@@ -470,8 +470,8 @@
       "source_location": "L19",
       "_origin": "ast",
       "id": "package_dependencies_react",
-      "community": 2,
-      "community_name": "dependencies",
+      "community": 3,
+      "community_name": "permissions.js",
       "norm_label": "react"
     },
     {
@@ -481,8 +481,8 @@
       "source_location": "L19",
       "_origin": "ast",
       "id": "react",
-      "community": 2,
-      "community_name": "dependencies",
+      "community": 3,
+      "community_name": "permissions.js",
       "norm_label": "react"
     },
     {
@@ -1460,8 +1460,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_consignmentfinanceview",
-      "community": 3,
-      "community_name": "permissions.js",
+      "community": 22,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": "consignmentfinanceview.jsx"
     },
     {
@@ -1471,8 +1471,8 @@
       "source_location": "L6",
       "_origin": "ast",
       "id": "src_consignmentfinanceview_consignmentfinanceview",
-      "community": 3,
-      "community_name": "permissions.js",
+      "community": 22,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": "consignmentfinanceview()"
     },
     {
@@ -1482,8 +1482,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_eodreconciliationview",
-      "community": 3,
-      "community_name": "permissions.js",
+      "community": 22,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": "eodreconciliationview.jsx"
     },
     {
@@ -1493,8 +1493,8 @@
       "source_location": "L6",
       "_origin": "ast",
       "id": "src_eodreconciliationview_eodreconciliationview",
-      "community": 3,
-      "community_name": "permissions.js",
+      "community": 22,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": "eodreconciliationview()"
     },
     {
@@ -1614,8 +1614,8 @@
       "source_location": "L74",
       "_origin": "ast",
       "id": "src_journeyview_maprecenter",
-      "community": 2,
-      "community_name": "dependencies",
+      "community": 3,
+      "community_name": "permissions.js",
       "norm_label": "maprecenter()"
     },
     {
@@ -1900,8 +1900,8 @@
       "source_location": "L1050",
       "_origin": "ast",
       "id": "src_mapmissioncontrol_storebottomsheet",
-      "community": 22,
-      "community_name": "savePhotoAndGetReference",
+      "community": 1,
+      "community_name": "MapMissionControl.jsx",
       "norm_label": "storebottomsheet()"
     },
     {
@@ -1933,8 +1933,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_merchantsalesview",
-      "community": 23,
-      "community_name": "MerchantSalesView.jsx",
+      "community": 5,
+      "community_name": "mixedUnits.selfcheck.mjs",
       "norm_label": "merchantsalesview.jsx"
     },
     {
@@ -1944,8 +1944,8 @@
       "source_location": "L11",
       "_origin": "ast",
       "id": "src_merchantsalesview_merchantsalesview",
-      "community": 23,
-      "community_name": "MerchantSalesView.jsx",
+      "community": 5,
+      "community_name": "mixedUnits.selfcheck.mjs",
       "norm_label": "merchantsalesview()"
     },
     {
@@ -2274,8 +2274,8 @@
       "source_location": "L70",
       "_origin": "ast",
       "id": "src_components_confirmgate_confirmhost",
-      "community": 0,
-      "community_name": "App.jsx",
+      "community": 3,
+      "community_name": "permissions.js",
       "norm_label": "confirmhost()"
     },
     {
@@ -2582,8 +2582,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_safetystatus",
-      "community": 22,
-      "community_name": "savePhotoAndGetReference",
+      "community": 0,
+      "community_name": "App.jsx",
       "norm_label": "safetystatus.jsx"
     },
     {
@@ -2593,8 +2593,8 @@
       "source_location": "L4",
       "_origin": "ast",
       "id": "src_components_safetystatus_safetystatus",
-      "community": 22,
-      "community_name": "savePhotoAndGetReference",
+      "community": 0,
+      "community_name": "App.jsx",
       "norm_label": "safetystatus()"
     },
     {
@@ -2824,8 +2824,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_config_customerbrief_selfcheck",
-      "community": 29,
-      "community_name": "customerBrief.selfcheck.mjs",
+      "community": 5,
+      "community_name": "mixedUnits.selfcheck.mjs",
       "norm_label": "customerbrief.selfcheck.mjs"
     },
     {
@@ -2835,8 +2835,8 @@
       "source_location": "L10",
       "_origin": "ast",
       "id": "src_config_customerbrief_selfcheck_at",
-      "community": 29,
-      "community_name": "customerBrief.selfcheck.mjs",
+      "community": 5,
+      "community_name": "mixedUnits.selfcheck.mjs",
       "norm_label": "at()"
     },
     {
@@ -2846,8 +2846,8 @@
       "source_location": "L11",
       "_origin": "ast",
       "id": "src_config_customerbrief_selfcheck_tx",
-      "community": 29,
-      "community_name": "customerBrief.selfcheck.mjs",
+      "community": 5,
+      "community_name": "mixedUnits.selfcheck.mjs",
       "norm_label": "tx()"
     },
     {
@@ -2857,8 +2857,8 @@
       "source_location": "L17",
       "_origin": "ast",
       "id": "src_config_customerbrief_selfcheck_rows",
-      "community": 29,
-      "community_name": "customerBrief.selfcheck.mjs",
+      "community": 5,
+      "community_name": "mixedUnits.selfcheck.mjs",
       "norm_label": "rows"
     },
     {
@@ -2868,8 +2868,8 @@
       "source_location": "L22",
       "_origin": "ast",
       "id": "src_config_customerbrief_selfcheck_b",
-      "community": 29,
-      "community_name": "customerBrief.selfcheck.mjs",
+      "community": 5,
+      "community_name": "mixedUnits.selfcheck.mjs",
       "norm_label": "b"
     },
     {
@@ -2879,8 +2879,8 @@
       "source_location": "L28",
       "_origin": "ast",
       "id": "src_config_customerbrief_selfcheck_messy",
-      "community": 29,
-      "community_name": "customerBrief.selfcheck.mjs",
+      "community": 5,
+      "community_name": "mixedUnits.selfcheck.mjs",
       "norm_label": "messy"
     },
     {
@@ -2890,8 +2890,8 @@
       "source_location": "L33",
       "_origin": "ast",
       "id": "src_config_customerbrief_selfcheck_sameday",
-      "community": 29,
-      "community_name": "customerBrief.selfcheck.mjs",
+      "community": 5,
+      "community_name": "mixedUnits.selfcheck.mjs",
       "norm_label": "sameday"
     },
     {
@@ -2901,8 +2901,8 @@
       "source_location": "L38",
       "_origin": "ast",
       "id": "src_config_customerbrief_selfcheck_sd",
-      "community": 29,
-      "community_name": "customerBrief.selfcheck.mjs",
+      "community": 5,
+      "community_name": "mixedUnits.selfcheck.mjs",
       "norm_label": "sd"
     },
     {
@@ -2912,8 +2912,8 @@
       "source_location": "L43",
       "_origin": "ast",
       "id": "src_config_customerbrief_selfcheck_withretur",
-      "community": 29,
-      "community_name": "customerBrief.selfcheck.mjs",
+      "community": 5,
+      "community_name": "mixedUnits.selfcheck.mjs",
       "norm_label": "withretur"
     },
     {
@@ -2923,8 +2923,8 @@
       "source_location": "L63",
       "_origin": "ast",
       "id": "src_config_customerbrief_selfcheck_inventory",
-      "community": 29,
-      "community_name": "customerBrief.selfcheck.mjs",
+      "community": 5,
+      "community_name": "mixedUnits.selfcheck.mjs",
       "norm_label": "inventory"
     },
     {
@@ -2934,8 +2934,8 @@
       "source_location": "L70",
       "_origin": "ast",
       "id": "src_config_customerbrief_selfcheck_ok",
-      "community": 29,
-      "community_name": "customerBrief.selfcheck.mjs",
+      "community": 5,
+      "community_name": "mixedUnits.selfcheck.mjs",
       "norm_label": "ok"
     },
     {
@@ -2945,8 +2945,8 @@
       "source_location": "L79",
       "_origin": "ast",
       "id": "src_config_customerbrief_selfcheck_guarded",
-      "community": 29,
-      "community_name": "customerBrief.selfcheck.mjs",
+      "community": 5,
+      "community_name": "mixedUnits.selfcheck.mjs",
       "norm_label": "guarded"
     },
     {
@@ -2956,8 +2956,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_config_daystats_selfcheck",
-      "community": 30,
-      "community_name": "dayStats.selfcheck.mjs",
+      "community": 5,
+      "community_name": "mixedUnits.selfcheck.mjs",
       "norm_label": "daystats.selfcheck.mjs"
     },
     {
@@ -2967,8 +2967,8 @@
       "source_location": "L10",
       "_origin": "ast",
       "id": "src_config_daystats_selfcheck_at",
-      "community": 30,
-      "community_name": "dayStats.selfcheck.mjs",
+      "community": 5,
+      "community_name": "mixedUnits.selfcheck.mjs",
       "norm_label": "at()"
     },
     {
@@ -2978,8 +2978,8 @@
       "source_location": "L14",
       "_origin": "ast",
       "id": "src_config_daystats_selfcheck_tx",
-      "community": 30,
-      "community_name": "dayStats.selfcheck.mjs",
+      "community": 5,
+      "community_name": "mixedUnits.selfcheck.mjs",
       "norm_label": "tx()"
     },
     {
@@ -2989,8 +2989,8 @@
       "source_location": "L17",
       "_origin": "ast",
       "id": "src_config_daystats_selfcheck_now",
-      "community": 30,
-      "community_name": "dayStats.selfcheck.mjs",
+      "community": 5,
+      "community_name": "mixedUnits.selfcheck.mjs",
       "norm_label": "now"
     },
     {
@@ -3000,8 +3000,8 @@
       "source_location": "L20",
       "_origin": "ast",
       "id": "src_config_daystats_selfcheck_rows",
-      "community": 30,
-      "community_name": "dayStats.selfcheck.mjs",
+      "community": 5,
+      "community_name": "mixedUnits.selfcheck.mjs",
       "norm_label": "rows"
     },
     {
@@ -3011,8 +3011,8 @@
       "source_location": "L29",
       "_origin": "ast",
       "id": "src_config_daystats_selfcheck_s",
-      "community": 30,
-      "community_name": "dayStats.selfcheck.mjs",
+      "community": 5,
+      "community_name": "mixedUnits.selfcheck.mjs",
       "norm_label": "s"
     },
     {
@@ -3022,8 +3022,8 @@
       "source_location": "L38",
       "_origin": "ast",
       "id": "src_config_daystats_selfcheck_shuffled",
-      "community": 30,
-      "community_name": "dayStats.selfcheck.mjs",
+      "community": 5,
+      "community_name": "mixedUnits.selfcheck.mjs",
       "norm_label": "shuffled"
     },
     {
@@ -3033,8 +3033,8 @@
       "source_location": "L42",
       "_origin": "ast",
       "id": "src_config_daystats_selfcheck_withreturn",
-      "community": 30,
-      "community_name": "dayStats.selfcheck.mjs",
+      "community": 5,
+      "community_name": "mixedUnits.selfcheck.mjs",
       "norm_label": "withreturn"
     },
     {
@@ -3044,8 +3044,8 @@
       "source_location": "L54",
       "_origin": "ast",
       "id": "src_config_daystats_selfcheck_justafterlocalmidnight",
-      "community": 30,
-      "community_name": "dayStats.selfcheck.mjs",
+      "community": 5,
+      "community_name": "mixedUnits.selfcheck.mjs",
       "norm_label": "justafterlocalmidnight"
     },
     {
@@ -3055,8 +3055,8 @@
       "source_location": "L56",
       "_origin": "ast",
       "id": "src_config_daystats_selfcheck_justbeforelocalmidnight",
-      "community": 30,
-      "community_name": "dayStats.selfcheck.mjs",
+      "community": 5,
+      "community_name": "mixedUnits.selfcheck.mjs",
       "norm_label": "justbeforelocalmidnight"
     },
     {
@@ -3434,6 +3434,50 @@
       "norm_label": "pmissing"
     },
     {
+      "label": "engineCode",
+      "file_type": "code",
+      "source_file": "src/config/integration.audit.mjs",
+      "source_location": "L314",
+      "_origin": "ast",
+      "id": "src_config_integration_audit_enginecode",
+      "community": 24,
+      "community_name": "hasClearance",
+      "norm_label": "enginecode"
+    },
+    {
+      "label": "appCode",
+      "file_type": "code",
+      "source_file": "src/config/integration.audit.mjs",
+      "source_location": "L323",
+      "_origin": "ast",
+      "id": "src_config_integration_audit_appcode",
+      "community": 24,
+      "community_name": "hasClearance",
+      "norm_label": "appcode"
+    },
+    {
+      "label": "custMgr",
+      "file_type": "code",
+      "source_file": "src/config/integration.audit.mjs",
+      "source_location": "L330",
+      "_origin": "ast",
+      "id": "src_config_integration_audit_custmgr",
+      "community": 24,
+      "community_name": "hasClearance",
+      "norm_label": "custmgr"
+    },
+    {
+      "label": "repairBlock",
+      "file_type": "code",
+      "source_file": "src/config/integration.audit.mjs",
+      "source_location": "L331",
+      "_origin": "ast",
+      "id": "src_config_integration_audit_repairblock",
+      "community": 24,
+      "community_name": "hasClearance",
+      "norm_label": "repairblock"
+    },
+    {
       "label": "mixedUnits.selfcheck.mjs",
       "file_type": "code",
       "source_file": "src/config/mixedUnits.selfcheck.mjs",
@@ -3770,8 +3814,8 @@
       "source_location": "L12",
       "_origin": "ast",
       "id": "src_config_permissions_dynamic_tiers",
-      "community": 11,
-      "community_name": "HallOfFameView.jsx",
+      "community": 3,
+      "community_name": "permissions.js",
       "norm_label": "dynamic_tiers"
     },
     {
@@ -4254,8 +4298,8 @@
       "source_location": "L10",
       "_origin": "ast",
       "id": "src_hooks_usesound_selfcheck_stubaudio",
-      "community": 32,
-      "community_name": "StubAudio",
+      "community": 6,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": "stubaudio"
     },
     {
@@ -4265,8 +4309,8 @@
       "source_location": "L11",
       "_origin": "ast",
       "id": "src_hooks_usesound_selfcheck_stubaudio_constructor",
-      "community": 32,
-      "community_name": "StubAudio",
+      "community": 6,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": ".constructor()"
     },
     {
@@ -4276,8 +4320,8 @@
       "source_location": "L12",
       "_origin": "ast",
       "id": "src_hooks_usesound_selfcheck_stubaudio_play",
-      "community": 32,
-      "community_name": "StubAudio",
+      "community": 6,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": ".play()"
     },
     {
@@ -4287,8 +4331,8 @@
       "source_location": "L13",
       "_origin": "ast",
       "id": "src_hooks_usesound_selfcheck_stubaudio_pause",
-      "community": 32,
-      "community_name": "StubAudio",
+      "community": 6,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": ".pause()"
     },
     {
@@ -4342,8 +4386,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_main",
-      "community": 0,
-      "community_name": "App.jsx",
+      "community": 3,
+      "community_name": "permissions.js",
       "norm_label": "main.jsx"
     },
     {
@@ -4408,8 +4452,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_utils_customerbrief",
-      "community": 29,
-      "community_name": "customerBrief.selfcheck.mjs",
+      "community": 5,
+      "community_name": "mixedUnits.selfcheck.mjs",
       "norm_label": "customerbrief.js"
     },
     {
@@ -4419,8 +4463,8 @@
       "source_location": "L12",
       "_origin": "ast",
       "id": "src_utils_customerbrief_briefseconds",
-      "community": 29,
-      "community_name": "customerBrief.selfcheck.mjs",
+      "community": 5,
+      "community_name": "mixedUnits.selfcheck.mjs",
       "norm_label": "briefseconds()"
     },
     {
@@ -4430,8 +4474,8 @@
       "source_location": "L24",
       "_origin": "ast",
       "id": "src_utils_customerbrief_key",
-      "community": 29,
-      "community_name": "customerBrief.selfcheck.mjs",
+      "community": 5,
+      "community_name": "mixedUnits.selfcheck.mjs",
       "norm_label": "key()"
     },
     {
@@ -4441,8 +4485,8 @@
       "source_location": "L26",
       "_origin": "ast",
       "id": "src_utils_customerbrief_customerbrief",
-      "community": 29,
-      "community_name": "customerBrief.selfcheck.mjs",
+      "community": 5,
+      "community_name": "mixedUnits.selfcheck.mjs",
       "norm_label": "customerbrief()"
     },
     {
@@ -4452,8 +4496,8 @@
       "source_location": "L75",
       "_origin": "ast",
       "id": "src_utils_customerbrief_reorderfromlast",
-      "community": 23,
-      "community_name": "MerchantSalesView.jsx",
+      "community": 5,
+      "community_name": "mixedUnits.selfcheck.mjs",
       "norm_label": "reorderfromlast()"
     },
     {
@@ -4463,8 +4507,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_utils_daystats",
-      "community": 23,
-      "community_name": "MerchantSalesView.jsx",
+      "community": 5,
+      "community_name": "mixedUnits.selfcheck.mjs",
       "norm_label": "daystats.js"
     },
     {
@@ -4474,8 +4518,8 @@
       "source_location": "L15",
       "_origin": "ast",
       "id": "src_utils_daystats_txseconds",
-      "community": 23,
-      "community_name": "MerchantSalesView.jsx",
+      "community": 5,
+      "community_name": "mixedUnits.selfcheck.mjs",
       "norm_label": "txseconds()"
     },
     {
@@ -4485,8 +4529,8 @@
       "source_location": "L24",
       "_origin": "ast",
       "id": "src_utils_daystats_daystats",
-      "community": 23,
-      "community_name": "MerchantSalesView.jsx",
+      "community": 5,
+      "community_name": "mixedUnits.selfcheck.mjs",
       "norm_label": "daystats()"
     },
     {
@@ -4496,8 +4540,8 @@
       "source_location": "L74",
       "_origin": "ast",
       "id": "src_utils_daystats_agolabel",
-      "community": 23,
-      "community_name": "MerchantSalesView.jsx",
+      "community": 5,
+      "community_name": "mixedUnits.selfcheck.mjs",
       "norm_label": "agolabel()"
     },
     {
@@ -4507,8 +4551,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_utils_helpers",
-      "community": 3,
-      "community_name": "permissions.js",
+      "community": 22,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": "helpers.js"
     },
     {
@@ -4562,8 +4606,8 @@
       "source_location": "L28",
       "_origin": "ast",
       "id": "src_utils_helpers_getlocaldaykey",
-      "community": 3,
-      "community_name": "permissions.js",
+      "community": 22,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": "getlocaldaykey()"
     },
     {
@@ -4672,8 +4716,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_utils_nextstop",
-      "community": 23,
-      "community_name": "MerchantSalesView.jsx",
+      "community": 5,
+      "community_name": "mixedUnits.selfcheck.mjs",
       "norm_label": "nextstop.js"
     },
     {
@@ -4683,8 +4727,8 @@
       "source_location": "L12",
       "_origin": "ast",
       "id": "src_utils_nextstop_km",
-      "community": 23,
-      "community_name": "MerchantSalesView.jsx",
+      "community": 5,
+      "community_name": "mixedUnits.selfcheck.mjs",
       "norm_label": "km()"
     },
     {
@@ -4694,8 +4738,8 @@
       "source_location": "L21",
       "_origin": "ast",
       "id": "src_utils_nextstop_mine",
-      "community": 23,
-      "community_name": "MerchantSalesView.jsx",
+      "community": 5,
+      "community_name": "mixedUnits.selfcheck.mjs",
       "norm_label": "mine()"
     },
     {
@@ -4705,8 +4749,8 @@
       "source_location": "L37",
       "_origin": "ast",
       "id": "src_utils_nextstop_visitedwithincycle",
-      "community": 23,
-      "community_name": "MerchantSalesView.jsx",
+      "community": 5,
+      "community_name": "mixedUnits.selfcheck.mjs",
       "norm_label": "visitedwithincycle()"
     },
     {
@@ -4716,8 +4760,8 @@
       "source_location": "L45",
       "_origin": "ast",
       "id": "src_utils_nextstop_nextstop",
-      "community": 23,
-      "community_name": "MerchantSalesView.jsx",
+      "community": 5,
+      "community_name": "mixedUnits.selfcheck.mjs",
       "norm_label": "nextstop()"
     },
     {
@@ -4727,8 +4771,8 @@
       "source_location": "L76",
       "_origin": "ast",
       "id": "src_utils_nextstop_directionsurl",
-      "community": 23,
-      "community_name": "MerchantSalesView.jsx",
+      "community": 5,
+      "community_name": "mixedUnits.selfcheck.mjs",
       "norm_label": "directionsurl()"
     },
     {
@@ -4738,8 +4782,8 @@
       "source_location": "L84",
       "_origin": "ast",
       "id": "src_utils_nextstop_metreslabel",
-      "community": 23,
-      "community_name": "MerchantSalesView.jsx",
+      "community": 5,
+      "community_name": "mixedUnits.selfcheck.mjs",
       "norm_label": "metreslabel()"
     },
     {
@@ -4831,15 +4875,15 @@
       "norm_label": "now"
     },
     {
-      "label": "\u23f0 A SCHEDULED SESSION MAY HAVE ALREADY DONE WORK \u2014 CHECK BEFORE STARTING ANYTHING",
+      "label": "\u23f0 SCHEDULED TASKS DO NOT WORK HERE \u2014 DON'T OFFER ONE AGAIN",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
       "source_location": "L72",
       "_origin": "ast",
-      "id": "claude_progress_a_scheduled_session_may_have_already_done_work_check_before_starting_anything",
+      "id": "claude_progress_scheduled_tasks_do_not_work_here_don_t_offer_one_again",
       "community": 26,
       "community_name": "LOG \u2014 newest first, older entries live in `git log` for this file",
-      "norm_label": "\u23f0 a scheduled session may have already done work \u2014 check before starting anything"
+      "norm_label": "\u23f0 scheduled tasks do not work here \u2014 don't offer one again"
     },
     {
       "label": "WAITING ON ALDI \u2014 do not re-derive these, just ask",
@@ -4856,7 +4900,7 @@
       "label": "\ud83d\udeab DO NOT open a PR or merge to main yet",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L138",
+      "source_location": "L136",
       "_origin": "ast",
       "id": "claude_progress_do_not_open_a_pr_or_merge_to_main_yet",
       "community": 26,
@@ -4867,7 +4911,7 @@
       "label": "NEXT, once testing is done \u2014 he has not chosen",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L148",
+      "source_location": "L146",
       "_origin": "ast",
       "id": "claude_progress_next_once_testing_is_done_he_has_not_chosen",
       "community": 26,
@@ -4878,7 +4922,7 @@
       "label": "LOG \u2014 newest first, older entries live in `git log` for this file",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L156",
+      "source_location": "L154",
       "_origin": "ast",
       "id": "claude_progress_log_newest_first_older_entries_live_in_git_log_for_this_file",
       "community": 26,
@@ -4886,10 +4930,43 @@
       "norm_label": "log \u2014 newest first, older entries live in `git log` for this file"
     },
     {
+      "label": "2026-08-07 19:5x WIB \u2014 the tier-spelling fix is BUILT (Aldi: \"you can do both fix bro\")",
+      "file_type": "document",
+      "source_file": ".claude/PROGRESS.md",
+      "source_location": "L156",
+      "_origin": "ast",
+      "id": "claude_progress_2026_08_07_19_5x_wib_the_tier_spelling_fix_is_built_aldi_you_can_do_both_fix_bro",
+      "community": 26,
+      "community_name": "LOG \u2014 newest first, older entries live in `git log` for this file",
+      "norm_label": "2026-08-07 19:5x wib \u2014 the tier-spelling fix is built (aldi: \"you can do both fix bro\")"
+    },
+    {
+      "label": "2026-08-07 19:2x WIB \u2014 duplicate/invisible customers: root cause found (investigation)",
+      "file_type": "document",
+      "source_file": ".claude/PROGRESS.md",
+      "source_location": "L191",
+      "_origin": "ast",
+      "id": "claude_progress_2026_08_07_19_2x_wib_duplicate_invisible_customers_root_cause_found_investigation",
+      "community": 26,
+      "community_name": "LOG \u2014 newest first, older entries live in `git log` for this file",
+      "norm_label": "2026-08-07 19:2x wib \u2014 duplicate/invisible customers: root cause found (investigation)"
+    },
+    {
+      "label": "2026-08-07 18:31 WIB \u2014 11 prompt dialogs replaced; the scheduled session was a dud",
+      "file_type": "document",
+      "source_file": ".claude/PROGRESS.md",
+      "source_location": "L234",
+      "_origin": "ast",
+      "id": "claude_progress_2026_08_07_18_31_wib_11_prompt_dialogs_replaced_the_scheduled_session_was_a_dud",
+      "community": 26,
+      "community_name": "LOG \u2014 newest first, older entries live in `git log` for this file",
+      "norm_label": "2026-08-07 18:31 wib \u2014 11 prompt dialogs replaced; the scheduled session was a dud"
+    },
+    {
       "label": "2026-08-07 16:34 WIB \u2014 all 58 remaining dialogs replaced, gate tested in a real browser",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L158",
+      "source_location": "L262",
       "_origin": "ast",
       "id": "claude_progress_2026_08_07_16_34_wib_all_58_remaining_dialogs_replaced_gate_tested_in_a_real_browser",
       "community": 26,
@@ -4900,7 +4977,7 @@
       "label": "2026-08-07 15:52 WIB \u2014 committed `f2060f1`, two of three new tests passed",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L189",
+      "source_location": "L293",
       "_origin": "ast",
       "id": "claude_progress_2026_08_07_15_52_wib_committed_f2060f1_two_of_three_new_tests_passed",
       "community": 26,
@@ -4911,7 +4988,7 @@
       "label": "2026-08-07 15:41 WIB \u2014 stale-stamp hole in the new territory code, found and closed",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L214",
+      "source_location": "L318",
       "_origin": "ast",
       "id": "claude_progress_2026_08_07_15_41_wib_stale_stamp_hole_in_the_new_territory_code_found_and_closed",
       "community": 26,
@@ -4922,7 +4999,7 @@
       "label": "2026-08-07 15:06 WIB",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L234",
+      "source_location": "L338",
       "_origin": "ast",
       "id": "claude_progress_2026_08_07_15_06_wib",
       "community": 26,
@@ -4933,7 +5010,7 @@
       "label": "2026-08-07 14:55 WIB",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L248",
+      "source_location": "L352",
       "_origin": "ast",
       "id": "claude_progress_2026_08_07_14_55_wib",
       "community": 26,
@@ -4944,7 +5021,7 @@
       "label": "2026-08-07 (later)",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L261",
+      "source_location": "L365",
       "_origin": "ast",
       "id": "claude_progress_2026_08_07_later",
       "community": 26,
@@ -4955,7 +5032,7 @@
       "label": "2026-08-07 14:46 WIB",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L274",
+      "source_location": "L378",
       "_origin": "ast",
       "id": "claude_progress_2026_08_07_14_46_wib",
       "community": 26,
@@ -4966,7 +5043,7 @@
       "label": "2026-08-07 14:35 WIB",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L288",
+      "source_location": "L392",
       "_origin": "ast",
       "id": "claude_progress_2026_08_07_14_35_wib",
       "community": 26,
@@ -4977,7 +5054,7 @@
       "label": "2026-08-07 14:32 WIB",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L294",
+      "source_location": "L398",
       "_origin": "ast",
       "id": "claude_progress_2026_08_07_14_32_wib",
       "community": 26,
@@ -4988,7 +5065,7 @@
       "label": "2026-08-07 14:30 WIB",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L302",
+      "source_location": "L406",
       "_origin": "ast",
       "id": "claude_progress_2026_08_07_14_30_wib",
       "community": 26,
@@ -4999,7 +5076,7 @@
       "label": "2026-08-07 14:25 WIB",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L309",
+      "source_location": "L413",
       "_origin": "ast",
       "id": "claude_progress_2026_08_07_14_25_wib",
       "community": 26,
@@ -5010,7 +5087,7 @@
       "label": "2026-08-07 14:23 WIB",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L314",
+      "source_location": "L418",
       "_origin": "ast",
       "id": "claude_progress_2026_08_07_14_23_wib",
       "community": 26,
@@ -5021,7 +5098,7 @@
       "label": "2026-08-07 14:11 WIB",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L322",
+      "source_location": "L426",
       "_origin": "ast",
       "id": "claude_progress_2026_08_07_14_11_wib",
       "community": 26,
@@ -5032,7 +5109,7 @@
       "label": "2026-08-07 14:07 WIB",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L329",
+      "source_location": "L433",
       "_origin": "ast",
       "id": "claude_progress_2026_08_07_14_07_wib",
       "community": 26,
@@ -5043,7 +5120,7 @@
       "label": "2026-08-07 13:56 WIB",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L342",
+      "source_location": "L446",
       "_origin": "ast",
       "id": "claude_progress_2026_08_07_13_56_wib",
       "community": 26,
@@ -5054,7 +5131,7 @@
       "label": "2026-08-07 (earlier)",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L353",
+      "source_location": "L457",
       "_origin": "ast",
       "id": "claude_progress_2026_08_07_earlier",
       "community": 26,
@@ -5065,7 +5142,7 @@
       "label": "2026-08-06",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L357",
+      "source_location": "L461",
       "_origin": "ast",
       "id": "claude_progress_2026_08_06",
       "community": 26,
@@ -13750,6 +13827,17 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/config/integration.audit.mjs",
+      "source_location": "L323",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_config_integration_audit",
+      "target": "src_config_integration_audit_appcode",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/config/integration.audit.mjs",
       "source_location": "L263",
       "weight": 1.0,
       "_origin": "ast",
@@ -13816,11 +13904,33 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/config/integration.audit.mjs",
+      "source_location": "L330",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_config_integration_audit",
+      "target": "src_config_integration_audit_custmgr",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/config/integration.audit.mjs",
       "source_location": "L20",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_config_integration_audit",
       "target": "src_config_integration_audit_engine",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/config/integration.audit.mjs",
+      "source_location": "L314",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_config_integration_audit",
+      "target": "src_config_integration_audit_enginecode",
       "confidence_score": 1.0
     },
     {
@@ -13942,6 +14052,17 @@
       "_origin": "ast",
       "source": "src_config_integration_audit",
       "target": "src_config_integration_audit_pusers",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/config/integration.audit.mjs",
+      "source_location": "L331",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_config_integration_audit",
+      "target": "src_config_integration_audit_repairblock",
       "confidence_score": 1.0
     },
     {
@@ -15299,7 +15420,7 @@
       "confidence": "INFERRED",
       "confidence_score": 0.8,
       "source_file": "src/hooks/useTransactionEngine.js",
-      "source_location": "L233",
+      "source_location": "L238",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_hooks_usetransactionengine_usetransactionengine",
@@ -15793,18 +15914,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L72",
-      "weight": 1.0,
-      "_origin": "ast",
-      "source": "claude_progress_progress_read_this_search_for_nothing",
-      "target": "claude_progress_a_scheduled_session_may_have_already_done_work_check_before_starting_anything",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": ".claude/PROGRESS.md",
-      "source_location": "L138",
+      "source_location": "L136",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -15837,7 +15947,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L156",
+      "source_location": "L154",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -15848,7 +15958,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L148",
+      "source_location": "L146",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -15864,6 +15974,17 @@
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
       "target": "claude_progress_now",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": ".claude/PROGRESS.md",
+      "source_location": "L72",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "claude_progress_progress_read_this_search_for_nothing",
+      "target": "claude_progress_scheduled_tasks_do_not_work_here_don_t_offer_one_again",
       "confidence_score": 1.0
     },
     {
@@ -15892,7 +16013,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L357",
+      "source_location": "L461",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_log_newest_first_older_entries_live_in_git_log_for_this_file",
@@ -15903,7 +16024,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L342",
+      "source_location": "L446",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_log_newest_first_older_entries_live_in_git_log_for_this_file",
@@ -15914,7 +16035,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L329",
+      "source_location": "L433",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_log_newest_first_older_entries_live_in_git_log_for_this_file",
@@ -15925,7 +16046,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L322",
+      "source_location": "L426",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_log_newest_first_older_entries_live_in_git_log_for_this_file",
@@ -15936,7 +16057,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L314",
+      "source_location": "L418",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_log_newest_first_older_entries_live_in_git_log_for_this_file",
@@ -15947,7 +16068,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L309",
+      "source_location": "L413",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_log_newest_first_older_entries_live_in_git_log_for_this_file",
@@ -15958,7 +16079,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L302",
+      "source_location": "L406",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_log_newest_first_older_entries_live_in_git_log_for_this_file",
@@ -15969,7 +16090,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L294",
+      "source_location": "L398",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_log_newest_first_older_entries_live_in_git_log_for_this_file",
@@ -15980,7 +16101,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L288",
+      "source_location": "L392",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_log_newest_first_older_entries_live_in_git_log_for_this_file",
@@ -15991,7 +16112,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L274",
+      "source_location": "L378",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_log_newest_first_older_entries_live_in_git_log_for_this_file",
@@ -16002,7 +16123,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L248",
+      "source_location": "L352",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_log_newest_first_older_entries_live_in_git_log_for_this_file",
@@ -16013,7 +16134,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L234",
+      "source_location": "L338",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_log_newest_first_older_entries_live_in_git_log_for_this_file",
@@ -16024,7 +16145,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L214",
+      "source_location": "L318",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_log_newest_first_older_entries_live_in_git_log_for_this_file",
@@ -16035,7 +16156,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L189",
+      "source_location": "L293",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_log_newest_first_older_entries_live_in_git_log_for_this_file",
@@ -16046,7 +16167,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L158",
+      "source_location": "L262",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_log_newest_first_older_entries_live_in_git_log_for_this_file",
@@ -16057,7 +16178,40 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L353",
+      "source_location": "L234",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "claude_progress_log_newest_first_older_entries_live_in_git_log_for_this_file",
+      "target": "claude_progress_2026_08_07_18_31_wib_11_prompt_dialogs_replaced_the_scheduled_session_was_a_dud",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": ".claude/PROGRESS.md",
+      "source_location": "L191",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "claude_progress_log_newest_first_older_entries_live_in_git_log_for_this_file",
+      "target": "claude_progress_2026_08_07_19_2x_wib_duplicate_invisible_customers_root_cause_found_investigation",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": ".claude/PROGRESS.md",
+      "source_location": "L156",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "claude_progress_log_newest_first_older_entries_live_in_git_log_for_this_file",
+      "target": "claude_progress_2026_08_07_19_5x_wib_the_tier_spelling_fix_is_built_aldi_you_can_do_both_fix_bro",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": ".claude/PROGRESS.md",
+      "source_location": "L457",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_log_newest_first_older_entries_live_in_git_log_for_this_file",
@@ -16068,7 +16222,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L261",
+      "source_location": "L365",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_log_newest_first_older_entries_live_in_git_log_for_this_file",
@@ -16847,5 +17001,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "71b8a32a27578a6324df90cd9abedf672c7bd253"
+  "built_at_commit": "542be60c3241c2459465b6dfa4cce349a37cdd2f"
 }

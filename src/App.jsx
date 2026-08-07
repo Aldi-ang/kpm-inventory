@@ -3217,10 +3217,18 @@ const handleGitHubMirror = async () => {
           // 🚀 ANTI-FRAUD QUARANTINE: Strictly hide PENDING stores from Agents!
           if (c.status === 'PENDING') return false;
 
-          let mappedTier = c.priceTier || 'Retail'; 
-          
-          // Fallback logic for legacy customers missing the explicit priceTier
-          if (!c.priceTier) {
+          /* `pricingTier` is the SAME field under a second spelling. useTransactionEngine wrote
+             it that way for every store registered during a sale, while this filter only looked
+             for `priceTier` — so those stores fell through to the 'Retail' default below and
+             vanished from any agent whose allowedTiers excluded Retail. The salesman could not
+             find the store he had just created, so he created it again. That is where the
+             duplicates came from. The writer now emits `priceTier`; this line is what rescues
+             every record already saved the old way, with no migration needed. */
+          const explicitTier = c.priceTier || c.pricingTier;
+          let mappedTier = explicitTier || 'Retail';
+
+          // Fallback logic for legacy customers missing any explicit tier
+          if (!explicitTier) {
               const tierUpper = (c.tier || '').toUpperCase();
               if (tierUpper.includes('GROSIR') || tierUpper.includes('GOLD') || tierUpper.includes('WHOLESALE')) mappedTier = 'Grosir';
               else if (tierUpper.includes('RETAIL') || tierUpper.includes('SILVER')) mappedTier = 'Retail';

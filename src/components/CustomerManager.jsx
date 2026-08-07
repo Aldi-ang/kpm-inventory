@@ -651,6 +651,57 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
         e.target.value = null;
     };
 
+    /* 🔧 ONE-TIME REPAIR: the pricingTier / priceTier spelling split.
+       useTransactionEngine used to save a store's price level as `pricingTier`, while the rest
+       of the app — including the filter that decides which stores an agent may see — reads
+       `priceTier`. Stores registered during a sale therefore defaulted to 'Retail' and could
+       disappear from the agent who had just created them, who then registered them again.
+
+       The writer and the filter are both fixed, so nothing new lands wrong and nothing stays
+       hidden. This button is cleanup only: it copies the value across on records already saved
+       the old way, so future queries and indexes on `priceTier` see them too.
+
+       Deliberately non-destructive. It only ADDS `priceTier` where it is missing, never
+       overwrites an existing one, never removes `pricingTier`, and never touches any other
+       field. It cannot merge or delete a duplicate store — that needs human eyes and is a
+       separate job. */
+    const handleRepairTierField = async () => {
+        const broken = customers.filter(c => !c.priceTier && c.pricingTier);
+        if (broken.length === 0) {
+            if (triggerCapy) triggerCapy("Nothing to repair — every store already has priceTier. ✅");
+            return;
+        }
+        if (!await confirmAction(
+            `Repair ${broken.length} store${broken.length === 1 ? '' : 's'} saved with the old field name?\n\n` +
+            `Their price level was stored as "pricingTier" instead of "priceTier". This copies the ` +
+            `value across so every screen reads them correctly.\n\n` +
+            `Nothing is deleted and no other field is touched. No store is merged or removed.`
+        )) return;
+
+        if (triggerCapy) triggerCapy("Repairing store price levels... ⚙️");
+        try {
+            /* 'update', NOT 'set'. commitInChunks passes op.options as set()'s third argument,
+               so a `merge: true` key on the operation would be ignored and set() would REPLACE
+               each customer document with just this one field, destroying name, address, GPS,
+               everything. update() writes only the named field. It also throws if a document
+               disappeared mid-run, which fails the batch loudly instead of quietly creating a
+               one-field record with no name — and a record with no name is invisible to the
+               orderBy('name') customer listener, so that would manufacture the exact ghost
+               this repair exists to clear. */
+            const operations = broken.map(c => ({
+                type: 'update',
+                ref: doc(db, 'artifacts', appId, 'users', user.uid, 'customers', c.id),
+                data: { priceTier: c.pricingTier },
+            }));
+            await commitInChunks(db, writeBatch, operations);
+            if (logAudit) logAudit("TIER_FIELD_REPAIR", `Copied pricingTier to priceTier on ${broken.length} stores.`);
+            if (triggerCapy) triggerCapy(`Repaired ${broken.length} stores. They are visible again. ✅`);
+        } catch (err) {
+            console.error("Tier repair error:", err);
+            alert(`Repair failed: ${err.message || "Unknown error."}`);
+        }
+    };
+
     // 🚀 ONE-TIME ENTERPRISE DATA SCRUB (MIGRATION ENGINE)
     const handleEnterpriseDataScrub = async () => {
         if (!await confirmAction("⚠️ INITIATE ENTERPRISE DATA SCRUB?\n\nThis will scan all customers and permanently hard-write their exact Matrix Location (Provinsi, Kabupaten, Kecamatan) into the Firebase database to establish a Single Source of Truth.")) return;
@@ -901,7 +952,19 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                 <h2 className="text-2xl font-bold dark:text-white flex items-center gap-2"><Store size={24} className="text-orange-500"/> Customer Directory</h2>
                 {isAdmin && (
                     <div className="flex gap-2">
-                        <button 
+                        {/* Only shown when there is actually something to repair, so it stops
+                            cluttering the header the moment the job is done. The count is read
+                            from the same live customers array the repair itself works from. */}
+                        {customers.some(c => !c.priceTier && c.pricingTier) && (
+                            <button
+                                onClick={handleRepairTierField}
+                                className="bg-amber-600 hover:bg-amber-500 text-white px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest cursor-pointer shadow-[0_0_15px_rgba(217,119,6,0.4)] transition-all active:scale-95 flex items-center gap-2"
+                                title="Some stores saved their price level under the old field name and can be hidden from agents. This copies it across. Nothing is deleted."
+                            >
+                                <ShieldAlert size={14}/> Repair {customers.filter(c => !c.priceTier && c.pricingTier).length} Store Tiers
+                            </button>
+                        )}
+                        <button
                             onClick={handleEnterpriseDataScrub}
                             className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest cursor-pointer shadow-[0_0_15px_rgba(16,185,129,0.4)] transition-all active:scale-95 flex items-center gap-2"
                             title="Hard-map all UNMAPPED stores into the Database permanently"

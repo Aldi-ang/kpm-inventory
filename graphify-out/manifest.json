@@ -50,8 +50,8 @@
     "semantic_hash": ""
   },
   "src/App.jsx": {
-    "mtime": 1786101637.1821313,
-    "ast_hash": "046d21c462faa9bf284684370bc74330",
+    "mtime": 1786109232.804103,
+    "ast_hash": "13d4cbb529251555c8be97c1a6151d9e",
     "semantic_hash": ""
   },
   "src/ConsignmentFinanceView.jsx": {
@@ -130,8 +130,8 @@
     "semantic_hash": ""
   },
   "src/components/CustomerManager.jsx": {
-    "mtime": 1786101648.2445812,
-    "ast_hash": "9859be940812e1f9452a81da80f65470",
+    "mtime": 1786109313.9062302,
+    "ast_hash": "a090b7b0c2de426b4ce993689676ecc5",
     "semantic_hash": ""
   },
   "src/components/DashboardBenchmarks.jsx": {
@@ -210,8 +210,8 @@
     "semantic_hash": ""
   },
   "src/hooks/useTransactionEngine.js": {
-    "mtime": 1786089726.276476,
-    "ast_hash": "bf9819c511ac220d448ade10cc449b4e",
+    "mtime": 1786109239.6911142,
+    "ast_hash": "34bfd0d3005cfcccd98347c7ac09d54d",
     "semantic_hash": ""
   },
   "src/main.jsx": {
@@ -540,8 +540,8 @@
     "semantic_hash": ""
   },
   "src/config/integration.audit.mjs": {
-    "mtime": 1786101673.477986,
-    "ast_hash": "566d8289fb099f1405fc453fa5d589fd",
+    "mtime": 1786109336.2773314,
+    "ast_hash": "28559b39186a28a1dd580ac716d886e7",
     "semantic_hash": ""
   },
   "src/config/nextStop.selfcheck.mjs": {
@@ -570,8 +570,8 @@
     "semantic_hash": ""
   },
   ".claude/PROGRESS.md": {
-    "mtime": 1786099741.7731478,
-    "ast_hash": "f469042d771c9b459306364cdfbc56e3",
+    "mtime": 1786109419.6315253,
+    "ast_hash": "daa0d6790018073e155507857622dc09",
     "semantic_hash": ""
   },
   ".claude/pre-compact-context.md": {

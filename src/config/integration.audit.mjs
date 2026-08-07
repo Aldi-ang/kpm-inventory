@@ -305,6 +305,37 @@ check(G10, 'the typing field reached the built bundle',
 check(G10, 'a cancelled prompt answers null, not empty string', gate.includes("? (inputRef.current?.value ?? '') : null"),
   'callers guard with `if (name && ...)` — null is what they expect from a cancel');
 
+/* ── 11. one spelling for the store's price level ──────────────────────────
+   useTransactionEngine used to write `pricingTier` while the rest of the app reads
+   `priceTier`. App.jsx's permittedCustomers filter only knew `priceTier`, so a store
+   registered during a sale defaulted to 'Retail' and could vanish from the very agent who
+   created it — who then created it again. That is where duplicate stores came from. */
+const G11 = '11. Store price level has one spelling';
+const engineCode = strip(engine);
+check(G11, 'the sale path writes priceTier, never pricingTier',
+  !/pricingTier\s*:/.test(engineCode),
+  'pricingTier is invisible to the customer filter in App.jsx');
+/* Same dual-payload rule as the territory stamp: a sale made offline must record the tier the
+   same way as one made online, or the store is only half-registered. */
+check(G11, 'both sale payloads carry the tier, offline and online',
+  (engineCode.match(/priceTier\s*:/g) || []).length >= 3,
+  'offline payload and both online branches must each set it');
+const appCode = strip(fs.readFileSync('src/App.jsx', 'utf8'));
+check(G11, 'the customer filter still reads the old spelling too',
+  /c\.priceTier\s*\|\|\s*c\.pricingTier/.test(appCode),
+  'this is what un-hides every store already saved the old way, without a migration');
+/* The repair writes to live customer records. batch.set() would REPLACE each document with
+   the single field it writes — name, address and GPS gone — because commitInChunks passes
+   op.options, not op.merge, so a merge flag on the operation is silently ignored. */
+const custMgr = fs.readFileSync('src/components/CustomerManager.jsx', 'utf8');
+const repairBlock = custMgr.slice(custMgr.indexOf('handleRepairTierField'), custMgr.indexOf('handleEnterpriseDataScrub'));
+check(G11, 'the tier repair updates fields, never overwrites the record',
+  repairBlock.includes("type: 'update'") && !repairBlock.includes("type: 'set'"),
+  'set() here would erase name/address/GPS on every store it touched');
+check(G11, 'the tier repair never deletes anything',
+  !/deleteDoc|type:\s*'delete'/.test(repairBlock),
+  'merging or removing a duplicate store is a human decision, not this button');
+
 /* ── report ──────────────────────────────────────────────────────────────── */
 let last = '';
 for (const r of results) {

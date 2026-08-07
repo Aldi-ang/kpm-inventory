@@ -153,10 +153,42 @@ are never worth rescuing.
 
 ## LOG — newest first, older entries live in `git log` for this file
 
-### 2026-08-07 19:2x WIB — duplicate/invisible customers: root cause found, NOTHING CHANGED YET
+### 2026-08-07 19:5x WIB — the tier-spelling fix is BUILT (Aldi: "you can do both fix bro")
 
-Investigation only, at Aldi's instruction. No code touched. **Do not "fix" this without showing
-him the plan first — it involves a data migration, not just a code edit.**
+Both halves done, audit **133 → 138**, build green, committed. Not pushed.
+
+**Code (3 files).** `useTransactionEngine.js` now writes `priceTier` in all three places it used
+to write `pricingTier` — the offline payload and both online branches. `App.jsx:3220`
+`permittedCustomers` now reads `c.priceTier || c.pricingTier`. **That reader change is the actual
+rescue**: every store already saved the old way becomes visible again immediately, with no
+migration run at all. Said so plainly to Aldi rather than letting the migration take the credit.
+
+**Repair button.** `handleRepairTierField` in `CustomerManager.jsx`, next to the existing Data
+Scrub, following the same `commitInChunks` shape. Admin-only, amber, and only rendered when a
+store actually needs it, with the count in the label. Copies `pricingTier` → `priceTier` where
+`priceTier` is missing. Adds only; never overwrites an existing value, never removes
+`pricingTier`, never deletes or merges a store.
+
+**A near-miss worth keeping.** The repair was first written as `type: 'set'` with `merge: true`.
+`commitInChunks` (helpers.js:139) passes **`op.options`**, not `op.merge`, to `batch.set()` — so
+the flag would have been silently dropped and every touched customer document REPLACED by a
+single `priceTier` field. Name, address, GPS, tier, all gone, on live production data. Changed to
+`type: 'update'`, which writes only the named field and throws if a doc vanished mid-run instead
+of quietly creating a nameless one-field record — and a nameless record is invisible to the
+`orderBy('name')` listener, so the silent version would have manufactured the exact ghost the
+repair exists to clear. Audit group 11 now fails the build if `set` or any delete reappears there.
+
+**Still true, still not done:** the duplicate documents themselves are untouched. Merging or
+deleting a duplicate store means deciding which one keeps its history and debt — human judgement,
+a separate job, and NOT something to automate. Aldi has not been asked to decide it yet.
+
+**Untested in the real screens.** The repair button needs admin + the master password, which
+Claude does not enter. Verified only that the build is green, the audit passes, all changed
+modules serve 200, and the app still renders.
+
+---
+
+### 2026-08-07 19:2x WIB — duplicate/invisible customers: root cause found (investigation)
 
 **The field-name split. This is the bug.**
 `src/hooks/useTransactionEngine.js` writes the store's tier as **`pricingTier`** — line 104 in the

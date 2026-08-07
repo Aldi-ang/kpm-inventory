@@ -101,7 +101,12 @@ export default function useTransactionEngine({
                         name: customerName,
                         phone: newStoreData.phone || '',
                         address: newStoreData.address || '',
-                        pricingTier: newStoreData.isNooRegistration ? newStoreData.requestedTier : 'Ecer',
+                        /* priceTier, NOT pricingTier. This file was the only place in the app
+                           writing the second spelling, and App.jsx's permittedCustomers filter
+                           reads priceTier — so a store made during a sale was invisible to the
+                           agent who made it. Both payloads below must stay in step: this offline
+                           one and the online batch.set. */
+                        priceTier: newStoreData.isNooRegistration ? newStoreData.requestedTier : 'Ecer',
                         latitude: newStoreData.latitude || null,
                         longitude: newStoreData.longitude || null,
                         status: newStoreData.isNooRegistration ? 'NOO_ACTIVE' : 'WALK_IN',
@@ -266,7 +271,7 @@ export default function useTransactionEngine({
                         name: customerName,
                         phone: newStoreData.phone,
                         address: newStoreData.address,
-                        pricingTier: newStoreData.requestedTier, 
+                        priceTier: newStoreData.requestedTier,
                         latitude: newStoreData.latitude,
                         longitude: newStoreData.longitude,
                         status: 'NOO_ACTIVE',
@@ -281,7 +286,7 @@ export default function useTransactionEngine({
                         name: customerName,
                         latitude: newStoreData.latitude || null,
                         longitude: newStoreData.longitude || null,
-                        pricingTier: 'Ecer', 
+                        priceTier: 'Ecer',
                         status: 'WALK_IN',
                         mappedBy: finalAgentName,
                         mappedAt: serverTimestamp()
