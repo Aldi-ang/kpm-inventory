@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { collection, query, where, onSnapshot, doc, setDoc, writeBatch, getDocs, updateDoc, deleteDoc } from 'firebase/firestore';
 import { Power, UserPlus, ShieldAlert, CheckCircle, ShieldCheck, Edit, Trash2, Save, X } from 'lucide-react';
 import { commitInChunks, isSafeDocIdEmail } from '../utils/helpers';
+import { confirmAction } from './ConfirmGate.jsx';
 
 export default function LandlordDashboard({ db, appId, user }) {
     const [tenants, setTenants] = useState([]);
@@ -86,7 +87,7 @@ export default function LandlordDashboard({ db, appId, user }) {
             ? `SUSPEND ${tenant.name}? This will instantly lock out the Boss AND all their active salesmen.`
             : `REACTIVATE ${tenant.name}?`;
 
-        if (!window.confirm(confirmMsg)) return;
+        if (!await confirmAction(confirmMsg)) return;
 
         try {
             const operations = [];
@@ -173,7 +174,7 @@ export default function LandlordDashboard({ db, appId, user }) {
 
     // --- UPGRADED: DATABASE SWEEPER FOR DELETING ---
     const handleDelete = async (tenant) => {
-        if (window.confirm(`CRITICAL WARNING: Are you sure you want to permanently delete ${tenant.name}? This action cannot be undone.`)) {
+        if (await confirmAction(`CRITICAL WARNING: Are you sure you want to permanently delete ${tenant.name}? This action cannot be undone.`)) {
             try {
                 // Sweep and eradicate all ghost profiles matching this email
                 const q = query(collection(db, `artifacts/${appId}/employee_directory`), where('email', '==', tenant.email));

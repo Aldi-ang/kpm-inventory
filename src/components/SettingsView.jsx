@@ -9,6 +9,7 @@ import CareerDevTools from './CareerDevTools';
 
 // 🚀 IMPORT THE MATRIX BRAIN
 import { CORPORATE_TIERS, ROLE_PERMISSIONS, DYNAMIC_TIERS, injectDynamicPermissions, CUSTOMER_EDIT_PERMS } from '../config/permissions';
+import { confirmAction } from './ConfirmGate.jsx';
 
 export default function SettingsView({
     user, userId, db, appId, isAdmin, isSystemOwner, userRole,
@@ -431,8 +432,8 @@ export default function SettingsView({
                                               {tier.iconType === 'image' ? (tier.value ? <img src={tier.value} className="w-full h-full object-contain p-1" /> : <ImageIcon size={14} className="opacity-30"/>) : (<span className="text-lg">{tier.value}</span>)}
                                           </div>
 
-                                          <button onClick={() => {
-                                              if(window.confirm(`Are you sure you want to delete the tier: ${tier.label}?`)) {
+                                          <button onClick={async () => {
+                                              if(await confirmAction(`Are you sure you want to delete the tier: ${tier.label}?`)) {
                                                   const newTiers = tierSettings.filter((_, i) => i !== idx);
                                                   setTierSettings(newTiers);
                                                   handleSaveTiers(newTiers);
@@ -1050,9 +1051,9 @@ const PermissionMatrixEditor = ({ db, appId, userRole, userId }) => {
         }
     };
 
-    const handleDeleteTier = (id) => {
+    const handleDeleteTier = async (id) => {
         if (!id.startsWith('CUSTOM_')) return alert("System core tiers cannot be deleted, but you can rename and move them!");
-        if (window.confirm("Delete this custom tier? All remaining tiers will automatically shift up in rank.")) {
+        if (await confirmAction("Delete this custom tier? All remaining tiers will automatically shift up in rank.")) {
             const remaining = tiers.filter(t => t.id !== id);
             recalculateTierRanks(remaining);
             const newMatrix = { ...matrix };

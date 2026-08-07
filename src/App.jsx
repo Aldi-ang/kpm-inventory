@@ -100,6 +100,7 @@ import {
 import { auth, db, storage, googleProvider, appId } from './config/firebase';
 import { formatRupiah, getCurrentDate, getLocalDayKey, getRandomColor, convertToBks, commitInChunks, savePhotoAndGetReference } from './utils/helpers';
 import { computeDayXP, DEFAULT_XP, checkBadges, DEFAULT_BADGES } from './config/career';
+import { confirmAction } from './components/ConfirmGate.jsx';
 
 const APP_VERSION = packageJson.version;
 
@@ -562,9 +563,9 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
   const handleWipeData = async (type) => {
     if (!user) return;
     const confirmMsg = `WARNING: Are you sure you want to PERMANENTLY delete ${type === 'both' ? 'Products AND Customers' : type === 'products' ? 'Products & Prices' : 'Customer Profiles'}?`;
-    if (!window.confirm(confirmMsg)) return;
+    if (!await confirmAction(confirmMsg)) return;
 
-    if (!window.confirm(`FINAL WARNING: This cannot be undone. Proceed with deletion?`)) return;
+    if (!await confirmAction(`FINAL WARNING: This cannot be undone. Proceed with deletion?`)) return;
 
     try {
         triggerCapy(`Initiating data wipe for ${type}... 🗑️`);
@@ -659,10 +660,10 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
   };
 
   // --- 3. GRANULAR TEAM SHARING: IMPORT (WITH DEEP RESTORE) ---
-  const handleImportGranular = (e, targetType) => {
+  const handleImportGranular = async (e, targetType) => {
     const file = e.target.files[0];
     if (!file || !user) return;
-    if(!window.confirm(`Import ${targetType} data? This will overwrite existing items with the same ID.`)) return;
+    if(!await confirmAction(`Import ${targetType} data? This will overwrite existing items with the same ID.`)) return;
     
     const reader = new FileReader();
     reader.onload = async (event) => {
@@ -1071,7 +1072,7 @@ const handleGitHubMirror = async () => {
   };
 
   const handleRemovePasskey = async (passkeyToRemove) => {
-      if(!window.confirm(`Remove authorization for "${passkeyToRemove.name}"? This device will no longer be able to use fingerprint login.`)) return;
+      if(!await confirmAction(`Remove authorization for "${passkeyToRemove.name}"? This device will no longer be able to use fingerprint login.`)) return;
       try {
           const updatedPasskeys = registeredPasskeys.filter(pk => pk.id !== passkeyToRemove.id);
           const adminDocRef = doc(db, `artifacts/${appId}/users/${userId}/settings`, 'admin');
@@ -1211,11 +1212,11 @@ const handleGitHubMirror = async () => {
   };
 
   // --- FIXED: SMART IMPORT (AUTO-RESIZE TO FIT DATABASE) ---
-  const handleImportTiers = (e) => {
+  const handleImportTiers = async (e) => {
       const file = e.target.files[0];
       if (!file) return;
       
-      if(!window.confirm("Import Icons? This will overwrite your current map pins.")) return;
+      if(!await confirmAction("Import Icons? This will overwrite your current map pins.")) return;
 
       const reader = new FileReader();
       reader.onload = async (event) => {
@@ -1534,7 +1535,7 @@ const handleGitHubMirror = async () => {
   };
 
   const handleAdminApproveTransfer = async (request, isApproved) => {
-      if (!window.confirm(`${isApproved ? 'Approve' : 'Reject'} the transfer of ${request.storeName} to ${request.toAgentName}?`)) return;
+      if (!await confirmAction(`${isApproved ? 'Approve' : 'Reject'} the transfer of ${request.storeName} to ${request.toAgentName}?`)) return;
       try {
           const operations = [];
 
@@ -1652,7 +1653,7 @@ const handleGitHubMirror = async () => {
           ? `Verify Bounty Clearance of Rp ${new Intl.NumberFormat('id-ID').format(report.cash)} for ${report.agentName}? This will wipe their quarantine debt.`
           : `Verify EOD for ${report.agentName}? This clears their inventory and returns it to the Vault.`;
 
-      if(!window.confirm(confirmMsg)) return;
+      if(!await confirmAction(confirmMsg)) return;
 
       try {
           await runTransaction(db, async (t) => {
@@ -1929,7 +1930,7 @@ const handleGitHubMirror = async () => {
   };
 
   const handleResetEOD = async (report) => {
-      if(!window.confirm(`RESET EOD for ${report.agentName}? This will delete today's submission so they can try again.`)) return;
+      if(!await confirmAction(`RESET EOD for ${report.agentName}? This will delete today's submission so they can try again.`)) return;
       try {
           await deleteDoc(doc(db, `artifacts/${appId}/users/${userId}/eod_reports`, report.id));
           await logAudit("EOD_RESET", `Admin reset EOD for ${report.agentName}`);
@@ -1956,7 +1957,7 @@ const handleGitHubMirror = async () => {
           triggerCapy('💻 Hitung Ulang Karir hanya untuk laptop/PC, bukan HP.');
           return;
       }
-      if (!window.confirm('Hitung ulang riwayat karir SEMUA agen dari seluruh laporan EOD yang sudah diverifikasi? Ini akan mengatur ulang penghitung "live" tiap agen dan membangun ulang "base" dari awal. Aman dijalankan berkali-kali.')) return;
+      if (!await confirmAction('Hitung ulang riwayat karir SEMUA agen dari seluruh laporan EOD yang sudah diverifikasi? Ini akan mengatur ulang penghitung "live" tiap agen dan membangun ulang "base" dari awal. Aman dijalankan berkali-kali.')) return;
 
       try {
           const snap = await getDocs(collection(db, `artifacts/${appId}/users/${userId}/eod_reports`));
@@ -2422,7 +2423,7 @@ const handleGitHubMirror = async () => {
   };
   // --- NEW: DELETE SINGLE TRANSACTION ---
   const handleDeleteSingleTransaction = async (transaction) => {
-      if(!window.confirm("Delete this specific transaction record? Stock will NOT be restored automatically (manual adjustment required if needed).")) return;
+      if(!await confirmAction("Delete this specific transaction record? Stock will NOT be restored automatically (manual adjustment required if needed).")) return;
       try {
           await deleteDoc(doc(db, `artifacts/${appId}/users/${user.uid}/transactions`, transaction.id));
           logAudit("TRANS_DELETE", `Deleted transaction ${transaction.id} for ${transaction.customerName}`);
@@ -2433,7 +2434,7 @@ const handleGitHubMirror = async () => {
   };
 
   const handleDeleteConsignmentData = async (customerName) => {
-      if(!window.confirm(`Delete ALL history for ${customerName}?`)) return;
+      if(!await confirmAction(`Delete ALL history for ${customerName}?`)) return;
       try {
           const targets = transactions.filter(t => (t.customerName||'').trim() === customerName && (t.type.includes('CONSIGNMENT') || (t.type === 'SALE' && t.paymentType === 'Titip') || t.type === 'RETURN'));
           // 🚀 FIX: Chunked/paced commitInChunks instead of one deleteDoc await per
@@ -2444,7 +2445,7 @@ const handleGitHubMirror = async () => {
       } catch(err) { console.error(err); }
   };
   const handleDeleteHistory = async (customerName, agentName) => { 
-      if(!window.confirm(`Permanently delete ALL transaction history for "${customerName}" handled by ${agentName}?`)) return; 
+      if(!await confirmAction(`Permanently delete ALL transaction history for "${customerName}" handled by ${agentName}?`)) return; 
       try { 
           const targets = transactions.filter(t => {
               let cust = (t.customerName || 'Walk-in Customer').trim();
@@ -2661,7 +2662,7 @@ const handleGitHubMirror = async () => {
   };
 
   const deleteProduct = async (id) => { 
-      if (window.confirm("Are you sure you want to delete this product?")) { 
+      if (await confirmAction("Are you sure you want to delete this product?")) { 
           try { 
               await deleteDoc(doc(db, `artifacts/${appId}/users/${user.uid}/products`, id)); 
               await logAudit("PRODUCT_DELETE", `Deleted product ID: ${id}`); 
@@ -2685,7 +2686,7 @@ const handleGitHubMirror = async () => {
           } 
       }); 
       if (updates.length === 0) { triggerCapy("No changes to save!"); return; } 
-      if (!window.confirm(`Confirm stock adjustment for ${updates.length} items?`)) return; 
+      if (!await confirmAction(`Confirm stock adjustment for ${updates.length} items?`)) return; 
       try { 
           await runTransaction(db, async (transaction) => { 
               updates.forEach(update => { 
@@ -2829,7 +2830,7 @@ const handleGitHubMirror = async () => {
   };
 
   const handleDeleteSampling = async (sample) => {
-      if(!window.confirm("Delete this sample record? Stock will be RESTORED to its original source.")) return;
+      if(!await confirmAction("Delete this sample record? Stock will be RESTORED to its original source.")) return;
       try {
           await runTransaction(db, async (t) => {
               const prodRef = doc(db, `artifacts/${appId}/users/${user.uid}/products`, sample.productId);
@@ -2980,7 +2981,7 @@ const handleGitHubMirror = async () => {
           return;
       }
 
-      if (!window.confirm(`Move ALL items from "${oldReason}" to "${newReason}" on ${newDate}?`)) return;
+      if (!await confirmAction(`Move ALL items from "${oldReason}" to "${newReason}" on ${newDate}?`)) return;
 
       try {
           const targets = samplings.filter(s => s.date === oldDate && s.reason === oldReason);
@@ -3028,7 +3029,7 @@ const handleGitHubMirror = async () => {
   const handleRestoreData = async (e) => {
       const file = e.target.files[0];
       if (!file || !user) return;
-      if(!window.confirm("CRITICAL WARNING: Restoring from a backup will overwrite your live database with the file's contents. Proceed?")) return;
+      if(!await confirmAction("CRITICAL WARNING: Restoring from a backup will overwrite your live database with the file's contents. Proceed?")) return;
       
       triggerCapy("Initiating Full System Restore... Do not close the window. ⏳");
       const reader = new FileReader();
@@ -3131,7 +3132,7 @@ const handleGitHubMirror = async () => {
     const file = e.target.files[0];
     if (!file || !user) return;
     
-    if(!window.confirm("Import Shared Config? This will overwrite your current Product List and Branding settings (Mascot/Name). Transactions will NOT be affected.")) return;
+    if(!await confirmAction("Import Shared Config? This will overwrite your current Product List and Branding settings (Mascot/Name). Transactions will NOT be affected.")) return;
     
     const reader = new FileReader();
     reader.onload = async (event) => {

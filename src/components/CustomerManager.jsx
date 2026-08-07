@@ -30,6 +30,7 @@ const checkPointInGeoJSON = (lng, lat, geometry) => {
     return false;
 };
 import { ArrowRight, MapPin, Phone, User, ShieldAlert, Trash2, Store, Camera, X, RefreshCcw, Search, Folder, Pencil, Plus, Globe } from 'lucide-react';
+import { confirmAction } from './ConfirmGate.jsx';
 
 // --- CUSTOMER DETAIL VIEW (WITH IFRAME SUPPORT) ---
 export const CustomerDetailView = ({ customer, db, appId, user, onBack, logAudit, triggerCapy, onNavigateToMap }) => {
@@ -54,7 +55,7 @@ export const CustomerDetailView = ({ customer, db, appId, user, onBack, logAudit
     };
 
     const handleDeleteBenchmark = async (id) => {
-        if (!window.confirm("Delete record?")) return;
+        if (!await confirmAction("Delete record?")) return;
         await deleteDoc(doc(db, `artifacts/${appId}/users/${user.uid}/customers/${customer.id}/benchmarks`, id));
     };
 
@@ -437,7 +438,7 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
         const newName = window.prompt(`Rename "${oldName}" to:`, oldName);
         if (!newName || newName.trim() === "" || newName === oldName) return;
 
-        if (!window.confirm(`Are you sure you want to move ${storesToUpdate.length} stores to "${newName}"?`)) return;
+        if (!await confirmAction(`Are you sure you want to move ${storesToUpdate.length} stores to "${newName}"?`)) return;
 
         if (triggerCapy) triggerCapy(`Moving ${storesToUpdate.length} stores... 🚀`);
 
@@ -476,7 +477,7 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
     // 🚀 NEW: FOLDER DELETION ENGINE
     const handleDeleteFolder = async (e, level, folderName, storesToUpdate) => {
         e.stopPropagation();
-        if (!window.confirm(`⚠️ DANGER: Delete "${folderName}" and reset its ${storesToUpdate.length} stores to Unknown?`)) return;
+        if (!await confirmAction(`⚠️ DANGER: Delete "${folderName}" and reset its ${storesToUpdate.length} stores to Unknown?`)) return;
         
         try {
             // 🚀 FIX: Was firing multiple batches simultaneously (Promise.all), which risks
@@ -570,7 +571,7 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
     const handleImportKML = async (e) => {
         const file = e.target.files[0];
         if (!file || !isAdmin) return;
-        if (!window.confirm("Import Map Marker KML? This will automatically create customer profiles from the map pins.")) return;
+        if (!await confirmAction("Import Map Marker KML? This will automatically create customer profiles from the map pins.")) return;
 
         if (triggerCapy) triggerCapy("Parsing KML Data... 🗺️");
         const reader = new FileReader();
@@ -652,7 +653,7 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
 
     // 🚀 ONE-TIME ENTERPRISE DATA SCRUB (MIGRATION ENGINE)
     const handleEnterpriseDataScrub = async () => {
-        if (!window.confirm("⚠️ INITIATE ENTERPRISE DATA SCRUB?\n\nThis will scan all customers and permanently hard-write their exact Matrix Location (Provinsi, Kabupaten, Kecamatan) into the Firebase database to establish a Single Source of Truth.")) return;
+        if (!await confirmAction("⚠️ INITIATE ENTERPRISE DATA SCRUB?\n\nThis will scan all customers and permanently hard-write their exact Matrix Location (Provinsi, Kabupaten, Kecamatan) into the Firebase database to establish a Single Source of Truth.")) return;
 
         if (triggerCapy) triggerCapy("Initiating Great Scrub... Please wait. ⚙️");
 
@@ -834,14 +835,14 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
         window.scrollTo({ top: 0, behavior: 'smooth' }); 
     };
 
-    const handleDelete = async (id, name) => { if (window.confirm("Delete profile?")) { await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'customers', id)); logAudit("CUSTOMER_DELETE", `Deleted ${name}`); } };
+    const handleDelete = async (id, name) => { if (await confirmAction("Delete profile?")) { await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'customers', id)); logAudit("CUSTOMER_DELETE", `Deleted ${name}`); } };
     const openDetail = (c) => { setSelectedCustomer(c); setViewMode('detail'); };
 
 
     // 🚀 ADMIN NOO APPROVAL PROTOCOL
     const handleApproveNOO = async (e, id, name) => {
         e.stopPropagation();
-        if (!window.confirm(`Approve NOO for ${name}? This will permanently unlock the store for Field Agents.`)) return;
+        if (!await confirmAction(`Approve NOO for ${name}? This will permanently unlock the store for Field Agents.`)) return;
         try {
             await updateDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'customers', id), {
                 status: 'APPROVED',
@@ -994,8 +995,8 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                                         </button>
                                         <button 
                                             type="button" 
-                                            onClick={() => {
-                                                if(window.confirm("Are you sure you want to remove this store photo?")) {
+                                            onClick={async () => {
+                                                if(await confirmAction("Are you sure you want to remove this store photo?")) {
                                                     setFormData({...formData, storeImage: ''});
                                                 }
                                             }} 

@@ -14,6 +14,7 @@ import 'leaflet/dist/leaflet.css';
 import { doc, collection, getDocs, setDoc, deleteDoc, updateDoc, writeBatch } from 'firebase/firestore';
 import { commitInChunks, convertToBks, formatRupiah } from './utils/helpers';
 import { loadBorderCache, saveBorderCache, clearBorderCache } from './utils/borderCache';
+import { confirmAction } from './components/ConfirmGate.jsx';
 import MarkerClusterGroup from 'react-leaflet-cluster'; // 🚀 INJECTED SUPERCLUSTER ENGINE
 
 // 🚀 GOOGLE MAPS STYLE: THE SMART AVATAR ENGINE
@@ -579,7 +580,7 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
     };
 
     const handleWipeAll = async () => {
-        if(window.confirm("WARNING: This will completely delete ALL active borders from your map. Continue?")) {
+        if(await confirmAction("WARNING: This will completely delete ALL active borders from your map. Continue?")) {
             // 🚀 FIX: Chunked/paced commitInChunks instead of one deleteBoundaryFromFirebase
             // (single deleteDoc) await per border in a tight loop.
             try {
@@ -598,7 +599,7 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
     };
 
     const handleDeleteBorder = async (idToRemove) => {
-        if(window.confirm("Remove this specific border?")) {
+        if(await confirmAction("Remove this specific border?")) {
             const updated = safeBoundaries.filter(b => b.id !== idToRemove);
             setBoundaries(updated);
             saveBorderCache(appId, updated);
@@ -706,7 +707,7 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
     // 🚀 NEW: BULK FOLDER DELETE ENGINE
     const handleDeleteFolder = async (folderName) => {
         const bordersInside = safeBoundaries.filter(b => (b.folderName || b.level || 'Uncategorized') === folderName);
-        if (!window.confirm(`⚠️ DANGER: Are you sure you want to PERMANENTLY DELETE the folder "${folderName}" and all ${bordersInside.length} map borders inside it?`)) return;
+        if (!await confirmAction(`⚠️ DANGER: Are you sure you want to PERMANENTLY DELETE the folder "${folderName}" and all ${bordersInside.length} map borders inside it?`)) return;
         
         setIsLoading(true);
         
@@ -1243,7 +1244,7 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
     };
 
     const handleDeleteStore = async () => {
-        if (!window.confirm(`⚠️ DANGER: Are you absolutely sure you want to PERMANENTLY DELETE ${store.name}? This cannot be undone.`)) return;
+        if (!await confirmAction(`⚠️ DANGER: Are you absolutely sure you want to PERMANENTLY DELETE ${store.name}? This cannot be undone.`)) return;
         if (!db || !appId || !user || !store?.id) return;
         try {
             const userId = user?.uid || user?.id;
@@ -1553,7 +1554,7 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
     };
 
     const runDataCleanse = async () => {
-        if (!window.confirm("WARNING: Initialize RPG Protocol? This will calculate Lifetime and Season XP from all legacy receipts and lock them into store profiles permanently.")) return;
+        if (!await confirmAction("WARNING: Initialize RPG Protocol? This will calculate Lifetime and Season XP from all legacy receipts and lock them into store profiles permanently.")) return;
         setIsApplying(true);
         try {
             const currentMonth = new Date().getMonth();
@@ -1675,7 +1676,7 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
 
     const applyChanges = async () => {
         if (!simResults || simResults.actions.length === 0) return;
-        if (!window.confirm(`Execute Season Updates for ${simResults.actions.length} stores?`)) return;
+        if (!await confirmAction(`Execute Season Updates for ${simResults.actions.length} stores?`)) return;
         setIsApplying(true);
         try {
             const operations = simResults.actions.map(action => {

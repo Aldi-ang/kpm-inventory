@@ -4,6 +4,7 @@ import { Wrench, Zap, Award, Undo2, AlertTriangle, Loader2, User } from 'lucide-
 import { careerXP, DEFAULT_XP, DEFAULT_BADGES } from '../config/career';
 import { RankBorder, RANK_BORDERS, BORDER_KEYFRAMES, BORDER_LOAD } from '../config/rankBorders';
 import { formatNumber, parseGroupedNumber } from '../utils/helpers';
+import { confirmAction } from './ConfirmGate.jsx';
 
 /*
  * 🔧 CAREER DEV TOOLS — Tier 1 (platform architect) only.
@@ -124,8 +125,8 @@ export default function CareerDevTools({ db, appId, userId, triggerCapy }) {
         }, `${has ? 'Kunci lagi' : 'Buka'} badge "${badge.title}".`);
     };
 
-    const undoAll = () => {
-        if (!window.confirm('Batalkan SEMUA perubahan yang dibuat alat dev ini untuk agen ini? XP dan badge asli tidak tersentuh.')) return;
+    const undoAll = async () => {
+        if (!await confirmAction('Batalkan SEMUA perubahan yang dibuat alat dev ini untuk agen ini? XP dan badge asli tidak tersentuh.')) return;
         const granted = Number(devGrant.bonusXP || 0);
         const grantedBadges = devGrant.unlocks || [];
         write({

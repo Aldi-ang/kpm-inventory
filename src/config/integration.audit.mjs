@@ -238,6 +238,53 @@ check(G9, 'override reaches the saved sale, offline and online',
   'offline payload AND online batch must both carry it');
 check(G9, 'terminal sends the override with the sale',
   src.includes('territoryOverride: territoryClaim'));
+/* territoryClaim is written only by handleCustomerSelect, so both paths that clear the chosen
+   customer must clear it too — the post-sale reset and typing over a chosen store. Miss either
+   and the next hand-typed walk-in is stamped with the previous store's owner. The built bundle
+   mangles the setter name so this cannot be checked there; the source is where it is checkable. */
+check(G9, 'territory claim cleared on both customer-clearing paths',
+  (src.match(/setTerritoryClaim\(null\)/g) || []).length >= 2,
+  'post-sale reset AND handleManualCustomerType must both clear it');
+
+/* ── 10. no browser dialog anywhere in the app ─────────────────────────────
+   Group 9 proved the sales terminal was clean. It was the only clean file: 58 more of these
+   were live across 16 others, every one of them dead on a browser with the dialog box ticked.
+   They now route through src/components/ConfirmGate.jsx, which draws the question on the page.
+   These checks are what stop the next one being added. */
+const G10 = '10. No browser dialog anywhere';
+const strip = s => s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^[ \t]*\/\/.*$/gm, '');
+const walk = d => fs.readdirSync(d, { withFileTypes: true }).flatMap(e => {
+  const p = `${d}/${e.name}`;
+  if (e.isDirectory()) return e.name === '.claude' || e.name === 'node_modules' ? [] : walk(p);
+  return /\.(jsx?|mjs)$/.test(e.name) ? [p] : [];
+});
+/* src/.claude/worktrees/ holds three whole copies of this app. They are not shipped and their
+   confirms are not this app's problem, so the walk skips any .claude directory. */
+const appFiles = walk('src').filter(f => !f.includes('config/'));
+const offenders = appFiles.filter(f => /window\.confirm\s*\(/.test(strip(fs.readFileSync(f, 'utf8'))));
+check(G10, 'no window.confirm left in src/', offenders.length === 0,
+  offenders.length ? `still present in: ${offenders.join(', ')}` : '');
+
+const gate = fs.readFileSync('src/components/ConfirmGate.jsx', 'utf8');
+const mainJsx = fs.readFileSync('src/main.jsx', 'utf8');
+check(G10, 'the gate is mounted, or every confirm in the app refuses',
+  /<ConfirmHost\s*\/>/.test(mainJsx) && /from\s+['"]\.\/components\/ConfirmGate/.test(mainJsx),
+  'main.jsx must render <ConfirmHost /> — without it confirmAction resolves false every time');
+check(G10, 'gate refuses loudly, never silently', gate.includes('console.error'),
+  'the whole point is that a refusal is findable');
+check(G10, 'gate offers a way through and a way out',
+  gate.includes('Cancel') && /Yes, do it|Confirm</.test(gate));
+/* A file that awaits confirmAction without importing it throws at runtime, in a click handler,
+   where nobody sees it until the button is dead. Cheap to assert, so assert it. */
+const users = appFiles.filter(f => /await confirmAction\s*\(/.test(fs.readFileSync(f, 'utf8')));
+const missing = users.filter(f => !/from\s+['"][^'"]*ConfirmGate/.test(fs.readFileSync(f, 'utf8')));
+check(G10, 'every caller imports the gate', missing.length === 0,
+  missing.length ? `missing import: ${missing.join(', ')}` : `${users.length} files call it`);
+/* allJs, not inJs: inJs searches the MerchantSalesView chunk alone, and the gate is its own
+   chunk. Asserting the built output rather than the source is what proves it actually ships. */
+check(G10, 'the gate reached the built bundle',
+  allJs.includes('Yes, do it') && allJs.includes('is not mounted'),
+  'ConfirmGate is not in dist/ — it would be missing from the app entirely');
 
 /* ── report ──────────────────────────────────────────────────────────────── */
 let last = '';

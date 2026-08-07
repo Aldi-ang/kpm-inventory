@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { doc, getDoc, setDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
 import emailjs from '@emailjs/browser';
 import { ShieldAlert, Key, Fingerprint, Mail, AlertTriangle, CheckCircle2, ArrowRight } from 'lucide-react';
+import { confirmAction } from './ConfirmGate.jsx';
 
 export default function CrownTransferProtocol({ db, appId, userId, user, onClose, triggerCapy }) {
     const [step, setStep] = useState(1);
@@ -108,7 +109,7 @@ export default function CrownTransferProtocol({ db, appId, userId, user, onClose
             return showError("CANNOT TRANSFER TO SELF");
         }
         
-        if (!window.confirm(`CRITICAL WARNING: You are about to permanently transfer ownership of this entire system to ${newEmail}. This action CANNOT be undone. Proceed?`)) return;
+        if (!await confirmAction(`CRITICAL WARNING: You are about to permanently transfer ownership of this entire system to ${newEmail}. This action CANNOT be undone. Proceed?`)) return;
 
         setLoading(true);
         try {

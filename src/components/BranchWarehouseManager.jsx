@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Package, ArrowRight, CheckCircle, XCircle, AlertCircle, Clock, Send, Truck, ShieldCheck, Globe, MapPin, Pencil, MinusCircle, PlusCircle, User, FileText, Camera, UploadCloud, ChevronDown, ChevronUp, Check, Eye, Trash2, Save, X } from 'lucide-react';
 import { collection, doc, onSnapshot, writeBatch, serverTimestamp, updateDoc, deleteDoc, runTransaction } from 'firebase/firestore';
 import { savePhotoAndGetReference, compressImageToBase64 } from '../utils/helpers';
+import { confirmAction } from './ConfirmGate.jsx';
 
 export default function BranchWarehouseManager({ db, storage, appId, user, userRole, userLocation, isAdmin, masterUserId, globalInventory, triggerCapy, logAudit, appSettings }) {
     
@@ -97,7 +98,7 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
             return alert("ALAMAT TIDAK LENGKAP!\n\nMohon lengkapi data alamat pengiriman (Jalan, Kecamatan, Kabupaten, Provinsi) agar HQ dapat memproses pengiriman.");
         }
 
-        if (!window.confirm(`Submit stock request to HQ for ${branchLocation}?`)) return;
+        if (!await confirmAction(`Submit stock request to HQ for ${branchLocation}?`)) return;
         setIsProcessing(true);
 
         try {
@@ -136,7 +137,7 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
 
     // 🚀 THE FIX: TRANSACTION READ BEFORE WRITE ENGINE 🚀
     const handleConfirmReceipt = async (order) => {
-        if (!window.confirm(`Confirm receipt of items for ${order.id}?\n\nItems will be officially added to your ${branchLocation} branch warehouse.`)) return;
+        if (!await confirmAction(`Confirm receipt of items for ${order.id}?\n\nItems will be officially added to your ${branchLocation} branch warehouse.`)) return;
         setIsProcessing(true);
 
         try {
@@ -234,7 +235,7 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
 
     const handleRejectRequest = async () => {
         if (!isFulfilling) return;
-        if (!window.confirm(`Reject this request from ${isFulfilling.branch}?`)) return;
+        if (!await confirmAction(`Reject this request from ${isFulfilling.branch}?`)) return;
         setIsProcessing(true);
 
         try {
@@ -267,7 +268,7 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
         }
         if (fulfillmentCart.some(item => Number(item.qty) <= 0)) return alert("Qty must be greater than 0.");
 
-        if (!window.confirm(`Confirm fulfillment & ship items to ${isFulfilling.branch}?\n\nThis will permanently deduct stock from HQ Master Vault.`)) return;
+        if (!await confirmAction(`Confirm fulfillment & ship items to ${isFulfilling.branch}?\n\nThis will permanently deduct stock from HQ Master Vault.`)) return;
         setIsProcessing(true);
 
         try {
@@ -364,7 +365,7 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
     };
 
     const handleDeleteRequest = async (orderId) => {
-        if (!window.confirm(`⚠️ WARNING: DELETE RECORD?\n\nAre you sure you want to permanently delete Order: ${orderId}?\n\nNote: This only deletes the history paper-trail. It will NOT automatically refund or reverse warehouse math.`)) return;
+        if (!await confirmAction(`⚠️ WARNING: DELETE RECORD?\n\nAre you sure you want to permanently delete Order: ${orderId}?\n\nNote: This only deletes the history paper-trail. It will NOT automatically refund or reverse warehouse math.`)) return;
         
         setIsProcessing(true);
         try {

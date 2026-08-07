@@ -1,16 +1,16 @@
 # Graph Report - kpm-inventory-main  (2026-08-07)
 
 ## Corpus Check
-- 78 files · ~501,907 words
+- 79 files · ~504,470 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 517 nodes · 860 edges · 30 communities (28 shown, 2 thin omitted)
+- 533 nodes · 929 edges · 29 communities (27 shown, 2 thin omitted)
 - Extraction: 99% EXTRACTED · 1% INFERRED · 0% AMBIGUOUS · INFERRED: 10 edges (avg confidence: 0.8)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `f3623188`
+- Built from commit: `12aab202`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -34,7 +34,6 @@
 - CLAUDE.md
 - Animation prompts — Pip-Boy style, capybara merchant
 - savePhotoAndGetReference
-- txSize.selfcheck.mjs
 - hasClearance
 - Sales Terminal — test list
 - LOG — newest first, older entries live in `git log` for this file
@@ -43,16 +42,16 @@
 - customerBrief.selfcheck.mjs
 
 ## God Nodes (most connected - your core abstractions)
-1. `formatRupiah()` - 23 edges
-2. `MerchantSalesView()` - 18 edges
-3. `convertToBks()` - 18 edges
-4. `KPMInventoryApp()` - 15 edges
-5. `LOG — newest first, older entries live in `git log` for this file` - 15 edges
-6. `AgentProfileView()` - 14 edges
-7. `commitInChunks()` - 14 edges
-8. `savePhotoAndGetReference()` - 13 edges
-9. `hasClearance()` - 11 edges
-10. `Sales Terminal — test list` - 11 edges
+1. `confirmAction()` - 37 edges
+2. `formatRupiah()` - 23 edges
+3. `MerchantSalesView()` - 18 edges
+4. `convertToBks()` - 18 edges
+5. `LOG — newest first, older entries live in `git log` for this file` - 17 edges
+6. `KPMInventoryApp()` - 16 edges
+7. `AgentProfileView()` - 14 edges
+8. `commitInChunks()` - 14 edges
+9. `savePhotoAndGetReference()` - 13 edges
+10. `Sales Terminal — test list` - 13 edges
 
 ## Surprising Connections (you probably didn't know these)
 - `AgentProfileView()` --indirect_call--> `k()`  [INFERRED]
@@ -69,35 +68,35 @@
 ## Import Cycles
 - None detected.
 
-## Communities (30 total, 2 thin omitted)
+## Communities (29 total, 2 thin omitted)
 
 ### Community 0 - "App.jsx"
 Cohesion: 0.06
 Nodes (44): AgentInventoryView, AgentProfileView, BranchWarehouseManager, ConsignmentFinanceView, DashboardView, EODReconciliationView, FleetCanvasManager, getDocOfflineSafe() (+36 more)
 
 ### Community 1 - "MapMissionControl.jsx"
-Cohesion: 0.06
-Nodes (38): hook, k(), left, lines, pct, used, AuditVaultView(), checkPointInGeoJSON() (+30 more)
+Cohesion: 0.07
+Nodes (36): hook, k(), left, lines, pct, used, checkPointInGeoJSON(), CustomerDetailView() (+28 more)
 
 ### Community 2 - "dependencies"
 Cohesion: 0.06
 Nodes (33): @emailjs/browser, firebase, idb, leaflet, lucide-react, dependencies, @emailjs/browser, firebase (+25 more)
 
 ### Community 3 - "permissions.js"
-Cohesion: 0.17
-Nodes (17): react, react, CrownTransferProtocol(), LandlordDashboard(), PermissionMatrixEditor(), SettingsView(), CORPORATE_TIERS, CUSTOMER_EDIT_PERMS (+9 more)
+Cohesion: 0.12
+Nodes (31): react, react, AuditVaultView(), BranchWarehouseManager(), CareerDevTools(), confirmAction(), ConfirmHost(), CrownTransferProtocol() (+23 more)
 
 ### Community 4 - "devDependencies"
 Cohesion: 0.07
 Nodes (29): autoprefixer, cross-env, eslint, @eslint/js, eslint-plugin-react-hooks, eslint-plugin-react-refresh, globals, devDependencies (+21 more)
 
 ### Community 5 - "mixedUnits.selfcheck.mjs"
-Cohesion: 0.13
-Nodes (19): BOOST, boostElement(), initSounds(), __isUnlocked(), liteModeOn(), makePool(), MUMBLES, playSound() (+11 more)
+Cohesion: 0.11
+Nodes (16): blank, done, eightDaysAgo, far, free, HERE, minefar, near (+8 more)
 
 ### Community 6 - "savePhotoAndGetReference"
 Cohesion: 0.06
-Nodes (45): HistoryReportView(), justAfterLocalMidnight, justBeforeLocalMidnight, NOW, rows, s, shuffled, withReturn (+37 more)
+Nodes (49): formatAdvancedStock(), ItemInspector(), ResidentEvilInventory(), justAfterLocalMidnight, justBeforeLocalMidnight, NOW, rows, s (+41 more)
 
 ### Community 7 - "getCurrentDate"
 Cohesion: 0.17
@@ -117,7 +116,7 @@ Nodes (6): After a successful deploy, Before deploying, Firestore Security Rules
 
 ### Community 11 - "HallOfFameView.jsx"
 Cohesion: 0.12
-Nodes (31): AgentProfileView(), BADGE_CATEGORIES, createImage(), DynamicIconMap, getCroppedImg(), AchievementTester(), BASE_STATS, buildFakeCareer() (+23 more)
+Nodes (30): AgentProfileView(), BADGE_CATEGORIES, createImage(), DynamicIconMap, getCroppedImg(), AchievementTester(), BASE_STATS, buildFakeCareer() (+22 more)
 
 ### Community 12 - "test-batch1.mjs"
 Cohesion: 0.53
@@ -136,24 +135,20 @@ Cohesion: 0.29
 Nodes (6): Animation prompts — Pip-Boy style, capybara merchant, How a sprite sheet gets wired (already possible today), PROMPT — 2D animation sprite sheet (paste this), PROMPT — 3D, only if a rotating merchant is ever wanted, When Aldi generates more images, Why this reference is a good fit
 
 ### Community 22 - "savePhotoAndGetReference"
-Cohesion: 0.13
-Nodes (21): AgentInventoryView(), getCurrentDate(), BranchWarehouseManager(), DashboardBenchmarks(), CustomTooltip(), DashboardView(), formatAdvancedStock(), ItemInspector() (+13 more)
-
-### Community 23 - "txSize.selfcheck.mjs"
-Cohesion: 0.29
-Nodes (5): big, line, naive, product, stripped
+Cohesion: 0.14
+Nodes (16): AgentInventoryView(), getCurrentDate(), DashboardBenchmarks(), CustomTooltip(), DashboardView(), SafetyStatus(), big, line (+8 more)
 
 ### Community 24 - "hasClearance"
-Cohesion: 0.14
-Nodes (15): allJs, beforeNota, BS, CENSUS, check(), css, engine, files (+7 more)
+Cohesion: 0.09
+Nodes (21): allJs, appFiles, beforeNota, BS, CENSUS, check(), css, engine (+13 more)
 
 ### Community 25 - "Sales Terminal — test list"
-Cohesion: 0.17
-Nodes (11): A. The shelf, B. The rail (desktop, wide window), C. The customer brief, D. Money — the part that must be exactly right, E. The merchant, F. Phone (narrow the browser, or use your phone), G. Nothing old was lost, How to report a failure (+3 more)
+Cohesion: 0.13
+Nodes (14): A. The shelf, B. The rail (desktop, wide window), C. The customer brief, D. Money — the part that must be exactly right, E. The merchant, F. Phone (narrow the browser, or use your phone), G. Nothing old was lost, H. Territory and duplicate outlets — built 2026-08-07 (+6 more)
 
 ### Community 26 - "LOG — newest first, older entries live in `git log` for this file"
 Cohesion: 0.08
-Nodes (23): 2026-08-06, 2026-08-07 13:56 WIB, 2026-08-07 14:07 WIB, 2026-08-07 14:11 WIB, 2026-08-07 14:23 WIB, 2026-08-07 14:25 WIB, 2026-08-07 14:30 WIB, 2026-08-07 14:32 WIB (+15 more)
+Nodes (25): 2026-08-06, 2026-08-07 13:56 WIB, 2026-08-07 14:07 WIB, 2026-08-07 14:11 WIB, 2026-08-07 14:23 WIB, 2026-08-07 14:25 WIB, 2026-08-07 14:30 WIB, 2026-08-07 14:32 WIB (+17 more)
 
 ### Community 27 - "check-progress.mjs"
 Cohesion: 0.29
@@ -168,7 +163,7 @@ Cohesion: 0.16
 Nodes (12): b, guarded, inventory, messy, ok, rows, sameDay, sd (+4 more)
 
 ## Knowledge Gaps
-- **215 isolated node(s):** `root`, `note`, `hook`, `now`, `hook` (+210 more)
+- **225 isolated node(s):** `root`, `note`, `hook`, `now`, `hook` (+220 more)
   These have ≤1 connection - possible missing edges or undocumented components.
 - **2 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
@@ -176,16 +171,16 @@ Nodes (12): b, guarded, inventory, messy, ok, rows, sameDay, sd (+4 more)
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `devDependencies` connect `devDependencies` to `dependencies`?**
-  _High betweenness centrality (0.075) - this node is a cross-community bridge._
+  _High betweenness centrality (0.072) - this node is a cross-community bridge._
 - **Why does `dependencies` connect `dependencies` to `permissions.js`?**
-  _High betweenness centrality (0.063) - this node is a cross-community bridge._
-- **Why does `MerchantSalesView()` connect `savePhotoAndGetReference` to `customerBrief.selfcheck.mjs`, `permissions.js`, `mixedUnits.selfcheck.mjs`, `savePhotoAndGetReference`?**
-  _High betweenness centrality (0.056) - this node is a cross-community bridge._
+  _High betweenness centrality (0.060) - this node is a cross-community bridge._
+- **Why does `MerchantSalesView()` connect `savePhotoAndGetReference` to `permissions.js`, `customerBrief.selfcheck.mjs`?**
+  _High betweenness centrality (0.052) - this node is a cross-community bridge._
 - **Are the 2 inferred relationships involving `MerchantSalesView()` (e.g. with `back()` and `totalBks()`) actually correct?**
   _`MerchantSalesView()` has 2 INFERRED edges - model-reasoned connections that need verification._
 - **What connects `root`, `note`, `hook` to the rest of the system?**
-  _215 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _225 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `App.jsx` be split into smaller, more focused modules?**
-  _Cohesion score 0.05565638233514821 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.05639097744360902 - nodes in this community are weakly interconnected._
 - **Should `MapMissionControl.jsx` be split into smaller, more focused modules?**
-  _Cohesion score 0.06359189378057302 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.06509803921568627 - nodes in this community are weakly interconnected._

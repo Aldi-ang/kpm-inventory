@@ -3,6 +3,7 @@ import { Folder, Calendar, RotateCcw, ShieldCheck } from 'lucide-react';
 import { collection, query, orderBy, onSnapshot, writeBatch, doc } from 'firebase/firestore';
 import { ref as storageRef, getDownloadURL } from 'firebase/storage';
 import { commitInChunks } from '../utils/helpers';
+import { confirmAction } from './ConfirmGate.jsx';
 
 export default function AuditVaultView({ db, storage, appId, user, userId, isAdmin, logAudit, setBackupToast, auditLogs }) {
     const [path, setPath] = useState({ year: null, month: null, day: null });
@@ -27,7 +28,7 @@ export default function AuditVaultView({ db, storage, appId, user, userId, isAdm
         
         const confirmMsg = `[RE TERMINAL]: DOWNLOADING CLOUD ARCHIVE...\n\nTarget: ${logEntry.action}\n\nProceed with reconstruction?`;
         
-        if (window.confirm(confirmMsg)) {
+        if (await confirmAction(confirmMsg)) {
             try {
                 setLoading(true);
                 const fileRef = storageRef(storage, logEntry.snapshotPath);

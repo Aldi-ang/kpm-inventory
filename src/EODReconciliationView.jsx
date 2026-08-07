@@ -1,6 +1,7 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { ShieldCheck, Wallet, Truck, CheckCircle, Upload, AlertCircle, Clock, DollarSign, Package, XCircle, Tag, ChevronDown, ChevronRight, MapPin, User, Calendar, Folder, Target, BadgeDollarSign, ShieldAlert } from 'lucide-react';
 import { formatRupiah, getLocalDayKey } from './utils/helpers';
+import { confirmAction } from './components/ConfirmGate.jsx';
 
 const EODReconciliationView = ({ samplings = [], transactions = [], inventory = [], agentCanvas = [], agentProfileId, motorists = [], eodReports = [], user, appSettings, onSubmitEOD, onVerifyEOD, onResetEOD, isAdmin }) => {
     
@@ -321,8 +322,8 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                                 )}
 
                                                 <button 
-                                                    onClick={() => {
-                                                        if (window.confirm(`Hand over exactly ${formatRupiah(agentBountyData.total)} in cash to the Admin to clear this bounty?`)) {
+                                                    onClick={async () => {
+                                                        if (await confirmAction(`Hand over exactly ${formatRupiah(agentBountyData.total)} in cash to the Admin to clear this bounty?`)) {
                                                             onSubmitEOD({ 
                                                                 cash: agentBountyData.total, 
                                                                 transfer: 0, cukai: 0, 

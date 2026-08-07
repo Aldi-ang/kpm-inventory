@@ -7,6 +7,7 @@ import {
 import { collection, doc, setDoc, deleteDoc, updateDoc, writeBatch, runTransaction, onSnapshot, serverTimestamp } from 'firebase/firestore';
 import { DYNAMIC_TIERS, isFieldLevelTier } from './config/permissions';
 import { convertToBks, isSafeDocIdEmail } from './utils/helpers';
+import { confirmAction } from './components/ConfirmGate.jsx';
 
 export default function FleetCanvasManager({ db, appId, user, userRole, agentProfileId, inventory, transactions = [], appSettings = {}, logAudit, triggerCapy, isAdmin, motorists = [] }) {
     
@@ -252,7 +253,7 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
 
     const handleDeleteAgent = async (e, agent) => {
         e.stopPropagation();
-        if (!window.confirm(`TERMINATION WARNING: Are you sure you want to remove ${agent.name}? This will instantly revoke their login access.`)) return;
+        if (!await confirmAction(`TERMINATION WARNING: Are you sure you want to remove ${agent.name}? This will instantly revoke their login access.`)) return;
         try {
             const batch = writeBatch(db);
             batch.delete(doc(db, collPath, agent.id));
@@ -351,7 +352,7 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
         const useBranchWarehouse = agentIsFieldLevel && agentLocation && agentLocation !== 'Headquarters' && agentLocation !== 'UNASSIGNED AREA' && agentLocation !== 'UNASSIGNED';
         const destinationLabel = useBranchWarehouse ? `${agentLocation} Branch` : 'Master Vault';
 
-        if (!window.confirm(`Are you sure you want to empty ${selectedAgent.name}'s vehicle inventory? This will securely return all their unsold stock back into the ${destinationLabel}.`)) return;
+        if (!await confirmAction(`Are you sure you want to empty ${selectedAgent.name}'s vehicle inventory? This will securely return all their unsold stock back into the ${destinationLabel}.`)) return;
 
         try {
             const currentCanvas = selectedAgent.activeCanvas || [];
@@ -899,8 +900,8 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                                     </div>
                                     <div className="flex gap-2 w-full md:w-auto shrink-0 border-t border-orange-500/20 md:border-none pt-3 md:pt-0 mt-2 md:mt-0">
                                         <button 
-                                            onClick={() => {
-                                                if(window.confirm(`Grant 100m Bypass for ${bypass.storeName}?`)){
+                                            onClick={async () => {
+                                                if(await confirmAction(`Grant 100m Bypass for ${bypass.storeName}?`)){
                                                     updateDoc(doc(db, `artifacts/${appId}/users/${userId}/gps_bypasses`, bypass.id), { status: 'APPROVED' });
                                                     if(logAudit) logAudit("GPS_BYPASS_APPROVED", `Granted override for ${bypass.salesmanName} at ${bypass.storeName}`);
                                                 }
@@ -910,8 +911,8 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                                             Approve Override
                                         </button>
                                         <button 
-                                            onClick={() => {
-                                                if(window.confirm(`Reject Bypass Request?`)){
+                                            onClick={async () => {
+                                                if(await confirmAction(`Reject Bypass Request?`)){
                                                     updateDoc(doc(db, `artifacts/${appId}/users/${userId}/gps_bypasses`, bypass.id), { status: 'REJECTED' });
                                                     if(logAudit) logAudit("GPS_BYPASS_REJECTED", `Denied override for ${bypass.salesmanName} at ${bypass.storeName}`);
                                                 }

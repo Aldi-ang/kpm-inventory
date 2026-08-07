@@ -7,6 +7,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { loadBorderCache, saveBorderCache } from './utils/borderCache';
 import { isFleetManagementTier } from './config/permissions';
+import { confirmAction } from './components/ConfirmGate.jsx';
 
 // 🚀 SAFE LEAFLET ICON SETUP
 delete L.Icon.Default.prototype._getIconUrl;
@@ -1563,8 +1564,8 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                                                                     </>
                                                                 ) : (
                                                                     <button 
-                                                                        onClick={() => {
-                                                                            if (window.confirm(`Undo clearance for ${customer.name}? This removes the report from the database.`)) {
+                                                                        onClick={async () => {
+                                                                            if (await confirmAction(`Undo clearance for ${customer.name}? This removes the report from the database.`)) {
                                                                                 handleUndoCheckIn(customer);
                                                                             }
                                                                         }}

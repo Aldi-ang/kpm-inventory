@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { PackagePlus, Receipt, Calculator, Calendar, UploadCloud, CheckCircle, AlertCircle, FileText, Search, Save, X, ShoppingCart, Truck, RefreshCcw, History, ArrowRight, ChevronDown, ChevronUp, Folder, Printer, Pencil, Trash2, ExternalLink, Image as ImageIcon, User, Eye, Check, XCircle, Target, Activity, PlusCircle } from 'lucide-react';
 import { doc, collection, setDoc, updateDoc, deleteDoc, serverTimestamp, writeBatch, onSnapshot, increment } from 'firebase/firestore';
 import { savePhotoAndGetReference, deletePhotoFromStorage, compressImageToBase64 } from './utils/helpers';
+import { confirmAction } from './components/ConfirmGate.jsx';
 
 const RestockVaultView = ({ inventory = [], procurements = [], db, storage, appId, user, isAdmin, logAudit, triggerCapy, appSettings, masterUserId }) => {
     const [viewMode, setViewMode] = useState('cart'); 
@@ -167,7 +168,7 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, storage, appI
     };
     
     const handleDeleteTarget = async (targetId) => {
-        if (!window.confirm("Are you sure you want to remove this production target?")) return;
+        if (!await confirmAction("Are you sure you want to remove this production target?")) return;
         try {
             await deleteDoc(doc(db, `artifacts/${appId}/users/${activeUserId}/production_targets`, targetId));
             if (triggerCapy) triggerCapy("Target removed.");
@@ -207,7 +208,7 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, storage, appI
     }, [procurements, stockRequests]);
 
     const handleDeletePO = async (po) => {
-        if(!window.confirm(`Delete Delivery Record ${po.poNumber}? WARNING: This will DEDUCT the items back out of your inventory!`)) return;
+        if(!await confirmAction(`Delete Delivery Record ${po.poNumber}? WARNING: This will DEDUCT the items back out of your inventory!`)) return;
         try {
             const batch = writeBatch(db);
             const stockToRevert = {};
@@ -231,7 +232,7 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, storage, appI
     };
 
     const handleDeleteRequest = async (orderId) => {
-        if (!window.confirm(`⚠️ WARNING: DELETE OUTBOUND RECORD?\n\nAre you sure you want to permanently delete Order: ${orderId}?\n\nNote: This only deletes the history paper-trail. It will NOT automatically refund or reverse warehouse math.`)) return;
+        if (!await confirmAction(`⚠️ WARNING: DELETE OUTBOUND RECORD?\n\nAre you sure you want to permanently delete Order: ${orderId}?\n\nNote: This only deletes the history paper-trail. It will NOT automatically refund or reverse warehouse math.`)) return;
         try {
             await deleteDoc(doc(db, `artifacts/${appId}/users/${activeUserId}/stock_requests`, orderId));
             if (triggerCapy) triggerCapy(`Record ${orderId} deleted permanently. 🗑️`);

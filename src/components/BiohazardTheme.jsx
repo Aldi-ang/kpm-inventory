@@ -7,6 +7,7 @@ import MusicPlayer from '../MusicPlayer';
 
 // 🚀 IMPORT THE BRAIN
 import { hasClearance } from '../config/permissions'; 
+import { confirmAction } from './ConfirmGate.jsx';
 
 export default function BiohazardTheme({
     activeTab, setActiveTab, children, user, appSettings,
@@ -34,8 +35,8 @@ export default function BiohazardTheme({
         return () => root.classList.remove('kpm-nav-open');
     }, [isMobileMenuOpen]);
     
-    const handleLogout = () => {
-        if(window.confirm("Terminate Session?")) {
+    const handleLogout = async () => {
+        if(await confirmAction("Terminate Session?")) {
             signOut(auth);
             window.location.reload();
         }

@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { collection, addDoc, getDocs, updateDoc, doc, writeBatch, serverTimestamp, query, where, onSnapshot, increment } from "firebase/firestore";
 import { savePhotoAndGetReference, deletePhotoFromStorage, commitInChunks, formatRupiah, compressImageToBase64 } from './utils/helpers';
+import { confirmAction } from './components/ConfirmGate.jsx';
 
 const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId, user, isAdmin, logAudit, triggerCapy, motorists = [], appSettings }) => {
     
@@ -199,7 +200,7 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
     const handleCommit = async () => {
         const countedItems = activeInventory.filter(i => i && i.id && counts[i.id] !== undefined);
         if (countedItems.length === 0) return alert("No items counted! Please enter at least one physical count.");
-        if (!window.confirm(`Submit Stock Opname for ${countedItems.length} items to HQ for verification?`)) return;
+        if (!await confirmAction(`Submit Stock Opname for ${countedItems.length} items to HQ for verification?`)) return;
 
         setIsSubmitting(true);
         try {
@@ -258,7 +259,7 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
     };
 
     const handleApproveAudit = async (audit) => {
-        if (!window.confirm(`APPROVE AUDIT: This will permanently overwrite the inventory for ${audit.branchLocation}. Proceed?`)) return;
+        if (!await confirmAction(`APPROVE AUDIT: This will permanently overwrite the inventory for ${audit.branchLocation}. Proceed?`)) return;
         setIsProcessingAudit(true);
         try {
             // 🚀 FIX: Build the operations list and hand it to commitInChunks instead of a
@@ -317,7 +318,7 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
         const agentId = formData.get('agentId') || '';
 
         if (qtyToResolve <= 0 || qtyToResolve > resolutionModal.item.damagedStock) return alert("Invalid quantity.");
-        if (!window.confirm(`Execute ${resolutionModal.method} protocol for ${qtyToResolve} Bks of ${resolutionModal.item.name}?`)) return;
+        if (!await confirmAction(`Execute ${resolutionModal.method} protocol for ${qtyToResolve} Bks of ${resolutionModal.item.name}?`)) return;
 
         setIsProcessingAudit(true);
         try {
