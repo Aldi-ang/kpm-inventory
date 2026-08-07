@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-07 20:14 WIB** · branch `phase0-solid-ground` · last commit `f1394f3`
+**Updated: 2026-08-07 21:39 WIB** · branch `phase0-solid-ground` · last commit `29923a9`
 
 **Aldi clears the session every time he starts a new one. This file is the ONLY thing that
 survives. If it is not current, the work is lost.** Write it before context runs low, not after.
@@ -53,7 +53,11 @@ it never happens twice. Answer, then ask which of the waiting items he wants to 
 | Code knowledge graph — query, do not grep | `graphify-out/` |
 | Alucard's rules (edit-denied — lift in settings first) | `C:\Users\ASUS\.claude\skills\alucard\SKILL.md` |
 | The Stop hook that keeps this file honest | `.claude/check-progress.mjs` |
-| The context meter (measures how full we are) | `.claude/context-watch.mjs` |
+| The context meter + the 93% hard stop | `.claude/context-watch.mjs` |
+| Duplicate-store logic (pure, has a selfcheck) | `src/utils/findDuplicates.js` |
+| Its 16 self-checks | `src/config/findDuplicates.selfcheck.mjs` |
+| 8-bit test logger source (published copy) | `.claude/kpm-test-quest.html` |
+| The published test logger | `https://claude.ai/code/artifact/435e77ee-9f1f-4786-a1df-050156596016` |
 | Next-stop design artifact | `https://claude.ai/code/artifact/8feebaa4-f8a2-414d-a4a6-2c642a27af48` |
 
 ## First command of every session
@@ -70,12 +74,25 @@ intact — do **not** re-read source to confirm it.
 ## NOW
 
 Sales terminal redesign is **built and passing 143/143**. Design work is CLOSED.
-Aldi is hand-testing it group by group and reporting **BROKEN / UGLY / AWKWARD**.
-He got through groups A and B; four fixes from that pass are already committed.
+Groups A and B are walked; H1, H3 and C2 confirmed by hand. **Everything below is committed
+on `phase0-solid-ground` and NOTHING is pushed — the branch has no upstream, so Vercel cannot
+see any of it.**
 
-Alongside that: cutting token cost. Root cause was measured, not guessed —
-cost = context size x turns taken, and the 60% incident was a *search* for progress
-data in the wrong folder. This file exists to end that.
+Three jobs closed today, all after the same root cause: **the app failed silently.**
+1. Every browser dialog — 58 confirms + 11 prompts — went dead on his browser and did nothing
+   visible. All now route through `src/components/ConfirmGate.jsx`.
+2. `pricingTier` vs `priceTier` hid sales-flow stores from the agent who created them, who then
+   created them again. Fixed both ends; the repair button ran and reported **3** stores.
+3. A duplicate-store finder now exists, because nothing could ever show him the damage.
+
+**Open thread:** 3 stores cannot explain the duplicates he described. The KML import creates a
+fresh document per pin with no dedup check of any kind, and is the prime suspect. He has not yet
+run **Find Duplicates** — that number is the next real fact and it is waiting on him.
+
+He also asked for the testing to be less tedious, so the test list now has an 8-bit quest log
+(link in the table above). Nothing in it reaches Claude on its own; he presses COPY REPORT and
+pastes. No artifact capability exists that would change that — checked, only `downloads` and
+`mcp` are available.
 
 ## ⏰ SCHEDULED TASKS DO NOT WORK HERE — DON'T OFFER ONE AGAIN
 
@@ -92,6 +109,21 @@ Do not promise a scheduled session a second time without testing the mechanism o
 throwaway first.
 
 ## WAITING ON ALDI — do not re-derive these, just ask
+
+- ❓ **"Press Find Duplicates and tell me the number."** Asked 2026-08-07, unanswered. Admin
+  button in the Customer Directory. This is the next real fact: the tier repair touched only 3
+  stores, which cannot account for the duplicates he described, and the count tells us whether
+  the KML import is the real source. Nothing else about duplicates should be built until he says.
+
+- 🔴 **The 180 `alert(` calls — he has picked NOTHING yet.** The question put to him, verbatim:
+  *"My question isn't whether to fix them. It's how"* — a box in the middle of the screen that
+  must be dismissed 180 separate times, or **a toast** (a strip that slides into the corner and
+  fades by itself). **Claude recommended the toast.** A suppressed `alert` only fails to inform;
+  nothing breaks. Do not start either until he answers.
+
+- 🔴 **What is the rule for the duplicate documents that already exist?** Merging or deleting one
+  means deciding which copy keeps its sales history and its outstanding debt — real money, human
+  judgement, deliberately not automated. Ask only after he has seen the finder's output.
 
 - 🔴 **180 `alert(` calls across src/ — same bug class, deliberately NOT done.** A suppressed
   `alert` only fails to inform; nothing breaks, it just goes quiet. Aldi chose the prompts over
@@ -160,6 +192,24 @@ are never worth rescuing.
 ---
 
 ## LOG — newest first, older entries live in `git log` for this file
+
+### 2026-08-07 21:39 WIB — the end-of-window stop is now a HOOK, not a promise
+
+Aldi: *"this habits should work everytime and automatically without me ask u to do so everytime"*.
+So it stopped being a memory note and became structure. `.claude/context-watch.mjs` gained a
+fourth tier at **93%**: write `PROGRESS.md` first, then show the clear banner, then start nothing
+new. Fires on its own every session; needs neither his reminder nor Claude's memory.
+
+**93, not the 95-98 he said, deliberately** — a note begun at 97% may not fit in what is left,
+and a note that fails to land is the exact failure he asked to prevent. 93% leaves ~70k. Told him
+this in the reply rather than silently changing his number. All four tiers verified against
+synthetic transcripts: 96% hits the new branch, 85% the red banner, 60% amber, 20% silent.
+
+Quest log gained **Snipping Tool paste** (Win+Shift+S → click a test → Ctrl+V). The armed test is
+outlined gold and labelled PASTE HERE. Arming updates the DOM directly instead of re-rendering —
+a full render would rebuild the notes box under his cursor and eat what he was typing. Text
+pastes are untouched; only images are intercepted. Source copied to `.claude/kpm-test-quest.html`
+so it survives the scratchpad being cleared.
 
 ### 2026-08-07 20:1x WIB — duplicate finder shipped, plus an 8-bit test logger
 
@@ -299,206 +349,4 @@ red, plain gold, no stray input box, yes/cancel/escape all still correct.
 **Still untested and must not be reported otherwise:** all 11 prompts in their real screens.
 The app is behind `ENTER MASTER PASSWORD`, which I do not enter, so no real screen was reached.
 
-### 2026-08-07 16:34 WIB — all 58 remaining dialogs replaced, gate tested in a real browser
-
-Aldi said "yes fix all of it" and went to rest. Done and committed.
-
-**What shipped.** `src/components/ConfirmGate.jsx` — an in-page confirm that draws the question
-instead of asking the browser. `ConfirmHost` is mounted in `main.jsx` as a **sibling of `<App />`**,
-not a child, so no screen can unmount it. All 58 call sites across 16 files converted; 11 enclosing
-functions needed `async`, found in one Babel AST pass rather than one build error at a time.
-Audit **122 → 129**, all passing. `.gitignore` now covers the dated graphify snapshot folders.
-Commits: `5091e25` (this), `f2060f1` + `12aab20` (the terminal work before it).
-
-**Tested in the browser, by me, against the running dev server — six behaviours, all pass:**
-draws at all · destructive wording renders red `#b4524a` and plain wording gold `#ff9d00` ·
-Cancel resolves `false` · the confirm button resolves `true` · Escape resolves `false` ·
-backdrop click resolves `false` and leaves nothing stuck. Buttons measured at 44px.
-
-**What I could NOT test and why — do not claim these are verified.** The whole app sits behind
-`ENTER MASTER PASSWORD` and entering a password is not something I am allowed to do, so I never
-reached a real screen. Every one of the 58 sites in its actual context is **untested**, and so is
-**H2**, which needs a real sale committed against live data. That half is still Aldi's.
-
-**Two traps this cost me, both the same shape — a tool matching its own explanation.** The codemod
-rewrote `ConfirmGate.jsx`'s own doc comments and gave the file a self-import; the audit check now
-strips comments before matching, and the codemod must skip the gate. Then my browser probe imported
-`/src/components/ConfirmGate.jsx` while `main.jsx` held `...jsx?t=1786091480120` — **Vite's HMR
-query string makes a second module instance**, so `openGate` was null and the test read as a
-failure that was not real. Read the URL out of the served `main.jsx` and import *that*.
-
-Also seen and dismissed: the dev server logged 500s for eight files. Stale — they were emitted in
-the seconds between the codemod writing `await` and the async pass fixing it. All eight refetch 200.
-
-### 2026-08-07 15:52 WIB — committed `f2060f1`, two of three new tests passed
-
-Aldi hand-tested and sent screenshots. **H1 pass** — red bar reads "Another agent handles this
-store / Assigned to ALEX. Selling is allowed — this sale will be recorded as a territory
-override", and the sale completed. **H3 pass** — "Existing store 0m away / You are standing next
-to HQ TEST" with the "This is a different building — continue" button, inside the outlet form.
-
-He reported the revisit banner as possibly wrong: he said he sold to "HQ 1" but the banner
-appeared on "HQ (RETAIL) 1". **Not a bug** — `MerchantSalesView.jsx:427` reads `cust.lastVisit`
-straight off the selected store's own record, no name matching anywhere, so the banner cannot
-cross stores. He had sold to both. Do not re-investigate this.
-
-H2 (the stale-stamp test) was written too vaguely for him to follow and he said so. Rewritten in
-`SALES_TERMINAL_TEST_LIST.md` as "The H2 test, step by step" with two explicit rounds — after a
-finished sale, and typing over a chosen store — because those are two different code paths.
-
-Committed on his instruction, all 10 files, `f2060f1`. He said "as long as its not push into the
-vercel": **nothing was pushed, and the branch has no upstream**, so a push cannot happen by
-accident. The test list also got a status table and its 115 → 122 correction, and C2 was rewritten
-— it still described the deleted double-tap dialog and told him to cancel a pop-up that no longer
-exists.
-
-Left uncommitted on purpose: seven untracked `graphify-out/2026-08-0*/` snapshot folders, 3.0 MB
-total, one per day, regenerable. They are asked about under WAITING ON ALDI.
-
-### 2026-08-07 15:41 WIB — stale-stamp hole in the new territory code, found and closed
-
-Adversarial pass on my own change caught a bug before Aldi ever ran it. `territoryClaim` is
-written ONLY by `handleCustomerSelect`. Two paths cleared the chosen customer but left that
-name in state:
-
-- after a completed sale (the big reset block, `MerchantSalesView.jsx` ~1096)
-- when he types a name over a chosen store (`handleManualCustomerType`, ~483)
-
-Either one meant the NEXT sale — a hand-typed walk-in that has no owner at all — got stamped
-`territoryOverride: "<previous store's owner>"`. Wrong name on a real sale record, invisible.
-Fixed by clearing `territoryClaim` at both sites, and `proximityHit`/`proximityAck` at the
-post-sale reset so an acknowledged neighbour cannot carry into the next new-outlet form.
-
-No audit check added for this one: the built bundle is minified, `setTerritoryClaim` is renamed
-to a single letter, so there is nothing stable to match on. Guarded by comments at both sites
-instead — the one place prose beats a check here.
-
-Rebuilt: **122 passed, 0 failed**. `graphify update .` run. Still nothing committed.
-
-### 2026-08-07 15:06 WIB
-Built all four territory/proximity fixes on Aldi's go-ahead. Audit 115 -> 122 checks, all pass;
-baseline was re-run BEFORE editing (115/115) so the 7 new checks are the only delta. The trap is
-now encoded as check §9 rather than prose, because the prose version already failed: a comment
-warning against `confirm()` sat nine lines above a live one for weeks. First run of that check
-FAILED on its own explanation (the comments contain the banned words), so it strips comments and
-matches the CALL — the reason has to be allowed to live next to the code.
-Design decisions that should not be re-argued: territory is reported and stamped, never blocked;
-the stamp is written in BOTH the offline and online payloads or an offline sale would launder the
-crossing; the proximity acknowledgement stores the store NAME, not a boolean, so it cannot leak
-onto a different neighbour and needs no reset-on-close plumbing.
-Discovered and NOT fixed: 58 more `window.confirm(` calls across 16 other files — logged above.
-`graphify update .` run (516 nodes, 859 edges). Nothing committed; working tree is dirty.
-
-### 2026-08-07 14:55 WIB
-Territory-block question CLOSED on the reasoning side: no hard block. Aldi's own two answers
-settled it (recorded verbatim in WAITING ON ALDI above) — ranking carries no pay, and he runs
-under 100 salesmen who are meant to cover for each other. Three fixes explained to him in plain
-English and awaiting a yes: (1) delete the `window.confirm` at `:427`, reuse the `setRevisitToday`
-red-bar pattern so the claim is shown, not asked; (2) stamp the saved sale with
-`territoryOverride: <assignedAgent>` — one field, makes every crossing permanently auditable;
-(3) deliberately build nothing else (no PIN — shared within a week at that headcount).
-UNVERIFIED, does not change the fixes: whether a credit sale crossing territory lands on the
-seller's or the store owner's ledger. Settle with `graphify explain "debtInfo transaction agentId"`.
-Also spotted, out of scope: `src/.claude/worktrees/` contains three full app copies INSIDE `src/`,
-so every grep returns 4x duplicates and the build may be compiling them. Needs its own cleanup.
-
-### 2026-08-07 (later)
-Aldi got install advice for 5 outside tools: omniroutes, claude-mem, headroom, claude-code-setup,
-task-observer. Checked live instead of guessing — `claude mcp list` shows headroom already
-installed and connected; `settings.json` shows every model call already routes through 9Router
-(`ANTHROPIC_BASE_URL=127.0.0.1:20128`); Claude Code already ships a native Monitor tool. Verdict:
-install none. omniroutes (github.com/diegosouzapw/OmniRoute) duplicates 9Router. claude-mem
-(github.com/thedotmack/claude-mem) duplicates the MEMORY.md + this file + A-Brain stack already
-running every session. task-observer duplicates the native Monitor tool and Alucard's
-`lessons.md`. claude-code-setup (official, `anthropics/claude-plugins-official`, read-only
-recommender) is the one real maybe — but `codeburn get_savings` shows 12 MCP servers already at
-low tool coverage and 22 unused skills; clean those before adding a tool whose job is to
-recommend more. Nothing installed, no repo files touched.
-
-### 2026-08-07 14:46 WIB
-Aldi asked whether hard-blocking a cross-territory sale is wise in real life. Answer: no, and the
-premise was wrong — reading `MerchantSalesView.jsx:390-431` showed the guard is STILL
-`window.confirm` (`:427`), so it is already a hard block and an invisible one on his browser. This
-note claimed otherwise; corrected above. Decision logic recorded so it is never re-argued: wrong
-*allow* is repairable by the existing store/debt transfer flow (`App.jsx:1607`), wrong *block*
-destroys a live cash sale and pushes people to share logins, which erases every attribution the
-block existed to protect. The identity check at `:426` is a substring compare (`"Adi"` vs
-`"Adikarya"`), wrong in both directions — hardening a gate on top of it multiplies the error.
-Recommendation is banner + `territoryOverride` stamp; not built, waiting on his two questions.
-Also found `:711` carries the identical `window.confirm` trap for the proximity check. Connectors
-question closed by him: leave them, only Chrome is connected.
-Nothing was edited in `src/` this turn — advice only.
-
-### 2026-08-07 14:35 WIB
-Confirmed clearing the context cannot lose work: /clear empties the conversation only. Branch
-is 80 commits ahead of main (+7.1k lines in src; the +116k in the status bar is mostly
-generated graphify output, not code). Aldi decided to hold the PR until testing and
-adjustments are finished, then push everything at once.
-
-### 2026-08-07 14:32 WIB
-SETTLED: autoCompactWindow 600k -> 200k, set directly in ~/.claude/settings.json. Autocompact
-cannot be switched off at all (/autocompact rejects "off"; range is 100k-1M), so the only
-lever is the number. context-watch measures against that same number, so lowering it pulls
-both warnings earlier AND keeps average context low: yellow 110k, RED 160k, autocompact 200k
-as a backstop that should never fire. Aldi also confirmed he skims and needs the red banner
-first on screen.
-
-### 2026-08-07 14:30 WIB
-Aldi DECIDED: no autocompact - he will clear when warned. Setting left at 600k anyway as a
-silent backstop, since clearing at the 80%% warning (480k) means it never fires; disabling it
-would only remove the safety net for the day he ignores the warning. He also said he skims
-and will not read a paragraph, so context-watch now prescribes the banner verbatim: a red
-🔴 line at >=80%%, yellow 🟡 at 55-80%%, first thing on screen, nothing above it.
-
-### 2026-08-07 14:25 WIB
-Taught Alucard the context-watch habit in §9: act on a [context-watch] line before doing
-any work, recommend /clear rather than /compact above 80%, and treat turn count - not big
-reads - as the real cost. Deny on alucard/SKILL.md lifted for the edit and restored after.
-
-### 2026-08-07 14:23 WIB
-Added a UserPromptSubmit hook that MEASURES context fullness from the live transcript
-instead of guessing: it finds the last compaction boundary so a just-compacted session is
-not reported as full, and stays completely silent below 55%. At 55-80% it reports headroom
-so the upcoming job can be judged against it; above 80% it demands /clear and explicitly
-forbids recommending /compact, because clearing is free and compacting at that level bills
-the whole window. Claude still cannot clear itself - only Aldi can type it.
-
-### 2026-08-07 14:11 WIB
-Added DO THIS NEXT at the top, and the rule that a vague question from Aldi ("where were
-we?") is answered from this file alone with zero tool calls. He should never have to
-remember his own progress; reconstructing it with tools is the failure this replaces.
-He also switched off and deleted a large number of claude.ai connectors and plugin packs,
-cutting the fixed per-session tax.
-
-### 2026-08-07 14:07 WIB
-Built this file and the two hooks that keep it true (`d403de9`): a Stop hook that blocks
-any turn which changed the project while leaving this note stale, and a SessionStart hook
-that prints it before anything else. Then added the same habit to Alucard §1 (never search
-for progress — it is already printed) and §11 (write the note before closing, including
-after a conversation that only *decided* something, which the hook cannot detect). Aldi's
-`Edit()` deny on `alucard/SKILL.md` was lifted for that edit and **restored afterwards** —
-§8 of that file asserts the rule exists, so leaving it off would make his advisor lie.
-
-Also settled: starting a NEW session and typing `/clear` are equivalent — both wipe context
-to zero and both print this file. And "continue with the last work" is a *search* prompt;
-with this file loaded he can name the task directly instead.
-
-### 2026-08-07 13:56 WIB
-Measured where tokens actually go by parsing the session transcripts. Found the old
-diagnosis was wrong: no single tool result ever exceeded 3k tokens, so "stop reading the
-big file" was aimed at nothing. The real driver is **~29 tool round-trips per user
-message against a context that is re-sent every turn**. Corrected
-`.claude/session-start-context.md` (`aaa3eda`). Established that `/clear` costs nothing
-while `/compact` at 90% costs ~540k — so notes + clear beats compact at a clean break.
-Researched `rtk-ai/rtk`: verdict **do not install** — it only shrinks shell output, misses
-Claude's native Read/Grep entirely, and would compress away the `git show --stat` proof
-Aldi requires before any "done" claim.
-
-### 2026-08-07 (earlier)
-Test list check-count corrected to 115 (`33e112b`). Resume brief compressed 118 → 96
-lines and the `window.confirm` trap written down for the first time.
-
-### 2026-08-06
-PreCompact hook added and standing rules compressed 128 → 59 lines (`8feb135`).
-Four fixes from Aldi's first test pass (`a2c6c5c`), store selection always acts and the
-round follows the week (`ba4ffe5`), brief waits for a chosen customer (`5eb2a87`).
+_Older entries live in `git log -p .claude/PROGRESS.md`._
