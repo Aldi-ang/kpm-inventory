@@ -5,13 +5,19 @@
 **Aldi clears the session every time he starts a new one. This file is the ONLY thing that
 survives. If it is not current, the work is lost.** Write it before context runs low, not after.
 
-**STANDING RULE, his instruction 2026-08-07: stop at 95-98% usage and write this file before the
-window runs out.** When usage dies mid-task the screen sticks, he force-retries, and the next
-session finds no note covering the work that was in flight — so it re-derives everything. That
-re-derivation is the cost, not the stopped turn. **But do not wait for 95% to start writing:** a
-note begun at 97% may not fit. Write this file after every landed piece of work; the 95-98% halt
-is the backstop, not the mechanism. Never begin something at high usage that cannot be finished
-and committed inside it. Recommend `/clear` (free), never `/compact` (bills the whole window).
+**STANDING RULE — his instruction 2026-08-07. The limit he means is the 5-HOUR PLAN QUOTA, not
+the context window.** He corrected this directly: *"its not the context window, clear wont fix
+the problem, im talking about the 5 hours limit - plan usage limit."*
+
+- **`/clear` does NOT help.** Never offer it as the answer to this. It empties context; the plan
+  quota keeps counting regardless.
+- **Claude cannot see plan usage.** `context-watch.mjs` reads the transcript, so it can only ever
+  measure context. No hook currently exists that can warn about this. Only Aldi can see it.
+- **When he states a percentage, act on that turn — do not finish what you were doing first.**
+  Write this file, commit, reply short. He said 94% once and the turn stalled anyway, which is
+  precisely the stuck-screen-and-force-retry he asked to prevent.
+- **Keep this file committed after every landed step**, so a lockout costs one step, never a day.
+- Never start something at high usage that cannot be finished and committed inside it.
 
 This file is printed into Claude automatically at the start of every session, so the
 last state is already in front of him before he touches a tool. He must never go
