@@ -1,12 +1,12 @@
 {
   ".claude/launch.json": {
-    "mtime": 1785346389.2817988,
-    "ast_hash": "fe15566602097c7acaf4f38fa04f1e51",
+    "mtime": 1785694177.8033955,
+    "ast_hash": "81bba4bb6a056ee988f15e3865376a38",
     "semantic_hash": ""
   },
   ".claude/settings.json": {
-    "mtime": 1785494890.1606853,
-    "ast_hash": "d91d34ff214beec78d35df4565314efc",
+    "mtime": 1786087393.261399,
+    "ast_hash": "07f2118946d76770cf3be38028d7c57e",
     "semantic_hash": ""
   },
   "eslint.config.js": {
@@ -50,8 +50,8 @@
     "semantic_hash": ""
   },
   "src/App.jsx": {
-    "mtime": 1785344517.197813,
-    "ast_hash": "888008e14639a8a5acc51bdd1c408307",
+    "mtime": 1785831733.7100291,
+    "ast_hash": "65d48a8d2871eea50afc0620fd681ede",
     "semantic_hash": ""
   },
   "src/ConsignmentFinanceView.jsx": {
@@ -85,8 +85,8 @@
     "semantic_hash": ""
   },
   "src/MerchantSalesView.jsx": {
-    "mtime": 1785326612.5023205,
-    "ast_hash": "04238bc66c0dd769b072c3eb687d58c2",
+    "mtime": 1786090141.8519578,
+    "ast_hash": "ef3c6f5aedb7feb3f1d3a80ab9390b55",
     "semantic_hash": ""
   },
   "src/MusicPlayer.jsx": {
@@ -110,8 +110,8 @@
     "semantic_hash": ""
   },
   "src/components/BiohazardTheme.jsx": {
-    "mtime": 1785344498.6433764,
-    "ast_hash": "9b8ad589b31bf57c55375f2f900c3bc4",
+    "mtime": 1786045642.5144708,
+    "ast_hash": "f527e0e816fc88deb5ed0f943051fdf6",
     "semantic_hash": ""
   },
   "src/components/BranchWarehouseManager.jsx": {
@@ -120,8 +120,8 @@
     "semantic_hash": ""
   },
   "src/components/CapybaraMascot.jsx": {
-    "mtime": 1782956856.8709369,
-    "ast_hash": "c679ca4a5cb5a7add0833f4c976dc34b",
+    "mtime": 1785849931.4461725,
+    "ast_hash": "3cf828329dcb3ebb1735a6750d0d9183",
     "semantic_hash": ""
   },
   "src/components/CrownTransferProtocol.jsx": {
@@ -145,8 +145,8 @@
     "semantic_hash": ""
   },
   "src/components/ExamineModal.jsx": {
-    "mtime": 1775260438.0,
-    "ast_hash": "234b64d0bd90715ad6170ce305fe061e",
+    "mtime": 1786045632.0174422,
+    "ast_hash": "eb5361f21b5284e8cc619ceaee2a51a1",
     "semantic_hash": ""
   },
   "src/components/HistoryReportView.jsx": {
@@ -200,8 +200,8 @@
     "semantic_hash": ""
   },
   "src/hooks/useDatabaseSync.js": {
-    "mtime": 1785308445.7101233,
-    "ast_hash": "57c5ca0557e9cca075f9155da4b51f59",
+    "mtime": 1785905249.4453988,
+    "ast_hash": "7f51927dd0bf2c0bb038f76daa4e1c5d",
     "semantic_hash": ""
   },
   "src/hooks/useOfflineEngine.js": {
@@ -210,8 +210,8 @@
     "semantic_hash": ""
   },
   "src/hooks/useTransactionEngine.js": {
-    "mtime": 1785326170.6275203,
-    "ast_hash": "dd6577e2043356b1f2be53a2e5bab92b",
+    "mtime": 1786089726.276476,
+    "ast_hash": "bf9819c511ac220d448ade10cc449b4e",
     "semantic_hash": ""
   },
   "src/main.jsx": {
@@ -225,8 +225,8 @@
     "semantic_hash": ""
   },
   "src/utils/helpers.js": {
-    "mtime": 1785376915.4364007,
-    "ast_hash": "0e50ba2827cbd5b2bd9579478b25919a",
+    "mtime": 1785871280.6629357,
+    "ast_hash": "3316596471c05b010bdf8f4a1d7bf011",
     "semantic_hash": ""
   },
   "tailwind.config.js": {
@@ -235,8 +235,8 @@
     "semantic_hash": ""
   },
   "vite.config.js": {
-    "mtime": 1785304957.7300472,
-    "ast_hash": "830a6fea5386221c174a4316ae625d61",
+    "mtime": 1785670299.5374773,
+    "ast_hash": "4ffa3862cada59da83495797c21f0b04",
     "semantic_hash": ""
   },
   ".github/workflows/build-check.yml": {
@@ -250,8 +250,8 @@
     "semantic_hash": ""
   },
   "MANUAL_TEST_CHECKLIST.md": {
-    "mtime": 1785629749.856527,
-    "ast_hash": "49488841eb5f2d2e44aaad774b61c568",
+    "mtime": 1785671727.9703066,
+    "ast_hash": "fac007b17f2bc2cb8b57d84248eb8e39",
     "semantic_hash": ""
   },
   "README.md": {
@@ -265,8 +265,8 @@
     "semantic_hash": ""
   },
   "index.html": {
-    "mtime": 1785305012.9183211,
-    "ast_hash": "a80ddf1cd921379b8ae5eb14321fe9ae",
+    "mtime": 1785862040.5036032,
+    "ast_hash": "b254d8b6783a82d5243134ae28acdddf",
     "semantic_hash": ""
   },
   "public/apple-touch-icon.png": {
@@ -360,8 +360,8 @@
     "semantic_hash": ""
   },
   ".claude/settings.local.json": {
-    "mtime": 1785548513.7658632,
-    "ast_hash": "0d37e6bb0930ff88be812888f2cc1325",
+    "mtime": 1785690177.5402398,
+    "ast_hash": "a31f9e7ea2a6b65de239102e4558bde1",
     "semantic_hash": ""
   },
   ".mcp.json": {
@@ -380,8 +380,8 @@
     "semantic_hash": ""
   },
   ".claude/session-start-context.md": {
-    "mtime": 1785187366.9043674,
-    "ast_hash": "542be9e7dabf5279dfece1d226d345fb",
+    "mtime": 1786086673.7583086,
+    "ast_hash": "a5f60a80246064143e1cf8aacd33ae63",
     "semantic_hash": ""
   },
   "src/components/AchievementTester.jsx": {
@@ -407,6 +407,176 @@
   "public/coin-sprite.png": {
     "mtime": 1785515929.625612,
     "ast_hash": "3781c879221505d857d5904809731773",
+    "semantic_hash": ""
+  },
+  "public/sprites/deal.png": {
+    "mtime": 1785637608.2794845,
+    "ast_hash": "d72dfe4bd6c0a36adfe8c50366192a2f",
+    "semantic_hash": ""
+  },
+  "public/sprites/idle.png": {
+    "mtime": 1785637607.9263318,
+    "ast_hash": "a872fe3396417c3e8d09d21b3bb4a22e",
+    "semantic_hash": ""
+  },
+  "public/sprites/talking.png": {
+    "mtime": 1785637608.10225,
+    "ast_hash": "328d90e3c5c62d2fd667b08d93fa1b4b",
+    "semantic_hash": ""
+  },
+  "src/hooks/useSound.js": {
+    "mtime": 1785918807.2285635,
+    "ast_hash": "8886cb8df64c964a5128f221786c0f04",
+    "semantic_hash": ""
+  },
+  "src/hooks/useSound.selfcheck.mjs": {
+    "mtime": 1785668352.0538187,
+    "ast_hash": "aadf0dda0ed055cf55cf8c359abe5ac9",
+    "semantic_hash": ""
+  },
+  "public/sounds/commit.mp3": {
+    "mtime": 1785631481.076626,
+    "ast_hash": "f73a97808c21437850bfa52c6a28a0ee",
+    "semantic_hash": ""
+  },
+  "public/sounds/error.mp3": {
+    "mtime": 1785631481.1461365,
+    "ast_hash": "415f4d77ab8eb572f90ac34f31a3821b",
+    "semantic_hash": ""
+  },
+  "public/sounds/tap.mp3": {
+    "mtime": 1785631480.8610792,
+    "ast_hash": "a7901c6edf70c72bec06d762925a45fa",
+    "semantic_hash": ""
+  },
+  "docs/merchant/merchant-animation-prompts.md": {
+    "mtime": 1785638203.5997941,
+    "ast_hash": "7506d224f5432e73284e4ff1071d3de5",
+    "semantic_hash": ""
+  },
+  "docs/merchant/merchant-prompt-pack.md": {
+    "mtime": 1785638203.6039014,
+    "ast_hash": "d5223d66df5622393e8c611f8387fcae",
+    "semantic_hash": ""
+  },
+  "public/sprites/merchant-deal.png": {
+    "mtime": 1785670716.432395,
+    "ast_hash": "c8d183eb2f62d8577d15c071a2425966",
+    "semantic_hash": ""
+  },
+  "public/sprites/merchant-talk.png": {
+    "mtime": 1785790309.0945039,
+    "ast_hash": "4f3ab2ee26c26cad2b3bb3319442a8b4",
+    "semantic_hash": ""
+  },
+  "public/sounds/mumble1.mp3": {
+    "mtime": 1785668287.0790732,
+    "ast_hash": "6ba3f3611d96a34541f60906fb4eb2f2",
+    "semantic_hash": ""
+  },
+  "public/sounds/mumble2.mp3": {
+    "mtime": 1785668287.205861,
+    "ast_hash": "835cbb21d6be89cd6ff9fe25a74f9c5d",
+    "semantic_hash": ""
+  },
+  "public/sounds/mumble3.mp3": {
+    "mtime": 1785668287.3271084,
+    "ast_hash": "0c6c5152d2bf05c6bd656f8bc44afeb8",
+    "semantic_hash": ""
+  },
+  "public/sounds/mumble4.mp3": {
+    "mtime": 1785668287.4465578,
+    "ast_hash": "40f3c78015897b3b6c7eb0f775ae13c7",
+    "semantic_hash": ""
+  },
+  "docs/merchant/merchant-demo.html": {
+    "mtime": 1785653315.8634663,
+    "ast_hash": "474ac3ca8715eb4c5dfbb9a16917d326",
+    "semantic_hash": ""
+  },
+  "public/sprites/merchant-idle.png": {
+    "mtime": 1785790526.3838582,
+    "ast_hash": "237e14236cdd301543055a8ec9354e20",
+    "semantic_hash": ""
+  },
+  "public/sounds/click.mp3": {
+    "mtime": 1785755365.258629,
+    "ast_hash": "10dd40c4b0d155b807fb467bac48bcd5",
+    "semantic_hash": ""
+  },
+  "public/sounds/sign.mp3": {
+    "mtime": 1785737868.199716,
+    "ast_hash": "66cd4a2b2f96a72c088739c33372216b",
+    "semantic_hash": ""
+  },
+  "src/config/mixedUnits.selfcheck.mjs": {
+    "mtime": 1785871451.490723,
+    "ast_hash": "6cd2cc1e8abf39c0bd0975844bcfb07b",
+    "semantic_hash": ""
+  },
+  "src/config/txSize.selfcheck.mjs": {
+    "mtime": 1785843397.7543778,
+    "ast_hash": "09c1314a127d82b8b7ef05ca7f971230",
+    "semantic_hash": ""
+  },
+  "src/config/dayStats.selfcheck.mjs": {
+    "mtime": 1785866643.2865741,
+    "ast_hash": "6c1c52d8ee7bea98968f5681203e7ac3",
+    "semantic_hash": ""
+  },
+  "src/utils/dayStats.js": {
+    "mtime": 1785866617.7097862,
+    "ast_hash": "d42643dc6edd98d60be9cea48375b9b2",
+    "semantic_hash": ""
+  },
+  "src/config/customerBrief.selfcheck.mjs": {
+    "mtime": 1785916026.3280008,
+    "ast_hash": "db482f8729fe941508d18e7f0e26267a",
+    "semantic_hash": ""
+  },
+  "src/utils/customerBrief.js": {
+    "mtime": 1785915995.5246377,
+    "ast_hash": "cd64ebe1f8e930d7e853fad8083190ac",
+    "semantic_hash": ""
+  },
+  "src/config/integration.audit.mjs": {
+    "mtime": 1786089865.0597658,
+    "ast_hash": "a7932601a917dbab8eae2c3de723f6cf",
+    "semantic_hash": ""
+  },
+  "src/config/nextStop.selfcheck.mjs": {
+    "mtime": 1786047456.5961316,
+    "ast_hash": "0de97b9e3650eb4abeb6bb62c1adb32d",
+    "semantic_hash": ""
+  },
+  "src/utils/nextStop.js": {
+    "mtime": 1786047405.5721834,
+    "ast_hash": "a92f66b7a82b4f02ebae7eec0cd0a2e3",
+    "semantic_hash": ""
+  },
+  "SALES_TERMINAL_TEST_LIST.md": {
+    "mtime": 1786064624.761547,
+    "ast_hash": "3530e6717b0e4a3291d694265c7370cc",
+    "semantic_hash": ""
+  },
+  ".claude/check-progress.mjs": {
+    "mtime": 1786085902.7649815,
+    "ast_hash": "a170e0aa4acefdd17bcb1865c486d728",
+    "semantic_hash": ""
+  },
+  ".claude/context-watch.mjs": {
+    "mtime": 1786087798.0454204,
+    "ast_hash": "08247f2eace6c7660024267f1e845435",
+    "semantic_hash": ""
+  },
+  ".claude/PROGRESS.md": {
+    "mtime": 1786089997.9967802,
+    "ast_hash": "d6cefc51d01a885e8a2a89caea243053",
+    "semantic_hash": ""
+  },
+  ".claude/pre-compact-context.md": {
+    "mtime": 1786064010.1093047,
+    "ast_hash": "62f8c517f5450daff31ecc4134bcd4d4",
     "semantic_hash": ""
   }
 }

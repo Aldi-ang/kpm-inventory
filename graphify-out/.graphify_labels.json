@@ -4,7 +4,9 @@
   "2": "dependencies",
   "3": "permissions.js",
   "4": "devDependencies",
-  "5": "formatRupiah",
+  "5": "mixedUnits.selfcheck.mjs",
+  "6": "savePhotoAndGetReference",
+  "7": "getCurrentDate",
   "8": "manifest.json",
   "9": "KPM Inventory — Manual Test Checklist",
   "10": "Firestore Security Rules — Deployment Checklist",
@@ -17,5 +19,14 @@
   "17": "eslint.config.js",
   "18": "postcss.config.js",
   "19": "tailwind.config.js",
-  "20": "vite.config.js"
+  "20": "vite.config.js",
+  "21": "Animation prompts — Pip-Boy style, capybara merchant",
+  "22": "savePhotoAndGetReference",
+  "23": "txSize.selfcheck.mjs",
+  "24": "hasClearance",
+  "25": "Sales Terminal — test list",
+  "26": "LOG — newest first, older entries live in `git log` for this file",
+  "27": "check-progress.mjs",
+  "28": "COMPACTING NOW — what the summary must keep, and what it must drop",
+  "29": "customerBrief.selfcheck.mjs"
 }

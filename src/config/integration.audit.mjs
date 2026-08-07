@@ -15,6 +15,9 @@ const css = files.filter(f => f.endsWith('.css')).map(f => fs.readFileSync(D + f
 const allJs = files.filter(f => f.endsWith('.js')).map(f => fs.readFileSync(D + f, 'utf8')).join('\n');
 const term = fs.readFileSync(D + files.find(f => f.startsWith('MerchantSalesView-')), 'utf8');
 const src = fs.readFileSync('src/MerchantSalesView.jsx', 'utf8');
+/* The sale is assembled here, not in the view — so the territory stamp has to be asserted
+   here too, in BOTH the offline and the online payload. */
+const engine = fs.readFileSync('src/hooks/useTransactionEngine.js', 'utf8');
 const BS = String.fromCharCode(92);
 
 let pass = 0, fail = 0;
@@ -209,6 +212,32 @@ const offPalette = (beforeNota.match(/(^|["' ])(slate|blue|emerald|indigo|teal|c
 check(G8, 'no blue/green in the app UI', offPalette.length === 0,
   offPalette.length ? offPalette.slice(0, 6).join(' ') : '');
 check(G8, 'printed nota keeps KPM blue (deliberate)', src.includes('!text-blue-900'));
+
+/* ── 9. GUARDS RENDER, THEY NEVER DIALOG ─────────────────────────────────── */
+/* window.confirm returns false WITHOUT drawing anything in a browser where the user ticked
+   "prevent this page from creating more dialogues" — Aldi's has. Both guards in the terminal
+   used one, so both failed closed AND invisibly: picking another agent's store did nothing at
+   all, and registering an outlet near an existing one did nothing at all, each with no message
+   and no reason. A comment warning about this already sat nine lines above one of them and did
+   not stop it, which is exactly why this is a check and not another paragraph. */
+const G9 = '9. Guards render, never dialog';
+/* Comments stripped first, deliberately. The reason these dialogs are banned has to stay
+   written next to the code that used to hold them, and a plain substring test would fail on
+   its own explanation — which it did, the first time this check ran. Banned is the CALL. */
+const srcCode = src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^[ \t]*\/\/.*$/gm, '');
+check(G9, 'no confirm() dialog in the terminal', !/window\.confirm\s*\(/.test(srcCode),
+  'a suppressed dialog answers false invisibly — render the guard instead');
+inJs (G9, 'territory reported on screen',     'Another agent handles this store');
+inJs (G9, 'territory sale still allowed',     'territory override');
+inJs (G9, 'proximity reported on screen',     'would create a duplicate');
+inJs (G9, 'proximity has a visible way past', 'This is a different building');
+/* The stamp is the entire anti-fraud mechanism now that the block is gone. A sale made
+   offline must carry the same evidence as one made online, so BOTH payloads need it. */
+check(G9, 'override reaches the saved sale, offline and online',
+  (engine.match(/territoryOverride:/g) || []).length >= 2,
+  'offline payload AND online batch must both carry it');
+check(G9, 'terminal sends the override with the sale',
+  src.includes('territoryOverride: territoryClaim'));
 
 /* ── report ──────────────────────────────────────────────────────────────── */
 let last = '';

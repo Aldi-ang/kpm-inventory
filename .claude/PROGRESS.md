@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-07 14:35 WIB** · branch `phase0-solid-ground`
+**Updated: 2026-08-07 15:41 WIB** · branch `phase0-solid-ground`
 
 This file is printed into Claude automatically at the start of every session, so the
 last state is already in front of him before he touches a tool. He must never go
@@ -63,16 +63,47 @@ data in the wrong folder. This file exists to end that.
 
 ## WAITING ON ALDI — do not re-derive these, just ask
 
-- 🔴 **Other-agent store block.** Picking a store assigned to another salesman is now a
-  loud warning, not a hard block. Does he want the block back? If yes: build it as an
-  in-page confirmation, **never `window.confirm`** (his browser suppresses dialogs, so it
-  silently returns false and the guard fails invisibly).
+- 🔴 **Other-agent store block — recommendation given, waiting on his go-ahead.** The note used
+  to say this was already a loud warning. **It was wrong; the repo won.** `MerchantSalesView.jsx:427`
+  is still `window.confirm`, so on his browser it returns false silently and line 429 refuses the
+  selection — an invisible hard block, the exact failure the comment at `:408` warns about nine
+  lines earlier. Recommended, not yet built: (a) delete the confirm, reuse the `setRevisitToday`
+  standing-banner pattern, (b) stamp the saved sale with `territoryOverride: <assignedAgent>`,
+  (c) nothing else — no PIN, no approval queue. Reasoning: a wrong *allow* is fixable by the
+  existing transfer flow; a wrong *block* kills a real cash sale and teaches login-sharing, which
+  destroys all attribution. The identity test at `:426` is a fuzzy substring compare, so it is
+  wrong in both directions — never harden a gate built on it.
+  **BUILT 2026-08-07 15:06, NOT COMMITTED — waiting on his hand-test.** Audit now 122 checks,
+  122 pass (was 115). Both confirm dialogs are gone from the terminal; a new §9 group in
+  `integration.audit.mjs` fails the build if either comes back, if a banner text disappears, or if
+  the stamp stops reaching either sale payload. What changed: `MerchantSalesView.jsx` (territory
+  now sets `territoryClaim` and renders a standing red bar in the brief instead of asking;
+  `proximityHit`/`proximityAck` render the duplicate-store warning inside the NOO modal with a
+  real "different building" button; `proofPayload` carries `territoryOverride`) and
+  `useTransactionEngine.js` (both the offline payload and the online batch write
+  `territoryOverride`, so an offline sale carries the same evidence as an online one).
+  **What he must test:** pick a store assigned to someone else → it SELECTS, red bar names the
+  owner, sale completes. Register a new outlet within 15m of an existing one → warning appears
+  in the modal with a button, not silence.
+  **Both open questions ANSWERED by Aldi 2026-08-07, VERBATIM:** *"no ranking does nothing to the
+  payment, i made them just to motivates them, make sure that all the salesman competing sales to
+  work together thats all, its a team game after all"* and *"there are less than 100 salesman as i
+  know"*. Both confirm: DO NOT BLOCK. No pay on the ranking = the block protects a motivation game,
+  not money. ~100 salesmen + a substring name compare at `:426` = false blocks on real owners are
+  routine, not rare (`Adi`/`Adit`/`Aditya`). And a block on covering another's route contradicts
+  his own stated goal of salesmen working together. He agreed; waiting only on "build it? yes/no".
+- 🔴 **58 more `window.confirm(` calls in 16 OTHER files — same silent-failure bug, untouched.**
+  Found while fixing the terminal. Worst: `App.jsx` (18), `components/CustomerManager.jsx` (8),
+  `MapMissionControl.jsx` (6), `components/BranchWarehouseManager.jsx` (5), `FleetCanvasManager.jsx`
+  (4), `StockOpnameView.jsx` (3), `RestockVaultView.jsx` (3), then 9 files with 1–2 each. Every one
+  of them answers *false* invisibly on his browser, so each is a feature that silently does nothing.
+  NOT fixed — out of scope for this pass and 16 files is its own job. Needs his go-ahead as a
+  separate task, probably one file at a time starting with `App.jsx`.
 - ✅ **Retest HQ 1 and HQ (RETAIL) 1** — they should select properly now.
 - ✅ **Resume the test list at group C**, then D–G. B2/B3 need his phone (GPS).
   C2 needs a second salesman account, which he does not have — skip and report.
-- 🔴 **Connectors.** He approved removing unused ones, but they are claude.ai account
-  settings — only he can click them. GitHub and Vercel are both unnecessary here
-  (`gh` CLI covers GitHub; this app deploys to Firebase, not Vercel).
+- ~~Connectors~~ **SETTLED 2026-08-07:** leave them alone. They cost almost no tokens and the only
+  one actually connected is Chrome for Claude. Do not raise this again.
 
 ## 🚫 DO NOT open a PR or merge to main yet
 
@@ -93,6 +124,80 @@ are never worth rescuing.
 ---
 
 ## LOG — newest first, older entries live in `git log` for this file
+
+### 2026-08-07 15:41 WIB — stale-stamp hole in the new territory code, found and closed
+
+Adversarial pass on my own change caught a bug before Aldi ever ran it. `territoryClaim` is
+written ONLY by `handleCustomerSelect`. Two paths cleared the chosen customer but left that
+name in state:
+
+- after a completed sale (the big reset block, `MerchantSalesView.jsx` ~1096)
+- when he types a name over a chosen store (`handleManualCustomerType`, ~483)
+
+Either one meant the NEXT sale — a hand-typed walk-in that has no owner at all — got stamped
+`territoryOverride: "<previous store's owner>"`. Wrong name on a real sale record, invisible.
+Fixed by clearing `territoryClaim` at both sites, and `proximityHit`/`proximityAck` at the
+post-sale reset so an acknowledged neighbour cannot carry into the next new-outlet form.
+
+No audit check added for this one: the built bundle is minified, `setTerritoryClaim` is renamed
+to a single letter, so there is nothing stable to match on. Guarded by comments at both sites
+instead — the one place prose beats a check here.
+
+Rebuilt: **122 passed, 0 failed**. `graphify update .` run. Still nothing committed.
+
+### 2026-08-07 15:06 WIB
+Built all four territory/proximity fixes on Aldi's go-ahead. Audit 115 -> 122 checks, all pass;
+baseline was re-run BEFORE editing (115/115) so the 7 new checks are the only delta. The trap is
+now encoded as check §9 rather than prose, because the prose version already failed: a comment
+warning against `confirm()` sat nine lines above a live one for weeks. First run of that check
+FAILED on its own explanation (the comments contain the banned words), so it strips comments and
+matches the CALL — the reason has to be allowed to live next to the code.
+Design decisions that should not be re-argued: territory is reported and stamped, never blocked;
+the stamp is written in BOTH the offline and online payloads or an offline sale would launder the
+crossing; the proximity acknowledgement stores the store NAME, not a boolean, so it cannot leak
+onto a different neighbour and needs no reset-on-close plumbing.
+Discovered and NOT fixed: 58 more `window.confirm(` calls across 16 other files — logged above.
+`graphify update .` run (516 nodes, 859 edges). Nothing committed; working tree is dirty.
+
+### 2026-08-07 14:55 WIB
+Territory-block question CLOSED on the reasoning side: no hard block. Aldi's own two answers
+settled it (recorded verbatim in WAITING ON ALDI above) — ranking carries no pay, and he runs
+under 100 salesmen who are meant to cover for each other. Three fixes explained to him in plain
+English and awaiting a yes: (1) delete the `window.confirm` at `:427`, reuse the `setRevisitToday`
+red-bar pattern so the claim is shown, not asked; (2) stamp the saved sale with
+`territoryOverride: <assignedAgent>` — one field, makes every crossing permanently auditable;
+(3) deliberately build nothing else (no PIN — shared within a week at that headcount).
+UNVERIFIED, does not change the fixes: whether a credit sale crossing territory lands on the
+seller's or the store owner's ledger. Settle with `graphify explain "debtInfo transaction agentId"`.
+Also spotted, out of scope: `src/.claude/worktrees/` contains three full app copies INSIDE `src/`,
+so every grep returns 4x duplicates and the build may be compiling them. Needs its own cleanup.
+
+### 2026-08-07 (later)
+Aldi got install advice for 5 outside tools: omniroutes, claude-mem, headroom, claude-code-setup,
+task-observer. Checked live instead of guessing — `claude mcp list` shows headroom already
+installed and connected; `settings.json` shows every model call already routes through 9Router
+(`ANTHROPIC_BASE_URL=127.0.0.1:20128`); Claude Code already ships a native Monitor tool. Verdict:
+install none. omniroutes (github.com/diegosouzapw/OmniRoute) duplicates 9Router. claude-mem
+(github.com/thedotmack/claude-mem) duplicates the MEMORY.md + this file + A-Brain stack already
+running every session. task-observer duplicates the native Monitor tool and Alucard's
+`lessons.md`. claude-code-setup (official, `anthropics/claude-plugins-official`, read-only
+recommender) is the one real maybe — but `codeburn get_savings` shows 12 MCP servers already at
+low tool coverage and 22 unused skills; clean those before adding a tool whose job is to
+recommend more. Nothing installed, no repo files touched.
+
+### 2026-08-07 14:46 WIB
+Aldi asked whether hard-blocking a cross-territory sale is wise in real life. Answer: no, and the
+premise was wrong — reading `MerchantSalesView.jsx:390-431` showed the guard is STILL
+`window.confirm` (`:427`), so it is already a hard block and an invisible one on his browser. This
+note claimed otherwise; corrected above. Decision logic recorded so it is never re-argued: wrong
+*allow* is repairable by the existing store/debt transfer flow (`App.jsx:1607`), wrong *block*
+destroys a live cash sale and pushes people to share logins, which erases every attribution the
+block existed to protect. The identity check at `:426` is a substring compare (`"Adi"` vs
+`"Adikarya"`), wrong in both directions — hardening a gate on top of it multiplies the error.
+Recommendation is banner + `territoryOverride` stamp; not built, waiting on his two questions.
+Also found `:711` carries the identical `window.confirm` trap for the proximity check. Connectors
+question closed by him: leave them, only Chrome is connected.
+Nothing was edited in `src/` this turn — advice only.
 
 ### 2026-08-07 14:35 WIB
 Confirmed clearing the context cannot lose work: /clear empties the conversation only. Branch

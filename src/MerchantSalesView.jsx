@@ -147,7 +147,15 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
     /* null when the store has not been visited today. Otherwise 'me', or the name of whoever
        claimed it — shown as a banner rather than a dialog. See handleCustomerSelect. */
     const [revisitToday, setRevisitToday] = useState(null);
-    const [manualOverride, setManualOverride] = useState(false); 
+    /* Name of the agent this store belongs to, when it is not the one selling. Drives the
+       banner AND the territoryOverride stamp on the saved sale. Null on a normal sale. */
+    const [territoryClaim, setTerritoryClaim] = useState(null);
+    /* Proximity duplicate guard for a NEW outlet. proximityHit is what to show; proximityAck
+       holds the store NAME he already accepted as a different building, so an acknowledgement
+       can never leak onto a different neighbour and needs no reset plumbing. See validateNoo. */
+    const [proximityHit, setProximityHit] = useState(null);
+    const [proximityAck, setProximityAck] = useState(null);
+    const [manualOverride, setManualOverride] = useState(false);
     const [bypassState, setBypassState] = useState({ status: 'idle', id: null, photo: null });
     
     const [showNooModal, setShowNooModal] = useState(false);
@@ -420,15 +428,32 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
             ? (iVisitedIt ? 'me' : (visitedBy || 'another agent'))
             : null);
 
+        /* TERRITORY IS REPORTED, NEVER BLOCKED — and this was the last window.confirm in the
+           file. The comment directly above already condemned dialogs for the revisit case, but
+           this branch kept one: a browser with "prevent this page from creating more dialogues"
+           ticked answers confirm() false without drawing anything, so the next line refused the
+           selection and picking another agent's store did nothing at all, with no message. The
+           guard failed closed and invisibly, which is the worst way for a guard to fail.
+
+           Blocking is also the wrong policy here, decided 2026-08-07: the ranking carries no
+           pay, so a block defends a motivation game rather than money; salesmen are meant to
+           cover each other's routes, which a block punishes; and the owner test below is a
+           SUBSTRING compare ("Adi" matches "Aditya"), so across ~100 salesmen it would refuse
+           real owners routinely while a determined intruder walks straight through. A refused
+           sale in front of a paying customer cannot be undone and teaches people to share
+           logins — which destroys every attribution the block was supposed to protect. A
+           wrongly-allowed sale is repairable by the existing store/debt transfer flow.
+
+           So: report it here, stamp it on the sale (see proofPayload.territoryOverride), and
+           let the sale happen. A wall can be walked around; a record cannot. */
         const currentAgentName = user?.displayName || user?.email?.split('@')[0] || 'Admin';
-        const assignedAgent = cust.assignedAgent;
-        if (assignedAgent && assignedAgent !== 'Unassigned') {
-            const isAssignedToMe = currentAgentName.toLowerCase().includes(assignedAgent.toLowerCase()) || assignedAgent.toLowerCase().includes(currentAgentName.toLowerCase());
-            if (!isAssignedToMe && !window.confirm(`⚠️ TERRITORY OVERRIDE WARNING!\n\nTarget "${cust.name}" is officially assigned to ${assignedAgent.toUpperCase()}.\n\nAre you sure you want to intercept their target?`)) {
-                // same as above: refuse the selection, keep his typing
-                setShowCustomerDropdown(false); return;
-            }
-        }
+        const assignedAgent = String(cust.assignedAgent || '').trim();
+        const unowned = !assignedAgent || assignedAgent.toLowerCase() === 'unassigned';
+        // NB: "".includes("") is true, so the unowned case must short-circuit before the compare.
+        const isAssignedToMe = unowned ||
+            currentAgentName.toLowerCase().includes(assignedAgent.toLowerCase()) ||
+            assignedAgent.toLowerCase().includes(currentAgentName.toLowerCase());
+        setTerritoryClaim(isAssignedToMe ? null : assignedAgent);
 
         setCustomerName(cust.name);
         setShowCustomerDropdown(false);
@@ -455,8 +480,11 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
     };
 
     const handleManualCustomerType = (e) => {
-        setCustomerName(e.target.value); setShowCustomerDropdown(true); setSelectedCustomerInfo(null); 
+        setCustomerName(e.target.value); setShowCustomerDropdown(true); setSelectedCustomerInfo(null);
         setLockedTier('Ecer'); updateCartPricing('Ecer'); setManualOverride(true); setBypassState({ status: 'idle', id: null, photo: null });
+        // Typing over a chosen store un-chooses it, so the owner name must go too - else the
+        // red bar and the territoryOverride stamp survive onto a hand-typed walk-in.
+        setTerritoryClaim(null);
     };
 
     const updateCartPricing = (tier) => {
@@ -708,7 +736,17 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                 }
             });
         }
-        if (tooClose && !window.confirm(`⚠️ EXTREME PROXIMITY WARNING!\n\nYou are standing only ${Math.round(tooCloseDistance)} meters away from an existing store: "${tooClose.name}".\n\nAre you sure this is a different building/customer?`)) return false;
+        /* Same failure as the territory guard, same fix. This was a window.confirm, so on a
+           browser with dialogs suppressed it returned false without drawing anything and
+           registering a new outlet near an existing one failed silently, with no message and
+           no reason. Now the hit is rendered inside the NOO modal and he clears it with a real
+           button. proximityAck stores the NAME he accepted, so the acknowledgement cannot leak
+           onto a different neighbour later and no reset-on-close plumbing is needed. */
+        if (tooClose && proximityAck !== tooClose.name) {
+            setProximityHit({ name: tooClose.name, metres: Math.round(tooCloseDistance) });
+            return false;
+        }
+        setProximityHit(null);
         return true;
     };
 
@@ -866,7 +904,11 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
             const proofPayload = {
                 photoData: finalPhotoData, latitude: agentLocation?.latitude || 0, longitude: agentLocation?.longitude || 0,
                 timestamp: new Date().toISOString(), tempoDays: dbMethod === 'Titip' ? tempoDays : null,
-                isRetur: isReturMode, type: txType
+                isRetur: isReturMode, type: txType,
+                /* Whose store this really was, when it was not this salesman's. Null on a normal
+                   sale. This single field replaced the territory block: nobody is stopped, but
+                   every crossing is on the record permanently and can be listed later. */
+                territoryOverride: territoryClaim || null
             };
 
             const trueAgentName = await onProcessSale(finalCust, dbMethod, finalCart, newStorePayload, proofPayload);
@@ -1055,9 +1097,14 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
             window.dispatchEvent(new CustomEvent('trigger-telemetry-ping'));
 
             setCart([]); setCustomerName(""); setLockedTier(null); setSelectedCustomerInfo(null);
-            setGpsStatus('idle'); setAgentLocation(null); setTxProofPhoto(null); 
+            setGpsStatus('idle'); setAgentLocation(null); setTxProofPhoto(null);
             setIsReturMode(false); setManualOverride(false); setReturType('EXCHANGE');
             setNooForm({ phone: '', address: '', requestedTier: defaultNooTier, photoUrl: null });
+            // territoryClaim is only ever written by handleCustomerSelect. A walk-in sale
+            // typed by hand never calls it, so without this line the PREVIOUS customer's
+            // owner name stays in state and stamps territoryOverride on an innocent sale.
+            // proximityAck is cleared for the same reason: it must not carry to the next NOO.
+            setTerritoryClaim(null); setProximityHit(null); setProximityAck(null);
             // The merchant has no permanent space on screen - he shows up on a committed
             // deal and leaves, borrowing CapybaraMascot's slide-in/out. Deal commit ONLY:
             // never on add-to-cart, so a 15-line basket stays silent until it is paid.
@@ -2187,6 +2234,23 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                 </div>
                             )}
 
+                            {/* Territory: shown, never enforced — see handleCustomerSelect for why
+                                the block was removed. This bar stays up for as long as the customer
+                                is selected, which is the point: a dialog is gone in half a second,
+                                and a suppressed dialog was never seen at all. */}
+                            {territoryClaim && (
+                                <div className="mb-3 border-l-[3px] border-[#b4524a] bg-[#1e1512] px-3 py-2">
+                                    {/* No apostrophe in this heading on purpose — the audit matches
+                                        it as a literal in the built bundle, and a minifier is free
+                                        to re-quote and escape one, which would fail the check for
+                                        no real reason. */}
+                                    <div className="font-mono text-[9.5px] font-black uppercase tracking-[0.16em] text-[#b4524a] mb-1">Another agent handles this store</div>
+                                    <div className="font-mono text-[10px] leading-snug text-[#a39b90]">
+                                        Assigned to <span className="font-black uppercase text-[#e08c82]">{territoryClaim}</span>. Selling is allowed — this sale will be recorded as a territory override.
+                                    </div>
+                                </div>
+                            )}
+
                             {debtInfo && debtInfo.totalDebt > 0 && (
                                 <div className="mb-3 border-l-[3px] border-[#b4524a] bg-[#1e1512] px-3 py-2">
                                     <div className="font-mono text-[9.5px] font-black uppercase tracking-[0.16em] text-[#b4524a] mb-1">Owes</div>
@@ -2398,6 +2462,25 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                         </div>
                         
                         <div className="p-6 overflow-y-auto space-y-5 custom-scrollbar flex-1">
+                            {/* Proximity duplicate guard, rendered instead of the window.confirm
+                                that used to sit in validateNoo. Registration is refused only while
+                                this bar is on screen, so the refusal always has a visible reason
+                                and a visible way past it — the old dialog had neither. */}
+                            {proximityHit && (
+                                <div className="border-l-[3px] border-[#b4524a] bg-[#1e1512] px-3 py-3">
+                                    <div className="font-mono text-[9.5px] font-black uppercase tracking-[0.16em] text-[#b4524a] mb-1">Existing store {proximityHit.metres}m away</div>
+                                    <div className="font-mono text-[10px] leading-snug text-[#a39b90] mb-2.5">
+                                        You are standing next to <span className="font-black uppercase text-[#e08c82]">{proximityHit.name}</span>. Registering again would create a duplicate of it.
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => { setProximityAck(proximityHit.name); setProximityHit(null); }}
+                                        className="w-full min-h-[44px] bg-[#3e3226] hover:bg-[#5c4b3a] text-[#ff9d00] text-[10px] font-black uppercase tracking-widest py-2.5 rounded transition-colors"
+                                    >
+                                        This is a different building — continue
+                                    </button>
+                                </div>
+                            )}
                             <div>
                                 <label className="text-xs font-bold text-[#8b7256] uppercase tracking-widest block mb-1">Store Name</label>
                                 <input value={customerName} disabled className="w-full bg-black border border-[#3e3226] text-[#d4c5a3] p-3 rounded font-bold uppercase opacity-70" />

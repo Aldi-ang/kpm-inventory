@@ -2,7 +2,7 @@
 
 Everything designed for the terminal is now built. This is the list to walk, in order.
 
-**Before you start, run this.** It checks 115 things about the built app in one command and
+**Before you start, run this.** It checks 122 things about the built app in one command and
 takes seconds. If it fails, stop and send me the failure — no point testing by hand what a
 machine already says is broken.
 
@@ -30,6 +30,21 @@ Three tags I will act on differently:
 The UI collapsing you mentioned is almost always **UGLY at a particular width**. If you hit
 one, tell me the browser width and whether the sidebar was open — those two facts usually
 identify it immediately.
+
+---
+
+## Where you are — updated 2026-08-07
+
+| Group | State |
+|---|---|
+| A. The shelf | ✅ done |
+| B. The rail | ✅ done except **B2, B3** — those need your phone for GPS |
+| C. The customer brief | ⬅ **you are here.** C2 done (see below), C1 and C3–C6 left |
+| D. Money | not started |
+| E. The merchant | not started |
+| F. Phone | not started |
+| G. Nothing old was lost | not started |
+| H. Territory + duplicate outlets | ✅ H1 and H3 passed. **H2 left** — the one you asked about |
 
 ---
 
@@ -64,7 +79,8 @@ identify it immediately.
 | # | Do this | Expect |
 |---|---|---|
 | C1 | Choose a customer from the dropdown | It **sticks**. The name must not blank itself |
-| C2 | Choose a store you sold to today | A double-tap warning. Cancel it — your typing must survive |
+| C2 | Choose a store **you** sold to today | ✅ passed 2026-08-07. Gold bar, "Already sold here today". No pop-up, nothing to cancel — the old pop-up was deleted on purpose |
+| C2b | Choose a store **another agent** sold to today | Red bar, "Already secured today", names them. **You cannot test this** — needs a second salesman account. Skip it, I know it is untested |
 | C3 | Choose a customer who owes money | Red "Owes" block with the age in days |
 | C4 | Press "Same as last time" | Manifest fills with their last order |
 | C5 | Same, but a ware is now empty or low | It tells you what it dropped or clamped. It must never load stock you do not have |
@@ -120,6 +136,50 @@ These existed before the redesign. They must still work.
 | G7 | Sampling | Deploy Marketing Sample works |
 | G8 | Stand out of range of a store | Geofence blocks the sale; bypass request works |
 | G9 | Lite Mode on | Nothing animates, but hover still responds and the merchant still reads as solid |
+
+## H. Territory and duplicate outlets — built 2026-08-07
+
+Two rules changed here. Read this before testing the three items.
+
+**Selling into another salesman's store is allowed.** It is not blocked and will not be
+blocked. The app records the sale as a *territory override* — a note on the saved sale saying
+"this was someone else's store" — so you can see it later without anyone losing a live sale.
+
+**Nothing in this app uses a pop-up any more.** Your browser has "prevent this page from
+creating more dialogues" ticked, which makes pop-ups return "cancel" **without ever appearing
+on screen**. A guard built on one would block you silently. Everything is a bar on the page now.
+
+| # | Do this | Expect |
+|---|---|---|
+| H1 | Choose a store assigned to another salesman | ✅ passed 2026-08-07. Red bar names them, sale still completes |
+| H2 | **See "The H2 test, step by step" below** | The red bar disappears |
+| H3 | Register a new outlet while standing at an existing one | ✅ passed 2026-08-07. Red bar with the distance, plus a "This is a different building — continue" button |
+
+### The H2 test, step by step
+
+This is the one I explained badly. Here it is properly.
+
+**What it is checking.** The owner's name (ALEX) is held in the app's memory from the moment
+you pick their store. If that memory is not wiped afterwards, the *next* sale — a walk-in with
+no owner at all — gets saved with ALEX's name stamped on it. A false record, and nothing on
+screen would tell you.
+
+**Round 1 — after a finished sale**
+
+1. Pick a store assigned to another salesman. Red bar appears.
+2. Finish the sale normally.
+3. Now do **not** pick anything from the dropdown. Type a made-up name straight into the
+   customer box, e.g. `WARUNG TEST 99`.
+4. **Expect: no red bar.** If ALEX's red bar is still there, that is the bug — tell me.
+
+**Round 2 — without finishing a sale**
+
+1. Pick that same store again. Red bar appears.
+2. Type over the name in the box — replace it with `WARUNG TEST 99`.
+3. **Expect: the red bar disappears as you type.** It must not wait for anything.
+
+Round 1 and round 2 are two different paths through the code. Both were broken, both were
+fixed, so please do both — one passing does not prove the other.
 
 ---
 

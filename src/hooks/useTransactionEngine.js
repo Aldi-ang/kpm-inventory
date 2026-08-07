@@ -82,6 +82,9 @@ export default function useTransactionEngine({
                     agentId: currentAgentProfileId || 'ADMIN',
                     agentName: finalAgentName,
                     tempoDays: proofPayload?.tempoDays || null,
+                    // Whose store it really was, when the seller was not its assigned agent.
+                    // Null on a normal sale. Must stay in step with the online batch below.
+                    territoryOverride: proofPayload?.territoryOverride || null,
                     forensicData: forensicData, // 🚀 Bind forensic root for Ghost Ledger
                     deliveryProof: proofPayload ? {
                         photo: proofPayload.photoData,
@@ -243,6 +246,10 @@ export default function useTransactionEngine({
                 agentId: currentAgentProfileId || 'ADMIN',
                 agentName: finalAgentName,
                 tempoDays: proofPayload?.tempoDays || null,
+                // Whose store it really was, when the seller was not its assigned agent.
+                // Null on a normal sale. Must stay in step with the offline payload above —
+                // a sale made offline and one made online have to carry the same evidence.
+                territoryOverride: proofPayload?.territoryOverride || null,
                 forensicData: forensicData, // 🚀 Bind forensic root for real-time Firebase sync
                 deliveryProof: proofPayload ? {
                     photo: proofPayload.photoData,
