@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-07 22:55 WIB** · branch `phase0-solid-ground` · last commit `149c890`
+**Updated: 2026-08-07 23:05 WIB** · branch `phase0-solid-ground` · last commit `149c890`
 
 **Aldi clears the session every time he starts a new one. This file is the ONLY thing that
 survives. If it is not current, the work is lost.** Write it before context runs low, not after.
@@ -191,7 +191,33 @@ are never worth rescuing.
 
 ## LOG — newest first, older entries live in `git log` for this file
 
-### 2026-08-07 22:5x WIB — 🔴 THE CONTEXT METER IS BROKEN. FIX THIS FIRST.
+### 2026-08-07 23:0x WIB — 🔴 THE LIMIT THAT MATTERS IS THE 5-HOUR PLAN QUOTA, NOT CONTEXT
+
+**Read this before acting on the entry below it, which chases the wrong thing.**
+
+Aldi, verbatim: *"its not the context window, clear wont fix the problem, im talking about the
+5 hours limit - plan usage limit, dont forget your habits."* He was at **94%** of that.
+
+**The distinction, and why it changes everything:**
+- **Context window** = how full this conversation is. `/clear` empties it, free. `context-watch.mjs`
+  measures this.
+- **5-hour plan usage limit** = a rolling quota on his subscription. **`/clear` does NOT help.**
+  When it runs out he is locked out entirely, mid-work, screen stuck.
+
+**`context-watch.mjs` CANNOT see plan usage.** It reads the transcript file, which only describes
+context. So the 93% tier added earlier today measures the wrong quantity and will never protect
+him from the thing that actually stops him. Do not "fix the denominator" and think it is solved —
+that was a wrong diagnosis made under time pressure and he corrected it.
+
+**So the habit cannot be automated the way it was attempted.** Claude has no way to read plan
+usage. Aldi can see it; Claude cannot. Until a mechanism is found, the rule is:
+- **When he says a percentage, treat it as the plan limit and act immediately** — write
+  `PROGRESS.md`, commit, stop taking new work. Do not ask him to `/clear`; it will not help.
+- Keep committing after every landed piece, so a lockout never costs more than the current step.
+- Worth investigating next session: the `explain-usage` skill and whether any command surfaces
+  plan usage to Claude. If nothing does, say so plainly and keep the manual rule.
+
+### 2026-08-07 22:5x WIB — the context meter is ALSO broken, but this is NOT what blocked him
 
 **Aldi hit 92% and no warning ever fired — not once, all session.** The hook IS registered
 (`.claude/settings.json` → UserPromptSubmit → `context-watch.mjs`) and the script itself works;
