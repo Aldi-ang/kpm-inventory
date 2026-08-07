@@ -22,7 +22,12 @@ if (!tp || !fs.existsSync(tp)) process.exit(0);
 let WINDOW = 200_000;
 try {
   const s = JSON.parse(fs.readFileSync('C:/Users/ASUS/.claude/settings.json', 'utf8'));
-  if (Number.isFinite(s.autoCompactWindow)) WINDOW = s.autoCompactWindow;
+  /* Clamped, and that clamp is the whole point. Aldi ran `/autocompact 1000k`, so this setting
+     read 1,000,000 — five times the real usable context. Every tier below then computed about a
+     fifth of the truth and stayed silent through an entire session while the UI correctly showed
+     92%. A meter that under-reports is worse than no meter, because it is trusted. The setting
+     can raise the auto-compact point; it cannot make the context window bigger than it is. */
+  if (Number.isFinite(s.autoCompactWindow)) WINDOW = Math.min(s.autoCompactWindow, 200_000);
 } catch { /* default stands */ }
 
 const lines = fs.readFileSync(tp, 'utf8').split('\n');
@@ -81,7 +86,9 @@ const head = `[context-watch] ~${k(used)} of ${k(WINDOW)} used (${pct}%), ~${k(l
 if (pct >= 93) {
   console.log(`${head}
 
-🔴 END OF WINDOW. Aldi's standing rule fires here. Do this in THIS order, nothing else:
+🔴 END OF CONTEXT WINDOW. This is the CONVERSATION filling up — it is NOT the 5-hour plan
+quota, which nothing here can measure and which /clear does not help. Do not confuse the two
+when talking to Aldi. Do this in THIS order, nothing else:
 
 1. Write .claude/PROGRESS.md NOW, before any other tool call. Not a summary of this reply —
    the real state: what landed, what is half-done, what the next session must not re-derive,
