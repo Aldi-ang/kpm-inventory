@@ -1,9 +1,17 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-07 19:24 WIB** · branch `phase0-solid-ground` · last commit `87156f8`
+**Updated: 2026-08-07 20:14 WIB** · branch `phase0-solid-ground` · last commit `87156f8`
 
 **Aldi clears the session every time he starts a new one. This file is the ONLY thing that
 survives. If it is not current, the work is lost.** Write it before context runs low, not after.
+
+**STANDING RULE, his instruction 2026-08-07: stop at 95-98% usage and write this file before the
+window runs out.** When usage dies mid-task the screen sticks, he force-retries, and the next
+session finds no note covering the work that was in flight — so it re-derives everything. That
+re-derivation is the cost, not the stopped turn. **But do not wait for 95% to start writing:** a
+note begun at 97% may not fit. Write this file after every landed piece of work; the 95-98% halt
+is the backstop, not the mechanism. Never begin something at high usage that cannot be finished
+and committed inside it. Recommend `/clear` (free), never `/compact` (bills the whole window).
 
 This file is printed into Claude automatically at the start of every session, so the
 last state is already in front of him before he touches a tool. He must never go
@@ -152,6 +160,28 @@ are never worth rescuing.
 ---
 
 ## LOG — newest first, older entries live in `git log` for this file
+
+### 2026-08-07 20:1x WIB — duplicate finder shipped, plus an 8-bit test logger
+
+**Duplicate finder — committed.** `src/utils/findDuplicates.js` is a pure module (no React, no
+Firestore) so `src/config/findDuplicates.selfcheck.mjs` can run the real logic against fixtures —
+**16 checks, all passing**. Two stores match if their names agree once punctuation and spacing
+stop mattering, OR if they sit within 40m; union-find joins the passes so a chain groups together.
+Members sort oldest first across all three date shapes the app writes. Admin button + report panel
+in `CustomerManager.jsx`. **No delete or merge control anywhere in it, deliberately** — audit group
+12 fails the build if one appears, if the finder gains database access, or if it sorts its input in
+place. Audit **138 → 143**.
+
+**Test logger artifact:** https://claude.ai/code/artifact/435e77ee-9f1f-4786-a1df-050156596016
+8-bit CRT quest log holding the real `SALES_TERMINAL_TEST_LIST.md` items. Good/Broken/Weird per
+test, notes, downscaled photo attachments, localStorage persistence, WebAudio bleeps, and a COPY
+REPORT button producing markdown he pastes back into chat. A and B and the three confirmed items
+come pre-marked so the meter shows the true picture. **Told him plainly there is no capability
+that lets a published page send data back to Claude by itself** — `downloads` and `mcp` are the
+only two available and neither does that, so copy-paste is the mechanism, not a shortcut.
+
+Redeploy by republishing the same scratchpad path from this conversation, or pass that URL as
+`url` from any other conversation — otherwise a new URL is minted.
 
 ### 2026-08-07 19:5x WIB — the tier-spelling fix is BUILT (Aldi: "you can do both fix bro")
 
