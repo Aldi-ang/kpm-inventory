@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-07 13:56 WIB** · branch `phase0-solid-ground`
+**Updated: 2026-08-07 14:07 WIB** · branch `phase0-solid-ground`
 
 This file is printed into Claude automatically at the start of every session, so the
 last state is already in front of him before he touches a tool. He must never go
@@ -24,6 +24,8 @@ If this file and the repo disagree, **the repo wins, and fixing this file is job
 | The resume brief (traps, locked decisions) | same memory folder → `project_kpm_merchantsales_redesign_brief.md` |
 | A-Brain vault (decisions, incidents, backlog) | `D:\APP DEVELOPMENT\kpm inventory main FILES\A-Brain` |
 | Code knowledge graph — query, do not grep | `graphify-out/` |
+| Alucard's rules (edit-denied — lift in settings first) | `C:\Users\ASUS\.claude\skills\alucard\SKILL.md` |
+| The Stop hook that keeps this file honest | `.claude/check-progress.mjs` |
 | Next-stop design artifact | `https://claude.ai/code/artifact/8feebaa4-f8a2-414d-a4a6-2c642a27af48` |
 
 ## First command of every session
@@ -70,6 +72,19 @@ data in the wrong folder. This file exists to end that.
 ---
 
 ## LOG — newest first, older entries live in `git log` for this file
+
+### 2026-08-07 14:07 WIB
+Built this file and the two hooks that keep it true (`d403de9`): a Stop hook that blocks
+any turn which changed the project while leaving this note stale, and a SessionStart hook
+that prints it before anything else. Then added the same habit to Alucard §1 (never search
+for progress — it is already printed) and §11 (write the note before closing, including
+after a conversation that only *decided* something, which the hook cannot detect). Aldi's
+`Edit()` deny on `alucard/SKILL.md` was lifted for that edit and **restored afterwards** —
+§8 of that file asserts the rule exists, so leaving it off would make his advisor lie.
+
+Also settled: starting a NEW session and typing `/clear` are equivalent — both wipe context
+to zero and both print this file. And "continue with the last work" is a *search* prompt;
+with this file loaded he can name the task directly instead.
 
 ### 2026-08-07 13:56 WIB
 Measured where tokens actually go by parsing the session transcripts. Found the old
