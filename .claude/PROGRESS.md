@@ -33,7 +33,8 @@ it never happens twice. Answer, then ask which of the waiting items he wants to 
 | What | Exact path |
 |---|---|
 | The sales terminal (all UI work lands here) | `src/MerchantSalesView.jsx` |
-| The 115-check audit — run before anything | `src/config/integration.audit.mjs` |
+| The 129-check audit — run before anything | `src/config/integration.audit.mjs` |
+| The in-page confirm that replaced every dialog | `src/components/ConfirmGate.jsx` |
 | Money & logic self-checks | `src/config/*.selfcheck.mjs`, `src/hooks/useSound.selfcheck.mjs` |
 | Aldi's 51-item manual test list | `SALES_TERMINAL_TEST_LIST.md` (repo root) |
 | Standing rules (auto-loaded each session) | `.claude/session-start-context.md` |
@@ -53,14 +54,14 @@ it never happens twice. Answer, then ask which of the waiting items he wants to 
 npm run build; node src/config/integration.audit.mjs
 ```
 
-115 checks over the built output. One turn, small result. If it passes, the terminal is
+129 checks over the built output. One turn, small result. If it passes, the terminal is
 intact — do **not** re-read source to confirm it.
 
 ---
 
 ## NOW
 
-Sales terminal redesign is **built and passing 115/115**. Design work is CLOSED.
+Sales terminal redesign is **built and passing 129/129**. Design work is CLOSED.
 Aldi is hand-testing it group by group and reporting **BROKEN / UGLY / AWKWARD**.
 He got through groups A and B; four fixes from that pass are already committed.
 
@@ -77,7 +78,8 @@ data in the wrong folder. This file exists to end that.
   12 prompts (small, and they are the ones that actually break), leave the 180 alerts for a later
   sweep or a toast. Needs his yes — 192 call sites is not something to start unasked.
 
-- 🔴 **Other-agent store block — recommendation given, waiting on his go-ahead.** The note used
+- ✅ **Other-agent store block — DONE, committed `f2060f1`. Kept only for the reasoning; nothing
+  here is still an ask.** The note used
   to say this was already a loud warning. **It was wrong; the repo won.** `MerchantSalesView.jsx:427`
   is still `window.confirm`, so on his browser it returns false silently and line 429 refuses the
   selection — an invisible hard block, the exact failure the comment at `:408` warns about nine
@@ -107,13 +109,12 @@ data in the wrong folder. This file exists to end that.
   not money. ~100 salesmen + a substring name compare at `:426` = false blocks on real owners are
   routine, not rare (`Adi`/`Adit`/`Aditya`). And a block on covering another's route contradicts
   his own stated goal of salesmen working together. He agreed; waiting only on "build it? yes/no".
-- 🔴 **58 more `window.confirm(` calls in 16 OTHER files — same silent-failure bug, untouched.**
-  Found while fixing the terminal. Worst: `App.jsx` (18), `components/CustomerManager.jsx` (8),
-  `MapMissionControl.jsx` (6), `components/BranchWarehouseManager.jsx` (5), `FleetCanvasManager.jsx`
-  (4), `StockOpnameView.jsx` (3), `RestockVaultView.jsx` (3), then 9 files with 1–2 each. Every one
-  of them answers *false* invisibly on his browser, so each is a feature that silently does nothing.
-  NOT fixed — out of scope for this pass and 16 files is its own job. Needs his go-ahead as a
-  separate task, probably one file at a time starting with `App.jsx`.
+- ✅ **58 `window.confirm(` calls in 16 other files — DONE, committed `5091e25`.** All route
+  through `src/components/ConfirmGate.jsx` now. Zero remain in `src/`; audit group 10 fails the
+  build if one comes back, if the host stops being mounted in `main.jsx`, if a caller forgets the
+  import, or if the gate stops reaching the built bundle. The gate itself is browser-tested (six
+  behaviours, listed in the LOG). **The 58 sites in their real screens are NOT tested** — the app
+  is behind a master password, so no real screen was ever reached. Do not report them as verified.
 - ✅ **Retest HQ 1 and HQ (RETAIL) 1** — they should select properly now.
 - ✅ **Resume the test list at group C**, then D–G. B2/B3 need his phone (GPS).
   C2 needs a second salesman account, which he does not have — skip and report.
