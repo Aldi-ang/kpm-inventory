@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-07 16:34 WIB** · branch `phase0-solid-ground` · last commit `0c8f1d9`
+**Updated: 2026-08-07 16:34 WIB** · branch `phase0-solid-ground` · last commit `5091e25`
 
 **Aldi clears the session every time he starts a new one. This file is the ONLY thing that
 survives. If it is not current, the work is lost.** Write it before context runs low, not after.
@@ -149,7 +149,7 @@ instead of asking the browser. `ConfirmHost` is mounted in `main.jsx` as a **sib
 not a child, so no screen can unmount it. All 58 call sites across 16 files converted; 11 enclosing
 functions needed `async`, found in one Babel AST pass rather than one build error at a time.
 Audit **122 → 129**, all passing. `.gitignore` now covers the dated graphify snapshot folders.
-Commits: `0c8f1d9` (this), `f2060f1` + `12aab20` (the terminal work before it).
+Commits: `5091e25` (this), `f2060f1` + `12aab20` (the terminal work before it).
 
 **Tested in the browser, by me, against the running dev server — six behaviours, all pass:**
 draws at all · destructive wording renders red `#b4524a` and plain wording gold `#ff9d00` ·
