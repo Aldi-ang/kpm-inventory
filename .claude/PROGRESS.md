@@ -1,7 +1,7 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-08 19:40 WIB** · branch `phase0-solid-ground` · last code commit `23b4fda`
-(quest log `3c8e763`)
+**Updated: 2026-08-08 20:05 WIB** · branch `phase0-solid-ground` · last code commit `23b4fda`
+(quest log locked after his round-2 report)
 
 **Aldi clears the session every time he starts a new one. This file is the ONLY thing that
 survives. If it is not current, the work is lost.** Write it before context runs low, not after.
@@ -80,6 +80,18 @@ His words: *"i want to change that cheap ass access granted animation we should 
   is done — and expect other green to fall out of it.
 - ❓ **Ask him before designing:** does the 2.4s bar gate the actual unlock, or is it pure
   waiting? If it is pure waiting, the best animation may be a much shorter one.
+
+**🔁 STANDING RULE, his instruction 2026-08-08:** *"update the quest log everytime i give u copy
+reports, if the test already done just lock it"*. **Every COPY REPORT he pastes = do this, in
+this order, without being asked:**
+1. Read the report, fix or file what it found.
+2. **Reopen every test whose behaviour you changed** — new `RETEST_TAG` and a new id list in
+   `.claude/kpm-test-quest.html`. **NEVER reuse a tag.** Keep his notes and screenshots; only
+   the verdict is cleared. A test you changed but left locked is one he will never re-run.
+3. Leave BROKEN and WEIRD visible; only `good` and `skip` lock.
+4. Republish to the SAME artifact URL, run the scratchpad quest-log checks, commit.
+The lock is applied at report time, never mid-round — locking mid-round is what made his
+mis-clicked tickbox expensive.
 
 **JOB 5 — what is still open from his TWO test reports. His words kept.**
 Round 2 (35/64, 31 good) confirmed the Firestore fix: **T1–T5 and T8 all GOOD**. Motion, sound,

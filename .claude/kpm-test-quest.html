@@ -335,8 +335,13 @@ function load(){
      re-run the very thing that just changed. Clear the verdict once, keep the note: the note
      is his own words about what he saw, and that is worth more than the vote.
      Adding another round? New tag, new id list. Never reuse a tag. */
-  const RETEST_TAG='report-2026-08-08';
-  const RETEST=['T1','T2','T3','T4','T6','T8','T9','T10'];
+  const RETEST_TAG='round2-2026-08-08';
+  /* Round 2. Every one of these had the thing he complained about changed underneath it, so his
+     answer describes an app that is gone — and with locking now on, a stale GOOD would be
+     hidden and never re-run. T1/T3/T5/T8 got the motion and sound he asked for four times over,
+     T9 lost most of its gold, T10's real cause was in the mascot rather than in App.
+     T2 and T4 are untouched and keep their pass: they lock. */
+  const RETEST=['T1','T3','T5','T8','T9','T10'];
   if(saved){
     try{
       if(localStorage.getItem(KEY+'-retest')!==RETEST_TAG){
@@ -435,12 +440,18 @@ const openGroups = new Set(TESTS.slice(0,2).map(g=>g.g));
    list of what is actually wrong. Aldi asked for this as "test that u have been confirmed and
    fix" — so a pass and an untestable both go quiet, and a problem stays on screen. */
 const clearedVerdict = v => v==='good' || v==='skip';
-/* DEFAULT OFF, on his instruction: "dont locked the answer until i give u the copy reports
-   because i just accidently press the wrong tickbox". With hiding on, one mis-clicked verdict
-   makes the row vanish on the spot and the only way back is a button in the bottom bar — so a
-   slip costs him the thing he was looking at. Nothing hides until he turns this on himself.
-   Do NOT flip this default back without him asking. */
-let hideCleared = localStorage.getItem(KEY+'-hide') === 'on';
+/* DEFAULT ON since his 2026-08-08 report — his standing instruction: "update the quest log
+   everytime i give u copy reports, if the test already done just lock it".
+
+   It was off for one round, because with hiding on a mis-clicked verdict makes the row vanish
+   on the spot: "i just accidently press the wrong tickbox". That risk has not gone away, so the
+   button in the bottom bar stays, and the rule is that the lock is applied AT REPORT TIME —
+   after he has sent a COPY REPORT and the tests that changed have been reopened below. Locking
+   mid-round is what made the mis-click expensive.
+
+   New storage key deliberately: the old one may hold an 'off' he set during that round, and
+   reusing it would silently ignore the instruction he just gave. */
+let hideCleared = localStorage.getItem(KEY+'-hide2') !== 'off';
 
 function render(){
   const root=document.getElementById('groups'); root.innerHTML='';
@@ -634,7 +645,7 @@ const clearedBtn=document.getElementById('cleared');
 const paintClearedBtn=()=>{ clearedBtn.textContent='👁 Cleared: '+(hideCleared?'Hidden':'Shown'); };
 clearedBtn.onclick=()=>{
   hideCleared=!hideCleared;
-  localStorage.setItem(KEY+'-hide', hideCleared?'on':'off');
+  localStorage.setItem(KEY+'-hide2', hideCleared?'on':'off');
   paintClearedBtn(); render(); bleep(hideCleared?520:660,80);
 };
 paintClearedBtn();
