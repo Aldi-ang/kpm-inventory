@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-09 03:00 WIB** · branch `phase0-solid-ground` · last code commit `139a15c`
+**Updated: 2026-08-09 03:15 WIB** · branch `phase0-solid-ground` · last code commit `139a15c`
 (quest log locked after his round-2 report)
 
 **Aldi clears the session every time he starts a new one. This file is the ONLY thing that
@@ -80,6 +80,16 @@ His words: *"i want to change that cheap ass access granted animation we should 
   is done — and expect other green to fall out of it.
 - ❓ **Ask him before designing:** does the 2.4s bar gate the actual unlock, or is it pure
   waiting? If it is pure waiting, the best animation may be a much shorter one.
+
+**✅ D3 AND E7 PASS — second test cycle 2026-08-09 03:10, cleaned up the same way.**
+| Test | Result | Evidence |
+|---|---|---|
+| **D3** change packing, come back | **GOOD** | packing edited 10/20/4 → 5/10/2 in the vault. Save strip read *"1 Karton = 100 Bks · 1 Bal = 50 Bks"*, and the terminal's rate line then read `1 KARTON = 100 · 1 BAL = 50 · 1 SLOP = 5 BKS`. Total Rp 120.000 = 100 × Rp 1.200 Ecer |
+| **E7** commit a sale | **GOOD** | sprite `kpm-merch-deal`, `.kpm-merch-hold` coin present, **z-index 400 — above the receipt**, which is what the test asks |
+| **D6** printed nota | **HIS** | the nota is a print block; it is not in the DOM outside printing, so this needs him to press print and look. Audit G8 still asserts `!text-blue-900` survives in source |
+Cleanup verified again: transactions **105**, products **5**, no `ZZZ CLAUDE` anywhere.
+**T5 was deliberately NOT re-run — a wrong master PIN increments a strike counter (`Strike x/5`)
+and risks locking him out of his own app. Leave that one to him.**
 
 **✅ UI TESTS 2026-08-09 03:00 — T3, T4, T9, G9 all GOOD. No writes.**
 | Test | Result | Evidence |
