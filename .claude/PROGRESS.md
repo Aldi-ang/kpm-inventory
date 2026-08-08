@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-09 03:25 WIB** · branch `phase0-solid-ground` · last code commit `139a15c`
+**Updated: 2026-08-09 03:35 WIB** · branch `phase0-solid-ground` · last code commit `139a15c`
 (quest log locked after his round-2 report)
 
 **Aldi clears the session every time he starts a new one. This file is the ONLY thing that
@@ -87,6 +87,11 @@ cleared session cannot reach. **16 marked good with the evidence in each note** 
 T10, D1–D5, E1, E4, E5, E6, E7, G9. With locking on they vanish, leaving him ~22 that need his
 eyes, phone or printer.
 - **It only fills an EMPTY verdict.** Anything Aldi answered himself wins over a script.
+- **CLEARED now means ANSWERED, in any way** — his correction *"why the weird answer still not
+  locked?"*. BROKEN and WEIRD lock away too. An earlier rule hid only `good`/`skip` to keep the
+  problem list visible; that was Claude's reasoning, not his instruction. Problems stay findable
+  via COPY REPORT's "Needs attention" and a red **"N need fixing"** chip on the group header.
+  **Only an unanswered test stays on screen.**
 - **T5, T6, T7, T8, D6, E2, E3 are deliberately absent** — no evidence exists, and T5 would cost
   one of his five PIN tries.
 - **ORDER MATTERS AND IS COMMENTED IN THE FILE: retest clears, then verify fills.** Written the
