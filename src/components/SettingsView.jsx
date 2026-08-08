@@ -10,6 +10,7 @@ import CareerDevTools from './CareerDevTools';
 // 🚀 IMPORT THE MATRIX BRAIN
 import { CORPORATE_TIERS, ROLE_PERMISSIONS, DYNAMIC_TIERS, injectDynamicPermissions, CUSTOMER_EDIT_PERMS } from '../config/permissions';
 import { confirmAction, promptAction } from './ConfirmGate.jsx';
+import { notify } from './Toast.jsx';
 
 export default function SettingsView({
     user, userId, db, appId, isAdmin, isSystemOwner, userRole,
@@ -82,9 +83,9 @@ export default function SettingsView({
         try {
             await setDoc(doc(db, `artifacts/${appId}/users/${userId}/appSettings`, 'tierRules'), { rules: cleanedRules });
             setTierRules(cleanedRules);
-            alert("✅ Tier Automation Rules locked in!");
+            notify("✅ Tier Automation Rules locked in!");
         } catch(e) { 
-            alert("Failed to save settings."); 
+            notify("Failed to save settings."); 
         }
         setIsSavingTierRules(false);
     };
@@ -1052,7 +1053,7 @@ const PermissionMatrixEditor = ({ db, appId, userRole, userId }) => {
     };
 
     const handleDeleteTier = async (id) => {
-        if (!id.startsWith('CUSTOM_')) return alert("System core tiers cannot be deleted, but you can rename and move them!");
+        if (!id.startsWith('CUSTOM_')) return notify("System core tiers cannot be deleted, but you can rename and move them!");
         if (await confirmAction("Delete this custom tier? All remaining tiers will automatically shift up in rank.")) {
             const remaining = tiers.filter(t => t.id !== id);
             recalculateTierRanks(remaining);
@@ -1074,10 +1075,10 @@ const PermissionMatrixEditor = ({ db, appId, userRole, userId }) => {
             await setDoc(doc(db, `artifacts/${appId}/users/${userId}/appSettings`, 'permission_matrix'), payload, { merge: true });
             
             injectDynamicPermissions(matrix, fullTiers); 
-            alert("✅ Matrix & Hierarchy Deployed to Global Server!");
+            notify("✅ Matrix & Hierarchy Deployed to Global Server!");
         } catch (e) { 
             console.error(e);
-            alert("Matrix Deployment Failed."); 
+            notify("Matrix Deployment Failed."); 
         }
         setIsSaving(false);
     };

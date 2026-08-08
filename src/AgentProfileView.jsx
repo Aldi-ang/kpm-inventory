@@ -16,6 +16,7 @@ import { hasClearance, DYNAMIC_TIERS } from './config/permissions';
 import HallOfFameView from './HallOfFameView';
 import { savePhotoAndGetReference, deletePhotoFromStorage, formatNumber, parseGroupedNumber } from './utils/helpers';
 import { careerXP, DEFAULT_XP, totals, DEFAULT_BADGES, STAT_LABELS, BADGE_SOURCES, statLabel } from './config/career';
+import { notify } from './components/Toast.jsx';
 
 const DynamicIconMap = { Calendar, PackageOpen, Crown, Target, Zap, Trophy, Medal, Star, Flame, ShieldCheck, Truck, Activity, DollarSign, Award };
 
@@ -158,7 +159,7 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
             await setDoc(doc(db, `artifacts/${appId}/users/${userId}/settings`, 'progression'), { badges: editingBadges }, { merge: true });
             setBadgeData(editingBadges);
             setShowBadgeConfig(false);
-        } catch (error) { alert("Failed to save Achievements."); }
+        } catch (error) { notify("Failed to save Achievements."); }
     };
     const [isEditingBio, setIsEditingBio] = useState(false);
     const [bioText, setBioText] = useState('');
@@ -289,7 +290,7 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
                 newRanks[targetIdx].borderImage = croppedImageBase64;
                 setEditingRpgData({...editingRpgData, ranks: newRanks});
             }
-        } catch (e) { alert("Crop Failed: " + e.message); }
+        } catch (e) { notify("Crop Failed: " + e.message); }
         setCropImageSrc(null);
         setCropTarget(null);
         setIsUploading(false);
@@ -335,7 +336,7 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
             else await updateDoc(agentRef, { bio: bioText });
             if(activeAgent.id === 'master_owner') setOwnerProfile(prev => ({...prev, bio: bioText}));
             setIsEditingBio(false);
-        } catch(err) { alert("Failed to save record: " + err.message); }
+        } catch(err) { notify("Failed to save record: " + err.message); }
     };
 
     // 🚀 Phase 6: replaces the old `prompt("Set to 1000000000 to instantly hit Mythic")` override
@@ -344,9 +345,9 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
     // toward XP immediately, and actually calls logAudit (the old override recorded nothing at all).
     const handleGrantAward = async () => {
         const xpNum = Number(awardForm.xp);
-        if (!awardForm.title.trim()) return alert("Award needs a title.");
-        if (awardForm.reason.trim().length < 10) return alert("Reason needs at least 10 characters — a real explanation, not a placeholder.");
-        if (isNaN(xpNum) || xpNum === 0) return alert("XP must be a nonzero number.");
+        if (!awardForm.title.trim()) return notify("Award needs a title.");
+        if (awardForm.reason.trim().length < 10) return notify("Reason needs at least 10 characters — a real explanation, not a placeholder.");
+        if (isNaN(xpNum) || xpNum === 0) return notify("XP must be a nonzero number.");
         try {
             const careerRef = doc(db, `artifacts/${appId}/users/${userId}/career`, activeAgent.id);
             const awardRef = doc(collection(db, `artifacts/${appId}/users/${userId}/career/${activeAgent.id}/awards`));
@@ -359,7 +360,7 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
             await logAudit?.("AWARD_GRANTED", `Granted "${awardForm.title.trim()}" (${xpNum} XP) to ${activeAgent.name}: ${awardForm.reason.trim()}`);
             setShowAwardForm(false);
             setAwardForm({ title: '', reason: '', xp: '', cosmetic: '' });
-        } catch (err) { alert("Failed to grant award: " + err.message); }
+        } catch (err) { notify("Failed to grant award: " + err.message); }
     };
 
     const handleSaveRankConfig = async () => {
@@ -372,7 +373,7 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
             await setDoc(doc(db, `artifacts/${appId}/users/${userId}/settings`, 'progression'), finalData, { merge: true });
             setRpgData(finalData);
             setShowRankConfig(false);
-        } catch (error) { alert("Failed to save Rank Configuration."); }
+        } catch (error) { notify("Failed to save Rank Configuration."); }
     };
 
     // The frame each agent wears is THEIRS — stored on their own motorist doc, not on the rank.
@@ -393,7 +394,7 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
         // overwrite a deliberate choice made at the rank the agent is already standing on.
         try {
             await writeAgentBorder({ borderStyle: styleId, borderTier: stats.currentTier?.id || null });
-        } catch (e) { alert("Failed to save frame: " + e.message); }
+        } catch (e) { notify("Failed to save frame: " + e.message); }
     };
 
     const toggleWorkingDay = (dayIndex) => {

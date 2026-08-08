@@ -3,6 +3,7 @@ import { Package, ArrowRight, CheckCircle, XCircle, AlertCircle, Clock, Send, Tr
 import { collection, doc, onSnapshot, writeBatch, serverTimestamp, updateDoc, deleteDoc, runTransaction } from 'firebase/firestore';
 import { savePhotoAndGetReference, compressImageToBase64 } from '../utils/helpers';
 import { confirmAction } from './ConfirmGate.jsx';
+import { notify } from './Toast.jsx';
 
 export default function BranchWarehouseManager({ db, storage, appId, user, userRole, userLocation, isAdmin, masterUserId, globalInventory, triggerCapy, logAudit, appSettings }) {
     
@@ -74,7 +75,7 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
     }, [db, appId, masterUserId, isAreaAdmin, branchLocation]);
 
     const handleAddToCart = () => {
-        if (!selectedProduct || !requestQty || Number(requestQty) <= 0) return alert("Select a product and valid quantity.");
+        if (!selectedProduct || !requestQty || Number(requestQty) <= 0) return notify("Select a product and valid quantity.");
         const product = globalInventory.find(p => p.id === selectedProduct);
         if (!product) return;
 
@@ -95,7 +96,7 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
         if (requestCart.length === 0) return;
         
         if (!shippingAddress.jalan || !shippingAddress.kecamatan || !shippingAddress.kabupaten || !shippingAddress.provinsi) {
-            return alert("ALAMAT TIDAK LENGKAP!\n\nMohon lengkapi data alamat pengiriman (Jalan, Kecamatan, Kabupaten, Provinsi) agar HQ dapat memproses pengiriman.");
+            return notify("ALAMAT TIDAK LENGKAP!\n\nMohon lengkapi data alamat pengiriman (Jalan, Kecamatan, Kabupaten, Provinsi) agar HQ dapat memproses pengiriman.");
         }
 
         if (!await confirmAction(`Submit stock request to HQ for ${branchLocation}?`)) return;
@@ -130,7 +131,7 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
             setRequestCart([]);
             setIsProcessing(false);
         } catch (e) {
-            alert("Failed to submit request: " + e.message);
+            notify("Failed to submit request: " + e.message);
             setIsProcessing(false);
         }
     };
@@ -197,7 +198,7 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
             setIsProcessing(false);
         } catch(e) {
             console.error(e);
-            alert("Error confirming receipt: " + e.message);
+            notify("Error confirming receipt: " + e.message);
             setIsProcessing(false);
         }
     };
@@ -258,15 +259,15 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
             logAudit("STOCK_REJECT", `Rejected ${isFulfilling.id} from ${isFulfilling.branch}`);
             cancelFulfillment();
             setIsProcessing(false);
-        } catch (e) { alert("Failed to reject: " + e.message); setIsProcessing(false); }
+        } catch (e) { notify("Failed to reject: " + e.message); setIsProcessing(false); }
     };
 
     const handleShipItems = async () => {
         if (!isFulfilling) return;
         if (!courierName || !trackingNo || !packagePhotoFile || !senderName) {
-            return alert("INSUFFICIENT DATA!\n\nTo fulfill this shipment, you must provide:\n1. Nama Pengirim\n2. Logistic Company / Courier\n3. Nomor Resi (Tracking #)\n4. Proof of Sending Photo");
+            return notify("INSUFFICIENT DATA!\n\nTo fulfill this shipment, you must provide:\n1. Nama Pengirim\n2. Logistic Company / Courier\n3. Nomor Resi (Tracking #)\n4. Proof of Sending Photo");
         }
-        if (fulfillmentCart.some(item => Number(item.qty) <= 0)) return alert("Qty must be greater than 0.");
+        if (fulfillmentCart.some(item => Number(item.qty) <= 0)) return notify("Qty must be greater than 0.");
 
         if (!await confirmAction(`Confirm fulfillment & ship items to ${isFulfilling.branch}?\n\nThis will permanently deduct stock from HQ Master Vault.`)) return;
         setIsProcessing(true);
@@ -278,7 +279,7 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
                 const hqProduct = globalInventory.find(p => p.id === item.productId);
                 if (!hqProduct || (hqProduct.stock || 0) < item.qty) {
                     setIsProcessing(false);
-                    return alert(`INSUFFICIENT HQ STOCK!\n\nYou cannot ship this. HQ Vault is missing ${item.qty - (hqProduct?.stock || 0)} ${item.unit} of ${item.name}. Please edit the fulfillment qty.`);
+                    return notify(`INSUFFICIENT HQ STOCK!\n\nYou cannot ship this. HQ Vault is missing ${item.qty - (hqProduct?.stock || 0)} ${item.unit} of ${item.name}. Please edit the fulfillment qty.`);
                 }
             }
 
@@ -320,7 +321,7 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
             setIsProcessing(false);
         } catch (e) {
             console.error(e);
-            alert("Shipment failed: " + e.message);
+            notify("Shipment failed: " + e.message);
             setIsProcessing(false);
         }
     };
@@ -334,7 +335,7 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
 
     const handleSaveOrderEdit = async () => {
         if (!editingOrder) return;
-        if (!editCourier || !editTrackingNo || !editSenderName) return alert("Sender Name, Logistic Company, and Tracking No are required.");
+        if (!editCourier || !editTrackingNo || !editSenderName) return notify("Sender Name, Logistic Company, and Tracking No are required.");
         
         setIsProcessingOrder(true);
         try {
@@ -359,7 +360,7 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
             setEditingOrder(null);
             setIsProcessingOrder(false);
         } catch (e) {
-            alert("Failed to edit record: " + e.message);
+            notify("Failed to edit record: " + e.message);
             setIsProcessingOrder(false);
         }
     };
@@ -374,7 +375,7 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
             logAudit("STOCK_DELETE_LOG", `Admin deleted request ${orderId}`);
             setIsProcessing(false);
         } catch(e) {
-            alert("Failed to delete record: " + e.message);
+            notify("Failed to delete record: " + e.message);
             setIsProcessing(false);
         }
     };

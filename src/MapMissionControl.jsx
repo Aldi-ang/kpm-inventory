@@ -15,6 +15,7 @@ import { doc, collection, getDocs, setDoc, deleteDoc, updateDoc, writeBatch } fr
 import { commitInChunks, convertToBks, formatRupiah } from './utils/helpers';
 import { loadBorderCache, saveBorderCache, clearBorderCache } from './utils/borderCache';
 import { confirmAction, promptAction } from './components/ConfirmGate.jsx';
+import { notify } from './components/Toast.jsx';
 import MarkerClusterGroup from 'react-leaflet-cluster'; // 🚀 INJECTED SUPERCLUSTER ENGINE
 
 // 🚀 GOOGLE MAPS STYLE: THE SMART AVATAR ENGINE
@@ -574,7 +575,7 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
                 await deleteDoc(doc(db, `artifacts/${appId}/users/${userId}/mapSettings`, `bnd_${id}`));
             } catch (e) {
                 console.error("Failed to delete boundary:", e);
-                alert("Database error: Could not delete this boundary. Only the Company Owner can edit map boundaries.");
+                notify("Database error: Could not delete this boundary. Only the Company Owner can edit map boundaries.");
             }
         }
     };
@@ -591,7 +592,7 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
                 await commitInChunks(db, writeBatch, operations);
             } catch (e) {
                 console.error("Failed to wipe all boundaries:", e);
-                alert("Database error: Could not delete all borders. Only the Company Owner can edit map boundaries.");
+                notify("Database error: Could not delete all borders. Only the Company Owner can edit map boundaries.");
             }
             setBoundaries([]);
             clearBorderCache(appId);
@@ -725,7 +726,7 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
             await commitInChunks(db, writeBatch, operations);
         } catch (e) {
             console.error("Failed to delete folder:", e);
-            alert("Database error: Could not delete this folder. Only the Company Owner can edit map boundaries.");
+            notify("Database error: Could not delete this folder. Only the Company Owner can edit map boundaries.");
         }
 
         setIsLoading(false);
@@ -1249,11 +1250,11 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
         try {
             const userId = user?.uid || user?.id;
             await deleteDoc(doc(db, `artifacts/${appId}/users/${userId}/customers`, store.id));
-            alert(`✅ ${store.name} has been eradicated from the database.`);
+            notify(`✅ ${store.name} has been eradicated from the database.`);
             setSelectedStore(null);
         } catch (error) {
             console.error("Delete Error:", error);
-            alert("Failed to delete store.");
+            notify("Failed to delete store.");
         }
     };
 
@@ -1592,11 +1593,11 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
             // 🚀 FIX: Chunked/paced commitInChunks instead of one updateDoc await
             // per store in a tight loop.
             await commitInChunks(db, writeBatch, operations);
-            alert(`✅ RPG Migration Complete! ${operations.length} stores upgraded. You can now use the Season Rank Audit.`);
+            notify(`✅ RPG Migration Complete! ${operations.length} stores upgraded. You can now use the Season Rank Audit.`);
             onClose();
         } catch(e) {
             console.error(e);
-            alert("Migration Failed. Check console.");
+            notify("Migration Failed. Check console.");
         }
         setIsApplying(false);
     };
@@ -1705,10 +1706,10 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
             const ops = operations.length;
             if (logAudit) logAudit("SEASON_RANK_AUDIT", `Season RPG Engine adjusted ${ops} stores.`);
             if (triggerCapy) triggerCapy(`Season Update Complete! ${ops} store ranks adjusted. 📈`);
-            alert(`✅ Success! ${ops} stores instantly updated on map.`);
+            notify(`✅ Success! ${ops} stores instantly updated on map.`);
             setSimResults(null);
             onClose();
-        } catch(e) { alert("Error applying changes."); }
+        } catch(e) { notify("Error applying changes."); }
         setIsApplying(false);
     };
 
@@ -1854,7 +1855,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
     const [isSavingStore, setIsSavingStore] = useState(false);
 
     const handleSaveNewStore = async () => {
-        if (!newStoreForm.name) return alert("Store Name is required!");
+        if (!newStoreForm.name) return notify("Store Name is required!");
         setIsSavingStore(true);
         try {
             const newRef = doc(collection(db, `artifacts/${appId}/users/${userId}/customers`));
@@ -1880,7 +1881,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
             setPendingNewStore(null);
         } catch (e) {
             console.error(e);
-            alert("Failed to save store: " + e.message);
+            notify("Failed to save store: " + e.message);
         } finally {
             setIsSavingStore(false);
         }
@@ -2139,12 +2140,12 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                                     try {
                                         const storeRef = doc(db, `artifacts/${appId}/users/${userId}/customers`, editingStoreId);
                                         await updateDoc(storeRef, { latitude: finalLat, longitude: finalLng });
-                                        alert("✅ Location Corrected!");
+                                        notify("✅ Location Corrected!");
                                         setEditingStoreId(null);
                                         setDragPinCoords(null);
                                         if (logAudit) logAudit("STORE_EDITED_MAP", `Corrected pin for store ID: ${editingStoreId}`);
                                     } catch(e) {
-                                        alert("Failed to update location: " + e.message);
+                                        notify("Failed to update location: " + e.message);
                                     }
                                 } else {
                                     setPendingNewStore({ lat: finalLat, lng: finalLng });

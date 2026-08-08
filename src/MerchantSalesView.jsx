@@ -7,6 +7,7 @@ import { dayStats, agoLabel } from './utils/dayStats';
 import { customerBrief, reorderFromLast } from './utils/customerBrief';
 import { nextStop, directionsUrl, metresLabel } from './utils/nextStop';
 import { unlockSounds, speakMumble, playSound } from './hooks/useSound';
+import { notify } from './components/Toast.jsx';
 
 const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, onProcessSale, onInspect, appSettings, customers = [], allowedPayments = ['Cash'], allowedTiers = ['Retail', 'Ecer'], transactions = [], allowRetur = true, db, appId, agentProfileId, storage }) => {
     /* Phase A items 1-2: the two-tab bar is gone. The manifest is a bottom drawer that
@@ -537,13 +538,13 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
     };
 
     const addToCart = (product) => {
-        if (!isReturMode && product.stock <= 0) return alert(`OUT OF STOCK IN VEHICLE!\n\nYou cannot sell ${product.name} because you don't have any in your car.`);
+        if (!isReturMode && product.stock <= 0) return notify(`OUT OF STOCK IN VEHICLE!\n\nYou cannot sell ${product.name} because you don't have any in your car.`);
 
         setCart(prev => {
             const existing = prev.find(i => i.productId === product.id);
             if (existing) {
                 if (!isReturMode && existing.qty >= product.stock) {
-                    alert(`MAX STOCK REACHED!\n\nYou only have ${product.stock} units of ${product.name} in your vehicle.`);
+                    notify(`MAX STOCK REACHED!\n\nYou only have ${product.stock} units of ${product.name} in your vehicle.`);
                     return prev;
                 }
                 triggerMerchantSpeak((product.priceEcer || 0) > 100000 ? 'expensive' : 'add');
@@ -605,7 +606,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                 if (field === 'qty' && (!isReturMode || (isReturMode && returType === 'EXCHANGE' && item.fulfillment === 'NOW'))) {
                     const maxStock = item.product.stock || 0;
                     if (val > maxStock) {
-                        alert(`INSUFFICIENT VEHICLE STOCK!\n\nYou only have ${maxStock} units of ${item.name} available.`);
+                        notify(`INSUFFICIENT VEHICLE STOCK!\n\nYou only have ${maxStock} units of ${item.name} available.`);
                         finalVal = maxStock;
                     }
                 }
@@ -637,8 +638,8 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
     // 🚀 THE IOU TEAMWORK ENGINE
     const handleFulfillIOU = (iou) => {
         const product = inventory.find(p => p.id === iou.productId);
-        if (!product) return alert("Product no longer exists in inventory!");
-        if (product.stock < iou.qty) return alert("You don't have enough healthy stock in your vehicle to fulfill this IOU!");
+        if (!product) return notify("Product no longer exists in inventory!");
+        if (product.stock < iou.qty) return notify("You don't have enough healthy stock in your vehicle to fulfill this IOU!");
 
         setCart(prev => [...prev, {
             productId: product.id, name: product.name, qty: iou.qty, unit: iou.unit,
@@ -706,7 +707,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                 if (triggerCapy) triggerCapy("HQ Approved! Geofence widened to 100m. 🟢");
                                 unsub();
                             } else if (data.status === 'REJECTED') {
-                                setBypassState({ status: 'rejected', id: null, photo: null }); alert("HQ Rejected your Bypass Request."); unsub();
+                                setBypassState({ status: 'rejected', id: null, photo: null }); notify("HQ Rejected your Bypass Request."); unsub();
                             }
                         }
                     }, (err) => {
@@ -714,9 +715,9 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                         // "Awaiting approval..." forever with no explanation.
                         console.warn("GPS bypass approval listener:", err.code);
                         setBypassState({ status: 'idle', id: null, photo: null });
-                        alert("Could not check bypass approval status. Please try again.");
+                        notify("Could not check bypass approval status. Please try again.");
                     });
-                } catch (err) { alert(`Failed to submit bypass request: ${err.message || "Network Error"}`); setBypassState({ status: 'idle', id: null, photo: null }); }
+                } catch (err) { notify(`Failed to submit bypass request: ${err.message || "Network Error"}`); setBypassState({ status: 'idle', id: null, photo: null }); }
             };
             img.src = event.target.result;
         };
@@ -724,8 +725,8 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
     };
 
     const validateNoo = () => {
-        if (!nooForm.phone || !nooForm.photoUrl) return alert("Phone number and Photo are required to register a new outlet!");
-        if (customers.find(c => c.name.toLowerCase().trim() === customerName.toLowerCase().trim())) return alert("DUPLICATE DETECTED!\n\nA store with this name is already in the database.");
+        if (!nooForm.phone || !nooForm.photoUrl) return notify("Phone number and Photo are required to register a new outlet!");
+        if (customers.find(c => c.name.toLowerCase().trim() === customerName.toLowerCase().trim())) return notify("DUPLICATE DETECTED!\n\nA store with this name is already in the database.");
         
         let tooClose = null; let tooCloseDistance = Infinity;
         if (agentLocation) {
@@ -767,7 +768,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
 
             setSelectedCustomerInfo(newStoreData); setLockedTier(nooForm.requestedTier); updateCartPricing(nooForm.requestedTier);
             setShowNooModal(false); setGpsStatus('verified'); triggerMerchantSpeak('expensive');
-        } catch (e) { alert("Failed to save NOO: " + e.message); }
+        } catch (e) { notify("Failed to save NOO: " + e.message); }
     };
 
     // 🚀 FIX: "Register Only (No Sale)" button had no handler at all — undefined
@@ -790,20 +791,20 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
 
             setShowNooModal(false);
             setNooForm({ phone: '', address: '', requestedTier: defaultNooTier, photoUrl: null });
-        } catch (e) { alert("Failed to save NOO: " + e.message); }
+        } catch (e) { notify("Failed to save NOO: " + e.message); }
     };
 
     const handleDeploySample = async () => {
         const qtyBks = parseInt(sampleForm.qtyBks) || 0;
         const qtyBatang = parseInt(sampleForm.qtyBatang) || 0;
-        if (qtyBks === 0 && qtyBatang === 0) return alert("Enter a valid quantity to sample.");
-        if (!sampleForm.productId) return alert("Please select a product.");
+        if (qtyBks === 0 && qtyBatang === 0) return notify("Enter a valid quantity to sample.");
+        if (!sampleForm.productId) return notify("Please select a product.");
 
         const product = inventory.find(p => p.id === sampleForm.productId);
         const sp = product?.sticksPerPack || 16;
         const totalQtyDecimal = qtyBks + (qtyBatang / sp);
 
-        if ((product.stock || 0) < totalQtyDecimal) return alert(`INSUFFICIENT STOCK!\n\nYou only have ${product.stock} units of ${product.name} available in your vehicle.`);
+        if ((product.stock || 0) < totalQtyDecimal) return notify(`INSUFFICIENT STOCK!\n\nYou only have ${product.stock} units of ${product.name} available in your vehicle.`);
 
         setIsProcessingSale(true);
         try {
@@ -850,7 +851,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
             window.dispatchEvent(new CustomEvent('trigger-telemetry-ping'));
 
             setShowSampleModal(false); setSampleForm({ productId: '', qtyBks: 0, qtyBatang: 0 });
-        } catch (err) { alert("Failed to deploy sample: " + err); } finally { setIsProcessingSale(false); }
+        } catch (err) { notify("Failed to deploy sample: " + err); } finally { setIsProcessingSale(false); }
     };
 
     const handleFinalDeal = async () => {
@@ -1137,7 +1138,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                showing it. The alcove bubble keys off the mood, so it goes quiet on schedule
                either way. */
             setTimeout(() => setMerchantMood("idle"), 3000);
-        } catch (error) { alert("Transaction Failed! Please try again."); }
+        } catch (error) { notify("Transaction Failed! Please try again."); }
         finally { setIsProcessingSale(false); }
     };
 
@@ -1301,7 +1302,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
         if (!brief) return;
         const { lines, dropped, clamped } = reorderFromLast(brief.lastItems, inventory);
         if (!lines.length) {
-            alert("Nothing from their last order is on the vehicle today.");
+            notify("Nothing from their last order is on the vehicle today.");
             return;
         }
 
@@ -1324,7 +1325,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
         const notes = [];
         if (clamped.length) notes.push(clamped.map(c => `${c.name}: only ${c.qty} on board (wanted ${c.wanted})`).join('\n'));
         if (dropped.length) notes.push(`Not on the vehicle today:\n${dropped.join('\n')}`);
-        if (notes.length) alert(`Loaded their last order, with changes:\n\n${notes.join('\n\n')}`);
+        if (notes.length) notify(`Loaded their last order, with changes:\n\n${notes.join('\n\n')}`);
     };
 
     const filteredItems = inventory.filter(i => (activeCategory === "ALL" || i.type === activeCategory) && i.name.toLowerCase().includes(searchTerm.toLowerCase()));
@@ -1359,7 +1360,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                 <div className="flex bg-[#1a1815] rounded border border-[#5c4b3a] p-1 mb-2">
                     <button onClick={() => { setIsReturMode(false); setReturType('EXCHANGE'); }} className={`kpm-hover flex-1 py-1.5 text-[10px] font-black uppercase tracking-widest rounded ${!isReturMode ? 'bg-[#c9a227] text-[#2b2318]' : 'text-[#8b7256] hover:text-white'}`}>Sale Mode</button>
                     <button onClick={() => {
-                        if (!allowRetur) return alert("You do not have clearance to process returns.");
+                        if (!allowRetur) return notify("You do not have clearance to process returns.");
                         setIsReturMode(true);
                     }} className={`kpm-hover flex-1 py-1.5 text-[10px] font-black uppercase tracking-widest rounded ${isReturMode ? 'bg-[#8e4038] text-[#f7f2ee]' : 'text-[#8b7256] hover:text-white'}`}>Retur Mode</button>
                 </div>

@@ -3,6 +3,7 @@ import { PackagePlus, Receipt, Calculator, Calendar, UploadCloud, CheckCircle, A
 import { doc, collection, setDoc, updateDoc, deleteDoc, serverTimestamp, writeBatch, onSnapshot, increment } from 'firebase/firestore';
 import { savePhotoAndGetReference, deletePhotoFromStorage, compressImageToBase64 } from './utils/helpers';
 import { confirmAction } from './components/ConfirmGate.jsx';
+import { notify } from './components/Toast.jsx';
 
 const RestockVaultView = ({ inventory = [], procurements = [], db, storage, appId, user, isAdmin, logAudit, triggerCapy, appSettings, masterUserId }) => {
     const [viewMode, setViewMode] = useState('cart'); 
@@ -82,8 +83,8 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, storage, appI
     const totalItemsReceived = cart.reduce((sum, item) => sum + Number(item.qtyReceived || 0), 0);
 
     const handleProcessRestock = async () => {
-        if (!user || !db || !activeUserId) return alert("System disconnected. Cannot save.");
-        if (cart.length === 0 || totalItemsReceived <= 0) return alert("Cart is empty or missing quantities.");
+        if (!user || !db || !activeUserId) return notify("System disconnected. Cannot save.");
+        if (cart.length === 0 || totalItemsReceived <= 0) return notify("Cart is empty or missing quantities.");
         
         const batchId = `BCH-${new Date().toISOString().slice(2,10).replace(/-/g,'')}`;
         const trueLandedTotal = totalBasePrice + (Number(poData.shippingCost)||0) + (Number(poData.laborCost)||0) + (Number(poData.exciseTax)||0);
@@ -133,7 +134,7 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, storage, appI
             
         } catch (error) { 
             console.error(error); 
-            alert("Procurement Failed: " + error.message); 
+            notify("Procurement Failed: " + error.message); 
         } finally {
             setIsSubmitting(false); 
         }
@@ -141,7 +142,7 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, storage, appI
 
     const handleSaveTarget = async (e) => {
         e.preventDefault();
-        if (!targetForm.productId || !targetForm.targetQty) return alert("Select product and enter target quantity.");
+        if (!targetForm.productId || !targetForm.targetQty) return notify("Select product and enter target quantity.");
         
         setIsSubmitting(true);
         try {
@@ -161,7 +162,7 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, storage, appI
             setShowTargetModal(false);
             setTargetForm({ productId: '', targetQty: '', month: targetForm.month });
         } catch (error) {
-            alert("Failed to save target: " + error.message);
+            notify("Failed to save target: " + error.message);
         } finally {
             setIsSubmitting(false);
         }
@@ -173,7 +174,7 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, storage, appI
             await deleteDoc(doc(db, `artifacts/${appId}/users/${activeUserId}/production_targets`, targetId));
             if (triggerCapy) triggerCapy("Target removed.");
         } catch (e) {
-            alert("Failed to delete target: " + e.message);
+            notify("Failed to delete target: " + e.message);
         }
     };
 
@@ -228,7 +229,7 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, storage, appI
 
             if (logAudit) await logAudit("RESTOCK_DELETE", `Deleted Record ${po.poNumber} and reverted stock.`);
             if (triggerCapy) triggerCapy("Record Deleted & Stock Reverted.");
-        } catch(e) { alert("Failed to delete: " + e.message); }
+        } catch(e) { notify("Failed to delete: " + e.message); }
     };
 
     const handleDeleteRequest = async (orderId) => {
@@ -237,7 +238,7 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, storage, appI
             await deleteDoc(doc(db, `artifacts/${appId}/users/${activeUserId}/stock_requests`, orderId));
             if (triggerCapy) triggerCapy(`Record ${orderId} deleted permanently. 🗑️`);
             if (logAudit) await logAudit("STOCK_DELETE_LOG", `Admin deleted request ${orderId}`);
-        } catch(e) { alert("Failed to delete record: " + e.message); }
+        } catch(e) { notify("Failed to delete record: " + e.message); }
     };
 
     const handleSaveEditPO = async (e) => {
@@ -303,7 +304,7 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, storage, appI
             setEditingPO(null);
             setEditReceiptFile(null);
         } catch(e) { 
-            alert("Edit Failed: " + e.message); 
+            notify("Edit Failed: " + e.message); 
         } finally {
             setIsSubmitting(false);
         }
@@ -318,7 +319,7 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, storage, appI
 
     const handleSaveOrderEdit = async () => {
         if (!editingOrder) return;
-        if (!editCourier || !editTrackingNo || !editSenderName) return alert("Sender Name, Logistic Company, and Tracking No are required.");
+        if (!editCourier || !editTrackingNo || !editSenderName) return notify("Sender Name, Logistic Company, and Tracking No are required.");
         
         setIsProcessingOrder(true);
         try {
@@ -343,7 +344,7 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, storage, appI
             setEditingOrder(null);
             setIsProcessingOrder(false);
         } catch (e) {
-            alert("Failed to edit record: " + e.message);
+            notify("Failed to edit record: " + e.message);
             setIsProcessingOrder(false);
         }
     };

@@ -3,6 +3,7 @@ import { Search, X, ArrowRight, Printer, Calendar, User, Folder, Store, Wallet, 
 import { updateDoc, doc, serverTimestamp } from 'firebase/firestore';
 import { formatRupiah, convertToBks, getCurrentDate } from '../utils/helpers';
 import { hasClearance } from '../config/permissions'; 
+import { notify } from './Toast.jsx';
 
 export default function HistoryReportView({ transactions, inventory, onDeleteFolder, onDeleteTransaction, isAdmin, user, appId, db, appSettings, userRole, agentProfileId, fetchHistoricalTransactions, motorists, customers }) {
     const [searchTerm, setSearchTerm] = useState('');
@@ -350,9 +351,9 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
             await updateDoc(doc(db, `artifacts/${appId}/users/${user.uid}/transactions`, editingTrans.id), {
                 date: rawDate, customerName: editingTrans.customerName, total: Number(editingTrans.total) || 0, amountPaid: Number(editingTrans.total) || 0, priceTier: editingTrans.priceTier || 'Retail', items: cleanItems, timestamp: fakeTimestamp, updatedAt: serverTimestamp() 
             });
-            alert("✅ Audit Successful!");
+            notify("✅ Audit Successful!");
             setEditingTrans(null);
-        } catch(err) { alert(err.message); }
+        } catch(err) { notify(err.message); }
     };
 
     return (

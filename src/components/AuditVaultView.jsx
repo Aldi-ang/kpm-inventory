@@ -4,6 +4,7 @@ import { collection, query, orderBy, onSnapshot, writeBatch, doc } from 'firebas
 import { ref as storageRef, getDownloadURL } from 'firebase/storage';
 import { commitInChunks } from '../utils/helpers';
 import { confirmAction } from './ConfirmGate.jsx';
+import { notify } from './Toast.jsx';
 
 export default function AuditVaultView({ db, storage, appId, user, userId, isAdmin, logAudit, setBackupToast, auditLogs }) {
     const [path, setPath] = useState({ year: null, month: null, day: null });
@@ -60,7 +61,7 @@ export default function AuditVaultView({ db, storage, appId, user, userId, isAdm
             } catch (err) {
                 console.error("CLOUD_REVERSION_FAILURE:", err);
                 setLoading(false);
-                alert("SYSTEM ERROR: Cloud data packet corrupted.");
+                notify("SYSTEM ERROR: Cloud data packet corrupted.");
             }
         }
     };

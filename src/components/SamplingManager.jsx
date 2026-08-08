@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { ArrowRight, Wallet, Package, Truck, ClipboardList, Lock, Calendar, RefreshCcw, Save, Store, Pencil, Trash2, MapPin, Folder, X, Edit, TrendingUp, Plus } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts';
 import { getCurrentDate } from '../utils/helpers';
+import { notify } from './Toast.jsx';
 
 // 🚀 HELPER: Safely formats decimal Bks back into "X Bks Y Btg"
 export const formatSampleQty = (qtyDecimal, sticksPerPack) => {
@@ -228,7 +229,7 @@ export const SamplingCartView = ({ inventory, isAdmin, onCancel, onSubmit }) => 
     const removeFromCart = (id) => setCart(prev => prev.filter(i => i.id !== id));
 
     const handleFinalSubmit = async () => {
-        if (!location.trim()) { alert("Please enter a Folder/Location name!"); return; }
+        if (!location.trim()) { notify("Please enter a Folder/Location name!"); return; }
         if (cart.length === 0) return;
         setIsSubmitting(true);
         

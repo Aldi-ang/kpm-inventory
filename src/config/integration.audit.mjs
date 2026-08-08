@@ -385,6 +385,71 @@ check(G12, 'the finder has a runnable self-check',
   fs.existsSync('src/config/findDuplicates.selfcheck.mjs'),
   'node src/config/findDuplicates.selfcheck.mjs');
 
+/* ── 13. no message box anywhere ───────────────────────────────────────────
+   The other half of group 10. A browser told to suppress dialogs suppresses the message box
+   too, so 184 reports across 18 files — every "saved", every "failed to save", every "not
+   enough stock" — could draw nothing on Aldi's machine and let the code carry straight on.
+   They now route through src/components/Toast.jsx, which draws them on the page. These checks
+   are what stop the next one being added. */
+const G13 = '13. No message box anywhere';
+const boxLeft = appFiles.filter(f => /(?<![.\w$])alert\s*\(/.test(strip(fs.readFileSync(f, 'utf8'))));
+check(G13, 'no bare alert() left in src/', boxLeft.length === 0,
+  boxLeft.length ? `still present in: ${boxLeft.join(', ')}` : '');
+
+const toast = fs.readFileSync('src/components/Toast.jsx', 'utf8');
+check(G13, 'the toast host is mounted, or every report goes to the console',
+  /<ToastHost\s*\/>/.test(mainJsx) && /from\s+['"]\.\/components\/Toast/.test(mainJsx),
+  'main.jsx must render <ToastHost /> — without it notify() only reaches console.error');
+/* Several call sites are written `return alert(msg)`. That works only because both return
+   undefined. Make notify async or promise-returning and those functions start returning a
+   pending promise instead of exiting — a silent behaviour change at sites nobody would retest. */
+check(G13, 'notify stays fire-and-forget', /export function notify\s*\(/.test(toast) &&
+  !/export\s+async\s+function\s+notify/.test(toast) &&
+  (toast.match(/return undefined;/g) || []).length >= 2,
+  '`return alert(x)` call sites depend on notify returning undefined, not a promise');
+/* THE trap in this job. Get this backwards and every failure message starts fading after 3.5
+   seconds — the exact silent-failure class the whole thing existed to end. Unrecognised text
+   must stay on screen; only a recognised success is allowed to clear itself. */
+const sev = fs.readFileSync('src/utils/toastSeverity.js', 'utf8');
+check(G13, 'the host asks the classifier, it does not judge for itself',
+  /sticky:\s*isSticky\(text\)/.test(toast) && /from\s+['"][^'"]*toastSeverity\.js['"]/.test(toast),
+  'the severity rule must stay in one testable place');
+check(G13, 'anything not recognisably a success stays until clicked',
+  /return\s+!SUCCESS\.test\(text\)/.test(sev),
+  'the default must be sticky — a dropped failure message is the bug this replaced');
+/* "Could not complete the sync" contains "complete". Checking SUCCESS first faded it — a sync
+   failure vanishing unread. FAILURE returning true before SUCCESS is ever consulted is what
+   stops that, so the order is asserted, not just commented. */
+check(G13, 'a failure wins even when it also reads like a success',
+  /if\s*\(FAILURE\.test\(text\)\)\s*return true;[\s\S]{0,120}return\s+!SUCCESS\.test/.test(sev),
+  'FAILURE must be tested before SUCCESS — see toastSeverity.selfcheck.mjs');
+check(G13, 'the severity rule has a runnable self-check',
+  fs.existsSync('src/config/toastSeverity.selfcheck.mjs'),
+  'node src/config/toastSeverity.selfcheck.mjs');
+check(G13, 'a stuck toast can always be cleared', /onClick=\{\(\)\s*=>\s*dismiss\(item\.id\)\}/.test(toast) &&
+  /clearTimeout/.test(toast),
+  'sticky with no way out would wall off the screen');
+const nUsers = appFiles.filter(f => /(?<![.\w$])notify\s*\(/.test(fs.readFileSync(f, 'utf8')) &&
+  f !== 'src/components/Toast.jsx');
+const nMissing = nUsers.filter(f => !/from\s+['"][^'"]*\/Toast\.jsx['"]/.test(fs.readFileSync(f, 'utf8')));
+check(G13, 'every caller imports notify', nMissing.length === 0,
+  nMissing.length ? `missing import: ${nMissing.join(', ')}` : `${nUsers.length} files call it`);
+check(G13, 'the toast reached the built bundle',
+  allJs.includes('Message lost:'),
+  'Toast.jsx is not in dist/ — every report in the app would vanish into the console');
+/* The one behaviour the message box had that a toast does not: it blocked. Code written as
+   `alert(msg); window.location.reload();` relied on that — the reload could not run until he
+   clicked OK. Reloading destroys ToastHost with the rest of the page, so the same two lines
+   with notify() show him nothing at all. Found once, in the crown transfer, where the lost
+   message was the only confirmation that ownership of the whole system had changed hands.
+   signOut() is NOT in this ban: ToastHost is a sibling of <App /> in main.jsx, so signing out
+   re-renders App without unmounting the toast, and the message survives onto the login screen. */
+const reloadRace = appFiles.filter(f =>
+  /(?<![.\w$])notify\s*\([\s\S]{0,300}?\)\s*;\s*(?:\/\/[^\n]*\n\s*)?window\.location\.(?:reload\s*\(|href\s*=)/
+    .test(strip(fs.readFileSync(f, 'utf8'))));
+check(G13, 'no report is destroyed by the reload on the next line', reloadRace.length === 0,
+  reloadRace.length ? `notify() then an immediate reload in: ${reloadRace.join(', ')}` : '');
+
 /* ── report ──────────────────────────────────────────────────────────────── */
 let last = '';
 for (const r of results) {

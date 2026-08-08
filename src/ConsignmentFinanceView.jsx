@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { FileSpreadsheet, ShieldCheck, AlertCircle, XCircle, MessageSquare, Box, Package, ArrowRight, DollarSign, Store, Truck, Plus, Wallet, RotateCcw, Lock, Trash2, ArrowLeftRight, Check, X, ClipboardList, ScanSearch, Calculator, Printer, User, MapPin, Search } from 'lucide-react';
 import { convertToBks, formatRupiah } from './utils/helpers';
 import { confirmAction } from './components/ConfirmGate.jsx';
+import { notify } from './components/Toast.jsx';
 
 export default function ConsignmentFinanceView({ transactions = [], inventory = [], onAddGoods, onPayment, onReturn, onDeleteConsignment, isAdmin, user, agentProfileId, motorists = [], transferRequests = [], onRequestTransfer, onAgentAcceptTransfer, onAdminApproveTransfer, appSettings, triggerCapy }) {
     const [activeTab, setActiveTab] = useState('financials');
@@ -243,7 +244,7 @@ export default function ConsignmentFinanceView({ transactions = [], inventory = 
             const shelf = parseInt(updated.shelf) || 0;
             const damaged = parseInt(updated.damaged) || 0;
             if (shelf + damaged > totalItemQty) {
-                alert("INVALID AUDIT!\n\nJumlah (Sisa di Rak + Retur Rusak) tidak boleh melebihi total barang yang dititipkan.");
+                notify("INVALID AUDIT!\n\nJumlah (Sisa di Rak + Retur Rusak) tidak boleh melebihi total barang yang dititipkan.");
                 return current; 
             }
             return { ...prev, [key]: updated };
@@ -254,9 +255,9 @@ export default function ConsignmentFinanceView({ transactions = [], inventory = 
         if (!activeCustomer) return;
 
         if (transferMode) {
-            if (!targetAgent) return alert("Select an agent to transfer to!");
+            if (!targetAgent) return notify("Select an agent to transfer to!");
             const agentInfo = (motorists || []).find(m => m.id === targetAgent);
-            if (!agentInfo) return alert("Agent not found!");
+            if (!agentInfo) return notify("Agent not found!");
             
             // Call the core function
             onRequestTransfer(activeCustomer.name, targetAgent, agentInfo.name, transferNote);
@@ -297,7 +298,7 @@ export default function ConsignmentFinanceView({ transactions = [], inventory = 
             });
 
             if (paymentItems.length === 0 && returnItems.length === 0 && remainingItems.length === 0) {
-                return alert("No changes recorded. Did you enter Sisa / Retur data?");
+                return notify("No changes recorded. Did you enter Sisa / Retur data?");
             }
 
             if (!await confirmAction(`Confirm Store Audit?\n\n- Payment to Collect: Rp ${new Intl.NumberFormat('id-ID').format(paymentTotal)}\n- Bad Stock to Retur: ${returnItems.reduce((s, i) => s + i.qty, 0)} Bks`)) return;
@@ -311,7 +312,7 @@ export default function ConsignmentFinanceView({ transactions = [], inventory = 
                 setAuditData({});
             } catch (err) {
                 console.error(err);
-                alert("Error saving audit data.");
+                notify("Error saving audit data.");
             }
         }
     };

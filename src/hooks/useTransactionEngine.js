@@ -1,6 +1,7 @@
 import { doc, collection, serverTimestamp, writeBatch, getDoc, addDoc } from 'firebase/firestore';
 import { getCurrentDate, stripCartItemForStorage } from '../utils/helpers';
 import useOfflineEngine from './useOfflineEngine';
+import { notify } from '../components/Toast.jsx';
 
 export default function useTransactionEngine({
     db, appId, userId, userRole, agentProfileId, adminSalesMode,
@@ -32,7 +33,7 @@ export default function useTransactionEngine({
             }));
         const forensicData = quarantineCargo.length > 0 ? { quarantineCargo } : null;
         
-        if(!customerName) { alert("Customer Name is required!"); return; }
+        if(!customerName) { notify("Customer Name is required!"); return; }
 
         let currentAgentProfileId = agentProfileId;
         if (userRole === 'ADMIN' && adminSalesMode === 'VEHICLE') currentAgentProfileId = 'ADMIN_VEHICLE';
@@ -128,7 +129,7 @@ export default function useTransactionEngine({
                 return finalAgentName;
             } catch (err) {
                 console.error("Ghost Ledger Error:", err);
-                alert("Failed to save to Offline Vault.");
+                notify("Failed to save to Offline Vault.");
                 return;
             }
         }
@@ -318,7 +319,7 @@ export default function useTransactionEngine({
             return finalAgentName; 
         } catch(err) { 
             console.error("TRANSACTION ERROR:", err);
-            alert("Transaction Failed: " + err); 
+            notify("Transaction Failed: " + err); 
             throw err; 
         } 
     };

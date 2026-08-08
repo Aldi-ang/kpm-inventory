@@ -3,6 +3,7 @@ import { collection, query, where, onSnapshot, doc, setDoc, writeBatch, getDocs,
 import { Power, UserPlus, ShieldAlert, CheckCircle, ShieldCheck, Edit, Trash2, Save, X } from 'lucide-react';
 import { commitInChunks, isSafeDocIdEmail } from '../utils/helpers';
 import { confirmAction } from './ConfirmGate.jsx';
+import { notify } from './Toast.jsx';
 
 export default function LandlordDashboard({ db, appId, user }) {
     const [tenants, setTenants] = useState([]);
@@ -36,7 +37,7 @@ export default function LandlordDashboard({ db, appId, user }) {
         // emailClean gets used directly as a Firestore document ID below (line ~55). A
         // stray '/' in place of a '.' turns one ID into extra path segments and crashes
         // the write with a raw SDK error. Catch it here with a message the owner can act on.
-        if (!isSafeDocIdEmail(emailClean)) return alert(`"${emailClean}" doesn't look like a valid email address. Check for a stray "/" or space — it should look like name@domain.com.`);
+        if (!isSafeDocIdEmail(emailClean)) return notify(`"${emailClean}" doesn't look like a valid email address. Check for a stray "/" or space — it should look like name@domain.com.`);
 
         try {
             // 1. Search for any auto-generated Tier 4 ghost profiles
@@ -56,7 +57,7 @@ export default function LandlordDashboard({ db, appId, user }) {
                     });
                 });
                 await batch.commit();
-                alert(`✅ Ghost profile found & upgraded! ${emailClean} is now Tier ${newTier}.`);
+                notify(`✅ Ghost profile found & upgraded! ${emailClean} is now Tier ${newTier}.`);
             } else {
                 // 3. If they have never logged in, pre-provision normally
                 await setDoc(doc(db, `artifacts/${appId}/employee_directory`, emailClean), {
@@ -69,7 +70,7 @@ export default function LandlordDashboard({ db, appId, user }) {
                     bossUid: emailClean, 
                     createdAt: new Date().toISOString()
                 });
-                alert(`✅ Provisioned successfully! They are now assigned to Tier ${newTier}.`);
+                notify(`✅ Provisioned successfully! They are now assigned to Tier ${newTier}.`);
             }
             
             setNewEmail('');
@@ -77,7 +78,7 @@ export default function LandlordDashboard({ db, appId, user }) {
             setNewTier(2);
         } catch (err) {
             console.error(err);
-            alert("Failed to create tenant.");
+            notify("Failed to create tenant.");
         }
     };
 
@@ -126,7 +127,7 @@ export default function LandlordDashboard({ db, appId, user }) {
             await commitInChunks(db, writeBatch, operations);
         } catch (err) {
             console.error(err);
-            alert("Failed to update subscription status.");
+            notify("Failed to update subscription status.");
         }
     };
 
@@ -138,7 +139,7 @@ export default function LandlordDashboard({ db, appId, user }) {
 
     // --- UPGRADED: DATABASE SWEEPER FOR EDITING ---
     const handleSaveEdit = async (tenant) => {
-        if (!editName.trim()) return alert("Name cannot be empty");
+        if (!editName.trim()) return notify("Name cannot be empty");
         
         try {
             // Sweep for all documents matching the email and force the upgrade
@@ -168,7 +169,7 @@ export default function LandlordDashboard({ db, appId, user }) {
             setEditingId(null);
         } catch (err) {
             console.error(err);
-            alert("Failed to save changes.");
+            notify("Failed to save changes.");
         }
     };
 
@@ -189,7 +190,7 @@ export default function LandlordDashboard({ db, appId, user }) {
                 await batch.commit();
             } catch (err) {
                 console.error(err);
-                alert("Failed to delete record.");
+                notify("Failed to delete record.");
             }
         }
     };

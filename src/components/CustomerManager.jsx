@@ -32,6 +32,7 @@ const checkPointInGeoJSON = (lng, lat, geometry) => {
 };
 import { ArrowRight, MapPin, Phone, User, ShieldAlert, Trash2, Store, Camera, X, RefreshCcw, Search, Folder, Pencil, Plus, Globe } from 'lucide-react';
 import { confirmAction, promptAction } from './ConfirmGate.jsx';
+import { notify } from './Toast.jsx';
 
 // --- CUSTOMER DETAIL VIEW (WITH IFRAME SUPPORT) ---
 export const CustomerDetailView = ({ customer, db, appId, user, onBack, logAudit, triggerCapy, onNavigateToMap }) => {
@@ -461,7 +462,7 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
             if (logAudit) logAudit("DIRECTORY_BULK_RENAME", `Renamed ${level} from ${oldName} to ${newName} for ${storesToUpdate.length} stores`);
         } catch (err) {
             console.error(err);
-            alert("Failed to rename folder.");
+            notify("Failed to rename folder.");
         }
     };
 
@@ -501,7 +502,7 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
             if (level === 'Kecamatan') setCustomKec(prev => { const n = {...prev}; Object.keys(n).forEach(k => n[k] = n[k].filter(x => x !== folderName)); return n; });
 
             if (triggerCapy) triggerCapy(`Folder ${folderName} deleted! 🗑️`);
-        } catch (err) { alert("Failed to delete folder."); }
+        } catch (err) { notify("Failed to delete folder."); }
     };
 
     // 🚀 NEW: FAST STORE MOVE ENGINE
@@ -518,11 +519,11 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
             const ref = doc(db, 'artifacts', appId, 'users', user.uid, 'customers', storeId);
             await updateDoc(ref, { city: targetCity });
             if (triggerCapy) triggerCapy(`Store moved to ${targetCity}! 🚀`);
-        } catch(err) { alert("Failed to move store"); }
+        } catch(err) { notify("Failed to move store"); }
     };
 
     const handleAutoGeocode = async () => {
-        if (!formData.address && !formData.city) { alert("Please enter City/Address first!"); return; }
+        if (!formData.address && !formData.city) { notify("Please enter City/Address first!"); return; }
         setIsLocating(true);
         try {
             const query = `${formData.address}, ${formData.city || ''}, ${formData.region || ''}`;
@@ -532,13 +533,13 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                 const result = data[0];
                 setFormData(prev => ({ ...prev, latitude: parseFloat(result.lat), longitude: parseFloat(result.lon) }));
                 triggerCapy(`Found: ${result.display_name.split(',')[0]} 📍`);
-            } else { alert("Location not found."); }
-        } catch (error) { console.error(error); alert("Geocoding failed."); }
+            } else { notify("Location not found."); }
+        } catch (error) { console.error(error); notify("Geocoding failed."); }
         setIsLocating(false);
     };
 
     const handleGetLocation = () => {
-        if (!navigator.geolocation) { alert("Geolocation not supported"); return; }
+        if (!navigator.geolocation) { notify("Geolocation not supported"); return; }
         setIsLocating(true);
         navigator.geolocation.getCurrentPosition(
             (pos) => {
@@ -546,7 +547,7 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                 setIsLocating(false);
                 triggerCapy("GPS Locked! 🎯");
             },
-            (err) => { alert("GPS Error: " + err.message); setIsLocating(false); }
+            (err) => { notify("GPS Error: " + err.message); setIsLocating(false); }
         );
     };
 
@@ -645,7 +646,7 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                 
             } catch (err) {
                 console.error("KML Import Error:", err);
-                alert(`Failed to import KML: ${err.message || "Invalid file format."}`);
+                notify(`Failed to import KML: ${err.message || "Invalid file format."}`);
             }
         };
         reader.readAsText(file);
@@ -706,7 +707,7 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
         } catch (e) {
             console.error('Could not save the not-duplicate decision:', e);
             setDupIgnored(dupIgnored);      // put it back rather than lie about having saved it
-            alert(`Could not save that: ${e.message || 'unknown error'}`);
+            notify(`Could not save that: ${e.message || 'unknown error'}`);
         }
     };
 
@@ -722,7 +723,7 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
             if (triggerCapy) triggerCapy(`All cleared groups restored.`);
         } catch (e) {
             setDupIgnored(previous);
-            alert(`Could not reset: ${e.message || 'unknown error'}`);
+            notify(`Could not reset: ${e.message || 'unknown error'}`);
         }
     };
 
@@ -760,7 +761,7 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
             if (triggerCapy) triggerCapy(`Removed ${store.name}. 🗑️`);
         } catch (err) {
             console.error("Duplicate delete failed:", err);
-            alert(`Could not delete: ${err.message || 'unknown error'}`);
+            notify(`Could not delete: ${err.message || 'unknown error'}`);
         }
     };
 
@@ -832,7 +833,7 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
             if (triggerCapy) triggerCapy(`Repaired ${broken.length} stores. They are visible again. ✅`);
         } catch (err) {
             console.error("Tier repair error:", err);
-            alert(`Repair failed: ${err.message || "Unknown error."}`);
+            notify(`Repair failed: ${err.message || "Unknown error."}`);
         }
     };
 
@@ -910,7 +911,7 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
 
         } catch (error) {
             console.error("Scrub Error:", error);
-            alert("Data Scrub Failed: " + error.message);
+            notify("Data Scrub Failed: " + error.message);
         }
     };
 
@@ -925,13 +926,13 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
         const safeName = String(formData.name || '').trim();
 
         if (!safeName) {
-            alert("⚠️ Mission Control: Store Name is required to establish a target.");
+            notify("⚠️ Mission Control: Store Name is required to establish a target.");
             return;
         }
 
         // 🛑 Hard Block: Prevent any new UNMAPPED edge cases from entering the database
         if (!safeProv || !safeKab || !safeKec) {
-            alert("⚠️ SSOT Violation: You must specify the complete Matrix Location (Provinsi, Kabupaten, and Kecamatan) before logging this target.");
+            notify("⚠️ SSOT Violation: You must specify the complete Matrix Location (Provinsi, Kabupaten, and Kecamatan) before logging this target.");
             return;
         }
         
@@ -1001,7 +1002,7 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
             // the UI's own canEditCustomer() gate can miss (e.g. a stale card, or the
             // Map Mission Control edit bridge), so the server-side denial needs its own message.
             if (err.code === 'permission-denied') {
-                alert(editingId ? "⚠️ You don't have permission to edit this customer (it's outside your assigned region)." : "⚠️ You don't have permission to add customers right now.");
+                notify(editingId ? "⚠️ You don't have permission to edit this customer (it's outside your assigned region)." : "⚠️ You don't have permission to add customers right now.");
             }
         }
     };
@@ -1051,7 +1052,7 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
             });
             logAudit("NOO_APPROVED", `Verified and approved NOO: ${name}`);
             triggerCapy(`${name} is now unlocked and live! 🟢`);
-        } catch(err) { console.error(err); alert("Failed to approve: " + err.message); }
+        } catch(err) { console.error(err); notify("Failed to approve: " + err.message); }
     };
 
     // 🚀 THE DIRECTORY CATCHER: Intercepts edit targets sent from Map Mission Control

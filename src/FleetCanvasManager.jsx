@@ -8,6 +8,7 @@ import { collection, doc, setDoc, deleteDoc, updateDoc, writeBatch, runTransacti
 import { DYNAMIC_TIERS, isFieldLevelTier } from './config/permissions';
 import { convertToBks, isSafeDocIdEmail } from './utils/helpers';
 import { confirmAction } from './components/ConfirmGate.jsx';
+import { notify } from './components/Toast.jsx';
 
 export default function FleetCanvasManager({ db, appId, user, userRole, agentProfileId, inventory, transactions = [], appSettings = {}, logAudit, triggerCapy, isAdmin, motorists = [] }) {
     
@@ -146,9 +147,9 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
     const handleSaveAgent = async () => {
         if (isReadOnlyMode) return setIsAddingAgent(false); 
         
-        if (!newAgent.name || !newAgent.phone || !newAgent.email) return alert("Name, Phone, and Google Account Email are absolutely required!");
-        if (newAgent.allowedPayments.length === 0) return alert("You must allow at least one Payment Method (e.g., Cash)!");
-        if (newAgent.allowedTiers.length === 0) return alert("You must allow at least one Price Tier!");
+        if (!newAgent.name || !newAgent.phone || !newAgent.email) return notify("Name, Phone, and Google Account Email are absolutely required!");
+        if (newAgent.allowedPayments.length === 0) return notify("You must allow at least one Payment Method (e.g., Cash)!");
+        if (newAgent.allowedTiers.length === 0) return notify("You must allow at least one Price Tier!");
 
         const emailKey = newAgent.email.toLowerCase().trim();
 
@@ -157,17 +158,17 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
         // even number of segments") — a '/' where a '.' should be turns one document ID
         // into two extra path segments. Catch it here with a message that actually tells
         // the user what to fix, instead of the save silently blowing up below.
-        if (!isSafeDocIdEmail(emailKey)) return alert(`"${emailKey}" doesn't look like a valid email address. Check for a stray "/" or space — it should look like name@domain.com.`);
+        if (!isSafeDocIdEmail(emailKey)) return notify(`"${emailKey}" doesn't look like a valid email address. Check for a stray "/" or space — it should look like name@domain.com.`);
 
         const isDupEmail = activeMotorists.some(a => a.email?.toLowerCase().trim() === emailKey && a.id !== editingAgentId);
         const isDupPhone = activeMotorists.some(a => a.phone?.trim() === newAgent.phone.trim() && a.id !== editingAgentId);
         const isDupName = activeMotorists.some(a => a.name?.toLowerCase().trim() === newAgent.name.toLowerCase().trim() && a.id !== editingAgentId);
         const isDupPlate = newAgent.vehicle?.trim() && activeMotorists.some(a => a.vehicle?.toLowerCase().trim() === newAgent.vehicle.toLowerCase().trim() && a.id !== editingAgentId);
 
-        if (isDupEmail) return alert(`ACCESS DENIED!\n\nThe email "${emailKey}" is already registered to another active personnel.`);
-        if (isDupPhone) return alert(`ACCESS DENIED!\n\nThe phone number "${newAgent.phone}" is already registered.`);
-        if (isDupName) return alert(`ACCESS DENIED!\n\nThe name "${newAgent.name}" is already registered.`);
-        if (isDupPlate) return alert(`ACCESS DENIED!\n\nThe vehicle license plate "${newAgent.vehicle.toUpperCase()}" is already assigned.`);
+        if (isDupEmail) return notify(`ACCESS DENIED!\n\nThe email "${emailKey}" is already registered to another active personnel.`);
+        if (isDupPhone) return notify(`ACCESS DENIED!\n\nThe phone number "${newAgent.phone}" is already registered.`);
+        if (isDupName) return notify(`ACCESS DENIED!\n\nThe name "${newAgent.name}" is already registered.`);
+        if (isDupPlate) return notify(`ACCESS DENIED!\n\nThe vehicle license plate "${newAgent.vehicle.toUpperCase()}" is already assigned.`);
 
         try {
             const batch = writeBatch(db);
@@ -220,7 +221,7 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
             setNewAgent(defaultAgentState);
             setIsAddingAgent(false);
             setEditingAgentId(null);
-        } catch (e) { alert("Firebase Blocked the Save: " + e.message); }
+        } catch (e) { notify("Firebase Blocked the Save: " + e.message); }
     };
 
     const handleEditClick = (e, agent) => {
@@ -262,11 +263,11 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
             triggerCapy(`${agent.name} terminated. Access revoked. 🛑`);
             logAudit("FLEET_DELETE", `Terminated agent: ${agent.email}`);
             if (selectedAgent?.id === agent.id) setSelectedAgent(null);
-        } catch (e) { alert("Firebase Blocked the Deletion: " + e.message); }
+        } catch (e) { notify("Firebase Blocked the Deletion: " + e.message); }
     };
 
     const handleLoadCanvas = async () => {
-        if (!selectedProduct || !loadQty || isNaN(loadQty) || Number(loadQty) <= 0) return alert("Select a product and valid quantity.");
+        if (!selectedProduct || !loadQty || isNaN(loadQty) || Number(loadQty) <= 0) return notify("Select a product and valid quantity.");
         if (!selectedAgent) return;
 
         // Use the master product record for name/pricing/conversion metadata — always correct,
@@ -338,7 +339,7 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
             logAudit("CANVAS_LOAD", `Loaded ${qtyToLoad} ${masterProduct.name} to ${selectedAgent.name} (from ${sourceLabel})`);
         } catch (e) {
             console.error(e);
-            alert(e.message || "Failed to load vehicle canvas.");
+            notify(e.message || "Failed to load vehicle canvas.");
         }
     };
 
@@ -392,7 +393,7 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
 
             triggerCapy(`Vehicle cleared. All unsold stock returned to the ${destinationLabel}! 🧹`);
             logAudit("CANVAS_CLEAR", `Cleared and reconciled canvas for ${selectedAgent.name} → ${destinationLabel}`);
-        } catch(e) { alert("Failed to clear canvas: " + e.message); }
+        } catch(e) { notify("Failed to clear canvas: " + e.message); }
     };
 
     const handleWhatsAppShare = () => {

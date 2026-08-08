@@ -9,6 +9,7 @@ import {
 import { collection, addDoc, getDocs, updateDoc, doc, writeBatch, serverTimestamp, query, where, onSnapshot, increment } from "firebase/firestore";
 import { savePhotoAndGetReference, deletePhotoFromStorage, commitInChunks, formatRupiah, compressImageToBase64 } from './utils/helpers';
 import { confirmAction, promptAction } from './components/ConfirmGate.jsx';
+import { notify } from './components/Toast.jsx';
 
 const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId, user, isAdmin, logAudit, triggerCapy, motorists = [], appSettings }) => {
     
@@ -175,7 +176,7 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
             // against any path that lands here with a URL still attached.
             if (previousUrl) deletePhotoFromStorage(storage, previousUrl);
             setCounts(prev => ({ ...prev, [id]: { ...(prev[id] || { good: '', damaged: '' }), photo: photoUrl } }));
-        } catch (e) { alert("Failed to process image."); }
+        } catch (e) { notify("Failed to process image."); }
     };
 
     const handleClearPhoto = async (id) => {
@@ -199,7 +200,7 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
 
     const handleCommit = async () => {
         const countedItems = activeInventory.filter(i => i && i.id && counts[i.id] !== undefined);
-        if (countedItems.length === 0) return alert("No items counted! Please enter at least one physical count.");
+        if (countedItems.length === 0) return notify("No items counted! Please enter at least one physical count.");
         if (!await confirmAction(`Submit Stock Opname for ${countedItems.length} items to HQ for verification?`)) return;
 
         setIsSubmitting(true);
@@ -253,8 +254,8 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
             if (triggerCapy) triggerCapy(`Audit Payload sent to HQ! Awaiting Commander approval. 📡`);
 
             setCounts({});
-            alert("✅ Physical Count submitted to HQ successfully!");
-        } catch (error) { alert("Failed to submit audit payload to HQ."); } 
+            notify("✅ Physical Count submitted to HQ successfully!");
+        } catch (error) { notify("Failed to submit audit payload to HQ."); } 
         finally { setIsSubmitting(false); }
     };
 
@@ -291,7 +292,7 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
             if (triggerCapy) triggerCapy(`Audit Approved! Vault updated. 🔒`);
             
             setExpandedAudit(null);
-        } catch (error) { alert("Failed to approve audit."); } 
+        } catch (error) { notify("Failed to approve audit."); } 
         finally { setIsProcessingAudit(false); }
     };
 
@@ -305,7 +306,7 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
             await updateDoc(auditRef, { status: 'REJECTED', rejectReason: reason || "Discrepancy too high.", resolvedAt: serverTimestamp(), resolvedBy: user.email?.split('@')[0] });
             if (logAudit) await logAudit("STOCK_OPNAME_REJECTED", `Rejected stock audit for ${audit.branchLocation}.`);
             setExpandedAudit(null);
-        } catch (error) { alert("Failed to reject audit."); } 
+        } catch (error) { notify("Failed to reject audit."); } 
         finally { setIsProcessingAudit(false); }
     };
 
@@ -317,7 +318,7 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
         const rtvRefStr = formData.get('rtvRef') || '';
         const agentId = formData.get('agentId') || '';
 
-        if (qtyToResolve <= 0 || qtyToResolve > resolutionModal.item.damagedStock) return alert("Invalid quantity.");
+        if (qtyToResolve <= 0 || qtyToResolve > resolutionModal.item.damagedStock) return notify("Invalid quantity.");
         if (!await confirmAction(`Execute ${resolutionModal.method} protocol for ${qtyToResolve} Bks of ${resolutionModal.item.name}?`)) return;
 
         setIsProcessingAudit(true);
@@ -392,7 +393,7 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
             await batch.commit();
             triggerCapy("Quarantine Liquidation Logged & Executed! 📜");
             setResolutionModal(null);
-        } catch (error) { alert("Resolution failed: " + error.message); } 
+        } catch (error) { notify("Resolution failed: " + error.message); } 
         finally { setIsProcessingAudit(false); }
     };
 
@@ -473,7 +474,7 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
         if (newStockStr === null || newStockStr === "") return;
         
         const newStock = parseInt(newStockStr, 10);
-        if (isNaN(newStock) || newStock < 0) return alert("Invalid number.");
+        if (isNaN(newStock) || newStock < 0) return notify("Invalid number.");
 
         try {
             const ref = monitorFacility === 'MASTER'
@@ -483,7 +484,7 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
             await updateDoc(ref, { stock: newStock });
             triggerCapy(`God Mode: ${productName} forced to ${newStock} Bks in ${monitorFacility}.`);
         } catch (err) {
-            alert("Failed to override: " + err.message);
+            notify("Failed to override: " + err.message);
         }
     };
 

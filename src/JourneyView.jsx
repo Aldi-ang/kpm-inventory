@@ -8,6 +8,7 @@ import 'leaflet/dist/leaflet.css';
 import { loadBorderCache, saveBorderCache } from './utils/borderCache';
 import { isFleetManagementTier } from './config/permissions';
 import { confirmAction } from './components/ConfirmGate.jsx';
+import { notify } from './components/Toast.jsx';
 
 // 🚀 SAFE LEAFLET ICON SETUP
 delete L.Icon.Default.prototype._getIconUrl;
@@ -124,7 +125,7 @@ const LocationController = ({ userLocation, setUserLocation, isEditing, isLiteMo
                 },
                 (err) => {
                     console.error(err);
-                    alert("Please enable location permissions in your device settings.");
+                    notify("Please enable location permissions in your device settings.");
                 },
                 { enableHighAccuracy: true }
             );
@@ -346,7 +347,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
             setEditingFolderId(null);
         } catch (error) {
             console.error("Failed to update folder:", error);
-            alert("Database error: Could not save folder routing.");
+            notify("Database error: Could not save folder routing.");
         }
     };
 
@@ -378,7 +379,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
             setTempPinLocation(null);
         } catch (error) {
             console.error("Failed to update GPS:", error);
-            alert("Database error: Could not save new GPS coordinates.");
+            notify("Database error: Could not save new GPS coordinates.");
         }
     };
 
@@ -433,7 +434,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
             await setDoc(docRef, { [agentName]: newColor }, { merge: true });
         } catch(e) {
             console.error("Failed to save squad color:", e);
-            alert("Database error: Could not save squad color. Only the Company Owner can edit fleet colors.");
+            notify("Database error: Could not save squad color. Only the Company Owner can edit fleet colors.");
         }
     };
 
@@ -722,7 +723,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
 
             if (logAudit) await logAudit("VISIT_UNDO", `Undid visit for ${customer.name}`);
             if (triggerCapy) triggerCapy("Visit Cancelled. Bounty Restored. ↩️");
-        } catch (error) { alert("Failed to undo: " + error.message); }
+        } catch (error) { notify("Failed to undo: " + error.message); }
     };
 
     const confirmCheckIn = async (e) => {
@@ -745,7 +746,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
             
             setCheckInCustomer(null);
             setIsSubmitting(false);
-        } catch (error) { alert("Failed to save report: " + error.message); setIsSubmitting(false); }
+        } catch (error) { notify("Failed to save report: " + error.message); setIsSubmitting(false); }
     };
 
     const QUICK_TAGS = ["Repeat Order 📦", "Stock Full (No Order) 🛑", "Competitor Issue ⚠️", "New Request 📝", "Store Closed 🔒"];
@@ -816,7 +817,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
             // 🚀 ACTUAL FIX: The real Google Maps Universal Search API
             window.open(`https://www.google.com/maps/search/?api=1&query=${customer.latitude},${customer.longitude}`, '_blank');
         } else {
-            alert("No GPS Coordinates found for this target.");
+            notify("No GPS Coordinates found for this target.");
         }
     };
 

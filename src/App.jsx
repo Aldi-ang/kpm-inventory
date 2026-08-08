@@ -101,6 +101,7 @@ import { auth, db, storage, googleProvider, appId } from './config/firebase';
 import { formatRupiah, getCurrentDate, getLocalDayKey, getRandomColor, convertToBks, commitInChunks, savePhotoAndGetReference } from './utils/helpers';
 import { computeDayXP, DEFAULT_XP, checkBadges, DEFAULT_BADGES } from './config/career';
 import { confirmAction, promptAction } from './components/ConfirmGate.jsx';
+import { notify } from './components/Toast.jsx';
 
 const APP_VERSION = packageJson.version;
 
@@ -482,7 +483,7 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
           triggerCapy("Executive Targets Updated! 🎯");
       } catch (err) {
           console.error(err);
-          alert("Failed to save targets.");
+          notify("Failed to save targets.");
       }
   };
 
@@ -602,7 +603,7 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
         triggerCapy(`Data wipe complete. Clean slate! ✨`);
     } catch (err) {
         console.error("Wipe failed:", err);
-        alert("Data Wipe Failed: " + err.message);
+        notify("Data Wipe Failed: " + err.message);
     }
   };
 
@@ -720,7 +721,7 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
             if (targetType === 'both') {
                 setTimeout(() => window.location.reload(), 1500);
             }
-        } catch (err) { alert("Import Failed: " + err.message); }
+        } catch (err) { notify("Import Failed: " + err.message); }
     };
     reader.readAsText(file);
     e.target.value = null; 
@@ -840,12 +841,12 @@ const handleGitHubMirror = async () => {
     // 🚨 ABSOLUTE HARD LOCK: Blocks "password" or anything under level 5
     if (strength.score < 5) { 
         setAuthShake(true); setTimeout(() => setAuthShake(false), 500);
-        alert("Encryption Failed: Password must reach Level 5 security (8+ chars, Upper, Lower, Number, Symbol)."); 
+        notify("Encryption Failed: Password must reach Level 5 security (8+ chars, Upper, Lower, Number, Symbol)."); 
         return; 
     }
     if (!setupSecret || !setupSecret.trim()) { 
         setAuthShake(true); setTimeout(() => setAuthShake(false), 500);
-        alert("Secret recovery word is required!"); 
+        notify("Secret recovery word is required!"); 
         return; 
     }
 
@@ -891,10 +892,10 @@ const handleGitHubMirror = async () => {
         setSetupPassword("");
         setSetupSecret("");
         
-        alert("Security Protocol Established! Vault Unlocked.");
+        notify("Security Protocol Established! Vault Unlocked.");
     } catch (error) {
         console.error("Save Error:", error);
-        alert(`Database Error: ${error.message || "Could not save credentials."}`);
+        notify(`Database Error: ${error.message || "Could not save credentials."}`);
     }
   };
 
@@ -913,7 +914,7 @@ const handleGitHubMirror = async () => {
 
           // Check if already locked out
           if (data.lockoutStatus === "PERMANENT" || data.failedRecoveryAttempts >= 5) {
-              alert("SECURITY LOCKOUT: Maximum attempts exceeded. Please unlock via Firebase Console.");
+              notify("SECURITY LOCKOUT: Maximum attempts exceeded. Please unlock via Firebase Console.");
               setInputPin("");
               return;
           }
@@ -942,7 +943,7 @@ const handleGitHubMirror = async () => {
               
               setAuthShake(true); setTimeout(() => setAuthShake(false), 500);
               setInputPin("");
-              alert(`Incorrect PIN. Strike ${newStrikes}/5.`);
+              notify(`Incorrect PIN. Strike ${newStrikes}/5.`);
           }
       } catch (error) {
           console.error("Login Error:", error);
@@ -965,11 +966,11 @@ const handleGitHubMirror = async () => {
         const adminDocRef = doc(db, `artifacts/${appId}/users/${userId}/settings`, 'admin');
         const adminSnap = await getDoc(adminDocRef);
         
-        if (!adminSnap.exists()) { alert("No security profile found."); setIsSendingEmail(false); return; }
+        if (!adminSnap.exists()) { notify("No security profile found."); setIsSendingEmail(false); return; }
         const data = adminSnap.data();
 
         if (data.lockoutStatus === "PERMANENT" || data.failedRecoveryAttempts >= 5) {
-            alert("SECURITY LOCKOUT: Maximum attempts exceeded. Please unlock via Firebase Console.");
+            notify("SECURITY LOCKOUT: Maximum attempts exceeded. Please unlock via Firebase Console.");
             setIsSendingEmail(false); return;
         }
 
@@ -993,7 +994,7 @@ const handleGitHubMirror = async () => {
                 setIsOtpMode(true); 
             } catch (emailErr) {
                 console.error("EmailJS Error:", emailErr);
-                alert("Identity verified, but failed to send OTP email. Check your internet or EmailJS account limits.");
+                notify("Identity verified, but failed to send OTP email. Check your internet or EmailJS account limits.");
             }
         } else {
             const newStrikes = (data.failedRecoveryAttempts || 0) + 1;
@@ -1001,11 +1002,11 @@ const handleGitHubMirror = async () => {
             await updateDoc(adminDocRef, { failedRecoveryAttempts: newStrikes, lockoutStatus: newLockout });
             
             setAuthShake(true); setTimeout(() => setAuthShake(false), 500);
-            alert(`Access Denied. Strike ${newStrikes}/5.`);
+            notify(`Access Denied. Strike ${newStrikes}/5.`);
         }
     } catch (error) {
         console.error("Recovery Error:", error);
-        alert("System error during recovery verification.");
+        notify("System error during recovery verification.");
     }
     setIsSendingEmail(false);
   };
@@ -1016,7 +1017,7 @@ const handleGitHubMirror = async () => {
           setIsOtpMode(false);
           setIsSetupMode(true);
           setInputOtp("");
-          alert("Authorization Code Accepted. You may now create new Master Credentials.");
+          notify("Authorization Code Accepted. You may now create new Master Credentials.");
       } else {
           setAuthShake(true); setTimeout(() => setAuthShake(false), 500);
           setInputOtp("");
@@ -1063,11 +1064,11 @@ const handleGitHubMirror = async () => {
               await updateDoc(adminDocRef, { passkeys: arrayUnion(newPasskey) });
 
               setRegisteredPasskeys(prev => [...prev, newPasskey]);
-              alert(`Success! "${deviceName}" is now authorized for Biometric Login.`);
+              notify(`Success! "${deviceName}" is now authorized for Biometric Login.`);
           }
       } catch (error) {
           console.error("Registration failed:", error);
-          alert("Could not register passkey. Check your device screen lock settings.");
+          notify("Could not register passkey. Check your device screen lock settings.");
       }
   };
 
@@ -1085,7 +1086,7 @@ const handleGitHubMirror = async () => {
   // 🚀 BIOMETRIC UNLOCK ENGINE (DEVICE TARGETED) 🚀
   const handleBiometricUnlock = async () => {
       if (registeredPasskeys.length === 0) {
-          alert("No devices registered! Please enter your PIN, go to Settings, and register this device.");
+          notify("No devices registered! Please enter your PIN, go to Settings, and register this device.");
           return;
       }
 
@@ -1119,7 +1120,7 @@ const handleGitHubMirror = async () => {
           console.error("Biometric failed:", error); 
           // 🚨 THE FIX: Actually show the error instead of failing silently!
           if (error.name !== 'NotAllowedError') {
-              alert("Biometric Error: " + (error.message || "Failed to scan fingerprint.")); 
+              notify("Biometric Error: " + (error.message || "Failed to scan fingerprint.")); 
           }
       }
   };
@@ -1190,7 +1191,7 @@ const handleGitHubMirror = async () => {
           // No alert needed here to avoid spamming while typing
       } catch (err) {
           console.error("Error saving tiers:", err);
-          alert("Failed to save tier settings.");
+          notify("Failed to save tier settings.");
       }
   };
 
@@ -1259,7 +1260,7 @@ const handleGitHubMirror = async () => {
               triggerCapy("Map Icons Imported & Optimized!");
           } catch (err) {
               console.error(err);
-              alert("Import Failed: " + err.message);
+              notify("Import Failed: " + err.message);
           }
       };
       reader.readAsText(file);
@@ -1446,7 +1447,7 @@ const handleGitHubMirror = async () => {
           (r.storeName || '').trim().toLowerCase() === (storeName || '').trim().toLowerCase() && 
           (r.status === 'PENDING_AGENT' || r.status === 'PENDING_ADMIN')
       );
-      if (isAlreadyPending) return alert(`Hold on! A transfer request for ${storeName} is already pending.`);
+      if (isAlreadyPending) return notify(`Hold on! A transfer request for ${storeName} is already pending.`);
 
       try {
           await addDoc(collection(db, `artifacts/${appId}/users/${userId}/account_transfers`), {
@@ -1473,13 +1474,13 @@ const handleGitHubMirror = async () => {
           });
 
           triggerCapy(`Transfer request for ${storeName} sent to ${toAgentName}!`);
-      } catch (e) { console.error(e); alert("Failed to request transfer: " + e.message); }
+      } catch (e) { console.error(e); notify("Failed to request transfer: " + e.message); }
   };
 
   const handleAgentAcceptTransfer = async (requestId, isAccepted) => {
       try {
           const request = transferRequests.find(r => r.id === requestId);
-          if (!request) return alert("Request not found!");
+          if (!request) return notify("Request not found!");
 
           const reqRef = doc(db, `artifacts/${appId}/users/${userId}/account_transfers`, requestId);
           await updateDoc(reqRef, { 
@@ -1531,7 +1532,7 @@ const handleGitHubMirror = async () => {
           }
 
           triggerCapy(isAccepted ? "Transfer accepted! Waiting for Admin approval." : "Transfer rejected.");
-      } catch (e) { console.error(e); alert("Action failed: " + e.message); }
+      } catch (e) { console.error(e); notify("Action failed: " + e.message); }
   };
 
   const handleAdminApproveTransfer = async (request, isApproved) => {
@@ -1606,7 +1607,7 @@ const handleGitHubMirror = async () => {
           await commitInChunks(db, writeBatch, operations);
           if (isApproved) await logAudit("TRANSFER_APPROVED", `Reassigned ${request.storeName} to ${request.toAgentName}`);
           triggerCapy(isApproved ? "Transfer complete! Debt reassigned." : "Transfer declined.");
-      } catch(e) { console.error(e); alert("Failed: " + e.message); }
+      } catch(e) { console.error(e); notify("Failed: " + e.message); }
   };
 
  // 🚀 EOD HANDLERS 🚀
@@ -1643,7 +1644,7 @@ const handleGitHubMirror = async () => {
           triggerCapy("EOD Report submitted! Admin has been notified.");
       } catch (e) { 
           console.error(e); 
-          alert("Failed to submit EOD: " + e.message); 
+          notify("Failed to submit EOD: " + e.message); 
       }
   };
 
@@ -1926,7 +1927,7 @@ const handleGitHubMirror = async () => {
           
           await logAudit("EOD_VERIFIED", `Verified ${report.reportType || 'EOD'} for ${report.agentName}`);
           triggerCapy(report.reportType === 'BOUNTY' ? "Bounty Cleared! The law is satisfied. 🤠" : "EOD Verified & Stock Returned! 📦");
-      } catch(e) { console.error(e); alert("Verification failed: " + e.message); }
+      } catch(e) { console.error(e); notify("Verification failed: " + e.message); }
   };
 
   const handleResetEOD = async (report) => {
@@ -1935,7 +1936,7 @@ const handleGitHubMirror = async () => {
           await deleteDoc(doc(db, `artifacts/${appId}/users/${userId}/eod_reports`, report.id));
           await logAudit("EOD_RESET", `Admin reset EOD for ${report.agentName}`);
           triggerCapy(`EOD Reset! ${report.agentName} can now submit again.`);
-      } catch(e) { console.error(e); alert("Failed to reset: " + e.message); }
+      } catch(e) { console.error(e); notify("Failed to reset: " + e.message); }
   };
 
   // 🚀 CAREER LEDGER BACKFILL (Phase 3): one-time bulk recompute of career.base from every
@@ -2118,7 +2119,7 @@ const handleGitHubMirror = async () => {
                 if (activeData) {
                     // 🚨 KILL SWITCH: Instantly reject suspended Tenants & Salesmen
                     if (activeData.subscriptionStatus === 'SUSPENDED' || activeData.status === 'SUSPENDED') {
-                        alert("ACCOUNT SUSPENDED: Subscription inactive. Please contact KPM System Administration.");
+                        notify("ACCOUNT SUSPENDED: Subscription inactive. Please contact KPM System Administration.");
                         signOut(auth);
                         setUser(null);
                         return;
@@ -2162,7 +2163,7 @@ const handleGitHubMirror = async () => {
                                         activeData.location = liveData.location || activeData.location;
                                         
                                         if (liveData.status === 'SUSPENDED') {
-                                            alert("ACCOUNT SUSPENDED: Profile inactive. Please contact KPM System Administration.");
+                                            notify("ACCOUNT SUSPENDED: Profile inactive. Please contact KPM System Administration.");
                                             signOut(auth);
                                             setUser(null);
                                             return;
@@ -2175,7 +2176,7 @@ const handleGitHubMirror = async () => {
                                     console.warn("Ghost Account Detected! Eradicating global auth tickets...");
                                     await deleteDoc(uidRef);
                                     await deleteDoc(emailRef);
-                                    alert("AUTHORIZATION REVOKED: Your KPM profile was deleted by the Administrator.");
+                                    notify("AUTHORIZATION REVOKED: Your KPM profile was deleted by the Administrator.");
                                     signOut(auth);
                                     setUser(null);
                                     return;
@@ -2321,7 +2322,7 @@ const handleGitHubMirror = async () => {
             if (error.code === 'auth/popup-blocked') {
                 signInWithRedirect(auth, googleProvider);
             } else {
-                alert(`Login Failed: ${error.message}`); 
+                notify(`Login Failed: ${error.message}`); 
                 setLoginError(`Error: ${error.code} - ${error.message}`);
             }
         }
@@ -2429,7 +2430,7 @@ const handleGitHubMirror = async () => {
           logAudit("TRANS_DELETE", `Deleted transaction ${transaction.id} for ${transaction.customerName}`);
           triggerCapy("Transaction record removed.");
       } catch(err) {
-          alert(err.message);
+          notify(err.message);
       }
   };
 
@@ -2462,7 +2463,7 @@ const handleGitHubMirror = async () => {
           await commitInChunks(db, writeBatch, operations);
           await logAudit("HISTORY_DELETE", `Deleted history folder for ${customerName} (${agentName})`);
           triggerCapy(`Deleted ${targets.length} records`); 
-      } catch (err) { console.error(err); alert("Error deleting history."); } 
+      } catch (err) { console.error(err); notify("Error deleting history."); } 
   };
 
  
@@ -2699,7 +2700,7 @@ const handleGitHubMirror = async () => {
           triggerCapy("Stock Opname saved successfully!"); 
       } catch (err) { 
           console.error(err); 
-          alert("Failed to update stock: " + err.message); 
+          notify("Failed to update stock: " + err.message); 
       } 
   };
 
@@ -2743,7 +2744,7 @@ const handleGitHubMirror = async () => {
       logAudit, triggerCapy, setCart, customers, user 
   });
 
- const handleAddGoodsToCustomer = (name) => { alert(`Go to Sales Terminal for ${name}`); setActiveTab('sales'); };
+ const handleAddGoodsToCustomer = (name) => { notify(`Go to Sales Terminal for ${name}`); setActiveTab('sales'); };
   
  // --- UPGRADED: SAMPLING ENGINE (VEHICLE DEDUCTION & BATANG SUPPORT) ---
   const handleBatchSamplingSubmit = async (cartItems, location, date, note) => {
@@ -2826,7 +2827,7 @@ const handleGitHubMirror = async () => {
           await logAudit("SAMPLING_BATCH", `Added ${cartItems.length} items to folder: ${location}`);
           triggerCapy(`Success! ${cartItems.length} items saved.`);
           setEditingSample(null);
-      } catch (err) { console.error(err); alert("Failed to save batch: " + err); }
+      } catch (err) { console.error(err); notify("Failed to save batch: " + err); }
   };
 
   const handleDeleteSampling = async (sample) => {
@@ -2865,7 +2866,7 @@ const handleGitHubMirror = async () => {
           });
           logAudit("SAMPLING_DELETE", `Deleted sample: ${sample.productName}`);
           triggerCapy("Sample deleted & stock restored.");
-      } catch(err) { console.error(err); alert("Failed to delete: " + err.message); }
+      } catch(err) { console.error(err); notify("Failed to delete: " + err.message); }
   };
 
   const handleUpdateSampling = async (updatedData) => {
@@ -2954,7 +2955,7 @@ const handleGitHubMirror = async () => {
           
           triggerCapy("Record updated!");
           setEditingSample(null);
-      } catch (err) { alert(err.message || err); }
+      } catch (err) { notify(err.message || err); }
   };
   
   // --- NEW: OPEN FOLDER EDIT MODAL ---
@@ -2997,7 +2998,7 @@ const handleGitHubMirror = async () => {
           setEditingFolder(null);
       } catch (err) {
           console.error(err);
-          alert("Move failed: " + err.message);
+          notify("Move failed: " + err.message);
       }
   };
 
@@ -3101,7 +3102,7 @@ const handleGitHubMirror = async () => {
               triggerCapy("System Restore Complete! Refreshing matrix... ✨");
               setTimeout(() => window.location.reload(), 2500);
           } catch (err) { 
-              alert("Failed to restore: " + err.message); 
+              notify("Failed to restore: " + err.message); 
               console.error(err); 
               triggerCapy("Restore Failed. File corrupted.");
           }
@@ -3160,7 +3161,7 @@ const handleGitHubMirror = async () => {
             
             triggerCapy("Config Imported! Welcome to the team.");
         } catch (err) { 
-            alert("Import Failed: " + err.message); 
+            notify("Import Failed: " + err.message); 
             console.error(err); 
         }
     };
@@ -3264,7 +3265,7 @@ const handleGitHubMirror = async () => {
           setAppSettings(newSettings);
           await setDoc(doc(db, `artifacts/${appId}/users/${user.uid}/settings/general`), newSettings, {merge: true});
           triggerCapy("New Map Home Base Saved! 🏠");
-      } catch(err) { console.error(err); alert("Failed to save map home."); }
+      } catch(err) { console.error(err); notify("Failed to save map home."); }
   };
 
 
@@ -3703,7 +3704,7 @@ const handleGitHubMirror = async () => {
                           triggerCapy("3D Settings Saved! 📦");
                           // Update local state immediately
                           setInventory(prev => prev.map(p => p.id === id ? { ...p, ...updates } : p));
-                      } catch(err) { console.error(err); alert("Save failed"); }
+                      } catch(err) { console.error(err); notify("Save failed"); }
                   }}
                   // ---------------------------
 

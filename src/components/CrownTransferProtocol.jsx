@@ -3,6 +3,7 @@ import { doc, getDoc, setDoc, deleteDoc, serverTimestamp } from 'firebase/firest
 import emailjs from '@emailjs/browser';
 import { ShieldAlert, Key, Fingerprint, Mail, AlertTriangle, CheckCircle2, ArrowRight } from 'lucide-react';
 import { confirmAction } from './ConfirmGate.jsx';
+import { notify } from './Toast.jsx';
 
 export default function CrownTransferProtocol({ db, appId, userId, user, onClose, triggerCapy }) {
     const [step, setStep] = useState(1);
@@ -123,8 +124,14 @@ export default function CrownTransferProtocol({ db, appId, userId, user, onClose
             // 2. Revoke current access
             await deleteDoc(doc(db, 'system_admins', user.uid));
 
-            alert("TRANSFER COMPLETE. You will now be logged out. The new owner must log in with Google to claim the Crown.");
-            window.location.reload(); // Force app to reload and kick the old admin out
+            notify("TRANSFER COMPLETE. You will now be logged out. The new owner must log in with Google to claim the Crown.");
+            /* The message box used to block here, so the reload could not happen until he had
+               read this and clicked OK. A toast does not block, and a full page reload destroys
+               ToastHost along with everything else — so reloading on the next line would wipe
+               the only confirmation he gets that the transfer of the entire system succeeded.
+               ponytail: fixed 5s read window; give the toast a real "dismissed" callback if a
+               second site ever needs this. integration.audit.mjs group 13 bans the immediate form. */
+            setTimeout(() => window.location.reload(), 5000); // kick the old admin out, after he reads it
         } catch (err) {
             showError("TRANSFER FAILED. FATAL ERROR.");
         }
