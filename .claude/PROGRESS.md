@@ -1,7 +1,7 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-08 19:00 WIB** · branch `phase0-solid-ground` · last code commit `c319b29`
-(quest log `3c8e763` after it)
+**Updated: 2026-08-08 19:40 WIB** · branch `phase0-solid-ground` · last code commit `23b4fda`
+(quest log `3c8e763`)
 
 **Aldi clears the session every time he starts a new one. This file is the ONLY thing that
 survives. If it is not current, the work is lost.** Write it before context runs low, not after.
@@ -81,25 +81,40 @@ His words: *"i want to change that cheap ass access granted animation we should 
 - ❓ **Ask him before designing:** does the 2.4s bar gate the actual unlock, or is it pure
   waiting? If it is pure waiting, the best animation may be a much shorter one.
 
-**JOB 5 — the rest of his 2026-08-08 test report. NOT DONE. Four items, his words kept.**
-He ran group T and groups C/H. Four things he reported were fixed on the spot (`c319b29`);
-these four were NOT, and none has been investigated beyond what is written here.
-1. 🔴 **The flight recorder stays green with the internet off.** His words: *"last time flight
+**JOB 5 — what is still open from his TWO test reports. His words kept.**
+Round 2 (35/64, 31 good) confirmed the Firestore fix: **T1–T5 and T8 all GOOD**. Motion, sound,
+the mascot and the gold were fixed in `23b4fda`. **Six items remain, none started:**
+
+- 🔴 **The flight recorder should show the queued edit.** His words: *"there should be the
+   notification that the edit is queued inside the flight recorder, just to monitor that the
+   edit we just did is pushed when online again"*. Pairs with item 1 below — both are about
+   trusting what happens offline, and `useOfflineEngine` already keeps `syncLogs` and
+   `pendingCount`, so the data probably exists and is simply not shown for this path.
+- **T7 was never run: he does not know how.** His words: *"i dont know how to test this
+   through phone yet"*. The answer is in the path table — `npm run dev -- --host`, then
+   `http://192.168.1.141:5173/` on a phone on the same wifi. **Tell him, do not assume.**
+- **T6 is still WEIRD and it is the same mascot problem, one screen over.** His words: *"the
+   question is on the page yes, but the notification is come from a splitsecond capybara
+   animation that just outro when spawned instead"*. The delete-a-product path still reports
+   through `triggerCapy` rather than `notify`. `23b4fda` fixed why he flashed; **the real fix is
+   that this path should report as a strip like the save path now does.** Cheap, and it makes
+   T6 testable.
+- 🔴 **The flight recorder stays green with the internet off.** His words: *"last time flight
    recorder will changed into red cloud logo but now its doesnt show it, instead it just stays
    green"*. **Cause found, not fixed:** `useOfflineEngine.js:9` seeds `isOnline` from
    `navigator.onLine`, which only means "a network interface exists" — his machine has a
    virtual adapter on `172.27.240.1`, so turning wifi off leaves it **true**. A real fix needs
    an actual reachability probe, not that flag. This matters more than it looks: with the badge
    lying, the new "has NOT reached the server" toast is his only offline signal.
-2. 🔴 **H2a — typing a store name by hand does not select it.** His words: *"if i dont press
+- 🔴 **H2a — typing a store name by hand does not select it.** His words: *"if i dont press
    anything from the dropdown then the stores wont be selected and it will just focused on that
    namebar, and if i press any space in there, what is shows instead is the main rail
    dashboard"*. Screenshot in his quest log. Not investigated at all.
-3. **The Edit Record panel is off-theme.** His words: *"also the edit record panel better
+- **The Edit Record panel is off-theme.** His words: *"also the edit record panel better
    changed it into our theme"*. It is white-on-black with `emerald`/`blue` price borders at
    `src/App.jsx:~3815` — **more palette-law green and blue, same finding as JOB 4.** Do these
    two together.
-4. **The mascot has no exit animation.** His words: *"the outro for that capybara is really not
+- **The mascot has no exit animation.** His words: *"the outro for that capybara is really not
    smooth, it is just snapped and gone"*. The overlapping-timer bug that made him vanish
    *early* is fixed; the abrupt disappearance is a separate, untouched thing.
    Also his H3 idea: *"even better when u redirect scroll and make that notification animation
@@ -327,6 +342,30 @@ are never worth rescuing.
 ---
 
 ## LOG — newest first, older entries live in `git log` for this file
+
+### 2026-08-08 19:40 WIB — round 2: the fix held, and the mascot's real bug surfaced
+
+**35/64, 31 good. T1–T5 and T8 all GOOD** — the Firestore ack fix works online and offline, the
+strips stack, and on the sticky-by-default question he answered *"not annoying just not well
+made since no animation nor SFX"*. **So the answer to the toast-nagging question is: keep
+sticky-by-default. It was never the problem.** Fixed in `23b4fda`: enter/exit keyframes, two
+sounds (tap fading, error sticky, click on dismiss), and the removal now waits for the exit —
+dropping the node on the click is what made a dismissal read as a glitch.
+
+**T10 stayed BROKEN through my first fix, which is the lesson.** Clearing the overlapping timer
+in App was necessary and not sufficient: the mascot ALSO never cleared `isHiding` when a new
+line arrived, so a `triggerCapy` landing inside the peek timer's exit window made him visible
+again while still wearing `kpm-merch-exit` — **he arrived already playing his exit**. And the
+`message` prop had no exit at all. Both fixed in `CapybaraMascot.jsx`, plus three more
+uncancelled timers of the same class and a `dialogueList` that was a new array every render, so
+the peek effect restarted constantly. **When a timing bug survives a fix, the second cause is
+usually in the other component.**
+
+**T9: too much gold.** His words: *"make sure more black and white, gold for some small thing
+thats fine"*. Worth remembering as a general steer, not just for that button.
+
+**He cannot see screenshots he attaches to the quest log** — they live in his browser and COPY
+REPORT sends text only. He has to drag the image into chat. Say so plainly when he asks.
 
 ### 2026-08-08 18:20 WIB — his first real test report, and the button that never worked
 
