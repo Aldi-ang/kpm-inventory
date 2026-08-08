@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-08 20:05 WIB** · branch `phase0-solid-ground` · last code commit `23b4fda`
+**Updated: 2026-08-09 00:20 WIB** · branch `phase0-solid-ground` · last code commit `ce9b9a6`
 (quest log locked after his round-2 report)
 
 **Aldi clears the session every time he starts a new one. This file is the ONLY thing that
@@ -80,6 +80,23 @@ His words: *"i want to change that cheap ass access granted animation we should 
   is done — and expect other green to fall out of it.
 - ❓ **Ask him before designing:** does the 2.4s bar gate the actual unlock, or is it pure
   waiting? If it is pure waiting, the best animation may be a much shorter one.
+
+**🔴 HE OFFERED TO LOG IN SO CLAUDE CAN TEST — 2026-08-09, while he sleeps. ANSWER NOT GIVEN.**
+His words: *"can u replace me doing the testing while im sleeping, i'll check in the morning"*
+then *"i can enter the password for u and u can test it from there"*.
+- **Two of the three blockers are gone.** He can type the master password himself (Claude must
+  never hold it), and **the network is FINE** — `firestore.googleapis.com`,
+  `identitytoolkit.googleapis.com` and google all reachable from the browser pane, verified
+  2026-08-09. An earlier report of DNS failure was transient and WRONG; do not repeat it.
+- **The remaining blocker is the real one: most of the test list WRITES TO HIS LIVE DATABASE.**
+  Group D commits real sales and deducts real stock; group G registers real outlets, real
+  returns and real samples; T1/T2 edit real products. Running those unattended fills his
+  business records with fake transactions. **Do not do it without an explicit yes, and raise
+  whether a throwaway account exists first.**
+- **Safe to run with him logged in and asleep:** group **E** (the merchant — the group tonight's
+  mascot fix actually changed), **G9** (Lite Mode), and watching the strips. All read-only or
+  UI-only. That is the offer to put to him.
+- Scheduled/unattended runs remain dead — see the SCHEDULED TASKS section below.
 
 **🔁 STANDING RULE, his instruction 2026-08-08:** *"update the quest log everytime i give u copy
 reports, if the test already done just lock it"*. **Every COPY REPORT he pastes = do this, in
