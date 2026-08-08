@@ -1,6 +1,35 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 
-export default function CapybaraMascot({ isDiscoMode, message, messages = [], onClick, staticImageSrc, user, scale }) {
+/* Module scope, not inside the component. As locals these were rebuilt on every single render,
+   so `dialogueList` was a new array every time, so the peek effect below — which lists it as a
+   dependency — tore itself down and restarted on every render. Its timers never survived long
+   enough to matter, and its cleanup could not cancel a hide that was already in flight. */
+const LOGGED_IN_MESSAGES = [
+    "Welcome back, Boss!",
+    "Stock looks good today.",
+    "Don't forget to record samples!",
+    "Sales are looking up! 📈",
+    "I love organization. And watermelons. 🍉",
+    "Did you know Capybaras are the largest rodents?",
+    "Remember to hydrate while you work! 💧",
+    "System systems go! 🚀",
+    "Any new products to add?",
+    "You are doing great today! ⭐"
+];
+
+const LOCKED_MESSAGES = [
+    "System Locked. 🔒",
+    "Please identify yourself.",
+    "I cannot let you in without a badge.",
+    "Access Denied. 🛑",
+    "Who goes there?"
+];
+
+/* A default of `[]` written in the parameter list is a NEW array on every render, which
+   defeats the memo below for every caller that omits the prop — which is all of them. */
+const NO_MESSAGES = [];
+
+export default function CapybaraMascot({ isDiscoMode, message, messages = NO_MESSAGES, onClick, staticImageSrc, user, scale }) {
     const NORMAL_IMAGE_URL = "/mr capy.png"; 
     const DISCO_VIDEO_URL = "/Bit_Capybara_Fortnite_Dance_Video.mp4";
     const DISCO_MUSIC_URL = "/disco_music.mp3";
@@ -16,29 +45,10 @@ export default function CapybaraMascot({ isDiscoMode, message, messages = [], on
         }
     }, []);
 
-    const LOGGED_IN_MESSAGES = [
-        "Welcome back, Boss!",
-        "Stock looks good today.",
-        "Don't forget to record samples!",
-        "Sales are looking up! 📈",
-        "I love organization. And watermelons. 🍉",
-        "Did you know Capybaras are the largest rodents?",
-        "Remember to hydrate while you work! 💧",
-        "System systems go! 🚀",
-        "Any new products to add?",
-        "You are doing great today! ⭐"
-    ];
-
-    const LOCKED_MESSAGES = [
-        "System Locked. 🔒",
-        "Please identify yourself.",
-        "I cannot let you in without a badge.",
-        "Access Denied. 🛑",
-        "Who goes there?"
-    ];
-
-    const DEFAULT_MESSAGES = user ? LOGGED_IN_MESSAGES : LOCKED_MESSAGES;
-    const dialogueList = messages.length > 0 ? messages : DEFAULT_MESSAGES;
+    const dialogueList = useMemo(
+        () => (messages.length > 0 ? messages : (user ? LOGGED_IN_MESSAGES : LOCKED_MESSAGES)),
+        [messages, user]
+    );
 
     const [isPeeking, setIsPeeking] = useState(false);
     const [isHiding, setIsHiding] = useState(false);
@@ -53,7 +63,40 @@ export default function CapybaraMascot({ isDiscoMode, message, messages = [], on
     const [radioSprite, setRadioSprite] = useState(null);
     const msgIndexRef = useRef(0);
 
+    /* THE BUG ALDI MARKED BROKEN: "capybara shows once and just spawned and do outro and
+       vanish". Two things caused it, and both live here.
+
+       One — `isHiding` was never cleared when a NEW line arrived. The peek timer sets it true
+       to play the exit; if triggerCapy fired inside that window, the mascot became visible
+       again while still wearing kpm-merch-exit, so he appeared already leaving.
+
+       Two — the `message` prop had no exit at all. App cleared it after 8s, `showMascot` went
+       false on the same tick, and he jumped to translate-x-[200%] with no animation: his
+       earlier "just snapped and gone". The prop is now mirrored into state that lags it by one
+       exit, so the animation has somewhere to play.
+
+       Deliberately not guarded on "was he actually showing": if he was not, showMascot is false
+       and the exit class is never on screen anyway, and the guard would need `propMsg` as a
+       dependency, which reintroduces the stale-closure class of bug this is fixing. */
+    const [propMsg, setPropMsg] = useState(null);
+    const propExitRef = useRef(null);
+    useEffect(() => {
+        clearTimeout(propExitRef.current);
+        if (message) {
+            setIsHiding(false);
+            setPropMsg(message);
+            return;
+        }
+        setIsHiding(true);
+        propExitRef.current = setTimeout(() => {
+            setPropMsg(null);
+            setIsHiding(false);
+        }, 700);
+        return () => clearTimeout(propExitRef.current);
+    }, [message]);
+
     // 📻 THE RADIO RECEIVER: Listens for signals from anywhere in the app
+    const radioTimers = useRef({});
     useEffect(() => {
         const handleRadioComms = (event) => {
             // detail is either a plain string (original callers) or
@@ -69,10 +112,14 @@ export default function CapybaraMascot({ isDiscoMode, message, messages = [], on
                 setIsPeeking(true);
                 setIsHiding(false);
 
-                // Auto-dismiss after 8 seconds
-                setTimeout(() => {
+                /* Same overlap bug as the mascot's other two paths: without cancelling the
+                   previous line's timers, the FIRST message's 8s dismissal hides the SECOND
+                   one — a line arriving late in the previous window flashes and goes. */
+                clearTimeout(radioTimers.current.hide);
+                clearTimeout(radioTimers.current.clear);
+                radioTimers.current.hide = setTimeout(() => {
                     setIsHiding(true);
-                    setTimeout(() => {
+                    radioTimers.current.clear = setTimeout(() => {
                         setIsPeeking(false);
                         setIsHiding(false);
                         setInternalMsg("");
@@ -84,7 +131,12 @@ export default function CapybaraMascot({ isDiscoMode, message, messages = [], on
         };
 
         window.addEventListener('CAPY_COMMS', handleRadioComms);
-        return () => window.removeEventListener('CAPY_COMMS', handleRadioComms);
+        const pending = radioTimers.current;
+        return () => {
+            window.removeEventListener('CAPY_COMMS', handleRadioComms);
+            clearTimeout(pending.hide);
+            clearTimeout(pending.clear);
+        };
     }, []);
 
     useEffect(() => {
@@ -145,18 +197,22 @@ export default function CapybaraMascot({ isDiscoMode, message, messages = [], on
             }, nextPeekTime);
         };
 
+        /* This inner timeout was never cancelled by the cleanup below — only peekTimer and
+           hideTimer were. A hide already in flight when the effect re-ran would land a second
+           later and blank whatever line had arrived in the meantime. */
+        let exitTimer;
         const handleHide = () => {
-            setIsHiding(true); 
-            setTimeout(() => {
+            setIsHiding(true);
+            exitTimer = setTimeout(() => {
                 setIsPeeking(false);
                 setIsHiding(false);
-                setInternalMsg(""); 
-                scheduleNextPeek(); 
+                setInternalMsg("");
+                scheduleNextPeek();
             }, 1000);
         };
 
         scheduleNextPeek();
-        return () => { clearTimeout(peekTimer); clearTimeout(hideTimer); };
+        return () => { clearTimeout(peekTimer); clearTimeout(hideTimer); clearTimeout(exitTimer); };
     }, [isDiscoMode, dialogueList, suppressed]);
 
     const onMascotClick = () => {
@@ -191,7 +247,9 @@ export default function CapybaraMascot({ isDiscoMode, message, messages = [], on
         );
     }
 
-    const activeMessage = message || internalMsg;
+    /* propMsg, not message: it holds the last line for one exit longer, so he finishes leaving
+       with his bubble still on him instead of the text vanishing a beat before he does. */
+    const activeMessage = propMsg || internalMsg;
 
     /* Only the sales terminal's deal ever passed an explicit sprite, so every other popup in
        the app - triggerCapy("Product updated!"), the sampling reminder, all of them - fell
@@ -204,7 +262,7 @@ export default function CapybaraMascot({ isDiscoMode, message, messages = [], on
         || (explicitImage ? null : (activeMessage ? 'kpm-merch-talk' : 'kpm-merch-idle'));
     // suppressed wins over an explicit `message` too — otherwise a triggerCapy fired while
     // the terminal owns the corner would put the second capybara straight back on screen
-    const showMascot = !suppressed && (isPeeking || message);
+    const showMascot = !suppressed && (isPeeking || propMsg);
     /* He arrives from below with an overshoot instead of sliding flatly in from the
        right, and leaves faster than he arrives. Keyframes live in theme.css so Lite
        Mode strips them with everything else. */

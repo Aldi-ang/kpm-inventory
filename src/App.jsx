@@ -3858,7 +3858,7 @@ const handleGitHubMirror = async () => {
                                 so Lite Mode is unaffected. */}
                             <button
                                 type="submit"
-                                className="w-full mt-6 py-4 bg-[#ff9d00] text-[#14100e] font-black uppercase tracking-widest text-sm border-2 border-transparent shadow-[0_3px_0_rgba(0,0,0,0.55)] transition-all duration-150 hover:bg-[#ffb42e] hover:border-[#a89070] hover:tracking-[0.22em] active:translate-y-[3px] active:shadow-none"
+                                className="group w-full mt-6 py-4 bg-[#0d0a09] text-[#f0e2c0] font-black uppercase tracking-widest text-sm border-2 border-[#3a3128] border-b-[3px] border-b-[#ff9d00] shadow-[0_3px_0_rgba(0,0,0,0.55)] transition-all duration-150 hover:bg-[#1c1814] hover:border-[#a89070] hover:border-b-[#ff9d00] hover:tracking-[0.22em] active:translate-y-[3px] active:shadow-none"
                             >
                                 Update Database
                             </button>
