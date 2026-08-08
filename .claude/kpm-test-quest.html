@@ -75,6 +75,14 @@ body::after{
 .ghead .tally.done{color:var(--gold)}
 .gbody{padding:4px 0}
 .gbody[hidden]{display:none}
+/* A finished quest chain should stop competing for his attention without disappearing. */
+.ghead.cleared{opacity:.5}
+.ghead.cleared:hover{opacity:1}
+.chip{
+  font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
+  color:#1a1509;background:var(--gold);padding:2px 6px;margin-left:8px;
+}
+.allclear{padding:11px 12px;font-size:11px;color:var(--dim);letter-spacing:.06em}
 
 /* ── one test ────────────────────────────────────────────────────────────── */
 .item{border-bottom:1px solid var(--line);padding:11px 12px}
@@ -201,6 +209,7 @@ textarea::placeholder{color:#4a423a}
   <div class="dock-in">
     <button class="big" id="copy">▶ Copy Report</button>
     <button class="big ghost" id="save">↓ Save File</button>
+    <button class="big ghost" id="cleared">👁 Cleared: Hidden</button>
     <button class="big ghost" id="sfx">♪ Sound: On</button>
     <button class="big ghost" id="reset">✖ Reset</button>
     <span class="hint" id="hint">Paste the report into the chat when you want Claude to review it.</span>
@@ -319,6 +328,23 @@ function load(){
     if(!Array.isArray(s[i.id].shots)) s[i.id].shots=[];
     if(typeof s[i.id].note!=='string') s[i.id].note='';
   }));
+
+  /* Tests whose wording changed, or whose underlying bug was fixed, after his 2026-08-08
+     report. Their old answers describe a version of the app that no longer exists — and a
+     stale GOOD would now be swallowed by the cleared filter, so he would never be prompted to
+     re-run the very thing that just changed. Clear the verdict once, keep the note: the note
+     is his own words about what he saw, and that is worth more than the vote.
+     Adding another round? New tag, new id list. Never reuse a tag. */
+  const RETEST_TAG='report-2026-08-08';
+  const RETEST=['T1','T2','T3','T4','T6','T8','T9','T10'];
+  if(saved){
+    try{
+      if(localStorage.getItem(KEY+'-retest')!==RETEST_TAG){
+        RETEST.forEach(id=>{ if(s[id]) s[id].verdict=null; });
+        localStorage.setItem(KEY+'-retest',RETEST_TAG);
+      }
+    }catch(e){}
+  }
   return s;
 }
 function save(){
@@ -404,28 +430,50 @@ function tally(g){
    customer brief is shrink and instead its open other test folder above that". */
 const openGroups = new Set(TESTS.slice(0,2).map(g=>g.g));
 
+/* CLEARED = settled, nothing left to do with it. Deliberately NOT "answered": a test marked
+   BROKEN or WEIRD is answered and is still open work, and hiding those would bury the only
+   list of what is actually wrong. Aldi asked for this as "test that u have been confirmed and
+   fix" — so a pass and an untestable both go quiet, and a problem stays on screen. */
+const clearedVerdict = v => v==='good' || v==='skip';
+let hideCleared = localStorage.getItem(KEY+'-hide') !== 'off';
+
 function render(){
   const root=document.getElementById('groups'); root.innerHTML='';
   TESTS.forEach(g=>{
     const t=tally(g);
-    const open=openGroups.has(g.g);
+    const shown = g.items.filter(i => !hideCleared || !clearedVerdict(state[i.id].verdict));
+    const hidden = g.items.length - shown.length;
+    const allClear = shown.length === 0;
+    /* A fully cleared chain collapses and stays collapsed: reopening it would put the exact
+       rows he asked not to look at back on screen. */
+    const open = allClear ? false : openGroups.has(g.g);
+
     const sec=document.createElement('section'); sec.className='group';
     const head=document.createElement('button');
-    head.className='ghead'; head.type='button';
+    head.className='ghead'+(allClear?' cleared':''); head.type='button';
     head.setAttribute('aria-expanded', String(open));
-    head.innerHTML='<span class="caret">'+(open?'▼':'▶')+'</span>'+
+    head.innerHTML='<span class="caret">'+(allClear?'✔':open?'▼':'▶')+'</span>'+
       '<span>'+g.g+' — '+g.name+'</span>'+
+      (hidden?'<span class="chip">'+hidden+' cleared</span>':'')+
       '<span class="tally'+(t.done===t.total?' done':'')+'">'+t.done+'/'+t.total+'</span>';
+
     const body=document.createElement('div'); body.className='gbody'; body.hidden=!open;
     head.onclick=()=>{
       const nowOpen=body.hidden;
       body.hidden=!nowOpen;
       if(nowOpen) openGroups.add(g.g); else openGroups.delete(g.g);
-      head.querySelector('.caret').textContent=nowOpen?'▼':'▶';
+      head.querySelector('.caret').textContent=allClear?'✔':nowOpen?'▼':'▶';
       head.setAttribute('aria-expanded', String(nowOpen));
       bleep(440,40);
     };
-    g.items.forEach(i=>body.appendChild(itemEl(i)));
+
+    if(allClear){
+      const done=document.createElement('div'); done.className='allclear';
+      done.textContent='All '+g.items.length+' cleared. Press CLEARED: HIDDEN in the bar below to bring them back.';
+      body.appendChild(done);
+    } else {
+      shown.forEach(i=>body.appendChild(itemEl(i)));
+    }
     sec.appendChild(head); sec.appendChild(body); root.appendChild(sec);
   });
   renderHud();
@@ -576,6 +624,15 @@ document.getElementById('save').onclick=async()=>{
   setTimeout(()=>URL.revokeObjectURL(a.href),1000);
   toast('Saved');
 };
+
+const clearedBtn=document.getElementById('cleared');
+const paintClearedBtn=()=>{ clearedBtn.textContent='👁 Cleared: '+(hideCleared?'Hidden':'Shown'); };
+clearedBtn.onclick=()=>{
+  hideCleared=!hideCleared;
+  localStorage.setItem(KEY+'-hide', hideCleared?'on':'off');
+  paintClearedBtn(); render(); bleep(hideCleared?520:660,80);
+};
+paintClearedBtn();
 
 document.getElementById('sfx').onclick=e=>{
   sfxOn=!sfxOn;
