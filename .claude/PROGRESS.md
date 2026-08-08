@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-08 17:24 WIB** · branch `phase0-solid-ground` · last commit `e7f2eab`
+**Updated: 2026-08-08 17:33 WIB** · branch `phase0-solid-ground` · last code commit `e7f2eab`
 
 **Aldi clears the session every time he starts a new one. This file is the ONLY thing that
 survives. If it is not current, the work is lost.** Write it before context runs low, not after.
@@ -119,7 +119,8 @@ it never happens twice. Answer, then ask which of the waiting items he wants to 
 | Its credential — OUTSIDE the repo, never commit | `C:/Users/ASUS/.claude/9router-cookie.txt` + `9router-claude-id.txt` |
 | Duplicate-store logic (pure, has a selfcheck) | `src/utils/findDuplicates.js` |
 | Its 21 self-checks | `src/config/findDuplicates.selfcheck.mjs` |
-| 8-bit test logger source (published copy) | `.claude/kpm-test-quest.html` |
+| 8-bit test logger source (published copy) | `.claude/kpm-test-quest.html` — group **T** covers the toasts |
+| How to run the app for him | `npm run dev -- --host` → PC `http://localhost:5173/`, phone `http://192.168.1.141:5173/` (ignore the `172.27.x` virtual adapter) |
 | The published test logger | `https://claude.ai/code/artifact/435e77ee-9f1f-4786-a1df-050156596016` |
 | The "ACCESS GRANTED" animation he wants replaced | `src/App.jsx:3397-3418` (`isUnlocking` branch) |
 | Next-stop design artifact | `https://claude.ai/code/artifact/8feebaa4-f8a2-414d-a4a6-2c642a27af48` |
@@ -166,6 +167,10 @@ fresh document per pin with no dedup check of any kind, and is still the prime s
 **Find Duplicates**: **11 groups out of 151 stores** — but the largest was a name coincidence
 14.5 km wide, so **11 is an upper bound, not a count.** The finder now flags those; the number
 after that change is the one to reason from, and he has not re-run it yet.
+
+**What he is doing right now: group T in the quest log** — 8 hand-tests for the new toasts,
+which is the first group the page opens on. The dev server was started for him; the run command
+and both URLs are in the path table.
 
 He also asked for the testing to be less tedious, so the test list now has an 8-bit quest log
 (link in the table above). Nothing in it reaches Claude on its own; he presses COPY REPORT and
@@ -298,10 +303,20 @@ are never worth rescuing.
 
 ## LOG — newest first, older entries live in `git log` for this file
 
-### 2026-08-08 17:24 WIB — JOB 1 done: 184 alerts → toast, `e7f2eab`. Audit 158/158.
+### 2026-08-08 17:33 WIB — JOB 1 done: 184 alerts → toast, `e7f2eab`. Audit 158/158.
 
 `.claude/session-start-context.md` still printed **115 checks** into every session; it is 158.
 Corrected in the same commit. If that number looks wrong again, it is this line that is stale.
+
+**Quest log updated too (`59e7446`), same URL** — group **T**, 8 tests for the new messages,
+and it now opens on them. **Two bugs fixed in it before publishing:** its `load()` returns
+whatever localStorage holds and every counter reads `state[id].verdict`, so Aldi's saved
+progress — written before T1–T8 existed — would have thrown on the first count and shown him a
+**blank page with his answers apparently gone**. It now backfills unseen ids and repairs
+half-written entries without touching answers it already holds (10 checks against fresh,
+upgraded and corrupt saved state). Its Reset button also used `confirm()`, so on his browser it
+did nothing and said nothing; now it is press-twice. **Any future edit that adds a test group
+must keep that backfill** — adding a group is exactly what makes the crash reachable.
 
 **It was 184, not 180**, across 18 files, and a census first proved every one was a plain
 `alert(...)` call on a single line — no `window.alert`, none inside a comment, none used as a
