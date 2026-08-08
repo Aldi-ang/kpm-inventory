@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-08 17:33 WIB** · branch `phase0-solid-ground` · last code commit `e7f2eab`
+**Updated: 2026-08-08 18:04 WIB** · branch `phase0-solid-ground` · last code commit `e7f2eab`
 
 **Aldi clears the session every time he starts a new one. This file is the ONLY thing that
 survives. If it is not current, the work is lost.** Write it before context runs low, not after.
@@ -302,6 +302,14 @@ are never worth rescuing.
 ---
 
 ## LOG — newest first, older entries live in `git log` for this file
+
+### 2026-08-08 18:04 WIB — session was unrelated (LLAMA download help), NOT kpm work.
+
+No kpm code touched this session. **But `.claude/kpm-test-quest.html` and `src/App.jsx` are
+sitting uncommitted** (`git status`: both modified, 41 and 110 lines) from before this session
+started — untouched by this note, not explained anywhere else in this file. Next session: find
+out what those changes are and whether they're finished, before assuming this file's "committed
+on phase0-solid-ground" claim above still holds for those two files.
 
 ### 2026-08-08 17:33 WIB — JOB 1 done: 184 alerts → toast, `e7f2eab`. Audit 158/158.
 
