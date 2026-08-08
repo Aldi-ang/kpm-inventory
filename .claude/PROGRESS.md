@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-09 00:40 WIB** · branch `phase0-solid-ground` · last code commit `ce9b9a6`
+**Updated: 2026-08-09 02:10 WIB** · branch `phase0-solid-ground` · last code commit `ce9b9a6`
 (quest log locked after his round-2 report)
 
 **Aldi clears the session every time he starts a new one. This file is the ONLY thing that
@@ -80,6 +80,32 @@ His words: *"i want to change that cheap ass access granted animation we should 
   is done — and expect other green to fall out of it.
 - ❓ **Ask him before designing:** does the 2.4s bar gate the actual unlock, or is it pure
   waiting? If it is pure waiting, the best animation may be a much shorter one.
+
+**✅ CLAUDE RAN THE READ-ONLY TESTS 2026-08-09 ~02:00, logged in, real data.** He typed the master
+password himself; Claude never held it. **Nothing was written to Firestore** — no sale committed,
+no outlet, no stock moved, no product saved. **Aldi still has to tick these himself in the quest
+log; Claude cannot set verdicts in his browser's storage.**
+| Test | Result | Evidence |
+|---|---|---|
+| E1 merchant idles in his cave | **GOOD** | in the alcove, torches lit |
+| E2 add a ware → he talks | **WEIRD** | sprite flips to `kpm-merch-talk`, **but no bubble** |
+| E3 choose a customer → he talks | **WEIRD** | same: talks, nothing readable |
+| E4 scroll shelf down | **GOOD** | corner figure appears (4 → 5 sprites) |
+| E5 scroll back up | **GOOD** | returns to 4 |
+| E6 only one capybara ever | **GOOD** | app mascot stays `opacity-0 translate-x-[200%]` throughout |
+| C1 customer sticks | **GOOD** | "AMANAH BARU" held, did not blank |
+| B4 pin a ware | **GOOD** | rail showed 12 Karton / 1 Bal / 16 Slop / 6 Bks |
+| D1/D2 packing line | partial | manifest read `1 KARTON = 400 · 1 BAL = 100 · 1 SLOP = 10 BKS`, Rp 8.900 |
+
+**🔴 NEW BUG, root cause found — the merchant in the terminal can never be read.** E2 and E3 both
+expect a speech bubble. The bubble markup lives on the **app-level `CapybaraMascot`**, and
+`MerchantSalesView` fires `CAPY_SUPPRESS` to stand that mascot down so there are not two
+capybaras. So inside the terminal he mouths words with `kpm-merch-talk` and **nothing he says is
+ever shown**. Verified live: app mascot at `opacity: 0`, `translate-x-[200%]`, `.animate-pop-in`
+count **0** after both an add-ware and a customer selection.
+**This is the silent-action law again, in the one screen he uses most.** The fix is a decision,
+not a bug fix — give the terminal's own merchant a bubble, or let a suppressed mascot still
+render its bubble. **Ask him which; do not pick silently.**
 
 **✅ T10 PASSES — verified in the running app 2026-08-09, not by reading code.** Two `CAPY_COMMS`
 lines 2s apart: the second arrives wearing `kpm-merch-enter` (it used to arrive wearing
