@@ -426,6 +426,15 @@ check(G13, 'a failure wins even when it also reads like a success',
 check(G13, 'the severity rule has a runnable self-check',
   fs.existsSync('src/config/toastSeverity.selfcheck.mjs'),
   'node src/config/toastSeverity.selfcheck.mjs');
+/* 68 reports in App.jsx speak only through the mascot, and some of them are failures. He holds
+   a line 8 seconds, the next line can walk over it, and the sales terminal suppresses him
+   entirely — so a failure announced only by him is a failure allowed to go unseen, which is the
+   whole class of bug this group exists to close. A recognised failure must also raise a strip. */
+const appSrc = fs.readFileSync('src/App.jsx', 'utf8');
+check(G13, 'a failure the mascot reports also raises a strip',
+  /const triggerCapy[\s\S]{0,400}?isFailure\(text\)\s*&&\s*notify\(text\)|const triggerCapy[\s\S]{0,400}?if\s*\(isFailure\(text\)\)\s*notify\(text\)/.test(appSrc) &&
+  /from\s+['"][^'"]*toastSeverity\.js['"]/.test(appSrc),
+  'the mascot is allowed to be missed; a failure is not');
 check(G13, 'a stuck toast can always be cleared', /onClick=\{\(\)\s*=>\s*dismiss\(item\.id\)\}/.test(toast) &&
   /clearTimeout/.test(toast),
   'sticky with no way out would wall off the screen');

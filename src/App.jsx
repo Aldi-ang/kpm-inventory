@@ -102,6 +102,7 @@ import { formatRupiah, getCurrentDate, getLocalDayKey, getRandomColor, convertTo
 import { computeDayXP, DEFAULT_XP, checkBadges, DEFAULT_BADGES } from './config/career';
 import { confirmAction, promptAction } from './components/ConfirmGate.jsx';
 import { notify } from './components/Toast.jsx';
+import { isFailure } from './utils/toastSeverity.js';
 
 const APP_VERSION = packageJson.version;
 
@@ -2387,8 +2388,22 @@ const handleGitHubMirror = async () => {
     speakCapy(activeMessages[nextIndex]);
   };
 
-  // Re-usable function to pop up the mascot with a custom message
-  const triggerCapy = (msg) => speakCapy(msg || "Hello!");
+  /* Re-usable function to pop up the mascot with a custom message.
+
+     68 places in this file report through here and nowhere else, and some of them are failures:
+     "❌ Sync Failed! Retrying later.", "Mirror failed. Check console.", "❌ Gagal menghitung
+     ulang karir". The mascot holds a line for 8 seconds, can be walked over by the next one, and
+     is suppressed entirely while the sales terminal owns the corner — so those were announced by
+     the one thing in the app that is allowed to be missed. Aldi marked exactly that BROKEN.
+
+     A recognised failure now ALSO raises a strip, which stays until he taps it. Only a
+     recognised failure: isFailure is deliberately narrower than isSticky, or every "Map Icons
+     Exported!" would be reported twice. The mascot still says everything he said before. */
+  const triggerCapy = (msg) => {
+    const text = msg || "Hello!";
+    speakCapy(text);
+    if (isFailure(text)) notify(text);
+  };
   
   const handleAddMascotMessage = async () => {
       if(!newMascotMessage.trim() || !user) return;

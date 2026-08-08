@@ -29,4 +29,18 @@ export function isSticky(message) {
     return !SUCCESS.test(text);
 }
 
+/* Narrower than isSticky on purpose. isSticky answers "may this clear itself?", and its answer
+   for anything unrecognised is no — which is right for a toast and useless as a filter, because
+   most of the mascot's lines are unrecognised flavour.
+
+   This answers the different question "is this a failure?", and only a recognised one counts.
+   App.jsx uses it so the 68 places that still report through the mascot alone — "Sync Failed!
+   Retrying later.", "Mirror failed.", "Gagal menghitung ulang karir" — also raise a strip that
+   cannot disappear on its own. The mascot keeps every line; he just stops being the only
+   witness to the ones that matter. Widening this makes him double-report ordinary news, so
+   widen it only for text that genuinely means something went wrong. */
+export function isFailure(message) {
+    return FAILURE.test(String(message ?? '').trim());
+}
+
 export default isSticky;

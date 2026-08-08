@@ -8,7 +8,30 @@
    which is precisely the silent-failure bug the whole toast job replaced. Getting a FADE one
    wrong just costs him a click. So when in doubt, a message belongs in STICKY. */
 
-import { isSticky } from '../utils/toastSeverity.js';
+import { isSticky, isFailure } from '../utils/toastSeverity.js';
+
+/* isFailure decides which of the 68 mascot-only reports in App.jsx also raise a strip. Too
+   narrow and a real failure is announced solely by a bubble that can be walked over; too wide
+   and every piece of good news is reported twice. Both lists are real mascot lines. */
+const MASCOT_FAILURES = [
+    '❌ Sync Failed! Retrying later.',
+    'Mirror failed. Check console.',
+    '❌ Gagal menghitung ulang karir: quota exceeded',
+    '⚠️ BOSS! Sampoerna Mild is critically low (3 left). Restock needed!',
+    '⚠️ PROTOCOL ALERT: TIME FOR USB SAFE BACKUP!',
+];
+const MASCOT_CHATTER = [
+    '📡 SIGNAL ACQUIRED! Pushing 12 offline records to HQ...',
+    '✅ Sync Complete! 12 items secured in Master Vault.',
+    'Map Icons Exported!',
+    'Executive Targets Updated! 🎯',
+    "Let's DANCE! 🕺💃",
+    'Access Granted. Welcome back, Boss.',
+    'New dialogue added!',
+    'Admin session ended.',
+    'Transfer request for Warung Bu Sri sent to Alex!',
+    'Deep-fetching system databases and intelligence... ⏳',
+];
 
 /* Must stay on screen until clicked. */
 const STICKY = [
@@ -83,6 +106,18 @@ console.log('\nsafe to fade on its own');
 for (const m of FADE) {
     report(isSticky(m) === false, JSON.stringify(m).slice(0, 74),
         'this would nag him for a click he does not need');
+}
+
+console.log('\nmascot lines that must ALSO raise a strip');
+for (const m of MASCOT_FAILURES) {
+    report(isFailure(m) === true, JSON.stringify(m).slice(0, 74),
+        'the mascot would be the only witness, and he can be walked over or suppressed');
+}
+
+console.log('\nmascot lines that must NOT be repeated as a strip');
+for (const m of MASCOT_CHATTER) {
+    report(isFailure(m) === false, JSON.stringify(m).slice(0, 74),
+        'every piece of ordinary news would be reported twice');
 }
 
 /* A classifier that answers "sticky" to everything passes the STICKY block and would look
