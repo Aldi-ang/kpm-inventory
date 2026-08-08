@@ -250,7 +250,48 @@ setting entirely and hard-code the real window. Then re-run the four-tier test �
 synthetic-transcript method in `git log` for this file works and is cheap. **Do not trust the
 93% stop until this is fixed; it cannot fire.**
 
-### 2026-08-08 — 9router key tested: VALID but wrong scope. One question to ask him.
+### 2026-08-08 — 9router fully investigated. Only ONE thing is still missing.
+
+**Do not re-probe any of this. It is settled.**
+
+**9router's data lives at** `C:/Users/ASUS/AppData/Roaming/9router/` — `db/data.sqlite` (SQLite,
+live, WAL), plus `auth`, `jwt-secret`, `logs`, `machine-id`, `runtime`. Read it with python3 and
+`file:...?mode=ro&immutable=1` — **sqlite3 CLI is not installed on this machine**, python3 is.
+
+**What the database does NOT have:** the session quota. Checked `providerConnections` for the
+Claude account (`e9d82a7e-4b97-43cc-8da6-6debf41b6752`) — its `data` blob holds only OAuth fields
+(`accessToken`, `refreshToken`, `expiresAt`, `scope`, `modelLock_*`, `testStatus`). **No quota,
+no limit, no reset.** Tables are `_meta, apiKeys, combos, kv, providerConnections, providerNodes,
+proxyPools, requestDetails, settings, sqlite_sequence, usageDaily, usageHistory`.
+
+**Why `usageHistory` cannot substitute:** it only logs traffic 9router actually proxies. Its
+newest row is `2026-08-07T01:50` from `opencode`. **Aldi's Claude Code sessions do not route
+through 9router**, so his real plan burn is invisible to it. Computing the window from this table
+would report near-zero while he is at 90%. Do not build that.
+
+**Therefore the Quota Tracker fetches the number live from Anthropic** using the stored OAuth
+token, and the only sane way in is 9router's own `/api/quota`.
+
+**Credentials — what has been ruled out:**
+- The `sk-…` inference key: valid for `/v1/models`, **rejected by every `/api/*` account route**.
+- `odysseus_session=…` cookie **alone: still 401.** It needs the `auth_token` JWT beside it.
+- No rate-limit response headers exist anywhere.
+- **Claude in Chrome is NOT connected**, so his logged-in browser cannot be borrowed to read it.
+
+**THE ONE MISSING PIECE — ask him for the full `auth_token` cookie value.** In DevTools, on any
+`localhost:20128` request, the Cookie header holds
+`odysseus_session=…; auth_token=eyJhbGciOiJIUzI1NiJ9.…` — his screenshot cut the JWT off. Easiest:
+right-click the request → **Copy → Copy as cURL**, paste that.
+
+**Deliberately NOT done:** his Anthropic OAuth `accessToken` sits in that SQLite file and could be
+used to call Anthropic directly. **Do not.** Lifting a third-party credential out of local storage
+to make calls he did not ask for is not something to do on inference. Ask.
+
+**When building: the credential goes OUTSIDE the repo** (`C:/Users/ASUS/.claude/`), never in
+`.claude/` inside the project, never in this file. Verified today that the key he pasted is absent
+from both the working tree and full git history (`git log -S`). Keep it that way.
+
+### 2026-08-08 — 9router key tested: VALID but wrong scope (superseded by the entry above)
 
 **The key Aldi supplied is NOT written anywhere in this repo, deliberately — a credential in a
 committed file is a credential leaked into git history forever. He will need to re-supply it, or
