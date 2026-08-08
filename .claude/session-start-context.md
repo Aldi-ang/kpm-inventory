@@ -28,7 +28,7 @@ Therefore:
 ```powershell
 npm run build; node src/config/integration.audit.mjs
 ```
-115 checks over the BUILT output — "is the terminal intact?" in one turn. The `*.selfcheck.mjs`
+158 checks over the BUILT output — "is the terminal intact?" in one turn. The `*.selfcheck.mjs`
 files in `src/config/` do the same for the money paths. Aldi is on **PowerShell**: `;` not `&&`.
 
 **Compress the resume memory before the session ends, not when asked.**

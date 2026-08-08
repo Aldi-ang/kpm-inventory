@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-08 09:00 WIB** · branch `phase0-solid-ground` · last commit `7ba7db3`
+**Updated: 2026-08-08 14:20 WIB** · branch `phase0-solid-ground` · last commit `e7f2eab`
 
 **Aldi clears the session every time he starts a new one. This file is the ONLY thing that
 survives. If it is not current, the work is lost.** Write it before context runs low, not after.
@@ -31,23 +31,32 @@ If this file and the repo disagree, **the repo wins, and fixing this file is job
 
 ## ▶ DO THIS NEXT
 
-**HE ASKED FOR TWO BIG JOBS, IN THIS ORDER, and they were deliberately NOT started — he was at
-80% plan quota with ~3h 39m to reset, and neither fits in 20%.** Do them after the reset, with a
-cleared context. He said: *"option b looks convenience do that instead, anyway lets work on what
+**JOB 1 IS DONE — committed `e7f2eab` 2026-08-08. JOB 2 is now the next thing to start.**
+He said: *"option b looks convenience do that instead, anyway lets work on what
 we can do while im away, do full review of my app now, but before we do that let me clear first"*
 
-**JOB 1 — the 180 `alert()` calls → toast. DECIDED: Option B (toast).** He picked it.
-- **Toast** = a small strip that slides into a corner, shows the message, fades after ~3s, no
-  click. Use it for the ~170 routine "it worked" messages.
-- **Keep a modal** for the handful that must genuinely stop him — not enough stock, sync failed.
-  That split was the recommendation he accepted, not a blanket replacement.
-- Follow `src/components/ConfirmGate.jsx`: one host mounted in `main.jsx` as a sibling of `<App/>`,
-  a module-level singleton, and a plain function call at the 180 sites. **Do not invent a second
-  mechanism.** Same traps as last time: exclude the toast file itself from any codemod, and use
-  an AST pass for `async` rather than one build error at a time.
-- Add audit checks so `alert(` cannot come back, mirroring group 10.
+**✅ JOB 1 — the `alert()` calls → toast. DONE, committed `e7f2eab`, NOT PUSHED.**
+It was **184** calls across 18 files, not 180. All gone; audit **158/158**, severity self-check
+**33/33**, build green, and the toast was **verified rendering in the running app** (dev server,
+real `ToastHost`): failure toast stayed past 4.2s, success toast cleared itself, click dismissed
+it, accent `rgb(180,82,74)` on `rgb(20,16,14)` — palette law intact.
+- `src/components/Toast.jsx` — same shape as ConfirmGate: module singleton, one host in
+  `main.jsx` beside `<App/>`, plain `notify(msg)` at the call sites. **No second mechanism.**
+- **`notify()` is NOT async and must never become async.** Several sites are written
+  `return alert(msg)` → `return notify(msg)`; both return undefined. That is why zero functions
+  needed converting and the whole thing was a textual swap. Audit group 13 pins this.
+- **No modal was added.** Instead: a message stays on screen until clicked unless it is
+  recognisably a success. `src/utils/toastSeverity.js` decides, `toastSeverity.selfcheck.mjs`
+  tests it on 32 real messages. **If Aldi says the toasts nag too much, widen the SUCCESS list
+  there — never make the default fade.** 🔴 he has not seen it in daily use yet; that is the
+  one thing to ask him after he tests.
+- Trap found and fixed, not shipped: the crown transfer reported the handover then reloaded on
+  the next line. `alert` used to block there; a toast does not, and a reload destroys the host.
+  Now a 5s delay. `signOut()` is fine — the host is a sibling of `<App/>`, so the toast survives
+  onto the login screen. Audit group 13 bans the immediate-reload form, and that check was
+  proved to FAIL on the pre-fix code before it was kept.
 
-**JOB 2 — a full review of the app.** He asked for a proper one, not a skim. `src/` is finally
+**JOB 2 — a full review of the app. ▶ START HERE.** He asked for a proper one, not a skim. `src/` is finally
 clean (worktrees gone, so searches return one hit each). Known leads already recorded:
 `logAudit`/`triggerCapy` unguarded at 35 sites vs guarded at 29 (latent, not live — App.jsx
 defines `logAudit` locally at ~:2335), the KML import creating a fresh doc per pin with no dedup,
@@ -76,6 +85,8 @@ it never happens twice. Answer, then ask which of the waiting items he wants to 
 | The sales terminal (all UI work lands here) | `src/MerchantSalesView.jsx` |
 | The 147-check audit — run before anything | `src/config/integration.audit.mjs` |
 | The in-page confirm that replaced every dialog | `src/components/ConfirmGate.jsx` |
+| The in-page toast that replaced every alert | `src/components/Toast.jsx` |
+| Which toasts stick vs fade (the one judgement call) | `src/utils/toastSeverity.js` + `src/config/toastSeverity.selfcheck.mjs` |
 | Money & logic self-checks | `src/config/*.selfcheck.mjs`, `src/hooks/useSound.selfcheck.mjs` |
 | Aldi's 51-item manual test list | `SALES_TERMINAL_TEST_LIST.md` (repo root) |
 | Standing rules (auto-loaded each session) | `.claude/session-start-context.md` |
@@ -101,21 +112,33 @@ it never happens twice. Answer, then ask which of the waiting items he wants to 
 npm run build; node src/config/integration.audit.mjs
 ```
 
-147 checks over the built output. One turn, small result. If it passes, the terminal is
+158 checks over the built output. One turn, small result. If it passes, the terminal is
 intact — do **not** re-read source to confirm it.
+
+The two pure-logic self-checks are separate and cheap:
+
+```powershell
+node src/config/toastSeverity.selfcheck.mjs; node src/config/findDuplicates.selfcheck.mjs
+```
 
 ---
 
 ## NOW
 
-Sales terminal redesign is **built and passing 147/147**. Design work is CLOSED.
+Sales terminal redesign is **built and passing 158/158**. Design work is CLOSED.
 Groups A and B are walked; H1, H3 and C2 confirmed by hand. **Everything below is committed
 on `phase0-solid-ground` and NOTHING is pushed — the branch has no upstream, so Vercel cannot
 see any of it.**
 
-Three jobs closed today, all after the same root cause: **the app failed silently.**
+**The silent-failure job is now COMPLETE.** Every browser dialog in the app is gone: 58
+confirms, 11 prompts, and as of `e7f2eab` all **184 alerts**. Nothing in `src/` can report
+through a box the browser is allowed to suppress, and groups 9, 10 and 13 of the audit fail
+the build if one comes back.
+
+Four jobs closed, all after the same root cause: **the app failed silently.**
 1. Every browser dialog — 58 confirms + 11 prompts — went dead on his browser and did nothing
-   visible. All now route through `src/components/ConfirmGate.jsx`.
+   visible. All now route through `src/components/ConfirmGate.jsx`. The 184 `alert()` reports
+   had the identical disease and now route through `src/components/Toast.jsx` (`e7f2eab`).
 2. `pricingTier` vs `priceTier` hid sales-flow stores from the agent who created them, who then
    created them again. Fixed both ends; the repair button ran and reported **3** stores.
 3. A duplicate-store finder now exists, because nothing could ever show him the damage.
@@ -181,7 +204,15 @@ throwaway first.
   beyond 500m; he has not re-run it since. Get the post-flag number before drawing any conclusion
   about the KML import.
 
-- ✅ **DECIDED 2026-08-08: toast (his "option b").** Not built — see DO THIS NEXT.
+- ✅ **DECIDED 2026-08-08: toast (his "option b"). BUILT AND COMMITTED `e7f2eab`.**
+
+- 🔴 **ONE QUESTION FOR HIM AFTER HE USES IT: do the toasts nag?** The rule shipped is *a
+  message stays on screen until you click it, unless it is recognisably a success.* That was
+  chosen to fail safe — a missed "stock did not save" is the bug being fixed, an extra click is
+  not. But it means roughly 100 of the 184 need a click. **Ask him in plain words: "when a
+  message stays until you tap it, is that helpful or annoying?"** If annoying, the fix is one
+  file — widen the SUCCESS list in `src/utils/toastSeverity.js` and add the message to
+  `toastSeverity.selfcheck.mjs`. **Never make the default fade.**
 
 - 🔴 **What is the rule for the duplicate documents that already exist?** Merging or deleting one
   means deciding which copy keeps its sales history and its outstanding debt — real money, human
@@ -248,6 +279,39 @@ are never worth rescuing.
 ---
 
 ## LOG — newest first, older entries live in `git log` for this file
+
+### 2026-08-08 14:xx WIB — JOB 1 done: 184 alerts → toast, `e7f2eab`. Audit 158/158.
+
+**It was 184, not 180**, across 18 files, and a census first proved every one was a plain
+`alert(...)` call on a single line — no `window.alert`, none inside a comment, none used as a
+callback. That is what made a textual codemod safe instead of an AST pass.
+
+**The design decision that mattered: `notify()` returns undefined and is never awaited.**
+ConfirmGate had to be async because a question must be answered; a report must not. Several
+sites are `return alert(msg)`, and they keep working only because both return undefined. Audit
+group 13 fails the build if anyone makes `notify` async.
+
+**No modal was built, deliberately** — the split he approved needed someone to name which of
+184 messages must block, and he is not here. Instead the toast **stays until clicked unless the
+text is recognisably a success**, which gets the same protection with no second mechanism and
+no per-site judgement. That rule lives in `src/utils/toastSeverity.js` with 33 self-checks.
+The direction is the safety call: sticky-by-default costs a click, fade-by-default loses a
+failure message. **This is the one thing to ask him about after he uses it** — see WAITING ON ALDI.
+
+**Two real bugs were caught by arguing against the work, not by testing it:**
+- Checking "is it a success?" first made *"Could not complete the sync"* fade — it contains the
+  word *complete*. FAILURE is now tested first and wins. The self-check pins it.
+- The crown transfer said "TRANSFER COMPLETE" and called `window.location.reload()` on the very
+  next line. `alert` blocked there; a toast does not, and a reload destroys `ToastHost` with the
+  page — so the only confirmation that ownership of the whole system changed hands would have
+  been wiped in milliseconds. Now delayed 5s, and group 13 bans the immediate form. **That check
+  was proved to FAIL on the pre-fix code before it was kept** — a check never seen failing is
+  not evidence.
+
+**Verified live, not just built:** dev server up, `import('/src/components/Toast.jsx')` in the
+page console fired two real toasts through the mounted host. At 300ms both present
+(`role="alert"` + `role="status"`); at 4200ms the success had cleared itself and the failure was
+still there; clicking removed it; accent `rgb(180,82,74)` on `rgb(20,16,14)`. Palette law holds.
 
 ### 2026-08-07 23:0x WIB — 🔴 THE LIMIT THAT MATTERS IS THE 5-HOUR PLAN QUOTA, NOT CONTEXT
 

@@ -31,5 +31,7 @@
   "29": "CustomerManager.jsx",
   "30": "dayStats.selfcheck.mjs",
   "31": "txSize.selfcheck.mjs",
-  "35": "context-watch.mjs"
+  "32": "MerchantSalesView",
+  "33": "MerchantSalesView.jsx",
+  "34": "plan-quota.mjs"
 }
