@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-08 WIB** · branch `phase0-solid-ground` · last commit `c90f397`
+**Updated: 2026-08-08 08:40 WIB** · branch `phase0-solid-ground` · last commit `35d4282`
 
 **Aldi clears the session every time he starts a new one. This file is the ONLY thing that
 survives. If it is not current, the work is lost.** Write it before context runs low, not after.
@@ -11,12 +11,11 @@ the problem, im talking about the 5 hours limit - plan usage limit."*
 
 - **`/clear` does NOT help.** Never offer it as the answer to this. It empties context; the plan
   quota keeps counting regardless.
-- **Claude cannot see plan usage YET.** `context-watch.mjs` measures the *context window* only —
-  a different limit. **But 9router's Quota Tracker has the real number** (`session (5h)`, shown
-  as `31 / 100` with a reset countdown) and its `localhost:20128/api/quota` endpoint exists and
-  returns **401**, i.e. it works and needs a credential. Building that reader is the top job —
-  see the LOG. Until it exists, only Aldi can see the quota, so his stated percentage is the
-  only signal.
+- **SOLVED 2026-08-08 — `.claude/plan-quota.mjs` reads the real quota** from 9router at
+  `GET localhost:20128/api/usage/<connectionId>`. Registered as a UserPromptSubmit hook, tiers at
+  70/85/95%. **It is silent until the credential files exist** (see WAITING ON ALDI). Do not
+  confuse it with `context-watch.mjs`, which measures the context window — a different limit that
+  `/clear` does fix.
 - **When he states a percentage, act on that turn — do not finish what you were doing first.**
   Write this file, commit, reply short. He said 94% once and the turn stalled anyway, which is
   precisely the stuck-screen-and-force-retry he asked to prevent.
@@ -68,6 +67,8 @@ it never happens twice. Answer, then ask which of the waiting items he wants to 
 | Alucard's rules (edit-denied — lift in settings first) | `C:\Users\ASUS\.claude\skills\alucard\SKILL.md` |
 | The Stop hook that keeps this file honest | `.claude/check-progress.mjs` |
 | The context meter (measures, never guesses) | `.claude/context-watch.mjs` |
+| The 5-hour PLAN quota watcher | `.claude/plan-quota.mjs` |
+| Its credential — OUTSIDE the repo, never commit | `C:/Users/ASUS/.claude/9router-cookie.txt` + `9router-claude-id.txt` |
 | Duplicate-store logic (pure, has a selfcheck) | `src/utils/findDuplicates.js` |
 | Its 21 self-checks | `src/config/findDuplicates.selfcheck.mjs` |
 | 8-bit test logger source (published copy) | `.claude/kpm-test-quest.html` |
@@ -125,6 +126,19 @@ Do not promise a scheduled session a second time without testing the mechanism o
 throwaway first.
 
 ## WAITING ON ALDI — do not re-derive these, just ask
+
+- ❓ **"yes save the cookie" — one word, and the plan-quota meter goes live.** Writing his 9router
+  session cookie to `C:/Users/ASUS/.claude/9router-cookie.txt` was **blocked by the safety
+  classifier**, correctly: he pasted the token to be *used*, never to be *persisted*. It needs him
+  to say so explicitly. Two files are needed, both OUTSIDE the repo:
+  `9router-cookie.txt` = the full `odysseus_session=…; auth_token=…` string, and
+  `9router-claude-id.txt` = `e9d82a7e-4b97-43cc-8da6-6debf41b6752`.
+  **Until then the hook runs and stays silent.** He can also just create the files himself.
+
+- ⏳ **That cookie's `auth_token` is a ~24h JWT — it expires 2026-08-09 ~08:45 WIB.** The hook
+  detects a 401 and prints the exact refresh steps rather than going blind. **Better fix worth
+  asking about:** whether 9router's settings page offers a permanent API token, which would end
+  the daily re-paste.
 
 - ✅ **ANSWERED 2026-08-07: 11 possible duplicate groups out of 151 stores.** But the top group
   was three *"warung sembako sumber rejeki"* **14.5 km apart**, matched on name alone — a shop
@@ -250,6 +264,36 @@ setting entirely and hard-code the real window. Then re-run the four-tier test �
 synthetic-transcript method in `git log` for this file works and is cheap. **Do not trust the
 93% stop until this is fixed; it cannot fire.**
 
+### 2026-08-08 08:40 WIB — the plan-quota meter EXISTS. It reads the real number.
+
+**The route is `GET localhost:20128/api/usage/<connectionId>`.** Claude's connection id is
+`e9d82a7e-4b97-43cc-8da6-6debf41b6752`. Observed live response — these field names are copied,
+not guessed:
+
+```json
+{"plan":"Claude Code",
+ "quotas":{"session (5h)":{"used":56,"total":100,"remaining":44,
+                          "remainingPercentage":44,
+                          "resetAt":"2026-08-08T05:40:00.066Z","unlimited":false}}}
+```
+
+**How it was found, because ~25 guessed paths all 404'd:** fetch `/dashboard/quota` (NOT `/quota`),
+read the `static/chunks/app/(dashboard)/dashboard/quota/page-*.js` path out of its HTML, download
+that chunk and grep its API literals. **Stop guessing endpoint names and read the page's bundle.**
+
+`.claude/plan-quota.mjs` is built, registered as a UserPromptSubmit hook beside `context-watch`,
+syntax-checked, verified silent when unconfigured, and its 70/85/95% tiers verified against the
+real shape. It **never** suggests `/clear` for this limit, and every failure path — service down,
+401, non-JSON, missing field — prints **UNKNOWN and why**, never a number it is unsure of.
+
+**It is silent until the credential files exist — see WAITING ON ALDI.** The write was blocked by
+the safety classifier and that block was right.
+
+**Also this session:** Aldi turned on Remote Control and confirmed he can follow work from his
+phone; `claude.ai/code` in a phone browser is the way to message from away, and `RemoteTrigger`
+(cloud routines, verified reachable, currently zero configured) is the way to run work that does
+not depend on his PC — unlike the local scheduled task, which failed.
+
 ### 2026-08-08 — the four worktrees are GONE. src/ is clean.
 
 Aldi approved explicitly (*"delete the worktree"*) after a first attempt was correctly blocked for
@@ -309,177 +353,5 @@ to make calls he did not ask for is not something to do on inference. Ask.
 **When building: the credential goes OUTSIDE the repo** (`C:/Users/ASUS/.claude/`), never in
 `.claude/` inside the project, never in this file. Verified today that the key he pasted is absent
 from both the working tree and full git history (`git log -S`). Keep it that way.
-
-### 2026-08-08 — 9router key tested: VALID but wrong scope (superseded by the entry above)
-
-**The key Aldi supplied is NOT written anywhere in this repo, deliberately — a credential in a
-committed file is a credential leaked into git history forever. He will need to re-supply it, or
-better, supply the admin one described below.**
-
-**What was established by probing, so nobody re-runs it:**
-- The key **works** — `/v1/models` returns 200 with the model list. It is an **inference key**
-  (`sk-…`), scoped to routing LLM calls.
-- **Every account/quota route rejects it** with `{"error":"Unauthorized"}`:
-  `/api/quota`, `/api/quotas`, `/api/usage`, `/api/quota/status`, `/api/me`, `/api/account`,
-  `/api/keys`. Tried as `Authorization: Bearer`, `x-api-key`, and `api-key` — all 401.
-- **No quota headers exist.** Checked response headers on `/v1/models`; nothing rate-limit-shaped.
-  So sniffing headers off normal traffic is a dead end, not just unimplemented.
-- Provider quota does appear **inside error bodies** on failure — a `kr/auto` test returned
-  `402 {"message":"You have reached the limit.","reason":"MONTHLY_REQUEST_COUNT"} (reset after 2m)`.
-  Useful to know, but it only reports the routed provider's limit at the moment of failure, which
-  is far too late to warn him. Not a solution.
-- Incidentally: **his free `kr/auto` tier is currently exhausted** (monthly request count).
-
-**THE ONE THING TO ASK HIM — takes 30 seconds:**
-> Open the Quota Tracker page in your browser → press **F12** → **Network** tab → click the
-> **refresh** icon on the Claude quota card → click the request to `/api/quota` → copy the
-> **`Authorization`** header, or the **`Cookie`** header if there is no Authorization.
-
-That is the credential the tracker page itself uses, and it is the one that unlocks the endpoint.
-
-**When building it:** store that credential **outside the repo** — `C:/Users/ASUS/.claude/` is
-right — and have the hook read it from there. **Never** write it into `.claude/` inside the repo,
-into `PROGRESS.md`, or anywhere `git add -A` can reach. Then `curl` one authenticated call and
-**record the real JSON shape before coding against it** — do not guess field names.
-
-### 2026-08-08 — ⚠️ RESCUED 259 LINES OF UNCOMMITTED WORK FROM A BURIED WORKTREE
-
-**Tell Aldi this first thing. It was one folder-delete from gone.**
-
-`src/.claude/worktrees/customer-directory-permissions-396625/` held **six modified files, never
-committed** — `firestore.rules` (+107 lines), `src/config/permissions.js`, `App.jsx`,
-`CustomerManager.jsx`, `SettingsView.jsx`, `MANUAL_TEST_CHECKLIST.md`. This is the **Customer
-Directory permission tier** work that memory records as "emulator-tested, NOT deployed". None of
-it exists on `phase0-solid-ground`.
-
-Committed on its own branch as **`cccb3c0`** (branch
-`claude/customer-directory-permissions-396625`). That changes nothing about its status —
-**`firestore.rules` is still a DRAFT and still NOT deployed** — it only moves the work out of
-"unsaved on disk" and into git.
-
-**Worktree audit, all four:**
-| Worktree | Branch | State |
-|---|---|---|
-| `critical-bugs-permissions-batch-c3371f` | detached `95c0248` | clean, commit reachable from `main` |
-| `customer-directory-permissions-396625` | own branch | **had the 259 lines — now committed** |
-| `obsidian-claudian-setup-2d80f9` | own branch | clean |
-| `plugin-marketplace-ponytail-68e37f` | detached `3231f21` | clean, reachable from `phase0-solid-ground` |
-
-**No orphans** — every commit is reachable from a branch. **They are now safe to remove**, but
-removal is destructive and Aldi has not approved it, so it was NOT done. The command when he says
-yes: `git worktree remove <path>` for each, which also un-clutters every future search.
-
-**They are NOT in the build.** Vite only bundles what the entry imports, and nothing imports them;
-`integration.audit.mjs`'s `walk()` already skips `.claude`. So the cost is search noise and tooling
-confusion, not bundle size. Do not treat this as a performance problem.
-
-**Second finding, lower severity, NOT fixed — needs a decision.** `logAudit` and `triggerCapy` are
-optional props in child components, and their use is split: **29 guarded** (`if (logAudit)`) vs
-**35 unguarded** bare calls. Inside `App.jsx` unguarded is fine — `logAudit` is defined locally at
-`App.jsx:2335`. The risk is only in children (`BranchWarehouseManager.jsx` has 10,
-`CrownTransferProtocol.jsx`, `CustomerManager.jsx`, `AuditVaultView.jsx`). App.jsx does pass them
-today, so this is a **latent crash risk, not a live bug** — do not report it as one. Fixing means
-touching ~35 call sites for a condition that never currently occurs; ask him before spending that.
-
-### 2026-08-08 — the context meter now MEASURES instead of guessing, and it is accurate
-
-**It was wrong twice in one day, in opposite directions. Both fixed; do not "improve" it by
-guessing a ceiling again.**
-
-1. **Under-reported.** It divided by `autoCompactWindow` = 1,000,000 and stayed silent all
-   session while the UI showed 92%.
-2. **Then over-reported.** The "fix" clamped the window to 200k on the assumption that was the
-   real size. Aldi's UI then read **459.7k / 1.0M (46%)** while the hook shouted 80% and told him
-   to clear with more than half his window free. **His window really is 1M.** The clamp is gone.
-
-**The real repair was the numerator, not the denominator.** It was estimating tokens from message
-characters, which only sees message text — never the system prompt, tool schemas or attachments —
-so it guessed 160k on a 459.7k conversation. The transcript already carries the true figure:
-every assistant line has `message.usage`, and on the MOST RECENT one,
-`input_tokens + cache_read_input_tokens + cache_creation_input_tokens + output_tokens` **is** the
-context that request actually sent. It now reads that, backwards from the end, and falls back to
-the character estimate only when a session has no usage line yet.
-
-**Verified against reality:** hook computes **466,796 (47%)** where Aldi's UI showed
-**459,700 (46%)** — 7k apart, which is just the turns between his screenshot and the check. It
-correctly stayed silent at 46%, being under the 55% threshold.
-
-**Standing warning for whoever touches this next:** never hard-code or clamp the window. Read
-`autoCompactWindow` and trust it. Both of today's failures came from assuming a number instead of
-measuring one.
-
-### 2026-08-08 — 🟢🟢 9ROUTER EXPOSES THE REAL QUOTA. Read it, do not estimate it.
-
-**This supersedes the calibration design below. Build this instead — it is the true number, not a
-fitted guess.**
-
-Aldi started 9router and pointed at its Quota Tracker. His screenshot, verbatim from the UI:
-
-> **Claude · Account 1 · session (5h) · 31 / 100 · 69% · in 4h 0m**
-
-So the quota is **already tracked, already normalised to /100, and already carries the reset
-countdown**. No token summing, no calibration, no weighting guesswork needed.
-
-**Probed `localhost:20128` while it was running:**
-```
-/api/health   200
-/api/quota    401      <- exists, needs auth
-/api/quotas   401      <- exists, needs auth
-/api/usage    401      <- exists, needs auth
-/quota /usage /health  404
-```
-**The endpoints are real. They only need a credential.** Not pursued further — Aldi had gone to
-sleep and hunting for his API key unasked is not something to do while he is away.
-
-**Next session, in order:**
-1. Ask him where 9router's API key/token lives, or for the header it wants. **Ask — do not go
-   looking through his config files for a credential.**
-2. `curl` one authenticated call to `/api/quota` and **record the real response shape** before
-   writing anything against it. Never code against a guessed JSON shape.
-3. Then a UserPromptSubmit hook that reads it and warns at his thresholds. Because this is the
-   real percentage, the "never under-report" rule is satisfied by construction — no rounding-up
-   fudge needed.
-4. If the key turns out to be awkward, the transcript-calibration design below still works as a
-   fallback. It is now plan B, not plan A.
-
-**Also captured for calibration if plan B is ever needed:** at ~80% context in this session, his
-tracker read **31/100 with 4h 0m remaining**.
-
-### 2026-08-08 — plan B (superseded by the above): estimate from transcripts + calibration
-
-Aldi asked whether codeburn or 9router could give the 5-hour quota. **Both checked, both no —
-but the raw transcripts can, and that is the answer.**
-
-- **codeburn — cannot.** `get_usage` totals return `costUSD / calls / sessions / cacheHitPercent`,
-  **no token counts and no timestamps**, and its finest period is a whole calendar day. A rolling
-  5-hour window cannot be cut from day buckets. Do not revisit this.
-- **9router — not running.** Nothing answers on `localhost:20128` (`/usage`, `/api/usage`,
-  `/v1/usage`, `/api/stats`, `/health` all dead). If he starts it, its usage section is worth
-  re-checking; until then it does not exist.
-- **The transcripts CAN.** `~/.claude/projects/**/*.jsonl` carries per-call
-  `message.usage` — `input_tokens`, `output_tokens`, `cache_creation_input_tokens`,
-  `cache_read_input_tokens` — **plus an ISO `timestamp` on nearly every line.** Verified on the
-  live file: 533 of 978 lines carry usage, and a trailing-5-hour sum computed cleanly
-  (**74.9M tokens in the last 5 hours from that one file alone**).
-
-**So the numerator is real and cheap. The denominator is the whole problem** — Anthropic does not
-publish the 5-hour allowance to the client, and it is weighted (model, output vs input, and cache
-reads are not billed like fresh input; his cache-hit rate is **99.99%**, so a raw token sum is a
-bad proxy on its own).
-
-**The design, which solves that — calibrate against him, do not guess:**
-1. Script sums tokens across **all** project transcripts in the trailing 5 hours, rolling.
-2. When Aldi states a percentage (he does this naturally — *"its passes 92%"*, *"94% now"*),
-   record `{tokens_at_that_moment, percent_he_said}` to a small JSON file.
-3. Allowance = median of `tokens / (percent/100)` across calibration points. One point makes it
-   usable; two or three make it good.
-4. A UserPromptSubmit hook then reports estimated plan usage every turn, **labelled an estimate**,
-   and stays silent until at least one calibration point exists.
-
-**Non-negotiable when building it:** it must never under-report. That failure — a meter trusted
-while quietly wrong — is what let him hit 92% in silence. If uncalibrated, say so; do not show a
-number. Round the estimate **up**.
-
-**Not started. Context was 79% when this was settled and the build did not fit in the remainder.**
 
 _Older entries live in `git log -p .claude/PROGRESS.md`._
