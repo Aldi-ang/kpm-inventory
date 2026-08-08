@@ -1,7 +1,7 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-08 18:45 WIB** · branch `phase0-solid-ground` · last code commit `c319b29`
-(quest log `9b3b661` after it)
+**Updated: 2026-08-08 19:00 WIB** · branch `phase0-solid-ground` · last code commit `c319b29`
+(quest log `3c8e763` after it)
 
 **Aldi clears the session every time he starts a new one. This file is the ONLY thing that
 survives. If it is not current, the work is lost.** Write it before context runs low, not after.
@@ -370,6 +370,12 @@ asked for and he would never have been prompted to re-run the thing that changed
 are reset to unanswered exactly once, keyed by a tag in localStorage; his notes and screenshots
 are kept. **Adding another round means a NEW tag and a new id list — never reuse a tag.**
 19 checks cover it, including that a re-answer survives the next reload.
+**Then he hit the flaw in it within minutes** — *"dont locked the answer until i give u the copy
+reports because i just accidently press the wrong tickbox"*. Hiding had defaulted to ON, so a
+mis-clicked verdict removed the row instantly and the only way back was a button in the bottom
+bar. **The default is now OFF (`3c8e763`) and three checks pin it — do not flip it back without
+him asking.** The feature is unchanged; he turns it on himself when he is ready. Consider
+offering to turn it on for him only after he has pasted a COPY REPORT.
 
 ### 2026-08-08 17:33 WIB — JOB 1 done: 184 alerts → toast, `e7f2eab`. Audit 158/158.
 
