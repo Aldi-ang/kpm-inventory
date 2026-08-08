@@ -36,6 +36,15 @@ const STICKY = [
     /* Unrecognised text is not a success, so it stays. This is the default and it must hold. */
     'Go to Sales Terminal for Warung Bu Sri',
     '',
+    /* The three real messages the Master Vault product save now sends. The middle one is why
+       "not <something>ed" had to join the failure list: it contains the word "saved", so a
+       failure whose error text carried no failure word of its own faded away. A save that did
+       not happen, clearing itself off the screen after 3.5 seconds. */
+    'Sampoerna Mild is on this device only — it has NOT reached the server yet, and will sync when the connection returns.\nStock 1000 Bks · 1 Karton = 800 Bks · 1 Bal = 200 Bks.',
+    '"Sampoerna Mild" was NOT saved. boom',
+    '"Sampoerna Mild" was NOT saved. Missing or insufficient permissions.',
+    'Could not save this product. boom',
+    'Stock belum masuk ke server.',
 ];
 
 /* Safe to miss — nothing is lost if it fades before he looks up. */
@@ -51,6 +60,10 @@ const FADE = [
     'Data berhasil tersimpan.',
     'Laporan terkirim.',
     '✅ Stock opname selesai.',
+    /* The successful half of the same Master Vault save. It names the stock he typed as well as
+       the packing — reporting only the packing is what made him think the app had confirmed
+       something he had not touched. */
+    'Sampoerna Mild saved.\nStock 1000 Bks · 1 Karton = 800 Bks · 1 Bal = 200 Bks.',
 ];
 
 let pass = 0;

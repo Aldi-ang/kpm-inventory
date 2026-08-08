@@ -215,15 +215,17 @@ textarea::placeholder{color:#4a423a}
    already-confirmed items are pre-marked so the meter shows the true picture, not a fake
    zero — every one of them can still be changed. */
 const TESTS = [
- {g:'T', name:'Messages — 184 of them just changed', items:[
-  {id:'T1', do:'Save something that works — add a customer, or edit a ware', ex:'A strip appears at the top saying it saved, and clears itself after about 3 seconds'},
-  {id:'T2', do:'Make something fail — turn wifi off, then save', ex:'A strip appears with a RED left edge and stays there. It must NOT disappear on its own'},
-  {id:'T3', do:'Tap that red strip', ex:'It goes away'},
-  {id:'T4', do:'Do two or three things quickly', ex:'The strips stack on top of each other, newest at the bottom, never more than five'},
+ {g:'T', name:'Messages — RE-ANSWER THESE, they were rewritten from your report', items:[
+  {id:'T1', do:'INTERNET ON. Master Vault → Edit Record → change a stock number → press UPDATE DATABASE', ex:'A GOLD strip at the top names the product, the stock you just typed, AND the packing. It clears itself after ~3s. The capybara no longer reports this save'},
+  {id:'T2', do:'INTERNET OFF. Same edit, press UPDATE DATABASE again', ex:'A strip says it is on this device only and has NOT reached the server. It STAYS until you tap it. Last time this button did nothing at all'},
+  {id:'T3', do:'Tap that strip', ex:'It goes away'},
+  {id:'T4', do:'Save two different products one after the other, quickly', ex:'Two strips stacked, newest at the bottom. Neither cuts the other short'},
   {id:'T5', do:'Type the wrong master PIN', ex:'"Incorrect PIN. Strike 1/5" as a strip that waits for a tap'},
-  {id:'T6', do:'Go everywhere you remember a grey browser pop-up box appearing', ex:'There are none left anywhere in the app'},
-  {id:'T7', do:'Same thing on your phone', ex:'The strip is readable and does not cover the button you were about to press'},
+  {id:'T6', do:'Master Vault → delete a product, and confirm it', ex:'The question is drawn ON THE PAGE, not as a grey browser box, and the result is reported as a strip'},
+  {id:'T7', do:'Any of the above on your phone', ex:'The strip is readable and does not cover the button you were about to press'},
   {id:'T8', do:'Overall — after using it for a while', ex:'THE QUESTION: do the strips that wait for a tap feel helpful, or annoying? Write it in the notes'},
+  {id:'T9', do:'Press UPDATE DATABASE and watch the button itself', ex:'It is gold now, brightens and spreads on hover, and presses down when clicked'},
+  {id:'T10',do:'Make the capybara talk twice in a row — save a product right after he has said something', ex:'The second line gets its full time on screen. It must not flash and vanish'},
  ]},
  {g:'H', name:'Territory + duplicate outlets', items:[
   {id:'H1', do:'Choose a store assigned to another salesman', ex:'Red bar names them, sale still completes', seed:'good'},
@@ -394,22 +396,33 @@ function tally(g){
   return {done,total:items.length};
 }
 
+/* Which groups are open. This has to live OUTSIDE render(), because render() throws the whole
+   list away and rebuilds it — and it runs on every vote and every pasted screenshot. Deriving
+   open/closed from the group's position instead meant that answering a test in group C folded C
+   shut and reopened the first two groups underneath his cursor, every single time. Aldi:
+   "everytime i press one of the button or paste image inside, all the dropdown for that
+   customer brief is shrink and instead its open other test folder above that". */
+const openGroups = new Set(TESTS.slice(0,2).map(g=>g.g));
+
 function render(){
   const root=document.getElementById('groups'); root.innerHTML='';
-  TESTS.forEach((g,gi)=>{
+  TESTS.forEach(g=>{
     const t=tally(g);
+    const open=openGroups.has(g.g);
     const sec=document.createElement('section'); sec.className='group';
     const head=document.createElement('button');
     head.className='ghead'; head.type='button';
-    head.setAttribute('aria-expanded', String(gi<2));
-    head.innerHTML='<span class="caret">'+(gi<2?'▼':'▶')+'</span>'+
+    head.setAttribute('aria-expanded', String(open));
+    head.innerHTML='<span class="caret">'+(open?'▼':'▶')+'</span>'+
       '<span>'+g.g+' — '+g.name+'</span>'+
       '<span class="tally'+(t.done===t.total?' done':'')+'">'+t.done+'/'+t.total+'</span>';
-    const body=document.createElement('div'); body.className='gbody'; body.hidden=gi>=2;
+    const body=document.createElement('div'); body.className='gbody'; body.hidden=!open;
     head.onclick=()=>{
-      body.hidden=!body.hidden;
-      head.querySelector('.caret').textContent=body.hidden?'▶':'▼';
-      head.setAttribute('aria-expanded', String(!body.hidden));
+      const nowOpen=body.hidden;
+      body.hidden=!nowOpen;
+      if(nowOpen) openGroups.add(g.g); else openGroups.delete(g.g);
+      head.querySelector('.caret').textContent=nowOpen?'▼':'▶';
+      head.setAttribute('aria-expanded', String(nowOpen));
       bleep(440,40);
     };
     g.items.forEach(i=>body.appendChild(itemEl(i)));

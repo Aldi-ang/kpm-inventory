@@ -1298,6 +1298,13 @@ const handleGitHubMirror = async () => {
   // Capybara Message Cycle
   const [capyMsg, setCapyMsg] = useState("Welcome to KPM Inventory!");
   const [showCapyMsg, setShowCapyMsg] = useState(false);
+  /* One hide-timer for the mascot, shared by every path that makes him speak. Two paths each
+     setting their own 8s timeout meant the FIRST one's timer hid the SECOND one's message —
+     so a line that arrived late in the previous message's window flashed and vanished before
+     it could be read. Aldi hit exactly that saving a product straight after the mascot had
+     cycled: "showing for split second and just outro animation away without showing what it
+     said". A ref, not state: changing it must never re-render. */
+  const capyTimerRef = useRef(null);
   const [msgIndex, setMsgIndex] = useState(0);
 
   // Default messages if none are set
@@ -2364,24 +2371,24 @@ const handleGitHubMirror = async () => {
     }
   };
   
+  /* Every mascot line goes through here, so the previous hide-timer is always cancelled and
+     each message gets its own full 8 seconds. See capyTimerRef for what happened without it. */
+  const speakCapy = (message) => {
+    setCapyMsg(message);
+    setShowCapyMsg(true);
+    clearTimeout(capyTimerRef.current);
+    capyTimerRef.current = setTimeout(() => setShowCapyMsg(false), 8000);
+  };
+
   const cycleMascotMessage = () => {
     // Uses the latest activeMessages list to cycle dialogue
     const nextIndex = (msgIndex + 1) % activeMessages.length;
     setMsgIndex(nextIndex);
-    const message = activeMessages[nextIndex];
-    setCapyMsg(message);
-    setShowCapyMsg(true);
-    setTimeout(() => setShowCapyMsg(false), 8000); 
+    speakCapy(activeMessages[nextIndex]);
   };
-  
+
   // Re-usable function to pop up the mascot with a custom message
-  const triggerCapy = (msg) => { 
-    const message = msg || "Hello!"; 
-    setCapyMsg(message); 
-    setShowCapyMsg(true); 
-    // Auto-hide after 8 seconds to prevent screen clutter
-    setTimeout(() => setShowCapyMsg(false), 8000); 
-  };
+  const triggerCapy = (msg) => speakCapy(msg || "Hello!");
   
   const handleAddMascotMessage = async () => {
       if(!newMascotMessage.trim() || !user) return;
@@ -2628,26 +2635,53 @@ const handleGitHubMirror = async () => {
           data.useFrontForBack = useFrontForBack; 
           data.updatedAt = serverTimestamp(); 
           
-          if (editingProduct?.id) { 
-              await updateDoc(doc(db, `artifacts/${appId}/users/${user.uid}/products`, editingProduct.id), data); 
-              await logAudit("PRODUCT_UPDATE", `Updated product: ${data.name}`);
-              /* Report the packing that was actually written, not just "saved". A wrong
-                 multiplier is invisible downstream — it produces a plausible total and a
-                 plausible receipt — so the one moment it can be caught is here. */
-              triggerCapy(`${data.name} saved. 1 Karton = ${data.balsPerCarton * data.slopsPerBal * data.packsPerSlop} Bks, 1 Bal = ${data.slopsPerBal * data.packsPerSlop} Bks.`);
-          } else { 
-              data.createdAt = serverTimestamp(); 
-              await addDoc(collection(db, `artifacts/${appId}/users/${user.uid}/products`), data); 
-              await logAudit("PRODUCT_ADD", `Added new product: ${data.name}`); 
-              triggerCapy("New product added!"); 
-          } 
-          setEditingProduct(null); 
-          setTempImages({}); 
-          setUseFrontForBack(false); 
-      } catch (err) { 
-          console.error(err); 
-          triggerCapy("Error saving product!"); 
-      } 
+          const isEdit = Boolean(editingProduct?.id);
+          if (!isEdit) data.createdAt = serverTimestamp();
+          const write = isEdit
+              ? updateDoc(doc(db, `artifacts/${appId}/users/${user.uid}/products`, editingProduct.id), data)
+              : addDoc(collection(db, `artifacts/${appId}/users/${user.uid}/products`), data);
+
+          /* Firestore settles this promise only when the SERVER acknowledges the write. With
+             the network down it never settles AT ALL — it does not resolve and it does not
+             reject. Awaiting it meant that offline, nothing below here ever ran: the panel
+             never closed, no message ever appeared, and the catch never fired either. Pressing
+             Update Database did nothing, visibly and silently, which is exactly what Aldi
+             reported testing this. The write itself was never in danger — Firestore had already
+             put it in the local cache and replays it on reconnect — so the only thing broken
+             was his ability to find that out.
+
+             So: wait a moment for an acknowledgement, then report whichever happened. A late
+             failure still reports, because the catch below stays attached to the same promise.
+             ponytail: fixed 1.5s ack window; make it adaptive only if a slow connection starts
+             reporting "not sent" for writes that did land. */
+          const acked = await Promise.race([
+              write.then(() => true, () => true),   // settled either way — the catch below reports a rejection
+              new Promise(resolve => setTimeout(() => resolve(false), 1500)),
+          ]);
+          write.catch(err => notify(`"${data.name}" was NOT saved. ${err.message}`));
+
+          /* Not awaited: the audit trail is a record of the save, never a gate on it. Awaited,
+             it hangs offline for exactly the same reason the write above did. */
+          Promise.resolve(logAudit(isEdit ? "PRODUCT_UPDATE" : "PRODUCT_ADD",
+              `${isEdit ? 'Updated' : 'Added'} product: ${data.name}`)).catch(() => {});
+
+          /* Report the packing that was actually written, not just "saved". A wrong multiplier
+             is invisible downstream — it produces a plausible total and a plausible receipt —
+             so the one moment it can be caught is here. Stock is named too: Aldi edited stock,
+             read a message about packing, and reasonably read that as the app confirming the
+             wrong thing. */
+          const perBal = data.slopsPerBal * data.packsPerSlop;
+          notify(acked
+              ? `${data.name} saved.\nStock ${data.stock} Bks · 1 Karton = ${data.balsPerCarton * perBal} Bks · 1 Bal = ${perBal} Bks.`
+              : `${data.name} is on this device only — it has NOT reached the server yet, and will sync when the connection returns.\nStock ${data.stock} Bks · 1 Karton = ${data.balsPerCarton * perBal} Bks · 1 Bal = ${perBal} Bks.`);
+
+          setEditingProduct(null);
+          setTempImages({});
+          setUseFrontForBack(false);
+      } catch (err) {
+          console.error(err);
+          notify(`Could not save this product. ${err.message || err}`);
+      }
   };
 
   const handleUpdateProduct = async (updatedProduct) => { 
@@ -3817,7 +3851,17 @@ const handleGitHubMirror = async () => {
                                     <div><label className="text-gray-500 block mb-1">ECER PRICE</label><input name="priceEcer" type="number" step="any" defaultValue={editingProduct.priceEcer} className="w-full p-2 bg-white/5 border border-yellow-900/50 text-yellow-400 focus:border-yellow-500 outline-none"/></div>
                                 </div>
                             </div>
-                            <button className="w-full bg-white text-black font-bold py-4 mt-6 uppercase hover:bg-gray-300 tracking-widest text-sm">Update Database</button>
+                            {/* type is explicit: this submits handleSaveProduct. It was relying on
+                                a bare <button> defaulting to submit inside the form, which is easy
+                                to break by accident and impossible to read at a glance. Hover and
+                                press are the app's own gold, not the white/grey it had — no rotation,
+                                so Lite Mode is unaffected. */}
+                            <button
+                                type="submit"
+                                className="w-full mt-6 py-4 bg-[#ff9d00] text-[#14100e] font-black uppercase tracking-widest text-sm border-2 border-transparent shadow-[0_3px_0_rgba(0,0,0,0.55)] transition-all duration-150 hover:bg-[#ffb42e] hover:border-[#a89070] hover:tracking-[0.22em] active:translate-y-[3px] active:shadow-none"
+                            >
+                                Update Database
+                            </button>
                         </form>
                     </div>
                 </div>

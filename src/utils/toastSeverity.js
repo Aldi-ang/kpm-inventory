@@ -17,7 +17,7 @@
 
    Both languages, because the messages are written in both. */
 
-const FAILURE = /\b(fail|fails|failed|failure|error|denied|invalid|cannot|can't|couldn't|unable|insufficient|unauthori[sz]ed|revoked|suspended|expired|rejected|incorrect|wrong|missing|gagal|ditolak|kadaluarsa|salah|habis)\b|\bcould not\b|\bnot (enough|found|registered|allowed|authorized)\b|\btidak (bisa|cukup|ditemukan)\b|⚠|❌/i;
+const FAILURE = /\b(fail|fails|failed|failure|error|denied|invalid|cannot|can't|couldn't|unable|insufficient|unauthori[sz]ed|revoked|suspended|expired|rejected|incorrect|wrong|missing|gagal|ditolak|kadaluarsa|salah|habis)\b|\bcould not\b|\bnot (enough|found|allowed)\b|\bnot\s+(?:been\s+)?\w+ed\b|\bbelum\b|\btidak (bisa|cukup|ditemukan)\b|⚠|❌/i;
 
 const SUCCESS = /\b(success|successful|saved|complete|completed|added|created|updated|sent|approved|granted|authorized|unlocked|established|accepted|berhasil|tersimpan|selesai|terkirim|disetujui|ditambahkan)\b|^✅/i;
 
