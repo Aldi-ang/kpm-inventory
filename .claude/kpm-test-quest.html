@@ -82,6 +82,9 @@ body::after{
   font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
   color:#1a1509;background:var(--gold);padding:2px 6px;margin-left:8px;
 }
+/* Hidden does not mean forgotten: a group holding a BROKEN or WEIRD says so in red, even when
+   the rows themselves are locked away. */
+.chip.bad{background:var(--red);color:#fff}
 .allclear{padding:11px 12px;font-size:11px;color:var(--dim);letter-spacing:.06em}
 
 /* ── one test ────────────────────────────────────────────────────────────── */
@@ -481,11 +484,15 @@ function tally(g){
    customer brief is shrink and instead its open other test folder above that". */
 const openGroups = new Set(TESTS.slice(0,2).map(g=>g.g));
 
-/* CLEARED = settled, nothing left to do with it. Deliberately NOT "answered": a test marked
-   BROKEN or WEIRD is answered and is still open work, and hiding those would bury the only
-   list of what is actually wrong. Aldi asked for this as "test that u have been confirmed and
-   fix" — so a pass and an untestable both go quiet, and a problem stays on screen. */
-const clearedVerdict = v => v==='good' || v==='skip';
+/* CLEARED = answered, in any way. He asked why a WEIRD was still on screen: *"why the weird
+   answer still not locked?"* — and he is right, he answered it, so it is done from his side.
+
+   An earlier version of this hid only `good` and `skip`, on the reasoning that a BROKEN or
+   WEIRD is still open work and hiding it buries the list of what is wrong. That reasoning was
+   never his instruction, and the cost it avoided is covered elsewhere: COPY REPORT still lists
+   every problem under "Needs attention", and the group header below now carries a red count of
+   the hidden ones that need fixing. So they are quiet, not lost. */
+const clearedVerdict = v => !!v;
 /* DEFAULT ON since his 2026-08-08 report — his standing instruction: "update the quest log
    everytime i give u copy reports, if the test already done just lock it".
 
@@ -505,6 +512,9 @@ function render(){
     const t=tally(g);
     const shown = g.items.filter(i => !hideCleared || !clearedVerdict(state[i.id].verdict));
     const hidden = g.items.length - shown.length;
+    /* Counted across the WHOLE group, not just the hidden ones: the number means "this chain
+       still has problems in it", which is true whether or not they are currently on screen. */
+    const needFixing = g.items.filter(i => ['broken','weird'].includes(state[i.id].verdict)).length;
     const allClear = shown.length === 0;
     /* A fully cleared chain collapses and stays collapsed: reopening it would put the exact
        rows he asked not to look at back on screen. */
@@ -517,6 +527,7 @@ function render(){
     head.innerHTML='<span class="caret">'+(allClear?'✔':open?'▼':'▶')+'</span>'+
       '<span>'+g.g+' — '+g.name+'</span>'+
       (hidden?'<span class="chip">'+hidden+' cleared</span>':'')+
+      (needFixing?'<span class="chip bad">'+needFixing+' need fixing</span>':'')+
       '<span class="tally'+(t.done===t.total?' done':'')+'">'+t.done+'/'+t.total+'</span>';
 
     const body=document.createElement('div'); body.className='gbody'; body.hidden=!open;
