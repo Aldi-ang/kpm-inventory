@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-09 02:40 WIB** · branch `phase0-solid-ground` · last code commit `ce9b9a6`
+**Updated: 2026-08-09 02:50 WIB** · branch `phase0-solid-ground` · last code commit `ce9b9a6`
 (quest log locked after his round-2 report)
 
 **Aldi clears the session every time he starts a new one. This file is the ONLY thing that
@@ -185,6 +185,19 @@ then *"i can enter the password for u and u can test it from there"*.
   mascot fix actually changed), **G9** (Lite Mode), and watching the strips. All read-only or
   UI-only. That is the offer to put to him.
 - Scheduled/unattended runs remain dead — see the SCHEDULED TASKS section below.
+
+**🔁 STANDING RULE, his instruction 2026-08-09 — animation reviews go through Emil.**
+His words: *"use this to review the app animation and improve it on my command /review-animations"*.
+So `emil-design-eng` (`~/.claude/skills/emil-design-eng/SKILL.md`) is the lens for **any**
+animation work here, and **`/review-animations` is the trigger he will type** — do not start one
+unprompted. Its output format is non-negotiable: a single markdown table with
+`| Before | After | Why |`, never a list.
+**This lands right before JOB 4** (the ACCESS GRANTED animation) — that job is now an Emil
+review, and two of its findings already match his checklist: `animate-spin` rings and a 2.4s
+duration on a UI element, against Emil's "UI animations stay under 300ms".
+**Already built to that standard, so leave them alone unless he asks:** the toast strips
+(`kpm-toast-in` 260ms `cubic-bezier(.16,1,.3,1)`, exit 200ms, both stripped by Lite Mode and
+`prefers-reduced-motion`).
 
 **🔁 STANDING RULE, his instruction 2026-08-08:** *"update the quest log everytime i give u copy
 reports, if the test already done just lock it"*. **Every COPY REPORT he pastes = do this, in
