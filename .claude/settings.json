@@ -47,6 +47,12 @@
             "command": "node \"D:/APP DEVELOPMENT/kpm inventory main FILES/kpm-inventory-main/.claude/context-watch.mjs\"",
             "timeout": 15,
             "statusMessage": "Measuring how full the context is..."
+          },
+          {
+            "type": "command",
+            "command": "node \"D:/APP DEVELOPMENT/kpm inventory main FILES/kpm-inventory-main/.claude/plan-quota.mjs\"",
+            "timeout": 15,
+            "statusMessage": "Measuring how full the context is..."
           }
         ]
       }
