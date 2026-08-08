@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-08 08:40 WIB** · branch `phase0-solid-ground` · last commit `35d4282`
+**Updated: 2026-08-08 09:00 WIB** · branch `phase0-solid-ground` · last commit `35d4282`
 
 **Aldi clears the session every time he starts a new one. This file is the ONLY thing that
 survives. If it is not current, the work is lost.** Write it before context runs low, not after.
@@ -29,6 +29,29 @@ hunting for "where did we leave off" again — that hunt is what cost Aldi 60% o
 If this file and the repo disagree, **the repo wins, and fixing this file is job one.**
 
 ## ▶ DO THIS NEXT
+
+**HE ASKED FOR TWO BIG JOBS, IN THIS ORDER, and they were deliberately NOT started — he was at
+80% plan quota with ~3h 39m to reset, and neither fits in 20%.** Do them after the reset, with a
+cleared context. He said: *"option b looks convenience do that instead, anyway lets work on what
+we can do while im away, do full review of my app now, but before we do that let me clear first"*
+
+**JOB 1 — the 180 `alert()` calls → toast. DECIDED: Option B (toast).** He picked it.
+- **Toast** = a small strip that slides into a corner, shows the message, fades after ~3s, no
+  click. Use it for the ~170 routine "it worked" messages.
+- **Keep a modal** for the handful that must genuinely stop him — not enough stock, sync failed.
+  That split was the recommendation he accepted, not a blanket replacement.
+- Follow `src/components/ConfirmGate.jsx`: one host mounted in `main.jsx` as a sibling of `<App/>`,
+  a module-level singleton, and a plain function call at the 180 sites. **Do not invent a second
+  mechanism.** Same traps as last time: exclude the toast file itself from any codemod, and use
+  an AST pass for `async` rather than one build error at a time.
+- Add audit checks so `alert(` cannot come back, mirroring group 10.
+
+**JOB 2 — a full review of the app.** He asked for a proper one, not a skim. `src/` is finally
+clean (worktrees gone, so searches return one hit each). Known leads already recorded:
+`logAudit`/`triggerCapy` unguarded at 35 sites vs guarded at 29 (latent, not live — App.jsx
+defines `logAudit` locally at ~:2335), the KML import creating a fresh doc per pin with no dedup,
+and `App.jsx` being ~4k lines doing many unrelated jobs.
+
 
 **1. Ask Aldi to say "yes save the cookie".** The plan-quota meter is BUILT and registered — it is
 just silent because the credential files do not exist yet, and writing them was blocked pending his
@@ -161,11 +184,7 @@ throwaway first.
   beyond 500m; he has not re-run it since. Get the post-flag number before drawing any conclusion
   about the KML import.
 
-- 🔴 **The 180 `alert(` calls — he has picked NOTHING yet.** The question put to him, verbatim:
-  *"My question isn't whether to fix them. It's how"* — a box in the middle of the screen that
-  must be dismissed 180 separate times, or **a toast** (a strip that slides into the corner and
-  fades by itself). **Claude recommended the toast.** A suppressed `alert` only fails to inform;
-  nothing breaks. Do not start either until he answers.
+- ✅ **DECIDED 2026-08-08: toast (his "option b").** Not built — see DO THIS NEXT.
 
 - 🔴 **What is the rule for the duplicate documents that already exist?** Merging or deleting one
   means deciding which copy keeps its sales history and its outstanding debt — real money, human
