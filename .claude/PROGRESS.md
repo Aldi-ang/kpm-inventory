@@ -1,6 +1,7 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-08 18:20 WIB** · branch `phase0-solid-ground` · last code commit `c319b29`
+**Updated: 2026-08-08 18:45 WIB** · branch `phase0-solid-ground` · last code commit `c319b29`
+(quest log `9b3b661` after it)
 
 **Aldi clears the session every time he starts a new one. This file is the ONLY thing that
 survives. If it is not current, the work is lost.** Write it before context runs low, not after.
@@ -356,6 +357,19 @@ away"*.
 **Quest log: `render()` derived each group's open/closed state from its position**, and it runs
 on every vote and every pasted screenshot — so answering anything in group C folded C shut and
 reopened the first two groups under his cursor. Open state now lives outside `render()`.
+
+**Then he asked for finished tests to disappear** — *"i want u to locked it, so that i dont have
+to see it again and save some space in my eyes"*, narrowed immediately to *"but of course test
+that u have been confirmed and fix"*. Done in `9b3b661`. **CLEARED means settled, not answered:
+a pass and an untestable go quiet, BROKEN and WEIRD stay on screen** — they are answered and
+still open, and hiding them would bury the only list of what is wrong. One dock button
+(`👁 Cleared`) brings everything back, and the choice persists.
+**The trap in that ask, worth remembering:** eight T tests had been reworded or had their bug
+fixed since he answered them, so a stale GOOD would have been swallowed by the filter he just
+asked for and he would never have been prompted to re-run the thing that changed. Those eight
+are reset to unanswered exactly once, keyed by a tag in localStorage; his notes and screenshots
+are kept. **Adding another round means a NEW tag and a new id list — never reuse a tag.**
+19 checks cover it, including that a re-answer survives the next reload.
 
 ### 2026-08-08 17:33 WIB — JOB 1 done: 184 alerts → toast, `e7f2eab`. Audit 158/158.
 
