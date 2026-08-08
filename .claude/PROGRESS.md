@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-08 09:00 WIB** · branch `phase0-solid-ground` · last commit `35d4282`
+**Updated: 2026-08-08 09:00 WIB** · branch `phase0-solid-ground` · last commit `7ba7db3`
 
 **Aldi clears the session every time he starts a new one. This file is the ONLY thing that
 survives. If it is not current, the work is lost.** Write it before context runs low, not after.
@@ -13,9 +13,10 @@ the problem, im talking about the 5 hours limit - plan usage limit."*
   quota keeps counting regardless.
 - **SOLVED 2026-08-08 — `.claude/plan-quota.mjs` reads the real quota** from 9router at
   `GET localhost:20128/api/usage/<connectionId>`. Registered as a UserPromptSubmit hook, tiers at
-  70/85/95%. **It is silent until the credential files exist** (see WAITING ON ALDI). Do not
-  confuse it with `context-watch.mjs`, which measures the context window — a different limit that
-  `/clear` does fix.
+  70/85/95%. **LIVE and verified** — it fired on its own at 80% on 2026-08-08. Credential files
+  are in place and 9router auto-starts at login. Do not confuse it with `context-watch.mjs`,
+  which measures the context window — a different limit that `/clear` DOES fix. Aldi understands
+  the distinction now: *"clear is for notification for context window isnt"*. Yes.
 - **When he states a percentage, act on that turn — do not finish what you were doing first.**
   Write this file, commit, reply short. He said 94% once and the turn stalled anyway, which is
   precisely the stuck-screen-and-force-retry he asked to prevent.
@@ -53,11 +54,7 @@ defines `logAudit` locally at ~:2335), the KML import creating a fresh doc per p
 and `App.jsx` being ~4k lines doing many unrelated jobs.
 
 
-**1. Ask Aldi to say "yes save the cookie".** The plan-quota meter is BUILT and registered — it is
-just silent because the credential files do not exist yet, and writing them was blocked pending his
-explicit word. One sentence from him and the lockout warning goes live. Details in WAITING ON ALDI.
-
-**2. Then resume the manual test list.** `SALES_TERMINAL_TEST_LIST.md` carries its own status table
+**JOB 3 — his hand-testing, whenever he wants it.** `SALES_TERMINAL_TEST_LIST.md` carries its own status table
 at the top — read that, not this paragraph, for which item is next. As of this write: A and B
 done (B2/B3 need his phone), H1 and H3 passed, **H2 is the next thing he runs**, then C1 and
 C3–C6, then D through G. C2b is untestable — it needs a second salesman account he does not have.
