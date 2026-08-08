@@ -63,6 +63,23 @@ defines `logAudit` locally at ~:2335), the KML import creating a fresh doc per p
 and `App.jsx` being ~4k lines doing many unrelated jobs.
 
 
+**JOB 4 — replace the "ACCESS GRANTED" unlock animation. HE ASKED FOR THIS 2026-08-08.**
+His words: *"i want to change that cheap ass access granted animation we should use /design
+/ui-ux-pro-max /ui-styling for this next"*. **Use those three skills — he named them.**
+- **It is `src/App.jsx:3397–3418`**, the `isUnlocking` branch inside the `showAdminLogin` modal.
+  Two counter-rotating rings, a pulsing `Unlock` icon, "Access Granted" in emerald with a green
+  glow, "Decrypting Master Vault…", and a fake stuttering progress bar (`@keyframes fillBar`,
+  **2.4s**) that reports no real work.
+- **It breaks two of his own locked laws, which is most of why it reads as cheap:**
+  **green** (`text-emerald-500`, `via-emerald-500`, `bg-emerald-500`, `shadow-[0_0_10px_#10b981]`
+  — 8 emerald classes in that block) against the no-blue-no-green palette law, and **two
+  `animate-spin` rings** against "lite mode = nothing rotates".
+- **Audit group 8 does NOT cover this.** Its palette scan reads MerchantSalesView only, so the
+  rest of the app has never been checked for the palette law. Worth widening the scan when this
+  is done — and expect other green to fall out of it.
+- ❓ **Ask him before designing:** does the 2.4s bar gate the actual unlock, or is it pure
+  waiting? If it is pure waiting, the best animation may be a much shorter one.
+
 **JOB 3 — his hand-testing, whenever he wants it.** `SALES_TERMINAL_TEST_LIST.md` carries its own status table
 at the top — read that, not this paragraph, for which item is next. As of this write: A and B
 done (B2/B3 need his phone), H1 and H3 passed, **H2 is the next thing he runs**, then C1 and
@@ -104,6 +121,7 @@ it never happens twice. Answer, then ask which of the waiting items he wants to 
 | Its 21 self-checks | `src/config/findDuplicates.selfcheck.mjs` |
 | 8-bit test logger source (published copy) | `.claude/kpm-test-quest.html` |
 | The published test logger | `https://claude.ai/code/artifact/435e77ee-9f1f-4786-a1df-050156596016` |
+| The "ACCESS GRANTED" animation he wants replaced | `src/App.jsx:3397-3418` (`isUnlocking` branch) |
 | Next-stop design artifact | `https://claude.ai/code/artifact/8feebaa4-f8a2-414d-a4a6-2c642a27af48` |
 
 ## First command of every session
