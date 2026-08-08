@@ -127,13 +127,23 @@ throwaway first.
 
 ## WAITING ON ALDI — do not re-derive these, just ask
 
-- ❓ **"yes save the cookie" — one word, and the plan-quota meter goes live.** Writing his 9router
-  session cookie to `C:/Users/ASUS/.claude/9router-cookie.txt` was **blocked by the safety
-  classifier**, correctly: he pasted the token to be *used*, never to be *persisted*. It needs him
-  to say so explicitly. Two files are needed, both OUTSIDE the repo:
-  `9router-cookie.txt` = the full `odysseus_session=…; auth_token=…` string, and
-  `9router-claude-id.txt` = `e9d82a7e-4b97-43cc-8da6-6debf41b6752`.
-  **Until then the hook runs and stays silent.** He can also just create the files himself.
+- ✅ **DONE — he said "yea save the cookies for us to use".** Credential files written outside the
+  repo and the meter is LIVE, verified reading `plan: Claude Code, used 60%, resets in 3h 57m`.
+
+- 🔴 **Should 9router auto-start with Windows? He raised it, it is NOT set up, and he is right
+  that it matters** — if 9router is not running the meter goes blind (it says UNKNOWN rather than
+  lying, but it cannot warn him). His words: *"u should start 9router automatically to run this
+  habit as well right"*. **Everything needed is already researched, so this is one yes away:**
+  - 9router has **no start-on-login setting of its own** — checked all 45 keys in `/api/settings`.
+  - It is a global npm package with a CLI already on PATH: `C:/Users/ASUS/AppData/Roaming/npm/9router`
+    (default port 20128; the running process is
+    `node --dns-result-order=ipv4first --max-old-space-size=6144 …/npm/node_modules/9router/app/custom-server.js`).
+  - Only `Ollama.lnk` is in
+    `C:/Users/ASUS/AppData/Roaming/Microsoft/Windows/Start Menu/Programs/Startup/`, and neither
+    HKCU nor HKLM `Run` mentions 9router.
+  - **Proposed:** drop a one-line `.bat`/shortcut calling `9router` into that Startup folder.
+    Reversible by deleting one file. NOT done — it changes Windows startup behaviour and he has
+    not explicitly approved that specific action.
 
 - ⏳ **That cookie's `auth_token` is a ~24h JWT — it expires 2026-08-09 ~08:45 WIB.** The hook
   detects a 401 and prints the exact refresh steps rather than going blind. **Better fix worth
@@ -264,7 +274,7 @@ setting entirely and hard-code the real window. Then re-run the four-tier test �
 synthetic-transcript method in `git log` for this file works and is cheap. **Do not trust the
 93% stop until this is fixed; it cannot fire.**
 
-### 2026-08-08 08:40 WIB — the plan-quota meter EXISTS. It reads the real number.
+### 2026-08-08 08:45 WIB — the plan-quota meter is LIVE. Reading 60% used, resets in 3h 57m.
 
 **The route is `GET localhost:20128/api/usage/<connectionId>`.** Claude's connection id is
 `e9d82a7e-4b97-43cc-8da6-6debf41b6752`. Observed live response — these field names are copied,
