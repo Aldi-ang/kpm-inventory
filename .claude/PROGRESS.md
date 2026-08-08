@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-09 00:20 WIB** · branch `phase0-solid-ground` · last code commit `ce9b9a6`
+**Updated: 2026-08-09 00:40 WIB** · branch `phase0-solid-ground` · last code commit `ce9b9a6`
 (quest log locked after his round-2 report)
 
 **Aldi clears the session every time he starts a new one. This file is the ONLY thing that
@@ -81,7 +81,20 @@ His words: *"i want to change that cheap ass access granted animation we should 
 - ❓ **Ask him before designing:** does the 2.4s bar gate the actual unlock, or is it pure
   waiting? If it is pure waiting, the best animation may be a much shorter one.
 
-**🔴 HE OFFERED TO LOG IN SO CLAUDE CAN TEST — 2026-08-09, while he sleeps. ANSWER NOT GIVEN.**
+**✅ T10 PASSES — verified in the running app 2026-08-09, not by reading code.** Two `CAPY_COMMS`
+lines 2s apart: the second arrives wearing `kpm-merch-enter` (it used to arrive wearing
+`kpm-merch-exit`), survives past the first line's old 8s dismissal (which used to kill it), and
+plays its own exit at its own time with the bubble still on him. **All four SFX files load**
+(`tap`/`error`/`click`/`commit`, 1–2 KB each) and the failure passthrough is live —
+`isFailure("❌ Sync Failed! Retrying later.")` true, `isFailure("Map Icons Exported!")` false.
+**Mark T10 good in the quest log at the next report.**
+
+**🔴 HE OFFERED TO LOG IN SO CLAUDE CAN TEST — 2026-08-09, while he sleeps. HE SAID YES.**
+*"lets do the test and let me open the app for u"*. **Blocked on one thing only: the Browser
+pane must be DISPLAYED in his Claude Code window** — screenshots fail with "the Browser pane is
+not displayed" and he cannot reach the password field otherwise. The dev server is up at
+`localhost:5173` with tonight's build, sitting on the master-password screen.
+**Claude never types that password. He does.**
 His words: *"can u replace me doing the testing while im sleeping, i'll check in the morning"*
 then *"i can enter the password for u and u can test it from there"*.
 - **Two of the three blockers are gone.** He can type the master password himself (Claude must
