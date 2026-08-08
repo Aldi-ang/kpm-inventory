@@ -435,7 +435,12 @@ const openGroups = new Set(TESTS.slice(0,2).map(g=>g.g));
    list of what is actually wrong. Aldi asked for this as "test that u have been confirmed and
    fix" — so a pass and an untestable both go quiet, and a problem stays on screen. */
 const clearedVerdict = v => v==='good' || v==='skip';
-let hideCleared = localStorage.getItem(KEY+'-hide') !== 'off';
+/* DEFAULT OFF, on his instruction: "dont locked the answer until i give u the copy reports
+   because i just accidently press the wrong tickbox". With hiding on, one mis-clicked verdict
+   makes the row vanish on the spot and the only way back is a button in the bottom bar — so a
+   slip costs him the thing he was looking at. Nothing hides until he turns this on himself.
+   Do NOT flip this default back without him asking. */
+let hideCleared = localStorage.getItem(KEY+'-hide') === 'on';
 
 function render(){
   const root=document.getElementById('groups'); root.innerHTML='';
