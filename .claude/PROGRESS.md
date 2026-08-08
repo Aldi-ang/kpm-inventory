@@ -130,10 +130,14 @@ throwaway first.
 - ✅ **DONE — he said "yea save the cookies for us to use".** Credential files written outside the
   repo and the meter is LIVE, verified reading `plan: Claude Code, used 60%, resets in 3h 57m`.
 
-- 🔴 **Should 9router auto-start with Windows? He raised it, it is NOT set up, and he is right
-  that it matters** — if 9router is not running the meter goes blind (it says UNKNOWN rather than
-  lying, but it cannot warn him). His words: *"u should start 9router automatically to run this
-  habit as well right"*. **Everything needed is already researched, so this is one yes away:**
+- ✅ **DONE — 9router auto-starts at login.** He said *"yes autostart"*. Created
+  `…/Start Menu/Programs/Startup/9router.bat`, which launches the 9router CLI minimised.
+  **To undo, delete that one file — nothing else depends on it.** Verified the absolute path
+  executes and 9router stayed healthy.
+  **Trap:** writing that path with `printf` turns the `\n` of `\npm` into a real newline and
+  silently produces a broken launcher — that is how the first attempt failed. Use a quoted
+  heredoc. Same class of bug bit a Python edit of this very file (`\U` of `\Users`).
+  The research behind it, kept because it explains why a Startup file was the only option:
   - 9router has **no start-on-login setting of its own** — checked all 45 keys in `/api/settings`.
   - It is a global npm package with a CLI already on PATH: `C:/Users/ASUS/AppData/Roaming/npm/9router`
     (default port 20128; the running process is
