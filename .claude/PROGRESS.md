@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-08 14:20 WIB** · branch `phase0-solid-ground` · last commit `e7f2eab`
+**Updated: 2026-08-08 17:24 WIB** · branch `phase0-solid-ground` · last commit `e7f2eab`
 
 **Aldi clears the session every time he starts a new one. This file is the ONLY thing that
 survives. If it is not current, the work is lost.** Write it before context runs low, not after.
@@ -280,7 +280,10 @@ are never worth rescuing.
 
 ## LOG — newest first, older entries live in `git log` for this file
 
-### 2026-08-08 14:xx WIB — JOB 1 done: 184 alerts → toast, `e7f2eab`. Audit 158/158.
+### 2026-08-08 17:24 WIB — JOB 1 done: 184 alerts → toast, `e7f2eab`. Audit 158/158.
+
+`.claude/session-start-context.md` still printed **115 checks** into every session; it is 158.
+Corrected in the same commit. If that number looks wrong again, it is this line that is stale.
 
 **It was 184, not 180**, across 18 files, and a census first proved every one was a plain
 `alert(...)` call on a single line — no `window.alert`, none inside a comment, none used as a
@@ -339,24 +342,15 @@ usage. Aldi can see it; Claude cannot. Until a mechanism is found, the rule is:
 - Worth investigating next session: the `explain-usage` skill and whether any command surfaces
   plan usage to Claude. If nothing does, say so plainly and keep the manual rule.
 
-### 2026-08-07 22:5x WIB — the context meter is ALSO broken, but this is NOT what blocked him
-
-**Aldi hit 92% and no warning ever fired — not once, all session.** The hook IS registered
-(`.claude/settings.json` → UserPromptSubmit → `context-watch.mjs`) and the script itself works;
-it was tested against synthetic transcripts and all four tiers fired correctly.
-
-**The bug is the denominator.** `context-watch.mjs` reads `autoCompactWindow` from
-`C:/Users/ASUS/.claude/settings.json` and divides by it. Aldi ran `/autocompact 1000k`, so that
-value is **1,000,000** — but the real usable context is nowhere near that. At ~185k used the hook
-computes 18% and stays silent, while the UI correctly shows 92%. **The meter has been reporting
-roughly a fifth of the truth for this whole session**, which is why the 93% stop never fired and
-why the 80% and 55% tiers never fired either.
-
-**Fix to make next session (NOT done — do this before any other work):** stop trusting
-`autoCompactWindow` as the window size. Either clamp it (`Math.min(setting, 200_000)`) or drop the
-setting entirely and hard-code the real window. Then re-run the four-tier test — the existing
-synthetic-transcript method in `git log` for this file works and is cheap. **Do not trust the
-93% stop until this is fixed; it cannot fire.**
+**Still-open bug from the same night, folded in here so the LOG stays five entries:**
+**`context-watch.mjs` (the CONTEXT-window meter, not the quota one) has a wrong denominator
+and has never been fixed.** It divides by `autoCompactWindow` from
+`C:/Users/ASUS/.claude/settings.json`; Aldi ran `/autocompact 1000k`, so that value is
+**1,000,000** and the real window is nowhere near it. At ~185k used it computes 18% and stays
+silent while the UI shows 92% — which is why no tier ever fired. Fix: clamp it
+(`Math.min(setting, 200_000)`) or hard-code the real window, then re-run the four-tier
+synthetic-transcript test (method is in `git log` for this file). **Until then its 93% stop
+cannot fire — do not trust it.** The plan-quota meter below is a DIFFERENT script and works.
 
 ### 2026-08-08 08:45 WIB — the plan-quota meter is LIVE. Reading 60% used, resets in 3h 57m.
 
