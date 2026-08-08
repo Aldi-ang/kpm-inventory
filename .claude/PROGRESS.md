@@ -250,6 +250,38 @@ setting entirely and hard-code the real window. Then re-run the four-tier test �
 synthetic-transcript method in `git log` for this file works and is cheap. **Do not trust the
 93% stop until this is fixed; it cannot fire.**
 
+### 2026-08-08 — 9router key tested: VALID but wrong scope. One question to ask him.
+
+**The key Aldi supplied is NOT written anywhere in this repo, deliberately — a credential in a
+committed file is a credential leaked into git history forever. He will need to re-supply it, or
+better, supply the admin one described below.**
+
+**What was established by probing, so nobody re-runs it:**
+- The key **works** — `/v1/models` returns 200 with the model list. It is an **inference key**
+  (`sk-…`), scoped to routing LLM calls.
+- **Every account/quota route rejects it** with `{"error":"Unauthorized"}`:
+  `/api/quota`, `/api/quotas`, `/api/usage`, `/api/quota/status`, `/api/me`, `/api/account`,
+  `/api/keys`. Tried as `Authorization: Bearer`, `x-api-key`, and `api-key` — all 401.
+- **No quota headers exist.** Checked response headers on `/v1/models`; nothing rate-limit-shaped.
+  So sniffing headers off normal traffic is a dead end, not just unimplemented.
+- Provider quota does appear **inside error bodies** on failure — a `kr/auto` test returned
+  `402 {"message":"You have reached the limit.","reason":"MONTHLY_REQUEST_COUNT"} (reset after 2m)`.
+  Useful to know, but it only reports the routed provider's limit at the moment of failure, which
+  is far too late to warn him. Not a solution.
+- Incidentally: **his free `kr/auto` tier is currently exhausted** (monthly request count).
+
+**THE ONE THING TO ASK HIM — takes 30 seconds:**
+> Open the Quota Tracker page in your browser → press **F12** → **Network** tab → click the
+> **refresh** icon on the Claude quota card → click the request to `/api/quota` → copy the
+> **`Authorization`** header, or the **`Cookie`** header if there is no Authorization.
+
+That is the credential the tracker page itself uses, and it is the one that unlocks the endpoint.
+
+**When building it:** store that credential **outside the repo** — `C:/Users/ASUS/.claude/` is
+right — and have the hook read it from there. **Never** write it into `.claude/` inside the repo,
+into `PROGRESS.md`, or anywhere `git add -A` can reach. Then `curl` one authenticated call and
+**record the real JSON shape before coding against it** — do not guess field names.
+
 ### 2026-08-08 — ⚠️ RESCUED 259 LINES OF UNCOMMITTED WORK FROM A BURIED WORKTREE
 
 **Tell Aldi this first thing. It was one folder-delete from gone.**
