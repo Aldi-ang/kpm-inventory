@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-08 18:04 WIB** · branch `phase0-solid-ground` · last code commit `e7f2eab`
+**Updated: 2026-08-08 18:20 WIB** · branch `phase0-solid-ground` · last code commit `c319b29`
 
 **Aldi clears the session every time he starts a new one. This file is the ONLY thing that
 survives. If it is not current, the work is lost.** Write it before context runs low, not after.
@@ -79,6 +79,30 @@ His words: *"i want to change that cheap ass access granted animation we should 
   is done — and expect other green to fall out of it.
 - ❓ **Ask him before designing:** does the 2.4s bar gate the actual unlock, or is it pure
   waiting? If it is pure waiting, the best animation may be a much shorter one.
+
+**JOB 5 — the rest of his 2026-08-08 test report. NOT DONE. Four items, his words kept.**
+He ran group T and groups C/H. Four things he reported were fixed on the spot (`c319b29`);
+these four were NOT, and none has been investigated beyond what is written here.
+1. 🔴 **The flight recorder stays green with the internet off.** His words: *"last time flight
+   recorder will changed into red cloud logo but now its doesnt show it, instead it just stays
+   green"*. **Cause found, not fixed:** `useOfflineEngine.js:9` seeds `isOnline` from
+   `navigator.onLine`, which only means "a network interface exists" — his machine has a
+   virtual adapter on `172.27.240.1`, so turning wifi off leaves it **true**. A real fix needs
+   an actual reachability probe, not that flag. This matters more than it looks: with the badge
+   lying, the new "has NOT reached the server" toast is his only offline signal.
+2. 🔴 **H2a — typing a store name by hand does not select it.** His words: *"if i dont press
+   anything from the dropdown then the stores wont be selected and it will just focused on that
+   namebar, and if i press any space in there, what is shows instead is the main rail
+   dashboard"*. Screenshot in his quest log. Not investigated at all.
+3. **The Edit Record panel is off-theme.** His words: *"also the edit record panel better
+   changed it into our theme"*. It is white-on-black with `emerald`/`blue` price borders at
+   `src/App.jsx:~3815` — **more palette-law green and blue, same finding as JOB 4.** Do these
+   two together.
+4. **The mascot has no exit animation.** His words: *"the outro for that capybara is really not
+   smooth, it is just snapped and gone"*. The overlapping-timer bug that made him vanish
+   *early* is fixed; the abrupt disappearance is a separate, untouched thing.
+   Also his H3 idea: *"even better when u redirect scroll and make that notification animation
+   glowing red on the borderline for that box"*.
 
 **JOB 3 — his hand-testing, whenever he wants it.** `SALES_TERMINAL_TEST_LIST.md` carries its own status table
 at the top — read that, not this paragraph, for which item is next. As of this write: A and B
@@ -303,13 +327,35 @@ are never worth rescuing.
 
 ## LOG — newest first, older entries live in `git log` for this file
 
-### 2026-08-08 18:04 WIB — session was unrelated (LLAMA download help), NOT kpm work.
+### 2026-08-08 18:20 WIB — his first real test report, and the button that never worked
 
-No kpm code touched this session. **But `.claude/kpm-test-quest.html` and `src/App.jsx` are
-sitting uncommitted** (`git status`: both modified, 41 and 110 lines) from before this session
-started — untouched by this note, not explained anywhere else in this file. Next session: find
-out what those changes are and whether they're finished, before assuming this file's "committed
-on phase0-solid-ground" claim above still holds for those two files.
+**He ran group T. 29/59 answered, 23 good, 2 broken, 4 weird.** Four fixed in `c319b29`, four
+left open as JOB 5 above. **He saw no toast anywhere except the wrong-PIN one** — not because
+the toast was broken, but because the screens he uses report through the mascot, and the one he
+tested hardest never reported at all.
+
+**`handleSaveProduct` awaited `updateDoc`. Firestore settles that promise only on SERVER
+acknowledgement — offline it never settles, neither resolving nor rejecting.** So the panel
+never closed, no message appeared, and the `catch` never ran either. Update Database looked
+stone dead. His words: *"i press update database and the button just didnt do anything"*. The
+data was never at risk — Firestore cached it and replays on reconnect — he simply had no way to
+learn that. **This is the single most reusable finding in the file: never `await` a Firestore
+write on a path that has to update the UI.** Now it races a 1.5s ack window and reports either
+outcome; `logAudit` is no longer awaited either, for the same reason.
+
+**The classifier had the same disease as the bug it guards.** A failed save reads *"X was NOT
+saved. <error>"* — that contains "saved", so unless the error text happened to carry a failure
+word of its own, the message **faded after 3.5 seconds**. Negated past participles now count as
+failures; six real messages from this path are pinned. Self-check 39/39.
+
+**Two mascot paths each set their own 8s hide-timer**, so the first one's timer hid the second
+one's line — a message arriving late in the previous window flashed and vanished unread. One
+shared timer now. His words: *"capybara showing for split second and just outro animation
+away"*.
+
+**Quest log: `render()` derived each group's open/closed state from its position**, and it runs
+on every vote and every pasted screenshot — so answering anything in group C folded C shut and
+reopened the first two groups under his cursor. Open state now lives outside `render()`.
 
 ### 2026-08-08 17:33 WIB — JOB 1 done: 184 alerts → toast, `e7f2eab`. Audit 158/158.
 
@@ -422,25 +468,6 @@ the safety classifier and that block was right.
 phone; `claude.ai/code` in a phone browser is the way to message from away, and `RemoteTrigger`
 (cloud routines, verified reachable, currently zero configured) is the way to run work that does
 not depend on his PC — unlike the local scheduled task, which failed.
-
-### 2026-08-08 — the four worktrees are GONE. src/ is clean.
-
-Aldi approved explicitly (*"delete the worktree"*) after a first attempt was correctly blocked for
-being ambiguous. All four removed; `git worktree list` now shows only the main repo.
-
-**Two things that got in the way, worth knowing:**
-- `git worktree remove` failed with **"Filename too long"** — Windows MAX_PATH. Fixed with
-  `git config core.longpaths true`, which is now set on this repo permanently.
-- That failed attempt left `critical-bugs-permissions-batch-c3371f` **deregistered but still on
-  disk**. Confirmed orphaned (git no longer knew it, its commit `95c0248` reachable from
-  `claude/agents-83a6d2`) and removed. **579 MB from that one folder alone.**
-
-**Nothing was lost.** All four were re-verified at 0 uncommitted tracked changes immediately
-before deletion, and the 259 lines that had been at risk were already committed as `cccb3c0`.
-
-**Result:** a search for `MerchantSalesView.jsx` now returns **1** hit instead of 4. Every grep,
-every graphify pass and every audit walk in this repo just got four times cleaner. Build still
-green, **147/147**, self-checks **26/26**.
 
 ### 2026-08-08 — 9router fully investigated. Only ONE thing is still missing.
 
