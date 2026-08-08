@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-09 03:15 WIB** · branch `phase0-solid-ground` · last code commit `139a15c`
+**Updated: 2026-08-09 03:25 WIB** · branch `phase0-solid-ground` · last code commit `139a15c`
 (quest log locked after his round-2 report)
 
 **Aldi clears the session every time he starts a new one. This file is the ONLY thing that
@@ -80,6 +80,19 @@ His words: *"i want to change that cheap ass access granted animation we should 
   is done — and expect other green to fall out of it.
 - ❓ **Ask him before designing:** does the 2.4s bar gate the actual unlock, or is it pure
   waiting? If it is pure waiting, the best animation may be a much shorter one.
+
+**✅ THE QUEST LOG NOW CARRIES THESE RESULTS — `115027a`, 2026-08-09 03:25.** He asked *"did u
+update quest log already?"* and the honest answer was no; they were only in chat, which a
+cleared session cannot reach. **16 marked good with the evidence in each note** — T1, T3, T4, T9,
+T10, D1–D5, E1, E4, E5, E6, E7, G9. With locking on they vanish, leaving him ~22 that need his
+eyes, phone or printer.
+- **It only fills an EMPTY verdict.** Anything Aldi answered himself wins over a script.
+- **T5, T6, T7, T8, D6, E2, E3 are deliberately absent** — no evidence exists, and T5 would cost
+  one of his five PIN tries.
+- **ORDER MATTERS AND IS COMMENTED IN THE FILE: retest clears, then verify fills.** Written the
+  other way round the retest wiped the marks for T1/T3/T9/T10 seconds after they were set.
+  Adding a future round means a NEW tag for each of the two migrations. Never reuse a tag.
+- Two checks live in the scratchpad: `questcheck.mjs` (23) and `verifycheck.mjs` (27).
 
 **✅ D3 AND E7 PASS — second test cycle 2026-08-09 03:10, cleaned up the same way.**
 | Test | Result | Evidence |
