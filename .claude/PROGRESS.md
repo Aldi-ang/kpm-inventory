@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-09 02:10 WIB** · branch `phase0-solid-ground` · last code commit `ce9b9a6`
+**Updated: 2026-08-09 02:25 WIB** · branch `phase0-solid-ground` · last code commit `ce9b9a6`
 (quest log locked after his round-2 report)
 
 **Aldi clears the session every time he starts a new one. This file is the ONLY thing that
@@ -88,8 +88,8 @@ log; Claude cannot set verdicts in his browser's storage.**
 | Test | Result | Evidence |
 |---|---|---|
 | E1 merchant idles in his cave | **GOOD** | in the alcove, torches lit |
-| E2 add a ware → he talks | **WEIRD** | sprite flips to `kpm-merch-talk`, **but no bubble** |
-| E3 choose a customer → he talks | **WEIRD** | same: talks, nothing readable |
+| E2 add a ware → he talks | **his call** | sprite flips to `kpm-merch-talk`; bubble DOES work — see retraction |
+| E3 choose a customer → he talks | **his call** | he confirmed the line appears in his view |
 | E4 scroll shelf down | **GOOD** | corner figure appears (4 → 5 sprites) |
 | E5 scroll back up | **GOOD** | returns to 4 |
 | E6 only one capybara ever | **GOOD** | app mascot stays `opacity-0 translate-x-[200%]` throughout |
@@ -97,15 +97,35 @@ log; Claude cannot set verdicts in his browser's storage.**
 | B4 pin a ware | **GOOD** | rail showed 12 Karton / 1 Bal / 16 Slop / 6 Bks |
 | D1/D2 packing line | partial | manifest read `1 KARTON = 400 · 1 BAL = 100 · 1 SLOP = 10 BKS`, Rp 8.900 |
 
-**🔴 NEW BUG, root cause found — the merchant in the terminal can never be read.** E2 and E3 both
-expect a speech bubble. The bubble markup lives on the **app-level `CapybaraMascot`**, and
-`MerchantSalesView` fires `CAPY_SUPPRESS` to stand that mascot down so there are not two
-capybaras. So inside the terminal he mouths words with `kpm-merch-talk` and **nothing he says is
-ever shown**. Verified live: app mascot at `opacity: 0`, `translate-x-[200%]`, `.animate-pop-in`
-count **0** after both an add-ware and a customer selection.
-**This is the silent-action law again, in the one screen he uses most.** The fix is a decision,
-not a bug fix — give the terminal's own merchant a bubble, or let a suppressed mascot still
-render its bubble. **Ask him which; do not pick silently.**
+**❌ RETRACTED — there was no bubble bug. E2 and E3 are Aldi's to mark, not Claude's.**
+Claude reported "the merchant can never be read" after `.animate-pop-in` returned 0. That is the
+**app mascot's** bubble class. The terminal draws its **own** bubble —
+`<p className="bubble" role="status">{merchantLine}</p>` at `MerchantSalesView.jsx:2440`, state
+`merchantLine` declared at `:25`. Aldi corrected it from direct observation: *"cave merchant does
+show its bubbletext and he also said it when we choose a new customer in my view"*. Confirmed
+live minutes later — `p.bubble` read **"Deep-fetching system databases and intelligence... ⏳"**.
+**The lesson, which is worth more than the test result: absence of a selector match is not
+absence of the feature.** A negative DOM query proves nothing until you have checked what the
+component actually renders. Claude asserted a mechanism and a root cause from one missing class.
+
+**💾 BACKUP TAKEN AND VERIFIED 2026-08-09 02:19 — he can now be reckless with test data.**
+His instruction: *"if u want to delete or add data, make sure is something that u add yourself
+and dont delete mine because most of them are real data and its kinda annoying to upload them
+back in the app lol"*, and *"i want u to make backup for me for everything then u can do whatever
+u want with that"*.
+- Ran the app's **own** RUN USB SAFE BACKUP on the dashboard, not new code.
+- **`C:\Users\ASUS\Downloads\USB_SAFE_BACKUP_2026-08-08.json`** — 8.55 MB, valid JSON.
+  **Second copy: `C:\Users\ASUS\KPM-Backups\`**, byte-identical, re-parsed to confirm.
+- Contents: **151 customers**, 5 inventory, 9 transactions, 59 auditLogs, 5 tierSettings,
+  0 samplings/procurements/mapBorders. The 151 matches the duplicate-finder's store count, so
+  the file is consistent rather than truncated.
+- Dashboard flipped **USB SAFE: OUTDATED → SECURE**.
+- **Do not read the file mid-download.** It lands as a `.tmp` with a GUID name and is renamed
+  only when finished; reading it too early looks exactly like a failed backup, and Claude
+  briefly reported it as one.
+- **THE RULE FOR WRITE TESTS: create a test product AND a test customer, sell between those two,
+  then delete both.** Selling one of HIS products deducts HIS stock, and billing a real store
+  writes a fake sale into that store's history — neither is "something you added yourself".
 
 **✅ T10 PASSES — verified in the running app 2026-08-09, not by reading code.** Two `CAPY_COMMS`
 lines 2s apart: the second arrives wearing `kpm-merch-enter` (it used to arrive wearing
