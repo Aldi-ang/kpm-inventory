@@ -30,9 +30,9 @@ If this file and the repo disagree, **the repo wins, and fixing this file is job
 
 ## ▶ DO THIS NEXT
 
-**1. Build the plan-quota reader — ask Aldi for the 9router credential first.** Full design and
-the probe results are in the newest LOG entry. This is the thread he was actively on when he went
-to sleep on 2026-08-08, and it is the one that stops him getting locked out mid-work.
+**1. Ask Aldi to say "yes save the cookie".** The plan-quota meter is BUILT and registered — it is
+just silent because the credential files do not exist yet, and writing them was blocked pending his
+explicit word. One sentence from him and the lockout warning goes live. Details in WAITING ON ALDI.
 
 **2. Then resume the manual test list.** `SALES_TERMINAL_TEST_LIST.md` carries its own status table
 at the top — read that, not this paragraph, for which item is next. As of this write: A and B
