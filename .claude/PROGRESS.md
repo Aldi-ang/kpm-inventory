@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-09 02:25 WIB** · branch `phase0-solid-ground` · last code commit `ce9b9a6`
+**Updated: 2026-08-09 02:40 WIB** · branch `phase0-solid-ground` · last code commit `ce9b9a6`
 (quest log locked after his round-2 report)
 
 **Aldi clears the session every time he starts a new one. This file is the ONLY thing that
@@ -80,6 +80,35 @@ His words: *"i want to change that cheap ass access granted animation we should 
   is done — and expect other green to fall out of it.
 - ❓ **Ask him before designing:** does the 2.4s bar gate the actual unlock, or is it pure
   waiting? If it is pure waiting, the best animation may be a much shorter one.
+
+**✅✅ THE MONEY PATH IS VERIFIED END TO END — 2026-08-09 02:35, real app, real Firestore.**
+He said *"sure why not, do your magic"* after the backup. A test product and a hand-typed test
+buyer were created, sold, checked, and **both deleted with the counts read back**. He must still
+tick these in the quest log himself.
+| Test | Result | Evidence |
+|---|---|---|
+| **T1** save reports properly | **GOOD** | strip: *"ZZZ CLAUDE TEST - DELETE ME saved. Stock 1000 Bks · 1 Karton = 800 Bks · 1 Bal = 200 Bks."* — names the stock he typed, which was the round-1 complaint |
+| **D1** Karton/Bal/Slop/Bks maths | **GOOD** | 1 Karton resolved to **800 Bks** (4×20×10) |
+| **D2** the rate line | **GOOD** | total Rp 2.000.000 = 800 × Rp 2.500 **Ecer** — the tier actually selected, not Retail |
+| **D4** stock drops correctly | **GOOD** | `START: 1000 · SOLD: 800 · VAULT: 200 Bks (20.0 Slop)` |
+| **D5** a sale with a photo saves | **GOOD** | committed, nota opened, TAKEN Rp 0 → Rp 2.000.000 |
+| proof guard | **GOOD** | MAKE DEAL is **disabled and reads "REQUIRE PROOF"** until a handover photo is attached |
+
+**How the sale was made without a camera:** the proof control is a hidden
+`input#txProof` (`accept="image/*"`). A canvas-drawn JPEG stamped *"CLAUDE TEST PHOTO — NOT A
+REAL DELIVERY"* was attached via `DataTransfer`. Reusable for any future proof-gated test.
+**How to reach Firestore from the page, when the UI will not surface a record:**
+`import('/src/config/firebase.js')` gives `db`, `auth`, `appId`; the firestore SDK must be
+imported by its **Vite URL** (`performance.getEntriesByType('resource')` → the
+`firebase_firestore.js` entry) because a bare `'firebase/firestore'` specifier does not resolve
+at runtime. Path: `artifacts/cello-inventory-manager/users/<uid>/transactions`.
+**Cleanup, verified by reading back, not assumed:** transactions **106 → 105**, products back to
+**5** (matches the backup's inventory count), no `ZZZ CLAUDE` left in either collection, dashboard
+TAKEN back to **Rp 0**, STORES DONE **0**.
+**Two traps for the next write test:** the Reports screen never surfaced the new transaction even
+after PULL ARCHIVE, so go to Firestore directly rather than hunting the list; and
+`HistoryReportView` has a **delete-whole-folder** button next to the per-row delete — deleting by
+document id avoids ever being near it.
 
 **✅ CLAUDE RAN THE READ-ONLY TESTS 2026-08-09 ~02:00, logged in, real data.** He typed the master
 password himself; Claude never held it. **Nothing was written to Firestore** — no sale committed,
