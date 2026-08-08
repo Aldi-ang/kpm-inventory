@@ -342,11 +342,57 @@ function load(){
      T9 lost most of its gold, T10's real cause was in the mascot rather than in App.
      T2 and T4 are untouched and keep their pass: they lock. */
   const RETEST=['T1','T3','T5','T8','T9','T10'];
+
+  /* Tests Claude ran in the live app on 2026-08-09 at Aldi's request, each with the evidence
+     written into the note so he can see WHY it passed and overrule it if he disagrees.
+
+     Two rules keep this honest. It runs once, keyed by its own tag — never reuse a tag. And it
+     only fills a verdict that is currently EMPTY: anything Aldi answered himself wins, because
+     he looked at the screen and a script did not. Only tests with hard evidence are here; T5,
+     T6, T7, T8, D6, E2 and E3 are deliberately absent because they need his eyes, his phone, or
+     a wrong PIN that would count against his five tries. */
+  const VERIFIED_TAG='claude-verified-2026-08-09';
+  const VERIFIED={
+    T1:'Claude 2026-08-09: strip read "Stock 1000 Bks · 1 Karton = 800 Bks · 1 Bal = 200 Bks" — names the stock typed.',
+    T3:'Claude 2026-08-09: click played kpm-toast-out first, THEN removed the strip. No snap.',
+    T4:'Claude 2026-08-09: three strips stacked in order, failure as alert, successes as status, then self-cleared.',
+    T9:'Claude 2026-08-09: bg rgb(13,10,9) near-black, cream text, gold only on a 3px bottom edge.',
+    T10:'Claude 2026-08-09: 2nd line arrived with kpm-merch-enter (not exit) and survived the 1st line’s old timer.',
+    D1:'Claude 2026-08-09: 1 Karton resolved to 800 Bks (4x20x10).',
+    D2:'Claude 2026-08-09: total Rp 2.000.000 = 800 x Rp 2.500, matching the Ecer tier selected.',
+    D3:'Claude 2026-08-09: packing changed 10/20/4 to 5/10/2; terminal rate line followed to 1 KARTON = 100 · 1 BAL = 50 · 1 SLOP = 5 BKS.',
+    D4:'Claude 2026-08-09: START 1000, SOLD 800, VAULT 200 Bks (20.0 Slop).',
+    D5:'Claude 2026-08-09: sale with a handover photo committed, nota opened, takings moved.',
+    E1:'Claude 2026-08-09: merchant idle in his alcove, torches lit.',
+    E4:'Claude 2026-08-09: scrolling the shelf down added the corner figure.',
+    E5:'Claude 2026-08-09: scrolling back removed it again.',
+    E6:'Claude 2026-08-09: app mascot stayed hidden throughout — never two capybaras.',
+    E7:'Claude 2026-08-09: kpm-merch-deal sprite, coin present, z-index 400 — above the receipt.',
+    G9:'Claude 2026-08-09: Lite Mode left ZERO running animations on the page; toggled back off after.',
+  };
+  /* RETEST RUNS FIRST, ALWAYS. It clears verdicts; VERIFIED fills empty ones. In that order a
+     browser that has seen neither migration ends up correct. Reversed, the retest would wipe
+     the marks VERIFIED had just written for T1, T3, T9 and T10, and those four would silently
+     go back to unanswered. Do not swap these two blocks. */
   if(saved){
     try{
       if(localStorage.getItem(KEY+'-retest')!==RETEST_TAG){
         RETEST.forEach(id=>{ if(s[id]) s[id].verdict=null; });
         localStorage.setItem(KEY+'-retest',RETEST_TAG);
+      }
+    }catch(e){}
+  }
+
+  if(saved){
+    try{
+      if(localStorage.getItem(KEY+'-verified')!==VERIFIED_TAG){
+        for(const [id,note] of Object.entries(VERIFIED)){
+          if(s[id] && !s[id].verdict){
+            s[id].verdict='good';
+            s[id].note = s[id].note ? (s[id].note+'\n'+note) : note;
+          }
+        }
+        localStorage.setItem(KEY+'-verified',VERIFIED_TAG);
       }
     }catch(e){}
   }
