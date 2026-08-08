@@ -215,6 +215,16 @@ textarea::placeholder{color:#4a423a}
    already-confirmed items are pre-marked so the meter shows the true picture, not a fake
    zero — every one of them can still be changed. */
 const TESTS = [
+ {g:'T', name:'Messages — 184 of them just changed', items:[
+  {id:'T1', do:'Save something that works — add a customer, or edit a ware', ex:'A strip appears at the top saying it saved, and clears itself after about 3 seconds'},
+  {id:'T2', do:'Make something fail — turn wifi off, then save', ex:'A strip appears with a RED left edge and stays there. It must NOT disappear on its own'},
+  {id:'T3', do:'Tap that red strip', ex:'It goes away'},
+  {id:'T4', do:'Do two or three things quickly', ex:'The strips stack on top of each other, newest at the bottom, never more than five'},
+  {id:'T5', do:'Type the wrong master PIN', ex:'"Incorrect PIN. Strike 1/5" as a strip that waits for a tap'},
+  {id:'T6', do:'Go everywhere you remember a grey browser pop-up box appearing', ex:'There are none left anywhere in the app'},
+  {id:'T7', do:'Same thing on your phone', ex:'The strip is readable and does not cover the button you were about to press'},
+  {id:'T8', do:'Overall — after using it for a while', ex:'THE QUESTION: do the strips that wait for a tap feel helpful, or annoying? Write it in the notes'},
+ ]},
  {g:'H', name:'Territory + duplicate outlets', items:[
   {id:'H1', do:'Choose a store assigned to another salesman', ex:'Red bar names them, sale still completes', seed:'good'},
   {id:'H2a',do:'ROUND 1 — after a finished sale, type a made-up name like WARUNG TEST 99 by hand (do NOT pick from the dropdown)', ex:'No red bar. If ALEX’s red bar is still there, that is the bug'},
@@ -291,10 +301,22 @@ const TESTS = [
 
 const KEY='kpm-test-quest-v1';
 let state = load();
+/* Saved progress is keyed by test id, so a test added AFTER he last opened this page has no
+   entry — and every counter here reads state[id].verdict, which throws on undefined and leaves
+   him with a blank screen and his answers apparently gone. They are not gone; the page just
+   died before it could draw them. So always backfill the ids the saved copy has never seen,
+   and never drop the ones it already holds. */
 function load(){
-  try{ const raw=localStorage.getItem(KEY); if(raw) return JSON.parse(raw); }catch(e){}
-  const s={};
-  TESTS.forEach(g=>g.items.forEach(i=>{ s[i.id]={verdict:i.seed||null,note:'',shots:[]}; }));
+  let saved=null;
+  try{ const raw=localStorage.getItem(KEY); if(raw) saved=JSON.parse(raw); }catch(e){}
+  const s = (saved && typeof saved==='object') ? saved : {};
+  TESTS.forEach(g=>g.items.forEach(i=>{
+    if(!s[i.id] || typeof s[i.id]!=='object'){
+      s[i.id]={verdict:(saved?null:i.seed||null),note:'',shots:[]};
+    }
+    if(!Array.isArray(s[i.id].shots)) s[i.id].shots=[];
+    if(typeof s[i.id].note!=='string') s[i.id].note='';
+  }));
   return s;
 }
 function save(){
@@ -550,10 +572,33 @@ document.getElementById('sfx').onclick=e=>{
 };
 if(!sfxOn) document.getElementById('sfx').textContent='♪ Sound: Off';
 
-document.getElementById('reset').onclick=()=>{
-  if(!confirm('Clear every answer, note and screenshot? This cannot be undone.')) return;
+/* This used to ask with a browser dialog. Aldi's browser is set to suppress those, so it
+   returned false without drawing anything and Reset silently did nothing — the same failure
+   that 184 alerts and 69 confirms in the app itself were just converted away from. Press
+   twice instead: the first press arms it and says so, the second inside 4s clears. No dialog,
+   nothing to suppress, and the destructive press is still not the first one. */
+let resetArmed=false, resetTimer=null;
+document.getElementById('reset').onclick=e=>{
+  const btn=e.currentTarget;
+  if(!resetArmed){
+    resetArmed=true;
+    btn.textContent='✖ Press again to erase';
+    btn.style.background='var(--red)'; btn.style.color='#fff'; btn.style.borderColor='#000';
+    toast('Press Reset again to erase everything');
+    bleep(200,180,'sawtooth');
+    clearTimeout(resetTimer);
+    resetTimer=setTimeout(()=>{
+      resetArmed=false;
+      btn.textContent='✖ Reset';
+      btn.style.background=''; btn.style.color=''; btn.style.borderColor='';
+    },4000);
+    return;
+  }
+  clearTimeout(resetTimer); resetArmed=false;
+  btn.textContent='✖ Reset';
+  btn.style.background=''; btn.style.color=''; btn.style.borderColor='';
   localStorage.removeItem(KEY);
-  state=load(); render(); toast('Cleared');
+  state=load(); activeId=null; render(); toast('Cleared');
 };
 
 /* Snipping Tool goes to the clipboard, not to a file, so Ctrl+V has to be a first-class way in.
