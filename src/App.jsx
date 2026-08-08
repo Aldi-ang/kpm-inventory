@@ -3873,7 +3873,11 @@ const handleGitHubMirror = async () => {
                                 so Lite Mode is unaffected. */}
                             <button
                                 type="submit"
-                                className="group w-full mt-6 py-4 bg-[#0d0a09] text-[#f0e2c0] font-black uppercase tracking-widest text-sm border-2 border-[#3a3128] border-b-[3px] border-b-[#ff9d00] shadow-[0_3px_0_rgba(0,0,0,0.55)] transition-all duration-150 hover:bg-[#1c1814] hover:border-[#a89070] hover:border-b-[#ff9d00] hover:tracking-[0.22em] active:translate-y-[3px] active:shadow-none"
+                                /* transition-[…] not transition-all: `all` makes the browser watch every
+                                   animatable property on the element, and it will happily animate one
+                                   nobody intended. Naming the four that actually change is both cheaper
+                                   and predictable. */
+                                className="group w-full mt-6 py-4 bg-[#0d0a09] text-[#f0e2c0] font-black uppercase tracking-widest text-sm border-2 border-[#3a3128] border-b-[3px] border-b-[#ff9d00] shadow-[0_3px_0_rgba(0,0,0,0.55)] transition-[background-color,border-color,letter-spacing,transform] duration-150 ease-out hover:bg-[#1c1814] hover:border-[#a89070] hover:border-b-[#ff9d00] hover:tracking-[0.22em] active:translate-y-[3px] active:shadow-none"
                             >
                                 Update Database
                             </button>

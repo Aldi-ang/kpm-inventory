@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-09 02:50 WIB** · branch `phase0-solid-ground` · last code commit `ce9b9a6`
+**Updated: 2026-08-09 03:00 WIB** · branch `phase0-solid-ground` · last code commit `4f1e2c8`
 (quest log locked after his round-2 report)
 
 **Aldi clears the session every time he starts a new one. This file is the ONLY thing that
@@ -80,6 +80,22 @@ His words: *"i want to change that cheap ass access granted animation we should 
   is done — and expect other green to fall out of it.
 - ❓ **Ask him before designing:** does the 2.4s bar gate the actual unlock, or is it pure
   waiting? If it is pure waiting, the best animation may be a much shorter one.
+
+**✅ UI TESTS 2026-08-09 03:00 — T3, T4, T9, G9 all GOOD. No writes.**
+| Test | Result | Evidence |
+|---|---|---|
+| **T3** tap a strip | **GOOD** | click → `kpm-toast-out` plays FIRST, then the node is removed. It does not snap |
+| **T4** strips stack | **GOOD** | three at once, in order, newest last; failure came in as `role="alert"`, successes as `role="status"`; the two successes then cleared themselves |
+| **T9** the Update Database button | **GOOD** | `rgb(13,10,9)` near-black, cream `#f0e2c0` text, gold `#ff9d00` only as a 3px bottom edge — his *"more black and white, gold for some small thing"* |
+| **G9** Lite Mode | **GOOD** | class applies, strip animation computes to `none`, and **zero running animations anywhere on the page**. Toggled back OFF afterwards; animation returned at `kpm-toast-in / 0.26s` |
+*"Hover still responds" in G9 was NOT checked* — a real `:hover` cannot be faked from script. His.
+
+**🎯 AMMUNITION FOR `/review-animations`, found while testing, NOT acted on:** `src/` holds
+**215 `transition-all`** across the `.jsx` files. Emil's checklist opens with exactly that — `all`
+makes the browser watch every animatable property and animate ones nobody intended. The Update
+Database button was one of them (mine, from this session) and is now
+`transition-[background-color,border-color,letter-spacing,transform] ease-out`. **The other 215
+are the review's job, on his command — do not start it.**
 
 **✅✅ THE MONEY PATH IS VERIFIED END TO END — 2026-08-09 02:35, real app, real Firestore.**
 He said *"sure why not, do your magic"* after the backup. A test product and a hand-typed test
