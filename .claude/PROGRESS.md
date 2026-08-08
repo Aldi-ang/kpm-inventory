@@ -250,6 +250,25 @@ setting entirely and hard-code the real window. Then re-run the four-tier test �
 synthetic-transcript method in `git log` for this file works and is cheap. **Do not trust the
 93% stop until this is fixed; it cannot fire.**
 
+### 2026-08-08 — the four worktrees are GONE. src/ is clean.
+
+Aldi approved explicitly (*"delete the worktree"*) after a first attempt was correctly blocked for
+being ambiguous. All four removed; `git worktree list` now shows only the main repo.
+
+**Two things that got in the way, worth knowing:**
+- `git worktree remove` failed with **"Filename too long"** — Windows MAX_PATH. Fixed with
+  `git config core.longpaths true`, which is now set on this repo permanently.
+- That failed attempt left `critical-bugs-permissions-batch-c3371f` **deregistered but still on
+  disk**. Confirmed orphaned (git no longer knew it, its commit `95c0248` reachable from
+  `claude/agents-83a6d2`) and removed. **579 MB from that one folder alone.**
+
+**Nothing was lost.** All four were re-verified at 0 uncommitted tracked changes immediately
+before deletion, and the 259 lines that had been at risk were already committed as `cccb3c0`.
+
+**Result:** a search for `MerchantSalesView.jsx` now returns **1** hit instead of 4. Every grep,
+every graphify pass and every audit walk in this repo just got four times cleaner. Build still
+green, **147/147**, self-checks **26/26**.
+
 ### 2026-08-08 — 9router fully investigated. Only ONE thing is still missing.
 
 **Do not re-probe any of this. It is settled.**
