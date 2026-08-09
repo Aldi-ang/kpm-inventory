@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-10 02:01 WIB** · branch `phase0-solid-ground` · last code commit: run `git log -1`
+**Updated: 2026-08-10 02:40 WIB** · branch `phase0-solid-ground` · last code commit: run `git log -1`
 (**JOB 6 IS BUILT AND HE HAS SEEN IT — `6a3aaca` + `784f5cc` + `ae341e7`, audit 191/191** ·
 timing signed off at 8.5s · card and nav button fixed on his report ·
 quest log sorted · four tests waiting on him · **nobody has watched the unlock run yet**)
@@ -807,6 +807,42 @@ are never worth rescuing.
 ---
 
 ## LOG — newest first, older entries live in `git log` for this file
+
+### 2026-08-10 02:40 WIB — gate shipped and working on his PHONE. Audit 196/196.
+
+**HE IS THROUGH THE GATE ON HIS PHONE** — screenshot shows the new card rendering correctly at
+`192.168.1.141`. The port is done and in daily use.
+
+**✅ THE PHONE LOGIN IS FIXED AND IT WAS NEVER CODE.** His authorised-domain list held
+`192.168.1.102` — his PC's OLD address. The router had since handed it `192.168.1.141`. He added
+the new one and it worked immediately. **T7 was a stale IP in the Firebase Console all along.**
+**It will break again on every DHCP reshuffle.** Two permanent options offered, he has not
+chosen: a router reservation, or testing on `kpm-inventory.vercel.app`, which is already in the
+list and never changes.
+
+**Landed off his phone screenshot:** capybara no longer renders on the login screen (`182d7f8`,
+his ask — "capybara should shows when we are already log in"; **both** `user` and
+`!showAdminLogin` are required, since he was already signed in), and the master password no
+longer flashes as he types (`351e380`).
+
+**🔴 SECURITY SHAPE WORTH KEEPING: the no-flash fix is feature-detected on purpose.** The phone's
+last-character reveal cannot be turned off on a real `<input type="password">`. The only fix is a
+TEXT input masked by `-webkit-text-security` — and a browser without that property would render
+his MASTER PASSWORD as readable plaintext. `CAN_MASK_TEXT_INPUT` (top of `App.jsx`) gates the
+swap and falls back to a genuine password field. **Never make it unconditional.** Two audit
+checks pin it, plus the autofill/spellcheck exclusions a text input needs.
+
+**⚠️ STILL OPEN — the mascot clipping is NOT fixed.** Hiding him on the login screen removed the
+place Aldi saw it; wherever he DOES render he is still anchored `fixed bottom-0 right-0` and cut
+by the viewport edge on a phone. **Do not mark that done.** Needs a phone screenshot of a screen
+he appears on.
+
+**⚠️ Also unresolved: he says the sidebar button is still on the login screen.** Measured absent
+from the DOM after `036ead3`. Have him hard-refresh first; if it survives that, get a screenshot
+before touching code.
+
+**QUEUED, NOT STARTED, his order:** dashboard UI rework — *"the dashboard theme looks not in line
+with the theme that we have… we'll do it after the sales terminal"*. **Sales terminal first.**
 
 ### 2026-08-10 02:30 WIB — the gate WORKS (his screenshot proves it), and T7's real cause found
 
