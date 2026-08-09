@@ -1,12 +1,12 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-10 02:44 WIB** · branch `phase0-solid-ground` · last code commit: run `git log -1`
+**Updated: 2026-08-10 03:10 WIB** · branch `phase0-solid-ground` · last code commit: run `git log -1`
 (**🔴 NEW BUG, NOT INVESTIGATED — see "OPEN BUG: vault button dead on phone" right below.**
 Session stopped at 95% plan quota before any work started. Nothing was changed for it.)
 (**JOB 6 IS DONE AND LIVE ON HIS PHONE — audit 196/196, last gate commit `351e380`** ·
 timing signed off at 8.5s · card, spaces, panel size, mascot and password-flash all fixed ·
 phone login fixed in the Firebase Console, NOT in code · quest log sorted, four tests his ·
-**NEXT JOB: redesign the panel OUTRO animation — he asked, it is not started**)
+**WAITING ON HIM: pick an outro, artifact 76cd529a · then the quest-log list in LOG**)
 
 *⚠️ A second session was editing this file at 01:42 and wrote "no kpm code touched since 20:45".
 That was true when written and is now wrong — `6a3aaca` and `784f5cc` both landed after it.
@@ -556,6 +556,7 @@ it never happens twice. Answer, then ask which of the waiting items he wants to 
 | A-Brain vault (decisions, incidents, backlog) | `D:\APP DEVELOPMENT\kpm inventory main FILES\A-Brain` |
 | Code knowledge graph — query, do not grep | `graphify-out/` |
 | NOT kpm — the LLM download's space log (outside the repo) | `D:\LLAMA\space.log` |
+| NOT kpm — pristine AirLLM before the resume patch | `D:\LLAMA\utils.py.backup` |
 | Alucard's rules (edit-denied — lift in settings first) | `C:\Users\ASUS\.claude\skills\alucard\SKILL.md` |
 | The Stop hook that keeps this file honest | `.claude/check-progress.mjs` |
 | The context meter (measures, never guesses) | `.claude/context-watch.mjs` |
@@ -835,6 +836,56 @@ are never worth rescuing.
 
 ## LOG — newest first, older entries live in `git log` for this file
 
+### 2026-08-10 — outro drafts published, and two quest-log items closed. Audit 202/202.
+
+**🔴 WAITING ON HIM — FOUR PANEL OUTROS, HIS PICK:**
+**`https://claude.ai/code/artifact/76cd529a-dc41-45cc-ad23-a5ea0418f7b0`**
+Same wave every time, so only the exit differs; slow-motion ×3 toggle for judging timing.
+`0` today (fade+shrink 200ms, the one he called cheap) · **`A` Conversion** — the card's own
+outline lifts off and becomes the ring, +420ms · `B` Power cut — 90ms to black, a beat, then
+the ring, +300ms · `C` Seal & release — hairline draws shut, holds, lets go, +560ms.
+**A is the recommendation**, because it fixes the actual fault: today the exit and the wave are
+two unrelated events. **All three push the wave later, so `vault-b.mp3` MUST be regenerated** —
+he has to accept that cost with the pick. Source: scratchpad `gate-outro.html`.
+
+**✅ QUEST-LOG ITEM — Edit Record panel is on-theme (`30c1944`).** His words: *"also the edit
+record panel better changed it into our theme"*. STOCK/STICKS and RETAIL/GROSIR were using
+green-vs-blue to tell pairs apart; all four are cream on neutral with a gold focus edge now. No
+meaning lost — the labels already say which is which. **Still off-theme and deliberately NOT
+touched** (different screen, not something he tested): the loading spinner at `App.jsx:~3748` is
+emerald AND uses `animate-spin`, which also breaks the Lite Mode "nothing rotates" rule.
+
+**✅ QUEST-LOG ITEM — the flight recorder no longer lies about being offline (`3af67f0`).**
+His words: *"it just stays green"*. `navigator.onLine` answers "is there an interface", not "can
+I reach anything", and his WSL adapter keeps it true with the wifi off. Now a real probe.
+**Three things about it that must not be "simplified" later, each pinned by a check in group 17:**
+it is deliberately **NOT same-origin** (this is a PWA — the service worker answers its own
+precached files with the wifi off, so a same-origin probe proves nothing); it uses `no-cors`
+against a **204** so the body is never read and the data cost is headers only; and
+`navigator.onLine === false` is still trusted instantly, because the flag lies by saying yes,
+never by saying no. **Measured live from his network: 119ms.** A 30s heartbeat covers the case
+with no event at all, which is his case exactly.
+**Wrong answers fail safe by design:** a false "offline" queues a sale that syncs later; a false
+"online" is the bug being fixed.
+*Not proven, and do not claim it was: the service-worker half was NOT demonstrated live — the SW
+is not active under `vite dev`. It applies to the production build (71 precached entries).*
+
+**▶ QUEST-LOG ITEMS STILL OPEN, his words, in the order I would take them:**
+1. **H2a — typing a store name by hand does not select it.** *"if i dont press anything from the
+   dropdown then the stores wont be selected… if i press any space in there, what is shows
+   instead is the main rail dashboard"*. **Never investigated.** Probably the biggest real bug left.
+2. **The flight recorder should show the queued edit.** *"there should be the notification that
+   the edit is queued inside the flight recorder"*. `useOfflineEngine` already keeps `syncLogs`
+   and `pendingCount`, so the data likely exists and is simply not shown for that path.
+3. **The mascot has no exit animation** — *"it is just snapped and gone"*. Plus his H3 idea:
+   *"glowing red on the borderline for that box"*.
+4. **The mascot is clipped on his phone** — needs a phone screenshot of a screen he appears on.
+5. **T9 button** — *"makes it more expensive and elegant"*. A taste call; give him options.
+6. 🔴 **C6 retur — BLOCKED ON HIM, do not guess.** *"disabled button and add red strip as well…
+   i like it better when the red strip dissapeared after 3 seconds"*. The button is ALREADY
+   disabled (`MerchantSalesView.jsx:~2301`) with a grey caption. **Ask: recolour that caption, or
+   raise a toast on a click that a disabled button cannot receive?**
+
 ### 2026-08-10 02:55 WIB — phone can open the vault again. `d366acc`. NEXT JOB IS THE PANEL OUTRO
 
 **🔴🔴 THE ONE THING HE IS WAITING FOR — DO THIS FIRST NEXT SESSION.** His words, verbatim:
@@ -1023,7 +1074,7 @@ never remove.
 
 Audit **175 → 187**. Build green, useSound 6/6, toastSeverity 54/54, guard proofs 12/12.
 
-### 2026-08-10 01:59 WIB — NOT kpm work: the LLM download, and the disk that kept eating itself
+### 2026-08-10 05:05 WIB — NOT kpm work: the LLM download, and the disk that kept eating itself
 
 **This entry is from the OTHER session running in this folder tonight. It touched no `src/` file
 and shipped no kpm code** — the gate work in `784f5cc`/`6a3aaca` is the *other* session's, not
@@ -1033,6 +1084,40 @@ this one's. Nothing here changes JOB 2/4/5. It is recorded only so the disk find
 survive every crash. A watcher samples free space + layer count every 2 minutes into
 `D:\LLAMA\space.log` and alerts at 200/120/60/**35**GB — the 35GB alarm exists to kill the process
 *before* `ENOSPC` so the run ends on our terms instead of losing hours to a crash.
+
+**05:05 — THE DOWNLOAD IS DELIBERATELY STOPPED, and the root cause is finally named.** Its own log
+gave it up: `some layer splits found, some are not, re-save all layers in case there's some
+corruptions.` **AirLLM re-walks every layer from zero on each run, so it re-downloads all 118
+shards (~460GB) no matter how many layers are already on disk.** The 65 finished layers save disk,
+they save *no* download. After 2h52m the run was only at layer **14/97**, still on shard 18, with
+its own ETA of **16h40m** — and it burns ~22GB/h of leaked space against 233GB free, so it would
+have died of `ENOSPC` around hour 10 for the fifth time. Stopping cost nothing: those hours were
+redoing layers that already existed.
+
+**THE FIX, and the trap inside it.** Skip layers that already have a `.done` marker and park the
+shard cursor before the first unfinished one → ~36 shards instead of 118, ~6h instead of 17.
+**The cursor must go to the LOWEST shard the first unsaved layer needs, never after the highest
+shard the previous layer reached.** Verified against `model.safetensors.index.json`: **layer 63
+spans shards 79-81 and layer 64 spans 81-82 — they SHARE shard 81.** The obvious version of this
+patch skips 81 and hands layer 64 incomplete weights: the model still runs and still answers, it
+just answers with rubbish, and nothing fails loudly. Cursor goes to **80**.
+
+**BLOCKED — the edit needs Aldi to name the file out loud.** The patch targets
+`D:\LLAMA\venv\Lib\site-packages\airllm\utils.py` and the permission layer refuses edits to
+installed packages unless he names them. Backup already taken: `D:\LLAMA\utils.py.backup`.
+His open choice, verbatim, both still valid:
+- **"yes patch airllm utils.py"** — apply it in the library, verify it compiles, restart.
+- **"do it in run_qwen.py instead"** — same logic as an override in his own script, no library
+  touched, but ~120 lines of library code get copied and can drift on an AirLLM update.
+
+**Restart command once he answers:**
+
+```powershell
+cd D:\LLAMA; $env:HF_HUB_DISABLE_XET=1; $env:HF_HUB_DOWNLOAD_TIMEOUT=120; .\venv\Scripts\python.exe run_qwen.py
+```
+
+Re-arm a 2-minute watcher on `df -m /d` + the `.done` count, alerting at 35GB. `D:\LLAMA\space.log`
+holds every sample taken so far and is the only record of the leak rate.
 
 The `D:\LLAMA` Qwen3-235B download died four times. The first was a genuine HF CDN 500 (`xet`
 backend — `HF_HUB_DISABLE_XET=1` fixed it for good). Every failure after that was `OSError: [Errno
