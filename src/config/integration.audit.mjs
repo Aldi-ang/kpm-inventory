@@ -605,6 +605,16 @@ check(G16, 'the scramble letters keep a fixed cell, so spaces survive',
   /minWidth\s*=\s*'0\.62em'/.test(gateCode),
   'these spans are flex items — a lone space collapses to zero and "Welcome back" renders as '
   + 'WELCOMEBACK, which is exactly what he saw');
+/* The master password must NEVER be readable on screen. The no-flash trick needs a text input,
+   and a text input with no working CSS mask is plaintext — so the swap is feature-detected and
+   these two checks exist to keep it that way. */
+check(G16, 'the password field only becomes a text input where the mask works',
+  /type=\{CAN_MASK_TEXT_INPUT \? 'text' : 'password'\}/.test(appCode)
+  && /CSS\.supports\('-webkit-text-security', 'disc'\)/.test(appCode),
+  'an unconditional text input renders his master password as readable plaintext');
+check(G16, 'that field is kept away from autofill and spellcheck',
+  /autoComplete="off"[\s\S]{0,200}?spellCheck=\{false\}/.test(appCode),
+  'a text input is offered to autofill and spellcheck services; a password input is not');
 check(G16, 'the mascot stays out of the login screen',
   /\{user && !showAdminLogin && \(\s*<CapybaraMascot/.test(appCode),
   'he saw the capybara standing beside the vault gate on his phone, telling him to run a backup '

@@ -104,6 +104,19 @@ import { computeDayXP, DEFAULT_XP, checkBadges, DEFAULT_BADGES } from './config/
 import { confirmAction, promptAction } from './components/ConfirmGate.jsx';
 import { notify } from './components/Toast.jsx';
 import VaultGate, { gateHoldMs, gateIsRich } from './components/VaultGate.jsx';
+
+/* Phones flash the character you just typed before masking it — Aldi: "it shows in split second
+   after i type it". That reveal is the platform's, not ours, and there is no way to switch it
+   off on a real <input type="password">. The only reliable trick is a TEXT input masked by
+   `-webkit-text-security`, which has no reveal logic to run.
+
+   THE TRAP, and why this is feature-detected instead of just done: a browser without
+   `-webkit-text-security` would render his MASTER PASSWORD as plain readable text on screen.
+   So the swap only happens where the mask is proven to work, and everywhere else it stays a
+   genuine password field with the flash. Never make this unconditional. */
+const CAN_MASK_TEXT_INPUT =
+  typeof CSS !== 'undefined' && typeof CSS.supports === 'function' &&
+  (CSS.supports('-webkit-text-security', 'disc') || CSS.supports('text-security', 'disc'));
 import { isFailure } from './utils/toastSeverity.js';
 
 const APP_VERSION = packageJson.version;
@@ -3629,7 +3642,16 @@ const handleGitHubMirror = async () => {
                 <div className="text-[13px] uppercase tracking-[0.2em] font-bold text-[#f7e9c8] mt-[7px] mb-[17px]">Master Vault</div>
 
                 <input
-                    type="password"
+                    /* See CAN_MASK_TEXT_INPUT at the top of this file. Falls back to a real
+                       password field wherever the CSS mask is not supported — never plaintext. */
+                    type={CAN_MASK_TEXT_INPUT ? 'text' : 'password'}
+                    style={CAN_MASK_TEXT_INPUT ? { WebkitTextSecurity: 'disc', textSecurity: 'disc' } : undefined}
+                    /* A text input would otherwise be offered to autofill, spellcheck and
+                       autocapitalise — none of which should ever see a master password. */
+                    autoComplete="off"
+                    autoCorrect="off"
+                    autoCapitalize="off"
+                    spellCheck={false}
                     placeholder="MASTER PASSWORD"
                     className="w-full bg-transparent border-0 border-b border-[#E7700F]/20 py-[11px] px-1.5 text-center font-mono text-[13px] tracking-[0.42em] text-[#f7e9c8] outline-none focus:border-[#E7700F] placeholder:text-[#5f4a2c] placeholder:tracking-[0.16em] placeholder:text-[9.5px] transition-colors"
                     value={inputPin}
