@@ -721,6 +721,38 @@ No kpm-inventory code touched. This session was babysitting a Qwen3-235B downloa
 `plan-quota.mjs`'s working-tree diff (see `git status`) predates this session; not made here.
 Still stuck at layer 63/94 as of this update, cause not yet diagnosed.
 
+### 2026-08-09 19:15 WIB — TWO variations now live. He must pick one.
+
+**🔴 THE OPEN DECISION: variation A (sphere) or variation B (the dots become the name).**
+He asked for B as an ADDITION — *"i want u to make this as other variations so do not delete the
+previous work"*. Both are published and both are current.
+- **A · sphere** — `https://claude.ai/code/artifact/48f5d0b1-3ca2-4d8d-b3d8-b1753c4519b9`
+- **B · the words** — `https://claude.ai/code/artifact/c5a353b6-49ce-4215-ac3f-b67fb85319b2`
+
+**HIS MEASURED NUMBERS, now the defaults — hard-code these at port time:**
+**background spacing 26 · sphere spacing 38 · sphere size 0.46.** He set them on the sliders
+himself, which is why they are not up for re-litigation.
+- **Background 26 and sphere 38 are different on purpose**, so the sphere takes the field dot
+  nearest each point of a 38 grid and **the rest stay put and dim out**. The Fibonacci lattice is
+  then spread over the survivors — spreading it over the whole field would keep the background's
+  density and make his 38 do nothing.
+- **0.46 needed a clamp or it runs off a phone.** The widest projected point is not the equator:
+  maximising `sqrt(1-z²)·FOV/(FOV+z)` gives `z=-1/FOV` and a factor of **1.084**, so R is capped
+  at `(short/2 - 9)/1.084`. His number is kept wherever it fits.
+- **The dots-forming-a-line idea is REMOVED** — he tried it and did not like it. Do not revive it.
+- **The sphere outro now collapses inward** instead of fading in place, his note.
+- **The field brightens for 0.3s as the unlock starts**, so the journey from background to shape
+  is visible. Also his.
+- **Press-and-drag reveals the field on touch** — he confirmed it: *"u are right press and drag
+  should be the hover animation for phone users"*. Without it a pitch-black field is a black
+  rectangle on a phone.
+
+**How B works, because it is the non-obvious one:** the name is drawn to an offscreen canvas, its
+opaque pixels are read back and thinned, and each dot flies to one — so the letterforms are the
+real font. The **matrix outro is then literal**: the same dots re-form random glyphs four times
+before scattering, each with its own direction. The scramble is made OF the text rather than laid
+over it.
+
 ### 2026-08-09 18:50 WIB — pitch black, two sliders, and a rule made of dots
 
 **Four more corrections, all landed.** *"this design is almost perfect"* — so these are the last
