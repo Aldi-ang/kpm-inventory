@@ -1,12 +1,52 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { openDB } from 'idb';
 
 const DB_NAME = 'kpm_ghost_ledger';
 const DB_VERSION = 1;
 
+/* ── IS THERE ACTUALLY AN INTERNET? ────────────────────────────────────────
+   Aldi's report: "last time flight recorder will changed into red cloud logo but now its
+   doesnt show it, instead it just stays green". Cause: `navigator.onLine` only answers
+   "does a network interface exist", NOT "can I reach anything". His PC has a virtual WSL
+   adapter on 172.27.240.1, so switching the wifi off leaves that flag TRUE and the badge
+   green — while nothing can actually be sent.
+
+   That matters more than a wrong colour: with the badge lying, it is his only signal that
+   work is being queued rather than saved.
+
+   So a real probe. Notes on the choices, because each one is load-bearing:
+   - It must NOT be same-origin. This app is a PWA and the service worker would serve its own
+     cached file happily with the wifi off — a probe that the cache can answer proves nothing.
+   - `no-cors` gives an opaque response we never read; we only care that the request completed.
+     Offline it rejects, which is the whole signal.
+   - A 204 is headers and no body, so the cost to a salesman's data plan is as close to zero
+     as a network check gets.
+   - `navigator.onLine === false` is still trusted immediately: the flag lies by saying YES,
+     never by saying NO. */
+const REACHABILITY_URL = 'https://www.gstatic.com/generate_204';
+const PROBE_EVERY_MS = 30000;
+const PROBE_TIMEOUT_MS = 5000;
+
+async function canReachInternet() {
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) return false;
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), PROBE_TIMEOUT_MS);
+    try {
+        await fetch(REACHABILITY_URL, { mode: 'no-cors', cache: 'no-store', signal: ctrl.signal });
+        return true;
+    } catch {
+        return false;
+    } finally {
+        clearTimeout(timer);
+    }
+}
+
 export default function useOfflineEngine() {
     // 1. HARDWARE SENSORS
     const [isOnline, setIsOnline] = useState(navigator.onLine);
+    /* Mirrors isOnline so the probe can tell a real change from a repeat without depending on
+       stale state inside the interval closure — and so the log only fires on an actual flip. */
+    const onlineRef = useRef(navigator.onLine);
     const [syncLogs, setSyncLogs] = useState([]);
     const [pendingCount, setPendingCount] = useState({ transactions: 0, noo: 0 });
     const [pendingTxData, setPendingTxData] = useState([]); // 🚀 WAITING ROOM DATA
@@ -114,13 +154,27 @@ export default function useOfflineEngine() {
 
     // 6. THE HARDWARE LISTENER (Watches the phone's 4G/WiFi chip)
     useEffect(() => {
-        const handleOnline = () => {
-            setIsOnline(true);
-            logSyncEvent("📡 SIGNAL ACQUIRED: Entering Online Mode", 'INFO');
+        /* One place that changes the flag, so the badge and the log can never disagree. */
+        const apply = (next) => {
+            if (onlineRef.current === next) return;
+            onlineRef.current = next;
+            setIsOnline(next);
+            logSyncEvent(
+                next ? "📡 SIGNAL ACQUIRED: Entering Online Mode" : "⚠️ CONNECTION LOST: Entering Offline Mode",
+                next ? 'INFO' : 'OFFLINE'
+            );
         };
-        const handleOffline = () => {
-            setIsOnline(false);
-            logSyncEvent("⚠️ CONNECTION LOST: Entering Offline Mode", 'OFFLINE');
+
+        /* The browser events are kept because they are INSTANT, but they are only half the
+           story: `offline` is trustworthy on its own, while `online` merely means an adapter
+           came up — so that one is confirmed by a probe before the badge goes green. */
+        const handleOnline = () => { probe(); };
+        const handleOffline = () => { apply(false); };
+
+        let stopped = false;
+        const probe = async () => {
+            const ok = await canReachInternet();
+            if (!stopped) apply(ok);
         };
 
         // 🚀 RADIO RECEIVER: Listens for updates from other files
@@ -137,7 +191,15 @@ export default function useOfflineEngine() {
         updatePendingCount();
         loadLogs();
 
+        /* Probe once on boot — this is what corrects a badge that booted green on a machine
+           whose wifi is already off — then on a slow heartbeat, because with the flag lying
+           there is no event coming to tell us the connection died. */
+        probe();
+        const heartbeat = setInterval(probe, PROBE_EVERY_MS);
+
         return () => {
+            stopped = true;
+            clearInterval(heartbeat);
             window.removeEventListener('online', handleOnline);
             window.removeEventListener('offline', handleOffline);
             window.removeEventListener('ghost-ledger-updated', handleLedgerUpdate); // 🚀 RADIO DETACHED

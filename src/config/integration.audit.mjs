@@ -641,6 +641,36 @@ check(G16, 'the everyday login is the preview card, not the red alarm one',
   /Open the vault/.test(appCode) && !/bg-red-900\/20 hover:bg-red-900\/60/.test(appCode),
   'the red slab and ACCESS VAULT are the old panel he asked to be replaced');
 
+/* ── 17. the offline badge tells the truth ─────────────────────────────────
+   His report: "last time flight recorder will changed into red cloud logo but now its doesnt
+   show it, instead it just stays green". `navigator.onLine` answers "is there an interface",
+   not "can I reach anything" — his PC has a virtual WSL adapter, so the flag stays true with
+   the wifi off. With the badge lying, he has no signal that work is being queued instead of
+   saved, which is worse than a wrong colour. Each check below pins one thing that would
+   silently restore the lie. */
+const G17 = '17. The offline badge tells the truth';
+const offlineSrc = strip(fs.readFileSync('src/hooks/useOfflineEngine.js', 'utf8'));
+
+check(G17, 'there is a real reachability probe, not just the browser flag',
+  /fetch\(REACHABILITY_URL/.test(offlineSrc),
+  'navigator.onLine alone is what made the badge stay green with the wifi off');
+check(G17, 'the probe does NOT ask this app, which a service worker could answer',
+  /REACHABILITY_URL\s*=\s*'https:\/\//.test(offlineSrc)
+  && !/REACHABILITY_URL\s*=\s*'\//.test(offlineSrc),
+  'this is a PWA — a same-origin probe gets served from the precache with the wifi off and '
+  + 'proves nothing');
+check(G17, 'the probe cannot hang the badge forever', /AbortController/.test(offlineSrc)
+  && /PROBE_TIMEOUT_MS/.test(offlineSrc),
+  'a request that never settles leaves the badge on its last value indefinitely');
+check(G17, 'something re-checks on a heartbeat', /setInterval\(probe, PROBE_EVERY_MS\)/.test(offlineSrc),
+  'with the flag lying there is no offline event coming — nothing else would ever notice');
+check(G17, 'a browser saying OFFLINE is still believed at once',
+  /navigator\.onLine === false\) return false/.test(offlineSrc),
+  'the flag lies by saying yes, never by saying no — trusting the no keeps it instant');
+check(G17, 'the heartbeat is stopped on unmount',
+  /clearInterval\(heartbeat\)/.test(offlineSrc),
+  'a probe outliving the component keeps hitting the network for nothing');
+
 /* ── report ──────────────────────────────────────────────────────────────── */
 let last = '';
 for (const r of results) {
