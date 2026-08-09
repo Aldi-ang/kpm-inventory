@@ -721,6 +721,36 @@ No kpm-inventory code touched. This session was babysitting a Qwen3-235B downloa
 `plan-quota.mjs`'s working-tree diff (see `git status`) predates this session; not made here.
 Still stuck at layer 63/94 as of this update, cause not yet diagnosed.
 
+### 2026-08-09 19:25 WIB — ✅ HE PICKED B. The letters were being clipped by a real bug.
+
+**🟢 THE DIRECTION IS DECIDED: variation B, the dots become the name.** *"i like B better"*.
+`https://claude.ai/code/artifact/c5a353b6-49ce-4215-ac3f-b67fb85319b2`. Variation A (the sphere,
+`48f5d0b1-…`) stays published as the alternative but is no longer the candidate.
+
+**THE CLIPPED LETTERS WERE A BUG, NOT A SETTING, and it is the reusable find here.** He reported
+*"words from the formed dots is cutted on the bottom"*. Cause: glyph pixels are scanned **row by
+row from the top**, and the list was then **truncated** to the number of dots available — so the
+surplus that got dropped was always the bottom of the letters. Fix: thin the whole set evenly
+instead of cutting the tail. **When a sampled list is longer than the budget, subsample it —
+never slice it — or you silently delete one end of the data.**
+
+**His other four, all landed:**
+- **No leftovers.** *"i dont want any leftover"* — every dot the word does not need now flies
+  into it anyway, arrives behind the others and dissolves there (`fly===2`, alpha peaking at
+  mid-flight). Nothing sits on the field waiting to be switched off.
+- **The outro was "childish splashed".** The random-direction explosion is gone; it is now a slow
+  wave crossing the word from the left, each dot lifting 17px as it goes out. **An explosion is
+  loud, and loud is the opposite of expensive.**
+- **Brightness was too instant.** It arrives as a **sweep** now — each dot starts brightening
+  based on how far right it sits, over ~1s — and the gather waits until 1.15s so there is
+  something to watch before the letters form.
+- **His numbers: letter density 7, name size 0.10**, and the two DOM lines a size larger.
+
+**The sound was retimed for B and is a SECOND file** — `public/sounds/vault-b.mp3` (89.7 KB,
+7.6s): tok at 2.90s where the name finishes forming, four soft ticks under the scramble, release
+at 5.6s under the fade wave. `vault.mp3` still matches variation A. **He did not ask for this —
+the beats had moved and the old one would have landed a second early.**
+
 ### 2026-08-09 19:15 WIB — TWO variations now live. He must pick one.
 
 **🔴 THE OPEN DECISION: variation A (sphere) or variation B (the dots become the name).**
