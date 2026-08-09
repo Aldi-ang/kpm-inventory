@@ -45,13 +45,33 @@ timed to the 3.0s wave (tok 4.50s where the name completes, ticks 6.70s, release
 **Change the wave and the sound must be regenerated** — the generator is a plain Node PCM script
 plus ffmpeg, both used repeatedly on 2026-08-09.
 
-**▶▶ THE TWO JOBS WAITING, in order:**
+**✅ QUEST LOG IS SORTED AND REPUBLISHED — 2026-08-09 20:50, tag `redo-2026-08-09c`.**
+All 48 answered tests LOCK. **Four come back blank and are the only things on his screen:**
+| Back | Why |
+|---|---|
+| **T6** | he accepted the capybara reporting it, but asked for a talking sound. **Shipped this session** |
+| **T7** | he could never log in on his phone, so it was never really tested. **Fixed this session** |
+| **T10** | rewritten — the old wording never said HOW to make the mascot talk twice |
+| **H2b** | rewritten — *"i dont understand how to test this"*, my wording failing, not him |
+T5 and T8 are deliberately NOT reopened: he answered them GOOD this round and nothing changed
+under them. **Next round needs another NEW tag** (`...d`); never reuse one.
+*The two scratchpad suites named in older notes (`questcheck.mjs`, `verifycheck.mjs`) belong to a
+previous session's scratchpad and were not available here; the migration's invariants were
+checked directly against the file instead — 10/10.*
 
-**1. THE QUEST LOG STILL HAS NOT BEEN UPDATED for his 2026-08-09 COPY REPORT.** His standing rule
-fires on every report and it has now been outstanding for several turns. The sort is already
-decided: **48 answered tests lock; T10 and H2b come BACK rewritten**, because his note on both was
-that he does not know how to test them — my wording failing, not him. New tag, never reuse one,
-order stays retest → verified → redo.
+**▶▶ THE JOBS WAITING, in order:**
+
+**1. HIS OWN REQUESTS STILL OPEN from the 2026-08-09 report — verbatim in WAITING ON ALDI below.**
+- **T9 button** *"makes it more expensive and elegant"* — **not started, deliberately.** It is a
+  taste call he has to judge, and starting it at 23% quota would have left it half-done.
+- **C6 retur** *"disabled button and add red strip… i like it better when the red strip
+  dissapeared after 3 seconds"* — **not started, and the reason matters:** the button is ALREADY
+  disabled (`MerchantSalesView.jsx:2301`) with a grey caption at `:2307`. What is ambiguous is
+  whether "red strip" means recolouring that caption or raising a toast, and whether "disappears
+  after 3 seconds" applies to a caption that renders for as long as the retur is open. **Ask him
+  which, do not guess.**
+- **E1 cave/torches and E6 capybara handoff** — still blocked on 📎 the two screenshots stuck in
+  his browser. He must drag them into chat.
 
 **2. PORT THE GATE INTO THE APP.** `src/` has none of it. `src/App.jsx:3439-3618` is **five modes
 wearing one shell** — standard login, first-time setup, recovery, OTP, unlock — and **setup is
@@ -737,6 +757,26 @@ No kpm-inventory code touched. This session was babysitting a Qwen3-235B downloa
 `plan-quota.mjs`'s working-tree diff (see `git status`) predates this session; not made here.
 Still stuck at layer 63/94 as of this update, cause not yet diagnosed.
 
+### 2026-08-09 20:50 WIB — quest log sorted at last, and the mascot got his voice
+
+**The standing rule was outstanding for most of the session and is now done.** 48 answered tests
+lock; T6, T7, T10 and H2b come back blank under a new tag. Details in DO THIS NEXT above.
+
+**T6 shipped: `triggerCapy` now plays a mumble.** The files have existed since the terminal was
+built and **only `MerchantSalesView` ever played them**, so the mascot was mute on every screen
+except the one he was not testing. Same shape as the audio-unlock bug from earlier today — **an
+asset existing is not the same as a path playing it, and the second time this pattern appeared it
+was in a different component.**
+**It cost a build:** the explanatory comment I wrote pushed `notify(text)` outside the
+400-character window audit group 13 asserts around `triggerCapy`, and the check failed. **The fix
+was to shorten the comment, not widen the guard** — a check that exists to keep a failure visible
+should not be relaxed to make room for prose. 172/172 after.
+
+**Three times this session a check of mine failed on my own COMMENTS rather than on code** — the
+last one matched the phrase "let state = load()" inside a comment describing declaration order.
+**Scan the extracted code, never the whole document, and normalise whitespace.** Every time, the
+honest move was re-running scoped rather than trusting or dismissing the red.
+
 ### 2026-08-09 20:35 WIB — ✅ GATE DESIGN CLOSED. One clock, 3s wave. Next session: port it.
 
 **He was right twice in a row about the ring, and the second time the cause was three faults at
@@ -797,29 +837,5 @@ standard login, first-time setup, recovery, OTP and unlock — and **setup is em
 entirely blue**, against the palette law. Porting only the unlock leaves the law half-kept.
 Also unresolved for the port: **a phone has no hover**, so press-and-drag must reveal the field
 (implemented in the preview, must survive the port) or the gate is a black rectangle on mobile.
-
-### 2026-08-09 19:45 WIB — the panel now becomes the wave, and the name leaves letter by letter
-
-**His idea, and it fixed a weakness I had not named: the login panel had no exit at all.** It
-simply faded. His words: *"the outward wave animation should be as a result from the first login
-panel that animate into outward wave maybe something like that could be cool, because right now
-the panel is so static and have a really basic outro"*. The card now **collapses to 86% and
-throws a ring outward**; the field only exists where that ring has already passed, with a bright
-crest at the ring itself and a calm level behind it.
-**Why this beat the previous attempt, which is the reusable part: a 0-to-1 fade has no
-DIRECTION.** He called it instant twice, and both times the problem was not the duration — it was
-that nothing travelled. Give the same brightness a front that moves and it reads as an event.
-
-**The name now exits exactly like the two DOM lines**, his other note. That needed a structural
-change: the word is sampled into **one bucket per character**, keyed off each glyph's measured
-x-range, so a single letter can scramble and leave on its own. Each letter cycles three random
-glyphs 70ms apart and then goes, 95ms behind the one before it — the same rhythm as `resolveOut`,
-so the three lines read as one idea instead of three effects.
-**The scramble glyphs are pre-sampled at unlock**, never mid-animation: `getImageData` on a
-full-size canvas is exactly the kind of work that stutters on the phones Lite Mode exists for.
-
-**Timings now: ring 0.1–1.45s · letters form 1.3–3.0s · "Welcome back" 1.6s · "Master Vault
-unlocked" 3.3s · the name leaves from 5.2s · app at 7.0s.** `vault-b.mp3` still fits — its tok
-lands at 2.90s where the name completes at 3.00s. Close enough to keep; retime only if he says.
 
 _Older entries live in `git log -p .claude/PROGRESS.md`._

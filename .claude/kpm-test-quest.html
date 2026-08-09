@@ -247,7 +247,7 @@ const TESTS = [
   {id:'T7', do:'Any of the above on your phone', ex:'The strip is readable and does not cover the button you were about to press'},
   {id:'T8', do:'Overall — after using it for a while', ex:'THE QUESTION: do the strips that wait for a tap feel helpful, or annoying? Write it in the notes'},
   {id:'T9', do:'Press UPDATE DATABASE and watch the button itself', ex:'It is gold now, brightens and spreads on hover, and presses down when clicked'},
-  {id:'T10',do:'Make the capybara talk twice in a row — save a product right after he has said something', ex:'The second line gets its full time on screen. It must not flash and vanish'},
+  {id:'T10',do:'Master Vault → press UPDATE DATABASE on one product, then within about 2 seconds press UPDATE DATABASE on a DIFFERENT product', ex:'The capybara speaks for the first save, then again for the second. The SECOND line must stay on screen long enough to read — it must not flash and vanish. If you only ever see one line, you were too slow: try again faster'},
   /* New 2026-08-09. Saved copies have never seen this id, and load() backfills it as unanswered —
      that backfill is the only reason adding a test here does not blank his whole page. */
   {id:'T11',do:'Type your master PIN and watch the screen the moment it is accepted', ex:'ACCESS GRANTED in cream on black, one gold hairline sweeping left to right, NOTHING spinning, and you are in after about 1 second. It used to be green, spinning, and 2.5 seconds of waiting for nothing. Two things to judge: too fast now? and does the sweep read as finished or as cut off?'},
@@ -255,7 +255,7 @@ const TESTS = [
  {g:'H', name:'Territory + duplicate outlets', items:[
   {id:'H1', do:'Choose a store assigned to another salesman', ex:'Red bar names them, sale still completes', seed:'good'},
   {id:'H2a',do:'ROUND 1 — after a finished sale, type a made-up name like WARUNG TEST 99 by hand (do NOT pick from the dropdown)', ex:'No red bar. If ALEX’s red bar is still there, that is the bug'},
-  {id:'H2b',do:'ROUND 2 — pick that store again, then type over the name in the box', ex:'The red bar disappears as you type, without waiting'},
+  {id:'H2b',do:'Pick a customer from the dropdown that belongs to ANOTHER salesman, so the red bar naming them appears. Then click into the store-name box and type a different name over it', ex:'The red bar naming the other salesman disappears the moment you start typing. It must not sit there while you type a new name'},
   {id:'H3', do:'Register a new outlet while standing at an existing one', ex:'Red bar with the distance, plus a "different building" button', seed:'good'},
  ]},
  {g:'C', name:'The customer brief', items:[
@@ -328,11 +328,15 @@ const TESTS = [
 
 /* Declared HERE, above `let state = load()`, because load() runs on that very line and a const
    declared further down would still be in its temporal dead zone when load() reached for it. */
-const REDO_TAG='redo-2026-08-09';
+/* Round 3, from his 2026-08-09 report. NEW TAG — never reuse one, or the migration is skipped
+   for anyone who already ran the previous round. T5 and T8 are NOT here: he answered them GOOD
+   this round and nothing under them changed, so they lock. */
+const REDO_TAG='redo-2026-08-09c';
 const REDO_REASONS={
-  T5:'the strip now animates and makes a sound — you passed this before that existed',
-  T7:'you can reach the app on your phone now: same wifi, http://192.168.1.141:5173/',
-  T8:'the whole point: motion and SFX are in, so your "helpful or annoying" answer may have changed',
+  T6:'you said the capybara reporting it was fine, but wanted him to make a sound. He does now, on every screen — he used to be mute outside the sales terminal',
+  T7:'you could not log in on your phone at all, so this was never really tested. Fixed: a sign-in now sits on the screen instead of hidden in the side drawer, and Google falls back to a full-page redirect when a phone blocks the popup',
+  T10:'rewritten — the old wording never said HOW to make him talk twice. It does now',
+  H2b:'rewritten — you said you did not understand it, which was my wording, not you',
 };
 
 const KEY='kpm-test-quest-v1';
