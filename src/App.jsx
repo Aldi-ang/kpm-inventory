@@ -31,7 +31,8 @@ import CrownTransferProtocol from './components/CrownTransferProtocol';
 import { CustomerManagement, CustomerDetailView } from './components/CustomerManager';
 import SettingsView from './components/SettingsView'; 
 import AuditVaultView from './components/AuditVaultView'; 
-import BiohazardTheme from './components/BiohazardTheme'; 
+import BiohazardTheme from './components/BiohazardTheme';
+import { unlockSounds, speakMumble } from './hooks/useSound';
 
 // 🚀 ENTERPRISE CODE SPLITTING: Lazy-load all heavy map, chart, and rendering engines
 const MapMissionControl = lazy(() => import('./MapMissionControl'));
@@ -2419,6 +2420,8 @@ const handleGitHubMirror = async () => {
   const triggerCapy = (msg) => {
     const text = msg || "Hello!";
     speakCapy(text);
+    // T6: the mascot was mute outside the sales terminal. unlockSounds() is a no-op once unlocked.
+    unlockSounds().then(() => speakMumble(text)).catch(() => {});
     if (isFailure(text)) notify(text);
   };
   
