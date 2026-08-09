@@ -1,9 +1,10 @@
 # PROGRESS — read this, search for nothing
 
 **Updated: 2026-08-10 02:40 WIB** · branch `phase0-solid-ground` · last code commit: run `git log -1`
-(**JOB 6 IS BUILT AND HE HAS SEEN IT — `6a3aaca` + `784f5cc` + `ae341e7`, audit 191/191** ·
-timing signed off at 8.5s · card and nav button fixed on his report ·
-quest log sorted · four tests waiting on him · **nobody has watched the unlock run yet**)
+(**JOB 6 IS DONE AND LIVE ON HIS PHONE — audit 196/196, last gate commit `351e380`** ·
+timing signed off at 8.5s · card, spaces, panel size, mascot and password-flash all fixed ·
+phone login fixed in the Firebase Console, NOT in code · quest log sorted, four tests his ·
+**next: sales terminal, THEN the dashboard rework he asked for**)
 
 *⚠️ A second session was editing this file at 01:42 and wrote "no kpm code touched since 20:45".
 That was true when written and is now wrong — `6a3aaca` and `784f5cc` both landed after it.
