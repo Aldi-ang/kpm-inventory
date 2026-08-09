@@ -10,6 +10,33 @@
 import fs from 'node:fs';
 
 const D = 'dist/assets/';
+
+/* ── IS dist EVEN THIS BUILD? ──────────────────────────────────────────────
+   Every check below reads dist/. When a build FAILS, dist keeps the previous output and this
+   file cheerfully re-audits it — on 2026-08-10 a JSX syntax error killed the build and the
+   audit still printed "191 passed, 0 failed" against the last good bundle. A green audit
+   standing on a failed build is worse than a red one, because it is trusted.
+
+   So: refuse to report anything if any source file is newer than the newest built asset. */
+const newest = (dir, skip = /node_modules|\.git/) => {
+  let t = 0;
+  for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+    const p = dir + '/' + e.name;
+    if (skip.test(p)) continue;
+    t = Math.max(t, e.isDirectory() ? newest(p, skip) : fs.statSync(p).mtimeMs);
+  }
+  return t;
+};
+if (!fs.existsSync(D)) {
+  console.error('\nNO dist/ AT ALL. Run `npm run build` first — this audit reads the built output.');
+  process.exit(1);
+}
+if (newest('src') > newest(D)) {
+  console.error('\nSTALE BUILD: src/ is newer than dist/. Run `npm run build` and audit again.');
+  console.error('Refusing to report — a pass here would be describing the PREVIOUS build.\n');
+  process.exit(1);
+}
+
 const files = fs.readdirSync(D);
 const css = files.filter(f => f.endsWith('.css')).map(f => fs.readFileSync(D + f, 'utf8')).join('\n');
 const allJs = files.filter(f => f.endsWith('.js')).map(f => fs.readFileSync(D + f, 'utf8')).join('\n');
@@ -574,6 +601,19 @@ check(G16, 'the sound actually reaches the built bundle', /vault-b\.mp3/.test(al
   'registering it in source proves nothing if the bundle never references it');
 check(G16, 'App renders the gate behind the card', /<VaultGate\b/.test(appCode),
   'the component existing is not the same as it being mounted');
+
+/* Three things Aldi caught by looking at the running gate, which no check had been watching. */
+check(G16, 'the nav button is hidden while the gate is up',
+  /showAdminLogin \? 'hidden'/.test(strip(themeSrc)),
+  'it sits in its own stacking context, so raising the gate z-index does NOT cover it, and it '
+  + 'opens nothing while the gate is modal — a live control on top of his login screen');
+check(G16, 'App hands the theme the flag that hides it', /showAdminLogin=\{showAdminLogin\}/.test(appCode),
+  'hiding it in the theme does nothing if the prop never arrives');
+check(G16, 'the gate backdrop is solid black', /z-\[9999\] bg-black flex/.test(appCode),
+  'at bg-black/95 the app behind bleeds through as ghost text and competes with the dot field');
+check(G16, 'the everyday login is the preview card, not the red alarm one',
+  /Open the vault/.test(appCode) && !/bg-red-900\/20 hover:bg-red-900\/60/.test(appCode),
+  'the red slab and ACCESS VAULT are the old panel he asked to be replaced');
 
 /* ── report ──────────────────────────────────────────────────────────────── */
 let last = '';

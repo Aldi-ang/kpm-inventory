@@ -3368,10 +3368,11 @@ const handleGitHubMirror = async () => {
 
   // --- MAIN APP RENDER (BIOHAZARD THEME) ---
       return (
-        <BiohazardTheme 
-            activeTab={activeTab} 
-            setActiveTab={setActiveTab} 
-            user={user} 
+        <BiohazardTheme
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
+            user={user}
+            showAdminLogin={showAdminLogin}
             appSettings={appSettings}
             
             /* 🎭 MATRIX VIEW FIX: Instantly strip Admin UI privileges if masquerading as Tier 3/4 */
@@ -3457,8 +3458,12 @@ const handleGitHubMirror = async () => {
 
 
       {/* --- PINPOINT: Improved Admin Modal (Fixed Fonts & Layout) --- */}
+      {/* Solid black, not black/95: at 95% the app behind it bleeds through as ghost text and
+          the dot field has to compete with it. The preview's stage was pure black and that is
+          half of why it read as a vault rather than an overlay. Dropping backdrop-blur with it
+          is free — there is nothing left to blur. */}
       {showAdminLogin && (
-        <div className="fixed inset-0 z-[9999] bg-black/95 backdrop-blur-md flex items-center justify-center p-4 font-mono">
+        <div className="fixed inset-0 z-[9999] bg-black flex items-center justify-center p-4 font-mono">
           {/* The dot field is the gate's background for ALL FIVE modes, not just the unlock:
               dark until the pointer — or a finger press, phones have no hover — reveals it.
               On unlock the card collapses and the same field carries his name.
@@ -3470,10 +3475,16 @@ const handleGitHubMirror = async () => {
               agentName={user?.displayName?.split(' ')[0] || user?.email?.split('@')[0]}
             />
           )}
-          <div className={`bg-[#0a0a0a] border border-red-600/30 p-8 max-w-sm w-full text-center shadow-[0_0_60px_rgba(220,38,38,0.15)] relative z-10 overflow-hidden transition-all ${authShake ? 'animate-shake' : ''} ${isUnlocking && gateIsRich() ? 'opacity-0 scale-[.86] pointer-events-none duration-[420ms]' : ''}`}>
-            
-            {/* Terminal Decoration */}
-            <div className={`absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent ${isUnlocking ? 'via-[#ff9d00]' : isSetupMode ? 'via-[#ff9d00]' : isResetMode ? 'via-orange-500' : 'via-red-600'} to-transparent ${authShake ? '' : 'animate-pulse'}`}></div>
+          {/* The card, at the preview's own values: near-black, a single rust hairline, and no
+              red alarm chrome. It is the same shell for all five modes — that is what "five modes
+              wearing one shell" was always supposed to look like. */}
+          <div className={`bg-[rgba(4,3,2,0.9)] border border-[#E7700F]/20 p-6 max-w-[320px] w-full text-center shadow-[0_20px_46px_-12px_rgba(0,0,0,0.95)] relative z-10 overflow-hidden transition-all ${authShake ? 'animate-shake' : ''} ${isUnlocking && gateIsRich() ? 'opacity-0 scale-[.86] pointer-events-none duration-[420ms]' : ''}`}>
+
+            {/* The top stripe marks a mode that is NOT the everyday one, so it still carries
+                meaning. Standard login has none — the preview's gate is a plain card. */}
+            {(isUnlocking || isSetupMode || isResetMode || isOtpMode) && (
+              <div className={`absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent ${isResetMode ? 'via-orange-500' : 'via-[#ff9d00]'} to-transparent ${authShake ? '' : 'animate-pulse'}`}></div>
+            )}
             
             {/* 🎬 CINEMATIC UNLOCK SEQUENCE 🎬 */}
             {isUnlocking ? (
@@ -3513,11 +3524,15 @@ const handleGitHubMirror = async () => {
                 </div>
             ) : (
                 <>
-                    <ShieldAlert size={32} className={`mx-auto mb-4 ${isSetupMode ? 'text-[#ff9d00]' : isResetMode ? 'text-orange-500' : 'text-red-600 animate-pulse'}`} />
-
-                    <h2 className="text-lg font-black text-white mb-6 uppercase tracking-[0.25em]">
+                    {/* The red shield and SECURITY CHECK belong to the modes that really are an
+                        alarm. Standard login is the door he opens every day, and the preview
+                        gives it two quiet lines instead — see CASE 3. */}
+                    {(isSetupMode || isResetMode || isOtpMode) && (<>
+                      <ShieldAlert size={32} className={`mx-auto mb-4 ${isSetupMode ? 'text-[#ff9d00]' : isResetMode ? 'text-orange-500' : 'text-[#E7700F]'}`} />
+                      <h2 className="text-lg font-black text-white mb-6 uppercase tracking-[0.25em]">
                         {isSetupMode ? "Initialize Vault" : isResetMode ? "Identity Recovery" : "Security Check"}
-                    </h2>
+                      </h2>
+                    </>)}
 
             {/* CASE 1: FIRST TIME SETUP (Or Resetting) */}
             {isSetupMode ? (
@@ -3602,44 +3617,45 @@ const handleGitHubMirror = async () => {
                     </div>
                 </div>
             ) : (
-                /* CASE 3: STANDARD LOGIN */
-            <div className="space-y-4">
-                <input 
-                    type="password" 
-                    placeholder="ENTER MASTER PASSWORD" 
-                    className="w-full bg-black border border-red-600/30 p-4 text-center text-red-500 text-xl mb-2 outline-none font-mono tracking-[0.2em] focus:border-red-500 placeholder:text-red-900/50 placeholder:tracking-widest placeholder:text-xs transition-colors" 
-                    value={inputPin} 
-                    onChange={(e) => setInputPin(e.target.value)} 
-                    onKeyDown={(e) => e.key === 'Enter' && handlePinLogin()} 
-                    autoFocus 
+                /* CASE 3: STANDARD LOGIN — the preview's gate, value for value.
+                   The field is an underline, not a box; the submit is a hairline, not a red
+                   slab; and biometric drops to the small line beside recovery. Both are still
+                   real buttons — the preview merged them into one label because nothing there
+                   had to work. */
+            <div>
+                <div className="text-[9px] uppercase tracking-[0.34em] text-[#8a7048]">KPM Inventory</div>
+                <div className="text-[13px] uppercase tracking-[0.2em] font-bold text-[#f7e9c8] mt-[7px] mb-[17px]">Master Vault</div>
+
+                <input
+                    type="password"
+                    placeholder="MASTER PASSWORD"
+                    className="w-full bg-transparent border-0 border-b border-[#E7700F]/20 py-[11px] px-1.5 text-center font-mono text-[13px] tracking-[0.42em] text-[#f7e9c8] outline-none focus:border-[#E7700F] placeholder:text-[#5f4a2c] placeholder:tracking-[0.16em] placeholder:text-[9.5px] transition-colors"
+                    value={inputPin}
+                    onChange={(e) => setInputPin(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handlePinLogin()}
+                    autoFocus
                     maxLength={15}
                 />
-                
-                {/* 🚀 THE NEW SUBMIT BUTTON 🚀 */}
-                <button 
+
+                <button
                     onClick={handlePinLogin}
-                    className="w-full py-4 bg-red-900/20 hover:bg-red-900/60 border border-red-600/50 text-red-500 hover:text-white font-bold uppercase text-xs tracking-[0.2em] transition-all font-mono"
+                    className="w-full mt-[15px] py-3 font-mono text-[9.5px] font-bold uppercase tracking-[0.24em] bg-transparent text-[#f7e9c8] border border-[#E7700F]/30 hover:border-[#E7700F] hover:text-[#ffb066] hover:bg-[#E7700F]/[0.09] active:scale-[.975] transition-[transform,background-color,border-color,color] duration-150"
                 >
-                    Access Vault
+                    Open the vault
                 </button>
-                
-                {/* 🚀 SECURED BIOMETRIC CONTROLS (UNLOCK ONLY) 🚀 */}
-                    {window.PublicKeyCredential && (
-                        <button 
-                            onClick={handleBiometricUnlock}
-                            className="w-full mt-4 py-4 bg-[#ff9d00]/5 hover:bg-[#ff9d00]/15 border border-[#ff9d00]/30 hover:border-[#ff9d00] text-[#ff9d00] hover:text-[#f0e2c0] font-bold uppercase text-xs tracking-[0.2em] flex justify-center items-center gap-3 transition-all font-mono shadow-[0_0_15px_rgba(255,157,0,0.1)]"
-                        >
-                            <ScanFace size={18} className="animate-pulse" />
-                            Biometric Override
+
+                <div className="mt-[11px] flex items-center justify-center gap-2 text-[8.5px] uppercase tracking-[0.16em] text-[#8a7048]">
+                    {window.PublicKeyCredential && (<>
+                        <button onClick={handleBiometricUnlock} className="py-1 hover:text-[#f7e9c8] transition-colors flex items-center gap-1.5">
+                            <ScanFace size={11} /> Fingerprint
                         </button>
-                    )}
-                    
-                    <div className="pt-6 border-t border-white/5 mt-6">
-                        <button onClick={() => setIsResetMode(true)} className="text-[11px] text-slate-400 hover:text-white uppercase font-bold transition-colors tracking-[0.1em] font-mono">
-                            Lost Key? Use Recovery Protocol
-                        </button>
-                    </div>
+                        <span aria-hidden="true">·</span>
+                    </>)}
+                    <button onClick={() => setIsResetMode(true)} className="py-1 hover:text-[#f7e9c8] transition-colors">
+                        Lost your key?
+                    </button>
                 </div>
+            </div>
             )}
                 </>
             )}

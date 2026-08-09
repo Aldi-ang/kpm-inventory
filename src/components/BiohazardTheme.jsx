@@ -11,7 +11,7 @@ import { confirmAction } from './ConfirmGate.jsx';
 
 export default function BiohazardTheme({
     activeTab, setActiveTab, children, user, appSettings,
-    isAdmin, onLogin, userRole, setShowAdminLogin, agentSettings,
+    isAdmin, onLogin, userRole, setShowAdminLogin, showAdminLogin, agentSettings,
     notifications, onNotificationClick, appVersion,
     darkMode, setDarkMode, syncIndicator
 }) {
@@ -93,7 +93,11 @@ export default function BiohazardTheme({
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                 aria-label={isMobileMenuOpen ? 'Close navigation' : 'Open navigation'}
                 aria-expanded={isMobileMenuOpen}
-                className="hide-on-print fixed top-3 left-3 z-[100] p-2.5 bg-orange-600/90 backdrop-blur-md text-white rounded-xl shadow-[0_0_15px_rgba(234,88,12,0.5)] border border-orange-400/50 active:scale-90 transition-all"
+                /* Hidden while the vault gate is up. Raising the modal's z-index does not fix
+                   this: the button sits in its own stacking context, so z-[9999] on the gate
+                   never wins against z-[100] here. There is also nothing for it to open — the
+                   gate is modal — so it is a dead control sitting on top of his login screen. */
+                className={`hide-on-print fixed top-3 left-3 z-[100] p-2.5 bg-orange-600/90 backdrop-blur-md text-white rounded-xl shadow-[0_0_15px_rgba(234,88,12,0.5)] border border-orange-400/50 active:scale-90 transition-all ${showAdminLogin ? 'hidden' : ''}`}
             >
                 {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
             </button>
