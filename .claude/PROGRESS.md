@@ -721,6 +721,33 @@ No kpm-inventory code touched. This session was babysitting a Qwen3-235B downloa
 `plan-quota.mjs`'s working-tree diff (see `git status`) predates this session; not made here.
 Still stuck at layer 63/94 as of this update, cause not yet diagnosed.
 
+### 2026-08-09 15:55 WIB — the unlock is his reference sphere now. Base is draft D, unchanged.
+
+**He sent a 9.7s screen recording and it settled the design.** *"lets go back to DRAFT D since
+its the best one right now… i want u to do the exact same animation for unlock"*, and
+*"just replace the vault gate with draft D lab lights + agent welcome in stereoid"*.
+**How it was read, and this is reusable: extract frames with ffmpeg and LOOK.** `ffmpeg -vf
+"fps=10/<dur>,scale=560:-1"` gave 11 stills, and the tool's own control panel was visible in
+every one — **Dot Color `#E7700F` · Dot Radius 2 · Total Dots 290 · Background `#000000` · Size
+580**. No guessing at a palette that was printed on screen.
+
+**What it is:** 290 points on a **Fibonacci lattice** (even spread; a lat/long grid bunches at
+the poles and does not look like his reference), perspective-projected, **depth driving both size
+and brightness — that is the entire illusion of volume**. Rotation 0.115 rad/s, tilt 0.38.
+**The flat field GATHERS into it** rather than cutting — each sphere point is seeded with a real
+grid cell at resize, so the dots he was holding the lamp over are the dots that form the ball.
+Then it bursts outward past the camera at 4.4s and the app boots behind it.
+Timings are deliberately slow — his reasoning: *"rich people focus on quality and not just
+speed"*.
+
+**🔴 A LOCKED RULE IS BENT AND HE WAS TOLD, NOT SILENTLY OVERRULED.** *"lite mode = nothing
+rotates"*. This rotates, because he asked for this exact animation and it is a once-a-session
+event rather than a spinner faking progress. **Lite Mode and `prefers-reduced-motion` still kill
+it.** If he objects, that is his call to make and the note says so on the page itself.
+
+**Still open:** the sound is the 3.4s one and now ends before the burst — it needs extending if
+he keeps this. And `src/` still has none of this.
+
 ### 2026-08-09 15:35 WIB — dark room, bright dots: he wanted the ARK light on the DOTS only
 
 **Round 5 was mostly a revert, and the lesson is about scope.** He said the dots were not bright
