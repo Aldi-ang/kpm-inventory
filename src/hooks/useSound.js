@@ -22,6 +22,10 @@ const SOURCES = {
      mostly silence, which made every press sound late. */
   click:  '/sounds/click.mp3',
   sign:   '/sounds/sign.mp3',
+  /* The Master Vault gate. Cut to the 3.0s wave Aldi signed off: the "tok" lands at 4.50s
+     where his name finishes forming, the ticks at 6.70s as the letters leave. It only fits
+     that wave — move VaultGate's T_WAVE_DUR and this file has to be regenerated. */
+  vaultb: '/sounds/vault-b.mp3',
   mumble1: '/sounds/mumble1.mp3',
   mumble2: '/sounds/mumble2.mp3',
   mumble3: '/sounds/mumble3.mp3',
@@ -39,6 +43,7 @@ const MAX_BLIPS = 8;        // Undertale mumbles the whole line; this is a work 
 const VOLUMES = {
   click: 1.0, error: 1.0, tap: 0.9, commit: 0.9, sign: 0.9,
   mumble1: 0.7, mumble2: 0.7, mumble3: 0.7, mumble4: 0.7,
+  vaultb: 0.9,
 };
 const DEFAULT_VOLUME = 0.85;
 
@@ -56,6 +61,9 @@ const DEFAULT_VOLUME = 0.85;
 const BOOST = {
   click: 3.2, error: 2.4, tap: 2.2, commit: 2.4, sign: 2.4,
   mumble1: 1.5, mumble2: 1.5, mumble3: 1.5, mumble4: 1.5,
+  /* No boost. The others are blips fighting a roadside; this one is a mixed cue that was
+     mastered at the level it wants, and multiplying it just clips the tok. */
+  vaultb: 1.0,
 };
 const DEFAULT_BOOST = 1.8;
 

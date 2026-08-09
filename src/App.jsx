@@ -103,6 +103,7 @@ import { formatRupiah, getCurrentDate, getLocalDayKey, getRandomColor, convertTo
 import { computeDayXP, DEFAULT_XP, checkBadges, DEFAULT_BADGES } from './config/career';
 import { confirmAction, promptAction } from './components/ConfirmGate.jsx';
 import { notify } from './components/Toast.jsx';
+import VaultGate, { gateHoldMs, gateIsRich } from './components/VaultGate.jsx';
 import { isFailure } from './utils/toastSeverity.js';
 
 const APP_VERSION = packageJson.version;
@@ -939,7 +940,7 @@ const handleGitHubMirror = async () => {
                   setShowAdminLogin(false);
                   setIsUnlocking(false);
                   setInputPin("");
-              }, 1000);
+              }, gateHoldMs());
           } else {
               // FAILED: Add a strike to the database
               const newStrikes = (data.failedRecoveryAttempts || 0) + 1;
@@ -1119,7 +1120,7 @@ const handleGitHubMirror = async () => {
 
           if (assertion) {
               setIsUnlocking(true);
-              setTimeout(() => { setIsAdmin(true); setShowAdminLogin(false); setIsUnlocking(false); }, 1000); // was 2500ms of pure waiting
+              setTimeout(() => { setIsAdmin(true); setShowAdminLogin(false); setIsUnlocking(false); }, gateHoldMs()); // was 2500ms of pure waiting
           }
       } catch (error) { 
           console.error("Biometric failed:", error); 
@@ -3458,7 +3459,18 @@ const handleGitHubMirror = async () => {
       {/* --- PINPOINT: Improved Admin Modal (Fixed Fonts & Layout) --- */}
       {showAdminLogin && (
         <div className="fixed inset-0 z-[9999] bg-black/95 backdrop-blur-md flex items-center justify-center p-4 font-mono">
-          <div className={`bg-[#0a0a0a] border border-red-600/30 p-8 max-w-sm w-full text-center shadow-[0_0_60px_rgba(220,38,38,0.15)] relative overflow-hidden transition-all ${authShake ? 'animate-shake' : ''}`}>
+          {/* The dot field is the gate's background for ALL FIVE modes, not just the unlock:
+              dark until the pointer — or a finger press, phones have no hover — reveals it.
+              On unlock the card collapses and the same field carries his name.
+              Lite Mode and prefers-reduced-motion skip the canvas entirely and keep the plain
+              ACCESS GRANTED block below, which is the whole point of that switch. */}
+          {gateIsRich() && (
+            <VaultGate
+              playing={isUnlocking}
+              agentName={user?.displayName?.split(' ')[0] || user?.email?.split('@')[0]}
+            />
+          )}
+          <div className={`bg-[#0a0a0a] border border-red-600/30 p-8 max-w-sm w-full text-center shadow-[0_0_60px_rgba(220,38,38,0.15)] relative z-10 overflow-hidden transition-all ${authShake ? 'animate-shake' : ''} ${isUnlocking && gateIsRich() ? 'opacity-0 scale-[.86] pointer-events-none duration-[420ms]' : ''}`}>
             
             {/* Terminal Decoration */}
             <div className={`absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent ${isUnlocking ? 'via-[#ff9d00]' : isSetupMode ? 'via-[#ff9d00]' : isResetMode ? 'via-orange-500' : 'via-red-600'} to-transparent ${authShake ? '' : 'animate-pulse'}`}></div>

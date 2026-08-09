@@ -532,6 +532,49 @@ check(G15, 'a refused popup falls back to redirect on more than one error code',
 check(G15, 'the fallback actually redirects', /POPUP_FAILED\.includes\(error\.code\)[\s\S]{0,120}?signInWithRedirect/.test(appCode),
   'the list must be wired to signInWithRedirect, not just declared');
 
+/* ── 16. the vault gate keeps the numbers he signed off ────────────────────
+   The gate design took a whole session and closed with "okay i want u to make the wave little
+   bit slower and we done bro". Four numbers came out of that, measured on sliders, and the
+   sound file is cut to one of them — so a tweak to the wave silently desynchronises the audio
+   from the picture with nothing failing. These pin the numbers, the two traps that each cost a
+   session in the preview, and the fact that the hold and the animation share one constant. */
+const G16 = '16. The vault gate keeps his signed-off numbers';
+const gateSrc = fs.readFileSync('src/components/VaultGate.jsx', 'utf8');
+/* Scan the CODE, not the prose. Three checks on this project have failed on their own
+   explanatory comments, and the last one matched a phrase inside a comment describing the very
+   rule it was asserting. */
+const gateCode = gateSrc.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\n]*/g, '');
+
+check(G16, 'the wave is still the 3.0s he chose', /T_WAVE_DUR\s*=\s*3\.00/.test(gateCode),
+  'vault-b.mp3 is cut to 3.0s — change this and the tok no longer lands on his name');
+check(G16, 'background spacing, letter density and name size are his',
+  /GAP\s*=\s*26/.test(gateCode) && /DEN\s*=\s*7/.test(gateCode) && /TSIZE\s*=\s*0\.10/.test(gateCode),
+  'spacing 26 / density 7 / size 0.10 were measured on the sliders, not chosen');
+check(G16, 'ONE CLOCK: the ring is drawn on the canvas with the dots',
+  /ctx\.arc\(cx,\s*cy,\s*front/.test(gateCode),
+  'a CSS ring and canvas dots cannot be kept in step by hand — that pairing caused two bugs');
+check(G16, 'no second animation mechanism for the ring', !/@keyframes[^}]*ring/i.test(gateSrc),
+  'the ring must not become a keyframe again');
+check(G16, 'a phone can reveal the field without hover', /addEventListener\('pointerdown'/.test(gateCode),
+  'no pointerdown = a black rectangle on his phone and no way to find the password box');
+check(G16, 'Lite Mode switches the canvas off', /lite-mode/.test(gateCode),
+  'Lite Mode exists to stop exactly this kind of loop');
+check(G16, 'reduced motion switches the canvas off', /prefers-reduced-motion/.test(gateCode),
+  'a motion-sensitive user must not be given an 8-second canvas sequence');
+check(G16, 'the hold and the animation share one number',
+  /export const GATE_UNLOCK_MS\s*=\s*OUT\s*\+/.test(gateCode),
+  'a literal in App.jsx would drift from the animation the first time either moved');
+check(G16, 'both unlock paths use that number, not a literal',
+  (appCode.match(/setIsUnlocking\(true\)[\s\S]{0,400}?gateHoldMs\(\)/g) || []).length === 2,
+  'PIN and biometric must both hold for the gate, or one of them cuts his name off mid-air');
+check(G16, 'the gate sound is registered and points at the retimed file',
+  /vaultb:\s*'\/sounds\/vault-b\.mp3'/.test(fs.readFileSync('src/hooks/useSound.js', 'utf8')),
+  'vault.mp3 is the OLD cut and does not fit the 3.0s wave');
+check(G16, 'the sound actually reaches the built bundle', /vault-b\.mp3/.test(allJs),
+  'registering it in source proves nothing if the bundle never references it');
+check(G16, 'App renders the gate behind the card', /<VaultGate\b/.test(appCode),
+  'the component existing is not the same as it being mounted');
+
 /* ── report ──────────────────────────────────────────────────────────────── */
 let last = '';
 for (const r of results) {
