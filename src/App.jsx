@@ -3478,7 +3478,9 @@ const handleGitHubMirror = async () => {
           {/* The card, at the preview's own values: near-black, a single rust hairline, and no
               red alarm chrome. It is the same shell for all five modes — that is what "five modes
               wearing one shell" was always supposed to look like. */}
-          <div className={`bg-[rgba(4,3,2,0.9)] border border-[#E7700F]/20 p-6 max-w-[320px] w-full text-center shadow-[0_20px_46px_-12px_rgba(0,0,0,0.95)] relative z-10 overflow-hidden transition-all ${authShake ? 'animate-shake' : ''} ${isUnlocking && gateIsRich() ? 'opacity-0 scale-[.86] pointer-events-none duration-[420ms]' : ''}`}>
+          {/* 320 on a phone, 384 from md up — his ask: "i want the login panel to be a little bit
+              bigger on pc". The preview's 264 was sized for a small demo stage, not a monitor. */}
+          <div className={`bg-[rgba(4,3,2,0.9)] border border-[#E7700F]/20 p-6 md:p-8 max-w-[320px] md:max-w-[384px] w-full text-center shadow-[0_20px_46px_-12px_rgba(0,0,0,0.95)] relative z-10 overflow-hidden transition-all ${authShake ? 'animate-shake' : ''} ${isUnlocking && gateIsRich() ? 'opacity-0 scale-[.86] pointer-events-none duration-[420ms]' : ''}`}>
 
             {/* The top stripe marks a mode that is NOT the everyday one, so it still carries
                 meaning. Standard login has none — the preview's gate is a plain card. */}
