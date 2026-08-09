@@ -601,6 +601,13 @@ check(G16, 'the sound actually reaches the built bundle', /vault-b\.mp3/.test(al
   'registering it in source proves nothing if the bundle never references it');
 check(G16, 'App renders the gate behind the card', /<VaultGate\b/.test(appCode),
   'the component existing is not the same as it being mounted');
+check(G16, 'the scramble letters keep a fixed cell, so spaces survive',
+  /minWidth\s*=\s*'0\.62em'/.test(gateCode),
+  'these spans are flex items — a lone space collapses to zero and "Welcome back" renders as '
+  + 'WELCOMEBACK, which is exactly what he saw');
+check(G16, 'the second line names the app, not the vault screen',
+  /'KPM App access unlocked'/.test(gateCode) && !/'Master Vault unlocked'/.test(gateCode),
+  'his wording: "master vault sentence should be KPM APP instead so kpm app access unlocked"');
 
 /* Three things Aldi caught by looking at the running gate, which no check had been watching. */
 /* Asserts it is NOT RENDERED, not merely class-hidden. The class version was measured live in

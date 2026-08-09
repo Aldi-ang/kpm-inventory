@@ -262,6 +262,14 @@ export default function VaultGate({ playing, agentName }) {
       const chars = [...text.toUpperCase()]; el.innerHTML = '';
       const spans = chars.map(c => {
         const s = document.createElement('span');
+        /* Every character gets a fixed cell. TWO reasons, and the first is a bug Aldi caught:
+           these spans are flex items, and a lone space collapses to zero width, so "Welcome back"
+           rendered as "WELCOMEBACK". The second is why the preview had it — the scramble swaps
+           each letter through random glyphs, and without a fixed cell every neighbour shifts
+           sideways on each frame as glyph widths change. */
+        s.style.display = 'inline-block';
+        s.style.minWidth = '0.62em';
+        s.style.textAlign = 'center';
         s.textContent = c === ' ' ? ' ' : c;
         if (c !== ' ') s.style.visibility = 'hidden';
         el.appendChild(s); return s;
@@ -295,8 +303,10 @@ export default function VaultGate({ playing, agentName }) {
     const RANDSETS = [0, 1, 2].map(() => sampleWord(rndWord(name.length)));
     playSound('vaultb');
 
+    /* His wording, 2026-08-10: the second line names the whole app, not the vault screen —
+       "master vault sentence should be KPM APP instead so kpm app access unlocked". */
     resolveIn(helloRef.current, 'Welcome back', FORMED - 1400, 70, 440);
-    resolveIn(lineRef.current, 'Master Vault unlocked', FORMED + 300, 40, 360);
+    resolveIn(lineRef.current, 'KPM App access unlocked', FORMED + 300, 40, 360);
 
     /* The name leaves EXACTLY like the two text lines: letter by letter, each scrambling through
        three glyphs before it goes, so the three read as one idea rather than three effects. */
