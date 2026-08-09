@@ -25,6 +25,7 @@
    Test:  echo '{}' | node .claude/plan-quota.mjs
 */
 import fs from 'node:fs';
+import crypto from 'node:crypto';
 
 /* The credential lives OUTSIDE the repo on purpose. A cookie committed into git is leaked
    permanently, and this repo is the thing most likely to be shared or pushed. */
@@ -33,39 +34,78 @@ const COOKIE_FILE = `${HOME}/9router-cookie.txt`;
 const ID_FILE = `${HOME}/9router-claude-id.txt`;
 const BASE = 'http://localhost:20128';
 
+/* 9router signs its own auth_token with this key, so the hook mints a fresh one on every run
+   rather than Aldi pasting a ~24h cookie by hand every day (2026-08-09, his call: "mint it").
+   The key is already readable by anything running as him, so nothing new is exposed — but it is
+   never printed, never logged, and never copied into the repo. Reset the key and minting starts
+   401ing; the last pasted cookie is still tried as a fallback, so the meter degrades instead of
+   dying. */
+const SECRET_FILE = 'C:/Users/ASUS/AppData/Roaming/9router/jwt-secret';
+
 const read = (p) => { try { return fs.readFileSync(p, 'utf8').trim(); } catch { return ''; } };
 
-const cookie = read(COOKIE_FILE);
 const connId = read(ID_FILE);
 
 /* Silent when it was never set up. This hook runs on every message Aldi types; nagging about
    configuration he has not asked for would cost tokens forever. */
-if (!cookie || !connId) process.exit(0);
+if (!connId) process.exit(0);
+
+const b64 = (o) => Buffer.from(JSON.stringify(o)).toString('base64url');
+const mint = (key) => {
+  const now = Math.floor(Date.now() / 1000);
+  const body = `${b64({ alg: 'HS256' })}.${b64({ authenticated: true, iat: now, exp: now + 3600 })}`;
+  return `${body}.${crypto.createHmac('sha256', key).update(body).digest('base64url')}`;
+};
+
+/* The odysseus_session half of the cookie is a session id, not a JWT, and does not expire daily.
+   Reuse whatever he last pasted; only the auth_token half is minted. */
+const saved = read(COOKIE_FILE);
+const session = (saved.match(/odysseus_session=[^;]+/) || [''])[0];
+
+const candidates = [];
+let secret = null;
+try { secret = fs.readFileSync(SECRET_FILE); } catch { /* 9router not installed here */ }
+if (secret) {
+  /* Two readings of the same file — raw bytes, and the trimmed text. Which one verifies depends
+     on how 9router loaded it, and trying both costs microseconds. Never log which one won: that
+     would leak the encoding of the key. */
+  for (const key of [secret, secret.toString('utf8').trim()]) {
+    candidates.push([session, `auth_token=${mint(key)}`].filter(Boolean).join('; '));
+  }
+}
+if (saved) candidates.push(saved);
+
+if (!candidates.length) process.exit(0);
 
 const say = (s) => { console.log(s); process.exit(0); };
 
-const ctl = new AbortController();
-const timer = setTimeout(() => ctl.abort(), 2500);   // never block his prompt on a hung service
-
 let res;
-try {
-  res = await fetch(`${BASE}/api/usage/${connId}`, {
-    headers: { Cookie: cookie },
-    signal: ctl.signal,
-  });
-} catch {
+for (const cookie of candidates) {
+  const ctl = new AbortController();
+  const timer = setTimeout(() => ctl.abort(), 2500); // never block his prompt on a hung service
+  try {
+    res = await fetch(`${BASE}/api/usage/${connId}`, {
+      headers: { Cookie: cookie },
+      signal: ctl.signal,
+    });
+  } catch {
+    clearTimeout(timer);
+    /* 9router down or slow. Say so — silence here would read as "quota is fine". */
+    say('[plan-quota] 9router is not responding, so the 5-hour plan quota is UNKNOWN right now. ' +
+        'Tell Aldi the meter is blind, and START IT: run the launcher at ' +
+        '"C:/Users/ASUS/AppData/Roaming/Microsoft/Windows/Start Menu/Programs/Startup/9router.bat". ' +
+        'Do not just report it as blocked.');
+  }
   clearTimeout(timer);
-  /* 9router down or slow. Say so — silence here would read as "quota is fine". */
-  say('[plan-quota] 9router is not responding, so the 5-hour plan quota is UNKNOWN right now. ' +
-      'Do not reassure Aldi about usage; tell him the meter is blind and ask him to read it off ' +
-      'the Quota Tracker if it matters.');
+  if (res.status !== 401 && res.status !== 403) break;
 }
-clearTimeout(timer);
 
 if (res.status === 401 || res.status === 403) {
-  say('[plan-quota] The 9router cookie has EXPIRED — its auth_token is a ~24h JWT. The 5-hour ' +
-      'plan quota is UNKNOWN. Tell Aldi in one line: open the Quota Tracker, F12 > Application > ' +
-      `Cookies > localhost:20128, copy the auth_token value, and it goes in ${COOKIE_FILE}. ` +
+  say('[plan-quota] 9router rejected every credential, so the 5-hour plan quota is UNKNOWN. ' +
+      'The minted token failed, which means the signing key at ' +
+      `${SECRET_FILE} changed, or odysseus_session finally expired. ` +
+      'Tell Aldi in one line: open the Quota Tracker, F12 > Application > Cookies > ' +
+      `localhost:20128, copy the WHOLE cookie header, and it goes in ${COOKIE_FILE}. ` +
       'Do not paste the value into any file inside the repo.');
 }
 if (!res.ok) {

@@ -1,7 +1,7 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-09 04:10 WIB** · branch `phase0-solid-ground` · last code commit `1c1423e`
-(quest log locked after his round-2 report)
+**Updated: 2026-08-09 13:35 WIB** · branch `phase0-solid-ground` · last code commit `133f329`
+(the quota meter now mints its own token — the daily cookie paste is dead)
 
 **Aldi clears the session every time he starts a new one. This file is the ONLY thing that
 survives. If it is not current, the work is lost.** Write it before context runs low, not after.
@@ -32,9 +32,9 @@ If this file and the repo disagree, **the repo wins, and fixing this file is job
 
 ## ▶ DO THIS NEXT
 
-**🔴 STOPPED AT 95% PLAN QUOTA, 2026-08-09 04:10. Reset ~08:18 WIB. Nothing is half-done.**
-Working tree clean, everything committed through `453a9d8`. Answering his last question: **yes,
-the notes were already written** — the SFX causes and the swallowed-notes fix are recorded below.
+**Resumed 2026-08-09 13:16 WIB. Build green, audit 161/161, tree clean at `133f329`.**
+The quota meter no longer needs a pasted cookie — it mints its own 9router token on every run
+(his call, 13:30: *"mint it"*). Read 12% used at 13:35 WIB.
 **First command when he returns:**
 
 ```powershell
@@ -401,8 +401,9 @@ it never happens twice. Answer, then ask which of the waiting items he wants to 
 npm run build; node src/config/integration.audit.mjs
 ```
 
-158 checks over the built output. One turn, small result. If it passes, the terminal is
-intact — do **not** re-read source to confirm it.
+**161** checks over the built output (it was 158 before the audio/toast groups landed; if a note
+anywhere still says 158, that note is stale). One turn, small result. If it passes, the terminal
+is intact — do **not** re-read source to confirm it.
 
 The two pure-logic self-checks are separate and cheap:
 
@@ -485,10 +486,18 @@ throwaway first.
     Reversible by deleting one file. NOT done — it changes Windows startup behaviour and he has
     not explicitly approved that specific action.
 
-- ⏳ **That cookie's `auth_token` is a ~24h JWT — it expires 2026-08-09 ~08:45 WIB.** The hook
-  detects a 401 and prints the exact refresh steps rather than going blind. **Better fix worth
-  asking about:** whether 9router's settings page offers a permanent API token, which would end
-  the daily re-paste.
+- ✅ **SOLVED 2026-08-09 13:35 — the daily cookie paste is dead. Do not re-investigate this.**
+  There is **no permanent API token in 9router**: the `sk-…` inference key returns **401** on
+  `/api/usage/<cid>`, and `/api/settings` has no token field at all (only `"requireApiKey":true`).
+  Both checked live in one batch. So instead `.claude/plan-quota.mjs` **mints its own
+  `auth_token`** — it is a plain HS256 JWT whose payload is `{authenticated,iat,exp}`, signed with
+  9router's own key at `C:/Users/ASUS/AppData/Roaming/9router/jwt-secret`. **Verified: a minted
+  token ALONE returns 200** (all four raw/trimmed × with/without session combinations did).
+  The pasted cookie file stays only as a last-resort fallback. A 401 now means the signing key
+  was reset, NOT that a cookie expired — the hook's message says exactly that.
+  **The key is never printed, never logged, never committed.** The safety classifier blocked an
+  attempt to `head` it into the transcript, and that block was right: the script pipes the file
+  straight into the HMAC without it ever reaching output.
 
 - ✅ **ANSWERED 2026-08-07: 11 possible duplicate groups out of 151 stores.** But the top group
   was three *"warung sembako sumber rejeki"* **14.5 km apart**, matched on name alone — a shop
@@ -572,6 +581,37 @@ are never worth rescuing.
 ---
 
 ## LOG — newest first, older entries live in `git log` for this file
+
+### 2026-08-09 13:35 WIB — unrelated: helped Aldi with a stuck local LLM download
+
+No kpm-inventory code touched. This session was babysitting a Qwen3-235B download in
+`D:\LLAMA` (separate project, AirLLM), unrelated to JOB 2/4/5 above — still open, unchanged.
+`plan-quota.mjs`'s working-tree diff (see `git status`) predates this session; not made here.
+Still stuck at layer 63/94 as of this update, cause not yet diagnosed.
+
+### 2026-08-09 13:40 WIB — the quota meter went self-sufficient, and Alucard got two habits
+
+**No code in `src/` changed. Audit still 161/161, tree otherwise clean.**
+
+**`plan-quota.mjs` mints its own token now.** Aldi asked where to find a permanent 9router cookie;
+there isn't one, proven live rather than assumed. The fix he approved (*"mint it"*) reads
+9router's own signing key and issues a fresh 1-hour JWT on every hook run. Details and the
+verification are in WAITING ON ALDI above. **The daily paste is gone.**
+
+**Two habits added to `~/.claude/skills/alucard/SKILL.md` §9, at his instruction:**
+1. **Always know the time** — his words: *"i want alucard to always be aware of the time, this
+   makes it more agentic"*. `date "+%H:%M WIB"` rides along with whatever check was already
+   running, so it costs no extra turn.
+2. **9router down → start it**, do not report it as blocked. The Startup `.bat` is the launcher.
+   A 401 is a credential problem, not a dead process, and the two must never be conflated again.
+
+**The deny rule on SKILL.md is now an `ask` rule** — his change: *"u should reword it becoming
+deny edit except if aldi give u permissions"*. `deny` has no "unless"; `ask` prompts him every
+time. **Both the Edit and Write forms are listed**, or a Write would have walked straight past a
+deny that only named Edit. §8 of the skill was reworded to match.
+**Two classifier blocks fired this session and both were correct:** removing my own deny rule
+from `settings.json`, and printing the signing key into the transcript. Neither was worked
+around. If a third fires, that is the system working, not an obstacle.
 
 ### 2026-08-08 19:40 WIB — round 2: the fix held, and the mascot's real bug surfaced
 
