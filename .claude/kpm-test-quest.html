@@ -91,6 +91,10 @@ body::after{
   border-left:3px solid var(--magenta);background:#1d1620;color:var(--cream);
   padding:6px 9px;margin:0 0 9px;font-size:10.5px;line-height:1.45;
 }
+.staying{
+  border-left:3px solid var(--gold);background:#1e1a12;color:var(--dim);
+  padding:5px 9px;margin:0 0 9px;font-size:10px;letter-spacing:.04em;
+}
 .allclear{padding:11px 12px;font-size:11px;color:var(--dim);letter-spacing:.06em}
 
 /* ── one test ────────────────────────────────────────────────────────────── */
@@ -533,6 +537,17 @@ const openGroups = new Set(TESTS.slice(0,2).map(g=>g.g));
    every problem under "Needs attention", and the group header below now carries a red count of
    the hidden ones that need fixing. So they are quiet, not lost. */
 const clearedVerdict = v => !!v;
+
+/* Tests he has answered DURING THIS VISIT. They stay on screen no matter what the lock says.
+
+   His bug, and it was mine: *"i want to write some message why it is still weird and need fix
+   but instead the question closes and gone"*. Voting locked the row on the same click, and the
+   notes box went with it — so the moment he decided something was broken was the moment he lost
+   the place to say why. A verdict without its reason is the least useful thing in this file.
+
+   Session-scoped on purpose: reload and it locks away like everything else, so the screen still
+   empties out. Nothing here is persisted — the point is the gap between clicking and typing. */
+const answeredNow = new Set();
 /* DEFAULT ON since his 2026-08-08 report — his standing instruction: "update the quest log
    everytime i give u copy reports, if the test already done just lock it".
 
@@ -550,7 +565,7 @@ function render(){
   const root=document.getElementById('groups'); root.innerHTML='';
   TESTS.forEach(g=>{
     const t=tally(g);
-    const shown = g.items.filter(i => !hideCleared || !clearedVerdict(state[i.id].verdict));
+    const shown = g.items.filter(i => !hideCleared || !clearedVerdict(state[i.id].verdict) || answeredNow.has(i.id));
     const hidden = g.items.length - shown.length;
     /* Counted across the WHOLE group, not just the hidden ones: the number means "this chain
        still has problems in it", which is true whether or not they are currently on screen. */
@@ -607,6 +622,11 @@ function itemEl(i){
                     he would have no idea why the one he already passed is asking again. */
                  (REDO_REASONS[i.id] && !st.verdict
                     ? '<div class="redo">↻ back for another look — '+esc(REDO_REASONS[i.id])+'</div>'
+                    : '')+
+                 /* Says the row is staying only for now, so its later disappearance is expected
+                    rather than alarming. */
+                 (answeredNow.has(i.id) && hideCleared && clearedVerdict(st.verdict)
+                    ? '<div class="staying">✎ staying open so you can write the reason — it locks away when you reload</div>'
                     : '');
   el.appendChild(head);
 
@@ -620,6 +640,9 @@ function itemEl(i){
       st.verdict = st.verdict===v ? null : v;
       if(st.verdict && SOUND[st.verdict]) SOUND[st.verdict]();
       activeId = i.id;                 // set before render so the rebuilt card keeps the arming
+      /* Keep it on screen so he can type the reason. Without this the lock swallowed the row,
+         and its notes box, on the very click that decided something was wrong. */
+      answeredNow.add(i.id);
       save(); render();
     };
     votes.appendChild(b);

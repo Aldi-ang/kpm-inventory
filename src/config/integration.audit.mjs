@@ -446,6 +446,16 @@ check(G13, 'every caller imports notify', nMissing.length === 0,
 check(G13, 'the toast reached the built bundle',
   allJs.includes('Message lost:'),
   'Toast.jsx is not in dist/ — every report in the app would vanish into the console');
+/* Audio is locked until the page sees a real gesture. Before this, the ONLY caller of
+   unlockSounds was MerchantSalesView, so a sound played from any other screen was silent
+   forever — Aldi tested the strips from the Master Vault and reported no SFX at all. */
+check(G13, 'audio is unlocked app-wide, not only by the sales terminal',
+  /unlockSounds/.test(mainJsx) && /once:\s*true/.test(mainJsx),
+  'main.jsx must unlock on the first gesture or every sound outside the terminal is a no-op');
+/* `tap` is 45ms. A sound that short is not quiet, it is inaudible, and choosing it for the
+   most frequent toast is why the strips seemed to have no sound of their own. */
+check(G13, 'the toast does not use the 45ms blip', !/playSound\([^)]*'tap'/.test(toast),
+  'measure a sound before choosing it — tap.mp3 is 0.045s and cannot be heard');
 /* The one behaviour the message box had that a toast does not: it blocked. Code written as
    `alert(msg); window.location.reload();` relied on that — the reload could not run until he
    clicked OK. Reloading destroys ToastHost with the rest of the page, so the same two lines

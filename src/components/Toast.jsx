@@ -82,8 +82,13 @@ export function ToastHost() {
             setItems((cur) => [...cur, item].slice(-5));
             /* Two different sounds, because the two kinds of message mean opposite things and
                he should be able to tell them apart without looking up. Both are no-ops under
-               Lite Mode and before the first user gesture — playSound handles that itself. */
-            playSound(item.sticky ? 'error' : 'tap');
+               Lite Mode and before the first user gesture — playSound handles that itself.
+
+               `commit` (0.18s), NOT `tap`. tap is 45 MILLISECONDS long, and at that length it
+               is not a quiet sound, it is an inaudible one — Aldi reported the strips as having
+               no SFX at all and this was half the reason. Measure a sound before choosing it;
+               the file being present says nothing about it being hearable. */
+            playSound(item.sticky ? 'error' : 'commit');
             if (!item.sticky) {
                 /* silent: a message that times out on its own was not dismissed BY him, so it
                    gets the exit animation but no click sound. */
