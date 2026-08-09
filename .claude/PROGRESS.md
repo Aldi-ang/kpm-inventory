@@ -1,8 +1,9 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-10 01:47 WIB** · branch `phase0-solid-ground` · last code commit: run `git log -1`
-(**JOB 6 IS BUILT — the gate is in `src/`, `784f5cc` + `6a3aaca`, audit 187/187** ·
-quest log sorted · four tests waiting on him · ONE question owed: is an 8.5-second login too long?)
+**Updated: 2026-08-10 02:01 WIB** · branch `phase0-solid-ground` · last code commit: run `git log -1`
+(**JOB 6 IS BUILT AND HE HAS SEEN IT — `6a3aaca` + `784f5cc` + `ae341e7`, audit 191/191** ·
+timing signed off at 8.5s · card and nav button fixed on his report ·
+quest log sorted · four tests waiting on him · **nobody has watched the unlock run yet**)
 
 *⚠️ A second session was editing this file at 01:42 and wrote "no kpm code touched since 20:45".
 That was true when written and is now wrong — `6a3aaca` and `784f5cc` both landed after it.
@@ -94,12 +95,23 @@ checked directly against the file instead — 10/10.*
 - **Lite Mode and reduced motion never load the canvas** — App renders the old plain ACCESS
   GRANTED block instead, so group 14's original checks still have something to find.
 
-🔴 **THE ONE QUESTION OWED — ASK BEFORE ANY MORE GATE WORK: the full sequence is 8.5 SECONDS.**
-It was 1.0s before. Every beat is his signed-off design and the sound needs all of it (tok 4.50s,
-ticks 6.70s), but he approved it watching a demo with a replay button, not as something he passes
-through daily, outdoors, in a hurry. **`GATE_UNLOCK_MS` in `VaultGate.jsx` is the single number to
-change; the hold and the animation both read it, and a check asserts they cannot drift apart.**
-Do not cut it on his behalf — this is exactly the kind of taste call he decides.
+✅ **THE 8.5s QUESTION IS ANSWERED — his words: *"timing is fine"*. Do not raise it again.**
+`GATE_UNLOCK_MS` in `VaultGate.jsx` stays; the hold and the animation both read it and a check
+asserts they cannot drift apart.
+
+✅ **HE THEN CAUGHT WHAT THE PORT MISSED — `ae341e7`.** His words: *"not all of the features on
+the artifact is integrate yet isnt, the login panel is still the old one and i dont want to see
+the sidebar button on the login screen"*. Both right: the port brought the canvas over and left
+the CARD alone, so the preview's gate sat behind the old red SECURITY CHECK panel.
+- The card is now the preview's, value for value — near-black on a rust hairline, KPM INVENTORY /
+  MASTER VAULT, the field an underline not a box, the submit a hairline not a red slab, and
+  fingerprint + recovery on the one small line. **Both stay real buttons**; the preview merged
+  them into one label only because nothing there had to work.
+- The shield and SECURITY CHECK heading now render for **setup, recovery and OTP only** — those
+  really are an alarm; the door he opens daily is not.
+- **The nav button is hidden while the gate is up.** Raising the modal's z-index does NOT fix it:
+  the button is in its own stacking context, so `z-[9999]` never beats its `z-[100]`.
+- Backdrop is solid black, not `black/95` — the app was bleeding through as ghost text.
 
 ⚠️ **NOT VERIFIED IN A BROWSER, and say so rather than implying otherwise.** The gate sits behind
 the master password, which Claude must never type, and the Browser pane is still not displayed in
@@ -516,6 +528,7 @@ it never happens twice. Answer, then ask which of the waiting items he wants to 
 | The resume brief (traps, locked decisions) | same memory folder → `project_kpm_merchantsales_redesign_brief.md` |
 | A-Brain vault (decisions, incidents, backlog) | `D:\APP DEVELOPMENT\kpm inventory main FILES\A-Brain` |
 | Code knowledge graph — query, do not grep | `graphify-out/` |
+| NOT kpm — the LLM download's space log (outside the repo) | `D:\LLAMA\space.log` |
 | Alucard's rules (edit-denied — lift in settings first) | `C:\Users\ASUS\.claude\skills\alucard\SKILL.md` |
 | The Stop hook that keeps this file honest | `.claude/check-progress.mjs` |
 | The context meter (measures, never guesses) | `.claude/context-watch.mjs` |
@@ -545,9 +558,17 @@ it never happens twice. Answer, then ask which of the waiting items he wants to 
 npm run build; node src/config/integration.audit.mjs
 ```
 
-**167** checks over the built output (158 → 161 with the audio/toast groups, → 167 with group 14
-on the unlock screen; if a note anywhere still says 158 or 161, that note is stale). One turn,
-small result. If it passes, the terminal is intact — do **not** re-read source to confirm it.
+**191** checks over the built output (→ 175 with group 14 reading the whole gate, → 191 with
+group 16 on the vault gate itself; if a note anywhere still says 158, 161 or 167, that note is
+stale). One turn, small result. If it passes, the terminal is intact — do **not** re-read source
+to confirm it.
+
+**🔴 RUN THE BUILD FIRST, ALWAYS — and since 2026-08-10 the audit enforces it.** It reads
+`dist/`, so a **failed** build leaves the previous bundle in place and every check re-passes
+against it. That happened: a JSX syntax error killed the build and the audit still printed
+*"191 passed, 0 failed"*. **A green audit standing on a failed build is worse than a red one,
+because it is trusted.** It now refuses to report when anything in `src/` is newer than the
+newest built asset. If you see *"STALE BUILD"*, that is the guard working, not a break.
 
 The two pure-logic self-checks are separate and cheap:
 
@@ -562,7 +583,7 @@ node src/config/toastSeverity.selfcheck.mjs; node src/config/findDuplicates.self
 **⚠️ The last several hours were NOT kpm work.** They went to a Qwen3-235B download in `D:\LLAMA`
 (AirLLM, separate project). No file in `src/` changed. Everything below is exactly where 20:45
 left it, and **the CANVAS half of the gate port is still the next kpm job.** The download is
-stopped and blocked on him — see WAITING ON ALDI.
+running again, instrumented, and **needs nothing from him** — see the LOG.
 
 Sales terminal redesign is **built and passing 158/158**. Design work is CLOSED.
 Groups A and B are walked; H1, H3 and C2 confirmed by hand. **Everything below is committed
@@ -613,16 +634,10 @@ throwaway first.
 
 ## WAITING ON ALDI — do not re-derive these, just ask
 
-- 🔴 **NOT KPM — the `D:\LLAMA` download is stopped, waiting on ONE click from him.** He must turn
-  **System Restore OFF for drive D:** and delete its existing restore points (Settings → "Create a
-  restore point" → select **D:** → Configure → Disable → Delete). **Do not do this for him — it is
-  a system security setting, it is his click.** Until then the download cannot finish: it writes a
-  4GB shard and deletes it 118 times, and every deleted shard is being kept as a restore snapshot,
-  so the space never comes back. Measured: D: had 316GB free, lost **313GB** during one run while
-  `D:\LLAMA` grew only **14GB**. **271GB is unaccounted for and sits in `D:\System Volume
-  Information`, which no scan can read without admin.** His standing position, verbatim: *"its not
-  the steam, it is your download"* — he is right that the download caused it, via the snapshots.
-  Verify with `vssadmin list shadowstorage` in an **Administrator** terminal.
+- ✅ **NOT KPM — nothing is waiting on him for the `D:\LLAMA` download.** It is running and watched.
+  **The System Restore instruction that used to sit here was WRONG and has been withdrawn — do not
+  reissue it.** His standing position was right: *"its not the steam, it is your download"*. The
+  cause and the proof are in the LOG entry below.
 - ✅ **ANSWERED — he chose D.** *"D is the best one, so i want u to improve the D and send me back
   the result"*. Round 1 was rejected whole; round 2 landed. Do not re-pitch directions.
 - 🔴 **THREE QUESTIONS ON THE REFINED D, all still open:**
@@ -793,6 +808,30 @@ are never worth rescuing.
 
 ## LOG — newest first, older entries live in `git log` for this file
 
+### 2026-08-10 02:01 WIB — he looked at the gate, and the port had done half the job. `ae341e7`
+
+**"timing is fine"** — the 8.5s sequence is signed off. That question is closed.
+
+**But he saw immediately what a build and 187 checks could not: the CARD was still the old one.**
+The port brought the canvas across and left the panel alone, so the preview's dot field sat
+behind a red shield, a SECURITY CHECK heading and a red ACCESS VAULT slab. **Everything I could
+verify passed; the thing he noticed in one second was not any of it.** That is the shape of this
+whole job — the checks guard against regression, they do not tell you the work is finished.
+
+He also wanted the nav button off the login screen. **Raising the modal's z-index would not have
+worked**: the button sits in its own stacking context, so `z-[9999]` on the gate never beats its
+`z-[100]`. It is hidden by a prop instead.
+
+**A REAL HOLE, found only because a build failed at the right moment: the audit read a stale
+`dist/` and reported 191/191 while `npm run build` was erroring.** Every check re-passed against
+the last good bundle. It now refuses to report when `src/` is newer than the newest built asset,
+proved both ways — refuses before a rebuild, passes after. **This had been silently possible for
+the whole life of the file**, and every "audit green" claim made straight after a failed build
+was worth nothing.
+
+Audit **187 → 191**. Build green, useSound 6/6, toastSeverity 54/54, findDuplicates 26/26,
+gate guard proofs 12/12.
+
 ### 2026-08-10 01:47 WIB — ✅ JOB 6 IS BUILT. The gate is in the app. `784f5cc`
 
 **The design sat as an artifact for a day; `src/` now has it.** 335 lines in one new component
@@ -820,10 +859,16 @@ never remove.
 
 Audit **175 → 187**. Build green, useSound 6/6, toastSeverity 54/54, guard proofs 12/12.
 
-### 2026-08-10 01:42 WIB — NOT kpm work: the LLM download, and the disk that kept eating itself
+### 2026-08-10 01:59 WIB — NOT kpm work: the LLM download, and the disk that kept eating itself
 
-**No `src/` file was touched. JOBs 2/4/5/6 are untouched and still open.** This entry exists so a
-cleared session does not go hunting for kpm progress that was never made.
+**This entry is from the OTHER session running in this folder tonight. It touched no `src/` file
+and shipped no kpm code** — the gate work in `784f5cc`/`6a3aaca` is the *other* session's, not
+this one's. Nothing here changes JOB 2/4/5. It is recorded only so the disk finding is not lost.
+
+**Status as of 01:59: running again with instrumentation.** 65 of 97 pieces are already on disk and
+survive every crash. A watcher samples free space + layer count every 2 minutes into
+`D:\LLAMA\space.log` and alerts at 200/120/60/**35**GB — the 35GB alarm exists to kill the process
+*before* `ENOSPC` so the run ends on our terms instead of losing hours to a crash.
 
 The `D:\LLAMA` Qwen3-235B download died four times. The first was a genuine HF CDN 500 (`xet`
 backend — `HF_HUB_DISABLE_XET=1` fixed it for good). Every failure after that was `OSError: [Errno
@@ -838,14 +883,23 @@ any of them without new evidence:**
    shadowstorage` run elevated: D: has no shadow storage association at all** (only C:, 10.5GB),
    and `D:\System Volume Information` measures **0.0GB**. This was my theory and it was wrong.
 
-**What is actually known, and it is only arithmetic:** D: had 316GB free, ended a run with 2.8GB,
-so it **lost 313GB while `D:\LLAMA` grew 14GB**. A PowerShell folder scan totals **657GB visible
-against 929GB used** — a **271GB gap with no home**. Biggest visible: SteamLibrary 221GB, Wuthering
-Waves 110GB, LLAMA 91GB. **Leading suspicion now: the PowerShell scan itself undercounted**, since
-`Get-ChildItem -ErrorAction SilentlyContinue` swallows both access denials and >260-char path
-failures, so whole subtrees can vanish from the total silently. A second pass with `du` (Git Bash,
-which reports what it cannot read) was running when this was written — compare its numbers to the
-PowerShell ones before theorising again.
+**RESOLVED — the space is TRANSIENT, held by the running download and released when it dies.**
+The proof is a reconciliation, not a theory. With the download stopped, `du` totals **632GB** and
+the drive reports **631GB used of 931GB** — **the gap is zero.** While a run was live the drive
+read 929GB used against only 657GB of enumerable folders, a 271GB hole that no scan could find and
+that vanished by itself the moment the process died. Space that returns on its own was never
+really on disk: it is deleted-but-still-open file handles, invisible to any directory walk and
+unreclaimed until the process exits. **Windows had no symlink support for this cache** (the very
+first log line warned of it), so every shard is written more than once — that is the multiplier.
+
+**Operationally this means the download can never finish by retrying.** It leaks roughly 10GB per
+shard, dies of `ENOSPC` after ~30 shards, gives the space back, and the next run does the same.
+65 of 97 pieces are on disk (`D:\LLAMA\airllm_shards\splitted_model.4bit`, 84GB) and none of that
+is lost between crashes. **The next attempt must be instrumented — sample free space and folder
+size every 60s — so the leak rate is measured, not guessed at a fourth time.**
+
+Minor, but it cost a wrong number once: **PowerShell's `Get-ChildItem` counts hardlinked files
+repeatedly** — it read `Vortex Mods` as 34GB where `du` reads 6.2GB. Use `du` for disk work here.
 
 **When a "used" number and a folder scan disagree, the gap IS the finding — do not name a suspect
 from the visible list.** Two wasted restarts and one wrong diagnosis came from doing exactly that.
