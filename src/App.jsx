@@ -929,13 +929,16 @@ const handleGitHubMirror = async () => {
               await updateDoc(adminDocRef, { failedRecoveryAttempts: 0, lockoutStatus: "NONE" });
               setIsUnlocking(true);
               
-              // Wait 2.5 seconds for the animation to finish before revealing dashboard
+              // Hold just long enough for the unlock to land (sweep ends at 740ms), then go.
+              // This used to be 2500ms of nothing: the PIN was already verified and the write
+              // above already awaited, so every login paid 2.5s for an animation with no work
+              // behind it.
               setTimeout(() => {
                   setIsAdmin(true);
                   setShowAdminLogin(false);
                   setIsUnlocking(false);
                   setInputPin("");
-              }, 2500);
+              }, 1000);
           } else {
               // FAILED: Add a strike to the database
               const newStrikes = (data.failedRecoveryAttempts || 0) + 1;
@@ -1115,7 +1118,7 @@ const handleGitHubMirror = async () => {
 
           if (assertion) {
               setIsUnlocking(true);
-              setTimeout(() => { setIsAdmin(true); setShowAdminLogin(false); setIsUnlocking(false); }, 2500);
+              setTimeout(() => { setIsAdmin(true); setShowAdminLogin(false); setIsUnlocking(false); }, 1000); // was 2500ms of pure waiting
           }
       } catch (error) { 
           console.error("Biometric failed:", error); 
@@ -3441,28 +3444,42 @@ const handleGitHubMirror = async () => {
           <div className={`bg-[#0a0a0a] border border-red-600/30 p-8 max-w-sm w-full text-center shadow-[0_0_60px_rgba(220,38,38,0.15)] relative overflow-hidden transition-all ${authShake ? 'animate-shake' : ''}`}>
             
             {/* Terminal Decoration */}
-            <div className={`absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent ${isUnlocking || isSetupMode ? 'via-emerald-500' : isResetMode ? 'via-orange-500' : 'via-red-600'} to-transparent ${authShake ? '' : 'animate-pulse'}`}></div>
+            <div className={`absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent ${isUnlocking ? 'via-[#ff9d00]' : isSetupMode ? 'via-emerald-500' : isResetMode ? 'via-orange-500' : 'via-red-600'} to-transparent ${authShake ? '' : 'animate-pulse'}`}></div>
             
             {/* 🎬 CINEMATIC UNLOCK SEQUENCE 🎬 */}
             {isUnlocking ? (
-                <div className="space-y-6 text-center py-6 animate-fade-in">
-                    <div className="relative w-24 h-24 mx-auto flex items-center justify-center">
-                        {/* Mechanical Spinning Rings */}
-                        <div className="absolute inset-0 border-4 border-emerald-500/20 rounded-full border-t-emerald-500 animate-spin"></div>
-                        <div className="absolute inset-2 border-4 border-emerald-500/20 rounded-full border-b-emerald-500 animate-spin" style={{ animationDirection: 'reverse', animationDuration: '1.5s' }}></div>
-                        <Unlock size={32} className="text-emerald-500 animate-pulse" />
+                <div className="space-y-5 text-center py-6">
+                    <div className="relative w-20 h-20 mx-auto flex items-center justify-center">
+                        {/* One ring, drawn once. It does NOT rotate: Lite Mode's law is that
+                            nothing spins, and a spinner here would also be a lie — the vault is
+                            already open by the time this branch renders. */}
+                        <div className="absolute inset-0 rounded-full border border-[#ff9d00]/25 kpm-unlock-ring"></div>
+                        <Unlock size={30} className="text-[#f0e2c0] kpm-unlock-icon" />
                     </div>
                     <div>
-                        <h3 className="text-emerald-500 font-black text-2xl uppercase tracking-[0.3em] mb-2 drop-shadow-[0_0_15px_rgba(16,185,129,0.8)]">Access Granted</h3>
-                        <p className="text-emerald-400/80 font-mono text-[10px] uppercase tracking-[0.2em] animate-pulse">Decrypting Master Vault...</p>
+                        <h3 className="text-[#f0e2c0] font-black text-2xl uppercase mb-2 kpm-unlock-title">Access Granted</h3>
+                        <p className="text-[#f0e2c0]/40 font-mono text-[10px] uppercase tracking-[0.25em]">Master Vault</p>
                     </div>
-                    {/* Stuttering Progress Bar */}
-                    <div className="w-full bg-black border border-emerald-500/30 h-1.5 rounded-full overflow-hidden relative">
-                        <div className="absolute top-0 left-0 h-full bg-emerald-500 shadow-[0_0_10px_#10b981]" style={{ animation: 'fillBar 2.4s ease-in-out forwards' }}></div>
+                    {/* A single sweep, not a progress bar. Nothing is loading here, so a bar that
+                        appears to measure work is telling him something untrue — the old one
+                        stuttered for 2.4s to sell a decryption that never happened. */}
+                    <div className="w-full h-px bg-[#ff9d00]/15 overflow-hidden">
+                        <div className="h-full w-full origin-left bg-[#ff9d00] kpm-unlock-sweep"></div>
                     </div>
-                    {/* Custom Keyframe for the stuttering decrypt effect */}
                     <style>{`
-                        @keyframes fillBar { 0% { width: 0%; } 20% { width: 15%; } 40% { width: 45%; } 60% { width: 45%; } 80% { width: 90%; } 100% { width: 100%; } }
+                        @keyframes kpmUnlockIcon  { from { opacity: 0; transform: scale(.82); } to { opacity: 1; transform: scale(1); } }
+                        @keyframes kpmUnlockRing  { from { opacity: 0; transform: scale(.88); } to { opacity: 1; transform: scale(1); } }
+                        @keyframes kpmUnlockTitle { from { opacity: 0; letter-spacing: .55em; } to { opacity: 1; letter-spacing: .3em; } }
+                        @keyframes kpmUnlockSweep { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+                        .kpm-unlock-icon  { animation: kpmUnlockIcon  220ms cubic-bezier(.16,1,.3,1) both; }
+                        .kpm-unlock-ring  { animation: kpmUnlockRing  260ms cubic-bezier(.16,1,.3,1) both; }
+                        .kpm-unlock-title { letter-spacing: .3em; animation: kpmUnlockTitle 320ms cubic-bezier(.16,1,.3,1) 60ms both; }
+                        .kpm-unlock-sweep { animation: kpmUnlockSweep 620ms cubic-bezier(.22,1,.36,1) 120ms both; }
+                        @media (prefers-reduced-motion: reduce) {
+                            .kpm-unlock-icon, .kpm-unlock-ring, .kpm-unlock-title, .kpm-unlock-sweep {
+                                animation-duration: 1ms !important; animation-delay: 0ms !important;
+                            }
+                        }
                     `}</style>
                 </div>
             ) : (

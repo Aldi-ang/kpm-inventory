@@ -469,6 +469,30 @@ const reloadRace = appFiles.filter(f =>
 check(G13, 'no report is destroyed by the reload on the next line', reloadRace.length === 0,
   reloadRace.length ? `notify() then an immediate reload in: ${reloadRace.join(', ')}` : '');
 
+/* ── 14. the unlock sequence ──────────────────────────────────────────────
+   The "ACCESS GRANTED" screen broke two of Aldi's own locked laws at once — eight emerald
+   classes against no-blue-no-green, and two counter-rotating rings against "nothing rotates".
+   It also ran a 2.4s progress bar that measured nothing: both unlock paths had already awaited
+   their Firestore write before this branch rendered, so the 2500ms timeout was pure waiting
+   charged to every single login. Group 8's palette scan only reads MerchantSalesView, which is
+   why none of that was ever caught. This group watches the branch itself. */
+const G14 = '14. The vault opens without lying';
+
+const unlockBlock = (appCode.match(/\{isUnlocking \? \(([\s\S]*?)\n\s*\) : \(/) || ['', ''])[1];
+
+check(G14, 'the unlock sequence is where this group can see it', unlockBlock.length > 200,
+  'could not find the isUnlocking branch in App.jsx — this whole group is blind, fix the match');
+check(G14, 'no green while the vault opens', !/emerald|#10b981/i.test(unlockBlock),
+  'palette law: slate is the blue and emerald is the green, neither belongs here');
+check(G14, 'nothing rotates while the vault opens', !/animate-spin/.test(unlockBlock),
+  'lite mode law: nothing rotates');
+check(G14, 'no bar pretends to measure work that is not happening', !/fillBar/.test(unlockBlock),
+  'the PIN is verified and the write awaited before this renders — a progress bar here is a lie');
+check(G14, 'neither unlock path sits on a 2.5s timer', !/setIsUnlocking\(true\)[\s\S]{0,500}?\},\s*2500\s*\)/.test(appCode),
+  'the hold must cover the animation, not invent a wait — 2500ms was 1.7s of nothing');
+check(G14, 'the unlock animation respects reduced motion', /prefers-reduced-motion[\s\S]{0,300}kpm-unlock/.test(appCode),
+  'a motion-sensitive user must be able to opt out of the sweep');
+
 /* ── report ──────────────────────────────────────────────────────────────── */
 let last = '';
 for (const r of results) {

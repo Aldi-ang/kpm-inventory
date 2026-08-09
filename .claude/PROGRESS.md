@@ -100,22 +100,30 @@ defines `logAudit` locally at ~:2335), the KML import creating a fresh doc per p
 and `App.jsx` being ~4k lines doing many unrelated jobs.
 
 
-**JOB 4 — replace the "ACCESS GRANTED" unlock animation. HE ASKED FOR THIS 2026-08-08.**
-His words: *"i want to change that cheap ass access granted animation we should use /design
-/ui-ux-pro-max /ui-styling for this next"*. **Use those three skills — he named them.**
-- **It is `src/App.jsx:3397–3418`**, the `isUnlocking` branch inside the `showAdminLogin` modal.
-  Two counter-rotating rings, a pulsing `Unlock` icon, "Access Granted" in emerald with a green
-  glow, "Decrypting Master Vault…", and a fake stuttering progress bar (`@keyframes fillBar`,
-  **2.4s**) that reports no real work.
-- **It breaks two of his own locked laws, which is most of why it reads as cheap:**
-  **green** (`text-emerald-500`, `via-emerald-500`, `bg-emerald-500`, `shadow-[0_0_10px_#10b981]`
-  — 8 emerald classes in that block) against the no-blue-no-green palette law, and **two
-  `animate-spin` rings** against "lite mode = nothing rotates".
-- **Audit group 8 does NOT cover this.** Its palette scan reads MerchantSalesView only, so the
-  rest of the app has never been checked for the palette law. Worth widening the scan when this
-  is done — and expect other green to fall out of it.
-- ❓ **Ask him before designing:** does the 2.4s bar gate the actual unlock, or is it pure
-  waiting? If it is pure waiting, the best animation may be a much shorter one.
+**✅ JOB 4 IS DONE — 2026-08-09 13:50. Audit 167/167. HE HAS NOT SEEN IT YET.**
+His ask: *"i want to change that cheap ass access granted animation"*. Rebuilt at
+`src/App.jsx:~3447`, the `isUnlocking` branch of the `showAdminLogin` modal.
+- **The question in the old note is ANSWERED, and it changed the job: the 2.4s bar was pure
+  waiting.** Both unlock paths (`:930` PIN, `:1117` biometric) had already awaited their
+  Firestore write before this branch rendered, then sat on `setTimeout(…, 2500)` doing nothing.
+  **So the fix was mostly deletion, not decoration.** Hold is now **1000ms**, animation ends at
+  740ms. Every login was paying ~1.7s for a decryption that never happened.
+- Gone: 8 emerald classes, both `animate-spin` rings, `@keyframes fillBar`, and
+  "Decrypting Master Vault…" (it described work that did not exist).
+- Now: cream `#f0e2c0` on black, gold `#ff9d00` as a hairline and a single left-origin sweep —
+  his *"more black and white, gold for some small thing"*. One static ring, no rotation.
+  Title animates its letter-spacing `.55em → .3em`; icon and ring settle from 82/88% scale.
+  All four run `cubic-bezier(.16,1,.3,1)`, 220–620ms, each under Emil's 300ms except the sweep,
+  which is the one deliberate beat. `prefers-reduced-motion` collapses all of it to 1ms.
+- The modal's top gradient line went gold **for the unlock case only**. `isSetupMode` still
+  renders `via-emerald-500` — a different screen, deliberately left alone, and still a palette
+  breach worth doing with the Edit Record panel in JOB 5.
+- **Audit group 14 now guards it** (6 checks): no green, no rotation, no `fillBar`, no 2500ms
+  timer on either path, reduced-motion honoured, plus one check that the group can still find
+  the branch at all. **All five behaviour checks were proved to FAIL on the old markup before
+  they were kept** — scratchpad `unlock-guard-proof.mjs`.
+- ✅ **HE MUST LOOK AT IT.** It is the first thing on screen after the master PIN. Judge two
+  things: is 1 second too fast now, and does the gold sweep read as finished or as cut off.
 
 **✅ THE QUEST LOG NOW CARRIES THESE RESULTS — `115027a`, 2026-08-09 03:25.** He asked *"did u
 update quest log already?"* and the honest answer was no; they were only in chat, which a
@@ -401,9 +409,9 @@ it never happens twice. Answer, then ask which of the waiting items he wants to 
 npm run build; node src/config/integration.audit.mjs
 ```
 
-**161** checks over the built output (it was 158 before the audio/toast groups landed; if a note
-anywhere still says 158, that note is stale). One turn, small result. If it passes, the terminal
-is intact — do **not** re-read source to confirm it.
+**167** checks over the built output (158 → 161 with the audio/toast groups, → 167 with group 14
+on the unlock screen; if a note anywhere still says 158 or 161, that note is stale). One turn,
+small result. If it passes, the terminal is intact — do **not** re-read source to confirm it.
 
 The two pure-logic self-checks are separate and cheap:
 
@@ -588,6 +596,19 @@ No kpm-inventory code touched. This session was babysitting a Qwen3-235B downloa
 `D:\LLAMA` (separate project, AirLLM), unrelated to JOB 2/4/5 above — still open, unchanged.
 `plan-quota.mjs`'s working-tree diff (see `git status`) predates this session; not made here.
 Still stuck at layer 63/94 as of this update, cause not yet diagnosed.
+
+### 2026-08-09 13:50 WIB — JOB 4 done: the unlock screen was 1.7s of pretending
+
+**The finding that mattered was not the colour.** The brief said "cheap ass animation", and the
+green and the spinning rings were real breaches — but reading the two call sites showed the
+whole sequence gated nothing. `setIsUnlocking(true)` runs AFTER the Firestore write is awaited,
+and the screen then holds for 2500ms on a timer. The stuttering progress bar was animating a
+decryption that had already finished. **Rebuilding it prettier and leaving 2500ms in place would
+have missed the actual defect.** Read what a UI is waiting for before restyling the wait.
+
+Hold cut to 1000ms, animation ends at 740ms. Palette-legal, nothing rotates, reduced-motion
+honoured, and audit group 14 (6 checks) fails the build if any of it comes back. Details in the
+JOB 4 block above. **Aldi has not seen it yet — it is the first thing after the master PIN.**
 
 ### 2026-08-09 13:40 WIB — the quota meter went self-sufficient, and Alucard got two habits
 
