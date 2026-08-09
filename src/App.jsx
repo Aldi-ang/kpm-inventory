@@ -802,7 +802,7 @@ const handleGitHubMirror = async () => {
 
       if (score <= 2) return { score, label: "CRITICAL VULNERABILITY (WEAK)", color: "text-red-500", bar: "bg-red-600 shadow-[0_0_10px_red]" };
       if (score <= 4) return { score, label: "SUB-OPTIMAL (MODERATE)", color: "text-orange-500", bar: "bg-orange-500 shadow-[0_0_10px_orange]" };
-      return { score, label: "ENCRYPTION SECURE (STRONG)", color: "text-emerald-500", bar: "bg-emerald-500 shadow-[0_0_10px_emerald]" };
+      return { score, label: "ENCRYPTION SECURE (STRONG)", color: "text-[#ff9d00]", bar: "bg-[#ff9d00] shadow-[0_0_10px_rgba(255,157,0,0.8)]" };
   };
 
   // 1. INITIAL CHECK: Does a PIN exist?
@@ -3461,7 +3461,7 @@ const handleGitHubMirror = async () => {
           <div className={`bg-[#0a0a0a] border border-red-600/30 p-8 max-w-sm w-full text-center shadow-[0_0_60px_rgba(220,38,38,0.15)] relative overflow-hidden transition-all ${authShake ? 'animate-shake' : ''}`}>
             
             {/* Terminal Decoration */}
-            <div className={`absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent ${isUnlocking ? 'via-[#ff9d00]' : isSetupMode ? 'via-emerald-500' : isResetMode ? 'via-orange-500' : 'via-red-600'} to-transparent ${authShake ? '' : 'animate-pulse'}`}></div>
+            <div className={`absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent ${isUnlocking ? 'via-[#ff9d00]' : isSetupMode ? 'via-[#ff9d00]' : isResetMode ? 'via-orange-500' : 'via-red-600'} to-transparent ${authShake ? '' : 'animate-pulse'}`}></div>
             
             {/* 🎬 CINEMATIC UNLOCK SEQUENCE 🎬 */}
             {isUnlocking ? (
@@ -3501,7 +3501,7 @@ const handleGitHubMirror = async () => {
                 </div>
             ) : (
                 <>
-                    <ShieldAlert size={32} className={`mx-auto mb-4 ${isSetupMode ? 'text-emerald-500' : isResetMode ? 'text-orange-500' : 'text-red-600 animate-pulse'}`} />
+                    <ShieldAlert size={32} className={`mx-auto mb-4 ${isSetupMode ? 'text-[#ff9d00]' : isResetMode ? 'text-orange-500' : 'text-red-600 animate-pulse'}`} />
 
                     <h2 className="text-lg font-black text-white mb-6 uppercase tracking-[0.25em]">
                         {isSetupMode ? "Initialize Vault" : isResetMode ? "Identity Recovery" : "Security Check"}
@@ -3512,13 +3512,13 @@ const handleGitHubMirror = async () => {
                 <div className="space-y-4 text-left">
                     {/* 🚀 NEW: The Welcome Bridge UI */}
                     {pendingMigration ? (
-                        <div className="mb-6 text-center border-b border-emerald-500/30 pb-4 animate-fade-in">
+                        <div className="mb-6 text-center border-b border-[#ff9d00]/30 pb-4 animate-fade-in">
                             <h3 className="text-xl font-black text-white uppercase tracking-widest mb-1">Welcome to {appSettings?.companyName || "The Platform"}</h3>
-                            <p className="text-emerald-500 text-[10px] uppercase tracking-[0.2em] font-bold">First-Time Setup: Initialize Vault</p>
+                            <p className="text-[#ff9d00] text-[10px] uppercase tracking-[0.2em] font-bold">First-Time Setup: Initialize Vault</p>
                             <p className="text-slate-400 text-[10px] mt-2 leading-relaxed">Your Architect has provisioned your clearance. Create your Master Credentials to secure your database and finalize your account migration.</p>
                         </div>
                     ) : (
-                        <p className="text-[10px] text-emerald-500 uppercase font-bold mb-4 tracking-widest text-center">Create Administrator Credentials</p>
+                        <p className="text-[10px] text-[#ff9d00] uppercase font-bold mb-4 tracking-widest text-center">Create Administrator Credentials</p>
                     )}
                     
                     <div className="relative">
@@ -3527,7 +3527,7 @@ const handleGitHubMirror = async () => {
                             placeholder="CREATE MASTER PASSWORD"
                             value={setupPassword}
                             onChange={(e) => setSetupPassword(e.target.value)}
-                            className="w-full bg-black border border-emerald-500/30 p-4 text-center text-white text-lg outline-none focus:border-emerald-500 font-mono placeholder:text-white/20 transition-colors" 
+                            className="w-full bg-black border border-[#ff9d00]/30 p-4 text-center text-[#f0e2c0] text-lg outline-none focus:border-[#ff9d00] font-mono placeholder:text-white/20 transition-colors" 
                             maxLength={25}
                         />
                         
@@ -3555,12 +3555,12 @@ const handleGitHubMirror = async () => {
                         placeholder="SECRET RECOVERY WORD" 
                         value={setupSecret}
                         onChange={(e) => setSetupSecret(e.target.value)}
-                        className="w-full bg-black border border-emerald-500/30 p-4 text-center text-white text-xs outline-none focus:border-emerald-500 uppercase tracking-widest placeholder:text-white/20 font-mono transition-colors" 
+                        className="w-full bg-black border border-[#ff9d00]/30 p-4 text-center text-[#f0e2c0] text-xs outline-none focus:border-[#ff9d00] uppercase tracking-widest placeholder:text-white/20 font-mono transition-colors" 
                     />
                     
                     <button 
                         onClick={handleSetupSecurity} 
-                        className={`w-full py-4 font-bold uppercase text-xs tracking-[0.2em] transition-all shadow-lg font-mono border ${calculateStrength(setupPassword).score === 5 && setupSecret ? 'bg-emerald-600/20 hover:bg-emerald-600 border-emerald-500/50 text-emerald-500 hover:text-white cursor-pointer' : 'bg-black border-slate-700 text-slate-400 cursor-not-allowed opacity-50'}`}
+                        className={`w-full py-4 font-bold uppercase text-xs tracking-[0.2em] transition-all shadow-lg font-mono border ${calculateStrength(setupPassword).score === 5 && setupSecret ? 'bg-[#ff9d00]/10 hover:bg-[#ff9d00]/25 border-[#ff9d00]/50 text-[#ff9d00] hover:text-[#f0e2c0] cursor-pointer' : 'bg-black border-slate-700 text-slate-400 cursor-not-allowed opacity-50'}`}
                         disabled={calculateStrength(setupPassword).score < 5 || !setupSecret}
                     >
                         Save Credentials
@@ -3569,12 +3569,12 @@ const handleGitHubMirror = async () => {
             ) : isOtpMode ? (
                 /* CASE 2.5: OTP VERIFICATION */
                 <div className="space-y-4 animate-fade-in">
-                    <p className="text-[10px] text-blue-400 uppercase font-bold mb-4 tracking-widest">Verify Email Authorization</p>
+                    <p className="text-[10px] text-[#ff9d00] uppercase font-bold mb-4 tracking-widest">Verify Email Authorization</p>
                     <p className="text-xs text-slate-400 mb-4">A 6-digit code has been sent to your registered Admin Email.</p>
-                    <input type="number" placeholder="• • • • • •" className="w-full bg-black border border-blue-500/30 p-4 text-center text-blue-400 text-2xl outline-none tracking-[0.5em] focus:border-blue-500 font-mono transition-colors" value={inputOtp} onChange={(e) => setInputOtp(e.target.value)} autoFocus maxLength={6} onKeyDown={(e) => e.key === 'Enter' && handleVerifyOtp()} />
+                    <input type="number" placeholder="• • • • • •" className="w-full bg-black border border-[#ff9d00]/30 p-4 text-center text-[#f0e2c0] text-2xl outline-none tracking-[0.5em] focus:border-[#ff9d00] font-mono transition-colors" value={inputOtp} onChange={(e) => setInputOtp(e.target.value)} autoFocus maxLength={6} onKeyDown={(e) => e.key === 'Enter' && handleVerifyOtp()} />
                     <div className="flex gap-3 mt-4">
                         <button onClick={() => { setIsOtpMode(false); setIsResetMode(true); setInputOtp(""); }} className="flex-1 py-3 border border-white/10 text-gray-400 text-xs font-bold uppercase hover:text-white hover:bg-white/5 font-mono tracking-widest transition-colors">Abort</button>
-                        <button onClick={handleVerifyOtp} className="flex-1 py-3 bg-blue-600/20 hover:bg-blue-600 border border-blue-500/50 text-blue-500 hover:text-white text-xs font-bold uppercase font-mono tracking-widest transition-colors">Verify Code</button>
+                        <button onClick={handleVerifyOtp} className="flex-1 py-3 bg-[#ff9d00]/10 hover:bg-[#ff9d00]/25 border border-[#ff9d00]/50 text-[#ff9d00] hover:text-[#f0e2c0] text-xs font-bold uppercase font-mono tracking-widest transition-colors">Verify Code</button>
                     </div>
                 </div>
             ) : isResetMode ? (
@@ -3615,7 +3615,7 @@ const handleGitHubMirror = async () => {
                     {window.PublicKeyCredential && (
                         <button 
                             onClick={handleBiometricUnlock}
-                            className="w-full mt-4 py-4 bg-emerald-900/10 hover:bg-emerald-900/30 border border-emerald-500/30 hover:border-emerald-500 text-emerald-500 hover:text-emerald-400 font-bold uppercase text-xs tracking-[0.2em] flex justify-center items-center gap-3 transition-all font-mono shadow-[0_0_15px_rgba(16,185,129,0.1)]"
+                            className="w-full mt-4 py-4 bg-[#ff9d00]/5 hover:bg-[#ff9d00]/15 border border-[#ff9d00]/30 hover:border-[#ff9d00] text-[#ff9d00] hover:text-[#f0e2c0] font-bold uppercase text-xs tracking-[0.2em] flex justify-center items-center gap-3 transition-all font-mono shadow-[0_0_15px_rgba(255,157,0,0.1)]"
                         >
                             <ScanFace size={18} className="animate-pulse" />
                             Biometric Override

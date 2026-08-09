@@ -493,6 +493,20 @@ check(G14, 'neither unlock path sits on a 2.5s timer', !/setIsUnlocking\(true\)[
 check(G14, 'the unlock animation respects reduced motion', /prefers-reduced-motion[\s\S]{0,300}kpm-unlock/.test(appCode),
   'a motion-sensitive user must be able to opt out of the sweep');
 
+/* The gate is FIVE modes wearing one shell: standard login, first-time setup, recovery, OTP and
+   unlock. The checks above read the isUnlocking branch ONLY, so when that branch went gold the
+   group passed while first-time setup was still emerald and the whole OTP screen was still blue.
+   A guard that watches one of five modes reports a law as kept when it is half-kept. These read
+   the entire modal. */
+const gateBlock = (appCode.match(/\{showAdminLogin && \(([\s\S]*?)\n {6}\)\}/) || ['', ''])[1];
+
+check(G14, 'all five gate modes are where this group can see them', gateBlock.length > 2000,
+  'could not find the showAdminLogin modal in App.jsx — the two checks below are blind, fix the match');
+check(G14, 'no green in ANY gate mode, not just the unlock', !/emerald|#10b981/i.test(gateBlock),
+  'setup mode was emerald long after the unlock went gold — palette law: no green');
+check(G14, 'no blue in ANY gate mode, not just the unlock', !/\bblue-\d/.test(gateBlock),
+  'the whole OTP screen was blue-500/blue-400 — palette law: slate is the only blue allowed');
+
 /* ── 15. there is always a way in ──────────────────────────────────────────
    Aldi could not sign in on his phone and his testing stopped dead there: *"i cant even login,
    there is no login button everywhere, i cant choose google account nor entering the password"*.
