@@ -721,6 +721,21 @@ No kpm-inventory code touched. This session was babysitting a Qwen3-235B downloa
 `plan-quota.mjs`'s working-tree diff (see `git status`) predates this session; not made here.
 Still stuck at layer 63/94 as of this update, cause not yet diagnosed.
 
+### 2026-08-09 20:25 WIB — the ring ignored its own slider, and he saw it before I did
+
+**He was right: *"the waveline should follow the wave time also… it only slow the dot wave not
+the line wave"*.** The dot wave is canvas maths and read `T_WAVE_DUR` every frame; the ring is a
+CSS animation, and its duration was being written **after** `.playing` had already started it.
+**Changing `animation-duration` on a running animation does not restart it — CSS keeps the
+elapsed time** — so the ring held roughly its stylesheet speed while the dots obeyed the slider.
+Fixed by setting the duration **before** the class is added, and again on every slider input.
+**The general trap: any CSS animation whose timing is data-driven must have that value written
+before the class that starts it, or the first run silently uses the stale one.**
+
+**Two mechanisms driving one visual is the deeper smell here** — canvas maths and a CSS keyframe
+had to be kept in step by hand. Worth collapsing at port time: draw the ring on the canvas with
+the dots, and there is only one clock.
+
 ### 2026-08-09 20:10 WIB — ✅ THE VAULT GATE DESIGN IS SIGNED OFF. Next job is the PORT.
 
 **His words: *"okay i want u to make the wave little bit slower and we done bro"*.** Wave is now
