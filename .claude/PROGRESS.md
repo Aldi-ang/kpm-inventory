@@ -721,6 +721,33 @@ No kpm-inventory code touched. This session was babysitting a Qwen3-235B downloa
 `plan-quota.mjs`'s working-tree diff (see `git status`) predates this session; not made here.
 Still stuck at layer 63/94 as of this update, cause not yet diagnosed.
 
+### 2026-08-09 20:10 WIB — ✅ THE VAULT GATE DESIGN IS SIGNED OFF. Next job is the PORT.
+
+**His words: *"okay i want u to make the wave little bit slower and we done bro"*.** Wave is now
+**1.90s** and on a slider (1.0–3.8s). **The design phase of JOB 6 is CLOSED — do not reopen it,
+do not offer new directions.** What remains is engineering.
+
+**Everything downstream now DERIVES from the wave** rather than being hard-coded: gather starts
+at `T_WAVE + T_WAVE_DUR*0.9`, and the two text lines, the exit and the app entry are all anchored
+to `FORMED = T_GATHER + 1.70`. Drag the slider and the whole sequence stays in proportion. **That
+is the shape to port — one number, everything else in terms of it.**
+
+**THE NUMBERS TO HARD-CODE, all his, all measured on the sliders:**
+`background spacing 26 · letter density 7 · name size 0.10 · wave 1.90s`
+(variation A's, if it is ever revived: sphere spacing 38, sphere size 0.46.)
+
+**`public/sounds/vault-b.mp3` is retimed to match and is the one to ship** — tok at 3.51s where
+the name completes, four ticks at 5.71s as the letters leave, release at 5.9s. **It only fits the
+1.90s wave.** If he moves that slider before the port, the sound needs regenerating; the
+generator is a plain Node PCM script plus ffmpeg, both used several times today.
+
+**▶ THE PORT IS THE NEXT JOB, and it is bigger than the animation.** `src/` still has none of
+this. The Security Check modal at `src/App.jsx:3439-3618` is **five modes wearing one shell** —
+standard login, first-time setup, recovery, OTP and unlock — and **setup is emerald, OTP is
+entirely blue**, against the palette law. Porting only the unlock leaves the law half-kept.
+Also unresolved for the port: **a phone has no hover**, so press-and-drag must reveal the field
+(implemented in the preview, must survive the port) or the gate is a black rectangle on mobile.
+
 ### 2026-08-09 19:45 WIB — the panel now becomes the wave, and the name leaves letter by letter
 
 **His idea, and it fixed a weakness I had not named: the login panel had no exit at all.** It
