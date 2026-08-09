@@ -808,6 +808,44 @@ are never worth rescuing.
 
 ## LOG — newest first, older entries live in `git log` for this file
 
+### 2026-08-10 02:30 WIB — the gate WORKS (his screenshot proves it), and T7's real cause found
+
+**HIS NAME CAME OUT OF THE DOTS.** He sent a screenshot of ALDI formed in orange dots with the
+two lines above it. The port is functionally done. Fixes off that screenshot, all committed:
+spaces restored (`b549893`), second line reworded to **"KPM App access unlocked"** at his
+instruction, panel widened on desktop (`119ab32`).
+
+**🔴🔴 T7 HAS NEVER BEEN A UI BUG AND EVERY NOTE ABOUT IT IS WRONG.** He reported tonight:
+*"i cant login through my phone it said login failed firebase error auth/unauthorized domain"*.
+That is **Firebase Auth rejecting the HOST**, not a missing button. `localhost` is authorised by
+default; **`192.168.1.141` is not**, and nothing in `src/` can change that — it is a Firebase
+Console setting, and only Aldi can make it. **The sign-in button added for T7 in
+`BiohazardTheme.jsx` could never have fixed this**; a visible button cannot beat an unauthorised
+domain. **Do not "fix" T7 in code again.** The action is his, once:
+Console → project `cello-inventory-manager` → Authentication → Settings → Authorized domains →
+Add `192.168.1.141` (bare host, no `http://`, no `:5173`). **It breaks again if his router hands
+the PC a different IP** — a DHCP reservation or a static IP is the permanent answer.
+
+**Everything phone-shaped is blocked behind that**, including his report that *"capybara on my
+phone is still cutted"*. Investigated as far as code allows: the mascot is
+`fixed bottom-0 right-0 z-[99999]` with `w-32 h-32 md:w-48` (`CapybaraMascot.jsx:275,279`) and
+its bubble is `absolute bottom-[112%] right-[6%]`, `min-w-[140px]` — **nothing there clips on its
+own, so the likely cause is an ancestor with a `transform`, which makes `fixed` resolve against
+that ancestor and lets its `overflow` clip.** Unproven. **Ask him for a phone screenshot** once
+he can log in; guessing at this without seeing it wastes a round.
+
+**🔑 He said the sidebar button is still on the login screen — the code says otherwise and was
+measured saying otherwise** (`navButtonInDOM: false`, canvas painted at its old corner). Most
+likely a page loaded before the fix. **Tell him to hard-refresh before investigating**, and do not
+re-fix it on the report alone.
+
+**QUEUED AT HIS INSTRUCTION, NOT NOW:** *"the dashboard theme looks not in line with the theme
+that we have, maybe we should rework the dashboard UI as well, we'll do it after the sales
+terminal"*. **Sales terminal first. Do not start the dashboard.**
+
+**Do not click "Lock Terminal" in his live session to reach the gate.** He is signed in and
+working; it costs him a password entry. Verify from a page state he is already in.
+
 ### 2026-08-10 02:15 WIB — the gate is VERIFIED IN THE RUNNING APP. `036ead3`
 
 **🔑 THE BLOCKER THAT HAS COST THREE SESSIONS IS HALF GONE. `read_page` and `javascript_tool`
