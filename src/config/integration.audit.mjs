@@ -603,10 +603,15 @@ check(G16, 'App renders the gate behind the card', /<VaultGate\b/.test(appCode),
   'the component existing is not the same as it being mounted');
 
 /* Three things Aldi caught by looking at the running gate, which no check had been watching. */
-check(G16, 'the nav button is hidden while the gate is up',
-  /showAdminLogin \? 'hidden'/.test(strip(themeSrc)),
-  'it sits in its own stacking context, so raising the gate z-index does NOT cover it, and it '
-  + 'opens nothing while the gate is modal — a live control on top of his login screen');
+/* Asserts it is NOT RENDERED, not merely class-hidden. The class version was measured live in
+   the dev server with `hidden` on the element and computed display still `flex` — Tailwind
+   generates on demand and the dev stylesheet had not caught up. The production CSS does carry
+   `.hidden{display:none}`, so a class-hide would pass a build check and still be visible to him
+   while developing. Not rendering it cannot fail that way, and it leaves the tab order too. */
+check(G16, 'the nav button is not rendered at all while the gate is up',
+  /\{!showAdminLogin && \(/.test(strip(themeSrc)),
+  'it sits in its own stacking context, so raising the gate z-index does NOT cover it, and a '
+  + 'class-based hide is only as reliable as the stylesheet that happens to be loaded');
 check(G16, 'App hands the theme the flag that hides it', /showAdminLogin=\{showAdminLogin\}/.test(appCode),
   'hiding it in the theme does nothing if the prop never arrives');
 check(G16, 'the gate backdrop is solid black', /z-\[9999\] bg-black flex/.test(appCode),

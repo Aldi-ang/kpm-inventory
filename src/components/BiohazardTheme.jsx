@@ -89,18 +89,26 @@ export default function BiohazardTheme({
             <div className="hide-on-print absolute inset-0 bg-[url('https://wallpapers.com/images/hd/resident-evil-background-2834-x-1594-c7m6q8j3q8j3q8j3.jpg')] bg-cover bg-center opacity-40 pointer-events-none"></div>
             <div className="hide-on-print absolute inset-0 bg-gradient-to-r from-black via-black/90 to-transparent pointer-events-none"></div>
 
-            <button 
-                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                aria-label={isMobileMenuOpen ? 'Close navigation' : 'Open navigation'}
-                aria-expanded={isMobileMenuOpen}
-                /* Hidden while the vault gate is up. Raising the modal's z-index does not fix
-                   this: the button sits in its own stacking context, so z-[9999] on the gate
-                   never wins against z-[100] here. There is also nothing for it to open — the
-                   gate is modal — so it is a dead control sitting on top of his login screen. */
-                className={`hide-on-print fixed top-3 left-3 z-[100] p-2.5 bg-orange-600/90 backdrop-blur-md text-white rounded-xl shadow-[0_0_15px_rgba(234,88,12,0.5)] border border-orange-400/50 active:scale-90 transition-all ${showAdminLogin ? 'hidden' : ''}`}
-            >
-                {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
-            </button>
+            {/* NOT RENDERED while the vault gate is up, rather than hidden with a class.
+                The class route was tried first and did not work in the DEV server: the prop
+                arrived and React put `hidden` on the element, but computed display stayed
+                `flex` because the dev stylesheet had no matching rule yet — Tailwind generates
+                on demand and had not caught up with the new class. The production CSS does
+                contain `.hidden{display:none}`, so that route would have worked in a build and
+                failed in front of him while developing. Not rendering depends on no CSS at all,
+                and takes a dead control out of the tab order as well as out of sight.
+                Raising the gate's z-index is not an option either: this button sits in its own
+                stacking context, so the gate's z-[9999] never beats its z-[100]. */}
+            {!showAdminLogin && (
+                <button
+                    onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                    aria-label={isMobileMenuOpen ? 'Close navigation' : 'Open navigation'}
+                    aria-expanded={isMobileMenuOpen}
+                    className="hide-on-print fixed top-3 left-3 z-[100] p-2.5 bg-orange-600/90 backdrop-blur-md text-white rounded-xl shadow-[0_0_15px_rgba(234,88,12,0.5)] border border-orange-400/50 active:scale-90 transition-all"
+                >
+                    {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+                </button>
+            )}
 
             {/* 🔑 THE WAY IN. Aldi could not log in on his phone at all — his words: "there is no
                 login button everywhere, i cant choose google account nor entering the password".
