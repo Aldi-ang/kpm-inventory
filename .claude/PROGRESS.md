@@ -721,6 +721,36 @@ No kpm-inventory code touched. This session was babysitting a Qwen3-235B downloa
 `plan-quota.mjs`'s working-tree diff (see `git status`) predates this session; not made here.
 Still stuck at layer 63/94 as of this update, cause not yet diagnosed.
 
+### 2026-08-09 18:30 WIB — one field, one sphere, and his ending won
+
+**He caught a real structural cheat and was right about the fix.** His words: *"the background is
+vanished slowly while there is another new dot that come and make a sphere"*. There genuinely
+were two particle systems — the flat field faded while a separate sphere faded in. **Now every
+grid dot IS a lattice point**: built once per resize, carrying both a grid position and a place
+on the Fibonacci sphere, and the unlock just moves it. One array, no second set.
+
+**He also rejected the burst ending and proposed a better one, which I took:** *"at the end of
+the unlock animation there only be dark space and a matrix words, u can just do outro for the
+matrix sentence and move on with the intro for the UI"*. **The reason it works is worth keeping:
+both ends are black, so there is no seam to get wrong.** The burst was joining two spaces that
+never shared a camera — that is why it read as disconnected. The words now scramble OUT the same
+way they scrambled in.
+
+**"Silau" — glare — was the whole hover complaint, and the fix was deletion.** He sent two
+screenshots: dim crisp dots = wanted, blown-out orange bloom = hated. **The bloom sprite and
+`globalCompositeOperation='lighter'` are both gone entirely**, not tuned down. Dots are flat
+2.4px circles; the pointer raises ALPHA and nothing else. *"it doesnt emit light but make the
+background clear to see thats the point"*. Base opacity is **0.055** — invisible until revealed.
+
+**The sound's "beep" was sustain, not pitch.** The bell was a chord ringing 0.85s; a note held
+that long IS a beep. Now a single tok at 262 Hz plus one octave, **decay 0.055s**. Bed stretched
+to 5.6s to carry the sphere, plus a 74 Hz release when it lets go. `vault.mp3` now 66.5 KB.
+
+**A verification lesson, mine:** two of my nine checks failed on the first run because they
+grepped the whole HTML and matched my own explanatory PROSE — the word "burst" in a paragraph
+about removing the burst. **Scan the code, not the document that describes it.** Re-run against
+the extracted script: 9/9.
+
 ### 2026-08-09 15:55 WIB — the unlock is his reference sphere now. Base is draft D, unchanged.
 
 **He sent a 9.7s screen recording and it settled the design.** *"lets go back to DRAFT D since
