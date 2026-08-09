@@ -1,8 +1,10 @@
 # PROGRESS — read this, search for nothing
 
 **Updated: 2026-08-10 05:08 WIB** · branch `phase0-solid-ground` · last code commit: run `git log -1`
-(**🔴 NEW BUG, NOT INVESTIGATED — see "OPEN BUG: vault button dead on phone" right below.**
-Session stopped at 95% plan quota before any work started. Nothing was changed for it.)
+(**✅ THAT PHONE-BUTTON BUG IS FIXED — `d366acc`. A concurrent session wrote it up as
+"NOT INVESTIGATED" and that entry is STALE; it was the keyboard, not the layout.** ·
+**WAITING ON HIM: pick a panel outro — artifact 76cd529a** · then the quest-log list in LOG ·
+audit 202/202)
 (**JOB 6 IS DONE AND LIVE ON HIS PHONE — audit 196/196, last gate commit `351e380`** ·
 timing signed off at 8.5s · card, spaces, panel size, mascot and password-flash all fixed ·
 phone login fixed in the Firebase Console, NOT in code · quest log sorted, four tests his ·
