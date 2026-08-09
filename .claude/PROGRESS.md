@@ -104,6 +104,22 @@ on any verdict meant the click that decided something was BROKEN also removed th
 saying why. **A test answered during the CURRENT visit now stays on screen**, with a gold line
 saying it locks away on reload. Session-scoped only — nothing persisted, the screen still empties.
 
+**🔴🔴 JOB 7 — HE WANTS THE ARK-LAB AMBIENCE ACROSS THE WHOLE APP. NOT STARTED. ASK FIRST.**
+His words, 2026-08-09 15:15: *"well what i love towards this theme is the ambience that the ark
+lab offers in requiem, well made color comfortable in eyes whether in dark or light mode"* and
+*"i want this idea and mindset could be implemented towards my app"*.
+- **This CONTRADICTS a locked decision and he has to break the tie himself.** The palette law on
+  record is *"more black and white, gold for some small thing thats fine"* (his words, T9,
+  2026-08-08). An ARK-lab app is the opposite: warm gold everywhere, black nowhere. **Do not
+  quietly widen the gold. Ask which rule wins.**
+- **The real constraint he named is the useful one: *"comfortable in eyes whether in dark or
+  light mode"*.** The app HAS a `darkMode` toggle (`BiohazardTheme.jsx`, `setDarkMode`). Any ARK
+  palette has to work in both, which is why it cannot just be "make everything amber".
+- What is NOT in dispute: **no blue, no green** stays. Amber/rust/cream does not touch that law.
+- Suggested first step when he answers: a token pass — define the ARK ramp once
+  (shadow/wall/structure/lamp/gold/hot/cream) and prove it on ONE screen he uses daily before
+  touching seventeen views.
+
 **🔴 JOB 6 — REDESIGN THE MASTER VAULT GATE. ✅ HE CHOSE **DRAFT D** ON 2026-08-09 14:40.**
 **The direction is settled — do not re-pitch it.** Refined version, his to judge:
 `https://claude.ai/code/artifact/a0da45ac-6c9a-409f-bd6a-128c2defb4cc`. What D now is: the
@@ -452,8 +468,10 @@ it never happens twice. Answer, then ask which of the waiting items he wants to 
 | Next-stop design artifact | `https://claude.ai/code/artifact/8feebaa4-f8a2-414d-a4a6-2c642a27af48` |
 | Vault-gate drafts round 1 — ALL REJECTED | `https://claude.ai/code/artifact/3125ccf5-2445-4b64-94e7-419987fb4d0f` |
 | Vault-gate drafts round 2 (D/E/F) — **he picked D** | `https://claude.ai/code/artifact/5e09bebe-e627-41dc-a493-bdf6fcc4435a` |
-| **★ THE CHOSEN DESIGN — refined D, lab lights + name** | `https://claude.ai/code/artifact/a0da45ac-6c9a-409f-bd6a-128c2defb4cc` |
-| Its source, to port from | scratchpad `draft-d-refined.html` (canvas lamp + scramble, no libraries) |
+| Refined D (superseded by the ARK version) | `https://claude.ai/code/artifact/a0da45ac-6c9a-409f-bd6a-128c2defb4cc` |
+| **★★ CURRENT — ARK lab, sound, app handoff** | `https://claude.ai/code/artifact/48f5d0b1-3ca2-4d8d-b3d8-b1753c4519b9` |
+| Its source, to port from | scratchpad `draft-d-ark.html` (bloom sprites + scramble, no libraries) |
+| **The unlock sound — MADE, in the repo, NOT wired** | `public/sounds/vault.mp3` (33.9 KB, 2.75s) |
 | The signed-out sign-in (T7 fix) | `src/components/BiohazardTheme.jsx:~101` (`!user &&`, z-80) |
 | The gate itself — five modes, not one | `src/App.jsx:3439-3618` (`showAdminLogin`) |
 
@@ -702,6 +720,31 @@ No kpm-inventory code touched. This session was babysitting a Qwen3-235B downloa
 `D:\LLAMA` (separate project, AirLLM), unrelated to JOB 2/4/5 above — still open, unchanged.
 `plan-quota.mjs`'s working-tree diff (see `git status`) predates this session; not made here.
 Still stuck at layer 63/94 as of this update, cause not yet diagnosed.
+
+### 2026-08-09 15:20 WIB — the ARK lab round, a real mp3, and a request that outgrew the login
+
+**His note said "the dots are not bright enough". His screenshots said something bigger.** The
+RE9 ARK lab is not a black room with lights in it — it is a hazy warm chamber that is FULL of
+light: lit brown-gold walls, warm shadows, visible air. Turning the dots up on a black ground
+would have produced fairy lights. The ground warmed up with them. **When a note names one knob
+but the reference shows a whole room, believe the reference.**
+
+**Brightness is done with pre-rendered bloom sprites, not `shadowBlur`.** One radial gradient is
+drawn to an offscreen canvas at boot and blitted per dot under `globalCompositeOperation
+= 'lighter'`. shadowBlur recomputes a blur for every dot every frame; at 400 dots that is the
+exact cost Lite Mode exists to avoid. **Cache the glow, do not recompute it.**
+
+**`public/sounds/vault.mp3` is real and in the repo — 33.9 KB, 2.75s, synthesised to the beats**
+(52 Hz thud at 0.00, riser 90→390 Hz at 0.16, shimmer at 0.70, chime at 1.62, closing door at
+2.28). Made with a Node PCM generator plus ffmpeg, which IS installed here. **It is deliberately
+NOT wired into `useSound.js`** — the design is not approved yet, and an unused asset is cheaper
+to delete than a wired one is to unpick.
+
+**The handoff into the app reuses the app's OWN boot animation** (`reRequiem`, `.boot-1..4`,
+already in `BiohazardTheme.jsx`) rather than inventing a second one.
+
+**Then the ask outgrew the screen: he wants the ARK ambience app-wide.** See JOB 7 — it
+contradicts his own "more black and white" rule and only he can break that tie.
 
 ### 2026-08-09 14:45 WIB — he chose D, and the gate now has emergency lighting and his name
 
