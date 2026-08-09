@@ -1,7 +1,7 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-09 20:40 WIB** · branch `phase0-solid-ground` · last code commit: run `git log -1`
-(vault-gate design SIGNED OFF — next session ports it; quest log still owes his last report)
+**Updated: 2026-08-09 20:55 WIB** · branch `phase0-solid-ground` · last code commit: run `git log -1`
+(gate design signed off · quest log sorted · four tests waiting on him · next job is the PORT)
 
 **Aldi clears the session every time he starts a new one. This file is the ONLY thing that
 survives. If it is not current, the work is lost.** Write it before context runs low, not after.
@@ -86,10 +86,10 @@ with the dots**, never as a separate CSS animation — that second clock caused 
 npm run build; node src/config/integration.audit.mjs
 ```
 
-**Then: he runs T5, T7, T8 and the new T11 in the quest log** — the four sitting blank and
-waiting. T5/T8 test the sound that only started working in `1c1423e`; **T11 is the rebuilt unlock
-screen from JOB 4, which he has not seen yet.** T11 was added to group T on 2026-08-09 and the
-artifact republished to the same URL; `load()`'s backfill is what makes adding an id safe.
+**Then: he runs T6, T7, T10 and H2b** — the only four on his screen, all handed back under tag
+`redo-2026-08-09c` (see the table above). **T7 needs his phone**: `npm run dev -- --host`, then
+`http://192.168.1.141:5173/` on the same wifi. Adding an id to that file is only safe because of
+`load()`'s backfill — keep it.
 Untouched and ready after that: **JOB 2** (the full app review, never started) and the six
 JOB 5 items.
 
