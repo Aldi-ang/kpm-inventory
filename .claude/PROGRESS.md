@@ -1,6 +1,8 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-10 02:55 WIB** · branch `phase0-solid-ground` · last code commit: run `git log -1`
+**Updated: 2026-08-10 02:44 WIB** · branch `phase0-solid-ground` · last code commit: run `git log -1`
+(**🔴 NEW BUG, NOT INVESTIGATED — see "OPEN BUG: vault button dead on phone" right below.**
+Session stopped at 95% plan quota before any work started. Nothing was changed for it.)
 (**JOB 6 IS DONE AND LIVE ON HIS PHONE — audit 196/196, last gate commit `351e380`** ·
 timing signed off at 8.5s · card, spaces, panel size, mascot and password-flash all fixed ·
 phone login fixed in the Firebase Console, NOT in code · quest log sorted, four tests his ·
@@ -36,6 +38,30 @@ last state is already in front of him before he touches a tool. He must never go
 hunting for "where did we leave off" again — that hunt is what cost Aldi 60% once.
 
 If this file and the repo disagree, **the repo wins, and fixing this file is job one.**
+
+## 🔴 OPEN BUG: vault button dead on phone (reported 2026-08-10 02:44 WIB)
+
+His words, VERBATIM: *"open the vault button on my phone still not working btw i press and the
+animation wont even started"*
+
+Status: **reported only. Not reproduced, not diagnosed, no code read, no fix attempted.**
+Session hit 95% plan quota at the moment he reported it and stopped by his standing rule.
+
+"still not working" = this is the SECOND report. Commit `d366acc` ("Make the vault openable on a
+phone") was supposed to fix it and did not, or did not cover this path. **Start from that diff.**
+
+The animation not starting at all means the press is not reaching the handler — a tap/pointer
+event problem or an overlay swallowing the touch — NOT an animation-timing problem. Do not go
+tuning the wave. [likely — no check run this session]
+
+First commands next session:
+```
+git show --stat d366acc
+graphify query "vault gate open button press handler"
+```
+
+Also still open and unstarted: **redesign the panel OUTRO animation** (he asked for it; it was
+the "next job" before this bug landed). The bug outranks it — he cannot use the screen at all.
 
 ## ▶ DO THIS NEXT
 
