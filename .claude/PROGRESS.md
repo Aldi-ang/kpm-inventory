@@ -1,7 +1,9 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-09 20:55 WIB** · branch `phase0-solid-ground` · last code commit: run `git log -1`
-(gate design signed off · quest log sorted · four tests waiting on him · next job is the PORT)
+**Updated: 2026-08-09 20:45 WIB** · branch `phase0-solid-ground` · last code commit: run `git log -1`
+(gate design signed off · **the palette half of the port is DONE, `6a3aaca`, audit 175/175** ·
+quest log sorted · four tests waiting on him · the CANVAS half of the port is the next job)
+*The previous header read 20:55; the real clock was 20:39. Trust `date`, not this stamp.*
 
 **Aldi clears the session every time he starts a new one. This file is the ONLY thing that
 survives. If it is not current, the work is lost.** Write it before context runs low, not after.
@@ -73,12 +75,18 @@ checked directly against the file instead — 10/10.*
 - **E1 cave/torches and E6 capybara handoff** — still blocked on 📎 the two screenshots stuck in
   his browser. He must drag them into chat.
 
-**2. PORT THE GATE INTO THE APP.** `src/` has none of it. `src/App.jsx:3439-3618` is **five modes
-wearing one shell** — standard login, first-time setup, recovery, OTP, unlock — and **setup is
-emerald, OTP is entirely blue**, against the palette law. Porting only the unlock leaves the law
-half-kept. Two traps carried from the preview: **a phone has no hover**, so press-and-drag must
-reveal the field or the gate is a black rectangle on mobile; and **draw the ring on the canvas
-with the dots**, never as a separate CSS animation — that second clock caused two bugs today.
+**2. PORT THE GATE INTO THE APP.** The port has two halves. **The PALETTE half is DONE —
+`6a3aaca`, 2026-08-09 20:42.** Setup is no longer emerald, the OTP screen is no longer blue, the
+biometric button and the strength meter's STRONG state went gold/cream with them, and **audit
+group 14 now reads the WHOLE modal instead of only the `isUnlocking` branch** (172 → 175 checks,
+each proved to fail on the pre-fix markup). Do not re-audit that; the check asserts it every build.
+
+**The CANVAS half is untouched and is the real work.** `src/` still has none of the lamp, the dot
+wave, the scramble or the sound. `src/App.jsx:3439-3640` is **five modes wearing one shell** —
+standard login, first-time setup, recovery, OTP, unlock. Two traps carried from the preview:
+**a phone has no hover**, so press-and-drag must reveal the field or the gate is a black rectangle
+on mobile; and **draw the ring on the canvas with the dots**, never as a separate CSS animation —
+that second clock caused two bugs on 2026-08-09.
 
 **First command when he returns:**
 
@@ -749,6 +757,24 @@ are never worth rescuing.
 ---
 
 ## LOG — newest first, older entries live in `git log` for this file
+
+### 2026-08-09 20:45 WIB — the palette law reached the other four gate modes. `6a3aaca`
+
+**He asked for the login-screen fixes with under 20% of the plan quota left, so the canvas port
+was deliberately NOT started** — it cannot finish and commit inside that, and his own standing
+rule bans starting one that can't. The palette half can, and it is now shipped.
+
+**The finding worth keeping: a guard that watches one of five modes reports a law as kept when it
+is half-kept.** Audit group 14 said "no green while the vault opens" and passed — because it read
+only the `isUnlocking` branch. First-time setup was still `emerald-500` and the entire OTP screen
+was still `blue-500` for a full day after the unlock went gold, with the audit green the whole
+time. **Scope a check to the whole feature, not to the branch you happened to be editing.**
+
+Also dead on arrival and now gone: the strength meter's `shadow-[0_0_10px_emerald]` — `emerald` is
+not a CSS color, so that glow had never rendered once.
+
+Three new checks, each **proved to fail on `HEAD~` before being kept** (old markup reports
+`green=true blue=true`, new reports `false/false`). Build green, audit **175/175**.
 
 ### 2026-08-09 13:35 WIB — unrelated: helped Aldi with a stuck local LLM download
 
