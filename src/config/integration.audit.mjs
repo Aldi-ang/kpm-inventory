@@ -493,6 +493,31 @@ check(G14, 'neither unlock path sits on a 2.5s timer', !/setIsUnlocking\(true\)[
 check(G14, 'the unlock animation respects reduced motion', /prefers-reduced-motion[\s\S]{0,300}kpm-unlock/.test(appCode),
   'a motion-sensitive user must be able to opt out of the sweep');
 
+/* ── 15. there is always a way in ──────────────────────────────────────────
+   Aldi could not sign in on his phone and his testing stopped dead there: *"i cant even login,
+   there is no login button everywhere, i cant choose google account nor entering the password"*.
+   Two independent causes, both guarded here. The only SYSTEM LOGIN lived at the bottom of the
+   sidebar, and the sidebar starts CLOSED below 1024px — so the way into the app was behind an
+   unlabelled orange square in the corner. And the redirect fallback fired on exactly one error
+   code while mobile browsers refuse popups under several. */
+const G15 = '15. There is always a way in';
+const themeSrc = fs.readFileSync('src/components/BiohazardTheme.jsx', 'utf8');
+
+check(G15, 'a signed-out user sees a way in without opening the drawer',
+  /!user\s*&&\s*\([\s\S]{0,900}?onClick=\{onLogin\}/.test(themeSrc),
+  'the only login was inside a sidebar that starts closed on a phone');
+check(G15, 'that way in is not inside the sidebar',
+  /fixed inset-0 z-\[80\][\s\S]{0,900}?onClick=\{onLogin\}/.test(themeSrc),
+  'it must render over the app, not in the panel that is hidden on a phone');
+check(G15, 'no green on the shell a signed-out user is looking at',
+  !/emerald/.test(themeSrc),
+  'palette law: the SYSTEM LOGIN button used to be emerald');
+check(G15, 'a refused popup falls back to redirect on more than one error code',
+  /POPUP_FAILED[\s\S]{0,400}?popup-closed-by-user[\s\S]{0,400}?operation-not-supported/.test(appCode),
+  'only auth/popup-blocked was handled; mobile refuses popups under several codes');
+check(G15, 'the fallback actually redirects', /POPUP_FAILED\.includes\(error\.code\)[\s\S]{0,120}?signInWithRedirect/.test(appCode),
+  'the list must be wired to signInWithRedirect, not just declared');
+
 /* ── report ──────────────────────────────────────────────────────────────── */
 let last = '';
 for (const r of results) {

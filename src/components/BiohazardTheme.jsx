@@ -98,6 +98,32 @@ export default function BiohazardTheme({
                 {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
             </button>
 
+            {/* 🔑 THE WAY IN. Aldi could not log in on his phone at all — his words: "there is no
+                login button everywhere, i cant choose google account nor entering the password".
+                The only SYSTEM LOGIN lived at the bottom of this sidebar, and the sidebar starts
+                CLOSED on a phone (see the width check above), so the way into the app was hidden
+                behind a small unlabelled square in the corner. A logged-out user has nothing else
+                to do here — the main area is empty and every tab is gated — so the door belongs
+                in the middle of the screen, not in a drawer.
+
+                z-[80] on purpose: under the sidebar (90) and its toggle (100), so opening the
+                drawer still works and this never traps anyone. */}
+            {!user && (
+                <div className="hide-on-print fixed inset-0 z-[80] flex flex-col items-center justify-center gap-6 bg-black/92 px-6 text-center">
+                    <div>
+                        <div className="text-[10px] uppercase tracking-[0.35em] text-[#6b6157] font-mono">{appSettings?.companyName || 'KPM Inventory'}</div>
+                        <h2 className="mt-2 text-2xl font-black uppercase tracking-[0.2em] text-[#f0e2c0] font-mono">Sign in to continue</h2>
+                        <p className="mt-3 max-w-xs text-[11px] leading-relaxed text-[#6b6157] font-mono">Use the Google account your name is registered under.</p>
+                    </div>
+                    <button
+                        onClick={onLogin}
+                        className="flex w-full max-w-[260px] items-center justify-center gap-3 border border-[#ff9d00] bg-transparent py-4 font-mono text-xs font-bold uppercase tracking-[0.2em] text-[#ff9d00] transition-[background-color,transform] duration-150 ease-out hover:bg-[#ff9d00]/10 active:scale-[0.975]"
+                    >
+                        <LogIn size={15} /> Sign in with Google
+                    </button>
+                </div>
+            )}
+
             {/* On a phone it slides over the content; on a desk it is in the flow, so closing
                 it has to give its WIDTH back rather than just translate away — otherwise the
                 space it occupied stays empty and the toggle achieves nothing. Padding has to
@@ -176,7 +202,8 @@ export default function BiohazardTheme({
                     ) : (
                         <button 
                             onClick={onLogin}
-                            className="w-full flex items-center justify-center gap-2 bg-emerald-900/30 hover:bg-emerald-800/50 text-emerald-500 border border-emerald-800 py-3 rounded uppercase text-xs font-bold tracking-widest transition-all"
+                            /* Was green. Palette law forbids it; gold outline instead. */
+                            className="w-full flex items-center justify-center gap-2 bg-transparent hover:bg-[#ff9d00]/10 text-[#ff9d00] border border-[#ff9d00]/50 py-3 uppercase text-xs font-bold tracking-widest transition-[background-color,transform] duration-150 ease-out active:scale-[0.975]"
                         >
                             <LogIn size={14}/> System Login
                         </button>
@@ -197,8 +224,12 @@ export default function BiohazardTheme({
 
                     <div>
                         <div className="flex items-center gap-2 mb-0.5">
-                            <div className={`h-1.5 w-1.5 rounded-full ${user ? 'bg-emerald-500 animate-ping' : 'bg-red-500'}`}></div>
-                            <span className={`text-[11px] font-mono uppercase ${user ? 'text-emerald-500' : 'text-red-500'}`}>{user ? "System Active" : "Disconnected"}</span>
+                            {/* Was a green pinging dot. Green is against the palette law, and the
+                                ping looped forever to report a state that never changes while you
+                                are looking at it. Calm cream when connected; red still earns
+                                attention when it is not. */}
+                            <div className={`h-1.5 w-1.5 rounded-full ${user ? 'bg-[#f0e2c0]' : 'bg-red-500 animate-pulse'}`}></div>
+                            <span className={`text-[11px] font-mono uppercase ${user ? 'text-[#f0e2c0]/70' : 'text-red-500'}`}>{user ? "System Active" : "Disconnected"}</span>
                         </div>
                         <div className="text-2xl text-white font-bold tracking-[0.15em] uppercase text-shadow-glow">
                             {activeTab.replace(/_/g, ' ')}

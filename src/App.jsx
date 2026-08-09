@@ -2329,8 +2329,22 @@ const handleGitHubMirror = async () => {
         } catch (error) {
             console.error("Login Error:", error);
             
-            // Smart Fallback ONLY for embedded browsers (like clicking a link inside Instagram/Line)
-            if (error.code === 'auth/popup-blocked') {
+            /* Fall back to a full-page redirect whenever the POPUP is what failed, not only when
+               the browser admitted to blocking it. Aldi could not sign in on his phone; mobile
+               Chrome and Safari refuse popups under several different codes, and only
+               'popup-blocked' was handled — every other one dead-ended on a red error toast with
+               no second way in. A redirect works in all of them.
+               'popup-closed-by-user' is in this list deliberately: on mobile the popup is often
+               closed by the browser itself, not by him, and offering the redirect costs a person
+               who really did cancel one extra tap. */
+            const POPUP_FAILED = [
+                'auth/popup-blocked',
+                'auth/popup-closed-by-user',
+                'auth/cancelled-popup-request',
+                'auth/operation-not-supported-in-this-environment',
+                'auth/web-storage-unsupported',
+            ];
+            if (POPUP_FAILED.includes(error.code)) {
                 signInWithRedirect(auth, googleProvider);
             } else {
                 notify(`Login Failed: ${error.message}`); 
