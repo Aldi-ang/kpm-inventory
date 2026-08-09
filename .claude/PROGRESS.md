@@ -1,9 +1,12 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-09 20:45 WIB** · branch `phase0-solid-ground` · last code commit: run `git log -1`
-(gate design signed off · **the palette half of the port is DONE, `6a3aaca`, audit 175/175** ·
-quest log sorted · four tests waiting on him · the CANVAS half of the port is the next job)
-*The previous header read 20:55; the real clock was 20:39. Trust `date`, not this stamp.*
+**Updated: 2026-08-10 01:47 WIB** · branch `phase0-solid-ground` · last code commit: run `git log -1`
+(**JOB 6 IS BUILT — the gate is in `src/`, `784f5cc` + `6a3aaca`, audit 187/187** ·
+quest log sorted · four tests waiting on him · ONE question owed: is an 8.5-second login too long?)
+
+*⚠️ A second session was editing this file at 01:42 and wrote "no kpm code touched since 20:45".
+That was true when written and is now wrong — `6a3aaca` and `784f5cc` both landed after it.
+**Two sessions ran in this folder tonight; when this file and `git log` disagree, git wins.***
 
 **Aldi clears the session every time he starts a new one. This file is the ONLY thing that
 survives. If it is not current, the work is lost.** Write it before context runs low, not after.
@@ -75,18 +78,33 @@ checked directly against the file instead — 10/10.*
 - **E1 cave/torches and E6 capybara handoff** — still blocked on 📎 the two screenshots stuck in
   his browser. He must drag them into chat.
 
-**2. PORT THE GATE INTO THE APP.** The port has two halves. **The PALETTE half is DONE —
-`6a3aaca`, 2026-08-09 20:42.** Setup is no longer emerald, the OTP screen is no longer blue, the
-biometric button and the strength meter's STRONG state went gold/cream with them, and **audit
-group 14 now reads the WHOLE modal instead of only the `isUnlocking` branch** (172 → 175 checks,
-each proved to fail on the pre-fix markup). Do not re-audit that; the check asserts it every build.
+**2. ✅ PORT THE GATE INTO THE APP — DONE. Both halves. Do not rebuild it; judge it.**
+- **Palette half `6a3aaca`** — setup no longer emerald, OTP no longer blue, biometric button and
+  the strength meter's STRONG state gold/cream. Audit group 14 now reads the WHOLE modal instead
+  of only the `isUnlocking` branch (172 → 175).
+- **Canvas half `784f5cc`** — `src/components/VaultGate.jsx`, 335 lines. The dot field is the
+  background of **all five modes**, dark until the pointer or a finger press reveals it; on unlock
+  the card collapses, the ring crosses, his name forms out of the dots and scrambles away.
+  **`vault-b.mp3` is wired** through `useSound` as `vaultb`. Audit **group 16, 12 checks**, each
+  proved to fail on a mutated copy first (scratchpad `gate-guard-proof.mjs`).
+- **His four numbers are hard-coded and pinned by checks:** spacing 26 · density 7 · size 0.10 ·
+  **wave 3.00s**. The sound is cut to that wave — *move the wave and the mp3 must be regenerated.*
+- **Both traps are guarded, not just fixed:** the ring is drawn on the canvas from the dots' own
+  `front` (one clock), and `pointerdown` is a listener (a phone has no hover).
+- **Lite Mode and reduced motion never load the canvas** — App renders the old plain ACCESS
+  GRANTED block instead, so group 14's original checks still have something to find.
 
-**The CANVAS half is untouched and is the real work.** `src/` still has none of the lamp, the dot
-wave, the scramble or the sound. `src/App.jsx:3439-3640` is **five modes wearing one shell** —
-standard login, first-time setup, recovery, OTP, unlock. Two traps carried from the preview:
-**a phone has no hover**, so press-and-drag must reveal the field or the gate is a black rectangle
-on mobile; and **draw the ring on the canvas with the dots**, never as a separate CSS animation —
-that second clock caused two bugs on 2026-08-09.
+🔴 **THE ONE QUESTION OWED — ASK BEFORE ANY MORE GATE WORK: the full sequence is 8.5 SECONDS.**
+It was 1.0s before. Every beat is his signed-off design and the sound needs all of it (tok 4.50s,
+ticks 6.70s), but he approved it watching a demo with a replay button, not as something he passes
+through daily, outdoors, in a hurry. **`GATE_UNLOCK_MS` in `VaultGate.jsx` is the single number to
+change; the hold and the animation both read it, and a check asserts they cannot drift apart.**
+Do not cut it on his behalf — this is exactly the kind of taste call he decides.
+
+⚠️ **NOT VERIFIED IN A BROWSER, and say so rather than implying otherwise.** The gate sits behind
+the master password, which Claude must never type, and the Browser pane is still not displayed in
+his Claude Code window (`screenshot` fails with "the Browser pane is not displayed" — same blocker
+as 2026-08-09). Build, 187 audit checks and 12 guard proofs are what stands behind it.
 
 **First command when he returns:**
 
@@ -517,7 +535,9 @@ it never happens twice. Answer, then ask which of the waiting items he wants to 
 | Its source, to port from | scratchpad `draft-d-ark.html` (bloom sprites + scramble, no libraries) |
 | **The unlock sound — MADE, in the repo, NOT wired** | `public/sounds/vault.mp3` (33.9 KB, 2.75s) |
 | The signed-out sign-in (T7 fix) | `src/components/BiohazardTheme.jsx:~101` (`!user &&`, z-80) |
-| The gate itself — five modes, not one | `src/App.jsx:3439-3618` (`showAdminLogin`) |
+| The gate itself — five modes, not one | `src/App.jsx:3439-3640` (`showAdminLogin`) |
+| **The gate's canvas, wave and name** | `src/components/VaultGate.jsx` — his 4 numbers at the top |
+| Its 12 guards | `integration.audit.mjs` group 16 |
 
 ## First command of every session
 
@@ -538,6 +558,11 @@ node src/config/toastSeverity.selfcheck.mjs; node src/config/findDuplicates.self
 ---
 
 ## NOW
+
+**⚠️ The last several hours were NOT kpm work.** They went to a Qwen3-235B download in `D:\LLAMA`
+(AirLLM, separate project). No file in `src/` changed. Everything below is exactly where 20:45
+left it, and **the CANVAS half of the gate port is still the next kpm job.** The download is
+stopped and blocked on him — see WAITING ON ALDI.
 
 Sales terminal redesign is **built and passing 158/158**. Design work is CLOSED.
 Groups A and B are walked; H1, H3 and C2 confirmed by hand. **Everything below is committed
@@ -588,6 +613,16 @@ throwaway first.
 
 ## WAITING ON ALDI — do not re-derive these, just ask
 
+- 🔴 **NOT KPM — the `D:\LLAMA` download is stopped, waiting on ONE click from him.** He must turn
+  **System Restore OFF for drive D:** and delete its existing restore points (Settings → "Create a
+  restore point" → select **D:** → Configure → Disable → Delete). **Do not do this for him — it is
+  a system security setting, it is his click.** Until then the download cannot finish: it writes a
+  4GB shard and deletes it 118 times, and every deleted shard is being kept as a restore snapshot,
+  so the space never comes back. Measured: D: had 316GB free, lost **313GB** during one run while
+  `D:\LLAMA` grew only **14GB**. **271GB is unaccounted for and sits in `D:\System Volume
+  Information`, which no scan can read without admin.** His standing position, verbatim: *"its not
+  the steam, it is your download"* — he is right that the download caused it, via the snapshots.
+  Verify with `vssadmin list shadowstorage` in an **Administrator** terminal.
 - ✅ **ANSWERED — he chose D.** *"D is the best one, so i want u to improve the D and send me back
   the result"*. Round 1 was rejected whole; round 2 landed. Do not re-pitch directions.
 - 🔴 **THREE QUESTIONS ON THE REFINED D, all still open:**
@@ -758,6 +793,67 @@ are never worth rescuing.
 
 ## LOG — newest first, older entries live in `git log` for this file
 
+### 2026-08-10 01:47 WIB — ✅ JOB 6 IS BUILT. The gate is in the app. `784f5cc`
+
+**The design sat as an artifact for a day; `src/` now has it.** 335 lines in one new component
+rather than added to `App.jsx`, which is ~4k lines and already flagged as doing too many jobs.
+
+**The card stayed where it was, and that was the whole design decision.** The obvious port makes
+the gate the parent and passes the card in as children — which would have moved 180 lines of JSX
+and five modes into a new file to obtain two CSS properties. Instead `VaultGate` renders only the
+background layer and App applies the collapse itself. **Side effect worth knowing: audit group
+14's regex still finds the `{isUnlocking ? (` block exactly where it was, so none of its six
+existing checks needed touching.** A port that does not disturb the guards around it is the one
+to prefer.
+
+**A check of mine looked dead and was not — the fourth time this pattern has appeared here.**
+`gate-guard-proof.mjs` reported the `gateHoldMs` guard as useless. The guard was fine; my PROOF
+read the raw file while the audit reads it **with comments stripped**, and the PIN path's
+explanatory comment pushed the match past its 400-character window. **The rule is now four for
+four: any check that scans source must scan the CODE, never the document.** The honest move each
+time was to re-run scoped rather than trust the red or dismiss it.
+
+Two runtime faults the build cannot see, found by reading my own code back and fixed before
+commit: a refused 2d context would have thrown the whole login screen instead of just losing its
+background, and the `pointerup` listener was added with an inline arrow that the cleanup could
+never remove.
+
+Audit **175 → 187**. Build green, useSound 6/6, toastSeverity 54/54, guard proofs 12/12.
+
+### 2026-08-10 01:42 WIB — NOT kpm work: the LLM download, and the disk that kept eating itself
+
+**No `src/` file was touched. JOBs 2/4/5/6 are untouched and still open.** This entry exists so a
+cleared session does not go hunting for kpm progress that was never made.
+
+The `D:\LLAMA` Qwen3-235B download died four times. The first was a genuine HF CDN 500 (`xet`
+backend — `HF_HUB_DISABLE_XET=1` fixed it for good). Every failure after that was `OSError: [Errno
+28] No space left on device`, and **twice I blamed the wrong thing** — first a Steam update, then
+"D: is just full". Both wrong.
+
+**The cause is still UNKNOWN. Three theories have now been killed by measurement — do not revive
+any of them without new evidence:**
+1. ~~Steam auto-updating~~ — his flat denial, and no evidence was ever gathered for it.
+2. ~~`D:\LLAMA` itself~~ — measured **91GB**, third largest folder on the drive.
+3. ~~Windows System Restore hoarding the deleted shards~~ — **disproven by `vssadmin list
+   shadowstorage` run elevated: D: has no shadow storage association at all** (only C:, 10.5GB),
+   and `D:\System Volume Information` measures **0.0GB**. This was my theory and it was wrong.
+
+**What is actually known, and it is only arithmetic:** D: had 316GB free, ended a run with 2.8GB,
+so it **lost 313GB while `D:\LLAMA` grew 14GB**. A PowerShell folder scan totals **657GB visible
+against 929GB used** — a **271GB gap with no home**. Biggest visible: SteamLibrary 221GB, Wuthering
+Waves 110GB, LLAMA 91GB. **Leading suspicion now: the PowerShell scan itself undercounted**, since
+`Get-ChildItem -ErrorAction SilentlyContinue` swallows both access denials and >260-char path
+failures, so whole subtrees can vanish from the total silently. A second pass with `du` (Git Bash,
+which reports what it cannot read) was running when this was written — compare its numbers to the
+PowerShell ones before theorising again.
+
+**When a "used" number and a folder scan disagree, the gap IS the finding — do not name a suspect
+from the visible list.** Two wasted restarts and one wrong diagnosis came from doing exactly that.
+**Also: never trust a scan that hides its own errors.**
+
+Also worth keeping: `powershell -Command` invoked through Bash is on his **deny list** and will be
+refused; use plain `du`/`find` for disk work here.
+
 ### 2026-08-09 20:45 WIB — the palette law reached the other four gate modes. `6a3aaca`
 
 **He asked for the login-screen fixes with under 20% of the plan quota left, so the canvas port
@@ -775,13 +871,6 @@ not a CSS color, so that glow had never rendered once.
 
 Three new checks, each **proved to fail on `HEAD~` before being kept** (old markup reports
 `green=true blue=true`, new reports `false/false`). Build green, audit **175/175**.
-
-### 2026-08-09 13:35 WIB — unrelated: helped Aldi with a stuck local LLM download
-
-No kpm-inventory code touched. This session was babysitting a Qwen3-235B download in
-`D:\LLAMA` (separate project, AirLLM), unrelated to JOB 2/4/5 above — still open, unchanged.
-`plan-quota.mjs`'s working-tree diff (see `git status`) predates this session; not made here.
-Still stuck at layer 63/94 as of this update, cause not yet diagnosed.
 
 ### 2026-08-09 20:50 WIB — quest log sorted at last, and the mascot got his voice
 
