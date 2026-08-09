@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-09 03:35 WIB** · branch `phase0-solid-ground` · last code commit `139a15c`
+**Updated: 2026-08-09 03:45 WIB** · branch `phase0-solid-ground` · last code commit `139a15c`
 (quest log locked after his round-2 report)
 
 **Aldi clears the session every time he starts a new one. This file is the ONLY thing that
@@ -246,12 +246,32 @@ duration on a UI element, against Emil's "UI animations stay under 300ms".
 **🔁 STANDING RULE, his instruction 2026-08-08:** *"update the quest log everytime i give u copy
 reports, if the test already done just lock it"*. **Every COPY REPORT he pastes = do this, in
 this order, without being asked:**
+**🔴 THE SORTING RULE, which he gave on 2026-08-09 and which supersedes the two earlier ones.**
+His words: *"it is just i dont know whether all the test that i have done is reviewed and fix or
+not… if fix then u can lock it, but if u want me to review it again after the fix then u can let
+it stay visible, great if u can clear all the comments and screenshot for redo it again"*.
+**It keys off the state of the FIX, never off the verdict.** Every answered test is exactly one of:
+
+| State | What to do |
+|---|---|
+| Fixed **and** proven by Claude | **Lock it.** He never sees it again |
+| Fixed, but only HIS eyes can judge it | **Hand it back BLANK** — verdict, note and screenshots all wiped, plus a magenta line saying why |
+| Not fixed yet | **Lock it**, and carry it in JOB 5. Nothing for him to do until it is fixed |
+
+A stale comment is worse than none: he would read a note about the OLD behaviour while looking
+at the new one. His words are never lost — they are quoted here and in git.
+
+**Every COPY REPORT he pastes = do this, in this order, without being asked:**
 1. Read the report, fix or file what it found.
-2. **Reopen every test whose behaviour you changed** — new `RETEST_TAG` and a new id list in
-   `.claude/kpm-test-quest.html`. **NEVER reuse a tag.** Keep his notes and screenshots; only
-   the verdict is cleared. A test you changed but left locked is one he will never re-run.
-3. Leave BROKEN and WEIRD visible; only `good` and `skip` lock.
-4. Republish to the SAME artifact URL, run the scratchpad quest-log checks, commit.
+2. Sort every affected test by the table above.
+3. Edit the three migrations in `.claude/kpm-test-quest.html`, **each with a NEW tag — never
+   reuse one.** They MUST stay in this order, and the file says so: **retest clears → verified
+   fills → redo wipes.** Each wins over the one before.
+   `REDO_REASONS` must stay declared **above `let state = load()`** or load() hits a dead-zone const.
+4. **Everything he answered locks; only unanswered stays on screen.** Groups still holding a
+   problem show a red "N need fixing" chip, so nothing goes missing.
+5. Republish to the SAME artifact URL, run BOTH scratchpad suites
+   (`questcheck.mjs`, `verifycheck.mjs`), commit.
 The lock is applied at report time, never mid-round — locking mid-round is what made his
 mis-clicked tickbox expensive.
 
