@@ -721,6 +721,32 @@ No kpm-inventory code touched. This session was babysitting a Qwen3-235B downloa
 `plan-quota.mjs`'s working-tree diff (see `git status`) predates this session; not made here.
 Still stuck at layer 63/94 as of this update, cause not yet diagnosed.
 
+### 2026-08-09 18:50 WIB — pitch black, two sliders, and a rule made of dots
+
+**Four more corrections, all landed.** *"this design is almost perfect"* — so these are the last
+knobs, not a redesign.
+- **Pitch black until hover.** Base alpha was 0.055 and he could still see the grid. It is now
+  **0**, with the lamp as the only light in existence. **⚠️ A PHONE HAS NO HOVER** — when this is
+  ported, touch/drag must reveal, or the login screen is a black rectangle on mobile. Not solved
+  in the preview; solve it in the port.
+- **Two sliders, because he asked to measure it himself rather than describe it back to me:**
+  `Dot spacing` (16–46px, rebuilds the field, default 27) and `Sphere size` (0.24–0.46 of the
+  short edge, default 0.36). **Whatever numbers he lands on are the ones to hard-code.**
+- **The rule under his name is drawn from DOTS now.** His objection: *"the orange line under
+  agent name is annoying because it just spawned out of nowhere"*. 26 dots picked evenly across
+  the array leave the sphere at 2.9s, line up, brighten to 0.95 and **turn cream** — his idea,
+  *"change the dot into other color try it maybe it looks cool"*. **Nothing on this screen
+  arrives without travelling** — that is the rule the whole design now follows.
+- **The words were unreadable on a dense sphere.** A soft radial scrim fades in WITH them, so
+  they get a ground without a box appearing. Spreading the dots may make it unnecessary; the
+  slider will tell him.
+
+**🔴 A VERIFICATION HABIT THAT BIT TWICE IN ONE SESSION.** Two check runs reported failures that
+were **my checks being wrong, not the code**: once a regex matched my own explanatory prose in
+the same file, once it was whitespace-sensitive against code I had reformatted. **Scan the
+extracted script, not the document, and normalise whitespace before matching.** Both times the
+honest move was to re-run scoped rather than to trust or dismiss the red.
+
 ### 2026-08-09 18:30 WIB — one field, one sphere, and his ending won
 
 **He caught a real structural cheat and was right about the fix.** His words: *"the background is
