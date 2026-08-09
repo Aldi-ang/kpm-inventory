@@ -808,6 +808,35 @@ are never worth rescuing.
 
 ## LOG — newest first, older entries live in `git log` for this file
 
+### 2026-08-10 02:15 WIB — the gate is VERIFIED IN THE RUNNING APP. `036ead3`
+
+**🔑 THE BLOCKER THAT HAS COST THREE SESSIONS IS HALF GONE. `read_page` and `javascript_tool`
+WORK WITHOUT THE BROWSER PANE BEING DISPLAYED.** Only `screenshot` needs compositing. Every note
+saying "blocked on the Browser pane" was over-broad — **the DOM, computed styles, and even canvas
+pixels are all reachable right now.** Use them. Ask for the pane only when the actual question is
+"what does it LOOK like".
+
+**Verified live, gate open, on his own dev server:** canvas mounted 859×653 · overlay
+`rgb(0,0,0)` · card `rgba(4,3,2,.9)` on `rgba(231,112,15,.2)` at 320px · field underline-only,
+bottom border `rgb(231,112,15)`, text `rgb(247,233,200)`, letter-spacing 5.46px · SECURITY CHECK,
+ACCESS VAULT and BIOMETRIC OVERRIDE all absent · nav button absent from the DOM.
+
+**THE PHONE PATH IS PROVEN, which no static check could do.** A `pointerdown` with
+`pointerType:'touch'` — no mouse, no hover — took the field from **0 lit pixels to 5,986**,
+centred at (208,325) against a touch at (215,327). The 7px is the dot grid. His phone will work.
+
+**His "taking too long" was a dead port.** My preview server had died; the pane's tab was pointed
+at nothing. His own dev server on **5173 answers in 5ms**. **Check the port is listening before
+diagnosing anything else** — `netstat` + `curl -w %{time_total}` settled it in one turn.
+
+**A fix that passes a build check and still fails in front of him is the worst shape there is.**
+The nav button was first hidden with a `hidden` class. The prop arrived, React put the class on
+the element, computed display stayed `flex`. Cause: Tailwind generates on demand and the DEV
+stylesheet had not caught up — **the production CSS does contain `.hidden{display:none}`**, so a
+build-time check would have passed while he kept seeing the button. It is now simply not
+rendered. **I also stated the wrong cause first ("Tailwind never emitted .hidden") and corrected
+it after grepping the built CSS — check the artifact before naming a cause.**
+
 ### 2026-08-10 02:01 WIB — he looked at the gate, and the port had done half the job. `ae341e7`
 
 **"timing is fine"** — the 8.5s sequence is signed off. That question is closed.
