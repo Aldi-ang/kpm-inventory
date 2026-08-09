@@ -104,7 +104,22 @@ on any verdict meant the click that decided something was BROKEN also removed th
 saying why. **A test answered during the CURRENT visit now stays on screen**, with a gold line
 saying it locks away on reload. Session-scoped only — nothing persisted, the screen still empties.
 
-**🔴 JOB 6 — REDESIGN THE MASTER VAULT GATE. DRAFTS ARE PUBLISHED; HE OWES ONE LETTER.**
+**🔴 JOB 6 — REDESIGN THE MASTER VAULT GATE. ✅ HE CHOSE **DRAFT D** ON 2026-08-09 14:40.**
+**The direction is settled — do not re-pitch it.** Refined version, his to judge:
+`https://claude.ai/code/artifact/a0da45ac-6c9a-409f-bd6a-128c2defb4cc`. What D now is: the
+pointer is a LAMP (inverse-square falloff, canvas `shadowBlur` only on lit dots, amber→gold→rust,
+never white — his *"emergency light, lab lights kinda theme… inspiration from resident evil game
+labs"*), a failing-fluorescent flicker, and an unlock rebuilt as a POWER-UP: black for 130ms,
+emergency lights igniting outward from the centre, then **"Welcome back" + HIS AGENT NAME
+resolving out of scrambling characters** — his ask, from a matrix-text component he sent.
+**Two things about that component were deliberately not copied:** its `#00ff00` green (against
+the palette law; RE lab lighting is amber and red anyway, so nothing is lost) and its
+`motion`/framer dependency (the scramble is ~20 lines of plain JS; a library to animate five
+letters is not worth the bundle on a field phone).
+**AMBIGUITY RESOLVED, flag it if wrong:** he wrote *"i dont still want it to be in theme with our
+app tho"* — read as *"I DO still want it in theme"*, which is why the palette law was kept.
+
+**The original brief, kept because it names all five modes that still need doing:**
 His ask, 2026-08-09: *"i think we need to rework the whole login screen and make sure that we are
 in theme with the apps right now, we need to rework the background, features that is viewable and
 login animation from the scratch again this is the best time to use /design /emil-design-eng
@@ -436,7 +451,9 @@ it never happens twice. Answer, then ask which of the waiting items he wants to 
 | The "ACCESS GRANTED" animation he wants replaced | `src/App.jsx:3397-3418` (`isUnlocking` branch) |
 | Next-stop design artifact | `https://claude.ai/code/artifact/8feebaa4-f8a2-414d-a4a6-2c642a27af48` |
 | Vault-gate drafts round 1 — ALL REJECTED | `https://claude.ai/code/artifact/3125ccf5-2445-4b64-94e7-419987fb4d0f` |
-| **Vault-gate drafts round 2 — awaiting his letter** | `https://claude.ai/code/artifact/5e09bebe-e627-41dc-a493-bdf6fcc4435a` |
+| Vault-gate drafts round 2 (D/E/F) — **he picked D** | `https://claude.ai/code/artifact/5e09bebe-e627-41dc-a493-bdf6fcc4435a` |
+| **★ THE CHOSEN DESIGN — refined D, lab lights + name** | `https://claude.ai/code/artifact/a0da45ac-6c9a-409f-bd6a-128c2defb4cc` |
+| Its source, to port from | scratchpad `draft-d-refined.html` (canvas lamp + scramble, no libraries) |
 | The signed-out sign-in (T7 fix) | `src/components/BiohazardTheme.jsx:~101` (`!user &&`, z-80) |
 | The gate itself — five modes, not one | `src/App.jsx:3439-3618` (`showAdminLogin`) |
 
@@ -509,12 +526,21 @@ throwaway first.
 
 ## WAITING ON ALDI — do not re-derive these, just ask
 
-- 🔴 **PICK A LETTER: D, E or F** from round 2 —
-  `https://claude.ai/code/artifact/5e09bebe-e627-41dc-a493-bdf6fcc4435a`. Round 1 was rejected
-  whole: *"i dont like any of those draft u give me, make more high end elegant animation, u can
-  do some research how to make human satisfied as well for extra work"*. **No code on that screen
-  until he chooses**, and the chosen one carries through all five modes of the modal.
-- ❓ **Sound on the unlock?** `commit.mp3` is 0.18s and would land on the sweep. Not asked before.
+- ✅ **ANSWERED — he chose D.** *"D is the best one, so i want u to improve the D and send me back
+  the result"*. Round 1 was rejected whole; round 2 landed. Do not re-pitch directions.
+- 🔴 **THREE QUESTIONS ON THE REFINED D, all still open:**
+  - **Is 1.8s too long?** It is once per session so a beat is affordable, but he is the one who
+    sees it daily. Cutting the ignite takes it to ~1.1s.
+  - ✅ **ANSWERED BY THE CODE, not by him: use `user.displayName`.** It is the Google account's
+    real name and the codebase already uses it with a fallback in six places
+    (`App.jsx:1467,1478,1627,1412`). Ship `user.displayName?.split(' ')[0]` uppercased, falling
+    back to the email prefix only if Google has no name. **Never show the raw prefix by default —
+    it would greet him as "ADIKARYASUKSES99".** He still has to confirm his Google name is what
+    he wants on screen.
+  - **Sound?** `commit.mp3` is 0.18s and would land on the hairline sweep at 1180ms.
+- 🔴 **NOTHING IS IN `src/` FOR JOB 6 YET.** The refined D exists only as an artifact. Building it
+  means porting the canvas lamp + the scramble into the modal, then carrying the look through
+  setup, recovery, OTP and the unlock.
 - 📎 **TWO SCREENSHOTS ARE STUCK IN HIS BROWSER** — E1 and E6. COPY REPORT sends text only, so he
   has to drag the images into chat. **Both jobs are blocked without them.**
 
@@ -676,6 +702,23 @@ No kpm-inventory code touched. This session was babysitting a Qwen3-235B downloa
 `D:\LLAMA` (separate project, AirLLM), unrelated to JOB 2/4/5 above — still open, unchanged.
 `plan-quota.mjs`'s working-tree diff (see `git status`) predates this session; not made here.
 Still stuck at layer 63/94 as of this update, cause not yet diagnosed.
+
+### 2026-08-09 14:45 WIB — he chose D, and the gate now has emergency lighting and his name
+
+**Round 2 landed: *"D is the best one"*.** The two notes he gave with it are the design now —
+the pointer had to become a **light source** rather than a hover state (inverse-square falloff,
+glow only on lit dots so a weak phone survives it, amber→gold→rust and never white, plus a
+failing-fluorescent flicker), and the unlock had to stop being *"too simple and nothing special"*.
+It is now a power-up: black, emergency lights igniting outward, then **his agent name resolving
+out of scrambling characters** — his own idea, from a component he sent.
+
+**The reusable part: his reference shipped `#00ff00` and a framer dependency, and both were
+dropped without losing anything he wanted.** Resident Evil lab lighting is amber and red, so the
+palette law and the reference agreed once the green was ignored; and a library to animate five
+letters is not worth the bundle. **Take the idea from a reference, not its implementation.**
+
+Nothing in `src/` yet. Three questions block the build — duration, WHICH name field, and sound —
+and the name one matters most: the raw email prefix would greet him as "ADIKARYASUKSES99".
 
 ### 2026-08-09 14:30 WIB — his phone could not log in at all, and round 1 of the drafts died
 
