@@ -4292,16 +4292,23 @@ const handleGitHubMirror = async () => {
       )}
 
       {/* GLOBAL WIDGETS */}
-      <CapybaraMascot 
-          isDiscoMode={isDiscoMode} 
-          message={showCapyMsg ? capyMsg : null} 
-          onClick={() => cycleMascotMessage()} 
-          staticImageSrc={appSettings?.mascotImage} 
-          user={user} 
-          
-          // --- ADD THIS LINE ---
-          scale={appSettings?.mascotScale || 1} 
-      />
+      {/* The mascot belongs to the app, not to the door. His words, 2026-08-10: "i want u to
+          hide the capybara on the login screen, capybara should shows when we are already log
+          in". Two gates, and BOTH have to be past: signed in with Google (`user`) AND through
+          the Master Vault (`!showAdminLogin`) — on his phone he was signed in already, so the
+          mascot was standing next to the vault gate telling him to run a backup he could not
+          reach. Not rendered rather than hidden with a class: the same class-hide was tried on
+          the nav button hours earlier and was still visible in the running app. */}
+      {user && !showAdminLogin && (
+        <CapybaraMascot
+            isDiscoMode={isDiscoMode}
+            message={showCapyMsg ? capyMsg : null}
+            onClick={() => cycleMascotMessage()}
+            staticImageSrc={appSettings?.mascotImage}
+            user={user}
+            scale={appSettings?.mascotScale || 1}
+        />
+      )}
     </BiohazardTheme>
   );
 }

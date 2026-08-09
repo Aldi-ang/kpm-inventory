@@ -605,6 +605,10 @@ check(G16, 'the scramble letters keep a fixed cell, so spaces survive',
   /minWidth\s*=\s*'0\.62em'/.test(gateCode),
   'these spans are flex items — a lone space collapses to zero and "Welcome back" renders as '
   + 'WELCOMEBACK, which is exactly what he saw');
+check(G16, 'the mascot stays out of the login screen',
+  /\{user && !showAdminLogin && \(\s*<CapybaraMascot/.test(appCode),
+  'he saw the capybara standing beside the vault gate on his phone, telling him to run a backup '
+  + 'he could not reach — the mascot belongs to the app, not to the door');
 check(G16, 'the second line names the app, not the vault screen',
   /'KPM App access unlocked'/.test(gateCode) && !/'Master Vault unlocked'/.test(gateCode),
   'his wording: "master vault sentence should be KPM APP instead so kpm app access unlocked"');
