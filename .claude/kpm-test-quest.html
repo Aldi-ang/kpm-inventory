@@ -85,6 +85,12 @@ body::after{
 /* Hidden does not mean forgotten: a group holding a BROKEN or WEIRD says so in red, even when
    the rows themselves are locked away. */
 .chip.bad{background:var(--red);color:#fff}
+/* Why a test he already answered is asking again. Magenta, the same colour the log already
+   uses for "weird", because this is neither a pass nor a failure — it is a re-ask. */
+.redo{
+  border-left:3px solid var(--magenta);background:#1d1620;color:var(--cream);
+  padding:6px 9px;margin:0 0 9px;font-size:10.5px;line-height:1.45;
+}
 .allclear{padding:11px 12px;font-size:11px;color:var(--dim);letter-spacing:.06em}
 
 /* ── one test ────────────────────────────────────────────────────────────── */
@@ -313,6 +319,15 @@ const TESTS = [
  ]},
 ];
 
+/* Declared HERE, above `let state = load()`, because load() runs on that very line and a const
+   declared further down would still be in its temporal dead zone when load() reached for it. */
+const REDO_TAG='redo-2026-08-09';
+const REDO_REASONS={
+  T5:'the strip now animates and makes a sound — you passed this before that existed',
+  T7:'you can reach the app on your phone now: same wifi, http://192.168.1.141:5173/',
+  T8:'the whole point: motion and SFX are in, so your "helpful or annoying" answer may have changed',
+};
+
 const KEY='kpm-test-quest-v1';
 let state = load();
 /* Saved progress is keyed by test id, so a test added AFTER he last opened this page has no
@@ -396,6 +411,31 @@ function load(){
           }
         }
         localStorage.setItem(KEY+'-verified',VERIFIED_TAG);
+      }
+    }catch(e){}
+  }
+
+  /* REDO — runs LAST, and it wins over everything above.
+
+     His rule, and it is a better one than either of the two this file used before, because it
+     keys off the state of the FIX rather than off the verdict: *"if fix then u can lock it, but
+     if u want me to review it again after the fix then u can let it stay visible, great if u
+     can clear all the comments and screenshot for redo it again"*.
+
+     So a test whose fix he still has to judge with his own eyes comes back completely blank —
+     no verdict, no note, no screenshots — because a stale comment describing the OLD behaviour
+     is worse than none when he is looking at the new one. His original words are not lost; they
+     are quoted in .claude/PROGRESS.md and in this file's git history.
+
+     Anything NOT listed here is either already verified or nothing changed under it, so it
+     stays locked. New round means a NEW tag. Never reuse a tag. */
+  if(saved){
+    try{
+      if(localStorage.getItem(KEY+'-redo')!==REDO_TAG){
+        for(const id of Object.keys(REDO_REASONS)){
+          if(s[id]){ s[id].verdict=null; s[id].note=''; s[id].shots=[]; }
+        }
+        localStorage.setItem(KEY+'-redo',REDO_TAG);
       }
     }catch(e){}
   }
@@ -562,7 +602,12 @@ function itemEl(i){
   head.innerHTML='<div class="iid">'+i.id+
                  '<span class="armed-tag"'+(activeId===i.id?'':' hidden')+'>paste here</span></div>'+
                  '<div class="ido">'+esc(i.do)+'</div>'+
-                 '<div class="iex">Expect: <b>'+esc(i.ex)+'</b></div>';
+                 '<div class="iex">Expect: <b>'+esc(i.ex)+'</b></div>'+
+                 /* A row that was wiped and put back would otherwise just look unanswered, and
+                    he would have no idea why the one he already passed is asking again. */
+                 (REDO_REASONS[i.id] && !st.verdict
+                    ? '<div class="redo">↻ back for another look — '+esc(REDO_REASONS[i.id])+'</div>'
+                    : '');
   el.appendChild(head);
 
   const votes=document.createElement('div'); votes.className='votes';
