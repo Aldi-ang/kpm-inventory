@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-09 04:05 WIB** · branch `phase0-solid-ground` · last code commit `1c1423e`
+**Updated: 2026-08-09 04:10 WIB** · branch `phase0-solid-ground` · last code commit `1c1423e`
 (quest log locked after his round-2 report)
 
 **Aldi clears the session every time he starts a new one. This file is the ONLY thing that
@@ -31,6 +31,21 @@ hunting for "where did we leave off" again — that hunt is what cost Aldi 60% o
 If this file and the repo disagree, **the repo wins, and fixing this file is job one.**
 
 ## ▶ DO THIS NEXT
+
+**🔴 STOPPED AT 95% PLAN QUOTA, 2026-08-09 04:10. Reset ~08:18 WIB. Nothing is half-done.**
+Working tree clean, everything committed through `453a9d8`. Answering his last question: **yes,
+the notes were already written** — the SFX causes and the swallowed-notes fix are recorded below.
+**First command when he returns:**
+
+```powershell
+npm run build; node src/config/integration.audit.mjs
+```
+
+**Then: he re-runs T5, T7 and T8 in the quest log** — they are the three sitting blank and waiting,
+and T5/T8 specifically test the sound that only started working in `1c1423e`.
+Untouched and ready after that: **JOB 2** (the full app review, never started) and **JOB 4**
+(the ACCESS GRANTED animation, now an Emil review on his `/review-animations`).
+
 
 **JOB 1 IS DONE — committed `e7f2eab` 2026-08-08. JOB 2 is now the next thing to start.**
 He said: *"option b looks convenience do that instead, anyway lets work on what
