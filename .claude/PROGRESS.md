@@ -1,7 +1,7 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-09 13:35 WIB** · branch `phase0-solid-ground` · last code commit `133f329`
-(the quota meter now mints its own token — the daily cookie paste is dead)
+**Updated: 2026-08-09 13:35 WIB** · branch `phase0-solid-ground` · last code commit `f4c1e9a`-ish (see `git log -1`)
+(his phone can log in again; vault-gate drafts round 2 are out and he owes a letter)
 
 **Aldi clears the session every time he starts a new one. This file is the ONLY thing that
 survives. If it is not current, the work is lost.** Write it before context runs low, not after.
@@ -32,9 +32,18 @@ If this file and the repo disagree, **the repo wins, and fixing this file is job
 
 ## ▶ DO THIS NEXT
 
-**Resumed 2026-08-09 13:16 WIB. Build green, audit 161/161, tree clean at `133f329`.**
-The quota meter no longer needs a pasted cookie — it mints its own 9router token on every run
-(his call, 13:30: *"mint it"*). Read 12% used at 13:35 WIB.
+**2026-08-09 14:30 WIB. Audit 172/172. His second COPY REPORT is in: 48/64, 44 good, 2 broken,
+2 weird. F and G are still untouched — he had not reached them.**
+
+**🔴 THE ONE THING HE IS WAITING ON: pick a letter from the round-2 drafts —
+`https://claude.ai/code/artifact/5e09bebe-e627-41dc-a493-bdf6fcc4435a` (D Field / E Aperture /
+F Weight).** He rejected all of round 1. Nothing gets built on that screen until he chooses.
+
+**🔴 THE QUEST LOG HAS NOT BEEN UPDATED FOR THIS REPORT YET — that is the first job.** His
+standing rule fires on every COPY REPORT and it was not run before the turn ended. The sort is
+already decided: **48 answered tests lock; T10 and H2b come BACK rewritten**, because his note on
+both was that he does not know how to test them — that is my wording failing, not him. New tag,
+never reuse one, and the order in the file stays retest → verified → redo.
 **First command when he returns:**
 
 ```powershell
@@ -426,7 +435,9 @@ it never happens twice. Answer, then ask which of the waiting items he wants to 
 | The published test logger | `https://claude.ai/code/artifact/435e77ee-9f1f-4786-a1df-050156596016` |
 | The "ACCESS GRANTED" animation he wants replaced | `src/App.jsx:3397-3418` (`isUnlocking` branch) |
 | Next-stop design artifact | `https://claude.ai/code/artifact/8feebaa4-f8a2-414d-a4a6-2c642a27af48` |
-| Vault-gate drafts A/B/C (JOB 6) | `https://claude.ai/code/artifact/3125ccf5-2445-4b64-94e7-419987fb4d0f` |
+| Vault-gate drafts round 1 — ALL REJECTED | `https://claude.ai/code/artifact/3125ccf5-2445-4b64-94e7-419987fb4d0f` |
+| **Vault-gate drafts round 2 — awaiting his letter** | `https://claude.ai/code/artifact/5e09bebe-e627-41dc-a493-bdf6fcc4435a` |
+| The signed-out sign-in (T7 fix) | `src/components/BiohazardTheme.jsx:~101` (`!user &&`, z-80) |
 | The gate itself — five modes, not one | `src/App.jsx:3439-3618` (`showAdminLogin`) |
 
 ## First command of every session
@@ -497,6 +508,49 @@ Do not promise a scheduled session a second time without testing the mechanism o
 throwaway first.
 
 ## WAITING ON ALDI — do not re-derive these, just ask
+
+- 🔴 **PICK A LETTER: D, E or F** from round 2 —
+  `https://claude.ai/code/artifact/5e09bebe-e627-41dc-a493-bdf6fcc4435a`. Round 1 was rejected
+  whole: *"i dont like any of those draft u give me, make more high end elegant animation, u can
+  do some research how to make human satisfied as well for extra work"*. **No code on that screen
+  until he chooses**, and the chosen one carries through all five modes of the modal.
+- ❓ **Sound on the unlock?** `commit.mp3` is 0.18s and would land on the sweep. Not asked before.
+- 📎 **TWO SCREENSHOTS ARE STUCK IN HIS BROWSER** — E1 and E6. COPY REPORT sends text only, so he
+  has to drag the images into chat. **Both jobs are blocked without them.**
+
+**HIS OWN WORDS FROM THE 2026-08-09 REPORT — these are the open work items. Verbatim, because a
+summarised request gets asked twice:**
+- **E1 cave/torches** — *"i want u to redesign the torch animation and make it HD, and for the
+  cave i want u to redesign the background, this is the inspiration dont copy this 100%"*
+- **E6 capybara handoff** — *"well i can see his feet still when i dont scroll up, what make it
+  more realistic is that whenever i scroll down and before bottom right capybara shows up, the
+  caveman capybara should outro to the left then the capybara intro from the right then do the
+  opposite when he about to go back to the cave, even better if we put some hovering rock just
+  below the capybara on the right so that capybara on the right have something to stepped into,
+  stepping rock should just stay on the right side and didnt need intro or outro for that, other
+  alternative if not some flying rock is maybe a mine elevator animation on the right looks cool
+  also"*
+- **T9 button** — *"yes but i dont like the design for that button, makes it more expensive and
+  elegant"*
+- **C6 retur** — *"yes, but better if u disabled button and add red strip as well, and btw i like
+  it better when the red strip dissapeared after 3 seconds"*. **Note the second half: he wants
+  THAT strip to auto-fade at 3s.** It is a failure-shaped message, so `toastSeverity.js` makes it
+  sticky. Widen the SUCCESS list for it rather than changing the default.
+- **T6 delete-a-product** — *"question is on the screen by instead of the strip the capybara shows
+  and told me, but its okay, better if u make capybara do the talking SFX"*. **He accepted the
+  capybara reporting it — the ask changed to giving the capybara a talking sound.**
+- **T2 offline queue** — *"i dont know if the app really queue this edit when we are online,
+  because the status is not shown in the flight recorder"*. Same item as JOB 5's first bullet.
+- **H2a** — *"showing the default dashbboard rails when i dont choose the customer from
+  dropdown"*. He marked it GOOD but the note still describes the original H2a complaint.
+- **T10 / H2b — he cannot test them: *"how to test this exactly?"* and *"i dont understand how to
+  test this"*.** These come back REWRITTEN, not re-asked.
+
+- ⚠️ **`context-watch.mjs` still has the wrong denominator and has never been fixed.** It divides
+  by `autoCompactWindow` from `C:/Users/ASUS/.claude/settings.json`, which he set to 1,000,000
+  via `/autocompact 1000k`, so at ~185k used it reports 18% while the UI shows 92% and no tier
+  ever fires. Fix: clamp it (`Math.min(setting, 200_000)`). **Until then do not trust it.** This
+  is the CONTEXT meter — the PLAN quota meter is a different script and works.
 
 - ✅ **DONE — he said "yea save the cookies for us to use".** Credential files written outside the
   repo and the meter is LIVE, verified reading `plan: Claude Code, used 60%, resets in 3h 57m`.
@@ -623,6 +677,31 @@ No kpm-inventory code touched. This session was babysitting a Qwen3-235B downloa
 `plan-quota.mjs`'s working-tree diff (see `git status`) predates this session; not made here.
 Still stuck at layer 63/94 as of this update, cause not yet diagnosed.
 
+### 2026-08-09 14:30 WIB — his phone could not log in at all, and round 1 of the drafts died
+
+**T7 was the important thing in his whole report and it was not a cosmetic bug.** His words:
+*"i cant even login, there is no login button everywhere, i cant choose google account nor
+entering the password and my test stopped here"*. **Two independent causes, both found by reading
+rather than guessing:** the only SYSTEM LOGIN lived at the bottom of the sidebar and the sidebar
+starts CLOSED below 1024px (`BiohazardTheme.jsx:21`), so the way in was behind a small unlabelled
+orange square; and the redirect fallback fired on `auth/popup-blocked` alone
+(`App.jsx:2333`) while mobile browsers refuse popups under several other codes, each dead-ending
+on an error toast. Fixed: a centred sign-in at z-80 for signed-out users, and a five-code
+fallback list wired to `signInWithRedirect`. Audit group 15, five checks, all proved failing on
+the old code first. **172/172. Group F is unblocked — he could not have run it.**
+
+**Round 1 of the vault-gate drafts was rejected outright**: *"i dont like any of those draft u
+give me, make more high end elegant animation"*. The diagnosis worth keeping: **all three varied
+how much to REMOVE, and restraint on its own reads as plain, not expensive.** Round 2 varies
+material and choreography instead — anticipation before the payoff, long deceleration for mass,
+one mover at a time, a landing rather than a fade, and a surface that answers the pointer.
+
+**His reference component pulls Three.js from a CDN.** This app is offline-first with a service
+worker, so that login screen would fail to draw with no internet — precisely when a salesman in
+the field needs it. Draft D reproduces the same dot field on a 2D canvas in ~40 lines, no
+network. Its email/GitHub/Apple buttons were also dropped: accounts here are provisioned by an
+admin and Google is the only way in.
+
 ### 2026-08-09 14:10 WIB — JOB 6 opened: three vault-gate drafts, waiting on one letter
 
 **The brief said "login screen" and meant something else.** Reading the live DOM before designing
@@ -674,231 +753,5 @@ deny that only named Edit. §8 of the skill was reworded to match.
 **Two classifier blocks fired this session and both were correct:** removing my own deny rule
 from `settings.json`, and printing the signing key into the transcript. Neither was worked
 around. If a third fires, that is the system working, not an obstacle.
-
-### 2026-08-08 19:40 WIB — round 2: the fix held, and the mascot's real bug surfaced
-
-**35/64, 31 good. T1–T5 and T8 all GOOD** — the Firestore ack fix works online and offline, the
-strips stack, and on the sticky-by-default question he answered *"not annoying just not well
-made since no animation nor SFX"*. **So the answer to the toast-nagging question is: keep
-sticky-by-default. It was never the problem.** Fixed in `23b4fda`: enter/exit keyframes, two
-sounds (tap fading, error sticky, click on dismiss), and the removal now waits for the exit —
-dropping the node on the click is what made a dismissal read as a glitch.
-
-**T10 stayed BROKEN through my first fix, which is the lesson.** Clearing the overlapping timer
-in App was necessary and not sufficient: the mascot ALSO never cleared `isHiding` when a new
-line arrived, so a `triggerCapy` landing inside the peek timer's exit window made him visible
-again while still wearing `kpm-merch-exit` — **he arrived already playing his exit**. And the
-`message` prop had no exit at all. Both fixed in `CapybaraMascot.jsx`, plus three more
-uncancelled timers of the same class and a `dialogueList` that was a new array every render, so
-the peek effect restarted constantly. **When a timing bug survives a fix, the second cause is
-usually in the other component.**
-
-**T9: too much gold.** His words: *"make sure more black and white, gold for some small thing
-thats fine"*. Worth remembering as a general steer, not just for that button.
-
-**He cannot see screenshots he attaches to the quest log** — they live in his browser and COPY
-REPORT sends text only. He has to drag the image into chat. Say so plainly when he asks.
-
-### 2026-08-08 18:20 WIB — his first real test report, and the button that never worked
-
-**He ran group T. 29/59 answered, 23 good, 2 broken, 4 weird.** Four fixed in `c319b29`, four
-left open as JOB 5 above. **He saw no toast anywhere except the wrong-PIN one** — not because
-the toast was broken, but because the screens he uses report through the mascot, and the one he
-tested hardest never reported at all.
-
-**`handleSaveProduct` awaited `updateDoc`. Firestore settles that promise only on SERVER
-acknowledgement — offline it never settles, neither resolving nor rejecting.** So the panel
-never closed, no message appeared, and the `catch` never ran either. Update Database looked
-stone dead. His words: *"i press update database and the button just didnt do anything"*. The
-data was never at risk — Firestore cached it and replays on reconnect — he simply had no way to
-learn that. **This is the single most reusable finding in the file: never `await` a Firestore
-write on a path that has to update the UI.** Now it races a 1.5s ack window and reports either
-outcome; `logAudit` is no longer awaited either, for the same reason.
-
-**The classifier had the same disease as the bug it guards.** A failed save reads *"X was NOT
-saved. <error>"* — that contains "saved", so unless the error text happened to carry a failure
-word of its own, the message **faded after 3.5 seconds**. Negated past participles now count as
-failures; six real messages from this path are pinned. Self-check 39/39.
-
-**Two mascot paths each set their own 8s hide-timer**, so the first one's timer hid the second
-one's line — a message arriving late in the previous window flashed and vanished unread. One
-shared timer now. His words: *"capybara showing for split second and just outro animation
-away"*.
-
-**Quest log: `render()` derived each group's open/closed state from its position**, and it runs
-on every vote and every pasted screenshot — so answering anything in group C folded C shut and
-reopened the first two groups under his cursor. Open state now lives outside `render()`.
-
-**Then he asked for finished tests to disappear** — *"i want u to locked it, so that i dont have
-to see it again and save some space in my eyes"*, narrowed immediately to *"but of course test
-that u have been confirmed and fix"*. Done in `9b3b661`. **CLEARED means settled, not answered:
-a pass and an untestable go quiet, BROKEN and WEIRD stay on screen** — they are answered and
-still open, and hiding them would bury the only list of what is wrong. One dock button
-(`👁 Cleared`) brings everything back, and the choice persists.
-**The trap in that ask, worth remembering:** eight T tests had been reworded or had their bug
-fixed since he answered them, so a stale GOOD would have been swallowed by the filter he just
-asked for and he would never have been prompted to re-run the thing that changed. Those eight
-are reset to unanswered exactly once, keyed by a tag in localStorage; his notes and screenshots
-are kept. **Adding another round means a NEW tag and a new id list — never reuse a tag.**
-19 checks cover it, including that a re-answer survives the next reload.
-**Then he hit the flaw in it within minutes** — *"dont locked the answer until i give u the copy
-reports because i just accidently press the wrong tickbox"*. Hiding had defaulted to ON, so a
-mis-clicked verdict removed the row instantly and the only way back was a button in the bottom
-bar. **The default is now OFF (`3c8e763`) and three checks pin it — do not flip it back without
-him asking.** The feature is unchanged; he turns it on himself when he is ready. Consider
-offering to turn it on for him only after he has pasted a COPY REPORT.
-
-### 2026-08-08 17:33 WIB — JOB 1 done: 184 alerts → toast, `e7f2eab`. Audit 158/158.
-
-`.claude/session-start-context.md` still printed **115 checks** into every session; it is 158.
-Corrected in the same commit. If that number looks wrong again, it is this line that is stale.
-
-**Quest log updated too (`59e7446`), same URL** — group **T**, 8 tests for the new messages,
-and it now opens on them. **Two bugs fixed in it before publishing:** its `load()` returns
-whatever localStorage holds and every counter reads `state[id].verdict`, so Aldi's saved
-progress — written before T1–T8 existed — would have thrown on the first count and shown him a
-**blank page with his answers apparently gone**. It now backfills unseen ids and repairs
-half-written entries without touching answers it already holds (10 checks against fresh,
-upgraded and corrupt saved state). Its Reset button also used `confirm()`, so on his browser it
-did nothing and said nothing; now it is press-twice. **Any future edit that adds a test group
-must keep that backfill** — adding a group is exactly what makes the crash reachable.
-
-**It was 184, not 180**, across 18 files, and a census first proved every one was a plain
-`alert(...)` call on a single line — no `window.alert`, none inside a comment, none used as a
-callback. That is what made a textual codemod safe instead of an AST pass.
-
-**The design decision that mattered: `notify()` returns undefined and is never awaited.**
-ConfirmGate had to be async because a question must be answered; a report must not. Several
-sites are `return alert(msg)`, and they keep working only because both return undefined. Audit
-group 13 fails the build if anyone makes `notify` async.
-
-**No modal was built, deliberately** — the split he approved needed someone to name which of
-184 messages must block, and he is not here. Instead the toast **stays until clicked unless the
-text is recognisably a success**, which gets the same protection with no second mechanism and
-no per-site judgement. That rule lives in `src/utils/toastSeverity.js` with 33 self-checks.
-The direction is the safety call: sticky-by-default costs a click, fade-by-default loses a
-failure message. **This is the one thing to ask him about after he uses it** — see WAITING ON ALDI.
-
-**Two real bugs were caught by arguing against the work, not by testing it:**
-- Checking "is it a success?" first made *"Could not complete the sync"* fade — it contains the
-  word *complete*. FAILURE is now tested first and wins. The self-check pins it.
-- The crown transfer said "TRANSFER COMPLETE" and called `window.location.reload()` on the very
-  next line. `alert` blocked there; a toast does not, and a reload destroys `ToastHost` with the
-  page — so the only confirmation that ownership of the whole system changed hands would have
-  been wiped in milliseconds. Now delayed 5s, and group 13 bans the immediate form. **That check
-  was proved to FAIL on the pre-fix code before it was kept** — a check never seen failing is
-  not evidence.
-
-**Verified live, not just built:** dev server up, `import('/src/components/Toast.jsx')` in the
-page console fired two real toasts through the mounted host. At 300ms both present
-(`role="alert"` + `role="status"`); at 4200ms the success had cleared itself and the failure was
-still there; clicking removed it; accent `rgb(180,82,74)` on `rgb(20,16,14)`. Palette law holds.
-
-### 2026-08-07 23:0x WIB — 🔴 THE LIMIT THAT MATTERS IS THE 5-HOUR PLAN QUOTA, NOT CONTEXT
-
-**Read this before acting on the entry below it, which chases the wrong thing.**
-
-Aldi, verbatim: *"its not the context window, clear wont fix the problem, im talking about the
-5 hours limit - plan usage limit, dont forget your habits."* He was at **94%** of that.
-
-**The distinction, and why it changes everything:**
-- **Context window** = how full this conversation is. `/clear` empties it, free. `context-watch.mjs`
-  measures this.
-- **5-hour plan usage limit** = a rolling quota on his subscription. **`/clear` does NOT help.**
-  When it runs out he is locked out entirely, mid-work, screen stuck.
-
-**`context-watch.mjs` CANNOT see plan usage.** It reads the transcript file, which only describes
-context. So the 93% tier added earlier today measures the wrong quantity and will never protect
-him from the thing that actually stops him. Do not "fix the denominator" and think it is solved —
-that was a wrong diagnosis made under time pressure and he corrected it.
-
-**So the habit cannot be automated the way it was attempted.** Claude has no way to read plan
-usage. Aldi can see it; Claude cannot. Until a mechanism is found, the rule is:
-- **When he says a percentage, treat it as the plan limit and act immediately** — write
-  `PROGRESS.md`, commit, stop taking new work. Do not ask him to `/clear`; it will not help.
-- Keep committing after every landed piece, so a lockout never costs more than the current step.
-- Worth investigating next session: the `explain-usage` skill and whether any command surfaces
-  plan usage to Claude. If nothing does, say so plainly and keep the manual rule.
-
-**Still-open bug from the same night, folded in here so the LOG stays five entries:**
-**`context-watch.mjs` (the CONTEXT-window meter, not the quota one) has a wrong denominator
-and has never been fixed.** It divides by `autoCompactWindow` from
-`C:/Users/ASUS/.claude/settings.json`; Aldi ran `/autocompact 1000k`, so that value is
-**1,000,000** and the real window is nowhere near it. At ~185k used it computes 18% and stays
-silent while the UI shows 92% — which is why no tier ever fired. Fix: clamp it
-(`Math.min(setting, 200_000)`) or hard-code the real window, then re-run the four-tier
-synthetic-transcript test (method is in `git log` for this file). **Until then its 93% stop
-cannot fire — do not trust it.** The plan-quota meter below is a DIFFERENT script and works.
-
-### 2026-08-08 08:45 WIB — the plan-quota meter is LIVE. Reading 60% used, resets in 3h 57m.
-
-**The route is `GET localhost:20128/api/usage/<connectionId>`.** Claude's connection id is
-`e9d82a7e-4b97-43cc-8da6-6debf41b6752`. Observed live response — these field names are copied,
-not guessed:
-
-```json
-{"plan":"Claude Code",
- "quotas":{"session (5h)":{"used":56,"total":100,"remaining":44,
-                          "remainingPercentage":44,
-                          "resetAt":"2026-08-08T05:40:00.066Z","unlimited":false}}}
-```
-
-**How it was found, because ~25 guessed paths all 404'd:** fetch `/dashboard/quota` (NOT `/quota`),
-read the `static/chunks/app/(dashboard)/dashboard/quota/page-*.js` path out of its HTML, download
-that chunk and grep its API literals. **Stop guessing endpoint names and read the page's bundle.**
-
-`.claude/plan-quota.mjs` is built, registered as a UserPromptSubmit hook beside `context-watch`,
-syntax-checked, verified silent when unconfigured, and its 70/85/95% tiers verified against the
-real shape. It **never** suggests `/clear` for this limit, and every failure path — service down,
-401, non-JSON, missing field — prints **UNKNOWN and why**, never a number it is unsure of.
-
-**It is silent until the credential files exist — see WAITING ON ALDI.** The write was blocked by
-the safety classifier and that block was right.
-
-**Also this session:** Aldi turned on Remote Control and confirmed he can follow work from his
-phone; `claude.ai/code` in a phone browser is the way to message from away, and `RemoteTrigger`
-(cloud routines, verified reachable, currently zero configured) is the way to run work that does
-not depend on his PC — unlike the local scheduled task, which failed.
-
-### 2026-08-08 — 9router fully investigated. Only ONE thing is still missing.
-
-**Do not re-probe any of this. It is settled.**
-
-**9router's data lives at** `C:/Users/ASUS/AppData/Roaming/9router/` — `db/data.sqlite` (SQLite,
-live, WAL), plus `auth`, `jwt-secret`, `logs`, `machine-id`, `runtime`. Read it with python3 and
-`file:...?mode=ro&immutable=1` — **sqlite3 CLI is not installed on this machine**, python3 is.
-
-**What the database does NOT have:** the session quota. Checked `providerConnections` for the
-Claude account (`e9d82a7e-4b97-43cc-8da6-6debf41b6752`) — its `data` blob holds only OAuth fields
-(`accessToken`, `refreshToken`, `expiresAt`, `scope`, `modelLock_*`, `testStatus`). **No quota,
-no limit, no reset.** Tables are `_meta, apiKeys, combos, kv, providerConnections, providerNodes,
-proxyPools, requestDetails, settings, sqlite_sequence, usageDaily, usageHistory`.
-
-**Why `usageHistory` cannot substitute:** it only logs traffic 9router actually proxies. Its
-newest row is `2026-08-07T01:50` from `opencode`. **Aldi's Claude Code sessions do not route
-through 9router**, so his real plan burn is invisible to it. Computing the window from this table
-would report near-zero while he is at 90%. Do not build that.
-
-**Therefore the Quota Tracker fetches the number live from Anthropic** using the stored OAuth
-token, and the only sane way in is 9router's own `/api/quota`.
-
-**Credentials — what has been ruled out:**
-- The `sk-…` inference key: valid for `/v1/models`, **rejected by every `/api/*` account route**.
-- `odysseus_session=…` cookie **alone: still 401.** It needs the `auth_token` JWT beside it.
-- No rate-limit response headers exist anywhere.
-- **Claude in Chrome is NOT connected**, so his logged-in browser cannot be borrowed to read it.
-
-**THE ONE MISSING PIECE — ask him for the full `auth_token` cookie value.** In DevTools, on any
-`localhost:20128` request, the Cookie header holds
-`odysseus_session=…; auth_token=eyJhbGciOiJIUzI1NiJ9.…` — his screenshot cut the JWT off. Easiest:
-right-click the request → **Copy → Copy as cURL**, paste that.
-
-**Deliberately NOT done:** his Anthropic OAuth `accessToken` sits in that SQLite file and could be
-used to call Anthropic directly. **Do not.** Lifting a third-party credential out of local storage
-to make calls he did not ask for is not something to do on inference. Ask.
-
-**When building: the credential goes OUTSIDE the repo** (`C:/Users/ASUS/.claude/`), never in
-`.claude/` inside the project, never in this file. Verified today that the key he pasted is absent
-from both the working tree and full git history (`git log -S`). Keep it that way.
 
 _Older entries live in `git log -p .claude/PROGRESS.md`._
