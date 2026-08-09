@@ -721,6 +721,30 @@ No kpm-inventory code touched. This session was babysitting a Qwen3-235B downloa
 `plan-quota.mjs`'s working-tree diff (see `git status`) predates this session; not made here.
 Still stuck at layer 63/94 as of this update, cause not yet diagnosed.
 
+### 2026-08-09 15:35 WIB — dark room, bright dots: he wanted the ARK light on the DOTS only
+
+**Round 5 was mostly a revert, and the lesson is about scope.** He said the dots were not bright
+enough; I warmed the whole room. His correction: *"apply the light effect for ark lab on the dot
+itself not the animation nor hover effect"*, *"background should be darker just like the effect
+before, and the flashlight should be the same like before"*, and the outward beam was *"crazy
+bright i dont like it"*. **When a note names one element, change that element. Widening it to the
+whole scene reads as ignoring him, even when the wider version is defensible.**
+Reverted: room ground, haze, lamp reach (back to 150), beam intensity (band ×0.38, flood halved).
+Kept and pushed further: the dots themselves — white core `#fffcf4`, additive, own halo.
+
+**🔊 THE SOUND WAS GENUINELY BAD AND HE WAS RIGHT: *"so cheap annoying and really hurt to
+hear"*.** The cause is worth keeping: it had a **2.3/3.1 kHz shimmer under an 11 Hz tremolo**,
+which is both the most ear-fatiguing band and the rhythm of an alarm, plus a noise burst and a
+hard 52 Hz thud. Rebuilt with **nothing above 900 Hz, no noise, no tremolo, no percussion** —
+three sine layers that swell, one clean bell at 1.95s, peak dropped 0.92 → **0.62**.
+**Synthesised sound needs a frequency budget, not just a shape.** `public/sounds/vault.mp3` is
+now 40.8 KB / 3.4s. Still not wired.
+
+**Also slowed, both his notes:** letters scramble ~0.5s each and arrive further apart (name lands
+at 2.1s, on the bell); the app handoff moved 2.6s → 3.5s and its `reRequiem` boot to 0.55s
+staggered 120/340/560/780ms. And "Welcome back" / "Master Vault unlocked" were dim brown on dark
+— *"too dark that i cant see it"* — now cream at 82%/72% and a size larger.
+
 ### 2026-08-09 15:20 WIB — the ARK lab round, a real mp3, and a request that outgrew the login
 
 **His note said "the dots are not bright enough". His screenshots said something bigger.** The
