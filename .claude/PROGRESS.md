@@ -1,10 +1,10 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-10 02:40 WIB** · branch `phase0-solid-ground` · last code commit: run `git log -1`
+**Updated: 2026-08-10 02:55 WIB** · branch `phase0-solid-ground` · last code commit: run `git log -1`
 (**JOB 6 IS DONE AND LIVE ON HIS PHONE — audit 196/196, last gate commit `351e380`** ·
 timing signed off at 8.5s · card, spaces, panel size, mascot and password-flash all fixed ·
 phone login fixed in the Firebase Console, NOT in code · quest log sorted, four tests his ·
-**next: sales terminal, THEN the dashboard rework he asked for**)
+**NEXT JOB: redesign the panel OUTRO animation — he asked, it is not started**)
 
 *⚠️ A second session was editing this file at 01:42 and wrote "no kpm code touched since 20:45".
 That was true when written and is now wrong — `6a3aaca` and `784f5cc` both landed after it.
@@ -808,6 +808,40 @@ are never worth rescuing.
 ---
 
 ## LOG — newest first, older entries live in `git log` for this file
+
+### 2026-08-10 02:55 WIB — phone can open the vault again. `d366acc`. NEXT JOB IS THE PANEL OUTRO
+
+**🔴🔴 THE ONE THING HE IS WAITING FOR — DO THIS FIRST NEXT SESSION.** His words, verbatim:
+*"the animation for the access granted is too quick, we need to add more smooth and better
+animation for the panel outro just before the waves. this animation is too cheap and quick we
+need to redesign the outro animation for the panel do u have any ideas in mind?"* and he named
+`/design /emil-design-eng /ui-ux-pro-max /review-animations /improve-animations /animate`.
+**NOT STARTED — deliberately, at 16% quota, because a design round he has to judge cannot be
+half-delivered.** He has used the word "cheap" about an animation twice now (JOB 4 was the first),
+and both times he was right.
+**WHAT THE OUTRO IS TODAY, so nobody has to go looking:** the card gets
+`opacity-0 scale-[.86]` over `200ms ease` / `420ms cubic-bezier(.16,1,.3,1)`, applied in
+`App.jsx` on the card div. **That is the whole thing — a fade and a shrink, no exit choreography
+at all**, and it is the ONE beat in the gate that was never designed, only ported. The wave that
+follows is 3.0s of craft landing on a 200ms fade.
+**The constraint that makes this hard and must be respected:** `public/sounds/vault-b.mp3` is cut
+to the 3.0s wave, tok at 4.50s, ticks at 6.70s. **A longer outro pushes the wave later and
+desyncs the sound** unless the wave start is moved with it and the mp3 regenerated. `T_WAVE` in
+`VaultGate.jsx` is where the delay before the ring lives.
+
+**✅ THE PHONE BUTTON IS FIXED AND IT WAS THE KEYBOARD, NOT THE LAYOUT.** *"i cant press open the
+vault button on my phone it is just not working"*. **Measured at 375×812 first: the button is
+fully hit-testable and nothing covers it** — so every occlusion/z-index theory was wrong. The
+field had `autoFocus`, so on a phone the keyboard is up before he touches anything and the first
+tap is eaten dismissing it. Now: `autoFocus` only where there is a mouse (`IS_TOUCH`), the field
+and button are a real `<form>` so the phone's return key says **GO**, and
+`touch-action: manipulation` kills the double-tap wait.
+**Two traps that each cost one of his five PIN tries if reintroduced:** the `onKeyDown` Enter
+handler was REMOVED when the form went in (both would fire `handlePinLogin`), and Fingerprint /
+Lost-your-key are explicitly `type="button"` — inside a form they would otherwise submit.
+
+**Also landed:** mascot no longer renders on the login screen (`182d7f8`), master password no
+longer flashes as typed (`351e380`, feature-detected — see the security note in the entry below).
 
 ### 2026-08-10 02:40 WIB — gate shipped and working on his PHONE. Audit 196/196.
 
