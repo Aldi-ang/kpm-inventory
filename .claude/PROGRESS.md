@@ -95,6 +95,28 @@ on any verdict meant the click that decided something was BROKEN also removed th
 saying why. **A test answered during the CURRENT visit now stays on screen**, with a gold line
 saying it locks away on reload. Session-scoped only — nothing persisted, the screen still empties.
 
+**🔴 JOB 6 — REDESIGN THE MASTER VAULT GATE. DRAFTS ARE PUBLISHED; HE OWES ONE LETTER.**
+His ask, 2026-08-09: *"i think we need to rework the whole login screen and make sure that we are
+in theme with the apps right now, we need to rework the background, features that is viewable and
+login animation from the scratch again this is the best time to use /design /emil-design-eng
+/ui-ux-pro-max /impeccable we can use template from 21st dev"*, then *"u can give me some draft
+for me to choose the design that i desire"* and *"make artifacts for the draft"*.
+- **CRITICAL — "the login screen" is NOT the Google sign-in.** He is already signed in as
+  `adikaryasukses99`; the screen he means is the **SECURITY CHECK modal**, `showAdminLogin` in
+  `src/App.jsx:~3439–3618`. Confirmed by reading the live DOM: ACCESS VAULT / BIOMETRIC OVERRIDE /
+  LOST KEY / RESTRICTED ACCESS. Do not go rebuild `handleLogin` (`App.jsx:2314`, a Google popup).
+- **Three drafts, live and playable:** `https://claude.ai/code/artifact/3125ccf5-2445-4b64-94e7-419987fb4d0f`
+  **A Vault Door** (nothing removed, gold seam parts), **B Blackout** (app gone, CRT scanlines,
+  fewest elements), **C Ember** (rust glow, no box, Enter submits). Current sits first for
+  comparison. Each obeys the locked laws and each has a PLAY UNLOCK.
+- **The modal's remaining palette breaches, found while reading it:** the biometric button is
+  `emerald` (`:3601`), OTP mode is entirely `blue-*` (`:3555–3560`), setup mode is `emerald`
+  (`:3498–3546`), and `BiohazardTheme.jsx:179` has an emerald SYSTEM LOGIN button. **The gate is
+  not one screen — it is five modes**, and only the standard-login mode is drafted. Whichever
+  letter he picks has to be carried through OTP, recovery, setup and the locked-out shell.
+- Skills: `emil-design-eng` and `artifact-design` were used. `ui-ux-pro-max` and `/design` were
+  **not** — they offer palette/type/logo options his locked laws already decide. He was told.
+
 **JOB 2 — a full review of the app. ▶ START HERE.** He asked for a proper one, not a skim. `src/` is finally
 clean (worktrees gone, so searches return one hit each). Known leads already recorded:
 `logAudit`/`triggerCapy` unguarded at 35 sites vs guarded at 29 (latent, not live — App.jsx
@@ -404,6 +426,8 @@ it never happens twice. Answer, then ask which of the waiting items he wants to 
 | The published test logger | `https://claude.ai/code/artifact/435e77ee-9f1f-4786-a1df-050156596016` |
 | The "ACCESS GRANTED" animation he wants replaced | `src/App.jsx:3397-3418` (`isUnlocking` branch) |
 | Next-stop design artifact | `https://claude.ai/code/artifact/8feebaa4-f8a2-414d-a4a6-2c642a27af48` |
+| Vault-gate drafts A/B/C (JOB 6) | `https://claude.ai/code/artifact/3125ccf5-2445-4b64-94e7-419987fb4d0f` |
+| The gate itself — five modes, not one | `src/App.jsx:3439-3618` (`showAdminLogin`) |
 
 ## First command of every session
 
@@ -598,6 +622,21 @@ No kpm-inventory code touched. This session was babysitting a Qwen3-235B downloa
 `D:\LLAMA` (separate project, AirLLM), unrelated to JOB 2/4/5 above — still open, unchanged.
 `plan-quota.mjs`'s working-tree diff (see `git status`) predates this session; not made here.
 Still stuck at layer 63/94 as of this update, cause not yet diagnosed.
+
+### 2026-08-09 14:10 WIB — JOB 6 opened: three vault-gate drafts, waiting on one letter
+
+**The brief said "login screen" and meant something else.** Reading the live DOM before designing
+showed he was already signed in — the screen he wants reworked is the SECURITY CHECK modal, not
+the Google sign-in. Designing from the words alone would have rebuilt the wrong screen entirely.
+**Look at the running app before accepting which screen a brief names.**
+
+Second finding, from reading the modal end to end: **it is five screens wearing one modal** —
+standard login, first-time setup, recovery, OTP and the unlock. Setup is emerald, OTP is entirely
+blue, biometric is emerald. Only standard login is drafted; whichever draft he picks has to be
+carried through the other four or the palette law is half-kept. Recorded in JOB 6 above.
+
+Drafts published and playable. Nothing in `src/` changed for this job yet — no code until he
+picks a letter.
 
 ### 2026-08-09 13:50 WIB — JOB 4 done: the unlock screen was 1.7s of pretending
 
