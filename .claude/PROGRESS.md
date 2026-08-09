@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-09 03:45 WIB** · branch `phase0-solid-ground` · last code commit `139a15c`
+**Updated: 2026-08-09 04:05 WIB** · branch `phase0-solid-ground` · last code commit `1c1423e`
 (quest log locked after his round-2 report)
 
 **Aldi clears the session every time he starts a new one. This file is the ONLY thing that
@@ -56,6 +56,27 @@ it, accent `rgb(180,82,74)` on `rgb(20,16,14)` — palette law intact.
   Now a 5s delay. `signOut()` is fine — the host is a sibling of `<App/>`, so the toast survives
   onto the login screen. Audit group 13 bans the immediate-reload form, and that check was
   proved to FAIL on the pre-fix code before it was kept.
+
+**🔊 THE STRIPS HAD NO SOUND — FIXED `1c1423e`, and the cause was two separate mistakes.**
+His report: *"the strip animation is there and good enough but there is no SFX"*.
+1. **`tap.mp3` is 45 MILLISECONDS long.** It was the sound chosen for the ordinary "saved"
+   strip — the most frequent one. At that length it is not quiet, it is inaudible. Now
+   `commit.mp3`, 0.18s. **Measure a sound before choosing it; the file existing says nothing
+   about it being hearable.** Lengths: tap 0.045s · error 0.16s · click 0.15s · commit 0.18s ·
+   sign 4.1s.
+2. **Audio was only ever unlocked by the sales terminal.** Browsers keep audio locked until a
+   real gesture, and `MerchantSalesView` held the ONLY `unlockSounds()` calls in the codebase —
+   so any sound raised from any other screen was silent forever. He was testing from the Master
+   Vault. `main.jsx` now unlocks once on the first gesture of any kind.
+   **Verified on the UNLOCK MASTER VAULT screen: unlocked `false` before a gesture, `true`
+   after, `playSound` returning true from a screen that could never make a sound before.**
+Audit group 13 now pins both — main.jsx must unlock app-wide, and the toast must not use `tap`.
+
+**🖊 THE QUEST LOG WAS EATING HIS REASON — FIXED `1c1423e`.** His words: *"i want to write some
+message why it is still weird and need fix but instead the question closes and gone"*. Locking
+on any verdict meant the click that decided something was BROKEN also removed the notes box for
+saying why. **A test answered during the CURRENT visit now stays on screen**, with a gold line
+saying it locks away on reload. Session-scoped only — nothing persisted, the screen still empties.
 
 **JOB 2 — a full review of the app. ▶ START HERE.** He asked for a proper one, not a skim. `src/` is finally
 clean (worktrees gone, so searches return one hit each). Known leads already recorded:
