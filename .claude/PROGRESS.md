@@ -1,7 +1,7 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-09 14:30 WIB** · branch `phase0-solid-ground` · last code commit: run `git log -1`
-(his phone can log in again; vault-gate drafts round 2 are out and he owes a letter)
+**Updated: 2026-08-09 20:40 WIB** · branch `phase0-solid-ground` · last code commit: run `git log -1`
+(vault-gate design SIGNED OFF — next session ports it; quest log still owes his last report)
 
 **Aldi clears the session every time he starts a new one. This file is the ONLY thing that
 survives. If it is not current, the work is lost.** Write it before context runs low, not after.
