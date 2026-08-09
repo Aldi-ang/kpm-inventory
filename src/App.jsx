@@ -117,6 +117,13 @@ import VaultGate, { gateHoldMs, gateIsRich } from './components/VaultGate.jsx';
 const CAN_MASK_TEXT_INPUT =
   typeof CSS !== 'undefined' && typeof CSS.supports === 'function' &&
   (CSS.supports('-webkit-text-security', 'disc') || CSS.supports('text-security', 'disc'));
+
+/* A touch screen, i.e. no mouse. Used to NOT autofocus the vault field: on a phone, focusing it
+   opens the keyboard over the panel, and the first tap on OPEN THE VAULT is then eaten dismissing
+   that keyboard instead of pressing the button — which is exactly what Aldi hit: "i cant press
+   open the vault button on my phone it is just not working". On a desk the autofocus is a real
+   convenience and costs nothing, so it stays there. */
+const IS_TOUCH = typeof matchMedia === 'function' && matchMedia('(hover: none)').matches;
 import { isFailure } from './utils/toastSeverity.js';
 
 const APP_VERSION = packageJson.version;
@@ -3641,6 +3648,12 @@ const handleGitHubMirror = async () => {
                 <div className="text-[9px] uppercase tracking-[0.34em] text-[#8a7048]">KPM Inventory</div>
                 <div className="text-[13px] uppercase tracking-[0.2em] font-bold text-[#f7e9c8] mt-[7px] mb-[17px]">Master Vault</div>
 
+              {/* A REAL FORM, not a div with a click handler. On a phone this is what turns the
+                  keyboard's own key into GO — a second way in that does not depend on hitting a
+                  40px target with the keyboard covering half the screen. The Enter key is handled
+                  by onSubmit alone; the old onKeyDown was removed with it, because both together
+                  would call handlePinLogin twice and each call spends one of his five tries. */}
+              <form onSubmit={(e) => { e.preventDefault(); handlePinLogin(); }}>
                 <input
                     /* See CAN_MASK_TEXT_INPUT at the top of this file. Falls back to a real
                        password field wherever the CSS mask is not supported — never plaintext. */
@@ -3656,29 +3669,38 @@ const handleGitHubMirror = async () => {
                     className="w-full bg-transparent border-0 border-b border-[#E7700F]/20 py-[11px] px-1.5 text-center font-mono text-[13px] tracking-[0.42em] text-[#f7e9c8] outline-none focus:border-[#E7700F] placeholder:text-[#5f4a2c] placeholder:tracking-[0.16em] placeholder:text-[9.5px] transition-colors"
                     value={inputPin}
                     onChange={(e) => setInputPin(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && handlePinLogin()}
-                    autoFocus
+                    /* Labels the phone's own return key GO instead of "return". */
+                    enterKeyHint="go"
+                    /* NOT on a phone — see IS_TOUCH at the top of this file. */
+                    autoFocus={!IS_TOUCH}
                     maxLength={15}
                 />
 
                 <button
-                    onClick={handlePinLogin}
+                    type="submit"
+                    /* touch-action: manipulation drops the double-tap-zoom wait, so the press
+                       registers on the first tap rather than after the browser has finished
+                       deciding whether a second one is coming. */
+                    style={{ touchAction: 'manipulation' }}
                     className="w-full mt-[15px] py-3 font-mono text-[9.5px] font-bold uppercase tracking-[0.24em] bg-transparent text-[#f7e9c8] border border-[#E7700F]/30 hover:border-[#E7700F] hover:text-[#ffb066] hover:bg-[#E7700F]/[0.09] active:scale-[.975] transition-[transform,background-color,border-color,color] duration-150"
                 >
                     Open the vault
                 </button>
 
+                {/* type="button" on BOTH, or they inherit type=submit inside the form and a tap
+                    on either would try the password instead — spending one of his five tries. */}
                 <div className="mt-[11px] flex items-center justify-center gap-2 text-[8.5px] uppercase tracking-[0.16em] text-[#8a7048]">
                     {window.PublicKeyCredential && (<>
-                        <button onClick={handleBiometricUnlock} className="py-1 hover:text-[#f7e9c8] transition-colors flex items-center gap-1.5">
+                        <button type="button" onClick={handleBiometricUnlock} style={{ touchAction: 'manipulation' }} className="py-1 hover:text-[#f7e9c8] transition-colors flex items-center gap-1.5">
                             <ScanFace size={11} /> Fingerprint
                         </button>
                         <span aria-hidden="true">·</span>
                     </>)}
-                    <button onClick={() => setIsResetMode(true)} className="py-1 hover:text-[#f7e9c8] transition-colors">
+                    <button type="button" onClick={() => setIsResetMode(true)} style={{ touchAction: 'manipulation' }} className="py-1 hover:text-[#f7e9c8] transition-colors">
                         Lost your key?
                     </button>
                 </div>
+              </form>
             </div>
             )}
                 </>
