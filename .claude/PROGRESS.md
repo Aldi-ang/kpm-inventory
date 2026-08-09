@@ -721,6 +721,30 @@ No kpm-inventory code touched. This session was babysitting a Qwen3-235B downloa
 `plan-quota.mjs`'s working-tree diff (see `git status`) predates this session; not made here.
 Still stuck at layer 63/94 as of this update, cause not yet diagnosed.
 
+### 2026-08-09 19:45 WIB — the panel now becomes the wave, and the name leaves letter by letter
+
+**His idea, and it fixed a weakness I had not named: the login panel had no exit at all.** It
+simply faded. His words: *"the outward wave animation should be as a result from the first login
+panel that animate into outward wave maybe something like that could be cool, because right now
+the panel is so static and have a really basic outro"*. The card now **collapses to 86% and
+throws a ring outward**; the field only exists where that ring has already passed, with a bright
+crest at the ring itself and a calm level behind it.
+**Why this beat the previous attempt, which is the reusable part: a 0-to-1 fade has no
+DIRECTION.** He called it instant twice, and both times the problem was not the duration — it was
+that nothing travelled. Give the same brightness a front that moves and it reads as an event.
+
+**The name now exits exactly like the two DOM lines**, his other note. That needed a structural
+change: the word is sampled into **one bucket per character**, keyed off each glyph's measured
+x-range, so a single letter can scramble and leave on its own. Each letter cycles three random
+glyphs 70ms apart and then goes, 95ms behind the one before it — the same rhythm as `resolveOut`,
+so the three lines read as one idea instead of three effects.
+**The scramble glyphs are pre-sampled at unlock**, never mid-animation: `getImageData` on a
+full-size canvas is exactly the kind of work that stutters on the phones Lite Mode exists for.
+
+**Timings now: ring 0.1–1.45s · letters form 1.3–3.0s · "Welcome back" 1.6s · "Master Vault
+unlocked" 3.3s · the name leaves from 5.2s · app at 7.0s.** `vault-b.mp3` still fits — its tok
+lands at 2.90s where the name completes at 3.00s. Close enough to keep; retime only if he says.
+
 ### 2026-08-09 19:25 WIB — ✅ HE PICKED B. The letters were being clipped by a real bug.
 
 **🟢 THE DIRECTION IS DECIDED: variation B, the dots become the name.** *"i like B better"*.
