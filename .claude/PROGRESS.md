@@ -41,10 +41,12 @@ The quota meter no longer needs a pasted cookie — it mints its own 9router tok
 npm run build; node src/config/integration.audit.mjs
 ```
 
-**Then: he re-runs T5, T7 and T8 in the quest log** — they are the three sitting blank and waiting,
-and T5/T8 specifically test the sound that only started working in `1c1423e`.
-Untouched and ready after that: **JOB 2** (the full app review, never started) and **JOB 4**
-(the ACCESS GRANTED animation, now an Emil review on his `/review-animations`).
+**Then: he runs T5, T7, T8 and the new T11 in the quest log** — the four sitting blank and
+waiting. T5/T8 test the sound that only started working in `1c1423e`; **T11 is the rebuilt unlock
+screen from JOB 4, which he has not seen yet.** T11 was added to group T on 2026-08-09 and the
+artifact republished to the same URL; `load()`'s backfill is what makes adding an id safe.
+Untouched and ready after that: **JOB 2** (the full app review, never started) and the six
+JOB 5 items.
 
 
 **JOB 1 IS DONE — committed `e7f2eab` 2026-08-08. JOB 2 is now the next thing to start.**
