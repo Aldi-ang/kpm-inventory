@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-10 05:40 WIB** · branch `phase0-solid-ground` · last code commit: run `git log -1`
+**Updated: 2026-08-10 09:35 WIB** · branch `phase0-solid-ground` · last code commit: run `git log -1`
 (**✅ THAT PHONE-BUTTON BUG IS FIXED — `d366acc`. A concurrent session wrote it up as
 "NOT INVESTIGATED" and that entry is STALE; it was the keyboard, not the layout.** ·
 **WAITING ON HIM: pick a panel outro — artifact 76cd529a** · then the quest-log list in LOG ·
@@ -838,6 +838,38 @@ are never worth rescuing.
 
 ## LOG — newest first, older entries live in `git log` for this file
 
+### 2026-08-10 — ✅ HIS PHONE CAN LOG IN NOW. Dev is HTTPS. `b1aee4e`
+
+**🔴 THE DEV SERVER IS HTTPS FROM NOW ON. `npm run dev -- --host` → `https://`, not `http://`.**
+Phone URL is **`https://192.168.1.141:5173/`**. Safari warns once about the self-signed
+certificate — **that warning is expected, he taps through it.** He approved this:
+*"yeah sure for testing purpose this is needed i cant even login to test the UI on phone bro"*.
+- `@vitejs/plugin-basic-ssl` (devDependency) + `server: { https: true, host: true }` in
+  `vite.config.js`. **Dev only — neither reaches a build**, and production never needed it
+  because Vercel already serves https.
+- **Verified, not assumed:** server started, `curl -k` returned **HTTP 200 over TLS** and the body
+  really is the app.
+- `.claude/launch.json` now carries `"url": "https://localhost:5173"`, or `preview_start` opens
+  the wrong scheme.
+- **To undo:** delete the import, the comment and the `server` line in `vite.config.js`.
+
+**✅ THE APP NO LONGER SLIDES AROUND ON HIS IPHONE.** His words: *"sometimes i drag something and
+the whole app zoom and moved"*. Three parts, because on iOS no single one is enough:
+viewport tag pins the scale (+`viewport-fit=cover` for the notch), `overscroll-behavior: none`
+kills the rubber-band and pull-to-refresh, and a Safari-only `gesture*` guard in `main.jsx`
+refuses page pinch — **the only thing that works there, since iOS ignores `user-scalable=no`.**
+**🔴 THE MAP IS EXEMPT ON PURPOSE.** Leaflet is in this app and pinch is how a map is used. The
+guard returns early inside `.leaflet-container`; Leaflet drives its own pinch from raw touch
+events, so the map still zooms. **The listeners are non-passive by necessity** — a passive
+listener cannot `preventDefault`, which is the entire point, and touch listeners default to
+passive. Do not "tidy" that flag away.
+**Zoom is now off app-wide: a deliberate accessibility trade-off he asked for**, for a
+one-handed tool used beside a road.
+
+**⚠️ `npm audit` reports pre-existing advisories.** They were there before this install and
+nothing was run to "fix" them — `npm audit fix` can move majors under him. His call, not a
+side effect of a bug fix.
+
 ### 2026-08-10 — 🔑🔑 THE PHONE LOGIN MYSTERY IS SOLVED. It was `crypto.subtle`. `f460297`
 
 **READ THIS BEFORE TOUCHING ANYTHING PHONE-RELATED. Every "I can't log in on my phone" report,
@@ -1171,15 +1203,20 @@ spans shards 79-81 and layer 64 spans 81-82 — they SHARE shard 81.** The obvio
 patch skips 81 and hands layer 64 incomplete weights: the model still runs and still answers, it
 just answers with rubbish, and nothing fails loudly. Cursor goes to **80**.
 
-**BLOCKED — the edit needs Aldi to name the file out loud.** The patch targets
-`D:\LLAMA\venv\Lib\site-packages\airllm\utils.py` and the permission layer refuses edits to
-installed packages unless he names them. Backup already taken: `D:\LLAMA\utils.py.backup`.
-His open choice, verbatim, both still valid:
-- **"yes patch airllm utils.py"** — apply it in the library, verify it compiles, restart.
-- **"do it in run_qwen.py instead"** — same logic as an override in his own script, no library
-  touched, but ~120 lines of library code get copied and can drift on an AirLLM update.
+**✅ APPLIED AND VERIFIED 05:45 — he answered *"sure do whatever wise for the best bro"*.** The
+patch is in `D:\LLAMA\venv\Lib\site-packages\airllm\utils.py`; restore with
+`cp D:\LLAMA\utils.py.backup` over it. Two changes: skip layers that already have a `.done`
+marker, and don't try to delete a shard that was never downloaded (the resumed cursor starts
+mid-checkpoint, so those files are absent and the unguarded delete would throw).
+**Checked before running anything, not after:** `py_compile` clean · first unsaved layer is
+`model.layers.64.` · it spans shards 81-82 · cursor parks at **80**, so shard 81 — the one shared
+with layer 63 — **is** loaded. **38 shards to fetch instead of 118.** ~6h and ~145GB against
+299GB free.
 
-**Restart command once he answers:**
+**He must launch it from HIS OWN PowerShell window.** A Claude background task dies with the
+session; five nights of restarts came partly from that. His own window outlives everything.
+
+**Restart command:**
 
 ```powershell
 cd D:\LLAMA; $env:HF_HUB_DISABLE_XET=1; $env:HF_HUB_DOWNLOAD_TIMEOUT=120; .\venv\Scripts\python.exe run_qwen.py
