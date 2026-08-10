@@ -60,6 +60,54 @@ which is neither, so hashing threw and a silent `catch` ate the error. Nothing o
 
 **Do not re-open the phone-login bug without a NEW symptom from him on the https URL.**
 
+## 🔴🔴 NEW STANDING RULE — A-BRAIN IS MANDATORY (his instruction, 2026-08-10 10:40 WIB)
+
+His words, VERBATIM: *"add extra rules to alucard, make sure that all the data that we have done
+here is written in A-Brain before anything else, because its part of the plan to become agentic
+Agent for alucard, so update everything that we do inside claude from the last six day until now
+and upload it to A-Brain, always update all the new knowledge and skills that we have everytime
+we made a mistake or i there some design that i dont like and like to know my taste better, keep
+improving everytime, one thing to mention is that there always lesson learn for everything we
+have done, u should take every data that we done and put it on A-Brain."*
+
+**✅ DONE — vault commit `a5921e6`.** Six-day backfill written and committed. New pages:
+`Secure Context Requirement`, `Silent Failure Disease`, `Aldi's Design Taste`, `Master Vault Gate`,
+plus a Summary, the Raw source, and MOC/Index/Log updates.
+**Alucard `SKILL.md` §11a now makes the vault write mandatory** — four triggers (a mistake, a
+design he judged, a root cause or closed decision, a new technique), and the closing line now
+carries a `vault:` field so "nothing recorded" has to be claimed out loud.
+
+**This note is NOT a substitute for the vault.** It is trimmed to ~5 log entries and scoped to
+one repo. That is exactly how six days went unrecorded.
+
+## 🔴 HIS PHONE REPORT — 2026-08-10 10:17–10:25 WIB, 8 items, NONE FIXED YET
+
+Tested on his iPhone over the HTTPS dev server. Four screenshots in chat.
+
+| # | His words | Where it is | State |
+|---|---|---|---|
+| 1 | *"capybara is still cutted on the phone"* | `src/components/CapybaraMascot.jsx` | open |
+| 2 | *"split second of old access granted panel after i press the enter vault"* | `App.jsx` + `VaultGate.jsx` | open |
+| 3+6 | manifest sheet: pinned Proof/Sign eat the product list; customer name cut | sales terminal manifest | **decided, not built** |
+| 4 | *"annoying when i have to always enter my password everytime i use my phone"* | gate session | **BLOCKED — security, his call** |
+| 5 | quest log COPY REPORT misses the answers just given | `.claude/kpm-test-quest.html` | open, cause suspected |
+| 7 | *"3D is flickering and the dimension panel collapsing with the product name"* | `src/components/ExamineModal.jsx` | open |
+| 8 | F1–F5 GOOD. F6, F7 and all of G not run yet | quest log | his to run |
+
+**✅ HIS DECISION ON 3+6 — he said "b is better".** One slim bar pinned at the bottom with
+**SIGN only**; delivery proof moves up into the paper and scrolls with it. Do not pin proof.
+
+**🔴 ITEM 4 IS STILL HIS TO ANSWER — do not build it without a number.** iOS discards the page
+when he switches apps, so the gate reloads. Options put to him: (a) 2-minute grace period,
+(b) 30-minute grace, (c) fingerprint instead of typing. **(a) or (a)+(c) recommended.**
+The trade-off must be restated when he answers: whoever holds the unlocked phone gets the vault.
+
+**On item 5, the suspected cause, not yet proved:** `navigator.clipboard.writeText` is blocked in
+the artifact's iframe on iOS, and the fallback at `kpm-test-quest.html:749-758` uses `ta.select()`
+alone, which does not work on iOS Safari (needs `setSelectionRange`). Both fail -> he pastes the
+PREVIOUS report still in his clipboard. **Second half he is also right about: `report()` prints
+every test with any verdict, including the 48 locked ones. It should only carry this round.**
+
 ## ▶ DO THIS NEXT
 
 **2026-08-09 14:30 WIB. Audit 172/172. His second COPY REPORT is in: 48/64, 44 good, 2 broken,
