@@ -1,10 +1,11 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-11 03:12 WIB** · branch `phase0-solid-ground` · last code commit: run `git log -1`
+**Updated: 2026-08-11 03:30 WIB** · branch `phase0-solid-ground` · last code commit: run `git log -1`
 **Build/audit not re-checked this edit — see LOG entry below for why.**
 
-*(03:12 touch only — trigger was `.claude/scheduled_tasks.lock`, bookkeeping for monitoring an
-unrelated `D:\LLAMA` AirLLM run in this session. Does not affect where KPM work stands.)*
+*(03:17 touch — the OTHER concurrent session (see 03:10 LOG below) grew its uncommitted
+`MerchantSalesView.jsx` diff from +13 to +26/-5. Still not this session's work, still not built
+or audited from here. This session is only monitoring an unrelated `D:\LLAMA` AirLLM run.)*
 
 ## 🔴 LOG 03:12 WIB — YOUR EMAIL IS A HARDCODED MASTER KEY IN THE RULES. Not fixed, his call.
 
@@ -1241,7 +1242,32 @@ the debt is invisible to everyone.** The same four sites also cover **NOO regist
 **On the boss's own account `bossUid === user.uid`, so everything works — which is why this was
 never seen.** This is the [[UI-Says-Yes-Server-Says-No]] family again.
 
-**🔴 WHY THIS IS NOT JUST "PASS THE RIGHT ID" — ASK HIM, DO NOT GUESS.** `MerchantSalesView.jsx`
+## ✅ FIXED — he delegated the choice: *"go with the wisest choice but make sure that it didnt broke anything"*
+
+**Option (a), surgically.** App now passes `masterUserId={userId}` (`App.jsx:~4163`) — the id it
+has always given `RestockVaultView` — and the terminal resolves every `customers/` and
+`appSettings/` path through one `dataOwnerId` (`MerchantSalesView.jsx:33`).
+
+**WHY IT CANNOT BREAK HIS OWN ACCOUNT, and this is the load-bearing argument:** the boss's record
+claims `bossUid: user.uid` permanently (`App.jsx:904`), so for him `dataOwnerId` returns *exactly*
+what the old expression returned. If `masterUserId` is ever missing it falls back to the old value
+too. The behaviour differs **only** on a salesman account, where today's behaviour is the bug.
+
+**🔴 THE THREE `masterUid` DERIVATIONS ARE STILL LOCAL AND THAT IS DELIBERATE**
+(`:708`, `:852`, `:937` — products, motorists, samplings, photos, notifications). Same expression,
+different name, probably the same fault — but they carry the **sale commit**, and `:958` records
+someone already hitting a rules wall writing to another vault. **Audit group 20 pins the count at
+three**, so leaving them is a recorded decision and changing them will be a visible one.
+
+**Verified:** build green · audit **221/221** (was 217, +4 new) · **all nine self-checks pass** ·
+the `dataOwnerId` check proved absent on HEAD first.
+**NOT verified, say so:** no live salesman account was used, and `firestore.rules` was not read.
+**If a salesman turns out to be rules-blocked from writing the boss's customer doc, this becomes a
+rules change — a DRAFT Aldi deploys himself.** That is the one way this fix can still be wrong.
+
+*Original diagnosis, kept because it explains the mechanism:*
+
+**🔴 WHY THIS WAS NOT JUST "PASS THE RIGHT ID" —** `MerchantSalesView.jsx`
 `:958` already documents deliberately avoiding boss-path writes: *"REMOVED DIRECT CLIENT-SIDE
 MOTORISTS WRITES TO BYPASS FIRESTORE PERMISSION LOCKS"*. So a salesman may be **rules-blocked**
 from writing to the boss's customer doc. Two real options:
