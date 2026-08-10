@@ -792,6 +792,25 @@ check(G20, 'the product/motorist paths were left alone on purpose',
   (merchSrc.match(/const masterUid = user\?\.uid/g) || []).length === 3,
   'if these changed, the sale-commit blast radius changed with them — that needs Aldi, not a refactor');
 
+/* ── 21. the admin field-mode bar stays behind the manifest ──────────────────
+   His G5 report: "mastervault and bosscar button ... is collapsing infront of the manifest
+   paper". The bar is an ordinary flex child above the terminal and needed no stacking order at
+   all; z-[200] let it punch through a drawer that is fixed to the viewport and opens to 92% of
+   the screen. Raising the drawer instead would repeat the vault gate's nav-button mistake. */
+const G21 = '21. The admin field-mode bar stays behind the manifest';
+/* Anchored on real code, never on a comment: `appCode` is strip()ed, so the explanation above
+   this bar in App.jsx does not exist by the time this runs. That cost two build cycles to learn.
+   The window starts at the bar's own background colour, so the wrapper's class list — where the
+   z-index used to be — is inside what gets tested. */
+const adminBar = (appCode.match(/bg-\[#0f0e0d\][\s\S]{0,1500}?Boss Car<\/button>/) || [''])[0];
+
+check(G21, 'the field-mode bar is present to check at all', adminBar.length > 400,
+  'could not find the admin toggle bar in App.jsx — this group is blind, fix the match');
+check(G21, 'the bar claims no stacking order of its own', !/z-\[\d+\]/.test(adminBar),
+  'any z-index here lifts it through the manifest drawer, which is fixed to the viewport');
+check(G21, 'no blue on the field-mode bar', !/blue-|slate-/.test(adminBar),
+  'palette law: Boss Car was bg-blue-600 and both rest states were text-slate-400 — slate IS the blue');
+
 /* ── report ──────────────────────────────────────────────────────────────── */
 let last = '';
 for (const r of results) {

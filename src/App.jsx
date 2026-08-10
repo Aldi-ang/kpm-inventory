@@ -4144,12 +4144,26 @@ const handleGitHubMirror = async () => {
 
           {activeTab === 'sales' && (
               <div className="h-full w-full flex flex-col relative bg-black"> 
-                  {/* --- FIXED: ADMIN FIELD MODE TOGGLE BAR --- */}
+                  {/* --- ADMIN FIELD MODE TOGGLE BAR --- */}
+                  {/* HIS REPORT, G5: "mastervault and bosscar button and the notification button is
+                      collapsing infront of the manifest paper". It was `z-[200]`, and that is the
+                      whole bug. This bar is an ordinary flex child sitting ABOVE the terminal — it
+                      needs no stacking order to be where it is. The manifest drawer inside the
+                      terminal is fixed to the viewport and opens to 92% of the screen height, so
+                      it reaches this row; at z-200 the bar punched straight through the paper.
+                      With no z-index the positioned drawer paints over it, which is correct: while
+                      he is writing a manifest, the stock-source switch is not what he is doing.
+                      Raising the DRAWER instead would have been the wrong fix — the same mistake
+                      the vault gate's nav button taught, where z-index was never the answer. */}
                   {userRole === 'ADMIN' && (
-                      <div className="w-full shrink-0 bg-[#0f0e0d] border-b-2 border-[#3e3226] p-3 flex justify-center z-[200] shadow-md">
+                      <div className="w-full shrink-0 bg-[#0f0e0d] border-b-2 border-[#3e3226] p-3 flex justify-center shadow-md">
                           <div className="bg-black/90 backdrop-blur-md border border-[#8b7256] p-1.5 rounded-full flex items-center shadow-2xl">
-                              <button onClick={() => setAdminSalesMode('VAULT')} className={`px-4 md:px-6 py-2 rounded-full text-[10px] md:text-xs font-black uppercase tracking-widest transition-all ${adminSalesMode === 'VAULT' ? 'bg-orange-500 text-white shadow-[0_0_15px_rgba(249,115,22,0.5)]' : 'text-slate-400 hover:text-white hover:bg-white/10'}`}>Master Vault</button>
-                              <button onClick={() => setAdminSalesMode('VEHICLE')} className={`px-4 md:px-6 py-2 rounded-full text-[10px] md:text-xs font-black uppercase tracking-widest transition-all ${adminSalesMode === 'VEHICLE' ? 'bg-blue-600 text-white shadow-[0_0_15px_rgba(37,99,235,0.5)]' : 'text-slate-400 hover:text-white hover:bg-white/10'}`}>Boss Car</button>
+                              {/* Palette law, same pass: BOSS CAR was `bg-blue-600` and both rest
+                                  states were `text-slate-400` — slate IS the blue. These now match
+                                  the SALE/RETUR toggle inside the manifest, which is the same kind
+                                  of control one screen over. */}
+                              <button onClick={() => setAdminSalesMode('VAULT')} className={`px-4 md:px-6 py-2 rounded-full text-[10px] md:text-xs font-black uppercase tracking-widest transition-all ${adminSalesMode === 'VAULT' ? 'bg-[#ff9d00] text-[#2b2318] shadow-[0_0_15px_rgba(255,157,0,0.45)]' : 'text-[#8b7256] hover:text-white hover:bg-white/10'}`}>Master Vault</button>
+                              <button onClick={() => setAdminSalesMode('VEHICLE')} className={`px-4 md:px-6 py-2 rounded-full text-[10px] md:text-xs font-black uppercase tracking-widest transition-all ${adminSalesMode === 'VEHICLE' ? 'bg-[#c9a227] text-[#2b2318] shadow-[0_0_15px_rgba(201,162,39,0.45)]' : 'text-[#8b7256] hover:text-white hover:bg-white/10'}`}>Boss Car</button>
                           </div>
                       </div>
                   )}
