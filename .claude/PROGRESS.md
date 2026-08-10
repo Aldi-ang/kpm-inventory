@@ -14,16 +14,27 @@ disagree, git wins.** That is the third time this exact collision has happened h
 Read "HIS FULL ROUND RESULT" below before anything else: one BROKEN (G5, four separate faults
 inside it), and two asks buried in GOOD answers. **Nothing is in flight; nothing is half-done.**
 
-*The 11:52 Hermes session is unrelated app-side: it edited
-`C:\Users\ASUS\.claude\skills\alucard\SKILL.md` only. Its two open questions are kept below.*
+*The Hermes → alucard session is unrelated app-side: it edits
+`C:\Users\ASUS\.claude\skills\alucard\SKILL.md` only, never KPM code. **It is FINISHED as of
+15:12** — 16 agents swept the Hermes source, 19 rule proposals went through an adversarial cut,
+7 survived. All seven, with exact wording and the Hermes evidence for each, are in
+`A-Brain/Hermes-Agent-Research/2026-08-10 Seven Rules Worth Porting.md` (vault commit `38b7eff`).
+Its open questions are kept below.*
 
-**WAITING ON ALDI — two open questions, VERBATIM from him:**
-1. *"make sure that u know everything about hermes before integrating it to alucard"* — answered
-   with a hard number he has not responded to: the Hermes checkout is **35.9 MB of Python across
-   1,109 files + 9.7 MB of markdown ≈ 11M tokens**, 11x a 1M context window. Reading all of it is
-   impossible at any budget. He must pick ONE extra pass instead: the unread 735 lines of
-   `AGENTS.md`, the `cli.py` command system, or the gateway.
-2. He was offered a revert of the three alucard edits and never answered. They are still in place.
+**WAITING ON ALDI — VERBATIM from him:**
+1. *"integrate hermes to alucard so basically just hermes in the persona of alucard and A-Brain
+   memory"* — **the study is done; only his approval is missing.** Alucard §8 forbids
+   self-editing `SKILL.md`, so the seven rules sit unapplied (~+16 lines on 263). Read the vault
+   page above, then apply the ones he accepts. Highest-value two: `(checked: ...)` receipts go
+   stale on the next edit ("this session" is the wrong window), and a Lesson saying a tool is
+   broken outlives the fix — this repo's own `0aabb81` → `b1aee4e` is one day apart.
+2. *"make sure that u know everything about hermes before integrating it to alucard"* — answered
+   with a number he has not responded to: the checkout is **35.9 MB of Python across 1,109 files
+   + 9.7 MB of markdown ≈ 11M tokens**, 11x a 1M window. Possible across ~14 passes, not in one.
+   The 8 subsystems swept are the 90%. He may still name a tail pass: `cli.py`, or the gateway.
+3. He was offered a revert of the three already-applied alucard edits and never answered. They
+   are still in place (prompt-cache reason §1, session search §2, subagent rule §10 carrying his
+   words *"allow parents write is my best pick"*).
 3. **APP SIDE — asked 15:11, unanswered: did turning ⚡ Cello Lite Mode OFF bring the sound and
    animation back?** If yes, F7 is not a bug and G5 is the next job. If no, the iOS audio unlock
    is back on the table and F7 becomes real work.
