@@ -181,6 +181,17 @@ textarea::placeholder{color:#4a423a}
 
 .lightbox{position:fixed;inset:0;z-index:90;background:rgba(0,0,0,.9);display:flex;align-items:center;justify-content:center;padding:20px;cursor:zoom-out}
 .lightbox[hidden]{display:none}
+
+/* Last-resort copy panel. THE RULE THIS BROKE ONCE, 2026-08-10: `display` must live HERE, with
+   a matching [hidden] rule, and NEVER in an inline style attribute. The `hidden` attribute is
+   only `display:none` from the browser's own stylesheet, and ANY inline display beats it — so
+   an inline `display:flex` left this panel covering the whole log from page load, empty,
+   looking like the quest log had been wiped. Every other overlay in this file (.toast,
+   .lightbox, .detail, .gbody) already follows this pattern. */
+.fallback{position:fixed;inset:0;z-index:9999;background:rgba(8,6,4,.94);display:flex;flex-direction:column;gap:10px;padding:16px}
+.fallback[hidden]{display:none}
+.fallback b{color:var(--cream);font-size:13px;line-height:1.5;font-weight:700}
+.fallback textarea{flex:1;width:100%;font-size:12px;line-height:1.45;background:#141210;color:#e8dcc4;border:2px solid var(--line);padding:10px}
 .lightbox img{max-width:100%;max-height:100%;border:3px solid var(--gold);image-rendering:auto}
 
 .note{border:2px solid var(--line);background:var(--panel);padding:11px 12px;margin-bottom:14px;font-size:11.5px;color:var(--dim)}
@@ -232,9 +243,9 @@ textarea::placeholder{color:#4a423a}
 <!-- Last-resort copy path: shown only when the browser refuses both clipboard routes, which is
      what his iPhone does inside the published artifact's iframe. The text arrives already
      selected, so it is one hold-and-copy away. -->
-<div id="fallback" hidden style="position:fixed;inset:0;z-index:9999;background:rgba(8,6,4,.94);display:flex;flex-direction:column;gap:10px;padding:16px;">
-  <b style="color:#f0e2c0;font-size:13px;line-height:1.5">This browser blocked the automatic copy. The report is below and already selected — hold on it, choose <i>Copy</i>, then paste it into the chat.</b>
-  <textarea id="fallbackText" readonly style="flex:1;width:100%;font:12px/1.45 ui-monospace,monospace;background:#141210;color:#e8dcc4;border:1px solid #6b5a3c;border-radius:6px;padding:10px;"></textarea>
+<div id="fallback" class="fallback" hidden>
+  <b>This browser blocked the automatic copy. The report is below and already selected — hold on it, choose <i>Copy</i>, then paste it into the chat.</b>
+  <textarea id="fallbackText" readonly></textarea>
   <button id="fallbackClose" class="big ghost">Close</button>
 </div>
 
