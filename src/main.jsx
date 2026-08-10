@@ -11,10 +11,24 @@ import { unlockSounds } from './hooks/useSound.js'
    was the sales terminal — so every sound anywhere else in the app was silent forever, which is
    the other half of why Aldi reported the toast strips as having no SFX: he was testing them
    from the Master Vault, which never unlocks.
-   One listener, once, on the first gesture of any kind. `unlockSounds` returns early if it has
-   already run, so the terminal's own calls stay harmless. */
-for (const evt of ['pointerdown', 'keydown', 'touchstart']) {
-  window.addEventListener(evt, () => unlockSounds(), { once: true, passive: true })
+   THE SECOND HALF OF THE SILENT-IPHONE BUG, and it was `{ once: true }`. One tap on a phone
+   fires BOTH `pointerdown` and `touchstart`, so a single touch tore down all three listeners —
+   whether or not the unlock had actually worked. If that first gesture failed to unlock (and on
+   iOS the first touch of a session very often does), the app was muted for the rest of the
+   session with nothing left listening to try again.
+
+   So: stay armed until the unlock actually reports success, then stop listening. `unlockSounds`
+   returns early once unlocked, so extra gestures cost a resolved promise and nothing else, and
+   the terminal's own calls stay harmless. */
+const SOUND_GESTURES = ['pointerdown', 'keydown', 'touchstart']
+const onGestureUnlock = () => {
+  unlockSounds().then((ok) => {
+    if (!ok) return
+    for (const evt of SOUND_GESTURES) window.removeEventListener(evt, onGestureUnlock, true)
+  })
+}
+for (const evt of SOUND_GESTURES) {
+  window.addEventListener(evt, onGestureUnlock, { passive: true, capture: true })
 }
 
 /* iPHONE PINCH GUARD. His report: "sometimes i drag something and the whole app zoom and moved".

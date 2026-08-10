@@ -136,26 +136,55 @@ export function playSound(name, { AudioImpl, doc } = {}) {
   return true;
 }
 
+/* THE GAIN STAGE IS BUILT ONLY ONCE THE CONTEXT IS PROVABLY RUNNING — this is the iPhone bug.
+
+   `createMediaElementSource` moves an element's output INTO the Web Audio graph permanently:
+   once routed, the element no longer reaches the speakers on its own, it reaches them through
+   `audioCtx.destination`. If the context is not running, that destination goes nowhere and the
+   element is now silent forever — the WeakSet means it can never be un-routed.
+
+   The old code called `audioCtx.resume()` without awaiting it and routed every element on the
+   next line. `resume()` is asynchronous and iOS is strict about when it may complete, so on his
+   phone the routing happened while the context was still `suspended`. Desktop resumed fast
+   enough to hide it. That is why every sound worked on his PC and nothing played on his iPhone.
+
+   The comment above promises "if Web Audio is missing or refuses, nothing breaks". It only
+   keeps that promise if we refuse to route BEFORE knowing the context runs. */
+function buildGainStage() {
+  let ctx;
+  try {
+    const Ctx = globalThis.AudioContext || globalThis.webkitAudioContext;
+    if (!Ctx) return Promise.resolve(false);
+    if (!audioCtx) audioCtx = new Ctx();
+    ctx = audioCtx;
+  } catch (err) { audioCtx = null; return Promise.resolve(false); }
+
+  const resumed = ctx.state === 'suspended' && typeof ctx.resume === 'function'
+    ? Promise.resolve(ctx.resume()).catch(() => {})
+    : Promise.resolve();
+
+  return resumed.then(() => {
+    /* The only condition under which routing is safe. Anything else and the elements keep
+       playing at their own volume, unboosted but audible — which is the correct trade. */
+    if (ctx.state !== 'running') { audioCtx = null; return false; }
+    for (const [name, p] of pools) p.els.forEach(el => boostElement(el, name));
+    return true;
+  }).catch(() => { audioCtx = null; return false; });
+}
+
 /* Browsers block audio until a real user gesture. Unlock by playing ONE element
    silently and only marking unlocked once play() actually resolves - marking it
-   before resolution is what makes the first real sound get swallowed. */
+   before resolution is what makes the first real sound get swallowed.
+
+   Returns false when the gesture did not actually unlock anything. main.jsx keeps listening
+   on that answer instead of throwing its listeners away — see the comment there. */
 export function unlockSounds({ AudioImpl, doc } = {}) {
   if (unlocked) return Promise.resolve(true);
   initSounds(AudioImpl);
   const pool = pools.get('tap');
   if (!pool) return Promise.resolve(false);
 
-  /* The unlock gesture is also the only moment Web Audio is allowed to start, so the gain
-     stage is built here rather than at import time. */
-  try {
-    const Ctx = globalThis.AudioContext || globalThis.webkitAudioContext;
-    if (Ctx && !audioCtx) audioCtx = new Ctx();
-    if (audioCtx?.state === 'suspended') audioCtx.resume();
-    if (audioCtx) {
-      for (const [name, p] of pools) p.els.forEach(el => boostElement(el, name));
-    }
-  } catch (err) { audioCtx = null; }
-
+  /* play() must be reached synchronously inside the gesture, so nothing awaits before here. */
   const el = pool.els[0];
   const wasVolume = el.volume;
   el.volume = 0;
@@ -168,8 +197,10 @@ export function unlockSounds({ AudioImpl, doc } = {}) {
       el.pause();
       el.currentTime = 0;
       el.volume = wasVolume;
-      return unlocked;
-    });
+      /* Boost only after real playback proved the gesture counted. */
+      return unlocked ? buildGainStage() : false;
+    })
+    .then(() => unlocked);
 }
 
 /* Speak a line as mumbling. Returns the number of blips scheduled, so a caller (or a

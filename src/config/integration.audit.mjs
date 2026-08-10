@@ -477,8 +477,25 @@ check(G13, 'the toast reached the built bundle',
    unlockSounds was MerchantSalesView, so a sound played from any other screen was silent
    forever — Aldi tested the strips from the Master Vault and reported no SFX at all. */
 check(G13, 'audio is unlocked app-wide, not only by the sales terminal',
-  /unlockSounds/.test(mainJsx) && /once:\s*true/.test(mainJsx),
+  /unlockSounds/.test(mainJsx),
   'main.jsx must unlock on the first gesture or every sound outside the terminal is a no-op');
+/* `once: true` used to be asserted here. It was WRONG and it silenced his iPhone: one tap fires
+   pointerdown AND touchstart, so a single touch removed all three listeners even when the unlock
+   had failed — and on iOS the first touch of a session often does fail. The listener must survive
+   a failed attempt and only stand down once the unlock reports success. */
+/* Read the sound listener's OPTIONS specifically, not the whole file: the comment above it in
+   main.jsx explains the bug and necessarily contains the words, so a file-wide text match would
+   fail on the very explanation of the fix. */
+const soundListenerOpts = (mainJsx.match(/window\.addEventListener\(evt, onGestureUnlock, \{([^}]*)\}/) || ['', 'MISSING'])[1];
+check(G13, 'a failed unlock leaves the app still listening for the next gesture',
+  !/once/.test(soundListenerOpts) && /removeEventListener\(evt, onGestureUnlock/.test(mainJsx),
+  'main.jsx must keep listening until unlockSounds() actually returns true, or one bad first tap mutes the session');
+/* Routing an element through createMediaElementSource moves its output into the Web Audio graph
+   permanently. Do that while the context is suspended and the element is silent forever. */
+const useSoundSrc = fs.readFileSync('src/hooks/useSound.js', 'utf8');
+check(G13, 'the gain stage is only built once the audio context is running',
+  /state\s*!==\s*'running'/.test(useSoundSrc) && /buildGainStage/.test(useSoundSrc),
+  'boostElement must not run against a suspended context — that is what made every sound silent on his phone');
 /* `tap` is 45ms. A sound that short is not quiet, it is inaudible, and choosing it for the
    most frequent toast is why the strips seemed to have no sound of their own. */
 check(G13, 'the toast does not use the 45ms blip', !/playSound\([^)]*'tap'/.test(toast),
