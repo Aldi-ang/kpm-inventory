@@ -1,14 +1,16 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-10 09:35 WIB** · branch `phase0-solid-ground` · last code commit: run `git log -1`
-(**✅ THAT PHONE-BUTTON BUG IS FIXED — `d366acc`. A concurrent session wrote it up as
-"NOT INVESTIGATED" and that entry is STALE; it was the keyboard, not the layout.** ·
-**WAITING ON HIM: pick a panel outro — artifact 76cd529a** · then the quest-log list in LOG ·
-audit 202/202)
-(**JOB 6 IS DONE AND LIVE ON HIS PHONE — audit 196/196, last gate commit `351e380`** ·
-timing signed off at 8.5s · card, spaces, panel size, mascot and password-flash all fixed ·
-phone login fixed in the Firebase Console, NOT in code · quest log sorted, four tests his ·
-**WAITING ON HIM: pick an outro, artifact 76cd529a · then the quest-log list in LOG**)
+**Updated: 2026-08-10 10:15 WIB** · branch `phase0-solid-ground` · last code commit: run `git log -1`
+**Build green, audit 214/214 (checked 10:15).**
+
+**THE LOGIN SCREEN / VAULT GATE HAS NOTHING OPEN. Every part of it is signed off by him:**
+design (Variation B), timing (8.5s, *"timing is fine"*), the card, the outro
+(*"stay with that i dont want to waste anymore time to design this"*, 05:15 LOG entry) and now
+phone access (HTTPS, `b1aee4e`). **Two earlier header lines claimed he still owed an outro pick
+— they were stale copies and are deleted. Do not re-pitch the outro.**
+
+**WAITING ON HIM: the quest-log tests in LOG (T6, T7, T10, H2b) — T7 is now testable for the
+first time, on `https://192.168.1.141:5173/`.**
 
 *⚠️ A second session was editing this file at 01:42 and wrote "no kpm code touched since 20:45".
 That was true when written and is now wrong — `6a3aaca` and `784f5cc` both landed after it.
@@ -41,29 +43,22 @@ hunting for "where did we leave off" again — that hunt is what cost Aldi 60% o
 
 If this file and the repo disagree, **the repo wins, and fixing this file is job one.**
 
-## 🔴 OPEN BUG: vault button dead on phone (reported 2026-08-10 02:44 WIB)
+## ✅ CLOSED: "vault button dead on phone" — it was `crypto.subtle`, fixed `f460297` + `b1aee4e`
 
-His words, VERBATIM: *"open the vault button on my phone still not working btw i press and the
-animation wont even started"*
+His 02:44 report (*"i press and the animation wont even started"*) was written up here as an open
+bug. **It is fixed.** The 09:17–09:28 session found the real cause and it was neither the layout
+nor the keyboard: `crypto.subtle` — which hashes the master password — **only exists on HTTPS or
+localhost**. His PC is localhost so it always worked; his phone hit `http://192.168.1.141:5173`,
+which is neither, so hashing threw and a silent `catch` ate the error. Nothing on screen, ever.
+- `f460297` — the gate reports its failures instead of returning in silence, and hashing refuses
+  loudly with `SECURE_CONTEXT_REQUIRED`. Audit group 19, 7 checks.
+- `b1aee4e` — dev server now serves **HTTPS**. **His phone URL is `https://192.168.1.141:5173/`**
+  and Safari warns once about the self-signed certificate — that warning is expected, he taps
+  through it. Production was never affected; Vercel is already HTTPS.
+- Same commit stopped the iPhone zooming/sliding the whole app. The Leaflet map is exempt on
+  purpose — pinch is how a map is used.
 
-Status: **reported only. Not reproduced, not diagnosed, no code read, no fix attempted.**
-Session hit 95% plan quota at the moment he reported it and stopped by his standing rule.
-
-"still not working" = this is the SECOND report. Commit `d366acc` ("Make the vault openable on a
-phone") was supposed to fix it and did not, or did not cover this path. **Start from that diff.**
-
-The animation not starting at all means the press is not reaching the handler — a tap/pointer
-event problem or an overlay swallowing the touch — NOT an animation-timing problem. Do not go
-tuning the wave. [likely — no check run this session]
-
-First commands next session:
-```
-git show --stat d366acc
-graphify query "vault gate open button press handler"
-```
-
-Also still open and unstarted: **redesign the panel OUTRO animation** (he asked for it; it was
-the "next job" before this bug landed). The bug outranks it — he cannot use the screen at all.
+**Do not re-open the phone-login bug without a NEW symptom from him on the https URL.**
 
 ## ▶ DO THIS NEXT
 
