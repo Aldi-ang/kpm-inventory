@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-10 15:15 WIB** · branch `phase0-solid-ground` · last code commit: run `git log -1`
+**Updated: 2026-08-10 15:11 WIB** · branch `phase0-solid-ground` · last code commit: run `git log -1`
 **Build green, audit 215/215, `vaultGrace.selfcheck` 10/10 (checked 11:30).**
 
 *⚠️ TWO SESSIONS WROTE THIS FILE TODAY. The 11:52 header said "No KPM code was touched this
@@ -24,6 +24,12 @@ inside it), and two asks buried in GOOD answers. **Nothing is in flight; nothing
    impossible at any budget. He must pick ONE extra pass instead: the unread 735 lines of
    `AGENTS.md`, the `cli.py` command system, or the gateway.
 2. He was offered a revert of the three alucard edits and never answered. They are still in place.
+3. **APP SIDE — asked 15:11, unanswered: did turning ⚡ Cello Lite Mode OFF bring the sound and
+   animation back?** If yes, F7 is not a bug and G5 is the next job. If no, the iOS audio unlock
+   is back on the table and F7 becomes real work.
+4. **APP SIDE — asked 15:11, unanswered: for the strip redesign (G5 #3), does the strip MERGE
+   into the top of the manifest paper as one block, or STAY separate but stick to the paper's top
+   edge so it moves with it?** Different builds — do not start until he picks.
 
 **✅ The eight phone-report items are built, committed AND he has now tested the round around
 them.** What he did NOT separately confirm: the 5-minute grace period, the safe-area inset on the
@@ -714,6 +720,8 @@ it never happens twice. Answer, then ask which of the waiting items he wants to 
 | 8-bit test logger source (published copy) | `.claude/kpm-test-quest.html` — group **T** covers the toasts |
 | How to run the app for him | `npm run dev -- --host` → PC `http://localhost:5173/`, phone `http://192.168.1.141:5173/` (ignore the `172.27.x` virtual adapter) |
 | The published test logger | `https://claude.ai/code/artifact/435e77ee-9f1f-4786-a1df-050156596016` |
+| **His 2026-08-10 round result, 64/64** | `.claude/kpm-test-results-2026-08-10.md` — his own words, the primary source for G5 |
+| The Lite Mode switch he left on | `src/components/SettingsView.jsx:200-217` (⚡ Cello Lite Mode) |
 | The "ACCESS GRANTED" animation he wants replaced | `src/App.jsx:3397-3418` (`isUnlocking` branch) |
 | Next-stop design artifact | `https://claude.ai/code/artifact/8feebaa4-f8a2-414d-a4a6-2c642a27af48` |
 | Vault-gate drafts round 1 — ALL REJECTED | `https://claude.ai/code/artifact/3125ccf5-2445-4b64-94e7-419987fb4d0f` |
@@ -758,7 +766,30 @@ node src/config/toastSeverity.selfcheck.mjs; node src/config/findDuplicates.self
 **⚠️ The last several hours were NOT kpm work.** They went to a Qwen3-235B download in `D:\LLAMA`
 (AirLLM, separate project). No file in `src/` changed. Everything below is exactly where 20:45
 left it, and **the CANVAS half of the gate port is still the next kpm job.** The download is
-running again, instrumented, and **needs nothing from him** — see the LOG.
+running again and **needs nothing from him**.
+
+**The `D:\LLAMA` download is FIXED and proven, 2026-08-10.** Five nights of failures had one
+cause: AirLLM re-walked every layer each run, so it re-downloaded all 118 shards (~460GB) to redo
+65 layers already on disk — it could never fit or finish. `venv\Lib\site-packages\airllm\utils.py`
+is patched to skip layers with a `.done` marker (backup `D:\LLAMA\utils.py.backup`; restore = copy
+it back). **The boundary matters: the cursor parks at the LOWEST shard the first unsaved layer
+needs, never after the previous layer's highest** — layer 63 spans shards 79-81 and layer 64 spans
+81-82, and skipping the shared shard 81 would have handed layer 64 incomplete weights that fail
+silently as rubbish output. Real run confirmed it: `resuming: 65/97 modules already saved,
+skipping ahead to shard 81/118`, counter **1/32** not 1/97, `model.layers.64.safetensors` saved.
+**Now 66/97, restarted 15:10 at shard 82, 31 layers left, ETA 7-10h, 295GB free.**
+Command (**his own terminal — a Claude background task dies with the session**):
+
+```powershell
+cd D:\LLAMA; $env:HF_HUB_DISABLE_XET=1; $env:HF_HUB_DOWNLOAD_TIMEOUT=120; .\venv\Scripts\python.exe run_qwen.py
+```
+
+Two traps for whoever picks this up: **clicking inside the running console kills it** (that is how
+the 09:52 run died — no traceback, just the prompt back with a stray `n`; he is on Windows
+Terminal so there is no QuickEdit checkbox, Esc unfreezes). And **free space drops ~20GB/h while
+it runs and returns by itself up to an hour after the process exits** — deleted-but-open handles,
+invisible to any scan. Do not go hunting for it again; at rest `du` and the drive reconcile
+exactly (632GB vs 631GB). `D:\LLAMA\space.log` holds the samples.
 
 Sales terminal redesign is **built and passing 158/158**. Design work is CLOSED.
 Groups A and B are walked; H1, H3 and C2 confirmed by hand. **Everything below is committed
@@ -983,6 +1014,27 @@ are never worth rescuing.
 
 ## LOG — newest first, older entries live in `git log` for this file
 
+### 2026-08-10 15:11 WIB — he finished the round, 64/64. G5 broken. Two questions open.
+
+He could not copy from the quest log and used **Save File**; the result is now in the repo at
+`.claude/kpm-test-results-2026-08-10.md` instead of only on his Desktop. **That file proves half
+of the item-5 fix**: it printed F and G only and said 56 earlier tests were left out. The copy
+button itself is still unproven — he may have downloaded from the build carrying the broken
+always-visible overlay, so he must hard-reload before that path is judged.
+
+**G5 BROKEN is four faults, kept separate on purpose**: no pending-IOU banner at all; the strip
+shows the last order's value but not its items; strip and manifest too far apart on a phone (a
+taste call, give options); and Master Vault / Boss Car / notification rendering in FRONT of the
+manifest paper — same stacking-context family as the vault gate's nav button, which z-index did
+not fix.
+
+**F7's missing SFX and animation is most likely Lite Mode left on after G9** and persisting in
+localStorage. Both going at once is the tell: a broken iOS audio unlock takes the sound and
+leaves the animation. Asked, unanswered.
+
+Also his: haptics on cart add/remove, and NOO registration froze the phone (G6, uninvestigated).
+**Not a bug: no merchant on the phone is deliberate** (`MerchantSalesView.jsx:1740`, `hidden lg:grid`).
+
 ### 2026-08-10 11:52 WIB — Hermes → alucard. Not app work. Quota died mid-sweep.
 
 **No KPM code touched.** He asked for Hermes Agent (Nous Research, installed at
@@ -1091,98 +1143,6 @@ origin work is his decision, not a thing to slip into a bug fix.
 
 **✅ THE GATE CAN NO LONGER FAIL IN SILENCE (`f460297`, audit group 19, 7 checks).** Three exits
 in `handlePinLogin` reported nothing: an empty box (a shake only), a missing settings doc (a bare
-`return`), and the `catch` (console only — on the one device where he cannot open a console).
-`handleResetPin` had reported the missing-doc case since it was written; only the login path was
-missed. **This is the app's oldest disease** — 58 confirms, 11 prompts and 184 alerts were
-replaced for exactly this — **still alive on the screen every session starts at.** Each check was
-proved to fail on the previous commit first.
-
-**✅ REDUCE MOTION NO LONGER DELETES THE BACKGROUND (`cb6f550`).** His report: *"the press and
-drag for the background is not available in the phone"* — **he has Reduce Motion ON in iOS
-Accessibility**, and one flag was deciding both whether the canvas existed and whether the 8.5s
-sequence played. Now `gateCanvasOn()` (the FIELD, Lite Mode only) is separate from `gateIsRich()`
-(the SEQUENCE, also reduced motion). The field does not move on its own — it brightens under a
-finger, which is a response to input.
-
-**⚠️ A CLAIM I MADE EARLIER WAS OVERSTATED AND IS CORRECTED HERE.** I reported the phone
-press-and-drag path "proven" from a synthetic `PointerEvent` dispatched straight onto the canvas
-host. That bypasses hit-testing **and** mounting — on his device the host was never rendered at
-all. **A synthetic event dispatched at an element proves the handler runs, never that a real
-finger reaches it.**
-
-**⚠️ TWICE NOW `node audit.mjs | tail` HAS HIDDEN A FAILING AUDIT** — the pipeline exits with
-`tail`'s status, so `&& git commit` ran on a red audit and a failing state was committed (amended
-away). **Capture the exit code before piping:** `node … > /tmp/a.log 2>&1; code=$?`.
-
-### 2026-08-10 05:15 WIB — 🔒 THE OUTRO IS CLOSED. He kept today's. JOB 6 IS FINISHED.
-
-**His words: *"TBH from all your design what we already have is still the best i still choose
-today, just stay with that i dont want to waste anymore time to design this, lets move on with
-other work"*.**
-
-**DO NOT RE-PITCH THE OUTRO. DO NOT OFFER VARIANTS. DO NOT "IMPROVE" IT.** The fade-and-shrink
-at `opacity 200ms ease / transform 420ms cubic-bezier(.16,1,.3,1)` on the card in `App.jsx` is
-final and chosen, having been compared against three alternatives he actually played.
-**A consequence worth stating plainly: `vault-b.mp3` needs NO regeneration.** The whole timing
-chain — wave 3.0s, tok 4.50s, ticks 6.70s — stays exactly as shipped.
-The rejected drafts stay at `https://claude.ai/code/artifact/76cd529a-dc41-45cc-ad23-a5ea0418f7b0`
-for the record only. **JOB 6, start to finish, is done.**
-
-**The lesson for me, not for him: he judged three designed alternatives and kept the default.**
-The "cheap" verdict he gave earlier was about the whole ACCESS GRANTED beat, and that had already
-been fixed. I read it as a standing complaint about the outro specifically and built four
-variants off that reading. **When he says something is cheap, ask which part before designing.**
-
-### 2026-08-10 05:08 WIB — outro drafts published, and two quest-log items closed. Audit 202/202.
-
-**🔴 WAITING ON HIM — FOUR PANEL OUTROS, HIS PICK:**
-**`https://claude.ai/code/artifact/76cd529a-dc41-45cc-ad23-a5ea0418f7b0`**
-Same wave every time, so only the exit differs; slow-motion ×3 toggle for judging timing.
-`0` today (fade+shrink 200ms, the one he called cheap) · **`A` Conversion** — the card's own
-outline lifts off and becomes the ring, +420ms · `B` Power cut — 90ms to black, a beat, then
-the ring, +300ms · `C` Seal & release — hairline draws shut, holds, lets go, +560ms.
-**A is the recommendation**, because it fixes the actual fault: today the exit and the wave are
-two unrelated events. **All three push the wave later, so `vault-b.mp3` MUST be regenerated** —
-he has to accept that cost with the pick. Source: scratchpad `gate-outro.html`.
-
-**✅ QUEST-LOG ITEM — Edit Record panel is on-theme (`30c1944`).** His words: *"also the edit
-record panel better changed it into our theme"*. STOCK/STICKS and RETAIL/GROSIR were using
-green-vs-blue to tell pairs apart; all four are cream on neutral with a gold focus edge now. No
-meaning lost — the labels already say which is which. **Still off-theme and deliberately NOT
-touched** (different screen, not something he tested): the loading spinner at `App.jsx:~3748` is
-emerald AND uses `animate-spin`, which also breaks the Lite Mode "nothing rotates" rule.
-
-**✅ QUEST-LOG ITEM — the flight recorder no longer lies about being offline (`3af67f0`).**
-His words: *"it just stays green"*. `navigator.onLine` answers "is there an interface", not "can
-I reach anything", and his WSL adapter keeps it true with the wifi off. Now a real probe.
-**Three things about it that must not be "simplified" later, each pinned by a check in group 17:**
-it is deliberately **NOT same-origin** (this is a PWA — the service worker answers its own
-precached files with the wifi off, so a same-origin probe proves nothing); it uses `no-cors`
-against a **204** so the body is never read and the data cost is headers only; and
-`navigator.onLine === false` is still trusted instantly, because the flag lies by saying yes,
-never by saying no. **Measured live from his network: 119ms.** A 30s heartbeat covers the case
-with no event at all, which is his case exactly.
-**Wrong answers fail safe by design:** a false "offline" queues a sale that syncs later; a false
-"online" is the bug being fixed.
-*Not proven, and do not claim it was: the service-worker half was NOT demonstrated live — the SW
-is not active under `vite dev`. It applies to the production build (71 precached entries).*
-
-**▶ QUEST-LOG ITEMS STILL OPEN, his words, in the order I would take them:**
-1. ~~H2a — typing a store name by hand does not select it.~~ **✅ DONE `b3436c6`.** Both halves
-   were one root cause: only a dropdown CLICK ever set `selectedCustomerInfo`. Typing the full
-   name now selects, via the SAME handler, and **only when exactly one shop matches** — three of
-   his shops share a name 14.5 km apart.
-2. **The flight recorder should show the queued edit.** *"there should be the notification that
-   the edit is queued inside the flight recorder"*. `useOfflineEngine` already keeps `syncLogs`
-   and `pendingCount`, so the data likely exists and is simply not shown for that path.
-3. **The mascot has no exit animation** — *"it is just snapped and gone"*. Plus his H3 idea:
-   *"glowing red on the borderline for that box"*.
-4. **The mascot is clipped on his phone** — needs a phone screenshot of a screen he appears on.
-5. **T9 button** — *"makes it more expensive and elegant"*. A taste call; give him options.
-6. 🔴 **C6 retur — BLOCKED ON HIM, do not guess.** *"disabled button and add red strip as well…
-   i like it better when the red strip dissapeared after 3 seconds"*. The button is ALREADY
-   disabled (`MerchantSalesView.jsx:~2301`) with a grey caption. **Ask: recolour that caption, or
-   raise a toast on a click that a disabled button cannot receive?**
-
-_Older entries live in `git log -p .claude/PROGRESS.md`. Trimmed to five on 2026-08-10 11:44 —
-the gate port, the outro rounds and the 02:xx phone-button session are all in that history._
+_Older entries live in `git log -p .claude/PROGRESS.md`. Trimmed to five on 2026-08-10 15:11.
+The outro closure, the gate port and the 02:xx phone-button session are all in that history —
+their locked decisions are restated near the top of this file, so nothing load-bearing was cut._
