@@ -1,7 +1,10 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-10 10:15 WIB** · branch `phase0-solid-ground` · last code commit: run `git log -1`
-**Build green, audit 214/214 (checked 10:15).**
+**Updated: 2026-08-10 11:44 WIB** · branch `phase0-solid-ground` · last code commit: run `git log -1`
+**Build green, audit 215/215, `vaultGrace.selfcheck` 10/10 (checked 11:30).**
+
+**NOW: all eight of his phone-report items are built and committed. NOTHING is in flight.**
+He is testing on his phone. The quest log is republished at the same URL.
 
 **THE LOGIN SCREEN / VAULT GATE HAS NOTHING OPEN. Every part of it is signed off by him:**
 design (Variation B), timing (8.5s, *"timing is fine"*), the card, the outro
@@ -632,6 +635,8 @@ it never happens twice. Answer, then ask which of the waiting items he wants to 
 | Its credential — OUTSIDE the repo, never commit | `C:/Users/ASUS/.claude/9router-cookie.txt` + `9router-claude-id.txt` |
 | Duplicate-store logic (pure, has a selfcheck) | `src/utils/findDuplicates.js` |
 | Its 21 self-checks | `src/config/findDuplicates.selfcheck.mjs` |
+| **The 5-minute vault grace period** | `src/utils/vaultGrace.js` — wired by two effects in `App.jsx` near `handleAdminAuthSuccess` |
+| Its 10 self-checks (run it, it is free) | `src/config/vaultGrace.selfcheck.mjs` |
 | 8-bit test logger source (published copy) | `.claude/kpm-test-quest.html` — group **T** covers the toasts |
 | How to run the app for him | `npm run dev -- --host` → PC `http://localhost:5173/`, phone `http://192.168.1.141:5173/` (ignore the `172.27.x` virtual adapter) |
 | The published test logger | `https://claude.ai/code/artifact/435e77ee-9f1f-4786-a1df-050156596016` |
@@ -904,6 +909,29 @@ are never worth rescuing.
 
 ## LOG — newest first, older entries live in `git log` for this file
 
+### 2026-08-10 11:44 WIB — his 8 phone items are all built. A-Brain backfilled. One self-inflicted break, fixed.
+
+**A-BRAIN IS NO LONGER OPTIONAL — his instruction, and it is now Alucard §11a.** Six days and 178
+commits had gone into `PROGRESS.md` and nowhere else; he called that an emergency and had it
+closed before any code. Vault commit `a5921e6`: new Concepts `Secure Context Requirement`,
+`Silent Failure Disease`, `Aldi's Design Taste`, new Entity `Master Vault Gate`, a Summary, the
+Raw source, and the MOC's first new sections since it was built. **The vault also held weeks of
+UNCOMMITTED files** — Duke's Ledger assets, Backlog notes, a 9Router page. Writing to it and
+saving it were two different things. 77 files in that one commit.
+
+**All eight phone items shipped** — `d15ae51`, `df2087f`, `01dfdb0`. Audit 214 → 215.
+Details are in the section above; the two that will bite someone later are the grace period's
+restore-once ref and `handleLogout`'s explicit `clearGrace()`.
+
+**⚠️ I BROKE THE QUEST LOG FOR 20 MINUTES AND HE FOUND IT, NOT ME.** The new copy-fallback panel
+carried an inline `display:flex`. **The `hidden` attribute is only `display:none` from the UA
+stylesheet, so ANY inline `display` beats it** — the overlay was never hidden, it covered the
+whole log from page load, and it read as "the quest log is wiped". Fixed in `2e1e9a3`-style
+commit (see `git log -1 -- .claude/kpm-test-quest.html`): display moved to the stylesheet with a
+`.fallback[hidden]` rule, which is what `.toast`, `.lightbox`, `.detail` and `.gbody` already did.
+**The lesson is not "check the overlay" — it is that four correct precedents were sitting in the
+same file and the new code did not follow them.**
+
 ### 2026-08-10 — ✅ HIS PHONE CAN LOG IN NOW. Dev is HTTPS. `b1aee4e`
 
 **🔴 THE DEV SERVER IS HTTPS FROM NOW ON. `npm run dev -- --host` → `https://`, not `http://`.**
@@ -1053,379 +1081,5 @@ is not active under `vite dev`. It applies to the production build (71 precached
    disabled (`MerchantSalesView.jsx:~2301`) with a grey caption. **Ask: recolour that caption, or
    raise a toast on a click that a disabled button cannot receive?**
 
-### 2026-08-10 02:55 WIB — phone can open the vault again. `d366acc`. NEXT JOB IS THE PANEL OUTRO
-
-**🔴🔴 THE ONE THING HE IS WAITING FOR — DO THIS FIRST NEXT SESSION.** His words, verbatim:
-*"the animation for the access granted is too quick, we need to add more smooth and better
-animation for the panel outro just before the waves. this animation is too cheap and quick we
-need to redesign the outro animation for the panel do u have any ideas in mind?"* and he named
-`/design /emil-design-eng /ui-ux-pro-max /review-animations /improve-animations /animate`.
-**NOT STARTED — deliberately, at 16% quota, because a design round he has to judge cannot be
-half-delivered.** He has used the word "cheap" about an animation twice now (JOB 4 was the first),
-and both times he was right.
-**WHAT THE OUTRO IS TODAY, so nobody has to go looking:** the card gets
-`opacity-0 scale-[.86]` over `200ms ease` / `420ms cubic-bezier(.16,1,.3,1)`, applied in
-`App.jsx` on the card div. **That is the whole thing — a fade and a shrink, no exit choreography
-at all**, and it is the ONE beat in the gate that was never designed, only ported. The wave that
-follows is 3.0s of craft landing on a 200ms fade.
-**The constraint that makes this hard and must be respected:** `public/sounds/vault-b.mp3` is cut
-to the 3.0s wave, tok at 4.50s, ticks at 6.70s. **A longer outro pushes the wave later and
-desyncs the sound** unless the wave start is moved with it and the mp3 regenerated. `T_WAVE` in
-`VaultGate.jsx` is where the delay before the ring lives.
-
-**✅ THE PHONE BUTTON IS FIXED AND IT WAS THE KEYBOARD, NOT THE LAYOUT.** *"i cant press open the
-vault button on my phone it is just not working"*. **Measured at 375×812 first: the button is
-fully hit-testable and nothing covers it** — so every occlusion/z-index theory was wrong. The
-field had `autoFocus`, so on a phone the keyboard is up before he touches anything and the first
-tap is eaten dismissing it. Now: `autoFocus` only where there is a mouse (`IS_TOUCH`), the field
-and button are a real `<form>` so the phone's return key says **GO**, and
-`touch-action: manipulation` kills the double-tap wait.
-**Two traps that each cost one of his five PIN tries if reintroduced:** the `onKeyDown` Enter
-handler was REMOVED when the form went in (both would fire `handlePinLogin`), and Fingerprint /
-Lost-your-key are explicitly `type="button"` — inside a form they would otherwise submit.
-
-**Also landed:** mascot no longer renders on the login screen (`182d7f8`), master password no
-longer flashes as typed (`351e380`, feature-detected — see the security note in the entry below).
-
-### 2026-08-10 02:40 WIB — gate shipped and working on his PHONE. Audit 196/196.
-
-**HE IS THROUGH THE GATE ON HIS PHONE** — screenshot shows the new card rendering correctly at
-`192.168.1.141`. The port is done and in daily use.
-
-**✅ THE PHONE LOGIN IS FIXED AND IT WAS NEVER CODE.** His authorised-domain list held
-`192.168.1.102` — his PC's OLD address. The router had since handed it `192.168.1.141`. He added
-the new one and it worked immediately. **T7 was a stale IP in the Firebase Console all along.**
-**It will break again on every DHCP reshuffle.** Two permanent options offered, he has not
-chosen: a router reservation, or testing on `kpm-inventory.vercel.app`, which is already in the
-list and never changes.
-
-**Landed off his phone screenshot:** capybara no longer renders on the login screen (`182d7f8`,
-his ask — "capybara should shows when we are already log in"; **both** `user` and
-`!showAdminLogin` are required, since he was already signed in), and the master password no
-longer flashes as he types (`351e380`).
-
-**🔴 SECURITY SHAPE WORTH KEEPING: the no-flash fix is feature-detected on purpose.** The phone's
-last-character reveal cannot be turned off on a real `<input type="password">`. The only fix is a
-TEXT input masked by `-webkit-text-security` — and a browser without that property would render
-his MASTER PASSWORD as readable plaintext. `CAN_MASK_TEXT_INPUT` (top of `App.jsx`) gates the
-swap and falls back to a genuine password field. **Never make it unconditional.** Two audit
-checks pin it, plus the autofill/spellcheck exclusions a text input needs.
-
-**⚠️ STILL OPEN — the mascot clipping is NOT fixed.** Hiding him on the login screen removed the
-place Aldi saw it; wherever he DOES render he is still anchored `fixed bottom-0 right-0` and cut
-by the viewport edge on a phone. **Do not mark that done.** Needs a phone screenshot of a screen
-he appears on.
-
-**⚠️ Also unresolved: he says the sidebar button is still on the login screen.** Measured absent
-from the DOM after `036ead3`. Have him hard-refresh first; if it survives that, get a screenshot
-before touching code.
-
-**QUEUED, NOT STARTED, his order:** dashboard UI rework — *"the dashboard theme looks not in line
-with the theme that we have… we'll do it after the sales terminal"*. **Sales terminal first.**
-
-### 2026-08-10 02:30 WIB — the gate WORKS (his screenshot proves it), and T7's real cause found
-
-**HIS NAME CAME OUT OF THE DOTS.** He sent a screenshot of ALDI formed in orange dots with the
-two lines above it. The port is functionally done. Fixes off that screenshot, all committed:
-spaces restored (`b549893`), second line reworded to **"KPM App access unlocked"** at his
-instruction, panel widened on desktop (`119ab32`).
-
-**🔴🔴 T7 HAS NEVER BEEN A UI BUG AND EVERY NOTE ABOUT IT IS WRONG.** He reported tonight:
-*"i cant login through my phone it said login failed firebase error auth/unauthorized domain"*.
-That is **Firebase Auth rejecting the HOST**, not a missing button. `localhost` is authorised by
-default; **`192.168.1.141` is not**, and nothing in `src/` can change that — it is a Firebase
-Console setting, and only Aldi can make it. **The sign-in button added for T7 in
-`BiohazardTheme.jsx` could never have fixed this**; a visible button cannot beat an unauthorised
-domain. **Do not "fix" T7 in code again.** The action is his, once:
-Console → project `cello-inventory-manager` → Authentication → Settings → Authorized domains →
-Add `192.168.1.141` (bare host, no `http://`, no `:5173`). **It breaks again if his router hands
-the PC a different IP** — a DHCP reservation or a static IP is the permanent answer.
-
-**Everything phone-shaped is blocked behind that**, including his report that *"capybara on my
-phone is still cutted"*. Investigated as far as code allows: the mascot is
-`fixed bottom-0 right-0 z-[99999]` with `w-32 h-32 md:w-48` (`CapybaraMascot.jsx:275,279`) and
-its bubble is `absolute bottom-[112%] right-[6%]`, `min-w-[140px]` — **nothing there clips on its
-own, so the likely cause is an ancestor with a `transform`, which makes `fixed` resolve against
-that ancestor and lets its `overflow` clip.** Unproven. **Ask him for a phone screenshot** once
-he can log in; guessing at this without seeing it wastes a round.
-
-**🔑 He said the sidebar button is still on the login screen — the code says otherwise and was
-measured saying otherwise** (`navButtonInDOM: false`, canvas painted at its old corner). Most
-likely a page loaded before the fix. **Tell him to hard-refresh before investigating**, and do not
-re-fix it on the report alone.
-
-**QUEUED AT HIS INSTRUCTION, NOT NOW:** *"the dashboard theme looks not in line with the theme
-that we have, maybe we should rework the dashboard UI as well, we'll do it after the sales
-terminal"*. **Sales terminal first. Do not start the dashboard.**
-
-**Do not click "Lock Terminal" in his live session to reach the gate.** He is signed in and
-working; it costs him a password entry. Verify from a page state he is already in.
-
-### 2026-08-10 02:15 WIB — the gate is VERIFIED IN THE RUNNING APP. `036ead3`
-
-**🔑 THE BLOCKER THAT HAS COST THREE SESSIONS IS HALF GONE. `read_page` and `javascript_tool`
-WORK WITHOUT THE BROWSER PANE BEING DISPLAYED.** Only `screenshot` needs compositing. Every note
-saying "blocked on the Browser pane" was over-broad — **the DOM, computed styles, and even canvas
-pixels are all reachable right now.** Use them. Ask for the pane only when the actual question is
-"what does it LOOK like".
-
-**Verified live, gate open, on his own dev server:** canvas mounted 859×653 · overlay
-`rgb(0,0,0)` · card `rgba(4,3,2,.9)` on `rgba(231,112,15,.2)` at 320px · field underline-only,
-bottom border `rgb(231,112,15)`, text `rgb(247,233,200)`, letter-spacing 5.46px · SECURITY CHECK,
-ACCESS VAULT and BIOMETRIC OVERRIDE all absent · nav button absent from the DOM.
-
-**THE PHONE PATH IS PROVEN, which no static check could do.** A `pointerdown` with
-`pointerType:'touch'` — no mouse, no hover — took the field from **0 lit pixels to 5,986**,
-centred at (208,325) against a touch at (215,327). The 7px is the dot grid. His phone will work.
-
-**His "taking too long" was a dead port.** My preview server had died; the pane's tab was pointed
-at nothing. His own dev server on **5173 answers in 5ms**. **Check the port is listening before
-diagnosing anything else** — `netstat` + `curl -w %{time_total}` settled it in one turn.
-
-**A fix that passes a build check and still fails in front of him is the worst shape there is.**
-The nav button was first hidden with a `hidden` class. The prop arrived, React put the class on
-the element, computed display stayed `flex`. Cause: Tailwind generates on demand and the DEV
-stylesheet had not caught up — **the production CSS does contain `.hidden{display:none}`**, so a
-build-time check would have passed while he kept seeing the button. It is now simply not
-rendered. **I also stated the wrong cause first ("Tailwind never emitted .hidden") and corrected
-it after grepping the built CSS — check the artifact before naming a cause.**
-
-### 2026-08-10 02:01 WIB — he looked at the gate, and the port had done half the job. `ae341e7`
-
-**"timing is fine"** — the 8.5s sequence is signed off. That question is closed.
-
-**But he saw immediately what a build and 187 checks could not: the CARD was still the old one.**
-The port brought the canvas across and left the panel alone, so the preview's dot field sat
-behind a red shield, a SECURITY CHECK heading and a red ACCESS VAULT slab. **Everything I could
-verify passed; the thing he noticed in one second was not any of it.** That is the shape of this
-whole job — the checks guard against regression, they do not tell you the work is finished.
-
-He also wanted the nav button off the login screen. **Raising the modal's z-index would not have
-worked**: the button sits in its own stacking context, so `z-[9999]` on the gate never beats its
-`z-[100]`. It is hidden by a prop instead.
-
-**A REAL HOLE, found only because a build failed at the right moment: the audit read a stale
-`dist/` and reported 191/191 while `npm run build` was erroring.** Every check re-passed against
-the last good bundle. It now refuses to report when `src/` is newer than the newest built asset,
-proved both ways — refuses before a rebuild, passes after. **This had been silently possible for
-the whole life of the file**, and every "audit green" claim made straight after a failed build
-was worth nothing.
-
-Audit **187 → 191**. Build green, useSound 6/6, toastSeverity 54/54, findDuplicates 26/26,
-gate guard proofs 12/12.
-
-### 2026-08-10 01:47 WIB — ✅ JOB 6 IS BUILT. The gate is in the app. `784f5cc`
-
-**The design sat as an artifact for a day; `src/` now has it.** 335 lines in one new component
-rather than added to `App.jsx`, which is ~4k lines and already flagged as doing too many jobs.
-
-**The card stayed where it was, and that was the whole design decision.** The obvious port makes
-the gate the parent and passes the card in as children — which would have moved 180 lines of JSX
-and five modes into a new file to obtain two CSS properties. Instead `VaultGate` renders only the
-background layer and App applies the collapse itself. **Side effect worth knowing: audit group
-14's regex still finds the `{isUnlocking ? (` block exactly where it was, so none of its six
-existing checks needed touching.** A port that does not disturb the guards around it is the one
-to prefer.
-
-**A check of mine looked dead and was not — the fourth time this pattern has appeared here.**
-`gate-guard-proof.mjs` reported the `gateHoldMs` guard as useless. The guard was fine; my PROOF
-read the raw file while the audit reads it **with comments stripped**, and the PIN path's
-explanatory comment pushed the match past its 400-character window. **The rule is now four for
-four: any check that scans source must scan the CODE, never the document.** The honest move each
-time was to re-run scoped rather than trust the red or dismiss it.
-
-Two runtime faults the build cannot see, found by reading my own code back and fixed before
-commit: a refused 2d context would have thrown the whole login screen instead of just losing its
-background, and the `pointerup` listener was added with an inline arrow that the cleanup could
-never remove.
-
-Audit **175 → 187**. Build green, useSound 6/6, toastSeverity 54/54, guard proofs 12/12.
-
-### 2026-08-10 05:05 WIB — NOT kpm work: the LLM download, and the disk that kept eating itself
-
-**This entry is from the OTHER session running in this folder tonight. It touched no `src/` file
-and shipped no kpm code** — the gate work in `784f5cc`/`6a3aaca` is the *other* session's, not
-this one's. Nothing here changes JOB 2/4/5. It is recorded only so the disk finding is not lost.
-
-**Status as of 01:59: running again with instrumentation.** 65 of 97 pieces are already on disk and
-survive every crash. A watcher samples free space + layer count every 2 minutes into
-`D:\LLAMA\space.log` and alerts at 200/120/60/**35**GB — the 35GB alarm exists to kill the process
-*before* `ENOSPC` so the run ends on our terms instead of losing hours to a crash.
-
-**05:05 — THE DOWNLOAD IS DELIBERATELY STOPPED, and the root cause is finally named.** Its own log
-gave it up: `some layer splits found, some are not, re-save all layers in case there's some
-corruptions.` **AirLLM re-walks every layer from zero on each run, so it re-downloads all 118
-shards (~460GB) no matter how many layers are already on disk.** The 65 finished layers save disk,
-they save *no* download. After 2h52m the run was only at layer **14/97**, still on shard 18, with
-its own ETA of **16h40m** — and it burns ~22GB/h of leaked space against 233GB free, so it would
-have died of `ENOSPC` around hour 10 for the fifth time. Stopping cost nothing: those hours were
-redoing layers that already existed.
-
-**THE FIX, and the trap inside it.** Skip layers that already have a `.done` marker and park the
-shard cursor before the first unfinished one → ~36 shards instead of 118, ~6h instead of 17.
-**The cursor must go to the LOWEST shard the first unsaved layer needs, never after the highest
-shard the previous layer reached.** Verified against `model.safetensors.index.json`: **layer 63
-spans shards 79-81 and layer 64 spans 81-82 — they SHARE shard 81.** The obvious version of this
-patch skips 81 and hands layer 64 incomplete weights: the model still runs and still answers, it
-just answers with rubbish, and nothing fails loudly. Cursor goes to **80**.
-
-**✅ APPLIED AND VERIFIED 05:45 — he answered *"sure do whatever wise for the best bro"*.** The
-patch is in `D:\LLAMA\venv\Lib\site-packages\airllm\utils.py`; restore with
-`cp D:\LLAMA\utils.py.backup` over it. Two changes: skip layers that already have a `.done`
-marker, and don't try to delete a shard that was never downloaded (the resumed cursor starts
-mid-checkpoint, so those files are absent and the unguarded delete would throw).
-**Checked before running anything, not after:** `py_compile` clean · first unsaved layer is
-`model.layers.64.` · it spans shards 81-82 · cursor parks at **80**, so shard 81 — the one shared
-with layer 63 — **is** loaded. **38 shards to fetch instead of 118.** ~6h and ~145GB against
-299GB free.
-
-**He must launch it from HIS OWN PowerShell window.** A Claude background task dies with the
-session; five nights of restarts came partly from that. His own window outlives everything.
-
-**Restart command:**
-
-```powershell
-cd D:\LLAMA; $env:HF_HUB_DISABLE_XET=1; $env:HF_HUB_DOWNLOAD_TIMEOUT=120; .\venv\Scripts\python.exe run_qwen.py
-```
-
-Re-arm a 2-minute watcher on `df -m /d` + the `.done` count, alerting at 35GB. `D:\LLAMA\space.log`
-holds every sample taken so far and is the only record of the leak rate.
-
-The `D:\LLAMA` Qwen3-235B download died four times. The first was a genuine HF CDN 500 (`xet`
-backend — `HF_HUB_DISABLE_XET=1` fixed it for good). Every failure after that was `OSError: [Errno
-28] No space left on device`, and **twice I blamed the wrong thing** — first a Steam update, then
-"D: is just full". Both wrong.
-
-**The cause is still UNKNOWN. Three theories have now been killed by measurement — do not revive
-any of them without new evidence:**
-1. ~~Steam auto-updating~~ — his flat denial, and no evidence was ever gathered for it.
-2. ~~`D:\LLAMA` itself~~ — measured **91GB**, third largest folder on the drive.
-3. ~~Windows System Restore hoarding the deleted shards~~ — **disproven by `vssadmin list
-   shadowstorage` run elevated: D: has no shadow storage association at all** (only C:, 10.5GB),
-   and `D:\System Volume Information` measures **0.0GB**. This was my theory and it was wrong.
-
-**RESOLVED — the space is TRANSIENT, held by the running download and released when it dies.**
-The proof is a reconciliation, not a theory. With the download stopped, `du` totals **632GB** and
-the drive reports **631GB used of 931GB** — **the gap is zero.** While a run was live the drive
-read 929GB used against only 657GB of enumerable folders, a 271GB hole that no scan could find and
-that vanished by itself the moment the process died. Space that returns on its own was never
-really on disk: it is deleted-but-still-open file handles, invisible to any directory walk and
-unreclaimed until the process exits. **Windows had no symlink support for this cache** (the very
-first log line warned of it), so every shard is written more than once — that is the multiplier.
-
-**Operationally this means the download can never finish by retrying.** It leaks roughly 10GB per
-shard, dies of `ENOSPC` after ~30 shards, gives the space back, and the next run does the same.
-65 of 97 pieces are on disk (`D:\LLAMA\airllm_shards\splitted_model.4bit`, 84GB) and none of that
-is lost between crashes. **The next attempt must be instrumented — sample free space and folder
-size every 60s — so the leak rate is measured, not guessed at a fourth time.**
-
-Minor, but it cost a wrong number once: **PowerShell's `Get-ChildItem` counts hardlinked files
-repeatedly** — it read `Vortex Mods` as 34GB where `du` reads 6.2GB. Use `du` for disk work here.
-
-**When a "used" number and a folder scan disagree, the gap IS the finding — do not name a suspect
-from the visible list.** Two wasted restarts and one wrong diagnosis came from doing exactly that.
-**Also: never trust a scan that hides its own errors.**
-
-Also worth keeping: `powershell -Command` invoked through Bash is on his **deny list** and will be
-refused; use plain `du`/`find` for disk work here.
-
-### 2026-08-09 20:45 WIB — the palette law reached the other four gate modes. `6a3aaca`
-
-**He asked for the login-screen fixes with under 20% of the plan quota left, so the canvas port
-was deliberately NOT started** — it cannot finish and commit inside that, and his own standing
-rule bans starting one that can't. The palette half can, and it is now shipped.
-
-**The finding worth keeping: a guard that watches one of five modes reports a law as kept when it
-is half-kept.** Audit group 14 said "no green while the vault opens" and passed — because it read
-only the `isUnlocking` branch. First-time setup was still `emerald-500` and the entire OTP screen
-was still `blue-500` for a full day after the unlock went gold, with the audit green the whole
-time. **Scope a check to the whole feature, not to the branch you happened to be editing.**
-
-Also dead on arrival and now gone: the strength meter's `shadow-[0_0_10px_emerald]` — `emerald` is
-not a CSS color, so that glow had never rendered once.
-
-Three new checks, each **proved to fail on `HEAD~` before being kept** (old markup reports
-`green=true blue=true`, new reports `false/false`). Build green, audit **175/175**.
-
-### 2026-08-09 20:50 WIB — quest log sorted at last, and the mascot got his voice
-
-**The standing rule was outstanding for most of the session and is now done.** 48 answered tests
-lock; T6, T7, T10 and H2b come back blank under a new tag. Details in DO THIS NEXT above.
-
-**T6 shipped: `triggerCapy` now plays a mumble.** The files have existed since the terminal was
-built and **only `MerchantSalesView` ever played them**, so the mascot was mute on every screen
-except the one he was not testing. Same shape as the audio-unlock bug from earlier today — **an
-asset existing is not the same as a path playing it, and the second time this pattern appeared it
-was in a different component.**
-**It cost a build:** the explanatory comment I wrote pushed `notify(text)` outside the
-400-character window audit group 13 asserts around `triggerCapy`, and the check failed. **The fix
-was to shorten the comment, not widen the guard** — a check that exists to keep a failure visible
-should not be relaxed to make room for prose. 172/172 after.
-
-**Three times this session a check of mine failed on my own COMMENTS rather than on code** — the
-last one matched the phrase "let state = load()" inside a comment describing declaration order.
-**Scan the extracted code, never the whole document, and normalise whitespace.** Every time, the
-honest move was re-running scoped rather than trusting or dismissing the red.
-
-### 2026-08-09 20:35 WIB — ✅ GATE DESIGN CLOSED. One clock, 3s wave. Next session: port it.
-
-**He was right twice in a row about the ring, and the second time the cause was three faults at
-once.** His hypothesis: *"maybe it is the same speed but it didnt start at the same place"*.
-Measured: the ring **started at 72px** while the dots started at 0, **ended at 924px** while the
-dots ended near 727, and used **cubic-bezier(.16,1,.3,1)** against the dots' `1-(1-t)³`. He
-offered to accept a start-point slider; that would have papered over one of three.
-**The fix was to delete the second mechanism, not tune it: the ring is now drawn on the canvas
-from the dots' own `front` value.** Same origin, same radius, same easing, because it is the same
-number. **Two mechanisms driving one visual cannot be kept in step by hand — that pairing caused
-both ring bugs today.** Carry this into the port.
-
-**Wave is 3.0s, his pick, and `vault-b.mp3` is retimed to it.** Every downstream beat derives
-from the wave, so his number alone sets the whole rhythm.
-
-**SESSION HANDOFF, at his request — he is near the plan limit and starting fresh.** Everything a
-new session needs is at the top of this file: the artifact URL, the four locked numbers, and the
-two jobs in order (quest log first, then the port). No code in `src/` changed for the gate.
-
-### 2026-08-09 20:25 WIB — the ring ignored its own slider, and he saw it before I did
-
-**He was right: *"the waveline should follow the wave time also… it only slow the dot wave not
-the line wave"*.** The dot wave is canvas maths and read `T_WAVE_DUR` every frame; the ring is a
-CSS animation, and its duration was being written **after** `.playing` had already started it.
-**Changing `animation-duration` on a running animation does not restart it — CSS keeps the
-elapsed time** — so the ring held roughly its stylesheet speed while the dots obeyed the slider.
-Fixed by setting the duration **before** the class is added, and again on every slider input.
-**The general trap: any CSS animation whose timing is data-driven must have that value written
-before the class that starts it, or the first run silently uses the stale one.**
-
-**Two mechanisms driving one visual is the deeper smell here** — canvas maths and a CSS keyframe
-had to be kept in step by hand. Worth collapsing at port time: draw the ring on the canvas with
-the dots, and there is only one clock.
-
-### 2026-08-09 20:10 WIB — ✅ THE VAULT GATE DESIGN IS SIGNED OFF. Next job is the PORT.
-
-**His words: *"okay i want u to make the wave little bit slower and we done bro"*.** Wave is now
-**1.90s** and on a slider (1.0–3.8s). **The design phase of JOB 6 is CLOSED — do not reopen it,
-do not offer new directions.** What remains is engineering.
-
-**Everything downstream now DERIVES from the wave** rather than being hard-coded: gather starts
-at `T_WAVE + T_WAVE_DUR*0.9`, and the two text lines, the exit and the app entry are all anchored
-to `FORMED = T_GATHER + 1.70`. Drag the slider and the whole sequence stays in proportion. **That
-is the shape to port — one number, everything else in terms of it.**
-
-**THE NUMBERS TO HARD-CODE, all his, all measured on the sliders:**
-`background spacing 26 · letter density 7 · name size 0.10 · wave 1.90s`
-(variation A's, if it is ever revived: sphere spacing 38, sphere size 0.46.)
-
-**`public/sounds/vault-b.mp3` is retimed to match and is the one to ship** — tok at 3.51s where
-the name completes, four ticks at 5.71s as the letters leave, release at 5.9s. **It only fits the
-1.90s wave.** If he moves that slider before the port, the sound needs regenerating; the
-generator is a plain Node PCM script plus ffmpeg, both used several times today.
-
-**▶ THE PORT IS THE NEXT JOB, and it is bigger than the animation.** `src/` still has none of
-this. The Security Check modal at `src/App.jsx:3439-3618` is **five modes wearing one shell** —
-standard login, first-time setup, recovery, OTP and unlock — and **setup is emerald, OTP is
-entirely blue**, against the palette law. Porting only the unlock leaves the law half-kept.
-Also unresolved for the port: **a phone has no hover**, so press-and-drag must reveal the field
-(implemented in the preview, must survive the port) or the gate is a black rectangle on mobile.
-
-_Older entries live in `git log -p .claude/PROGRESS.md`._
+_Older entries live in `git log -p .claude/PROGRESS.md`. Trimmed to five on 2026-08-10 11:44 —
+the gate port, the outro rounds and the 02:xx phone-button session are all in that history._
