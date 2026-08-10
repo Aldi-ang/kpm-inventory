@@ -1969,6 +1969,19 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                                 ? <>Last order {agoLabel(brief.lastAt)} &middot; usually Rp {new Intl.NumberFormat('id-ID').format(brief.avgBasket)}</>
                                                 : 'No order in the last 7 days'}
                                         </div>
+                                        {/* HIS REPORT, G5: "it doesnt show me what is the last order item is, only the
+                                            value". The desktop rail has listed the items since it was built (:2303);
+                                            only the phone strip was reduced to a number, and the phone is where he
+                                            cannot open the rail to go and look. `brief.lastItems` was already here —
+                                            nothing new is fetched, it was simply never rendered on this branch.
+                                            Two names then a count: the strip is one line of a card he reads at a
+                                            doorstep, so it names enough to recognise the order, not to audit it. */}
+                                        {brief?.lastItems?.length > 0 && (
+                                            <div className="mt-0.5 truncate font-mono text-[10px] text-[#a89070]">
+                                                {brief.lastItems.slice(0, 2).map(it => it.name).join(' · ')}
+                                                {brief.lastItems.length > 2 && ` +${brief.lastItems.length - 2} more`}
+                                            </div>
+                                        )}
                                     </div>
                                     {debtInfo && debtInfo.totalDebt > 0 && (
                                         <div className="shrink-0 border-l-[3px] border-[#b4524a] bg-[#1e1512] px-2 py-1 text-right">
