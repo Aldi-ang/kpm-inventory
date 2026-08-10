@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-10 05:08 WIB** · branch `phase0-solid-ground` · last code commit: run `git log -1`
+**Updated: 2026-08-10 05:40 WIB** · branch `phase0-solid-ground` · last code commit: run `git log -1`
 (**✅ THAT PHONE-BUTTON BUG IS FIXED — `d366acc`. A concurrent session wrote it up as
 "NOT INVESTIGATED" and that entry is STALE; it was the keyboard, not the layout.** ·
 **WAITING ON HIM: pick a panel outro — artifact 76cd529a** · then the quest-log list in LOG ·
@@ -837,6 +837,53 @@ are never worth rescuing.
 ---
 
 ## LOG — newest first, older entries live in `git log` for this file
+
+### 2026-08-10 — 🔑🔑 THE PHONE LOGIN MYSTERY IS SOLVED. It was `crypto.subtle`. `f460297`
+
+**READ THIS BEFORE TOUCHING ANYTHING PHONE-RELATED. Every "I can't log in on my phone" report,
+going back months, was ONE undefined API.**
+
+`crypto.subtle` exists **only in a secure context** — HTTPS, or `localhost`. His PC works because
+it IS localhost. His phone reaches the dev server at `http://192.168.1.141:5173`, which is
+neither, so `hashSecretWord` (`App.jsx:~853`) threw *"undefined is not an object"* — and a silent
+`catch` ate it, so the button did nothing at all. **Production is NOT affected: Vercel is HTTPS.**
+
+**T7's history is now fully understood and every earlier explanation was incomplete:** the
+missing sign-in button was real, the stale Firebase authorised-domain (`192.168.1.102` vs `.141`)
+was real, and **neither was the thing that stopped him logging in.** Do not "fix" T7 in code.
+
+**🔴 STILL BLOCKED ON HIM — he did not understand the options and they were re-explained.**
+The choice is how to get his phone onto HTTPS: (1) an HTTPS dev server via `@vitejs/plugin-basic-ssl`,
+one dev-only dependency, phone shows a one-time certificate warning — **recommended, and app code
+does not change**; (2) push the branch for a Vercel preview, which collides with his own "nothing
+leaves this branch yet" rule; (3) a hand-written SHA-256 fallback — **advised against and
+deliberately NOT built**: routing a master password through unreviewed crypto to make an insecure
+origin work is his decision, not a thing to slip into a bug fix.
+
+**✅ THE GATE CAN NO LONGER FAIL IN SILENCE (`f460297`, audit group 19, 7 checks).** Three exits
+in `handlePinLogin` reported nothing: an empty box (a shake only), a missing settings doc (a bare
+`return`), and the `catch` (console only — on the one device where he cannot open a console).
+`handleResetPin` had reported the missing-doc case since it was written; only the login path was
+missed. **This is the app's oldest disease** — 58 confirms, 11 prompts and 184 alerts were
+replaced for exactly this — **still alive on the screen every session starts at.** Each check was
+proved to fail on the previous commit first.
+
+**✅ REDUCE MOTION NO LONGER DELETES THE BACKGROUND (`cb6f550`).** His report: *"the press and
+drag for the background is not available in the phone"* — **he has Reduce Motion ON in iOS
+Accessibility**, and one flag was deciding both whether the canvas existed and whether the 8.5s
+sequence played. Now `gateCanvasOn()` (the FIELD, Lite Mode only) is separate from `gateIsRich()`
+(the SEQUENCE, also reduced motion). The field does not move on its own — it brightens under a
+finger, which is a response to input.
+
+**⚠️ A CLAIM I MADE EARLIER WAS OVERSTATED AND IS CORRECTED HERE.** I reported the phone
+press-and-drag path "proven" from a synthetic `PointerEvent` dispatched straight onto the canvas
+host. That bypasses hit-testing **and** mounting — on his device the host was never rendered at
+all. **A synthetic event dispatched at an element proves the handler runs, never that a real
+finger reaches it.**
+
+**⚠️ TWICE NOW `node audit.mjs | tail` HAS HIDDEN A FAILING AUDIT** — the pipeline exits with
+`tail`'s status, so `&& git commit` ran on a red audit and a failing state was committed (amended
+away). **Capture the exit code before piping:** `node … > /tmp/a.log 2>&1; code=$?`.
 
 ### 2026-08-10 05:15 WIB — 🔒 THE OUTRO IS CLOSED. He kept today's. JOB 6 IS FINISHED.
 
