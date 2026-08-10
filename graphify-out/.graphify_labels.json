@@ -38,5 +38,6 @@
   "36": "dayStats.selfcheck.mjs",
   "37": "MerchantSalesView.jsx",
   "38": "mixedUnits.selfcheck.mjs",
-  "39": "vaultGrace.selfcheck.mjs"
+  "39": "vaultGrace.selfcheck.mjs",
+  "40": "ExamineModal.jsx"
 }

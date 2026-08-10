@@ -1,16 +1,16 @@
-# Graph Report - kpm-inventory-main  (2026-08-10)
+# Graph Report - kpm-inventory-main  (2026-08-11)
 
 ## Corpus Check
-- 88 files · ~547,550 words
+- 89 files · ~547,922 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 616 nodes · 1148 edges · 40 communities (38 shown, 2 thin omitted)
-- Extraction: 98% EXTRACTED · 2% INFERRED · 0% AMBIGUOUS · INFERRED: 22 edges (avg confidence: 0.8)
+- 628 nodes · 1161 edges · 41 communities (38 shown, 3 thin omitted)
+- Extraction: 98% EXTRACTED · 2% INFERRED · 0% AMBIGUOUS · INFERRED: 23 edges (avg confidence: 0.79)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `01dfdb04`
+- Built from commit: `6b9cd73e`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -51,15 +51,16 @@
 - MerchantSalesView.jsx
 - mixedUnits.selfcheck.mjs
 - vaultGrace.selfcheck.mjs
+- ExamineModal.jsx
 
 ## God Nodes (most connected - your core abstractions)
 1. `notify()` - 43 edges
 2. `confirmAction()` - 37 edges
 3. `KPMInventoryApp()` - 28 edges
 4. `formatRupiah()` - 23 edges
-5. `MerchantSalesView()` - 20 edges
-6. `convertToBks()` - 18 edges
-7. `LOG — newest first, older entries live in `git log` for this file` - 17 edges
+5. `PROGRESS — read this, search for nothing` - 23 edges
+6. `MerchantSalesView()` - 20 edges
+7. `convertToBks()` - 18 edges
 8. `AgentProfileView()` - 15 edges
 9. `CustomerManagement()` - 14 edges
 10. `commitInChunks()` - 14 edges
@@ -79,23 +80,23 @@
 ## Import Cycles
 - None detected.
 
-## Communities (40 total, 2 thin omitted)
+## Communities (41 total, 3 thin omitted)
 
 ### Community 0 - "App.jsx"
-Cohesion: 0.08
-Nodes (23): AgentInventoryView, AgentProfileView, BranchWarehouseManager, ConsignmentFinanceView, DashboardView, EODReconciliationView, FleetCanvasManager, HistoryReportView (+15 more)
+Cohesion: 0.09
+Nodes (20): AgentInventoryView, AgentProfileView, BranchWarehouseManager, ConsignmentFinanceView, DashboardView, EODReconciliationView, FleetCanvasManager, HistoryReportView (+12 more)
 
 ### Community 1 - "MapMissionControl.jsx"
-Cohesion: 0.11
-Nodes (26): checkPointInGeoJSON(), CustomerDetailView(), CustomerManagement(), isPointInPolygon(), getCustomerAccessLevel(), BorderImporter(), checkPointInGeoJSON(), compressCoords() (+18 more)
+Cohesion: 0.50
+Nodes (3): F — Phone, G — Nothing old was lost, KPM Sales Terminal — test results
 
 ### Community 2 - "dependencies"
 Cohesion: 0.05
 Nodes (36): @emailjs/browser, firebase, idb, leaflet, lucide-react, dependencies, @emailjs/browser, firebase (+28 more)
 
 ### Community 3 - "permissions.js"
-Cohesion: 0.11
-Nodes (40): AgentInventoryView(), getCurrentDate(), AuditVaultView(), BranchWarehouseManager(), confirmAction(), CrownTransferProtocol(), DashboardBenchmarks(), CustomTooltip() (+32 more)
+Cohesion: 0.08
+Nodes (48): AgentInventoryView(), getCurrentDate(), AuditVaultView(), BranchWarehouseManager(), confirmAction(), promptAction(), CrownTransferProtocol(), DashboardBenchmarks() (+40 more)
 
 ### Community 4 - "devDependencies"
 Cohesion: 0.06
@@ -106,8 +107,8 @@ Cohesion: 0.11
 Nodes (16): blank, done, eightDaysAgo, far, free, HERE, minefar, near (+8 more)
 
 ### Community 6 - "savePhotoAndGetReference"
-Cohesion: 0.12
-Nodes (20): ConfirmHost(), BOOST, boostElement(), initSounds(), __isUnlocked(), liteModeOn(), makePool(), MUMBLES (+12 more)
+Cohesion: 0.11
+Nodes (23): ConfirmHost(), BOOST, boostElement(), buildGainStage(), initSounds(), __isUnlocked(), liteModeOn(), makePool() (+15 more)
 
 ### Community 7 - "getCurrentDate"
 Cohesion: 0.17
@@ -127,7 +128,7 @@ Nodes (6): After a successful deploy, Before deploying, Firestore Security Rules
 
 ### Community 11 - "HallOfFameView.jsx"
 Cohesion: 0.12
-Nodes (31): AgentProfileView(), BADGE_CATEGORIES, createImage(), DynamicIconMap, getCroppedImg(), AchievementTester(), BASE_STATS, buildFakeCareer() (+23 more)
+Nodes (32): AgentProfileView(), BADGE_CATEGORIES, createImage(), DynamicIconMap, getCroppedImg(), AchievementTester(), BASE_STATS, buildFakeCareer() (+24 more)
 
 ### Community 12 - "test-batch1.mjs"
 Cohesion: 0.53
@@ -146,24 +147,24 @@ Cohesion: 0.29
 Nodes (6): Animation prompts — Pip-Boy style, capybara merchant, How a sprite sheet gets wired (already possible today), PROMPT — 2D animation sprite sheet (paste this), PROMPT — 3D, only if a rotating merchant is ever wanted, When Aldi generates more images, Why this reference is a good fit
 
 ### Community 22 - "savePhotoAndGetReference"
-Cohesion: 0.09
-Nodes (26): hook, k(), left, lines, pct, promptAction(), PermissionMatrixEditor(), store() (+18 more)
+Cohesion: 0.08
+Nodes (37): hook, k(), left, lines, pct, checkPointInGeoJSON(), CustomerDetailView(), CustomerManagement() (+29 more)
 
 ### Community 23 - "customerBrief.selfcheck.mjs"
 Cohesion: 0.16
-Nodes (11): b, guarded, inventory, messy, ok, rows, sameDay, sd (+3 more)
+Nodes (12): b, guarded, inventory, messy, ok, rows, sameDay, sd (+4 more)
 
 ### Community 24 - "hasClearance"
 Cohesion: 0.04
-Nodes (43): allJs, appCode, appFiles, appSrc, beforeNota, boxLeft, BS, CENSUS (+35 more)
+Nodes (44): allJs, appCode, appFiles, appSrc, beforeNota, boxLeft, BS, CENSUS (+36 more)
 
 ### Community 25 - "Sales Terminal — test list"
 Cohesion: 0.13
 Nodes (14): A. The shelf, B. The rail (desktop, wide window), C. The customer brief, D. Money — the part that must be exactly right, E. The merchant, F. Phone (narrow the browser, or use your phone), G. Nothing old was lost, H. Territory and duplicate outlets — built 2026-08-07 (+6 more)
 
 ### Community 26 - "LOG — newest first, older entries live in `git log` for this file"
-Cohesion: 0.07
-Nodes (29): 2026-08-09 20:10 WIB — ✅ THE VAULT GATE DESIGN IS SIGNED OFF. Next job is the PORT., 2026-08-09 20:25 WIB — the ring ignored its own slider, and he saw it before I did, 2026-08-09 20:35 WIB — ✅ GATE DESIGN CLOSED. One clock, 3s wave. Next session: port it., 2026-08-09 20:45 WIB — the palette law reached the other four gate modes. `6a3aaca`, 2026-08-09 20:50 WIB — quest log sorted at last, and the mascot got his voice, 2026-08-10 01:47 WIB — ✅ JOB 6 IS BUILT. The gate is in the app. `784f5cc`, 2026-08-10 02:01 WIB — he looked at the gate, and the port had done half the job. `ae341e7`, 2026-08-10 02:15 WIB — the gate is VERIFIED IN THE RUNNING APP. `036ead3` (+21 more)
+Cohesion: 0.06
+Nodes (33): 2026-08-10 11:44 WIB — his 8 phone items are all built. A-Brain backfilled. One self-inflicted break, fixed., 2026-08-10 11:52 WIB — Hermes → alucard. Not app work. Quota died mid-sweep., 2026-08-10 15:11 WIB — he finished the round, 64/64. G5 broken. Two questions open., 2026-08-10 21:11 WIB — the iPhone silence is fixed. `8c502f7`. Audit 217/217., 2026-08-10 — ✅ HIS PHONE CAN LOG IN NOW. Dev is HTTPS. `b1aee4e`, ✅ CLOSED 20:22 WIB — HERMES → ALUCARD IS DONE. Nothing open on it., ✅ CLOSED: "vault button dead on phone" — it was `crypto.subtle`, fixed `f460297` + `b1aee4e`, 🚫 DO NOT open a PR or merge to main yet (+25 more)
 
 ### Community 27 - "check-progress.mjs"
 Cohesion: 0.29
@@ -182,16 +183,16 @@ Cohesion: 0.28
 Nodes (7): FADE, MASCOT_CHATTER, MASCOT_FAILURES, report(), STICKY, isFailure(), isSticky()
 
 ### Community 31 - "txSize.selfcheck.mjs"
-Cohesion: 0.21
-Nodes (10): big, line, naive, product, size(), stripped, canReachInternet(), useOfflineEngine() (+2 more)
+Cohesion: 0.14
+Nodes (16): formatSampleQty(), SampleEntryModal(), SamplingAnalyticsView(), SamplingCartView(), SamplingFolderView(), big, line, naive (+8 more)
 
 ### Community 32 - "MerchantSalesView"
-Cohesion: 0.36
-Nodes (7): getDocOfflineSafe(), KPMInventoryApp(), computeDayXP(), clearGrace(), graceIsValid(), readGrace(), touchGrace()
+Cohesion: 0.27
+Nodes (10): getDocOfflineSafe(), KPMInventoryApp(), gateCanvasOn(), gateHoldMs(), gateIsRich(), computeDayXP(), clearGrace(), graceIsValid() (+2 more)
 
 ### Community 33 - "MerchantSalesView.jsx"
-Cohesion: 0.43
-Nodes (7): easeInOut(), easeOut(), gateCanvasOn(), gateHoldMs(), gateIsRich(), rndWord(), VaultGate()
+Cohesion: 0.70
+Nodes (4): easeInOut(), easeOut(), rndWord(), VaultGate()
 
 ### Community 34 - "plan-quota.mjs"
 Cohesion: 0.29
@@ -218,24 +219,24 @@ Cohesion: 0.33
 Nodes (4): body, fnText, graceIsValid, src
 
 ## Knowledge Gaps
-- **266 isolated node(s):** `root`, `note`, `hook`, `now`, `hook` (+261 more)
+- **273 isolated node(s):** `root`, `note`, `hook`, `now`, `hook` (+268 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **2 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **3 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `devDependencies` connect `devDependencies` to `dependencies`?**
-  _High betweenness centrality (0.064) - this node is a cross-community bridge._
-- **Why does `notify()` connect `permissions.js` to `App.jsx`, `MapMissionControl.jsx`, `MerchantSalesView`, `MerchantSalesView.jsx`, `HallOfFameView.jsx`, `savePhotoAndGetReference`, `dayStats.selfcheck.mjs`, `txSize.selfcheck.mjs`?**
-  _High betweenness centrality (0.052) - this node is a cross-community bridge._
-- **Are the 3 inferred relationships involving `MerchantSalesView()` (e.g. with `t()` and `back()`) actually correct?**
-  _`MerchantSalesView()` has 3 INFERRED edges - model-reasoned connections that need verification._
+  _High betweenness centrality (0.062) - this node is a cross-community bridge._
+- **Why does `notify()` connect `permissions.js` to `App.jsx`, `MerchantSalesView`, `MerchantSalesView.jsx`, `HallOfFameView.jsx`, `savePhotoAndGetReference`, `dayStats.selfcheck.mjs`, `txSize.selfcheck.mjs`?**
+  _High betweenness centrality (0.051) - this node is a cross-community bridge._
 - **What connects `root`, `note`, `hook` to the rest of the system?**
-  _266 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _273 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `App.jsx` be split into smaller, more focused modules?**
-  _Cohesion score 0.082010582010582 - nodes in this community are weakly interconnected._
-- **Should `MapMissionControl.jsx` be split into smaller, more focused modules?**
-  _Cohesion score 0.10526315789473684 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.09486166007905138 - nodes in this community are weakly interconnected._
 - **Should `dependencies` be split into smaller, more focused modules?**
   _Cohesion score 0.05405405405405406 - nodes in this community are weakly interconnected._
+- **Should `permissions.js` be split into smaller, more focused modules?**
+  _Cohesion score 0.07997265892002735 - nodes in this community are weakly interconnected._
+- **Should `devDependencies` be split into smaller, more focused modules?**
+  _Cohesion score 0.06451612903225806 - nodes in this community are weakly interconnected._

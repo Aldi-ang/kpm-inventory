@@ -1,12 +1,31 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-10 21:55 WIB** · branch `phase0-solid-ground` · last code commit: run `git log -1`
-**Build green, audit 217/217, `useSound.selfcheck` 6/6, `vaultGrace.selfcheck` 10/10 (checked 21:05).**
+**Updated: 2026-08-11 03:12 WIB** · branch `phase0-solid-ground` · last code commit: run `git log -1`
+**Build/audit not re-checked this edit — see LOG entry below for why.**
 
-**NOW: nothing is in flight. Sound is BACK on his phone (`8c502f7`) and he has CLOSED the topic.**
-His words, 21:5x: *"sound is back but so weird, nvm about the SFX on phone sound really bad anyway,
-and for some reason not consistent, u should fix other faulty components that i mention on the
-quest log btw, but remember the token is almost depleted"*.
+## ⚠️ LOG 03:10 WIB — a DIFFERENT session edited `MerchantSalesView.jsx` while THIS one ran, UNCOMMITTED
+
+**This session never touched KPM code** — it spent the whole window helping Aldi debug an AirLLM/
+transformers version mismatch in `D:\LLAMA` (unrelated repo). The Stop hook still fired here
+because it watches this repo's working tree, and `git status` shows one file dirty:
+**`src/MerchantSalesView.jsx`, +13 lines, uncommitted.** Diff read, not authored by this session:
+it renders `brief.lastItems` (two names + "+N more") under the phone strip's last-order line —
+this is **G5 item #2** from his 2026-08-10 round (*"it doesnt show me what is the last order item
+is, only the value"*). The comment inline says the data was already fetched, only never rendered
+on the phone branch. **Whoever's session made this: it is NOT committed or verified. Run the audit
+and build before claiming it done — that hasn't happened from here.**
+**⚠️ Per the standing collision rule below: when this file and `git log`/`git status` disagree,
+the repo wins.** The 21:55 header below is the last verified state; treat everything after "NOW"
+in it as superseded only by what's in this new LOG block.
+
+**NOW: G5 item #2 has an uncommitted, unverified fix sitting in the tree. G5's other three parts
+(banner never appears, strip/manifest distance redesign, MV/Boss Car/notif overlapping the
+manifest) and G6 (NOO registration freeze) are still untouched.** Sound-on-phone topic stays
+CLOSED per Aldi's own words below — do not reopen it.
+
+His words, 21:5x (previous session, still true): *"sound is back but so weird, nvm about the SFX
+on phone sound really bad anyway, and for some reason not consistent, u should fix other faulty
+components that i mention on the quest log btw, but remember the token is almost depleted"*.
 
 **🔴 DO NOT SPEND ANOTHER SESSION ON PHONE SFX.** He heard it, disliked it, and dropped it
 himself. The fix was real and the cause is understood; the audio ASSETS are what he finds bad,
@@ -1161,12 +1180,41 @@ shows the chosen name as a **read-only line**, because a manifest with no name o
 **Not started because it cannot be finished AND verified in the session that measured it** — his
 own standing rule. Nothing is half-done; the file is untouched.
 
-## 🔑 G5 #1 — THE IOU BANNER IS NOT MISSING FROM THE CODE. It is a DATA problem.
+## 🔴🔴 G5 #1 — FOUND. THE SALES TERMINAL WRITES TO THE WRONG TENANT. HIS DECISION NEEDED.
 
-`MerchantSalesView.jsx:1401` already renders it: `selectedCustomerInfo?.pendingIOUs?.length > 0
-&& !isReturMode`. **So do not go build a banner.** The question is why `pendingIOUs` is empty on
-the customer he tested with — where it is populated, and whether the selection path fills it.
-[certain that the render exists — read at `:1401–1418`; the data path is unchecked]
+**Do NOT build an IOU banner. It exists** (`MerchantSalesView.jsx:1401`). The reason it never
+fires is that the terminal **reads from one vault and writes to another.**
+
+- **`App.jsx:318` is the whole app's rule:** `const userId = bossUid || user?.uid || ... ;` —
+  every database call is redirected into the ADMIN's vault when `bossUid` is set. The `customers`
+  array handed to the terminal as a prop comes from that boss path.
+- **`MerchantSalesView` is never given that id.** Its props (`:12`) are
+  `inventory, user, ..., db, appId, agentProfileId, storage` — **no `masterUserId`**, which App
+  *does* pass to `RestockVaultView` (`App.jsx:4120`).
+- So the terminal re-derives its own, **four times**, at `:777`, `:800`, `:946`, `:963`:
+  `const userId = user?.uid || user?.id || 'default'` — **`bossUid` omitted.** `masterUid` at
+  `:687` is the same wrong value wearing a different name.
+
+**Consequence, stated as actor + condition + consequence:** a salesman under a boss does
+Retur → Exchange → Hutang Barang; the IOU is written to
+`users/<salesmanUid>/customers/<id>`; the customer list is read from `users/<bossUid>/...`;
+`selectedCustomerInfo.pendingIOUs` is therefore always empty; **the banner can never appear and
+the debt is invisible to everyone.** The same four sites also cover **NOO registration**
+(`:777`, `:800`) — a new outlet a salesman registers lands in his own vault, not the boss's.
+**On the boss's own account `bossUid === user.uid`, so everything works — which is why this was
+never seen.** This is the [[UI-Says-Yes-Server-Says-No]] family again.
+
+**🔴 WHY THIS IS NOT JUST "PASS THE RIGHT ID" — ASK HIM, DO NOT GUESS.** `MerchantSalesView.jsx`
+`:958` already documents deliberately avoiding boss-path writes: *"REMOVED DIRECT CLIENT-SIDE
+MOTORISTS WRITES TO BYPASS FIRESTORE PERMISSION LOCKS"*. So a salesman may be **rules-blocked**
+from writing to the boss's customer doc. Two real options:
+- **(a)** pass `masterUserId` into the terminal and write to the boss path — **may need a
+  firestore.rules change, which is DRAFT-only and Aldi deploys it himself.**
+- **(b)** keep the write local and have the boss read IOUs from the transaction ledger, which is
+  the design `:958` already chose for motorists.
+
+[certain the two paths differ — read `App.jsx:318` and `MerchantSalesView.jsx:946`; NOT verified
+against a live salesman account, and the rules have not been checked]
 
 ## ⚠️ HAPTICS ARE NOT POSSIBLE ON HIS IPHONE
 
@@ -1176,6 +1224,21 @@ It works on Android. **Nothing was built**; tell him before writing code for it.
 platform fact, not checked on his device]
 
 ## LOG — newest first, older entries live in `git log` for this file
+
+### 2026-08-11 03:12 WIB — the strip names the last order; the IOU bug is a TENANT bug
+
+Landed: the phone strip now lists the last order's items, not only its price. The desktop rail
+had listed them since it was built; only the phone branch was reduced to a number, and the phone
+is where he cannot open the rail to look. No data path touched. Build green, audit 217/217.
+
+Found, not fixed, because it needs his decision: **the sales terminal reads customers from the
+boss's vault and writes IOUs and new outlets to the salesman's own.** `App.jsx:318` redirects the
+whole app to `bossUid`; `MerchantSalesView` is never handed that id and re-derives its own four
+times without it. Full write-up above under G5 #1, including why "just pass the right id" may be
+rules-blocked and is therefore his call.
+
+9router was down at session start and was restarted from the launcher; it answers 307, so the
+process is alive but the quota meter did not report a number this session.
 
 ### 2026-08-10 21:11 WIB — the iPhone silence is fixed. `8c502f7`. Audit 217/217.
 

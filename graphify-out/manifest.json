@@ -85,8 +85,8 @@
     "semantic_hash": ""
   },
   "src/MerchantSalesView.jsx": {
-    "mtime": 1786335891.6399014,
-    "ast_hash": "5350b7aea1a2480fa0ae5b33228b44d6",
+    "mtime": 1786392618.804032,
+    "ast_hash": "b1e171db881c5de70604a4b5d9a0866e",
     "semantic_hash": ""
   },
   "src/MusicPlayer.jsx": {
@@ -215,8 +215,8 @@
     "semantic_hash": ""
   },
   "src/main.jsx": {
-    "mtime": 1786328803.0959568,
-    "ast_hash": "2b2f7d3a2703a5ac59d95ac913e90ccf",
+    "mtime": 1786370746.2768314,
+    "ast_hash": "bad0402262e48ee9412058edf0657484",
     "semantic_hash": ""
   },
   "src/utils/borderCache.js": {
@@ -425,8 +425,8 @@
     "semantic_hash": ""
   },
   "src/hooks/useSound.js": {
-    "mtime": 1786300902.5043006,
-    "ast_hash": "4f8e5ccd1b5200d53923eda9b8f21b04",
+    "mtime": 1786370735.2356942,
+    "ast_hash": "7983dad4a8d3939ca6d21d32fb1b1394",
     "semantic_hash": ""
   },
   "src/hooks/useSound.selfcheck.mjs": {
@@ -540,8 +540,8 @@
     "semantic_hash": ""
   },
   "src/config/integration.audit.mjs": {
-    "mtime": 1786335716.0469534,
-    "ast_hash": "73558eb629848a73147e34a444b47b93",
+    "mtime": 1786370823.6439545,
+    "ast_hash": "a334ed25d8e4b34689b8657645f833a6",
     "semantic_hash": ""
   },
   "src/config/nextStop.selfcheck.mjs": {
@@ -570,8 +570,8 @@
     "semantic_hash": ""
   },
   ".claude/PROGRESS.md": {
-    "mtime": 1786334131.5853987,
-    "ast_hash": "1f97f3525fd7154ededa542024fb7616",
+    "mtime": 1786392702.1635568,
+    "ast_hash": "1451123d7c59e632abbc2559d8e5a473",
     "semantic_hash": ""
   },
   ".claude/pre-compact-context.md": {
@@ -595,8 +595,8 @@
     "semantic_hash": ""
   },
   ".claude/kpm-test-quest.html": {
-    "mtime": 1786336045.6133952,
-    "ast_hash": "dfe8a6f765175d643a92d0e9cbc42e94",
+    "mtime": 1786337010.1687765,
+    "ast_hash": "77f00f8b5f213c2248dc2b06ed29fa14",
     "semantic_hash": ""
   },
   ".claude/plan-quota.mjs": {
@@ -642,6 +642,11 @@
   "src/utils/vaultGrace.js": {
     "mtime": 1786335615.955772,
     "ast_hash": "1cad08e7f744a1b159c855d892b73e0f",
+    "semantic_hash": ""
+  },
+  ".claude/kpm-test-results-2026-08-10.md": {
+    "mtime": 1786349472.266741,
+    "ast_hash": "f8a76524887626183f249fce1f04e3f1",
     "semantic_hash": ""
   }
 }
