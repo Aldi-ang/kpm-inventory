@@ -1,9 +1,19 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-10 20:52 WIB** · branch `phase0-solid-ground` · last code commit: run `git log -1`
+**Updated: 2026-08-10 20:56 WIB** · branch `phase0-solid-ground` · last code commit: run `git log -1`
 **Build green, audit 215/215, `vaultGrace.selfcheck` 10/10 (checked 11:30).**
 
-## 🔴 LOG 20:52 WIB — ALUCARD CANNOT LEARN ANY MORE. One decision from Aldi unblocks it.
+## ✅ LOG 20:56 WIB — the jam is CLEARED. Alucard can learn again. Nothing open.
+
+Aldi chose (a): *"i think i choose A because lesson is part of experience that alucard can use to
+be wiser in the future right, memories also important for AI not just human"*. The
+`agent-browser` entry was archived to `A-Brain/Wiki/Lessons-Archive.md` (vault `6fcd06b`) — picked
+over the oldest-by-date because §8's new Hermes rule bans lessons claiming a tool is broken, and
+that entry is exactly that shape. Its reusable half was kept as a fact, not a verdict.
+`lessons.md` header rewritten (it had claimed nothing ever fired). **Check flipped JAMMED → `OK —
+4/5 entries`**, which is the proof: it was red before the fix and green after.
+
+## 🔴 LOG 20:52 WIB — how the jam was found (superseded by 20:56 above)
 
 A curator was built (Hermes' idea, Claude Code's tools — no 9router needed). Two free checks,
 no model call, driving one daily scheduled task at 19:13. **NOT KPM app code** — `.claude/`
@@ -15,7 +25,7 @@ none — "or don't write". So the only branch left is don't-write: **Alucard can
 another lesson.** Nothing errors; it silently stopped learning. Verified by running the check
 against the real file, a healthy fixture, and an all-fired fixture.
 
-**🔴 HE MUST PICK (a) or (b) — the curator is told to STOP and ask, not to fix this itself:**
+**RESOLVED 20:56 — he picked (a). Left here only so the reasoning survives:**
 - **(a)** archive the oldest entry anyway, fired or not, to `A-Brain/Wiki/Lessons-Archive.md`
 - **(b)** change §8's archive rule — needs his approval, Alucard may never edit `SKILL.md`
 
