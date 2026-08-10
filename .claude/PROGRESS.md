@@ -16,12 +16,17 @@ firestore.rules:20   request.auth.token.email == 'adikaryasukses99@gmail.com'
 src/App.jsx:2130     const masterVIPs = ['adikaryasukses99@gmail.com'];
 ```
 
-Two layers, same constant, no config indirection. **Fine while Aldi owns the app; a backdoor the
-moment he sells it** — a buyer's deployment would still grant him server-level master access to
-their tenants' data. **Deliberately NOT fixed by an agent**: it touches the rules draft and the
-auth path, and rules are his to change and deploy by hand. Shape of the fix when he wants it —
-move the address to config or a Firestore doc so a buyer sets their own. Written up in the vault
-at `Wiki/Entities/Firestore Rules.md`.
+**🔴 DO NOT DELETE THAT LINE.** It is not excess access — `isSuperAdmin()` never reads
+`system_admins`, so removing the literal leaves **nobody** with god-mode, Aldi included. The rules
+file already says this in a comment under the function, and already contains the one-line repair
+(`|| exists(/databases/$(database)/documents/system_admins/$(request.auth.uid))`), deliberately
+unapplied because *"it widens god-mode and is the owner's call to make knowingly."* Correct order
+if he ever wants it: add the `exists()` clause, prove it on the emulator, THEN remove the literal.
+Reverse that and the app has no owner.
+
+**CLOSED 2026-08-11 at his instruction — *"leave it then"*.** Not forgotten:
+`A-Brain/automation/export-app-for-sale.mjs` exits 1 on this exact string, so a sale cannot be
+packaged until it is handled deliberately. Full writeup: `Wiki/Entities/Firestore Rules.md`.
 
 **Found by a packaging tool, not a security review.** He chose option (a) on the sell-the-app
 question — *"app is meant to be sell while this A-Brain is forever with me"* — meaning: do NOT
