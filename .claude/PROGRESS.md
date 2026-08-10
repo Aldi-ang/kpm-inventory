@@ -3,6 +3,13 @@
 **Updated: 2026-08-10 21:06 WIB** · branch `phase0-solid-ground` · last code commit: run `git log -1`
 **Build green, audit 215/215, `vaultGrace.selfcheck` 10/10 (checked 11:30).**
 
+> ⚠️ **21:06 — `src/main.jsx` is MODIFIED AND UNCOMMITTED, and it is NOT from this thread.**
+> It is the app session's work: the second half of the silent-iPhone sound bug (`{ once: true }`
+> tore down all three gesture listeners on a single tap, because one touch fires both
+> `pointerdown` and `touchstart`). The curator/Hermes thread touched `.claude/` only — verify with
+> `git log --name-only`. **Do not commit it from here and do not claim it**; whoever is holding
+> that fix owns landing it.
+
 ## 🔴 LOG 21:06 WIB — YOUR VAULT AUTOMATION HAS BEEN DEAD SINCE 2026-07-28. One decision owed.
 
 Found by testing the new curator, not by anything reporting a fault. **`a-brain-session-ingest`
