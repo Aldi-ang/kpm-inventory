@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-10 21:06 WIB** · branch `phase0-solid-ground` · last code commit: run `git log -1`
+**Updated: 2026-08-10 21:10 WIB** · branch `phase0-solid-ground` · last code commit: run `git log -1`
 **Build green, audit 215/215, `vaultGrace.selfcheck` 10/10 (checked 11:30).**
 
 > ⚠️ **21:06 — `src/main.jsx` is MODIFIED AND UNCOMMITTED, and it is NOT from this thread.**
@@ -1105,6 +1105,47 @@ are never worth rescuing.
 3. Regional warehouse stock in the rail — own region only, field is `location`.
 
 ---
+
+## 🔴 THE CUSTOMER BLOCK MOVE — HE SAID GO, AND IT IS DELIBERATELY NOT STARTED
+
+**His decision, 2026-08-10 ~21:00, VERBATIM:** *"no sound still and i ask u to make heptic i just
+mentioned it on the quest log if possible, yea u can update it directly so that i can give direct
+feedback"* — and before that, his design call: *"what if we put the customer on top instead just
+near the strip?"*
+
+**AGREED SHAPE — do not re-pitch it, build it:** the customer block moves OUT of the manifest
+paper and to the TOP of the phone screen, beside the brief strip. It must collapse to ONE LINE
+once a customer is chosen, or the trade is a loss — the top of a phone is scarce. The paper then
+shows the chosen name as a **read-only line**, because a manifest with no name on it is wrong.
+
+**THE MEASUREMENT THAT MADE ME STOP, take it as the starting point:**
+- The block is `manifest-dropdown-area`, **`MerchantSalesView.jsx:1374–1582` — 209 lines**
+  (measured by tag-depth matching, not guessed). It holds the SALE/RETUR toggle, the
+  MASTER VAULT/BOSS CAR toggle, the IOU banner, the debt warning, the customer input and its
+  dropdown, the whole GPS/geofence/bypass column, and Deploy Free Sample.
+- **`renderManifestUI(true)` is called with a hardcoded `true` at EVERY width** (`:1795`) — there
+  is only ONE manifest in the DOM, on purpose, after a duplicate-id incident. So the block must
+  **MOVE, not be duplicated**: two copies means two `customerName` inputs and two
+  `id="bypassPhotoCapture"`.
+- Therefore the desktop layout has to be re-judged in the same change. This is a real
+  restructure, not an edit.
+
+**Not started because it cannot be finished AND verified in the session that measured it** — his
+own standing rule. Nothing is half-done; the file is untouched.
+
+## 🔑 G5 #1 — THE IOU BANNER IS NOT MISSING FROM THE CODE. It is a DATA problem.
+
+`MerchantSalesView.jsx:1401` already renders it: `selectedCustomerInfo?.pendingIOUs?.length > 0
+&& !isReturMode`. **So do not go build a banner.** The question is why `pendingIOUs` is empty on
+the customer he tested with — where it is populated, and whether the selection path fills it.
+[certain that the render exists — read at `:1401–1418`; the data path is unchecked]
+
+## ⚠️ HAPTICS ARE NOT POSSIBLE ON HIS IPHONE
+
+He asked for a buzz when adding/removing a cart item. **iOS Safari has no Vibration API** —
+`navigator.vibrate` does not exist there, so nothing web-side can make his phone buzz.
+It works on Android. **Nothing was built**; tell him before writing code for it. [likely — a
+platform fact, not checked on his device]
 
 ## LOG — newest first, older entries live in `git log` for this file
 
