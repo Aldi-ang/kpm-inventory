@@ -21,6 +21,18 @@
             "commandWindows": "Get-Content \"D:\\APP DEVELOPMENT\\kpm inventory main FILES\\kpm-inventory-main\\.claude\\session-start-context.md\" -Raw -Encoding UTF8",
             "timeout": 5,
             "statusMessage": "Loading KPM standing context (Caveman + Karpathy + A-Brain)..."
+          },
+          {
+            "type": "command",
+            "command": "node \"D:/APP DEVELOPMENT/kpm inventory main FILES/A-Brain/automation/vault-gap.mjs\"",
+            "timeout": 15,
+            "statusMessage": "Checking the vault is not falling behind the code..."
+          },
+          {
+            "type": "command",
+            "command": "node \"D:/APP DEVELOPMENT/kpm inventory main FILES/A-Brain/automation/lessons-health.mjs\"",
+            "timeout": 15,
+            "statusMessage": "Checking Alucard can still learn..."
           }
         ]
       }
