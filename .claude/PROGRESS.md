@@ -119,8 +119,17 @@ the artifact's iframe, and the old fallback's `ta.select()` does nothing on iOS)
 PREVIOUS report — and the report printed every round at once, burying the new answers. Answers
 now carry their round tag, persisted, so a reload no longer empties the report.
 
+**✅ THE QUEST LOG IS REPUBLISHED at the SAME URL** —
+`https://claude.ai/code/artifact/435e77ee-9f1f-4786-a1df-050156596016`. Round tag is still
+`redo-2026-08-09c`; F1–F5 land as GOOD under the new `aldi-2026-08-10` migration tag.
+**Next round needs a NEW tag (`...d`) — never reuse one.**
+
 **▶ WAITING ON HIM: run it on the phone.** All eight are code-complete and unverified by him.
 F6, F7 and the whole G section are still his to run.
+
+**⚠️ NOT VERIFIED IN A BROWSER — say so rather than implying otherwise.** Everything above stands
+on the build, 215 audit checks, the vaultGrace self-check and the code itself. The grace period,
+the safe-area inset and the iOS copy path are all things only his phone can actually prove.
 
 ## ▶ DO THIS NEXT
 
