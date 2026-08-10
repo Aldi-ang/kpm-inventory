@@ -33,5 +33,10 @@
   "31": "txSize.selfcheck.mjs",
   "32": "MerchantSalesView",
   "33": "MerchantSalesView.jsx",
-  "34": "plan-quota.mjs"
+  "34": "plan-quota.mjs",
+  "35": "MerchantSalesView.jsx",
+  "36": "dayStats.selfcheck.mjs",
+  "37": "MerchantSalesView.jsx",
+  "38": "mixedUnits.selfcheck.mjs",
+  "39": "vaultGrace.selfcheck.mjs"
 }

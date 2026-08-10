@@ -80,33 +80,47 @@ carries a `vault:` field so "nothing recorded" has to be claimed out loud.
 **This note is NOT a substitute for the vault.** It is trimmed to ~5 log entries and scoped to
 one repo. That is exactly how six days went unrecorded.
 
-## 🔴 HIS PHONE REPORT — 2026-08-10 10:17–10:25 WIB, 8 items, NONE FIXED YET
+## ✅ HIS PHONE REPORT — 2026-08-10 10:17–10:25 WIB. ALL 8 ITEMS BUILT, NONE TESTED BY HIM YET
 
-Tested on his iPhone over the HTTPS dev server. Four screenshots in chat.
+Tested on his iPhone over the HTTPS dev server. Four screenshots in chat. **Build green,
+audit 215/215 (was 214), `vaultGrace.selfcheck` 10/10.** Three commits, all `git show --stat`-ed.
 
-| # | His words | Where it is | State |
+| # | His words | Fix | Where |
 |---|---|---|---|
-| 1 | *"capybara is still cutted on the phone"* | `src/components/CapybaraMascot.jsx` | open |
-| 2 | *"split second of old access granted panel after i press the enter vault"* | `App.jsx` + `VaultGate.jsx` | open |
-| 3+6 | manifest sheet: pinned Proof/Sign eat the product list; customer name cut | sales terminal manifest | **decided, not built** |
-| 4 | *"annoying when i have to always enter my password everytime i use my phone"* | gate session | **BLOCKED — security, his call** |
-| 5 | quest log COPY REPORT misses the answers just given | `.claude/kpm-test-quest.html` | open, cause suspected |
-| 7 | *"3D is flickering and the dimension panel collapsing with the product name"* | `src/components/ExamineModal.jsx` | open |
-| 8 | F1–F5 GOOD. F6, F7 and all of G not run yet | quest log | his to run |
+| 1 | *"capybara is still cutted on the phone"* | `env(safe-area-inset-*)` inset | `CapybaraMascot.jsx` |
+| 2 | *"split second of old access granted panel"* | that block is the LITE path only now | `App.jsx` |
+| 3+6 | manifest eats the product list | slim SIGN-only bar; proof + total scroll | `MerchantSalesView.jsx` |
+| 4 | password on every app switch | 5-minute grace, resets on interaction | `utils/vaultGrace.js` |
+| 5 | COPY REPORT misses new answers | iOS copy path + this-round-only report | `kpm-test-quest.html` |
+| 7 | 3D flickers; dimensions panel overlaps | ref-driven spin; panel removed | `ExamineModal.jsx` |
+| 8 | F1–F5 GOOD | recorded in the log under tag `aldi-2026-08-10` | `kpm-test-quest.html` |
 
-**✅ HIS DECISION ON 3+6 — he said "b is better".** One slim bar pinned at the bottom with
-**SIGN only**; delivery proof moves up into the paper and scrolls with it. Do not pin proof.
+**🔴 THE ONE THING THAT MUST BE RESTATED EVERY TIME ITEM 4 COMES UP.** He chose **5 minutes,
+resetting on interaction** — his words: *"5 minutes is the best one, should reset when i interact
+with the app tho"*. **For up to 5 minutes after his last touch, anyone holding his unlocked phone
+reaches the vault without the master password.** He accepted that. It grants nothing at the
+server — Firestore rules have never heard of `vaultGrace`. It will not survive a different
+account, a lock, a logout, or a clock moved backwards, and each of those is an assert in
+`src/config/vaultGrace.selfcheck.mjs`. **Do not widen the window without asking him again.**
 
-**🔴 ITEM 4 IS STILL HIS TO ANSWER — do not build it without a number.** iOS discards the page
-when he switches apps, so the gate reloads. Options put to him: (a) 2-minute grace period,
-(b) 30-minute grace, (c) fingerprint instead of typing. **(a) or (a)+(c) recommended.**
-The trade-off must be restated when he answers: whoever holds the unlocked phone gets the vault.
+**Two traps in that feature, both load-bearing:**
+- The restore is attempted **once per page load** (`graceRestoreTried`). Without that ref,
+  locking the vault by hand sets `isAdmin` false, the effect finds the record still valid, and
+  re-opens the door he just closed.
+- `handleLogout` calls `clearGrace()` **explicitly**, because signing out drops `user` in the
+  same tick and the effect returns early with no uid — the record would outlive the account.
 
-**On item 5, the suspected cause, not yet proved:** `navigator.clipboard.writeText` is blocked in
-the artifact's iframe on iOS, and the fallback at `kpm-test-quest.html:749-758` uses `ta.select()`
-alone, which does not work on iOS Safari (needs `setSelectionRange`). Both fail -> he pastes the
-PREVIOUS report still in his clipboard. **Second half he is also right about: `report()` prints
-every test with any verdict, including the 48 locked ones. It should only carry this round.**
+**Item 7 note:** the dimensions sliders are NOT gone from the app. They live in `ImageCropper`
+(Master Vault, `App.jsx:~3519`), which is what writes `product.dimensions`. `ExamineModal` only
+reads them now, which is why `onUpdateProduct` was removed from it.
+
+**Item 5 was two bugs, not one.** The copy failed silently (iOS blocks `navigator.clipboard` in
+the artifact's iframe, and the old fallback's `ta.select()` does nothing on iOS) so he pasted the
+PREVIOUS report — and the report printed every round at once, burying the new answers. Answers
+now carry their round tag, persisted, so a reload no longer empties the report.
+
+**▶ WAITING ON HIM: run it on the phone.** All eight are code-complete and unverified by him.
+F6, F7 and the whole G section are still his to run.
 
 ## ▶ DO THIS NEXT
 
