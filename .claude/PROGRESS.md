@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-10 15:11 WIB** · branch `phase0-solid-ground` · last code commit: run `git log -1`
+**Updated: 2026-08-10 20:22 WIB** · branch `phase0-solid-ground` · last code commit: run `git log -1`
 **Build green, audit 215/215, `vaultGrace.selfcheck` 10/10 (checked 11:30).**
 
 *⚠️ TWO SESSIONS WROTE THIS FILE TODAY. The 11:52 header said "No KPM code was touched this
@@ -14,27 +14,30 @@ disagree, git wins.** That is the third time this exact collision has happened h
 Read "HIS FULL ROUND RESULT" below before anything else: one BROKEN (G5, four separate faults
 inside it), and two asks buried in GOOD answers. **Nothing is in flight; nothing is half-done.**
 
-*The Hermes → alucard session is unrelated app-side: it edits
-`C:\Users\ASUS\.claude\skills\alucard\SKILL.md` only, never KPM code. **It is FINISHED as of
-15:12** — 16 agents swept the Hermes source, 19 rule proposals went through an adversarial cut,
-7 survived. All seven, with exact wording and the Hermes evidence for each, are in
-`A-Brain/Hermes-Agent-Research/2026-08-10 Seven Rules Worth Porting.md` (vault commit `38b7eff`).
-Its open questions are kept below.*
+## ✅ CLOSED 20:22 WIB — HERMES → ALUCARD IS DONE. Nothing open on it.
 
-**WAITING ON ALDI — VERBATIM from him:**
-1. *"integrate hermes to alucard so basically just hermes in the persona of alucard and A-Brain
-   memory"* — **the study is done; only his approval is missing.** Alucard §8 forbids
-   self-editing `SKILL.md`, so the seven rules sit unapplied (~+16 lines on 263). Read the vault
-   page above, then apply the ones he accepts. Highest-value two: `(checked: ...)` receipts go
-   stale on the next edit ("this session" is the wrong window), and a Lesson saying a tool is
-   broken outlives the fix — this repo's own `0aabb81` → `b1aee4e` is one day apart.
-2. *"make sure that u know everything about hermes before integrating it to alucard"* — answered
-   with a number he has not responded to: the checkout is **35.9 MB of Python across 1,109 files
-   + 9.7 MB of markdown ≈ 11M tokens**, 11x a 1M window. Possible across ~14 passes, not in one.
-   The 8 subsystems swept are the 90%. He may still name a tail pass: `cli.py`, or the gateway.
-3. He was offered a revert of the three already-applied alucard edits and never answered. They
-   are still in place (prompt-cache reason §1, session search §2, subagent rule §10 carrying his
-   words *"allow parents write is my best pick"*).
+*Never touched KPM code — it edited `C:\Users\ASUS\.claude\skills\alucard\SKILL.md` only.*
+16 agents swept the Hermes source, 19 rule proposals faced an adversarial cut, **7 survived and
+ALL SEVEN ARE APPLIED** — he approved with *"can u continue, apply all that hermes have inside
+alucard"*. Eight edits (the seventh brought a consistency fix: §4 carried the same stale
+freshness anchor). **`SKILL.md` 263 → 282 lines.** Vault: `38b7eff` + `eb1b78a`, full writeup at
+`A-Brain/Hermes-Agent-Research/2026-08-10 Seven Rules Worth Porting.md`.
+
+**Three of those rules change how EVERY future session must verify — read them before claiming
+anything:** (1) `(checked: ...)` now goes stale at your next edit, not at end of session;
+(2) a check that could not have gone red counts **0**, so on a bug fix you run it BEFORE the edit
+and watch it fail; (3) the closing line now carries `edits: N ok, N failed` — a failed edit is a
+line item, never silence. Also: merges need a check AFTER (`git diff HEAD~1..HEAD`), the third
+failed fix attempt is a full stop, and a Lesson may never say a tool is broken.
+
+**Not ported, and never will be as text — these are programs, not rules:** Hermes' curator (a
+forked agent on a cheap model doing idle-time maintenance), self-authored skills (Aldi forbade
+`SKILL.md` self-edits 2026-08-09), automated user modeling. Buildable later with `CronCreate` +
+9Router; do not re-derive this gap.
+
+**Only Hermes question left, and it is optional** — he never answered which tail pass he wants
+(`cli.py`, or the gateway). The checkout is 35.9 MB of Python + 9.7 MB of markdown ≈ **11M
+tokens**, 11x a 1M window; the 8 subsystems already swept are the 90%. Do not start one unasked.
 3. **APP SIDE — asked 15:11, unanswered: did turning ⚡ Cello Lite Mode OFF bring the sound and
    animation back?** If yes, F7 is not a bug and G5 is the next job. If no, the iOS audio unlock
    is back on the table and F7 becomes real work.
