@@ -4160,6 +4160,13 @@ const handleGitHubMirror = async () => {
                           appSettings={appSettings}
                           customers={customers} 
                           // 🚀 BUG FIX: Wire the exact Boss Car or Vault ID to the Sales Terminal
+                          /* The SAME id every other database call in this file uses (`:318`,
+                             `bossUid || user.uid`). The terminal used to re-derive its own without
+                             bossUid, so a salesman wrote customers, IOUs and new outlets into his
+                             own vault while reading the list out of the boss's — see
+                             MerchantSalesView's dataOwnerId. RestockVaultView has been given this
+                             same id as `masterUserId` since it was written. */
+                          masterUserId={userId}
                           agentProfileId={userRole === 'ADMIN' ? (adminSalesMode === 'VEHICLE' ? 'ADMIN_VEHICLE' : 'VAULT') : agentProfileId}
                           allowedPayments={agentSettings.allowedPayments}
                           allowedTiers={agentSettings.allowedTiers}

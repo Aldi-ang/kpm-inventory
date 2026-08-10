@@ -768,6 +768,30 @@ check(G19, 'that case is translated into something he can act on',
   /SECURE_CONTEXT_REQUIRED[\s\S]{0,400}?https:\/\/ or localhost/.test(appCode),
   'telling him "undefined is not an object" is not a report');
 
+/* ── 20. the terminal writes into the vault it read from ─────────────────────
+   His G5 report was "no IOU banner". The banner was never missing: the terminal wrote the IOU
+   to users/<salesmanUid>/customers and read the list from users/<bossUid>/customers, so the
+   pendingIOUs it looked for could not exist. New outlets went to the same wrong place.
+   Invisible on the boss's own account, where the two ids are the same value. */
+const G20 = '20. The terminal writes into the vault it read from';
+const merchSrc = fs.readFileSync('src/MerchantSalesView.jsx', 'utf8');
+
+check(G20, 'App hands the terminal the same owner id it uses everywhere else',
+  /masterUserId=\{userId\}/.test(appCode) && /const userId = bossUid \|\|/.test(appCode),
+  'without masterUserId the terminal cannot know whose vault the customers came from');
+check(G20, 'the terminal takes the owner id instead of re-deriving one',
+  /const dataOwnerId = masterUserId \|\|/.test(merchSrc),
+  'a locally derived id omits bossUid, which is the whole bug');
+check(G20, 'no customer path is built from a re-derived id',
+  !/const userId = user\?\.uid/.test(merchSrc),
+  'every customers/ write in this file must resolve through dataOwnerId');
+/* The three masterUid derivations are DELIBERATELY still local — products, motorists, samplings,
+   photos and notifications are a separate question with a far larger blast radius. This check
+   exists so that staying is a decision, and a future change to them is a visible one. */
+check(G20, 'the product/motorist paths were left alone on purpose',
+  (merchSrc.match(/const masterUid = user\?\.uid/g) || []).length === 3,
+  'if these changed, the sale-commit blast radius changed with them — that needs Aldi, not a refactor');
+
 /* ── report ──────────────────────────────────────────────────────────────── */
 let last = '';
 for (const r of results) {

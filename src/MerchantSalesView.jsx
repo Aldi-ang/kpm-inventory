@@ -9,7 +9,28 @@ import { nextStop, directionsUrl, metresLabel } from './utils/nextStop';
 import { unlockSounds, speakMumble, playSound } from './hooks/useSound';
 import { notify } from './components/Toast.jsx';
 
-const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, onProcessSale, onInspect, appSettings, customers = [], allowedPayments = ['Cash'], allowedTiers = ['Retail', 'Ecer'], transactions = [], allowRetur = true, db, appId, agentProfileId, storage }) => {
+const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, onProcessSale, onInspect, appSettings, customers = [], allowedPayments = ['Cash'], allowedTiers = ['Retail', 'Ecer'], transactions = [], allowRetur = true, db, appId, agentProfileId, storage, masterUserId }) => {
+    /* WHOSE VAULT THE CUSTOMER RECORDS LIVE IN — and the answer must be the same one App used to
+       fetch them, or a write lands in a document nobody reads.
+
+       HIS BUG, G5: the pending-IOU banner never appeared. It was never a missing banner. App
+       redirects every database call to the admin's vault when `bossUid` is set (`App.jsx:318`),
+       and the `customers` prop arrives from there — but this file re-derived its own owner id
+       four times WITHOUT bossUid. So a salesman's IOU was written to
+       users/<hisUid>/customers/<id> while the list was read from users/<bossUid>/..., and
+       `selectedCustomerInfo.pendingIOUs` could never be anything but empty. The same four sites
+       cover new-outlet registration, so an outlet he registered was invisible to his boss too.
+
+       WHY THIS IS SAFE TO CHANGE: on the boss's own account `bossUid === user.uid`, so this
+       expression returns exactly what the old one did and nothing about his experience moves.
+       It differs only on a salesman account, where today's behaviour is the bug.
+
+       DELIBERATELY NOT TOUCHED: `masterUid` inside handleFinalDeal and the sampling/bypass paths
+       (products, motorists, samplings, photos, notifications). Those are the same expression
+       under a different name and are probably the same fault, but they are a separate question
+       with a much larger blast radius — stock writes work for him today, and `:958` records that
+       someone already hit a rules wall writing motorists to another vault. */
+    const dataOwnerId = masterUserId || user?.uid || user?.id || 'default';
     /* Phase A items 1-2: the two-tab bar is gone. The manifest is a bottom drawer that
        is dragged between three snap points, so the wares list never has to be left. */
     const [drawerH, setDrawerH] = useState(52);
@@ -774,7 +795,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
     const submitNooRegistration = async () => {
         if (!validateNoo()) return;
         try {
-            const userId = user?.uid || user?.id || 'default';
+            const userId = dataOwnerId;   // see dataOwnerId — must match where `customers` was read from
             const newRef = doc(collection(db, `artifacts/${appId}/users/${userId}/customers`));
             const newStoreData = {
                 id: newRef.id, name: customerName.toUpperCase().trim(), phone: nooForm.phone, address: nooForm.address || "GPS Locked via NOO Form",
@@ -797,7 +818,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
     const submitNooOnly = async () => {
         if (!validateNoo()) return;
         try {
-            const userId = user?.uid || user?.id || 'default';
+            const userId = dataOwnerId;   // see dataOwnerId — must match where `customers` was read from
             const newRef = doc(collection(db, `artifacts/${appId}/users/${userId}/customers`));
             const newStoreData = {
                 id: newRef.id, name: customerName.toUpperCase().trim(), phone: nooForm.phone, address: nooForm.address || "GPS Locked via NOO Form",
@@ -943,7 +964,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
             const fulfilledIOUIds = finalCart.filter(i => i.isIouFulfillment).map(i => i.iouId);
             
             if (selectedCustomerInfo && (generatedIOUs.length > 0 || fulfilledIOUIds.length > 0)) {
-                const userId = user?.uid || user?.id || 'default';
+                const userId = dataOwnerId;   // see dataOwnerId — must match where `customers` was read from
                 const custRef = doc(db, `artifacts/${appId}/users/${userId}/customers`, selectedCustomerInfo.id);
                 const custSnap = await getDoc(custRef);
                 if (custSnap.exists()) {
@@ -960,7 +981,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
 
             if (navigator.onLine && !isReturMode && !finalCart.some(i => i.isIouFulfillment)) {
                 try {
-                    const userId = user?.uid || user?.id || 'default';
+                    const userId = dataOwnerId;   // see dataOwnerId — must match where `customers` was read from
                     let rules = null;
                     const rulesSnap = await getDoc(doc(db, `artifacts/${appId}/users/${userId}/appSettings`, 'tierRules'));
                     if (rulesSnap.exists() && rulesSnap.data().rules) rules = rulesSnap.data().rules;
