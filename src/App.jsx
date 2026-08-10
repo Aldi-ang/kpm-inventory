@@ -104,6 +104,7 @@ import { computeDayXP, DEFAULT_XP, checkBadges, DEFAULT_BADGES } from './config/
 import { confirmAction, promptAction } from './components/ConfirmGate.jsx';
 import { notify } from './components/Toast.jsx';
 import VaultGate, { gateHoldMs, gateIsRich, gateCanvasOn } from './components/VaultGate.jsx';
+import { readGrace, touchGrace, clearGrace } from './utils/vaultGrace.js';
 
 /* Phones flash the character you just typed before masking it — Aldi: "it shows in split second
    after i type it". That reveal is the platform's, not ours, and there is no way to switch it
@@ -2348,6 +2349,49 @@ const handleGitHubMirror = async () => {
     return () => unsubAuth();
   }, []);
 
+  /* THE 5-MINUTE GRACE PERIOD. His words: "it is annoying when i have to always enter my
+     password everytime i use my phone because i will enter another app each time i send a pic",
+     and then "5 minutes is the best one, should reset when i interact with the app tho".
+
+     ONE effect covers every way the vault opens and closes, which is why it is written against
+     `isAdmin` rather than at the eight setIsAdmin() call sites. The restore is attempted exactly
+     ONCE per page load — that ref is load-bearing. Without it, locking the vault by hand would
+     set isAdmin false, this effect would find the grace record still valid, and re-open the door
+     he just closed. After that single attempt, isAdmin going false always clears the record. */
+  const graceRestoreTried = useRef(false);
+  useEffect(() => {
+    const uid = user?.uid;
+    if (!uid) return;
+    if (isAdmin) { touchGrace(uid); return; }
+    if (!graceRestoreTried.current) {
+      graceRestoreTried.current = true;
+      if (readGrace(uid)) setIsAdmin(true);
+      return;
+    }
+    clearGrace();
+  }, [isAdmin, user]);
+
+  /* "should reset when i interact with the app" — the window measures from his last touch, not
+     from the unlock. Throttled to one write per 20s: localStorage.setItem is synchronous, and
+     writing it on every tap would sit on the main thread during a scroll. */
+  useEffect(() => {
+    const uid = user?.uid;
+    if (!isAdmin || !uid) return;
+    let lastWrite = 0;
+    const bump = () => {
+      const now = Date.now();
+      if (now - lastWrite < 20000) return;
+      lastWrite = now;
+      touchGrace(uid);
+    };
+    window.addEventListener('pointerdown', bump, true);
+    window.addEventListener('keydown', bump, true);
+    return () => {
+      window.removeEventListener('pointerdown', bump, true);
+      window.removeEventListener('keydown', bump, true);
+    };
+  }, [isAdmin, user]);
+
   const handleAdminAuthSuccess = () => {
     setIsAdmin(true);
     setShowAdminLogin(false);
@@ -2418,7 +2462,10 @@ const handleGitHubMirror = async () => {
         }
     };
 
-  const handleLogout = async () => { await signOut(auth); setUser(null); setInventory([]); setTransactions([]); setIsAdmin(false); };
+  /* clearGrace() here and not only in the effect: signing out drops `user` in the same tick, and
+     the effect returns early with no uid to check — so the grace record would outlive the account
+     that made it and hand the next sign-in an admin session it never earned. */
+  const handleLogout = async () => { clearGrace(); await signOut(auth); setUser(null); setInventory([]); setTransactions([]); setIsAdmin(false); };
 
   // --- ACTIONS ---
  
@@ -3515,7 +3562,9 @@ const handleGitHubMirror = async () => {
       )}
 
       {/* 1. GLOBAL MODALS */}
-      {examiningProduct && <ExamineModal product={examiningProduct} onClose={() => setExaminingProduct(null)} onUpdateProduct={handleUpdateProduct} isAdmin={isAdmin} />}
+      {/* onUpdateProduct is gone: this screen no longer edits dimensions, it only shows them.
+          Measuring lives in ImageCropper below, which is Master Vault only — his instruction. */}
+      {examiningProduct && <ExamineModal product={examiningProduct} onClose={() => setExaminingProduct(null)} isAdmin={isAdmin} />}
       {cropImageSrc && <ImageCropper imageSrc={cropImageSrc} onCancel={() => { setCropImageSrc(null); setActiveCropContext(null); }} onCrop={handleCropConfirm} dimensions={boxDimensions} onDimensionsChange={setBoxDimensions} face={activeCropContext?.face || 'front'} />}
      
 
@@ -3551,12 +3600,18 @@ const handleGitHubMirror = async () => {
 
             {/* The top stripe marks a mode that is NOT the everyday one, so it still carries
                 meaning. Standard login has none — the preview's gate is a plain card. */}
-            {(isUnlocking || isSetupMode || isResetMode || isOtpMode) && (
+            {((isUnlocking && !gateIsRich()) || isSetupMode || isResetMode || isOtpMode) && (
               <div className={`absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent ${isResetMode ? 'via-orange-500' : 'via-[#ff9d00]'} to-transparent ${authShake ? '' : 'animate-pulse'}`}></div>
             )}
-            
+
             {/* 🎬 CINEMATIC UNLOCK SEQUENCE 🎬 */}
-            {isUnlocking ? (
+            {/* HIS REPORT: "there is split second of old access granted panel after i press the
+                enter vault in phone". This block IS that panel. When the rich gate is playing,
+                the card is fading out over 420ms — and swapping its contents to ACCESS GRANTED
+                on the same frame meant he watched the old screen flash inside the fade.
+                It is now the LITE path only, which is the one place it was ever meant to be:
+                Lite Mode and reduced motion skip the canvas and need something to show. */}
+            {isUnlocking && !gateIsRich() ? (
                 <div className="space-y-5 text-center py-6">
                     <div className="relative w-20 h-20 mx-auto flex items-center justify-center">
                         {/* One ring, drawn once. It does NOT rotate: Lite Mode's law is that

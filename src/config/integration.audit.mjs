@@ -505,7 +505,15 @@ check(G13, 'no report is destroyed by the reload on the next line', reloadRace.l
    why none of that was ever caught. This group watches the branch itself. */
 const G14 = '14. The vault opens without lying';
 
-const unlockBlock = (appCode.match(/\{isUnlocking \? \(([\s\S]*?)\n\s*\) : \(/) || ['', ''])[1];
+/* The condition gained `&& !gateIsRich()` on 2026-08-10 — his report: "there is split second of
+   old access granted panel after i press the enter vault in phone". This block is now the LITE
+   path only; the rich gate fades the card instead of swapping its contents. The match has to
+   tolerate a guard here, or the whole group goes blind the next time the condition is touched. */
+const unlockBlock = (appCode.match(/\{isUnlocking[^?]*\? \(([\s\S]*?)\n\s*\) : \(/) || ['', ''])[1];
+
+check(G14, 'the old ACCESS GRANTED panel cannot flash over the rich gate',
+  /\{isUnlocking && !gateIsRich\(\) \? \(/.test(appCode),
+  'without the !gateIsRich() guard the card swaps to ACCESS GRANTED on the same frame it starts fading, and he sees it');
 
 check(G14, 'the unlock sequence is where this group can see it', unlockBlock.length > 200,
   'could not find the isUnlocking branch in App.jsx — this whole group is blind, fix the match');
