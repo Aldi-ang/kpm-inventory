@@ -1,10 +1,23 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-10 11:44 WIB** · branch `phase0-solid-ground` · last code commit: run `git log -1`
+**Updated: 2026-08-10 11:52 WIB** · branch `phase0-solid-ground` · last code commit: run `git log -1`
 **Build green, audit 215/215, `vaultGrace.selfcheck` 10/10 (checked 11:30).**
 
-**NOW: all eight of his phone-report items are built and committed. NOTHING is in flight.**
-He is testing on his phone. The quest log is republished at the same URL.
+**🔴 PLAN QUOTA HIT 100% at 11:45 WIB. Resets ~15:00 WIB. No KPM code was touched this session.**
+
+**NOW: this session was NOT app work — it was Hermes → alucard, at his instruction
+(*"this is nothing to do with our app, a whole different session to work on"*). Three edits
+landed in `C:\Users\ASUS\.claude\skills\alucard\SKILL.md`; a deep-read sweep died at the quota.**
+
+**WAITING ON ALDI — two open questions, VERBATIM from him:**
+1. *"make sure that u know everything about hermes before integrating it to alucard"* — answered
+   with a hard number he has not responded to: the Hermes checkout is **35.9 MB of Python across
+   1,109 files + 9.7 MB of markdown ≈ 11M tokens**, 11x a 1M context window. Reading all of it is
+   impossible at any budget. He must pick ONE extra pass instead: the unread 735 lines of
+   `AGENTS.md`, the `cli.py` command system, or the gateway.
+2. He was offered a revert of the three alucard edits and never answered. They are still in place.
+
+**The eight phone-report items are still built and committed; he has still not tested them.**
 
 **THE LOGIN SCREEN / VAULT GATE HAS NOTHING OPEN. Every part of it is signed off by him:**
 design (Variation B), timing (8.5s, *"timing is fine"*), the card, the outro
@@ -627,6 +640,9 @@ it never happens twice. Answer, then ask which of the waiting items he wants to 
 | A-Brain vault (decisions, incidents, backlog) | `D:\APP DEVELOPMENT\kpm inventory main FILES\A-Brain` |
 | Code knowledge graph — query, do not grep | `graphify-out/` |
 | NOT kpm — the LLM download's space log (outside the repo) | `D:\LLAMA\space.log` |
+| NOT kpm — alucard's own rules (he must approve every edit) | `C:\Users\ASUS\.claude\skills\alucard\SKILL.md` |
+| NOT kpm — Hermes Agent research notes | `A-Brain\Hermes-Agent-Research\` |
+| NOT kpm — Hermes source, 11M tokens, never read whole | `C:\Users\ASUS\AppData\Local\hermes\hermes-agent\` |
 | NOT kpm — pristine AirLLM before the resume patch | `D:\LLAMA\utils.py.backup` |
 | Alucard's rules (edit-denied — lift in settings first) | `C:\Users\ASUS\.claude\skills\alucard\SKILL.md` |
 | The Stop hook that keeps this file honest | `.claude/check-progress.mjs` |
@@ -908,6 +924,35 @@ are never worth rescuing.
 ---
 
 ## LOG — newest first, older entries live in `git log` for this file
+
+### 2026-08-10 11:52 WIB — Hermes → alucard. Not app work. Quota died mid-sweep.
+
+**No KPM code touched.** He asked for Hermes Agent (Nous Research, installed at
+`%LOCALAPPDATA%\hermes`) to be studied and folded into alucard, explicitly as a separate
+non-app session. The desktop `.exe` is only an Electron shell — it spawns the real Python
+agent as a local child process, and that full source was on disk.
+
+**Vault: `c74c4f7`** — new top-level domain `A-Brain/Hermes-Agent-Research/` (sibling to
+Crypto-Learning, deliberately outside the KPM `Wiki/`), holding the architecture write-up and
+the portability shortlist. No secrets read: his `.env`, `auth.json`, `.anthropic_oauth.json`
+were listed, never opened.
+
+**Three alucard edits landed** (`C:\Users\ASUS\.claude\skills\alucard\SKILL.md`, +12 lines):
+§1 states the prompt-cache reason for load-order · §2 adds
+`mcp__ccd_session_mgmt__search_session_transcripts` as a source rung · §10 replaces the flat
+"never spawn subagents" with **his** decision — fan-out reads allowed, *the parent* writes the
+findings to A-Brain. His words: *"allow parents write is my best pick"*. He was offered a
+revert and never answered.
+
+**The 8-agent deep-read sweep FAILED — 8 of 11 agents died on the session limit**, 691k
+subagent tokens spent for a `{survivors: [], raw: []}`. Only `agents-md`, `context`, and
+`turn-discipline` readers finished; their raw returns are in the journal, unreviewed.
+**Resume (do not re-launch from scratch — cached agents replay free):**
+`Workflow({scriptPath: ".../workflows/scripts/hermes-deep-sweep-wf_e9141f16-6bc.js", resumeFromRunId: "wf_e9141f16-6bc"})`
+Journal: `.../subagents/workflows/wf_e9141f16-6bc/journal.jsonl`
+
+**The lesson worth keeping:** an 11-agent fan-out at ~85% quota is a bet that loses the whole
+stake. Check the quota BEFORE launching a workflow, not after it reports.
 
 ### 2026-08-10 11:44 WIB — his 8 phone items are all built. A-Brain backfilled. One self-inflicted break, fixed.
 
