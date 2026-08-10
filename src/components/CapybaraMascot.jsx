@@ -274,7 +274,17 @@ export default function CapybaraMascot({ isDiscoMode, message, messages = NO_MES
         <div 
             className={`hide-on-print fixed bottom-0 right-0 z-[99999] cursor-pointer group ${stateClass}`}
             onClick={onMascotClick}
-            style={{ willChange: 'transform', marginBottom: '0px', marginRight: '0px' }} 
+            /* HIS REPORT: "capybara is still cutted on the phone". `viewport-fit=cover` went into
+               index.html on 2026-08-10 so the app could fill the notch — which also means the
+               page now runs under the phone's rounded corners and its home-indicator strip, and
+               anything pinned to bottom-0 right-0 gets sliced by the hardware.
+               env(safe-area-inset-*) is what the browser exposes for exactly this; it is 0 on a
+               desktop and on any phone without a cutout, so nothing else moves. */
+            style={{
+                willChange: 'transform',
+                marginBottom: 'env(safe-area-inset-bottom, 0px)',
+                marginRight: 'env(safe-area-inset-right, 0px)'
+            }}
         >
             <div className="relative w-32 h-32 md:w-48 md:h-48 transition-transform duration-300 origin-bottom-right" style={{ transform: `scale(${scale || 1})` }}> 
                 {/* bubble sits fully above him: 85% overlapped the hat once the sprite

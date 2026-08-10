@@ -1792,13 +1792,23 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                     the one element that must always be visible - is the first thing pushed
                     off the top. That is why the merchant vanished while he could still be
                     heard. */}
-                <div className="flex-1 min-h-0 overflow-hidden flex flex-col">{renderManifestUI(true)}</div>
+                {/* HIS CALL, 2026-08-10, on being shown two options: "b is better" — one slim
+                    bar pinned at the bottom carrying SIGN only, and everything else scrolling
+                    with the paper. His report: "the delivery proof panel and sign manifest panel
+                    shouldnt be lock in the phone view because its taking so much space that the
+                    product list is too small", and "cant see product list and customer name
+                    section is cutted".
 
-                {/* The commit footer is part of the manifest, so it is the same sheet of paper.
-                    It used to be a dark panel bolted under the parchment, which read as two
-                    documents. Tokens are the artifact's: #c9b892 rules, #6b5a3c labels,
-                    #a35a00 for the total. */}
-                <div className="kpm-parchment p-4 md:p-6 border-t-2 border-[#c9b892] flex flex-col shrink-0 z-20 shadow-[0_-6px_14px_rgba(110,84,44,0.18)]">
+                    Delivery Proof and Total Value used to be pinned alongside the button, which
+                    on a phone is ~200px of permanently reserved height. They now live inside the
+                    scrolling sheet. overflow-hidden became overflow-y-auto for the same reason —
+                    the paper has to be able to scroll now that it carries them. */}
+                <div className="flex-1 min-h-0 overflow-y-auto flex flex-col">
+                    {renderManifestUI(true)}
+
+                    {/* Still the same sheet of paper — same parchment, same tokens. It scrolls
+                        with the manifest instead of being bolted under it. */}
+                    <div className="kpm-parchment px-4 md:px-6 pb-4 shrink-0">
 
                     <div className="mb-4">
                         <label className="text-[10px] font-bold text-[#6b5a3c] uppercase tracking-widest block mb-2">Delivery Proof <span className="text-[#9e4038]">*</span></label>
@@ -1835,10 +1845,16 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                         </div>
                     )}
 
+                    </div>
+                </div>
+
+                {/* THE PINNED BAR — the only thing that stays fixed on a phone now. Slimmer than
+                    the old footer on purpose: this bar is height taken from the product list. */}
+                <div className="kpm-parchment px-4 py-2 md:p-6 border-t-2 border-[#c9b892] flex flex-col shrink-0 z-20 shadow-[0_-6px_14px_rgba(110,84,44,0.18)]">
                     <button
                         onClick={handleFinalDeal}
                         disabled={!canSubmitSale || isProcessingSale}
-                        className={`kpm-hover py-3 md:py-4 border-2 text-lg md:text-xl lg:text-2xl font-black uppercase tracking-[0.2em] transition-all active:translate-y-1 shadow-lg rounded flex items-center justify-center gap-2 md:gap-3 ${canSubmitSale && !isProcessingSale ? (isReturMode ? (returType === 'EXCHANGE' ? 'bg-gradient-to-r from-[#c9a227] to-[#8a6a2f] border-[#d4af37] text-[#2b2318] hover:from-[#d4af37] hover:to-[#a3822f] shadow-[0_0_20px_rgba(212,175,55,0.4)]' : 'bg-gradient-to-r from-red-600 to-red-800 border-red-500 text-white hover:from-red-500 hover:to-red-700 shadow-[0_0_20px_rgba(220,38,38,0.4)]') : 'bg-gradient-to-r from-[#ff9d00] to-[#c47f00] border-[#ffca28] text-black hover:from-[#ffca28] hover:to-[#ff9d00]') : 'bg-transparent text-[#8b7256] border-[#c9b892] cursor-not-allowed'}`}
+                        className={`kpm-hover py-2.5 md:py-4 border-2 text-base md:text-xl lg:text-2xl font-black uppercase tracking-[0.2em] transition-all active:translate-y-1 shadow-lg rounded flex items-center justify-center gap-2 md:gap-3 ${canSubmitSale && !isProcessingSale ? (isReturMode ? (returType === 'EXCHANGE' ? 'bg-gradient-to-r from-[#c9a227] to-[#8a6a2f] border-[#d4af37] text-[#2b2318] hover:from-[#d4af37] hover:to-[#a3822f] shadow-[0_0_20px_rgba(212,175,55,0.4)]' : 'bg-gradient-to-r from-red-600 to-red-800 border-red-500 text-white hover:from-red-500 hover:to-red-700 shadow-[0_0_20px_rgba(220,38,38,0.4)]') : 'bg-gradient-to-r from-[#ff9d00] to-[#c47f00] border-[#ffca28] text-black hover:from-[#ffca28] hover:to-[#ff9d00]') : 'bg-transparent text-[#8b7256] border-[#c9b892] cursor-not-allowed'}`}
                     >
                         {isProcessingSale ? <span className="flex items-center gap-2 animate-pulse"><Zap size={20}/> PROCESSING...</span> :
                          gpsStatus === 'checking' ? 'Awaiting GPS...' :
