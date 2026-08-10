@@ -838,6 +838,25 @@ are never worth rescuing.
 
 ## LOG — newest first, older entries live in `git log` for this file
 
+### 2026-08-10 05:15 WIB — 🔒 THE OUTRO IS CLOSED. He kept today's. JOB 6 IS FINISHED.
+
+**His words: *"TBH from all your design what we already have is still the best i still choose
+today, just stay with that i dont want to waste anymore time to design this, lets move on with
+other work"*.**
+
+**DO NOT RE-PITCH THE OUTRO. DO NOT OFFER VARIANTS. DO NOT "IMPROVE" IT.** The fade-and-shrink
+at `opacity 200ms ease / transform 420ms cubic-bezier(.16,1,.3,1)` on the card in `App.jsx` is
+final and chosen, having been compared against three alternatives he actually played.
+**A consequence worth stating plainly: `vault-b.mp3` needs NO regeneration.** The whole timing
+chain — wave 3.0s, tok 4.50s, ticks 6.70s — stays exactly as shipped.
+The rejected drafts stay at `https://claude.ai/code/artifact/76cd529a-dc41-45cc-ad23-a5ea0418f7b0`
+for the record only. **JOB 6, start to finish, is done.**
+
+**The lesson for me, not for him: he judged three designed alternatives and kept the default.**
+The "cheap" verdict he gave earlier was about the whole ACCESS GRANTED beat, and that had already
+been fixed. I read it as a standing complaint about the outro specifically and built four
+variants off that reading. **When he says something is cheap, ask which part before designing.**
+
 ### 2026-08-10 05:08 WIB — outro drafts published, and two quest-log items closed. Audit 202/202.
 
 **🔴 WAITING ON HIM — FOUR PANEL OUTROS, HIS PICK:**

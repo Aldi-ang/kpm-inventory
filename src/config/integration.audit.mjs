@@ -671,6 +671,28 @@ check(G17, 'the heartbeat is stopped on unmount',
   /clearInterval\(heartbeat\)/.test(offlineSrc),
   'a probe outliving the component keeps hitting the network for nothing');
 
+/* ── 18. typing a store's name picks it — safely ───────────────────────────
+   H2a, his words: "if i dont press anything from the dropdown then the stores wont be selected
+   and it will just focused on that namebar". Selection required a click, so a fully typed name
+   left no store chosen and the rail fell back to the default dashboard. */
+const G18 = '18. Typing a store name selects it, without picking the wrong shop';
+const termSrc = strip(src);
+
+check(G18, 'a typed name can select a store at all',
+  /const exact = customers\.filter/.test(termSrc),
+  'without this, typing the whole name still leaves no store chosen');
+check(G18, 'ONLY when exactly one store matches',
+  /exact\.length === 1/.test(termSrc) && !/exact\[0\]\s*\)/.test(termSrc.replace(/exact\.length === 1\) handleCustomerSelect\(exact\[0\]\)/, '')),
+  'he has three shops named "warung sembako sumber rejeki" 14.5km apart — auto-picking the '
+  + 'first would bill the wrong one, which is real money and cannot be spotted afterwards');
+check(G18, 'it goes through the same handler the dropdown uses',
+  /exact\.length === 1\) handleCustomerSelect\(/.test(termSrc),
+  'a second selection path that skips the tier mapping, territory bar or telemetry ping is '
+  + 'exactly how the pricingTier bug got in');
+check(G18, 'an empty or whitespace-only name never selects anything',
+  /const needle = typed\.trim\(\)\.toLowerCase\(\);\s*if \(needle\)/.test(termSrc),
+  'pressing space in an empty field must not match a store');
+
 /* ── report ──────────────────────────────────────────────────────────────── */
 let last = '';
 for (const r of results) {

@@ -481,11 +481,31 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
     };
 
     const handleManualCustomerType = (e) => {
-        setCustomerName(e.target.value); setShowCustomerDropdown(true); setSelectedCustomerInfo(null);
+        const typed = e.target.value;
+        setCustomerName(typed); setShowCustomerDropdown(true); setSelectedCustomerInfo(null);
         setLockedTier('Ecer'); updateCartPricing('Ecer'); setManualOverride(true); setBypassState({ status: 'idle', id: null, photo: null });
         // Typing over a chosen store un-chooses it, so the owner name must go too - else the
         // red bar and the territoryOverride stamp survive onto a hand-typed walk-in.
         setTerritoryClaim(null);
+
+        /* H2a — his report: "if i dont press anything from the dropdown then the stores wont be
+           selected and it will just focused on that namebar". Selecting used to require a CLICK,
+           so a salesman who typed a store's name in full still had no store chosen, and the rail
+           fell back to the default dashboard because `customerSettled` needs selectedCustomerInfo.
+
+           Typing the whole name now picks the store, through the SAME handler the dropdown uses
+           so the tier, territory bar, GPS lock and telemetry ping all still happen — a second
+           selection path that skipped any of those is how the pricingTier bug got in.
+
+           ONLY on exactly one match, and that is the important half. His book has three shops
+           called "warung sembako sumber rejeki" 14.5 km apart; auto-picking the first would bill
+           the wrong shop, which is real money and unpickable afterwards. Several matches means
+           the dropdown stays open and he chooses. */
+        const needle = typed.trim().toLowerCase();
+        if (needle) {
+            const exact = customers.filter(c => (c.name || '').trim().toLowerCase() === needle);
+            if (exact.length === 1) handleCustomerSelect(exact[0]);
+        }
     };
 
     const updateCartPricing = (tier) => {
