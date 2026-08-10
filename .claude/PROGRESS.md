@@ -1,13 +1,21 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-10 11:52 WIB** · branch `phase0-solid-ground` · last code commit: run `git log -1`
+**Updated: 2026-08-10 15:15 WIB** · branch `phase0-solid-ground` · last code commit: run `git log -1`
 **Build green, audit 215/215, `vaultGrace.selfcheck` 10/10 (checked 11:30).**
 
-**🔴 PLAN QUOTA HIT 100% at 11:45 WIB. Resets ~15:00 WIB. No KPM code was touched this session.**
+*⚠️ TWO SESSIONS WROTE THIS FILE TODAY. The 11:52 header said "No KPM code was touched this
+session" — true of the HERMES session that wrote it, and false of the app session running beside
+it, which had already landed `d15ae51`, `df2087f`, `01dfdb0`. **When this file and `git log`
+disagree, git wins.** That is the third time this exact collision has happened here.*
 
-**NOW: this session was NOT app work — it was Hermes → alucard, at his instruction
-(*"this is nothing to do with our app, a whole different session to work on"*). Three edits
-landed in `C:\Users\ASUS\.claude\skills\alucard\SKILL.md`; a deep-read sweep died at the quota.**
+**🔴 PLAN QUOTA HIT 100% at 11:45 WIB and has since reset (confirmed 15:08 WIB).**
+
+**NOW: he finished the WHOLE test round — 64/64 — and his results are IN and NOT yet acted on.**
+Read "HIS FULL ROUND RESULT" below before anything else: one BROKEN (G5, four separate faults
+inside it), and two asks buried in GOOD answers. **Nothing is in flight; nothing is half-done.**
+
+*The 11:52 Hermes session is unrelated app-side: it edited
+`C:\Users\ASUS\.claude\skills\alucard\SKILL.md` only. Its two open questions are kept below.*
 
 **WAITING ON ALDI — two open questions, VERBATIM from him:**
 1. *"make sure that u know everything about hermes before integrating it to alucard"* — answered
@@ -17,7 +25,9 @@ landed in `C:\Users\ASUS\.claude\skills\alucard\SKILL.md`; a deep-read sweep die
    `AGENTS.md`, the `cli.py` command system, or the gateway.
 2. He was offered a revert of the three alucard edits and never answered. They are still in place.
 
-**The eight phone-report items are still built and committed; he has still not tested them.**
+**✅ The eight phone-report items are built, committed AND he has now tested the round around
+them.** What he did NOT separately confirm: the 5-minute grace period, the safe-area inset on the
+capybara, and the copy button. Ask for those three by name.
 
 **THE LOGIN SCREEN / VAULT GATE HAS NOTHING OPEN. Every part of it is signed off by him:**
 design (Variation B), timing (8.5s, *"timing is fine"*), the card, the outro
@@ -146,6 +156,54 @@ F6, F7 and the whole G section are still his to run.
 **⚠️ NOT VERIFIED IN A BROWSER — say so rather than implying otherwise.** Everything above stands
 on the build, 215 audit checks, the vaultGrace self-check and the code itself. The grace period,
 the safe-area inset and the iOS copy path are all things only his phone can actually prove.
+
+## 🔴 HIS FULL ROUND RESULT — 2026-08-10, 64/64 answered. Source: `kpm-test-results.md` on his Desktop
+
+**He could NOT copy from the quest log and used Save File instead.** The saved report proves the
+round-only fix works (it printed F/G only and said "56 test(s) ... left out"), but **the copy
+button is still unproven on his phone** — he may have downloaded from the build that still had the
+broken always-visible fallback overlay. **Ask him to hard-reload before judging the copy path.**
+
+**GOOD: 58 · BROKEN: 4 · WEIRD: 2 (whole log). This round: F6, F7, G1–G9.**
+
+### 🔴 G5 IS BROKEN — the IOU banner never appears. His words:
+*"there is no notification on the strip or banner appear when there is IOU in that store, the
+strip only tell me the last order and owes, and it doesnt show me what is the last order item is,
+only the value, and i think we should redesign the strip to be closer with the strip because
+manifest paper and the strip is too far away when we use phone right, unlike pc that can see
+everything, we should redesign to make this simpler and more ergonomics about this, and another
+things to fix is that mastervault and bosscar button and the notification button is collapsing
+infront of the manifest paper, better to fix it"*
+
+**That is FOUR separate things, do not treat it as one:**
+1. The pending-IOU banner does not appear at all. A real bug.
+2. The strip shows the last order's VALUE but not its ITEMS.
+3. The strip and the manifest paper are too far apart on a phone — a redesign he is asking for,
+   **his taste call, give him options.**
+4. **Master Vault / Boss Car and the notification button render in front of the manifest paper.**
+   Visible in his 10:19 screenshot. A z-index/stacking bug, same family as the nav button on the
+   vault gate — and that one was NOT fixed by raising z-index, it was fixed by not rendering.
+
+### ⚠️ F7 — "all the SFX is gone, animation is gone, animation when sign manifest happen also gone"
+**MOST LIKELY CAUSE: he left Lite Mode ON after testing G9, and it persists in localStorage.**
+`isLiteMode` (`App.jsx:1208`) reads `kpm_lite_mode` and survives every reload; `liteModeOn()`
+(`useSound.js:118`) makes `playSound` return false, and the same flag kills animation. **Both
+being gone at once is what points at Lite Mode rather than at the iOS audio unlock** — a broken
+unlock would take the sound and leave the animation. **Settings → ⚡ Cello Lite Mode.**
+[likely — not confirmed on his device]
+He also asked for **haptics** on adding/removing a cart item. Not built.
+
+### G6 — NOO registration froze his phone
+*"it freeze my phone for a while tho maybe add some conveniency after we register new NOO, like
+close the manifest paper for example"*. Not investigated.
+
+### NOT A BUG, do not "fix" it
+**No merchant on the phone is deliberate** — `MerchantSalesView.jsx:1740`, the alcove is
+`hidden lg:grid`, because a phone screen has no room. He knows: *"no merchant as well remember"*.
+
+### Spotted in passing, NOT in scope and NOT touched
+`SettingsView.jsx:200-217` — the Lite Mode card turns **emerald** when on. Palette law says no
+green. It is the switch he uses to prove the palette law elsewhere.
 
 ## ▶ DO THIS NEXT
 
