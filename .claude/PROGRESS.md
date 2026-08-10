@@ -1,10 +1,22 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-10 21:11 WIB** · branch `phase0-solid-ground` · last code commit: run `git log -1`
+**Updated: 2026-08-10 21:55 WIB** · branch `phase0-solid-ground` · last code commit: run `git log -1`
 **Build green, audit 217/217, `useSound.selfcheck` 6/6, `vaultGrace.selfcheck` 10/10 (checked 21:05).**
 
-**NOW: the silent-iPhone sound bug is FIXED and COMMITTED (`8c502f7`). Nothing is in flight.**
-The next job is the customer-block move — agreed with him, measured, deliberately not started.
+**NOW: nothing is in flight. Sound is BACK on his phone (`8c502f7`) and he has CLOSED the topic.**
+His words, 21:5x: *"sound is back but so weird, nvm about the SFX on phone sound really bad anyway,
+and for some reason not consistent, u should fix other faulty components that i mention on the
+quest log btw, but remember the token is almost depleted"*.
+
+**🔴 DO NOT SPEND ANOTHER SESSION ON PHONE SFX.** He heard it, disliked it, and dropped it
+himself. The fix was real and the cause is understood; the audio ASSETS are what he finds bad,
+and that is a different job he has not asked for. The remaining inconsistency is [likely] the
+element pool recycling three `<audio>` objects per sound — not investigated, and not to be
+investigated unless he asks.
+
+**NEXT, in his order:** the faulty components from his quest-log round — G5's four separate parts
+and G6's freeze — then the customer-block move. **Both are written up above with line numbers.**
+Work stopped at 87% plan quota with nothing half-done.
 
 > ✅ *The 21:06 warning that `src/main.jsx` was uncommitted is resolved: it landed in `8c502f7`
 > at 21:05 together with `useSound.js` and the audit. That thread was right to leave it alone.*
