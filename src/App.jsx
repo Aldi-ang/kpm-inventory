@@ -851,6 +851,19 @@ const handleGitHubMirror = async () => {
 
   // 🔐 CRYPTOGRAPHIC ENGINE: SHA-256 Hash Generator
   const hashSecretWord = async (word) => {
+      /* 🔴 THE REAL CAUSE OF EVERY "I CAN'T LOG IN ON MY PHONE" REPORT, found 2026-08-10.
+         `crypto.subtle` only exists in a SECURE CONTEXT: HTTPS, or localhost. Aldi's PC works
+         because it IS localhost; his phone reaches the dev server at http://192.168.1.141, which
+         is neither, so `crypto.subtle` is undefined and this line threw "undefined is not an
+         object". For months that throw was swallowed by a silent catch, so the button simply
+         did nothing — which is precisely how it was reported, every time.
+
+         Production is unaffected: Vercel serves HTTPS, so the API is there.
+
+         This is NOT worked around with a hand-rolled SHA-256. Same algorithm or not, quietly
+         routing a master password through unreviewed crypto — to make an insecure origin work —
+         is his call to make, not a thing to slip into a bug fix. */
+      if (!globalThis.crypto?.subtle) throw new Error('SECURE_CONTEXT_REQUIRED');
       const msgBuffer = new TextEncoder().encode(word.toLowerCase().trim());
       const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
       const hashArray = Array.from(new Uint8Array(hashBuffer));
@@ -924,15 +937,27 @@ const handleGitHubMirror = async () => {
 
   // 3. LOGIN: Verify PIN (NOW WITH HASH & 5-STRIKE LOCKOUT)
   const handlePinLogin = async () => {
+      /* A shake alone is not a report. On a phone he may not even see it — and pressing OPEN THE
+         VAULT with an empty box is the likeliest thing to happen now that the field no longer
+         autofocuses there. His report was exactly this shape: "doesnt let me enter but no
+         notification just nothing". */
       if (!inputPin || inputPin.trim() === "") {
-          setAuthShake(true); setTimeout(() => setAuthShake(false), 500); return;
+          setAuthShake(true); setTimeout(() => setAuthShake(false), 500);
+          notify("Type your master password first.");
+          return;
       }
 
       try {
           // Fetch the live security profile
           const adminDocRef = doc(db, `artifacts/${appId}/users/${userId}/settings`, 'admin');
           const adminSnap = await getDoc(adminDocRef);
-          if (!adminSnap.exists()) return;
+          /* Was a bare `return` — the single most invisible failure in the app, on the one screen
+             every session starts at. handleResetPin has reported this same condition since it was
+             written (see "No security profile found." below); only this path was missed. */
+          if (!adminSnap.exists()) {
+              notify("No security profile found for this account. The Master Vault has to be set up first.");
+              return;
+          }
           const data = adminSnap.data();
 
           // Check if already locked out
@@ -973,6 +998,24 @@ const handleGitHubMirror = async () => {
           }
       } catch (error) {
           console.error("Login Error:", error);
+          /* THE ONE THAT LOCKED HIM OUT. Checking the password needs a Firestore read, and on a
+             phone that read is the fragile part — weak signal, an auth token not refreshed yet,
+             or simply no internet. Every one of those landed here and printed to a console he
+             cannot open on a phone, so the button genuinely did nothing.
+
+             The offline case gets its own wording because the fix is different and it is the one
+             he will actually hit: nothing is wrong with his password, he just cannot be checked
+             right now. */
+          const msg = error?.message || '';
+          const insecure = msg === 'SECURE_CONTEXT_REQUIRED' || /crypto|subtle|digest/i.test(msg);
+          const offline = !navigator.onLine || error?.code === 'unavailable'
+              || /offline|network|unavailable/i.test(msg);
+          notify(
+              insecure
+                  ? `This page is open over http://${location.host}, and browsers only allow password checking on https:// or localhost. Nothing is wrong with your password — open the app over HTTPS.`
+              : offline
+                  ? "Can't reach the server to check your password. Get back online and try again — nothing was wrong with what you typed."
+                  : `Could not check your password: ${msg || 'unknown error'}. Nothing was changed, try again.`);
       }
   };
 

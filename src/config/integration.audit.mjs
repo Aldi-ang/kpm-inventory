@@ -693,6 +693,40 @@ check(G18, 'an empty or whitespace-only name never selects anything',
   /const needle = typed\.trim\(\)\.toLowerCase\(\);\s*if \(needle\)/.test(termSrc),
   'pressing space in an empty field must not match a store');
 
+/* ── 19. the vault gate can never fail in silence ──────────────────────────
+   2026-08-10. Aldi, on his phone: "i press open vault from my phone and its not doing anything,
+   doesnt let me enter but no notification just nothing". Three exits in handlePinLogin reported
+   nothing: an empty box, a missing settings doc, and the catch — which only did console.error,
+   on a device where he cannot open a console.
+
+   The catch was hiding the actual bug the whole time. `crypto.subtle` does not exist outside a
+   SECURE CONTEXT, so hashing threw on his phone at http://192.168.1.141 and nothing happened.
+   Months of "I can't log in on my phone" was this, invisible.
+
+   This is the app's oldest disease — 58 confirms, 11 prompts and 184 alerts were replaced for
+   the same reason — and it was still alive on the one screen every session starts at. */
+const G19 = '19. The vault gate can never fail in silence';
+const pinLogin = (appCode.match(/const handlePinLogin = async \(\) => \{([\s\S]*?)\n {2}\};/) || ['', ''])[1];
+
+check(G19, 'the login handler is where this group can see it', pinLogin.length > 400,
+  'could not find handlePinLogin — every check below is blind, fix the match');
+check(G19, 'an empty password says so', /notify\("Type your master password first\."\)/.test(pinLogin),
+  'a shake is not a report, and on a phone he may not even see it');
+check(G19, 'a missing security profile says so', /!adminSnap\.exists\(\)\) \{[\s\S]{0,120}?notify\(/.test(pinLogin),
+  'this was a bare return — the most invisible failure in the app');
+check(G19, 'the catch reports to the SCREEN, not only the console',
+  /catch \(error\) \{[\s\S]{0,900}?notify\(/.test(pinLogin),
+  'console.error alone is invisible on a phone, and that is where he uses it');
+check(G19, 'no bare `return;` is left in the handler',
+  !/\n\s+return;\s*\n/.test(pinLogin.replace(/notify\([\s\S]*?\);\s*\n\s+return;/g, '')),
+  'every exit must leave something on screen — silence is the bug being fixed');
+check(G19, 'hashing refuses loudly outside a secure context',
+  /if \(!globalThis\.crypto\?\.subtle\) throw new Error\('SECURE_CONTEXT_REQUIRED'\)/.test(appCode),
+  'crypto.subtle is undefined over plain http, and the raw TypeError explains nothing to him');
+check(G19, 'that case is translated into something he can act on',
+  /SECURE_CONTEXT_REQUIRED[\s\S]{0,400}?https:\/\/ or localhost/.test(appCode),
+  'telling him "undefined is not an object" is not a report');
+
 /* ── report ──────────────────────────────────────────────────────────────── */
 let last = '';
 for (const r of results) {
