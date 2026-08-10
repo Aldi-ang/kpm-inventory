@@ -1,9 +1,33 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-10 20:56 WIB** · branch `phase0-solid-ground` · last code commit: run `git log -1`
+**Updated: 2026-08-10 21:06 WIB** · branch `phase0-solid-ground` · last code commit: run `git log -1`
 **Build green, audit 215/215, `vaultGrace.selfcheck` 10/10 (checked 11:30).**
 
-## ✅ LOG 20:56 WIB — the jam is CLEARED. Alucard can learn again. Nothing open.
+## 🔴 LOG 21:06 WIB — YOUR VAULT AUTOMATION HAS BEEN DEAD SINCE 2026-07-28. One decision owed.
+
+Found by testing the new curator, not by anything reporting a fault. **`a-brain-session-ingest`
+(daily 21:02) fires but records nothing.** Its state table and its run logs both stop at
+2026-07-28; the scheduler says it last ran 2026-08-09. It passed straight through the 178-commit
+six-day gap it exists to prevent — that gap was closed by hand (`a5921e6`), not by the task.
+[likely] cause: it cannot see session history from a scheduled context, so it finds "nothing new"
+every run and exits clean. Silent Failure Disease, in his own automation. Written up in the vault
+at `Automation-Setup.md` §1 (commit `b5e7124`).
+
+**🔴 HE MUST DECIDE: repair that ingest task, or move the vault-writing job somewhere else.**
+Detection is already covered — `.claude/vault-gap.mjs` counts git commits since the last vault
+commit, needs no session history, and `vault-gap-curator` (19:13) reports when it climbs.
+
+**Curator scope was corrected before it ever ran.** Its first version told it to edit
+`lessons.md` — which violates the HARD BOUNDARY written into `a-brain-session-ingest`'s own
+prompt ("Never write to `...\skills\alucard\` — not SKILL.md, not lessons.md, not to fix a
+typo"). It is now **detect-and-report only**; the single file it may write is
+`A-Brain/runs/lesson-candidates.md`.
+
+**Still untested and only Aldi can do it: click "Run now" on `vault-gap-curator` once.** Tool
+approvals granted during a run are stored on the task. Without that, an unattended 19:13 run can
+stall on a permission prompt with nobody watching.
+
+## ✅ LOG 20:56 WIB — the jam is CLEARED. Alucard can learn again.
 
 Aldi chose (a): *"i think i choose A because lesson is part of experience that alucard can use to
 be wiser in the future right, memories also important for AI not just human"*. The
