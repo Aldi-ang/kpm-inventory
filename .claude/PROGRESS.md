@@ -7,6 +7,31 @@
 `MerchantSalesView.jsx` diff from +13 to +26/-5. Still not this session's work, still not built
 or audited from here. This session is only monitoring an unrelated `D:\LLAMA` AirLLM run.)*
 
+## ✅ LOG 03:28 WIB — Alucard now runs code at every session start. Hermes work is DONE.
+
+*(Hermes→Alucard session. Touched NO app code — only `.claude/settings.json` hooks + the vault.)*
+
+**The two health checks now fire at every session start**, not just at the curator's 19:13 daily
+slot: `hooks.SessionStart` in `.claude/settings.json` gained two non-blocking commands. **719 ms,
+~25 tokens.** He approved this specific hook after being shown its exact output and cost —
+the first attempt was correctly blocked for adding persistence he had not named. JSON re-validated
+after the edit and all five other hook types confirmed untouched (`SessionStart:1 PreCompact:1
+UserPromptSubmit:1 Stop:1 PreToolUse:2`).
+
+**Both scripts moved to `A-Brain/automation/`** — they hardcode his home dir, vault path and
+Alucard path, and *"app is meant to be sell while this A-Brain is forever with me"*. The path table
+below is corrected; the old `.claude/*.mjs` entries were stale.
+
+**HERMES → ALUCARD IS FINISHED. Do not re-open it.** 10 rules ported (7 from a 16-agent adversarial
+sweep, 19 proposals in), 2 health scripts, 1 daily curator, 1 session-start hook. Everything else
+Hermes has is a *running program* — its curator forks a second agent on a cheap model, it writes
+its own skill files, it auto-models the user — and a skill file cannot do those. That wall is real
+and no further sweeping moves it. Full record: `A-Brain/Hermes-Agent-Research/`.
+
+**He declined, worth revisiting after a few days:** a Stop hook that refuses to end a turn when
+real work happened and nothing reached A-Brain — the same shape as this file's own
+`check-progress.mjs`, which is the only reason this note stayed current tonight.
+
 ## 🔴 LOG 03:12 WIB — YOUR EMAIL IS A HARDCODED MASTER KEY IN THE RULES. Not fixed, his call.
 
 *(Written by the Hermes→Alucard session. It touched NO app code — only the A-Brain vault.)*
@@ -868,7 +893,7 @@ it never happens twice. Answer, then ask which of the waiting items he wants to 
 | A-Brain vault (decisions, incidents, backlog) | `D:\APP DEVELOPMENT\kpm inventory main FILES\A-Brain` |
 | Code knowledge graph — query, do not grep | `graphify-out/` |
 | NOT kpm — the LLM download's space log (outside the repo) | `D:\LLAMA\space.log` |
-| Curator check 1: is the vault behind the repo? | `.claude/vault-gap.mjs` |
+| Curator check 1: is the vault behind the repo? | `A-Brain\automation\vault-gap.mjs` |
 | Curator check 2: can Alucard still learn? | `A-Brain\automation\lessons-health.mjs` |
 | Sale-day export — refuses to write if personal data survives | `A-Brain\automation\export-app-for-sale.mjs` |
 | The daily job both feed (19:13, survives restarts) | `C:\Users\ASUS\.claude\scheduled-tasks\vault-gap-curator\SKILL.md` |
