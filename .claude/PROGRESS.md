@@ -3,6 +3,43 @@
 **Updated: 2026-08-11 03:12 WIB** · branch `phase0-solid-ground` · last code commit: run `git log -1`
 **Build/audit not re-checked this edit — see LOG entry below for why.**
 
+*(03:12 touch only — trigger was `.claude/scheduled_tasks.lock`, bookkeeping for monitoring an
+unrelated `D:\LLAMA` AirLLM run in this session. Does not affect where KPM work stands.)*
+
+## 🔴 LOG 03:12 WIB — YOUR EMAIL IS A HARDCODED MASTER KEY IN THE RULES. Not fixed, his call.
+
+*(Written by the Hermes→Alucard session. It touched NO app code — only the A-Brain vault.)*
+
+```
+firestore.rules:20   request.auth.token.email == 'adikaryasukses99@gmail.com'
+src/App.jsx:2130     const masterVIPs = ['adikaryasukses99@gmail.com'];
+```
+
+Two layers, same constant, no config indirection. **Fine while Aldi owns the app; a backdoor the
+moment he sells it** — a buyer's deployment would still grant him server-level master access to
+their tenants' data. **Deliberately NOT fixed by an agent**: it touches the rules draft and the
+auth path, and rules are his to change and deploy by hand. Shape of the fix when he wants it —
+move the address to config or a Firestore doc so a buyer sets their own. Written up in the vault
+at `Wiki/Entities/Firestore Rules.md`.
+
+**Found by a packaging tool, not a security review.** He chose option (a) on the sell-the-app
+question — *"app is meant to be sell while this A-Brain is forever with me"* — meaning: do NOT
+move personal files out of the repo now (`PROGRESS.md` alone is in 118 commits, so moving it
+forward does nothing about history), and instead export a fresh one-commit repo on sale day.
+That export is `A-Brain/automation/export-app-for-sale.mjs`: copies tracked files only, drops 28
+personal ones, then **scans what remains and refuses to write** if any personal marker survives.
+Its first real run exited 1 on 7 hits. Six were paths and comments; the seventh was the email.
+
+**Also moved out of this repo tonight:** `vault-gap.mjs` and `lessons-health.mjs` now live in
+`A-Brain/automation/` — they hardcoded his home dir, vault path and Alucard path and had no
+business shipping with the app.
+
+⚠️ **9router is DOWN (connection refused, not 401).** The launcher was run from here and it did
+not come back up. **The 21:02 `a-brain-session-ingest` task will keep dying while it is down** —
+that task has been dead on arrival since ~2026-07-28 with "issue with the selected model
+(cc/claude-sonnet-5)", which is an AUTH failure, not a missing model. Aldi generated an API key
+and edited settings himself; that fix is untested until 9router answers again.
+
 ## ⚠️ LOG 03:10 WIB — a DIFFERENT session edited `MerchantSalesView.jsx` while THIS one ran, UNCOMMITTED
 
 **This session never touched KPM code** — it spent the whole window helping Aldi debug an AirLLM/
