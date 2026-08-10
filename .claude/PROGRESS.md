@@ -892,9 +892,10 @@ with no event at all, which is his case exactly.
 is not active under `vite dev`. It applies to the production build (71 precached entries).*
 
 **▶ QUEST-LOG ITEMS STILL OPEN, his words, in the order I would take them:**
-1. **H2a — typing a store name by hand does not select it.** *"if i dont press anything from the
-   dropdown then the stores wont be selected… if i press any space in there, what is shows
-   instead is the main rail dashboard"*. **Never investigated.** Probably the biggest real bug left.
+1. ~~H2a — typing a store name by hand does not select it.~~ **✅ DONE `b3436c6`.** Both halves
+   were one root cause: only a dropdown CLICK ever set `selectedCustomerInfo`. Typing the full
+   name now selects, via the SAME handler, and **only when exactly one shop matches** — three of
+   his shops share a name 14.5 km apart.
 2. **The flight recorder should show the queued edit.** *"there should be the notification that
    the edit is queued inside the flight recorder"*. `useOfflineEngine` already keeps `syncLogs`
    and `pendingCount`, so the data likely exists and is simply not shown for that path.
