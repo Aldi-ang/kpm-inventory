@@ -229,6 +229,15 @@ textarea::placeholder{color:#4a423a}
   </div>
 </div>
 
+<!-- Last-resort copy path: shown only when the browser refuses both clipboard routes, which is
+     what his iPhone does inside the published artifact's iframe. The text arrives already
+     selected, so it is one hold-and-copy away. -->
+<div id="fallback" hidden style="position:fixed;inset:0;z-index:9999;background:rgba(8,6,4,.94);display:flex;flex-direction:column;gap:10px;padding:16px;">
+  <b style="color:#f0e2c0;font-size:13px;line-height:1.5">This browser blocked the automatic copy. The report is below and already selected — hold on it, choose <i>Copy</i>, then paste it into the chat.</b>
+  <textarea id="fallbackText" readonly style="flex:1;width:100%;font:12px/1.45 ui-monospace,monospace;background:#141210;color:#e8dcc4;border:1px solid #6b5a3c;border-radius:6px;padding:10px;"></textarea>
+  <button id="fallbackClose" class="big ghost">Close</button>
+</div>
+
 <div class="toast" id="toast" hidden></div>
 <div class="lightbox" id="lightbox" hidden><img id="lightboxImg" alt="Attached screenshot"></div>
 
@@ -450,6 +459,36 @@ function load(){
       }
     }catch(e){}
   }
+
+  /* HIS OWN VERDICT, spoken in chat instead of clicked: "test F1-F5 good i havent do f6 and f7
+     and whole G section" (2026-08-10). His standing instruction is that the log carries what he
+     has already told me — "update the quest log everytime i give u copy reports, if the test
+     already done just lock it" — otherwise he answers the same five twice.
+
+     No round stamp is written here on purpose. These are SETTLED, so they lock away and stay out
+     of the next COPY REPORT, exactly like the 48 before them. Only a verdict he clicks in the
+     current round earns a place in the report. */
+  const ALDI_TAG='aldi-2026-08-10';
+  const ALDI_GOOD={
+    F1:'Aldi 2026-08-10: reported GOOD in chat.',
+    F2:'Aldi 2026-08-10: reported GOOD in chat.',
+    F3:'Aldi 2026-08-10: reported GOOD in chat.',
+    F4:'Aldi 2026-08-10: reported GOOD in chat.',
+    F5:'Aldi 2026-08-10: reported GOOD in chat.',
+  };
+  if(saved){
+    try{
+      if(localStorage.getItem(KEY+'-aldi')!==ALDI_TAG){
+        for(const [id,note] of Object.entries(ALDI_GOOD)){
+          if(s[id] && !s[id].verdict){
+            s[id].verdict='good';
+            s[id].note = s[id].note ? (s[id].note+'\n'+note) : note;
+          }
+        }
+        localStorage.setItem(KEY+'-aldi',ALDI_TAG);
+      }
+    }catch(e){}
+  }
   return s;
 }
 function save(){
@@ -645,6 +684,11 @@ function itemEl(i){
     b.setAttribute('aria-pressed', String(st.verdict===v));
     b.onclick=()=>{
       st.verdict = st.verdict===v ? null : v;
+      /* Stamp WHICH ROUND this answer belongs to, and persist it. `answeredNow` cannot do this
+         job: it is session-scoped, so answering three tests and then reloading the page left
+         COPY REPORT with nothing to say they were new. The report keys off this stamp instead,
+         which is why an answer survives a reload and an old round's answer never comes back. */
+      if(st.verdict) st.round = REDO_TAG; else delete st.round;
       if(st.verdict && SOUND[st.verdict]) SOUND[st.verdict]();
       activeId = i.id;                 // set before render so the rebuilt card keeps the arming
       /* Keep it on screen so he can type the reason. Without this the lock swallowed the row,
@@ -712,13 +756,23 @@ function esc(s){ return String(s).replace(/[&<>]/g,m=>({'&':'&amp;','<':'&lt;','
 function report(){
   const c=counts();
   const L=[];
+  /* HIS INSTRUCTION, 2026-08-10: "copy reports doesnt need to include the test thats already
+     reviewed and fix right". It was printing every test that had ever been answered — 48 of them
+     locked and settled — so the handful he had just answered were buried in a wall of old text,
+     which is also why he thought his new answers had not been copied at all.
+     THIS ROUND ONLY now. A test earns its place by carrying the current round stamp. */
+  const thisRound = i => state[i.id].round === REDO_TAG;
+  const settled = allItems.filter(i => state[i.id].verdict && !thisRound(i)).length;
+
   L.push('# KPM Sales Terminal — test results');
   L.push('');
-  L.push('Answered '+c.done+'/'+c.total+' · GOOD '+c.good+' · BROKEN '+c.bad+' · WEIRD '+c.weird);
+  L.push('Round `'+REDO_TAG+'` — answers given in THIS round only.');
+  L.push('Answered '+c.done+'/'+c.total+' overall · GOOD '+c.good+' · BROKEN '+c.bad+' · WEIRD '+c.weird);
+  if(settled) L.push(settled+' test(s) answered in earlier rounds are settled and deliberately left out.');
   L.push('');
   const problems=[];
   TESTS.forEach(g=>{
-    const rows=g.items.filter(i=>state[i.id].verdict && state[i.id].verdict!=='skip');
+    const rows=g.items.filter(i=>thisRound(i) && state[i.id].verdict && state[i.id].verdict!=='skip');
     if(!rows.length) return;
     L.push('## '+g.g+' — '+g.name);
     rows.forEach(i=>{
@@ -732,6 +786,8 @@ function report(){
     });
     L.push('');
   });
+  if(!allItems.some(i=>thisRound(i) && state[i.id].verdict))
+    L.push('_Nothing answered in this round yet — press a verdict on a test first._');
   const skipped=allItems.filter(i=>state[i.id].verdict==='skip').map(i=>i.id);
   const untouched=allItems.filter(i=>!state[i.id].verdict).map(i=>i.id);
   if(skipped.length){ L.push('Skipped (cannot be tested): '+skipped.join(', ')); L.push(''); }
@@ -746,17 +802,58 @@ function toast(msg){
   clearTimeout(toast._t); toast._t=setTimeout(()=>{t.hidden=true;},2600);
 }
 
+/* THE COPY BUTTON WAS FAILING SILENTLY ON HIS IPHONE, which is the worst possible failure here:
+   both paths threw, the clipboard kept the PREVIOUS report, and he pasted that — so it looked
+   like the log had simply ignored the answers he had just given. His words: "i enter my answer
+   and choose the good or bad section but when i press copy reports, it doesnt copy the answer
+   that i give".
+
+   Two faults. navigator.clipboard is unavailable in a cross-origin iframe on iOS, and the old
+   fallback called ta.select() on a plain textarea — which does nothing on iOS Safari. iOS needs
+   a contentEditable element, a real Range, AND setSelectionRange before execCommand will copy.
+
+   Third path, because the first two can still both fail: show the text on screen, already
+   selected, so he can hold-and-copy. Never leave him holding a stale clipboard again. */
+function legacyCopy(txt){
+  const ta=document.createElement('textarea');
+  ta.value=txt;
+  ta.contentEditable='true';           // iOS: a plain textarea cannot be selected programmatically
+  ta.readOnly=false;
+  ta.style.cssText='position:fixed;top:0;left:0;width:1px;height:1px;opacity:0;';
+  document.body.appendChild(ta);
+  const sel=window.getSelection();
+  const range=document.createRange();
+  range.selectNodeContents(ta);
+  sel.removeAllRanges(); sel.addRange(range);
+  ta.setSelectionRange(0, txt.length);
+  let ok=false;
+  try{ ok=document.execCommand('copy'); }catch(_){ ok=false; }
+  sel.removeAllRanges();
+  ta.remove();
+  return ok;
+}
+
+function showFallback(txt){
+  const box=document.getElementById('fallback');
+  const area=document.getElementById('fallbackText');
+  area.value=txt; box.hidden=false;
+  area.focus(); area.setSelectionRange(0, txt.length);
+}
+
 document.getElementById('copy').onclick=async()=>{
   const txt=report();
-  try{ await navigator.clipboard.writeText(txt); toast('Copied — paste it into the chat'); bleep(880,90); }
-  catch(e){
-    const ta=document.createElement('textarea');
-    ta.value=txt; document.body.appendChild(ta); ta.select();
-    try{ document.execCommand('copy'); toast('Copied — paste it into the chat'); }
-    catch(_){ toast('Could not copy — use Save File'); }
-    ta.remove();
-  }
+  try{
+    if(!navigator.clipboard) throw new Error('no clipboard api');
+    await navigator.clipboard.writeText(txt);
+    toast('Copied — paste it into the chat'); bleep(880,90);
+    return;
+  }catch(e){ /* iframe or insecure context — fall through */ }
+  if(legacyCopy(txt)){ toast('Copied — paste it into the chat'); bleep(880,90); return; }
+  showFallback(txt);
+  toast('This browser blocked the copy — the text is on screen, hold and copy it');
 };
+
+document.getElementById('fallbackClose').onclick=()=>{ document.getElementById('fallback').hidden=true; };
 
 document.getElementById('save').onclick=async()=>{
   const payload=report();
