@@ -51,8 +51,23 @@ const STEP = 95;                                 // per-letter delay as the name
 export const GATE_UNLOCK_MS = OUT + 1800;        // 8500ms
 export const GATE_FAST_MS = 1000;                // the plain ACCESS GRANTED block's own length
 
+/* Lite Mode is the PERFORMANCE switch and it does turn the canvas off completely — a rAF loop is
+   exactly what it exists to stop. */
+export function gateCanvasOn(doc = globalThis.document) {
+  return !doc?.documentElement?.classList?.contains('lite-mode');
+}
+
+/* Reduced motion is a DIFFERENT question, and conflating the two cost Aldi the whole background
+   on his phone: he has Reduce Motion on in iOS Accessibility, so the gate rendered no canvas at
+   all and press-and-drag did nothing. His words: "the press and drag for the background is not
+   available in the phone".
+
+   Reduced motion means nothing should move on its own. The dot field does not: it sits still and
+   brightens under his finger, which is a response to input, not motion. What it must switch off
+   is the 8.5-second sequence — the wave crossing the screen and the letters flying into place.
+   So the field stays and only the SEQUENCE is gated on this. */
 export function gateIsRich(doc = globalThis.document) {
-  if (doc?.documentElement?.classList?.contains('lite-mode')) return false;
+  if (!gateCanvasOn(doc)) return false;
   return !globalThis.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
 }
 export function gateHoldMs(doc = globalThis.document) {

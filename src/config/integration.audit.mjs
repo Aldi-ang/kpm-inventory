@@ -584,10 +584,26 @@ check(G16, 'no second animation mechanism for the ring', !/@keyframes[^}]*ring/i
   'the ring must not become a keyframe again');
 check(G16, 'a phone can reveal the field without hover', /addEventListener\('pointerdown'/.test(gateCode),
   'no pointerdown = a black rectangle on his phone and no way to find the password box');
-check(G16, 'Lite Mode switches the canvas off', /lite-mode/.test(gateCode),
-  'Lite Mode exists to stop exactly this kind of loop');
-check(G16, 'reduced motion switches the canvas off', /prefers-reduced-motion/.test(gateCode),
-  'a motion-sensitive user must not be given an 8-second canvas sequence');
+check(G16, 'Lite Mode switches the canvas off', /gateCanvasOn[\s\S]{0,160}?lite-mode/.test(gateCode),
+  'Lite Mode is the performance switch and a rAF loop is what it exists to stop');
+/* Each function's OWN body, not a window of characters around its name — gateIsRich calls
+   gateCanvasOn, so a proximity match sees both names next to each other and reports a fault
+   that is not there. This is the third time on this project a check has failed on text near
+   the code instead of the code. */
+const canvasFn = (gateCode.match(/export function gateCanvasOn[\s\S]*?\n\}/) || ['', ''])[0];
+const richFn = (gateCode.match(/export function gateIsRich[\s\S]*?\n\}/) || ['', ''])[0];
+
+check(G16, 'reduced motion switches off the SEQUENCE, not the field',
+  canvasFn.length > 20 && richFn.length > 20
+  && /lite-mode/.test(canvasFn) && !/prefers-reduced-motion/.test(canvasFn)
+  && /prefers-reduced-motion/.test(richFn),
+  'Aldi has Reduce Motion on in iOS Accessibility. Gating the CANVAS on it removed his whole '
+  + 'background and press-and-drag did nothing — the field does not move on its own, so it '
+  + 'stays; only the 8.5s wave is motion');
+check(G16, 'App mounts the field on the canvas rule, not the motion rule',
+  /\{gateCanvasOn\(\) && \(\s*<VaultGate/.test(appCode)
+  && /playing=\{isUnlocking && gateIsRich\(\)\}/.test(appCode),
+  'mounting on gateIsRich() is what hid the background from him');
 check(G16, 'the hold and the animation share one number',
   /export const GATE_UNLOCK_MS\s*=\s*OUT\s*\+/.test(gateCode),
   'a literal in App.jsx would drift from the animation the first time either moved');

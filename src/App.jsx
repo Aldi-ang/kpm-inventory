@@ -103,7 +103,7 @@ import { formatRupiah, getCurrentDate, getLocalDayKey, getRandomColor, convertTo
 import { computeDayXP, DEFAULT_XP, checkBadges, DEFAULT_BADGES } from './config/career';
 import { confirmAction, promptAction } from './components/ConfirmGate.jsx';
 import { notify } from './components/Toast.jsx';
-import VaultGate, { gateHoldMs, gateIsRich } from './components/VaultGate.jsx';
+import VaultGate, { gateHoldMs, gateIsRich, gateCanvasOn } from './components/VaultGate.jsx';
 
 /* Phones flash the character you just typed before masking it — Aldi: "it shows in split second
    after i type it". That reveal is the platform's, not ours, and there is no way to switch it
@@ -3532,9 +3532,13 @@ const handleGitHubMirror = async () => {
               On unlock the card collapses and the same field carries his name.
               Lite Mode and prefers-reduced-motion skip the canvas entirely and keep the plain
               ACCESS GRANTED block below, which is the whole point of that switch. */}
-          {gateIsRich() && (
+          {/* The FIELD survives reduced motion — it only sits there and lights up under a finger.
+              Only the SEQUENCE is gated on gateIsRich(), so a phone with Reduce Motion on still
+              gets a background it can touch, and skips the 8.5s wave. Lite Mode still removes
+              the canvas entirely, which is what that switch is for. */}
+          {gateCanvasOn() && (
             <VaultGate
-              playing={isUnlocking}
+              playing={isUnlocking && gateIsRich()}
               agentName={user?.displayName?.split(' ')[0] || user?.email?.split('@')[0]}
             />
           )}
