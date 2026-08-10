@@ -1,9 +1,22 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
+import basicSsl from '@vitejs/plugin-basic-ssl'
 
 export default defineConfig({
+  /* DEV ONLY — this never reaches a build. `npm run dev` now serves https://, because
+     `crypto.subtle` (which hashes the master password) exists only in a SECURE CONTEXT:
+     https, or localhost. Aldi's PC is localhost so it always worked; his phone reaches
+     http://192.168.1.141:5173, which is neither, so login threw and — until 2026-08-10 —
+     did so silently. This is the fix for testing on a real phone.
+
+     The certificate is self-signed, so the phone shows a "not private" warning once and he
+     taps through. That warning is expected and is not a problem with the app.
+     To undo: delete the import, this comment and the `server` block. Nothing else depends
+     on it, and production is unaffected — Vercel already serves https. */
+  server: { https: true, host: true },
   plugins: [
+    basicSsl(),
     react(),
     VitePWA({
       registerType: 'autoUpdate',

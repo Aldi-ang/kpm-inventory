@@ -12,11 +12,22 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta charset="UTF-8" />
     <link rel="icon" type="image/x-icon" href="/favicon.ico" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- His report: "sometimes i drag something and the whole app zoom and moved". This is a
+         field tool held in one hand next to a road, not a document to read, so the page itself
+         must not pan or zoom. `viewport-fit=cover` lets it fill an iPhone's rounded screen.
+         iOS Safari ignores user-scalable=no on its own — the gesture guard in main.jsx is what
+         actually stops pinch there, and it deliberately leaves the MAP alone. -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <title>KPM Inventory by AK</title>
 
     <meta name="theme-color" content="#1a1815" />
-    
+
+    <!-- Stops the rubber-band bounce and pull-to-refresh that make the app feel like it slid
+         off the screen. Scrolling INSIDE the app is untouched — this only pins the document. -->
+    <style>
+      html, body { overscroll-behavior: none; }
+      body { position: relative; overflow-x: hidden; }
+    </style>
   </head>
   <body>
     <div id="root"></div>
