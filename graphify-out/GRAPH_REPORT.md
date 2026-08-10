@@ -1,16 +1,16 @@
 # Graph Report - kpm-inventory-main  (2026-08-11)
 
 ## Corpus Check
-- 89 files · ~549,335 words
+- 89 files · ~550,147 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 632 nodes · 1165 edges · 41 communities (38 shown, 3 thin omitted)
+- 633 nodes · 1166 edges · 42 communities (40 shown, 2 thin omitted)
 - Extraction: 98% EXTRACTED · 2% INFERRED · 0% AMBIGUOUS · INFERRED: 23 edges (avg confidence: 0.79)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `44b2c086`
+- Built from commit: `93537490`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -52,12 +52,13 @@
 - mixedUnits.selfcheck.mjs
 - vaultGrace.selfcheck.mjs
 - ExamineModal.jsx
+- useTransactionEngine.js
 
 ## God Nodes (most connected - your core abstractions)
 1. `notify()` - 43 edges
 2. `confirmAction()` - 37 edges
 3. `KPMInventoryApp()` - 28 edges
-4. `PROGRESS — read this, search for nothing` - 25 edges
+4. `PROGRESS — read this, search for nothing` - 26 edges
 5. `formatRupiah()` - 23 edges
 6. `MerchantSalesView()` - 20 edges
 7. `convertToBks()` - 18 edges
@@ -80,11 +81,11 @@
 ## Import Cycles
 - None detected.
 
-## Communities (41 total, 3 thin omitted)
+## Communities (42 total, 2 thin omitted)
 
 ### Community 0 - "App.jsx"
 Cohesion: 0.09
-Nodes (20): AgentInventoryView, AgentProfileView, BranchWarehouseManager, ConsignmentFinanceView, DashboardView, EODReconciliationView, FleetCanvasManager, HistoryReportView (+12 more)
+Nodes (22): AgentInventoryView, AgentProfileView, BranchWarehouseManager, ConsignmentFinanceView, DashboardView, EODReconciliationView, FleetCanvasManager, HistoryReportView (+14 more)
 
 ### Community 1 - "MapMissionControl.jsx"
 Cohesion: 0.50
@@ -96,7 +97,7 @@ Nodes (36): @emailjs/browser, firebase, idb, leaflet, lucide-react, dependencies
 
 ### Community 3 - "permissions.js"
 Cohesion: 0.10
-Nodes (45): AgentInventoryView(), getCurrentDate(), AuditVaultView(), BranchWarehouseManager(), confirmAction(), promptAction(), CrownTransferProtocol(), DashboardBenchmarks() (+37 more)
+Nodes (44): AgentInventoryView(), getCurrentDate(), AuditVaultView(), BranchWarehouseManager(), confirmAction(), CrownTransferProtocol(), DashboardBenchmarks(), CustomTooltip() (+36 more)
 
 ### Community 4 - "devDependencies"
 Cohesion: 0.06
@@ -104,7 +105,7 @@ Nodes (31): autoprefixer, cross-env, eslint, @eslint/js, eslint-plugin-react-hoo
 
 ### Community 5 - "mixedUnits.selfcheck.mjs"
 Cohesion: 0.11
-Nodes (16): blank, done, eightDaysAgo, far, free, HERE, minefar, near (+8 more)
+Nodes (17): blank, done, eightDaysAgo, far, free, HERE, minefar, near (+9 more)
 
 ### Community 6 - "savePhotoAndGetReference"
 Cohesion: 0.11
@@ -128,7 +129,7 @@ Nodes (6): After a successful deploy, Before deploying, Firestore Security Rules
 
 ### Community 11 - "HallOfFameView.jsx"
 Cohesion: 0.12
-Nodes (31): AgentProfileView(), BADGE_CATEGORIES, createImage(), DynamicIconMap, getCroppedImg(), AchievementTester(), BASE_STATS, buildFakeCareer() (+23 more)
+Nodes (32): AgentProfileView(), BADGE_CATEGORIES, createImage(), DynamicIconMap, getCroppedImg(), AchievementTester(), BASE_STATS, buildFakeCareer() (+24 more)
 
 ### Community 12 - "test-batch1.mjs"
 Cohesion: 0.53
@@ -147,8 +148,8 @@ Cohesion: 0.29
 Nodes (6): Animation prompts — Pip-Boy style, capybara merchant, How a sprite sheet gets wired (already possible today), PROMPT — 2D animation sprite sheet (paste this), PROMPT — 3D, only if a rotating merchant is ever wanted, When Aldi generates more images, Why this reference is a good fit
 
 ### Community 22 - "savePhotoAndGetReference"
-Cohesion: 0.06
-Nodes (41): hook, k(), left, lines, pct, checkPointInGeoJSON(), CustomerDetailView(), CustomerManagement() (+33 more)
+Cohesion: 0.11
+Nodes (26): promptAction(), checkPointInGeoJSON(), CustomerDetailView(), CustomerManagement(), isPointInPolygon(), getCustomerAccessLevel(), BorderImporter(), checkPointInGeoJSON() (+18 more)
 
 ### Community 23 - "customerBrief.selfcheck.mjs"
 Cohesion: 0.16
@@ -164,7 +165,7 @@ Nodes (14): A. The shelf, B. The rail (desktop, wide window), C. The customer br
 
 ### Community 26 - "LOG — newest first, older entries live in `git log` for this file"
 Cohesion: 0.05
-Nodes (36): 2026-08-10 11:44 WIB — his 8 phone items are all built. A-Brain backfilled. One self-inflicted break, fixed., 2026-08-10 11:52 WIB — Hermes → alucard. Not app work. Quota died mid-sweep., 2026-08-10 15:11 WIB — he finished the round, 64/64. G5 broken. Two questions open., 2026-08-10 21:11 WIB — the iPhone silence is fixed. `8c502f7`. Audit 217/217., 2026-08-10 — ✅ HIS PHONE CAN LOG IN NOW. Dev is HTTPS. `b1aee4e`, 2026-08-11 03:12 WIB — the strip names the last order; the IOU bug is a TENANT bug, ✅ CLOSED 20:22 WIB — HERMES → ALUCARD IS DONE. Nothing open on it., ✅ CLOSED: "vault button dead on phone" — it was `crypto.subtle`, fixed `f460297` + `b1aee4e` (+28 more)
+Nodes (37): 2026-08-10 11:44 WIB — his 8 phone items are all built. A-Brain backfilled. One self-inflicted break, fixed., 2026-08-10 11:52 WIB — Hermes → alucard. Not app work. Quota died mid-sweep., 2026-08-10 15:11 WIB — he finished the round, 64/64. G5 broken. Two questions open., 2026-08-10 21:11 WIB — the iPhone silence is fixed. `8c502f7`. Audit 217/217., 2026-08-10 — ✅ HIS PHONE CAN LOG IN NOW. Dev is HTTPS. `b1aee4e`, 2026-08-11 03:12 WIB — the strip names the last order; the IOU bug is a TENANT bug, ✅ CLOSED 20:22 WIB — HERMES → ALUCARD IS DONE. Nothing open on it., ✅ CLOSED: "vault button dead on phone" — it was `crypto.subtle`, fixed `f460297` + `b1aee4e` (+29 more)
 
 ### Community 27 - "check-progress.mjs"
 Cohesion: 0.29
@@ -183,8 +184,8 @@ Cohesion: 0.28
 Nodes (7): FADE, MASCOT_CHATTER, MASCOT_FAILURES, report(), STICKY, isFailure(), isSticky()
 
 ### Community 31 - "txSize.selfcheck.mjs"
-Cohesion: 0.14
-Nodes (16): formatSampleQty(), SampleEntryModal(), SamplingAnalyticsView(), SamplingCartView(), SamplingFolderView(), big, line, naive (+8 more)
+Cohesion: 0.29
+Nodes (6): big, line, naive, product, size(), stripped
 
 ### Community 32 - "MerchantSalesView"
 Cohesion: 0.27
@@ -218,25 +219,33 @@ Nodes (7): back(), bksPerUnit(), cello, custom, d, real, totalBks()
 Cohesion: 0.33
 Nodes (4): body, fnText, graceIsValid, src
 
+### Community 40 - "ExamineModal.jsx"
+Cohesion: 0.11
+Nodes (20): hook, k(), left, lines, pct, CORPORATE_TIERS, isFieldLevelTier(), isFleetManagementTier() (+12 more)
+
+### Community 41 - "useTransactionEngine.js"
+Cohesion: 0.60
+Nodes (4): canReachInternet(), useOfflineEngine(), useTransactionEngine(), stripCartItemForStorage()
+
 ## Knowledge Gaps
-- **277 isolated node(s):** `root`, `note`, `hook`, `now`, `hook` (+272 more)
+- **278 isolated node(s):** `root`, `note`, `hook`, `now`, `hook` (+273 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **3 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **2 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `devDependencies` connect `devDependencies` to `dependencies`?**
   _High betweenness centrality (0.061) - this node is a cross-community bridge._
-- **Why does `notify()` connect `permissions.js` to `App.jsx`, `MerchantSalesView`, `MerchantSalesView.jsx`, `HallOfFameView.jsx`, `savePhotoAndGetReference`, `dayStats.selfcheck.mjs`, `txSize.selfcheck.mjs`?**
+- **Why does `notify()` connect `permissions.js` to `App.jsx`, `MerchantSalesView`, `MerchantSalesView.jsx`, `ExamineModal.jsx`, `useTransactionEngine.js`, `HallOfFameView.jsx`, `savePhotoAndGetReference`, `dayStats.selfcheck.mjs`?**
   _High betweenness centrality (0.050) - this node is a cross-community bridge._
 - **What connects `root`, `note`, `hook` to the rest of the system?**
-  _277 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _278 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `App.jsx` be split into smaller, more focused modules?**
-  _Cohesion score 0.09486166007905138 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.08615384615384615 - nodes in this community are weakly interconnected._
 - **Should `dependencies` be split into smaller, more focused modules?**
   _Cohesion score 0.05405405405405406 - nodes in this community are weakly interconnected._
 - **Should `permissions.js` be split into smaller, more focused modules?**
-  _Cohesion score 0.09769335142469471 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.09743589743589744 - nodes in this community are weakly interconnected._
 - **Should `devDependencies` be split into smaller, more focused modules?**
   _Cohesion score 0.06451612903225806 - nodes in this community are weakly interconnected._

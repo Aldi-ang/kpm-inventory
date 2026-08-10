@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-11 03:30 WIB** · branch `phase0-solid-ground` · last code commit: run `git log -1`
+**Updated: 2026-08-11 03:35 WIB** · branch `phase0-solid-ground` · last code commit: run `git log -1`
 **Build/audit not re-checked this edit — see LOG entry below for why.**
 
 *(03:17 touch — the OTHER concurrent session (see 03:10 LOG below) grew its uncommitted
@@ -869,8 +869,10 @@ it never happens twice. Answer, then ask which of the waiting items he wants to 
 | Code knowledge graph — query, do not grep | `graphify-out/` |
 | NOT kpm — the LLM download's space log (outside the repo) | `D:\LLAMA\space.log` |
 | Curator check 1: is the vault behind the repo? | `.claude/vault-gap.mjs` |
-| Curator check 2: can Alucard still learn? | `.claude/lessons-health.mjs` |
+| Curator check 2: can Alucard still learn? | `A-Brain\automation\lessons-health.mjs` |
+| Sale-day export — refuses to write if personal data survives | `A-Brain\automation\export-app-for-sale.mjs` |
 | The daily job both feed (19:13, survives restarts) | `C:\Users\ASUS\.claude\scheduled-tasks\vault-gap-curator\SKILL.md` |
+| Both checks also run at EVERY session start (03:28) | `.claude/settings.json` → `hooks.SessionStart` |
 | NOT kpm — alucard's own rules (he must approve every edit) | `C:\Users\ASUS\.claude\skills\alucard\SKILL.md` |
 | NOT kpm — Hermes Agent research notes | `A-Brain\Hermes-Agent-Research\` |
 | NOT kpm — Hermes source, 11M tokens, never read whole | `C:\Users\ASUS\AppData\Local\hermes\hermes-agent\` |
@@ -1290,6 +1292,31 @@ He asked for a buzz when adding/removing a cart item. **iOS Safari has no Vibrat
 `navigator.vibrate` does not exist there, so nothing web-side can make his phone buzz.
 It works on Android. **Nothing was built**; tell him before writing code for it. [likely — a
 platform fact, not checked on his device]
+
+## 🌙 HE WENT TO SLEEP AT 03:27 WIB — what was done and what was deliberately NOT
+
+His words: *"i want to sleep first can i leave the work to u i will check when i wake up"*.
+Quota was **76% used, resetting 08:00 WIB** when he said it.
+
+**LANDED WHILE HE SLEPT — all committed, build green, audit 224/224, nine self-checks pass:**
+1. The phone strip names the last order's items, not just its price.
+2. The tenant fix — IOUs and new outlets now write into the vault the customers were read from.
+3. The field-mode bar stops punching through the manifest paper (`z-[200]` removed), and Boss Car
+   loses its blue in the same pass.
+4. A-Brain page `Wiki/Entities/Terminal Tenant Path Split.md` — the tenant bug written up as the
+   second instance of UI-Says-Yes-Server-Says-No, with the open risk kept honest.
+
+**🔴 NOT STARTED, AND THIS WAS A JUDGEMENT CALL — the customer-block move.** He approved the
+shape and I did not build it. **24% of quota left, a 209-line restructure, and nobody awake to
+judge a layout he cannot see.** Half of it landing would mean he wakes to a broken terminal and
+no quota to repair it. **Do it first with a fresh budget** — the shape and the line numbers are
+above under "THE CUSTOMER BLOCK MOVE".
+
+**❓ WAITING ON HIM — one question, do not guess it:** he reported *"the notification button is
+collapsing infront of the manifest paper"*. **The bell's `z-[9999]` is on its DROPDOWN PANEL
+(`NotificationBell.jsx:46`), not on the button**, so the button should not be punching through
+anything. **Ask which bell he means** — the app header's, or the orange chevron on the drawer's
+own collapsed bar. Guessing a second stacking change is how the first one got made.
 
 ## LOG — newest first, older entries live in `git log` for this file
 
