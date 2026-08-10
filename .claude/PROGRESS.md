@@ -1,14 +1,13 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-10 21:10 WIB** · branch `phase0-solid-ground` · last code commit: run `git log -1`
-**Build green, audit 215/215, `vaultGrace.selfcheck` 10/10 (checked 11:30).**
+**Updated: 2026-08-10 21:11 WIB** · branch `phase0-solid-ground` · last code commit: run `git log -1`
+**Build green, audit 217/217, `useSound.selfcheck` 6/6, `vaultGrace.selfcheck` 10/10 (checked 21:05).**
 
-> ⚠️ **21:06 — `src/main.jsx` is MODIFIED AND UNCOMMITTED, and it is NOT from this thread.**
-> It is the app session's work: the second half of the silent-iPhone sound bug (`{ once: true }`
-> tore down all three gesture listeners on a single tap, because one touch fires both
-> `pointerdown` and `touchstart`). The curator/Hermes thread touched `.claude/` only — verify with
-> `git log --name-only`. **Do not commit it from here and do not claim it**; whoever is holding
-> that fix owns landing it.
+**NOW: the silent-iPhone sound bug is FIXED and COMMITTED (`8c502f7`). Nothing is in flight.**
+The next job is the customer-block move — agreed with him, measured, deliberately not started.
+
+> ✅ *The 21:06 warning that `src/main.jsx` was uncommitted is resolved: it landed in `8c502f7`
+> at 21:05 together with `useSound.js` and the audit. That thread was right to leave it alone.*
 
 ## 🔴 LOG 21:06 WIB — YOUR VAULT AUTOMATION HAS BEEN DEAD SINCE 2026-07-28. One decision owed.
 
@@ -934,6 +933,23 @@ throwaway first.
 
 ## WAITING ON ALDI — do not re-derive these, just ask
 
+**🔴 TOP OF THE LIST, 2026-08-10 21:11 — the only thing blocking app work:**
+- **Is the sound back on his phone?** `8c502f7` fixed two real faults in the unlock path. If it
+  is still silent, the next suspect is **his iPhone's physical mute switch** — iOS silences web
+  audio when the ringer switch is off, and no code can override that. Ask him to check it before
+  anyone reopens the code.
+- ✅ **ANSWERED — the customer block moves to the top.** His words: *"what if we put the customer
+  on top instead just near the strip?"* then *"yea u can update it directly so that i can give
+  direct feedback"*. **The direction is settled; build it, do not re-pitch it.** Measurements and
+  the trap are in "THE CUSTOMER BLOCK MOVE" above.
+- ✅ **ANSWERED — Lite Mode was NOT the cause.** *"no sound still"*. Do not send him back to that
+  toggle.
+- 🔴 **Told, not yet acknowledged: haptics cannot work on his iPhone.** iOS Safari has no
+  Vibration API. He asked for a buzz on cart add/remove. **Nothing was built.** If he wants it for
+  his Android salesmen it is ~4 lines behind a `navigator.vibrate` guard — his call.
+- 🔴 **Still owed from the curator thread:** repair `a-brain-session-ingest`, or move the
+  vault-writing job elsewhere. Unrelated to the app.
+
 - ✅ **NOT KPM — nothing is waiting on him for the `D:\LLAMA` download.** It is running and watched.
   **The System Restore instruction that used to sit here was WRONG and has been withdrawn — do not
   reissue it.** His standing position was right: *"its not the steam, it is your download"*. The
@@ -1149,6 +1165,28 @@ platform fact, not checked on his device]
 
 ## LOG — newest first, older entries live in `git log` for this file
 
+### 2026-08-10 21:11 WIB — the iPhone silence is fixed. `8c502f7`. Audit 217/217.
+
+Lite Mode was ruled out by him (*"no sound still"*), and the real cause was two faults stacked in
+the unlock path. **One:** the loudness feature routes each element through Web Audio with
+`createMediaElementSource`, which is permanent — once routed, the element only reaches the speaker
+through `audioCtx.destination`. The old code called `resume()` without awaiting it and routed on
+the next line, so on iOS the routing happened against a still-suspended context and every sound
+went nowhere. Desktop resumed fast enough to hide it. `buildGainStage()` now refuses to route
+unless `state === 'running'`; failing that, sounds play unboosted but audible. **Two:** the
+gesture listeners were `{ once: true }`, and one phone tap fires both `pointerdown` and
+`touchstart` — so a single touch removed all three whether or not the unlock had worked, muting
+the session with nothing left to retry. **The audit had been asserting `once: true` as correct;
+that check was wrong and is replaced by its opposite.** Both new checks proved to fail on HEAD~.
+
+Also: **G5 #1 is a data bug, not a missing banner** (`MerchantSalesView.jsx:1401` already renders
+it). **Haptics are impossible on his iPhone** — no Vibration API in iOS Safari. **The customer
+block move is agreed and measured at 209 lines, and deliberately not started.**
+
+*Two `.claude/` curator scripts were missing from disk before this thread touched anything, and my
+note commit recorded the deletion. Restored from `82c20f3` and both re-run to prove they work.
+`lessons-health` now reports 4/5, not the jammed 5/5 — that blocker looks resolved elsewhere.*
+
 ### 2026-08-10 15:11 WIB — he finished the round, 64/64. G5 broken. Two questions open.
 
 He could not copy from the quest log and used **Save File**; the result is now in the repo at
@@ -1254,30 +1292,6 @@ one-handed tool used beside a road.
 nothing was run to "fix" them — `npm audit fix` can move majors under him. His call, not a
 side effect of a bug fix.
 
-### 2026-08-10 — 🔑🔑 THE PHONE LOGIN MYSTERY IS SOLVED. It was `crypto.subtle`. `f460297`
-
-**READ THIS BEFORE TOUCHING ANYTHING PHONE-RELATED. Every "I can't log in on my phone" report,
-going back months, was ONE undefined API.**
-
-`crypto.subtle` exists **only in a secure context** — HTTPS, or `localhost`. His PC works because
-it IS localhost. His phone reaches the dev server at `http://192.168.1.141:5173`, which is
-neither, so `hashSecretWord` (`App.jsx:~853`) threw *"undefined is not an object"* — and a silent
-`catch` ate it, so the button did nothing at all. **Production is NOT affected: Vercel is HTTPS.**
-
-**T7's history is now fully understood and every earlier explanation was incomplete:** the
-missing sign-in button was real, the stale Firebase authorised-domain (`192.168.1.102` vs `.141`)
-was real, and **neither was the thing that stopped him logging in.** Do not "fix" T7 in code.
-
-**🔴 STILL BLOCKED ON HIM — he did not understand the options and they were re-explained.**
-The choice is how to get his phone onto HTTPS: (1) an HTTPS dev server via `@vitejs/plugin-basic-ssl`,
-one dev-only dependency, phone shows a one-time certificate warning — **recommended, and app code
-does not change**; (2) push the branch for a Vercel preview, which collides with his own "nothing
-leaves this branch yet" rule; (3) a hand-written SHA-256 fallback — **advised against and
-deliberately NOT built**: routing a master password through unreviewed crypto to make an insecure
-origin work is his decision, not a thing to slip into a bug fix.
-
-**✅ THE GATE CAN NO LONGER FAIL IN SILENCE (`f460297`, audit group 19, 7 checks).** Three exits
-in `handlePinLogin` reported nothing: an empty box (a shake only), a missing settings doc (a bare
-_Older entries live in `git log -p .claude/PROGRESS.md`. Trimmed to five on 2026-08-10 15:11.
-The outro closure, the gate port and the 02:xx phone-button session are all in that history —
-their locked decisions are restated near the top of this file, so nothing load-bearing was cut._
+_Older entries live in `git log -p .claude/PROGRESS.md`. Trimmed to five on 2026-08-10 21:11.
+The `crypto.subtle` root cause it ends on is written up permanently in the A-Brain vault at
+`Wiki/Concepts/Secure Context Requirement.md`, so nothing load-bearing left with it._
