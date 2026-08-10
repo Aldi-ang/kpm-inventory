@@ -1,7 +1,37 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-10 20:22 WIB** · branch `phase0-solid-ground` · last code commit: run `git log -1`
+**Updated: 2026-08-10 20:52 WIB** · branch `phase0-solid-ground` · last code commit: run `git log -1`
 **Build green, audit 215/215, `vaultGrace.selfcheck` 10/10 (checked 11:30).**
+
+## 🔴 LOG 20:52 WIB — ALUCARD CANNOT LEARN ANY MORE. One decision from Aldi unblocks it.
+
+A curator was built (Hermes' idea, Claude Code's tools — no 9router needed). Two free checks,
+no model call, driving one daily scheduled task at 19:13. **NOT KPM app code** — `.claude/`
+tooling only. Commits `435b4e5` (`vault-gap.mjs`) and `82c20f3` (`lessons-health.mjs`).
+
+**`lessons-health.mjs` immediately found a real fault: `lessons.md` is JAMMED.** 5/5 entries and
+every one has a `Fired:` date. §8 says at cap, archive the oldest with ZERO fires — there is
+none — "or don't write". So the only branch left is don't-write: **Alucard can never record
+another lesson.** Nothing errors; it silently stopped learning. Verified by running the check
+against the real file, a healthy fixture, and an all-fired fixture.
+
+**🔴 HE MUST PICK (a) or (b) — the curator is told to STOP and ask, not to fix this itself:**
+- **(a)** archive the oldest entry anyway, fired or not, to `A-Brain/Wiki/Lessons-Archive.md`
+- **(b)** change §8's archive rule — needs his approval, Alucard may never edit `SKILL.md`
+
+Also found: `lessons.md`'s header still claims "No entry has ever been written or fired" while 5
+have. The curator fixes that one itself; it is safe and mechanical.
+
+*Two of my own checks were wrong before they were right — the parser counted the format template
+in the preamble as a 6th entry (reported OVER CAP instead of JAMMED), and a "TOO LONG" check
+fired on all 5 normal entries, so it was noise and was deleted. Both recorded in `82c20f3`.*
+
+## LOG 20:42 WIB — NOT KPM CODE. Debugging his separate LLAMA/AirLLM download in `D:\LLAMA`.
+No KPM file touched. Only reason `.claude/scheduled_tasks.lock` changed: a `ScheduleWakeup` set
+to poll whether his `run_qwen.py` (Qwen3-MoE via AirLLM) is still progressing — it looked frozen.
+Fixed one real bug on the way: `transformers` was 5.12.1 (too new, MoE experts restructured,
+crashed AirLLM's layer-mover) then briefly 4.46.3 (too old, no `qwen3_moe` support at all) —
+landed on **4.51.3**, which works. Everything below this entry is untouched and still current.
 
 *⚠️ TWO SESSIONS WROTE THIS FILE TODAY. The 11:52 header said "No KPM code was touched this
 session" — true of the HERMES session that wrote it, and false of the app session running beside
@@ -30,10 +60,16 @@ and watch it fail; (3) the closing line now carries `edits: N ok, N failed` — 
 line item, never silence. Also: merges need a check AFTER (`git diff HEAD~1..HEAD`), the third
 failed fix attempt is a full stop, and a Lesson may never say a tool is broken.
 
-**Not ported, and never will be as text — these are programs, not rules:** Hermes' curator (a
-forked agent on a cheap model doing idle-time maintenance), self-authored skills (Aldi forbade
-`SKILL.md` self-edits 2026-08-09), automated user modeling. Buildable later with `CronCreate` +
-9Router; do not re-derive this gap.
+**Not portable as text — these are programs, not rules:** self-authored skills (Aldi forbade
+`SKILL.md` self-edits 2026-08-09) and automated user modeling. **The curator IS now built** —
+see the 20:52 log entry. It did NOT need 9router: the detection is plain script math, and the
+drafting is done by the scheduled task, which is already Claude.
+
+**9router status, so nobody re-diagnoses it:** the process is UP (`/v1/models` → 200). Two
+different doors — the quota hook's admin endpoint mints its own cookie and is currently failing
+auth, and `/v1/chat/completions` returns "Missing API key", a credential Aldi has never supplied.
+Delegating prompts to free models stays blocked until he pastes an API key from 9router's own
+settings. Never go hunting for it in `AppData/Roaming/9router/auth`.
 
 **Only Hermes question left, and it is optional** — he never answered which tail pass he wants
 (`cli.py`, or the gateway). The checkout is 35.9 MB of Python + 9.7 MB of markdown ≈ **11M
@@ -718,6 +754,9 @@ it never happens twice. Answer, then ask which of the waiting items he wants to 
 | A-Brain vault (decisions, incidents, backlog) | `D:\APP DEVELOPMENT\kpm inventory main FILES\A-Brain` |
 | Code knowledge graph — query, do not grep | `graphify-out/` |
 | NOT kpm — the LLM download's space log (outside the repo) | `D:\LLAMA\space.log` |
+| Curator check 1: is the vault behind the repo? | `.claude/vault-gap.mjs` |
+| Curator check 2: can Alucard still learn? | `.claude/lessons-health.mjs` |
+| The daily job both feed (19:13, survives restarts) | `C:\Users\ASUS\.claude\scheduled-tasks\vault-gap-curator\SKILL.md` |
 | NOT kpm — alucard's own rules (he must approve every edit) | `C:\Users\ASUS\.claude\skills\alucard\SKILL.md` |
 | NOT kpm — Hermes Agent research notes | `A-Brain\Hermes-Agent-Research\` |
 | NOT kpm — Hermes source, 11M tokens, never read whole | `C:\Users\ASUS\AppData\Local\hermes\hermes-agent\` |
