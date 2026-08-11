@@ -1,7 +1,46 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-11 03:35 WIB** · branch `phase0-solid-ground` · last code commit: run `git log -1`
+**Updated: 2026-08-11 08:20 WIB** · branch `phase0-solid-ground` · last code commit: run `git log -1`
+
+## 🔴 LOG 08:20 WIB — EVERY SCHEDULED TASK ON THIS MACHINE IS DEAD. One line fixes it, his to type.
+
+*(Hermes→Alucard session. No KPM code touched — only `.claude/settings.json` hooks and the vault.)*
+
+The API key he installed on 2026-08-10 **did not fix anything**. Both tasks ran that night and both
+died identically: `a-brain-session-ingest` at 21:02, and the `vault-gap-curator` built hours earlier
+to detect exactly this at 21:07. Two-message transcripts, prompt then
+`"There's an issue with the selected model (cc/claude-sonnet-5)"`.
+
+**Real cause — a model-name mismatch, not auth.** A scheduled task has no project override, so it
+falls back to the GLOBAL tier defaults in `C:\Users\ASUS\.claude\settings.json`:
+
+| Setting | Points at | 9router serves it? |
+|---|---|---|
+| `ANTHROPIC_DEFAULT_SONNET_MODEL` | `cc/claude-sonnet-5` | listed, **access denied** |
+| `ANTHROPIC_DEFAULT_OPUS_MODEL` | `cc/claude-opus-4-8` | **not served at all** |
+| this repo's `ANTHROPIC_MODEL` | `cc/claude-opus-5` | **works** |
+
+9router serves exactly four: `cc/claude-opus-5`, `cc/claude-fable-5`, `cc/claude-sonnet-5`,
+`cc/claude-haiku-4-5-20251001`. Interactive sessions here work because this repo pins opus-5.
+
+**🔴 HE MUST DO THIS — no agent may touch that file, it holds his API key.** In
+`C:\Users\ASUS\.claude\settings.json` set `ANTHROPIC_DEFAULT_SONNET_MODEL` to `cc/claude-opus-5`
+(`ANTHROPIC_DEFAULT_OPUS_MODEL` is wrong too, same edit). Restart Claude Code, then **Run now** on a
+scheduled task to confirm — the scheduler reads config at startup. **Until that line changes,
+nothing automated on this machine runs.** Vault: `Automation-Setup.md` §1.
+
+*Not affected: the session-start hooks added 03:28. Those run as shell commands, not as a model,
+which is why `VAULT-GAP: OK` and `LESSONS: OK` printed at the top of this session.*
+
+*(07:50 touch, timestamp only — quota hit 99%, stopping. Still no KPM code touched this
+session. Cleaned `D:\LLAMA\airllm_shards` + `huggingface_cache` (dead 235B model attempt,
+outside this repo). Next: set up Ollama + Qwen3-8B on that machine — not started yet.)*
 **Build/audit not re-checked this edit — see LOG entry below for why.**
+
+*(07:37 touch, timestamp only — this session never touched KPM code. It ran ~4.5 hours
+babysitting a local LLM download in `D:\LLAMA` (unrelated folder, outside this repo), which
+turned out to be a 235B model too big for the 8GB VRAM / 15GB RAM machine — killed, dropped.
+The other concurrent session's edits below are untouched and unverified by this session.)*
 
 *(03:17 touch — the OTHER concurrent session (see 03:10 LOG below) grew its uncommitted
 `MerchantSalesView.jsx` diff from +13 to +26/-5. Still not this session's work, still not built
