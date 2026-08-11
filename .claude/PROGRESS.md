@@ -2,6 +2,10 @@
 
 **Updated: 2026-08-11 08:21 WIB** · branch `phase0-solid-ground` · last code commit: run `git log -1`
 
+*(08:25 — **those two files were MINE and they are committed now: `237bf6f`, the customer-block
+move, build green, audit 230/230.** The 08:21 note below caught them mid-edit from another
+session and read them as orphans; they were not. See the ✅ section "THE CUSTOMER BLOCK MOVE".)*
+
 *(08:21 touch, timestamp only — the Stop hook fired on `src/config/integration.audit.mjs` (+31)
 and `src/MerchantSalesView.jsx`, both **uncommitted and NOT this session's work**. The
 Hermes→Alucard session has never touched KPM app code. Whoever owns those edits: they are
@@ -1267,7 +1271,33 @@ are never worth rescuing.
 
 ---
 
-## 🔴 THE CUSTOMER BLOCK MOVE — HE SAID GO, AND IT IS DELIBERATELY NOT STARTED
+## ✅ THE CUSTOMER BLOCK MOVE — SHIPPED 2026-08-11 08:22 WIB, commit `237bf6f`
+
+**What landed, and it is smaller than the 209-line teardown measured below.** The *picker* moved,
+not the whole block: a 44px bar (`renderCustomerBar`, one line always) pinned directly above the
+grip, carrying the input, the clear button and the suggestion list. `DRAWER_CLOSED` went 52 → 96
+so the bar is on screen while the drawer is SHUT — a bar you cannot see has not moved to the top
+of anything. Three numbers now have to agree on 96: `useState(96)`, `DRAWER_CLOSED`, and the
+wares column's `pb-[96px]`. Audit group 22 pins all of them.
+
+**The paper keeps everything else** — mode toggles, IOU banner, debt warnings, the geofence/GPS
+column, Deploy Free Sample — and echoes the chosen name as a **read-only line**. That is the
+agreed shape: a one-line collapse cannot contain the GPS column, so "the block moves" always
+meant "the picker moves". Still exactly ONE input and ONE dropdown in the DOM.
+
+**The trap that nearly shipped:** the bar's root needs `manifest-dropdown-area`. A document click
+listener (`:313`) closes the dropdown for any click outside that class, so without it focusing the
+input would open the list and shut it in the same tick. Checked, not remembered.
+
+**Verified:** build green · audit **230/230** (was 224, +6) · all 8 self-checks pass.
+**NOT verified, say so plainly:** no browser. The layout was never opened at 375px — the numbers
+are reasoned from the drawer's own geometry, not seen. **✅ TEST: open the terminal on a phone,
+confirm the customer bar is visible with the drawer shut, the list opens UPWARDS over the wares,
+and the last ware still clears the drawer.**
+
+*(original measurement kept below — it is why this took the shape it did)*
+
+## ~~🔴 THE CUSTOMER BLOCK MOVE — HE SAID GO, AND IT IS DELIBERATELY NOT STARTED~~
 
 **His decision, 2026-08-10 ~21:00, VERBATIM:** *"no sound still and i ask u to make heptic i just
 mentioned it on the quest log if possible, yea u can update it directly so that i can give direct
