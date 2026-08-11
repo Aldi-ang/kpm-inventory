@@ -1398,6 +1398,14 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
        ONE LINE, a fixed 44px, chosen or not — the top of a phone is scarce and that was the deal.
        There is still exactly ONE of these in the DOM (one `customerName` input, one dropdown);
        the paper echoes the chosen name as a read-only line and keeps everything else it had. */
+    /* Which way the suggestion list opens. Upwards is the normal case — the bar sits low on a
+       phone. But the drawer snaps to 92% of the screen, and at that height "8px above the drawer"
+       is 200px past the top edge of the viewport: the list renders completely off screen and the
+       salesman cannot pick anybody. So when the drawer is tall the list opens DOWNWARDS over the
+       manifest instead, which is space the drawer itself is already occupying. 208 = the list's
+       max-height (12rem) plus the 8px gap and the 8px it must keep off the top edge. */
+    const listOpensUp = drawerH + 208 <= (typeof window === 'undefined' ? 800 : window.innerHeight);
+
     /* `manifest-dropdown-area` on the root is load-bearing, not decoration: the document click
        listener at the top of this file closes the dropdown for any click outside that class.
        Without it, focusing this very input would open the list and shut it in the same tick. */
@@ -1427,7 +1435,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                         list has to open UPWARDS over the wares because the bar is near the
                         bottom of the screen. `--drawer-h` is inherited from the drawer element,
                         so the panel tracks the drawer however far it is dragged open. */}
-                    <div className="manifest-dropdown-area fixed left-2 right-2 bottom-[calc(var(--drawer-h)+8px)] lg:absolute lg:inset-x-0 lg:top-full lg:bottom-auto lg:mt-1 bg-[#f5e6c8] border-2 border-[#a89070] shadow-xl rounded z-[100] max-h-48 overflow-y-auto">
+                    <div className={`manifest-dropdown-area fixed left-2 right-2 ${listOpensUp ? 'bottom-[calc(var(--drawer-h)+8px)]' : 'top-[calc(100vh-var(--drawer-h)+52px)]'} lg:absolute lg:inset-x-0 lg:top-full lg:bottom-auto lg:mt-1 bg-[#f5e6c8] border-2 border-[#a89070] shadow-xl rounded z-[100] max-h-48 overflow-y-auto`}>
                         {suggestedCustomers.map(c => (
                             <div key={c.id} onClick={() => handleCustomerSelect(c)} className="p-2 text-xs font-bold border-b border-[#a89070]/30 hover:bg-[#8b7256] hover:text-white cursor-pointer flex justify-between uppercase text-[#3e3226]">
                                 <span>{c.name}</span><span className="opacity-50 text-[11px]">PROFILED</span>

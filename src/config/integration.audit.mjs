@@ -832,6 +832,9 @@ check(G22, 'the bar is rendered above the grip, not inside the paper',
   termSrc.indexOf('renderCustomerBar()') > 0 &&
   termSrc.indexOf('renderCustomerBar()') < termSrc.indexOf('startDrawerDrag}'),
   'below the grip it is inside the collapsed-away region and is not "on top" of anything');
+check(G22, 'the suggestion list can open both ways',
+  /listOpensUp \? 'bottom-\[calc\(var\(--drawer-h\)\+8px\)\]' : 'top-\[calc\(100vh-var\(--drawer-h\)\+52px\)\]'/.test(termSrc),
+  'upward only puts the list 200px above the viewport at the 92% snap — invisible, no customer pickable');
 check(G22, 'the bar itself is inside the click-outside sanctuary',
   /manifest-dropdown-area hide-on-print shrink-0 h-\[44px\]/.test(termSrc),
   'the document listener closes the dropdown for clicks outside .manifest-dropdown-area — ' +
