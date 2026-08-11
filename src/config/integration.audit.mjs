@@ -861,6 +861,28 @@ check(G23, 'register-and-sell collapses AFTER the customer is selected',
   termSrc.indexOf('setDrawerH(DRAWER_CLOSED)'),
   'collapsing before the selection lands would close the paper on a screen with no customer named');
 
+/* ── 24. the customer listener does not rebuild 100 outlets per write ────────
+   His G6 freeze, narrowed by his own answer: "freeze after just after the NOO is successful, it
+   go back to the manifest paper right and it freeze there". Every outlet carries its store photo
+   as base64 inside the document, and the listener re-ran `d.data()` over all ~100 of them on
+   every single write. Only the customers listener changed — the rest carry small documents and
+   are not worth the extra moving part, so this group pins that boundary too. */
+const G24 = '24. The customer listener updates incrementally';
+const syncSrc = strip(fs.readFileSync('src/hooks/useDatabaseSync.js', 'utf8'));
+
+check(G24, 'the customers listener applies docChanges', /applyDocChanges\(prev, snap\.docChanges\(\)\)/.test(syncSrc),
+  'without this every write re-materialises every outlet, base64 store photo and all');
+check(G24, 'the first snapshot of a subscription is still a full re-map', /custFirst/.test(syncSrc),
+  'a new subscription reports every doc as `added`; applied on top of the previous tenant it ' +
+  'splices one company\'s outlets into another\'s');
+check(G24, 'only the customers listener was changed',
+  (syncSrc.match(/applyDocChanges\(/g) || []).length === 1 &&   // the import has no paren
+  /setInventory\(snap\.docs\.map/.test(syncSrc) && /setMotorists\(snap\.docs\.map/.test(syncSrc),
+  'inventory and motorists documents are small — converting them adds risk and buys nothing');
+check(G24, 'the reducer has its own runnable proof',
+  fs.existsSync('src/utils/docChanges.selfcheck.mjs'),
+  'a silent drift here is a duplicated or missing outlet with nothing on screen to announce it');
+
 /* ── report ──────────────────────────────────────────────────────────────── */
 let last = '';
 for (const r of results) {

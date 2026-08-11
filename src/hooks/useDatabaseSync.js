@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { collection, doc, getDocs, onSnapshot, query, orderBy, setDoc, where } from 'firebase/firestore'; // 🚀 IMPORTED 'where'
+import { applyDocChanges } from '../utils/docChanges';
 
 export default function useDatabaseSync(db, appId, user, userId, userRole, agentProfileId) {
     // Data States
@@ -44,7 +45,25 @@ export default function useDatabaseSync(db, appId, user, userId, userRole, agent
 
         // 2. Core Collections (Static data like Inventory and Customers load fully)
         const unsubInv = onSnapshot(collection(db, basePath, 'products'), (snap) => setInventory(snap.docs.map(d => ({id: d.id, ...d.data()}))), (err) => console.warn("Inventory listener:", err.code));
-        const unsubCust = onSnapshot(query(collection(db, basePath, 'customers'), orderBy('name', 'asc')), (snap) => setCustomers(snap.docs.map(d => ({id: d.id, ...d.data()}))), (err) => console.warn("Customers listener:", err.code));
+        /* CUSTOMERS IS THE ONE COLLECTION THAT CANNOT AFFORD A FULL RE-MAP, and that is not a
+           style preference — see docChanges.js. Every outlet carries its store photo as base64
+           INSIDE the document, so re-running `d.data()` over ~100 outlets rebuilds several
+           megabytes of string on the main thread. That is what ran the instant a new outlet was
+           registered, on the phone, right as the manifest came back. Only this listener is
+           changed: the others carry small documents and are not worth the extra moving part.
+
+           `custFirst` is load-bearing. This effect re-subscribes whenever the signed-in user or
+           the vault owner changes, and the first snapshot of a NEW subscription reports every
+           document as `added` — applied incrementally on top of the PREVIOUS tenant's list, that
+           would splice one company's outlets into another's. So the first snapshot per
+           subscription is still a full re-map (which costs the same, since everything is new),
+           and only the snapshots after it are incremental. The flag lives in the effect closure,
+           so each subscription gets its own. */
+        let custFirst = true;
+        const unsubCust = onSnapshot(query(collection(db, basePath, 'customers'), orderBy('name', 'asc')), (snap) => {
+            if (custFirst) { custFirst = false; setCustomers(snap.docs.map(d => ({id: d.id, ...d.data()}))); return; }
+            setCustomers(prev => applyDocChanges(prev, snap.docChanges()));
+        }, (err) => console.warn("Customers listener:", err.code));
         const unsubMotorists = onSnapshot(collection(db, basePath, 'motorists'), (snap) => setMotorists(snap.docs.map(d => ({id: d.id, ...d.data()}))), (err) => console.warn("Motorists listener:", err.code));
         // 🚀 CAREER LEDGER (Phase 2): no time gate — bounded by headcount, not history.
         const unsubCareer = onSnapshot(collection(db, basePath, 'career'), (snap) => setCareer(Object.fromEntries(snap.docs.map(d => [d.id, d.data()]))), (err) => console.warn("Career listener:", err.code));
