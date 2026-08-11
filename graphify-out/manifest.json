@@ -200,8 +200,8 @@
     "semantic_hash": ""
   },
   "src/hooks/useDatabaseSync.js": {
-    "mtime": 1785905249.4453988,
-    "ast_hash": "7f51927dd0bf2c0bb038f76daa4e1c5d",
+    "mtime": 1786428488.4450493,
+    "ast_hash": "e34e2f3549193ca695d11ee857fe16aa",
     "semantic_hash": ""
   },
   "src/hooks/useOfflineEngine.js": {
@@ -540,8 +540,8 @@
     "semantic_hash": ""
   },
   "src/config/integration.audit.mjs": {
-    "mtime": 1786412088.5627587,
-    "ast_hash": "dbecb0303518eda993d463b6ef6cb4ac",
+    "mtime": 1786428577.6956737,
+    "ast_hash": "e5e82fa7861d46d63893f0ef97c16b89",
     "semantic_hash": ""
   },
   "src/config/nextStop.selfcheck.mjs": {
@@ -570,8 +570,8 @@
     "semantic_hash": ""
   },
   ".claude/PROGRESS.md": {
-    "mtime": 1786412165.5473797,
-    "ast_hash": "f1ce00838abfc17d5b11a847f08c2fa0",
+    "mtime": 1786416145.5249586,
+    "ast_hash": "b9c9a99af98a831166ad32bbc179a4cf",
     "semantic_hash": ""
   },
   ".claude/pre-compact-context.md": {
@@ -647,6 +647,16 @@
   ".claude/kpm-test-results-2026-08-10.md": {
     "mtime": 1786349472.266741,
     "ast_hash": "f8a76524887626183f249fce1f04e3f1",
+    "semantic_hash": ""
+  },
+  "src/utils/docChanges.js": {
+    "mtime": 1786428436.8976853,
+    "ast_hash": "4f1865b6784b9ebe055d4098b861be53",
+    "semantic_hash": ""
+  },
+  "src/utils/docChanges.selfcheck.mjs": {
+    "mtime": 1786428460.2497354,
+    "ast_hash": "9cbbec3bb89f75826b5670649f0f98c1",
     "semantic_hash": ""
   }
 }

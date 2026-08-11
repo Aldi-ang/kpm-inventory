@@ -1,6 +1,34 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-11 08:36 WIB** · branch `phase0-solid-ground` · last code commit: run `git log -1`
+**Updated: 2026-08-11 13:11 WIB** · branch `phase0-solid-ground` · last code commit: run `git log -1`
+
+## ✅ LOG 13:11 WIB — NOT KPM. Built Lancelot, the tobacco-ledger bookkeeper. Zero repo files touched.
+
+**KPM state is UNCHANGED since 08:36 — everything below this entry is still current.** This session
+was entirely Aldi's separate tobacco buying business, not the app. `git status` shows only
+`graphify-out/*` modified, from an earlier graphify run, not from this session.
+
+What was built, all outside this repo:
+- **`C:\Users\ASUS\.claude\agents\lancelot.md`** — a finance/accounting subagent that reads photos of
+  handwritten nota + bank transfer proofs, checks the arithmetic (batch weights sum to bruto,
+  tara ≈ 10%, netto × harga + ongkos = total), and writes rows to his Google Sheets ledger via the
+  **Autosheet** MCP connector. It refuses to mark `LUNAS` unless the transfer nominal, date, and
+  recipient all match the nota.
+- **Ledger** `1qBbfEsuYQu0CWMGzzYES2xKCn0PMVseG_CodZ0QUPAQ` — new `PAK MUL` tab built and formatted
+  (frozen headers, `Rp 9.357.500` currency format, kg units in headers, conditional LUNAS
+  green/red). First real transaction written to row 3: 11/08/2026, bruto 185kg, netto 166.5kg,
+  Rp 55.000/kg, total Rp 9.357.500, LUNAS.
+
+**Decision locked (his call):** receipt images go in as **Drive links**, not embedded image objects
+— links survive row edits, embedded images shift when rows are added. Columns L/M hold them.
+
+**Known gap, told to him:** a Claude Code subagent runs on his PC only. For phone use he must
+create a claude.ai **Project** and paste `lancelot.md` in as its custom instructions, with Autosheet
++ Drive connected there. Same brain, two doors.
+
+**LOG below is over the ~5-entry limit.** Not trimmed this session — the older entries belong to KPM
+work I did not touch, and cutting notes I have not read is the wrong kind of tidy. `git log` on this
+file keeps the rest either way.
 
 ## ✅ LOG 08:36 WIB — the rules question is ANSWERED, and G6 is HALF done. One question owed.
 
@@ -46,9 +74,39 @@ fix, *"like close the manifest paper for example"*. Safe only because the custom
 into the collapsed 96px this morning; before that it would have hidden the name he just registered.
 Audit group 23, 2 checks.
 
-**THE FREEZE IS NARROWED BUT NOT DIAGNOSED — do not fix it blind.** He answered at 08:45,
-verbatim: *"freeze after just after the NOO is successful, it go back to the manifest paper right
-and it freeze there"*.
+## ✅ 13:20 — THE FREEZE'S BIGGEST CAUSE IS FIXED. ~100 outlets was the number that decided it.
+
+His answer: *"there are around 100 stores"*. That makes suspect 1 below real, and it shipped.
+
+**The mechanism, and it is not a guess:** `useDatabaseSync.js:47` ran
+`snap.docs.map(d => ({id: d.id, ...d.data()}))` on **every** customers snapshot. `d.data()`
+deserializes a document afresh on every call, and every outlet carries its store photo as base64
+**inside** the document (`storeImage`, ~40-60KB). So one new outlet re-materialised **several
+megabytes of string on the main thread**, then handed React 100 brand-new objects, so every memo
+over the list recomputed too. It ran the instant the write landed — the moment he named.
+
+**Fixed:** the listener applies `snap.docChanges()` — one document instead of a hundred, and
+untouched rows keep their identity. `src/utils/docChanges.js` + `docChanges.selfcheck.mjs`
+(**8/8**, proves it equals the old full re-map, including a rename that REORDERS a row).
+Audit **237/237**, group 24. Vault: `Concepts/Fat Documents in a Live Listener.md`.
+
+**Two boundaries, both deliberate and both pinned by checks:** only the customers listener changed
+(the others carry small docs), and the FIRST snapshot per subscription is still a full re-map —
+applying a new subscription's changes onto the previous tenant's list would splice one company's
+outlets into another's.
+
+**🔴 NOT PROVEN, AND SAY SO: never profiled on his device.** This removed the largest measurable
+cost at the right moment. **✅ TEST: register an outlet on the phone. Still freezes?** Then it is
+one of the two smaller suspects left standing on purpose — the `enableHighAccuracy` GPS ping at
+`App.jsx:1490`, or the mascot animation on that frame. **Do not re-fix the listener.**
+
+*Correction to the note below: it said a create fires the snapshot twice (local echo + server ack).
+Wrong — without `includeMetadataChanges` the SDK does not deliver the ack as a separate snapshot.
+Once, not twice. The cost per snapshot was the problem, not the count.*
+
+**THE FREEZE WAS NARROWED BY HIS ANSWER — kept because it is why the fix went where it did.**
+He answered at 08:45, verbatim: *"freeze after just after the NOO is successful, it go back to the
+manifest paper right and it freeze there"*.
 
 **That ELIMINATES the photo-capture theory** — the `FileReader` → `Image` → canvas decode at
 `:220-237` runs when he presses the camera button, which is not the moment he named. Do not spend
