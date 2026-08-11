@@ -28,9 +28,16 @@ So the fix works **unless** the company set that tier to:
 NOO registration is a `create` (`:413`) — allowed unless `view_only`, never region-locked.
 Default with no `permission_matrix` doc is `global`, i.e. allowed.
 
-**🔴 STILL UNKNOWN, AND ONLY HE CAN SETTLE IT: what is actually DEPLOYED.** This file is a draft;
-CHANGE 6 was emulator-tested and never deployed. The deployed text is in Firebase Console →
-Firestore → Rules. **Nobody may deploy it but Aldi.**
+**✅ CLOSED 08:45 — THE RULES ARE DEPLOYED.** He read the Firebase Console → Firestore → Rules tab
+and pasted the live text back; it is byte-identical to this repo's `firestore.rules`, **CHANGE 6
+included**. His words: *"i got it from firebase console"*. **The IOU fix therefore works at the
+server.** Only the two tier settings above can still deny it, and those are configuration.
+
+**🔴 DELETE THE OLD BELIEF WHEREVER IT APPEARS.** Several notes in this file and in memory still
+say "rules are a DRAFT, NOT deployed / never deployed to Firebase". **That was wrong.** A file
+named `firestore.rules` in the repo proves what someone intended to deploy, never what Firebase is
+enforcing. Reading the Console took him thirty seconds and settled weeks of hedging. Deploying is
+still his to do — never the agent's — but *asserting* what is live without the Console is banned.
 
 ### 2. G6 — the convenience shipped, the freeze did not
 
@@ -39,13 +46,33 @@ fix, *"like close the manifest paper for example"*. Safe only because the custom
 into the collapsed 96px this morning; before that it would have hidden the name he just registered.
 Audit group 23, 2 checks.
 
-**The freeze is NOT diagnosed and was NOT guessed at in code.** Three plausible mechanisms, none
-profiled: (a) the photo capture decodes a full-size camera JPEG through `FileReader` → `Image` →
-canvas on the main thread (`:220-237`, and the same shape at `:194` and `:695`); (b) every
-customer doc carries a ~600px base64 `storeImage`, and the whole collection is subscribed
-app-wide; (c) `trigger-telemetry-ping` fires a `enableHighAccuracy` GPS fix with `maximumAge: 0`
-(`App.jsx:1490`). **❓ ASK HIM WHICH MOMENT FROZE** — pressing the camera button, or after
-pressing REGISTER. His taste page records that guessing which beat he meant cost a whole session.
+**THE FREEZE IS NARROWED BUT NOT DIAGNOSED — do not fix it blind.** He answered at 08:45,
+verbatim: *"freeze after just after the NOO is successful, it go back to the manifest paper right
+and it freeze there"*.
+
+**That ELIMINATES the photo-capture theory** — the `FileReader` → `Image` → canvas decode at
+`:220-237` runs when he presses the camera button, which is not the moment he named. Do not spend
+a session there.
+
+What actually fires on success, in order, at `submitNooRegistration` (`:805-817`) — this is the
+suspect list, ranked, **none profiled on a real device**:
+1. `setDoc(newRef, newStoreData)` where `storeImage` is a ~40KB base64 JPEG. The app-wide
+   `customers` snapshot then re-delivers the WHOLE collection, every doc carrying its own base64
+   image, and React re-renders App plus the terminal's memos. On a phone with a few hundred
+   outlets this is the only candidate big enough to be a true main-thread stall.
+2. `window.dispatchEvent('trigger-telemetry-ping')` → `App.jsx:1490` → `getCurrentPosition` with
+   `enableHighAccuracy: true, maximumAge: 0, timeout: 15000` — the heaviest possible GPS request,
+   fired at exactly that moment. **It is async, so it cannot block the main thread** — it makes the
+   phone hot and slow, not frozen. Ranked second for that reason, not dismissed.
+3. `triggerCapy(...)` + `triggerMerchantSpeak('expensive')` — mascot animation starting on the same
+   frame the paper returns.
+
+**The cheap fix that is NOT yet justified:** route the NOO photo through
+`savePhotoAndGetReference` like every other photo in the app (avatar, bypass, receipt, sale proof
+all do; NOO is the only one writing raw base64 into a business document). It only helps when the
+`usePhotoStorage` toggle is ON, and it does nothing for outlets already registered — so it is a
+scaling fix, not necessarily HIS fix. **Measure first: how many customers does his company have?**
+If it is under ~50, suspect 1 is too small and the answer is elsewhere.
 
 ### 3. Dead flag found: `isNooRegistration` is never set anywhere in `src/`
 
