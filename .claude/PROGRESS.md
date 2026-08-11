@@ -1,6 +1,11 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-11 08:20 WIB** · branch `phase0-solid-ground` · last code commit: run `git log -1`
+**Updated: 2026-08-11 08:21 WIB** · branch `phase0-solid-ground` · last code commit: run `git log -1`
+
+*(08:21 touch, timestamp only — the Stop hook fired on `src/config/integration.audit.mjs` (+31)
+and `src/MerchantSalesView.jsx`, both **uncommitted and NOT this session's work**. The
+Hermes→Alucard session has never touched KPM app code. Whoever owns those edits: they are
+unbuilt and unaudited from here. Nothing about where work stands changed.)*
 
 ## 🔴 LOG 08:20 WIB — EVERY SCHEDULED TASK ON THIS MACHINE IS DEAD. One line fixes it, his to type.
 
