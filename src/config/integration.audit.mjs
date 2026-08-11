@@ -811,6 +811,37 @@ check(G21, 'the bar claims no stacking order of its own', !/z-\[\d+\]/.test(admi
 check(G21, 'no blue on the field-mode bar', !/blue-|slate-/.test(adminBar),
   'palette law: Boss Car was bg-blue-600 and both rest states were text-slate-400 — slate IS the blue');
 
+/* ── 22. the customer picker is one bar at the top, and there is only one of it ──
+   His call: "what if we put the customer on top instead just near the strip?" The picker left
+   the manifest paper and became a 44px bar pinned above the grip. Two traps, both of which have
+   already bitten this file once: a SECOND copy of the block (two `customerName` inputs, two
+   `id="bypassPhotoCapture"` — the reason renderManifestUI takes a hardcoded `true`), and the
+   three numbers that have to agree or the bar is hidden behind the wares list. */
+const G22 = '22. The customer picker is one bar at the top of the column';
+const custInputs = (termSrc.match(/onChange=\{handleManualCustomerType\}/g) || []).length;
+const custLists  = (termSrc.match(/suggestedCustomers\.map/g) || []).length;
+
+check(G22, 'exactly ONE customer input exists', custInputs === 1,
+  `found ${custInputs} — a second copy means two inputs fighting over one customerName`);
+check(G22, 'exactly ONE suggestion dropdown exists', custLists === 1,
+  `found ${custLists} — the list moved to the bar, the paper's copy must be gone`);
+check(G22, 'the paper echoes the name read-only instead of editing it',
+  /Name the customer in the bar at the top/.test(termSrc),
+  'a manifest with no name written on it is wrong — the read-only echo is not optional');
+check(G22, 'the bar is rendered above the grip, not inside the paper',
+  termSrc.indexOf('renderCustomerBar()') > 0 &&
+  termSrc.indexOf('renderCustomerBar()') < termSrc.indexOf('startDrawerDrag}'),
+  'below the grip it is inside the collapsed-away region and is not "on top" of anything');
+check(G22, 'the bar itself is inside the click-outside sanctuary',
+  /manifest-dropdown-area hide-on-print shrink-0 h-\[44px\]/.test(termSrc),
+  'the document listener closes the dropdown for clicks outside .manifest-dropdown-area — ' +
+  'drop the class and focusing the input opens and shuts the list in the same tick');
+check(G22, 'closed height, initial height and wares padding all say 96',
+  /const DRAWER_CLOSED = 96;/.test(termSrc) &&
+  /useState\(96\)/.test(termSrc) &&
+  /pb-\[96px\]/.test(termSrc),
+  '96 = 52 grip + 44 bar; if these three disagree the bar is covered or a dead gap appears');
+
 /* ── report ──────────────────────────────────────────────────────────────── */
 let last = '';
 for (const r of results) {

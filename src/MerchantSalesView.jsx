@@ -33,7 +33,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
     const dataOwnerId = masterUserId || user?.uid || user?.id || 'default';
     /* Phase A items 1-2: the two-tab bar is gone. The manifest is a bottom drawer that
        is dragged between three snap points, so the wares list never has to be left. */
-    const [drawerH, setDrawerH] = useState(52);
+    const [drawerH, setDrawerH] = useState(96); // 52 grip + 44 customer bar — see DRAWER_CLOSED
     const [isDragging, setIsDragging] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
     const [cart, setCart] = useState([]);
@@ -1212,7 +1212,10 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
        the only thing hiding it, which is what makes the drag reveal content
        continuously instead of at the end.
        ------------------------------------------------------------------ */
-    const DRAWER_CLOSED = 52;
+    /* 96, not 52: the 52px grip plus the 44px customer bar above it. The bar is only worth
+       moving to the top if it is on screen when the drawer is SHUT, so the closed height has
+       to include it. Keep this in sync with the useState default and the wares-list padding. */
+    const DRAWER_CLOSED = 96;
     const gripRef = useRef(null);
     const dragRef = useRef(null);
     const ghostUntilRef = useRef(0);
@@ -1387,15 +1390,62 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
 
     const canSubmitSale = cart.length > 0 && customerName.trim() && gpsStatus !== 'checking' && txProofPhoto && !isGpsRestricted && !isProcessingSale && !hasInvalidDamagedItems && !hasInsufficientStockForExchange;
 
+    /* HIS CALL, 2026-08-10: "what if we put the customer on top instead just near the strip?"
+       The picker used to sit in the middle of the manifest paper, so the first question of every
+       sale — who is buying — could only be answered by opening the drawer and scrolling the sheet.
+       It is ONE bar now, pinned directly above the grip, which is why DRAWER_CLOSED grew from 52
+       to 96: a bar you cannot see while the drawer is shut has not moved to the top of anything.
+       ONE LINE, a fixed 44px, chosen or not — the top of a phone is scarce and that was the deal.
+       There is still exactly ONE of these in the DOM (one `customerName` input, one dropdown);
+       the paper echoes the chosen name as a read-only line and keeps everything else it had. */
+    /* `manifest-dropdown-area` on the root is load-bearing, not decoration: the document click
+       listener at the top of this file closes the dropdown for any click outside that class.
+       Without it, focusing this very input would open the list and shut it in the same tick. */
+    const renderCustomerBar = () => (
+        <div className="manifest-dropdown-area hide-on-print shrink-0 h-[44px] px-3 flex items-center gap-2 bg-[#26211c] border-b border-[#3e3226] relative z-[60]">
+            <Store size={14} className="shrink-0 text-[#8b7256]" />
+            <input
+                value={customerName}
+                onFocus={() => setShowCustomerDropdown(true)}
+                onChange={handleManualCustomerType}
+                placeholder="CUSTOMER — TYPE OR SELECT"
+                aria-label="Customer name"
+                className="flex-1 min-w-0 bg-transparent text-[#f5e6c8] placeholder-[#5c4b3a] text-xs font-black uppercase tracking-wide outline-none"
+            />
+            {customerName.length > 0 && (
+                <button
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); setCustomerName(""); setSelectedCustomerInfo(null); setLockedTier(null); setGpsStatus('idle'); setShowCustomerDropdown(true); setManualOverride(true); }}
+                    aria-label="Clear customer"
+                    className="shrink-0 bg-red-600 hover:bg-red-500 text-white p-1 rounded shadow-md active:scale-90 transition-all"
+                ><X size={14} strokeWidth={3}/></button>
+            )}
+
+            {showCustomerDropdown && (
+                <>
+                    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[70] manifest-dropdown-area" onClick={() => setShowCustomerDropdown(false)}></div>
+                    {/* Fixed, not absolute, on a phone: the drawer clips its children, and the
+                        list has to open UPWARDS over the wares because the bar is near the
+                        bottom of the screen. `--drawer-h` is inherited from the drawer element,
+                        so the panel tracks the drawer however far it is dragged open. */}
+                    <div className="manifest-dropdown-area fixed left-2 right-2 bottom-[calc(var(--drawer-h)+8px)] lg:absolute lg:inset-x-0 lg:top-full lg:bottom-auto lg:mt-1 bg-[#f5e6c8] border-2 border-[#a89070] shadow-xl rounded z-[100] max-h-48 overflow-y-auto">
+                        {suggestedCustomers.map(c => (
+                            <div key={c.id} onClick={() => handleCustomerSelect(c)} className="p-2 text-xs font-bold border-b border-[#a89070]/30 hover:bg-[#8b7256] hover:text-white cursor-pointer flex justify-between uppercase text-[#3e3226]">
+                                <span>{c.name}</span><span className="opacity-50 text-[11px]">PROFILED</span>
+                            </div>
+                        ))}
+                    </div>
+                </>
+            )}
+        </div>
+    );
+
     const renderManifestUI = (isMobile) => (
         <div className={`kpm-parchment text-[#2a231d] shadow-2xl relative flex flex-col border-[#a89070] ${isMobile ? 'flex-1 border-t-2' : 'w-80 border-l-2'} shrink-0`}>
             {/* grain now comes from .kpm-parchment */}
             <div className="p-3 md:p-4 border-b-2 border-dashed border-[#a89070] relative z-10 text-center uppercase font-bold tracking-widest text-[#3e3226]">Manifest</div>
             
             <div className="p-3 md:p-4 relative z-[60] border-b border-[#a89070] bg-[#dfd5bc] space-y-3 md:space-y-4 manifest-dropdown-area">
-                {showCustomerDropdown && (
-                    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[70] manifest-dropdown-area transition-all duration-300" onClick={() => setShowCustomerDropdown(false)}></div>
-                )}
+                {/* the dropdown backdrop moved with the picker — it belongs to renderCustomerBar now */}
 
                 {/* --- 🚀 DUAL MODE TOGGLE (SALE VS RETUR) --- */}
                 <div className="flex bg-[#1a1815] rounded border border-[#5c4b3a] p-1 mb-2">
@@ -1452,21 +1502,15 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                         </div>
                     )}
 
-                    <div className={`relative transition-all duration-300 ${showCustomerDropdown ? 'z-[80] scale-[1.02]' : ''}`}>
-                        <label className={`text-[10px] font-bold uppercase tracking-widest block mb-1 transition-colors ${showCustomerDropdown ? 'text-white drop-shadow-md' : 'text-[#8b7256]'}`}>Customer Name</label>
-                        <div className="relative">
-                            <input 
-                                value={customerName} 
-                                onFocus={() => setShowCustomerDropdown(true)}
-                                onChange={handleManualCustomerType} 
-                                placeholder="TYPE OR SELECT..." 
-                                className={`w-full bg-[#f5e6c8] text-[#3e3226] p-2 pr-12 text-xs md:text-sm font-black uppercase outline-none rounded transition-all ${showCustomerDropdown ? 'border-2 border-[#ff9d00] shadow-[0_0_20px_rgba(255,157,0,0.5)]' : 'border border-[#a89070]'}`} 
-                            />
-                            {customerName.length > 0 && (
-                                <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); setCustomerName(""); setSelectedCustomerInfo(null); setLockedTier(null); setGpsStatus('idle'); setShowCustomerDropdown(true); setManualOverride(true); }} className={`absolute right-2 top-1/2 -translate-y-1/2 bg-red-600 hover:bg-red-500 text-white p-1.5 rounded-lg shadow-md active:scale-90 transition-all z-[90] ${showCustomerDropdown ? 'opacity-100' : 'opacity-80'}`}><X size={16} strokeWidth={3}/></button>
-                            )}
+                    <div className="relative">
+                        <label className="text-[10px] font-bold uppercase tracking-widest block mb-1 text-[#8b7256]">Customer Name</label>
+                        {/* Read-only echo. The picker is the bar at the top of this column now, but a
+                            manifest with no name written on it is not a manifest, so the paper still
+                            states who the deal is with. */}
+                        <div className="w-full bg-[#efe3c6] border border-dashed border-[#a89070] text-[#3e3226] p-2 text-xs md:text-sm font-black uppercase rounded truncate">
+                            {customerName || <span className="text-[#8b7256] font-bold normal-case tracking-normal">Name the customer in the bar at the top</span>}
                         </div>
-                        
+
                         <div className="mt-2 min-h-[20px]">
                             {selectedCustomerInfo && !selectedCustomerInfo.isNooRegistration ? (
                                 <div className="flex flex-col gap-2">
@@ -1556,15 +1600,6 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                             ) : null}
                         </div>
 
-                        {showCustomerDropdown && (
-                            <div className="absolute left-0 right-0 top-full mt-1 bg-[#f5e6c8] border-2 border-[#a89070] shadow-xl rounded z-[100] max-h-48 overflow-y-auto">
-                                {suggestedCustomers.map(c => (
-                                    <div key={c.id} onClick={() => handleCustomerSelect(c)} className="p-2 text-xs font-bold border-b border-[#a89070]/30 hover:bg-[#8b7256] hover:text-white cursor-pointer flex justify-between uppercase">
-                                        <span>{c.name}</span><span className="opacity-50 text-[11px]">PROFILED</span>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
                     </div>
 
                 <div>
@@ -1780,7 +1815,9 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                     {merchantLine && merchantMood !== 'idle' && <p className="says" role="status">{merchantLine}</p>}
                 </div>
 
-                {/* The grip. Collapsed it is the whole drawer, so it carries the running
+                {renderCustomerBar()}
+
+                {/* The grip. Collapsed it is the drawer minus the customer bar, so it carries the running
                     total, the item count and the LAST ITEM ADDED - that last one is what
                     removes the need to open the manifest just to check it went in. */}
                 <div
@@ -1890,8 +1927,9 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
 
             {/* Always mounted now. It used to be hidden whenever the Merchant tab was open,
                 which is the ~2n tab switches per sale this phase exists to remove. The
-                bottom padding is the collapsed drawer's 52px, so the last ware clears it. */}
-            <div className="hide-on-print flex-1 flex flex-col h-full lg:h-auto bg-[#161412] pb-[52px] lg:pb-0 overflow-hidden">
+                bottom padding is the collapsed drawer's 96px (grip + customer bar), so the last
+                ware clears it. */}
+            <div className="hide-on-print flex-1 flex flex-col h-full lg:h-auto bg-[#161412] pb-[96px] lg:pb-0 overflow-hidden">
                 <div className="flex gap-2 p-2 md:p-3 bg-black border-b border-[#3e3226] overflow-x-auto scrollbar-hide shrink-0">
                     {categories.map(cat => ( <button key={cat} onClick={() => setActiveCategory(cat)} className={`kpm-hover px-4 py-2 md:px-5 md:py-2.5 text-[10px] md:text-xs font-black uppercase whitespace-nowrap transition-all rounded-lg border-2 ${activeCategory === cat ? 'bg-[#8b7256] text-black border-[#ff9d00]' : 'bg-[#26211c] text-[#6b5845] border-[#3e3226] hover:border-[#8b7256]'}`}>{cat}</button> ))}
                 </div>
