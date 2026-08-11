@@ -1,6 +1,59 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-11 08:26 WIB** · branch `phase0-solid-ground` · last code commit: run `git log -1`
+**Updated: 2026-08-11 08:36 WIB** · branch `phase0-solid-ground` · last code commit: run `git log -1`
+
+## ✅ LOG 08:36 WIB — the rules question is ANSWERED, and G6 is HALF done. One question owed.
+
+**NOW: nothing is half-built. G6's convenience shipped; G6's freeze is undiagnosed and needs ONE
+answer from him. G5's remaining part is the notification-button stacking question, also his.**
+
+### 1. The salesman→boss customer write IS allowed by the rules — with two named exceptions
+
+The open risk on the IOU fix is settled at the draft level. The IOU write is
+`updateDoc` on `artifacts/{appId}/users/{dataOwnerId}/customers/{id}`
+(`MerchantSalesView.jsx:974`), and `firestore.rules:414` reads:
+
+```
+allow update: if isSalesman(bossUid) && customerAccessLevel(bossUid) != 'view_only' && (
+  customerAccessLevel(bossUid) != 'own_region' || isUnclassifiedRegion(...) || isOwnRegionMatch(bossUid));
+```
+
+`isSalesman(bossUid)` (`:106`) is true for **anyone whose employee_directory doc carries that
+bossUid** — cross-tenant writing into the boss's vault is the intended design, not a loophole.
+So the fix works **unless** the company set that tier to:
+- **`customers_view_only`** → update DENIED, and the IOU silently fails at the server; or
+- **`customers_edit_own_region`** → DENIED when the customer's `region` is classified and does not
+  match the salesman's profile `location`. Unclassified/legacy regions stay editable by design.
+
+NOO registration is a `create` (`:413`) — allowed unless `view_only`, never region-locked.
+Default with no `permission_matrix` doc is `global`, i.e. allowed.
+
+**🔴 STILL UNKNOWN, AND ONLY HE CAN SETTLE IT: what is actually DEPLOYED.** This file is a draft;
+CHANGE 6 was emulator-tested and never deployed. The deployed text is in Firebase Console →
+Firestore → Rules. **Nobody may deploy it but Aldi.**
+
+### 2. G6 — the convenience shipped, the freeze did not
+
+Shipped: both NOO paths collapse the manifest drawer once the outlet is saved — his own suggested
+fix, *"like close the manifest paper for example"*. Safe only because the customer picker moved
+into the collapsed 96px this morning; before that it would have hidden the name he just registered.
+Audit group 23, 2 checks.
+
+**The freeze is NOT diagnosed and was NOT guessed at in code.** Three plausible mechanisms, none
+profiled: (a) the photo capture decodes a full-size camera JPEG through `FileReader` → `Image` →
+canvas on the main thread (`:220-237`, and the same shape at `:194` and `:695`); (b) every
+customer doc carries a ~600px base64 `storeImage`, and the whole collection is subscribed
+app-wide; (c) `trigger-telemetry-ping` fires a `enableHighAccuracy` GPS fix with `maximumAge: 0`
+(`App.jsx:1490`). **❓ ASK HIM WHICH MOMENT FROZE** — pressing the camera button, or after
+pressing REGISTER. His taste page records that guessing which beat he meant cost a whole session.
+
+### 3. Dead flag found: `isNooRegistration` is never set anywhere in `src/`
+
+`isFormalNoo` (`:925`) reads it, so it is permanently false. Consequences: the purple **"NOO
+Verified (tier Unlocked)"** badge at `:1595` can never render, and the `1500ms` sleep plus
+full-collection `getDocs` at `:1114-1115` is unreachable via that flag. **Not removed — nothing in
+today's change orphaned it, and deleting a branch in the sale path is its own decision.** Filed.
+
 
 *(08:25 — **those two files were MINE and they are committed now: `237bf6f`, the customer-block
 move, build green, audit 230/230.** The 08:21 note below caught them mid-edit from another
