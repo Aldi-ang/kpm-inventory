@@ -98,8 +98,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "claude_context_watch",
-      "community": 40,
-      "community_name": "ExamineModal.jsx",
+      "community": 22,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": "context-watch.mjs"
     },
     {
@@ -109,8 +109,8 @@
       "source_location": "L15",
       "_origin": "ast",
       "id": "claude_context_watch_hook",
-      "community": 40,
-      "community_name": "ExamineModal.jsx",
+      "community": 22,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": "hook"
     },
     {
@@ -120,8 +120,8 @@
       "source_location": "L32",
       "_origin": "ast",
       "id": "claude_context_watch_lines",
-      "community": 40,
-      "community_name": "ExamineModal.jsx",
+      "community": 22,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": "lines"
     },
     {
@@ -131,8 +131,8 @@
       "source_location": "L85",
       "_origin": "ast",
       "id": "claude_context_watch_pct",
-      "community": 40,
-      "community_name": "ExamineModal.jsx",
+      "community": 22,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": "pct"
     },
     {
@@ -142,8 +142,8 @@
       "source_location": "L86",
       "_origin": "ast",
       "id": "claude_context_watch_left",
-      "community": 40,
-      "community_name": "ExamineModal.jsx",
+      "community": 22,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": "left"
     },
     {
@@ -153,8 +153,8 @@
       "source_location": "L87",
       "_origin": "ast",
       "id": "claude_context_watch_k",
-      "community": 40,
-      "community_name": "ExamineModal.jsx",
+      "community": 22,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": "k()"
     },
     {
@@ -1658,8 +1658,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_journeyview",
-      "community": 40,
-      "community_name": "ExamineModal.jsx",
+      "community": 22,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": "journeyview.jsx"
     },
     {
@@ -1669,8 +1669,8 @@
       "source_location": "L24",
       "_origin": "ast",
       "id": "src_journeyview_createjourneyclustericon",
-      "community": 40,
-      "community_name": "ExamineModal.jsx",
+      "community": 22,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": "createjourneyclustericon()"
     },
     {
@@ -1680,8 +1680,8 @@
       "source_location": "L39",
       "_origin": "ast",
       "id": "src_journeyview_storeiconcache",
-      "community": 40,
-      "community_name": "ExamineModal.jsx",
+      "community": 22,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": "storeiconcache"
     },
     {
@@ -1691,8 +1691,8 @@
       "source_location": "L40",
       "_origin": "ast",
       "id": "src_journeyview_getstoreicon",
-      "community": 40,
-      "community_name": "ExamineModal.jsx",
+      "community": 22,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": "getstoreicon()"
     },
     {
@@ -1702,8 +1702,8 @@
       "source_location": "L63",
       "_origin": "ast",
       "id": "src_journeyview_userlocationicon",
-      "community": 40,
-      "community_name": "ExamineModal.jsx",
+      "community": 22,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": "userlocationicon"
     },
     {
@@ -1724,8 +1724,8 @@
       "source_location": "L106",
       "_origin": "ast",
       "id": "src_journeyview_locationcontroller",
-      "community": 40,
-      "community_name": "ExamineModal.jsx",
+      "community": 22,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": "locationcontroller()"
     },
     {
@@ -1735,8 +1735,8 @@
       "source_location": "L165",
       "_origin": "ast",
       "id": "src_journeyview_mapeditcontroller",
-      "community": 40,
-      "community_name": "ExamineModal.jsx",
+      "community": 22,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": "mapeditcontroller()"
     },
     {
@@ -1746,8 +1746,8 @@
       "source_location": "L175",
       "_origin": "ast",
       "id": "src_journeyview_ispointinpolygon",
-      "community": 40,
-      "community_name": "ExamineModal.jsx",
+      "community": 22,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": "ispointinpolygon()"
     },
     {
@@ -1757,8 +1757,8 @@
       "source_location": "L188",
       "_origin": "ast",
       "id": "src_journeyview_checkpointingeojson",
-      "community": 40,
-      "community_name": "ExamineModal.jsx",
+      "community": 22,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": "checkpointingeojson()"
     },
     {
@@ -1768,8 +1768,8 @@
       "source_location": "L208",
       "_origin": "ast",
       "id": "src_journeyview_getstorehierarchy",
-      "community": 40,
-      "community_name": "ExamineModal.jsx",
+      "community": 22,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": "getstorehierarchy()"
     },
     {
@@ -1779,8 +1779,8 @@
       "source_location": "L221",
       "_origin": "ast",
       "id": "src_journeyview_agent_colors",
-      "community": 40,
-      "community_name": "ExamineModal.jsx",
+      "community": 22,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": "agent_colors"
     },
     {
@@ -1790,8 +1790,8 @@
       "source_location": "L222",
       "_origin": "ast",
       "id": "src_journeyview_gethashcolor",
-      "community": 40,
-      "community_name": "ExamineModal.jsx",
+      "community": 22,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": "gethashcolor()"
     },
     {
@@ -1801,8 +1801,8 @@
       "source_location": "L233",
       "_origin": "ast",
       "id": "src_journeyview_journeyview",
-      "community": 40,
-      "community_name": "ExamineModal.jsx",
+      "community": 22,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": "journeyview()"
     },
     {
@@ -1966,8 +1966,8 @@
       "source_location": "L461",
       "_origin": "ast",
       "id": "src_mapmissioncontrol_borderimporter",
-      "community": 22,
-      "community_name": "savePhotoAndGetReference",
+      "community": 3,
+      "community_name": "permissions.js",
       "norm_label": "borderimporter()"
     },
     {
@@ -2043,8 +2043,8 @@
       "source_location": "L12",
       "_origin": "ast",
       "id": "src_merchantsalesview_merchantsalesview",
-      "community": 37,
-      "community_name": "MerchantSalesView.jsx",
+      "community": 38,
+      "community_name": "mixedUnits.selfcheck.mjs",
       "norm_label": "merchantsalesview()"
     },
     {
@@ -2395,8 +2395,8 @@
       "source_location": "L50",
       "_origin": "ast",
       "id": "src_components_confirmgate_promptaction",
-      "community": 22,
-      "community_name": "savePhotoAndGetReference",
+      "community": 3,
+      "community_name": "permissions.js",
       "norm_label": "promptaction()"
     },
     {
@@ -2439,8 +2439,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_customermanager",
-      "community": 22,
-      "community_name": "savePhotoAndGetReference",
+      "community": 40,
+      "community_name": "ExamineModal.jsx",
       "norm_label": "customermanager.jsx"
     },
     {
@@ -2450,8 +2450,8 @@
       "source_location": "L9",
       "_origin": "ast",
       "id": "src_components_customermanager_ispointinpolygon",
-      "community": 22,
-      "community_name": "savePhotoAndGetReference",
+      "community": 40,
+      "community_name": "ExamineModal.jsx",
       "norm_label": "ispointinpolygon()"
     },
     {
@@ -2461,8 +2461,8 @@
       "source_location": "L19",
       "_origin": "ast",
       "id": "src_components_customermanager_checkpointingeojson",
-      "community": 22,
-      "community_name": "savePhotoAndGetReference",
+      "community": 40,
+      "community_name": "ExamineModal.jsx",
       "norm_label": "checkpointingeojson()"
     },
     {
@@ -2472,8 +2472,8 @@
       "source_location": "L38",
       "_origin": "ast",
       "id": "src_components_customermanager_customerdetailview",
-      "community": 22,
-      "community_name": "savePhotoAndGetReference",
+      "community": 40,
+      "community_name": "ExamineModal.jsx",
       "norm_label": "customerdetailview()"
     },
     {
@@ -2483,8 +2483,8 @@
       "source_location": "L203",
       "_origin": "ast",
       "id": "src_components_customermanager_customermanagement",
-      "community": 22,
-      "community_name": "savePhotoAndGetReference",
+      "community": 40,
+      "community_name": "ExamineModal.jsx",
       "norm_label": "customermanagement()"
     },
     {
@@ -2549,8 +2549,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_examinemodal",
-      "community": 0,
-      "community_name": "App.jsx",
+      "community": 43,
+      "community_name": "ExamineModal.jsx",
       "norm_label": "examinemodal.jsx"
     },
     {
@@ -2560,8 +2560,8 @@
       "source_location": "L4",
       "_origin": "ast",
       "id": "src_components_examinemodal_start_rotation",
-      "community": 0,
-      "community_name": "App.jsx",
+      "community": 43,
+      "community_name": "ExamineModal.jsx",
       "norm_label": "start_rotation"
     },
     {
@@ -2571,8 +2571,8 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "src_components_examinemodal_examinemodal",
-      "community": 0,
-      "community_name": "App.jsx",
+      "community": 43,
+      "community_name": "ExamineModal.jsx",
       "norm_label": "examinemodal()"
     },
     {
@@ -2582,8 +2582,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_historyreportview",
-      "community": 3,
-      "community_name": "permissions.js",
+      "community": 40,
+      "community_name": "ExamineModal.jsx",
       "norm_label": "historyreportview.jsx"
     },
     {
@@ -2593,8 +2593,8 @@
       "source_location": "L8",
       "_origin": "ast",
       "id": "src_components_historyreportview_historyreportview",
-      "community": 3,
-      "community_name": "permissions.js",
+      "community": 40,
+      "community_name": "ExamineModal.jsx",
       "norm_label": "historyreportview()"
     },
     {
@@ -2670,8 +2670,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_residentevilinventory",
-      "community": 3,
-      "community_name": "permissions.js",
+      "community": 42,
+      "community_name": "ResidentEvilInventory.jsx",
       "norm_label": "residentevilinventory.jsx"
     },
     {
@@ -2681,8 +2681,8 @@
       "source_location": "L6",
       "_origin": "ast",
       "id": "src_components_residentevilinventory_formatadvancedstock",
-      "community": 3,
-      "community_name": "permissions.js",
+      "community": 42,
+      "community_name": "ResidentEvilInventory.jsx",
       "norm_label": "formatadvancedstock()"
     },
     {
@@ -2692,8 +2692,8 @@
       "source_location": "L27",
       "_origin": "ast",
       "id": "src_components_residentevilinventory_dimensioncontrol",
-      "community": 3,
-      "community_name": "permissions.js",
+      "community": 42,
+      "community_name": "ResidentEvilInventory.jsx",
       "norm_label": "dimensioncontrol()"
     },
     {
@@ -2703,8 +2703,8 @@
       "source_location": "L51",
       "_origin": "ast",
       "id": "src_components_residentevilinventory_iteminspector",
-      "community": 3,
-      "community_name": "permissions.js",
+      "community": 42,
+      "community_name": "ResidentEvilInventory.jsx",
       "norm_label": "iteminspector()"
     },
     {
@@ -2714,8 +2714,8 @@
       "source_location": "L194",
       "_origin": "ast",
       "id": "src_components_residentevilinventory_residentevilinventory",
-      "community": 3,
-      "community_name": "permissions.js",
+      "community": 42,
+      "community_name": "ResidentEvilInventory.jsx",
       "norm_label": "residentevilinventory()"
     },
     {
@@ -2747,8 +2747,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_samplingmanager",
-      "community": 3,
-      "community_name": "permissions.js",
+      "community": 31,
+      "community_name": "txSize.selfcheck.mjs",
       "norm_label": "samplingmanager.jsx"
     },
     {
@@ -2758,8 +2758,8 @@
       "source_location": "L8",
       "_origin": "ast",
       "id": "src_components_samplingmanager_formatsampleqty",
-      "community": 3,
-      "community_name": "permissions.js",
+      "community": 31,
+      "community_name": "txSize.selfcheck.mjs",
       "norm_label": "formatsampleqty()"
     },
     {
@@ -2769,8 +2769,8 @@
       "source_location": "L20",
       "_origin": "ast",
       "id": "src_components_samplingmanager_samplinganalyticsview",
-      "community": 3,
-      "community_name": "permissions.js",
+      "community": 31,
+      "community_name": "txSize.selfcheck.mjs",
       "norm_label": "samplinganalyticsview()"
     },
     {
@@ -2780,8 +2780,8 @@
       "source_location": "L192",
       "_origin": "ast",
       "id": "src_components_samplingmanager_samplingcartview",
-      "community": 3,
-      "community_name": "permissions.js",
+      "community": 31,
+      "community_name": "txSize.selfcheck.mjs",
       "norm_label": "samplingcartview()"
     },
     {
@@ -2791,8 +2791,8 @@
       "source_location": "L330",
       "_origin": "ast",
       "id": "src_components_samplingmanager_samplingfolderview",
-      "community": 3,
-      "community_name": "permissions.js",
+      "community": 31,
+      "community_name": "txSize.selfcheck.mjs",
       "norm_label": "samplingfolderview()"
     },
     {
@@ -2802,8 +2802,8 @@
       "source_location": "L512",
       "_origin": "ast",
       "id": "src_components_samplingmanager_sampleentrymodal",
-      "community": 3,
-      "community_name": "permissions.js",
+      "community": 31,
+      "community_name": "txSize.selfcheck.mjs",
       "norm_label": "sampleentrymodal()"
     },
     {
@@ -3330,8 +3330,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_config_findduplicates_selfcheck",
-      "community": 22,
-      "community_name": "savePhotoAndGetReference",
+      "community": 40,
+      "community_name": "ExamineModal.jsx",
       "norm_label": "findduplicates.selfcheck.mjs"
     },
     {
@@ -3352,8 +3352,8 @@
       "source_location": "L15",
       "_origin": "ast",
       "id": "src_config_findduplicates_selfcheck_near",
-      "community": 22,
-      "community_name": "savePhotoAndGetReference",
+      "community": 40,
+      "community_name": "ExamineModal.jsx",
       "norm_label": "near()"
     },
     {
@@ -3363,8 +3363,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_config_firebase",
-      "community": 29,
-      "community_name": "CustomerManager.jsx",
+      "community": 41,
+      "community_name": "useTransactionEngine.js",
       "norm_label": "firebase.js"
     },
     {
@@ -3374,8 +3374,8 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "src_config_firebase_firebaseconfig",
-      "community": 29,
-      "community_name": "CustomerManager.jsx",
+      "community": 41,
+      "community_name": "useTransactionEngine.js",
       "norm_label": "firebaseconfig"
     },
     {
@@ -3385,8 +3385,8 @@
       "source_location": "L17",
       "_origin": "ast",
       "id": "src_config_firebase_app",
-      "community": 29,
-      "community_name": "CustomerManager.jsx",
+      "community": 41,
+      "community_name": "useTransactionEngine.js",
       "norm_label": "app"
     },
     {
@@ -3396,8 +3396,8 @@
       "source_location": "L19",
       "_origin": "ast",
       "id": "src_config_firebase_auth",
-      "community": 29,
-      "community_name": "CustomerManager.jsx",
+      "community": 41,
+      "community_name": "useTransactionEngine.js",
       "norm_label": "auth"
     },
     {
@@ -3407,8 +3407,8 @@
       "source_location": "L23",
       "_origin": "ast",
       "id": "src_config_firebase_db",
-      "community": 29,
-      "community_name": "CustomerManager.jsx",
+      "community": 41,
+      "community_name": "useTransactionEngine.js",
       "norm_label": "db"
     },
     {
@@ -3418,8 +3418,8 @@
       "source_location": "L35",
       "_origin": "ast",
       "id": "src_config_firebase_storage",
-      "community": 29,
-      "community_name": "CustomerManager.jsx",
+      "community": 41,
+      "community_name": "useTransactionEngine.js",
       "norm_label": "storage"
     },
     {
@@ -3429,8 +3429,8 @@
       "source_location": "L36",
       "_origin": "ast",
       "id": "src_config_firebase_googleprovider",
-      "community": 29,
-      "community_name": "CustomerManager.jsx",
+      "community": 41,
+      "community_name": "useTransactionEngine.js",
       "norm_label": "googleprovider"
     },
     {
@@ -4331,8 +4331,8 @@
       "source_location": "L41",
       "_origin": "ast",
       "id": "src_config_permissions_isfieldleveltier",
-      "community": 40,
-      "community_name": "ExamineModal.jsx",
+      "community": 3,
+      "community_name": "permissions.js",
       "norm_label": "isfieldleveltier()"
     },
     {
@@ -4375,8 +4375,8 @@
       "source_location": "L91",
       "_origin": "ast",
       "id": "src_config_permissions_hasclearance",
-      "community": 29,
-      "community_name": "CustomerManager.jsx",
+      "community": 40,
+      "community_name": "ExamineModal.jsx",
       "norm_label": "hasclearance()"
     },
     {
@@ -4397,8 +4397,8 @@
       "source_location": "L116",
       "_origin": "ast",
       "id": "src_config_permissions_getcustomeraccesslevel",
-      "community": 22,
-      "community_name": "savePhotoAndGetReference",
+      "community": 40,
+      "community_name": "ExamineModal.jsx",
       "norm_label": "getcustomeraccesslevel()"
     },
     {
@@ -4705,8 +4705,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_hooks_useofflineengine",
-      "community": 41,
-      "community_name": "useTransactionEngine.js",
+      "community": 31,
+      "community_name": "txSize.selfcheck.mjs",
       "norm_label": "useofflineengine.js"
     },
     {
@@ -4716,8 +4716,8 @@
       "source_location": "L30",
       "_origin": "ast",
       "id": "src_hooks_useofflineengine_canreachinternet",
-      "community": 41,
-      "community_name": "useTransactionEngine.js",
+      "community": 31,
+      "community_name": "txSize.selfcheck.mjs",
       "norm_label": "canreachinternet()"
     },
     {
@@ -4727,8 +4727,8 @@
       "source_location": "L44",
       "_origin": "ast",
       "id": "src_hooks_useofflineengine_useofflineengine",
-      "community": 41,
-      "community_name": "useTransactionEngine.js",
+      "community": 31,
+      "community_name": "txSize.selfcheck.mjs",
       "norm_label": "useofflineengine()"
     },
     {
@@ -5013,8 +5013,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_hooks_usetransactionengine",
-      "community": 41,
-      "community_name": "useTransactionEngine.js",
+      "community": 31,
+      "community_name": "txSize.selfcheck.mjs",
       "norm_label": "usetransactionengine.js"
     },
     {
@@ -5024,8 +5024,8 @@
       "source_location": "L6",
       "_origin": "ast",
       "id": "src_hooks_usetransactionengine_usetransactionengine",
-      "community": 41,
-      "community_name": "useTransactionEngine.js",
+      "community": 31,
+      "community_name": "txSize.selfcheck.mjs",
       "norm_label": "usetransactionengine()"
     },
     {
@@ -5167,8 +5167,8 @@
       "source_location": "L75",
       "_origin": "ast",
       "id": "src_utils_customerbrief_reorderfromlast",
-      "community": 37,
-      "community_name": "MerchantSalesView.jsx",
+      "community": 23,
+      "community_name": "customerBrief.selfcheck.mjs",
       "norm_label": "reorderfromlast()"
     },
     {
@@ -5211,8 +5211,8 @@
       "source_location": "L74",
       "_origin": "ast",
       "id": "src_utils_daystats_agolabel",
-      "community": 37,
-      "community_name": "MerchantSalesView.jsx",
+      "community": 36,
+      "community_name": "dayStats.selfcheck.mjs",
       "norm_label": "agolabel()"
     },
     {
@@ -5222,8 +5222,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_utils_findduplicates",
-      "community": 22,
-      "community_name": "savePhotoAndGetReference",
+      "community": 40,
+      "community_name": "ExamineModal.jsx",
       "norm_label": "findduplicates.js"
     },
     {
@@ -5233,8 +5233,8 @@
       "source_location": "L19",
       "_origin": "ast",
       "id": "src_utils_findduplicates_normalisename",
-      "community": 22,
-      "community_name": "savePhotoAndGetReference",
+      "community": 40,
+      "community_name": "ExamineModal.jsx",
       "norm_label": "normalisename()"
     },
     {
@@ -5244,8 +5244,8 @@
       "source_location": "L26",
       "_origin": "ast",
       "id": "src_utils_findduplicates_metresbetween",
-      "community": 22,
-      "community_name": "savePhotoAndGetReference",
+      "community": 40,
+      "community_name": "ExamineModal.jsx",
       "norm_label": "metresbetween()"
     },
     {
@@ -5255,8 +5255,8 @@
       "source_location": "L36",
       "_origin": "ast",
       "id": "src_utils_findduplicates_hascoords",
-      "community": 22,
-      "community_name": "savePhotoAndGetReference",
+      "community": 40,
+      "community_name": "ExamineModal.jsx",
       "norm_label": "hascoords()"
     },
     {
@@ -5266,8 +5266,8 @@
       "source_location": "L46",
       "_origin": "ast",
       "id": "src_utils_findduplicates_groupkey",
-      "community": 22,
-      "community_name": "savePhotoAndGetReference",
+      "community": 40,
+      "community_name": "ExamineModal.jsx",
       "norm_label": "groupkey()"
     },
     {
@@ -5277,8 +5277,8 @@
       "source_location": "L57",
       "_origin": "ast",
       "id": "src_utils_findduplicates_createdmillis",
-      "community": 22,
-      "community_name": "savePhotoAndGetReference",
+      "community": 40,
+      "community_name": "ExamineModal.jsx",
       "norm_label": "createdmillis()"
     },
     {
@@ -5288,8 +5288,8 @@
       "source_location": "L73",
       "_origin": "ast",
       "id": "src_utils_findduplicates_findduplicates",
-      "community": 22,
-      "community_name": "savePhotoAndGetReference",
+      "community": 40,
+      "community_name": "ExamineModal.jsx",
       "norm_label": "findduplicates()"
     },
     {
@@ -5343,8 +5343,8 @@
       "source_location": "L23",
       "_origin": "ast",
       "id": "src_utils_helpers_getcurrentdate",
-      "community": 3,
-      "community_name": "permissions.js",
+      "community": 31,
+      "community_name": "txSize.selfcheck.mjs",
       "norm_label": "getcurrentdate()"
     },
     {
@@ -5387,8 +5387,8 @@
       "source_location": "L58",
       "_origin": "ast",
       "id": "src_utils_helpers_splittounits",
-      "community": 37,
-      "community_name": "MerchantSalesView.jsx",
+      "community": 38,
+      "community_name": "mixedUnits.selfcheck.mjs",
       "norm_label": "splittounits()"
     },
     {
@@ -5398,8 +5398,8 @@
       "source_location": "L88",
       "_origin": "ast",
       "id": "src_utils_helpers_stripcartitemforstorage",
-      "community": 41,
-      "community_name": "useTransactionEngine.js",
+      "community": 31,
+      "community_name": "txSize.selfcheck.mjs",
       "norm_label": "stripcartitemforstorage()"
     },
     {
@@ -5409,8 +5409,8 @@
       "source_location": "L97",
       "_origin": "ast",
       "id": "src_utils_helpers_converttobks",
-      "community": 3,
-      "community_name": "permissions.js",
+      "community": 38,
+      "community_name": "mixedUnits.selfcheck.mjs",
       "norm_label": "converttobks()"
     },
     {
@@ -5667,10 +5667,32 @@
       "norm_label": "progress \u2014 read this, search for nothing"
     },
     {
+      "label": "\ud83d\udd34 LOG 08:20 WIB \u2014 EVERY SCHEDULED TASK ON THIS MACHINE IS DEAD. One line fixes it, his to type.",
+      "file_type": "document",
+      "source_file": ".claude/PROGRESS.md",
+      "source_location": "L14",
+      "_origin": "ast",
+      "id": "claude_progress_log_08_20_wib_every_scheduled_task_on_this_machine_is_dead_one_line_fixes_it_his_to_type",
+      "community": 26,
+      "community_name": "LOG \u2014 newest first, older entries live in `git log` for this file",
+      "norm_label": "\ud83d\udd34 log 08:20 wib \u2014 every scheduled task on this machine is dead. one line fixes it, his to type."
+    },
+    {
+      "label": "\u2705 LOG 03:28 WIB \u2014 Alucard now runs code at every session start. Hermes work is DONE.",
+      "file_type": "document",
+      "source_file": ".claude/PROGRESS.md",
+      "source_location": "L58",
+      "_origin": "ast",
+      "id": "claude_progress_log_03_28_wib_alucard_now_runs_code_at_every_session_start_hermes_work_is_done",
+      "community": 26,
+      "community_name": "LOG \u2014 newest first, older entries live in `git log` for this file",
+      "norm_label": "\u2705 log 03:28 wib \u2014 alucard now runs code at every session start. hermes work is done."
+    },
+    {
       "label": "\ud83d\udd34 LOG 03:12 WIB \u2014 YOUR EMAIL IS A HARDCODED MASTER KEY IN THE RULES. Not fixed, his call.",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L10",
+      "source_location": "L83",
       "_origin": "ast",
       "id": "claude_progress_log_03_12_wib_your_email_is_a_hardcoded_master_key_in_the_rules_not_fixed_his_call",
       "community": 26,
@@ -5681,7 +5703,7 @@
       "label": "\u26a0\ufe0f LOG 03:10 WIB \u2014 a DIFFERENT session edited `MerchantSalesView.jsx` while THIS one ran, UNCOMMITTED",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L49",
+      "source_location": "L122",
       "_origin": "ast",
       "id": "claude_progress_log_03_10_wib_a_different_session_edited_merchantsalesview_jsx_while_this_one_ran_uncommitted",
       "community": 26,
@@ -5692,7 +5714,7 @@
       "label": "\ud83d\udd34 LOG 21:06 WIB \u2014 YOUR VAULT AUTOMATION HAS BEEN DEAD SINCE 2026-07-28. One decision owed.",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L86",
+      "source_location": "L159",
       "_origin": "ast",
       "id": "claude_progress_log_21_06_wib_your_vault_automation_has_been_dead_since_2026_07_28_one_decision_owed",
       "community": 26,
@@ -5703,7 +5725,7 @@
       "label": "\u2705 LOG 20:56 WIB \u2014 the jam is CLEARED. Alucard can learn again.",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L110",
+      "source_location": "L183",
       "_origin": "ast",
       "id": "claude_progress_log_20_56_wib_the_jam_is_cleared_alucard_can_learn_again",
       "community": 26,
@@ -5714,7 +5736,7 @@
       "label": "\ud83d\udd34 LOG 20:52 WIB \u2014 how the jam was found (superseded by 20:56 above)",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L120",
+      "source_location": "L193",
       "_origin": "ast",
       "id": "claude_progress_log_20_52_wib_how_the_jam_was_found_superseded_by_20_56_above",
       "community": 26,
@@ -5725,7 +5747,7 @@
       "label": "LOG 20:42 WIB \u2014 NOT KPM CODE. Debugging his separate LLAMA/AirLLM download in `D:\\LLAMA`.",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L143",
+      "source_location": "L216",
       "_origin": "ast",
       "id": "claude_progress_log_20_42_wib_not_kpm_code_debugging_his_separate_llama_airllm_download_in_d_llama",
       "community": 26,
@@ -5736,7 +5758,7 @@
       "label": "\u2705 CLOSED 20:22 WIB \u2014 HERMES \u2192 ALUCARD IS DONE. Nothing open on it.",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L161",
+      "source_location": "L234",
       "_origin": "ast",
       "id": "claude_progress_closed_20_22_wib_hermes_alucard_is_done_nothing_open_on_it",
       "community": 26,
@@ -5747,7 +5769,7 @@
       "label": "\u2705 CLOSED: \"vault button dead on phone\" \u2014 it was `crypto.subtle`, fixed `f460297` + `b1aee4e`",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L242",
+      "source_location": "L315",
       "_origin": "ast",
       "id": "claude_progress_closed_vault_button_dead_on_phone_it_was_crypto_subtle_fixed_f460297_b1aee4e",
       "community": 26,
@@ -5758,7 +5780,7 @@
       "label": "\ud83d\udd34\ud83d\udd34 NEW STANDING RULE \u2014 A-BRAIN IS MANDATORY (his instruction, 2026-08-10 10:40 WIB)",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L259",
+      "source_location": "L332",
       "_origin": "ast",
       "id": "claude_progress_new_standing_rule_a_brain_is_mandatory_his_instruction_2026_08_10_10_40_wib",
       "community": 26,
@@ -5769,7 +5791,7 @@
       "label": "\u2705 HIS PHONE REPORT \u2014 2026-08-10 10:17\u201310:25 WIB. ALL 8 ITEMS BUILT, NONE TESTED BY HIM YET",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L279",
+      "source_location": "L352",
       "_origin": "ast",
       "id": "claude_progress_his_phone_report_2026_08_10_10_17_10_25_wib_all_8_items_built_none_tested_by_him_yet",
       "community": 26,
@@ -5780,7 +5802,7 @@
       "label": "\ud83d\udd34 HIS FULL ROUND RESULT \u2014 2026-08-10, 64/64 answered. Source: `kpm-test-results.md` on his Desktop",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L330",
+      "source_location": "L403",
       "_origin": "ast",
       "id": "claude_progress_his_full_round_result_2026_08_10_64_64_answered_source_kpm_test_results_md_on_his_desktop",
       "community": 26,
@@ -5791,7 +5813,7 @@
       "label": "\ud83d\udd34 G5 IS BROKEN \u2014 the IOU banner never appears. His words:",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L339",
+      "source_location": "L412",
       "_origin": "ast",
       "id": "claude_progress_g5_is_broken_the_iou_banner_never_appears_his_words",
       "community": 26,
@@ -5802,7 +5824,7 @@
       "label": "\u26a0\ufe0f F7 \u2014 \"all the SFX is gone, animation is gone, animation when sign manifest happen also gone\"",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L357",
+      "source_location": "L430",
       "_origin": "ast",
       "id": "claude_progress_f7_all_the_sfx_is_gone_animation_is_gone_animation_when_sign_manifest_happen_also_gone",
       "community": 26,
@@ -5813,7 +5835,7 @@
       "label": "G6 \u2014 NOO registration froze his phone",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L366",
+      "source_location": "L439",
       "_origin": "ast",
       "id": "claude_progress_g6_noo_registration_froze_his_phone",
       "community": 26,
@@ -5824,7 +5846,7 @@
       "label": "NOT A BUG, do not \"fix\" it",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L370",
+      "source_location": "L443",
       "_origin": "ast",
       "id": "claude_progress_not_a_bug_do_not_fix_it",
       "community": 26,
@@ -5835,7 +5857,7 @@
       "label": "Spotted in passing, NOT in scope and NOT touched",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L374",
+      "source_location": "L447",
       "_origin": "ast",
       "id": "claude_progress_spotted_in_passing_not_in_scope_and_not_touched",
       "community": 26,
@@ -5846,7 +5868,7 @@
       "label": "\u25b6 DO THIS NEXT",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L378",
+      "source_location": "L451",
       "_origin": "ast",
       "id": "claude_progress_do_this_next",
       "community": 26,
@@ -5857,7 +5879,7 @@
       "label": "Where things live \u2014 never search for these",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L853",
+      "source_location": "L926",
       "_origin": "ast",
       "id": "claude_progress_where_things_live_never_search_for_these",
       "community": 26,
@@ -5868,7 +5890,7 @@
       "label": "First command of every session",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L907",
+      "source_location": "L980",
       "_origin": "ast",
       "id": "claude_progress_first_command_of_every_session",
       "community": 26,
@@ -5879,7 +5901,7 @@
       "label": "NOW",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L933",
+      "source_location": "L1006",
       "_origin": "ast",
       "id": "claude_progress_now",
       "community": 26,
@@ -5890,7 +5912,7 @@
       "label": "\u23f0 SCHEDULED TASKS DO NOT WORK HERE \u2014 DON'T OFFER ONE AGAIN",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L996",
+      "source_location": "L1069",
       "_origin": "ast",
       "id": "claude_progress_scheduled_tasks_do_not_work_here_don_t_offer_one_again",
       "community": 26,
@@ -5901,7 +5923,7 @@
       "label": "WAITING ON ALDI \u2014 do not re-derive these, just ask",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L1010",
+      "source_location": "L1083",
       "_origin": "ast",
       "id": "claude_progress_waiting_on_aldi_do_not_re_derive_these_just_ask",
       "community": 26,
@@ -5912,7 +5934,7 @@
       "label": "\ud83d\udeab DO NOT open a PR or merge to main yet",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L1183",
+      "source_location": "L1256",
       "_origin": "ast",
       "id": "claude_progress_do_not_open_a_pr_or_merge_to_main_yet",
       "community": 26,
@@ -5923,7 +5945,7 @@
       "label": "NEXT, once testing is done \u2014 he has not chosen",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L1193",
+      "source_location": "L1266",
       "_origin": "ast",
       "id": "claude_progress_next_once_testing_is_done_he_has_not_chosen",
       "community": 26,
@@ -5931,21 +5953,32 @@
       "norm_label": "next, once testing is done \u2014 he has not chosen"
     },
     {
-      "label": "\ud83d\udd34 THE CUSTOMER BLOCK MOVE \u2014 HE SAID GO, AND IT IS DELIBERATELY NOT STARTED",
+      "label": "\u2705 THE CUSTOMER BLOCK MOVE \u2014 SHIPPED 2026-08-11 08:22 WIB, commit `237bf6f`",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L1201",
+      "source_location": "L1274",
+      "_origin": "ast",
+      "id": "claude_progress_the_customer_block_move_shipped_2026_08_11_08_22_wib_commit_237bf6f",
+      "community": 26,
+      "community_name": "LOG \u2014 newest first, older entries live in `git log` for this file",
+      "norm_label": "\u2705 the customer block move \u2014 shipped 2026-08-11 08:22 wib, commit `237bf6f`"
+    },
+    {
+      "label": "~~\ud83d\udd34 THE CUSTOMER BLOCK MOVE \u2014 HE SAID GO, AND IT IS DELIBERATELY NOT STARTED~~",
+      "file_type": "document",
+      "source_file": ".claude/PROGRESS.md",
+      "source_location": "L1300",
       "_origin": "ast",
       "id": "claude_progress_the_customer_block_move_he_said_go_and_it_is_deliberately_not_started",
       "community": 26,
       "community_name": "LOG \u2014 newest first, older entries live in `git log` for this file",
-      "norm_label": "\ud83d\udd34 the customer block move \u2014 he said go, and it is deliberately not started"
+      "norm_label": "~~\ud83d\udd34 the customer block move \u2014 he said go, and it is deliberately not started~~"
     },
     {
       "label": "\ud83d\udd34\ud83d\udd34 G5 #1 \u2014 FOUND. THE SALES TERMINAL WRITES TO THE WRONG TENANT. HIS DECISION NEEDED.",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L1228",
+      "source_location": "L1327",
       "_origin": "ast",
       "id": "claude_progress_g5_1_found_the_sales_terminal_writes_to_the_wrong_tenant_his_decision_needed",
       "community": 26,
@@ -5956,7 +5989,7 @@
       "label": "\u2705 FIXED \u2014 he delegated the choice: *\"go with the wisest choice but make sure that it didnt broke anything\"*",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L1252",
+      "source_location": "L1351",
       "_origin": "ast",
       "id": "claude_progress_fixed_he_delegated_the_choice_go_with_the_wisest_choice_but_make_sure_that_it_didnt_broke_anything",
       "community": 26,
@@ -5967,7 +6000,7 @@
       "label": "\u26a0\ufe0f HAPTICS ARE NOT POSSIBLE ON HIS IPHONE",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L1289",
+      "source_location": "L1388",
       "_origin": "ast",
       "id": "claude_progress_haptics_are_not_possible_on_his_iphone",
       "community": 26,
@@ -5978,7 +6011,7 @@
       "label": "\ud83c\udf19 HE WENT TO SLEEP AT 03:27 WIB \u2014 what was done and what was deliberately NOT",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L1296",
+      "source_location": "L1395",
       "_origin": "ast",
       "id": "claude_progress_he_went_to_sleep_at_03_27_wib_what_was_done_and_what_was_deliberately_not",
       "community": 26,
@@ -5989,7 +6022,7 @@
       "label": "LOG \u2014 newest first, older entries live in `git log` for this file",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L1321",
+      "source_location": "L1420",
       "_origin": "ast",
       "id": "claude_progress_log_newest_first_older_entries_live_in_git_log_for_this_file",
       "community": 26,
@@ -6000,7 +6033,7 @@
       "label": "2026-08-11 03:12 WIB \u2014 the strip names the last order; the IOU bug is a TENANT bug",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L1323",
+      "source_location": "L1422",
       "_origin": "ast",
       "id": "claude_progress_2026_08_11_03_12_wib_the_strip_names_the_last_order_the_iou_bug_is_a_tenant_bug",
       "community": 26,
@@ -6011,7 +6044,7 @@
       "label": "2026-08-10 21:11 WIB \u2014 the iPhone silence is fixed. `8c502f7`. Audit 217/217.",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L1338",
+      "source_location": "L1437",
       "_origin": "ast",
       "id": "claude_progress_2026_08_10_21_11_wib_the_iphone_silence_is_fixed_8c502f7_audit_217_217",
       "community": 26,
@@ -6022,7 +6055,7 @@
       "label": "2026-08-10 15:11 WIB \u2014 he finished the round, 64/64. G5 broken. Two questions open.",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L1360",
+      "source_location": "L1459",
       "_origin": "ast",
       "id": "claude_progress_2026_08_10_15_11_wib_he_finished_the_round_64_64_g5_broken_two_questions_open",
       "community": 26,
@@ -6033,7 +6066,7 @@
       "label": "2026-08-10 11:52 WIB \u2014 Hermes \u2192 alucard. Not app work. Quota died mid-sweep.",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L1381",
+      "source_location": "L1480",
       "_origin": "ast",
       "id": "claude_progress_2026_08_10_11_52_wib_hermes_alucard_not_app_work_quota_died_mid_sweep",
       "community": 26,
@@ -6044,7 +6077,7 @@
       "label": "2026-08-10 11:44 WIB \u2014 his 8 phone items are all built. A-Brain backfilled. One self-inflicted break, fixed.",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L1410",
+      "source_location": "L1509",
       "_origin": "ast",
       "id": "claude_progress_2026_08_10_11_44_wib_his_8_phone_items_are_all_built_a_brain_backfilled_one_self_inflicted_break_fixed",
       "community": 26,
@@ -6055,7 +6088,7 @@
       "label": "2026-08-10 \u2014 \u2705 HIS PHONE CAN LOG IN NOW. Dev is HTTPS. `b1aee4e`",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L1433",
+      "source_location": "L1532",
       "_origin": "ast",
       "id": "claude_progress_2026_08_10_his_phone_can_log_in_now_dev_is_https_b1aee4e",
       "community": 26,
@@ -12244,7 +12277,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/MerchantSalesView.jsx",
-      "source_location": "L1533",
+      "source_location": "L1585",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_merchantsalesview_merchantsalesview",
@@ -12292,7 +12325,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/MerchantSalesView.jsx",
-      "source_location": "L1284",
+      "source_location": "L1287",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_merchantsalesview_merchantsalesview",
@@ -12304,7 +12337,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/MerchantSalesView.jsx",
-      "source_location": "L1344",
+      "source_location": "L1347",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_merchantsalesview_merchantsalesview",
@@ -12316,7 +12349,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/MerchantSalesView.jsx",
-      "source_location": "L1990",
+      "source_location": "L2036",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_merchantsalesview_merchantsalesview",
@@ -12328,7 +12361,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/MerchantSalesView.jsx",
-      "source_location": "L1270",
+      "source_location": "L1273",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_merchantsalesview_merchantsalesview",
@@ -12364,7 +12397,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/MerchantSalesView.jsx",
-      "source_location": "L2169",
+      "source_location": "L2215",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_merchantsalesview_merchantsalesview",
@@ -12376,7 +12409,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/MerchantSalesView.jsx",
-      "source_location": "L1945",
+      "source_location": "L1991",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_merchantsalesview_merchantsalesview",
@@ -12388,7 +12421,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/MerchantSalesView.jsx",
-      "source_location": "L1942",
+      "source_location": "L1988",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_merchantsalesview_merchantsalesview",
@@ -12400,7 +12433,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/MerchantSalesView.jsx",
-      "source_location": "L1333",
+      "source_location": "L1336",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_merchantsalesview_merchantsalesview",
@@ -19254,7 +19287,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L161",
+      "source_location": "L234",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -19265,7 +19298,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L242",
+      "source_location": "L315",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -19276,7 +19309,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L1183",
+      "source_location": "L1256",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -19287,7 +19320,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L378",
+      "source_location": "L451",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -19298,7 +19331,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L907",
+      "source_location": "L980",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -19309,7 +19342,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L1252",
+      "source_location": "L1351",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -19320,7 +19353,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L1228",
+      "source_location": "L1327",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -19331,7 +19364,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L1289",
+      "source_location": "L1388",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -19342,7 +19375,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L1296",
+      "source_location": "L1395",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -19353,7 +19386,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L330",
+      "source_location": "L403",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -19364,7 +19397,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L279",
+      "source_location": "L352",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -19375,7 +19408,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L49",
+      "source_location": "L122",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -19386,7 +19419,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L10",
+      "source_location": "L83",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -19397,7 +19430,29 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L143",
+      "source_location": "L58",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "claude_progress_progress_read_this_search_for_nothing",
+      "target": "claude_progress_log_03_28_wib_alucard_now_runs_code_at_every_session_start_hermes_work_is_done",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": ".claude/PROGRESS.md",
+      "source_location": "L14",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "claude_progress_progress_read_this_search_for_nothing",
+      "target": "claude_progress_log_08_20_wib_every_scheduled_task_on_this_machine_is_dead_one_line_fixes_it_his_to_type",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": ".claude/PROGRESS.md",
+      "source_location": "L216",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -19408,7 +19463,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L120",
+      "source_location": "L193",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -19419,7 +19474,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L110",
+      "source_location": "L183",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -19430,7 +19485,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L86",
+      "source_location": "L159",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -19441,7 +19496,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L1321",
+      "source_location": "L1420",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -19452,7 +19507,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L259",
+      "source_location": "L332",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -19463,7 +19518,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L1193",
+      "source_location": "L1266",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -19474,7 +19529,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L933",
+      "source_location": "L1006",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -19485,7 +19540,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L996",
+      "source_location": "L1069",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -19496,7 +19551,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L1201",
+      "source_location": "L1300",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -19507,7 +19562,18 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L1010",
+      "source_location": "L1274",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "claude_progress_progress_read_this_search_for_nothing",
+      "target": "claude_progress_the_customer_block_move_shipped_2026_08_11_08_22_wib_commit_237bf6f",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": ".claude/PROGRESS.md",
+      "source_location": "L1083",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -19518,7 +19584,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L853",
+      "source_location": "L926",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -19529,7 +19595,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L357",
+      "source_location": "L430",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_his_full_round_result_2026_08_10_64_64_answered_source_kpm_test_results_md_on_his_desktop",
@@ -19540,7 +19606,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L339",
+      "source_location": "L412",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_his_full_round_result_2026_08_10_64_64_answered_source_kpm_test_results_md_on_his_desktop",
@@ -19551,7 +19617,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L366",
+      "source_location": "L439",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_his_full_round_result_2026_08_10_64_64_answered_source_kpm_test_results_md_on_his_desktop",
@@ -19562,7 +19628,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L370",
+      "source_location": "L443",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_his_full_round_result_2026_08_10_64_64_answered_source_kpm_test_results_md_on_his_desktop",
@@ -19573,7 +19639,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L374",
+      "source_location": "L447",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_his_full_round_result_2026_08_10_64_64_answered_source_kpm_test_results_md_on_his_desktop",
@@ -19584,7 +19650,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L1410",
+      "source_location": "L1509",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_log_newest_first_older_entries_live_in_git_log_for_this_file",
@@ -19595,7 +19661,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L1381",
+      "source_location": "L1480",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_log_newest_first_older_entries_live_in_git_log_for_this_file",
@@ -19606,7 +19672,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L1360",
+      "source_location": "L1459",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_log_newest_first_older_entries_live_in_git_log_for_this_file",
@@ -19617,7 +19683,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L1338",
+      "source_location": "L1437",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_log_newest_first_older_entries_live_in_git_log_for_this_file",
@@ -19628,7 +19694,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L1433",
+      "source_location": "L1532",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_log_newest_first_older_entries_live_in_git_log_for_this_file",
@@ -19639,7 +19705,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L1323",
+      "source_location": "L1422",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_log_newest_first_older_entries_live_in_git_log_for_this_file",
@@ -20451,5 +20517,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "935374908b5455aed15010b58385a931781a0f58"
+  "built_at_commit": "32dd4dc174ab2227769f77d2a7e82ba2385667ad"
 }

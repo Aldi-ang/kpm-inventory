@@ -1289,7 +1289,15 @@ meant "the picker moves". Still exactly ONE input and ONE dropdown in the DOM.
 listener (`:313`) closes the dropdown for any click outside that class, so without it focusing the
 input would open the list and shut it in the same tick. Checked, not remembered.
 
-**Verified:** build green · audit **230/230** (was 224, +6) · all 8 self-checks pass.
+**A second commit followed the same morning and it fixed a real defect, not a nit.** The
+suggestion list was pinned 8px above the drawer at every height. The drawer snaps to **92% of the
+screen**, and there "above the drawer" is ~200px past the top edge of the viewport: the list
+rendered entirely off screen and **no customer could be selected at all**. It now opens downwards
+over the manifest when the drawer is tall (`listOpensUp`), and audit group 22 checks both
+directions exist. Found by reading the geometry — no browser was involved, in either direction.
+
+**Verified:** build green · audit **231/231** (was 224, +7) · all 8 self-checks pass · the
+new both-directions check negative-tested against the old one-way markup, so it can fail.
 **NOT verified, say so plainly:** no browser. The layout was never opened at 375px — the numbers
 are reasoned from the drawer's own geometry, not seen. **✅ TEST: open the terminal on a phone,
 confirm the customer bar is visible with the drawer shut, the list opens UPWARDS over the wares,

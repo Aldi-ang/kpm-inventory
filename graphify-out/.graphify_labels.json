@@ -40,5 +40,7 @@
   "38": "mixedUnits.selfcheck.mjs",
   "39": "vaultGrace.selfcheck.mjs",
   "40": "ExamineModal.jsx",
-  "41": "useTransactionEngine.js"
+  "41": "useTransactionEngine.js",
+  "42": "ResidentEvilInventory.jsx",
+  "43": "ExamineModal.jsx"
 }
