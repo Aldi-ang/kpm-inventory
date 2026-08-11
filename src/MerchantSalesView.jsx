@@ -809,6 +809,12 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
 
             setSelectedCustomerInfo(newStoreData); setLockedTier(nooForm.requestedTier); updateCartPricing(nooForm.requestedTier);
             setShowNooModal(false); setGpsStatus('verified'); triggerMerchantSpeak('expensive');
+            /* HIS ASK (G6): "maybe add some conveniency after we register new NOO, like close the
+               manifest paper for example". The outlet is registered and the next thing he does is
+               pick wares, so hand the screen back to the wares list instead of leaving the paper
+               covering it. The customer bar stays on screen — it is inside DRAWER_CLOSED — so the
+               name he just registered is still visible, which is the whole reason this is safe. */
+            setDrawerH(DRAWER_CLOSED);
         } catch (e) { notify("Failed to save NOO: " + e.message); }
     };
 
@@ -832,6 +838,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
 
             setShowNooModal(false);
             setNooForm({ phone: '', address: '', requestedTier: defaultNooTier, photoUrl: null });
+            setDrawerH(DRAWER_CLOSED);   // same convenience as the register-and-sell path above
         } catch (e) { notify("Failed to save NOO: " + e.message); }
     };
 

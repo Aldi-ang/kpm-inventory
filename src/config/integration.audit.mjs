@@ -845,6 +845,22 @@ check(G22, 'closed height, initial height and wares padding all say 96',
   /pb-\[96px\]/.test(termSrc),
   '96 = 52 grip + 44 bar; if these three disagree the bar is covered or a dead gap appears');
 
+/* ── 23. registering an outlet hands the screen back ─────────────────────────
+   His G6 report: "it freeze my phone for a while tho maybe add some conveniency after we register
+   new NOO, like close the manifest paper for example". Both NOO paths now collapse the drawer.
+   This is only safe BECAUSE the customer bar lives inside the collapsed 96px — collapsing the
+   drawer while the picker was still buried in the paper would hide the name he just registered,
+   which is the "every action must report" law failing in a new place. Group 22 guards that. */
+const G23 = '23. Registering an outlet hands the screen back to the wares';
+const nooCollapses = (termSrc.match(/setDrawerH\(DRAWER_CLOSED\)/g) || []).length;
+
+check(G23, 'both NOO paths collapse the manifest', nooCollapses === 2,
+  `found ${nooCollapses} setDrawerH(DRAWER_CLOSED) calls, expected 2 — register-and-sell and register-only`);
+check(G23, 'register-and-sell collapses AFTER the customer is selected',
+  termSrc.indexOf('setSelectedCustomerInfo(newStoreData)') <
+  termSrc.indexOf('setDrawerH(DRAWER_CLOSED)'),
+  'collapsing before the selection lands would close the paper on a screen with no customer named');
+
 /* ── report ──────────────────────────────────────────────────────────────── */
 let last = '';
 for (const r of results) {
