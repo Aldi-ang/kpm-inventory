@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-12 21:40 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
+**Updated: 2026-08-12 22:30 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
 **Lancelot session last wrote 17:20 WIB** — see the 17:15 entry. Two clocks, two sessions, one file.
 
 ## 🧭 WHICH TRACK IS WHICH — check this before editing anything below
@@ -51,6 +51,36 @@ The rules, in order:
    else wrote in the meantime. If an `Edit` fails as stale, re-read and re-apply — do not force it.
 7. **The quota is one shared pool.** Two sessions running hard halve each other's runway, and the
    `[plan-quota]` percentage covers both. Size your work against the whole pool, not your own chat.
+
+## ✅ LOG 22:30 WIB — capybara, flight recorder, delete buttons. THE QUEUE IS EMPTY. 272/272.
+
+**Nothing is owed.** The delete-button rollout that sat open for three sessions is done.
+
+**1. The capybara's bubble was being clipped by an ANCESTOR, not by the hardware.** The
+safe-area insets added earlier fixed the notch/home-strip cut; this was different. He is `fixed`
+but rendered deep inside the shell, which has `overflow-hidden` on its column and
+`overflow-y-auto` on its scroller — and on iOS WebKit an overflow ancestor **clips a fixed
+descendant**. The parts reaching furthest outside his own 128px box get sliced, which is exactly
+the bubble at `bottom-112%`. Portalled to `<body>`; his bubble is also capped against the
+**viewport** now, not against him, so a long line cannot run off a narrow phone.
+
+🔑 **That is the FOURTH time this trap has bitten**: the field-mode bar, the notification bell,
+the music pill, now the mascot. **Anything pinned to the viewport in this app belongs in a
+portal.** If a new overlay looks clipped or lands in the wrong place, check its ancestors before
+anything else.
+
+**2. Flight Recorder animates.** The case rises, then the rows read out on a CSS `nth-child`
+stagger — no timers, no state, capped at ten so late rows don't queue into next week.
+
+**3. Eighteen icon-only delete buttons** across ten files now wear the expanding red control,
+marked by **attribute** (`data-kpm-del data-label="Delete"`) rather than by class, because their
+className shapes differ and merging a class mechanically is what broke two earlier attempts.
+⚠️ The CSS selector must stay `button[data-kpm-del]` — theme.css loads BEFORE `@tailwind
+utilities`, so a bare `[data-kpm-del]` ties with `p-2` and loses on source order, and the whole
+sweep silently reverts. **Six buttons were deliberately left alone** — they already say "Remove",
+"DEL" or "Revert & Delete", and this control supplies the word itself.
+
+**Not verified by eye:** all three need his phone.
 
 ## ✅ LOG 21:40 WIB — the side-panel "flash" is fixed. It was never opening. 270/270.
 

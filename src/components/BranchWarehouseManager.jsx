@@ -693,7 +693,7 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
                                             
                                             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 border-b border-line-2 pb-3 mb-3 relative">
                                                 
-                                                <button onClick={() => handleDeleteRequest(req.id)} className="absolute -top-1 -right-1 text-ink-muted hover:text-danger-text bg-panel p-1.5 rounded-lg border border-line-2 transition-colors shadow-lg z-10" title="Delete Ghost Data Permanently">
+                                                <button data-kpm-del data-label="Delete" onClick={() => handleDeleteRequest(req.id)} className="absolute -top-1 -right-1 text-ink-muted hover:text-danger-text bg-panel p-1.5 rounded-lg border border-line-2 transition-colors shadow-lg z-10" title="Delete Ghost Data Permanently">
                                                     <Trash2 size={16}/>
                                                 </button>
 

@@ -846,7 +846,7 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                                                                     {canEditFleet && (
                                                                         <>
                                                                             <button onClick={(e) => handleEditClick(e, m)} className="text-slate-400 hover:text-blue-400" title="Edit Profile"><Pencil size={14}/></button>
-                                                                            <button onClick={(e) => handleDeleteAgent(e, m)} className="text-slate-400 hover:text-red-500" title="Remove Profile"><Trash2 size={14}/></button>
+                                                                            <button data-kpm-del data-label="Delete" onClick={(e) => handleDeleteAgent(e, m)} className="text-slate-400 hover:text-red-500" title="Remove Profile"><Trash2 size={14}/></button>
                                                                         </>
                                                                     )}
                                                                 </div>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { createPortal } from 'react-dom';
 
 /* Module scope, not inside the component. As locals these were rebuilt on every single render,
    so `dialogueList` was a new array every time, so the peek effect below — which lists it as a
@@ -270,8 +271,20 @@ export default function CapybaraMascot({ isDiscoMode, message, messages = NO_MES
         ? 'opacity-0 pointer-events-none translate-x-[200%]'
         : (isHiding ? 'kpm-merch-exit' : 'kpm-merch-enter');
 
-    return (
-        <div 
+    /* HIS REPORT, 2026-08-12: the talking capybara "is still cutted in my phone" — the safe-area
+       insets below fixed the HARDWARE cut (the notch and the home strip) but not this one.
+
+       This one is an ancestor. He is `fixed`, but he is rendered deep inside the app shell, and
+       that shell has `overflow-hidden` on its column and `overflow-y-auto` on its scroller. On
+       iOS WebKit an overflow ancestor CLIPS a fixed descendant, so the parts of him that reach
+       furthest outside his own 128px box — which is exactly the speech bubble, sitting at
+       bottom-112% — are the parts that get sliced off.
+
+       A portal to <body> takes him out of every one of those ancestors at once. He is already
+       `fixed` with his own z-index, so nothing else about him changes. Third time this exact trap
+       has bitten in this app: the field-mode bar, the music pill, now him. */
+    return createPortal(
+        <div
             className={`hide-on-print fixed bottom-0 right-0 z-[99999] cursor-pointer group ${stateClass}`}
             onClick={onMascotClick}
             /* HIS REPORT: "capybara is still cutted on the phone". `viewport-fit=cover` went into
@@ -291,7 +304,10 @@ export default function CapybaraMascot({ isDiscoMode, message, messages = NO_MES
                     filled the box. Border was green-600, which the palette law bans. */}
                 {activeMessage && (
                     <div className="absolute bottom-[112%] right-[6%] mb-2 z-20 animate-pop-in pointer-events-none">
-                        <div className="relative border-4 border-gold p-3 min-w-[140px] max-w-[180px] text-center shadow-[4px_4px_0px_0px_rgba(212,175,55,0.45)]" style={{ backgroundColor: '#ffffff', color: '#000000' }}>
+                        {/* the cap is measured off the VIEWPORT, not off him: he sits at the
+                            right edge, so a long line grows leftward and a fixed 180px can still
+                            run off a narrow phone even once nothing is clipping him. */}
+                        <div className="relative border-4 border-gold p-3 min-w-[140px] max-w-[min(180px,calc(100vw-40px))] text-center shadow-[4px_4px_0px_0px_rgba(212,175,55,0.45)]" style={{ backgroundColor: '#ffffff', color: '#000000' }}>
                             <p className="text-[10px] font-bold font-mono leading-tight uppercase tracking-wide" style={{ color: '#000000' }}>{activeMessage}</p>
                             <div className="absolute -bottom-3 right-8 w-4 h-4 border-r-4 border-b-4 border-gold rotate-45" style={{ backgroundColor: '#ffffff' }}></div>
                         </div>
@@ -312,6 +328,7 @@ export default function CapybaraMascot({ isDiscoMode, message, messages = NO_MES
                 @keyframes pop-in { 0% { transform: scale(0) translateY(20px); opacity: 0; } 80% { transform: scale(1.1) translateY(-5px); opacity: 1; } 100% { transform: scale(1) translateY(0); opacity: 1; } }
                 .animate-pop-in { animation: pop-in 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
             `}</style>
-        </div>
+        </div>,
+        document.body
     );
 }

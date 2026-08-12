@@ -4376,7 +4376,11 @@ const handleGitHubMirror = async () => {
               {/* The Flight Recorder Terminal Modal */}
               {showFlightRecorder && (
                   <div className="fixed inset-0 z-[9999] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
-                      <div className="bg-[#0a0a0a] border border-white/20 w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[80vh]">
+                      {/* It is a RECORDER, so it should behave like one being switched on: the
+                          case arrives first, then the tape reads itself out line by line. The
+                          stagger is CSS-only (see .kpm-log-row) — no timers, and it re-runs every
+                          time the panel opens because the rows are mounted fresh. */}
+                      <div className="kpm-recorder bg-[#0a0a0a] border border-[#3e3226] w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[80vh]">
                           <div className="bg-[#0f0e0d] p-4 border-b border-[#3e3226] flex justify-between items-center shrink-0">
                               <h3 className="text-white font-black uppercase tracking-widest flex items-center gap-2"><Activity size={18} className="text-[#ff9d00]"/> Flight Recorder</h3>
                               <button onClick={() => setShowFlightRecorder(false)} className="text-[#8b7256] hover:text-red-500"><X size={20}/></button>
@@ -4456,7 +4460,7 @@ const handleGitHubMirror = async () => {
                                      resting row is just the panel's own surface. Red and orange
                                      stay: those two are earning attention. */
                                   syncLogs.map((log) => (
-                                      <div key={log.id} className={`p-3 rounded border text-xs leading-relaxed ${log.type === 'ERROR' ? 'bg-red-950/20 border-red-900/50 text-red-400' : log.type === 'SUCCESS' ? 'bg-[#c9a227]/10 border-[#8a6a2f]/60 text-[#d4af37]' : log.type === 'OFFLINE' ? 'bg-orange-950/20 border-orange-900/50 text-orange-400' : 'bg-[#0f0e0d] border-[#3e3226] text-[#d4c5a3]'}`}>
+                                      <div key={log.id} className={`kpm-log-row p-3 rounded border text-xs leading-relaxed ${log.type === 'ERROR' ? 'bg-red-950/20 border-red-900/50 text-red-400' : log.type === 'SUCCESS' ? 'bg-[#c9a227]/10 border-[#8a6a2f]/60 text-[#d4af37]' : log.type === 'OFFLINE' ? 'bg-orange-950/20 border-orange-900/50 text-orange-400' : 'bg-[#0f0e0d] border-[#3e3226] text-[#d4c5a3]'}`}>
                                           <div className="text-[11px] opacity-50 mb-1">{new Date(log.timestamp).toLocaleString()}</div>
                                           <div>{log.message}</div>
                                       </div>

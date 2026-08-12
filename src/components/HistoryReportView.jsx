@@ -760,7 +760,7 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                                                     <p className={`text-xl md:text-2xl font-black ${cObj.total < 0 ? 'text-red-400' : 'text-emerald-400'}`}>{formatRupiah(cObj.total)}</p>
                                                 </div>
                                                 {isAdmin && (
-                                                    <button onClick={() => onDeleteFolder(cObj.name, selectedAgent)} title="Delete ALL history for this store" className="p-2 bg-red-900/40 hover:bg-red-600 text-red-400 hover:text-white border border-red-500/50 rounded-lg transition-colors shrink-0">
+                                                    <button data-kpm-del data-label="Delete" onClick={() => onDeleteFolder(cObj.name, selectedAgent)} title="Delete ALL history for this store" className="p-2 bg-red-900/40 hover:bg-red-600 text-red-400 hover:text-white border border-red-500/50 rounded-lg transition-colors shrink-0">
                                                         <Trash2 size={16}/>
                                                     </button>
                                                 )}
@@ -822,7 +822,7 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                                                                 {t.deliveryProof && <button onClick={() => setViewingPhoto(t.deliveryProof)} className="p-2 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-200 rounded-lg transition-colors"><Camera size={14}/></button>}
                                                                 <button onClick={() => setViewingReceipt(t)} className="p-2 bg-slate-100 dark:bg-slate-700 text-slate-400 dark:text-slate-300 hover:text-orange-500 rounded-lg transition-colors"><FileText size={14}/></button>
                                                                 {isAdmin && <button onClick={() => setEditingTrans(t)} className="p-2 bg-slate-100 dark:bg-slate-700 text-slate-400 dark:text-slate-300 hover:text-blue-500 rounded-lg transition-colors"><Pencil size={14}/></button>}
-                                                                {isAdmin && <button onClick={() => onDeleteTransaction(t)} className="p-2 bg-slate-100 dark:bg-slate-700 text-slate-400 dark:text-slate-300 hover:text-red-500 rounded-lg transition-colors"><Trash2 size={14}/></button>}
+                                                                {isAdmin && <button data-kpm-del data-label="Delete" onClick={() => onDeleteTransaction(t)} className="p-2 bg-slate-100 dark:bg-slate-700 text-slate-400 dark:text-slate-300 hover:text-red-500 rounded-lg transition-colors"><Trash2 size={14}/></button>}
                                                             </div>
                                                         </td>
                                                     </tr>
@@ -892,7 +892,7 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                                                 <option value="Karton">Karton</option>
                                             </select>
                                             <input type="number" value={item.calculatedPrice} onChange={(e) => handleEditItemChange(idx, 'calculatedPrice', Number(e.target.value))} className="w-28 p-2 text-xs text-right border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white text-emerald-600 font-bold outline-none" placeholder="Price/Unit" />
-                                            <button type="button" onClick={() => {
+                                            <button data-kpm-del data-label="Delete" type="button" onClick={() => {
                                                 const newItems = editingTrans.items.filter((_, i) => i !== idx);
                                                 const newTotal = newItems.reduce((sum, it) => sum + ((it.calculatedPrice || 0) * it.qty), 0);
                                                 setEditingTrans({...editingTrans, items: newItems, total: newTotal, amountPaid: newTotal});

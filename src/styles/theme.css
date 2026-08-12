@@ -1151,6 +1151,59 @@ html.lite-mode .kpm-expand, html.lite-mode .kpm-expand > svg, html.lite-mode .kp
   .kpm-expand:active { transform: none; }
 }
 
+/* ---------- EVERY ICON-ONLY DELETE BUTTON IN THE APP ----------
+   Same control as .kpm-expand.danger above, reached by ATTRIBUTE instead of by class, and that is
+   a deliberate choice about how it got applied to eighteen buttons across ten files.
+
+   Those buttons all carry different className shapes — plain strings, template literals, ternaries
+   — so merging a class into each one mechanically was the thing that broke twice. An attribute
+   needs no merging: `data-kpm-del data-label="Delete"` goes in beside whatever was already there,
+   and the old classes simply lose the cascade.
+
+   Which is why every selector here is `button[data-kpm-del]` (0,1,1) and not `[data-kpm-del]`
+   (0,1,0): theme.css is imported BEFORE @tailwind utilities, so on a tie Tailwind wins. The
+   element+attribute form outranks the single utility classes still sitting on these buttons
+   (`p-2`, `bg-danger-well`, `text-red-500`), and the :hover form outranks their :hover ones.
+
+   Six buttons were deliberately NOT marked — the ones that already say "Remove", "DEL" or
+   "Revert & Delete" in their own words. This control supplies the word itself, so marking those
+   would print it twice. */
+button[data-kpm-del] {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 38px; height: 38px; padding: 0; flex: none;
+  position: relative; overflow: hidden; cursor: pointer;
+  border: 1px solid #3e3226; border-radius: 999px;
+  background-color: #14110e; background-image: none; color: #8b7256;
+  box-shadow: 0 2px 10px rgba(0,0,0,.35);
+  -webkit-tap-highlight-color: transparent;
+  transition: width 300ms cubic-bezier(.22, 1, .36, 1), border-radius 300ms cubic-bezier(.22, 1, .36, 1),
+              background-color 220ms ease-out, border-color 220ms ease-out, color 220ms ease-out;
+}
+button[data-kpm-del] > svg { flex: none; color: inherit; transition: margin 300ms cubic-bezier(.22, 1, .36, 1); }
+button[data-kpm-del]::after {
+  content: attr(data-label); position: absolute; right: 0; width: 0; opacity: 0;
+  overflow: hidden; white-space: nowrap; text-align: left;
+  font-size: 11px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase;
+  transition: opacity 200ms ease-out, width 300ms cubic-bezier(.22, 1, .36, 1),
+              padding 300ms cubic-bezier(.22, 1, .36, 1);
+}
+/* :active is in here for the same reason it is on .kpm-expand — a phone has no hover at all */
+button[data-kpm-del]:hover, button[data-kpm-del]:focus-visible, button[data-kpm-del]:active {
+  width: 112px; border-radius: 19px;
+  background-color: #8e2f28; border-color: #c0473c; color: #ffece9; }
+button[data-kpm-del]:hover > svg, button[data-kpm-del]:focus-visible > svg, button[data-kpm-del]:active > svg {
+  margin-right: auto; margin-left: 12px; }
+button[data-kpm-del]:hover::after, button[data-kpm-del]:focus-visible::after, button[data-kpm-del]:active::after {
+  opacity: 1; width: 66%; padding-right: 11px; }
+button[data-kpm-del]:active { transform: translate(1px, 1px); }
+html.lite-mode button[data-kpm-del],
+html.lite-mode button[data-kpm-del] > svg,
+html.lite-mode button[data-kpm-del]::after { transition: none; }
+@media (prefers-reduced-motion: reduce) {
+  button[data-kpm-del], button[data-kpm-del] > svg, button[data-kpm-del]::after { transition: opacity 120ms ease-out; }
+  button[data-kpm-del]:active { transform: none; }
+}
+
 /* ---------- THE HEADER'S CONTROLS ----------
    Sync, theme and the bell were three shapes in three palettes standing 24px apart: a green
    pill, a white-outlined square and a bare icon. One plate for all three. `on` is gold and is
@@ -1178,6 +1231,42 @@ html.lite-mode .kpm-expand, html.lite-mode .kpm-expand > svg, html.lite-mode .kp
 .kpm-chip.warn { color: #e0705a; border-color: #7a3b32; box-shadow: 0 0 14px rgba(224,112,90,.18); }
 html.lite-mode .kpm-chip { transition: none; }
 html.lite-mode .kpm-chip:active { transform: none; }
+
+/* ---------- THE FLIGHT RECORDER ----------
+   It is a recorder, so it opens like one being switched on: the case arrives, then the tape reads
+   itself out. The case rises rather than fading in place — a panel that only fades has no
+   direction, and this one comes from the chip you pressed at the top of the screen.
+
+   The rows stagger on nth-child DELAYS, with no JavaScript and no timers. That is the whole
+   reason this is affordable: a stagger driven by state would re-render the list once per row.
+   Capped at ten — past that the delay is longer than anyone waits, and every later row simply
+   arrives on the tenth row's clock rather than progressively later into next week. */
+.kpm-recorder { animation: kpmRecorderIn .34s cubic-bezier(.16, 1.06, .3, 1) both; }
+@keyframes kpmRecorderIn {
+  from { opacity: 0; transform: translateY(14px) scale(.97); }
+  to   { opacity: 1; transform: translateY(0)    scale(1);   }
+}
+.kpm-log-row { animation: kpmLogIn .3s cubic-bezier(.22, 1, .36, 1) both; }
+@keyframes kpmLogIn {
+  from { opacity: 0; transform: translateX(-10px); }
+  to   { opacity: 1; transform: translateX(0);     }
+}
+.kpm-log-row:nth-child(1) { animation-delay: 40ms; }
+.kpm-log-row:nth-child(2) { animation-delay: 80ms; }
+.kpm-log-row:nth-child(3) { animation-delay: 120ms; }
+.kpm-log-row:nth-child(4) { animation-delay: 160ms; }
+.kpm-log-row:nth-child(5) { animation-delay: 200ms; }
+.kpm-log-row:nth-child(6) { animation-delay: 240ms; }
+.kpm-log-row:nth-child(7) { animation-delay: 280ms; }
+.kpm-log-row:nth-child(8) { animation-delay: 320ms; }
+.kpm-log-row:nth-child(9) { animation-delay: 360ms; }
+.kpm-log-row:nth-child(n+10) { animation-delay: 400ms; }
+html.lite-mode .kpm-recorder, html.lite-mode .kpm-log-row { animation: none; }
+@media (prefers-reduced-motion: reduce) {
+  /* the fade stays, so the panel still announces itself; the travel and the stagger go */
+  .kpm-recorder, .kpm-log-row { animation: kpmRecorderFade .16s ease-out both; animation-delay: 0ms !important; }
+  @keyframes kpmRecorderFade { from { opacity: 0; } to { opacity: 1; } }
+}
 
 /* ---------- THE PANEL IS ALLOWED TO EXIST AGAIN ----------
    The other half of the anti-flash guard in index.html. That inline rule hides the nav panel from

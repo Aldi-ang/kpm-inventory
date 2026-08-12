@@ -185,7 +185,7 @@ export const CustomerDetailView = ({ customer, db, appId, user, onBack, logAudit
                                             </td>
                                             <td className="py-3 text-slate-400 text-xs italic truncate max-w-[150px]">{b.notes}</td>
                                             <td className="py-3 text-right pr-2">
-                                                <button onClick={()=>handleDeleteBenchmark(b.id)} className="text-slate-300 hover:text-red-500"><Trash2 size={14}/></button>
+                                                <button data-kpm-del data-label="Delete" onClick={()=>handleDeleteBenchmark(b.id)} className="text-slate-300 hover:text-red-500"><Trash2 size={14}/></button>
                                             </td>
                                         </tr>
                                     ))}
@@ -1325,7 +1325,7 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                                         >
                                             <img src={formData.storeImage} className="w-full h-full object-cover" alt="Store" />
                                         </button>
-                                        <button 
+                                        <button data-kpm-del data-label="Delete" 
                                             type="button" 
                                             onClick={async () => {
                                                 if(await confirmAction("Are you sure you want to remove this store photo?")) {

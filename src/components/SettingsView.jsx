@@ -318,7 +318,7 @@ export default function SettingsView({
                                                   <span className="text-sm dark:text-slate-300 italic truncate mr-2">"{msg}"</span>
                                                   <div className="flex gap-2 shrink-0">
                                                       <button onClick={() => { setEditingMsgIndex(idx); setEditMsgText(msg); }} className="text-slate-400 hover:text-blue-500"><Edit size={14}/></button>
-                                                      <button onClick={() => handleDeleteMascotMessage(msg)} className="text-slate-400 hover:text-red-500"><Trash2 size={14}/></button>
+                                                      <button data-kpm-del data-label="Delete" onClick={() => handleDeleteMascotMessage(msg)} className="text-slate-400 hover:text-red-500"><Trash2 size={14}/></button>
                                                   </div>
                                               </>
                                           )}
@@ -433,7 +433,7 @@ export default function SettingsView({
                                               {tier.iconType === 'image' ? (tier.value ? <img src={tier.value} className="w-full h-full object-contain p-1" /> : <ImageIcon size={14} className="opacity-30"/>) : (<span className="text-lg">{tier.value}</span>)}
                                           </div>
 
-                                          <button onClick={async () => {
+                                          <button data-kpm-del data-label="Delete" onClick={async () => {
                                               if(await confirmAction(`Are you sure you want to delete the tier: ${tier.label}?`)) {
                                                   const newTiers = tierSettings.filter((_, i) => i !== idx);
                                                   setTierSettings(newTiers);
@@ -743,7 +743,7 @@ export default function SettingsView({
                                                           <p className="text-blue-600 dark:text-blue-400 font-bold text-xs uppercase">{device.name}</p>
                                                           <p className="text-slate-400 text-[11px] uppercase tracking-widest mt-0.5">Added: {new Date(device.addedAt).toLocaleDateString()}</p>
                                                       </div>
-                                                      <button 
+                                                      <button data-kpm-del data-label="Delete" 
                                                           onClick={() => handleRemovePasskey(device)}
                                                           className="p-2 bg-red-100 dark:bg-red-900/30 text-red-500 hover:bg-red-500 hover:text-white rounded transition-colors"
                                                           title="Revoke Access"
@@ -1133,7 +1133,7 @@ const PermissionMatrixEditor = ({ db, appId, userRole, userId }) => {
                             <div className="flex gap-2">
                                 <button onClick={() => handleRenameTier(activeTier.id)} className="text-slate-400 hover:text-white p-1 bg-slate-800 rounded"><Edit size={14}/></button>
                                 {activeTier.id.startsWith('CUSTOM_') && (
-                                    <button onClick={() => handleDeleteTier(activeTier.id)} className="text-red-500 hover:text-red-400 p-1 bg-red-950/30 rounded"><Trash2 size={14}/></button>
+                                    <button data-kpm-del data-label="Delete" onClick={() => handleDeleteTier(activeTier.id)} className="text-red-500 hover:text-red-400 p-1 bg-red-950/30 rounded"><Trash2 size={14}/></button>
                                 )}
                             </div>
                         </div>
@@ -1212,7 +1212,7 @@ const PermissionMatrixEditor = ({ db, appId, userRole, userId }) => {
                                                 <button onClick={() => handleRenameTier(tier.id)} className={`text-[10px] font-black uppercase tracking-widest hover:text-white transition-colors ${tier.color}`} title="Rename Tier">
                                                     {cleanName} <Edit size={10} className="inline opacity-50 group-hover:opacity-100"/>
                                                 </button>
-                                                {tier.id.startsWith('CUSTOM_') && <button onClick={() => handleDeleteTier(tier.id)} className="text-red-500 hover:text-red-400 ml-1"><Trash2 size={12}/></button>}
+                                                {tier.id.startsWith('CUSTOM_') && <button data-kpm-del data-label="Delete" onClick={() => handleDeleteTier(tier.id)} className="text-red-500 hover:text-red-400 ml-1"><Trash2 size={12}/></button>}
                                             </div>
                                         </div>
                                     </th>

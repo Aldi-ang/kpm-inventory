@@ -1117,6 +1117,33 @@ check(G25, 'the rail never scrolls — the rows share the height instead',
   'a fixed cell height brings the scroll back on a short phone; a min-height floor clips a mark ' +
   'off the bottom instead, which is worse — the tab becomes unreachable, not just further down');
 
+/* THE DELETE SWEEP. Eighteen icon-only delete buttons across ten files wear the expanding control
+   now, reached by ATTRIBUTE rather than by class — their className shapes differ (plain strings,
+   template literals, ternaries) and merging a class into each mechanically is what broke two
+   earlier attempts.
+
+   The specificity is the load-bearing part: theme.css is imported BEFORE @tailwind utilities, so
+   a bare `[data-kpm-del]` (0,1,0) would TIE with the `p-2` and `bg-...` classes still on those
+   buttons and lose on source order. `button[data-kpm-del]` (0,1,1) wins; drop the element and the
+   whole sweep silently reverts to looking like nothing happened. */
+const DEL_FILES = ['src/AgentProfileView.jsx', 'src/FleetCanvasManager.jsx',
+  'src/components/BranchWarehouseManager.jsx', 'src/MapMissionControl.jsx',
+  'src/components/CustomerManager.jsx', 'src/RestockVaultView.jsx',
+  'src/components/LandlordDashboard.jsx', 'src/components/HistoryReportView.jsx',
+  'src/components/SamplingManager.jsx', 'src/components/SettingsView.jsx'];
+const delMarks = DEL_FILES.reduce((n, f) =>
+  n + (fs.readFileSync(f, 'utf8').match(/<button data-kpm-del data-label="Delete"/g) || []).length, 0);
+check(G25, 'every icon-only delete button in the app wears the expanding control', delMarks === 18,
+  `found ${delMarks} marked, expected 18 — a new icon-only delete button needs ` +
+  '`data-kpm-del data-label="Delete"` on it, and one that carries its own word ("Remove", "DEL") ' +
+  'must NOT be marked or the label prints twice');
+check(G25, 'the delete rules outrank the Tailwind classes still on those buttons',
+  /button\[data-kpm-del\] \{/.test(themeCss) &&
+  /button\[data-kpm-del\]:hover, button\[data-kpm-del\]:focus-visible, button\[data-kpm-del\]:active \{/.test(themeCss) &&
+  /content: attr\(data-label\)/.test(themeCss),
+  'theme.css loads before @tailwind utilities, so a bare [data-kpm-del] ties with p-2 and loses ' +
+  'on source order — the `button` prefix is what makes the sweep visible at all');
+
 /* THE FLASH. His report: "sometimes there is a bug and the sidepanel show a while until i refresh
    on the phone then its gone". Nothing opened it — the app imports its CSS from main.jsx, so the
    dev server injects that stylesheet with JS AFTER React paints, and for that window the panel has

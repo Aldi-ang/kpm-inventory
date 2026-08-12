@@ -650,7 +650,7 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, storage, appI
                                                         <Pencil size={14}/>
                                                     </button>
                                                 )}
-                                                <button onClick={(e) => { e.stopPropagation(); handleDeleteRequest(record.id); }} className="p-2 bg-danger-well text-danger-text rounded hover:bg-danger hover:text-white transition-colors" title="Delete Ghost Data">
+                                                <button data-kpm-del data-label="Delete" onClick={(e) => { e.stopPropagation(); handleDeleteRequest(record.id); }} className="p-2 bg-danger-well text-danger-text rounded hover:bg-danger hover:text-white transition-colors" title="Delete Ghost Data">
                                                     <Trash2 size={14}/>
                                                 </button>
                                                 {expandedPO === record.id ? <ChevronUp size={20} className="text-ink-muted"/> : <ChevronDown size={20} className="text-ink-muted"/>}

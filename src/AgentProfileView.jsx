@@ -903,7 +903,7 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
                                             <label className="text-[11px] text-ink-muted uppercase tracking-widest font-bold block mb-1">Achievement Title</label>
                                             <div className="flex gap-2">
                                                 <input type="text" value={rank.title || ''} onChange={(e) => { const r = [...editingRpgData.ranks]; r[idx].title = e.target.value; setEditingRpgData({...editingRpgData, ranks: r})}} placeholder="e.g. The Sales Boomer" className="w-full bg-black border border-line text-verified px-3 py-2 rounded text-xs outline-none focus:border-verified transition-colors" />
-                                                <button onClick={() => { const r = [...editingRpgData.ranks]; r.splice(idx, 1); setEditingRpgData({...editingRpgData, ranks: r})}} className="w-9 h-9 bg-danger-well/20 border border-danger/50 text-danger-text rounded flex items-center justify-center shrink-0 hover:bg-danger hover:text-white transition-colors"><Trash2 size={16}/></button>
+                                                <button data-kpm-del data-label="Delete" onClick={() => { const r = [...editingRpgData.ranks]; r.splice(idx, 1); setEditingRpgData({...editingRpgData, ranks: r})}} className="w-9 h-9 bg-danger-well/20 border border-danger/50 text-danger-text rounded flex items-center justify-center shrink-0 hover:bg-danger hover:text-white transition-colors"><Trash2 size={16}/></button>
                                             </div>
                                         </div>
                                     </div>

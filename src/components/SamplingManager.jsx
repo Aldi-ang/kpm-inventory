@@ -288,7 +288,7 @@ export const SamplingCartView = ({ inventory, isAdmin, onCancel, onSubmit }) => 
                             <div key={item.id} className="p-3 bg-slate-50 dark:bg-slate-900 rounded-xl border dark:border-slate-700 animate-fade-in-up flex flex-col gap-3">
                                 <div className="flex justify-between items-start border-b dark:border-slate-700 pb-2">
                                     <h4 className="font-bold text-sm dark:text-white flex-1 pr-2">{item.name}</h4>
-                                    <button onClick={() => removeFromCart(item.id)} className="text-slate-300 hover:text-red-500"><Trash2 size={16}/></button>
+                                    <button data-kpm-del data-label="Delete" onClick={() => removeFromCart(item.id)} className="text-slate-300 hover:text-red-500"><Trash2 size={16}/></button>
                                 </div>
                                 <div className="flex items-center justify-between">
                                     {/* 🚀 BKS INPUT */}
@@ -399,7 +399,7 @@ export const SamplingFolderView = ({ samplings, isAdmin, onRecordSample, onDelet
                                                     {isAdmin && (
                                                         <>
                                                             <button onClick={(e) => { e.stopPropagation(); onEdit(s); }} className="p-1.5 text-blue-400 hover:bg-blue-100 dark:bg-slate-800 dark:hover:bg-blue-900/40 rounded transition-colors"><Pencil size={14}/></button>
-                                                            <button onClick={(e) => { e.stopPropagation(); onDelete(s); }} className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-100 dark:bg-slate-800 dark:hover:bg-red-900/40 rounded transition-colors"><Trash2 size={14}/></button>
+                                                            <button data-kpm-del data-label="Delete" onClick={(e) => { e.stopPropagation(); onDelete(s); }} className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-100 dark:bg-slate-800 dark:hover:bg-red-900/40 rounded transition-colors"><Trash2 size={14}/></button>
                                                         </>
                                                     )}
                                                 </td>

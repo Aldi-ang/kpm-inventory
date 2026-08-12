@@ -307,7 +307,7 @@ export default function LandlordDashboard({ db, appId, user }) {
                                                 <Edit size={14} />
                                             </button>
 
-                                            <button 
+                                            <button data-kpm-del data-label="Delete" 
                                                 onClick={() => handleDelete(t)} 
                                                 className="p-2 md:px-3 bg-slate-900/20 text-slate-400 border-slate-500/50 hover:bg-red-600 hover:border-red-500 hover:text-white transition-all flex items-center justify-center"
                                                 title="Permanently Delete User"

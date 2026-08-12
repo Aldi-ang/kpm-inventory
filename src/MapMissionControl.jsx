@@ -976,7 +976,7 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
                                                                 folderName: b.folderName || b.level || "Uncategorized"
                                                             }); 
                                                         }} className="text-slate-400 hover:text-blue-400 p-1 rounded bg-slate-900 transition-colors"><Settings size={12}/></button>
-                                                        <button onClick={() => handleDeleteBorder(b.id)} className="text-slate-400 hover:text-red-500 p-1 rounded bg-slate-900 transition-colors"><Trash2 size={12}/></button>
+                                                        <button data-kpm-del data-label="Delete" onClick={() => handleDeleteBorder(b.id)} className="text-slate-400 hover:text-red-500 p-1 rounded bg-slate-900 transition-colors"><Trash2 size={12}/></button>
                                                     </div>
                                                 </div>
                                             )}
