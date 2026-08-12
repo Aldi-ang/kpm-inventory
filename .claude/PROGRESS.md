@@ -52,6 +52,33 @@ The rules, in order:
 7. **The quota is one shared pool.** Two sessions running hard halve each other's runway, and the
    `[plan-quota]` percentage covers both. Size your work against the whole pool, not your own chat.
 
+## ⏭️ LOG 15:20 WIB — rail fixes done; the DELETE BUTTON ROLLOUT IS THE OPEN ITEM.
+
+**Start here next session.** `39dfd72` + `2dac37d`, 262/262.
+
+Done: the drag-across-the-rail bug (see below), rail 152→176 with 8px gutters and 64px cells,
+music panel un-cut (it was `max-h-[300px]`, vertical clipping — now 65vh, and its width is
+measured off the viewport so widening the rail can never squeeze it again), and a much louder
+`hot` state — the lit mark jumps 42% and lifts 4px CLEAR of the fingertip, because on a phone the
+finger covers the thing being animated.
+
+🔑 **THE BUG WORTH REMEMBERING:** "i press and drag but it only show the first button i press".
+On touch the browser gives the pointerdown target **implicit pointer capture** — every later move
+for that finger goes to the button first pressed, whatever the finger is over. Per-button pointer
+handlers are deaf by design after the first one, and a phone has no `:hover`. Fix: ONE listener on
+the nav + `document.elementFromPoint`, plus a 120ms ghost window to swallow the click the browser
+still fires on the mark you *pressed*.
+
+⏭️ **OPEN — the delete-button rollout.** `.kpm-expand` / `.kpm-expand.danger` exists in theme.css
+and is wired to **logout only**. **24 icon-only delete buttons across 10 files are untouched.**
+Opting one in needs no JSX beyond two attributes:
+`<button className="kpm-expand danger" data-label="Delete">`.
+Two attempts to mark them with a script both mis-parsed: **the `>` inside an arrow function is not
+the end of a JSX opening tag** — a brace/quote-aware scanner is needed, or just do the 24 by hand.
+Files: AgentProfileView, FleetCanvasManager, BranchWarehouseManager, MapMissionControl,
+CustomerManager, RestockVaultView, LandlordDashboard, HistoryReportView, SamplingManager,
+SettingsView. Buttons that already carry their own word ("Delete Record") should be left alone.
+
 ## ✅ LOG 14:35 WIB — palette law finished. The last green and slate are out of App.jsx.
 
 The deferred job from the 13:25 entry, done (`54d9edd`). It was **35 sites, not the 6 it was
