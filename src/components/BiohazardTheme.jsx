@@ -265,9 +265,13 @@ export default function BiohazardTheme({
                             </button>
                         )}
 
-                        <div className="z-[9999]">
-                            <NotificationBell notifications={notifications} onNotificationClick={onNotificationClick} />
-                        </div>
+                        {/* The wrapper this used to sit in carried `z-[9999]` and did nothing at
+                            all — z-index is ignored on an element that is not positioned, so it
+                            was only ever a decoy for the next person debugging the bell drawing
+                            over the sales manifest. That overlap is fixed where it was caused:
+                            the manifest sheet now stops below this header instead of growing
+                            into it. */}
+                        <NotificationBell notifications={notifications} onNotificationClick={onNotificationClick} />
 
                         <div className="text-[10px] text-gray-500 font-mono text-right hidden md:block">
                             <div>{new Date().toLocaleDateString()}</div>

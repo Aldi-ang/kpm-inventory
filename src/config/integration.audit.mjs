@@ -797,18 +797,31 @@ check(G20, 'the product/motorist paths were left alone on purpose',
    paper". The bar is an ordinary flex child above the terminal and needed no stacking order at
    all; z-[200] let it punch through a drawer that is fixed to the viewport and opens to 92% of
    the screen. Raising the drawer instead would repeat the vault gate's nav-button mistake. */
-const G21 = '21. The admin field-mode bar stays behind the manifest';
+const G21 = '21. The stock-source switch lives inside the terminal, not the shell';
 /* Anchored on real code, never on a comment: `appCode` is strip()ed, so the explanation above
    this bar in App.jsx does not exist by the time this runs. That cost two build cycles to learn.
    The window starts at the bar's own background colour, so the wrapper's class list — where the
    z-index used to be — is inside what gets tested. */
-const adminBar = (appCode.match(/bg-\[#0f0e0d\][\s\S]{0,1500}?Boss Car<\/button>/) || [''])[0];
+const adminBar = (termSrc.match(/onAdminSalesMode\('VAULT'\)[\s\S]{0,900}?Boss Car<\/button>/) || [''])[0];
 
-check(G21, 'the field-mode bar is present to check at all', adminBar.length > 400,
-  'could not find the admin toggle bar in App.jsx — this group is blind, fix the match');
-check(G21, 'the bar claims no stacking order of its own', !/z-\[\d+\]/.test(adminBar),
-  'any z-index here lifts it through the manifest drawer, which is fixed to the viewport');
-check(G21, 'no blue on the field-mode bar', !/blue-|slate-/.test(adminBar),
+check(G21, 'the field-mode toggle is present to check at all', adminBar.length > 300,
+  'could not find the stock-source toggle in MerchantSalesView.jsx — this group is blind, fix the match');
+/* THE FIX THAT DELETING z-[200] DID NOT MAKE. Twice he reported this bar drawing on top of the
+   manifest paper, and twice the answer was assumed to be a stacking number. It was not: the bar
+   lived in App's shell, ABOVE the terminal, while the manifest drawer is fixed to the viewport
+   and opens across that same band — two subtrees under different positioned ancestors, with no
+   z-index either of them states deciding which wins. Nothing in the shell may sit above the
+   terminal on the sales tab; put a control there again and this check goes red. */
+check(G21, 'App renders no stock-source bar of its own above the terminal',
+  !/Boss Car<\/button>/.test(appCode) && !/setAdminSalesMode\('VEHICLE'\)/.test(appCode),
+  'a shell row above the terminal shares a band with a viewport-fixed drawer — one of them always loses');
+check(G21, 'the toggle is gated on the prop App hands only to the boss',
+  /onAdminSalesMode=\{userRole === 'ADMIN' \? setAdminSalesMode : undefined\}/.test(appCode) &&
+  /\{onAdminSalesMode && \(/.test(termSrc),
+  'absent prop, absent switch — this is the same test that used to gate the bar in App');
+check(G21, 'the toggle claims no stacking order of its own', !/z-\[\d+\]/.test(adminBar),
+  'it is a plain row of the wares column now; a z-index means someone is fighting the drawer again');
+check(G21, 'no blue on the field-mode toggle', !/blue-|slate-/.test(adminBar),
   'palette law: Boss Car was bg-blue-600 and both rest states were text-slate-400 — slate IS the blue');
 
 /* ── 22. the customer picker is one bar at the top, and there is only one of it ──
@@ -832,18 +845,38 @@ check(G22, 'the bar is rendered above the grip, not inside the paper',
   termSrc.indexOf('renderCustomerBar()') > 0 &&
   termSrc.indexOf('renderCustomerBar()') < termSrc.indexOf('startDrawerDrag}'),
   'below the grip it is inside the collapsed-away region and is not "on top" of anything');
-check(G22, 'the suggestion list can open both ways',
-  /listOpensUp \? 'bottom-\[calc\(var\(--drawer-h\)\+8px\)\]' : 'top-\[calc\(100vh-var\(--drawer-h\)\+52px\)\]'/.test(termSrc),
-  'upward only puts the list 200px above the viewport at the 92% snap — invisible, no customer pickable');
-check(G22, 'the bar itself is inside the click-outside sanctuary',
-  /manifest-dropdown-area hide-on-print shrink-0 h-\[44px\]/.test(termSrc),
-  'the document listener closes the dropdown for clicks outside .manifest-dropdown-area — ' +
-  'drop the class and focusing the input opens and shuts the list in the same tick');
-check(G22, 'closed height, initial height and wares padding all say 96',
-  /const DRAWER_CLOSED = 96;/.test(termSrc) &&
-  /useState\(96\)/.test(termSrc) &&
-  /pb-\[96px\]/.test(termSrc),
-  '96 = 52 grip + 44 bar; if these three disagree the bar is covered or a dead gap appears');
+/* The list used to be a strip that opened up or down depending on how far the drawer was
+   dragged, and it opened directly over the 12px field you were typing into. His report:
+   "too small and sempit". It is a sheet now, so there is no direction to get wrong. */
+check(G22, 'the picker escapes this subtree through a portal',
+  /createPortal\(/.test(termSrc) && /document\.body\s*\n?\s*\)\}/.test(termSrc),
+  'it is the one overlay that must out-rank the app header; a portal settles that without ' +
+  'asking any positioned ancestor in the terminal for permission');
+/* iOS zooms the whole page into any focused input under 16px. text-base IS 16px. Drop below it
+   and the page scales on focus — which is half of what "not satisfying" meant. */
+check(G22, 'the picker field is 16px so iOS cannot zoom the page on focus',
+  /placeholder="Type the shop name"[\s\S]{0,400}?text-base/.test(termSrc),
+  'text-xs/text-sm here re-introduces the focus zoom that made typing a customer feel broken');
+check(G22, 'both halves of the picker are inside the click-outside sanctuary',
+  /manifest-dropdown-area hide-on-print shrink-0 h-\[52px\]/.test(termSrc) &&
+  /manifest-dropdown-area hide-on-print fixed inset-0/.test(termSrc),
+  'the document listener closes the picker for clicks outside .manifest-dropdown-area — ' +
+  'drop it from the strip and tapping the strip opens and shuts the sheet in the same tick; ' +
+  'drop it from the sheet and typing in the sheet closes it');
+check(G22, 'closed height, initial height and wares padding all say 104',
+  /const DRAWER_CLOSED = 104;/.test(termSrc) &&
+  /useState\(104\)/.test(termSrc) &&
+  /pb-\[104px\]/.test(termSrc),
+  '104 = 52 grip + 52 bar; if these three disagree the bar is covered or a dead gap appears');
+/* HIS REPORT: "the notification bell button is collapsing infront of the manifest paper". The
+   bell belongs to the app header. The sheet grew to 92% of the screen, which reached into that
+   header's band, and the two had no agreed order. A sheet that stops below the header cannot
+   argue with it — the fix is geometry, not a z-index. */
+check(G22, 'the sheet stops below the app header instead of growing into it',
+  /const DRAWER_TOP_GAP = 112;/.test(termSrc) &&
+  /window\.innerHeight - DRAWER_TOP_GAP/.test(termSrc) &&
+  !/innerHeight \* 0\.92/.test(termSrc),
+  'at the 92% snap the sheet covered the header band and the bell drew on top of the paper');
 
 /* ── 23. registering an outlet hands the screen back ─────────────────────────
    His G6 report: "it freeze my phone for a while tho maybe add some conveniency after we register

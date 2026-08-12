@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { Search, Box, Zap, X, DollarSign, List, ChevronDown, Printer, MessageSquare, ArrowRight, ArrowLeft, MapPin, AlertCircle, Camera, Store, Map, Lock, Package, AlertTriangle, Check, Eye } from 'lucide-react';
 import { doc, setDoc, collection, getDoc, getDocs, updateDoc, addDoc, onSnapshot, serverTimestamp, runTransaction } from 'firebase/firestore'; 
 import { hasClearance } from './config/permissions';
@@ -9,7 +10,10 @@ import { nextStop, directionsUrl, metresLabel } from './utils/nextStop';
 import { unlockSounds, speakMumble, playSound } from './hooks/useSound';
 import { notify } from './components/Toast.jsx';
 
-const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, onProcessSale, onInspect, appSettings, customers = [], allowedPayments = ['Cash'], allowedTiers = ['Retail', 'Ecer'], transactions = [], allowRetur = true, db, appId, agentProfileId, storage, masterUserId }) => {
+/* `onAdminSalesMode` is undefined for everyone but the boss, and that IS the permission check —
+   App only hands it over on `userRole === 'ADMIN'`, the same test that used to gate the bar it
+   replaces. Absent prop, absent switch. */
+const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, onProcessSale, onInspect, appSettings, customers = [], allowedPayments = ['Cash'], allowedTiers = ['Retail', 'Ecer'], transactions = [], allowRetur = true, db, appId, agentProfileId, storage, masterUserId, adminSalesMode, onAdminSalesMode }) => {
     /* WHOSE VAULT THE CUSTOMER RECORDS LIVE IN — and the answer must be the same one App used to
        fetch them, or a write lands in a document nobody reads.
 
@@ -33,7 +37,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
     const dataOwnerId = masterUserId || user?.uid || user?.id || 'default';
     /* Phase A items 1-2: the two-tab bar is gone. The manifest is a bottom drawer that
        is dragged between three snap points, so the wares list never has to be left. */
-    const [drawerH, setDrawerH] = useState(96); // 52 grip + 44 customer bar — see DRAWER_CLOSED
+    const [drawerH, setDrawerH] = useState(104); // 52 grip + 52 customer bar — see DRAWER_CLOSED
     const [isDragging, setIsDragging] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
     const [cart, setCart] = useState([]);
@@ -1219,15 +1223,27 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
        the only thing hiding it, which is what makes the drag reveal content
        continuously instead of at the end.
        ------------------------------------------------------------------ */
-    /* 96, not 52: the 52px grip plus the 44px customer bar above it. The bar is only worth
+    /* 104, not 52: the 52px grip plus the 52px customer bar above it. The bar is only worth
        moving to the top if it is on screen when the drawer is SHUT, so the closed height has
        to include it. Keep this in sync with the useState default and the wares-list padding. */
-    const DRAWER_CLOSED = 96;
+    const DRAWER_CLOSED = 104;
     const gripRef = useRef(null);
     const dragRef = useRef(null);
     const ghostUntilRef = useRef(0);
 
-    const drawerSnaps = () => [DRAWER_CLOSED, Math.round(window.innerHeight * 0.55), Math.round(window.innerHeight * 0.92)];
+    /* HIS REPORT, 2026-08-12: "the notification bell button is collapsing infront of the
+       manifest paper". The bell is not the terminal's — it belongs to the app header, which
+       occupies the top ~112px of a phone. The sheet was allowed to grow to 92% of the screen,
+       taller than the header sits, so the two claimed the same band and one had to lose.
+
+       No bottom sheet on any phone covers the app header. Leaving it uncovered is the thing
+       that says "this is a layer over the screen", not a new screen — and it settles the
+       argument by geometry instead of by a z-index the two elements have no way to agree on.
+       112 = pt-16 (64) + the header's two lines + pb-2. */
+    const DRAWER_TOP_GAP = 112;
+    const drawerMax = () => Math.max(DRAWER_CLOSED + 1, window.innerHeight - DRAWER_TOP_GAP);
+
+    const drawerSnaps = () => [DRAWER_CLOSED, Math.min(Math.round(window.innerHeight * 0.55), drawerMax()), drawerMax()];
 
     useEffect(() => {
         const swallowGhostClick = (e) => {
@@ -1247,7 +1263,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
             if (!d) return;
             if (!gripRef.current || !gripRef.current.isConnected) return onEnd();
             if (Math.abs(ev.clientY - d.startY) > 4) d.moved = true;
-            const max = window.innerHeight * 0.92;
+            const max = drawerMax();
             setDrawerH(Math.max(DRAWER_CLOSED, Math.min(max, d.startH + (d.startY - ev.clientY))));
         };
 
@@ -1401,57 +1417,118 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
        The picker used to sit in the middle of the manifest paper, so the first question of every
        sale — who is buying — could only be answered by opening the drawer and scrolling the sheet.
        It is ONE bar now, pinned directly above the grip, which is why DRAWER_CLOSED grew from 52
-       to 96: a bar you cannot see while the drawer is shut has not moved to the top of anything.
-       ONE LINE, a fixed 44px, chosen or not — the top of a phone is scarce and that was the deal.
-       There is still exactly ONE of these in the DOM (one `customerName` input, one dropdown);
-       the paper echoes the chosen name as a read-only line and keeps everything else it had. */
-    /* Which way the suggestion list opens. Upwards is the normal case — the bar sits low on a
-       phone. But the drawer snaps to 92% of the screen, and at that height "8px above the drawer"
-       is 200px past the top edge of the viewport: the list renders completely off screen and the
-       salesman cannot pick anybody. So when the drawer is tall the list opens DOWNWARDS over the
-       manifest instead, which is space the drawer itself is already occupying. 208 = the list's
-       max-height (12rem) plus the 8px gap and the 8px it must keep off the top edge. */
-    const listOpensUp = drawerH + 208 <= (typeof window === 'undefined' ? 800 : window.innerHeight);
+       to 104: a bar you cannot see while the drawer is shut has not moved to the top of anything.
+       ONE LINE, chosen or not — the top of a phone is scarce and that was the deal.
+       There is still exactly ONE `customerName` input in the DOM; the paper echoes the chosen
+       name as a read-only line and keeps everything else it had. */
+    /* HIS REPORT, 2026-08-12: "the customer select textbox is really not satisfying ... it is
+       too small and sempit". Where it sits was never the complaint, so the bar has not moved.
+       What changed is that it stopped pretending to be a text field.
 
-    /* `manifest-dropdown-area` on the root is load-bearing, not decoration: the document click
-       listener at the top of this file closes the dropdown for any click outside that class.
-       Without it, focusing this very input would open the list and shut it in the same tick. */
+       It was a 12px input squeezed into a 44px strip, and the suggestion list opened directly
+       over it — so the one thing you had to read while typing was the one thing covered. Worse,
+       iOS zooms the whole page into any input smaller than 16px on focus, which is the other
+       half of why typing here felt wrong and why the layout jumped.
+
+       The strip now SHOWS who is buying, at a size you can read across a market stall, and
+       tapping it opens a real picker: a full-width 16px field (no zoom) and full-size rows.
+       The picker goes through a portal to <body> on purpose — it is the one overlay that must
+       out-rank the app header, and a portal settles that without asking anything in this
+       subtree for permission.
+
+       `manifest-dropdown-area` on BOTH pieces is load-bearing, not decoration: the document
+       click listener at the top of this file closes the picker for any click outside that
+       class. Without it on the strip, tapping the strip would open the picker and shut it in
+       the same tick; without it on the sheet, typing in the sheet would close it. */
+    const clearCustomer = (e) => {
+        e.preventDefault(); e.stopPropagation();
+        setCustomerName(""); setSelectedCustomerInfo(null); setLockedTier(null);
+        setGpsStatus('idle'); setManualOverride(true); setShowCustomerDropdown(true);
+    };
+
     const renderCustomerBar = () => (
-        <div className="manifest-dropdown-area hide-on-print shrink-0 h-[44px] px-3 flex items-center gap-2 bg-[#26211c] border-b border-[#3e3226] relative z-[60]">
-            <Store size={14} className="shrink-0 text-[#8b7256]" />
-            <input
-                value={customerName}
-                onFocus={() => setShowCustomerDropdown(true)}
-                onChange={handleManualCustomerType}
-                placeholder="CUSTOMER — TYPE OR SELECT"
-                aria-label="Customer name"
-                className="flex-1 min-w-0 bg-transparent text-[#f5e6c8] placeholder-[#5c4b3a] text-xs font-black uppercase tracking-wide outline-none"
-            />
-            {customerName.length > 0 && (
+        <>
+            <div className="manifest-dropdown-area hide-on-print shrink-0 h-[52px] px-3 flex items-center gap-2.5 bg-[#26211c] border-b border-[#3e3226] relative z-[60]">
+                <Store size={16} className="shrink-0 text-[#8b7256]" />
                 <button
-                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); setCustomerName(""); setSelectedCustomerInfo(null); setLockedTier(null); setGpsStatus('idle'); setShowCustomerDropdown(true); setManualOverride(true); }}
-                    aria-label="Clear customer"
-                    className="shrink-0 bg-red-600 hover:bg-red-500 text-white p-1 rounded shadow-md active:scale-90 transition-all"
-                ><X size={14} strokeWidth={3}/></button>
-            )}
+                    onClick={() => setShowCustomerDropdown(true)}
+                    aria-label="Choose customer"
+                    className="flex-1 min-w-0 text-left"
+                >
+                    {customerName ? (
+                        <>
+                            <span className="block text-[9px] font-black uppercase tracking-widest text-[#5c4b3a] leading-none">Customer</span>
+                            <span className="block text-sm font-black uppercase tracking-wide text-[#f5e6c8] truncate leading-tight mt-1">{customerName}</span>
+                        </>
+                    ) : (
+                        <span className="block text-xs font-black uppercase tracking-widest text-[#8b7256]">Customer — tap to choose</span>
+                    )}
+                </button>
+                {customerName.length > 0 && (
+                    <button
+                        onClick={clearCustomer}
+                        aria-label="Clear customer"
+                        className="shrink-0 bg-red-600 hover:bg-red-500 text-white p-1.5 rounded shadow-md active:scale-90 transition-all"
+                    ><X size={14} strokeWidth={3}/></button>
+                )}
+            </div>
 
-            {showCustomerDropdown && (
-                <>
-                    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[70] manifest-dropdown-area" onClick={() => setShowCustomerDropdown(false)}></div>
-                    {/* Fixed, not absolute, on a phone: the drawer clips its children, and the
-                        list has to open UPWARDS over the wares because the bar is near the
-                        bottom of the screen. `--drawer-h` is inherited from the drawer element,
-                        so the panel tracks the drawer however far it is dragged open. */}
-                    <div className={`manifest-dropdown-area fixed left-2 right-2 ${listOpensUp ? 'bottom-[calc(var(--drawer-h)+8px)]' : 'top-[calc(100vh-var(--drawer-h)+52px)]'} lg:absolute lg:inset-x-0 lg:top-full lg:bottom-auto lg:mt-1 bg-[#f5e6c8] border-2 border-[#a89070] shadow-xl rounded z-[100] max-h-48 overflow-y-auto`}>
-                        {suggestedCustomers.map(c => (
-                            <div key={c.id} onClick={() => handleCustomerSelect(c)} className="p-2 text-xs font-bold border-b border-[#a89070]/30 hover:bg-[#8b7256] hover:text-white cursor-pointer flex justify-between uppercase text-[#3e3226]">
-                                <span>{c.name}</span><span className="opacity-50 text-[11px]">PROFILED</span>
-                            </div>
-                        ))}
+            {/* Anchored to the TOP, not the bottom, and that is not a taste call: a bottom-
+                anchored sheet on iOS sits UNDER the keyboard the moment the field takes focus,
+                which would bury the suggestions the sheet exists to show. */}
+            {showCustomerDropdown && createPortal(
+                <div className="manifest-dropdown-area hide-on-print fixed inset-0 z-[300] flex items-start justify-center">
+                    <div className="absolute inset-0 bg-black/85 backdrop-blur-sm" onClick={() => setShowCustomerDropdown(false)}></div>
+
+                    <div className="relative w-full lg:max-w-md lg:mt-16 max-h-[70vh] flex flex-col bg-[#161412] border-b-4 lg:border-4 border-[#3e3226] shadow-[0_10px_40px_rgba(0,0,0,0.7)]">
+                        <div className="shrink-0 flex items-center gap-2 px-4 py-3 border-b border-[#3e3226]">
+                            <Store size={16} className="shrink-0 text-[#8b7256]" />
+                            <span className="flex-1 text-xs font-black uppercase tracking-widest text-[#8b7256]">Who is buying?</span>
+                            {/* Says DONE, not an X. Half of what gets typed here is a walk-in that
+                                is never in the book, and an X on the way out of that reads as
+                                "throw the name away". */}
+                            <button
+                                onClick={() => setShowCustomerDropdown(false)}
+                                className="kpm-hover shrink-0 px-3 py-1.5 border border-[#8b7256] rounded text-[10px] font-black uppercase tracking-widest text-[#f5e6c8]"
+                            >Done</button>
+                        </div>
+
+                        <div className="shrink-0 p-3">
+                            {/* text-base is exactly 16px and it is load-bearing, not styling:
+                                anything smaller makes iOS zoom the page on focus. */}
+                            <input
+                                autoFocus
+                                value={customerName}
+                                onChange={handleManualCustomerType}
+                                placeholder="Type the shop name"
+                                aria-label="Customer name"
+                                className="w-full bg-black/60 border-2 border-[#3e3226] focus:border-[#ff9d00] rounded-lg px-3 py-3 text-base font-bold uppercase text-[#f5e6c8] placeholder-[#5c4b3a] outline-none transition-colors"
+                            />
+                        </div>
+
+                        <div className="flex-1 min-h-0 overflow-y-auto border-t border-[#3e3226]">
+                            {suggestedCustomers.length > 0 ? suggestedCustomers.map(c => (
+                                <button
+                                    key={c.id}
+                                    onClick={() => handleCustomerSelect(c)}
+                                    className="w-full text-left px-4 py-3 border-b border-[#3e3226] flex items-center justify-between gap-3 hover:bg-[#26211c] active:bg-[#26211c] transition-colors"
+                                >
+                                    <span className="text-sm font-bold uppercase text-[#f5e6c8] truncate">{c.name}</span>
+                                    <span className="shrink-0 text-[9px] font-black uppercase tracking-widest text-[#8b7256]">Profiled</span>
+                                </button>
+                            )) : (
+                                <p className="px-4 py-6 text-center text-[11px] uppercase tracking-widest text-[#5c4b3a] leading-relaxed">
+                                    {customerName.trim()
+                                        ? 'Not in the book — the sale will use this name exactly as typed.'
+                                        : 'Start typing to search the book.'}
+                                </p>
+                            )}
+                        </div>
                     </div>
-                </>
+                </div>,
+                document.body
             )}
-        </div>
+        </>
     );
 
     const renderManifestUI = (isMobile) => (
@@ -1942,9 +2019,22 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
 
             {/* Always mounted now. It used to be hidden whenever the Merchant tab was open,
                 which is the ~2n tab switches per sale this phase exists to remove. The
-                bottom padding is the collapsed drawer's 96px (grip + customer bar), so the last
+                bottom padding is the collapsed drawer's 104px (grip + customer bar), so the last
                 ware clears it. */}
-            <div className="hide-on-print flex-1 flex flex-col h-full lg:h-auto bg-[#161412] pb-[96px] lg:pb-0 overflow-hidden">
+            <div className="hide-on-print flex-1 flex flex-col h-full lg:h-auto bg-[#161412] pb-[104px] lg:pb-0 overflow-hidden">
+                {/* WHICH STOCK AM I SELLING FROM — the boss's only. This used to be a bar in the
+                    app shell above the whole terminal, where the manifest drawer painted over it
+                    (his G5 report, twice). It is a row of this column now because this column is
+                    what it changes: every ware below this line comes from whichever side is lit.
+                    Same plates as the SALE/RETUR toggle in the manifest — same kind of switch. */}
+                {onAdminSalesMode && (
+                    <div className="p-2 md:p-3 bg-black border-b border-[#3e3226] shrink-0">
+                        <div className="flex bg-[#1a1815] rounded border border-[#5c4b3a] p-1">
+                            <button onClick={() => onAdminSalesMode('VAULT')} className={`kpm-hover flex-1 py-1.5 text-[10px] font-black uppercase tracking-widest rounded transition-colors ${adminSalesMode !== 'VEHICLE' ? 'bg-[#ff9d00] text-[#2b2318]' : 'text-[#8b7256] hover:text-white'}`}>Master Vault</button>
+                            <button onClick={() => onAdminSalesMode('VEHICLE')} className={`kpm-hover flex-1 py-1.5 text-[10px] font-black uppercase tracking-widest rounded transition-colors ${adminSalesMode === 'VEHICLE' ? 'bg-[#c9a227] text-[#2b2318]' : 'text-[#8b7256] hover:text-white'}`}>Boss Car</button>
+                        </div>
+                    </div>
+                )}
                 <div className="flex gap-2 p-2 md:p-3 bg-black border-b border-[#3e3226] overflow-x-auto scrollbar-hide shrink-0">
                     {categories.map(cat => ( <button key={cat} onClick={() => setActiveCategory(cat)} className={`kpm-hover px-4 py-2 md:px-5 md:py-2.5 text-[10px] md:text-xs font-black uppercase whitespace-nowrap transition-all rounded-lg border-2 ${activeCategory === cat ? 'bg-[#8b7256] text-black border-[#ff9d00]' : 'bg-[#26211c] text-[#6b5845] border-[#3e3226] hover:border-[#8b7256]'}`}>{cat}</button> ))}
                 </div>

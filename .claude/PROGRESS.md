@@ -1,6 +1,248 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-11 13:11 WIB** · branch `phase0-solid-ground` · last code commit: run `git log -1`
+**Updated: 2026-08-12 07:45 WIB** · branch `phase0-solid-ground` · last code commit: run `git log -1`
+
+## ✅ LOG 07:45 WIB — the three phone complaints are fixed. Build + 241/241 audit green.
+
+This answers the ⚠️ entry below it: `src/App.jsx`, `src/MerchantSalesView.jsx`,
+`src/components/BiohazardTheme.jsx` and `src/config/integration.audit.mjs` are **this** work.
+
+His screenshot, 07:22: the MASTER VAULT / BOSS CAR bar and the notification bell both drawing on
+top of the manifest paper, and the customer field "too small and sempit".
+
+**The bar was NOT a z-index bug**, which is why deleting `z-[200]` on 2026-08-11 (6bb27b1) did
+not fix it. It lived in App's shell, ABOVE the terminal; the manifest drawer is `fixed` to the
+viewport and opens across that same band. Two subtrees, different positioned ancestors, no
+agreed order. Moved into MerchantSalesView as a row of the WARES COLUMN — which is what it
+actually controls — so the drawer covers it like any other ware. Frees ~60px of phone height.
+
+**The bell**: same shape of problem, opposite direction. It belongs to the app header; the sheet
+grew to 92% of the screen and reached into it. The sheet now stops 112px short of the top
+(`DRAWER_TOP_GAP`), which is what every native bottom sheet does. Geometry, not z-index.
+
+**The customer field**: a 12px input in a 44px strip with the suggestion list opening over it.
+The strip stays where he put it (above the grip) but is now a *display* row — big name, tap to
+open — and the picker is a top-anchored sheet through a portal to `<body>`, with a 16px field.
+16px is load-bearing: iOS zooms the page into anything smaller on focus. Bar 44→52px, so
+`DRAWER_CLOSED` 96→104 (three places, audited).
+
+Audit groups 21 and 22 were rewritten to assert the NEW invariants — including "App renders no
+stock-source bar of its own above the terminal", which goes red if anyone puts a control back in
+the shell on the sales tab. **Not yet verified by eye** — it needs an admin login on a phone.
+
+## ⚠️ LOG 07:43 WIB — the KPM working-tree changes are NOT from this session
+
+`git status` shows `src/App.jsx`, `src/MerchantSalesView.jsx`, `src/components/BiohazardTheme.jsx`
+and `src/config/integration.audit.mjs` modified. **This session touched none of them** — all of
+today's work was in the A-Brain vault (`Lancelot.gs` + wiki), which is a different git repo.
+Another chat is running a dev server in this folder and is editing the app; the same thing happened
+at 03:10 on an earlier day. Do not attribute those diffs to the Lancelot work, and do not commit
+them blind — ask whoever is in that session first.
+
+LOG below is NOT trimmed to five entries this time, on purpose: everything from 07:24 onward is
+still uncommitted, so `git log` does not hold it yet and trimming would delete it for real rather
+than archive it. Trim after the next `PROGRESS:` commit.
+
+## ✅ LOG 07:24 WIB — round 2 produced NO report. Two bugs found by hand, fixed, vault committed.
+
+The background workflow **hit the Anthropic session limit at 01:56** ("resets 5am") and died before
+its synthesis agent ran. `result.laporan` is `null`. 9 of 12 agents errored, including the
+`regresi` lens — the regression audit, the whole point of the round. 641k tokens, no report.
+Do NOT expect a report to arrive; there is none to wait for.
+
+Findings were salvaged from the on-disk agent journal
+(`…/subagents/workflows/wf_6d41c78e-354/journal.jsonl`) and are kept verbatim at
+`A-Brain/Wiki/Attachments/lancelot-round2-findings.txt` — 20 findings from 3 of 5 lenses, all
+**unverified** (the refute stage died too).
+
+Two were confirmed by hand, proven red against the previous commit, and fixed (A-Brain `f07ce55`):
+1. `lancelotSelfCheck` line 1459 asserted 25 NOTA columns; the `TAMBAHAN` column made it 26 — so
+   **step 1 of the run order could never pass**. Now derived from the header, not a magic number.
+2. `angka_("55.000/kg")` returned **55**, not 55000 — units were stripped after the separator test.
+   A 1000x underpayment that passes every arithmetic check. 12/12 helper checks pass after the fix.
+
+Then three more, all in CUAN, all money (A-Brain `12b3e9e`). Proven by extracting the **real**
+pre-fix `buatCuan` body from the previous commit and running it on the same rows — 5 of 6 red
+before, 6 of 6 green after:
+3. A gulungan the pabrik rejected was stored as sold-for-Rp-0 → stock printed as **−Rp 505.000**.
+4. `LABEL BARU` was never read → a rejected-then-resold gulungan printed **−Rp 1.005.000** instead
+   of **+Rp 195.000**.
+5. A nota's whole `TOTAL ONGKOS` was charged the moment one gulungan sold.
+The CUAN arithmetic is now a pure `hitungCuan_(nota, item)` (drawing split into `lanjutCuan_`), so
+`lancelotSelfCheck` runs six real CUAN cases with no sheet. Harness:
+`scratchpad/cuan.js` pattern — extract the function text, eval, feed made-up rows.
+
+### New feature he asked for this morning: the PESAN tab (A-Brain `d367f2f`)
+
+His words: *"if there is duplicate i want lancelot to inform me and add some logs or notification
+panel so that i can see the old notification if i accidently dismiss it"*.
+
+`PESAN` tab, newest on row 2, `SUDAH DIBACA` checkbox — **ticking never deletes the row**, so a
+dismissed message is still there tomorrow. `jenisMasalah_()` (pure, self-checked) turns the three
+duplicate errors into `DOBEL` with plain-Indonesian instructions and says the ledger was NOT
+touched. `DASHBOARD!M2` counts unread live with COUNTIFS. Deliberately NOT a dialog: the script is
+standalone, so `getUi()` alerts die under a time trigger — the same reason `lapor_` reports to
+nobody today (still unfixed, and still on the unverified list).
+
+### Second feature: the TANYA tab + the clock (A-Brain `07975bf`)
+
+His words: *"i also want [lancelot] to be able to give me the exact nota for specific agen in
+specific time, and also i want [lancelot] to be able to summarise todays activities and performance
+from the agen"* · *"make sure that lancelot know the time right now, so if i said today he know
+that today is what date"*.
+
+`TANYA` tab, formulas only: `B3` agen (or SEMUA), `B4`/`B5` dates → exact notas live under row 7;
+column J = HARI INI per agen (nota, gulungan, netto, dibayar). **`TANYA!B2` is the clock**, and
+`pasangSheet` now pins the spreadsheet timezone to `Asia/Jakarta`. `~/.claude/agents/lancelot.md`
+gained a section naming which tab answers which question and forbidding it to guess the date.
+
+**Aldi must re-paste `Lancelot.gs` — it changed four times this morning (1511 → 1732 lines).
+Run `lancelotSelfCheck` first; it now has 12 new cases (6 CUAN, 6 notification).**
+
+**❓ Still unanswered by Aldi:** none of the TANYA formulas or the PESAN tab have ever executed in
+Apps Script — `node --check` and the pure-function checks are all that stand behind them. First run
+of `pasangSheet` + `buatSemuaTampilan` is the real test, and the formulas are the likeliest thing
+to need a fix.
+
+**Aldi's decision, 2026-08-12: do NOT re-run the review workflow.** His words: *"re run it always
+waste my 30% quota and never succeded, it always run out then looks like it restarted again"*. He
+asked whether a cheap model or 9router would fix it. Answer given: the cost is 12 agents each
+re-reading the whole 1511-line script (85–110k tokens each), and resume re-runs exactly the agents
+that died. Hand-verification found 5 real money bugs at a fraction of the cost. Keep doing that.
+
+Resuming round 2 is possible but costs again from the dead agents onward:
+`Workflow({scriptPath: "C:\Users\ASUS\.claude\projects\D--APP-DEVELOPMENT-kpm-inventory-main-FILES-kpm-inventory-main\9dacc95f-c044-4e31-9c14-4e32adc2ddab\workflows\scripts\lancelot-round2-wf_6d41c78e-354.js", resumeFromRunId: "wf_6d41c78e-354"})`
+Cheaper alternative he has not decided on: skip the workflow, verify the 20 salvaged findings by
+hand in priority order.
+
+## ✅ LOG 01:05 WIB — ALL 15 FIXED. Lancelot.gs is ready to paste (1511 lines, 43 checks).
+
+Script: `A-Brain/Wiki/Attachments/Lancelot.gs`. **Still never executed by me** — Apps Script only
+runs in his sheet, so `lancelotSelfCheck` is the proof and it must be step 1.
+
+Fixed this round, on top of the earlier 7: the JUAL PABRIK exemption moved to the **incoming**
+nota (the sell side was dead) · NOTA CETAK now **fails closed** (`<>"UNTUK SAYA"`) · a real
+`CUAN` tab that joins buy↔sell by `NO NOTA JUAL` + seri, replacing the formula that printed
+freight cost as profit · a proper Indonesian number parser (`"55.000"` → 55000, not 55) used on
+every figure · `LockService` in `cekInbox` · `folder_` skips **trashed** folders · backup prunes
+to 8 and logs its own failure · `hapusMigrasi` demands the word HAPUS and takes a backup first ·
+unreadable dates **throw** instead of silently becoming today · `CARA TARA` trimmed · NO NOTA /
+SERI / LABEL forced to text · values starting with `=` neutralised · new `TAMBAHAN` column ·
+`cekKualitas` now checks DIBAYAR, JUMLAH GULUNG vs real row count, and netto = bruto − tara ·
+heartbeat cell on DASHBOARD that says **OTOMATIS MACET** when the inbox has not run in 30 min.
+
+**Helpers were executed for real** (extracted and run under node): 21/21 pass, including
+`angka_("9.357.500") === 9357500` and `hitungTara_(34,"kg ",1) === 1`.
+
+Run order: `lancelotSelfCheck` → `pasangSheet` → `bersihkanTabLama` → `migrasiDataLama` →
+`buatSemuaTampilan` → `cekKualitas` → `nyalakanOtomatis`.
+
+### Round 2 review — DEAD, see the 07:24 log above (launched 01:10 WIB, killed by the quota 01:56)
+
+16 agents, five new lenses: did the 15 fixes regress anything · the AI reader side (no JSON schema
+validation exists at all) · recovery procedures (a restored backup is a Drive copy, but the
+standalone script still points at the ORIGINAL file id) · business cases the NOTA/ITEM model cannot
+express (split sales, partial payment, bon deduction, a gulungan going OUT twice) · what would make
+the automation complete, including what must stay manual because it decides money.
+
+Aldi asked to be told when it lands, and asked for notes either way. If the session died before the
+report arrived, resume it — completed agents replay from cache:
+`Workflow({scriptPath: "C:\Users\ASUS\.claude\projects\D--APP-DEVELOPMENT-kpm-inventory-main-FILES-kpm-inventory-main\9dacc95f-c044-4e31-9c14-4e32adc2ddab\workflows\scripts\lancelot-round2-wf_6d41c78e-354.js", resumeFromRunId: "wf_6d41c78e-354"})`
+
+Round 1's catalogue (111 scenarios) is at `A-Brain/Wiki/Attachments/lancelot-scenarios.txt`; its
+resume id is `wf_a8795bf0-530` and ~100 of its findings are still unverified, not disproven.
+
+**Decision still owed by Aldi (not code):** never give an agen access to the file — the print
+modes are not access control. And check File → Version history + the trigger list, since the file
+was world-editable that morning and its bound script was too.
+
+## 🔴 LOG 00:37 WIB — superseded: 4 blockers found, now all fixed.
+
+**Still not KPM. Zero repo files touched except this note.**
+
+Script lives at `A-Brain/Wiki/Attachments/Lancelot.gs` (1256 lines, syntax OK, **never executed**).
+Working copy in the session scratchpad. Full risk report:
+`https://claude.ai/code/artifact/54476c1e-8704-4e66-b568-48c31337ada7`
+Catalogue: `A-Brain/Wiki/Attachments/lancelot-scenarios.txt` (111 scenarios, 42 high).
+
+### Fixed this session (7)
+Transient-error retry in `cekInbox` · per-nota and per-file rollback · `matikanOtomatis` now reports
+· `catatUbah` onChange trigger for deleted rows · honest blast radius on multi-cell edits ·
+`jagaOtomatis_` watchdog (missing triggers, files stuck in `Gagal`, stale backup).
+
+### NOT fixed — next job, in this order
+
+1. **`petaSeri_` line 414 — every sale to the pabrik is rejected.** The `JUAL PABRIK` exemption is
+   on the stored nota; it must be on the **incoming** one. Sell side is dead until this is fixed.
+2. **`buatNotaCetak` 1032/1036 — secrecy gate fails OPEN.** Invert to
+   `IF(E3="UNTUK SAYA", pabrik…, "")` and add `setAllowInvalid(false)`.
+3. **`buatNotaCetak` 1036–1037 — printed CUAN is the freight cost**, not profit. Needs the buy↔sell
+   join via `NO NOTA JUAL`; show blank until the sale exists.
+4. **Line 274 — `Number()` instead of a real parser.** `Number("55.000")` = 55. `angka_()` is
+   written, never called, and would fail the same way. Needs an Indonesian number parser used
+   everywhere.
+5. **No `LockService` anywhere** — five reviewers found this independently. Three lines in `cekInbox`.
+6. `folder_()` returns **trashed** folders; `backupMingguan` never prunes; `hapusMigrasi` has no
+   confirmation and no backup.
+
+### Decision Aldi owes (not code)
+
+**Never give an agen access to the file.** The NOTA CETAK modes are not access control — COMPILE,
+ITEM, DASHBOARD and RINGKASAN all carry pabrik money. Export the agen block as a PDF instead.
+Also worth checking: the file was world-editable this morning, so its bound Apps Script was too —
+look at File → Version history and the trigger list for anything not from Lancelot.
+
+## 🔴 LOG 20:05 WIB — STOPPED AT PLAN QUOTA 100%. Lancelot v8 written but NOT pasted. 3 real bugs found.
+
+**STILL NOT KPM. Zero repo files touched all day** except this note. KPM state unchanged since 08:36.
+
+### The exact next command
+
+Open the Apps Script project **Lancelot** (standalone, opens the sheet by ID) and paste the current
+`Lancelot.gs`, then run in order:
+`lancelotSelfCheck` → `pasangSheet` → `bersihkanTabLama` → `migrasiDataLama` → `buatSemuaTampilan`
+→ `cekKualitas` → `nyalakanOtomatis`.
+
+**BUT DO NOT PASTE YET — three confirmed bugs are still unfixed** (below). Fix them into the file
+first; that was his explicit instruction: *"i rather give u all the time to learn first then we
+update the code at last, i dont want to update it everytime u learn a new thing."*
+
+File: `C:\Users\ASUS\AppData\Local\Temp\claude\D--APP-DEVELOPMENT-kpm-inventory-main-FILES-kpm-inventory-main\9dacc95f-c044-4e31-9c14-4e32adc2ddab\scratchpad\Lancelot.gs`
+(1083 lines, syntax-checked with `node --check`, never executed by me.)
+
+### What is live in his sheet right now
+
+Sheet `1qBbfEsuYQu0CWMGzzYES2xKCn0PMVseG_CodZ0QUPAQ`, now owned by `adikaryasukses99` and no longer
+world-editable. He ran the **older** v6 build successfully: NOTA + ITEM + masters + LOG, generated
+COMPILE / IN-OUT / RINGKASAN / DASHBOARD / MASALAH, and the Drive inbox watcher. `MASALAH` currently
+shows leftovers from a v6 migration bug that v7+ fixes.
+
+### The three bugs — CONFIRMED against the source, all still in the file
+
+1. **`cekInbox` throws away good notas.** The single `catch` treats a transient Google timeout the
+   same as bad JSON: the file is moved to `Lancelot-Gagal` and **never retried**. Nothing ever reads
+   that folder. Worse: ITEM rows are written *before* the NOTA row, so a timeout between them leaves
+   orphan gulungan, and `data.forEach(tulisNota_)` has no per-nota isolation — nota 1 commits, nota 2
+   throws, and re-dropping the file fails on the duplicate guard. **Fix:** only exile on permanent
+   errors (`/sudah ada|KEMBAR|BENTROK|JSON|wajib/i`), otherwise leave the file in the inbox to retry.
+2. **`matikanOtomatis` silently kills everything.** No trailing underscore, so it sits in the Run
+   dropdown right under `nyalakanOtomatis`. It deletes **all four** triggers — inbox, nightly check,
+   weekly backup, edit audit — with no `catat_` and no `lapor_`. **Fix:** count and report.
+3. **`catatEdit` cannot see a deleted row.** `onEdit` does not fire for structural changes (that is
+   `onChange`/`REMOVE_ROW`), and `e.oldValue` is undefined on multi-cell paste. Deleting a NOTA row
+   *and* its ITEM rows together is completely silent. **Fix:** add an `onChange` trigger, and log
+   `getNumRows()x getNumColumns()` so the blast radius is honest.
+
+### Trust level on the hunt
+
+48 findings raised, **45 of the verify agents died on the session limit**. Only 3 got adversarially
+confirmed. The other 45 are **unverified, not disproven** — re-run when quota allows:
+`Workflow({scriptPath: "C:\Users\ASUS\.claude\projects\D--APP-DEVELOPMENT-kpm-inventory-main-FILES-kpm-inventory-main\9dacc95f-c044-4e31-9c14-4e32adc2ddab\workflows\scripts\lancelot-failure-hunt-wf_a8795bf0-530.js", resumeFromRunId: "wf_a8795bf0-530"})`
+
+### WAITING ON ALDI
+
+Nothing. He owes no answer. Design is settled and approved; the spec is at
+`https://claude.ai/code/artifact/8f6c4244-b668-44c2-9b8e-337c9d0ad794`.
 
 ## ✅ LOG 13:11 WIB — NOT KPM. Built Lancelot, the tobacco-ledger bookkeeper. Zero repo files touched.
 
