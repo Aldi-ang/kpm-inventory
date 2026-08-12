@@ -815,7 +815,7 @@ const handleGitHubMirror = async () => {
 
   const calculateStrength = (pass) => {
       let score = 0;
-      if (!pass) return { score: 0, label: "AWAITING INPUT", color: "text-slate-400", bar: "bg-slate-800" };
+      if (!pass) return { score: 0, label: "AWAITING INPUT", color: "text-[#8b7256]", bar: "bg-[#26211c]" };
       if (pass.length >= 8) score++;
       if (/[a-z]/.test(pass)) score++;
       if (/[A-Z]/.test(pass)) score++;
@@ -3673,7 +3673,7 @@ const handleGitHubMirror = async () => {
                         <div className="mb-6 text-center border-b border-[#ff9d00]/30 pb-4 animate-fade-in">
                             <h3 className="text-xl font-black text-white uppercase tracking-widest mb-1">Welcome to {appSettings?.companyName || "The Platform"}</h3>
                             <p className="text-[#ff9d00] text-[10px] uppercase tracking-[0.2em] font-bold">First-Time Setup: Initialize Vault</p>
-                            <p className="text-slate-400 text-[10px] mt-2 leading-relaxed">Your Architect has provisioned your clearance. Create your Master Credentials to secure your database and finalize your account migration.</p>
+                            <p className="text-[#8b7256] text-[10px] mt-2 leading-relaxed">Your Architect has provisioned your clearance. Create your Master Credentials to secure your database and finalize your account migration.</p>
                         </div>
                     ) : (
                         <p className="text-[10px] text-[#ff9d00] uppercase font-bold mb-4 tracking-widest text-center">Create Administrator Credentials</p>
@@ -3695,7 +3695,7 @@ const handleGitHubMirror = async () => {
                                 <span className={`text-[11px] font-black tracking-widest uppercase ${calculateStrength(setupPassword).color}`}>
                                     {calculateStrength(setupPassword).label}
                                 </span>
-                                <span className="text-[11px] text-slate-400 font-mono">LVL {calculateStrength(setupPassword).score}/5</span>
+                                <span className="text-[11px] text-[#8b7256] font-mono">LVL {calculateStrength(setupPassword).score}/5</span>
                             </div>
                             <div className="flex gap-1 h-1.5">
                                 {[1, 2, 3, 4, 5].map(level => (
@@ -3718,7 +3718,7 @@ const handleGitHubMirror = async () => {
                     
                     <button 
                         onClick={handleSetupSecurity} 
-                        className={`w-full py-4 font-bold uppercase text-xs tracking-[0.2em] transition-all shadow-lg font-mono border ${calculateStrength(setupPassword).score === 5 && setupSecret ? 'bg-[#ff9d00]/10 hover:bg-[#ff9d00]/25 border-[#ff9d00]/50 text-[#ff9d00] hover:text-[#f0e2c0] cursor-pointer' : 'bg-black border-slate-700 text-slate-400 cursor-not-allowed opacity-50'}`}
+                        className={`w-full py-4 font-bold uppercase text-xs tracking-[0.2em] transition-all shadow-lg font-mono border ${calculateStrength(setupPassword).score === 5 && setupSecret ? 'bg-[#ff9d00]/10 hover:bg-[#ff9d00]/25 border-[#ff9d00]/50 text-[#ff9d00] hover:text-[#f0e2c0] cursor-pointer' : 'bg-black border-[#3e3226] text-[#8b7256] cursor-not-allowed opacity-50'}`}
                         disabled={calculateStrength(setupPassword).score < 5 || !setupSecret}
                     >
                         Save Credentials
@@ -3728,7 +3728,7 @@ const handleGitHubMirror = async () => {
                 /* CASE 2.5: OTP VERIFICATION */
                 <div className="space-y-4 animate-fade-in">
                     <p className="text-[10px] text-[#ff9d00] uppercase font-bold mb-4 tracking-widest">Verify Email Authorization</p>
-                    <p className="text-xs text-slate-400 mb-4">A 6-digit code has been sent to your registered Admin Email.</p>
+                    <p className="text-xs text-[#8b7256] mb-4">A 6-digit code has been sent to your registered Admin Email.</p>
                     <input type="number" placeholder="• • • • • •" className="w-full bg-black border border-[#ff9d00]/30 p-4 text-center text-[#f0e2c0] text-2xl outline-none tracking-[0.5em] focus:border-[#ff9d00] font-mono transition-colors" value={inputOtp} onChange={(e) => setInputOtp(e.target.value)} autoFocus maxLength={6} onKeyDown={(e) => e.key === 'Enter' && handleVerifyOtp()} />
                     <div className="flex gap-3 mt-4">
                         <button onClick={() => { setIsOtpMode(false); setIsResetMode(true); setInputOtp(""); }} className="flex-1 py-3 border border-white/10 text-gray-400 text-xs font-bold uppercase hover:text-white hover:bg-white/5 font-mono tracking-widest transition-colors">Abort</button>
@@ -3826,7 +3826,7 @@ const handleGitHubMirror = async () => {
             <div className="fixed inset-0 z-[9999] bg-black/95 flex flex-col items-center justify-center text-center p-6 font-mono">
                 <ShieldAlert size={64} className="text-red-600 mb-6 animate-pulse" />
                 <h2 className="text-3xl font-black text-white uppercase tracking-[0.25em] mb-2">Access Denied</h2>
-                <p className="text-slate-400 text-xs font-bold uppercase tracking-widest max-w-md leading-relaxed mb-8">
+                <p className="text-[#8b7256] text-xs font-bold uppercase tracking-widest max-w-md leading-relaxed mb-8">
                     The email <span className="text-red-500">[{user.email}]</span> is not registered in the KPM Employee Directory. Contact your System Administrator for clearance.
                 </p>
                 <button onClick={handleLogout} className="px-10 py-4 border-2 border-red-600/50 text-red-500 font-black uppercase text-xs hover:bg-red-900/30 transition-all shadow-[0_0_15px_rgba(220,38,38,0.2)]">
@@ -3840,13 +3840,13 @@ const handleGitHubMirror = async () => {
             <div className="fixed inset-0 z-[9999] bg-black/95 flex flex-col items-center justify-center text-center p-6 font-mono">
                 <CloudOff size={64} className="text-amber-500 mb-6 animate-pulse" />
                 <h2 className="text-3xl font-black text-white uppercase tracking-[0.25em] mb-2">Can't Verify You Yet</h2>
-                <p className="text-slate-400 text-xs font-bold uppercase tracking-widest max-w-md leading-relaxed mb-8">
+                <p className="text-[#8b7256] text-xs font-bold uppercase tracking-widest max-w-md leading-relaxed mb-8">
                     We can't reach the internet right now, and this device hasn't confirmed the account <span className="text-amber-500">[{user.email}]</span> online before. Connect to the internet at least once to unlock offline access, then try again.
                 </p>
                 <button onClick={() => window.location.reload()} className="px-10 py-4 border-2 border-amber-500/50 text-amber-400 font-black uppercase text-xs hover:bg-amber-900/30 transition-all shadow-[0_0_15px_rgba(245,158,11,0.2)] mb-4">
                     Retry
                 </button>
-                <button onClick={handleLogout} className="px-10 py-4 border-2 border-slate-600/50 text-slate-400 font-black uppercase text-xs hover:bg-slate-800/30 transition-all">
+                <button onClick={handleLogout} className="px-10 py-4 border-2 border-[#5c4b3a]/50 text-[#8b7256] font-black uppercase text-xs hover:bg-[#26211c]/30 transition-all">
                     Disconnect Session
                 </button>
             </div>
@@ -3854,8 +3854,11 @@ const handleGitHubMirror = async () => {
             <>
             {/* 🚀 SUSPENSE BOUNDARY: Master wrapper for all lazy-loaded tabs */}
             <Suspense fallback={
-                <div className="flex flex-col items-center justify-center min-h-[60vh] text-emerald-500 font-mono space-y-4">
-                    <div className="w-12 h-12 border-4 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin"></div>
+                /* palette law: this spinner was the first thing the app ever showed, and it
+                   showed it in a green nothing else in the app uses. A JSX {comment} cannot go
+                   here — inside fallback={...} this is a JS expression slot, not children. */
+                <div className="flex flex-col items-center justify-center min-h-[60vh] text-[#ff9d00] font-mono space-y-4">
+                    <div className="w-12 h-12 border-4 border-[#ff9d00]/20 border-t-[#ff9d00] rounded-full animate-spin"></div>
                     <p className="animate-pulse text-xs tracking-[0.2em] uppercase mt-4">Downloading Tactical Modules...</p>
                 </div>
             }>
@@ -3870,7 +3873,7 @@ const handleGitHubMirror = async () => {
                         </div>
                     </div>
                     <h2 className="text-3xl font-black text-white uppercase tracking-[0.25em] mb-2 font-mono">Restricted Access</h2>
-                    <p className="text-slate-400 text-xs font-bold uppercase tracking-widest max-w-xs leading-relaxed mb-8">Admin Clearance Required</p>
+                    <p className="text-[#8b7256] text-xs font-bold uppercase tracking-widest max-w-xs leading-relaxed mb-8">Admin Clearance Required</p>
                     <button onClick={() => setShowAdminLogin(true)} className="px-10 py-4 border-2 border-white text-white font-black uppercase text-xs hover:bg-white hover:text-black transition-all">Unlock System</button>
                 </div>
             ) : (
@@ -3950,7 +3953,7 @@ const handleGitHubMirror = async () => {
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                       placeholder="Search inventory by name..."
-                      className="w-full bg-slate-900 border border-slate-700 rounded-lg py-2 pl-9 pr-3 text-sm text-white outline-none focus:border-[#ff9d00] transition-colors"
+                      className="w-full bg-[#0f0e0d] border border-[#3e3226] rounded-lg py-2 pl-9 pr-3 text-sm text-white outline-none focus:border-[#ff9d00] transition-colors"
                   />
               </div>
 
@@ -4112,7 +4115,7 @@ const handleGitHubMirror = async () => {
                   
                   {/* 🚀 HQ ONLY: FACTORY PROCUREMENT ENGINE (RESI, PHOTOS, DLL) */}
                   {isAdmin && (
-                      <div className="mb-12 pb-12 border-b-4 border-slate-800 border-dashed">
+                      <div className="mb-12 pb-12 border-b-4 border-[#3e3226] border-dashed">
                           <RestockVaultView 
                               inventory={inventory} 
                               procurements={procurements}
@@ -4291,12 +4294,12 @@ const handleGitHubMirror = async () => {
                   {/* EDIT FOLDER MODAL */}
                   {editingFolder && (
                       <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
-                          <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl w-full max-w-sm shadow-2xl">
+                          <div className="bg-white dark:bg-[#26211c] p-6 rounded-2xl w-full max-w-sm shadow-2xl">
                               <h3 className="font-bold text-lg mb-4 dark:text-white">Rename Folder</h3>
                               <form onSubmit={processFolderEdit} className="space-y-4">
-                                  <div><label className="text-xs font-bold text-slate-400">Date</label><input name="newDate" type="date" defaultValue={editingFolder.oldDate} className="w-full p-2 rounded border dark:bg-slate-900 dark:border-slate-600 dark:text-white"/></div>
-                                  <div><label className="text-xs font-bold text-slate-400">Location Name</label><input name="newReason" defaultValue={editingFolder.oldReason} className="w-full p-2 rounded border dark:bg-slate-900 dark:border-slate-600 dark:text-white"/></div>
-                                  <div className="flex gap-2 pt-2"><button type="button" onClick={()=>setEditingFolder(null)} className="flex-1 py-2 bg-slate-100 dark:bg-slate-700 rounded-lg">Cancel</button><button className="flex-1 py-2 bg-orange-500 text-white rounded-lg font-bold">Save Move</button></div>
+                                  <div><label className="text-xs font-bold text-[#8b7256]">Date</label><input name="newDate" type="date" defaultValue={editingFolder.oldDate} className="w-full p-2 rounded border dark:bg-[#0f0e0d] dark:border-[#5c4b3a] dark:text-white"/></div>
+                                  <div><label className="text-xs font-bold text-[#8b7256]">Location Name</label><input name="newReason" defaultValue={editingFolder.oldReason} className="w-full p-2 rounded border dark:bg-[#0f0e0d] dark:border-[#5c4b3a] dark:text-white"/></div>
+                                  <div className="flex gap-2 pt-2"><button type="button" onClick={()=>setEditingFolder(null)} className="flex-1 py-2 bg-[#d2cec7] dark:bg-[#3e3226] rounded-lg">Cancel</button><button className="flex-1 py-2 bg-orange-500 text-white rounded-lg font-bold">Save Move</button></div>
                               </form>
                           </div>
                       </div>
@@ -4374,15 +4377,18 @@ const handleGitHubMirror = async () => {
               {showFlightRecorder && (
                   <div className="fixed inset-0 z-[9999] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
                       <div className="bg-[#0a0a0a] border border-white/20 w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[80vh]">
-                          <div className="bg-slate-900 p-4 border-b border-white/10 flex justify-between items-center shrink-0">
-                              <h3 className="text-white font-black uppercase tracking-widest flex items-center gap-2"><Activity size={18} className="text-blue-500"/> Flight Recorder</h3>
-                              <button onClick={() => setShowFlightRecorder(false)} className="text-slate-400 hover:text-red-500"><X size={20}/></button>
+                          <div className="bg-[#0f0e0d] p-4 border-b border-[#3e3226] flex justify-between items-center shrink-0">
+                              <h3 className="text-white font-black uppercase tracking-widest flex items-center gap-2"><Activity size={18} className="text-[#ff9d00]"/> Flight Recorder</h3>
+                              <button onClick={() => setShowFlightRecorder(false)} className="text-[#8b7256] hover:text-red-500"><X size={20}/></button>
                           </div>
                           
-                          <div className="p-4 bg-slate-900/50 flex justify-between items-center border-b border-white/5 shrink-0">
+                          <div className="p-4 bg-[#0f0e0d]/60 flex justify-between items-center border-b border-[#3e3226]/60 shrink-0">
                               <div className="flex gap-4">
-                                  <div className="text-center"><p className="text-[10px] text-slate-400 uppercase tracking-widest font-bold">Pending Receipts</p><p className="text-xl font-black text-orange-500">{pendingCount.transactions}</p></div>
-                                  <div className="text-center"><p className="text-[10px] text-slate-400 uppercase tracking-widest font-bold">Pending NOO</p><p className="text-xl font-black text-blue-500">{pendingCount.noo}</p></div>
+                                  <div className="text-center"><p className="text-[10px] text-[#8b7256] uppercase tracking-widest font-bold">Pending Receipts</p><p className="text-xl font-black text-[#ff9d00]">{pendingCount.transactions}</p></div>
+                                  {/* was text-blue-500 — slate and blue were the only two colours
+                                      in this panel that meant nothing. Pending NOO is a count, not
+                                      an alarm, so it takes the quieter gold. */}
+                                  <div className="text-center"><p className="text-[10px] text-[#8b7256] uppercase tracking-widest font-bold">Pending NOO</p><p className="text-xl font-black text-[#c9a227]">{pendingCount.noo}</p></div>
                               </div>
                               <button onClick={clearFlightRecorder} className="px-3 py-1.5 bg-red-900/30 text-red-500 border border-red-500/30 rounded text-[11px] uppercase font-bold tracking-widest hover:bg-red-500 hover:text-white transition-colors">Clear Logs</button>
                           </div>
@@ -4391,18 +4397,18 @@ const handleGitHubMirror = async () => {
                               
                               {/* 🚀 THE OFFLINE WAITING ROOM 🚀 */}
                               {pendingTxData && pendingTxData.length > 0 && (
-                                  <div className="mb-6 border-b-2 border-slate-700 pb-4">
+                                  <div className="mb-6 border-b-2 border-[#3e3226] pb-4">
                                       <h3 className="text-orange-400 font-black uppercase tracking-widest text-xs mb-3 flex items-center gap-2">
                                           <Database size={14}/> Ghost Ledger Queue ({pendingTxData.length})
                                       </h3>
                                       
                                       <div className="space-y-3 max-h-64 overflow-y-auto custom-scrollbar pr-2">
                                           {pendingTxData.map((tx, idx) => (
-                                              <details key={idx} className="bg-slate-800 border border-orange-500/30 rounded-lg shadow-inner group">
+                                              <details key={idx} className="bg-[#26211c] border border-orange-500/30 rounded-lg shadow-inner group">
                                                   <summary className="p-3 flex justify-between items-center cursor-pointer select-none list-none outline-none">
                                                       <div>
                                                           <span className="text-white font-bold uppercase block text-xs">{tx.customerName}</span>
-                                                          <span className="text-slate-400 text-[10px] uppercase">{tx.date}</span>
+                                                          <span className="text-[#8b7256] text-[10px] uppercase">{tx.date}</span>
                                                       </div>
                                                       <div className="flex items-center gap-3">
                                                           <span className="bg-orange-900/50 text-orange-400 font-bold px-2 py-1 rounded text-[10px] uppercase border border-orange-700/50">
@@ -4415,18 +4421,18 @@ const handleGitHubMirror = async () => {
                                                   </summary>
                                                   
                                                   {/* EXPANDED RECEIPT DETAILS */}
-                                                  <div className="p-3 pt-0 border-t border-slate-700/50 mt-1 bg-black/20 rounded-b-lg">
+                                                  <div className="p-3 pt-0 border-t border-[#3e3226]/50 mt-1 bg-black/20 rounded-b-lg">
                                                       <div className="space-y-1 mb-2 mt-2">
                                                           {tx.items?.map((item, i) => (
-                                                              <div key={i} className="flex justify-between text-[10px] text-slate-300 border-b border-slate-700/30 pb-1 mb-1">
-                                                                  <span>{item.qty} {item.unit} <span className="font-bold text-slate-200">{item.name}</span></span>
+                                                              <div key={i} className="flex justify-between text-[10px] text-[#d4c5a3] border-b border-[#3e3226]/30 pb-1 mb-1">
+                                                                  <span>{item.qty} {item.unit} <span className="font-bold text-[#f5e6c8]">{item.name}</span></span>
                                                                   <span className="font-mono">Rp {new Intl.NumberFormat('id-ID').format(item.calculatedPrice * item.qty)}</span>
                                                               </div>
                                                           ))}
                                                       </div>
                                                       
-                                                      <div className="flex justify-between items-center text-xs border-t border-slate-600 pt-2 mt-2">
-                                                          <span className="text-slate-400 uppercase font-bold text-[10px]">Total Revenue</span>
+                                                      <div className="flex justify-between items-center text-xs border-t border-[#5c4b3a] pt-2 mt-2">
+                                                          <span className="text-[#8b7256] uppercase font-bold text-[10px]">Total Revenue</span>
                                                           <span className="text-orange-400 font-black font-mono text-sm">Rp {new Intl.NumberFormat('id-ID').format(tx.total)}</span>
                                                       </div>
                                                   </div>
@@ -4438,15 +4444,19 @@ const handleGitHubMirror = async () => {
                                       
                                      
 
-                              <h3 className="text-slate-400 font-black uppercase tracking-widest text-[10px] mb-2 flex items-center gap-2">
+                              <h3 className="text-[#8b7256] font-black uppercase tracking-widest text-[10px] mb-2 flex items-center gap-2">
                                   <Activity size={12}/> System Telemetry Logs
                               </h3>
 
                               {syncLogs.length === 0 ? (
-                                  <p className="text-slate-400 text-center py-10 text-xs uppercase tracking-widest">No sync events recorded.</p>
+                                  <p className="text-[#8b7256] text-center py-10 text-xs uppercase tracking-widest">No sync events recorded.</p>
                               ) : (
+                                  /* SUCCESS was green and the resting row was slate. Gold for done —
+                                     the same plate the rest of the app uses for it — and the
+                                     resting row is just the panel's own surface. Red and orange
+                                     stay: those two are earning attention. */
                                   syncLogs.map((log) => (
-                                      <div key={log.id} className={`p-3 rounded border text-xs leading-relaxed ${log.type === 'ERROR' ? 'bg-red-950/20 border-red-900/50 text-red-400' : log.type === 'SUCCESS' ? 'bg-emerald-950/20 border-emerald-900/50 text-emerald-400' : log.type === 'OFFLINE' ? 'bg-orange-950/20 border-orange-900/50 text-orange-400' : 'bg-slate-900/50 border-slate-800 text-slate-300'}`}>
+                                      <div key={log.id} className={`p-3 rounded border text-xs leading-relaxed ${log.type === 'ERROR' ? 'bg-red-950/20 border-red-900/50 text-red-400' : log.type === 'SUCCESS' ? 'bg-[#c9a227]/10 border-[#8a6a2f]/60 text-[#d4af37]' : log.type === 'OFFLINE' ? 'bg-orange-950/20 border-orange-900/50 text-orange-400' : 'bg-[#0f0e0d] border-[#3e3226] text-[#d4c5a3]'}`}>
                                           <div className="text-[11px] opacity-50 mb-1">{new Date(log.timestamp).toLocaleString()}</div>
                                           <div>{log.message}</div>
                                       </div>

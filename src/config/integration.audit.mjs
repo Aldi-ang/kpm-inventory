@@ -1036,9 +1036,15 @@ check(G25, 'its body opens sideways, out of the rail',
   'slider cannot be hit — but the overflow must go back to hidden when the rail CLOSES, or an ' +
   'expanded player is left floating over the app with no rail behind it. lg:static is what ' +
   'keeps the desk layout exactly as it was');
-check(G25, 'no blue, slate or green left in the app chrome',
-  !BANNED_HUE.test(shellSrc) && syncBlock.length > 100 && !BANNED_HUE.test(syncBlock),
-  'palette law: slate IS the blue, and the sync pill was the last green in the header');
+/* This used to be scoped to the chrome and the sync pill alone, because App.jsx still had
+   emerald and slate deeper in — the boot spinner, the Flight Recorder, the setup screens, the
+   password-strength meter. All 35 of those sites are swept now, so the check covers the WHOLE
+   file. The narrow version was the honest thing to write while an exception existed; leaving it
+   narrow once the exception is gone would just be somewhere for the next green to hide. */
+check(G25, 'no blue, slate or green left in the shell, App or the player',
+  !BANNED_HUE.test(shellSrc) && !BANNED_HUE.test(appCode) && !BANNED_HUE.test(musicSrc),
+  'palette law: slate IS the blue. The print receipt is the ONLY exemption and it lives in its ' +
+  'own @media print block in theme.css, not in any of these three files');
 
 /* ── report ──────────────────────────────────────────────────────────────── */
 let last = '';
