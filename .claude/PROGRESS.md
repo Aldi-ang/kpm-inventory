@@ -1,6 +1,56 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-12 14:10 WIB** · branch `phase0-solid-ground` · last code commit: run `git log -1`
+**Updated: 2026-08-12 14:10 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
+**Lancelot session last wrote 17:20 WIB** — see the 17:15 entry. Two clocks, two sessions, one file.
+
+## 🧭 WHICH TRACK IS WHICH — check this before editing anything below
+
+Two unrelated systems log into this one file. **Never edit an entry from the other track**, and
+never merge, re-sort or "tidy" across them: the timestamps interleave, so a chronological cleanup
+is exactly what collapses one track into the other. Add your own entry at the top and leave every
+paragraph you did not write alone.
+
+| Track | What it is | Its log entries (by heading time) |
+|---|---|---|
+| 🟠 **KPM app** — this repo | The React inventory app. Files: `src/**`, `firestore.rules`, `.claude/**`. Verified by `npm run build` + `node src/config/integration.audit.mjs`. | 14:10, 13:25, 07:45, 07:43, 08:36, 13:20 (freeze), 08:20, 03:28, 03:12, 03:10, 21:06, 20:56, 20:52, 20:42, 20:22, and the CLOSED entries |
+| 🟢 **Lancelot / tobacco ledger** — NOT this repo | Aldi's tembakau bookkeeping in Google Sheets + Apps Script (`Lancelot.gs`), the Drive nota inbox, and the A-Brain vault. **Touches zero files in this repo.** | 17:15, 13:40, 13:18, 13:14, 13:11, 07:52, 07:24, 01:05, 00:37, 20:05, and 13:20 / 08:02 (tab audit) |
+
+Two headings read `13:20` and belong to **different tracks** — one is the customers-listener
+freeze fix in the app, one is the sheet's tab audit. Read the first line of an entry before
+assuming which is which; that collision is the most likely place for the two to get mixed up.
+
+The KPM app's own audit is the tiebreaker for this track: if a change is real, it is asserted in
+`src/config/integration.audit.mjs`, currently **258 checks**. Nothing in the tobacco track appears
+there, and nothing should.
+
+## 📌 HOW TO WRITE IN THIS FILE WHEN OTHER SESSIONS ARE ALSO WRITING — read before editing
+
+Aldi's instruction, 2026-08-12: *"make sure that on the progress.md u put another paragraph that
+didnt disturb the notes made from the KPM app, i want alucard have this thinking to not collapse
+the notes from another session, because there will be more than 1 alucard use is several sessions"*.
+
+**More than one session writes this file at the same time.** Today two ran in parallel: the KPM app
+work (`src/`, this repo) and the Lancelot tobacco ledger (`A-Brain/`, a different repo). Neither one
+owns the file. This block was written after an `Edit` failed with "file has been modified since
+read" mid-sentence — the collision is not hypothetical.
+
+The rules, in order:
+
+1. **Add, never rewrite.** `Edit` with a unique anchor. Never `Write` this whole file, and never
+   regenerate it from what you remember — you will silently delete a section you never read.
+2. **Prepend your entry; leave every other entry byte-for-byte alone.** Even if another session's
+   entry looks stale, wrong, or superseded, it is not yours to fix. Say so inside your own entry.
+3. **Label whose work it is** in the first line of your entry — `(KPM app session)` or
+   `(Lancelot session)`. An unlabelled entry gets blamed on the wrong session by whoever reads next.
+4. **Never claim another session's diffs.** Before writing "I changed X", check `git status` against
+   what you actually edited. The Stop hook fires on ANY changed file in this repo, including files a
+   different session touched — that is not evidence you touched them. This happened twice today.
+5. **Do not trim the LOG while another session is running**, and never trim entries that are still
+   uncommitted — `git log` cannot give back what was never committed.
+6. **Re-read immediately before you edit.** The header timestamp moving is the tell that someone
+   else wrote in the meantime. If an `Edit` fails as stale, re-read and re-apply — do not force it.
+7. **The quota is one shared pool.** Two sessions running hard halve each other's runway, and the
+   `[plan-quota]` percentage covers both. Size your work against the whole pool, not your own chat.
 
 ## ✅ LOG 14:10 WIB — his six rail notes, all done. 258/258, drag re-measured live.
 
