@@ -949,9 +949,27 @@ check(G25, 'the three-line square is gone at every width',
 check(G25, 'the ribbon can be moved to wherever his thumb is, and stays there',
   /localStorage\.setItem\('kpm-ribbon-y'/.test(shellSrc) &&
   /d\.axis = Math\.abs\(dy\) > Math\.abs\(dx\) \? 'y' : 'x'/.test(shellSrc) &&
-  /style=\{\{ touchAction: 'none', top: ribbonY \}\}/.test(shellSrc),
+  /top: ribbonY, '--hold-ms'/.test(shellSrc),
   'his words: "our thumb usually position differently when using phone" — the axis must be ' +
   'decided ONCE per gesture or a diagonal thumb-swipe stutters between moving and opening');
+/* HIS SECOND REPORT ON THE SAME CONTROL: "sidebar hold button is too easy to be moved, there
+   should be like 3 second press and hold to move it instead". Moving is rare and deliberate;
+   opening is the everyday act. So a vertical drag that has NOT earned the hold must do nothing
+   at all — not move the ribbon, and not open the panel either. Drop the `d.armed` gate and a
+   slanted thumb reaching for the menu drags the ribbon again, which is the whole bug. */
+check(G25, 'moving the ribbon costs a three-second hold',
+  /const RIBBON_HOLD_MS = 3000;/.test(shellSrc) &&
+  /if \(pullRef\.current\) pullRef\.current\.armed = true;/.test(shellSrc) &&
+  /if \(d\.armed\) \{/.test(shellSrc) &&
+  /if \(d\.axis === 'y'\) return;/.test(shellSrc) &&
+  /cancelHold\(\);\s*\n\s*setRibbonHold\(null\);/.test(shellSrc),
+  'a travelling finger must cancel the hold, and an un-armed vertical drag must be inert');
+check(G25, 'the hold is visible while it is being counted',
+  /animation: kpmEdgeArm var\(--hold-ms, 3000ms\)/.test(themeCss) &&
+  /\.kpm-edge-ribbon\.armed \.kpm-edge-grip/.test(themeCss),
+  'his ask: "when we hold it, the sidebar button will become a little bit bigger so we know ' +
+  'that we holding it" — the swell is the only signal that a 3s hold has landed, so it must ' +
+  'survive lite mode and reduced motion, which is why those selectors are more specific');
 /* "instead of 1 line of sidebar i want it to be 2 colomn per row, to eliminate scrolling
    because there is so many features, especially for higher tier" */
 check(G25, 'the rail is two columns wide, so a full menu fits without scrolling',
@@ -1018,8 +1036,17 @@ check(G25, 'the ribbon breathes, and holds still when motion is off',
 check(G25, 'the three header controls wear the one plate',
   /className=\{`kpm-chip kpm-bell relative \$\{unreadCount > 0 \? 'on' : ''\} \$\{ringing \? 'ringing' : ''\}`\}/.test(strip(fs.readFileSync('src/components/NotificationBell.jsx', 'utf8'))) &&
   /className=\{`kpm-chip relative \$\{isOnline \? '' : 'warn animate-pulse'\}`\}/.test(appCode) &&
-  /className="kpm-chip"/.test(shellSrc),
+  /className=\{`kpm-theme-switch \$\{darkMode \? '' : 'is-light'\}`\}/.test(shellSrc),
   'they were a green pill, a white-outlined square and a bare icon standing 24px apart');
+/* "make sure that it background change from white to black according to the changes" — the TRACK
+   is the readout, not just a housing for the knob, and the knob shows the state you are IN. A
+   toggle that displays its destination instead is the oldest way to make one unreadable. */
+check(G25, 'the theme switch turns white and black with the theme',
+  /\.kpm-theme-switch \{[\s\S]{0,300}?background-color: #0f0e0d/.test(themeCss) &&
+  /\.kpm-theme-switch\.is-light \{ background-color: #f3efe6/.test(themeCss) &&
+  /role="switch"/.test(shellSrc) && /aria-checked=\{!darkMode\}/.test(shellSrc),
+  'the track carries the answer; without is-light it is a knob sliding on a black bar and the ' +
+  'change he asked for never happens');
 /* Anchored on the Tailwind PREFIX, not on the colour name alone. A bare /slate-/ matches
    `translate-x-full` — tranSLATE-x — so the first version of this check failed on the panel's
    own slide animation and would have failed on any future one. */

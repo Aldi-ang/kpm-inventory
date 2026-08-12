@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-12 20:10 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
+**Updated: 2026-08-12 21:05 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
 **Lancelot session last wrote 17:20 WIB** — see the 17:15 entry. Two clocks, two sessions, one file.
 
 ## 🧭 WHICH TRACK IS WHICH — check this before editing anything below
@@ -51,6 +51,30 @@ The rules, in order:
    else wrote in the meantime. If an `Edit` fails as stale, re-read and re-apply — do not force it.
 7. **The quota is one shared pool.** Two sessions running hard halve each other's runway, and the
    `[plan-quota]` percentage covers both. Size your work against the whole pool, not your own chat.
+
+## ✅ LOG 21:05 WIB — theme switch + hold-to-move. DELETE BUTTONS STILL THE ONLY OPEN JOB.
+
+269/269. Two asks, both landed.
+
+**The theme switch.** His note: *"make sure that it background change from white to black
+according to the changes"*. It is a real switch now, not a chip: the **track** is the readout —
+black with the knob left in dark, white with the knob right in light — and the knob shows the
+state you are **IN**, not the one you would get. The knob overshoots and the track does not; that
+mismatch is deliberate, a lever snaps past centre while the panel behind it just changes colour.
+
+**Moving the ribbon now costs a 3-second hold.** His report: *"sidebar hold button is too easy to
+be moved"*. It was — ANY vertical drag repositioned it, so a slanted thumb reaching for the menu
+dragged the thing instead of opening it. Now: hold still 3s → it **swells** (that swell is both
+"I know you are holding" and the progress bar) → then it follows your finger. Any movement before
+it fires cancels the hold, and **an un-armed vertical drag is inert** — it neither moves the
+ribbon nor opens the panel. That inertness is the fix; do not "helpfully" make it fall back to
+opening.
+
+⚠️ The arming/armed CSS is deliberately MORE SPECIFIC than the lite-mode and reduced-motion rules.
+The swell is the only signal a 3s hold has landed — remove it and the control is unusable, not
+merely quieter.
+
+**Not verified by eye:** the switch, the pill and the hold all need his phone.
 
 ## ✅ LOG 20:10 WIB — the MusicPill is built. Only the DELETE BUTTONS are still queued.
 
@@ -262,6 +286,23 @@ Fixed inside `cek()` (A-Brain `34ea414`), not at the six call sites.
 see the bug. New harness `scratchpad/selfcheck.js` evaluates the whole file with the Google
 services stubbed and calls the REAL `lancelotSelfCheck`, which returns `semua` (a boolean). It now
 returns `true`. Never re-implement the thing under test.
+
+## ✅ LOG 20:25 WIB (Lancelot session) — agen check shipped. A-Brain `259c078`. 76 checks green.
+
+His words: *"lancelot should ask me everytime for the nota name, if there is name in the nota u
+should make sure that the nota is belong to that agen or not"*.
+
+Split deliberately in two: **the agent asks, the script refuses.** `lancelot.md` now forbids
+inferring the agen from the previous nota / filename / folder, requires the question per nota even
+inside a batch, and makes Lancelot read a printed name back to Aldi rather than resolving the
+conflict itself. `cocokAgen_(diminta, diNota, daftar)` is pure, runs BEFORE the duplicate guards,
+and refuses: no agen named · agen absent from `M_AGEN` · printed name disagrees (naming the other
+agen when the printed one is real). Both refusals are permanent and land on PESAN as `AGEN SALAH`.
+`namaRapi_` makes case/spacing not count as identity. An empty `M_AGEN` blocks nothing.
+
+9 new self-check cases, every branch. **Meter blind this turn:** 9router was down and the restart
+could not run (tool classifier briefly unavailable) — retry
+`cmd //c start "" "C:/Users/ASUS/AppData/Roaming/Microsoft/Windows/Start Menu/Programs/Startup/9router.bat"`.
 
 ## ✅ LOG 18:50 WIB (Lancelot session) — TWO-NOTA MODEL BUILT. A-Brain `0e8f84c`. 67 checks green.
 

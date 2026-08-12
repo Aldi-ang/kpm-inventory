@@ -123,6 +123,14 @@ export default function BiohazardTheme({
        horizontal drag opens the panel. The axis is decided once, on the first 6px of
        movement, and then held for the rest of the gesture — deciding it per-event makes a
        diagonal thumb-swipe stutter between the two. */
+    /* null | 'arming' | 'armed'. Drives the swell that tells him the hold is being counted, and
+       then that it has landed. The timer is cleared on unmount as well as on release — a ribbon
+       that leaves the screen mid-hold must not fire into a dead component. */
+    const RIBBON_HOLD_MS = 3000;
+    const [ribbonHold, setRibbonHold] = useState(null);
+    const holdRef = useRef(null);
+    useEffect(() => () => clearTimeout(holdRef.current), []);
+
     const [ribbonY, setRibbonY] = useState(() => {
         if (typeof window === 'undefined') return 0;
         const saved = Number(localStorage.getItem('kpm-ribbon-y'));
@@ -137,23 +145,45 @@ export default function BiohazardTheme({
        Listening on window covers the finger leaving the ribbon just as well. */
     const startRailPull = (e) => {
         if (pullRef.current) return;
-        pullRef.current = { startX: e.clientX, startY: e.clientY, startTop: ribbonY, axis: null, moved: false, wasOpen: isMobileMenuOpen };
+        pullRef.current = { startX: e.clientX, startY: e.clientY, startTop: ribbonY, axis: null, moved: false, wasOpen: isMobileMenuOpen, armed: false };
         setRailPull(isMobileMenuOpen ? 1 : 0);
+
+        /* HOLD THREE SECONDS TO MOVE IT. His report: "sidebar hold button is too easy to be
+           moved". It was — ANY vertical drag repositioned it, so reaching for the menu with a
+           slightly slanted thumb dragged the thing instead of opening it.
+
+           Moving is a rare, deliberate act; opening is the everyday one. So moving now has to be
+           asked for: hold still for three seconds and the ribbon ARMS — it swells while you wait,
+           which is both the "we know that we holding it" he asked for and a progress bar for how
+           much longer. Any movement before it fires cancels the hold, because a finger that is
+           travelling is opening the panel, not settling in to reposition it. */
+        setRibbonHold('arming');
+        holdRef.current = setTimeout(() => {
+            if (pullRef.current) pullRef.current.armed = true;
+            setRibbonHold('armed');
+        }, RIBBON_HOLD_MS);
+        const cancelHold = () => { clearTimeout(holdRef.current); holdRef.current = null; };
 
         const onMove = (ev) => {
             const d = pullRef.current;
             if (!d) return;
             const dx = d.startX - ev.clientX;          // pulling LEFT opens it
             const dy = ev.clientY - d.startY;          // dragging UP/DOWN moves the ribbon
+
+            if (d.armed) {                              // held long enough: the ribbon follows
+                setRibbonY(Math.max(8, Math.min(window.innerHeight - RIBBON_H - 8, d.startTop + dy)));
+                setRailPull(d.wasOpen ? 1 : 0);         // hold the panel still while it is moved
+                return;
+            }
             if (!d.axis && (Math.abs(dx) > 6 || Math.abs(dy) > 6)) {
                 d.axis = Math.abs(dy) > Math.abs(dx) ? 'y' : 'x';
                 d.moved = true;
+                cancelHold();                           // a travelling finger is not a hold
+                setRibbonHold(null);
             }
-            if (d.axis === 'y') {
-                setRibbonY(Math.max(8, Math.min(window.innerHeight - RIBBON_H - 8, d.startTop + dy)));
-                setRailPull(d.wasOpen ? 1 : 0);        // hold the panel still while it is moved
-                return;
-            }
+            /* A vertical drag that never earned the hold does NOTHING — it does not move the
+               ribbon and it does not open the panel. That is the whole point of his report. */
+            if (d.axis === 'y') return;
             if (Math.abs(dx) > 4) d.moved = true;
             const base = d.wasOpen ? RAIL_W : 0;
             setRailPull(Math.max(0, Math.min(1, (base + dx) / RAIL_W)));
@@ -162,16 +192,20 @@ export default function BiohazardTheme({
             window.removeEventListener('pointermove', onMove);
             window.removeEventListener('pointerup', onEnd);
             window.removeEventListener('pointercancel', onEnd);
+            cancelHold();
+            setRibbonHold(null);
             const d = pullRef.current;
             pullRef.current = null;
             if (!d) return;
-            /* Moving the ribbon is not opening the panel. Remembered across sessions, because a
-               position you have to set every time you pick the phone up is not a preference. */
-            if (d.axis === 'y') {
+            /* Moving the ribbon is not opening the panel, and a three-second hold is not a tap
+               either. Remembered across sessions, because a position you have to set every time
+               you pick the phone up is not a preference. */
+            if (d.armed) {
                 setRailPull(null);
                 try { localStorage.setItem('kpm-ribbon-y', String(Math.max(8, Math.min(window.innerHeight - RIBBON_H - 8, d.startTop + (ev.clientY - d.startY))))); } catch { /* private mode */ }
                 return;
             }
+            if (d.axis === 'y') { setRailPull(null); return; }
             /* A tap is a toggle. A drag lands wherever it was let go of, past the halfway
                mark — the same rule the manifest drawer uses, so the two gestures in this app
                do not disagree about what "far enough" means. `wasOpen` is read off the drag
@@ -261,8 +295,8 @@ export default function BiohazardTheme({
                     onPointerDown={startRailPull}
                     aria-label={isMobileMenuOpen ? 'Close navigation' : 'Open navigation'}
                     aria-expanded={isMobileMenuOpen}
-                    style={{ touchAction: 'none', top: ribbonY }}
-                    className="kpm-edge-ribbon hide-on-print lg:hidden fixed right-0 z-[100] w-[14px] h-[132px]"
+                    style={{ touchAction: 'none', top: ribbonY, '--hold-ms': `${RIBBON_HOLD_MS}ms` }}
+                    className={`kpm-edge-ribbon ${ribbonHold || ''} hide-on-print lg:hidden fixed right-0 z-[100] w-[14px] h-[132px]`}
                 >
                     <span className="kpm-edge-grip"></span>
                 </button>
@@ -539,13 +573,23 @@ export default function BiohazardTheme({
                             (a green pill, a white-outlined square, a bare icon) sitting 12px apart. */}
                         {syncIndicator}
 
+                        {/* A SWITCH, not a chip. His note: "make sure that it background change
+                            from white to black according to the changes" — so the track itself
+                            carries the answer. Black track with the knob left means you are in
+                            the dark; white track with the knob right means you are in the light.
+                            The knob shows the state you are IN, not the one you would get: a
+                            switch that displays its destination is the oldest way to make a
+                            toggle unreadable. `role="switch"` so it is announced as one. */}
                         {setDarkMode && (
                             <button
                                 onClick={() => setDarkMode(prev => !prev)}
-                                className="kpm-chip"
+                                role="switch"
+                                aria-checked={!darkMode}
+                                aria-label={darkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
                                 title={darkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
+                                className={`kpm-theme-switch ${darkMode ? '' : 'is-light'}`}
                             >
-                                {darkMode ? <Sun size={16} /> : <Moon size={16} />}
+                                <span className="knob">{darkMode ? <Moon size={12} /> : <Sun size={12} />}</span>
                             </button>
                         )}
 
