@@ -456,12 +456,14 @@ export default function BiohazardTheme({
                                 <p className="text-[11px] text-gray-400 uppercase font-bold leading-none mb-0.5">OPERATIVE</p>
                                 <p className="text-[10px] text-white font-mono truncate leading-none">{user.email?.split('@')[0]}</p>
                             </div>
+                            {/* The reference he sent for this one, in the app's colours: black at
+                                rest with the rest of the panel, red only once you are on it. The
+                                name plate is gone from here — this button says its own word now. */}
                             <button
                                 onClick={handleLogout}
-                                onPointerDown={(e) => setPeek({ id: 'out', label: 'Terminate session', y: e.clientY })}
-                                onPointerUp={() => setPeek(null)}
-                                onPointerCancel={() => setPeek(null)}
-                                className="text-red-500 hover:text-red-400 p-1.5 rounded transition-colors" title="Logout"
+                                className="kpm-expand danger"
+                                data-label="Log out"
+                                title="Logout"
                             >
                                 <LogOut size={16}/>
                             </button>

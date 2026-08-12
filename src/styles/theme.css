@@ -1068,6 +1068,62 @@ html.lite-mode .kpm-rail-mark:active { transform: none; }
   .kpm-rail-mark, .kpm-rail-mark::before { transition: opacity 120ms ease-out, color 120ms ease-out; transform: none !important; }
 }
 
+/* ---------- THE EXPANDING BUTTON ----------
+   Two references from him, the same mechanism in both: a circle that grows into a pill, the mark
+   sliding left as its word arrives. His notes: "make it little bit minimalist" on the delete one,
+   and "use our theme color black and white with little bit amber" on the other, with red kept for
+   the two that destroy something.
+
+   ONE class, two variants, and NO JSX to write per site: the word comes from `data-label`, so a
+   button opts in with two attributes and keeps whatever markup it already had.
+
+     <button className="kpm-expand danger" data-label="Delete"> <Trash2/> </button>
+
+   Minimalist means his numbers pulled in: 40px not 50, 118px not 140, 11px letterforms not 13,
+   and the resting state is the app's own black rather than a colour. A delete button that is red
+   before you have gone near it is shouting at you for having a list.
+
+   :active is in the same selector as :hover on purpose — a phone has no hover, and without it
+   this control would be a plain circle forever on the only device he uses. */
+.kpm-expand {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 40px; height: 40px; padding: 0; border: 1px solid #3e3226; border-radius: 999px;
+  position: relative; overflow: hidden; cursor: pointer; flex: none;
+  background-color: #14110e; color: #8b7256;
+  box-shadow: 0 2px 10px rgba(0,0,0,.35);
+  -webkit-tap-highlight-color: transparent;
+  transition: width 300ms cubic-bezier(.22, 1, .36, 1), border-radius 300ms cubic-bezier(.22, 1, .36, 1),
+              background-color 220ms ease-out, border-color 220ms ease-out, color 220ms ease-out;
+}
+.kpm-expand > svg { flex: none; transition: margin 300ms cubic-bezier(.22, 1, .36, 1); }
+.kpm-expand::after {
+  content: attr(data-label); position: absolute; right: 0; width: 0; opacity: 0;
+  overflow: hidden; white-space: nowrap; text-align: left;
+  font-size: 11px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase;
+  transition: opacity 200ms ease-out, width 300ms cubic-bezier(.22, 1, .36, 1),
+              padding 300ms cubic-bezier(.22, 1, .36, 1);
+}
+.kpm-expand:hover, .kpm-expand:focus-visible, .kpm-expand:active {
+  width: 118px; border-radius: 20px;
+  background-color: #1c1814; border-color: #8b7256; color: #ff9d00; }
+.kpm-expand:hover > svg, .kpm-expand:focus-visible > svg, .kpm-expand:active > svg {
+  margin-right: auto; margin-left: 13px; }
+.kpm-expand:hover::after, .kpm-expand:focus-visible::after, .kpm-expand:active::after {
+  opacity: 1; width: 68%; padding-right: 12px; }
+/* his "button click effect", kept exactly */
+.kpm-expand:active { transform: translate(1px, 1px); }
+
+/* The two that destroy something. Red only once you are ON it — the amber rest state is shared,
+   so a row of controls reads as one row until you reach for the dangerous one. */
+.kpm-expand.danger:hover, .kpm-expand.danger:focus-visible, .kpm-expand.danger:active {
+  background-color: #8e2f28; border-color: #c0473c; color: #ffece9; }
+
+html.lite-mode .kpm-expand, html.lite-mode .kpm-expand > svg, html.lite-mode .kpm-expand::after { transition: none; }
+@media (prefers-reduced-motion: reduce) {
+  .kpm-expand, .kpm-expand > svg, .kpm-expand::after { transition: opacity 120ms ease-out; }
+  .kpm-expand:active { transform: none; }
+}
+
 /* ---------- THE HEADER'S CONTROLS ----------
    Sync, theme and the bell were three shapes in three palettes standing 24px apart: a green
    pill, a white-outlined square and a bare icon. One plate for all three. `on` is gold and is

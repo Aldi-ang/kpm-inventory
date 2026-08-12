@@ -1057,6 +1057,21 @@ check(G25, 'its body opens sideways, out of the rail',
    password-strength meter. All 35 of those sites are swept now, so the check covers the WHOLE
    file. The narrow version was the honest thing to write while an exception existed; leaving it
    narrow once the exception is gone would just be somewhere for the next green to hide. */
+/* THE EXPANDING BUTTON. Two traps, and the first one is the one that would go unnoticed for
+   weeks: a phone has NO :hover, so a hover-only rule leaves this a plain circle forever on the
+   only device he uses. :active has to be in the same selector. The second is the palette one —
+   red at rest means a list of rows is a wall of red before you have gone near any of it. */
+check(G25, 'the expanding button opens on touch, not only on hover',
+  /\.kpm-expand:hover, \.kpm-expand:focus-visible, \.kpm-expand:active \{/.test(themeCss) &&
+  /content: attr\(data-label\)/.test(themeCss),
+  'hover-only leaves it a plain circle on a phone; data-label is what lets a site opt in ' +
+  'without any JSX beyond two attributes');
+check(G25, 'it is black at rest and red only under the finger',
+  /\.kpm-expand \{[\s\S]{0,400}?background-color: #14110e/.test(themeCss) &&
+  /\.kpm-expand\.danger:hover, \.kpm-expand\.danger:focus-visible, \.kpm-expand\.danger:active/.test(themeCss) &&
+  /className="kpm-expand danger"/.test(shellSrc) && /data-label="Log out"/.test(shellSrc),
+  'a delete or logout button that is red before you reach for it turns every list into a wall ' +
+  'of alarm');
 check(G25, 'no blue, slate or green left in the shell, App or the player',
   !BANNED_HUE.test(shellSrc) && !BANNED_HUE.test(appCode) && !BANNED_HUE.test(musicSrc),
   'palette law: slate IS the blue. The print receipt is the ONLY exemption and it lives in its ' +
