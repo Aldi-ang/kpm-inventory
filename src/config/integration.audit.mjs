@@ -1016,7 +1016,7 @@ check(G25, 'the ribbon breathes, and holds still when motion is off',
   'a still 14px sliver on a black screen is invisible — the breath is the whole affordance, ' +
   'but it must not move for anyone who asked for no movement');
 check(G25, 'the three header controls wear the one plate',
-  /className=\{`kpm-chip relative \$\{unreadCount > 0 \? 'on' : ''\}`\}/.test(strip(fs.readFileSync('src/components/NotificationBell.jsx', 'utf8'))) &&
+  /className=\{`kpm-chip kpm-bell relative \$\{unreadCount > 0 \? 'on' : ''\} \$\{ringing \? 'ringing' : ''\}`\}/.test(strip(fs.readFileSync('src/components/NotificationBell.jsx', 'utf8'))) &&
   /className=\{`kpm-chip relative \$\{isOnline \? '' : 'warn animate-pulse'\}`\}/.test(appCode) &&
   /className="kpm-chip"/.test(shellSrc),
   'they were a green pill, a white-outlined square and a bare icon standing 24px apart');
@@ -1057,6 +1057,21 @@ check(G25, 'its body opens sideways, out of the rail',
    password-strength meter. All 35 of those sites are swept now, so the check covers the WHOLE
    file. The narrow version was the honest thing to write while an exception existed; leaving it
    narrow once the exception is gone would just be somewhere for the next green to hide. */
+/* THE BELL. It rings on ARRIVAL, not only when touched — hover is a mouse idea and this button
+   lives on a phone. The trap is the comparison: ring on an INCREASE only, held in a ref. Compare
+   against zero instead and reading your mail sets the bell off on the way down. */
+const bellSrc = strip(fs.readFileSync('src/components/NotificationBell.jsx', 'utf8'));
+check(G25, 'the bell rings when mail arrives, not only when it is touched',
+  /const rose = unreadCount > prevUnread\.current;/.test(bellSrc) &&
+  /kpm-bell\.ringing > svg \{ animation: kpmBellRing/.test(themeCss) &&
+  /transform-origin: top center/.test(themeCss),
+  'transform-origin decides whether it swings like a bell or spins like a coin; and a count ' +
+  'compared against zero rings again every time he READS his notifications');
+check(G25, 'the bell holds still for anyone who asked for no motion',
+  /lite-mode \.kpm-bell > svg \{ animation: none/.test(themeCss) &&
+  /\.kpm-bell\.ringing \{ box-shadow/.test(themeCss),
+  'reduced motion must still announce the arrival — it just stops swinging to do it');
+
 /* THE EXPANDING BUTTON. Two traps, and the first one is the one that would go unnoticed for
    weeks: a phone has NO :hover, so a hover-only rule leaves this a plain circle forever on the
    only device he uses. :active has to be in the same selector. The second is the palette one —

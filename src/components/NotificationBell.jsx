@@ -14,6 +14,22 @@ const NotificationBell = ({ notifications = [], onNotificationClick }) => {
     
     const unreadCount = sortedNotifs.filter(n => !n.read && n.isRead !== true).length;
 
+    /* RING WHEN SOMETHING ARRIVES, not only when you touch it. The swing itself is CSS; this is
+       just the 900ms window it runs in. Only on an INCREASE — reading your mail drops the count
+       and must not set the bell off, which is what comparing against a ref rather than against
+       zero buys. The timeout is cleared on unmount so a bell that leaves mid-ring cannot set
+       state on a dead component. */
+    const [ringing, setRinging] = useState(false);
+    const prevUnread = useRef(unreadCount);
+    useEffect(() => {
+        const rose = unreadCount > prevUnread.current;
+        prevUnread.current = unreadCount;
+        if (!rose) return;
+        setRinging(true);
+        const t = setTimeout(() => setRinging(false), 900);
+        return () => clearTimeout(t);
+    }, [unreadCount]);
+
     // Close dropdown when clicking anywhere outside of it
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -33,9 +49,11 @@ const NotificationBell = ({ notifications = [], onNotificationClick }) => {
                 /* was `text-slate-400` and a bare 24px icon — slate IS the blue, and it was the
                    only control in the header wearing no plate at all. .kpm-chip is the shared
                    one; `.on` is what the unread state lights up. */
-                className={`kpm-chip relative ${unreadCount > 0 ? 'on' : ''}`}
+                className={`kpm-chip kpm-bell relative ${unreadCount > 0 ? 'on' : ''} ${ringing ? 'ringing' : ''}`}
             >
-                <Bell size={18} className={unreadCount > 0 ? "animate-pulse" : ""} />
+                {/* the permanent `animate-pulse` is gone with this: a loop that never stops is
+                    not news, and the gold `on` plate already says there is unread mail. */}
+                <Bell size={18} />
                 
                 {unreadCount > 0 && (
                     <span className="absolute top-0 right-0 w-4 h-4 bg-red-600 text-white text-[11px] font-black rounded-full flex items-center justify-center shadow-[0_0_10px_red]">

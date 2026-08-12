@@ -1152,6 +1152,40 @@ html.lite-mode .kpm-expand, html.lite-mode .kpm-expand > svg, html.lite-mode .kp
 html.lite-mode .kpm-chip { transition: none; }
 html.lite-mode .kpm-chip:active { transform: none; }
 
+/* ---------- THE BELL RINGS ----------
+   His reference, with one addition it needed to be worth having. Hover is a mouse idea and this
+   button lives on a phone, so the swing also fires on focus and on press — and, the part that
+   actually earns its keep, `ringing`, which NotificationBell sets for 900ms whenever the unread
+   count goes UP. A bell that rings when something arrives is telling you something; a bell that
+   only rings when you touch it is decoration.
+
+   transform-origin: top is what makes it a bell rather than a spinning icon — it pivots where it
+   would hang. The swing decays 10 → 5 → 2 degrees, which is the whole reason it reads as a
+   struck object settling instead of a wobble.
+
+   These sit after .kpm-chip on purpose: same specificity, so source order is what lets the
+   press-scale below win over the chip's own. */
+.kpm-bell > svg { transform-origin: top center; }
+.kpm-bell:hover > svg, .kpm-bell:focus-visible > svg,
+.kpm-bell:active > svg, .kpm-bell.ringing > svg { animation: kpmBellRing .9s both; }
+@keyframes kpmBellRing {
+  0%, 100% { transform: rotateZ(0); }
+  15% { transform: rotateZ(10deg); }
+  30% { transform: rotateZ(-10deg); }
+  45% { transform: rotateZ(5deg); }
+  60% { transform: rotateZ(-5deg); }
+  75% { transform: rotateZ(2deg); }
+}
+.kpm-bell:active { transform: scale(.88); }
+html.lite-mode .kpm-bell > svg { animation: none !important; }
+html.lite-mode .kpm-bell:active { transform: none; }
+@media (prefers-reduced-motion: reduce) {
+  /* the arrival still has to be announced — it just stops swinging to do it */
+  .kpm-bell > svg { animation: none !important; }
+  .kpm-bell.ringing { box-shadow: 0 0 16px rgba(255,157,0,.5); }
+  .kpm-bell:active { transform: none; }
+}
+
 /* The rule under the screen's name. Re-keyed on the tab in BiohazardTheme, so it draws itself
    again on every move — the one piece of motion in that row, and it says the one thing the row
    has to say: you are somewhere else now. */
