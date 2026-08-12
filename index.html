@@ -27,6 +27,19 @@
     <style>
       html, body { overscroll-behavior: none; }
       body { position: relative; overflow-x: hidden; }
+
+      /* THE NAVIGATION PANEL DOES NOT GET TO FLASH. His report: "sometimes there is a bug and
+         the sidepanel show a while until i refresh on the phone then its gone".
+
+         The app imports its stylesheet from main.jsx, so the dev server injects that CSS with
+         JavaScript AFTER React has painted. In that window the panel has no `fixed`, no
+         `translate-x-full` and no width — it is a plain block in the middle of the document,
+         in full view, until the styles land. This <style> is in the document before any of
+         that, so it wins the race; theme.css turns it back on when the real styles arrive.
+
+         Scoped to this ONE element deliberately. The usual version of this guard hides #root
+         until styled, which blanks the entire app if the stylesheet ever fails to load. */
+      [data-kpm-rail] { visibility: hidden; }
     </style>
   </head>
   <body>

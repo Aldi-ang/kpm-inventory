@@ -361,6 +361,22 @@ export default function BiohazardTheme({
                 and the CSS transition is off, so the panel tracks the finger exactly; on
                 release railPull goes back to null and the class transition carries it home. */}
             <div
+                /* HIS REPORT: "sometimes there is a bug and the sidepanel show a while until i
+                   refresh on the phone then its gone".
+
+                   Nothing opens it — it is never open. The app imports its stylesheet from
+                   main.jsx, so on the DEV SERVER Vite injects that CSS with JavaScript, AFTER
+                   React has already painted. For that window this element has no `fixed`, no
+                   `translate-x-full` and no width: it is a plain block sitting in the document,
+                   in full view, until the styles land and it snaps off screen. A refresh warms
+                   the modules, the window shrinks to nothing, and the bug "goes away" — which is
+                   exactly the shape of his report.
+
+                   `data-kpm-rail` is hidden by the inline <style> in index.html, which is in the
+                   document before anything loads, and unhidden by theme.css, which arrives with
+                   the rest of the app's CSS. Scoped to this one element on purpose: a guard that
+                   hides #root would blank the whole app if the stylesheet ever failed. */
+                data-kpm-rail
                 style={railPull === null ? undefined : { transform: `translateX(${(1 - railPull) * RAIL_W}px)`, transition: 'none' }}
                 /* overflow-hidden throughout, at every width, again. It was briefly conditional
                    so the music panel could escape sideways out of the rail; the panel is a

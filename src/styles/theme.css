@@ -1179,6 +1179,14 @@ html.lite-mode .kpm-expand, html.lite-mode .kpm-expand > svg, html.lite-mode .kp
 html.lite-mode .kpm-chip { transition: none; }
 html.lite-mode .kpm-chip:active { transform: none; }
 
+/* ---------- THE PANEL IS ALLOWED TO EXIST AGAIN ----------
+   The other half of the anti-flash guard in index.html. That inline rule hides the nav panel from
+   the first byte of the document; this one — which cannot run until the app's real stylesheet has
+   arrived — hands it back. Same specificity, later source order, so this simply wins once it is
+   here. If you move this rule, keep it in a file that ships in the MAIN css bundle: put it in a
+   lazily-imported stylesheet and the panel stays invisible until that chunk loads. */
+[data-kpm-rail] { visibility: visible; }
+
 /* ---------- THE THEME SWITCH ----------
    His note: "make sure that it background change from white to black according to the changes".
    So the TRACK is the readout, not just a housing for the knob — black while you are in the dark,

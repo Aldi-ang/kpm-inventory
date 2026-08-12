@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-12 21:05 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
+**Updated: 2026-08-12 21:40 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
 **Lancelot session last wrote 17:20 WIB** — see the 17:15 entry. Two clocks, two sessions, one file.
 
 ## 🧭 WHICH TRACK IS WHICH — check this before editing anything below
@@ -51,6 +51,29 @@ The rules, in order:
    else wrote in the meantime. If an `Edit` fails as stale, re-read and re-apply — do not force it.
 7. **The quota is one shared pool.** Two sessions running hard halve each other's runway, and the
    `[plan-quota]` percentage covers both. Size your work against the whole pool, not your own chat.
+
+## ✅ LOG 21:40 WIB — the side-panel "flash" is fixed. It was never opening. 270/270.
+
+His report: *"sometimes there is a bug and the sidepanel show a while until i refresh on the phone
+then its gone"*.
+
+**Nothing was opening it.** `main.jsx` imports the stylesheet, so on the **dev server** Vite
+injects that CSS with JavaScript **after React has painted**. In that window the panel has no
+`fixed`, no `translate-x-full` and no width — it is a plain block sitting in the middle of the
+document, in full view, until the styles land and it snaps off screen. A refresh warms the
+modules, the window shrinks to nothing, and it "goes away". That is the whole bug.
+
+⚠️ **The guard lives in TWO files and is worthless if either half is deleted:**
+`index.html` hides `[data-kpm-rail]` from the first byte of the document; `theme.css` un-hides it
+when the app's real CSS arrives. A tidy-up that removes "the duplicate rule" either restores the
+flash or **hides the navigation forever**. Both halves are asserted.
+
+Scoped to that one element on purpose — the usual version of this guard hides `#root`, which
+blanks the entire app if the stylesheet ever fails to load.
+
+Verified in the BUILT output: the inline rule is in `dist/index.html`, the un-hide is in
+`dist/assets/index-*.css`, and that is the stylesheet the HTML actually links (not a lazy chunk —
+in a lazy chunk the panel would stay invisible until that chunk loaded).
 
 ## ✅ LOG 21:05 WIB — theme switch + hold-to-move. DELETE BUTTONS STILL THE ONLY OPEN JOB.
 

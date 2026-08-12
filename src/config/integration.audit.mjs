@@ -1117,6 +1117,23 @@ check(G25, 'the rail never scrolls — the rows share the height instead',
   'a fixed cell height brings the scroll back on a short phone; a min-height floor clips a mark ' +
   'off the bottom instead, which is worse — the tab becomes unreachable, not just further down');
 
+/* THE FLASH. His report: "sometimes there is a bug and the sidepanel show a while until i refresh
+   on the phone then its gone". Nothing opened it — the app imports its CSS from main.jsx, so the
+   dev server injects that stylesheet with JS AFTER React paints, and for that window the panel has
+   no `fixed` and no `translate-x-full`: a plain block, in the document, in full view.
+
+   The guard is in TWO files and is worthless with either half missing — index.html hides it from
+   the first byte, theme.css hands it back when the real styles land. Both are checked here
+   because a future tidy-up that deletes "the duplicate rule" would silently restore the flash, or
+   silently hide the navigation forever. */
+const indexHtml = fs.readFileSync('index.html', 'utf8');
+check(G25, 'the nav panel cannot flash before the stylesheet lands',
+  /\[data-kpm-rail\] \{ visibility: hidden; \}/.test(indexHtml) &&
+  /\[data-kpm-rail\] \{ visibility: visible; \}/.test(themeCss) &&
+  /data-kpm-rail\b/.test(shellSrc),
+  'both halves are required: index.html hides it before anything loads, theme.css un-hides it ' +
+  'when the app CSS arrives. Delete the second and the navigation is invisible forever');
+
 /* THE BELL. It rings on ARRIVAL, not only when touched — hover is a mouse idea and this button
    lives on a phone. The trap is the comparison: ring on an INCREASE only, held in a ref. Compare
    against zero instead and reading your mail sets the bell off on the way down. */
