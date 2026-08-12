@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-12 22:30 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
+**Updated: 2026-08-12 23:05 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
 **Lancelot session last wrote 17:20 WIB** — see the 17:15 entry. Two clocks, two sessions, one file.
 
 ## 🧭 WHICH TRACK IS WHICH — check this before editing anything below
@@ -51,6 +51,31 @@ The rules, in order:
    else wrote in the meantime. If an `Edit` fails as stale, re-read and re-apply — do not force it.
 7. **The quota is one shared pool.** Two sessions running hard halve each other's runway, and the
    `[plan-quota]` percentage covers both. Size your work against the whole pool, not your own chat.
+
+## ✅ LOG 23:05 WIB — the capybara cut was the SPRITE FRAME, not the ancestors. 272/272.
+
+**Correction to the 22:30 entry.** The portal fixed the BUBBLE. It did not fix the model, because
+the model was never being clipped by anything outside it — his screenshot showed the cut was down
+the capybara's own right side and across his feet.
+
+**Every sprite sheet in theme.css is measured in PIXELS** — 200 to a frame,
+`background-size: 2000px 200px` for the ten-frame idle — because that is what keeps `steps()`
+landing on a frame edge. `.kpm-merch` is `width: 100%`. In the alcove that is fine:
+`.kpm-alcove .fig` is exactly 200px. **The corner mascot's box is `w-32`, which is 128** — so the
+element was 128px wide with a 200px frame painted into it, and the remaining 72px of him was
+simply never drawn.
+
+The fix changes the BOX, not the sheet: `.kpm-merch-corner` gives the element the frame's true
+200px, pins it to the bottom-right of the 128px box, and scales it to `.64` (`.96` at md).
+⚠️ **Do not "simplify" this into a percentage `background-size`** — every `steps()` offset in this
+file is in pixels, and converting them is how sprite sheets end up drifting half a frame.
+
+The coin (`.kpm-merch-hold`) moved INSIDE the sprite element: it is `inset-0` of its parent, and
+that element is now the only box at the frame's real size. As a sibling it measured against 128px
+and sat off his hand.
+
+Measured live at 375px: element 200×200, background still `2000px 200px`, painted 128×128,
+origin bottom-right, nothing off-screen.
 
 ## ✅ LOG 22:30 WIB — capybara, flight recorder, delete buttons. THE QUEUE IS EMPTY. 272/272.
 

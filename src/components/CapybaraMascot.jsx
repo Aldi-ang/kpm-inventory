@@ -314,12 +314,17 @@ export default function CapybaraMascot({ isDiscoMode, message, messages = NO_MES
                     </div>
                 )}
                 {spriteToShow ? (
-                    <>
-                        <div className={`kpm-merch ${spriteToShow}`} role="img" aria-label="Merchant"></div>
+                    /* kpm-merch-corner carries the frame's TRUE 200px size and scales it down to
+                       this box — see the note in theme.css. Without it the element is 128px wide
+                       with a 200px frame painted into it, and he is sliced down his right side. */
+                    <div className={`kpm-merch kpm-merch-corner ${spriteToShow}`} role="img" aria-label="Merchant">
                         {/* the coin he is holding — the app's existing spinning coin sprite,
-                            floated beside his hand rather than drawn into the character */}
+                            floated beside his hand rather than drawn into the character.
+                            INSIDE the sprite now, not beside it: it is `inset-0` of its parent,
+                            and this is the only box that is the frame's real size. As a sibling
+                            it was measured against the 128px box and sat off his hand. */}
                         {spriteToShow === 'kpm-merch-deal' && <div className="kpm-merch-hold" aria-hidden="true"></div>}
-                    </>
+                    </div>
                 ) : (
                 <img src={radioImage || staticImageSrc || NORMAL_IMAGE_URL} alt="Mascot" className="w-full h-full object-contain drop-shadow-[0_0_15px_rgba(255,255,255,0.3)] hover:brightness-110 transition-all origin-bottom-right" onError={(e) => { e.target.onerror = null; e.target.src="https://api.dicebear.com/7.x/avataaars/svg?seed=CapyStandard"; }}/>
                 )}
