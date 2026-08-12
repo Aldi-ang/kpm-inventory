@@ -52,6 +52,21 @@ The rules, in order:
 7. **The quota is one shared pool.** Two sessions running hard halve each other's runway, and the
    `[plan-quota]` percentage covers both. Size your work against the whole pool, not your own chat.
 
+## ✅ LOG 14:35 WIB — palette law finished. The last green and slate are out of App.jsx.
+
+The deferred job from the 13:25 entry, done (`54d9edd`). It was **35 sites, not the 6 it was
+estimated at**: boot spinner, the whole Flight Recorder panel, the setup/credential screens, the
+password-strength meter, the folder-edit modal. Red and orange stayed wherever they carry meaning
+(ERROR row, OFFLINE row, pending counts); SUCCESS went from green to the app's gold.
+
+Audit group 25's palette check now covers `App.jsx` and `MusicPlayer.jsx` **whole** — the narrow
+"chrome only" version existed to document a real exception, and with the exception gone a narrow
+check is just a hiding place. 258/258.
+
+⚠️ **Trap, twice in one commit:** `{/* … */}` is a syntax error in a JS **expression** slot — inside
+`fallback={…}` and between `.map(x => (` and its element. It is only valid in JSX *children*
+position. Both were caught by the build, not by reading.
+
 ## ✅ LOG 14:10 WIB — his six rail notes, all done. 258/258, drag re-measured live.
 
 1. **The ribbon moves.** Drag it up/down and it stays there (`kpm-ribbon-y` in localStorage).
@@ -160,7 +175,27 @@ see the bug. New harness `scratchpad/selfcheck.js` evaluates the whole file with
 services stubbed and calls the REAL `lancelotSelfCheck`, which returns `semua` (a boolean). It now
 returns `true`. Never re-implement the thing under test.
 
-## 🟡 LOG 17:15 WIB — NEW MODEL SPECCED, BUILD DEFERRED BY HIM. Quota 84%, resets ~18:00.
+## ✅ LOG 18:50 WIB (Lancelot session) — TWO-NOTA MODEL BUILT. A-Brain `0e8f84c`. 67 checks green.
+
+Quota reset confirmed at 18:40, then built the spec from the 17:15 entry below.
+
+1. **Blocking fix:** `petaSeri_`'s seri-clash exemption now covers `NOTA AGEN`, not just
+   `JUAL PABRIK`. The agen copy carries the same seri on purpose — without this, **no sale could
+   ever have been recorded**.
+2. ITEM: `LABEL BARU` → `NO GUDANG` (optional). The resold-OUT lookup added to `hitungCuan_` this
+   morning is deleted — his rule retired it the same day it was written.
+3. **New `CUAN HARIAN`**: one row per day per agen — jual ke pabrik, dibayar ke agen, cuan. Ongkos
+   read from the agen side only, because charging it on both sides double-counts the margin.
+4. **New `IN-OUT AGEN`**: every gulungan of a real sale nota, per agen, IN or OUT.
+
+`hitungCuanHarian_` and `hitungInOutAgen_` are pure → 7 new self-check cases, all green, each
+proven able to fail by flipping an expected value on a scratch copy. `node --check` clean.
+
+**❓ OWED BY ALDI:** (a) confirm the pairing suffix — real `JUAL-07`, agen copy `JUAL-07-AGEN`;
+(b) is `AGEN` always filled on a sale nota? Both new tabs group by it and neither has seen real
+data. **✅ TEST:** re-paste → `lancelotSelfCheck` → `mulaiBersih()` → `buatSemuaTampilan`.
+
+## 🟡 LOG 17:15 WIB (Lancelot session) — model specced, build deferred by him. Quota 84%.
 
 His instruction: *"i rather let u take notes first and do this after token reset"*. **No code was
 written for this.** The full spec, in his own words, is in
