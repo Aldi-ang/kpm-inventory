@@ -72,8 +72,51 @@ export default function BiohazardTheme({
        many features, especially for higher tier", and a single column of seventeen made the
        rail a scrolling list, which is the thing a rail exists to avoid. Two columns fit a
        Tier-1 menu on one screen with nothing to scroll past. */
-    const RAIL_W = 152;
+    const RAIL_W = 176;
     const RIBBON_H = 132;
+
+    /* WHY DRAGGING ACROSS THE MARKS ONLY EVER LIT THE FIRST ONE — his report: "i press and drag
+       but it only show the first button that i press, it didnt show anything else when i drag".
+
+       This is not a styling bug. On touch, the browser gives the pointerdown target IMPLICIT
+       POINTER CAPTURE: every pointermove for that finger is delivered to the button you first
+       pressed, no matter what the finger is actually over. So per-button handlers are deaf by
+       design once a finger is down, and no amount of :hover CSS can help — a phone has no hover.
+
+       One listener on the nav, and the mark is found by asking the document what is under the
+       finger. That is what a rail like this always has to do. */
+    const scrubRef = useRef(null);
+    const markAt = (x, y) => {
+        const el = typeof document === 'undefined' ? null : document.elementFromPoint(x, y);
+        return el && el.closest ? el.closest('[data-mark]') : null;
+    };
+    const scrubTo = (ev) => {
+        const el = markAt(ev.clientX, ev.clientY);
+        const s = scrubRef.current;
+        if (!el) { setPeek(null); return; }
+        if (s && s.startId && el.dataset.mark !== s.startId) s.jumped = true;
+        setPeek({ id: el.dataset.mark, label: el.dataset.label, y: ev.clientY });
+    };
+    const startScrub = (ev) => {
+        const el = markAt(ev.clientX, ev.clientY);
+        scrubRef.current = { startId: el ? el.dataset.mark : null, jumped: false, ghost: 0 };
+        scrubTo(ev);
+    };
+    const endScrub = (ev) => {
+        const s = scrubRef.current;
+        setPeek(null);
+        if (!s) return;
+        const el = markAt(ev.clientX, ev.clientY);
+        /* Lifting off a DIFFERENT mark than you pressed goes to that one. The click that follows
+           still fires on the mark you pressed, so it has to be swallowed — same 120ms ghost
+           window the manifest drawer uses for exactly the same reason. */
+        if (s.jumped && el && el.dataset.mark) {
+            s.ghost = Date.now() + 120;
+            setActiveTab(el.dataset.mark);
+            setIsMobileMenuOpen(false);
+        }
+    };
+    const swallowedByScrub = () => Date.now() < (scrubRef.current?.ghost || 0);
 
     /* WHERE THE RIBBON SITS IS HIS, NOT MINE. His words: "our thumb usually position
        differently when using phone right". A vertical drag moves it and remembers; a
@@ -291,7 +334,7 @@ export default function BiohazardTheme({
                    orphan panel floating over the app once you have expanded the player. The
                    desk keeps overflow-hidden throughout, because there the panel collapses by
                    WIDTH (lg:w-0) and its contents must not spill while it does. */
-                className={`hide-on-print fixed inset-y-0 right-0 z-[90] w-[152px] lg:w-64 bg-[#0b0a09]/97 lg:bg-black/95 backdrop-blur-xl border-l lg:border-l-0 lg:border-r border-[#3e3226] lg:border-white/10 flex flex-col pt-5 lg:pt-8 px-0 lg:pl-4 lg:pr-4 lg:overflow-hidden
+                className={`hide-on-print fixed inset-y-0 right-0 z-[90] w-[176px] lg:w-64 bg-[#0b0a09]/97 lg:bg-black/95 backdrop-blur-xl border-l lg:border-l-0 lg:border-r border-[#3e3226] lg:border-white/10 flex flex-col pt-5 lg:pt-8 px-0 lg:pl-4 lg:pr-4 lg:overflow-hidden
                              transition-[transform,width,padding,opacity] duration-300 ease-[cubic-bezier(.22,1,.36,1)] lg:relative lg:translate-x-0
                              ${isMobileMenuOpen
                                 ? 'overflow-visible translate-x-0 lg:w-64 lg:opacity-100'
@@ -314,32 +357,42 @@ export default function BiohazardTheme({
                     tier's menu on one screen. `content-start` so a short menu sits at the top
                     instead of being spread down the whole rail. */}
                 {user ? (
-                    <nav key={`nav-${isAdmin}`} className="grid grid-cols-2 gap-1 px-1 content-start lg:block lg:space-y-0.5 lg:px-0 flex-1 overflow-y-auto scrollbar-hide boot-2">
+                    <nav
+                        key={`nav-${isAdmin}`}
+                        onPointerDown={startScrub}
+                        onPointerMove={(e) => { if (scrubRef.current) scrubTo(e); }}
+                        onPointerUp={endScrub}
+                        onPointerCancel={() => { scrubRef.current = null; setPeek(null); }}
+                        style={{ touchAction: 'pan-y' }}
+                        className="grid grid-cols-2 gap-2 p-2 content-start lg:block lg:space-y-0.5 lg:p-0 flex-1 overflow-y-auto scrollbar-hide boot-2"
+                    >
                         {visibleMenu.map(item => {
                             const Mark = item.icon;
                             const on = activeTab === item.id;
                             return (
                                 <button
                                     key={item.id}
-                                    onClick={() => { setActiveTab(item.id); setIsMobileMenuOpen(false); }}
-                                    /* The name appears on PRESS, before the finger lifts — that is
-                                       the "brief info of what we hovering at" on a screen with no
-                                       hover. Lifting navigates; sliding off cancels the label. */
-                                    onPointerDown={(e) => setPeek({ id: item.id, label: item.label, y: e.clientY })}
-                                    onPointerUp={() => setPeek(null)}
-                                    onPointerCancel={() => setPeek(null)}
-                                    onPointerLeave={() => setPeek(null)}
+                                    /* data-mark is how the nav's single listener finds this button
+                                       under a finger — see the note on implicit pointer capture.
+                                       The per-button pointer handlers that used to live here are
+                                       gone: on touch they only ever fired for the first mark. */
+                                    data-mark={item.id}
+                                    data-label={item.label}
+                                    onClick={() => { if (swallowedByScrub()) return; setActiveTab(item.id); setIsMobileMenuOpen(false); }}
                                     title={item.label}
-                                    className={`kpm-rail-mark ${on ? 'on' : ''} relative w-full flex items-center justify-center h-14 lg:h-auto lg:block lg:text-left lg:py-2 lg:px-3 text-xs font-bold transition-all duration-200 uppercase tracking-widest lg:clip-path-polygon ${
+                                    className={`kpm-rail-mark ${on ? 'on' : ''} ${peek?.id === item.id ? 'hot' : ''} relative w-full flex items-center justify-center h-16 lg:h-auto lg:block lg:text-left lg:py-2 lg:px-3 text-xs font-bold transition-all duration-200 uppercase tracking-widest lg:clip-path-polygon ${
                                         on
                                         ? 'text-[#ff9d00] lg:bg-white lg:text-black lg:pl-6 lg:shadow-[0_0_10px_rgba(255,255,255,0.8)] lg:border-l-4 lg:border-orange-500'
                                         : 'text-[#6b5845] lg:text-gray-500 lg:hover:text-white lg:hover:pl-4 lg:hover:bg-white/5'
                                     }`}
                                 >
+                                    {/* The lift lives on the ICON and the plate on ::before, and the
+                                        two run on different clocks — that separation is what reads
+                                        as weight instead of a box changing colour. */}
                                     <Mark
-                                        size={21}
-                                        strokeWidth={on ? 2.4 : 2}
-                                        className={`lg:hidden transition-transform duration-300 ease-[cubic-bezier(.16,1,.3,1)] ${on ? 'scale-[1.22] drop-shadow-[0_0_8px_rgba(255,157,0,0.55)]' : ''}`}
+                                        size={23}
+                                        strokeWidth={peek?.id === item.id || on ? 2.4 : 2}
+                                        className="kpm-rail-icon lg:hidden"
                                     />
                                     <span className="hidden lg:inline">{item.label}</span>
                                     {on && <span className="lg:hidden absolute right-0 top-2 bottom-2 w-[3px] rounded-l-full bg-[#ff9d00] shadow-[0_0_10px_rgba(255,157,0,.6)]"></span>}

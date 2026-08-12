@@ -955,11 +955,27 @@ check(G25, 'the ribbon can be moved to wherever his thumb is, and stays there',
 /* "instead of 1 line of sidebar i want it to be 2 colomn per row, to eliminate scrolling
    because there is so many features, especially for higher tier" */
 check(G25, 'the rail is two columns wide, so a full menu fits without scrolling',
-  /const RAIL_W = 152;/.test(shellSrc) &&
-  /w-\[152px\] lg:w-64/.test(shellSrc) &&
-  /grid grid-cols-2 gap-1 px-1 content-start lg:block/.test(shellSrc),
-  'RAIL_W and the class must agree — the drag maths, the name plate offset and the panel ' +
-  'width are all measured off it');
+  /const RAIL_W = 176;/.test(shellSrc) &&
+  /w-\[176px\] lg:w-64/.test(shellSrc) &&
+  /grid grid-cols-2 gap-2 p-2 content-start lg:block/.test(shellSrc),
+  'RAIL_W and the class must agree — the drag maths, the name plate offset and the music ' +
+  'panel width are all measured off it');
+/* HIS REPORT: "i press and drag but it only show the first button that i press, it didnt show
+   anything else when i drag". On touch the browser gives the pointerdown target IMPLICIT POINTER
+   CAPTURE, so every later move for that finger is delivered to the button first pressed — no
+   matter what the finger is over. Per-button pointer handlers are deaf by design after the first
+   one, and a phone has no :hover to fall back on. One listener, and ask the document what is
+   under the finger. Put the handlers back on the buttons and this goes red. */
+check(G25, 'the mark under a dragging finger is found by hit-test, not by per-button events',
+  /document\.elementFromPoint\(x, y\)/.test(shellSrc) &&
+  /onPointerMove=\{\(e\) => \{ if \(scrubRef\.current\) scrubTo\(e\); \}\}/.test(shellSrc) &&
+  /data-mark=\{item\.id\}/.test(shellSrc) &&
+  !/onPointerDown=\{\(e\) => setPeek\(\{ id: item\.id/.test(shellSrc),
+  'implicit pointer capture means the second mark you slide onto never hears a single event');
+check(G25, 'the click that follows a slid-to pick is swallowed',
+  /swallowedByScrub\(\)/.test(shellSrc) && /s\.ghost = Date\.now\(\) \+ 120/.test(shellSrc),
+  'the browser still fires click on the mark you PRESSED, so without the ghost window a drag ' +
+  'to a different tab lands on the one you started from');
 /* "we dont need that mascott profile anymore" */
 check(G25, 'the face is the agent\'s own, not a mascot or a robot',
   !/mascotImage/.test(shellSrc) && !/dicebear/.test(shellSrc) &&
@@ -971,7 +987,7 @@ check(G25, 'the face is the agent\'s own, not a mascot or a robot',
    does nothing without forward history. Move it back to the left and this goes red. */
 check(G25, 'the ribbon is on the RIGHT edge, away from Safari\'s back gesture',
   /kpm-edge-ribbon[^"]*lg:hidden fixed right-0/.test(shellSrc) &&
-  /fixed inset-y-0 right-0 z-\[90\] w-\[152px\]/.test(shellSrc),
+  /fixed inset-y-0 right-0 z-\[90\] w-\[176px\]/.test(shellSrc),
   'the left edge is iOS back — a navigation control that can exit the app is worse than none');
 /* IT THREW AND THE WHOLE GESTURE DIED SILENTLY. setPointerCapture needs an active pointer;
    without one it raises, before a single listener is attached, and the ribbon does nothing. */

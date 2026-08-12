@@ -122,9 +122,9 @@ const MusicPlayer = () => {
                 rail for this to have anywhere to go. On a desk nothing moves: lg:static puts it
                 straight back under the head, in the flow, exactly as it was. */}
             <div className={`transition-all duration-300 origin-top overflow-hidden
-                             absolute right-full bottom-0 mr-2 w-[200px] rounded-xl border border-[#3e3226] bg-[#0f0e0d] shadow-[0_10px_40px_rgba(0,0,0,.7)]
-                             lg:static lg:w-auto lg:mr-0 lg:rounded-none lg:border-0 lg:bg-transparent lg:shadow-none
-                             ${isExpanded ? 'max-h-[300px] opacity-100' : 'max-h-0 opacity-0 pointer-events-none'}`}>
+                             absolute right-full bottom-0 mr-2 w-[calc(100vw-200px)] max-w-[240px] rounded-xl border border-[#3e3226] bg-[#0f0e0d] shadow-[0_10px_40px_rgba(0,0,0,.7)]
+                             lg:static lg:w-auto lg:max-w-none lg:mr-0 lg:rounded-none lg:border-0 lg:bg-transparent lg:shadow-none
+                             ${isExpanded ? 'max-h-[65vh] opacity-100' : 'max-h-0 opacity-0 pointer-events-none'}`}>
                 
                 {/* PLAYLIST TOGGLE */}
                 <div className="px-2 pt-2 flex justify-end">
