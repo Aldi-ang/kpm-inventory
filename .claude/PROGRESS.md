@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-12 23:05 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
+**Updated: 2026-08-12 23:45 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
 **Lancelot session last wrote 17:20 WIB** — see the 17:15 entry. Two clocks, two sessions, one file.
 
 ## 🧭 WHICH TRACK IS WHICH — check this before editing anything below
@@ -51,6 +51,31 @@ The rules, in order:
    else wrote in the meantime. If an `Edit` fails as stale, re-read and re-apply — do not force it.
 7. **The quota is one shared pool.** Two sessions running hard halve each other's runway, and the
    `[plan-quota]` percentage covers both. Size your work against the whole pool, not your own chat.
+
+## ✅ LOG 23:45 WIB — manifest drag + picker reachable from the paper. TERMINAL TEST ADDED.
+
+**281/281.** Queue empty. **Next: the crown plan** — that is what he said comes after this.
+
+1. **The customer bar is a second drag handle** for the manifest. A press that moves drags; a
+   press that does not is left to the picker button inside it. That is what the new `onTap`
+   argument on `startDrawerDrag` buys — ⚠️ **without it, tapping the bar toggles the drawer and
+   the picker button inside it becomes unreachable on a phone.** The clear-X carries
+   `data-no-drag` so clearing a customer does not drag the paper.
+2. **The paper's customer box opens the picker.** It was a dead label saying "name the customer in
+   the bar at the top" — a sign, not a control.
+3. **Audit group 26: "the sales terminal still behaves after the UI rework".** Two days of UI
+   churn went through this file; this group is the boundary between *looks different* and
+   *behaves differently*. It pins the seven-clause `canSubmitSale` gate verbatim, the single
+   committed submit path, both drag handles, the stock switch still deriving `agentProfileId`,
+   the read/write vault match (G20's bug), and the NOO drawer collapse.
+
+🔑 **A check of mine was wrong, not the code:** there are TWO `value={customerName}` inputs and
+that is correct — the second (NOO block, ~line 2748) is `disabled`, a read-back. The invariant is
+**one WRITER**: exactly one `onChange={handleManualCustomerType}`, because that handler carries
+the tier reset, the territory clear and the auto-select. A second field wired straight to
+`setCustomerName` would skip all three silently.
+
+**Not verified by eye:** both drag handles and the paper's picker need his phone.
 
 ## ✅ LOG 23:05 WIB — the capybara cut was the SPRITE FRAME, not the ancestors. 272/272.
 

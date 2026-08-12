@@ -1269,9 +1269,19 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
         return () => document.removeEventListener('click', swallowGhostClick, true);
     }, []);
 
-    const startDrawerDrag = (e) => {
+    /* `onTap` is what a press that never moved should do. The grip has no argument and keeps its
+       old behaviour — a tap toggles the drawer. The CUSTOMER BAR passes a no-op, because a tap
+       there belongs to the picker button inside it; without that override, tapping the customer
+       bar would toggle the manifest instead of choosing a shop.
+
+       HIS ASK: "the customer name textbox above the manifest drag button should also be use as
+       drag button". The grip is 52px of a phone screen and it is the only thing you could grab;
+       the bar above it doubles the target for the same gesture at no cost. */
+    const startDrawerDrag = (e, onTap) => {
         if (dragRef.current) return;
-        dragRef.current = { startY: e.clientY, startH: drawerH, moved: false };
+        /* the clear-customer X is inside the bar and must not start a drag */
+        if (e.target.closest && e.target.closest('[data-no-drag]')) return;
+        dragRef.current = { startY: e.clientY, startH: drawerH, moved: false, onTap };
         setIsDragging(true);
 
         const onMove = (ev) => {
@@ -1293,6 +1303,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
             if (!d) return;
             if (!d.moved) {
                 // a tap, not a drag: closed -> half, anything else -> closed
+                if (d.onTap) { d.onTap(); return; }
                 setDrawerH(h => (h <= DRAWER_CLOSED + 8 ? drawerSnaps()[1] : DRAWER_CLOSED));
                 return;
             }
@@ -1464,7 +1475,17 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
 
     const renderCustomerBar = () => (
         <>
-            <div className="manifest-dropdown-area hide-on-print shrink-0 h-[52px] px-3 flex items-center gap-2.5 bg-[#26211c] border-b border-[#3e3226] relative z-[60]">
+            {/* THIS BAR IS ALSO THE GRIP. His ask: "the customer name textbox above the manifest
+                drag button should also be use as drag button". A press that moves drags the
+                manifest; a press that does not is left to the picker button inside it, which is
+                what the no-op onTap buys. touchAction none for the same reason the grip needs it:
+                the browser claims a vertical drag as a page scroll before the first move event
+                lands otherwise. */}
+            <div
+                onPointerDown={(e) => startDrawerDrag(e, () => {})}
+                style={{ touchAction: 'none' }}
+                className="manifest-dropdown-area hide-on-print shrink-0 h-[52px] px-3 flex items-center gap-2.5 bg-[#26211c] border-b border-[#3e3226] relative z-[60] cursor-grab active:cursor-grabbing select-none"
+            >
                 <Store size={16} className="shrink-0 text-[#8b7256]" />
                 <button
                     onClick={() => setShowCustomerDropdown(true)}
@@ -1484,6 +1505,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                     <button
                         onClick={clearCustomer}
                         aria-label="Clear customer"
+                        data-no-drag
                         className="shrink-0 bg-red-600 hover:bg-red-500 text-white p-1.5 rounded shadow-md active:scale-90 transition-all"
                     ><X size={14} strokeWidth={3}/></button>
                 )}
@@ -1615,9 +1637,19 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                         {/* Read-only echo. The picker is the bar at the top of this column now, but a
                             manifest with no name written on it is not a manifest, so the paper still
                             states who the deal is with. */}
-                        <div className="w-full bg-[#efe3c6] border border-dashed border-[#a89070] text-[#3e3226] p-2 text-xs md:text-sm font-black uppercase rounded truncate">
-                            {customerName || <span className="text-[#8b7256] font-bold normal-case tracking-normal">Name the customer in the bar at the top</span>}
-                        </div>
+                        {/* HIS ASK: "the customer box inside the manifest paper should also be
+                            use to choose customer". It was a dead label that told you to go and
+                            use the bar at the top — which is a sign, not a control. It opens the
+                            SAME picker now; there is still exactly one `customerName` input in
+                            the DOM, because that input lives in the picker sheet and this is a
+                            button. Nothing here duplicates it. */}
+                        <button
+                            onClick={() => setShowCustomerDropdown(true)}
+                            aria-label={customerName ? `Customer: ${customerName}. Tap to change` : 'Choose customer'}
+                            className="kpm-hover w-full text-left bg-[#efe3c6] border border-dashed border-[#a89070] text-[#3e3226] p-2 text-xs md:text-sm font-black uppercase rounded truncate"
+                        >
+                            {customerName || <span className="text-[#8b7256] font-bold normal-case tracking-normal">Tap to choose the customer</span>}
+                        </button>
 
                         <div className="mt-2 min-h-[20px]">
                             {selectedCustomerInfo && !selectedCustomerInfo.isNooRegistration ? (

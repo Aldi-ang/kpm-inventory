@@ -838,9 +838,18 @@ check(G22, 'exactly ONE customer input exists', custInputs === 1,
   `found ${custInputs} — a second copy means two inputs fighting over one customerName`);
 check(G22, 'exactly ONE suggestion dropdown exists', custLists === 1,
   `found ${custLists} — the list moved to the bar, the paper's copy must be gone`);
-check(G22, 'the paper echoes the name read-only instead of editing it',
-  /Name the customer in the bar at the top/.test(termSrc),
-  'a manifest with no name written on it is wrong — the read-only echo is not optional');
+/* The paper used to carry a dead label telling you to go and use the bar at the top — a sign,
+   not a control. His ask: "the customer box inside the manifest paper should also be use to
+   choose customer". It opens the SAME picker now. The one-input invariant is untouched, and that
+   is the thing to keep checking: the only `customerName` input in this file lives in the picker
+   sheet, and both openers are buttons. Add an input here and there are two fields fighting over
+   one piece of state — which is the bug this group was written for. */
+check(G22, 'the paper opens the same picker instead of telling you to go elsewhere',
+  /Tap to choose the customer/.test(termSrc) &&
+  !/Name the customer in the bar at the top/.test(termSrc) &&
+  (termSrc.match(/onClick=\{\(\) => setShowCustomerDropdown\(true\)\}/g) || []).length >= 2,
+  'a manifest with no name on it is wrong, so the paper still states who the deal is with — ' +
+  'but stating it and being unable to change it is what he reported');
 check(G22, 'the bar is rendered above the grip, not inside the paper',
   termSrc.indexOf('renderCustomerBar()') > 0 &&
   termSrc.indexOf('renderCustomerBar()') < termSrc.indexOf('startDrawerDrag}'),
@@ -1195,6 +1204,71 @@ check(G25, 'no blue, slate or green left in the shell, App or the player',
   !BANNED_HUE.test(shellSrc) && !BANNED_HUE.test(appCode) && !BANNED_HUE.test(musicSrc),
   'palette law: slate IS the blue. The print receipt is the ONLY exemption and it lives in its ' +
   'own @media print block in theme.css, not in any of these three files');
+
+/* ── 26. the sales terminal still works after the UI rework ─────────────────
+   His ask: "make another test make sure that all the sales terminal works fine, then we can move
+   on to the crown plan again". Two days of UI churn went through this file — the picker became a
+   sheet, the stock switch moved in, the drawer lost its cap, the customer bar became a drag
+   handle, the paper's label became a button. None of that was supposed to touch the money path.
+
+   This group is the boundary between "the terminal looks different" and "the terminal behaves
+   differently". Every check is a thing a careless UI edit could plausibly break WITHOUT breaking
+   the build — which is exactly the class of bug that reaches his phone. */
+const G26 = '26. The sales terminal still behaves after the UI rework';
+
+/* THE GATE ON A SALE. Seven conditions, and every one of them is somebody's money or somebody's
+   accountability: no empty sale, no unnamed customer, no sale while GPS is still deciding, no
+   sale without handover proof, no double-submit, no damaged return without a reason, no exchange
+   the vehicle cannot cover. A UI tidy-up that drops one of these ships a hole in the ledger. */
+check(G26, 'a sale still needs all seven of its gates',
+  /const canSubmitSale = cart\.length > 0 && customerName\.trim\(\) && gpsStatus !== 'checking' && txProofPhoto && !isGpsRestricted && !isProcessingSale && !hasInvalidDamagedItems && !hasInsufficientStockForExchange;/.test(termSrc),
+  'this one line is the difference between a manifest and a hole in the ledger — if it was ' +
+  'reformatted, re-read every clause before changing this check to match');
+check(G26, 'the deal still leaves through the one committed path',
+  /onClick=\{handleFinalDeal\}/.test(termSrc) && /disabled=\{!canSubmitSale \|\| isProcessingSale\}/.test(termSrc),
+  'a second submit path would bypass the gate above');
+
+/* THE DRAWER. Both handles now, and the bar must pass an onTap or a tap on it toggles the
+   manifest instead of reaching the picker button inside it. */
+check(G26, 'the manifest can be dragged by the grip AND by the customer bar',
+  /onPointerDown=\{startDrawerDrag\}/.test(termSrc) &&
+  /onPointerDown=\{\(e\) => startDrawerDrag\(e, \(\) => \{\}\)\}/.test(termSrc) &&
+  /if \(d\.onTap\) \{ d\.onTap\(\); return; \}/.test(termSrc),
+  'without the onTap override a tap on the customer bar toggles the drawer, and the picker ' +
+  'button inside it becomes unreachable on a phone');
+check(G26, 'the clear-customer X does not start a drag',
+  /data-no-drag/.test(termSrc) && /e\.target\.closest\('\[data-no-drag\]'\)/.test(termSrc),
+  'it sits inside the drag surface — without the guard, clearing a customer drags the manifest');
+check(G26, 'the drawer still snaps closed, half and full',
+  /drawerSnaps\(\) = \(\) =>|const drawerSnaps = \(\) => \[DRAWER_CLOSED, Math\.round\(window\.innerHeight \* 0\.55\), drawerMax\(\)\]/.test(termSrc),
+  'the three snap points are what make it a drawer rather than a thing that flops open');
+
+/* THE STOCK SOURCE. The switch moved out of App's shell into the wares column; what must NOT
+   have moved is which vault the terminal then reads and writes. */
+check(G26, 'the stock switch still decides which vault the terminal uses',
+  /agentProfileId=\{userRole === 'ADMIN' \? \(adminSalesMode === 'VEHICLE' \? 'ADMIN_VEHICLE' : 'VAULT'\) : agentProfileId\}/.test(appCode),
+  'the toggle is cosmetic if this stops deriving agentProfileId — the boss would sell from the ' +
+  'wrong stock with the right button lit');
+check(G26, 'the terminal still writes into the vault it read from',
+  /masterUserId=\{userId\}/.test(appCode) && /const dataOwnerId = masterUserId \|\|/.test(termSrc),
+  'this is G20\'s bug: a salesman writing customers and IOUs into his own vault while reading ' +
+  'the list out of the boss\'s');
+
+/* THE PICKER. One input, two ways in, and the click-outside sanctuary intact. */
+/* ONE WRITER, not one field. There are two `value={customerName}` inputs in this file and that is
+   correct: the second (in the NOO block) is `disabled`, a read-back rather than a control. What
+   must stay unique is the number of places that can CHANGE customerName from a keyboard —
+   `handleManualCustomerType` carries the tier reset, the territory clear and the auto-select, so
+   a second field wired straight to setCustomerName would skip all three silently. */
+check(G26, 'exactly one field can write the customer name, reachable from both openers',
+  (termSrc.match(/onChange=\{handleManualCustomerType\}/g) || []).length === 1 &&
+  /autoFocus/.test(termSrc) &&
+  (termSrc.match(/manifest-dropdown-area/g) || []).length >= 3,
+  'two inputs fighting over one customerName is how the tier and the territory stamp drift ' +
+  'apart; the sanctuary class is what stops the sheet closing as you type in it');
+check(G26, 'registering an outlet still hands the screen back to the wares',
+  (termSrc.match(/setDrawerH\(DRAWER_CLOSED\)/g) || []).length >= 2,
+  'his G6 report — a NOO that leaves the paper open looks like a freeze');
 
 /* ── report ──────────────────────────────────────────────────────────────── */
 let last = '';
