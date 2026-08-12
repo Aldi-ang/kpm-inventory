@@ -1,6 +1,26 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-12 13:25 WIB** · branch `phase0-solid-ground` · last code commit: run `git log -1`
+**Updated: 2026-08-12 14:10 WIB** · branch `phase0-solid-ground` · last code commit: run `git log -1`
+
+## ✅ LOG 14:10 WIB — his six rail notes, all done. 258/258, drag re-measured live.
+
+1. **The ribbon moves.** Drag it up/down and it stays there (`kpm-ribbon-y` in localStorage).
+   Axis is decided once per gesture on the first 6px — per-event decisions stutter on a
+   diagonal thumb-swipe. Verified: 340 → 500, saved, and the panel did NOT open.
+2. **The three-line square is deleted at every width.** `Menu`/`X` imports gone with it. Desk
+   keeps the panel permanently open — it is in the flow there, so nothing is covered.
+3. **The rail is two columns** — `RAIL_W` 76 → 152, `grid grid-cols-2`. A full Tier-1 menu fits
+   with no scrolling. NOTE: opening now needs a 76px drag (half the rail), or a tap.
+4. **The music head is one mark.** No play/pause/chevron crammed into the cell; everything is
+   in the panel, which opens to the left at 200px (152+8+200 < 375).
+5. **The face is the agent's own** — `motorists[agentProfileId].profileImage`, then
+   `user.photoURL`, then a plain mark. dicebear and `appSettings.mascotImage` are gone.
+6. **Liquid-glass hover** on the rail marks and header chips: real `backdrop-filter`, arrives
+   at 320/420ms with overshoot, LEAVES at a flat 180ms. The asymmetry is the whole effect.
+
+Verified live at 375px: rail w=152, opens to x=223 (=375-152), tap closes to 375, vertical drag
+moves the ribbon without opening. Still unverified by eye: the 2-column grid and the music panel
+both need a logged-in admin.
 
 ## ✅ LOG 13:25 WIB — full-height manifest, the edge panel, and the header. 252/252.
 
@@ -89,6 +109,33 @@ Fixed inside `cek()` (A-Brain `34ea414`), not at the six call sites.
 see the bug. New harness `scratchpad/selfcheck.js` evaluates the whole file with the Google
 services stubbed and calls the REAL `lancelotSelfCheck`, which returns `semua` (a boolean). It now
 returns `true`. Never re-implement the thing under test.
+
+## 🟡 LOG 17:15 WIB — NEW MODEL SPECCED, BUILD DEFERRED BY HIM. Quota 84%, resets ~18:00.
+
+His instruction: *"i rather let u take notes first and do this after token reset"*. **No code was
+written for this.** The full spec, in his own words, is in
+`A-Brain/Wiki/Concepts/Lancelot the Tobacco Ledger Agent.md` → section **"THE TWO-NOTA MODEL"**.
+Read that section, not this summary, before touching `tulisNota_`.
+
+One sale now produces **two notas**: the real pabrik nota (our revenue) and the agen's copy (lower
+price — the minus). Profit = real − agen. Identical rows and seri; only harga, maybe tara, and
+ongkos differ, and **ongkos is charged on the agen side only** or the margin double-counts.
+
+**🔴 BLOCKING BUG, found while speccing, NOT fixed:** `petaSeri_` skips the seri-clash guard only
+for `JUAL PABRIK`. The agen copy carries the SAME seri, so every agen nota would be rejected with
+`NOMOR SERI BENTROK`. It must skip `NOTA AGEN` too. **Fix this first.**
+
+Also: `IN/OUT` shrinks — OUT means the pabrik refused and *"its their responsibility... we dont
+need to take notes"*, so `LABEL BARU` and the resold-OUT fallback added this morning are now dead
+weight. New: `NO GUDANG` (optional) on ITEM, a per-agen IN/OUT tab, and a `CUAN HARIAN` tab with
+**one row per day per agen**. Nota pembelian is now optional; bon is out of scope.
+
+**❓ OWED BY ALDI:** confirm the pairing key. My pick, unconfirmed: agen copy = real nota number +
+`-AGEN` with `JENIS NOTA = NOTA AGEN`. He described only that the contents are identical.
+
+**⚠️ Two sessions share ONE quota.** The 84% reading includes the KPM app session running in
+parallel in this same repo. Nothing collides on disk — Lancelot work is entirely in the A-Brain
+repo — but the runway is shared, and this is the second time in one day a big job was cut short.
 
 ## 🔴 LOG 13:40 WIB — HE WIPED THE SHEET. Only MITA, YOHAN, C remain. New law: he names categories.
 

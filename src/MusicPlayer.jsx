@@ -73,23 +73,36 @@ const MusicPlayer = () => {
     return (
         /* `relative` is load-bearing on a phone: it is what the body below anchors its
            `right-full` to, and without it the panel would hang off the viewport instead. */
-        <div className="relative w-full bg-black/40 border border-white/10 rounded-xl font-mono flex flex-col mb-4 shadow-lg shrink-0">
+        /* Bare on a phone — the head has to read as one more mark in the rail, not as a widget
+           parked in it. The desk keeps the card it always had. */
+        <div className="relative w-full lg:bg-black/40 lg:border lg:border-white/10 rounded-xl font-mono flex flex-col mb-2 lg:mb-4 lg:shadow-lg shrink-0">
             <audio ref={audioRef} onEnded={handleSongEnd} />
 
             {/* ACCORDION HEADER (Always visible) */}
-            {/* On a phone this whole component lives in a 76px rail, so the head keeps the note
-                and play/pause and drops the name — you opened the music, you know what it is. */}
+            {/* HIS CALL: "music player is squeshed bro, hard to interact with it, i rather make
+                the music logo pressable like other components ... delete the music player button,
+                like the forward backwar pause button in the sidebar ... make the music button
+                spawn a panel beside it".
+
+                So on a phone the head is exactly one mark, the same 56px target as every other
+                mark in the rail, and it does exactly one thing: open the panel. Every control —
+                play, skip, shuffle, loop, volume — lives in the panel where there is room to hit
+                it. The mini play/pause that used to sit here is what was squeezing the row. */}
             <div
                 onClick={() => setIsExpanded(!isExpanded)}
-                className="bg-[#ff9d00]/10 p-2 lg:p-2.5 flex justify-center lg:justify-between items-center gap-1.5 lg:gap-2 rounded-t-xl border-b border-[#ff9d00]/20 cursor-pointer hover:bg-[#ff9d00]/20 transition-colors"
+                role="button"
+                aria-expanded={isExpanded}
+                aria-label="Cassette OS"
+                className={`kpm-rail-mark ${isExpanded ? 'on' : ''} relative h-14 lg:h-auto p-2 lg:p-2.5 flex justify-center lg:justify-between items-center gap-2 rounded-xl lg:rounded-none lg:rounded-t-xl lg:border-b border-[#ff9d00]/20 cursor-pointer transition-colors`}
             >
                 <div className="flex items-center gap-2">
-                    <Music size={14} className={`text-[#ff9d00] shrink-0 ${isPlaying ? 'animate-pulse' : ''}`} />
+                    <Music size={21} className={`text-[#ff9d00] shrink-0 transition-transform duration-300 ${isPlaying ? 'animate-pulse' : ''} ${isExpanded ? 'scale-[1.22]' : ''}`} />
                     <span className="hidden lg:inline text-[10px] font-bold text-[#ff9d00] tracking-widest uppercase">Cassette OS</span>
                 </div>
 
-                {/* MINI CONTROLS (Lets you play/pause without expanding the menu!) */}
-                <div className="flex items-center gap-1 lg:gap-3">
+                {/* Desk keeps its chevron and its inline play/pause — there is room for them in
+                    a 256px column, and taking them away would be a change he did not ask for. */}
+                <div className="hidden lg:flex items-center gap-3">
                     <button
                         onClick={(e) => { e.stopPropagation(); togglePlay(); }}
                         aria-label={isPlaying ? 'Pause' : 'Play'}
@@ -109,7 +122,7 @@ const MusicPlayer = () => {
                 rail for this to have anywhere to go. On a desk nothing moves: lg:static puts it
                 straight back under the head, in the flow, exactly as it was. */}
             <div className={`transition-all duration-300 origin-top overflow-hidden
-                             absolute right-full bottom-0 mr-2 w-[232px] rounded-xl border border-[#3e3226] bg-[#0f0e0d] shadow-[0_10px_40px_rgba(0,0,0,.7)]
+                             absolute right-full bottom-0 mr-2 w-[200px] rounded-xl border border-[#3e3226] bg-[#0f0e0d] shadow-[0_10px_40px_rgba(0,0,0,.7)]
                              lg:static lg:w-auto lg:mr-0 lg:rounded-none lg:border-0 lg:bg-transparent lg:shadow-none
                              ${isExpanded ? 'max-h-[300px] opacity-100' : 'max-h-0 opacity-0 pointer-events-none'}`}>
                 

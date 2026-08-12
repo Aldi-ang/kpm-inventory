@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Menu, Lock, LogOut, LogIn, ArrowRight, Trophy, Sun, Moon,
+/* `Menu` and `X` went with the three-line square — nothing else in this file drew either. */
+import { Lock, LogOut, LogIn, ArrowRight, Trophy, Sun, Moon,
          User, LayoutGrid, Map, Route, Truck, Package, Boxes, PackagePlus, Store,
          Receipt, Wallet, ClipboardList, Users, Gift, BarChart3, ScrollText, Settings } from 'lucide-react';
 import { signOut } from 'firebase/auth';
@@ -15,7 +16,7 @@ export default function BiohazardTheme({
     activeTab, setActiveTab, children, user, appSettings,
     isAdmin, onLogin, userRole, setShowAdminLogin, showAdminLogin, agentSettings,
     notifications, onNotificationClick, appVersion,
-    darkMode, setDarkMode, syncIndicator
+    darkMode, setDarkMode, syncIndicator, agentPhoto
 }) {
     /* Starts open on a desk and closed on a phone. One piece of state drives both, but the
        sensible default differs: a phone has no room to spend on navigation you are not
@@ -67,7 +68,25 @@ export default function BiohazardTheme({
     const [railPull, setRailPull] = useState(null);   // null = not dragging
     const [peek, setPeek] = useState(null);           // which mark is being touched
     const pullRef = useRef(null);
-    const RAIL_W = 76;
+    /* 152, not 76: two columns of marks. His reason, and it is the right one — "there is so
+       many features, especially for higher tier", and a single column of seventeen made the
+       rail a scrolling list, which is the thing a rail exists to avoid. Two columns fit a
+       Tier-1 menu on one screen with nothing to scroll past. */
+    const RAIL_W = 152;
+    const RIBBON_H = 132;
+
+    /* WHERE THE RIBBON SITS IS HIS, NOT MINE. His words: "our thumb usually position
+       differently when using phone right". A vertical drag moves it and remembers; a
+       horizontal drag opens the panel. The axis is decided once, on the first 6px of
+       movement, and then held for the rest of the gesture — deciding it per-event makes a
+       diagonal thumb-swipe stutter between the two. */
+    const [ribbonY, setRibbonY] = useState(() => {
+        if (typeof window === 'undefined') return 0;
+        const saved = Number(localStorage.getItem('kpm-ribbon-y'));
+        return Number.isFinite(saved) && saved > 0
+            ? Math.min(saved, window.innerHeight - RIBBON_H - 8)
+            : Math.round((window.innerHeight - RIBBON_H) / 2);
+    });
 
     /* NO setPointerCapture. It was here and it was a liability: the pointer has to be active
        for it, and when it is not it THROWS, which kills the handler before a single listener
@@ -75,13 +94,23 @@ export default function BiohazardTheme({
        Listening on window covers the finger leaving the ribbon just as well. */
     const startRailPull = (e) => {
         if (pullRef.current) return;
-        pullRef.current = { startX: e.clientX, moved: false, wasOpen: isMobileMenuOpen };
+        pullRef.current = { startX: e.clientX, startY: e.clientY, startTop: ribbonY, axis: null, moved: false, wasOpen: isMobileMenuOpen };
         setRailPull(isMobileMenuOpen ? 1 : 0);
 
         const onMove = (ev) => {
             const d = pullRef.current;
             if (!d) return;
             const dx = d.startX - ev.clientX;          // pulling LEFT opens it
+            const dy = ev.clientY - d.startY;          // dragging UP/DOWN moves the ribbon
+            if (!d.axis && (Math.abs(dx) > 6 || Math.abs(dy) > 6)) {
+                d.axis = Math.abs(dy) > Math.abs(dx) ? 'y' : 'x';
+                d.moved = true;
+            }
+            if (d.axis === 'y') {
+                setRibbonY(Math.max(8, Math.min(window.innerHeight - RIBBON_H - 8, d.startTop + dy)));
+                setRailPull(d.wasOpen ? 1 : 0);        // hold the panel still while it is moved
+                return;
+            }
             if (Math.abs(dx) > 4) d.moved = true;
             const base = d.wasOpen ? RAIL_W : 0;
             setRailPull(Math.max(0, Math.min(1, (base + dx) / RAIL_W)));
@@ -93,6 +122,13 @@ export default function BiohazardTheme({
             const d = pullRef.current;
             pullRef.current = null;
             if (!d) return;
+            /* Moving the ribbon is not opening the panel. Remembered across sessions, because a
+               position you have to set every time you pick the phone up is not a preference. */
+            if (d.axis === 'y') {
+                setRailPull(null);
+                try { localStorage.setItem('kpm-ribbon-y', String(Math.max(8, Math.min(window.innerHeight - RIBBON_H - 8, d.startTop + (ev.clientY - d.startY))))); } catch { /* private mode */ }
+                return;
+            }
             /* A tap is a toggle. A drag lands wherever it was let go of, past the halfway
                mark — the same rule the manifest drawer uses, so the two gestures in this app
                do not disagree about what "far enough" means. `wasOpen` is read off the drag
@@ -166,32 +202,24 @@ export default function BiohazardTheme({
                 and takes a dead control out of the tab order as well as out of sight.
                 Raising the gate's z-index is not an option either: this button sits in its own
                 stacking context, so the gate's z-[9999] never beats its z-[100]. */}
-            {!showAdminLogin && (
-                <button
-                    onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                    aria-label={isMobileMenuOpen ? 'Close navigation' : 'Open navigation'}
-                    aria-expanded={isMobileMenuOpen}
-                    /* DESK ONLY now. On a desk this square also has a second job the phone
-                       never had — it gives the panel's 256px back to the content — so it stays,
-                       in the app's own colours instead of the stock orange it was built in. */
-                    className="hide-on-print hidden lg:block fixed top-3 left-3 z-[100] p-2.5 bg-[#0f0e0d]/95 backdrop-blur-md text-[#ff9d00] rounded-xl shadow-[0_0_15px_rgba(255,157,0,0.28)] border border-[#5c4b3a] hover:border-[#8b7256] active:scale-90 transition-all"
-                >
-                    {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
-                </button>
-            )}
+            {/* THE THREE-LINE SQUARE IS DELETED, at every width — his call: "the 3 lines sidebar
+                button is still exist make sure u delete it". The ribbon is the only way in on a
+                phone, and on a desk the panel is simply always open: it is in the flow there, so
+                nothing is covered and there was never anything to dismiss. `Menu` and `X` are no
+                longer imported for this reason. */}
 
             {/* THE RIBBON — the phone's way in. A 14px sliver on the edge that breathes, so it
-                reads as "pull me" without ever being a thing on the screen. It is a drag first
-                and a tap second: `startRailPull` keeps the panel under the finger and decides
-                where it lands on release. touchAction none or the browser claims the gesture
-                for a page scroll before the first move event arrives. */}
+                reads as "pull me" without ever being a thing on the screen. Drag it SIDEWAYS to
+                open the panel, UP or DOWN to move the ribbon itself to wherever your thumb
+                actually rests. touchAction none or the browser claims the gesture for a page
+                scroll before the first move event arrives. */}
             {!showAdminLogin && (
                 <button
                     onPointerDown={startRailPull}
                     aria-label={isMobileMenuOpen ? 'Close navigation' : 'Open navigation'}
                     aria-expanded={isMobileMenuOpen}
-                    style={{ touchAction: 'none' }}
-                    className="kpm-edge-ribbon hide-on-print lg:hidden fixed right-0 top-1/2 -translate-y-1/2 z-[100] w-[14px] h-[132px]"
+                    style={{ touchAction: 'none', top: ribbonY }}
+                    className="kpm-edge-ribbon hide-on-print lg:hidden fixed right-0 z-[100] w-[14px] h-[132px]"
                 >
                     <span className="kpm-edge-grip"></span>
                 </button>
@@ -263,7 +291,7 @@ export default function BiohazardTheme({
                    orphan panel floating over the app once you have expanded the player. The
                    desk keeps overflow-hidden throughout, because there the panel collapses by
                    WIDTH (lg:w-0) and its contents must not spill while it does. */
-                className={`hide-on-print fixed inset-y-0 right-0 z-[90] w-[76px] lg:w-64 bg-[#0b0a09]/97 lg:bg-black/95 backdrop-blur-xl border-l lg:border-l-0 lg:border-r border-[#3e3226] lg:border-white/10 flex flex-col pt-5 lg:pt-8 px-0 lg:pl-4 lg:pr-4 lg:overflow-hidden
+                className={`hide-on-print fixed inset-y-0 right-0 z-[90] w-[152px] lg:w-64 bg-[#0b0a09]/97 lg:bg-black/95 backdrop-blur-xl border-l lg:border-l-0 lg:border-r border-[#3e3226] lg:border-white/10 flex flex-col pt-5 lg:pt-8 px-0 lg:pl-4 lg:pr-4 lg:overflow-hidden
                              transition-[transform,width,padding,opacity] duration-300 ease-[cubic-bezier(.22,1,.36,1)] lg:relative lg:translate-x-0
                              ${isMobileMenuOpen
                                 ? 'overflow-visible translate-x-0 lg:w-64 lg:opacity-100'
@@ -280,8 +308,13 @@ export default function BiohazardTheme({
                     <p className="text-[10px] font-mono text-[#8b7256] tracking-widest mt-1">BUILD {appVersion}</p>
                 </div>
 
+                {/* TWO COLUMNS ON A PHONE, one on a desk. Seventeen marks in a single file made
+                    the rail a list you had to scroll, and a menu you scroll is a menu you search
+                    — which is the opposite of what a fixed rail is for. Two columns put a full
+                    tier's menu on one screen. `content-start` so a short menu sits at the top
+                    instead of being spread down the whole rail. */}
                 {user ? (
-                    <nav key={`nav-${isAdmin}`} className="space-y-0.5 lg:space-y-0.5 flex-1 overflow-y-auto scrollbar-hide boot-2">
+                    <nav key={`nav-${isAdmin}`} className="grid grid-cols-2 gap-1 px-1 content-start lg:block lg:space-y-0.5 lg:px-0 flex-1 overflow-y-auto scrollbar-hide boot-2">
                         {visibleMenu.map(item => {
                             const Mark = item.icon;
                             const on = activeTab === item.id;
@@ -297,7 +330,7 @@ export default function BiohazardTheme({
                                     onPointerCancel={() => setPeek(null)}
                                     onPointerLeave={() => setPeek(null)}
                                     title={item.label}
-                                    className={`kpm-rail-mark relative w-full flex items-center justify-center h-14 lg:h-auto lg:block lg:text-left lg:py-2 lg:px-3 text-xs font-bold transition-all duration-200 uppercase tracking-widest lg:clip-path-polygon ${
+                                    className={`kpm-rail-mark ${on ? 'on' : ''} relative w-full flex items-center justify-center h-14 lg:h-auto lg:block lg:text-left lg:py-2 lg:px-3 text-xs font-bold transition-all duration-200 uppercase tracking-widest lg:clip-path-polygon ${
                                         on
                                         ? 'text-[#ff9d00] lg:bg-white lg:text-black lg:pl-6 lg:shadow-[0_0_10px_rgba(255,255,255,0.8)] lg:border-l-4 lg:border-orange-500'
                                         : 'text-[#6b5845] lg:text-gray-500 lg:hover:text-white lg:hover:pl-4 lg:hover:bg-white/5'
@@ -349,11 +382,23 @@ export default function BiohazardTheme({
 
                     {user ? (
                         <div className="flex flex-col lg:flex-row items-center gap-2">
-                            <img
-                                src={appSettings?.mascotImage || "https://api.dicebear.com/7.x/avataaars/svg?seed=Admin"}
-                                className="w-8 h-8 lg:w-7 lg:h-7 rounded border border-[#5c4b3a] lg:border-white/30 object-cover bg-black"
-                                alt="avatar"
-                            />
+                            {/* HIS CALL: "my profile picture above the logout button should follow
+                                the one each email have on the agent profile ... we dont need that
+                                mascott profile anymore". So: the agent's own uploaded photo, then
+                                the Google account picture, then a plain mark. The dicebear robot
+                                and appSettings.mascotImage are both gone — one of them was a
+                                network request on every load for a face nobody chose. */}
+                            {agentPhoto || user?.photoURL ? (
+                                <img
+                                    src={agentPhoto || user.photoURL}
+                                    className="w-9 h-9 lg:w-7 lg:h-7 rounded border border-[#5c4b3a] lg:border-white/30 object-cover bg-black shrink-0"
+                                    alt="Profile"
+                                />
+                            ) : (
+                                <div className="w-9 h-9 lg:w-7 lg:h-7 rounded border border-[#5c4b3a] lg:border-white/30 bg-black text-[#8b7256] flex items-center justify-center shrink-0">
+                                    <User size={16} />
+                                </div>
+                            )}
                             <div className="hidden lg:block flex-1 min-w-0">
                                 <p className="text-[11px] text-gray-400 uppercase font-bold leading-none mb-0.5">OPERATIVE</p>
                                 <p className="text-[10px] text-white font-mono truncate leading-none">{user.email?.split('@')[0]}</p>

@@ -940,16 +940,38 @@ check(G24, 'the reducer has its own runnable proof',
 const G25 = '25. The phone opens the navigation from the edge';
 const shellSrc = strip(fs.readFileSync('src/components/BiohazardTheme.jsx', 'utf8'));
 
-check(G25, 'the orange corner square is desk-only now',
-  /hidden lg:block fixed top-3 left-3 z-\[100\]/.test(shellSrc),
-  'on a phone it is replaced by the ribbon — leaving both means two ways in and 64px of ' +
-  'header padding kept for a button that is not there');
+/* "the 3 lines sidebar button is still exist make sure u delete it" — deleted at EVERY width,
+   not hidden on one. The ribbon is the only way in on a phone; on a desk the panel is in the
+   flow and always open, so there was never anything to dismiss. */
+check(G25, 'the three-line square is gone at every width',
+  !/fixed top-3 left-3/.test(shellSrc) && !/<Menu\b/.test(shellSrc) && !/\bMenu,/.test(shellSrc),
+  'he asked for it deleted, not hidden — and an unused Menu import is how it creeps back');
+check(G25, 'the ribbon can be moved to wherever his thumb is, and stays there',
+  /localStorage\.setItem\('kpm-ribbon-y'/.test(shellSrc) &&
+  /d\.axis = Math\.abs\(dy\) > Math\.abs\(dx\) \? 'y' : 'x'/.test(shellSrc) &&
+  /style=\{\{ touchAction: 'none', top: ribbonY \}\}/.test(shellSrc),
+  'his words: "our thumb usually position differently when using phone" — the axis must be ' +
+  'decided ONCE per gesture or a diagonal thumb-swipe stutters between moving and opening');
+/* "instead of 1 line of sidebar i want it to be 2 colomn per row, to eliminate scrolling
+   because there is so many features, especially for higher tier" */
+check(G25, 'the rail is two columns wide, so a full menu fits without scrolling',
+  /const RAIL_W = 152;/.test(shellSrc) &&
+  /w-\[152px\] lg:w-64/.test(shellSrc) &&
+  /grid grid-cols-2 gap-1 px-1 content-start lg:block/.test(shellSrc),
+  'RAIL_W and the class must agree — the drag maths, the name plate offset and the panel ' +
+  'width are all measured off it');
+/* "we dont need that mascott profile anymore" */
+check(G25, 'the face is the agent\'s own, not a mascot or a robot',
+  !/mascotImage/.test(shellSrc) && !/dicebear/.test(shellSrc) &&
+  /agentPhoto \|\| user\?\.photoURL/.test(shellSrc) &&
+  /agentPhoto=\{motorists\.find/.test(appCode),
+  'dicebear was a network request on every load for a face nobody chose');
 /* THE iOS TRAP. A drag that starts on the LEFT edge is Safari's back gesture, so a left-hand
    ribbon sometimes leaves the app instead of opening the panel. Right edge is forward, which
    does nothing without forward history. Move it back to the left and this goes red. */
 check(G25, 'the ribbon is on the RIGHT edge, away from Safari\'s back gesture',
   /kpm-edge-ribbon[^"]*lg:hidden fixed right-0/.test(shellSrc) &&
-  /fixed inset-y-0 right-0 z-\[90\] w-\[76px\]/.test(shellSrc),
+  /fixed inset-y-0 right-0 z-\[90\] w-\[152px\]/.test(shellSrc),
   'the left edge is iOS back — a navigation control that can exit the app is worse than none');
 /* IT THREW AND THE WHOLE GESTURE DIED SILENTLY. setPointerCapture needs an active pointer;
    without one it raises, before a single listener is attached, and the ribbon does nothing. */
@@ -998,6 +1020,14 @@ const musicSrc = strip(fs.readFileSync('src/MusicPlayer.jsx', 'utf8'));
 check(G25, 'the music player is in the panel at every width',
   /\{isAdmin && <MusicPlayer \/>\}/.test(shellSrc),
   'wrapping it in `hidden lg:block` takes it off the phone again — he asked for it back by name');
+/* "music player is squeshed bro ... i rather make the music logo pressable like other
+   components ... delete the music player button, like the forward backwar pause button in the
+   sidebar ... make the music button spawn a panel beside it". */
+check(G25, 'the rail head is one mark, with no transport crammed beside it',
+  /kpm-rail-mark \$\{isExpanded \? 'on' : ''\}/.test(musicSrc) &&
+  /hidden lg:flex items-center gap-3/.test(musicSrc),
+  'play/skip in a rail cell is what squeezed it — every control belongs in the panel, and ' +
+  'the desk keeps its inline pair because there is room for it there');
 check(G25, 'its body opens sideways, out of the rail',
   /\? 'overflow-visible translate-x-0/.test(shellSrc) &&
   /: 'overflow-hidden translate-x-full/.test(shellSrc) &&

@@ -987,11 +987,56 @@ html.lite-mode .kpm-rail-say { animation: none; }
   @keyframes kpmRailSayFade { from { opacity: 0; } to { opacity: 1; } }
 }
 
-/* A mark that is pressed dips, the way a real key does. transform only — see the note on
-   the coin: nothing in this app may reflow to acknowledge a touch. */
-.kpm-rail-mark { -webkit-tap-highlight-color: transparent; }
-.kpm-rail-mark:active { transform: scale(.9); }
+/* ---------- LIQUID GLASS ----------
+   His words: "i want the hover animation to be better tho, maybe more natural and more organic,
+   more like liquid glass kind of smoothness".
+
+   What makes a hover feel like a hard switch is that everything about it arrives at once and on
+   the same clock. This does the opposite, and the whole trick is in three numbers:
+
+   - The GLASS grows from 72% to full on a 420ms overshoot curve, so it swells into place
+     instead of appearing. It carries a real backdrop-filter, so what is behind it bends.
+   - The COLOUR lands sooner, at 260ms, because the eye reads colour before shape — matching
+     them makes the whole thing feel late.
+   - LEAVING is quicker than arriving (180ms, plain ease-out, no overshoot). Nothing in the
+     physical world springs back into a resting state, and a symmetric exit is the single most
+     common reason UI motion reads as rubbery rather than liquid.
+
+   The inset highlight along the top edge is what sells it as a surface rather than a glow: a
+   real pane of glass catches light on the lip nearest the light source, and nowhere else. */
+.kpm-rail-mark { -webkit-tap-highlight-color: transparent;
+  transition: color 180ms ease-out, transform 180ms ease-out; }
+.kpm-rail-mark::before {
+  content: ""; position: absolute; inset: 5px; border-radius: 14px; pointer-events: none;
+  opacity: 0; transform: scale(.72);
+  background:
+    radial-gradient(120% 120% at 50% 24%, rgba(255,157,0,.22), rgba(255,157,0,.05) 56%, transparent 74%),
+    linear-gradient(180deg, rgba(255,238,205,.10), rgba(255,238,205,0) 58%);
+  box-shadow: inset 0 1px 0 rgba(255,228,175,.22), inset 0 -1px 0 rgba(0,0,0,.35),
+              0 6px 20px rgba(255,157,0,.10);
+  -webkit-backdrop-filter: blur(7px) saturate(1.25);
+          backdrop-filter: blur(7px) saturate(1.25);
+  /* leaving: 180ms, flat. arriving: 320/420ms with overshoot. See the note above. */
+  transition: opacity 180ms ease-out, transform 180ms ease-out;
+}
+.kpm-rail-mark:hover, .kpm-rail-mark:focus-visible {
+  transition: color 260ms cubic-bezier(.22, 1, .36, 1), transform 260ms cubic-bezier(.22, 1, .36, 1); }
+.kpm-rail-mark:hover::before, .kpm-rail-mark:focus-visible::before, .kpm-rail-mark.on::before {
+  opacity: 1; transform: scale(1);
+  transition: opacity 320ms cubic-bezier(.22, 1, .36, 1),
+              transform 420ms cubic-bezier(.16, 1.16, .3, 1); }
+/* The press is the one place a hard, fast number is right — a key that dips slowly feels broken. */
+.kpm-rail-mark:active { transform: scale(.92); transition-duration: 90ms; }
+.kpm-rail-mark:active::before { transform: scale(.96); transition-duration: 90ms; }
+/* the icon has to sit ON the glass — ::before is positioned, so without this it covers it */
+.kpm-rail-mark > * { position: relative; z-index: 1; }
+
+html.lite-mode .kpm-rail-mark::before { display: none; }
 html.lite-mode .kpm-rail-mark:active { transform: none; }
+@media (prefers-reduced-motion: reduce) {
+  /* the glass stays — it is what says "this one" — only the swell and the dip go */
+  .kpm-rail-mark, .kpm-rail-mark::before { transition: opacity 120ms ease-out, color 120ms ease-out; transform: none !important; }
+}
 
 /* ---------- THE HEADER'S CONTROLS ----------
    Sync, theme and the bell were three shapes in three palettes standing 24px apart: a green
@@ -1003,10 +1048,18 @@ html.lite-mode .kpm-rail-mark:active { transform: none; }
   height: 36px; min-width: 36px; padding: 0 .55rem;
   color: #8b7256; background: #0f0e0d; border: 1px solid #3e3226; border-radius: 10px;
   -webkit-tap-highlight-color: transparent;
-  transition: color 160ms ease-out, border-color 160ms ease-out,
-              box-shadow 160ms ease-out, transform 110ms ease-out;
+  /* same asymmetry as the rail marks: leaving is flat and quick, arriving overshoots slightly */
+  transition: color 170ms ease-out, border-color 170ms ease-out,
+              background-color 170ms ease-out, box-shadow 170ms ease-out, transform 110ms ease-out;
 }
-.kpm-chip:hover, .kpm-chip:focus-visible { color: #f5e6c8; border-color: #8b7256; box-shadow: 0 0 12px rgba(255,157,0,.14); }
+.kpm-chip:hover, .kpm-chip:focus-visible {
+  color: #f5e6c8; border-color: #8b7256;
+  background-image: linear-gradient(180deg, rgba(255,238,205,.09), rgba(255,238,205,0) 62%);
+  box-shadow: inset 0 1px 0 rgba(255,228,175,.20), 0 4px 18px rgba(255,157,0,.14);
+  transition: color 240ms cubic-bezier(.22, 1, .36, 1), border-color 240ms cubic-bezier(.22, 1, .36, 1),
+              background-color 240ms cubic-bezier(.22, 1, .36, 1),
+              box-shadow 300ms cubic-bezier(.16, 1.16, .3, 1), transform 240ms cubic-bezier(.16, 1.16, .3, 1);
+}
 .kpm-chip:active { transform: translateY(1px) scale(.955); }
 .kpm-chip.on   { color: #ff9d00; border-color: #8b7256; box-shadow: 0 0 14px rgba(255,157,0,.22); }
 .kpm-chip.warn { color: #e0705a; border-color: #7a3b32; box-shadow: 0 0 14px rgba(224,112,90,.18); }

@@ -3497,6 +3497,9 @@ const handleGitHubMirror = async () => {
              matrixTick={matrixTick} /* 🚀 CATCH THE PULSE AND REDRAW UI */
             darkMode={darkMode}
             setDarkMode={setDarkMode}
+            /* The face in the panel is the agent's own, the one they set on Agent Profile.
+               Google's account picture is the fallback; the dicebear robot is gone. */
+            agentPhoto={motorists.find(m => m.id === agentProfileId)?.profileImage || null}
             syncIndicator={user && (
                 /* PALETTE LAW. This was an emerald pill — the last green in the app chrome, and
                    the loudest thing in a header whose job is to be quiet. Synced is the calm
