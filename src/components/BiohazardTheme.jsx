@@ -1,5 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { X, Menu, Lock, LogOut, LogIn, ArrowRight, Trophy, Sun, Moon } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { X, Menu, Lock, LogOut, LogIn, ArrowRight, Trophy, Sun, Moon,
+         User, LayoutGrid, Map, Route, Truck, Package, Boxes, PackagePlus, Store,
+         Receipt, Wallet, ClipboardList, Users, Gift, BarChart3, ScrollText, Settings } from 'lucide-react';
 import { signOut } from 'firebase/auth';
 import { auth } from '../config/firebase'; 
 import NotificationBell from './NotificationBell';
@@ -42,25 +44,90 @@ export default function BiohazardTheme({
         }
     };
 
+    /* THE EDGE PANEL — his call, 2026-08-12: "replace the side panel button into smaller size
+       that is dragable from the side but not really visible from the side, the idea is like
+       samsung edge panel ... when we pull it what showing instead is this kind of logo with
+       brief info of what we hovering at".
+
+       PHONE ONLY. A desk has room for the 256px panel of words and always has; every `lg:`
+       below is that panel, untouched. What changes under lg is the way IN (a ribbon on the
+       edge instead of an orange square in the corner) and the way it READS (a 76px rail of
+       marks, with the name of the one you are touching printed beside it).
+
+       `railPull` is 0..1 — how far out the finger has dragged it — and it is the only reason
+       this feels like Samsung's rather than a button that toggles a class: the panel is under
+       the finger the whole way, and where it lands is decided on release.
+
+       THE RIGHT EDGE, NOT THE LEFT, and that is not a style choice. He is on iOS, where a drag
+       that starts at the left edge is Safari's own BACK gesture. A navigation panel that
+       sometimes leaves the app instead of opening is worse than no panel; the right edge on
+       iOS is forward, which does nothing when there is no forward history — which there never
+       is here. Samsung's own edge panel is on the right for the mirror of this reason. The
+       desk is untouched: every `lg:` below still puts the panel on the left, in the flow. */
+    const [railPull, setRailPull] = useState(null);   // null = not dragging
+    const [peek, setPeek] = useState(null);           // which mark is being touched
+    const pullRef = useRef(null);
+    const RAIL_W = 76;
+
+    /* NO setPointerCapture. It was here and it was a liability: the pointer has to be active
+       for it, and when it is not it THROWS, which kills the handler before a single listener
+       is attached — the gesture then does nothing at all, with no error anyone would see.
+       Listening on window covers the finger leaving the ribbon just as well. */
+    const startRailPull = (e) => {
+        if (pullRef.current) return;
+        pullRef.current = { startX: e.clientX, moved: false, wasOpen: isMobileMenuOpen };
+        setRailPull(isMobileMenuOpen ? 1 : 0);
+
+        const onMove = (ev) => {
+            const d = pullRef.current;
+            if (!d) return;
+            const dx = d.startX - ev.clientX;          // pulling LEFT opens it
+            if (Math.abs(dx) > 4) d.moved = true;
+            const base = d.wasOpen ? RAIL_W : 0;
+            setRailPull(Math.max(0, Math.min(1, (base + dx) / RAIL_W)));
+        };
+        const onEnd = (ev) => {
+            window.removeEventListener('pointermove', onMove);
+            window.removeEventListener('pointerup', onEnd);
+            window.removeEventListener('pointercancel', onEnd);
+            const d = pullRef.current;
+            pullRef.current = null;
+            if (!d) return;
+            /* A tap is a toggle. A drag lands wherever it was let go of, past the halfway
+               mark — the same rule the manifest drawer uses, so the two gestures in this app
+               do not disagree about what "far enough" means. `wasOpen` is read off the drag
+               and not off state: the handler that started the drag closed over the old value,
+               and a stale one here is how a tap stops toggling after the first open. */
+            setIsMobileMenuOpen(d.moved
+                ? ((d.wasOpen ? RAIL_W : 0) + (d.startX - ev.clientX)) > RAIL_W / 2
+                : !d.wasOpen);
+            setRailPull(null);
+        };
+        window.addEventListener('pointermove', onMove);
+        window.addEventListener('pointerup', onEnd);
+        window.addEventListener('pointercancel', onEnd);
+    };
+
     // 🚀 LINK EACH TAB TO A PERMISSION STRING
+    /* `icon` is the phone's whole label, so it has to say the thing the words said. */
     const allMenuItems = [
-        { id: 'agent_profile', label: 'Agent Profile', feature: 'view_agent_profile' },
-        { id: 'dashboard', label: 'Command Center', feature: 'view_dashboard' },
-        { id: 'map_war_room', label: 'Map System', feature: 'view_map' },
-        { id: 'journey', label: 'Journey Plan', feature: 'view_journey' },
-        { id: 'fleet', label: 'Fleet & Canvas', feature: 'view_fleet' }, 
-        { id: 'inventory', label: 'Master Vault', feature: 'view_master_vault' },
-        { id: 'agent_inventory', label: 'Agent Inventory', feature: 'view_agent_inventory' },
-        { id: 'restock_vault', label: 'Restock Vault', feature: 'view_restock_vault' },
-        { id: 'sales', label: 'Sales Terminal', feature: 'view_sales' },
-        { id: 'receivables', label: 'Receivables & Consignment', feature: 'view_receivables' },
-        { id: 'eod', label: 'EOD Setoran', feature: 'view_eod' },
-        { id: 'stock_opname', label: 'Stock Opname', feature: 'view_stock_opname' },
-        { id: 'customers', label: 'Customers', feature: 'view_customers' },
-        { id: 'sampling', label: 'Sampling', feature: 'view_sampling' },
-        { id: 'transactions', label: 'Reports', feature: 'view_reports' },
-        { id: 'audit', label: 'Audit Logs', feature: 'view_audit_logs' },
-        { id: 'settings', label: 'Settings', feature: 'view_settings' }
+        { id: 'agent_profile', label: 'Agent Profile', feature: 'view_agent_profile', icon: User },
+        { id: 'dashboard', label: 'Command Center', feature: 'view_dashboard', icon: LayoutGrid },
+        { id: 'map_war_room', label: 'Map System', feature: 'view_map', icon: Map },
+        { id: 'journey', label: 'Journey Plan', feature: 'view_journey', icon: Route },
+        { id: 'fleet', label: 'Fleet & Canvas', feature: 'view_fleet', icon: Truck },
+        { id: 'inventory', label: 'Master Vault', feature: 'view_master_vault', icon: Package },
+        { id: 'agent_inventory', label: 'Agent Inventory', feature: 'view_agent_inventory', icon: Boxes },
+        { id: 'restock_vault', label: 'Restock Vault', feature: 'view_restock_vault', icon: PackagePlus },
+        { id: 'sales', label: 'Sales Terminal', feature: 'view_sales', icon: Store },
+        { id: 'receivables', label: 'Receivables & Consignment', feature: 'view_receivables', icon: Receipt },
+        { id: 'eod', label: 'EOD Setoran', feature: 'view_eod', icon: Wallet },
+        { id: 'stock_opname', label: 'Stock Opname', feature: 'view_stock_opname', icon: ClipboardList },
+        { id: 'customers', label: 'Customers', feature: 'view_customers', icon: Users },
+        { id: 'sampling', label: 'Sampling', feature: 'view_sampling', icon: Gift },
+        { id: 'transactions', label: 'Reports', feature: 'view_reports', icon: BarChart3 },
+        { id: 'audit', label: 'Audit Logs', feature: 'view_audit_logs', icon: ScrollText },
+        { id: 'settings', label: 'Settings', feature: 'view_settings', icon: Settings }
     ];
 
     // 🚀 THE 3 REPORT VISIBILITY MODES (matches Settings > Global Permission Matrix > Reporting Authority)
@@ -104,10 +171,53 @@ export default function BiohazardTheme({
                     onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                     aria-label={isMobileMenuOpen ? 'Close navigation' : 'Open navigation'}
                     aria-expanded={isMobileMenuOpen}
-                    className="hide-on-print fixed top-3 left-3 z-[100] p-2.5 bg-orange-600/90 backdrop-blur-md text-white rounded-xl shadow-[0_0_15px_rgba(234,88,12,0.5)] border border-orange-400/50 active:scale-90 transition-all"
+                    /* DESK ONLY now. On a desk this square also has a second job the phone
+                       never had — it gives the panel's 256px back to the content — so it stays,
+                       in the app's own colours instead of the stock orange it was built in. */
+                    className="hide-on-print hidden lg:block fixed top-3 left-3 z-[100] p-2.5 bg-[#0f0e0d]/95 backdrop-blur-md text-[#ff9d00] rounded-xl shadow-[0_0_15px_rgba(255,157,0,0.28)] border border-[#5c4b3a] hover:border-[#8b7256] active:scale-90 transition-all"
                 >
                     {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
                 </button>
+            )}
+
+            {/* THE RIBBON — the phone's way in. A 14px sliver on the edge that breathes, so it
+                reads as "pull me" without ever being a thing on the screen. It is a drag first
+                and a tap second: `startRailPull` keeps the panel under the finger and decides
+                where it lands on release. touchAction none or the browser claims the gesture
+                for a page scroll before the first move event arrives. */}
+            {!showAdminLogin && (
+                <button
+                    onPointerDown={startRailPull}
+                    aria-label={isMobileMenuOpen ? 'Close navigation' : 'Open navigation'}
+                    aria-expanded={isMobileMenuOpen}
+                    style={{ touchAction: 'none' }}
+                    className="kpm-edge-ribbon hide-on-print lg:hidden fixed right-0 top-1/2 -translate-y-1/2 z-[100] w-[14px] h-[132px]"
+                >
+                    <span className="kpm-edge-grip"></span>
+                </button>
+            )}
+
+            {/* The scrim is the way OUT, and it is phone-only: on a desk the panel is in the
+                flow and nothing is covered, so there is nothing to dismiss. */}
+            {isMobileMenuOpen && (
+                <div
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="hide-on-print lg:hidden fixed inset-0 z-[85] bg-black/60 backdrop-blur-[2px] animate-fade-in"
+                ></div>
+            )}
+
+            {/* What the mark under the finger is called. Fixed, not inside the rail — the rail
+                clips its own overflow, so a plate parented to a mark would be cut off at 76px.
+                It rides the finger's y, which is what makes it read as a label and not a menu. */}
+            {peek && (
+                <div
+                    className="hide-on-print lg:hidden fixed z-[95] pointer-events-none kpm-rail-say"
+                    style={{ right: RAIL_W + 10, top: Math.max(8, peek.y - 18) }}
+                >
+                    <span className="block px-3 py-2 rounded bg-[#0f0e0d] border border-[#5c4b3a] text-[10px] font-black uppercase tracking-widest text-[#f5e6c8] shadow-[0_4px_20px_rgba(0,0,0,.6)]">
+                        {peek.label}
+                    </span>
+                </div>
             )}
 
             {/* 🔑 THE WAY IN. Aldi could not log in on his phone at all — his words: "there is no
@@ -140,75 +250,112 @@ export default function BiohazardTheme({
                 it has to give its WIDTH back rather than just translate away — otherwise the
                 space it occupied stays empty and the toggle achieves nothing. Padding has to
                 collapse with it, or 32px of it survives at zero width. */}
-            <div className={`hide-on-print fixed inset-y-0 left-0 z-[90] w-64 bg-black/95 backdrop-blur-xl border-r border-white/10 flex flex-col pt-5 lg:pt-8 pl-4 pr-4 overflow-hidden
-                             transition-[transform,width,padding,opacity] duration-300 lg:relative lg:translate-x-0
+            {/* 76px of marks on a phone, 256px of words on a desk — one element, because two
+                would mean two copies of the permission filter and eventually two answers to
+                "which tabs may this tier see". While a drag is live the inline transform wins
+                and the CSS transition is off, so the panel tracks the finger exactly; on
+                release railPull goes back to null and the class transition carries it home. */}
+            <div
+                style={railPull === null ? undefined : { transform: `translateX(${(1 - railPull) * RAIL_W}px)`, transition: 'none' }}
+                className={`hide-on-print fixed inset-y-0 right-0 z-[90] w-[76px] lg:w-64 bg-[#0b0a09]/97 lg:bg-black/95 backdrop-blur-xl border-l lg:border-l-0 lg:border-r border-[#3e3226] lg:border-white/10 flex flex-col pt-5 lg:pt-8 px-0 lg:pl-4 lg:pr-4 overflow-hidden
+                             transition-[transform,width,padding,opacity] duration-300 ease-[cubic-bezier(.22,1,.36,1)] lg:relative lg:translate-x-0
                              ${isMobileMenuOpen
                                 ? 'translate-x-0 lg:w-64 lg:opacity-100'
-                                : '-translate-x-full lg:w-0 lg:px-0 lg:border-r-0 lg:opacity-0 lg:pointer-events-none'}`}>
-                
-                {/* ml-12 at every width now: the toggle is fixed at top-left on desktop too,
-                    so the brand has to clear it there as well or the button lands on the name. */}
-                <div key={`brand-${isAdmin}`} className="mb-6 ml-12 mt-0.5 lg:mt-0 boot-1">
+                                : 'translate-x-full lg:w-0 lg:px-0 lg:border-r-0 lg:opacity-0 lg:pointer-events-none'}`}>
+
+                {/* ml-12 on a desk: the toggle is fixed at top-left there, so the brand has to
+                    clear it or the button lands on the name. A 76px rail has no room for a
+                    name at all, and does not need one — you opened it, you know where you are. */}
+                <div key={`brand-${isAdmin}`} className="hidden lg:block mb-6 ml-12 mt-0.5 lg:mt-0 boot-1">
                     <h1 className="text-sm lg:text-xl font-bold text-white font-mono border-b-2 border-white/50 pb-1 lg:pb-2 inline-block shadow-[0_0_10px_rgba(255,255,255,0.3)]">
                         {appSettings?.companyName || "KPM SYSTEM"}
                     </h1>
-                    <p className="text-[10px] font-mono text-blue-400 tracking-widest mt-1">BUILD {appVersion}</p>
+                    {/* was text-blue-400 — palette law, and it was the last blue in this file */}
+                    <p className="text-[10px] font-mono text-[#8b7256] tracking-widest mt-1">BUILD {appVersion}</p>
                 </div>
 
                 {user ? (
-                    <nav key={`nav-${isAdmin}`} className="space-y-0.5 flex-1 overflow-y-auto scrollbar-hide boot-2">
-                        {visibleMenu.map(item => (
-                            <button
-                                key={item.id}
-                                onClick={() => { setActiveTab(item.id); setIsMobileMenuOpen(false); }}
-                                className={`w-full text-left py-2 px-3 text-xs font-bold transition-all duration-200 uppercase tracking-widest clip-path-polygon ${
-                                    activeTab === item.id 
-                                    ? 'bg-white text-black pl-6 shadow-[0_0_10px_rgba(255,255,255,0.8)] border-l-4 border-orange-500' 
-                                    : 'text-gray-500 hover:text-white hover:pl-4 hover:bg-white/5'
-                                }`}
-                            >
-                                {item.label}
-                            </button>
-                        ))}
-
-                        
+                    <nav key={`nav-${isAdmin}`} className="space-y-0.5 lg:space-y-0.5 flex-1 overflow-y-auto scrollbar-hide boot-2">
+                        {visibleMenu.map(item => {
+                            const Mark = item.icon;
+                            const on = activeTab === item.id;
+                            return (
+                                <button
+                                    key={item.id}
+                                    onClick={() => { setActiveTab(item.id); setIsMobileMenuOpen(false); }}
+                                    /* The name appears on PRESS, before the finger lifts — that is
+                                       the "brief info of what we hovering at" on a screen with no
+                                       hover. Lifting navigates; sliding off cancels the label. */
+                                    onPointerDown={(e) => setPeek({ id: item.id, label: item.label, y: e.clientY })}
+                                    onPointerUp={() => setPeek(null)}
+                                    onPointerCancel={() => setPeek(null)}
+                                    onPointerLeave={() => setPeek(null)}
+                                    title={item.label}
+                                    className={`kpm-rail-mark relative w-full flex items-center justify-center h-14 lg:h-auto lg:block lg:text-left lg:py-2 lg:px-3 text-xs font-bold transition-all duration-200 uppercase tracking-widest lg:clip-path-polygon ${
+                                        on
+                                        ? 'text-[#ff9d00] lg:bg-white lg:text-black lg:pl-6 lg:shadow-[0_0_10px_rgba(255,255,255,0.8)] lg:border-l-4 lg:border-orange-500'
+                                        : 'text-[#6b5845] lg:text-gray-500 lg:hover:text-white lg:hover:pl-4 lg:hover:bg-white/5'
+                                    }`}
+                                >
+                                    <Mark
+                                        size={21}
+                                        strokeWidth={on ? 2.4 : 2}
+                                        className={`lg:hidden transition-transform duration-300 ease-[cubic-bezier(.16,1,.3,1)] ${on ? 'scale-[1.22] drop-shadow-[0_0_8px_rgba(255,157,0,0.55)]' : ''}`}
+                                    />
+                                    <span className="hidden lg:inline">{item.label}</span>
+                                    {on && <span className="lg:hidden absolute right-0 top-2 bottom-2 w-[3px] rounded-l-full bg-[#ff9d00] shadow-[0_0_10px_rgba(255,157,0,.6)]"></span>}
+                                </button>
+                            );
+                        })}
                     </nav>
                 ) : (
-                    <div className="flex-1 flex flex-col items-start pt-10 opacity-50">
-                        <div className="text-xs text-red-500 font-mono mb-2">ACCESS DENIED</div>
+                    <div className="flex-1 flex flex-col items-center lg:items-start pt-10 opacity-50 px-2">
+                        <div className="text-xs text-red-500 font-mono mb-2 text-center">ACCESS<br className="lg:hidden"/> DENIED</div>
                         <div className="h-0.5 w-10 bg-red-800 mb-4"></div>
-                        <p className="text-[10px] text-slate-400">Authentication required.</p>
+                        {/* was text-slate-400 — slate IS the blue */}
+                        <p className="hidden lg:block text-[10px] text-[#8b7256]">Authentication required.</p>
                     </div>
                 )}
 
-                <div key={`bot-${isAdmin}`} className="mt-auto mb-2 border-t border-white/10 pt-3 boot-3">
+                <div key={`bot-${isAdmin}`} className="mt-auto mb-2 border-t border-[#3e3226] lg:border-white/10 pt-3 boot-3">
                     {/* 🚀 HIDDEN DOOR: Show Master Vault button if they aren't fully unlocked but have Tier 2 settings */}
                     {hasClearance(userRole, 'view_master_vault') && !isAdmin && (
-                        <div className="px-2 mb-3">
-                            <button 
-                                onClick={() => { if (setShowAdminLogin) setShowAdminLogin(true); setIsMobileMenuOpen(false); }} 
-                                className="w-full bg-orange-600/20 hover:bg-orange-600 border border-orange-500/50 text-orange-400 hover:text-white p-2.5 rounded-xl font-bold text-[10px] uppercase tracking-widest transition-all flex items-center justify-center gap-2 shadow-lg shadow-orange-900/20"
+                        <div className="px-0 lg:px-2 mb-3">
+                            <button
+                                onClick={() => { if (setShowAdminLogin) setShowAdminLogin(true); setIsMobileMenuOpen(false); }}
+                                onPointerDown={(e) => setPeek({ id: 'unlock', label: 'Unlock Master Vault', y: e.clientY })}
+                                onPointerUp={() => setPeek(null)}
+                                onPointerCancel={() => setPeek(null)}
+                                title="Unlock Master Vault"
+                                className="w-full bg-[#ff9d00]/10 hover:bg-[#ff9d00]/20 border border-[#8b7256] lg:border-orange-500/50 text-[#ff9d00] p-2.5 rounded-xl font-bold text-[10px] uppercase tracking-widest transition-all flex items-center justify-center gap-2 shadow-lg"
                             >
-                                <Lock size={14} /> Unlock Master Vault
+                                <Lock size={14} /> <span className="hidden lg:inline">Unlock Master Vault</span>
                             </button>
                         </div>
                     )}
 
-                    {isAdmin && <MusicPlayer />}
+                    {/* Desk only — the player is a wide widget and a 76px rail cannot hold it. */}
+                    {isAdmin && <div className="hidden lg:block"><MusicPlayer /></div>}
 
                     {user ? (
-                        <div className="flex items-center gap-2">
-                            <img 
-                                src={appSettings?.mascotImage || "https://api.dicebear.com/7.x/avataaars/svg?seed=Admin"} 
-                                className="w-7 h-7 rounded border border-white/30 object-cover bg-black"
+                        <div className="flex flex-col lg:flex-row items-center gap-2">
+                            <img
+                                src={appSettings?.mascotImage || "https://api.dicebear.com/7.x/avataaars/svg?seed=Admin"}
+                                className="w-8 h-8 lg:w-7 lg:h-7 rounded border border-[#5c4b3a] lg:border-white/30 object-cover bg-black"
                                 alt="avatar"
                             />
-                            <div className="flex-1 min-w-0">
+                            <div className="hidden lg:block flex-1 min-w-0">
                                 <p className="text-[11px] text-gray-400 uppercase font-bold leading-none mb-0.5">OPERATIVE</p>
                                 <p className="text-[10px] text-white font-mono truncate leading-none">{user.email?.split('@')[0]}</p>
                             </div>
-                            <button onClick={handleLogout} className="text-red-500 hover:text-red-400 p-1.5 rounded transition-colors" title="Logout">
-                                <LogOut size={14}/>
+                            <button
+                                onClick={handleLogout}
+                                onPointerDown={(e) => setPeek({ id: 'out', label: 'Terminate session', y: e.clientY })}
+                                onPointerUp={() => setPeek(null)}
+                                onPointerCancel={() => setPeek(null)}
+                                className="text-red-500 hover:text-red-400 p-1.5 rounded transition-colors" title="Logout"
+                            >
+                                <LogOut size={16}/>
                             </button>
                         </div>
                     ) : (
@@ -229,7 +376,11 @@ export default function BiohazardTheme({
                     button is on desktop now too, and with the panel CLOSED it sits directly on
                     "System Active". CSS gives this a left inset in exactly that case; padding
                     the top instead would shove the whole header down at every width. */}
-                <div className={`kpm-topbar hide-on-print pt-16 lg:pt-6 px-4 lg:px-8 pb-2 flex justify-between items-end border-b border-white/20 shrink-0 relative`}>
+                {/* pt-4, not pt-16: the 64px used to be there to clear the orange square in the
+                    corner, and on a phone that square is a ribbon on the edge now. Sixty-four
+                    pixels of a phone screen back, for nothing. The desk still pays it, in CSS,
+                    because the square is still up there — see kpm-topbar in theme.css. */}
+                <div className={`kpm-topbar hide-on-print pt-4 lg:pt-6 px-4 lg:px-8 pb-2 flex justify-between items-end gap-3 border-b border-[#3e3226] shrink-0 relative`}>
                     <h2 className="text-6xl font-bold text-white/5 uppercase select-none absolute top-2 right-8 pointer-events-none hidden lg:block">
                         {activeTab}
                     </h2>
@@ -243,22 +394,29 @@ export default function BiohazardTheme({
                             <div className={`h-1.5 w-1.5 rounded-full ${user ? 'bg-[#f0e2c0]' : 'bg-red-500 animate-pulse'}`}></div>
                             <span className={`text-[11px] font-mono uppercase ${user ? 'text-[#f0e2c0]/70' : 'text-red-500'}`}>{user ? "System Active" : "Disconnected"}</span>
                         </div>
-                        <div className="text-2xl text-white font-bold tracking-[0.15em] uppercase text-shadow-glow">
+                        <div className="text-xl lg:text-2xl text-white font-bold tracking-[0.15em] uppercase text-shadow-glow truncate">
                             {activeTab.replace(/_/g, ' ')}
                         </div>
+                        {/* Re-keyed on the tab, so the rule redraws itself every time you move.
+                            It is the only motion in this row and it is the one that carries
+                            meaning: something changed, and this is what it changed to. */}
+                        <span key={activeTab} className="kpm-title-rule"></span>
                     </div>
 
-                    <div className="flex items-center gap-6">
+                    <div className="flex items-center gap-2 lg:gap-3 shrink-0">
                         {/* Sync/offline pill lives in this row on purpose. It used to be a `fixed`
                             element with a hardcoded right offset, which drifted into the theme
                             toggle at tablet widths because the two used different positioning
                             systems. As a flex child it just sits next to the bell at every width. */}
+                        {/* All three controls wear .kpm-chip now — one plate, one size, one hover,
+                            one press. They were three different shapes in three different palettes
+                            (a green pill, a white-outlined square, a bare icon) sitting 12px apart. */}
                         {syncIndicator}
 
                         {setDarkMode && (
                             <button
                                 onClick={() => setDarkMode(prev => !prev)}
-                                className="p-2 rounded-lg border border-white/10 text-gray-400 hover:text-white hover:bg-white/5 transition-colors"
+                                className="kpm-chip"
                                 title={darkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
                             >
                                 {darkMode ? <Sun size={16} /> : <Moon size={16} />}

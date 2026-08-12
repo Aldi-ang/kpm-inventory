@@ -1,6 +1,46 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-12 07:45 WIB** · branch `phase0-solid-ground` · last code commit: run `git log -1`
+**Updated: 2026-08-12 13:25 WIB** · branch `phase0-solid-ground` · last code commit: run `git log -1`
+
+## ✅ LOG 13:25 WIB — full-height manifest, the edge panel, and the header. 252/252.
+
+(KPM app session — see the two-sessions note below.) Three asks from his 07:50 screenshots, all
+shipped and **verified in a real browser at 375px**: the drag was exercised with synthetic
+pointer events, the panel tracked the finger 375→343→313 and rested at exactly `innerWidth-76`.
+
+1. **The manifest pulls to the very top now.** `drawerMax()` is `window.innerHeight`, no cap.
+   The bell does not come back, because while the sheet is inside the header's band
+   MerchantSalesView sets `kpm-sheet-over-header` on `<html>` and the header fades to
+   `opacity:0; pointer-events:none`. Stop arguing about z-index; remove one of the arguers.
+2. **The orange corner square is gone on phones** — a 14px breathing ribbon on the **RIGHT**
+   edge replaces it, dragged out like a Samsung edge panel. Right, not left, because the left
+   edge on iOS is Safari's back gesture and a nav control that can exit the app is worse than
+   none. It opens a 76px rail of icons; pressing one prints its name beside your finger. Desk
+   is untouched (256px of words, still on the left, still in the flow).
+3. **The header controls are one plate** (`.kpm-chip`): sync, theme, bell — 44px squares, one
+   hover, one press. The emerald sync pill is gone (palette law). The screen name got a gold
+   rule that redraws on every tab change. `pt-16` → `pt-4` on phones: 64px back, since the
+   square it was clearing no longer exists there.
+
+**Two bugs were caught by testing, not by reading**, and both are now checks in audit group 25:
+`setPointerCapture` threw on a non-active pointer and killed the whole gesture before it
+attached a listener; and `onEnd` read `isMobileMenuOpen` from a stale closure, so tapping the
+ribbon stopped toggling after the first open.
+
+**Not verified by eye:** the icon rail's marks and the full-height manifest both need a logged-in
+admin. Everything else was measured live. MusicPlayer is desk-only now — a 76px rail cannot
+hold it.
+
+Known and deliberately NOT fixed: `App.jsx` still has emerald/slate in the boot spinner and the
+flight-recorder log rows. Real palette-law breaches, but not this change — audit group 25 is
+scoped to the chrome so it does not go red for something nobody has agreed to fix yet.
+
+> **Two sessions are writing this file today.** The KPM app work (07:45 entry, `BiohazardTheme.jsx`,
+> `App.jsx`, `MerchantSalesView.jsx`, `integration.audit.mjs`) is a DIFFERENT chat. The Lancelot
+> entries (07:24 / 07:52 / 08:02 / 13:20) are the tobacco ledger and touched **zero** files in this
+> repo — all of that work lives in the A-Brain vault. Do not attribute either one's diffs to the
+> other. The label "13:20" on the tab-audit entry is a clock estimate that ran ahead; the real time
+> was 13:13. Order of events is correct.
 
 ## ✅ LOG 07:45 WIB — the three phone complaints are fixed. Build + 241/241 audit green.
 
@@ -29,6 +69,104 @@ open — and the picker is a top-anchored sheet through a portal to `<body>`, wi
 Audit groups 21 and 22 were rewritten to assert the NEW invariants — including "App renders no
 stock-source bar of its own above the terminal", which goes red if anyone puts a control back in
 the shell on the sales tab. **Not yet verified by eye** — it needs an admin login on a phone.
+
+## ✅ LOG 07:52 WIB — selfCheck ran in his sheet and caught a REAL bug: in cek() itself
+
+Aldi pasted the file and ran `lancelotSelfCheck`. Five lines printed `DOBEL = DOBEL (harus DOBEL)`
+and still said GAGAL. Cause: `cek()` compares with `Math.abs(dapat - harus) < 0.01`, and
+`'DOBEL' - 'DOBEL'` is `NaN`, so **every check on a word always failed**. Every older check dodged
+it by converting to `1/0` first; the six notification checks written this morning did not.
+Fixed inside `cek()` (A-Brain `34ea414`), not at the six call sites.
+
+**Process lesson, the real one:** my node harness defined its OWN `cek` with `===`, so it could not
+see the bug. New harness `scratchpad/selfcheck.js` evaluates the whole file with the Google
+services stubbed and calls the REAL `lancelotSelfCheck`, which returns `semua` (a boolean). It now
+returns `true`. Never re-implement the thing under test.
+
+## 🟢 LOG 13:18 WIB — LANCELOT IS LIVE. All 5 steps ran in his sheet. Triggers are on.
+
+1 `lancelotSelfCheck` 60/60 · 2 `migrasiDataLama` **threw NOTA KEMBAR on "MITA-LAMA"** — the
+duplicate guard firing correctly, because migration had already been run in an earlier session ·
+3 `buatSemuaTampilan` OK (COMPILE, IN-OUT, RINGKASAN, CUAN, DASHBOARD, NOTA CETAK, TANYA) ·
+4 `rapikanTab` hid COMPILE, IN-OUT, RINGKASAN, MASALAH · 5 `nyalakanOtomatis` — **the 5-minute
+importer, nightly quality check, weekly backup and edit logging are now running.**
+
+**⚠️ OPEN, needs Aldi's eyes — the one thing step 2's error leaves uncertain:** `migrasiDataLama`
+aborts on the first throw, and MITA is first. So YOHAN and PAK MUL were NOT re-attempted this run.
+If the EARLIER migration also aborted at MITA, their notas were never migrated at all. **He must
+open NOTA and confirm rows exist for all three**, not just MITA. Fix if missing: comment out the
+MITA call, or send those two through the inbox as JSON.
+
+**⚠️ Also unverified:** step 3 succeeded as a SCRIPT, which does not prove the formulas are right —
+`#REF!`/`#ERROR!` live in cells, not in the execution log. TANYA's FILTER/QUERY and the PESAN
+COUNTIFS have still never been confirmed by eye.
+
+## ✅ LOG 13:14 WIB — FIRST GREEN RUN IN HIS REAL SHEET. `lancelotSelfCheck` = SEMUA BENAR, 60/60.
+
+Aldi pasted 1821-line `Lancelot.gs` into Apps Script and ran it: **60 OK, 0 GAGAL**, identical to
+the node harness. Step 1 of the run order is done for real — the script is no longer "never
+executed". Next: `pasangSheet` → `buatSemuaTampilan` → `rapikanTab()`.
+
+**⚠️ Ask before `migrasiDataLama`:** if NOTA already has rows from an earlier migration, re-running
+it risks duplicates (the fingerprint guard should throw NOTA KEMBAR, but that is untested against
+real migrated rows). Check NOTA is empty first, or skip that step.
+
+`buatSemuaTampilan` is the remaining risk: the TANYA FILTER/QUERY formulas and the PESAN COUNTIFS
+have never executed in Sheets. A formula error there is expected-ish and fixable in one edit.
+
+## ✅ LOG 13:20 WIB — tab audit SALVAGED and answered. `rapikanTab()` shipped. Lesson written.
+
+Quota reset at 12:10. Salvaged `wf_f20bc26d-9ec` from `journal.jsonl` instead of re-running it —
+21 tabs traced, and **every AMAN DIHAPUS verdict was refuted**. Kept verbatim at
+`A-Brain/Wiki/Attachments/lancelot-tab-audit.txt`. Caveat: refuters were told to default to "not
+safe", so read that as a strong prior, not proof.
+
+Shipped `rapikanTab()` (A-Brain `git log -1`): **hides** COMPILE / IN-OUT / RINGKASAN / MASALAH,
+`TAB_LINDUNGI` refuses everything else by name, `tampilkanSemuaTab()` undoes it, and
+`hapusTabRapikan()` is the only deleter — typed HAPUS plus a backup first. Four new self-check
+cases assert NOTA, ITEM and the handwritten tabs are protected. Real `lancelotSelfCheck` under node
+returns `true` (64 checks).
+
+Traps the audit found, worth keeping: `CUAN` is pointed at by DASHBOARD and NOTA CETAK formulas
+(deleting it = `#REF!` on his profit) · `koreksiNota` has no null guard, so deleting KOREKSI throws
+· `M_PETANI`/`M_PABRIK` die **silently** (only reader runs inside `pasangSheet`, which recreates
+the tab first) and take the petani bank accounts with them · `MASALAH` holds the failed-import list
+that exists nowhere else · `TAB_LAMA` (line 28) is dead code.
+
+**Lesson written** (`~/.claude/skills/alucard/lessons.md`): price a fan-out against the quota
+BEFORE launching, and never let one final agent own the answer. Archived the zero-fire 2026-08-11
+entry to `A-Brain/Wiki/Lessons-Archive.md` to make room.
+
+## 🔴 LOG 08:02 WIB — superseded by the 13:20 log. Tab audit's report died; findings salvaged since.
+
+**Where it stands:** 10 of 11 agents completed, **21 tabs traced**, and the synthesis agent died on
+the session limit (resets 12:10 WIB). `rencana` is `null` — same failure shape as round 2, so the
+findings are on disk and must be salvaged, not re-run:
+`subagents/workflows/wf_f20bc26d-9ec/journal.jsonl` — one `{"type":"result"}` line per agent.
+`amanDihapus` came back **empty**: not one tab survived the refute stage as safe to delete. Read the
+journal before believing that means "nothing is deletable" — it may also mean no tracer proposed a
+deletion in the first place. 584k subagent tokens spent; do NOT re-run, salvage.
+
+**EXACT NEXT COMMAND after the reset** (salvage first, workflow second):
+`python` over `journal.jsonl`, same shape as `scratchpad/r2.txt` this morning, then write the
+keep/hide/delete table by hand. Only if that is not enough:
+`Workflow({scriptPath: "…\workflows\scripts\lancelot-tab-audit.js", resumeFromRunId: "wf_f20bc26d-9ec"})`
+— the 10 finished agents replay free; only the synthesis re-runs.
+
+**Nothing was deleted, nothing was hidden, his sheet is untouched.** No code shipped for the tab
+work at all — `rapikanTab()` was to be written by the agent that died. It does not exist.
+
+### Tab cleanup audit — DEAD at synthesis, see the 08:02 log (launched 07:53 WIB)
+
+Aldi's words: *"there are too many useless sheets u should delete most of it except the 3 nota data
+that i mentioned before from yohan mita and p mul"*. He opted into ultracode for this.
+`Workflow({scriptPath: "C:\Users\ASUS\.claude\projects\D--APP-DEVELOPMENT-kpm-inventory-main-FILES-kpm-inventory-main\a36445c9-d4b1-4c88-b1e4-096584a3690d\workflows\scripts\lancelot-tab-audit.js", resumeFromRunId: "wf_f20bc26d-9ec"})`
+Agents are told to grep, not to read the whole file — that is what killed round 2.
+
+**🔴 SAFETY, must survive this session:** `NOTA` and `ITEM` are the only stored data. MITA / YOHAN /
+PAK MUL are his hand-written source tabs, read by `migrasiLama_` only. Deleting NOTA or ITEM
+destroys every imported nota. The audit's output must HIDE clutter, never delete, and any real
+deletion needs the typed word HAPUS plus a backup first.
 
 ## ⚠️ LOG 07:43 WIB — the KPM working-tree changes are NOT from this session
 

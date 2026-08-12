@@ -30,9 +30,12 @@ const NotificationBell = ({ notifications = [], onNotificationClick }) => {
             {/* 🚀 THE BELL BUTTON */}
             <button 
                 onClick={() => setIsOpen(!isOpen)}
-                className="relative p-2 text-slate-400 hover:text-white transition-colors flex items-center justify-center"
+                /* was `text-slate-400` and a bare 24px icon — slate IS the blue, and it was the
+                   only control in the header wearing no plate at all. .kpm-chip is the shared
+                   one; `.on` is what the unread state lights up. */
+                className={`kpm-chip relative ${unreadCount > 0 ? 'on' : ''}`}
             >
-                <Bell size={24} className={unreadCount > 0 ? "animate-pulse text-orange-500" : ""} />
+                <Bell size={18} className={unreadCount > 0 ? "animate-pulse" : ""} />
                 
                 {unreadCount > 0 && (
                     <span className="absolute top-0 right-0 w-4 h-4 bg-red-600 text-white text-[11px] font-black rounded-full flex items-center justify-center shadow-[0_0_10px_red]">

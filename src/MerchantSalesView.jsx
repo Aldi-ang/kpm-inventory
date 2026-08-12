@@ -1232,18 +1232,34 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
     const ghostUntilRef = useRef(0);
 
     /* HIS REPORT, 2026-08-12: "the notification bell button is collapsing infront of the
-       manifest paper". The bell is not the terminal's — it belongs to the app header, which
-       occupies the top ~112px of a phone. The sheet was allowed to grow to 92% of the screen,
-       taller than the header sits, so the two claimed the same band and one had to lose.
+       manifest paper" — then, once the sheet stopped short of the header: "even more
+       convenience if i can pull the manifest panel until the top of the app, so that the whole
+       screen is full of manifest panel".
 
-       No bottom sheet on any phone covers the app header. Leaving it uncovered is the thing
-       that says "this is a layer over the screen", not a new screen — and it settles the
-       argument by geometry instead of by a z-index the two elements have no way to agree on.
-       112 = pt-16 (64) + the header's two lines + pb-2. */
-    const DRAWER_TOP_GAP = 112;
-    const drawerMax = () => Math.max(DRAWER_CLOSED + 1, window.innerHeight - DRAWER_TOP_GAP);
+       Both are true at once, and the only way to have both is to stop treating this as a
+       stacking argument. The bell belongs to the app header; the sheet is allowed all the way
+       to the top again — and while it is standing IN that header's band, the header is faded
+       out of the way instead of fought with. `kpm-sheet-over-header` on <html> is the switch;
+       the rule lives in theme.css beside the kpm-nav-open ones, which do the same job for the
+       sidebar. Nothing overlaps because by then there is nothing left to overlap.
 
-    const drawerSnaps = () => [DRAWER_CLOSED, Math.min(Math.round(window.innerHeight * 0.55), drawerMax()), drawerMax()];
+       84 = the header on a phone, with a little margin so it is already gone by the time the
+       paper arrives: pt-4 (16) + its two lines + the gold rule + pb-2. It was 112 while the
+       orange menu square still forced pt-16 up there; the ribbon on the edge replaced it. */
+    const DRAWER_TOP_GAP = 84;
+    const drawerMax = () => window.innerHeight;
+
+    const drawerSnaps = () => [DRAWER_CLOSED, Math.round(window.innerHeight * 0.55), drawerMax()];
+
+    /* Continuous, not only at the top snap: the header has to be gone BEFORE the sheet reaches
+       it, or it flickers back into view for the length of a drag. Cleaned up on unmount so
+       leaving the sales tab mid-drag cannot strand the app with no header. */
+    useEffect(() => {
+        const root = document.documentElement;
+        const covering = drawerH > window.innerHeight - DRAWER_TOP_GAP;
+        root.classList.toggle('kpm-sheet-over-header', covering);
+        return () => root.classList.remove('kpm-sheet-over-header');
+    }, [drawerH]);
 
     useEffect(() => {
         const swallowGhostClick = (e) => {

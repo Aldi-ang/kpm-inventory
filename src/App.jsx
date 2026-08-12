@@ -3498,7 +3498,11 @@ const handleGitHubMirror = async () => {
             darkMode={darkMode}
             setDarkMode={setDarkMode}
             syncIndicator={user && (
-                <button onClick={() => setShowFlightRecorder(true)} className={`relative flex items-center gap-2 px-3 py-1.5 rounded-full border shadow-lg backdrop-blur-md transition-all ${isOnline ? 'bg-emerald-500/10 border-emerald-500/50 text-emerald-400 hover:bg-emerald-500/20' : 'bg-red-500/10 border-red-500/50 text-red-400 hover:bg-red-500/20 animate-pulse'}`}>
+                /* PALETTE LAW. This was an emerald pill — the last green in the app chrome, and
+                   the loudest thing in a header whose job is to be quiet. Synced is the calm
+                   state and now looks like it; only OFFLINE earns a colour, because only
+                   offline is news. .kpm-chip is the shared header plate. */
+                <button onClick={() => setShowFlightRecorder(true)} className={`kpm-chip relative ${isOnline ? '' : 'warn animate-pulse'}`}>
                     {isOnline ? <Cloud size={16} /> : <CloudOff size={16} />}
                     <span className="text-[10px] font-black tracking-widest hidden md:inline">{isOnline ? 'SYNCED' : 'OFFLINE'}</span>
                     {(pendingCount.transactions > 0 || pendingCount.noo > 0) && (

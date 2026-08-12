@@ -868,15 +868,29 @@ check(G22, 'closed height, initial height and wares padding all say 104',
   /useState\(104\)/.test(termSrc) &&
   /pb-\[104px\]/.test(termSrc),
   '104 = 52 grip + 52 bar; if these three disagree the bar is covered or a dead gap appears');
-/* HIS REPORT: "the notification bell button is collapsing infront of the manifest paper". The
-   bell belongs to the app header. The sheet grew to 92% of the screen, which reached into that
-   header's band, and the two had no agreed order. A sheet that stops below the header cannot
-   argue with it — the fix is geometry, not a z-index. */
-check(G22, 'the sheet stops below the app header instead of growing into it',
-  /const DRAWER_TOP_GAP = 112;/.test(termSrc) &&
-  /window\.innerHeight - DRAWER_TOP_GAP/.test(termSrc) &&
+/* Two of his reports, and they only look like opposites: "the notification bell button is
+   collapsing infront of the manifest paper", then "i can pull the manifest panel until the top
+   of the app, so that the whole screen is full of manifest panel". The sheet goes all the way
+   up AND nothing draws on it, because the header is faded out while the sheet is in its band
+   rather than fought with for a z-index neither of them states. Both halves are checked: a
+   sheet that cannot reach the top fails the first line, a class that is never set fails the
+   rest, and the CSS that acts on it is asserted in its own file. */
+check(G22, 'the sheet can be pulled to the full height of the screen',
+  /const drawerMax = \(\) => window\.innerHeight;/.test(termSrc) &&
   !/innerHeight \* 0\.92/.test(termSrc),
-  'at the 92% snap the sheet covered the header band and the bell drew on top of the paper');
+  'his ask was the whole screen — any cap here silently takes it back');
+check(G22, 'the header is told to stand down while the sheet is in its band',
+  /const DRAWER_TOP_GAP = 84;/.test(termSrc) &&
+  /classList\.toggle\('kpm-sheet-over-header', covering\)/.test(termSrc) &&
+  /root\.classList\.remove\('kpm-sheet-over-header'\)/.test(termSrc),
+  'without the class the bell is back on the paper; without the cleanup, leaving the tab ' +
+  'mid-drag strands the app with no header at all');
+const themeCss = fs.readFileSync('src/styles/theme.css', 'utf8');
+check(G22, 'the rule that acts on that class exists in theme.css',
+  /html\.kpm-sheet-over-header \.kpm-topbar \{[^}]*opacity: 0/.test(themeCss) &&
+  /html\.kpm-sheet-over-header \.kpm-topbar \{[^}]*pointer-events: none/.test(themeCss),
+  'the class is set by JS and does nothing on its own — pointer-events matters as much as ' +
+  'opacity, or an invisible bell is still pressable through the paper');
 
 /* ── 23. registering an outlet hands the screen back ─────────────────────────
    His G6 report: "it freeze my phone for a while tho maybe add some conveniency after we register
@@ -915,6 +929,71 @@ check(G24, 'only the customers listener was changed',
 check(G24, 'the reducer has its own runnable proof',
   fs.existsSync('src/utils/docChanges.selfcheck.mjs'),
   'a silent drift here is a duplicated or missing outlet with nothing on screen to announce it');
+
+/* ── 25. the phone's way into the navigation is an edge ribbon ──────────────
+   His brief: "replace the side panel button into smaller size that is dragable from the side
+   but not really visible from the side, the idea is like samsung edge panel ... when we pull it
+   what showing instead is this kind of logo with brief info of what we hovering at".
+
+   Three of these checks are scars, not preferences. Each one names something that made the
+   gesture do NOTHING while looking perfectly correct in the source. */
+const G25 = '25. The phone opens the navigation from the edge';
+const shellSrc = strip(fs.readFileSync('src/components/BiohazardTheme.jsx', 'utf8'));
+
+check(G25, 'the orange corner square is desk-only now',
+  /hidden lg:block fixed top-3 left-3 z-\[100\]/.test(shellSrc),
+  'on a phone it is replaced by the ribbon — leaving both means two ways in and 64px of ' +
+  'header padding kept for a button that is not there');
+/* THE iOS TRAP. A drag that starts on the LEFT edge is Safari's back gesture, so a left-hand
+   ribbon sometimes leaves the app instead of opening the panel. Right edge is forward, which
+   does nothing without forward history. Move it back to the left and this goes red. */
+check(G25, 'the ribbon is on the RIGHT edge, away from Safari\'s back gesture',
+  /kpm-edge-ribbon[^"]*lg:hidden fixed right-0/.test(shellSrc) &&
+  /fixed inset-y-0 right-0 z-\[90\] w-\[76px\]/.test(shellSrc),
+  'the left edge is iOS back — a navigation control that can exit the app is worse than none');
+/* IT THREW AND THE WHOLE GESTURE DIED SILENTLY. setPointerCapture needs an active pointer;
+   without one it raises, before a single listener is attached, and the ribbon does nothing. */
+check(G25, 'the drag does not call setPointerCapture',
+  !/setPointerCapture/.test(shellSrc),
+  'it throws when the pointer is not active and kills startRailPull before it listens; ' +
+  'the window listeners already cover the finger leaving the ribbon');
+/* IT OPENED ONCE AND THEN STOPPED TOGGLING. onEnd read `isMobileMenuOpen` from the render that
+   created the handler, so after the first open every tap re-computed against a stale `false`. */
+check(G25, 'the release reads the state the drag started with, not the closure\'s',
+  /wasOpen: isMobileMenuOpen/.test(shellSrc) && /: !d\.wasOpen\)/.test(shellSrc),
+  'reading isMobileMenuOpen in onEnd is a stale closure — the tap stops toggling after the ' +
+  'first open, with nothing on screen to say why');
+check(G25, 'every menu item carries the mark the rail shows',
+  (shellSrc.match(/icon: [A-Z]/g) || []).length === (shellSrc.match(/feature: 'view_/g) || []).length,
+  'the icon IS the label at 76px wide — an item without one is an invisible tab');
+check(G25, 'the name plate is rendered outside the rail, which clips',
+  /fixed z-\[95\] pointer-events-none kpm-rail-say/.test(shellSrc) &&
+  /right: RAIL_W \+ 10/.test(shellSrc),
+  'the rail sets overflow-hidden, so a plate parented to a mark is cut off at 76px and the ' +
+  '"brief info" he asked for is never seen');
+check(G25, 'the ribbon breathes, and holds still when motion is off',
+  /animation: kpmEdgeBreath/.test(themeCss) &&
+  /lite-mode \.kpm-edge-grip \{ animation: none/.test(themeCss) &&
+  /prefers-reduced-motion[\s\S]{0,80}\.kpm-edge-grip \{ animation: none/.test(themeCss),
+  'a still 14px sliver on a black screen is invisible — the breath is the whole affordance, ' +
+  'but it must not move for anyone who asked for no movement');
+check(G25, 'the three header controls wear the one plate',
+  /className=\{`kpm-chip relative \$\{unreadCount > 0 \? 'on' : ''\}`\}/.test(strip(fs.readFileSync('src/components/NotificationBell.jsx', 'utf8'))) &&
+  /className=\{`kpm-chip relative \$\{isOnline \? '' : 'warn animate-pulse'\}`\}/.test(appCode) &&
+  /className="kpm-chip"/.test(shellSrc),
+  'they were a green pill, a white-outlined square and a bare icon standing 24px apart');
+/* Anchored on the Tailwind PREFIX, not on the colour name alone. A bare /slate-/ matches
+   `translate-x-full` — tranSLATE-x — so the first version of this check failed on the panel's
+   own slide animation and would have failed on any future one. */
+const BANNED_HUE = /(?:bg|text|border|ring|from|via|to|shadow|fill|stroke|divide|outline)-(?:blue|slate|emerald|green)-/;
+/* Scoped to the CHROME — this shell file and the sync pill it is handed. App.jsx still has
+   emerald and slate further in (the boot spinner, the flight-recorder log rows); those are
+   real palette-law breaches but they are not this change, and asserting them here would mean
+   a check that has been red since the day it was written. */
+const syncBlock = (appCode.match(/<button onClick=\{\(\) => setShowFlightRecorder\(true\)\}[\s\S]{0,900}?<\/button>/) || [''])[0];
+check(G25, 'no blue, slate or green left in the app chrome',
+  !BANNED_HUE.test(shellSrc) && syncBlock.length > 100 && !BANNED_HUE.test(syncBlock),
+  'palette law: slate IS the blue, and the sync pill was the last green in the header');
 
 /* ── report ──────────────────────────────────────────────────────────────── */
 let last = '';
