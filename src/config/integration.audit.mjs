@@ -991,6 +991,21 @@ const BANNED_HUE = /(?:bg|text|border|ring|from|via|to|shadow|fill|stroke|divide
    real palette-law breaches but they are not this change, and asserting them here would mean
    a check that has been red since the day it was written. */
 const syncBlock = (appCode.match(/<button onClick=\{\(\) => setShowFlightRecorder\(true\)\}[\s\S]{0,900}?<\/button>/) || [''])[0];
+/* "nah bro bring back that music player man" — it was desk-only for exactly one commit, on the
+   grounds that a 76px rail cannot hold a volume slider. True, and beside the point: the rail is
+   on the right, so the body opens LEFT into the screen and only the head stays in the rail. */
+const musicSrc = strip(fs.readFileSync('src/MusicPlayer.jsx', 'utf8'));
+check(G25, 'the music player is in the panel at every width',
+  /\{isAdmin && <MusicPlayer \/>\}/.test(shellSrc),
+  'wrapping it in `hidden lg:block` takes it off the phone again — he asked for it back by name');
+check(G25, 'its body opens sideways, out of the rail',
+  /\? 'overflow-visible translate-x-0/.test(shellSrc) &&
+  /: 'overflow-hidden translate-x-full/.test(shellSrc) &&
+  /absolute right-full bottom-0/.test(musicSrc) && /lg:static/.test(musicSrc),
+  'an overflow-hidden rail cuts the panel off at 76px, where the transport row and the volume ' +
+  'slider cannot be hit — but the overflow must go back to hidden when the rail CLOSES, or an ' +
+  'expanded player is left floating over the app with no rail behind it. lg:static is what ' +
+  'keeps the desk layout exactly as it was');
 check(G25, 'no blue, slate or green left in the app chrome',
   !BANNED_HUE.test(shellSrc) && syncBlock.length > 100 && !BANNED_HUE.test(syncBlock),
   'palette law: slate IS the blue, and the sync pill was the last green in the header');

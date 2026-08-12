@@ -257,11 +257,17 @@ export default function BiohazardTheme({
                 release railPull goes back to null and the class transition carries it home. */}
             <div
                 style={railPull === null ? undefined : { transform: `translateX(${(1 - railPull) * RAIL_W}px)`, transition: 'none' }}
-                className={`hide-on-print fixed inset-y-0 right-0 z-[90] w-[76px] lg:w-64 bg-[#0b0a09]/97 lg:bg-black/95 backdrop-blur-xl border-l lg:border-l-0 lg:border-r border-[#3e3226] lg:border-white/10 flex flex-col pt-5 lg:pt-8 px-0 lg:pl-4 lg:pr-4 overflow-hidden
+                /* overflow-visible ONLY WHILE OPEN, and on a phone only. It is what lets the
+                   music player's body escape a 76px rail — but the body is anchored to the
+                   rail's own left edge, so a rail that is closed AND visible-overflow leaves an
+                   orphan panel floating over the app once you have expanded the player. The
+                   desk keeps overflow-hidden throughout, because there the panel collapses by
+                   WIDTH (lg:w-0) and its contents must not spill while it does. */
+                className={`hide-on-print fixed inset-y-0 right-0 z-[90] w-[76px] lg:w-64 bg-[#0b0a09]/97 lg:bg-black/95 backdrop-blur-xl border-l lg:border-l-0 lg:border-r border-[#3e3226] lg:border-white/10 flex flex-col pt-5 lg:pt-8 px-0 lg:pl-4 lg:pr-4 lg:overflow-hidden
                              transition-[transform,width,padding,opacity] duration-300 ease-[cubic-bezier(.22,1,.36,1)] lg:relative lg:translate-x-0
                              ${isMobileMenuOpen
-                                ? 'translate-x-0 lg:w-64 lg:opacity-100'
-                                : 'translate-x-full lg:w-0 lg:px-0 lg:border-r-0 lg:opacity-0 lg:pointer-events-none'}`}>
+                                ? 'overflow-visible translate-x-0 lg:w-64 lg:opacity-100'
+                                : 'overflow-hidden translate-x-full lg:w-0 lg:px-0 lg:border-r-0 lg:opacity-0 lg:pointer-events-none'}`}>
 
                 {/* ml-12 on a desk: the toggle is fixed at top-left there, so the brand has to
                     clear it or the button lands on the name. A 76px rail has no room for a
@@ -334,8 +340,12 @@ export default function BiohazardTheme({
                         </div>
                     )}
 
-                    {/* Desk only — the player is a wide widget and a 76px rail cannot hold it. */}
-                    {isAdmin && <div className="hidden lg:block"><MusicPlayer /></div>}
+                    {/* HIS CALL: "nah bro bring back that music player man". It is here at every
+                        width now. A 76px rail genuinely cannot hold the transport and the volume
+                        slider, so on a phone the player keeps only its head — the note and
+                        play/pause — and opens its body to the LEFT of the rail, into the screen
+                        it has plenty of. See the note on `right-full` in MusicPlayer. */}
+                    {isAdmin && <MusicPlayer />}
 
                     {user ? (
                         <div className="flex flex-col lg:flex-row items-center gap-2">

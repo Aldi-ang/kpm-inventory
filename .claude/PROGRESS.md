@@ -28,8 +28,15 @@ attached a listener; and `onEnd` read `isMobileMenuOpen` from a stale closure, s
 ribbon stopped toggling after the first open.
 
 **Not verified by eye:** the icon rail's marks and the full-height manifest both need a logged-in
-admin. Everything else was measured live. MusicPlayer is desk-only now — a 76px rail cannot
-hold it.
+admin. Everything else was measured live.
+
+**13:40 follow-up, his call — "nah bro bring back that music player man, sidebar on the right its
+okay".** The right-hand rail is confirmed. MusicPlayer is back at every width: on a phone only its
+head (note + play/pause) stays in the 76px rail and the body opens LEFT via `absolute right-full`,
+into the screen the rail is sitting on. That needs `overflow-visible` on the rail — but only WHILE
+OPEN, or an expanded player is left floating over the app after the rail slides away. Both states
+are asserted. Its `slate-*` controls went to the app palette on the way past. 254/254, and the
+open/close/drag was re-measured live afterwards (375 → 334 → shut, overflow back to hidden).
 
 Known and deliberately NOT fixed: `App.jsx` still has emerald/slate in the boot spinner and the
 flight-recorder log rows. Real palette-law breaches, but not this change — audit group 25 is
@@ -82,6 +89,27 @@ Fixed inside `cek()` (A-Brain `34ea414`), not at the six call sites.
 see the bug. New harness `scratchpad/selfcheck.js` evaluates the whole file with the Google
 services stubbed and calls the REAL `lancelotSelfCheck`, which returns `semua` (a boolean). It now
 returns `true`. Never re-implement the thing under test.
+
+## 🔴 LOG 13:40 WIB — HE WIPED THE SHEET. Only MITA, YOHAN, C remain. New law: he names categories.
+
+He deleted every generated tab and NOTA/ITEM after seeing half-filled migrated rows and seeded
+example data in his live dropdowns. **PAK MUL no longer exists in the file** (screenshot: tab bar
+shows MITA · YOHAN · C only). Those three are now the only original data in the spreadsheet.
+
+**LAW, his words:** *"dont add extra grade or jenis tembakau inside yourself, only i can decide what
+considered as jenis or grade and any other criteria"*. Recorded in `Aldi's Design Taste.md` and in
+the lancelot agent's hard limits. All `CONTOH_*` seed arrays are now empty — `pasangSheet` creates
+the masters blank. **Two lists still need his verdict:** `CARA BAYAR`'s `BON` and `JENIS NOTA`'s
+`NOTA AGEN` may be my inventions, not his vocabulary.
+
+Also shipped: `mulaiBersih()` (backup + empty the ledger, refuses the handwritten tabs by name),
+`lihatTabLama()` (read-only dump of the handwritten tabs' real shape), and `migrasiDataLama` now
+**refuses to run into a non-empty NOTA** — importing on top of existing rows is what produced the
+half-filled notas.
+
+**❓ WAITING ON ALDI — the exact next step:** run `lihatTabLama()` and paste the output. The old
+importer was written against my *memory* of the MITA/YOHAN column shapes and the audit proved it
+drops per-row detail. I will not write a second importer on a second guess.
 
 ## 🟢 LOG 13:18 WIB — LANCELOT IS LIVE. All 5 steps ran in his sheet. Triggers are on.
 

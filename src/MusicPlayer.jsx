@@ -71,33 +71,47 @@ const MusicPlayer = () => {
     const playPrev = () => { setCurrentTrack((prev) => (prev - 1 + TRACKS.length) % TRACKS.length); setIsPlaying(true); };
 
     return (
-        <div className="w-full bg-black/40 border border-white/10 rounded-xl overflow-hidden font-mono flex flex-col mb-4 shadow-lg shrink-0">
+        /* `relative` is load-bearing on a phone: it is what the body below anchors its
+           `right-full` to, and without it the panel would hang off the viewport instead. */
+        <div className="relative w-full bg-black/40 border border-white/10 rounded-xl font-mono flex flex-col mb-4 shadow-lg shrink-0">
             <audio ref={audioRef} onEnded={handleSongEnd} />
 
             {/* ACCORDION HEADER (Always visible) */}
-            <div 
+            {/* On a phone this whole component lives in a 76px rail, so the head keeps the note
+                and play/pause and drops the name — you opened the music, you know what it is. */}
+            <div
                 onClick={() => setIsExpanded(!isExpanded)}
-                className="bg-orange-500/10 p-2.5 flex justify-between items-center border-b border-orange-500/20 cursor-pointer hover:bg-orange-500/20 transition-colors"
+                className="bg-[#ff9d00]/10 p-2 lg:p-2.5 flex justify-center lg:justify-between items-center gap-1.5 lg:gap-2 rounded-t-xl border-b border-[#ff9d00]/20 cursor-pointer hover:bg-[#ff9d00]/20 transition-colors"
             >
                 <div className="flex items-center gap-2">
-                    <Music size={12} className={`text-orange-500 ${isPlaying ? 'animate-pulse' : ''}`} />
-                    <span className="text-[10px] font-bold text-orange-500 tracking-widest uppercase">Cassette OS</span>
+                    <Music size={14} className={`text-[#ff9d00] shrink-0 ${isPlaying ? 'animate-pulse' : ''}`} />
+                    <span className="hidden lg:inline text-[10px] font-bold text-[#ff9d00] tracking-widest uppercase">Cassette OS</span>
                 </div>
-                
+
                 {/* MINI CONTROLS (Lets you play/pause without expanding the menu!) */}
-                <div className="flex items-center gap-3">
-                    <button 
-                        onClick={(e) => { e.stopPropagation(); togglePlay(); }} 
-                        className="text-orange-500 hover:text-white transition-colors p-1"
+                <div className="flex items-center gap-1 lg:gap-3">
+                    <button
+                        onClick={(e) => { e.stopPropagation(); togglePlay(); }}
+                        aria-label={isPlaying ? 'Pause' : 'Play'}
+                        className="text-[#ff9d00] hover:text-white transition-colors p-1"
                     >
-                        {isPlaying ? <Pause size={12} fill="currentColor" /> : <Play size={12} fill="currentColor" />}
+                        {isPlaying ? <Pause size={13} fill="currentColor" /> : <Play size={13} fill="currentColor" />}
                     </button>
-                    {isExpanded ? <ChevronUp size={14} className="text-orange-500" /> : <ChevronDown size={14} className="text-orange-500" />}
+                    {isExpanded ? <ChevronUp size={14} className="text-[#ff9d00] shrink-0" /> : <ChevronDown size={14} className="text-[#ff9d00] shrink-0" />}
                 </div>
             </div>
 
             {/* EXPANDABLE CONTENT */}
-            <div className={`transition-all duration-300 origin-top overflow-hidden ${isExpanded ? 'max-h-[300px] opacity-100' : 'max-h-0 opacity-0'}`}>
+            {/* THE BODY OPENS SIDEWAYS ON A PHONE. The transport row and a volume slider cannot
+                be used at 76px, and shrinking them further would have made a control nobody can
+                hit. `right-full` puts it in the screen the rail is sitting on top of — which is
+                why the rail is overflow-visible below lg, and why it had to be the RIGHT-hand
+                rail for this to have anywhere to go. On a desk nothing moves: lg:static puts it
+                straight back under the head, in the flow, exactly as it was. */}
+            <div className={`transition-all duration-300 origin-top overflow-hidden
+                             absolute right-full bottom-0 mr-2 w-[232px] rounded-xl border border-[#3e3226] bg-[#0f0e0d] shadow-[0_10px_40px_rgba(0,0,0,.7)]
+                             lg:static lg:w-auto lg:mr-0 lg:rounded-none lg:border-0 lg:bg-transparent lg:shadow-none
+                             ${isExpanded ? 'max-h-[300px] opacity-100' : 'max-h-0 opacity-0 pointer-events-none'}`}>
                 
                 {/* PLAYLIST TOGGLE */}
                 <div className="px-2 pt-2 flex justify-end">
@@ -111,7 +125,7 @@ const MusicPlayer = () => {
                     <div className="max-h-24 overflow-y-auto mx-2 mt-2 p-1.5 bg-black/80 border border-white/10 rounded custom-scrollbar">
                         <div className="space-y-1">
                             {TRACKS.map((t, idx) => (
-                                <button key={idx} onClick={() => { setCurrentTrack(idx); setIsPlaying(true); }} className={`w-full text-left text-[11px] p-1.5 rounded truncate transition-colors ${currentTrack === idx ? 'bg-orange-500 text-white font-bold' : 'text-slate-400 hover:bg-slate-800'}`}>
+                                <button key={idx} onClick={() => { setCurrentTrack(idx); setIsPlaying(true); }} className={`w-full text-left text-[11px] p-1.5 rounded truncate transition-colors ${currentTrack === idx ? 'bg-[#ff9d00] text-[#2b2318] font-bold' : 'text-[#8b7256] hover:bg-[#26211c]'}`}>
                                     {idx + 1}. {t.title}
                                 </button>
                             ))}
@@ -128,20 +142,21 @@ const MusicPlayer = () => {
                     </div>
 
                     <div className="flex items-center justify-between w-full mb-3 px-2">
-                        <button onClick={() => setIsShuffling(!isShuffling)} className={`transition-colors ${isShuffling ? 'text-orange-500' : 'text-slate-400 hover:text-white'}`}><Shuffle size={12}/></button>
+                        <button onClick={() => setIsShuffling(!isShuffling)} className={`transition-colors ${isShuffling ? 'text-orange-500' : 'text-[#8b7256] hover:text-white'}`}><Shuffle size={12}/></button>
                         <div className="flex items-center gap-3">
-                            <button onClick={playPrev} className="text-slate-400 hover:text-white transition-colors"><SkipBack size={16} /></button>
+                            <button onClick={playPrev} className="text-[#8b7256] hover:text-white transition-colors"><SkipBack size={16} /></button>
                             <button onClick={togglePlay} className="w-8 h-8 bg-orange-600 rounded-full flex items-center justify-center text-white hover:scale-105 transition-all shadow-[0_0_10px_rgba(234,88,12,0.4)]">
                                 {isPlaying ? <Pause size={14} fill="currentColor" /> : <Play size={14} fill="currentColor" className="ml-0.5"/>}
                             </button>
-                            <button onClick={playNext} className="text-slate-400 hover:text-white transition-colors"><SkipForward size={16} /></button>
+                            <button onClick={playNext} className="text-[#8b7256] hover:text-white transition-colors"><SkipForward size={16} /></button>
                         </div>
-                        <button onClick={() => setIsLooping(!isLooping)} className={`transition-colors ${isLooping ? 'text-orange-500' : 'text-slate-400 hover:text-white'}`}><Repeat size={12}/></button>
+                        <button onClick={() => setIsLooping(!isLooping)} className={`transition-colors ${isLooping ? 'text-orange-500' : 'text-[#8b7256] hover:text-white'}`}><Repeat size={12}/></button>
                     </div>
 
                     <div className="w-full flex items-center gap-2">
-                        <Volume2 size={12} className="text-slate-400"/>
-                        <input type="range" min="0" max="1" step="0.05" value={volume} onChange={(e) => setVolume(parseFloat(e.target.value))} className="flex-1 h-1 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-orange-500" />
+                        {/* was text-slate-400 / bg-slate-700 — slate IS the blue */}
+                        <Volume2 size={12} className="text-[#8b7256]"/>
+                        <input type="range" min="0" max="1" step="0.05" value={volume} onChange={(e) => setVolume(parseFloat(e.target.value))} className="flex-1 h-1 bg-[#3e3226] rounded-lg appearance-none cursor-pointer accent-[#ff9d00]" />
                     </div>
                 </div>
             </div>
