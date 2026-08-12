@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-12 14:10 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
+**Updated: 2026-08-12 19:07 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
 **Lancelot session last wrote 17:20 WIB** — see the 17:15 entry. Two clocks, two sessions, one file.
 
 ## 🧭 WHICH TRACK IS WHICH — check this before editing anything below
@@ -51,6 +51,28 @@ The rules, in order:
    else wrote in the meantime. If an `Edit` fails as stale, re-read and re-apply — do not force it.
 7. **The quota is one shared pool.** Two sessions running hard halve each other's runway, and the
    `[plan-quota]` percentage covers both. Size your work against the whole pool, not your own chat.
+
+## ⏭️ LOG 19:07 WIB — bell done. TWO UI JOBS ARE QUEUED AND NEITHER IS STARTED.
+
+Shipped since 15:20: the expanding button component (`2dac37d`) and the notification bell
+(`e0d164c`). **264/264.** The bell rings on ARRIVAL, not only on touch — compared against a ref,
+never against zero, or reading his notifications rings it again on the way down.
+
+**⏭️ QUEUED #1 — the 24 delete buttons.** `.kpm-expand.danger` exists and is proven on logout.
+Opting a site in is two attributes, no JSX:
+`<button className="kpm-expand danger" data-label="Delete">`. Do them **by hand** — two scripted
+attempts both mis-parsed, because **the `>` inside an arrow function is not the end of a JSX
+opening tag**. Files and the leave-alone rule are in the 15:20 entry below.
+
+**⏭️ QUEUED #2 — the Dynamic Island music player.** NOT STARTED. His words are in
+WAITING ON ALDI, verbatim, including the reference link and the one hard constraint:
+**"make sure it is working even when we dont have iphone"** — this is a CSS/JS island drawn at
+the top of the page, NOT the iOS notch API, which no website can reach.
+
+**LOG NOT TRIMMED, deliberately.** The five-entry rule cannot run on this file: the entries below
+interleave with the Lancelot/tobacco session's, and Aldi's standing instruction is that those must
+not be touched. See the track table at the top. Trim only within the 🟠 KPM rows, and only when
+that session is not mid-flight.
 
 ## ⏭️ LOG 15:20 WIB — rail fixes done; the DELETE BUTTON ROLLOUT IS THE OPEN ITEM.
 
@@ -1633,7 +1655,11 @@ it never happens twice. Answer, then ask which of the waiting items he wants to 
 | What | Exact path |
 |---|---|
 | The sales terminal (all UI work lands here) | `src/MerchantSalesView.jsx` |
-| The 147-check audit — run before anything | `src/config/integration.audit.mjs` |
+| The 264-check audit — run before anything | `src/config/integration.audit.mjs` |
+| **The app shell: edge ribbon, icon rail, header chips, logout** | `src/components/BiohazardTheme.jsx` |
+| **Every shared visual: `.kpm-expand`, `.kpm-bell`, `.kpm-chip`, `.kpm-rail-mark`, the liquid-glass hover** | `src/styles/theme.css` (bottom third) |
+| **The bell and its arrival ring** | `src/components/NotificationBell.jsx` |
+| **The music player — the Dynamic Island rewrite lands here** | `src/MusicPlayer.jsx` |
 | The in-page confirm that replaced every dialog | `src/components/ConfirmGate.jsx` |
 | The in-page toast that replaced every alert | `src/components/Toast.jsx` |
 | Which toasts stick vs fade (the one judgement call) | `src/utils/toastSeverity.js` + `src/config/toastSeverity.selfcheck.mjs` |
@@ -1709,6 +1735,25 @@ node src/config/toastSeverity.selfcheck.mjs; node src/config/findDuplicates.self
 ---
 
 ## NOW
+
+**🟠 KPM APP, as of 2026-08-12 19:07 — the phone UI thread.** Branch `phase0-solid-ground`,
+264/264, working tree clean apart from graphify's regenerated output. Everything Aldi asked for
+today is shipped EXCEPT two jobs, both listed at the top of the 19:07 log: the **24 delete
+buttons** and the **Dynamic Island music player**. Neither is started; no half-applied change is
+sitting in the tree.
+
+Nothing in this thread is blocked on him. He still owes **test results** on the things only a
+logged-in admin can see: the two-column rail, the slide-across-marks highlight, the music panel,
+his profile photo, and the full-height manifest — and then the **NOO test** he was heading for
+before any of this UI work began.
+
+Verify this thread with one command, not by reading code:
+
+```powershell
+npm run build; node src/config/integration.audit.mjs
+```
+
+**⚠️ Everything from here down in this section is the OLDER, non-KPM thread.**
 
 **⚠️ The last several hours were NOT kpm work.** They went to a Qwen3-235B download in `D:\LLAMA`
 (AirLLM, separate project). No file in `src/` changed. Everything below is exactly where 20:45
@@ -1786,6 +1831,21 @@ Do not promise a scheduled session a second time without testing the mechanism o
 throwaway first.
 
 ## WAITING ON ALDI — do not re-derive these, just ask
+
+**🟠 NEWEST FIRST — 2026-08-12 19:07. His two open UI asks, in his own words.**
+
+- **The Dynamic Island music player — NOT BUILT YET.** Verbatim: *"and this is the model for the
+  music player because it looks better, but since dynamic island take so much space then when we
+  press music button the sidebar should close and open dynamic island
+  https://framer.com/m/Music-Island-lisn25.js@g20HU6fTKTx8KYtv5O4W make sure it is working even
+  when we dont have iphone"*.
+  Three things are settled by that sentence and must not be re-pitched: pressing the music mark
+  **closes the rail**, the island **replaces** the side panel rather than sitting beside it, and
+  it must be a drawn element — **the real iOS notch is not reachable from a website**, so this is
+  a fixed pill at the top of the page that works on any phone.
+- **The 24 delete buttons — NOT DONE.** He asked for his delete-button style *"throughout the
+  app"*. Only logout wears it. He has not been asked to re-confirm anything; it is just unfinished.
+- **No answer is owed on either.** Do not ask him again — build them.
 
 **🔴 TOP OF THE LIST, 2026-08-10 21:11 — the only thing blocking app work:**
 - **Is the sound back on his phone?** `8c502f7` fixed two real faults in the unlock path. If it
