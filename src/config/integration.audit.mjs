@@ -957,7 +957,7 @@ check(G25, 'the ribbon can be moved to wherever his thumb is, and stays there',
 check(G25, 'the rail is two columns wide, so a full menu fits without scrolling',
   /const RAIL_W = 176;/.test(shellSrc) &&
   /w-\[176px\] lg:w-64/.test(shellSrc) &&
-  /grid grid-cols-2 gap-2 p-2 content-start lg:block/.test(shellSrc),
+  /grid grid-cols-2 gap-2 p-2 auto-rows-\[minmax\(0,1fr\)\] overflow-hidden lg:block/.test(shellSrc),
   'RAIL_W and the class must agree — the drag maths, the name plate offset and the music ' +
   'panel width are all measured off it');
 /* HIS REPORT: "i press and drag but it only show the first button that i press, it didnt show
@@ -1057,6 +1057,30 @@ check(G25, 'its body opens sideways, out of the rail',
    password-strength meter. All 35 of those sites are swept now, so the check covers the WHOLE
    file. The narrow version was the honest thing to write while an exception existed; leaving it
    narrow once the exception is gone would just be somewhere for the next green to hide. */
+/* NO SCROLLING IN THE RAIL — "there is still scroll feature inside sidebar, i dont want that,
+   find another solution to fit it there". The solution is that the rows SHARE the column instead
+   of each claiming a fixed height, so the same rail fits a Tier-1 menu on a tall phone and a
+   short one without ever scrolling.
+
+   Two things here are load-bearing and both look like noise:
+   - `minmax(0, 1fr)`, not `1fr`. A grid row's default minimum is its CONTENT, so plain 1fr rows
+     refuse to shrink and the overflow he reported comes straight back.
+   - `min-h-0` on the marks and on the nav. A flex child's default minimum is its content too;
+     this is the same trap twice, in the two layout systems.
+   Putting a fixed cell height or a min-height floor back on the marks reintroduces the scroll on
+   a short screen — or, worse, CLIPS a tab he can then never reach, since the nav is
+   overflow-hidden by design. */
+check(G25, 'the rail never scrolls — the rows share the height instead',
+  /auto-rows-\[minmax\(0,1fr\)\] overflow-hidden/.test(shellSrc) &&
+  /flex-1 min-h-0 scrollbar-hide/.test(shellSrc) &&
+  /justify-center h-full min-h-0 lg:h-auto/.test(shellSrc) &&
+  /* the space matters: `lg:overflow-y-auto` in the same string is the DESK's scroll, which is
+     correct — 256px of text rows on a short monitor genuinely needs it. Only an unprefixed one
+     is the bug. */
+  !/grid[^"]* overflow-y-auto/.test(shellSrc),
+  'a fixed cell height brings the scroll back on a short phone; a min-height floor clips a mark ' +
+  'off the bottom instead, which is worse — the tab becomes unreachable, not just further down');
+
 /* THE BELL. It rings on ARRIVAL, not only when touched — hover is a mouse idea and this button
    lives on a phone. The trap is the comparison: ring on an INCREASE only, held in a ref. Compare
    against zero instead and reading your mail sets the bell off on the way down. */

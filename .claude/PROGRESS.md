@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-12 19:07 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
+**Updated: 2026-08-12 19:35 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
 **Lancelot session last wrote 17:20 WIB** — see the 17:15 entry. Two clocks, two sessions, one file.
 
 ## 🧭 WHICH TRACK IS WHICH — check this before editing anything below
@@ -51,6 +51,23 @@ The rules, in order:
    else wrote in the meantime. If an `Edit` fails as stale, re-read and re-apply — do not force it.
 7. **The quota is one shared pool.** Two sessions running hard halve each other's runway, and the
    `[plan-quota]` percentage covers both. Size your work against the whole pool, not your own chat.
+
+## ⏭️ LOG 19:35 WIB — the rail stopped scrolling. Two UI jobs still queued, neither started.
+
+265/265. His note: *"there is still scroll feature inside sidebar, i dont want that, find another
+solution to fit it there"*. The fix is that the rows now **share** the column instead of each
+claiming a fixed height — `auto-rows-[minmax(0,1fr)]`, so the same rail fits a full Tier-1 menu on
+a tall phone and on a short one without ever scrolling.
+
+🔑 **Two traps, and they are the same trap in two layout systems.** A grid row's default minimum
+is its CONTENT, and so is a flex child's. Plain `1fr` rows refuse to shrink and the scroll comes
+straight back; that is what `minmax(0, …)` and the `min-h-0` on both the nav and the marks are
+for. **Do not put a fixed cell height or a min-height floor back on the marks** — a floor does not
+restore the scroll, it CLIPS a mark off the bottom, and an unreachable tab is worse than a
+scrolling one. `lg:overflow-y-auto` stays: 256px of text rows on a short monitor genuinely needs
+it, and the audit check allows exactly that one prefixed form.
+
+**Not verified by eye** — the rail's marks only render for a logged-in user.
 
 ## ⏭️ LOG 19:07 WIB — bell done. TWO UI JOBS ARE QUEUED AND NEITHER IS STARTED.
 

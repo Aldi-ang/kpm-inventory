@@ -363,8 +363,23 @@ export default function BiohazardTheme({
                         onPointerMove={(e) => { if (scrubRef.current) scrubTo(e); }}
                         onPointerUp={endScrub}
                         onPointerCancel={() => { scrubRef.current = null; setPeek(null); }}
-                        style={{ touchAction: 'pan-y' }}
-                        className="grid grid-cols-2 gap-2 p-2 content-start lg:block lg:space-y-0.5 lg:p-0 flex-1 overflow-y-auto scrollbar-hide boot-2"
+                        /* NO SCROLLING, at any tier, on any phone — his call: "there is still
+                           scroll feature inside sidebar, i dont want that, find another solution
+                           to fit it there".
+
+                           The solution is to stop giving the rows a fixed height and let them
+                           SHARE what there is. `auto-rows-[minmax(0,1fr)]` divides the column
+                           evenly between however many marks this tier can see, so seventeen fit
+                           on a tall phone and nine fit on a short one without either ever
+                           scrolling. minmax(0,…) rather than plain 1fr is load-bearing: a grid
+                           row's default minimum is its content, so without the 0 the rows refuse
+                           to shrink and the overflow comes straight back.
+
+                           touchAction is 'none' now, not 'pan-y'. With nothing to scroll, pan-y
+                           only gave the browser a reason to steal a slow vertical drag from the
+                           scrub. */
+                        style={{ touchAction: 'none' }}
+                        className="grid grid-cols-2 gap-2 p-2 auto-rows-[minmax(0,1fr)] overflow-hidden lg:block lg:space-y-0.5 lg:p-0 lg:overflow-y-auto flex-1 min-h-0 scrollbar-hide boot-2"
                     >
                         {visibleMenu.map(item => {
                             const Mark = item.icon;
@@ -380,7 +395,7 @@ export default function BiohazardTheme({
                                     data-label={item.label}
                                     onClick={() => { if (swallowedByScrub()) return; setActiveTab(item.id); setIsMobileMenuOpen(false); }}
                                     title={item.label}
-                                    className={`kpm-rail-mark ${on ? 'on' : ''} ${peek?.id === item.id ? 'hot' : ''} relative w-full flex items-center justify-center h-16 lg:h-auto lg:block lg:text-left lg:py-2 lg:px-3 text-xs font-bold transition-all duration-200 uppercase tracking-widest lg:clip-path-polygon ${
+                                    className={`kpm-rail-mark ${on ? 'on' : ''} ${peek?.id === item.id ? 'hot' : ''} relative w-full flex items-center justify-center h-full min-h-0 lg:h-auto lg:block lg:text-left lg:py-2 lg:px-3 text-xs font-bold transition-all duration-200 uppercase tracking-widest lg:clip-path-polygon ${
                                         on
                                         ? 'text-[#ff9d00] lg:bg-white lg:text-black lg:pl-6 lg:shadow-[0_0_10px_rgba(255,255,255,0.8)] lg:border-l-4 lg:border-orange-500'
                                         : 'text-[#6b5845] lg:text-gray-500 lg:hover:text-white lg:hover:pl-4 lg:hover:bg-white/5'
