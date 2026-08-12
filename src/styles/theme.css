@@ -1152,6 +1152,31 @@ html.lite-mode .kpm-expand, html.lite-mode .kpm-expand > svg, html.lite-mode .kp
 html.lite-mode .kpm-chip { transition: none; }
 html.lite-mode .kpm-chip:active { transform: none; }
 
+/* ---------- THE MUSIC PILL ----------
+   It arrives from the top edge, because that is where it lives and motion that starts off-screen
+   says where a thing came from. The spinning disc is the only loop in it and it runs ONLY while
+   audio is actually playing — a decoration that spins forever is a battery cost and a lie about
+   the state. */
+.kpm-music-pill { animation: kpmPillDrop .32s cubic-bezier(.16, 1.1, .3, 1) both; }
+@keyframes kpmPillDrop {
+  from { opacity: 0; transform: translate(-50%, -14px) scale(.94); }
+  to   { opacity: 1; transform: translate(-50%, 0) scale(1); }
+}
+.kpm-pill-art {
+  flex: none; display: inline-flex; align-items: center; justify-content: center;
+  width: 34px; height: 34px; border-radius: 50%; color: #2b2318;
+  background: radial-gradient(circle at 50% 50%, #1a1815 0 22%, #c9a227 23% 100%);
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,.5), 0 2px 10px rgba(0,0,0,.5);
+}
+.kpm-pill-art.spinning { animation: kpmPillSpin 3.6s linear infinite; }
+@keyframes kpmPillSpin { to { transform: rotate(360deg); } }
+html.lite-mode .kpm-music-pill, html.lite-mode .kpm-pill-art.spinning { animation: none; }
+@media (prefers-reduced-motion: reduce) {
+  .kpm-music-pill { animation: kpmPillFade .18s ease-out both; }
+  @keyframes kpmPillFade { from { opacity: 0; } to { opacity: 1; } }
+  .kpm-pill-art.spinning { animation: none; }
+}
+
 /* ---------- THE BELL RINGS ----------
    His reference, with one addition it needed to be worth having. Hover is a mouse idea and this
    button lives on a phone, so the swing also fires on focus and on press — and, the part that

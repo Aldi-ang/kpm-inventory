@@ -1034,8 +1034,9 @@ const syncBlock = (appCode.match(/<button onClick=\{\(\) => setShowFlightRecorde
    on the right, so the body opens LEFT into the screen and only the head stays in the rail. */
 const musicSrc = strip(fs.readFileSync('src/MusicPlayer.jsx', 'utf8'));
 check(G25, 'the music player is in the panel at every width',
-  /\{isAdmin && <MusicPlayer \/>\}/.test(shellSrc),
-  'wrapping it in `hidden lg:block` takes it off the phone again — he asked for it back by name');
+  /\{isAdmin && <MusicPlayer onOpen=\{\(\) => setIsMobileMenuOpen\(false\)\} \/>\}/.test(shellSrc),
+  'wrapping it in `hidden lg:block` takes it off the phone again — he asked for it back by name; ' +
+  'and onOpen is what closes the rail when the pill opens, which was his rule for the island');
 /* "music player is squeshed bro ... i rather make the music logo pressable like other
    components ... delete the music player button, like the forward backwar pause button in the
    sidebar ... make the music button spawn a panel beside it". */
@@ -1044,14 +1045,22 @@ check(G25, 'the rail head is one mark, with no transport crammed beside it',
   /hidden lg:flex items-center gap-3/.test(musicSrc),
   'play/skip in a rail cell is what squeezed it — every control belongs in the panel, and ' +
   'the desk keeps its inline pair because there is room for it there');
-check(G25, 'its body opens sideways, out of the rail',
-  /\? 'overflow-visible translate-x-0/.test(shellSrc) &&
-  /: 'overflow-hidden translate-x-full/.test(shellSrc) &&
-  /absolute right-full bottom-0/.test(musicSrc) && /lg:static/.test(musicSrc),
-  'an overflow-hidden rail cuts the panel off at 76px, where the transport row and the volume ' +
-  'slider cannot be hit — but the overflow must go back to hidden when the rail CLOSES, or an ' +
-  'expanded player is left floating over the app with no rail behind it. lg:static is what ' +
-  'keeps the desk layout exactly as it was');
+/* THE PILL MUST LEAVE THE RAIL, and by portal — not by CSS. The rail carries `backdrop-blur`,
+   and a backdrop-filter makes its element the containing block for `position: fixed` descendants.
+   A pill left inside would anchor to the rail instead of the screen and sit off the edge. This is
+   the same class of trap that made the field-mode bar and the bell land on the manifest: an
+   ancestor quietly deciding where a fixed child lives. */
+check(G25, 'the pill is portalled out of the rail, not positioned inside it',
+  /createPortal\(/.test(musicSrc) && /document\.body/.test(musicSrc) &&
+  /matchMedia\('\(max-width: 1023px\)'\)/.test(musicSrc) &&
+  /kpm-music-pill[^"]*fixed z-\[95\] top-3 left-1\/2/.test(musicSrc) &&
+  !/absolute right-full/.test(musicSrc),
+  'backdrop-filter on the rail makes it the containing block for fixed children — a pill left ' +
+  'inside anchors to the rail, not the screen');
+check(G25, 'the desk keeps its in-flow accordion',
+  /isPhone \? \(isExpanded && createPortal\(/.test(musicSrc) &&
+  /max-h-\[300px\] opacity-100/.test(musicSrc),
+  'the pill is the phone answer only; a desk has the column room the panel always had');
 /* This used to be scoped to the chrome and the sync pill alone, because App.jsx still had
    emerald and slate deeper in — the boot spinner, the Flight Recorder, the setup screens, the
    password-strength meter. All 35 of those sites are swept now, so the check covers the WHOLE

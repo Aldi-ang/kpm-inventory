@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-12 19:35 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
+**Updated: 2026-08-12 20:10 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
 **Lancelot session last wrote 17:20 WIB** — see the 17:15 entry. Two clocks, two sessions, one file.
 
 ## 🧭 WHICH TRACK IS WHICH — check this before editing anything below
@@ -51,6 +51,28 @@ The rules, in order:
    else wrote in the meantime. If an `Edit` fails as stale, re-read and re-apply — do not force it.
 7. **The quota is one shared pool.** Two sessions running hard halve each other's runway, and the
    `[plan-quota]` percentage covers both. Size your work against the whole pool, not your own chat.
+
+## ✅ LOG 20:10 WIB — the MusicPill is built. Only the DELETE BUTTONS are still queued.
+
+266/266. He swapped his own ask: *"what about this for the music player instead?"* + a Framer
+MusicPill link. **The Dynamic Island is off the list** — do not build it.
+
+The pill replaced the panel that hung off the side of the rail, and it is the better shape for the
+reason the old one kept failing: that panel had to fit in whatever the rail left over, so it got
+squeezed and then cut. The pill owns the top of the screen at a width it chooses, and the rail
+**closes behind it** — his rule from the island ask, kept.
+
+🔑 **It is PORTALLED to `<body>`, and that is not a preference.** The rail carries
+`backdrop-blur`, and a `backdrop-filter` makes its element the containing block for
+`position: fixed` descendants — a pill left inside would anchor to the RAIL, not the screen, and
+sit off the edge. This is the third time an ancestor has quietly decided where a fixed child
+lives in this app (the field-mode bar, the bell, now this). CSS cannot do it; a portal is a JS
+decision, hence the `matchMedia` in MusicPlayer.
+
+The rail went back to plain `overflow-hidden` at every width — the conditional overflow existed
+only so the old panel could escape sideways, and the orphan-panel trap went with it.
+
+**Not verified by eye:** the pill only renders for an admin, so it needs his phone.
 
 ## ⏭️ LOG 19:35 WIB — the rail stopped scrolling. Two UI jobs still queued, neither started.
 

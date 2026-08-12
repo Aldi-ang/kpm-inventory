@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Music, Play, Pause, SkipForward, SkipBack, Volume2, List, Repeat, Shuffle, ChevronDown, ChevronUp } from 'lucide-react';
+import { createPortal } from 'react-dom';
+import { Music, Play, Pause, SkipForward, SkipBack, Volume2, List, Repeat, Shuffle, ChevronDown, ChevronUp, X } from 'lucide-react';
 
 // --- DYNAMIC MUSIC LOADING ---
 // ponytail: eager:false so the ~9.66MB of MP3s only download when someone actually presses
@@ -16,7 +17,25 @@ const TRACKS = DETECTED_TRACKS.length > 0 ? DETECTED_TRACKS : [
     { title: "No Music Found", path: null }
 ];
 
-const MusicPlayer = () => {
+/* `onOpen` lets the shell get out of the way — his rule for the island, which holds for the pill:
+   pressing the music mark should close the rail, not stack a panel on top of it. */
+const MusicPlayer = ({ onOpen }) => {
+    /* WHY A MEDIA QUERY IN JS AND NOT JUST `lg:` CLASSES. The pill is PORTALLED to <body>, and a
+       portal is a JS decision — CSS cannot move an element out of the rail. It has to move: the
+       rail carries `backdrop-blur`, and a backdrop-filter makes its ancestor the containing block
+       for `position: fixed` descendants, so a pill left inside it would anchor to the rail rather
+       than to the screen and land off the edge. The desk keeps the in-flow accordion it has
+       always had, so nothing about that layout moves. */
+    const [isPhone, setIsPhone] = useState(
+        () => typeof window !== 'undefined' && window.matchMedia('(max-width: 1023px)').matches
+    );
+    useEffect(() => {
+        const mq = window.matchMedia('(max-width: 1023px)');
+        const onChange = (e) => setIsPhone(e.matches);
+        mq.addEventListener('change', onChange);
+        return () => mq.removeEventListener('change', onChange);
+    }, []);
+
     const [isPlaying, setIsPlaying] = useState(false);
     const [currentTrack, setCurrentTrack] = useState(0);
     const [volume, setVolume] = useState(0.5);
@@ -89,7 +108,7 @@ const MusicPlayer = () => {
                 play, skip, shuffle, loop, volume — lives in the panel where there is room to hit
                 it. The mini play/pause that used to sit here is what was squeezing the row. */}
             <div
-                onClick={() => setIsExpanded(!isExpanded)}
+                onClick={() => { const next = !isExpanded; setIsExpanded(next); if (next && onOpen) onOpen(); }}
                 role="button"
                 aria-expanded={isExpanded}
                 aria-label="Cassette OS"
@@ -114,18 +133,60 @@ const MusicPlayer = () => {
                 </div>
             </div>
 
-            {/* EXPANDABLE CONTENT */}
-            {/* THE BODY OPENS SIDEWAYS ON A PHONE. The transport row and a volume slider cannot
-                be used at 76px, and shrinking them further would have made a control nobody can
-                hit. `right-full` puts it in the screen the rail is sitting on top of — which is
-                why the rail is overflow-visible below lg, and why it had to be the RIGHT-hand
-                rail for this to have anywhere to go. On a desk nothing moves: lg:static puts it
-                straight back under the head, in the flow, exactly as it was. */}
+            {/* THE PILL — his call, replacing the panel that hung off the side of the rail:
+                a MusicPill instead. It is the better shape for this: the panel had to fit in
+                whatever the rail left over, which is why it kept getting squeezed and cut. The
+                pill owns the top of the screen instead, at a width it chooses, and the rail
+                closes behind it — his rule from the island ask, and it still holds. Everything
+                the old panel had is here; nothing had to shrink to fit beside something.
+
+                Portalled to <body>, which is not optional — see the note on backdrop-filter at
+                the top of this file. The desk branch below is the accordion, untouched. */}
+            {isPhone ? (isExpanded && createPortal(
+                <>
+                    {/* No dimmer: a pill is not a modal, and the screen behind it stays readable.
+                        This only catches the tap that dismisses it. */}
+                    <div className="hide-on-print fixed inset-0 z-[94]" onClick={() => setIsExpanded(false)}></div>
+
+                    <div className="kpm-music-pill hide-on-print fixed z-[95] top-3 left-1/2 -translate-x-1/2 w-[min(92vw,340px)] rounded-[26px] border border-[#3e3226] bg-[#0f0e0d]/95 backdrop-blur-xl shadow-[0_14px_44px_rgba(0,0,0,.72)] overflow-hidden font-mono">
+                        <div className="flex items-center gap-3 px-3 py-2.5">
+                            <span className={`kpm-pill-art ${isPlaying ? 'spinning' : ''}`} aria-hidden="true"><Music size={15} /></span>
+                            <div className="flex-1 min-w-0">
+                                <div className="text-[9px] font-black uppercase tracking-[0.22em] text-[#5c4b3a] leading-none">Cassette OS</div>
+                                <div className="text-xs font-bold text-[#f5e6c8] truncate leading-tight mt-1">{TRACKS[currentTrack].title}</div>
+                            </div>
+                            <button onClick={togglePlay} aria-label={isPlaying ? 'Pause' : 'Play'} className="shrink-0 w-10 h-10 rounded-full bg-[#ff9d00] text-[#2b2318] flex items-center justify-center active:scale-90 transition-transform shadow-[0_0_14px_rgba(255,157,0,.35)]">
+                                {isPlaying ? <Pause size={16} fill="currentColor" /> : <Play size={16} fill="currentColor" className="ml-0.5" />}
+                            </button>
+                            <button onClick={() => setIsExpanded(false)} aria-label="Close player" className="shrink-0 p-1.5 text-[#8b7256]"><X size={18} strokeWidth={3} /></button>
+                        </div>
+
+                        <div className="flex items-center gap-3 px-3 pb-3">
+                            <button onClick={() => setIsShuffling(!isShuffling)} aria-label="Shuffle" className={isShuffling ? 'text-[#ff9d00]' : 'text-[#8b7256]'}><Shuffle size={15} /></button>
+                            <button onClick={playPrev} aria-label="Previous track" className="text-[#d4c5a3]"><SkipBack size={17} /></button>
+                            <button onClick={playNext} aria-label="Next track" className="text-[#d4c5a3]"><SkipForward size={17} /></button>
+                            <button onClick={() => setIsLooping(!isLooping)} aria-label="Repeat" className={isLooping ? 'text-[#ff9d00]' : 'text-[#8b7256]'}><Repeat size={15} /></button>
+                            <Volume2 size={14} className="text-[#8b7256] shrink-0 ml-1" />
+                            <input type="range" min="0" max="1" step="0.05" value={volume} onChange={(e) => setVolume(parseFloat(e.target.value))} aria-label="Volume" className="flex-1 min-w-0 h-1 bg-[#3e3226] rounded-lg appearance-none cursor-pointer accent-[#ff9d00]" />
+                            <button onClick={() => setShowPlaylist(!showPlaylist)} aria-label="Tracks" className={showPlaylist ? 'text-[#ff9d00]' : 'text-[#8b7256]'}><List size={15} /></button>
+                        </div>
+
+                        {showPlaylist && (
+                            <div className="max-h-40 overflow-y-auto border-t border-[#3e3226] custom-scrollbar">
+                                {TRACKS.map((t, idx) => (
+                                    <button key={idx} onClick={() => { setCurrentTrack(idx); setIsPlaying(true); }} className={`w-full text-left px-4 py-2.5 text-[11px] border-b border-[#3e3226]/60 truncate ${currentTrack === idx ? 'bg-[#ff9d00] text-[#2b2318] font-black' : 'text-[#8b7256]'}`}>
+                                        {idx + 1}. {t.title}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                </>,
+                document.body
+            )) : (
             <div className={`transition-all duration-300 origin-top overflow-hidden
-                             absolute right-full bottom-0 mr-2 w-[calc(100vw-200px)] max-w-[240px] rounded-xl border border-[#3e3226] bg-[#0f0e0d] shadow-[0_10px_40px_rgba(0,0,0,.7)]
-                             lg:static lg:w-auto lg:max-w-none lg:mr-0 lg:rounded-none lg:border-0 lg:bg-transparent lg:shadow-none
-                             ${isExpanded ? 'max-h-[65vh] opacity-100' : 'max-h-0 opacity-0 pointer-events-none'}`}>
-                
+                             ${isExpanded ? 'max-h-[300px] opacity-100' : 'max-h-0 opacity-0'}`}>
+
                 {/* PLAYLIST TOGGLE */}
                 <div className="px-2 pt-2 flex justify-end">
                     <button onClick={() => setShowPlaylist(!showPlaylist)} className={`text-[11px] font-bold uppercase flex items-center gap-1 transition-colors ${showPlaylist ? 'text-white' : 'text-orange-500 hover:text-orange-400'}`}>
@@ -173,6 +234,7 @@ const MusicPlayer = () => {
                     </div>
                 </div>
             </div>
+            )}
             <style>{`
                 @keyframes marquee { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
                 .animate-marquee { animation: marquee 10s linear infinite; }
