@@ -1,7 +1,54 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-13 23:50 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
-**Lancelot session last wrote 2026-08-13 13:51 WIB** — see the 14:05 entry. Two clocks, one file.
+**Updated: 2026-08-14 00:10 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
+**Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry directly below. Two clocks, one file.
+
+### ✅ 23:40 WIB (Lancelot session) — the two potongan methods BUILT. A-Brain `8b20e34`. 103 checks green.
+
+**Zero files in this repo were touched by this track**, as always — the work is `Lancelot.gs` and
+the concept page in the A-Brain repo, plus `~/.claude/agents/lancelot.md` (global config, NOT a
+git repo, so that one edit is on disk and uncommitted by nature).
+
+Built the two items the 14:05 entry was waiting on his go-ahead for:
+
+1. **`caraHitung`** (`total` | `per gulungan`, default per gulungan) — a new NOTA column,
+   **appended, never inserted**, because `pasangSheet` rewrites row 1 in place and a mid-list
+   column would silently relabel every stored value to its right. On `total`, `tulisNota_` writes
+   per-row TARA/NETTO/JUMLAH **blank** and **refuses the nota** unless `totalNetto` and
+   `totalJumlah` are copied off the paper. On `per gulungan`, `taraBulat_` rounds the derived tara
+   to a whole kg (26 → tara 3 → netto 23, his own nota).
+   🔑 **The rounding is on the TARA, not the netto** — the paper's `TARA (10%)` column carries whole
+   numbers. Both readings match every row he has sent; they differ only when the potongan lands
+   exactly on `.5`. Never runs when the tara is printed: a printed tara is copied.
+2. **`BIAYA` child table + empty `M_BIAYA` master.** `NO NOTA · NO · JENIS BIAYA · KETERANGAN ·
+   JUMLAH`. `TAMBAHAN` on NOTA is now only the list's total, and `cekKualitas` fails **BERAT** when
+   they disagree — `DIBAYAR` is computed from `TAMBAHAN`, so a hand-edited biaya row is a money bug.
+   M_BIAYA ships **empty on purpose** (13:40 law: he names his own categories).
+
+🔴 **The bug this closes:** `cekKualitas` asserted `(bruto − tara) = netto` per row, so a
+total-level nota — whose per-row netto is correctly blank — raised a **BERAT alarm on every
+gulungan, every night**. The nightly check was calling his most accurate data an error.
+
+**103 self-check cases green (was 82)**, and four mutations were run to prove the new ones can go
+red: rounding removed, `caraHitungRapi_` broken, the blank-biaya filter disabled, and a column
+inserted mid-header. Each turned exactly the expected cases red and nothing else.
+
+⚠️ **NOT covered by any runnable check:** the `tulisNota_` TOTAL path and the `cekKualitas` skips
+both need a real sheet, so they are **[likely], not [certain]** until he runs them.
+
+**✅ TEST, in order:** re-paste `Lancelot.gs` → `pasangSheet` (creates BIAYA + M_BIAYA and the CARA
+HITUNG dropdown) → `lancelotSelfCheck` (must say SEMUA BENAR) → `cekKualitas` (must NOT report
+BERAT on a total-level nota).
+
+**❓ STILL OWED BY ALDI — unchanged, none of it blocked this build:**
+(a) the `-AGEN` pairing suffix (`JUAL-07` → `JUAL-07-AGEN`);
+(b) is `AGEN` always filled on a sale nota?;
+(c) the Pak Mul nota is filed on disk but still **not written to the sheet** — everything it needed
+is now built, so it can go in as the first live test once he re-pastes.
+
+**▶ NEXT (was item 3 of the 14:05 list, deliberately not built):** `NOTA CETAK` printing the biaya
+list beside the gulungan rows and continuing downward past them. It is presentation only — the data
+it needs now exists.
 
 ### 🟢 13:51 WIB (Lancelot session) — no file changes this turn; those `src/**` edits are the app's
 
@@ -61,6 +108,25 @@ The rules, in order:
    else wrote in the meantime. If an `Edit` fails as stale, re-read and re-apply — do not force it.
 7. **The quota is one shared pool.** Two sessions running hard halve each other's runway, and the
    `[plan-quota]` percentage covers both. Size your work against the whole pool, not your own chat.
+
+## ✅ LOG 2026-08-14 00:10 WIB — login screen FINISHED, arrival animation added to the system. 355/355. (KPM app session)
+
+*"make sure all the ui is the new one that we design last time with all its animation and stuff"*
+→ clarified by him as **the login screen**, not the whole app. Everything on it is the vocabulary
+now: the door module, the sidebar login button, the "Locked" readout, the company name (was a
+white `box-shadow` glow — **Lite Mode deletes box-shadow, so the name lost its edge entirely
+there**; it is a display title on an `accent-edge` border now), `BUILD` and the two footer hints
+(were `bg-white` / `bg-gray-700` chips, now `.kpm-read`).
+
+🔑 **New in the vocabulary: `.kpm-mod.arrive`** — 320ms rise + fade, transform/opacity only, and
+dropped whole under Lite Mode and `prefers-reduced-motion`. Put it on any module that appears; do
+NOT write a per-screen entrance again.
+
+**📊 CENSUS, if he ever means the WHOLE app by "all the UI":** **488 `<button>` elements across
+the app; 11 are on `.kpm-btn`.** Worst files by count: `MapMissionControl` 47, `MerchantSalesView`
+47, `SettingsView` 45 (7 done), `CustomerManager` 37, `JourneyView` 32, `RestockVaultView` 31,
+`AgentProfileView` 28. That is Phase 6 and it is **many sessions of work** — do not start it on a
+half-empty quota. Convert per screen, run the audit after each.
 
 ## ✅ LOG 2026-08-13 23:50 WIB — the LOGIN SCREEN is on the control system. 355/355. (KPM app session)
 
