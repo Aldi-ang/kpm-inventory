@@ -311,27 +311,52 @@ html.lite-mode .kpm-coin.lg,   .kpm-coin.lg.still   { background-position: -72px
 /* Taller than the 200px figure so his line has somewhere to sit that is not his hat, and
    sticky so he stays on screen while the manifest under him is scrolled — his reaction is
    worthless if it plays somewhere the salesman is not looking. */
+/* ---------- THE CAVE, second pass (2026-08-13) ----------
+   His brief: the pixel-art dungeon he sent — an arched doorway throwing light into a masonry
+   undercroft — "but darker". So: the stone is near-black and reads by its COURSES, not by
+   lighting; the one bright thing in the frame is the doorway behind him, and the torches are
+   the only cool light. Everything is still gradients, so Lite Mode keeps the whole set.
+   ⚠️ The masonry must stay LOW contrast. At the contrast the old highlights used, the blocks
+   compete with the merchant, and he is the subject of this frame. */
 .kpm-alcove { position: sticky; top: 0; z-index: 30;
   height: 280px; overflow: hidden;
-  background: #0d0b09; display: grid; place-items: end center; }
+  background: #070605; display: grid; place-items: end center; }
 .kpm-alcove .rock { position: absolute; inset: 0; z-index: 0;
   background:
     linear-gradient(196deg, transparent 46%, rgba(0,0,0,.62) 46.4%, transparent 47%),
     linear-gradient(158deg, transparent 62%, rgba(0,0,0,.55) 62.3%, transparent 63%),
     linear-gradient(15deg,  transparent 30%, rgba(0,0,0,.5)  30.3%, transparent 31%); }
+/* the masonry: 22px courses, joints offset every other course by the 44px background-size —
+   two gradients doing the work of a tileset */
 .kpm-alcove .rock::before { content: ""; position: absolute; inset: 0;
   background:
-    radial-gradient(46% 30% at 14% 16%, rgba(150,138,124,.55), transparent 62%),
-    radial-gradient(38% 26% at 42%  8%, rgba(128,118,106,.48), transparent 62%),
-    radial-gradient(52% 32% at 78% 20%, rgba(140,128,114,.46), transparent 64%),
-    radial-gradient(40% 28% at 24% 52%, rgba(120,110,98,.44),  transparent 62%),
-    radial-gradient(46% 30% at 62% 46%, rgba(132,120,108,.40), transparent 64%),
-    radial-gradient(56% 34% at 90% 62%, rgba(112,102,92,.42),  transparent 66%),
-    radial-gradient(44% 30% at  8% 82%, rgba(124,114,102,.40), transparent 64%),
-    radial-gradient(50% 30% at 50% 88%, rgba(108,98,88,.38),   transparent 66%),
-    repeating-linear-gradient(112deg, rgba(0,0,0,.32) 0 2px, transparent 2px 9px),
-    repeating-linear-gradient(31deg, rgba(255,255,255,.07) 0 1px, transparent 1px 7px),
-    linear-gradient(180deg, #2a2521 0%, #171412 58%, #0c0a09 100%); }
+    radial-gradient(46% 30% at 14% 16%, rgba(150,138,124,.20), transparent 62%),
+    radial-gradient(52% 32% at 78% 20%, rgba(140,128,114,.17), transparent 64%),
+    radial-gradient(56% 34% at 90% 62%, rgba(112,102,92,.15),  transparent 66%),
+    radial-gradient(44% 30% at  8% 82%, rgba(124,114,102,.14), transparent 64%),
+    repeating-linear-gradient(0deg,  rgba(0,0,0,.55) 0 2px, transparent 2px 22px),
+    repeating-linear-gradient(90deg, rgba(0,0,0,.45) 0 2px, transparent 2px 44px),
+    repeating-linear-gradient(112deg, rgba(0,0,0,.30) 0 2px, transparent 2px 9px),
+    linear-gradient(180deg, #1a1614 0%, #100d0b 58%, #070605 100%); }
+
+/* THE DOORWAY. The only warm light in the cave, and the reason the figure has a silhouette.
+   Round-topped like the reference's arch; the ::before is the light itself, the ::after is the
+   spill on the floor in front of it. Amber, per his theme. */
+.kpm-alcove .arch { position: absolute; z-index: 0; left: 50%; margin-left: -46px; bottom: 26px;
+  width: 92px; height: 168px; border-radius: 46px 46px 4px 4px;
+  background: linear-gradient(180deg, #2a2018 0%, #171210 70%, #0d0a08 100%);
+  box-shadow: inset 0 0 0 3px #0a0806; }
+.kpm-alcove .arch::before { content: ""; position: absolute; inset: 7px 7px 0 7px;
+  border-radius: 39px 39px 2px 2px;
+  background:
+    linear-gradient(180deg, rgba(255,214,120,.20) 0%, rgba(232,168,52,.55) 46%, rgba(255,226,150,.92) 100%),
+    #b9791a; }
+/* the light on the floor. Separate element-half so it can animate without touching the arch. */
+.kpm-alcove .arch::after { content: ""; position: absolute; left: -54px; right: -54px; bottom: -26px;
+  height: 54px; pointer-events: none;
+  background: radial-gradient(50% 100% at 50% 100%, rgba(236,176,66,.42), rgba(180,120,30,.16) 52%, transparent 76%);
+  animation: kpmArchBreath 5.2s ease-in-out infinite; }
+@keyframes kpmArchBreath { 0%,100% { opacity: .86; } 50% { opacity: 1; } }
 
 .kpm-torch { position: absolute; bottom: 30px; width: 30px; height: 150px; z-index: 1;
   transform-origin: 50% 100%; }
@@ -346,33 +371,31 @@ html.lite-mode .kpm-coin.lg,   .kpm-coin.lg.still   { background-position: -72px
 .kpm-torch .bowl { position: absolute; bottom: 128px; left: 50%; margin-left: -14px;
   width: 28px; height: 13px; border-radius: 3px 3px 8px 8px;
   background: linear-gradient(180deg, #3a332b, #15120f); }
-.kpm-flame { position: absolute; bottom: 138px; left: 50%; margin-left: -16px;
-  width: 32px; height: 52px; }
-.kpm-flame i { position: absolute; left: 50%; bottom: 0; transform: translateX(-50%);
-  border-radius: 50% 50% 46% 46%; }
-.kpm-flame .o { width: 28px; height: 46px; animation: kpmFl1 1.5s ease-in-out infinite;
-  background: radial-gradient(50% 60% at 50% 78%, rgba(70,170,255,.85), rgba(30,90,190,.35) 60%, transparent 75%); }
-.kpm-flame .m { width: 17px; height: 33px; animation: kpmFl2 1.1s ease-in-out infinite;
-  background: radial-gradient(50% 60% at 50% 80%, rgba(150,225,255,.95), rgba(60,150,255,.5) 62%, transparent 78%); }
-.kpm-flame .c { width: 8px; height: 18px; animation: kpmFl3 .75s ease-in-out infinite;
-  background: radial-gradient(50% 60% at 50% 82%, #eaf8ff, rgba(190,235,255,.75) 60%, transparent 80%); }
-@keyframes kpmFl1 { 0%,100% { transform: translateX(-50%) scaleY(1) skewX(0deg); }
-  35% { transform: translateX(-52%) scaleY(1.1) skewX(-4deg); }
-  70% { transform: translateX(-48%) scaleY(.94) skewX(3deg); } }
-@keyframes kpmFl2 { 0%,100% { transform: translateX(-50%) scaleY(1); }
-  40% { transform: translateX(-47%) scaleY(1.16); } 75% { transform: translateX(-53%) scaleY(.9); } }
-@keyframes kpmFl3 { 0%,100% { transform: translateX(-50%) scaleY(1); opacity: .95; }
-  50% { transform: translateX(-50%) scaleY(1.2); opacity: 1; } }
-.kpm-torch.r .kpm-flame .o { animation-duration: 1.7s; }
-.kpm-torch.r .kpm-flame .m { animation-duration: 1.25s; }
-.kpm-torch.r .kpm-flame .c { animation-duration: .62s; }
+/* THE FLAME IS A SPRITE NOW, not three stacked gradients. Aldi pointed at a pixel-art blue fire
+   for the look. ⚠️ The file he pointed at is a Shutterstock clip with the watermark burned into
+   every frame — it cannot ship in a business app, so this sheet was GENERATED instead (a Doom-fire
+   automaton in a blue palette, generator kept out of the bundle): 8 frames of 32x56, sheet
+   256x56, stepped in PIXELS like every other sheet in this file. Never convert it to percentages.
+   The 8-frame loop runs faster than the eye resolves, which is what makes a 16px-wide fire read
+   as fire rather than as a flickering blob. */
+.kpm-flame { position: absolute; bottom: 136px; left: 50%; margin-left: -16px;
+  width: 32px; height: 56px;
+  background-image: url('/sprites/bluefire.png');
+  background-size: 256px 56px; background-repeat: no-repeat;
+  image-rendering: pixelated;                 /* it is pixel art; smoothing it is the one way to ruin it */
+  animation: kpmFlame .64s steps(8, end) infinite; }
+@keyframes kpmFlame { to { background-position: -256px 0; } }
+/* the right torch runs on its own clock, so the pair never pulse together */
+.kpm-torch.r .kpm-flame { animation-duration: .78s; }
 
+/* the light the torches throw. Weaker than before: with the doorway lit, two strong blue washes
+   plus a warm arch turned the back wall into soup. */
 .kpm-alcove .cast { position: absolute; inset: 0; z-index: 1; pointer-events: none;
   mix-blend-mode: screen; animation: kpmCast 2.9s ease-in-out infinite;
   background:
-    radial-gradient(110px 140px at 21% 18%, rgba(130,205,255,.34), transparent 66%),
-    radial-gradient(96px 126px at 79% 14%, rgba(120,195,255,.26), transparent 66%),
-    radial-gradient(240px 60px at 50% 100%, rgba(50,120,190,.20), transparent 74%); }
+    radial-gradient(96px 120px at 21% 18%, rgba(130,205,255,.22), transparent 66%),
+    radial-gradient(84px 110px at 79% 14%, rgba(120,195,255,.17), transparent 66%),
+    radial-gradient(220px 54px at 50% 100%, rgba(50,120,190,.12), transparent 74%); }
 @keyframes kpmCast { 0%,100% { opacity: .9; } 35% { opacity: 1; } 70% { opacity: .82; } }
 .kpm-alcove .dark { position: absolute; inset: 0; z-index: 4; pointer-events: none;
   background: radial-gradient(130% 110% at 50% 42%, transparent 42%, rgba(0,0,0,.34) 82%, rgba(0,0,0,.62) 100%); }
@@ -394,10 +417,14 @@ html.lite-mode .kpm-coin.lg,   .kpm-coin.lg.still   { background-position: -72px
 .kpm-alcove .sh.a { transform: translateX(30px) skewX(-27deg) scale(1.06,.88); opacity: .5; }
 .kpm-alcove .sh.b { transform: translateX(-26px) skewX(22deg) scale(.98,.8); opacity: .34; }
 
-html.lite-mode .kpm-flame i,
-html.lite-mode .kpm-alcove .cast { animation: none !important; }
+/* Lite Mode holds frame 1 — the same contract every other sheet here honours. A held frame of
+   this sheet is a lit torch, not a half-drawn one, because frame 1 is the settled pose. */
+html.lite-mode .kpm-flame { animation: none !important; background-position: 0 0 !important; }
+html.lite-mode .kpm-alcove .cast,
+html.lite-mode .kpm-alcove .arch::after { animation: none !important; }
 @media (prefers-reduced-motion: reduce) {
-  .kpm-flame i, .kpm-alcove .cast { animation: none; }
+  .kpm-flame { animation: none; background-position: 0 0; }
+  .kpm-alcove .cast, .kpm-alcove .arch::after { animation: none; }
 }
 
 .kpm-merch-hold { position: absolute; inset: 0; pointer-events: none; }

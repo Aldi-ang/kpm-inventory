@@ -1358,6 +1358,37 @@ check(G28, 'the deal pose still breathes',
   'the wrapper exists so this animation can keep its own transform — if it went away, the ' +
   'wrapper is pointless indirection');
 
+/* ── 29. THE CAVE ─────────────────────────────────────────────────────────
+   Aldi sent a pixel-art dungeon and asked for the alcove to look like it, "but darker", with the
+   torch fire matching a pixel flame. The flame is now a real sprite sheet, so it inherits every
+   trap the other sheets have: pixel stepping, a held frame in Lite Mode, and offline precache. */
+const G29 = '29. The cave is lit by its doorway, and the fire is a sprite';
+const sw = fs.readFileSync('dist/sw.js', 'utf8');
+
+check(G29, 'the flame is the generated sprite, stepped in pixels',
+  css.includes('/sprites/bluefire.png') &&
+  css.includes('background-size:256px 56px') &&
+  /steps\(8/.test(css),
+  'a percentage background-size lands between frames and tears — every sheet in this file is ' +
+  'stepped in pixels for that reason');
+check(G29, 'the old three-gradient flame is gone from the markup',
+  !/className="kpm-flame"><i/.test(termSrc),
+  'the <i> layers styled nothing once the sprite took over — dead elements that read as ' +
+  'deliberate to the next person');
+check(G29, 'Lite Mode holds a lit frame instead of animating',
+  /lite-mode \.kpm-flame \{ animation: none !important; background-position: 0 0/.test(themeCss),
+  'without the held position Lite Mode leaves the sheet wherever it stopped, which can be a ' +
+  'half-drawn frame');
+check(G29, 'the flame still works with no network',
+  sw.includes('sprites/bluefire.png'),
+  'the app is installed as a PWA — a sprite outside the precache is a blank torch offline');
+check(G29, 'the lit doorway exists in both the markup and the stylesheet',
+  /className="arch"/.test(termSrc) && /\.kpm-alcove \.arch \{/.test(themeCss),
+  'the arch is what gives the merchant a silhouette; without it he is a flat cut-out on rock');
+check(G29, 'the cave got darker, not lighter',
+  /\.kpm-alcove \{[^}]*background: #070605/s.test(themeCss),
+  'his word was "darker" — this is the ground the masonry and the doorway are judged against');
+
 /* ── report ──────────────────────────────────────────────────────────────── */
 let last = '';
 for (const r of results) {

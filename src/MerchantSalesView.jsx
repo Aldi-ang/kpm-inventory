@@ -1935,13 +1935,18 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                     announced, which is why the bubble sits outside that subtree. */}
                 <div ref={alcoveRef} className="kpm-alcove hidden lg:grid shrink-0">
                     <div className="rock"></div>
+                    {/* the lit doorway he stands in front of — the only warm light in the cave,
+                        and what gives the figure a silhouette instead of a flat cut-out */}
+                    <div className="arch" aria-hidden="true"></div>
                     <div className="kpm-torch l">
                         <div className="pole"></div><div className="bowl"></div>
-                        <div className="kpm-flame"><i className="o"></i><i className="m"></i><i className="c"></i></div>
+                        {/* one sprite, 8 frames. The three stacked gradients it replaced could
+                            not make a pixel flame read as pixel art. */}
+                        <div className="kpm-flame"></div>
                     </div>
                     <div className="kpm-torch r">
                         <div className="pole"></div><div className="bowl"></div>
-                        <div className="kpm-flame"><i className="o"></i><i className="m"></i><i className="c"></i></div>
+                        <div className="kpm-flame"></div>
                     </div>
                     <div className="cast"></div>
                     {/* the two shadows are the SAME sprite, flattened - no extra download */}
