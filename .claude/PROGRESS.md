@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-13 23:25 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
+**Updated: 2026-08-13 23:50 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
 **Lancelot session last wrote 2026-08-13 13:51 WIB** — see the 14:05 entry. Two clocks, one file.
 
 ### 🟢 13:51 WIB (Lancelot session) — no file changes this turn; those `src/**` edits are the app's
@@ -61,6 +61,29 @@ The rules, in order:
    else wrote in the meantime. If an `Edit` fails as stale, re-read and re-apply — do not force it.
 7. **The quota is one shared pool.** Two sessions running hard halve each other's runway, and the
    `[plan-quota]` percentage covers both. Size your work against the whole pool, not your own chat.
+
+## ✅ LOG 2026-08-13 23:50 WIB — the LOGIN SCREEN is on the control system. 355/355. (KPM app session)
+
+*"i dont want to see old UI here can u fix this, this is also happening on the phone tho"* — the
+sign-in screen. It was the last screen wearing hand-picked hex (`#f0e2c0`, `#6b6157`, `#ff9d00`)
+and its own button shape, i.e. **the first screen anyone sees looked like a different app**.
+
+All three controls on it are now the vocabulary — in `src/components/BiohazardTheme.jsx`:
+- the centre door (~line 338) is a `.kpm-mod` with head + description + `.kpm-btn key block`
+- the sidebar's **System login** is the SAME button, because it is the same act
+- the ACCESS DENIED block lost `opacity-50`, which halved the contrast of the only message a
+  locked-out user gets; it says "Locked" through a `.kpm-read alert` now
+
+🔑 **Group 15's first two checks FAILED on this rebuild although the door was never gone** — they
+measured the **distance** (900 chars) between `{!user && (` and `onClick={onLogin}`, and a comment
+pushed the button past the window. **A proximity needle breaks on any edit that adds prose.** Both
+are structural now (the signed-out block must CONTAIN the control, and must appear before
+`data-kpm-rail`), and were verified to still pass against the OLD file, where the door existed too.
+
+⚠️ **Not touched, still old-looking:** the "Unlock Master Vault" button in the sidebar
+(`BiohazardTheme.jsx` ~line 479) is hand-rolled `#ff9d00` with `rounded-xl` and a shadow. It only
+appears for a Tier-2 user who is already signed in, so it is not on the login screen — but it is
+the next obvious `.kpm-btn key` conversion.
 
 ## 🔴 LOG 2026-08-13 23:25 WIB — CORRECTION: the dev server is HTTPS ON PURPOSE. I broke it, reverted. (KPM app session)
 
