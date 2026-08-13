@@ -1064,18 +1064,13 @@ html.lite-mode .kpm-examine-object { animation: none; }
   .kpm-examine-object { animation: kpmExamineGround .2s ease-out both; }
 }
 
-/* ---------- THE MENU BUTTON AND THE HEADER ----------
-   The button is fixed at top-left. With the navigation panel OPEN it sits over the panel's
-   own brand, which already carries a left margin for it. With the panel CLOSED there is
-   nothing there but the page header, so it landed on "System Active".
-
-   Only the closed case needs the inset, and only on a desk — on a phone there is no button
-   up there any more, only a ribbon on the edge. Padding the LEFT rather than the top, because
-   the top is shared by every screen and pushing it down would cost vertical room everywhere
-   to fix one overlap. */
-@media (min-width: 1024px) {
-  html:not(.kpm-nav-open) .kpm-topbar { padding-left: 76px; }
-}
+/* ---------- THE MENU BUTTON AND THE HEADER — DELETED 2026-08-14 ----------
+   This reserved 76px at the left of every desk header to clear a menu button fixed at
+   top-left. That button was deleted at every width on his instruction, and from 2026-08-14
+   the desk navigation is an 88px strip sitting in the flow — so nothing overlaps the header
+   and nothing needs clearing. The rule survived both changes as 76px of dead space on every
+   desk screen, which is exactly what he was pointing at: *"i dont want this many spaces
+   useless"*. Audit group 6 now asserts it stays gone. */
 
 /* ---------- THE HEADER GETS OUT OF THE SHEET'S WAY ----------
    His ask: pull the manifest all the way up, "so that the whole screen is full of manifest

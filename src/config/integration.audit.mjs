@@ -179,7 +179,13 @@ inCss(G6, 'rail yields when cramped',     'max-width:1535px');
 inCss(G6, 'grid yields when cramped',     'max-width:1659px');
 check(G6, 'sidebar collapses its width', css.includes('.lg' + BS + ':w-0'));
 /* With the panel closed the fixed menu button landed on "System Active". */
-check(G6, 'menu button does not sit on the header', css.includes('html:not(.kpm-nav-open) .kpm-topbar'));
+/* INVERTED 2026-08-14. It used to require a 76px left inset on the desk header, to clear a menu
+   button fixed at top-left. That button is deleted at every width and the desk navigation is now
+   an 88px strip in the flow — so the inset became 76px of dead space on every desk screen, and he
+   pointed straight at it: "i dont want this many spaces useless". */
+check(G6, 'the header reserves no room for a menu button that no longer exists',
+  !css.includes('html:not(.kpm-nav-open) .kpm-topbar'),
+  'nothing is fixed over the header any more; the strip sits in the flow beside it');
 /* The bell is z-[9999]; a "full screen" 3D view at z-[60] was never actually on top. */
 check(G6, '3D view outranks the notification bell', allJs.includes('z-[10000]'));
 
@@ -1056,12 +1062,29 @@ check(G25, 'the hold is visible while it is being counted',
   'survive lite mode and reduced motion, which is why those selectors are more specific');
 /* "instead of 1 line of sidebar i want it to be 2 colomn per row, to eliminate scrolling
    because there is so many features, especially for higher tier" */
+/* And from 2026-08-14 the DESK is one column of marks in an 88px strip, always visible — his
+   call, with a reference component: "i want u to change the sidebar for pc to be like this, so it
+   doesnt take so much space", plus "the sidebar u pull here is the sidebar for phone only dont use
+   it on PC". So the ribbon is `lg:hidden` again, the panel carries no `lg:` open/closed variants,
+   and no width at either size may bring back a scrollbar. */
 check(G25, 'the rail is two columns wide, so a full menu fits without scrolling',
   /const RAIL_W = 176;/.test(shellSrc) &&
-  /w-\[176px\] lg:w-64/.test(shellSrc) &&
-  /grid grid-cols-2 gap-2 p-2 auto-rows-\[minmax\(0,1fr\)\] overflow-hidden lg:block/.test(shellSrc),
+  /w-\[176px\] lg:w-\[88px\]/.test(shellSrc) &&
+  /grid grid-cols-2 lg:grid-cols-1 gap-2 p-2 auto-rows-\[minmax\(0,1fr\)\] overflow-hidden/.test(shellSrc) &&
+  !/lg:overflow-y-auto/.test(shellSrc),
   'RAIL_W and the class must agree — the drag maths, the name plate offset and the music ' +
   'panel width are all measured off it');
+check(G25, 'the desk strip is always there and is never pulled open',
+  /\$\{isMobileMenuOpen \? 'translate-x-0' : 'translate-x-full'\}/.test(shellSrc) &&
+  /lg:relative lg:translate-x-0 lg:opacity-100 lg:pointer-events-auto/.test(shellSrc) &&
+  /kpm-edge-ribbon[^"]*lg:hidden/.test(shellSrc),
+  'the pull gesture is the phone\'s; on a desk the strip is in the flow and opening it is not a ' +
+  'thing you can do, so isMobileMenuOpen must not carry any lg: variant');
+check(G25, 'the desk wears the same mark as the phone, not a white slab',
+  !/lg:bg-white/.test(shellSrc) && !/lg:text-gray-500/.test(shellSrc) &&
+  !/rounded-xl/.test(shellSrc),
+  'the active tab was a white slab with a white glow and the unlock button a hand-rolled gold ' +
+  'rounded slab — that pair is why his PC screenshot read as a different app');
 /* HIS REPORT: "i press and drag but it only show the first button that i press, it didnt show
    anything else when i drag". On touch the browser gives the pointerdown target IMPLICIT POINTER
    CAPTURE, so every later move for that finger is delivered to the button first pressed — no
@@ -1087,12 +1110,11 @@ check(G25, 'the face is the agent\'s own, not a mascot or a robot',
 /* THE iOS TRAP. A drag that starts on the LEFT edge is Safari's back gesture, so a left-hand
    ribbon sometimes leaves the app instead of opening the panel. Right edge is forward, which
    does nothing without forward history. Move it back to the left and this goes red. */
-/* It is on the desk as well from 2026-08-14, and there it moves to the LEFT — that is where the
-   panel sits in the flow at lg, and a desk browser has no back-swipe to steal the drag. The trap
-   is a PHONE trap, so the needle still pins right-0 as the base and only allows lg to move it. */
+/* It was briefly on the desk too, on the left, for the hour between the desk no longer opening
+   itself and his correction — *"the sidebar u pull here is the sidebar for phone only dont use it
+   on PC"*. Back to `lg:hidden`, right edge, phone only. */
 check(G25, 'the ribbon is on the RIGHT edge, away from Safari\'s back gesture',
-  /kpm-edge-ribbon[^"]*fixed right-0/.test(shellSrc) &&
-  /lg:right-auto lg:left-0/.test(shellSrc) &&
+  /kpm-edge-ribbon[^"]*lg:hidden fixed right-0/.test(shellSrc) &&
   /fixed inset-y-0 right-0 z-\[90\] w-\[176px\]/.test(shellSrc),
   'the left edge is iOS back — a navigation control that can exit the app is worse than none');
 /* IT THREW AND THE WHOLE GESTURE DIED SILENTLY. setPointerCapture needs an active pointer;
@@ -1197,11 +1219,12 @@ check(G25, 'the desk keeps its in-flow accordion',
 check(G25, 'the rail never scrolls — the rows share the height instead',
   /auto-rows-\[minmax\(0,1fr\)\] overflow-hidden/.test(shellSrc) &&
   /flex-1 min-h-0 scrollbar-hide/.test(shellSrc) &&
-  /justify-center h-full min-h-0 lg:h-auto/.test(shellSrc) &&
-  /* the space matters: `lg:overflow-y-auto` in the same string is the DESK's scroll, which is
-     correct — 256px of text rows on a short monitor genuinely needs it. Only an unprefixed one
-     is the bug. */
-  !/grid[^"]* overflow-y-auto/.test(shellSrc),
+  /justify-center h-full min-h-0/.test(shellSrc) &&
+  /* From 2026-08-14 this holds at BOTH widths. The desk used to be allowed its own
+     `lg:overflow-y-auto`, because 256px of text rows on a short monitor genuinely needed it —
+     an 88px column of marks does not, and a scrollbar in this panel is a thing he rejected
+     once already. So the exception is gone and any overflow-y-auto here is the bug. */
+  !/grid[^"]*overflow-y-auto/.test(shellSrc),
   'a fixed cell height brings the scroll back on a short phone; a min-height floor clips a mark ' +
   'off the bottom instead, which is worse — the tab becomes unreachable, not just further down');
 

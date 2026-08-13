@@ -301,14 +301,11 @@ export default function BiohazardTheme({
                     aria-label={isMobileMenuOpen ? 'Close navigation' : 'Open navigation'}
                     aria-expanded={isMobileMenuOpen}
                     style={{ touchAction: 'none', top: ribbonY, '--hold-ms': `${RIBBON_HOLD_MS}ms` }}
-                    /* ON THE DESK TOO, from 2026-08-14 — the panel no longer opens itself there,
-                       so it needs a way in, and he deleted the three-line square himself ("the 3
-                       lines sidebar button is still exist make sure u delete it"). Same grip, and
-                       a tap is already a toggle, so a mouse click opens and closes it.
-                       LEFT edge on a desk, RIGHT on a phone: the panel is in the flow on the left
-                       at lg, and the right edge on a phone is not negotiable — a left-edge drag is
-                       iOS Safari's back gesture and would leave the app. */
-                    className={`kpm-edge-ribbon ${ribbonHold || ''} hide-on-print fixed right-0 lg:right-auto lg:left-0 z-[100] w-[14px] h-[132px]`}
+                    /* PHONE ONLY, and that is his correction — it was briefly on the desk too,
+                       for the hour between the desk opening itself and this: *"the sidebar u pull
+                       here is the sidebar for phone only dont use it on PC"*. The desk pulls
+                       nothing now; its strip is always there. */
+                    className={`kpm-edge-ribbon ${ribbonHold || ''} hide-on-print lg:hidden fixed right-0 z-[100] w-[14px] h-[132px]`}
                 >
                     <span className="kpm-edge-grip"></span>
                 </button>
@@ -429,22 +426,31 @@ export default function BiohazardTheme({
                    so the music panel could escape sideways out of the rail; the panel is a
                    portalled pill now and escapes nothing, so the exception and the orphan-panel
                    trap that came with it are both gone. */
-                className={`hide-on-print fixed inset-y-0 right-0 z-[90] w-[176px] lg:w-64 bg-[#0b0a09]/97 lg:bg-black/95 backdrop-blur-xl border-l lg:border-l-0 lg:border-r border-[#3e3226] lg:border-white/10 flex flex-col pt-5 lg:pt-8 px-0 lg:pl-4 lg:pr-4 overflow-hidden
-                             transition-[transform,width,padding,opacity] duration-300 ease-[cubic-bezier(.22,1,.36,1)] lg:relative lg:translate-x-0
-                             ${isMobileMenuOpen
-                                ? 'translate-x-0 lg:w-64 lg:opacity-100'
-                                : 'translate-x-full lg:w-0 lg:px-0 lg:border-r-0 lg:opacity-0 lg:pointer-events-none'}`}>
+                /* 🔑 THE DESK IS A STRIP, NOT A DRAWER — his call, 2026-08-14, with a reference
+                   component: *"i want u to change the sidebar for pc to be like this, so it
+                   doesnt take so much space"*, and *"i dont want this many spaces useless"*.
+                   88px, always there, never opened and never closed: every `lg:` variant is gone
+                   from the open/closed pair below, so `isMobileMenuOpen` now drives the PHONE
+                   alone. 256px of words became 88px of marks — the words live in the tooltip.
+                   The reference's own numbers: ~70-98px wide, 44px rows, 10px gaps, 20-32px
+                   icons. `w-[88px]` sits in that band and gives a 23px mark a 32px margin. */
+                className={`hide-on-print fixed inset-y-0 right-0 z-[90] w-[176px] lg:w-[88px] bg-[#0b0a09]/97 lg:bg-black/95 backdrop-blur-xl border-l lg:border-l-0 lg:border-r border-[#3e3226] lg:border-white/10 flex flex-col pt-5 lg:pt-3 px-0 overflow-hidden
+                             transition-[transform,width,padding,opacity] duration-300 ease-[cubic-bezier(.22,1,.36,1)] lg:relative lg:translate-x-0 lg:opacity-100 lg:pointer-events-auto
+                             ${isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full'}`}>
 
                 {/* ml-12 on a desk: the toggle is fixed at top-left there, so the brand has to
                     clear it or the button lands on the name. A 76px rail has no room for a
                     name at all, and does not need one — you opened it, you know where you are. */}
-                <div key={`brand-${isAdmin}`} className="hidden lg:block mb-6 ml-12 mt-0.5 lg:mt-0 boot-1">
+                {/* `ml-12` cleared the fixed menu square that no longer exists, and `mb-6` was
+                    spacing for a 256px column. Centred in 88px now, and the version prints as
+                    `v0.1.174` — "Build 0.1.174" is wider than the strip and would be clipped. */}
+                <div key={`brand-${isAdmin}`} className="hidden lg:block mb-3 px-2 text-center mt-0.5 lg:mt-0 boot-1">
                     {/* the glow was a box-shadow, which Lite Mode deletes — the name then lost its
                         edge entirely. A border is a border in every mode. */}
-                    <h1 className="text-sm lg:text-xl font-display font-bold text-ink border-b-2 border-accent-edge pb-1 lg:pb-2 inline-block tracking-[0.08em] uppercase">
+                    <h1 className="text-sm lg:text-[11px] font-display font-bold text-ink border-b-2 border-accent-edge pb-1 lg:pb-1.5 inline-block tracking-[0.08em] uppercase leading-tight">
                         {appSettings?.companyName || "KPM SYSTEM"}
                     </h1>
-                    <p className="kpm-read mt-2 inline-block">Build {appVersion}</p>
+                    <p className="kpm-read mt-2 lg:mt-1.5 inline-block">v{appVersion}</p>
                 </div>
 
                 {/* TWO COLUMNS ON A PHONE, one on a desk. Seventeen marks in a single file made
@@ -477,7 +483,12 @@ export default function BiohazardTheme({
                            only gave the browser a reason to steal a slow vertical drag from the
                            scrub. */
                         style={{ touchAction: 'none' }}
-                        className="grid grid-cols-2 gap-2 p-2 auto-rows-[minmax(0,1fr)] overflow-hidden lg:block lg:space-y-0.5 lg:p-0 lg:overflow-y-auto flex-1 min-h-0 scrollbar-hide boot-2"
+                        /* ONE column on the desk, two on the phone — same mechanism either way.
+                           `lg:overflow-y-auto` is gone with it: a scrollbar in this panel is the
+                           thing he rejected once already ("there is still scroll feature inside
+                           sidebar, i dont want that"), and it was only ever there because a
+                           256px list of words could not fit. Marks share the height instead. */
+                        className="grid grid-cols-2 lg:grid-cols-1 gap-2 p-2 auto-rows-[minmax(0,1fr)] overflow-hidden flex-1 min-h-0 scrollbar-hide boot-2"
                     >
                         {visibleMenu.map(item => {
                             const Mark = item.icon;
@@ -493,10 +504,15 @@ export default function BiohazardTheme({
                                     data-label={item.label}
                                     onClick={() => { if (swallowedByScrub()) return; setActiveTab(item.id); setIsMobileMenuOpen(false); }}
                                     title={item.label}
-                                    className={`kpm-rail-mark ${on ? 'on' : ''} ${peek?.id === item.id ? 'hot' : ''} relative w-full flex items-center justify-center h-full min-h-0 lg:h-auto lg:block lg:text-left lg:py-2 lg:px-3 text-xs font-bold transition-all duration-200 uppercase tracking-widest lg:clip-path-polygon ${
-                                        on
-                                        ? 'text-[#ff9d00] lg:bg-white lg:text-black lg:pl-6 lg:shadow-[0_0_10px_rgba(255,255,255,0.8)] lg:border-l-4 lg:border-orange-500'
-                                        : 'text-[#6b5845] lg:text-gray-500 lg:hover:text-white lg:hover:pl-4 lg:hover:bg-white/5'
+                                    /* ONE set of classes for both widths now. The desk used to
+                                       carry its own palette on top of this — a white slab with a
+                                       white glow for the active tab (`lg:bg-white`,
+                                       `lg:shadow-[0_0_10px_rgba(255,255,255,.8)]`) and flat grey
+                                       for the rest — which is why his PC screenshot read as a
+                                       different app from the sign-in screen. `.kpm-rail-mark`
+                                       already draws both states; the desk just joins it. */
+                                    className={`kpm-rail-mark ${on ? 'on' : ''} ${peek?.id === item.id ? 'hot' : ''} relative w-full flex items-center justify-center h-full min-h-0 text-xs font-bold transition-all duration-200 uppercase tracking-widest ${
+                                        on ? 'text-[#ff9d00]' : 'text-[#6b5845]'
                                     }`}
                                 >
                                     {/* The lift lives on the ICON and the plate on ::before, and the
@@ -505,10 +521,12 @@ export default function BiohazardTheme({
                                     <Mark
                                         size={23}
                                         strokeWidth={peek?.id === item.id || on ? 2.4 : 2}
-                                        className="kpm-rail-icon lg:hidden"
+                                        className="kpm-rail-icon"
                                     />
-                                    <span className="hidden lg:inline">{item.label}</span>
-                                    {on && <span className="lg:hidden absolute right-0 top-2 bottom-2 w-[3px] rounded-l-full bg-[#ff9d00] shadow-[0_0_10px_rgba(255,157,0,.6)]"></span>}
+                                    {/* The word is the `title` tooltip on a desk and the peek
+                                        plate under the finger on a phone. Printing it inside an
+                                        88px strip is what made the old desk list 256px wide. */}
+                                    {on && <span className="absolute right-0 top-2 bottom-2 w-[3px] rounded-l-full bg-[#ff9d00] shadow-[0_0_10px_rgba(255,157,0,.6)]"></span>}
                                 </button>
                             );
                         })}
@@ -524,9 +542,14 @@ export default function BiohazardTheme({
                                 onPointerUp={() => setPeek(null)}
                                 onPointerCancel={() => setPeek(null)}
                                 title="Unlock Master Vault"
-                                className="w-full bg-[#ff9d00]/10 hover:bg-[#ff9d00]/20 border border-[#8b7256] lg:border-orange-500/50 text-[#ff9d00] p-2.5 rounded-xl font-bold text-[10px] uppercase tracking-widest transition-all flex items-center justify-center gap-2 shadow-lg"
+                                /* On the control system at last. It was the loudest hand-rolled
+                                   control left in the shell — raw #ff9d00, `rounded-xl` and a
+                                   drop shadow Lite Mode deletes — and it is in the screenshot he
+                                   complained about. The word does not fit an 88px strip; the
+                                   title carries it on a desk and the peek plate on a phone. */
+                                className="kpm-btn key block"
                             >
-                                <Lock size={14} /> <span className="hidden lg:inline">Unlock Master Vault</span>
+                                <Lock size={14} />
                             </button>
                         </div>
                     )}
@@ -541,7 +564,9 @@ export default function BiohazardTheme({
                         screen to the player, not stack it on top of the menu. */}
                     {isAdmin && <MusicPlayer onOpen={() => setIsMobileMenuOpen(false)} />}
 
-                        <div className="flex flex-col lg:flex-row items-center gap-2">
+                        {/* A column at BOTH widths now — `lg:flex-row` was laying the face, the
+                            name and the logout button side by side across 256px. */}
+                        <div className="flex flex-col items-center gap-2">
                             {/* HIS CALL: "my profile picture above the logout button should follow
                                 the one each email have on the agent profile ... we dont need that
                                 mascott profile anymore". So: the agent's own uploaded photo, then
@@ -551,18 +576,18 @@ export default function BiohazardTheme({
                             {agentPhoto || user?.photoURL ? (
                                 <img
                                     src={agentPhoto || user.photoURL}
-                                    className="w-9 h-9 lg:w-7 lg:h-7 rounded border border-[#5c4b3a] lg:border-white/30 object-cover bg-black shrink-0"
+                                    title={user.email || 'Signed in'}
+                                    className="w-9 h-9 rounded border border-[#5c4b3a] lg:border-white/30 object-cover bg-black shrink-0"
                                     alt="Profile"
                                 />
                             ) : (
-                                <div className="w-9 h-9 lg:w-7 lg:h-7 rounded border border-[#5c4b3a] lg:border-white/30 bg-black text-[#8b7256] flex items-center justify-center shrink-0">
+                                <div title={user.email || 'Signed in'} className="w-9 h-9 rounded border border-[#5c4b3a] lg:border-white/30 bg-black text-[#8b7256] flex items-center justify-center shrink-0">
                                     <User size={16} />
                                 </div>
                             )}
-                            <div className="hidden lg:block flex-1 min-w-0">
-                                <p className="text-[11px] text-gray-400 uppercase font-bold leading-none mb-0.5">OPERATIVE</p>
-                                <p className="text-[10px] text-white font-mono truncate leading-none">{user.email?.split('@')[0]}</p>
-                            </div>
+                            {/* The OPERATIVE plate and the account name were desk-only and needed
+                                the 256px. The face is the identity in a strip; the account is on
+                                its tooltip, and Agent Profile is one mark away. */}
                             {/* The reference he sent for this one, in the app's colours: black at
                                 rest with the rest of the panel, red only once you are on it. The
                                 name plate is gone from here — this button says its own word now. */}
