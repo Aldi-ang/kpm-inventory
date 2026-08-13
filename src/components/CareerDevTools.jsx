@@ -139,19 +139,17 @@ export default function CareerDevTools({ db, appId, userId, triggerCapy }) {
     const hasDevChanges = Number(devGrant.bonusXP || 0) !== 0 || (devGrant.unlocks || []).length > 0;
 
     return (
-        <div className="bg-black/40 border border-gold/40 rounded-xl p-5">
+        /* No frame, no heading: it mounts inside a .kpm-shelf whose module head already names it. */
+        <div className="flex flex-col gap-3">
             <style>{BORDER_KEYFRAMES}</style>
-            <h3 className="text-lg font-black text-gold uppercase tracking-widest flex items-center gap-2 mb-1">
-                <Wrench size={18} /> Career Dev Tools
-            </h3>
-            <p className="text-[11px] text-gold/80 font-mono mb-4 flex items-start gap-1.5">
+            <p className="text-[11px] text-accent-ink font-mono mb-4 flex items-start gap-1.5">
                 <AlertTriangle size={13} className="mt-0.5 shrink-0" />
                 <span>Alat ini <b>menulis data asli</b>. Semua yang diberikan di sini bisa dibatalkan lewat tombol Undo — data EOD asli tidak pernah disentuh.</span>
             </p>
 
             {scaleLooksWrong && (
-                <div className="mb-4 p-3 rounded-lg bg-danger-well/50 border border-danger/50">
-                    <p className="text-[11px] text-danger-text font-mono leading-relaxed">
+                <div className="mb-4 p-3 bg-danger-well/50 border border-danger/50">
+                    <p className="text-[11px] text-danger-ink font-mono leading-relaxed">
                         <b>⚠️ Skala rank tidak cocok dengan Career Ledger.</b> Rank tertinggi butuh {num(topRankMin)} XP,
                         tapi Rp 100.000 yang tertagih = 1 XP. Artinya butuh Rp {num(topRankMin * DEFAULT_XP.rupiahPerXp)} untuk
                         mencapainya. Kalau "Use Career Ledger for Rank" dinyalakan sekarang, semua agen akan mentok di rank terendah.
@@ -164,7 +162,7 @@ export default function CareerDevTools({ db, appId, userId, triggerCapy }) {
                 see here is exactly what the profile screen draws. Assign one per rank in
                 Agent Profile → Rank Config → Border. */}
             <div className="mb-5">
-                <h4 className="text-[11px] font-black text-gold uppercase tracking-widest mb-1">Galeri Border Rank</h4>
+                <h4 className="text-[11px] font-black text-accent-ink uppercase tracking-widest mb-1">Galeri Border Rank</h4>
                 <p className="text-[11px] text-ink-muted font-mono mb-3">
                     Pilih border tiap rank di Agent Profile → Rank Config → Border.
                     Tiap frame punya bahannya sendiri (kayu, baja, emas, marmer), jadi warnanya
@@ -196,7 +194,7 @@ export default function CareerDevTools({ db, appId, userId, triggerCapy }) {
             <select
                 value={agentId}
                 onChange={e => setAgentId(e.target.value)}
-                className="w-full bg-sunk border border-white/10 rounded-lg px-3 py-2 text-sm text-white mb-4 focus:border-gold focus:outline-none"
+                className="w-full bg-sunk border border-line px-3 py-2 text-sm text-white mb-4 focus:border-accent-edge focus:outline-none"
             >
                 <option value="">— Pilih agen —</option>
                 {agents.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
@@ -205,33 +203,33 @@ export default function CareerDevTools({ db, appId, userId, triggerCapy }) {
             {agentId && career && (
                 <>
                     <div className="grid grid-cols-2 gap-3 mb-4 text-[11px] font-mono">
-                        <div className="bg-sunk/60 rounded-lg p-3">
+                        <div className="bg-sunk/60 p-3">
                             <div className="text-ink-muted uppercase">Total XP</div>
                             <div className="text-lg text-white font-black">{num(currentXP)}</div>
                         </div>
-                        <div className="bg-sunk/60 rounded-lg p-3">
+                        <div className="bg-sunk/60 p-3">
                             <div className="text-ink-muted uppercase">Rank sekarang</div>
                             <div className="text-lg font-black" style={{ color: currentRank?.hex }}>{currentRank?.name || '—'}</div>
                         </div>
                     </div>
                     <p className="text-[11px] text-ink-muted font-mono mb-4">
-                        Bonus XP: {num(career.bonusXP)} · dari alat dev: <span className="text-gold">{num(devGrant.bonusXP)}</span>
-                        {' · '}badge dibuka paksa: <span className="text-gold">{(devGrant.unlocks || []).length}</span>
+                        Bonus XP: {num(career.bonusXP)} · dari alat dev: <span className="text-accent-ink">{num(devGrant.bonusXP)}</span>
+                        {' · '}badge dibuka paksa: <span className="text-accent-ink">{(devGrant.unlocks || []).length}</span>
                     </p>
 
                     {/* EXP MODIFIER */}
                     <div className="mb-5">
-                        <h4 className="text-[11px] font-black text-gold uppercase tracking-widest mb-2 flex items-center gap-1.5"><Zap size={12} /> Ubah EXP</h4>
+                        <h4 className="text-[11px] font-black text-accent-ink uppercase tracking-widest mb-2 flex items-center gap-1.5"><Zap size={12} /> Ubah EXP</h4>
                         <div className="flex gap-2 flex-wrap mb-2">
                             {[100, 1000, 10000, 100000].map(v => (
                                 <button key={v} disabled={busy} onClick={() => addXP(v)}
-                                    className="px-3 py-1.5 rounded-lg bg-verified-fill/40 border border-verified/40 text-verified text-[11px] font-bold hover:bg-verified-fill/50 disabled:opacity-40 transition-colors">
+                                    className="px-3 py-1.5 bg-verified-fill/40 border border-verified/40 text-verified text-[11px] font-bold hover:bg-verified-fill/50 disabled:opacity-40 transition-colors">
                                     +{num(v)}
                                 </button>
                             ))}
                             {[-1000, -10000].map(v => (
                                 <button key={v} disabled={busy} onClick={() => addXP(v)}
-                                    className="px-3 py-1.5 rounded-lg bg-danger-well/40 border border-danger/40 text-danger-text text-[11px] font-bold hover:bg-danger-rail/50 disabled:opacity-40 transition-colors">
+                                    className="px-3 py-1.5 bg-danger-well/40 border border-danger/40 text-danger-ink text-[11px] font-bold hover:bg-danger-rail/50 disabled:opacity-40 transition-colors">
                                     {num(v)}
                                 </button>
                             ))}
@@ -240,9 +238,9 @@ export default function CareerDevTools({ db, appId, userId, triggerCapy }) {
                             {/* Grouped while typing so a big XP figure stays readable; stored raw. */}
                             <input type="text" inputMode="numeric" value={xpInput ? num(xpInput) : ''} onFocus={e => e.target.select()}
                                 onChange={e => setXpInput(parseGroupedNumber(e.target.value) || '')} placeholder="jumlah bebas"
-                                className="flex-1 bg-sunk border border-white/10 rounded-lg px-3 py-2 text-sm text-white font-mono focus:border-gold focus:outline-none" />
+                                className="flex-1 bg-sunk border border-line px-3 py-2 text-sm text-white font-mono focus:border-accent-edge focus:outline-none" />
                             <button disabled={busy || !xpInput} onClick={() => { addXP(Number(xpInput)); setXpInput(''); }}
-                                className="px-4 rounded-lg bg-gold hover:bg-gold text-black text-[11px] font-black uppercase disabled:opacity-40 transition-colors">
+                                className="px-4 bg-gold hover:bg-gold text-black text-[11px] font-black uppercase disabled:opacity-40 transition-colors">
                                 Tambah
                             </button>
                         </div>
@@ -250,11 +248,11 @@ export default function CareerDevTools({ db, appId, userId, triggerCapy }) {
 
                     {/* LEVEL / RANK UNLOCK */}
                     <div className="mb-5">
-                        <h4 className="text-[11px] font-black text-gold uppercase tracking-widest mb-2">Loncat ke rank</h4>
+                        <h4 className="text-[11px] font-black text-accent-ink uppercase tracking-widest mb-2">Loncat ke rank</h4>
                         <div className="flex gap-2 flex-wrap">
                             {sortedRanks.map(r => (
                                 <button key={r.id || r.name} disabled={busy} onClick={() => jumpToRank(r)}
-                                    className="px-3 py-1.5 rounded-lg border text-[11px] font-bold disabled:opacity-40 transition-colors"
+                                    className="px-3 py-1.5 border text-[11px] font-bold disabled:opacity-40 transition-colors"
                                     style={{ borderColor: `${r.hex}80`, color: r.hex, backgroundColor: currentRank?.name === r.name ? `${r.hex}25` : 'transparent' }}>
                                     {r.name}
                                 </button>
@@ -264,13 +262,13 @@ export default function CareerDevTools({ db, appId, userId, triggerCapy }) {
 
                     {/* BADGE UNLOCK */}
                     <div className="mb-5">
-                        <h4 className="text-[11px] font-black text-gold uppercase tracking-widest mb-2 flex items-center gap-1.5"><Award size={12} /> Buka / kunci badge</h4>
+                        <h4 className="text-[11px] font-black text-accent-ink uppercase tracking-widest mb-2 flex items-center gap-1.5"><Award size={12} /> Buka / kunci badge</h4>
                         <div className="space-y-1.5">
                             {badges.map(b => {
                                 const on = unlocks.includes(b.id);
                                 return (
                                     <button key={b.id} disabled={busy} onClick={() => toggleBadge(b)}
-                                        className="w-full flex items-center justify-between gap-3 p-2.5 rounded-lg border text-left disabled:opacity-40 transition-colors"
+                                        className="w-full flex items-center justify-between gap-3 p-2.5 border text-left disabled:opacity-40 transition-colors"
                                         style={{ borderColor: on ? b.hex : 'rgba(255,255,255,0.08)', backgroundColor: on ? `${b.hex}18` : 'rgba(0,0,0,0.3)' }}>
                                         <span className="text-[12px] font-bold truncate" style={{ color: on ? b.hex : '#94a3b8' }}>{b.title}</span>
                                         <span className="text-[10px] font-mono uppercase shrink-0" style={{ color: on ? b.hex : '#64748b' }}>{on ? 'terbuka' : 'terkunci'}</span>
@@ -281,7 +279,7 @@ export default function CareerDevTools({ db, appId, userId, triggerCapy }) {
                     </div>
 
                     <button disabled={busy || !hasDevChanges} onClick={undoAll}
-                        className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg bg-panel hover:bg-raised text-ink text-[11px] font-black uppercase tracking-widest disabled:opacity-30 transition-colors">
+                        className="w-full flex items-center justify-center gap-2 py-2.5 bg-panel hover:bg-raised text-ink text-[11px] font-black uppercase tracking-widest disabled:opacity-30 transition-colors">
                         {busy ? <Loader2 size={13} className="animate-spin" /> : <Undo2 size={13} />}
                         Batalkan semua perubahan dev
                     </button>

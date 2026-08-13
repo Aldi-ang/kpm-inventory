@@ -29,6 +29,11 @@ export default {
           inverse:   'var(--ink-inverse)',
         },
         gold:     'var(--gold)',
+        /* readable stand-ins for gold/red AS TEXT or AS A BORDER. --gold measures 1,19:1 on the
+           light ground, so it may fill a plate but must never label one. */
+        'accent-ink':  'var(--accent-ink)',
+        'accent-edge': 'var(--accent-edge)',
+        'danger-ink':  'var(--danger-ink)',
         'gold-ink': 'var(--gold-ink)',
         orange:   'var(--orange)',
         'orange-ink': 'var(--orange-ink)',

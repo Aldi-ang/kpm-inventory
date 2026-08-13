@@ -89,26 +89,22 @@ export default function AchievementTester({ db, appId, userId }) {
     const unlockedCount = badges.filter(b => isUnlocked(b, fakeCareer, {})).length;
 
     return (
-        <div className="bg-black/40 border border-cyan-500/30 rounded-xl p-5">
-            <div className="flex items-center justify-between mb-1 flex-wrap gap-2">
-                <h3 className="text-lg font-black text-cyan-400 uppercase tracking-widest flex items-center gap-2">
-                    <FlaskConical size={18} /> Tes Achievement
-                </h3>
-                <button
-                    onClick={() => setStats({})}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] font-bold uppercase tracking-wider transition-colors"
-                >
+        /* NO FRAME OF ITS OWN. This mounts inside a `.kpm-shelf`, which already supplies the
+           ground and the padding — the old `bg-black/40 border-cyan-500/30 rounded-xl` was a box
+           inside a box, and cyan is a blue, which the palette law bans outright. The <h3> went for
+           the same reason the registry's did: the module head above already names this panel. */
+        <div className="flex flex-col gap-4">
+            <div className="flex items-start justify-between gap-3 flex-wrap">
+                <p className="kpm-note flex-1 min-w-[220px]">
+                    Ketik angka, lihat badge mana yang menyala. <b>Tidak menulis data apa pun</b> —
+                    aman dicoba berkali-kali. Config dibaca dari <span className="font-mono text-ink">{configSource}</span> ({badges.length} badge).
+                </p>
+                <button type="button" onClick={() => setStats({})} className="kpm-btn" style={{ minHeight: 36, fontSize: 11 }}>
                     <RotateCcw size={12} /> Reset
                 </button>
             </div>
-            <p className="text-[11px] text-slate-400 font-mono mb-1">
-                Ketik angka, lihat badge mana yang menyala. <span className="text-emerald-400">Tidak menulis data apa pun</span> — aman dicoba berkali-kali.
-            </p>
-            <p className="text-[11px] text-slate-400 font-mono mb-4">
-                Config badge dibaca dari: <span className="text-cyan-400">{configSource}</span> ({badges.length} badge)
-            </p>
 
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-5">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                 {usedSources.map(src => {
                     // A source this tool can't route is a source no badge on it can ever unlock.
                     // Say so out loud instead of rendering a box that silently does nothing.
@@ -116,10 +112,10 @@ export default function AchievementTester({ db, appId, userId }) {
                     const tracked = STAT_LABELS[src]?.tracked;
                     const broken = !known || !tracked;
                     return (
-                        <div key={src}>
-                            <label className={`block text-[11px] font-mono uppercase mb-1 ${broken ? 'text-amber-400' : 'text-slate-400'}`}>
+                        <label key={src} className="kpm-field">
+                            <span style={broken ? { color: 'var(--orange)' } : undefined}>
                                 {broken && '⚠ '}{statLabel(src)}
-                            </label>
+                            </span>
                             <input
                                 type="number"
                                 min="0"
@@ -128,25 +124,23 @@ export default function AchievementTester({ db, appId, userId }) {
                                 onChange={e => setStats(s => ({ ...s, [src]: e.target.value }))}
                                 placeholder="0"
                                 disabled={broken}
-                                className={`w-full rounded-lg px-3 py-2 text-sm font-mono focus:outline-none ${broken
-                                    ? 'bg-amber-950/30 border border-amber-500/40 text-amber-300 cursor-not-allowed'
-                                    : 'bg-slate-900 border border-white/10 text-white focus:border-cyan-500'}`}
+                                style={broken ? { borderColor: 'var(--orange)', color: 'var(--orange)', cursor: 'not-allowed' } : undefined}
                             />
                             {broken && (
-                                <p className="text-[10px] text-amber-400/80 font-mono mt-1 leading-tight">
+                                <span style={{ color: 'var(--orange)', letterSpacing: 0, textTransform: 'none' }}>
                                     {known ? 'Belum dilacak aplikasi' : 'Sumber tidak dikenal'} — badge ini tidak akan pernah terbuka.
-                                </p>
+                                </span>
                             )}
-                        </div>
+                        </label>
                     );
                 })}
             </div>
 
-            <div className="text-[11px] font-mono text-slate-400 mb-3">
-                Terbuka: <span className="text-cyan-400 font-black">{unlockedCount}</span> / {badges.length}
+            <div className="kpm-read" style={{ alignSelf: 'flex-start' }}>
+                Terbuka {unlockedCount} / {badges.length}
             </div>
 
-            <div className="space-y-2">
+            <div className="flex flex-col gap-2">
                 {badges.map(badge => {
                     const unlocked = isUnlocked(badge, fakeCareer, {});
                     const current = currentTotals[badge.source] || 0;
@@ -154,23 +148,27 @@ export default function AchievementTester({ db, appId, userId }) {
                     return (
                         <div
                             key={badge.id}
-                            className="flex items-center gap-3 p-2.5 rounded-lg border transition-colors"
+                            className="flex items-center gap-3 p-2.5 border transition-colors"
+                            /* badge.hex is the badge's OWN rank colour — data, not palette, so it
+                               stays. Only the locked fallbacks were slate, and those are tokens now. */
                             style={{
-                                borderColor: unlocked ? badge.hex : 'rgba(255,255,255,0.08)',
-                                backgroundColor: unlocked ? `${badge.hex}18` : 'rgba(0,0,0,0.3)'
+                                borderColor: unlocked ? badge.hex : 'var(--line)',
+                                backgroundColor: unlocked ? `${badge.hex}18` : 'var(--inset)'
                             }}
                         >
                             <div
-                                className="w-8 h-8 rounded-full flex items-center justify-center shrink-0"
-                                style={{ backgroundColor: unlocked ? badge.hex : '#1e293b', color: unlocked ? '#000' : '#64748b' }}
+                                className="w-8 h-8 flex items-center justify-center shrink-0 border"
+                                style={{ backgroundColor: unlocked ? badge.hex : 'var(--raised)',
+                                         borderColor: unlocked ? badge.hex : 'var(--line-2)',
+                                         color: unlocked ? '#000' : 'var(--ink-dim)' }}
                             >
                                 {unlocked ? <Check size={16} /> : <Lock size={14} />}
                             </div>
                             <div className="flex-1 min-w-0">
-                                <p className="text-[13px] font-bold truncate" style={{ color: unlocked ? badge.hex : '#94a3b8' }}>
+                                <p className="text-[13px] font-bold truncate" style={{ color: unlocked ? badge.hex : 'var(--ink-muted)' }}>
                                     {badge.title}
                                 </p>
-                                <p className="text-[11px] text-slate-400 font-mono truncate">
+                                <p className="text-[11px] font-mono truncate" style={{ color: 'var(--ink-dim)' }}>
                                     {statLabel(badge.source)}: {fmtValue(current, badge.fmt)} / {fmtValue(badge.target, badge.fmt)} ({pct}%)
                                 </p>
                             </div>
