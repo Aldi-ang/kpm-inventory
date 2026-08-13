@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-13 14:05 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
+**Updated: 2026-08-13 14:25 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
 **Lancelot session last wrote 2026-08-13 13:51 WIB** — see the 14:05 entry. Two clocks, one file.
 
 ### 🟢 13:51 WIB (Lancelot session) — no file changes this turn; those `src/**` edits are the app's
@@ -61,6 +61,26 @@ The rules, in order:
    else wrote in the meantime. If an `Edit` fails as stale, re-read and re-apply — do not force it.
 7. **The quota is one shared pool.** Two sessions running hard halve each other's runway, and the
    `[plan-quota]` percentage covers both. Size your work against the whole pool, not your own chat.
+
+## ✅ LOG 2026-08-13 14:25 WIB — he vanishes AT the door now (`f7c99be`), 321/321. (KPM app session)
+
+**Two housekeeping things he asked for, both done:**
+
+1. **The two-track rule is now IN the Alucard skill** (§11b), so he stops having to repeat it:
+   *"this workflow of editing progression.md should be added to alucard, i dont want to tell u
+   everytime"*. It carries the proof command —
+   `git log --since=<today> -p -- .claude/PROGRESS.md | grep '^-' | grep -v '^---'` — and the
+   rule that every deleted line must be your own `**Updated:` stamp.
+2. **Audited today's writes against that rule:** the only lines any of my four PROGRESS commits
+   deleted are the `**Updated:` header stamps. The one 🟢 line that ever vanished was removed by
+   `2049fd1` on 08-12 17:18, the commit that CREATED the track table. Green markers went 2 → 3.
+
+**The vanish point.** *"make the capybara vanish closer to the door"* — he was walking a fixed
+`translateX`, so the disappearing point drifted with the column width. ⚠️ The walk now animates
+`left`, because a percentage in `left` measures the PARENT while a percentage in `translateX`
+measures the ELEMENT. Arch at `left: 4%`, 124px wide → centre `4% + 62px`; he is 200px wide →
+`calc(4% - 38px)`. **If the arch's left or width changes, those numbers move with it** — group 29
+checks the vanish point for exactly that reason.
 
 ## ✅ LOG 2026-08-13 14:05 WIB — dark doorway + he walks out through it (`2869d9c`), 320/320. (KPM app session)
 
