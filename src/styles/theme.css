@@ -1716,11 +1716,49 @@ html.lite-mode .kpm-mod.arrive { animation: none; }
    ⚠️ The numbers are his (background spacing 26 · letter density 7 · name size 0.10 · wave 3.0s
    live in VaultGate.jsx). Do not tune them without him. */
 .kpm-mod.gate { background: rgba(4, 3, 2, .9); border-color: rgba(231, 112, 15, .28);
-  max-width: 320px; }
-@media (min-width: 768px) { .kpm-mod.gate { max-width: 384px; } }
+  max-width: 320px; padding: 24px; text-align: center;
+  font-family: var(--font-mono); color: #f7e9c8; }
+@media (min-width: 768px) { .kpm-mod.gate { max-width: 384px; padding: 32px; } }
+
+/* ---- and the FORMAT, not only the colour. His follow-up the same night: the middle panel
+   should have *"the same color theme of our panel inside vault gate as well, and similar
+   format"*. The gate's panel is ONE CENTRED COLUMN in mono — an eyebrow, a title, the control —
+   with nothing ruled across it. The module's default is the opposite: a left-aligned head on its
+   own tinted band, a 19px display title, and a divider above the shelf. That is what still made
+   the two read as different screens after the shell already matched.
+
+   🔑 THE COLOURS ARE LITERAL HERE, NOT TOKENS, and that half is load-bearing: this card is
+   near-black in BOTH themes, so var(--ink) hands it LIGHT MODE'S near-black ink — #131211 on
+   rgba(4,3,2,.9), which is nothing at all. Until this block, anyone who last left the app in
+   light mode and then signed out got a card with no readable text on it. Same hexes as the gate
+   card in App.jsx, so the two stay one screen. */
+
 /* the head and the shelf go transparent so the card reads as ONE pane of glass over the dot
    field, the way the gate's card does — a stack of tinted bands would sit on top of it instead */
 .kpm-mod.gate .kpm-head { background-color: transparent; background-image: none;
-  border-bottom-color: rgba(231, 112, 15, .18); }
-.kpm-mod.gate .kpm-shelf { background-color: transparent; }
-.kpm-mod.gate .kpm-shelf.split { border-top-color: rgba(231, 112, 15, .18); }
+  padding: 0; border-bottom: 0; }
+.kpm-mod.gate .kpm-shelf { background-color: transparent; padding: 15px 0 0; }
+.kpm-mod.gate .kpm-shelf.split { border-top: 0; }
+/* line 1 — the eyebrow, in the same 9px / .34em dim gold the gate prints "KPM Inventory" in */
+.kpm-mod.gate .kpm-head .slot { font-size: 9px; letter-spacing: .34em; color: #8a7048; }
+/* the title stacks rather than sharing a baseline: a flex row with space-between throws it off
+   centre the moment anything else sits on the line */
+.kpm-mod.gate .kpm-head .line { display: block; margin-top: 7px; }
+.kpm-mod.gate .kpm-head h3 { font-family: var(--font-mono); font-size: 13px; font-weight: 700;
+  letter-spacing: .2em; color: #f7e9c8; }
+/* the description keeps the BODY face on purpose — it is the one sentence on the panel and the
+   gate has no equivalent to match; mono at this size is for labels, not for reading. It is the
+   cream at 62%, not the eyebrow's dim gold: this is the line that explains a refused account,
+   and 3.8:1 is the same half-contrast mistake ACCESS DENIED was fixed for. */
+.kpm-mod.gate .kpm-desc { margin: 12px auto 0; max-width: 34ch; font-size: 12px;
+  line-height: 1.6; color: rgba(247, 233, 200, .62); }
+/* the gate's submit is a hairline, never a filled slab: transparent until you are on it */
+.kpm-mod.gate .kpm-btn.key { font-family: var(--font-mono); font-size: 9.5px;
+  letter-spacing: .24em; background: transparent; color: #f7e9c8;
+  border-color: rgba(231, 112, 15, .3); }
+.kpm-mod.gate .kpm-btn.key:active { background: rgba(231, 112, 15, .09); color: #ffb066;
+  border-color: #E7700F; }
+@media (hover: hover) and (pointer: fine) {
+  .kpm-mod.gate .kpm-btn.key:hover { background: rgba(231, 112, 15, .09); color: #ffb066;
+    border-color: #E7700F; }
+}

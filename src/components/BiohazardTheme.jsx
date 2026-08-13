@@ -293,7 +293,10 @@ export default function BiohazardTheme({
                 open the panel, UP or DOWN to move the ribbon itself to wherever your thumb
                 actually rests. touchAction none or the browser claims the gesture for a page
                 scroll before the first move event arrives. */}
-            {!showAdminLogin && (
+            {/* `user &&` — the ribbon opens the navigation, and while signed out there is no
+                navigation to open. His call, 2026-08-14: "remove the left sidebar then its old
+                stuff already". A grip on the edge that opens an empty drawer is exactly that. */}
+            {user && !showAdminLogin && (
                 <button
                     onPointerDown={startRailPull}
                     aria-label={isMobileMenuOpen ? 'Close navigation' : 'Open navigation'}
@@ -359,9 +362,12 @@ export default function BiohazardTheme({
                     <div className="kpm-mod gate arrive w-full relative z-10">
                         <div className="kpm-head">
                             <span className="slot">{appSettings?.companyName || 'KPM Inventory'}</span>
+                            {/* No state plate on this line any more. The gate's panel is an
+                                eyebrow, a title and the control — a red readout is the one thing
+                                that would break the family, and "Sign in to continue" already
+                                says the state it was reporting. */}
                             <div className="line">
                                 <h3>Sign in to continue</h3>
-                                <span className="kpm-read alert">Locked</span>
                             </div>
                             <p className="kpm-desc">
                                 Use the Google account your name is registered under. If the app says your
@@ -386,6 +392,15 @@ export default function BiohazardTheme({
                 "which tabs may this tier see". While a drag is live the inline transform wins
                 and the CSS transition is off, so the panel tracks the finger exactly; on
                 release railPull goes back to null and the class transition carries it home. */}
+            {/* 🔑 NOT RENDERED WHILE SIGNED OUT — his call, 2026-08-14: "remove the left sidebar
+                then its old stuff already". Not deleted: this drawer is the app's entire
+                navigation and it comes back untouched the moment there is a user. But signed
+                out it held nothing anyone could use — a list of tabs that are all gated, and a
+                second login button behind a panel that starts closed on a phone. The door in the
+                middle is the whole screen now.
+                The block below keeps its own indentation on purpose: re-indenting 180 lines to
+                add one guard would bury the actual change in the diff. */}
+            {user && (
             <div
                 /* HIS REPORT: "sometimes there is a bug and the sidepanel show a while until i
                    refresh on the phone then its gone".
@@ -431,8 +446,10 @@ export default function BiohazardTheme({
                     — which is the opposite of what a fixed rail is for. Two columns put a full
                     tier's menu on one screen. `content-start` so a short menu sits at the top
                     instead of being spread down the whole rail. */}
-                {user ? (
-                    <nav
+                {/* No signed-out branch here any more: the drawer itself does not render without
+                    a user, so a "Locked / your tabs load once you sign in" panel inside it could
+                    never be seen by the person it was written for. */}
+                <nav
                         key={`nav-${isAdmin}`}
                         onPointerDown={startScrub}
                         onPointerMove={(e) => { if (scrubRef.current) scrubTo(e); }}
@@ -490,14 +507,6 @@ export default function BiohazardTheme({
                             );
                         })}
                     </nav>
-                ) : (
-                    /* `opacity-50` used to sit on this whole block, which halved the contrast of
-                       the one message a locked-out user gets. The readout carries the state now. */
-                    <div className="flex-1 flex flex-col items-center lg:items-start pt-10 px-2 gap-3">
-                        <span className="kpm-read alert">Locked</span>
-                        <p className="hidden lg:block kpm-note">Your tabs load once you sign in.</p>
-                    </div>
-                )}
 
                 <div key={`bot-${isAdmin}`} className="mt-auto mb-2 border-t border-[#3e3226] lg:border-white/10 pt-3 boot-3">
                     {/* 🚀 HIDDEN DOOR: Show Master Vault button if they aren't fully unlocked but have Tier 2 settings */}
@@ -526,7 +535,6 @@ export default function BiohazardTheme({
                         screen to the player, not stack it on top of the menu. */}
                     {isAdmin && <MusicPlayer onOpen={() => setIsMobileMenuOpen(false)} />}
 
-                    {user ? (
                         <div className="flex flex-col lg:flex-row items-center gap-2">
                             {/* HIS CALL: "my profile picture above the logout button should follow
                                 the one each email have on the agent profile ... we dont need that
@@ -561,15 +569,9 @@ export default function BiohazardTheme({
                                 <LogOut size={16}/>
                             </button>
                         </div>
-                    ) : (
-                        /* Was green, then a hand-rolled gold outline. It is the same act as the
-                           door in the middle of the screen, so it is the same control now. */
-                        <button type="button" onClick={onLogin} className="kpm-btn key block">
-                            <LogIn size={14}/> <span className="hidden lg:inline">System login</span>
-                        </button>
-                    )}
                 </div>
             </div>
+            )}
 
             <div className="print-reset relative z-10 flex-1 flex flex-col overflow-hidden bg-gradient-to-br from-transparent to-black/80">
                 {/* kpm-topbar: on a phone pt-16 already clears the fixed menu button. On a desk

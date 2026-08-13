@@ -596,9 +596,21 @@ check(G15, 'the door is built from the control system, not hand-picked hex',
   /kpm-mod/.test(doorSrc) && /kpm-btn key block/.test(doorSrc) &&
   !/#f0e2c0|#6b6157|border-\[#ff9d00\]/.test(doorSrc),
   'this is the first screen anyone sees; if it looks like a different app, the app looks unfinished');
-check(G15, 'the sidebar login is the same control as the door',
-  (code(themeSrc).match(/className="kpm-btn key block"/g) || []).length >= 2,
-  'two buttons doing the identical act must not wear two different shapes');
+/* HIS CALL, 2026-08-14: *"remove the left sidebar then its old stuff already"* — while signed
+   out the door in the middle is the only thing on the screen. The drawer's own System-login
+   button went with it, so the old "both buttons wear the same shape" check has nothing left to
+   compare. What replaces it is STRONGER: the drawer and its edge ribbon do not render at all
+   until there is a user, so the way in cannot be hidden behind either of them.
+   Comments are stripped by code(), so this window measures markup only — it cannot be pushed
+   open by adding prose, which is what broke the two proximity needles above. */
+const railGuardIdx = code(themeSrc).indexOf('data-kpm-rail');
+check(G15, 'the drawer and its ribbon do not exist until you are signed in',
+  railGuardIdx > 0 &&
+  /\{user && \(/.test(code(themeSrc).slice(Math.max(0, railGuardIdx - 400), railGuardIdx)) &&
+  /\{user && !showAdminLogin && \(/.test(code(themeSrc)) &&
+  !/System login/.test(themeSrc),
+  'a signed-out screen with a drawer on it is the old UI he asked to have removed — and the ' +
+  'drawer login is dead code the moment the drawer cannot render');
 /* HIS CALL, 2026-08-14: the sign-in screen and the Master Vault gate are the SAME screen with a
    different middle panel. Reused, not re-drawn — a second copy of the dot field or of the card's
    hex is how the two would drift the next time either is touched. */
@@ -616,6 +628,20 @@ check(G15, 'the door wears the gate card as a shared class, not a copy of its he
   !/rgba\(4,\s*3,\s*2/.test(doorSrc),
   'the values are his signed-off variation-B ones; duplicating them in JSX is what lets the two ' +
   'locked screens drift');
+/* HIS FOLLOW-UP the same night: the middle panel should have *"the same color theme of our panel
+   inside vault gate as well, and similar format"*. Colour alone was not it — the module's default
+   is a left-aligned head, a 19px display title and a ruled shelf, and the gate's panel is one
+   centred mono column with no rules across it.
+   🔑 The colours are LITERAL, not tokens, and that is the load-bearing half: this card is
+   near-black in BOTH themes, so var(--ink) paints light mode's near-black ink onto it. Until this
+   block, the title, the description and the button were invisible for anyone who last left the
+   app in light mode. */
+check(G15, 'the middle panel wears the gate panel\'s format, not the module default',
+  /\.kpm-mod\.gate \{[^}]*text-align: center/s.test(gateCss) &&
+  /\.kpm-mod\.gate \.kpm-head h3 \{[^}]*color: #f7e9c8/s.test(gateCss) &&
+  /\.kpm-mod\.gate \.kpm-btn\.key \{[^}]*background: transparent/s.test(gateCss),
+  'same colours AND same format as the vault gate panel — and a token here would be light ' +
+  'mode\'s dark ink on a near-black card, i.e. nothing on the screen at all');
 
 check(G15, 'the locked-out message is not dimmed to half contrast',
   !/opacity-50[\s\S]{0,120}ACCESS/.test(code(themeSrc)),
@@ -716,8 +742,11 @@ check(G16, 'the second line names the app, not the vault screen',
    generates on demand and the dev stylesheet had not caught up. The production CSS does carry
    `.hidden{display:none}`, so a class-hide would pass a build check and still be visible to him
    while developing. Not rendering it cannot fail that way, and it leaves the tab order too. */
+/* The `user &&` in front is the 2026-08-14 addition — the ribbon also stays away while signed
+   out, because there is no navigation to open then. Optional in the needle so this check keeps
+   testing its own thing (the GATE hides it) rather than doubling as a test of that. */
 check(G16, 'the nav button is not rendered at all while the gate is up',
-  /\{!showAdminLogin && \(/.test(strip(themeSrc)),
+  /\{(?:user && )?!showAdminLogin && \(/.test(strip(themeSrc)),
   'it sits in its own stacking context, so raising the gate z-index does NOT cover it, and a '
   + 'class-based hide is only as reliable as the stylesheet that happens to be loaded');
 check(G16, 'App hands the theme the flag that hides it', /showAdminLogin=\{showAdminLogin\}/.test(appCode),
