@@ -196,48 +196,48 @@ export default function LandlordDashboard({ db, appId, user }) {
     };
 
    return (
-        <div className="bg-black/95 border border-red-900/50 p-6 md:p-8 rounded-xl shadow-[0_0_40px_rgba(220,38,38,0.1)] mb-8 animate-fade-in relative overflow-hidden">
+        <div className="bg-panel border border-line-2 p-6 md:p-8 rounded-xl shadow-lg mb-8 animate-fade-in relative overflow-hidden">
             {/* BACKGROUND TEXTURE */}
             <div className="absolute inset-0 z-0 opacity-20 pointer-events-none" style={{ backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 2px, #fff 2px, #fff 4px)', backgroundSize: '100% 4px' }}></div>
             
             <div className="relative z-10">
-                <div className="flex items-center gap-4 mb-6 border-b border-red-900/50 pb-4">
-                    <div className="p-3 bg-red-900/20 border border-red-500/30 rounded-full">
-                        <ShieldAlert className="text-red-500" size={28} />
+                <div className="flex items-center gap-4 mb-6 border-b border-line pb-4">
+                    <div className="p-3 bg-danger-well border border-danger/30 rounded-full">
+                        <ShieldAlert className="text-danger-text" size={28} />
                     </div>
                     <div>
-                        <h2 className="text-xl md:text-2xl font-serif text-red-500 uppercase tracking-[0.2em] drop-shadow-lg">Architect Terminal</h2>
-                        <p className="text-[10px] text-orange-400 font-mono uppercase tracking-widest mt-1">Tier 1 // Global Overseer Override</p>
+                        <h2 className="text-xl md:text-2xl font-display text-ink uppercase tracking-[0.2em]">Architect Terminal</h2>
+                        <p className="text-[10px] text-orange font-mono uppercase tracking-widest mt-1">Tier 1 // Global Overseer Override</p>
                     </div>
                 </div>
 
                 {/* PROVISIONING FORM */}
-                <form onSubmit={handleCreateTenant} className="flex flex-col md:flex-row gap-3 mb-8 bg-black/60 p-5 rounded-lg border border-white/10 shadow-inner">
-                    <input 
-                        value={newName} onChange={e=>setNewName(e.target.value)} 
-                        placeholder="TENANT DESIGNATION" 
-                        className="flex-1 bg-black border border-white/20 p-3 text-white text-[10px] font-mono uppercase tracking-wider outline-none focus:border-orange-500 transition-colors placeholder:text-slate-400" 
-                        required 
+                <form onSubmit={handleCreateTenant} className="flex flex-col md:flex-row gap-3 mb-8 bg-sunk p-5 rounded-lg border border-line shadow-inner">
+                    <input
+                        value={newName} onChange={e=>setNewName(e.target.value)}
+                        placeholder="TENANT DESIGNATION"
+                        className="flex-1 bg-inset border border-line p-3 text-ink text-[10px] font-mono uppercase tracking-wider outline-none focus:border-gold transition-colors placeholder:text-ink-dim"
+                        required
                     />
-                    <input 
-                        type="email" value={newEmail} onChange={e=>setNewEmail(e.target.value)} 
-                        placeholder="ADMIN IDENTIFIER (EMAIL)" 
-                        className="flex-1 bg-black border border-white/20 p-3 text-white text-[10px] font-mono uppercase tracking-wider outline-none focus:border-orange-500 transition-colors placeholder:text-slate-400" 
-                        required 
+                    <input
+                        type="email" value={newEmail} onChange={e=>setNewEmail(e.target.value)}
+                        placeholder="ADMIN IDENTIFIER (EMAIL)"
+                        className="flex-1 bg-inset border border-line p-3 text-ink text-[10px] font-mono uppercase tracking-wider outline-none focus:border-gold transition-colors placeholder:text-ink-dim"
+                        required
                     />
-                    
-                    <div className="bg-white/5 border border-white/10 text-white/50 p-3 text-[10px] font-mono uppercase tracking-wider flex items-center justify-center cursor-not-allowed select-none">
+
+                    <div className="bg-inset border border-line text-ink-dim p-3 text-[10px] font-mono uppercase tracking-wider flex items-center justify-center cursor-not-allowed select-none">
                         TIER 2 (OWNER)
                     </div>
 
-                    <button type="submit" className="bg-red-900/30 border border-red-500 text-red-500 hover:bg-red-600 hover:text-white font-bold text-[10px] uppercase tracking-widest px-6 py-3 transition-all flex items-center justify-center gap-2 whitespace-nowrap">
+                    <button type="submit" className="bg-gold/10 border border-gold text-gold hover:bg-gold hover:text-gold-ink font-bold text-[10px] uppercase tracking-widest px-6 py-3 transition-all flex items-center justify-center gap-2 whitespace-nowrap">
                         <UserPlus size={16}/> Provision
                     </button>
                 </form>
 
                 <div className="space-y-3">
                     {tenants.map(t => (
-                        <div key={t.id} className={`p-4 flex flex-col md:flex-row justify-between items-center transition-all bg-black/80 border-y md:border ${t.subscriptionStatus === 'ACTIVE' ? 'border-emerald-900/50 border-l-4 border-l-emerald-500 hover:bg-emerald-900/10' : 'border-red-900/50 border-l-4 border-l-red-500 hover:bg-red-900/10'}`}>
+                        <div key={t.id} className={`p-4 flex flex-col md:flex-row justify-between items-center transition-all bg-raised border-y md:border ${t.subscriptionStatus === 'ACTIVE' ? 'border-line-2 border-l-4 border-l-gold hover:bg-inset' : 'border-danger/40 border-l-4 border-l-danger hover:bg-danger-well/40'}`}>
                             
                             {editingId === t.id ? (
                                 /* INLINE EDIT MODE */
@@ -246,16 +246,16 @@ export default function LandlordDashboard({ db, appId, user }) {
                                         <input 
                                             value={editName} 
                                             onChange={e=>setEditName(e.target.value)} 
-                                            className="flex-1 bg-black border border-blue-500/50 p-2 text-white text-[10px] font-mono uppercase outline-none focus:border-blue-400" 
+                                            className="flex-1 bg-inset border border-line p-2 text-ink text-[10px] font-mono uppercase outline-none focus:border-gold"
                                             placeholder="Update Name"
                                         />
-                                        <div className="bg-white/5 border border-blue-500/30 p-2 px-4 text-white/50 text-[10px] font-mono uppercase flex items-center justify-center cursor-not-allowed select-none">
+                                        <div className="bg-inset border border-line p-2 px-4 text-ink-dim text-[10px] font-mono uppercase flex items-center justify-center cursor-not-allowed select-none">
                                             TIER 2
                                         </div>
                                     </div>
                                     <div className="flex gap-2 w-full md:w-auto mt-2 md:mt-0">
-                                        <button onClick={() => handleSaveEdit(t)} className="flex-1 md:flex-none p-2 md:px-4 bg-emerald-900/30 text-emerald-500 hover:bg-emerald-600 hover:text-white border border-emerald-500/50 transition-all flex justify-center items-center gap-2 text-[10px] font-bold tracking-widest"><Save size={14}/> SAVE</button>
-                                        <button onClick={() => setEditingId(null)} className="flex-1 md:flex-none p-2 md:px-4 bg-slate-900/30 text-slate-400 hover:bg-slate-600 hover:text-white border border-slate-500/50 transition-all flex justify-center items-center gap-2 text-[10px] font-bold tracking-widest"><X size={14}/> CANCEL</button>
+                                        <button onClick={() => handleSaveEdit(t)} className="flex-1 md:flex-none p-2 md:px-4 bg-gold/10 text-gold hover:bg-gold hover:text-gold-ink border border-gold/50 transition-all flex justify-center items-center gap-2 text-[10px] font-bold tracking-widest"><Save size={14}/> SAVE</button>
+                                        <button onClick={() => setEditingId(null)} className="flex-1 md:flex-none p-2 md:px-4 bg-inset text-ink-muted hover:bg-raised hover:text-ink border border-line-2 transition-all flex justify-center items-center gap-2 text-[10px] font-bold tracking-widest"><X size={14}/> CANCEL</button>
                                     </div>
                                 </div>
                             ) : (
@@ -263,36 +263,36 @@ export default function LandlordDashboard({ db, appId, user }) {
                                 <>
                                     <div className="text-center md:text-left mb-4 md:mb-0 w-full md:w-auto">
                                         <div className="flex flex-col md:flex-row items-center gap-3">
-                                            <h3 className={`font-serif tracking-widest uppercase text-lg ${t.subscriptionStatus === 'ACTIVE' ? 'text-white' : 'text-slate-400'}`}>{t.name}</h3>
-                                            
+                                            <h3 className={`font-display tracking-widest uppercase text-lg ${t.subscriptionStatus === 'ACTIVE' ? 'text-ink' : 'text-ink-dim'}`}>{t.name}</h3>
+
                                             <span className={`text-[11px] px-2 py-1 border flex items-center gap-1 tracking-widest ${
-                                                t.tier === 1 
-                                                ? 'border-red-900 text-red-500 bg-red-950/20' 
-                                                : 'border-emerald-900 text-emerald-500 bg-emerald-950/20'
+                                                t.tier === 1
+                                                ? 'border-danger/50 text-danger-text bg-danger-well'
+                                                : 'border-line-2 text-ink-muted bg-inset'
                                             }`}>
                                                 {t.tier === 1 ? <ShieldAlert size={10}/> : <ShieldCheck size={10}/>}
                                                 TIER {t.tier || 1}
                                             </span>
                                         </div>
                                         
-                                        <p className="text-[10px] text-slate-400 font-mono tracking-wider mt-2 border border-white/5 inline-block px-2 py-0.5 bg-white/5">
-                                            ID: <span className="text-slate-400">{t.email}</span>
+                                        <p className="text-[10px] text-ink-muted font-mono tracking-wider mt-2 border border-line inline-block px-2 py-0.5 bg-inset">
+                                            ID: <span className="text-ink-dim">{t.email}</span>
                                         </p>
                                     </div>
 
-                                    <div className="flex items-center justify-between w-full md:w-auto gap-4 border-t border-white/5 md:border-none pt-4 md:pt-0">
+                                    <div className="flex items-center justify-between w-full md:w-auto gap-4 border-t border-line md:border-none pt-4 md:pt-0">
                                         <div className="hidden md:flex">
                                             {t.subscriptionStatus === 'ACTIVE' ? (
-                                                <span className="flex items-center gap-2 text-emerald-400 text-[10px] font-mono font-bold uppercase tracking-widest"><CheckCircle size={14} className="animate-pulse"/> SECURE</span>
+                                                <span className="flex items-center gap-2 text-verified text-[10px] font-mono font-bold uppercase tracking-widest"><CheckCircle size={14} className="animate-pulse"/> SECURE</span>
                                             ) : (
-                                                <span className="flex items-center gap-2 text-red-500 text-[10px] font-mono font-bold uppercase tracking-widest"><ShieldAlert size={14} className="animate-pulse"/> LOCKED</span>
+                                                <span className="flex items-center gap-2 text-danger-text text-[10px] font-mono font-bold uppercase tracking-widest"><ShieldAlert size={14} className="animate-pulse"/> LOCKED</span>
                                             )}
                                         </div>
                                         
                                         <div className="flex gap-2 w-full md:w-auto">
                                             <button 
                                                 onClick={() => toggleSubscription(t)} 
-                                                className={`flex-1 md:flex-none p-2 md:px-3 font-mono font-bold text-[10px] uppercase tracking-widest transition-all flex items-center justify-center gap-2 border ${t.subscriptionStatus === 'ACTIVE' ? 'bg-red-900/20 text-red-500 border-red-500/50 hover:bg-red-600 hover:text-white' : 'bg-emerald-900/20 text-emerald-500 border-emerald-500/50 hover:bg-emerald-600 hover:text-white'}`}
+                                                className={`flex-1 md:flex-none p-2 md:px-3 font-mono font-bold text-[10px] uppercase tracking-widest transition-all flex items-center justify-center gap-2 border ${t.subscriptionStatus === 'ACTIVE' ? 'bg-danger-well text-danger-text border-danger/50 hover:bg-danger hover:text-white' : 'bg-gold/10 text-gold border-gold/50 hover:bg-gold hover:text-gold-ink'}`}
                                                 title={t.subscriptionStatus === 'ACTIVE' ? "Suspend User" : "Restore User"}
                                             >
                                                 <Power size={14} />
@@ -301,7 +301,7 @@ export default function LandlordDashboard({ db, appId, user }) {
 
                                             <button 
                                                 onClick={() => handleEditClick(t)} 
-                                                className="p-2 md:px-3 bg-blue-900/20 text-blue-500 border-blue-500/50 hover:bg-blue-600 hover:text-white transition-all flex items-center justify-center"
+                                                className="p-2 md:px-3 bg-inset text-ink-muted border border-line-2 hover:bg-raised hover:text-ink transition-all flex items-center justify-center"
                                                 title="Edit User"
                                             >
                                                 <Edit size={14} />
@@ -309,7 +309,7 @@ export default function LandlordDashboard({ db, appId, user }) {
 
                                             <button data-kpm-del data-label="Delete" 
                                                 onClick={() => handleDelete(t)} 
-                                                className="p-2 md:px-3 bg-slate-900/20 text-slate-400 border-slate-500/50 hover:bg-red-600 hover:border-red-500 hover:text-white transition-all flex items-center justify-center"
+                                                className="p-2 md:px-3 bg-inset text-ink-muted border border-line-2 hover:bg-danger hover:border-danger hover:text-white transition-all flex items-center justify-center"
                                                 title="Permanently Delete User"
                                             >
                                                 <Trash2 size={14} />
@@ -321,8 +321,8 @@ export default function LandlordDashboard({ db, appId, user }) {
                         </div>
                     ))}
                     {tenants.length === 0 && (
-                        <div className="text-center py-8 border border-white/5 bg-black/50">
-                            <p className="text-orange-500/50 font-mono text-[10px] uppercase tracking-widest animate-pulse">Waiting for database population...</p>
+                        <div className="text-center py-8 border border-line bg-sunk">
+                            <p className="text-orange/60 font-mono text-[10px] uppercase tracking-widest animate-pulse">Waiting for database population...</p>
                         </div>
                     )}
                 </div>

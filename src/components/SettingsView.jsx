@@ -834,13 +834,13 @@ export default function SettingsView({
                           <CareerDevTools db={db} appId={appId} userId={userId} triggerCapy={triggerCapy} />
 
                           {/* 🚀 PHOTO STORAGE MODE (SPARK vs BLAZE SWITCH) */}
-                          <div className={`p-6 rounded-2xl shadow-sm border transition-all duration-300 ${appSettings.usePhotoStorage ? 'bg-blue-900/20 border-blue-500/50' : 'bg-black border-slate-800'}`}>
+                          <div className={`p-6 rounded-2xl shadow-sm border transition-all duration-300 ${appSettings.usePhotoStorage ? 'bg-raised border-gold/50' : 'bg-panel border-line'}`}>
                               <div className="flex items-center justify-between gap-4">
                                   <div>
-                                      <h3 className={`font-bold text-lg flex items-center gap-2 ${appSettings.usePhotoStorage ? 'text-blue-400' : 'text-white'}`}>
+                                      <h3 className={`font-bold text-lg flex items-center gap-2 ${appSettings.usePhotoStorage ? 'text-gold' : 'text-ink'}`}>
                                           ☁️ Use Cloud Photo Storage (requires Blaze plan)
                                       </h3>
-                                      <p className="text-[10px] text-slate-400 uppercase tracking-widest mt-1">
+                                      <p className="text-[10px] text-ink-muted uppercase tracking-widest mt-1">
                                           When off, photos save directly in the database (works on any plan). When on, photos upload to Firebase Storage instead (requires the Blaze plan to be active).
                                       </p>
                                   </div>
@@ -851,7 +851,7 @@ export default function SettingsView({
                                           if (user) setDoc(doc(db, `artifacts/${appId}/users/${user.uid}/settings/general`), { usePhotoStorage: newVal }, { merge: true });
                                           triggerCapy(newVal ? "Cloud Photo Storage Enabled! Make sure the Blaze plan is active. ☁️" : "Cloud Photo Storage Disabled. Photos now save directly to the database.");
                                       }}
-                                      className={`shrink-0 transition-all duration-300 ${appSettings.usePhotoStorage ? 'text-blue-400 drop-shadow-[0_0_8px_rgba(59,130,246,0.8)]' : 'text-slate-400 hover:text-slate-300'}`}
+                                      className={`shrink-0 transition-all duration-300 ${appSettings.usePhotoStorage ? 'text-gold drop-shadow-[0_0_8px_var(--gold)]' : 'text-ink-dim hover:text-ink'}`}
                                   >
                                       {appSettings.usePhotoStorage ? <ToggleRight size={40} /> : <ToggleLeft size={40} />}
                                   </button>
@@ -859,17 +859,17 @@ export default function SettingsView({
                           </div>
 
                           {/* LANDLORD DASHBOARD */}
-                          <div className="bg-black border border-slate-800 rounded-2xl overflow-hidden shadow-2xl">
+                          <div className="bg-panel border border-line rounded-2xl overflow-hidden shadow-2xl">
                              <LandlordDashboard db={db} appId={appId} user={user} />
                           </div>
 
                           {/* CROWN TRANSFER */}
-                          <div className="bg-red-950/20 border border-red-500/30 p-6 rounded-2xl flex justify-between items-center">
+                          <div className="bg-danger-well/40 border border-danger/30 p-6 rounded-2xl flex justify-between items-center">
                               <div>
-                                  <h3 className="text-red-500 font-black uppercase tracking-widest text-lg">Danger Zone</h3>
-                                  <p className="text-xs font-mono text-slate-400 mt-1">Permanently transfer ownership of this software.</p>
+                                  <h3 className="text-danger-text font-black uppercase tracking-widest text-lg">Danger Zone</h3>
+                                  <p className="text-xs font-mono text-ink-muted mt-1">Permanently transfer ownership of this software.</p>
                               </div>
-                              <button onClick={() => setShowCrownTransfer(true)} className="bg-red-900/40 hover:bg-red-600 text-red-500 hover:text-white border border-red-500 px-6 py-3 rounded text-xs font-bold uppercase tracking-widest transition-all">
+                              <button onClick={() => setShowCrownTransfer(true)} className="bg-danger-well hover:bg-danger text-danger-text hover:text-white border border-danger px-6 py-3 rounded text-xs font-bold uppercase tracking-widest transition-all">
                                   Initiate Transfer
                               </button>
                           </div>
@@ -886,12 +886,12 @@ export default function SettingsView({
                           )}
 
                           {/* DISCO PROTOCOL */}
-                          <div className="pt-8 border-t-2 border-red-900/30">
-                              <h4 className="text-xs font-bold text-red-500 uppercase tracking-widest mb-4 flex items-center gap-2"><ShieldAlert size={16}/> System Overload</h4>
-                              <button onClick={triggerDiscoParty} disabled={isDiscoMode} className={`w-full py-4 rounded-xl font-bold text-white shadow-xl transition-all ${isDiscoMode ? 'bg-slate-500' : 'bg-red-600 hover:bg-red-700'}`}>
+                          <div className="pt-8 border-t-2 border-danger/30">
+                              <h4 className="text-xs font-bold text-danger-text uppercase tracking-widest mb-4 flex items-center gap-2"><ShieldAlert size={16}/> System Overload</h4>
+                              <button onClick={triggerDiscoParty} disabled={isDiscoMode} className={`w-full py-4 rounded-xl font-bold shadow-xl transition-all ${isDiscoMode ? 'bg-inset text-ink-dim' : 'bg-danger-plate text-danger-plate-ink hover:bg-danger'}`}>
                                   {isDiscoMode ? <><Music size={24} className="animate-spin inline mr-2"/> SYSTEM OVERLOAD...</> : <><ShieldAlert size={24} className="animate-pulse inline mr-2"/> DO NOT PRESS: CAPY DISCO PROTOCOL</>}
                               </button>
-                              <p className="text-[10px] text-red-400 text-center mt-3 font-mono opacity-70">Warning: Extreme funkiness levels incoming.</p>
+                              <p className="text-[10px] text-danger-text text-center mt-3 font-mono opacity-70">Warning: Extreme funkiness levels incoming.</p>
                           </div>
                       </div>
                   )}

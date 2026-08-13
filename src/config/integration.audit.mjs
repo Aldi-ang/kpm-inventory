@@ -1270,6 +1270,65 @@ check(G26, 'registering an outlet still hands the screen back to the wares',
   (termSrc.match(/setDrawerH\(DRAWER_CLOSED\)/g) || []).length >= 2,
   'his G6 report — a NOO that leaves the paper open looks like a freeze');
 
+/* ── 27. THE ARCHITECT TAB ────────────────────────────────────────────────
+   Phase 5 of the UI plan. This tab was the last screen wearing another app's clothes: a red
+   `font-serif` scanline card dropped into a blue settings page. Restyling a screen that holds
+   the tenant switch, the ownership transfer and a data wipe is exactly where a cosmetic edit
+   can quietly delete a control, so this group asserts BOTH halves — the palette, and that every
+   child that was in the tab is still mounted. */
+const G27 = '27. The architect tab is the same app as everything else';
+
+const settingsSrc = fs.readFileSync('src/components/SettingsView.jsx', 'utf8');
+const lordSrc = fs.readFileSync('src/components/LandlordDashboard.jsx', 'utf8');
+/* Only the architect block — the other tabs in this file are Phase 6's job, and asserting them
+   here would report a failure that is not this change. */
+const archStart = settingsSrc.indexOf('WORKSPACE: ARCHITECT TERMINAL');
+const archEnd = settingsSrc.indexOf('PLUG & PLAY: THE RESPONSIVE MATRIX EDITOR');
+const arch = archStart > 0 && archEnd > archStart ? settingsSrc.slice(archStart, archEnd) : '';
+
+check(G27, 'the architect block was found at all',
+  arch.length > 1000,
+  'the two markers this group slices between were renamed — every palette check below would ' +
+  'pass on an empty string, which is the worst kind of green');
+
+const offToken = /\b(?:bg|text|border|from|to|via)-(?:blue|emerald|green|slate|sky|indigo|teal|cyan)-\d/;
+check(G27, 'the architect block carries no blue, no green, no slate',
+  !offToken.test(arch),
+  'palette law: slate IS the blue and emerald IS the green. This tab used bg-blue-900/20 for ' +
+  'the photo-storage card and bg-black/border-slate-800 for the landlord panel');
+check(G27, 'the landlord panel carries no blue, no green, no slate either',
+  !offToken.test(lordSrc),
+  'the tenant rows were emerald-for-active / red-for-locked and the edit button was blue-500');
+check(G27, 'the terminal heading uses the display font, not font-serif',
+  !/font-serif/.test(lordSrc) && /font-display text-ink/.test(lordSrc),
+  'font-serif is what made this card read as pasted in from another app');
+check(G27, 'the scanline texture survives — it is the house texture, not decoration',
+  /repeating-linear-gradient/.test(lordSrc),
+  'it is one of the few effects that survives Lite Mode; the plan says keep it');
+
+/* THE CONTROLS. Restyling must not drop a child. Each of these is Tier-1-only and has no other
+   route in the app. */
+for (const [what, needle] of [
+  ['the achievement tester', '<AchievementTester'],
+  ['career dev tools', '<CareerDevTools'],
+  ['the landlord dashboard', '<LandlordDashboard'],
+  ['the crown transfer button', 'setShowCrownTransfer(true)'],
+  ['the crown transfer protocol itself', '<CrownTransferProtocol'],
+  ['the disco protocol', 'triggerDiscoParty'],
+]) check(G27, `${what} is still mounted in the tab`, arch.includes(needle),
+  'this control has no other route in the app — losing it in a restyle is silent');
+
+check(G27, 'the tab is still Tier 1 only',
+  /activeTab === 'architect' && isSystemOwner/.test(settingsSrc),
+  'the gate, not the look — dropping isSystemOwner hands the tenant switch to every owner');
+
+/* The tokens have to exist in the BUILT css, not just in the source. */
+for (const n of ['.bg-panel', '.bg-raised', '.bg-inset', '.bg-sunk', '.text-ink', '.text-gold',
+                 '.text-danger-text', '.bg-danger-well', '.border-line-2', '.text-verified'])
+  check(G27, `${n} survived the build`, css.includes(n + '{'),
+    'Tailwind only emits a class it saw in source — a typo here paints nothing and looks ' +
+    'like a transparent panel');
+
 /* ── report ──────────────────────────────────────────────────────────────── */
 let last = '';
 for (const r of results) {
