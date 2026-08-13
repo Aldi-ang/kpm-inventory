@@ -343,7 +343,7 @@ export default function BiohazardTheme({
                    `bg-ground` is solid on purpose: a locked screen has nothing worth showing
                    through it, and a translucent one let the dashboard behind it compete. */
                 <div className="hide-on-print fixed inset-0 z-[80] flex items-center justify-center px-4 bg-ground">
-                    <div className="kpm-mod w-full max-w-sm">
+                    <div className="kpm-mod arrive w-full max-w-sm">
                         <div className="kpm-head">
                             <span className="slot">{appSettings?.companyName || 'KPM Inventory'}</span>
                             <div className="line">
@@ -405,11 +405,12 @@ export default function BiohazardTheme({
                     clear it or the button lands on the name. A 76px rail has no room for a
                     name at all, and does not need one — you opened it, you know where you are. */}
                 <div key={`brand-${isAdmin}`} className="hidden lg:block mb-6 ml-12 mt-0.5 lg:mt-0 boot-1">
-                    <h1 className="text-sm lg:text-xl font-bold text-white font-mono border-b-2 border-white/50 pb-1 lg:pb-2 inline-block shadow-[0_0_10px_rgba(255,255,255,0.3)]">
+                    {/* the glow was a box-shadow, which Lite Mode deletes — the name then lost its
+                        edge entirely. A border is a border in every mode. */}
+                    <h1 className="text-sm lg:text-xl font-display font-bold text-ink border-b-2 border-accent-edge pb-1 lg:pb-2 inline-block tracking-[0.08em] uppercase">
                         {appSettings?.companyName || "KPM SYSTEM"}
                     </h1>
-                    {/* was text-blue-400 — palette law, and it was the last blue in this file */}
-                    <p className="text-[10px] font-mono text-[#8b7256] tracking-widest mt-1">BUILD {appVersion}</p>
+                    <p className="kpm-read mt-2 inline-block">Build {appVersion}</p>
                 </div>
 
                 {/* TWO COLUMNS ON A PHONE, one on a desk. Seventeen marks in a single file made
@@ -642,8 +643,8 @@ export default function BiohazardTheme({
                 </div>
 
                 <div className="hide-on-print hidden lg:flex h-8 border-t border-white/10 items-center px-6 gap-6 text-[10px] text-gray-500 font-bold uppercase bg-black/80 backdrop-blur shrink-0">
-                    <span className="flex items-center gap-2"><span className="bg-white text-black px-1 rounded-[1px]">L-CLICK</span> SELECT</span>
-                    <span className="flex items-center gap-2"><span className="bg-gray-700 text-white px-1 rounded-[1px]">SCROLL</span> NAVIGATE</span>
+                    <span className="flex items-center gap-2"><span className="kpm-read on">L-Click</span> Select</span>
+                    <span className="flex items-center gap-2"><span className="kpm-read">Scroll</span> Navigate</span>
                 </div>
             </div>
             

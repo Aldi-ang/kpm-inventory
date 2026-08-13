@@ -1698,3 +1698,11 @@ html.lite-mode .kpm-title-rule { animation: none; width: 100%; }
   text-transform: uppercase; color: var(--ink); }
 .kpm-band.hazard { color: var(--danger-ink); border-color: var(--danger);
   background-color: var(--danger-well); background-image: var(--hatch-danger); }
+
+/* ---- ARRIVAL: a module lands, it does not blink into place. One name, so every screen that
+   spends this vocabulary gets the same arrival instead of inventing its own.
+   transform + opacity only — no layout work, and Lite Mode drops it whole. */
+@keyframes kpmModIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+.kpm-mod.arrive { animation: kpmModIn 320ms cubic-bezier(.2,.8,.3,1) both; }
+html.lite-mode .kpm-mod.arrive { animation: none; }
+@media (prefers-reduced-motion: reduce) { .kpm-mod.arrive { animation: none; } }
