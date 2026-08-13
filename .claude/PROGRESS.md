@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-14 00:10 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
+**Updated: 2026-08-14 00:35 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry directly below. Two clocks, one file.
 
 ### ✅ 23:40 WIB (Lancelot session) — the two potongan methods BUILT. A-Brain `8b20e34`. 103 checks green.
@@ -108,6 +108,31 @@ The rules, in order:
    else wrote in the meantime. If an `Edit` fails as stale, re-read and re-apply — do not force it.
 7. **The quota is one shared pool.** Two sessions running hard halve each other's runway, and the
    `[plan-quota]` percentage covers both. Size your work against the whole pool, not your own chat.
+
+## ✅ LOG 2026-08-14 00:35 WIB — the sign-in door IS the vault gate now. 357/357. (KPM app session)
+
+His clarification, and it changed the job: *"this screen should be the same with the login screen
+that we design last time the vault gate ... but of course the panel on the middle should change a
+little bit because one is panel when you are already login in google and this one is havent"*.
+
+**Reused, never re-drawn:**
+- the door renders **`<VaultGate playing={false} />`** — the gate's own dot field, lighting under
+  the pointer only. ⚠️ `playing={false}` is load-bearing: the unlock sequence belongs to the vault.
+  Same `gateCanvasOn()` switch, so Lite Mode drops the canvas on both screens identically.
+- the card wears **`.kpm-mod.gate`** (new, theme.css): the signed-off variation-B values —
+  `rgba(4,3,2,.9)`, one rust hairline `rgba(231,112,15,.28)`, 320px phone / 384px md — with head
+  and shelf transparent so it reads as ONE pane over the field.
+  🔑 **A class, not a second copy of the hex** — that is what stops the two locked screens
+  drifting. Group 15 fails if the door inlines `rgba(4, 3, 2` itself.
+- ⚠️ His locked numbers still live in `VaultGate.jsx` (spacing 26 · density 7 · name 0.10 ·
+  wave 3.0s) and `public/sounds/vault-b.mp3` is cut to the 3.0s wave. **Do not tune without him.**
+
+🔑 **Audit trap hit twice today:** `integration.audit.mjs` loads `themeCss` ~line 897, so a check
+written into group 15 (~line 612) that reaches for it throws *"Cannot access before
+initialization"* — the whole audit dies, not just that check. Read the file locally there.
+
+**Still open:** App.jsx's gate card (~line 3605) still carries those values inline; it should
+adopt `.kpm-mod.gate` too, but its own audit needles quote the hex, so change both together.
 
 ## ✅ LOG 2026-08-14 00:10 WIB — login screen FINISHED, arrival animation added to the system. 355/355. (KPM app session)
 
