@@ -71,9 +71,17 @@ The rules, in order:
    everytime"*. It carries the proof command —
    `git log --since=<today> -p -- .claude/PROGRESS.md | grep '^-' | grep -v '^---'` — and the
    rule that every deleted line must be your own `**Updated:` stamp.
-2. **Audited today's writes against that rule:** the only lines any of my four PROGRESS commits
-   deleted are the `**Updated:` header stamps. The one 🟢 line that ever vanished was removed by
-   `2049fd1` on 08-12 17:18, the commit that CREATED the track table. Green markers went 2 → 3.
+2. **Audited today's writes against that rule — with ONE loose end, stated honestly.** Every
+   deleted line is an `**Updated:` header stamp EXCEPT one:
+   `-**Lancelot session last wrote 17:20 WIB** — see the 17:15 entry.`
+   `git log -S` attributes it to `2049fd1` (08-12 17:18, the commit that CREATED the track table),
+   but it still shows up under a `--since=2026-08-13` filter, which means its COMMIT date is today
+   even though its author date is yesterday. 🔴 **Unresolved: settle it with
+   `git log --since=2026-08-13 --format='%h %cd %s' --date=iso -- .claude/PROGRESS.md` and then
+   `git show <each>:.claude/PROGRESS.md | grep -c '🟢'`.** If one of my commits ate that line, it
+   must be restored — it is the Lancelot session's own pointer, and it is not mine to remove.
+   Green markers went 2 → 3 overall, so no 🟢 LOG ENTRY was lost; the line in question is the
+   header pointer, not an entry.
 
 **The vanish point.** *"make the capybara vanish closer to the door"* — he was walking a fixed
 `translateX`, so the disappearing point drifted with the column width. ⚠️ The walk now animates
