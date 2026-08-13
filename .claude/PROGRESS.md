@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-13 18:40 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
+**Updated: 2026-08-13 19:30 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
 **Lancelot session last wrote 2026-08-13 13:51 WIB** — see the 14:05 entry. Two clocks, one file.
 
 ### 🟢 13:51 WIB (Lancelot session) — no file changes this turn; those `src/**` edits are the app's
@@ -61,6 +61,37 @@ The rules, in order:
    else wrote in the meantime. If an `Edit` fails as stale, re-read and re-apply — do not force it.
 7. **The quota is one shared pool.** Two sessions running hard halve each other's runway, and the
    `[plan-quota]` percentage covers both. Size your work against the whole pool, not your own chat.
+
+## ✅ LOG 2026-08-13 19:30 WIB — contrast fixed with NUMBERS, panels stopped looking identical. 351/351. (KPM app session)
+
+**Preview (same URL, updated):** `https://claude.ai/code/artifact/22bbf462-6009-4ebc-a447-56fb4177120c`
+
+🔴 **`.claude/launch.json` said `https://localhost:5173` and Vite serves HTTP** — that is why he
+could not open localhost on his PC. Fixed to `http://`. The server itself was fine.
+
+🔑 **A law written in a comment does not hold. A number does.** theme.css has said since Phase 3
+that *"gold is DECORATION … never a text colour"*, and `.kpm-btn.key { color: var(--gold) }` still
+shipped — **1,19:1 on the light ground**. His report: *"dont use yellow color for text on light
+mode because its hard to see, red color is some place also not visible"*.
+**New: `node src/config/contrast.selfcheck.mjs`** parses the real tokens out of theme.css and
+measures all 17 text-on-surface pairs in BOTH themes against WCAG. Run it after ANY token edit.
+Three new tokens do the work — ⚠️ **use these, never `--gold`/`--danger-text`, for text or borders:**
+`--accent-ink` (gold-as-text) · `--accent-edge` (gold-as-border) · `--danger-ink` (red-as-text).
+Light values are darkened (`#6B4A05`, `#7A5A12`, `#611A14`). Group 32 fails if a raw `--gold`
+text colour reappears in the control system.
+
+**"this design is too standardise nothing special"** — his second verdict, also right. Eight
+identical boxes whose one 14px caption row did three jobs. Now:
+- a module declares its KIND — `.bench` `.live` `.hazard` `.idle` — and each kind wears a
+  different head (live = gold rule under the title; hazard = hatched + red title; idle = no stripe).
+- the head is three lines that cannot be confused: mono **slot code** (`Live · 02`), then
+  **title + live state**, then the **description in the BODY face** — prose, not more caps.
+- controls moved to `.kpm-shelf`, its own ground with its own rule, so *press* is a different
+  zone from *read*.
+Group 31 pins all of it, including that no bare `.kpm-mod` (no kind) is left.
+
+⚠️ **Slot codes must match the variant** — Career Dev Tools was `.live` but read "Bench · 02".
+The audit caught the count, not the mismatch; that one needs eyes.
 
 ## ✅ LOG 2026-08-13 18:40 WIB — THE CONTROL SYSTEM IS IN, architect tab rebuilt on it. 340/340. (KPM app session)
 
