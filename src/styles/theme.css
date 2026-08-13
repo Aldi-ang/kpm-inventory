@@ -1506,3 +1506,126 @@ html.lite-mode .kpm-bell:active { transform: none; }
 }
 html.lite-mode .kpm-title-rule { animation: none; width: 100%; }
 @media (prefers-reduced-motion: reduce) { .kpm-title-rule { animation: none; width: 100%; } }
+
+/* ============================================================================
+   THE CONTROL SYSTEM — Aldi's ask, 2026-08-13, verbatim:
+   *"i want better presentation of all of this button and features to be more
+   presentable, since i will redesign the whole setting as well, make sure that
+   the logic and theme and button design and animation that we made here could
+   be use for button in another place so design it well"*.
+
+   So this is a VOCABULARY, not one screen's styling. The Architect Terminal is
+   its first customer; the rest of Settings spends the same names.
+
+   THE ONE IDEA: authority is graded by MATERIAL, not by colour.
+     hairline + mono  = routine, reversible
+     gold plate       = the primary act of a module
+     striped plate    = irreversible, no undo
+   Colour alone fails twice over here — it dies in Lite Mode, and it cannot tell
+   a joke button apart from an ownership transfer. Material survives both.
+
+   EVERYTHING BELOW SURVIVES LITE MODE. Only borders, background-color and
+   background-image gradients are used — no box-shadow, no filter, no blur — so
+   the hierarchy is identical on a cheap Android with the governor on.
+   ⚠️ Do not "improve" any of it with a shadow. The shadow is what Lite Mode eats.
+   ============================================================================ */
+
+/* ---- MODULE: one bordered instrument. No radius: this is bolted, not floated. */
+.kpm-mod { border: 1px solid var(--line-2); background: var(--panel); }
+.kpm-mod + .kpm-mod { border-top: 0; }          /* a rack, not a stack of cards */
+
+/* ---- RAIL: the module's caption. Name on the left, live state on the right. */
+.kpm-rail { display: flex; align-items: center; justify-content: space-between;
+  gap: var(--s3); min-height: 40px; padding: 0 var(--s3);
+  border-bottom: 1px solid var(--line); background: var(--inset);
+  border-left: 3px solid var(--line-3); }
+.kpm-rail.gold   { border-left-color: var(--gold); }
+.kpm-rail.hazard { border-left-color: var(--danger); background-image: var(--hatch-gold); }
+.kpm-rail h3 { margin: 0; font-family: var(--font-display); font-weight: 700;
+  font-size: 14px; letter-spacing: .18em; text-transform: uppercase; color: var(--ink); }
+
+/* ---- READOUT: a printed state, so a module answers before it is opened. */
+.kpm-read { font-family: var(--font-mono); font-size: 10px; letter-spacing: .14em;
+  text-transform: uppercase; padding: 3px 7px; border: 1px solid var(--line-2);
+  color: var(--ink-muted); white-space: nowrap; }
+.kpm-read.on     { color: var(--gold-ink); background: var(--gold); border-color: var(--gold); }
+.kpm-read.alert  { color: var(--danger-plate-ink); background: var(--danger-plate);
+                   border-color: var(--danger); }
+
+/* ---- BODY ---- */
+.kpm-body { padding: var(--s4) var(--s3); display: flex; flex-direction: column; gap: var(--s3); }
+.kpm-note { margin: 0; font-size: 12px; line-height: 1.5; color: var(--ink-muted); }
+
+/* ---- BUTTON: three weights, one shape. 44px tall everywhere — his phone is the
+   only device that matters, and 44px is the smallest reliable touch target. */
+.kpm-btn { display: inline-flex; align-items: center; justify-content: center; gap: var(--s2);
+  min-height: 44px; padding: 0 var(--s4); border: 1px solid var(--line-3);
+  background: var(--raised); color: var(--ink);
+  font-family: var(--font-display); font-weight: 700; font-size: 13px;
+  letter-spacing: .16em; text-transform: uppercase; cursor: pointer;
+  transition: background-color 120ms ease-out, color 120ms ease-out, border-color 120ms ease-out; }
+.kpm-btn:disabled { color: var(--ink-disabled); border-color: var(--line); cursor: not-allowed; }
+.kpm-btn.block { display: flex; width: 100%; }
+.kpm-btn.key    { border-color: var(--gold); color: var(--gold); }
+.kpm-btn.hazard { border-color: var(--danger); color: var(--danger-text);
+  background-image: repeating-linear-gradient(135deg,
+    rgba(180,82,74,.16) 0 6px, transparent 6px 12px); }
+/* the press is the report: it is what tells him the tap landed */
+.kpm-btn:active           { background: var(--inset); }
+.kpm-btn.key:active       { background: var(--gold);        color: var(--gold-ink); }
+.kpm-btn.hazard:active    { background: var(--danger-plate); color: var(--danger-plate-ink); }
+@media (hover: hover) and (pointer: fine) {
+  .kpm-btn:hover        { background: var(--inset); border-color: var(--ink-dim); }
+  .kpm-btn.key:hover    { background: var(--gold);         color: var(--gold-ink); }
+  .kpm-btn.hazard:hover { background: var(--danger-plate); color: var(--danger-plate-ink);
+                          background-image: none; }
+}
+.kpm-btn:focus-visible { outline: 2px solid var(--gold); outline-offset: -4px; }
+
+/* ---- FIELD: a labelled input. The label is printed above, never a placeholder —
+   a placeholder disappears exactly when he needs to check what he typed. */
+.kpm-field { display: flex; flex-direction: column; gap: 4px; }
+.kpm-field > span { font-family: var(--font-mono); font-size: 10px; letter-spacing: .16em;
+  text-transform: uppercase; color: var(--ink-dim); }
+.kpm-field > input, .kpm-field > .fixed {
+  min-height: 44px; padding: 0 var(--s3); border: 1px solid var(--line-2);
+  background: var(--inset); color: var(--ink);
+  font-family: var(--font-mono); font-size: 12px; letter-spacing: .06em; }
+.kpm-field > input:focus { outline: none; border-color: var(--gold); }
+.kpm-field > .fixed { display: flex; align-items: center; color: var(--ink-dim); }
+
+/* ---- SWITCH: both positions always visible, so the choice is readable without
+   remembering which way "on" points. */
+.kpm-switch { display: flex; border: 1px solid var(--line-3); }
+.kpm-switch > button { flex: 1; min-height: 44px; background: transparent; color: var(--ink-muted);
+  font-family: var(--font-mono); font-size: 11px; letter-spacing: .14em; text-transform: uppercase;
+  border: 0; cursor: pointer; }
+.kpm-switch > button + button { border-left: 1px solid var(--line-3); }
+.kpm-switch > button[aria-pressed="true"] { background: var(--gold); color: var(--gold-ink); }
+
+/* ---- RECORD: one row of a registry. Identity above, actions below — at 375px a
+   side-by-side row cannot hold three word buttons without shrinking them. */
+.kpm-rec { border: 1px solid var(--line); border-left: 3px solid var(--line-3);
+  background: var(--raised); }
+.kpm-rec.locked { border-left-color: var(--danger); }
+.kpm-rec .who { display: flex; flex-direction: column; gap: 2px; padding: var(--s3); }
+.kpm-rec .who b { font-family: var(--font-display); font-weight: 700; font-size: 15px;
+  letter-spacing: .1em; text-transform: uppercase; color: var(--ink); }
+.kpm-rec .who code { font-family: var(--font-mono); font-size: 11px; color: var(--ink-muted); }
+.kpm-rec .acts { display: flex; border-top: 1px solid var(--line); }
+.kpm-rec .acts > .kpm-btn { flex: 1; border: 0; border-left: 1px solid var(--line);
+  min-height: 44px; font-size: 11px; letter-spacing: .12em; }
+.kpm-rec .acts > .kpm-btn:first-child { border-left: 0; }
+
+/* ---- BAND: names what a group of modules is allowed to do. This is the fence
+   that used to be a 1.02:1 tinted box nobody could see. */
+.kpm-band { display: flex; align-items: center; gap: var(--s2);
+  padding: var(--s2) var(--s3); margin-top: var(--s5);
+  border: 1px solid var(--line-2); border-bottom: 0;
+  /* the house texture, kept: the old panel's scanline was the one decoration in this tab that
+     survived Lite Mode, and a printed caption strip is where it belongs */
+  background-color: var(--sunk); background-image: var(--hatch);
+  font-family: var(--font-mono); font-size: 10px; letter-spacing: .22em;
+  text-transform: uppercase; color: var(--ink-muted); }
+.kpm-band.hazard { color: var(--danger-text); border-color: var(--danger);
+  background-image: var(--hatch-gold); }

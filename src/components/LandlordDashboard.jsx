@@ -196,137 +196,99 @@ export default function LandlordDashboard({ db, appId, user }) {
     };
 
    return (
-        <div className="bg-panel border border-line-2 p-6 md:p-8 rounded-xl shadow-lg mb-8 animate-fade-in relative overflow-hidden">
-            {/* BACKGROUND TEXTURE */}
-            <div className="absolute inset-0 z-0 opacity-20 pointer-events-none" style={{ backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 2px, #fff 2px, #fff 4px)', backgroundSize: '100% 4px' }}></div>
-            
-            <div className="relative z-10">
-                <div className="flex items-center gap-4 mb-6 border-b border-line pb-4">
-                    <div className="p-3 bg-danger-well border border-danger/30 rounded-full">
-                        <ShieldAlert className="text-danger-text" size={28} />
-                    </div>
-                    <div>
-                        <h2 className="text-xl md:text-2xl font-display text-ink uppercase tracking-[0.2em]">Architect Terminal</h2>
-                        <p className="text-[10px] text-orange font-mono uppercase tracking-widest mt-1">Tier 1 // Global Overseer Override</p>
-                    </div>
+        /* NO FRAME AND NO HEADING OF ITS OWN. This renders inside a `.kpm-mod` whose rail already
+           names it, and the old version opened with its own border, its own radius, its own
+           shadow and an <h2> that outranked the tab's own name — a box inside a box, named twice. */
+        <div className="kpm-body animate-fade-in">
+            <p className="kpm-note">
+                Every account here is a Tier 2 owner with its own separate company data.
+                Suspending one locks that owner out immediately.
+            </p>
+
+            {/* PROVISIONING FORM — labels printed above the fields, not inside them: a
+                placeholder disappears exactly when he wants to check what he typed. */}
+            <form onSubmit={handleCreateTenant} className="flex flex-col gap-3 border border-line bg-sunk p-3">
+                <div className="kpm-field">
+                    <span>Company name</span>
+                    <input value={newName} onChange={e=>setNewName(e.target.value)} required />
                 </div>
+                <div className="kpm-field">
+                    <span>Owner email</span>
+                    <input type="email" value={newEmail} onChange={e=>setNewEmail(e.target.value)} required />
+                </div>
+                <div className="kpm-field">
+                    <span>Tier</span>
+                    <div className="fixed">Tier 2 · Owner (fixed)</div>
+                </div>
+                <button type="submit" className="kpm-btn key block">
+                    <UserPlus size={16}/> Provision account
+                </button>
+            </form>
 
-                {/* PROVISIONING FORM */}
-                <form onSubmit={handleCreateTenant} className="flex flex-col md:flex-row gap-3 mb-8 bg-sunk p-5 rounded-lg border border-line shadow-inner">
-                    <input
-                        value={newName} onChange={e=>setNewName(e.target.value)}
-                        placeholder="TENANT DESIGNATION"
-                        className="flex-1 bg-inset border border-line p-3 text-ink text-[10px] font-mono uppercase tracking-wider outline-none focus:border-gold transition-colors placeholder:text-ink-dim"
-                        required
-                    />
-                    <input
-                        type="email" value={newEmail} onChange={e=>setNewEmail(e.target.value)}
-                        placeholder="ADMIN IDENTIFIER (EMAIL)"
-                        className="flex-1 bg-inset border border-line p-3 text-ink text-[10px] font-mono uppercase tracking-wider outline-none focus:border-gold transition-colors placeholder:text-ink-dim"
-                        required
-                    />
-
-                    <div className="bg-inset border border-line text-ink-dim p-3 text-[10px] font-mono uppercase tracking-wider flex items-center justify-center cursor-not-allowed select-none">
-                        TIER 2 (OWNER)
-                    </div>
-
-                    <button type="submit" className="bg-gold/10 border border-gold text-gold hover:bg-gold hover:text-gold-ink font-bold text-[10px] uppercase tracking-widest px-6 py-3 transition-all flex items-center justify-center gap-2 whitespace-nowrap">
-                        <UserPlus size={16}/> Provision
-                    </button>
-                </form>
-
-                <div className="space-y-3">
+                <div className="flex flex-col gap-2">
                     {tenants.map(t => (
-                        <div key={t.id} className={`p-4 flex flex-col md:flex-row justify-between items-center transition-all bg-raised border-y md:border ${t.subscriptionStatus === 'ACTIVE' ? 'border-line-2 border-l-4 border-l-gold hover:bg-inset' : 'border-danger/40 border-l-4 border-l-danger hover:bg-danger-well/40'}`}>
-                            
+                        <div key={t.id} className={`kpm-rec ${t.subscriptionStatus === 'ACTIVE' ? '' : 'locked'}`}>
+
                             {editingId === t.id ? (
                                 /* INLINE EDIT MODE */
-                                <div className="w-full flex flex-col md:flex-row gap-3 items-center justify-between animate-fade-in">
-                                    <div className="flex-1 flex gap-2 w-full">
-                                        <input 
-                                            value={editName} 
-                                            onChange={e=>setEditName(e.target.value)} 
-                                            className="flex-1 bg-inset border border-line p-2 text-ink text-[10px] font-mono uppercase outline-none focus:border-gold"
-                                            placeholder="Update Name"
-                                        />
-                                        <div className="bg-inset border border-line p-2 px-4 text-ink-dim text-[10px] font-mono uppercase flex items-center justify-center cursor-not-allowed select-none">
-                                            TIER 2
+                                <div className="animate-fade-in">
+                                    <div className="who">
+                                        <div className="kpm-field">
+                                            <span>Company name</span>
+                                            <input value={editName} onChange={e=>setEditName(e.target.value)} autoFocus />
                                         </div>
                                     </div>
-                                    <div className="flex gap-2 w-full md:w-auto mt-2 md:mt-0">
-                                        <button onClick={() => handleSaveEdit(t)} className="flex-1 md:flex-none p-2 md:px-4 bg-gold/10 text-gold hover:bg-gold hover:text-gold-ink border border-gold/50 transition-all flex justify-center items-center gap-2 text-[10px] font-bold tracking-widest"><Save size={14}/> SAVE</button>
-                                        <button onClick={() => setEditingId(null)} className="flex-1 md:flex-none p-2 md:px-4 bg-inset text-ink-muted hover:bg-raised hover:text-ink border border-line-2 transition-all flex justify-center items-center gap-2 text-[10px] font-bold tracking-widest"><X size={14}/> CANCEL</button>
+                                    <div className="acts">
+                                        <button type="button" className="kpm-btn key" onClick={() => handleSaveEdit(t)}><Save size={14}/> Save</button>
+                                        <button type="button" className="kpm-btn" onClick={() => setEditingId(null)}><X size={14}/> Cancel</button>
                                     </div>
                                 </div>
                             ) : (
-                                /* NORMAL DISPLAY MODE */
+                                /* NORMAL DISPLAY MODE — identity above, actions below. At 375px a
+                                   side-by-side row cannot hold three word buttons without shrinking
+                                   them under the 44px touch minimum. */
                                 <>
-                                    <div className="text-center md:text-left mb-4 md:mb-0 w-full md:w-auto">
-                                        <div className="flex flex-col md:flex-row items-center gap-3">
-                                            <h3 className={`font-display tracking-widest uppercase text-lg ${t.subscriptionStatus === 'ACTIVE' ? 'text-ink' : 'text-ink-dim'}`}>{t.name}</h3>
-
-                                            <span className={`text-[11px] px-2 py-1 border flex items-center gap-1 tracking-widest ${
-                                                t.tier === 1
-                                                ? 'border-danger/50 text-danger-text bg-danger-well'
-                                                : 'border-line-2 text-ink-muted bg-inset'
-                                            }`}>
-                                                {t.tier === 1 ? <ShieldAlert size={10}/> : <ShieldCheck size={10}/>}
-                                                TIER {t.tier || 1}
+                                    <div className="who">
+                                        <b>{t.name}</b>
+                                        <code>{t.email}</code>
+                                        <div className="flex items-center gap-2 mt-1">
+                                            {/* ⚠️ NOT `hidden md:flex`. Whether an account is locked is the one
+                                                fact this list exists to report, and it used to be desktop-only. */}
+                                            <span className={`kpm-read ${t.subscriptionStatus === 'ACTIVE' ? '' : 'alert'}`}>
+                                                {t.subscriptionStatus === 'ACTIVE'
+                                                    ? <><CheckCircle size={10} className="inline mr-1"/>Active</>
+                                                    : <><ShieldAlert size={10} className="inline mr-1"/>Locked out</>}
+                                            </span>
+                                            <span className="kpm-read">
+                                                {t.tier === 1 ? <ShieldAlert size={10} className="inline mr-1"/> : <ShieldCheck size={10} className="inline mr-1"/>}
+                                                Tier {t.tier || 1}
                                             </span>
                                         </div>
-                                        
-                                        <p className="text-[10px] text-ink-muted font-mono tracking-wider mt-2 border border-line inline-block px-2 py-0.5 bg-inset">
-                                            ID: <span className="text-ink-dim">{t.email}</span>
-                                        </p>
                                     </div>
 
-                                    <div className="flex items-center justify-between w-full md:w-auto gap-4 border-t border-line md:border-none pt-4 md:pt-0">
-                                        <div className="hidden md:flex">
-                                            {t.subscriptionStatus === 'ACTIVE' ? (
-                                                <span className="flex items-center gap-2 text-verified text-[10px] font-mono font-bold uppercase tracking-widest"><CheckCircle size={14} className="animate-pulse"/> SECURE</span>
-                                            ) : (
-                                                <span className="flex items-center gap-2 text-danger-text text-[10px] font-mono font-bold uppercase tracking-widest"><ShieldAlert size={14} className="animate-pulse"/> LOCKED</span>
-                                            )}
-                                        </div>
-                                        
-                                        <div className="flex gap-2 w-full md:w-auto">
-                                            <button 
-                                                onClick={() => toggleSubscription(t)} 
-                                                className={`flex-1 md:flex-none p-2 md:px-3 font-mono font-bold text-[10px] uppercase tracking-widest transition-all flex items-center justify-center gap-2 border ${t.subscriptionStatus === 'ACTIVE' ? 'bg-danger-well text-danger-text border-danger/50 hover:bg-danger hover:text-white' : 'bg-gold/10 text-gold border-gold/50 hover:bg-gold hover:text-gold-ink'}`}
-                                                title={t.subscriptionStatus === 'ACTIVE' ? "Suspend User" : "Restore User"}
-                                            >
-                                                <Power size={14} />
-                                                <span className="md:hidden">{t.subscriptionStatus === 'ACTIVE' ? 'SUSPEND' : 'RESTORE'}</span>
-                                            </button>
-
-                                            <button 
-                                                onClick={() => handleEditClick(t)} 
-                                                className="p-2 md:px-3 bg-inset text-ink-muted border border-line-2 hover:bg-raised hover:text-ink transition-all flex items-center justify-center"
-                                                title="Edit User"
-                                            >
-                                                <Edit size={14} />
-                                            </button>
-
-                                            <button data-kpm-del data-label="Delete" 
-                                                onClick={() => handleDelete(t)} 
-                                                className="p-2 md:px-3 bg-inset text-ink-muted border border-line-2 hover:bg-danger hover:border-danger hover:text-white transition-all flex items-center justify-center"
-                                                title="Permanently Delete User"
-                                            >
-                                                <Trash2 size={14} />
-                                            </button>
-                                        </div>
+                                    <div className="acts">
+                                        <button type="button" className={`kpm-btn ${t.subscriptionStatus === 'ACTIVE' ? 'hazard' : 'key'}`}
+                                            onClick={() => toggleSubscription(t)}
+                                            title={t.subscriptionStatus === 'ACTIVE' ? "Suspend this owner" : "Restore this owner"}>
+                                            <Power size={14} /> {t.subscriptionStatus === 'ACTIVE' ? 'Suspend' : 'Restore'}
+                                        </button>
+                                        <button type="button" className="kpm-btn" onClick={() => handleEditClick(t)} title="Rename this account">
+                                            <Edit size={14} /> Rename
+                                        </button>
+                                        <button type="button" className="kpm-btn hazard" onClick={() => handleDelete(t)} title="Permanently delete this account">
+                                            <Trash2 size={14} /> Delete
+                                        </button>
                                     </div>
                                 </>
                             )}
                         </div>
                     ))}
                     {tenants.length === 0 && (
-                        <div className="text-center py-8 border border-line bg-sunk">
-                            <p className="text-orange/60 font-mono text-[10px] uppercase tracking-widest animate-pulse">Waiting for database population...</p>
+                        <div className="border border-line bg-sunk p-4">
+                            <p className="kpm-note">No accounts yet. Provision one above and it appears here.</p>
                         </div>
                     )}
                 </div>
-            </div>
         </div>
     );
 }

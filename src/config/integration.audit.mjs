@@ -53,6 +53,10 @@ const check = (group, label, ok, detail = '') => {
   ok ? pass++ : fail++;
   results.push({ group, label, ok, detail });
 };
+/* Comments QUOTE the code they replaced — "it used to be `hidden md:flex`" is exactly the kind of
+   sentence worth writing, and exactly the kind that fails a grep for `hidden md:flex`. Four checks
+   went red on their own explanations on 2026-08-13. Structural tests run on the code, not the prose. */
+const code = (s) => s.replace(/\/\*[\s\S]*?\*\//g, '');
 const inCss = (g, l, n) => check(g, l, css.includes(n), n);
 const inJs  = (g, l, n) => check(g, l, term.includes(n), n);
 
@@ -1142,7 +1146,11 @@ const DEL_FILES = ['src/AgentProfileView.jsx', 'src/FleetCanvasManager.jsx',
   'src/components/SamplingManager.jsx', 'src/components/SettingsView.jsx'];
 const delMarks = DEL_FILES.reduce((n, f) =>
   n + (fs.readFileSync(f, 'utf8').match(/<button data-kpm-del data-label="Delete"/g) || []).length, 0);
-check(G25, 'every icon-only delete button in the app wears the expanding control', delMarks === 18,
+/* 18 → 17 on 2026-08-13, and this is a REAL change, not a loosened needle: the tenant registry's
+   delete button stopped being icon-only. It now reads "Delete" inside the record's action strip,
+   and the rule above says a button carrying its own word must NOT be marked, or the label prints
+   twice. If this number drops again without a word button appearing, something was lost. */
+check(G25, 'every icon-only delete button in the app wears the expanding control', delMarks === 17,
   `found ${delMarks} marked, expected 18 — a new icon-only delete button needs ` +
   '`data-kpm-del data-label="Delete"` on it, and one that carries its own word ("Remove", "DEL") ' +
   'must NOT be marked or the label prints twice');
@@ -1299,12 +1307,19 @@ check(G27, 'the architect block carries no blue, no green, no slate',
 check(G27, 'the landlord panel carries no blue, no green, no slate either',
   !offToken.test(lordSrc),
   'the tenant rows were emerald-for-active / red-for-locked and the edit button was blue-500');
-check(G27, 'the terminal heading uses the display font, not font-serif',
-  !/font-serif/.test(lordSrc) && /font-display text-ink/.test(lordSrc),
-  'font-serif is what made this card read as pasted in from another app');
-check(G27, 'the scanline texture survives — it is the house texture, not decoration',
-  /repeating-linear-gradient/.test(lordSrc),
-  'it is one of the few effects that survives Lite Mode; the plan says keep it');
+/* STRONGER CLAIM after the 2026-08-13 rebuild. The old needles asserted a heading and a scanline
+   that lived on the registry's own card; that card is gone, and both facts moved. What must stay
+   true is the INTENT: nothing here is font-serif, and the screen names itself exactly once. */
+check(G27, 'the registry does not name itself — the module rail does',
+  !/font-serif/.test(code(lordSrc)) &&
+  !/<h2/.test(code(lordSrc)) &&
+  /<h3>Tenant registry<\/h3>/.test(settingsSrc),
+  'it used to open with its own <h2>Architect Terminal</h2>, typographically louder than the ' +
+  'tab it sits inside — the screen named itself twice and the child won');
+check(G27, 'the house texture survives, on the band that carries it now',
+  /\.kpm-band \{[^}]*background-image: var\(--hatch\)/s.test(themeCss),
+  'the scanline was the one decoration in this tab that Lite Mode could not strip; it belongs ' +
+  'on a printed caption strip, not on a card that no longer exists');
 
 /* THE CONTROLS. Restyling must not drop a child. Each of these is Tier-1-only and has no other
    route in the app. */
@@ -1323,11 +1338,18 @@ check(G27, 'the tab is still Tier 1 only',
   'the gate, not the look — dropping isSystemOwner hands the tenant switch to every owner');
 
 /* The tokens have to exist in the BUILT css, not just in the source. */
-for (const n of ['.bg-panel', '.bg-raised', '.bg-inset', '.bg-sunk', '.text-ink', '.text-gold',
+/* Utility classes still in use in this tab. `.bg-inset` left the list on 2026-08-13: the rebuild
+   consumes that token through `var(--inset)` in theme.css instead, so Tailwind correctly stops
+   emitting the utility — asserting it would be asserting a class nobody asks for. */
+for (const n of ['.bg-panel', '.bg-raised', '.bg-sunk', '.text-ink', '.text-gold',
                  '.text-danger-text', '.bg-danger-well', '.border-line-2', '.text-verified'])
   check(G27, `${n} survived the build`, css.includes(n + '{'),
     'Tailwind only emits a class it saw in source — a typo here paints nothing and looks ' +
     'like a transparent panel');
+/* the tokens themselves must reach the built CSS, whichever way they are spent */
+for (const v of ['--inset:', '--panel:', '--gold:', '--danger-plate:', '--line-3:'])
+  check(G27, `${v} is defined in the built stylesheet`, css.includes(v),
+    'the control system reads these through var() — an undefined token is a transparent control');
 
 /* ── 28. THE CORNER MASCOT'S SIZE ─────────────────────────────────────────
    He has been reported cut THREE times. Twice it was a real geometry bug, and each fix was
@@ -1424,6 +1446,58 @@ check(G29, 'he vanishes AT the doorway, at any cave width',
 check(G29, 'Lite Mode does not leave him mid-step',
   /lite-mode \.kpm-alcove \.walker\.out \{ opacity: 0/.test(themeCss),
   'with animations collapsed he would otherwise stand in the doorway forever');
+
+/* ── 30. THE CONTROL SYSTEM ───────────────────────────────────────────────
+   Aldi asked for a vocabulary he can spend on the rest of Settings, not one styled screen:
+   *"make sure that the logic and theme and button design and animation that we made here could
+   be use for button in another place"*. Two things have to hold for that to be true: the classes
+   exist in the stylesheet rather than in one file's JSX, and NOTHING in them dies in Lite Mode. */
+const G30 = '30. The control system is reusable, and survives Lite Mode';
+
+for (const cls of ['.kpm-mod', '.kpm-rail', '.kpm-read', '.kpm-btn', '.kpm-field',
+                   '.kpm-switch', '.kpm-rec', '.kpm-band'])
+  check(G30, `${cls} is defined once, in theme.css`,
+    new RegExp(`\\${cls}[ ,{]`).test(themeCss) && css.includes(cls),
+    'a control that lives in one screen\'s className strings cannot be reused by the next screen');
+
+/* THE LITE-MODE CONTRACT. index.css strips box-shadow and collapses animation; anything the
+   hierarchy depends on must be a border, a background-color or a background-image. */
+/* strip comments FIRST, then slice: slicing at the header text lands INSIDE that comment, so the
+   `/*` opener is gone and nothing can strip the prose that follows */
+const systemBlock = code(themeCss).slice(code(themeCss).indexOf('.kpm-mod {'));
+check(G30, 'nothing in the system depends on a shadow, a blur or a filter',
+  !/box-shadow|backdrop-filter|filter:|text-shadow/.test(systemBlock),
+  'Lite Mode deletes all four — the old tab put every separation into shadows, so on a cheap ' +
+  'Android the six panels collapsed into one undifferentiated column');
+check(G30, 'every hover rule is gated for touch',
+  (systemBlock.match(/:hover/g) || []).length > 0 &&
+  /@media \(hover: hover\) and \(pointer: fine\) \{[\s\S]*?:hover/.test(systemBlock),
+  'touch fires :hover on tap and KEEPS it — an ungated hover leaves a button stuck lit');
+check(G30, 'controls meet the 44px touch minimum',
+  /\.kpm-btn \{[^}]*min-height: 44px/s.test(systemBlock) &&
+  /\.kpm-field > input[^}]*min-height: 44px/s.test(systemBlock),
+  'he works one-handed on a phone; below 44px the tap lands somewhere else');
+
+/* THE HIERARCHY INVERSION — the defect all three design directions found independently. */
+const arch2 = arch;   // the architect block sliced above
+check(G30, 'the ownership transfer is the loudest control, and the joke is the quietest',
+  /kpm-btn hazard block" onClick=\{\(\) => setShowCrownTransfer\(true\)\}/.test(arch2) &&
+  /className="kpm-btn block"[\s\S]{0,200}triggerDiscoParty|onClick=\{triggerDiscoParty\} disabled=\{isDiscoMode\} className="kpm-btn block"/.test(arch2),
+  'before this, Disco wore a filled red plate at full width and Crown Transfer wore a quiet ' +
+  'outline — the loudest thing on the screen was the button that does nothing');
+check(G30, 'the irreversible group is fenced by a band, not by a 1.02:1 tint',
+  /<div className="kpm-band hazard">/.test(arch2) &&
+  /\.kpm-band\.hazard \{[^}]*border-color: var\(--danger\)/s.test(themeCss),
+  'the old fence was bg-danger-well\\/40 over --panel: about 1.02:1, invisible in dark mode');
+check(G30, 'a tenant\'s locked state is readable on the phone',
+  !/hidden md:flex/.test(code(lordSrc)) && /Locked out/.test(lordSrc),
+  'SECURE\\/LOCKED used to be desktop-only — the one fact the registry exists to report was ' +
+  'hidden on the only device he carries');
+check(G30, 'the photo-storage setting still has exactly one writer',
+  (settingsSrc.match(/setAppSettings\(prev => \(\{ \.\.\.prev, usePhotoStorage: newVal \}\)\)/g) || []).length === 1 &&
+  (settingsSrc.match(/writePhotoStorage\(/g) || []).length === 2,
+  'the switch draws two positions; two copies of the write is how a setting saves locally but ' +
+  'never reaches the database');
 
 /* ── report ──────────────────────────────────────────────────────────────── */
 let last = '';

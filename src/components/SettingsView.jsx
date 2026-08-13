@@ -822,56 +822,102 @@ export default function SettingsView({
                   {/* WORKSPACE: ARCHITECT TERMINAL (TIER 1 ONLY) */}
                   {/* ---------------------------------------------------- */}
                   {activeTab === 'architect' && isSystemOwner && (
-                      <div className="animate-fade-in space-y-6">
+                      /* THE RACK. Modules are grouped under bands that say what the group is
+                         ALLOWED to do, and authority is graded by material: hairline = routine,
+                         gold = the module's primary act, stripe = irreversible. Colour alone
+                         could not do this job — Lite Mode strips it, and it could not tell the
+                         disco joke apart from an ownership transfer, which is exactly the
+                         hierarchy this screen had backwards. */
+                      <div className="animate-fade-in">
+
+                          <div className="kpm-band">Bench · simulation and reversible tools</div>
 
                           {/* 🧪 ACHIEVEMENT TESTER — dev tool, correctly Tier-1-only (unlike the
                               career-ledger toggle and the recalculate button, which are business
                               features and live under Security so Tier 2 owners can reach them). */}
-                          <AchievementTester db={db} appId={appId} userId={userId} />
+                          <div className="kpm-mod">
+                              <div className="kpm-rail">
+                                  <h3>Achievement Tester</h3>
+                                  <span className="kpm-read">Simulation · writes nothing</span>
+                              </div>
+                              <div className="kpm-body">
+                                  <AchievementTester db={db} appId={appId} userId={userId} />
+                              </div>
+                          </div>
 
                           {/* 🔧 Writes real career docs — Tier 1 only, and every grant is
                               reversible via its own Undo. */}
-                          <CareerDevTools db={db} appId={appId} userId={userId} triggerCapy={triggerCapy} />
+                          <div className="kpm-mod">
+                              <div className="kpm-rail gold">
+                                  <h3>Career Dev Tools</h3>
+                                  <span className="kpm-read on">Writes live · undoable</span>
+                              </div>
+                              <div className="kpm-body">
+                                  <CareerDevTools db={db} appId={appId} userId={userId} triggerCapy={triggerCapy} />
+                              </div>
+                          </div>
 
-                          {/* 🚀 PHOTO STORAGE MODE (SPARK vs BLAZE SWITCH) */}
-                          <div className={`p-6 rounded-2xl shadow-sm border transition-all duration-300 ${appSettings.usePhotoStorage ? 'bg-raised border-gold/50' : 'bg-panel border-line'}`}>
-                              <div className="flex items-center justify-between gap-4">
-                                  <div>
-                                      <h3 className={`font-bold text-lg flex items-center gap-2 ${appSettings.usePhotoStorage ? 'text-gold' : 'text-ink'}`}>
-                                          ☁️ Use Cloud Photo Storage (requires Blaze plan)
-                                      </h3>
-                                      <p className="text-[10px] text-ink-muted uppercase tracking-widest mt-1">
-                                          When off, photos save directly in the database (works on any plan). When on, photos upload to Firebase Storage instead (requires the Blaze plan to be active).
-                                      </p>
+                          <div className="kpm-band">Live · changes how the app stores real data</div>
+
+                          {/* 🚀 PHOTO STORAGE MODE (SPARK vs BLAZE SWITCH)
+                              Both positions are drawn. A single toggle asked him to remember which
+                              way "on" points AND what the two ways mean, on a setting that decides
+                              where every handover photo in the business is written. */}
+                          <div className="kpm-mod">
+                              <div className={`kpm-rail ${appSettings.usePhotoStorage ? 'gold' : ''}`}>
+                                  <h3>Photo storage</h3>
+                                  <span className={`kpm-read ${appSettings.usePhotoStorage ? 'on' : ''}`}>
+                                      {appSettings.usePhotoStorage ? 'Cloud · Blaze' : 'Database'}
+                                  </span>
+                              </div>
+                              <div className="kpm-body">
+                                  <p className="kpm-note">
+                                      Where handover photos are written. <b>Database</b> works on any Firebase plan.
+                                      <b> Cloud</b> uploads to Firebase Storage instead and needs the Blaze plan active,
+                                      or photos stop saving.
+                                  </p>
+                                  <div className="kpm-switch" role="group" aria-label="Photo storage destination">
+                                      <button type="button" aria-pressed={!appSettings.usePhotoStorage}
+                                          onClick={() => writePhotoStorage(false, { db, appId, user, setAppSettings, triggerCapy })}>
+                                          Database
+                                      </button>
+                                      <button type="button" aria-pressed={!!appSettings.usePhotoStorage}
+                                          onClick={() => writePhotoStorage(true, { db, appId, user, setAppSettings, triggerCapy })}>
+                                          Cloud · Blaze
+                                      </button>
                                   </div>
-                                  <button
-                                      onClick={() => {
-                                          const newVal = !appSettings.usePhotoStorage;
-                                          setAppSettings(prev => ({ ...prev, usePhotoStorage: newVal }));
-                                          if (user) setDoc(doc(db, `artifacts/${appId}/users/${user.uid}/settings/general`), { usePhotoStorage: newVal }, { merge: true });
-                                          triggerCapy(newVal ? "Cloud Photo Storage Enabled! Make sure the Blaze plan is active. ☁️" : "Cloud Photo Storage Disabled. Photos now save directly to the database.");
-                                      }}
-                                      className={`shrink-0 transition-all duration-300 ${appSettings.usePhotoStorage ? 'text-gold drop-shadow-[0_0_8px_var(--gold)]' : 'text-ink-dim hover:text-ink'}`}
-                                  >
-                                      {appSettings.usePhotoStorage ? <ToggleRight size={40} /> : <ToggleLeft size={40} />}
+                              </div>
+                          </div>
+
+                          {/* LANDLORD DASHBOARD — the rail lives here, so the child no longer
+                              prints a second "Architect Terminal" heading louder than the tab's. */}
+                          <div className="kpm-mod">
+                              <div className="kpm-rail gold">
+                                  <h3>Tenant registry</h3>
+                                  <span className="kpm-read on">Provisions live accounts</span>
+                              </div>
+                              <LandlordDashboard db={db} appId={appId} user={user} />
+                          </div>
+
+                          <div className="kpm-band hazard">Irreversible · nothing here can be undone</div>
+
+                          {/* CROWN TRANSFER — the loudest control on this screen, which is what it
+                              was NOT before: the disco joke wore the filled red plate and this wore
+                              a quiet outline. */}
+                          <div className="kpm-mod">
+                              <div className="kpm-rail hazard">
+                                  <h3>Crown transfer</h3>
+                                  <span className="kpm-read alert">Sealed</span>
+                              </div>
+                              <div className="kpm-body">
+                                  <p className="kpm-note">
+                                      Hands ownership of this software to another account, permanently.
+                                      You cannot take it back yourself afterwards.
+                                  </p>
+                                  <button type="button" className="kpm-btn hazard block" onClick={() => setShowCrownTransfer(true)}>
+                                      Initiate transfer
                                   </button>
                               </div>
-                          </div>
-
-                          {/* LANDLORD DASHBOARD */}
-                          <div className="bg-panel border border-line rounded-2xl overflow-hidden shadow-2xl">
-                             <LandlordDashboard db={db} appId={appId} user={user} />
-                          </div>
-
-                          {/* CROWN TRANSFER */}
-                          <div className="bg-danger-well/40 border border-danger/30 p-6 rounded-2xl flex justify-between items-center">
-                              <div>
-                                  <h3 className="text-danger-text font-black uppercase tracking-widest text-lg">Danger Zone</h3>
-                                  <p className="text-xs font-mono text-ink-muted mt-1">Permanently transfer ownership of this software.</p>
-                              </div>
-                              <button onClick={() => setShowCrownTransfer(true)} className="bg-danger-well hover:bg-danger text-danger-text hover:text-white border border-danger px-6 py-3 rounded text-xs font-bold uppercase tracking-widest transition-all">
-                                  Initiate Transfer
-                              </button>
                           </div>
 
                           {showCrownTransfer && (
@@ -885,13 +931,24 @@ export default function SettingsView({
                               />
                           )}
 
-                          {/* DISCO PROTOCOL */}
-                          <div className="pt-8 border-t-2 border-danger/30">
-                              <h4 className="text-xs font-bold text-danger-text uppercase tracking-widest mb-4 flex items-center gap-2"><ShieldAlert size={16}/> System Overload</h4>
-                              <button onClick={triggerDiscoParty} disabled={isDiscoMode} className={`w-full py-4 rounded-xl font-bold shadow-xl transition-all ${isDiscoMode ? 'bg-inset text-ink-dim' : 'bg-danger-plate text-danger-plate-ink hover:bg-danger'}`}>
-                                  {isDiscoMode ? <><Music size={24} className="animate-spin inline mr-2"/> SYSTEM OVERLOAD...</> : <><ShieldAlert size={24} className="animate-pulse inline mr-2"/> DO NOT PRESS: CAPY DISCO PROTOCOL</>}
-                              </button>
-                              <p className="text-[10px] text-danger-text text-center mt-3 font-mono opacity-70">Warning: Extreme funkiness levels incoming.</p>
+                          <div className="kpm-band">Harmless · touches no data</div>
+
+                          {/* DISCO PROTOCOL — deliberately the QUIETEST control in the rack now.
+                              It used to be the largest and the only filled red plate on a screen
+                              that also transfers ownership of the product. */}
+                          <div className="kpm-mod">
+                              <div className="kpm-rail">
+                                  <h3>Capy disco protocol</h3>
+                                  <span className="kpm-read">{isDiscoMode ? 'Running' : 'Idle'}</span>
+                              </div>
+                              <div className="kpm-body">
+                                  <p className="kpm-note">Makes the app dance for a few seconds. Changes nothing.</p>
+                                  <button type="button" onClick={triggerDiscoParty} disabled={isDiscoMode} className="kpm-btn block">
+                                      {isDiscoMode
+                                          ? <><Music size={18} className="inline mr-2"/> Overloading…</>
+                                          : <><ShieldAlert size={18} className="inline mr-2"/> Do not press</>}
+                                  </button>
+                              </div>
                           </div>
                       </div>
                   )}
@@ -901,6 +958,17 @@ export default function SettingsView({
       </div>
     );
 }
+
+/* ONE WRITER for the photo-storage setting. The switch shows two positions, and two positions
+   with two copies of the write logic is how a setting ends up saved locally but not in the
+   database — the failure Aldi cannot see until the next login. */
+const writePhotoStorage = (newVal, { db, appId, user, setAppSettings, triggerCapy }) => {
+    setAppSettings(prev => ({ ...prev, usePhotoStorage: newVal }));
+    if (user) setDoc(doc(db, `artifacts/${appId}/users/${user.uid}/settings/general`), { usePhotoStorage: newVal }, { merge: true });
+    triggerCapy(newVal
+        ? "Photos will upload to Firebase Storage. The Blaze plan must be active. ☁️"
+        : "Photos will save straight into the database. Works on any plan.");
+};
 
 // 🚀 PLUG & PLAY: THE RESPONSIVE MATRIX EDITOR
 const PermissionMatrixEditor = ({ db, appId, userRole, userId }) => {
