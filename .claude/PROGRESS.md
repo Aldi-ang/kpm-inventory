@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-13 19:55 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
+**Updated: 2026-08-13 20:20 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
 **Lancelot session last wrote 2026-08-13 13:51 WIB** — see the 14:05 entry. Two clocks, one file.
 
 ### 🟢 13:51 WIB (Lancelot session) — no file changes this turn; those `src/**` edits are the app's
@@ -61,6 +61,30 @@ The rules, in order:
    else wrote in the meantime. If an `Edit` fails as stale, re-read and re-apply — do not force it.
 7. **The quota is one shared pool.** Two sessions running hard halve each other's runway, and the
    `[plan-quota]` percentage covers both. Size your work against the whole pool, not your own chat.
+
+## ✅ LOG 2026-08-13 20:20 WIB — the two bench panels joined the system. 352/352. QUOTA 88%. (KPM app session)
+
+**The Architect Terminal is DONE unless he asks for more.** Achievement Tester and Career Dev
+Tools were the last foreign-looking things inside it: the tester in a **cyan**-bordered card
+(cyan is a blue — banned), the dev tools in their own gold-bordered card, both printing their own
+heading inside a module that already names them, both a box inside a box. Frames and headings
+gone; the tester now uses `.kpm-field` / `.kpm-btn` / `.kpm-read`, and its untracked-source
+warning uses `--orange` instead of `amber-400`.
+
+⚠️ **Badge hex colours were deliberately LEFT ALONE** — a badge's colour is its rank's identity,
+i.e. data, not palette. Only the locked-state fallbacks (which were slate) became tokens.
+
+🔑 **`tailwind.config.js` now exposes `accent-ink` / `accent-edge` / `danger-ink` as utilities**,
+so any screen can write `text-accent-ink` instead of hand-rolled CSS. **Use these, never
+`text-gold`, for a label** — `--gold` is 1,19:1 on the light ground. Career Dev Tools had exactly
+that bug, plus an `/80` opacity that pulled its warning label under the minimum.
+
+**▶ WHERE TO PICK UP NEXT (in order):**
+1. He has NOT seen any of today's Settings work on a real screen — only the preview page. The tab
+   needs his Tier-1 login. **Ask what he thinks before building more.**
+2. The rest of Settings, on the same vocabulary — that is what the system was built for, and it is
+   the biggest remaining win.
+3. `SALES_TERMINAL_TEST_LIST.md` step 6 (a full sale) is STILL unanswered, asked three times.
 
 ## ✅ LOG 2026-08-13 19:55 WIB — no gold on the hazard panel. 352/352. (KPM app session)
 
