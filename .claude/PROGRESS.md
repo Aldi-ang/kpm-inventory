@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-13 20:20 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
+**Updated: 2026-08-13 23:25 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
 **Lancelot session last wrote 2026-08-13 13:51 WIB** — see the 14:05 entry. Two clocks, one file.
 
 ### 🟢 13:51 WIB (Lancelot session) — no file changes this turn; those `src/**` edits are the app's
@@ -61,6 +61,29 @@ The rules, in order:
    else wrote in the meantime. If an `Edit` fails as stale, re-read and re-apply — do not force it.
 7. **The quota is one shared pool.** Two sessions running hard halve each other's runway, and the
    `[plan-quota]` percentage covers both. Size your work against the whole pool, not your own chat.
+
+## 🔴 LOG 2026-08-13 23:25 WIB — CORRECTION: the dev server is HTTPS ON PURPOSE. I broke it, reverted. (KPM app session)
+
+**I was wrong at 19:30 and the wrong claim is in a commit message.** I "fixed" `.claude/launch.json`
+from `https://localhost:5173` to `http://` and told him that was why localhost would not open.
+It was not. `vite.config.js:17` is `server: { https: true, host: true }` with
+`@vitejs/plugin-basic-ssl`, **and the comment above it says why: his PHONE needs a secure context**
+for camera and GPS on a LAN IP. Serving http would quietly break phone testing.
+**Reverted to `https://`.** ⚠️ Never "correct" that URL again — read `vite.config.js` first.
+
+**Why he actually could not open it:** the dev server was DEAD. `preview_start` reported
+`reused: false`, i.e. it started a new process (PID 31800). It is running now and answers
+`curl -k https://localhost:5173/` → **HTTP 200**.
+
+**What he sees on his PC:** the certificate is self-signed by `basic-ssl`, so Chrome shows a
+full-page "Your connection is not private" warning ONCE per session →
+**Advanced → Proceed to localhost (unsafe)**. That is expected on his own machine.
+
+⚠️ **The in-app Browser pane cannot show it** — it refuses the self-signed cert and its policy
+check hangs ("Policy check in progress for this tab", same as this morning). Verify the dev server
+with `curl -k`, not with the pane.
+
+Quota at this write: 19% used, 81% left (fresh window, resets ~04:20 WIB).
 
 ## ✅ LOG 2026-08-13 20:20 WIB — the two bench panels joined the system. 352/352. QUOTA 88%. (KPM app session)
 
