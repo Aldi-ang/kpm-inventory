@@ -1520,9 +1520,17 @@ check(G31, 'every module in the tab declares WHAT KIND it is',
   'from something that writes live data and different again from something irreversible');
 check(G31, 'each kind wears a different head',
   /\.kpm-mod\.live \.kpm-head\s*\{[^}]*background-image/s.test(themeCss) &&
-  /\.kpm-mod\.hazard \.kpm-head \{[^}]*background-image: var\(--hatch-gold\)/s.test(themeCss) &&
+  /\.kpm-mod\.hazard \.kpm-head \{[^}]*background-image: var\(--hatch-danger\)/s.test(themeCss) &&
   /\.kpm-mod\.hazard \.kpm-head h3 \{ color: var\(--danger-ink\)/.test(themeCss),
   'same head on every module is the "too standardise" complaint, restated');
+/* ⚠️ NO GOLD ON A HAZARD SURFACE. He killed the gold stripe on Crown Transfer on sight, and the
+   reason outlives the taste call: gold is this app's ACCENT — the colour of "do this" — so gold
+   on the one control that cannot be undone says "primary action" and "danger" at the same time. */
+check(G31, 'the hazard surfaces carry no gold at all',
+  !/\.kpm-mod\.hazard[^{]*\{[^}]*gold/s.test(themeCss) &&
+  !/\.kpm-band\.hazard \{[^}]*gold/s.test(themeCss),
+  'the danger texture is --hatch-danger, in the red family, matching the stripe already on ' +
+  '.kpm-btn.hazard');
 check(G31, 'every module prints its slot code',
   (arch.match(/className="slot"/g) || []).length === 6,
   'the code says which band a module belongs to and its order in it — it is how he names one ' +

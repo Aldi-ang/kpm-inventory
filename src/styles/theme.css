@@ -81,6 +81,11 @@
   /* materials — all built from borders and gradients, so Lite Mode keeps them */
   --hatch:      repeating-linear-gradient(135deg, #26231F 0 1px, transparent 1px 4px);
   --hatch-gold: repeating-linear-gradient(135deg, #5A4A1E 0 1px, transparent 1px 4px);
+  /* ⚠️ DANGER SURFACES USE THIS, NEVER --hatch-gold. Aldi killed the gold stripe on Crown
+     Transfer on sight — *"i dont like yellow line in there"* — and he was right about more than
+     the colour: a gold stripe is the app's ACCENT, so putting it on the one control that cannot
+     be undone said "primary action" and "hazard" in the same breath. */
+  --hatch-danger: repeating-linear-gradient(135deg, rgba(180,82,74,.30) 0 1px, transparent 1px 5px);
   --grad-panel: linear-gradient(180deg, #1B1917, #121110);
   --grad-steel: linear-gradient(180deg, #2A2724 0%, #221F1C 47%, #171512 48%, #100F0D 100%);
   --burn:       linear-gradient(180deg, #5E2A24, #140A08);
@@ -156,6 +161,7 @@ html.light {
 
   --hatch:      repeating-linear-gradient(135deg, #8F8B84 0 1px, transparent 1px 4px);
   --hatch-gold: repeating-linear-gradient(135deg, #B49A55 0 1px, transparent 1px 4px);
+  --hatch-danger: repeating-linear-gradient(135deg, rgba(126,42,34,.32) 0 1px, transparent 1px 5px);
   --grad-panel: linear-gradient(180deg, #D2CEC7, #BFBBB4);
   --grad-steel: linear-gradient(180deg, #EFECE6 0%, #DDDAD4 47%, #C9C6C0 48%, #BAB7B1 100%);
   --burn:       linear-gradient(180deg, #8E4038, #3A1C18);
@@ -1568,7 +1574,11 @@ html.lite-mode .kpm-title-rule { animation: none; width: 100%; }
    carried all three jobs. */
 .kpm-head { padding: var(--s3); border-bottom: 1px solid var(--line); background: var(--inset); }
 .kpm-mod.live .kpm-head   { background-image: var(--grad-panel); }
-.kpm-mod.hazard .kpm-head { background-image: var(--hatch-gold); }
+/* the hazard head is its own material: a red-tinted well, a fine red hatch, and a solid danger
+   rule where every other module has a hairline. No gold anywhere near it. */
+.kpm-mod.hazard .kpm-head { background-color: var(--danger-well);
+  background-image: var(--hatch-danger);
+  border-bottom: 2px solid var(--danger); }
 /* line 1 — the slot code: which band this belongs to and its order in it. Information, not
    decoration; it is how he refers to a module out loud. */
 .kpm-head .slot { display: block; font-family: var(--font-mono); font-size: 10px;
@@ -1687,4 +1697,4 @@ html.lite-mode .kpm-title-rule { animation: none; width: 100%; }
   font-family: var(--font-mono); font-size: 10px; letter-spacing: .22em;
   text-transform: uppercase; color: var(--ink); }
 .kpm-band.hazard { color: var(--danger-ink); border-color: var(--danger);
-  background-image: var(--hatch-gold); }
+  background-color: var(--danger-well); background-image: var(--hatch-danger); }
