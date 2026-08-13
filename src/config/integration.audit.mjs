@@ -1087,8 +1087,12 @@ check(G25, 'the face is the agent\'s own, not a mascot or a robot',
 /* THE iOS TRAP. A drag that starts on the LEFT edge is Safari's back gesture, so a left-hand
    ribbon sometimes leaves the app instead of opening the panel. Right edge is forward, which
    does nothing without forward history. Move it back to the left and this goes red. */
+/* It is on the desk as well from 2026-08-14, and there it moves to the LEFT — that is where the
+   panel sits in the flow at lg, and a desk browser has no back-swipe to steal the drag. The trap
+   is a PHONE trap, so the needle still pins right-0 as the base and only allows lg to move it. */
 check(G25, 'the ribbon is on the RIGHT edge, away from Safari\'s back gesture',
-  /kpm-edge-ribbon[^"]*lg:hidden fixed right-0/.test(shellSrc) &&
+  /kpm-edge-ribbon[^"]*fixed right-0/.test(shellSrc) &&
+  /lg:right-auto lg:left-0/.test(shellSrc) &&
   /fixed inset-y-0 right-0 z-\[90\] w-\[176px\]/.test(shellSrc),
   'the left edge is iOS back — a navigation control that can exit the app is worse than none');
 /* IT THREW AND THE WHOLE GESTURE DIED SILENTLY. setPointerCapture needs an active pointer;

@@ -21,12 +21,11 @@ export default function BiohazardTheme({
     notifications, onNotificationClick, appVersion,
     darkMode, setDarkMode, syncIndicator, agentPhoto
 }) {
-    /* Starts open on a desk and closed on a phone. One piece of state drives both, but the
-       sensible default differs: a phone has no room to spend on navigation you are not
-       using, a desk starts with it visible because that is where it has always been. */
-    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(
-        () => typeof window !== 'undefined' && window.innerWidth >= 1024
-    );
+    /* CLOSED AT EVERY WIDTH — his call, 2026-08-14, about the PC: *"it should be hidden until we
+       press the sidebar button"*. It used to open itself on anything 1024px and wider, on the
+       reasoning that a desk has room for it. It has room; he still did not ask for it. The
+       ribbon is the way in at both widths now, so one default serves both. */
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
     /* Tell the rest of the app the sidebar is taking 256px.
 
@@ -302,7 +301,14 @@ export default function BiohazardTheme({
                     aria-label={isMobileMenuOpen ? 'Close navigation' : 'Open navigation'}
                     aria-expanded={isMobileMenuOpen}
                     style={{ touchAction: 'none', top: ribbonY, '--hold-ms': `${RIBBON_HOLD_MS}ms` }}
-                    className={`kpm-edge-ribbon ${ribbonHold || ''} hide-on-print lg:hidden fixed right-0 z-[100] w-[14px] h-[132px]`}
+                    /* ON THE DESK TOO, from 2026-08-14 — the panel no longer opens itself there,
+                       so it needs a way in, and he deleted the three-line square himself ("the 3
+                       lines sidebar button is still exist make sure u delete it"). Same grip, and
+                       a tap is already a toggle, so a mouse click opens and closes it.
+                       LEFT edge on a desk, RIGHT on a phone: the panel is in the flow on the left
+                       at lg, and the right edge on a phone is not negotiable — a left-edge drag is
+                       iOS Safari's back gesture and would leave the app. */
+                    className={`kpm-edge-ribbon ${ribbonHold || ''} hide-on-print fixed right-0 lg:right-auto lg:left-0 z-[100] w-[14px] h-[132px]`}
                 >
                     <span className="kpm-edge-grip"></span>
                 </button>
