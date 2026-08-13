@@ -573,12 +573,36 @@ check(G14, 'no blue in ANY gate mode, not just the unlock', !/\bblue-\d/.test(ga
 const G15 = '15. There is always a way in';
 const themeSrc = fs.readFileSync('src/components/BiohazardTheme.jsx', 'utf8');
 
+/* STRUCTURAL, not proximity. These two used a 900-character window between the anchor and the
+   button, so the 2026-08-13 rebuild of the door failed them by adding a comment — the door was
+   never gone. What matters is that the signed-out block CONTAINS a login control and that it
+   renders before, and outside, the sidebar element. */
+const doorSrc = (() => {
+  const s = code(themeSrc);
+  const i = s.indexOf('{!user && (');
+  return i < 0 ? '' : s.slice(i, i + 3000);
+})();
 check(G15, 'a signed-out user sees a way in without opening the drawer',
-  /!user\s*&&\s*\([\s\S]{0,900}?onClick=\{onLogin\}/.test(themeSrc),
+  doorSrc.includes('onClick={onLogin}'),
   'the only login was inside a sidebar that starts closed on a phone');
 check(G15, 'that way in is not inside the sidebar',
-  /fixed inset-0 z-\[80\][\s\S]{0,900}?onClick=\{onLogin\}/.test(themeSrc),
+  /fixed inset-0 z-\[80\]/.test(doorSrc) &&
+  code(themeSrc).indexOf('{!user && (') < code(themeSrc).indexOf('data-kpm-rail'),
   'it must render over the app, not in the panel that is hidden on a phone');
+/* HIS REPORT, 2026-08-13: *"i dont want to see old UI here"*, pointing at the login screen —
+   phone and desktop both. It was the last screen still wearing hand-picked hex and its own
+   button shape while Settings had moved onto the control system. */
+check(G15, 'the door is built from the control system, not hand-picked hex',
+  /kpm-mod/.test(doorSrc) && /kpm-btn key block/.test(doorSrc) &&
+  !/#f0e2c0|#6b6157|border-\[#ff9d00\]/.test(doorSrc),
+  'this is the first screen anyone sees; if it looks like a different app, the app looks unfinished');
+check(G15, 'the sidebar login is the same control as the door',
+  (code(themeSrc).match(/className="kpm-btn key block"/g) || []).length >= 2,
+  'two buttons doing the identical act must not wear two different shapes');
+check(G15, 'the locked-out message is not dimmed to half contrast',
+  !/opacity-50[\s\S]{0,120}ACCESS/.test(code(themeSrc)),
+  'opacity-50 sat on the one message a locked-out user gets');
+
 check(G15, 'no green on the shell a signed-out user is looking at',
   !/emerald/.test(themeSrc),
   'palette law: the SYSTEM LOGIN button used to be emerald');

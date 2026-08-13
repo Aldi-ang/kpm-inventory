@@ -336,18 +336,31 @@ export default function BiohazardTheme({
                 z-[80] on purpose: under the sidebar (90) and its toggle (100), so opening the
                 drawer still works and this never traps anyone. */}
             {!user && (
-                <div className="hide-on-print fixed inset-0 z-[80] flex flex-col items-center justify-center gap-6 bg-black/92 px-6 text-center">
-                    <div>
-                        <div className="text-[10px] uppercase tracking-[0.35em] text-[#6b6157] font-mono">{appSettings?.companyName || 'KPM Inventory'}</div>
-                        <h2 className="mt-2 text-2xl font-black uppercase tracking-[0.2em] text-[#f0e2c0] font-mono">Sign in to continue</h2>
-                        <p className="mt-3 max-w-xs text-[11px] leading-relaxed text-[#6b6157] font-mono">Use the Google account your name is registered under.</p>
+                /* THE DOOR, on the control system — his report, 2026-08-13: *"i dont want to see
+                   old UI here"*, on this screen, phone and desktop both. It was the last screen
+                   still wearing hand-picked hex (#f0e2c0, #6b6157, #ff9d00) and its own button
+                   shape, which is why it read as a different app from Settings.
+                   `bg-ground` is solid on purpose: a locked screen has nothing worth showing
+                   through it, and a translucent one let the dashboard behind it compete. */
+                <div className="hide-on-print fixed inset-0 z-[80] flex items-center justify-center px-4 bg-ground">
+                    <div className="kpm-mod w-full max-w-sm">
+                        <div className="kpm-head">
+                            <span className="slot">{appSettings?.companyName || 'KPM Inventory'}</span>
+                            <div className="line">
+                                <h3>Sign in to continue</h3>
+                                <span className="kpm-read alert">Locked</span>
+                            </div>
+                            <p className="kpm-desc">
+                                Use the Google account your name is registered under. If the app says your
+                                name is not on the list, the account is right but the registration is missing.
+                            </p>
+                        </div>
+                        <div className="kpm-shelf split">
+                            <button type="button" onClick={onLogin} className="kpm-btn key block">
+                                <LogIn size={15} /> Sign in with Google
+                            </button>
+                        </div>
                     </div>
-                    <button
-                        onClick={onLogin}
-                        className="flex w-full max-w-[260px] items-center justify-center gap-3 border border-[#ff9d00] bg-transparent py-4 font-mono text-xs font-bold uppercase tracking-[0.2em] text-[#ff9d00] transition-[background-color,transform] duration-150 ease-out hover:bg-[#ff9d00]/10 active:scale-[0.975]"
-                    >
-                        <LogIn size={15} /> Sign in with Google
-                    </button>
                 </div>
             )}
 
@@ -464,11 +477,11 @@ export default function BiohazardTheme({
                         })}
                     </nav>
                 ) : (
-                    <div className="flex-1 flex flex-col items-center lg:items-start pt-10 opacity-50 px-2">
-                        <div className="text-xs text-red-500 font-mono mb-2 text-center">ACCESS<br className="lg:hidden"/> DENIED</div>
-                        <div className="h-0.5 w-10 bg-red-800 mb-4"></div>
-                        {/* was text-slate-400 — slate IS the blue */}
-                        <p className="hidden lg:block text-[10px] text-[#8b7256]">Authentication required.</p>
+                    /* `opacity-50` used to sit on this whole block, which halved the contrast of
+                       the one message a locked-out user gets. The readout carries the state now. */
+                    <div className="flex-1 flex flex-col items-center lg:items-start pt-10 px-2 gap-3">
+                        <span className="kpm-read alert">Locked</span>
+                        <p className="hidden lg:block kpm-note">Your tabs load once you sign in.</p>
                     </div>
                 )}
 
@@ -535,12 +548,10 @@ export default function BiohazardTheme({
                             </button>
                         </div>
                     ) : (
-                        <button 
-                            onClick={onLogin}
-                            /* Was green. Palette law forbids it; gold outline instead. */
-                            className="w-full flex items-center justify-center gap-2 bg-transparent hover:bg-[#ff9d00]/10 text-[#ff9d00] border border-[#ff9d00]/50 py-3 uppercase text-xs font-bold tracking-widest transition-[background-color,transform] duration-150 ease-out active:scale-[0.975]"
-                        >
-                            <LogIn size={14}/> System Login
+                        /* Was green, then a hand-rolled gold outline. It is the same act as the
+                           door in the middle of the screen, so it is the same control now. */
+                        <button type="button" onClick={onLogin} className="kpm-btn key block">
+                            <LogIn size={14}/> <span className="hidden lg:inline">System login</span>
                         </button>
                     )}
                 </div>
