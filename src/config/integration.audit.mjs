@@ -1389,6 +1389,22 @@ check(G29, 'the cave got darker, not lighter',
   /\.kpm-alcove \{[^}]*background: #070605/s.test(themeCss),
   'his word was "darker" — this is the ground the masonry and the doorway are judged against');
 
+/* THE WALL. His verdict on the gradient masonry was "unnatural", and the cause was that
+   repeating-linear-gradients are a perfect grid. Both tiles are generated pixel art. */
+check(G29, 'the wall and the floor are tiles, not repeating gradients',
+  css.includes('/sprites/cave-wall.png') && css.includes('/sprites/cave-floor.png') &&
+  !/\.kpm-alcove \.rock::before[^}]*repeating-linear-gradient/s.test(themeCss),
+  'a gradient grid is the exact thing he rejected — if this fails, someone put the grid back');
+check(G29, 'the tiles stay pixel art through the upscale',
+  (themeCss.match(/image-rendering: pixelated/g) || []).length >= 3,
+  'smoothed, a 2x pixel tile turns to mush and stops reading as stone');
+check(G29, 'both cave tiles work with no network',
+  sw.includes('sprites/cave-wall.png') && sw.includes('sprites/cave-floor.png'),
+  'the app is installed as a PWA — an un-precached tile is a black wall offline');
+check(G29, 'the doorway is off-centre and taller than the merchant',
+  /\.kpm-alcove \.arch \{[^}]*left: 4%;[^}]*height: 226px/s.test(themeCss),
+  'centred, he stood in front of the only lit thing in the frame — his report, 2026-08-13');
+
 /* ── report ──────────────────────────────────────────────────────────────── */
 let last = '';
 for (const r of results) {

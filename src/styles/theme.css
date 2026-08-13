@@ -321,33 +321,44 @@ html.lite-mode .kpm-coin.lg,   .kpm-coin.lg.still   { background-position: -72px
 .kpm-alcove { position: sticky; top: 0; z-index: 30;
   height: 280px; overflow: hidden;
   background: #070605; display: grid; place-items: end center; }
+/* THE WALL IS A TILE, NOT GRADIENTS. His verdict on the gradient version: *"i dont want to see
+   the background graphic that u made unnatural like that"* — and he was right about the cause:
+   repeating-linear-gradients are a perfect grid, and real stonework never is. The tile is
+   generated pixel art (irregular stones, jittered edges, cracks, chipped corners), seamless in
+   both directions, drawn 2x so one native pixel is two screen pixels.
+   ⚠️ `image-rendering: pixelated` is load-bearing. Smoothed, it turns to mush. */
 .kpm-alcove .rock { position: absolute; inset: 0; z-index: 0;
-  background:
-    linear-gradient(196deg, transparent 46%, rgba(0,0,0,.62) 46.4%, transparent 47%),
-    linear-gradient(158deg, transparent 62%, rgba(0,0,0,.55) 62.3%, transparent 63%),
-    linear-gradient(15deg,  transparent 30%, rgba(0,0,0,.5)  30.3%, transparent 31%); }
-/* the masonry: 22px courses, joints offset every other course by the 44px background-size —
-   two gradients doing the work of a tileset */
+  background-image: url('/sprites/cave-wall.png');
+  background-size: 384px 288px; background-repeat: repeat;
+  image-rendering: pixelated; }
+/* the light in the room, over the stone: dark at the ceiling, a little bounce near the floor.
+   Kept as gradients on a SEPARATE layer so the tile itself stays untinted. */
 .kpm-alcove .rock::before { content: ""; position: absolute; inset: 0;
   background:
-    radial-gradient(46% 30% at 14% 16%, rgba(150,138,124,.20), transparent 62%),
-    radial-gradient(52% 32% at 78% 20%, rgba(140,128,114,.17), transparent 64%),
-    radial-gradient(56% 34% at 90% 62%, rgba(112,102,92,.15),  transparent 66%),
-    radial-gradient(44% 30% at  8% 82%, rgba(124,114,102,.14), transparent 64%),
-    repeating-linear-gradient(0deg,  rgba(0,0,0,.55) 0 2px, transparent 2px 22px),
-    repeating-linear-gradient(90deg, rgba(0,0,0,.45) 0 2px, transparent 2px 44px),
-    repeating-linear-gradient(112deg, rgba(0,0,0,.30) 0 2px, transparent 2px 9px),
-    linear-gradient(180deg, #1a1614 0%, #100d0b 58%, #070605 100%); }
+    radial-gradient(60% 40% at 22% 62%, rgba(236,176,66,.10), transparent 70%),
+    radial-gradient(50% 34% at 78% 24%, rgba(130,200,255,.07), transparent 68%),
+    linear-gradient(180deg, rgba(0,0,0,.82) 0%, rgba(0,0,0,.28) 42%, rgba(0,0,0,.55) 100%); }
+/* the cobbled floor he stands on — same trick, flatter stones */
+.kpm-alcove .rock::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0;
+  height: 64px;
+  background-image: url('/sprites/cave-floor.png');
+  background-size: 384px 112px; background-repeat: repeat-x;
+  image-rendering: pixelated;
+  box-shadow: inset 0 14px 20px -8px rgba(0,0,0,.9); }
 
 /* THE DOORWAY. The only warm light in the cave, and the reason the figure has a silhouette.
    Round-topped like the reference's arch; the ::before is the light itself, the ::after is the
    spill on the floor in front of it. Amber, per his theme. */
-.kpm-alcove .arch { position: absolute; z-index: 0; left: 50%; margin-left: -46px; bottom: 26px;
-  width: 92px; height: 168px; border-radius: 46px 46px 4px 4px;
+/* OFF-CENTRE ON PURPOSE. Centred, the merchant stood in front of it and the one lit thing in the
+   frame was behind his hat — his note: *"bigger doorway or put it little bit to the side or smth
+   to make sure that capybara doesnt block it"*. Now it sits to his left and stands taller than he
+   does, so the crown of the arch clears his head at any alcove width. */
+.kpm-alcove .arch { position: absolute; z-index: 0; left: 4%; bottom: 26px;
+  width: 124px; height: 226px; border-radius: 62px 62px 4px 4px;
   background: linear-gradient(180deg, #2a2018 0%, #171210 70%, #0d0a08 100%);
   box-shadow: inset 0 0 0 3px #0a0806; }
-.kpm-alcove .arch::before { content: ""; position: absolute; inset: 7px 7px 0 7px;
-  border-radius: 39px 39px 2px 2px;
+.kpm-alcove .arch::before { content: ""; position: absolute; inset: 8px 8px 0 8px;
+  border-radius: 54px 54px 2px 2px;
   background:
     linear-gradient(180deg, rgba(255,214,120,.20) 0%, rgba(232,168,52,.55) 46%, rgba(255,226,150,.92) 100%),
     #b9791a; }
