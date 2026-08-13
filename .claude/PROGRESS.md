@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-13 19:30 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
+**Updated: 2026-08-13 19:55 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
 **Lancelot session last wrote 2026-08-13 13:51 WIB** — see the 14:05 entry. Two clocks, one file.
 
 ### 🟢 13:51 WIB (Lancelot session) — no file changes this turn; those `src/**` edits are the app's
@@ -61,6 +61,17 @@ The rules, in order:
    else wrote in the meantime. If an `Edit` fails as stale, re-read and re-apply — do not force it.
 7. **The quota is one shared pool.** Two sessions running hard halve each other's runway, and the
    `[plan-quota]` percentage covers both. Size your work against the whole pool, not your own chat.
+
+## ✅ LOG 2026-08-13 19:55 WIB — no gold on the hazard panel. 352/352. (KPM app session)
+
+*"the crown transfer look really bad, i dont like yellow line in there"* — it wore `--hatch-gold`.
+🔑 **The rule that outlives the taste call: GOLD IS THE ACCENT, the colour of "do this". Gold on a
+control that cannot be undone says "primary action" and "hazard" at once.** Hazard surfaces now
+use **`--hatch-danger`** (new token, both themes) over `--danger-well`, plus a solid 2px `--danger`
+rule where every other module has a hairline — matching the stripe already on `.kpm-btn.hazard`.
+Measured: title 7,04:1 dark / 7,54:1 light. Group 31 fails if any gold returns to a hazard surface.
+
+**Preview updated (same URL):** `https://claude.ai/code/artifact/22bbf462-6009-4ebc-a447-56fb4177120c`
 
 ## ✅ LOG 2026-08-13 19:30 WIB — contrast fixed with NUMBERS, panels stopped looking identical. 351/351. (KPM app session)
 
