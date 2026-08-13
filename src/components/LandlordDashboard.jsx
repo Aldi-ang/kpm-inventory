@@ -199,12 +199,7 @@ export default function LandlordDashboard({ db, appId, user }) {
         /* NO FRAME AND NO HEADING OF ITS OWN. This renders inside a `.kpm-mod` whose rail already
            names it, and the old version opened with its own border, its own radius, its own
            shadow and an <h2> that outranked the tab's own name — a box inside a box, named twice. */
-        <div className="kpm-body animate-fade-in">
-            <p className="kpm-note">
-                Every account here is a Tier 2 owner with its own separate company data.
-                Suspending one locks that owner out immediately.
-            </p>
-
+        <div className="kpm-shelf split animate-fade-in">
             {/* PROVISIONING FORM — labels printed above the fields, not inside them: a
                 placeholder disappears exactly when he wants to check what he typed. */}
             <form onSubmit={handleCreateTenant} className="flex flex-col gap-3 border border-line bg-sunk p-3">

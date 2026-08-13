@@ -835,24 +835,32 @@ export default function SettingsView({
                           {/* 🧪 ACHIEVEMENT TESTER — dev tool, correctly Tier-1-only (unlike the
                               career-ledger toggle and the recalculate button, which are business
                               features and live under Security so Tier 2 owners can reach them). */}
-                          <div className="kpm-mod">
-                              <div className="kpm-rail">
-                                  <h3>Achievement Tester</h3>
-                                  <span className="kpm-read">Simulation · writes nothing</span>
+                          <div className="kpm-mod bench">
+                              <div className="kpm-head">
+                                  <span className="slot">Bench · 01</span>
+                                  <div className="line">
+                                      <h3>Achievement Tester</h3>
+                                      <span className="kpm-read">Writes nothing</span>
+                                  </div>
+                                  <p className="kpm-desc">Fire any achievement at your own account to see exactly what a salesman sees when it unlocks. Nothing is saved and nobody is notified.</p>
                               </div>
-                              <div className="kpm-body">
+                              <div className="kpm-shelf split">
                                   <AchievementTester db={db} appId={appId} userId={userId} />
                               </div>
                           </div>
 
                           {/* 🔧 Writes real career docs — Tier 1 only, and every grant is
                               reversible via its own Undo. */}
-                          <div className="kpm-mod">
-                              <div className="kpm-rail gold">
-                                  <h3>Career Dev Tools</h3>
-                                  <span className="kpm-read on">Writes live · undoable</span>
+                          <div className="kpm-mod live">
+                              <div className="kpm-head">
+                                  <span className="slot">Live · 01</span>
+                                  <div className="line">
+                                      <h3>Career Dev Tools</h3>
+                                      <span className="kpm-read on">Writes live data</span>
+                                  </div>
+                                  <p className="kpm-desc">Grants ranks, badges and experience to a real salesman's record. Every grant has its own Undo, so a mistake here is reversible.</p>
                               </div>
-                              <div className="kpm-body">
+                              <div className="kpm-shelf split">
                                   <CareerDevTools db={db} appId={appId} userId={userId} triggerCapy={triggerCapy} />
                               </div>
                           </div>
@@ -863,19 +871,22 @@ export default function SettingsView({
                               Both positions are drawn. A single toggle asked him to remember which
                               way "on" points AND what the two ways mean, on a setting that decides
                               where every handover photo in the business is written. */}
-                          <div className="kpm-mod">
-                              <div className={`kpm-rail ${appSettings.usePhotoStorage ? 'gold' : ''}`}>
-                                  <h3>Photo storage</h3>
-                                  <span className={`kpm-read ${appSettings.usePhotoStorage ? 'on' : ''}`}>
-                                      {appSettings.usePhotoStorage ? 'Cloud · Blaze' : 'Database'}
-                                  </span>
-                              </div>
-                              <div className="kpm-body">
-                                  <p className="kpm-note">
-                                      Where handover photos are written. <b>Database</b> works on any Firebase plan.
-                                      <b> Cloud</b> uploads to Firebase Storage instead and needs the Blaze plan active,
-                                      or photos stop saving.
+                          <div className="kpm-mod live">
+                              <div className="kpm-head">
+                                  <span className="slot">Live · 02</span>
+                                  <div className="line">
+                                      <h3>Photo storage</h3>
+                                      <span className={`kpm-read ${appSettings.usePhotoStorage ? 'on' : ''}`}>
+                                          {appSettings.usePhotoStorage ? 'Cloud · Blaze' : 'Database'}
+                                      </span>
+                                  </div>
+                                  <p className="kpm-desc">
+                                      Where every handover photo in the business gets written. <b>Database</b> works on
+                                      any Firebase plan. <b>Cloud</b> uploads to Firebase Storage instead and needs the
+                                      Blaze plan active — without it, photos stop saving.
                                   </p>
+                              </div>
+                              <div className="kpm-shelf split">
                                   <div className="kpm-switch" role="group" aria-label="Photo storage destination">
                                       <button type="button" aria-pressed={!appSettings.usePhotoStorage}
                                           onClick={() => writePhotoStorage(false, { db, appId, user, setAppSettings, triggerCapy })}>
@@ -891,10 +902,18 @@ export default function SettingsView({
 
                           {/* LANDLORD DASHBOARD — the rail lives here, so the child no longer
                               prints a second "Architect Terminal" heading louder than the tab's. */}
-                          <div className="kpm-mod">
-                              <div className="kpm-rail gold">
-                                  <h3>Tenant registry</h3>
-                                  <span className="kpm-read on">Provisions live accounts</span>
+                          <div className="kpm-mod live">
+                              <div className="kpm-head">
+                                  <span className="slot">Live · 03</span>
+                                  <div className="line">
+                                      <h3>Tenant registry</h3>
+                                      <span className="kpm-read on">Provisions accounts</span>
+                                  </div>
+                                  <p className="kpm-desc">
+                                      Every company using this software, and their owner accounts. Creating one here
+                                      gives a stranger their own separate business inside your app; suspending one
+                                      locks that owner out immediately.
+                                  </p>
                               </div>
                               <LandlordDashboard db={db} appId={appId} user={user} />
                           </div>
@@ -904,16 +923,19 @@ export default function SettingsView({
                           {/* CROWN TRANSFER — the loudest control on this screen, which is what it
                               was NOT before: the disco joke wore the filled red plate and this wore
                               a quiet outline. */}
-                          <div className="kpm-mod">
-                              <div className="kpm-rail hazard">
-                                  <h3>Crown transfer</h3>
-                                  <span className="kpm-read alert">Sealed</span>
-                              </div>
-                              <div className="kpm-body">
-                                  <p className="kpm-note">
-                                      Hands ownership of this software to another account, permanently.
-                                      You cannot take it back yourself afterwards.
+                          <div className="kpm-mod hazard">
+                              <div className="kpm-head">
+                                  <span className="slot">Hazard · 01</span>
+                                  <div className="line">
+                                      <h3>Crown transfer</h3>
+                                      <span className="kpm-read alert">Sealed</span>
+                                  </div>
+                                  <p className="kpm-desc">
+                                      Hands ownership of this software to another account, permanently. The new owner
+                                      can lock you out, and you cannot take it back yourself.
                                   </p>
+                              </div>
+                              <div className="kpm-shelf split">
                                   <button type="button" className="kpm-btn hazard block" onClick={() => setShowCrownTransfer(true)}>
                                       Initiate transfer
                                   </button>
@@ -936,13 +958,16 @@ export default function SettingsView({
                           {/* DISCO PROTOCOL — deliberately the QUIETEST control in the rack now.
                               It used to be the largest and the only filled red plate on a screen
                               that also transfers ownership of the product. */}
-                          <div className="kpm-mod">
-                              <div className="kpm-rail">
-                                  <h3>Capy disco protocol</h3>
-                                  <span className="kpm-read">{isDiscoMode ? 'Running' : 'Idle'}</span>
+                          <div className="kpm-mod idle">
+                              <div className="kpm-head">
+                                  <span className="slot">Harmless · 01</span>
+                                  <div className="line">
+                                      <h3>Capy disco protocol</h3>
+                                      <span className="kpm-read">{isDiscoMode ? 'Running' : 'Idle'}</span>
+                                  </div>
+                                  <p className="kpm-desc">Makes the whole app dance for a few seconds. Touches no data at all.</p>
                               </div>
-                              <div className="kpm-body">
-                                  <p className="kpm-note">Makes the app dance for a few seconds. Changes nothing.</p>
+                              <div className="kpm-shelf split">
                                   <button type="button" onClick={triggerDiscoParty} disabled={isDiscoMode} className="kpm-btn block">
                                       {isDiscoMode
                                           ? <><Music size={18} className="inline mr-2"/> Overloading…</>

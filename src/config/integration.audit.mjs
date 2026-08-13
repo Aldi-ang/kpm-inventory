@@ -1499,6 +1499,61 @@ check(G30, 'the photo-storage setting still has exactly one writer',
   'the switch draws two positions; two copies of the write is how a setting saves locally but ' +
   'never reaches the database');
 
+/* ── 31. PANELS THAT READ AS DIFFERENT INSTRUMENTS ────────────────────────
+   His verdict on the first version of the control system, 2026-08-13: *"this design is too
+   standardise nothing special"*, and *"i want ... every panel have its own unique and it shows
+   the difference between components title and its decription and features"*. Eight identical
+   bordered boxes with one 14px caption row doing three jobs is what that was. */
+const G31 = '31. Each panel is its own instrument, and title / description / controls differ';
+
+for (const [cls, why] of [
+  ['.kpm-head', 'the three-line head: slot code, then title + state, then the description'],
+  ['.kpm-desc', 'the description, in the BODY face — a sentence must not compete with a title'],
+  ['.kpm-shelf', 'the controls get their own ground, so "press" is a different zone from "read"'],
+]) check(G31, `${cls} exists — ${why}`, new RegExp(`\\${cls}[ ,{]`).test(themeCss) && css.includes(cls),
+    'without it the head collapses back to one caption row carrying title, state and prose');
+
+check(G31, 'every module in the tab declares WHAT KIND it is',
+  (arch.match(/className="kpm-mod (bench|live|hazard|idle)"/g) || []).length === 6 &&
+  !/className="kpm-mod"/.test(arch),
+  'a bare .kpm-mod is a generic card — the variant is what makes a bench tool look different ' +
+  'from something that writes live data and different again from something irreversible');
+check(G31, 'each kind wears a different head',
+  /\.kpm-mod\.live \.kpm-head\s*\{[^}]*background-image/s.test(themeCss) &&
+  /\.kpm-mod\.hazard \.kpm-head \{[^}]*background-image: var\(--hatch-gold\)/s.test(themeCss) &&
+  /\.kpm-mod\.hazard \.kpm-head h3 \{ color: var\(--danger-ink\)/.test(themeCss),
+  'same head on every module is the "too standardise" complaint, restated');
+check(G31, 'every module prints its slot code',
+  (arch.match(/className="slot"/g) || []).length === 6,
+  'the code says which band a module belongs to and its order in it — it is how he names one ' +
+  'out loud, and it is information rather than decoration');
+check(G31, 'descriptions are prose, not another row of caps',
+  /\.kpm-desc \{[^}]*text-transform: none/s.test(themeCss) &&
+  /\.kpm-desc \{[^}]*font-family: var\(--font-body\)/s.test(themeCss),
+  'uppercase mono for a whole sentence is why the old version read as one texture');
+
+/* ── 32. COLOUR THAT CAN ACTUALLY BE READ ─────────────────────────────────
+   *"dont use yellow color for text on light mode because its hard to see, red color is some
+   place also not visible"*. Gold as text measured 1,19:1 on the light ground. The palette law
+   had said "never a text colour" since Phase 3 and it still shipped — so this is a number now. */
+const G32 = '32. Gold and red are readable in BOTH themes';
+
+check(G32, 'the measuring script exists and is runnable',
+  fs.existsSync('src/config/contrast.selfcheck.mjs'),
+  'node src/config/contrast.selfcheck.mjs — it reads the real tokens and fails under 4,5:1');
+check(G32, 'text tokens that flip per theme exist',
+  /--accent-ink:/.test(themeCss) && /--danger-ink:/.test(themeCss) && /--accent-edge:/.test(themeCss),
+  'gold-as-text and red-as-text must be different values in light mode; --gold cannot be both ' +
+  'a plate fill and a legible label');
+check(G32, 'the light theme darkens all three',
+  /html\.light \{[\s\S]*?--accent-ink:\s*#6B4A05[\s\S]*?--accent-edge:\s*#7A5A12[\s\S]*?--danger-ink:\s*#611A14/.test(themeCss) ||
+  /:root\.light,[\s\S]*?--accent-ink:\s*#6B4A05[\s\S]*?--accent-edge:\s*#7A5A12[\s\S]*?--danger-ink:\s*#611A14/.test(themeCss),
+  'if these stay at the dark values the light theme is back to 1,19:1 and he cannot read the ' +
+  'button that provisions accounts');
+check(G32, 'the control system spends the readable tokens, never --gold or --danger-text as text',
+  !/color: var\(--gold\)/.test(systemBlock) && !/color: var\(--danger-text\)/.test(systemBlock),
+  'this is the exact line that shipped broken: .kpm-btn.key { color: var(--gold) }');
+
 /* ── report ──────────────────────────────────────────────────────────────── */
 let last = '';
 for (const r of results) {

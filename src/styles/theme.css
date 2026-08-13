@@ -43,6 +43,16 @@
   --gold:          #D4AF37;
   --gold-ink:      #0A0908;   /* ink to place ON gold, 8,9:1 */
 
+  /* ⚠️ TEXT AND EDGES THAT MEAN "GOLD" OR "DANGER" — use THESE, never --gold or --danger.
+     Aldi, 2026-08-13: *"dont use yellow color for text on light mode because its hard to see,
+     red color is some place also not visible"*. He was right and the law above already said it,
+     yet `.kpm-btn.key` shipped with `color: var(--gold)` — 1,19:1 on the light ground.
+     A law in a comment did not stop it. `src/config/contrast.selfcheck.mjs` measures every pair
+     in both themes and fails the build's audit if one drops below 4,5:1. */
+  --accent-ink:    #D4AF37;   /* gold-as-TEXT. Same as gold in dark; goes dark in light. */
+  --accent-edge:   #D4AF37;   /* gold-as-BORDER. 3:1 minimum against its surface. */
+  --danger-ink:    #E08C82;   /* red-as-TEXT. */
+
   /* orange — warning. Aldi asked for more of it. */
   --orange:        #FF8C1A;
   --orange-ink:    #0A0603;   /* 8,7:1 — needs weight 700 + a hairline stroke at small sizes */
@@ -115,6 +125,13 @@ html.light {
      has to darken. That is what stops light mode looking duller than dark. */
   --gold:          #D4AF37;
   --gold-ink:      #131211;
+
+  /* ...but gold AS TEXT and gold AS A BORDER must darken here, or they measure 1,19:1 and 1,19:1
+     against the steel and vanish — which is exactly what he reported. Measured on --raised:
+     accent-ink 7,4:1, accent-edge 5,2:1, danger-ink 6,0:1. */
+  --accent-ink:    #6B4A05;
+  --accent-edge:   #7A5A12;
+  --danger-ink:    #611A14;   /* darkened 2026-08-13: #7E2A22 measured 4,00:1 on --inset */
 
   --orange:        #FF8C1A;
   --orange-ink:    #0A0603;
@@ -1530,17 +1547,59 @@ html.lite-mode .kpm-title-rule { animation: none; width: 100%; }
    ⚠️ Do not "improve" any of it with a shadow. The shadow is what Lite Mode eats.
    ============================================================================ */
 
-/* ---- MODULE: one bordered instrument. No radius: this is bolted, not floated. */
-.kpm-mod { border: 1px solid var(--line-2); background: var(--panel); }
+/* ---- MODULE: one bordered instrument. No radius: this is bolted, not floated.
+   ⚠️ A module is NOT a generic card. Its variant says what KIND of instrument it is, and each
+   kind wears a different head — Aldi, 2026-08-13: *"i want u to make better UI so that every
+   panel have its own unique and it shows the difference between components title and its
+   decription and features. this design is too standardise nothing special"*.
+     .bench  — reads, simulates, writes nothing. Quietest head.
+     .live   — writes real data. Gold stripe, gold rule under the title, gold slot code.
+     .hazard — cannot be undone. Danger stripe, hatched head, red title.
+     .idle   — harmless. No stripe at all; the only module with none. */
+.kpm-mod { border: 1px solid var(--line-2); background: var(--panel);
+  border-left: 3px solid var(--line-3); }
 .kpm-mod + .kpm-mod { border-top: 0; }          /* a rack, not a stack of cards */
+.kpm-mod.live   { border-left-color: var(--accent-edge); }
+.kpm-mod.hazard { border-left-width: 5px; border-left-color: var(--danger); }
+.kpm-mod.idle   { border-left-color: transparent; }
 
-/* ---- RAIL: the module's caption. Name on the left, live state on the right. */
+/* ---- HEAD: three lines of different WEIGHT, so title, state and description cannot be
+   mistaken for each other. This is the part that was "too standardise": one 14px caption row
+   carried all three jobs. */
+.kpm-head { padding: var(--s3); border-bottom: 1px solid var(--line); background: var(--inset); }
+.kpm-mod.live .kpm-head   { background-image: var(--grad-panel); }
+.kpm-mod.hazard .kpm-head { background-image: var(--hatch-gold); }
+/* line 1 — the slot code: which band this belongs to and its order in it. Information, not
+   decoration; it is how he refers to a module out loud. */
+.kpm-head .slot { display: block; font-family: var(--font-mono); font-size: 10px;
+  letter-spacing: .26em; text-transform: uppercase; color: var(--ink-dim); }
+.kpm-mod.live .kpm-head .slot   { color: var(--accent-ink); }
+.kpm-mod.hazard .kpm-head .slot { color: var(--danger-ink); }
+/* line 2 — the title and the live state, on one baseline */
+.kpm-head .line { display: flex; align-items: baseline; justify-content: space-between;
+  gap: var(--s3); margin-top: 2px; }
+.kpm-head h3 { margin: 0; font-family: var(--font-display); font-weight: 700;
+  font-size: 19px; line-height: 1.1; letter-spacing: .06em; text-transform: uppercase;
+  color: var(--ink); }
+.kpm-mod.hazard .kpm-head h3 { color: var(--danger-ink); }
+.kpm-mod.live .kpm-head h3 { padding-bottom: 5px; border-bottom: 2px solid var(--accent-edge);
+  display: inline-block; }
+/* line 3 — the description. Body face, not caps: it is a sentence, and it must not compete
+   with the title for the same reading. */
+.kpm-desc { margin: var(--s2) 0 0; max-width: 62ch;
+  font-family: var(--font-body); font-size: 13px; line-height: 1.55; color: var(--ink-muted);
+  letter-spacing: 0; text-transform: none; }
+
+/* ---- SHELF: where the controls live. Its own ground and its own top rule, so "things you can
+   press" is a different zone from "things you read". */
+.kpm-shelf { padding: var(--s3); display: flex; flex-direction: column; gap: var(--s3);
+  background: var(--panel); }
+.kpm-shelf.split { border-top: 1px solid var(--line-2); }
+
+/* ---- RAIL: the older one-line caption. Kept for modules that carry no description. */
 .kpm-rail { display: flex; align-items: center; justify-content: space-between;
   gap: var(--s3); min-height: 40px; padding: 0 var(--s3);
-  border-bottom: 1px solid var(--line); background: var(--inset);
-  border-left: 3px solid var(--line-3); }
-.kpm-rail.gold   { border-left-color: var(--gold); }
-.kpm-rail.hazard { border-left-color: var(--danger); background-image: var(--hatch-gold); }
+  border-bottom: 1px solid var(--line); background: var(--inset); }
 .kpm-rail h3 { margin: 0; font-family: var(--font-display); font-weight: 700;
   font-size: 14px; letter-spacing: .18em; text-transform: uppercase; color: var(--ink); }
 
@@ -1548,7 +1607,7 @@ html.lite-mode .kpm-title-rule { animation: none; width: 100%; }
 .kpm-read { font-family: var(--font-mono); font-size: 10px; letter-spacing: .14em;
   text-transform: uppercase; padding: 3px 7px; border: 1px solid var(--line-2);
   color: var(--ink-muted); white-space: nowrap; }
-.kpm-read.on     { color: var(--gold-ink); background: var(--gold); border-color: var(--gold); }
+.kpm-read.on     { color: var(--gold-ink); background: var(--gold); border-color: var(--accent-edge); }
 .kpm-read.alert  { color: var(--danger-plate-ink); background: var(--danger-plate);
                    border-color: var(--danger); }
 
@@ -1566,8 +1625,8 @@ html.lite-mode .kpm-title-rule { animation: none; width: 100%; }
   transition: background-color 120ms ease-out, color 120ms ease-out, border-color 120ms ease-out; }
 .kpm-btn:disabled { color: var(--ink-disabled); border-color: var(--line); cursor: not-allowed; }
 .kpm-btn.block { display: flex; width: 100%; }
-.kpm-btn.key    { border-color: var(--gold); color: var(--gold); }
-.kpm-btn.hazard { border-color: var(--danger); color: var(--danger-text);
+.kpm-btn.key    { border-color: var(--accent-edge); color: var(--accent-ink); }
+.kpm-btn.hazard { border-color: var(--danger); color: var(--danger-ink);
   background-image: repeating-linear-gradient(135deg,
     rgba(180,82,74,.16) 0 6px, transparent 6px 12px); }
 /* the press is the report: it is what tells him the tap landed */
@@ -1580,18 +1639,18 @@ html.lite-mode .kpm-title-rule { animation: none; width: 100%; }
   .kpm-btn.hazard:hover { background: var(--danger-plate); color: var(--danger-plate-ink);
                           background-image: none; }
 }
-.kpm-btn:focus-visible { outline: 2px solid var(--gold); outline-offset: -4px; }
+.kpm-btn:focus-visible { outline: 2px solid var(--accent-edge); outline-offset: -4px; }
 
 /* ---- FIELD: a labelled input. The label is printed above, never a placeholder —
    a placeholder disappears exactly when he needs to check what he typed. */
 .kpm-field { display: flex; flex-direction: column; gap: 4px; }
 .kpm-field > span { font-family: var(--font-mono); font-size: 10px; letter-spacing: .16em;
-  text-transform: uppercase; color: var(--ink-dim); }
+  text-transform: uppercase; color: var(--ink-muted); }
 .kpm-field > input, .kpm-field > .fixed {
   min-height: 44px; padding: 0 var(--s3); border: 1px solid var(--line-2);
   background: var(--inset); color: var(--ink);
   font-family: var(--font-mono); font-size: 12px; letter-spacing: .06em; }
-.kpm-field > input:focus { outline: none; border-color: var(--gold); }
+.kpm-field > input:focus { outline: none; border-color: var(--accent-edge); }
 .kpm-field > .fixed { display: flex; align-items: center; color: var(--ink-dim); }
 
 /* ---- SWITCH: both positions always visible, so the choice is readable without
@@ -1624,8 +1683,8 @@ html.lite-mode .kpm-title-rule { animation: none; width: 100%; }
   border: 1px solid var(--line-2); border-bottom: 0;
   /* the house texture, kept: the old panel's scanline was the one decoration in this tab that
      survived Lite Mode, and a printed caption strip is where it belongs */
-  background-color: var(--sunk); background-image: var(--hatch);
+  background-color: var(--inset); background-image: var(--hatch);
   font-family: var(--font-mono); font-size: 10px; letter-spacing: .22em;
-  text-transform: uppercase; color: var(--ink-muted); }
-.kpm-band.hazard { color: var(--danger-text); border-color: var(--danger);
+  text-transform: uppercase; color: var(--ink); }
+.kpm-band.hazard { color: var(--danger-ink); border-color: var(--danger);
   background-image: var(--hatch-gold); }
