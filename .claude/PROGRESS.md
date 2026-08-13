@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-13 13:20 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
+**Updated: 2026-08-13 13:45 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
 **Lancelot session last wrote 17:20 WIB** — see the 17:15 entry. Two clocks, two sessions, one file.
 
 ## 🧭 WHICH TRACK IS WHICH — check this before editing anything below
@@ -51,6 +51,34 @@ The rules, in order:
    else wrote in the meantime. If an `Edit` fails as stale, re-read and re-apply — do not force it.
 7. **The quota is one shared pool.** Two sessions running hard halve each other's runway, and the
    `[plan-quota]` percentage covers both. Size your work against the whole pool, not your own chat.
+
+## ✅ LOG 2026-08-13 13:45 WIB — the cave WALL is generated stone now (`7008ba3`), 317/317. (KPM app session)
+
+**Quota at this write: 65% used, 35% left, resets ~18:00 WIB.** Architect redesign deliberately
+NOT started — 35% cannot finish a control system, and starting it half-way is the failure mode he
+has named twice today.
+
+**His verdicts, verbatim:** *"btw fire is good"* · *"i dont want to see the background graphic that
+u made unnatural like that"* · *"bigger doorway or put it little bit to the side or smth to make
+sure that capybara doesnt block it"*.
+
+🔑 **Why the first wall failed, and the rule that comes out of it:** it was
+`repeating-linear-gradient` masonry — a PERFECT GRID. Stone never is, and that is what he read as
+fake. **Anything meant to look natural (stone, rust, dirt, paper fibre) cannot be a repeating
+gradient.** It is now generated pixel art: `public/sprites/cave-wall.png` (192×144 tile) and
+`cave-floor.png` (192×56), seamless in both directions, drawn at 2× with `image-rendering:
+pixelated`. Generator: `…scratchpad\cave\gen-wall.mjs wall|floor > raw.rgba`, then ffmpeg to PNG —
+the ffmpeg lines are in the shell history of this entry's commit or re-derive from `gen.mjs`.
+⚠️ Group 29 has a check that FAILS if a repeating gradient is ever put back in the wall.
+
+The doorway is `left: 4%`, 124×226 — off his centre and taller than he is, so its crown clears
+his head at any alcove width.
+
+**Preview page (he has no other way to see this — the alcove is desktop-only):**
+`https://claude.ai/code/artifact/0c4a2801-457d-4259-804b-f8370c0ad7c5`
+Rebuild: `node …scratchpad\cave\build.mjs <out.html>` then republish the SAME path to keep the URL.
+"Before" is pinned to commit `4adb13a` on purpose — it means *the wall he rejected*, and HEAD~1
+stops being that as soon as anything else lands.
 
 ## ✅ LOG 2026-08-13 13:20 WIB — the cave SHIPPED (`4adb13a`), 313/313. Architect redesign still open. (KPM app session)
 
@@ -515,6 +543,26 @@ Fixed inside `cek()` (A-Brain `34ea414`), not at the six call sites.
 see the bug. New harness `scratchpad/selfcheck.js` evaluates the whole file with the Google
 services stubbed and calls the REAL `lancelotSelfCheck`, which returns `semua` (a boolean). It now
 returns `true`. Never re-implement the thing under test.
+
+## ✅ LOG 13:40 WIB 2026-08-13 (Lancelot session) — FIRST REAL NOTA FILED. mbako routine added.
+
+**New: the local archive `D:\mbako\<TAHUN>\<TEMBAKAU>\`** (`BOYOLALI` / `PRAMBANAN`), with
+`RAW DATA\` → `NOTA PEMBELIAN\NOTA ASLI\` and `...\BUKTI TF\`. **Apps Script cannot see this path**,
+so the routine lives in `~/.claude/agents/lancelot.md`, not in `Lancelot.gs`: ask the region first,
+classify by CONTENT not filename, rename `YYYY-MM-DD <NOTA|BUKTI TF> <AGEN> Rp<total>`, move, leave
+RAW DATA empty. **The date comes from the paper** — WhatsApp names files by the forwarding day and
+was a day late on the first one.
+
+Done for real: both Boyolali photos filed (PAK MUL nota Rp 9.357.500 + its BCA→BRI slip).
+
+**🔴 BUG THE FIRST REAL NOTA EXPOSED (fixed, A-Brain `1412fc2`):** his `M_AGEN` says `Mul`, the
+paper says `P. Mul` — `cocokAgen_` would have **rejected his very first live import**. `namaInti_`
+now drops a leading honorific (P/PAK/BPK/BAPAK/BU/IBU/MBAK/MAS/H/HJ/HAJI) and nothing else;
+`MITA` vs `MITHA` still refuses, asserted. 82 checks green.
+
+**❓ NEXT:** the nota JSON is drafted and waiting on his OK — the paper carries **no nota number**,
+so one must be agreed (proposed `MUL-11-08-26`) before anything can be written to `Lancelot-Inbox`
+(folder id `1V5bMdRA6IKJ87kyDFpqsaN1BCRd1I2bs`, Drive connector confirmed working).
 
 ## ✅ LOG 13:03 WIB 2026-08-13 (Lancelot session) — 76/76 GREEN IN HIS REAL SHEET.
 
