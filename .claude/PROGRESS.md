@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-12 23:45 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
+**Updated: 2026-08-13 08:15 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
 **Lancelot session last wrote 17:20 WIB** — see the 17:15 entry. Two clocks, two sessions, one file.
 
 ## 🧭 WHICH TRACK IS WHICH — check this before editing anything below
@@ -51,6 +51,111 @@ The rules, in order:
    else wrote in the meantime. If an `Edit` fails as stale, re-read and re-apply — do not force it.
 7. **The quota is one shared pool.** Two sessions running hard halve each other's runway, and the
    `[plan-quota]` percentage covers both. Size your work against the whole pool, not your own chat.
+
+## 🔴 LOG 2026-08-13 08:15 WIB — QUOTA 100%. Architect redesign UNFINISHED. Fire sprite done, uncommitted. (KPM app session)
+
+**STOPPED ON THE PLAN LIMIT, resets ~12:30 WIB.** Nothing in the repo is broken; last commit
+`860c2ea` is green at 307/307. Read this whole entry before doing anything.
+
+### ✅ CONFIRMED BY ALDI
+- **The capybara is fixed.** His words: *"capybara mascott looks great now"*. Commit `860c2ea`
+  (the scale moved to a wrapper). The 4th cut report is CLOSED.
+- **Light mode stays STEEL.** He chose "keep steel for now, decide later" when told white would
+  repaint all ~25 screens. Do NOT touch the light tokens without asking again.
+
+### 🔴 HIS ACTUAL ASK, verbatim — the architect redesign is NOT a repaint
+*"i dont like the UI for the architect terminal still, redesign it again"* … *"i want u to rebuild
+everything, but make sure that all the features is still intake, i want better presentation of all
+of this button and features to be more presentable, since i will redesign the whole setting as
+well, make sure that the logic and theme and button design and animation that we made here could
+be use for button in another place so design it well"*.
+
+**So the deliverable is a REUSABLE CONTROL SYSTEM** (button / panel / switch / row classes in
+theme.css), with the Architect Terminal as its first customer — not one screen's classNames.
+`src/components/ui/` is still empty; that is the gap being filled. Theme, his words:
+*"our theme is Resident evil 9 ark lab theme, for dark mode is black white and amber, while light
+mode is white black amber and red color"*.
+
+### ⏸️ WHERE THE REDESIGN STOPPED
+A design workflow ran and **died on the session limit before it produced the spec**: 3 directions
+drafted, judges and the merge all errored. Winner on partial scores was **"The Ark Dossier"**
+(7/30 — a score from ONE surviving judge, not a verdict; treat the three drafts as equal).
+**The three full direction specs ARE recoverable** — they are in the journal, not lost:
+`…\06d83074-a835-491b-88cd-dacef0ff7854\subagents\workflows\wf_5afe7309-600\journal.jsonl`
+Resume (replays the 5 finished agents from cache, re-runs only the failed ones):
+`Workflow({scriptPath: "…\workflows\scripts\architect-terminal-redesign-wf_5afe7309-600.js", resumeFromRunId: "wf_5afe7309-600", args: "{\"screen\":\"Architect Terminal\"}"})`
+⚠️ **Do not relaunch it from scratch — it cost 1.1M subagent tokens.** Read the journal first;
+the drafts may be enough to implement from by hand, which is cheaper than any re-run.
+
+### 🔵 THE ALCOVE FIRE — asset is DONE, nothing wired yet
+He asked for the capybara's cave to look like a pixel dungeon reference (darker, arched glowing
+doorway) and for the flame to match `bluefire pixel.webm` in
+`C:\Users\ASUS\OneDrive\Desktop\my stuff\sementara\RE UI`.
+🔴 **That webm is a Shutterstock clip with the watermark burned across every frame — it cannot
+ship.** He was told. Instead an equivalent was GENERATED and he owns it outright:
+- generator: `…scratchpad\fire\gen.mjs` (Doom-fire automaton, blue palette, fixed seed)
+- output: `…scratchpad\fire\bluefire.png` — **8 frames of 32×56, sheet 256×56**, pixel-stepped
+  like every other sheet here. Preview it with the `scale=…:flags=neighbor` ffmpeg line in that
+  folder over `#0d0b09`, never on white — alpha on white reads as a washed-out blob.
+**Next three steps, in order:** copy the sheet to `public/sprites/bluefire.png`; replace the three
+CSS flame layers (`.kpm-flame .o/.m/.c`, theme.css ~349-368) with one sprite element stepped
+`steps(8)` over `-256px`, holding frame 1 in Lite Mode like every other sheet; then darken the
+alcove and add the arched doorway + floor light-pool from the reference. **The cave redesign has
+NOT been started.**
+
+### ❓ STILL OWED BY ALDI
+The step-6 full-sale run from last night's list. Never answered, twice asked.
+
+## ⚠️ LOG 2026-08-13 07:58 WIB — capybara cut AGAIN (4th report). One cause fixed, HIS is not explained. (KPM app session)
+
+Commit `860c2ea`; 307/307. **His screenshot is timestamped 01:10, which is
+AFTER last night's 23:45 fix, and he is on the LAN dev server (`…1.141:5173`) — so he was not
+looking at stale code.** The cut is real in the current build for at least one state.
+
+**FOUND AND FIXED — the deal pose.** `transform` is ONE property. `.kpm-merch-corner` set
+`transform: scale(.64)` and `.kpm-merch-deal` animates `transform` for the breath; an animation
+replaces a static transform wholesale, so in the deal pose the .64 was thrown away, the element
+rendered at its true 200px pinned to the screen corner, and his feet and right side left the
+screen. ⚠️ **The scale now lives on a WRAPPER that nothing animates, and the sheet on its child.
+Never put them back on one element.** Group 28 pins the split; it was red on `HEAD` first.
+
+**NOT EXPLAINED — his screenshot is the TALKING pose, and nothing animates transform there.**
+Measured off the image: the figure is ~200px tall with its bottom at the viewport bottom, i.e.
+the .64 is not applied there either. Two candidates, untested: (a) the md: breakpoint is somehow
+active — the bubble's position in that screenshot fits a **192px** box better than a 128px one,
+which would mean his layout viewport is ≥768px; (b) something in Chrome-iOS drops the transform.
+**Next step is a measurement, not another guess** — ask him to reload and re-shoot, and if it is
+still cut, ship a temporary on-screen readout of `getBoundingClientRect()` for that element.
+
+The Browser pane could not be used to measure: every call returned "Policy check in progress for
+this tab" and never cleared.
+
+## ✅ LOG 2026-08-13 07:45 WIB — CROWN PLAN PHASE 5 DONE: the Architect Terminal. 303/303. (KPM app session)
+
+Commit `b25c526`. Vault `6b175f9` in A-Brain. **"The crown plan" = the RE-style UI rework at
+`C:\Users\ASUS\.claude\plans\purring-fluttering-balloon.md`** — that name is only in the session
+titles, not in the plan file, so it is written here once. Phase 5 was its next unstarted block.
+
+The architect tab was the last screen wearing another app's clothes: a red `font-serif` scanline
+card dropped into a blue settings page. It is now on the theme tokens — photo-storage card gold
+when armed, tenant rows gold for ACTIVE and danger for locked, `font-display` heading. The
+scanline STAYS: it is `repeating-linear-gradient`, one of the few effects Lite Mode does not kill.
+
+⚠️ **This tab holds the tenant switch, the ownership transfer and a data wipe, and none of those
+has another route in the app.** So group 27 asserts the palette AND a mount check per control — a
+restyle that deletes one of them is otherwise silent. The palette and `font-serif` checks were
+run against `HEAD` before the edit and both FAILED there.
+
+The mapping (blue-as-accent → gold, blue-as-neutral → inset/ink-muted, emerald → verified,
+red → the danger family) is in the vault as **Off-Token Colour Migration Map** — Phase 6 repeats
+this sweep over ~25 files and should read that instead of re-deriving it.
+
+**Not verified by eye:** the tab needs his Tier-1 admin login. ❓ Still owed from last night: the
+step-6 full-sale run.
+
+**Deliberately untouched:** the Security tab's `bg-red-600` Full Reset row (`SettingsView.jsx`
+~line 811) is off-token but belongs to Phase 6, and group 27's needle is scoped to the architect
+block so it does not report it.
 
 ## ✅ LOG 23:45 WIB — manifest drag + picker reachable from the paper. TERMINAL TEST ADDED.
 
@@ -389,6 +494,17 @@ Fixed inside `cek()` (A-Brain `34ea414`), not at the six call sites.
 see the bug. New harness `scratchpad/selfcheck.js` evaluates the whole file with the Google
 services stubbed and calls the REAL `lancelotSelfCheck`, which returns `semua` (a boolean). It now
 returns `true`. Never re-implement the thing under test.
+
+## ✅ LOG 13:03 WIB 2026-08-13 (Lancelot session) — 76/76 GREEN IN HIS REAL SHEET.
+
+He pasted the current `Lancelot.gs` and ran `lancelotSelfCheck` in Apps Script: **✅ SEMUA BENAR**,
+all 76 cases, matching the node harness exactly. That covers the 9 `cocokAgen_` branches, the 4
+`CUAN HARIAN` cases and the 3 `IN-OUT AGEN` cases — so the two-nota model and the agen check are
+confirmed working on Google's side, not just locally.
+
+**Next, in order:** fill `M_AGEN` with his real agen names → `buatSemuaTampilan` → send ONE real
+nota through the Drive inbox as the first live test. Still owed by him: the `-AGEN` pairing suffix
+and whether a sale nota always carries an AGEN.
 
 ## ✅ LOG 20:25 WIB (Lancelot session) — agen check shipped. A-Brain `259c078`. 76 checks green.
 
