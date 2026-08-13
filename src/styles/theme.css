@@ -213,12 +213,24 @@ html.lite-mode .kpm-coin.lg,   .kpm-coin.lg.still   { background-position: -72px
    in this file has to be recomputed in percentages, which is how sprite sheets end up drifting
    half a frame. `transform-origin: 100% 100%` because that corner is the one anchored to the
    screen; scaling from the centre would push his right side back off the edge. */
+/* ---------- WHY THE SCALE IS ON A WRAPPER AND NOT ON THE SPRITE ----------
+   2026-08-13. The scale used to sit on the same element as the sheet. `transform` is ONE
+   property: any animation that touches transform replaces it wholesale, and an animation wins
+   over a normal declaration. `.kpm-merch-deal` animates `transform` (the breath) — so in the
+   deal pose the .64 was thrown away, the element rendered at its true 200px anchored to the
+   screen corner, and his feet and his right side went off the edge. Exactly the cut this whole
+   block was written to fix, back again for one state only.
+
+   The wrapper owns the size and the scale; nothing animates the wrapper. The sheet lives on the
+   child and may animate its own transform freely — a breath now breathes inside the box instead
+   of cancelling it. ⚠️ Do NOT move the scale back onto the sheet element. */
 .kpm-merch-corner {
   position: absolute; right: 0; bottom: 0;
   width: 200px; height: 200px;
   transform: scale(.64);            /* 128 / 200 — matches w-32 */
   transform-origin: 100% 100%;
 }
+.kpm-merch-corner > .kpm-merch { position: absolute; inset: 0; }
 @media (min-width: 768px) {
   .kpm-merch-corner { transform: scale(.96); }   /* 192 / 200 — matches md:w-48 */
 }

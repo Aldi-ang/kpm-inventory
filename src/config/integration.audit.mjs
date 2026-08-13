@@ -1329,6 +1329,35 @@ for (const n of ['.bg-panel', '.bg-raised', '.bg-inset', '.bg-sunk', '.text-ink'
     'Tailwind only emits a class it saw in source — a typo here paints nothing and looks ' +
     'like a transparent panel');
 
+/* ── 28. THE CORNER MASCOT'S SIZE ─────────────────────────────────────────
+   He has been reported cut THREE times. Twice it was a real geometry bug, and each fix was
+   undone by the next change touching the same one property. `transform` is a single property:
+   an animation that sets it replaces a static `scale()` entirely, and animations beat normal
+   declarations. So the rule is structural — the scale lives on a wrapper nothing animates, and
+   the sheet lives on its child. */
+const G28 = '28. The corner mascot fits inside his corner';
+const capySrc = fs.readFileSync('src/components/CapybaraMascot.jsx', 'utf8');
+/* theme.css is already loaded as `themeCss` further up. `themeSrc` is BiohazardTheme.jsx, NOT
+   the stylesheet — reaching for that name here is what made these checks read the wrong file. */
+
+check(G28, 'the scale sits on a wrapper, not on the sheet element',
+  /<div className="kpm-merch-corner">/.test(capySrc) &&
+  /kpm-merch \$\{spriteToShow\}/.test(capySrc),
+  'sharing one element means the deal breath (which animates transform) throws the scale away ' +
+  'and he renders at his true 200px in the screen corner — feet and right side off the edge');
+check(G28, 'the wrapper still carries the frame size and the corner origin',
+  /\.kpm-merch-corner \{[^}]*width: 200px;[^}]*\}/s.test(themeCss) &&
+  /\.kpm-merch-corner \{[^}]*transform: scale\(\.64\);[^}]*transform-origin: 100% 100%;/s.test(themeCss),
+  'origin 100% 100% is what keeps the shrink pinned to the screen corner instead of the centre');
+check(G28, 'the sheet child fills the wrapper',
+  /\.kpm-merch-corner > \.kpm-merch \{ position: absolute; inset: 0; \}/.test(themeCss),
+  'without it the child is width:100% of a 200px box, which happens to work — until someone ' +
+  'changes .kpm-merch, and then he is silently a different size');
+check(G28, 'the deal pose still breathes',
+  /\.kpm-merch-deal \{[^}]*animation: kpmMerchBreathe/s.test(themeCss),
+  'the wrapper exists so this animation can keep its own transform — if it went away, the ' +
+  'wrapper is pointless indirection');
+
 /* ── report ──────────────────────────────────────────────────────────────── */
 let last = '';
 for (const r of results) {
