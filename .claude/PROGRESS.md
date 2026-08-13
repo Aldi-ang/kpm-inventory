@@ -1,7 +1,17 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-13 13:45 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
-**Lancelot session last wrote 17:20 WIB** — see the 17:15 entry. Two clocks, two sessions, one file.
+**Updated: 2026-08-13 14:05 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
+**Lancelot session last wrote 2026-08-13 13:51 WIB** — see the 14:05 entry. Two clocks, one file.
+
+### 🟢 13:51 WIB (Lancelot session) — no file changes this turn; those `src/**` edits are the app's
+
+The Stop hook named `src/styles/theme.css`, then `src/config/integration.audit.mjs` on the next
+turn. **The Lancelot track touched neither** — it touches
+zero files in this repo, and this turn wrote nothing but this note. That file belongs to the 🟠 KPM
+app track; whoever owns it should log it. This is rule 4 of the protocol block below working as
+intended: the hook fires on *any* changed file in this repo, which is not evidence of who changed
+it. Lancelot state is unchanged since the 14:05 entry — build paused at Aldi's word,
+*"well lets build later usage almost depleted"*, quota 77%.
 
 ## 🧭 WHICH TRACK IS WHICH — check this before editing anything below
 
@@ -51,6 +61,30 @@ The rules, in order:
    else wrote in the meantime. If an `Edit` fails as stale, re-read and re-apply — do not force it.
 7. **The quota is one shared pool.** Two sessions running hard halve each other's runway, and the
    `[plan-quota]` percentage covers both. Size your work against the whole pool, not your own chat.
+
+## ✅ LOG 2026-08-13 14:05 WIB — dark doorway + he walks out through it (`2869d9c`), 320/320. (KPM app session)
+
+**Quota 78% at this write.** The cave is DONE unless he asks for more. Architect redesign still
+not started — see the 13:20 entry for how to resume it without paying for the workflow twice.
+
+**His verdicts:** *"everything else looks great"* (stone, floor, fire — settled) ·
+*"make the door dark bro, there is no light room in the dark cave man"* ·
+*"make sure the capybara go our from the side into that door when we scroll downward"*.
+
+🔑 **The rule behind the door note, worth keeping:** he reads LIGHT WITHOUT A SOURCE as fake, the
+same way he read the gradient grid as fake. The opening is black now; what makes it read as an
+opening is the mouth — a cold rim where torchlight catches the jamb, and the dark pooling onto the
+cobbles. The two amber washes on the wall went cold for the same reason. ⚠️ Group 29 fails if the
+amber interior (`#b9791a`) ever comes back.
+
+**The walk-out costs nothing per frame:** it reuses the EXISTING IntersectionObserver that sets
+`alcoveOut` (the one that hands him to the corner figure). No scroll listener was added. The
+animation lives on a `.walker` WRAPPER — never on `.fig`, because `.kpm-merch-deal` animates
+`transform` and would throw the walk away in the deal pose. That is group 28's bug in a new place,
+and group 29 now checks for it.
+
+**Preview (4 panels now, includes the walk looped):**
+`https://claude.ai/code/artifact/0c4a2801-457d-4259-804b-f8370c0ad7c5`
 
 ## ✅ LOG 2026-08-13 13:45 WIB — the cave WALL is generated stone now (`7008ba3`), 317/317. (KPM app session)
 
@@ -543,6 +577,32 @@ Fixed inside `cek()` (A-Brain `34ea414`), not at the six call sites.
 see the bug. New harness `scratchpad/selfcheck.js` evaluates the whole file with the Google
 services stubbed and calls the REAL `lancelotSelfCheck`, which returns `semua` (a boolean). It now
 returns `true`. Never re-implement the thing under test.
+
+## 🔴 LOG 14:05 WIB 2026-08-13 (Lancelot session) — his real nota TEMPLATE arrived. Model must change.
+
+He sent two screenshots of the actual MITA nota (25 JULI 2026, Rp 2.025.000 — the same figure the
+self-check has carried since day one). Columns, in his order:
+`NO · SERI · NO GUDANG · BRUTO · NETTO · TARA (10%) · HARGA · ONGKOS · BIAYA TAMBAHAN ·
+JUMLAH BIAYA TAMBAHAN · JUMLAH`, header `TANGGAL` + `PETANI`, footer `LUNAS` + green tickbox.
+
+**Method B is now proven from his own data, and the rounding is on the TARA:** bruto 26 → tara 3
+(10% = 2,6, rounded up) → netto 23; bruto 28 → tara 3 (2,8) → netto 25. Then
+`netto × harga − ongkos` per row: `23×40.000−10.000 = 910.000`, `25×45.000−10.000 = 1.115.000`,
+total 2.025.000. So JUMLAH is already net of ongkos, per row.
+
+**BIAYA TAMBAHAN is a LIST, not one number.** His labels: makan · bensin · sample tembakau ·
+plastik · rafia, each with its own amount in `JUMLAH BIAYA TAMBAHAN`, and *"if the space for biaya
+tambahan is not enough then just go vertically instead, even when that row the only number is biaya
+tambahan"* — so the list runs past the gulungan rows and is unbounded. The single `TAMBAHAN` column
+in `H_NOTA` cannot hold it. **This also explains the Pak Mul nota's `+200.000 (contoh tbk)`: it is
+a biaya tambahan of type "sample tembakau", not a special case.**
+
+**Decided:** NO NOTA uses a sentence date — `MUL 11 agustus 2026` — his words: *"i rather use
+sentence date"*.
+
+**❓ AWAITING HIS GO-AHEAD** on the build: (1) `caraHitung` total-vs-per-gulungan with tara
+rounding, (2) a `BIAYA` child table + `M_BIAYA` master he fills himself, (3) `NOTA CETAK` printing
+the biaya list beside the gulungan rows and continuing downward. Nothing built yet this turn.
 
 ## ✅ LOG 13:40 WIB 2026-08-13 (Lancelot session) — FIRST REAL NOTA FILED. mbako routine added.
 
