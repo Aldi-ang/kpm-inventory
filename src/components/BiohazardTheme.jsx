@@ -6,6 +6,9 @@ import { Lock, LogOut, LogIn, ArrowRight, Trophy, Sun, Moon,
 import { signOut } from 'firebase/auth';
 import { auth } from '../config/firebase'; 
 import NotificationBell from './NotificationBell';
+/* the dot field from the Master Vault gate — reused, not re-drawn, so the two locked screens
+   cannot drift apart. gateCanvasOn() is its own Lite-Mode switch. */
+import VaultGate, { gateCanvasOn } from './VaultGate.jsx';
 import MusicPlayer from '../MusicPlayer'; 
 
 // 🚀 IMPORT THE BRAIN
@@ -342,8 +345,18 @@ export default function BiohazardTheme({
                    shape, which is why it read as a different app from Settings.
                    `bg-ground` is solid on purpose: a locked screen has nothing worth showing
                    through it, and a translucent one let the dashboard behind it compete. */
-                <div className="hide-on-print fixed inset-0 z-[80] flex items-center justify-center px-4 bg-ground">
-                    <div className="kpm-mod arrive w-full max-w-sm">
+                /* SAME SCREEN AS THE MASTER VAULT GATE — his call, 2026-08-14: this *"should be
+                   the same with the login screen that we design last time the vault gate ... but
+                   of course the panel on the middle should change a little bit because one is
+                   panel when you are already login in google and this one is havent"*.
+                   So: the gate's own dot field behind it, and the gate's card shell (`.gate`)
+                   around a panel whose CONTENT is the one thing that differs. `playing={false}`
+                   means the field only lights under the pointer — the unlock sequence belongs to
+                   the vault, not to the door. `gateCanvasOn()` is the same switch the vault uses,
+                   so Lite Mode drops the canvas here exactly as it does there. */
+                <div className="hide-on-print fixed inset-0 z-[80] flex items-center justify-center px-4 bg-[#050403]">
+                    {gateCanvasOn() && <VaultGate playing={false} />}
+                    <div className="kpm-mod gate arrive w-full relative z-10">
                         <div className="kpm-head">
                             <span className="slot">{appSettings?.companyName || 'KPM Inventory'}</span>
                             <div className="line">

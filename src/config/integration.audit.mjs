@@ -599,6 +599,24 @@ check(G15, 'the door is built from the control system, not hand-picked hex',
 check(G15, 'the sidebar login is the same control as the door',
   (code(themeSrc).match(/className="kpm-btn key block"/g) || []).length >= 2,
   'two buttons doing the identical act must not wear two different shapes');
+/* HIS CALL, 2026-08-14: the sign-in screen and the Master Vault gate are the SAME screen with a
+   different middle panel. Reused, not re-drawn — a second copy of the dot field or of the card's
+   hex is how the two would drift the next time either is touched. */
+check(G15, 'the door stands on the vault gate\'s own dot field',
+  /import VaultGate, \{ gateCanvasOn \}/.test(code(themeSrc)) &&
+  /gateCanvasOn\(\) && <VaultGate playing=\{false\}/.test(doorSrc),
+  'playing={false} keeps the unlock sequence with the vault — here the field only lights under ' +
+  'the pointer; gateCanvasOn() is the same Lite-Mode switch the vault uses');
+/* theme.css is loaded as `themeCss` further down this file, AFTER group 15 — reaching for it here
+   throws "Cannot access before initialization". Read it locally rather than reordering the file. */
+const gateCss = fs.readFileSync('src/styles/theme.css', 'utf8');
+check(G15, 'the door wears the gate card as a shared class, not a copy of its hex',
+  /className="kpm-mod gate/.test(doorSrc) &&
+  /\.kpm-mod\.gate \{[^}]*background: rgba\(4, 3, 2, \.9\)/s.test(gateCss) &&
+  !/rgba\(4,\s*3,\s*2/.test(doorSrc),
+  'the values are his signed-off variation-B ones; duplicating them in JSX is what lets the two ' +
+  'locked screens drift');
+
 check(G15, 'the locked-out message is not dimmed to half contrast',
   !/opacity-50[\s\S]{0,120}ACCESS/.test(code(themeSrc)),
   'opacity-50 sat on the one message a locked-out user gets');

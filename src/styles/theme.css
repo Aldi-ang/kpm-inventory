@@ -1706,3 +1706,21 @@ html.lite-mode .kpm-title-rule { animation: none; width: 100%; }
 .kpm-mod.arrive { animation: kpmModIn 320ms cubic-bezier(.2,.8,.3,1) both; }
 html.lite-mode .kpm-mod.arrive { animation: none; }
 @media (prefers-reduced-motion: reduce) { .kpm-mod.arrive { animation: none; } }
+
+/* ---- THE GATE SHELL. Aldi, 2026-08-14: the Google sign-in screen *"should be the same with the
+   login screen that we design last time the vault gate"*, with only the middle panel differing
+   because one is entered before Google and one after.
+   These are the signed-off variation-B values, lifted from the gate card in App.jsx: near-black
+   at 90%, ONE rust hairline, 320 wide on a phone and 384 from md up. Keeping them in a class is
+   what stops the two screens drifting the next time either is touched.
+   ⚠️ The numbers are his (background spacing 26 · letter density 7 · name size 0.10 · wave 3.0s
+   live in VaultGate.jsx). Do not tune them without him. */
+.kpm-mod.gate { background: rgba(4, 3, 2, .9); border-color: rgba(231, 112, 15, .28);
+  max-width: 320px; }
+@media (min-width: 768px) { .kpm-mod.gate { max-width: 384px; } }
+/* the head and the shelf go transparent so the card reads as ONE pane of glass over the dot
+   field, the way the gate's card does — a stack of tinted bands would sit on top of it instead */
+.kpm-mod.gate .kpm-head { background-color: transparent; background-image: none;
+  border-bottom-color: rgba(231, 112, 15, .18); }
+.kpm-mod.gate .kpm-shelf { background-color: transparent; }
+.kpm-mod.gate .kpm-shelf.split { border-top-color: rgba(231, 112, 15, .18); }
