@@ -433,16 +433,27 @@ html.lite-mode .kpm-coin.lg,   .kpm-coin.lg.still   { background-position: -72px
    `transform` for its breath, and an animation replaces a static transform wholesale — the same
    trap that put the corner mascot's feet off the screen (group 28). Wrapper owns the journey,
    the sprite owns its own motion. */
-.kpm-alcove .walker { position: relative; z-index: 3; width: 200px; height: 200px;
+/* ⚠️ THE WALK IS ANCHORED TO THE DOOR, not to a pixel distance. A fixed `translateX` made where
+   he disappears depend on how wide the cave happened to be — too early in a wide column, past the
+   jamb in a narrow one. Aldi: *"make the capybara vanish closer to the door"*.
+   `left` is animated instead of `transform` precisely because a percentage in `left` measures the
+   PARENT, while a percentage in `translateX` measures the element. The arch is `left: 4%` and
+   124px wide, so its centre is `4% + 62px`, and he is 200px wide — hence `calc(4% - 38px)`.
+   Animating `left` costs a layout pass per frame; it runs once, on desktop, for 700ms.
+   If the arch's `left` or width ever changes, THESE NUMBERS MOVE WITH IT. */
+.kpm-alcove .walker { position: absolute; z-index: 3; bottom: 0; left: calc(50% - 100px);
+  width: 200px; height: 200px;
   animation: kpmMerchFromDoor 520ms cubic-bezier(.2,.8,.3,1) both; }
-.kpm-alcove .walker.out { animation: kpmMerchToDoor 700ms cubic-bezier(.45,0,.55,1) forwards; }
+.kpm-alcove .walker.out { animation: kpmMerchToDoor 760ms cubic-bezier(.4,0,.6,1) forwards; }
+/* he keeps his shape until he is AT the mouth, and only then the dark takes him */
 @keyframes kpmMerchToDoor {
-  0%   { transform: translateX(0) scale(1); opacity: 1; }
-  55%  { transform: translateX(-84px) scale(.96); opacity: .92; }
-  100% { transform: translateX(-146px) scale(.86); opacity: 0; } }
+  0%   { left: calc(50% - 100px); transform: scale(1);   opacity: 1; }
+  62%  { left: calc(22% - 68px);  transform: scale(.95); opacity: 1; }
+  86%  { left: calc(4% - 38px);   transform: scale(.88); opacity: .85; }
+  100% { left: calc(4% - 38px);   transform: scale(.84); opacity: 0; } }
 @keyframes kpmMerchFromDoor {
-  from { transform: translateX(-124px) scale(.9); opacity: 0; }
-  to   { transform: none; opacity: 1; } }
+  from { left: calc(4% - 38px);   transform: scale(.86); opacity: 0; }
+  to   { left: calc(50% - 100px); transform: none;       opacity: 1; } }
 /* Lite Mode and reduced motion: he is simply there, or simply gone. No half-walk. */
 html.lite-mode .kpm-alcove .walker,
 html.lite-mode .kpm-alcove .walker.out { animation: none !important; }

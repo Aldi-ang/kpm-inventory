@@ -1415,6 +1415,12 @@ check(G29, 'the merchant walks out through the doorway, and the walk is on a wra
   !/\.kpm-alcove \.fig \{[^}]*animation: kpmMerchToDoor/s.test(themeCss),
   'group 28 all over again: the deal breath animates transform, so a walk sharing that element ' +
   'is thrown away in the deal pose');
+check(G29, 'he vanishes AT the doorway, at any cave width',
+  /86%\s*\{ left: calc\(4% - 38px\);/.test(themeCss) &&
+  /100% \{ left: calc\(4% - 38px\);[^}]*opacity: 0/.test(themeCss),
+  'a fixed translateX made the vanish point depend on the column width — too early when wide, ' +
+  'past the jamb when narrow. 4% - 38px is the arch centre (left 4% + half of 124px) minus half ' +
+  'of his 200px box, so it tracks the arch instead of guessing');
 check(G29, 'Lite Mode does not leave him mid-step',
   /lite-mode \.kpm-alcove \.walker\.out \{ opacity: 0/.test(themeCss),
   'with animations collapsed he would otherwise stand in the doorway forever');
