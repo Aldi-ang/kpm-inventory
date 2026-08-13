@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-13 08:15 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
+**Updated: 2026-08-13 13:20 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
 **Lancelot session last wrote 17:20 WIB** — see the 17:15 entry. Two clocks, two sessions, one file.
 
 ## 🧭 WHICH TRACK IS WHICH — check this before editing anything below
@@ -51,6 +51,27 @@ The rules, in order:
    else wrote in the meantime. If an `Edit` fails as stale, re-read and re-apply — do not force it.
 7. **The quota is one shared pool.** Two sessions running hard halve each other's runway, and the
    `[plan-quota]` percentage covers both. Size your work against the whole pool, not your own chat.
+
+## ✅ LOG 2026-08-13 13:20 WIB — the cave SHIPPED (`4adb13a`), 313/313. Architect redesign still open. (KPM app session)
+
+**Preview for him, no login needed:** `https://claude.ai/code/artifact/0c4a2801-457d-4259-804b-f8370c0ad7c5`
+— before / after / after-in-Lite-Mode, each an iframe running the REAL `theme.css` with the
+sprites inlined. ⚠️ **The alcove is `hidden lg:grid` — DESKTOP ONLY. He cannot see this change on
+his phone at all**, which is why the preview exists. Rebuild it with
+`node …scratchpad\cave\build.mjs <out.html>` and republish the SAME file path to keep the URL.
+
+Shipped: the generated 8×(32×56) blue flame sprite (`public/sprites/bluefire.png`, in the PWA
+precache), the near-black masonry, and the amber doorway that finally gives the merchant a
+silhouette. Group 29 pins all six claims and was proved red on `HEAD` first.
+
+**Quota discipline — he called this out twice today and he was right.** The hook is SILENT below
+70%, so silence is NOT blindness; 9router being down is. Read the exact number any time by copying
+`.claude/plan-quota.mjs` to the scratchpad, replacing `if (used >= 95) {` with
+`if (true) { console.log(head); } else if (used >= 95) {`, and running it. 13:10 WIB read: 20% used.
+
+**STILL OPEN — the architect redesign, unchanged from the entry below:** recover the three
+direction drafts from `wf_5afe7309-600`'s `journal.jsonl` rather than relaunching (1.1M tokens
+already spent), and build the REUSABLE control system he asked for, not a repaint.
 
 ## 🔴 LOG 2026-08-13 08:15 WIB — QUOTA 100%. Architect redesign UNFINISHED. Fire sprite done, uncommitted. (KPM app session)
 
