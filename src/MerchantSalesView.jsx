@@ -1949,12 +1949,17 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                         <div className="kpm-flame"></div>
                     </div>
                     <div className="cast"></div>
-                    {/* the two shadows are the SAME sprite, flattened - no extra download */}
-                    <div className={`fig sh a kpm-merch ${merchSprite}`}></div>
-                    <div className={`fig sh b kpm-merch ${merchSprite}`}></div>
                     <div className="floor"></div>
-                    <div className={`fig kpm-merch ${merchSprite}`} aria-hidden="true">
-                        {merchantMood === 'deal' && <span className="kpm-merch-hold"></span>}
+                    {/* He walks out through the doorway when the cave scrolls away, and back in
+                        when it returns — the wrapper carries the journey so the deal-pose breath
+                        cannot cancel it, and his two shadows travel with him. */}
+                    <div className={`walker ${alcoveOut ? 'out' : ''}`}>
+                        {/* the two shadows are the SAME sprite, flattened - no extra download */}
+                        <div className={`fig sh a kpm-merch ${merchSprite}`}></div>
+                        <div className={`fig sh b kpm-merch ${merchSprite}`}></div>
+                        <div className={`fig kpm-merch ${merchSprite}`} aria-hidden="true">
+                            {merchantMood === 'deal' && <span className="kpm-merch-hold"></span>}
+                        </div>
                     </div>
                     <div className="dark" aria-hidden="true"></div>
                     {merchantLine && merchantMood !== 'idle' && <p className="says" role="status">{merchantLine}</p>}

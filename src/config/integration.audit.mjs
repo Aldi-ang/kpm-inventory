@@ -1362,7 +1362,7 @@ check(G28, 'the deal pose still breathes',
    Aldi sent a pixel-art dungeon and asked for the alcove to look like it, "but darker", with the
    torch fire matching a pixel flame. The flame is now a real sprite sheet, so it inherits every
    trap the other sheets have: pixel stepping, a held frame in Lite Mode, and offline precache. */
-const G29 = '29. The cave is lit by its doorway, and the fire is a sprite';
+const G29 = '29. The cave, its dark doorway, and its pixel fire';
 const sw = fs.readFileSync('dist/sw.js', 'utf8');
 
 check(G29, 'the flame is the generated sprite, stepped in pixels',
@@ -1382,7 +1382,7 @@ check(G29, 'Lite Mode holds a lit frame instead of animating',
 check(G29, 'the flame still works with no network',
   sw.includes('sprites/bluefire.png'),
   'the app is installed as a PWA — a sprite outside the precache is a blank torch offline');
-check(G29, 'the lit doorway exists in both the markup and the stylesheet',
+check(G29, 'the doorway exists in both the markup and the stylesheet',
   /className="arch"/.test(termSrc) && /\.kpm-alcove \.arch \{/.test(themeCss),
   'the arch is what gives the merchant a silhouette; without it he is a flat cut-out on rock');
 check(G29, 'the cave got darker, not lighter',
@@ -1404,6 +1404,20 @@ check(G29, 'both cave tiles work with no network',
 check(G29, 'the doorway is off-centre and taller than the merchant',
   /\.kpm-alcove \.arch \{[^}]*left: 4%;[^}]*height: 226px/s.test(themeCss),
   'centred, he stood in front of the only lit thing in the frame — his report, 2026-08-13');
+check(G29, 'the doorway is DARK — no lit room behind it',
+  /\.kpm-alcove \.arch::before[^}]*linear-gradient\(180deg, #0a0908 0%, #050403 55%, #000000 100%\)/s.test(themeCss) &&
+  !/\.kpm-alcove \.arch::before[^}]*#b9791a/s.test(themeCss),
+  'his words: "there is no light room in the dark cave man". A lit interior needs a light ' +
+  'source this scene does not have');
+check(G29, 'the merchant walks out through the doorway, and the walk is on a wrapper',
+  /className=\{`walker \$\{alcoveOut \? 'out' : ''\}`\}/.test(termSrc) &&
+  /\.kpm-alcove \.walker\.out \{ animation: kpmMerchToDoor/.test(themeCss) &&
+  !/\.kpm-alcove \.fig \{[^}]*animation: kpmMerchToDoor/s.test(themeCss),
+  'group 28 all over again: the deal breath animates transform, so a walk sharing that element ' +
+  'is thrown away in the deal pose');
+check(G29, 'Lite Mode does not leave him mid-step',
+  /lite-mode \.kpm-alcove \.walker\.out \{ opacity: 0/.test(themeCss),
+  'with animations collapsed he would otherwise stand in the doorway forever');
 
 /* ── report ──────────────────────────────────────────────────────────────── */
 let last = '';

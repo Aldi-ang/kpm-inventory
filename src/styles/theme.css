@@ -335,8 +335,8 @@ html.lite-mode .kpm-coin.lg,   .kpm-coin.lg.still   { background-position: -72px
    Kept as gradients on a SEPARATE layer so the tile itself stays untinted. */
 .kpm-alcove .rock::before { content: ""; position: absolute; inset: 0;
   background:
-    radial-gradient(60% 40% at 22% 62%, rgba(236,176,66,.10), transparent 70%),
-    radial-gradient(50% 34% at 78% 24%, rgba(130,200,255,.07), transparent 68%),
+    radial-gradient(46% 32% at 21% 20%, rgba(130,200,255,.09), transparent 68%),
+    radial-gradient(46% 32% at 79% 16%, rgba(130,200,255,.07), transparent 68%),
     linear-gradient(180deg, rgba(0,0,0,.82) 0%, rgba(0,0,0,.28) 42%, rgba(0,0,0,.55) 100%); }
 /* the cobbled floor he stands on — same trick, flatter stones */
 .kpm-alcove .rock::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0;
@@ -355,19 +355,23 @@ html.lite-mode .kpm-coin.lg,   .kpm-coin.lg.still   { background-position: -72px
    does, so the crown of the arch clears his head at any alcove width. */
 .kpm-alcove .arch { position: absolute; z-index: 0; left: 4%; bottom: 26px;
   width: 124px; height: 226px; border-radius: 62px 62px 4px 4px;
-  background: linear-gradient(180deg, #2a2018 0%, #171210 70%, #0d0a08 100%);
-  box-shadow: inset 0 0 0 3px #0a0806; }
+  background: linear-gradient(180deg, #23201c 0%, #15120f 62%, #0b0908 100%);
+  box-shadow: inset 0 0 0 3px #0a0806, 0 0 0 1px #2b2620; }
+/* ⚠️ THE OPENING IS DARK, and it must stay dark. It was lit amber for one commit and Aldi killed
+   it on sight: *"make the door dark bro, there is no light room in the dark cave man"* — a lit
+   room behind a doorway needs a light source the scene does not have. What makes it read as an
+   opening instead of a black panel is the MOUTH: a thin cold rim where the torchlight catches the
+   jamb, and nothing beyond it. */
 .kpm-alcove .arch::before { content: ""; position: absolute; inset: 8px 8px 0 8px;
   border-radius: 54px 54px 2px 2px;
   background:
-    linear-gradient(180deg, rgba(255,214,120,.20) 0%, rgba(232,168,52,.55) 46%, rgba(255,226,150,.92) 100%),
-    #b9791a; }
-/* the light on the floor. Separate element-half so it can animate without touching the arch. */
-.kpm-alcove .arch::after { content: ""; position: absolute; left: -54px; right: -54px; bottom: -26px;
-  height: 54px; pointer-events: none;
-  background: radial-gradient(50% 100% at 50% 100%, rgba(236,176,66,.42), rgba(180,120,30,.16) 52%, transparent 76%);
-  animation: kpmArchBreath 5.2s ease-in-out infinite; }
-@keyframes kpmArchBreath { 0%,100% { opacity: .86; } 50% { opacity: 1; } }
+    radial-gradient(80% 30% at 50% 0%, rgba(150,190,225,.10), transparent 70%),
+    linear-gradient(180deg, #0a0908 0%, #050403 55%, #000000 100%);
+  box-shadow: inset 0 2px 6px rgba(160,200,235,.07); }
+/* the dark does not stop at the threshold — it pools out onto the cobbles in front of it */
+.kpm-alcove .arch::after { content: ""; position: absolute; left: -30px; right: -30px; bottom: -22px;
+  height: 44px; pointer-events: none;
+  background: radial-gradient(50% 100% at 50% 0%, rgba(0,0,0,.85), rgba(0,0,0,.45) 46%, transparent 78%); }
 
 .kpm-torch { position: absolute; bottom: 30px; width: 30px; height: 150px; z-index: 1;
   transform-origin: 50% 100%; }
@@ -420,6 +424,34 @@ html.lite-mode .kpm-coin.lg,   .kpm-coin.lg.still   { background-position: -72px
    whole figure visually off centre. It also explains the coin: the palm sits at 81% across
    in the SPRITE, and the coin's 72,5% was measured against a full 200px frame, so it only
    lands on his hand once the box is the frame's real size. */
+/* HE LEAVES THROUGH THE DOOR. Aldi: *"make sure the capybara go our from the side into that door
+   when we scroll downward"*. The cave already knows when it has scrolled away — an
+   IntersectionObserver sets `alcoveOut`, which is what hands him over to the corner figure. That
+   same signal now walks him off toward the arch first, instead of cutting him.
+
+   ⚠️ The walk lives on this WRAPPER, never on `.fig` itself. `.kpm-merch-deal` animates
+   `transform` for its breath, and an animation replaces a static transform wholesale — the same
+   trap that put the corner mascot's feet off the screen (group 28). Wrapper owns the journey,
+   the sprite owns its own motion. */
+.kpm-alcove .walker { position: relative; z-index: 3; width: 200px; height: 200px;
+  animation: kpmMerchFromDoor 520ms cubic-bezier(.2,.8,.3,1) both; }
+.kpm-alcove .walker.out { animation: kpmMerchToDoor 700ms cubic-bezier(.45,0,.55,1) forwards; }
+@keyframes kpmMerchToDoor {
+  0%   { transform: translateX(0) scale(1); opacity: 1; }
+  55%  { transform: translateX(-84px) scale(.96); opacity: .92; }
+  100% { transform: translateX(-146px) scale(.86); opacity: 0; } }
+@keyframes kpmMerchFromDoor {
+  from { transform: translateX(-124px) scale(.9); opacity: 0; }
+  to   { transform: none; opacity: 1; } }
+/* Lite Mode and reduced motion: he is simply there, or simply gone. No half-walk. */
+html.lite-mode .kpm-alcove .walker,
+html.lite-mode .kpm-alcove .walker.out { animation: none !important; }
+html.lite-mode .kpm-alcove .walker.out { opacity: 0; }
+@media (prefers-reduced-motion: reduce) {
+  .kpm-alcove .walker { animation: none; }
+  .kpm-alcove .walker.out { animation: none; opacity: 0; }
+}
+
 .kpm-alcove .fig { position: relative; z-index: 3; width: 200px; height: 200px;
   filter: drop-shadow(0 -2px 16px rgba(70,160,255,.26)); }
 .kpm-alcove .sh { position: absolute; bottom: 0; left: 50%; margin-left: -100px;
