@@ -450,7 +450,7 @@ export default function BiohazardTheme({
                 {/* `ml-12` cleared the fixed menu square that no longer exists, and `mb-6` was
                     spacing for a 256px column. Centred in 88px now, and the version prints as
                     `v0.1.174` — "Build 0.1.174" is wider than the strip and would be clipped. */}
-                <div key={`brand-${isAdmin}`} className="hidden lg:block mb-3 px-2 text-center mt-0.5 lg:mt-0 boot-1">
+                <div key={`brand-${isAdmin}`} className="kpm-rail-brand hidden lg:block mb-3 px-2 text-center mt-0.5 lg:mt-0 boot-1">
                     {/* the glow was a box-shadow, which Lite Mode deletes — the name then lost its
                         edge entirely. A border is a border in every mode. */}
                     <h1 className="text-sm lg:text-[11px] font-display font-bold text-ink border-b-2 border-accent-edge pb-1 lg:pb-1.5 inline-block tracking-[0.08em] uppercase leading-tight">
@@ -494,7 +494,7 @@ export default function BiohazardTheme({
                            thing he rejected once already ("there is still scroll feature inside
                            sidebar, i dont want that"), and it was only ever there because a
                            256px list of words could not fit. Marks share the height instead. */
-                        className="grid grid-cols-2 gap-2 p-2 auto-rows-[minmax(0,1fr)] overflow-hidden flex-1 min-h-0 scrollbar-hide boot-2"
+                        className="kpm-rail-grid grid grid-cols-2 gap-2 p-2 auto-rows-[minmax(0,1fr)] overflow-hidden flex-1 min-h-0 scrollbar-hide boot-2"
                     >
                         {visibleMenu.map(item => {
                             const Mark = item.icon;
@@ -529,9 +529,11 @@ export default function BiohazardTheme({
                                         strokeWidth={peek?.id === item.id || on ? 2.4 : 2}
                                         className="kpm-rail-icon"
                                     />
-                                    {/* The word is the `title` tooltip on a desk and the peek
-                                        plate under the finger on a phone. Printing it inside an
-                                        88px strip is what made the old desk list 256px wide. */}
+                                    {/* HIS ASK: *"i want u to add textbox when we hover it"*. This
+                                        is that box — it is `display: none` until the strip is
+                                        pointed at, and the strip widens to hold it. The phone
+                                        never shows it; there the peek plate follows the finger. */}
+                                    <span className="kpm-rail-word">{item.label}</span>
                                     {on && <span className="absolute right-0 top-2 bottom-2 w-[3px] rounded-l-full bg-[#ff9d00] shadow-[0_0_10px_rgba(255,157,0,.6)]"></span>}
                                 </button>
                             );

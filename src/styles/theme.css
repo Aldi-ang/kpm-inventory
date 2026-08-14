@@ -1086,6 +1086,48 @@ html.kpm-sheet-over-header .kpm-topbar { opacity: 0; pointer-events: none; }
 html.lite-mode .kpm-topbar { transition: none; }
 @media (prefers-reduced-motion: reduce) { .kpm-topbar { transition: none; } }
 
+/* ---------- THE DESK RAIL SHRINKS, AND OPENS WHEN YOU POINT AT IT ----------
+   His ask, 2026-08-14, with two screenshots: *"sidebar should shrink and opens up when hovered
+   not fix like that to add more space for the main UI instead"*, and *"i want u to add textbox
+   when we hover it"*. Both are this block: 104px of marks at rest, 236px with their words when
+   the pointer is on it.
+
+   🔑 `margin-right: -132px` is the whole trick. The rail is the first flex child, so growing it
+   would push the app sideways every time the pointer brushed past — a layout jump on hover is
+   worse than the wasted space it fixes. The negative margin gives back exactly what the width
+   took, so the strip PAINTS 236 wide and OCCUPIES 104: the main UI never moves, and z-[90] on
+   the panel keeps the open state above it.
+
+   Gated on `hover: hover` and `pointer: fine` per the control system's contract — a touch screen
+   fires :hover on tap and keeps it, which would leave the rail stuck open. Those devices keep the
+   Tailwind `lg:w-[144px]` and its two columns, unchanged.
+
+   The doubled `[data-kpm-rail][data-kpm-rail]` is deliberate: `lg:w-[144px]` is a single class, so
+   a single attribute selector would tie on specificity and be decided by file order. */
+@media (min-width: 1024px) and (hover: hover) and (pointer: fine) {
+  [data-kpm-rail][data-kpm-rail] {
+    width: 104px;
+    transition: width 260ms cubic-bezier(.22, 1, .36, 1), margin-right 260ms cubic-bezier(.22, 1, .36, 1);
+  }
+  [data-kpm-rail][data-kpm-rail]:hover { width: 236px; margin-right: -132px; }
+  /* two columns of marks at rest — his "2 colomn to add more space" — one column of marks and
+     words when it opens, because a label cannot share a 100px cell with another label */
+  [data-kpm-rail]:hover .kpm-rail-grid { grid-template-columns: minmax(0, 1fr); }
+  [data-kpm-rail]:hover .kpm-rail-mark { justify-content: flex-start; gap: 12px; padding-left: 16px; }
+  .kpm-rail-word {
+    display: none; font-family: var(--font-display); font-weight: 700; font-size: 11px;
+    letter-spacing: .1em; text-transform: uppercase; white-space: nowrap; text-align: left;
+  }
+  [data-kpm-rail]:hover .kpm-rail-word { display: inline; }
+  /* the wordmark cannot fit 104px, so it is part of what opens */
+  [data-kpm-rail] .kpm-rail-brand { display: none; }
+  [data-kpm-rail]:hover .kpm-rail-brand { display: block; }
+}
+/* the word is desk-only — on a phone the peek plate follows the finger instead */
+@media (max-width: 1023px) { .kpm-rail-word { display: none; } }
+html.lite-mode [data-kpm-rail][data-kpm-rail] { transition: none; }
+@media (prefers-reduced-motion: reduce) { [data-kpm-rail][data-kpm-rail] { transition: none; } }
+
 /* ---------- THE EDGE RIBBON ----------
    His brief: "smaller size that is dragable from the side but not really visible from the
    side, the idea is like samsung edge panel", and "maybe put small animation ribbon on the

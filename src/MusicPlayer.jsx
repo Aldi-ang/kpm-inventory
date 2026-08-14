@@ -92,9 +92,13 @@ const MusicPlayer = ({ onOpen }) => {
     return (
         /* `relative` is load-bearing on a phone: it is what the body below anchors its
            `right-full` to, and without it the panel would hang off the viewport instead. */
-        /* Bare on a phone — the head has to read as one more mark in the rail, not as a widget
-           parked in it. The desk keeps the card it always had. */
-        <div className="relative w-full lg:bg-black/40 lg:border lg:border-white/10 rounded-xl font-mono flex flex-col mb-2 lg:mb-4 lg:shadow-lg shrink-0">
+        /* Bare at BOTH widths from 2026-08-14 — his call: *"music player is not even the same UI
+           like what we have in the phone mode"*. The desk used to keep a card of its own here
+           (`lg:bg-black/40`, a white hairline, a drop shadow) plus a "Cassette OS" label and an
+           inline play/pause, because it had a 256px column to spend. It has a strip now, and the
+           head has to read as one more mark in it — which is exactly what the phone already
+           settled. Ported, not redesigned. */
+        <div className="relative w-full rounded-xl font-mono flex flex-col mb-2 shrink-0">
             <audio ref={audioRef} onEnded={handleSongEnd} />
 
             {/* ACCORDION HEADER (Always visible) */}
@@ -112,25 +116,12 @@ const MusicPlayer = ({ onOpen }) => {
                 role="button"
                 aria-expanded={isExpanded}
                 aria-label="Cassette OS"
-                className={`kpm-rail-mark ${isExpanded ? 'on' : ''} relative h-14 lg:h-auto p-2 lg:p-2.5 flex justify-center lg:justify-between items-center gap-2 rounded-xl lg:rounded-none lg:rounded-t-xl lg:border-b border-[#ff9d00]/20 cursor-pointer transition-colors`}
+                className={`kpm-rail-mark ${isExpanded ? 'on' : ''} relative h-14 p-2 flex justify-center items-center gap-2 rounded-xl cursor-pointer transition-colors`}
             >
-                <div className="flex items-center gap-2">
-                    <Music size={21} className={`text-[#ff9d00] shrink-0 transition-transform duration-300 ${isPlaying ? 'animate-pulse' : ''} ${isExpanded ? 'scale-[1.22]' : ''}`} />
-                    <span className="hidden lg:inline text-[10px] font-bold text-[#ff9d00] tracking-widest uppercase">Cassette OS</span>
-                </div>
-
-                {/* Desk keeps its chevron and its inline play/pause — there is room for them in
-                    a 256px column, and taking them away would be a change he did not ask for. */}
-                <div className="hidden lg:flex items-center gap-3">
-                    <button
-                        onClick={(e) => { e.stopPropagation(); togglePlay(); }}
-                        aria-label={isPlaying ? 'Pause' : 'Play'}
-                        className="text-[#ff9d00] hover:text-white transition-colors p-1"
-                    >
-                        {isPlaying ? <Pause size={13} fill="currentColor" /> : <Play size={13} fill="currentColor" />}
-                    </button>
-                    {isExpanded ? <ChevronUp size={14} className="text-[#ff9d00] shrink-0" /> : <ChevronDown size={14} className="text-[#ff9d00] shrink-0" />}
-                </div>
+                {/* One mark, one job: open the pill. Every control — play, skip, shuffle, loop,
+                    volume — lives in the pill, at both widths now. The desk's own label and inline
+                    play/pause are gone with the 256px column that had room for them. */}
+                <Music size={21} className={`text-[#ff9d00] shrink-0 transition-transform duration-300 ${isPlaying ? 'animate-pulse' : ''} ${isExpanded ? 'scale-[1.22]' : ''}`} />
             </div>
 
             {/* THE PILL — his call, replacing the panel that hung off the side of the rail:

@@ -3499,7 +3499,13 @@ const handleGitHubMirror = async () => {
             setDarkMode={setDarkMode}
             /* The face in the panel is the agent's own, the one they set on Agent Profile.
                Google's account picture is the fallback; the dicebear robot is gone. */
-            agentPhoto={motorists.find(m => m.id === agentProfileId)?.profileImage || null}
+            /* `|| 'master_owner'` — his report, 2026-08-14: *"the profile picture is not even
+               changing like agent profile picture"*. `agentProfileId` is null for the owner and
+               for an admin (App.jsx:296 + the sign-in branch), so the lookup missed and the shell
+               fell through to the Google account photo. The owner's own record is written under
+               `master_owner` by AgentProfileView, which is what this now asks for when there is
+               no agent id. A real agent id still wins, so nobody sees somebody else's face. */
+            agentPhoto={motorists.find(m => m.id === (agentProfileId || 'master_owner'))?.profileImage || null}
             syncIndicator={user && (
                 /* PALETTE LAW. This was an emerald pill — the last green in the app chrome, and
                    the loudest thing in a header whose job is to be quiet. Synced is the calm

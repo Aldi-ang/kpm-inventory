@@ -1177,11 +1177,16 @@ check(G25, 'the music player is in the panel at every width',
 /* "music player is squeshed bro ... i rather make the music logo pressable like other
    components ... delete the music player button, like the forward backwar pause button in the
    sidebar ... make the music button spawn a panel beside it". */
+/* INVERTED at the desk end, 2026-08-14: *"music player is not even the same UI like what we have
+   in the phone mode"*. The desk used to keep a card, a "Cassette OS" label and an inline
+   play/pause pair, because it had a 256px column. It has a 104px strip now, so the head is one
+   mark at BOTH widths and every control lives in the pill. */
 check(G25, 'the rail head is one mark, with no transport crammed beside it',
   /kpm-rail-mark \$\{isExpanded \? 'on' : ''\}/.test(musicSrc) &&
-  /hidden lg:flex items-center gap-3/.test(musicSrc),
-  'play/skip in a rail cell is what squeezed it — every control belongs in the panel, and ' +
-  'the desk keeps its inline pair because there is room for it there');
+  !/hidden lg:flex items-center gap-3/.test(musicSrc) &&
+  !/lg:bg-black\/40/.test(musicSrc),
+  'play/skip in a rail cell is what squeezed it — every control belongs in the pill, and the ' +
+  'desk wears the phone\'s shape now rather than a card of its own');
 /* THE PILL MUST LEAVE THE RAIL, and by portal — not by CSS. The rail carries `backdrop-blur`,
    and a backdrop-filter makes its element the containing block for `position: fixed` descendants.
    A pill left inside would anchor to the rail instead of the screen and sit off the edge. This is
