@@ -434,7 +434,13 @@ export default function BiohazardTheme({
                    alone. 256px of words became 88px of marks — the words live in the tooltip.
                    The reference's own numbers: ~70-98px wide, 44px rows, 10px gaps, 20-32px
                    icons. `w-[88px]` sits in that band and gives a 23px mark a 32px margin. */
-                className={`hide-on-print fixed inset-y-0 right-0 z-[90] w-[176px] lg:w-[88px] bg-[#0b0a09]/97 lg:bg-black/95 backdrop-blur-xl border-l lg:border-l-0 lg:border-r border-[#3e3226] lg:border-white/10 flex flex-col pt-5 lg:pt-3 px-0 overflow-hidden
+                /* 144px, not 88 — his report with a screenshot: *"pc sidebar is too small even
+                   logout button is cutted"*. `.kpm-expand` grows to **118px** on hover to print
+                   its word, and this panel is `overflow-hidden` (load-bearing — a conditional
+                   overflow here once left an expanded music panel floating over the app), so at
+                   88px the logout button was cut off mid-animation. 144 clears 118 plus its
+                   padding, and it is what two columns of marks need anyway. */
+                className={`hide-on-print fixed inset-y-0 right-0 z-[90] w-[176px] lg:w-[144px] bg-[#0b0a09]/97 lg:bg-black/95 backdrop-blur-xl border-l lg:border-l-0 lg:border-r border-[#3e3226] lg:border-white/10 flex flex-col pt-5 lg:pt-3 px-0 overflow-hidden
                              transition-[transform,width,padding,opacity] duration-300 ease-[cubic-bezier(.22,1,.36,1)] lg:relative lg:translate-x-0 lg:opacity-100 lg:pointer-events-auto
                              ${isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full'}`}>
 
@@ -488,7 +494,7 @@ export default function BiohazardTheme({
                            thing he rejected once already ("there is still scroll feature inside
                            sidebar, i dont want that"), and it was only ever there because a
                            256px list of words could not fit. Marks share the height instead. */
-                        className="grid grid-cols-2 lg:grid-cols-1 gap-2 p-2 auto-rows-[minmax(0,1fr)] overflow-hidden flex-1 min-h-0 scrollbar-hide boot-2"
+                        className="grid grid-cols-2 gap-2 p-2 auto-rows-[minmax(0,1fr)] overflow-hidden flex-1 min-h-0 scrollbar-hide boot-2"
                     >
                         {visibleMenu.map(item => {
                             const Mark = item.icon;

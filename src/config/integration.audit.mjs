@@ -1069,8 +1069,8 @@ check(G25, 'the hold is visible while it is being counted',
    and no width at either size may bring back a scrollbar. */
 check(G25, 'the rail is two columns wide, so a full menu fits without scrolling',
   /const RAIL_W = 176;/.test(shellSrc) &&
-  /w-\[176px\] lg:w-\[88px\]/.test(shellSrc) &&
-  /grid grid-cols-2 lg:grid-cols-1 gap-2 p-2 auto-rows-\[minmax\(0,1fr\)\] overflow-hidden/.test(shellSrc) &&
+  /w-\[176px\] lg:w-\[144px\]/.test(shellSrc) &&
+  /grid grid-cols-2 gap-2 p-2 auto-rows-\[minmax\(0,1fr\)\] overflow-hidden/.test(shellSrc) &&
   !/lg:overflow-y-auto/.test(shellSrc),
   'RAIL_W and the class must agree — the drag maths, the name plate offset and the music ' +
   'panel width are all measured off it');
