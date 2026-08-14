@@ -685,11 +685,21 @@ export default function BiohazardTheme({
                                 the rail, so a second language costs nothing here.
                                 The capsule grows sideways and prints its own word; `.danger` turns
                                 it red only once you are on it. `data-label` is what it prints. */}
+                            {/* 📏 "Exit", not "Log out", and it is arithmetic rather than taste.
+                                His report: *"when it expand the animation go outside the sidebar
+                                box"*. The capsule is 100px wide by design, and he had already
+                                asked for 24px of clear air between the glyph and its word. Those
+                                three constraints are only satisfiable by a shorter word —
+                                MEASURED: at 96px with a 24px gap there are 32px left for text,
+                                and "LOG OUT" needs 52. "EXIT" needs 26.
+                                The full phrase survives where it costs nothing: the tooltip and
+                                the accessible name both still say "Log out". */}
                             <button
                                 onClick={handleLogout}
                                 className="kpm-expand danger shrink-0"
-                                data-label="Log out"
-                                title="Logout"
+                                data-label="Exit"
+                                aria-label="Log out"
+                                title="Log out"
                             >
                                 <LogOut size={19} />
                             </button>

@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-15 02:50 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
+**Updated: 2026-08-15 03:05 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -49,6 +49,22 @@ order:
   Authorized domains, or the phone cannot sign in.
 
 ## 📓 LOG — newest first, about five entries; `git log` keeps the rest
+
+### 2026-08-15 03:05 — the logout capsule stayed inside the dock, and the word had to shrink
+
+His last open item: *"when it expand the animation go outside the sidebar box"*. `.kpm-expand`
+grows to 136px and the pod is 100px, so the red slab crossed the capsule's edge. The rail now gets
+its own narrower expansion, scoped — `.kpm-expand` is shared and every other site has the room.
+
+⚠️ **THREE OF HIS ASKS CONFLICTED AND ONLY ARITHMETIC COULD SETTLE IT.** Inside the dock, 24px of
+clear air between glyph and word (he asked for that a round earlier), and the words "LOG OUT".
+Measured with the real face at 10px/.12em: at 96px wide there are **32px left for text**, and
+"LOG OUT" needs **52**, "LOGOUT" 48, **"EXIT" 26**. So the word is the only variable that could
+give. The full phrase moved to `title` and `aria-label`, where it costs no width.
+**If anyone lengthens that label, the capsule leaves the dock again** — there is a check on it.
+**373/373.** He may prefer the alternative: put logout back on the same slide-out plate as every
+other mark, which keeps "Log out" in full because the plate lands outside the capsule by design.
+He chose the expand animation deliberately, so it was not swapped without asking.
 
 ### 2026-08-15 02:35 — the dock is as tall as its buttons. Second attempt; the first broke it.
 

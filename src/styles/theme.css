@@ -1282,6 +1282,24 @@ html.lite-mode .kpm-topbar { transition: none; }
      `max-height` is the short-screen guard: 56px is the 32px strip plus air. Past that the grid's
      1fr rows give way — `--cap` is a ceiling, never a floor. */
   .kpm-rail-pod { height: max-content; max-height: calc(100vh - 56px); }
+  /* 📏 THE LOGOUT CAPSULE STAYS INSIDE THE DOCK. His report: *"when it expand the animation go
+     outside the sidebar box"* — it grew to 136px inside a 100px pod, so the red slab crossed the
+     capsule's edge. Scoped to the rail, because `.kpm-expand` is a shared control and every other
+     site that uses it has the room.
+     THE NUMBERS ARE MEASURED, not guessed. 96 - 2 border - 12 icon margin - 16 icon - 42 label
+     = **24px of clear air**, the exact gap he asked for a round earlier. The 42px label box holds
+     "EXIT" (26px at 10px/.12em) with 12px of right padding and 4px spare. It does NOT hold
+     "LOG OUT" (52px) — which is why the word is shorter in the shell, and why the tooltip carries
+     the full phrase instead. Widen this and it leaves the capsule again; keep the word short. */
+  [data-kpm-rail] .kpm-expand:hover,
+  [data-kpm-rail] .kpm-expand:focus-visible,
+  [data-kpm-rail] .kpm-expand:active { width: 96px; }
+  [data-kpm-rail] .kpm-expand:hover > svg,
+  [data-kpm-rail] .kpm-expand:focus-visible > svg,
+  [data-kpm-rail] .kpm-expand:active > svg { margin-left: 12px; }
+  [data-kpm-rail] .kpm-expand:hover::after,
+  [data-kpm-rail] .kpm-expand:focus-visible::after,
+  [data-kpm-rail] .kpm-expand:active::after { width: 42px; padding-right: 12px; }
   /* :focus-within, not only :hover — at rest every mark is invisible but still tabbable, so
      keyboard focus has to open the same capsule the pointer does or it lands on nothing */
   /* 351px, not 292: measured from the longest tab name. "Receivables & Consignment" is 219px of

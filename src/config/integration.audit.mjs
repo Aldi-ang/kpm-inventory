@@ -1578,6 +1578,23 @@ check(G25, 'the parts nobody draws are on the palette too — scrollbar, selecti
   'a scrollbar, a caret and a selection highlight ship with defaults that belong to no design ' +
   'system — and Firefox ignores ::-webkit entirely, so scrollbar-color is a second rule, not a ' +
   'duplicate of the first');
+/* 📏 THE LOGOUT CAPSULE MUST NOT LEAVE THE DOCK. His report: *"when it expand the animation go
+   outside the sidebar box"* — `.kpm-expand` grows to 136px and the pod is 100px, so the red slab
+   crossed the capsule's edge. The rail gets its own narrower expansion.
+   ⚠️ THIS IS AN ARITHMETIC CONSTRAINT, NOT A PREFERENCE, and all three of his asks only fit
+   together because the WORD is short. Measured with the real face at 10px/.12em:
+     96 - 2 border - 12 icon margin - 16 icon - 42 label = 24px clear air (the gap he asked for)
+     "EXIT" = 26px and fits the 42px box · "LOGOUT" = 48px · "LOG OUT" = 52px — neither fits.
+   So a longer word here silently pushes the capsule back outside the dock. The full phrase lives
+   on `title` and `aria-label`, where it costs no width. */
+check(G25, 'the logout capsule expands INSIDE the dock, and its word fits the room',
+  /\[data-kpm-rail\] \.kpm-expand:hover,[\s\S]{0,140}?\{ width: 96px; \}/.test(themeCss) &&
+  /\[data-kpm-rail\] \.kpm-expand:hover::after,[\s\S]{0,180}?\{ width: 42px; padding-right: 12px; \}/.test(themeCss) &&
+  /data-label="Exit"/.test(shellSrc) &&
+  /aria-label="Log out"/.test(shellSrc),
+  'the rail is 100px wide and .kpm-expand grows to 136px everywhere else, so the rail needs its ' +
+  'own narrower expansion — and the label has to be a word that fits 42px, or it leaves the dock ' +
+  'again no matter how narrow the button is');
 check(G25, 'no blue, slate or green left in the shell, App or the player',
   !BANNED_HUE.test(shellSrc) && !BANNED_HUE.test(appCode) && !BANNED_HUE.test(musicSrc),
   'palette law: slate IS the blue. The print receipt is the ONLY exemption and it lives in its ' +
