@@ -19,6 +19,35 @@ staleness, not on a new edit; timestamp bumped to satisfy it.
 > `A-Brain/Wiki/Log.md`, which is the memory now, and this file should hold only where the work
 > stands. Do not do it without his word; do not let another session pass without asking.
 
+### ✅ 14:40 WIB — the specificity tie that shipped twice, and the skills were installed all along.
+
+🔴 **CORRECTION TO THE 13:20 ENTRY: the design skills DO exist.** `~/.claude/skills/` already held
+`emil-design-eng`, `impeccable`, `ui-ux-pro-max`, `design`, `ui-styling`,
+`make-interfaces-feel-better` and the rest of Emil's set. The 13:20 claim that they "do not
+exist" was drawn from `ListSkills`/`SuggestSkills`, which report the **claude.ai** registry — a
+different thing from the on-disk user skills. Pulled all three repos fresh at his request: 9
+updated, `ask-sonner` new, **30 skills on disk**. No `design-critique` exists in any of them.
+⚠️ They still did not appear in THIS session's invocable list — a restart is the thing to try, and
+"a skill is unavailable" is a fact about one session, never about the machine.
+
+**🔑 THE SAME CASCADE TIE SHIPPED TWICE IN ONE DAY, and the second time I had "verified" it.**
+`.kpm-rail-pod > *` counts as **one class** — the universal selector scores zero — so it tied
+with `.boot-3` and lost on order, because the boot animations live in an inline `<style>` that
+lands after theme.css. The animation kept running, and a filled animation outranks every normal
+declaration, so `opacity: 0` could not hold it either. That is why his music/face/logout stayed
+lit around a closed capsule after the morning's "fix". `[data-kpm-rail] ` prefix makes it two.
+The header padding lost the identical fight (`.kpm-topbar` vs Tailwind's `lg:px-8`) — doubled.
+
+⚠️ **THE HARNESS LET IT THROUGH, and that is the more useful lesson.** It was missing the
+component's own inline `<style>`, so there was no animation to lose to; and the reading was taken
+**before the 0.25s delay had elapsed**, so opacity read 0 and looked right. Both fixed: the boot
+keyframes are in `harness.html` now, and readings are taken after the animations finish.
+**A mock verifies nothing it does not contain, and a measurement taken mid-animation is a guess.**
+
+Also: the pod pads itself 12px so the bottom group stops hanging off the capsule's end.
+Measured after animations complete — closed: all three blocks opacity 0. Open: capsule 12→708
+with the bottom group at 479→700, inside it.
+
 ### ✅ 13:55 WIB — the dock floats and moves to the corner. `93b5c2f`, 364/364. HIS TWO DECISIONS, BOTH ANSWERED.
 
 **He chose "float it"** for the blank-column question, which is also what the component's sheet
