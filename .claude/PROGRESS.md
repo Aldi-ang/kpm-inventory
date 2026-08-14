@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-15 02:20 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
+**Updated: 2026-08-15 02:35 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -50,19 +50,30 @@ order:
 
 ## 📓 LOG — newest first, about five entries; `git log` keeps the rest
 
-### 2026-08-15 02:20 — the dock is as tall as its buttons, not as tall as the screen
+### 2026-08-15 02:35 — the dock is as tall as its buttons. Second attempt; the first broke it.
 
 His two reports were ONE bug: *"i dont want bottom panel to collapse with the sidebar panel"* and
 *"it looks better when the sidebar panel height follow how many buttons are there instead of
 expanding all the way to the bottom of the screen while there is so much blank space above it"*.
-`bottom: 0` pinned the capsule floor-to-ceiling, so it reserved height it never used — the grid is
-capped and centred and the foot has `margin-top: auto`, so the leftover opened as a gap between
-them (the blank space), and the same overrun reached into the L-Click/SCROLL strip (the
-collision). `bottom: auto` + `height: max-content` closes the gap and lifts it clear of the strip
-in one change. `max-height: calc(100vh - 56px)` is the short-screen guard; if content ever exceeds
-it the grid's 1fr rows give way, because `--cap` is a ceiling and never a floor.
-**Computed, not measured:** 12 + grid 436 + foot ~126 + 12 ≈ **586px**, against a strip whose top
-edge is at 736 on a 768px screen. **He should confirm by looking** — no frame has been captured.
+A full-height pod reserved height it never used — the grid is capped and centred and the foot has
+`margin-top: auto`, so the leftover opened as a gap BETWEEN them (the blank space), and the bottom
+of the same pod reached into the L-Click/SCROLL strip (the collision).
+
+🔴 **THE FIRST FIX BROKE THE DOCK — his word: *"it brokes"*, with a screenshot showing the capsule
+split into two nested shapes.** It had put `bottom: auto`, `height: max-content` and a `max-height`
+on **`[data-kpm-rail]`**, the PANEL. That element is `position: fixed` + `inset-y-0` + `display:
+flex` + **`overflow: hidden`** all at once, and asking that combination to size itself from its
+content is asking a clipping box to measure the thing it clips.
+**The panel paints nothing, so its height costs nothing. The capsule lives on the POD.** The
+working fix is one property on one element: `.kpm-rail-pod { height: max-content; max-height:
+calc(100vh - 56px) }`. The panel is back to exactly the full-height state he had approved.
+⚠️ Note the cascade: the pod's `height: 100%` from the appearance block still exists; this rule
+wins only because it is LATER at equal specificity. Do not move it above that block.
+
+⚠️ **THREE AUDIT CHECKS BROKE ON PROSE TODAY, NOT ON CODE** — including `railGateAt`, which
+allowed 2400 characters between a media query and a rule inside it until a comment pushed the rule
+out of reach. **A regex that spans the gap from a selector to its declaration breaks when someone
+edits the comment in between.** Anchor on the value or on something short and unique.
 
 ### 2026-08-15 01:55 — the header became the dock's twin; slate was hiding in `index.css`
 

@@ -1259,15 +1259,29 @@ html.lite-mode .kpm-topbar { transition: none; }
      `max-height` is the guard for a short screen: 56px is the 32px strip plus air. If the content
      ever exceeds it the grid's 1fr rows shrink — `--cap` is a ceiling, never a floor, so they are
      allowed to give way rather than overflow a panel that clips. */
+  /* ⚠️ THE PANEL STAYS FULL HEIGHT. An earlier attempt at his "follow how many buttons" ask put
+     `height: max-content` and a `max-height` on THIS element — and it broke the dock's shape.
+     This element is `position: fixed`, `inset-y-0`, `display: flex` AND `overflow: hidden`; asking
+     that combination to size itself from its content is asking a clipping box to measure the
+     thing it clips. It paints nothing anyway, so its height costs nothing.
+     **The capsule is what had to shrink, and the capsule lives on the pod.** One property on one
+     element, instead of three on the wrong one. */
   [data-kpm-rail][data-kpm-rail] {
-    position: fixed; left: 0; right: auto; top: 0; bottom: auto;
-    height: max-content; max-height: calc(100vh - 56px);
+    position: fixed; left: 0; right: auto; top: 0; bottom: 0;
     width: 64px; margin-right: 0;
     transition: width 340ms cubic-bezier(.22, 1, .36, 1);
   }
-  /* the appearance block sets height: 100% for the full-height desk; here the pod follows the
-     panel's content height instead, or `100%` of an auto-height parent resolves to nothing useful */
-  .kpm-rail-pod { height: auto; }
+  /* 📏 THE DOCK IS AS TALL AS ITS BUTTONS — his report, 2026-08-15: *"it looks better when the
+     sidebar panel height follow how many buttons are there instead of expanding all the way to
+     the bottom of the screen while there is so much blank space above it"*, and in the same
+     breath *"i dont want bottom panel to collapse with the sidebar panel"*. Those are ONE bug:
+     a full-height pod reserved height it never used — the grid is capped and centred and the foot
+     has `margin-top: auto`, so the leftover opened as a gap BETWEEN them (the blank space), and
+     the bottom of the same pod reached into the L-Click/SCROLL strip (the collision).
+     `max-content` here ends the capsule where its buttons end and closes both.
+     `max-height` is the short-screen guard: 56px is the 32px strip plus air. Past that the grid's
+     1fr rows give way — `--cap` is a ceiling, never a floor. */
+  .kpm-rail-pod { height: max-content; max-height: calc(100vh - 56px); }
   /* :focus-within, not only :hover — at rest every mark is invisible but still tabbable, so
      keyboard focus has to open the same capsule the pointer does or it lands on nothing */
   /* 351px, not 292: measured from the longest tab name. "Receivables & Consignment" is 219px of

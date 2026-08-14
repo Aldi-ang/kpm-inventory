@@ -1145,16 +1145,21 @@ check(G25, 'the desk wears the same mark as the phone, not a white slab',
    that trick has to come back with it or every hover will shove the app sideways.
    The pointer-events pair is load-bearing now, not a nicety: a fixed panel over the content with
    pointer events at rest would swallow every click down the left edge of every screen. */
-const railGateAt = themeCss.search(/@media \(min-width: 1024px\) and \(hover: hover\) and \(pointer: fine\) \{[\s\S]{0,2400}?\[data-kpm-rail\]\[data-kpm-rail\] \{\s*position: fixed/);
+/* ⚠️ ANCHORED ON THE GATE ITSELF, not on a span reaching forward to some rule inside it. This
+   used to allow 2400 characters between the media query and `position: fixed`, and a comment
+   added inside that span pushed the rule out of reach — the check then failed on prose, not on
+   code. Third time this shape of regex has broken today. Anchor on something unique and short. */
+const railGateAt = themeCss.search(/@media \(min-width: 1024px\) and \(hover: hover\) and \(pointer: fine\) \{/);
 check(G25, 'the desk rail collapses to one circle, and opening it moves nothing',
   /\.kpm-rail-pod \{ display: contents; \}/.test(themeCss) &&
-  /* 📏 `bottom: auto`, NOT `bottom: 0`. Pinned floor-to-ceiling the capsule reserved height it
-     never used: the grid is capped and centred and the foot has `margin-top: auto`, so the
-     leftover opened as a gap between them, and the same overrun reached into the L-Click/SCROLL
-     strip at the bottom of the screen. His report named both as one thing. Put `bottom: 0` back
-     and the blank gap and the strip collision both return. */
-  /position: fixed; left: 0; right: auto; top: 0; bottom: auto;\s*\n\s*height: max-content; max-height: calc\(100vh - 56px\);/.test(themeCss) &&
-  /\.kpm-rail-pod \{ height: auto; \}/.test(themeCss) &&
+  /position: fixed; left: 0; right: auto; top: 0; bottom: 0;\s*\n\s*width: 64px; margin-right: 0;/.test(themeCss) &&
+  /* 📏 THE POD SHRINKS, THE PANEL DOES NOT. His ask was that the dock be as tall as its buttons;
+     the first attempt put `max-content` on the PANEL and broke the dock's shape, because that
+     element is fixed, flexed AND `overflow: hidden` — a clipping box cannot be asked to measure
+     the thing it clips. The panel paints nothing, so its height costs nothing; the capsule lives
+     on the pod, so the pod is the only thing that had to change. */
+  /\.kpm-rail-pod \{ height: max-content; max-height: calc\(100vh - 56px\); \}/.test(themeCss) &&
+  !/\[data-kpm-rail\]\[data-kpm-rail\] \{\s*\n\s*position: fixed;[^}]*height: max-content/.test(themeCss) &&
   !/margin-right: -228px;/.test(themeCss) &&
   /\[data-kpm-rail\]\[data-kpm-rail\] \{ pointer-events: none; \}/.test(themeCss) &&
   /* right: 40px, not 4px — the pod went to 100px for the two columns, and 100 - 4 - 56 = 40 is
