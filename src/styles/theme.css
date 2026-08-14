@@ -1088,7 +1088,30 @@ html.lite-mode .kpm-examine-object { animation: none; }
    sheet stands in the header's band the header is simply not there. Opacity, not display, so
    it fades with the drag instead of vanishing at a threshold; pointer-events so a control you
    cannot see cannot be pressed through the paper. MerchantSalesView owns the class. */
+/* ═══ THE HEADER BAND ═══ his ask, 2026-08-15: *"lets rework the top UI format ... i want it to
+   be in theme with this app and also change the background"*.
+   The diagnosis first, because it decides the shape: the dock is a floating capsule with a lit
+   edge, and the header was a hairline rule on a flat wall. One side of the app floated and the
+   other was a line — that is the "not in theme with this app" he is pointing at. So the header
+   becomes the dock's TWIN: same glass, same lit lip, inset from the edges, floating on the same
+   ground. One rule for the whole shell — things float — instead of two unrelated ideas. */
 .kpm-topbar { transition: opacity 220ms ease-out; }
+/* the section's mark, ghosted into the corner. Low enough to be texture, never a second label. */
+.kpm-topbar-ghost {
+  position: absolute; top: -18px; right: 10px; pointer-events: none; user-select: none;
+  color: #ff9d00; opacity: .05; z-index: 0;
+}
+html.lite-mode .kpm-topbar-ghost { opacity: .04; }
+/* THE CLOCK, plated like its neighbours. `tabular-nums` is not a detail here: proportional
+   digits change width as the minute ticks, so the whole chip twitches once a minute. */
+.kpm-chip.kpm-clock {
+  flex-direction: column; align-items: flex-end; gap: 0; line-height: 1.15;
+  padding-top: 5px; padding-bottom: 5px; cursor: default;
+  font-variant-numeric: tabular-nums;
+}
+.kpm-chip.kpm-clock:hover { color: #8b7256; border-color: #3e3226; box-shadow: none; }
+.kpm-clock-date { font-size: 9px; letter-spacing: .1em; opacity: .75; }
+.kpm-clock-time { font-size: 13px; font-weight: 700; color: #f5e6c8; letter-spacing: .04em; }
 html.kpm-sheet-over-header .kpm-topbar { opacity: 0; pointer-events: none; }
 html.lite-mode .kpm-topbar { transition: none; }
 @media (prefers-reduced-motion: reduce) { .kpm-topbar { transition: none; } }
@@ -1424,7 +1447,41 @@ html.lite-mode .kpm-topbar { transition: none; }
      `lg:px-8`, which is also one class, and a tie is decided by file order — Tailwind's utilities
      are emitted after this file, so a single `.kpm-topbar` LOST and his header kept sitting under
      the logo. Anything here that competes with a utility must outrank it, not tie with it. */
-  .kpm-topbar.kpm-topbar { padding-left: 76px; }
+  /* 🔵 THE HEADER IS THE DOCK'S TWIN. It no longer spans wall to wall under a hairline; it is a
+     floating pane inset from three edges, starting at 76px so it clears the collapsed circle and
+     lines its left edge up with the dock's column.
+     `margin-left`, not `padding-left` — padding put the band's own background under the logo,
+     which is exactly the overlap he photographed. A margin gives the corner away instead.
+     The glass is deliberately WEAKER than the dock's (blur 18 vs 30, lip .28 vs .42): the dock is
+     the thing you reach for and the header is the thing you read, so the header must not compete.
+     Same family, quieter voice. */
+  .kpm-topbar.kpm-topbar {
+    margin: 12px 14px 4px 76px;
+    padding: 11px 16px 12px;
+    border: 1px solid rgba(245, 230, 200, .12);
+    border-radius: 20px;
+    overflow: hidden;
+    background-color: transparent;
+    background-image: linear-gradient(180deg, rgba(72, 58, 42, .04), rgba(20, 16, 13, .12));
+    -webkit-backdrop-filter: blur(18px) saturate(1.5);
+            backdrop-filter: blur(18px) saturate(1.5);
+    box-shadow: inset 0 1px 0 rgba(255, 247, 228, .28),
+                inset 0 -1px 0 rgba(0, 0, 0, .30),
+                0 18px 46px rgba(0, 0, 0, .42);
+  }
+  /* ⚠️ SAME FALLBACK AS THE DOCK, AND FOR THE SAME REASON. Lite Mode strips backdrop-filter, and
+     a 4%-tinted bar with no blur is an invisible header. The opaque ground lives here, not in the
+     rule above, or it would sit in FRONT of the blur and there would be nothing to see through. */
+  html.lite-mode .kpm-topbar.kpm-topbar {
+    background-color: #14110e; background-image: none;
+    -webkit-backdrop-filter: none; backdrop-filter: none;
+    box-shadow: 0 18px 46px rgba(0, 0, 0, .42);
+  }
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .kpm-topbar.kpm-topbar { background-color: #14110e; background-image: none; }
+  }
+  /* the band drew its own bottom rule as a wall; a floating pane has edges instead */
+  .kpm-topbar.kpm-topbar { border-bottom-color: rgba(245, 230, 200, .12); }
   /* the pod's children live INSIDE the capsule, not in the 12px the capsule insets itself by.
      His report: *"all the button can be put inside the sidebar without some of them exiting the
      sidebar space"* — the bottom group was hanging off the end of the capsule. */

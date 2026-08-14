@@ -710,9 +710,21 @@ export default function BiohazardTheme({
                     pixels of a phone screen back, for nothing. The desk still pays it, in CSS,
                     because the square is still up there — see kpm-topbar in theme.css. */}
                 <div className={`kpm-topbar hide-on-print pt-4 lg:pt-6 px-4 lg:px-8 pb-2 flex justify-between items-end gap-3 border-b border-[#3e3226] shrink-0 relative`}>
-                    <h2 className="text-6xl font-bold text-white/5 uppercase select-none absolute top-2 right-8 pointer-events-none hidden lg:block">
-                        {activeTab}
-                    </h2>
+                    {/* 👻 THE GHOST IS THE SECTION'S MARK NOW, NOT ITS NAME.
+                        His note when I proposed deleting it: *"well it change according to the
+                        choosen app section"* — and he is right, that is the good part, so it is
+                        kept. What is dropped is the redundancy: it used to print the tab NAME at
+                        60px, the same word already set 24px to its left, and it sat directly
+                        behind the bell and the clock while doing it. Text behind text is an echo,
+                        and letterforms are the worst possible thing to put under a control.
+                        The same tab's ICON still changes with every section, still fills the
+                        corner, and cannot be misread as a second label. */}
+                    <TotemMark
+                        size={150}
+                        strokeWidth={1}
+                        aria-hidden="true"
+                        className="kpm-topbar-ghost hidden lg:block"
+                    />
 
                     <div>
                         <div className="flex items-center gap-2 mb-0.5">
@@ -723,7 +735,12 @@ export default function BiohazardTheme({
                             <div className={`h-1.5 w-1.5 rounded-full ${user ? 'bg-[#f0e2c0]' : 'bg-red-500 animate-pulse'}`}></div>
                             <span className={`text-[11px] font-mono uppercase ${user ? 'text-[#f0e2c0]/70' : 'text-red-500'}`}>{user ? "System Active" : "Disconnected"}</span>
                         </div>
-                        <div className="text-xl lg:text-2xl text-white font-bold tracking-[0.15em] uppercase text-shadow-glow truncate">
+                        {/* `text-shadow-glow` is gone: a white blur around white letterforms is
+                            the one 2015 thing left in this row, and it softens the very edges the
+                            letter-spacing exists to sharpen. The gold rule under the title already
+                            carries the emphasis, and it MOVES when you change tab, which is the
+                            part that means something. */}
+                        <div className="text-xl lg:text-2xl text-white font-bold tracking-[0.15em] uppercase truncate">
                             {activeTab.replace(/_/g, ' ')}
                         </div>
                         {/* Re-keyed on the tab, so the rule redraws itself every time you move.
@@ -770,9 +787,13 @@ export default function BiohazardTheme({
                             into it. */}
                         <NotificationBell notifications={notifications} onNotificationClick={onNotificationClick} />
 
-                        <div className="text-[10px] text-gray-500 font-mono text-right hidden md:block">
-                            <div>{new Date().toLocaleDateString()}</div>
-                            <div className="text-sm text-white">{new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
+                        {/* THE CLOCK JOINS THE OTHERS. It was the only thing in this row wearing
+                            no plate — a chip, a switch, a bell, and then bare text — which is why
+                            it read as left over rather than placed. Same .kpm-chip as its
+                            neighbours, so the right cluster is one language instead of four. */}
+                        <div className="kpm-chip kpm-clock hidden md:flex" title="Local date and time">
+                            <span className="kpm-clock-date">{new Date().toLocaleDateString()}</span>
+                            <span className="kpm-clock-time">{new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
                         </div>
                     </div>
                 </div>

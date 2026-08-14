@@ -992,6 +992,11 @@ check(G22, 'the header is told to stand down while the sheet is in its band',
   'without the class the bell is back on the paper; without the cleanup, leaving the tab ' +
   'mid-drag strands the app with no header at all');
 const themeCss = fs.readFileSync('src/styles/theme.css', 'utf8');
+/* index.css was never read here, which is how slate scrollbars survived every palette sweep —
+   the banned-hue check only ever looked at the shell, App and the player. It holds the body
+   ground and the browser-chrome colours (scrollbar, caret, selection), so it is palette surface
+   like any other file. */
+const indexCss = fs.readFileSync('src/index.css', 'utf8');
 check(G22, 'the rule that acts on that class exists in theme.css',
   /html\.kpm-sheet-over-header \.kpm-topbar \{[^}]*opacity: 0/.test(themeCss) &&
   /html\.kpm-sheet-over-header \.kpm-topbar \{[^}]*pointer-events: none/.test(themeCss),
@@ -1151,7 +1156,11 @@ check(G25, 'the desk rail collapses to one circle, and opening it moves nothing'
      the right edge and the height animate; the left edge never moves. */
   /\.kpm-rail-pod::before \{ left: 4px; right: 40px; top: 12px; height: 56px; border-radius: 999px; \}/.test(themeCss) &&
   /\.kpm-rail-totem \{[\s\S]{0,200}?top: 12px; left: 4px;/.test(themeCss) &&
-  /\.kpm-topbar \{ padding-left: 76px; \}/.test(themeCss) &&
+  /* 76px still, but a MARGIN now, not padding. Padding kept the header's own surface underneath
+     the collapsed logo — fine while the band was transparent, wrong the moment it became a glass
+     pane, because the pane then paints under the dock. A margin gives the corner away instead. */
+  /\.kpm-topbar\.kpm-topbar \{\s*\n?\s*margin: 12px 14px 4px 76px;/.test(themeCss) &&
+  !/\.kpm-topbar\.kpm-topbar \{ padding-left: 76px; \}/.test(themeCss) &&
   /:focus-within \{ width: 351px/.test(themeCss) &&
   /\[data-kpm-rail\] \.kpm-rail-pod > \* \{ animation: none; \}/.test(themeCss) &&
   /<div className="kpm-rail-pod">/.test(shellSrc) &&
@@ -1511,6 +1520,38 @@ check(G25, 'it is black at rest and red only under the finger',
   !/\.kpm-expand:hover::after,[\s\S]{0,120}?width: 68%/.test(themeCss),
   'a delete or logout button that is red before you reach for it turns every list into a wall ' +
   'of alarm');
+/* ═══ THE HEADER IS THE DOCK'S TWIN ═══ his ask, 2026-08-15: *"i want it to be in theme with this
+   app and also change the background"*.
+   The band was a hairline rule on a flat wall while the dock had become a floating capsule with a
+   lit edge — one side of the shell floated and the other was a line. Now both are panes on one
+   lit ground, which is the "in theme" he was asking for.
+   The header's glass is deliberately WEAKER than the dock's (blur 18 vs 30): the dock is what you
+   reach for, the header is what you read, and two panes shouting at the same volume is how a
+   shell reads as busy. If the dock's blur ever changes, this stays below it. */
+check(G25, 'the header floats on the same ground as the dock, and survives Lite Mode',
+  /\.kpm-topbar\.kpm-topbar \{[\s\S]{0,420}?backdrop-filter: blur\(18px\) saturate\(1\.5\)/.test(themeCss) &&
+  /html\.lite-mode \.kpm-topbar\.kpm-topbar \{[\s\S]{0,200}?backdrop-filter: none/.test(themeCss) &&
+  /html\.lite-mode \.kpm-topbar\.kpm-topbar \{\s*\n?\s*background-color: #14110e/.test(themeCss) &&
+  /* the ground exists at all — glass over a flat wall is a grey rectangle, and both panes were
+     spending a blur on nothing until the body got a light source */
+  /background-attachment: fixed;/.test(indexCss) &&
+  /radial-gradient\(58% 44% at 4% -4%, rgba\(255, 157, 0, \.13\)/.test(indexCss),
+  'a 4%-tinted bar with the blur stripped is an invisible header — Lite Mode strips exactly that, ' +
+  'so the opaque ground is not decoration; and the ground must stay BEHIND the blur, never in the ' +
+  'same declaration, or there is nothing left to see through');
+/* 🔴 PALETTE LAW, THE GAP THAT LET SLATE SHIP. The banned-hue sweep below reads the shell, App and
+   the player — and `src/index.css` is none of the three, so every scrollbar in the app sat at
+   #cbd5e1 / #94a3b8 / #475569 / #64748b. Slate IS the blue. Text selection and the caret were
+   browser-default blue for the same reason: nobody had drawn them, so nobody had checked them. */
+check(G25, 'the parts nobody draws are on the palette too — scrollbar, selection, caret',
+  !BANNED_HUE.test(indexCss) &&
+  /::-webkit-scrollbar-thumb \{\s*\n?\s*background: #3e3226;/.test(indexCss) &&
+  /scrollbar-color: #3e3226 transparent;/.test(indexCss) &&
+  /::selection \{\s*\n?\s*background: rgba\(255, 157, 0, \.28\)/.test(indexCss) &&
+  /caret-color: #ff9d00;/.test(indexCss),
+  'a scrollbar, a caret and a selection highlight ship with defaults that belong to no design ' +
+  'system — and Firefox ignores ::-webkit entirely, so scrollbar-color is a second rule, not a ' +
+  'duplicate of the first');
 check(G25, 'no blue, slate or green left in the shell, App or the player',
   !BANNED_HUE.test(shellSrc) && !BANNED_HUE.test(appCode) && !BANNED_HUE.test(musicSrc),
   'palette law: slate IS the blue. The print receipt is the ONLY exemption and it lives in its ' +
