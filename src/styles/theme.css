@@ -1246,11 +1246,28 @@ html.lite-mode .kpm-topbar { transition: none; }
      Safe because the panel takes no pointer events until it is opened — content underneath is
      still clickable through it. See the pointer-events pair below; they are load-bearing now.
      64, not 72 — *"button is too big"*. The circle inside is 56, which is a dock button. */
+  /* 📏 THE DOCK IS AS TALL AS ITS BUTTONS, NOT AS TALL AS THE SCREEN — his report, 2026-08-15:
+     *"it looks better when the sidebar panel height follow how many buttons are there instead of
+     expanding all the way to the bottom of the screen while there is so much blank space above
+     it"*, and in the same breath *"i dont want bottom panel to collapse with the sidebar panel"*.
+     Those are ONE bug. `bottom: 0` pinned the capsule floor-to-ceiling, so it reserved height it
+     was not using: the grid is capped and centred, `.kpm-rail-foot` has `margin-top: auto`, and
+     the leftover height opened as a gap between them — the blank space he is pointing at. The
+     same overrun is what reached down into the L-Click/SCROLL strip at the bottom of the screen.
+     `bottom: auto` + `height: max-content` makes the capsule end where its content ends, which
+     closes the gap and lifts it clear of the strip in one change.
+     `max-height` is the guard for a short screen: 56px is the 32px strip plus air. If the content
+     ever exceeds it the grid's 1fr rows shrink — `--cap` is a ceiling, never a floor, so they are
+     allowed to give way rather than overflow a panel that clips. */
   [data-kpm-rail][data-kpm-rail] {
-    position: fixed; left: 0; right: auto; top: 0; bottom: 0;
+    position: fixed; left: 0; right: auto; top: 0; bottom: auto;
+    height: max-content; max-height: calc(100vh - 56px);
     width: 64px; margin-right: 0;
     transition: width 340ms cubic-bezier(.22, 1, .36, 1);
   }
+  /* the appearance block sets height: 100% for the full-height desk; here the pod follows the
+     panel's content height instead, or `100%` of an auto-height parent resolves to nothing useful */
+  .kpm-rail-pod { height: auto; }
   /* :focus-within, not only :hover — at rest every mark is invisible but still tabbable, so
      keyboard focus has to open the same capsule the pointer does or it lands on nothing */
   /* 351px, not 292: measured from the longest tab name. "Receivables & Consignment" is 219px of

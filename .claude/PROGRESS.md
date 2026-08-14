@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-15 01:55 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
+**Updated: 2026-08-15 02:20 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -49,6 +49,20 @@ order:
   Authorized domains, or the phone cannot sign in.
 
 ## 📓 LOG — newest first, about five entries; `git log` keeps the rest
+
+### 2026-08-15 02:20 — the dock is as tall as its buttons, not as tall as the screen
+
+His two reports were ONE bug: *"i dont want bottom panel to collapse with the sidebar panel"* and
+*"it looks better when the sidebar panel height follow how many buttons are there instead of
+expanding all the way to the bottom of the screen while there is so much blank space above it"*.
+`bottom: 0` pinned the capsule floor-to-ceiling, so it reserved height it never used — the grid is
+capped and centred and the foot has `margin-top: auto`, so the leftover opened as a gap between
+them (the blank space), and the same overrun reached into the L-Click/SCROLL strip (the
+collision). `bottom: auto` + `height: max-content` closes the gap and lifts it clear of the strip
+in one change. `max-height: calc(100vh - 56px)` is the short-screen guard; if content ever exceeds
+it the grid's 1fr rows give way, because `--cap` is a ceiling and never a floor.
+**Computed, not measured:** 12 + grid 436 + foot ~126 + 12 ≈ **586px**, against a strip whose top
+edge is at 736 on a 768px screen. **He should confirm by looking** — no frame has been captured.
 
 ### 2026-08-15 01:55 — the header became the dock's twin; slate was hiding in `index.css`
 

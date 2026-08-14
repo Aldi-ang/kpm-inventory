@@ -1148,7 +1148,13 @@ check(G25, 'the desk wears the same mark as the phone, not a white slab',
 const railGateAt = themeCss.search(/@media \(min-width: 1024px\) and \(hover: hover\) and \(pointer: fine\) \{[\s\S]{0,2400}?\[data-kpm-rail\]\[data-kpm-rail\] \{\s*position: fixed/);
 check(G25, 'the desk rail collapses to one circle, and opening it moves nothing',
   /\.kpm-rail-pod \{ display: contents; \}/.test(themeCss) &&
-  /position: fixed; left: 0; right: auto; top: 0; bottom: 0;\s*\n\s*width: 64px; margin-right: 0;/.test(themeCss) &&
+  /* 📏 `bottom: auto`, NOT `bottom: 0`. Pinned floor-to-ceiling the capsule reserved height it
+     never used: the grid is capped and centred and the foot has `margin-top: auto`, so the
+     leftover opened as a gap between them, and the same overrun reached into the L-Click/SCROLL
+     strip at the bottom of the screen. His report named both as one thing. Put `bottom: 0` back
+     and the blank gap and the strip collision both return. */
+  /position: fixed; left: 0; right: auto; top: 0; bottom: auto;\s*\n\s*height: max-content; max-height: calc\(100vh - 56px\);/.test(themeCss) &&
+  /\.kpm-rail-pod \{ height: auto; \}/.test(themeCss) &&
   !/margin-right: -228px;/.test(themeCss) &&
   /\[data-kpm-rail\]\[data-kpm-rail\] \{ pointer-events: none; \}/.test(themeCss) &&
   /* right: 40px, not 4px — the pod went to 100px for the two columns, and 100 - 4 - 56 = 40 is
