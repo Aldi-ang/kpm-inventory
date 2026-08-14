@@ -1118,13 +1118,23 @@ check(G25, 'the desk wears the same mark as the phone, not a white slab',
    big and when it hover it opens all the way to show all the button ... i want background for the
    sidebar to be transparant but blurred". Three states: one circle, then a full-height capsule,
    then the hovered mark's name printed on the app's own ground beside it.
-   The two numbers below have to stay in step. 272 painted - 72 occupied = the 200px the negative
-   margin hands back. Let them drift and every brush past the left edge shoves the app sideways. */
-const railGateAt = themeCss.search(/@media \(min-width: 1024px\) and \(hover: hover\) and \(pointer: fine\) \{[\s\S]{0,500}?\[data-kpm-rail\]\[data-kpm-rail\] \{\s*width: 64px/);
+   🔑 IT RESERVES NOTHING. His call, 2026-08-14 — *"the sidebar have it own space but it just
+   blank while its closed"* — and the component's own instruction, *"set it to Fixed, and pin to
+   your chosen edge"*. `position: fixed` takes it out of the flow, so the app keeps its full
+   width and the dock floats. That retired an earlier `margin-right: -228px` trick whose only job
+   was to hand back the column this no longer takes; if `position` ever goes back to relative,
+   that trick has to come back with it or every hover will shove the app sideways.
+   The pointer-events pair is load-bearing now, not a nicety: a fixed panel over the content with
+   pointer events at rest would swallow every click down the left edge of every screen. */
+const railGateAt = themeCss.search(/@media \(min-width: 1024px\) and \(hover: hover\) and \(pointer: fine\) \{[\s\S]{0,2400}?\[data-kpm-rail\]\[data-kpm-rail\] \{\s*position: fixed/);
 check(G25, 'the desk rail collapses to one circle, and opening it moves nothing',
   /\.kpm-rail-pod \{ display: contents; \}/.test(themeCss) &&
-  /width: 292px; margin-right: -228px;/.test(themeCss) &&
-  /\.kpm-rail-pod::before \{ left: 4px; right: 4px; top: calc\(50% - 28px\); height: 56px; border-radius: 999px; \}/.test(themeCss) &&
+  /position: fixed; left: 0; right: auto; top: 0; bottom: 0;\s*\n\s*width: 64px; margin-right: 0;/.test(themeCss) &&
+  !/margin-right: -228px;/.test(themeCss) &&
+  /\[data-kpm-rail\]\[data-kpm-rail\] \{ pointer-events: none; \}/.test(themeCss) &&
+  /\.kpm-rail-pod::before \{ left: 4px; right: 4px; top: 12px; height: 56px; border-radius: 999px; \}/.test(themeCss) &&
+  /\.kpm-rail-totem \{[\s\S]{0,200}?top: 12px; left: 4px;/.test(themeCss) &&
+  /\.kpm-topbar \{ padding-left: 76px; \}/.test(themeCss) &&
   /:focus-within \{ width: 292px/.test(themeCss) &&
   /\.kpm-rail-pod > \* \{ animation: none; \}/.test(themeCss) &&
   /<div className="kpm-rail-pod">/.test(shellSrc) &&

@@ -1179,16 +1179,26 @@ html.lite-mode .kpm-topbar { transition: none; }
   .kpm-rail-totem { display: none; }
 }
 @media (min-width: 1024px) and (hover: hover) and (pointer: fine) {
-  /* 64, not 72 — *"button is too big"*, his third report on this rail. The circle inside is 56,
-     which is a dock button; 72 read as a panel with one icon in it. */
+  /* 🔑 FIXED, AND OUT OF THE FLOW — his choice, 2026-08-14, and the component's own instruction:
+     *"Drop the component on your canvas, set it to Fixed, and pin to your chosen edge."* His
+     report is what it fixes: *"the sidebar have it own space but it just blank while its
+     closed"*. It was reserving a 64px column all day for one circle, and that column IS the
+     blank strip. Out of flow it reserves nothing, the app gets its full width back, and the
+     circle floats over the page.
+     This also retires `margin-right: -228px`: an out-of-flow box cannot push its siblings, so
+     there is nothing left to give back. The whole reason that trick existed is gone.
+     Safe because the panel takes no pointer events until it is opened — content underneath is
+     still clickable through it. See the pointer-events pair below; they are load-bearing now.
+     64, not 72 — *"button is too big"*. The circle inside is 56, which is a dock button. */
   [data-kpm-rail][data-kpm-rail] {
-    width: 64px;
-    transition: width 340ms cubic-bezier(.22, 1, .36, 1), margin-right 340ms cubic-bezier(.22, 1, .36, 1);
+    position: fixed; left: 0; right: auto; top: 0; bottom: 0;
+    width: 64px; margin-right: 0;
+    transition: width 340ms cubic-bezier(.22, 1, .36, 1);
   }
   /* :focus-within, not only :hover — at rest every mark is invisible but still tabbable, so
      keyboard focus has to open the same capsule the pointer does or it lands on nothing */
   [data-kpm-rail][data-kpm-rail]:hover,
-  [data-kpm-rail][data-kpm-rail]:focus-within { width: 292px; margin-right: -228px; }
+  [data-kpm-rail][data-kpm-rail]:focus-within { width: 292px; }
   /* 🔑 THE LOGO IS THE TRIGGER, not the column — *"Hover the logo, and the pill unfurls"*, and
      *"The page stays clean — one logo, nothing else — until someone reaches for it"*. At rest the
      panel takes no pointer events at all, so the 72px strip is not an invisible wall down the
@@ -1200,7 +1210,13 @@ html.lite-mode .kpm-topbar { transition: none; }
   [data-kpm-rail][data-kpm-rail]:focus-within { pointer-events: auto; }
   /* the pod never widens — only the window around it does */
   .kpm-rail-pod { width: 64px; flex: none; }
-  .kpm-rail-pod::before { left: 4px; right: 4px; top: calc(50% - 28px); height: 56px; border-radius: 999px; }
+  /* 🔑 TOP-LEFT, NOT MID-LEFT — his suggestion, 2026-08-14: *"the top part of the app is very
+     spacey what if u put the single button when unopen on the left top instead of the middle
+     left?"*. He is right twice over. It fills the emptiest corner of the header, and because the
+     closed circle and the open capsule now share a top edge, only the HEIGHT animates — the dock
+     unfurls downward out of the logo instead of growing in both directions at once, which is
+     what *"Floating logo → vertical nav"* actually describes. */
+  .kpm-rail-pod::before { left: 4px; right: 4px; top: 12px; height: 56px; border-radius: 999px; }
   [data-kpm-rail]:hover .kpm-rail-pod::before,
   [data-kpm-rail]:focus-within .kpm-rail-pod::before {
     left: 0; right: 0; top: 12px; height: calc(100% - 24px); border-radius: 30px;
@@ -1227,7 +1243,7 @@ html.lite-mode .kpm-topbar { transition: none; }
   /* the whole circle is the target, not the 22px glyph inside it */
   .kpm-rail-totem {
     display: flex; align-items: center; justify-content: center;
-    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    position: absolute; top: 12px; left: 4px;
     width: 56px; height: 56px; border-radius: 999px;
     color: #ff9d00; pointer-events: auto; cursor: pointer;
     transition: opacity 180ms ease-out;
@@ -1268,6 +1284,12 @@ html.lite-mode .kpm-topbar { transition: none; }
   .kpm-rail-mark:focus-visible > .kpm-rail-word {
     opacity: 1; transform: translate(0, -50%); transition-delay: 140ms;
   }
+  /* THE HEADER GIVES THE LOGO ITS CORNER. The dock is out of the flow now, so nothing reserves
+     this space — and the closed circle sits exactly where SYSTEM ACTIVE and the screen title
+     start. 76px clears the 60px circle and its 4px inset with room to breathe. This inset
+     existed once before for the orange menu square, was deleted with it this morning, and is
+     back for a better reason: it is the app's identity corner rather than a control. */
+  .kpm-topbar { padding-left: 76px; }
   /* the one control that destroys something says so in red, and only once you are on it — the
      same rule `.kpm-expand.danger` follows, so the rail reads as one row until you reach it */
   .kpm-rail-mark.danger:hover, .kpm-rail-mark.danger:focus-visible { color: #ff8175; }
