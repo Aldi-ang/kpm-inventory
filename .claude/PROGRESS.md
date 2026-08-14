@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-14 11:43 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
+**Updated: 2026-08-14 12:40 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > 🔴 **THIS FILE IS 3,270 LINES / 233 KB AND IT IS READ IN FULL AT EVERY SESSION START.** That is
@@ -8,6 +8,51 @@
 > **Ask him to let it be archived** — everything below the current day belongs in
 > `A-Brain/Wiki/Log.md`, which is the memory now, and this file should hold only where the work
 > stands. Do not do it without his word; do not let another session pass without asking.
+
+### 🔑 12:40 WIB — BROWSER ACCESS IS FIXED. It found two real bugs in an hour. `c53025b` + `a611857`, 364/364.
+
+**🔴 THE ONE THING TO CARRY FORWARD: you can look at this app now. Use it.**
+
+The in-app browser will not accept the dev server's self-signed certificate (HTTPS is deliberate,
+`vite.config.js:17`, the phone needs it — never "fix" that). **Plain HTTP is not blocked.** So:
+
+    # 1. copy the built stylesheet next to a mock page
+    cp dist/assets/*.css <scratchpad>/
+    # 2. serve it
+    python -m http.server 5199 --bind 127.0.0.1     (run in the scratchpad, background)
+    # 3. preview_start { url: "http://127.0.0.1:5199/harness.html" }   → navOk: true
+
+`harness.html` in this session's scratchpad is a faithful copy of the shell's markup — real class
+strings, real built CSS, no React and **no login**, which is what makes it usable at all. Measure
+with `javascript_tool`. **`:hover` cannot be forced from script, but `:focus-within` can** — call
+`.focus()` on a mark and the open state is reachable. Kill transitions first with an injected
+`*{transition:none!important}` or you measure a frame mid-animation.
+⚠️ Screenshots still need Aldi to DISPLAY the pane. Everything else is scriptable.
+
+**Bug 1 — the desk panel was 176px wide, the PHONE's width, not 144.** `w-[176px] lg:w-[144px]`
+on the element fought a width rule in the stylesheet for the same property, and the phone value
+won on the desk. So yesterday's "144px so the logout button stops being clipped" **never once took
+effect**. The check that was supposed to protect it asserted the class was PRESENT in the source —
+which says nothing about whether it WINS. Width classes deleted; theme.css owns it at every size.
+
+**Bug 2 — the hover label was `position: relative`, not absolute.** `.kpm-rail-mark > *` sets
+relative to lift icons above their plate; equal specificity, later in the file, so it won. The
+label sat inside the capsule and, being a flex child, pushed the icon off centre. Now scoped to
+`.kpm-rail-mark > .kpm-rail-word`.
+
+🔑 **Both are the same lesson, and it is worth more than either fix: a check that greps the SOURCE
+for a class proves the class was typed, not that it applies.** Assert the outcome, or measure it.
+
+**Then his Totem spec, from the component's own description** (`a611857`): **solid, no blur** —
+which supersedes his earlier "transparant but blurred" and removes the Lite Mode fallback problem
+entirely; the **label is its own pill** that slides 6px out; **the logo is the trigger**, so at
+rest the panel takes no pointer events and is not an invisible wall down the screen edge; icons
+**cascade** in via `--i` set in the JSX; and **every control is a mark now** — the gold unlock
+block and the `.kpm-expand` logout are gone, logout keeping its red on icon and label pill.
+
+Measured after: closed **72px**, pointer-events none, surface `rgb(20,17,14)`, blur `none`. Open
+**300px**, main column's left edge **unmoved at 72**. Longest label's pill 128 wide, ending at 200
+inside a 300 window — not clipped.
 
 ### ✅ 11:43 WIB — the sidebar no longer paints over the vault gate. `06f299b`, 363/363.
 
