@@ -13,6 +13,36 @@
 > archive rather than letting it grow back. This file holds WHERE THE WORK STANDS; the archive
 > and `A-Brain/Wiki/Log.md` hold how it got there.
 
+### 🔴 ~20:00 WIB — THE DOCK REDESIGN IS DECIDED. NOT YET BUILT IN THE APP. Prototype only.
+
+**Artifact (his decision board):** https://claude.ai/code/artifact/c0af9545-8a29-40b9-a787-2f33d8835082
+**Source:** `<scratchpad>/dock-options.html`. Nothing in `src/` has been touched for any of this.
+
+**HIS LOCKED DECISIONS — build these, do not re-ask:**
+1. **Two columns when nav tabs exceed 10**, one column at 10 or fewer (so a low tier never sees
+   two). Music, profile and logout stay **one per row**. Column gap **2px**, row gap 4px.
+2. **Label B's look** (square 4px plate, `#0f0e0d`, `--line-2` border) with **Label A's motion** —
+   slides **left to right** out from under the dock edge, and **slower**: enter `opacity 300ms /
+   transform 520ms` on `var(--ease)`, exit stays quick at `180/240ms`. Travel **22px**, and the
+   gap must equal the travel or it reads as sluggish rather than natural.
+3. **Glass tint 0.02** over a 30px blur, saturate 1.9, brightness 1.06, with the bright top lip.
+4. **Logout keeps its old `.kpm-expand` grow-sideways animation**, but the label takes a fixed
+   80px from the right edge (NOT the old `68%`, which is a share and crowds the glyph as the
+   capsule grows). 24px of clear air.
+5. **Apple-dock magnification: REJECTED** — *"for double column it look really bad"*. The code is
+   in the prototype under `.magnify` if it is ever wanted for a single column.
+
+**⚠️ THREE BUGS FOUND THAT ARE LIVE IN THE APP AND STILL UNFIXED:**
+- **`.kpm-rail-grid` is `overflow-hidden`, and the hover label is a child of the mark — so the
+  desk label has NEVER been visible.** Rows are `1fr` and cannot overflow, so the clip guards
+  nothing. Removing it is the fix. This is the single most important item.
+- **`transition-all duration-200` on the nav mark (JSX ~line 572)** beats `.kpm-rail-mark`'s
+  per-property rule on file order, so the tuned transitions never applied either.
+- **`.hot` (icon `scale(1.42)`, lift 4px) is a FINGERTIP affordance** leaking onto the desk.
+
+**Two column-1 labels need `left: calc(200% + 6px)`, column-2 `calc(100% + 4px)`** or the label
+lands on top of column 2 — measured, clears by 18px.
+
 ### ✅ 17:45 WIB — his last open item closed: the icon was taller than its own button. `f6c5dbe`
 
 **366/366, `src/` clean.** The one item from his list that was only half done — *"button for each
