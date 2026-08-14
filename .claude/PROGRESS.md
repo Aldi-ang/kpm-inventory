@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-15 02:35 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
+**Updated: 2026-08-15 02:50 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -59,16 +59,32 @@ A full-height pod reserved height it never used — the grid is capped and centr
 `margin-top: auto`, so the leftover opened as a gap BETWEEN them (the blank space), and the bottom
 of the same pod reached into the L-Click/SCROLL strip (the collision).
 
-🔴 **THE FIRST FIX BROKE THE DOCK — his word: *"it brokes"*, with a screenshot showing the capsule
-split into two nested shapes.** It had put `bottom: auto`, `height: max-content` and a `max-height`
-on **`[data-kpm-rail]`**, the PANEL. That element is `position: fixed` + `inset-y-0` + `display:
-flex` + **`overflow: hidden`** all at once, and asking that combination to size itself from its
-content is asking a clipping box to measure the thing it clips.
-**The panel paints nothing, so its height costs nothing. The capsule lives on the POD.** The
-working fix is one property on one element: `.kpm-rail-pod { height: max-content; max-height:
-calc(100vh - 56px) }`. The panel is back to exactly the full-height state he had approved.
-⚠️ Note the cascade: the pod's `height: 100%` from the appearance block still exists; this rule
-wins only because it is LATER at equal specificity. Do not move it above that block.
+🔴 **IT TOOK THREE ATTEMPTS AND THE REAL CAUSE WAS NEITHER OF MY FIRST TWO GUESSES.** His reports:
+*"it brokes"*, then *"break no change"*.
+
+**The actual mechanism, MEASURED in an isolated box chain (same nesting, 768px frame):**
+`grid-auto-rows: minmax(0, 1fr)` **resolves only against a DEFINITE height.** While the pod was
+`height: 100%` the grid inherited one and cells came out 44x44. The moment the pod became
+`max-content` — which is what his "follow how many buttons" ask required — the grid's height went
+**indefinite**, and every `1fr` row collapsed to its icon:
+
+| grid's flex | cell size | square? | pod |
+|---|---|---|---|
+| `flex: 1 1 0%` | 44 x **17** | no | 342px |
+| `flex: 0 1 var(--cap)` | 44 x **44.9** | yes | **593px** |
+
+So the fix is a **definite flex-basis on the grid**: `flex: 0 1 var(--cap, auto)`. `0 1` keeps it
+shrinkable, so a short screen squeezes the rows rather than clipping a tab off the bottom where it
+cannot be reached.
+
+⚠️ **Two wrong turns on the way, both worth not repeating.** First I put `height: max-content` on
+**`[data-kpm-rail]`**, the PANEL — which is `position: fixed` + `inset-y-0` + `display: flex` +
+`overflow: hidden` all at once. Asking that to size itself from its content is asking a clipping
+box to measure the thing it clips. The panel paints nothing, so its height costs nothing; only the
+POD needed to change. Second, I shipped that as a fix without being able to see it, and he had to
+report the same break twice.
+⚠️ Cascade note: the pod's `height: 100%` from the appearance block still exists. `height:
+max-content` wins only because it is LATER at equal specificity. Do not move it above that block.
 
 ⚠️ **THREE AUDIT CHECKS BROKE ON PROSE TODAY, NOT ON CODE** — including `railGateAt`, which
 allowed 2400 characters between a media query and a rule inside it until a comment pushed the rule

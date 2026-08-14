@@ -1402,7 +1402,15 @@ check(G25, 'the marks are spacier without a scrollbar and without a floor',
 check(G25, 'the two columns are square cells, so the spacing is even in both directions',
   /\.kpm-rail-pod \{ width: 100px; flex: none; \}/.test(themeCss) &&
   /\[data-kpm-rail\] \.kpm-rail-grid\.is-two \{ grid-template-columns: repeat\(2, minmax\(0, 1fr\)\); \}/.test(themeCss) &&
-  /\[data-kpm-rail\] \.kpm-rail-grid \{ max-height: var\(--cap, none\); align-content: center; \}/.test(themeCss) &&
+  /* 🔴 THE FLEX BASIS IS THE LOAD-BEARING HALF, not the max-height. `auto-rows: minmax(0,1fr)`
+     resolves only against a DEFINITE height. While the pod was full-height the grid inherited one
+     and the cells came out 44x44; the moment the pod became `max-content` for his "follow how many
+     buttons" ask, the grid's height went indefinite and every row collapsed to its icon.
+     MEASURED in an isolated box chain, same nesting, 768px frame:
+       `flex: 1 1 0%`            → cells 44 x 17, NOT square  ← the "it brokes" screenshot
+       `flex: 0 1 var(--cap)`    → cells 44 x 44.9, square, pod 593px
+     `0 1` keeps it shrinkable so a short screen squeezes the rows instead of clipping a tab. */
+  /\[data-kpm-rail\] \.kpm-rail-grid \{\s*\n?\s*flex: 0 1 var\(--cap, auto\); max-height: var\(--cap, none\); align-content: center;/.test(themeCss) &&
   /'--cap': visibleMenu\.length > 10/.test(shellSrc) &&
   /visibleMenu\.length > 10 \? 'is-two' : ''/.test(shellSrc),
   'a 1fr row grows to fill whatever height it is given, so without the cap the cells stretch back ' +

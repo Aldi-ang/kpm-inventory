@@ -1368,7 +1368,18 @@ html.lite-mode .kpm-topbar { transition: none; }
      become oblong again and the even spacing he asked for silently disappears. Capping the grid's
      height stops the stretch. `--cap` is computed from the row count in the shell, never
      hardcoded, and `align-content: center` spends the leftover height as margin instead. */
-  [data-kpm-rail] .kpm-rail-grid { max-height: var(--cap, none); align-content: center; }
+  /* 🔴 `flex-basis`, NOT just `max-height` — and this is the whole reason the dock broke when the
+     pod stopped being full height. `auto-rows: minmax(0, 1fr)` can only resolve against a
+     DEFINITE height. While the pod was `height: 100%` the grid inherited one and the rows came
+     out 44px square. The moment the pod became `max-content`, the grid's height turned
+     indefinite, every `1fr` row collapsed to its icon, and the even 44x44 cells he had signed off
+     silently became short oblong ones — that is the "it brokes" screenshot.
+     `--cap` is the definite basis now, so the rows have something real to divide. `0 1` keeps it
+     shrinkable: on a screen too short to hold the cap, the grid gives way rather than overflow a
+     panel that clips, because a clipped tab is unreachable and that is worse than a tight one. */
+  [data-kpm-rail] .kpm-rail-grid {
+    flex: 0 1 var(--cap, auto); max-height: var(--cap, none); align-content: center;
+  }
   /* 📏 HIS REPORT, 2026-08-14: *"button for each should be spacier"*. MEASURED before believing
      it — 1366x768, all seventeen marks: each plate came out **21.8px tall around a 27px icon**.
      The glyph was physically BIGGER than the button it sits on, which is why the column read as
