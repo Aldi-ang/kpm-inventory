@@ -1234,7 +1234,12 @@ html.lite-mode .kpm-topbar { transition: none; }
      The arrival animation is switched off on the desk instead of fought with `!important`: the
      capsule unfurling IS the arrival here, and two entrances playing over each other was never
      the design. The phone keeps its boot animation untouched. */
-  .kpm-rail-pod > * { animation: none; }
+  /* ⚠️ `[data-kpm-rail] ` PREFIX IS LOAD-BEARING. `.kpm-rail-pod > *` scores as ONE class — the
+     universal selector contributes nothing — so it TIED with `.boot-3` and lost on order, because
+     boot lives in an inline <style> that lands after this file. The attribute makes it two.
+     This is the second time the same tie has shipped today; when a rule must beat a utility or an
+     inline style, count the specificity, do not eyeball it. */
+  [data-kpm-rail] .kpm-rail-pod > * { animation: none; }
   .kpm-rail-pod > *:not(.kpm-rail-totem) { opacity: 0; transition: opacity 140ms ease-out; }
   [data-kpm-rail]:hover .kpm-rail-pod > *:not(.kpm-rail-totem),
   [data-kpm-rail]:focus-within .kpm-rail-pod > *:not(.kpm-rail-totem) {
@@ -1289,7 +1294,15 @@ html.lite-mode .kpm-topbar { transition: none; }
      start. 76px clears the 60px circle and its 4px inset with room to breathe. This inset
      existed once before for the orange menu square, was deleted with it this morning, and is
      back for a better reason: it is the app's identity corner rather than a control. */
-  .kpm-topbar { padding-left: 76px; }
+  /* ⚠️ DOUBLED CLASS, and for the fourth time today the same reason: the header carries Tailwind's
+     `lg:px-8`, which is also one class, and a tie is decided by file order — Tailwind's utilities
+     are emitted after this file, so a single `.kpm-topbar` LOST and his header kept sitting under
+     the logo. Anything here that competes with a utility must outrank it, not tie with it. */
+  .kpm-topbar.kpm-topbar { padding-left: 76px; }
+  /* the pod's children live INSIDE the capsule, not in the 12px the capsule insets itself by.
+     His report: *"all the button can be put inside the sidebar without some of them exiting the
+     sidebar space"* — the bottom group was hanging off the end of the capsule. */
+  .kpm-rail-pod { padding: 12px 0; }
   /* the one control that destroys something says so in red, and only once you are on it — the
      same rule `.kpm-expand.danger` follows, so the rail reads as one row until you reach it */
   .kpm-rail-mark.danger:hover, .kpm-rail-mark.danger:focus-visible { color: #ff8175; }

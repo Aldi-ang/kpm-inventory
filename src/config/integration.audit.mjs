@@ -1136,7 +1136,7 @@ check(G25, 'the desk rail collapses to one circle, and opening it moves nothing'
   /\.kpm-rail-totem \{[\s\S]{0,200}?top: 12px; left: 4px;/.test(themeCss) &&
   /\.kpm-topbar \{ padding-left: 76px; \}/.test(themeCss) &&
   /:focus-within \{ width: 292px/.test(themeCss) &&
-  /\.kpm-rail-pod > \* \{ animation: none; \}/.test(themeCss) &&
+  /\[data-kpm-rail\] \.kpm-rail-pod > \* \{ animation: none; \}/.test(themeCss) &&
   /<div className="kpm-rail-pod">/.test(shellSrc) &&
   /<span className="kpm-rail-totem"/.test(shellSrc),
   'the pod is `display: contents` on a phone, so none of this reaches the layout he already ' +
