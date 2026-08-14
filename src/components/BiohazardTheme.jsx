@@ -592,7 +592,7 @@ export default function BiohazardTheme({
                         })}
                     </nav>
 
-                <div key={`bot-${isAdmin}`} className="mt-auto mb-2 border-t border-[#3e3226] lg:border-white/10 pt-3 boot-3">
+                <div key={`bot-${isAdmin}`} className="kpm-rail-foot mt-auto mb-2 border-t border-[#3e3226] lg:border-white/10 pt-3 boot-3">
                     {/* 🚀 HIDDEN DOOR: Show Master Vault button if they aren't fully unlocked but have Tier 2 settings */}
                     {hasClearance(userRole, 'view_master_vault') && !isAdmin && (
                         <div className="px-0 lg:px-2 mb-3">

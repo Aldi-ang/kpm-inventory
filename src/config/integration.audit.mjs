@@ -1307,6 +1307,41 @@ check(G25, 'the rail never scrolls — the rows share the height instead',
   !/grid[^"]*overflow-y-auto/.test(shellSrc),
   'a fixed cell height brings the scroll back on a short phone; a min-height floor clips a mark ' +
   'off the bottom instead, which is worse — the tab becomes unreachable, not just further down');
+/* 📏 THE OTHER HALF OF THAT TRADE, his report of the same day: *"button for each should be
+   spacier"*. With no scrollbar and no min-height allowed, the ONLY way a mark gets taller is if
+   something else in the column stops spending the height. Measured in a browser on 1366x768 with
+   all seventeen marks present: 21.8px plates around a 27px icon before, 29.9px after.
+   Each number below is load-bearing, and raising any one of them takes the height straight back
+   out of the marks:
+     · gap 4px — at 8px the sixteen gaps alone ate 128px of a 515px column
+     · padding 4px — 8px on a 64px-wide strip, and it also makes the plate 56px, the same width
+       as the collapsed circle, so the open dock lines up with the closed one
+     · icon 17px — the glyph was TALLER than its own plate, the actual defect in his screenshot
+     · the foot's 36px marks — it was 221px of the 744px available, for four controls */
+check(G25, 'the marks are spacier without a scrollbar and without a floor',
+  /\[data-kpm-rail\] \.kpm-rail-grid \{ gap: 4px; padding: 4px; \}/.test(themeCss) &&
+  /\[data-kpm-rail\] \.kpm-rail-icon \{ width: 17px; height: 17px; \}/.test(themeCss) &&
+  /\[data-kpm-rail\] \.kpm-rail-foot \{ margin-bottom: 0; padding-top: 6px; \}/.test(themeCss) &&
+  /\[data-kpm-rail\] \.kpm-rail-foot \.kpm-rail-mark \{ height: 36px; \}/.test(themeCss) &&
+  /className="kpm-rail-foot mt-auto/.test(shellSrc) &&
+  /* the prefix is the whole reason these apply — `.kpm-rail-foot` alone ties with `mb-2` and
+     loses on file order, which is the same tie that shipped twice this morning */
+  !/\n  \.kpm-rail-foot \{/.test(themeCss),
+  'every one of these is a Tailwind utility being overridden, so each needs the attribute ' +
+  'prefix to outrank it — and each is height that the seventeen marks get to share instead');
+/* 📏 THE LABEL PILL'S HEADROOM, measured the same way. The open panel is 292px only so the pill
+   has somewhere to go: the pod keeps 64px and the remaining 228px is the pill's room. Measured
+   with every real label, the longest — "Receivables & Consignment", 25 characters — draws a
+   201px pill ending at x=271. That is **21px of headroom**, about two and a half characters.
+   The panel sets overflow: hidden, so a longer tab name does not wrap or push — it is silently
+   sliced off, and the only symptom is a hover label that reads wrong. Rename past this and
+   widen the panel in the same commit. */
+const railLabels = (shellSrc.match(/label: '([^']*)'/g) || []).map(s => s.slice(8, -1));
+check(G25, 'no tab name is long enough to be sliced off its own hover pill',
+  railLabels.length >= 17 && railLabels.every(l => l.length <= 27),
+  'the pill is measured in a browser, not guessed: 25 characters lands 21px short of the edge, ' +
+  'so 27 is the last safe length before `:focus-within { width: 292px }` has to grow too — ' +
+  'longest today: ' + railLabels.reduce((a, b) => (b.length > a.length ? b : a), ''));
 
 /* THE DELETE SWEEP. Eighteen icon-only delete buttons across ten files wear the expanding control
    now, reached by ATTRIBUTE rather than by class — their className shapes differ (plain strings,

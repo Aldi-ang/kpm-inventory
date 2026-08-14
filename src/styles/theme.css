@@ -1258,6 +1258,33 @@ html.lite-mode .kpm-topbar { transition: none; }
   /* ONE column, one button wide — "shrink in to 1 button big". The phone keeps the two columns
      it asked for; this is the desk's own answer and it supersedes them here. */
   [data-kpm-rail] .kpm-rail-grid { grid-template-columns: minmax(0, 1fr); }
+  /* 📏 HIS REPORT, 2026-08-14: *"button for each should be spacier"*. MEASURED before believing
+     it — 1366x768, all seventeen marks: each plate came out **21.8px tall around a 27px icon**.
+     The glyph was physically BIGGER than the button it sits on, which is why the column read as
+     a smear rather than as buttons.
+     ⚠️ THE FIX MAY NOT BE A MIN-HEIGHT OR A SCROLLBAR — see the trap on `auto-rows` in the audit:
+     *"there is still scroll feature inside sidebar, i dont want that, find another solution to
+     fit it there"*. The rows must keep SHARING the column. So the height is bought back from the
+     three things that were spending it instead:
+       · the gap ran 8px x 16 = 128px, a quarter of the whole column, for seventeen buttons
+       · the grid's own 8px padding, on a strip only 64px wide
+       · the foot had grown to 221px of the 744px available
+     Measured after: **29.9px rows with 4.9px of plate around every icon**, nothing clipped, and
+     still no scrollbar. The 56px plate also now lines up exactly with the 56px collapsed circle.
+     A second column is NOT available here and never was: the pod stays 64px wide by design and
+     the extra 228px of the open panel is the room the label pills slide into — two columns would
+     be 21px each. */
+  [data-kpm-rail] .kpm-rail-grid { gap: 4px; padding: 4px; }
+  [data-kpm-rail] .kpm-rail-icon { width: 17px; height: 17px; }
+  /* ⚠️ `[data-kpm-rail] ` PREFIX, FIFTH TIME TODAY. `.kpm-rail-foot` is one class and so is
+     `mb-2`; Tailwind's utilities are emitted after this file, so a tie hands the win to Tailwind
+     and none of this applies. The attribute makes it two. Count, do not eyeball. */
+  [data-kpm-rail] .kpm-rail-foot { margin-bottom: 0; padding-top: 6px; }
+  [data-kpm-rail] .kpm-rail-foot > * { margin-bottom: 4px; }
+  [data-kpm-rail] .kpm-rail-foot .kpm-rail-mark { height: 36px; }
+  [data-kpm-rail] .kpm-rail-foot img, [data-kpm-rail] .kpm-rail-foot .w-9 {
+    width: 32px; height: 32px;
+  }
   /* round plates like the video's. Stadium rather than circle because seventeen marks sharing
      one column are wider than they are tall. */
   [data-kpm-rail] .kpm-rail-mark::before { border-radius: 999px; }
