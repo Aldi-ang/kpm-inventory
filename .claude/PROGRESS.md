@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-14 00:35 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
+**Updated: 2026-08-14 06:25 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry directly below. Two clocks, one file.
 
 ### ✅ 23:40 WIB (Lancelot session) — the two potongan methods BUILT. A-Brain `8b20e34`. 103 checks green.
@@ -108,6 +108,253 @@ The rules, in order:
    else wrote in the meantime. If an `Edit` fails as stale, re-read and re-apply — do not force it.
 7. **The quota is one shared pool.** Two sessions running hard halve each other's runway, and the
    `[plan-quota]` percentage covers both. Size your work against the whole pool, not your own chat.
+
+## ✅ LOG 2026-08-14 06:25 WIB — drawer gone while signed out, panel in the gate's FORMAT. 358/358. (KPM app session)
+
+Commit **`371a165`**. Two asks from last night that were still owed, plus a bug neither of us had
+seen.
+
+1. *"remove the left sidebar then its old stuff already"* — the drawer and its edge ribbon are
+   **not rendered** while signed out (`{user && (` around the `data-kpm-rail` div;
+   `{user && !showAdminLogin && (` on the ribbon). Not deleted: it is the whole navigation once
+   you are in. Its two signed-out branches went with it — the "Locked / your tabs load once you
+   sign in" block and the **System login** button, both unreachable once the drawer cannot render.
+2. *"make the panel in the middle to have the same color theme of our panel inside vault gate as
+   well, and similar format"* — the SHELL already matched (`.kpm-mod.gate`, 00:35 entry); the
+   CONTENTS did not. `.kpm-mod.gate` now also carries the gate panel's **format**: centred, mono,
+   9px/.34em eyebrow, 13px/.2em title, no head band, no shelf divider, and a hairline submit
+   instead of a filled slab. The red `Locked` plate is gone from the door's head — the gate panel
+   has no state chip and the title already says it.
+
+🔴 **THE BUG, shipped 4 hours earlier and fixed here:** `.kpm-mod.gate` is near-black in **both**
+themes, but its title/description/button still took colour from `var(--ink)` — which is
+**`#131211` in light mode** (`theme.css:123`). Near-black ink on a near-black card ≈ 1.05:1.
+Anyone who last left the app in **light mode** and then signed out saw a card with **no readable
+text on it**. The gate's colours are now literal hex inside that class, which is what fixes it.
+🔑 **The rule this teaches: a class that pins its own background must pin its own ink.** A token
+is a promise about the theme's ground, and this card is not standing on it.
+
+**Audit:** group 15 lost its weakest check (`>=2 "kpm-btn key block"` — nothing left to compare
+once there is one login button) and gained two stronger ones: the drawer/ribbon cannot render
+before there is a user, and the gate CSS carries format + literal colour. **Both were seen FAILING
+before the fix** (`356 passed, 2 failed`), then 358/358. Group 16's ribbon needle was widened to
+`\{(?:user && )?!showAdminLogin` — it tests that the GATE hides the ribbon, not who else does.
+
+⚠️ **NOT verified in a browser.** The preview pane refused `https://localhost:5173` on every
+attempt this session (`navigation ... denied or failed`, tabs 1 and 2, server answering **200** to
+curl). Verified instead by: 358 audit checks, a clean build, and the minified rules present in
+`dist/assets/*.css`. **The pixels are [likely], not [certain] — his reload is the check.**
+
+### 🔴 08:10 — SESSION STOPPED AT 95% PLAN QUOTA. Resets ~10:50 WIB. Nothing half-done.
+
+He asked whether to `/compact` the chat to stretch it. **It does not help** — compacting bills the
+whole window and the 5-hour PLAN limit is not a context limit, so neither `/compact` nor `/clear`
+buys a single token back. Only the reset does.
+
+**Nothing is half-finished.** Last code commit `d248017` (360/360 checks, clean build). Vault is
+current through `23a346f`. Everything below this line is either shipped or written up well enough
+for a cold session.
+
+**▶ FIRST TWO MOVES AFTER THE RESET, in order:**
+1. `npm run build; node src/config/integration.audit.mjs` — confirm 360/360 on a fresh window.
+2. Watch `A-Brain/Assets/references/2026-08-14_pc-sidebar-liquid-reference.mp4`, then read
+   `A-Brain/Backlog/PC sidebar hover-expand and top panel redesign.md` before writing any CSS.
+
+⚠️ **Still owed by Aldi, do not re-ask:** add `192.168.1.109` to Firebase → Authentication →
+Settings → Authorized domains, or the phone cannot sign in.
+
+### 📝 08:05 — NEW TO-DO: the phone ribbon's position must survive logout. Vault item written.
+
+*"make sure that adjustmen on phone sidebar is remembered even after logout, so that the user dont
+have to hold and rearrange the button each time login"*.
+🔑 **It is ALREADY persisted** — `localStorage.setItem('kpm-ribbon-y', ...)` in `startRailPull`'s
+pointer-up handler, and localStorage survives sign-out by itself. **Do not build persistence.**
+Find what clears or ignores it: (1) a `localStorage.clear()` in the logout path — the obvious
+suspect; (2) whether `ribbonY` actually reads the key on mount; (3) the PWA service worker wiping
+storage on activate, which looks identical from outside. Only if all three are clean is it a real
+gap — and then ask him device-scoped vs user-scoped (Firestore) before choosing.
+Full item: `A-Brain/Backlog/Phone ribbon position must survive logout.md`.
+
+### 📱 08:00 — `auth/unauthorized-domain` on the phone. HIS console job, and it is the SAME cause.
+
+Second breakage from one root: the router gave the PC a new DHCP address, so (a) his saved phone
+link pointed at the old one, and (b) the new one — `192.168.1.109` — is not on Firebase's
+**Authorized domains**, so Google sign-in refuses to run there. His old address was presumably on
+that list, which is why this worked yesterday and not today.
+
+**HE does this, not us** (live project setting; we touch no Firebase config):
+Firebase Console → the KPM project → **Authentication** → **Settings** tab → **Authorized domains**
+→ **Add domain** → `192.168.1.109` → save → reload the phone.
+
+🔑 **It will recur every time the router reassigns.** The durable fix is a DHCP reservation for the
+PC in the router, then the Firebase entry is added once. [likely] the console accepts a bare IP —
+`localhost` is on that list by the same mechanism; if it refuses, find the alternative before
+telling him to force it.
+
+### 📱 07:55 — "did the phone URL change?" — NO. It is the LAN IP, and the ROUTER changes that.
+
+Asked because the phone could not reach the app. Checked live: `vite.config.js` and
+`.claude/launch.json` are **untouched** (`git diff HEAD --stat` empty), and the dev server answered
+**200**, so this was neither an edit nor the dead-server case from 23:25 last night.
+**The address is the PC's DHCP address — today `https://192.168.1.109:5173`** — and a router
+reassignment is the usual reason a saved link stops working. Get it with
+`ipconfig | grep -i IPv4`, never from memory.
+⚠️ **`https`, always** (`vite.config.js:17`, `@vitejs/plugin-basic-ssl` — his phone needs a secure
+context for camera and GPS; see the 23:25 correction, never "fix" this to http). The phone will
+warn about the certificate — Advanced → proceed — and must be on the same wifi, not mobile data.
+
+### 🔴 07:50 — THE PC SIDEBAR IS THE WRONG FORMAT. NOT STARTED, quota 91%. Spec + video in A-Brain.
+
+**Read `A-Brain/Backlog/PC sidebar hover-expand and top panel redesign.md` FIRST — his verbatim
+words and the four corrections are at the top of it, and the reference is a VIDEO:**
+`A-Brain/Assets/references/2026-08-14_pc-sidebar-liquid-reference.mp4` (257K, rescued from
+`Microsoft.ScreenSketch/TempState/Recordings/`, which Windows clears — the original path is gone
+soon). **Watch it before writing CSS.** His phrase for the target: *"liquid expensive looks"*.
+
+Four deltas from what shipped in `d248017`: collapsed must be **one button wide**, not two columns
+(this supersedes his earlier "2 colomn" ask, for the desk only); the **music button sits in that
+collapsed strip** like any other mark; opening shows **every** button with its **name**; and the
+panel must be **transparent + blurred** — it ships near-opaque (`lg:bg-black/95`), so the
+`backdrop-blur-xl` behind it does nothing. ⚠️ Lite Mode strips `backdrop-filter`, so that mode
+needs a solid fallback rather than a see-through panel.
+✅ **Keep, do not rebuild:** `.kpm-rail-word`, the `margin-right: -132px` no-reflow trick, the
+music player's phone shape, and the `hover:hover` / `pointer:fine` gate.
+
+### 07:35 — ALL OF HIS LIST BUILT EXCEPT THE TOP PANEL. `d248017`, 360/360. **STOP HERE: quota 80%.**
+
+He overruled the parking — *"why does the sidebar not shrinking like i ask before?"* — so items 1,
+2, 4 and 7 were built after all. **He also approved the SKILL.md line** (*"yes better add that line
+to alucard"*): it is in `~/.claude/skills/alucard/SKILL.md` §4, after the `Touching:` block.
+
+- **Shrink + open on hover:** 104px at rest → 236px with words, gated on `hover:hover` and
+  `pointer:fine`. 🔑 **`margin-right: -132px`** — the strip PAINTS 236 and OCCUPIES 104, so the
+  main UI never reflows; growing a flex child on hover would shove the app sideways. Two columns
+  at rest, one column with words when open. Touch desks keep `lg:w-[144px]`, unchanged.
+- **Hover textbox:** `.kpm-rail-word`, `display:none` until pointed at. Phone untouched.
+- **Music player:** the desk's own card (`lg:bg-black/40`, hairline, shadow), its "Cassette OS"
+  label and its inline play/pause are gone — one mark at both widths, controls in the pill.
+- **🔴 THE PROFILE PICTURE WAS A REAL BUG:** `agentProfileId` is **null for the owner and for an
+  admin**, so `motorists.find(m => m.id === agentProfileId)` matched nothing and the shell fell
+  through to the Google photo. Now asks for `master_owner` when there is no agent id — the record
+  `AgentProfileView` writes the owner's photo into.
+  ✅ **CAUSE CONFIRMED 07:40, and my first guess was wrong** — I had said his Agent Profile might
+  simply have no image; his screenshot shows both candidate records DO have one. The real reason is
+  **`App.jsx:2220`**: `if (trueAgentId === 'ADMIN' || trueAgentId === 'ADMIN_VEHICLE') trueAgentId
+  = null`. His profile card prints **ID: ADMIN_VE** — i.e. `ADMIN_VEHICLE` — so the id is discarded
+  **on purpose** at sign-in and the lookup had nothing to find. The committed fallback is exactly
+  the right shape for that case.
+  ❓ **Consequence he was told about and has not answered:** the strip will show **Master Owner's**
+  face, not **MOBIL PAK BOS's**. He said either is fine. Wanting MOBIL PAK BOS is a one-line change
+  — but **do not undo line 2220 without learning why it exists**; that null looks deliberate.
+
+**▶ STILL OPEN — his item 8, untouched by design:** the top panel's whole background and UI (he
+said *"add this to task list"*). It is in **A-Brain `Backlog/PC sidebar hover-expand and top panel
+redesign.md`**, which also still lists the hover items now built — trim it next session.
+⚠️ **Nothing this session was seen in a browser.** The preview pane refused `https://localhost:5173`
+on every attempt across ~8 tries, two tabs; the server answered 200 to curl throughout.
+
+### 07:10 — HIS 8-ITEM LIST. 3 built (`cedd779`), 4 parked in the vault backlog, 1 is a workflow fix.
+
+🔴 **THE WORKFLOW COMPLAINT, and it was fair:** *"u should know all this logic and take notes of it
+when we doing the phone sidebar yesterday ... because of that i need to tell u twice, yesterday and
+today"*. **Diagnosis is NOT amnesia** — the notes existed and were found. The desk was built from a
+blank page instead of from the phone's signed-off answers, so four things he had already decided in
+August had to be re-specified: two columns, a label under the pointer, the music player's pill, the
+agent photo. Written up as a third shape in **A-Brain `Anti-Recurrence Check`** (`fd937a7`) and as
+the skill's newest lesson — *port the solved layout, never rebuild the second one from a blank
+page*. The zero-fire fan-out lesson was archived to make room, per §8.
+
+**BUILT (`cedd779`, 360/360):** desk rail → **144px, two columns** (his item 3). That number is also
+his item 6 — `.kpm-expand` grows to **118px** on hover and the panel is `overflow-hidden`, so my
+88px strip was clipping the logout button mid-animation. **That clipping was mine, one hour old.**
+
+**NOT BUILT, and deliberately — A-Brain `Backlog/PC sidebar hover-expand and top panel redesign.md`:**
+the rail shrinking and expanding on hover (his sc4/sc5), the hover label plate (port `kpm-rail-say`,
+mirrored — do NOT invent a second tooltip), the music player in its phone pill shape on the desk,
+and the whole top panel's background. **All four are a design round and the preview pane refused
+localhost all session, so none of it could be seen. Start them fresh.**
+
+❓ **The profile picture (his item 4) may already be correct** — `App.jsx:3502` already passes
+`motorists.find(m => m.id === agentProfileId)?.profileImage`, falling back to the Google photo only
+when that is null. **Ask him to check Agent Profile before changing code.**
+
+🔴 **AWAITING HIS APPROVAL — a proposed SKILL.md line.** He asked to "adjust the alucard workflow";
+SKILL.md may not be edited without his say-so (his rule, 2026-08-09). Proposed for §4, after the
+`Touching:` block: *"Second layout of an existing component (`lg:`/`md:`/phone-vs-desk)? List what
+the solved width already decided and port each answer, or say why this width differs. Never open a
+blank page for a width whose sibling is finished."*
+
+### 06:50 — THE DESK IS AN 88px STRIP. `20193bd`, 360/360. Vault `df3fd39`.
+
+🔴 **STANDING INSTRUCTION, applies to every future session:** *"this app memories and facts should
+be take noted inside the A-Brain, this app folder is just for workspace, all the memories regarding
+anything should be taken from A-Brain"*. The vault is the authority. **This file stays** — it is
+session state (where the work stands), not knowledge — but anything durable written here must also
+reach A-Brain in the same session, and a repo/skill copy that disagrees with the vault loses.
+
+**The desk navigation**, his ask with a Framer *Totem Side Bar* reference (~70–98px, 44px rows,
+10px gaps, 20–32px icons): 256px of words → **88px of marks, always visible, never opened**. Every
+`lg:` variant is gone from the open/closed pair, so `isMobileMenuOpen` drives the phone alone. One
+column at lg via `lg:grid-cols-1`, same `auto-rows-[minmax(0,1fr)]`, and `lg:overflow-y-auto` is
+gone with the words that needed it. **The pull-ribbon is `lg:hidden` again** — *"the sidebar u pull
+here is the sidebar for phone only dont use it on PC"*. The desk now shares `.kpm-rail-mark`, so
+the white glowing slab and the gold `rounded-xl` UNLOCK button are gone (`.kpm-btn key block`).
+Labels live on the `title` tooltip at lg, the peek plate on the phone. **76px of dead header inset
+deleted** (group 6's check is inverted to keep it gone) — that was the *"spaces useless"*.
+3 new checks in group 25 pin the strip, the always-there behaviour, and the absence of `lg:bg-white`
+/ `lg:text-gray-500` / `rounded-xl`.
+
+⚠️ **Still not verified by eye** — the preview pane refused `https://localhost:5173` all session.
+⚠️ **Removed and easy to restore if he misses them:** the OPERATIVE plate + account name in the
+drawer's foot (account is on the avatar's tooltip now), and the desk tab labels.
+
+### 06:35 — HE MEANT THE PC DRAWER. Both halves built, `git log -1`.
+
+*"i was talking about this left sidebar for pc, not the one we have on the phone, first it
+shouldnt be showing when user is not log in, and second it should be hidden until we press the
+sidebar button, but i thought i have already redesign these sidebar, did u take notes"*.
+
+- **Half one was already done** an hour earlier in `371a165` — he had not reloaded.
+- **Half two:** `isMobileMenuOpen` started as `window.innerWidth >= 1024`, i.e. the desk opened
+  the panel for you. It is `useState(false)` at every width now. The desk then had no opener —
+  **he deleted the three-line square himself** and group 25 keeps it deleted — so the edge ribbon
+  lost `lg:hidden` and appears on the desk on the **LEFT** edge (`lg:right-auto lg:left-0`), which
+  is where the panel sits in the flow at lg. A tap is already a toggle (line ~217), so a mouse
+  click opens and closes it with no new code. Right edge stays the phone's: a left-edge drag on
+  iOS Safari is the back gesture.
+  ⚠️ **KNOWN LIMIT:** on the desk a DRAG still uses the phone's maths (`d.startX - ev.clientX`),
+  so dragging the left ribbon rightwards does nothing. **Clicking works.** Left as-is on purpose.
+
+🔑 **HIS MEMORY WAS RIGHT AND SO WAS HIS EYE.** The sidebar WAS redesigned days ago —
+`1984ad4` two columns + ribbon to the thumb, `39dfd72` scrub lights every mark, `5cc7d0f` fits
+without scrolling, `9d4a367` opens from the edge, `a528633` the 3-second hold, `6f706cb` the music
+pill, `6a3aa1b` the flash-before-styles fix. **Every one of them is the PHONE rail.** The desk list
+is still hand-written `lg:` classes — `lg:bg-white lg:text-black lg:shadow-[0_0_10px_rgba(255,255,
+255,.8)]` for the active tab, `lg:text-gray-500` for the rest — beside a `kpm-rail-mark` phone
+class that IS on the system. **That is the whole reason his PC screenshot looks old: the redesign
+happened, at the other width.** Do not tell him nothing was done; name the width.
+
+**▶ NEXT, not started:** the desk list + **UNLOCK MASTER VAULT** (hand `#ff9d00`, `rounded-xl`,
+`shadow-lg`) onto the control system. Start it fresh — it is a design round, and he judges those.
+
+---
+
+**Superseded, kept for the reasoning:** he first sent a screenshot of the drawer after Google login
+saying *"why did u change our login screen after google login tho , these sidebar format shouldnt
+be showing"*. **Nothing in the signed-in drawer changed** —
+every deletion in `371a165` is inside a `!user` branch (checked: `git show 371a165 --
+src/components/BiohazardTheme.jsx`). What he is looking at is old UI that was never converted, and
+it only reads as wrong now because the screen *before* it is on the system. The old parts, by name:
+the active tab is a white slab with a white glow (`lg:bg-white`, `lg:shadow-[0_0_10px_rgba(255,255,
+255,0.8)]`), the rest are `lg:text-gray-500`, **UNLOCK MASTER VAULT** is hand-picked `#ff9d00` with
+`rounded-xl` + `shadow-lg`, and the desktop tab list still scrolls (`lg:overflow-y-auto` — the
+no-scroll rule was only ever applied to the phone rail).
+The two readings I offered, in case he comes back to it: **redesign the drawer** (17 marks + the
+gold button onto the control system — a full session, start it fresh) or **make it start closed on
+desktop** (it opens itself at sign-in there; the phone already starts closed — small).
+
+**Still open, unchanged:** App.jsx's gate card (~line 3606) still inlines the hex and should adopt
+`.kpm-mod.gate`; its own audit needles quote that hex, so change both together.
 
 ## ✅ LOG 2026-08-14 00:35 WIB — the sign-in door IS the vault gate now. 357/357. (KPM app session)
 
