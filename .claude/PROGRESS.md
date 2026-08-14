@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-14 17:50 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
+**Updated: 2026-08-15 01:55 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -13,32 +13,80 @@
 > archive rather than letting it grow back. This file holds WHERE THE WORK STANDS; the archive
 > and `A-Brain/Wiki/Log.md` hold how it got there.
 
-### ✅ THE DOCK IS BUILT AND COMMITTED — `git log -1`, **370/370**, `src/` clean.
+## ▶ NOW
 
-He gave the green light (*"okay u can integrate panel B"*) and everything below shipped. Build
-green, audit up from 366 to 370, and the four new checks are the ones that matter — each encodes
-a bug that a diff could not see.
+**The app shell redesign is SHIPPED and committed. Nothing is in flight, `src/` is clean.**
+Two commits: the desk dock (Label B, square cells, glass) and the header band. **372/372.**
 
-**⚠️ THE ONE THING STILL UNVERIFIED: nobody has LOOKED at it.** The audit reads source, and the
-built CSS was confirmed to contain every rule, but the Browser pane is not displayed on his
-machine so no frame has ever been captured, and the dev server is HTTPS (on purpose — the phone
-needs a secure context; never "fix" it) which the in-app browser refuses. **His eyes are the
-check.** If he reports something looks wrong, believe the screenshot over the measurement — that
-happened three times in one afternoon and the screenshot was right every time.
+**✅ HE HAS SEEN IT AND APPROVED IT** — *"it looks fine"* — after one overlap fix. That matters
+because **no frame was ever captured on this machine**: the Browser pane is not displayed, and the
+dev server is HTTPS on purpose (the phone needs a secure context — **never "fix" it to http**),
+which the in-app browser refuses. The audit reads source; the built CSS was confirmed to contain
+every rule; **his eyes are the only check that has ever run on the appearance.**
+⚠️ **If he says "localhost not working", the answer is `https://`** — plain `http` on 5173 refuses
+the connection. That cost a round trip once.
 
-**What to check first if he reports a problem, in this order:**
-1. Is the label visible at all on the desk? If not, something re-clips it — check every ancestor's
-   `overflow`, not the label's own position.
-2. Are the cells square? If oblong, `--cap` is not reaching the grid.
-3. Is the sidebar visible in Lite Mode? If not, the 0.02 glass lost its opaque fallback.
+**If he reports something looks wrong, believe the screenshot over any measurement.** That
+happened three times in one afternoon and the screenshot was right every time. Check in this
+order:
+1. Desk hover label invisible → something re-clips it. Walk every ancestor's `overflow`;
+   `getBoundingClientRect` reports layout position and knows nothing about an ancestor clip.
+2. Cells oblong instead of square → `--cap` is not reaching the grid.
+3. Sidebar or header gone in Lite Mode → the glass lost its opaque fallback. Both have one.
+4. Header sits wrong against the dock → the number is the `112px` left margin on `.kpm-topbar`,
+   and it must stay >= `.kpm-rail-pod`'s width or the open dock paints over the title.
 
-### 📋 THE DECISIONS THAT SHIPPED (kept for reference; do not re-ask)
+## ❓ WAITING ON ALDI — verbatim, do not paraphrase
+
+- **21st.dev theme publish.** He ran `/21st:21st-design-sync`, which publishes the project's
+  palette **publicly and permanently** to the 21st.dev community library. **It was NOT run.** He
+  was asked to confirm and has not answered. Do not run it without an explicit yes.
+- **Phone ribbon position** — device-scoped (localStorage, current behaviour) or user-scoped
+  (Firestore, follows the account)? Asked, unanswered.
+- **The music stops when the vault gate opens**, because MusicPlayer unmounts with the rail. He
+  was offered a move of the player out of the rail and has not said either way.
+- ✅ **HIS JOB, not ours:** add `192.168.1.109` to Firebase Console → Authentication → Settings →
+  Authorized domains, or the phone cannot sign in.
+
+## 📓 LOG — newest first, about five entries; `git log` keeps the rest
+
+### 2026-08-15 01:55 — the header became the dock's twin; slate was hiding in `index.css`
+
+**He has now SEEN both and approved:** *"it looks fine"*. One fix on top of it, from his
+screenshot: *"i dont want the new header panel to collapse with the sidebar when open"* — the
+header's left margin cleared the **closed** 60px circle but not the **open** 100px pane, so the
+dock painted over the status dot and the first letter of the title. **76px → 112px**, static on
+purpose: shifting the header sideways on every dock hover would make the title jump each time the
+pointer passes the logo, which is worse than the overlap. ⚠️ That number tracks `.kpm-rail-pod`'s
+width — change one, change both.
+
+⚠️ **A lesson about the audit itself, worth more than the fix:** two checks failed because their
+regexes spanned the gap from a selector to its declaration, and I had put a long comment in that
+gap. **A check that reaches across prose breaks when the prose is edited.** Anchor on the value,
+which is unique, not on a span from the selector.
+
+
+His ask: *"lets rework the top UI format bro ... i want it to be in theme with this app and also
+change the background"*. The band was a hairline rule on a flat wall while the dock had become a
+floating capsule — one side of the shell floated, the other was a line. The header is a pane on
+the same lit ground now, with **weaker glass than the dock on purpose** (blur 18 vs 30): the dock
+is what you reach for, the header is what you read.
+The ghost watermark kept its job and lost its redundancy — he pushed back on deleting it
+(*"well it change according to the choosen app section"*) and he was right, so it is the section's
+**icon** now instead of its **name**, which it was printing 24px from the real title and directly
+behind the bell.
+🔴 **Two defects found by the craft floor, not by looking for them:** every scrollbar in the app
+was slate (`#cbd5e1 / #94a3b8 / #475569 / #64748b`) — **slate IS the blue the palette law bans** —
+and the caret and text selection were browser-default blue. They survived every sweep because the
+banned-hue check read the shell, App and the player, and **`src/index.css` is none of the three**.
+It is read by the audit now. The clock also had no plate while its three neighbours did.
+
+### 📋 THE DECISIONS THAT SHIPPED (reference only; do not re-ask, do not re-derive)
 
 **Artifact (his decision board):** https://claude.ai/code/artifact/c0af9545-8a29-40b9-a787-2f33d8835082
-**Source:** `<scratchpad>/dock-options.html`. Nothing in `src/` has been touched for any of this.
+**Prototype source:** `<scratchpad>/dock-options.html`. **All of this is now IN `src/`.**
 
-**✅ THE GEOMETRY IS DONE IN THE PROTOTYPE (2026-08-14, after the quota reset). Numbers below
-are final and measured — take them straight into `theme.css`, no re-derivation needed:**
+**The measured geometry, already ported to `theme.css`:**
   · dock **100px** wide (was 118) · collapsed circle still **56px**, inset 22px each side
   · cells **44 x 44 square**, `gap: 4px` on BOTH axes → pitch 48px in both directions
   · `--cap` on the grid = `rows*44 + (rows-1)*4 + 8`, set from the row count. **This is
@@ -50,8 +98,17 @@ are final and measured — take them straight into `theme.css`, no re-derivation
     one-column `calc(100% + 4px)`. Measured: col-1 clears col-2 by 26px, nothing clipped.
   · Label B plate: rests at `translate(-22px,-50%)` opacity 0 → slides RIGHT to `0`. Enter
     `opacity 300ms / transform 520ms var(--ease)`; exit stays `180/240ms`. Gap 22px = the travel.
-**Still prototype-only. `src/` untouched.** Next step is porting it, starting with the
-`overflow-hidden` bug below.
+**✅ ALL PORTED AND COMMITTED.** The `overflow-hidden` bug below was the first thing fixed.
+
+**Where the shell's design lives — check here before grepping:**
+
+| What | File | The rule that matters |
+|---|---|---|
+| Dock geometry, glass, label | `src/styles/theme.css` | the two `@media (min-width: 1024px)` blocks |
+| Header band + ghost + clock chip | `src/styles/theme.css` | `.kpm-topbar`, `.kpm-topbar-ghost`, `.kpm-chip.kpm-clock` |
+| **The ground, scrollbar, caret, selection** | **`src/index.css`** | **newly audited — slate hid here for months** |
+| Rail markup, `--cap`, `is-two`, logout | `src/components/BiohazardTheme.jsx` | the `kpm-rail-grid` nav and the foot |
+| Every trap above, as a check | `src/config/integration.audit.mjs` | group G25 |
 
 **▶ HIS INSTRUCTION THAT THIS CLOSES, verbatim, 2026-08-14 ~20:10:**
 *"Label B is good, but make the sidebar thinner, and reduce space between each column, it should
@@ -155,154 +212,13 @@ Also: the pod pads itself 12px so the bottom group stops hanging off the capsule
 Measured after animations complete — closed: all three blocks opacity 0. Open: capsule 12→708
 with the bottom group at 479→700, inside it.
 
-### ✅ 13:55 WIB — the dock floats and moves to the corner. `93b5c2f`, 364/364. HIS TWO DECISIONS, BOTH ANSWERED.
+### ⤵ Earlier 2026-08-14 entries trimmed (13:55, 13:20, 12:40, 11:43, 11:20)
 
-**He chose "float it"** for the blank-column question, which is also what the component's sheet
-said: *"set it to Fixed, and pin to your chosen edge"*. So the desk rail is `position: fixed` and
-**reserves nothing** — measured, the main content starts at 0 and spans the full 1280.
-⚠️ `margin-right: -228px` is RETIRED with it: an out-of-flow box cannot push its siblings. If
-`position` ever goes back to relative, that trick must come back or every hover shoves the app
-sideways. And the `pointer-events: none` at rest is now **load-bearing**, not polish — a fixed
-panel over the content that took clicks would swallow every click down the left edge.
-
-**He also chose to leave the wider SALES layout alone** — *"It's fine, just the sidebar"*. The
-cream-panel-dominates / empty-right-column / no-column-rhythm critique was offered and declined.
-**Do not reopen it unprompted.**
-
-**Then his own suggestion, and it is a good one:** *"the top part of the app is very spacey what
-if u put the single button when unopen on the left top instead of the middle left?"*. Circle now
-at (4, 12), 56 square. Because the closed circle and the open capsule share a top edge, **only the
-height animates** — it unfurls downward out of the logo. `.kpm-topbar` takes 76px of left padding
-so the header gives up that corner.
-
-### ✅ 13:20 WIB — his four screenshot reports. Three fixed (`9e975aa`, 364/364), the fourth is a DECISION.
-
-1. **Left torch stood in the doorway.** The arch is `left: 4%` **plus a fixed 124px**; the torch
-   was at `21%` of the same box. They only clear each other past ~729px and the ledger column
-   never is. Anchored to the arch's right edge in px now. ⚠️ Mixing % and px positioning in one
-   scene is the bug class, not this one instance.
-2. **The hover label already exists** — he could not see it because of (3).
-3. **🔑 Music, face and logout stayed visible around a CLOSED capsule and were not clickable.**
-   Cause: `boot-1/2/3` (the arrival animations) run `forwards`, and **a filled animation outranks
-   a normal declaration in the cascade**, so `opacity: 0` never reached the three blocks carrying
-   one. It reached the marks, which carry none — which is exactly the split he photographed.
-   Fixed by switching the boot animation off on the DESK (`.kpm-rail-pod > * { animation: none }`),
-   not with `!important`: the capsule unfurling is the arrival here. Phone untouched.
-   Circle also went 72 → **56 inside a 64px column** — *"button is too big"*.
-4. **HIS DESIGN QUESTION IS OPEN, do not answer it for him.** *"the sidebar have it own space but
-   it just blank while its closed ... so much item on the left while the right it is just one big
-   panel ... i want ... more balance and more organic"*. The Totem sheet he pasted says **"set it
-   to Fixed, and pin to your chosen edge"** — a floating dock reserves NO column, which is the
-   blank strip he is looking at. Three options were put to him; **the answer decides the work.**
-
-⚠️ **The seven skills he named do not exist** (`/emil-design-eng`, `/design:design-critique`,
-`/design`, `/ui-styling`, `/ui-ux-pro-max`, `/make-interfaces-feel-better`, `/impeccable`).
-`ListSkills` and `SuggestSkills` both come back empty for design/UI. He asked to "add them to this
-workspace" — **they cannot be installed from here.** The nearest real thing is a project skill
-written into this repo, and he has not said yes to that yet.
-
-### 🔑 12:40 WIB — BROWSER ACCESS IS FIXED. It found two real bugs in an hour. `c53025b` + `a611857`, 364/364.
-
-**🔴 THE ONE THING TO CARRY FORWARD: you can look at this app now. Use it.**
-
-The in-app browser will not accept the dev server's self-signed certificate (HTTPS is deliberate,
-`vite.config.js:17`, the phone needs it — never "fix" that). **Plain HTTP is not blocked.** So:
-
-    # 1. copy the built stylesheet next to a mock page
-    cp dist/assets/*.css <scratchpad>/
-    # 2. serve it
-    python -m http.server 5199 --bind 127.0.0.1     (run in the scratchpad, background)
-    # 3. preview_start { url: "http://127.0.0.1:5199/harness.html" }   → navOk: true
-
-`harness.html` in this session's scratchpad is a faithful copy of the shell's markup — real class
-strings, real built CSS, no React and **no login**, which is what makes it usable at all. Measure
-with `javascript_tool`. **`:hover` cannot be forced from script, but `:focus-within` can** — call
-`.focus()` on a mark and the open state is reachable. Kill transitions first with an injected
-`*{transition:none!important}` or you measure a frame mid-animation.
-⚠️ Screenshots still need Aldi to DISPLAY the pane. Everything else is scriptable.
-
-**Bug 1 — the desk panel was 176px wide, the PHONE's width, not 144.** `w-[176px] lg:w-[144px]`
-on the element fought a width rule in the stylesheet for the same property, and the phone value
-won on the desk. So yesterday's "144px so the logout button stops being clipped" **never once took
-effect**. The check that was supposed to protect it asserted the class was PRESENT in the source —
-which says nothing about whether it WINS. Width classes deleted; theme.css owns it at every size.
-
-**Bug 2 — the hover label was `position: relative`, not absolute.** `.kpm-rail-mark > *` sets
-relative to lift icons above their plate; equal specificity, later in the file, so it won. The
-label sat inside the capsule and, being a flex child, pushed the icon off centre. Now scoped to
-`.kpm-rail-mark > .kpm-rail-word`.
-
-🔑 **Both are the same lesson, and it is worth more than either fix: a check that greps the SOURCE
-for a class proves the class was typed, not that it applies.** Assert the outcome, or measure it.
-
-**Then his Totem spec, from the component's own description** (`a611857`): **solid, no blur** —
-which supersedes his earlier "transparant but blurred" and removes the Lite Mode fallback problem
-entirely; the **label is its own pill** that slides 6px out; **the logo is the trigger**, so at
-rest the panel takes no pointer events and is not an invisible wall down the screen edge; icons
-**cascade** in via `--i` set in the JSX; and **every control is a mark now** — the gold unlock
-block and the `.kpm-expand` logout are gone, logout keeping its red on icon and label pill.
-
-Measured after: closed **72px**, pointer-events none, surface `rgb(20,17,14)`, blur `none`. Open
-**300px**, main column's left edge **unmoved at 72**. Longest label's pill 128 wide, ending at 200
-inside a 300 window — not clipped.
-
-### ✅ 11:43 WIB — the sidebar no longer paints over the vault gate. `06f299b`, 363/363.
-
-**He reported this twice and the first answer was WRONG.** *"why did u change our login screen
-after google login tho, these sidebar format shouldnt be showing"*, answered from the diff as old
-un-converted UI. Then, with a screenshot: *"why sidebar keep showing in login screen"*. A diff
-proves what changed; it cannot prove what is correct.
-
-🔑 **A z-index only competes inside its own stacking context.** The gate is a CHILD of
-`<BiohazardTheme>`, so it lands in the content div, and that div is `relative z-10` — a stacking
-context. Its `z-[9999]` is settled against its siblings in there, then the whole context is stamped
-at 10. The panel is a sibling of that div at `z-[90]`. 90 beats 10. **Raising the gate's number can
-never fix it.** Fix: `{user && !showAdminLogin && (` on the panel, the guard the edge ribbon
-already had. Two checks carry the reason so nobody reaches for a bigger number.
-
-⚠️ **Known cost, his call if he wants it back:** MusicPlayer lives inside the panel, so opening
-the vault gate now unmounts it and the music stops. Moving the player out of the rail is the fix
-if he objects.
-
-**PROGRESS.md was NOT trimmed.** The 🔴 above asks his permission to archive it; deleting 3,000
-lines of his history on a hook's say-so is not mine to do. It stays until he answers.
-
-### ✅ 11:20 WIB — the PC sidebar shipped in the format his VIDEO asks for. `16c8ff9`, 362/362.
-
-**The reference video can be watched. `ffmpeg` is on this machine.**
-
-    ffmpeg -i clip.mp4 -vf "fps=1,scale=900:-1" -frames:v 12 f%02d.png
-
-Six seconds became six frames, and the frames contradicted the guess made from his words: *"shrink
-in to 1 button big"* had been written down as *one button WIDE* (a narrow column of icons). It is
-**one single circle**. The whole menu appears only on hover. Everything built on the wrong reading
-was redone this morning. The law is now in `A-Brain/Wiki/Concepts/Aldi's Design Taste.md`: **his
-reference is the artefact, not his sentence about the artefact.**
-
-**What the desk sidebar is now**, three states:
-- **at rest** — one circle, centred on the left edge, carrying the ACTIVE TAB's own mark.
-- **pointer on the rail** — a full-height translucent, blurred capsule; every mark fades up in one
-  column, the music button among them.
-- **pointer on a mark** — that mark's name prints beside the capsule, on the app's own background.
-
-**The two numbers that must stay in step: 272 painted, 72 occupied, `margin-right: -200px`.** The
-rail's margin box never changes, so opening it never moves the main UI.
-
-`.kpm-rail-pod` is new and is the capsule; the panel around it is the window. One element cannot
-both clip (`overflow-hidden` is load-bearing there) and let the label escape. On a phone the pod is
-`display: contents` — the signed-off phone layout does not know it exists.
-
-⚠️ **The panel now paints NOTHING of its own**, so anything that hides the pod's glass hides the
-whole sidebar. Two checks pin it: the appearance sits OUTSIDE the `hover: hover` gate (a touch
-laptop matches `lg:` but not that), and Lite Mode gets solid ground because it deletes
-`backdrop-filter`.
-
-**The music player lost its desk accordion** — it opened downwards into a panel that is now 72px
-wide and 72px tall. The pill answers both widths. Net −48 lines in that file.
-
-**Not seen with eyes.** The Browser pane still refuses the dev server's self-signed HTTPS cert
-(`chrome-error://chromewebdata`), and screenshots need the pane displayed. Verified by build,
-362 checks and the built CSS. **Aldi has to look at this one.**
+Every one of them is a step toward the dock that has now SHIPPED, so they describe a state that
+no longer exists. `git log --oneline` names them; `A-Brain/Archive/PROGRESS-archive-2026-08-14.md`
+and `A-Brain/Wiki/Log.md` hold the reasoning. The two findings from that stretch that outlived
+their entries are already stated above: the filled-animation cascade tie, and that browser access
+is what turned guessing into measuring.
 
 ### ✅ 23:40 WIB (Lancelot session) — the two potongan methods BUILT. A-Brain `8b20e34`. 103 checks green.
 

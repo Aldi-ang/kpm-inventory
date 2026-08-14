@@ -1456,7 +1456,16 @@ html.lite-mode .kpm-topbar { transition: none; }
      the thing you reach for and the header is the thing you read, so the header must not compete.
      Same family, quieter voice. */
   .kpm-topbar.kpm-topbar {
-    margin: 12px 14px 4px 76px;
+    /* 📏 112px, not 76. His report with a screenshot: *"i dont want the new header panel to
+       collapse with the sidebar when open"*. 76px cleared the CLOSED circle (60px) but the OPEN
+       pane is the pod's full 100px, so the dock painted over the header's left edge — it was
+       covering the status dot and the first letter of the title.
+       112 clears the open pane with 12px of air, and it is a STATIC number on purpose: shifting
+       the header sideways on every dock hover would mean the title jumps every time the pointer
+       passes the logo, which is a worse problem than the one being fixed. The cost is 36px of
+       header width, paid always, in exchange for an overlap that can never happen.
+       ⚠️ This tracks `.kpm-rail-pod`'s width. If the pod changes, this changes with it. */
+    margin: 12px 14px 4px 112px;
     padding: 11px 16px 12px;
     border: 1px solid rgba(245, 230, 200, .12);
     border-radius: 20px;

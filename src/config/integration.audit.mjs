@@ -1156,10 +1156,17 @@ check(G25, 'the desk rail collapses to one circle, and opening it moves nothing'
      the right edge and the height animate; the left edge never moves. */
   /\.kpm-rail-pod::before \{ left: 4px; right: 40px; top: 12px; height: 56px; border-radius: 999px; \}/.test(themeCss) &&
   /\.kpm-rail-totem \{[\s\S]{0,200}?top: 12px; left: 4px;/.test(themeCss) &&
-  /* 76px still, but a MARGIN now, not padding. Padding kept the header's own surface underneath
-     the collapsed logo — fine while the band was transparent, wrong the moment it became a glass
-     pane, because the pane then paints under the dock. A margin gives the corner away instead. */
-  /\.kpm-topbar\.kpm-topbar \{\s*\n?\s*margin: 12px 14px 4px 76px;/.test(themeCss) &&
+  /* A MARGIN, not padding: padding kept the header's own surface underneath the collapsed logo —
+     harmless while the band was transparent, wrong the moment it became a glass pane, because the
+     pane then paints under the dock.
+     📏 112px CLEARS THE OPEN PANE, NOT JUST THE CLOSED CIRCLE. His screenshot: *"i dont want the
+     new header panel to collapse with the sidebar when open"*. 76px cleared the 60px circle but
+     the OPEN pod is 100px wide, so the dock painted over the status dot and the first letter of
+     the title. This number TRACKS `.kpm-rail-pod`'s width — change one, change both. */
+  /* ⚠️ ANCHORED ON THE VALUE, NOT ON A SPAN FROM THE SELECTOR. A regex that reaches across the
+     comment between a selector and its declaration breaks every time someone edits the prose —
+     which is exactly what happened the first time this was written. The value is unique. */
+  /margin: 12px 14px 4px 112px;/.test(themeCss) &&
   !/\.kpm-topbar\.kpm-topbar \{ padding-left: 76px; \}/.test(themeCss) &&
   /:focus-within \{ width: 351px/.test(themeCss) &&
   /\[data-kpm-rail\] \.kpm-rail-pod > \* \{ animation: none; \}/.test(themeCss) &&
@@ -1529,7 +1536,7 @@ check(G25, 'it is black at rest and red only under the finger',
    reach for, the header is what you read, and two panes shouting at the same volume is how a
    shell reads as busy. If the dock's blur ever changes, this stays below it. */
 check(G25, 'the header floats on the same ground as the dock, and survives Lite Mode',
-  /\.kpm-topbar\.kpm-topbar \{[\s\S]{0,420}?backdrop-filter: blur\(18px\) saturate\(1\.5\)/.test(themeCss) &&
+  /backdrop-filter: blur\(18px\) saturate\(1\.5\)/.test(themeCss) &&
   /html\.lite-mode \.kpm-topbar\.kpm-topbar \{[\s\S]{0,200}?backdrop-filter: none/.test(themeCss) &&
   /html\.lite-mode \.kpm-topbar\.kpm-topbar \{\s*\n?\s*background-color: #14110e/.test(themeCss) &&
   /* the ground exists at all — glass over a flat wall is a grey rectangle, and both panes were
