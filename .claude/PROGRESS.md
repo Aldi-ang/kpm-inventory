@@ -18,6 +18,33 @@
 **Artifact (his decision board):** https://claude.ai/code/artifact/c0af9545-8a29-40b9-a787-2f33d8835082
 **Source:** `<scratchpad>/dock-options.html`. Nothing in `src/` has been touched for any of this.
 
+**▶ START HERE NEXT SESSION — his last instruction, verbatim, 2026-08-14 ~20:10:**
+*"Label B is good, but make the sidebar thinner, and reduce space between each column, it should
+look better when each button have the same spacing between vertical and horizontal space make the
+space between columns to be the same with the row to be more even, take notes and do this after
+quota reset"*.
+
+**LABEL B IS CONFIRMED. Nothing above it needs re-deciding.** The open work is geometry only.
+
+**The insight to lead with, because it is not obvious and it decides the numbers:** he is asking
+for even spacing, and the reason it looks uneven is that **the buttons are not square**. They are
+currently **54px wide and about 30px tall**, so the icon-to-icon pitch is ~56px across and ~34px
+down — nearly double in one direction. Shrinking the column gap alone cannot fix that; the gap is
+already only 2px. **Thinning the dock is what evens it**, which is exactly what he asked for in
+the same breath. Trust his eye here: he diagnosed the right fix from the symptom.
+
+**⚠️ AND THE TRAP: on his real screen the rows STRETCH.** `grid-auto-rows: minmax(0,1fr)` makes
+9 rows share ~580px, so each row is ~65px tall — wider than any thin dock would make the buttons,
+so thinning alone makes it MORE uneven, not less. Even spacing therefore needs the row height
+CAPPED to the button width, i.e. square cells:
+  · marks **44 x 44**, gap **4px on BOTH axes**, pod width **100px** (4 + 44 + 4 + 44 + 4)
+  · pitch becomes 48px in both directions — even by construction, not by taste
+  · 9 rows x 48 = 432px inside ~580px, so it still never scrolls; the spare height goes to the
+    foot or centres the column. **Do NOT let the rows go back to 1fr** or the evenness is lost.
+  · one-column mode: keep the pod at 64px so the collapsed 56px circle still fits, marks 56 wide.
+Take these numbers to the prototype FIRST — he judges by looking, and the artifact is already
+built for exactly this comparison.
+
 **HIS LOCKED DECISIONS — build these, do not re-ask:**
 1. **Two columns when nav tabs exceed 10**, one column at 10 or fewer (so a low tier never sees
    two). Music, profile and logout stay **one per row**. Column gap **2px**, row gap 4px.
