@@ -19,6 +19,27 @@ staleness, not on a new edit; timestamp bumped to satisfy it.
 > `A-Brain/Wiki/Log.md`, which is the memory now, and this file should hold only where the work
 > stands. Do not do it without his word; do not let another session pass without asking.
 
+### ✅ 17:45 WIB — his last open item closed: the icon was taller than its own button. `f6c5dbe`
+
+**366/366, `src/` clean.** The one item from his list that was only half done — *"button for each
+should be spacier"* — is finished, and it was a real defect, not a preference. Measured in a
+browser at 1366x768 with all **seventeen** marks: plates were **21.8px tall around a 27px icon**.
+
+No scrollbar and no `min-height` were available (his rule, and a floor clips a tab into being
+unreachable), so the height came from the three things spending it: gap 8px→4px, grid padding
+8px→4px, and the foot 221px→167px. **After: 29.7px rows, 4.8px of plate around every icon**, no
+scroll, nothing clipped, plates now 56px wide — matching the collapsed circle exactly.
+
+Two things learned that are now checks, not prose:
+- **A second column is impossible here.** The pod is 64px by design; the extra 228px of the open
+  panel is the room the label pills slide into. Two columns would be 21px each.
+- **The longest tab name clears the panel edge by 21px.** "Receivables & Consignment" ends at
+  x=271 of 292, and the panel clips — a longer name is sliced off silently. Capped at 27 chars.
+
+Full record: `A-Brain/Backlog/PC sidebar hover-expand and top panel redesign.md`.
+
+**NOTHING IS IN FLIGHT.** Open asks for Aldi are unchanged and listed below.
+
 ### ✅ 14:40 WIB — the specificity tie that shipped twice, and the skills were installed all along.
 
 🔴 **CORRECTION TO THE 13:20 ENTRY: the design skills DO exist.** `~/.claude/skills/` already held
