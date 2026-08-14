@@ -408,7 +408,25 @@ export default function BiohazardTheme({
                 middle is the whole screen now.
                 The block below keeps its own indentation on purpose: re-indenting 180 lines to
                 add one guard would bury the actual change in the diff. */}
-            {user && (
+            {/* 🔑 AND NOT WHILE THE VAULT GATE IS UP — his report, twice: *"why did u change our
+                login screen after google login tho, these sidebar format shouldnt be showing"*,
+                then *"why sidebar keep showing in login screen"* with a screenshot of the capsule
+                floating over the gate. The first time this was answered as old un-converted UI.
+                That was wrong, and here is the real reason.
+
+                THE GATE CANNOT COVER THIS PANEL, however high its z-index goes. It is rendered as
+                one of this component's own children (`App.jsx`, inside `<BiohazardTheme>`), and
+                children land in the content div below, which is `relative z-10` — a STACKING
+                CONTEXT. Every z-index inside it, including the gate's `z-[9999]`, is resolved
+                against its siblings inside that context and then the whole context is stamped at
+                10. This panel is a sibling of that div at `z-[90]`, so 90 beats 10 and the rail
+                paints over a full-screen modal. Raising the gate's number does nothing at all.
+
+                So the panel steps aside instead, which is what the edge ribbon and the old nav
+                button already do a few lines up. Nothing in here is reachable behind a modal
+                anyway. Cost, stated plainly: the music player unmounts with it, so opening the
+                gate stops the music — worth it against a menu drawn over the lock screen. */}
+            {user && !showAdminLogin && (
             <div
                 /* HIS REPORT: "sometimes there is a bug and the sidepanel show a while until i
                    refresh on the phone then its gone".

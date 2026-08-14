@@ -610,10 +610,13 @@ check(G15, 'the door is built from the control system, not hand-picked hex',
    Comments are stripped by code(), so this window measures markup only — it cannot be pushed
    open by adding prose, which is what broke the two proximity needles above. */
 const railGuardIdx = code(themeSrc).indexOf('data-kpm-rail');
-check(G15, 'the drawer and its ribbon do not exist until you are signed in',
+/* TIGHTENED 2026-08-14: the drawer's own guard was `{user && (`, which is why it kept painting
+   over the vault gate — see the z-10 stacking-context note in group 16. Both it and the ribbon
+   now carry the same pair of conditions. */
+check(G15, 'the drawer and its ribbon exist only when signed in AND not behind the gate',
   railGuardIdx > 0 &&
-  /\{user && \(/.test(code(themeSrc).slice(Math.max(0, railGuardIdx - 400), railGuardIdx)) &&
-  /\{user && !showAdminLogin && \(/.test(code(themeSrc)) &&
+  /\{user && !showAdminLogin && \(/.test(code(themeSrc).slice(Math.max(0, railGuardIdx - 900), railGuardIdx)) &&
+  (code(themeSrc).match(/\{user && !showAdminLogin && \(/g) || []).length >= 2 &&
   !/System login/.test(themeSrc),
   'a signed-out screen with a drawer on it is the old UI he asked to have removed — and the ' +
   'drawer login is dead code the moment the drawer cannot render');
@@ -757,6 +760,19 @@ check(G16, 'the nav button is not rendered at all while the gate is up',
   + 'class-based hide is only as reliable as the stylesheet that happens to be loaded');
 check(G16, 'App hands the theme the flag that hides it', /showAdminLogin=\{showAdminLogin\}/.test(appCode),
   'hiding it in the theme does nothing if the prop never arrives');
+/* ⚠️ THE GATE CAN NEVER COVER THE NAVIGATION PANEL BY Z-INDEX, and raising its number is exactly
+   the fix that will be reached for. The gate is rendered as a CHILD of <BiohazardTheme>, so it
+   lands inside the content div — and that div is `relative z-10`, a STACKING CONTEXT. Every
+   z-index within it, `z-[9999]` included, is resolved against its own siblings and then the whole
+   context is stamped at 10. The panel is a sibling of that div at `z-[90]`, so 90 beats 10 and a
+   menu paints over a full-screen lock screen. He reported it twice before the reason was found.
+   The panel steps aside instead. If the content div ever stops being a stacking context, come
+   back and re-read this check — do not delete it. */
+check(G16, 'the navigation steps aside for the gate, because it can never be covered by it',
+  (strip(themeSrc).match(/!showAdminLogin && \(/g) || []).length >= 2 &&
+  /print-reset relative z-10 flex-1/.test(strip(themeSrc)),
+  'the edge ribbon and the panel itself both need the guard — one without the other still leaves ' +
+  'a control drawn over the lock screen');
 check(G16, 'the gate backdrop is solid black', /z-\[9999\] bg-black flex/.test(appCode),
   'at bg-black/95 the app behind bleeds through as ghost text and competes with the dot field');
 check(G16, 'the everyday login is the preview card, not the red alarm one',
