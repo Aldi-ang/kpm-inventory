@@ -1153,24 +1153,57 @@ html.lite-mode .kpm-topbar { transition: none; }
   .kpm-rail-pod {
     display: flex; flex-direction: column; position: relative; width: 100%; height: 100%;
   }
-  /* 🔴 SOLID, NOT GLASS — his correction, 2026-08-14, quoting the component's own spec sheet:
-     *"Solid surface. No backdrop blur, so it sits cleanly over any page background"*, and then
-     *"i want exactly like that"*. This supersedes his earlier *"transparant but blurred"*, which
-     was his reading of the video; the sheet is the artefact and the artefact wins.
-     It also deletes a whole failure mode: a solid panel needs no Lite Mode fallback, because
-     there is no backdrop-filter left for Lite Mode to strip. */
+  /* 🔵 GLASS AGAIN, AND THIN — his call after seeing it on a slider, 2026-08-14: *"i want the
+     sidebar background to be more transparant than this, as transparan like apple liquid glass
+     theme uknow"*, then he landed on **0.02** by dragging it himself.
+     This REVERSES the "solid surface" note that used to live here. That was read off the Framer
+     spec sheet; he has since looked at the real thing and chosen. His eye on his own app beats a
+     component vendor's default.
+     The depth is not in the tint — at 0.02 there is barely any tint. It comes from the 30px blur
+     with saturation pushed 90%, and from the bright specular lip on the top edge, which is the
+     actual trick that makes liquid glass read as a LENS rather than as fog.
+     ⚠️ TWO THINGS THIS BRINGS BACK, both previously paid for:
+     1. LITE MODE STRIPS backdrop-filter. At 0.02 alpha that would leave a sidebar you cannot see.
+        The solid ground below is therefore not decoration — it is the fallback, and Lite Mode
+        turns the capsule into a plain dark pill instead of into nothing.
+     2. A blurred element becomes the containing block for `position: fixed` descendants. That is
+        what once threw the music pill off the screen edge. The pill lives at the page root now so
+        it is safe, but anything fixed added INSIDE this pod in future will anchor here, not to
+        the viewport. */
   .kpm-rail-pod::before {
     content: ""; position: absolute; z-index: 0; left: 0; right: 0; top: 12px;
     height: calc(100% - 24px); border-radius: 34px;
-    border: 1px solid rgba(255, 255, 255, .10);
-    background-color: #14110e;
-    box-shadow: 0 18px 50px rgba(0, 0, 0, .55);
+    border: 1px solid rgba(245, 230, 200, .18);
+    /* 0.02 and 0.10 — his number. NOT a solid colour: a solid ground would sit in front of the
+       blur and there would be nothing to see through, which is the whole point of the effect.
+       The opaque fallback lives in the Lite Mode rule below instead. */
+    background-color: transparent;
+    background-image: linear-gradient(180deg, rgba(72, 58, 42, .02), rgba(20, 16, 13, .10));
+    -webkit-backdrop-filter: blur(30px) saturate(1.9) brightness(1.06);
+            backdrop-filter: blur(30px) saturate(1.9) brightness(1.06);
+    box-shadow: inset 0 1px 0 rgba(255, 247, 228, .42),
+                inset 0 -1px 0 rgba(0, 0, 0, .28),
+                inset 0 0 40px rgba(255, 238, 205, .05),
+                0 24px 70px rgba(0, 0, 0, .5);
     pointer-events: none;
     /* the spring morph: it overshoots and settles, which is the difference between a panel that
        grows and one that unfurls */
     transition: top 380ms cubic-bezier(.2, 1.2, .3, 1), height 380ms cubic-bezier(.2, 1.2, .3, 1),
                 left 380ms cubic-bezier(.2, 1.2, .3, 1), right 380ms cubic-bezier(.2, 1.2, .3, 1),
                 border-radius 340ms cubic-bezier(.22, 1, .36, 1);
+  }
+  /* 🔴 THE LITE MODE FALLBACK, AND IT IS LOAD-BEARING. Lite Mode strips `backdrop-filter` — that
+     is what Lite Mode is FOR. With a 0.02 tint and no blur the capsule would be very nearly
+     invisible, so the sidebar would simply vanish for anyone who turned Lite Mode on. This has
+     bitten this panel once already, when it stopped painting its own background.
+     `@supports not` covers the same hole for a browser that never had backdrop-filter at all. */
+  html.lite-mode .kpm-rail-pod::before {
+    background-color: #14110e; background-image: none;
+    -webkit-backdrop-filter: none; backdrop-filter: none;
+    box-shadow: 0 18px 50px rgba(0, 0, 0, .55);
+  }
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .kpm-rail-pod::before { background-color: #14110e; background-image: none; }
   }
   /* an absolutely-positioned ::before paints in the POSITIONED layer, which is above ordinary
      in-flow children — without these two z-indexes the surface covers the marks */
@@ -1197,8 +1230,11 @@ html.lite-mode .kpm-topbar { transition: none; }
   }
   /* :focus-within, not only :hover — at rest every mark is invisible but still tabbable, so
      keyboard focus has to open the same capsule the pointer does or it lands on nothing */
+  /* 351px, not 292: measured from the longest tab name. "Receivables & Consignment" is 219px of
+     label, and it starts 132px from the dock's left edge — 351 is where it ends. A shorter panel
+     slices the name off silently, because the panel is the box that clips. */
   [data-kpm-rail][data-kpm-rail]:hover,
-  [data-kpm-rail][data-kpm-rail]:focus-within { width: 292px; }
+  [data-kpm-rail][data-kpm-rail]:focus-within { width: 351px; }
   /* 🔑 THE LOGO IS THE TRIGGER, not the column — *"Hover the logo, and the pill unfurls"*, and
      *"The page stays clean — one logo, nothing else — until someone reaches for it"*. At rest the
      panel takes no pointer events at all, so the 72px strip is not an invisible wall down the
@@ -1208,15 +1244,28 @@ html.lite-mode .kpm-topbar { transition: none; }
   [data-kpm-rail][data-kpm-rail] { pointer-events: none; }
   [data-kpm-rail][data-kpm-rail]:hover,
   [data-kpm-rail][data-kpm-rail]:focus-within { pointer-events: auto; }
-  /* the pod never widens — only the window around it does */
-  .kpm-rail-pod { width: 64px; flex: none; }
+  /* the pod never widens — only the window around it does.
+     📏 100px, up from 64, and this is what makes the dock look THINNER rather than wider. His
+     ask: *"make the sidebar thinner, and reduce space between each column ... make the space
+     between columns to be the same with the row to be more even"*.
+     Matching the gaps was the smaller half. The cells were 54 WIDE and 30 TALL, so icon-to-icon
+     the pitch was ~56 across and ~34 down — the unevenness was the CELL SHAPE, and no gap value
+     could have fixed it. At 100px with two columns the cells come out 44 x 44 SQUARE, so the
+     pitch is 48px in both directions: even by construction, not by eye. The visible strip is
+     narrower than the old 118px two-column attempt, which is the "thinner" he asked for.
+     The panel stays 64px while closed, so the collapsed circle still sits in the corner exactly
+     where he put it; the pod's extra 36px is simply clipped until it opens. */
+  .kpm-rail-pod { width: 100px; flex: none; }
   /* 🔑 TOP-LEFT, NOT MID-LEFT — his suggestion, 2026-08-14: *"the top part of the app is very
      spacey what if u put the single button when unopen on the left top instead of the middle
      left?"*. He is right twice over. It fills the emptiest corner of the header, and because the
      closed circle and the open capsule now share a top edge, only the HEIGHT animates — the dock
      unfurls downward out of the logo instead of growing in both directions at once, which is
      what *"Floating logo → vertical nav"* actually describes. */
-  .kpm-rail-pod::before { left: 4px; right: 4px; top: 12px; height: 56px; border-radius: 999px; }
+  /* right: 40px, not 4px — the pod is 100 wide now, and 100 - 4 - 56 = 40 keeps the CLOSED
+     capsule exactly the 56px circle he signed off, in the same corner. Only its right edge and
+     its height animate; the left edge never moves. */
+  .kpm-rail-pod::before { left: 4px; right: 40px; top: 12px; height: 56px; border-radius: 999px; }
   [data-kpm-rail]:hover .kpm-rail-pod::before,
   [data-kpm-rail]:focus-within .kpm-rail-pod::before {
     left: 0; right: 0; top: 12px; height: calc(100% - 24px); border-radius: 30px;
@@ -1255,9 +1304,17 @@ html.lite-mode .kpm-topbar { transition: none; }
   }
   [data-kpm-rail]:hover .kpm-rail-totem,
   [data-kpm-rail]:focus-within .kpm-rail-totem { opacity: 0; }
-  /* ONE column, one button wide — "shrink in to 1 button big". The phone keeps the two columns
-     it asked for; this is the desk's own answer and it supersedes them here. */
+  /* ONE column by default — "shrink in to 1 button big" — and TWO once the tab list passes ten,
+     which is `is-two`, set in the shell from `visibleMenu.length`. His rule: a lower tier sees
+     fewer tabs and therefore never gets a second column. */
   [data-kpm-rail] .kpm-rail-grid { grid-template-columns: minmax(0, 1fr); }
+  [data-kpm-rail] .kpm-rail-grid.is-two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  /* 🔑 THE CAP IS LOAD-BEARING, NOT POLISH. `auto-rows: minmax(0,1fr)` makes rows share the whole
+     column, so on a 768px screen nine rows stretch to ~65px tall against 44px wide — square cells
+     become oblong again and the even spacing he asked for silently disappears. Capping the grid's
+     height stops the stretch. `--cap` is computed from the row count in the shell, never
+     hardcoded, and `align-content: center` spends the leftover height as margin instead. */
+  [data-kpm-rail] .kpm-rail-grid { max-height: var(--cap, none); align-content: center; }
   /* 📏 HIS REPORT, 2026-08-14: *"button for each should be spacier"*. MEASURED before believing
      it — 1366x768, all seventeen marks: each plate came out **21.8px tall around a 27px icon**.
      The glyph was physically BIGGER than the button it sits on, which is why the column read as
@@ -1281,7 +1338,20 @@ html.lite-mode .kpm-topbar { transition: none; }
      and none of this applies. The attribute makes it two. Count, do not eyeball. */
   [data-kpm-rail] .kpm-rail-foot { margin-bottom: 0; padding-top: 6px; }
   [data-kpm-rail] .kpm-rail-foot > * { margin-bottom: 4px; }
-  [data-kpm-rail] .kpm-rail-foot .kpm-rail-mark { height: 36px; }
+  /* 56 wide, centred in the 100px pod — one per row, as he asked: *"i suggest 1 button per row
+     for music, profile photo and logout thats fine"*. Matching the collapsed circle's width is
+     what stops the bottom group reading as a different component from the grid above it. */
+  [data-kpm-rail] .kpm-rail-foot .kpm-rail-mark { height: 36px; width: 56px; margin-inline: auto; }
+  /* ⚠️ `.hot` IS A FINGERTIP AFFORDANCE AND HAS NO BUSINESS ON A DESK. It scales the icon 42% and
+     lifts it 4px so the effect happens OUTSIDE the area a thumb covers — see the note where it is
+     defined. A mouse covers nothing, so on the desk it is just an icon jumping out of its own
+     button, which is what his screenshot caught. The hover plate says enough here. */
+  [data-kpm-rail] .kpm-rail-mark.hot .kpm-rail-icon {
+    transform: none; filter: none;
+  }
+  [data-kpm-rail] .kpm-rail-mark.hot.on .kpm-rail-icon {
+    transform: scale(1.18) translateY(-1px);
+  }
   [data-kpm-rail] .kpm-rail-foot img, [data-kpm-rail] .kpm-rail-foot .w-9 {
     width: 32px; height: 32px;
   }
@@ -1300,22 +1370,51 @@ html.lite-mode .kpm-topbar { transition: none; }
   /* 🔑 THE LABEL IS ITS OWN PILL, not floating text — *"the label slides out as its own pill on
      hover"*, and his own earlier words for the same thing, *"i want u to add textbox when we
      hover it"*. It slides 6px out as it arrives, which is the "slips out to the side" part. */
+  /* 🔑 "LABEL B" — his pick after seeing three side by side: *"Label B is good"*. It is the same
+     plate the PHONE already uses (square corners, #0f0e0d, a lighter border), which he had called
+     *"clean"*. The old desk version was a rounded PILL with a 140ms delay, and he called that one
+     *"too cheap"* — the shape belonged to nothing else in the app and the delay made the rail feel
+     hesitant across seventeen buttons.
+     The MOTION is Label A's, on his instruction: *"make the intro animation from label B text to
+     looks like label A, it slides moving from left to right it looks more natural, and slowdown
+     the animation to increase the naturality"*. So it rests at -22px — exactly its own gap, which
+     puts it precisely ON the dock's right edge and never over the glass — and travels LEFT TO
+     RIGHT, emerging from under the sidebar.
+     ⚠️ ENTER IS SLOW, EXIT IS NOT. The base rule below is what plays on the way OUT; a label that
+     lingers on exit reads as sticky rather than natural. And the travel must stay equal to the
+     gap: at 14px a 520ms slide reads as sluggish, because the eye registers the duration but
+     almost no movement. Distance and duration have to move together. */
   .kpm-rail-mark > .kpm-rail-word {
-    display: block; position: absolute; left: calc(100% + 14px); top: 50%;
-    transform: translate(-6px, -50%); opacity: 0;
-    padding: 7px 12px; border-radius: 999px;
-    background-color: #14110e; border: 1px solid #3e3226;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, .55);
-    font-family: var(--font-display); font-weight: 700; font-size: 11px;
-    letter-spacing: .12em; text-transform: uppercase; white-space: nowrap; text-align: left;
+    display: block; position: absolute; top: 50%; margin-left: 22px;
+    transform: translate(-22px, -50%); opacity: 0;
+    padding: 8px 12px; border-radius: 4px;
+    background-color: #0f0e0d; border: 1px solid #5c4b3a;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, .6);
+    font-family: var(--font-display); font-weight: 800; font-size: 10px;
+    letter-spacing: .14em; text-transform: uppercase; white-space: nowrap; text-align: left;
     color: #f5e6c8; pointer-events: none;
-    transition: opacity 160ms ease-out, transform 220ms cubic-bezier(.22, 1, .36, 1),
+    transition: opacity 180ms ease-out, transform 240ms cubic-bezier(.22, 1, .36, 1),
                 background-color 200ms ease-out, border-color 200ms ease-out, color 200ms ease-out;
   }
   .kpm-rail-mark:hover > .kpm-rail-word,
   .kpm-rail-mark:focus-visible > .kpm-rail-word {
-    opacity: 1; transform: translate(0, -50%); transition-delay: 140ms;
+    opacity: 1; transform: translate(0, -50%);
+    transition: opacity 300ms cubic-bezier(.22, 1, .36, 1),
+                transform 520ms cubic-bezier(.22, 1, .36, 1);
   }
+  /* 🔴 THE LABEL MUST CLEAR BOTH COLUMNS. A mark in column 1 pushing its label out from its OWN
+     right edge lands it on top of column 2 — that is the *"description is hiding inside the
+     sidebar"* he photographed. Odd children are column 1, even are column 2. Measured: column 1
+     clears column 2 by 26px. */
+  [data-kpm-rail] .kpm-rail-grid .kpm-rail-mark > .kpm-rail-word { left: calc(100% + 4px); }
+  [data-kpm-rail] .kpm-rail-grid.is-two .kpm-rail-mark:nth-child(odd) > .kpm-rail-word {
+    left: calc(200% + 8px);
+  }
+  [data-kpm-rail] .kpm-rail-grid.is-two .kpm-rail-mark:nth-child(even) > .kpm-rail-word {
+    left: calc(100% + 4px);
+  }
+  /* the foot's marks are 56 wide inside the 100px pod, so their labels start further out */
+  [data-kpm-rail] .kpm-rail-foot .kpm-rail-mark > .kpm-rail-word { left: calc(100% + 22px); }
   /* THE HEADER GIVES THE LOGO ITS CORNER. The dock is out of the flow now, so nothing reserves
      this space — and the closed circle sits exactly where SYSTEM ACTIVE and the screen title
      start. 76px clears the 60px circle and its 4px inset with room to breathe. This inset
@@ -1543,12 +1642,19 @@ html.lite-mode .kpm-rail-mark:active { transform: none; }
               padding 300ms cubic-bezier(.22, 1, .36, 1);
 }
 .kpm-expand:hover, .kpm-expand:focus-visible, .kpm-expand:active {
-  width: 118px; border-radius: 20px;
+  width: 136px; border-radius: 20px;
   background-color: #1c1814; border-color: #8b7256; color: #ff9d00; }
 .kpm-expand:hover > svg, .kpm-expand:focus-visible > svg, .kpm-expand:active > svg {
-  margin-right: auto; margin-left: 13px; }
+  margin-right: auto; margin-left: 16px; }
+/* 📏 HIS REPORT, 2026-08-14: *"make sure the description that grow with it doesnt collapse with
+   the logout logo, because it looks collapsed"*, then *"give more space between text and logo,
+   there is still more space on the growed capsule right"*.
+   The label used to claim `68%` — a SHARE of the button, not a distance. So it grew as the
+   capsule grew and kept crowding the glyph no matter how wide the capsule got, which is exactly
+   what he saw. A fixed 80px from the right edge leaves the icon 24px of clear air that holds at
+   any width, and the capsule went 118 → 136 because there was room to spend. */
 .kpm-expand:hover::after, .kpm-expand:focus-visible::after, .kpm-expand:active::after {
-  opacity: 1; width: 68%; padding-right: 12px; }
+  opacity: 1; width: 80px; padding-right: 16px; }
 /* his "button click effect", kept exactly */
 .kpm-expand:active { transform: translate(1px, 1px); }
 

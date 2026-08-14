@@ -1094,10 +1094,24 @@ check(G25, 'one owner for the panel width, and RAIL_W agrees with it',
   !/w-\[176px\]/.test(shellSrc) && !/lg:w-\[144px\]/.test(shellSrc) &&
   /\[data-kpm-rail\] \{ width: 176px; \}/.test(themeCss) &&
   /\[data-kpm-rail\] \{ width: 144px; \}/.test(themeCss) &&
-  /grid grid-cols-2 gap-2 p-2 auto-rows-\[minmax\(0,1fr\)\] overflow-hidden/.test(shellSrc) &&
+  /grid grid-cols-2 gap-2 p-2 auto-rows-\[minmax\(0,1fr\)\]/.test(shellSrc) &&
   !/lg:overflow-y-auto/.test(shellSrc),
   'a width class on the element and a width rule in the stylesheet fighting over the same ' +
   'property is how a fix ships, passes its check, and never takes effect');
+/* 🔴 THE BUG THAT HID EVERY DESK LABEL, 2026-08-14. `.kpm-rail-grid` carried `overflow-hidden`,
+   and the hover label is a CHILD of the mark — so the grid clipped the label out of existence and
+   the desk name plate had NEVER been visible, in the app or in the prototype. His report:
+   *"sc2 is a prove that i cant see the hover text animation"*. The music and logout labels DID
+   show, because the foot does not clip; that split is the fingerprint.
+   The rows are `minmax(0,1fr)` and cannot overflow, so the clip guarded nothing.
+   ⚠️ MEASUREMENT WILL NOT CATCH THIS. getBoundingClientRect reports layout position and knows
+   nothing about an ancestor clipping you — it reported the label as perfectly placed while the
+   label was invisible. This check exists because the browser could not be asked. */
+check(G25, 'the nav grid does not clip the hover label out of existence',
+  !/kpm-rail-grid[^`"]*overflow-hidden/.test(shellSrc),
+  'the label lives INSIDE the mark, so any overflow clip on the grid erases it — and the ' +
+  'symptom is not a broken label, it is no label at all, which reads as "the feature was never ' +
+  'built" rather than as a bug');
 check(G25, 'the hover label is positioned against the mark rule that would otherwise beat it',
   /\.kpm-rail-mark > \.kpm-rail-word \{\s*display: block; position: absolute;/.test(themeCss),
   '`.kpm-rail-mark > *` sets position: relative to lift the icon over its plate. At equal ' +
@@ -1132,10 +1146,13 @@ check(G25, 'the desk rail collapses to one circle, and opening it moves nothing'
   /position: fixed; left: 0; right: auto; top: 0; bottom: 0;\s*\n\s*width: 64px; margin-right: 0;/.test(themeCss) &&
   !/margin-right: -228px;/.test(themeCss) &&
   /\[data-kpm-rail\]\[data-kpm-rail\] \{ pointer-events: none; \}/.test(themeCss) &&
-  /\.kpm-rail-pod::before \{ left: 4px; right: 4px; top: 12px; height: 56px; border-radius: 999px; \}/.test(themeCss) &&
+  /* right: 40px, not 4px — the pod went to 100px for the two columns, and 100 - 4 - 56 = 40 is
+     what keeps the CLOSED capsule the same 56px circle in the same corner he signed off. Only
+     the right edge and the height animate; the left edge never moves. */
+  /\.kpm-rail-pod::before \{ left: 4px; right: 40px; top: 12px; height: 56px; border-radius: 999px; \}/.test(themeCss) &&
   /\.kpm-rail-totem \{[\s\S]{0,200}?top: 12px; left: 4px;/.test(themeCss) &&
   /\.kpm-topbar \{ padding-left: 76px; \}/.test(themeCss) &&
-  /:focus-within \{ width: 292px/.test(themeCss) &&
+  /:focus-within \{ width: 351px/.test(themeCss) &&
   /\[data-kpm-rail\] \.kpm-rail-pod > \* \{ animation: none; \}/.test(themeCss) &&
   /<div className="kpm-rail-pod">/.test(shellSrc) &&
   /<span className="kpm-rail-totem"/.test(shellSrc),
@@ -1145,17 +1162,25 @@ check(G25, 'the desk rail collapses to one circle, and opening it moves nothing'
    the pod took over, so anything that hides the pod's surface hides the whole sidebar. The way
    that happens is putting the appearance behind the hover gate — a touch laptop matches `lg:`
    but not `hover: hover`, and would get nothing at all.
-   🔴 SOLID, per his correction quoting the component's spec sheet: *"Solid surface. No backdrop
-   blur, so it sits cleanly over any page background"*. That also closes the second half of this
-   trap for good — there is no backdrop-filter left for Lite Mode to strip, so no fallback to
-   forget. If a blur ever comes back here, so must the Lite Mode ground. */
-check(G25, 'the capsule paints on a desk with no hover, and needs no Lite Mode fallback',
+   🔵 THE BLUR IS BACK, and so is the second half of this trap. His call, 2026-08-14, after
+   dragging a tint slider himself: *"i want the sidebar background to be more transparant than
+   this, as transparan like apple liquid glass theme uknow"* — he landed on **0.02**. This
+   REVERSES the "solid surface" note that used to sit here, which came off the Framer spec sheet;
+   he has since looked at the real thing and chosen, and his eye on his own app outranks a
+   component vendor's default.
+   ⚠️ AT 0.02 THE LITE MODE FALLBACK IS NOT OPTIONAL. Lite Mode strips backdrop-filter — that is
+   what Lite Mode is FOR — and a 2%-tinted capsule with no blur is a sidebar you cannot see. Both
+   halves are asserted here so neither can ship without the other. */
+check(G25, 'the capsule paints on a hoverless desk, in Lite Mode, and in a browser without blur',
   railGateAt > 0 &&
-  /background-color: #14110e;\s*\n\s*box-shadow: 0 18px 50px/.test(themeCss.slice(0, railGateAt)) &&
-  !/backdrop-filter: blur\(18px\)/.test(themeCss) &&
+  /backdrop-filter: blur\(30px\) saturate\(1\.9\) brightness\(1\.06\)/.test(themeCss.slice(0, railGateAt)) &&
+  /html\.lite-mode \.kpm-rail-pod::before \{[\s\S]{0,220}?backdrop-filter: none/.test(themeCss) &&
+  /html\.lite-mode \.kpm-rail-pod::before \{\s*\n?\s*background-color: #14110e/.test(themeCss) &&
+  /@supports not \(\(backdrop-filter: blur\(1px\)\)[\s\S]{0,220}?background-color: #14110e/.test(themeCss) &&
   !/lg:bg-black\/95/.test(shellSrc),
-  'the panel itself paints nothing now, so an appearance left behind the hover gate would be an ' +
-  'invisible sidebar on a touch laptop');
+  'the panel itself paints nothing, so the pod IS the sidebar — leave the appearance behind the ' +
+  'hover gate and a touch laptop gets nothing; leave out the Lite Mode ground and Lite Mode ' +
+  'users get nothing');
 /* HIS REPORT: "i press and drag but it only show the first button that i press, it didnt show
    anything else when i drag". On touch the browser gives the pointerdown target IMPLICIT POINTER
    CAPTURE, so every later move for that finger is delivered to the button first pressed — no
@@ -1297,7 +1322,7 @@ check(G25, 'the pill is the answer at BOTH widths, with no desk accordion left b
    a short screen — or, worse, CLIPS a tab he can then never reach, since the nav is
    overflow-hidden by design. */
 check(G25, 'the rail never scrolls — the rows share the height instead',
-  /auto-rows-\[minmax\(0,1fr\)\] overflow-hidden/.test(shellSrc) &&
+  /auto-rows-\[minmax\(0,1fr\)\]/.test(shellSrc) &&
   /flex-1 min-h-0 scrollbar-hide/.test(shellSrc) &&
   /justify-center h-full min-h-0/.test(shellSrc) &&
   /* From 2026-08-14 this holds at BOTH widths. The desk used to be allowed its own
@@ -1322,7 +1347,7 @@ check(G25, 'the marks are spacier without a scrollbar and without a floor',
   /\[data-kpm-rail\] \.kpm-rail-grid \{ gap: 4px; padding: 4px; \}/.test(themeCss) &&
   /\[data-kpm-rail\] \.kpm-rail-icon \{ width: 17px; height: 17px; \}/.test(themeCss) &&
   /\[data-kpm-rail\] \.kpm-rail-foot \{ margin-bottom: 0; padding-top: 6px; \}/.test(themeCss) &&
-  /\[data-kpm-rail\] \.kpm-rail-foot \.kpm-rail-mark \{ height: 36px; \}/.test(themeCss) &&
+  /\[data-kpm-rail\] \.kpm-rail-foot \.kpm-rail-mark \{ height: 36px; width: 56px; margin-inline: auto; \}/.test(themeCss) &&
   /className="kpm-rail-foot mt-auto/.test(shellSrc) &&
   /* the prefix is the whole reason these apply — `.kpm-rail-foot` alone ties with `mb-2` and
      loses on file order, which is the same tie that shipped twice this morning */
@@ -1336,6 +1361,58 @@ check(G25, 'the marks are spacier without a scrollbar and without a floor',
    The panel sets overflow: hidden, so a longer tab name does not wrap or push — it is silently
    sliced off, and the only symptom is a hover label that reads wrong. Rename past this and
    widen the panel in the same commit. */
+/* 📐 SQUARE CELLS ARE WHAT MAKE THE SPACING EVEN — his ask, 2026-08-14: *"make the sidebar
+   thinner, and reduce space between each column ... make the space between columns to be the same
+   with the row to be more even"*.
+   Matching the two gaps was the SMALLER half and would not have worked alone. The cells were 54
+   wide and 30 tall, so icon-to-icon the pitch was ~56 across and ~34 down — the unevenness was the
+   CELL SHAPE, and no gap value could have fixed it. At a 100px pod the two columns come out
+   44 x 44 and the pitch is 48px both ways: even by construction rather than by eye.
+   ⚠️ `--cap` IS THE LOAD-BEARING HALF. `auto-rows: minmax(0,1fr)` lets rows share the whole
+   column, so on a 768px screen nine rows stretch to ~65px tall against 44px wide and the cells
+   quietly stop being square — the evenness undoes itself with nothing in the diff to show for it.
+   Delete the cap and this check is the only thing that will notice. */
+check(G25, 'the two columns are square cells, so the spacing is even in both directions',
+  /\.kpm-rail-pod \{ width: 100px; flex: none; \}/.test(themeCss) &&
+  /\[data-kpm-rail\] \.kpm-rail-grid\.is-two \{ grid-template-columns: repeat\(2, minmax\(0, 1fr\)\); \}/.test(themeCss) &&
+  /\[data-kpm-rail\] \.kpm-rail-grid \{ max-height: var\(--cap, none\); align-content: center; \}/.test(themeCss) &&
+  /'--cap': visibleMenu\.length > 10/.test(shellSrc) &&
+  /visibleMenu\.length > 10 \? 'is-two' : ''/.test(shellSrc),
+  'a 1fr row grows to fill whatever height it is given, so without the cap the cells stretch back ' +
+  'to oblong on a tall screen and the evenness he asked for disappears with no visible cause');
+/* 🔑 "LABEL B", his pick of three shown side by side: *"Label B is good"* — the same square plate
+   the PHONE already uses, which he had called clean. The old desk label was a rounded PILL with a
+   140ms delay and he called it *"too cheap"*: the shape matched nothing else in the app, and the
+   delay made the rail feel hesitant across seventeen buttons.
+   The MOTION is Label A's, on his instruction: *"make the intro animation from label B text to
+   looks like label A, it slides moving from left to right ... and slowdown the animation"*.
+   ⚠️ THE TRAVEL MUST EQUAL THE GAP. It rests at -22px, which is exactly its own 22px margin, so it
+   starts precisely ON the dock's edge and never paints over the glass. Shorten the gap without
+   shortening the travel and it starts on top of the sidebar; shorten the travel without the gap
+   and a 520ms slide covers almost no distance, which reads as sluggish rather than natural. */
+check(G25, 'the hover label is the phone plate, sliding out from under the dock edge',
+  /\.kpm-rail-mark > \.kpm-rail-word \{[\s\S]{0,320}?margin-left: 22px;[\s\S]{0,120}?transform: translate\(-22px, -50%\)/.test(themeCss) &&
+  /\.kpm-rail-mark > \.kpm-rail-word \{[\s\S]{0,320}?border-radius: 4px;/.test(themeCss) &&
+  /transition: opacity 300ms cubic-bezier\(\.22, 1, \.36, 1\),\s*\n\s*transform 520ms/.test(themeCss) &&
+  !/transition-delay: 140ms/.test(themeCss) &&
+  /* column 1's label must clear column 2 — anchored to its own right edge it lands ON column 2,
+     which is the *"description is hiding inside the sidebar"* he photographed. Measured: 26px. */
+  /\.kpm-rail-grid\.is-two \.kpm-rail-mark:nth-child\(odd\) > \.kpm-rail-word \{\s*\n?\s*left: calc\(200% \+ 8px\)/.test(themeCss),
+  'the plate must start at the dock edge and travel the width of its own gap — and a column-1 ' +
+  'label anchored to its own button lands on top of column 2');
+/* ⚠️ TWO CASCADE TIES AND A FINGERTIP AFFORDANCE, all found on 2026-08-14 and all invisible in a
+   diff. `transition-all duration-200` sat on the mark: one Tailwind class against one
+   `.kpm-rail-mark` class, and Tailwind is emitted after theme.css, so it won the tie and every
+   tuned per-property transition in that file never applied. It also animated `all`, dragging the
+   background, the shadow and the blur along with it.
+   `.hot` scales the icon 42% and lifts it 4px so the effect lands OUTSIDE the area a thumb covers.
+   A mouse covers nothing, so on the desk it is just an icon jumping out of its own button — which
+   is the overflow his screenshot caught. */
+check(G25, 'no transition-all on the mark, and no fingertip pop on a desk',
+  !/kpm-rail-mark[^`]*transition-all/.test(shellSrc) &&
+  /\[data-kpm-rail\] \.kpm-rail-mark\.hot \.kpm-rail-icon \{\s*\n?\s*transform: none; filter: none;/.test(themeCss),
+  '`transition-all` is one class and so is `.kpm-rail-mark`; Tailwind lands later, so the tie ' +
+  'goes to Tailwind and the stylesheet is silently ignored. Count the specificity, do not eyeball');
 const railLabels = (shellSrc.match(/label: '([^']*)'/g) || []).map(s => s.slice(8, -1));
 check(G25, 'no tab name is long enough to be sliced off its own hover pill',
   railLabels.length >= 17 && railLabels.every(l => l.length <= 27),
@@ -1419,7 +1496,19 @@ check(G25, 'it is black at rest and red only under the finger',
   /\.kpm-expand \{[\s\S]{0,400}?background-color: #14110e/.test(themeCss) &&
   /\.kpm-expand\.danger:hover, \.kpm-expand\.danger:focus-visible, \.kpm-expand\.danger:active/.test(themeCss) &&
   /\.kpm-rail-mark\.danger:hover, \.kpm-rail-mark\.danger:focus-visible \{ color: #ff8175; \}/.test(themeCss) &&
-  /className="kpm-rail-mark danger/.test(shellSrc),
+  /* 🔄 LOGOUT WENT BACK TO `.kpm-expand` on his word, 2026-08-14: *"i like the old logout button
+     animation better, can u revert that?"*. It had been flattened into a plain `.kpm-rail-mark`
+     that morning when he asked for one hover language across the rail; he has since seen both
+     side by side and picked this one back. It is the last control in the rail, so a second
+     language costs nothing there. */
+  /className="kpm-expand danger shrink-0"/.test(shellSrc) &&
+  /* 📏 THE LABEL CLAIMS A DISTANCE, NOT A SHARE. It used to take `68%` of the button, so it grew
+     as the capsule grew and kept crowding the glyph no matter how wide the capsule got — his
+     report twice over: *"it looks collapsed"*, then *"give more space between text and logo"*.
+     80px from the right edge leaves the icon 24px of clear air that holds at ANY width. Put a
+     percentage back here and the crowding comes back with it. */
+  /\.kpm-expand:hover::after,[\s\S]{0,120}?width: 80px; padding-right: 16px;/.test(themeCss) &&
+  !/\.kpm-expand:hover::after,[\s\S]{0,120}?width: 68%/.test(themeCss),
   'a delete or logout button that is red before you reach for it turns every list into a wall ' +
   'of alarm');
 check(G25, 'no blue, slate or green left in the shell, App or the player',

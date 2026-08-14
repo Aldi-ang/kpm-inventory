@@ -537,12 +537,33 @@ export default function BiohazardTheme({
                            only gave the browser a reason to steal a slow vertical drag from the
                            scrub. */
                         style={{ touchAction: 'none' }}
-                        /* ONE column on the desk, two on the phone — same mechanism either way.
-                           `lg:overflow-y-auto` is gone with it: a scrollbar in this panel is the
-                           thing he rejected once already ("there is still scroll feature inside
-                           sidebar, i dont want that"), and it was only ever there because a
-                           256px list of words could not fit. Marks share the height instead. */
-                        className="kpm-rail-grid grid grid-cols-2 gap-2 p-2 auto-rows-[minmax(0,1fr)] overflow-hidden flex-1 min-h-0 scrollbar-hide boot-2"
+                        /* 🔴 `overflow-hidden` IS GONE AND MUST STAY GONE. The hover label is a
+                           CHILD of the mark, so a clipping grid erased it — which is why the desk
+                           label had never once been visible, in the app or in the prototype. His
+                           report: *"sc2 is a prove that i cant see the hover text animation"*.
+                           The music and logout labels DID show, because the foot does not clip;
+                           that split is the fingerprint of this bug. Rows are `1fr` and cannot
+                           overflow, so the clip was guarding nothing.
+                           ⚠️ A measurement will not catch this if it comes back: getBoundingClientRect
+                           reports layout position and knows nothing about an ancestor clipping you.
+                           Check ancestors' overflow, or check by looking.
+
+                           TWO COLUMNS PAST TEN TABS — his rule, 2026-08-14: *"just use 1 column
+                           when it doesnt exceed 10 button that is not including music, profile and
+                           logout"*. A lower tier sees fewer tabs and so never gets a second column.
+                           `--cap` stops the 1fr rows stretching taller than they are wide on a tall
+                           screen. That is what keeps the cells SQUARE, which is what makes the
+                           spacing even in both directions — *"make the space between columns to be
+                           the same with the row to be more even"*. Drop the cap and the evenness
+                           quietly comes undone. Desk only; the phone ignores it. */
+                        style={{
+                            '--cap': visibleMenu.length > 10
+                                ? `${Math.ceil(visibleMenu.length / 2) * 48 + 4}px`
+                                : `${visibleMenu.length * 60 + 4}px`,
+                        }}
+                        className={`kpm-rail-grid grid grid-cols-2 gap-2 p-2 auto-rows-[minmax(0,1fr)] flex-1 min-h-0 scrollbar-hide boot-2 ${
+                            visibleMenu.length > 10 ? 'is-two' : ''
+                        }`}
                     >
                         {visibleMenu.map((item, idx) => {
                             const Mark = item.icon;
@@ -569,7 +590,14 @@ export default function BiohazardTheme({
                                        for the rest — which is why his PC screenshot read as a
                                        different app from the sign-in screen. `.kpm-rail-mark`
                                        already draws both states; the desk just joins it. */
-                                    className={`kpm-rail-mark ${on ? 'on' : ''} ${peek?.id === item.id ? 'hot' : ''} relative w-full flex items-center justify-center h-full min-h-0 text-xs font-bold transition-all duration-200 uppercase tracking-widest ${
+                                    /* ⚠️ `transition-all duration-200` USED TO BE HERE AND IS GONE.
+                                       It is one class, `.kpm-rail-mark` is one class, and Tailwind
+                                       is emitted after theme.css — so it won the tie and the tuned
+                                       per-property transitions in that file never applied. It also
+                                       animated `all`, which drags background, shadow and the blur
+                                       along with it. Sixth cascade tie of this shape; count the
+                                       specificity, do not eyeball it. */
+                                    className={`kpm-rail-mark ${on ? 'on' : ''} ${peek?.id === item.id ? 'hot' : ''} relative w-full flex items-center justify-center h-full min-h-0 text-xs font-bold uppercase tracking-widest ${
                                         on ? 'text-[#ff9d00]' : 'text-[#6b5845]'
                                     }`}
                                 >
@@ -649,19 +677,21 @@ export default function BiohazardTheme({
                             {/* The OPERATIVE plate and the account name were desk-only and needed
                                 the 256px. The face is the identity in a strip; the account is on
                                 its tooltip, and Agent Profile is one mark away. */}
-                            {/* A MARK LIKE EVERY OTHER MARK — *"i want exactly like that for all
-                                of our button inside the sidebar"*. It was `.kpm-expand`, a pill
-                                that grew sideways to print its own word, which is a second
-                                hover language inside a rail that already has one. It keeps the
-                                red: `.danger` turns the icon and its label pill red, and only
-                                once you are on it, exactly as `.kpm-expand.danger` did. */}
+                            {/* 🔄 REVERTED TO `.kpm-expand` ON HIS WORD, 2026-08-14: *"i like the
+                                old logout button animation better, can u revert that?"*. It had
+                                been flattened into a plain mark that morning because he asked for
+                                one hover language across the rail — he has since looked at both
+                                and picked this one back. His call, and it is the last control in
+                                the rail, so a second language costs nothing here.
+                                The capsule grows sideways and prints its own word; `.danger` turns
+                                it red only once you are on it. `data-label` is what it prints. */}
                             <button
                                 onClick={handleLogout}
-                                className="kpm-rail-mark danger relative w-full flex items-center justify-center h-11 text-[#6b5845]"
+                                className="kpm-expand danger shrink-0"
+                                data-label="Log out"
                                 title="Logout"
                             >
-                                <LogOut size={19} className="kpm-rail-icon" />
-                                <span className="kpm-rail-word">Log out</span>
+                                <LogOut size={19} />
                             </button>
                         </div>
                 </div>
