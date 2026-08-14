@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-14 11:20 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
+**Updated: 2026-08-14 11:43 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > 🔴 **THIS FILE IS 3,270 LINES / 233 KB AND IT IS READ IN FULL AT EVERY SESSION START.** That is
@@ -8,6 +8,27 @@
 > **Ask him to let it be archived** — everything below the current day belongs in
 > `A-Brain/Wiki/Log.md`, which is the memory now, and this file should hold only where the work
 > stands. Do not do it without his word; do not let another session pass without asking.
+
+### ✅ 11:43 WIB — the sidebar no longer paints over the vault gate. `06f299b`, 363/363.
+
+**He reported this twice and the first answer was WRONG.** *"why did u change our login screen
+after google login tho, these sidebar format shouldnt be showing"*, answered from the diff as old
+un-converted UI. Then, with a screenshot: *"why sidebar keep showing in login screen"*. A diff
+proves what changed; it cannot prove what is correct.
+
+🔑 **A z-index only competes inside its own stacking context.** The gate is a CHILD of
+`<BiohazardTheme>`, so it lands in the content div, and that div is `relative z-10` — a stacking
+context. Its `z-[9999]` is settled against its siblings in there, then the whole context is stamped
+at 10. The panel is a sibling of that div at `z-[90]`. 90 beats 10. **Raising the gate's number can
+never fix it.** Fix: `{user && !showAdminLogin && (` on the panel, the guard the edge ribbon
+already had. Two checks carry the reason so nobody reaches for a bigger number.
+
+⚠️ **Known cost, his call if he wants it back:** MusicPlayer lives inside the panel, so opening
+the vault gate now unmounts it and the music stops. Moving the player out of the rail is the fix
+if he objects.
+
+**PROGRESS.md was NOT trimmed.** The 🔴 above asks his permission to archive it; deleting 3,000
+lines of his history on a hook's say-so is not mine to do. It stays until he answers.
 
 ### ✅ 11:20 WIB — the PC sidebar shipped in the format his VIDEO asks for. `16c8ff9`, 362/362.
 
