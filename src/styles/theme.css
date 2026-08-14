@@ -1146,24 +1146,27 @@ html.lite-mode .kpm-topbar { transition: none; }
   .kpm-rail-pod {
     display: flex; flex-direction: column; position: relative; width: 100%; height: 100%;
   }
+  /* 🔴 SOLID, NOT GLASS — his correction, 2026-08-14, quoting the component's own spec sheet:
+     *"Solid surface. No backdrop blur, so it sits cleanly over any page background"*, and then
+     *"i want exactly like that"*. This supersedes his earlier *"transparant but blurred"*, which
+     was his reading of the video; the sheet is the artefact and the artefact wins.
+     It also deletes a whole failure mode: a solid panel needs no Lite Mode fallback, because
+     there is no backdrop-filter left for Lite Mode to strip. */
   .kpm-rail-pod::before {
     content: ""; position: absolute; z-index: 0; left: 0; right: 0; top: 12px;
     height: calc(100% - 24px); border-radius: 34px;
     border: 1px solid rgba(255, 255, 255, .10);
-    background-color: rgba(20, 17, 14, .55);
-    -webkit-backdrop-filter: blur(18px) saturate(1.3);
-            backdrop-filter: blur(18px) saturate(1.3);
+    background-color: #14110e;
     box-shadow: 0 18px 50px rgba(0, 0, 0, .55);
     pointer-events: none;
-    transition: top 340ms cubic-bezier(.22, 1, .36, 1), height 340ms cubic-bezier(.22, 1, .36, 1),
+    /* the spring morph: it overshoots and settles, which is the difference between a panel that
+       grows and one that unfurls */
+    transition: top 380ms cubic-bezier(.2, 1.2, .3, 1), height 380ms cubic-bezier(.2, 1.2, .3, 1),
                 border-radius 340ms cubic-bezier(.22, 1, .36, 1);
   }
   /* an absolutely-positioned ::before paints in the POSITIONED layer, which is above ordinary
-     in-flow children — without these two z-indexes the glass covers the marks */
+     in-flow children — without these two z-indexes the surface covers the marks */
   .kpm-rail-pod > * { position: relative; z-index: 1; }
-  /* ⚠️ LITE MODE DELETES backdrop-filter (index.css). A transparent panel with no blur behind it
-     is a hole in the app, not a sidebar, so that mode gets solid ground. */
-  html.lite-mode .kpm-rail-pod::before { background-color: #12100e; box-shadow: none; }
   /* the totem IS the collapsed state, and a desk without hover never collapses */
   .kpm-rail-totem { display: none; }
 }
@@ -1175,7 +1178,16 @@ html.lite-mode .kpm-topbar { transition: none; }
   /* :focus-within, not only :hover — at rest every mark is invisible but still tabbable, so
      keyboard focus has to open the same capsule the pointer does or it lands on nothing */
   [data-kpm-rail][data-kpm-rail]:hover,
-  [data-kpm-rail][data-kpm-rail]:focus-within { width: 272px; margin-right: -200px; }
+  [data-kpm-rail][data-kpm-rail]:focus-within { width: 300px; margin-right: -228px; }
+  /* 🔑 THE LOGO IS THE TRIGGER, not the column — *"Hover the logo, and the pill unfurls"*, and
+     *"The page stays clean — one logo, nothing else — until someone reaches for it"*. At rest the
+     panel takes no pointer events at all, so the 72px strip is not an invisible wall down the
+     side of the app; only the totem is hittable. Hovering a descendant still puts :hover on this
+     element, which is what opens it, and once open the whole panel takes events again so the
+     pointer can travel from the logo to any mark without it closing underneath. */
+  [data-kpm-rail][data-kpm-rail] { pointer-events: none; }
+  [data-kpm-rail][data-kpm-rail]:hover,
+  [data-kpm-rail][data-kpm-rail]:focus-within { pointer-events: auto; }
   /* the pod never widens — only the window around it does */
   .kpm-rail-pod { width: 72px; flex: none; }
   .kpm-rail-pod::before { top: calc(50% - 36px); height: 72px; border-radius: 999px; }
@@ -1191,10 +1203,13 @@ html.lite-mode .kpm-topbar { transition: none; }
   [data-kpm-rail]:focus-within .kpm-rail-pod > *:not(.kpm-rail-totem) {
     opacity: 1; transition: opacity 260ms ease-out 120ms;
   }
+  /* 72 square, so the whole circle is the target rather than the 22px glyph inside it */
   .kpm-rail-totem {
     display: flex; align-items: center; justify-content: center;
     position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-    color: #ff9d00; pointer-events: none; transition: opacity 180ms ease-out;
+    width: 72px; height: 72px; border-radius: 999px;
+    color: #ff9d00; pointer-events: auto; cursor: pointer;
+    transition: opacity 180ms ease-out;
   }
   [data-kpm-rail]:hover .kpm-rail-totem,
   [data-kpm-rail]:focus-within .kpm-rail-totem { opacity: 0; }
@@ -1213,16 +1228,44 @@ html.lite-mode .kpm-topbar { transition: none; }
      this file sets `position: relative` to lift the icon above the plate, and at equal specificity
      the later rule won — measured in a browser, the label came out RELATIVE, which put it inside
      the capsule AND made it a flex child that shoved the icon off centre. */
+  /* 🔑 THE LABEL IS ITS OWN PILL, not floating text — *"the label slides out as its own pill on
+     hover"*, and his own earlier words for the same thing, *"i want u to add textbox when we
+     hover it"*. It slides 6px out as it arrives, which is the "slips out to the side" part. */
   .kpm-rail-mark > .kpm-rail-word {
-    display: block; position: absolute; left: calc(100% + 16px); top: 50%;
-    transform: translateY(-50%); opacity: 0;
-    font-family: var(--font-display); font-weight: 700; font-size: 12px;
+    display: block; position: absolute; left: calc(100% + 14px); top: 50%;
+    transform: translate(-6px, -50%); opacity: 0;
+    padding: 7px 12px; border-radius: 999px;
+    background-color: #14110e; border: 1px solid #3e3226;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, .55);
+    font-family: var(--font-display); font-weight: 700; font-size: 11px;
     letter-spacing: .12em; text-transform: uppercase; white-space: nowrap; text-align: left;
-    color: #f5e6c8; text-shadow: 0 2px 14px rgba(0, 0, 0, .85);
-    pointer-events: none; transition: opacity 160ms ease-out;
+    color: #f5e6c8; pointer-events: none;
+    transition: opacity 160ms ease-out, transform 220ms cubic-bezier(.22, 1, .36, 1),
+                background-color 200ms ease-out, border-color 200ms ease-out, color 200ms ease-out;
   }
-  .kpm-rail-mark:hover .kpm-rail-word,
-  .kpm-rail-mark:focus-visible .kpm-rail-word { opacity: 1; transition-delay: 180ms; }
+  .kpm-rail-mark:hover > .kpm-rail-word,
+  .kpm-rail-mark:focus-visible > .kpm-rail-word {
+    opacity: 1; transform: translate(0, -50%); transition-delay: 140ms;
+  }
+  /* the one control that destroys something says so in red, and only once you are on it — the
+     same rule `.kpm-expand.danger` follows, so the rail reads as one row until you reach it */
+  .kpm-rail-mark.danger:hover, .kpm-rail-mark.danger:focus-visible { color: #ff8175; }
+  .kpm-rail-mark.danger:hover > .kpm-rail-word,
+  .kpm-rail-mark.danger:focus-visible > .kpm-rail-word {
+    background-color: #8e2f28; border-color: #c0473c; color: #ffece9;
+  }
+  /* ⚡ THE CASCADE — *"with icons cascading in"*. `--i` is the mark's index, set in the shell; a
+     stylesheet cannot count seventeen children without seventeen rules. */
+  .kpm-rail-grid .kpm-rail-mark {
+    opacity: 0;
+    transition: opacity 140ms ease-out, color 180ms ease-out, transform 180ms ease-out;
+  }
+  [data-kpm-rail]:hover .kpm-rail-grid .kpm-rail-mark,
+  [data-kpm-rail]:focus-within .kpm-rail-grid .kpm-rail-mark {
+    opacity: 1;
+    transition: opacity 240ms ease-out calc(130ms + var(--i, 0) * 26ms),
+                color 180ms ease-out, transform 180ms ease-out;
+  }
 }
 html.lite-mode [data-kpm-rail][data-kpm-rail],
 html.lite-mode .kpm-rail-pod::before,

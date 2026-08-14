@@ -544,12 +544,16 @@ export default function BiohazardTheme({
                            256px list of words could not fit. Marks share the height instead. */
                         className="kpm-rail-grid grid grid-cols-2 gap-2 p-2 auto-rows-[minmax(0,1fr)] overflow-hidden flex-1 min-h-0 scrollbar-hide boot-2"
                     >
-                        {visibleMenu.map(item => {
+                        {visibleMenu.map((item, idx) => {
                             const Mark = item.icon;
                             const on = activeTab === item.id;
                             return (
                                 <button
                                     key={item.id}
+                                    /* the mark's place in the queue, for the cascade when the
+                                       capsule unfurls — a stylesheet cannot count seventeen
+                                       children without seventeen rules. See .kpm-rail-grid. */
+                                    style={{ '--i': idx }}
                                     /* data-mark is how the nav's single listener finds this button
                                        under a finger — see the note on implicit pointer capture.
                                        The per-button pointer handlers that used to live here are
@@ -598,14 +602,15 @@ export default function BiohazardTheme({
                                 onPointerUp={() => setPeek(null)}
                                 onPointerCancel={() => setPeek(null)}
                                 title="Unlock Master Vault"
-                                /* On the control system at last. It was the loudest hand-rolled
-                                   control left in the shell — raw #ff9d00, `rounded-xl` and a
-                                   drop shadow Lite Mode deletes — and it is in the screenshot he
-                                   complained about. The word does not fit an 88px strip; the
-                                   title carries it on a desk and the peek plate on a phone. */
-                                className="kpm-btn key block"
+                                /* 🔑 ONE SHAPE FOR EVERY CONTROL IN THE RAIL — his call,
+                                   2026-08-14: *"i want exactly like that for all of our button
+                                   inside the sidebar"*. This was a full-width gold block; the
+                                   marks around it are round plates with a label pill. A dock in
+                                   which one button is a different species is not a dock. */
+                                className="kpm-rail-mark relative w-full flex items-center justify-center h-11 text-[#6b5845]"
                             >
-                                <Lock size={14} />
+                                <Lock size={19} className="kpm-rail-icon" />
+                                <span className="kpm-rail-word">Unlock Vault</span>
                             </button>
                         </div>
                     )}
@@ -633,27 +638,30 @@ export default function BiohazardTheme({
                                 <img
                                     src={agentPhoto || user.photoURL}
                                     title={user.email || 'Signed in'}
-                                    className="w-9 h-9 rounded border border-[#5c4b3a] lg:border-white/30 object-cover bg-black shrink-0"
+                                    className="w-9 h-9 rounded-full border border-[#5c4b3a] lg:border-white/30 object-cover bg-black shrink-0"
                                     alt="Profile"
                                 />
                             ) : (
-                                <div title={user.email || 'Signed in'} className="w-9 h-9 rounded border border-[#5c4b3a] lg:border-white/30 bg-black text-[#8b7256] flex items-center justify-center shrink-0">
+                                <div title={user.email || 'Signed in'} className="w-9 h-9 rounded-full border border-[#5c4b3a] lg:border-white/30 bg-black text-[#8b7256] flex items-center justify-center shrink-0">
                                     <User size={16} />
                                 </div>
                             )}
                             {/* The OPERATIVE plate and the account name were desk-only and needed
                                 the 256px. The face is the identity in a strip; the account is on
                                 its tooltip, and Agent Profile is one mark away. */}
-                            {/* The reference he sent for this one, in the app's colours: black at
-                                rest with the rest of the panel, red only once you are on it. The
-                                name plate is gone from here — this button says its own word now. */}
+                            {/* A MARK LIKE EVERY OTHER MARK — *"i want exactly like that for all
+                                of our button inside the sidebar"*. It was `.kpm-expand`, a pill
+                                that grew sideways to print its own word, which is a second
+                                hover language inside a rail that already has one. It keeps the
+                                red: `.danger` turns the icon and its label pill red, and only
+                                once you are on it, exactly as `.kpm-expand.danger` did. */}
                             <button
                                 onClick={handleLogout}
-                                className="kpm-expand danger"
-                                data-label="Log out"
+                                className="kpm-rail-mark danger relative w-full flex items-center justify-center h-11 text-[#6b5845]"
                                 title="Logout"
                             >
-                                <LogOut size={16}/>
+                                <LogOut size={19} className="kpm-rail-icon" />
+                                <span className="kpm-rail-word">Log out</span>
                             </button>
                         </div>
                 </div>

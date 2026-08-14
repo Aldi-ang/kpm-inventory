@@ -1123,24 +1123,28 @@ check(G25, 'the desk wears the same mark as the phone, not a white slab',
 const railGateAt = themeCss.search(/@media \(min-width: 1024px\) and \(hover: hover\) and \(pointer: fine\) \{\s*\[data-kpm-rail\]\[data-kpm-rail\] \{\s*width: 72px/);
 check(G25, 'the desk rail collapses to one circle, and opening it moves nothing',
   /\.kpm-rail-pod \{ display: contents; \}/.test(themeCss) &&
-  /width: 272px; margin-right: -200px;/.test(themeCss) &&
+  /width: 300px; margin-right: -228px;/.test(themeCss) &&
   /\.kpm-rail-pod::before \{ top: calc\(50% - 36px\); height: 72px; border-radius: 999px; \}/.test(themeCss) &&
-  /:focus-within \{ width: 272px/.test(themeCss) &&
+  /:focus-within \{ width: 300px/.test(themeCss) &&
   /<div className="kpm-rail-pod">/.test(shellSrc) &&
   /<span className="kpm-rail-totem"/.test(shellSrc),
   'the pod is `display: contents` on a phone, so none of this reaches the layout he already ' +
   'signed off; and :focus-within is not optional — at rest every mark is invisible but tabbable');
 /* ⚠️ THE INVISIBLE-PANEL TRAP, SECOND SHAPE. The rail stopped painting its own background when
-   the pod took over, so anything that hides the pod's glass hides the whole sidebar. Two ways
-   that can happen: putting the glass behind the hover gate (a touch laptop matches `lg:` but not
-   `hover: hover`), or Lite Mode deleting backdrop-filter with nothing solid underneath. */
-check(G25, 'the capsule still paints with no hover at all, and in Lite Mode',
+   the pod took over, so anything that hides the pod's surface hides the whole sidebar. The way
+   that happens is putting the appearance behind the hover gate — a touch laptop matches `lg:`
+   but not `hover: hover`, and would get nothing at all.
+   🔴 SOLID, per his correction quoting the component's spec sheet: *"Solid surface. No backdrop
+   blur, so it sits cleanly over any page background"*. That also closes the second half of this
+   trap for good — there is no backdrop-filter left for Lite Mode to strip, so no fallback to
+   forget. If a blur ever comes back here, so must the Lite Mode ground. */
+check(G25, 'the capsule paints on a desk with no hover, and needs no Lite Mode fallback',
   railGateAt > 0 &&
-  /backdrop-filter: blur\(18px\) saturate\(1\.3\)/.test(themeCss.slice(0, railGateAt)) &&
-  /html\.lite-mode \.kpm-rail-pod::before \{ background-color: #12100e/.test(themeCss) &&
+  /background-color: #14110e;\s*\n\s*box-shadow: 0 18px 50px/.test(themeCss.slice(0, railGateAt)) &&
+  !/backdrop-filter: blur\(18px\)/.test(themeCss) &&
   !/lg:bg-black\/95/.test(shellSrc),
-  'a surface that supplies its own background owes a fallback for every mode that strips it — ' +
-  'the same defect that made the sign-in panel unreadable in the light theme');
+  'the panel itself paints nothing now, so an appearance left behind the hover gate would be an ' +
+  'invisible sidebar on a touch laptop');
 /* HIS REPORT: "i press and drag but it only show the first button that i press, it didnt show
    anything else when i drag". On touch the browser gives the pointerdown target IMPLICIT POINTER
    CAPTURE, so every later move for that finger is delivered to the button first pressed — no
@@ -1368,7 +1372,8 @@ check(G25, 'the expanding button opens on touch, not only on hover',
 check(G25, 'it is black at rest and red only under the finger',
   /\.kpm-expand \{[\s\S]{0,400}?background-color: #14110e/.test(themeCss) &&
   /\.kpm-expand\.danger:hover, \.kpm-expand\.danger:focus-visible, \.kpm-expand\.danger:active/.test(themeCss) &&
-  /className="kpm-expand danger"/.test(shellSrc) && /data-label="Log out"/.test(shellSrc),
+  /\.kpm-rail-mark\.danger:hover, \.kpm-rail-mark\.danger:focus-visible \{ color: #ff8175; \}/.test(themeCss) &&
+  /className="kpm-rail-mark danger/.test(shellSrc),
   'a delete or logout button that is red before you reach for it turns every list into a wall ' +
   'of alarm');
 check(G25, 'no blue, slate or green left in the shell, App or the player',
