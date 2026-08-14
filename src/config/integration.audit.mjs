@@ -1083,13 +1083,26 @@ check(G25, 'the hold is visible while it is being counted',
    doesnt take so much space", plus "the sidebar u pull here is the sidebar for phone only dont use
    it on PC". So the ribbon is `lg:hidden` again, the panel carries no `lg:` open/closed variants,
    and no width at either size may bring back a scrollbar. */
-check(G25, 'the rail is two columns wide, so a full menu fits without scrolling',
+/* ⚠️ REWRITTEN 2026-08-14 after a browser measurement. The old needle asserted the SOURCE STRING
+   `w-[176px] lg:w-[144px]` was present — and it was, and the desk still resolved to 176px, the
+   phone's width. A class being in the file says nothing about whether it wins the cascade, so the
+   144px that was meant to stop the logout button being clipped never once applied on a desk.
+   The width classes are gone; theme.css owns this property at every size, and RAIL_W (the drag
+   maths, the name-plate offset) must equal the phone number it declares. */
+check(G25, 'one owner for the panel width, and RAIL_W agrees with it',
   /const RAIL_W = 176;/.test(shellSrc) &&
-  /w-\[176px\] lg:w-\[144px\]/.test(shellSrc) &&
+  !/w-\[176px\]/.test(shellSrc) && !/lg:w-\[144px\]/.test(shellSrc) &&
+  /\[data-kpm-rail\] \{ width: 176px; \}/.test(themeCss) &&
+  /\[data-kpm-rail\] \{ width: 144px; \}/.test(themeCss) &&
   /grid grid-cols-2 gap-2 p-2 auto-rows-\[minmax\(0,1fr\)\] overflow-hidden/.test(shellSrc) &&
   !/lg:overflow-y-auto/.test(shellSrc),
-  'RAIL_W and the class must agree — the drag maths, the name plate offset and the music ' +
-  'panel width are all measured off it');
+  'a width class on the element and a width rule in the stylesheet fighting over the same ' +
+  'property is how a fix ships, passes its check, and never takes effect');
+check(G25, 'the hover label is positioned against the mark rule that would otherwise beat it',
+  /\.kpm-rail-mark > \.kpm-rail-word \{\s*display: block; position: absolute;/.test(themeCss),
+  '`.kpm-rail-mark > *` sets position: relative to lift the icon over its plate. At equal ' +
+  'specificity it wins on order, and a RELATIVE label is a flex child: it lands inside the ' +
+  'capsule and pushes the icon off centre. Measured in a browser, not reasoned about');
 check(G25, 'the desk strip is always there and is never pulled open',
   /\$\{isMobileMenuOpen \? 'translate-x-0' : 'translate-x-full'\}/.test(shellSrc) &&
   /lg:relative lg:translate-x-0 lg:opacity-100 lg:pointer-events-auto/.test(shellSrc) &&
@@ -1158,7 +1171,7 @@ check(G25, 'the face is the agent\'s own, not a mascot or a robot',
    on PC"*. Back to `lg:hidden`, right edge, phone only. */
 check(G25, 'the ribbon is on the RIGHT edge, away from Safari\'s back gesture',
   /kpm-edge-ribbon[^"]*lg:hidden fixed right-0/.test(shellSrc) &&
-  /fixed inset-y-0 right-0 z-\[90\] w-\[176px\]/.test(shellSrc),
+  /fixed inset-y-0 right-0 z-\[90\] bg-\[#0b0a09\]\/97/.test(shellSrc),
   'the left edge is iOS back — a navigation control that can exit the app is worse than none');
 /* IT THREW AND THE WHOLE GESTURE DIED SILENTLY. setPointerCapture needs an active pointer;
    without one it raises, before a single listener is attached, and the ribbon does nothing. */

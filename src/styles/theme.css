@@ -1126,9 +1126,19 @@ html.lite-mode .kpm-topbar { transition: none; }
    a single attribute selector would tie on specificity and be decided by file order. */
 /* on a phone the pod is not in the layout at all: its children are the drawer's own children,
    exactly as they were before it was introduced */
+/* ⚠️ THE PANEL'S WIDTH IS OWNED HERE, at every size, and nowhere else. It used to be
+   `w-[176px] lg:w-[144px]` on the element as well, and the two fought: measured in a real browser
+   on 2026-08-14, the desk resolved to 176 — the PHONE's width — so the 144px that was supposed to
+   stop the logout button being clipped never once applied on a desk. The check that was meant to
+   catch this only asserted the class was in the source, which says nothing about whether it wins.
+   RAIL_W in the shell is the drag maths and must stay equal to the phone number below. */
+[data-kpm-rail] { width: 176px; }
 .kpm-rail-pod { display: contents; }
 .kpm-rail-word { display: none; }
 @media (min-width: 1024px) {
+  /* the fallback desk width, for a pointer that cannot hover — two columns, and wide enough for
+     `.kpm-expand` to print its word (118px) inside an overflow-hidden panel */
+  [data-kpm-rail] { width: 144px; }
   /* ⚠️ THE APPEARANCE IS HERE, NOT BEHIND THE HOVER GATE. The panel stopped painting its own
      background for this design; a touch-screen laptop matches `lg:` but not `hover: hover`, so
      leaving the glass in the block below would have shipped it an invisible sidebar. That is the
@@ -1199,7 +1209,11 @@ html.lite-mode .kpm-topbar { transition: none; }
   /* THE NAME, printed on the app's background beside the mark under the pointer. Absolute, so it
      never takes part in the mark's layout; delayed, so it does not paint into a window that is
      still opening. */
-  .kpm-rail-word {
+  /* ⚠️ `.kpm-rail-mark > .kpm-rail-word`, not `.kpm-rail-word`. `.kpm-rail-mark > *` further down
+     this file sets `position: relative` to lift the icon above the plate, and at equal specificity
+     the later rule won — measured in a browser, the label came out RELATIVE, which put it inside
+     the capsule AND made it a flex child that shoved the icon off centre. */
+  .kpm-rail-mark > .kpm-rail-word {
     display: block; position: absolute; left: calc(100% + 16px); top: 50%;
     transform: translateY(-50%); opacity: 0;
     font-family: var(--font-display); font-weight: 700; font-size: 12px;

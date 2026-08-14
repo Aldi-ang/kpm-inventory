@@ -470,7 +470,14 @@ export default function BiohazardTheme({
                    border, the blur) or there would be a second opaque slab behind the capsule.
                    The blur moving to the pod also moves the containing block for `position:
                    fixed` children — see the portal note in MusicPlayer, which still holds. */
-                className={`hide-on-print fixed inset-y-0 right-0 z-[90] w-[176px] lg:w-[144px] bg-[#0b0a09]/97 lg:bg-transparent backdrop-blur-xl lg:backdrop-blur-none border-l lg:border-0 border-[#3e3226] flex flex-col pt-5 lg:pt-0 px-0 overflow-hidden
+                /* ⚠️ NO WIDTH CLASS HERE ANY MORE. `w-[176px] lg:w-[144px]` used to live on this
+                   element and fight the CSS for the same property at three breakpoints. Measured
+                   in a browser on 2026-08-14: the desk NEVER got 144px — the phone's 176 won —
+                   which means the "144px so the logout stops being clipped" fix from the previous
+                   session never actually took effect on a desk. A source-string check had been
+                   asserting the class was PRESENT, which is not the same as asserting it WINS.
+                   One owner for this property now, and it is theme.css. */
+                className={`hide-on-print fixed inset-y-0 right-0 z-[90] bg-[#0b0a09]/97 lg:bg-transparent backdrop-blur-xl lg:backdrop-blur-none border-l lg:border-0 border-[#3e3226] flex flex-col pt-5 lg:pt-0 px-0 overflow-hidden
                              transition-[transform,width,padding,opacity] duration-300 ease-[cubic-bezier(.22,1,.36,1)] lg:relative lg:translate-x-0 lg:opacity-100 lg:pointer-events-auto
                              ${isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full'}`}>
 
