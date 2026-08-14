@@ -1120,12 +1120,13 @@ check(G25, 'the desk wears the same mark as the phone, not a white slab',
    then the hovered mark's name printed on the app's own ground beside it.
    The two numbers below have to stay in step. 272 painted - 72 occupied = the 200px the negative
    margin hands back. Let them drift and every brush past the left edge shoves the app sideways. */
-const railGateAt = themeCss.search(/@media \(min-width: 1024px\) and \(hover: hover\) and \(pointer: fine\) \{\s*\[data-kpm-rail\]\[data-kpm-rail\] \{\s*width: 72px/);
+const railGateAt = themeCss.search(/@media \(min-width: 1024px\) and \(hover: hover\) and \(pointer: fine\) \{[\s\S]{0,500}?\[data-kpm-rail\]\[data-kpm-rail\] \{\s*width: 64px/);
 check(G25, 'the desk rail collapses to one circle, and opening it moves nothing',
   /\.kpm-rail-pod \{ display: contents; \}/.test(themeCss) &&
-  /width: 300px; margin-right: -228px;/.test(themeCss) &&
-  /\.kpm-rail-pod::before \{ top: calc\(50% - 36px\); height: 72px; border-radius: 999px; \}/.test(themeCss) &&
-  /:focus-within \{ width: 300px/.test(themeCss) &&
+  /width: 292px; margin-right: -228px;/.test(themeCss) &&
+  /\.kpm-rail-pod::before \{ left: 4px; right: 4px; top: calc\(50% - 28px\); height: 56px; border-radius: 999px; \}/.test(themeCss) &&
+  /:focus-within \{ width: 292px/.test(themeCss) &&
+  /\.kpm-rail-pod > \* \{ animation: none; \}/.test(themeCss) &&
   /<div className="kpm-rail-pod">/.test(shellSrc) &&
   /<span className="kpm-rail-totem"/.test(shellSrc),
   'the pod is `display: contents` on a phone, so none of this reaches the layout he already ' +

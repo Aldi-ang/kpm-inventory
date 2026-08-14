@@ -398,7 +398,14 @@ html.lite-mode .kpm-coin.lg,   .kpm-coin.lg.still   { background-position: -72px
 
 .kpm-torch { position: absolute; bottom: 30px; width: 30px; height: 150px; z-index: 1;
   transform-origin: 50% 100%; }
-.kpm-torch.l { left: 21%; transform: scale(.94); }
+/* ⚠️ ANCHORED TO THE DOORWAY, NOT TO A PERCENTAGE. His report with a screenshot, 2026-08-14:
+   *"left torch shouldnt be blocking the door"*. The cause is a units mismatch — the arch is
+   `left: 4%` plus a FIXED 124px, and this torch was at 21% of the same box. The two only clear
+   each other when the column is wider than ~729px, and the ledger column never is, so the torch
+   stood in the doorway at every real width. Tied to the arch's right edge now, so it cannot
+   drift back into it when the column resizes. The right torch keeps its percentage: nothing is
+   over there for it to collide with. */
+.kpm-torch.l { left: calc(4% + 132px); transform: scale(.94); }
 .kpm-torch.r { right: 21%; bottom: 40px; transform: scale(.88); }
 .kpm-torch .pole { position: absolute; bottom: 0; left: 50%; margin-left: -3px;
   width: 6px; height: 132px; border-radius: 2px;
@@ -1162,6 +1169,7 @@ html.lite-mode .kpm-topbar { transition: none; }
     /* the spring morph: it overshoots and settles, which is the difference between a panel that
        grows and one that unfurls */
     transition: top 380ms cubic-bezier(.2, 1.2, .3, 1), height 380ms cubic-bezier(.2, 1.2, .3, 1),
+                left 380ms cubic-bezier(.2, 1.2, .3, 1), right 380ms cubic-bezier(.2, 1.2, .3, 1),
                 border-radius 340ms cubic-bezier(.22, 1, .36, 1);
   }
   /* an absolutely-positioned ::before paints in the POSITIONED layer, which is above ordinary
@@ -1171,14 +1179,16 @@ html.lite-mode .kpm-topbar { transition: none; }
   .kpm-rail-totem { display: none; }
 }
 @media (min-width: 1024px) and (hover: hover) and (pointer: fine) {
+  /* 64, not 72 — *"button is too big"*, his third report on this rail. The circle inside is 56,
+     which is a dock button; 72 read as a panel with one icon in it. */
   [data-kpm-rail][data-kpm-rail] {
-    width: 72px;
+    width: 64px;
     transition: width 340ms cubic-bezier(.22, 1, .36, 1), margin-right 340ms cubic-bezier(.22, 1, .36, 1);
   }
   /* :focus-within, not only :hover — at rest every mark is invisible but still tabbable, so
      keyboard focus has to open the same capsule the pointer does or it lands on nothing */
   [data-kpm-rail][data-kpm-rail]:hover,
-  [data-kpm-rail][data-kpm-rail]:focus-within { width: 300px; margin-right: -228px; }
+  [data-kpm-rail][data-kpm-rail]:focus-within { width: 292px; margin-right: -228px; }
   /* 🔑 THE LOGO IS THE TRIGGER, not the column — *"Hover the logo, and the pill unfurls"*, and
      *"The page stays clean — one logo, nothing else — until someone reaches for it"*. At rest the
      panel takes no pointer events at all, so the 72px strip is not an invisible wall down the
@@ -1189,25 +1199,36 @@ html.lite-mode .kpm-topbar { transition: none; }
   [data-kpm-rail][data-kpm-rail]:hover,
   [data-kpm-rail][data-kpm-rail]:focus-within { pointer-events: auto; }
   /* the pod never widens — only the window around it does */
-  .kpm-rail-pod { width: 72px; flex: none; }
-  .kpm-rail-pod::before { top: calc(50% - 36px); height: 72px; border-radius: 999px; }
+  .kpm-rail-pod { width: 64px; flex: none; }
+  .kpm-rail-pod::before { left: 4px; right: 4px; top: calc(50% - 28px); height: 56px; border-radius: 999px; }
   [data-kpm-rail]:hover .kpm-rail-pod::before,
   [data-kpm-rail]:focus-within .kpm-rail-pod::before {
-    top: 12px; height: calc(100% - 24px); border-radius: 34px;
+    left: 0; right: 0; top: 12px; height: calc(100% - 24px); border-radius: 30px;
   }
   /* everything but the totem is faded while it is a circle. Faded, NOT removed: `display` cannot
      be animated, and a rail that re-laid seventeen marks every time the pointer passed would
      stutter. The delay lets the capsule arrive before its contents do. */
+  /* 🔴 THE BUG HIS SCREENSHOT CAUGHT: *"profile + music is still outside when the sidebar
+     eventhough they are not pressable"* — the music mark, the face and the logout stayed visible
+     around a closed capsule, and could not be clicked, which is the worst of both.
+     Cause: `boot-1/2/3` are the arrival animations, and they run `forwards`. **A filled animation
+     beats a normal declaration in the cascade**, so `opacity: 0` below never applied to the three
+     blocks that carry them — only to the marks, which carry none. That is exactly why the nav
+     went invisible and the bottom row did not.
+     The arrival animation is switched off on the desk instead of fought with `!important`: the
+     capsule unfurling IS the arrival here, and two entrances playing over each other was never
+     the design. The phone keeps its boot animation untouched. */
+  .kpm-rail-pod > * { animation: none; }
   .kpm-rail-pod > *:not(.kpm-rail-totem) { opacity: 0; transition: opacity 140ms ease-out; }
   [data-kpm-rail]:hover .kpm-rail-pod > *:not(.kpm-rail-totem),
   [data-kpm-rail]:focus-within .kpm-rail-pod > *:not(.kpm-rail-totem) {
     opacity: 1; transition: opacity 260ms ease-out 120ms;
   }
-  /* 72 square, so the whole circle is the target rather than the 22px glyph inside it */
+  /* the whole circle is the target, not the 22px glyph inside it */
   .kpm-rail-totem {
     display: flex; align-items: center; justify-content: center;
     position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-    width: 72px; height: 72px; border-radius: 999px;
+    width: 56px; height: 56px; border-radius: 999px;
     color: #ff9d00; pointer-events: auto; cursor: pointer;
     transition: opacity 180ms ease-out;
   }
