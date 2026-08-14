@@ -1,7 +1,50 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-14 06:25 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
-**Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry directly below. Two clocks, one file.
+**Updated: 2026-08-14 11:20 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
+**Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
+
+> 🔴 **THIS FILE IS 3,270 LINES / 233 KB AND IT IS READ IN FULL AT EVERY SESSION START.** That is
+> roughly 58,000 tokens of Aldi's budget spent before he has typed anything, every single time.
+> **Ask him to let it be archived** — everything below the current day belongs in
+> `A-Brain/Wiki/Log.md`, which is the memory now, and this file should hold only where the work
+> stands. Do not do it without his word; do not let another session pass without asking.
+
+### ✅ 11:20 WIB — the PC sidebar shipped in the format his VIDEO asks for. `16c8ff9`, 362/362.
+
+**The reference video can be watched. `ffmpeg` is on this machine.**
+
+    ffmpeg -i clip.mp4 -vf "fps=1,scale=900:-1" -frames:v 12 f%02d.png
+
+Six seconds became six frames, and the frames contradicted the guess made from his words: *"shrink
+in to 1 button big"* had been written down as *one button WIDE* (a narrow column of icons). It is
+**one single circle**. The whole menu appears only on hover. Everything built on the wrong reading
+was redone this morning. The law is now in `A-Brain/Wiki/Concepts/Aldi's Design Taste.md`: **his
+reference is the artefact, not his sentence about the artefact.**
+
+**What the desk sidebar is now**, three states:
+- **at rest** — one circle, centred on the left edge, carrying the ACTIVE TAB's own mark.
+- **pointer on the rail** — a full-height translucent, blurred capsule; every mark fades up in one
+  column, the music button among them.
+- **pointer on a mark** — that mark's name prints beside the capsule, on the app's own background.
+
+**The two numbers that must stay in step: 272 painted, 72 occupied, `margin-right: -200px`.** The
+rail's margin box never changes, so opening it never moves the main UI.
+
+`.kpm-rail-pod` is new and is the capsule; the panel around it is the window. One element cannot
+both clip (`overflow-hidden` is load-bearing there) and let the label escape. On a phone the pod is
+`display: contents` — the signed-off phone layout does not know it exists.
+
+⚠️ **The panel now paints NOTHING of its own**, so anything that hides the pod's glass hides the
+whole sidebar. Two checks pin it: the appearance sits OUTSIDE the `hover: hover` gate (a touch
+laptop matches `lg:` but not that), and Lite Mode gets solid ground because it deletes
+`backdrop-filter`.
+
+**The music player lost its desk accordion** — it opened downwards into a panel that is now 72px
+wide and 72px tall. The pill answers both widths. Net −48 lines in that file.
+
+**Not seen with eyes.** The Browser pane still refuses the dev server's self-signed HTTPS cert
+(`chrome-error://chromewebdata`), and screenshots need the pane displayed. Verified by build,
+362 checks and the built CSS. **Aldi has to look at this one.**
 
 ### ✅ 23:40 WIB (Lancelot session) — the two potongan methods BUILT. A-Brain `8b20e34`. 103 checks green.
 
