@@ -255,6 +255,11 @@ export default function BiohazardTheme({
         return hasClearance(userRole, item.feature);
     });
 
+    /* What sits in the collapsed rail's single circle. His video shows the company logo there;
+       this app has no logo file, and a generic menu glyph would say nothing — so the circle
+       carries the mark of the tab you are ON. Collapsed, the rail still answers "where am I". */
+    const TotemMark = visibleMenu.find(i => i.id === activeTab)?.icon || LayoutGrid;
+
     return (
         <div className="print-reset h-[100dvh] w-full bg-black text-gray-300 font-sans tracking-wide overflow-hidden flex relative">
             <style>{`
@@ -440,9 +445,27 @@ export default function BiohazardTheme({
                    overflow here once left an expanded music panel floating over the app), so at
                    88px the logout button was cut off mid-animation. 144 clears 118 plus its
                    padding, and it is what two columns of marks need anyway. */
-                className={`hide-on-print fixed inset-y-0 right-0 z-[90] w-[176px] lg:w-[144px] bg-[#0b0a09]/97 lg:bg-black/95 backdrop-blur-xl border-l lg:border-l-0 lg:border-r border-[#3e3226] lg:border-white/10 flex flex-col pt-5 lg:pt-3 px-0 overflow-hidden
+                /* 🔑 THE DESK PANEL PAINTS NOTHING NOW — the glass is on `.kpm-rail-pod` inside
+                   it, so this element is only a window: it reserves 72px of the row, widens to
+                   272px on hover to let a label paint beside the pod, and clips nothing else.
+                   Every `lg:` surface here had to go with that (`lg:bg-black/95`, the right
+                   border, the blur) or there would be a second opaque slab behind the capsule.
+                   The blur moving to the pod also moves the containing block for `position:
+                   fixed` children — see the portal note in MusicPlayer, which still holds. */
+                className={`hide-on-print fixed inset-y-0 right-0 z-[90] w-[176px] lg:w-[144px] bg-[#0b0a09]/97 lg:bg-transparent backdrop-blur-xl lg:backdrop-blur-none border-l lg:border-0 border-[#3e3226] flex flex-col pt-5 lg:pt-0 px-0 overflow-hidden
                              transition-[transform,width,padding,opacity] duration-300 ease-[cubic-bezier(.22,1,.36,1)] lg:relative lg:translate-x-0 lg:opacity-100 lg:pointer-events-auto
                              ${isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+
+            {/* THE POD — the capsule you actually see on a desk, and `display: contents` on a
+                phone, which means the phone's layout does not know it exists. It is here because
+                the label has to paint OUTSIDE the glass while the glass stays one button wide:
+                two boxes, one that clips and one that is clipped. Its own note is in theme.css. */}
+            <div className="kpm-rail-pod">
+                {/* 🔑 COLLAPSED, THE WHOLE RAIL IS THIS CIRCLE — his video, 2026-08-14: *"a
+                    sidebar that shrink in to 1 button big and when it hover it opens all the way
+                    to show all the button"*. Everything below is still rendered, and still
+                    focusable; it is faded out and the capsule is drawn round this one mark. */}
+                <span className="kpm-rail-totem" aria-hidden="true"><TotemMark size={22} /></span>
 
                 {/* ml-12 on a desk: the toggle is fixed at top-left there, so the brand has to
                     clear it or the button lands on the name. A 76px rail has no room for a
@@ -609,6 +632,7 @@ export default function BiohazardTheme({
                             </button>
                         </div>
                 </div>
+            </div>
             </div>
             )}
 

@@ -1092,41 +1092,132 @@ html.lite-mode .kpm-topbar { transition: none; }
    when we hover it"*. Both are this block: 104px of marks at rest, 236px with their words when
    the pointer is on it.
 
-   🔑 `margin-right: -132px` is the whole trick. The rail is the first flex child, so growing it
+   🔑 `margin-right: -200px` is the whole trick. The rail is the first flex child, so growing it
    would push the app sideways every time the pointer brushed past — a layout jump on hover is
    worse than the wasted space it fixes. The negative margin gives back exactly what the width
-   took, so the strip PAINTS 236 wide and OCCUPIES 104: the main UI never moves, and z-[90] on
+   took, so the rail PAINTS 272 wide and OCCUPIES 72: the main UI never moves, and z-[90] on
    the panel keeps the open state above it.
+
+   🎥 THE SHAPE IS HIS VIDEO, 2026-08-14 (`A-Brain/Assets/references/`), and it is three states,
+   not two: *"a sidebar that shrink in to 1 button big and when it hover it opens all the way to
+   show all the button ... when we hover it will show the name of that features ... i want
+   background for the sidebar to be transparant but blurred ... it is liquid expensive looks"*.
+
+     at rest      ONE circle, centred on the edge. Every mark is still rendered and still
+                  focusable — faded out, with the glass drawn round the totem alone.
+     rail hover   the capsule grows to full height and the marks fade up inside it.
+     mark hover   THAT mark's name paints beside the capsule, out on the app's own ground.
+
+   TWO BOXES, which is the whole reason `.kpm-rail-pod` exists. The panel clips (overflow-hidden
+   is load-bearing — a conditional overflow here once left an expanded music panel floating over
+   the app), and the label has to escape the glass while the glass stays one button wide. So the
+   panel is the WINDOW and the pod is the CAPSULE: the label paints inside the window and outside
+   the pod. One box cannot do both.
+
+   The glass lives on `.kpm-rail-pod::before`, not on the pod, so the capsule can grow from a
+   circle into a column without moving one pixel of what it contains. Nothing reflows on hover —
+   only opacity, and one pseudo-element's box.
 
    Gated on `hover: hover` and `pointer: fine` per the control system's contract — a touch screen
    fires :hover on tap and keeps it, which would leave the rail stuck open. Those devices keep the
-   Tailwind `lg:w-[144px]` and its two columns, unchanged.
+   Tailwind `lg:w-[144px]` and its two columns, with the pod as a plain full-height capsule.
 
    The doubled `[data-kpm-rail][data-kpm-rail]` is deliberate: `lg:w-[144px]` is a single class, so
    a single attribute selector would tie on specificity and be decided by file order. */
+/* on a phone the pod is not in the layout at all: its children are the drawer's own children,
+   exactly as they were before it was introduced */
+.kpm-rail-pod { display: contents; }
+.kpm-rail-word { display: none; }
+@media (min-width: 1024px) {
+  /* ⚠️ THE APPEARANCE IS HERE, NOT BEHIND THE HOVER GATE. The panel stopped painting its own
+     background for this design; a touch-screen laptop matches `lg:` but not `hover: hover`, so
+     leaving the glass in the block below would have shipped it an invisible sidebar. That is the
+     same defect as the sign-in panel that pinned its own background and not its own ink. */
+  .kpm-rail-pod {
+    display: flex; flex-direction: column; position: relative; width: 100%; height: 100%;
+  }
+  .kpm-rail-pod::before {
+    content: ""; position: absolute; z-index: 0; left: 0; right: 0; top: 12px;
+    height: calc(100% - 24px); border-radius: 34px;
+    border: 1px solid rgba(255, 255, 255, .10);
+    background-color: rgba(20, 17, 14, .55);
+    -webkit-backdrop-filter: blur(18px) saturate(1.3);
+            backdrop-filter: blur(18px) saturate(1.3);
+    box-shadow: 0 18px 50px rgba(0, 0, 0, .55);
+    pointer-events: none;
+    transition: top 340ms cubic-bezier(.22, 1, .36, 1), height 340ms cubic-bezier(.22, 1, .36, 1),
+                border-radius 340ms cubic-bezier(.22, 1, .36, 1);
+  }
+  /* an absolutely-positioned ::before paints in the POSITIONED layer, which is above ordinary
+     in-flow children — without these two z-indexes the glass covers the marks */
+  .kpm-rail-pod > * { position: relative; z-index: 1; }
+  /* ⚠️ LITE MODE DELETES backdrop-filter (index.css). A transparent panel with no blur behind it
+     is a hole in the app, not a sidebar, so that mode gets solid ground. */
+  html.lite-mode .kpm-rail-pod::before { background-color: #12100e; box-shadow: none; }
+  /* the totem IS the collapsed state, and a desk without hover never collapses */
+  .kpm-rail-totem { display: none; }
+}
 @media (min-width: 1024px) and (hover: hover) and (pointer: fine) {
   [data-kpm-rail][data-kpm-rail] {
-    width: 104px;
-    transition: width 260ms cubic-bezier(.22, 1, .36, 1), margin-right 260ms cubic-bezier(.22, 1, .36, 1);
+    width: 72px;
+    transition: width 340ms cubic-bezier(.22, 1, .36, 1), margin-right 340ms cubic-bezier(.22, 1, .36, 1);
   }
-  [data-kpm-rail][data-kpm-rail]:hover { width: 236px; margin-right: -132px; }
-  /* two columns of marks at rest — his "2 colomn to add more space" — one column of marks and
-     words when it opens, because a label cannot share a 100px cell with another label */
-  [data-kpm-rail]:hover .kpm-rail-grid { grid-template-columns: minmax(0, 1fr); }
-  [data-kpm-rail]:hover .kpm-rail-mark { justify-content: flex-start; gap: 12px; padding-left: 16px; }
-  .kpm-rail-word {
-    display: none; font-family: var(--font-display); font-weight: 700; font-size: 11px;
-    letter-spacing: .1em; text-transform: uppercase; white-space: nowrap; text-align: left;
+  /* :focus-within, not only :hover — at rest every mark is invisible but still tabbable, so
+     keyboard focus has to open the same capsule the pointer does or it lands on nothing */
+  [data-kpm-rail][data-kpm-rail]:hover,
+  [data-kpm-rail][data-kpm-rail]:focus-within { width: 272px; margin-right: -200px; }
+  /* the pod never widens — only the window around it does */
+  .kpm-rail-pod { width: 72px; flex: none; }
+  .kpm-rail-pod::before { top: calc(50% - 36px); height: 72px; border-radius: 999px; }
+  [data-kpm-rail]:hover .kpm-rail-pod::before,
+  [data-kpm-rail]:focus-within .kpm-rail-pod::before {
+    top: 12px; height: calc(100% - 24px); border-radius: 34px;
   }
-  [data-kpm-rail]:hover .kpm-rail-word { display: inline; }
-  /* the wordmark cannot fit 104px, so it is part of what opens */
+  /* everything but the totem is faded while it is a circle. Faded, NOT removed: `display` cannot
+     be animated, and a rail that re-laid seventeen marks every time the pointer passed would
+     stutter. The delay lets the capsule arrive before its contents do. */
+  .kpm-rail-pod > *:not(.kpm-rail-totem) { opacity: 0; transition: opacity 140ms ease-out; }
+  [data-kpm-rail]:hover .kpm-rail-pod > *:not(.kpm-rail-totem),
+  [data-kpm-rail]:focus-within .kpm-rail-pod > *:not(.kpm-rail-totem) {
+    opacity: 1; transition: opacity 260ms ease-out 120ms;
+  }
+  .kpm-rail-totem {
+    display: flex; align-items: center; justify-content: center;
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    color: #ff9d00; pointer-events: none; transition: opacity 180ms ease-out;
+  }
+  [data-kpm-rail]:hover .kpm-rail-totem,
+  [data-kpm-rail]:focus-within .kpm-rail-totem { opacity: 0; }
+  /* ONE column, one button wide — "shrink in to 1 button big". The phone keeps the two columns
+     it asked for; this is the desk's own answer and it supersedes them here. */
+  [data-kpm-rail] .kpm-rail-grid { grid-template-columns: minmax(0, 1fr); }
+  /* round plates like the video's. Stadium rather than circle because seventeen marks sharing
+     one column are wider than they are tall. */
+  [data-kpm-rail] .kpm-rail-mark::before { border-radius: 999px; }
+  /* the wordmark cannot fit 72px, and the totem says where you are instead */
   [data-kpm-rail] .kpm-rail-brand { display: none; }
-  [data-kpm-rail]:hover .kpm-rail-brand { display: block; }
+  /* THE NAME, printed on the app's background beside the mark under the pointer. Absolute, so it
+     never takes part in the mark's layout; delayed, so it does not paint into a window that is
+     still opening. */
+  .kpm-rail-word {
+    display: block; position: absolute; left: calc(100% + 16px); top: 50%;
+    transform: translateY(-50%); opacity: 0;
+    font-family: var(--font-display); font-weight: 700; font-size: 12px;
+    letter-spacing: .12em; text-transform: uppercase; white-space: nowrap; text-align: left;
+    color: #f5e6c8; text-shadow: 0 2px 14px rgba(0, 0, 0, .85);
+    pointer-events: none; transition: opacity 160ms ease-out;
+  }
+  .kpm-rail-mark:hover .kpm-rail-word,
+  .kpm-rail-mark:focus-visible .kpm-rail-word { opacity: 1; transition-delay: 180ms; }
 }
-/* the word is desk-only — on a phone the peek plate follows the finger instead */
-@media (max-width: 1023px) { .kpm-rail-word { display: none; } }
-html.lite-mode [data-kpm-rail][data-kpm-rail] { transition: none; }
-@media (prefers-reduced-motion: reduce) { [data-kpm-rail][data-kpm-rail] { transition: none; } }
+html.lite-mode [data-kpm-rail][data-kpm-rail],
+html.lite-mode .kpm-rail-pod::before,
+html.lite-mode .kpm-rail-totem,
+html.lite-mode .kpm-rail-word { transition: none; }
+@media (prefers-reduced-motion: reduce) {
+  [data-kpm-rail][data-kpm-rail], .kpm-rail-pod::before,
+  .kpm-rail-totem, .kpm-rail-word { transition: none; }
+}
 
 /* ---------- THE EDGE RIBBON ----------
    His brief: "smaller size that is dragable from the side but not really visible from the

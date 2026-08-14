@@ -20,22 +20,18 @@ const TRACKS = DETECTED_TRACKS.length > 0 ? DETECTED_TRACKS : [
 /* `onOpen` lets the shell get out of the way — his rule for the island, which holds for the pill:
    pressing the music mark should close the rail, not stack a panel on top of it. */
 const MusicPlayer = ({ onOpen }) => {
-    /* WHY A MEDIA QUERY IN JS AND NOT JUST `lg:` CLASSES. The pill is PORTALLED to <body>, and a
-       portal is a JS decision — CSS cannot move an element out of the rail. It has to move: the
-       rail carries `backdrop-blur`, and a backdrop-filter makes its ancestor the containing block
-       for `position: fixed` descendants, so a pill left inside it would anchor to the rail rather
-       than to the screen and land off the edge. The desk keeps the in-flow accordion it has
-       always had, so nothing about that layout moves. */
-    const [isPhone, setIsPhone] = useState(
-        () => typeof window !== 'undefined' && window.matchMedia('(max-width: 1023px)').matches
-    );
-    useEffect(() => {
-        const mq = window.matchMedia('(max-width: 1023px)');
-        const onChange = (e) => setIsPhone(e.matches);
-        mq.addEventListener('change', onChange);
-        return () => mq.removeEventListener('change', onChange);
-    }, []);
+    /* WHY THE PILL IS PORTALLED AND NOT SIMPLY POSITIONED. The rail carries a backdrop-filter —
+       on the pod, since 2026-08-14 — and a backdrop-filter makes that element the containing
+       block for every `position: fixed` descendant. A pill left inside would anchor to a 72px
+       capsule instead of to the screen and land off the edge. CSS cannot move an element out of
+       an ancestor, so this has to stay a JS decision.
 
+       ONE ANSWER AT BOTH WIDTHS from 2026-08-14 — his call: *"i want the initial position for the
+       music player also the same with that"*, meaning the music button is one more mark in the
+       collapsed capsule. The desk's in-flow accordion could not survive that: it opened downward
+       inside a panel that is 72px wide, and 72px tall the moment the pointer leaves. The phone
+       had already answered this. Ported, not redesigned — and the `isPhone` media query that
+       used to choose between the two went with it. */
     const [isPlaying, setIsPlaying] = useState(false);
     const [currentTrack, setCurrentTrack] = useState(0);
     const [volume, setVolume] = useState(0.5);
@@ -122,6 +118,9 @@ const MusicPlayer = ({ onOpen }) => {
                     volume — lives in the pill, at both widths now. The desk's own label and inline
                     play/pause are gone with the 256px column that had room for them. */}
                 <Music size={21} className={`text-[#ff9d00] shrink-0 transition-transform duration-300 ${isPlaying ? 'animate-pulse' : ''} ${isExpanded ? 'scale-[1.22]' : ''}`} />
+                {/* the same label plate every other mark gets on a desk — his video asks for the
+                    music button to be one of them, which means it says its name like one too */}
+                <span className="kpm-rail-word">Music</span>
             </div>
 
             {/* THE PILL — his call, replacing the panel that hung off the side of the rail:
@@ -133,7 +132,7 @@ const MusicPlayer = ({ onOpen }) => {
 
                 Portalled to <body>, which is not optional — see the note on backdrop-filter at
                 the top of this file. The desk branch below is the accordion, untouched. */}
-            {isPhone ? (isExpanded && createPortal(
+            {isExpanded && createPortal(
                 <>
                     {/* No dimmer: a pill is not a modal, and the screen behind it stays readable.
                         This only catches the tap that dismisses it. */}
@@ -174,62 +173,7 @@ const MusicPlayer = ({ onOpen }) => {
                     </div>
                 </>,
                 document.body
-            )) : (
-            <div className={`transition-all duration-300 origin-top overflow-hidden
-                             ${isExpanded ? 'max-h-[300px] opacity-100' : 'max-h-0 opacity-0'}`}>
-
-                {/* PLAYLIST TOGGLE */}
-                <div className="px-2 pt-2 flex justify-end">
-                    <button onClick={() => setShowPlaylist(!showPlaylist)} className={`text-[11px] font-bold uppercase flex items-center gap-1 transition-colors ${showPlaylist ? 'text-white' : 'text-orange-500 hover:text-orange-400'}`}>
-                        <List size={10} /> {showPlaylist ? 'Hide Tracks' : 'Tracks'}
-                    </button>
-                </div>
-
-                {/* PLAYLIST OVERLAY */}
-                {showPlaylist && (
-                    <div className="max-h-24 overflow-y-auto mx-2 mt-2 p-1.5 bg-black/80 border border-white/10 rounded custom-scrollbar">
-                        <div className="space-y-1">
-                            {TRACKS.map((t, idx) => (
-                                <button key={idx} onClick={() => { setCurrentTrack(idx); setIsPlaying(true); }} className={`w-full text-left text-[11px] p-1.5 rounded truncate transition-colors ${currentTrack === idx ? 'bg-[#ff9d00] text-[#2b2318] font-bold' : 'text-[#8b7256] hover:bg-[#26211c]'}`}>
-                                    {idx + 1}. {t.title}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-                )}
-
-                {/* MAIN CONTROLS */}
-                <div className="p-3 flex flex-col items-center">
-                    <div className="w-full text-center mb-3 overflow-hidden">
-                        <div className="whitespace-nowrap animate-marquee inline-block">
-                            <h3 className="text-orange-400 font-bold text-[10px] uppercase tracking-wider">{TRACKS[currentTrack].title}</h3>
-                        </div>
-                    </div>
-
-                    <div className="flex items-center justify-between w-full mb-3 px-2">
-                        <button onClick={() => setIsShuffling(!isShuffling)} className={`transition-colors ${isShuffling ? 'text-orange-500' : 'text-[#8b7256] hover:text-white'}`}><Shuffle size={12}/></button>
-                        <div className="flex items-center gap-3">
-                            <button onClick={playPrev} className="text-[#8b7256] hover:text-white transition-colors"><SkipBack size={16} /></button>
-                            <button onClick={togglePlay} className="w-8 h-8 bg-orange-600 rounded-full flex items-center justify-center text-white hover:scale-105 transition-all shadow-[0_0_10px_rgba(234,88,12,0.4)]">
-                                {isPlaying ? <Pause size={14} fill="currentColor" /> : <Play size={14} fill="currentColor" className="ml-0.5"/>}
-                            </button>
-                            <button onClick={playNext} className="text-[#8b7256] hover:text-white transition-colors"><SkipForward size={16} /></button>
-                        </div>
-                        <button onClick={() => setIsLooping(!isLooping)} className={`transition-colors ${isLooping ? 'text-orange-500' : 'text-[#8b7256] hover:text-white'}`}><Repeat size={12}/></button>
-                    </div>
-
-                    <div className="w-full flex items-center gap-2">
-                        {/* was text-slate-400 / bg-slate-700 — slate IS the blue */}
-                        <Volume2 size={12} className="text-[#8b7256]"/>
-                        <input type="range" min="0" max="1" step="0.05" value={volume} onChange={(e) => setVolume(parseFloat(e.target.value))} className="flex-1 h-1 bg-[#3e3226] rounded-lg appearance-none cursor-pointer accent-[#ff9d00]" />
-                    </div>
-                </div>
-            </div>
             )}
-            <style>{`
-                @keyframes marquee { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
-                .animate-marquee { animation: marquee 10s linear infinite; }
-            `}</style>
         </div>
     );
 };

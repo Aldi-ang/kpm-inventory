@@ -1085,6 +1085,33 @@ check(G25, 'the desk wears the same mark as the phone, not a white slab',
   !/rounded-xl/.test(shellSrc),
   'the active tab was a white slab with a white glow and the unlock button a hand-rolled gold ' +
   'rounded slab — that pair is why his PC screenshot read as a different app');
+/* 🎥 THE DESK CAPSULE — his video is the spec, 2026-08-14: "a sidebar that shrink in to 1 button
+   big and when it hover it opens all the way to show all the button ... i want background for the
+   sidebar to be transparant but blurred". Three states: one circle, then a full-height capsule,
+   then the hovered mark's name printed on the app's own ground beside it.
+   The two numbers below have to stay in step. 272 painted - 72 occupied = the 200px the negative
+   margin hands back. Let them drift and every brush past the left edge shoves the app sideways. */
+const railGateAt = themeCss.search(/@media \(min-width: 1024px\) and \(hover: hover\) and \(pointer: fine\) \{\s*\[data-kpm-rail\]\[data-kpm-rail\] \{\s*width: 72px/);
+check(G25, 'the desk rail collapses to one circle, and opening it moves nothing',
+  /\.kpm-rail-pod \{ display: contents; \}/.test(themeCss) &&
+  /width: 272px; margin-right: -200px;/.test(themeCss) &&
+  /\.kpm-rail-pod::before \{ top: calc\(50% - 36px\); height: 72px; border-radius: 999px; \}/.test(themeCss) &&
+  /:focus-within \{ width: 272px/.test(themeCss) &&
+  /<div className="kpm-rail-pod">/.test(shellSrc) &&
+  /<span className="kpm-rail-totem"/.test(shellSrc),
+  'the pod is `display: contents` on a phone, so none of this reaches the layout he already ' +
+  'signed off; and :focus-within is not optional — at rest every mark is invisible but tabbable');
+/* ⚠️ THE INVISIBLE-PANEL TRAP, SECOND SHAPE. The rail stopped painting its own background when
+   the pod took over, so anything that hides the pod's glass hides the whole sidebar. Two ways
+   that can happen: putting the glass behind the hover gate (a touch laptop matches `lg:` but not
+   `hover: hover`), or Lite Mode deleting backdrop-filter with nothing solid underneath. */
+check(G25, 'the capsule still paints with no hover at all, and in Lite Mode',
+  railGateAt > 0 &&
+  /backdrop-filter: blur\(18px\) saturate\(1\.3\)/.test(themeCss.slice(0, railGateAt)) &&
+  /html\.lite-mode \.kpm-rail-pod::before \{ background-color: #12100e/.test(themeCss) &&
+  !/lg:bg-black\/95/.test(shellSrc),
+  'a surface that supplies its own background owes a fallback for every mode that strips it — ' +
+  'the same defect that made the sign-in panel unreadable in the light theme');
 /* HIS REPORT: "i press and drag but it only show the first button that i press, it didnt show
    anything else when i drag". On touch the browser gives the pointerdown target IMPLICIT POINTER
    CAPTURE, so every later move for that finger is delivered to the button first pressed — no
@@ -1194,15 +1221,19 @@ check(G25, 'the rail head is one mark, with no transport crammed beside it',
    ancestor quietly deciding where a fixed child lives. */
 check(G25, 'the pill is portalled out of the rail, not positioned inside it',
   /createPortal\(/.test(musicSrc) && /document\.body/.test(musicSrc) &&
-  /matchMedia\('\(max-width: 1023px\)'\)/.test(musicSrc) &&
   /kpm-music-pill[^"]*fixed z-\[95\] top-3 left-1\/2/.test(musicSrc) &&
   !/absolute right-full/.test(musicSrc),
   'backdrop-filter on the rail makes it the containing block for fixed children — a pill left ' +
   'inside anchors to the rail, not the screen');
-check(G25, 'the desk keeps its in-flow accordion',
-  /isPhone \? \(isExpanded && createPortal\(/.test(musicSrc) &&
-  /max-h-\[300px\] opacity-100/.test(musicSrc),
-  'the pill is the phone answer only; a desk has the column room the panel always had');
+/* INVERTED 2026-08-14: the desk had an in-flow accordion of its own and now it must not. It
+   opened DOWNWARDS inside a panel that is 72px wide and — the moment the pointer leaves — 72px
+   tall, so there is nowhere left for it to open into. His words: *"i want the initial position
+   for the music player also the same with that"*, the music button being one more mark in the
+   collapsed capsule, which means it also says its own name like one. */
+check(G25, 'the pill is the answer at BOTH widths, with no desk accordion left behind',
+  !/isPhone/.test(musicSrc) && !/max-h-\[300px\] opacity-100/.test(musicSrc) &&
+  /kpm-rail-word/.test(musicSrc),
+  'a second music layout on the desk is the thing he rejected by name, twice');
 /* This used to be scoped to the chrome and the sync pill alone, because App.jsx still had
    emerald and slate deeper in — the boot spinner, the Flight Recorder, the setup screens, the
    password-strength meter. All 35 of those sites are swept now, so the check covers the WHOLE
