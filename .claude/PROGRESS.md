@@ -18,7 +18,23 @@
 **Artifact (his decision board):** https://claude.ai/code/artifact/c0af9545-8a29-40b9-a787-2f33d8835082
 **Source:** `<scratchpad>/dock-options.html`. Nothing in `src/` has been touched for any of this.
 
-**▶ START HERE NEXT SESSION — his last instruction, verbatim, 2026-08-14 ~20:10:**
+**✅ THE GEOMETRY IS DONE IN THE PROTOTYPE (2026-08-14, after the quota reset). Numbers below
+are final and measured — take them straight into `theme.css`, no re-derivation needed:**
+  · dock **100px** wide (was 118) · collapsed circle still **56px**, inset 22px each side
+  · cells **44 x 44 square**, `gap: 4px` on BOTH axes → pitch 48px in both directions
+  · `--cap` on the grid = `rows*44 + (rows-1)*4 + 8`, set from the row count. **This is
+    load-bearing**: 1fr rows stretch to fill a tall screen, which silently un-squares the cells
+    and undoes the whole change. Cap it or lose it.
+  · one column (<=10 tabs): pod stays **64px**, cells **56 square** — no horizontal neighbour to
+    be even with, so it matches the collapsed circle instead
+  · labels: col-1 `left: calc(200% + 8px)`, col-2 `calc(100% + 4px)`, foot `calc(100% + 22px)`,
+    one-column `calc(100% + 4px)`. Measured: col-1 clears col-2 by 26px, nothing clipped.
+  · Label B plate: rests at `translate(-22px,-50%)` opacity 0 → slides RIGHT to `0`. Enter
+    `opacity 300ms / transform 520ms var(--ease)`; exit stays `180/240ms`. Gap 22px = the travel.
+**Still prototype-only. `src/` untouched.** Next step is porting it, starting with the
+`overflow-hidden` bug below.
+
+**▶ HIS INSTRUCTION THAT THIS CLOSES, verbatim, 2026-08-14 ~20:10:**
 *"Label B is good, but make the sidebar thinner, and reduce space between each column, it should
 look better when each button have the same spacing between vertical and horizontal space make the
 space between columns to be the same with the row to be more even, take notes and do this after
