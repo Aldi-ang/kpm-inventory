@@ -19,6 +19,26 @@ staleness, not on a new edit; timestamp bumped to satisfy it.
 > `A-Brain/Wiki/Log.md`, which is the memory now, and this file should hold only where the work
 > stands. Do not do it without his word; do not let another session pass without asking.
 
+### ✅ 13:55 WIB — the dock floats and moves to the corner. `93b5c2f`, 364/364. HIS TWO DECISIONS, BOTH ANSWERED.
+
+**He chose "float it"** for the blank-column question, which is also what the component's sheet
+said: *"set it to Fixed, and pin to your chosen edge"*. So the desk rail is `position: fixed` and
+**reserves nothing** — measured, the main content starts at 0 and spans the full 1280.
+⚠️ `margin-right: -228px` is RETIRED with it: an out-of-flow box cannot push its siblings. If
+`position` ever goes back to relative, that trick must come back or every hover shoves the app
+sideways. And the `pointer-events: none` at rest is now **load-bearing**, not polish — a fixed
+panel over the content that took clicks would swallow every click down the left edge.
+
+**He also chose to leave the wider SALES layout alone** — *"It's fine, just the sidebar"*. The
+cream-panel-dominates / empty-right-column / no-column-rhythm critique was offered and declined.
+**Do not reopen it unprompted.**
+
+**Then his own suggestion, and it is a good one:** *"the top part of the app is very spacey what
+if u put the single button when unopen on the left top instead of the middle left?"*. Circle now
+at (4, 12), 56 square. Because the closed circle and the open capsule share a top edge, **only the
+height animates** — it unfurls downward out of the logo. `.kpm-topbar` takes 76px of left padding
+so the header gives up that corner.
+
 ### ✅ 13:20 WIB — his four screenshot reports. Three fixed (`9e975aa`, 364/364), the fourth is a DECISION.
 
 1. **Left torch stood in the doorway.** The arch is `left: 4%` **plus a fixed 124px**; the torch
