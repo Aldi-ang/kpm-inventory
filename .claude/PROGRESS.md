@@ -13,7 +13,26 @@
 > archive rather than letting it grow back. This file holds WHERE THE WORK STANDS; the archive
 > and `A-Brain/Wiki/Log.md` hold how it got there.
 
-### 🔴 ~20:00 WIB — THE DOCK REDESIGN IS DECIDED. NOT YET BUILT IN THE APP. Prototype only.
+### ✅ THE DOCK IS BUILT AND COMMITTED — `git log -1`, **370/370**, `src/` clean.
+
+He gave the green light (*"okay u can integrate panel B"*) and everything below shipped. Build
+green, audit up from 366 to 370, and the four new checks are the ones that matter — each encodes
+a bug that a diff could not see.
+
+**⚠️ THE ONE THING STILL UNVERIFIED: nobody has LOOKED at it.** The audit reads source, and the
+built CSS was confirmed to contain every rule, but the Browser pane is not displayed on his
+machine so no frame has ever been captured, and the dev server is HTTPS (on purpose — the phone
+needs a secure context; never "fix" it) which the in-app browser refuses. **His eyes are the
+check.** If he reports something looks wrong, believe the screenshot over the measurement — that
+happened three times in one afternoon and the screenshot was right every time.
+
+**What to check first if he reports a problem, in this order:**
+1. Is the label visible at all on the desk? If not, something re-clips it — check every ancestor's
+   `overflow`, not the label's own position.
+2. Are the cells square? If oblong, `--cap` is not reaching the grid.
+3. Is the sidebar visible in Lite Mode? If not, the 0.02 glass lost its opaque fallback.
+
+### 📋 THE DECISIONS THAT SHIPPED (kept for reference; do not re-ask)
 
 **Artifact (his decision board):** https://claude.ai/code/artifact/c0af9545-8a29-40b9-a787-2f33d8835082
 **Source:** `<scratchpad>/dock-options.html`. Nothing in `src/` has been touched for any of this.
