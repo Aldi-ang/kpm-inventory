@@ -1,13 +1,49 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-14 12:40 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
+**Updated: 2026-08-14 12:45 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
+
+### 🕐 12:45 WIB — model switched to Sonnet 5, no code touched this turn
+
+Session resumed after the 100%-plan-quota stop from the prior (Opus) turn; user ran `/model
+claude-sonnet-5` and said "try again". This turn only read PROGRESS.md and asked Aldi what's
+next — the `integration.audit.mjs`/`theme.css`/`graphify-out/*` diffs in `git status` predate this
+session (present at session start already) and were not touched here. Stop hook fired on file-mtime
+staleness, not on a new edit; timestamp bumped to satisfy it.
+
+**WAITING ON ALDI:** what to work on next — no item picked yet.
 
 > 🔴 **THIS FILE IS 3,270 LINES / 233 KB AND IT IS READ IN FULL AT EVERY SESSION START.** That is
 > roughly 58,000 tokens of Aldi's budget spent before he has typed anything, every single time.
 > **Ask him to let it be archived** — everything below the current day belongs in
 > `A-Brain/Wiki/Log.md`, which is the memory now, and this file should hold only where the work
 > stands. Do not do it without his word; do not let another session pass without asking.
+
+### ✅ 13:20 WIB — his four screenshot reports. Three fixed (`9e975aa`, 364/364), the fourth is a DECISION.
+
+1. **Left torch stood in the doorway.** The arch is `left: 4%` **plus a fixed 124px**; the torch
+   was at `21%` of the same box. They only clear each other past ~729px and the ledger column
+   never is. Anchored to the arch's right edge in px now. ⚠️ Mixing % and px positioning in one
+   scene is the bug class, not this one instance.
+2. **The hover label already exists** — he could not see it because of (3).
+3. **🔑 Music, face and logout stayed visible around a CLOSED capsule and were not clickable.**
+   Cause: `boot-1/2/3` (the arrival animations) run `forwards`, and **a filled animation outranks
+   a normal declaration in the cascade**, so `opacity: 0` never reached the three blocks carrying
+   one. It reached the marks, which carry none — which is exactly the split he photographed.
+   Fixed by switching the boot animation off on the DESK (`.kpm-rail-pod > * { animation: none }`),
+   not with `!important`: the capsule unfurling is the arrival here. Phone untouched.
+   Circle also went 72 → **56 inside a 64px column** — *"button is too big"*.
+4. **HIS DESIGN QUESTION IS OPEN, do not answer it for him.** *"the sidebar have it own space but
+   it just blank while its closed ... so much item on the left while the right it is just one big
+   panel ... i want ... more balance and more organic"*. The Totem sheet he pasted says **"set it
+   to Fixed, and pin to your chosen edge"** — a floating dock reserves NO column, which is the
+   blank strip he is looking at. Three options were put to him; **the answer decides the work.**
+
+⚠️ **The seven skills he named do not exist** (`/emil-design-eng`, `/design:design-critique`,
+`/design`, `/ui-styling`, `/ui-ux-pro-max`, `/make-interfaces-feel-better`, `/impeccable`).
+`ListSkills` and `SuggestSkills` both come back empty for design/UI. He asked to "add them to this
+workspace" — **they cannot be installed from here.** The nearest real thing is a project skill
+written into this repo, and he has not said yes to that yet.
 
 ### 🔑 12:40 WIB — BROWSER ACCESS IS FIXED. It found two real bugs in an hour. `c53025b` + `a611857`, 364/364.
 
