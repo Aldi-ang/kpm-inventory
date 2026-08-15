@@ -1496,7 +1496,14 @@ const PermissionMatrixEditor = ({ db, appId, userRole, userId }) => {
         const name = await promptAction("Enter new Rank Name (e.g., WAREHOUSE):");
         if (!name || name.trim() === '') return;
         const newId = `CUSTOM_TIER_${Date.now()}`;
-        const newTiers = [...tiers, { id: newId, label: `T${tiers.length + 2}: ${name.toUpperCase().trim()}`, color: 'text-cyan-400' }];
+        /* ⚠️ NO `color:` ANY MORE. It held a raw Tailwind class ('text-cyan-400') and the matrix
+           painted each rank's name in it — which is how purple, yellow, cyan and emerald rank
+           labels were on this screen at once, none of them from the palette. The conversion
+           stopped rendering it, so THIS change orphaned the field and it goes with it.
+           Nothing reads `.color` on a permission tier anywhere in the app (the map's pin colour
+           is `tierSettings`, a different list, and that one is real customer data and stays).
+           Seeded tiers in permissions.js still carry the field; it is inert there too. */
+        const newTiers = [...tiers, { id: newId, label: `T${tiers.length + 2}: ${name.toUpperCase().trim()}` }];
         setTiers(newTiers);
         setMatrix({ ...matrix, [newId]: [] });
         setActiveMobileTierId(newId);
@@ -1546,100 +1553,123 @@ const PermissionMatrixEditor = ({ db, appId, userRole, userId }) => {
     const activeTierIdx = tiers.findIndex(t => t.id === activeTier?.id);
 
     return (
-        <div className="bg-slate-900 border border-slate-700 rounded-2xl p-4 lg:p-6 shadow-2xl mt-8">
-            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-6 border-b border-slate-800 pb-4">
-                <div>
-                    <h2 className="text-lg lg:text-xl font-black text-rose-500 uppercase tracking-widest flex items-center gap-3"><ShieldCheck size={24}/> Global Permission Matrix</h2>
-                    <p className="text-[10px] text-slate-400 uppercase tracking-widest mt-1 hidden lg:block">Tier 1 Overrides - Drag columns to reorder ranks.</p>
-                    <p className="text-[10px] text-slate-400 uppercase tracking-widest mt-1 lg:hidden">Select a tier below to edit its permissions.</p>
+        <>
+        {/* ⚠️ HAZARD, AND IT IS THE MOST EARNED HAZARD MARK IN THE APP. Everything else red
+            marks destroys DATA; this decides who is allowed to. A wrong toggle here hands a
+            salesman the power to edit any customer in the country, and nothing about the app
+            will look broken afterwards. */}
+        <div className="kpm-band hazard">Authority · who is allowed to do what, company-wide</div>
+
+        <div className="kpm-mod hazard">
+            <div className="kpm-head">
+                <span className="slot">Authority · 01</span>
+                <div className="line">
+                    <h3>Global permission matrix</h3>
+                    <span className="kpm-read alert">Tier 1 only</span>
                 </div>
-                <div className="flex flex-wrap gap-2 w-full lg:w-auto">
-                    <button onClick={handleAddTier} className="flex-1 lg:flex-none justify-center bg-slate-800 hover:bg-slate-700 text-white px-4 py-2.5 rounded-xl font-black uppercase tracking-widest text-xs flex items-center gap-2 border border-slate-600 transition-colors">
-                        <Plus size={16}/> Add Tier
-                    </button>
-                    <button onClick={saveMatrixToFirebase} disabled={isSaving} className="flex-1 lg:flex-none justify-center bg-rose-600 hover:bg-rose-500 text-white px-6 py-2.5 rounded-xl font-black uppercase tracking-widest text-xs flex items-center gap-2 shadow-[0_0_15px_rgba(225,29,72,0.4)] transition-colors">
-                        <Save size={16}/> {isSaving ? 'Deploying...' : 'Deploy Matrix'}
-                    </button>
-                </div>
+                <p className="kpm-desc">
+                    Every rank below Tier 1, and what each one can reach. On a phone, pick a rank and
+                    work down its list; on a wide screen the whole grid is here and the column headers
+                    drag to reorder the hierarchy. <b>Nothing is live until you press Deploy.</b>
+                </p>
             </div>
 
             {/* ========================================= */}
             {/* 📱 MOBILE VIEW (Hidden on large screens)  */}
             {/* ========================================= */}
-            <div className="block lg:hidden space-y-4">
-                {/* Horizontal Tier Scroller */}
-                <div className="flex overflow-x-auto gap-2 pb-2 custom-scrollbar snap-x">
-                    {tiers.map((t) => (
-                        <button 
-                            key={t.id} 
-                            onClick={() => setActiveMobileTierId(t.id)}
-                            className={`snap-start whitespace-nowrap px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${activeMobileTierId === t.id ? 'bg-slate-800 text-white border border-emerald-500 shadow-inner' : 'bg-slate-950/50 text-slate-400 border border-slate-800 hover:text-slate-300'}`}
-                        >
-                            {t.label}
-                        </button>
-                    ))}
+            <div className="block lg:hidden">
+                {/* the rank strip. A snapping chip row, NOT a content list — this is the phone's
+                    equivalent of the desktop table's column headers, and panning a tab strip is
+                    the point of it rather than a workaround for a cramped layout. */}
+                <div className="kpm-shelf split">
+                    <div className="kpm-chips">
+                        {tiers.map((t) => (
+                            <button
+                                key={t.id}
+                                type="button"
+                                aria-pressed={activeMobileTierId === t.id}
+                                onClick={() => setActiveMobileTierId(t.id)}
+                            >
+                                {t.label}
+                            </button>
+                        ))}
+                    </div>
                 </div>
 
                 {/* Active Tier Controls */}
                 {activeTier && (
-                    <div className="bg-slate-950/50 rounded-xl border border-slate-800 p-4">
-                        <div className="flex items-center justify-between mb-4 border-b border-slate-800 pb-4">
-                            <div className="flex items-center gap-2">
-                                <button onClick={() => handleShiftTier(activeTier.id, -1)} disabled={activeTierIdx === 0} className="p-1 text-slate-400 hover:text-white disabled:opacity-30"><ChevronLeft size={18}/></button>
-                                <span className={`text-xs font-black uppercase tracking-widest ${activeTier.color}`}>{activeTier.label}</span>
-                                <button onClick={() => handleShiftTier(activeTier.id, 1)} disabled={activeTierIdx === tiers.length - 1} className="p-1 text-slate-400 hover:text-white disabled:opacity-30"><ChevronRight size={18}/></button>
+                    <div className="kpm-shelf split">
+                        <div className="kpm-rec">
+                            <div className="who kpm-line">
+                                <b>{activeTier.label}</b>
+                                <code>rank {activeTierIdx + 1} of {tiers.length}</code>
                             </div>
-                            <div className="flex gap-2">
-                                <button onClick={() => handleRenameTier(activeTier.id)} className="text-slate-400 hover:text-white p-1 bg-slate-800 rounded"><Edit size={14}/></button>
+                            <div className="acts">
+                                <button type="button" className="kpm-btn" onClick={() => handleShiftTier(activeTier.id, -1)} disabled={activeTierIdx === 0}>
+                                    <ChevronLeft size={14}/> Up
+                                </button>
+                                <button type="button" className="kpm-btn" onClick={() => handleShiftTier(activeTier.id, 1)} disabled={activeTierIdx === tiers.length - 1}>
+                                    <ChevronRight size={14}/> Down
+                                </button>
+                                <button type="button" className="kpm-btn" onClick={() => handleRenameTier(activeTier.id)}>
+                                    <Edit size={14}/> Rename
+                                </button>
+                                {/* worded, so deliberately NOT `data-kpm-del` — the mark prints
+                                    "Delete" on hover and would say it twice */}
                                 {activeTier.id.startsWith('CUSTOM_') && (
-                                    <button data-kpm-del data-label="Delete" onClick={() => handleDeleteTier(activeTier.id)} className="text-red-500 hover:text-red-400 p-1 bg-red-950/30 rounded"><Trash2 size={14}/></button>
+                                    <button type="button" className="kpm-btn hazard" onClick={() => handleDeleteTier(activeTier.id)}>
+                                        <Trash2 size={14}/> Delete
+                                    </button>
                                 )}
                             </div>
                         </div>
 
                         {/* Toggle List */}
-                        <div className="space-y-2">
+                        <div className="kpm-permlist">
                             {ALL_FEATURES.map(feature => {
                                 const hasAccess = (matrix[activeTier.id] || []).includes(feature.id);
                                 return (
                                     <React.Fragment key={feature.id}>
-                                        <div className="flex justify-between items-center p-2 rounded hover:bg-slate-800/30">
-                                            <span className={`text-[10px] font-bold font-mono ${feature.id.includes('edit_') ? 'text-rose-400' : 'text-slate-300'}`}>{feature.label}</span>
-                                            <button onClick={() => togglePermission(activeTier.id, feature.id)} className={`transition-all duration-300 ${hasAccess ? 'text-emerald-500 drop-shadow-[0_0_5px_rgba(16,185,129,0.8)]' : 'text-slate-400'}`}>
+                                        <div className="kpm-permrow">
+                                            <span className={feature.id.includes('edit_') ? 'feat edit' : 'feat'}>{feature.label}</span>
+                                            {/* aria-pressed is the state for BOTH the CSS and a screen reader, so
+                                                what is drawn and what is announced cannot disagree — on a
+                                                permissions grid that pair going out of step is a security bug */}
+                                            <button type="button" className="kpm-toggle" aria-pressed={hasAccess}
+                                                aria-label={`${feature.label}: ${hasAccess ? 'allowed' : 'blocked'}`}
+                                                onClick={() => togglePermission(activeTier.id, feature.id)}>
                                                 {hasAccess ? <ToggleRight size={24}/> : <ToggleLeft size={24}/>}
                                             </button>
                                         </div>
                                         {/* 🚀 CUSTOMER DIRECTORY ACCESS: sits right after the Customers toggle */}
                                         {feature.id === 'view_customers' && (
-                                            <div className="my-2 bg-slate-900 border border-slate-700 p-3 rounded-xl shadow-inner">
-                                                <label className="text-[10px] font-black text-emerald-400 uppercase tracking-widest block mb-2 flex items-center gap-2"><Store size={14}/> Customer Directory Access</label>
+                                            <label className="kpm-field kpm-authority">
+                                                <span><Store size={12}/> Customer directory access</span>
                                                 <select
                                                     value={(matrix[activeTier.id] || []).find(p => CUSTOMER_EDIT_PERMS.includes(p)) || 'none'}
                                                     onChange={(e) => changeCustomerAccess(activeTier.id, e.target.value)}
-                                                    className="w-full bg-black/40 border border-slate-600 rounded p-2 text-xs font-bold text-white outline-none focus:border-emerald-500"
                                                 >
                                                     <option value="none">Global (edit any customer — default)</option>
                                                     <option value="customers_edit_global">Global (edit any customer — default)</option>
                                                     <option value="customers_edit_own_region">Own Region Only</option>
                                                     <option value="customers_view_only">View Only (no edits)</option>
                                                 </select>
-                                            </div>
+                                            </label>
                                         )}
                                         {/* 🚀 REPORTING AUTHORITY: sits right after Sampling, replacing the old Reports + View Team History toggles */}
                                         {feature.id === 'view_sampling' && (
-                                            <div className="my-2 bg-slate-900 border border-slate-700 p-3 rounded-xl shadow-inner">
-                                                <label className="text-[10px] font-black text-orange-400 uppercase tracking-widest block mb-2 flex items-center gap-2"><BarChart2 size={14}/> Reporting Authority</label>
+                                            <label className="kpm-field kpm-authority">
+                                                <span><BarChart2 size={12}/> Reporting authority</span>
                                                 <select
                                                     value={(matrix[activeTier.id] || []).find(p => REPORT_PERMS.includes(p)) || 'none'}
                                                     onChange={(e) => changeReportAccess(activeTier.id, e.target.value)}
-                                                    className="w-full bg-black/40 border border-slate-600 rounded p-2 text-xs font-bold text-white outline-none focus:border-orange-500"
                                                 >
                                                     <option value="none">No Access</option>
                                                     <option value="view_reports_personal">Lone Wolf (Personal Data Only)</option>
                                                     <option value="view_reports_regional">Regional Command (Branch Data)</option>
                                                     <option value="view_reports_global">God Mode (Global Master Data)</option>
                                                 </select>
-                                            </div>
+                                            </label>
                                         )}
                                     </React.Fragment>
                                 );
@@ -1652,26 +1682,38 @@ const PermissionMatrixEditor = ({ db, appId, userRole, userId }) => {
             {/* ========================================= */}
             {/* 💻 DESKTOP VIEW (Hidden on small screens) */}
             {/* ========================================= */}
-            <div className="hidden lg:block overflow-x-auto custom-scrollbar pb-4">
-                <table className="w-full text-left border-collapse min-w-[800px] select-none">
+            {/* the grid keeps its horizontal scroll, and that is not the banned pattern: a
+                permissions matrix is features × ranks, so its width is the DATA's width and
+                there is nothing to reflow. Desktop only — the phone gets the rank picker above. */}
+            <div className="hidden lg:block overflow-x-auto custom-scrollbar kpm-shelf split">
+                <table className="kpm-matrix">
                     <thead>
                         <tr>
-                            <th className="p-3 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-800 bg-slate-950/50">Feature / Module</th>
+                            <th>Feature / module</th>
                             {tiers.map((tier, idx) => {
                                 const cleanName = tier.label.replace(/^T\d+:\s*/, '');
                                 return (
-                                    <th 
+                                    <th
                                         key={tier.id} draggable onDragStart={(e) => handleDragStart(e, idx)} onDragOver={(e) => handleDragOver(e, idx)} onDrop={(e) => handleDrop(e, idx)} onDragEnd={handleDragEnd}
-                                        className={`p-3 border-b border-slate-800 text-center bg-slate-950/50 group cursor-move transition-all duration-200 ${dragOverIdx === idx ? 'bg-slate-800 border-b-emerald-500 border-b-2 shadow-inner' : ''} ${draggedIdx === idx ? 'opacity-20' : ''}`}
+                                        className={`${dragOverIdx === idx ? 'drop' : ''} ${draggedIdx === idx ? 'dragging' : ''}`.trim() || undefined}
                                         title="Drag to adjust Rank Hierarchy"
                                     >
                                         <div className="flex flex-col items-center justify-center gap-0.5">
-                                            <span className="text-[11px] text-slate-400 font-mono font-black tracking-widest">T{idx + 2} RANK</span>
-                                            <div className="flex items-center gap-1">
-                                                <button onClick={() => handleRenameTier(tier.id)} className={`text-[10px] font-black uppercase tracking-widest hover:text-white transition-colors ${tier.color}`} title="Rename Tier">
-                                                    {cleanName} <Edit size={10} className="inline opacity-50 group-hover:opacity-100"/>
+                                            <span>T{idx + 2} Rank</span>
+                                            <div className="kpm-rowacts">
+                                                <button type="button" onClick={() => handleRenameTier(tier.id)} title="Rename Tier">
+                                                    {cleanName} <Edit size={10} className="inline"/>
                                                 </button>
-                                                {tier.id.startsWith('CUSTOM_') && <button data-kpm-del data-label="Delete" onClick={() => handleDeleteTier(tier.id)} className="text-red-500 hover:text-red-400 ml-1"><Trash2 size={12}/></button>}
+                                                {/* ⚠️ `data-kpm-del` MUST BE THE FIRST ATTRIBUTE ON THE TAG. The group-25
+                                                    needle anchors on it immediately after the tag name, so slipping
+                                                    `type` in front silently unmarks the button — the sweep stops
+                                                    applying, the hover label never appears, and nothing fails to say
+                                                    so. Caught on this conversion's first run.
+                                                    (The needle is deliberately not written out here: the count reads
+                                                    raw source, so quoting it in a comment adds a phantom button.)
+                                                    This one stays icon-only — a 12px glyph in a table header with no
+                                                    room for a word. */}
+                                                {tier.id.startsWith('CUSTOM_') && <button data-kpm-del data-label="Delete" type="button" onClick={() => handleDeleteTier(tier.id)}><Trash2 size={12}/></button>}
                                             </div>
                                         </div>
                                     </th>
@@ -1682,13 +1724,15 @@ const PermissionMatrixEditor = ({ db, appId, userRole, userId }) => {
                     <tbody>
                         {ALL_FEATURES.map((feature) => (
                             <React.Fragment key={feature.id}>
-                                <tr className="border-b border-slate-800/50 hover:bg-slate-800/30 transition-colors">
-                                    <td className={`p-3 text-xs font-bold font-mono ${feature.id.includes('edit_') ? 'text-rose-400' : 'text-slate-300'}`}>{feature.label}</td>
+                                <tr>
+                                    <td className={feature.id.includes('edit_') ? 'feat edit' : 'feat'}>{feature.label}</td>
                                     {tiers.map(tier => {
                                         const hasAccess = (matrix[tier.id] || []).includes(feature.id);
                                         return (
-                                            <td key={`${tier.id}-${feature.id}`} className="p-3 text-center">
-                                                <button onClick={() => togglePermission(tier.id, feature.id)} className={`transition-all duration-300 ${hasAccess ? 'text-emerald-500 drop-shadow-[0_0_5px_rgba(16,185,129,0.8)]' : 'text-slate-400 hover:text-slate-400'}`}>
+                                            <td key={`${tier.id}-${feature.id}`} className="text-center">
+                                                <button type="button" className="kpm-toggle" aria-pressed={hasAccess}
+                                                    aria-label={`${feature.label} for ${tier.label}: ${hasAccess ? 'allowed' : 'blocked'}`}
+                                                    onClick={() => togglePermission(tier.id, feature.id)}>
                                                     {hasAccess ? <ToggleRight size={28}/> : <ToggleLeft size={28}/>}
                                                 </button>
                                             </td>
@@ -1697,16 +1741,16 @@ const PermissionMatrixEditor = ({ db, appId, userRole, userId }) => {
                                 </tr>
                                 {/* 🚀 CUSTOMER DIRECTORY ACCESS: sits right after the Customers toggle */}
                                 {feature.id === 'view_customers' && (
-                                    <tr className="border-t-2 border-b-2 border-slate-700 bg-slate-900/30 hover:bg-slate-800/50 transition-colors">
-                                        <td className="p-3 text-xs font-black uppercase tracking-widest text-emerald-400 flex items-center gap-2"><Store size={16}/> Customer Directory Access</td>
+                                    <tr className="authority">
+                                        <td className="feat"><Store size={14} className="inline"/> Customer directory access</td>
                                         {tiers.map(tier => {
                                             const currentCustomerAccess = (matrix[tier.id] || []).find(p => CUSTOMER_EDIT_PERMS.includes(p)) || 'none';
                                             return (
-                                                <td key={`customer-access-${tier.id}`} className="p-2 text-center">
+                                                <td key={`customer-access-${tier.id}`} className="text-center">
                                                     <select
                                                         value={currentCustomerAccess}
                                                         onChange={(e) => changeCustomerAccess(tier.id, e.target.value)}
-                                                        className="w-[110px] bg-black/40 border border-slate-600 rounded p-1 text-[11px] font-bold text-slate-300 outline-none focus:border-emerald-500 mx-auto"
+                                                        className="kpm-inline"
                                                     >
                                                         <option value="none">Global (default)</option>
                                                         <option value="customers_edit_global">Global (default)</option>
@@ -1720,16 +1764,16 @@ const PermissionMatrixEditor = ({ db, appId, userRole, userId }) => {
                                 )}
                                 {/* 🚀 REPORTING AUTHORITY: sits right after Sampling, replacing the old Reports + View Team History toggles */}
                                 {feature.id === 'view_sampling' && (
-                                    <tr className="border-t-2 border-b-2 border-slate-700 bg-slate-900/30 hover:bg-slate-800/50 transition-colors">
-                                        <td className="p-3 text-xs font-black uppercase tracking-widest text-orange-400 flex items-center gap-2"><BarChart2 size={16}/> Reporting Authority</td>
+                                    <tr className="authority">
+                                        <td className="feat"><BarChart2 size={14} className="inline"/> Reporting authority</td>
                                         {tiers.map(tier => {
                                             const currentReportAccess = (matrix[tier.id] || []).find(p => REPORT_PERMS.includes(p)) || 'none';
                                             return (
-                                                <td key={`report-${tier.id}`} className="p-2 text-center">
-                                                    <select 
+                                                <td key={`report-${tier.id}`} className="text-center">
+                                                    <select
                                                         value={currentReportAccess}
                                                         onChange={(e) => changeReportAccess(tier.id, e.target.value)}
-                                                        className="w-[110px] bg-black/40 border border-slate-600 rounded p-1 text-[11px] font-bold text-slate-300 outline-none focus:border-orange-500 mx-auto"
+                                                        className="kpm-inline"
                                                     >
                                                         <option value="none">No Access</option>
                                                         <option value="view_reports_personal">Personal Only</option>
@@ -1746,6 +1790,22 @@ const PermissionMatrixEditor = ({ db, appId, userRole, userId }) => {
                     </tbody>
                 </table>
             </div>
+
+            {/* ⚠️ DEPLOY SITS AT THE BOTTOM, AFTER THE GRID IT COMMITS. It was in the header,
+                above everything it applies to, wearing a red glow — so the loudest thing on the
+                panel was a button you should only reach once you are finished. Amber: it is the
+                ACT, and the panel's own hazard mark already carries the danger. */}
+            <div className="kpm-shelf split">
+                <div className="kpm-acts">
+                    <button type="button" className="kpm-btn" onClick={handleAddTier}>
+                        <Plus size={14}/> Add rank
+                    </button>
+                    <button type="button" className="kpm-btn key" onClick={saveMatrixToFirebase} disabled={isSaving}>
+                        <Save size={14}/> {isSaving ? 'Deploying…' : 'Deploy matrix'}
+                    </button>
+                </div>
+            </div>
         </div>
+        </>
     );
 };

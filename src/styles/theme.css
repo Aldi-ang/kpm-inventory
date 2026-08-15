@@ -2384,6 +2384,72 @@ html.lite-mode .kpm-title-rule { animation: none; width: 100%; }
 }
 .kpm-nav > button:focus-visible { outline: 2px solid var(--accent-edge); outline-offset: -3px; }
 
+/* ---- THE PERMISSION MATRIX --------------------------------------------------
+   The last unconverted panel in Settings, and the one screen in the app where a
+   single wrong pixel hands someone authority they should not have. Everything
+   here is therefore state-first: what is ON must be readable at a glance, in
+   both themes, with colour stripped.
+
+   ⚠️ EVERY "ON" USED TO BE EMERALD WITH A GLOW — banned twice over: green is not
+   in this palette, and `drop-shadow` is a shadow, which Lite Mode removes. In
+   Lite Mode an enabled permission and a disabled one were the SAME COLOUR with
+   the same glyph weight. On a permissions grid that is not a cosmetic bug. */
+.kpm-chips { display: flex; gap: var(--s2); overflow-x: auto; padding-bottom: var(--s2);
+  scroll-snap-type: x proximity; }
+.kpm-chips > button { scroll-snap-align: start; white-space: nowrap; flex: none;
+  min-height: 44px; padding: 0 var(--s4); cursor: pointer; background: transparent;
+  border: 1px solid var(--line-2); border-bottom: 3px solid var(--line-2);
+  color: var(--ink-muted); font-family: var(--font-mono); font-weight: 700;
+  font-size: 11px; letter-spacing: .16em; text-transform: uppercase; }
+.kpm-chips > button[aria-pressed="true"] { background: var(--raised); color: var(--ink);
+  border-color: var(--line); border-bottom-color: var(--accent-edge); }
+.kpm-chips > button:focus-visible { outline: 2px solid var(--accent-edge); outline-offset: -3px; }
+
+/* one permission. Amber says ON, and the inset well says it again in material so the
+   answer survives Lite Mode. 44px because this is the most-tapped control in Settings. */
+.kpm-toggle { display: inline-flex; align-items: center; justify-content: center;
+  min-width: 44px; min-height: 44px; cursor: pointer;
+  background: transparent; border: 1px solid transparent; color: var(--ink-dim); }
+.kpm-toggle[aria-pressed="true"] { background: var(--inset); border-color: var(--line-2);
+  color: var(--accent-ink); }
+.kpm-toggle:focus-visible { outline: 2px solid var(--accent-edge); outline-offset: -3px; }
+@media (hover: hover) and (pointer: fine) {
+  .kpm-toggle:hover { color: var(--ink); border-color: var(--line-2); }
+}
+
+.kpm-matrix { width: 100%; border-collapse: collapse; min-width: 800px; user-select: none;
+  text-align: left; }
+.kpm-matrix th, .kpm-matrix td { padding: var(--s3); border-bottom: 1px solid var(--line); }
+.kpm-matrix thead th { background: var(--sunk); text-align: center; font-family: var(--font-mono);
+  font-weight: 700; font-size: 10px; letter-spacing: .16em; text-transform: uppercase;
+  color: var(--ink-muted); cursor: move; }
+.kpm-matrix thead th:first-child { text-align: left; cursor: default; }
+/* where the dragged column will land. An edge, not a fill — the row underneath still has to
+   be readable while the pointer is over it. */
+.kpm-matrix thead th.drop { background: var(--raised); border-bottom: 2px solid var(--accent-edge); }
+.kpm-matrix thead th.dragging { opacity: .25; }
+.kpm-matrix td.feat { font-family: var(--font-mono); font-size: 12px; color: var(--ink-muted); }
+/* ⚠️ RED HERE IS EARNED AND STAYS. A feature whose id contains `edit_` grants the power to
+   CHANGE data, not just read it — the one distinction on this grid worth a colour of its own. */
+.kpm-matrix td.feat.edit { color: var(--danger-ink); }
+/* the two authority rows are not toggles but choices, so they read as their own band */
+.kpm-matrix tr.authority > td { background: var(--sunk); border-top: 1px solid var(--line-2); }
+.kpm-matrix tr.authority > td.feat { color: var(--ink); }
+
+/* the same grid on a phone, one rank at a time: a list of features against one column */
+.kpm-permlist { display: flex; flex-direction: column; }
+.kpm-permrow { display: flex; align-items: center; justify-content: space-between;
+  gap: var(--s3); border-bottom: 1px solid var(--line); }
+.kpm-permrow:last-child { border-bottom: 0; }
+.kpm-permrow > .feat { font-family: var(--font-mono); font-weight: 700; font-size: 11px;
+  color: var(--ink-muted); }
+.kpm-permrow > .feat.edit { color: var(--danger-ink); }
+/* the two AUTHORITY choices are not on/off, so they sit in a well of their own rather than
+   pretending to be one more row in the list */
+.kpm-field.kpm-authority { padding: var(--s3); margin: var(--s2) 0;
+  background: var(--sunk); border: 1px solid var(--line-2); }
+.kpm-field.kpm-authority > span { display: flex; align-items: center; gap: 6px; color: var(--ink); }
+
 /* ---- BAND: names what a group of modules is allowed to do. This is the fence
    that used to be a 1.02:1 tinted box nobody could see. */
 /* margin-top 20 → 40: a band opens a GROUP, so it must clear the previous group by more than the

@@ -1506,6 +1506,13 @@ const DEL_FILES = ['src/AgentProfileView.jsx', 'src/FleetCanvasManager.jsx',
   'src/components/CustomerManager.jsx', 'src/RestockVaultView.jsx',
   'src/components/LandlordDashboard.jsx', 'src/components/HistoryReportView.jsx',
   'src/components/SamplingManager.jsx', 'src/components/SettingsView.jsx'];
+/* ⚠️ DO NOT WRAP THIS IN `strip()`. It was tried on 2026-08-15 — the count had just found a
+   COMMENT that quoted this needle, and stripping comments looked like the clean fix. It is not:
+   `strip`'s non-greedy `/* … *​/` pair swallows real code in CustomerManager.jsx and silently
+   dropped one of its two genuine delete buttons. A needle that under-counts is far worse here
+   than one that over-counts — over-counting fails loudly and gets read, under-counting hides
+   exactly the lost control this check exists to catch.
+   The fix is the other way round: do not quote this needle verbatim in any comment. */
 const delMarks = DEL_FILES.reduce((n, f) =>
   n + (fs.readFileSync(f, 'utf8').match(/<button data-kpm-del data-label="Delete"/g) || []).length, 0);
 /* 18 → 17 on 2026-08-13, and this is a REAL change, not a loosened needle: the tenant registry's
@@ -1520,8 +1527,14 @@ const delMarks = DEL_FILES.reduce((n, f) =>
    `.kpm-rec` record when Tiers & Logic joined the control system, so its trash glyph is now a
    "Delete rank" button in the record's action strip. The word is checked in group 35 — the pair
    of edits is what makes this a migration rather than a loss. */
-check(G25, 'every icon-only delete button in the app wears the expanding control', delMarks === 14,
-  `found ${delMarks} marked, expected 14 — a new icon-only delete button needs ` +
+/* 14 → 13 on 2026-08-15, fourth time, same reason: the permission matrix's MOBILE rank delete
+   became a worded "Delete" in the record's action strip when the matrix joined the control
+   system. Its DESKTOP twin is still a 12px glyph in a table header with no room for a word, so
+   that one stays marked — and this run is also where the needle's strictness earned its keep:
+   writing `<button type="button" data-kpm-del …>` silently unmarks a button, because the needle
+   requires the attribute first. The count caught it; nothing else would have. */
+check(G25, 'every icon-only delete button in the app wears the expanding control', delMarks === 13,
+  `found ${delMarks} marked, expected 13 — a new icon-only delete button needs ` +
   '`data-kpm-del data-label="Delete"` on it, and one that carries its own word ("Remove", "DEL") ' +
   'must NOT be marked or the label prints twice');
 check(G25, 'the delete rules outrank the Tailwind classes still on those buttons',
@@ -2447,6 +2460,70 @@ for (const [what, needle] of [['reset indicators', 'onClick={handleResetIndicato
     'a control that vanished in a restyle is silent — nothing errors, the button is simply gone');
 for (const cls of ['.kpm-cmd', '.kpm-nav'])
   check(G36, `${cls} is defined in theme.css, not invented in the JSX`,
+    themeCss.includes(cls + ' ') || themeCss.includes(cls + ' {') || themeCss.includes(cls + '{'),
+    'an undefined class is the quietest possible bug: no error, no paint');
+
+/* ── 37. THE PERMISSION MATRIX — the last panel of Phase 6 ─────────────────────────────────────
+   *"then we can move on with the matrix"*. This is the one screen in the app where a single
+   wrong pixel hands someone authority they should not have, so its checks are about STATE being
+   unmistakable rather than about the panel being pretty. */
+const G37 = '37. The permission matrix joins the control system';
+const mtxStart = settingsSrc.indexOf('const PermissionMatrixEditor');
+const mtx = mtxStart > 0 ? strip(settingsSrc.slice(mtxStart)) : '';
+
+check(G37, 'the matrix component was found at all', mtx.length > 2000,
+  'the marker this group slices from was renamed — every check below would pass on ""');
+check(G37, 'the matrix carries no blue, no green, no slate, no rose', !offToken.test(mtx),
+  'a rose heading, a glowing rose Deploy button, emerald ON toggles and slate everywhere — and ' +
+  'rank names painted in purple, yellow, cyan and emerald at the same time, none from the palette');
+/* 🔑 THE ONE THAT MATTERS MOST ON THIS SCREEN. Every enabled permission was emerald WITH a
+   `drop-shadow` glow. Lite Mode strips shadow AND colour — so in Lite Mode an allowed permission
+   and a blocked one were the same glyph in the same colour. On a permissions grid that is not a
+   cosmetic bug, it is a screen that cannot be read at all. */
+check(G37, 'an allowed permission is still obvious with colour stripped',
+  !/drop-shadow/.test(mtx) &&
+  /\.kpm-toggle\[aria-pressed="true"\] \{[^}]*background: var\(--inset\)/.test(themeCss) &&
+  /\.kpm-toggle\[aria-pressed="true"\] \{[^}]*border-color: var\(--line-2\)/.test(themeCss),
+  'colour alone cannot carry ON here: Lite Mode removes it and the grid becomes unreadable');
+/* what is drawn and what is announced come from ONE attribute, so they cannot drift. On this
+   screen a toggle that reads "on" to a screen reader while drawn off is a security bug. */
+check(G37, 'every permission toggle states its state to both eye and screen reader',
+  (mtx.match(/aria-pressed=\{hasAccess\}/g) || []).length === 2 &&
+  (mtx.match(/aria-label=\{`\$\{feature\.label\}/g) || []).length === 2,
+  'a colour for the eye and nothing for the ear makes an authority grid unusable without sight');
+check(G37, 'the phone rank picker says which rank is open',
+  /aria-pressed=\{activeMobileTierId === t\.id\}/.test(mtx) &&
+  themeCss.includes('.kpm-chips > button[aria-pressed="true"]'),
+  'editing permissions without being certain which rank is selected is the worst kind of guess');
+/* ⚠️ RED IS EARNED TWICE HERE AND NOWHERE ELSE ON THE PANEL: the band/module pair marking the
+   whole thing Tier 1, and the `edit_` features, which grant the power to CHANGE data. Deploy is
+   amber — it is the ACT, and it used to be a red button with a glow sitting ABOVE the grid it
+   commits, so the loudest thing on screen was the one control you should reach last. */
+check(G37, 'red marks the panel and the edit permissions, and Deploy is the amber act',
+  (mtx.match(/kpm-(mod|band) hazard/g) || []).length === 2 &&
+  mtx.includes("feature.id.includes('edit_') ? 'feat edit' : 'feat'") &&
+  /className="kpm-btn key" onClick=\{saveMatrixToFirebase\}/.test(mtx),
+  'a red Deploy taught the eye that red means "important" rather than "this cannot be undone"');
+check(G37, 'Deploy sits after the grid it commits, not above it',
+  mtx.indexOf('saveMatrixToFirebase}') > mtx.indexOf('<table className="kpm-matrix">'),
+  'a commit button above its own form is reachable before the work it commits is done');
+/* the drag-to-reorder is the only way to change the hierarchy; a restyle losing it is silent */
+for (const [what, needle] of [
+  ['drag to reorder ranks', 'onDragStart={(e) => handleDragStart(e, idx)}'],
+  ['the drop target marker', "dragOverIdx === idx ? 'drop' : ''"],
+  ['renaming a rank', 'onClick={() => handleRenameTier(tier.id)}'],
+  ['adding a rank', 'onClick={handleAddTier}'],
+  ['customer directory access', 'changeCustomerAccess(tier.id, e.target.value)'],
+  ['reporting authority', 'changeReportAccess(tier.id, e.target.value)'],
+]) check(G37, `${what} is still mounted`, mtx.includes(needle),
+  'a control that vanished in a restyle is silent — nothing errors, the button is simply gone');
+/* a raw Tailwind class stored as DATA is how four off-palette rank colours reached this screen
+   without ever appearing in a className. Nothing reads the field; it went with the render. */
+check(G37, 'a rank no longer carries a Tailwind class as data',
+  !/color: 'text-/.test(mtx),
+  'a colour hidden in a data record is invisible to every className-based palette check');
+for (const cls of ['.kpm-matrix', '.kpm-toggle', '.kpm-chips', '.kpm-permrow', '.kpm-permlist'])
+  check(G37, `${cls} is defined in theme.css, not invented in the JSX`,
     themeCss.includes(cls + ' ') || themeCss.includes(cls + ' {') || themeCss.includes(cls + '{'),
     'an undefined class is the quietest possible bug: no error, no paint');
 
