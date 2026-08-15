@@ -2,17 +2,16 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { Search, X, ArrowRight, Printer, Calendar, User, Folder, Store, Wallet, Package, Pencil, Trash2, Camera, FileText, MessageSquare, Database, ChevronRight, RotateCw, MapPin, Globe, ChevronDown, ChevronUp, Clock, AlertTriangle } from 'lucide-react';
 import { updateDoc, doc, serverTimestamp } from 'firebase/firestore';
 import { formatRupiah, convertToBks, getCurrentDate } from '../utils/helpers';
-import { hasClearance } from '../config/permissions'; 
+import { hasClearance } from '../config/permissions';
 import { notify } from './Toast.jsx';
+import { WATERMARK_STYLE, WATERMARK_POSITION, watermarkFrom } from '../config/receiptWatermark';
 
 export default function HistoryReportView({ transactions, inventory, onDeleteFolder, onDeleteTransaction, isAdmin, user, appId, db, appSettings, userRole, agentProfileId, fetchHistoricalTransactions, motorists, customers }) {
     const [searchTerm, setSearchTerm] = useState('');
     const [reportView, setReportView] = useState(false);
-    /* the mark printed in the corner of the A4 nota. `|| mascotImage` is the same migration
-       SettingsView carries: the picture used to live under that name and doubled as the mascot's
-       face until they were split on 2026-08-15. Undefined when he has never set one, which is
-       what keeps the nota unchanged for anyone who does not want a watermark. */
-    const watermarkSrc = appSettings?.receiptWatermark || appSettings?.mascotImage;
+    /* the mark printed in the corner of the A4 nota. Undefined when he has never set one, which
+       is what keeps the nota unchanged for anyone who does not want a watermark. */
+    const watermarkSrc = watermarkFrom(appSettings);
     
     // 🚀 TIME MACHINE & COMMAND CENTER STATE
     const [rangeType, setRangeType] = useState('daily');
@@ -941,27 +940,6 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                 return (
                     <div className="print-modal-wrapper fixed inset-0 z-[500] bg-black/90 flex items-center justify-center p-4">
                         <div className={`print-receipt format-${printFormat} !bg-white !text-black w-full ${printFormat === 'thermal' ? 'max-w-sm' : 'max-w-4xl'} shadow-2xl relative flex flex-col text-sm border-t-8 ${printFormat === 'a4' ? '!border-blue-800' : '!border-slate-800'} animate-fade-in rounded-b-lg max-h-[90vh] overflow-y-auto custom-scrollbar`}>
-                            {/* ── THE A4 WATERMARK ─────────────────────────────────────────────
-                                His choice between the two shapes offered, 2026-08-15: *"B is good
-                                enough"* — a small corner mark, not a faint wash across the whole
-                                page. A4 only: the thermal slip is 48mm of receipt paper with no
-                                corner to spare, and a grey mark on a thermal printer prints as mud.
-
-                                ⚠️ THIS BLOCK IS NOT APP UI AND THE PALETTE LAW STOPS AT ITS EDGE.
-                                The nota is KPM's business document and keeps the company blue; no
-                                amber, no cream, no token from theme.css belongs anywhere in here.
-
-                                It is inline-styled on purpose. Printing clones this node into a new
-                                window, and while the parent's stylesheets come along, `opacity` set
-                                by a utility class is exactly the kind of thing a print stylesheet
-                                overrides. The image is a data: URI from the crop, so it needs no
-                                network and cannot arrive after the print dialog has already opened. */}
-                            {printFormat === 'a4' && watermarkSrc && (
-                                <img src={watermarkSrc} alt=""
-                                    className="absolute bottom-4 right-4 pointer-events-none select-none"
-                                    style={{ width: '64px', height: '64px', objectFit: 'contain',
-                                             opacity: 0.28, WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }} />
-                            )}
                             {printFormat === 'thermal' && (
                                 <div className="p-4 shrink-0 font-mono text-xs">
                                     <div className="text-center mb-4">
@@ -1037,6 +1015,22 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                             {printFormat === 'a4' && (
                                 <div className="w-full overflow-x-auto custom-scrollbar border-b !border-slate-300">
                                     <div className="a4-print-jail p-8 md:p-12 shrink-0 font-sans relative min-w-[800px] mx-auto" style={{ backgroundColor: '#ffffff', color: '#000000', boxSizing: 'border-box' }}>
+                                        {/* ── THE WATERMARK ──────────────────────────────────────
+                                            INSIDE the sheet, not on the modal shell around it. It
+                                            was on `.print-receipt` first, which for A4 is only the
+                                            outer wrapper — that put the mark level with the action
+                                            buttons instead of on the paper. `.a4-print-jail` is the
+                                            page, and it is already `relative`.
+                                            A4 only, by construction: this branch never runs for the
+                                            48mm thermal slip, which has no corner to spare and would
+                                            print a grey mark as mud.
+                                            ⚠️ NOT APP UI — the nota keeps KPM company blue and the
+                                            palette law stops at this block's edge. Geometry lives in
+                                            config/receiptWatermark.js so the Settings preview cannot
+                                            drift away from what actually prints. */}
+                                        {watermarkSrc && (
+                                            <img src={watermarkSrc} alt="" className={WATERMARK_POSITION} style={WATERMARK_STYLE} />
+                                        )}
                                         <div className="border-b-4 !border-blue-800 pb-4 mb-6 flex justify-between items-end gap-8">
                                             <div className="flex-1">
                                                 <h1 className="text-2xl md:text-3xl font-black !text-blue-900 tracking-widest uppercase break-words">{appSettings?.companyName || "PT KARYAMEGA PUTERA MANDIRI"}</h1>

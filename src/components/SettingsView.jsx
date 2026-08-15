@@ -13,6 +13,7 @@ import CrownTransferProtocol from './CrownTransferProtocol';
 import AchievementTester from './AchievementTester';
 import CareerDevTools from './CareerDevTools';
 import HoldButton from './HoldButton';
+import ReceiptPreview from './ReceiptPreview';
 
 // 🚀 IMPORT THE MATRIX BRAIN
 import { CORPORATE_TIERS, ROLE_PERMISSIONS, DYNAMIC_TIERS, injectDynamicPermissions, CUSTOMER_EDIT_PERMS } from '../config/permissions';
@@ -52,6 +53,9 @@ export default function SettingsView({
        picture had been thrown away. New crops write `receiptWatermark`, so this fallback goes
        quiet on its own the first time he replaces the image. */
     const watermarkSrc = appSettings?.receiptWatermark || appSettings?.mascotImage;
+    /* ⚠️ ABOVE `if (!isAdmin) return (...)` with the others — every hook below that line is a
+       conditionally-called one, and this file already has ten. */
+    const [showReceiptPreview, setShowReceiptPreview] = useState(false);
 
     const defaultLogic = {
         type: 'omset', 
@@ -377,6 +381,27 @@ export default function SettingsView({
                                       </div>
                                   </div>
                               </div>
+                              {/* 📍 HIS ASK, 2026-08-15: *"can u add view receipt button just below the
+                                  mascot watermark photo panel?"* — its own shelf under the picker, because
+                                  the question it answers belongs to the picker: is the mark in the right
+                                  place and the right weight? Checking that used to mean leaving Settings
+                                  to hunt down a real transaction, or printing a page to find out.
+                                  It stays enabled with no picture set: the preview then shows the empty
+                                  corner and says so, which is a real answer to "where would it go?". */}
+                              <div className="kpm-shelf split">
+                                  <div className="kpm-acts">
+                                      <button type="button" className="kpm-btn" onClick={() => setShowReceiptPreview(true)}>
+                                          View receipt
+                                      </button>
+                                  </div>
+                              </div>
+                              {/* rendered right here rather than at the bottom of the file: it portals to
+                                  <body> itself, so its position in the tree costs nothing and keeping it
+                                  beside its button is one less thing to find later. */}
+                              {showReceiptPreview && (
+                                  <ReceiptPreview appSettings={appSettings} editCompanyProfile={editCompanyProfile}
+                                      onClose={() => setShowReceiptPreview(false)} />
+                              )}
                           </div>
 
                           {/* 🚀 TIER 1 ONLY. This one charges a salesman real money, so it gets its

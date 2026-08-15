@@ -2195,6 +2195,8 @@ check(G34, 'the mascot lines are a picker, not an unbounded list',
    business document moved whenever he changed the mascot's face — his *"the picture is following
    the mascot image"*. These four checks hold the split. */
 const histSrc = fs.readFileSync('src/components/HistoryReportView.jsx', 'utf8');
+const prevSrc = fs.readFileSync('src/components/ReceiptPreview.jsx', 'utf8');
+const wmCfg   = fs.readFileSync('src/config/receiptWatermark.js', 'utf8');
 check(G34, 'the watermark panel sits directly below Signature & bank',
   gen.indexOf('<h3>Signature &amp; bank</h3>') > 0 &&
   gen.indexOf('<h3>Receipt watermark</h3>') > gen.indexOf('<h3>Signature &amp; bank</h3>') &&
@@ -2203,19 +2205,43 @@ check(G34, 'the watermark panel sits directly below Signature & bank',
 check(G34, 'the picture no longer replaces the mascot',
   !/staticImageSrc=\{/.test(appCode) && appCode.includes('receiptWatermark: finalImageUrl'),
   'passing it back would re-couple them and the nota would follow the mascot again');
-/* A4 only. The thermal slip is 48mm of receipt paper with no corner to spare, and grey on a
-   thermal head prints as mud. `watermarkSrc` undefined = nothing renders = the nota is unchanged
-   for anyone who never sets one, which is why both halves of the guard matter. */
-check(G34, 'the nota mark is A4-only and skipped when unset',
-  /\{printFormat === 'a4' && watermarkSrc && \(/.test(histSrc),
-  'on a 48mm thermal slip a corner mark either overlaps the total or prints as a grey smear');
-/* the same migration in both readers: the picture used to live at `mascotImage`. Without it,
-   anyone who uploaded one before the split opens Settings to an empty frame and concludes the
-   app threw their picture away. It goes quiet by itself the first time he replaces the image. */
-for (const [where, txt] of [['Settings', settingsSrc], ['the nota', histSrc]])
-  check(G34, `${where} still finds a picture uploaded before the split`,
-    txt.includes('appSettings?.receiptWatermark || appSettings?.mascotImage'),
-    'dropping the fallback silently blanks the watermark of anyone who set one earlier');
+/* 🔑 THE MARK GOES ON THE PAGE, NOT ON THE MODAL AROUND IT. First cut anchored it to
+   `.print-receipt`, which for A4 is only the outer shell — that put it level with the action
+   buttons instead of on the paper. `.a4-print-jail` IS the sheet and is already `relative`.
+   Being inside that div is also what makes it A4-only for free: the branch never runs for the
+   48mm thermal slip, which has no corner to spare and would print a grey mark as mud. */
+const jailAt = histSrc.indexOf('a4-print-jail p-8');
+check(G34, 'the nota mark sits inside the A4 sheet, not on the modal shell',
+  jailAt > 0 && histSrc.indexOf('className={WATERMARK_POSITION}') > jailAt &&
+  !/print-receipt[\s\S]{0,400}watermarkSrc/.test(histSrc),
+  'anchored to the shell it lands beside the buttons, and the thermal slip would inherit it too');
+/* ONE COPY OF THE GEOMETRY. Settings previews the mark so he can check it without printing —
+   which it can only do if it agrees with what prints. Two hand-typed copies drift the first time
+   one is nudged, and a preview that lies is worse than none because he would trust it. */
+check(G34, 'the nota and the preview share one set of watermark numbers',
+  histSrc.includes("from '../config/receiptWatermark'") &&
+  prevSrc.includes("from '../config/receiptWatermark'") &&
+  prevSrc.includes('style={WATERMARK_STYLE}') && !/opacity:\s*0\.\d/.test(prevSrc),
+  'a preview that disagrees with the printed page is worse than no preview at all');
+/* the migration now lives in one function instead of being retyped by each reader. The picture
+   lived at `mascotImage` until the split; without this anyone who uploaded one earlier opens
+   Settings to an empty frame and concludes the app threw it away. */
+check(G34, 'a picture uploaded before the split still resolves',
+  wmCfg.includes('appSettings?.receiptWatermark || appSettings?.mascotImage'),
+  'dropping the fallback silently blanks the watermark of anyone who set one earlier');
+/* 🔑 HIS ASK: *"can u add view receipt button just below the mascot watermark photo panel?"* —
+   below the picker, because the question it answers belongs to the picker. */
+check(G34, 'View receipt sits under the watermark picker',
+  gen.indexOf('<h3>Receipt watermark</h3>') > 0 &&
+  gen.indexOf('View receipt') > gen.indexOf('onChange={handleMascotSelect}') &&
+  gen.indexOf('View receipt') < gen.indexOf('<h3>Lost pita cukai fine</h3>'),
+  'above the picker it reads as a nav item; in another band it loses the question it answers');
+/* ⚠️ THE PREVIEW MUST NEVER PASS FOR A REAL NOTA. It carries his real letterhead, signature,
+   bank block and mark — the parts he is checking — so the invented goods are the one thing that
+   could mislead. A preview mistaken for a genuine nota is a document handed to a customer. */
+check(G34, 'the preview says on its face that it is a sample',
+  prevSrc.includes('Sample only · not a real transaction') && prevSrc.includes('PREVIEW ONLY'),
+  'a preview that looks like a real nota eventually gets printed and handed over as one');
 
 /* the four small parts this tab needed exist in CSS. Tailwind only emits a class it saw in source,
    and a class that exists in neither paints nothing — which looks like a transparent panel. */
