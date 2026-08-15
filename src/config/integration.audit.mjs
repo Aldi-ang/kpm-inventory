@@ -2506,11 +2506,27 @@ check(G37, 'the matrix carries no blue, no green, no slate, no rose', !offToken.
    `drop-shadow` glow. Lite Mode strips shadow AND colour — so in Lite Mode an allowed permission
    and a blocked one were the same glyph in the same colour. On a permissions grid that is not a
    cosmetic bug, it is a screen that cannot be read at all. */
+/* 🔀 A REAL SWITCH SINCE 2026-08-15, built from the video he recorded: *"i want u to make the
+   toggle button for the matric to be like this video, amber suit our system well"*. The state is
+   carried by the knob's POSITION — which survives Lite Mode, light mode, greyscale and a
+   colour-blind reader — with amber as the fill on top of it. Two lucide glyphs swapped in and out
+   could never have slid, and the slide is the half that does not depend on colour.
+   ⚠️ The glow behind the knob in his video is deliberately absent: it is a shadow, and shadow is
+   what made this exact grid unreadable in Lite Mode in the first place. */
 check(G37, 'an allowed permission is still obvious with colour stripped',
   !/drop-shadow/.test(mtx) &&
-  /\.kpm-toggle\[aria-pressed="true"\] \{[^}]*background: var\(--inset\)/.test(themeCss) &&
-  /\.kpm-toggle\[aria-pressed="true"\] \{[^}]*border-color: var\(--line-2\)/.test(themeCss),
+  !/\.kpm-sw[^{]*\{[^}]*box-shadow/.test(themeCss) &&
+  /\[aria-pressed="true"\] > \.kpm-sw::after \{ transform: translateX\(24px\)/.test(themeCss) &&
+  /\[aria-pressed="true"\] > \.kpm-sw::before \{ background: var\(--gold\)/.test(themeCss) &&
+  (mtx.match(/<span className="kpm-sw" aria-hidden="true" \/>/g) || []).length === 2,
   'colour alone cannot carry ON here: Lite Mode removes it and the grid becomes unreadable');
+/* the knob is taller than its track and proud of both ends — the detail in his video that makes
+   it read as a physical switch rather than a coloured bar. Numbers, so they cannot drift apart:
+   32 in a 26 track, offset -2, travelling 52 - 32 + 4. */
+check(G37, 'the knob overhangs its track the way his reference does',
+  /\.kpm-sw \{ position: relative; display: block; width: 52px; height: 26px/.test(themeCss) &&
+  /\.kpm-sw::after \{[\s\S]{0,120}?width: 32px; height: 32px/.test(themeCss),
+  'a knob that fits inside the track is a progress bar with a dot on it, not a switch');
 /* what is drawn and what is announced come from ONE attribute, so they cannot drift. On this
    screen a toggle that reads "on" to a screen reader while drawn off is a security bug. */
 check(G37, 'every permission toggle states its state to both eye and screen reader',

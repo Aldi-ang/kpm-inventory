@@ -2466,17 +2466,48 @@ html.lite-mode .kpm-title-rule { animation: none; width: 100%; }
   border-color: var(--line); border-bottom-color: var(--accent-edge); }
 .kpm-chips > button:focus-visible { outline: 2px solid var(--accent-edge); outline-offset: -3px; }
 
-/* one permission. Amber says ON, and the inset well says it again in material so the
-   answer survives Lite Mode. 44px because this is the most-tapped control in Settings. */
+/* one permission. The button is only the 44px target and the focus ring; the switch
+   inside it carries the state. */
 .kpm-toggle { display: inline-flex; align-items: center; justify-content: center;
-  min-width: 44px; min-height: 44px; cursor: pointer;
-  background: transparent; border: 1px solid transparent; color: var(--ink-dim); }
-.kpm-toggle[aria-pressed="true"] { background: var(--inset); border-color: var(--line-2);
-  color: var(--accent-ink); }
+  min-width: 44px; min-height: 44px; cursor: pointer; padding: 0;
+  background: transparent; border: 1px solid transparent; }
 .kpm-toggle:focus-visible { outline: 2px solid var(--accent-edge); outline-offset: -3px; }
+
+/* ---- THE SWITCH ------------------------------------------------------------
+   Built from the video he recorded, 2026-08-15: *"i want u to make the toggle
+   button for the matric to be like this video, amber suit our system well so use
+   it on this button as well"*. A filled pill, and a knob noticeably TALLER than
+   the track it rides in, overhanging it top and bottom — that overhang is the
+   detail that makes it read as a physical switch rather than a coloured bar.
+
+   ⚠️ ONE THING FROM THE VIDEO IS DELIBERATELY NOT HERE: the glow behind the knob.
+   It is a shadow, and shadow is banned system-wide because Lite Mode strips it —
+   this exact grid was unreadable in Lite Mode until an hour ago for precisely
+   that reason, every "allowed" being a glow. Nothing is lost: the knob's POSITION
+   is the answer, and position survives every mode, every theme, and greyscale.
+
+   Amber is the fill, which is what he asked for and what the rationing law already
+   says — amber marks the STATE. It is a background here, never text, so the
+   readable-token rule in group 32 is untouched. */
+.kpm-sw { position: relative; display: block; width: 52px; height: 26px; flex: none; }
+/* the track */
+.kpm-sw::before { content: ''; position: absolute; inset: 0; border-radius: 999px;
+  background: var(--inset); border: 1px solid var(--line-3);
+  transition: background 220ms cubic-bezier(.22, 1, .36, 1), border-color 220ms ease-out; }
+/* the knob. 32 tall in a 26 track = 3px proud on each edge, and 2px proud at each end. */
+.kpm-sw::after { content: ''; position: absolute; top: 50%; left: -2px;
+  width: 32px; height: 32px; margin-top: -16px; border-radius: 50%;
+  background: var(--ink-muted); border: 1px solid var(--line-3);
+  transition: transform 260ms cubic-bezier(.22, 1, .36, 1), background 220ms ease-out; }
+[aria-pressed="true"] > .kpm-sw::before { background: var(--gold); border-color: var(--accent-edge); }
+/* 52 - 32 + 4 = 24, so the knob ends 2px proud of the far end exactly as it starts */
+[aria-pressed="true"] > .kpm-sw::after { transform: translateX(24px); background: var(--ink); }
 @media (hover: hover) and (pointer: fine) {
-  .kpm-toggle:hover { color: var(--ink); border-color: var(--line-2); }
+  .kpm-toggle:hover > .kpm-sw::after { background: var(--ink); }
+  .kpm-toggle:hover > .kpm-sw::before { border-color: var(--accent-edge); }
 }
+/* the press. Not a scale on the button — that would drag the whole 44px target with it. */
+.kpm-toggle:active > .kpm-sw::after { width: 34px; height: 34px; margin-top: -17px; }
 
 .kpm-matrix { width: 100%; border-collapse: collapse; min-width: 800px; user-select: none;
   text-align: left; }

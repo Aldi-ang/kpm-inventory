@@ -1608,10 +1608,13 @@ const PermissionMatrixEditor = ({ db, appId, userRole, userId }) => {
                                             {/* aria-pressed is the state for BOTH the CSS and a screen reader, so
                                                 what is drawn and what is announced cannot disagree — on a
                                                 permissions grid that pair going out of step is a security bug */}
+                                            {/* the switch is drawn in CSS, not by an icon swap: two different
+                                                glyphs cannot slide into one another, and the SLIDE is what
+                                                makes the state readable without colour */}
                                             <button type="button" className="kpm-toggle" aria-pressed={hasAccess}
                                                 aria-label={`${feature.label}: ${hasAccess ? 'allowed' : 'blocked'}`}
                                                 onClick={() => togglePermission(activeTier.id, feature.id)}>
-                                                {hasAccess ? <ToggleRight size={24}/> : <ToggleLeft size={24}/>}
+                                                <span className="kpm-sw" aria-hidden="true" />
                                             </button>
                                         </div>
                                         {/* 🚀 CUSTOMER DIRECTORY ACCESS: sits right after the Customers toggle */}
@@ -1706,7 +1709,7 @@ const PermissionMatrixEditor = ({ db, appId, userRole, userId }) => {
                                                 <button type="button" className="kpm-toggle" aria-pressed={hasAccess}
                                                     aria-label={`${feature.label} for ${tier.label}: ${hasAccess ? 'allowed' : 'blocked'}`}
                                                     onClick={() => togglePermission(tier.id, feature.id)}>
-                                                    {hasAccess ? <ToggleRight size={28}/> : <ToggleLeft size={28}/>}
+                                                    <span className="kpm-sw" aria-hidden="true" />
                                                 </button>
                                             </td>
                                         );
