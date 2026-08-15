@@ -2305,7 +2305,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                         </div>
                                         <div className="text-left lg:text-right lg:w-auto lg:mt-0 lg:pt-0 lg:border-none">
                                             <span className="hidden lg:block text-[11px] text-[var(--duke-ink-6)] font-bold uppercase tracking-widest mb-1">Ecer Price</span>
-                                            <span className="text-[15px] lg:text-2xl font-black text-[var(--duke-amber-ink)] lg:text-[var(--duke-price-ink)] leading-none drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">{new Intl.NumberFormat('id-ID', { notation: 'compact', maximumFractionDigits: 1 }).format(item.priceEcer || 0)}</span>
+                                            <span className="text-[15px] lg:text-2xl font-black text-[var(--duke-amber-ink)] lg:text-[var(--duke-price-ink)] leading-none drop-shadow-[0_2px_4px_var(--duke-text-shade)]">{new Intl.NumberFormat('id-ID', { notation: 'compact', maximumFractionDigits: 1 }).format(item.priceEcer || 0)}</span>
                                         </div>
                                     </div>
                                 </div>
