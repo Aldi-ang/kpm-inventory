@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-15 08:09 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
+**Updated: 2026-08-15 08:55 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -39,11 +39,11 @@ order:
 
 ## ❓ WAITING ON ALDI — verbatim, do not paraphrase
 
-- ✅ **TEST — the phone's duplicate corner icon.** Fixed and committed (`3a9e4c5`); **he says it is
-  STILL THERE**. The dev server was fetched live at 08:20 and IS serving both `display: none`
-  rules, so the code is right and his phone is showing cached CSS. Waiting on a forced reload.
-  ⚠️ If it survives a genuinely fresh load, the element is NOT `.kpm-rail-totem` and the whole
-  diagnosis restarts — find what else paints the active tab's icon on a phone.
+- ✅ **TEST — the 5-minute grace period, FIXED and committed.** It had never worked once. Unlock the
+  vault, close Safari, reopen within 5 minutes: it should go straight in with no PIN. Then lock it
+  by hand and confirm it does NOT let you back in — that half must still work.
+- ⚠️ **`src/utils/vaultGrace.js` IS NOT ON `main`.** The grace period has never been deployed, so
+  it does not exist on the Vercel app he actually uses. Nothing to debug there — it needs merging.
 - ✅ **TEST — the logout word is now "Exit", not "LOG OUT".** Arithmetic forced it (32px available,
   52px needed). He has not given a verdict. The alternative, offered and unanswered: put logout on
   the same slide-out plate as every other mark, which keeps "Log out" in full.
@@ -69,6 +69,32 @@ order:
 - ✅ **The Firebase authorized domain is DONE** — *"already"*. `192.168.1.109` can sign in.
 
 ## 📓 LOG — newest first, about five entries; `git log` keeps the rest
+
+### 2026-08-15 08:55 (KPM app session) — the grace period unlocked the vault behind a curtain it never raised
+
+**376/376.** His report: *"grace period is not working on my phone, i just close the safari and it
+force me to login"* — master PIN screen, LAN address, iPhone Safari.
+
+🔴 **It had NEVER worked, on any device, and the reason is one missing line.** The gate has TWO
+pieces of state. The system-owner branch of the auth handler sets **`setShowAdminLogin(true)` on
+every cold load** (`App.jsx` ~2155) and the app renders only under `{user && !showAdminLogin}`. The
+restore raised `isAdmin` and stopped — so a perfectly valid grace session sat behind a modal that
+only `handleAdminAuthSuccess` knew how to close. **The door was unlocked and the curtain was down**,
+which from his side is identical to the feature not existing.
+🔑 **Anything that opens the vault must do BOTH, exactly as `handleAdminAuthSuccess` does.** Check.
+
+Also removed the one-shot `graceRestoreTried` ref and the blanket `clearGrace()` it guarded: the
+auth handler asserts `setIsAdmin(false)` on **every** load and can fire twice, and on that second
+assert the effect deleted a still-valid record. A ref cannot tell a deliberate lock from a cold
+load; `handleAdminLogout` can, so it clears now. That is the only `setIsAdmin(false)` of the eight
+that means *"keep it locked"*.
+
+⚠️ **`vaultGrace.selfcheck.mjs` was GREEN through all of this** — it covers the pure `graceIsValid`
+maths and nothing that touches the screen. **A green self-check over the pure half of a feature
+says nothing about the half that renders.** The integration audit had zero checks on grace; it has
+two now. **When a feature has a self-check, ask what the self-check cannot see.**
+
+⚠️ **`src/utils/vaultGrace.js` does not exist on `main`** — the feature has never been deployed.
 
 ### 2026-08-15 08:09 (KPM app session) — the phone was printing the active icon twice, and biometric was never a Firebase problem
 
