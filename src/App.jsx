@@ -3626,7 +3626,10 @@ const handleGitHubMirror = async () => {
           half of why it read as a vault rather than an overlay. Dropping backdrop-blur with it
           is free — there is nothing left to blur. */}
       {showAdminLogin && (
-        <div className="fixed inset-0 z-[9999] bg-[var(--duke-well-solid)] flex items-center justify-center p-4 font-mono">
+        /* `kpm-dark-island` is not decoration — it is what keeps this screen black. See the block
+           of the same name in theme.css: the gate is a THEME ISLAND, because a card that is
+           near-black in both themes cannot be painted with inks that flip. */
+        <div className="kpm-dark-island fixed inset-0 z-[9999] bg-[var(--duke-well-solid)] flex items-center justify-center p-4 font-mono">
           {/* The dot field is the gate's background for ALL FIVE modes, not just the unlock:
               dark until the pointer — or a finger press, phones have no hover — reveals it.
               On unlock the card collapses and the same field carries his name.
@@ -3867,7 +3870,7 @@ const handleGitHubMirror = async () => {
         <>
         {/* 🚀 THE HARD STOP: Blocks any email not found in the KPM Employee Directory */}
         {userRole === 'UNAUTHORIZED' ? (
-            <div className="fixed inset-0 z-[9999] bg-[var(--duke-scrim-hi)] flex flex-col items-center justify-center text-center p-6 font-mono">
+            <div className="kpm-dark-island fixed inset-0 z-[9999] bg-[var(--duke-scrim-hi)] flex flex-col items-center justify-center text-center p-6 font-mono">
                 <ShieldAlert size={64} className="text-red-600 mb-6 animate-pulse" />
                 <h2 className="text-3xl font-black text-[var(--duke-ink-hi)] uppercase tracking-[0.25em] mb-2">Access Denied</h2>
                 <p className="text-[var(--duke-ink-3)] text-xs font-bold uppercase tracking-widest max-w-md leading-relaxed mb-8">
@@ -3881,7 +3884,7 @@ const handleGitHubMirror = async () => {
             // 🚀 THE FIX: An honest, DIFFERENT message from Access Denied — this fires
             // only when we genuinely couldn't check (offline, and this device has never
             // cached this account before), never when the server actually said no.
-            <div className="fixed inset-0 z-[9999] bg-[var(--duke-scrim-hi)] flex flex-col items-center justify-center text-center p-6 font-mono">
+            <div className="kpm-dark-island fixed inset-0 z-[9999] bg-[var(--duke-scrim-hi)] flex flex-col items-center justify-center text-center p-6 font-mono">
                 <CloudOff size={64} className="text-amber-500 mb-6 animate-pulse" />
                 <h2 className="text-3xl font-black text-[var(--duke-ink-hi)] uppercase tracking-[0.25em] mb-2">Can't Verify You Yet</h2>
                 <p className="text-[var(--duke-ink-3)] text-xs font-bold uppercase tracking-widest max-w-md leading-relaxed mb-8">

@@ -2831,10 +2831,15 @@ check(G39, 'no ink token is painted as a surface, and no edge token as anything 
    is that the accent inks are SEPARATE tokens that actually change between themes; the number
    itself belongs to contrast.selfcheck.mjs, which measures rather than remembers. */
 const dukeAccentInks = ['duke-amber-ink', 'duke-brass-ink', 'duke-danger-ink'];
+/* ⚠️ SCOPED TO THE `:root` BLOCKS, NOT THE WHOLE FILE. The first spelling counted declarations
+   across all of theme.css and asserted there were exactly two — which was the same statement as
+   "one per theme" right up until group 41 added `.kpm-dark-island`, a THIRD declaration that is
+   deliberately a copy of the dark one. The claim was always about the two THEME blocks. */
+const themeRoots = [...themeCss.matchAll(/(^|\n):root[^{]*\{([^}]*)\}/g)].map(m => m[2]).join('\n');
 check(G39, 'the amber, brass and red each kept their own ink, and each one changes theme',
   dukeAccentInks.every(t => new RegExp(`text-\\[var\\(--${t}\\)\\]`).test(duke)) &&
   dukeAccentInks.every(t => {
-    const v = [...themeCss.matchAll(new RegExp(`--${t}:\\s*(#[0-9a-f]{6})`, 'g'))].map(m => m[1]);
+    const v = [...themeRoots.matchAll(new RegExp(`--${t}:\\s*(#[0-9a-f]{6})`, 'g'))].map(m => m[1]);
     return v.length === 2 && v[0] !== v[1];
   }),
   'gold and red as text are the two he has reported unreadable in light mode — group 32 again');
@@ -2908,6 +2913,44 @@ for (const m of app.matchAll(/([a-z-]+)-\[var\(--([a-z0-9-]+)\)\]/g)) {
 }
 check(G40, 'the shell crosses no role either', !appCrossed.length,
   'crossed roles: ' + [...new Set(appCrossed)].join(' '));
+
+/* ── 41. the screens that stay dark in both themes ───────────────────────────
+   🔴 HIS SCREENSHOT, 2026-08-16: *"light mode or not, login background should not change like
+   this should stay black"*. The vault gate's backdrop was `--duke-well-solid`, which flips to
+   cream, so the vault stage became a sheet of paper. The comment sitting directly above that
+   line already said the point of it was SOLID BLACK — the token flipped out from under a stated
+   intent, which is the failure mode a token system has that a literal does not.
+   ⚠️ THE BACKGROUND WAS THE HALF HE COULD SEE. All seventeen tokens inside that gate flip, so
+   on a card that is near-black in BOTH themes every ink went near-black too. Same for the two
+   full-screen stop screens (Access Denied, Can't Verify You Yet), which sit on a scrim that is
+   dark in both themes and were printing light-mode ink on it.
+   The fix is a THEME ISLAND rather than 40 individual conversions: the subtree re-declares the
+   tokens it uses back to their dark values, so anything added inside it later is correct for
+   free. This group is what stops the island drifting from the dark block it copies. */
+const G41 = '41. A screen that stays dark keeps dark ink';
+const island = (themeCss.match(/\.kpm-dark-island\s*\{([^}]*)\}/) || [, ''])[1];
+/* the bare `:root` blocks are the dark ones; `:root.light` and `:root.dark` are selector lists */
+const darkBlocks = [...themeCss.matchAll(/(^|\n):root\s*\{([^}]*)\}/g)].map(m => m[2]).join('\n');
+const islandToks = [...island.matchAll(/(--[a-z0-9-]+):\s*([^;]+);/g)].map(m => [m[1], m[2].trim()]);
+const drifted = islandToks.filter(([t, v]) => {
+  const m = darkBlocks.match(new RegExp(t + ':\\s*([^;]+);'));
+  return !m || m[1].trim() !== v;
+});
+check(G41, 'every island token is EXACTLY its dark-mode value', islandToks.length > 15 && !drifted.length,
+  'copied by hand and now stale: ' + drifted.map(([t, v]) => `${t}=${v}`).join(' ') +
+  ' — an island that has drifted is a screen painted in colours that exist nowhere else');
+/* an overlay that covers the whole viewport has no themed page behind it to agree with, so it
+   is its own world; if it is dark it must carry the island or its ink flips out from under it */
+const stops = [...app.matchAll(/className="([^"]*fixed inset-0 z-\[9999\][^"]*)"/g)].map(m => m[1]);
+const unislanded = stops.filter(c => /bg-\[var\(--duke-(well-solid|scrim|scrim-hi)\)\]/.test(c) &&
+                                     !/kpm-dark-island/.test(c));
+check(G41, 'every full-screen dark stop screen is an island', stops.length >= 3 && !unislanded.length,
+  'not islanded: ' + unislanded.join(' | '));
+/* the gate card is a literal near-black in BOTH themes — that is WHY the island exists, and a
+   later "tidy-up" that tokenised it would quietly reintroduce the flip */
+check(G41, 'the gate card is still a literal that cannot flip',
+  /bg-\[rgba\(4,3,2,0\.9\)\]/.test(app) && /\.kpm-mod\.gate\s*\{[^}]*background:\s*rgba\(4, 3, 2, \.9\)/.test(themeCss),
+  'the two gate screens share one card colour, and it is deliberately not a token');
 
 /* ── report ──────────────────────────────────────────────────────────────── */
 let last = '';

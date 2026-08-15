@@ -3092,6 +3092,45 @@ html.lite-mode .kpm-mod.arrive { animation: none; }
   font-family: var(--font-mono); color: #f7e9c8; }
 @media (min-width: 768px) { .kpm-mod.gate { max-width: 384px; padding: 32px; } }
 
+/* ---- THE VAULT GATE IS A THEME ISLAND -------------------------------------------------------
+   🔴 HIS SCREENSHOT, 2026-08-16: *"light mode or not, login background should not change like
+   this should stay black"*. The gate's backdrop was `--duke-well-solid`, which flips to cream —
+   so the vault stage became a sheet of paper with a dark card floating on it, and the comment
+   sitting directly above that line in App.jsx already said the whole point was SOLID BLACK.
+
+   ⚠️ THE BACKGROUND WAS ONLY THE HALF HE COULD SEE. Every one of the seventeen tokens inside
+   that gate flips — the inks, the rust hairline, the amber, the veils. On a card that is
+   near-black in BOTH themes, a light-mode ink is near-black text on a near-black card. Look at
+   his screenshot again: MASTER VAULT, the button label, "Lost your key?" are all barely there.
+
+   So the gate does not get converted site by site. It re-declares the tokens it uses back to
+   their DARK values for the whole subtree, and anything added inside it later is dark-correct
+   without anyone remembering this rule. Same idea as `.kpm-mod.gate` printing literal hexes,
+   generalised — and unlike the literals, this one keeps working when a token's value moves.
+   ⚠️ Values are copied from the dark `:root` blocks above. A check holds them equal. */
+.kpm-dark-island {
+  --duke-well-solid:   #000000;
+  --duke-scrim-hi:     rgba(0, 0, 0, .95);
+  --duke-fill-panel:   #26211c;
+  --duke-ink-hi:       #ffffff;
+  --duke-ink-2:        #a89070;
+  --duke-ink-3:        #a08768;
+  --duke-edge-1:       #3e3226;
+  --duke-edge-2:       #7d6a48;
+  --duke-amber:        #ff9d00;
+  --duke-amber-edge:   #ff9d00;
+  --duke-amber-ink:    #ff9d00;
+  --shell-ink:         #f0e2c0;
+  --shell-ink-2:       #f7e9c8;
+  --shell-ink-3:       #8a7048;
+  --shell-orange:      #e7700f;
+  --shell-orange-edge: #e7700f;
+  --shell-orange-ink:  #e7700f;
+  --duke-veil:         rgba(255, 255, 255, .05);
+  --duke-veil-2:       rgba(255, 255, 255, .10);
+  --duke-veil-edge:    rgba(255, 255, 255, .10);
+}
+
 /* ---- and the FORMAT, not only the colour. His follow-up the same night: the middle panel
    should have *"the same color theme of our panel inside vault gate as well, and similar
    format"*. The gate's panel is ONE CENTRED COLUMN in mono — an eyebrow, a title, the control —
