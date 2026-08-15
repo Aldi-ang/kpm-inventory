@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-15 10:15 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
+**Updated: 2026-08-15 10:25 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -99,9 +99,17 @@ order:
   both halves 2026-08-15: **(a) delete the thumbnail — DONE, `121de10`. (b) is NOT started**, and
   it is the one thing owed him. His words: *"i want the mascott to show up for 5 second when the
   slider for the mascot size is moved"* + *"just the idle animation"*.
-  **EVERYTHING NEEDED IS ALREADY TRACED — do not re-derive it, it cost half a turn:**
-  1. `CapybaraMascot` renders in **`App.jsx:4503`**, gated `user && !showAdminLogin` — **always on
-     screen in Settings already**, so "show up" means make it NOTICEABLE, not mount it.
+  🔴 **CORRECTION — MY OWN ASSUMPTION BELOW WAS WRONG, AND HE DISPROVED IT.** He reported, after
+  the thumbnail was deleted: ***"slider moved but mascot still not showing btw"***. I had written
+  that the mascot is "already on screen in Settings", reasoning only from the render gate at
+  `App.jsx:4503`. **A render gate being open does not mean the thing is visible** — it can be
+  behind the settings panel, off-viewport, z-indexed under the shell, or self-hiding inside
+  `CapybaraMascot`. **START BY FINDING OUT WHY IT IS NOT VISIBLE ON THIS SCREEN**, not by adding a
+  peek prop; a 5-second reveal of something that renders behind a panel reveals nothing.
+  ⚠️ This is the third time this week that reasoning from source beat looking, and lost.
+  **EVERYTHING ELSE BELOW IS TRACED AND STILL GOOD — do not re-derive it:**
+  1. `CapybaraMascot` renders in **`App.jsx:4503`**, gated `user && !showAdminLogin`. That gate is
+     OPEN in Settings — so the reason he cannot see it is downstream of the gate.
   2. Signature: **`CapybaraMascot.jsx:33`** — `{ isDiscoMode, message, messages, onClick,
      staticImageSrc, user, scale }`. The scaling wrapper is **line 302**, a fixed-corner div with
      `transition-transform duration-300` and `transform: scale(...)`.
@@ -113,6 +121,18 @@ order:
   wrapper. The slider lives in `SettingsView` Mascot · 01, so the setter has to be threaded down
   the same way `triggerCapy` already is. ⚠️ Dragging fires `onChange` continuously — **debounce to
   one 5s window that restarts on the last move**, or it will re-trigger dozens of times.
+- ▶ **BRING THE MASCOT PICTURE BACK — he reversed himself, with a reason.** Verbatim, 2026-08-15:
+  *"i forgot to tell, we might need this mascot photo for our watermark in our A4 printable
+  receipt, so bring that back after quota reset"*. He asked for the thumbnail's deletion an hour
+  earlier; **this supersedes that**, and `git revert 121de10` is most of the job.
+  ✅ **NOTHING WAS LOST — the picture itself was never deleted.** Only the 96px preview `<img>`
+  went; the image still lives in **`appSettings.mascotImage`** (Firestore, `settings/general`) and
+  `handleMascotSelect` was never touched. Reassure him of that before he worries.
+  ⚠️ **The watermark belongs to the PRINT BLOCK, which is NOT app UI.** The nota keeps KPM's
+  company blue and the palette law stops at its edge — so a watermark there must NOT be dragged
+  onto the amber/cream tokens. It is also a different problem from the Settings preview: a print
+  watermark needs low opacity, a size that survives A4 at 96dpi, and `hide-on-print`'s inverse.
+  **Ask what he wants first — a faint full-page watermark, or a small corner mark on the nota.**
 - ✅ **The logout word is "Exit" — HE CHOSE TO KEEP IT** (2026-08-15). Closed, do not re-offer.
 
 **ANSWERED 2026-08-15, do not re-ask:**
