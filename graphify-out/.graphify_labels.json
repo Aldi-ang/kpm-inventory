@@ -44,14 +44,9 @@
   "42": "check",
   "43": "🔴 LOG 00:37 WIB — superseded: 4 blockers found, now all fixed.",
   "44": "✅ LOG 08:36 WIB — the rules question is ANSWERED, and G6 is HALF done. One question owed.",
-  "45": "✅ LOG 07:24 WIB — round 2 produced NO report. Two bugs found by hand, fixed, vault committed.",
-  "46": "✅ 13:20 — THE FREEZE'S BIGGEST CAUSE IS FIXED. ~100 outlets was the number that decided it.",
-  "47": "✅ LOG 01:05 WIB — ALL 15 FIXED. Lancelot.gs is ready to paste (1511 lines, 43 checks).",
   "48": "customerBrief.selfcheck.mjs",
   "49": "dayStats.selfcheck.mjs",
   "50": "MerchantSalesView.jsx",
   "51": "dayStats.selfcheck.mjs",
-  "52": "VaultGate.jsx",
-  "53": "🔴 LOG 08:02 WIB — superseded by the 13:20 log. Tab audit's report died; findings salvaged since.",
-  "54": "✅ LOG 2026-08-14 06:25 WIB — drawer gone while signed out, panel in the gate's FORMAT. 358/358. (KPM app session)"
+  "52": "VaultGate.jsx"
 }

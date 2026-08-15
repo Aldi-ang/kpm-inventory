@@ -50,8 +50,8 @@
     "semantic_hash": ""
   },
   "src/App.jsx": {
-    "mtime": 1786667335.2088547,
-    "ast_hash": "54299d03417ae19005a3c9ae530c48ca",
+    "mtime": 1786820803.4463773,
+    "ast_hash": "925c082185155ed42ea6f0f1a22d81f3",
     "semantic_hash": ""
   },
   "src/ConsignmentFinanceView.jsx": {
@@ -85,8 +85,8 @@
     "semantic_hash": ""
   },
   "src/MerchantSalesView.jsx": {
-    "mtime": 1786603866.5236862,
-    "ast_hash": "382ab373f2be3a96b08b03b347400345",
+    "mtime": 1786802382.908441,
+    "ast_hash": "9fe255ef18f0bfe7b4d5328f292debdf",
     "semantic_hash": ""
   },
   "src/MusicPlayer.jsx": {
@@ -110,8 +110,8 @@
     "semantic_hash": ""
   },
   "src/components/BiohazardTheme.jsx": {
-    "mtime": 1786704021.8299084,
-    "ast_hash": "d306a506bb65b8a4b36ce818bed566fd",
+    "mtime": 1786734780.0835786,
+    "ast_hash": "eeb38cf9361765bbe5b3ca74c07981e2",
     "semantic_hash": ""
   },
   "src/components/BranchWarehouseManager.jsx": {
@@ -120,8 +120,8 @@
     "semantic_hash": ""
   },
   "src/components/CapybaraMascot.jsx": {
-    "mtime": 1786582080.1937292,
-    "ast_hash": "632cdfee02da52e6dcd009c095fb66c7",
+    "mtime": 1786785517.559153,
+    "ast_hash": "7c2fe167bdca23146796105da2eb1162",
     "semantic_hash": ""
   },
   "src/components/CrownTransferProtocol.jsx": {
@@ -150,8 +150,8 @@
     "semantic_hash": ""
   },
   "src/components/HistoryReportView.jsx": {
-    "mtime": 1786557237.985023,
-    "ast_hash": "c1ea5896c2611485bc1174c6d72d19a7",
+    "mtime": 1786787801.9162555,
+    "ast_hash": "151a13ec5bc21477e1b5775ab94b3d0b",
     "semantic_hash": ""
   },
   "src/components/ImageCropper.jsx": {
@@ -185,8 +185,8 @@
     "semantic_hash": ""
   },
   "src/components/SettingsView.jsx": {
-    "mtime": 1786621172.0625966,
-    "ast_hash": "da86ae67494c48b9b674fb7663567a72",
+    "mtime": 1786820803.448377,
+    "ast_hash": "c91fc2d72c32787d27e9be2b738a13a4",
     "semantic_hash": ""
   },
   "src/config/firebase.js": {
@@ -265,8 +265,8 @@
     "semantic_hash": ""
   },
   "index.html": {
-    "mtime": 1786556906.2043946,
-    "ast_hash": "c0a0c675db650d1f7b7bf039d2461664",
+    "mtime": 1786798031.2170117,
+    "ast_hash": "19ee523c84abf2d1f45a8a6cb39cac0f",
     "semantic_hash": ""
   },
   "public/apple-touch-icon.png": {
@@ -540,8 +540,8 @@
     "semantic_hash": ""
   },
   "src/config/integration.audit.mjs": {
-    "mtime": 1786704232.5314257,
-    "ast_hash": "aca4a28d101c1c89690149fe5a311436",
+    "mtime": 1786825015.198543,
+    "ast_hash": "72b27a822a3e5ab7ae593ad3ae7d5061",
     "semantic_hash": ""
   },
   "src/config/nextStop.selfcheck.mjs": {
@@ -570,8 +570,8 @@
     "semantic_hash": ""
   },
   ".claude/PROGRESS.md": {
-    "mtime": 1786704355.905095,
-    "ast_hash": "e1f3ad5c9f02c378ee6c486d2f55d7ee",
+    "mtime": 1786825655.9356103,
+    "ast_hash": "8144f5b05b4d743efd2a7d01f50d5bde",
     "semantic_hash": ""
   },
   ".claude/pre-compact-context.md": {
@@ -675,8 +675,48 @@
     "semantic_hash": ""
   },
   "src/config/contrast.selfcheck.mjs": {
-    "mtime": 1786621615.645538,
-    "ast_hash": "362b9c5372419ebca227b63da7175f5c",
+    "mtime": 1786803237.6387844,
+    "ast_hash": "be28d6589f087361d4dc5143be0f487e",
+    "semantic_hash": ""
+  },
+  "src/components/AuthoritySelect.jsx": {
+    "mtime": 1786797310.8306484,
+    "ast_hash": "fd76bd44a692e72fe8814c1bf27567db",
+    "semantic_hash": ""
+  },
+  "src/components/HoldButton.jsx": {
+    "mtime": 1786762572.628568,
+    "ast_hash": "7a9d728cf45fd7deb9b28af1ad8618b1",
+    "semantic_hash": ""
+  },
+  "src/components/ReceiptPreview.jsx": {
+    "mtime": 1786791686.3959951,
+    "ast_hash": "375f2e0e606684fc14e20827e5214547",
+    "semantic_hash": ""
+  },
+  "src/config/receiptWatermark.js": {
+    "mtime": 1786787773.7502139,
+    "ast_hash": "44ca6c9c1734d373152d5277c10b4898",
+    "semantic_hash": ""
+  },
+  "src/config/theme.grounds.mjs": {
+    "mtime": 1786820937.2721796,
+    "ast_hash": "cb4aaae1757f4547199e4e6c483b24b6",
+    "semantic_hash": ""
+  },
+  "tools/make-preview.mjs": {
+    "mtime": 1786825097.0132952,
+    "ast_hash": "a2a8f5794ed2d48d10e8d4110639a8fa",
+    "semantic_hash": ""
+  },
+  "tools/theme-lab-server.mjs": {
+    "mtime": 1786822518.8517911,
+    "ast_hash": "2b4df8e4146e793cd128cde5d380218a",
+    "semantic_hash": ""
+  },
+  "tools/theme-lab.html": {
+    "mtime": 1786824792.6109772,
+    "ast_hash": "b70bc68589980a4a5e07064ad4610318",
     "semantic_hash": ""
   }
 }
