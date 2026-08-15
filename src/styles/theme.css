@@ -194,7 +194,15 @@ html.light {
   /* ...but gold AS TEXT and gold AS A BORDER must darken here, or they measure 1,19:1 and 1,19:1
      against the steel and vanish — which is exactly what he reported. Measured on --raised:
      accent-ink 7,4:1, accent-edge 5,2:1, danger-ink 6,0:1. */
-  --accent-ink:    #6B4A05;
+  /* ⚠️ #6B4A05 UNTIL 2026-08-16, AND IT MEASURED 3,73:1 ON THE STEEL GROUND. His report, with a
+     screenshot: *"reset indicator button and lock terminal also looks so dark in light mode"*.
+     Reset Indicators was fine at 5,48 and only looked wrong because the page behind it was still
+     black; LOCK TERMINAL was genuinely failing, and it is the one control on that row that acts.
+     ⚠️ MEASURED IN THE BROWSER, NOT REASONED ABOUT — see tools/theme-lab.html. #4F3603 clears
+     4,5:1 on every surface this ink is actually printed on (ground 5,22 · panel 6,36 · raised
+     7,20 · inset 4,82) and is the last step down that still reads as GOLD rather than brown.
+     Its dark twin does not move: #D08A2E stays 6,97:1 on the dark ground. */
+  --accent-ink:    #4F3603;
   --accent-edge:   #7A5A12;
   --danger-ink:    #611A14;   /* darkened 2026-08-13: #7E2A22 measured 4,00:1 on --inset */
 

@@ -1,0 +1,145 @@
+<!doctype html>
+<!-- THEME LAB — the app's real stylesheet, no login, no HTTPS, no Firebase.
+     ============================================================================================
+     🔴 WHY THIS EXISTS. Every colour decision on this project has been made blind. The dev server
+     is HTTPS with a self-signed certificate (deliberately — Aldi's phone needs a secure context
+     for crypto.subtle) and the in-app browser refuses it, and the app itself needs a Google
+     sign-in before any screen renders. So no frame of this app had EVER been captured here, and
+     "it should look right" was doing the work that looking should have done. His words, after the
+     third wrong claim in a row: *"if the browser is broken then fix it until u can see it"*.
+
+     ⚠️ IT LINKS THE BUILT STYLESHEET, NOT A COPY. Serve it with tools/theme-lab-server.mjs, which
+     substitutes the real hashed filename out of dist/assets. Every token, every class and every
+     contrast here is the same CSS the app ships, so what this page shows is what the app does.
+     Run `npm run build` first; a stale dist is a stale lab.
+
+     The markup mirrors what he photographed: the glass header, the Command Center head, the tab
+     list, and a module. Classes only — nothing here invents a style. -->
+<html lang="en" class="kpm-cursor light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>KPM Theme Lab</title>
+    <link rel="stylesheet" href="__CSS__" />
+    <style>
+      /* the lab's own chrome, kept visually apart from anything the app owns */
+      .lab-bar { position: fixed; right: 12px; bottom: 12px; z-index: 99999;
+                 font: 600 11px/1 ui-monospace, monospace; display: flex; gap: 6px; }
+      .lab-bar button { padding: 8px 12px; border: 1px solid #888; background: #222; color: #fff;
+                        cursor: pointer; border-radius: 4px; }
+      .lab-note { font: 600 10px/1.6 ui-monospace, monospace; letter-spacing: .18em;
+                  text-transform: uppercase; opacity: .55; margin: 26px 0 8px; }
+    </style>
+  </head>
+  <body>
+    <div style="min-height:100vh">
+
+      <!-- THE GLASS HEADER. It paints no colour of its own; it blurs the page behind it. -->
+      <header class="kpm-topbar" style="display:flex;align-items:center;justify-content:space-between">
+        <div>
+          <div class="kpm-topbar-eyebrow">System active</div>
+          <div class="kpm-topbar-title">Settings</div>
+        </div>
+        <div style="display:flex;gap:10px;align-items:center">
+          <span class="kpm-chip">Synced</span>
+          <span class="kpm-chip on">02:18 AM</span>
+        </div>
+      </header>
+
+      <div style="max-width:1180px;margin:0 auto;padding:0 24px 80px">
+
+        <p class="lab-note">the command center head — sc2</p>
+        <div class="kpm-cmd">
+          <div>
+            <h2>Command Center</h2>
+            <p class="clearance tier1">Clearance: Tier 1 (Overseer)</p>
+          </div>
+          <div class="kpm-acts">
+            <button type="button" class="kpm-btn">Reset indicators</button>
+            <button type="button" class="kpm-btn key">Lock terminal</button>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:32px;align-items:flex-start">
+
+          <p class="lab-note" style="display:none"></p>
+          <!-- THE TAB LIST — sc1 -->
+          <div class="kpm-nav" style="width:224px;flex:none">
+            <button type="button" aria-current="page">General &amp; brand</button>
+            <button type="button">Tiers &amp; logic</button>
+            <button type="button">Security &amp; data</button>
+            <button type="button" class="tier1">Architect (Tier 1)</button>
+          </div>
+
+          <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:24px">
+            <section class="kpm-band">
+              <span class="slot">This device &middot; nothing here leaves the phone</span>
+            </section>
+            <section class="kpm-mod">
+              <div class="kpm-head">
+                <span class="slot">Device &middot; 01</span>
+                <h3>Graphics</h3>
+              </div>
+              <p class="kpm-desc">
+                <b>Lite</b> drops blur, animation and the heavy effects so a cheap phone stays
+                quick and the battery lasts. Nothing is hidden and no data changes.
+              </p>
+              <div class="kpm-shelf split">
+                <div class="kpm-matrix two">
+                  <button type="button" class="on">Full</button>
+                  <button type="button">Lite</button>
+                </div>
+              </div>
+            </section>
+
+            <section class="kpm-mod">
+              <div class="kpm-head">
+                <span class="slot">Company &middot; 01</span>
+                <h3>Letterhead</h3>
+              </div>
+              <p class="kpm-desc">The name, address and number printed at the top of every nota.</p>
+              <div class="kpm-shelf">
+                <label class="kpm-field">
+                  <span>Company name</span>
+                  <input type="text" value="KPM Inventory" />
+                </label>
+                <label class="kpm-field">
+                  <span>Official address</span>
+                  <input type="text" placeholder="Jl. Jendral Sudirman No.129, Jakarta" />
+                </label>
+              </div>
+              <div class="kpm-shelf split">
+                <div class="kpm-acts">
+                  <button type="button" class="kpm-btn key">Save letterhead</button>
+                </div>
+              </div>
+            </section>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="lab-bar">
+      <button onclick="document.documentElement.className='kpm-cursor light'">light</button>
+      <button onclick="document.documentElement.className='kpm-cursor dark'">dark</button>
+      <button onclick="document.documentElement.classList.toggle('lite-mode')">lite</button>
+    </div>
+
+    <script>
+      /* ⚠️ A LAB THAT MEASURES NOTHING MUST NOT LOOK LIKE A LAB THAT FOUND NOTHING.
+         This happened on the day the file was written: a rebuild changed the stylesheet's hash,
+         the <link> 404'd, and a full contrast sweep came back "no failures" in both themes with
+         identical numbers — because every element was rendering at the browser default. The
+         numbers were real; they just were not about this app. So the page proves the stylesheet
+         arrived before anyone is allowed to trust a reading from it. */
+      window.LAB_READY = !!getComputedStyle(document.documentElement)
+        .getPropertyValue('--ground').trim();
+      if (!window.LAB_READY) {
+        document.body.innerHTML =
+          '<pre style="padding:40px;font:700 16px/1.7 ui-monospace,monospace;color:#c00">' +
+          'STYLESHEET DID NOT LOAD — every reading from this page is meaningless.\n\n' +
+          'Run `npm run build`, then restart tools/theme-lab-server.mjs.</pre>';
+      }
+    </script>
+  </body>
+</html>

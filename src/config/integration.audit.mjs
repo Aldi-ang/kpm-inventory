@@ -2087,11 +2087,27 @@ check(G32, 'text tokens that flip per theme exist',
   /--accent-ink:/.test(themeCss) && /--danger-ink:/.test(themeCss) && /--accent-edge:/.test(themeCss),
   'gold-as-text and red-as-text must be different values in light mode; --gold cannot be both ' +
   'a plate fill and a legible label');
-check(G32, 'the light theme darkens all three',
-  /html\.light \{[\s\S]*?--accent-ink:\s*#6B4A05[\s\S]*?--accent-edge:\s*#7A5A12[\s\S]*?--danger-ink:\s*#611A14/.test(themeCss) ||
-  /:root\.light,[\s\S]*?--accent-ink:\s*#6B4A05[\s\S]*?--accent-edge:\s*#7A5A12[\s\S]*?--danger-ink:\s*#611A14/.test(themeCss),
-  'if these stay at the dark values the light theme is back to 1,19:1 and he cannot read the ' +
-  'button that provisions accounts');
+/* ⚠️ THIS ASSERTS THE RELATIONSHIP, NOT THE NUMBERS — rewritten 2026-08-16, and the reason is
+   written up one group over. It used to pin `#6B4A05`, and on the day that value was MEASURED in
+   a browser for the first time it turned out to be 3,73:1 on the steel ground — his report,
+   *"lock terminal also looks so dark in light mode"*. Fixing the colour then broke the check that
+   existed to protect the colour. Group 39 already carries the same lesson in its own words: a
+   check that freezes a value a measurement later moves is just a second thing to fix.
+   The invariant is that all three inks go DARKER in light, which is what makes them legible on a
+   pale ground at all. The ratios belong to contrast.selfcheck.mjs, which measures. */
+const lumOf = (hex) => {
+  const c = [1, 3, 5].map(i => parseInt(hex.substr(i, 2), 16) / 255)
+    .map(v => v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4));
+  return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+};
+const themedInks = ['--accent-ink', '--accent-edge', '--danger-ink'];
+const notDarkened = themedInks.filter(t => {
+  const v = [...themeCss.matchAll(new RegExp(t + ':\\s*(#[0-9a-fA-F]{6})', 'g'))].map(m => m[1]);
+  return v.length !== 2 || lumOf(v[1]) >= lumOf(v[0]);
+});
+check(G32, 'the light theme darkens all three', !notDarkened.length,
+  'not darker in light: ' + notDarkened.join(' ') + ' — if these stay at the dark values the ' +
+  'light theme is back to 1,19:1 and he cannot read the button that provisions accounts');
 /* ⚠️ ANCHORED ON A PROPERTY BOUNDARY, 2026-08-15. The bare `color: var(--gold)` needle also matched
    `accent-color: var(--gold)` on a range input — a substring, not a text colour, and a slider thumb
    is a fill. It failed on correct code. A needle that can match INSIDE a longer property name will
