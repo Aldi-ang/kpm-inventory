@@ -2317,6 +2317,25 @@ html.lite-mode .kpm-title-rule { animation: none; width: 100%; }
 .kpm-portrait > img { width: 96px; height: 96px; border-radius: 50%; object-fit: cover;
   border: 2px solid var(--accent-edge); background: var(--inset); flex: none; }
 .kpm-portrait > .kpm-acts { flex: 1 1 auto; }
+.kpm-portrait > .kpm-field { flex: 1 1 160px; }
+
+/* ---- THE TIER BADGE, exactly as the customer wears it on the map -------------
+   The ring is the tier's own colour and comes from customer data, NOT from this
+   palette — so it is the one border in the system set inline. Same reason the
+   `type="color"` picker below keeps its native chrome: the value it returns is a
+   real pin colour on a real map, and the palette law has no jurisdiction over
+   what a customer's pin looks like. */
+.kpm-swatch { width: 44px; height: 44px; flex: none; display: flex; align-items: center;
+  justify-content: center; overflow: hidden; background: var(--inset);
+  border: 2px solid var(--line-2); border-radius: 50%; }
+.kpm-swatch > img { width: 100%; height: 100%; object-fit: contain; padding: 4px; }
+.kpm-swatch > span { font-size: 20px; line-height: 1; }
+/* the OS picker. 44px like every other control so the row does not go ragged. */
+.kpm-swatch-input { min-height: 44px; width: 100%; padding: 2px; cursor: pointer;
+  background: var(--inset); border: 1px solid var(--line-2); }
+/* the same colour again at reading size, inside a record's name line */
+.kpm-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%;
+  vertical-align: baseline; }
 
 /* ---- BAND: names what a group of modules is allowed to do. This is the fence
    that used to be a 1.02:1 tinted box nobody could see. */

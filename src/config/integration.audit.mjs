@@ -1516,8 +1516,12 @@ const delMarks = DEL_FILES.reduce((n, f) =>
    `.kpm-rec` records when Security joined the control system, so its trash glyph is now a "Revoke"
    button in the record's action strip. The word is checked one line below — the pair of edits is
    what makes this a migration rather than a loss. */
-check(G25, 'every icon-only delete button in the app wears the expanding control', delMarks === 15,
-  `found ${delMarks} marked, expected 15 — a new icon-only delete button needs ` +
+/* 15 → 14 on 2026-08-15, third time and the same reason: the customer-tier row became a
+   `.kpm-rec` record when Tiers & Logic joined the control system, so its trash glyph is now a
+   "Delete rank" button in the record's action strip. The word is checked in group 35 — the pair
+   of edits is what makes this a migration rather than a loss. */
+check(G25, 'every icon-only delete button in the app wears the expanding control', delMarks === 14,
+  `found ${delMarks} marked, expected 14 — a new icon-only delete button needs ` +
   '`data-kpm-del data-label="Delete"` on it, and one that carries its own word ("Remove", "DEL") ' +
   'must NOT be marked or the label prints twice');
 check(G25, 'the delete rules outrank the Tailwind classes still on those buttons',
@@ -2292,6 +2296,78 @@ check(G34, 'a silent peek shows the idle sprite, not the talking one',
   capySrc.includes('setInternalMsg(incomingMessage || "");') &&
   capySrc.includes("(activeMessage ? 'kpm-merch-talk' : 'kpm-merch-idle')"),
   'a peek that left a bubble up would be the mascot talking at him, which he did not ask for');
+
+/* ── 35. TIERS & LOGIC — the last tab of Phase 6 ───────────────────────────────────────────────
+   *"we have the theme set yet, other will just follow make it somewhat follow that"* — the
+   Architect tab is the template and this is a CONVERSION, not a redesign. 106 off-token colours
+   to zero. The controls here have no other route in the app: a rank list every customer is
+   badged from, a company-wide kill switch, and rules that promote and demote people on their own.
+   ⚠️ `PermissionMatrixEditor` RENDERS INSIDE THIS TAB BUT IS DEFINED SEPARATELY (~line 1345) and
+   is NOT converted — about 80 off-token colours, deliberately left as its own slice. Scope the
+   needle below to the tab's own markup or it reports a failure that belongs to that next slice. */
+const G35 = '35. Tiers & Logic joins the control system';
+const tierStart = settingsSrc.indexOf('WORKSPACE: TIERS & LOGIC');
+const tierEnd = settingsSrc.indexOf('WORKSPACE: SECURITY & DATA');
+const tiersBlk = tierStart > 0 && tierEnd > tierStart ? settingsSrc.slice(tierStart, tierEnd) : '';
+/* ⚠️ COMMENTS STRIPPED, AND THE FIRST RUN IS WHY. The sled check below failed on the comment that
+   EXPLAINS the sled was removed — it quoted the very class it forbids. A needle that reads code
+   must be given code; otherwise documenting a rule is what breaks it. */
+const tiersCode = strip(tiersBlk);
+
+check(G35, 'the tiers block was found at all', tiersBlk.length > 1000,
+  'the markers this group slices between were renamed — every check below would pass on ""');
+check(G35, 'the tiers tab carries no blue, no green, no slate', !offToken.test(tiersCode),
+  'an emerald Add button, an orange glowing toggle and slate inputs throughout — 106 to zero');
+check(G35, 'no dark: variant survived the conversion',
+  !/dark:/.test(tiersCode),
+  'a dark: variant means the colour is hardcoded twice and light mode still has to be hand-built');
+check(G35, 'every module declares its kind and prints its slot',
+  (tiersCode.match(/kpm-mod (bench|live|hazard|idle|gate|arrive)/g) || []).length >= 3 &&
+  (tiersCode.match(/<span className="slot">/g) || []).length >= 3,
+  'a module with no kind is a generic card again');
+/* 🚫 THE INNER SCROLLBAR HE HAS REJECTED TWICE. The tier row was a fixed-width sled inside a
+   horizontal scroller, so a phone reached the delete button by dragging sideways. */
+check(G35, 'no fixed-width sled and no inner scrollbar in the tier list',
+  !/min-w-\[\d+px\]/.test(tiersCode) && !/overflow-x-auto/.test(tiersCode),
+  'he has rejected the inner scrollbar twice; it came back here as a fixed minimum width');
+/* the pair edit that makes the group-25 count drop a migration and not a loss */
+check(G35, 'the tier delete carries its own word instead of the icon mark',
+  tiersCode.includes('Delete rank') && !tiersCode.includes('data-kpm-del'),
+  'marked AND worded prints "Delete" twice; unmarked and unworded is a bare glyph on a no-undo act');
+/* MOUNT CHECK PER CONTROL. None of these has another route in the app, and a control lost to a
+   cosmetic edit is silent — nothing errors, the button is simply gone. */
+for (const [what, needle] of [
+  ['adding a rank', 'const newTiers = [...tierSettings, newTier];'],
+  ['exporting ranks', 'onClick={handleExportTiers}'],
+  ['importing ranks', 'onChange={handleImportTiers}'],
+  ['the rank colour picker', 'newTiers[idx].color = e.target.value'],
+  ['the badge-kind switch', "newTiers[idx].iconType = e.target.value"],
+  ['uploading a rank logo', 'handleTierIconSelect(e, idx)'],
+  ['deleting a rank', 'tierSettings.filter((_, i) => i !== idx)'],
+  ['the permission matrix', '<PermissionMatrixEditor'],
+  ['the fleet paintbrush switch', 'enableFleetPaintbrush: newVal'],
+  ['saving the promotion rules', 'onClick={handleSaveTierRules}'],
+]) check(G35, `${what} is still mounted in the tab`, tiersBlk.includes(needle),
+  'a control that vanished in a restyle is silent — nothing errors, the button is simply gone');
+/* 🔑 ONLY THE AUTOMATION IS A HAZARD. Red marks the one group that acts WITHOUT anyone pressing
+   anything; the rank list and the paintbrush are ordinary live controls. Red on all three would
+   be the wash he rejected: *"i dont want red color to dominate certain features of the app"*. */
+check(G35, 'red marks the automatic promotions and nothing else on the tab',
+  (tiersBlk.match(/kpm-(mod|band) hazard/g) || []).length === 2 &&
+  tiersBlk.includes('<div className="kpm-band hazard">Automatic'),
+  'red on the rank list too would be a wash again, and the one group that acts alone stops standing out');
+/* the three parts this tab needed exist in CSS. Tailwind emits nothing for a class it never saw,
+   and a class defined nowhere paints nothing — which reads as a transparent panel, not an error. */
+for (const cls of ['.kpm-swatch', '.kpm-swatch-input', '.kpm-dot'])
+  check(G35, `${cls} is defined in theme.css, not invented in the JSX`,
+    themeCss.includes(cls + ' ') || themeCss.includes(cls + ' {') || themeCss.includes(cls + '{'),
+    'an undefined class is the quietest possible bug: no error, no paint');
+/* ⚠️ THE TIER'S OWN COLOUR IS CUSTOMER DATA AND STAYS INLINE. It is a real pin on a real map and
+   the palette has no jurisdiction over it — the same exemption the printed nota gets. */
+check(G35, "a tier's own colour is still set from its data, not from a token",
+  tiersBlk.includes('style={{ borderColor: tier.color }}') &&
+  tiersBlk.includes('style={{ backgroundColor: tier.color }}'),
+  'tokenising this would paint every rank the same and the map would lose its ranks');
 
 /* ── report ──────────────────────────────────────────────────────────────── */
 let last = '';

@@ -5,7 +5,10 @@ import React, { useState } from 'react';
    more conditional hook on a pile eslint already flags ten times. Only one SettingsView is ever
    mounted, so a module-level handle is exactly as correct here and costs no hook at all. */
 let capyPeekTimer = null;
-import { Lock, ShieldCheck, ShieldAlert, UploadCloud, Copy, Package, User, Settings, Trash2, ScanFace, Plus, Tag, Download, Upload, Image as ImageIcon, Edit, Save, X, Music, TrendingUp, ChevronLeft, ChevronRight, LayoutDashboard, ToggleLeft, ToggleRight, BarChart2, Store } from 'lucide-react';
+/* `TrendingUp` and `Package` went with the tiers conversion: they were the two glyphs stuffed
+   inside the old omset/volume select, which is a labelled field now. Removed because THIS change
+   orphaned them — no other dead import in this file was touched. */
+import { Lock, ShieldCheck, ShieldAlert, UploadCloud, Copy, User, Settings, Trash2, ScanFace, Plus, Tag, Download, Upload, Image as ImageIcon, Edit, Save, X, Music, ChevronLeft, ChevronRight, LayoutDashboard, ToggleLeft, ToggleRight, BarChart2, Store } from 'lucide-react';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 
 import LandlordDashboard from './LandlordDashboard';
@@ -543,101 +546,144 @@ export default function SettingsView({
                   {/* WORKSPACE: TIERS & LOGIC */}
                   {/* ---------------------------------------------------- */}
                   {activeTab === 'tiers' && (
-                      <div className="animate-fade-in space-y-6">
-                          
-                         {/* TIER & MAP ICON MANAGER */}
-                          <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 transition-all">
-                              <div className="flex justify-between items-center mb-4">
-                                  <h3 className="font-bold text-lg flex items-center gap-2 dark:text-white"><Tag size={20}/> Customer Tiers & Map Icons</h3>
-                                  <div className="flex gap-2">
-                                      <button onClick={() => {
+                      /* THE RACK, FOURTH AND LAST TAB. Conversion, not redesign — his instruction:
+                         *"we have the theme set yet, other will just follow make it somewhat follow
+                         that"*. Grouped by consequence like the three before it: what a customer
+                         wears, then what a whole company is allowed to do, then the automation that
+                         moves people between ranks on its own. */
+                      <div className="animate-fade-in">
+
+                          <div className="kpm-band">Ranks · the badge a customer wears on the map</div>
+
+                          <div className="kpm-mod live">
+                              <div className="kpm-head">
+                                  <span className="slot">Rank · 01</span>
+                                  <div className="line">
+                                      <h3>Customer tiers</h3>
+                                      <span className="kpm-read on">{tierSettings.length} defined</span>
+                                  </div>
+                                  <p className="kpm-desc">
+                                      The colour is the customer's pin on the map and the icon is the badge beside it.
+                                      Everything here saves the moment you change it — there is no Save button.
+                                  </p>
+                              </div>
+                              <div className="kpm-shelf split">
+                                  <div className="kpm-acts">
+                                      <button type="button" onClick={() => {
                                           const hasUnranked = tierSettings.some(t => t.id.toLowerCase() === 'unranked');
-                                          const newTier = !hasUnranked 
+                                          const newTier = !hasUnranked
                                               ? { id: 'Unranked', label: 'Unranked', color: '#475569', iconType: 'emoji', value: '🪵' }
                                               : { id: `Tier_${Date.now()}`, label: 'New Rank', color: '#94a3b8', iconType: 'emoji', value: '❓' };
-                                          
+
                                           const newTiers = [...tierSettings, newTier];
                                           setTierSettings(newTiers);
                                           handleSaveTiers(newTiers);
-                                      }} className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold flex items-center gap-1 shadow-md transition-all active:scale-95">
-                                          <Plus size={14}/> Add Tier
+                                      }} className="kpm-btn key">
+                                          <Plus size={14}/> Add tier
                                       </button>
-                                      <button onClick={handleExportTiers} className="px-3 py-1.5 bg-slate-100 dark:bg-slate-700 rounded-lg text-xs font-bold"><Download size={14}/></button>
-                                      <label className="px-3 py-1.5 bg-slate-100 dark:bg-slate-700 rounded-lg text-xs font-bold cursor-pointer"><Upload size={14}/><input type="file" accept=".json" onChange={handleImportTiers} className="hidden" /></label>
+                                      {/* ⚠️ WORDS, NOT BARE ICONS. A lone download glyph and a lone upload glyph
+                                          sat side by side here and were indistinguishable at a glance — and one
+                                          of them REPLACES every tier you have. */}
+                                      <button type="button" onClick={handleExportTiers} className="kpm-btn"><Download size={14}/> Export</button>
+                                      <label className="kpm-btn"><Upload size={14}/> Import
+                                          <input type="file" accept=".json" onChange={handleImportTiers} className="hidden" />
+                                      </label>
                                   </div>
                               </div>
-                              <div className="overflow-x-auto pb-2">
-                                  <div className="space-y-3 min-w-[650px]">
+                              {/* 🚫 NO `min-w-[650px]` AND NO INNER SCROLLBAR. The row was a fixed 650px sled
+                                  that a phone could only reach by dragging sideways — the pattern he has
+                                  rejected twice. Each tier is a record now and its fields wrap. */}
+                              <div className="kpm-shelf split">
                                   {tierSettings.map((tier, idx) => (
-                                      <div key={tier.id || idx} className="flex gap-2 items-center bg-slate-50 dark:bg-slate-900 p-2 rounded-xl border dark:border-slate-700 transition-colors hover:border-slate-400 dark:hover:border-slate-500">
-                                          <input type="color" value={tier.color} onChange={(e) => { const newTiers = [...tierSettings]; newTiers[idx].color = e.target.value; handleSaveTiers(newTiers); }} className="w-8 h-8 rounded cursor-pointer border-none bg-transparent flex-shrink-0"/>
-                                          
-                                          <input 
-                                              value={tier.label} 
-                                              onChange={(e) => { 
-                                                  const newTiers = [...tierSettings]; 
-                                                  newTiers[idx].label = e.target.value; 
-                                                  if (tier.id.startsWith('Tier_')) newTiers[idx].id = e.target.value.replace(/\s+/g, '_');
-                                                  setTierSettings(newTiers); 
-                                              }} 
-                                              onBlur={() => handleSaveTiers(tierSettings)} 
-                                              className="w-28 p-2 text-xs font-bold border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white uppercase tracking-wider" 
-                                          />
-                                          
-                                          <select value={tier.iconType} onChange={(e) => { const newTiers = [...tierSettings]; newTiers[idx].iconType = e.target.value; handleSaveTiers(newTiers); }} className="p-2 text-xs border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white"><option value="emoji">Emoji</option><option value="image">Custom Logo</option></select>
-                                          
-                                          <div className="flex-1">
+                                      <div key={tier.id || idx} className="kpm-rec">
+                                          <div className="kpm-shelf">
+                                              {/* the badge as the customer sees it, beside the fields that make it,
+                                                  so a change is legible without hunting for the result */}
+                                              <div className="kpm-portrait">
+                                                  <div className="kpm-swatch" style={{ borderColor: tier.color }}>
+                                                      {tier.iconType === 'image'
+                                                          ? (tier.value ? <img src={tier.value} alt="" /> : <ImageIcon size={14} className="opacity-30"/>)
+                                                          : <span>{tier.value}</span>}
+                                                  </div>
+                                                  <label className="kpm-field">
+                                                      <span>Rank name</span>
+                                                      <input
+                                                          value={tier.label}
+                                                          onChange={(e) => {
+                                                              const newTiers = [...tierSettings];
+                                                              newTiers[idx].label = e.target.value;
+                                                              if (tier.id.startsWith('Tier_')) newTiers[idx].id = e.target.value.replace(/\s+/g, '_');
+                                                              setTierSettings(newTiers);
+                                                          }}
+                                                          onBlur={() => handleSaveTiers(tierSettings)}
+                                                      />
+                                                  </label>
+                                              </div>
+                                              <label className="kpm-field">
+                                                  <span>Pin colour</span>
+                                                  {/* ⚠️ `type="color"` KEEPS ITS OWN CHROME and takes no token. That is
+                                                      correct: it is the operating system's picker, and the value it
+                                                      returns is the customer's real pin colour, which by definition is
+                                                      not on this palette. */}
+                                                  <input type="color" value={tier.color} className="kpm-swatch-input"
+                                                      onChange={(e) => { const newTiers = [...tierSettings]; newTiers[idx].color = e.target.value; handleSaveTiers(newTiers); }} />
+                                              </label>
+                                              <label className="kpm-field">
+                                                  <span>Badge kind</span>
+                                                  <select value={tier.iconType} onChange={(e) => { const newTiers = [...tierSettings]; newTiers[idx].iconType = e.target.value; handleSaveTiers(newTiers); }}>
+                                                      <option value="emoji">Emoji</option>
+                                                      <option value="image">Custom logo</option>
+                                                  </select>
+                                              </label>
                                               {tier.iconType === 'image' ? (
-                                                  <div className="flex gap-2">
-                                                      <label htmlFor={`tier-upload-${idx}`} className="flex-1 flex items-center justify-center gap-2 p-2 bg-slate-200 dark:bg-slate-700 rounded cursor-pointer hover:bg-slate-300 text-xs font-bold text-slate-400 dark:text-slate-300 whitespace-nowrap transition-colors shadow-inner">
-                                                          <Upload size={14}/> 
-                                                          {tier.value?.startsWith('data:') ? "Change Image" : "Upload Image"}
-                                                          
-                                                          <input 
-                                                              id={`tier-upload-${idx}`} 
-                                                              type="file" 
-                                                              accept="image/*" 
-                                                              className="hidden" 
-                                                              onChange={(e) => handleTierIconSelect(e, idx)} 
-                                                          />
+                                                  <div className="kpm-acts">
+                                                      <label className="kpm-btn" htmlFor={`tier-upload-${idx}`}>
+                                                          <Upload size={14}/> {tier.value?.startsWith('data:') ? 'Change image' : 'Upload image'}
+                                                          <input id={`tier-upload-${idx}`} type="file" accept="image/*" className="hidden"
+                                                              onChange={(e) => handleTierIconSelect(e, idx)} />
                                                       </label>
-                                                      
                                                       {tier.value?.startsWith('data:') && (
-                                                          <button 
+                                                          <button type="button" className="kpm-btn hazard"
                                                               onClick={() => {
                                                                   const newTiers = [...tierSettings];
                                                                   newTiers[idx].value = '';
                                                                   setTierSettings(newTiers);
                                                                   handleSaveTiers(newTiers);
-                                                              }} 
-                                                              className="px-3 bg-red-100 dark:bg-red-900/40 text-red-500 rounded hover:bg-red-200 dark:hover:bg-red-500 dark:hover:text-white transition-colors flex items-center justify-center border border-red-500/30"
-                                                              title="Clear Image"
-                                                          >
-                                                              <X size={14}/>
+                                                              }}
+                                                              title="Remove the uploaded logo and fall back to the emoji">
+                                                              Clear image
                                                           </button>
                                                       )}
                                                   </div>
                                               ) : (
-                                                  <input value={tier.value} onChange={(e) => { const newTiers = [...tierSettings]; newTiers[idx].value = e.target.value; handleSaveTiers(newTiers); }} className="w-full p-2 text-xs border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white" placeholder="Paste Emoji Here" />
+                                                  <label className="kpm-field">
+                                                      <span>Emoji</span>
+                                                      <input value={tier.value} placeholder="Paste an emoji here"
+                                                          onChange={(e) => { const newTiers = [...tierSettings]; newTiers[idx].value = e.target.value; handleSaveTiers(newTiers); }} />
+                                                  </label>
                                               )}
                                           </div>
-                                          
-                                          <div className="w-10 h-10 rounded-full border-2 flex items-center justify-center overflow-hidden bg-slate-100 dark:bg-slate-800 flex-shrink-0 shadow-inner" style={{ borderColor: tier.color }}>
-                                              {tier.iconType === 'image' ? (tier.value ? <img src={tier.value} className="w-full h-full object-contain p-1" /> : <ImageIcon size={14} className="opacity-30"/>) : (<span className="text-lg">{tier.value}</span>)}
+                                          {/* ⚠️ A WORDED DELETE, SO IT IS DELIBERATELY *NOT* `data-kpm-del`.
+                                              That mark drives an expanding control that prints "Delete" on
+                                              hover, which on a button already saying it would print the word
+                                              twice. Same migration the tenant registry and the biometric
+                                              device list already made — the icon count in group 25 drops by
+                                              one and the word below is what makes that a migration rather
+                                              than a control going missing. */}
+                                          <div className="acts">
+                                              <button type="button" className="kpm-btn hazard"
+                                                  onClick={async () => {
+                                                      if(await confirmAction(`Are you sure you want to delete the tier: ${tier.label}?`)) {
+                                                          const newTiers = tierSettings.filter((_, i) => i !== idx);
+                                                          setTierSettings(newTiers);
+                                                          handleSaveTiers(newTiers);
+                                                      }
+                                                  }}>
+                                                  <Trash2 size={14}/> Delete rank
+                                              </button>
                                           </div>
-
-                                          <button data-kpm-del data-label="Delete" onClick={async () => {
-                                              if(await confirmAction(`Are you sure you want to delete the tier: ${tier.label}?`)) {
-                                                  const newTiers = tierSettings.filter((_, i) => i !== idx);
-                                                  setTierSettings(newTiers);
-                                                  handleSaveTiers(newTiers);
-                                              }
-                                          }} className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-colors ml-1" title="Delete Tier">
-                                              <Trash2 size={16}/>
-                                          </button>
                                       </div>
                                   ))}
-                                  </div>
                               </div>
                           </div>
                           
@@ -656,145 +702,151 @@ export default function SettingsView({
                               anyone until an owner deliberately turns it off. Same tier gate as the
                               Permission Matrix editor above (DEVELOPER/ADMIN/COMPANY_OWNER). */}
                           {(userRole === 'DEVELOPER' || userRole === 'ADMIN' || userRole === 'COMPANY_OWNER') && (
-                              <div className={`p-6 rounded-2xl shadow-sm border transition-all duration-300 mb-6 ${appSettings.enableFleetPaintbrush !== false ? 'bg-orange-900/20 border-orange-500/50' : 'bg-black border-slate-800'}`}>
-                                  <div className="flex items-center justify-between gap-4">
-                                      <div>
-                                          <h3 className={`font-bold text-lg flex items-center gap-2 ${appSettings.enableFleetPaintbrush !== false ? 'text-orange-400' : 'text-white'}`}>
-                                              🖌️ Fleet Paintbrush (Journey Plan)
-                                          </h3>
-                                          <p className="text-[10px] text-slate-400 uppercase tracking-widest mt-1">
-                                              When on, Tier 1-4 (Developer, Company Owner, Area Admin, Fleet Captain) can paint squad colors and map boundaries on Journey Plan. When off, the paintbrush is hidden for everyone, regardless of tier.
-                                          </p>
+                              <>
+                              <div className="kpm-band">Company · what everyone under you is allowed to do</div>
+
+                              <div className="kpm-mod live">
+                                  <div className="kpm-head">
+                                      <span className="slot">Company · 01</span>
+                                      <div className="line">
+                                          <h3>Fleet paintbrush</h3>
+                                          {/* the STATE, which is what amber is for. It was a glowing orange toggle
+                                              plus an orange panel plus orange heading text — three things saying
+                                              one thing, on a screen where nothing else was allowed to speak. */}
+                                          <span className={`kpm-read ${appSettings.enableFleetPaintbrush !== false ? 'on' : ''}`}>
+                                              {appSettings.enableFleetPaintbrush !== false ? 'On' : 'Off'}
+                                          </span>
                                       </div>
-                                      <button
-                                          onClick={() => {
-                                              const newVal = !(appSettings.enableFleetPaintbrush !== false);
-                                              setAppSettings(prev => ({ ...prev, enableFleetPaintbrush: newVal }));
-                                              if (user) setDoc(doc(db, `artifacts/${appId}/users/${user.uid}/settings/general`), { enableFleetPaintbrush: newVal }, { merge: true });
-                                              triggerCapy(newVal ? "Fleet Paintbrush Enabled for Tier 1-4! 🖌️" : "Fleet Paintbrush Disabled Company-Wide.");
-                                          }}
-                                          className={`shrink-0 transition-all duration-300 ${appSettings.enableFleetPaintbrush !== false ? 'text-orange-400 drop-shadow-[0_0_8px_rgba(249,115,22,0.8)]' : 'text-slate-400 hover:text-slate-300'}`}
-                                      >
-                                          {appSettings.enableFleetPaintbrush !== false ? <ToggleRight size={40} /> : <ToggleLeft size={40} />}
-                                      </button>
+                                      <p className="kpm-desc">
+                                          When on, Tier 1-4 (Developer, Company Owner, Area Admin, Fleet Captain) can paint
+                                          squad colours and map boundaries on Journey Plan. When off it is hidden for
+                                          everyone, whatever their tier.
+                                      </p>
+                                  </div>
+                                  <div className="kpm-shelf split">
+                                      <div className="kpm-acts">
+                                          {/* ⚠️ A BUTTON THAT SAYS WHAT PRESSING IT DOES, not a toggle glyph that
+                                              only shows where it currently is. The readout above already carries
+                                              the state; a switch repeating it left the act unnamed. */}
+                                          <button type="button" className="kpm-btn"
+                                              onClick={() => {
+                                                  const newVal = !(appSettings.enableFleetPaintbrush !== false);
+                                                  setAppSettings(prev => ({ ...prev, enableFleetPaintbrush: newVal }));
+                                                  if (user) setDoc(doc(db, `artifacts/${appId}/users/${user.uid}/settings/general`), { enableFleetPaintbrush: newVal }, { merge: true });
+                                                  triggerCapy(newVal ? "Fleet Paintbrush Enabled for Tier 1-4! 🖌️" : "Fleet Paintbrush Disabled Company-Wide.");
+                                              }}>
+                                              {appSettings.enableFleetPaintbrush !== false
+                                                  ? <><ToggleRight size={14}/> Turn it off</>
+                                                  : <><ToggleLeft size={14}/> Turn it on</>}
+                                          </button>
+                                      </div>
                                   </div>
                               </div>
+                              </>
                           )}
 
                           {/* AUTOMATED PERFORMANCE TIERS (TIER 1 OVERSEER ONLY) */}
                           {isSystemOwner && (
-                              <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border-2 border-red-500/20 mb-6 transition-all relative overflow-hidden">
-                                  <div className="absolute top-0 right-0 p-4 opacity-5"><Lock size={120} className="text-red-500" /></div>
-                                  
-                                  <div className="relative z-10">
-                                      <div className="flex justify-between items-center mb-6 border-b border-slate-100 dark:border-slate-700 pb-4">
-                                          <div>
-                                              <h3 className="font-bold text-lg flex items-center gap-2 text-red-600 dark:text-red-400">
-                                                  <Settings size={20}/> Performance Tier Logic (Tier 1 Only)
-                                              </h3>
-                                              <p className="text-[10px] text-slate-400 uppercase tracking-widest mt-1">Configure automated promotion/demotion conditions</p>
-                                          </div>
-                                          <button 
-                                              onClick={handleSaveTierRules}
-                                              disabled={isSavingTierRules}
-                                              className="bg-red-600 hover:bg-red-500 text-white px-4 py-2 rounded-xl font-black uppercase tracking-widest text-xs flex items-center gap-2 transition-all active:scale-95 shadow-md disabled:opacity-50"
-                                          >
-                                              <Save size={14} /> {isSavingTierRules ? 'Saving...' : 'Save Logic'}
-                                          </button>
+                              <>
+                              {/* 🚀 TIER 1 ONLY, and the band says so rather than a red panel implying it.
+                                  These rules PROMOTE AND DEMOTE REAL CUSTOMERS on their own, with nobody
+                                  pressing anything — which is why this is the one group on the tab that
+                                  earns the hazard mark. */}
+                              <div className="kpm-band hazard">Automatic · moves customers between ranks without asking</div>
+
+                              <div className="kpm-mod hazard">
+                                  <div className="kpm-head">
+                                      <span className="slot">Automatic · 01</span>
+                                      <div className="line">
+                                          <h3>Performance tier logic</h3>
+                                          <span className="kpm-read alert">Tier 1 only</span>
                                       </div>
+                                      <p className="kpm-desc">
+                                          What a customer has to buy to hold each rank. Unlike the rest of this tab these
+                                          wait for <b>Save logic</b> — a half-typed target that promoted people the
+                                          moment you paused would be worse than a button.
+                                      </p>
+                                  </div>
 
-                                      <div className="space-y-3">
-                                          {tierSettings.map((tier, idx) => {
-                                              const rule = tierRules[tier.id] || defaultLogic;
-                                              const isOmset = rule.type === 'omset';
+                                  {tierSettings.map((tier) => {
+                                      const rule = tierRules[tier.id] || defaultLogic;
+                                      const isOmset = rule.type === 'omset';
 
-                                              return (
-                                                  <div key={tier.id} className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-3 flex flex-col lg:flex-row lg:items-center justify-between gap-4 transition-all hover:border-red-500/30">
-                                                      
-                                                      <div className="flex items-center gap-3 min-w-[140px] shrink-0">
-                                                          <div className="w-4 h-4 rounded-full shadow-inner" style={{ backgroundColor: tier.color }}></div>
-                                                          <div>
-                                                              <h4 className="text-sm font-black text-slate-800 dark:text-white uppercase tracking-wider">{tier.label}</h4>
-                                                              <p className="text-[11px] text-slate-400 uppercase tracking-widest">Target Requirement</p>
-                                                          </div>
-                                                      </div>
-
-                                                      <ChevronRight className="hidden lg:block text-slate-400 shrink-0" size={16}/>
-
-                                                      <div className="flex-1 flex flex-wrap items-center gap-2 bg-white dark:bg-black/40 p-2 rounded-lg border border-slate-200 dark:border-slate-800 shadow-sm">
-                                                          
-                                                          <div className="flex items-center bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded overflow-hidden">
-                                                              <div className="px-2 text-slate-400 dark:text-slate-400">
-                                                                  {isOmset ? <TrendingUp size={14}/> : <Package size={14}/>}
-                                                              </div>
-                                                              <select 
-                                                                  value={rule.type}
-                                                                  onChange={(e) => handleUpdateTierRule(tier.id, 'type', e.target.value)}
-                                                                  className="bg-transparent text-xs font-bold text-slate-700 dark:text-white uppercase p-2 outline-none cursor-pointer hover:text-blue-500 dark:hover:text-blue-400"
-                                                              >
-                                                                  <option value="omset" className="dark:bg-slate-900">Total Omset</option>
-                                                                  <option value="volume" className="dark:bg-slate-900">Total Volume</option>
-                                                              </select>
-                                                          </div>
-
-                                                          <span className="text-slate-400 font-black text-sm">=</span>
-
-                                                          {isOmset ? (
-                                                              <div className="flex items-center bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded overflow-hidden">
-                                                                  <span className="px-2 text-xs font-black text-emerald-600 dark:text-emerald-500 bg-emerald-100 dark:bg-emerald-900/30">Rp</span>
-                                                                  <input 
-                                                                      type="text" 
-                                                                      value={rule.omsetTarget === '' ? '' : new Intl.NumberFormat('en-US').format(rule.omsetTarget || 0)}
-                                                                      onChange={(e) => {
-                                                                          const val = e.target.value.replace(/[^0-9]/g, ''); 
-                                                                          handleUpdateTierRule(tier.id, 'omsetTarget', val === '' ? '' : Number(val));
-                                                                      }}
-                                                                      className="bg-transparent text-xs font-black text-emerald-600 dark:text-emerald-400 p-2 w-32 outline-none text-right"
-                                                                  />
-                                                              </div>
-                                                          ) : (
-                                                              <div className="flex items-center bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded overflow-hidden">
-                                                                  <input 
-                                                                      type="text" 
-                                                                      value={rule.volumeTarget === '' ? '' : new Intl.NumberFormat('en-US').format(rule.volumeTarget || 0)}
-                                                                      onChange={(e) => {
-                                                                          const val = e.target.value.replace(/[^0-9]/g, '');
-                                                                          handleUpdateTierRule(tier.id, 'volumeTarget', val === '' ? '' : Number(val));
-                                                                      }}
-                                                                      className="bg-transparent text-xs font-black text-orange-600 dark:text-orange-400 p-2 w-16 outline-none text-center border-r border-slate-200 dark:border-slate-700"
-                                                                  />
-                                                                  <select 
-                                                                      value={rule.volumeUnit}
-                                                                      onChange={(e) => handleUpdateTierRule(tier.id, 'volumeUnit', e.target.value)}
-                                                                      className="bg-transparent text-xs font-bold text-orange-600 dark:text-orange-300 uppercase p-2 outline-none cursor-pointer"
-                                                                  >
-                                                                      <option value="Bks" className="dark:bg-slate-900">Bks</option>
-                                                                      <option value="Slop" className="dark:bg-slate-900">Slop</option>
-                                                                      <option value="Bal" className="dark:bg-slate-900">Bal</option>
-                                                                      <option value="Karton" className="dark:bg-slate-900">Karton</option>
-                                                                  </select>
-                                                              </div>
-                                                          )}
-
-                                                          <span className="text-slate-400 font-black text-sm">/</span>
-
-                                                          <select 
-                                                              value={rule.timeframe}
-                                                              onChange={(e) => handleUpdateTierRule(tier.id, 'timeframe', e.target.value)}
-                                                              className="bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded text-xs font-bold text-blue-600 dark:text-blue-300 uppercase p-2 outline-none cursor-pointer hover:border-blue-500"
-                                                          >
-                                                              <option value="30" className="dark:bg-slate-900">1 Bulan</option>
-                                                              <option value="90" className="dark:bg-slate-900">3 Bulan</option>
-                                                              <option value="180" className="dark:bg-slate-900">6 Bulan</option>
-                                                              <option value="365" className="dark:bg-slate-900">1 Tahun</option>
-                                                          </select>
-                                                      </div>
+                                      return (
+                                          <div key={tier.id} className="kpm-shelf split">
+                                              <div className="kpm-rec">
+                                                  <div className="who kpm-line">
+                                                      {/* the tier's own colour, which is customer data and not on this
+                                                          palette — same reason the picker above keeps its native chrome */}
+                                                      <b><span className="kpm-dot" style={{ backgroundColor: tier.color }}></span> {tier.label}</b>
+                                                      <code>{isOmset ? 'by money spent' : 'by volume bought'}</code>
                                                   </div>
-                                              );
-                                          })}
+                                                  <div className="kpm-shelf">
+                                                      <label className="kpm-field">
+                                                          <span>Measured by</span>
+                                                          <select value={rule.type} onChange={(e) => handleUpdateTierRule(tier.id, 'type', e.target.value)}>
+                                                              <option value="omset">Total omset</option>
+                                                              <option value="volume">Total volume</option>
+                                                          </select>
+                                                      </label>
+                                                      {isOmset ? (
+                                                          <label className="kpm-field">
+                                                              <span>Target · rupiah</span>
+                                                              <input type="text" inputMode="numeric"
+                                                                  value={rule.omsetTarget === '' ? '' : new Intl.NumberFormat('en-US').format(rule.omsetTarget || 0)}
+                                                                  onChange={(e) => {
+                                                                      const val = e.target.value.replace(/[^0-9]/g, '');
+                                                                      handleUpdateTierRule(tier.id, 'omsetTarget', val === '' ? '' : Number(val));
+                                                                  }} />
+                                                          </label>
+                                                      ) : (
+                                                          <>
+                                                          <label className="kpm-field">
+                                                              <span>Target · quantity</span>
+                                                              <input type="text" inputMode="numeric"
+                                                                  value={rule.volumeTarget === '' ? '' : new Intl.NumberFormat('en-US').format(rule.volumeTarget || 0)}
+                                                                  onChange={(e) => {
+                                                                      const val = e.target.value.replace(/[^0-9]/g, '');
+                                                                      handleUpdateTierRule(tier.id, 'volumeTarget', val === '' ? '' : Number(val));
+                                                                  }} />
+                                                          </label>
+                                                          <label className="kpm-field">
+                                                              <span>Counted in</span>
+                                                              <select value={rule.volumeUnit} onChange={(e) => handleUpdateTierRule(tier.id, 'volumeUnit', e.target.value)}>
+                                                                  <option value="Bks">Bks</option>
+                                                                  <option value="Slop">Slop</option>
+                                                                  <option value="Bal">Bal</option>
+                                                                  <option value="Karton">Karton</option>
+                                                              </select>
+                                                          </label>
+                                                          </>
+                                                      )}
+                                                      <label className="kpm-field">
+                                                          <span>Within</span>
+                                                          <select value={rule.timeframe} onChange={(e) => handleUpdateTierRule(tier.id, 'timeframe', e.target.value)}>
+                                                              <option value="30">1 Bulan</option>
+                                                              <option value="90">3 Bulan</option>
+                                                              <option value="180">6 Bulan</option>
+                                                              <option value="365">1 Tahun</option>
+                                                          </select>
+                                                      </label>
+                                                  </div>
+                                              </div>
+                                          </div>
+                                      );
+                                  })}
+
+                                  {/* the Save sits at the BOTTOM, after the rules it commits — it used to be in
+                                      the header, above everything it applies to */}
+                                  <div className="kpm-shelf split">
+                                      <div className="kpm-acts">
+                                          <button type="button" className="kpm-btn key" onClick={handleSaveTierRules} disabled={isSavingTierRules}>
+                                              <Save size={14} /> {isSavingTierRules ? 'Saving…' : 'Save logic'}
+                                          </button>
                                       </div>
                                   </div>
                               </div>
+                              </>
                           )}
                       </div>
                   )}
