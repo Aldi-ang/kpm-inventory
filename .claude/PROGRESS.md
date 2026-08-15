@@ -97,12 +97,24 @@ order:
   ✅ **TEST:** Settings → Tiers & Logic → the matrix. Customer directory access should show ONE
   "Global" line, on both the phone list and the desktop grid, and every tier should show a filled
   box — never an empty one. Set one tier to Own Region, Deploy, reopen: it must still read Own Region.
-  ▶ **2. REDESIGN + ANIMATE THE DROPDOWN.** His words, deferred by him to after the reset. A
-  native `<select>` cannot be animated or restyled past the closed box — the open list is the OS.
-  Doing this properly means a custom listbox: button + popup, `aria-expanded`/`aria-activedescendant`,
-  keyboard (arrows, Home/End, type-ahead, Escape), and `.kpm-inline` styling on the trigger.
-  ⚠️ It sits in the permission matrix, so **it must stay operable by keyboard and screen reader**
-  — group 37 already holds that line for the switches.
+- ✅ **2. THE DROPDOWN IS REDESIGNED AND ANIMATED — 508/508, `src/components/AuthoritySelect.jsx`.**
+  A native `<select>` draws its open list in the OPERATING SYSTEM, out of CSS's reach, so this had
+  to become a real component. Trigger keeps `.kpm-inline` (every matrix size rule still applies);
+  `.kpm-pick` + `.kpm-picklist` in theme.css. Amber fill + a tick mark the saved choice, a rail
+  marks the arrow-key cursor, chevron flips, list scales in from the trigger's edge at 160ms.
+  ⚠️ **The list is portalled to `<body>` and `position: fixed`** — the desktop matrix sits inside
+  `overflow-x: auto`, which would have CLIPPED an in-place popup. The price is it must close on
+  any scroll or resize; both are checked.
+  ⚠️ **Both views now read ONE options list each** (`CUSTOMER_ACCESS_OPTIONS` /
+  `REPORT_ACCESS_OPTIONS`). Two copies of the wording is how the duplicate above was born.
+  Keyboard: arrows, Home/End, Enter/Space, Escape, Tab, type-ahead. Focus never leaves the
+  trigger (`role="combobox"` + `aria-activedescendant`), so it cannot trap a keyboard.
+  ✅ **TEST — this component has never been rendered on this machine.** Open Settings → Tiers &
+  Logic → the matrix. On both the phone list AND the desktop grid: click a dropdown, it should
+  open **downward, hugging the control, not clipped by the edge of the grid**; the current choice
+  carries a tick and an amber bar. Arrow keys should move a marker, Enter should pick, Escape
+  should cancel with no change. Scroll the grid sideways with one open — it should CLOSE, not
+  float. Then Deploy and reopen to confirm the choice stuck.
 
 - ✅ **TEST — the 5-minute grace period, FIXED and committed.** It had never worked once. Unlock the
   vault, close Safari, reopen within 5 minutes: it should go straight in with no PIN. Then lock it

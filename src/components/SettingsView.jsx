@@ -17,6 +17,7 @@ import AchievementTester from './AchievementTester';
 import CareerDevTools from './CareerDevTools';
 import HoldButton from './HoldButton';
 import ReceiptPreview from './ReceiptPreview';
+import AuthoritySelect from './AuthoritySelect';
 
 // 🚀 IMPORT THE MATRIX BRAIN
 import { CORPORATE_TIERS, ROLE_PERMISSIONS, DYNAMIC_TIERS, injectDynamicPermissions, CUSTOMER_EDIT_PERMS } from '../config/permissions';
@@ -1394,6 +1395,25 @@ const PermissionMatrixEditor = ({ db, appId, userRole, userId }) => {
     // 🚀 THE 3 REPORT VISIBILITY MODES
     const REPORT_PERMS = ['view_reports_global', 'view_reports_regional', 'view_reports_personal'];
 
+    /* ⚠️ ONE LIST EACH, USED BY BOTH THE PHONE AND THE DESKTOP. There used to be two copies of
+       every option with different wording, which is how two lines came to read "Global (default)"
+       in one of them and not the other. `short` is what fits in a rank column; `label` is the
+       whole sentence, and the open list is wide enough to hold it — that is the point of drawing
+       the list ourselves instead of letting the OS draw it. */
+    const CUSTOMER_ACCESS_OPTIONS = [
+        { value: 'customers_edit_global',     short: 'Global',     label: 'Global — edit any customer (default)' },
+        { value: 'customers_edit_own_region', short: 'Own region', label: 'Own region only — edit customers in their own region' },
+        { value: 'customers_view_only',       short: 'View only',  label: 'View only — can look, cannot edit' },
+    ];
+    /* ⚠️ 'none' IS A REAL CHOICE HERE AND A FORBIDDEN ONE ABOVE. Reporting really can be switched
+       off; customer access cannot, because an unset tier resolves to Global. */
+    const REPORT_ACCESS_OPTIONS = [
+        { value: 'none',                  short: 'No access', label: 'No access — reports stay hidden' },
+        { value: 'view_reports_personal', short: 'Personal',  label: 'Lone Wolf — their own numbers only' },
+        { value: 'view_reports_regional', short: 'Regional',  label: 'Regional Command — their branch' },
+        { value: 'view_reports_global',   short: 'Global',    label: 'God Mode — the global master data' },
+    ];
+
     const togglePermission = (tierId, featureId) => {
         const newMatrix = { ...matrix };
         const tierPerms = [...(newMatrix[tierId] || [])];
@@ -1629,32 +1649,29 @@ const PermissionMatrixEditor = ({ db, appId, userRole, userId }) => {
                                         </div>
                                         {/* 🚀 CUSTOMER DIRECTORY ACCESS: sits right after the Customers toggle */}
                                         {feature.id === 'view_customers' && (
-                                            <label className="kpm-field kpm-authority">
+                                            /* a div, not a label: the control inside is a button now, and a label
+                                               wrapping a button forwards its click to nothing */
+                                            <div className="kpm-field kpm-authority">
                                                 <span><Store size={12}/> Customer directory access</span>
-                                                <select
+                                                <AuthoritySelect
+                                                    label={`Customer directory access for ${activeTier.label}`}
+                                                    options={CUSTOMER_ACCESS_OPTIONS}
                                                     value={(matrix[activeTier.id] || []).find(p => CUSTOMER_EDIT_PERMS.includes(p)) || 'customers_edit_global'}
-                                                    onChange={(e) => changeCustomerAccess(activeTier.id, e.target.value)}
-                                                >
-                                                    <option value="customers_edit_global">Global (edit any customer — default)</option>
-                                                    <option value="customers_edit_own_region">Own Region Only</option>
-                                                    <option value="customers_view_only">View Only (no edits)</option>
-                                                </select>
-                                            </label>
+                                                    onChange={(v) => changeCustomerAccess(activeTier.id, v)}
+                                                />
+                                            </div>
                                         )}
                                         {/* 🚀 REPORTING AUTHORITY: sits right after Sampling, replacing the old Reports + View Team History toggles */}
                                         {feature.id === 'view_sampling' && (
-                                            <label className="kpm-field kpm-authority">
+                                            <div className="kpm-field kpm-authority">
                                                 <span><BarChart2 size={12}/> Reporting authority</span>
-                                                <select
+                                                <AuthoritySelect
+                                                    label={`Reporting authority for ${activeTier.label}`}
+                                                    options={REPORT_ACCESS_OPTIONS}
                                                     value={(matrix[activeTier.id] || []).find(p => REPORT_PERMS.includes(p)) || 'none'}
-                                                    onChange={(e) => changeReportAccess(activeTier.id, e.target.value)}
-                                                >
-                                                    <option value="none">No Access</option>
-                                                    <option value="view_reports_personal">Lone Wolf (Personal Data Only)</option>
-                                                    <option value="view_reports_regional">Regional Command (Branch Data)</option>
-                                                    <option value="view_reports_global">God Mode (Global Master Data)</option>
-                                                </select>
-                                            </label>
+                                                    onChange={(v) => changeReportAccess(activeTier.id, v)}
+                                                />
+                                            </div>
                                         )}
                                     </React.Fragment>
                                 );
@@ -1732,15 +1749,12 @@ const PermissionMatrixEditor = ({ db, appId, userRole, userId }) => {
                                             const currentCustomerAccess = (matrix[tier.id] || []).find(p => CUSTOMER_EDIT_PERMS.includes(p)) || 'customers_edit_global';
                                             return (
                                                 <td key={`customer-access-${tier.id}`} className="text-center">
-                                                    <select
+                                                    <AuthoritySelect
+                                                        label={`Customer directory access for ${tier.label}`}
+                                                        options={CUSTOMER_ACCESS_OPTIONS}
                                                         value={currentCustomerAccess}
-                                                        onChange={(e) => changeCustomerAccess(tier.id, e.target.value)}
-                                                        className="kpm-inline"
-                                                    >
-                                                        <option value="customers_edit_global">Global (default)</option>
-                                                        <option value="customers_edit_own_region">Own Region</option>
-                                                        <option value="customers_view_only">View Only</option>
-                                                    </select>
+                                                        onChange={(v) => changeCustomerAccess(tier.id, v)}
+                                                    />
                                                 </td>
                                             );
                                         })}
@@ -1754,16 +1768,12 @@ const PermissionMatrixEditor = ({ db, appId, userRole, userId }) => {
                                             const currentReportAccess = (matrix[tier.id] || []).find(p => REPORT_PERMS.includes(p)) || 'none';
                                             return (
                                                 <td key={`report-${tier.id}`} className="text-center">
-                                                    <select
+                                                    <AuthoritySelect
+                                                        label={`Reporting authority for ${tier.label}`}
+                                                        options={REPORT_ACCESS_OPTIONS}
                                                         value={currentReportAccess}
-                                                        onChange={(e) => changeReportAccess(tier.id, e.target.value)}
-                                                        className="kpm-inline"
-                                                    >
-                                                        <option value="none">No Access</option>
-                                                        <option value="view_reports_personal">Personal Only</option>
-                                                        <option value="view_reports_regional">Regional Team</option>
-                                                        <option value="view_reports_global">Global Master</option>
-                                                    </select>
+                                                        onChange={(v) => changeReportAccess(tier.id, v)}
+                                                    />
                                                 </td>
                                             );
                                         })}

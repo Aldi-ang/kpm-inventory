@@ -2627,8 +2627,8 @@ for (const [what, needle] of [
   ['the drop target marker', "dragOverIdx === idx ? 'drop' : ''"],
   ['renaming a rank', 'onClick={() => handleRenameTier(tier.id)}'],
   ['adding a rank', 'onClick={handleAddTier}'],
-  ['customer directory access', 'changeCustomerAccess(tier.id, e.target.value)'],
-  ['reporting authority', 'changeReportAccess(tier.id, e.target.value)'],
+  ['customer directory access', 'changeCustomerAccess(tier.id, v)'],
+  ['reporting authority', 'changeReportAccess(tier.id, v)'],
 ]) check(G37, `${what} is still mounted`, mtx.includes(needle),
   'a control that vanished in a restyle is silent — nothing errors, the button is simply gone');
 /* a raw Tailwind class stored as DATA is how four off-palette rank colours reached this screen
@@ -2643,15 +2643,60 @@ check(G37, 'a rank no longer carries a Tailwind class as data',
    <option> that both <select>s were still VALUED at would have blanked the control for every tier
    nobody had ever set, on the screen that decides who may edit customers. */
 check(G37, 'the customer-access dropdown offers each state exactly once',
-  !/<option value="none">Global/.test(mtx),
+  !/value: 'none',[^\n]*Global/.test(mtx) && !/<option value="none">Global/.test(mtx),
   'two lines reading the same words is a menu where one of them can never be selected');
 check(G37, 'an unset customer access lands on Global instead of blanking the box',
   (mtx.match(/CUSTOMER_EDIT_PERMS\.includes\(p\)\) \|\| 'customers_edit_global'/g) || []).length === 2,
-  'phone and desktop must fall back to the SAME state or one of the two shows an empty select');
+  'phone and desktop must fall back to the SAME state or one of the two shows an empty control');
 check(G37, "Reporting authority keeps its 'none' — there it really means no access",
-  /<option value="none">No Access<\/option>/.test(mtx),
+  /\{ value: 'none',\s+short: 'No access'/.test(mtx),
   'the two dropdowns look alike, but only one of them has a genuine off position');
-for (const cls of ['.kpm-matrix', '.kpm-toggle', '.kpm-chips', '.kpm-permrow', '.kpm-permlist'])
+/* one list each, read by the phone AND the desktop. Two copies of the wording is exactly how one
+   of them came to carry a line the other did not. */
+check(G37, 'both views read the same option lists',
+  (mtx.match(/options=\{CUSTOMER_ACCESS_OPTIONS\}/g) || []).length === 2 &&
+  (mtx.match(/options=\{REPORT_ACCESS_OPTIONS\}/g) || []).length === 2,
+  'a second copy of the wording drifts from the first, silently, and only on one screen size');
+
+/* ── the authority picker, his *"redesign and animate the dropdown for this"* ──────────────
+   A native <select> draws its open list in the OS, out of CSS's reach, so matching the control
+   system meant drawing it ourselves — and inheriting every behaviour the native one gave free.
+   On the screen that decides who may edit what, those behaviours are the checks. */
+const pick = fs.readFileSync('src/components/AuthoritySelect.jsx', 'utf8');
+check(G37, 'no native <select> is left in the permission matrix',
+  !/<select/.test(mtx),
+  'one converted and one not is two different controls doing the same job on one panel');
+/* ⚠️ THE CLIPPING TRAP. The desktop matrix sits inside `overflow-x: auto`. A popup rendered in
+   place is cut off at that box's edge and scrolls away from its own trigger — it would look
+   broken only on the desktop grid, which is the view this machine has never rendered. */
+check(G37, 'the open list escapes the matrix scroller instead of being clipped by it',
+  /createPortal\(/.test(pick) && /position: fixed/.test(themeCss.slice(themeCss.indexOf('.kpm-picklist'))),
+  'a list drawn inside overflow-x: auto is clipped at the edge and scrolls away from its trigger');
+/* the price of `fixed`: it cannot follow a trigger that moved, so it must not try */
+check(G37, 'the list closes on scroll and resize rather than floating away',
+  /addEventListener\('scroll', shut, true\)/.test(pick) && /addEventListener\('resize', shut\)/.test(pick),
+  'a fixed box left open through a scroll ends up pointing at the wrong rank');
+/* focus NEVER enters the list: one tab stop, arrows move a cursor the reader announces. Moving
+   real focus into a popup is how custom pickers trap a keyboard. */
+check(G37, 'the picker is fully operable from the keyboard',
+  /aria-activedescendant=/.test(pick) &&
+  ["'ArrowDown'", "'ArrowUp'", "'Home'", "'End'", "'Escape'", "'Enter'", "'Tab'"].every(k => pick.includes(k)),
+  'a permissions control a keyboard cannot reach is not a style problem, it is a lockout');
+check(G37, 'what is announced and what is saved come from the same value',
+  /aria-selected=\{o\.value === value\}/.test(pick) && !/useState\(value/.test(pick),
+  'a local copy of the choice is how a picker shows one permission while the matrix holds another');
+/* Lite Mode force-kills every animation, so the entrance must be decoration only: the keyframe's
+   end state has to equal the element's resting state or the list never appears there at all. */
+check(G37, 'the list is visible with its animation stripped',
+  /to\s+\{ opacity: 1; transform: none; \}/.test(themeCss) &&
+  !/\.kpm-picklist \{[^}]*opacity: 0/.test(themeCss),
+  'an element that starts hidden and is REVEALED by an animation stays hidden in Lite Mode');
+check(G37, 'the saved choice is readable without colour',
+  /<Check size=\{12\} aria-hidden="true" \/>/.test(pick) &&
+  /\.kpm-picklist > li\[aria-selected="true"\] > svg \{ opacity: 1; \}/.test(themeCss),
+  'an amber fill alone leaves the choice unreadable to an eye that cannot separate it');
+for (const cls of ['.kpm-matrix', '.kpm-toggle', '.kpm-chips', '.kpm-permrow', '.kpm-permlist',
+                   '.kpm-pick', '.kpm-picklist'])
   check(G37, `${cls} is defined in theme.css, not invented in the JSX`,
     themeCss.includes(cls + ' ') || themeCss.includes(cls + ' {') || themeCss.includes(cls + '{'),
     'an undefined class is the quietest possible bug: no error, no paint');
