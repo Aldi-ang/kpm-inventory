@@ -2737,6 +2737,78 @@ check(G38, "the browser's own chrome follows the theme too",
   /#B4B0A9/.test(indexHtml),
   'a dark address bar over a steel app is the one part of the theme the app does not own');
 
+/* ── 39. the Duke's Ledger has a light variant ───────────────────────────────
+   His pick for the light-mode pilot, 2026-08-15: the sales terminal. It turned out not to be a
+   slate screen at all — 465 hardcoded hexes across 47 colours, and that IS the wood-and-brass
+   identity he designed and hand-tested. So it got its own light palette rather than being
+   converted onto the app's steel-and-gold tokens, which would have deleted the look instead of
+   theming it. His call on the near-identical browns: *"keep them separate, must be difference
+   for a reasons right"*. */
+const G39 = '39. The Duke\'s Ledger has a light variant';
+const duke = fs.readFileSync('src/MerchantSalesView.jsx', 'utf8');
+/* ⚠️ THE ONLY LITERALS ALLOWED TO REMAIN. Black and white belong to the printed nota and the
+   print stylesheet — KPM's business document, out of the palette law's reach. The two greens are
+   WhatsApp's brand mark, which is not ours to restyle. Any OTHER hex is a colour that cannot
+   change theme, which is the whole defect this group exists to prevent. */
+const dukeHex = (duke.match(/#[0-9a-fA-F]{6}/g) || []).map(h => h.toLowerCase());
+const allowedHex = new Set(['#000000', '#ffffff', '#25d366', '#128c7e']);
+check(G39, 'the terminal carries no hardcoded colour of its own any more',
+  dukeHex.every(h => allowedHex.has(h)),
+  'left behind: ' + [...new Set(dukeHex.filter(h => !allowedHex.has(h)))].join(' '));
+check(G39, 'the nota and the WhatsApp mark were left alone',
+  /a4-print-jail[\s\S]{0,200}#ffffff/.test(duke) && /#25D366/i.test(duke) &&
+  /!text-blue-800/.test(duke),
+  'the printed nota keeps KPM company blue — the palette law stops at the print block');
+/* 🔴 THE FAILURE THAT STARTED THIS WHOLE FRONT, IN MINIATURE. A token defined in only one of the
+   two blocks is a colour that cannot change theme — exactly what `:root`-only tokens did to the
+   entire app until group 38. Every Duke token must be declared TWICE. */
+const dukeNames = [...new Set((themeCss.match(/--duke-[a-z0-9-]+(?=:)/g) || []))];
+const oncers = dukeNames.filter(n => (themeCss.match(new RegExp(n + ':', 'g')) || []).length < 2);
+check(G39, 'every Duke token is declared in BOTH themes', dukeNames.length > 40 && !oncers.length,
+  'declared once, so it can never change theme: ' + oncers.join(' '));
+/* ⚠️ EVERY DARK VALUE IS THE EXACT HEX IT REPLACED. This is the safety property of the change and
+   the reason he only has to test light mode: dark cannot have moved. Spot-checked on the five
+   highest-traffic colours — the structural line, the workhorse ink, the amber, the brass, the
+   bench itself. */
+for (const [tok, hex] of [['--duke-edge-1', '#3e3226'], ['--duke-ink-3', '#8b7256'],
+                          ['--duke-amber', '#ff9d00'], ['--duke-brass', '#d4af37'],
+                          ['--duke-fill-ground', '#1a1815']])
+  check(G39, `${tok} still carries its original hex in dark`,
+    new RegExp(tok + ':\\s*' + hex).test(themeCss),
+    'a changed dark value means he has to re-test a terminal he already tested');
+/* 🔴 THE ROLE SPLIT IS THE POINT, AND IT IS WHAT A LATER "TIDY-UP" WOULD UNDO. One hex served as
+   a fill AND as text; as a fill it survives a pale ground, as text it does not. So the tokens are
+   named by ROLE and a role must never be crossed — an -ink token painted as a background, or a
+   fill token used as text, is the invisible-text bug walking straight back in. */
+const crossed = [];
+for (const m of duke.matchAll(/([a-z-]+)-\[var\(--([a-z0-9-]+)\)\]/g)) {
+  const [, prefix, tok] = m;
+  const isText = /^(text|placeholder|caret|decoration)$/.test(prefix);
+  const isEdge = /^(border|ring|outline|divide|stroke|shadow)$/.test(prefix);
+  if (/(^|-)ink(-\d+)?$/.test(tok) && !isText) crossed.push(`${prefix}:${tok}`);
+  if (/-edge(-\d+)?$/.test(tok) && !isEdge) crossed.push(`${prefix}:${tok}`);
+}
+check(G39, 'no ink token is painted as a surface, and no edge token as anything else',
+  !crossed.length,
+  'crossed roles: ' + [...new Set(crossed)].join(' ') +
+  ' — a fill colour used as text is unreadable on the pale ground, and nothing errors');
+/* ⚠️ NO HEX IS NAMED HERE ON PURPOSE. The first version of this check pinned the light amber ink
+   to a literal, and the literal was WRONG — #8a4f00 looked right and measured 3,03:1. Freezing a
+   value a measurement later moved just turns the check into a second thing to fix. The invariant
+   is that the accent inks are SEPARATE tokens that actually change between themes; the number
+   itself belongs to contrast.selfcheck.mjs, which measures rather than remembers. */
+const dukeAccentInks = ['duke-amber-ink', 'duke-brass-ink', 'duke-danger-ink'];
+check(G39, 'the amber, brass and red each kept their own ink, and each one changes theme',
+  dukeAccentInks.every(t => new RegExp(`text-\\[var\\(--${t}\\)\\]`).test(duke)) &&
+  dukeAccentInks.every(t => {
+    const v = [...themeCss.matchAll(new RegExp(`--${t}:\\s*(#[0-9a-f]{6})`, 'g'))].map(m => m[1]);
+    return v.length === 2 && v[0] !== v[1];
+  }),
+  'gold and red as text are the two he has reported unreadable in light mode — group 32 again');
+check(G39, 'the Duke palette is measured, not just declared',
+  /duke-amber-ink/.test(fs.readFileSync('src/config/contrast.selfcheck.mjs', 'utf8')),
+  'a palette nobody measures is how #8a4f00 shipped at 3,03:1 in the first pass of this very file');
+
 /* ── report ──────────────────────────────────────────────────────────────── */
 let last = '';
 for (const r of results) {

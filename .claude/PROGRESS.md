@@ -88,6 +88,38 @@ Three things the next session must know before starting:
    (the nota), and `#25D366` (WhatsApp brand). Everything from the `print-modal-wrapper` line
    onward is mixed — the merchant bubble and the scrollbar there ARE app UI and do convert.
 
+## ✅ THE LIGHT DUKE'S LEDGER IS BUILT — 524/524, contrast self-check passes
+
+**467 sites converted, 54 new `--duke-*` tokens, group 39.** His answer on the near-identical
+browns: *"keep them separate, must be difference for a reasons right"* — kept separate.
+
+⚠️ **DARK MODE IS PROVEN UNCHANGED.** Every token's dark value is the exact hex it replaced; a
+diff of all 465 arbitrary-value sites against `HEAD` before the change reported **0 mismatches**.
+**He only has to test LIGHT mode.**
+
+**The role split is the load-bearing idea and a later "tidy-up" will want to undo it.** One hex
+served as a fill AND as text — `#ff9d00` is 24 text sites and 21 fill/edge sites. As a fill it
+survives a pale ground; as text it does not. So tokens are named by ROLE (`-ink` / `-edge` /
+fill), and a check now fails if an ink token is ever painted as a surface or vice versa.
+
+**Two things the measurement caught that the eye did not:**
+· The first light palette had **six failing pairs** — amber text 3,03:1, brass 3,60:1, red 4,32:1,
+  three borders under 3:1. The whole surface ladder was lifted a step and the accent inks driven
+  much darker than they "looked" right. **Gold and red in light mode, for the third time.**
+· ⚠️ `contrast.selfcheck.mjs` read only the FIRST `:root` block — the new palette added a second
+  one, so all 54 tokens would have gone unmeasured while it still printed *"all pairs pass"*.
+  Fixed to read every block. **A measuring tool that quietly measures less than it claims.**
+
+🔴 **A REAL FINDING HE SHOULD DECIDE ON — the terminal's DARK contrast was already below target
+in 13 pairs before any of this.** Not introduced here; these are the shipped values. The two that
+are certainly real: the workhorse text `#8b7256` on a panel measures **3,52:1** (needs 4,5) and
+the structural line `#3e3226` on a panel measures **1,28:1** (needs 3). The self-check now prints
+these as `note`, not `FAIL` — fixing them means changing colours he hand-tested, which is his
+call, not the checker's.
+
+---
+
+### (resolved) the near-identical browns
 🔴 **DECISION HE OWES BEFORE THE SWEEP:** several wood tones differ by one or two channel steps
 (`#2a231d` / `#2a2520` / `#2b2318` / `#2b2417`, one or two uses each). **Collapsing them** gives a
 much smaller token set but means dark mode shifts imperceptibly — and he would have to re-test the

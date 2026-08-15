@@ -571,7 +571,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
             <div className="kpm-cube">
                 <i className="f">
                     {front ? <img src={front} alt={prod?.name || ''} />
-                           : <span className="grid place-items-center w-full h-full text-[9px] font-black font-mono tracking-widest text-[#ff9d00]">EXAMINE</span>}
+                           : <span className="grid place-items-center w-full h-full text-[9px] font-black font-mono tracking-widest text-[var(--duke-amber-ink)]">EXAMINE</span>}
                 </i>
                 {face('bk', back)}
                 {face('l', img.left)}
@@ -1352,7 +1352,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                             key={s.id}
                             onClick={() => { if (!on) handleCustomerSelect(s, s._metres); }}
                             aria-pressed={on}
-                            className={`kpm-press min-w-0 flex-1 truncate rounded border px-2 py-1.5 font-mono text-[9px] font-black uppercase tracking-[0.08em] ${on ? 'border-[#d4af37] bg-[#1a1815] text-[#d4af37]' : 'border-[#3e3226] bg-transparent text-[#7a736a]'}`}
+                            className={`kpm-press min-w-0 flex-1 truncate rounded border px-2 py-1.5 font-mono text-[9px] font-black uppercase tracking-[0.08em] ${on ? 'border-[var(--duke-brass-edge)] bg-[var(--duke-fill-ground)] text-[var(--duke-brass-ink)]' : 'border-[var(--duke-edge-1)] bg-transparent text-[var(--ink-dim)]'}`}
                         >
                             {s.name} &middot; {s._metres}m
                         </button>
@@ -1484,9 +1484,9 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
             <div
                 onPointerDown={(e) => startDrawerDrag(e, () => {})}
                 style={{ touchAction: 'none' }}
-                className="manifest-dropdown-area hide-on-print shrink-0 h-[52px] px-3 flex items-center gap-2.5 bg-[#26211c] border-b border-[#3e3226] relative z-[60] cursor-grab active:cursor-grabbing select-none"
+                className="manifest-dropdown-area hide-on-print shrink-0 h-[52px] px-3 flex items-center gap-2.5 bg-[var(--duke-fill-panel)] border-b border-[var(--duke-edge-1)] relative z-[60] cursor-grab active:cursor-grabbing select-none"
             >
-                <Store size={16} className="shrink-0 text-[#8b7256]" />
+                <Store size={16} className="shrink-0 text-[var(--duke-ink-3)]" />
                 <button
                     onClick={() => setShowCustomerDropdown(true)}
                     aria-label="Choose customer"
@@ -1494,11 +1494,11 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                 >
                     {customerName ? (
                         <>
-                            <span className="block text-[9px] font-black uppercase tracking-widest text-[#5c4b3a] leading-none">Customer</span>
-                            <span className="block text-sm font-black uppercase tracking-wide text-[#f5e6c8] truncate leading-tight mt-1">{customerName}</span>
+                            <span className="block text-[9px] font-black uppercase tracking-widest text-[var(--duke-ink-6)] leading-none">Customer</span>
+                            <span className="block text-sm font-black uppercase tracking-wide text-[var(--duke-paper-ink)] truncate leading-tight mt-1">{customerName}</span>
                         </>
                     ) : (
-                        <span className="block text-xs font-black uppercase tracking-widest text-[#8b7256]">Customer — tap to choose</span>
+                        <span className="block text-xs font-black uppercase tracking-widest text-[var(--duke-ink-3)]">Customer — tap to choose</span>
                     )}
                 </button>
                 {customerName.length > 0 && (
@@ -1518,16 +1518,16 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                 <div className="manifest-dropdown-area hide-on-print fixed inset-0 z-[300] flex items-start justify-center">
                     <div className="absolute inset-0 bg-black/85 backdrop-blur-sm" onClick={() => setShowCustomerDropdown(false)}></div>
 
-                    <div className="relative w-full lg:max-w-md lg:mt-16 max-h-[70vh] flex flex-col bg-[#161412] border-b-4 lg:border-4 border-[#3e3226] shadow-[0_10px_40px_rgba(0,0,0,0.7)]">
-                        <div className="shrink-0 flex items-center gap-2 px-4 py-3 border-b border-[#3e3226]">
-                            <Store size={16} className="shrink-0 text-[#8b7256]" />
-                            <span className="flex-1 text-xs font-black uppercase tracking-widest text-[#8b7256]">Who is buying?</span>
+                    <div className="relative w-full lg:max-w-md lg:mt-16 max-h-[70vh] flex flex-col bg-[var(--duke-fill-deep)] border-b-4 lg:border-4 border-[var(--duke-edge-1)] shadow-[0_10px_40px_rgba(0,0,0,0.7)]">
+                        <div className="shrink-0 flex items-center gap-2 px-4 py-3 border-b border-[var(--duke-edge-1)]">
+                            <Store size={16} className="shrink-0 text-[var(--duke-ink-3)]" />
+                            <span className="flex-1 text-xs font-black uppercase tracking-widest text-[var(--duke-ink-3)]">Who is buying?</span>
                             {/* Says DONE, not an X. Half of what gets typed here is a walk-in that
                                 is never in the book, and an X on the way out of that reads as
                                 "throw the name away". */}
                             <button
                                 onClick={() => setShowCustomerDropdown(false)}
-                                className="kpm-hover shrink-0 px-3 py-1.5 border border-[#8b7256] rounded text-[10px] font-black uppercase tracking-widest text-[#f5e6c8]"
+                                className="kpm-hover shrink-0 px-3 py-1.5 border border-[var(--duke-edge-5)] rounded text-[10px] font-black uppercase tracking-widest text-[var(--duke-paper-ink)]"
                             >Done</button>
                         </div>
 
@@ -1540,22 +1540,22 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                 onChange={handleManualCustomerType}
                                 placeholder="Type the shop name"
                                 aria-label="Customer name"
-                                className="w-full bg-black/60 border-2 border-[#3e3226] focus:border-[#ff9d00] rounded-lg px-3 py-3 text-base font-bold uppercase text-[#f5e6c8] placeholder-[#5c4b3a] outline-none transition-colors"
+                                className="w-full bg-black/60 border-2 border-[var(--duke-edge-1)] focus:border-[var(--duke-amber-edge)] rounded-lg px-3 py-3 text-base font-bold uppercase text-[var(--duke-paper-ink)] placeholder-[var(--duke-ink-6)] outline-none transition-colors"
                             />
                         </div>
 
-                        <div className="flex-1 min-h-0 overflow-y-auto border-t border-[#3e3226]">
+                        <div className="flex-1 min-h-0 overflow-y-auto border-t border-[var(--duke-edge-1)]">
                             {suggestedCustomers.length > 0 ? suggestedCustomers.map(c => (
                                 <button
                                     key={c.id}
                                     onClick={() => handleCustomerSelect(c)}
-                                    className="w-full text-left px-4 py-3 border-b border-[#3e3226] flex items-center justify-between gap-3 hover:bg-[#26211c] active:bg-[#26211c] transition-colors"
+                                    className="w-full text-left px-4 py-3 border-b border-[var(--duke-edge-1)] flex items-center justify-between gap-3 hover:bg-[var(--duke-fill-panel)] active:bg-[var(--duke-fill-panel)] transition-colors"
                                 >
-                                    <span className="text-sm font-bold uppercase text-[#f5e6c8] truncate">{c.name}</span>
-                                    <span className="shrink-0 text-[9px] font-black uppercase tracking-widest text-[#8b7256]">Profiled</span>
+                                    <span className="text-sm font-bold uppercase text-[var(--duke-paper-ink)] truncate">{c.name}</span>
+                                    <span className="shrink-0 text-[9px] font-black uppercase tracking-widest text-[var(--duke-ink-3)]">Profiled</span>
                                 </button>
                             )) : (
-                                <p className="px-4 py-6 text-center text-[11px] uppercase tracking-widest text-[#5c4b3a] leading-relaxed">
+                                <p className="px-4 py-6 text-center text-[11px] uppercase tracking-widest text-[var(--duke-ink-6)] leading-relaxed">
                                     {customerName.trim()
                                         ? 'Not in the book — the sale will use this name exactly as typed.'
                                         : 'Start typing to search the book.'}
@@ -1570,48 +1570,48 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
     );
 
     const renderManifestUI = (isMobile) => (
-        <div className={`kpm-parchment text-[#2a231d] shadow-2xl relative flex flex-col border-[#a89070] ${isMobile ? 'flex-1 border-t-2' : 'w-80 border-l-2'} shrink-0`}>
+        <div className={`kpm-parchment text-[var(--duke-on-plate-2)] shadow-2xl relative flex flex-col border-[var(--duke-edge-3)] ${isMobile ? 'flex-1 border-t-2' : 'w-80 border-l-2'} shrink-0`}>
             {/* grain now comes from .kpm-parchment */}
-            <div className="p-3 md:p-4 border-b-2 border-dashed border-[#a89070] relative z-10 text-center uppercase font-bold tracking-widest text-[#3e3226]">Manifest</div>
+            <div className="p-3 md:p-4 border-b-2 border-dashed border-[var(--duke-edge-3)] relative z-10 text-center uppercase font-bold tracking-widest text-[var(--duke-ink-7)]">Manifest</div>
             
-            <div className="p-3 md:p-4 relative z-[60] border-b border-[#a89070] bg-[#dfd5bc] space-y-3 md:space-y-4 manifest-dropdown-area">
+            <div className="p-3 md:p-4 relative z-[60] border-b border-[var(--duke-edge-3)] bg-[var(--duke-paper-2)] space-y-3 md:space-y-4 manifest-dropdown-area">
                 {/* the dropdown backdrop moved with the picker — it belongs to renderCustomerBar now */}
 
                 {/* --- 🚀 DUAL MODE TOGGLE (SALE VS RETUR) --- */}
-                <div className="flex bg-[#1a1815] rounded border border-[#5c4b3a] p-1 mb-2">
-                    <button onClick={() => { setIsReturMode(false); setReturType('EXCHANGE'); }} className={`kpm-hover flex-1 py-1.5 text-[10px] font-black uppercase tracking-widest rounded ${!isReturMode ? 'bg-[#c9a227] text-[#2b2318]' : 'text-[#8b7256] hover:text-white'}`}>Sale Mode</button>
+                <div className="flex bg-[var(--duke-fill-ground)] rounded border border-[var(--duke-edge-2)] p-1 mb-2">
+                    <button onClick={() => { setIsReturMode(false); setReturType('EXCHANGE'); }} className={`kpm-hover flex-1 py-1.5 text-[10px] font-black uppercase tracking-widest rounded ${!isReturMode ? 'bg-[var(--duke-brass-2)] text-[var(--duke-on-plate)]' : 'text-[var(--duke-ink-3)] hover:text-white'}`}>Sale Mode</button>
                     <button onClick={() => {
                         if (!allowRetur) return notify("You do not have clearance to process returns.");
                         setIsReturMode(true);
-                    }} className={`kpm-hover flex-1 py-1.5 text-[10px] font-black uppercase tracking-widest rounded ${isReturMode ? 'bg-[#8e4038] text-[#f7f2ee]' : 'text-[#8b7256] hover:text-white'}`}>Retur Mode</button>
+                    }} className={`kpm-hover flex-1 py-1.5 text-[10px] font-black uppercase tracking-widest rounded ${isReturMode ? 'bg-[var(--danger-plate)] text-[var(--danger-plate-ink)]' : 'text-[var(--duke-ink-3)] hover:text-white'}`}>Retur Mode</button>
                 </div>
 
                 {/* --- 🚀 SUB MODE TOGGLE (BUYBACK VS EXCHANGE) --- */}
                 {isReturMode && (
-                    <div className="flex bg-[#2a2520] rounded border border-[#5c4b3a] p-1 mb-2 shadow-inner">
+                    <div className="flex bg-[var(--duke-fill-panel-2)] rounded border border-[var(--duke-edge-2)] p-1 mb-2 shadow-inner">
                         {/* Muted plates, no emoji. These two are a mode switch, not an alert —
                             a saturated orange and a bright gold shouting at each other was the
                             loudest thing on a screen whose whole point is a quiet ledger. Buyback
                             keeps the desaturated danger plate because it pays money OUT. */}
-                        <button onClick={() => setReturType('BUYBACK')} className={`kpm-hover flex-1 py-1 text-[11px] font-bold uppercase tracking-widest rounded ${returType === 'BUYBACK' ? 'bg-[#8e4038] text-[#f7f2ee]' : 'text-[#8b7256] hover:text-white'}`}>Buyback (Refund)</button>
-                        <button onClick={() => setReturType('EXCHANGE')} className={`kpm-hover flex-1 py-1 text-[11px] font-bold uppercase tracking-widest rounded ${returType === 'EXCHANGE' ? 'bg-[#8a6a2f] text-[#f5e6c8]' : 'text-[#8b7256] hover:text-white'}`}>Exchange (Tukar)</button>
+                        <button onClick={() => setReturType('BUYBACK')} className={`kpm-hover flex-1 py-1 text-[11px] font-bold uppercase tracking-widest rounded ${returType === 'BUYBACK' ? 'bg-[var(--danger-plate)] text-[var(--danger-plate-ink)]' : 'text-[var(--duke-ink-3)] hover:text-white'}`}>Buyback (Refund)</button>
+                        <button onClick={() => setReturType('EXCHANGE')} className={`kpm-hover flex-1 py-1 text-[11px] font-bold uppercase tracking-widest rounded ${returType === 'EXCHANGE' ? 'bg-[var(--duke-brass-3)] text-[var(--duke-paper-ink)]' : 'text-[var(--duke-ink-3)] hover:text-white'}`}>Exchange (Tukar)</button>
                     </div>
                 )}
 
                 {/* --- 🚀 TEAMWORK IOU BANNER --- */}
                 {selectedCustomerInfo?.pendingIOUs?.length > 0 && !isReturMode && (
-                    <div className="bg-[#2b2417] border-2 border-[#d4af37] p-3 rounded mb-3 shadow-[0_0_15px_rgba(212,175,55,0.28)] animate-fade-in-up">
-                        <h4 className="text-[#d4af37] font-black uppercase text-[10px] flex items-center gap-1 mb-2"><AlertCircle size={14}/> IOU Pending Fulfillment</h4>
+                    <div className="bg-[var(--duke-fill-panel-3)] border-2 border-[var(--duke-brass-edge)] p-3 rounded mb-3 shadow-[0_0_15px_rgba(212,175,55,0.28)] animate-fade-in-up">
+                        <h4 className="text-[var(--duke-brass-ink)] font-black uppercase text-[10px] flex items-center gap-1 mb-2"><AlertCircle size={14}/> IOU Pending Fulfillment</h4>
                         {selectedCustomerInfo.pendingIOUs.map((iou, i) => {
                             const isAlreadyInCart = cart.some(ci => ci.iouId === iou.id);
                             return (
-                                <div key={i} className="flex justify-between items-center text-[11px] text-[#d4c5a3] mb-1 border-b border-[#5c4b3a] pb-1">
-                                    <span>{iou.qty} {iou.unit} {iou.name} <br/><span className="text-[#8b7256] font-mono">By: {iou.agentName} | {new Date(iou.date).toLocaleDateString()}</span></span>
+                                <div key={i} className="flex justify-between items-center text-[11px] text-[var(--duke-ink-1)] mb-1 border-b border-[var(--duke-edge-2)] pb-1">
+                                    <span>{iou.qty} {iou.unit} {iou.name} <br/><span className="text-[var(--duke-ink-3)] font-mono">By: {iou.agentName} | {new Date(iou.date).toLocaleDateString()}</span></span>
                                     {!isAlreadyInCart ? (
-                                        <button onClick={() => handleFulfillIOU(iou)} className="bg-[#c9a227] hover:bg-[#d4af37] text-[#2b2318] px-2 py-1 rounded font-bold uppercase transition-colors">Fulfill</button>
+                                        <button onClick={() => handleFulfillIOU(iou)} className="bg-[var(--duke-brass-2)] hover:bg-[var(--duke-brass)] text-[var(--duke-on-plate)] px-2 py-1 rounded font-bold uppercase transition-colors">Fulfill</button>
                                     ) : (
                                         /* palette law: "done" is never a hue. Gold plate + tick, same as everywhere else. */
-                                        <span className="text-[#d4af37] font-bold uppercase px-2 py-1 border border-[#d4af37]/50 rounded bg-[#d4af37]/10"><Check size={10} className="inline mr-1"/> Added</span>
+                                        <span className="text-[var(--duke-brass-ink)] font-bold uppercase px-2 py-1 border border-[var(--duke-brass-edge)]/50 rounded bg-[var(--duke-brass)]/10"><Check size={10} className="inline mr-1"/> Added</span>
                                     )}
                                 </div>
                             );
@@ -1620,12 +1620,12 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                 )}
 
                 {debtInfo && debtInfo.status === 'RED' && (
-                        <div className="bg-[#5c4b3a] border-2 border-red-500/80 p-3 shadow-[0_0_15px_rgba(239,68,68,0.5)] animate-pulse rounded-sm relative z-[65] mb-4">
+                        <div className="bg-[var(--duke-fill-plank-2)] border-2 border-red-500/80 p-3 shadow-[0_0_15px_rgba(239,68,68,0.5)] animate-pulse rounded-sm relative z-[65] mb-4">
                             <div className="flex items-center gap-2 mb-1">
                                 <AlertCircle className="text-red-500 shrink-0" size={16}/>
                                 <h4 className="text-red-500 font-black uppercase tracking-widest text-[10px]">Warning: Jatuh Tempo!</h4>
                             </div>
-                            <p className="text-[#d4c5a3] text-[11px] leading-relaxed uppercase tracking-widest mt-1">
+                            <p className="text-[var(--duke-ink-1)] text-[11px] leading-relaxed uppercase tracking-widest mt-1">
                                 {customerName} OWES <span className="font-bold text-white text-[10px]">Rp {new Intl.NumberFormat('id-ID').format(debtInfo.totalDebt)}</span> FROM {debtInfo.ageDays} DAYS AGO.
                             </p>
                             <div className="text-white bg-red-600 px-1.5 py-0.5 mt-2 inline-block text-[11px] uppercase tracking-widest font-black shadow-md">Collect payment before issuing new Titip!</div>
@@ -1633,7 +1633,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                     )}
 
                     <div className="relative">
-                        <label className="text-[10px] font-bold uppercase tracking-widest block mb-1 text-[#8b7256]">Customer Name</label>
+                        <label className="text-[10px] font-bold uppercase tracking-widest block mb-1 text-[var(--duke-ink-3)]">Customer Name</label>
                         {/* Read-only echo. The picker is the bar at the top of this column now, but a
                             manifest with no name written on it is not a manifest, so the paper still
                             states who the deal is with. */}
@@ -1646,9 +1646,9 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                         <button
                             onClick={() => setShowCustomerDropdown(true)}
                             aria-label={customerName ? `Customer: ${customerName}. Tap to change` : 'Choose customer'}
-                            className="kpm-hover w-full text-left bg-[#efe3c6] border border-dashed border-[#a89070] text-[#3e3226] p-2 text-xs md:text-sm font-black uppercase rounded truncate"
+                            className="kpm-hover w-full text-left bg-[var(--duke-paper-5)] border border-dashed border-[var(--duke-edge-3)] text-[var(--duke-ink-7)] p-2 text-xs md:text-sm font-black uppercase rounded truncate"
                         >
-                            {customerName || <span className="text-[#8b7256] font-bold normal-case tracking-normal">Tap to choose the customer</span>}
+                            {customerName || <span className="text-[var(--duke-ink-3)] font-bold normal-case tracking-normal">Tap to choose the customer</span>}
                         </button>
 
                         <div className="mt-2 min-h-[20px]">
@@ -1657,8 +1657,8 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                     <div className="flex items-center gap-2 text-[10px] uppercase tracking-widest font-bold">
                                         {gpsStatus === 'checking' && (
                                             <div className="flex items-center justify-between w-full">
-                                                <span className="text-[#ff9d00] animate-pulse flex items-center gap-1"><MapPin size={12}/> Acquiring Satellites...</span>
-                                                <button onClick={() => verifyLocation(true)} className="text-[#ff9d00] hover:text-white underline text-[11px] ml-2">PC Fast Scan</button>
+                                                <span className="text-[var(--duke-amber-ink)] animate-pulse flex items-center gap-1"><MapPin size={12}/> Acquiring Satellites...</span>
+                                                <button onClick={() => verifyLocation(true)} className="text-[var(--duke-amber-ink)] hover:text-white underline text-[11px] ml-2">PC Fast Scan</button>
                                             </div>
                                         )}
                                         
@@ -1667,11 +1667,11 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                             decides whether a sale is allowed to happen at all — it should
                                             read as a statement, with the distance and the store named. */}
                                         {gpsStatus === 'verified' && (
-                                            <div className="w-full border-l-[3px] border-[#a35a00] bg-[#f2e9d4] px-3 py-2 rounded-r">
-                                                <b className="block font-mono text-[9px] font-extrabold uppercase tracking-[0.16em] text-[#a35a00] mb-1">Location verified</b>
-                                                <span className="block normal-case tracking-normal text-[12px] font-semibold text-[#2b2318] leading-snug">
+                                            <div className="w-full border-l-[3px] border-[var(--duke-amber-edge-2)] bg-[var(--duke-paper-6)] px-3 py-2 rounded-r">
+                                                <b className="block font-mono text-[9px] font-extrabold uppercase tracking-[0.16em] text-[var(--duke-amber-ink-2)] mb-1">Location verified</b>
+                                                <span className="block normal-case tracking-normal text-[12px] font-semibold text-[var(--duke-on-plate)] leading-snug">
                                                     {distanceToStore}m from {selectedCustomerInfo.name}
-                                                    <i className="not-italic font-mono text-[8px] font-extrabold uppercase tracking-[0.1em] text-[#6b5a3c] ml-2 align-middle">auto</i>
+                                                    <i className="not-italic font-mono text-[8px] font-extrabold uppercase tracking-[0.1em] text-[var(--duke-ink-4)] ml-2 align-middle">auto</i>
                                                 </span>
                                             </div>
                                         )}
@@ -1697,7 +1697,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                                                 <Camera size={10}/> Request 100m HQ Bypass
                                                             </button>
                                                         ) : bypassState.status === 'uploading' ? (
-                                                            <span className="text-[11px] text-[#ff9d00] font-bold uppercase animate-pulse">Uploading Proof...</span>
+                                                            <span className="text-[11px] text-[var(--duke-amber-ink)] font-bold uppercase animate-pulse">Uploading Proof...</span>
                                                         ) : bypassState.status === 'pending' ? (
                                                             <span className="text-[11px] text-yellow-400 font-bold uppercase animate-pulse bg-yellow-900/20 px-2 py-1 rounded border border-yellow-500/50 inline-block w-fit">Awaiting HQ Approval...</span>
                                                         ) : null}
@@ -1705,7 +1705,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                                     </div>
                                                 )}
                                                 {!canOverrideGps && distanceToStore > 100 && (
-                                                    <span className="text-[11px] text-[#8b7256] font-bold uppercase mt-1">Distance &gt; 100m. Bypass Unavailable.</span>
+                                                    <span className="text-[11px] text-[var(--duke-ink-3)] font-bold uppercase mt-1">Distance &gt; 100m. Bypass Unavailable.</span>
                                                 )}
                                             </div>
                                         )}
@@ -1715,11 +1715,11 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                     </div>
                                     
                                     {(!canOverrideGps && !hasClearance(user?.userRole || user?.role, 'can_unrestricted_sample') && !['verified', 'bypass', 'walk_in'].includes(gpsStatus)) ? (
-                                        <button disabled className="w-full mt-1 bg-[#1a1815] border border-[#3e3226] text-[#8b7256] text-[10px] font-bold uppercase tracking-widest p-2 rounded shadow-inner flex items-center justify-center gap-2 cursor-not-allowed">
+                                        <button disabled className="w-full mt-1 bg-[var(--duke-fill-ground)] border border-[var(--duke-edge-1)] text-[var(--duke-ink-3)] text-[10px] font-bold uppercase tracking-widest p-2 rounded shadow-inner flex items-center justify-center gap-2 cursor-not-allowed">
                                             <Lock size={12}/> Sample Locked (Requires GPS)
                                         </button>
                                     ) : (
-                                        <button onClick={() => setShowSampleModal(true)} className="w-full mt-1 bg-[#1a1815] border border-[#ff9d00]/50 hover:bg-[#ff9d00] text-[#ff9d00] hover:text-black text-[10px] font-bold uppercase tracking-widest p-2 rounded shadow-md flex items-center justify-center gap-2 transition-colors active:scale-95">
+                                        <button onClick={() => setShowSampleModal(true)} className="w-full mt-1 bg-[var(--duke-fill-ground)] border border-[var(--duke-amber-edge)]/50 hover:bg-[var(--duke-amber)] text-[var(--duke-amber-ink)] hover:text-black text-[10px] font-bold uppercase tracking-widest p-2 rounded shadow-md flex items-center justify-center gap-2 transition-colors active:scale-95">
                                             <Package size={12}/> Deploy Free Sample
                                         </button>
                                     )}
@@ -1733,7 +1733,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                     <div className="flex items-center gap-2 text-[10px] uppercase tracking-widest font-bold text-orange-600">
                                         <AlertCircle size={12}/> Walk-in (Locked to Ecer)
                                     </div>
-                                    <button onClick={() => setShowNooModal(true)} className="bg-[#3e3226] hover:bg-[#5c4b3a] text-[#ff9d00] text-[10px] font-bold uppercase tracking-widest p-2 rounded shadow-md flex items-center justify-center gap-2 transition-colors">
+                                    <button onClick={() => setShowNooModal(true)} className="bg-[var(--duke-fill-plank)] hover:bg-[var(--duke-fill-plank-2)] text-[var(--duke-amber-ink)] text-[10px] font-bold uppercase tracking-widest p-2 rounded shadow-md flex items-center justify-center gap-2 transition-colors">
                                         <Store size={12}/> Register Outlet to Unlock Tiers
                                     </button>
                                 </div>
@@ -1743,21 +1743,21 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                     </div>
 
                 <div>
-                    <label className="text-[10px] font-bold uppercase text-[#8b7256] block mb-1">Payment Method</label>
-                    <select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)} disabled={isReturMode} className={`w-full bg-[#f5e6c8] border border-[#a89070] text-[#3e3226] p-2 text-xs md:text-sm font-bold uppercase outline-none rounded ${isReturMode ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                    <label className="text-[10px] font-bold uppercase text-[var(--duke-ink-3)] block mb-1">Payment Method</label>
+                    <select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)} disabled={isReturMode} className={`w-full bg-[var(--duke-paper)] border border-[var(--duke-edge-3)] text-[var(--duke-ink-7)] p-2 text-xs md:text-sm font-bold uppercase outline-none rounded ${isReturMode ? 'opacity-50 cursor-not-allowed' : ''}`}>
                         {allowedPayments.map(method => ( <option key={method} value={method}>{method === 'Titip' ? 'Consignment' : method}</option> ))}
                     </select>
                 </div>
 
                 {paymentMethod === 'Titip' && !isReturMode && (
-                    <div className="mt-3 bg-[#3e3226] border border-[#ff9d00]/50 p-3 rounded shadow-inner animate-fade-in">
-                        <label className="text-[10px] font-bold text-[#d4c5a3] mb-2 flex items-center justify-between uppercase tracking-widest">
+                    <div className="mt-3 bg-[var(--duke-fill-plank)] border border-[var(--duke-amber-edge)]/50 p-3 rounded shadow-inner animate-fade-in">
+                        <label className="text-[10px] font-bold text-[var(--duke-ink-1)] mb-2 flex items-center justify-between uppercase tracking-widest">
                             <span>Jatuh Tempo (Due Date)</span>
-                            <span className="bg-[#ff9d00] text-black px-2 py-0.5 rounded shadow-sm text-[10px]">{tempoDays} Hari</span>
+                            <span className="bg-[var(--duke-amber)] text-black px-2 py-0.5 rounded shadow-sm text-[10px]">{tempoDays} Hari</span>
                         </label>
                         <div className="flex items-center gap-3">
-                            <input type="range" min="1" max="60" value={tempoDays} onChange={(e) => setTempoDays(parseInt(e.target.value))} className="w-full accent-[#ff9d00] h-1.5 bg-[#1a1815] rounded-lg appearance-none cursor-pointer" />
-                            <input type="number" min="1" max="60" value={tempoDays} onChange={(e) => setTempoDays(parseInt(e.target.value))} className="w-12 bg-[#1a1815] border border-[#5c4b3a] rounded p-1 text-center text-[#ff9d00] text-xs font-bold focus:outline-none focus:border-[#ff9d00]"/>
+                            <input type="range" min="1" max="60" value={tempoDays} onChange={(e) => setTempoDays(parseInt(e.target.value))} className="w-full accent-[var(--duke-amber)] h-1.5 bg-[var(--duke-fill-ground)] rounded-lg appearance-none cursor-pointer" />
+                            <input type="number" min="1" max="60" value={tempoDays} onChange={(e) => setTempoDays(parseInt(e.target.value))} className="w-12 bg-[var(--duke-fill-ground)] border border-[var(--duke-edge-2)] rounded p-1 text-center text-[var(--duke-amber-ink)] text-xs font-bold focus:outline-none focus:border-[var(--duke-amber-edge)]"/>
                         </div>
                     </div>
                 )}
@@ -1769,8 +1769,8 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                             <h4 className={`font-black text-[11px] uppercase tracking-[0.1em] ${selectedCustomerDebts.isOverdue ? 'text-red-500' : 'text-orange-500'}`}>
                                 {selectedCustomerDebts.isOverdue ? '⚠️ OVERDUE TITIP DETECTED' : 'Active Titip Balance'}
                             </h4>
-                            <p className="text-[10px] text-[#5c4b3a] mt-0.5 leading-tight font-bold">
-                                <strong className="text-[#3e3226]">Rp {new Intl.NumberFormat('id-ID').format(selectedCustomerDebts.totalDebt)}</strong> Unpaid.
+                            <p className="text-[10px] text-[var(--duke-ink-6)] mt-0.5 leading-tight font-bold">
+                                <strong className="text-[var(--duke-ink-7)]">Rp {new Intl.NumberFormat('id-ID').format(selectedCustomerDebts.totalDebt)}</strong> Unpaid.
                             </p>
                         </div>
                     </div>
@@ -1782,7 +1782,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                 controls a salesman uses most ended up furthest apart exactly when the basket
                 was biggest. The cap is a max-height, not a fixed one, so a basket of one line
                 does not leave a hole. */}
-            <div className="flex-1 min-h-0 max-h-[min(54vh,540px)] overflow-y-auto p-2 md:p-3 relative z-10 space-y-2 kpm-scroll bg-[#dfd5bc]/50">
+            <div className="flex-1 min-h-0 max-h-[min(54vh,540px)] overflow-y-auto p-2 md:p-3 relative z-10 space-y-2 kpm-scroll bg-[var(--duke-paper-2)]/50">
                 {cart.length === 0 ? (
                     <div className="text-center opacity-50 mt-8 font-bold uppercase text-xs md:text-sm">Manifest Empty</div>
                 ) : (
@@ -1790,19 +1790,19 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                         const mergedTiers = new Set(allowedTiers);
                         if (lockedTier) mergedTiers.add(lockedTier);
                         return (
-                        <div key={idx} className={`kpm-row-in flex flex-col border-b-2 border-dashed border-[#a89070]/30 p-3 md:p-4 mb-1 rounded border shadow-sm ${isReturMode ? (returType === 'EXCHANGE' ? 'bg-[#f0e2c0] border-[#c9a227]' : 'bg-[#f2ddd6] border-[#9e4038]') : 'bg-[#f5e6c8] border-[#a89070]/50'}`}>
+                        <div key={idx} className={`kpm-row-in flex flex-col border-b-2 border-dashed border-[var(--duke-edge-3)]/30 p-3 md:p-4 mb-1 rounded border shadow-sm ${isReturMode ? (returType === 'EXCHANGE' ? 'bg-[var(--duke-paper-3)] border-[var(--duke-brass-edge-2)]' : 'bg-[var(--duke-paper-7)] border-[var(--duke-danger-edge)]') : 'bg-[var(--duke-paper)] border-[var(--duke-edge-3)]/50'}`}>
                             <div className="flex justify-between items-start mb-2">
-                                <span className={`text-[10px] md:text-xs font-black w-40 leading-tight uppercase break-words whitespace-normal ${isReturMode ? (returType === 'EXCHANGE' ? 'text-[#6b4d0f]' : 'text-red-900') : 'text-[#3e3226]'}`}>
+                                <span className={`text-[10px] md:text-xs font-black w-40 leading-tight uppercase break-words whitespace-normal ${isReturMode ? (returType === 'EXCHANGE' ? 'text-[var(--duke-brass-ink-2)]' : 'text-red-900') : 'text-[var(--duke-ink-7)]'}`}>
                                     {item.name} {isReturMode && (returType === 'EXCHANGE' ? '(TUKAR GANTI)' : '(BUYBACK)')}
                                     {item.isIouFulfillment && ' (FULFILLING IOU)'}
                                 </span>
-                                <button onClick={() => setCart(c => c.filter(i => i.productId !== item.productId))} className={`p-1 rounded ${isReturMode ? (returType === 'EXCHANGE' ? 'bg-[#e6d3a3] text-[#6b4d0f] hover:text-red-700' : 'text-red-800 hover:text-red-600 bg-red-200') : 'text-red-800 bg-red-100 hover:text-red-600'}`}><X size={14}/></button>
+                                <button onClick={() => setCart(c => c.filter(i => i.productId !== item.productId))} className={`p-1 rounded ${isReturMode ? (returType === 'EXCHANGE' ? 'bg-[var(--duke-paper-4)] text-[var(--duke-brass-ink-2)] hover:text-red-700' : 'text-red-800 hover:text-red-600 bg-red-200') : 'text-red-800 bg-red-100 hover:text-red-600'}`}><X size={14}/></button>
                             </div>
                             {/* the four boxes: type what the customer said, in their words */}
                             {!item.isIouFulfillment && (
                                 <div className="flex items-center gap-1 flex-wrap mb-2">
                                     {['Karton', 'Bal', 'Slop', 'Bks'].map(u => (
-                                        <span key={u} className="flex items-center gap-1 border border-[#a89070] bg-[#f7f0e0] px-1.5 py-1 rounded">
+                                        <span key={u} className="flex items-center gap-1 border border-[var(--duke-edge-3)] bg-[var(--duke-paper-8)] px-1.5 py-1 rounded">
                                             <input
                                                 type="text"
                                                 inputMode="numeric"
@@ -1810,12 +1810,12 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                                 onChange={(e) => applyMix(item, u, e.target.value)}
                                                 placeholder="–"
                                                 aria-label={`${item.name} ${u}`}
-                                                className="w-8 bg-transparent text-center text-[#2b2318] font-black text-sm outline-none"
+                                                className="w-8 bg-transparent text-center text-[var(--duke-on-plate)] font-black text-sm outline-none"
                                             />
-                                            <em className="not-italic text-[8px] font-black uppercase tracking-widest text-[#6b5a3c]">{u}</em>
+                                            <em className="not-italic text-[8px] font-black uppercase tracking-widest text-[var(--duke-ink-4)]">{u}</em>
                                         </span>
                                     ))}
-                                    <span className="text-[10px] font-black font-mono text-[#a35a00] ml-1">
+                                    <span className="text-[10px] font-black font-mono text-[var(--duke-amber-ink-2)] ml-1">
                                         = {new Intl.NumberFormat('id-ID').format(item.qty || 0)} Bks
                                     </span>
                                     {/* The rates this line is actually using. Packing is per product and set in
@@ -1825,32 +1825,32 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                     {(() => {
                                         const per = bksPerUnit(item.product);
                                         return (
-                                            <span className="w-full text-[11px] font-mono font-bold text-[#6b5a3c] tracking-wide mt-0.5">
+                                            <span className="w-full text-[11px] font-mono font-bold text-[var(--duke-ink-4)] tracking-wide mt-0.5">
                                                 1 KARTON = {per.Karton} &middot; 1 BAL = {per.Bal} &middot; 1 SLOP = {per.Slop} BKS
                                             </span>
                                         );
                                     })()}
                                 </div>
                             )}
-                            <div className={`flex items-center gap-1 md:gap-2 p-1 rounded border ${isReturMode ? (returType === 'EXCHANGE' ? 'bg-[#e6d3a3]/60 border-[#c9a227]' : 'bg-red-200/50 border-red-300') : 'bg-[#dfd5bc] border-[#a89070]/30'}`}>
-                                <input type="number" value={item.qty} disabled={item.isIouFulfillment} onChange={(e) => updateCartItem(item.productId, 'qty', e.target.value === '' ? '' : parseInt(e.target.value))} onBlur={(e) => { if (!e.target.value || parseInt(e.target.value) < 1) updateCartItem(item.productId, 'qty', 1); }} className={`w-20 md:w-24 bg-white border border-[#a89070] text-center text-xs md:text-sm font-bold tabular-nums outline-none focus:border-[#ff9d00] rounded p-1 text-[#3e3226] ${item.isIouFulfillment ? 'opacity-50' : ''}`} />
+                            <div className={`flex items-center gap-1 md:gap-2 p-1 rounded border ${isReturMode ? (returType === 'EXCHANGE' ? 'bg-[var(--duke-paper-4)]/60 border-[var(--duke-brass-edge-2)]' : 'bg-red-200/50 border-red-300') : 'bg-[var(--duke-paper-2)] border-[var(--duke-edge-3)]/30'}`}>
+                                <input type="number" value={item.qty} disabled={item.isIouFulfillment} onChange={(e) => updateCartItem(item.productId, 'qty', e.target.value === '' ? '' : parseInt(e.target.value))} onBlur={(e) => { if (!e.target.value || parseInt(e.target.value) < 1) updateCartItem(item.productId, 'qty', 1); }} className={`w-20 md:w-24 bg-white border border-[var(--duke-edge-3)] text-center text-xs md:text-sm font-bold tabular-nums outline-none focus:border-[var(--duke-amber-edge)] rounded p-1 text-[var(--duke-ink-7)] ${item.isIouFulfillment ? 'opacity-50' : ''}`} />
                                 {/* 🚀 Phase 8: unit + price-tier directly change how much money is charged —
                                     bumped to text-sm specifically, not just the general 11px pass, since
                                     these two decide the price, not just describe something. */}
-                                <select value={item.unit} disabled={item.isIouFulfillment} onChange={(e) => updateCartItem(item.productId, 'unit', e.target.value)} className={`bg-transparent text-sm font-bold uppercase outline-none text-[#3e3226] border-r border-[#a89070]/30 pr-1 md:pr-2 ${item.isIouFulfillment ? 'opacity-50' : ''}`}><option>Bks</option><option>Slop</option><option>Bal</option><option>Karton</option></select>
-                                <select value={item.priceTier} onChange={(e) => updateCartItem(item.productId, 'priceTier', e.target.value)} disabled={!!lockedTier || item.isIouFulfillment} className={`bg-transparent text-sm font-bold uppercase outline-none text-[#3e3226] pl-1 ${lockedTier || item.isIouFulfillment ? 'opacity-50 cursor-not-allowed text-red-700' : ''}`}>
+                                <select value={item.unit} disabled={item.isIouFulfillment} onChange={(e) => updateCartItem(item.productId, 'unit', e.target.value)} className={`bg-transparent text-sm font-bold uppercase outline-none text-[var(--duke-ink-7)] border-r border-[var(--duke-edge-3)]/30 pr-1 md:pr-2 ${item.isIouFulfillment ? 'opacity-50' : ''}`}><option>Bks</option><option>Slop</option><option>Bal</option><option>Karton</option></select>
+                                <select value={item.priceTier} onChange={(e) => updateCartItem(item.productId, 'priceTier', e.target.value)} disabled={!!lockedTier || item.isIouFulfillment} className={`bg-transparent text-sm font-bold uppercase outline-none text-[var(--duke-ink-7)] pl-1 ${lockedTier || item.isIouFulfillment ? 'opacity-50 cursor-not-allowed text-red-700' : ''}`}>
                                     {Array.from(mergedTiers).map(tier => ( <option key={tier} value={tier}>{tier}</option> ))}
                                 </select>
                             </div>
 
                             {/* 🚀 ITEM-LEVEL FORENSIC TAGGING (RETUR ONLY) */}
                             {isReturMode && !item.isIouFulfillment && (
-                                <div className={`mt-2 pt-2 border-t flex flex-col gap-2 ${returType === 'EXCHANGE' ? 'border-[#c9a227]/50' : 'border-red-300/50'}`}>
+                                <div className={`mt-2 pt-2 border-t flex flex-col gap-2 ${returType === 'EXCHANGE' ? 'border-[var(--duke-brass-edge-2)]/50' : 'border-red-300/50'}`}>
                                     <div className="flex gap-2">
                                         <select 
                                             value={item.condition || 'GOOD'} 
                                             onChange={(e) => updateCartItem(item.productId, 'condition', e.target.value)}
-                                            className={`text-[11px] font-bold uppercase p-1.5 rounded outline-none border flex-1 ${item.condition === 'DAMAGED' ? 'bg-red-900/30 border-red-500 text-red-700' : 'bg-[#f0e2c0] border-[#a89070] text-[#3e3226]'}`}
+                                            className={`text-[11px] font-bold uppercase p-1.5 rounded outline-none border flex-1 ${item.condition === 'DAMAGED' ? 'bg-red-900/30 border-red-500 text-red-700' : 'bg-[var(--duke-paper-3)] border-[var(--duke-edge-3)] text-[var(--duke-ink-7)]'}`}
                                         >
                                             <option value="GOOD">Good (Resellable)</option>
                                             <option value="DAMAGED">Damaged (Quarantine)</option>
@@ -1886,14 +1886,14 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                     {/* EXCHANGE MODE ONLY: FULFILL NOW VS IOU */}
                                     {returType === 'EXCHANGE' && (
                                         <div className="flex gap-2 mt-1">
-                                            <button onClick={() => updateCartItem(item.productId, 'fulfillment', 'NOW')} className={`flex-1 py-1.5 text-[11px] font-bold uppercase rounded border transition-all ${item.fulfillment !== 'IOU' ? 'bg-[#d4af37] border-[#c9a227] text-[#2b2318] shadow-md' : 'bg-black/20 border-[#a89070]/50 text-[#8b7256] hover:text-white'}`}>Give Replacement Now</button>
-                                            <button onClick={() => updateCartItem(item.productId, 'fulfillment', 'IOU')} className={`flex-1 py-1.5 text-[11px] font-bold uppercase rounded border transition-all ${item.fulfillment === 'IOU' ? 'bg-[#8a6a2f] border-[#a3822f] text-white shadow-md' : 'bg-black/20 border-[#a89070]/50 text-[#8b7256] hover:text-white'}`}>Hutang Barang (IOU)</button>
+                                            <button onClick={() => updateCartItem(item.productId, 'fulfillment', 'NOW')} className={`flex-1 py-1.5 text-[11px] font-bold uppercase rounded border transition-all ${item.fulfillment !== 'IOU' ? 'bg-[var(--duke-brass)] border-[var(--duke-brass-edge-2)] text-[var(--duke-on-plate)] shadow-md' : 'bg-black/20 border-[var(--duke-edge-3)]/50 text-[var(--duke-ink-3)] hover:text-white'}`}>Give Replacement Now</button>
+                                            <button onClick={() => updateCartItem(item.productId, 'fulfillment', 'IOU')} className={`flex-1 py-1.5 text-[11px] font-bold uppercase rounded border transition-all ${item.fulfillment === 'IOU' ? 'bg-[var(--duke-brass-3)] border-[var(--duke-brass-edge-4)] text-white shadow-md' : 'bg-black/20 border-[var(--duke-edge-3)]/50 text-[var(--duke-ink-3)] hover:text-white'}`}>Hutang Barang (IOU)</button>
                                         </div>
                                     )}
                                 </div>
                             )}
 
-                            <div className="text-right text-base md:text-lg font-black font-mono mt-2 text-[#5c4b3a]">
+                            <div className="text-right text-base md:text-lg font-black font-mono mt-2 text-[var(--duke-ink-6)]">
                                 {isReturMode && returType === 'BUYBACK' ? '-' : ''}Rp {new Intl.NumberFormat('id-ID').format(item.calculatedPrice * item.qty)}
                             </div>
                         </div>
@@ -1910,7 +1910,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                       : 'kpm-merch-idle';
 
     return (
-        <div className="flex h-full w-full bg-[#1a1815] text-[#d4c5a3] font-serif overflow-hidden relative border-4 border-[#3e3226] shadow-2xl">
+        <div className="flex h-full w-full bg-[var(--duke-fill-ground)] text-[var(--duke-ink-1)] font-serif overflow-hidden relative border-4 border-[var(--duke-edge-1)] shadow-2xl">
             <div className="absolute inset-0 opacity-50 pointer-events-none" style={{ backgroundImage: 'repeating-linear-gradient(45deg, rgba(255,255,255,.025) 0 1px, transparent 1px 5px), repeating-linear-gradient(-45deg, rgba(0,0,0,.25) 0 1px, transparent 1px 5px)' }}></div>
             
             {/* Below lg this element IS the drawer: fixed to the bottom, its height driven
@@ -1923,7 +1923,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                 style={{ '--drawer-h': `${drawerH}px` }}
                 className={`hide-on-print fixed bottom-0 inset-x-0 z-[150] h-[var(--drawer-h)] overflow-hidden border-t-4 shadow-[0_-10px_30px_rgba(0,0,0,0.6)]
                             lg:static lg:z-10 lg:h-full lg:w-[420px] lg:border-t-0 lg:border-r-4 lg:shadow-none
-                            flex flex-col border-[#3e3226] bg-[#0f0e0d] shrink-0
+                            flex flex-col border-[var(--duke-edge-1)] bg-[var(--duke-fill-well)] shrink-0
                             ${isDragging ? '' : 'transition-[height] duration-[340ms] ease-[cubic-bezier(.33,.78,.22,1)]'}`}
             >
                 {/* THE ALCOVE — desktop only. On a phone he still only visits, via
@@ -1973,21 +1973,21 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                 <div
                     onPointerDown={startDrawerDrag}
                     style={{ touchAction: 'none' }}
-                    className="lg:hidden h-[52px] shrink-0 px-4 flex items-center gap-3 cursor-grab active:cursor-grabbing select-none bg-[#26211c] border-b border-[#3e3226]"
+                    className="lg:hidden h-[52px] shrink-0 px-4 flex items-center gap-3 cursor-grab active:cursor-grabbing select-none bg-[var(--duke-fill-panel)] border-b border-[var(--duke-edge-1)]"
                 >
-                    <div className="w-10 h-1.5 rounded-full bg-[#5c4b3a] shrink-0"></div>
+                    <div className="w-10 h-1.5 rounded-full bg-[var(--duke-fill-plank-2)] shrink-0"></div>
                     <div className="flex-1 min-w-0">
-                        <div className="text-[10px] font-black uppercase tracking-widest text-[#8b7256] leading-none">
+                        <div className="text-[10px] font-black uppercase tracking-widest text-[var(--duke-ink-3)] leading-none">
                             Manifest ({cart.length})
                         </div>
-                        <div className="text-[10px] font-mono text-[#5c4b3a] truncate leading-tight mt-0.5">
+                        <div className="text-[10px] font-mono text-[var(--duke-ink-6)] truncate leading-tight mt-0.5">
                             {cart.length ? cart[cart.length - 1].name : 'Empty — tap a ware to add'}
                         </div>
                     </div>
-                    <span className={`text-lg font-black font-mono leading-none shrink-0 ${isReturMode && returType === 'BUYBACK' ? 'text-red-500' : 'text-[#ff9d00]'}`}>
+                    <span className={`text-lg font-black font-mono leading-none shrink-0 ${isReturMode && returType === 'BUYBACK' ? 'text-red-500' : 'text-[var(--duke-amber-ink)]'}`}>
                         {isReturMode && returType === 'BUYBACK' ? '-' : ''}Rp {new Intl.NumberFormat('id-ID').format(cartTotal)}
                     </span>
-                    <ChevronDown size={18} className={`shrink-0 text-[#8b7256] transition-transform ${drawerH > DRAWER_CLOSED + 8 ? '' : 'rotate-180'}`} />
+                    <ChevronDown size={18} className={`shrink-0 text-[var(--duke-ink-3)] transition-transform ${drawerH > DRAWER_CLOSED + 8 ? '' : 'rotate-180'}`} />
                 </div>
 
                 {/* Rendered at EVERY width now. It used to be lg:hidden with a second copy
@@ -2019,25 +2019,25 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                     <div className="kpm-parchment px-4 md:px-6 pb-4 shrink-0">
 
                     <div className="mb-4">
-                        <label className="text-[10px] font-bold text-[#6b5a3c] uppercase tracking-widest block mb-2">Delivery Proof <span className="text-[#9e4038]">*</span></label>
+                        <label className="text-[10px] font-bold text-[var(--duke-ink-4)] uppercase tracking-widest block mb-2">Delivery Proof <span className="text-[var(--duke-danger-ink-2)]">*</span></label>
                         <input type="file" accept="image/*" capture="environment" id="txProof" className="hidden" onChange={handleTxPhotoCapture} />
                         
                         {txProofPhoto ? (
-                            <div className="relative rounded-lg border-2 border-[#ff9d00] overflow-hidden shadow-[0_0_15px_rgba(255,157,0,0.3)] bg-black">
+                            <div className="relative rounded-lg border-2 border-[var(--duke-amber-edge)] overflow-hidden shadow-[0_0_15px_rgba(255,157,0,0.3)] bg-black">
                                 <img src={txProofPhoto} alt="Proof" className="w-full h-32 object-contain opacity-90" />
                                 <button onClick={() => setTxProofPhoto(null)} className="absolute top-2 right-2 bg-red-600 hover:bg-red-500 text-white p-1.5 rounded-md shadow-md"><X size={14}/></button>
                             </div>
                         ) : (
-                            <button onClick={() => document.getElementById('txProof').click()} className="kpm-hover w-full py-2 border border-dashed border-[#c9b892] hover:border-[#a35a00] text-[#6b5a3c] hover:text-[#a35a00] bg-transparent rounded flex items-center justify-center gap-2">
+                            <button onClick={() => document.getElementById('txProof').click()} className="kpm-hover w-full py-2 border border-dashed border-[var(--duke-edge-4)] hover:border-[var(--duke-amber-edge-2)] text-[var(--duke-ink-4)] hover:text-[var(--duke-amber-ink-2)] bg-transparent rounded flex items-center justify-center gap-2">
                                 <Camera size={14} />
                                 <span className="text-[10px] uppercase tracking-widest font-bold">Capture Handover Photo</span>
                             </button>
                         )}
                     </div>
 
-                    <div className="flex justify-between items-end mb-3 md:mb-4 border-b border-[#c9b892] pb-2 md:pb-3 font-mono">
-                        <span className="text-xs md:text-sm font-bold text-[#6b5a3c] uppercase tracking-widest">Total Value</span>
-                        <span className={`text-2xl md:text-3xl lg:text-4xl font-black leading-none tabular-nums ${isReturMode && returType === 'BUYBACK' ? 'text-[#9e4038]' : 'text-[#a35a00]'}`}>
+                    <div className="flex justify-between items-end mb-3 md:mb-4 border-b border-[var(--duke-edge-4)] pb-2 md:pb-3 font-mono">
+                        <span className="text-xs md:text-sm font-bold text-[var(--duke-ink-4)] uppercase tracking-widest">Total Value</span>
+                        <span className={`text-2xl md:text-3xl lg:text-4xl font-black leading-none tabular-nums ${isReturMode && returType === 'BUYBACK' ? 'text-[var(--duke-danger-ink-2)]' : 'text-[var(--duke-amber-ink-2)]'}`}>
                             {isReturMode && returType === 'BUYBACK' ? '-' : ''}Rp {new Intl.NumberFormat('id-ID').format(cartTotal)}
                         </span>
                     </div>
@@ -2058,11 +2058,11 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
 
                 {/* THE PINNED BAR — the only thing that stays fixed on a phone now. Slimmer than
                     the old footer on purpose: this bar is height taken from the product list. */}
-                <div className="kpm-parchment px-4 py-2 md:p-6 border-t-2 border-[#c9b892] flex flex-col shrink-0 z-20 shadow-[0_-6px_14px_rgba(110,84,44,0.18)]">
+                <div className="kpm-parchment px-4 py-2 md:p-6 border-t-2 border-[var(--duke-edge-4)] flex flex-col shrink-0 z-20 shadow-[0_-6px_14px_rgba(110,84,44,0.18)]">
                     <button
                         onClick={handleFinalDeal}
                         disabled={!canSubmitSale || isProcessingSale}
-                        className={`kpm-hover py-2.5 md:py-4 border-2 text-base md:text-xl lg:text-2xl font-black uppercase tracking-[0.2em] transition-all active:translate-y-1 shadow-lg rounded flex items-center justify-center gap-2 md:gap-3 ${canSubmitSale && !isProcessingSale ? (isReturMode ? (returType === 'EXCHANGE' ? 'bg-gradient-to-r from-[#c9a227] to-[#8a6a2f] border-[#d4af37] text-[#2b2318] hover:from-[#d4af37] hover:to-[#a3822f] shadow-[0_0_20px_rgba(212,175,55,0.4)]' : 'bg-gradient-to-r from-red-600 to-red-800 border-red-500 text-white hover:from-red-500 hover:to-red-700 shadow-[0_0_20px_rgba(220,38,38,0.4)]') : 'bg-gradient-to-r from-[#ff9d00] to-[#c47f00] border-[#ffca28] text-black hover:from-[#ffca28] hover:to-[#ff9d00]') : 'bg-transparent text-[#8b7256] border-[#c9b892] cursor-not-allowed'}`}
+                        className={`kpm-hover py-2.5 md:py-4 border-2 text-base md:text-xl lg:text-2xl font-black uppercase tracking-[0.2em] transition-all active:translate-y-1 shadow-lg rounded flex items-center justify-center gap-2 md:gap-3 ${canSubmitSale && !isProcessingSale ? (isReturMode ? (returType === 'EXCHANGE' ? 'bg-gradient-to-r from-[var(--duke-brass-2)] to-[var(--duke-brass-3)] border-[var(--duke-brass-edge)] text-[var(--duke-on-plate)] hover:from-[var(--duke-brass)] hover:to-[var(--duke-brass-6)] shadow-[0_0_20px_rgba(212,175,55,0.4)]' : 'bg-gradient-to-r from-red-600 to-red-800 border-red-500 text-white hover:from-red-500 hover:to-red-700 shadow-[0_0_20px_rgba(220,38,38,0.4)]') : 'bg-gradient-to-r from-[var(--duke-amber)] to-[var(--duke-amber-2)] border-[var(--duke-brass-edge-3)] text-black hover:from-[var(--duke-brass-5)] hover:to-[var(--duke-amber)]') : 'bg-transparent text-[var(--duke-ink-3)] border-[var(--duke-edge-4)] cursor-not-allowed'}`}
                     >
                         {isProcessingSale ? <span className="flex items-center gap-2 animate-pulse"><Zap size={20}/> PROCESSING...</span> :
                          gpsStatus === 'checking' ? 'Awaiting GPS...' :
@@ -2079,35 +2079,35 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                 which is the ~2n tab switches per sale this phase exists to remove. The
                 bottom padding is the collapsed drawer's 104px (grip + customer bar), so the last
                 ware clears it. */}
-            <div className="hide-on-print flex-1 flex flex-col h-full lg:h-auto bg-[#161412] pb-[104px] lg:pb-0 overflow-hidden">
+            <div className="hide-on-print flex-1 flex flex-col h-full lg:h-auto bg-[var(--duke-fill-deep)] pb-[104px] lg:pb-0 overflow-hidden">
                 {/* WHICH STOCK AM I SELLING FROM — the boss's only. This used to be a bar in the
                     app shell above the whole terminal, where the manifest drawer painted over it
                     (his G5 report, twice). It is a row of this column now because this column is
                     what it changes: every ware below this line comes from whichever side is lit.
                     Same plates as the SALE/RETUR toggle in the manifest — same kind of switch. */}
                 {onAdminSalesMode && (
-                    <div className="p-2 md:p-3 bg-black border-b border-[#3e3226] shrink-0">
-                        <div className="flex bg-[#1a1815] rounded border border-[#5c4b3a] p-1">
-                            <button onClick={() => onAdminSalesMode('VAULT')} className={`kpm-hover flex-1 py-1.5 text-[10px] font-black uppercase tracking-widest rounded transition-colors ${adminSalesMode !== 'VEHICLE' ? 'bg-[#ff9d00] text-[#2b2318]' : 'text-[#8b7256] hover:text-white'}`}>Master Vault</button>
-                            <button onClick={() => onAdminSalesMode('VEHICLE')} className={`kpm-hover flex-1 py-1.5 text-[10px] font-black uppercase tracking-widest rounded transition-colors ${adminSalesMode === 'VEHICLE' ? 'bg-[#c9a227] text-[#2b2318]' : 'text-[#8b7256] hover:text-white'}`}>Boss Car</button>
+                    <div className="p-2 md:p-3 bg-black border-b border-[var(--duke-edge-1)] shrink-0">
+                        <div className="flex bg-[var(--duke-fill-ground)] rounded border border-[var(--duke-edge-2)] p-1">
+                            <button onClick={() => onAdminSalesMode('VAULT')} className={`kpm-hover flex-1 py-1.5 text-[10px] font-black uppercase tracking-widest rounded transition-colors ${adminSalesMode !== 'VEHICLE' ? 'bg-[var(--duke-amber)] text-[var(--duke-on-plate)]' : 'text-[var(--duke-ink-3)] hover:text-white'}`}>Master Vault</button>
+                            <button onClick={() => onAdminSalesMode('VEHICLE')} className={`kpm-hover flex-1 py-1.5 text-[10px] font-black uppercase tracking-widest rounded transition-colors ${adminSalesMode === 'VEHICLE' ? 'bg-[var(--duke-brass-2)] text-[var(--duke-on-plate)]' : 'text-[var(--duke-ink-3)] hover:text-white'}`}>Boss Car</button>
                         </div>
                     </div>
                 )}
-                <div className="flex gap-2 p-2 md:p-3 bg-black border-b border-[#3e3226] overflow-x-auto scrollbar-hide shrink-0">
-                    {categories.map(cat => ( <button key={cat} onClick={() => setActiveCategory(cat)} className={`kpm-hover px-4 py-2 md:px-5 md:py-2.5 text-[10px] md:text-xs font-black uppercase whitespace-nowrap transition-all rounded-lg border-2 ${activeCategory === cat ? 'bg-[#8b7256] text-black border-[#ff9d00]' : 'bg-[#26211c] text-[#6b5845] border-[#3e3226] hover:border-[#8b7256]'}`}>{cat}</button> ))}
+                <div className="flex gap-2 p-2 md:p-3 bg-black border-b border-[var(--duke-edge-1)] overflow-x-auto scrollbar-hide shrink-0">
+                    {categories.map(cat => ( <button key={cat} onClick={() => setActiveCategory(cat)} className={`kpm-hover px-4 py-2 md:px-5 md:py-2.5 text-[10px] md:text-xs font-black uppercase whitespace-nowrap transition-all rounded-lg border-2 ${activeCategory === cat ? 'bg-[var(--duke-fill-tan)] text-black border-[var(--duke-amber-edge)]' : 'bg-[var(--duke-fill-panel)] text-[var(--duke-ink-5)] border-[var(--duke-edge-1)] hover:border-[var(--duke-edge-5)]'}`}>{cat}</button> ))}
                 </div>
                 {/* The examine shelf used to sit here as a full-width horizontal strip, which
                     cost the wares 150px of vertical room on every screen. It is the rail now —
                     same content, in space that was empty anyway. */}
-                <div className="p-2 md:p-3 border-b border-[#3e3226] flex gap-3 shrink-0 bg-[#0f0e0d] items-center relative z-10">
+                <div className="p-2 md:p-3 border-b border-[var(--duke-edge-1)] flex gap-3 shrink-0 bg-[var(--duke-fill-well)] items-center relative z-10">
                     <div className="relative flex-1">
-                        <input ref={searchRef} value={searchTerm} onChange={e => setSearchTerm(e.target.value)} placeholder="SEARCH WARES..." className="w-full bg-black/60 border-2 border-[#3e3226] p-2 md:p-3 pl-9 md:pl-10 pr-10 text-[#ff9d00] font-mono text-xs md:text-sm font-bold outline-none focus:border-[#ff9d00] rounded-lg shadow-inner transition-colors"/>
-                        <Search size={16} className="absolute left-3 top-2.5 md:top-3.5 text-[#8b7256]"/>
+                        <input ref={searchRef} value={searchTerm} onChange={e => setSearchTerm(e.target.value)} placeholder="SEARCH WARES..." className="w-full bg-black/60 border-2 border-[var(--duke-edge-1)] p-2 md:p-3 pl-9 md:pl-10 pr-10 text-[var(--duke-amber-ink)] font-mono text-xs md:text-sm font-bold outline-none focus:border-[var(--duke-amber-edge)] rounded-lg shadow-inner transition-colors"/>
+                        <Search size={16} className="absolute left-3 top-2.5 md:top-3.5 text-[var(--duke-ink-3)]"/>
                         <span className="kpm-kbd hidden lg:inline-grid absolute right-3 top-1/2 -translate-y-1/2">/</span>
                     </div>
                     <div className="hidden lg:flex gap-1">
-                        <button onClick={() => scroll('left')} className="kpm-hover p-3 bg-[#26211c] border-2 border-[#3e3226] text-[#8b7256] hover:text-[#ff9d00] hover:border-[#ff9d00] rounded-lg active:scale-95 transition-all shadow-md"><ArrowLeft size={20}/></button>
-                        <button onClick={() => scroll('right')} className="kpm-hover p-3 bg-[#26211c] border-2 border-[#3e3226] text-[#8b7256] hover:text-[#ff9d00] hover:border-[#ff9d00] rounded-lg active:scale-95 transition-all shadow-md"><ArrowRight size={20}/></button>
+                        <button onClick={() => scroll('left')} className="kpm-hover p-3 bg-[var(--duke-fill-panel)] border-2 border-[var(--duke-edge-1)] text-[var(--duke-ink-3)] hover:text-[var(--duke-amber-ink)] hover:border-[var(--duke-amber-edge)] rounded-lg active:scale-95 transition-all shadow-md"><ArrowLeft size={20}/></button>
+                        <button onClick={() => scroll('right')} className="kpm-hover p-3 bg-[var(--duke-fill-panel)] border-2 border-[var(--duke-edge-1)] text-[var(--duke-ink-3)] hover:text-[var(--duke-amber-ink)] hover:border-[var(--duke-amber-edge)] rounded-lg active:scale-95 transition-all shadow-md"><ArrowRight size={20}/></button>
                     </div>
                 </div>
 
@@ -2134,12 +2134,12 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                     not what he is selling. This is the state the phone spends most of its day
                     in, and it used to show nothing at all. */}
                 {!customerSettled && upNext && (
-                    <div className="kpm-strip lg:hidden shrink-0 border-b border-[#3e3226] bg-[#0f0e0d] px-3 py-2">
+                    <div className="kpm-strip lg:hidden shrink-0 border-b border-[var(--duke-edge-1)] bg-[var(--duke-fill-well)] px-3 py-2">
                         <div className="flex items-center justify-between gap-3">
                             <div className="min-w-0">
-                                <div className="font-mono text-[8.5px] font-black uppercase tracking-[0.16em] text-[#d4af37]">Next stop</div>
-                                <div className="truncate font-mono text-[13px] font-black uppercase text-[#e8e4de]">{upNext.customer.name}</div>
-                                <div className="mt-0.5 font-mono text-[10px] tabular-nums text-[#7a736a]">
+                                <div className="font-mono text-[8.5px] font-black uppercase tracking-[0.16em] text-[var(--duke-brass-ink)]">Next stop</div>
+                                <div className="truncate font-mono text-[13px] font-black uppercase text-[var(--ink)]">{upNext.customer.name}</div>
+                                <div className="mt-0.5 font-mono text-[10px] tabular-nums text-[var(--ink-dim)]">
                                     {metresLabel(upNext.metres)} &middot; {upNext.remaining} left today
                                 </div>
                             </div>
@@ -2151,7 +2151,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                     href={directionsUrl(upNext.customer)}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="kpm-press flex h-11 shrink-0 items-center gap-1.5 rounded border border-[#3e3226] bg-[#1a1815] px-3 font-mono text-[10px] font-black uppercase tracking-[0.12em] text-[#8b7256] no-underline"
+                                    className="kpm-press flex h-11 shrink-0 items-center gap-1.5 rounded border border-[var(--duke-edge-1)] bg-[var(--duke-fill-ground)] px-3 font-mono text-[10px] font-black uppercase tracking-[0.12em] text-[var(--duke-ink-3)] no-underline"
                                 >
                                     <Map size={14}/> Go
                                 </a>
@@ -2161,19 +2161,19 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                 )}
 
                 {customerSettled && (
-                    <div className="kpm-strip lg:hidden shrink-0 border-b border-[#3e3226] bg-[#0f0e0d] px-3 py-2">
+                    <div className="kpm-strip lg:hidden shrink-0 border-b border-[var(--duke-edge-1)] bg-[var(--duke-fill-well)] px-3 py-2">
                         {cart.length > 0 ? (
                             <div className="flex items-center justify-between gap-3">
                                 <div className="min-w-0">
-                                    <div className="font-mono text-[8.5px] font-black uppercase tracking-[0.16em] text-[#7a736a]">Selling to</div>
-                                    <div className="truncate font-mono text-[12px] font-black uppercase text-[#e8e4de]">{customerName}</div>
+                                    <div className="font-mono text-[8.5px] font-black uppercase tracking-[0.16em] text-[var(--ink-dim)]">Selling to</div>
+                                    <div className="truncate font-mono text-[12px] font-black uppercase text-[var(--ink)]">{customerName}</div>
                                 </div>
                                 {/* The debt is the ONE thing that stays visible while he sells.
                                     Everything else can wait; this changes what he should accept. */}
                                 {debtInfo && debtInfo.totalDebt > 0 && (
-                                    <div className="shrink-0 border-l-[3px] border-[#b4524a] bg-[#1e1512] px-2 py-1 text-right">
-                                        <div className="font-mono text-[8px] font-black uppercase tracking-[0.14em] text-[#b4524a]">Owes</div>
-                                        <div className="font-mono text-[11px] font-black tabular-nums text-[#e08c82]">
+                                    <div className="shrink-0 border-l-[3px] border-[var(--danger)] bg-[var(--danger-well)] px-2 py-1 text-right">
+                                        <div className="font-mono text-[8px] font-black uppercase tracking-[0.14em] text-[var(--duke-danger-ink)]">Owes</div>
+                                        <div className="font-mono text-[11px] font-black tabular-nums text-[var(--danger-ink)]">
                                             Rp {new Intl.NumberFormat('id-ID').format(debtInfo.totalDebt)}
                                         </div>
                                     </div>
@@ -2184,9 +2184,9 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                 {renderStoreSwap()}
                                 <div className="flex items-start justify-between gap-3">
                                     <div className="min-w-0">
-                                        <div className="font-mono text-[8.5px] font-black uppercase tracking-[0.16em] text-[#d4af37]">Before you go in</div>
-                                        <div className="truncate font-mono text-[13px] font-black uppercase text-[#e8e4de]">{customerName}</div>
-                                        <div className="mt-0.5 font-mono text-[10px] tabular-nums text-[#7a736a]">
+                                        <div className="font-mono text-[8.5px] font-black uppercase tracking-[0.16em] text-[var(--duke-brass-ink)]">Before you go in</div>
+                                        <div className="truncate font-mono text-[13px] font-black uppercase text-[var(--ink)]">{customerName}</div>
+                                        <div className="mt-0.5 font-mono text-[10px] tabular-nums text-[var(--ink-dim)]">
                                             {brief
                                                 ? <>Last order {agoLabel(brief.lastAt)} &middot; usually Rp {new Intl.NumberFormat('id-ID').format(brief.avgBasket)}</>
                                                 : 'No order in the last 7 days'}
@@ -2199,19 +2199,19 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                             Two names then a count: the strip is one line of a card he reads at a
                                             doorstep, so it names enough to recognise the order, not to audit it. */}
                                         {brief?.lastItems?.length > 0 && (
-                                            <div className="mt-0.5 truncate font-mono text-[10px] text-[#a89070]">
+                                            <div className="mt-0.5 truncate font-mono text-[10px] text-[var(--duke-ink-2)]">
                                                 {brief.lastItems.slice(0, 2).map(it => it.name).join(' · ')}
                                                 {brief.lastItems.length > 2 && ` +${brief.lastItems.length - 2} more`}
                                             </div>
                                         )}
                                     </div>
                                     {debtInfo && debtInfo.totalDebt > 0 && (
-                                        <div className="shrink-0 border-l-[3px] border-[#b4524a] bg-[#1e1512] px-2 py-1 text-right">
-                                            <div className="font-mono text-[8px] font-black uppercase tracking-[0.14em] text-[#b4524a]">Owes</div>
-                                            <div className="font-mono text-[11px] font-black tabular-nums text-[#e08c82]">
+                                        <div className="shrink-0 border-l-[3px] border-[var(--danger)] bg-[var(--danger-well)] px-2 py-1 text-right">
+                                            <div className="font-mono text-[8px] font-black uppercase tracking-[0.14em] text-[var(--duke-danger-ink)]">Owes</div>
+                                            <div className="font-mono text-[11px] font-black tabular-nums text-[var(--danger-ink)]">
                                                 Rp {new Intl.NumberFormat('id-ID').format(debtInfo.totalDebt)}
                                             </div>
-                                            <div className="font-mono text-[8.5px] tabular-nums text-[#7a736a]">{debtInfo.ageDays}d old</div>
+                                            <div className="font-mono text-[8.5px] tabular-nums text-[var(--ink-dim)]">{debtInfo.ageDays}d old</div>
                                         </div>
                                     )}
                                 </div>
@@ -2221,7 +2221,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                 {brief?.lastItems?.length > 0 && !isReturMode && (
                                     <button
                                         onClick={handleReorder}
-                                        className="kpm-press h-11 w-full rounded border-2 border-[#ffca28] bg-gradient-to-r from-[#ff9d00] to-[#c47f00] font-mono text-[11px] font-black uppercase tracking-[0.12em] text-black"
+                                        className="kpm-press h-11 w-full rounded border-2 border-[var(--duke-brass-edge-3)] bg-gradient-to-r from-[var(--duke-amber)] to-[var(--duke-amber-2)] font-mono text-[11px] font-black uppercase tracking-[0.12em] text-black"
                                     >
                                         Same as last time
                                     </button>
@@ -2236,7 +2236,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                     panel unreachable — you cannot walk to a thing that disappears when you set
                     off towards it. Press the picture again, or another, to change it. */}
                 <div className="flex-1 min-h-0 flex overflow-hidden">
-                <div className="kpm-wares-3up flex-1 min-w-0 overflow-y-auto overflow-x-hidden p-3 pb-4 lg:p-6 lg:pb-8 flex flex-col lg:grid lg:grid-cols-2 [@media(min-width:1400px)]:grid-cols-3 lg:content-start gap-3 lg:gap-6 scrollbar-hide items-stretch lg:items-start bg-[#1a1815] relative scroll-smooth" ref={scrollContainerRef}>
+                <div className="kpm-wares-3up flex-1 min-w-0 overflow-y-auto overflow-x-hidden p-3 pb-4 lg:p-6 lg:pb-8 flex flex-col lg:grid lg:grid-cols-2 [@media(min-width:1400px)]:grid-cols-3 lg:content-start gap-3 lg:gap-6 scrollbar-hide items-stretch lg:items-start bg-[var(--duke-fill-ground)] relative scroll-smooth" ref={scrollContainerRef}>
                     <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ backgroundImage: 'repeating-linear-gradient(0deg, rgba(255,255,255,.06) 0 1px, transparent 1px 12px), repeating-linear-gradient(90deg, rgba(255,255,255,.06) 0 1px, transparent 1px 12px)' }}></div>
                     {filteredItems.map(item => (
                         /* Hover no longer drives the rail. Aldi's problem was concrete and
@@ -2248,12 +2248,12 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                            until he presses another, or the same one again. Pressing anywhere
                            else on the card still adds to the cart, which is the common action
                            and keeps the biggest target. */
-                        <div key={item.id} onClick={() => addToCart(item)} onContextMenu={(e) => { e.preventDefault(); onInspect(item); }} className="product-card w-full lg:w-full shrink-0 bg-[#0f0e0d] border-2 border-[#3e3226] hover:border-[#ff9d00] transition-all flex flex-row flex-wrap lg:flex-col group active:scale-[0.98] shadow-[0_10px_20px_rgba(0,0,0,0.3)] rounded-xl overflow-hidden relative z-10 h-max">
+                        <div key={item.id} onClick={() => addToCart(item)} onContextMenu={(e) => { e.preventDefault(); onInspect(item); }} className="product-card w-full lg:w-full shrink-0 bg-[var(--duke-fill-well)] border-2 border-[var(--duke-edge-1)] hover:border-[var(--duke-amber-edge)] transition-all flex flex-row flex-wrap lg:flex-col group active:scale-[0.98] shadow-[0_10px_20px_rgba(0,0,0,0.3)] rounded-xl overflow-hidden relative z-10 h-max">
                             {/* 96px on a phone, not 80. This whole square is the press target for
                                 the stock breakdown, and 80 minus its own padding left barely more
                                 than a fingertip. */}
                             <div className="w-24 h-24 lg:w-auto lg:h-48 p-2 lg:p-5 flex items-center justify-center relative overflow-hidden bg-black/50 shrink-0">
-                                <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,#3e3226_0%,#000000_80%)] opacity-50"></div>
+                                <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,var(--duke-fill-plank)_0%,var(--duke-vignette)_80%)] opacity-50"></div>
                                 {/* The ware as a solid object, not a picture of one. Front face is the real
                                     photo, the other faces are tinted panels; it turns only while pointed at.
                                     Pure CSS on purpose — see the note above .kpm-cube in theme.css. */}
@@ -2262,12 +2262,12 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                     onClick={(e) => { e.stopPropagation(); unlockSounds().then(() => playSound('tap')); setExamineItem(prev => prev?.id === item.id ? null : item); }}
                                     aria-pressed={examineItem?.id === item.id}
                                     aria-label={`Show what is left of ${item.name}`}
-                                    className={`kpm-cube-stage w-full h-full relative cursor-pointer bg-transparent border-0 p-0 rounded-lg transition-shadow ${examineItem?.id === item.id ? 'shadow-[inset_0_0_0_2px_#d4af37]' : ''}`}
+                                    className={`kpm-cube-stage w-full h-full relative cursor-pointer bg-transparent border-0 p-0 rounded-lg transition-shadow ${examineItem?.id === item.id ? 'shadow-[inset_0_0_0_2px_var(--duke-brass-edge)]' : ''}`}
                                     style={cubeVars(item)}
                                 >
                                     {renderCube(item)}
                                 </button>
-                                <div className="hidden lg:block absolute top-3 right-3 bg-black/80 text-[#8b7256] text-[10px] font-black px-2 py-1 rounded-full border border-[#3e3226] uppercase tracking-wider">
+                                <div className="hidden lg:block absolute top-3 right-3 bg-black/80 text-[var(--duke-ink-3)] text-[10px] font-black px-2 py-1 rounded-full border border-[var(--duke-edge-1)] uppercase tracking-wider">
                                     {item.type || 'MISC'}
                                 </div>
                                 {/* Examine was reachable ONLY by right-click, which does not exist on a
@@ -2283,9 +2283,9 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                     clean target and the examine button gets a full row in both
                                     places. Right-click on the card still opens it directly. */}
                             </div>
-                            <div className="flex-1 min-w-0 bg-gradient-to-b from-[#1a1815] to-[#0f0e0d] border-l-2 lg:border-l-0 lg:border-t-2 border-[#3e3226] p-2 lg:p-4 flex flex-row lg:flex-col items-center lg:items-stretch gap-2 lg:gap-0 font-mono relative">
+                            <div className="flex-1 min-w-0 bg-gradient-to-b from-[var(--duke-fill-ground)] to-[var(--duke-fill-well)] border-l-2 lg:border-l-0 lg:border-t-2 border-[var(--duke-edge-1)] p-2 lg:p-4 flex flex-row lg:flex-col items-center lg:items-stretch gap-2 lg:gap-0 font-mono relative">
                                 <div className="flex-1 min-w-0 flex flex-col">
-                                    <h4 className="text-[#d4c5a3] text-[12px] lg:text-sm font-black uppercase line-clamp-2 lg:mb-3 lg:h-[40px] leading-tight group-hover:text-white transition-colors">{item.name}</h4>
+                                    <h4 className="text-[var(--duke-ink-1)] text-[12px] lg:text-sm font-black uppercase line-clamp-2 lg:mb-3 lg:h-[40px] leading-tight group-hover:text-white transition-colors">{item.name}</h4>
                                     <div className="mt-1 lg:mt-auto flex flex-row items-center gap-2 lg:gap-0 lg:justify-between lg:items-end w-full">
                                         {/* The running Bks figure moved to the rail, where hovering shows it
                                             properly broken into Karton / Bal / Slop / Bks. A bare "9.892 Bks"
@@ -2300,12 +2300,12 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                             {item.stock <= 0 ? (
                                                 <span className="text-[10px] lg:text-xs font-black px-1.5 py-0.5 lg:px-2 lg:py-1 rounded-md border-2 inline-block bg-red-900/20 text-red-500 border-red-900/50">EMPTY</span>
                                             ) : item.stock <= (item.minStock || 50) ? (
-                                                <span className="text-[10px] lg:text-xs font-black px-1.5 py-0.5 lg:px-2 lg:py-1 rounded-md border-2 inline-block bg-[#3e2a10] text-[#ff9d00] border-[#ff9d00]/50">LOW</span>
+                                                <span className="text-[10px] lg:text-xs font-black px-1.5 py-0.5 lg:px-2 lg:py-1 rounded-md border-2 inline-block bg-[var(--duke-brass-4)] text-[var(--duke-amber-ink)] border-[var(--duke-amber-edge)]/50">LOW</span>
                                             ) : null}
                                         </div>
                                         <div className="text-left lg:text-right lg:w-auto lg:mt-0 lg:pt-0 lg:border-none">
-                                            <span className="hidden lg:block text-[11px] text-[#5c4b3a] font-bold uppercase tracking-widest mb-1">Ecer Price</span>
-                                            <span className="text-[15px] lg:text-2xl font-black text-[#ff9d00] leading-none drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">{new Intl.NumberFormat('id-ID', { notation: 'compact', maximumFractionDigits: 1 }).format(item.priceEcer || 0)}</span>
+                                            <span className="hidden lg:block text-[11px] text-[var(--duke-ink-6)] font-bold uppercase tracking-widest mb-1">Ecer Price</span>
+                                            <span className="text-[15px] lg:text-2xl font-black text-[var(--duke-amber-ink)] leading-none drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">{new Intl.NumberFormat('id-ID', { notation: 'compact', maximumFractionDigits: 1 }).format(item.priceEcer || 0)}</span>
                                         </div>
                                     </div>
                                 </div>
@@ -2332,12 +2332,12 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                                     unlockSounds().then(() => playSound(qty > 1 ? 'click' : 'error'));
                                                     qty > 1 ? updateCartItem(item.id, 'qty', qty - 1) : setCart(c => c.filter(i => i.productId !== item.id));
                                                 }}
-                                                className="kpm-press kpm-hover w-8 h-8 rounded-lg border-2 border-[#3e3226] bg-[#26211c] text-[#8b7256] text-lg font-black leading-none disabled:opacity-30 flex items-center justify-center"
+                                                className="kpm-press kpm-hover w-8 h-8 rounded-lg border-2 border-[var(--duke-edge-1)] bg-[var(--duke-fill-panel)] text-[var(--duke-ink-3)] text-lg font-black leading-none disabled:opacity-30 flex items-center justify-center"
                                             >−</button>
-                                            <span className={`w-6 text-center text-sm font-black ${qty ? 'text-[#ff9d00]' : 'text-[#3e3226]'}`}>{qty}</span>
+                                            <span className={`w-6 text-center text-sm font-black ${qty ? 'text-[var(--duke-amber-ink)]' : 'text-[var(--duke-ink-7)]'}`}>{qty}</span>
                                             <button
                                                 onClick={(e) => { e.stopPropagation(); unlockSounds().then(() => playSound('click')); addToCart(item); }}
-                                                className="kpm-press kpm-hover w-8 h-8 rounded-lg border-2 border-[#ff9d00] bg-[#3e3226] text-[#ff9d00] text-lg font-black leading-none flex items-center justify-center"
+                                                className="kpm-press kpm-hover w-8 h-8 rounded-lg border-2 border-[var(--duke-amber-edge)] bg-[var(--duke-fill-plank)] text-[var(--duke-amber-ink)] text-lg font-black leading-none flex items-center justify-center"
                                             >+</button>
                                         </div>
                                     );
@@ -2354,11 +2354,11 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                 The card wraps so this lands full width underneath rather than
                                 squeezing the row. */}
                             {examineItem?.id === item.id && (
-                                <div className="kpm-strip w-full lg:hidden border-t-2 border-[#3e3226] bg-black/40 px-2 py-2">
+                                <div className="kpm-strip w-full lg:hidden border-t-2 border-[var(--duke-edge-1)] bg-black/40 px-2 py-2">
                                     <div className="mb-1.5 flex items-baseline justify-between gap-2">
-                                        <span className="font-mono text-[8.5px] font-black uppercase tracking-[0.16em] text-[#7a736a]">In vehicle</span>
+                                        <span className="font-mono text-[8.5px] font-black uppercase tracking-[0.16em] text-[var(--ink-dim)]">In vehicle</span>
                                         {item.dimensions && (
-                                            <span className="font-mono text-[8.5px] tabular-nums text-[#57514a]">
+                                            <span className="font-mono text-[8.5px] tabular-nums text-[var(--ink-disabled)]">
                                                 {item.dimensions.w}×{item.dimensions.h}×{item.dimensions.d} mm
                                             </span>
                                         )}
@@ -2369,19 +2369,19 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                                 {(() => {
                                                     const split = splitToUnits(item.stock, item);
                                                     return ['Karton', 'Bal', 'Slop', 'Bks'].map(u => (
-                                                        <div key={u} className={`rounded border px-1 py-1 text-center ${split[u] ? 'border-[#5c4b3a] bg-[#1a1815]' : 'border-[#26231f]'}`}>
-                                                            <div className={`font-mono text-[13px] font-black tabular-nums leading-none ${split[u] ? 'text-[#e8e4de]' : 'text-[#3e3a35]'}`}>{split[u]}</div>
-                                                            <div className="mt-0.5 font-mono text-[7px] font-black uppercase tracking-[0.1em] text-[#7a736a]">{u}</div>
+                                                        <div key={u} className={`rounded border px-1 py-1 text-center ${split[u] ? 'border-[var(--duke-edge-2)] bg-[var(--duke-fill-ground)]' : 'border-[var(--line)]'}`}>
+                                                            <div className={`font-mono text-[13px] font-black tabular-nums leading-none ${split[u] ? 'text-[var(--ink)]' : 'text-[var(--duke-ink-8)]'}`}>{split[u]}</div>
+                                                            <div className="mt-0.5 font-mono text-[7px] font-black uppercase tracking-[0.1em] text-[var(--ink-dim)]">{u}</div>
                                                         </div>
                                                     ));
                                                 })()}
                                             </div>
-                                            <div className="mt-1 font-mono text-[9px] tabular-nums text-[#7a736a]">
+                                            <div className="mt-1 font-mono text-[9px] tabular-nums text-[var(--ink-dim)]">
                                                 = {new Intl.NumberFormat('id-ID').format(item.stock)} Bks total
                                             </div>
                                         </>
                                     ) : (
-                                        <div className="font-mono text-[11px] font-black uppercase text-[#b4524a]">Empty</div>
+                                        <div className="font-mono text-[11px] font-black uppercase text-[var(--duke-danger-ink)]">Empty</div>
                                     )}
 
                                     {/* The eye moved here off the 80px image. A full row at 44px is
@@ -2390,7 +2390,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                         want to turn it over. */}
                                     <button
                                         onClick={(e) => { e.stopPropagation(); unlockSounds().then(() => playSound('click')); onInspect(item); }}
-                                        className="kpm-press mt-2 flex h-11 w-full items-center justify-center gap-2 rounded border border-[#3e3226] bg-[#1a1815] font-mono text-[10px] font-black uppercase tracking-[0.14em] text-[#8b7256]"
+                                        className="kpm-press mt-2 flex h-11 w-full items-center justify-center gap-2 rounded border border-[var(--duke-edge-1)] bg-[var(--duke-fill-ground)] font-mono text-[10px] font-black uppercase tracking-[0.14em] text-[var(--duke-ink-3)]"
                                     >
                                         <Eye size={14}/> Examine in 3D
                                     </button>
@@ -2412,15 +2412,15 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                     xl and up only. Below that the shelf needs the width more, and nothing is
                     lost: examine is still on the eye button and the day's figures live on the
                     dashboard, which is where you go between routes anyway. */}
-                <aside className="kpm-rail hidden xl:flex w-[236px] shrink-0 flex-col gap-4 border-l border-[#3e3226] bg-[#0f0e0d] p-4 overflow-y-auto kpm-scroll">
+                <aside className="kpm-rail hidden xl:flex w-[236px] shrink-0 flex-col gap-4 border-l border-[var(--duke-edge-1)] bg-[var(--duke-fill-well)] p-4 overflow-y-auto kpm-scroll">
                     {examineItem ? (
                         <div key="examine" className="kpm-rail-panel">
-                            <h3 className="m-0 mb-3 font-mono text-[11px] font-black uppercase tracking-[0.16em] text-[#d4af37]">Examine</h3>
+                            <h3 className="m-0 mb-3 font-mono text-[11px] font-black uppercase tracking-[0.16em] text-[var(--duke-brass-ink)]">Examine</h3>
                             <div className="kpm-cube-stage big h-[150px]" style={cubeVars(examineItem)}>
                                 {renderCube(examineItem)}
                             </div>
-                            <p className="mt-3 mb-1 font-mono text-[12px] font-black uppercase tracking-[0.06em] text-[#e8e4de] leading-tight">{examineItem.name}</p>
-                            <p className="m-0 font-mono text-[10.5px] tabular-nums text-[#7a736a]">
+                            <p className="mt-3 mb-1 font-mono text-[12px] font-black uppercase tracking-[0.06em] text-[var(--ink)] leading-tight">{examineItem.name}</p>
+                            <p className="m-0 font-mono text-[10.5px] tabular-nums text-[var(--ink-dim)]">
                                 {examineItem.dimensions
                                     ? `${examineItem.dimensions.w} × ${examineItem.dimensions.h} × ${examineItem.dimensions.d} mm`
                                     : 'no size set in the vault'}
@@ -2428,25 +2428,25 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                             {/* In the units he counts in, not a flat Bks figure. "12 Karton 1 Bal
                                 4 Slop" is what he would say out loud and how he checks the van
                                 without opening a box; 9.892 is a number he has to do maths on. */}
-                            <div className="mt-3 border-t border-[#26231f] pt-3">
-                                <div className="font-mono text-[9.5px] font-black uppercase tracking-[0.16em] text-[#7a736a] mb-2">In vehicle</div>
+                            <div className="mt-3 border-t border-[var(--line)] pt-3">
+                                <div className="font-mono text-[9.5px] font-black uppercase tracking-[0.16em] text-[var(--ink-dim)] mb-2">In vehicle</div>
                                 {(() => {
                                     const split = splitToUnits(examineItem.stock || 0, examineItem);
                                     const rows = ['Karton', 'Bal', 'Slop', 'Bks'];
                                     if (!(examineItem.stock > 0)) {
-                                        return <div className="font-mono text-[13px] font-black uppercase text-[#b4524a]">Empty</div>;
+                                        return <div className="font-mono text-[13px] font-black uppercase text-[var(--duke-danger-ink)]">Empty</div>;
                                     }
                                     return (
                                         <>
                                             <div className="grid grid-cols-4 gap-1">
                                                 {rows.map(u => (
-                                                    <div key={u} className={`rounded border px-1 py-1.5 text-center ${split[u] ? 'border-[#5c4b3a] bg-[#1a1815]' : 'border-[#26231f] bg-transparent'}`}>
-                                                        <div className={`font-mono text-[15px] font-black tabular-nums leading-none ${split[u] ? 'text-[#e8e4de]' : 'text-[#3e3a35]'}`}>{split[u]}</div>
-                                                        <div className="mt-1 font-mono text-[7.5px] font-black uppercase tracking-[0.1em] text-[#7a736a]">{u}</div>
+                                                    <div key={u} className={`rounded border px-1 py-1.5 text-center ${split[u] ? 'border-[var(--duke-edge-2)] bg-[var(--duke-fill-ground)]' : 'border-[var(--line)] bg-transparent'}`}>
+                                                        <div className={`font-mono text-[15px] font-black tabular-nums leading-none ${split[u] ? 'text-[var(--ink)]' : 'text-[var(--duke-ink-8)]'}`}>{split[u]}</div>
+                                                        <div className="mt-1 font-mono text-[7.5px] font-black uppercase tracking-[0.1em] text-[var(--ink-dim)]">{u}</div>
                                                     </div>
                                                 ))}
                                             </div>
-                                            <div className="mt-1.5 font-mono text-[10px] tabular-nums text-[#7a736a]">
+                                            <div className="mt-1.5 font-mono text-[10px] tabular-nums text-[var(--ink-dim)]">
                                                 = {new Intl.NumberFormat('id-ID').format(examineItem.stock)} Bks total
                                             </div>
                                         </>
@@ -2459,7 +2459,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                 press target for opening this panel at every width. */}
                             <button
                                 onClick={() => { unlockSounds().then(() => playSound('click')); onInspect(examineItem); }}
-                                className="kpm-press kpm-hover mt-3 flex h-10 w-full items-center justify-center gap-2 rounded border border-[#3e3226] bg-[#1a1815] font-mono text-[10px] font-black uppercase tracking-[0.14em] text-[#8b7256] hover:text-[#ff9d00] hover:border-[#ff9d00] transition-colors"
+                                className="kpm-press kpm-hover mt-3 flex h-10 w-full items-center justify-center gap-2 rounded border border-[var(--duke-edge-1)] bg-[var(--duke-fill-ground)] font-mono text-[10px] font-black uppercase tracking-[0.14em] text-[var(--duke-ink-3)] hover:text-[var(--duke-amber-ink)] hover:border-[var(--duke-amber-edge)] transition-colors"
                             >
                                 <Eye size={14}/> Examine in 3D
                             </button>
@@ -2476,13 +2476,13 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                            the day's takings there just looked like the rail had ignored him. */
                         <div key="brief" className="kpm-rail-panel">
                             {renderStoreSwap()}
-                            <h3 className="m-0 mb-1 font-mono text-[11px] font-black uppercase tracking-[0.16em] text-[#d4af37]">Before you go in</h3>
-                            <p className="m-0 mb-3 font-mono text-[12px] font-black uppercase leading-tight text-[#e8e4de] break-words">{customerName}</p>
+                            <h3 className="m-0 mb-1 font-mono text-[11px] font-black uppercase tracking-[0.16em] text-[var(--duke-brass-ink)]">Before you go in</h3>
+                            <p className="m-0 mb-3 font-mono text-[12px] font-black uppercase leading-tight text-[var(--ink)] break-words">{customerName}</p>
 
                             {!brief && (
-                                <p className="m-0 border-t border-[#26231f] pt-3 font-mono text-[11px] leading-relaxed text-[#7a736a]">
+                                <p className="m-0 border-t border-[var(--line)] pt-3 font-mono text-[11px] leading-relaxed text-[var(--ink-dim)]">
                                     No order in the last 7 days.<br/>
-                                    <span className="text-[#57514a]">New account, or one worth asking about.</span>
+                                    <span className="text-[var(--ink-disabled)]">New account, or one worth asking about.</span>
                                 </p>
                             )}
 
@@ -2494,14 +2494,14 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                    colour; his own second visit is merely worth knowing. Both stay
                                    on screen for as long as the decision is live, which a dialog
                                    he can dismiss in half a second does not. */
-                                <div className={`mb-3 border-l-[3px] px-3 py-2 ${revisitToday === 'me' ? 'border-[#ff9d00] bg-[#3e2a10]' : 'border-[#b4524a] bg-[#1e1512]'}`}>
-                                    <div className={`font-mono text-[9.5px] font-black uppercase tracking-[0.16em] mb-1 ${revisitToday === 'me' ? 'text-[#ff9d00]' : 'text-[#b4524a]'}`}>
+                                <div className={`mb-3 border-l-[3px] px-3 py-2 ${revisitToday === 'me' ? 'border-[var(--duke-amber-edge)] bg-[var(--duke-brass-4)]' : 'border-[var(--danger)] bg-[var(--danger-well)]'}`}>
+                                    <div className={`font-mono text-[9.5px] font-black uppercase tracking-[0.16em] mb-1 ${revisitToday === 'me' ? 'text-[var(--duke-amber-ink)]' : 'text-[var(--duke-danger-ink)]'}`}>
                                         {revisitToday === 'me' ? 'Already sold here today' : 'Already secured today'}
                                     </div>
-                                    <div className="font-mono text-[10px] leading-snug text-[#a39b90]">
+                                    <div className="font-mono text-[10px] leading-snug text-[var(--ink-muted)]">
                                         {revisitToday === 'me'
                                             ? 'This would be a second visit.'
-                                            : <>Claimed by <span className="font-black uppercase text-[#e08c82]">{revisitToday}</span>. Selling here is a redundant visit.</>}
+                                            : <>Claimed by <span className="font-black uppercase text-[var(--danger-ink)]">{revisitToday}</span>. Selling here is a redundant visit.</>}
                                     </div>
                                 </div>
                             )}
@@ -2511,123 +2511,123 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                 is selected, which is the point: a dialog is gone in half a second,
                                 and a suppressed dialog was never seen at all. */}
                             {territoryClaim && (
-                                <div className="mb-3 border-l-[3px] border-[#b4524a] bg-[#1e1512] px-3 py-2">
+                                <div className="mb-3 border-l-[3px] border-[var(--danger)] bg-[var(--danger-well)] px-3 py-2">
                                     {/* No apostrophe in this heading on purpose — the audit matches
                                         it as a literal in the built bundle, and a minifier is free
                                         to re-quote and escape one, which would fail the check for
                                         no real reason. */}
-                                    <div className="font-mono text-[9.5px] font-black uppercase tracking-[0.16em] text-[#b4524a] mb-1">Another agent handles this store</div>
-                                    <div className="font-mono text-[10px] leading-snug text-[#a39b90]">
-                                        Assigned to <span className="font-black uppercase text-[#e08c82]">{territoryClaim}</span>. Selling is allowed — this sale will be recorded as a territory override.
+                                    <div className="font-mono text-[9.5px] font-black uppercase tracking-[0.16em] text-[var(--duke-danger-ink)] mb-1">Another agent handles this store</div>
+                                    <div className="font-mono text-[10px] leading-snug text-[var(--ink-muted)]">
+                                        Assigned to <span className="font-black uppercase text-[var(--danger-ink)]">{territoryClaim}</span>. Selling is allowed — this sale will be recorded as a territory override.
                                     </div>
                                 </div>
                             )}
 
                             {debtInfo && debtInfo.totalDebt > 0 && (
-                                <div className="mb-3 border-l-[3px] border-[#b4524a] bg-[#1e1512] px-3 py-2">
-                                    <div className="font-mono text-[9.5px] font-black uppercase tracking-[0.16em] text-[#b4524a] mb-1">Owes</div>
-                                    <div className="font-mono text-[15px] font-black tabular-nums text-[#e08c82] leading-none">
+                                <div className="mb-3 border-l-[3px] border-[var(--danger)] bg-[var(--danger-well)] px-3 py-2">
+                                    <div className="font-mono text-[9.5px] font-black uppercase tracking-[0.16em] text-[var(--duke-danger-ink)] mb-1">Owes</div>
+                                    <div className="font-mono text-[15px] font-black tabular-nums text-[var(--danger-ink)] leading-none">
                                         Rp {new Intl.NumberFormat('id-ID').format(debtInfo.totalDebt)}
                                     </div>
-                                    <div className="mt-1 font-mono text-[10px] tabular-nums text-[#7a736a]">{debtInfo.ageDays} days old</div>
+                                    <div className="mt-1 font-mono text-[10px] tabular-nums text-[var(--ink-dim)]">{debtInfo.ageDays} days old</div>
                                 </div>
                             )}
 
                             {brief && (<>
-                            <div className="border-t border-[#26231f] pt-3">
-                                <div className="font-mono text-[9.5px] font-black uppercase tracking-[0.16em] text-[#7a736a] mb-1.5">Last order &middot; {agoLabel(brief.lastAt)}</div>
+                            <div className="border-t border-[var(--line)] pt-3">
+                                <div className="font-mono text-[9.5px] font-black uppercase tracking-[0.16em] text-[var(--ink-dim)] mb-1.5">Last order &middot; {agoLabel(brief.lastAt)}</div>
                                 {brief.lastItems.length ? (
                                     <ul className="m-0 list-none p-0 flex flex-col gap-1">
                                         {brief.lastItems.slice(0, 4).map((it, i) => (
-                                            <li key={i} className="font-mono text-[11px] leading-tight text-[#e8e4de] flex justify-between gap-2">
+                                            <li key={i} className="font-mono text-[11px] leading-tight text-[var(--ink)] flex justify-between gap-2">
                                                 <span className="min-w-0 break-words">{it.name}</span>
-                                                <span className="shrink-0 tabular-nums text-[#a39b90]">{it.qty} {it.unit}</span>
+                                                <span className="shrink-0 tabular-nums text-[var(--ink-muted)]">{it.qty} {it.unit}</span>
                                             </li>
                                         ))}
                                         {brief.lastItems.length > 4 && (
-                                            <li className="font-mono text-[10px] text-[#7a736a]">+{brief.lastItems.length - 4} more</li>
+                                            <li className="font-mono text-[10px] text-[var(--ink-dim)]">+{brief.lastItems.length - 4} more</li>
                                         )}
                                     </ul>
                                 ) : (
-                                    <p className="m-0 font-mono text-[11px] text-[#7a736a]">No line detail on that order.</p>
+                                    <p className="m-0 font-mono text-[11px] text-[var(--ink-dim)]">No line detail on that order.</p>
                                 )}
-                                <div className="mt-2 font-mono text-[11px] font-black tabular-nums text-[#ff9d00]">
+                                <div className="mt-2 font-mono text-[11px] font-black tabular-nums text-[var(--duke-amber-ink)]">
                                     Rp {new Intl.NumberFormat('id-ID').format(brief.lastTotal)}
                                 </div>
                             </div>
 
-                            <div className="mt-3 grid grid-cols-2 gap-2 border-t border-[#26231f] pt-3">
+                            <div className="mt-3 grid grid-cols-2 gap-2 border-t border-[var(--line)] pt-3">
                                 <div>
-                                    <div className="font-mono text-[9.5px] font-black uppercase tracking-[0.16em] text-[#7a736a] mb-1">Usual basket</div>
-                                    <div className="font-mono text-[13px] font-black tabular-nums text-[#e8e4de]">Rp {new Intl.NumberFormat('id-ID').format(brief.avgBasket)}</div>
+                                    <div className="font-mono text-[9.5px] font-black uppercase tracking-[0.16em] text-[var(--ink-dim)] mb-1">Usual basket</div>
+                                    <div className="font-mono text-[13px] font-black tabular-nums text-[var(--ink)]">Rp {new Intl.NumberFormat('id-ID').format(brief.avgBasket)}</div>
                                 </div>
                                 <div>
-                                    <div className="font-mono text-[9.5px] font-black uppercase tracking-[0.16em] text-[#7a736a] mb-1">Visits &middot; 7d</div>
-                                    <div className="font-mono text-[13px] font-black tabular-nums text-[#e8e4de]">{brief.visits}</div>
+                                    <div className="font-mono text-[9.5px] font-black uppercase tracking-[0.16em] text-[var(--ink-dim)] mb-1">Visits &middot; 7d</div>
+                                    <div className="font-mono text-[13px] font-black tabular-nums text-[var(--ink)]">{brief.visits}</div>
                                 </div>
                             </div>
 
                             <button
                                 onClick={handleReorder}
                                 disabled={isReturMode || !brief.lastItems.length}
-                                className="kpm-hover kpm-press mt-4 w-full rounded border-2 border-[#ffca28] bg-gradient-to-r from-[#ff9d00] to-[#c47f00] py-2.5 font-mono text-[11px] font-black uppercase tracking-[0.12em] text-black disabled:cursor-not-allowed disabled:border-[#3e3a35] disabled:bg-none disabled:bg-transparent disabled:text-[#57514a]"
+                                className="kpm-hover kpm-press mt-4 w-full rounded border-2 border-[var(--duke-brass-edge-3)] bg-gradient-to-r from-[var(--duke-amber)] to-[var(--duke-amber-2)] py-2.5 font-mono text-[11px] font-black uppercase tracking-[0.12em] text-black disabled:cursor-not-allowed disabled:border-[var(--line-2)] disabled:bg-none disabled:bg-transparent disabled:text-[var(--ink-disabled)]"
                             >
                                 Same as last time
                             </button>
                             {isReturMode && (
-                                <p className="m-0 mt-1.5 font-mono text-[10px] leading-snug text-[#7a736a]">Not while a retur is open.</p>
+                                <p className="m-0 mt-1.5 font-mono text-[10px] leading-snug text-[var(--ink-dim)]">Not while a retur is open.</p>
                             )}
                             </>)}
                         </div>
                     ) : (
                         <div key="today" className="kpm-rail-panel">
-                            <h3 className="m-0 mb-3 font-mono text-[11px] font-black uppercase tracking-[0.16em] text-[#d4af37]">Today</h3>
+                            <h3 className="m-0 mb-3 font-mono text-[11px] font-black uppercase tracking-[0.16em] text-[var(--duke-brass-ink)]">Today</h3>
 
                             <div>
-                                <div className="font-mono text-[9.5px] font-black uppercase tracking-[0.16em] text-[#7a736a] mb-1.5">Taken</div>
-                                <div className="font-mono text-[21px] font-black tabular-nums text-[#ff9d00] leading-none">
+                                <div className="font-mono text-[9.5px] font-black uppercase tracking-[0.16em] text-[var(--ink-dim)] mb-1.5">Taken</div>
+                                <div className="font-mono text-[21px] font-black tabular-nums text-[var(--duke-amber-ink)] leading-none">
                                     Rp {new Intl.NumberFormat('id-ID').format(today.today)}
                                 </div>
                                 {/* Direction is carried by the ARROW first and colour second: the palette
                                     bans green, so an up/down pair could never lean on red/green anyway. */}
                                 {today.pct === null ? (
-                                    <p className="m-0 mt-1.5 font-mono text-[10px] text-[#7a736a]">no sales yesterday to compare</p>
+                                    <p className="m-0 mt-1.5 font-mono text-[10px] text-[var(--ink-dim)]">no sales yesterday to compare</p>
                                 ) : (
-                                    <p className={`m-0 mt-1.5 flex items-baseline gap-1.5 font-mono text-[11px] font-black tabular-nums ${today.pct >= 0 ? 'text-[#d4af37]' : 'text-[#b4524a]'}`}>
+                                    <p className={`m-0 mt-1.5 flex items-baseline gap-1.5 font-mono text-[11px] font-black tabular-nums ${today.pct >= 0 ? 'text-[var(--duke-brass-ink)]' : 'text-[var(--duke-danger-ink)]'}`}>
                                         <span aria-hidden="true">{today.pct >= 0 ? '▲' : '▼'}</span>
                                         {Math.abs(today.pct)}%
-                                        <span className="font-normal text-[#7a736a]">vs yesterday, {clockLabel}</span>
+                                        <span className="font-normal text-[var(--ink-dim)]">vs yesterday, {clockLabel}</span>
                                     </p>
                                 )}
                             </div>
 
-                            <div className="mt-3 border-t border-[#26231f] pt-3">
-                                <div className="font-mono text-[9.5px] font-black uppercase tracking-[0.16em] text-[#7a736a] mb-1.5">Stores done</div>
-                                <div className="font-mono text-[21px] font-black tabular-nums text-[#e8e4de] leading-none">{today.stores}</div>
+                            <div className="mt-3 border-t border-[var(--line)] pt-3">
+                                <div className="font-mono text-[9.5px] font-black uppercase tracking-[0.16em] text-[var(--ink-dim)] mb-1.5">Stores done</div>
+                                <div className="font-mono text-[21px] font-black tabular-nums text-[var(--ink)] leading-none">{today.stores}</div>
                                 {today.storesYesterday > 0 && (
-                                    <p className={`m-0 mt-1.5 flex items-baseline gap-1.5 font-mono text-[11px] font-black tabular-nums ${today.storesDelta >= 0 ? 'text-[#d4af37]' : 'text-[#b4524a]'}`}>
+                                    <p className={`m-0 mt-1.5 flex items-baseline gap-1.5 font-mono text-[11px] font-black tabular-nums ${today.storesDelta >= 0 ? 'text-[var(--duke-brass-ink)]' : 'text-[var(--duke-danger-ink)]'}`}>
                                         <span aria-hidden="true">{today.storesDelta >= 0 ? '▲' : '▼'}</span>
                                         {Math.abs(today.storesDelta)}
-                                        <span className="font-normal text-[#7a736a]">vs yesterday</span>
+                                        <span className="font-normal text-[var(--ink-dim)]">vs yesterday</span>
                                     </p>
                                 )}
                             </div>
 
                             {today.last && (
-                                <div className="mt-3 border-t border-[#26231f] pt-3">
-                                    <div className="font-mono text-[9.5px] font-black uppercase tracking-[0.16em] text-[#7a736a] mb-1.5">Last customer</div>
-                                    <div className="font-mono text-[13px] font-black uppercase text-[#e8e4de] leading-tight break-words">{today.last.customerName}</div>
-                                    <p className="m-0 mt-1 font-mono text-[10.5px] tabular-nums text-[#7a736a]">
+                                <div className="mt-3 border-t border-[var(--line)] pt-3">
+                                    <div className="font-mono text-[9.5px] font-black uppercase tracking-[0.16em] text-[var(--ink-dim)] mb-1.5">Last customer</div>
+                                    <div className="font-mono text-[13px] font-black uppercase text-[var(--ink)] leading-tight break-words">{today.last.customerName}</div>
+                                    <p className="m-0 mt-1 font-mono text-[10.5px] tabular-nums text-[var(--ink-dim)]">
                                         {agoLabel(today.lastAt)} &middot; Rp {new Intl.NumberFormat('id-ID').format(Number(today.last.total) || 0)}
                                     </p>
                                 </div>
                             )}
 
                             {lowestStock && (
-                                <div className="mt-3 border-t border-[#26231f] pt-3">
-                                    <div className="font-mono text-[9.5px] font-black uppercase tracking-[0.16em] text-[#7a736a] mb-1.5">Running low</div>
-                                    <div className="font-mono text-[13px] font-black uppercase text-[#b4524a] leading-tight break-words">{lowestStock.name}</div>
-                                    <p className="m-0 mt-1 font-mono text-[10.5px] tabular-nums text-[#7a736a]">
+                                <div className="mt-3 border-t border-[var(--line)] pt-3">
+                                    <div className="font-mono text-[9.5px] font-black uppercase tracking-[0.16em] text-[var(--ink-dim)] mb-1.5">Running low</div>
+                                    <div className="font-mono text-[13px] font-black uppercase text-[var(--duke-danger-ink)] leading-tight break-words">{lowestStock.name}</div>
+                                    <p className="m-0 mt-1 font-mono text-[10.5px] tabular-nums text-[var(--ink-dim)]">
                                         {new Intl.NumberFormat('id-ID').format(lowestStock.stock)} Bks left in the vehicle
                                     </p>
                                 </div>
@@ -2641,14 +2641,14 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                 space, and reasonably concluded it did not work. A desktop browser
                                 often has no location permission at all. */}
                             {!agentLocation && (
-                                <div className="mt-3 border-t border-[#26231f] pt-3">
-                                    <div className="font-mono text-[9.5px] font-black uppercase tracking-[0.16em] text-[#7a736a] mb-1.5">Next stop</div>
-                                    <p className="m-0 font-mono text-[10.5px] leading-relaxed text-[#7a736a]">
+                                <div className="mt-3 border-t border-[var(--line)] pt-3">
+                                    <div className="font-mono text-[9.5px] font-black uppercase tracking-[0.16em] text-[var(--ink-dim)] mb-1.5">Next stop</div>
+                                    <p className="m-0 font-mono text-[10.5px] leading-relaxed text-[var(--ink-dim)]">
                                         Needs a GPS fix to know what is nearest.
                                     </p>
                                     <button
                                         onClick={() => verifyLocation(true)}
-                                        className="kpm-hover kpm-press mt-2 flex h-9 w-full items-center justify-center gap-2 rounded border border-[#3e3226] bg-[#1a1815] font-mono text-[10px] font-black uppercase tracking-[0.14em] text-[#8b7256] hover:text-[#ff9d00] hover:border-[#ff9d00] transition-colors"
+                                        className="kpm-hover kpm-press mt-2 flex h-9 w-full items-center justify-center gap-2 rounded border border-[var(--duke-edge-1)] bg-[var(--duke-fill-ground)] font-mono text-[10px] font-black uppercase tracking-[0.14em] text-[var(--duke-ink-3)] hover:text-[var(--duke-amber-ink)] hover:border-[var(--duke-amber-edge)] transition-colors"
                                     >
                                         <MapPin size={13}/> Find me
                                     </button>
@@ -2656,19 +2656,19 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                             )}
 
                             {agentLocation && !upNext && (
-                                <div className="mt-3 border-t border-[#26231f] pt-3">
-                                    <div className="font-mono text-[9.5px] font-black uppercase tracking-[0.16em] text-[#7a736a] mb-1.5">Next stop</div>
-                                    <p className="m-0 font-mono text-[10.5px] leading-relaxed text-[#7a736a]">
+                                <div className="mt-3 border-t border-[var(--line)] pt-3">
+                                    <div className="font-mono text-[9.5px] font-black uppercase tracking-[0.16em] text-[var(--ink-dim)] mb-1.5">Next stop</div>
+                                    <p className="m-0 font-mono text-[10.5px] leading-relaxed text-[var(--ink-dim)]">
                                         Nothing left nearby — every store assigned to you has been visited today.
                                     </p>
                                 </div>
                             )}
 
                             {upNext && (
-                                <div className="mt-3 border-t border-[#26231f] pt-3">
-                                    <div className="font-mono text-[9.5px] font-black uppercase tracking-[0.16em] text-[#7a736a] mb-1.5">Next stop</div>
-                                    <div className="font-mono text-[13px] font-black uppercase leading-tight text-[#e8e4de] break-words">{upNext.customer.name}</div>
-                                    <p className="m-0 mt-1 font-mono text-[10.5px] tabular-nums text-[#7a736a]">
+                                <div className="mt-3 border-t border-[var(--line)] pt-3">
+                                    <div className="font-mono text-[9.5px] font-black uppercase tracking-[0.16em] text-[var(--ink-dim)] mb-1.5">Next stop</div>
+                                    <div className="font-mono text-[13px] font-black uppercase leading-tight text-[var(--ink)] break-words">{upNext.customer.name}</div>
+                                    <p className="m-0 mt-1 font-mono text-[10.5px] tabular-nums text-[var(--ink-dim)]">
                                         {metresLabel(upNext.metres)} &middot; {upNext.remaining} left today
                                     </p>
                                     {directionsUrl(upNext.customer) && (
@@ -2679,7 +2679,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                             href={directionsUrl(upNext.customer)}
                                             target="_blank"
                                             rel="noopener noreferrer"
-                                            className="kpm-hover kpm-press mt-2 flex h-9 w-full items-center justify-center gap-2 rounded border border-[#3e3226] bg-[#1a1815] font-mono text-[10px] font-black uppercase tracking-[0.14em] text-[#8b7256] no-underline hover:text-[#ff9d00] hover:border-[#ff9d00] transition-colors"
+                                            className="kpm-hover kpm-press mt-2 flex h-9 w-full items-center justify-center gap-2 rounded border border-[var(--duke-edge-1)] bg-[var(--duke-fill-ground)] font-mono text-[10px] font-black uppercase tracking-[0.14em] text-[var(--duke-ink-3)] no-underline hover:text-[var(--duke-amber-ink)] hover:border-[var(--duke-amber-edge)] transition-colors"
                                         >
                                             <Map size={13}/> Directions
                                         </a>
@@ -2687,7 +2687,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                 </div>
                             )}
 
-                            <p className="mt-auto pt-3 border-t border-[#26231f] m-0 font-mono text-[10px] leading-relaxed text-[#7a736a]">
+                            <p className="mt-auto pt-3 border-t border-[var(--line)] m-0 font-mono text-[10px] leading-relaxed text-[var(--ink-dim)]">
                                 Point at a ware to inspect it here.
                             </p>
                         </div>
@@ -2724,13 +2724,13 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
             {/* --- THE NOO REGISTRATION MODAL --- */}
             {showNooModal && (
                 <div className="fixed inset-0 z-[300] bg-black/95 flex items-center justify-center p-4 font-sans backdrop-blur-md">
-                    <div className="bg-[#1a1815] w-full max-w-lg border-2 border-orange-500/50 rounded-2xl shadow-[0_0_50px_rgba(249,115,22,0.2)] flex flex-col max-h-[90vh] overflow-hidden animate-fade-in-up">
-                        <div className="p-5 border-b border-[#3e3226] bg-black/40 flex justify-between items-center">
+                    <div className="bg-[var(--duke-fill-ground)] w-full max-w-lg border-2 border-orange-500/50 rounded-2xl shadow-[0_0_50px_rgba(249,115,22,0.2)] flex flex-col max-h-[90vh] overflow-hidden animate-fade-in-up">
+                        <div className="p-5 border-b border-[var(--duke-edge-1)] bg-black/40 flex justify-between items-center">
                             <div>
                                 <h2 className="text-lg font-black text-white flex items-center gap-2 uppercase tracking-wider"><Store size={20} className="text-orange-500"/> Outlet Registration</h2>
-                                <p className="text-[10px] text-[#8b7256] uppercase tracking-widest mt-1">Unlock Requested Pricing Tiers</p>
+                                <p className="text-[10px] text-[var(--duke-ink-3)] uppercase tracking-widest mt-1">Unlock Requested Pricing Tiers</p>
                             </div>
-                            <button onClick={() => setShowNooModal(false)} className="text-[#8b7256] hover:text-white"><X size={24}/></button>
+                            <button onClick={() => setShowNooModal(false)} className="text-[var(--duke-ink-3)] hover:text-white"><X size={24}/></button>
                         </div>
                         
                         <div className="p-6 overflow-y-auto space-y-5 custom-scrollbar flex-1">
@@ -2739,39 +2739,39 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                 this bar is on screen, so the refusal always has a visible reason
                                 and a visible way past it — the old dialog had neither. */}
                             {proximityHit && (
-                                <div className="border-l-[3px] border-[#b4524a] bg-[#1e1512] px-3 py-3">
-                                    <div className="font-mono text-[9.5px] font-black uppercase tracking-[0.16em] text-[#b4524a] mb-1">Existing store {proximityHit.metres}m away</div>
-                                    <div className="font-mono text-[10px] leading-snug text-[#a39b90] mb-2.5">
-                                        You are standing next to <span className="font-black uppercase text-[#e08c82]">{proximityHit.name}</span>. Registering again would create a duplicate of it.
+                                <div className="border-l-[3px] border-[var(--danger)] bg-[var(--danger-well)] px-3 py-3">
+                                    <div className="font-mono text-[9.5px] font-black uppercase tracking-[0.16em] text-[var(--duke-danger-ink)] mb-1">Existing store {proximityHit.metres}m away</div>
+                                    <div className="font-mono text-[10px] leading-snug text-[var(--ink-muted)] mb-2.5">
+                                        You are standing next to <span className="font-black uppercase text-[var(--danger-ink)]">{proximityHit.name}</span>. Registering again would create a duplicate of it.
                                     </div>
                                     <button
                                         type="button"
                                         onClick={() => { setProximityAck(proximityHit.name); setProximityHit(null); }}
-                                        className="w-full min-h-[44px] bg-[#3e3226] hover:bg-[#5c4b3a] text-[#ff9d00] text-[10px] font-black uppercase tracking-widest py-2.5 rounded transition-colors"
+                                        className="w-full min-h-[44px] bg-[var(--duke-fill-plank)] hover:bg-[var(--duke-fill-plank-2)] text-[var(--duke-amber-ink)] text-[10px] font-black uppercase tracking-widest py-2.5 rounded transition-colors"
                                     >
                                         This is a different building — continue
                                     </button>
                                 </div>
                             )}
                             <div>
-                                <label className="text-xs font-bold text-[#8b7256] uppercase tracking-widest block mb-1">Store Name</label>
-                                <input value={customerName} disabled className="w-full bg-black border border-[#3e3226] text-[#d4c5a3] p-3 rounded font-bold uppercase opacity-70" />
+                                <label className="text-xs font-bold text-[var(--duke-ink-3)] uppercase tracking-widest block mb-1">Store Name</label>
+                                <input value={customerName} disabled className="w-full bg-black border border-[var(--duke-edge-1)] text-[var(--duke-ink-1)] p-3 rounded font-bold uppercase opacity-70" />
                             </div>
                             
                             <div>
-                                <label className="text-xs font-bold text-[#8b7256] uppercase tracking-widest block mb-1">WhatsApp / Phone <span className="text-red-500">*</span></label>
-                                <input value={nooForm.phone} onChange={e => setNooForm({...nooForm, phone: e.target.value})} placeholder="e.g. 081234567890" className="w-full bg-[#26211c] border border-[#5c4b3a] focus:border-orange-500 outline-none text-white p-3 rounded font-bold" />
+                                <label className="text-xs font-bold text-[var(--duke-ink-3)] uppercase tracking-widest block mb-1">WhatsApp / Phone <span className="text-red-500">*</span></label>
+                                <input value={nooForm.phone} onChange={e => setNooForm({...nooForm, phone: e.target.value})} placeholder="e.g. 081234567890" className="w-full bg-[var(--duke-fill-panel)] border border-[var(--duke-edge-2)] focus:border-orange-500 outline-none text-white p-3 rounded font-bold" />
                             </div>
 
                             <div>
-                                <label className="text-xs font-bold text-[#8b7256] uppercase tracking-widest block mb-1">Requested Pricing Tier <span className="text-red-500">*</span></label>
-                                <select value={nooForm.requestedTier} onChange={e => setNooForm({...nooForm, requestedTier: e.target.value})} className="w-full bg-[#26211c] border border-[#5c4b3a] focus:border-orange-500 outline-none text-white p-3 rounded font-bold uppercase">
+                                <label className="text-xs font-bold text-[var(--duke-ink-3)] uppercase tracking-widest block mb-1">Requested Pricing Tier <span className="text-red-500">*</span></label>
+                                <select value={nooForm.requestedTier} onChange={e => setNooForm({...nooForm, requestedTier: e.target.value})} className="w-full bg-[var(--duke-fill-panel)] border border-[var(--duke-edge-2)] focus:border-orange-500 outline-none text-white p-3 rounded font-bold uppercase">
                                     {allowedTiers.map(tier => ( <option key={tier} value={tier}>{tier}</option> ))}
                                 </select>
                             </div>
 
                             <div>
-                                <label className="text-xs font-bold text-[#8b7256] uppercase tracking-widest block mb-2">Storefront Photo <span className="text-red-500">*</span></label>
+                                <label className="text-xs font-bold text-[var(--duke-ink-3)] uppercase tracking-widest block mb-2">Storefront Photo <span className="text-red-500">*</span></label>
                                 <input type="file" accept="image/*" capture="environment" ref={fileInputRef} onChange={handlePhotoCapture} className="hidden" />
                                 {nooForm.photoUrl ? (
                                     <div className="relative rounded-lg overflow-hidden border-2 border-orange-500 bg-black">
@@ -2779,7 +2779,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                         <button onClick={() => setNooForm({...nooForm, photoUrl: null, photoFile: null})} className="absolute top-2 right-2 bg-red-600 text-white p-1.5 rounded-full"><X size={14}/></button>
                                     </div>
                                 ) : (
-                                    <button onClick={() => fileInputRef.current.click()} className="w-full border-2 border-dashed border-[#5c4b3a] hover:border-orange-500 bg-[#26211c]/50 hover:bg-[#26211c] text-[#8b7256] hover:text-orange-400 transition-colors py-8 rounded-lg flex flex-col items-center justify-center gap-2">
+                                    <button onClick={() => fileInputRef.current.click()} className="w-full border-2 border-dashed border-[var(--duke-edge-2)] hover:border-orange-500 bg-[var(--duke-fill-panel)]/50 hover:bg-[var(--duke-fill-panel)] text-[var(--duke-ink-3)] hover:text-orange-400 transition-colors py-8 rounded-lg flex flex-col items-center justify-center gap-2">
                                         <Camera size={32} />
                                         <span className="text-xs font-bold uppercase tracking-widest">Capture Live Photo</span>
                                         <span className="text-[11px] opacity-60">(Live Camera Only - Gallery Disabled)</span>
@@ -2787,27 +2787,27 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                 )}
                             </div>
                             
-                            <div className="bg-black/30 p-3 rounded border border-[#3e3226] flex justify-between items-center gap-3">
+                            <div className="bg-black/30 p-3 rounded border border-[var(--duke-edge-1)] flex justify-between items-center gap-3">
                                 <div className="flex items-center gap-3">
-                                    <div className="p-2 bg-[#3e3226] text-[#ff9d00] rounded-full"><Map size={16}/></div>
+                                    <div className="p-2 bg-[var(--duke-fill-plank)] text-[var(--duke-amber-ink)] rounded-full"><Map size={16}/></div>
                                     <div>
-                                        <p className="text-[10px] font-bold text-[#8b7256] uppercase tracking-widest">Location Tracking</p>
-                                        <p className="text-xs text-[#ff9d00] font-mono">{agentLocation ? `${agentLocation.latitude.toFixed(5)}, ${agentLocation.longitude.toFixed(5)}` : 'Awaiting GPS Lock...'}</p>
+                                        <p className="text-[10px] font-bold text-[var(--duke-ink-3)] uppercase tracking-widest">Location Tracking</p>
+                                        <p className="text-xs text-[var(--duke-amber-ink)] font-mono">{agentLocation ? `${agentLocation.latitude.toFixed(5)}, ${agentLocation.longitude.toFixed(5)}` : 'Awaiting GPS Lock...'}</p>
                                     </div>
                                 </div>
                                 {!agentLocation && (
-                                    <button onClick={() => verifyLocation(true)} className="text-[11px] bg-[#26211c] hover:bg-[#3e3226] text-[#d4c5a3] border border-[#5c4b3a] px-3 py-1.5 rounded uppercase font-bold transition-colors shadow-md">
+                                    <button onClick={() => verifyLocation(true)} className="text-[11px] bg-[var(--duke-fill-panel)] hover:bg-[var(--duke-fill-plank)] text-[var(--duke-ink-1)] border border-[var(--duke-edge-2)] px-3 py-1.5 rounded uppercase font-bold transition-colors shadow-md">
                                         Force GPS Lock
                                     </button>
                                 )}
                             </div>
                         </div>
 
-                        <div className="p-5 border-t border-[#3e3226] bg-black/40 flex flex-col gap-3">
-                            <button onClick={submitNooRegistration} disabled={!agentLocation} className={`w-full py-4 rounded-xl font-black uppercase tracking-[0.1em] transition-all shadow-lg flex items-center justify-center gap-2 ${agentLocation ? 'bg-orange-600 hover:bg-orange-500 text-white shadow-[0_0_15px_rgba(249,115,22,0.5)]' : 'bg-[#26211c] text-[#8b7256] cursor-not-allowed'}`}>
+                        <div className="p-5 border-t border-[var(--duke-edge-1)] bg-black/40 flex flex-col gap-3">
+                            <button onClick={submitNooRegistration} disabled={!agentLocation} className={`w-full py-4 rounded-xl font-black uppercase tracking-[0.1em] transition-all shadow-lg flex items-center justify-center gap-2 ${agentLocation ? 'bg-orange-600 hover:bg-orange-500 text-white shadow-[0_0_15px_rgba(249,115,22,0.5)]' : 'bg-[var(--duke-fill-panel)] text-[var(--duke-ink-3)] cursor-not-allowed'}`}>
                                 {agentLocation ? 'Save & Proceed to Sale' : 'Acquiring Satellites...'}
                             </button>
-                            <button onClick={submitNooOnly} disabled={!agentLocation} className={`w-full py-3 rounded-xl font-black uppercase tracking-[0.1em] transition-all border-2 flex items-center justify-center gap-2 ${agentLocation ? 'bg-[#26211c] border-[#5c4b3a] hover:border-[#d4af37] hover:text-[#d4af37] text-[#d4c5a3]' : 'bg-[#26211c] border-[#3e3226] text-[#8b7256] cursor-not-allowed'}`}>
+                            <button onClick={submitNooOnly} disabled={!agentLocation} className={`w-full py-3 rounded-xl font-black uppercase tracking-[0.1em] transition-all border-2 flex items-center justify-center gap-2 ${agentLocation ? 'bg-[var(--duke-fill-panel)] border-[var(--duke-edge-2)] hover:border-[var(--duke-brass-edge)] hover:text-[var(--duke-brass-ink)] text-[var(--duke-ink-1)]' : 'bg-[var(--duke-fill-panel)] border-[var(--duke-edge-1)] text-[var(--duke-ink-3)] cursor-not-allowed'}`}>
                                 Register Only (No Sale)
                             </button>
                         </div>
@@ -2818,19 +2818,19 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
             {/* --- SAMPLING DEPLOYMENT MODAL --- */}
             {showSampleModal && (
                 <div className="fixed inset-0 z-[300] bg-black/95 flex items-center justify-center p-4 font-sans backdrop-blur-md">
-                    <div className="bg-[#1a1815] w-full max-w-md border-2 border-[#d4af37]/50 rounded-2xl shadow-[0_0_50px_rgba(99,102,241,0.2)] flex flex-col animate-fade-in-up">
-                        <div className="p-5 border-b border-[#3e3226] bg-black/40 flex justify-between items-center">
+                    <div className="bg-[var(--duke-fill-ground)] w-full max-w-md border-2 border-[var(--duke-brass-edge)]/50 rounded-2xl shadow-[0_0_50px_rgba(99,102,241,0.2)] flex flex-col animate-fade-in-up">
+                        <div className="p-5 border-b border-[var(--duke-edge-1)] bg-black/40 flex justify-between items-center">
                             <div>
-                                <h2 className="text-lg font-black text-white flex items-center gap-2 uppercase tracking-wider"><Package size={20} className="text-[#d4af37]"/> Deploy Marketing Sample</h2>
-                                <p className="text-[10px] text-[#8b7256] uppercase tracking-widest mt-1">Target: {customerName}</p>
+                                <h2 className="text-lg font-black text-white flex items-center gap-2 uppercase tracking-wider"><Package size={20} className="text-[var(--duke-brass-ink)]"/> Deploy Marketing Sample</h2>
+                                <p className="text-[10px] text-[var(--duke-ink-3)] uppercase tracking-widest mt-1">Target: {customerName}</p>
                             </div>
-                            <button onClick={() => setShowSampleModal(false)} className="text-[#8b7256] hover:text-white"><X size={24}/></button>
+                            <button onClick={() => setShowSampleModal(false)} className="text-[var(--duke-ink-3)] hover:text-white"><X size={24}/></button>
                         </div>
                         
                         <div className="p-6 space-y-5">
                             <div>
-                                <label className="text-xs font-bold text-[#8b7256] uppercase tracking-widest block mb-1">Select Product</label>
-                                <select value={sampleForm.productId} onChange={e => setSampleForm({...sampleForm, productId: e.target.value})} className="w-full bg-[#26211c] border border-[#5c4b3a] focus:border-[#d4af37] outline-none text-white p-3 rounded font-bold">
+                                <label className="text-xs font-bold text-[var(--duke-ink-3)] uppercase tracking-widest block mb-1">Select Product</label>
+                                <select value={sampleForm.productId} onChange={e => setSampleForm({...sampleForm, productId: e.target.value})} className="w-full bg-[var(--duke-fill-panel)] border border-[var(--duke-edge-2)] focus:border-[var(--duke-brass-edge)] outline-none text-white p-3 rounded font-bold">
                                     <option value="">-- Choose Product --</option>
                                     {inventory.map(p => {
                                         const sp = p.sticksPerPack || 16;
@@ -2845,13 +2845,13 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                 </select>
                             </div>
 
-                            <div className="grid grid-cols-2 gap-4 bg-[#26211c]/50 p-3 rounded-xl border border-[#3e3226]">
+                            <div className="grid grid-cols-2 gap-4 bg-[var(--duke-fill-panel)]/50 p-3 rounded-xl border border-[var(--duke-edge-1)]">
                                 <div>
-                                    <label className="text-[10px] font-bold text-[#8b7256] uppercase tracking-widest mb-1 block text-center">Bungkus</label>
-                                    <input type="number" min="0" placeholder="0" value={sampleForm.qtyBks === 0 ? '' : sampleForm.qtyBks} onChange={e=>setSampleForm({...sampleForm, qtyBks: parseInt(e.target.value)||0})} className="w-full p-2 border rounded bg-[#1a1815] border-[#5c4b3a] text-white text-center font-bold text-lg focus:border-[#d4af37] outline-none" />
+                                    <label className="text-[10px] font-bold text-[var(--duke-ink-3)] uppercase tracking-widest mb-1 block text-center">Bungkus</label>
+                                    <input type="number" min="0" placeholder="0" value={sampleForm.qtyBks === 0 ? '' : sampleForm.qtyBks} onChange={e=>setSampleForm({...sampleForm, qtyBks: parseInt(e.target.value)||0})} className="w-full p-2 border rounded bg-[var(--duke-fill-ground)] border-[var(--duke-edge-2)] text-white text-center font-bold text-lg focus:border-[var(--duke-brass-edge)] outline-none" />
                                 </div>
                                 <div>
-                                    <label className="text-[10px] font-bold text-[#8b7256] uppercase tracking-widest mb-1 block text-center">
+                                    <label className="text-[10px] font-bold text-[var(--duke-ink-3)] uppercase tracking-widest mb-1 block text-center">
                                         Batang {sampleForm.productId && `(Max: ${(inventory.find(p => p.id === sampleForm.productId)?.sticksPerPack || 16) - 1})`}
                                     </label>
                                     <input 
@@ -2866,19 +2866,19 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                             if (val > maxBtg) val = maxBtg; 
                                             setSampleForm({...sampleForm, qtyBatang: val});
                                         }} 
-                                        className="w-full p-2 border rounded bg-[#1a1815] border-[#5c4b3a] text-[#d4af37] text-center font-bold text-lg focus:border-[#d4af37] outline-none" 
+                                        className="w-full p-2 border rounded bg-[var(--duke-fill-ground)] border-[var(--duke-edge-2)] text-[var(--duke-brass-ink)] text-center font-bold text-lg focus:border-[var(--duke-brass-edge)] outline-none" 
                                     />
                                 </div>
                             </div>
                             
-                            <div className="bg-[#d4af37]/10 p-3 rounded border border-[#d4af37]/30 text-[#d4af37] text-[10px] uppercase tracking-widest font-bold flex items-start gap-2">
+                            <div className="bg-[var(--duke-brass)]/10 p-3 rounded border border-[var(--duke-brass-edge)]/30 text-[var(--duke-brass-ink)] text-[10px] uppercase tracking-widest font-bold flex items-start gap-2">
                                 <AlertCircle size={14} className="shrink-0 mt-0.5"/>
                                 <p>Warning: You must collect the Pita Cukai for every open pack. This will be demanded during EOD Setoran.</p>
                             </div>
                         </div>
 
-                        <div className="p-5 border-t border-[#3e3226] bg-black/40">
-                            <button onClick={handleDeploySample} disabled={!sampleForm.productId || isProcessingSale || (sampleForm.qtyBks === 0 && sampleForm.qtyBatang === 0)} className={`w-full py-4 rounded-xl font-black uppercase tracking-[0.1em] transition-all shadow-lg flex items-center justify-center gap-2 ${sampleForm.productId && (sampleForm.qtyBks > 0 || sampleForm.qtyBatang > 0) && !isProcessingSale ? 'bg-[#c9a227] hover:bg-[#d4af37] text-white shadow-[0_0_15px_rgba(99,102,241,0.5)]' : 'bg-[#26211c] text-[#8b7256] cursor-not-allowed'}`}>
+                        <div className="p-5 border-t border-[var(--duke-edge-1)] bg-black/40">
+                            <button onClick={handleDeploySample} disabled={!sampleForm.productId || isProcessingSale || (sampleForm.qtyBks === 0 && sampleForm.qtyBatang === 0)} className={`w-full py-4 rounded-xl font-black uppercase tracking-[0.1em] transition-all shadow-lg flex items-center justify-center gap-2 ${sampleForm.productId && (sampleForm.qtyBks > 0 || sampleForm.qtyBatang > 0) && !isProcessingSale ? 'bg-[var(--duke-brass-2)] hover:bg-[var(--duke-brass)] text-white shadow-[0_0_15px_rgba(99,102,241,0.5)]' : 'bg-[var(--duke-fill-panel)] text-[var(--duke-ink-3)] cursor-not-allowed'}`}>
                                 {isProcessingSale ? 'Deploying...' : 'Confirm & Deploy Sample'}
                             </button>
                         </div>
@@ -2957,7 +2957,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                 </div>
                             </div>
                             {merchantLine && (
-                                <p className="max-w-[240px] rounded-lg border border-[#c9b892] bg-[#f5e6c8] px-3 py-2 font-mono text-[11px] font-bold leading-snug text-[#2b2318] shadow-lg">
+                                <p className="max-w-[240px] rounded-lg border border-[var(--duke-edge-4)] bg-[var(--duke-paper)] px-3 py-2 font-mono text-[11px] font-bold leading-snug text-[var(--duke-on-plate)] shadow-lg">
                                     {merchantLine}
                                 </p>
                             )}
@@ -3237,7 +3237,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                 );
             })()}
         
-            <style>{`.custom-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; } .custom-scrollbar::-webkit-scrollbar-thumb { background: #8b7256; border-radius: 2px; } .custom-scrollbar::-webkit-scrollbar-track { background: #26211c; } .scrollbar-hide::-webkit-scrollbar { display: none; } @keyframes pulse { 0% { opacity: 0.8; } 50% { opacity: 1; } 100% { opacity: 0.8; } } .animate-pulse { animation: pulse 2s infinite ease-in-out; } .animate-fade-in { animation: fadeIn 0.2s ease-out; } .animate-fade-in-up { animation: fadeInUp 0.3s ease-out; } @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } } @keyframes fadeInUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }`}</style>
+            <style>{`.custom-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; } .custom-scrollbar::-webkit-scrollbar-thumb { background: var(--duke-fill-tan); border-radius: 2px; } .custom-scrollbar::-webkit-scrollbar-track { background: var(--duke-fill-panel); } .scrollbar-hide::-webkit-scrollbar { display: none; } @keyframes pulse { 0% { opacity: 0.8; } 50% { opacity: 1; } 100% { opacity: 0.8; } } .animate-pulse { animation: pulse 2s infinite ease-in-out; } .animate-fade-in { animation: fadeIn 0.2s ease-out; } .animate-fade-in-up { animation: fadeInUp 0.3s ease-out; } @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } } @keyframes fadeInUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }`}</style>
         </div>
     );
 };

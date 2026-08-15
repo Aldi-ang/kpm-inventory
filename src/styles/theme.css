@@ -177,6 +177,175 @@ html.dark { color-scheme: dark; }
 html.light { color-scheme: light; }
 
 /* ============================================================================
+   THE DUKE'S LEDGER — the sales terminal's own palette
+   ----------------------------------------------------------------------------
+   The terminal does not use the steel-and-gold control system. It is wood, brass
+   and paper — a look Aldi designed, integrated and hand-tested, and converting it
+   onto the app tokens would have DELETED that, not themed it. So it gets its own
+   light variant instead.
+
+   ⚠️ EVERY DARK VALUE HERE IS THE EXACT HEX IT REPLACED IN MerchantSalesView.jsx.
+   That is deliberate and it is the safety property of this whole change: dark mode
+   cannot move by a single channel, so only LIGHT mode needs testing. His call,
+   2026-08-15, on four browns that differ by a hair — *"keep them separate, must be
+   difference for a reasons right"*. Some of those differences are deliberate and
+   some are drift from months of hand-editing; keeping them apart is correct either
+   way, and costs only names.
+
+   ⚠️ THE LADDERS DO NOT ALL INVERT, AND THAT IS THE EASY MISTAKE HERE.
+     · INK inverts — pale text on dark wood becomes dark text on pale wood.
+     · SURFACES do not. A well stays DARKER than the panel above it in both themes;
+       only the whole range slides. Inverting them turns every recess into a bump.
+     · PAPER stays paper. Those cards are cream in dark mode already.
+     · A brass or amber FILL keeps working on both grounds. The same colour as TEXT
+       does not — #ff9d00 on pale oak is unreadable. That is why one hex became an
+       -ink token AND a fill token, split by how it was used, not by what it was.
+   ============================================================================ */
+:root {
+  /* ---- ink: text ------------------------------------------------------- */
+  --duke-ink-1:        #d4c5a3;   /* parchment text on dark wood */
+  --duke-ink-2:        #a89070;
+  --duke-ink-3:        #8b7256;   /* the workhorse — 48 sites */
+  --duke-ink-4:        #6b5a3c;
+  --duke-ink-5:        #6b5845;
+  --duke-ink-6:        #5c4b3a;
+  --duke-ink-7:        #3e3226;
+  --duke-ink-8:        #3e3a35;
+  /* ink that sits ON a bright brass or amber plate — dark in BOTH themes, because
+     the plate under it is the same colour in both */
+  --duke-on-plate:     #2b2318;
+  --duke-on-plate-2:   #2a231d;
+  --duke-paper-ink:    #f5e6c8;   /* cream TEXT — must darken in light, see below */
+  --duke-amber-ink:    #ff9d00;
+  --duke-amber-ink-2:  #a35a00;
+  --duke-brass-ink:    #d4af37;
+  --duke-brass-ink-2:  #6b4d0f;
+  --duke-danger-ink:   #b4524a;
+  --duke-danger-ink-2: #9e4038;
+
+  /* ---- edge: borders, rings, rules -------------------------------------- */
+  --duke-edge-1:       #3e3226;   /* 39 sites — the terminal's structural line */
+  --duke-edge-2:       #5c4b3a;
+  --duke-edge-3:       #a89070;
+  --duke-edge-4:       #c9b892;
+  --duke-edge-5:       #8b7256;
+  --duke-amber-edge:   #ff9d00;
+  --duke-amber-edge-2: #a35a00;
+  --duke-brass-edge:   #d4af37;
+  --duke-brass-edge-2: #c9a227;
+  --duke-brass-edge-3: #ffca28;
+  --duke-brass-edge-4: #a3822f;
+  --duke-danger-edge:  #9e4038;
+
+  /* ---- fill: surfaces, plates, gradient stops --------------------------- */
+  --duke-fill-well:    #0f0e0d;   /* deepest recess */
+  --duke-fill-deep:    #161412;
+  --duke-fill-ground:  #1a1815;   /* the bench itself */
+  --duke-fill-panel:   #26211c;
+  --duke-fill-panel-2: #2a2520;
+  --duke-fill-panel-3: #2b2417;
+  --duke-fill-plank:   #3e3226;
+  --duke-fill-plank-2: #5c4b3a;
+  --duke-fill-tan:     #8b7256;
+  --duke-paper:        #f5e6c8;   /* the same hex as --duke-paper-ink, on purpose */
+  --duke-paper-2:      #dfd5bc;
+  --duke-paper-3:      #f0e2c0;
+  --duke-paper-4:      #e6d3a3;
+  --duke-paper-5:      #efe3c6;
+  --duke-paper-6:      #f2e9d4;
+  --duke-paper-7:      #f2ddd6;
+  --duke-paper-8:      #f7f0e0;
+  --duke-amber:        #ff9d00;
+  --duke-amber-2:      #c47f00;
+  --duke-brass:        #d4af37;
+  --duke-brass-2:      #c9a227;
+  --duke-brass-3:      #8a6a2f;
+  --duke-brass-4:      #3e2a10;
+  --duke-brass-5:      #ffca28;
+  --duke-brass-6:      #a3822f;
+  /* the vignette behind the 3D wares. Pure black is right on a dark bench and
+     wrong on a pale one, where it reads as a hole rather than a shadow. */
+  --duke-vignette:     #000000;
+}
+
+/* ---- the light bench: pale oak, never white ------------------------------
+   Same law as the app's steel ground. Paper on a white ground has no edge to
+   sit on, and the whole look is built from one material lying on another. */
+:root.light,
+html.light {
+  /* ink flips: everything that was pale text becomes dark text */
+  --duke-ink-1:        #3a2f1c;
+  --duke-ink-2:        #4a3b26;
+  --duke-ink-3:        #3e3226;
+  --duke-ink-4:        #46381f;
+  --duke-ink-5:        #46381f;
+  --duke-ink-6:        #35291a;
+  --duke-ink-7:        #241c10;
+  --duke-ink-8:        #3a3733;
+  /* ...except ink on a plate, because the plate did not flip */
+  --duke-on-plate:     #2b2318;
+  --duke-on-plate-2:   #2a231d;
+  --duke-paper-ink:    #3a2f1c;   /* ⚠️ cream text would vanish on oak. This is the
+                                     whole reason the roles were split. */
+  /* ⚠️ THE ACCENT INKS ARE MUCH DARKER THAN THEY LOOK LIKE THEY SHOULD BE, AND THAT IS MEASURED,
+     NOT TASTE. The first pass used #8a4f00 for amber text — it looked right and measured 3,03:1
+     on the panel, well under the 4,5:1 floor. Gold and red are the two colours he has reported
+     as unreadable in light mode before; they are the ones to over-correct, not to eyeball. */
+  --duke-amber-ink:    #6e3f00;
+  --duke-amber-ink-2:  #5a2e00;
+  --duke-brass-ink:    #553d0b;
+  --duke-brass-ink-2:  #3e2c06;
+  --duke-danger-ink:   #6b1f18;
+  --duke-danger-ink-2: #5a1712;
+
+  /* edges darken — a pale border on pale oak is not a border. 3:1 minimum, measured. */
+  --duke-edge-1:       #5e5039;
+  --duke-edge-2:       #6b5a40;
+  --duke-edge-3:       #5f4f36;
+  --duke-edge-4:       #6e5f42;
+  --duke-edge-5:       #6b5a3c;
+  --duke-amber-edge:   #8a4e00;
+  --duke-amber-edge-2: #663800;
+  --duke-brass-edge:   #6e5610;
+  --duke-brass-edge-2: #66500c;
+  --duke-brass-edge-3: #6e5610;
+  --duke-brass-edge-4: #57430d;
+  --duke-danger-edge:  #6b1f18;
+
+  /* surfaces slide, they do NOT invert — the well stays the darkest of them.
+     The whole ladder was lifted one step after measuring: the first pass sat dark enough that
+     amber and brass could not clear 3:1 against it without going nearly black. */
+  --duke-fill-well:    #a89b82;
+  --duke-fill-deep:    #b0a38a;
+  --duke-fill-ground:  #b9ac93;
+  --duke-fill-panel:   #c8bca3;
+  --duke-fill-panel-2: #ccc0a8;
+  --duke-fill-panel-3: #cec2a6;
+  --duke-fill-plank:   #d6cab2;
+  --duke-fill-plank-2: #c4b69a;
+  --duke-fill-tan:     #ac9874;
+  /* paper stays paper, just a shade cleaner so it still lifts off the oak */
+  --duke-paper:        #faf3e2;
+  --duke-paper-2:      #efe7d2;
+  --duke-paper-3:      #f7efdb;
+  --duke-paper-4:      #f2e7cb;
+  --duke-paper-5:      #f7f0de;
+  --duke-paper-6:      #f9f3e5;
+  --duke-paper-7:      #f9e9e3;
+  --duke-paper-8:      #fbf6ea;
+  /* brass and amber come down a step: full brightness glares on a pale ground */
+  --duke-amber:        #e07c00;
+  --duke-amber-2:      #a66200;
+  --duke-brass:        #b8912a;
+  --duke-brass-2:      #a8831a;
+  --duke-brass-3:      #6f5322;
+  --duke-brass-4:      #3e2a10;
+  --duke-brass-5:      #e8ae00;
+  --duke-brass-6:      #856722;
+  --duke-vignette:     #6e6152;
+}
+
+/* ============================================================================
    SHARED BEHAVIOUR
    ============================================================================ */
 
