@@ -17,7 +17,7 @@
 
 **🔴 LIGHT MODE IS THE LIVE FRONT, AND IT IS NOW ACTUALLY ON.** Phase 6 is complete; the switch
 bug is fixed (group 38) and the sales terminal is converted as his chosen pilot (group 39).
-**533/533 · `node src/config/contrast.selfcheck.mjs` must also pass — it measures both themes.**
+**536/536 · `node src/config/contrast.selfcheck.mjs` must also pass — it measures both themes.**
 
 **▶ NEXT: the other 29 screens.** He has seen ONE converted screen. Ranked by hardcoded colour
 count in the earlier survey below: `MapMissionControl` · `CustomerManager` · `FleetCanvasManager` ·
@@ -99,6 +99,27 @@ and one `text-blue-500` which breaks the palette law outright. These do not chan
 pale ground they are the exact complaint he already filed once (*"price and running low text
 color"*). ⚠️ **Each needs its GROUND checked first** — several sit on red/amber PLATES where they
 are correct and must be left alone. That is the `pairs.mjs` ancestor walk, not a blind sweep.
+
+### ✅ THE VAULT GATE STAYS BLACK — `26615d7`, 536/536
+
+His screenshot, 2026-08-16: *"light mode or not, login background should not change like this
+should stay black"*. The gate backdrop was `--duke-well-solid`, which flips to cream.
+⚠️ **The comment directly above that line already said the point of it was SOLID BLACK.** The
+token flipped out from under a stated intent — the failure a token system has that a literal
+does not.
+
+**The background was the half he could see.** All 17 tokens inside the gate flip, and the card is
+a literal near-black in BOTH themes, so every ink on it went near-black too. Look at his
+screenshot: MASTER VAULT, the button label, "Lost your key?" — all barely there.
+
+🔑 **THE PATTERN, and it will come up again: a THEME ISLAND, not 40 conversions.**
+`.kpm-dark-island` in theme.css re-declares the tokens back to their **dark** values for the whole
+subtree. Anything added inside later is dark-correct without anyone remembering the rule. Three
+screens carry it: the vault gate, Access Denied, Can't Verify You Yet.
+⚠️ Reach for this **whenever a screen's ground is fixed while the page around it themes.** The
+sign-in screen in `BiohazardTheme.jsx` was already safe — its backdrop is a literal `#050403` and
+`.kpm-mod.gate` prints literal hexes. Group 41 pins that card as a literal so a later "tidy-up"
+cannot tokenise the flip back in.
 
 ### Where things live
 
