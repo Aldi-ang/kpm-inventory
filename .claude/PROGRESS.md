@@ -58,7 +58,42 @@ will look identical in both themes. Only 8 files use `dark:` at all. Measured co
 `AgentProfileView` 110 · `App.jsx` 109.
 ⚠️ **`HistoryReportView`'s count is misleading** — much of it is the printed nota, which is OUT of
 scope and keeps KPM company blue. See [[project_kpm_receipt_is_company_theme]].
-🔴 **ORDER IS HIS CALL** — asked 2026-08-15, not yet answered.
+✅ **ORDER — HE CHOSE, 2026-08-15: the sales terminal first, as a pilot**, so he can look at one
+fully converted screen before committing to thirty.
+
+### 🔴 THE TERMINAL IS NOT A SLATE SCREEN — measured before touching it, 2026-08-15
+
+The 139 Tailwind palette classes counted in `MerchantSalesView.jsx` are **almost all inside the
+printed nota**, which is out of scope. The terminal's app UI is coloured by **465 HARDCODED HEX
+LITERALS across 47 distinct colours** — `#3e3226` ×56, `#8b7256` ×51, `#ff9d00` ×49, `#d4af37`
+×31, `#5c4b3a` ×26 … **That is the Duke's Ledger wood-and-brass identity**, which he designed,
+integrated and hand-tested. It is not legacy slate awaiting a sweep.
+
+**So "light mode for the terminal" means giving Duke's Ledger a light variant, NOT converting it
+onto the app's steel/gold tokens.** Converting it would delete a look he approved.
+
+Three things the next session must know before starting:
+
+1. **~95 of the 465 are already system-token VALUES typed out as hex** — `#7a736a` = `--ink-dim`,
+   `#e8e4de` = `--ink`, `#26231f` = `--line`, `#3e3a35` = `--line-2`, `#a39b90` = `--ink-muted`,
+   `#57514a` = `--ink-disabled`, `#b4524a` = `--danger`, `#e08c82` = `--danger-ink`, `#1e1512` =
+   `--danger-well`, `#8e4038` = `--danger-plate`, `#f7f2ee` = `--danger-plate-ink`. These need no
+   new tokens and no design work — they already have correct light values. Do these first.
+2. **THE REPLACEMENT MUST BE ROLE-AWARE, KEYED ON THE UTILITY PREFIX, NOT ON THE HEX.** `#ff9d00`
+   appears as `bg-`, `from-`, `border-` AND `text-`. As a fill it can stay bright in light mode;
+   as TEXT it must darken or it vanishes on pale wood — this is the `-ink` law that group 32
+   already caught once. So `text-[#ff9d00]` → an `-ink` token, `bg-[#ff9d00]` → the fill token.
+   One token per hex is WRONG here.
+3. **DO NOT TOUCH:** `#ffffff` / `#000000` inside `.a4-print-jail` and the print `<style>` string
+   (the nota), and `#25D366` (WhatsApp brand). Everything from the `print-modal-wrapper` line
+   onward is mixed — the merchant bubble and the scrollbar there ARE app UI and do convert.
+
+🔴 **DECISION HE OWES BEFORE THE SWEEP:** several wood tones differ by one or two channel steps
+(`#2a231d` / `#2a2520` / `#2b2318` / `#2b2417`, one or two uses each). **Collapsing them** gives a
+much smaller token set but means dark mode shifts imperceptibly — and he would have to re-test the
+terminal in DARK as well, which he has already done once. **Keeping them distinct** guarantees
+dark mode is byte-identical and only light mode needs testing, at the cost of ~23 wood tokens.
+**Recommend keeping them distinct** — his testing time costs more than token names do.
 ✅ **TEST FIRST:** flip the theme switch. Login screen, app shell, dock, header and all of Settings
 should go **steel grey (not white)**. Everything else will still be dark — that is expected and is
 the list above, not a new bug.
