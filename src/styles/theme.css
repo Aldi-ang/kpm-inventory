@@ -1165,6 +1165,15 @@ html.lite-mode .kpm-topbar { transition: none; }
 [data-kpm-rail] { width: 176px; }
 .kpm-rail-pod { display: contents; }
 .kpm-rail-word { display: none; }
+/* 🔑 THE TOTEM IS THE DESK'S COLLAPSED STATE AND NOTHING ELSE. It was given a rule for a desk
+   that hovers (it becomes the one circle) and a rule for a desk that cannot (hidden) — and no
+   rule at all for a phone, where a bare <span> just renders inline. A phone rail is never
+   collapsed, so what it printed was the active tab's own icon, a second time, in the corner
+   above the grid. His screenshots, 2026-08-15: *"there is a duplicate logo of the active segment
+   in the top left of the sidebar panel i want u to delete that, because it is not aesthetic"*.
+   Hidden by DEFAULT, not deleted — the hover-desk block below turns it back on, later in the
+   file and at equal specificity, which is the only reason that still wins. */
+.kpm-rail-totem { display: none; }
 @media (min-width: 1024px) {
   /* the fallback desk width, for a pointer that cannot hover — two columns, and wide enough for
      `.kpm-expand` to print its word (118px) inside an overflow-hidden panel */

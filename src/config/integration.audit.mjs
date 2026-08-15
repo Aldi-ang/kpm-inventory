@@ -1185,6 +1185,25 @@ check(G25, 'the desk rail collapses to one circle, and opening it moves nothing'
   /<span className="kpm-rail-totem"/.test(shellSrc),
   'the pod is `display: contents` on a phone, so none of this reaches the layout he already ' +
   'signed off; and :focus-within is not optional — at rest every mark is invisible but tabbable');
+/* ⚠️ A RULE THAT EXISTS FOR TWO SCREENS AND NOT THE THIRD. `.kpm-rail-totem` had a desk-with-hover
+   rule (it becomes the collapsed circle) and a desk-without-hover rule (hidden), and the phone —
+   which matches neither media query — fell through to a bare inline <span>. It therefore drew the
+   ACTIVE TAB'S OWN ICON a second time above the grid, which is what he photographed twice on
+   2026-08-15. The shape to remember: when a class is only ever styled inside media queries, ask
+   what it looks like OUTSIDE them, because that is a real screen too.
+   Deleting the span was the wrong fix and would have taken the desk's collapsed state with it. */
+/* ⚠️ ANCHORED ON TWO UNIQUE VALUES, not on `@media (min-width: 1024px) {` — that string appears
+   several times in this file and `.search` returns the FIRST, which put the gate 28,000 characters
+   too early and failed this check on its first run. Same lesson as the three regexes above: pick
+   an anchor that occurs once, and verify the count rather than assuming it. */
+const railPhoneAt = themeCss.search(/\.kpm-rail-word \{ display: none; \}/);
+const railDeskAt = themeCss.search(/\[data-kpm-rail\] \{ width: 144px; \}/);
+const totemPhoneAt = themeCss.search(/\.kpm-rail-totem \{ display: none; \}/);
+check(G25, 'the phone never prints the active tab icon a second time in the corner',
+  railPhoneAt > -1 && totemPhoneAt > railPhoneAt && totemPhoneAt < railDeskAt &&
+  /\.kpm-rail-totem \{\s*\n\s*display: flex;/.test(themeCss),
+  'the totem must be hidden at file scope — before any width gate — and switched back on only ' +
+  'by the hover-desk block; a phone rail is never collapsed, so on a phone it is pure duplication');
 /* ⚠️ THE INVISIBLE-PANEL TRAP, SECOND SHAPE. The rail stopped painting its own background when
    the pod took over, so anything that hides the pod's surface hides the whole sidebar. The way
    that happens is putting the appearance behind the hover gate — a touch laptop matches `lg:`
