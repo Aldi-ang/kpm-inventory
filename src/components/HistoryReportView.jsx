@@ -8,6 +8,11 @@ import { notify } from './Toast.jsx';
 export default function HistoryReportView({ transactions, inventory, onDeleteFolder, onDeleteTransaction, isAdmin, user, appId, db, appSettings, userRole, agentProfileId, fetchHistoricalTransactions, motorists, customers }) {
     const [searchTerm, setSearchTerm] = useState('');
     const [reportView, setReportView] = useState(false);
+    /* the mark printed in the corner of the A4 nota. `|| mascotImage` is the same migration
+       SettingsView carries: the picture used to live under that name and doubled as the mascot's
+       face until they were split on 2026-08-15. Undefined when he has never set one, which is
+       what keeps the nota unchanged for anyone who does not want a watermark. */
+    const watermarkSrc = appSettings?.receiptWatermark || appSettings?.mascotImage;
     
     // 🚀 TIME MACHINE & COMMAND CENTER STATE
     const [rangeType, setRangeType] = useState('daily');
@@ -936,6 +941,27 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                 return (
                     <div className="print-modal-wrapper fixed inset-0 z-[500] bg-black/90 flex items-center justify-center p-4">
                         <div className={`print-receipt format-${printFormat} !bg-white !text-black w-full ${printFormat === 'thermal' ? 'max-w-sm' : 'max-w-4xl'} shadow-2xl relative flex flex-col text-sm border-t-8 ${printFormat === 'a4' ? '!border-blue-800' : '!border-slate-800'} animate-fade-in rounded-b-lg max-h-[90vh] overflow-y-auto custom-scrollbar`}>
+                            {/* ── THE A4 WATERMARK ─────────────────────────────────────────────
+                                His choice between the two shapes offered, 2026-08-15: *"B is good
+                                enough"* — a small corner mark, not a faint wash across the whole
+                                page. A4 only: the thermal slip is 48mm of receipt paper with no
+                                corner to spare, and a grey mark on a thermal printer prints as mud.
+
+                                ⚠️ THIS BLOCK IS NOT APP UI AND THE PALETTE LAW STOPS AT ITS EDGE.
+                                The nota is KPM's business document and keeps the company blue; no
+                                amber, no cream, no token from theme.css belongs anywhere in here.
+
+                                It is inline-styled on purpose. Printing clones this node into a new
+                                window, and while the parent's stylesheets come along, `opacity` set
+                                by a utility class is exactly the kind of thing a print stylesheet
+                                overrides. The image is a data: URI from the crop, so it needs no
+                                network and cannot arrive after the print dialog has already opened. */}
+                            {printFormat === 'a4' && watermarkSrc && (
+                                <img src={watermarkSrc} alt=""
+                                    className="absolute bottom-4 right-4 pointer-events-none select-none"
+                                    style={{ width: '64px', height: '64px', objectFit: 'contain',
+                                             opacity: 0.28, WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }} />
+                            )}
                             {printFormat === 'thermal' && (
                                 <div className="p-4 shrink-0 font-mono text-xs">
                                     <div className="text-center mb-4">

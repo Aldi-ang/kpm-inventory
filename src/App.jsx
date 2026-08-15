@@ -2655,11 +2655,22 @@ const handleGitHubMirror = async () => {
       }
 
       // Now we route the tiny finalImageUrl into your database instead of the massive Base64 string
-      if (activeCropContext.type === 'mascot') { 
-          setAppSettings(prev => ({ ...prev, mascotImage: finalImageUrl }));
-          if(user) setDoc(doc(db, collPath), { mascotImage: finalImageUrl }, {merge: true});
-          triggerCapy("Profile picture updated & secured! 🛡️"); 
-      
+      /* ⚠️ THE FIELD IS `receiptWatermark` NOW, NOT `mascotImage`. His instruction, 2026-08-15:
+         *"change the picture into watermarks"* — and the reason he gave the turn before is the
+         one that matters: *"the picture is following the mascot image"*. It was ONE picture doing
+         two unrelated jobs. Uploading it replaced the animated capybara with a still photo, and
+         it was also the only candidate for the nota's mark, so the printed business document
+         moved whenever he changed the mascot's face.
+         They are separate now: this picture is the RECEIPT WATERMARK and nothing else, and the
+         mascot always draws its own sprite. The crop context keeps the name 'mascot' because it
+         is the same crop pipeline and renaming it would touch three files for nothing.
+         `mascotImage` is still READ once, as a fallback in SettingsView, so a picture he uploaded
+         before today becomes his watermark instead of silently disappearing. */
+      if (activeCropContext.type === 'mascot') {
+          setAppSettings(prev => ({ ...prev, receiptWatermark: finalImageUrl }));
+          if(user) setDoc(doc(db, collPath), { receiptWatermark: finalImageUrl }, {merge: true});
+          triggerCapy("Receipt watermark updated & secured! 🛡️");
+
       } else if (activeCropContext.type === 'product') { 
           setTempImages(prev => ({ ...prev, [activeCropContext.face]: finalImageUrl })); 
       
@@ -4505,7 +4516,10 @@ const handleGitHubMirror = async () => {
             isDiscoMode={isDiscoMode}
             message={showCapyMsg ? capyMsg : null}
             onClick={() => cycleMascotMessage()}
-            staticImageSrc={appSettings?.mascotImage}
+            /* NO `staticImageSrc` ANY MORE. It used to be `appSettings.mascotImage`, which meant
+               uploading a picture swapped the animated capybara for a still photo — the coupling
+               behind his *"the picture is following the mascot image"*. That picture is the
+               receipt watermark now, so the mascot is free to always be the mascot. */
             user={user}
             scale={appSettings?.mascotScale || 1}
         />

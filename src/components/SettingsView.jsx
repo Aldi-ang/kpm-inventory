@@ -46,6 +46,12 @@ export default function SettingsView({
     /* ⚠️ DECLARED UP HERE, ABOVE `if (!isAdmin) return (...)` on purpose — see the module-level
        timer at the top of the file. Everything below that return is a conditionally-called hook. */
     const [capyOut, setCapyOut] = useState(false);
+    /* ⚠️ THE `|| mascotImage` IS A MIGRATION, NOT A DEFAULT — do not "tidy" it away. Until today
+       this picture lived at `mascotImage` and doubled as the mascot's face. Anyone who uploaded
+       one before the split would otherwise open Settings to an empty watermark and think their
+       picture had been thrown away. New crops write `receiptWatermark`, so this fallback goes
+       quiet on its own the first time he replaces the image. */
+    const watermarkSrc = appSettings?.receiptWatermark || appSettings?.mascotImage;
 
     const defaultLogic = {
         type: 'omset', 
@@ -339,13 +345,47 @@ export default function SettingsView({
                               </div>
                           </div>
 
+                          {/* 📍 IT SITS HERE ON HIS INSTRUCTION, 2026-08-15: *"i want u to move the
+                              watermark panel just below the signature and bank panel"*. It belongs to
+                              this band and not to the Mascot band it came from — everything under
+                              "Company" is a thing that ends up printed on a nota, and the watermark is
+                              now exactly that. It was the mascot's picture until today; see the note in
+                              App.jsx on why the two were split. */}
+                          <div className="kpm-mod live">
+                              <div className="kpm-head">
+                                  <span className="slot">Company · 03</span>
+                                  <div className="line">
+                                      <h3>Receipt watermark</h3>
+                                      <span className={`kpm-read ${watermarkSrc ? 'on' : ''}`}>{watermarkSrc ? 'Set' : 'None'}</span>
+                                  </div>
+                                  <p className="kpm-desc">
+                                      A small mark printed in the bottom corner of the A4 nota. You crop it after
+                                      choosing, so it does not matter how the photo is framed. Leave it empty and
+                                      nothing is printed — the nota is unchanged.
+                                  </p>
+                              </div>
+                              <div className="kpm-shelf split">
+                                  <div className="kpm-portrait">
+                                      {/* only when there IS one. A stand-in picture here would promise a mark
+                                          that never prints, which is worse than an empty frame. */}
+                                      {watermarkSrc && <img alt="Current receipt watermark" src={watermarkSrc} />}
+                                      <div className="kpm-acts">
+                                          <label className="kpm-btn">
+                                              {watermarkSrc ? 'Replace' : 'Choose'} &amp; crop
+                                              <input type="file" accept="image/*" onChange={handleMascotSelect} className="hidden" />
+                                          </label>
+                                      </div>
+                                  </div>
+                              </div>
+                          </div>
+
                           {/* 🚀 TIER 1 ONLY. This one charges a salesman real money, so it gets its
                               own module and says so, instead of hiding under a divider inside the
                               letterhead card where it read as one more invoice field. */}
                           {isSystemOwner && (
                               <div className="kpm-mod live">
                                   <div className="kpm-head">
-                                      <span className="slot">Company · 03</span>
+                                      <span className="slot">Company · 04</span>
                                       <div className="line">
                                           <h3>Lost pita cukai fine</h3>
                                           <span className="kpm-read on">Charges salesmen</span>
@@ -471,28 +511,6 @@ export default function SettingsView({
                               </div>
                           </div>
 
-                          <div className="kpm-mod live">
-                              <div className="kpm-head">
-                                  <span className="slot">Mascot · 03</span>
-                                  <div className="line">
-                                      <h3>Picture</h3>
-                                      <span className={`kpm-read ${appSettings?.mascotImage ? 'on' : ''}`}>{appSettings?.mascotImage ? 'Custom' : 'Default'}</span>
-                                  </div>
-                                  <p className="kpm-desc">You crop it after choosing, so it does not matter how the photo is framed.</p>
-                              </div>
-                              <div className="kpm-shelf split">
-                                  <div className="kpm-portrait">
-                                      <img alt="Current mascot" src={appSettings?.mascotImage || "/mr capy.png"}
-                                          onError={(e) => {e.target.onerror = null; e.target.src="https://api.dicebear.com/7.x/avataaars/svg?seed=Capy"}}/>
-                                      <div className="kpm-acts">
-                                          <label className="kpm-btn">
-                                              Choose &amp; crop
-                                              <input type="file" accept="image/*" onChange={handleMascotSelect} className="hidden" />
-                                          </label>
-                                      </div>
-                                  </div>
-                              </div>
-                          </div>
                       </div>
                   )}
 

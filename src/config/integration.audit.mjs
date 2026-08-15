@@ -2188,6 +2188,35 @@ check(G34, 'the mascot lines are a picker, not an unbounded list',
   /const pick = Math\.min\(pickedMsg, Math\.max\(0, activeMessages\.length - 1\)\)/.test(settingsSrc),
   'the clamp is load-bearing: deleting the last line leaves the index past the end, and the next ' +
   'Delete would then act on undefined');
+/* ── THE WATERMARK, 2026-08-15 ────────────────────────────────────────────────────────────────
+   *"change the picture into watermarks and i want u to move the watermark panel just below the
+   signature and bank panel"*. One picture had been doing two unrelated jobs: uploading it replaced
+   the animated mascot with a still photo AND was the only candidate for the nota's mark, so a
+   business document moved whenever he changed the mascot's face — his *"the picture is following
+   the mascot image"*. These four checks hold the split. */
+const histSrc = fs.readFileSync('src/components/HistoryReportView.jsx', 'utf8');
+check(G34, 'the watermark panel sits directly below Signature & bank',
+  gen.indexOf('<h3>Signature &amp; bank</h3>') > 0 &&
+  gen.indexOf('<h3>Receipt watermark</h3>') > gen.indexOf('<h3>Signature &amp; bank</h3>') &&
+  gen.indexOf('<h3>Receipt watermark</h3>') < gen.indexOf('<h3>Lost pita cukai fine</h3>'),
+  'he asked for it in that exact position; a band reshuffle would move it without anything failing');
+check(G34, 'the picture no longer replaces the mascot',
+  !/staticImageSrc=\{/.test(appCode) && appCode.includes('receiptWatermark: finalImageUrl'),
+  'passing it back would re-couple them and the nota would follow the mascot again');
+/* A4 only. The thermal slip is 48mm of receipt paper with no corner to spare, and grey on a
+   thermal head prints as mud. `watermarkSrc` undefined = nothing renders = the nota is unchanged
+   for anyone who never sets one, which is why both halves of the guard matter. */
+check(G34, 'the nota mark is A4-only and skipped when unset',
+  /\{printFormat === 'a4' && watermarkSrc && \(/.test(histSrc),
+  'on a 48mm thermal slip a corner mark either overlaps the total or prints as a grey smear');
+/* the same migration in both readers: the picture used to live at `mascotImage`. Without it,
+   anyone who uploaded one before the split opens Settings to an empty frame and concludes the
+   app threw their picture away. It goes quiet by itself the first time he replaces the image. */
+for (const [where, txt] of [['Settings', settingsSrc], ['the nota', histSrc]])
+  check(G34, `${where} still finds a picture uploaded before the split`,
+    txt.includes('appSettings?.receiptWatermark || appSettings?.mascotImage'),
+    'dropping the fallback silently blanks the watermark of anyone who set one earlier');
+
 /* the four small parts this tab needed exist in CSS. Tailwind only emits a class it saw in source,
    and a class that exists in neither paints nothing — which looks like a transparent panel. */
 for (const cls of ['.kpm-rowacts', '.kpm-inline', '.kpm-slider', '.kpm-portrait'])
