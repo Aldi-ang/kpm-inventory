@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-15 09:05 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
+**Updated: 2026-08-15 09:25 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -27,7 +27,7 @@ not invent a new look for a tab; copy the bands / module kinds / slot codes / re
 | General & Brand | 67 | ▶ **next slice** |
 | Tiers & Logic | 89 | after that |
 
-**398/398, `src/` clean.** The rack's spacing ladder was rebuilt on 2026-08-15 after his report
+**400/400, `src/` clean.** The rack's spacing ladder was rebuilt on 2026-08-15 after his report
 that modules read as one component — **12 / 16 / 20 / 40, and no inner number may reach an outer
 one.** Two checks in group 30 hold it. Read [[The KPM Control System]] and [[Off-Token Colour Migration Map]]
 in the A-Brain vault before touching a tab — the class list and the substitution table are there,
@@ -74,20 +74,12 @@ order:
   rebuilt. Every control was checked as MOUNTED but **none has been pressed** — master backup, the
   three downloads, change PIN, authorise/revoke a device, export/import, rebuild career, the three
   wipes. His eyes and his fingers are the only test that has ever run on this screen.
-- 🔴 **DECIDE — the "interactive hover button" he pasted (dot expands to fill → text slides → spinner
-  → tick).** He asked *"for the button that have confirmation what if u made it like this"*.
-  **The animation is good and needs NO new dependency** — it is transform + opacity, buildable in
-  the control system in CSS. **The danger is what it replaces.** The component as pasted has no
-  confirmation at all: one click runs straight to "success". The wipes currently pass through
-  `confirmAction` TWICE (`App.jsx:591` and a `FINAL WARNING` at :593). **Never let this pattern
-  swallow those.** The safe split, offered and awaiting his word: keep both confirmations, and use
-  the morph only to REPORT the result — which is his own law, *"every action must report"*.
-  ⚠️ It also cannot ship as pasted: repo is **JavaScript + Vite, not TypeScript, not shadcn**, and
-  `framer-motion`, `clsx`, `tailwind-merge` are all absent (`lucide-react` is present).
-- 🔴 **DECIDE — "minimize red" collides with a decision he already made.** The hazard head's red
-  tint, red hatch and red title are asserted by group 31 *because he complained the heads were
-  "too standardise"*. Reducing red there reverses his own earlier call, so it was NOT done.
-  Ask which he wants; do not quietly pick one.
+- ✅ **TEST — hold to wipe.** The three wipe buttons now need a **1.6s press**, then say
+  "Wiping…" → "…wiped" in place. Both dialogs still appear after the hold. **Does holding feel
+  right at 1.6s?** `HOLD_MS` in `HoldButton.jsx` is one number to change.
+- ❓ **Offered, unanswered:** if the hold feels like enough on its own, the FIRST of the two wipe
+  dialogs could go, leaving hold → FINAL WARNING. **Not done — removing a confirmation on a
+  no-undo act is his explicit call, never a side effect of a nicer button.**
 - ❓ **Raised, unanswered:** the 19px module titles are display-face CAPS with letter-spacing. Caps
   read slower than sentence case at that size. Left alone because it is this app's character —
   **if the tabs still feel heavy after he looks, that is the next thing to try.**
@@ -111,6 +103,31 @@ order:
 - ✅ **The Firebase authorized domain is DONE** — *"already"*. `192.168.1.109` can sign in.
 
 ## 📓 LOG — newest first, about five entries; `git log` keeps the rest
+
+### 2026-08-15 09:25 (KPM app session) — red stops upholstering, and the wipes ask for pressure
+
+**400/400.** New file: **`src/components/HoldButton.jsx`**.
+
+🔴 **RED WAS THE PANEL, NOT A MARK ON IT.** His screenshot: *"u can add red but not this much
+especially on few buttons and panel ... i dont want red color to dominate certain features"*.
+~70% of a hazard module's surface was red before a warning word was read — a `--danger-well` wash
+under `--hatch-danger`, above buttons that were **also** red-hatched, under a red-hatched band.
+The head stays DISTINCT (his older *"too standardise"* call, still checked) but carries it in a
+**2px danger rule + red title** instead of a red ground. Red now costs 5px of stripe, 2px of rule,
+a title and a chip. ⚠️ **Group 31's needle moved for this** and the entry says why — it now asserts
+BOTH that the head is distinct AND that `.kpm-btn.hazard` has no `background-image`.
+
+🔑 **`HoldButton` is the confirmation the component he pasted did not have.** That one runs
+click → spinner → "Complete!" with nothing between; dropped in as-is **one tap wipes the database**.
+This asks **1.6s of deliberate pressure**, then reports in the same object he pressed —
+*every action must report*. The sweep is `clip-path` + `background-color` only, so **Lite Mode keeps
+it, and it must**: the fill is the only thing saying how much longer to press.
+⚠️ **BOTH `confirmAction` dialogs still run.** The hold is a gate IN FRONT of them, never instead.
+A check fails if either disappears. **Trading a confirmation for an animation is his call alone.**
+📌 It needed **no new dependency** — the pasted version wanted `framer-motion` + `clsx` +
+`tailwind-merge` + TypeScript + shadcn, and this repo has none of those.
+⚠️ `keyHeld` ref is load-bearing: keydown REPEATS while held, and without it the timer restarts
+forever and the button reads as broken. `no-unsafe-finally` also bit — never `return` in a `finally`.
 
 ### 2026-08-15 09:05 (KPM app session) — Option C, and amber gets rationed
 
@@ -281,6 +298,7 @@ which must equal its 22px gap, and `.kpm-topbar`'s 112px left margin which track
 | **The ground, scrollbar, caret, selection** | **`src/index.css`** | **newly audited — slate hid here for months** |
 | Rail markup, `--cap`, `is-two`, logout | `src/components/BiohazardTheme.jsx` | the `kpm-rail-grid` nav and the foot |
 | Every trap above, as a check | `src/config/integration.audit.mjs` | group G25 |
+| **Hold-to-confirm** | `src/components/HoldButton.jsx` | the gate for no-undo acts. **Never replaces `confirmAction`** &mdash; group 33 fails if a wipe dialog vanishes |
 | **The control system** (Settings' whole look) | `src/styles/theme.css` | `.kpm-band` / `.kpm-mod` / `.kpm-head` / `.kpm-shelf` / `.kpm-btn` / `.kpm-rec` / `.kpm-switch` / `.kpm-field` / `.kpm-read`. **Spacing ladder 12 / 16 / 20 / 40 — groups 30 and 33** |
 | **Biometric / passkeys** | `src/App.jsx` :1107 register · :1157 unlock | **`rp.id = window.location.hostname`** — a passkey is locked to the host it was made on, so it is Vercel-only. Not a Firebase problem. |
 
