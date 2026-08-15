@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-15 10:25 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
+**Updated: 2026-08-15 14:31 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -27,7 +27,7 @@ not invent a new look for a tab; copy the bands / module kinds / slot codes / re
 | **General & Brand** | **0** | ✅ **DONE 2026-08-15, group 34, 18 checks** |
 | Tiers & Logic | 89 | ▶ **the last slice** |
 
-**418/418, `src/` clean.** The rack's spacing ladder was rebuilt on 2026-08-15 after his report
+**422/422, `src/` clean.** The rack's spacing ladder was rebuilt on 2026-08-15 after his report
 that modules read as one component — **12 / 16 / 20 / 40, and no inner number may reach an outer
 one.** Two checks in group 30 hold it. Read [[The KPM Control System]] and [[Off-Token Colour Migration Map]]
 in the A-Brain vault before touching a tab — the class list and the substitution table are there,
@@ -95,44 +95,28 @@ order:
 - ❓ **Raised, unanswered:** the 19px module titles are display-face CAPS with letter-spacing. Caps
   read slower than sentence case at that size. Left alone because it is this app's character —
   **if the tabs still feel heavy after he looks, that is the next thing to try.**
-- ▶ **BUILD FIRST NEXT SESSION — "make the mascot show up when we use the slider".** He answered
-  both halves 2026-08-15: **(a) delete the thumbnail — DONE, `121de10`. (b) is NOT started**, and
-  it is the one thing owed him. His words: *"i want the mascott to show up for 5 second when the
-  slider for the mascot size is moved"* + *"just the idle animation"*.
-  🔴 **CORRECTION — MY OWN ASSUMPTION BELOW WAS WRONG, AND HE DISPROVED IT.** He reported, after
-  the thumbnail was deleted: ***"slider moved but mascot still not showing btw"***. I had written
-  that the mascot is "already on screen in Settings", reasoning only from the render gate at
-  `App.jsx:4503`. **A render gate being open does not mean the thing is visible** — it can be
-  behind the settings panel, off-viewport, z-indexed under the shell, or self-hiding inside
-  `CapybaraMascot`. **START BY FINDING OUT WHY IT IS NOT VISIBLE ON THIS SCREEN**, not by adding a
-  peek prop; a 5-second reveal of something that renders behind a panel reveals nothing.
-  ⚠️ This is the third time this week that reasoning from source beat looking, and lost.
-  **EVERYTHING ELSE BELOW IS TRACED AND STILL GOOD — do not re-derive it:**
-  1. `CapybaraMascot` renders in **`App.jsx:4503`**, gated `user && !showAdminLogin`. That gate is
-     OPEN in Settings — so the reason he cannot see it is downstream of the gate.
-  2. Signature: **`CapybaraMascot.jsx:33`** — `{ isDiscoMode, message, messages, onClick,
-     staticImageSrc, user, scale }`. The scaling wrapper is **line 302**, a fixed-corner div with
-     `transition-transform duration-300` and `transform: scale(...)`.
-  3. **It must NOT go through `triggerCapy`** — that speaks AND mumbles, and he said *"just the
-     idle animation"*. `speakCapy` sets `capyMsg`+`showCapyMsg`; the bubble is
-     `message={showCapyMsg ? capyMsg : null}`. Leave both alone.
-  **The shape that fits:** one new prop (`peek`) on CapybaraMascot, raised for 5s by a timer in
-  `App.jsx` and triggered from the slider's `onChange`, lifting z-index / opacity on line 302's
-  wrapper. The slider lives in `SettingsView` Mascot · 01, so the setter has to be threaded down
-  the same way `triggerCapy` already is. ⚠️ Dragging fires `onChange` continuously — **debounce to
-  one 5s window that restarts on the last move**, or it will re-trigger dozens of times.
-- ▶ **BRING THE MASCOT PICTURE BACK — he reversed himself, with a reason.** Verbatim, 2026-08-15:
-  *"i forgot to tell, we might need this mascot photo for our watermark in our A4 printable
-  receipt, so bring that back after quota reset"*. He asked for the thumbnail's deletion an hour
-  earlier; **this supersedes that**, and `git revert 121de10` is most of the job.
-  ✅ **NOTHING WAS LOST — the picture itself was never deleted.** Only the 96px preview `<img>`
-  went; the image still lives in **`appSettings.mascotImage`** (Firestore, `settings/general`) and
-  `handleMascotSelect` was never touched. Reassure him of that before he worries.
-  ⚠️ **The watermark belongs to the PRINT BLOCK, which is NOT app UI.** The nota keeps KPM's
-  company blue and the palette law stops at its edge — so a watermark there must NOT be dragged
-  onto the amber/cream tokens. It is also a different problem from the Settings preview: a print
-  watermark needs low opacity, a size that survives A4 at 96dpi, and `hide-on-print`'s inverse.
-  **Ask what he wants first — a faint full-page watermark, or a small corner mark on the nota.**
+- ✅ **BOTH MASCOT ASKS DONE 2026-08-15, `ad2a6536`, 422/422.** (a) The picture is back —
+  `121de10` reverted, on his watermark reason. (b) Moving the size slider calls the mascot out for
+  5s, idle, no speech. ✅ **He still has to look at it on his phone.**
+  🔴 **THE LESSON, and it is why a note here was wrong: AN OPEN RENDER GATE IS NOT VISIBILITY.**
+  I had written that the mascot was "already on screen in Settings", reasoning only from the gate
+  at `App.jsx:4503` (`user && !showAdminLogin`). He disproved it by looking: *"slider moved but
+  mascot still not showing btw"*. The gate is open and he is still not there — `CapybaraMascot`
+  parks at `opacity-0 translate-x-[200%]` and leaves it only during a peek, which its own timer
+  schedules **every 90-210 SECONDS**. Third time this week that reasoning from source lost to him
+  looking at the screen. A check in group 34 now carries it so it cannot go stale.
+  **How it was built, if it ever needs changing:** `CAPY_COMMS` — the window event that already
+  existed — took a new `peek` field, a duration in ms carrying NO message. A blank message
+  resolves `spriteToShow` to `kpm-merch-idle` and renders no bubble, which is *"just the idle
+  animation"*. **No debounce was needed:** the receiver already clears the previous event's timers
+  before setting its own, so a whole drag leaves one window, counted from the last move.
+- ▶ **THE A4 RECEIPT WATERMARK — his reason for wanting the picture back, and NOT yet built.**
+  *"we might need this mascot photo for our watermark in our A4 printable receipt"*.
+  ❓ **ASK HIM FIRST: a faint full-page watermark behind the whole nota, or a small corner mark?**
+  ⚠️ The print block is **NOT app UI** — the nota keeps KPM's company blue and the palette law
+  stops at its edge, so the watermark must not be dragged onto the amber/cream tokens. ⚠️ The
+  mascot's own wrapper carries `hide-on-print`; the watermark is a separate element, not that one.
+  The image to draw is `appSettings.mascotImage`, falling back to `/mr capy.png`.
 - ✅ **The logout word is "Exit" — HE CHOSE TO KEEP IT** (2026-08-15). Closed, do not re-offer.
 
 **ANSWERED 2026-08-15, do not re-ask:**
@@ -153,6 +137,33 @@ order:
 - ✅ **The Firebase authorized domain is DONE** — *"already"*. `192.168.1.109` can sign in.
 
 ## 📓 LOG — newest first, about five entries; `git log` keeps the rest
+
+### 2026-08-15 14:31 (KPM app session) — the mascot comes back, and steps out when you size him
+
+`ad2a6536`. **422/422, `src/` clean.** Both halves of his last message, and the second one
+corrected me.
+
+**The picture is back.** `121de10` reverted in full — the 96px preview, its `.kpm-portrait` rule,
+and its check. New information, not a reversal for its own sake: *"we might need this mascot photo
+for our watermark in our A4 printable receipt"*. A watermark nobody can see before it prints is
+one you discover on paper.
+
+**The slider now calls him out for 5 seconds, idle, silent.** And the reason it was needed is the
+entry that matters: **an open render gate is not visibility.** I had reasoned from
+`App.jsx:4503` — `user && !showAdminLogin`, open on this screen — that the mascot was already
+there, and deleted the preview partly on that basis. He looked, and it was not: `CapybaraMascot`
+sits at `opacity-0 translate-x-[200%]` and leaves it only during a peek its own timer schedules
+**every 90-210 seconds**. Three checks in group 34 hold the fix and the reason.
+
+Built on the `CAPY_COMMS` event that already existed rather than a new prop threaded down through
+Settings: it takes a `peek` duration carrying no message, and a blank message is exactly what
+resolves the sprite to `kpm-merch-idle` with no bubble. No debounce was written — the receiver
+clears the previous event's timers before setting its own, so a whole drag leaves one window.
+
+⚠️ **Pre-existing lint debt found, NOT touched** (Karpathy rule 3 — surgical): `SettingsView.jsx`
+has 10 `react-hooks/rules-of-hooks` errors around lines 1212-1240 and `CapybaraMascot.jsx` has 2,
+all present at `a317aeb` before this change and unchanged by it. Verified by linting the stashed
+tree. Hooks called conditionally are a real class of bug; they are just not this commit's.
 
 ### 2026-08-15 09:55 (KPM app session) — the mascot lines became a picker
 
@@ -275,81 +286,6 @@ This session was Aldi's home wifi (Instagram/TikTok slow, DNS routing) via `/alu
 in `src/` was touched. The uncommitted `SettingsView.jsx` diff predates this session (present in
 git status before the first message) and was not read or changed here. Touching timestamp only,
 per the Stop hook's own fallback instruction for a session with no progress to record.
-
-### 2026-08-15 08:47 (KPM app session) — Security & Data joins the control system. Phase 6, slice 1.
-
-**393/393.** 94 off-token colours to zero. The tab is grouped by **consequence** now, not by
-feature — copies, then writes, then the stripe — which is what it was actually missing.
-
-🔑 **The regrouping found a real hierarchy inversion, the same shape as the Architect tab's.**
-**Restore replaces the entire database**, and it was a dashed drop-zone at the foot of the backup
-card — *quieter* than the three download buttons above it. It is under the hazard band now with
-the wipes. The three backup states (RECOVERY / USB / CLOUD) were pulsing green-or-red tiles;
-**Lite Mode strips colour and left three identical boxes**, so they are `.kpm-rail` rows and the
-word carries the state. The biometric card was the last bright blue anywhere in the app.
-
-The rank toggle became a two-position `.kpm-switch` with **one writer** (`writeCareerLedger`),
-matching photo storage — a copy of the write behind each position is [[Silent Failure Disease]].
-
-⚠️ **The icon-delete count went 17 → 16**, the same migration as 18 → 17 before it: a record's
-action strip carries a WORD ("Revoke"), and a worded button must not wear `data-kpm-del` or the
-label prints twice. Both halves of that edit are checked.
-✅ **All 17 new checks were run against the pre-edit block and seen to FAIL first** — palette,
-kinds, hazard band, rails, one-writer. A check never seen red is a decoration.
-
-### 2026-08-15 08:30 (KPM app session) — the grace period unlocked the vault behind a curtain it never raised
-
-**376/376.** His report: *"grace period is not working on my phone, i just close the safari and it
-force me to login"* — master PIN screen, LAN address, iPhone Safari.
-
-🔴 **It had NEVER worked, on any device, and the reason is one missing line.** The gate has TWO
-pieces of state. The system-owner branch of the auth handler sets **`setShowAdminLogin(true)` on
-every cold load** (`App.jsx` ~2155) and the app renders only under `{user && !showAdminLogin}`. The
-restore raised `isAdmin` and stopped — so a perfectly valid grace session sat behind a modal that
-only `handleAdminAuthSuccess` knew how to close. **The door was unlocked and the curtain was down**,
-which from his side is identical to the feature not existing.
-🔑 **Anything that opens the vault must do BOTH, exactly as `handleAdminAuthSuccess` does.** Check.
-
-Also removed the one-shot `graceRestoreTried` ref and the blanket `clearGrace()` it guarded: the
-auth handler asserts `setIsAdmin(false)` on **every** load and can fire twice, and on that second
-assert the effect deleted a still-valid record. A ref cannot tell a deliberate lock from a cold
-load; `handleAdminLogout` can, so it clears now. That is the only `setIsAdmin(false)` of the eight
-that means *"keep it locked"*.
-
-⚠️ **`vaultGrace.selfcheck.mjs` was GREEN through all of this** — it covers the pure `graceIsValid`
-maths and nothing that touches the screen. **A green self-check over the pure half of a feature
-says nothing about the half that renders.** The integration audit had zero checks on grace; it has
-two now. **When a feature has a self-check, ask what the self-check cannot see.**
-
-⚠️ **`src/utils/vaultGrace.js` does not exist on `main`** — the feature has never been deployed.
-
-### 2026-08-15 08:09 (KPM app session) — the phone was printing the active icon twice, and biometric was never a Firebase problem
-
-**374/374, `src/` clean.** His screenshots: *"there is a duplicate logo of the active segment in
-the top left of the sidebar panel i want u to delete that, because it is not aesthetic"*.
-
-**`.kpm-rail-totem` had a rule for a desk that hovers (it BECOMES the collapsed circle) and a rule
-for a desk that cannot (hidden) — and no rule at all for a phone, which matches neither media
-query.** A bare `<span>` renders inline, so it drew the active tab's own icon a second time above
-the grid. Hidden at file scope now; the hover-desk block still turns it back on because it is later
-at equal specificity. **Deleting the span was the wrong fix** — it would have taken the PC's
-collapsed circle with it.
-🔑 **The shape to remember: when a class is only ever styled inside media queries, ask what it
-looks like OUTSIDE them, because that is a real screen too.** Now a check.
-⚠️ That check failed on its first run: I anchored it on `@media (min-width: 1024px) {`, which
-occurs several times, and `.search` returns the FIRST — the gate landed 28,000 characters early.
-**Fourth time this week a regex anchor has been wrong. Count the occurrences, do not assume one.**
-
-**His biometric question — answered, nothing to build.** *"why biometric keep resetting ... is
-there any problem with the biometric data inside the firebase?"* **No.** The device list is in
-Firestore and [firebase.js:37](../src/config/firebase.js:37) hardcodes `appId`, so the path is
-identical on every site. The cause is [App.jsx:1118](../src/App.jsx:1118) —
-`rp: { id: window.location.hostname }` — which locks each passkey to the exact hostname it was
-created on. Registered at the Vercel address, opened at `192.168.1.109`: different host, so the
-phone reports no key. **It can never work there anyway**: WebAuthn requires a real *domain* (an IP
-is rejected outright) and refuses to run on a page with a certificate warning, which is what his
-"Not Secure" address bar is. **Biometric is Vercel-only; the LAN IP is PIN-only, by design.**
-No new file was created this session.
 
 ### ⤵ The 2026-08-15 early-morning shell entries trimmed (03:05, 02:35, 01:55)
 
