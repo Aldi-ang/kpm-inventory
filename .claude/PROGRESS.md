@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-15 17:00 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
+**Updated: 2026-08-15 17:31 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -25,9 +25,16 @@ not invent a new look for a tab; copy the bands / module kinds / slot codes / re
 | Architect (Tier 1) | 0 | ✅ template, `b25c526` + `7166366` |
 | **Security & Data** | **0** | ✅ **DONE 2026-08-15, group 33, 17 checks** |
 | **General & Brand** | **0** | ✅ **DONE 2026-08-15, group 34, 18 checks** |
-| Tiers & Logic | 89 | ▶ **the last slice** |
+| **Tiers & Logic** | **0** | ✅ **DONE 2026-08-15, group 35, 21 checks, `50d2ea9`** |
+| `PermissionMatrixEditor` | ~80 | ▶ **the last slice** — see below |
 
-**432/432, `src/` clean.** The rack's spacing ladder was rebuilt on 2026-08-15 after his report
+⚠️ **PHASE 6 IS ONE SLICE FROM DONE.** `PermissionMatrixEditor` is defined at ~line 1345 of
+`SettingsView.jsx` and **renders inside the Tiers & Logic tab**, so that tab still has an
+unconverted panel in the middle of it. It was left deliberately: it is its own component with its
+own ~80 off-token colours, and group 35's needle is **scoped to the tab's own markup** so it does
+not report that as a failure. **Convert it and Phase 6 closes.**
+
+**453/453, `src/` clean.** The rack's spacing ladder was rebuilt on 2026-08-15 after his report
 that modules read as one component — **12 / 16 / 20 / 40, and no inner number may reach an outer
 one.** Two checks in group 30 hold it. Read [[The KPM Control System]] and [[Off-Token Colour Migration Map]]
 in the A-Brain vault before touching a tab — the class list and the substitution table are there,
@@ -92,6 +99,18 @@ order:
 - ❓ **Offered, unanswered:** if the hold feels like enough on its own, the FIRST of the two wipe
   dialogs could go, leaving hold → FINAL WARNING. **Not done — removing a confirmation on a
   no-undo act is his explicit call, never a side effect of a nicer button.**
+- ✅ **TEST — TIERS & LOGIC, the whole tab (`50d2ea9`, 453/453).** Converted, and **four things
+  changed beyond colour** because the old markup broke rules he had already set — all four need
+  his eyes: **(1)** the tier row's sideways scrollbar is gone, fields wrap instead (he has rejected
+  that pattern twice); **(2)** Export/Import were two bare glyphs, one of which REPLACES every
+  tier — they carry words now; **(3)** the paintbrush toggle became a button that says *"Turn it
+  off"* rather than a switch showing where it is; **(4)** Save logic moved below the rules it
+  commits. **Nothing here has been pressed — add a rank, rename one, delete one, flip the
+  paintbrush, save a rule.**
+  🔑 **Red marks ONE group on that tab** — the automatic promotions, the only thing there that acts
+  without anyone pressing anything. Deliberate, and a check holds it at exactly two hazard marks.
+  ⚠️ Two things stay off-token on purpose and are checked: a tier's own colour (a real pin on a
+  real map — customer data, not palette) and the `type="color"` picker's native chrome.
 - ❓ **Raised, unanswered:** the 19px module titles are display-face CAPS with letter-spacing. Caps
   read slower than sentence case at that size. Left alone because it is this app's character —
   **if the tabs still feel heavy after he looks, that is the next thing to try.**
