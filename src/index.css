@@ -24,16 +24,26 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #0b0a09;
+  /* 🔴 THESE FIVE WERE LITERALS UNTIL 2026-08-16, AND THEY WERE THE WHOLE OF *"settingview is
+     not even done, look at ther black background"*. Every module on that screenshot is already
+     cream; the page under them never changed theme because it was pinned here.
+     ⚠️ THE HEADER AND THE DOCK ARE GLASS. `.kpm-topbar` sets `background-color: transparent` and
+     blurs what is behind it, so neither of them was "still dark" — both were faithfully showing
+     this black through themselves. One literal, three surfaces. See the token block in
+     theme.css for what the light values keep. */
+  background-color: var(--ground-base);
   background-image:
-    radial-gradient(58% 44% at 4% -4%, rgba(255, 157, 0, .13), transparent 66%),
-    radial-gradient(44% 38% at 98% 2%, rgba(192, 71, 60, .05), transparent 70%),
-    linear-gradient(168deg, #110f0c 0%, #0b0a09 46%, #070606 100%);
+    radial-gradient(58% 44% at 4% -4%, var(--ground-glow), transparent 66%),
+    radial-gradient(44% 38% at 98% 2%, var(--ground-glow-2), transparent 70%),
+    linear-gradient(168deg, var(--ground-hi) 0%, var(--ground-base) 46%, var(--ground-lo) 100%);
   background-attachment: fixed;
 }
 
-/* 🔴 PALETTE LAW BREACH, FOUND 2026-08-15 AND FIXED HERE. Every scrollbar in the app was
-   slate — #cbd5e1 / #94a3b8 / #475569 / #64748b — and slate IS the blue his palette law bans.
+/* 🔴 PALETTE LAW BREACH, FOUND 2026-08-15 AND FIXED HERE. Every scrollbar in the app was slate,
+   four shades of it, track through active — and slate IS the blue his palette law bans.
+   ⚠️ The old version of this note listed those four hex codes, and a later check that hunts slate
+   hexes in this file found them HERE, in the sentence explaining that they were gone. Seventh
+   time a needle has matched its own documentation. Describe a removed colour, never quote it.
    It survived every sweep because the audit greps the SHELL, App and the player for banned hues,
    and this file is none of the three. The parts of a page you did not draw still carry the
    design: scrollbars, the caret, and text selection all ship with defaults that belong to no
@@ -89,7 +99,11 @@ html.lite-mode .bg-black\/95,
 html.lite-mode [class*="backdrop-blur"] {
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
-    background-color: #0f172a !important; /* Solid Slate-900 fallback */
+    /* ⚠️ WAS THE DARKEST SLATE — the blue the palette law bans, and a literal, applied with
+       !important to every backdrop in the app. Its twin inside App.jsx was fixed first; THIS is
+       the one that actually ships, and it survived because the audit read the JSX, not this
+       file. A scrim is dark in both themes by law, which is what this token is. */
+    background-color: var(--duke-scrim) !important;
 }
 
 /* 3. Kill massive glowing box-shadows (Huge GPU overdraw culprit) */

@@ -26,6 +26,28 @@
   --panel:         #121110;
   --raised:        #1B1917;
   --inset:         #0E0D0C;
+  /* ---- THE PAGE ITSELF, and the reason light mode looked half-finished ---------------------
+     🔴 HIS SCREENSHOT, 2026-08-16: *"settingview is not even done, look at ther black
+     background"* — with every module on the page already cream. `body` in index.css pinned its
+     own near-black and a hardcoded lit-corner gradient, so the page never changed theme.
+     ⚠️ AND IT TOOK THE HEADER AND THE DOCK DOWN WITH IT. Both are GLASS — `.kpm-topbar` sets
+     `background-color: transparent` and blurs whatever is behind it — so they were not "still
+     dark", they were correctly showing the black body through themselves. Three surfaces, one
+     cause: the only thing in the app that was still painting a literal on a whole page.
+     ⚠️ THE LIGHT SET KEEPS THE GEOMETRY, not just the hue: `-hi` stays the lighter corner at the
+     top-left where the logo is and `-lo` the far corner, so the one light source stays where the
+     app's identity is instead of flipping to a flat sheet. */
+  --ground-base:   #0b0a09;
+  --ground-hi:     #110f0c;   /* the lit corner, top-left */
+  --ground-lo:     #070606;   /* falls away bottom-right */
+  --ground-glow:   rgba(255, 157, 0, .13);   /* the gold light source */
+  --ground-glow-2: rgba(192, 71, 60, .05);   /* hazard red, keeps the shadows off neutral grey */
+  /* ⚠️ THE OUTLINE OF A PANE OF GLASS, AND ONLY THE OUTLINE. The header's and the dock's inner
+     LIPS are cream and stay cream — cream at .28 over the steel ground still reads as a lit
+     top edge. The BORDERS do not: cream at .12 over steel is 1,06:1, so the two floating panes
+     would have lost their outline entirely and bled into the page. */
+  --glass-edge:    rgba(245, 230, 200, .18);
+  --glass-edge-2:  rgba(245, 230, 200, .12);
 
   /* lines. Three weights: whisper, structure, control edge. */
   --line:          #26231F;   /* 1,3:1 — decorative only, never a control's only edge */
@@ -125,6 +147,17 @@ html.light {
   --panel:         #C6C2BB;
   --raised:        #D2CEC7;
   --inset:         #ADA9A2;
+  /* the page in daylight: the same steel the rest of the light theme is built on, the same lit
+     corner, the same two blooms — a touch stronger because gold on steel carries less far than
+     gold on near-black. Never white: the cream modules need a ground to be lifted OFF. */
+  --ground-base:   #b4b0a9;
+  --ground-hi:     #c4c0b8;
+  --ground-lo:     #a29d94;
+  --ground-glow:   rgba(255, 157, 0, .20);
+  --ground-glow-2: rgba(192, 71, 60, .07);
+  /* the glass outline inverts; the lip above it does not — see the note on the dark block */
+  --glass-edge:    rgba(46, 38, 26, .30);
+  --glass-edge-2:  rgba(46, 38, 26, .22);
 
   --line:          #6E6A64;   /* 3,0:1 — the old value was 2,0:1 and vanished */
   --line-2:        #5E5A55;   /* 3,9:1 */
@@ -1555,7 +1588,7 @@ html.lite-mode .kpm-topbar { transition: none; }
   .kpm-rail-pod::before {
     content: ""; position: absolute; z-index: 0; left: 0; right: 0; top: 12px;
     height: calc(100% - 24px); border-radius: 34px;
-    border: 1px solid rgba(245, 230, 200, .18);
+    border: 1px solid var(--glass-edge);
     /* 0.02 and 0.10 — his number. NOT a solid colour: a solid ground would sit in front of the
        blur and there would be nothing to see through, which is the whole point of the effect.
        The opaque fallback lives in the Lite Mode rule below instead. */
@@ -1919,7 +1952,7 @@ html.lite-mode .kpm-topbar { transition: none; }
        ⚠️ This tracks `.kpm-rail-pod`'s width. If the pod changes, this changes with it. */
     margin: 12px 14px 4px 112px;
     padding: 11px 16px 12px;
-    border: 1px solid rgba(245, 230, 200, .12);
+    border: 1px solid var(--glass-edge-2);
     border-radius: 20px;
     overflow: hidden;
     background-color: transparent;
@@ -1942,7 +1975,7 @@ html.lite-mode .kpm-topbar { transition: none; }
     .kpm-topbar.kpm-topbar { background-color: #14110e; background-image: none; }
   }
   /* the band drew its own bottom rule as a wall; a floating pane has edges instead */
-  .kpm-topbar.kpm-topbar { border-bottom-color: rgba(245, 230, 200, .12); }
+  .kpm-topbar.kpm-topbar { border-bottom-color: var(--glass-edge-2); }
   /* the pod's children live INSIDE the capsule, not in the 12px the capsule insets itself by.
      His report: *"all the button can be put inside the sidebar without some of them exiting the
      sidebar space"* — the bottom group was hanging off the end of the capsule. */

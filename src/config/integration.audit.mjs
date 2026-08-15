@@ -1635,7 +1635,13 @@ check(G25, 'the header floats on the same ground as the dock, and survives Lite 
   /* the ground exists at all — glass over a flat wall is a grey rectangle, and both panes were
      spending a blur on nothing until the body got a light source */
   /background-attachment: fixed;/.test(indexCss) &&
-  /radial-gradient\(58% 44% at 4% -4%, rgba\(255, 157, 0, \.13\)/.test(indexCss),
+  /* ⚠️ THE GLOW MOVED OUT OF THIS FILE AND INTO A TOKEN, 2026-08-16, and this clause moved with
+     it. It used to pin `rgba(255, 157, 0, .13)` here — which was the same statement as "there is
+     a lit corner" only while the corner was a literal, and a literal is exactly what made the
+     page ignore light mode. Both halves of the claim survive: the gradient still names the
+     token, and the token still carries its agreed DARK value. */
+  /radial-gradient\(58% 44% at 4% -4%, var\(--ground-glow\)/.test(indexCss) &&
+  /--ground-glow:\s*rgba\(255, 157, 0, \.13\)/.test(themeCss),
   'a 4%-tinted bar with the blur stripped is an invisible header — Lite Mode strips exactly that, ' +
   'so the opaque ground is not decoration; and the ground must stay BEHIND the blur, never in the ' +
   'same declaration, or there is nothing left to see through');
@@ -2976,6 +2982,22 @@ check(G42, 'no slate survives in the shell, as a class OR as a hex', !slateLeft.
   'left behind: ' + [...new Set(slateLeft)].join(' ') + ' — slate IS the blue the palette law bans');
 /* the Lite-Mode blur fallback overrides every scrim in the app with !important, so a literal
    there is a colour that cannot change theme applied to the widest possible surface */
+/* 🔴 THE ONE THAT MADE A FINISHED SCREEN LOOK UNFINISHED. *"settingview is not even done, look
+   at ther black background"* — every module on it was already cream and the PAGE was still black,
+   because `body` pinned its own colour and its own gradient in index.css.
+   ⚠️ It took the header and the dock with it. Both are glass over the body, so neither was
+   "still dark" — they were correctly showing a black page through themselves. When three
+   surfaces are wrong at once, look for the one thing behind all three. */
+const bodyRule = (indexCss.match(/\nbody \{[\s\S]*?\n\}/) || [''])[0];
+check(G42, 'the page itself changes theme, gradient and all',
+  !/#[0-9a-fA-F]{3,8}|rgba?\(/.test(bodyRule) && /var\(--ground-base\)/.test(bodyRule),
+  'a literal on `body` is a colour that cannot change theme applied to the entire app, and it ' +
+  'reads as "this screen was never converted" even when every module on it was');
+/* the same sweep that missed the body missed this file's OTHER literal, twice over */
+const indexSlate = [...new Set(indexCss.match(/#(?:0f172a|475569|94a3b8|1e293b|334155|64748b|cbd5e1)\b/gi) || [])];
+check(G42, 'index.css carries no slate either', !indexSlate.length,
+  'left behind: ' + indexSlate.join(' ') + ' — this file is not the shell, not App and not the ' +
+  'player, which is exactly why slate kept shipping from it');
 check(G42, 'the Lite Mode blur fallback is a token, and a scrim',
   /\.lite-mode \.backdrop-blur[\s\S]{0,900}background-color:\s*var\(--duke-scrim\)\s*!important/.test(app),
   'in Lite Mode this rule paints every backdrop in the app, so a literal here is the whole app');
