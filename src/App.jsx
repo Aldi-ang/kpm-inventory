@@ -815,7 +815,7 @@ const handleGitHubMirror = async () => {
 
   const calculateStrength = (pass) => {
       let score = 0;
-      if (!pass) return { score: 0, label: "AWAITING INPUT", color: "text-[#8b7256]", bar: "bg-[#26211c]" };
+      if (!pass) return { score: 0, label: "AWAITING INPUT", color: "text-[var(--duke-ink-3)]", bar: "bg-[var(--duke-fill-panel)]" };
       if (pass.length >= 8) score++;
       if (/[a-z]/.test(pass)) score++;
       if (/[A-Z]/.test(pass)) score++;
@@ -824,7 +824,7 @@ const handleGitHubMirror = async () => {
 
       if (score <= 2) return { score, label: "CRITICAL VULNERABILITY (WEAK)", color: "text-red-500", bar: "bg-red-600 shadow-[0_0_10px_red]" };
       if (score <= 4) return { score, label: "SUB-OPTIMAL (MODERATE)", color: "text-orange-500", bar: "bg-orange-500 shadow-[0_0_10px_orange]" };
-      return { score, label: "ENCRYPTION SECURE (STRONG)", color: "text-[#ff9d00]", bar: "bg-[#ff9d00] shadow-[0_0_10px_rgba(255,157,0,0.8)]" };
+      return { score, label: "ENCRYPTION SECURE (STRONG)", color: "text-[var(--duke-amber-ink)]", bar: "bg-[var(--duke-amber)] shadow-[0_0_10px_rgba(255,157,0,0.8)]" };
   };
 
   // 1. INITIAL CHECK: Does a PIN exist?
@@ -3553,7 +3553,7 @@ const handleGitHubMirror = async () => {
                     {isOnline ? <Cloud size={16} /> : <CloudOff size={16} />}
                     <span className="text-[10px] font-black tracking-widest hidden md:inline">{isOnline ? 'SYNCED' : 'OFFLINE'}</span>
                     {(pendingCount.transactions > 0 || pendingCount.noo > 0) && (
-                        <span className="absolute -top-2 -right-2 bg-orange-500 text-white text-[10px] font-black w-5 h-5 flex items-center justify-center rounded-full shadow-[0_0_10px_rgba(249,115,22,0.8)]">{pendingCount.transactions + pendingCount.noo}</span>
+                        <span className="absolute -top-2 -right-2 bg-orange-500 text-[var(--duke-on-fill)] text-[10px] font-black w-5 h-5 flex items-center justify-center rounded-full shadow-[0_0_10px_rgba(249,115,22,0.8)]">{pendingCount.transactions + pendingCount.noo}</span>
                     )}
                 </button>
             )}
@@ -3626,7 +3626,7 @@ const handleGitHubMirror = async () => {
           half of why it read as a vault rather than an overlay. Dropping backdrop-blur with it
           is free — there is nothing left to blur. */}
       {showAdminLogin && (
-        <div className="fixed inset-0 z-[9999] bg-black flex items-center justify-center p-4 font-mono">
+        <div className="fixed inset-0 z-[9999] bg-[var(--duke-well-solid)] flex items-center justify-center p-4 font-mono">
           {/* The dot field is the gate's background for ALL FIVE modes, not just the unlock:
               dark until the pointer — or a finger press, phones have no hover — reveals it.
               On unlock the card collapses and the same field carries his name.
@@ -3647,12 +3647,12 @@ const handleGitHubMirror = async () => {
               wearing one shell" was always supposed to look like. */}
           {/* 320 on a phone, 384 from md up — his ask: "i want the login panel to be a little bit
               bigger on pc". The preview's 264 was sized for a small demo stage, not a monitor. */}
-          <div className={`bg-[rgba(4,3,2,0.9)] border border-[#E7700F]/20 p-6 md:p-8 max-w-[320px] md:max-w-[384px] w-full text-center shadow-[0_20px_46px_-12px_rgba(0,0,0,0.95)] relative z-10 overflow-hidden transition-all ${authShake ? 'animate-shake' : ''} ${isUnlocking && gateIsRich() ? 'opacity-0 scale-[.86] pointer-events-none duration-[420ms]' : ''}`}>
+          <div className={`bg-[rgba(4,3,2,0.9)] border border-[var(--shell-orange-edge)]/20 p-6 md:p-8 max-w-[320px] md:max-w-[384px] w-full text-center shadow-[0_20px_46px_-12px_rgba(0,0,0,0.95)] relative z-10 overflow-hidden transition-all ${authShake ? 'animate-shake' : ''} ${isUnlocking && gateIsRich() ? 'opacity-0 scale-[.86] pointer-events-none duration-[420ms]' : ''}`}>
 
             {/* The top stripe marks a mode that is NOT the everyday one, so it still carries
                 meaning. Standard login has none — the preview's gate is a plain card. */}
             {((isUnlocking && !gateIsRich()) || isSetupMode || isResetMode || isOtpMode) && (
-              <div className={`absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent ${isResetMode ? 'via-orange-500' : 'via-[#ff9d00]'} to-transparent ${authShake ? '' : 'animate-pulse'}`}></div>
+              <div className={`absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent ${isResetMode ? 'via-orange-500' : 'via-[var(--duke-amber)]'} to-transparent ${authShake ? '' : 'animate-pulse'}`}></div>
             )}
 
             {/* 🎬 CINEMATIC UNLOCK SEQUENCE 🎬 */}
@@ -3668,18 +3668,18 @@ const handleGitHubMirror = async () => {
                         {/* One ring, drawn once. It does NOT rotate: Lite Mode's law is that
                             nothing spins, and a spinner here would also be a lie — the vault is
                             already open by the time this branch renders. */}
-                        <div className="absolute inset-0 rounded-full border border-[#ff9d00]/25 kpm-unlock-ring"></div>
-                        <Unlock size={30} className="text-[#f0e2c0] kpm-unlock-icon" />
+                        <div className="absolute inset-0 rounded-full border border-[var(--duke-amber-edge)]/25 kpm-unlock-ring"></div>
+                        <Unlock size={30} className="text-[var(--shell-ink)] kpm-unlock-icon" />
                     </div>
                     <div>
-                        <h3 className="text-[#f0e2c0] font-black text-2xl uppercase mb-2 kpm-unlock-title">Access Granted</h3>
-                        <p className="text-[#f0e2c0]/40 font-mono text-[10px] uppercase tracking-[0.25em]">Master Vault</p>
+                        <h3 className="text-[var(--shell-ink)] font-black text-2xl uppercase mb-2 kpm-unlock-title">Access Granted</h3>
+                        <p className="text-[var(--shell-ink)]/40 font-mono text-[10px] uppercase tracking-[0.25em]">Master Vault</p>
                     </div>
                     {/* A single sweep, not a progress bar. Nothing is loading here, so a bar that
                         appears to measure work is telling him something untrue — the old one
                         stuttered for 2.4s to sell a decryption that never happened. */}
-                    <div className="w-full h-px bg-[#ff9d00]/15 overflow-hidden">
-                        <div className="h-full w-full origin-left bg-[#ff9d00] kpm-unlock-sweep"></div>
+                    <div className="w-full h-px bg-[var(--duke-amber)]/15 overflow-hidden">
+                        <div className="h-full w-full origin-left bg-[var(--duke-amber)] kpm-unlock-sweep"></div>
                     </div>
                     <style>{`
                         @keyframes kpmUnlockIcon  { from { opacity: 0; transform: scale(.82); } to { opacity: 1; transform: scale(1); } }
@@ -3703,8 +3703,8 @@ const handleGitHubMirror = async () => {
                         alarm. Standard login is the door he opens every day, and the preview
                         gives it two quiet lines instead — see CASE 3. */}
                     {(isSetupMode || isResetMode || isOtpMode) && (<>
-                      <ShieldAlert size={32} className={`mx-auto mb-4 ${isSetupMode ? 'text-[#ff9d00]' : isResetMode ? 'text-orange-500' : 'text-[#E7700F]'}`} />
-                      <h2 className="text-lg font-black text-white mb-6 uppercase tracking-[0.25em]">
+                      <ShieldAlert size={32} className={`mx-auto mb-4 ${isSetupMode ? 'text-[var(--duke-amber-ink)]' : isResetMode ? 'text-orange-500' : 'text-[var(--shell-orange-ink)]'}`} />
+                      <h2 className="text-lg font-black text-[var(--duke-ink-hi)] mb-6 uppercase tracking-[0.25em]">
                         {isSetupMode ? "Initialize Vault" : isResetMode ? "Identity Recovery" : "Security Check"}
                       </h2>
                     </>)}
@@ -3714,13 +3714,13 @@ const handleGitHubMirror = async () => {
                 <div className="space-y-4 text-left">
                     {/* 🚀 NEW: The Welcome Bridge UI */}
                     {pendingMigration ? (
-                        <div className="mb-6 text-center border-b border-[#ff9d00]/30 pb-4 animate-fade-in">
-                            <h3 className="text-xl font-black text-white uppercase tracking-widest mb-1">Welcome to {appSettings?.companyName || "The Platform"}</h3>
-                            <p className="text-[#ff9d00] text-[10px] uppercase tracking-[0.2em] font-bold">First-Time Setup: Initialize Vault</p>
-                            <p className="text-[#8b7256] text-[10px] mt-2 leading-relaxed">Your Architect has provisioned your clearance. Create your Master Credentials to secure your database and finalize your account migration.</p>
+                        <div className="mb-6 text-center border-b border-[var(--duke-amber-edge)]/30 pb-4 animate-fade-in">
+                            <h3 className="text-xl font-black text-[var(--duke-ink-hi)] uppercase tracking-widest mb-1">Welcome to {appSettings?.companyName || "The Platform"}</h3>
+                            <p className="text-[var(--duke-amber-ink)] text-[10px] uppercase tracking-[0.2em] font-bold">First-Time Setup: Initialize Vault</p>
+                            <p className="text-[var(--duke-ink-3)] text-[10px] mt-2 leading-relaxed">Your Architect has provisioned your clearance. Create your Master Credentials to secure your database and finalize your account migration.</p>
                         </div>
                     ) : (
-                        <p className="text-[10px] text-[#ff9d00] uppercase font-bold mb-4 tracking-widest text-center">Create Administrator Credentials</p>
+                        <p className="text-[10px] text-[var(--duke-amber-ink)] uppercase font-bold mb-4 tracking-widest text-center">Create Administrator Credentials</p>
                     )}
                     
                     <div className="relative">
@@ -3729,7 +3729,7 @@ const handleGitHubMirror = async () => {
                             placeholder="CREATE MASTER PASSWORD"
                             value={setupPassword}
                             onChange={(e) => setSetupPassword(e.target.value)}
-                            className="w-full bg-black border border-[#ff9d00]/30 p-4 text-center text-[#f0e2c0] text-lg outline-none focus:border-[#ff9d00] font-mono placeholder:text-white/20 transition-colors" 
+                            className="w-full bg-[var(--duke-well-solid)] border border-[var(--duke-amber-edge)]/30 p-4 text-center text-[var(--shell-ink)] text-lg outline-none focus:border-[var(--duke-amber-edge)] font-mono placeholder:text-[var(--duke-ink-hi)]/20 transition-colors" 
                             maxLength={25}
                         />
                         
@@ -3739,7 +3739,7 @@ const handleGitHubMirror = async () => {
                                 <span className={`text-[11px] font-black tracking-widest uppercase ${calculateStrength(setupPassword).color}`}>
                                     {calculateStrength(setupPassword).label}
                                 </span>
-                                <span className="text-[11px] text-[#8b7256] font-mono">LVL {calculateStrength(setupPassword).score}/5</span>
+                                <span className="text-[11px] text-[var(--duke-ink-3)] font-mono">LVL {calculateStrength(setupPassword).score}/5</span>
                             </div>
                             <div className="flex gap-1 h-1.5">
                                 {[1, 2, 3, 4, 5].map(level => (
@@ -3757,12 +3757,12 @@ const handleGitHubMirror = async () => {
                         placeholder="SECRET RECOVERY WORD" 
                         value={setupSecret}
                         onChange={(e) => setSetupSecret(e.target.value)}
-                        className="w-full bg-black border border-[#ff9d00]/30 p-4 text-center text-[#f0e2c0] text-xs outline-none focus:border-[#ff9d00] uppercase tracking-widest placeholder:text-white/20 font-mono transition-colors" 
+                        className="w-full bg-[var(--duke-well-solid)] border border-[var(--duke-amber-edge)]/30 p-4 text-center text-[var(--shell-ink)] text-xs outline-none focus:border-[var(--duke-amber-edge)] uppercase tracking-widest placeholder:text-[var(--duke-ink-hi)]/20 font-mono transition-colors" 
                     />
                     
                     <button 
                         onClick={handleSetupSecurity} 
-                        className={`w-full py-4 font-bold uppercase text-xs tracking-[0.2em] transition-all shadow-lg font-mono border ${calculateStrength(setupPassword).score === 5 && setupSecret ? 'bg-[#ff9d00]/10 hover:bg-[#ff9d00]/25 border-[#ff9d00]/50 text-[#ff9d00] hover:text-[#f0e2c0] cursor-pointer' : 'bg-black border-[#3e3226] text-[#8b7256] cursor-not-allowed opacity-50'}`}
+                        className={`w-full py-4 font-bold uppercase text-xs tracking-[0.2em] transition-all shadow-lg font-mono border ${calculateStrength(setupPassword).score === 5 && setupSecret ? 'bg-[var(--duke-amber)]/10 hover:bg-[var(--duke-amber)]/25 border-[var(--duke-amber-edge)]/50 text-[var(--duke-amber-ink)] hover:text-[var(--shell-ink)] cursor-pointer' : 'bg-[var(--duke-well-solid)] border-[var(--duke-edge-1)] text-[var(--duke-ink-3)] cursor-not-allowed opacity-50'}`}
                         disabled={calculateStrength(setupPassword).score < 5 || !setupSecret}
                     >
                         Save Credentials
@@ -3771,22 +3771,22 @@ const handleGitHubMirror = async () => {
             ) : isOtpMode ? (
                 /* CASE 2.5: OTP VERIFICATION */
                 <div className="space-y-4 animate-fade-in">
-                    <p className="text-[10px] text-[#ff9d00] uppercase font-bold mb-4 tracking-widest">Verify Email Authorization</p>
-                    <p className="text-xs text-[#8b7256] mb-4">A 6-digit code has been sent to your registered Admin Email.</p>
-                    <input type="number" placeholder="• • • • • •" className="w-full bg-black border border-[#ff9d00]/30 p-4 text-center text-[#f0e2c0] text-2xl outline-none tracking-[0.5em] focus:border-[#ff9d00] font-mono transition-colors" value={inputOtp} onChange={(e) => setInputOtp(e.target.value)} autoFocus maxLength={6} onKeyDown={(e) => e.key === 'Enter' && handleVerifyOtp()} />
+                    <p className="text-[10px] text-[var(--duke-amber-ink)] uppercase font-bold mb-4 tracking-widest">Verify Email Authorization</p>
+                    <p className="text-xs text-[var(--duke-ink-3)] mb-4">A 6-digit code has been sent to your registered Admin Email.</p>
+                    <input type="number" placeholder="• • • • • •" className="w-full bg-[var(--duke-well-solid)] border border-[var(--duke-amber-edge)]/30 p-4 text-center text-[var(--shell-ink)] text-2xl outline-none tracking-[0.5em] focus:border-[var(--duke-amber-edge)] font-mono transition-colors" value={inputOtp} onChange={(e) => setInputOtp(e.target.value)} autoFocus maxLength={6} onKeyDown={(e) => e.key === 'Enter' && handleVerifyOtp()} />
                     <div className="flex gap-3 mt-4">
-                        <button onClick={() => { setIsOtpMode(false); setIsResetMode(true); setInputOtp(""); }} className="flex-1 py-3 border border-white/10 text-gray-400 text-xs font-bold uppercase hover:text-white hover:bg-white/5 font-mono tracking-widest transition-colors">Abort</button>
-                        <button onClick={handleVerifyOtp} className="flex-1 py-3 bg-[#ff9d00]/10 hover:bg-[#ff9d00]/25 border border-[#ff9d00]/50 text-[#ff9d00] hover:text-[#f0e2c0] text-xs font-bold uppercase font-mono tracking-widest transition-colors">Verify Code</button>
+                        <button onClick={() => { setIsOtpMode(false); setIsResetMode(true); setInputOtp(""); }} className="flex-1 py-3 border border-white/10 text-gray-400 text-xs font-bold uppercase hover:text-[var(--duke-ink-hi)] hover:bg-white/5 font-mono tracking-widest transition-colors">Abort</button>
+                        <button onClick={handleVerifyOtp} className="flex-1 py-3 bg-[var(--duke-amber)]/10 hover:bg-[var(--duke-amber)]/25 border border-[var(--duke-amber-edge)]/50 text-[var(--duke-amber-ink)] hover:text-[var(--shell-ink)] text-xs font-bold uppercase font-mono tracking-widest transition-colors">Verify Code</button>
                     </div>
                 </div>
             ) : isResetMode ? (
                 /* CASE 2: RECOVERY MODE (Now with Loading State) */
                 <div className="space-y-4">
                     <p className="text-[10px] text-orange-400 uppercase font-bold mb-4 tracking-widest">Enter Secret Word</p>
-                   <input type="password" id="resetWord" placeholder="ENTER SECRET WORD..." className="w-full bg-black border border-orange-500/30 p-4 text-center text-white text-xl outline-none tracking-widest focus:border-orange-500 font-mono placeholder:text-white/20 transition-colors" autoFocus disabled={isSendingEmail} onKeyDown={(e) => e.key === 'Enter' && handleResetPin(e.target.value)}/>
+                   <input type="password" id="resetWord" placeholder="ENTER SECRET WORD..." className="w-full bg-[var(--duke-well-solid)] border border-orange-500/30 p-4 text-center text-[var(--duke-ink-hi)] text-xl outline-none tracking-widest focus:border-orange-500 font-mono placeholder:text-[var(--duke-ink-hi)]/20 transition-colors" autoFocus disabled={isSendingEmail} onKeyDown={(e) => e.key === 'Enter' && handleResetPin(e.target.value)}/>
                     <div className="flex gap-3 mt-4">
-                        <button onClick={() => setIsResetMode(false)} disabled={isSendingEmail} className="flex-1 py-3 border border-white/10 text-gray-400 text-xs font-bold uppercase hover:text-white hover:bg-white/5 font-mono tracking-widest transition-colors">Abort</button>
-                        <button onClick={() => handleResetPin(document.getElementById('resetWord').value)} disabled={isSendingEmail} className={`flex-1 py-3 border text-xs font-bold uppercase font-mono tracking-widest transition-colors ${isSendingEmail ? 'bg-orange-900/50 border-orange-800 text-orange-700 cursor-wait' : 'bg-orange-600/20 hover:bg-orange-600 border-orange-500/50 text-orange-500 hover:text-white'}`}>
+                        <button onClick={() => setIsResetMode(false)} disabled={isSendingEmail} className="flex-1 py-3 border border-white/10 text-gray-400 text-xs font-bold uppercase hover:text-[var(--duke-ink-hi)] hover:bg-white/5 font-mono tracking-widest transition-colors">Abort</button>
+                        <button onClick={() => handleResetPin(document.getElementById('resetWord').value)} disabled={isSendingEmail} className={`flex-1 py-3 border text-xs font-bold uppercase font-mono tracking-widest transition-colors ${isSendingEmail ? 'bg-orange-900/50 border-orange-800 text-orange-700 cursor-wait' : 'bg-orange-600/20 hover:bg-orange-600 border-orange-500/50 text-orange-500 hover:text-[var(--duke-ink-hi)]'}`}>
                             {isSendingEmail ? 'Authorizing...' : 'Verify'}
                         </button>
                     </div>
@@ -3798,8 +3798,8 @@ const handleGitHubMirror = async () => {
                    real buttons — the preview merged them into one label because nothing there
                    had to work. */
             <div>
-                <div className="text-[9px] uppercase tracking-[0.34em] text-[#8a7048]">KPM Inventory</div>
-                <div className="text-[13px] uppercase tracking-[0.2em] font-bold text-[#f7e9c8] mt-[7px] mb-[17px]">Master Vault</div>
+                <div className="text-[9px] uppercase tracking-[0.34em] text-[var(--shell-ink-3)]">KPM Inventory</div>
+                <div className="text-[13px] uppercase tracking-[0.2em] font-bold text-[var(--shell-ink-2)] mt-[7px] mb-[17px]">Master Vault</div>
 
               {/* A REAL FORM, not a div with a click handler. On a phone this is what turns the
                   keyboard's own key into GO — a second way in that does not depend on hitting a
@@ -3819,7 +3819,7 @@ const handleGitHubMirror = async () => {
                     autoCapitalize="off"
                     spellCheck={false}
                     placeholder="MASTER PASSWORD"
-                    className="w-full bg-transparent border-0 border-b border-[#E7700F]/20 py-[11px] px-1.5 text-center font-mono text-[13px] tracking-[0.42em] text-[#f7e9c8] outline-none focus:border-[#E7700F] placeholder:text-[#5f4a2c] placeholder:tracking-[0.16em] placeholder:text-[9.5px] transition-colors"
+                    className="w-full bg-transparent border-0 border-b border-[var(--shell-orange-edge)]/20 py-[11px] px-1.5 text-center font-mono text-[13px] tracking-[0.42em] text-[var(--shell-ink-2)] outline-none focus:border-[var(--shell-orange-edge)] placeholder:text-[#5f4a2c] placeholder:tracking-[0.16em] placeholder:text-[9.5px] transition-colors"
                     value={inputPin}
                     onChange={(e) => setInputPin(e.target.value)}
                     /* Labels the phone's own return key GO instead of "return". */
@@ -3835,21 +3835,21 @@ const handleGitHubMirror = async () => {
                        registers on the first tap rather than after the browser has finished
                        deciding whether a second one is coming. */
                     style={{ touchAction: 'manipulation' }}
-                    className="w-full mt-[15px] py-3 font-mono text-[9.5px] font-bold uppercase tracking-[0.24em] bg-transparent text-[#f7e9c8] border border-[#E7700F]/30 hover:border-[#E7700F] hover:text-[#ffb066] hover:bg-[#E7700F]/[0.09] active:scale-[.975] transition-[transform,background-color,border-color,color] duration-150"
+                    className="w-full mt-[15px] py-3 font-mono text-[9.5px] font-bold uppercase tracking-[0.24em] bg-transparent text-[var(--shell-ink-2)] border border-[var(--shell-orange-edge)]/30 hover:border-[var(--shell-orange-edge)] hover:text-[#ffb066] hover:bg-[var(--shell-orange)]/[0.09] active:scale-[.975] transition-[transform,background-color,border-color,color] duration-150"
                 >
                     Open the vault
                 </button>
 
                 {/* type="button" on BOTH, or they inherit type=submit inside the form and a tap
                     on either would try the password instead — spending one of his five tries. */}
-                <div className="mt-[11px] flex items-center justify-center gap-2 text-[8.5px] uppercase tracking-[0.16em] text-[#8a7048]">
+                <div className="mt-[11px] flex items-center justify-center gap-2 text-[8.5px] uppercase tracking-[0.16em] text-[var(--shell-ink-3)]">
                     {window.PublicKeyCredential && (<>
-                        <button type="button" onClick={handleBiometricUnlock} style={{ touchAction: 'manipulation' }} className="py-1 hover:text-[#f7e9c8] transition-colors flex items-center gap-1.5">
+                        <button type="button" onClick={handleBiometricUnlock} style={{ touchAction: 'manipulation' }} className="py-1 hover:text-[var(--shell-ink-2)] transition-colors flex items-center gap-1.5">
                             <ScanFace size={11} /> Fingerprint
                         </button>
                         <span aria-hidden="true">·</span>
                     </>)}
-                    <button type="button" onClick={() => setIsResetMode(true)} style={{ touchAction: 'manipulation' }} className="py-1 hover:text-[#f7e9c8] transition-colors">
+                    <button type="button" onClick={() => setIsResetMode(true)} style={{ touchAction: 'manipulation' }} className="py-1 hover:text-[var(--shell-ink-2)] transition-colors">
                         Lost your key?
                     </button>
                 </div>
@@ -3867,10 +3867,10 @@ const handleGitHubMirror = async () => {
         <>
         {/* 🚀 THE HARD STOP: Blocks any email not found in the KPM Employee Directory */}
         {userRole === 'UNAUTHORIZED' ? (
-            <div className="fixed inset-0 z-[9999] bg-black/95 flex flex-col items-center justify-center text-center p-6 font-mono">
+            <div className="fixed inset-0 z-[9999] bg-[var(--duke-scrim-hi)] flex flex-col items-center justify-center text-center p-6 font-mono">
                 <ShieldAlert size={64} className="text-red-600 mb-6 animate-pulse" />
-                <h2 className="text-3xl font-black text-white uppercase tracking-[0.25em] mb-2">Access Denied</h2>
-                <p className="text-[#8b7256] text-xs font-bold uppercase tracking-widest max-w-md leading-relaxed mb-8">
+                <h2 className="text-3xl font-black text-[var(--duke-ink-hi)] uppercase tracking-[0.25em] mb-2">Access Denied</h2>
+                <p className="text-[var(--duke-ink-3)] text-xs font-bold uppercase tracking-widest max-w-md leading-relaxed mb-8">
                     The email <span className="text-red-500">[{user.email}]</span> is not registered in the KPM Employee Directory. Contact your System Administrator for clearance.
                 </p>
                 <button onClick={handleLogout} className="px-10 py-4 border-2 border-red-600/50 text-red-500 font-black uppercase text-xs hover:bg-red-900/30 transition-all shadow-[0_0_15px_rgba(220,38,38,0.2)]">
@@ -3881,16 +3881,16 @@ const handleGitHubMirror = async () => {
             // 🚀 THE FIX: An honest, DIFFERENT message from Access Denied — this fires
             // only when we genuinely couldn't check (offline, and this device has never
             // cached this account before), never when the server actually said no.
-            <div className="fixed inset-0 z-[9999] bg-black/95 flex flex-col items-center justify-center text-center p-6 font-mono">
+            <div className="fixed inset-0 z-[9999] bg-[var(--duke-scrim-hi)] flex flex-col items-center justify-center text-center p-6 font-mono">
                 <CloudOff size={64} className="text-amber-500 mb-6 animate-pulse" />
-                <h2 className="text-3xl font-black text-white uppercase tracking-[0.25em] mb-2">Can't Verify You Yet</h2>
-                <p className="text-[#8b7256] text-xs font-bold uppercase tracking-widest max-w-md leading-relaxed mb-8">
+                <h2 className="text-3xl font-black text-[var(--duke-ink-hi)] uppercase tracking-[0.25em] mb-2">Can't Verify You Yet</h2>
+                <p className="text-[var(--duke-ink-3)] text-xs font-bold uppercase tracking-widest max-w-md leading-relaxed mb-8">
                     We can't reach the internet right now, and this device hasn't confirmed the account <span className="text-amber-500">[{user.email}]</span> online before. Connect to the internet at least once to unlock offline access, then try again.
                 </p>
                 <button onClick={() => window.location.reload()} className="px-10 py-4 border-2 border-amber-500/50 text-amber-400 font-black uppercase text-xs hover:bg-amber-900/30 transition-all shadow-[0_0_15px_rgba(245,158,11,0.2)] mb-4">
                     Retry
                 </button>
-                <button onClick={handleLogout} className="px-10 py-4 border-2 border-[#5c4b3a]/50 text-[#8b7256] font-black uppercase text-xs hover:bg-[#26211c]/30 transition-all">
+                <button onClick={handleLogout} className="px-10 py-4 border-2 border-[var(--duke-edge-2)]/50 text-[var(--duke-ink-3)] font-black uppercase text-xs hover:bg-[var(--duke-fill-panel)]/30 transition-all">
                     Disconnect Session
                 </button>
             </div>
@@ -3901,8 +3901,8 @@ const handleGitHubMirror = async () => {
                 /* palette law: this spinner was the first thing the app ever showed, and it
                    showed it in a green nothing else in the app uses. A JSX {comment} cannot go
                    here — inside fallback={...} this is a JS expression slot, not children. */
-                <div className="flex flex-col items-center justify-center min-h-[60vh] text-[#ff9d00] font-mono space-y-4">
-                    <div className="w-12 h-12 border-4 border-[#ff9d00]/20 border-t-[#ff9d00] rounded-full animate-spin"></div>
+                <div className="flex flex-col items-center justify-center min-h-[60vh] text-[var(--duke-amber-ink)] font-mono space-y-4">
+                    <div className="w-12 h-12 border-4 border-[var(--duke-amber-edge)]/20 border-t-[#ff9d00] rounded-full animate-spin"></div>
                     <p className="animate-pulse text-xs tracking-[0.2em] uppercase mt-4">Downloading Tactical Modules...</p>
                 </div>
             }>
@@ -3912,13 +3912,13 @@ const handleGitHubMirror = async () => {
                     <div className="flex flex-col items-center justify-center min-h-[60vh] animate-fade-in text-center">
                         <div className="relative mb-8">
                         <div className="absolute inset-0 bg-red-500/20 blur-3xl rounded-full animate-pulse"></div>
-                        <div className="relative w-24 h-24 bg-black border-2 border-red-600 rounded-full flex items-center justify-center text-red-500 shadow-[0_0_30px_rgba(220,38,38,0.4)]">
+                        <div className="relative w-24 h-24 bg-[var(--duke-well-solid)] border-2 border-red-600 rounded-full flex items-center justify-center text-red-500 shadow-[0_0_30px_rgba(220,38,38,0.4)]">
                             <Lock size={40} className="animate-bounce-slow" />
                         </div>
                     </div>
-                    <h2 className="text-3xl font-black text-white uppercase tracking-[0.25em] mb-2 font-mono">Restricted Access</h2>
-                    <p className="text-[#8b7256] text-xs font-bold uppercase tracking-widest max-w-xs leading-relaxed mb-8">Admin Clearance Required</p>
-                    <button onClick={() => setShowAdminLogin(true)} className="px-10 py-4 border-2 border-white text-white font-black uppercase text-xs hover:bg-white hover:text-black transition-all">Unlock System</button>
+                    <h2 className="text-3xl font-black text-[var(--duke-ink-hi)] uppercase tracking-[0.25em] mb-2 font-mono">Restricted Access</h2>
+                    <p className="text-[var(--duke-ink-3)] text-xs font-bold uppercase tracking-widest max-w-xs leading-relaxed mb-8">Admin Clearance Required</p>
+                    <button onClick={() => setShowAdminLogin(true)} className="px-10 py-4 border-2 border-white text-[var(--duke-ink-hi)] font-black uppercase text-xs hover:bg-white hover:text-black transition-all">Unlock System</button>
                 </div>
             ) : (
                 <DashboardView 
@@ -3990,14 +3990,14 @@ const handleGitHubMirror = async () => {
               {/* 🚀 FIX: searchTerm/setSearchTerm existed and already filtered inventory
                   into filteredInventory below, but the input that was supposed to drive it
                   was missing from the UI entirely. */}
-              <div className="relative shrink-0 border-b-4 border-black bg-black/80 p-3">
+              <div className="relative shrink-0 border-b-4 border-black bg-[var(--duke-badge)] p-3">
                   <Search size={16} className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" />
                   <input
                       type="text"
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                       placeholder="Search inventory by name..."
-                      className="w-full bg-[#0f0e0d] border border-[#3e3226] rounded-lg py-2 pl-9 pr-3 text-sm text-white outline-none focus:border-[#ff9d00] transition-colors"
+                      className="w-full bg-[var(--duke-fill-well)] border border-[var(--duke-edge-1)] rounded-lg py-2 pl-9 pr-3 text-sm text-[var(--duke-ink-hi)] outline-none focus:border-[var(--duke-amber-edge)] transition-colors"
                   />
               </div>
 
@@ -4039,27 +4039,27 @@ const handleGitHubMirror = async () => {
               {/* EDIT MODAL - AUTO HIDES WHEN CROPPING (fixes "Menu doesn't exit") */}
               {editingProduct && (
                 <div 
-                    className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-md flex items-center justify-center p-4 transition-opacity duration-300"
+                    className="fixed inset-0 z-[100] bg-[var(--duke-scrim-hi)] backdrop-blur-md flex items-center justify-center p-4 transition-opacity duration-300"
                     style={{ display: cropImageSrc ? 'none' : 'flex' }} // <--- MAGIC FIX: Hides when cropping
                 >
-                    <div className="bg-black border border-white/30 w-full max-w-2xl max-h-[90vh] overflow-y-auto p-8 relative shadow-[0_0_50px_rgba(255,255,255,0.1)]">
-                        <button onClick={() => setEditingProduct(null)} className="absolute top-4 right-4 text-white hover:text-red-500"><X size={24}/></button>
-                        <h2 className="text-2xl font-bold text-white mb-6 uppercase tracking-widest border-b border-white/20 pb-2">
+                    <div className="bg-[var(--duke-well-solid)] border border-white/30 w-full max-w-2xl max-h-[90vh] overflow-y-auto p-8 relative shadow-[0_0_50px_rgba(255,255,255,0.1)]">
+                        <button onClick={() => setEditingProduct(null)} className="absolute top-4 right-4 text-[var(--duke-ink-hi)] hover:text-red-500"><X size={24}/></button>
+                        <h2 className="text-2xl font-bold text-[var(--duke-ink-hi)] mb-6 uppercase tracking-widest border-b border-white/20 pb-2">
                             {editingProduct.id ? "Edit Record" : "New Entry"}
                         </h2>
                         
                         <form onSubmit={handleSaveProduct} className="space-y-6 font-mono text-xs">
                             <div className="grid md:grid-cols-2 gap-8">
                                 <div className="space-y-4">
-                                    <div><label className="text-gray-500 block mb-1">PRODUCT NAME</label><input name="name" defaultValue={editingProduct.name} className="w-full p-2 bg-white/5 border border-white/20 text-white focus:border-orange-500 outline-none"/></div>
+                                    <div><label className="text-gray-500 block mb-1">PRODUCT NAME</label><input name="name" defaultValue={editingProduct.name} className="w-full p-2 bg-white/5 border border-white/20 text-[var(--duke-ink-hi)] focus:border-orange-500 outline-none"/></div>
 
                                   {/* --- PINPOINT: Edit Product Modal --- */}
                                     <div className="grid grid-cols-4 gap-2">
-                                        <div><label className="text-[10px] text-gray-500 block mb-1 tracking-widest">STOCK</label><input name="stock" type="number" step="any" defaultValue={editingProduct.stock} className="w-full p-2 bg-white/5 border border-white/10 text-[#f0e2c0] focus:border-[#ff9d00] outline-none transition-colors"/></div>
+                                        <div><label className="text-[10px] text-gray-500 block mb-1 tracking-widest">STOCK</label><input name="stock" type="number" step="any" defaultValue={editingProduct.stock} className="w-full p-2 bg-white/5 border border-white/10 text-[var(--shell-ink)] focus:border-[var(--duke-amber-edge)] outline-none transition-colors"/></div>
                                         <div><label className="text-[10px] text-gray-500 block mb-1 tracking-widest">MIN. ALERT</label><input name="minStock" type="number" step="any" defaultValue={editingProduct.minStock || 50} className="w-full p-2 bg-white/5 border border-red-500/50 text-red-400 focus:border-red-500 outline-none"/></div>
                                         {/* 🚀 NEW: STICKS PER PACK INPUT */}
-                                        <div><label className="text-[10px] text-gray-500 block mb-1 tracking-widest">STICKS / BKS</label><input name="sticksPerPack" type="number" step="any" defaultValue={editingProduct.sticksPerPack || 16} className="w-full p-2 bg-white/5 border border-white/10 text-[#f0e2c0] focus:border-[#ff9d00] outline-none transition-colors"/></div>
-                                        <div><label className="text-[10px] text-gray-500 block mb-1 tracking-widest">TYPE</label><input name="type" defaultValue={editingProduct.type} className="w-full p-2 bg-white/5 border border-white/20 text-white focus:border-white outline-none"/></div>
+                                        <div><label className="text-[10px] text-gray-500 block mb-1 tracking-widest">STICKS / BKS</label><input name="sticksPerPack" type="number" step="any" defaultValue={editingProduct.sticksPerPack || 16} className="w-full p-2 bg-white/5 border border-white/10 text-[var(--shell-ink)] focus:border-[var(--duke-amber-edge)] outline-none transition-colors"/></div>
+                                        <div><label className="text-[10px] text-gray-500 block mb-1 tracking-widest">TYPE</label><input name="type" defaultValue={editingProduct.type} className="w-full p-2 bg-white/5 border border-white/20 text-[var(--duke-ink-hi)] focus:border-white outline-none"/></div>
                                     </div>
 
                                     {/* PACKING. Every sale in Bal or Karton multiplies by these, and until now
@@ -4081,7 +4081,7 @@ const handleGitHubMirror = async () => {
                                             onChange={(e) => setUseFrontForBack(e.target.checked)}
                                             className="accent-orange-500 w-4 h-4"
                                         />
-                                        <label htmlFor="useFront" className="text-white text-xs cursor-pointer select-none">Use Front Image for Back</label>
+                                        <label htmlFor="useFront" className="text-[var(--duke-ink-hi)] text-xs cursor-pointer select-none">Use Front Image for Back</label>
                                     </div>
 
                                     {/* TEXTURE ASSETS (WITH PREVIEWS & EDIT BTN) */}
@@ -4093,20 +4093,20 @@ const handleGitHubMirror = async () => {
                                                 return (
                                                     <div 
                                                         key={face} 
-                                                        className="h-12 bg-black border border-white/10 flex items-center justify-center text-[11px] text-gray-500 uppercase cursor-pointer hover:bg-white/10 hover:text-white transition-colors relative group overflow-hidden" 
+                                                        className="h-12 bg-[var(--duke-well-solid)] border border-white/10 flex items-center justify-center text-[11px] text-gray-500 uppercase cursor-pointer hover:bg-white/10 hover:text-[var(--duke-ink-hi)] transition-colors relative group overflow-hidden" 
                                                         onClick={() => document.getElementById(`file-edit-${face}`).click()}
                                                     >
                                                         {hasImg ? (
                                                             <>
                                                                 <img src={hasImg} className="w-full h-full object-cover opacity-50 group-hover:opacity-100"/>
-                                                                <div className="absolute inset-0 flex items-center justify-center bg-black/60 opacity-40 group-hover:opacity-100 transition-opacity">
-                                                                    <Pencil size={12} className="text-white"/>
+                                                                <div className="absolute inset-0 flex items-center justify-center bg-[var(--duke-well)] opacity-40 group-hover:opacity-100 transition-opacity">
+                                                                    <Pencil size={12} className="text-[var(--duke-ink-hi)]"/>
                                                                 </div>
                                                                 {/* RESTORED: Edit from existing button */}
                                                                 <button
                                                                     type="button"
                                                                     onClick={(e) => { e.stopPropagation(); handleEditExisting(face, hasImg); }}
-                                                                    className="absolute top-0 right-0 p-1 bg-orange-600 text-white opacity-100 z-20"
+                                                                    className="absolute top-0 right-0 p-1 bg-orange-600 text-[var(--duke-on-fill)] opacity-100 z-20"
                                                                     title="Edit Crop"
                                                                 >
                                                                     <Crop size={8}/>
@@ -4123,10 +4123,10 @@ const handleGitHubMirror = async () => {
                                     </div>
                                 </div>
                                 <div className="space-y-4">
-                                    <h3 className="text-white border-b border-white/10 pb-1 mb-2">PRICING ENGINE</h3>
+                                    <h3 className="text-[var(--duke-ink-hi)] border-b border-white/10 pb-1 mb-2">PRICING ENGINE</h3>
                                     <div><label className="text-gray-500 block mb-1">DISTRIBUTOR (MODAL)</label><input name="priceDistributor" type="number" step="any" defaultValue={editingProduct.priceDistributor} className="w-full p-2 bg-white/5 border border-red-900/50 text-red-400 focus:border-red-500 outline-none"/></div>
-                                    <div><label className="text-gray-500 block mb-1">RETAIL PRICE</label><input name="priceRetail" type="number" step="any" defaultValue={editingProduct.priceRetail} className="w-full p-2 bg-white/5 border border-white/10 text-[#f0e2c0] focus:border-[#ff9d00] outline-none transition-colors"/></div>
-                                    <div><label className="text-gray-500 block mb-1">GROSIR PRICE</label><input name="priceGrosir" type="number" step="any" defaultValue={editingProduct.priceGrosir} className="w-full p-2 bg-white/5 border border-white/10 text-[#f0e2c0] focus:border-[#ff9d00] outline-none transition-colors"/></div>
+                                    <div><label className="text-gray-500 block mb-1">RETAIL PRICE</label><input name="priceRetail" type="number" step="any" defaultValue={editingProduct.priceRetail} className="w-full p-2 bg-white/5 border border-white/10 text-[var(--shell-ink)] focus:border-[var(--duke-amber-edge)] outline-none transition-colors"/></div>
+                                    <div><label className="text-gray-500 block mb-1">GROSIR PRICE</label><input name="priceGrosir" type="number" step="any" defaultValue={editingProduct.priceGrosir} className="w-full p-2 bg-white/5 border border-white/10 text-[var(--shell-ink)] focus:border-[var(--duke-amber-edge)] outline-none transition-colors"/></div>
                                     <div><label className="text-gray-500 block mb-1">ECER PRICE</label><input name="priceEcer" type="number" step="any" defaultValue={editingProduct.priceEcer} className="w-full p-2 bg-white/5 border border-yellow-900/50 text-yellow-400 focus:border-yellow-500 outline-none"/></div>
                                 </div>
                             </div>
@@ -4141,7 +4141,7 @@ const handleGitHubMirror = async () => {
                                    animatable property on the element, and it will happily animate one
                                    nobody intended. Naming the four that actually change is both cheaper
                                    and predictable. */
-                                className="group w-full mt-6 py-4 bg-[#0d0a09] text-[#f0e2c0] font-black uppercase tracking-widest text-sm border-2 border-[#3a3128] border-b-[3px] border-b-[#ff9d00] shadow-[0_3px_0_rgba(0,0,0,0.55)] transition-[background-color,border-color,letter-spacing,transform] duration-150 ease-out hover:bg-[#1c1814] hover:border-[#a89070] hover:border-b-[#ff9d00] hover:tracking-[0.22em] active:translate-y-[3px] active:shadow-none"
+                                className="group w-full mt-6 py-4 bg-[#0d0a09] text-[var(--shell-ink)] font-black uppercase tracking-widest text-sm border-2 border-[#3a3128] border-b-[3px] border-b-[#ff9d00] shadow-[0_3px_0_rgba(0,0,0,0.55)] transition-[background-color,border-color,letter-spacing,transform] duration-150 ease-out hover:bg-[#1c1814] hover:border-[var(--duke-edge-3)] hover:border-b-[#ff9d00] hover:tracking-[0.22em] active:translate-y-[3px] active:shadow-none"
                             >
                                 Update Database
                             </button>
@@ -4155,11 +4155,11 @@ const handleGitHubMirror = async () => {
 
       {/* MULTI-WAREHOUSE ERP ENGINE */}
           {activeTab === 'restock_vault' && (
-              <div className="h-auto min-h-[800px] lg:min-h-0 lg:h-[calc(100vh-140px)] w-full max-w-7xl mx-auto border-4 border-black shadow-[0_0_0_1px_rgba(255,255,255,0.1)] relative flex flex-col bg-black p-4 overflow-y-auto custom-scrollbar">
+              <div className="h-auto min-h-[800px] lg:min-h-0 lg:h-[calc(100vh-140px)] w-full max-w-7xl mx-auto border-4 border-black shadow-[0_0_0_1px_rgba(255,255,255,0.1)] relative flex flex-col bg-[var(--duke-well-solid)] p-4 overflow-y-auto custom-scrollbar">
                   
                   {/* 🚀 HQ ONLY: FACTORY PROCUREMENT ENGINE (RESI, PHOTOS, DLL) */}
                   {isAdmin && (
-                      <div className="mb-12 pb-12 border-b-4 border-[#3e3226] border-dashed">
+                      <div className="mb-12 pb-12 border-b-4 border-[var(--duke-edge-1)] border-dashed">
                           <RestockVaultView 
                               inventory={inventory} 
                               procurements={procurements}
@@ -4214,7 +4214,7 @@ const handleGitHubMirror = async () => {
                  stock list drawn directly beneath it. Inside the terminal the drawer covers it
                  exactly as it covers every ware, because now it is the same box. It also gives
                  a phone back the ~60px this bar was reserving above everything. */
-              <div className="h-full w-full relative bg-black">
+              <div className="h-full w-full relative bg-[var(--duke-well-solid)]">
                       <MerchantSalesView
                           adminSalesMode={adminSalesMode}
                           onAdminSalesMode={userRole === 'ADMIN' ? setAdminSalesMode : undefined}
@@ -4337,13 +4337,13 @@ const handleGitHubMirror = async () => {
               <>
                   {/* EDIT FOLDER MODAL */}
                   {editingFolder && (
-                      <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
-                          <div className="bg-white dark:bg-[#26211c] p-6 rounded-2xl w-full max-w-sm shadow-2xl">
-                              <h3 className="font-bold text-lg mb-4 dark:text-white">Rename Folder</h3>
+                      <div className="fixed inset-0 z-50 bg-[var(--duke-badge)] flex items-center justify-center p-4">
+                          <div className="bg-white dark:bg-[var(--duke-fill-panel)] p-6 rounded-2xl w-full max-w-sm shadow-2xl">
+                              <h3 className="font-bold text-lg mb-4 dark:text-[var(--duke-ink-hi)]">Rename Folder</h3>
                               <form onSubmit={processFolderEdit} className="space-y-4">
-                                  <div><label className="text-xs font-bold text-[#8b7256]">Date</label><input name="newDate" type="date" defaultValue={editingFolder.oldDate} className="w-full p-2 rounded border dark:bg-[#0f0e0d] dark:border-[#5c4b3a] dark:text-white"/></div>
-                                  <div><label className="text-xs font-bold text-[#8b7256]">Location Name</label><input name="newReason" defaultValue={editingFolder.oldReason} className="w-full p-2 rounded border dark:bg-[#0f0e0d] dark:border-[#5c4b3a] dark:text-white"/></div>
-                                  <div className="flex gap-2 pt-2"><button type="button" onClick={()=>setEditingFolder(null)} className="flex-1 py-2 bg-[#d2cec7] dark:bg-[#3e3226] rounded-lg">Cancel</button><button className="flex-1 py-2 bg-orange-500 text-white rounded-lg font-bold">Save Move</button></div>
+                                  <div><label className="text-xs font-bold text-[var(--duke-ink-3)]">Date</label><input name="newDate" type="date" defaultValue={editingFolder.oldDate} className="w-full p-2 rounded border dark:bg-[var(--duke-fill-well)] dark:border-[var(--duke-edge-2)] dark:text-[var(--duke-ink-hi)]"/></div>
+                                  <div><label className="text-xs font-bold text-[var(--duke-ink-3)]">Location Name</label><input name="newReason" defaultValue={editingFolder.oldReason} className="w-full p-2 rounded border dark:bg-[var(--duke-fill-well)] dark:border-[var(--duke-edge-2)] dark:text-[var(--duke-ink-hi)]"/></div>
+                                  <div className="flex gap-2 pt-2"><button type="button" onClick={()=>setEditingFolder(null)} className="flex-1 py-2 bg-[#d2cec7] dark:bg-[var(--duke-fill-plank)] rounded-lg">Cancel</button><button className="flex-1 py-2 bg-orange-500 text-[var(--duke-on-fill)] rounded-lg font-bold">Save Move</button></div>
                               </form>
                           </div>
                       </div>
@@ -4419,68 +4419,68 @@ const handleGitHubMirror = async () => {
           <>
               {/* The Flight Recorder Terminal Modal */}
               {showFlightRecorder && (
-                  <div className="fixed inset-0 z-[9999] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
+                  <div className="fixed inset-0 z-[9999] bg-[var(--duke-badge)] backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
                       {/* It is a RECORDER, so it should behave like one being switched on: the
                           case arrives first, then the tape reads itself out line by line. The
                           stagger is CSS-only (see .kpm-log-row) — no timers, and it re-runs every
                           time the panel opens because the rows are mounted fresh. */}
-                      <div className="kpm-recorder bg-[#0a0a0a] border border-[#3e3226] w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[80vh]">
-                          <div className="bg-[#0f0e0d] p-4 border-b border-[#3e3226] flex justify-between items-center shrink-0">
-                              <h3 className="text-white font-black uppercase tracking-widest flex items-center gap-2"><Activity size={18} className="text-[#ff9d00]"/> Flight Recorder</h3>
-                              <button onClick={() => setShowFlightRecorder(false)} className="text-[#8b7256] hover:text-red-500"><X size={20}/></button>
+                      <div className="kpm-recorder bg-[#0a0a0a] border border-[var(--duke-edge-1)] w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[80vh]">
+                          <div className="bg-[var(--duke-fill-well)] p-4 border-b border-[var(--duke-edge-1)] flex justify-between items-center shrink-0">
+                              <h3 className="text-[var(--duke-ink-hi)] font-black uppercase tracking-widest flex items-center gap-2"><Activity size={18} className="text-[var(--duke-amber-ink)]"/> Flight Recorder</h3>
+                              <button onClick={() => setShowFlightRecorder(false)} className="text-[var(--duke-ink-3)] hover:text-red-500"><X size={20}/></button>
                           </div>
                           
-                          <div className="p-4 bg-[#0f0e0d]/60 flex justify-between items-center border-b border-[#3e3226]/60 shrink-0">
+                          <div className="p-4 bg-[var(--duke-fill-well)]/60 flex justify-between items-center border-b border-[var(--duke-edge-1)]/60 shrink-0">
                               <div className="flex gap-4">
-                                  <div className="text-center"><p className="text-[10px] text-[#8b7256] uppercase tracking-widest font-bold">Pending Receipts</p><p className="text-xl font-black text-[#ff9d00]">{pendingCount.transactions}</p></div>
+                                  <div className="text-center"><p className="text-[10px] text-[var(--duke-ink-3)] uppercase tracking-widest font-bold">Pending Receipts</p><p className="text-xl font-black text-[var(--duke-amber-ink)]">{pendingCount.transactions}</p></div>
                                   {/* was text-blue-500 — slate and blue were the only two colours
                                       in this panel that meant nothing. Pending NOO is a count, not
                                       an alarm, so it takes the quieter gold. */}
-                                  <div className="text-center"><p className="text-[10px] text-[#8b7256] uppercase tracking-widest font-bold">Pending NOO</p><p className="text-xl font-black text-[#c9a227]">{pendingCount.noo}</p></div>
+                                  <div className="text-center"><p className="text-[10px] text-[var(--duke-ink-3)] uppercase tracking-widest font-bold">Pending NOO</p><p className="text-xl font-black text-[#c9a227]">{pendingCount.noo}</p></div>
                               </div>
-                              <button onClick={clearFlightRecorder} className="px-3 py-1.5 bg-red-900/30 text-red-500 border border-red-500/30 rounded text-[11px] uppercase font-bold tracking-widest hover:bg-red-500 hover:text-white transition-colors">Clear Logs</button>
+                              <button onClick={clearFlightRecorder} className="px-3 py-1.5 bg-red-900/30 text-red-500 border border-red-500/30 rounded text-[11px] uppercase font-bold tracking-widest hover:bg-red-500 hover:text-[var(--duke-ink-hi)] transition-colors">Clear Logs</button>
                           </div>
 
-                          <div className="p-4 overflow-y-auto custom-scrollbar flex-1 space-y-2 bg-black font-mono">
+                          <div className="p-4 overflow-y-auto custom-scrollbar flex-1 space-y-2 bg-[var(--duke-well-solid)] font-mono">
                               
                               {/* 🚀 THE OFFLINE WAITING ROOM 🚀 */}
                               {pendingTxData && pendingTxData.length > 0 && (
-                                  <div className="mb-6 border-b-2 border-[#3e3226] pb-4">
+                                  <div className="mb-6 border-b-2 border-[var(--duke-edge-1)] pb-4">
                                       <h3 className="text-orange-400 font-black uppercase tracking-widest text-xs mb-3 flex items-center gap-2">
                                           <Database size={14}/> Ghost Ledger Queue ({pendingTxData.length})
                                       </h3>
                                       
                                       <div className="space-y-3 max-h-64 overflow-y-auto custom-scrollbar pr-2">
                                           {pendingTxData.map((tx, idx) => (
-                                              <details key={idx} className="bg-[#26211c] border border-orange-500/30 rounded-lg shadow-inner group">
+                                              <details key={idx} className="bg-[var(--duke-fill-panel)] border border-orange-500/30 rounded-lg shadow-inner group">
                                                   <summary className="p-3 flex justify-between items-center cursor-pointer select-none list-none outline-none">
                                                       <div>
-                                                          <span className="text-white font-bold uppercase block text-xs">{tx.customerName}</span>
-                                                          <span className="text-[#8b7256] text-[10px] uppercase">{tx.date}</span>
+                                                          <span className="text-[var(--duke-ink-hi)] font-bold uppercase block text-xs">{tx.customerName}</span>
+                                                          <span className="text-[var(--duke-ink-3)] text-[10px] uppercase">{tx.date}</span>
                                                       </div>
                                                       <div className="flex items-center gap-3">
                                                           <span className="bg-orange-900/50 text-orange-400 font-bold px-2 py-1 rounded text-[10px] uppercase border border-orange-700/50">
                                                               IN QUEUE
                                                           </span>
-                                                          <span className="text-orange-500 text-[10px] uppercase font-bold bg-black/30 px-2 py-1 rounded group-open:bg-black/50 hover:text-white transition-colors">
+                                                          <span className="text-orange-500 text-[10px] uppercase font-bold bg-[var(--duke-bar-2)] px-2 py-1 rounded group-open:bg-[var(--duke-shade)] hover:text-[var(--duke-ink-hi)] transition-colors">
                                                               View Receipt ▼
                                                           </span>
                                                       </div>
                                                   </summary>
                                                   
                                                   {/* EXPANDED RECEIPT DETAILS */}
-                                                  <div className="p-3 pt-0 border-t border-[#3e3226]/50 mt-1 bg-black/20 rounded-b-lg">
+                                                  <div className="p-3 pt-0 border-t border-[var(--duke-edge-1)]/50 mt-1 bg-[var(--duke-bar-3)] rounded-b-lg">
                                                       <div className="space-y-1 mb-2 mt-2">
                                                           {tx.items?.map((item, i) => (
-                                                              <div key={i} className="flex justify-between text-[10px] text-[#d4c5a3] border-b border-[#3e3226]/30 pb-1 mb-1">
-                                                                  <span>{item.qty} {item.unit} <span className="font-bold text-[#f5e6c8]">{item.name}</span></span>
+                                                              <div key={i} className="flex justify-between text-[10px] text-[var(--duke-ink-1)] border-b border-[var(--duke-edge-1)]/30 pb-1 mb-1">
+                                                                  <span>{item.qty} {item.unit} <span className="font-bold text-[var(--duke-paper-ink)]">{item.name}</span></span>
                                                                   <span className="font-mono">Rp {new Intl.NumberFormat('id-ID').format(item.calculatedPrice * item.qty)}</span>
                                                               </div>
                                                           ))}
                                                       </div>
                                                       
-                                                      <div className="flex justify-between items-center text-xs border-t border-[#5c4b3a] pt-2 mt-2">
-                                                          <span className="text-[#8b7256] uppercase font-bold text-[10px]">Total Revenue</span>
+                                                      <div className="flex justify-between items-center text-xs border-t border-[var(--duke-edge-2)] pt-2 mt-2">
+                                                          <span className="text-[var(--duke-ink-3)] uppercase font-bold text-[10px]">Total Revenue</span>
                                                           <span className="text-orange-400 font-black font-mono text-sm">Rp {new Intl.NumberFormat('id-ID').format(tx.total)}</span>
                                                       </div>
                                                   </div>
@@ -4492,19 +4492,19 @@ const handleGitHubMirror = async () => {
                                       
                                      
 
-                              <h3 className="text-[#8b7256] font-black uppercase tracking-widest text-[10px] mb-2 flex items-center gap-2">
+                              <h3 className="text-[var(--duke-ink-3)] font-black uppercase tracking-widest text-[10px] mb-2 flex items-center gap-2">
                                   <Activity size={12}/> System Telemetry Logs
                               </h3>
 
                               {syncLogs.length === 0 ? (
-                                  <p className="text-[#8b7256] text-center py-10 text-xs uppercase tracking-widest">No sync events recorded.</p>
+                                  <p className="text-[var(--duke-ink-3)] text-center py-10 text-xs uppercase tracking-widest">No sync events recorded.</p>
                               ) : (
                                   /* SUCCESS was green and the resting row was slate. Gold for done —
                                      the same plate the rest of the app uses for it — and the
                                      resting row is just the panel's own surface. Red and orange
                                      stay: those two are earning attention. */
                                   syncLogs.map((log) => (
-                                      <div key={log.id} className={`kpm-log-row p-3 rounded border text-xs leading-relaxed ${log.type === 'ERROR' ? 'bg-red-950/20 border-red-900/50 text-red-400' : log.type === 'SUCCESS' ? 'bg-[#c9a227]/10 border-[#8a6a2f]/60 text-[#d4af37]' : log.type === 'OFFLINE' ? 'bg-orange-950/20 border-orange-900/50 text-orange-400' : 'bg-[#0f0e0d] border-[#3e3226] text-[#d4c5a3]'}`}>
+                                      <div key={log.id} className={`kpm-log-row p-3 rounded border text-xs leading-relaxed ${log.type === 'ERROR' ? 'bg-red-950/20 border-red-900/50 text-red-400' : log.type === 'SUCCESS' ? 'bg-[var(--duke-brass-2)]/10 border-[#8a6a2f]/60 text-[var(--duke-brass-ink)]' : log.type === 'OFFLINE' ? 'bg-orange-950/20 border-orange-900/50 text-orange-400' : 'bg-[var(--duke-fill-well)] border-[var(--duke-edge-1)] text-[var(--duke-ink-1)]'}`}>
                                           <div className="text-[11px] opacity-50 mb-1">{new Date(log.timestamp).toLocaleString()}</div>
                                           <div>{log.message}</div>
                                       </div>

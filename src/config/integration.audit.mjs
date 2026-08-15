@@ -791,7 +791,10 @@ check(G16, 'the navigation steps aside for the gate, because it can never be cov
   /print-reset relative z-10 flex-1/.test(strip(themeSrc)),
   'the edge ribbon and the panel itself both need the guard — one without the other still leaves ' +
   'a control drawn over the lock screen');
-check(G16, 'the gate backdrop is solid black', /z-\[9999\] bg-black flex/.test(appCode),
+/* the claim is OPACITY, not the literal word "black" — the shell moved onto tokens 2026-08-15 and
+   `--duke-well-solid` is #000000 in dark, the same paint. What must never come back is an alpha. */
+check(G16, 'the gate backdrop is fully opaque',
+  /z-\[9999\] bg-\[var\(--duke-well-solid\)\] flex/.test(appCode),
   'at bg-black/95 the app behind bleeds through as ghost text and competes with the dot field');
 check(G16, 'the everyday login is the preview card, not the red alarm one',
   /Open the vault/.test(appCode) && !/bg-red-900\/20 hover:bg-red-900\/60/.test(appCode),

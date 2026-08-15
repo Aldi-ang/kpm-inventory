@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-15 22:18 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
+**Updated: 2026-08-15 22:41 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -50,6 +50,25 @@ it, because that switch carries its state by WHERE THE KNOB IS, which is also wh
 Mode. Asserting 3:1 there would fail a control that works.
 **Residual 2, both understood:** `--ink-disabled` (WCAG-exempt) and `.kpm-hold[data-phase]`, where
 the scan cannot see that `> .fill` has covered the button.
+
+### ✅ THE APP SHELL IS ON THE LIGHT PALETTE TOO — 527/527, 137 sites in `App.jsx`
+
+His screenshot, 2026-08-15: *"the panel inside is already on white mode, now u need to change the
+outside panel as well, including the top panel, and left dashboard that shows 4 option"*.
+**The shell was built in the SAME wood-and-brass language as the terminal**, hardcoded the same
+way — so it converted onto the same `--duke-*` tokens with the same role-aware script, plus six
+new `--shell-*` tokens for its cream labels and its orange. 110 hexes + 27 colour names.
+⚠️ **Dark values are the exact hexes they replace, as before — dark mode has not moved.**
+
+▶ **NOT DONE, and visible in light: `bg-white/5` ×15 and `border-white/10` ×8 in `App.jsx`.**
+These are the glass/frost effects on the header band and the dock. A white veil over a DARK ground
+is a highlight; over a pale ground it is nothing at all, so the glass simply stops reading in
+light mode. They need a token pair like the wells did (`rgba(255,255,255,.05)` dark →
+`rgba(46,38,26,.06)` light). **Straightforward, just not landed this session.**
+▶ Also left: a handful of one-off hexes the map did not cover — `#8b5cf6` / `#ec4899` are the
+Mythic rank frame and are ALLOWED by the palette law, so leave those.
+⚠️ `npx eslint src/App.jsx` reports **51 pre-existing errors** — verified unchanged by stashing
+this work and re-running. Not this session's, do not "fix" them inside a colour commit.
 
 ### Where things live
 

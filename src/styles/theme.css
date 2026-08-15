@@ -311,6 +311,17 @@ html.light { color-scheme: light; }
   /* the vignette behind the 3D wares. Pure black is right on a dark bench and
      wrong on a pale one, where it reads as a hole rather than a shadow. */
   --duke-vignette:     #000000;
+  /* ---- THE APP SHELL — header band, rail pod, nav, alcove ------------------
+     His screenshot, 2026-08-15: *"the panel inside is already on white mode, now u need to change
+     the outside panel as well, including the top panel, and left dashboard"*. The shell was built
+     in the SAME wood-and-brass language as the terminal and its colours were hardcoded the same
+     way, so it converts onto the same tokens. Dark values are the exact hexes they replace. */
+  --shell-ink:         #f0e2c0;   /* cream label on the dark shell */
+  --shell-ink-2:       #f7e9c8;
+  --shell-ink-3:       #8a7048;
+  --shell-orange-ink:  #e7700f;
+  --shell-orange-edge: #e7700f;
+  --shell-orange:      #e7700f;
 
   /* ---- the ones that were COLOUR NAMES, not hexes --------------------------
      🔴 THE SWEEP MISSED THESE AND HE FOUND THEM IN MINUTES: *"the customer
@@ -445,6 +456,14 @@ html.light {
   --duke-brass-5:      #e8ae00;
   --duke-brass-6:      #856722;
   --duke-vignette:     #6e6152;
+  /* the shell flips with everything else: cream label becomes dark ink, and the orange darkens
+     as TEXT and as an EDGE while staying orange as a FILL — the same role split as the terminal */
+  --shell-ink:         #2e2618;
+  --shell-ink-2:       #3a2f1c;
+  --shell-ink-3:       #4a3b26;
+  --shell-orange-ink:  #7a3a00;
+  --shell-orange-edge: #8a4300;
+  --shell-orange:      #c05e00;
 
   /* the colour-name half of the sweep — see the note on the dark block above */
   --duke-ink-hi:       #1a1512;   /* on wood: white becomes near-black */
