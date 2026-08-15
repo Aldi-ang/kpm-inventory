@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-15 14:31 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
+**Updated: 2026-08-15 15:05 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -27,7 +27,7 @@ not invent a new look for a tab; copy the bands / module kinds / slot codes / re
 | **General & Brand** | **0** | ✅ **DONE 2026-08-15, group 34, 18 checks** |
 | Tiers & Logic | 89 | ▶ **the last slice** |
 
-**422/422, `src/` clean.** The rack's spacing ladder was rebuilt on 2026-08-15 after his report
+**425/425, `src/` clean.** The rack's spacing ladder was rebuilt on 2026-08-15 after his report
 that modules read as one component — **12 / 16 / 20 / 40, and no inner number may reach an outer
 one.** Two checks in group 30 hold it. Read [[The KPM Control System]] and [[Off-Token Colour Migration Map]]
 in the A-Brain vault before touching a tab — the class list and the substitution table are there,
@@ -95,9 +95,23 @@ order:
 - ❓ **Raised, unanswered:** the 19px module titles are display-face CAPS with letter-spacing. Caps
   read slower than sentence case at that size. Left alone because it is this app's character —
   **if the tabs still feel heavy after he looks, that is the next thing to try.**
-- ✅ **BOTH MASCOT ASKS DONE 2026-08-15, `ad2a6536`, 422/422.** (a) The picture is back —
-  `121de10` reverted, on his watermark reason. (b) Moving the size slider calls the mascot out for
-  5s, idle, no speech. ✅ **He still has to look at it on his phone.**
+- ✅ **TEST — THE SIZE SLIDER, SECOND ATTEMPT (`03840f5`, 425/425).** He reported the first one
+  dead: *"can u fix the size slider please, it still didnt show the mascot when i interact with
+  it"*. 🔴 **THE ANSWER HE OWES IS A DIAGNOSTIC, NOT A YES/NO** — the slider now prints
+  **"Mr. Capy is out — bottom-right corner of the screen"** for 5s. **If that notice appears and
+  no capybara does, the event fired and the fault is DOWNSTREAM in `CapybaraMascot`** (mount,
+  stacking, or CSS) — not in the slider, and not worth touching SettingsView again. If the notice
+  never appears, the handler is still dying before the dispatch.
+  **Likely cause, fixed:** the dispatch was the LAST statement in `onChange`, behind
+  `setDoc(doc(db, ...))`. `doc()` throws SYNCHRONOUSLY on a bad path, which skips everything after
+  it — while `setAppSettings` one line earlier had already moved the number. Slider moves, mascot
+  never hears. `callMascot()` is now first and a check asserts nothing gets in front of it.
+  Also closed: an explicit peek now clears `suppressed` (the sales terminal's mute), which would
+  otherwise swallow every peek and look identical to a dead button.
+  ⚠️ **`SettingsView` has `if (!isAdmin) return (...)` at line 95** — every hook below it is
+  conditionally called, 10 eslint errors. New state went ABOVE it and the peek timer is a
+  module-level variable, not a `useRef`, so this change added no hook and no lint error.
+- ✅ **The picture is back** — `121de10` reverted (`ad2a6536`), on his watermark reason.
   🔴 **THE LESSON, and it is why a note here was wrong: AN OPEN RENDER GATE IS NOT VISIBILITY.**
   I had written that the mascot was "already on screen in Settings", reasoning only from the gate
   at `App.jsx:4503` (`user && !showAdminLogin`). He disproved it by looking: *"slider moved but
@@ -112,7 +126,12 @@ order:
   before setting its own, so a whole drag leaves one window, counted from the last move.
 - ▶ **THE A4 RECEIPT WATERMARK — his reason for wanting the picture back, and NOT yet built.**
   *"we might need this mascot photo for our watermark in our A4 printable receipt"*.
-  ❓ **ASK HIM FIRST: a faint full-page watermark behind the whole nota, or a small corner mark?**
+  ✅ **ANSWERED 2026-08-15: "B is good enough" — a SMALL CORNER MARK, not a full-page wash.**
+  ❓ **STILL OPEN, and it is the whole remaining question.** He added: *"the picture is following
+  the mascot image"*. Read as a worry, not an approval — a receipt is a business document and the
+  mascot image is a photo he can change from Settings, so today the nota's mark would change with
+  it. **Ask which he wants: the mark follows whatever mascot he picks, or the nota is pinned to
+  one fixed logo that Settings cannot move.** Do not build until he says.
   ⚠️ The print block is **NOT app UI** — the nota keeps KPM's company blue and the palette law
   stops at its edge, so the watermark must not be dragged onto the amber/cream tokens. ⚠️ The
   mascot's own wrapper carries `hide-on-print`; the watermark is a separate element, not that one.
