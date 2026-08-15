@@ -2636,6 +2636,21 @@ for (const [what, needle] of [
 check(G37, 'a rank no longer carries a Tailwind class as data',
   !/color: 'text-/.test(mtx),
   'a colour hidden in a data record is invisible to every className-based palette check');
+/* 🔴 HIS FIND, 2026-08-15: *"there is 2 default here"*. Both customer-access dropdowns listed a
+   "not set" line AND a Global line under the same words, because getCustomerAccessLevel() resolves
+   an absent permission to 'global' — ONE state wearing two names, and the second line could never
+   be chosen because selecting it produced the first. The fix reads absent AS global; deleting an
+   <option> that both <select>s were still VALUED at would have blanked the control for every tier
+   nobody had ever set, on the screen that decides who may edit customers. */
+check(G37, 'the customer-access dropdown offers each state exactly once',
+  !/<option value="none">Global/.test(mtx),
+  'two lines reading the same words is a menu where one of them can never be selected');
+check(G37, 'an unset customer access lands on Global instead of blanking the box',
+  (mtx.match(/CUSTOMER_EDIT_PERMS\.includes\(p\)\) \|\| 'customers_edit_global'/g) || []).length === 2,
+  'phone and desktop must fall back to the SAME state or one of the two shows an empty select');
+check(G37, "Reporting authority keeps its 'none' — there it really means no access",
+  /<option value="none">No Access<\/option>/.test(mtx),
+  'the two dropdowns look alike, but only one of them has a genuine off position');
 for (const cls of ['.kpm-matrix', '.kpm-toggle', '.kpm-chips', '.kpm-permrow', '.kpm-permlist'])
   check(G37, `${cls} is defined in theme.css, not invented in the JSX`,
     themeCss.includes(cls + ' ') || themeCss.includes(cls + ' {') || themeCss.includes(cls + '{'),

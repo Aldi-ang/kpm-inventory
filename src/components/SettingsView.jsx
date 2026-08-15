@@ -1402,10 +1402,20 @@ const PermissionMatrixEditor = ({ db, appId, userRole, userId }) => {
         setMatrix(newMatrix);
     };
 
-    // 🚀 CUSTOMER DIRECTORY ACCESS: 'none' in this dropdown means "not explicitly set" ->
-    // config/permissions.js's getCustomerAccessLevel() defaults that to customers_edit_global
-    // (today's unrestricted behavior), NOT a locked-out state. Unlike Reporting Authority's
-    // 'none' (which really means no access), this dropdown's 'none' is a synonym for Global.
+    // 🚀 CUSTOMER DIRECTORY ACCESS.
+    // ⚠️ THIS DROPDOWN HAS NO "not set" LINE, AND MUST NEVER GET ONE BACK. An absent
+    // customer-edit permission is NOT a locked-out state: config/permissions.js's
+    // getCustomerAccessLevel() returns 'global' when it finds none of the three, so "never set"
+    // and "Global" are ONE state wearing two names. Listing both put two identical lines in the
+    // menu — his find, 2026-08-15: *"there is 2 default here"*, and the second was unreachable.
+    // ⚠️ THE FIX IS ON THE READ SIDE, NOT THE MENU. Each <select> below now falls back to
+    // 'customers_edit_global', so a tier that was never set lands ON the Global line. Deleting
+    // the duplicate <option> alone would have left every unset tier valued at a choice that no
+    // longer exists — a blank box on the screen that decides who may edit customers.
+    // Reporting Authority's 'none' is a DIFFERENT thing: there it really means no access, which
+    // is why that dropdown keeps its option and this one does not.
+    // The 'none' guard below stays as a floor: if that value ever reaches here again it must
+    // clear the permission, never be pushed into the array as a permission named "none".
     const changeCustomerAccess = (tierId, newAccessLevel) => {
         const newMatrix = { ...matrix };
         let tierPerms = (newMatrix[tierId] || []).filter(p => !CUSTOMER_EDIT_PERMS.includes(p));
@@ -1622,10 +1632,9 @@ const PermissionMatrixEditor = ({ db, appId, userRole, userId }) => {
                                             <label className="kpm-field kpm-authority">
                                                 <span><Store size={12}/> Customer directory access</span>
                                                 <select
-                                                    value={(matrix[activeTier.id] || []).find(p => CUSTOMER_EDIT_PERMS.includes(p)) || 'none'}
+                                                    value={(matrix[activeTier.id] || []).find(p => CUSTOMER_EDIT_PERMS.includes(p)) || 'customers_edit_global'}
                                                     onChange={(e) => changeCustomerAccess(activeTier.id, e.target.value)}
                                                 >
-                                                    <option value="none">Global (edit any customer — default)</option>
                                                     <option value="customers_edit_global">Global (edit any customer — default)</option>
                                                     <option value="customers_edit_own_region">Own Region Only</option>
                                                     <option value="customers_view_only">View Only (no edits)</option>
@@ -1720,7 +1729,7 @@ const PermissionMatrixEditor = ({ db, appId, userRole, userId }) => {
                                     <tr className="authority">
                                         <td className="feat"><Store size={14} className="inline"/> Customer directory access</td>
                                         {tiers.map(tier => {
-                                            const currentCustomerAccess = (matrix[tier.id] || []).find(p => CUSTOMER_EDIT_PERMS.includes(p)) || 'none';
+                                            const currentCustomerAccess = (matrix[tier.id] || []).find(p => CUSTOMER_EDIT_PERMS.includes(p)) || 'customers_edit_global';
                                             return (
                                                 <td key={`customer-access-${tier.id}`} className="text-center">
                                                     <select
@@ -1728,7 +1737,6 @@ const PermissionMatrixEditor = ({ db, appId, userRole, userId }) => {
                                                         onChange={(e) => changeCustomerAccess(tier.id, e.target.value)}
                                                         className="kpm-inline"
                                                     >
-                                                        <option value="none">Global (default)</option>
                                                         <option value="customers_edit_global">Global (default)</option>
                                                         <option value="customers_edit_own_region">Own Region</option>
                                                         <option value="customers_view_only">View Only</option>

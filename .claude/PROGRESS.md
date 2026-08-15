@@ -84,21 +84,19 @@ order:
 
 ## ❓ WAITING ON ALDI — verbatim, do not paraphrase
 
-- ▶ **NEXT SESSION, HIS TWO ASKS — both about the Customer-directory dropdown.** *"there is 2
-  default here and redesign and animate the dropdown for this later after quota reset"*.
-  🔴 **1. THE DUPLICATE OPTION IS A REAL BUG AND IT WAS NOT SAFE TO FIX AT 12 MINUTES OF QUOTA
-  ON A PERMISSIONS SCREEN.** Both copies of the select — mobile (`~1621`) and desktop (`~1711`) in
-  `SettingsView.jsx` — list **two options that read the same and carry different values**:
-  `value="none"` and `value="customers_edit_global"`, both labelled "Global (default)".
-  ⚠️ **DO NOT JUST DELETE ONE.** They are not redundant, they are two states that MEAN the same
-  thing: `none` = the tier has no customer-edit permission recorded at all (the `|| 'none'`
-  fallback in `changeCustomerAccess`'s `value=`), `customers_edit_global` = it has one, explicitly.
-  Delete the wrong one and every tier in that state renders a blank or wrong selection.
-  **The safe fix is to collapse the STATE, not the option:** keep one visible "Global (default)"
-  option, and have the `value=` expression map BOTH stored states onto it. Check
-  `changeCustomerAccess` in `permissions.js`/`SettingsView` for what it writes when 'none' is
-  chosen before touching either. **Same shape almost certainly applies to Reporting authority's
-  "No Access".**
+- ✅ **1. THE DUPLICATE "Global (default)" IS FIXED — 498/498, group 37 + 3 checks.** His find:
+  *"there is 2 default here"*. Cause: `getCustomerAccessLevel()` (permissions.js:120) returns
+  `'global'` when it finds none of the three customer-edit perms, so **"never set" and "Global" are
+  ONE state wearing two names** — and the `none` line could never be chosen, because selecting it
+  produced the other one. **Fixed on the READ side, not the menu:** both selects now fall back to
+  `|| 'customers_edit_global'`, so an unset tier lands on the Global line; then the `none` option
+  was removed. Deleting the option alone would have blanked the control for every unset tier.
+  ⚠️ **Reporting authority was NOT the same shape** — the earlier note guessed wrong. Its `none`
+  really means no access (`changeReportAccess` clears the perm and nothing defaults it back), so
+  its "No Access" option stays, and a check now holds that line.
+  ✅ **TEST:** Settings → Tiers & Logic → the matrix. Customer directory access should show ONE
+  "Global" line, on both the phone list and the desktop grid, and every tier should show a filled
+  box — never an empty one. Set one tier to Own Region, Deploy, reopen: it must still read Own Region.
   ▶ **2. REDESIGN + ANIMATE THE DROPDOWN.** His words, deferred by him to after the reset. A
   native `<select>` cannot be animated or restyled past the closed box — the open list is the OS.
   Doing this properly means a custom listbox: button + popup, `aria-expanded`/`aria-activedescendant`,
