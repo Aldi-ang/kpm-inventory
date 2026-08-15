@@ -580,8 +580,9 @@ export default function SettingsView({
                                       <span className="kpm-read on">{tierSettings.length} defined</span>
                                   </div>
                                   <p className="kpm-desc">
-                                      The colour is the customer's pin on the map and the icon is the badge beside it.
-                                      Everything here saves the moment you change it — there is no Save button.
+                                      One line each: <b>badge · colour · name · kind</b>. The colour is the customer's
+                                      pin on the map and the badge sits beside it. Everything saves the moment you
+                                      change it — there is no Save button.
                                   </p>
                               </div>
                               <div className="kpm-shelf split">
@@ -612,83 +613,55 @@ export default function SettingsView({
                                   rejected twice. Each tier is a record now and its fields wrap. */}
                               <div className="kpm-shelf split">
                                   {tierSettings.map((tier, idx) => (
-                                      <div key={tier.id || idx} className="kpm-rec">
-                                          <div className="kpm-shelf">
-                                              {/* the badge as the customer sees it, beside the fields that make it,
-                                                  so a change is legible without hunting for the result */}
-                                              <div className="kpm-portrait">
-                                                  <div className="kpm-swatch" style={{ borderColor: tier.color }}>
-                                                      {tier.iconType === 'image'
-                                                          ? (tier.value ? <img src={tier.value} alt="" /> : <ImageIcon size={14} className="opacity-30"/>)
-                                                          : <span>{tier.value}</span>}
-                                                  </div>
-                                                  <label className="kpm-field">
-                                                      <span>Rank name</span>
-                                                      <input
-                                                          value={tier.label}
-                                                          onChange={(e) => {
-                                                              const newTiers = [...tierSettings];
-                                                              newTiers[idx].label = e.target.value;
-                                                              if (tier.id.startsWith('Tier_')) newTiers[idx].id = e.target.value.replace(/\s+/g, '_');
-                                                              setTierSettings(newTiers);
-                                                          }}
-                                                          onBlur={() => handleSaveTiers(tierSettings)}
-                                                      />
-                                                  </label>
-                                              </div>
-                                              <label className="kpm-field">
-                                                  <span>Pin colour</span>
-                                                  {/* ⚠️ `type="color"` KEEPS ITS OWN CHROME and takes no token. That is
-                                                      correct: it is the operating system's picker, and the value it
-                                                      returns is the customer's real pin colour, which by definition is
-                                                      not on this palette. */}
-                                                  <input type="color" value={tier.color} className="kpm-swatch-input"
-                                                      onChange={(e) => { const newTiers = [...tierSettings]; newTiers[idx].color = e.target.value; handleSaveTiers(newTiers); }} />
-                                              </label>
-                                              <label className="kpm-field">
-                                                  <span>Badge kind</span>
-                                                  <select value={tier.iconType} onChange={(e) => { const newTiers = [...tierSettings]; newTiers[idx].iconType = e.target.value; handleSaveTiers(newTiers); }}>
-                                                      <option value="emoji">Emoji</option>
-                                                      <option value="image">Custom logo</option>
-                                                  </select>
-                                              </label>
-                                              {tier.iconType === 'image' ? (
-                                                  <div className="kpm-acts">
-                                                      <label className="kpm-btn" htmlFor={`tier-upload-${idx}`}>
-                                                          <Upload size={14}/> {tier.value?.startsWith('data:') ? 'Change image' : 'Upload image'}
-                                                          <input id={`tier-upload-${idx}`} type="file" accept="image/*" className="hidden"
-                                                              onChange={(e) => handleTierIconSelect(e, idx)} />
-                                                      </label>
-                                                      {tier.value?.startsWith('data:') && (
-                                                          <button type="button" className="kpm-btn hazard"
-                                                              onClick={() => {
-                                                                  const newTiers = [...tierSettings];
-                                                                  newTiers[idx].value = '';
-                                                                  setTierSettings(newTiers);
-                                                                  handleSaveTiers(newTiers);
-                                                              }}
-                                                              title="Remove the uploaded logo and fall back to the emoji">
-                                                              Clear image
-                                                          </button>
-                                                      )}
-                                                  </div>
-                                              ) : (
-                                                  <label className="kpm-field">
-                                                      <span>Emoji</span>
-                                                      <input value={tier.value} placeholder="Paste an emoji here"
-                                                          onChange={(e) => { const newTiers = [...tierSettings]; newTiers[idx].value = e.target.value; handleSaveTiers(newTiers); }} />
-                                                  </label>
-                                              )}
+                                      /* 📏 ONE LINE PER RANK. His report, 2026-08-15: *"customer tier panel is
+                                         too large, better redesign it to make it smaller compact
+                                         minimalistic"*. It was a stacked record per rank — five labelled
+                                         fields and a full action strip — so six ranks filled a screen and a
+                                         half to edit six words and six colours.
+                                         A rank is really four small facts: a colour, a name, what kind of
+                                         badge, and the badge itself. They fit on one row, and the labels
+                                         that explained them go to the caption line above, said once, instead
+                                         of being repeated six times down the panel. */
+                                      <div key={tier.id || idx} className="kpm-rank">
+                                          <div className="kpm-swatch sm" style={{ borderColor: tier.color }}>
+                                              {tier.iconType === 'image'
+                                                  ? (tier.value ? <img src={tier.value} alt="" /> : <ImageIcon size={12} className="opacity-30"/>)
+                                                  : <span>{tier.value}</span>}
                                           </div>
-                                          {/* ⚠️ A WORDED DELETE, SO IT IS DELIBERATELY *NOT* `data-kpm-del`.
-                                              That mark drives an expanding control that prints "Delete" on
-                                              hover, which on a button already saying it would print the word
-                                              twice. Same migration the tenant registry and the biometric
-                                              device list already made — the icon count in group 25 drops by
-                                              one and the word below is what makes that a migration rather
-                                              than a control going missing. */}
-                                          <div className="acts">
-                                              <button type="button" className="kpm-btn hazard"
+                                          {/* ⚠️ `type="color"` KEEPS ITS OWN CHROME and takes no token. That is
+                                              correct: it is the operating system's picker, and the value it
+                                              returns is the customer's real pin colour, which by definition is
+                                              not on this palette. */}
+                                          <input type="color" value={tier.color} className="kpm-swatch-input" aria-label={`Pin colour for ${tier.label}`}
+                                              onChange={(e) => { const newTiers = [...tierSettings]; newTiers[idx].color = e.target.value; handleSaveTiers(newTiers); }} />
+                                          <input className="kpm-inline name" value={tier.label} aria-label="Rank name"
+                                              onChange={(e) => {
+                                                  const newTiers = [...tierSettings];
+                                                  newTiers[idx].label = e.target.value;
+                                                  if (tier.id.startsWith('Tier_')) newTiers[idx].id = e.target.value.replace(/\s+/g, '_');
+                                                  setTierSettings(newTiers);
+                                              }}
+                                              onBlur={() => handleSaveTiers(tierSettings)} />
+                                          <select className="kpm-inline kind" value={tier.iconType} aria-label="Badge kind"
+                                              onChange={(e) => { const newTiers = [...tierSettings]; newTiers[idx].iconType = e.target.value; handleSaveTiers(newTiers); }}>
+                                              <option value="emoji">Emoji</option>
+                                              <option value="image">Logo</option>
+                                          </select>
+                                          {tier.iconType === 'image' ? (
+                                              <label className="kpm-btn" htmlFor={`tier-upload-${idx}`}>
+                                                  <Upload size={12}/> {tier.value?.startsWith('data:') ? 'Change' : 'Upload'}
+                                                  <input id={`tier-upload-${idx}`} type="file" accept="image/*" className="hidden"
+                                                      onChange={(e) => handleTierIconSelect(e, idx)} />
+                                              </label>
+                                          ) : (
+                                              <input className="kpm-inline badge" value={tier.value} placeholder="Emoji" aria-label="Badge emoji"
+                                                  onChange={(e) => { const newTiers = [...tierSettings]; newTiers[idx].value = e.target.value; handleSaveTiers(newTiers); }} />
+                                          )}
+                                          {/* the delete goes back to the icon-and-sweep — a one-line row has no
+                                              room for a word, which is exactly what `data-kpm-del` is for, and
+                                              the confirm dialog still names the rank before anything happens */}
+                                          <div className="kpm-rowacts">
+                                              <button data-kpm-del data-label="Delete" type="button" title={`Delete ${tier.label}`}
                                                   onClick={async () => {
                                                       if(await confirmAction(`Are you sure you want to delete the tier: ${tier.label}?`)) {
                                                           const newTiers = tierSettings.filter((_, i) => i !== idx);
@@ -696,7 +669,7 @@ export default function SettingsView({
                                                           handleSaveTiers(newTiers);
                                                       }
                                                   }}>
-                                                  <Trash2 size={14}/> Delete rank
+                                                  <Trash2 size={14}/>
                                               </button>
                                           </div>
                                       </div>

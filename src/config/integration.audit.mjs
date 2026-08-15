@@ -1197,12 +1197,21 @@ check(G25, 'the desk rail collapses to one circle, and opening it moves nothing'
      which is exactly what happened the first time this was written. The value is unique. */
   /margin: 12px 14px 4px 112px;/.test(themeCss) &&
   !/\.kpm-topbar\.kpm-topbar \{ padding-left: 76px; \}/.test(themeCss) &&
-  /:focus-within \{ width: 351px/.test(themeCss) &&
+  /* 🔴 `:has(:focus-visible)`, NOT `:focus-within` — CHANGED 2026-08-15 ON HIS REPORT: *"when i
+     hover the sidebar, and release it, the sidebar will remain open and i cant press any button
+     on the features panel"*. `:focus-within` matches ANY focus, and a mouse click on a nav mark
+     focuses it — so the dock stayed open after the pointer left, held there by the focus its own
+     click had put inside it, lying over the workspace as a 351px column that ate the next click.
+     The keyboard requirement this check was protecting is unchanged: a tab still opens the dock,
+     because `:focus-visible` is exactly the focus a keyboard produces. */
+  /:has\(:focus-visible\) \{ width: 351px/.test(themeCss) &&
+  !/\[data-kpm-rail\][^\n]*:focus-within/.test(themeCss) &&
   /\[data-kpm-rail\] \.kpm-rail-pod > \* \{ animation: none; \}/.test(themeCss) &&
   /<div className="kpm-rail-pod">/.test(shellSrc) &&
   /<span className="kpm-rail-totem"/.test(shellSrc),
   'the pod is `display: contents` on a phone, so none of this reaches the layout he already ' +
-  'signed off; and :focus-within is not optional — at rest every mark is invisible but tabbable');
+  'signed off; and the open state must be keyboard-reachable — :has(:focus-visible), never ' +
+  ':focus-within, which a mouse click also satisfies and which pinned the dock open over the app');
 /* ⚠️ A RULE THAT EXISTS FOR TWO SCREENS AND NOT THE THIRD. `.kpm-rail-totem` had a desk-with-hover
    rule (it becomes the collapsed circle) and a desk-without-hover rule (hidden), and the phone —
    which matches neither media query — fell through to a bare inline <span>. It therefore drew the
@@ -1533,8 +1542,12 @@ const delMarks = DEL_FILES.reduce((n, f) =>
    that one stays marked — and this run is also where the needle's strictness earned its keep:
    writing `<button type="button" data-kpm-del …>` silently unmarks a button, because the needle
    requires the attribute first. The count caught it; nothing else would have. */
-check(G25, 'every icon-only delete button in the app wears the expanding control', delMarks === 13,
-  `found ${delMarks} marked, expected 13 — a new icon-only delete button needs ` +
+/* 13 → 14 on 2026-08-15, and this one goes UP, which is the first time. The customer-tier row was
+   compacted to a single line on his *"too large … smaller compact minimalistic"*, and a one-line
+   row has no room for the word — so that delete went back to a glyph and back under the sweep.
+   The word and the mark are alternatives, and which one is right follows the row's width. */
+check(G25, 'every icon-only delete button in the app wears the expanding control', delMarks === 14,
+  `found ${delMarks} marked, expected 14 — a new icon-only delete button needs ` +
   '`data-kpm-del data-label="Delete"` on it, and one that carries its own word ("Remove", "DEL") ' +
   'must NOT be marked or the label prints twice');
 check(G25, 'the delete rules outrank the Tailwind classes still on those buttons',
@@ -2367,10 +2380,23 @@ check(G35, 'every module declares its kind and prints its slot',
 check(G35, 'no fixed-width sled and no inner scrollbar in the tier list',
   !/min-w-\[\d+px\]/.test(tiersCode) && !/overflow-x-auto/.test(tiersCode),
   'he has rejected the inner scrollbar twice; it came back here as a fixed minimum width');
-/* the pair edit that makes the group-25 count drop a migration and not a loss */
-check(G35, 'the tier delete carries its own word instead of the icon mark',
-  tiersCode.includes('Delete rank') && !tiersCode.includes('data-kpm-del'),
-  'marked AND worded prints "Delete" twice; unmarked and unworded is a bare glyph on a no-undo act');
+/* 📏 BACK TO THE ICON AND THE SWEEP, 2026-08-15, on his *"customer tier panel is too large …
+   smaller compact minimalistic"*. The stacked record became one row per rank, and a one-line row
+   has no room for the word "Delete rank" — which is precisely the case `data-kpm-del` exists for:
+   the glyph carries the act and the sweep prints the word on hover. Marked again, so the group-25
+   count goes back up by one. The confirm dialog still names the rank before anything happens. */
+check(G35, 'the compact tier row deletes by icon-and-sweep, not a bare glyph',
+  tiersCode.includes('data-kpm-del data-label="Delete"') && !tiersCode.includes('Delete rank'),
+  'a bare trash glyph with no label on a no-undo act is the thing the sweep was built to fix');
+/* the row must stay a row: no fixed widths, so it wraps on a phone instead of growing a scrollbar */
+/* ⚠️ THE NEGATIVE IS SCOPED TO THE RANK ROW, NOT TO `.kpm-rec` IN GENERAL — that was the first
+   draft and it failed on correct code: the promotion-rules module below still uses `.kpm-rec`
+   legitimately, for its rank name line. Fourth time this week a needle has been too broad. */
+check(G35, 'a rank is one wrapping line, not a stacked record',
+  /\.kpm-rank \{ display: flex; flex-wrap: wrap;/.test(themeCss) &&
+  tiersCode.includes('key={tier.id || idx} className="kpm-rank"') &&
+  !tiersCode.includes('key={tier.id || idx} className="kpm-rec"'),
+  'the stacked version ran six ranks to a screen and a half to edit six words and six colours');
 /* MOUNT CHECK PER CONTROL. None of these has another route in the app, and a control lost to a
    cosmetic edit is silent — nothing errors, the button is simply gone. */
 for (const [what, needle] of [

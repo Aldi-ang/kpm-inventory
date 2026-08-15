@@ -1278,7 +1278,13 @@ html.lite-mode .kpm-topbar { transition: none; }
   [data-kpm-rail][data-kpm-rail] {
     position: fixed; left: 0; right: auto; top: 0; bottom: 0;
     width: 64px; margin-right: 0;
-    transition: width 340ms cubic-bezier(.22, 1, .36, 1);
+    /* 🕓 SMOOTHER AUTOCLOSE — his report, 2026-08-15: *"smoothen the autoclose mechanic on the
+       side bar"*. Opening is instant so it feels responsive to the reach; CLOSING waits 220ms
+       and takes longer, so clipping the edge on the way past a mark does not slam it shut and
+       a pointer that strays one pixel out and back never sees a flicker. The delay is only on
+       the resting rule, so `:hover` cancels it the moment the pointer returns. */
+    transition: width 380ms cubic-bezier(.22, 1, .36, 1);
+    transition-delay: 220ms;
   }
   /* 📏 THE DOCK IS AS TALL AS ITS BUTTONS — his report, 2026-08-15: *"it looks better when the
      sidebar panel height follow how many buttons are there instead of expanding all the way to
@@ -1309,22 +1315,49 @@ html.lite-mode .kpm-topbar { transition: none; }
   [data-kpm-rail] .kpm-expand:hover::after,
   [data-kpm-rail] .kpm-expand:focus-visible::after,
   [data-kpm-rail] .kpm-expand:active::after { width: 42px; padding-right: 12px; }
-  /* :focus-within, not only :hover — at rest every mark is invisible but still tabbable, so
-     keyboard focus has to open the same capsule the pointer does or it lands on nothing */
+  /* keyboard focus has to open the same capsule the pointer does, or a tab lands on a mark that
+     is invisible. `:has(:focus-visible)` rather than `:focus-within` — see the note below on why
+     "any focus" was the wrong test and what it cost him. */
   /* 351px, not 292: measured from the longest tab name. "Receivables & Consignment" is 219px of
      label, and it starts 132px from the dock's left edge — 351 is where it ends. A shorter panel
      slices the name off silently, because the panel is the box that clips. */
+  /* 🔴 `:has(:focus-visible)`, NOT `:focus-within` — THIS WAS THE BUG HE REPORTED, 2026-08-15:
+     *"when i hover the sidebar, and release it, the sidebar will remain open and i cant press
+     any button on the features panel"*.
+     `:focus-within` matches ANY focus, and clicking a nav mark with a mouse focuses it. So the
+     rail stayed open after the pointer left — held there by the focus its own click had put
+     inside it — and while open it was a 351px column lying over the workspace eating the next
+     click. The first press on a feature did nothing; the second worked, because the first had
+     only moved focus out.
+     `:has(:focus-visible)` matches only the focus the browser judges KEYBOARD-driven, so tabbing
+     still opens the dock and reads it out, while a mouse click no longer pins it open. */
   [data-kpm-rail][data-kpm-rail]:hover,
-  [data-kpm-rail][data-kpm-rail]:focus-within { width: 351px; }
+  [data-kpm-rail][data-kpm-rail]:has(:focus-visible) { width: 351px; transition-delay: 0s; }
   /* 🔑 THE LOGO IS THE TRIGGER, not the column — *"Hover the logo, and the pill unfurls"*, and
      *"The page stays clean — one logo, nothing else — until someone reaches for it"*. At rest the
      panel takes no pointer events at all, so the 72px strip is not an invisible wall down the
      side of the app; only the totem is hittable. Hovering a descendant still puts :hover on this
      element, which is what opens it, and once open the whole panel takes events again so the
      pointer can travel from the logo to any mark without it closing underneath. */
+  /* 🔑 THE PANEL NEVER TAKES EVENTS — THE POD DOES. His second ask in the same message: *"i want
+     the features to be use able even when the sidebar is open"*.
+     The panel opens to 351px but the capsule inside it is 100px; the other 251px exists only so
+     the labels have room to unfurl. Handing events to the PANEL made that empty strip an
+     invisible sheet over a third of the workspace whenever the dock was open — every click
+     landing on nothing.
+     Events belong to `.kpm-rail-pod` and its descendants, which is the capsule plus the labels
+     that overhang it (they are children of the marks, so they inherit it). Everything the dock
+     is not stays clickable, open or closed. Hovering any of those descendants still puts
+     `:hover` on the panel, so travelling from the totem to a mark keeps it open exactly as
+     before. */
   [data-kpm-rail][data-kpm-rail] { pointer-events: none; }
-  [data-kpm-rail][data-kpm-rail]:hover,
-  [data-kpm-rail][data-kpm-rail]:focus-within { pointer-events: auto; }
+  /* ⚠️ ONLY WHILE OPEN. The pod is 100px wide at rest but the panel clips it to 64, and its
+     other children sit at `opacity: 0` rather than `display: none` (opacity animates, display
+     does not) — so handing the pod events unconditionally would make a column of INVISIBLE
+     buttons hittable down the side of the app. At rest the totem alone takes events; it
+     re-enables them on itself further down, which works fine under a `none` ancestor. */
+  [data-kpm-rail][data-kpm-rail]:hover .kpm-rail-pod,
+  [data-kpm-rail][data-kpm-rail]:has(:focus-visible) .kpm-rail-pod { pointer-events: auto; }
   /* the pod never widens — only the window around it does.
      📏 100px, up from 64, and this is what makes the dock look THINNER rather than wider. His
      ask: *"make the sidebar thinner, and reduce space between each column ... make the space
@@ -1348,7 +1381,7 @@ html.lite-mode .kpm-topbar { transition: none; }
      its height animate; the left edge never moves. */
   .kpm-rail-pod::before { left: 4px; right: 40px; top: 12px; height: 56px; border-radius: 999px; }
   [data-kpm-rail]:hover .kpm-rail-pod::before,
-  [data-kpm-rail]:focus-within .kpm-rail-pod::before {
+  [data-kpm-rail]:has(:focus-visible) .kpm-rail-pod::before {
     left: 0; right: 0; top: 12px; height: calc(100% - 24px); border-radius: 30px;
   }
   /* everything but the totem is faded while it is a circle. Faded, NOT removed: `display` cannot
@@ -1372,7 +1405,7 @@ html.lite-mode .kpm-topbar { transition: none; }
   [data-kpm-rail] .kpm-rail-pod > * { animation: none; }
   .kpm-rail-pod > *:not(.kpm-rail-totem) { opacity: 0; transition: opacity 140ms ease-out; }
   [data-kpm-rail]:hover .kpm-rail-pod > *:not(.kpm-rail-totem),
-  [data-kpm-rail]:focus-within .kpm-rail-pod > *:not(.kpm-rail-totem) {
+  [data-kpm-rail]:has(:focus-visible) .kpm-rail-pod > *:not(.kpm-rail-totem) {
     opacity: 1; transition: opacity 260ms ease-out 120ms;
   }
   /* the whole circle is the target, not the 22px glyph inside it */
@@ -1384,7 +1417,7 @@ html.lite-mode .kpm-topbar { transition: none; }
     transition: opacity 180ms ease-out;
   }
   [data-kpm-rail]:hover .kpm-rail-totem,
-  [data-kpm-rail]:focus-within .kpm-rail-totem { opacity: 0; }
+  [data-kpm-rail]:has(:focus-visible) .kpm-rail-totem { opacity: 0; }
   /* ONE column by default — "shrink in to 1 button big" — and TWO once the tab list passes ten,
      which is `is-two`, set in the shell from `visibleMenu.length`. His rule: a lower tier sees
      fewer tabs and therefore never gets a second column. */
@@ -1577,8 +1610,10 @@ html.lite-mode .kpm-topbar { transition: none; }
     opacity: 0;
     transition: opacity 140ms ease-out, color 180ms ease-out, transform 180ms ease-out;
   }
+  /* the fifth and last of the pair — all five must agree, or the capsule stays drawn open while
+     the panel that clips it has already closed, and the marks get sliced down their right side */
   [data-kpm-rail]:hover .kpm-rail-grid .kpm-rail-mark,
-  [data-kpm-rail]:focus-within .kpm-rail-grid .kpm-rail-mark {
+  [data-kpm-rail]:has(:focus-visible) .kpm-rail-grid .kpm-rail-mark {
     opacity: 1;
     transition: opacity 240ms ease-out calc(130ms + var(--i, 0) * 26ms),
                 color 180ms ease-out, transform 180ms ease-out;
@@ -2336,6 +2371,32 @@ html.lite-mode .kpm-title-rule { animation: none; width: 100%; }
 /* the same colour again at reading size, inside a record's name line */
 .kpm-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%;
   vertical-align: baseline; }
+
+/* ---- ONE RANK, ONE LINE ------------------------------------------------------
+   His report, 2026-08-15: *"customer tier panel is too large, better redesign it
+   to make it smaller compact minimalistic"*. Each rank was a stacked record with
+   five labelled fields and its own action strip, so six ranks ran to a screen and
+   a half — to edit six words and six colours.
+
+   A rank is four small facts. They fit on one row, and the words that labelled
+   them are said ONCE in the module's caption instead of six times down the panel.
+   It wraps rather than scrolls: at 375px the name keeps the first line and the
+   rest fall under it. No fixed width anywhere, so there is nothing to drag. */
+.kpm-rank { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s2);
+  padding: var(--s2) 0; border-bottom: 1px solid var(--line); }
+.kpm-rank:last-child { border-bottom: 0; }
+/* the name takes the slack; everything else is only as wide as it needs to be */
+.kpm-rank > .kpm-inline.name { flex: 1 1 120px; min-width: 0; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .08em; }
+.kpm-rank > .kpm-inline.kind { flex: 0 0 auto; }
+.kpm-rank > .kpm-inline.badge { flex: 0 0 64px; text-align: center; }
+.kpm-rank > .kpm-swatch-input { flex: 0 0 44px; }
+.kpm-rank > .kpm-btn { flex: 0 0 auto; }
+.kpm-rank > .kpm-rowacts { margin-left: auto; }
+/* 36px, not 44: it is a swatch, not a control — nothing about it is tappable, and
+   the row's height is set by the inputs beside it either way */
+.kpm-swatch.sm { width: 36px; height: 36px; }
+.kpm-swatch.sm > span { font-size: 16px; }
 
 /* ---- THE COMMAND CENTER HEADER AND ITS TAB LIST -----------------------------
    His screenshots, 2026-08-15: *"next we will need to redesign this set of
