@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-15 16:29 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
+**Updated: 2026-08-15 17:00 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -27,7 +27,7 @@ not invent a new look for a tab; copy the bands / module kinds / slot codes / re
 | **General & Brand** | **0** | ✅ **DONE 2026-08-15, group 34, 18 checks** |
 | Tiers & Logic | 89 | ▶ **the last slice** |
 
-**430/430, `src/` clean.** The rack's spacing ladder was rebuilt on 2026-08-15 after his report
+**432/432, `src/` clean.** The rack's spacing ladder was rebuilt on 2026-08-15 after his report
 that modules read as one component — **12 / 16 / 20 / 40, and no inner number may reach an outer
 one.** Two checks in group 30 hold it. Read [[The KPM Control System]] and [[Off-Token Colour Migration Map]]
 in the A-Brain vault before touching a tab — the class list and the substitution table are there,
@@ -133,6 +133,22 @@ order:
   now Company · 04. 64px at 28% opacity, inline-styled (printing clones the node into a fresh
   window where a print stylesheet would beat a utility class), A4 only, nothing renders when unset.
   ⚠️ **The nota keeps KPM company blue — the palette law stops at the print block.**
+- ✅ **"VIEW RECEIPT" BUILT 2026-08-15, `dc238ba`, 432/432.** *"can u add view receipt button just
+  below the mascot watermark photo panel?"* — own shelf under the picker. Opens a scaled A4 sample
+  sheet (`src/components/ReceiptPreview.jsx`) so he can check the mark without printing.
+  ⚠️ **IT FOUND A BUG IN THE COMMIT BEFORE IT.** The mark had been anchored to `.print-receipt`,
+  which for A4 is only the outer modal shell — the sheet is `.a4-print-jail` inside a scrolling
+  wrapper — so it sat level with the action buttons, not on the paper. Inside the sheet now, which
+  also makes it A4-only by construction.
+  🔑 **Geometry lives in `src/config/receiptWatermark.js` and BOTH screens import it.** A preview
+  is only useful if it agrees with what prints; two hand-typed opacities drift the first time one
+  is nudged, and a preview that lies is worse than none because he would trust it. A check asserts
+  the preview declares no opacity of its own.
+  ⚠️ The preview says **SAMPLE** twice, on purpose — letterhead/signature/bank/mark are his REAL
+  settings, so the invented goods are the one part that could mislead, and a preview mistaken for
+  a real nota is a document that gets handed to a customer.
+  ❓ **Untested on paper — the 64px / 28% numbers are judgement, not measurement.** If it prints
+  too faint or too strong, both live in that one config file.
   ⚠️ The print block is **NOT app UI** — the nota keeps KPM's company blue and the palette law
   stops at its edge, so the watermark must not be dragged onto the amber/cream tokens. ⚠️ The
   mascot's own wrapper carries `hide-on-print`; the watermark is a separate element, not that one.
