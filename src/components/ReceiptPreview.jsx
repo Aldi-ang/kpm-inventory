@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { X } from 'lucide-react';
+import { X, ZoomIn, ZoomOut, Maximize2 } from 'lucide-react';
 import { WATERMARK_STYLE, WATERMARK_POSITION, watermarkFrom } from '../config/receiptWatermark';
 
 /* ── "VIEW RECEIPT", THE BUTTON UNDER THE WATERMARK PANEL ──────────────────────────────────────
@@ -29,7 +29,15 @@ import { WATERMARK_STYLE, WATERMARK_POSITION, watermarkFrom } from '../config/re
 // re-measured by hand, which is exactly the drift the shared constants prevent.
 const PAGE_W = 794;
 const PAGE_H = 1123;
-const SCALE = 0.42;   // 794 -> 333px, fits a 375px phone with room for the frame
+const FIT = 0.42;   // 794 -> 333px, fits a 375px phone with room for the frame
+/* His ask, 2026-08-15: *"can u add zoom button to the receipt view"*. A mark that is 8% of the
+   page width is about 27px at fit — enough to see WHERE it sits, not enough to judge whether the
+   picture itself survived being shrunk, which is the other half of the question this screen
+   exists to answer. 1.5 is a little past life size on a 96dpi screen. */
+const MIN_ZOOM = FIT;
+const MAX_ZOOM = 1.5;
+const STEP = 0.2;
+const clampZoom = (z) => Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, Math.round(z * 100) / 100));
 
 const SAMPLE_ROWS = [
     { no: 1, name: 'SAMPLE — Gudang Garam Surya 16', qty: '10 slop', amount: 'Rp 2.150.000' },
@@ -37,6 +45,7 @@ const SAMPLE_ROWS = [
 ];
 
 export default function ReceiptPreview({ appSettings, editCompanyProfile, onClose }) {
+    const [zoom, setZoom] = useState(FIT);
     const watermarkSrc = watermarkFrom(appSettings);
     const companyName = appSettings?.companyName || editCompanyProfile?.name || 'PT KARYAMEGA PUTERA MANDIRI';
     const companyAddress = appSettings?.companyAddress || editCompanyProfile?.address || 'Jl. Raya Magelang - Purworejo Km. 11';
@@ -44,18 +53,44 @@ export default function ReceiptPreview({ appSettings, editCompanyProfile, onClos
     return createPortal(
         <div className="fixed inset-0 z-[9998] bg-black/85 flex flex-col items-center justify-start gap-3 p-4 overflow-y-auto"
             onClick={onClose}>
-            <div className="w-full max-w-[360px] flex items-center justify-between shrink-0 pt-2">
+            {/* ⚠️ THE BAR STOPS THE CLICK. The backdrop closes on click, so without this every
+                press of + would zoom once and shut the preview in the same gesture. */}
+            <div className="w-full max-w-3xl flex flex-wrap items-center justify-between gap-2 shrink-0 pt-2"
+                onClick={(e) => e.stopPropagation()}>
                 <span className="kpm-read on">Watermark preview · sample nota</span>
-                <button type="button" className="kpm-btn" onClick={onClose} aria-label="Close preview">
-                    <X size={14} /> Close
-                </button>
+                <div className="kpm-acts">
+                    <button type="button" className="kpm-btn" aria-label="Zoom out"
+                        onClick={() => setZoom(z => clampZoom(z - STEP))} disabled={zoom <= MIN_ZOOM}>
+                        <ZoomOut size={14} />
+                    </button>
+                    {/* the number is the readout, so the two buttons do not have to carry it */}
+                    <span className="kpm-read">{Math.round(zoom * 100)}%</span>
+                    <button type="button" className="kpm-btn" aria-label="Zoom in"
+                        onClick={() => setZoom(z => clampZoom(z + STEP))} disabled={zoom >= MAX_ZOOM}>
+                        <ZoomIn size={14} />
+                    </button>
+                    <button type="button" className="kpm-btn" onClick={() => setZoom(FIT)} disabled={zoom === FIT}>
+                        <Maximize2 size={14} /> Fit
+                    </button>
+                    <button type="button" className="kpm-btn" onClick={onClose} aria-label="Close preview">
+                        <X size={14} /> Close
+                    </button>
+                </div>
             </div>
 
-            {/* the frame is exactly the scaled page, so the sheet does not float in dead space */}
-            <div style={{ width: PAGE_W * SCALE, height: PAGE_H * SCALE }}
-                className="shrink-0 overflow-hidden shadow-2xl"
+            {/* ⚠️ THREE BOXES, AND EACH ONE IS LOAD-BEARING.
+                OUTER scrolls and is capped to the viewport, so zooming past the screen pans
+                instead of spilling off the sides where a centred flex child cannot be scrolled
+                back to. MIDDLE is a sizer at the SCALED dimensions — a `transform` does not
+                change the space an element reserves, so without it the scroller would think the
+                page is always 794x1123 and the scrollbars would be wrong at every zoom but 100%.
+                INNER is the page itself at its true A4 size, scaled as a whole — which is what
+                keeps the watermark honest: its size relative to the page is never recomputed. */}
+            <div className="shrink-0 overflow-auto shadow-2xl"
+                style={{ maxWidth: '100%', maxHeight: '72vh' }}
                 onClick={(e) => e.stopPropagation()}>
-                <div style={{ width: PAGE_W, height: PAGE_H, transform: `scale(${SCALE})`, transformOrigin: 'top left',
+                <div style={{ width: PAGE_W * zoom, height: PAGE_H * zoom }}>
+                <div style={{ width: PAGE_W, height: PAGE_H, transform: `scale(${zoom})`, transformOrigin: 'top left',
                               backgroundColor: '#ffffff', color: '#000000', boxSizing: 'border-box' }}
                     className="p-12 font-sans relative">
 
@@ -116,12 +151,13 @@ export default function ReceiptPreview({ appSettings, editCompanyProfile, onClos
 
                     {watermarkSrc && <img src={watermarkSrc} alt="" className={WATERMARK_POSITION} style={WATERMARK_STYLE} />}
                 </div>
+                </div>
             </div>
 
             {/* says what to do about it, rather than leaving him to guess whether it is adjustable */}
             <p className="kpm-desc max-w-[360px] text-center shrink-0 pb-4">
                 {watermarkSrc
-                    ? 'This is the size and weight your mark prints at on A4. Thermal slips never carry it. If it looks too faint or too strong on paper, say so and it is one number to change.'
+                    ? 'This is the size and weight your mark prints at on A4 — zooming magnifies the whole page at once, so the mark never grows on its own. Thermal slips never carry it. If it looks too faint or too strong on paper, say so and it is one number to change.'
                     : 'No watermark set yet — choose a picture above and it will appear in this corner.'}
             </p>
         </div>,

@@ -2243,6 +2243,30 @@ check(G34, 'View receipt sits under the watermark picker',
 /* ⚠️ THE PREVIEW MUST NEVER PASS FOR A REAL NOTA. It carries his real letterhead, signature,
    bank block and mark — the parts he is checking — so the invented goods are the one thing that
    could mislead. A preview mistaken for a genuine nota is a document handed to a customer. */
+/* 🔍 ZOOM, his ask 2026-08-15: *"can u add zoom button to the receipt view"*. At fit the mark is
+   ~27px — enough to see WHERE it sits, not enough to judge whether the picture survived being
+   shrunk, which is the other half of what this screen is for. */
+check(G34, 'the preview zoom is clamped at both ends',
+  prevSrc.includes('Math.min(MAX_ZOOM, Math.max(MIN_ZOOM,') &&
+  /disabled=\{zoom <= MIN_ZOOM\}/.test(prevSrc) && /disabled=\{zoom >= MAX_ZOOM\}/.test(prevSrc),
+  'unclamped, one held press either collapses the page to nothing or scrolls it off the screen');
+/* ⚠️ THE BACKDROP CLOSES ON CLICK. Without a stop on the toolbar, every press of + would zoom
+   once and shut the preview in the same gesture — indistinguishable from a broken button. */
+check(G34, 'the zoom bar does not close the preview it is zooming',
+  (prevSrc.match(/onClick=\{\(e\) => e\.stopPropagation\(\)\}/g) || []).length >= 2,
+  'one press would zoom and close at the same time, which reads as the button not working');
+/* 🔑 A `transform` DOES NOT CHANGE THE SPACE AN ELEMENT RESERVES. Without a sizer at the scaled
+   size the scroller believes the page is always 794x1123, so the scrollbars are wrong at every
+   zoom except 100% and the bottom of the nota cannot be reached. */
+check(G34, 'the zoomed page reserves its real space so it can be scrolled',
+  /width: PAGE_W \* zoom, height: PAGE_H \* zoom/.test(prevSrc) &&
+  /maxWidth: '100%', maxHeight: '72vh'/.test(prevSrc),
+  'a centred flex child wider than its parent cannot be scrolled back to — the left edge is lost');
+/* the whole page scales as ONE element, so the mark's size relative to the paper is never
+   recomputed. Zoom magnifies the question; it must not change the answer. */
+check(G34, 'zoom scales the whole page, never the mark on its own',
+  prevSrc.includes('transform: `scale(${zoom})`') && prevSrc.includes('style={WATERMARK_STYLE}'),
+  'scaling the mark separately would make the preview disagree with the printed page again');
 check(G34, 'the preview says on its face that it is a sample',
   prevSrc.includes('Sample only · not a real transaction') && prevSrc.includes('PREVIEW ONLY'),
   'a preview that looks like a real nota eventually gets printed and handed over as one');
