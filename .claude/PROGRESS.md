@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-15 18:17 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
+**Updated: 2026-08-15 18:33 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -34,7 +34,7 @@ not invent a new look for a tab; copy the bands / module kinds / slot codes / re
 **LIGHT MODE IS NOW THE FRONT** — his stated order, and every screen converted above gets it
 mostly free (one token name resolves to both themes; no `dark:` variant was written).
 
-**489/489, `src/` clean.** The rack's spacing ladder was rebuilt on 2026-08-15 after his report
+**490/490, `src/` clean.** The rack's spacing ladder was rebuilt on 2026-08-15 after his report
 that modules read as one component — **12 / 16 / 20 / 40, and no inner number may reach an outer
 one.** Two checks in group 30 hold it. Read [[The KPM Control System]] and [[Off-Token Colour Migration Map]]
 in the A-Brain vault before touching a tab — the class list and the substitution table are there,
@@ -99,6 +99,16 @@ order:
 - ❓ **Offered, unanswered:** if the hold feels like enough on its own, the FIRST of the two wipe
   dialogs could go, leaving hold → FINAL WARNING. **Not done — removing a confirmation on a
   no-undo act is his explicit call, never a side effect of a nicer button.**
+- ✅ **TEST — THE MATRIX TOGGLES ARE A REAL SWITCH NOW (`912796b`, 490/490).** Built from the
+  video he recorded: *"i want u to make the toggle button for the matric to be like this video,
+  amber suit our system well so use it on this button as well"*. Amber filled pill, knob **taller
+  than its track and proud of both ends** (32 in a 26, travelling 24) — that overhang is the
+  detail that makes it read as a switch and not a coloured bar.
+  🔑 **It replaced two swapped lucide glyphs, and that is the real upgrade** — two different
+  icons cannot slide, so the old control had nothing but colour to say which way it was set.
+  ⚠️ **The glow behind the knob in his video is DELIBERATELY absent** — it is a shadow, Lite Mode
+  strips it, and a glowing "allowed" is exactly what made this grid unreadable an hour earlier.
+  Position carries the state; amber is decoration on top of it.
 - ✅ **TEST — THE SIDEBAR, and it is the one most likely to still be wrong (`8a3d94d`, 489/489).**
   His report: *"when i hover the sidebar, and release it, the sidebar will remain open and i cant
   press any button on the features panel"* + *"i want the features to be use able even when the
