@@ -2842,6 +2842,73 @@ check(G39, 'the Duke palette is measured, not just declared',
   /duke-amber-ink/.test(fs.readFileSync('src/config/contrast.selfcheck.mjs', 'utf8')),
   'a palette nobody measures is how #8a4f00 shipped at 3,03:1 in the first pass of this very file');
 
+/* ── 40. the veils: the third spelling of the colour-name bug ────────────────
+   The hex sweep missed colour NAMES (group 39), and the name sweep missed names WITH AN ALPHA.
+   `bg-white/5` is a white film: over the black bench it is a lit recess you can see the walls of,
+   over the cream panel it is the cream panel. Every field in the product editor — name, stock,
+   all four prices — carried a white film as BOTH its fill and its border, so in light mode the
+   modal was a blank cream box containing invisible boxes to type in.
+   ⚠️ The lesson is not "sweep alphas too". It is that a colour is only convertible once you know
+   what it sits ON: same rgba, opposite job, depending on the ground. */
+const G40 = '40. The veils flip, and the plank\'s label does not';
+const app = fs.readFileSync('src/App.jsx', 'utf8');
+/* the shell dialog at the bottom of App.jsx is a genuine light/dark PAIR (`bg-white dark:bg-…`),
+   so a bare `bg-white` is allowed there; a white film with an alpha never is. */
+const filmLeft = [...new Set(app.match(/\b(hover:)?(bg|border)-white\/\d+/g) || [])];
+check(G40, 'no white film is left painting a surface that changes theme', !filmLeft.length,
+  'left behind: ' + filmLeft.join(' ') + ' — a white veil is a highlight on black and nothing ' +
+  'at all on cream, so the control it was drawing simply stops existing in light mode');
+/* slate IS the blue the palette law bans, and these were the last of it in the shell */
+const grayLeft = [...new Set(app.match(/\b(hover:)?text-gray-\d+/g) || [])];
+check(G40, 'the cold slate greys are gone from the shell', !grayLeft.length,
+  'left behind: ' + grayLeft.join(' '));
+/* 🔴 THE INVARIANT, AND THE ONE A LATER "TIDY-UP" WOULD BREAK BY MAKING THEM ALL WHITE AGAIN.
+   A film recesses a surface below its ground. On a pale ground only a DARK film does that, so
+   the light values must not be white — they are the shell's own warm brown at low alpha. */
+/* ⚠️ `[^}]*`, NOT `[\s\S]*?\n\}`. The first spelling of this line closed each block at the next
+   `}` sitting in column 1 — and one of the three `.light` selectors is followed by a block that
+   closes on an indented brace, so the match ran on and swallowed the entire DARK block. The
+   check then measured dark values while claiming to measure light ones, and passed. */
+const lightBlock = (themeCss.match(/:root\.light[^{]*\{([^}]*)\}/g) || []).join('\n');
+const veils = ['--duke-veil', '--duke-veil-2', '--duke-veil-edge', '--duke-veil-edge-2',
+               '--duke-veil-edge-3', '--duke-lift'];
+check(G40, 'every veil is a WARM DARK film in light, not a paler white one',
+  veils.every(v => new RegExp(v + ':\\s*rgba\\(255, 255, 255').test(themeCss)) &&
+  veils.every(v => new RegExp(v + ':\\s*rgba\\(46, 38, 26').test(lightBlock)),
+  'a white film on a pale panel is the panel — the field loses its walls and nothing errors');
+/* the same role split as --duke-edge-ctl vs --duke-edge-1, one layer down: an edge tells you
+   where a control begins so it owes 3:1, a fill owes nothing and stays a whisper. Dark serves
+   the fill and the edge the SAME rgba, which is exactly why one token would have looked fine. */
+const alphaOf = (tok) => {
+  const m = lightBlock.match(new RegExp(tok + ':\\s*rgba\\([^)]*?,\\s*(\\.\\d+)\\s*\\)'));
+  return m ? parseFloat(m[1]) : NaN;
+};
+check(G40, 'a veil EDGE is a separate token from a veil FILL, and is far stronger in light',
+  alphaOf('--duke-veil-edge') >= alphaOf('--duke-veil') * 3,
+  'the fill and the edge share one rgba in dark; collapsing them into one token loses the ' +
+  'boundary of every input the moment the ground goes pale');
+/* ⚠️ AN INK ONLY FLIPS WHEN THE GROUND UNDER IT DOES. The Update Database button is a hardcoded
+   near-black plank in BOTH themes; it was wearing --shell-ink, which flips to near-black, so its
+   label went dark-on-dark in light. Same bug as the wells, running the other way. */
+check(G40, 'the dark plank\'s label uses an ink that does NOT flip',
+  /bg-\[#0d0a09\][\s\S]{0,60}text-\[var\(--duke-on-plank\)\]/.test(app) &&
+  [...themeCss.matchAll(/--duke-on-plank:\s*(#[0-9a-f]{6})/g)].map(m => m[1])
+    .every((v, _, a) => a.length === 2 && v === a[0]),
+  'a flipping ink on a plate that cannot flip is invisible text, and it reads as "the button ' +
+  'lost its label" rather than as a colour bug');
+/* the role rule from group 39, now enforced on the shell as well — it was only ever scoped to
+   the terminal because the terminal was the only file with role-named tokens at the time */
+const appCrossed = [];
+for (const m of app.matchAll(/([a-z-]+)-\[var\(--([a-z0-9-]+)\)\]/g)) {
+  const [, prefix, tok] = m;
+  const isText = /^(text|placeholder|caret|decoration)$/.test(prefix);
+  const isEdge = /^(border|border-[btlrxy]|ring|outline|divide|stroke|shadow)$/.test(prefix);
+  if (/(^|-)ink(-\d+)?$/.test(tok) && !isText) appCrossed.push(`${prefix}:${tok}`);
+  if (/-edge(-\d+)?$/.test(tok) && !isEdge) appCrossed.push(`${prefix}:${tok}`);
+}
+check(G40, 'the shell crosses no role either', !appCrossed.length,
+  'crossed roles: ' + [...new Set(appCrossed)].join(' '));
+
 /* ── report ──────────────────────────────────────────────────────────────── */
 let last = '';
 for (const r of results) {

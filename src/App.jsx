@@ -3745,7 +3745,7 @@ const handleGitHubMirror = async () => {
                                 {[1, 2, 3, 4, 5].map(level => (
                                     <div 
                                         key={level} 
-                                        className={`flex-1 rounded-[1px] transition-all duration-300 ${calculateStrength(setupPassword).score >= level ? calculateStrength(setupPassword).bar : 'bg-white/10'}`}
+                                        className={`flex-1 rounded-[1px] transition-all duration-300 ${calculateStrength(setupPassword).score >= level ? calculateStrength(setupPassword).bar : 'bg-[var(--duke-veil-2)]'}`}
                                     ></div>
                                 ))}
                             </div>
@@ -3775,7 +3775,7 @@ const handleGitHubMirror = async () => {
                     <p className="text-xs text-[var(--duke-ink-3)] mb-4">A 6-digit code has been sent to your registered Admin Email.</p>
                     <input type="number" placeholder="• • • • • •" className="w-full bg-[var(--duke-well-solid)] border border-[var(--duke-amber-edge)]/30 p-4 text-center text-[var(--shell-ink)] text-2xl outline-none tracking-[0.5em] focus:border-[var(--duke-amber-edge)] font-mono transition-colors" value={inputOtp} onChange={(e) => setInputOtp(e.target.value)} autoFocus maxLength={6} onKeyDown={(e) => e.key === 'Enter' && handleVerifyOtp()} />
                     <div className="flex gap-3 mt-4">
-                        <button onClick={() => { setIsOtpMode(false); setIsResetMode(true); setInputOtp(""); }} className="flex-1 py-3 border border-white/10 text-gray-400 text-xs font-bold uppercase hover:text-[var(--duke-ink-hi)] hover:bg-white/5 font-mono tracking-widest transition-colors">Abort</button>
+                        <button onClick={() => { setIsOtpMode(false); setIsResetMode(true); setInputOtp(""); }} className="flex-1 py-3 border border-[var(--duke-veil-edge)] text-[var(--duke-ink-2)] text-xs font-bold uppercase hover:text-[var(--duke-ink-hi)] hover:bg-[var(--duke-veil)] font-mono tracking-widest transition-colors">Abort</button>
                         <button onClick={handleVerifyOtp} className="flex-1 py-3 bg-[var(--duke-amber)]/10 hover:bg-[var(--duke-amber)]/25 border border-[var(--duke-amber-edge)]/50 text-[var(--duke-amber-ink)] hover:text-[var(--shell-ink)] text-xs font-bold uppercase font-mono tracking-widest transition-colors">Verify Code</button>
                     </div>
                 </div>
@@ -3785,7 +3785,7 @@ const handleGitHubMirror = async () => {
                     <p className="text-[10px] text-orange-400 uppercase font-bold mb-4 tracking-widest">Enter Secret Word</p>
                    <input type="password" id="resetWord" placeholder="ENTER SECRET WORD..." className="w-full bg-[var(--duke-well-solid)] border border-orange-500/30 p-4 text-center text-[var(--duke-ink-hi)] text-xl outline-none tracking-widest focus:border-orange-500 font-mono placeholder:text-[var(--duke-ink-hi)]/20 transition-colors" autoFocus disabled={isSendingEmail} onKeyDown={(e) => e.key === 'Enter' && handleResetPin(e.target.value)}/>
                     <div className="flex gap-3 mt-4">
-                        <button onClick={() => setIsResetMode(false)} disabled={isSendingEmail} className="flex-1 py-3 border border-white/10 text-gray-400 text-xs font-bold uppercase hover:text-[var(--duke-ink-hi)] hover:bg-white/5 font-mono tracking-widest transition-colors">Abort</button>
+                        <button onClick={() => setIsResetMode(false)} disabled={isSendingEmail} className="flex-1 py-3 border border-[var(--duke-veil-edge)] text-[var(--duke-ink-2)] text-xs font-bold uppercase hover:text-[var(--duke-ink-hi)] hover:bg-[var(--duke-veil)] font-mono tracking-widest transition-colors">Abort</button>
                         <button onClick={() => handleResetPin(document.getElementById('resetWord').value)} disabled={isSendingEmail} className={`flex-1 py-3 border text-xs font-bold uppercase font-mono tracking-widest transition-colors ${isSendingEmail ? 'bg-orange-900/50 border-orange-800 text-orange-700 cursor-wait' : 'bg-orange-600/20 hover:bg-orange-600 border-orange-500/50 text-orange-500 hover:text-[var(--duke-ink-hi)]'}`}>
                             {isSendingEmail ? 'Authorizing...' : 'Verify'}
                         </button>
@@ -3918,7 +3918,7 @@ const handleGitHubMirror = async () => {
                     </div>
                     <h2 className="text-3xl font-black text-[var(--duke-ink-hi)] uppercase tracking-[0.25em] mb-2 font-mono">Restricted Access</h2>
                     <p className="text-[var(--duke-ink-3)] text-xs font-bold uppercase tracking-widest max-w-xs leading-relaxed mb-8">Admin Clearance Required</p>
-                    <button onClick={() => setShowAdminLogin(true)} className="px-10 py-4 border-2 border-white text-[var(--duke-ink-hi)] font-black uppercase text-xs hover:bg-white hover:text-black transition-all">Unlock System</button>
+                    <button onClick={() => setShowAdminLogin(true)} className="px-10 py-4 border-2 border-[var(--duke-edge-4)] text-[var(--duke-ink-hi)] font-black uppercase text-xs hover:bg-[var(--duke-amber)] hover:text-black transition-all">Unlock System</button>
                 </div>
             ) : (
                 <DashboardView 
@@ -3985,13 +3985,13 @@ const handleGitHubMirror = async () => {
 
           
           {activeTab === 'inventory' && (
-          <div className="h-auto min-h-[800px] lg:min-h-0 lg:h-[calc(100vh-140px)] w-full max-w-7xl mx-auto border-4 border-black shadow-[0_0_0_1px_rgba(255,255,255,0.1)] relative flex flex-col">
+          <div className="h-auto min-h-[800px] lg:min-h-0 lg:h-[calc(100vh-140px)] w-full max-w-7xl mx-auto border-4 border-[var(--duke-frame)] shadow-[0_0_0_1px_var(--duke-lift)] relative flex flex-col">
 
               {/* 🚀 FIX: searchTerm/setSearchTerm existed and already filtered inventory
                   into filteredInventory below, but the input that was supposed to drive it
                   was missing from the UI entirely. */}
-              <div className="relative shrink-0 border-b-4 border-black bg-[var(--duke-badge)] p-3">
-                  <Search size={16} className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" />
+              <div className="relative shrink-0 border-b-4 border-[var(--duke-frame)] bg-[var(--duke-badge)] p-3">
+                  <Search size={16} className="absolute left-6 top-1/2 -translate-y-1/2 text-[var(--duke-ink-8)] pointer-events-none" />
                   <input
                       type="text"
                       value={searchTerm}
@@ -4042,24 +4042,24 @@ const handleGitHubMirror = async () => {
                     className="fixed inset-0 z-[100] bg-[var(--duke-scrim-hi)] backdrop-blur-md flex items-center justify-center p-4 transition-opacity duration-300"
                     style={{ display: cropImageSrc ? 'none' : 'flex' }} // <--- MAGIC FIX: Hides when cropping
                 >
-                    <div className="bg-[var(--duke-well-solid)] border border-white/30 w-full max-w-2xl max-h-[90vh] overflow-y-auto p-8 relative shadow-[0_0_50px_rgba(255,255,255,0.1)]">
+                    <div className="bg-[var(--duke-well-solid)] border border-[var(--duke-veil-edge-3)] w-full max-w-2xl max-h-[90vh] overflow-y-auto p-8 relative shadow-[0_0_50px_var(--duke-lift)]">
                         <button onClick={() => setEditingProduct(null)} className="absolute top-4 right-4 text-[var(--duke-ink-hi)] hover:text-red-500"><X size={24}/></button>
-                        <h2 className="text-2xl font-bold text-[var(--duke-ink-hi)] mb-6 uppercase tracking-widest border-b border-white/20 pb-2">
+                        <h2 className="text-2xl font-bold text-[var(--duke-ink-hi)] mb-6 uppercase tracking-widest border-b border-[var(--duke-veil-edge-2)] pb-2">
                             {editingProduct.id ? "Edit Record" : "New Entry"}
                         </h2>
                         
                         <form onSubmit={handleSaveProduct} className="space-y-6 font-mono text-xs">
                             <div className="grid md:grid-cols-2 gap-8">
                                 <div className="space-y-4">
-                                    <div><label className="text-gray-500 block mb-1">PRODUCT NAME</label><input name="name" defaultValue={editingProduct.name} className="w-full p-2 bg-white/5 border border-white/20 text-[var(--duke-ink-hi)] focus:border-orange-500 outline-none"/></div>
+                                    <div><label className="text-[var(--duke-ink-8)] block mb-1">PRODUCT NAME</label><input name="name" defaultValue={editingProduct.name} className="w-full p-2 bg-[var(--duke-veil)] border border-[var(--duke-veil-edge-2)] text-[var(--duke-ink-hi)] focus:border-orange-500 outline-none"/></div>
 
                                   {/* --- PINPOINT: Edit Product Modal --- */}
                                     <div className="grid grid-cols-4 gap-2">
-                                        <div><label className="text-[10px] text-gray-500 block mb-1 tracking-widest">STOCK</label><input name="stock" type="number" step="any" defaultValue={editingProduct.stock} className="w-full p-2 bg-white/5 border border-white/10 text-[var(--shell-ink)] focus:border-[var(--duke-amber-edge)] outline-none transition-colors"/></div>
-                                        <div><label className="text-[10px] text-gray-500 block mb-1 tracking-widest">MIN. ALERT</label><input name="minStock" type="number" step="any" defaultValue={editingProduct.minStock || 50} className="w-full p-2 bg-white/5 border border-red-500/50 text-red-400 focus:border-red-500 outline-none"/></div>
+                                        <div><label className="text-[10px] text-[var(--duke-ink-8)] block mb-1 tracking-widest">STOCK</label><input name="stock" type="number" step="any" defaultValue={editingProduct.stock} className="w-full p-2 bg-[var(--duke-veil)] border border-[var(--duke-veil-edge)] text-[var(--shell-ink)] focus:border-[var(--duke-amber-edge)] outline-none transition-colors"/></div>
+                                        <div><label className="text-[10px] text-[var(--duke-ink-8)] block mb-1 tracking-widest">MIN. ALERT</label><input name="minStock" type="number" step="any" defaultValue={editingProduct.minStock || 50} className="w-full p-2 bg-[var(--duke-veil)] border border-red-500/50 text-red-400 focus:border-red-500 outline-none"/></div>
                                         {/* 🚀 NEW: STICKS PER PACK INPUT */}
-                                        <div><label className="text-[10px] text-gray-500 block mb-1 tracking-widest">STICKS / BKS</label><input name="sticksPerPack" type="number" step="any" defaultValue={editingProduct.sticksPerPack || 16} className="w-full p-2 bg-white/5 border border-white/10 text-[var(--shell-ink)] focus:border-[var(--duke-amber-edge)] outline-none transition-colors"/></div>
-                                        <div><label className="text-[10px] text-gray-500 block mb-1 tracking-widest">TYPE</label><input name="type" defaultValue={editingProduct.type} className="w-full p-2 bg-white/5 border border-white/20 text-[var(--duke-ink-hi)] focus:border-white outline-none"/></div>
+                                        <div><label className="text-[10px] text-[var(--duke-ink-8)] block mb-1 tracking-widest">STICKS / BKS</label><input name="sticksPerPack" type="number" step="any" defaultValue={editingProduct.sticksPerPack || 16} className="w-full p-2 bg-[var(--duke-veil)] border border-[var(--duke-veil-edge)] text-[var(--shell-ink)] focus:border-[var(--duke-amber-edge)] outline-none transition-colors"/></div>
+                                        <div><label className="text-[10px] text-[var(--duke-ink-8)] block mb-1 tracking-widest">TYPE</label><input name="type" defaultValue={editingProduct.type} className="w-full p-2 bg-[var(--duke-veil)] border border-[var(--duke-veil-edge-2)] text-[var(--duke-ink-hi)] focus:border-white outline-none"/></div>
                                     </div>
 
                                     {/* PACKING. Every sale in Bal or Karton multiplies by these, and until now
@@ -4067,9 +4067,9 @@ const handleGitHubMirror = async () => {
                                         to 10/20/4 for every product. Aldi's real stock varies (a Bal can be 100 or
                                         200 Bks, a Karton 4 or 5 Bal), so they have to be per product. */}
                                     <div className="grid grid-cols-3 gap-2">
-                                        <div><label className="text-[10px] text-gray-500 block mb-1 tracking-widest">BKS / SLOP</label><input name="packsPerSlop" type="number" step="any" defaultValue={editingProduct.packsPerSlop || 10} className="w-full p-2 bg-white/5 border border-amber-500/50 text-amber-400 focus:border-amber-500 outline-none"/></div>
-                                        <div><label className="text-[10px] text-gray-500 block mb-1 tracking-widest">SLOP / BAL</label><input name="slopsPerBal" type="number" step="any" defaultValue={editingProduct.slopsPerBal || 20} className="w-full p-2 bg-white/5 border border-amber-500/50 text-amber-400 focus:border-amber-500 outline-none"/></div>
-                                        <div><label className="text-[10px] text-gray-500 block mb-1 tracking-widest">BAL / KARTON</label><input name="balsPerCarton" type="number" step="any" defaultValue={editingProduct.balsPerCarton || 4} className="w-full p-2 bg-white/5 border border-amber-500/50 text-amber-400 focus:border-amber-500 outline-none"/></div>
+                                        <div><label className="text-[10px] text-[var(--duke-ink-8)] block mb-1 tracking-widest">BKS / SLOP</label><input name="packsPerSlop" type="number" step="any" defaultValue={editingProduct.packsPerSlop || 10} className="w-full p-2 bg-[var(--duke-veil)] border border-amber-500/50 text-amber-400 focus:border-amber-500 outline-none"/></div>
+                                        <div><label className="text-[10px] text-[var(--duke-ink-8)] block mb-1 tracking-widest">SLOP / BAL</label><input name="slopsPerBal" type="number" step="any" defaultValue={editingProduct.slopsPerBal || 20} className="w-full p-2 bg-[var(--duke-veil)] border border-amber-500/50 text-amber-400 focus:border-amber-500 outline-none"/></div>
+                                        <div><label className="text-[10px] text-[var(--duke-ink-8)] block mb-1 tracking-widest">BAL / KARTON</label><input name="balsPerCarton" type="number" step="any" defaultValue={editingProduct.balsPerCarton || 4} className="w-full p-2 bg-[var(--duke-veil)] border border-amber-500/50 text-amber-400 focus:border-amber-500 outline-none"/></div>
                                     </div>
 
                                     {/* RESTORED: FRONT = BACK TOGGLE */}
@@ -4085,7 +4085,7 @@ const handleGitHubMirror = async () => {
                                     </div>
 
                                     {/* TEXTURE ASSETS (WITH PREVIEWS & EDIT BTN) */}
-                                    <div className="p-3 border border-dashed border-white/30 text-center bg-white/5">
+                                    <div className="p-3 border border-dashed border-[var(--duke-veil-edge-3)] text-center bg-[var(--duke-veil)]">
                                         <p className="text-orange-500 font-bold mb-2">TEXTURE ASSETS</p>
                                         <div className="grid grid-cols-3 gap-2">
                                             {['front', 'back', 'left', 'right', 'top', 'bottom'].map(face => {
@@ -4093,7 +4093,7 @@ const handleGitHubMirror = async () => {
                                                 return (
                                                     <div 
                                                         key={face} 
-                                                        className="h-12 bg-[var(--duke-well-solid)] border border-white/10 flex items-center justify-center text-[11px] text-gray-500 uppercase cursor-pointer hover:bg-white/10 hover:text-[var(--duke-ink-hi)] transition-colors relative group overflow-hidden" 
+                                                        className="h-12 bg-[var(--duke-well-solid)] border border-[var(--duke-veil-edge)] flex items-center justify-center text-[11px] text-[var(--duke-ink-8)] uppercase cursor-pointer hover:bg-[var(--duke-veil-2)] hover:text-[var(--duke-ink-hi)] transition-colors relative group overflow-hidden" 
                                                         onClick={() => document.getElementById(`file-edit-${face}`).click()}
                                                     >
                                                         {hasImg ? (
@@ -4123,11 +4123,11 @@ const handleGitHubMirror = async () => {
                                     </div>
                                 </div>
                                 <div className="space-y-4">
-                                    <h3 className="text-[var(--duke-ink-hi)] border-b border-white/10 pb-1 mb-2">PRICING ENGINE</h3>
-                                    <div><label className="text-gray-500 block mb-1">DISTRIBUTOR (MODAL)</label><input name="priceDistributor" type="number" step="any" defaultValue={editingProduct.priceDistributor} className="w-full p-2 bg-white/5 border border-red-900/50 text-red-400 focus:border-red-500 outline-none"/></div>
-                                    <div><label className="text-gray-500 block mb-1">RETAIL PRICE</label><input name="priceRetail" type="number" step="any" defaultValue={editingProduct.priceRetail} className="w-full p-2 bg-white/5 border border-white/10 text-[var(--shell-ink)] focus:border-[var(--duke-amber-edge)] outline-none transition-colors"/></div>
-                                    <div><label className="text-gray-500 block mb-1">GROSIR PRICE</label><input name="priceGrosir" type="number" step="any" defaultValue={editingProduct.priceGrosir} className="w-full p-2 bg-white/5 border border-white/10 text-[var(--shell-ink)] focus:border-[var(--duke-amber-edge)] outline-none transition-colors"/></div>
-                                    <div><label className="text-gray-500 block mb-1">ECER PRICE</label><input name="priceEcer" type="number" step="any" defaultValue={editingProduct.priceEcer} className="w-full p-2 bg-white/5 border border-yellow-900/50 text-yellow-400 focus:border-yellow-500 outline-none"/></div>
+                                    <h3 className="text-[var(--duke-ink-hi)] border-b border-[var(--duke-veil-edge)] pb-1 mb-2">PRICING ENGINE</h3>
+                                    <div><label className="text-[var(--duke-ink-8)] block mb-1">DISTRIBUTOR (MODAL)</label><input name="priceDistributor" type="number" step="any" defaultValue={editingProduct.priceDistributor} className="w-full p-2 bg-[var(--duke-veil)] border border-red-900/50 text-red-400 focus:border-red-500 outline-none"/></div>
+                                    <div><label className="text-[var(--duke-ink-8)] block mb-1">RETAIL PRICE</label><input name="priceRetail" type="number" step="any" defaultValue={editingProduct.priceRetail} className="w-full p-2 bg-[var(--duke-veil)] border border-[var(--duke-veil-edge)] text-[var(--shell-ink)] focus:border-[var(--duke-amber-edge)] outline-none transition-colors"/></div>
+                                    <div><label className="text-[var(--duke-ink-8)] block mb-1">GROSIR PRICE</label><input name="priceGrosir" type="number" step="any" defaultValue={editingProduct.priceGrosir} className="w-full p-2 bg-[var(--duke-veil)] border border-[var(--duke-veil-edge)] text-[var(--shell-ink)] focus:border-[var(--duke-amber-edge)] outline-none transition-colors"/></div>
+                                    <div><label className="text-[var(--duke-ink-8)] block mb-1">ECER PRICE</label><input name="priceEcer" type="number" step="any" defaultValue={editingProduct.priceEcer} className="w-full p-2 bg-[var(--duke-veil)] border border-yellow-900/50 text-yellow-400 focus:border-yellow-500 outline-none"/></div>
                                 </div>
                             </div>
                             {/* type is explicit: this submits handleSaveProduct. It was relying on
@@ -4141,7 +4141,11 @@ const handleGitHubMirror = async () => {
                                    animatable property on the element, and it will happily animate one
                                    nobody intended. Naming the four that actually change is both cheaper
                                    and predictable. */
-                                className="group w-full mt-6 py-4 bg-[#0d0a09] text-[var(--shell-ink)] font-black uppercase tracking-widest text-sm border-2 border-[#3a3128] border-b-[3px] border-b-[#ff9d00] shadow-[0_3px_0_rgba(0,0,0,0.55)] transition-[background-color,border-color,letter-spacing,transform] duration-150 ease-out hover:bg-[#1c1814] hover:border-[var(--duke-edge-3)] hover:border-b-[#ff9d00] hover:tracking-[0.22em] active:translate-y-[3px] active:shadow-none"
+                                /* ⚠️ --duke-on-plank, NOT --shell-ink. The plank under this label is a
+                                   hardcoded near-black in BOTH themes, so an ink that flips to
+                                   near-black in light put dark text on a dark plate. An ink only
+                                   flips when the ground beneath it does. */
+                                className="group w-full mt-6 py-4 bg-[#0d0a09] text-[var(--duke-on-plank)] font-black uppercase tracking-widest text-sm border-2 border-[#3a3128] border-b-[3px] border-b-[#ff9d00] shadow-[0_3px_0_rgba(0,0,0,0.55)] transition-[background-color,border-color,letter-spacing,transform] duration-150 ease-out hover:bg-[#1c1814] hover:border-[var(--duke-edge-3)] hover:border-b-[#ff9d00] hover:tracking-[0.22em] active:translate-y-[3px] active:shadow-none"
                             >
                                 Update Database
                             </button>
@@ -4155,7 +4159,7 @@ const handleGitHubMirror = async () => {
 
       {/* MULTI-WAREHOUSE ERP ENGINE */}
           {activeTab === 'restock_vault' && (
-              <div className="h-auto min-h-[800px] lg:min-h-0 lg:h-[calc(100vh-140px)] w-full max-w-7xl mx-auto border-4 border-black shadow-[0_0_0_1px_rgba(255,255,255,0.1)] relative flex flex-col bg-[var(--duke-well-solid)] p-4 overflow-y-auto custom-scrollbar">
+              <div className="h-auto min-h-[800px] lg:min-h-0 lg:h-[calc(100vh-140px)] w-full max-w-7xl mx-auto border-4 border-[var(--duke-frame)] shadow-[0_0_0_1px_var(--duke-lift)] relative flex flex-col bg-[var(--duke-well-solid)] p-4 overflow-y-auto custom-scrollbar">
                   
                   {/* 🚀 HQ ONLY: FACTORY PROCUREMENT ENGINE (RESI, PHOTOS, DLL) */}
                   {isAdmin && (
@@ -4424,7 +4428,7 @@ const handleGitHubMirror = async () => {
                           case arrives first, then the tape reads itself out line by line. The
                           stagger is CSS-only (see .kpm-log-row) — no timers, and it re-runs every
                           time the panel opens because the rows are mounted fresh. */}
-                      <div className="kpm-recorder bg-[#0a0a0a] border border-[var(--duke-edge-1)] w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[80vh]">
+                      <div className="kpm-recorder bg-[var(--duke-well-solid)] border border-[var(--duke-edge-1)] w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[80vh]">
                           <div className="bg-[var(--duke-fill-well)] p-4 border-b border-[var(--duke-edge-1)] flex justify-between items-center shrink-0">
                               <h3 className="text-[var(--duke-ink-hi)] font-black uppercase tracking-widest flex items-center gap-2"><Activity size={18} className="text-[var(--duke-amber-ink)]"/> Flight Recorder</h3>
                               <button onClick={() => setShowFlightRecorder(false)} className="text-[var(--duke-ink-3)] hover:text-red-500"><X size={20}/></button>
@@ -4436,7 +4440,7 @@ const handleGitHubMirror = async () => {
                                   {/* was text-blue-500 — slate and blue were the only two colours
                                       in this panel that meant nothing. Pending NOO is a count, not
                                       an alarm, so it takes the quieter gold. */}
-                                  <div className="text-center"><p className="text-[10px] text-[var(--duke-ink-3)] uppercase tracking-widest font-bold">Pending NOO</p><p className="text-xl font-black text-[#c9a227]">{pendingCount.noo}</p></div>
+                                  <div className="text-center"><p className="text-[10px] text-[var(--duke-ink-3)] uppercase tracking-widest font-bold">Pending NOO</p><p className="text-xl font-black text-[var(--duke-brass-ink)]">{pendingCount.noo}</p></div>
                               </div>
                               <button onClick={clearFlightRecorder} className="px-3 py-1.5 bg-red-900/30 text-red-500 border border-red-500/30 rounded text-[11px] uppercase font-bold tracking-widest hover:bg-red-500 hover:text-[var(--duke-ink-hi)] transition-colors">Clear Logs</button>
                           </div>

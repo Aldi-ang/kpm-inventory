@@ -349,6 +349,33 @@ html.light { color-scheme: light; }
   /* ⚠️ THE HALO BEHIND THE PRICE. On the dark bench a black blur is depth. On the pale one it is
      a dirty smear under an orange number, and it was half of why he photographed that card. */
   --duke-text-shade:   rgba(0, 0, 0, .50);
+
+  /* ---- the VEILS: a white film, which is a highlight on black and nothing on cream -------
+     🔴 THE LAST HALF OF THE COLOUR-NAME BUG, AND THE WORST-LOOKING ONE. `bg-white/5` over
+     black is a lit recess you can see the walls of; over the pale panel it is the pale panel.
+     Every field in the product editor — name, stock, all four prices — had a white-film fill
+     and a white-film border, so in light mode the whole modal was a blank cream box with
+     invisible boxes to type in. Neither the hex sweep nor the colour-NAME sweep caught these:
+     `white/5` is a colour name WITH AN ALPHA, a third spelling again.
+     ⚠️ The light values are a warm DARK film, not a paler white one — the film's job is to
+     recess a surface below its ground, and on a pale ground only a dark film does that.
+     ⚠️ The EDGES are not simply the fills at another alpha. An edge tells you where a control
+     begins, so it owes 3:1 and gets it; a fill owes nothing and stays a whisper. Same law as
+     `--duke-edge-ctl` vs `--duke-edge-1`, one layer down. */
+  --duke-veil:         rgba(255, 255, 255, .05);  /* a field at rest */
+  --duke-veil-2:       rgba(255, 255, 255, .10);  /* the same field hovered, and a meter track */
+  --duke-veil-edge:    rgba(255, 255, 255, .10);  /* the boundary of a control */
+  --duke-veil-edge-2:  rgba(255, 255, 255, .20);  /* a rule under a heading */
+  --duke-veil-edge-3:  rgba(255, 255, 255, .30);  /* the frame of a modal */
+  /* the 1px ring and the outer glow that lift a panel off the page behind it */
+  --duke-lift:         rgba(255, 255, 255, .10);
+  /* a 4px chassis frame. Black on black here, so only the ring above it reads. */
+  --duke-frame:        #000000;
+  /* ⚠️ DOES NOT FLIP, BECAUSE THE PLATE UNDER IT DOES NOT EITHER. The Update Database button is
+     a dark plank in BOTH themes; it was wearing `--shell-ink`, which flips to near-black, so in
+     light mode its label went near-black on a near-black plank. Same class of bug as the wells,
+     opposite direction: a ground that stayed put under an ink that moved. */
+  --duke-on-plank:     #f0e2c0;
 }
 
 /* ---- the light bench: pale oak, never white ------------------------------
@@ -485,6 +512,18 @@ html.light {
   --duke-scrim-hi:     rgba(46, 38, 26, .86);
   /* a PALE halo here, which lifts the figure off the hatch instead of muddying it */
   --duke-text-shade:   rgba(255, 252, 244, .85);
+
+  /* the veils invert: a warm dark film, because only a dark film recesses a pale ground */
+  --duke-veil:         rgba(46, 38, 26, .07);
+  --duke-veil-2:       rgba(46, 38, 26, .14);
+  /* 3,42:1 on the cream panel — a control boundary, measured, not eyeballed */
+  --duke-veil-edge:    rgba(46, 38, 26, .55);
+  --duke-veil-edge-2:  rgba(46, 38, 26, .70);
+  --duke-veil-edge-3:  rgba(46, 38, 26, .82);
+  --duke-lift:         rgba(46, 38, 26, .20);
+  /* the chassis softens to the bench tone rather than staying a black slab on cream */
+  --duke-frame:        #cdc2ab;
+  --duke-on-plank:     #f0e2c0;
 }
 
 /* ============================================================================
