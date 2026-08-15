@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-15 18:58 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
+**Updated: 2026-08-15 19:06 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -34,7 +34,7 @@ not invent a new look for a tab; copy the bands / module kinds / slot codes / re
 **LIGHT MODE IS NOW THE FRONT** — his stated order, and every screen converted above gets it
 mostly free (one token name resolves to both themes; no `dark:` variant was written).
 
-**493/493, `src/` clean.** The rack's spacing ladder was rebuilt on 2026-08-15 after his report
+**495/495, `src/` clean.** The rack's spacing ladder was rebuilt on 2026-08-15 after his report
 that modules read as one component — **12 / 16 / 20 / 40, and no inner number may reach an outer
 one.** Two checks in group 30 hold it. Read [[The KPM Control System]] and [[Off-Token Colour Migration Map]]
 in the A-Brain vault before touching a tab — the class list and the substitution table are there,
@@ -99,6 +99,15 @@ order:
 - ❓ **Offered, unanswered:** if the hold feels like enough on its own, the FIRST of the two wipe
   dialogs could go, leaving hold → FINAL WARNING. **Not done — removing a confirmation on a
   no-undo act is his explicit call, never a side effect of a nicer button.**
+- ✅ **TEST — THE MATRIX DENSITY, THIRD PASS (`9c9f561`, 495/495).** His screenshot: *"there is
+  so much space bro … make the space more even between the buttons and description"* + *"feature
+  modul and its tier is too far from each other causing the textbox on the bottom collapse with
+  each other"*. **This one still needs his eyes — it was adjusted three times from screenshots.**
+  Row 56→40px (4px padding round a 32px control + `line-height: 1.15`); description column
+  42%→30%; and 🔴 **the two authority dropdowns were OVERLAPPING** — a `<select>` with no width
+  sizes to its LONGEST OPTION, and under `table-layout: fixed` the column cannot grow, so it
+  spilled over its neighbour. `width: 100%` **plus `min-width: 0`** — width alone still loses to
+  the intrinsic minimum, which is the part worth remembering.
 - ✅ **TEST — THE MATRIX NO LONGER SLIDES SIDEWAYS (`6acbe3a`, 493/493).** He asked twice:
   *"i dont want to slide the matric panel left and right"* then *"if possible eliminates side
   slide especially when we have 5 tiers only"*.
