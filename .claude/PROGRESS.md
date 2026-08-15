@@ -39,14 +39,11 @@ order:
 
 ## ❓ WAITING ON ALDI — verbatim, do not paraphrase
 
-- 🔴 **21st.dev theme publish. STILL OPEN AFTER TWO ASKS.** He ran `/21st:21st-design-sync`, which
-  publishes the project's palette **publicly and permanently** to the 21st.dev community library.
-  **It was NOT run.** Asked twice; his 2026-08-15 reply numbered its answers against the ❓ list, so
-  his *"1. yes"* landed on the ribbon question, not this one. **Do not run it without a yes that
-  names the theme.**
-- ✅ **TEST — the phone's duplicate corner icon.** Fixed and committed this session; he has not
-  looked yet. Reload on the phone, the icon above the grid should be gone and the PC collapsed
-  circle unchanged.
+- ✅ **TEST — the phone's duplicate corner icon.** Fixed and committed (`3a9e4c5`); **he says it is
+  STILL THERE**. The dev server was fetched live at 08:20 and IS serving both `display: none`
+  rules, so the code is right and his phone is showing cached CSS. Waiting on a forced reload.
+  ⚠️ If it survives a genuinely fresh load, the element is NOT `.kpm-rail-totem` and the whole
+  diagnosis restarts — find what else paints the active tab's icon on a phone.
 - ✅ **TEST — the logout word is now "Exit", not "LOG OUT".** Arithmetic forced it (32px available,
   52px needed). He has not given a verdict. The alternative, offered and unanswered: put logout on
   the same slide-out plate as every other mark, which keeps "Log out" in full.
@@ -55,6 +52,14 @@ order:
   touched — it is outside what he asked for.
 
 **ANSWERED 2026-08-15, do not re-ask:**
+- 🔴 **21st.dev theme publish → NO.** His word, 2026-08-15: *"21 dev is no"*. **Closed. Never run
+  `/21st:21st-design-sync` on this project.** The palette stays private.
+- 🔑 **"Biometric is gone" and "the 5-minute grace period is gone" are ONE fact, not two bugs.**
+  Passkeys are bound to the hostname that made them and the grace record is `localStorage` under
+  the key `kpm-vault-grace` — **both are per-web-address**. `192.168.1.109` is a different address
+  from the Vercel one, so it starts blank, like a brand-new phone. Nothing was lost or reset.
+  Grace starts working on the LAN address after the first unlock there; biometric never can (see
+  the log entry). **Expect this to be re-reported — the symptom looks like data loss.**
 - **Phone ribbon position → stays device-scoped.** Read from his *"1. yes"*, which by his own
   numbering answered this one. If he ever says otherwise, user-scoped means moving it to Firestore.
 - 🔴 **The music does NOT stop — the previous claim in this file was WRONG.** His words: *"music
