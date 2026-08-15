@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-15 10:05 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
+**Updated: 2026-08-15 10:15 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -27,7 +27,7 @@ not invent a new look for a tab; copy the bands / module kinds / slot codes / re
 | **General & Brand** | **0** | ✅ **DONE 2026-08-15, group 34, 18 checks** |
 | Tiers & Logic | 89 | ▶ **the last slice** |
 
-**419/419, `src/` clean.** The rack's spacing ladder was rebuilt on 2026-08-15 after his report
+**418/418, `src/` clean.** The rack's spacing ladder was rebuilt on 2026-08-15 after his report
 that modules read as one component — **12 / 16 / 20 / 40, and no inner number may reach an outer
 one.** Two checks in group 30 hold it. Read [[The KPM Control System]] and [[Off-Token Colour Migration Map]]
 in the A-Brain vault before touching a tab — the class list and the substitution table are there,
@@ -95,24 +95,24 @@ order:
 - ❓ **Raised, unanswered:** the 19px module titles are display-face CAPS with letter-spacing. Caps
   read slower than sentence case at that size. Left alone because it is this app's character —
   **if the tabs still feel heavy after he looks, that is the next thing to try.**
-- 🔴 **DECIDE + BUILD — the mascot module, 2026-08-15, NOT started (quota ran out mid-question).**
-  Verbatim: *"this mascott picture is kinda useless when we have the mascott already right, and
-  another important features, i want the mascott to show up for 5 second when the slider for the
-  mascot size is moved"* then *"just the idle animation"*.
-  **THE GROUNDWORK IS DONE — start from these three facts, do not re-derive them:**
-  1. `CapybaraMascot` is rendered at **`App.jsx:4503`**, gated on `user && !showAdminLogin`, so it
-     is **already on screen the whole time he is in Settings**.
-  2. It already takes **`scale={appSettings?.mascotScale || 1}`**, so the slider ALREADY resizes it
-     live — which means "show up for 5 seconds" is about something he cannot currently SEE, not
-     about wiring the value.
-  3. `triggerCapy` → `speakCapy` sets `capyMsg` + `showCapyMsg`, and the bubble is
-     `message={showCapyMsg ? capyMsg : null}`. **He said *"just the idle animation"* — so whatever
-     is built must NOT go through `triggerCapy`; that speaks and mumbles.**
-  ❓ **THE QUESTION THAT WAS ASKED AND NOT YET ANSWERED — two readings, materially different work:**
-  **(a)** the round preview thumbnail in `Mascot · 03` is redundant → delete it, keep Choose & Crop;
-  **(b)** replace that static thumbnail with the LIVE idling mascot, and/or surface the real mascot
-  for 5s while the size slider is dragged. ⚠️ **Do not delete `handleMascotSelect`** — the upload is
-  a real feature whichever reading wins.
+- ▶ **BUILD FIRST NEXT SESSION — "make the mascot show up when we use the slider".** He answered
+  both halves 2026-08-15: **(a) delete the thumbnail — DONE, `121de10`. (b) is NOT started**, and
+  it is the one thing owed him. His words: *"i want the mascott to show up for 5 second when the
+  slider for the mascot size is moved"* + *"just the idle animation"*.
+  **EVERYTHING NEEDED IS ALREADY TRACED — do not re-derive it, it cost half a turn:**
+  1. `CapybaraMascot` renders in **`App.jsx:4503`**, gated `user && !showAdminLogin` — **always on
+     screen in Settings already**, so "show up" means make it NOTICEABLE, not mount it.
+  2. Signature: **`CapybaraMascot.jsx:33`** — `{ isDiscoMode, message, messages, onClick,
+     staticImageSrc, user, scale }`. The scaling wrapper is **line 302**, a fixed-corner div with
+     `transition-transform duration-300` and `transform: scale(...)`.
+  3. **It must NOT go through `triggerCapy`** — that speaks AND mumbles, and he said *"just the
+     idle animation"*. `speakCapy` sets `capyMsg`+`showCapyMsg`; the bubble is
+     `message={showCapyMsg ? capyMsg : null}`. Leave both alone.
+  **The shape that fits:** one new prop (`peek`) on CapybaraMascot, raised for 5s by a timer in
+  `App.jsx` and triggered from the slider's `onChange`, lifting z-index / opacity on line 302's
+  wrapper. The slider lives in `SettingsView` Mascot · 01, so the setter has to be threaded down
+  the same way `triggerCapy` already is. ⚠️ Dragging fires `onChange` continuously — **debounce to
+  one 5s window that restarts on the last move**, or it will re-trigger dozens of times.
 - ✅ **The logout word is "Exit" — HE CHOSE TO KEEP IT** (2026-08-15). Closed, do not re-offer.
 
 **ANSWERED 2026-08-15, do not re-ask:**
