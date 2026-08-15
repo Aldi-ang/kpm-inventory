@@ -58,6 +58,11 @@ clause now assert **relationships** (light is darker than dark; the token is a r
 the numbers to `contrast.selfcheck.mjs`. Group 39 already carried this lesson in its own words —
 **do not write another check that freezes a value.**
 
+✅ **VAULT IS CURRENT — A-Brain `da2a46a`, 11 files, 434 insertions, 0 deletions.** The 20-commit
+gap is closed. New page [[Looking at the App]]; `Aldi's Design Taste` now records that the
+2026-08-13 *"light mode is white"* question is **CLOSED** (he chose the modules' cream family, so
+the Phase-3 bench-steel law is superseded — the "no `#FFFFFF` surface" half survives).
+
 ### 🔧 THERE IS A WINDOW ONTO THE APP NOW — `b08d8db`. USE IT BEFORE CLAIMING ANY COLOUR IS FIXED.
 
 ```bash
