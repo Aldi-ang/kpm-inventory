@@ -106,8 +106,19 @@ export default function CapybaraMascot({ isDiscoMode, message, messages = NO_MES
             const incomingMessage = typeof d === 'string' ? d : d?.message;
             const incomingImage   = typeof d === 'string' ? null : d?.image;
             const incomingSprite  = typeof d === 'string' ? null : d?.sprite;
-            if (incomingMessage) {
-                setInternalMsg(incomingMessage);
+            /* `peek` is a duration in ms and carries NO line: "show yourself for N and go".
+               HIS ASK, 2026-08-15, about the mascot-size slider: *"i want the mascott to show
+               up for 5 second when the slider for the mascot size is moved"* — and, asked what
+               he wanted him to do while there, *"just the idle animation"*. A silent appearance
+               had no way in before this: every path into `isPeeking` went through a message,
+               and a message is what puts the bubble up and swaps him to the talking sprite. */
+            const incomingPeek = typeof d === 'string' ? 0 : d?.peek;
+            if (incomingMessage || incomingPeek) {
+                /* blank, not left alone: with `activeMessage` falsy `spriteToShow` resolves to
+                   kpm-merch-idle and no bubble renders — which IS the ask. A line still on
+                   screen from an earlier peek is cleared with it, deliberately: he asked to be
+                   shown a SIZE, and a leftover speech bubble is not part of that answer. */
+                setInternalMsg(incomingMessage || "");
                 setRadioImage(incomingImage || null);
                 setRadioSprite(incomingSprite || null);
                 setIsPeeking(true);
@@ -127,7 +138,11 @@ export default function CapybaraMascot({ isDiscoMode, message, messages = NO_MES
                         setRadioImage(null);
                         setRadioSprite(null);
                     }, 1000); // Wait for the slide-out animation to finish
-                }, 8000);
+                    /* the clear above already ran for the previous event, so a drag that fires
+                       this handler forty times leaves ONE window open, counted from the last
+                       move. Without that, the 5s would expire mid-drag and he would leave while
+                       the slider was still under his thumb. */
+                }, incomingPeek || 8000);
             }
         };
 

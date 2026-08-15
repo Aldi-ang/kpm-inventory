@@ -2190,10 +2190,32 @@ check(G34, 'the mascot lines are a picker, not an unbounded list',
   'Delete would then act on undefined');
 /* the four small parts this tab needed exist in CSS. Tailwind only emits a class it saw in source,
    and a class that exists in neither paints nothing — which looks like a transparent panel. */
-for (const cls of ['.kpm-rowacts', '.kpm-inline', '.kpm-slider'])
+for (const cls of ['.kpm-rowacts', '.kpm-inline', '.kpm-slider', '.kpm-portrait'])
   check(G34, `${cls} is defined in theme.css, not invented in the JSX`,
     themeCss.includes(cls + ' ') || themeCss.includes(cls + ' {') || themeCss.includes(cls + '{'),
     'an undefined class is the quietest possible bug: no error, no paint');
+
+/* 🔑 THE SIZE SLIDER CALLS THE MASCOT OUT. His report, 2026-08-15: *"slider moved but mascot
+   still not showing"* — which corrected an assumption written into the notes the hour before.
+   The render gate `user && !showAdminLogin` (checked at line ~759) is genuinely open on this
+   screen, and the mascot still is not on it: he lives at opacity-0 translate-x-[200%] and only
+   leaves that state during a peek, which his own timer schedules every 90-210 SECONDS. An open
+   render gate is not visibility. That is the whole lesson of this group — do not "fix" a
+   report like this by widening a gate that was never shut. */
+check(G34, 'moving the size slider calls the mascot out for five seconds',
+  gen.includes("new CustomEvent('CAPY_COMMS', { detail: { peek: 5000 } })"),
+  'without this the slider sizes something that is not on screen — pure guesswork');
+check(G34, 'the mascot answers a peek that carries no line',
+  capySrc.includes('if (incomingMessage || incomingPeek) {') &&
+  capySrc.includes('}, incomingPeek || 8000);'),
+  'the radio used to demand a message to show at all, so every appearance was a talking one');
+/* *"just the idle animation"* — his words when asked what the mascot should DO while it is out.
+   Two things have to hold for that: the peek must blank the line, and a blank line must still
+   resolve to the idle sheet rather than the talking one. */
+check(G34, 'a silent peek shows the idle sprite, not the talking one',
+  capySrc.includes('setInternalMsg(incomingMessage || "");') &&
+  capySrc.includes("(activeMessage ? 'kpm-merch-talk' : 'kpm-merch-idle')"),
+  'a peek that left a bubble up would be the mascot talking at him, which he did not ask for');
 
 /* ── report ──────────────────────────────────────────────────────────────── */
 let last = '';

@@ -345,14 +345,21 @@ export default function SettingsView({
                                       <h3>Size</h3>
                                       <span className="kpm-read on">{appSettings.mascotScale || 1}&times;</span>
                                   </div>
-                                  <p className="kpm-desc">How big the mascot is drawn on screen. Saves as you drag.</p>
+                                  <p className="kpm-desc">How big the mascot is drawn on screen. Saves as you drag, and he steps out for five seconds so you can see the size you picked.</p>
                               </div>
                               <div className="kpm-shelf split">
                                   <label className="kpm-field">
                                       <span>Scale · 0.5&times; to 2&times;</span>
                                       <input type="range" min="0.5" max="2.0" step="0.1" className="kpm-slider"
                                           value={appSettings.mascotScale || 1}
-                                          onChange={(e) => { const scale = parseFloat(e.target.value); setAppSettings(prev => ({ ...prev, mascotScale: scale })); setDoc(doc(db, `artifacts/${appId}/users/${user.uid}/settings/general`), { mascotScale: scale }, { merge: true }); }}/>
+                                          /* HIS REPORT that made this necessary: *"slider moved but mascot
+                                             still not showing"*. The mascot is rendered app-wide and its
+                                             gate IS open here — but it spends almost all of its life parked
+                                             off-screen right at opacity 0, appearing only on its own 90-210s
+                                             timer. Sizing something invisible is guesswork, so the slider
+                                             now calls him out. `peek` with no `message`: no bubble, no
+                                             talking sprite, just the idle animation he asked for. */
+                                          onChange={(e) => { const scale = parseFloat(e.target.value); setAppSettings(prev => ({ ...prev, mascotScale: scale })); setDoc(doc(db, `artifacts/${appId}/users/${user.uid}/settings/general`), { mascotScale: scale }, { merge: true }); window.dispatchEvent(new CustomEvent('CAPY_COMMS', { detail: { peek: 5000 } })); }}/>
                                   </label>
                               </div>
                           </div>
@@ -430,18 +437,15 @@ export default function SettingsView({
                                   <p className="kpm-desc">You crop it after choosing, so it does not matter how the photo is framed.</p>
                               </div>
                               <div className="kpm-shelf split">
-                                  {/* NO THUMBNAIL. His call, 2026-08-15: *"this mascott picture is
-                                      kinda useless when we have the mascott already right"* — and
-                                      he is right: `CapybaraMascot` is rendered app-wide
-                                      (`App.jsx`, gated on `user && !showAdminLogin`), so the real
-                                      one is on screen while this panel is open. A frozen 96px copy
-                                      of something already visible is a second answer to a question
-                                      nobody asked. The readout still says Default or Custom. */}
-                                  <div className="kpm-acts">
-                                      <label className="kpm-btn">
-                                          Choose &amp; crop
-                                          <input type="file" accept="image/*" onChange={handleMascotSelect} className="hidden" />
-                                      </label>
+                                  <div className="kpm-portrait">
+                                      <img alt="Current mascot" src={appSettings?.mascotImage || "/mr capy.png"}
+                                          onError={(e) => {e.target.onerror = null; e.target.src="https://api.dicebear.com/7.x/avataaars/svg?seed=Capy"}}/>
+                                      <div className="kpm-acts">
+                                          <label className="kpm-btn">
+                                              Choose &amp; crop
+                                              <input type="file" accept="image/*" onChange={handleMascotSelect} className="hidden" />
+                                          </label>
+                                      </div>
                                   </div>
                               </div>
                           </div>
