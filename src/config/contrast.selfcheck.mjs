@@ -67,6 +67,25 @@ const PAIRS = [
   ['control edge on panel',        'line-3',         'panel',        3],
   ['gold EDGE on panel',           'accent-edge',    'panel',        3],
 
+  /* 🔴 THE PLATE ITSELF, NOT JUST THE INK ON IT — the gap that produced *"the settingview still
+     looks unclear on the light mode"*. Every pair above asks whether text on a surface can be
+     read. None of them asked whether the STATE can be seen: a gold plate marks every ON in this
+     app, and in light mode it stood off the panel at 1,61:1 while measuring perfectly for its
+     own ink. An unreadable state is as broken as unreadable text and nothing here was watching
+     for it. 3:1 is the WCAG floor for a non-text indicator. */
+  ['the gold PLATE against a panel','gold',           'panel',        3],
+  ['the gold PLATE against a well', 'gold',           'inset',        3],
+  ['the gold PLATE against raised', 'gold',           'raised',       3],
+  /* ⚠️ THE KNOB-AGAINST-TRACK RATIO IS DELIBERATELY NOT CHECKED. In dark it is 2,25:1 and has
+     been since the switch was built from his video — because the state is carried by WHERE THE
+     KNOB IS, not by how it contrasts with the track. That is the entire reason it is a sliding
+     knob and not a colour swap, and it is why the switch survives Lite Mode stripping colour.
+     Asserting 3:1 here would fail a control that works, which is how a real check turns into
+     noise someone learns to ignore. What DOES matter is that the knob stays pale on a dark
+     light-mode track, and that is covered by the plate pairs above. */
+  ['rank name on the grid header',  'ink',            'sunk',         4.5],
+  ['hold label before it fills',    'danger-ink',     'panel',        4.5],
+
   /* 🔴 THE QUIET TEXT — 89 uses across every screen, and it was never measured here until
      2026-08-15. It sat at 4,0:1 under a comment reading "meta text only", which reads like an
      exemption and is not one: a 10px label is small text and owes 4,5:1 exactly like body copy.

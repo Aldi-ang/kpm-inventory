@@ -2717,7 +2717,10 @@ check(G38, 'the switch SETS light, it does not merely unset dark',
 check(G38, 'theme.css still carries a light value for every surface it darkens',
   /html\.light \{/.test(themeCss) &&
   ['--ground', '--panel', '--ink', '--accent-ink', '--danger-ink']
-    .every(t => new RegExp(`html\\.light[\\s\\S]{0,2000}${t}:`).test(themeCss)),
+    /* the window is generous on purpose: this asserts the token EXISTS in the light block, and a
+       fixed character distance turns every comment added to that block into a false failure — it
+       already did once, when the gold plate's reasoning was written in. */
+    .every(t => new RegExp(`html\\.light[\\s\\S]{0,8000}${t}:`).test(themeCss)),
   'a token defined only on :root is a colour that cannot change theme');
 /* the theme is stamped before the stylesheet is parsed; React's effect runs after mount, which
    for a light-mode user is a full dark load followed by a flip on every single launch */

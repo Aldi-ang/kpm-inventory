@@ -51,6 +51,7 @@
   /* gold — decoration only. Dots, rules, the coin. Not for text. */
   --gold:          #D08A2E;
   --gold-ink:      #0A0908;   /* ink to place ON gold, 8,9:1 */
+  --knob-on:       #E8E4DE;   /* the switch knob when it is ON — pale in BOTH themes */
 
   /* ⚠️ TEXT AND EDGES THAT MEAN "GOLD" OR "DANGER" — use THESE, never --gold or --danger.
      Aldi, 2026-08-13: *"dont use yellow color for text on light mode because its hard to see,
@@ -142,10 +143,20 @@ html.light {
   --ink-disabled:  #7E7A74;
   --ink-inverse:   #F4F1EB;
 
-  /* gold stays the SAME hex — it is a plate/dot here, never text, so it never
-     has to darken. That is what stops light mode looking duller than dark. */
-  --gold:          #D08A2E;
-  --gold-ink:      #131211;
+  /* 🔴 THIS COMMENT USED TO SAY GOLD STAYS THE SAME HEX HERE, AND IT WAS WRONG — his report,
+     2026-08-15: *"the settingview still looks unclear on the light mode"*. The old reasoning only
+     asked whether the INK on a gold plate was readable, and it was. Nobody asked whether the PLATE
+     was readable against the PANEL. Measured: a gold plate stands off the panel at **6,61:1 in
+     dark and 1,61:1 in light**. Gold is the app's only accent and it marks every ON state there
+     is — a live readout, the chosen side of a switch, a filled toggle. In light mode all of them
+     were dissolving into the surface behind them, which is exactly "unclear": not unreadable
+     text, an unreadable STATE.
+     ⚠️ SO THE PLATE INVERTS IN LIGHT AND ITS INK INVERTS WITH IT. A dark amber plate carrying
+     pale ink, instead of a bright plate carrying dark ink. 4,13:1 against the panel and 3,12:1
+     against an inset, so the state is unmistakable on every ground it lands on. */
+  --gold:          #7A4C0C;
+  --gold-ink:      #FCF7EE;
+  --knob-on:       #FCF7EE;
 
   /* ...but gold AS TEXT and gold AS A BORDER must darken here, or they measure 1,19:1 and 1,19:1
      against the steel and vanish — which is exactly what he reported. Measured on --raised:
@@ -2563,7 +2574,11 @@ html.lite-mode .kpm-title-rule { animation: none; width: 100%; }
 .kpm-hold[data-phase="done"]    { color: var(--danger-plate-ink); border-color: var(--danger-plate); }
 .kpm-hold:focus-visible { outline: 2px solid var(--danger); outline-offset: -4px; }
 @media (hover: hover) and (pointer: fine) {
-  .kpm-hold:hover { border-color: var(--danger-ink); color: var(--danger-plate-ink); }
+  /* 🔴 --danger-plate-ink IS THE INK FOR THE FILLED PLATE, and on hover the plate is NOT yet
+     filled — `> .fill` is still clipped away. In dark a pale label on the panel reads fine, so
+     this survived; in light it measured 1,60:1 and the word simply disappeared under the
+     pointer. Hover gets the readable red instead, and the plate ink stays for the plate. */
+  .kpm-hold:hover { border-color: var(--danger-ink); color: var(--danger-ink); }
 }
 /* ⚠️ THE HOLD IS NOT ANIMATION, SO REDUCED MOTION CANNOT DELETE IT. Without the sweep there is no
    way to know the press is counting; the honest reduction is a shorter, plainer fill, not none. */
@@ -2881,8 +2896,12 @@ html.lite-mode .kpm-title-rule { animation: none; width: 100%; }
    the light, and a wide soft bloom for the halo. `box-shadow` is a paint property, so this is
    the one thing here that is not on the compositor — at 26px, on up to a few dozen switches, it
    is not worth a third pseudo-element to avoid. */
+/* ⚠️ THE KNOB HAS ITS OWN TOKEN AND IT IS PALE IN BOTH THEMES. It used to be `--ink`, which is
+   pale in dark and near-black in light — fine while the track was bright amber in both, and
+   invisible the moment the light track became a DARK amber plate. Its dark value is `--ink`'s
+   old one to the digit, so the switch he approved has not moved. */
 [aria-pressed="true"] > .kpm-sw::after { transform: translateX(18px);
-  background: var(--ink); border-color: var(--accent-edge);
+  background: var(--knob-on); border-color: var(--accent-edge);
   box-shadow: 0 0 0 1px rgba(208, 138, 46, .55), 0 0 12px 3px rgba(208, 138, 46, .40); }
 @media (hover: hover) and (pointer: fine) {
   .kpm-toggle:hover > .kpm-sw::after { background: var(--ink); }
@@ -2947,7 +2966,8 @@ html.lite-mode .kpm-title-rule { animation: none; width: 100%; }
   padding: 0 6px; min-height: 32px; text-overflow: ellipsis; }
 .kpm-matrix thead th { background: var(--sunk); text-align: center; font-family: var(--font-mono);
   font-weight: 700; font-size: 10px; letter-spacing: .16em; text-transform: uppercase;
-  color: var(--ink-muted); cursor: move; }
+  /* --ink-muted measured 4,23:1 on --sunk in light; a rank name is not decoration */
+  color: var(--ink); cursor: move; }
 .kpm-matrix thead th:first-child { text-align: left; cursor: default; }
 /* where the dragged column will land. An edge, not a fill — the row underneath still has to
    be readable while the pointer is over it. */

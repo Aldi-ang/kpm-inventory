@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-15 21:52 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
+**Updated: 2026-08-15 22:18 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -26,6 +26,30 @@ count in the earlier survey below: `MapMissionControl` · `CustomerManager` · `
 ⚠️ **Do not repeat the terminal's two mistakes:** sweep colour NAMES as well as hexes, and check
 HUE separation against the ground, not only contrast. Both are written up in the log entry below
 and in [[The KPM Control System]] in the vault.
+
+### 🔴 SETTINGS IN LIGHT MODE — *"the settingview still looks unclear"*. FIXED, 527/527
+
+**It was not the text. Every ink/surface pair in the control system already passed.** A scan of
+`theme.css` — pairing each rule's `color:` with the background of its nearest ancestor selector —
+found only one real text failure. The cause was **STATE, not text**:
+
+⚠️ **A GOLD PLATE STOOD OFF THE PANEL AT 6,61:1 IN DARK AND 1,61:1 IN LIGHT.** Gold is the app's
+only accent and it marks every ON there is — a live readout, the chosen side of a switch, a filled
+toggle. In light they were all dissolving into the surface behind them. **Nothing was watching for
+it, because every check asked "can this text be read" and none asked "can this state be seen".**
+The old comment on the light `--gold` said it never has to darken *because it is never text* —
+true, and exactly the wrong question.
+**Light gold now inverts: a dark amber plate carrying pale ink** (4,13:1 on a panel, 3,12:1 on an
+inset). `--knob-on` was added for the switch knob — pale in BOTH themes, dark value identical to
+what it replaced — because a near-black knob on a dark track would have been invisible.
+Also fixed: `.kpm-hold:hover` used the FILLED plate's pale ink while the plate is still clipped
+away, so the word vanished under the pointer in light (1,60:1). And the matrix header's rank names
+moved `--ink-muted` → `--ink` (4,23:1 on `--sunk`).
+⚠️ **The knob-against-track ratio is deliberately NOT checked** — 2,25:1 in dark since he approved
+it, because that switch carries its state by WHERE THE KNOB IS, which is also why it survives Lite
+Mode. Asserting 3:1 there would fail a control that works.
+**Residual 2, both understood:** `--ink-disabled` (WCAG-exempt) and `.kpm-hold[data-phase]`, where
+the scan cannot see that `> .fill` has covered the button.
 
 ### Where things live
 
