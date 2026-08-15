@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-15 08:40 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
+**Updated: 2026-08-15 08:51 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -27,7 +27,9 @@ not invent a new look for a tab; copy the bands / module kinds / slot codes / re
 | General & Brand | 67 | ▶ **next slice** |
 | Tiers & Logic | 89 | after that |
 
-**393/393, `src/` clean.** Read [[The KPM Control System]] and [[Off-Token Colour Migration Map]]
+**395/395, `src/` clean.** The rack's spacing ladder was rebuilt on 2026-08-15 after his report
+that modules read as one component — **12 / 16 / 20 / 40, and no inner number may reach an outer
+one.** Two checks in group 30 hold it. Read [[The KPM Control System]] and [[Off-Token Colour Migration Map]]
 in the A-Brain vault before touching a tab — the class list and the substitution table are there,
 and re-deriving them costs a quarter of a session.
 
@@ -68,12 +70,14 @@ order:
   by hand and confirm it does NOT let you back in — that half must still work.
 - ⚠️ **`src/utils/vaultGrace.js` IS NOT ON `main`.** The grace period has never been deployed, so
   it does not exist on the Vercel app he actually uses. Nothing to debug there — it needs merging.
-- ✅ **TEST — the logout word is now "Exit", not "LOG OUT".** Arithmetic forced it (32px available,
-  52px needed). He has not given a verdict. The alternative, offered and unanswered: put logout on
-  the same slide-out plate as every other mark, which keeps "Log out" in full.
-- ❓ **Offered, unanswered:** the "Authorized Biometric Devices" card in `SettingsView.jsx` is
-  painted **bright blue** (`bg-blue-50`, `text-blue-600`) against his own no-blue palette law. Not
-  touched — it is outside what he asked for.
+- ✅ **TEST — Settings, both tabs.** Security & Data is converted and the module spacing is
+  rebuilt. Every control was checked as MOUNTED but **none has been pressed** — master backup, the
+  three downloads, change PIN, authorise/revoke a device, export/import, rebuild career, the three
+  wipes. His eyes and his fingers are the only test that has ever run on this screen.
+- ❓ **Raised, unanswered:** the 19px module titles are display-face CAPS with letter-spacing. Caps
+  read slower than sentence case at that size. Left alone because it is this app's character —
+  **if the tabs still feel heavy after he looks, that is the next thing to try.**
+- ✅ **The logout word is "Exit" — HE CHOSE TO KEEP IT** (2026-08-15). Closed, do not re-offer.
 
 **ANSWERED 2026-08-15, do not re-ask:**
 - 🔴 **21st.dev theme publish → NO.** His word, 2026-08-15: *"21 dev is no"*. **Closed. Never run
@@ -94,6 +98,35 @@ order:
 
 ## 📓 LOG — newest first, about five entries; `git log` keeps the rest
 
+### 2026-08-15 08:51 (KPM app session) — the rack was tighter inside a module than between two of them
+
+**395/395.** His report: *"i want u to give more space between features because all of it looks to
+close together i thought it is the same components"*. **He was reading it correctly — the spacing
+was lying, and it measured:**
+
+| Boundary | Before |
+|---|---|
+| between two modules | **0px** + one 1px line (`--line-2`) |
+| inside one module, head → shelf | **0px** + **two** stacked lines (`--line` + `--line-2`) |
+
+🔑 **The division INSIDE a module was heavier than the division BETWEEN two.** Proximity decides
+grouping before any border does, so at 0px on both sides three instruments read as one striped
+panel. The rack idea survives — a rack has rails between its units — but the ladder now only ever
+grows outward: **12px between controls · 16px module padding · 20px module→module · 40px between
+groups.** `.kpm-shelf.split`'s duplicate border is gone; the head already draws that seam, and
+inside an object a seam must be fainter than the object's own edge.
+⚠️ **Two checks now guard it. If any inner number ever reaches an outer one, they go red before he
+has to see it again.** Both Architect and Security got this from one change; General and Tiers will
+inherit it when they convert.
+
+🔴 **CLOCK CORRECTION:** two entries below were stamped 08:55 and 09:40 by this session — times
+that ran AHEAD of the real clock (`date` says 08:51 WIB / 01:51 UTC). Corrected to 08:30 and 08:47.
+**Stamp from `date`, never from a guess**; a log that runs into the future cannot be ordered.
+📌 **AND: the `SettingsView.jsx` / `integration.audit.mjs` diffs that the 08:36 and 08:40 entries
+disclaim WERE THIS SESSION'S**, not an orphan and not another process — they are committed now
+(`8084c25`, `946b1b8`). Those two entries are another session's and are left byte-for-byte alone
+per rule 2; this note is the correction, in my own entry, where it belongs.
+
 ### 2026-08-15 08:40 (KPM app session) — timestamp touch, 3rd fire, still not this session's edit
 
 Same hook fired again (08:38 → 08:40) on the same unchanged diff to `integration.audit.mjs` and
@@ -107,7 +140,7 @@ in `src/` was touched. The uncommitted `SettingsView.jsx` diff predates this ses
 git status before the first message) and was not read or changed here. Touching timestamp only,
 per the Stop hook's own fallback instruction for a session with no progress to record.
 
-### 2026-08-15 09:40 (KPM app session) — Security & Data joins the control system. Phase 6, slice 1.
+### 2026-08-15 08:47 (KPM app session) — Security & Data joins the control system. Phase 6, slice 1.
 
 **393/393.** 94 off-token colours to zero. The tab is grouped by **consequence** now, not by
 feature — copies, then writes, then the stripe — which is what it was actually missing.
@@ -128,7 +161,7 @@ label prints twice. Both halves of that edit are checked.
 ✅ **All 17 new checks were run against the pre-edit block and seen to FAIL first** — palette,
 kinds, hazard band, rails, one-writer. A check never seen red is a decoration.
 
-### 2026-08-15 08:55 (KPM app session) — the grace period unlocked the vault behind a curtain it never raised
+### 2026-08-15 08:30 (KPM app session) — the grace period unlocked the vault behind a curtain it never raised
 
 **376/376.** His report: *"grace period is not working on my phone, i just close the safari and it
 force me to login"* — master PIN screen, LAN address, iPhone Safari.
@@ -182,93 +215,17 @@ is rejected outright) and refuses to run on a page with a certificate warning, w
 "Not Secure" address bar is. **Biometric is Vercel-only; the LAN IP is PIN-only, by design.**
 No new file was created this session.
 
-### 2026-08-15 03:05 — the logout capsule stayed inside the dock, and the word had to shrink
+### ⤵ The 2026-08-15 early-morning shell entries trimmed (03:05, 02:35, 01:55)
 
-His last open item: *"when it expand the animation go outside the sidebar box"*. `.kpm-expand`
-grows to 136px and the pod is 100px, so the red slab crossed the capsule's edge. The rail now gets
-its own narrower expansion, scoped — `.kpm-expand` is shared and every other site has the room.
-
-⚠️ **THREE OF HIS ASKS CONFLICTED AND ONLY ARITHMETIC COULD SETTLE IT.** Inside the dock, 24px of
-clear air between glyph and word (he asked for that a round earlier), and the words "LOG OUT".
-Measured with the real face at 10px/.12em: at 96px wide there are **32px left for text**, and
-"LOG OUT" needs **52**, "LOGOUT" 48, **"EXIT" 26**. So the word is the only variable that could
-give. The full phrase moved to `title` and `aria-label`, where it costs no width.
-**If anyone lengthens that label, the capsule leaves the dock again** — there is a check on it.
-**373/373.** He may prefer the alternative: put logout back on the same slide-out plate as every
-other mark, which keeps "Log out" in full because the plate lands outside the capsule by design.
-He chose the expand animation deliberately, so it was not swapped without asking.
-
-### 2026-08-15 02:35 — the dock is as tall as its buttons. Second attempt; the first broke it.
-
-His two reports were ONE bug: *"i dont want bottom panel to collapse with the sidebar panel"* and
-*"it looks better when the sidebar panel height follow how many buttons are there instead of
-expanding all the way to the bottom of the screen while there is so much blank space above it"*.
-A full-height pod reserved height it never used — the grid is capped and centred and the foot has
-`margin-top: auto`, so the leftover opened as a gap BETWEEN them (the blank space), and the bottom
-of the same pod reached into the L-Click/SCROLL strip (the collision).
-
-🔴 **IT TOOK THREE ATTEMPTS AND THE REAL CAUSE WAS NEITHER OF MY FIRST TWO GUESSES.** His reports:
-*"it brokes"*, then *"break no change"*.
-
-**The actual mechanism, MEASURED in an isolated box chain (same nesting, 768px frame):**
-`grid-auto-rows: minmax(0, 1fr)` **resolves only against a DEFINITE height.** While the pod was
-`height: 100%` the grid inherited one and cells came out 44x44. The moment the pod became
-`max-content` — which is what his "follow how many buttons" ask required — the grid's height went
-**indefinite**, and every `1fr` row collapsed to its icon:
-
-| grid's flex | cell size | square? | pod |
-|---|---|---|---|
-| `flex: 1 1 0%` | 44 x **17** | no | 342px |
-| `flex: 0 1 var(--cap)` | 44 x **44.9** | yes | **593px** |
-
-So the fix is a **definite flex-basis on the grid**: `flex: 0 1 var(--cap, auto)`. `0 1` keeps it
-shrinkable, so a short screen squeezes the rows rather than clipping a tab off the bottom where it
-cannot be reached.
-
-⚠️ **Two wrong turns on the way, both worth not repeating.** First I put `height: max-content` on
-**`[data-kpm-rail]`**, the PANEL — which is `position: fixed` + `inset-y-0` + `display: flex` +
-`overflow: hidden` all at once. Asking that to size itself from its content is asking a clipping
-box to measure the thing it clips. The panel paints nothing, so its height costs nothing; only the
-POD needed to change. Second, I shipped that as a fix without being able to see it, and he had to
-report the same break twice.
-⚠️ Cascade note: the pod's `height: 100%` from the appearance block still exists. `height:
-max-content` wins only because it is LATER at equal specificity. Do not move it above that block.
-
-⚠️ **THREE AUDIT CHECKS BROKE ON PROSE TODAY, NOT ON CODE** — including `railGateAt`, which
-allowed 2400 characters between a media query and a rule inside it until a comment pushed the rule
-out of reach. **A regex that spans the gap from a selector to its declaration breaks when someone
-edits the comment in between.** Anchor on the value or on something short and unique.
-
-### 2026-08-15 01:55 — the header became the dock's twin; slate was hiding in `index.css`
-
-**He has now SEEN both and approved:** *"it looks fine"*. One fix on top of it, from his
-screenshot: *"i dont want the new header panel to collapse with the sidebar when open"* — the
-header's left margin cleared the **closed** 60px circle but not the **open** 100px pane, so the
-dock painted over the status dot and the first letter of the title. **76px → 112px**, static on
-purpose: shifting the header sideways on every dock hover would make the title jump each time the
-pointer passes the logo, which is worse than the overlap. ⚠️ That number tracks `.kpm-rail-pod`'s
-width — change one, change both.
-
-⚠️ **A lesson about the audit itself, worth more than the fix:** two checks failed because their
-regexes spanned the gap from a selector to its declaration, and I had put a long comment in that
-gap. **A check that reaches across prose breaks when the prose is edited.** Anchor on the value,
-which is unique, not on a span from the selector.
-
-
-His ask: *"lets rework the top UI format bro ... i want it to be in theme with this app and also
-change the background"*. The band was a hairline rule on a flat wall while the dock had become a
-floating capsule — one side of the shell floated, the other was a line. The header is a pane on
-the same lit ground now, with **weaker glass than the dock on purpose** (blur 18 vs 30): the dock
-is what you reach for, the header is what you read.
-The ghost watermark kept its job and lost its redundancy — he pushed back on deleting it
-(*"well it change according to the choosen app section"*) and he was right, so it is the section's
-**icon** now instead of its **name**, which it was printing 24px from the real title and directly
-behind the bell.
-🔴 **Two defects found by the craft floor, not by looking for them:** every scrollbar in the app
-was slate (`#cbd5e1 / #94a3b8 / #475569 / #64748b`) — **slate IS the blue the palette law bans** —
-and the caret and text selection were browser-default blue. They survived every sweep because the
-banned-hue check read the shell, App and the player, and **`src/index.css` is none of the three**.
-It is read by the audit now. The clock also had no plate while its three neighbours did.
+The desk dock, its height, the logout containment and the header band — all SHIPPED and approved,
+so they describe work that is done. `git log --oneline` names the commits and
+`A-Brain/Wiki/Concepts/The KPM Control System.md` holds the reasoning. Three findings outlived
+them and are checks now, not prose: **`grid-auto-rows: minmax(0,1fr)` resolves only against a
+DEFINITE height** (making the pod `max-content` silently collapsed every row to its icon); **a
+clipping box cannot be asked to measure the thing it clips** (`max-content` belonged on the visible
+pod, never on the fixed+overflow-hidden panel); and **a regex that spans the gap from a selector to
+its declaration breaks when someone edits the comment in between** — anchor on a value that occurs
+once, and count the occurrences rather than assuming.
 
 ### 📋 THE DECISIONS THAT SHIPPED (reference only; do not re-ask, do not re-derive)
 
@@ -289,6 +246,7 @@ which must equal its 22px gap, and `.kpm-topbar`'s 112px left margin which track
 | **The ground, scrollbar, caret, selection** | **`src/index.css`** | **newly audited — slate hid here for months** |
 | Rail markup, `--cap`, `is-two`, logout | `src/components/BiohazardTheme.jsx` | the `kpm-rail-grid` nav and the foot |
 | Every trap above, as a check | `src/config/integration.audit.mjs` | group G25 |
+| **The control system** (Settings' whole look) | `src/styles/theme.css` | `.kpm-band` / `.kpm-mod` / `.kpm-head` / `.kpm-shelf` / `.kpm-btn` / `.kpm-rec` / `.kpm-switch` / `.kpm-field` / `.kpm-read`. **Spacing ladder 12 / 16 / 20 / 40 — groups 30 and 33** |
 | **Biometric / passkeys** | `src/App.jsx` :1107 register · :1157 unlock | **`rp.id = window.location.hostname`** — a passkey is locked to the host it was made on, so it is Vercel-only. Not a Firebase problem. |
 
 **HIS LOCKED DECISIONS — already built; listed so they are never re-asked:**
