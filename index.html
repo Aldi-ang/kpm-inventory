@@ -22,6 +22,24 @@
 
     <meta name="theme-color" content="#1a1815" />
 
+    <!-- ⚠️ THE THEME IS STAMPED BEFORE THE FIRST PAINT, AND IT HAS TO BE HERE TO DO THAT.
+         React sets the same classes, but only after mount — so a user whose saved theme is
+         light would watch the app load DARK and then flip, on every single launch. This runs
+         before the stylesheet is even parsed, so there is nothing to flip.
+         ⚠️ THE STORAGE KEY AND THE SAVED STRING BELOW MUST MATCH App.jsx's theme effect exactly.
+         If they drift, this stamps one theme and React immediately corrects it to the other,
+         which is the same flash this exists to remove — and it would only show on the theme
+         the author was not looking at. A check holds the two together. -->
+    <script>
+      (function () {
+        try {
+          var light = localStorage.getItem('kpm_theme') === 'light';
+          document.documentElement.classList.add(light ? 'light' : 'dark');
+          if (light) document.querySelector('meta[name="theme-color"]').setAttribute('content', '#B4B0A9');
+        } catch (e) { /* private mode blocks localStorage; dark is the default anyway */ }
+      })();
+    </script>
+
     <!-- Stops the rubber-band bounce and pull-to-refresh that make the app feel like it slid
          off the screen. Scrolling INSIDE the app is untouched — this only pins the document. -->
     <style>

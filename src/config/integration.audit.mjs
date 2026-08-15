@@ -2701,6 +2701,42 @@ for (const cls of ['.kpm-matrix', '.kpm-toggle', '.kpm-chips', '.kpm-permrow', '
     themeCss.includes(cls + ' ') || themeCss.includes(cls + ' {') || themeCss.includes(cls + '{'),
     'an undefined class is the quietest possible bug: no error, no paint');
 
+/* ── 38. light mode is actually reachable ────────────────────────────────────
+   🔴 IT NEVER WAS. Found 2026-08-15, the first day the light theme was pointed at: the theme
+   effect ADDED `dark` and, for light, only REMOVED it. theme.css puts the dark values on bare
+   `:root` and the light values on `:root.light`, so "light mode" left every token holding its
+   dark value and only Tailwind's handful of `dark:` variants flipped. Every hour spent on the
+   light palette — and it is fully built, and contrast-measured — had been invisible.
+   ⚠️ The failure had no symptom a check could have caught by reading CSS: both files were
+   internally consistent. What was missing was the CLASS that joins them. */
+const G38 = '38. Light mode can actually be switched on';
+check(G38, 'the switch SETS light, it does not merely unset dark',
+  /classList\.toggle\('light', !darkMode\)/.test(appSrc) &&
+  /classList\.toggle\('dark', darkMode\)/.test(appSrc),
+  'removing `dark` leaves :root holding the dark values — the light tokens never apply at all');
+check(G38, 'theme.css still carries a light value for every surface it darkens',
+  /html\.light \{/.test(themeCss) &&
+  ['--ground', '--panel', '--ink', '--accent-ink', '--danger-ink']
+    .every(t => new RegExp(`html\\.light[\\s\\S]{0,2000}${t}:`).test(themeCss)),
+  'a token defined only on :root is a colour that cannot change theme');
+/* the theme is stamped before the stylesheet is parsed; React's effect runs after mount, which
+   for a light-mode user is a full dark load followed by a flip on every single launch */
+check(G38, 'the saved theme is stamped before the first paint',
+  /localStorage\.getItem\('kpm_theme'\) === 'light'/.test(indexHtml) &&
+  /classList\.add\(light \? 'light' : 'dark'\)/.test(indexHtml),
+  'setting the class in a React effect means every launch starts in the wrong theme for a beat');
+/* ⚠️ TWO FILES, ONE KEY. If the pre-paint stamp and the React effect ever disagree about the
+   storage key or the string, the stamp picks one theme and React corrects it a frame later —
+   the exact flash the stamp exists to remove, visible only in the theme nobody was testing. */
+check(G38, 'the pre-paint stamp and the React effect read the same saved value',
+  /localStorage\.setItem\('kpm_theme', darkMode \? 'dark' : 'light'\)/.test(appSrc) &&
+  (indexHtml.match(/'kpm_theme'/g) || []).length === 1,
+  'a drifted key stamps one theme and flips to the other, on launch, forever');
+check(G38, "the browser's own chrome follows the theme too",
+  /meta\[name="theme-color"\][\s\S]{0,80}darkMode \? '#1a1815' : '#B4B0A9'/.test(appSrc) &&
+  /#B4B0A9/.test(indexHtml),
+  'a dark address bar over a steel app is the one part of the theme the app does not own');
+
 /* ── report ──────────────────────────────────────────────────────────────── */
 let last = '';
 for (const r of results) {

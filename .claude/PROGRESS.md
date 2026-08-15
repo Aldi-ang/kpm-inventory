@@ -34,6 +34,35 @@ not invent a new look for a tab; copy the bands / module kinds / slot codes / re
 **LIGHT MODE IS NOW THE FRONT** — his stated order, and every screen converted above gets it
 mostly free (one token name resolves to both themes; no `dark:` variant was written).
 
+### 🔴 LIGHT MODE HAD NEVER ONCE BEEN TURNED ON — fixed 2026-08-15, group 38, 513/513
+
+`App.jsx`'s theme effect ADDED `dark` and, for light, only REMOVED it. theme.css puts the dark
+values on bare `:root` and the light values on `:root.light`, so **removing `dark` left every
+token still holding its dark value.** Turning the switch off produced a hybrid nobody designed:
+Tailwind's handful of `dark:` variants flipped to their light form while every surface, line and
+ink stayed dark. The entire light palette — fully built, contrast-measured by
+`contrast.selfcheck.mjs` — had never been on screen once.
+Fixed with `classList.toggle('dark', darkMode)` + `classList.toggle('light', !darkMode)`, plus a
+pre-paint stamp in `index.html` (React sets the class after mount, so a light-mode user watched a
+dark load and a flip on every launch) and the `theme-color` meta so the phone's address bar
+follows too. Five checks in group 38.
+⚠️ **The failure had no symptom any CSS check could have caught** — both files were internally
+consistent. What was missing was the class that joins them.
+
+**▶ WHAT IS LEFT IS THE LONG TAIL, AND IT IS BIG: ~3.500 hardcoded colour utilities across 30
+files** (`bg-slate-800`, `text-gray-400`, `bg-white` …) with **no light variant at all** — they
+will look identical in both themes. Only 8 files use `dark:` at all. Measured counts, worst first:
+`HistoryReportView` 480 · `MapMissionControl` 442 · `CustomerManager` 384 · `FleetCanvasManager`
+380 · `JourneyView` 287 · `StockOpnameView` 271 · `ConsignmentFinanceView` 262 · `SamplingManager`
+255 · `RestockVaultView` 193 · `EODReconciliationView` 164 · `MerchantSalesView` 139 ·
+`AgentProfileView` 110 · `App.jsx` 109.
+⚠️ **`HistoryReportView`'s count is misleading** — much of it is the printed nota, which is OUT of
+scope and keeps KPM company blue. See [[project_kpm_receipt_is_company_theme]].
+🔴 **ORDER IS HIS CALL** — asked 2026-08-15, not yet answered.
+✅ **TEST FIRST:** flip the theme switch. Login screen, app shell, dock, header and all of Settings
+should go **steel grey (not white)**. Everything else will still be dark — that is expected and is
+the list above, not a new bug.
+
 **495/495, `src/` clean.** The rack's spacing ladder was rebuilt on 2026-08-15 after his report
 that modules read as one component — **12 / 16 / 20 / 40, and no inner number may reach an outer
 one.** Two checks in group 30 hold it. Read [[The KPM Control System]] and [[Off-Token Colour Migration Map]]

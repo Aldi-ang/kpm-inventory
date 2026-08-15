@@ -2418,8 +2418,22 @@ const handleGitHubMirror = async () => {
 
  
 
+  /* 🔴 LIGHT MODE HAD NEVER ONCE BEEN TURNED ON. Found 2026-08-15.
+     This effect used to ADD `dark` and, for light, only REMOVE it — it never set `light`. But
+     theme.css puts the DARK values on bare `:root` and the light values on `:root.light`, so
+     removing `dark` left every token still holding its dark value. Turning the switch off gave a
+     hybrid nobody designed: Tailwind's handful of `dark:` variants flipped to their light form
+     while every surface, line and ink stayed dark.
+     ⚠️ BOTH CLASSES ARE SET EXPLICITLY, EVERY TIME. `toggle(name, force)` is what makes that hard
+     to get wrong again — the old shape was correct for whichever theme the author was looking at
+     and silently wrong for the other one. */
   useEffect(() => {
-    if (darkMode) { document.documentElement.classList.add('dark'); localStorage.setItem('kpm_theme', 'dark'); } else { document.documentElement.classList.remove('dark'); localStorage.setItem('kpm_theme', 'light'); }
+    const root = document.documentElement;
+    root.classList.toggle('dark', darkMode);
+    root.classList.toggle('light', !darkMode);
+    localStorage.setItem('kpm_theme', darkMode ? 'dark' : 'light');
+    // the browser's own chrome — the address bar on his phone — is part of the theme too
+    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', darkMode ? '#1a1815' : '#B4B0A9');
   }, [darkMode]);
 
   // 🚀 LITE MODE GOVERNOR: Attaches the global restrictor to the HTML root
