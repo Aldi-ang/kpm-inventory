@@ -17,7 +17,7 @@
 
 **🔴 LIGHT MODE IS THE LIVE FRONT, AND IT IS NOW ACTUALLY ON.** Phase 6 is complete; the switch
 bug is fixed (group 38) and the sales terminal is converted as his chosen pilot (group 39).
-**536/536 · `node src/config/contrast.selfcheck.mjs` must also pass — it measures both themes.**
+**541/541 · `node src/config/contrast.selfcheck.mjs` must also pass — it measures both themes.**
 
 **▶ NEXT: the other 29 screens.** He has seen ONE converted screen. Ranked by hardcoded colour
 count in the earlier survey below: `MapMissionControl` · `CustomerManager` · `FleetCanvasManager` ·
@@ -120,6 +120,54 @@ screens carry it: the vault gate, Access Denied, Can't Verify You Yet.
 sign-in screen in `BiohazardTheme.jsx` was already safe — its backdrop is a literal `#050403` and
 `.kpm-mod.gate` prints literal hexes. Group 41 pins that card as a literal so a later "tidy-up"
 cannot tokenise the flip back in.
+
+### ✅ SETTINGSVIEW + THE SHELL'S ACCENTS — `63f8f14`, 541/541
+
+*"yea fix all of the color for light mode and the adjustment as well for the outside panel, we can
+start from the settingview"*. **SettingsView was four lines** — the whole screen is already on the
+control system; only its lockscreen still had literals. The shell was the real work: **42 sites**.
+
+🔑 **THE RULE, and it is the whole method from here on: the GROUND decides, not the colour.**
+`text-orange-400` is CORRECT on a black disc and INVISIBLE on the cream panel. Same class,
+opposite verdict. Converting an accent that sits on a plate is work that changes nothing and
+risks a screen he has signed off; missing one on a flipping surface is invisible text.
+
+🔧 **THE TOOL THAT SEPARATES THEM IS NOW IN THE REPO — do not rebuild it.**
+```bash
+node src/config/theme.grounds.mjs src/SomeView.jsx
+```
+It walks the JSX by indentation, resolves each accent's nearest ancestor background, and groups
+by ground with a verdict. ⚠️ It cannot see two things: a subtree wearing `.kpm-dark-island` stays
+dark whatever its tokens say, and a class with a `dark:` twin is already the light value.
+
+Slate was still here **in three shapes at once**, which is why it kept surviving sweeps: a class,
+the `#0f172a` Lite-Mode blur fallback painting every backdrop navy with `!important`, and **the
+colour a new rank was born with** in two files. The four rank identities (Mythic, Epic,
+Grandmaster, Bronze) are untouched — the palette law does not reach them.
+⚠️ The Restricted Access medallion is written **twice** (App.jsx + SettingsView) and had already
+drifted. A check now holds them identical.
+
+### 🔴 WHAT "ALL THE COLOURS" ACTUALLY IS — measured 2026-08-16, not guessed
+
+**Ten screens have never been converted at all.** They are not "accents to fix" — they are built
+from `bg-slate-800` / `bg-slate-900` panels, i.e. the blue the palette law bans, plus some
+`bg-blue-600` and `bg-emerald-*`. **The panel is the work; the accents follow it.**
+
+| screen | on an unconverted panel | already flips | on plates |
+|---|---|---|---|
+| `MapMissionControl` | **157** | 4 | 30 |
+| `EODReconciliationView` | 90 | 7 | 48 |
+| `FleetCanvasManager` | 89 | 0 | 40 |
+| `StockOpnameView` | 83 | 2 | 54 |
+| `JourneyView` | 68 | 8 | 45 |
+| `CustomerManager` | 41 | 3 | 75 |
+| `ConsignmentFinanceView` | 33 | 3 | 40 |
+| `HistoryReportView` | 30 | 9 | 84 |
+| `SamplingManager` | 19 | **16** | 38 |
+| `RestockVaultView` | 3 | 0 | 9 |
+
+⚠️ **This is several sessions, one screen at a time — same shape as the terminal pilot.** Do NOT
+batch them: he has to look at each one. `AgentProfileView` is already clean (0 sites).
 
 ### Where things live
 
