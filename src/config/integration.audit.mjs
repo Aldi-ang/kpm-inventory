@@ -2516,17 +2516,40 @@ check(G37, 'the matrix carries no blue, no green, no slate, no rose', !offToken.
 check(G37, 'an allowed permission is still obvious with colour stripped',
   !/drop-shadow/.test(mtx) &&
   !/\.kpm-sw[^{]*\{[^}]*box-shadow/.test(themeCss) &&
-  /\[aria-pressed="true"\] > \.kpm-sw::after \{ transform: translateX\(24px\)/.test(themeCss) &&
-  /\[aria-pressed="true"\] > \.kpm-sw::before \{ background: var\(--gold\)/.test(themeCss) &&
+  /\[aria-pressed="true"\] > \.kpm-sw::after \{ transform: translateX\(18px\)/.test(themeCss) &&
+  /\[aria-pressed="true"\] > \.kpm-sw::before \{ clip-path: inset\(0 0 0 0\)/.test(themeCss) &&
   (mtx.match(/<span className="kpm-sw" aria-hidden="true" \/>/g) || []).length === 2,
   'colour alone cannot carry ON here: Lite Mode removes it and the grid becomes unreadable');
 /* the knob is taller than its track and proud of both ends — the detail in his video that makes
-   it read as a physical switch rather than a coloured bar. Numbers, so they cannot drift apart:
-   32 in a 26 track, offset -2, travelling 52 - 32 + 4. */
+   it read as a physical switch rather than a coloured bar. It is the RATIO that reads, not the
+   size, which is why shrinking it on 2026-08-15 kept 26-in-20 with the same -2 offset. */
 check(G37, 'the knob overhangs its track the way his reference does',
-  /\.kpm-sw \{ position: relative; display: block; width: 52px; height: 26px/.test(themeCss) &&
-  /\.kpm-sw::after \{[\s\S]{0,120}?width: 32px; height: 32px/.test(themeCss),
+  /\.kpm-sw \{ position: relative; display: block; width: 40px; height: 20px/.test(themeCss) &&
+  /\.kpm-sw::after \{[\s\S]{0,120}?width: 26px; height: 26px/.test(themeCss),
   'a knob that fits inside the track is a progress bar with a dot on it, not a switch');
+/* 🔴 ANIMATE TRANSFORM AND OPACITY, NOTHING ELSE. His report: the switch *"look so kaku"* —
+   stiff. Half of that was a real bug: the press animated the knob's `width`, `height` and
+   `margin-top`, three LAYOUT properties, so every frame re-ran layout and paint instead of
+   riding the compositor. The press is a `scale` now. */
+check(G37, 'the switch press rides the compositor, never layout',
+  /\.kpm-toggle:active > \.kpm-sw \{ transform: scale\(\.92\); \}/.test(themeCss) &&
+  !/\.kpm-toggle:active > \.kpm-sw::after \{[^}]*(width|height|margin-top):/.test(themeCss),
+  'animating width/height/margin re-runs layout every frame — that is what "kaku" felt like');
+/* 🎨 THE FILL WIPES, IT DOES NOT CROSS-FADE. A `background` transition dissolves grey to amber
+   through a dead muddy middle; `clip-path` uncovers it from the left so the colour arrives WITH
+   the knob. And the knob overshoots ~6% and settles — a curve that only decelerates arrives and
+   stops dead, which is the other half of what he called stiff. */
+check(G37, 'the colour arrives with the knob, and the knob settles rather than stopping dead',
+  /transition: clip-path 220ms cubic-bezier\(\.22, 1, \.36, 1\)/.test(themeCss) &&
+  /transition: transform 240ms cubic-bezier\(\.34, 1\.56, \.64, 1\)/.test(themeCss),
+  'a cross-fade through mud and a dead stop are exactly the two things he said were missing');
+/* 📏 the width he was fighting: 12px padding both sides of every cell, a 44px toggle floor and an
+   800px table floor. 6 / 40 / 560 now — a rank column is a quarter narrower. */
+check(G37, 'a rank column is narrow enough to fit without sliding sideways',
+  /\.kpm-matrix \{[^}]*min-width: 560px/.test(themeCss) &&
+  /\.kpm-matrix th, \.kpm-matrix td \{ padding: var\(--s2\) 6px/.test(themeCss) &&
+  /\.kpm-matrix \.kpm-toggle \{ min-width: 40px; min-height: 40px; \}/.test(themeCss),
+  'he asked not to have to slide left and right; the cell padding was the biggest single cost');
 /* what is drawn and what is announced come from ONE attribute, so they cannot drift. On this
    screen a toggle that reads "on" to a screen reader while drawn off is a security bug. */
 check(G37, 'every permission toggle states its state to both eye and screen reader',

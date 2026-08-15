@@ -2489,29 +2489,69 @@ html.lite-mode .kpm-title-rule { animation: none; width: 100%; }
    Amber is the fill, which is what he asked for and what the rationing law already
    says — amber marks the STATE. It is a background here, never text, so the
    readable-token rule in group 32 is untouched. */
-.kpm-sw { position: relative; display: block; width: 52px; height: 26px; flex: none; }
-/* the track */
-.kpm-sw::before { content: ''; position: absolute; inset: 0; border-radius: 999px;
-  background: var(--inset); border: 1px solid var(--line-3);
-  transition: background 220ms cubic-bezier(.22, 1, .36, 1), border-color 220ms ease-out; }
-/* the knob. 32 tall in a 26 track = 3px proud on each edge, and 2px proud at each end. */
+/* 📏 SMALLER, 2026-08-15: *"i feel like the button is too big and too much space between each
+   tiers can u adjust it so that the users didnt need to slide left and right each time"*.
+   52x26 -> 40x20, knob 32 -> 26, travel 18. Same proportions, same 2px/3px overhang — it is the
+   RATIO that reads as a switch, not the size. Paired with tighter table cells below, a column
+   goes from ~68px to ~52px, so a third more ranks fit before anything has to scroll. */
+.kpm-sw { position: relative; display: block; width: 40px; height: 20px; flex: none;
+  border-radius: 999px; background: var(--inset); border: 1px solid var(--line-3);
+  transition: border-color 180ms ease, transform 130ms cubic-bezier(.22, 1, .36, 1); }
+
+/* 🎨 THE FILL WIPES, IT DOES NOT CROSS-FADE — and this is most of what he meant by *"the motion
+   and the color is not good enough it just different from the video i gave u"*. A `background`
+   transition dissolves grey into amber through a dead muddy middle, which is exactly the flat,
+   stiff read he described. `clip-path` uncovers the amber from the left instead, so the colour
+   ARRIVES WITH the knob rather than appearing all over the track at once. Same trick the hold-to-
+   confirm button already uses, and it stays on the compositor. */
+.kpm-sw::before { content: ''; position: absolute; inset: -1px; border-radius: 999px;
+  background: var(--gold);
+  clip-path: inset(0 100% 0 0);
+  transition: clip-path 220ms cubic-bezier(.22, 1, .36, 1); }
+[aria-pressed="true"] > .kpm-sw { border-color: var(--accent-edge); }
+[aria-pressed="true"] > .kpm-sw::before { clip-path: inset(0 0 0 0); }
+
+/* the knob. 26 tall in a 20 track = 3px proud on each edge, 2px proud at each end. */
 .kpm-sw::after { content: ''; position: absolute; top: 50%; left: -2px;
-  width: 32px; height: 32px; margin-top: -16px; border-radius: 50%;
+  width: 26px; height: 26px; margin-top: -13px; border-radius: 50%;
   background: var(--ink-muted); border: 1px solid var(--line-3);
-  transition: transform 260ms cubic-bezier(.22, 1, .36, 1), background 220ms ease-out; }
-[aria-pressed="true"] > .kpm-sw::before { background: var(--gold); border-color: var(--accent-edge); }
-/* 52 - 32 + 4 = 24, so the knob ends 2px proud of the far end exactly as it starts */
-[aria-pressed="true"] > .kpm-sw::after { transform: translateX(24px); background: var(--ink); }
+  /* ⚠️ THE OVERSHOOT IS THE WHOLE DIFFERENCE. A plain ease-out arrives and stops dead, which is
+     the *"kaku"* — stiff — he named. This curve carries the knob ~6% past its mark and lets it
+     settle, which is what every switch that feels alive is doing. Kept small: a bounce you can
+     count is a toy, and this control decides who can edit customers.
+     The knob is 20ms SLOWER than the fill on purpose, so the amber is already there when it
+     lands instead of the two racing. */
+  transition: transform 240ms cubic-bezier(.34, 1.56, .64, 1),
+              background 180ms ease, border-color 180ms ease; }
+/* 40 - 26 + 4 = 18, so it ends 2px proud of the far end exactly as it starts */
+[aria-pressed="true"] > .kpm-sw::after { transform: translateX(18px);
+  background: var(--ink); border-color: var(--accent-edge); }
 @media (hover: hover) and (pointer: fine) {
   .kpm-toggle:hover > .kpm-sw::after { background: var(--ink); }
-  .kpm-toggle:hover > .kpm-sw::before { border-color: var(--accent-edge); }
+  .kpm-toggle:hover > .kpm-sw { border-color: var(--accent-edge); }
 }
-/* the press. Not a scale on the button — that would drag the whole 44px target with it. */
-.kpm-toggle:active > .kpm-sw::after { width: 34px; height: 34px; margin-top: -17px; }
+/* 🔴 THE PRESS IS A TRANSFORM. The first version animated the knob's `width`, `height` and
+   `margin-top` — three LAYOUT properties, so every frame of the press re-ran layout and paint
+   instead of riding the compositor. That is the other half of the stiffness he reported, and it
+   is a bug rather than a taste call. Scaling the switch does the same job for free.
+   Placed after the pressed rules so a press reads on a switch that is already on. */
+.kpm-toggle:active > .kpm-sw { transform: scale(.92); }
 
-.kpm-matrix { width: 100%; border-collapse: collapse; min-width: 800px; user-select: none;
+/* 📏 TIGHTER, 2026-08-15: *"too much space between each tiers can u adjust it so that the users
+   didnt need to slide left and right each time"*. Three numbers were spending the width:
+   12px cell padding on BOTH sides of every cell (24px a column), a 44px minimum on the toggle,
+   and an 800px floor under the whole table.
+   Now 6px / 40px / 560px. A rank column goes from ~68px to ~52px — a quarter narrower — so a
+   third more ranks fit before anything scrolls, and the feature-name column keeps its own air
+   because it is the only one that holds a sentence. */
+.kpm-matrix { width: 100%; border-collapse: collapse; min-width: 560px; user-select: none;
   text-align: left; }
-.kpm-matrix th, .kpm-matrix td { padding: var(--s3); border-bottom: 1px solid var(--line); }
+.kpm-matrix th, .kpm-matrix td { padding: var(--s2) 6px; border-bottom: 1px solid var(--line); }
+.kpm-matrix th:first-child, .kpm-matrix td:first-child { padding-left: var(--s3); padding-right: var(--s4); }
+/* ⚠️ 40px, NOT the system's 44px — and only inside this grid. The 44px floor is a THUMB rule,
+   and this table is `hidden lg:block`: it never renders on a touch screen. The phone gets the
+   rank-picker list, where the switch keeps its full 44px target. */
+.kpm-matrix .kpm-toggle { min-width: 40px; min-height: 40px; }
 .kpm-matrix thead th { background: var(--sunk); text-align: center; font-family: var(--font-mono);
   font-weight: 700; font-size: 10px; letter-spacing: .16em; text-transform: uppercase;
   color: var(--ink-muted); cursor: move; }
