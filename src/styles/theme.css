@@ -2522,10 +2522,24 @@ html.lite-mode .kpm-title-rule { animation: none; width: 100%; }
      The knob is 20ms SLOWER than the fill on purpose, so the amber is already there when it
      lands instead of the two racing. */
   transition: transform 240ms cubic-bezier(.34, 1.56, .64, 1),
-              background 180ms ease, border-color 180ms ease; }
-/* 40 - 26 + 4 = 18, so it ends 2px proud of the far end exactly as it starts */
+              background 180ms ease, border-color 180ms ease, box-shadow 200ms ease; }
+/* 40 - 26 + 4 = 18, so it ends 2px proud of the far end exactly as it starts.
+   ✨ THE GLOW, ON HIS WORD: *"yeah of course do use the shadow for normal mode"*. It is the last
+   thing from his video that was missing, and the only reason it was held back is that Lite Mode
+   strips shadow — which is fine, because it strips it AUTOMATICALLY: `html.lite-mode *::after`
+   already forces `box-shadow: none !important`. Nothing extra is needed here and nothing has to
+   be remembered later.
+   ⚠️ THAT SAFETY ONLY HOLDS BECAUSE THE GLOW IS DECORATION. The state is already carried by the
+   knob's POSITION and the amber fill, so losing the halo costs atmosphere and no meaning. The
+   moment a glow is the only thing saying "on" — which is exactly what the old emerald toggles
+   did — Lite Mode turns the screen unreadable. Never let it become load-bearing.
+   Two layers, like the reference: a tight warm ring that reads as the knob's own edge catching
+   the light, and a wide soft bloom for the halo. `box-shadow` is a paint property, so this is
+   the one thing here that is not on the compositor — at 26px, on up to a few dozen switches, it
+   is not worth a third pseudo-element to avoid. */
 [aria-pressed="true"] > .kpm-sw::after { transform: translateX(18px);
-  background: var(--ink); border-color: var(--accent-edge); }
+  background: var(--ink); border-color: var(--accent-edge);
+  box-shadow: 0 0 0 1px rgba(208, 138, 46, .55), 0 0 12px 3px rgba(208, 138, 46, .40); }
 @media (hover: hover) and (pointer: fine) {
   .kpm-toggle:hover > .kpm-sw::after { background: var(--ink); }
   .kpm-toggle:hover > .kpm-sw { border-color: var(--accent-edge); }

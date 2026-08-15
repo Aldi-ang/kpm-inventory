@@ -1923,10 +1923,29 @@ for (const cls of ['.kpm-mod', '.kpm-rail', '.kpm-read', '.kpm-btn', '.kpm-field
 /* strip comments FIRST, then slice: slicing at the header text lands INSIDE that comment, so the
    `/*` opener is gone and nothing can strip the prose that follows */
 const systemBlock = code(themeCss).slice(code(themeCss).indexOf('.kpm-mod {'));
+/* ⚠️ ONE LINE IS EXEMPT, AND THE EXEMPTION IS NARROW ON PURPOSE — 2026-08-15, on his word:
+   *"yeah of course do use the shadow for normal mode"*. The permission switch's ON knob wears the
+   amber halo from the video he recorded.
+   The rule this check enforces is *nothing DEPENDS on a shadow*, not *no shadow exists*. That
+   switch's state is already carried twice over without it — the knob's POSITION and the amber
+   fill — so Lite Mode dropping the halo costs atmosphere and no meaning. The emerald toggles it
+   replaced were the exact opposite: the glow WAS the state, and Lite Mode made the grid
+   unreadable. That is the line, and it is the only reason this passes.
+   The exemption is a single named selector, not a relaxed pattern: any OTHER shadow anywhere in
+   the system still fails here, which is what keeps this check worth having. */
+const SHADOW_EXEMPT = /\[aria-pressed="true"\] > \.kpm-sw::after \{[^}]*\}/g;
+/* ⚠️ `transition:` DECLARATIONS ARE STRIPPED FIRST, and that is a sharpening rather than a
+   loosening. A transition list PAINTS NOTHING — naming `box-shadow` in one only says how a
+   shadow would arrive if some other rule created it. Leaving them in made this check fail on the
+   line that animates the exempt glow, which is a false positive: the very next thing anyone would
+   do is widen the selector exemption, and that is how a real check quietly stops being one. */
+const paintOnly = (s) => s.replace(SHADOW_EXEMPT, '').replace(/transition:[^;}]*[;}]/g, '');
 check(G30, 'nothing in the system depends on a shadow, a blur or a filter',
-  !/box-shadow|backdrop-filter|filter:|text-shadow/.test(systemBlock),
+  !/box-shadow|backdrop-filter|filter:|text-shadow/.test(paintOnly(systemBlock)) &&
+  /\[aria-pressed="true"\] > \.kpm-sw::after \{[^}]*transform: translateX\(18px\)/.test(themeCss),
   'Lite Mode deletes all four — the old tab put every separation into shadows, so on a cheap ' +
-  'Android the six panels collapsed into one undifferentiated column');
+  'Android the six panels collapsed into one undifferentiated column. The switch glow is the one ' +
+  'exemption and it only holds while position + fill still carry the state without it');
 check(G30, 'every hover rule is gated for touch',
   (systemBlock.match(/:hover/g) || []).length > 0 &&
   /@media \(hover: hover\) and \(pointer: fine\) \{[\s\S]*?:hover/.test(systemBlock),
@@ -2513,9 +2532,16 @@ check(G37, 'the matrix carries no blue, no green, no slate, no rose', !offToken.
    could never have slid, and the slide is the half that does not depend on colour.
    ⚠️ The glow behind the knob in his video is deliberately absent: it is a shadow, and shadow is
    what made this exact grid unreadable in Lite Mode in the first place. */
+/* ⚠️ THE GLOW IS ALLOWED HERE, AND THE REASON MATTERS. He asked for it on 2026-08-15: *"yeah of
+   course do use the shadow for normal mode"* — it is the last piece of his reference video. It is
+   safe ONLY because it is decoration: the knob's POSITION and the amber fill already carry the
+   state, so Lite Mode stripping the halo costs atmosphere and no meaning. The old emerald toggles
+   were the opposite — a glow that WAS the state — and that is what made this grid unreadable in
+   Lite Mode. The check below therefore tests what has to remain true, not the absence of shadow:
+   position and fill still say "on" by themselves, and Lite Mode still strips shadow globally. */
 check(G37, 'an allowed permission is still obvious with colour stripped',
   !/drop-shadow/.test(mtx) &&
-  !/\.kpm-sw[^{]*\{[^}]*box-shadow/.test(themeCss) &&
+  /html\.lite-mode \*, html\.lite-mode \*::before, html\.lite-mode \*::after \{[^}]*box-shadow: none !important;/.test(themeCss) &&
   /\[aria-pressed="true"\] > \.kpm-sw::after \{ transform: translateX\(18px\)/.test(themeCss) &&
   /\[aria-pressed="true"\] > \.kpm-sw::before \{ clip-path: inset\(0 0 0 0\)/.test(themeCss) &&
   (mtx.match(/<span className="kpm-sw" aria-hidden="true" \/>/g) || []).length === 2,
