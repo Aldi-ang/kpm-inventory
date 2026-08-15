@@ -222,6 +222,9 @@ html.light { color-scheme: light; }
   --duke-brass-ink-2:  #6b4d0f;
   --duke-danger-ink:   #b4524a;
   --duke-danger-ink-2: #9e4038;
+  /* the big-figure band. Identical to --duke-amber-ink HERE on purpose: in dark mode a price is
+     the plain amber it always was, and only the LIGHT twin differs. */
+  --duke-price-ink:    #ff9d00;
 
   /* ---- edge: borders, rings, rules -------------------------------------- */
   --duke-edge-1:       #3e3226;   /* 39 sites — the terminal's structural line */
@@ -266,6 +269,30 @@ html.light { color-scheme: light; }
   /* the vignette behind the 3D wares. Pure black is right on a dark bench and
      wrong on a pale one, where it reads as a hole rather than a shadow. */
   --duke-vignette:     #000000;
+
+  /* ---- the ones that were COLOUR NAMES, not hexes --------------------------
+     🔴 THE SWEEP MISSED THESE AND HE FOUND THEM IN MINUTES: *"the customer
+     textbox ... is very dark letter causing very hard to see"*, *"skt textbox
+     also too dark"*. The first pass replaced every `#hex`, and `bg-black` /
+     `text-white` are not hexes — so those boxes kept a BLACK ground while the
+     text in them flipped to dark ink. Dark on black.
+     ⚠️ A palette sweep must cover the colour NAMES too, or it converts exactly
+     the half that makes the other half unreadable. */
+  --duke-ink-hi:       #ffffff;   /* was text-white, ON WOOD — flips */
+  --duke-on-fill:      #ffffff;   /* was text-white, ON RED/ORANGE/BRASS — does not */
+  --duke-well:         rgba(0, 0, 0, .60);   /* an input you type into */
+  --duke-well-solid:   #000000;
+  --duke-stage:        #000000;   /* the box a ware is photographed in */
+  --duke-bar-solid:    #000000;   /* a toolbar */
+  --duke-bar:          rgba(0, 0, 0, .40);
+  --duke-bar-2:        rgba(0, 0, 0, .30);
+  --duke-bar-3:        rgba(0, 0, 0, .20);
+  --duke-shade:        rgba(0, 0, 0, .50);
+  --duke-badge:        rgba(0, 0, 0, .80);
+  /* ⚠️ A SCRIM STAYS DARK IN BOTH THEMES. It exists to push the page behind a
+     modal away; a pale scrim on a pale page pushes nothing. */
+  --duke-scrim:        rgba(0, 0, 0, .85);
+  --duke-scrim-hi:     rgba(0, 0, 0, .95);
 }
 
 /* ---- the light bench: pale oak, never white ------------------------------
@@ -287,16 +314,31 @@ html.light {
   --duke-on-plate-2:   #2a231d;
   --duke-paper-ink:    #3a2f1c;   /* ⚠️ cream text would vanish on oak. This is the
                                      whole reason the roles were split. */
-  /* ⚠️ THE ACCENT INKS ARE MUCH DARKER THAN THEY LOOK LIKE THEY SHOULD BE, AND THAT IS MEASURED,
-     NOT TASTE. The first pass used #8a4f00 for amber text — it looked right and measured 3,03:1
-     on the panel, well under the 4,5:1 floor. Gold and red are the two colours he has reported
-     as unreadable in light mode before; they are the ones to over-correct, not to eyeball. */
-  --duke-amber-ink:    #6e3f00;
-  --duke-amber-ink-2:  #5a2e00;
-  --duke-brass-ink:    #553d0b;
-  --duke-brass-ink-2:  #3e2c06;
-  --duke-danger-ink:   #6b1f18;
-  --duke-danger-ink-2: #5a1712;
+  /* ⚠️ THE ACCENT INKS ARE DARKER THAN THEY LOOK LIKE THEY SHOULD BE, AND THAT IS MEASURED, NOT
+     TASTE. An early pass used #8a4f00 for amber text — it looked right and measured 3,03:1 on the
+     panel, under the 4,5:1 floor. Gold and red are the two colours he has reported as unreadable
+     in light mode before; they get measured, never eyeballed.
+     🔴 BUT THE FIRST FIX OVERSHOT AND HE CAUGHT IT: *"fix the contrast for the text and letter
+     especially for numbers, like the price because it little bit dark when viewed on the light
+     mode"*. #6e3f00 cleared the number and stopped looking like amber — a price is supposed to
+     read as money at a glance, and a brown one does not. The answer was to lift the BENCH rather
+     than keep darkening the ink: a lighter ground buys the ink brightness for free, and it is the
+     ground that was making the whole screen feel heavy. */
+  --duke-amber-ink:    #7f4800;
+  --duke-amber-ink-2:  #6b3800;
+  --duke-brass-ink:    #66490d;
+  --duke-brass-ink-2:  #4a3508;
+  --duke-danger-ink:   #7e2a22;
+  --duke-danger-ink-2: #6b1f18;
+  /* ⚠️ THE BIG FIGURES ONLY — the running total, the ware's price, the ledger's headline number.
+     WCAG's floor for text this size and weight is 3:1, not 4,5:1, and that band is the difference
+     between a brown number and an amber one. It is NOT interchangeable with --duke-amber-ink:
+     used on 10px text it would be genuinely too pale. A check holds it to the large sites.
+     ⚠️ ITS DARK TWIN IS THE PLAIN AMBER, deliberately — see the dark block. The first version of
+     this token carried the LIGHT value in both places, which would have dulled two of his price
+     figures in DARK mode, breaking the one promise this whole conversion is built on. The
+     multiset diff against the pre-change revision caught it; nothing on screen would have. */
+  --duke-price-ink:    #a85e00;
 
   /* edges darken — a pale border on pale oak is not a border. 3:1 minimum, measured. */
   --duke-edge-1:       #5e5039;
@@ -313,26 +355,29 @@ html.light {
   --duke-danger-edge:  #6b1f18;
 
   /* surfaces slide, they do NOT invert — the well stays the darkest of them.
-     The whole ladder was lifted one step after measuring: the first pass sat dark enough that
-     amber and brass could not clear 3:1 against it without going nearly black. */
-  --duke-fill-well:    #a89b82;
-  --duke-fill-deep:    #b0a38a;
-  --duke-fill-ground:  #b9ac93;
-  --duke-fill-panel:   #c8bca3;
-  --duke-fill-panel-2: #ccc0a8;
-  --duke-fill-panel-3: #cec2a6;
-  --duke-fill-plank:   #d6cab2;
-  --duke-fill-plank-2: #c4b69a;
-  --duke-fill-tan:     #ac9874;
-  /* paper stays paper, just a shade cleaner so it still lifts off the oak */
-  --duke-paper:        #faf3e2;
-  --duke-paper-2:      #efe7d2;
-  --duke-paper-3:      #f7efdb;
-  --duke-paper-4:      #f2e7cb;
-  --duke-paper-5:      #f7f0de;
-  --duke-paper-6:      #f9f3e5;
-  --duke-paper-7:      #f9e9e3;
-  --duke-paper-8:      #fbf6ea;
+     🔴 THE LADDER WAS LIFTED TWICE, AND THE SECOND TIME WAS HIS CALL. The first pass sat dark
+     enough that amber and brass could not clear their floors without going nearly black, and the
+     result was the price reading brown. Lifting the BENCH is what buys an ink its brightness
+     back — every accent on this screen is measured against these nine values, so they are the
+     lever, not the inks. */
+  --duke-fill-well:    #b8ad95;
+  --duke-fill-deep:    #c2b79f;
+  --duke-fill-ground:  #d8cdb6;
+  --duke-fill-panel:   #e2d9c4;
+  --duke-fill-panel-2: #e6ddc9;
+  --duke-fill-panel-3: #e8dfc8;
+  --duke-fill-plank:   #ede5d2;
+  --duke-fill-plank-2: #dcd1b8;
+  --duke-fill-tan:     #c6b795;
+  /* paper stays paper — lifted with the bench so a card still reads as laid ON it */
+  --duke-paper:        #fdf9ef;
+  --duke-paper-2:      #f5efe0;
+  --duke-paper-3:      #fbf6e9;
+  --duke-paper-4:      #f7f1de;
+  --duke-paper-5:      #fbf6ea;
+  --duke-paper-6:      #fdfaf1;
+  --duke-paper-7:      #fdf0eb;
+  --duke-paper-8:      #fefbf5;
   /* brass and amber come down a step: full brightness glares on a pale ground */
   --duke-amber:        #e07c00;
   --duke-amber-2:      #a66200;
@@ -343,6 +388,25 @@ html.light {
   --duke-brass-5:      #e8ae00;
   --duke-brass-6:      #856722;
   --duke-vignette:     #6e6152;
+
+  /* the colour-name half of the sweep — see the note on the dark block above */
+  --duke-ink-hi:       #1a1512;   /* on wood: white becomes near-black */
+  --duke-on-fill:      #ffffff;   /* on a red or brass plate: still white */
+  /* ⚠️ WELLS AND BARS FLIP FROM A BLACK VEIL TO A PALE ONE. A `rgba(0,0,0,.6)`
+     input is a hole in a dark bench; on a pale bench the same veil is a black
+     box with dark text in it, which is exactly what he reported. */
+  --duke-well:         rgba(255, 252, 244, .88);
+  --duke-well-solid:   #f6f1e4;
+  --duke-stage:        #cdc2ab;
+  --duke-bar-solid:    #e6dfcd;
+  --duke-bar:          rgba(255, 252, 244, .50);
+  --duke-bar-2:        rgba(255, 252, 244, .40);
+  --duke-bar-3:        rgba(255, 252, 244, .35);
+  --duke-shade:        rgba(110, 97, 74, .14);
+  --duke-badge:        rgba(255, 252, 244, .92);
+  /* the scrims stay dark — warmed, not lightened */
+  --duke-scrim:        rgba(46, 38, 26, .72);
+  --duke-scrim-hi:     rgba(46, 38, 26, .86);
 }
 
 /* ============================================================================

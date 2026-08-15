@@ -1506,7 +1506,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                         onClick={clearCustomer}
                         aria-label="Clear customer"
                         data-no-drag
-                        className="shrink-0 bg-red-600 hover:bg-red-500 text-white p-1.5 rounded shadow-md active:scale-90 transition-all"
+                        className="shrink-0 bg-red-600 hover:bg-red-500 text-[var(--duke-on-fill)] p-1.5 rounded shadow-md active:scale-90 transition-all"
                     ><X size={14} strokeWidth={3}/></button>
                 )}
             </div>
@@ -1516,7 +1516,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                 which would bury the suggestions the sheet exists to show. */}
             {showCustomerDropdown && createPortal(
                 <div className="manifest-dropdown-area hide-on-print fixed inset-0 z-[300] flex items-start justify-center">
-                    <div className="absolute inset-0 bg-black/85 backdrop-blur-sm" onClick={() => setShowCustomerDropdown(false)}></div>
+                    <div className="absolute inset-0 bg-[var(--duke-scrim)] backdrop-blur-sm" onClick={() => setShowCustomerDropdown(false)}></div>
 
                     <div className="relative w-full lg:max-w-md lg:mt-16 max-h-[70vh] flex flex-col bg-[var(--duke-fill-deep)] border-b-4 lg:border-4 border-[var(--duke-edge-1)] shadow-[0_10px_40px_rgba(0,0,0,0.7)]">
                         <div className="shrink-0 flex items-center gap-2 px-4 py-3 border-b border-[var(--duke-edge-1)]">
@@ -1540,7 +1540,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                 onChange={handleManualCustomerType}
                                 placeholder="Type the shop name"
                                 aria-label="Customer name"
-                                className="w-full bg-black/60 border-2 border-[var(--duke-edge-1)] focus:border-[var(--duke-amber-edge)] rounded-lg px-3 py-3 text-base font-bold uppercase text-[var(--duke-paper-ink)] placeholder-[var(--duke-ink-6)] outline-none transition-colors"
+                                className="w-full bg-[var(--duke-well)] border-2 border-[var(--duke-edge-1)] focus:border-[var(--duke-amber-edge)] rounded-lg px-3 py-3 text-base font-bold uppercase text-[var(--duke-paper-ink)] placeholder-[var(--duke-ink-6)] outline-none transition-colors"
                             />
                         </div>
 
@@ -1579,11 +1579,11 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
 
                 {/* --- 🚀 DUAL MODE TOGGLE (SALE VS RETUR) --- */}
                 <div className="flex bg-[var(--duke-fill-ground)] rounded border border-[var(--duke-edge-2)] p-1 mb-2">
-                    <button onClick={() => { setIsReturMode(false); setReturType('EXCHANGE'); }} className={`kpm-hover flex-1 py-1.5 text-[10px] font-black uppercase tracking-widest rounded ${!isReturMode ? 'bg-[var(--duke-brass-2)] text-[var(--duke-on-plate)]' : 'text-[var(--duke-ink-3)] hover:text-white'}`}>Sale Mode</button>
+                    <button onClick={() => { setIsReturMode(false); setReturType('EXCHANGE'); }} className={`kpm-hover flex-1 py-1.5 text-[10px] font-black uppercase tracking-widest rounded ${!isReturMode ? 'bg-[var(--duke-brass-2)] text-[var(--duke-on-plate)]' : 'text-[var(--duke-ink-3)] hover:text-[var(--duke-ink-hi)]'}`}>Sale Mode</button>
                     <button onClick={() => {
                         if (!allowRetur) return notify("You do not have clearance to process returns.");
                         setIsReturMode(true);
-                    }} className={`kpm-hover flex-1 py-1.5 text-[10px] font-black uppercase tracking-widest rounded ${isReturMode ? 'bg-[var(--danger-plate)] text-[var(--danger-plate-ink)]' : 'text-[var(--duke-ink-3)] hover:text-white'}`}>Retur Mode</button>
+                    }} className={`kpm-hover flex-1 py-1.5 text-[10px] font-black uppercase tracking-widest rounded ${isReturMode ? 'bg-[var(--danger-plate)] text-[var(--danger-plate-ink)]' : 'text-[var(--duke-ink-3)] hover:text-[var(--duke-ink-hi)]'}`}>Retur Mode</button>
                 </div>
 
                 {/* --- 🚀 SUB MODE TOGGLE (BUYBACK VS EXCHANGE) --- */}
@@ -1593,8 +1593,8 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                             a saturated orange and a bright gold shouting at each other was the
                             loudest thing on a screen whose whole point is a quiet ledger. Buyback
                             keeps the desaturated danger plate because it pays money OUT. */}
-                        <button onClick={() => setReturType('BUYBACK')} className={`kpm-hover flex-1 py-1 text-[11px] font-bold uppercase tracking-widest rounded ${returType === 'BUYBACK' ? 'bg-[var(--danger-plate)] text-[var(--danger-plate-ink)]' : 'text-[var(--duke-ink-3)] hover:text-white'}`}>Buyback (Refund)</button>
-                        <button onClick={() => setReturType('EXCHANGE')} className={`kpm-hover flex-1 py-1 text-[11px] font-bold uppercase tracking-widest rounded ${returType === 'EXCHANGE' ? 'bg-[var(--duke-brass-3)] text-[var(--duke-paper-ink)]' : 'text-[var(--duke-ink-3)] hover:text-white'}`}>Exchange (Tukar)</button>
+                        <button onClick={() => setReturType('BUYBACK')} className={`kpm-hover flex-1 py-1 text-[11px] font-bold uppercase tracking-widest rounded ${returType === 'BUYBACK' ? 'bg-[var(--danger-plate)] text-[var(--danger-plate-ink)]' : 'text-[var(--duke-ink-3)] hover:text-[var(--duke-ink-hi)]'}`}>Buyback (Refund)</button>
+                        <button onClick={() => setReturType('EXCHANGE')} className={`kpm-hover flex-1 py-1 text-[11px] font-bold uppercase tracking-widest rounded ${returType === 'EXCHANGE' ? 'bg-[var(--duke-brass-3)] text-[var(--duke-paper-ink)]' : 'text-[var(--duke-ink-3)] hover:text-[var(--duke-ink-hi)]'}`}>Exchange (Tukar)</button>
                     </div>
                 )}
 
@@ -1626,9 +1626,9 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                 <h4 className="text-red-500 font-black uppercase tracking-widest text-[10px]">Warning: Jatuh Tempo!</h4>
                             </div>
                             <p className="text-[var(--duke-ink-1)] text-[11px] leading-relaxed uppercase tracking-widest mt-1">
-                                {customerName} OWES <span className="font-bold text-white text-[10px]">Rp {new Intl.NumberFormat('id-ID').format(debtInfo.totalDebt)}</span> FROM {debtInfo.ageDays} DAYS AGO.
+                                {customerName} OWES <span className="font-bold text-[var(--duke-ink-hi)] text-[10px]">Rp {new Intl.NumberFormat('id-ID').format(debtInfo.totalDebt)}</span> FROM {debtInfo.ageDays} DAYS AGO.
                             </p>
-                            <div className="text-white bg-red-600 px-1.5 py-0.5 mt-2 inline-block text-[11px] uppercase tracking-widest font-black shadow-md">Collect payment before issuing new Titip!</div>
+                            <div className="text-[var(--duke-ink-hi)] bg-red-600 px-1.5 py-0.5 mt-2 inline-block text-[11px] uppercase tracking-widest font-black shadow-md">Collect payment before issuing new Titip!</div>
                         </div>
                     )}
 
@@ -1658,7 +1658,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                         {gpsStatus === 'checking' && (
                                             <div className="flex items-center justify-between w-full">
                                                 <span className="text-[var(--duke-amber-ink)] animate-pulse flex items-center gap-1"><MapPin size={12}/> Acquiring Satellites...</span>
-                                                <button onClick={() => verifyLocation(true)} className="text-[var(--duke-amber-ink)] hover:text-white underline text-[11px] ml-2">PC Fast Scan</button>
+                                                <button onClick={() => verifyLocation(true)} className="text-[var(--duke-amber-ink)] hover:text-[var(--duke-ink-hi)] underline text-[11px] ml-2">PC Fast Scan</button>
                                             </div>
                                         )}
                                         
@@ -1886,8 +1886,8 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                     {/* EXCHANGE MODE ONLY: FULFILL NOW VS IOU */}
                                     {returType === 'EXCHANGE' && (
                                         <div className="flex gap-2 mt-1">
-                                            <button onClick={() => updateCartItem(item.productId, 'fulfillment', 'NOW')} className={`flex-1 py-1.5 text-[11px] font-bold uppercase rounded border transition-all ${item.fulfillment !== 'IOU' ? 'bg-[var(--duke-brass)] border-[var(--duke-brass-edge-2)] text-[var(--duke-on-plate)] shadow-md' : 'bg-black/20 border-[var(--duke-edge-3)]/50 text-[var(--duke-ink-3)] hover:text-white'}`}>Give Replacement Now</button>
-                                            <button onClick={() => updateCartItem(item.productId, 'fulfillment', 'IOU')} className={`flex-1 py-1.5 text-[11px] font-bold uppercase rounded border transition-all ${item.fulfillment === 'IOU' ? 'bg-[var(--duke-brass-3)] border-[var(--duke-brass-edge-4)] text-white shadow-md' : 'bg-black/20 border-[var(--duke-edge-3)]/50 text-[var(--duke-ink-3)] hover:text-white'}`}>Hutang Barang (IOU)</button>
+                                            <button onClick={() => updateCartItem(item.productId, 'fulfillment', 'NOW')} className={`flex-1 py-1.5 text-[11px] font-bold uppercase rounded border transition-all ${item.fulfillment !== 'IOU' ? 'bg-[var(--duke-brass)] border-[var(--duke-brass-edge-2)] text-[var(--duke-on-plate)] shadow-md' : 'bg-[var(--duke-bar-3)] border-[var(--duke-edge-3)]/50 text-[var(--duke-ink-3)] hover:text-[var(--duke-ink-hi)]'}`}>Give Replacement Now</button>
+                                            <button onClick={() => updateCartItem(item.productId, 'fulfillment', 'IOU')} className={`flex-1 py-1.5 text-[11px] font-bold uppercase rounded border transition-all ${item.fulfillment === 'IOU' ? 'bg-[var(--duke-brass-3)] border-[var(--duke-brass-edge-4)] text-[var(--duke-on-fill)] shadow-md' : 'bg-[var(--duke-bar-3)] border-[var(--duke-edge-3)]/50 text-[var(--duke-ink-3)] hover:text-[var(--duke-ink-hi)]'}`}>Hutang Barang (IOU)</button>
                                         </div>
                                     )}
                                 </div>
@@ -2023,9 +2023,9 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                         <input type="file" accept="image/*" capture="environment" id="txProof" className="hidden" onChange={handleTxPhotoCapture} />
                         
                         {txProofPhoto ? (
-                            <div className="relative rounded-lg border-2 border-[var(--duke-amber-edge)] overflow-hidden shadow-[0_0_15px_rgba(255,157,0,0.3)] bg-black">
+                            <div className="relative rounded-lg border-2 border-[var(--duke-amber-edge)] overflow-hidden shadow-[0_0_15px_rgba(255,157,0,0.3)] bg-[var(--duke-stage)]">
                                 <img src={txProofPhoto} alt="Proof" className="w-full h-32 object-contain opacity-90" />
-                                <button onClick={() => setTxProofPhoto(null)} className="absolute top-2 right-2 bg-red-600 hover:bg-red-500 text-white p-1.5 rounded-md shadow-md"><X size={14}/></button>
+                                <button onClick={() => setTxProofPhoto(null)} className="absolute top-2 right-2 bg-red-600 hover:bg-red-500 text-[var(--duke-on-fill)] p-1.5 rounded-md shadow-md"><X size={14}/></button>
                             </div>
                         ) : (
                             <button onClick={() => document.getElementById('txProof').click()} className="kpm-hover w-full py-2 border border-dashed border-[var(--duke-edge-4)] hover:border-[var(--duke-amber-edge-2)] text-[var(--duke-ink-4)] hover:text-[var(--duke-amber-ink-2)] bg-transparent rounded flex items-center justify-center gap-2">
@@ -2062,7 +2062,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                     <button
                         onClick={handleFinalDeal}
                         disabled={!canSubmitSale || isProcessingSale}
-                        className={`kpm-hover py-2.5 md:py-4 border-2 text-base md:text-xl lg:text-2xl font-black uppercase tracking-[0.2em] transition-all active:translate-y-1 shadow-lg rounded flex items-center justify-center gap-2 md:gap-3 ${canSubmitSale && !isProcessingSale ? (isReturMode ? (returType === 'EXCHANGE' ? 'bg-gradient-to-r from-[var(--duke-brass-2)] to-[var(--duke-brass-3)] border-[var(--duke-brass-edge)] text-[var(--duke-on-plate)] hover:from-[var(--duke-brass)] hover:to-[var(--duke-brass-6)] shadow-[0_0_20px_rgba(212,175,55,0.4)]' : 'bg-gradient-to-r from-red-600 to-red-800 border-red-500 text-white hover:from-red-500 hover:to-red-700 shadow-[0_0_20px_rgba(220,38,38,0.4)]') : 'bg-gradient-to-r from-[var(--duke-amber)] to-[var(--duke-amber-2)] border-[var(--duke-brass-edge-3)] text-black hover:from-[var(--duke-brass-5)] hover:to-[var(--duke-amber)]') : 'bg-transparent text-[var(--duke-ink-3)] border-[var(--duke-edge-4)] cursor-not-allowed'}`}
+                        className={`kpm-hover py-2.5 md:py-4 border-2 text-base md:text-xl lg:text-2xl font-black uppercase tracking-[0.2em] transition-all active:translate-y-1 shadow-lg rounded flex items-center justify-center gap-2 md:gap-3 ${canSubmitSale && !isProcessingSale ? (isReturMode ? (returType === 'EXCHANGE' ? 'bg-gradient-to-r from-[var(--duke-brass-2)] to-[var(--duke-brass-3)] border-[var(--duke-brass-edge)] text-[var(--duke-on-plate)] hover:from-[var(--duke-brass)] hover:to-[var(--duke-brass-6)] shadow-[0_0_20px_rgba(212,175,55,0.4)]' : 'bg-gradient-to-r from-red-600 to-red-800 border-red-500 text-[var(--duke-on-fill)] hover:from-red-500 hover:to-red-700 shadow-[0_0_20px_rgba(220,38,38,0.4)]') : 'bg-gradient-to-r from-[var(--duke-amber)] to-[var(--duke-amber-2)] border-[var(--duke-brass-edge-3)] text-black hover:from-[var(--duke-brass-5)] hover:to-[var(--duke-amber)]') : 'bg-transparent text-[var(--duke-ink-3)] border-[var(--duke-edge-4)] cursor-not-allowed'}`}
                     >
                         {isProcessingSale ? <span className="flex items-center gap-2 animate-pulse"><Zap size={20}/> PROCESSING...</span> :
                          gpsStatus === 'checking' ? 'Awaiting GPS...' :
@@ -2086,14 +2086,14 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                     what it changes: every ware below this line comes from whichever side is lit.
                     Same plates as the SALE/RETUR toggle in the manifest — same kind of switch. */}
                 {onAdminSalesMode && (
-                    <div className="p-2 md:p-3 bg-black border-b border-[var(--duke-edge-1)] shrink-0">
+                    <div className="p-2 md:p-3 bg-[var(--duke-bar-solid)] border-b border-[var(--duke-edge-1)] shrink-0">
                         <div className="flex bg-[var(--duke-fill-ground)] rounded border border-[var(--duke-edge-2)] p-1">
-                            <button onClick={() => onAdminSalesMode('VAULT')} className={`kpm-hover flex-1 py-1.5 text-[10px] font-black uppercase tracking-widest rounded transition-colors ${adminSalesMode !== 'VEHICLE' ? 'bg-[var(--duke-amber)] text-[var(--duke-on-plate)]' : 'text-[var(--duke-ink-3)] hover:text-white'}`}>Master Vault</button>
-                            <button onClick={() => onAdminSalesMode('VEHICLE')} className={`kpm-hover flex-1 py-1.5 text-[10px] font-black uppercase tracking-widest rounded transition-colors ${adminSalesMode === 'VEHICLE' ? 'bg-[var(--duke-brass-2)] text-[var(--duke-on-plate)]' : 'text-[var(--duke-ink-3)] hover:text-white'}`}>Boss Car</button>
+                            <button onClick={() => onAdminSalesMode('VAULT')} className={`kpm-hover flex-1 py-1.5 text-[10px] font-black uppercase tracking-widest rounded transition-colors ${adminSalesMode !== 'VEHICLE' ? 'bg-[var(--duke-amber)] text-[var(--duke-on-plate)]' : 'text-[var(--duke-ink-3)] hover:text-[var(--duke-ink-hi)]'}`}>Master Vault</button>
+                            <button onClick={() => onAdminSalesMode('VEHICLE')} className={`kpm-hover flex-1 py-1.5 text-[10px] font-black uppercase tracking-widest rounded transition-colors ${adminSalesMode === 'VEHICLE' ? 'bg-[var(--duke-brass-2)] text-[var(--duke-on-plate)]' : 'text-[var(--duke-ink-3)] hover:text-[var(--duke-ink-hi)]'}`}>Boss Car</button>
                         </div>
                     </div>
                 )}
-                <div className="flex gap-2 p-2 md:p-3 bg-black border-b border-[var(--duke-edge-1)] overflow-x-auto scrollbar-hide shrink-0">
+                <div className="flex gap-2 p-2 md:p-3 bg-[var(--duke-bar-solid)] border-b border-[var(--duke-edge-1)] overflow-x-auto scrollbar-hide shrink-0">
                     {categories.map(cat => ( <button key={cat} onClick={() => setActiveCategory(cat)} className={`kpm-hover px-4 py-2 md:px-5 md:py-2.5 text-[10px] md:text-xs font-black uppercase whitespace-nowrap transition-all rounded-lg border-2 ${activeCategory === cat ? 'bg-[var(--duke-fill-tan)] text-black border-[var(--duke-amber-edge)]' : 'bg-[var(--duke-fill-panel)] text-[var(--duke-ink-5)] border-[var(--duke-edge-1)] hover:border-[var(--duke-edge-5)]'}`}>{cat}</button> ))}
                 </div>
                 {/* The examine shelf used to sit here as a full-width horizontal strip, which
@@ -2101,7 +2101,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                     same content, in space that was empty anyway. */}
                 <div className="p-2 md:p-3 border-b border-[var(--duke-edge-1)] flex gap-3 shrink-0 bg-[var(--duke-fill-well)] items-center relative z-10">
                     <div className="relative flex-1">
-                        <input ref={searchRef} value={searchTerm} onChange={e => setSearchTerm(e.target.value)} placeholder="SEARCH WARES..." className="w-full bg-black/60 border-2 border-[var(--duke-edge-1)] p-2 md:p-3 pl-9 md:pl-10 pr-10 text-[var(--duke-amber-ink)] font-mono text-xs md:text-sm font-bold outline-none focus:border-[var(--duke-amber-edge)] rounded-lg shadow-inner transition-colors"/>
+                        <input ref={searchRef} value={searchTerm} onChange={e => setSearchTerm(e.target.value)} placeholder="SEARCH WARES..." className="w-full bg-[var(--duke-well)] border-2 border-[var(--duke-edge-1)] p-2 md:p-3 pl-9 md:pl-10 pr-10 text-[var(--duke-amber-ink)] font-mono text-xs md:text-sm font-bold outline-none focus:border-[var(--duke-amber-edge)] rounded-lg shadow-inner transition-colors"/>
                         <Search size={16} className="absolute left-3 top-2.5 md:top-3.5 text-[var(--duke-ink-3)]"/>
                         <span className="kpm-kbd hidden lg:inline-grid absolute right-3 top-1/2 -translate-y-1/2">/</span>
                     </div>
@@ -2252,7 +2252,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                             {/* 96px on a phone, not 80. This whole square is the press target for
                                 the stock breakdown, and 80 minus its own padding left barely more
                                 than a fingertip. */}
-                            <div className="w-24 h-24 lg:w-auto lg:h-48 p-2 lg:p-5 flex items-center justify-center relative overflow-hidden bg-black/50 shrink-0">
+                            <div className="w-24 h-24 lg:w-auto lg:h-48 p-2 lg:p-5 flex items-center justify-center relative overflow-hidden bg-[var(--duke-shade)] shrink-0">
                                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,var(--duke-fill-plank)_0%,var(--duke-vignette)_80%)] opacity-50"></div>
                                 {/* The ware as a solid object, not a picture of one. Front face is the real
                                     photo, the other faces are tinted panels; it turns only while pointed at.
@@ -2267,7 +2267,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                 >
                                     {renderCube(item)}
                                 </button>
-                                <div className="hidden lg:block absolute top-3 right-3 bg-black/80 text-[var(--duke-ink-3)] text-[10px] font-black px-2 py-1 rounded-full border border-[var(--duke-edge-1)] uppercase tracking-wider">
+                                <div className="hidden lg:block absolute top-3 right-3 bg-[var(--duke-badge)] text-[var(--duke-ink-3)] text-[10px] font-black px-2 py-1 rounded-full border border-[var(--duke-edge-1)] uppercase tracking-wider">
                                     {item.type || 'MISC'}
                                 </div>
                                 {/* Examine was reachable ONLY by right-click, which does not exist on a
@@ -2285,7 +2285,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                             </div>
                             <div className="flex-1 min-w-0 bg-gradient-to-b from-[var(--duke-fill-ground)] to-[var(--duke-fill-well)] border-l-2 lg:border-l-0 lg:border-t-2 border-[var(--duke-edge-1)] p-2 lg:p-4 flex flex-row lg:flex-col items-center lg:items-stretch gap-2 lg:gap-0 font-mono relative">
                                 <div className="flex-1 min-w-0 flex flex-col">
-                                    <h4 className="text-[var(--duke-ink-1)] text-[12px] lg:text-sm font-black uppercase line-clamp-2 lg:mb-3 lg:h-[40px] leading-tight group-hover:text-white transition-colors">{item.name}</h4>
+                                    <h4 className="text-[var(--duke-ink-1)] text-[12px] lg:text-sm font-black uppercase line-clamp-2 lg:mb-3 lg:h-[40px] leading-tight group-hover:text-[var(--duke-ink-hi)] transition-colors">{item.name}</h4>
                                     <div className="mt-1 lg:mt-auto flex flex-row items-center gap-2 lg:gap-0 lg:justify-between lg:items-end w-full">
                                         {/* The running Bks figure moved to the rail, where hovering shows it
                                             properly broken into Karton / Bal / Slop / Bks. A bare "9.892 Bks"
@@ -2305,7 +2305,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                         </div>
                                         <div className="text-left lg:text-right lg:w-auto lg:mt-0 lg:pt-0 lg:border-none">
                                             <span className="hidden lg:block text-[11px] text-[var(--duke-ink-6)] font-bold uppercase tracking-widest mb-1">Ecer Price</span>
-                                            <span className="text-[15px] lg:text-2xl font-black text-[var(--duke-amber-ink)] leading-none drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">{new Intl.NumberFormat('id-ID', { notation: 'compact', maximumFractionDigits: 1 }).format(item.priceEcer || 0)}</span>
+                                            <span className="text-[15px] lg:text-2xl font-black text-[var(--duke-amber-ink)] lg:text-[var(--duke-price-ink)] leading-none drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">{new Intl.NumberFormat('id-ID', { notation: 'compact', maximumFractionDigits: 1 }).format(item.priceEcer || 0)}</span>
                                         </div>
                                     </div>
                                 </div>
@@ -2354,7 +2354,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                 The card wraps so this lands full width underneath rather than
                                 squeezing the row. */}
                             {examineItem?.id === item.id && (
-                                <div className="kpm-strip w-full lg:hidden border-t-2 border-[var(--duke-edge-1)] bg-black/40 px-2 py-2">
+                                <div className="kpm-strip w-full lg:hidden border-t-2 border-[var(--duke-edge-1)] bg-[var(--duke-bar)] px-2 py-2">
                                     <div className="mb-1.5 flex items-baseline justify-between gap-2">
                                         <span className="font-mono text-[8.5px] font-black uppercase tracking-[0.16em] text-[var(--ink-dim)]">In vehicle</span>
                                         {item.dimensions && (
@@ -2585,7 +2585,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
 
                             <div>
                                 <div className="font-mono text-[9.5px] font-black uppercase tracking-[0.16em] text-[var(--ink-dim)] mb-1.5">Taken</div>
-                                <div className="font-mono text-[21px] font-black tabular-nums text-[var(--duke-amber-ink)] leading-none">
+                                <div className="font-mono text-[21px] font-black tabular-nums text-[var(--duke-price-ink)] leading-none">
                                     Rp {new Intl.NumberFormat('id-ID').format(today.today)}
                                 </div>
                                 {/* Direction is carried by the ARROW first and colour second: the palette
@@ -2723,14 +2723,14 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
 
             {/* --- THE NOO REGISTRATION MODAL --- */}
             {showNooModal && (
-                <div className="fixed inset-0 z-[300] bg-black/95 flex items-center justify-center p-4 font-sans backdrop-blur-md">
+                <div className="fixed inset-0 z-[300] bg-[var(--duke-scrim-hi)] flex items-center justify-center p-4 font-sans backdrop-blur-md">
                     <div className="bg-[var(--duke-fill-ground)] w-full max-w-lg border-2 border-orange-500/50 rounded-2xl shadow-[0_0_50px_rgba(249,115,22,0.2)] flex flex-col max-h-[90vh] overflow-hidden animate-fade-in-up">
-                        <div className="p-5 border-b border-[var(--duke-edge-1)] bg-black/40 flex justify-between items-center">
+                        <div className="p-5 border-b border-[var(--duke-edge-1)] bg-[var(--duke-bar)] flex justify-between items-center">
                             <div>
-                                <h2 className="text-lg font-black text-white flex items-center gap-2 uppercase tracking-wider"><Store size={20} className="text-orange-500"/> Outlet Registration</h2>
+                                <h2 className="text-lg font-black text-[var(--duke-ink-hi)] flex items-center gap-2 uppercase tracking-wider"><Store size={20} className="text-orange-500"/> Outlet Registration</h2>
                                 <p className="text-[10px] text-[var(--duke-ink-3)] uppercase tracking-widest mt-1">Unlock Requested Pricing Tiers</p>
                             </div>
-                            <button onClick={() => setShowNooModal(false)} className="text-[var(--duke-ink-3)] hover:text-white"><X size={24}/></button>
+                            <button onClick={() => setShowNooModal(false)} className="text-[var(--duke-ink-3)] hover:text-[var(--duke-ink-hi)]"><X size={24}/></button>
                         </div>
                         
                         <div className="p-6 overflow-y-auto space-y-5 custom-scrollbar flex-1">
@@ -2755,17 +2755,17 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                             )}
                             <div>
                                 <label className="text-xs font-bold text-[var(--duke-ink-3)] uppercase tracking-widest block mb-1">Store Name</label>
-                                <input value={customerName} disabled className="w-full bg-black border border-[var(--duke-edge-1)] text-[var(--duke-ink-1)] p-3 rounded font-bold uppercase opacity-70" />
+                                <input value={customerName} disabled className="w-full bg-[var(--duke-well-solid)] border border-[var(--duke-edge-1)] text-[var(--duke-ink-1)] p-3 rounded font-bold uppercase opacity-70" />
                             </div>
                             
                             <div>
                                 <label className="text-xs font-bold text-[var(--duke-ink-3)] uppercase tracking-widest block mb-1">WhatsApp / Phone <span className="text-red-500">*</span></label>
-                                <input value={nooForm.phone} onChange={e => setNooForm({...nooForm, phone: e.target.value})} placeholder="e.g. 081234567890" className="w-full bg-[var(--duke-fill-panel)] border border-[var(--duke-edge-2)] focus:border-orange-500 outline-none text-white p-3 rounded font-bold" />
+                                <input value={nooForm.phone} onChange={e => setNooForm({...nooForm, phone: e.target.value})} placeholder="e.g. 081234567890" className="w-full bg-[var(--duke-fill-panel)] border border-[var(--duke-edge-2)] focus:border-orange-500 outline-none text-[var(--duke-ink-hi)] p-3 rounded font-bold" />
                             </div>
 
                             <div>
                                 <label className="text-xs font-bold text-[var(--duke-ink-3)] uppercase tracking-widest block mb-1">Requested Pricing Tier <span className="text-red-500">*</span></label>
-                                <select value={nooForm.requestedTier} onChange={e => setNooForm({...nooForm, requestedTier: e.target.value})} className="w-full bg-[var(--duke-fill-panel)] border border-[var(--duke-edge-2)] focus:border-orange-500 outline-none text-white p-3 rounded font-bold uppercase">
+                                <select value={nooForm.requestedTier} onChange={e => setNooForm({...nooForm, requestedTier: e.target.value})} className="w-full bg-[var(--duke-fill-panel)] border border-[var(--duke-edge-2)] focus:border-orange-500 outline-none text-[var(--duke-ink-hi)] p-3 rounded font-bold uppercase">
                                     {allowedTiers.map(tier => ( <option key={tier} value={tier}>{tier}</option> ))}
                                 </select>
                             </div>
@@ -2774,9 +2774,9 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                 <label className="text-xs font-bold text-[var(--duke-ink-3)] uppercase tracking-widest block mb-2">Storefront Photo <span className="text-red-500">*</span></label>
                                 <input type="file" accept="image/*" capture="environment" ref={fileInputRef} onChange={handlePhotoCapture} className="hidden" />
                                 {nooForm.photoUrl ? (
-                                    <div className="relative rounded-lg overflow-hidden border-2 border-orange-500 bg-black">
+                                    <div className="relative rounded-lg overflow-hidden border-2 border-orange-500 bg-[var(--duke-stage)]">
                                         <img src={nooForm.photoUrl} alt="Store Proof" className="w-full h-48 object-contain" />
-                                        <button onClick={() => setNooForm({...nooForm, photoUrl: null, photoFile: null})} className="absolute top-2 right-2 bg-red-600 text-white p-1.5 rounded-full"><X size={14}/></button>
+                                        <button onClick={() => setNooForm({...nooForm, photoUrl: null, photoFile: null})} className="absolute top-2 right-2 bg-red-600 text-[var(--duke-on-fill)] p-1.5 rounded-full"><X size={14}/></button>
                                     </div>
                                 ) : (
                                     <button onClick={() => fileInputRef.current.click()} className="w-full border-2 border-dashed border-[var(--duke-edge-2)] hover:border-orange-500 bg-[var(--duke-fill-panel)]/50 hover:bg-[var(--duke-fill-panel)] text-[var(--duke-ink-3)] hover:text-orange-400 transition-colors py-8 rounded-lg flex flex-col items-center justify-center gap-2">
@@ -2787,7 +2787,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                 )}
                             </div>
                             
-                            <div className="bg-black/30 p-3 rounded border border-[var(--duke-edge-1)] flex justify-between items-center gap-3">
+                            <div className="bg-[var(--duke-bar-2)] p-3 rounded border border-[var(--duke-edge-1)] flex justify-between items-center gap-3">
                                 <div className="flex items-center gap-3">
                                     <div className="p-2 bg-[var(--duke-fill-plank)] text-[var(--duke-amber-ink)] rounded-full"><Map size={16}/></div>
                                     <div>
@@ -2803,8 +2803,8 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                             </div>
                         </div>
 
-                        <div className="p-5 border-t border-[var(--duke-edge-1)] bg-black/40 flex flex-col gap-3">
-                            <button onClick={submitNooRegistration} disabled={!agentLocation} className={`w-full py-4 rounded-xl font-black uppercase tracking-[0.1em] transition-all shadow-lg flex items-center justify-center gap-2 ${agentLocation ? 'bg-orange-600 hover:bg-orange-500 text-white shadow-[0_0_15px_rgba(249,115,22,0.5)]' : 'bg-[var(--duke-fill-panel)] text-[var(--duke-ink-3)] cursor-not-allowed'}`}>
+                        <div className="p-5 border-t border-[var(--duke-edge-1)] bg-[var(--duke-bar)] flex flex-col gap-3">
+                            <button onClick={submitNooRegistration} disabled={!agentLocation} className={`w-full py-4 rounded-xl font-black uppercase tracking-[0.1em] transition-all shadow-lg flex items-center justify-center gap-2 ${agentLocation ? 'bg-orange-600 hover:bg-orange-500 text-[var(--duke-on-fill)] shadow-[0_0_15px_rgba(249,115,22,0.5)]' : 'bg-[var(--duke-fill-panel)] text-[var(--duke-ink-3)] cursor-not-allowed'}`}>
                                 {agentLocation ? 'Save & Proceed to Sale' : 'Acquiring Satellites...'}
                             </button>
                             <button onClick={submitNooOnly} disabled={!agentLocation} className={`w-full py-3 rounded-xl font-black uppercase tracking-[0.1em] transition-all border-2 flex items-center justify-center gap-2 ${agentLocation ? 'bg-[var(--duke-fill-panel)] border-[var(--duke-edge-2)] hover:border-[var(--duke-brass-edge)] hover:text-[var(--duke-brass-ink)] text-[var(--duke-ink-1)]' : 'bg-[var(--duke-fill-panel)] border-[var(--duke-edge-1)] text-[var(--duke-ink-3)] cursor-not-allowed'}`}>
@@ -2817,20 +2817,20 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
             
             {/* --- SAMPLING DEPLOYMENT MODAL --- */}
             {showSampleModal && (
-                <div className="fixed inset-0 z-[300] bg-black/95 flex items-center justify-center p-4 font-sans backdrop-blur-md">
+                <div className="fixed inset-0 z-[300] bg-[var(--duke-scrim-hi)] flex items-center justify-center p-4 font-sans backdrop-blur-md">
                     <div className="bg-[var(--duke-fill-ground)] w-full max-w-md border-2 border-[var(--duke-brass-edge)]/50 rounded-2xl shadow-[0_0_50px_rgba(99,102,241,0.2)] flex flex-col animate-fade-in-up">
-                        <div className="p-5 border-b border-[var(--duke-edge-1)] bg-black/40 flex justify-between items-center">
+                        <div className="p-5 border-b border-[var(--duke-edge-1)] bg-[var(--duke-bar)] flex justify-between items-center">
                             <div>
-                                <h2 className="text-lg font-black text-white flex items-center gap-2 uppercase tracking-wider"><Package size={20} className="text-[var(--duke-brass-ink)]"/> Deploy Marketing Sample</h2>
+                                <h2 className="text-lg font-black text-[var(--duke-ink-hi)] flex items-center gap-2 uppercase tracking-wider"><Package size={20} className="text-[var(--duke-brass-ink)]"/> Deploy Marketing Sample</h2>
                                 <p className="text-[10px] text-[var(--duke-ink-3)] uppercase tracking-widest mt-1">Target: {customerName}</p>
                             </div>
-                            <button onClick={() => setShowSampleModal(false)} className="text-[var(--duke-ink-3)] hover:text-white"><X size={24}/></button>
+                            <button onClick={() => setShowSampleModal(false)} className="text-[var(--duke-ink-3)] hover:text-[var(--duke-ink-hi)]"><X size={24}/></button>
                         </div>
                         
                         <div className="p-6 space-y-5">
                             <div>
                                 <label className="text-xs font-bold text-[var(--duke-ink-3)] uppercase tracking-widest block mb-1">Select Product</label>
-                                <select value={sampleForm.productId} onChange={e => setSampleForm({...sampleForm, productId: e.target.value})} className="w-full bg-[var(--duke-fill-panel)] border border-[var(--duke-edge-2)] focus:border-[var(--duke-brass-edge)] outline-none text-white p-3 rounded font-bold">
+                                <select value={sampleForm.productId} onChange={e => setSampleForm({...sampleForm, productId: e.target.value})} className="w-full bg-[var(--duke-fill-panel)] border border-[var(--duke-edge-2)] focus:border-[var(--duke-brass-edge)] outline-none text-[var(--duke-ink-hi)] p-3 rounded font-bold">
                                     <option value="">-- Choose Product --</option>
                                     {inventory.map(p => {
                                         const sp = p.sticksPerPack || 16;
@@ -2848,7 +2848,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                             <div className="grid grid-cols-2 gap-4 bg-[var(--duke-fill-panel)]/50 p-3 rounded-xl border border-[var(--duke-edge-1)]">
                                 <div>
                                     <label className="text-[10px] font-bold text-[var(--duke-ink-3)] uppercase tracking-widest mb-1 block text-center">Bungkus</label>
-                                    <input type="number" min="0" placeholder="0" value={sampleForm.qtyBks === 0 ? '' : sampleForm.qtyBks} onChange={e=>setSampleForm({...sampleForm, qtyBks: parseInt(e.target.value)||0})} className="w-full p-2 border rounded bg-[var(--duke-fill-ground)] border-[var(--duke-edge-2)] text-white text-center font-bold text-lg focus:border-[var(--duke-brass-edge)] outline-none" />
+                                    <input type="number" min="0" placeholder="0" value={sampleForm.qtyBks === 0 ? '' : sampleForm.qtyBks} onChange={e=>setSampleForm({...sampleForm, qtyBks: parseInt(e.target.value)||0})} className="w-full p-2 border rounded bg-[var(--duke-fill-ground)] border-[var(--duke-edge-2)] text-[var(--duke-ink-hi)] text-center font-bold text-lg focus:border-[var(--duke-brass-edge)] outline-none" />
                                 </div>
                                 <div>
                                     <label className="text-[10px] font-bold text-[var(--duke-ink-3)] uppercase tracking-widest mb-1 block text-center">
@@ -2877,8 +2877,8 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                             </div>
                         </div>
 
-                        <div className="p-5 border-t border-[var(--duke-edge-1)] bg-black/40">
-                            <button onClick={handleDeploySample} disabled={!sampleForm.productId || isProcessingSale || (sampleForm.qtyBks === 0 && sampleForm.qtyBatang === 0)} className={`w-full py-4 rounded-xl font-black uppercase tracking-[0.1em] transition-all shadow-lg flex items-center justify-center gap-2 ${sampleForm.productId && (sampleForm.qtyBks > 0 || sampleForm.qtyBatang > 0) && !isProcessingSale ? 'bg-[var(--duke-brass-2)] hover:bg-[var(--duke-brass)] text-white shadow-[0_0_15px_rgba(99,102,241,0.5)]' : 'bg-[var(--duke-fill-panel)] text-[var(--duke-ink-3)] cursor-not-allowed'}`}>
+                        <div className="p-5 border-t border-[var(--duke-edge-1)] bg-[var(--duke-bar)]">
+                            <button onClick={handleDeploySample} disabled={!sampleForm.productId || isProcessingSale || (sampleForm.qtyBks === 0 && sampleForm.qtyBatang === 0)} className={`w-full py-4 rounded-xl font-black uppercase tracking-[0.1em] transition-all shadow-lg flex items-center justify-center gap-2 ${sampleForm.productId && (sampleForm.qtyBks > 0 || sampleForm.qtyBatang > 0) && !isProcessingSale ? 'bg-[var(--duke-brass-2)] hover:bg-[var(--duke-brass)] text-[var(--duke-on-fill)] shadow-[0_0_15px_rgba(99,102,241,0.5)]' : 'bg-[var(--duke-fill-panel)] text-[var(--duke-ink-3)] cursor-not-allowed'}`}>
                                 {isProcessingSale ? 'Deploying...' : 'Confirm & Deploy Sample'}
                             </button>
                         </div>

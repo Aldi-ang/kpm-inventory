@@ -100,6 +100,22 @@ const PAIRS = [
   ['Duke brass border, bright',    'duke-brass-edge-3','duke-fill-panel',  3],
   ['Duke brass border, dull',      'duke-brass-edge-4','duke-fill-panel',  3],
   ['Duke red border',              'duke-danger-edge', 'duke-fill-panel',  3],
+
+  /* 🔴 THE HALF THE FIRST SWEEP MISSED, and he found it in minutes: *"the customer textbox ...
+     is very dark letter causing very hard to see"*, *"skt textbox also too dark"*. `bg-black` and
+     `text-white` are colour NAMES, not hexes, so a hex-only sweep left those boxes with a black
+     ground while the text inside them flipped to dark ink. These pairs are the boxes he types
+     into, measured against the ground they actually sit on. */
+  ['Duke text in an input',        'duke-paper-ink',   'duke-well-solid',  4.5],
+  ['Duke white-role text in an input', 'duke-ink-hi',  'duke-well-solid',  4.5],
+  ['Duke white-role text on wood',     'duke-ink-hi',  'duke-fill-ground', 4.5],
+  ['Duke white-role text on a stage',  'duke-ink-hi',  'duke-stage',       4.5],
+  ['Duke white-role text on a bar',    'duke-ink-hi',  'duke-bar-solid',   4.5],
+  /* ⚠️ 3:1 IS THE RIGHT FLOOR HERE AND ONLY HERE — the running total and the ware's price are
+     large and black-weight, which is the band WCAG allows it in. It is what lets a price still
+     read as amber instead of brown. On small text this token would be genuinely too pale. */
+  ['Duke PRICE figure on wood',    'duke-price-ink',   'duke-fill-ground', 3],
+  ['Duke PRICE figure on a panel', 'duke-price-ink',   'duke-fill-panel',  3],
 ];
 
 /* ⚠️ THE DUKE PAIRS ARE ENFORCED IN LIGHT AND ONLY REPORTED IN DARK, ON PURPOSE.

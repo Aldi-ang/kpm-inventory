@@ -110,6 +110,30 @@ fill), and a check now fails if an ink token is ever painted as a surface or vic
   one, so all 54 tokens would have gone unmeasured while it still printed *"all pairs pass"*.
   Fixed to read every block. **A measuring tool that quietly measures less than it claims.**
 
+### 🔴 HIS THREE REPORTS ON THE FIRST LOOK — all fixed, 526/526
+
+*"especially for numbers, like the price because it little bit dark"* · *"the customer textbox …
+is very dark letter causing very hard to see"* · *"skt textbox also too dark"*.
+
+**Two separate causes, and the second is the one worth remembering:**
+
+1. **The bench was too dark, so every ink had to be too dark to clear it.** Lifting the nine
+   surface values one step is what buys an ink its brightness back — the surfaces are the lever,
+   not the inks. Prices additionally got `--duke-price-ink`, which sits in WCAG's **3:1** band,
+   legitimate because those figures are large and black-weight. That band is the whole difference
+   between a number that reads as amber and one that reads as brown. A check holds it to the
+   large sites only.
+2. ⚠️ **THE FIRST SWEEP REPLACED EVERY `#hex` AND WALKED PAST EVERY COLOUR NAME.** `bg-black` and
+   `text-white` are not hexes. So the boxes he types into kept a **black ground** while the text
+   in them flipped to dark ink — dark on black. **A palette sweep that covers only hexes converts
+   exactly the half that makes the other half unreadable.** 34 more sites converted: wells, bars,
+   scrims, badges, stages. `text-black` and `bg-white` are deliberately still allowed — black on
+   an amber plate and black on a white field are correct in both themes.
+
+⚠️ **A regression I caused and the diff caught, not the screen:** `--duke-price-ink` first carried
+its LIGHT value in both blocks, which would have dulled two price figures in **dark** mode. The
+multiset diff against the pre-change revision is the only thing that saw it.
+
 🔴 **A REAL FINDING HE SHOULD DECIDE ON — the terminal's DARK contrast was already below target
 in 13 pairs before any of this.** Not introduced here; these are the shipped values. The two that
 are certainly real: the workhorse text `#8b7256` on a panel measures **3,52:1** (needs 4,5) and

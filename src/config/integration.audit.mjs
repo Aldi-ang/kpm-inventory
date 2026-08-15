@@ -2755,6 +2755,25 @@ const allowedHex = new Set(['#000000', '#ffffff', '#25d366', '#128c7e']);
 check(G39, 'the terminal carries no hardcoded colour of its own any more',
   dukeHex.every(h => allowedHex.has(h)),
   'left behind: ' + [...new Set(dukeHex.filter(h => !allowedHex.has(h)))].join(' '));
+/* 🔴 THE HALF THE FIRST SWEEP MISSED. `bg-black` and `text-white` are colour NAMES, not hexes, so
+   a hex-only sweep walked straight past them — and left the boxes he types into with a BLACK
+   ground while the text inside flipped to dark ink. His report, minutes after first looking at it:
+   *"the customer textbox ... is very dark letter causing very hard to see"*, *"skt textbox also
+   too dark"*. A palette sweep must cover the names or it converts exactly the half that makes the
+   other half unreadable.
+   ⚠️ `text-black` and `bg-white` ARE still allowed and are not an oversight: black on a bright
+   amber plate, and black on a white field, are correct in BOTH themes. They flip nothing because
+   nothing under them flipped. */
+const dukeUi = duke.slice(0, duke.indexOf('print-modal-wrapper'));
+const namedLeft = [...new Set(dukeUi.match(/(bg-black|text-white)(\/\d+)?/g) || [])];
+check(G39, 'no colour NAME is left painting the app UI either', !namedLeft.length,
+  'left behind: ' + namedLeft.join(' ') + ' — these do not change theme, so a box keeps its ' +
+  'dark ground while the text in it goes dark too');
+/* the price is the reason the 3:1 band exists here; using it on small text would be too pale */
+check(G39, 'the big-figure ink is used only where the size earns its lower floor',
+  [...dukeUi.matchAll(/([^"'`]{0,120})text-\[var\(--duke-price-ink\)\]/g)]
+    .every(m => /text-\[2[0-9]px\]|text-2xl|text-3xl|text-4xl|lg:text-2xl/.test(m[1])),
+  'this token clears 3:1, not 4,5:1 — on 10px text that is genuinely hard to read');
 check(G39, 'the nota and the WhatsApp mark were left alone',
   /a4-print-jail[\s\S]{0,200}#ffffff/.test(duke) && /#25D366/i.test(duke) &&
   /!text-blue-800/.test(duke),
