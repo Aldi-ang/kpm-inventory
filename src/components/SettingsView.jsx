@@ -6,6 +6,7 @@ import LandlordDashboard from './LandlordDashboard';
 import CrownTransferProtocol from './CrownTransferProtocol';
 import AchievementTester from './AchievementTester';
 import CareerDevTools from './CareerDevTools';
+import HoldButton from './HoldButton';
 
 // 🚀 IMPORT THE MATRIX BRAIN
 import { CORPORATE_TIERS, ROLE_PERMISSIONS, DYNAMIC_TIERS, injectDynamicPermissions, CUSTOMER_EDIT_PERMS } from '../config/permissions';
@@ -877,16 +878,25 @@ export default function SettingsView({
                                       the only way back is a backup file you made before pressing it.
                                   </p>
                               </div>
+                              {/* HOLD TO CONFIRM. The three acts with no undo are the only ones in
+                                  the app that ask for pressure rather than a click — 1.6s cannot
+                                  happen by accident, and the button reports its own result instead
+                                  of throwing it to a toast. The two `confirmAction` dialogs in
+                                  handleWipeData still run: this is a gate IN FRONT of them, never
+                                  a replacement for them. */}
                               <div className="kpm-shelf split">
-                                  <button type="button" className="kpm-btn hazard block" onClick={() => handleWipeData('products')}>
-                                      Wipe products &amp; prices
-                                  </button>
-                                  <button type="button" className="kpm-btn hazard block" onClick={() => handleWipeData('customers')}>
-                                      Wipe customers
-                                  </button>
-                                  <button type="button" className="kpm-btn hazard block" onClick={() => handleWipeData('both')}>
-                                      Wipe everything
-                                  </button>
+                                  <HoldButton onConfirm={() => handleWipeData('products')}
+                                      workingLabel="Wiping products…" doneLabel="Products wiped">
+                                      Hold to wipe products &amp; prices
+                                  </HoldButton>
+                                  <HoldButton onConfirm={() => handleWipeData('customers')}
+                                      workingLabel="Wiping customers…" doneLabel="Customers wiped">
+                                      Hold to wipe customers
+                                  </HoldButton>
+                                  <HoldButton onConfirm={() => handleWipeData('both')}
+                                      workingLabel="Wiping everything…" doneLabel="Everything wiped">
+                                      Hold to wipe everything
+                                  </HoldButton>
                               </div>
                           </div>
                       </div>

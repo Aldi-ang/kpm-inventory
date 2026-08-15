@@ -2102,8 +2102,18 @@ html.lite-mode .kpm-title-rule { animation: none; width: 100%; }
 .kpm-mod.live .kpm-head   { background-image: var(--grad-panel); }
 /* the hazard head is its own material: a red-tinted well, a fine red hatch, and a solid danger
    rule where every other module has a hairline. No gold anywhere near it. */
-.kpm-mod.hazard .kpm-head { background-color: var(--danger-well);
-  background-image: var(--hatch-danger);
+/* 🔴 RED WAS UPHOLSTERING THE PANEL, NOT MARKING IT. His screenshot, 2026-08-15: *"u can add red
+   but not this much especially on few buttons and panel ... i dont want red color to dominate
+   certain features of the app"*. He was looking at a head whose whole area was a red wash under a
+   red hatch, sitting above buttons that were ALSO red-hatched — roughly 70% of the module's
+   surface was red before a single warning word was read.
+   The head stays DISTINCT, which is his earlier call and still checked: red slot, red title, and a
+   solid 2px danger rule where every other module has a hairline. What it loses is the wash and the
+   texture, so red goes back to being a mark on a dark panel instead of the panel itself.
+   ⚠️ Same principle as the amber rationing directly above: a signal covering most of the surface
+   is not a signal. Red now costs 5px of stripe, 2px of rule, a title and a chip. */
+.kpm-mod.hazard .kpm-head { background-color: var(--inset);
+  background-image: none;
   border-bottom: 2px solid var(--danger); }
 /* line 1 — the slot code: which band this belongs to and its order in it. Information, not
    decoration; it is how he refers to a module out loud. */
@@ -2192,9 +2202,9 @@ html.lite-mode .kpm-title-rule { animation: none; width: 100%; }
 .kpm-btn:disabled { color: var(--ink-disabled); border-color: var(--line); cursor: not-allowed; }
 .kpm-btn.block { display: flex; width: 100%; }
 .kpm-btn.key    { border-color: var(--accent-edge); color: var(--accent-ink); }
-.kpm-btn.hazard { border-color: var(--danger); color: var(--danger-ink);
-  background-image: repeating-linear-gradient(135deg,
-    rgba(180,82,74,.16) 0 6px, transparent 6px 12px); }
+/* the stripe fill is gone with the head's wash — a hatched button inside a hatched head was two
+   textures arguing. The red border and red word are the mark; the fill arrives on press. */
+.kpm-btn.hazard { border-color: var(--danger); color: var(--danger-ink); }
 /* the press is the report: it is what tells him the tap landed */
 .kpm-btn:active           { background: var(--inset); }
 .kpm-btn.key:active       { background: var(--gold);        color: var(--gold-ink); }
@@ -2208,6 +2218,43 @@ html.lite-mode .kpm-title-rule { animation: none; width: 100%; }
                           background-image: none; }
 }
 .kpm-btn:focus-visible { outline: 2px solid var(--accent-edge); outline-offset: -4px; }
+
+/* ---- HOLD: the confirmation that lives INSIDE the button. See HoldButton.jsx for why a hold and
+   not a second dialog. Everything here is clip-path, background-color and opacity — no shadow, no
+   blur, no filter, so Lite Mode keeps the whole thing. That matters more than usual: the fill is
+   not decoration, it is the only thing telling him how much longer to press. */
+.kpm-hold { position: relative; overflow: hidden; isolation: isolate;
+  display: flex; width: 100%; align-items: center; justify-content: center;
+  min-height: 44px; padding: 0 14px; border: 1px solid var(--danger);
+  background: transparent; color: var(--danger-ink);
+  font-family: var(--font-display); font-weight: 700; font-size: 12px;
+  letter-spacing: .12em; text-transform: uppercase; cursor: pointer;
+  transition: color 160ms ease-out, border-color 160ms ease-out; }
+.kpm-hold > .word { position: relative; z-index: 1; }
+/* THE SWEEP. inset() eats in from the right at rest and opens to nothing when armed. Linear on the
+   way in, because it is a progress bar and progress bars must not lie about their rate; ease-out
+   and fast on the way back, so letting go feels like a release rather than a rewind. */
+.kpm-hold > .fill { position: absolute; inset: 0; z-index: 0;
+  background: var(--danger-plate); clip-path: inset(0 100% 0 0);
+  transition: clip-path 200ms cubic-bezier(.22, 1, .36, 1); }
+.kpm-hold[data-phase="arming"] > .fill { clip-path: inset(0 0 0 0); transition: clip-path 1600ms linear; }
+.kpm-hold[data-phase="arming"] { color: var(--danger-plate-ink); }
+/* working and done keep the plate filled — the button IS the receipt, so it must not snap back to
+   empty the moment the act starts. */
+.kpm-hold[data-phase="working"] > .fill,
+.kpm-hold[data-phase="done"]    > .fill { clip-path: inset(0 0 0 0); transition: none; }
+.kpm-hold[data-phase="working"] { color: var(--danger-plate-ink); cursor: progress; }
+.kpm-hold[data-phase="done"]    { color: var(--danger-plate-ink); border-color: var(--danger-plate); }
+.kpm-hold:focus-visible { outline: 2px solid var(--danger); outline-offset: -4px; }
+@media (hover: hover) and (pointer: fine) {
+  .kpm-hold:hover { border-color: var(--danger-ink); color: var(--danger-plate-ink); }
+}
+/* ⚠️ THE HOLD IS NOT ANIMATION, SO REDUCED MOTION CANNOT DELETE IT. Without the sweep there is no
+   way to know the press is counting; the honest reduction is a shorter, plainer fill, not none. */
+@media (prefers-reduced-motion: reduce) {
+  .kpm-hold > .fill { transition: none; }
+  .kpm-hold[data-phase="arming"] > .fill { transition: clip-path 1600ms linear; }
+}
 
 /* ---- FIELD: a labelled input. The label is printed above, never a placeholder —
    a placeholder disappears exactly when he needs to check what he typed. */
@@ -2257,8 +2304,10 @@ html.lite-mode .kpm-title-rule { animation: none; width: 100%; }
   background-color: var(--inset); background-image: var(--hatch);
   font-family: var(--font-mono); font-size: 10px; letter-spacing: .22em;
   text-transform: uppercase; color: var(--ink); }
-.kpm-band.hazard { color: var(--danger-ink); border-color: var(--danger);
-  background-color: var(--danger-well); background-image: var(--hatch-danger); }
+/* the band keeps the red WORD and the red border and loses the red ground, for the same reason as
+   the head below it: three red surfaces stacked read as one red region, and the fence disappears
+   into the thing it was fencing. */
+.kpm-band.hazard { color: var(--danger-ink); border-color: var(--danger); }
 
 /* ---- ARRIVAL: a module lands, it does not blink into place. One name, so every screen that
    spends this vocabulary gets the same arrival instead of inventing its own.

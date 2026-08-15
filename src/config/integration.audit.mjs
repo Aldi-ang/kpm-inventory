@@ -1985,11 +1985,20 @@ check(G31, 'every module in the tab declares WHAT KIND it is',
   !/className="kpm-mod"/.test(arch),
   'a bare .kpm-mod is a generic card — the variant is what makes a bench tool look different ' +
   'from something that writes live data and different again from something irreversible');
-check(G31, 'each kind wears a different head',
+/* ⚠️ NEEDLE MOVED 2026-08-15, and it is a real change, not a loosened check. It used to require
+   `background-image: var(--hatch-danger)` on the hazard head — a red wash under a red texture,
+   above buttons that were also red-hatched. His screenshot: *"u can add red but not this much
+   especially on few buttons and panel ... i dont want red color to dominate certain features"*.
+   The head must still be DISTINCT (his older "too standardise" complaint, which stands) — it just
+   carries the distinction in a 2px danger RULE and a red title rather than in a red ground.
+   Both halves are asserted, so neutralising the head completely would still fail. */
+check(G31, 'each kind wears a different head, without red owning the surface',
   /\.kpm-mod\.live \.kpm-head\s*\{[^}]*background-image/s.test(themeCss) &&
-  /\.kpm-mod\.hazard \.kpm-head \{[^}]*background-image: var\(--hatch-danger\)/s.test(themeCss) &&
-  /\.kpm-mod\.hazard \.kpm-head h3 \{ color: var\(--danger-ink\)/.test(themeCss),
-  'same head on every module is the "too standardise" complaint, restated');
+  /\.kpm-mod\.hazard \.kpm-head \{ background-color: var\(--inset\);\s*\n\s*background-image: none;\s*\n\s*border-bottom: 2px solid var\(--danger\); \}/.test(themeCss) &&
+  /\.kpm-mod\.hazard \.kpm-head h3 \{ color: var\(--danger-ink\)/.test(themeCss) &&
+  !/\.kpm-btn\.hazard \{[^}]*background-image/s.test(themeCss),
+  'same head on every module is the "too standardise" complaint; a head drowned in red is the ' +
+  'opposite complaint. Red marks it — 5px stripe, 2px rule, title, chip — and does not upholster it');
 /* ⚠️ NO GOLD ON A HAZARD SURFACE. He killed the gold stripe on Crown Transfer on sight, and the
    reason outlives the taste call: gold is this app's ACCENT — the colour of "do this" — so gold
    on the one control that cannot be undone says "primary action" and "danger" at the same time. */
@@ -2059,7 +2068,10 @@ check(G33, 'every module declares what kind it is, and prints its slot',
 check(G33, 'everything irreversible is behind the hazard band and wears the stripe',
   /<div className="kpm-band hazard">/.test(sec) &&
   /kpm-btn hazard block[\s\S]{0,400}?handleRestoreData/.test(sec) &&
-  (sec.match(/className="kpm-btn hazard block" onClick=\{\(\) => handleWipeData/g) || []).length === 3,
+  /* the three wipes moved to HoldButton on 2026-08-15 — same hazard weight, plus 1.6s of
+     deliberate pressure. Restore keeps the plain hazard button because the OS file picker is
+     already its deliberate step. */
+  (sec.match(/<HoldButton onConfirm=\{\(\) => handleWipeData\('(products|customers|both)'\)\}/g) || []).length === 3,
   'restore and the three wipes are the only acts on this screen with no undo; if one of them ' +
   'renders as an ordinary button again the screen is lying about what it does');
 check(G33, 'the rank source still has exactly one writer',
@@ -2089,10 +2101,30 @@ for (const [what, needle] of [
    control on the screen; elegance is not worth a mis-tapped wipe. If a routine act ever goes back
    to `block`, that hierarchy is gone and this check says so. */
 check(G33, 'only the irreversible acts still claim the full width',
-  (sec.match(/kpm-btn hazard block/g) || []).length === 4 &&
+  (sec.match(/kpm-btn hazard block/g) || []).length === 1 &&
+  (sec.match(/<HoldButton/g) || []).length === 3 &&
   !/kpm-btn(?! hazard)[a-z ]* block/.test(sec) &&
   (sec.match(/className="kpm-acts"/g) || []).length >= 4,
   'restore + three wipes are the only full-width acts; everything routine hugs its word');
+/* 🔑 THE HOLD IS A GATE IN FRONT OF THE DIALOGS, NEVER INSTEAD OF THEM. The pasted component he
+   liked runs click → spinner → "Complete!" with nothing in between; dropped in here as-is, one tap
+   would wipe the database. Both `confirmAction` calls in handleWipeData must survive alongside it,
+   and removing one is his explicit call to make, not a side effect of a nicer button. */
+const holdSrc = fs.readFileSync('src/components/HoldButton.jsx', 'utf8');
+check(G33, 'holding to confirm did not replace either wipe dialog',
+  (appSrc.match(/if \(!await confirmAction\(/g) || []).length >= 2 &&
+  /FINAL WARNING: This cannot be undone/.test(appSrc),
+  'the hold costs 1.6s of deliberate pressure, which is a real gate — but the act it guards has ' +
+  'no undo, and trading a confirmation for an animation is how a nicer screen loses a database');
+check(G33, 'the hold reports its own result and survives Lite Mode',
+  /data-phase=\{phase\}/.test(holdSrc) &&
+  /const HOLD_MS = 1600;/.test(holdSrc) &&
+  /keyHeld\.current/.test(holdSrc) &&
+  /\.kpm-hold > \.fill \{[^}]*clip-path: inset\(0 100% 0 0\);/s.test(themeCss) &&
+  !/\.kpm-hold[^{]*\{[^}]*(box-shadow|filter|backdrop-filter)/s.test(themeCss),
+  'the sweep is clip-path + background-color only, so Lite Mode keeps it — and it has to, because ' +
+  'the fill is the only thing saying how much longer to press. keyHeld guards the keydown repeat ' +
+  'that would otherwise restart the timer forever and read as a broken button');
 check(G33, 'the three backup states are still readable without colour',
   (sec.match(/className="kpm-rail"/g) || []).length === 3 &&
   /isRecoverySecure \? 'Secure' : 'Required'/.test(sec),
