@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-15 19:06 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
+**Updated: 2026-08-15 19:08 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -83,6 +83,28 @@ order:
    and it must stay >= `.kpm-rail-pod`'s width or the open dock paints over the title.
 
 ## ❓ WAITING ON ALDI — verbatim, do not paraphrase
+
+- ▶ **NEXT SESSION, HIS TWO ASKS — both about the Customer-directory dropdown.** *"there is 2
+  default here and redesign and animate the dropdown for this later after quota reset"*.
+  🔴 **1. THE DUPLICATE OPTION IS A REAL BUG AND IT WAS NOT SAFE TO FIX AT 12 MINUTES OF QUOTA
+  ON A PERMISSIONS SCREEN.** Both copies of the select — mobile (`~1621`) and desktop (`~1711`) in
+  `SettingsView.jsx` — list **two options that read the same and carry different values**:
+  `value="none"` and `value="customers_edit_global"`, both labelled "Global (default)".
+  ⚠️ **DO NOT JUST DELETE ONE.** They are not redundant, they are two states that MEAN the same
+  thing: `none` = the tier has no customer-edit permission recorded at all (the `|| 'none'`
+  fallback in `changeCustomerAccess`'s `value=`), `customers_edit_global` = it has one, explicitly.
+  Delete the wrong one and every tier in that state renders a blank or wrong selection.
+  **The safe fix is to collapse the STATE, not the option:** keep one visible "Global (default)"
+  option, and have the `value=` expression map BOTH stored states onto it. Check
+  `changeCustomerAccess` in `permissions.js`/`SettingsView` for what it writes when 'none' is
+  chosen before touching either. **Same shape almost certainly applies to Reporting authority's
+  "No Access".**
+  ▶ **2. REDESIGN + ANIMATE THE DROPDOWN.** His words, deferred by him to after the reset. A
+  native `<select>` cannot be animated or restyled past the closed box — the open list is the OS.
+  Doing this properly means a custom listbox: button + popup, `aria-expanded`/`aria-activedescendant`,
+  keyboard (arrows, Home/End, type-ahead, Escape), and `.kpm-inline` styling on the trigger.
+  ⚠️ It sits in the permission matrix, so **it must stay operable by keyboard and screen reader**
+  — group 37 already holds that line for the switches.
 
 - ✅ **TEST — the 5-minute grace period, FIXED and committed.** It had never worked once. Unlock the
   vault, close Safari, reopen within 5 minutes: it should go straight in with no PIN. Then lock it
