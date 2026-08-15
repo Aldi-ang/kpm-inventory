@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-15 22:41 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
+**Updated: 2026-08-16 (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -17,7 +17,7 @@
 
 **🔴 LIGHT MODE IS THE LIVE FRONT, AND IT IS NOW ACTUALLY ON.** Phase 6 is complete; the switch
 bug is fixed (group 38) and the sales terminal is converted as his chosen pilot (group 39).
-**526/526 · `node src/config/contrast.selfcheck.mjs` must also pass — it measures both themes.**
+**533/533 · `node src/config/contrast.selfcheck.mjs` must also pass — it measures both themes.**
 
 **▶ NEXT: the other 29 screens.** He has seen ONE converted screen. Ranked by hardcoded colour
 count in the earlier survey below: `MapMissionControl` · `CustomerManager` · `FleetCanvasManager` ·
@@ -60,15 +60,45 @@ way — so it converted onto the same `--duke-*` tokens with the same role-aware
 new `--shell-*` tokens for its cream labels and its orange. 110 hexes + 27 colour names.
 ⚠️ **Dark values are the exact hexes they replace, as before — dark mode has not moved.**
 
-▶ **NOT DONE, and visible in light: `bg-white/5` ×15 and `border-white/10` ×8 in `App.jsx`.**
-These are the glass/frost effects on the header band and the dock. A white veil over a DARK ground
-is a highlight; over a pale ground it is nothing at all, so the glass simply stops reading in
-light mode. They need a token pair like the wells did (`rgba(255,255,255,.05)` dark →
-`rgba(46,38,26,.06)` light). **Straightforward, just not landed this session.**
 ▶ Also left: a handful of one-off hexes the map did not cover — `#8b5cf6` / `#ec4899` are the
 Mythic rank frame and are ALLOWED by the palette law, so leave those.
 ⚠️ `npx eslint src/App.jsx` reports **51 pre-existing errors** — verified unchanged by stashing
 this work and re-running. Not this session's, do not "fix" them inside a colour commit.
+
+### ✅ THE WHITE FILM IS GONE — `ca40e61`, 533/533, contrast passes both themes
+
+**The glass was worse than "it stops reading".** It was not on the header band at all — the 52
+white-film sites were the PRODUCT EDITOR MODAL and the login card. Every field in that modal —
+name, stock, type, all four prices — used `bg-white/5` as its fill *and* `border-white/10` as its
+border, and the modal panel itself is `--duke-well-solid`, which flips to cream. So in light mode
+that modal was **a blank cream box containing invisible boxes to type in.**
+
+**This was the THIRD spelling of the same bug.** Sweep 1 replaced hexes and walked past colour
+NAMES. Sweep 2 swept names and walked past **names with an alpha**. The lesson is not "sweep
+alphas too" — it is that a colour is only convertible once you know **what it sits on**. The same
+rgba is a highlight or nothing at all depending on the ground.
+
+Eight new tokens, dark values byte-identical to the rgba they replaced:
+`--duke-veil` · `--duke-veil-2` · `--duke-veil-edge` · `--duke-veil-edge-2` · `--duke-veil-edge-3`
+· `--duke-lift` (the 1px ring + outer glow) · `--duke-frame` (the 4px chassis) · `--duke-on-plank`.
+⚠️ **The fill and the edge are SEPARATE tokens although dark serves them the same rgba** — an edge
+says where a control begins and owes 3:1 (light measures 3,42:1); a fill owes nothing. One token
+would have looked right until the ground went pale.
+
+🔴 **FOUR DELIBERATE DARK-MODE CHANGES — he may reject any of them, all in the product editor and
+the login card.** 14 cold slate labels → `--duke-ink-8`, 2 grey button labels → `--duke-ink-2`
+(slate IS the blue the palette law bans), the Unlock outline white → brass with a gold hover, and
+Update Database → `--duke-on-plank`. That last is **the wells' bug running backwards**: the plank
+under the label is hardcoded near-black in BOTH themes and was wearing an ink that flips to
+near-black, so in light its label went dark on dark. **An ink only flips when its ground does.**
+
+▶ **NEXT IN `App.jsx`, NOT DONE: 30 Tailwind accent NAMES used as text** — `text-red-500` ×5,
+`text-orange-500` ×5, `text-orange-400` ×5, `text-amber-400` ×4, `text-red-400` ×3,
+`text-amber-500` ×2, `hover:text-red-500` ×2, `text-yellow-400`, `text-red-600`, `text-orange-700`,
+and one `text-blue-500` which breaks the palette law outright. These do not change theme, so on a
+pale ground they are the exact complaint he already filed once (*"price and running low text
+color"*). ⚠️ **Each needs its GROUND checked first** — several sit on red/amber PLATES where they
+are correct and must be left alone. That is the `pairs.mjs` ancestor walk, not a blind sweep.
 
 ### Where things live
 
