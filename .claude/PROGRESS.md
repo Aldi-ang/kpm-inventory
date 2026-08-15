@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-15 19:08 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
+**Updated: 2026-08-15 20:46 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -15,10 +15,29 @@
 
 ## ▶ NOW
 
-**PHASE 6 IS THE LIVE FRONT: converting the rest of `SettingsView.jsx` onto the control system.**
-His instruction, 2026-08-15: *"we have the theme set yet, other will just follow make it somewhat
-follow that"* — the **Architect tab is the template**, the rest are conversions, NOT redesigns. Do
-not invent a new look for a tab; copy the bands / module kinds / slot codes / readouts it uses.
+**🔴 LIGHT MODE IS THE LIVE FRONT, AND IT IS NOW ACTUALLY ON.** Phase 6 is complete; the switch
+bug is fixed (group 38) and the sales terminal is converted as his chosen pilot (group 39).
+**526/526 · `node src/config/contrast.selfcheck.mjs` must also pass — it measures both themes.**
+
+**▶ NEXT: the other 29 screens.** He has seen ONE converted screen. Ranked by hardcoded colour
+count in the earlier survey below: `MapMissionControl` · `CustomerManager` · `FleetCanvasManager` ·
+`JourneyView` · `StockOpnameView` · `ConsignmentFinanceView` · `SamplingManager` ·
+`RestockVaultView` · `EODReconciliationView` · `AgentProfileView` · `App.jsx`.
+⚠️ **Do not repeat the terminal's two mistakes:** sweep colour NAMES as well as hexes, and check
+HUE separation against the ground, not only contrast. Both are written up in the log entry below
+and in [[The KPM Control System]] in the vault.
+
+### Where things live
+
+| File | What it owns |
+|---|---|
+| `src/styles/theme.css` | all tokens, both themes, + the `--duke-*` block for the terminal |
+| `src/components/AuthoritySelect.jsx` | **NEW 2026-08-15** — the custom listbox in the permission matrix |
+| `src/config/contrast.selfcheck.mjs` | measures every text/surface pair in BOTH themes |
+| `src/config/integration.audit.mjs` | 526 checks; groups 38 (light switch) and 39 (Duke's Ledger) |
+| `index.html` | the pre-paint theme stamp — must agree with `App.jsx`'s theme effect |
+
+### Phase 6 — complete, kept for reference
 
 | Settings tab | Off-token colours | State |
 |---|---|---|
@@ -203,6 +222,23 @@ order:
    and it must stay >= `.kpm-rail-pod`'s width or the open dock paints over the title.
 
 ## ❓ WAITING ON ALDI — verbatim, do not paraphrase
+
+- 🔴 **OPEN, ASKED 2026-08-15 20:46 — the terminal's DARK contrast, 13 pairs below target.** These
+  are his SHIPPED values, carried across untouched; not introduced by the light conversion. The two
+  that are certainly real: the workhorse text `#8b7256` on a panel measures **3,52:1** (needs 4,5)
+  and the structural line `#3e3226` on a panel measures **1,28:1** (needs 3). `contrast.selfcheck`
+  prints these as `note`, not `FAIL`, on purpose. **Fixing them means changing colours he
+  hand-tested, so it costs him a re-walk of the terminal in dark. He has not answered.**
+- 🔴 **OPEN, OFFERED 2026-08-15 20:46 — the price PLATE.** Told him plainly: *a bright amber can
+  never be readable as text on a pale ground* — which is why the app's own palette law says gold is
+  decoration, not text. If the price still does not pop for him in light mode, the real answer is a
+  plate (dark number on a small amber chip), which is a LAYOUT change, not a colour one. **Offered,
+  not started.**
+- ✅ **TEST — the light terminal, his own list, 5 items.** Price reads burnt orange with no fuzzy
+  edge · "Rp 17.400" the same · "CELLO TEH MANIS" reads clearly RED not brown · the customer name,
+  SKT, and Search Wares boxes have dark letters on a pale field · **dark mode looks exactly as it
+  always did** (that last one is proven by diff, but his eyes are the only appearance test that
+  has ever run here).
 
 - ✅ **1. THE DUPLICATE "Global (default)" IS FIXED — 498/498, group 37 + 3 checks.** His find:
   *"there is 2 default here"*. Cause: `getCustomerAccessLevel()` (permissions.js:120) returns
@@ -443,6 +479,40 @@ order:
 
 ## 📓 LOG — newest first, about five entries; `git log` keeps the rest
 
+### 2026-08-15 20:46 (KPM app session) — light mode switched on for the first time, and the terminal got a light bench
+
+`60236ab` → `f79456b`. **526/526, contrast self-check passes, `src/` clean.** Four fronts closed
+in one run; the middle two are the ones worth not re-deriving.
+
+**The duplicate "Global (default)" was one state wearing two names.** `getCustomerAccessLevel()`
+resolves an absent permission to `'global'`, so "never set" and "Global" were the same authority
+and the second line could never be picked. Collapsed on the READ side before removing the option —
+deleting the option first would have blanked the control for every unset tier. Reporting Authority
+looked identical and is NOT: there `'none'` genuinely means no access.
+
+**The authority dropdowns became a component** (`AuthoritySelect.jsx`). A native `<select>` draws
+its open list in the OS, out of CSS's reach — restyling was never possible. Drawing it ourselves
+means owing back arrows/Home/End/Enter/Escape/Tab/type-ahead and an announcement that matches what
+is saved. ⚠️ **A popup inside `overflow-x: auto` is CLIPPED** — portal to `<body>` + `position:
+fixed`, and then it must close on any scroll.
+
+**🔴 LIGHT MODE HAD NEVER ONCE BEEN ON.** The theme effect added `dark` and, for light, only
+removed it — but the dark values live on bare `:root`. Every hour spent on the light palette had
+been invisible. One line. **The failure had no symptom a CSS check could catch: both files were
+internally consistent, and what was missing was the class that joins them.**
+
+**The terminal pilot: 467 sites, 54 `--duke-*` tokens, dark mode provably unchanged** (multiset
+diff vs the pre-change revision, 0 drift). Three lessons, each caught by a different thing:
+· **A hex-only sweep converts exactly the half that makes the other half unreadable** — `bg-black`
+  and `text-white` are NAMES, so his textboxes kept black grounds while their text flipped dark.
+  Found by HIM, in minutes.
+· **Hue, not lightness.** Amber and the wood are both ~41°. On a dark bench the lightness gap does
+  all the work; on a pale one there is neither gap, so a price dissolves into the plank while
+  measuring as a pass. Found by his SCREENSHOTS — no number reports this.
+· **`contrast.selfcheck.mjs` was reading only the FIRST `:root` block**, so all 54 new tokens would
+  have gone unmeasured while it printed *"all pairs pass"*. Found by a token appearing to have no
+  value. **A measuring tool that quietly measures less than it claims.**
+
 ### 2026-08-15 14:31 (KPM app session) — the mascot comes back, and steps out when you size him
 
 `ad2a6536`. **422/422, `src/` clean.** Both halves of his last message, and the second one
@@ -504,93 +574,11 @@ nothing and looks exactly like a transparent panel.
 ⚠️ **Writing this file from a bash heredoc ate every backtick** — the shell ran them as commands
 and left the quoted names blank. **Use the Edit tool for PROGRESS.md, never `python -c` in bash.**
 
-### 2026-08-15 09:25 (KPM app session) — red stops upholstering, and the wipes ask for pressure
+### ⤵ The 2026-08-15 morning Phase-6 entries trimmed (09:25, 09:05, 08:51, 08:40, 08:36)
 
-**400/400.** New file: **`src/components/HoldButton.jsx`**.
-
-🔴 **RED WAS THE PANEL, NOT A MARK ON IT.** His screenshot: *"u can add red but not this much
-especially on few buttons and panel ... i dont want red color to dominate certain features"*.
-~70% of a hazard module's surface was red before a warning word was read — a `--danger-well` wash
-under `--hatch-danger`, above buttons that were **also** red-hatched, under a red-hatched band.
-The head stays DISTINCT (his older *"too standardise"* call, still checked) but carries it in a
-**2px danger rule + red title** instead of a red ground. Red now costs 5px of stripe, 2px of rule,
-a title and a chip. ⚠️ **Group 31's needle moved for this** and the entry says why — it now asserts
-BOTH that the head is distinct AND that `.kpm-btn.hazard` has no `background-image`.
-
-🔑 **`HoldButton` is the confirmation the component he pasted did not have.** That one runs
-click → spinner → "Complete!" with nothing between; dropped in as-is **one tap wipes the database**.
-This asks **1.6s of deliberate pressure**, then reports in the same object he pressed —
-*every action must report*. The sweep is `clip-path` + `background-color` only, so **Lite Mode keeps
-it, and it must**: the fill is the only thing saying how much longer to press.
-⚠️ **BOTH `confirmAction` dialogs still run.** The hold is a gate IN FRONT of them, never instead.
-A check fails if either disappears. **Trading a confirmation for an animation is his call alone.**
-📌 It needed **no new dependency** — the pasted version wanted `framer-motion` + `clsx` +
-`tailwind-merge` + TypeScript + shadcn, and this repo has none of those.
-⚠️ `keyHeld` ref is load-bearing: keydown REPEATS while held, and without it the timer restarts
-forever and the button reads as broken. `no-unsafe-finally` also bit — never `return` in a `finally`.
-
-### 2026-08-15 09:05 (KPM app session) — Option C, and amber gets rationed
-
-**398/398.** He picked **Option C** off the button-weight board
-(https://claude.ai/code/artifact/628a1a9c-0616-4ab5-9379-6b2ea816fa87).
-
-🔑 **His words were *"too big"* and the height was never the problem.** 44px is rule 3 and the
-smallest target a thumb hits one-handed — it does not move. What was wrong was that almost every
-act was `.block`, so "Revoke" sat in a ~900px box on a desk. Buttons hug their word in a
-right-aligned `.kpm-acts` row now, no fill at rest, 13→12px, .16→.12em, filling in on hover.
-⚠️ **Full width survives on EXACTLY four acts — restore and the three wipes.** Full width is a
-signal now, not a default. A check pins the count; elegance is not worth a mis-tapped wipe.
-
-🟡 **AMBER IS RATIONED.** *"i feel like there is too much yellow gold color, u should replace it
-with few amber color and more black and white for the theme, also minimize red color"*.
-`--gold` / `--accent-ink` / `--accent-edge` **#D4AF37 → #D08A2E** (one line each, easy to retune).
-A live module carried FOUR amber marks — stripe, slot code, title rule, state chip — so amber had
-stopped meaning "this writes real data" and become the body colour. **The rule now: amber marks
-the STATE and the ACT, never the label.** Slot and title rule went neutral; stripe and
-`.kpm-read.on` keep it. `--tier-gold` is deliberately untouched: a gold RANK is a medal.
-📌 **`#ff9d00` literals still live in `App.jsx` (~line 3625-3700)** — an un-migrated block, Phase 6.
-
-### 2026-08-15 08:51 (KPM app session) — the rack was tighter inside a module than between two of them
-
-**395/395.** His report: *"i want u to give more space between features because all of it looks to
-close together i thought it is the same components"*. **He was reading it correctly — the spacing
-was lying, and it measured:**
-
-| Boundary | Before |
-|---|---|
-| between two modules | **0px** + one 1px line (`--line-2`) |
-| inside one module, head → shelf | **0px** + **two** stacked lines (`--line` + `--line-2`) |
-
-🔑 **The division INSIDE a module was heavier than the division BETWEEN two.** Proximity decides
-grouping before any border does, so at 0px on both sides three instruments read as one striped
-panel. The rack idea survives — a rack has rails between its units — but the ladder now only ever
-grows outward: **12px between controls · 16px module padding · 20px module→module · 40px between
-groups.** `.kpm-shelf.split`'s duplicate border is gone; the head already draws that seam, and
-inside an object a seam must be fainter than the object's own edge.
-⚠️ **Two checks now guard it. If any inner number ever reaches an outer one, they go red before he
-has to see it again.** Both Architect and Security got this from one change; General and Tiers will
-inherit it when they convert.
-
-🔴 **CLOCK CORRECTION:** two entries below were stamped 08:55 and 09:40 by this session — times
-that ran AHEAD of the real clock (`date` says 08:51 WIB / 01:51 UTC). Corrected to 08:30 and 08:47.
-**Stamp from `date`, never from a guess**; a log that runs into the future cannot be ordered.
-📌 **AND: the `SettingsView.jsx` / `integration.audit.mjs` diffs that the 08:36 and 08:40 entries
-disclaim WERE THIS SESSION'S**, not an orphan and not another process — they are committed now
-(`8084c25`, `946b1b8`). Those two entries are another session's and are left byte-for-byte alone
-per rule 2; this note is the correction, in my own entry, where it belongs.
-
-### 2026-08-15 08:40 (KPM app session) — timestamp touch, 3rd fire, still not this session's edit
-
-Same hook fired again (08:38 → 08:40) on the same unchanged diff to `integration.audit.mjs` and
-`SettingsView.jsx` — no new bytes since the last entry, some other process wrote both, neither
-touched by me. Still just wifi troubleshooting in this conversation; nothing to record in `src/`.
-
-### 2026-08-15 08:36 (KPM app session) — no KPM work this session, timestamp touch only
-
-This session was Aldi's home wifi (Instagram/TikTok slow, DNS routing) via `/alucard` — nothing
-in `src/` was touched. The uncommitted `SettingsView.jsx` diff predates this session (present in
-git status before the first message) and was not read or changed here. Touching timestamp only,
-per the Stop hook's own fallback instruction for a session with no progress to record.
+Red rationed off the upholstery, the wipes made hold-to-confirm, Option C for the rack, the
+12/16/20/40 spacing ladder, and two timestamp-only fires. All SHIPPED and all held by checks in
+groups 30-34, which is a stronger record than prose. `git log --oneline` names the commits.
 
 ### ⤵ The 2026-08-15 early-morning shell entries trimmed (03:05, 02:35, 01:55)
 
