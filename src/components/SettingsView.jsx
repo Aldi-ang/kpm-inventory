@@ -1,4 +1,10 @@
 import React, { useState } from 'react';
+
+/* the mascot-peek notice's timer. Module scope, not a useRef, on purpose: every hook in this
+   file below line ~95 sits AFTER `if (!isAdmin) return (...)`, so each one added there is one
+   more conditional hook on a pile eslint already flags ten times. Only one SettingsView is ever
+   mounted, so a module-level handle is exactly as correct here and costs no hook at all. */
+let capyPeekTimer = null;
 import { Lock, ShieldCheck, ShieldAlert, UploadCloud, Copy, Package, User, Settings, Trash2, ScanFace, Plus, Tag, Download, Upload, Image as ImageIcon, Edit, Save, X, Music, TrendingUp, ChevronLeft, ChevronRight, LayoutDashboard, ToggleLeft, ToggleRight, BarChart2, Store } from 'lucide-react';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 
@@ -37,6 +43,9 @@ export default function SettingsView({
     
     // --- SIDEBAR NAVIGATION STATE ---
     const [activeTab, setActiveTab] = useState('general');
+    /* ⚠️ DECLARED UP HERE, ABOVE `if (!isAdmin) return (...)` on purpose — see the module-level
+       timer at the top of the file. Everything below that return is a conditionally-called hook. */
+    const [capyOut, setCapyOut] = useState(false);
 
     const defaultLogic = {
         type: 'omset', 
@@ -136,6 +145,31 @@ export default function SettingsView({
     /* clamped on every render, not on delete: removing the last line would otherwise leave the
        index pointing past the end and the next Delete would act on `undefined`. */
     const pick = Math.min(pickedMsg, Math.max(0, activeMessages.length - 1));
+
+    /* ⚠️ HIS SECOND REPORT ON THE SAME FEATURE: *"can u fix the size slider please, it still
+       didnt show the mascot when i interact with it"*. Two things were wrong with the first
+       attempt, and this is both fixes.
+
+       ONE — ORDER. The dispatch was the LAST statement in the slider's onChange, behind
+       `setDoc(doc(...))`. `doc()` throws SYNCHRONOUSLY on a malformed path, and `user.uid` is
+       not guaranteed at every render — so any throw there killed the handler before the mascot
+       was ever called, while `setAppSettings` had already run one line earlier. That is his
+       symptom exactly: the number moves, the mascot never hears about it. The call now goes
+       FIRST and nothing can get in front of it.
+
+       TWO — HE HAD NO WAY TO KNOW WHERE TO LOOK. The mascot appears in the BOTTOM-RIGHT CORNER
+       of the window, and the slider is in the middle of a long settings page — on a desktop
+       browser that can be several hundred pixels away and outside where his eyes are. This
+       line says he was called and where he went, which is his own law ("every action must
+       report") and also settles the question if it still looks broken: **if this line appears
+       and no capybara does, the event fired and the fault is in the mascot, not the slider.** */
+    const callMascot = () => {
+        window.dispatchEvent(new CustomEvent('CAPY_COMMS', { detail: { peek: 5000 } }));
+        setCapyOut(true);
+        clearTimeout(capyPeekTimer);
+        // matches the 5000 above, so the notice and the mascot leave together
+        capyPeekTimer = setTimeout(() => setCapyOut(false), 5000);
+    };
 
     const isRecoverySecure = sessionStatus.recovery || dbRecoveryCount > 0;
     const isUsbSecure = sessionStatus.usb || isUsbValidInDb;
@@ -358,10 +392,20 @@ export default function SettingsView({
                                              off-screen right at opacity 0, appearing only on its own 90-210s
                                              timer. Sizing something invisible is guesswork, so the slider
                                              now calls him out. `peek` with no `message`: no bubble, no
-                                             talking sprite, just the idle animation he asked for. */
-                                          onChange={(e) => { const scale = parseFloat(e.target.value); setAppSettings(prev => ({ ...prev, mascotScale: scale })); setDoc(doc(db, `artifacts/${appId}/users/${user.uid}/settings/general`), { mascotScale: scale }, { merge: true }); window.dispatchEvent(new CustomEvent('CAPY_COMMS', { detail: { peek: 5000 } })); }}/>
+                                             talking sprite, just the idle animation he asked for.
+                                             ⚠️ `callMascot()` IS DELIBERATELY THE FIRST STATEMENT — see the
+                                             note where it is defined. Behind the Firestore write it could be
+                                             skipped by a synchronous throw, which is what broke it once. */
+                                          onChange={(e) => { callMascot(); const scale = parseFloat(e.target.value); setAppSettings(prev => ({ ...prev, mascotScale: scale })); setDoc(doc(db, `artifacts/${appId}/users/${user.uid}/settings/general`), { mascotScale: scale }, { merge: true }); }}/>
                                   </label>
                               </div>
+                              {/* tells him WHERE the mascot went. He is fixed to the bottom-right of the
+                                  window, which on a desktop is a long way from this slider. */}
+                              {capyOut && (
+                                  <div className="kpm-shelf split">
+                                      <span className="kpm-read on">Mr. Capy is out — bottom-right corner of the screen</span>
+                                  </div>
+                              )}
                           </div>
 
                           {/* ⚠️ the delete stays an ICON with `data-kpm-del` — it sits in a cramped

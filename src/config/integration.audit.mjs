@@ -2203,8 +2203,23 @@ for (const cls of ['.kpm-rowacts', '.kpm-inline', '.kpm-slider', '.kpm-portrait'
    render gate is not visibility. That is the whole lesson of this group — do not "fix" a
    report like this by widening a gate that was never shut. */
 check(G34, 'moving the size slider calls the mascot out for five seconds',
-  gen.includes("new CustomEvent('CAPY_COMMS', { detail: { peek: 5000 } })"),
+  settingsSrc.includes("new CustomEvent('CAPY_COMMS', { detail: { peek: 5000 } })"),
   'without this the slider sizes something that is not on screen — pure guesswork');
+/* 🔑 ORDER, AND IT IS THE WHOLE BUG THE SECOND TIME ROUND. His report: *"can u fix the size
+   slider please, it still didnt show the mascot when i interact with it"*. The call sat LAST in
+   the handler, behind `setDoc(doc(...))` — and `doc()` throws synchronously on a bad path, which
+   would skip it while `setAppSettings` one line earlier had already moved the number. Slider
+   moves, mascot never hears. Nothing may be inserted in front of `callMascot()`. */
+check(G34, 'the mascot is called FIRST, before any Firestore write can throw',
+  /onChange=\{\(e\) => \{ callMascot\(\); const scale = parseFloat/.test(gen),
+  'a synchronous throw in doc() would swallow the call and the slider would look broken again');
+/* he cannot act on a mascot he does not know is there: it is fixed to the bottom-right of the
+   WINDOW and the slider is mid-page. This is also the diagnostic — notice but no capybara means
+   the event fired and the fault is downstream in CapybaraMascot, not in the slider. */
+check(G34, 'the slider says where the mascot went',
+  gen.includes('Mr. Capy is out — bottom-right corner of the screen') &&
+  settingsSrc.includes('const [capyOut, setCapyOut] = useState(false);'),
+  'a five-second appearance in a corner he is not looking at is the same as no appearance');
 check(G34, 'the mascot answers a peek that carries no line',
   capySrc.includes('if (incomingMessage || incomingPeek) {') &&
   capySrc.includes('}, incomingPeek || 8000);'),
@@ -2212,6 +2227,12 @@ check(G34, 'the mascot answers a peek that carries no line',
 /* *"just the idle animation"* — his words when asked what the mascot should DO while it is out.
    Two things have to hold for that: the peek must blank the line, and a blank line must still
    resolve to the idle sheet rather than the talking one. */
+/* `showMascot` is `!suppressed && (isPeeking || propMsg)`, so a `suppressed` stuck true eats every
+   peek and is indistinguishable from a dead button. An explicit peek releases it — safe because
+   only the Settings slider sends one, and Settings and the sales terminal are different tabs. */
+check(G34, 'an explicit peek releases the sales terminal mute',
+  capySrc.includes('if (incomingPeek) setSuppressed(false);'),
+  'a stale mute would silently swallow the peek and look exactly like the bug he reported twice');
 check(G34, 'a silent peek shows the idle sprite, not the talking one',
   capySrc.includes('setInternalMsg(incomingMessage || "");') &&
   capySrc.includes("(activeMessage ? 'kpm-merch-talk' : 'kpm-merch-idle')"),

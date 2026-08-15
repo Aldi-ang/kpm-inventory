@@ -123,6 +123,14 @@ export default function CapybaraMascot({ isDiscoMode, message, messages = NO_MES
                 setRadioSprite(incomingSprite || null);
                 setIsPeeking(true);
                 setIsHiding(false);
+                /* an EXPLICIT peek releases the sales terminal's mute. `showMascot` is
+                   `!suppressed && ...`, so a `suppressed` left stuck true — the terminal
+                   unmounting without its cleanup running, say — would silently eat every peek
+                   and look exactly like a dead button. Safe because `peek` is only ever sent by
+                   the Settings size slider, and Settings and the sales terminal are different
+                   tabs: they cannot be on screen together, so this cannot bring back the two
+                   capybaras that `suppressed` exists to prevent. */
+                if (incomingPeek) setSuppressed(false);
 
                 /* Same overlap bug as the mascot's other two paths: without cancelling the
                    previous line's timers, the FIRST message's 8s dismissal hides the SECOND
