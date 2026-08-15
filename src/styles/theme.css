@@ -35,8 +35,17 @@
   /* ink — warm off-white. Never #FFFFFF: it glares on cheap LCDs. */
   --ink:           #E8E4DE;   /* 14,9:1 on --panel */
   --ink-muted:     #A39B90;   /*  6,9:1 */
-  --ink-dim:       #7A736A;   /*  4,0:1 — meta text only */
-  --ink-disabled:  #57514A;   /*  2,4:1 — never carries meaning alone */
+  /* 🔴 RAISED 2026-08-15, on his word, from #7A736A. It had been set at 4,0:1 and labelled "meta
+     text only" — but "meta" is not a WCAG exemption: a 10px label is small text and owes 4,5:1
+     like any other. Measured on the darkest grounds it actually lands on it was 4,12:1 in the
+     terminal's deepest well and 3,79:1 on the bench. This is ONE token used 89 times across every
+     screen in the app, which is why it was raised rather than worked around locally — and why it
+     was asked before being touched. Now 4,74:1 against the lightest dark surface it sits on. */
+  --ink-dim:       #928B81;   /*  4,7:1 on --duke-fill-panel, 5,2:1 on --ground */
+  /* ⚠️ --ink-disabled IS DELIBERATELY LEFT BELOW THE FLOOR AND THAT IS CORRECT. WCAG exempts
+     disabled controls from contrast entirely; looking unavailable is the whole job. The comment
+     it already carried — "never carries meaning alone" — is the rule that makes that safe. */
+  --ink-disabled:  #57514A;   /*  2,4:1 — disabled only, exempt, never carries meaning alone */
   --ink-inverse:   #0A0908;
 
   /* gold — decoration only. Dots, rules, the coin. Not for text. */
@@ -122,7 +131,14 @@ html.light {
 
   --ink:           #131211;   /* 10,6:1 on --panel */
   --ink-muted:     #3A3733;   /*  6,7:1 */
-  --ink-dim:       #4E4A45;   /*  5,0:1 */
+  /* 🔴 DARKENED 2026-08-15 from #4E4A45, and the light theme had the SAME untested fault as the
+     dark one: 3,76:1 on --inset and 4,07:1 on --ground. The "5,0:1" it used to claim was measured
+     against --panel only, which is the lightest surface it sits on and therefore the easiest.
+     ⚠️ It now sits very close to --ink-muted in light, and that is a real consequence rather than
+     a mistake: on a STEEL ground there is not much room below muted before you hit the floor. The
+     dim/muted distinction is carried by size and weight here, which is how the rack already
+     grades everything else. Legibility wins over a distinction nobody can see at 10px. */
+  --ink-dim:       #3F3B36;   /*  4,7:1 on --inset, 5,1:1 on --ground */
   --ink-disabled:  #7E7A74;
   --ink-inverse:   #F4F1EB;
 

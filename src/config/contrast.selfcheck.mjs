@@ -67,6 +67,21 @@ const PAIRS = [
   ['control edge on panel',        'line-3',         'panel',        3],
   ['gold EDGE on panel',           'accent-edge',    'panel',        3],
 
+  /* 🔴 THE QUIET TEXT — 89 uses across every screen, and it was never measured here until
+     2026-08-15. It sat at 4,0:1 under a comment reading "meta text only", which reads like an
+     exemption and is not one: a 10px label is small text and owes 4,5:1 exactly like body copy.
+     It is checked on the five grounds it actually lands on, in both themes, so it cannot drift
+     back down quietly. `--ink-disabled` is NOT here on purpose — WCAG exempts disabled controls,
+     and looking unavailable is that token's entire job. */
+  ['quiet text on panel',          'ink-dim',        'panel',        4.5],
+  ['quiet text on raised',         'ink-dim',        'raised',       4.5],
+  ['quiet text on inset',          'ink-dim',        'inset',        4.5],
+  ['quiet text on the ground',     'ink-dim',        'ground',       4.5],
+  ['quiet text in the red well',   'ink-dim',        'danger-well',  4.5],
+  ['quiet text on the bench',      'ink-dim',        'duke-fill-ground', 4.5],
+  ['quiet text in a Duke well',    'ink-dim',        'duke-fill-well',   4.5],
+  ['quiet text on a Duke panel',   'ink-dim',        'duke-fill-panel',  4.5],
+
   /* ── THE DUKE'S LEDGER, the sales terminal's own palette ──────────────────────────
      WARNING: THESE PAIRS WERE DISCOVERED, NOT INVENTED. The first version of this block listed
      pairs I assumed the screen rendered, and several of them did not exist. A check that asserts

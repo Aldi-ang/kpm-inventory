@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-15 21:34 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
+**Updated: 2026-08-15 21:52 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -238,15 +238,25 @@ order:
   ⚠️ **Raising the wood inks broke them on the CREAM CARDS**, which are light in both themes. One
   token cannot serve a near-black ground and a near-white card: `--duke-on-paper`,
   `--duke-on-paper-dim`, `--duke-amber-on-paper`, `--duke-edge-on-paper` now exist for that.
-- 🔴 **OPEN, THE ONLY REMAINING CONTRAST QUESTION — `--ink-dim` and `--ink-disabled`, 36 of the 52
-  residual sites.** `--ink-dim` measures **4,12:1** in the terminal's deepest well (needs 4,5) and
-  **3,79:1** on the bench. ⚠️ **These are SYSTEM tokens used by every screen in the app**, not the
-  terminal's to change — raising `--ink-dim` re-colours all 30 screens at once. Its own comment in
-  theme.css says *"4,0:1 — meta text only"*, i.e. it was set below the floor deliberately.
-  **Needs his word before touching.** The other 16 residual sites: 13 are scan artifacts (a base
-  text colour paired with the opposite branch's hover plate, or a background set by a CSS class the
-  scan cannot see — spot-checked by hand), and 3 are near misses on his signature amber
-  (3,99:1 on a mid plank ×2, 4,07:1 on brass ×1).
+- ✅ **ANSWERED AND DONE — the quiet text, `--ink-dim`.** His word: *"i dont know what is that
+  problem u mentioned but if it needs fix then do it"*. **527/527, contrast passes in BOTH themes,
+  terminal scan down to 18 sites from 129.**
+  ⚠️ **"META TEXT ONLY" IS NOT A WCAG EXEMPTION, AND THAT COMMENT IS HOW IT SURVIVED.** The token
+  carried `/* 4,0:1 — meta text only */`, which reads like a documented decision and is in fact a
+  documented defect: a 10px label is small text and owes 4,5:1 like body copy. **89 uses across
+  every screen**, so it was raised once at the source rather than worked around per-screen.
+  Dark `#7A736A` → `#928B81`. ⚠️ **THE LIGHT THEME HAD THE SAME UNTESTED FAULT** — `#4E4A45`
+  measured 3,76:1 on `--inset` and 4,07:1 on `--ground`; its claimed "5,0:1" had been taken against
+  `--panel` alone, the easiest surface it lands on. Now `#3F3B36`. It sits close to `--ink-muted`
+  in light and that is accepted, not missed: on a steel ground there is little room below muted
+  before the floor, and dim-vs-muted is carried by size and weight anyway.
+  ⚠️ **`--ink-disabled` was deliberately NOT raised.** WCAG exempts disabled controls; looking
+  unavailable is the whole job. Its own rule — *never carries meaning alone* — is what makes that
+  safe. It is excluded from the self-check on purpose, with the reason written beside it.
+  **Residual 18 sites, all understood:** 13 scan artifacts (a base text colour paired with the
+  opposite branch of a conditional, or a background painted by a CSS class the scan cannot see —
+  each spot-checked by hand), 2 `--ink-disabled` (exempt), and 3 near misses on his signature amber
+  (3,99:1 on a mid plank ×2, 4,07:1 on brass ×1) which cannot be fixed without changing the amber.
 - 🔴 **OPEN, OFFERED 2026-08-15 20:46 — the price PLATE.** Told him plainly: *a bright amber can
   never be readable as text on a pale ground* — which is why the app's own palette law says gold is
   decoration, not text. If the price still does not pop for him in light mode, the real answer is a
