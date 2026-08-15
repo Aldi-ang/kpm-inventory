@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-15 18:45 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
+**Updated: 2026-08-15 18:58 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -99,6 +99,17 @@ order:
 - ❓ **Offered, unanswered:** if the hold feels like enough on its own, the FIRST of the two wipe
   dialogs could go, leaving hold → FINAL WARNING. **Not done — removing a confirmation on a
   no-undo act is his explicit call, never a side effect of a nicer button.**
+- ✅ **TEST — THE MATRIX NO LONGER SLIDES SIDEWAYS (`6acbe3a`, 493/493).** He asked twice:
+  *"i dont want to slide the matric panel left and right"* then *"if possible eliminates side
+  slide especially when we have 5 tiers only"*.
+  🔴 **NARROWING COLUMNS COULD NEVER HAVE FIXED IT** — a width FLOOR of any size (800px, then
+  560px) still overflows once there are enough ranks. The answer had to stop being a smaller
+  number and become **no number**: `table-layout: fixed` + `width: 100%` divides the space the
+  table HAS instead of measuring what its content wants. Feature column 42%, ranks split the rest.
+  At 5 ranks that is ~90px a column against the ~52px a switch needs. Comfortable to ~a dozen
+  ranks at 1024px; `overflow-x` remains only as a net.
+  ⚠️ **The check asserts the ABSENCE of a `min-width` floor** as well as the fixed layout —
+  re-adding one silently restores the drag, which is how it came back the first time.
 - ✅ **TEST — THE SWITCH GLOW (`e4b9d95`).** *"yeah of course do use the shadow for normal
   mode"*. Amber halo on the ON knob. **Nothing was written to keep it out of Lite Mode** —
   `html.lite-mode *::after` already forces `box-shadow: none !important`.
