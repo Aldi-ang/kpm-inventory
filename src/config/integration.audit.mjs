@@ -2571,11 +2571,19 @@ check(G37, 'the colour arrives with the knob, and the knob settles rather than s
   'a cross-fade through mud and a dead stop are exactly the two things he said were missing');
 /* 📏 the width he was fighting: 12px padding both sides of every cell, a 44px toggle floor and an
    800px table floor. 6 / 40 / 560 now — a rank column is a quarter narrower. */
-check(G37, 'a rank column is narrow enough to fit without sliding sideways',
-  /\.kpm-matrix \{[^}]*min-width: 560px/.test(themeCss) &&
+/* 🔴 HE ASKED TWICE. Narrowing the columns was the first answer and it could never have been
+   enough: a width FLOOR of any size still overflows once there are enough ranks. `table-layout:
+   fixed` divides the space the table HAS instead of measuring what its content wants, so ranks
+   get narrower as they are added rather than pushing the grid off the screen.
+   ⚠️ THE `min-width` FLOOR MUST NOT COME BACK. Re-adding one silently restores the drag. */
+check(G37, 'the grid fits its container instead of sliding sideways',
+  /\.kpm-matrix \{[^}]*table-layout: fixed/.test(themeCss) &&
+  !/\.kpm-matrix \{[^}]*min-width:/.test(themeCss) &&
+  /\.kpm-matrix th:first-child, \.kpm-matrix td:first-child \{ width: 42%/.test(themeCss) &&
+  /\.kpm-matrix thead th \{ overflow-wrap: anywhere/.test(themeCss) &&
   /\.kpm-matrix th, \.kpm-matrix td \{ padding: var\(--s2\) 6px/.test(themeCss) &&
   /\.kpm-matrix \.kpm-toggle \{ min-width: 40px; min-height: 40px; \}/.test(themeCss),
-  'he asked not to have to slide left and right; the cell padding was the biggest single cost');
+  'a fixed layout is what removes the drag; a min-width floor of any size brings it straight back');
 /* what is drawn and what is announced come from ONE attribute, so they cannot drift. On this
    screen a toggle that reads "on" to a screen reader while drawn off is a security bug. */
 check(G37, 'every permission toggle states its state to both eye and screen reader',

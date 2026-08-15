@@ -2558,10 +2558,27 @@ html.lite-mode .kpm-title-rule { animation: none; width: 100%; }
    Now 6px / 40px / 560px. A rank column goes from ~68px to ~52px — a quarter narrower — so a
    third more ranks fit before anything scrolls, and the feature-name column keeps its own air
    because it is the only one that holds a sentence. */
-.kpm-matrix { width: 100%; border-collapse: collapse; min-width: 560px; user-select: none;
+/* 🔴 NO HORIZONTAL SCROLL AT ALL — his second ask on the same thing, 2026-08-15: *"i dont want to
+   slide the matric panel left and right can u adjust it again"*. Narrowing the columns was not
+   enough and could never have been: a floor of ANY width still overflows once there are enough
+   ranks, so the answer had to stop being a smaller number and start being no number.
+   `table-layout: fixed` + `width: 100%` makes the browser divide the space it HAS rather than
+   measure what the content wants. The feature column takes a fixed 42%; every rank splits the
+   rest evenly, so ranks get narrower as they are added instead of pushing the table off-screen.
+   The switch is 40px and a cell keeps 12px of padding, so 52px is the floor a column can usefully
+   reach — about a dozen ranks on a 1024px screen, which is where `hidden lg:block` starts. Past
+   that the wrapper's `overflow-x` is still there as a net, but it is a net now and not the
+   everyday experience. */
+.kpm-matrix { width: 100%; border-collapse: collapse; table-layout: fixed; user-select: none;
   text-align: left; }
 .kpm-matrix th, .kpm-matrix td { padding: var(--s2) 6px; border-bottom: 1px solid var(--line); }
-.kpm-matrix th:first-child, .kpm-matrix td:first-child { padding-left: var(--s3); padding-right: var(--s4); }
+/* the only column that holds a sentence, so it is the only one given a share of its own */
+.kpm-matrix th:first-child, .kpm-matrix td:first-child { width: 42%;
+  padding-left: var(--s3); padding-right: var(--s4); }
+/* a rank name that no longer fits wraps rather than widening its column and shoving the table
+   sideways — the wrap is what the fixed layout buys, and breaking a long word is part of it */
+.kpm-matrix thead th { overflow-wrap: anywhere; hyphens: auto; }
+.kpm-matrix td.feat { overflow-wrap: anywhere; }
 /* ⚠️ 40px, NOT the system's 44px — and only inside this grid. The 44px floor is a THUMB rule,
    and this table is `hidden lg:block`: it never renders on a touch screen. The phone gets the
    rank-picker list, where the switch keeps its full 44px target. */
