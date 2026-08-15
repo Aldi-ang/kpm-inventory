@@ -17,15 +17,28 @@
 
 **🔴 LIGHT MODE IS THE LIVE FRONT, AND IT IS NOW ACTUALLY ON.** Phase 6 is complete; the switch
 bug is fixed (group 38) and the sales terminal is converted as his chosen pilot (group 39).
-**541/541 · `node src/config/contrast.selfcheck.mjs` must also pass — it measures both themes.**
+**543/543 · `node src/config/contrast.selfcheck.mjs` must also pass — it measures both themes.**
 
-**▶ NEXT: the other 29 screens.** He has seen ONE converted screen. Ranked by hardcoded colour
-count in the earlier survey below: `MapMissionControl` · `CustomerManager` · `FleetCanvasManager` ·
-`JourneyView` · `StockOpnameView` · `ConsignmentFinanceView` · `SamplingManager` ·
-`RestockVaultView` · `EODReconciliationView` · `AgentProfileView` · `App.jsx`.
-⚠️ **Do not repeat the terminal's two mistakes:** sweep colour NAMES as well as hexes, and check
-HUE separation against the ground, not only contrast. Both are written up in the log entry below
-and in [[The KPM Control System]] in the vault.
+### 🔴 THE PAGE ITSELF WAS THE LAST LITERAL — `39ad446`. Read this before hunting any colour bug.
+
+His screenshot, 2026-08-16: *"settingview is not even done, look at ther black background, it
+should be light color with the RE9 arklab theme"* — **with every module on that screen already
+cream.** The cause was not in SettingsView. `body` in `src/index.css` pinned its own near-black
+and its own hardcoded gradient, so the page never changed theme.
+
+🔑 **THE HEADER AND THE DOCK ARE GLASS, AND THAT IS WHY THEY LOOKED BROKEN TOO.** `.kpm-topbar`
+sets `background-color: transparent` and blurs what is behind it. Neither bar was "still dark" —
+both were faithfully showing a black page through themselves.
+⚠️ **When three surfaces are wrong at once, look for the one thing behind all three.**
+
+Now `--ground-base` / `-hi` / `-lo` / `--ground-glow` / `-glow-2`, plus `--glass-edge` / `-edge-2`
+for the two floating panes' outlines (cream at 12% over steel is 1,06:1 — they had no outline).
+The light ground keeps the **geometry**: lit corner top-left where the logo is, falling away to
+the far corner. Steel, never white — the cream modules need a ground to be lifted off.
+
+**▶ NEXT: the ten unconverted screens — see the measured table further down.** ⚠️ Start with the
+PANELS (`bg-slate-*`), not the accents; the accents follow the panel. Use
+`node src/config/theme.grounds.mjs <file>` to separate them.
 
 ### 🔴 SETTINGS IN LIGHT MODE — *"the settingview still looks unclear"*. FIXED, 527/527
 
