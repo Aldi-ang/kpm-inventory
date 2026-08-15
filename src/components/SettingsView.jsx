@@ -129,6 +129,14 @@ export default function SettingsView({
     const lastUsbTime = parseInt(localStorage.getItem('last_usb_backup') || '0');
     const isUsbValidInDb = lastUsbTime > resetThreshold && (sNow.getTime() - lastUsbTime) < (7 * 24 * 60 * 60 * 1000);
 
+    /* which mascot line the dropdown is pointing at. His call, 2026-08-15: *"for the capybara
+       dialogue u might need to make it dropdown menu instead, too many conversation for it"* — a
+       scrolling list of every line was taller than the module that held it. */
+    const [pickedMsg, setPickedMsg] = useState(0);
+    /* clamped on every render, not on delete: removing the last line would otherwise leave the
+       index pointing past the end and the next Delete would act on `undefined`. */
+    const pick = Math.min(pickedMsg, Math.max(0, activeMessages.length - 1));
+
     const isRecoverySecure = sessionStatus.recovery || dbRecoveryCount > 0;
     const isUsbSecure = sessionStatus.usb || isUsbValidInDb;
     const isCloudSecure = sessionStatus.cloud || !!confirmedMirror;
@@ -371,28 +379,43 @@ export default function SettingsView({
                                   <div className="kpm-acts">
                                       <button type="button" className="kpm-btn key" onClick={handleAddMascotMessage}>Add line</button>
                                   </div>
-                                  {activeMessages.map((msg, idx) => (
-                                      <div key={idx} className="kpm-rec">
-                                          {editingMsgIndex === idx ? (
-                                              <div className="who">
-                                                  <input autoFocus className="kpm-inline" value={editMsgText}
-                                                      onChange={(e) => setEditMsgText(e.target.value)}
-                                                      onKeyDown={(e) => e.key === 'Enter' && handleSaveEditedMessage(idx)}/>
-                                                  <div className="kpm-acts">
-                                                      <button type="button" className="kpm-btn" onClick={() => setEditingMsgIndex(-1)}>Cancel</button>
-                                                      <button type="button" className="kpm-btn key" onClick={() => handleSaveEditedMessage(idx)}>Save</button>
-                                                  </div>
-                                              </div>
-                                          ) : (
-                                              <div className="who kpm-line">
-                                                  <code>&ldquo;{msg}&rdquo;</code>
-                                                  <span className="kpm-rowacts">
-                                                      <button type="button" title="Edit this line" onClick={() => { setEditingMsgIndex(idx); setEditMsgText(msg); }}><Edit size={14}/></button>
-                                                      <button data-kpm-del data-label="Delete" onClick={() => handleDeleteMascotMessage(msg)}><Trash2 size={14}/></button>
-                                                  </span>
-                                              </div>
-                                          )}
-                                      </div>
+                                  {/* 🔑 A DROPDOWN, NOT A LIST. His call: *"too many conversation for
+                                      it"* — every line rendered as its own row, so the module grew
+                                      without limit and needed an inner scrollbar to survive, which
+                                      is the one thing he has banned twice. One picker plus two acts
+                                      is a fixed height no matter how many lines he writes.
+                                      ⚠️ "Delete" carries its own word now, so it must NOT wear
+                                      `data-kpm-del` — that marker prints the label a second time. */}
+                                  {activeMessages.length > 0 && (editingMsgIndex >= 0 ? (
+                                      <>
+                                          <label className="kpm-field">
+                                              <span>Editing line {editingMsgIndex + 1} of {activeMessages.length}</span>
+                                              <input autoFocus value={editMsgText}
+                                                  onChange={(e) => setEditMsgText(e.target.value)}
+                                                  onKeyDown={(e) => e.key === 'Enter' && handleSaveEditedMessage(editingMsgIndex)}/>
+                                          </label>
+                                          <div className="kpm-acts">
+                                              <button type="button" className="kpm-btn" onClick={() => setEditingMsgIndex(-1)}>Cancel</button>
+                                              <button type="button" className="kpm-btn key" onClick={() => handleSaveEditedMessage(editingMsgIndex)}>Save line</button>
+                                          </div>
+                                      </>
+                                  ) : (
+                                      <>
+                                          <label className="kpm-field">
+                                              <span>Existing lines · pick one to change</span>
+                                              <select value={pick} onChange={(e) => setPickedMsg(Number(e.target.value))}>
+                                                  {activeMessages.map((msg, idx) => (
+                                                      <option key={idx} value={idx}>{msg}</option>
+                                                  ))}
+                                              </select>
+                                          </label>
+                                          <div className="kpm-acts">
+                                              <button type="button" className="kpm-btn hazard"
+                                                  onClick={() => handleDeleteMascotMessage(activeMessages[pick])}>Delete</button>
+                                              <button type="button" className="kpm-btn"
+                                                  onClick={() => { setEditingMsgIndex(pick); setEditMsgText(activeMessages[pick]); }}>Edit</button>
+                                          </div>
+                                      </>
                                   ))}
                               </div>
                           </div>

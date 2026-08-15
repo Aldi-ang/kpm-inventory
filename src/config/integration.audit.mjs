@@ -1516,8 +1516,8 @@ const delMarks = DEL_FILES.reduce((n, f) =>
    `.kpm-rec` records when Security joined the control system, so its trash glyph is now a "Revoke"
    button in the record's action strip. The word is checked one line below — the pair of edits is
    what makes this a migration rather than a loss. */
-check(G25, 'every icon-only delete button in the app wears the expanding control', delMarks === 16,
-  `found ${delMarks} marked, expected 16 — a new icon-only delete button needs ` +
+check(G25, 'every icon-only delete button in the app wears the expanding control', delMarks === 15,
+  `found ${delMarks} marked, expected 15 — a new icon-only delete button needs ` +
   '`data-kpm-del data-label="Delete"` on it, and one that carries its own word ("Remove", "DEL") ' +
   'must NOT be marked or the label prints twice');
 check(G25, 'the delete rules outrank the Tailwind classes still on those buttons',
@@ -2172,11 +2172,22 @@ for (const [what, needle] of [
   ['the cukai fine', 'cukaiFinePrice: val'],
   ['the mascot scale', 'mascotScale: scale'],
   ['adding a line', 'onClick={handleAddMascotMessage}'],
-  ['editing a line', 'handleSaveEditedMessage(idx)'],
-  ['deleting a line', 'handleDeleteMascotMessage(msg)'],
+  ['editing a line', 'handleSaveEditedMessage(editingMsgIndex)'],
+  ['deleting a line', 'handleDeleteMascotMessage(activeMessages[pick])'],
   ['the mascot picture', 'onChange={handleMascotSelect}'],
 ]) check(G34, `${what} is still mounted in the tab`, gen.includes(needle),
   'a control that vanished in a restyle is silent — nothing errors, the button is simply gone');
+/* 🔑 A DROPDOWN, NOT A LIST. *"for the capybara dialogue u might need to make it dropdown menu
+   instead, too many conversation for it"*. Every line used to render as its own row, so the module
+   grew without limit and needed an inner scrollbar to survive — the thing he has banned twice. A
+   picker plus two acts is a fixed height at any number of lines. */
+check(G34, 'the mascot lines are a picker, not an unbounded list',
+  /<select value=\{pick\} onChange=/.test(gen) &&
+  !/activeMessages\.map\(\(msg, idx\) => \(\s*\n\s*<div key=\{idx\} className="kpm-rec">/.test(gen) &&
+  !/max-h-\d+ overflow-y-auto/.test(gen) &&
+  /const pick = Math\.min\(pickedMsg, Math\.max\(0, activeMessages\.length - 1\)\)/.test(settingsSrc),
+  'the clamp is load-bearing: deleting the last line leaves the index past the end, and the next ' +
+  'Delete would then act on undefined');
 /* the four small parts this tab needed exist in CSS. Tailwind only emits a class it saw in source,
    and a class that exists in neither paints nothing — which looks like a transparent panel. */
 for (const cls of ['.kpm-rowacts', '.kpm-inline', '.kpm-slider', '.kpm-portrait'])
