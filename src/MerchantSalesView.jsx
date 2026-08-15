@@ -1540,7 +1540,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                 onChange={handleManualCustomerType}
                                 placeholder="Type the shop name"
                                 aria-label="Customer name"
-                                className="w-full bg-[var(--duke-well)] border-2 border-[var(--duke-edge-1)] focus:border-[var(--duke-amber-edge)] rounded-lg px-3 py-3 text-base font-bold uppercase text-[var(--duke-paper-ink)] placeholder-[var(--duke-ink-6)] outline-none transition-colors"
+                                className="w-full bg-[var(--duke-well)] border-2 border-[var(--duke-edge-ctl)] focus:border-[var(--duke-amber-edge)] rounded-lg px-3 py-3 text-base font-bold uppercase text-[var(--duke-paper-ink)] placeholder-[var(--duke-ink-6)] outline-none transition-colors"
                             />
                         </div>
 
@@ -1574,7 +1574,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
             {/* grain now comes from .kpm-parchment */}
             <div className="p-3 md:p-4 border-b-2 border-dashed border-[var(--duke-edge-3)] relative z-10 text-center uppercase font-bold tracking-widest text-[var(--duke-ink-7)]">Manifest</div>
             
-            <div className="p-3 md:p-4 relative z-[60] border-b border-[var(--duke-edge-3)] bg-[var(--duke-paper-2)] space-y-3 md:space-y-4 manifest-dropdown-area">
+            <div className="p-3 md:p-4 relative z-[60] border-b border-[var(--duke-edge-on-paper)] bg-[var(--duke-paper-2)] space-y-3 md:space-y-4 manifest-dropdown-area">
                 {/* the dropdown backdrop moved with the picker — it belongs to renderCustomerBar now */}
 
                 {/* --- 🚀 DUAL MODE TOGGLE (SALE VS RETUR) --- */}
@@ -1633,7 +1633,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                     )}
 
                     <div className="relative">
-                        <label className="text-[10px] font-bold uppercase tracking-widest block mb-1 text-[var(--duke-ink-3)]">Customer Name</label>
+                        <label className="text-[10px] font-bold uppercase tracking-widest block mb-1 text-[var(--duke-ink-7)]">Customer Name</label>
                         {/* Read-only echo. The picker is the bar at the top of this column now, but a
                             manifest with no name written on it is not a manifest, so the paper still
                             states who the deal is with. */}
@@ -1646,9 +1646,9 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                         <button
                             onClick={() => setShowCustomerDropdown(true)}
                             aria-label={customerName ? `Customer: ${customerName}. Tap to change` : 'Choose customer'}
-                            className="kpm-hover w-full text-left bg-[var(--duke-paper-5)] border border-dashed border-[var(--duke-edge-3)] text-[var(--duke-ink-7)] p-2 text-xs md:text-sm font-black uppercase rounded truncate"
+                            className="kpm-hover w-full text-left bg-[var(--duke-paper-5)] border border-dashed border-[var(--duke-edge-on-paper)] text-[var(--duke-ink-7)] p-2 text-xs md:text-sm font-black uppercase rounded truncate"
                         >
-                            {customerName || <span className="text-[var(--duke-ink-3)] font-bold normal-case tracking-normal">Tap to choose the customer</span>}
+                            {customerName || <span className="text-[var(--duke-ink-7)] font-bold normal-case tracking-normal">Tap to choose the customer</span>}
                         </button>
 
                         <div className="mt-2 min-h-[20px]">
@@ -1657,8 +1657,8 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                     <div className="flex items-center gap-2 text-[10px] uppercase tracking-widest font-bold">
                                         {gpsStatus === 'checking' && (
                                             <div className="flex items-center justify-between w-full">
-                                                <span className="text-[var(--duke-amber-ink)] animate-pulse flex items-center gap-1"><MapPin size={12}/> Acquiring Satellites...</span>
-                                                <button onClick={() => verifyLocation(true)} className="text-[var(--duke-amber-ink)] hover:text-[var(--duke-ink-hi)] underline text-[11px] ml-2">PC Fast Scan</button>
+                                                <span className="text-[var(--duke-amber-on-paper)] animate-pulse flex items-center gap-1"><MapPin size={12}/> Acquiring Satellites...</span>
+                                                <button onClick={() => verifyLocation(true)} className="text-[var(--duke-amber-on-paper)] hover:text-[var(--duke-on-paper)] underline text-[11px] ml-2">PC Fast Scan</button>
                                             </div>
                                         )}
                                         
@@ -1668,10 +1668,10 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                             read as a statement, with the distance and the store named. */}
                                         {gpsStatus === 'verified' && (
                                             <div className="w-full border-l-[3px] border-[var(--duke-amber-edge-2)] bg-[var(--duke-paper-6)] px-3 py-2 rounded-r">
-                                                <b className="block font-mono text-[9px] font-extrabold uppercase tracking-[0.16em] text-[var(--duke-amber-ink-2)] mb-1">Location verified</b>
+                                                <b className="block font-mono text-[9px] font-extrabold uppercase tracking-[0.16em] text-[var(--duke-amber-on-paper)] mb-1">Location verified</b>
                                                 <span className="block normal-case tracking-normal text-[12px] font-semibold text-[var(--duke-on-plate)] leading-snug">
                                                     {distanceToStore}m from {selectedCustomerInfo.name}
-                                                    <i className="not-italic font-mono text-[8px] font-extrabold uppercase tracking-[0.1em] text-[var(--duke-ink-4)] ml-2 align-middle">auto</i>
+                                                    <i className="not-italic font-mono text-[8px] font-extrabold uppercase tracking-[0.1em] text-[var(--duke-on-paper-dim)] ml-2 align-middle">auto</i>
                                                 </span>
                                             </div>
                                         )}
@@ -1697,7 +1697,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                                                 <Camera size={10}/> Request 100m HQ Bypass
                                                             </button>
                                                         ) : bypassState.status === 'uploading' ? (
-                                                            <span className="text-[11px] text-[var(--duke-amber-ink)] font-bold uppercase animate-pulse">Uploading Proof...</span>
+                                                            <span className="text-[11px] text-[var(--duke-amber-on-paper)] font-bold uppercase animate-pulse">Uploading Proof...</span>
                                                         ) : bypassState.status === 'pending' ? (
                                                             <span className="text-[11px] text-yellow-400 font-bold uppercase animate-pulse bg-yellow-900/20 px-2 py-1 rounded border border-yellow-500/50 inline-block w-fit">Awaiting HQ Approval...</span>
                                                         ) : null}
@@ -1705,7 +1705,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                                     </div>
                                                 )}
                                                 {!canOverrideGps && distanceToStore > 100 && (
-                                                    <span className="text-[11px] text-[var(--duke-ink-3)] font-bold uppercase mt-1">Distance &gt; 100m. Bypass Unavailable.</span>
+                                                    <span className="text-[11px] text-[var(--duke-ink-7)] font-bold uppercase mt-1">Distance &gt; 100m. Bypass Unavailable.</span>
                                                 )}
                                             </div>
                                         )}
@@ -1715,7 +1715,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                     </div>
                                     
                                     {(!canOverrideGps && !hasClearance(user?.userRole || user?.role, 'can_unrestricted_sample') && !['verified', 'bypass', 'walk_in'].includes(gpsStatus)) ? (
-                                        <button disabled className="w-full mt-1 bg-[var(--duke-fill-ground)] border border-[var(--duke-edge-1)] text-[var(--duke-ink-3)] text-[10px] font-bold uppercase tracking-widest p-2 rounded shadow-inner flex items-center justify-center gap-2 cursor-not-allowed">
+                                        <button disabled className="w-full mt-1 bg-[var(--duke-fill-ground)] border border-[var(--duke-edge-ctl)] text-[var(--duke-ink-3)] text-[10px] font-bold uppercase tracking-widest p-2 rounded shadow-inner flex items-center justify-center gap-2 cursor-not-allowed">
                                             <Lock size={12}/> Sample Locked (Requires GPS)
                                         </button>
                                     ) : (
@@ -1743,8 +1743,8 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                     </div>
 
                 <div>
-                    <label className="text-[10px] font-bold uppercase text-[var(--duke-ink-3)] block mb-1">Payment Method</label>
-                    <select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)} disabled={isReturMode} className={`w-full bg-[var(--duke-paper)] border border-[var(--duke-edge-3)] text-[var(--duke-ink-7)] p-2 text-xs md:text-sm font-bold uppercase outline-none rounded ${isReturMode ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                    <label className="text-[10px] font-bold uppercase text-[var(--duke-ink-7)] block mb-1">Payment Method</label>
+                    <select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)} disabled={isReturMode} className={`w-full bg-[var(--duke-paper)] border border-[var(--duke-edge-on-paper)] text-[var(--duke-ink-7)] p-2 text-xs md:text-sm font-bold uppercase outline-none rounded ${isReturMode ? 'opacity-50 cursor-not-allowed' : ''}`}>
                         {allowedPayments.map(method => ( <option key={method} value={method}>{method === 'Titip' ? 'Consignment' : method}</option> ))}
                     </select>
                 </div>
@@ -1757,7 +1757,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                         </label>
                         <div className="flex items-center gap-3">
                             <input type="range" min="1" max="60" value={tempoDays} onChange={(e) => setTempoDays(parseInt(e.target.value))} className="w-full accent-[var(--duke-amber)] h-1.5 bg-[var(--duke-fill-ground)] rounded-lg appearance-none cursor-pointer" />
-                            <input type="number" min="1" max="60" value={tempoDays} onChange={(e) => setTempoDays(parseInt(e.target.value))} className="w-12 bg-[var(--duke-fill-ground)] border border-[var(--duke-edge-2)] rounded p-1 text-center text-[var(--duke-amber-ink)] text-xs font-bold focus:outline-none focus:border-[var(--duke-amber-edge)]"/>
+                            <input type="number" min="1" max="60" value={tempoDays} onChange={(e) => setTempoDays(parseInt(e.target.value))} className="w-12 bg-[var(--duke-fill-ground)] border border-[var(--duke-edge-ctl)] rounded p-1 text-center text-[var(--duke-amber-ink)] text-xs font-bold focus:outline-none focus:border-[var(--duke-amber-edge)]"/>
                         </div>
                     </div>
                 )}
@@ -1769,7 +1769,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                             <h4 className={`font-black text-[11px] uppercase tracking-[0.1em] ${selectedCustomerDebts.isOverdue ? 'text-red-500' : 'text-orange-500'}`}>
                                 {selectedCustomerDebts.isOverdue ? '⚠️ OVERDUE TITIP DETECTED' : 'Active Titip Balance'}
                             </h4>
-                            <p className="text-[10px] text-[var(--duke-ink-6)] mt-0.5 leading-tight font-bold">
+                            <p className="text-[10px] text-[var(--duke-on-paper-dim)] mt-0.5 leading-tight font-bold">
                                 <strong className="text-[var(--duke-ink-7)]">Rp {new Intl.NumberFormat('id-ID').format(selectedCustomerDebts.totalDebt)}</strong> Unpaid.
                             </p>
                         </div>
@@ -1790,7 +1790,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                         const mergedTiers = new Set(allowedTiers);
                         if (lockedTier) mergedTiers.add(lockedTier);
                         return (
-                        <div key={idx} className={`kpm-row-in flex flex-col border-b-2 border-dashed border-[var(--duke-edge-3)]/30 p-3 md:p-4 mb-1 rounded border shadow-sm ${isReturMode ? (returType === 'EXCHANGE' ? 'bg-[var(--duke-paper-3)] border-[var(--duke-brass-edge-2)]' : 'bg-[var(--duke-paper-7)] border-[var(--duke-danger-edge)]') : 'bg-[var(--duke-paper)] border-[var(--duke-edge-3)]/50'}`}>
+                        <div key={idx} className={`kpm-row-in flex flex-col border-b-2 border-dashed border-[var(--duke-edge-on-paper)]/30 p-3 md:p-4 mb-1 rounded border shadow-sm ${isReturMode ? (returType === 'EXCHANGE' ? 'bg-[var(--duke-paper-3)] border-[var(--duke-brass-edge-2)]' : 'bg-[var(--duke-paper-7)] border-[var(--duke-danger-edge)]') : 'bg-[var(--duke-paper)] border-[var(--duke-edge-on-paper)]/50'}`}>
                             <div className="flex justify-between items-start mb-2">
                                 <span className={`text-[10px] md:text-xs font-black w-40 leading-tight uppercase break-words whitespace-normal ${isReturMode ? (returType === 'EXCHANGE' ? 'text-[var(--duke-brass-ink-2)]' : 'text-red-900') : 'text-[var(--duke-ink-7)]'}`}>
                                     {item.name} {isReturMode && (returType === 'EXCHANGE' ? '(TUKAR GANTI)' : '(BUYBACK)')}
@@ -1802,7 +1802,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                             {!item.isIouFulfillment && (
                                 <div className="flex items-center gap-1 flex-wrap mb-2">
                                     {['Karton', 'Bal', 'Slop', 'Bks'].map(u => (
-                                        <span key={u} className="flex items-center gap-1 border border-[var(--duke-edge-3)] bg-[var(--duke-paper-8)] px-1.5 py-1 rounded">
+                                        <span key={u} className="flex items-center gap-1 border border-[var(--duke-edge-on-paper)] bg-[var(--duke-paper-8)] px-1.5 py-1 rounded">
                                             <input
                                                 type="text"
                                                 inputMode="numeric"
@@ -1812,10 +1812,10 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                                 aria-label={`${item.name} ${u}`}
                                                 className="w-8 bg-transparent text-center text-[var(--duke-on-plate)] font-black text-sm outline-none"
                                             />
-                                            <em className="not-italic text-[8px] font-black uppercase tracking-widest text-[var(--duke-ink-4)]">{u}</em>
+                                            <em className="not-italic text-[8px] font-black uppercase tracking-widest text-[var(--duke-on-paper-dim)]">{u}</em>
                                         </span>
                                     ))}
-                                    <span className="text-[10px] font-black font-mono text-[var(--duke-amber-ink-2)] ml-1">
+                                    <span className="text-[10px] font-black font-mono text-[var(--duke-amber-on-paper)] ml-1">
                                         = {new Intl.NumberFormat('id-ID').format(item.qty || 0)} Bks
                                     </span>
                                     {/* The rates this line is actually using. Packing is per product and set in
@@ -1825,19 +1825,19 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                     {(() => {
                                         const per = bksPerUnit(item.product);
                                         return (
-                                            <span className="w-full text-[11px] font-mono font-bold text-[var(--duke-ink-4)] tracking-wide mt-0.5">
+                                            <span className="w-full text-[11px] font-mono font-bold text-[var(--duke-on-paper-dim)] tracking-wide mt-0.5">
                                                 1 KARTON = {per.Karton} &middot; 1 BAL = {per.Bal} &middot; 1 SLOP = {per.Slop} BKS
                                             </span>
                                         );
                                     })()}
                                 </div>
                             )}
-                            <div className={`flex items-center gap-1 md:gap-2 p-1 rounded border ${isReturMode ? (returType === 'EXCHANGE' ? 'bg-[var(--duke-paper-4)]/60 border-[var(--duke-brass-edge-2)]' : 'bg-red-200/50 border-red-300') : 'bg-[var(--duke-paper-2)] border-[var(--duke-edge-3)]/30'}`}>
+                            <div className={`flex items-center gap-1 md:gap-2 p-1 rounded border ${isReturMode ? (returType === 'EXCHANGE' ? 'bg-[var(--duke-paper-4)]/60 border-[var(--duke-brass-edge-2)]' : 'bg-red-200/50 border-red-300') : 'bg-[var(--duke-paper-2)] border-[var(--duke-edge-on-paper)]/30'}`}>
                                 <input type="number" value={item.qty} disabled={item.isIouFulfillment} onChange={(e) => updateCartItem(item.productId, 'qty', e.target.value === '' ? '' : parseInt(e.target.value))} onBlur={(e) => { if (!e.target.value || parseInt(e.target.value) < 1) updateCartItem(item.productId, 'qty', 1); }} className={`w-20 md:w-24 bg-white border border-[var(--duke-edge-3)] text-center text-xs md:text-sm font-bold tabular-nums outline-none focus:border-[var(--duke-amber-edge)] rounded p-1 text-[var(--duke-ink-7)] ${item.isIouFulfillment ? 'opacity-50' : ''}`} />
                                 {/* 🚀 Phase 8: unit + price-tier directly change how much money is charged —
                                     bumped to text-sm specifically, not just the general 11px pass, since
                                     these two decide the price, not just describe something. */}
-                                <select value={item.unit} disabled={item.isIouFulfillment} onChange={(e) => updateCartItem(item.productId, 'unit', e.target.value)} className={`bg-transparent text-sm font-bold uppercase outline-none text-[var(--duke-ink-7)] border-r border-[var(--duke-edge-3)]/30 pr-1 md:pr-2 ${item.isIouFulfillment ? 'opacity-50' : ''}`}><option>Bks</option><option>Slop</option><option>Bal</option><option>Karton</option></select>
+                                <select value={item.unit} disabled={item.isIouFulfillment} onChange={(e) => updateCartItem(item.productId, 'unit', e.target.value)} className={`bg-transparent text-sm font-bold uppercase outline-none text-[var(--duke-ink-7)] border-r border-[var(--duke-edge-on-paper)]/30 pr-1 md:pr-2 ${item.isIouFulfillment ? 'opacity-50' : ''}`}><option>Bks</option><option>Slop</option><option>Bal</option><option>Karton</option></select>
                                 <select value={item.priceTier} onChange={(e) => updateCartItem(item.productId, 'priceTier', e.target.value)} disabled={!!lockedTier || item.isIouFulfillment} className={`bg-transparent text-sm font-bold uppercase outline-none text-[var(--duke-ink-7)] pl-1 ${lockedTier || item.isIouFulfillment ? 'opacity-50 cursor-not-allowed text-red-700' : ''}`}>
                                     {Array.from(mergedTiers).map(tier => ( <option key={tier} value={tier}>{tier}</option> ))}
                                 </select>
@@ -1850,7 +1850,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                         <select 
                                             value={item.condition || 'GOOD'} 
                                             onChange={(e) => updateCartItem(item.productId, 'condition', e.target.value)}
-                                            className={`text-[11px] font-bold uppercase p-1.5 rounded outline-none border flex-1 ${item.condition === 'DAMAGED' ? 'bg-red-900/30 border-red-500 text-red-700' : 'bg-[var(--duke-paper-3)] border-[var(--duke-edge-3)] text-[var(--duke-ink-7)]'}`}
+                                            className={`text-[11px] font-bold uppercase p-1.5 rounded outline-none border flex-1 ${item.condition === 'DAMAGED' ? 'bg-red-900/30 border-red-500 text-red-700' : 'bg-[var(--duke-paper-3)] border-[var(--duke-edge-on-paper)] text-[var(--duke-ink-7)]'}`}
                                         >
                                             <option value="GOOD">Good (Resellable)</option>
                                             <option value="DAMAGED">Damaged (Quarantine)</option>
@@ -1893,7 +1893,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                 </div>
                             )}
 
-                            <div className="text-right text-base md:text-lg font-black font-mono mt-2 text-[var(--duke-ink-6)]">
+                            <div className="text-right text-base md:text-lg font-black font-mono mt-2 text-[var(--duke-on-paper-dim)]">
                                 {isReturMode && returType === 'BUYBACK' ? '-' : ''}Rp {new Intl.NumberFormat('id-ID').format(item.calculatedPrice * item.qty)}
                             </div>
                         </div>
@@ -2094,20 +2094,20 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                     </div>
                 )}
                 <div className="flex gap-2 p-2 md:p-3 bg-[var(--duke-bar-solid)] border-b border-[var(--duke-edge-1)] overflow-x-auto scrollbar-hide shrink-0">
-                    {categories.map(cat => ( <button key={cat} onClick={() => setActiveCategory(cat)} className={`kpm-hover px-4 py-2 md:px-5 md:py-2.5 text-[10px] md:text-xs font-black uppercase whitespace-nowrap transition-all rounded-lg border-2 ${activeCategory === cat ? 'bg-[var(--duke-fill-tan)] text-black border-[var(--duke-amber-edge)]' : 'bg-[var(--duke-fill-panel)] text-[var(--duke-ink-5)] border-[var(--duke-edge-1)] hover:border-[var(--duke-edge-5)]'}`}>{cat}</button> ))}
+                    {categories.map(cat => ( <button key={cat} onClick={() => setActiveCategory(cat)} className={`kpm-hover px-4 py-2 md:px-5 md:py-2.5 text-[10px] md:text-xs font-black uppercase whitespace-nowrap transition-all rounded-lg border-2 ${activeCategory === cat ? 'bg-[var(--duke-fill-tan)] text-black border-[var(--duke-amber-edge)]' : 'bg-[var(--duke-fill-panel)] text-[var(--duke-ink-5)] border-[var(--duke-edge-ctl)] hover:border-[var(--duke-edge-5)]'}`}>{cat}</button> ))}
                 </div>
                 {/* The examine shelf used to sit here as a full-width horizontal strip, which
                     cost the wares 150px of vertical room on every screen. It is the rail now —
                     same content, in space that was empty anyway. */}
                 <div className="p-2 md:p-3 border-b border-[var(--duke-edge-1)] flex gap-3 shrink-0 bg-[var(--duke-fill-well)] items-center relative z-10">
                     <div className="relative flex-1">
-                        <input ref={searchRef} value={searchTerm} onChange={e => setSearchTerm(e.target.value)} placeholder="SEARCH WARES..." className="w-full bg-[var(--duke-well)] border-2 border-[var(--duke-edge-1)] p-2 md:p-3 pl-9 md:pl-10 pr-10 text-[var(--duke-amber-ink)] font-mono text-xs md:text-sm font-bold outline-none focus:border-[var(--duke-amber-edge)] rounded-lg shadow-inner transition-colors"/>
+                        <input ref={searchRef} value={searchTerm} onChange={e => setSearchTerm(e.target.value)} placeholder="SEARCH WARES..." className="w-full bg-[var(--duke-well)] border-2 border-[var(--duke-edge-ctl)] p-2 md:p-3 pl-9 md:pl-10 pr-10 text-[var(--duke-amber-ink)] font-mono text-xs md:text-sm font-bold outline-none focus:border-[var(--duke-amber-edge)] rounded-lg shadow-inner transition-colors"/>
                         <Search size={16} className="absolute left-3 top-2.5 md:top-3.5 text-[var(--duke-ink-3)]"/>
                         <span className="kpm-kbd hidden lg:inline-grid absolute right-3 top-1/2 -translate-y-1/2">/</span>
                     </div>
                     <div className="hidden lg:flex gap-1">
-                        <button onClick={() => scroll('left')} className="kpm-hover p-3 bg-[var(--duke-fill-panel)] border-2 border-[var(--duke-edge-1)] text-[var(--duke-ink-3)] hover:text-[var(--duke-amber-ink)] hover:border-[var(--duke-amber-edge)] rounded-lg active:scale-95 transition-all shadow-md"><ArrowLeft size={20}/></button>
-                        <button onClick={() => scroll('right')} className="kpm-hover p-3 bg-[var(--duke-fill-panel)] border-2 border-[var(--duke-edge-1)] text-[var(--duke-ink-3)] hover:text-[var(--duke-amber-ink)] hover:border-[var(--duke-amber-edge)] rounded-lg active:scale-95 transition-all shadow-md"><ArrowRight size={20}/></button>
+                        <button onClick={() => scroll('left')} className="kpm-hover p-3 bg-[var(--duke-fill-panel)] border-2 border-[var(--duke-edge-ctl)] text-[var(--duke-ink-3)] hover:text-[var(--duke-amber-ink)] hover:border-[var(--duke-amber-edge)] rounded-lg active:scale-95 transition-all shadow-md"><ArrowLeft size={20}/></button>
+                        <button onClick={() => scroll('right')} className="kpm-hover p-3 bg-[var(--duke-fill-panel)] border-2 border-[var(--duke-edge-ctl)] text-[var(--duke-ink-3)] hover:text-[var(--duke-amber-ink)] hover:border-[var(--duke-amber-edge)] rounded-lg active:scale-95 transition-all shadow-md"><ArrowRight size={20}/></button>
                     </div>
                 </div>
 
@@ -2755,17 +2755,17 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                             )}
                             <div>
                                 <label className="text-xs font-bold text-[var(--duke-ink-3)] uppercase tracking-widest block mb-1">Store Name</label>
-                                <input value={customerName} disabled className="w-full bg-[var(--duke-well-solid)] border border-[var(--duke-edge-1)] text-[var(--duke-ink-1)] p-3 rounded font-bold uppercase opacity-70" />
+                                <input value={customerName} disabled className="w-full bg-[var(--duke-well-solid)] border border-[var(--duke-edge-ctl)] text-[var(--duke-ink-1)] p-3 rounded font-bold uppercase opacity-70" />
                             </div>
                             
                             <div>
                                 <label className="text-xs font-bold text-[var(--duke-ink-3)] uppercase tracking-widest block mb-1">WhatsApp / Phone <span className="text-red-500">*</span></label>
-                                <input value={nooForm.phone} onChange={e => setNooForm({...nooForm, phone: e.target.value})} placeholder="e.g. 081234567890" className="w-full bg-[var(--duke-fill-panel)] border border-[var(--duke-edge-2)] focus:border-orange-500 outline-none text-[var(--duke-ink-hi)] p-3 rounded font-bold" />
+                                <input value={nooForm.phone} onChange={e => setNooForm({...nooForm, phone: e.target.value})} placeholder="e.g. 081234567890" className="w-full bg-[var(--duke-fill-panel)] border border-[var(--duke-edge-ctl)] focus:border-orange-500 outline-none text-[var(--duke-ink-hi)] p-3 rounded font-bold" />
                             </div>
 
                             <div>
                                 <label className="text-xs font-bold text-[var(--duke-ink-3)] uppercase tracking-widest block mb-1">Requested Pricing Tier <span className="text-red-500">*</span></label>
-                                <select value={nooForm.requestedTier} onChange={e => setNooForm({...nooForm, requestedTier: e.target.value})} className="w-full bg-[var(--duke-fill-panel)] border border-[var(--duke-edge-2)] focus:border-orange-500 outline-none text-[var(--duke-ink-hi)] p-3 rounded font-bold uppercase">
+                                <select value={nooForm.requestedTier} onChange={e => setNooForm({...nooForm, requestedTier: e.target.value})} className="w-full bg-[var(--duke-fill-panel)] border border-[var(--duke-edge-ctl)] focus:border-orange-500 outline-none text-[var(--duke-ink-hi)] p-3 rounded font-bold uppercase">
                                     {allowedTiers.map(tier => ( <option key={tier} value={tier}>{tier}</option> ))}
                                 </select>
                             </div>
@@ -2779,7 +2779,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                         <button onClick={() => setNooForm({...nooForm, photoUrl: null, photoFile: null})} className="absolute top-2 right-2 bg-red-600 text-[var(--duke-on-fill)] p-1.5 rounded-full"><X size={14}/></button>
                                     </div>
                                 ) : (
-                                    <button onClick={() => fileInputRef.current.click()} className="w-full border-2 border-dashed border-[var(--duke-edge-2)] hover:border-orange-500 bg-[var(--duke-fill-panel)]/50 hover:bg-[var(--duke-fill-panel)] text-[var(--duke-ink-3)] hover:text-orange-400 transition-colors py-8 rounded-lg flex flex-col items-center justify-center gap-2">
+                                    <button onClick={() => fileInputRef.current.click()} className="w-full border-2 border-dashed border-[var(--duke-edge-ctl)] hover:border-orange-500 bg-[var(--duke-fill-panel)]/50 hover:bg-[var(--duke-fill-panel)] text-[var(--duke-ink-3)] hover:text-orange-400 transition-colors py-8 rounded-lg flex flex-col items-center justify-center gap-2">
                                         <Camera size={32} />
                                         <span className="text-xs font-bold uppercase tracking-widest">Capture Live Photo</span>
                                         <span className="text-[11px] opacity-60">(Live Camera Only - Gallery Disabled)</span>
@@ -2796,7 +2796,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                     </div>
                                 </div>
                                 {!agentLocation && (
-                                    <button onClick={() => verifyLocation(true)} className="text-[11px] bg-[var(--duke-fill-panel)] hover:bg-[var(--duke-fill-plank)] text-[var(--duke-ink-1)] border border-[var(--duke-edge-2)] px-3 py-1.5 rounded uppercase font-bold transition-colors shadow-md">
+                                    <button onClick={() => verifyLocation(true)} className="text-[11px] bg-[var(--duke-fill-panel)] hover:bg-[var(--duke-fill-plank)] text-[var(--duke-ink-1)] border border-[var(--duke-edge-ctl)] px-3 py-1.5 rounded uppercase font-bold transition-colors shadow-md">
                                         Force GPS Lock
                                     </button>
                                 )}
@@ -2807,7 +2807,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                             <button onClick={submitNooRegistration} disabled={!agentLocation} className={`w-full py-4 rounded-xl font-black uppercase tracking-[0.1em] transition-all shadow-lg flex items-center justify-center gap-2 ${agentLocation ? 'bg-orange-600 hover:bg-orange-500 text-[var(--duke-on-fill)] shadow-[0_0_15px_rgba(249,115,22,0.5)]' : 'bg-[var(--duke-fill-panel)] text-[var(--duke-ink-3)] cursor-not-allowed'}`}>
                                 {agentLocation ? 'Save & Proceed to Sale' : 'Acquiring Satellites...'}
                             </button>
-                            <button onClick={submitNooOnly} disabled={!agentLocation} className={`w-full py-3 rounded-xl font-black uppercase tracking-[0.1em] transition-all border-2 flex items-center justify-center gap-2 ${agentLocation ? 'bg-[var(--duke-fill-panel)] border-[var(--duke-edge-2)] hover:border-[var(--duke-brass-edge)] hover:text-[var(--duke-brass-ink)] text-[var(--duke-ink-1)]' : 'bg-[var(--duke-fill-panel)] border-[var(--duke-edge-1)] text-[var(--duke-ink-3)] cursor-not-allowed'}`}>
+                            <button onClick={submitNooOnly} disabled={!agentLocation} className={`w-full py-3 rounded-xl font-black uppercase tracking-[0.1em] transition-all border-2 flex items-center justify-center gap-2 ${agentLocation ? 'bg-[var(--duke-fill-panel)] border-[var(--duke-edge-ctl)] hover:border-[var(--duke-brass-edge)] hover:text-[var(--duke-brass-ink)] text-[var(--duke-ink-1)]' : 'bg-[var(--duke-fill-panel)] border-[var(--duke-edge-ctl)] text-[var(--duke-ink-3)] cursor-not-allowed'}`}>
                                 Register Only (No Sale)
                             </button>
                         </div>
@@ -2830,7 +2830,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                         <div className="p-6 space-y-5">
                             <div>
                                 <label className="text-xs font-bold text-[var(--duke-ink-3)] uppercase tracking-widest block mb-1">Select Product</label>
-                                <select value={sampleForm.productId} onChange={e => setSampleForm({...sampleForm, productId: e.target.value})} className="w-full bg-[var(--duke-fill-panel)] border border-[var(--duke-edge-2)] focus:border-[var(--duke-brass-edge)] outline-none text-[var(--duke-ink-hi)] p-3 rounded font-bold">
+                                <select value={sampleForm.productId} onChange={e => setSampleForm({...sampleForm, productId: e.target.value})} className="w-full bg-[var(--duke-fill-panel)] border border-[var(--duke-edge-ctl)] focus:border-[var(--duke-brass-edge)] outline-none text-[var(--duke-ink-hi)] p-3 rounded font-bold">
                                     <option value="">-- Choose Product --</option>
                                     {inventory.map(p => {
                                         const sp = p.sticksPerPack || 16;
@@ -2848,7 +2848,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                             <div className="grid grid-cols-2 gap-4 bg-[var(--duke-fill-panel)]/50 p-3 rounded-xl border border-[var(--duke-edge-1)]">
                                 <div>
                                     <label className="text-[10px] font-bold text-[var(--duke-ink-3)] uppercase tracking-widest mb-1 block text-center">Bungkus</label>
-                                    <input type="number" min="0" placeholder="0" value={sampleForm.qtyBks === 0 ? '' : sampleForm.qtyBks} onChange={e=>setSampleForm({...sampleForm, qtyBks: parseInt(e.target.value)||0})} className="w-full p-2 border rounded bg-[var(--duke-fill-ground)] border-[var(--duke-edge-2)] text-[var(--duke-ink-hi)] text-center font-bold text-lg focus:border-[var(--duke-brass-edge)] outline-none" />
+                                    <input type="number" min="0" placeholder="0" value={sampleForm.qtyBks === 0 ? '' : sampleForm.qtyBks} onChange={e=>setSampleForm({...sampleForm, qtyBks: parseInt(e.target.value)||0})} className="w-full p-2 border rounded bg-[var(--duke-fill-ground)] border-[var(--duke-edge-ctl)] text-[var(--duke-ink-hi)] text-center font-bold text-lg focus:border-[var(--duke-brass-edge)] outline-none" />
                                 </div>
                                 <div>
                                     <label className="text-[10px] font-bold text-[var(--duke-ink-3)] uppercase tracking-widest mb-1 block text-center">

@@ -205,33 +205,48 @@ html.light { color-scheme: light; }
   /* ---- ink: text ------------------------------------------------------- */
   --duke-ink-1:        #d4c5a3;   /* parchment text on dark wood */
   --duke-ink-2:        #a89070;
-  --duke-ink-3:        #8b7256;   /* the workhorse — 48 sites */
-  --duke-ink-4:        #6b5a3c;
-  --duke-ink-5:        #6b5845;
-  --duke-ink-6:        #5c4b3a;
+  --duke-ink-3:        #a08768;   /* the workhorse — 48 sites */
+  --duke-ink-4:        #97835c;
+  --duke-ink-5:        #9d8a63;
+  --duke-ink-6:        #96825c;
   --duke-ink-7:        #3e3226;
-  --duke-ink-8:        #3e3a35;
+  --duke-ink-8:        #8a847c;
   /* ink that sits ON a bright brass or amber plate — dark in BOTH themes, because
      the plate under it is the same colour in both */
   --duke-on-plate:     #2b2318;
   --duke-on-plate-2:   #2a231d;
   --duke-paper-ink:    #f5e6c8;   /* cream TEXT — must darken in light, see below */
   --duke-amber-ink:    #ff9d00;
-  --duke-amber-ink-2:  #a35a00;
+  --duke-amber-ink-2:  #c47100;
   --duke-brass-ink:    #d4af37;
   --duke-brass-ink-2:  #6b4d0f;
-  --duke-danger-ink:   #b4524a;
-  --duke-danger-ink-2: #9e4038;
+  --duke-danger-ink:   #cf6c62;
+  --duke-danger-ink-2: #c96a60;
   /* the big-figure band. Identical to --duke-amber-ink HERE on purpose: in dark mode a price is
      the plain amber it always was, and only the LIGHT twin differs. */
   --duke-price-ink:    #ff9d00;
 
   /* ---- edge: borders, rings, rules -------------------------------------- */
   --duke-edge-1:       #3e3226;   /* 39 sites — the terminal's structural line */
-  --duke-edge-2:       #5c4b3a;
+  --duke-edge-2:       #7d6a48;
   --duke-edge-3:       #a89070;
   --duke-edge-4:       #c9b892;
   --duke-edge-5:       #8b7256;
+  /* ⚠️ A CONTROL'S BOUNDARY, NOT A DIVIDER — and the distinction is the whole point of this
+     token. `--duke-edge-1` is a hairline seam between two panels, 1,28:1 against the wood, and a
+     purely decorative rule carries no contrast requirement at all: raising it to 3:1 would turn
+     every seam in the terminal into a bright tan line and rebuild a look he has already signed
+     off. The edge of an INPUT is a different thing — it tells you where the box you can type in
+     begins, so it owes 3:1. Both jobs were wearing `--duke-edge-1` and `--duke-edge-2`. */
+  --duke-edge-ctl:     #a89070;
+  /* ⚠️ THE CREAM CARDS ARE LIGHT IN **BOTH** THEMES, so ink laid on them must be dark in both.
+     Raising the wood inks to clear the dark bench pushed them straight through the floor on these
+     cards — a token that has to serve a near-black ground and a near-white one cannot do it, and
+     the answer is a second token, not a compromise value that fails on both. */
+  --duke-on-paper:       #3e3226;
+  --duke-on-paper-dim:   #5c4b3a;
+  --duke-amber-on-paper: #834a00;
+  --duke-edge-on-paper:  #3e3226;
   --duke-amber-edge:   #ff9d00;
   --duke-amber-edge-2: #a35a00;
   --duke-brass-edge:   #d4af37;
@@ -336,7 +351,7 @@ html.light {
      still so a price and a warning never read as one another. */
   --duke-amber-ink:    #7a3e00;
   --duke-amber-ink-2:  #663000;
-  --duke-brass-ink:    #66490d;
+  --duke-brass-ink:    #5e430b;
   --duke-brass-ink-2:  #4a3508;
   --duke-danger-ink:   #7a1410;
   --duke-danger-ink-2: #66100c;
@@ -356,6 +371,11 @@ html.light {
   --duke-edge-3:       #5f4f36;
   --duke-edge-4:       #6e5f42;
   --duke-edge-5:       #6b5a3c;
+  --duke-edge-ctl:     #5f4f36;
+  --duke-on-paper:       #3a2f1c;
+  --duke-on-paper-dim:   #4a3b26;
+  --duke-amber-on-paper: #7a3e00;
+  --duke-edge-on-paper:  #5e5039;
   --duke-amber-edge:   #8a4e00;
   --duke-amber-edge-2: #663800;
   --duke-brass-edge:   #6e5610;
@@ -370,8 +390,8 @@ html.light {
      result was the price reading brown. Lifting the BENCH is what buys an ink its brightness
      back — every accent on this screen is measured against these nine values, so they are the
      lever, not the inks. */
-  --duke-fill-well:    #b8ad95;
-  --duke-fill-deep:    #c2b79f;
+  --duke-fill-well:    #cbc0a8;
+  --duke-fill-deep:    #d0c5ae;
   --duke-fill-ground:  #d8cdb6;
   --duke-fill-panel:   #e2d9c4;
   --duke-fill-panel-2: #e6ddc9;
@@ -392,7 +412,7 @@ html.light {
   --duke-amber:        #e07c00;
   --duke-amber-2:      #a66200;
   --duke-brass:        #b8912a;
-  --duke-brass-2:      #a8831a;
+  --duke-brass-2:      #b8901d;
   --duke-brass-3:      #6f5322;
   --duke-brass-4:      #3e2a10;
   --duke-brass-5:      #e8ae00;

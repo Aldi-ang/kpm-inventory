@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-15 20:46 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
+**Updated: 2026-08-15 21:34 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -223,12 +223,30 @@ order:
 
 ## ❓ WAITING ON ALDI — verbatim, do not paraphrase
 
-- 🔴 **OPEN, ASKED 2026-08-15 20:46 — the terminal's DARK contrast, 13 pairs below target.** These
-  are his SHIPPED values, carried across untouched; not introduced by the light conversion. The two
-  that are certainly real: the workhorse text `#8b7256` on a panel measures **3,52:1** (needs 4,5)
-  and the structural line `#3e3226` on a panel measures **1,28:1** (needs 3). `contrast.selfcheck`
-  prints these as `note`, not `FAIL`, on purpose. **Fixing them means changing colours he
-  hand-tested, so it costs him a re-walk of the terminal in dark. He has not answered.**
+- ✅ **ANSWERED AND DONE — *"fix the dark contrast"*, 527/527, contrast self-check passes in BOTH
+  themes.** From **129 sites below target down to 52**, and of those 52 only **3 are genuinely
+  short**. ⚠️ **The real work was finding out which pairs EXIST.** The 13 I had reported were from
+  a hand-written pair list and several were pairings the screen never draws — a check that asserts
+  an imaginary pairing is worse than none, because someone eventually "fixes" a colour that was
+  fine. A scan now walks the JSX for every ink and the surface it actually sits under (nearest
+  ancestor by indentation) and measures only what renders. `contrast.selfcheck.mjs` was rewritten
+  from that scan and now ENFORCES dark as well as light.
+  ⚠️ **`--duke-edge-1` was deliberately NOT raised.** A divider owes no contrast ratio; taking the
+  terminal's seams to 3:1 would turn every one into a bright tan line and rebuild a look he signed
+  off. Controls got their own `--duke-edge-ctl` (15 sites) — the edge of a box you type in is what
+  actually owes 3:1.
+  ⚠️ **Raising the wood inks broke them on the CREAM CARDS**, which are light in both themes. One
+  token cannot serve a near-black ground and a near-white card: `--duke-on-paper`,
+  `--duke-on-paper-dim`, `--duke-amber-on-paper`, `--duke-edge-on-paper` now exist for that.
+- 🔴 **OPEN, THE ONLY REMAINING CONTRAST QUESTION — `--ink-dim` and `--ink-disabled`, 36 of the 52
+  residual sites.** `--ink-dim` measures **4,12:1** in the terminal's deepest well (needs 4,5) and
+  **3,79:1** on the bench. ⚠️ **These are SYSTEM tokens used by every screen in the app**, not the
+  terminal's to change — raising `--ink-dim` re-colours all 30 screens at once. Its own comment in
+  theme.css says *"4,0:1 — meta text only"*, i.e. it was set below the floor deliberately.
+  **Needs his word before touching.** The other 16 residual sites: 13 are scan artifacts (a base
+  text colour paired with the opposite branch's hover plate, or a background set by a CSS class the
+  scan cannot see — spot-checked by hand), and 3 are near misses on his signature amber
+  (3,99:1 on a mid plank ×2, 4,07:1 on brass ×1).
 - 🔴 **OPEN, OFFERED 2026-08-15 20:46 — the price PLATE.** Told him plainly: *a bright amber can
   never be readable as text on a pale ground* — which is why the app's own palette law says gold is
   decoration, not text. If the price still does not pop for him in light mode, the real answer is a

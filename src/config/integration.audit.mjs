@@ -2785,16 +2785,24 @@ const dukeNames = [...new Set((themeCss.match(/--duke-[a-z0-9-]+(?=:)/g) || []))
 const oncers = dukeNames.filter(n => (themeCss.match(new RegExp(n + ':', 'g')) || []).length < 2);
 check(G39, 'every Duke token is declared in BOTH themes', dukeNames.length > 40 && !oncers.length,
   'declared once, so it can never change theme: ' + oncers.join(' '));
-/* ⚠️ EVERY DARK VALUE IS THE EXACT HEX IT REPLACED. This is the safety property of the change and
-   the reason he only has to test light mode: dark cannot have moved. Spot-checked on the five
-   highest-traffic colours — the structural line, the workhorse ink, the amber, the brass, the
-   bench itself. */
-for (const [tok, hex] of [['--duke-edge-1', '#3e3226'], ['--duke-ink-3', '#8b7256'],
+/* ⚠️ THE DARK VALUES ARE FROZEN, AND WHAT THEY ARE FROZEN AT MOVED ONCE, ON HIS WORD.
+   The conversion carried every dark value across untouched so that only light mode needed his
+   eyes. Then he read the contrast findings and said *"fix the dark contrast"*, which is the one
+   thing that licenses changing them — and it cost him a re-test, which is exactly why the freeze
+   exists. `--duke-ink-3` is the workhorse text and moved #8b7256 → #a08768 in that pass.
+   ⚠️ THE STRUCTURAL LINE DELIBERATELY DID NOT MOVE. A divider owes no contrast ratio; raising it
+   to 3:1 would turn every seam in the terminal into a bright tan line. Controls got their own
+   `--duke-edge-ctl` instead, which is the thing that actually owes a boundary ratio. */
+for (const [tok, hex] of [['--duke-edge-1', '#3e3226'], ['--duke-ink-3', '#a08768'],
                           ['--duke-amber', '#ff9d00'], ['--duke-brass', '#d4af37'],
                           ['--duke-fill-ground', '#1a1815']])
-  check(G39, `${tok} still carries its original hex in dark`,
+  check(G39, `${tok} still carries its agreed hex in dark`,
     new RegExp(tok + ':\\s*' + hex).test(themeCss),
-    'a changed dark value means he has to re-test a terminal he already tested');
+    'a dark value moving on its own means he re-tests a terminal he has already tested');
+check(G39, 'a control edge is a separate token from a decorative seam',
+  /--duke-edge-ctl:/.test(themeCss) && /border-\[var\(--duke-edge-ctl\)\]/.test(duke) &&
+  !/<(input|textarea|select|button)[^>]{0,400}border-\[var\(--duke-edge-[12]\)\]/.test(duke),
+  'the edge of a box you type in tells you where it begins, so it owes 3:1; a seam owes nothing');
 /* 🔴 THE ROLE SPLIT IS THE POINT, AND IT IS WHAT A LATER "TIDY-UP" WOULD UNDO. One hex served as
    a fill AND as text; as a fill it survives a pale ground, as text it does not. So the tokens are
    named by ROLE and a role must never be crossed — an -ink token painted as a background, or a

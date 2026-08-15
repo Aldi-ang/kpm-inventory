@@ -67,55 +67,80 @@ const PAIRS = [
   ['control edge on panel',        'line-3',         'panel',        3],
   ['gold EDGE on panel',           'accent-edge',    'panel',        3],
 
-  /* ── THE DUKE'S LEDGER, the sales terminal's own palette (2026-08-15) ──────────────────────
-     Same lesson as the one at the top of this file, and it landed again on the first pass: the
-     amber ink looked right at #8a4f00 and measured 3,03:1 on the panel. Gold and red are the two
-     he has reported unreadable in light mode; they are the ones to measure, never to eyeball. */
-  ['Duke text on a panel',         'duke-ink-3',       'duke-fill-panel',  4.5],
-  ['Duke text on the bench',       'duke-ink-3',       'duke-fill-ground', 4.5],
-  ['Duke text on paper',           'duke-ink-1',       'duke-paper',       4.5],
-  ['Duke secondary text',          'duke-ink-2',       'duke-fill-panel',  4.5],
-  ['Duke dim text',                'duke-ink-4',       'duke-fill-panel',  4.5],
-  ['Duke meta text',               'duke-ink-8',       'duke-fill-panel',  4.5],
-  ['Duke text on a plank',         'duke-ink-6',       'duke-fill-plank',  4.5],
-  ['Duke cream-role text',         'duke-paper-ink',   'duke-fill-panel',  4.5],
-  ['Duke AMBER text',              'duke-amber-ink',   'duke-fill-panel',  4.5],
-  ['Duke amber text, deep',        'duke-amber-ink-2', 'duke-fill-panel',  4.5],
-  ['Duke BRASS text',              'duke-brass-ink',   'duke-fill-panel',  4.5],
-  ['Duke brass text, deep',        'duke-brass-ink-2', 'duke-fill-panel',  4.5],
-  ['Duke RED text',                'duke-danger-ink',  'duke-fill-panel',  4.5],
-  ['Duke red text, deep',          'duke-danger-ink-2','duke-fill-panel',  4.5],
-  /* ink ON a plate — the plate is the same colour in both themes, so this pair must hold twice */
-  ['Duke ink on the amber plate',  'duke-on-plate',    'duke-amber',       4.5],
-  ['Duke ink on the brass plate',  'duke-on-plate',    'duke-brass',       4.5],
-  ['Duke structural line',         'duke-edge-1',      'duke-fill-panel',  3],
-  ['Duke second line',             'duke-edge-2',      'duke-fill-panel',  3],
-  ['Duke light rule',              'duke-edge-3',      'duke-fill-panel',  3],
-  ['Duke faint rule',              'duke-edge-4',      'duke-fill-panel',  3],
-  ['Duke tan rule',                'duke-edge-5',      'duke-fill-panel',  3],
-  ['Duke amber border',            'duke-amber-edge',  'duke-fill-panel',  3],
-  ['Duke amber border, deep',      'duke-amber-edge-2','duke-fill-panel',  3],
-  ['Duke brass border',            'duke-brass-edge',  'duke-fill-panel',  3],
-  ['Duke brass border 2',          'duke-brass-edge-2','duke-fill-panel',  3],
-  ['Duke brass border, bright',    'duke-brass-edge-3','duke-fill-panel',  3],
-  ['Duke brass border, dull',      'duke-brass-edge-4','duke-fill-panel',  3],
-  ['Duke red border',              'duke-danger-edge', 'duke-fill-panel',  3],
-
-  /* 🔴 THE HALF THE FIRST SWEEP MISSED, and he found it in minutes: *"the customer textbox ...
-     is very dark letter causing very hard to see"*, *"skt textbox also too dark"*. `bg-black` and
-     `text-white` are colour NAMES, not hexes, so a hex-only sweep left those boxes with a black
-     ground while the text inside them flipped to dark ink. These pairs are the boxes he types
-     into, measured against the ground they actually sit on. */
-  ['Duke text in an input',        'duke-paper-ink',   'duke-well-solid',  4.5],
-  ['Duke white-role text in an input', 'duke-ink-hi',  'duke-well-solid',  4.5],
-  ['Duke white-role text on wood',     'duke-ink-hi',  'duke-fill-ground', 4.5],
-  ['Duke white-role text on a stage',  'duke-ink-hi',  'duke-stage',       4.5],
-  ['Duke white-role text on a bar',    'duke-ink-hi',  'duke-bar-solid',   4.5],
-  /* ⚠️ 3:1 IS THE RIGHT FLOOR HERE AND ONLY HERE — the running total and the ware's price are
-     large and black-weight, which is the band WCAG allows it in. It is what lets a price still
-     read as amber instead of brown. On small text this token would be genuinely too pale. */
-  ['Duke PRICE figure on wood',    'duke-price-ink',   'duke-fill-ground', 3],
-  ['Duke PRICE figure on a panel', 'duke-price-ink',   'duke-fill-panel',  3],
+  /* ── THE DUKE'S LEDGER, the sales terminal's own palette ──────────────────────────
+     WARNING: THESE PAIRS WERE DISCOVERED, NOT INVENTED. The first version of this block listed
+     pairs I assumed the screen rendered, and several of them did not exist. A check that asserts
+     a pairing the UI never draws is worse than no check, because someone eventually "fixes" a
+     colour that was fine. These come from walking the JSX for every ink and the surface it
+     actually sits on. BOTH themes are enforced.
+     Two kinds of thing are deliberately NOT here: pairs that exist only inside opposite branches
+     of one conditional (the scan sees a base text colour beside a hover background), and the
+     `--ink-*` SYSTEM tokens, which every screen in the app uses and which are not the terminal's
+     to change. Those are an open question for Aldi — see PROGRESS.md. */
+  ['Duke text on the bench',       'duke-ink-3',         'duke-fill-ground', 4.5],
+  ['Duke text on a panel',         'duke-ink-3',         'duke-fill-panel',  4.5],
+  ['Duke text on the deep',        'duke-ink-3',         'duke-fill-deep',   4.5],
+  ['Duke text in a well',          'duke-ink-3',         'duke-fill-well',   4.5],
+  ['Duke dim text',                'duke-ink-4',         'duke-fill-ground', 4.5],
+  ['Duke dim text 2',              'duke-ink-5',         'duke-fill-panel',  4.5],
+  ['Duke faint text',              'duke-ink-6',         'duke-fill-ground', 4.5],
+  ['Duke faint text, deep',        'duke-ink-6',         'duke-fill-deep',   4.5],
+  ['Duke faint text, well',        'duke-ink-6',         'duke-fill-well',   4.5],
+  ['Duke meta text',               'duke-ink-8',         'duke-fill-ground', 4.5],
+  ['Duke bright text on a panel',  'duke-ink-1',         'duke-fill-panel',  4.5],
+  ['Duke bright text in a well',   'duke-ink-1',         'duke-fill-well',   4.5],
+  ['Duke bright text on a plank',  'duke-ink-1',         'duke-fill-plank',  4.5],
+  ['Duke white-role on a panel',   'duke-ink-hi',        'duke-fill-panel',  4.5],
+  ['Duke white-role on the bench', 'duke-ink-hi',        'duke-fill-ground', 4.5],
+  ['Duke white-role in an input',  'duke-ink-hi',        'duke-well-solid',  4.5],
+  ['Duke white-role on a stage',   'duke-ink-hi',        'duke-stage',       4.5],
+  ['Duke white-role on a bar',     'duke-ink-hi',        'duke-bar-solid',   4.5],
+  ['Duke AMBER on the bench',      'duke-amber-ink',     'duke-fill-ground', 4.5],
+  ['Duke AMBER on a panel',        'duke-amber-ink',     'duke-fill-panel',  4.5],
+  ['Duke AMBER in a well',         'duke-amber-ink',     'duke-fill-well',   4.5],
+  ['Duke amber 2 on the bench',    'duke-amber-ink-2',   'duke-fill-ground', 4.5],
+  ['Duke BRASS on the bench',      'duke-brass-ink',     'duke-fill-ground', 4.5],
+  ['Duke BRASS on a panel',        'duke-brass-ink',     'duke-fill-panel',  4.5],
+  ['Duke BRASS in a well',         'duke-brass-ink',     'duke-fill-well',   4.5],
+  ['Duke RED in the red well',     'duke-danger-ink',    'danger-well',      4.5],
+  ['Duke RED in a well',           'duke-danger-ink',    'duke-fill-well',   4.5],
+  ['Duke red 2 on the bench',      'duke-danger-ink-2',  'duke-fill-ground', 4.5],
+  ['Duke cream-role on the deep',  'duke-paper-ink',     'duke-fill-deep',   4.5],
+  ['Duke cream-role on the bench', 'duke-paper-ink',     'duke-fill-ground', 4.5],
+  ['Duke cream-role in an input',  'duke-paper-ink',     'duke-well-solid',  4.5],
+  /* the cream cards are light in BOTH themes, so the ink laid on them is dark in both */
+  ['Duke ink on a card',           'duke-on-paper',      'duke-paper',       4.5],
+  ['Duke ink on a card 2',         'duke-on-paper',      'duke-paper-2',     4.5],
+  ['Duke dim ink on a card',       'duke-on-paper-dim',  'duke-paper',       4.5],
+  ['Duke dim ink on a card 2',     'duke-on-paper-dim',  'duke-paper-2',     4.5],
+  ['Duke amber ink on a card',     'duke-amber-on-paper','duke-paper',       4.5],
+  ['Duke amber ink on a card 2',   'duke-amber-on-paper','duke-paper-2',     4.5],
+  ['Duke dark ink on a card',      'duke-ink-7',         'duke-paper',       4.5],
+  ['Duke dark ink on a card 3',    'duke-ink-7',         'duke-paper-3',     4.5],
+  ['Duke dark ink on a card 5',    'duke-ink-7',         'duke-paper-5',     4.5],
+  /* ink ON a plate: the plate is the same colour in both themes, so this must hold twice */
+  ['Duke ink on the amber plate',  'duke-on-plate',      'duke-amber',       4.5],
+  ['Duke ink on the brass plate',  'duke-on-plate',      'duke-brass',       4.5],
+  ['Duke ink on brass plate 2',    'duke-on-plate',      'duke-brass-2',     4.5],
+  /* 3:1 IS THE RIGHT FLOOR ONLY HERE — the running total and the ware's price are large and
+     black-weight, the band WCAG allows it in. It is what lets a price read as amber, not brown. */
+  ['Duke PRICE on the bench',      'duke-price-ink',     'duke-fill-ground', 3],
+  ['Duke PRICE on a panel',        'duke-price-ink',     'duke-fill-panel',  3],
+  ['Duke PRICE in a well',         'duke-price-ink',     'duke-fill-well',   3],
+  /* A CONTROL'S EDGE OWES 3:1; A DIVIDER OWES NOTHING. `--duke-edge-1` stays the decorative seam
+     it always was, at 1,28:1 against the wood, and that is not a defect — raising it would turn
+     every seam into a bright line and rebuild a look he has already signed off. Only the boundary
+     of something you can type in or press is checked here. */
+  ['Duke control edge, panel',     'duke-edge-ctl',      'duke-fill-panel',  3],
+  ['Duke control edge, bench',     'duke-edge-ctl',      'duke-fill-ground', 3],
+  ['Duke control edge, plank',     'duke-edge-ctl',      'duke-fill-plank',  3],
+  ['Duke control edge, input',     'duke-edge-ctl',      'duke-well-solid',  3],
+  ['Duke control edge on a card',  'duke-edge-on-paper', 'duke-paper',       3],
+  ['Duke control edge on card 2',  'duke-edge-on-paper', 'duke-paper-2',     3],
+  ['Duke amber edge, panel',       'duke-amber-edge',    'duke-fill-panel',  3],
+  ['Duke amber edge, bench',       'duke-amber-edge',    'duke-fill-ground', 3],
+  ['Duke brass edge, panel',       'duke-brass-edge',    'duke-fill-panel',  3],
+  ['Duke brass edge, bench',       'duke-brass-edge',    'duke-fill-ground', 3],
 ];
 
 /* ⚠️ THE DUKE PAIRS ARE ENFORCED IN LIGHT AND ONLY REPORTED IN DARK, ON PURPOSE.
@@ -125,7 +150,7 @@ const PAIRS = [
    not clear 4,5:1, and that is a real finding worth acting on, but "improve the terminal's dark
    contrast" is a decision he has to make, because it costs him a re-test. Failing the build on
    it would be this file overruling him rather than informing him. Reported loudly, not enforced. */
-const softInDark = (what) => what.startsWith('Duke ');
+const softInDark = () => false;   // nothing is exempt any more — see the note in PAIRS
 
 let fail = 0, noted = 0;
 for (const [theme, tokens] of [['DARK ', dark], ['LIGHT', light]]) {
