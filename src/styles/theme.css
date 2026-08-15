@@ -40,7 +40,7 @@
   --ink-inverse:   #0A0908;
 
   /* gold — decoration only. Dots, rules, the coin. Not for text. */
-  --gold:          #D4AF37;
+  --gold:          #D08A2E;
   --gold-ink:      #0A0908;   /* ink to place ON gold, 8,9:1 */
 
   /* ⚠️ TEXT AND EDGES THAT MEAN "GOLD" OR "DANGER" — use THESE, never --gold or --danger.
@@ -49,8 +49,8 @@
      yet `.kpm-btn.key` shipped with `color: var(--gold)` — 1,19:1 on the light ground.
      A law in a comment did not stop it. `src/config/contrast.selfcheck.mjs` measures every pair
      in both themes and fails the build's audit if one drops below 4,5:1. */
-  --accent-ink:    #D4AF37;   /* gold-as-TEXT. Same as gold in dark; goes dark in light. */
-  --accent-edge:   #D4AF37;   /* gold-as-BORDER. 3:1 minimum against its surface. */
+  --accent-ink:    #D08A2E;   /* gold-as-TEXT. Same as gold in dark; goes dark in light. */
+  --accent-edge:   #D08A2E;   /* gold-as-BORDER. 3:1 minimum against its surface. */
   --danger-ink:    #E08C82;   /* red-as-TEXT. */
 
   /* orange — warning. Aldi asked for more of it. */
@@ -128,7 +128,7 @@ html.light {
 
   /* gold stays the SAME hex — it is a plate/dot here, never text, so it never
      has to darken. That is what stops light mode looking duller than dark. */
-  --gold:          #D4AF37;
+  --gold:          #D08A2E;
   --gold-ink:      #131211;
 
   /* ...but gold AS TEXT and gold AS A BORDER must darken here, or they measure 1,19:1 and 1,19:1
@@ -2109,7 +2109,18 @@ html.lite-mode .kpm-title-rule { animation: none; width: 100%; }
    decoration; it is how he refers to a module out loud. */
 .kpm-head .slot { display: block; font-family: var(--font-mono); font-size: 10px;
   letter-spacing: .26em; text-transform: uppercase; color: var(--ink-dim); }
-.kpm-mod.live .kpm-head .slot   { color: var(--accent-ink); }
+/* 🟡 AMBER IS RATIONED FROM HERE ON. His call, 2026-08-15: *"i feel like there is too much yellow
+   gold color, u should replace it with few amber color and more black and white for the theme"*.
+   A live module used to carry FOUR amber marks — the stripe, this slot code, the rule under the
+   title, and the state chip. At four, amber stops meaning "this one writes real data" and becomes
+   the body colour, which is the same failure as the spacing: a signal that is everywhere is not a
+   signal. The rule now: **amber marks the STATE and the ACT, never the label.**
+     stripe ...... keeps it (it is the module's kind, read at a glance down the rack)
+     state chip .. keeps it (it is the thing he scans for)
+     slot code ... neutral, below
+     title rule .. neutral, below
+   Two marks per module instead of four, and the screen goes back to cream on near-black. */
+.kpm-mod.live .kpm-head .slot   { color: var(--ink-dim); }
 .kpm-mod.hazard .kpm-head .slot { color: var(--danger-ink); }
 /* line 2 — the title and the live state, on one baseline */
 .kpm-head .line { display: flex; align-items: baseline; justify-content: space-between;
@@ -2118,7 +2129,7 @@ html.lite-mode .kpm-title-rule { animation: none; width: 100%; }
   font-size: 19px; line-height: 1.1; letter-spacing: .06em; text-transform: uppercase;
   color: var(--ink); }
 .kpm-mod.hazard .kpm-head h3 { color: var(--danger-ink); }
-.kpm-mod.live .kpm-head h3 { padding-bottom: 5px; border-bottom: 2px solid var(--accent-edge);
+.kpm-mod.live .kpm-head h3 { padding-bottom: 5px; border-bottom: 1px solid var(--line-3);
   display: inline-block; }
 /* line 3 — the description. Body face, not caps: it is a sentence, and it must not compete
    with the title for the same reading. */
@@ -2160,12 +2171,24 @@ html.lite-mode .kpm-title-rule { animation: none; width: 100%; }
 
 /* ---- BUTTON: three weights, one shape. 44px tall everywhere — his phone is the
    only device that matters, and 44px is the smallest reliable touch target. */
+/* 🔑 OPTION C, his pick from the button-weight board, 2026-08-15: *"options C looks best"*.
+   His words were *"too big ... elegant should look little bit smaller with more UI space"*, and
+   the measurement said the height was not the problem — **44px is the floor, rule 3 of this
+   system, and it does not move**. What was wrong is that almost every act was `.block`, so the
+   word "REVOKE" sat in a ~900px box on a desk. Two changes, neither of them to the hit area:
+     · WIDTH  — `.block` is now the exception, not the default. See `.kpm-acts`.
+     · INK    — no fill at rest, hairline border, 13→12px, .16→.12em. The button FILLS IN on
+                hover instead of arriving pre-filled, so at rest the screen is his words.
+   The 44px min-height is what keeps this honest: it looks smaller, it is not smaller. */
 .kpm-btn { display: inline-flex; align-items: center; justify-content: center; gap: var(--s2);
-  min-height: 44px; padding: 0 var(--s4); border: 1px solid var(--line-3);
-  background: var(--raised); color: var(--ink);
-  font-family: var(--font-display); font-weight: 700; font-size: 13px;
-  letter-spacing: .16em; text-transform: uppercase; cursor: pointer;
+  min-height: 44px; padding: 0 14px; border: 1px solid var(--line-2);
+  background: transparent; color: var(--ink-muted);
+  font-family: var(--font-display); font-weight: 700; font-size: 12px;
+  letter-spacing: .12em; text-transform: uppercase; cursor: pointer;
   transition: background-color 120ms ease-out, color 120ms ease-out, border-color 120ms ease-out; }
+/* the action row: acts hug their word and settle to the right, where the eye finishes reading.
+   A module's controls now cost one row instead of one row EACH. */
+.kpm-acts { display: flex; flex-wrap: wrap; gap: var(--s2); justify-content: flex-end; }
 .kpm-btn:disabled { color: var(--ink-disabled); border-color: var(--line); cursor: not-allowed; }
 .kpm-btn.block { display: flex; width: 100%; }
 .kpm-btn.key    { border-color: var(--accent-edge); color: var(--accent-ink); }
@@ -2177,7 +2200,9 @@ html.lite-mode .kpm-title-rule { animation: none; width: 100%; }
 .kpm-btn.key:active       { background: var(--gold);        color: var(--gold-ink); }
 .kpm-btn.hazard:active    { background: var(--danger-plate); color: var(--danger-plate-ink); }
 @media (hover: hover) and (pointer: fine) {
-  .kpm-btn:hover        { background: var(--inset); border-color: var(--ink-dim); }
+  /* --raised, not --inset: the rest state is transparent now, and --inset is DARKER than the
+     panel behind it — hovering would have dug a hole instead of filling the button. */
+  .kpm-btn:hover        { background: var(--raised); border-color: var(--ink-dim); color: var(--ink); }
   .kpm-btn.key:hover    { background: var(--gold);         color: var(--gold-ink); }
   .kpm-btn.hazard:hover { background: var(--danger-plate); color: var(--danger-plate-ink);
                           background-image: none; }

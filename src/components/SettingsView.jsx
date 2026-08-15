@@ -642,9 +642,6 @@ export default function SettingsView({
                                   </p>
                               </div>
                               <div className="kpm-shelf split">
-                                  <button type="button" className="kpm-btn key block" onClick={handleMasterProtocol}>
-                                      Run master backup
-                                  </button>
                                   <div className="kpm-rail">
                                       <h3>Recovery</h3>
                                       <span className={`kpm-read ${isRecoverySecure ? 'on' : 'alert'}`}>{isRecoverySecure ? 'Secure' : 'Required'}</span>
@@ -657,10 +654,14 @@ export default function SettingsView({
                                       <h3>Cloud mirror</h3>
                                       <span className={`kpm-read ${isCloudSecure ? 'on' : 'alert'}`}>{isCloudSecure ? 'Secure' : 'Required'}</span>
                                   </div>
-                                  <div className="grid grid-cols-3 gap-2">
+                                  {/* One row, not four stacked bars. The three downloads are
+                                      routine and hug their word; the master run keeps the amber
+                                      border and sits last, where the eye finishes. */}
+                                  <div className="kpm-acts">
                                       <button type="button" className="kpm-btn" onClick={() => handleSingleBackup('RECOVERY')}>Recovery</button>
                                       <button type="button" className="kpm-btn" onClick={() => handleSingleBackup('USB')}>USB</button>
                                       <button type="button" className="kpm-btn" onClick={() => handleSingleBackup('CLOUD')}>Cloud</button>
+                                      <button type="button" className="kpm-btn key" onClick={handleMasterProtocol}>Run master backup</button>
                                   </div>
                               </div>
                           </div>
@@ -682,9 +683,9 @@ export default function SettingsView({
                                       </p>
                                   </div>
                                   <div className="kpm-shelf split">
-                                      <button type="button" className="kpm-btn block" onClick={handleRecalculateCareer}>
-                                          Rebuild now
-                                      </button>
+                                      <div className="kpm-acts">
+                                          <button type="button" className="kpm-btn" onClick={handleRecalculateCareer}>Rebuild now</button>
+                                      </div>
                                   </div>
                               </div>
                           )}
@@ -747,7 +748,9 @@ export default function SettingsView({
                                       <span>Signed in as</span>
                                       <span className="fixed">{currentUserEmail || "—"}</span>
                                   </label>
-                                  <button type="button" className="kpm-btn block" onClick={handleChangePin}>Change PIN</button>
+                                  <div className="kpm-acts">
+                                      <button type="button" className="kpm-btn" onClick={handleChangePin}>Change PIN</button>
+                                  </div>
                               </div>
                           </div>
 
@@ -792,9 +795,9 @@ export default function SettingsView({
                                   ) : (
                                       <p className="kpm-desc">No devices authorised yet — this account opens the vault with the PIN only.</p>
                                   )}
-                                  <button type="button" className="kpm-btn key block" onClick={handleRegisterPasskey}>
-                                      Authorise this device
-                                  </button>
+                                  <div className="kpm-acts">
+                                      <button type="button" className="kpm-btn key" onClick={handleRegisterPasskey}>Authorise this device</button>
+                                  </div>
                               </div>
                           </div>
 

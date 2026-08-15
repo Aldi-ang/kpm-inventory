@@ -1936,6 +1936,25 @@ check(G30, 'the module spacing scale only ever increases outward',
   /\.kpm-band \{[\s\S]{0,160}?margin-top: 40px;/.test(themeCss),
   'the ladder is 12px between controls, 16px of module padding, 20px between modules, 40px ' +
   'between groups — two levels tying is what made three instruments read as one striped panel');
+/* 🎚️ OPTION C, his pick from the button-weight board. *"elegant should look little bit smaller"* —
+   and the height could not move, because 44px is rule 3 and the smallest target a thumb hits.
+   What shrank is the WIDTH and the INK. The min-height clause below is the load-bearing half: it
+   is what makes "looks smaller" true and "is smaller" false. */
+check(G30, 'the button looks smaller without the tap target shrinking',
+  /\.kpm-btn \{[\s\S]{0,200}?min-height: 44px;[\s\S]{0,120}?background: transparent;/.test(themeCss) &&
+  /\.kpm-btn \{[\s\S]{0,300}?font-size: 12px;\s*\n?\s*letter-spacing: \.12em;/.test(themeCss) &&
+  /\.kpm-acts \{ display: flex; flex-wrap: wrap; gap: var\(--s2\); justify-content: flex-end; \}/.test(themeCss),
+  'if min-height ever drops below 44px the screen stops being usable one-handed in a warehouse, ' +
+  'which is the whole reason the height was never the thing to shrink');
+/* 🟡 AMBER IS RATIONED. *"i feel like there is too much yellow gold color ... more black and white"*.
+   A live module carried four amber marks; a signal that is everywhere is not a signal. Amber now
+   marks the STATE and the ACT — the stripe and the readout — never the label. */
+check(G30, 'amber marks the state and the act, never the label',
+  /\.kpm-mod\.live \.kpm-head \.slot   \{ color: var\(--ink-dim\); \}/.test(themeCss) &&
+  /\.kpm-mod\.live \.kpm-head h3 \{ padding-bottom: 5px; border-bottom: 1px solid var\(--line-3\);/.test(themeCss) &&
+  /\.kpm-mod\.live   \{ border-left-color: var\(--accent-edge\); \}/.test(themeCss),
+  'the slot code and the rule under the title went neutral; the stripe and .kpm-read.on keep it. ' +
+  'Four amber marks per module is how an accent turns into the body colour');
 check(G30, 'a module has exactly one internal seam, and it is the quiet one',
   /\.kpm-shelf\.split \{ border-top: 0; \}/.test(themeCss) &&
   /\.kpm-head \{ padding: var\(--s4\); border-bottom: 1px solid var\(--line\);/.test(themeCss),
@@ -2065,6 +2084,15 @@ for (const [what, needle] of [
   ['the signed-in email', '{currentUserEmail || "—"}'],
 ]) check(G33, `${what} is still mounted in the tab`, sec.includes(needle),
   'a control that vanished in a restyle is silent — nothing errors, the button is simply not there');
+/* 🔑 FULL WIDTH IS A SIGNAL NOW, NOT A DEFAULT. Option C hugs the word everywhere EXCEPT the four
+   acts with no undo — restore and the three wipes. Wiping the database should stay the loudest
+   control on the screen; elegance is not worth a mis-tapped wipe. If a routine act ever goes back
+   to `block`, that hierarchy is gone and this check says so. */
+check(G33, 'only the irreversible acts still claim the full width',
+  (sec.match(/kpm-btn hazard block/g) || []).length === 4 &&
+  !/kpm-btn(?! hazard)[a-z ]* block/.test(sec) &&
+  (sec.match(/className="kpm-acts"/g) || []).length >= 4,
+  'restore + three wipes are the only full-width acts; everything routine hugs its word');
 check(G33, 'the three backup states are still readable without colour',
   (sec.match(/className="kpm-rail"/g) || []).length === 3 &&
   /isRecoverySecure \? 'Secure' : 'Required'/.test(sec),
