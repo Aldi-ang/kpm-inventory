@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-15 08:55 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
+**Updated: 2026-08-15 08:40 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -15,9 +15,33 @@
 
 ## ▶ NOW
 
-**The app shell redesign is SHIPPED and committed. Nothing is in flight, `src/` is clean.**
-The desk dock (Label B, square cells, glass), the header band, the logout containment, and the
-phone's duplicate-totem fix. **374/374.**
+**PHASE 6 IS THE LIVE FRONT: converting the rest of `SettingsView.jsx` onto the control system.**
+His instruction, 2026-08-15: *"we have the theme set yet, other will just follow make it somewhat
+follow that"* — the **Architect tab is the template**, the rest are conversions, NOT redesigns. Do
+not invent a new look for a tab; copy the bands / module kinds / slot codes / readouts it uses.
+
+| Settings tab | Off-token colours | State |
+|---|---|---|
+| Architect (Tier 1) | 0 | ✅ template, `b25c526` + `7166366` |
+| **Security & Data** | **0** | ✅ **DONE 2026-08-15, group 33, 17 checks** |
+| General & Brand | 67 | ▶ **next slice** |
+| Tiers & Logic | 89 | after that |
+
+**393/393, `src/` clean.** Read [[The KPM Control System]] and [[Off-Token Colour Migration Map]]
+in the A-Brain vault before touching a tab — the class list and the substitution table are there,
+and re-deriving them costs a quarter of a session.
+
+🔴 **AFTER the whole UI redesign, the next big job is LIGHT MODE.** His words, 2026-08-15:
+*"there is some big job that we havent done, which is working on the light mode but lets do that
+after we finish redesign the whole UI"*. He also worked out why the order matters, and he is right:
+*"when we have this template for dark mode then making the light mode will be easier since all the
+UI theme is similar right"* — **every screen moved onto tokens gets light mode for free**, because
+one token name resolves to both themes and no `dark:` variant is written. Every screen still on
+`dark:bg-slate-800` has to be hand-coloured twice. **Phase 6 is not decoration; it is most of the
+light-mode job being done in advance.**
+
+**Shell redesign, previous front — SHIPPED and approved.** Desk dock (Label B, square cells,
+glass), header band, logout containment, the phone's duplicate-totem fix, and the vault grace fix.
 
 **✅ HE HAS SEEN IT AND APPROVED IT** — *"it looks fine"* — after one overlap fix. That matters
 because **no frame was ever captured on this machine**: the Browser pane is not displayed, and the
@@ -69,6 +93,40 @@ order:
 - ✅ **The Firebase authorized domain is DONE** — *"already"*. `192.168.1.109` can sign in.
 
 ## 📓 LOG — newest first, about five entries; `git log` keeps the rest
+
+### 2026-08-15 08:40 (KPM app session) — timestamp touch, 3rd fire, still not this session's edit
+
+Same hook fired again (08:38 → 08:40) on the same unchanged diff to `integration.audit.mjs` and
+`SettingsView.jsx` — no new bytes since the last entry, some other process wrote both, neither
+touched by me. Still just wifi troubleshooting in this conversation; nothing to record in `src/`.
+
+### 2026-08-15 08:36 (KPM app session) — no KPM work this session, timestamp touch only
+
+This session was Aldi's home wifi (Instagram/TikTok slow, DNS routing) via `/alucard` — nothing
+in `src/` was touched. The uncommitted `SettingsView.jsx` diff predates this session (present in
+git status before the first message) and was not read or changed here. Touching timestamp only,
+per the Stop hook's own fallback instruction for a session with no progress to record.
+
+### 2026-08-15 09:40 (KPM app session) — Security & Data joins the control system. Phase 6, slice 1.
+
+**393/393.** 94 off-token colours to zero. The tab is grouped by **consequence** now, not by
+feature — copies, then writes, then the stripe — which is what it was actually missing.
+
+🔑 **The regrouping found a real hierarchy inversion, the same shape as the Architect tab's.**
+**Restore replaces the entire database**, and it was a dashed drop-zone at the foot of the backup
+card — *quieter* than the three download buttons above it. It is under the hazard band now with
+the wipes. The three backup states (RECOVERY / USB / CLOUD) were pulsing green-or-red tiles;
+**Lite Mode strips colour and left three identical boxes**, so they are `.kpm-rail` rows and the
+word carries the state. The biometric card was the last bright blue anywhere in the app.
+
+The rank toggle became a two-position `.kpm-switch` with **one writer** (`writeCareerLedger`),
+matching photo storage — a copy of the write behind each position is [[Silent Failure Disease]].
+
+⚠️ **The icon-delete count went 17 → 16**, the same migration as 18 → 17 before it: a record's
+action strip carries a WORD ("Revoke"), and a worded button must not wear `data-kpm-del` or the
+label prints twice. Both halves of that edit are checked.
+✅ **All 17 new checks were run against the pre-edit block and seen to FAIL first** — palette,
+kinds, hazard band, rails, one-writer. A check never seen red is a decoration.
 
 ### 2026-08-15 08:55 (KPM app session) — the grace period unlocked the vault behind a curtain it never raised
 
