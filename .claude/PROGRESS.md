@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-15 08:51 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
+**Updated: 2026-08-15 09:05 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -27,7 +27,7 @@ not invent a new look for a tab; copy the bands / module kinds / slot codes / re
 | General & Brand | 67 | ▶ **next slice** |
 | Tiers & Logic | 89 | after that |
 
-**395/395, `src/` clean.** The rack's spacing ladder was rebuilt on 2026-08-15 after his report
+**398/398, `src/` clean.** The rack's spacing ladder was rebuilt on 2026-08-15 after his report
 that modules read as one component — **12 / 16 / 20 / 40, and no inner number may reach an outer
 one.** Two checks in group 30 hold it. Read [[The KPM Control System]] and [[Off-Token Colour Migration Map]]
 in the A-Brain vault before touching a tab — the class list and the substitution table are there,
@@ -74,6 +74,20 @@ order:
   rebuilt. Every control was checked as MOUNTED but **none has been pressed** — master backup, the
   three downloads, change PIN, authorise/revoke a device, export/import, rebuild career, the three
   wipes. His eyes and his fingers are the only test that has ever run on this screen.
+- 🔴 **DECIDE — the "interactive hover button" he pasted (dot expands to fill → text slides → spinner
+  → tick).** He asked *"for the button that have confirmation what if u made it like this"*.
+  **The animation is good and needs NO new dependency** — it is transform + opacity, buildable in
+  the control system in CSS. **The danger is what it replaces.** The component as pasted has no
+  confirmation at all: one click runs straight to "success". The wipes currently pass through
+  `confirmAction` TWICE (`App.jsx:591` and a `FINAL WARNING` at :593). **Never let this pattern
+  swallow those.** The safe split, offered and awaiting his word: keep both confirmations, and use
+  the morph only to REPORT the result — which is his own law, *"every action must report"*.
+  ⚠️ It also cannot ship as pasted: repo is **JavaScript + Vite, not TypeScript, not shadcn**, and
+  `framer-motion`, `clsx`, `tailwind-merge` are all absent (`lucide-react` is present).
+- 🔴 **DECIDE — "minimize red" collides with a decision he already made.** The hazard head's red
+  tint, red hatch and red title are asserted by group 31 *because he complained the heads were
+  "too standardise"*. Reducing red there reverses his own earlier call, so it was NOT done.
+  Ask which he wants; do not quietly pick one.
 - ❓ **Raised, unanswered:** the 19px module titles are display-face CAPS with letter-spacing. Caps
   read slower than sentence case at that size. Left alone because it is this app's character —
   **if the tabs still feel heavy after he looks, that is the next thing to try.**
@@ -97,6 +111,27 @@ order:
 - ✅ **The Firebase authorized domain is DONE** — *"already"*. `192.168.1.109` can sign in.
 
 ## 📓 LOG — newest first, about five entries; `git log` keeps the rest
+
+### 2026-08-15 09:05 (KPM app session) — Option C, and amber gets rationed
+
+**398/398.** He picked **Option C** off the button-weight board
+(https://claude.ai/code/artifact/628a1a9c-0616-4ab5-9379-6b2ea816fa87).
+
+🔑 **His words were *"too big"* and the height was never the problem.** 44px is rule 3 and the
+smallest target a thumb hits one-handed — it does not move. What was wrong was that almost every
+act was `.block`, so "Revoke" sat in a ~900px box on a desk. Buttons hug their word in a
+right-aligned `.kpm-acts` row now, no fill at rest, 13→12px, .16→.12em, filling in on hover.
+⚠️ **Full width survives on EXACTLY four acts — restore and the three wipes.** Full width is a
+signal now, not a default. A check pins the count; elegance is not worth a mis-tapped wipe.
+
+🟡 **AMBER IS RATIONED.** *"i feel like there is too much yellow gold color, u should replace it
+with few amber color and more black and white for the theme, also minimize red color"*.
+`--gold` / `--accent-ink` / `--accent-edge` **#D4AF37 → #D08A2E** (one line each, easy to retune).
+A live module carried FOUR amber marks — stripe, slot code, title rule, state chip — so amber had
+stopped meaning "this writes real data" and become the body colour. **The rule now: amber marks
+the STATE and the ACT, never the label.** Slot and title rule went neutral; stripe and
+`.kpm-read.on` keep it. `--tier-gold` is deliberately untouched: a gold RANK is a medal.
+📌 **`#ff9d00` literals still live in `App.jsx` (~line 3625-3700)** — an un-migrated block, Phase 6.
 
 ### 2026-08-15 08:51 (KPM app session) — the rack was tighter inside a module than between two of them
 
