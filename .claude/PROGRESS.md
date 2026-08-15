@@ -113,16 +113,18 @@ salesman's pay — was sitting under a divider inside the letterhead card, readi
 invoice field. It is its own Tier-1 module now and says what it does. And the letterhead is split
 **by save behaviour**: three fields wait for Save, two write as you type, and each module prints
 which it is instead of leaving him to guess.
-**Lite Mode** became a two-position switch with one writer () — third one-writer
-switch in the system, after photo storage and rank source.
+**Lite Mode** became a two-position switch with one writer (`writeLiteMode`) — the third
+one-writer switch in the system, after photo storage and rank source.
 
-⚠️ **A CHECK FAILED ON CORRECT CODE.**  also matches
-**** on a range input — a substring, and a slider thumb is a fill, not
+⚠️ **A CHECK FAILED ON CORRECT CODE.** The needle `!/color: var(--gold)/` also matches
+**`accent-color: var(--gold)`** on a range input — a substring, and a slider thumb is a fill, not
 text. Re-anchored on a property boundary. **A needle that can match inside a longer property name
 eventually will.** Fourth regex-anchor lesson this week.
-📌 Four small classes were needed (, , , );
+📌 Four small classes were needed (`.kpm-rowacts`, `.kpm-inline`, `.kpm-slider`, `.kpm-portrait`);
 each is checked as DEFINED, because a class that exists in neither Tailwind nor theme.css paints
 nothing and looks exactly like a transparent panel.
+⚠️ **Writing this file from a bash heredoc ate every backtick** — the shell ran them as commands
+and left the quoted names blank. **Use the Edit tool for PROGRESS.md, never `python -c` in bash.**
 
 ### 2026-08-15 09:25 (KPM app session) — red stops upholstering, and the wipes ask for pressure
 
