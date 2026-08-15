@@ -2369,6 +2369,63 @@ check(G35, "a tier's own colour is still set from its data, not from a token",
   tiersBlk.includes('style={{ backgroundColor: tier.color }}'),
   'tokenising this would paint every rank the same and the map would lose its ranks');
 
+/* ── 36. THE COMMAND CENTER HEADER AND ITS TAB LIST ────────────────────────────────────────────
+   His two screenshots, 2026-08-15: *"next we will need to redesign this set of buttons sc1. and
+   also this part sc2"*. The open tab was a `bg-blue-600` pill — the palette law's own headline
+   example, sitting in the most-looked-at spot on the settings screen — and the clearance line
+   pulsed red forever. */
+const G36 = '36. The Command Center chrome obeys the same laws as the rack';
+const chromeStart = settingsSrc.indexOf('<div className="kpm-cmd">');
+const chromeEnd = settingsSrc.indexOf("activeTab === 'general'");
+const chrome = strip(chromeStart > 0 && chromeEnd > chromeStart ? settingsSrc.slice(chromeStart, chromeEnd) : '');
+
+check(G36, 'the header and tab list were found at all', chrome.length > 400,
+  'the markers this group slices between were renamed — every check below would pass on ""');
+check(G36, 'the open tab is no longer a blue pill', !offToken.test(chrome),
+  'bg-blue-600 for the open tab and bg-red-600 for Tier 1 — the two loudest fills in the app, ' +
+  'spent on navigation that destroys nothing by being looked at');
+/* 🔑 THE LITE MODE CONTRACT, AND THIS IS THE CASE THAT PROVES WHY IT MATTERS. The old pill said
+   "open" with a blue fill AND a `shadow-md`. Lite Mode strips shadow and strips colour — so in
+   Lite Mode the open tab and the closed tabs became identical. Selection must survive that:
+   a raised SURFACE and a RAIL are material, and material is what Lite Mode keeps. */
+check(G36, 'the open tab is marked by material, not only by colour',
+  /\.kpm-nav > button\[aria-current="page"\] \{[^}]*background: var\(--raised\)/.test(themeCss) &&
+  /\.kpm-nav > button\[aria-current="page"\] \{[^}]*border-left-color: var\(--accent-edge\)/.test(themeCss),
+  'strip the colour and the open row must still be the open row — otherwise Lite Mode is broken, ' +
+  'not lite');
+check(G36, 'no shadow anywhere in the new chrome',
+  !/shadow/.test(chrome) &&
+  !/\.kpm-(nav|cmd)[^{]*\{[^}]*box-shadow/.test(themeCss),
+  'shadow is banned system-wide; here it was also load-bearing, which made it worse');
+/* one source of truth: `aria-current` is what a screen reader reads AND what the CSS selects on,
+   so the visible state and the announced state cannot drift apart. */
+check(G36, 'aria-current carries the open tab to both the screen reader and the CSS',
+  /aria-current=\{activeTab === tab\.id \? 'page' : undefined\}/.test(chrome) &&
+  themeCss.includes('.kpm-nav > button[aria-current="page"]'),
+  'a class for the eye and nothing for the ear is how a tab list becomes unusable without sight');
+/* ⚠️ RED AS A RAIL, NEVER A FILL — the same law as `.kpm-neg` and the hazard modules. */
+check(G36, 'Tier 1 keeps its distinction as an edge, not a solid red pill',
+  /\.kpm-nav > button\.tier1\[aria-current="page"\] \{ border-left-color: var\(--danger-rail\)/.test(themeCss) &&
+  chrome.includes("tab.id === 'architect' ? 'tier1' : undefined"),
+  'a solid red nav item spends the loudest signal in the app on a tab that destroys nothing');
+/* his words, on the screenshot before this one: *"i dont want red color to dominate certain
+   features of the app"*. A clearance line is a fact, and facts do not blink. */
+check(G36, 'the clearance line states its fact without pulsing',
+  !/animate-pulse/.test(chrome) && /\.kpm-cmd \.clearance\.tier1 \{ color: var\(--danger-ink\)/.test(themeCss),
+  'an always-on throbbing red line is the domination he ruled out; --danger-text would also have ' +
+  'been unreadable in light mode, which is what group 32 caught on the first run');
+check(G36, 'every tab clears the 44px touch minimum',
+  /\.kpm-nav > button \{[^}]*min-height: 48px/.test(themeCss),
+  'the rack holds 44px everywhere; a nav list is the one place a thumb lands most often');
+for (const [what, needle] of [['reset indicators', 'onClick={handleResetIndicators}'],
+                              ['lock terminal', 'onClick={handleAdminLogout}']])
+  check(G36, `${what} is still mounted in the header`, chrome.includes(needle),
+    'a control that vanished in a restyle is silent — nothing errors, the button is simply gone');
+for (const cls of ['.kpm-cmd', '.kpm-nav'])
+  check(G36, `${cls} is defined in theme.css, not invented in the JSX`,
+    themeCss.includes(cls + ' ') || themeCss.includes(cls + ' {') || themeCss.includes(cls + '{'),
+    'an undefined class is the quietest possible bug: no error, no paint');
+
 /* ── report ──────────────────────────────────────────────────────────────── */
 let last = '';
 for (const r of results) {

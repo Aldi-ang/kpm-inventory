@@ -209,37 +209,54 @@ export default function SettingsView({
     return (
       <div className="animate-fade-in max-w-6xl mx-auto pb-20">
           
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 border-b border-slate-200 dark:border-white/10 pb-4">
+          {/* ── THE COMMAND CENTER HEADER ─────────────────────────────────────────────────
+              His screenshot (sc2). The clearance line pulsed in red forever, which is the
+              always-on red he ruled out — *"i dont want red color to dominate certain
+              features of the app"* — and a fact does not need to blink to stay true. Lock
+              Terminal was the only red thing that had a claim to it and it was the same red
+              as everything else, so nothing stood out. Amber now marks the ACT; red is left
+              for the clearance line, where it is one short line of text and not a fill. */}
+          <div className="kpm-cmd">
               <div>
-                  <h2 className="text-2xl font-bold text-slate-800 dark:text-white uppercase tracking-tighter">Command Center</h2>
-                  <p className={`text-[10px] font-mono font-bold animate-pulse ${isSystemOwner ? 'text-red-500' : 'text-emerald-500'}`}>
-                      {isSystemOwner ? 'CLEARANCE: TIER 1 (OVERSEER)' : 'CLEARANCE: TIER 2 (MANAGER)'}
+                  <h2>Command Center</h2>
+                  <p className={`clearance ${isSystemOwner ? 'tier1' : ''}`}>
+                      {isSystemOwner ? 'Clearance: Tier 1 (Overseer)' : 'Clearance: Tier 2 (Manager)'}
                   </p>
               </div>
-              <div className="flex gap-2 mt-4 md:mt-0">
-                  <button onClick={handleResetIndicators} className="bg-slate-100 dark:bg-white/5 border border-slate-300 dark:border-slate-600 text-slate-400 dark:text-slate-400 px-3 py-2 rounded-lg text-[10px] font-bold uppercase hover:bg-red-900/50 hover:text-red-400 hover:border-red-500 transition-all">
-                      Reset Indicators
+              <div className="kpm-acts">
+                  <button type="button" onClick={handleResetIndicators} className="kpm-btn">
+                      Reset indicators
                   </button>
-                  <button onClick={handleAdminLogout} className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-500 px-4 py-2 rounded-lg text-[10px] font-bold uppercase hover:bg-red-600 hover:text-white transition-all">
-                      Lock Terminal
+                  {/* ⚠️ AMBER, NOT RED. Locking the terminal PROTECTS the app — it is the
+                      opposite of destructive, and red here taught the eye that red means
+                      "important" rather than "this cannot be undone". */}
+                  <button type="button" onClick={handleAdminLogout} className="kpm-btn key">
+                      Lock terminal
                   </button>
               </div>
           </div>
 
           <div className="flex flex-col md:flex-row gap-8">
-              <div className="w-full md:w-56 shrink-0 flex flex-col gap-2">
+              {/* ── THE TAB LIST (sc1) ────────────────────────────────────────────────────
+                  The open tab was a `bg-blue-600` pill: the palette law's headline example,
+                  in the most-looked-at spot on the screen. It also carried `shadow-md` — and
+                  Lite Mode strips shadow, so there the ONLY thing telling the open tab from
+                  the closed ones vanished completely.
+                  Selection is material first now: the open row comes forward onto `--raised`
+                  and grows a rail the flat rows do not have. Strip every colour and it is
+                  still obviously the open row. `aria-current` carries the state to a screen
+                  reader AND drives the CSS, so the two can never disagree. */}
+              <div className="w-full md:w-56 shrink-0 kpm-nav">
                   {navTabs.map(tab => (
                       <button
                           key={tab.id}
+                          type="button"
                           onClick={() => setActiveTab(tab.id)}
-                          className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all ${
-                              activeTab === tab.id 
-                                ? (tab.id === 'architect' ? 'bg-red-600 text-white shadow-md' : 'bg-blue-600 text-white shadow-md')
-                                : 'text-slate-400 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800'
-                          }`}
+                          aria-current={activeTab === tab.id ? 'page' : undefined}
+                          className={tab.id === 'architect' ? 'tier1' : undefined}
                       >
                           {tab.icon}
-                          <span className="uppercase tracking-wider">{tab.label}</span>
+                          <span>{tab.label}</span>
                       </button>
                   ))}
               </div>

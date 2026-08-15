@@ -2337,6 +2337,53 @@ html.lite-mode .kpm-title-rule { animation: none; width: 100%; }
 .kpm-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%;
   vertical-align: baseline; }
 
+/* ---- THE COMMAND CENTER HEADER AND ITS TAB LIST -----------------------------
+   His screenshots, 2026-08-15: *"next we will need to redesign this set of
+   buttons sc1. and also this part sc2"*. The selected tab was a `bg-blue-600`
+   pill — the palette law's own headline example, in the most-looked-at spot on
+   the settings screen — and it wore a `shadow-md`, which Lite Mode strips, so
+   the ONLY thing separating selected from unselected disappeared there entirely.
+
+   ⚠️ SELECTION IS MARKED BY MATERIAL FIRST, COLOUR SECOND. A raised surface and
+   a rail that the flat items do not have. Strip every colour and the selected
+   row is still obviously the selected row — which is the whole contract that
+   makes Lite Mode a performance mode and not a broken one. */
+.kpm-cmd { display: flex; flex-wrap: wrap; gap: var(--s4); align-items: flex-end;
+  justify-content: space-between; padding-bottom: var(--s4); margin-bottom: var(--s8);
+  border-bottom: 1px solid var(--line); }
+.kpm-cmd h2 { font-family: var(--font-display); font-weight: 800; font-size: 26px;
+  line-height: 1; letter-spacing: .01em; text-transform: uppercase; color: var(--ink); }
+/* ⚠️ NO `animate-pulse`. A clearance line that throbs in red forever is the
+   always-on red he ruled out: *"i dont want red color to dominate certain
+   features of the app"*. It states a fact; facts do not blink. */
+.kpm-cmd .clearance { font-family: var(--font-mono); font-size: 10px; font-weight: 700;
+  letter-spacing: .16em; text-transform: uppercase; color: var(--ink-dim); margin-top: 6px; }
+/* ⚠️ `--danger-ink`, NOT `--danger-text`. Group 32 caught this on the first run and it was
+   right: only the -ink tokens darken under the light theme, so -text here would have read at
+   about 1.2:1 on cream and this line would have been invisible in light mode — a whole theme
+   away from where anyone would have looked for it. */
+.kpm-cmd .clearance.tier1 { color: var(--danger-ink); }
+
+.kpm-nav { display: flex; flex-direction: column; gap: var(--s2); }
+.kpm-nav > button { display: flex; align-items: center; gap: var(--s3); width: 100%;
+  min-height: 48px; padding: 0 var(--s4); text-align: left; cursor: pointer;
+  background: transparent; border: 1px solid transparent; border-left: 3px solid var(--line-2);
+  color: var(--ink-muted); font-family: var(--font-display); font-weight: 700;
+  font-size: 14px; letter-spacing: .12em; text-transform: uppercase; }
+.kpm-nav > button > span { flex: 1; min-width: 0; }
+/* the selected tab: it comes forward off the page and grows an accent edge */
+.kpm-nav > button[aria-current="page"] { background: var(--raised); border-color: var(--line);
+  border-left-color: var(--accent-edge); color: var(--ink); }
+/* ⚠️ RED AS A RAIL, NEVER A FILL — the same law as `.kpm-neg`. The Tier 1 tab used to be a
+   SOLID red pill when open, which spent the app's loudest signal on a navigation item that
+   destroys nothing by being looked at. The edge still says "this one is not like the others". */
+.kpm-nav > button.tier1[aria-current="page"] { border-left-color: var(--danger-rail); }
+@media (hover: hover) and (pointer: fine) {
+  .kpm-nav > button:hover { color: var(--ink); border-left-color: var(--accent-edge); }
+  .kpm-nav > button.tier1:hover { border-left-color: var(--danger-rail); }
+}
+.kpm-nav > button:focus-visible { outline: 2px solid var(--accent-edge); outline-offset: -3px; }
+
 /* ---- BAND: names what a group of modules is allowed to do. This is the fence
    that used to be a 1.02:1 tinted box nobody could see. */
 /* margin-top 20 → 40: a band opens a GROUP, so it must clear the previous group by more than the
