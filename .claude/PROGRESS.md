@@ -19,6 +19,30 @@
 bug is fixed (group 38) and the sales terminal is converted as his chosen pilot (group 39).
 **543/543 · `node src/config/contrast.selfcheck.mjs` must also pass — it measures both themes.**
 
+### 🔧 THERE IS A WINDOW ONTO THE APP NOW — `b08d8db`. USE IT BEFORE CLAIMING ANY COLOUR IS FIXED.
+
+```bash
+npm run build; PORT=4181 node tools/theme-lab-server.mjs   # -> http://localhost:4181/
+```
+His instruction, after three wrong claims in a row: *"if the browser is broken then fix it until
+u can see it"*. Every colour call on this project until 2026-08-16 was made **blind** — the dev
+server is HTTPS with a self-signed cert (his phone needs a secure context; **that rule stands, do
+not "fix" it to http**) and the in-app browser refuses it, and the app needs a Google sign-in.
+
+`tools/theme-lab.html` renders the control-system markup against the **real built stylesheet** on
+plain HTTP. Flip themes in-page, then read computed colours with `javascript_tool` and compute
+ratios. ⚠️ **Rebuild first — the lab reads `dist/`.**
+
+⚠️ **THREE TRAPS, ALL HIT ON DAY ONE, ALL NOW GUARDED:**
+1. **Read colours at t=0 of a transition and you get the PREVIOUS theme's values.** `.kpm-btn` has
+   a 120ms colour transition; this nearly shipped a false *"the buttons don't flip in dark"* bug.
+   **Inject `transition:none !important` before measuring.**
+2. **Vite code-splits CSS.** "Newest file in `dist/assets`" was a 124-rule chunk with no tokens —
+   a full sweep returned *"no failures, both themes"* because it was measuring an **unstyled
+   page**. The server now picks the sheet that declares `--ground`, and the page refuses to render
+   without it. **A lab that measures nothing must never look like a lab that found nothing.**
+3. Port already in use → pass `PORT=`.
+
 ### 🔴 THE PAGE ITSELF WAS THE LAST LITERAL — `39ad446`. Read this before hunting any colour bug.
 
 His screenshot, 2026-08-16: *"settingview is not even done, look at ther black background, it
