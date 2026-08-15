@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-15 18:33 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
+**Updated: 2026-08-15 18:39 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -34,7 +34,7 @@ not invent a new look for a tab; copy the bands / module kinds / slot codes / re
 **LIGHT MODE IS NOW THE FRONT** — his stated order, and every screen converted above gets it
 mostly free (one token name resolves to both themes; no `dark:` variant was written).
 
-**490/490, `src/` clean.** The rack's spacing ladder was rebuilt on 2026-08-15 after his report
+**493/493, `src/` clean.** The rack's spacing ladder was rebuilt on 2026-08-15 after his report
 that modules read as one component — **12 / 16 / 20 / 40, and no inner number may reach an outer
 one.** Two checks in group 30 hold it. Read [[The KPM Control System]] and [[Off-Token Colour Migration Map]]
 in the A-Brain vault before touching a tab — the class list and the substitution table are there,
@@ -99,6 +99,17 @@ order:
 - ❓ **Offered, unanswered:** if the hold feels like enough on its own, the FIRST of the two wipe
   dialogs could go, leaving hold → FINAL WARNING. **Not done — removing a confirmation on a
   no-undo act is his explicit call, never a side effect of a nicer button.**
+- ✅ **TEST — THE MATRIX SWITCH, SECOND PASS (`857ea97`, 493/493).** *"it look so kaku and the
+  motion and the color is not good enough"* + *"too big and too much space between each tiers"*.
+  🔴 **HALF THE STIFFNESS WAS A REAL BUG:** the press animated `width`/`height`/`margin-top` —
+  three LAYOUT properties, so every frame re-ran layout instead of riding the compositor. **Only
+  transform and opacity belong in an animation.** Press is a `scale(.92)` now. A check forbids it
+  coming back.
+  The other half was two motion calls: the colour **cross-faded** through a muddy middle (now
+  `clip-path` wipes it from the left so the amber arrives WITH the knob), and the knob **stopped
+  dead** (now overshoots ~6% and settles; fill is 20ms faster so it is already there on landing).
+  Size: cell padding 12→6px, toggle floor 44→40px (**scoped to this grid — it is `hidden lg:block`
+  so it never sees a thumb**), table floor 800→560px, switch 52×26→40×20. Column ~68→~52px.
 - ✅ **TEST — THE MATRIX TOGGLES ARE A REAL SWITCH NOW (`912796b`, 490/490).** Built from the
   video he recorded: *"i want u to make the toggle button for the matric to be like this video,
   amber suit our system well so use it on this button as well"*. Amber filled pill, knob **taller
