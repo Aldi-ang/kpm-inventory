@@ -2571,10 +2571,20 @@ html.lite-mode .kpm-title-rule { animation: none; width: 100%; }
    everyday experience. */
 .kpm-matrix { width: 100%; border-collapse: collapse; table-layout: fixed; user-select: none;
   text-align: left; }
-.kpm-matrix th, .kpm-matrix td { padding: var(--s2) 6px; border-bottom: 1px solid var(--line); }
+/* 📏 TIGHTER AGAIN, on his screenshot: *"there is so much space bro fix that first, make the
+   space more even between the buttons and description"*. Two different gaps were wrong and the
+   picture shows both at once.
+   VERTICAL: a row was 8px of padding around a 40px control — 56px of box for a 20px switch, so
+   the switches floated in bands of empty with the rows reading as unrelated. 4px around a 32px
+   control is 40px, and `line-height: 1.15` stops a one-line label reserving space for a second.
+   HORIZONTAL: the description column had 42% of the table and never used it — that is the empty
+   left half of his screenshot. 30% still holds the longest feature name on one line and hands
+   the rest back to the ranks, which pulls the switches in toward the words they belong to. */
+.kpm-matrix th, .kpm-matrix td { padding: 4px 6px; border-bottom: 1px solid var(--line);
+  line-height: 1.15; }
 /* the only column that holds a sentence, so it is the only one given a share of its own */
-.kpm-matrix th:first-child, .kpm-matrix td:first-child { width: 42%;
-  padding-left: var(--s3); padding-right: var(--s4); }
+.kpm-matrix th:first-child, .kpm-matrix td:first-child { width: 30%;
+  padding-left: var(--s3); padding-right: var(--s3); }
 /* a rank name that no longer fits wraps rather than widening its column and shoving the table
    sideways — the wrap is what the fixed layout buys, and breaking a long word is part of it */
 .kpm-matrix thead th { overflow-wrap: anywhere; hyphens: auto; }
@@ -2582,7 +2592,15 @@ html.lite-mode .kpm-title-rule { animation: none; width: 100%; }
 /* ⚠️ 40px, NOT the system's 44px — and only inside this grid. The 44px floor is a THUMB rule,
    and this table is `hidden lg:block`: it never renders on a touch screen. The phone gets the
    rank-picker list, where the switch keeps its full 44px target. */
-.kpm-matrix .kpm-toggle { min-width: 40px; min-height: 40px; }
+.kpm-matrix .kpm-toggle { min-width: 40px; min-height: 32px; }
+/* 🔴 THE TWO AUTHORITY DROPDOWNS OVERLAPPED EACH OTHER. His report: *"the textbox on the bottom
+   collapse with each other"*. `.kpm-inline` carries no width, so a `<select>` sizes itself to its
+   LONGEST OPTION ("Global (edit any customer — default)") — far wider than a rank column. Under
+   `table-layout: fixed` the column cannot grow to fit it, so the control simply spills over its
+   neighbour instead. `width: 100%` plus `min-width: 0` makes it take the column it is given and
+   ellipsis the rest; the full wording is still in the open list, which is where it is read. */
+.kpm-matrix .kpm-inline { width: 100%; min-width: 0; max-width: 100%;
+  padding: 0 6px; min-height: 32px; text-overflow: ellipsis; }
 .kpm-matrix thead th { background: var(--sunk); text-align: center; font-family: var(--font-mono);
   font-weight: 700; font-size: 10px; letter-spacing: .16em; text-transform: uppercase;
   color: var(--ink-muted); cursor: move; }

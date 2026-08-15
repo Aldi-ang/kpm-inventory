@@ -2579,11 +2579,26 @@ check(G37, 'the colour arrives with the knob, and the knob settles rather than s
 check(G37, 'the grid fits its container instead of sliding sideways',
   /\.kpm-matrix \{[^}]*table-layout: fixed/.test(themeCss) &&
   !/\.kpm-matrix \{[^}]*min-width:/.test(themeCss) &&
-  /\.kpm-matrix th:first-child, \.kpm-matrix td:first-child \{ width: 42%/.test(themeCss) &&
+  /\.kpm-matrix th:first-child, \.kpm-matrix td:first-child \{ width: 30%/.test(themeCss) &&
   /\.kpm-matrix thead th \{ overflow-wrap: anywhere/.test(themeCss) &&
-  /\.kpm-matrix th, \.kpm-matrix td \{ padding: var\(--s2\) 6px/.test(themeCss) &&
-  /\.kpm-matrix \.kpm-toggle \{ min-width: 40px; min-height: 40px; \}/.test(themeCss),
+  /\.kpm-matrix th, \.kpm-matrix td \{ padding: 4px 6px/.test(themeCss) &&
+  /\.kpm-matrix \.kpm-toggle \{ min-width: 40px; min-height: 32px; \}/.test(themeCss),
   'a fixed layout is what removes the drag; a min-width floor of any size brings it straight back');
+/* 📏 HIS SCREENSHOT, 2026-08-15: *"there is so much space bro … make the space more even between
+   the buttons and description"*. A row was 8px of padding around a 40px control — 56px of box
+   holding a 20px switch — and the description column had 42% it never used, which is the empty
+   half of that picture. The two numbers are checked together because they are one complaint. */
+/* 🔴 *"the textbox on the bottom collapse with each other"*. A `<select>` with no width sizes to
+   its LONGEST OPTION, and under `table-layout: fixed` the column cannot grow to fit it — so it
+   spilled over its neighbour. Both halves are needed: `width: 100%` alone still loses to the
+   intrinsic minimum without `min-width: 0`. */
+check(G37, 'the authority dropdowns stay inside their own column',
+  /\.kpm-matrix \.kpm-inline \{ width: 100%; min-width: 0; max-width: 100%;/.test(themeCss),
+  'a select sizes to its longest option; in a fixed table that means it overlaps the next column');
+check(G37, 'the rows are as tall as their switch, not twice it',
+  /line-height: 1\.15/.test(themeCss) &&
+  !/\.kpm-matrix th, \.kpm-matrix td \{ padding: var\(--s[3-9]\)/.test(themeCss),
+  'a 20px switch in a 56px row reads as unrelated bands of empty, which is what he photographed');
 /* what is drawn and what is announced come from ONE attribute, so they cannot drift. On this
    screen a toggle that reads "on" to a screen reader while drawn off is a security bug. */
 check(G37, 'every permission toggle states its state to both eye and screen reader',
