@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-15 09:45 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
+**Updated: 2026-08-15 09:55 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -27,11 +27,23 @@ not invent a new look for a tab; copy the bands / module kinds / slot codes / re
 | **General & Brand** | **0** | ✅ **DONE 2026-08-15, group 34, 18 checks** |
 | Tiers & Logic | 89 | ▶ **the last slice** |
 
-**418/418, `src/` clean.** The rack's spacing ladder was rebuilt on 2026-08-15 after his report
+**419/419, `src/` clean.** The rack's spacing ladder was rebuilt on 2026-08-15 after his report
 that modules read as one component — **12 / 16 / 20 / 40, and no inner number may reach an outer
 one.** Two checks in group 30 hold it. Read [[The KPM Control System]] and [[Off-Token Colour Migration Map]]
 in the A-Brain vault before touching a tab — the class list and the substitution table are there,
 and re-deriving them costs a quarter of a session.
+
+🌏 **NEW, 2026-08-15 — INDONESIAN. Queued behind light mode, not started.** His words: *"we might
+need to add indonesian language for all the features that we have inside this app if needed in the
+future"* — **"if needed in the future" is the whole instruction; he has not asked for it yet.**
+Do not start it without asking. Two things worth knowing before anyone estimates it:
+· **The app is already half-Indonesian in its DATA** — "EOD Setoran", "Stock Opname", "Hitung Ulang
+  Karir", "Pita Cukai", "nota", "gulungan". Those are the business's real words and must NOT be
+  translated; they are the vocabulary, not English text awaiting a swap.
+· **What would need extracting is UI copy, and Phase 6 is quietly making that harder OR easier
+  depending on when it starts.** Every `.kpm-desc` written in this rework is a real English
+  sentence living inline in JSX. Translating later means extracting all of them. **If he ever says
+  yes, the honest first step is a string table, and it should come BEFORE the last tab, not after.**
 
 🔴 **AFTER the whole UI redesign, the next big job is LIGHT MODE.** His words, 2026-08-15:
 *"there is some big job that we havent done, which is working on the light mode but lets do that
@@ -103,6 +115,18 @@ order:
 - ✅ **The Firebase authorized domain is DONE** — *"already"*. `192.168.1.109` can sign in.
 
 ## 📓 LOG — newest first, about five entries; `git log` keeps the rest
+
+### 2026-08-15 09:55 (KPM app session) — the mascot lines became a picker
+
+**419/419.** *"for the capybara dialogue u might need to make it dropdown menu instead, too many
+conversation for it"*. Every line rendered as its own row, so the module grew without limit and
+needed an inner scrollbar to survive — **the one thing he has banned twice**. A `<select>` plus two
+acts is a **fixed height at any number of lines**.
+⚠️ `pick` is clamped on EVERY RENDER, not on delete: removing the last line leaves the index past
+the end and the next Delete acts on `undefined`.
+⚠️ Icon-delete count **16 → 15** — "Delete" carries its own word now, so it must not wear
+`data-kpm-del`. Third time this migration has happened (18→17→16→15); each one is a real change.
+✅ **His verdict on the whole Settings rework: *"overall i like it we can continue"***.
 
 ### 2026-08-15 09:45 (KPM app session) — General & Brand converted. Phase 6, slice 2. Only Tiers left.
 
