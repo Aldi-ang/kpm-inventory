@@ -2952,6 +2952,56 @@ check(G41, 'the gate card is still a literal that cannot flip',
   /bg-\[rgba\(4,3,2,0\.9\)\]/.test(app) && /\.kpm-mod\.gate\s*\{[^}]*background:\s*rgba\(4, 3, 2, \.9\)/.test(themeCss),
   'the two gate screens share one card colour, and it is deliberately not a token');
 
+/* ── 42. the accents follow the ground, and the blue is finally gone ─────────
+   *"yea fix all of the color for light mode and the adjustment as well for the outside panel,
+   we can start from the settingview"* — 2026-08-16. The red, orange, amber and yellow left in
+   the shell were Tailwind names, so they could not change theme; on the cream panel they were
+   the complaint he had already filed once about the terminal's prices.
+   🔑 THE RULE THAT DECIDED EACH ONE IS THE GROUND, NOT THE COLOUR. An accent sitting on a PLATE
+   (its own black disc, a solid red button) reads the same in both themes and was left alone. An
+   accent sitting on a surface that FLIPS had to become an ink or an edge. Converting the first
+   kind is work that changes nothing; missing the second kind is invisible text. */
+const G42 = '42. An accent follows its ground, not its name';
+const settings = fs.readFileSync('src/components/SettingsView.jsx', 'utf8');
+/* 🔴 SLATE IS THE BLUE. It survived in three shapes at once: a class, a `#0f172a` Lite-Mode
+   fallback that painted every backdrop navy, and the colour a NEW RANK was born with. */
+const slateLeft = [];
+for (const [f, t] of [['App.jsx', app], ['SettingsView.jsx', settings]]) {
+  for (const m of t.matchAll(/(?:^|[\s"'`])((?:hover:|focus:)?(?:text|bg|border|from|via|to|ring)-(?:slate|gray|zinc)-\d+)/g))
+    slateLeft.push(`${f}:${m[1]}`);
+  for (const m of t.matchAll(/#(?:0f172a|475569|94a3b8|1e293b|334155|64748b)\b/gi))
+    slateLeft.push(`${f}:${m[0]}`);
+}
+check(G42, 'no slate survives in the shell, as a class OR as a hex', !slateLeft.length,
+  'left behind: ' + [...new Set(slateLeft)].join(' ') + ' — slate IS the blue the palette law bans');
+/* the Lite-Mode blur fallback overrides every scrim in the app with !important, so a literal
+   there is a colour that cannot change theme applied to the widest possible surface */
+check(G42, 'the Lite Mode blur fallback is a token, and a scrim',
+  /\.lite-mode \.backdrop-blur[\s\S]{0,900}background-color:\s*var\(--duke-scrim\)\s*!important/.test(app),
+  'in Lite Mode this rule paints every backdrop in the app, so a literal here is the whole app');
+/* ⚠️ THESE TWO BLOCKS ARE THE SAME SCREEN WRITTEN TWICE, AND THEY HAVE ALREADY DRIFTED ONCE —
+   the name sweep converted App's disc to a token that flips and left SettingsView's as `bg-black`,
+   so one of them was about to show a dark-red lock on a cream disc. The disc is a PLATE: it
+   carries its own black, so its red never touches the page and never needs to change theme. */
+const medallion = /w-24 h-24 bg-black border-2 border-red-600 rounded-full[^"]*text-red-500/;
+check(G42, 'both Restricted Access medallions are the same plate',
+  medallion.test(app) && medallion.test(settings),
+  'a plate keeps its Tailwind red; only the text UNDER it sits on the page and has to flip');
+/* and the text under it does flip — that half was white and slate on a ground that goes pale */
+check(G42, 'the lockscreen text below the medallion is tokenised in both files',
+  [app, settings].every(t =>
+    /Restricted Access/.test(t) &&
+    /text-\[var\(--duke-ink-hi\)\][^>]*>Restricted Access/.test(t) &&
+    /text-\[var\(--duke-ink-3\)\][^>]*>Admin Clearance Required/.test(t)),
+  'this block sits directly on the page, which now goes pale — white text on it is nothing');
+/* the product editor was the densest patch of un-themed accent left in the app */
+const editor = app.slice(app.indexOf('EDIT MODAL - AUTO HIDES WHEN CROPPING'),
+                         app.indexOf('Update Database'));
+const editorLeft = [...new Set(editor.match(
+  /(?:hover:|focus:)?(?:text|border)-(?:red|orange|amber|yellow)-\d+(?:\/\d+)?/g) || [])];
+check(G42, 'the product editor carries no accent that cannot change theme', !editorLeft.length,
+  'left behind: ' + editorLeft.join(' ') + ' — every field in here sits on the cream panel');
+
 /* ── report ──────────────────────────────────────────────────────────────── */
 let last = '';
 for (const r of results) {

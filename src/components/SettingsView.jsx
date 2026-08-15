@@ -124,9 +124,15 @@ export default function SettingsView({
                         <Lock size={40} className="animate-bounce-slow" />
                     </div>
                 </div>
-                <h2 className="text-3xl font-black text-white uppercase tracking-[0.25em] mb-2 font-mono">Restricted Access</h2>
-                <p className="text-slate-400 text-xs font-bold uppercase tracking-widest max-w-xs leading-relaxed mb-8">Admin Clearance Required</p>
-                <button onClick={() => setShowAdminLogin(true)} className="px-10 py-4 border-2 border-white text-white font-black uppercase text-xs hover:bg-white hover:text-black transition-all">Unlock System</button>
+                {/* ⚠️ THE MEDALLION ABOVE IS LEFT ALONE ON PURPOSE. A black disc with a red lock
+                    on it is a PLATE — it reads on cream exactly as it reads on the bench, and its
+                    red sits on its own black, not on the page. What could not stay is everything
+                    below it: this block sits directly on the PAGE, which now goes pale, so white
+                    text and slate text were both invisible the moment light mode came on.
+                    (`slate` is also the blue the palette law bans — it was the last of it here.) */}
+                <h2 className="text-3xl font-black text-[var(--duke-ink-hi)] uppercase tracking-[0.25em] mb-2 font-mono">Restricted Access</h2>
+                <p className="text-[var(--duke-ink-3)] text-xs font-bold uppercase tracking-widest max-w-xs leading-relaxed mb-8">Admin Clearance Required</p>
+                <button onClick={() => setShowAdminLogin(true)} className="px-10 py-4 border-2 border-[var(--duke-edge-4)] text-[var(--duke-ink-hi)] font-black uppercase text-xs hover:bg-[var(--duke-amber)] hover:text-black transition-all">Unlock System</button>
             </div>
         );
     }
@@ -590,9 +596,15 @@ export default function SettingsView({
                                   <div className="kpm-acts">
                                       <button type="button" onClick={() => {
                                           const hasUnranked = tierSettings.some(t => t.id.toLowerCase() === 'unranked');
+                                          /* ⚠️ THESE TWO ARE DATA, NOT STYLING — the colour a new rank is BORN with,
+                                             and Aldi can change either one in the picker straight afterwards. They
+                                             were slate-600 and slate-400, which is the blue the palette law bans, so
+                                             a rank created today started off-palette until someone noticed. Warm
+                                             mid-browns instead: both read as a swatch on the bench AND on cream,
+                                             which a colour picked for one theme would not. */
                                           const newTier = !hasUnranked
-                                              ? { id: 'Unranked', label: 'Unranked', color: '#475569', iconType: 'emoji', value: '🪵' }
-                                              : { id: `Tier_${Date.now()}`, label: 'New Rank', color: '#94a3b8', iconType: 'emoji', value: '❓' };
+                                              ? { id: 'Unranked', label: 'Unranked', color: '#6b5a40', iconType: 'emoji', value: '🪵' }
+                                              : { id: `Tier_${Date.now()}`, label: 'New Rank', color: '#a89070', iconType: 'emoji', value: '❓' };
 
                                           const newTiers = [...tierSettings, newTier];
                                           setTierSettings(newTiers);

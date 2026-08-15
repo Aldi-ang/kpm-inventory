@@ -1238,7 +1238,11 @@ const handleGitHubMirror = async () => {
       { id: 'Epic', label: 'Epic', color: '#8b5cf6', iconType: 'emoji', value: '🔥' },
       { id: 'Grandmaster', label: 'Grandmaster', color: '#ec4899', iconType: 'emoji', value: '⚔️' },
       { id: 'Bronze', label: 'Bronze', color: '#d97706', iconType: 'emoji', value: '🛡️' },
-      { id: 'Unranked', label: 'Unranked', color: '#475569', iconType: 'emoji', value: '🪵' }
+      /* ⚠️ THE OTHER FOUR ARE RANK IDENTITY AND STAY. Mythic's amber, Epic's purple and
+         Grandmaster's pink are the rank frames Aldi designed, and the palette law does not
+         reach them. Unranked was slate — the blue the law actually bans — and it is the one
+         that meant nothing, so it takes the wood it already carries as an emoji. */
+      { id: 'Unranked', label: 'Unranked', color: '#6b5a40', iconType: 'emoji', value: '🪵' }
   ];
   const [tierSettings, setTierSettings] = useState(DEFAULT_TIERS);
 
@@ -3580,7 +3584,11 @@ const handleGitHubMirror = async () => {
                       animation-iteration-count: 1 !important;
                   }
                   .lite-mode .backdrop-blur, .lite-mode .backdrop-blur-md, .lite-mode .backdrop-blur-sm, .lite-mode .backdrop-blur-\\[2px\\] {
-                      background-color: #0f172a !important; /* Fast solid fallback */
+                      /* ⚠️ WAS THE DARKEST SLATE — the blue the palette law bans, and a literal
+                         besides, so in Lite Mode every backdrop in the app turned navy and
+                         stayed navy in light mode. Every element this rule overrides is a
+                         scrim or an overlay, and a scrim is dark in BOTH themes by law. */
+                      background-color: var(--duke-scrim) !important; /* Fast solid fallback */
                   }
                   .lite-mode .rank-frame {
                       background-image: none !important;
@@ -3915,7 +3923,13 @@ const handleGitHubMirror = async () => {
                     <div className="flex flex-col items-center justify-center min-h-[60vh] animate-fade-in text-center">
                         <div className="relative mb-8">
                         <div className="absolute inset-0 bg-red-500/20 blur-3xl rounded-full animate-pulse"></div>
-                        <div className="relative w-24 h-24 bg-[var(--duke-well-solid)] border-2 border-red-600 rounded-full flex items-center justify-center text-red-500 shadow-[0_0_30px_rgba(220,38,38,0.4)]">
+                        {/* ⚠️ `bg-black`, AND THE RED STAYS A TAILWIND RED — this medallion is a
+                            PLATE, not a surface. It reads the same on cream as on the bench
+                            because its red sits on its own black, never on the page. The name
+                            sweep had turned the disc into `--duke-well-solid`, which flips, and
+                            that would have put a dark-red lock on a cream disc. Its twin in
+                            SettingsView.jsx is the same three classes — keep them identical. */}
+                        <div className="relative w-24 h-24 bg-black border-2 border-red-600 rounded-full flex items-center justify-center text-red-500 shadow-[0_0_30px_rgba(220,38,38,0.4)]">
                             <Lock size={40} className="animate-bounce-slow" />
                         </div>
                     </div>
@@ -4046,7 +4060,7 @@ const handleGitHubMirror = async () => {
                     style={{ display: cropImageSrc ? 'none' : 'flex' }} // <--- MAGIC FIX: Hides when cropping
                 >
                     <div className="bg-[var(--duke-well-solid)] border border-[var(--duke-veil-edge-3)] w-full max-w-2xl max-h-[90vh] overflow-y-auto p-8 relative shadow-[0_0_50px_var(--duke-lift)]">
-                        <button onClick={() => setEditingProduct(null)} className="absolute top-4 right-4 text-[var(--duke-ink-hi)] hover:text-red-500"><X size={24}/></button>
+                        <button onClick={() => setEditingProduct(null)} className="absolute top-4 right-4 text-[var(--duke-ink-hi)] hover:text-[var(--duke-danger-ink)]"><X size={24}/></button>
                         <h2 className="text-2xl font-bold text-[var(--duke-ink-hi)] mb-6 uppercase tracking-widest border-b border-[var(--duke-veil-edge-2)] pb-2">
                             {editingProduct.id ? "Edit Record" : "New Entry"}
                         </h2>
@@ -4054,15 +4068,15 @@ const handleGitHubMirror = async () => {
                         <form onSubmit={handleSaveProduct} className="space-y-6 font-mono text-xs">
                             <div className="grid md:grid-cols-2 gap-8">
                                 <div className="space-y-4">
-                                    <div><label className="text-[var(--duke-ink-8)] block mb-1">PRODUCT NAME</label><input name="name" defaultValue={editingProduct.name} className="w-full p-2 bg-[var(--duke-veil)] border border-[var(--duke-veil-edge-2)] text-[var(--duke-ink-hi)] focus:border-orange-500 outline-none"/></div>
+                                    <div><label className="text-[var(--duke-ink-8)] block mb-1">PRODUCT NAME</label><input name="name" defaultValue={editingProduct.name} className="w-full p-2 bg-[var(--duke-veil)] border border-[var(--duke-veil-edge-2)] text-[var(--duke-ink-hi)] focus:border-[var(--duke-amber-edge)] outline-none"/></div>
 
                                   {/* --- PINPOINT: Edit Product Modal --- */}
                                     <div className="grid grid-cols-4 gap-2">
                                         <div><label className="text-[10px] text-[var(--duke-ink-8)] block mb-1 tracking-widest">STOCK</label><input name="stock" type="number" step="any" defaultValue={editingProduct.stock} className="w-full p-2 bg-[var(--duke-veil)] border border-[var(--duke-veil-edge)] text-[var(--shell-ink)] focus:border-[var(--duke-amber-edge)] outline-none transition-colors"/></div>
-                                        <div><label className="text-[10px] text-[var(--duke-ink-8)] block mb-1 tracking-widest">MIN. ALERT</label><input name="minStock" type="number" step="any" defaultValue={editingProduct.minStock || 50} className="w-full p-2 bg-[var(--duke-veil)] border border-red-500/50 text-red-400 focus:border-red-500 outline-none"/></div>
+                                        <div><label className="text-[10px] text-[var(--duke-ink-8)] block mb-1 tracking-widest">MIN. ALERT</label><input name="minStock" type="number" step="any" defaultValue={editingProduct.minStock || 50} className="w-full p-2 bg-[var(--duke-veil)] border border-[var(--duke-danger-edge)] text-[var(--duke-danger-ink)] focus:border-[var(--duke-danger-edge)] outline-none"/></div>
                                         {/* 🚀 NEW: STICKS PER PACK INPUT */}
                                         <div><label className="text-[10px] text-[var(--duke-ink-8)] block mb-1 tracking-widest">STICKS / BKS</label><input name="sticksPerPack" type="number" step="any" defaultValue={editingProduct.sticksPerPack || 16} className="w-full p-2 bg-[var(--duke-veil)] border border-[var(--duke-veil-edge)] text-[var(--shell-ink)] focus:border-[var(--duke-amber-edge)] outline-none transition-colors"/></div>
-                                        <div><label className="text-[10px] text-[var(--duke-ink-8)] block mb-1 tracking-widest">TYPE</label><input name="type" defaultValue={editingProduct.type} className="w-full p-2 bg-[var(--duke-veil)] border border-[var(--duke-veil-edge-2)] text-[var(--duke-ink-hi)] focus:border-white outline-none"/></div>
+                                        <div><label className="text-[10px] text-[var(--duke-ink-8)] block mb-1 tracking-widest">TYPE</label><input name="type" defaultValue={editingProduct.type} className="w-full p-2 bg-[var(--duke-veil)] border border-[var(--duke-veil-edge-2)] text-[var(--duke-ink-hi)] focus:border-[var(--duke-veil-edge-3)] outline-none"/></div>
                                     </div>
 
                                     {/* PACKING. Every sale in Bal or Karton multiplies by these, and until now
@@ -4070,9 +4084,9 @@ const handleGitHubMirror = async () => {
                                         to 10/20/4 for every product. Aldi's real stock varies (a Bal can be 100 or
                                         200 Bks, a Karton 4 or 5 Bal), so they have to be per product. */}
                                     <div className="grid grid-cols-3 gap-2">
-                                        <div><label className="text-[10px] text-[var(--duke-ink-8)] block mb-1 tracking-widest">BKS / SLOP</label><input name="packsPerSlop" type="number" step="any" defaultValue={editingProduct.packsPerSlop || 10} className="w-full p-2 bg-[var(--duke-veil)] border border-amber-500/50 text-amber-400 focus:border-amber-500 outline-none"/></div>
-                                        <div><label className="text-[10px] text-[var(--duke-ink-8)] block mb-1 tracking-widest">SLOP / BAL</label><input name="slopsPerBal" type="number" step="any" defaultValue={editingProduct.slopsPerBal || 20} className="w-full p-2 bg-[var(--duke-veil)] border border-amber-500/50 text-amber-400 focus:border-amber-500 outline-none"/></div>
-                                        <div><label className="text-[10px] text-[var(--duke-ink-8)] block mb-1 tracking-widest">BAL / KARTON</label><input name="balsPerCarton" type="number" step="any" defaultValue={editingProduct.balsPerCarton || 4} className="w-full p-2 bg-[var(--duke-veil)] border border-amber-500/50 text-amber-400 focus:border-amber-500 outline-none"/></div>
+                                        <div><label className="text-[10px] text-[var(--duke-ink-8)] block mb-1 tracking-widest">BKS / SLOP</label><input name="packsPerSlop" type="number" step="any" defaultValue={editingProduct.packsPerSlop || 10} className="w-full p-2 bg-[var(--duke-veil)] border border-[var(--duke-brass-edge)] text-[var(--duke-brass-ink)] focus:border-[var(--duke-brass-edge)] outline-none"/></div>
+                                        <div><label className="text-[10px] text-[var(--duke-ink-8)] block mb-1 tracking-widest">SLOP / BAL</label><input name="slopsPerBal" type="number" step="any" defaultValue={editingProduct.slopsPerBal || 20} className="w-full p-2 bg-[var(--duke-veil)] border border-[var(--duke-brass-edge)] text-[var(--duke-brass-ink)] focus:border-[var(--duke-brass-edge)] outline-none"/></div>
+                                        <div><label className="text-[10px] text-[var(--duke-ink-8)] block mb-1 tracking-widest">BAL / KARTON</label><input name="balsPerCarton" type="number" step="any" defaultValue={editingProduct.balsPerCarton || 4} className="w-full p-2 bg-[var(--duke-veil)] border border-[var(--duke-brass-edge)] text-[var(--duke-brass-ink)] focus:border-[var(--duke-brass-edge)] outline-none"/></div>
                                     </div>
 
                                     {/* RESTORED: FRONT = BACK TOGGLE */}
@@ -4089,7 +4103,7 @@ const handleGitHubMirror = async () => {
 
                                     {/* TEXTURE ASSETS (WITH PREVIEWS & EDIT BTN) */}
                                     <div className="p-3 border border-dashed border-[var(--duke-veil-edge-3)] text-center bg-[var(--duke-veil)]">
-                                        <p className="text-orange-500 font-bold mb-2">TEXTURE ASSETS</p>
+                                        <p className="text-[var(--shell-orange-ink)] font-bold mb-2">TEXTURE ASSETS</p>
                                         <div className="grid grid-cols-3 gap-2">
                                             {['front', 'back', 'left', 'right', 'top', 'bottom'].map(face => {
                                                 const hasImg = tempImages[face] || (editingProduct.images && editingProduct.images[face]);
@@ -4127,10 +4141,10 @@ const handleGitHubMirror = async () => {
                                 </div>
                                 <div className="space-y-4">
                                     <h3 className="text-[var(--duke-ink-hi)] border-b border-[var(--duke-veil-edge)] pb-1 mb-2">PRICING ENGINE</h3>
-                                    <div><label className="text-[var(--duke-ink-8)] block mb-1">DISTRIBUTOR (MODAL)</label><input name="priceDistributor" type="number" step="any" defaultValue={editingProduct.priceDistributor} className="w-full p-2 bg-[var(--duke-veil)] border border-red-900/50 text-red-400 focus:border-red-500 outline-none"/></div>
+                                    <div><label className="text-[var(--duke-ink-8)] block mb-1">DISTRIBUTOR (MODAL)</label><input name="priceDistributor" type="number" step="any" defaultValue={editingProduct.priceDistributor} className="w-full p-2 bg-[var(--duke-veil)] border border-[var(--duke-danger-edge)] text-[var(--duke-danger-ink)] focus:border-[var(--duke-danger-edge)] outline-none"/></div>
                                     <div><label className="text-[var(--duke-ink-8)] block mb-1">RETAIL PRICE</label><input name="priceRetail" type="number" step="any" defaultValue={editingProduct.priceRetail} className="w-full p-2 bg-[var(--duke-veil)] border border-[var(--duke-veil-edge)] text-[var(--shell-ink)] focus:border-[var(--duke-amber-edge)] outline-none transition-colors"/></div>
                                     <div><label className="text-[var(--duke-ink-8)] block mb-1">GROSIR PRICE</label><input name="priceGrosir" type="number" step="any" defaultValue={editingProduct.priceGrosir} className="w-full p-2 bg-[var(--duke-veil)] border border-[var(--duke-veil-edge)] text-[var(--shell-ink)] focus:border-[var(--duke-amber-edge)] outline-none transition-colors"/></div>
-                                    <div><label className="text-[var(--duke-ink-8)] block mb-1">ECER PRICE</label><input name="priceEcer" type="number" step="any" defaultValue={editingProduct.priceEcer} className="w-full p-2 bg-[var(--duke-veil)] border border-yellow-900/50 text-yellow-400 focus:border-yellow-500 outline-none"/></div>
+                                    <div><label className="text-[var(--duke-ink-8)] block mb-1">ECER PRICE</label><input name="priceEcer" type="number" step="any" defaultValue={editingProduct.priceEcer} className="w-full p-2 bg-[var(--duke-veil)] border border-[var(--duke-brass-edge)] text-[var(--duke-brass-ink)] focus:border-[var(--duke-brass-edge)] outline-none"/></div>
                                 </div>
                             </div>
                             {/* type is explicit: this submits handleSaveProduct. It was relying on
@@ -4434,7 +4448,7 @@ const handleGitHubMirror = async () => {
                       <div className="kpm-recorder bg-[var(--duke-well-solid)] border border-[var(--duke-edge-1)] w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[80vh]">
                           <div className="bg-[var(--duke-fill-well)] p-4 border-b border-[var(--duke-edge-1)] flex justify-between items-center shrink-0">
                               <h3 className="text-[var(--duke-ink-hi)] font-black uppercase tracking-widest flex items-center gap-2"><Activity size={18} className="text-[var(--duke-amber-ink)]"/> Flight Recorder</h3>
-                              <button onClick={() => setShowFlightRecorder(false)} className="text-[var(--duke-ink-3)] hover:text-red-500"><X size={20}/></button>
+                              <button onClick={() => setShowFlightRecorder(false)} className="text-[var(--duke-ink-3)] hover:text-[var(--duke-danger-ink)]"><X size={20}/></button>
                           </div>
                           
                           <div className="p-4 bg-[var(--duke-fill-well)]/60 flex justify-between items-center border-b border-[var(--duke-edge-1)]/60 shrink-0">
@@ -4445,7 +4459,7 @@ const handleGitHubMirror = async () => {
                                       an alarm, so it takes the quieter gold. */}
                                   <div className="text-center"><p className="text-[10px] text-[var(--duke-ink-3)] uppercase tracking-widest font-bold">Pending NOO</p><p className="text-xl font-black text-[var(--duke-brass-ink)]">{pendingCount.noo}</p></div>
                               </div>
-                              <button onClick={clearFlightRecorder} className="px-3 py-1.5 bg-red-900/30 text-red-500 border border-red-500/30 rounded text-[11px] uppercase font-bold tracking-widest hover:bg-red-500 hover:text-[var(--duke-ink-hi)] transition-colors">Clear Logs</button>
+                              <button onClick={clearFlightRecorder} className="px-3 py-1.5 bg-[var(--danger)]/20 text-[var(--duke-danger-ink)] border border-[var(--duke-danger-edge)]/40 rounded text-[11px] uppercase font-bold tracking-widest hover:bg-[var(--danger-plate)] hover:text-[var(--danger-plate-ink)] transition-colors">Clear Logs</button>
                           </div>
 
                           <div className="p-4 overflow-y-auto custom-scrollbar flex-1 space-y-2 bg-[var(--duke-well-solid)] font-mono">
@@ -4453,23 +4467,23 @@ const handleGitHubMirror = async () => {
                               {/* 🚀 THE OFFLINE WAITING ROOM 🚀 */}
                               {pendingTxData && pendingTxData.length > 0 && (
                                   <div className="mb-6 border-b-2 border-[var(--duke-edge-1)] pb-4">
-                                      <h3 className="text-orange-400 font-black uppercase tracking-widest text-xs mb-3 flex items-center gap-2">
+                                      <h3 className="text-[var(--shell-orange-ink)] font-black uppercase tracking-widest text-xs mb-3 flex items-center gap-2">
                                           <Database size={14}/> Ghost Ledger Queue ({pendingTxData.length})
                                       </h3>
                                       
                                       <div className="space-y-3 max-h-64 overflow-y-auto custom-scrollbar pr-2">
                                           {pendingTxData.map((tx, idx) => (
-                                              <details key={idx} className="bg-[var(--duke-fill-panel)] border border-orange-500/30 rounded-lg shadow-inner group">
+                                              <details key={idx} className="bg-[var(--duke-fill-panel)] border border-[var(--duke-amber-edge)]/40 rounded-lg shadow-inner group">
                                                   <summary className="p-3 flex justify-between items-center cursor-pointer select-none list-none outline-none">
                                                       <div>
                                                           <span className="text-[var(--duke-ink-hi)] font-bold uppercase block text-xs">{tx.customerName}</span>
                                                           <span className="text-[var(--duke-ink-3)] text-[10px] uppercase">{tx.date}</span>
                                                       </div>
                                                       <div className="flex items-center gap-3">
-                                                          <span className="bg-orange-900/50 text-orange-400 font-bold px-2 py-1 rounded text-[10px] uppercase border border-orange-700/50">
+                                                          <span className="bg-[var(--duke-amber)]/20 text-[var(--shell-orange-ink)] font-bold px-2 py-1 rounded text-[10px] uppercase border border-[var(--duke-amber-edge)]/50">
                                                               IN QUEUE
                                                           </span>
-                                                          <span className="text-orange-500 text-[10px] uppercase font-bold bg-[var(--duke-bar-2)] px-2 py-1 rounded group-open:bg-[var(--duke-shade)] hover:text-[var(--duke-ink-hi)] transition-colors">
+                                                          <span className="text-[var(--shell-orange-ink)] text-[10px] uppercase font-bold bg-[var(--duke-bar-2)] px-2 py-1 rounded group-open:bg-[var(--duke-shade)] hover:text-[var(--duke-ink-hi)] transition-colors">
                                                               View Receipt ▼
                                                           </span>
                                                       </div>
@@ -4488,7 +4502,7 @@ const handleGitHubMirror = async () => {
                                                       
                                                       <div className="flex justify-between items-center text-xs border-t border-[var(--duke-edge-2)] pt-2 mt-2">
                                                           <span className="text-[var(--duke-ink-3)] uppercase font-bold text-[10px]">Total Revenue</span>
-                                                          <span className="text-orange-400 font-black font-mono text-sm">Rp {new Intl.NumberFormat('id-ID').format(tx.total)}</span>
+                                                          <span className="text-[var(--shell-orange-ink)] font-black font-mono text-sm">Rp {new Intl.NumberFormat('id-ID').format(tx.total)}</span>
                                                       </div>
                                                   </div>
                                               </details>
@@ -4511,7 +4525,7 @@ const handleGitHubMirror = async () => {
                                      resting row is just the panel's own surface. Red and orange
                                      stay: those two are earning attention. */
                                   syncLogs.map((log) => (
-                                      <div key={log.id} className={`kpm-log-row p-3 rounded border text-xs leading-relaxed ${log.type === 'ERROR' ? 'bg-red-950/20 border-red-900/50 text-red-400' : log.type === 'SUCCESS' ? 'bg-[var(--duke-brass-2)]/10 border-[#8a6a2f]/60 text-[var(--duke-brass-ink)]' : log.type === 'OFFLINE' ? 'bg-orange-950/20 border-orange-900/50 text-orange-400' : 'bg-[var(--duke-fill-well)] border-[var(--duke-edge-1)] text-[var(--duke-ink-1)]'}`}>
+                                      <div key={log.id} className={`kpm-log-row p-3 rounded border text-xs leading-relaxed ${log.type === 'ERROR' ? 'bg-[var(--danger)]/15 border-[var(--duke-danger-edge)] text-[var(--duke-danger-ink)]' : log.type === 'SUCCESS' ? 'bg-[var(--duke-brass-2)]/10 border-[var(--duke-brass-3)]/60 text-[var(--duke-brass-ink)]' : log.type === 'OFFLINE' ? 'bg-[var(--duke-amber)]/15 border-[var(--duke-amber-edge)]/60 text-[var(--shell-orange-ink)]' : 'bg-[var(--duke-fill-well)] border-[var(--duke-edge-1)] text-[var(--duke-ink-1)]'}`}>
                                           <div className="text-[11px] opacity-50 mb-1">{new Date(log.timestamp).toLocaleString()}</div>
                                           <div>{log.message}</div>
                                       </div>
