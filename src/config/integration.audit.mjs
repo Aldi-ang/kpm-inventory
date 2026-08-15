@@ -1921,6 +1921,26 @@ check(G30, 'a tenant\'s locked state is readable on the phone',
   !/hidden md:flex/.test(code(lordSrc)) && /Locked out/.test(lordSrc),
   'SECURE\\/LOCKED used to be desktop-only — the one fact the registry exists to report was ' +
   'hidden on the only device he carries');
+/* 🔴 THE PROXIMITY INVERSION. His report, 2026-08-15: *"i want u to give more space between
+   features because all of it looks to close together i thought it is the same components"*. He was
+   right and it was measurable: modules sat at 0px with one 1px line between them, while each
+   module's OWN head→shelf waist carried TWO stacked lines (--line + --line-2) at 0px. The inner
+   division was heavier than the outer one, so the eye grouped across module boundaries.
+   The scale must only ever grow outward. If a future edit makes any inner number reach an outer
+   one, this check goes red before he has to see it again. */
+check(G30, 'the module spacing scale only ever increases outward',
+  /\.kpm-mod \+ \.kpm-mod \{ margin-top: var\(--s5\); \}/.test(themeCss) &&
+  !/\.kpm-mod \+ \.kpm-mod \{ border-top: 0; \}/.test(themeCss) &&
+  /\.kpm-shelf \{ padding: var\(--s4\); display: flex; flex-direction: column; gap: var\(--s3\);/.test(themeCss) &&
+  /\.kpm-head \{ padding: var\(--s4\);/.test(themeCss) &&
+  /\.kpm-band \{[\s\S]{0,160}?margin-top: 40px;/.test(themeCss),
+  'the ladder is 12px between controls, 16px of module padding, 20px between modules, 40px ' +
+  'between groups — two levels tying is what made three instruments read as one striped panel');
+check(G30, 'a module has exactly one internal seam, and it is the quiet one',
+  /\.kpm-shelf\.split \{ border-top: 0; \}/.test(themeCss) &&
+  /\.kpm-head \{ padding: var\(--s4\); border-bottom: 1px solid var\(--line\);/.test(themeCss),
+  'the head drew the seam in --line and the shelf drew a second one under it in the brighter ' +
+  '--line-2; inside an object a seam must be the faintest mark, never brighter than its edge');
 check(G30, 'the photo-storage setting still has exactly one writer',
   (settingsSrc.match(/setAppSettings\(prev => \(\{ \.\.\.prev, usePhotoStorage: newVal \}\)\)/g) || []).length === 1 &&
   (settingsSrc.match(/writePhotoStorage\(/g) || []).length === 2,

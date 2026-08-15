@@ -2073,7 +2073,24 @@ html.lite-mode .kpm-title-rule { animation: none; width: 100%; }
      .idle   — harmless. No stripe at all; the only module with none. */
 .kpm-mod { border: 1px solid var(--line-2); background: var(--panel);
   border-left: 3px solid var(--line-3); }
-.kpm-mod + .kpm-mod { border-top: 0; }          /* a rack, not a stack of cards */
+/* 🔴 THE RACK WAS TOO TIGHT TO READ, and the numbers say so — his report, 2026-08-15: *"i want u
+   to give more space between features because all of it looks to close together i thought it is
+   the same components"*. He was reading it correctly; the spacing was lying.
+   MEASURED, before this change:
+     between two modules ....... 0px + ONE 1px line (--line-2, #3E3A35)
+     inside one module, head→shelf  0px + TWO stacked lines (--line #26231F + --line-2 #3E3A35)
+   So the division INSIDE a module was 2px and brighter than the division BETWEEN two modules.
+   Proximity decides grouping before any border does, and at 0px on both sides there was nothing
+   left to say where one instrument ended — three modules read as one striped panel.
+   The rack idea survives; a rack still has visible rails between its units. What it needed was a
+   spacing scale that only ever increases outward:
+     12px  control → control, inside a shelf
+     16px  a module's own padding
+     20px  module → module          (this rule)
+     40px  group → group            (.kpm-band's margin-top)
+   ⚠️ Never let an inner number reach an outer one. The moment two levels tie, the eye picks the
+   wrong grouping and no amount of border weight argues it back. */
+.kpm-mod + .kpm-mod { margin-top: var(--s5); }
 .kpm-mod.live   { border-left-color: var(--accent-edge); }
 .kpm-mod.hazard { border-left-width: 5px; border-left-color: var(--danger); }
 .kpm-mod.idle   { border-left-color: transparent; }
@@ -2081,7 +2098,7 @@ html.lite-mode .kpm-title-rule { animation: none; width: 100%; }
 /* ---- HEAD: three lines of different WEIGHT, so title, state and description cannot be
    mistaken for each other. This is the part that was "too standardise": one 14px caption row
    carried all three jobs. */
-.kpm-head { padding: var(--s3); border-bottom: 1px solid var(--line); background: var(--inset); }
+.kpm-head { padding: var(--s4); border-bottom: 1px solid var(--line); background: var(--inset); }
 .kpm-mod.live .kpm-head   { background-image: var(--grad-panel); }
 /* the hazard head is its own material: a red-tinted well, a fine red hatch, and a solid danger
    rule where every other module has a hairline. No gold anywhere near it. */
@@ -2111,9 +2128,16 @@ html.lite-mode .kpm-title-rule { animation: none; width: 100%; }
 
 /* ---- SHELF: where the controls live. Its own ground and its own top rule, so "things you can
    press" is a different zone from "things you read". */
-.kpm-shelf { padding: var(--s3); display: flex; flex-direction: column; gap: var(--s3);
+.kpm-shelf { padding: var(--s4); display: flex; flex-direction: column; gap: var(--s3);
   background: var(--panel); }
-.kpm-shelf.split { border-top: 1px solid var(--line-2); }
+/* ⚠️ NO BORDER HERE ANY MORE, and that is the second half of the fix above. `.kpm-head` already
+   draws the seam with `border-bottom: 1px solid var(--line)`; this rule drew a SECOND one right
+   under it in the brighter `--line-2`. Two stacked lines made a module's own waist heavier than
+   the join between two modules, which is the inversion he saw. The head's quiet line is the
+   correct one: inside an object, a seam should be the faintest mark on the screen.
+   `.split` still earns its name — the shelf keeps its own ground (`--panel` against the head's
+   `--inset`), so "things you press" is still a different zone from "things you read". */
+.kpm-shelf.split { border-top: 0; }
 
 /* ---- RAIL: the older one-line caption. Kept for modules that carry no description. */
 .kpm-rail { display: flex; align-items: center; justify-content: space-between;
@@ -2197,8 +2221,11 @@ html.lite-mode .kpm-title-rule { animation: none; width: 100%; }
 
 /* ---- BAND: names what a group of modules is allowed to do. This is the fence
    that used to be a 1.02:1 tinted box nobody could see. */
+/* margin-top 20 → 40: a band opens a GROUP, so it must clear the previous group by more than the
+   20px that separates two modules inside one. At 20/20 the bands stopped fencing anything. The
+   band still fuses to its own first module (`border-bottom: 0`) — it is that group's lid. */
 .kpm-band { display: flex; align-items: center; gap: var(--s2);
-  padding: var(--s2) var(--s3); margin-top: var(--s5);
+  padding: var(--s3); margin-top: 40px;
   border: 1px solid var(--line-2); border-bottom: 0;
   /* the house texture, kept: the old panel's scanline was the one decoration in this tab that
      survived Lite Mode, and a printed caption strip is where it belongs */
