@@ -2358,18 +2358,27 @@ const handleGitHubMirror = async () => {
      ONCE per page load — that ref is load-bearing. Without it, locking the vault by hand would
      set isAdmin false, this effect would find the grace record still valid, and re-open the door
      he just closed. After that single attempt, isAdmin going false always clears the record. */
-  const graceRestoreTried = useRef(false);
+  /* 🔴 THE GRACE PERIOD RESTORED `isAdmin` BEHIND A GATE IT NEVER CLOSED, so it has never once
+     worked for him. His report, 2026-08-15: *"i just close the safari and it force me to login"*.
+     The system-owner branch of the auth handler sets `setShowAdminLogin(true)` on EVERY cold load
+     (App.jsx ~2155) and returns, and the app itself only renders under `!showAdminLogin`. So the
+     restore below was setting isAdmin true underneath a modal that only `handleAdminAuthSuccess`
+     knew how to close — the door was unlocked and the curtain was still down.
+     ⚠️ The gate has TWO pieces of state and both have to move together. Anything that opens the
+     vault must do what `handleAdminAuthSuccess` does: raise isAdmin AND drop showAdminLogin.
+
+     The one-shot ref is gone with it. It existed so that locking the vault by hand could not be
+     instantly undone by this effect — but that is the RECORD's job, so `handleAdminLogout` clears
+     it now and `readGrace` answers false straight after. A ref could not tell a deliberate lock
+     apart from the auth handler re-asserting `setIsAdmin(false)`, which it does on every load and
+     may do twice, and on that second assert the old code ran `clearGrace()` and destroyed a valid
+     record. Clearing on the deliberate lock is the only place that knows what it means. */
   useEffect(() => {
     const uid = user?.uid;
     if (!uid) return;
     if (isAdmin) { touchGrace(uid); return; }
-    if (!graceRestoreTried.current) {
-      graceRestoreTried.current = true;
-      if (readGrace(uid)) setIsAdmin(true);
-      return;
-    }
-    clearGrace();
-  }, [isAdmin, user]);
+    if (readGrace(uid)) { setIsAdmin(true); setShowAdminLogin(false); }
+  }, [isAdmin, user, showAdminLogin]);
 
   /* "should reset when i interact with the app" — the window measures from his last touch, not
      from the unlock. Throttled to one write per 20s: localStorage.setItem is synchronous, and
@@ -2398,7 +2407,11 @@ const handleGitHubMirror = async () => {
     triggerCapy("Access Granted. Welcome back, Boss.");
   };
 
+  /* clearGrace() here is what makes the restore effect safe to run on every render instead of
+     once per load: locking the vault by hand is the ONE `setIsAdmin(false)` that means "I want it
+     locked". The seven others are the auth handler describing a cold load, and must not count. */
   const handleAdminLogout = () => {
+    clearGrace();
     setIsAdmin(false);
     triggerCapy("Admin session ended.");
   };

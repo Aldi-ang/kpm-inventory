@@ -576,6 +576,24 @@ check(G14, 'no blue in ANY gate mode, not just the unlock', !/\bblue-\d/.test(ga
    sidebar, and the sidebar starts CLOSED below 1024px — so the way into the app was behind an
    unlabelled orange square in the corner. And the redirect fallback fired on exactly one error
    code while mobile browsers refuse popups under several. */
+/* 🔴 THE 5-MINUTE GRACE PERIOD HAD NO CHECK AT ALL, and it had never worked once. `vaultGrace.js`
+   has its own self-check, which passes — but it only covers the pure `graceIsValid` maths. The
+   defect was in the WIRING: the restore raised `isAdmin` and left `showAdminLogin` up, and the app
+   renders under `!showAdminLogin`, so he got the PIN screen anyway. A green self-check on the pure
+   half of a feature says nothing about the half that touches the screen. */
+check(G14, 'restoring the grace period opens the gate as well as unlocking the vault',
+  /if \(readGrace\(uid\)\) \{ setIsAdmin\(true\); setShowAdminLogin\(false\); \}/.test(appSrc) &&
+  /setShowAdminLogin\(true\);/.test(appSrc),
+  'the auth handler opens the master gate on every cold load and only handleAdminAuthSuccess ever ' +
+  'closed it, so a restored session sat behind a modal he still had to type his PIN into — ' +
+  'unlocking the door and leaving the curtain down reads to him as "the feature does not work"');
+check(G14, 'only a deliberate lock destroys the grace record',
+  /const handleAdminLogout = \(\) => \{\s*\n\s*clearGrace\(\);/.test(appSrc) &&
+  !/graceRestoreTried/.test(appSrc),
+  'the auth handler asserts setIsAdmin(false) on every cold load and can fire twice; a blanket ' +
+  'clearGrace() reachable from that state deleted a VALID record on the second assert. Locking ' +
+  'by hand is the one setIsAdmin(false) that means "keep it locked", so it is the one that clears');
+
 const G15 = '15. There is always a way in';
 const themeSrc = fs.readFileSync('src/components/BiohazardTheme.jsx', 'utf8');
 
