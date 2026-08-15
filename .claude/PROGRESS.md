@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-15 18:11 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
+**Updated: 2026-08-15 18:17 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -34,7 +34,7 @@ not invent a new look for a tab; copy the bands / module kinds / slot codes / re
 **LIGHT MODE IS NOW THE FRONT** — his stated order, and every screen converted above gets it
 mostly free (one token name resolves to both themes; no `dark:` variant was written).
 
-**488/488, `src/` clean.** The rack's spacing ladder was rebuilt on 2026-08-15 after his report
+**489/489, `src/` clean.** The rack's spacing ladder was rebuilt on 2026-08-15 after his report
 that modules read as one component — **12 / 16 / 20 / 40, and no inner number may reach an outer
 one.** Two checks in group 30 hold it. Read [[The KPM Control System]] and [[Off-Token Colour Migration Map]]
 in the A-Brain vault before touching a tab — the class list and the substitution table are there,
@@ -99,6 +99,24 @@ order:
 - ❓ **Offered, unanswered:** if the hold feels like enough on its own, the FIRST of the two wipe
   dialogs could go, leaving hold → FINAL WARNING. **Not done — removing a confirmation on a
   no-undo act is his explicit call, never a side effect of a nicer button.**
+- ✅ **TEST — THE SIDEBAR, and it is the one most likely to still be wrong (`8a3d94d`, 489/489).**
+  His report: *"when i hover the sidebar, and release it, the sidebar will remain open and i cant
+  press any button on the features panel"* + *"i want the features to be use able even when the
+  sidebar is open"* + *"smoothen the autoclose mechanic"*.
+  🔑 **CAUSE 1 — `:focus-within` matches ANY focus, and a MOUSE CLICK on a nav mark focuses it.**
+  The dock was pinned open by the focus its own click had put inside it. Now `:has(:focus-visible)`
+  — keyboard-only. **All five rules in that pair were switched together**; leaving one behind
+  draws the capsule open inside a panel that has already closed.
+  🔑 **CAUSE 2 — events belonged to the PANEL (351px), not the capsule (100px).** The other 251px
+  is label room, so an open dock laid an invisible sheet over a third of the workspace. Events are
+  on `.kpm-rail-pod` now **and only while open** — at rest the pod is still 100px with children at
+  `opacity: 0`, so unconditional events would make invisible buttons hittable.
+  Autoclose: open instant, close 220ms delay then 380ms.
+  ✅ **Also test the keyboard**: Tab into the dock — it must still open and stay open.
+- ✅ **TEST — THE CUSTOMER TIER PANEL, now one line per rank (`8a3d94d`).** *"too large, better
+  redesign it to make it smaller compact minimalistic"*. Badge · colour · name · kind on one
+  wrapping row; labels said once in the caption. Delete went back to the icon + hover-sweep (a
+  one-line row has no room for a word), so **group 25's count went UP for the first time, 13→14**.
 - ✅ **TEST — THE PERMISSION MATRIX (`8cb33c9`, 488/488, group 37).** *"then we can move on with
   the matrix"*. **Test BOTH views** — the phone rank-picker strip and the wide-screen grid,
   including **dragging a column header to reorder ranks**, rename, add, delete, and both authority
