@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-15 17:31 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
+**Updated: 2026-08-15 17:36 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -34,7 +34,7 @@ unconverted panel in the middle of it. It was left deliberately: it is its own c
 own ~80 off-token colours, and group 35's needle is **scoped to the tab's own markup** so it does
 not report that as a failure. **Convert it and Phase 6 closes.**
 
-**453/453, `src/` clean.** The rack's spacing ladder was rebuilt on 2026-08-15 after his report
+**465/465, `src/` clean.** The rack's spacing ladder was rebuilt on 2026-08-15 after his report
 that modules read as one component — **12 / 16 / 20 / 40, and no inner number may reach an outer
 one.** Two checks in group 30 hold it. Read [[The KPM Control System]] and [[Off-Token Colour Migration Map]]
 in the A-Brain vault before touching a tab — the class list and the substitution table are there,
@@ -99,6 +99,19 @@ order:
 - ❓ **Offered, unanswered:** if the hold feels like enough on its own, the FIRST of the two wipe
   dialogs could go, leaving hold → FINAL WARNING. **Not done — removing a confirmation on a
   no-undo act is his explicit call, never a side effect of a nicer button.**
+- ✅ **TEST — THE COMMAND CENTER HEADER AND TAB LIST (`6f29fda`, 465/465, group 36).** His two
+  screenshots. The open tab was `bg-blue-600` and Tier 1 was `bg-red-600`; the clearance line
+  pulsed red forever; Lock Terminal was red as well.
+  🔑 **THE PART WORTH REMEMBERING: the pill also carried `shadow-md`, and Lite Mode strips shadow
+  AND colour — so in Lite Mode the open tab and the closed tabs were IDENTICAL.** Selection is
+  material first now (raised surface + a rail). *Strip every colour and the open row must still be
+  the open row* — that is the contract that makes Lite Mode a performance mode and not a broken
+  one, and a check now states it.
+  Tier 1 keeps its distinction as a red EDGE (red is a rail, never a fill). `aria-current="page"`
+  drives both the CSS and the screen reader so they cannot drift. Lock Terminal is amber: locking
+  PROTECTS the app, and red there was teaching the eye that red means "important".
+  ⚠️ One check failed first and was right: `--danger-text` for the clearance line would have been
+  **invisible in light mode** — only the `-ink` tokens darken. Group 32 caught it.
 - ✅ **TEST — TIERS & LOGIC, the whole tab (`50d2ea9`, 453/453).** Converted, and **four things
   changed beyond colour** because the old markup broke rules he had already set — all four need
   his eyes: **(1)** the tier row's sideways scrollbar is gone, fields wrap instead (he has rejected
