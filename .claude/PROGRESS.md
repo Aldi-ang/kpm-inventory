@@ -275,19 +275,10 @@ It is read by the audit now. The clock also had no plate while its three neighbo
 **Artifact (his decision board):** https://claude.ai/code/artifact/c0af9545-8a29-40b9-a787-2f33d8835082
 **Prototype source:** `<scratchpad>/dock-options.html`. **All of this is now IN `src/`.**
 
-**The measured geometry, already ported to `theme.css`:**
-  · dock **100px** wide (was 118) · collapsed circle still **56px**, inset 22px each side
-  · cells **44 x 44 square**, `gap: 4px` on BOTH axes → pitch 48px in both directions
-  · `--cap` on the grid = `rows*44 + (rows-1)*4 + 8`, set from the row count. **This is
-    load-bearing**: 1fr rows stretch to fill a tall screen, which silently un-squares the cells
-    and undoes the whole change. Cap it or lose it.
-  · one column (<=10 tabs): pod stays **64px**, cells **56 square** — no horizontal neighbour to
-    be even with, so it matches the collapsed circle instead
-  · labels: col-1 `left: calc(200% + 8px)`, col-2 `calc(100% + 4px)`, foot `calc(100% + 22px)`,
-    one-column `calc(100% + 4px)`. Measured: col-1 clears col-2 by 26px, nothing clipped.
-  · Label B plate: rests at `translate(-22px,-50%)` opacity 0 → slides RIGHT to `0`. Enter
-    `opacity 300ms / transform 520ms var(--ease)`; exit stays `180/240ms`. Gap 22px = the travel.
-**✅ ALL PORTED AND COMMITTED.** The `overflow-hidden` bug below was the first thing fixed.
+**The measured geometry is IN `theme.css` and asserted by group 25** — every number that was
+listed here is now a check, so read the checks, not a copy of them. The three that bite if changed:
+`--cap` on the grid (drop it and 1fr rows stretch and un-square the cells), the label's 22px travel
+which must equal its 22px gap, and `.kpm-topbar`'s 112px left margin which tracks the pod's width.
 
 **Where the shell's design lives — check here before grepping:**
 
