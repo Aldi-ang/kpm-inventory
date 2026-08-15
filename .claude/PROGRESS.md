@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-15 17:36 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
+**Updated: 2026-08-15 18:11 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -26,15 +26,15 @@ not invent a new look for a tab; copy the bands / module kinds / slot codes / re
 | **Security & Data** | **0** | ✅ **DONE 2026-08-15, group 33, 17 checks** |
 | **General & Brand** | **0** | ✅ **DONE 2026-08-15, group 34, 18 checks** |
 | **Tiers & Logic** | **0** | ✅ **DONE 2026-08-15, group 35, 21 checks, `50d2ea9`** |
-| `PermissionMatrixEditor` | ~80 | ▶ **the last slice** — see below |
+| **`PermissionMatrixEditor`** | **0** | ✅ **DONE 2026-08-15, group 37, 19 checks, `8cb33c9`** |
+| **Command Center chrome** | **0** | ✅ **DONE 2026-08-15, group 36, 12 checks, `6f29fda`** |
 
-⚠️ **PHASE 6 IS ONE SLICE FROM DONE.** `PermissionMatrixEditor` is defined at ~line 1345 of
-`SettingsView.jsx` and **renders inside the Tiers & Logic tab**, so that tab still has an
-unconverted panel in the middle of it. It was left deliberately: it is its own component with its
-own ~80 off-token colours, and group 35's needle is **scoped to the tab's own markup** so it does
-not report that as a failure. **Convert it and Phase 6 closes.**
+## 🎉 PHASE 6 IS COMPLETE. `SettingsView.jsx` IS FULLY ON THE CONTROL SYSTEM.
 
-**465/465, `src/` clean.** The rack's spacing ladder was rebuilt on 2026-08-15 after his report
+**LIGHT MODE IS NOW THE FRONT** — his stated order, and every screen converted above gets it
+mostly free (one token name resolves to both themes; no `dark:` variant was written).
+
+**488/488, `src/` clean.** The rack's spacing ladder was rebuilt on 2026-08-15 after his report
 that modules read as one component — **12 / 16 / 20 / 40, and no inner number may reach an outer
 one.** Two checks in group 30 hold it. Read [[The KPM Control System]] and [[Off-Token Colour Migration Map]]
 in the A-Brain vault before touching a tab — the class list and the substitution table are there,
@@ -99,6 +99,21 @@ order:
 - ❓ **Offered, unanswered:** if the hold feels like enough on its own, the FIRST of the two wipe
   dialogs could go, leaving hold → FINAL WARNING. **Not done — removing a confirmation on a
   no-undo act is his explicit call, never a side effect of a nicer button.**
+- ✅ **TEST — THE PERMISSION MATRIX (`8cb33c9`, 488/488, group 37).** *"then we can move on with
+  the matrix"*. **Test BOTH views** — the phone rank-picker strip and the wide-screen grid,
+  including **dragging a column header to reorder ranks**, rename, add, delete, and both authority
+  dropdowns. Nothing here has been pressed.
+  🔑 **THE REAL BUG WAS NOT COLOUR: every ALLOWED permission was emerald with a `drop-shadow`
+  glow, and Lite Mode strips shadow AND colour — so in Lite Mode allowed and blocked were the
+  same glyph in the same colour.** An authority grid that cannot be read. ON is an inset well
+  with an amber mark now: material first.
+  Rank names came from a raw Tailwind class stored as **data**, which is how purple/yellow/cyan/
+  emerald labels were on screen at once **without ever appearing in a className** — invisible to
+  every palette check. Field removed with its render.
+  ⚠️ **TWO NEEDLE LESSONS, both from this commit:** `type="button"` written BEFORE `data-kpm-del`
+  silently unmarks a delete button (group 25's needle anchors right after the tag name); and
+  **do NOT wrap that count in `strip()`** — strip's comment pair swallows real code in
+  `CustomerManager.jsx` and hides a genuinely lost button. Both are commented in place.
 - ✅ **TEST — THE COMMAND CENTER HEADER AND TAB LIST (`6f29fda`, 465/465, group 36).** His two
   screenshots. The open tab was `bg-blue-600` and Tier 1 was `bg-red-600`; the clearance line
   pulsed red forever; Lock Terminal was red as well.
