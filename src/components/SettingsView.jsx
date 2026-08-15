@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Lock, ShieldCheck, ShieldAlert, UploadCloud, Copy, Package, User, Settings, Trash2, ScanFace, Plus, Tag, Download, Upload, Image as ImageIcon, MessageSquare, Edit, Save, X, Music, TrendingUp, ChevronLeft, ChevronRight, LayoutDashboard, ToggleLeft, ToggleRight, BarChart2, Store } from 'lucide-react';
+import { Lock, ShieldCheck, ShieldAlert, UploadCloud, Copy, Package, User, Settings, Trash2, ScanFace, Plus, Tag, Download, Upload, Image as ImageIcon, Edit, Save, X, Music, TrendingUp, ChevronLeft, ChevronRight, LayoutDashboard, ToggleLeft, ToggleRight, BarChart2, Store } from 'lucide-react';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 
 import LandlordDashboard from './LandlordDashboard';
@@ -195,152 +195,227 @@ export default function SettingsView({
                   {/* WORKSPACE: GENERAL & BRAND */}
                   {/* ---------------------------------------------------- */}
                   {activeTab === 'general' && (
-                      <div className="animate-fade-in space-y-6">
-                          
-                          {/* 🚀 LITE MODE (POTATO ENGINE) TOGGLE */}
-                          <div className={`p-6 rounded-2xl shadow-sm border transition-all duration-300 ${isLiteMode ? 'bg-emerald-900/20 border-emerald-500/50' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700'}`}>
-                              <div className="flex items-center justify-between">
-                                  <div>
-                                      <h3 className={`font-bold text-lg flex items-center gap-2 ${isLiteMode ? 'text-emerald-500' : 'dark:text-white'}`}>
-                                          ⚡ Cello Lite Mode
-                                      </h3>
-                                      <p className="text-[10px] text-slate-400 uppercase tracking-widest mt-1">
-                                          Disables blur, animations, and heavy GPU effects to save battery on low-end phones.
-                                      </p>
+                      /* THE RACK, THIRD TAB. Conversion, not redesign — his instruction: *"we have
+                         the theme set yet, other will just follow"*. Grouped by consequence like
+                         Security: what only this device sees, then what the whole company sees. */
+                      <div className="animate-fade-in">
+
+                          <div className="kpm-band">This device · nothing here leaves the phone</div>
+
+                          {/* ⚠️ ONE WRITER (`writeLiteMode`), and both positions drawn. The old
+                              toggle asked him to remember which way "on" pointed on a setting whose
+                              whole job is to be found by someone whose phone is struggling. */}
+                          <div className="kpm-mod bench">
+                              <div className="kpm-head">
+                                  <span className="slot">Device · 01</span>
+                                  <div className="line">
+                                      <h3>Graphics</h3>
+                                      <span className={`kpm-read ${isLiteMode ? 'on' : ''}`}>{isLiteMode ? 'Lite' : 'Full'}</span>
                                   </div>
-                                  <button 
-                                      onClick={() => {
-                                          setIsLiteMode(!isLiteMode);
-                                          triggerCapy(!isLiteMode ? "Lite Mode Enabled! Battery saving active. ⚡" : "Lite Mode Disabled. Full graphics restored!");
-                                      }}
-                                      className={`transition-all duration-300 ${isLiteMode ? 'text-emerald-500 drop-shadow-[0_0_8px_rgba(16,185,129,0.8)]' : 'text-slate-400 hover:text-slate-300'}`}
-                                  >
-                                      {isLiteMode ? <ToggleRight size={40} /> : <ToggleLeft size={40} />}
-                                  </button>
+                                  <p className="kpm-desc">
+                                      <b>Lite</b> drops blur, animation and the heavy effects so a cheap phone stays
+                                      quick and the battery lasts. Nothing is hidden and no data changes — it is only
+                                      how this one device draws the app.
+                                  </p>
+                              </div>
+                              <div className="kpm-shelf split">
+                                  <div className="kpm-switch" role="group" aria-label="Graphics mode">
+                                      <button type="button" aria-pressed={!isLiteMode}
+                                          onClick={() => writeLiteMode(false, { setIsLiteMode, triggerCapy })}>Full</button>
+                                      <button type="button" aria-pressed={!!isLiteMode}
+                                          onClick={() => writeLiteMode(true, { setIsLiteMode, triggerCapy })}>Lite</button>
+                                  </div>
                               </div>
                           </div>
 
-                          {/* COMPANY IDENTITY */}
-                          <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 transition-all duration-300">
-                              <h3 className="font-bold text-lg mb-4 dark:text-white">Corporate Identity & Invoice Data</h3>
-                              <div className="space-y-3">
-                                  <div>
-                                      <label className="text-xs font-bold text-slate-400 uppercase">Company Name</label>
-                                      <input className="w-full p-2 border rounded dark:bg-slate-900 dark:border-slate-600 dark:text-white" value={editCompanyProfile.name} onChange={e => setEditCompanyProfile({...editCompanyProfile, name: e.target.value})}/>
-                                  </div>
-                                  <div>
-                                      <label className="text-xs font-bold text-slate-400 uppercase">Official Address (Used on Invoice Header)</label>
-                                      <input className="w-full p-2 border rounded dark:bg-slate-900 dark:border-slate-600 dark:text-white" value={editCompanyProfile.address} onChange={e => setEditCompanyProfile({...editCompanyProfile, address: e.target.value})} placeholder="e.g. Jl. Jendral Sudirman No.123, Jakarta"/>
-                                  </div>
-                                  <div>
-                                      <label className="text-xs font-bold text-slate-400 uppercase">Contact Number</label>
-                                      <input className="w-full p-2 border rounded dark:bg-slate-900 dark:border-slate-600 dark:text-white" value={editCompanyProfile.phone} onChange={e => setEditCompanyProfile({...editCompanyProfile, phone: e.target.value})} placeholder="e.g. (021) 1234567"/>
-                                  </div>
+                          <div className="kpm-band">Company · printed on every invoice you hand out</div>
 
-                                  <div className="pt-4 border-t dark:border-slate-700">
-                                      <label className="text-xs font-bold text-emerald-500 uppercase">Admin/Boss Display Name (For Signature)</label>
-                                      <input 
-                                          className="w-full p-2 border rounded dark:bg-slate-900 dark:border-emerald-800/50 dark:text-white focus:border-emerald-500 outline-none transition-colors" 
-                                          value={appSettings.adminDisplayName || ''} 
+                          <div className="kpm-mod live">
+                              <div className="kpm-head">
+                                  <span className="slot">Company · 01</span>
+                                  <div className="line">
+                                      <h3>Letterhead</h3>
+                                      <span className="kpm-read">Save to apply</span>
+                                  </div>
+                                  <p className="kpm-desc">
+                                      The name, address and number printed at the top of every nota. These three wait
+                                      for <b>Save</b>; the two below save the moment you stop typing.
+                                  </p>
+                              </div>
+                              <div className="kpm-shelf split">
+                                  <label className="kpm-field">
+                                      <span>Company name</span>
+                                      <input value={editCompanyProfile.name} onChange={e => setEditCompanyProfile({...editCompanyProfile, name: e.target.value})}/>
+                                  </label>
+                                  <label className="kpm-field">
+                                      <span>Official address</span>
+                                      <input value={editCompanyProfile.address} onChange={e => setEditCompanyProfile({...editCompanyProfile, address: e.target.value})} placeholder="Jl. Jendral Sudirman No.123, Jakarta"/>
+                                  </label>
+                                  <label className="kpm-field">
+                                      <span>Contact number</span>
+                                      <input value={editCompanyProfile.phone} onChange={e => setEditCompanyProfile({...editCompanyProfile, phone: e.target.value})} placeholder="(021) 1234567"/>
+                                  </label>
+                                  <div className="kpm-acts">
+                                      <button type="button" className="kpm-btn key" onClick={handleSaveCompanyProfile}>Save letterhead</button>
+                                  </div>
+                              </div>
+                          </div>
+
+                          <div className="kpm-mod live">
+                              <div className="kpm-head">
+                                  <span className="slot">Company · 02</span>
+                                  <div className="line">
+                                      <h3>Signature &amp; bank</h3>
+                                      <span className="kpm-read on">Saves as you type</span>
+                                  </div>
+                                  <p className="kpm-desc">
+                                      Who the nota is signed by, and where customers send the money. Both are written
+                                      the moment you change them — there is no Save button and none is needed.
+                                  </p>
+                              </div>
+                              <div className="kpm-shelf split">
+                                  <label className="kpm-field">
+                                      <span>Signed by</span>
+                                      <input value={appSettings.adminDisplayName || ''}
                                           onChange={(e) => {
                                               const val = e.target.value;
                                               setAppSettings(prev => ({...prev, adminDisplayName: val}));
                                               if (user) setDoc(doc(db, `artifacts/${appId}/users/${user.uid}/settings/general`), { adminDisplayName: val }, {merge: true});
                                           }}
-                                          placeholder="e.g. Abednego YB"
-                                      />
-                                  </div>
-                                  <div>
-                                      <label className="text-xs font-bold text-blue-500 uppercase">Bank Details (Invoice Footer)</label>
-                                      <textarea 
-                                          className="w-full p-2 border rounded dark:bg-slate-900 dark:border-blue-800/50 dark:text-white focus:border-blue-500 outline-none transition-colors resize-none h-20" 
-                                          value={appSettings.bankDetails || ''} 
+                                          placeholder="Abednego YB"/>
+                                  </label>
+                                  <label className="kpm-field">
+                                      <span>Bank details · invoice footer</span>
+                                      <textarea rows={3} value={appSettings.bankDetails || ''}
                                           onChange={(e) => {
                                               const val = e.target.value;
                                               setAppSettings(prev => ({...prev, bankDetails: val}));
                                               if (user) setDoc(doc(db, `artifacts/${appId}/users/${user.uid}/settings/general`), { bankDetails: val }, {merge: true});
                                           }}
-                                          placeholder={"BCA 0301138379\nA/N ABEDNEGO YB"}
-                                      />
-                                  </div>
-
-                                  {/* 🚀 TIER 1 ONLY: PITA CUKAI FINE PRICING */}
-                                  {isSystemOwner && (
-                                      <div className="pt-4 border-t dark:border-slate-700">
-                                          <label className="text-xs font-bold text-red-500 uppercase flex items-center gap-1"><ShieldAlert size={14}/> Lost Pita Cukai Fine (Rp)</label>
-                                          <div className="flex items-center gap-2 mt-1">
-                                              <span className="text-slate-400 font-black">Rp</span>
-                                              <input 
-                                                  type="number" 
-                                                  min="0"
-                                                  className="w-full p-2 border rounded dark:bg-slate-900 dark:border-red-800/50 dark:text-white focus:border-red-500 outline-none transition-colors font-mono" 
-                                                  value={appSettings?.cukaiFinePrice || 5000} 
-                                                  onChange={(e) => {
-                                                      const val = parseInt(e.target.value) || 0;
-                                                      setAppSettings(prev => ({...prev, cukaiFinePrice: val}));
-                                                      if (user) setDoc(doc(db, `artifacts/${appId}/users/${user.uid}/settings/general`), { cukaiFinePrice: val }, {merge: true});
-                                                  }}
-                                                  placeholder="e.g. 5000"
-                                              />
-                                          </div>
-                                          <p className="text-[11px] text-slate-400 mt-1 uppercase tracking-widest">Amount charged to salesmen per tax stamp lost.</p>
-                                      </div>
-                                  )}
-
-                                  <button onClick={handleSaveCompanyProfile} className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-xl font-bold transition-colors w-full mt-4 shadow-md">Save Corporate Profile</button>
+                                          placeholder={"BCA 0301138379\nA/N ABEDNEGO YB"}/>
+                                  </label>
                               </div>
                           </div>
 
-                          {/* MASCOT SETTINGS */}
-                          <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 transition-all duration-300">
-                              <h3 className="font-bold text-lg flex items-center gap-2 dark:text-white mb-4"><MessageSquare size={20}/> Mascot Settings</h3>
-                              <div className="mb-6 bg-slate-50 dark:bg-slate-900 p-3 rounded-xl border dark:border-slate-700">
-                                  <div className="flex justify-between mb-2"><label className="text-xs font-bold text-slate-400 uppercase">Mascot Size</label><span className="text-xs text-orange-500 font-bold">{appSettings.mascotScale || 1}x</span></div>
-                                  <input type="range" min="0.5" max="2.0" step="0.1" value={appSettings.mascotScale || 1} onChange={(e) => { const scale = parseFloat(e.target.value); setAppSettings(prev => ({ ...prev, mascotScale: scale })); setDoc(doc(db, `artifacts/${appId}/users/${user.uid}/settings/general`), { mascotScale: scale }, { merge: true }); }} className="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-full appearance-none cursor-pointer accent-orange-500"/>
-                              </div>
-                              <div className="mb-4">
-                                  <label className="text-xs font-bold text-slate-400 mb-1 block">Add New Dialogue Line</label>
-                                  <div className="flex gap-2">
-                                      <input className="flex-1 p-2 border rounded dark:bg-slate-900 dark:border-slate-600 dark:text-white" placeholder="Type a message..." value={newMascotMessage} onChange={(e) => setNewMascotMessage(e.target.value)}/>
-                                      <button onClick={handleAddMascotMessage} className="bg-emerald-500 text-white px-4 rounded font-bold">Add</button>
+                          {/* 🚀 TIER 1 ONLY. This one charges a salesman real money, so it gets its
+                              own module and says so, instead of hiding under a divider inside the
+                              letterhead card where it read as one more invoice field. */}
+                          {isSystemOwner && (
+                              <div className="kpm-mod live">
+                                  <div className="kpm-head">
+                                      <span className="slot">Company · 03</span>
+                                      <div className="line">
+                                          <h3>Lost pita cukai fine</h3>
+                                          <span className="kpm-read on">Charges salesmen</span>
+                                      </div>
+                                      <p className="kpm-desc">
+                                          What a salesman is charged for every tax stamp that goes missing. This comes
+                                          out of a real person's pay, so it is Tier 1 only and it saves immediately.
+                                      </p>
+                                  </div>
+                                  <div className="kpm-shelf split">
+                                      <label className="kpm-field">
+                                          <span>Rupiah per stamp</span>
+                                          <input type="number" min="0" value={appSettings?.cukaiFinePrice || 5000}
+                                              onChange={(e) => {
+                                                  const val = parseInt(e.target.value) || 0;
+                                                  setAppSettings(prev => ({...prev, cukaiFinePrice: val}));
+                                                  if (user) setDoc(doc(db, `artifacts/${appId}/users/${user.uid}/settings/general`), { cukaiFinePrice: val }, {merge: true});
+                                              }}
+                                              placeholder="5000"/>
+                                      </label>
                                   </div>
                               </div>
-                              <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                          )}
+
+                          <div className="kpm-band">Mascot · the face and the lines it says</div>
+
+                          <div className="kpm-mod live">
+                              <div className="kpm-head">
+                                  <span className="slot">Mascot · 01</span>
+                                  <div className="line">
+                                      <h3>Size</h3>
+                                      <span className="kpm-read on">{appSettings.mascotScale || 1}&times;</span>
+                                  </div>
+                                  <p className="kpm-desc">How big the mascot is drawn on screen. Saves as you drag.</p>
+                              </div>
+                              <div className="kpm-shelf split">
+                                  <label className="kpm-field">
+                                      <span>Scale · 0.5&times; to 2&times;</span>
+                                      <input type="range" min="0.5" max="2.0" step="0.1" className="kpm-slider"
+                                          value={appSettings.mascotScale || 1}
+                                          onChange={(e) => { const scale = parseFloat(e.target.value); setAppSettings(prev => ({ ...prev, mascotScale: scale })); setDoc(doc(db, `artifacts/${appId}/users/${user.uid}/settings/general`), { mascotScale: scale }, { merge: true }); }}/>
+                                  </label>
+                              </div>
+                          </div>
+
+                          {/* ⚠️ the delete stays an ICON with `data-kpm-del` — it sits in a cramped
+                              row, not a record's action strip, so the expanding control is what
+                              gives it a label. A worded button here would not fit at 375px. */}
+                          <div className="kpm-mod live">
+                              <div className="kpm-head">
+                                  <span className="slot">Mascot · 02</span>
+                                  <div className="line">
+                                      <h3>Dialogue</h3>
+                                      <span className={`kpm-read ${activeMessages.length ? 'on' : ''}`}>{activeMessages.length} line{activeMessages.length === 1 ? '' : 's'}</span>
+                                  </div>
+                                  <p className="kpm-desc">What the mascot says. One is picked at random each time it speaks.</p>
+                              </div>
+                              <div className="kpm-shelf split">
+                                  <label className="kpm-field">
+                                      <span>New line</span>
+                                      <input placeholder="Type a message…" value={newMascotMessage}
+                                          onChange={(e) => setNewMascotMessage(e.target.value)}
+                                          onKeyDown={(e) => e.key === 'Enter' && handleAddMascotMessage()}/>
+                                  </label>
+                                  <div className="kpm-acts">
+                                      <button type="button" className="kpm-btn key" onClick={handleAddMascotMessage}>Add line</button>
+                                  </div>
                                   {activeMessages.map((msg, idx) => (
-                                      <div key={idx} className="flex justify-between items-center bg-slate-50 dark:bg-slate-900 p-2 rounded border dark:border-slate-700">
+                                      <div key={idx} className="kpm-rec">
                                           {editingMsgIndex === idx ? (
-                                              <div className="flex gap-2 w-full animate-fade-in">
-                                                  <input autoFocus className="flex-1 p-1 text-sm border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white" value={editMsgText} onChange={(e) => setEditMsgText(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSaveEditedMessage(idx)}/>
-                                                  <button onClick={() => handleSaveEditedMessage(idx)} className="text-emerald-500 hover:text-emerald-600"><Save size={16}/></button>
-                                                  <button onClick={() => setEditingMsgIndex(-1)} className="text-slate-400 hover:text-slate-400"><X size={16}/></button>
+                                              <div className="who">
+                                                  <input autoFocus className="kpm-inline" value={editMsgText}
+                                                      onChange={(e) => setEditMsgText(e.target.value)}
+                                                      onKeyDown={(e) => e.key === 'Enter' && handleSaveEditedMessage(idx)}/>
+                                                  <div className="kpm-acts">
+                                                      <button type="button" className="kpm-btn" onClick={() => setEditingMsgIndex(-1)}>Cancel</button>
+                                                      <button type="button" className="kpm-btn key" onClick={() => handleSaveEditedMessage(idx)}>Save</button>
+                                                  </div>
                                               </div>
                                           ) : (
-                                              <>
-                                                  <span className="text-sm dark:text-slate-300 italic truncate mr-2">"{msg}"</span>
-                                                  <div className="flex gap-2 shrink-0">
-                                                      <button onClick={() => { setEditingMsgIndex(idx); setEditMsgText(msg); }} className="text-slate-400 hover:text-blue-500"><Edit size={14}/></button>
-                                                      <button data-kpm-del data-label="Delete" onClick={() => handleDeleteMascotMessage(msg)} className="text-slate-400 hover:text-red-500"><Trash2 size={14}/></button>
-                                                  </div>
-                                              </>
+                                              <div className="who kpm-line">
+                                                  <code>&ldquo;{msg}&rdquo;</code>
+                                                  <span className="kpm-rowacts">
+                                                      <button type="button" title="Edit this line" onClick={() => { setEditingMsgIndex(idx); setEditMsgText(msg); }}><Edit size={14}/></button>
+                                                      <button data-kpm-del data-label="Delete" onClick={() => handleDeleteMascotMessage(msg)}><Trash2 size={14}/></button>
+                                                  </span>
+                                              </div>
                                           )}
                                       </div>
                                   ))}
                               </div>
                           </div>
 
-                          {/* PROFILE PICTURE */}
-                          <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 transition-all duration-300">
-                              <h3 className="font-bold text-lg mb-4 dark:text-white"><ImageIcon size={20}/> Mascot Profile</h3>
-                              <div className="flex items-start gap-6">
-                                  <div className="flex flex-col items-center">
-                                      <img src={appSettings?.mascotImage || "/mr capy.png"} className="w-24 h-24 rounded-full border-4 border-orange-500 object-cover bg-slate-100" onError={(e) => {e.target.onerror = null; e.target.src="https://api.dicebear.com/7.x/avataaars/svg?seed=Capy"}}/>
-                                      <span className="text-xs text-slate-400 mt-2">Current</span>
+                          <div className="kpm-mod live">
+                              <div className="kpm-head">
+                                  <span className="slot">Mascot · 03</span>
+                                  <div className="line">
+                                      <h3>Picture</h3>
+                                      <span className={`kpm-read ${appSettings?.mascotImage ? 'on' : ''}`}>{appSettings?.mascotImage ? 'Custom' : 'Default'}</span>
                                   </div>
-                                  <div className="flex-1">
-                                      <label className="bg-orange-100 dark:bg-slate-700 text-orange-600 dark:text-orange-300 px-4 py-2 rounded-lg cursor-pointer hover:bg-orange-200 transition-colors inline-flex items-center gap-2 font-medium">
-                                          <Upload size={16} /> Select & Crop
-                                          <input type="file" accept="image/*" onChange={handleMascotSelect} className="hidden" />
-                                      </label>
+                                  <p className="kpm-desc">You crop it after choosing, so it does not matter how the photo is framed.</p>
+                              </div>
+                              <div className="kpm-shelf split">
+                                  <div className="kpm-portrait">
+                                      <img alt="Current mascot" src={appSettings?.mascotImage || "/mr capy.png"}
+                                          onError={(e) => {e.target.onerror = null; e.target.src="https://api.dicebear.com/7.x/avataaars/svg?seed=Capy"}}/>
+                                      <div className="kpm-acts">
+                                          <label className="kpm-btn">
+                                              Choose &amp; crop
+                                              <input type="file" accept="image/*" onChange={handleMascotSelect} className="hidden" />
+                                          </label>
+                                      </div>
                                   </div>
                               </div>
                           </div>
@@ -1077,6 +1152,16 @@ const writePhotoStorage = (newVal, { db, appId, user, setAppSettings, triggerCap
     triggerCapy(newVal
         ? "Photos will upload to Firebase Storage. The Blaze plan must be active. ☁️"
         : "Photos will save straight into the database. Works on any plan.");
+};
+
+/* ONE WRITER for the graphics mode. Device-local, so there is no Firestore write here — but the
+   two-position switch still needs a single function behind both buttons for the same reason as the
+   others: two copies of a write drift, and the one that drifts is always the one nobody tests. */
+const writeLiteMode = (newVal, { setIsLiteMode, triggerCapy }) => {
+    setIsLiteMode(newVal);
+    triggerCapy(newVal
+        ? "Lite mode on. Blur and animation off, battery saved. ⚡"
+        : "Full graphics restored.");
 };
 
 /* ONE WRITER for the rank source, same shape as writePhotoStorage above and for the same reason:

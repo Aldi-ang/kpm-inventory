@@ -2290,6 +2290,33 @@ html.lite-mode .kpm-title-rule { animation: none; width: 100%; }
 .kpm-rec .acts > .kpm-btn { flex: 1; border: 0; border-left: 1px solid var(--line);
   min-height: 44px; font-size: 11px; letter-spacing: .12em; }
 .kpm-rec .acts > .kpm-btn:first-child { border-left: 0; }
+/* ---- four small parts the General tab needed. Each is here rather than as a Tailwind cluster
+   because a class Tailwind never saw in source is not emitted, and a typo then paints nothing at
+   all — which looks exactly like a transparent panel and reads as "the redesign broke it". */
+/* a row inside .who: the line on the left, its two icon controls on the right */
+.kpm-rec .who.kpm-line { flex-direction: row; align-items: center; justify-content: space-between;
+  gap: var(--s3); }
+.kpm-rec .who.kpm-line > code { font-style: italic; overflow: hidden; text-overflow: ellipsis;
+  white-space: nowrap; }
+.kpm-rowacts { display: flex; gap: var(--s1); flex: none; }
+.kpm-rowacts > button { display: inline-flex; align-items: center; justify-content: center;
+  min-width: 44px; min-height: 44px; border: 0; background: none; cursor: pointer;
+  color: var(--ink-dim); transition: color 120ms ease-out; }
+@media (hover: hover) and (pointer: fine) { .kpm-rowacts > button:hover { color: var(--ink); } }
+.kpm-rowacts > button:focus-visible { outline: 2px solid var(--accent-edge); outline-offset: -4px; }
+/* the edit field inside a record, and the slider — both borrow the field's ink */
+.kpm-inline { min-height: 44px; padding: 0 var(--s3); border: 1px solid var(--line-2);
+  background: var(--inset); color: var(--ink); font-family: var(--font-mono); font-size: 12px; }
+.kpm-inline:focus { outline: none; border-color: var(--accent-edge); }
+/* ⚠️ a range input takes NONE of .kpm-field's box — it needs its own track, and `accent-color` is
+   the only property that recolours the thumb without rebuilding the control per browser. */
+.kpm-field > input.kpm-slider { min-height: 44px; padding: 0; border: 0; background: none;
+  accent-color: var(--accent-edge); cursor: pointer; width: 100%; }
+/* the portrait: the picture and its one act, side by side and wrapping on a phone */
+.kpm-portrait { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s4); }
+.kpm-portrait > img { width: 96px; height: 96px; border-radius: 50%; object-fit: cover;
+  border: 2px solid var(--accent-edge); background: var(--inset); flex: none; }
+.kpm-portrait > .kpm-acts { flex: 1 1 auto; }
 
 /* ---- BAND: names what a group of modules is allowed to do. This is the fence
    that used to be a 1.02:1 tinted box nobody could see. */

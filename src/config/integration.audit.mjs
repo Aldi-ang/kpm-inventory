@@ -2034,8 +2034,13 @@ check(G32, 'the light theme darkens all three',
   /:root\.light,[\s\S]*?--accent-ink:\s*#6B4A05[\s\S]*?--accent-edge:\s*#7A5A12[\s\S]*?--danger-ink:\s*#611A14/.test(themeCss),
   'if these stay at the dark values the light theme is back to 1,19:1 and he cannot read the ' +
   'button that provisions accounts');
+/* ⚠️ ANCHORED ON A PROPERTY BOUNDARY, 2026-08-15. The bare `color: var(--gold)` needle also matched
+   `accent-color: var(--gold)` on a range input — a substring, not a text colour, and a slider thumb
+   is a fill. It failed on correct code. A needle that can match INSIDE a longer property name will
+   eventually do exactly that; require the start of a declaration. */
 check(G32, 'the control system spends the readable tokens, never --gold or --danger-text as text',
-  !/color: var\(--gold\)/.test(systemBlock) && !/color: var\(--danger-text\)/.test(systemBlock),
+  !/(?:^|[;{]\s*)color: var\(--gold\)/m.test(systemBlock) &&
+  !/(?:^|[;{]\s*)color: var\(--danger-text\)/m.test(systemBlock),
   'this is the exact line that shipped broken: .kpm-btn.key { color: var(--gold) }');
 
 /* ═══ PHASE 6 · SECURITY & DATA JOINS THE CONTROL SYSTEM (2026-08-15) ═══════
@@ -2130,6 +2135,54 @@ check(G33, 'the three backup states are still readable without colour',
   /isRecoverySecure \? 'Secure' : 'Required'/.test(sec),
   'they were three pulsing tiles that said SECURE or REQUIRED in green and red; Lite Mode strips ' +
   'the colour and they became three identical boxes, so the word has to carry the state');
+
+/* ═══ PHASE 6 · GENERAL & BRAND, SLICE 2 (2026-08-15) ══════════════════════ */
+const G34 = '34. General & Brand is the same app as the Architect terminal';
+const genStart = settingsSrc.indexOf("activeTab === 'general'");
+const genEnd = settingsSrc.indexOf('WORKSPACE: TIERS & LOGIC');
+const gen = genStart > 0 && genEnd > genStart ? settingsSrc.slice(genStart, genEnd) : '';
+
+check(G34, 'the general block was found at all', gen.length > 1000,
+  'the markers this group slices between were renamed — every check below would pass on ""');
+check(G34, 'the general tab carries no blue, no green, no slate', !offToken.test(gen),
+  'the emerald Lite Mode card, the blue bank-details field and the slate inputs are the ones ' +
+  'this replaced; 67 off-token colours to zero');
+check(G34, 'every module declares its kind and prints its slot',
+  (gen.match(/kpm-mod (bench|live|hazard)/g) || []).length >= 6 &&
+  (gen.match(/<span className="slot">/g) || []).length >= 6,
+  'a module with no kind is a generic card again');
+/* ⚠️ ONE WRITER, THIRD TIME. Lite mode is device-local so there is no Firestore write to drift —
+   but two copies of any write drift, and the copy that drifts is the one nobody tests. */
+check(G34, 'graphics mode has exactly one writer and both positions drawn',
+  (gen.match(/writeLiteMode\(/g) || []).length === 2 &&
+  /^const writeLiteMode = /m.test(settingsSrc) &&
+  !/setIsLiteMode\(!isLiteMode\)/.test(gen),
+  'the old control was a single toggle that asked him to remember which way "on" pointed, on the ' +
+  'one setting whose whole audience is someone whose phone is already struggling');
+/* 🔑 THE FINE IS ITS OWN MODULE ON PURPOSE. It came out of a real salesman's pay while sitting
+   under a divider inside the letterhead card, where it read as one more invoice field. */
+check(G34, 'the pita cukai fine is its own Tier-1 module, not an invoice field',
+  /<h3>Lost pita cukai fine<\/h3>/.test(gen) &&
+  /\{isSystemOwner && \(\s*\n\s*<div className="kpm-mod live">/.test(gen),
+  'a control that charges a person money must not look like a field that prints an address');
+for (const [what, needle] of [
+  ['the letterhead save', 'onClick={handleSaveCompanyProfile}'],
+  ['the signature name', 'adminDisplayName: val'],
+  ['the bank details', 'bankDetails: val'],
+  ['the cukai fine', 'cukaiFinePrice: val'],
+  ['the mascot scale', 'mascotScale: scale'],
+  ['adding a line', 'onClick={handleAddMascotMessage}'],
+  ['editing a line', 'handleSaveEditedMessage(idx)'],
+  ['deleting a line', 'handleDeleteMascotMessage(msg)'],
+  ['the mascot picture', 'onChange={handleMascotSelect}'],
+]) check(G34, `${what} is still mounted in the tab`, gen.includes(needle),
+  'a control that vanished in a restyle is silent — nothing errors, the button is simply gone');
+/* the four small parts this tab needed exist in CSS. Tailwind only emits a class it saw in source,
+   and a class that exists in neither paints nothing — which looks like a transparent panel. */
+for (const cls of ['.kpm-rowacts', '.kpm-inline', '.kpm-slider', '.kpm-portrait'])
+  check(G34, `${cls} is defined in theme.css, not invented in the JSX`,
+    themeCss.includes(cls + ' ') || themeCss.includes(cls + ' {') || themeCss.includes(cls + '{'),
+    'an undefined class is the quietest possible bug: no error, no paint');
 
 /* ── report ──────────────────────────────────────────────────────────────── */
 let last = '';
