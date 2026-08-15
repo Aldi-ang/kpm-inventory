@@ -610,209 +610,280 @@ export default function SettingsView({
                   {/* WORKSPACE: SECURITY & DATA */}
                   {/* ---------------------------------------------------- */}
                   {activeTab === 'security' && (
-                      <div className="animate-fade-in space-y-6">
+                      /* THE RACK, SECOND TAB ON THE SYSTEM. Same three questions the Architect
+                         terminal answers: what is this group allowed to do, what kind of module is
+                         this, and what is its state right now — all readable before you open
+                         anything. Grouped by CONSEQUENCE, not by feature, because that is the only
+                         grouping that helps on a screen where one button makes a copy and the one
+                         under it deletes the business: copies, then writes, then the stripe.
+                         Every colour here is a token, so light mode comes free — see the
+                         Off-Token Colour Migration Map. */
+                      <div className="animate-fade-in">
 
-                          {(userRole === 'DEVELOPER' || userRole === 'ADMIN' || userRole === 'COMPANY_OWNER') && (
-                              <div className="bg-orange-950/20 border border-orange-500/30 p-6 rounded-2xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                                  <div>
-                                      <h3 className="text-orange-500 font-black uppercase tracking-widest text-lg">Hitung Ulang Karir</h3>
-                                      <p className="text-xs font-mono text-slate-400 mt-1">One-time bulk recompute of every agent's career history from all verified EOD reports. Desktop + strong connection only. Safe to run more than once.</p>
+                          <div className="kpm-band">Copies · your business data is not touched</div>
+
+                          {/* The three readouts were three pulsing tiles that said SECURE or
+                              REQUIRED in green and red. Lite Mode strips the colour and they became
+                              three identical boxes, so the state lived only in the word. Rails
+                              print the name and the state on one line and never depend on hue. */}
+                          <div className="kpm-mod bench">
+                              <div className="kpm-head">
+                                  <span className="slot">Copy · 01</span>
+                                  <div className="line">
+                                      <h3>Master backup</h3>
+                                      <span className={`kpm-read ${isRecoverySecure && isUsbSecure && isCloudSecure ? 'on' : 'alert'}`}>
+                                          {[isRecoverySecure, isUsbSecure, isCloudSecure].filter(Boolean).length} of 3 current
+                                      </span>
                                   </div>
-                                  <button onClick={handleRecalculateCareer} className="bg-orange-900/40 hover:bg-orange-600 text-orange-500 hover:text-white border border-orange-500 px-6 py-3 rounded text-xs font-bold uppercase tracking-widest transition-all shrink-0">
-                                      Hitung Ulang
-                                  </button>
+                                  <p className="kpm-desc">
+                                      Writes all three recovery points in one run — the recovery file, the USB copy and
+                                      the cloud mirror. Safe to run as often as you like; each run replaces the one
+                                      before it, and none of it changes your products, customers or sales.
+                                  </p>
                               </div>
-                          )}
+                              <div className="kpm-shelf split">
+                                  <button type="button" className="kpm-btn key block" onClick={handleMasterProtocol}>
+                                      Run master backup
+                                  </button>
+                                  <div className="kpm-rail">
+                                      <h3>Recovery</h3>
+                                      <span className={`kpm-read ${isRecoverySecure ? 'on' : 'alert'}`}>{isRecoverySecure ? 'Secure' : 'Required'}</span>
+                                  </div>
+                                  <div className="kpm-rail">
+                                      <h3>USB copy</h3>
+                                      <span className={`kpm-read ${isUsbSecure ? 'on' : 'alert'}`}>{isUsbSecure ? 'Secure' : 'Out of date'}</span>
+                                  </div>
+                                  <div className="kpm-rail">
+                                      <h3>Cloud mirror</h3>
+                                      <span className={`kpm-read ${isCloudSecure ? 'on' : 'alert'}`}>{isCloudSecure ? 'Secure' : 'Required'}</span>
+                                  </div>
+                                  <div className="grid grid-cols-3 gap-2">
+                                      <button type="button" className="kpm-btn" onClick={() => handleSingleBackup('RECOVERY')}>Recovery</button>
+                                      <button type="button" className="kpm-btn" onClick={() => handleSingleBackup('USB')}>USB</button>
+                                      <button type="button" className="kpm-btn" onClick={() => handleSingleBackup('CLOUD')}>Cloud</button>
+                                  </div>
+                              </div>
+                          </div>
 
-                          {/* 🚀 CAREER LEDGER SWITCH (Phase 4) — rank reads from the permanent
-                              career ledger instead of the 7-day sales window. Off by default;
-                              turn on after running "Hitung Ulang Karir" above at least once so
-                              history isn't empty the moment this flips. */}
+                          <div className="kpm-band">Live · writes to the business database</div>
+
                           {(userRole === 'DEVELOPER' || userRole === 'ADMIN' || userRole === 'COMPANY_OWNER') && (
-                              <div className={`p-6 rounded-2xl shadow-sm border transition-all duration-300 ${appSettings.useCareerLedger ? 'bg-emerald-900/20 border-emerald-500/50' : 'bg-black border-slate-800'}`}>
-                                  <div className="flex items-center justify-between gap-4">
-                                      <div>
-                                          <h3 className={`font-bold text-lg flex items-center gap-2 ${appSettings.useCareerLedger ? 'text-emerald-400' : 'text-white'}`}>
-                                              🏆 Use Career Ledger for Rank
-                                          </h3>
-                                          <p className="text-[10px] text-slate-400 uppercase tracking-widest mt-1">
-                                              When off, rank still reads the old rolling 7-day sales window. When on, rank reads permanent career history instead — a quiet week no longer drops anyone's rank. Run "Hitung Ulang Karir" above at least once before turning this on.
-                                          </p>
+                              <div className="kpm-mod live">
+                                  <div className="kpm-head">
+                                      <span className="slot">Live · 01</span>
+                                      <div className="line">
+                                          <h3>Rebuild career history</h3>
+                                          <span className="kpm-read on">Writes every agent</span>
                                       </div>
-                                      <button
-                                          onClick={() => {
-                                              const newVal = !appSettings.useCareerLedger;
-                                              setAppSettings(prev => ({ ...prev, useCareerLedger: newVal }));
-                                              if (user) setDoc(doc(db, `artifacts/${appId}/users/${user.uid}/settings/general`), { useCareerLedger: newVal }, { merge: true });
-                                              triggerCapy(newVal ? "Rank now reads from career history! 🏆" : "Rank back to the 7-day sales window.");
-                                          }}
-                                          className={`shrink-0 transition-all duration-300 ${appSettings.useCareerLedger ? 'text-emerald-400 drop-shadow-[0_0_8px_rgba(16,185,129,0.8)]' : 'text-slate-400 hover:text-slate-300'}`}
-                                      >
-                                          {appSettings.useCareerLedger ? <ToggleRight size={40} /> : <ToggleLeft size={40} />}
+                                      <p className="kpm-desc">
+                                          Recounts every salesman's career from all verified EOD reports and writes the
+                                          result back. Desktop and a strong connection only. Safe to run more than once —
+                                          each run recomputes from the reports, it does not add to what is there.
+                                      </p>
+                                  </div>
+                                  <div className="kpm-shelf split">
+                                      <button type="button" className="kpm-btn block" onClick={handleRecalculateCareer}>
+                                          Rebuild now
                                       </button>
                                   </div>
                               </div>
                           )}
 
-                          {/* MASTER SECURITY CARD */}
-                          <div className="bg-white dark:bg-slate-800 p-8 rounded-2xl shadow-xl border-2 border-orange-500/20 relative overflow-hidden">
-                              <div className="absolute top-0 right-0 p-4 opacity-5"><ShieldCheck size={120} className="text-orange-500" /></div>
-                              <div className="relative z-10">
-                                  <h3 className="font-bold text-xl mb-1 dark:text-white flex items-center gap-3"><ShieldCheck className="text-emerald-500" size={24}/> Master Security Protocol</h3>
-                                  <p className="text-[10px] text-slate-400 uppercase tracking-widest mb-8">Triple-Layer Data Redundancy</p>
-                                  
-                                  <button onClick={handleMasterProtocol} className="w-full group relative bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 text-white py-6 rounded-2xl font-black uppercase tracking-[0.3em] shadow-lg active:scale-95 mb-6">
-                                      <div className="flex flex-col items-center gap-2">
-                                          <span className="text-sm">EXECUTE MASTER BACKUP</span>
-                                          <span className="text-[11px] opacity-70 font-mono tracking-normal">Generate 3 Recovery Points Now</span>
+                          {/* 🚀 RANK SOURCE (Phase 4). Both positions are drawn, like photo storage:
+                              a single toggle asked him to remember which way "on" points AND what
+                              the two ways mean, on a setting that decides every salesman's rank.
+                              ⚠️ ONE WRITER. Two buttons, one `writeCareerLedger` — a switch with a
+                              copy of the write behind each position is how a setting saves on the
+                              screen and never reaches the database. */}
+                          {(userRole === 'DEVELOPER' || userRole === 'ADMIN' || userRole === 'COMPANY_OWNER') && (
+                              <div className="kpm-mod live">
+                                  <div className="kpm-head">
+                                      <span className="slot">Live · 02</span>
+                                      <div className="line">
+                                          <h3>Rank source</h3>
+                                          <span className={`kpm-read ${appSettings.useCareerLedger ? 'on' : ''}`}>
+                                              {appSettings.useCareerLedger ? 'Career history' : 'Last 7 days'}
+                                          </span>
                                       </div>
+                                      <p className="kpm-desc">
+                                          What every salesman's rank is counted from. <b>Last 7 days</b> is a rolling sales
+                                          window, so a quiet week drops a rank. <b>Career history</b> reads the permanent
+                                          record instead and never drops for a slow week — rebuild the history above at
+                                          least once first, or it reads an empty ledger the moment you switch.
+                                      </p>
+                                  </div>
+                                  <div className="kpm-shelf split">
+                                      <div className="kpm-switch" role="group" aria-label="Rank source">
+                                          <button type="button" aria-pressed={!appSettings.useCareerLedger}
+                                              onClick={() => writeCareerLedger(false, { db, appId, user, setAppSettings, triggerCapy })}>
+                                              Last 7 days
+                                          </button>
+                                          <button type="button" aria-pressed={!!appSettings.useCareerLedger}
+                                              onClick={() => writeCareerLedger(true, { db, appId, user, setAppSettings, triggerCapy })}>
+                                              Career history
+                                          </button>
+                                      </div>
+                                  </div>
+                              </div>
+                          )}
+
+                          {/* The PIN card said "Administrator Access Verified" in green on green —
+                              a status that is true for anyone who can see the card at all, so it
+                              reported nothing. The account it belongs to is the useful fact. */}
+                          <div className="kpm-mod live">
+                              <div className="kpm-head">
+                                  <span className="slot">Live · 03</span>
+                                  <div className="line">
+                                      <h3>Master vault PIN</h3>
+                                      <span className="kpm-read on">Set</span>
+                                  </div>
+                                  <p className="kpm-desc">
+                                      The PIN that opens the vault on this account. Changing it takes effect on every
+                                      device immediately, and the old one stops working the moment you save.
+                                  </p>
+                              </div>
+                              <div className="kpm-shelf split">
+                                  <label className="kpm-field">
+                                      <span>Signed in as</span>
+                                      <span className="fixed">{currentUserEmail || "—"}</span>
+                                  </label>
+                                  <button type="button" className="kpm-btn block" onClick={handleChangePin}>Change PIN</button>
+                              </div>
+                          </div>
+
+                          {/* 🚀 DEVICE AUTHORIZATION LIST. Was a bright blue card — blue is not in
+                              this app's palette at all, and it was the last one left in Settings.
+                              Each device is a record: who it is above, what you can do to it below,
+                              which is the shape the tenant registry already uses.
+                              ⚠️ "Revoke" carries its own word, so it must NOT wear `data-kpm-del` —
+                              that marker prints the label a second time. */}
+                          <div className="kpm-mod live">
+                              <div className="kpm-head">
+                                  <span className="slot">Live · 04</span>
+                                  <div className="line">
+                                      <h3>Biometric devices</h3>
+                                      <span className={`kpm-read ${registeredPasskeys?.length ? 'on' : ''}`}>
+                                          {registeredPasskeys?.length ? `${registeredPasskeys.length} authorised` : 'None yet'}
+                                      </span>
+                                  </div>
+                                  <p className="kpm-desc">
+                                      Phones and laptops allowed to open the vault with a fingerprint or face instead of
+                                      the PIN. A device can only be authorised from the address you are on now, and the
+                                      fingerprint never leaves it — only the permission is stored here.
+                                  </p>
+                              </div>
+                              <div className="kpm-shelf split">
+                                  {registeredPasskeys && registeredPasskeys.length > 0 ? (
+                                      registeredPasskeys.map((device, idx) => (
+                                          <div key={idx} className="kpm-rec">
+                                              <div className="who">
+                                                  <b>{device.name}</b>
+                                                  <code>Added {new Date(device.addedAt).toLocaleDateString()}</code>
+                                              </div>
+                                              <div className="acts">
+                                                  <button type="button" className="kpm-btn hazard"
+                                                      onClick={() => handleRemovePasskey(device)}
+                                                      title="This device can no longer open the vault with a fingerprint">
+                                                      Revoke
+                                                  </button>
+                                              </div>
+                                          </div>
+                                      ))
+                                  ) : (
+                                      <p className="kpm-desc">No devices authorised yet — this account opens the vault with the PIN only.</p>
+                                  )}
+                                  <button type="button" className="kpm-btn key block" onClick={handleRegisterPasskey}>
+                                      Authorise this device
                                   </button>
-
-                                  <div className="grid grid-cols-3 gap-3 mb-6">
-                                      <div className={`p-4 rounded-xl border-2 flex flex-col items-center justify-center gap-2 transition-all duration-500 ${isRecoverySecure ? 'bg-emerald-500/20 border-emerald-500 text-emerald-500' : 'bg-red-900/20 border-red-500 text-red-500 animate-pulse'}`}>
-                                          {isRecoverySecure ? <ShieldCheck size={32}/> : <ShieldAlert size={32}/>}
-                                          <div className="text-center">
-                                              <p className="text-[10px] font-black uppercase tracking-widest mb-1">RECOVERY</p>
-                                              <p className="text-xs font-bold">{isRecoverySecure ? "SECURE" : "REQUIRED"}</p>
-                                          </div>
-                                      </div>
-                                      <div className={`p-4 rounded-xl border-2 flex flex-col items-center justify-center gap-2 transition-all duration-500 ${isUsbSecure ? 'bg-emerald-500/20 border-emerald-500 text-emerald-500' : 'bg-orange-500/20 border-orange-500 text-orange-500 animate-pulse'}`}>
-                                          {isUsbSecure ? <ShieldCheck size={32}/> : <ShieldAlert size={32}/>}
-                                          <div className="text-center">
-                                              <p className="text-[10px] font-black uppercase tracking-widest mb-1">USB SAFE</p>
-                                              <p className="text-xs font-bold">{isUsbSecure ? "SECURE" : "UPDATE"}</p>
-                                          </div>
-                                      </div>
-                                      <div className={`p-4 rounded-xl border-2 flex flex-col items-center justify-center gap-2 transition-all duration-500 ${isCloudSecure ? 'bg-emerald-500/20 border-emerald-500 text-emerald-500' : 'bg-red-900/20 border-red-500 text-red-500 animate-pulse'}`}>
-                                          {isCloudSecure ? <ShieldCheck size={32}/> : <ShieldAlert size={32}/>}
-                                          <div className="text-center">
-                                              <p className="text-[10px] font-black uppercase tracking-widest mb-1">CLOUD SYNC</p>
-                                              <p className="text-xs font-bold">{isCloudSecure ? "SECURE" : "REQUIRED"}</p>
-                                          </div>
-                                      </div>
-                                  </div>
-
-                                  <div className="grid grid-cols-3 gap-2 mb-6">
-                                      <button onClick={() => handleSingleBackup('RECOVERY')} className="p-2 bg-slate-100 dark:bg-slate-700/50 rounded hover:bg-blue-500 hover:text-white transition-colors text-[11px] font-bold text-slate-400 uppercase tracking-widest">Download Recovery</button>
-                                      <button onClick={() => handleSingleBackup('USB')} className="p-2 bg-slate-100 dark:bg-slate-700/50 rounded hover:bg-orange-500 hover:text-white transition-colors text-[11px] font-bold text-slate-400 uppercase tracking-widest">Download USB</button>
-                                      <button onClick={() => handleSingleBackup('CLOUD')} className="p-2 bg-slate-100 dark:bg-slate-700/50 rounded hover:bg-emerald-500 hover:text-white transition-colors text-[11px] font-bold text-slate-400 uppercase tracking-widest">Download Cloud</button>
-                                  </div>
-
-                                  <div className="border-t border-orange-500/30 pt-6">
-                                      <p className="text-[10px] text-slate-400 uppercase tracking-widest mb-3">System Recovery Terminal</p>
-                                      <label className="w-full flex items-center justify-center gap-3 py-4 border-2 border-dashed border-slate-600 hover:border-emerald-500 rounded-xl text-slate-400 hover:text-emerald-500 cursor-pointer transition-all bg-black/30 hover:bg-emerald-900/20 group">
-                                          <UploadCloud size={24} className="group-hover:-translate-y-1 transition-transform" />
-                                          <span className="font-bold uppercase tracking-widest text-xs">Load Backup File & Restore Data (.json)</span>
-                                          <input type="file" accept=".json" onChange={handleRestoreData} className="hidden" />
-                                      </label>
-                                  </div>
                               </div>
                           </div>
 
-                          {/* USER PROFILE & PIN */}
-                          <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700">
-                              <h3 className="font-bold text-lg mb-4 flex items-center gap-2 dark:text-white"><User size={20}/> User Profile & Security</h3>
-                              <label className="block text-sm text-slate-400 mb-2">Google Account Email</label>
-                              <input type="email" className="w-full p-2 rounded border dark:bg-slate-900 dark:border-slate-600 dark:text-white mb-4" value={currentUserEmail || ""} disabled/>
-                              
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                  <div className="p-4 rounded-xl border flex flex-col justify-between bg-emerald-50 border-emerald-200 dark:bg-emerald-900/20 dark:border-emerald-800">
-                                      <div className="mb-4">
-                                          <p className="font-bold text-sm text-emerald-600 dark:text-emerald-400 mb-1">Vault PIN Status</p>
-                                          <p className="text-[10px] text-emerald-600/70 dark:text-emerald-400/70 uppercase tracking-widest">Administrator Access Verified</p>
-                                      </div>
-                                      <div className="flex gap-2">
-                                          <button onClick={handleChangePin} className="flex-1 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-xs font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">Change PIN</button>
-                                      </div>
+                          {/* Export and Import lived on one row and read as a matched pair, which
+                              hid the fact that one of them REPLACES a dataset. Same row, but the
+                              description now says which half is the dangerous one. */}
+                          <div className="kpm-mod live">
+                              <div className="kpm-head">
+                                  <span className="slot">Live · 05</span>
+                                  <div className="line">
+                                      <h3>Share a dataset</h3>
+                                      <span className="kpm-read">Import overwrites</span>
                                   </div>
-                                  
-                                  {/* 🚀 DEVICE AUTHORIZATION LIST 🚀 */}
-                                  <div className="p-4 rounded-xl border flex flex-col bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:border-blue-800">
-                                      <div className="mb-4 border-b border-blue-200 dark:border-blue-800/50 pb-3">
-                                          <p className="font-bold text-sm text-blue-600 dark:text-blue-400 mb-1 flex items-center gap-2">
-                                              <ScanFace size={16}/> Authorized Biometric Devices
-                                          </p>
-                                          <p className="text-[10px] text-blue-600/70 dark:text-blue-400/70 uppercase tracking-widest">Manage Fingerprints & Phones</p>
+                                  <p className="kpm-desc">
+                                      Hands one part of your setup to another device or another person as a file.
+                                      <b> Export</b> only reads. <b>Import</b> replaces everything in that dataset with
+                                      what is in the file, and there is no undo for it.
+                                  </p>
+                              </div>
+                              <div className="kpm-shelf split">
+                                  {[
+                                      { label: 'Products & Prices', type: 'products', hint: 'Every product, unit and price level' },
+                                      { label: 'Customer Directory', type: 'customers', hint: 'Every customer and their details' },
+                                      { label: 'Full Configuration', type: 'both', hint: 'Products and customers together' }
+                                  ].map((item) => (
+                                      <div key={item.type} className="kpm-rec">
+                                          <div className="who">
+                                              <b>{item.label}</b>
+                                              <code>{item.hint}</code>
+                                          </div>
+                                          <div className="acts">
+                                              <button type="button" className="kpm-btn" onClick={() => handleExportGranular(item.type)}>Export</button>
+                                              <label className="kpm-btn">
+                                                  Import
+                                                  <input type="file" accept=".json" onChange={(e) => handleImportGranular(e, item.type)} className="hidden" />
+                                              </label>
+                                          </div>
                                       </div>
-                                      
-                                      <div className="space-y-2 mb-4 max-h-40 overflow-y-auto custom-scrollbar pr-2">
-                                          {registeredPasskeys && registeredPasskeys.length > 0 ? (
-                                              registeredPasskeys.map((device, idx) => (
-                                                  <div key={idx} className="flex justify-between items-center bg-white dark:bg-slate-900 border border-blue-100 dark:border-blue-800/30 p-3 rounded-lg shadow-sm">
-                                                      <div>
-                                                          <p className="text-blue-600 dark:text-blue-400 font-bold text-xs uppercase">{device.name}</p>
-                                                          <p className="text-slate-400 text-[11px] uppercase tracking-widest mt-0.5">Added: {new Date(device.addedAt).toLocaleDateString()}</p>
-                                                      </div>
-                                                      <button data-kpm-del data-label="Delete" 
-                                                          onClick={() => handleRemovePasskey(device)}
-                                                          className="p-2 bg-red-100 dark:bg-red-900/30 text-red-500 hover:bg-red-500 hover:text-white rounded transition-colors"
-                                                          title="Revoke Access"
-                                                      >
-                                                          <Trash2 size={14}/>
-                                                      </button>
-                                                  </div>
-                                              ))
-                                          ) : (
-                                              <p className="text-slate-400 text-[10px] uppercase tracking-widest text-center py-4 bg-white/50 dark:bg-slate-900/50 rounded border border-dashed border-slate-300 dark:border-slate-700">
-                                                  No devices authorized yet.
-                                              </p>
-                                          )}
-                                      </div>
-
-                                      <button 
-                                          onClick={handleRegisterPasskey} 
-                                          className="w-full mt-auto py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-bold shadow-md transition-colors flex items-center justify-center gap-2 uppercase tracking-widest"
-                                      >
-                                          <Plus size={16}/> Authorize Current Device
-                                      </button>
-                                  </div>
+                                  ))}
                               </div>
                           </div>
 
-                          {/* TEAM SHARING & DATA RESET */}
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                              <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700">
-                                  <h3 className="font-bold text-lg mb-1 dark:text-white flex items-center gap-2"><Copy size={20}/> Team Sharing</h3>
-                                  <p className="text-[10px] text-slate-400 uppercase tracking-widest mb-4">Export specific datasets</p>
-                                  <div className="space-y-4">
-                                      {[
-                                          { label: 'Products & Prices', type: 'products', icon: <Package size={16}/> },
-                                          { label: 'Customer Directory', type: 'customers', icon: <User size={16}/> },
-                                          { label: 'Full Configuration', type: 'both', icon: <Settings size={16}/> }
-                                      ].map((item) => (
-                                          <div key={item.type} className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-900 rounded-xl border dark:border-slate-700">
-                                              <div className="flex items-center gap-3">
-                                                  <div className="text-orange-500">{item.icon}</div>
-                                                  <span className="text-sm font-bold dark:text-white">{item.label}</span>
-                                              </div>
-                                              <div className="flex gap-2">
-                                                  <button onClick={() => handleExportGranular(item.type)} className="px-3 py-1.5 bg-white dark:bg-slate-800 border dark:border-slate-600 rounded-lg text-[10px] font-bold hover:bg-slate-100 transition-colors uppercase">Export</button>
-                                                  <label className="px-3 py-1.5 bg-white dark:bg-slate-800 border dark:border-slate-600 rounded-lg text-[10px] font-bold hover:bg-slate-100 cursor-pointer transition-colors uppercase">
-                                                      Import <input type="file" accept=".json" onChange={(e) => handleImportGranular(e, item.type)} className="hidden" />
-                                                  </label>
-                                              </div>
-                                          </div>
-                                      ))}
-                                  </div>
-                              </div>
+                          <div className="kpm-band hazard">Irreversible · nothing here can be undone</div>
 
-                              <div className="bg-red-50 dark:bg-red-950/20 p-6 rounded-2xl shadow-sm border border-red-200 dark:border-red-900/50">
-                                  <h3 className="font-bold text-lg mb-1 text-red-600 dark:text-red-500 flex items-center gap-2"><Trash2 size={20}/> Data Wipe</h3>
-                                  <p className="text-[10px] text-red-500/70 uppercase tracking-widest mb-4">Permanently delete datasets</p>
-                                  <div className="space-y-4">
-                                      <div className="flex items-center justify-between p-3 bg-white dark:bg-slate-900 rounded-xl border border-red-100 dark:border-red-900/30">
-                                          <div className="flex items-center gap-3 text-red-500"><Package size={16}/> <span className="text-sm font-bold">Wipe Products & Prices</span></div>
-                                          <button onClick={() => handleWipeData('products')} className="px-4 py-1.5 bg-red-100 dark:bg-red-900/50 text-red-600 dark:text-red-400 rounded-lg text-[10px] font-bold hover:bg-red-200 transition-colors uppercase">Delete</button>
-                                      </div>
-                                      <div className="flex items-center justify-between p-3 bg-white dark:bg-slate-900 rounded-xl border border-red-100 dark:border-red-900/30">
-                                          <div className="flex items-center gap-3 text-red-500"><User size={16}/> <span className="text-sm font-bold">Wipe Customers</span></div>
-                                          <button onClick={() => handleWipeData('customers')} className="px-4 py-1.5 bg-red-100 dark:bg-red-900/50 text-red-600 dark:text-red-400 rounded-lg text-[10px] font-bold hover:bg-red-200 transition-colors uppercase">Delete</button>
-                                      </div>
-                                      <div className="flex items-center justify-between p-3 bg-red-600 rounded-xl border border-red-700 shadow-md">
-                                          <div className="flex items-center gap-3 text-white"><ShieldAlert size={16}/> <span className="text-sm font-bold">Full Reset (Both)</span></div>
-                                          <button onClick={() => handleWipeData('both')} className="px-4 py-1.5 bg-black/20 text-white rounded-lg text-[10px] font-black tracking-widest hover:bg-black/40 transition-colors uppercase border border-white/20">Wipe All</button>
-                                      </div>
+                          {/* Restore was the quietest control on the old screen — a dashed outline
+                              at the bottom of the backup card, styled like a file drop zone. It
+                              replaces the entire database. It belongs under the stripe. */}
+                          <div className="kpm-mod hazard">
+                              <div className="kpm-head">
+                                  <span className="slot">Hazard · 01</span>
+                                  <div className="line">
+                                      <h3>Restore from a backup file</h3>
+                                      <span className="kpm-read alert">Replaces everything</span>
                                   </div>
+                                  <p className="kpm-desc">
+                                      Reads a .json backup and writes it over your live data. Anything recorded since
+                                      that file was made is gone. Run a master backup first if you are not certain.
+                                  </p>
+                              </div>
+                              <div className="kpm-shelf split">
+                                  <label className="kpm-btn hazard block">
+                                      Choose a backup file
+                                      <input type="file" accept=".json" onChange={handleRestoreData} className="hidden" />
+                                  </label>
+                              </div>
+                          </div>
+
+                          <div className="kpm-mod hazard">
+                              <div className="kpm-head">
+                                  <span className="slot">Hazard · 02</span>
+                                  <div className="line">
+                                      <h3>Data wipe</h3>
+                                      <span className="kpm-read alert">Permanent</span>
+                                  </div>
+                                  <p className="kpm-desc">
+                                      Deletes a dataset from the database outright. There is no undo and no recycle bin —
+                                      the only way back is a backup file you made before pressing it.
+                                  </p>
+                              </div>
+                              <div className="kpm-shelf split">
+                                  <button type="button" className="kpm-btn hazard block" onClick={() => handleWipeData('products')}>
+                                      Wipe products &amp; prices
+                                  </button>
+                                  <button type="button" className="kpm-btn hazard block" onClick={() => handleWipeData('customers')}>
+                                      Wipe customers
+                                  </button>
+                                  <button type="button" className="kpm-btn hazard block" onClick={() => handleWipeData('both')}>
+                                      Wipe everything
+                                  </button>
                               </div>
                           </div>
                       </div>
@@ -993,6 +1064,17 @@ const writePhotoStorage = (newVal, { db, appId, user, setAppSettings, triggerCap
     triggerCapy(newVal
         ? "Photos will upload to Firebase Storage. The Blaze plan must be active. ☁️"
         : "Photos will save straight into the database. Works on any plan.");
+};
+
+/* ONE WRITER for the rank source, same shape as writePhotoStorage above and for the same reason:
+   the two-position switch has a button per position, and a copy of this write behind each is how a
+   setting saves on screen and never reaches the database. Both buttons call this. */
+const writeCareerLedger = (newVal, { db, appId, user, setAppSettings, triggerCapy }) => {
+    setAppSettings(prev => ({ ...prev, useCareerLedger: newVal }));
+    if (user) setDoc(doc(db, `artifacts/${appId}/users/${user.uid}/settings/general`), { useCareerLedger: newVal }, { merge: true });
+    triggerCapy(newVal
+        ? "Rank now reads permanent career history. A quiet week no longer drops anyone. 🏆"
+        : "Rank back to the rolling 7-day sales window.");
 };
 
 // 🚀 PLUG & PLAY: THE RESPONSIVE MATRIX EDITOR

@@ -1511,9 +1511,13 @@ const delMarks = DEL_FILES.reduce((n, f) =>
 /* 18 → 17 on 2026-08-13, and this is a REAL change, not a loosened needle: the tenant registry's
    delete button stopped being icon-only. It now reads "Delete" inside the record's action strip,
    and the rule above says a button carrying its own word must NOT be marked, or the label prints
-   twice. If this number drops again without a word button appearing, something was lost. */
-check(G25, 'every icon-only delete button in the app wears the expanding control', delMarks === 17,
-  `found ${delMarks} marked, expected 18 — a new icon-only delete button needs ` +
+   twice. If this number drops again without a word button appearing, something was lost.
+   17 → 16 on 2026-08-15, the same change for the same reason: the biometric device list became
+   `.kpm-rec` records when Security joined the control system, so its trash glyph is now a "Revoke"
+   button in the record's action strip. The word is checked one line below — the pair of edits is
+   what makes this a migration rather than a loss. */
+check(G25, 'every icon-only delete button in the app wears the expanding control', delMarks === 16,
+  `found ${delMarks} marked, expected 16 — a new icon-only delete button needs ` +
   '`data-kpm-del data-label="Delete"` on it, and one that carries its own word ("Remove", "DEL") ' +
   'must NOT be marked or the label prints twice');
 check(G25, 'the delete rules outrank the Tailwind classes still on those buttons',
@@ -1985,6 +1989,67 @@ check(G32, 'the light theme darkens all three',
 check(G32, 'the control system spends the readable tokens, never --gold or --danger-text as text',
   !/color: var\(--gold\)/.test(systemBlock) && !/color: var\(--danger-text\)/.test(systemBlock),
   'this is the exact line that shipped broken: .kpm-btn.key { color: var(--gold) }');
+
+/* ═══ PHASE 6 · SECURITY & DATA JOINS THE CONTROL SYSTEM (2026-08-15) ═══════
+   Aldi: *"we have the theme set yet, other will just follow make it somewhat follow that"* — the
+   Architect terminal is the template and the remaining tabs are conversions, not redesigns.
+   Scoped to the security block alone: General and Tiers are still Phase 6's later slices, and
+   asserting them here would report a failure that belongs to a change nobody has made yet. */
+const G33 = '33. Security & Data is the same app as the Architect terminal';
+
+const secStart = settingsSrc.indexOf("activeTab === 'security'");
+const secEnd = settingsSrc.indexOf('WORKSPACE: ARCHITECT TERMINAL');
+const sec = secStart > 0 && secEnd > secStart ? settingsSrc.slice(secStart, secEnd) : '';
+
+/* The empty-string green, again. Rename either marker and every check below passes on ''. */
+check(G33, 'the security block was found at all', sec.length > 1000,
+  'the markers this group slices between were renamed — every check below would pass on an ' +
+  'empty string, which is the worst kind of green');
+check(G33, 'the security tab carries no blue, no green, no slate',
+  !offToken.test(sec),
+  'palette law: slate IS the blue and emerald IS the green. This tab held the last bright blue ' +
+  'left in the app — the biometric device card — plus emerald status tiles and slate everywhere');
+check(G33, 'every module declares what kind it is, and prints its slot',
+  (sec.match(/kpm-mod (bench|live|hazard)/g) || []).length >= 7 &&
+  (sec.match(/<span className="slot">/g) || []).length >= 7,
+  'a module with no kind is a card again — the kind is what grades authority by material rather ' +
+  'than by colour, which is the one thing Lite Mode cannot strip');
+/* 🔑 THE POINT OF THE WHOLE REGROUPING. Restore replaces the entire database and used to be a
+   dashed drop-zone at the foot of the backup card — quieter than the three download buttons above
+   it. Wipe was red-on-red, which Lite Mode flattens to nothing. Both wear the stripe now. */
+check(G33, 'everything irreversible is behind the hazard band and wears the stripe',
+  /<div className="kpm-band hazard">/.test(sec) &&
+  /kpm-btn hazard block[\s\S]{0,400}?handleRestoreData/.test(sec) &&
+  (sec.match(/className="kpm-btn hazard block" onClick=\{\(\) => handleWipeData/g) || []).length === 3,
+  'restore and the three wipes are the only acts on this screen with no undo; if one of them ' +
+  'renders as an ordinary button again the screen is lying about what it does');
+check(G33, 'the rank source still has exactly one writer',
+  (sec.match(/writeCareerLedger\(/g) || []).length === 2 &&
+  /^const writeCareerLedger = /m.test(settingsSrc) &&
+  !/useCareerLedger: newVal[\s\S]*useCareerLedger: newVal/.test(sec),
+  'both switch positions must call the same writer — a copy of the write behind each position is ' +
+  'how a setting saves on screen and never reaches the database');
+/* MOUNT CHECK PER CONTROL. A cosmetic rewrite of a screen this size loses a button silently, and
+   several of these have no other route in the app. */
+for (const [what, needle] of [
+  ['the master backup', 'onClick={handleMasterProtocol}'],
+  ['the three single backups', "handleSingleBackup('CLOUD')"],
+  ['the restore input', 'onChange={handleRestoreData}'],
+  ['the PIN change', 'onClick={handleChangePin}'],
+  ['the passkey registration', 'onClick={handleRegisterPasskey}'],
+  ['the passkey revoke', 'handleRemovePasskey(device)'],
+  ['the career rebuild', 'onClick={handleRecalculateCareer}'],
+  ['the dataset export', 'handleExportGranular(item.type)'],
+  ['the dataset import', 'handleImportGranular(e, item.type)'],
+  ['the full wipe', "handleWipeData('both')"],
+  ['the signed-in email', '{currentUserEmail || "—"}'],
+]) check(G33, `${what} is still mounted in the tab`, sec.includes(needle),
+  'a control that vanished in a restyle is silent — nothing errors, the button is simply not there');
+check(G33, 'the three backup states are still readable without colour',
+  (sec.match(/className="kpm-rail"/g) || []).length === 3 &&
+  /isRecoverySecure \? 'Secure' : 'Required'/.test(sec),
+  'they were three pulsing tiles that said SECURE or REQUIRED in green and red; Lite Mode strips ' +
+  'the colour and they became three identical boxes, so the word has to carry the state');
 
 /* ── report ──────────────────────────────────────────────────────────────── */
 let last = '';
