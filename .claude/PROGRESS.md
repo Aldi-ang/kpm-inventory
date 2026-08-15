@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-15 09:25 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
+**Updated: 2026-08-15 09:45 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -24,10 +24,10 @@ not invent a new look for a tab; copy the bands / module kinds / slot codes / re
 |---|---|---|
 | Architect (Tier 1) | 0 | ✅ template, `b25c526` + `7166366` |
 | **Security & Data** | **0** | ✅ **DONE 2026-08-15, group 33, 17 checks** |
-| General & Brand | 67 | ▶ **next slice** |
-| Tiers & Logic | 89 | after that |
+| **General & Brand** | **0** | ✅ **DONE 2026-08-15, group 34, 18 checks** |
+| Tiers & Logic | 89 | ▶ **the last slice** |
 
-**400/400, `src/` clean.** The rack's spacing ladder was rebuilt on 2026-08-15 after his report
+**418/418, `src/` clean.** The rack's spacing ladder was rebuilt on 2026-08-15 after his report
 that modules read as one component — **12 / 16 / 20 / 40, and no inner number may reach an outer
 one.** Two checks in group 30 hold it. Read [[The KPM Control System]] and [[Off-Token Colour Migration Map]]
 in the A-Brain vault before touching a tab — the class list and the substitution table are there,
@@ -103,6 +103,26 @@ order:
 - ✅ **The Firebase authorized domain is DONE** — *"already"*. `192.168.1.109` can sign in.
 
 ## 📓 LOG — newest first, about five entries; `git log` keeps the rest
+
+### 2026-08-15 09:45 (KPM app session) — General & Brand converted. Phase 6, slice 2. Only Tiers left.
+
+**418/418.** 67 off-token colours to zero, same regrouping by consequence.
+
+🔑 **Two real findings, not just paint.** The **pita cukai fine** — which comes out of a real
+salesman's pay — was sitting under a divider inside the letterhead card, reading as one more
+invoice field. It is its own Tier-1 module now and says what it does. And the letterhead is split
+**by save behaviour**: three fields wait for Save, two write as you type, and each module prints
+which it is instead of leaving him to guess.
+**Lite Mode** became a two-position switch with one writer () — third one-writer
+switch in the system, after photo storage and rank source.
+
+⚠️ **A CHECK FAILED ON CORRECT CODE.**  also matches
+**** on a range input — a substring, and a slider thumb is a fill, not
+text. Re-anchored on a property boundary. **A needle that can match inside a longer property name
+eventually will.** Fourth regex-anchor lesson this week.
+📌 Four small classes were needed (, , , );
+each is checked as DEFINED, because a class that exists in neither Tailwind nor theme.css paints
+nothing and looks exactly like a transparent panel.
 
 ### 2026-08-15 09:25 (KPM app session) — red stops upholstering, and the wipes ask for pressure
 
