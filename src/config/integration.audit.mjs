@@ -1649,12 +1649,25 @@ check(G25, 'the header floats on the same ground as the dock, and survives Lite 
    the player — and `src/index.css` is none of the three, so every scrollbar in the app sat at
    #cbd5e1 / #94a3b8 / #475569 / #64748b. Slate IS the blue. Text selection and the caret were
    browser-default blue for the same reason: nobody had drawn them, so nobody had checked them. */
+/* ⚠️ THE LITERALS BECAME TOKENS ON 2026-08-16 AND THIS CHECK MOVED WITH THEM — third time in one
+   day that a check pinning a hex broke on the hex being CORRECTLY replaced. The scrollbar was
+   drawn in fixed dark browns, so on the new cream page it was a dark bar down the side: on the
+   palette, but only in one theme. Being on the palette was never the whole claim — it has to be
+   on the palette THE PAGE IS CURRENTLY WEARING.
+   The claims that actually matter: we draw all four surfaces rather than inheriting a browser
+   default, Firefox gets its own rule because it ignores ::-webkit entirely, and the scrollbar
+   changes theme with the page. */
 check(G25, 'the parts nobody draws are on the palette too — scrollbar, selection, caret',
   !BANNED_HUE.test(indexCss) &&
-  /::-webkit-scrollbar-thumb \{\s*\n?\s*background: #3e3226;/.test(indexCss) &&
-  /scrollbar-color: #3e3226 transparent;/.test(indexCss) &&
+  /::-webkit-scrollbar-thumb \{\s*\n?\s*background: var\(--scroll-thumb\);/.test(indexCss) &&
+  /scrollbar-color: var\(--scroll-thumb\) transparent;/.test(indexCss) &&
   /::selection \{\s*\n?\s*background: rgba\(255, 157, 0, \.28\)/.test(indexCss) &&
-  /caret-color: #ff9d00;/.test(indexCss),
+  /caret-color: #ff9d00;/.test(indexCss) &&
+  /* and the thumb is a real pair, not one value wearing a token's name */
+  ['--scroll-thumb', '--select-ink'].every(t => {
+    const v = [...themeCss.matchAll(new RegExp(t + ':\\s*(#[0-9a-fA-F]{6})', 'g'))].map(m => m[1]);
+    return v.length === 2 && v[0].toLowerCase() !== v[1].toLowerCase();
+  }),
   'a scrollbar, a caret and a selection highlight ship with defaults that belong to no design ' +
   'system — and Firefox ignores ::-webkit entirely, so scrollbar-color is a second rule, not a ' +
   'duplicate of the first');

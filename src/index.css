@@ -57,24 +57,24 @@ body {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #3e3226;
+  background: var(--scroll-thumb);
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #5c4b3a;
+  background: var(--scroll-hover);
 }
 ::-webkit-scrollbar-thumb:active {
-  background: #8b7256;
+  background: var(--scroll-active);
 }
 /* Firefox has no ::-webkit pseudo-elements, so it was keeping the default grey bar regardless */
 * {
-  scrollbar-color: #3e3226 transparent;
+  scrollbar-color: var(--scroll-thumb) transparent;
   scrollbar-width: thin;
 }
 /* selection and caret were browser-default blue — the one banned hue, shipped by nobody's choice */
 ::selection {
   background: rgba(255, 157, 0, .28);
-  color: #fff6e2;
+  color: var(--select-ink);
 }
 :root {
   caret-color: #ff9d00;

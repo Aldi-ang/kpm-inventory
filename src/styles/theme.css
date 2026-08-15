@@ -42,6 +42,13 @@
   --ground-lo:     #070606;   /* falls away bottom-right */
   --ground-glow:   rgba(255, 157, 0, .13);   /* the gold light source */
   --ground-glow-2: rgba(192, 71, 60, .05);   /* hazard red, keeps the shadows off neutral grey */
+  /* the scrollbar and the selection highlight are drawn ON the page, so they theme with it —
+     they were literals in index.css, which is why they stayed dark brown down the side of a
+     cream page. See the note there: the parts nobody draws still carry the design. */
+  --scroll-thumb:  #3e3226;
+  --scroll-hover:  #5c4b3a;
+  --scroll-active: #8b7256;
+  --select-ink:    #fff6e2;
   /* ⚠️ THE OUTLINE OF A PANE OF GLASS, AND ONLY THE OUTLINE. The header's and the dock's inner
      LIPS are cream and stay cream — cream at .28 over the steel ground still reads as a lit
      top edge. The BORDERS do not: cream at .12 over steel is 1,06:1, so the two floating panes
@@ -168,8 +175,19 @@ html.light {
   --ground-base:   #d2c9b4;
   --ground-hi:     #ded5c1;
   --ground-lo:     #c3baa4;
-  --ground-glow:   rgba(255, 157, 0, .16);
-  --ground-glow-2: rgba(192, 71, 60, .06);
+  /* ⚠️ .16 LOOKED RIGHT ON PAPER AND WRONG ON SCREEN — the first thing the lab caught that no
+     ratio would have. The header is glass with `saturate(1.5)`, so it does not merely show the
+     bloom, it amplifies it: at .16 the top-left of the page wore a distinctly yellow stain and
+     the pane read as discoloured rather than lit. Gold on cream needs a fraction of what gold on
+     near-black needed. Contrast cannot see this; only looking can. */
+  --ground-glow:   rgba(255, 157, 0, .09);
+  --ground-glow-2: rgba(192, 71, 60, .05);
+  /* the scrollbar is ON the page, so it is part of the page's theme. Same relationship to the
+     cream ground as the dark browns have to the near-black one: present, never loud. */
+  --scroll-thumb:  #b3a892;
+  --scroll-hover:  #9d9078;
+  --scroll-active: #857a63;
+  --select-ink:    #2e2618;
   /* the glass outline inverts; the lip above it does not — see the note on the dark block */
   --glass-edge:    rgba(46, 38, 26, .30);
   --glass-edge-2:  rgba(46, 38, 26, .22);
