@@ -19,6 +19,45 @@
 bug is fixed (group 38) and the sales terminal is converted as his chosen pilot (group 39).
 **543/543 · `node src/config/contrast.selfcheck.mjs` must also pass — it measures both themes.**
 
+### ✅ LIGHT MODE IS DONE AND WAS LOOKED AT — `634e901`. 543/543, both themes measured in a browser.
+
+*"use the light theme that we apply to the setting panel to its background as well"* +
+*"this task is finish until the background is light color and on theme with the panel"*.
+
+🔴 **THE APP WAS CARRYING TWO LIGHT THEMES AND NOBODY HAD PUT THEM SIDE BY SIDE.** The modules he
+approves are **cream** (`#f6f1e4 · #e6dfcd · #d8cdb6`); the app's own surfaces were a colder,
+darker **steel** (`#B4B0A9 · #C6C2BB · #D2CEC7`). One screen, two families — which is why the page
+read as a different app to the panels on it even after it stopped being black.
+
+**The whole ladder moved together and every step was kept.** Lifting only the page would have put
+the ground ABOVE the panels and deleted the one thing that makes a panel read as a panel.
+
+| | light | dark |
+|---|---|---|
+| page | **`#d2c9b4`** | `#0b0a09` |
+| panel | `#e1dac8` | `#121110` |
+| panel lifts off page | **1,18** | 1,05 |
+| gold ON-plate vs panel | **5,26** | 6,61 |
+| all 19 head/nav/module/switch/chip pairs | **pass** | **pass** |
+
+⚠️ **Lifting a light surface only ever HELPS the dark inks on it** — that is why this direction was
+safe. The pale inks all live on dark plates, which did not move.
+
+Also landed, all found **by looking**, none of them things a ratio could have caught:
+▸ `.kpm-chip` (SYNCED + the clock) was raw dark hexes — black pills punched in the cream header.
+Its resting ink was a **fossil**: `#8b7256` is what `--duke-ink-3` was before *"fix the dark
+contrast"* moved it. **A frozen copy does not follow a token when the token is corrected.**
+▸ The gold bloom at `.16` was **amplified by the header's `saturate(1.5)`** into a yellow stain.
+Now `.09`. Gold on cream needs a fraction of what gold on near-black needed.
+▸ The scrollbar was three fixed browns — a dark bar down a cream page. **On the palette, but only
+in one theme.** Plus the selection ink. Both are token pairs now.
+
+🔴 **THREE AUDIT CHECKS FAILED CORRECTLY IN ONE DAY, ALL FOR THE SAME REASON: they pinned a HEX,
+so replacing the hex correctly broke the check protecting it.** Groups 25, 32 and the G25 scrollbar
+clause now assert **relationships** (light is darker than dark; the token is a real pair) and leave
+the numbers to `contrast.selfcheck.mjs`. Group 39 already carried this lesson in its own words —
+**do not write another check that freezes a value.**
+
 ### 🔧 THERE IS A WINDOW ONTO THE APP NOW — `b08d8db`. USE IT BEFORE CLAIMING ANY COLOUR IS FIXED.
 
 ```bash
