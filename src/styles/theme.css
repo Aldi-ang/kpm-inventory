@@ -142,19 +142,34 @@
    ---------------------------------------------------------------------------- */
 :root.light,
 html.light {
-  --ground:        #B4B0A9;   /* steel. #FFFFFF appears nowhere as a surface. */
-  --sunk:          #9E9A93;
-  --panel:         #C6C2BB;
-  --raised:        #D2CEC7;
-  --inset:         #ADA9A2;
-  /* the page in daylight: the same steel the rest of the light theme is built on, the same lit
-     corner, the same two blooms — a touch stronger because gold on steel carries less far than
-     gold on near-black. Never white: the cream modules need a ground to be lifted OFF. */
-  --ground-base:   #b4b0a9;
-  --ground-hi:     #c4c0b8;
-  --ground-lo:     #a29d94;
-  --ground-glow:   rgba(255, 157, 0, .20);
-  --ground-glow-2: rgba(192, 71, 60, .07);
+  /* ---- THE LIGHT LADDER, WARMED INTO THE PANELS' OWN FAMILY -------------------------------
+     🔴 HIS INSTRUCTION, 2026-08-16: *"use the light theme that we apply to the setting panel to
+     its background as well"*. The app was carrying TWO light themes at once and nobody had put
+     them side by side: the modules he has been approving are the Duke cream (#f6f1e4 · #e6dfcd ·
+     #d8cdb6), while the app's own surfaces were a colder, darker STEEL (#B4B0A9 · #C6C2BB ·
+     #D2CEC7). Two families, one screen — which is why the page read as a different app to the
+     panels sitting on it even once it stopped being black.
+     ⚠️ THE WHOLE LADDER MOVES TOGETHER, AND THE STEPS ARE PRESERVED. Lifting only the page would
+     have put the ground ABOVE the panels and deleted the one thing that makes a panel read as a
+     panel. `--ground` now sits between the terminal's own bench and stage tones, so a Duke module
+     and a control-system module are lit by the same daylight.
+     ⚠️ LIFTING A LIGHT SURFACE ONLY EVER HELPS THE DARK INKS ON IT — every ink here is dark, so
+     every text pair improves. The pale inks (--gold-ink, --ink-inverse, --knob-on) live on DARK
+     plates, which did not move. That is why this is a safe direction; it is still measured below.
+     ⚠️ STILL NOT PAPER: `--raised` stops at #EDE7D8. #FFFFFF appears nowhere as a surface. */
+  --ground:        #D2C9B4;
+  --sunk:          #B9B0A0;
+  --panel:         #E1DAC8;
+  --raised:        #EDE7D8;
+  --inset:         #C6BDA9;
+  /* the page in daylight: the same cream the modules are cut from, the same lit corner top-left,
+     the same two blooms. The gold is eased back — on a warm ground it carries further than it
+     did on steel, and at the old strength the corner went muddy rather than lit. */
+  --ground-base:   #d2c9b4;
+  --ground-hi:     #ded5c1;
+  --ground-lo:     #c3baa4;
+  --ground-glow:   rgba(255, 157, 0, .16);
+  --ground-glow-2: rgba(192, 71, 60, .06);
   /* the glass outline inverts; the lip above it does not — see the note on the dark block */
   --glass-edge:    rgba(46, 38, 26, .30);
   --glass-edge-2:  rgba(46, 38, 26, .22);
@@ -230,8 +245,10 @@ html.light {
   --hatch:      repeating-linear-gradient(135deg, #8F8B84 0 1px, transparent 1px 4px);
   --hatch-gold: repeating-linear-gradient(135deg, #B49A55 0 1px, transparent 1px 4px);
   --hatch-danger: repeating-linear-gradient(135deg, rgba(126,42,34,.32) 0 1px, transparent 1px 5px);
-  --grad-panel: linear-gradient(180deg, #D2CEC7, #BFBBB4);
-  --grad-steel: linear-gradient(180deg, #EFECE6 0%, #DDDAD4 47%, #C9C6C0 48%, #BAB7B1 100%);
+  /* the two surface gradients move with the ladder — a steel band left behind on a cream page is
+     the same two-themes-at-once fault one layer down, and it shows on every raised strip */
+  --grad-panel: linear-gradient(180deg, #EDE7D8, #D8D1BF);
+  --grad-steel: linear-gradient(180deg, #F7F3E9 0%, #E6E0CF 47%, #D5CDB9 48%, #C6BDA8 100%);
   --burn:       linear-gradient(180deg, #8E4038, #3A1C18);
 
   --sweep-hi:   rgba(255, 252, 244, .62);
@@ -1500,9 +1517,12 @@ html.lite-mode .kpm-topbar-ghost { opacity: .04; }
   padding-top: 5px; padding-bottom: 5px; cursor: default;
   font-variant-numeric: tabular-nums;
 }
-.kpm-chip.kpm-clock:hover { color: #8b7256; border-color: #3e3226; box-shadow: none; }
+/* the clock does not light up under the pointer — it is a readout, not a control. Same tokens
+   as the resting chip, so "no hover" keeps meaning "no change" in both themes. */
+.kpm-chip.kpm-clock:hover { color: var(--duke-ink-3); border-color: var(--duke-edge-1);
+                            box-shadow: none; }
 .kpm-clock-date { font-size: 9px; letter-spacing: .1em; opacity: .75; }
-.kpm-clock-time { font-size: 13px; font-weight: 700; color: #f5e6c8; letter-spacing: .04em; }
+.kpm-clock-time { font-size: 13px; font-weight: 700; color: var(--shell-ink-2); letter-spacing: .04em; }
 html.kpm-sheet-over-header .kpm-topbar { opacity: 0; pointer-events: none; }
 html.lite-mode .kpm-topbar { transition: none; }
 @media (prefers-reduced-motion: reduce) { .kpm-topbar { transition: none; } }
@@ -2291,14 +2311,22 @@ html.lite-mode button[data-kpm-del]::after { transition: none; }
 .kpm-chip {
   display: inline-flex; align-items: center; justify-content: center; gap: .45rem;
   height: 36px; min-width: 36px; padding: 0 .55rem;
-  color: #8b7256; background: #0f0e0d; border: 1px solid #3e3226; border-radius: 10px;
+  /* 🔴 EVERY COLOUR IN THIS BLOCK WAS A LITERAL UNTIL 2026-08-16 — the chip, its hover, its ON
+     and WARN states and the clock. They are the dark theme's own hexes, frozen, so SYNCED and
+     the clock stayed black pills no matter what the page did. On the old black header nobody
+     could tell; on the cream one they are two dark holes punched in the glass.
+     ⚠️ `#8b7256` as the resting ink is a FOSSIL: it is what `--duke-ink-3` used to be before he
+     said *"fix the dark contrast"* and it moved to #a08768. Frozen copies do not follow a token
+     when the token is corrected — which is the entire argument for not making frozen copies. */
+  color: var(--duke-ink-3); background: var(--duke-fill-well);
+  border: 1px solid var(--duke-edge-1); border-radius: 10px;
   -webkit-tap-highlight-color: transparent;
   /* same asymmetry as the rail marks: leaving is flat and quick, arriving overshoots slightly */
   transition: color 170ms ease-out, border-color 170ms ease-out,
               background-color 170ms ease-out, box-shadow 170ms ease-out, transform 110ms ease-out;
 }
 .kpm-chip:hover, .kpm-chip:focus-visible {
-  color: #f5e6c8; border-color: #8b7256;
+  color: var(--shell-ink-2); border-color: var(--duke-edge-5);
   background-image: linear-gradient(180deg, rgba(255,238,205,.09), rgba(255,238,205,0) 62%);
   box-shadow: inset 0 1px 0 rgba(255,228,175,.20), 0 4px 18px rgba(255,157,0,.14);
   transition: color 240ms cubic-bezier(.22, 1, .36, 1), border-color 240ms cubic-bezier(.22, 1, .36, 1),
@@ -2306,8 +2334,10 @@ html.lite-mode button[data-kpm-del]::after { transition: none; }
               box-shadow 300ms cubic-bezier(.16, 1.16, .3, 1), transform 240ms cubic-bezier(.16, 1.16, .3, 1);
 }
 .kpm-chip:active { transform: translateY(1px) scale(.955); }
-.kpm-chip.on   { color: #ff9d00; border-color: #8b7256; box-shadow: 0 0 14px rgba(255,157,0,.22); }
-.kpm-chip.warn { color: #e0705a; border-color: #7a3b32; box-shadow: 0 0 14px rgba(224,112,90,.18); }
+.kpm-chip.on   { color: var(--duke-amber-ink);  border-color: var(--duke-edge-5);
+                 box-shadow: 0 0 14px rgba(255,157,0,.22); }
+.kpm-chip.warn { color: var(--duke-danger-ink); border-color: var(--duke-danger-edge);
+                 box-shadow: 0 0 14px rgba(224,112,90,.18); }
 html.lite-mode .kpm-chip { transition: none; }
 html.lite-mode .kpm-chip:active { transform: none; }
 

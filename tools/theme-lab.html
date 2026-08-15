@@ -84,10 +84,15 @@
                 <b>Lite</b> drops blur, animation and the heavy effects so a cheap phone stays
                 quick and the battery lasts. Nothing is hidden and no data changes.
               </p>
+              <!-- ⚠️ `.kpm-switch` with aria-pressed, NOT `.kpm-matrix`. The first version of this
+                   file guessed `.kpm-matrix two` with a `.on` class; `.kpm-matrix` is the
+                   PERMISSION TABLE and the guessed class matched no rule at all, so the lab
+                   measured a plain button and reported the gold ON-plate at 1:1 against the
+                   panel. A harness that invents markup measures the harness. -->
               <div class="kpm-shelf split">
-                <div class="kpm-matrix two">
-                  <button type="button" class="on">Full</button>
-                  <button type="button">Lite</button>
+                <div class="kpm-switch" role="group" aria-label="Graphics mode">
+                  <button type="button" aria-pressed="true">Full</button>
+                  <button type="button" aria-pressed="false">Lite</button>
                 </div>
               </div>
             </section>
