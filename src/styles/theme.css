@@ -2313,10 +2313,6 @@ html.lite-mode .kpm-title-rule { animation: none; width: 100%; }
 .kpm-field > input.kpm-slider { min-height: 44px; padding: 0; border: 0; background: none;
   accent-color: var(--accent-edge); cursor: pointer; width: 100%; }
 /* the portrait: the picture and its one act, side by side and wrapping on a phone */
-.kpm-portrait { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s4); }
-.kpm-portrait > img { width: 96px; height: 96px; border-radius: 50%; object-fit: cover;
-  border: 2px solid var(--accent-edge); background: var(--inset); flex: none; }
-.kpm-portrait > .kpm-acts { flex: 1 1 auto; }
 
 /* ---- BAND: names what a group of modules is allowed to do. This is the fence
    that used to be a 1.02:1 tinted box nobody could see. */

@@ -2190,7 +2190,7 @@ check(G34, 'the mascot lines are a picker, not an unbounded list',
   'Delete would then act on undefined');
 /* the four small parts this tab needed exist in CSS. Tailwind only emits a class it saw in source,
    and a class that exists in neither paints nothing — which looks like a transparent panel. */
-for (const cls of ['.kpm-rowacts', '.kpm-inline', '.kpm-slider', '.kpm-portrait'])
+for (const cls of ['.kpm-rowacts', '.kpm-inline', '.kpm-slider'])
   check(G34, `${cls} is defined in theme.css, not invented in the JSX`,
     themeCss.includes(cls + ' ') || themeCss.includes(cls + ' {') || themeCss.includes(cls + '{'),
     'an undefined class is the quietest possible bug: no error, no paint');

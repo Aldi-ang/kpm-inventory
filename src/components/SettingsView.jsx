@@ -430,15 +430,18 @@ export default function SettingsView({
                                   <p className="kpm-desc">You crop it after choosing, so it does not matter how the photo is framed.</p>
                               </div>
                               <div className="kpm-shelf split">
-                                  <div className="kpm-portrait">
-                                      <img alt="Current mascot" src={appSettings?.mascotImage || "/mr capy.png"}
-                                          onError={(e) => {e.target.onerror = null; e.target.src="https://api.dicebear.com/7.x/avataaars/svg?seed=Capy"}}/>
-                                      <div className="kpm-acts">
-                                          <label className="kpm-btn">
-                                              Choose &amp; crop
-                                              <input type="file" accept="image/*" onChange={handleMascotSelect} className="hidden" />
-                                          </label>
-                                      </div>
+                                  {/* NO THUMBNAIL. His call, 2026-08-15: *"this mascott picture is
+                                      kinda useless when we have the mascott already right"* — and
+                                      he is right: `CapybaraMascot` is rendered app-wide
+                                      (`App.jsx`, gated on `user && !showAdminLogin`), so the real
+                                      one is on screen while this panel is open. A frozen 96px copy
+                                      of something already visible is a second answer to a question
+                                      nobody asked. The readout still says Default or Custom. */}
+                                  <div className="kpm-acts">
+                                      <label className="kpm-btn">
+                                          Choose &amp; crop
+                                          <input type="file" accept="image/*" onChange={handleMascotSelect} className="hidden" />
+                                      </label>
                                   </div>
                               </div>
                           </div>
