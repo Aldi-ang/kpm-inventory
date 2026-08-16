@@ -45,9 +45,10 @@
   "43": "🔴 LOG 00:37 WIB — superseded: 4 blockers found, now all fixed.",
   "44": "✅ LOG 08:36 WIB — the rules question is ANSWERED, and G6 is HALF done. One question owed.",
   "45": "dev-proxy.mjs",
+  "46": "firebase.js",
+  "47": "nextStop.js",
   "48": "customerBrief.selfcheck.mjs",
   "49": "dayStats.selfcheck.mjs",
   "50": "MerchantSalesView.jsx",
-  "51": "dayStats.selfcheck.mjs",
-  "52": "VaultGate.jsx"
+  "51": "dayStats.selfcheck.mjs"
 }

@@ -53,7 +53,9 @@ const NotificationBell = ({ notifications = [], onNotificationClick }) => {
             >
                 {/* the permanent `animate-pulse` is gone with this: a loop that never stops is
                     not news, and the gold `on` plate already says there is unread mail. */}
-                <Bell size={18} />
+                {/* 22, up from 18 — the plate went 36 -> 44 and an icon left at its old size
+                    turns a bigger button into a bigger EMPTY button. */}
+                <Bell size={22} />
                 
                 {unreadCount > 0 && (
                     <span className="absolute top-0 right-0 w-4 h-4 bg-red-600 text-white text-[11px] font-black rounded-full flex items-center justify-center shadow-[0_0_10px_red]">

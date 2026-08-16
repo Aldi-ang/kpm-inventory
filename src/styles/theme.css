@@ -1548,9 +1548,18 @@ html.lite-mode .kpm-examine-object { animation: none; }
 html.lite-mode .kpm-topbar-ghost { opacity: .04; }
 /* THE CLOCK, plated like its neighbours. `tabular-nums` is not a detail here: proportional
    digits change width as the minute ticks, so the whole chip twitches once a minute. */
+/* 📏 ONE LINE PER FACE — his ask, 2026-08-16: *"removed the small dated above that and use that
+   whole time box to 1 each time, so one side is clock and u press it other one is date so that it
+   look bigger on both side"*.
+   It used to stack a 9px date over a 13px time, and BOTH faces did it, so the plate was carrying
+   four pieces of text to show two facts. The small line was the compromise you make when a chip
+   must say everything at once — and the press already removed that requirement, so it was left
+   over from the design before the press existed.
+   ⚠️ THE VERTICAL PADDING IS GONE, NOT REDUCED. The 5px top/bottom existed to stop two rows
+   touching the plate's edge; with one row, `.kpm-chip`'s own 44px height centres it, and keeping
+   the padding would just cap how large the type could go. */
 .kpm-chip.kpm-clock {
-  flex-direction: column; align-items: flex-end; gap: 0; line-height: 1.15;
-  padding-top: 5px; padding-bottom: 5px; cursor: pointer;
+  align-items: center; gap: 0; line-height: 1.15; cursor: pointer;
   font-variant-numeric: tabular-nums;
 }
 /* ⚠️ THE "NO HOVER" RULE THAT USED TO LIVE HERE IS GONE ON PURPOSE. It reset the clock's hover
@@ -1573,7 +1582,7 @@ html.lite-mode .kpm-topbar-ghost { opacity: .04; }
    vocabulary for one control; `html.lite-mode *` kills both together. */
 .kpm-clock-win { display: grid; overflow: hidden; }
 .kpm-clock-face {
-  grid-area: 1 / 1; display: flex; flex-direction: column; align-items: flex-end;
+  grid-area: 1 / 1; display: flex; align-items: center; justify-content: center;
   transition: transform 320ms cubic-bezier(.2, .9, .2, 1), opacity 180ms linear;
 }
 /* at rest the date is parked one full window BELOW, so it rises into place and the clock leaves
@@ -1581,13 +1590,20 @@ html.lite-mode .kpm-topbar-ghost { opacity: .04; }
 .kpm-clock-face:nth-child(2) { transform: translateY(100%); opacity: 0; }
 .kpm-clock.is-date .kpm-clock-face:nth-child(1) { transform: translateY(-100%); opacity: 0; }
 .kpm-clock.is-date .kpm-clock-face:nth-child(2) { transform: translateY(0); opacity: 1; }
-/* his format, lowercase, and it must never wrap — a two-line date would break the chip's height */
-.kpm-clock-long { font-size: 13px; font-weight: 700; color: var(--shell-ink-2);
+/* his format, lowercase, and it must never wrap — a two-line date would break the chip's height.
+   ⚠️ 16 AND NOT 20. The date is the WIDER face and the window is sized to the wider of the two,
+   so every point added here widens the resting chip — the one you see all day — while the time
+   face gains nothing. 16 already reads at arm's length, and the pair still looks even because
+   `16 agustus 2026` is lowercase with descenders while `15:05:53` is all digits and caps-height:
+   matching their point sizes would have made the date look LARGER than the clock, not equal. */
+.kpm-clock-long { font-size: 16px; font-weight: 700; color: var(--shell-ink-2);
                   letter-spacing: .01em; white-space: nowrap; text-transform: none; }
 @media (prefers-reduced-motion: reduce) { .kpm-clock-face { transition: none; } }
-.kpm-clock-date { font-size: 9px; letter-spacing: .1em; opacity: .75; }
-.kpm-clock-time { font-size: 13px; font-weight: 700; color: var(--shell-ink-2); letter-spacing: .04em;
-                  display: flex; align-items: flex-start; --row: 1.15em; }
+/* `.kpm-clock-date` was the 9px line above each face and is DELETED, not hidden — it has no
+   markup left to style. A rule kept "just in case" is the thing that makes the next person think
+   the small line is still a state this control can enter. */
+.kpm-clock-time { font-size: 20px; font-weight: 700; color: var(--shell-ink-2); letter-spacing: .04em;
+                  display: flex; align-items: center; --row: 1.15em; }
 
 /* ---------- THE DIGITS SLIDE ----------
    His ask: the motion-primitives SlidingNumber look, built as a CSS transition
@@ -2285,6 +2301,70 @@ html.lite-mode .kpm-rail-mark:active { transform: none; }
   .kpm-rail-mark, .kpm-rail-mark::before { transition: opacity 120ms ease-out, color 120ms ease-out; transform: none !important; }
 }
 
+/* ---------- THE RAIL IN DAYLIGHT ----------
+   🔴 HIS REPORT, 2026-08-16, screenshot of the sidebar: *"yellow color glow inside the sidebar
+   on light mode is not good because it is not clear, feels like the color is menyatu with the
+   background human eyes hard to see light on light combination like that"*.
+   `menyatu` — it merges into the ground. He is describing a MECHANISM, not a preference.
+
+   Every value above this line is a GLOW: a gold radial blooming out of rgba(255,157,0,.22), a
+   drop-shadow ringing the icon, a 3px bar with ten pixels of orange spill. A glow works by
+   ADDING LIGHT. On a near-black rail that is exactly right. On a cream one there is no room
+   left to add any — the plate ends up no darker than the surface it is meant to stand on, and
+   light-on-light is precisely what he photographed.
+
+   🔴 AND THE RAIL WAS NOT READING THE THEME AT ALL. `text-[#ff9d00]` and `bg-[#ff9d00]` are
+   written into the JSX, so the DARK theme was deciding what light mode looked like. That is the
+   root fault; the glow is only its most visible symptom.
+
+   ⚠️ THE FIX IS NOT A STRONGER GLOW. It is the inversion this palette already made everywhere
+   else: in light mode `--gold` IS a dark amber plate and `--gold-ink` is the pale ink that sits
+   on it (see the note in the light block). Every other ON state in the app already reads that
+   way — a live readout, a filled toggle, the chosen side of a switch. The rail was the last
+   place still inventing its own answer.
+   MEASURED, and pinned in contrast.selfcheck so it cannot drift back: the ON plate stands off
+   the rail's own surface at 5,32:1, and its icon sits on that plate at 6,86:1. */
+html.light .kpm-rail-mark::before {
+  /* resting and hover: a well pressed INTO the surface, not a lamp laid on top of it */
+  background: rgba(46, 38, 26, .10);
+  box-shadow: inset 0 0 0 1px var(--glass-edge-2);
+  -webkit-backdrop-filter: none; backdrop-filter: none; }
+html.light .kpm-rail-mark.hot::before {
+  background: rgba(46, 38, 26, .16);
+  box-shadow: inset 0 0 0 1px var(--glass-edge); }
+html.light .kpm-rail-mark.hot { color: var(--accent-ink); }
+/* ⚠️ `.on` IS DECLARED AFTER `.hot` ON PURPOSE. A mark can be both — the finger is on the screen
+   you are already looking at — and at equal specificity the later rule wins. The other order put
+   dark gold ink on the dark amber plate, which is the same bug in a different direction. */
+html.light .kpm-rail-mark.on::before { background: var(--gold); box-shadow: none; }
+html.light .kpm-rail-mark.on { color: var(--gold-ink); }
+/* a drop-shadow needs a dark ground to bloom into. On cream it does not glow, it just softens
+   the edge of the one icon whose whole job is to be the sharpest thing in the column. */
+html.light .kpm-rail-mark.on .kpm-rail-icon,
+html.light .kpm-rail-mark.hot .kpm-rail-icon { filter: none; }
+/* the 3px bar at the right edge, and the ten pixels of orange spill that go with it */
+html.light .kpm-rail-bar { background: var(--gold); box-shadow: none; }
+/* 🔴 AND THE CLOSED RAIL, WHICH THE FIRST PASS MISSED — his screenshot, 2026-08-16: *"can u do
+   the same format for the darkbrown plate when the sidebar is closed as well? because it is still
+   the old yellow color instead"*.
+   ⚠️ COLLAPSED, THE WHOLE SIDEBAR IS ONE CIRCLE, AND IT IS A DIFFERENT ELEMENT. `.kpm-rail-totem`
+   is not a mark — it is the desk's collapsed state, a 56px disc that fades out as the dock
+   unfurls. Fixing every `.kpm-rail-mark` therefore fixed only the state he had OPEN, and the one
+   he actually looks at most kept its `color: #ff9d00`. The lesson is not "check the collapsed
+   state too"; it is that ONE component drawn by two unrelated selectors will always be half-fixed
+   by a change written against the selector you happened to be looking at.
+   THE PLATE GOES ON THE TOTEM, NOT ON THE CAPSULE BEHIND IT. `.kpm-rail-pod::before` is the same
+   circle while collapsed — but it is also the whole glass panel once open, so painting it amber
+   would turn the OPEN sidebar into a slab. The totem is exactly 56x56 at the same corner and the
+   same radius, it already covers the capsule, and it already fades itself out on hover, so the
+   open panel he has approved is not touched at all. */
+html.light .kpm-rail-totem { background: var(--gold); color: var(--gold-ink); }
+/* the music note is a rail mark whose icon is ALWAYS the accent — it has no resting grey to fall
+   back to, so it was the loudest light-on-light thing in the dock. Two states, two answers: dark
+   gold on the bare rail, pale ink once the mark's plate is under it. */
+html.light .kpm-music-note { color: var(--accent-ink); }
+html.light .kpm-rail-mark.on .kpm-music-note { color: var(--gold-ink); }
+
 /* ---------- THE EXPANDING BUTTON ----------
    Two references from him, the same mechanism in both: a circle that grows into a pill, the mark
    sliding left as its word arrives. His notes: "make it little bit minimalist" on the delete one,
@@ -2407,8 +2487,23 @@ html.lite-mode button[data-kpm-del]::after { transition: none; }
    for a state worth noticing (unread mail); `warn` is for one that is worth acting on (no
    connection). Neither is decoration, which is why the resting plate has no colour at all. */
 .kpm-chip {
-  display: inline-flex; align-items: center; justify-content: center; gap: .45rem;
-  height: 36px; min-width: 36px; padding: 0 .55rem;
+  display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
+  /* 📏 44, AND THE CEILING IS 48 — his ask, 2026-08-16: *"i want u to make all this button bigger
+     but dont allow it to exceed the given box space"*.
+     ⚠️ THE HEADER HAS NO HEIGHT OF ITS OWN. It is a flex row that grows to whatever is tallest
+     inside it, so "the given box space" is not a number written anywhere — it had to be measured.
+     MEASURED (headless Chrome, real built stylesheet, desk width):
+       header total 73  ·  padding 11/12  ·  border 1/1  ·  INNER BOX 48
+       left text stack 48   <- THIS is what sets the header height
+       chip 36              <- 12px of free room
+     So a chip may grow to 48 before the header gains a single pixel. It stops at 44 for two
+     reasons: 44 is this app's own minimum touch target, used by every field and button in it, so
+     the row now matches the rest of the app rather than being its own size; and 4px of slack means
+     a later change to the eyebrow/title line-height cannot silently start pushing the header
+     taller. At 48 the chips would set the height jointly with the text, and every future tweak to
+     either one would move the whole bar.
+     ⚠️ RE-MEASURE, DO NOT RE-GUESS, if the eyebrow or title ever changes size. */
+  height: 44px; min-width: 44px; padding: 0 .75rem;
   /* 🔴 EVERY COLOUR IN THIS BLOCK WAS A LITERAL UNTIL 2026-08-16 — the chip, its hover, its ON
      and WARN states and the clock. They are the dark theme's own hexes, frozen, so SYNCED and
      the clock stayed black pills no matter what the page did. On the old black header nobody
@@ -2417,7 +2512,8 @@ html.lite-mode button[data-kpm-del]::after { transition: none; }
      said *"fix the dark contrast"* and it moved to #a08768. Frozen copies do not follow a token
      when the token is corrected — which is the entire argument for not making frozen copies. */
   color: var(--duke-ink-3); background: var(--duke-fill-well);
-  border: 1px solid var(--duke-edge-1); border-radius: 10px;
+  /* the corner grows with the plate, or a bigger chip reads as a squarer one */
+  border: 1px solid var(--duke-edge-1); border-radius: 12px;
   -webkit-tap-highlight-color: transparent;
   /* same asymmetry as the rail marks: leaving is flat and quick, arriving overshoots slightly */
   transition: color 170ms ease-out, border-color 170ms ease-out,
@@ -2494,7 +2590,11 @@ html.lite-mode .kpm-recorder, html.lite-mode .kpm-log-row { animation: none; }
    feel: a physical switch's lever snaps past centre and settles, while the panel behind it just
    changes colour. Matching their curves would make it read as one flat animation. */
 .kpm-theme-switch {
-  position: relative; flex: none; width: 58px; height: 30px; padding: 0;
+  /* 📏 SCALED BY THE SAME 1,22 AS THE CHIPS (58x30 -> 70x36), not matched to them. The switch has
+     always been shorter than the plates beside it, and that gap is what says "this one is a
+     control, those are readouts". Growing it to a chip's full 44 would have made a 85px-wide
+     lozenge and flattened that distinction. Still under the 48px ceiling with room to spare. */
+  position: relative; flex: none; width: 70px; height: 36px; padding: 0;
   border-radius: 999px; border: 1px solid #3e3226; background-color: #0f0e0d;
   cursor: pointer; -webkit-tap-highlight-color: transparent;
   transition: background-color 380ms cubic-bezier(.22, 1, .36, 1),
@@ -2502,14 +2602,17 @@ html.lite-mode .kpm-recorder, html.lite-mode .kpm-log-row { animation: none; }
 }
 .kpm-theme-switch.is-light { background-color: #f3efe6; border-color: #b9ae97; }
 .kpm-theme-switch .knob {
-  position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; border-radius: 50%;
+  position: absolute; top: 4px; left: 4px; width: 28px; height: 28px; border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
   background-color: #ff9d00; color: #2b2318;
   box-shadow: 0 2px 8px rgba(0,0,0,.45);
   transition: transform 420ms cubic-bezier(.34, 1.4, .5, 1),
               background-color 380ms ease-out, color 380ms ease-out;
 }
-.kpm-theme-switch.is-light .knob { transform: translateX(28px); background-color: #14110e; color: #ffca28; }
+/* ⚠️ 32 IS DERIVED, NOT PICKED: content width 68 (70 less two 1px borders), less the 28px knob,
+   less the 4px inset it rests at on each side. Change any of those three and this changes too, or
+   the knob stops landing symmetrically and the switch looks broken at one end only. */
+.kpm-theme-switch.is-light .knob { transform: translateX(32px); background-color: #14110e; color: #ffca28; }
 .kpm-theme-switch:focus-visible { outline: 2px solid #8b7256; outline-offset: 2px; }
 .kpm-theme-switch:active .knob { box-shadow: 0 1px 4px rgba(0,0,0,.55); }
 html.lite-mode .kpm-theme-switch, html.lite-mode .kpm-theme-switch .knob { transition: none; }
@@ -2829,6 +2932,27 @@ html.lite-mode .kpm-title-rule { animation: none; width: 100%; }
   font-family: var(--font-mono); font-size: 12px; letter-spacing: .06em; }
 .kpm-field > input:focus { outline: none; border-color: var(--accent-edge); }
 .kpm-field > .fixed { display: flex; align-items: center; color: var(--ink-dim); }
+/* 🔴 THE EXAMPLE TEXT WAS NEVER GIVEN A COLOUR — his report, 2026-08-16, with a screenshot of
+   OFFICIAL ADDRESS and CONTACT NUMBER: *"i want the transparant example text inside the text to
+   be more clear in the light mode"*.
+   The comment above still holds for LABELS: none of them is a placeholder, and none should be.
+   But two fields carry a format EXAMPLE as well ("Jl. Jendral Sudirman No.123"), and no rule in
+   this file had ever reached one — so it rendered in the BROWSER's grey, a colour this palette
+   never chose and cannot measure. On the cream field that grey lands near 2,2:1.
+   --ink-dim is the app's quiet ink, already pinned at 4,5:1 on --inset in BOTH themes by
+   contrast.selfcheck. Nothing new is invented here; the placeholder just joins the ladder.
+   ⚠️ `opacity: 1` IS LOAD-BEARING, not tidiness. Firefox dims placeholders by .54 ON TOP of
+   whatever colour is set, so without it this fix silently undoes itself in one browser. */
+/* 🔴 ITALIC IS NOT DECORATION HERE — it is the half of the job the colour cannot do, and it was
+   found by LOOKING, not by measuring. Rendered side by side with a typed value, the darkened
+   placeholder was indistinguishable from real content in light mode: --ink-dim #3F3B36 and --ink
+   #131211 are close enough on this well that an EMPTY field reads as a filled one. In dark the
+   two inks are far apart and the problem does not exist, which is exactly why a single ratio
+   would have passed this and a screenshot would not.
+   So the "it is only an example" signal moves to SHAPE, which survives at any contrast. The
+   vocabulary already exists — `.kpm-rec .who.kpm-line > code` marks its quiet line the same way. */
+.kpm-field > input::placeholder, .kpm-inline::placeholder {
+  color: var(--ink-dim); opacity: 1; font-style: italic; }
 
 /* ---- SWITCH: both positions always visible, so the choice is readable without
    remembering which way "on" points. */
@@ -3238,6 +3362,17 @@ html.lite-mode .kpm-title-rule { animation: none; width: 100%; }
      survived Lite Mode, and a printed caption strip is where it belongs */
   background-color: var(--inset); background-image: var(--hatch);
   font-family: var(--font-mono); font-size: 11px; letter-spacing: .2em;
+  /* 🔴 700 — his ask, 2026-08-16: *"i want the black color text need to be clearer maybe add
+     little bit thickness in color could help?"*. He named the lever correctly, and it is worth
+     writing down WHY it is weight rather than darkness: the ink was never the problem. --ink
+     measures 10,6:1 on this well in light and 14,9:1 in dark; there is nowhere darker to go.
+     The HATCH is the problem. A 1px line every 4px runs straight through 11px mono letterforms
+     tracked out to .2em, and a one-pixel stroke loses that argument at every crossing — the
+     glyph and the stripe are the same width, so the eye cannot tell which is which.
+     ⚠️ THE STRIPE STAYS. It is the one decoration in this tab he approved keeping, and it is
+     also what makes the band read as a printed caption strip rather than another module. The
+     answer to texture eating a stroke is a thicker stroke, not a quieter texture. */
+  font-weight: 700;
   text-transform: uppercase; color: var(--ink); }
 /* the band keeps the red WORD and the red border and loses the red ground, for the same reason as
    the head below it: three red surfaces stacked read as one red region, and the fence disappears

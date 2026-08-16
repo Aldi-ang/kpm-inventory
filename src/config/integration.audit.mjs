@@ -1013,6 +1013,15 @@ check(G22, 'the header is told to stand down while the sheet is in its band',
   'without the class the bell is back on the paper; without the cleanup, leaving the tab ' +
   'mid-drag strands the app with no header at all');
 const themeCss = fs.readFileSync('src/styles/theme.css', 'utf8');
+/* ⚠️ STRIP COMMENTS BEFORE GREPPING CSS, and prefer this over the raw text for anything that
+   measures DISTANCE inside a rule. Group 45 learned it one way (a regex matched the prose that
+   explained why something was NOT done); group 46 learned it the other way, which is worse
+   because it fires late: `the theme switch turns white and black` used a `[\s\S]{0,300}?` window
+   from the selector to a colour, and adding a four-line comment inside that rule pushed the
+   colour past 300 characters. The check went red with nothing wrong in the CSS at all — a check
+   that a COMMENT can break teaches people to delete comments. Defined here, next to the file it
+   strips, so every later group can reach it. */
+const noCmt = s => s.replace(/\/\*[\s\S]*?\*\//g, '');
 /* index.css was never read here, which is how slate scrollbars survived every palette sweep —
    the banned-hue check only ever looked at the shell, App and the player. It holds the body
    ground and the browser-chrome colours (scrollbar, caret, selection), so it is palette surface
@@ -1324,8 +1333,8 @@ check(G25, 'the three header controls wear the one plate',
    is the readout, not just a housing for the knob, and the knob shows the state you are IN. A
    toggle that displays its destination instead is the oldest way to make one unreadable. */
 check(G25, 'the theme switch turns white and black with the theme',
-  /\.kpm-theme-switch \{[\s\S]{0,300}?background-color: #0f0e0d/.test(themeCss) &&
-  /\.kpm-theme-switch\.is-light \{ background-color: #f3efe6/.test(themeCss) &&
+  /\.kpm-theme-switch \{[\s\S]{0,300}?background-color: #0f0e0d/.test(noCmt(themeCss)) &&
+  /\.kpm-theme-switch\.is-light \{ background-color: #f3efe6/.test(noCmt(themeCss)) &&
   /role="switch"/.test(shellSrc) && /aria-checked=\{!darkMode\}/.test(shellSrc),
   'the track carries the answer; without is-light it is a knob sliding on a black bar and the ' +
   'change he asked for never happens');
@@ -3157,7 +3166,8 @@ const G45 = '45. The clock ticks, and its slide is CSS';
    which contains the words "never an animation:", and on the comment above
    ShellClock, which names `useSpring` to say why it is not used. A check that
    greps prose is checking the explanation, not the code. */
-const noCmt = s => s.replace(/\/\*[\s\S]*?\*\//g, '');
+/* `noCmt` now lives up beside `themeCss` — see the note there for the second, nastier way this
+   same trap fires. */
 const clockCss = noCmt(themeCss), clockSrc = noCmt(themeSrc);
 check(G45, 'the clock re-arms itself on a timer',
   /function ShellClock\s*\(/.test(clockSrc) && /setTimeout\(tick/.test(clockSrc),
@@ -3216,6 +3226,93 @@ check(G45, 'the month names are a literal table, not ICU',
 check(G45, 'reduced motion snaps the face swap as well as the digits',
   /@media \(prefers-reduced-motion: reduce\) \{ \.kpm-clock-face \{ transition: none/.test(clockCss),
   'the digits were covered and the face was not — the same guard has to reach both');
+
+/* ── 46. LIGHT MODE: THE THREE THINGS HE COULD NOT READ ─────────────────────
+   Three screenshots, 2026-08-16 — a field's example text, the caption on the striped band,
+   and the sidebar's gold glow. Three symptoms, ONE fault: colour decided against a near-black
+   ground and never re-decided for the cream one. The rail is the clearest case, because it
+   was not even reading the theme — the ON colour was a hex literal in the JSX.
+   These reuse `noCmt`/`clockCss` from group 45; the reason is the same one written there. */
+const G46 = '46. Light mode: the placeholder, the band, and the rail glow';
+check(G46, 'the example text inside a field has a colour of its own',
+  /::placeholder\s*\{[^}]*color:\s*var\(--/.test(clockCss),
+  'unstyled it falls back to the browser grey, which lands near 2,2:1 on the cream field');
+check(G46, 'the browser cannot dim that colour a second time',
+  /::placeholder\s*\{[^}]*opacity:\s*1/.test(clockCss),
+  'Firefox applies opacity .54 to placeholders ON TOP of whatever colour is set');
+check(G46, 'an empty field is still told apart from a filled one',
+  /::placeholder\s*\{[^}]*font-style:\s*italic/.test(clockCss),
+  'darkening the example text to 4,5:1 made it look exactly like a typed value in light mode');
+check(G46, 'the band caption carries its own weight',
+  /\.kpm-band \{[^}]*font-weight:\s*700/.test(clockCss),
+  '11px mono over a 1px hatch: the stripe wins against a normal-weight stroke');
+check(G46, 'the light rail marks ON with a plate, not a glow',
+  /html\.light[^{]*\.kpm-rail-mark\.on::before\s*\{[^}]*background:\s*var\(--gold\)/.test(clockCss),
+  'a bloom adds light, and on a cream ground there is none left to add — his word: menyatu');
+check(G46, 'the light rail drops the drop-shadow',
+  /html\.light[^{]*\.kpm-rail-mark[^{]*\.kpm-rail-icon\s*\{[^}]*filter:\s*none/.test(clockCss),
+  'a glow needs a dark ground to bloom into; on cream it only softens the icon it marks');
+check(G46, 'the active mark takes its ink from the theme, not from a fixed hex',
+  /html\.light[^{]*\.kpm-rail-mark\.on \{[^}]*color:\s*var\(--gold-ink\)/.test(clockCss),
+  'the JSX pins #ff9d00, which is the dark theme deciding what light mode looks like');
+check(G46, 'the CLOSED rail wears the same plate as the open one',
+  /html\.light[^{]*\.kpm-rail-totem\s*\{[^}]*background:\s*var\(--gold\)/.test(clockCss) &&
+  /html\.light[^{]*\.kpm-rail-totem\s*\{[^}]*color:\s*var\(--gold-ink\)/.test(clockCss),
+  'collapsed, the whole rail IS one circle — and it was still painting the dark theme\'s #ff9d00');
+/* 📏 His ask: *"make all this button bigger but dont allow it to exceed the given box space"*.
+   The header declares no height — it grows to its tallest child — so the ceiling is a MEASURED
+   fact, not a written one: inner box 48px, set by the two lines of text on the left. This asserts
+   the two relationships that keep the promise, and deliberately does NOT pin 44: the sizes are
+   free to move, the ceiling is not. Re-measure with tools/theme-lab-server.mjs + headless Chrome
+   if the eyebrow or title ever changes size. */
+const HEADER_INNER_PX = 48;
+const chipH = /\.kpm-chip \{[^}]*height:\s*(\d+)px/.exec(clockCss);
+const swH   = /\.kpm-theme-switch \{[^}]*height:\s*(\d+)px/.exec(clockCss);
+check(G46, 'the header controls cannot outgrow the header',
+  !!chipH && !!swH && +chipH[1] <= HEADER_INNER_PX && +swH[1] <= HEADER_INNER_PX,
+  `a chip taller than ${HEADER_INNER_PX}px stops fitting and starts SETTING the header's height`);
+check(G46, 'the switch stays shorter than the plates beside it',
+  !!chipH && !!swH && +swH[1] < +chipH[1],
+  'that height gap is what separates the one control in the row from the readouts around it');
+check(G46, 'the music note reads the theme instead of a fixed orange',
+  /html\.light[^{]*\.kpm-music-note\s*\{[^}]*color:\s*var\(--accent-ink\)/.test(clockCss) &&
+  /kpm-music-note/.test(noCmt(fs.readFileSync('src/MusicPlayer.jsx', 'utf8'))),
+  'it is the one rail mark with no resting grey, so on cream it was orange on cream all day');
+check(G46, 'the audit vault stopped painting itself for a black page',
+  !/(text-slate-|bg-black\/|border-white\/|text-white[^-]|bg-white\/|emerald|blue-500)/
+    .test(noCmt(fs.readFileSync('src/components/AuditVaultView.jsx', 'utf8'))),
+  'that screen was written entirely for a dark ground — in light mode it was a dark island with ' +
+  'pale slate text on it, and slate IS the blue the palette law bans');
+
+/* 📏 THE MIGRATION LEDGER. The app carries TWO theming systems: the control-system tokens
+   (--ink/--panel under html.light) and an older Tailwind `dark:` + slate/white layer. Every screen
+   Aldi has complained about lives in the old one. Add a file to this list the moment it is
+   converted — the check then makes the conversion permanent, which is the only thing that stops a
+   half-migrated screen creeping back one className at a time.
+   ⚠️ `bg-black/NN` is deliberately NOT banned: a modal scrim is correct in both themes. */
+const MIGRATED = [
+  'src/components/AuditVaultView.jsx',
+  'src/components/SamplingManager.jsx',
+];
+const LEGACY_PALETTE =
+  /(dark:[a-z-]|text-slate-|bg-slate-|border-slate-|divide-slate-|\btext-white\b|\bbg-white\b|emerald-|green-[0-9]|blue-[0-9]|indigo-|violet-|cyan-|gray-[0-9])/;
+for (const f of MIGRATED) {
+  const dirty = noCmt(fs.readFileSync(f, 'utf8')).match(LEGACY_PALETTE);
+  check(G46, `${f.split('/').pop()} stays on the tokens`, !dirty,
+    `found "${dirty ? dirty[0] : ''}" — a legacy colour class cannot follow the theme, so it is ` +
+    'right in whichever mode it was written for and wrong in the other');
+}
+check(G46, 'a bare `border` never survives a migration',
+  !MIGRATED.some(f => (noCmt(fs.readFileSync(f, 'utf8')).match(/className="[^"]*"/g) || []).some(c => {
+    const t = c.split(/\s+/);
+    return t.some(x => ['border', 'border-b', 'border-t', 'border-l', 'border-r'].includes(x)) &&
+           !t.some(x => x.startsWith('border-['));
+  })),
+  'Tailwind\'s default border colour is a THIRD palette on the page and follows neither theme');
+check(G46, 'the ON bar is a named part the stylesheet can reach',
+  /kpm-rail-bar/.test(noCmt(themeSrc)) &&
+  /html\.light[^{]*\.kpm-rail-bar\s*\{/.test(clockCss),
+  'an arbitrary Tailwind colour on an anonymous span cannot be themed at all');
 
 /* ── report ──────────────────────────────────────────────────────────────── */
 let last = '';

@@ -117,7 +117,16 @@ const MusicPlayer = ({ onOpen }) => {
                 {/* One mark, one job: open the pill. Every control — play, skip, shuffle, loop,
                     volume — lives in the pill, at both widths now. The desk's own label and inline
                     play/pause are gone with the 256px column that had room for them. */}
-                <Music size={21} className={`text-[#ff9d00] shrink-0 transition-transform duration-300 ${isPlaying ? 'animate-pulse' : ''} ${isExpanded ? 'scale-[1.22]' : ''}`} />
+                {/* ⚠️ `kpm-music-note` EXISTS SO THE THEME CAN REACH THIS ICON. His report,
+                    2026-08-16: *"u better change that yellow music color for the light mode"*.
+                    `text-[#ff9d00]` is the dark theme's hex written into the markup — the same
+                    root fault as the sidebar marks — and this one never even had an `on` state to
+                    hide behind: it is bright orange on cream all day. The hex STAYS as the dark
+                    default; `html.light .kpm-music-note` overrides it and wins on specificity.
+                    ⚠️ Only the COLLAPSED note is re-coloured. Everything inside the expanded pill
+                    sits on its own near-black surface, where orange is correct — that pill is a
+                    dark island like the vault gate, not app chrome. */}
+                <Music size={21} className={`kpm-music-note text-[#ff9d00] shrink-0 transition-transform duration-300 ${isPlaying ? 'animate-pulse' : ''} ${isExpanded ? 'scale-[1.22]' : ''}`} />
                 {/* the same label plate every other mark gets on a desk — his video asks for the
                     music button to be one of them, which means it says its name like one too */}
                 <span className="kpm-rail-word">Music</span>

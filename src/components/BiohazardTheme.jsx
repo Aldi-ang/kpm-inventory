@@ -113,19 +113,22 @@ function ShellClock() {
                     element at opacity 0 is still read out loud; without this the
                     button announces both faces at once. */}
                 <span className="kpm-clock-face" aria-hidden={showDate}>
-                    <span className="kpm-clock-date">{now.toLocaleDateString()}</span>
                     {/* the index is a safe key here: the string is always the same
                         eight characters in the same eight positions. */}
                     <span className="kpm-clock-time">
                         {time.split('').map((c, i) => <SlidingDigit key={i} char={c} />)}
                     </span>
                 </span>
-                {/* FACE 2 — the date. The two rows swap ROLES rather than one of
-                    them being replaced: the small line takes the time, the big
-                    line takes the date. Same two heights, so the flip cannot
-                    change the chip's size. */}
+                {/* FACE 2 — the date, and ONE line, same as face 1. His ask,
+                    2026-08-16: *"removed the small dated above that and use that
+                    whole time box to 1 each time ... so that it look bigger on
+                    both side"*.
+                    ⚠️ THE SMALL LINE IS NOT MOVED, IT IS GONE FROM BOTH FACES. It
+                    existed so the chip could say both things without being pressed;
+                    the press made that job unnecessary and nobody removed the line
+                    that was doing it. Each face now spends the whole plate on the
+                    one fact it is for. */}
                 <span className="kpm-clock-face" aria-hidden={!showDate}>
-                    <span className="kpm-clock-date">{time}</span>
                     <span className="kpm-clock-long">{longDate}</span>
                 </span>
             </span>
@@ -760,7 +763,11 @@ export default function BiohazardTheme({
                                         pointed at, and the strip widens to hold it. The phone
                                         never shows it; there the peek plate follows the finger. */}
                                     <span className="kpm-rail-word">{item.label}</span>
-                                    {on && <span className="absolute right-0 top-2 bottom-2 w-[3px] rounded-l-full bg-[#ff9d00] shadow-[0_0_10px_rgba(255,157,0,.6)]"></span>}
+                                    {/* ⚠️ `kpm-rail-bar` EARNS ITS KEEP — the two Tailwind hexes here are the
+                                        dark theme's, and an anonymous span gives the stylesheet nothing to
+                                        aim at. With the class, `html.light .kpm-rail-bar` is two classes to
+                                        Tailwind's one and wins the cascade regardless of file order. */}
+                                    {on && <span className="kpm-rail-bar absolute right-0 top-2 bottom-2 w-[3px] rounded-l-full bg-[#ff9d00] shadow-[0_0_10px_rgba(255,157,0,.6)]"></span>}
                                 </button>
                             );
                         })}
@@ -944,7 +951,10 @@ export default function BiohazardTheme({
                                 title={darkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
                                 className={`kpm-theme-switch ${darkMode ? '' : 'is-light'}`}
                             >
-                                <span className="knob">{darkMode ? <Moon size={12} /> : <Sun size={12} />}</span>
+                                {/* 15, up from 12, because the knob went 22 -> 28. An icon that
+                                    does not grow with its knob leaves a ring of empty colour and
+                                    reads as a smaller switch, not a bigger one. */}
+                                <span className="knob">{darkMode ? <Moon size={15} /> : <Sun size={15} />}</span>
                             </button>
                         )}
 

@@ -116,6 +116,16 @@ const PAIRS = [
   ['quiet text in a Duke well',    'ink-dim',        'duke-fill-well',   4.5],
   ['quiet text on a Duke panel',   'ink-dim',        'duke-fill-panel',  4.5],
 
+  /* 🔴 THE SIDEBAR'S "YOU ARE HERE", 2026-08-16 — *"yellow color glow inside the sidebar on
+     light mode is not good because it is not clear, feels like the color is menyatu with the
+     background"*. Nothing here was watching the rail, because the rail was not using tokens:
+     its ON state was a gold bloom written as rgba literals in this stylesheet and a #ff9d00
+     in the JSX, so both themes got the value that was tuned for the black one. --glass-solid
+     is the rail's own surface. 3:1 is the floor for a non-text indicator, same as the plate
+     pairs above, and for the same reason: an unreadable STATE is as broken as unreadable text. */
+  ['the ON plate against the rail', 'gold',          'glass-solid',  3],
+  ['the ON icon on its plate',      'gold-ink',      'gold',         4.5],
+
   /* ── THE DUKE'S LEDGER, the sales terminal's own palette ──────────────────────────
      WARNING: THESE PAIRS WERE DISCOVERED, NOT INVENTED. The first version of this block listed
      pairs I assumed the screen rendered, and several of them did not exist. A check that asserts

@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-16 09:21 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
+**Updated: 2026-08-16 14:52 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -15,11 +15,148 @@
 
 ## ▶ NOW
 
-### 🔴 THREE NEW LIGHT-MODE COMPLAINTS — NOT STARTED. Plan quota hit 97%, session stopped here.
+### 🔴 THE REAL SHAPE OF THE TEN JOBS: THIS APP HAS **TWO THEMING SYSTEMS**
 
-He sent three screenshots and three sentences at 09:21 WIB, right as the quota alarm fired.
-**Nothing was investigated, nothing was changed.** His words, verbatim — do not paraphrase, do not
-merge them into one "contrast pass", they are three different problems:
+Measured, not guessed. `tailwind.config.js` has `darkMode: 'class'` and `App.jsx:2436` toggles BOTH
+`dark` and `light` on `<html>` — so the old layer does respond to his switch. It is not broken. It
+is simply a **different, older design system** that predates the tokens, and every screen he has
+complained about lives in it:
+
+| task | screen | file | lines | `slate-` | `dark:` |
+|---|---|---|---|---|---|
+| 5 | Reports | `components/HistoryReportView.jsx` | 1157 | 275 | 154 |
+| 6 | Sampling | `components/SamplingManager.jsx` | 611 | 151 | 132 |
+| 7 | Customer Directory | `components/CustomerManager.jsx` | 1700 | 207 | 179 |
+| 8 | Stock Opname | `StockOpnameView.jsx` | 1092 | 114 | 0 |
+| 9 | EOD Setoran | `EODReconciliationView.jsx` | 916 | 70 | 0 |
+| 10 | Receivables | `ConsignmentFinanceView.jsx` | 988 | 129 | 38 |
+
+≈ **6,500 lines, ~950 legacy colour references.** Also on the old layer and not yet asked for:
+`DashboardView.jsx`, `ExamineModal.jsx`, `ImageCropper.jsx`.
+
+**THE METHOD, PROVEN ON SAMPLING (task 6, done):** `scratchpad/migrate.mjs` holds an ordered
+mapping table — 92 rules fired, 1,494 bytes removed, 30 bare `border`s given `--line` in a second
+pass. ⚠️ **Order is load-bearing**: compounds like `bg-orange-500 text-white` must be caught before
+`text-white`, or the ink on a gold plate becomes the page's dark ink and the button goes unreadable.
+Hand-editing ~330 sites is how a screen ends up HALF converted, which looks like a bug and hides.
+**Copy that script per screen, re-check its mapping, run, then render both themes.**
+
+⚠️ **A bare `border` with no colour class is a THIRD palette** — Tailwind's own default grey, which
+follows neither theme. Dropping a `dark:border-slate-700` leaves one behind every time. Checked now.
+
+### 🔴 TEN JOBS, AND EIGHT OF THEM ARE BLOCKED ON ONE UNANSWERED QUESTION
+
+He added five more (Sampling, Customer Directory, Stock Opname, EOD Setoran, Receivables). Tasks
+6-10. **Do not start 5-10 by "converting the colours" — that is the wrong summary of the problem.**
+
+⚠️ **THE PALETTE LAW BANS HUES BUT NEVER NAMED REPLACEMENTS.** Every one of these screens invented
+its own answer as a hardcoded hex against the near-black page that existed then. Light mode did not
+break them; it revealed they were never theme-aware. The blues are all decoration and convert
+freely. **The greens all mean "everything is fine"** — SAFE, HEALTHY, verified, revertable — and
+that is the one meaning with no token, which is why the same question keeps returning per screen.
+
+**Proposed once, for all of them: colour marks what needs ATTENTION; "fine" is the ABSENCE of
+colour.** fine → plain ink, no plate · needs attention → gold · overdue/destructive → the existing
+red. Not a new rule: it is what `.kpm-chip` already does (*"the resting plate has no colour at
+all"*) and what the danger red already does (*"rationed to things that destroy data"*).
+**Written up in `A-Brain/Wiki/Concepts/Aldi's Design Taste.md`. He has not answered yet.**
+
+Also note his two constraints on the new five: **Customer Directory — *"keep the logic tho"***, and
+**Stock Opname / Receivables — he asked for the SYSTEM and the LOGIC to change**, so those two need
+an investigation and a written report BEFORE any redesign.
+
+### 📋 FIVE JOBS ON THE TASK LIST — he asked for one, and asked to tick them off HIMSELF
+
+⚠️ **DO NOT MARK A TASK COMPLETED.** His instruction, 2026-08-16: *"u should put all of this work
+that i ask u to the task list and check it when i check and said done"*. Work goes to `in_progress`
+and STAYS there until he says the word.
+
+| # | job | state |
+|---|---|---|
+| 1 | Title block + kill SYSTEM ACTIVE, add an idle animation | **needs his pick** |
+| 2 | Audit log unreadable in light mode | built, 576/576, rendered — awaiting his check |
+| 3 | Music player's yellow in light mode | built, rendered — awaiting his check |
+| 4 | Replace the bottom L-CLICK / SCROLL strip | **needs his pick** |
+| 5 | Reports screen rework, both themes | **needs his direction** |
+
+**2 and 3 were the same fault as the sidebar, for the third time today:** `AuditVaultView.jsx` was
+written entirely for a black page — `text-white`, `bg-black/20`, `bg-white/5`, ten `text-slate-*`,
+plus blue and emerald — so in light mode it rendered as a **dark island with pale blue text on it**.
+Converted to tokens wholesale; a check now fails if any of those class families come back.
+⚠️ `opacity-50` on the RECENT SYSTEM ACTIVITY heading was the worst single thing in his screenshot —
+opacity applied to text is a contrast cut no colour token can defend against. Deleted, not re-tinted.
+⚠️ **The emerald badge/Revert became GOLD provisionally.** Green is banned but "revertable" has no
+token; this is the SAME open question as the emerald on EODReconciliationView. Settle both together.
+**Music: only the COLLAPSED note was re-coloured** — the expanded pill is its own near-black island,
+like the vault gate, and orange is correct in there.
+
+🔴 **I broke the build twice with my own comments** — a `{/* */}` cannot be the first sibling inside
+a `map(x => ( ... ))` return; it makes two expressions where one is allowed. Both fixed; noted here
+because it cost two full builds and will happen again in any file being commented while converted.
+
+### ✅ THE CLOCK IS ONE LINE PER FACE — 574/574, rendered. **Awaiting his look.**
+
+*"removed the small dated above that and use that whole time box to 1 each time, so one side is
+clock and u press it other one is date so that it look bigger on both side"*.
+
+The 9px line above the time is **deleted from both faces**, not moved — it was the compromise from
+before the press existed, and the press had already made it unnecessary. Time **13px → 20px**,
+date **13px → 16px**, `.kpm-clock-date` removed from CSS and JSX.
+⚠️ **The date stays smaller than the time on purpose:** the window is sized to the WIDER face, so
+every point added to the date widens the resting chip you look at all day. Measured: chip
+**88,77 → 150,64 wide**, still 44 tall, header still 73.
+
+### ✅ THE HEADER CONTROLS ARE BIGGER, AND THE HEADER DID NOT MOVE — 574/574. **Awaiting his look.**
+
+His ask: *"i want u to make all this button bigger but dont allow it to exceed the given box space"*.
+
+⚠️ **"The given box space" is not written anywhere.** `.kpm-topbar` declares no height — it is a
+flex row that grows to its tallest child — so the ceiling had to be MEASURED, and it is the two
+lines of text on the LEFT that set it, not the chips:
+
+    header total 73  ·  padding 11/12  ·  border 1/1  ·  INNER BOX 48
+    left text stack 48   <- sets the height       chip was 36   -> 12px free
+
+Chips **36 → 44** (the app's own touch target, so the row now matches every field and button in
+the app), switch **58x30 → 70x36** scaled by the same 1,22, knob 22 → 28, bell icon 18 → 22, sun/
+moon 12 → 15. **Re-measured after: header still exactly 73.** Rendered and looked at.
+
+🔴 **A PRE-EXISTING CHECK WENT RED ON MY COMMENT, NOT MY CODE.** `the theme switch turns white and
+black` scans `[\s\S]{0,300}?` from the selector to a colour — a four-line comment inside that rule
+pushed the colour past 300 characters. **A check a COMMENT can break teaches people to delete
+comments**, so the check was fixed rather than the comment: `noCmt` now lives beside `themeCss` at
+the top of the audit and this check strips comments before matching. Group 45 had already learned
+the mirror image of this; it is the same trap firing from the other side.
+
+### ✅ ALL THREE APPROVED BY ALDI IN THE REAL APP — 571/571. **REPO NOT COMMITTED.**
+
+**His verdict, 2026-08-16 ~15:0x WIB, after signing in and looking:** *"sidebar is good, grey
+example text is good, 3 is also good lets move on"*. That includes the italic he never asked for.
+⚠️ **This topic is CLOSED — do not re-open it or re-summarise it to him.**
+
+**…except one state the first pass missed**, reported straight after with a screenshot: *"can u do
+the same format for the darkbrown plate when the sidebar is closed as well? because it is still
+the old yellow color instead"*. Fixed, 572/572, rendered. **Awaiting his look.**
+🔴 **THE LESSON, AND IT WILL RECUR:** collapsed, the sidebar is `.kpm-rail-totem` — a completely
+different element from `.kpm-rail-mark`. Fixing every mark fixed only the state that happened to
+be open on screen. **One component drawn by two unrelated selectors is always half-fixed by a
+change written against the selector you were looking at.** The plate went on the TOTEM, not on
+`.kpm-rail-pod::before` — that pseudo-element is the same circle while collapsed but becomes the
+whole glass panel once open, so painting it would have turned the approved open sidebar into a slab.
+
+🎉 **A FRAME WAS FINALLY CAPTURED.** Two sessions of "measured but never rendered" are over:
+**headless Chrome is already on this machine** and needs no install, no dev server, no login.
+Full command and the traps in `A-Brain/Wiki/Concepts/Looking at the App.md` (commit `0b9b784`).
+
+    "/c/Program Files/Google/Chrome/Application/chrome.exe" --headless=new --disable-gpu \
+      --hide-scrollbars --virtual-time-budget=2500 --screenshot="<abs>/out.png" \
+      --window-size=1000,420 "http://localhost:4180/"
+
+⚠️ It paid for itself the first time it ran: the darkened placeholder **passed 4,5:1 and still
+looked exactly like a typed value** in light mode. A ratio said fine; the picture said an empty
+field now reads as a filled one. Fixed with italic — shape, not colour.
+
+His words, verbatim, and what each one turned out to be:
 
 1. *"i want the transparant example text inside the text to be more clear in the light mode"*
    — screenshot: the form fields **OFFICIAL ADDRESS** and **CONTACT NUMBER**. The greyed example
@@ -41,8 +178,20 @@ merge them into one "contrast pass", they are three different problems:
    fix is probably a different signal there (ring, solid chip, darker gold), not a brighter glow.
    ⚠️ Palette law still holds: no blue, no green, and gold is never text on light.
 
-**All three are LIGHT MODE ONLY.** Do not touch the dark theme values.
-**Run `node src/config/contrast.selfcheck.mjs` before and after** — that is the check that goes red.
+**ONE FAULT UNDER ALL THREE:** colour decided against a near-black ground and never re-decided for
+the cream one. The rail was the worst case — it was not reading the theme at all, because
+`text-[#ff9d00]` and `bg-[#ff9d00]` are written into the JSX, so **the dark theme was deciding what
+light mode looked like**. No token, no palette law and no contrast check can see a hardcoded hex.
+
+**What landed** (all light-mode-scoped except the band's weight, which is both themes):
+`::placeholder` gets `--ink-dim` + `opacity:1` + italic · `.kpm-band` gets `font-weight:700` ·
+`html.light .kpm-rail-mark` swaps the gold bloom for a pressed well, and `.on` for a solid
+`--gold` plate with `--gold-ink` on it · the ON bar gets the class `kpm-rail-bar` so CSS can reach
+it. **Audit group 46, 8 checks, all seen RED before the fix.** Contrast: ON plate 5,32:1 (was a
+bloom at roughly 1,2:1), icon on plate 6,86:1.
+
+❓ **ANSWER — the one judgement call he has not seen.** `opacity:1` and the darker ink were his
+ask; **the italic was mine**, added after looking at the frame. It is one word to remove.
 
 ### ✅ THE SLIDING CLOCK IS BUILT — 563/563, audit group 45. Committed this session (`git log -1`).
 
@@ -942,6 +1091,14 @@ order:
 
 ## 📓 LOG
 
+- **2026-08-16 14:52 WIB (KPM)** — All three approved in the real app (`0b9b784`, `f5f1810`).
+  Chrome now runs against a KEPT profile at `<scratch>/chrome-kpm` with `--ignore-certificate-errors`,
+  launched via `cmd //c start ""` so it survives the turn — that profile holds his Google session,
+  so the real app can be photographed on request. **Repo still uncommitted.**
+- **2026-08-16 14:24 WIB (KPM)** — The three light-mode complaints fixed, 571/571, and the first
+  real FRAME of this app's CSS ever captured in this environment (headless Chrome, no install).
+  Root cause of the sidebar one: hardcoded `#ff9d00` in the JSX, so light mode was never consulted.
+  Vault `0b9b784`. **Repo not committed — he has not asked.**
 - **2026-08-16 09:21 WIB (KPM)** — Sliding clock shipped and committed (CSS reel + press-to-flip
   date, 563/563). Found and fixed the real bug behind it: the header clock had never ticked. Then
   Aldi filed three light-mode legibility complaints (placeholder text, dark text on the striped
