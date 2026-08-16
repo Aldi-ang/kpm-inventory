@@ -56,12 +56,23 @@ repayment engine with no UI. `WANTED`, `Bounty Under Review`, `Awaiting Sheriff 
 the Georgia serif are already in `EODReconciliationView.jsx`.
 
 **✅ ALL THREE ANSWERED 2026-08-16 19:40 — nothing is blocking the build now:**
-1. **Per-card approval is a schema change.** Today an EOD report carries ONE `status`. Four cards
-   means four statuses inside the `handleVerifyEOD` transaction. Confirm he wants that.
-2. **5 taps per agent per day** for the admin (4 cards + the letter). With several agents that adds
-   up — does he want an "approve all four" shortcut, or is one-by-one the point?
-3. **"Missing transfer" needs defining.** A bank transfer either arrived or it did not; it cannot
-   be short in an envelope the way cash can.
+1. **Per-card approval is REAL** — his answer: *"Real — one result per card"*. Each card stores its
+   own approved/short result, so an admin can accept goods and stamps while marking only the cash
+   short. ⛔ **This is a SCHEMA CHANGE** inside the `handleVerifyEOD` transaction (today an EOD
+   report carries ONE `status`) and it touches money records. Draft the `firestore.rules` change,
+   report it, never deploy it — Aldi deploys rules himself.
+2. **"Approve all" shortcut: YES** — clears all four cards in one press; approving the LETTER stays
+   a separate second action. ⚠️ **PROPOSED SAFEGUARD, NOT YET APPROVED:** grey the shortcut out
+   whenever any card has a gap, so a day that does not balance can never be rubber-stamped. **Ask
+   him before building that** — he asked for the shortcut, not for the restriction.
+3. **"Missing transfer" = BOTH cases**, his answer: (a) recorded as paid by transfer but nothing
+   ever landed, and (b) it arrived for LESS than the sale was recorded at. The poster has to say
+   which of the two it is, so they cannot be chased the same way.
+
+**Build order when the quota resets:** the four swapping cards → the letter (fill, seal, send) →
+the admin's stack + per-card approval + approve-all → the letter approved and returned → the poster
+rebuilt as unpaid bounties only → the bounty repayment receipt and its cleared animation → the
+free week dashboard. Phone first throughout — container queries, not media queries.
 
 ### ✅ 2026-08-16 19:25 — earlier decisions, still valid: B chosen, Accept short YES, gold on a perfect day
 
