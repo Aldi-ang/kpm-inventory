@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-16 20:06 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
+**Updated: 2026-08-16 20:12 WIB (KPM app session)** · 🔴 EOD HANDOVER IS THE FIRST SECTION BELOW · branch `phase0-solid-ground` · last code commit: run `git log -1`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -14,6 +14,131 @@
 > and `A-Brain/Wiki/Log.md` hold how it got there.
 
 ## ▶ NOW
+
+# 🔴🔴 START HERE AFTER THE COMPACT — EOD SETORAN REDESIGN, FULL HANDOVER
+
+**Written 2026-08-16 20:10 WIB on his instruction:** *"let me compact this chat for later make sure
+u take notes of everything and our workflow for later"*. Everything below is decided. **Nothing in
+this section needs re-asking. Do not re-pitch, do not re-explain, do not re-derive.**
+
+## 1. What is being built, in one line
+
+The EOD Setoran screen becomes **four swapping cards → a letter → three approvals (agent → regional
+admin → HQ)**, with the WANTED poster repurposed for **unpaid bounties only** and a separate
+**bounty repayment** flow. His words for the whole point: *"3 times approval each day making sure
+that there is no leak in the work process"*.
+
+## 2. His decisions — LOCKED, do not re-litigate
+
+| # | decision | his words / answer |
+|---|---|---|
+| 1 | Concept | **B, the Sheriff's Desk**, then combined with A — *"i like B better TBH"*, then *"i want to combine A and B"* |
+| 2 | Vault-door concept | **DELETED** — *"i dont like 3"* |
+| 3 | Accept short | **YES, build it** — a gap becomes a debt on the agent |
+| 4 | A perfectly-counted day | **"Gold — let it glow"** — he broke his own palette law knowingly |
+| 5 | Per-card approval | **Real — one result per card**, not just flipping through |
+| 6 | Approve-all shortcut | **YES, add it** |
+| 7 | Grey-out when unbalanced | **NO — do not build it.** *"we gave admin power and we should trust them"* |
+| 8 | Missing transfer | **Both cases**: never arrived, AND arrived for less than recorded |
+| 9 | Week dashboard | **YES** — costs zero extra Firestore reads, proven |
+| 10 | Platform | **Phone first** — *"EOD will mostly be done in phone"* |
+
+## 3. The flow, as objects (his nouns are the spec)
+
+    AGENT           4 cards: cash -> transfer -> goods return -> pita cukai
+                    confirm one, it SWAPS to the next
+                    all four go INTO a letter, letter is SENT
+
+    REGIONAL ADMIN  a STACK of letters, openable
+                    views each card, approves them ONE BY ONE (or approve-all)
+                    then a button appears to approve the LETTER, sent back to the agent
+
+    HQ              approves the regional admin's approval, daily
+                    can see whether the region cheated or manipulated
+
+    POSTER          unpaid bounties ONLY - missing item / cukai / cash / transfer
+    REPAYMENT       separate feature -> bounties receipt -> admin confirms -> cleared animation
+
+## 4. 🔴 THE HARD PART, AND IT IS NOT THE ANIMATION
+
+*"we need to make system where this leak of cash or input can be traced down to the root"*.
+
+Today an EOD report stores **totals**. **A total cannot be traced** — you cannot ask a number which
+sale it came from. Each card MUST store:
+
+1. the **source record ids** it was computed from, not just the sum
+2. **declared** (agent) and **accepted** (regional) as two separate numbers — store one and
+   manipulation is invisible by construction
+3. **who** signed at each of the three steps, and **when**
+4. any gap as its own stored value with its own reason
+
+⛔ **Decide this record shape BEFORE building the cards.** Ship totals-only and traceability can
+never be added without a migration.
+
+## 5. What already exists — FINISH IT, DO NOT INVENT IT
+
+| already in the repo | where |
+|---|---|
+| Bounty engine: `reportType:'BOUNTY'`, `penaltyKeys`, debt-wiping | App.jsx ~1891-1898 — **no UI** |
+| Sheriff theme: `WANTED`, `Bounty Under Review`, `Awaiting Sheriff Verification`, Georgia serif | `EODReconciliationView.jsx` |
+| XP, badges, streaks, `daysVerified`, `cleanCukaiDays` — fire on APPROVAL | App.jsx ~1931-2006, invisible in the UI |
+| Approver identity on every approval (`user: user.email`) | `logAudit()` App.jsx:2504-2528 |
+| Today-vs-yesterday, same-time comparison | `src/utils/dayStats.js` |
+| Cukai debt that follows an agent — the model for Accept short | `cukaiDebts` on the motorist doc |
+
+⚠️ **What the audit line is MISSING is the numbers.** It records *"Verified EOD for Bagas"* and no
+money. HQ can see *that* a day was approved, never *what*. **Putting the figures into that existing
+line is the cheapest real work in the whole feature.**
+
+## 6. Build order
+
+four swapping cards → the letter (fill, seal, send) → admin stack + per-card approval + approve-all
+→ letter approved and returned → **HQ approval** → poster rebuilt as unpaid bounties only → bounty
+repayment receipt + cleared animation → the free week dashboard. **Phone first: container queries,
+not media queries.**
+
+## 7. 🔴 Still open — ask him, do not assume
+
+1. Does HQ get a **screen** (daily digest per region) or a **report** (pushed/exported)?
+2. Is HQ a **new permission tier**, or the existing top admin? `src/config/permissions.js` has NOT
+   been checked.
+3. `audit_logs` is admin-only and **7-day gated** (`useDatabaseSync.js:84`) — is that long enough
+   for HQ's review window?
+4. Week-vs-last-week on the dashboard **would** cost extra reads. Left out. Does he want it?
+
+## 8. ⛔ Safety rails for this feature
+
+- **Accept short and per-card status write MONEY records.** Draft the `firestore.rules` change,
+  show it to him, **never deploy it** — he deploys rules himself from the Console.
+- The logic is otherwise untouched. He has said *"keep the logic"* on every screen.
+- Never reintroduce `window.confirm`/`prompt` — the dialog gate replaced all 69.
+
+## 9. The artifact
+
+**`https://claude.ai/code/artifact/1f903a9f-d032-4098-8b5f-0719481affad`** — source of truth is
+`scratchpad/eod-concepts.html`; republish that same path to keep the URL. It currently shows the
+FOUR pitched concepts (v5), **not** the combined flow he then specified. It is a record of how the
+decisions were reached, not the spec. **Section 3 above is the spec.**
+
+## 10. How to work on this — the workflow that earned his approval
+
+1. **He cannot judge a concept from prose.** *"i cant imagine those, why dont u generate all of that
+   inside artifact and i choose"*. Build a **playable artifact** with light/dark/**Lite**/slow-mo/
+   **Phone** toggles, in the REAL palette lifted from `theme.css`. Prose pitches produce no decision.
+2. **Verify that something MOVED, not that an animation was assigned.** `animationName` passing
+   proved nothing — the key rotated a featureless circle and looked frozen. Read the end transform
+   with transitions off, use `getAnimations()` to prove a transition runs, and pause at ~42% for a
+   frame. Three questions, three instruments.
+3. **Headless Chrome does not advance CSS transitions under `--virtual-time-budget`.** "After"
+   samples return START values and read as bugs that are not there.
+4. **Check the code before answering a cost question.** The Firebase answer was *zero extra reads*,
+   and only reading `useDatabaseSync.js` could establish that.
+5. **Ask who else sees the output before designing an ending.** Two endings were designed for the
+   wrong last actor: first the regional admin was forgotten, then HQ.
+6. Render before claiming. Quote him verbatim. Write the vault the same session.
+
+---
+
 
 ### 🏆 2026-08-16 19:35 — HE SPECIFIED THE WHOLE FLOW HIMSELF. THIS SUPERSEDES "BUILD B".
 
