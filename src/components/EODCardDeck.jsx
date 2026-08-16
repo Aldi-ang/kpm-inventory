@@ -34,7 +34,11 @@ const HINTS = {
   cukai:    'Count the stamps you are handing over.'
 };
 
-export default function EODCardDeck({ expected = {}, onConfirm, disabled = false }) {
+/* `details` is a node per card — the goods card must LIST what is in the vehicle, or the agent is
+   being asked to count something the screen refuses to show them. Aldi's spec says the cards
+   "show the information for each"; that information is the point, not decoration. Capped and
+   scrollable so a long canvas cannot push the deck's height around mid-swap. */
+export default function EODCardDeck({ expected = {}, details = {}, onConfirm, disabled = false }) {
   const [step, setStep] = useState(0);
   const [entry, setEntry] = useState('');
   const [done, setDone] = useState([]);
@@ -55,7 +59,7 @@ export default function EODCardDeck({ expected = {}, onConfirm, disabled = false
   return (
     <div className="w-full">
       {/* ── the deck ───────────────────────────────────────────────────── */}
-      <div className="relative h-[248px] mb-4" style={{ perspective: '1200px' }}>
+      <div className="relative h-[350px] mb-4" style={{ perspective: '1200px' }}>
         {CARD_IDS.map((id, i) => {
           const Icon = ICONS[id];
           const offset = i - step;               // 0 = on top, >0 = still behind, <0 = gone
@@ -94,6 +98,12 @@ export default function EODCardDeck({ expected = {}, onConfirm, disabled = false
               </div>
 
               <p className="text-sm text-[var(--ink-dim)] mb-3">{HINTS[id]}</p>
+
+              {details[id] && (
+                <div className="mb-3 max-h-[96px] overflow-y-auto rounded-lg border bg-[var(--inset)] border-[var(--line)] p-2">
+                  {details[id]}
+                </div>
+              )}
 
               <label className="block">
                 <span className="text-[10px] font-bold uppercase tracking-[.18em] text-[var(--ink-dim)] block mb-1.5">

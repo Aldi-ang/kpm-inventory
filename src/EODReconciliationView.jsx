@@ -2,6 +2,7 @@ import React, { useMemo, useState, useEffect } from 'react';
 import { ShieldCheck, Wallet, Truck, CheckCircle, Upload, AlertCircle, Clock, DollarSign, Package, XCircle, Tag, ChevronDown, ChevronRight, MapPin, User, Calendar, Folder, Target, BadgeDollarSign, ShieldAlert } from 'lucide-react';
 import { formatRupiah, getLocalDayKey } from './utils/helpers';
 import { confirmAction } from './components/ConfirmGate.jsx';
+import EODAgentFlow from './components/EODAgentFlow.jsx';
 
 const EODReconciliationView = ({ samplings = [], transactions = [], inventory = [], agentCanvas = [], agentProfileId, motorists = [], eodReports = [], user, appSettings, onSubmitEOD, onVerifyEOD, onResetEOD, isAdmin }) => {
     
@@ -100,12 +101,26 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
             return tDate.toDateString() === today.toDateString();
         });
 
+        /* 🔎 THE SOURCE ROWS BEHIND EACH TOTAL. Aldi, 2026-08-16: *"we need to make system where
+           this leak of cash or input can be traced down to the root"*. A sum cannot be traced —
+           you cannot ask a number which sale it came from — so the loop that builds the total now
+           also keeps the transactions it came from. The cost is one push per row: the transaction
+           is already in hand here, `t.id` included. See src/utils/eodRecord.js. */
+        const cashSources = [];
+        const transferSources = [];
         todaysTrans.forEach(t => {
             const amount = t.amountPaid !== undefined ? t.amountPaid : (t.total || 0);
             const method = t.paymentType || t.method || 'Cash';
             if ((t.type === 'SALE' && method !== 'Titip') || t.type === 'CONSIGNMENT_PAYMENT') {
-                if (method === 'Transfer' || method === 'QRIS') expectedTransfer += amount;
-                else expectedCash += amount;
+                const row = {
+                    txId: t.id,
+                    amount,
+                    customerName: t.customerName || 'Unknown store',
+                    method,
+                    at: t.timestamp?.seconds || null
+                };
+                if (method === 'Transfer' || method === 'QRIS') { expectedTransfer += amount; transferSources.push(row); }
+                else { expectedCash += amount; cashSources.push(row); }
             }
         });
 
@@ -165,7 +180,7 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
         const cashStatus = (pendingCash || legacyPending) ? 'PENDING' : (verifiedCash || legacyVerified) ? 'VERIFIED' : 'READY';
         const cukaiStatus = (pendingCukai || legacyPending) ? 'PENDING' : (verifiedCukai || legacyVerified) ? 'VERIFIED' : 'READY';
 
-        return { expectedCash, expectedTransfer, expectedCukai, activeStock: resolvedCanvas, damagedItemsToReturn, todaysSamplings, cashStatus, cukaiStatus, storesServed, titipCollected, itemsBks, cukaiRemaining: expectedCukai };
+        return { expectedCash, expectedTransfer, expectedCukai, activeStock: resolvedCanvas, damagedItemsToReturn, todaysSamplings, cashStatus, cukaiStatus, storesServed, titipCollected, itemsBks, cukaiRemaining: expectedCukai, cashSources, transferSources };
     }, [effectiveId, samplings, transactions, agentCanvas, eodReports, motorists, agentProfileId]);
 
     useEffect(() => {
@@ -437,28 +452,61 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                     )}
                                 </div>
 
+                                {/* 🃏 THE AGENT COUNTS, THEN THE APP COMPARES — Aldi's redesign, 2026-08-16.
+                                    The old control here was a single "Submit Cash & Stock" button under figures the
+                                    app had worked out itself, so nothing the agent did could be right or wrong.
+
+                                    ⚠️ THE SUBMITTED PAYLOAD IS UNCHANGED. `cash` and `transfer` still carry the
+                                    CALCULATED figures, because handleVerifyEOD credits the career ledger from them
+                                    and he said keep the logic. What the agent counted rides alongside as `cards`,
+                                    where the regional admin and HQ can compare the two. Nothing about crediting
+                                    moves until "Accept short" ships — and that needs his rules deploy first. */}
                                 {agentData.cashStatus === 'READY' && (
-                                    <button 
-                                        onClick={() => onSubmitEOD({
-                                            cash: agentData.expectedCash,
-                                            transfer: agentData.expectedTransfer,
-                                            cukai: 0,
-                                            remainingStock: agentData.activeStock,
-                                            damagedStockToReturn: agentData.damagedItemsToReturn,
-                                            deployedSamples: [],
-                                            reportType: 'CASH_STOCK',
-                                            agentId: effectiveId,
-                                            agentName: resolveIdentityName(),
-                                            dayKey: getLocalDayKey(),
-                                            storesServed: agentData.storesServed,
-                                            cukaiRemaining: agentData.cukaiRemaining,
-                                            titipCollected: agentData.titipCollected,
-                                            itemsBks: agentData.itemsBks
-                                        })}
-                                        className="w-full mt-6 py-4 bg-[var(--gold)] hover:bg-[var(--gold)] text-[var(--gold-ink)] rounded-xl font-black uppercase tracking-[0.2em] flex items-center justify-center gap-2 shadow-lg transition-transform active:scale-95"
-                                    >
-                                        <Upload size={18}/> Submit Cash & Stock
-                                    </button>
+                                    <div className="mt-6">
+                                        <EODAgentFlow
+                                            expected={{
+                                                cash: agentData.expectedCash,
+                                                transfer: agentData.expectedTransfer,
+                                                goods: (agentData.activeStock || []).reduce((n, i) => n + (Number(i.qty) || 0), 0),
+                                                cukai: agentData.expectedCukai
+                                            }}
+                                            sources={{
+                                                cash: agentData.cashSources,
+                                                transfer: agentData.transferSources
+                                            }}
+                                            details={{
+                                                goods: (agentData.activeStock || []).length === 0
+                                                    ? <p className="text-[11px] text-[var(--ink-dim)] uppercase tracking-widest text-center py-1">Vehicle is empty.</p>
+                                                    : (agentData.activeStock || []).map((item, n) => (
+                                                        <div key={item.productId || n} className="flex justify-between gap-2 text-[11px] py-0.5">
+                                                            <span className="text-[var(--ink)] truncate">{item.name}</span>
+                                                            <span className="font-mono tabular-nums text-[var(--ink-dim)] shrink-0">{item.qty} {item.unit || 'Bks'}</span>
+                                                        </div>
+                                                    )),
+                                                cukai: <p className="text-[11px] text-[var(--ink-dim)]">
+                                                    {agentData.todaysSamplings?.length || 0} sampling records deployed today.
+                                                </p>
+                                            }}
+                                            onSubmit={(letter) => onSubmitEOD({
+                                                cash: agentData.expectedCash,
+                                                transfer: agentData.expectedTransfer,
+                                                cukai: 0,
+                                                remainingStock: agentData.activeStock,
+                                                damagedStockToReturn: agentData.damagedItemsToReturn,
+                                                deployedSamples: [],
+                                                reportType: 'CASH_STOCK',
+                                                agentId: effectiveId,
+                                                agentName: resolveIdentityName(),
+                                                dayKey: getLocalDayKey(),
+                                                storesServed: agentData.storesServed,
+                                                cukaiRemaining: agentData.cukaiRemaining,
+                                                titipCollected: agentData.titipCollected,
+                                                itemsBks: agentData.itemsBks,
+                                                // 🆕 additive: what the agent actually counted, with the rows behind it
+                                                cards: letter.cards
+                                            })}
+                                        />
+                                    </div>
                                 )}
                             </div>
 

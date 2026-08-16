@@ -15,7 +15,7 @@ import { CARD_IDS, CARD_LABELS, emptyLetter, emptyCard, declareCard, canSend } f
    that already owns the Firestore write decide what to do. Keeping the counting UI ignorant of
    persistence is what lets it be rendered and driven in a harness without a database. */
 
-export default function EODAgentFlow({ expected = {}, onSubmit, submitting = false }) {
+export default function EODAgentFlow({ expected = {}, details = {}, sources = {}, onSubmit, submitting = false }) {
   const [letter, setLetter] = useState(() => emptyLetter());
   const [stage, setStage] = useState('counting');   // counting → sealing → sealed → sent
 
@@ -28,8 +28,11 @@ export default function EODAgentFlow({ expected = {}, onSubmit, submitting = fal
         cards: {
           ...prev.cards,
           [id]: {
-            ...declareCard(emptyCard(id), expectedSources(id, expected, counted), 'agent', Date.now()),
-            declared: counted
+            /* the REAL rows where the screen has them (cash and transfer come straight off
+               today's transactions); a single summary row only where it genuinely has none. */
+            ...declareCard(emptyCard(id), sources[id]?.length ? sources[id] : summaryRow(id, expected, counted), 'agent', Date.now()),
+            declared: counted,
+            expected: Number(expected[id] ?? 0)
           }
         }
       };
@@ -77,7 +80,7 @@ export default function EODAgentFlow({ expected = {}, onSubmit, submitting = fal
       </ol>
 
       {stage === 'counting' ? (
-        <EODCardDeck expected={expected} onConfirm={handleConfirm} disabled={submitting} />
+        <EODCardDeck expected={expected} details={details} onConfirm={handleConfirm} disabled={submitting} />
       ) : (
         <EODLetter
           cards={cardsForLetter}
@@ -90,11 +93,10 @@ export default function EODAgentFlow({ expected = {}, onSubmit, submitting = fal
   );
 }
 
-/* What the agent counted becomes ONE source row for now — the per-transaction breakdown is wired
-   in when this replaces the live screen, where `todaysTrans` is already in scope and every `t.id`
-   is right there in the loop that computes the expected figure.
-   ponytail: single-row source until that wiring lands; the shape is already correct so nothing
-   downstream changes when the real rows arrive. */
-function expectedSources(id, expected, counted) {
+/* The fallback when a card genuinely has no underlying rows to point at — goods and stamps are
+   counted as physical objects, not as a list of transactions. Cash and transfer always arrive with
+   real per-sale rows from the screen, so this is not the traceability shortcut it looks like:
+   there is nothing finer to record for a stack of 128 stamps than "128 stamps". */
+function summaryRow(id, expected, counted) {
   return [{ txId: `counted:${id}`, amount: counted, label: CARD_LABELS[id], expected: Number(expected[id] ?? 0) }];
 }
