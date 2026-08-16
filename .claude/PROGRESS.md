@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-17 00:35 WIB (KPM app session)** · 🟢 THE COUNTING DECK IS LIVE IN THE APP · 🔴 EOD HANDOVER IS THE FIRST SECTION BELOW · branch `phase0-solid-ground` · last code commit: run `git log -1`
+**Updated: 2026-08-17 00:52 WIB (KPM app session)** · 🔴 HIS 3 CORRECTIONS ARE THE FIRST SECTION · 🔴 EOD HANDOVER IS THE FIRST SECTION BELOW · branch `phase0-solid-ground` · last code commit: run `git log -1`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -15,7 +15,40 @@
 
 ## ▶ NOW
 
-# 🔨 BUILD STARTED 2026-08-16 23:20 — TWO SLICES DONE, BOTH COMMITTED
+# 🔴 2026-08-17 00:50 — HIS THREE CORRECTIONS AFTER SEEING IT LIVE. START HERE.
+
+> 1. *"it look so broken sc1"*
+> 2. *"sc2 is not effective, what if there are a lot of item types at once missing item on onetype
+>    wont make a good record to the data"*
+> 3. *"what i want is each card animations going inside 1 same letter then sending animation could
+>    be better than now"*
+
+**#1 — MY BUG, PARTLY FIXED.** I replaced the submit BUTTON but left the old figures block above
+it, so the screen showed dead `Rp 0` plates and the goods table AND the new deck, stacked. 73 lines
+of the `cashStatus === 'READY'` branch removed (commit below). ⚠️ **STILL DUPLICATED AND NOT FIXED:
+the legacy `CARD 2: PITA CUKAI` block is still its own card with its own submit**, while the deck
+also counts pita cukai. The deck is meant to replace BOTH cards. Removing card 2 means folding its
+CUKAI submit into the letter — that touches a second Firestore write path, which is why it was not
+done in the same pass. Also still present: the decorative gold quarter-circle (`w-32 h-32
+bg-[var(--gold)] rounded-bl-full`) that overflows the card corner in his screenshot.
+
+**#2 — A REAL DESIGN FLAW I INTRODUCED, NOT A POLISH ITEM.** The goods card asks for ONE number
+("how many you counted: 120"). With many product types that is useless: a shortfall of one Cello
+Green is invisible inside a single total, and **the whole point of the record shape is that a gap
+leads back to a specific thing**. A one-number goods card throws that away at the point of entry.
+**Goods must be counted PER PRODUCT LINE** — one input per row, each row its own source record with
+its own declared/expected. Same argument applies to pita cukai if stamps are tracked per product.
+⚠️ This means `EODCardDeck` needs a per-row counting mode for the goods card, not a single input.
+
+**#3 — the animation he actually wants.** Right now the deck swaps cards, then the letter appears
+as a separate stage. He wants **one letter present the whole time, with each confirmed card flying
+INTO it**, and a better send animation. So the letter should be on screen from the start (small,
+waiting) and each confirm should launch that card into it — not deck-then-letter as two scenes.
+
+**Build order for the next session: #2 first (it is data correctness), then #3, then the leftover
+duplication in #1.**
+
+# 🔨 BUILD 2026-08-16 23:20 — SLICES 1-5, ALL COMMITTED
 
 **Slice 1 · the record shape** — `src/utils/eodRecord.js` + `src/config/eodRecord.selfcheck.mjs`
 + audit group 47. This was done FIRST because it is the only part that cannot be retrofitted.
