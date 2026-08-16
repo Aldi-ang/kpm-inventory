@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-16 08:18 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
+**Updated: 2026-08-16 08:32 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -557,6 +557,25 @@ order:
 ## ❓ WAITING ON ALDI — verbatim, do not paraphrase
 
 ### 🔴 OPEN — asked 2026-08-16, NOT answered
+
+0. **THE SLIDING CLOCK.** He pasted a 21st.dev/motion-primitives `SlidingNumber` component and
+   said *"and change the clock UI into this"*. **NOT BUILT — three facts make the paste-in wrong
+   for this repo, and he was asked to choose before anything was installed:**
+   - ⚠️ **The guide assumes TypeScript + shadcn + `@/components/ui/`.** This repo is **JavaScript**
+     (`.jsx`), has its own `.kpm-*` control system instead of shadcn, uses `src/components/`, and
+     has **no `@/` alias**. It cannot be copy-pasted; it has to be ported.
+   - 🔴 **IT WOULD BREAK LITE MODE.** The component animates with **JS-driven transforms**
+     (`useSpring` → `style.transform`), and `html.lite-mode *` can only force `animation`/
+     `transition` to none — **it cannot stop a JS animation.** On the setting that exists for
+     cheap phones, the digits would slide forever on a 1s timer. His law: *"lite mode means
+     performance"*, *"nothing rotates"*.
+   - It adds **`motion` (~50KB) + `react-use-measure`** to an offline-first app, for a clock.
+   - **Options put to him — A: a pure-CSS slide (recommended; no deps, and Lite Mode kills it for
+     free because it IS a CSS animation). B: install the libraries and hand-write a Lite guard.
+     C: park it, do the Dashboard first.**
+   - ❓ **Also unanswered: does he want SECONDS in the header?** The current clock is date + time,
+     no seconds. The pasted design is `HH:MM:SS` and re-renders the shell **once per second** —
+     a real battery cost on exactly the phones Lite Mode is for.
 
 1. **The banned hues on `EODReconciliationView`.** On that screen `emerald` means *verified /
    shift closed* and `blue` means *Digital Transfers*. Both are banned, but they carry DIFFERENT
