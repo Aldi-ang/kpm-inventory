@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-17 02:24 WIB (KPM app session)** · ✅ HIS 3 CORRECTIONS ARE ALL BUILT — `661498f` · 🔴 WHAT IS LEFT IS THE FIRST SECTION BELOW · branch `phase0-solid-ground` · last code commit: run `git log -1`
+**Updated: 2026-08-17 03:34 WIB (KPM app session)** · ✅ 5 OF HIS REPORTS BUILT — `661498f` + `23d1977` · 🔴 WHAT IS LEFT IS THE FIRST SECTION BELOW · branch `phase0-solid-ground` · last code commit: run `git log -1`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -15,7 +15,43 @@
 
 ## ▶ NOW
 
-# ✅ 2026-08-17 02:24 — ALL THREE CORRECTIONS BUILT AND RENDERED. `661498f`
+# 🔴 2026-08-17 03:34 — THE STAMP CEILING. `23d1977`. READ THE MONEY NOTE.
+
+> *"the color pallete and design is really bad, make sure it follow our theme"*
+> *"i add more item and submit on the EOD it still allow us to sent the item data more than what
+> the agent bring, this is really niche happen tho"*
+
+**HE CALLED IT NICHE. IT WAS THE MOST EXPENSIVE BUG IN THE FEATURE.** `handleVerifyEOD` spends
+`report.cukai` against the agent's stamp debt and turns any surplus into a **negative
+`global_credit`** (App.jsx:1918-1920) — a permanent reduction in what that agent owes on every
+later day. Nothing anywhere capped the number. So an over-count did not record a wrong figure, it
+**minted stamp credit nobody earned.**
+
+**Capped at entry AND at the write, on both paths** — the new deck (`clampLine` per line, plus
+`maxTotal` so 128 handed over + 128 lost cannot be 256 against a debt of 128) and the legacy card
+(`clampStamps` + `cukaiOverCount`). ⚠️ **Cash and transfer stay UNCAPPED on purpose** — an agent
+genuinely can hold more money than the app expected and that over IS a gap worth keeping. The
+ceiling belongs to physical objects, where the number is impossible rather than unlikely.
+⚠️ **The cap silently did nothing on the first pass**: it was added to the deck and to the screen
+and `EODAgentFlow` never forwarded it. Group 48 now pins the forward.
+
+**THE SCREEN HE PHOTOGRAPHED WAS THE LEGACY CARD**, still live because he had already submitted
+cash that day. Hiding it when `cashStatus === 'READY'` was not removing it. It is rebuilt on the
+tokens: the `--gold` slab carrying `--ink-dim` text (gold on gold) and the two `bg-black/60` fields
+are gone; the debt wears the surface, red appears only when stamps are actually lost, as a border
+plus a plate. **The new checks found two MORE gold-on-gold sites on the admin side** nobody had
+reported (`--accent-ink` IS the gold; `--gold-ink` is the ink that plate takes).
+
+**Checks:** 594/594 audit — **group 48 is new and was SEEN TO FAIL before the fixes** · 12/12
+record self-check · typing 999 into every goods line reads back `40|12|25|18|6|8`, the exact
+vehicle load · 128+128 refused in both cards, rendered.
+
+🔬 **A SECOND HARNESS EXISTS NOW: `http://localhost:4180/eod-view.html`** mounts the WHOLE
+`EODReconciliationView` with fabricated props, not a component out of it — the legacy card is
+inline JSX and the component harness could never reach it. `?stage=lost|over|typed999&theme=…`.
+This is the harness that would have caught the 2026-08-16 composition bug.
+
+# ✅ 2026-08-17 02:24 — HIS THREE EARLIER CORRECTIONS, BUILT AND RENDERED. `661498f`
 
 **#2 PER-LINE COUNTING — DONE.** `EODCardDeck` takes a `lines` prop. The goods card now has one
 input per product in the vehicle, each line its own source row with its own `expected`, and
