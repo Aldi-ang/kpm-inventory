@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-16 07:40 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
+**Updated: 2026-08-16 08:18 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -14,6 +14,17 @@
 > and `A-Brain/Wiki/Log.md` hold how it got there.
 
 ## ▶ NOW
+
+### ✅ THE PAGE IS CREAM IN THE REAL APP — `f44978f`, seen on screen, 2026-08-16 08:18
+
+**Two elements were covering a correct body**, and no file-reading could have found either: the
+shell's root wrapper (`bg-black`) and the content wrapper (`bg-gradient-to-br … to-black/80`, a
+background **image**). Both gone. **`BODY` is the only full-screen painter now.**
+🔧 **`node tools/dev-proxy.mjs` → `http://localhost:4183`** opens the REAL app in a browser that
+refuses the dev server's self-signed cert. **Use it before claiming any visual fix.** The dev
+server stays HTTPS.
+▸ **Still dark on purpose:** the Dashboard and the other five unconverted screens paint their own
+full-bleed panels over the cream. That is the remaining screen work, not a regression.
 
 **🔴 LIGHT MODE IS THE LIVE FRONT, AND IT IS NOW ACTUALLY ON.** Phase 6 is complete; the switch
 bug is fixed (group 38) and the sales terminal is converted as his chosen pilot (group 39).
@@ -335,6 +346,13 @@ batch them: he has to look at each one. `AgentProfileView` is already clean (0 s
 | `src/config/contrast.selfcheck.mjs` | measures every text/surface pair in BOTH themes |
 | `src/config/integration.audit.mjs` | 526 checks; groups 38 (light switch) and 39 (Duke's Ledger) |
 | `index.html` | the pre-paint theme stamp — must agree with `App.jsx`'s theme effect |
+| `src/index.css` | **the page ground** — `body` paints `--ground-base` + the lit-corner gradient |
+| `src/components/BiohazardTheme.jsx` | **the SHELL that actually covers the page** — root wrapper, dock, drawer, status strip |
+| `tools/dev-proxy.mjs` | **NEW 2026-08-16** — plain HTTP in front of the HTTPS dev server, so a browser can open the REAL app |
+| `tools/theme-showroom.html` | **NEW 2026-08-16** — every colour in place, both themes; the page Aldi comments on |
+| `tools/theme-lab.html` + `theme-lab-server.mjs` | the measurement harness (`/lab`); serves the showroom at `/` |
+| `tools/make-preview.mjs` | flattens either page into one file that opens from disk, no server |
+| `src/config/theme.grounds.mjs` | resolves each accent's ancestor background — run before converting any screen |
 
 ### Phase 6 — complete, kept for reference
 
@@ -521,6 +539,20 @@ order:
    and it must stay >= `.kpm-rail-pod`'s width or the open dock paints over the title.
 
 ## ❓ WAITING ON ALDI — verbatim, do not paraphrase
+
+### 🔴 OPEN — asked 2026-08-16, NOT answered
+
+1. **The banned hues on `EODReconciliationView`.** On that screen `emerald` means *verified /
+   shift closed* and `blue` means *Digital Transfers*. Both are banned, but they carry DIFFERENT
+   meanings, so making both gold would delete the distinction. **Proposed: verified → gold, digital
+   → brass (the quieter gold).** He has not answered. **Do not convert that screen until he does.**
+
+2. **Merging to `main`.** He said *"okay u may integrate this now, app havent been updated"* — but
+   `main` is at `3231f21` with **zero** of this work and the branch is **425 commits ahead**.
+   ⚠️ **"Integrate" was NOT treated as authorisation to merge 425 commits to production.** Offered:
+   confirm on localhost first, then open a **PR** (like PR #3) for him to merge himself.
+   ▸ `git log HEAD..main` = 0, so it would be a clean fast-forward; nothing on main gets reverted.
+   ▸ Merging does **not** deploy Firestore rules — those stay a draft he deploys by hand.
 
 - ✅ **ANSWERED AND DONE — *"fix the dark contrast"*, 527/527, contrast self-check passes in BOTH
   themes.** From **129 sites below target down to 52**, and of those 52 only **3 are genuinely
@@ -806,7 +838,37 @@ order:
 
 ## 📓 LOG — newest first, about five entries; `git log` keeps the rest
 
-### 2026-08-16 07:40 (KPM app session) — no KPM work this session, timestamp touch only
+### 2026-08-16 08:18 (KPM app session) — the app was finally OPENED, and two skins were painting over the page
+
+🔴 **The whole night's "the background is still black" was TWO ELEMENTS COVERING A CORRECT BODY**,
+and neither was findable from the files. His words: *"why dont u open the localhost then look at
+it yourself"* — after which he signed in himself so the real app could be inspected.
+
+- `tools/dev-proxy.mjs` terminates TLS in front of the HTTPS dev server so a browser that
+  distrusts the self-signed cert can open the app. ⚠️ **The dev server is untouched and stays
+  HTTPS — that rule is his.**
+- **`BiohazardTheme.jsx` root wrapper had `bg-black`**, full viewport. Measured live: `body` was
+  already correct cream `rgb(210,201,180)` with this on top at `rgb(0,0,0)`. Now `bg-transparent`,
+  because `body` paints the ground *and* the lit-corner gradient — an opaque wrapper of any colour
+  hides it, which is why the glass header and dock had been blurring a flat wall all along.
+- **The content wrapper had `bg-gradient-to-br from-transparent to-black/80`** — a background
+  **IMAGE**, which is exactly why fixing the first one measured correct and still looked black.
+  Deleted; it duplicated a falloff `index.css` already does.
+- ⚠️ **RULE: when a surface still looks wrong after its `background-color` checks out, read
+  `background-image` before assuming the measurement lied.**
+- Verified by sweeping every element wider than 60% / taller than 50% of the viewport: **`BODY` is
+  now the only full-screen painter.** Rest of the shell converted with them (drawer scrim, foot
+  rule, avatar rings, screen title, status strip).
+- Earlier in the same session: 35 dead `bg-[var(--x)]/N` classes (group 44), Lite Mode may never
+  change a colour (group 43), the dark island now rides the dark `:root` blocks, the showroom page.
+- **548/548 · contrast passes both themes · eslint unchanged.**
+- ⚠️ **Found, NOT fixed:** the Dashboard hotlinks a background wallpaper from `wallpapers.com` at
+  runtime — a third-party image in a business app, same class as the Shutterstock clip he was
+  warned about. Needs his call.
+- ⚠️ Same JSX mistake as the night before: `{/* comment */}` directly before the returned element
+  is two nodes and 500'd the whole app until the braces came off.
+
+### 2026-08-16 07:40 (KPM app session) — /alucard wifi troubleshooting, no KPM code touched
 
 `/alucard` wifi troubleshooting again (3rd recurrence — Instagram/TikTok slow on his home wifi).
 Nothing in `src/` touched by me; `integration.audit.mjs` mtime changed from some other process.
@@ -877,39 +939,10 @@ has 10 `react-hooks/rules-of-hooks` errors around lines 1212-1240 and `CapybaraM
 all present at `a317aeb` before this change and unchanged by it. Verified by linting the stashed
 tree. Hooks called conditionally are a real class of bug; they are just not this commit's.
 
-### 2026-08-15 09:55 (KPM app session) — the mascot lines became a picker
+### ⤵ The 2026-08-15 mid-morning Phase-6 entries trimmed (09:55, 09:45)
 
-**419/419.** *"for the capybara dialogue u might need to make it dropdown menu instead, too many
-conversation for it"*. Every line rendered as its own row, so the module grew without limit and
-needed an inner scrollbar to survive — **the one thing he has banned twice**. A `<select>` plus two
-acts is a **fixed height at any number of lines**.
-⚠️ `pick` is clamped on EVERY RENDER, not on delete: removing the last line leaves the index past
-the end and the next Delete acts on `undefined`.
-⚠️ Icon-delete count **16 → 15** — "Delete" carries its own word now, so it must not wear
-`data-kpm-del`. Third time this migration has happened (18→17→16→15); each one is a real change.
-✅ **His verdict on the whole Settings rework: *"overall i like it we can continue"***.
-
-### 2026-08-15 09:45 (KPM app session) — General & Brand converted. Phase 6, slice 2. Only Tiers left.
-
-**418/418.** 67 off-token colours to zero, same regrouping by consequence.
-
-🔑 **Two real findings, not just paint.** The **pita cukai fine** — which comes out of a real
-salesman's pay — was sitting under a divider inside the letterhead card, reading as one more
-invoice field. It is its own Tier-1 module now and says what it does. And the letterhead is split
-**by save behaviour**: three fields wait for Save, two write as you type, and each module prints
-which it is instead of leaving him to guess.
-**Lite Mode** became a two-position switch with one writer (`writeLiteMode`) — the third
-one-writer switch in the system, after photo storage and rank source.
-
-⚠️ **A CHECK FAILED ON CORRECT CODE.** The needle `!/color: var(--gold)/` also matches
-**`accent-color: var(--gold)`** on a range input — a substring, and a slider thumb is a fill, not
-text. Re-anchored on a property boundary. **A needle that can match inside a longer property name
-eventually will.** Fourth regex-anchor lesson this week.
-📌 Four small classes were needed (`.kpm-rowacts`, `.kpm-inline`, `.kpm-slider`, `.kpm-portrait`);
-each is checked as DEFINED, because a class that exists in neither Tailwind nor theme.css paints
-nothing and looks exactly like a transparent panel.
-⚠️ **Writing this file from a bash heredoc ate every backtick** — the shell ran them as commands
-and left the quoted names blank. **Use the Edit tool for PROGRESS.md, never `python -c` in bash.**
+The mascot line picker, and General & Brand converted as Phase 6 slice 2. Both superseded —
+Phase 6 is complete and the light theme has since been rebuilt on top of it. `git log` has them.
 
 ### ⤵ The 2026-08-15 morning Phase-6 entries trimmed (09:25, 09:05, 08:51, 08:40, 08:36)
 
