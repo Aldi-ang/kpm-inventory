@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-17 00:52 WIB (KPM app session)** · 🔴 HIS 3 CORRECTIONS ARE THE FIRST SECTION · 🔴 EOD HANDOVER IS THE FIRST SECTION BELOW · branch `phase0-solid-ground` · last code commit: run `git log -1`
+**Updated: 2026-08-17 02:24 WIB (KPM app session)** · ✅ HIS 3 CORRECTIONS ARE ALL BUILT — `661498f` · 🔴 WHAT IS LEFT IS THE FIRST SECTION BELOW · branch `phase0-solid-ground` · last code commit: run `git log -1`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -15,7 +15,58 @@
 
 ## ▶ NOW
 
-# 🔴 2026-08-17 00:50 — HIS THREE CORRECTIONS AFTER SEEING IT LIVE. START HERE.
+# ✅ 2026-08-17 02:24 — ALL THREE CORRECTIONS BUILT AND RENDERED. `661498f`
+
+**#2 PER-LINE COUNTING — DONE.** `EODCardDeck` takes a `lines` prop. The goods card now has one
+input per product in the vehicle, each line its own source row with its own `expected`, and
+**confirm is blocked until every line carries a number** — a blank and a zero must not become the
+same record. Proved end to end: `goodsRows=6`, `goodsShort="Cello Merah 12"`. A gap names the
+product.
+⚠️ **His "same applies to pita cukai" was wrong on the data and it is worth knowing why.**
+`expectedCukai` is ONE pool (`calcTotal + globalCredit + legacyDebt`) — there is no per-product
+stamp figure to count against. So cukai's two lines are the two OUTCOMES the legacy card owned:
+handed over, and lost. `declared = returned + lost = 123`, the same figure that card submitted.
+
+**#3 ONE LETTER, CARDS FLY IN — DONE.** The letter is mounted for the whole flow, small while
+counting, showing **four blank rules from the first card**. Each confirm measures the card against
+the letter's mouth (`mouthRef`, measured — not hard-coded, so it lands at any width) and flies it
+in over 760ms; its row fills 340ms later. Send is two beats now: a 200ms lift, then the arc away,
+then the slot closes behind it.
+
+**#1 DUPLICATION — DONE.** The legacy `CARD 2: PITA CUKAI` is gone from the READY screen (it stays
+for PENDING/VERIFIED and legacy days). Both gold quarter-circles removed. The card wrapper no
+longer clips — a confirmed card leaves the deck UPWARDS, so `overflow-hidden` would have deleted
+the only animation on the screen. **The letter now writes BOTH reports on one press** — CASH_STOCK
+and CUKAI, same two documents and shapes the two buttons used to write.
+
+**Three defects he had NOT named, found only by rendering:** the open flap at `rotateX(172deg)`
+threw an 81px beige wedge over the step strip (now 104°); the wax on the corner still clipped the
+last row's figure (now bottom-centre, where `justify-between` guarantees no text); the letter's
+238px slot stayed open after it flew away (now collapses after a 640ms delay).
+
+**Checks:** build clean · 586/586 audit · 12/12 record self-check (two new groups pin the per-line
+trace and the cukai split) · driven end to end in headless Chrome at 390px, light + dark + Lite,
+`overflowing=0`, resting height 167px after send.
+
+🔬 **THE LAB LIVES IN THE SCRATCHPAD NOW, NOT IN `dist/`** — `npm run build` empties `dist/`, so a
+harness planted there dies on the rebuild the harness itself requires. `scratchpad/relab.sh`
+copies it in, resolves the stylesheet hash from the build that just ran, and re-bundles:
+`sh <scratchpad>/relab.sh` then `http://localhost:4180/eod-lab.html?stage=<count|goods|fly|cukai|sealed|launch|done>&theme=<light|dark>&lite=1`.
+⚠️ Read **layout in Lite** (headless never advances a CSS transition — a normal shot reported 649px
+of "dead space" that does not exist) and **motion frozen**. Full write-up:
+`A-Brain/Wiki/Concepts/Looking at the App.md`.
+
+## 🔴 WHAT IS LEFT ON EOD — next session picks up here
+
+1. **The regional admin's stack of letters.** Nothing is built. The agent's letter submits, and the
+   admin still sees the old PENDING report list. This is the next slice.
+2. **`declared` vs `accepted` has no UI yet** — `acceptCard` / `returnCard` exist and are tested,
+   nothing calls them.
+3. **"Accept short"** still blocked on his rules deploy (task #10).
+4. **The audit line still records no numbers** — `logAudit("EOD_VERIFIED")` says who and not what.
+   Cheapest real work left in the whole feature.
+
+# 🔴 2026-08-17 00:50 — HIS THREE CORRECTIONS AFTER SEEING IT LIVE (all fixed above)
 
 > 1. *"it look so broken sc1"*
 > 2. *"sc2 is not effective, what if there are a lot of item types at once missing item on onetype
