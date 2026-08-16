@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-16 20:56 WIB (KPM app session)** · 🔴 EOD HANDOVER IS THE FIRST SECTION BELOW · branch `phase0-solid-ground` · last code commit: run `git log -1`
+**Updated: 2026-08-16 23:31 WIB (KPM app session)** · 🔴 EOD HANDOVER IS THE FIRST SECTION BELOW · branch `phase0-solid-ground` · last code commit: run `git log -1`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -15,7 +15,43 @@
 
 ## ▶ NOW
 
-# 🔴🔴 START HERE AFTER THE COMPACT — EOD SETORAN REDESIGN, FULL HANDOVER
+# 🔨 BUILD STARTED 2026-08-16 23:20 — TWO SLICES DONE, BOTH COMMITTED
+
+**Slice 1 · the record shape** — `src/utils/eodRecord.js` + `src/config/eodRecord.selfcheck.mjs`
++ audit group 47. This was done FIRST because it is the only part that cannot be retrofitted.
+Every card keeps `sources` (the records it was built from), `declared` and `accepted` are two
+separate stored fields, the `gap` is stored not derived, HQ reconciles `['cash','transfer']` only,
+and the three signatures are refused out of order.
+✅ **10/10 self-check, and each assertion was proved to go RED on a deliberate break.**
+⚠️ **One assertion was WRONG when first written and passed a broken module:** testing
+`{...card}.gap` proves nothing, because the spread operator EVALUATES a getter and copies the
+value — a derived gap looked stored. Fixed to mutate the same object and re-read; audit group 47
+now bans `get gap(` outright.
+
+**Slice 2 · the four cards** — `src/components/EODCardDeck.jsx`. A deck: the active card on top,
+the rest stacked behind, confirm → it rotates and flies out left while the next comes forward and
+a ledger line lands underneath. **The agent types what they counted; the expected figure is
+deliberately not shown first** — reading it first turns counting into copying.
+✅ Verified by mounting the REAL component (esbuild → react-dom) and driving it in headless Chrome:
+mid-swap transform `matrix(0.947, -0.0929, …)` (a live rotation), opacity `0.199` mid-fade,
+9 transitions in flight, ledger row written, heading advanced to "Transfer". Rendered light + dark
+inside a real 390px phone frame: `overflowing=0`, card 360px, deck height 248px.
+
+**Verification recipe worth reusing** — it is the only way found to prove a React component's
+motion without signing into the app:
+```
+npx esbuild entry.jsx --bundle --format=iife --jsx=automatic --outfile=app.js
+# harness links the REAL dist stylesheet, drives the component, then:
+document.getAnimations().forEach(a => { a.pause(); a.currentTime = duration * 0.45; })
+```
+⚠️ Headless reports `clientWidth=503` for `--window-size=390`, so a phone screenshot LOOKS clipped
+when nothing is wrong. **Wrap the component in a fixed-width div and measure**, never judge phone
+width from the crop.
+
+**NEXT:** wire `EODCardDeck` into `EODReconciliationView.jsx`'s agent view (it is currently
+standalone and writes nothing), then the letter → the admin stack → HQ.
+
+# 🔴🔴 THE SPEC — EOD SETORAN REDESIGN, FULL HANDOVER
 
 **Written 2026-08-16 20:10 WIB on his instruction:** *"let me compact this chat for later make sure
 u take notes of everything and our workflow for later"*. Everything below is decided. **Nothing in
