@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-16 19:18 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
+**Updated: 2026-08-16 19:26 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -14,6 +14,46 @@
 > and `A-Brain/Wiki/Log.md` hold how it got there.
 
 ## ▶ NOW
+
+### ✅ 2026-08-16 19:25 — ALL THREE DECISIONS ARE IN. **BUILD B.**
+
+| decision | his answer |
+|---|---|
+| which concept | **B · The Sheriff's Desk** — *"i like B better TBH"* |
+| Accept short | **YES, add it** (not admin-only) |
+| a perfectly-counted day | **"Gold — let it glow"** |
+
+⚠️ **He deliberately broke his own palette law** on the third one. Gold now means two things: needs
+attention everywhere, and a perfect close on the EOD stamp. **Do not "fix" this later as a
+violation.** It is contained: one element, once a day, only on a perfect match. The same stamp
+lands in danger red reading SHORT when the day closes with a gap.
+
+Artifact updated to match and verified (Lite, dark):
+`CLEARED` stamp `rgb(208,138,46)` = gold on a clean close · `SHORT` stamp `rgb(224,140,130)` with a
+danger border + a minted debt chip on a short close · `tornBeforeApproval=false` — a real bug fixed,
+the poster used to tear as soon as the agent submitted, i.e. it said the bounty was cleared before
+anyone had approved anything.
+
+### 🔨 NEXT SESSION STARTS HERE — building B into the real screen
+
+**Scope, in order. `EODReconciliationView.jsx` is 916 lines; the logic is NOT to be touched except
+where item 3 says so.**
+
+1. **Count-first** — the agent types what they physically counted; the app then reveals the gap.
+   Today there are only 2 inputs on the whole screen, both cukai. This is what makes anything
+   scoreable.
+2. **The Sheriff's Desk art direction** — WANTED poster, strongbox, deputy ranks, the stamp. The
+   theme is ALREADY half-built in this file (`WANTED`, `Bounty Under Review`,
+   `Awaiting Sheriff Verification`, Georgia serif) — finish it, do not invent it.
+3. **🔴 Accept short — THE MONEY CHANGE.** A third admin action beside `handleVerifyEOD` and
+   `handleResetEOD`. Mints a debt for the gap, mirroring `cukaiDebts`. **⚠️ THIS LIKELY NEEDS A
+   `firestore.rules` CHANGE, WHICH IS A DRAFT ALDI DEPLOYS HIMSELF — draft it, report it, never
+   deploy it.** Also needs a field for the amount actually received, which does not exist today.
+4. **The week dashboard** — Mon→Sat + today-vs-yesterday. **Zero extra Firestore reads**; reuse
+   `dayStats()` from `src/utils/dayStats.js` rather than writing a second one.
+5. **Phone first** — he said EOD is used mostly on the phone. Container queries, not media queries.
+
+**Do NOT bring D (the chain) unless he asks** — he chose B and said nothing about layering D on it.
 
 ### 📱 2026-08-16 19:15 — v4: PHONE, THE FREE DASHBOARD, AND THE ANIMATION THAT SHOWED NOTHING
 
