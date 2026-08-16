@@ -69,14 +69,17 @@ the numbers to `contrast.selfcheck.mjs`. Group 39 already carried this lesson in
 *"for the master vault panel, let the textbox to stay dark, light or dark mode should not affect
 the loading screen"*. **He thinks in SCREENS, not components** — once a screen is exempt,
 everything inside it is, including whatever is added later.
-⚠️ **The first  COPIED a list of ~20 tokens** and missed every app-level one, so
-’s input (painted with ) still flipped inside a near-black card. **A list of
+⚠️ **The first `.kpm-dark-island` COPIED a list of ~20 tokens** and missed every app-level one, so
+`.kpm-field`'s input (painted with `--inset`) still flipped inside a near-black card. **A list of
 exceptions is complete only on the day it is written.** The island is now a second selector on
-BOTH dark  blocks, so it rides the palette instead of copying it and cannot fall behind.
+BOTH dark `:root` blocks, so it rides the palette instead of copying it and cannot fall behind.
 ▸ Measured: card, field bg/ink/border, label and button are **byte-identical in light, dark AND
 lite**.
-⚠️  matched the literal string , which stopped existing — it
+⚠️ `contrast.selfcheck.mjs` matched the literal string `:root {`, which stopped existing — it
 parsed ZERO dark tokens and cried 88 failures. **It now aborts if it parses under 50 tokens.**
+⚠️ **5th shell-escaping failure of the session:** the note above was first written via a bash
+heredoc and the backticks ran as command substitution, deleting every code span. **Markdown with
+backticks goes through the Edit tool, never through a shell string.**
 
 ### 🔴 35 CLASSES WERE PAINTING NOTHING — `a5d0beb`, group 44. **547/547**
 
