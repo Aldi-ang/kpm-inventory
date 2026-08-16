@@ -58,6 +58,17 @@ clause now assert **relationships** (light is darker than dark; the token is a r
 the numbers to `contrast.selfcheck.mjs`. Group 39 already carried this lesson in its own words —
 **do not write another check that freezes a value.**
 
+### 🔴 NONE OF THIS HAS EVER REACHED `main` — checked 2026-08-16 08:05 WIB
+
+*"app havent been updated"*. **He is right, for the deployed app.** `main` is at `3231f21` and has
+**zero** of the light work; `phase0-solid-ground` is **425 commits ahead**. Vercel builds `main`,
+so the live app has none of Phase 0–6, the control system, or the light theme.
+▸ **The dev server IS current** — verified by curling it: 2 declarations + 2 `var()` usages of
+`--ground-base`. So a black page on localhost is a stale tab, not stale code.
+▸ **`git log HEAD..main` = 0** — a merge would be a clean fast-forward, nothing on main gets
+reverted. ⚠️ **NOT DONE. 425 commits to production is his call, not an inference from "integrate".**
+⚠️ Merging does NOT deploy Firestore rules — those stay a draft he deploys by hand.
+
 ### ✅ THE LIGHT PALETTE IS APPROVED — his words, 2026-08-16
 
 *"regarding the color i like it we can use this color"*, after looking at the showroom.
