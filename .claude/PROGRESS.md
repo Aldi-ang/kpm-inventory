@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-16 20:38 WIB (KPM app session)** · 🔴 EOD HANDOVER IS THE FIRST SECTION BELOW · branch `phase0-solid-ground` · last code commit: run `git log -1`
+**Updated: 2026-08-16 20:46 WIB (KPM app session)** · 🔴 EOD HANDOVER IS THE FIRST SECTION BELOW · branch `phase0-solid-ground` · last code commit: run `git log -1`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -172,8 +172,29 @@ not media queries.**
 ## 7. 🔴 Still open — ask him, do not assume
 
 1. ✅ ANSWERED — a SCREEN, showing BOTH dashboards (daily money-vs-sales, and the running money-convert-ratio against regional stock). See 3b.
-2. Is HQ a **new permission tier**, or the existing top admin? `src/config/permissions.js` has NOT
-   been checked.
+2. ✅ **ANSWERED by reading `src/config/permissions.js` — HQ IS NOT A NEW TIER.** The ladder already
+   maps exactly onto what he described:
+
+   | tier | role id | label | who he calls it |
+   |---|---|---|---|
+   | T1 | `DEVELOPER` | — | god mode, `ALL_ACCESS` |
+   | **T2** | `COMPANY_OWNER` | T2: OWNER | **this is HQ** — holds `view_reports_global` |
+   | **T3** | `AREA_ADMIN` | **T3: REGIONAL** | **this is the regional admin** — `view_reports_regional` |
+   | T4 | `FLEET_CAPTAIN` | T4: CAPTAIN | |
+   | T5 | `FIELD_OPERATIVE` | T5: OPERATIVE | the agent |
+   | T6 | `ROOKIE` | T6: ROOKIE | |
+
+   **`view_reports_global` (T2) vs `view_reports_regional` (T3) already draws the exact HQ↔region
+   line he wants.** Add a permission for the new HQ EOD panel (e.g. `view_eod_hq`) or gate it on
+   `view_reports_global`; do NOT invent an 'HQ' tier. ⚠️ The `'HQ'` string in StockOpnameView is a
+   **location** (`branchLocation: user.location || 'HQ'`) and a legacy role tag, not a tier.
+
+   🔴 **GAP FOUND, and it blocks his damaged-goods plan:** **T3 AREA_ADMIN does NOT have
+   `view_stock_opname`** — only T2 does (:59 vs :63). So the *regional admin cannot open Stock
+   Opname at all*, yet his plan is that damaged goods travel regional vault → HQ **through Stock
+   Opname**. Somebody has to run that count at the region. **Ask him who: the regional admin (needs
+   a new permission) or the fleet captain?** Same shape as the Fleet Captain Permission Gap already
+   in the vault — check that note before deciding.
 3. `audit_logs` is admin-only and **7-day gated** (`useDatabaseSync.js:84`) — is that long enough
    for HQ's review window?
 4. Week-vs-last-week on the dashboard **would** cost extra reads. Left out. Does he want it?
