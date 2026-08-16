@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-16 19:26 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
+**Updated: 2026-08-16 19:36 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -15,7 +15,55 @@
 
 ## ▶ NOW
 
-### ✅ 2026-08-16 19:25 — ALL THREE DECISIONS ARE IN. **BUILD B.**
+### 🏆 2026-08-16 19:35 — HE SPECIFIED THE WHOLE FLOW HIMSELF. THIS SUPERSEDES "BUILD B".
+
+**His words, verbatim — this is the specification, do not paraphrase it:**
+
+> *"i want to combine A and B, i want u do animation of cards or some kind of items that can show
+> the information for each (cash, transfer, goods return, and pita cukai) and i want an swapping
+> kind of animation for each card after the agent confirm it, for example, cash card confirm - swap
+> to transfer card , confirm - swap to goods return card, confirm-swap[ to pita cukai card,
+> confirm, animation of those cards put inside the letter, and there should be animation for that
+> letter sent to the regional admin, then on the regional admin there will be some stack of letter
+> that can be open to show all the cards and can view each of the cards then approve the cards one
+> by one and if everything approve there will be button to approve the letter and sent back to the
+> agent, there will be another animation that the letter is approved and accepted. i want to use
+> those wanted poster is for a bounties that havent been paid by the agent, like missing item or
+> missing pita cukai or missing cash and or missing transfer. then there will be an added features
+> beside the main EOD to repay the bounties which will show bounties receipt sent to the regional
+> admin for further confirmation, then if approve there will be cleared bounties animation for that
+> agent and agent is free from debt duties."*
+
+**The structure, as objects — his nouns are load-bearing:**
+
+| object | job |
+|---|---|
+| **4 cards** | cash · transfer · goods return · pita cukai. Each shows that item's information. Confirm one → **swaps** to the next. |
+| **the letter** | the four confirmed cards go INSIDE it; it is then **sent** to the regional admin |
+| **the stack** | the admin's inbox — several letters, openable |
+| **per-card approval** | the admin views and approves **each card individually**; only when all four are approved does the **approve-the-letter** button appear; the letter is then sent back to the agent, approved |
+| **the WANTED poster** | **unpaid bounties ONLY** — missing item, missing cukai, missing cash, missing transfer. No longer the day's numbers. |
+| **bounty repayment** | a separate feature beside EOD → a **bounties receipt** → admin confirms → **cleared-bounty animation**, agent free of debt |
+
+**Why this replaces the earlier plan:** the letter carries the FACTS and the poster carries the
+DEBT, so the sheriff theme stops competing with the money — the exact risk that was written into
+B's own cost line. And per-card approval is where **Accept short** naturally lives: goods can be
+approved while cash is marked short, with no extra button and no rule to explain.
+
+**✅ Already half-built in the repo, finish rather than invent:** `reportType: 'BOUNTY'`,
+`penaltyKeys`, and the debt-wiping branch of `handleVerifyEOD` (App.jsx ~1891-1898) are the bounty
+repayment engine with no UI. `WANTED`, `Bounty Under Review`, `Awaiting Sheriff Verification` and
+the Georgia serif are already in `EODReconciliationView.jsx`.
+
+**🔴 THREE THINGS HE OWES AN ANSWER ON BEFORE THE BUILD:**
+1. **Per-card approval is a schema change.** Today an EOD report carries ONE `status`. Four cards
+   means four statuses inside the `handleVerifyEOD` transaction. Confirm he wants that.
+2. **5 taps per agent per day** for the admin (4 cards + the letter). With several agents that adds
+   up — does he want an "approve all four" shortcut, or is one-by-one the point?
+3. **"Missing transfer" needs defining.** A bank transfer either arrived or it did not; it cannot
+   be short in an envelope the way cash can.
+
+### ✅ 2026-08-16 19:25 — earlier decisions, still valid: B chosen, Accept short YES, gold on a perfect day
 
 | decision | his answer |
 |---|---|
