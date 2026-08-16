@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-17 00:10 WIB (KPM app session)** · 🔴 EOD HANDOVER IS THE FIRST SECTION BELOW · branch `phase0-solid-ground` · last code commit: run `git log -1`
+**Updated: 2026-08-17 00:35 WIB (KPM app session)** · 🟢 THE COUNTING DECK IS LIVE IN THE APP · 🔴 EOD HANDOVER IS THE FIRST SECTION BELOW · branch `phase0-solid-ground` · last code commit: run `git log -1`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -66,7 +66,27 @@ branch (~line 365, the `else` of the PENDING/VERIFIED ladder). With the flow com
 edit is one branch → one tag. **This component writes NOTHING** — it hands the finished letter to
 `onSubmit` and lets the screen that already owns Firestore decide.
 
-🟡 **ONE DELIBERATE SHORTCUT, marked `ponytail:` in the file:** each card currently gets a SINGLE
+**Slice 5 · WIRED INTO THE LIVE SCREEN.** `EODReconciliationView.jsx` — the agent's
+`cashStatus === 'READY'` branch now renders `<EODAgentFlow>` instead of a lone "Submit Cash & Stock"
+button under figures the app worked out itself.
+
+✅ **The traceability shortcut is GONE for the cards that matter.** `agentData` now collects
+`cashSources` / `transferSources` in the same loop that computes the totals (the transaction was
+already in hand — `t.id`, customer, method, timestamp). Verified end-to-end: `cashSourceRows=3`,
+`firstSourceCustomer=Warung Bu Sari`. **A gap on the cash card now leads back to a named customer.**
+Goods and stamps keep a single summary row on purpose — there is nothing finer to record for a
+stack of 128 stamps than "128 stamps".
+
+⚠️ **THE SUBMITTED PAYLOAD IS DELIBERATELY UNCHANGED.** `cash` and `transfer` still carry the
+CALCULATED figures because `handleVerifyEOD` credits the career ledger from them, and he said keep
+the logic. What the agent counted rides alongside as a new additive `cards` field. **No crediting
+behaviour moves until "Accept short" ships, and that needs his rules deploy first (task #10).**
+
+✅ The goods card LISTS the vehicle contents (`details` prop) — asking an agent to count something
+the screen refuses to show them would have been a worse screen than the one being replaced.
+Deck height 248 → 350px to fit it.
+
+🟡 **~~ONE DELIBERATE SHORTCUT~~ — RESOLVED in slice 5, kept here for the reasoning:** each card currently gets a SINGLE
 source row (`counted:<id>`) rather than one row per transaction. The shape is already correct so
 nothing downstream changes — but **the real per-transaction rows must be filled in during the
 wiring step**, where `todaysTrans` is in scope and every `t.id` is already in the loop that
