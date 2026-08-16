@@ -3338,6 +3338,55 @@ check(G46, 'the ON bar is a named part the stylesheet can reach',
   /html\.light[^{]*\.kpm-rail-bar\s*\{/.test(clockCss),
   'an arbitrary Tailwind colour on an anonymous span cannot be themed at all');
 
+/* ═══════════════════════════════════════════════════════════════════════════════════════════
+   47. THE EOD RECORD KEEPS ITS SOURCES
+
+   Aldi, 2026-08-16: *"we need to make system where this leak of cash or input can be traced down
+   to the root"*. That is a data requirement. A total cannot be traced — you cannot ask a number
+   which sale it came from — so every card carries the records it was built from, and `declared`
+   (agent) is stored separately from `accepted` (regional admin).
+
+   ⚠️ THIS IS THE ONE PART THAT CANNOT BE RETROFITTED. Ship totals-only and traceability becomes a
+   data migration instead of a feature, which is why it is pinned here before any card is drawn.
+   ═══════════════════════════════════════════════════════════════════════════════════════════ */
+const G47 = '47. The EOD record keeps its sources';
+const eodRec = fs.existsSync('src/utils/eodRecord.js')
+  ? fs.readFileSync('src/utils/eodRecord.js', 'utf8') : '';
+
+check(G47, 'the record shape has a self-check that can be run',
+  fs.existsSync('src/config/eodRecord.selfcheck.mjs'),
+  'node src/config/eodRecord.selfcheck.mjs — 10 assertions, each verified to go red on a real break');
+
+check(G47, 'declared and accepted are two separate fields',
+  /declared:/.test(eodRec) && /accepted:/.test(eodRec),
+  'store one number and a changed figure is invisible by construction — there is nothing left to ' +
+  'compare it against, so no audit downstream can ever recover it');
+
+/* the getter version passed the first self-check written for it: `{...card}` EVALUATES a getter
+   and copies the value, so a derived gap looked stored. Banned outright here rather than tested
+   around. */
+check(G47, 'the gap is a stored value, never computed on read',
+  !/get\s+gap\s*\(/.test(noCmt(eodRec)),
+  'a signed gap must say what it was at the moment of approval; a derived one silently moves when ' +
+  'a source figure is corrected later, losing the record of what the admin actually signed for');
+
+check(G47, 'every card carries the records it was built from',
+  /sources:/.test(eodRec) && /sourcesTotal/.test(eodRec),
+  'a card holding only a total is untraceable — the gap has nothing to lead back to');
+
+/* His rule, verbatim: "HQ just care about the money transferred and the sales data ... since HQ
+   cant monitor the real supply number on the regional warehouse then the HQ will just trust the
+   regional admin for that". Stock is deliberately outside HQ's reconciliation. */
+check(G47, 'HQ reconciles money only, not stock',
+  /HQ_CARDS\s*=\s*\[\s*'cash',\s*'transfer'\s*\]/.test(eodRec),
+  'HQ cannot see the regional warehouse, so a goods gap entering its reconciliation would be a ' +
+  'number nobody can check');
+
+check(G47, 'the three signatures are enforced as a sequence',
+  /cannot sign \$\{step\} before/.test(eodRec),
+  'three approvals only mean something in order — a regional signature with no agent signature, ' +
+  'or an HQ signature with no regional one, is a broken chain');
+
 /* ── report ──────────────────────────────────────────────────────────────── */
 let last = '';
 for (const r of results) {
