@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-16 19:36 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
+**Updated: 2026-08-16 19:42 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -55,7 +55,7 @@ approved while cash is marked short, with no extra button and no rule to explain
 repayment engine with no UI. `WANTED`, `Bounty Under Review`, `Awaiting Sheriff Verification` and
 the Georgia serif are already in `EODReconciliationView.jsx`.
 
-**🔴 THREE THINGS HE OWES AN ANSWER ON BEFORE THE BUILD:**
+**✅ ALL THREE ANSWERED 2026-08-16 19:40 — nothing is blocking the build now:**
 1. **Per-card approval is a schema change.** Today an EOD report carries ONE `status`. Four cards
    means four statuses inside the `handleVerifyEOD` transaction. Confirm he wants that.
 2. **5 taps per agent per day** for the admin (4 cards + the letter). With several agents that adds
