@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-16 23:55 WIB (KPM app session)** · 🔴 EOD HANDOVER IS THE FIRST SECTION BELOW · branch `phase0-solid-ground` · last code commit: run `git log -1`
+**Updated: 2026-08-17 00:10 WIB (KPM app session)** · 🔴 EOD HANDOVER IS THE FIRST SECTION BELOW · branch `phase0-solid-ground` · last code commit: run `git log -1`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -52,6 +52,26 @@ harness links the built `dist/assets/index-*.css`, so a component written after 
 `npm run build` renders with none of its arbitrary classes (`w-[290px]`, `duration-[700ms]`) and
 the layout collapses into a heap. **Always `npm run build` after writing a component and BEFORE
 rendering it**, and re-point the harness at the new hashed filename — the hash changes every build.
+
+**Slice 4 · the agent's whole evening** — `src/components/EODAgentFlow.jsx`. Composes deck → letter
+→ sent, with a three-step strip (*You count · You seal & send · Region approves*) so the agent can
+always see that sealing is not finishing.
+✅ Driven end-to-end in headless: four cards counted → `stageIsLetter=true`, `rowsInLetter=4`,
+send pressed → `submitted=true`, `cashDeclared=4850000`, `cukaiDeclared=128`, sources captured,
+and the "Nothing is credited yet" copy present.
+
+⚠️ **WHY A COMPOSER RATHER THAN WIRING STRAIGHT INTO THE VIEW:** `EODReconciliationView.jsx` is 916
+lines and owns the money submit path. The counting UI goes in its `agentData.cashStatus === 'READY'`
+branch (~line 365, the `else` of the PENDING/VERIFIED ladder). With the flow composed here, that
+edit is one branch → one tag. **This component writes NOTHING** — it hands the finished letter to
+`onSubmit` and lets the screen that already owns Firestore decide.
+
+🟡 **ONE DELIBERATE SHORTCUT, marked `ponytail:` in the file:** each card currently gets a SINGLE
+source row (`counted:<id>`) rather than one row per transaction. The shape is already correct so
+nothing downstream changes — but **the real per-transaction rows must be filled in during the
+wiring step**, where `todaysTrans` is in scope and every `t.id` is already in the loop that
+computes the expected figure (EODReconciliationView.jsx:103-110). Ship it without that and the
+traceability the whole record shape exists for is decorative.
 
 **Verification recipe worth reusing** — it is the only way found to prove a React component's
 motion without signing into the app:
