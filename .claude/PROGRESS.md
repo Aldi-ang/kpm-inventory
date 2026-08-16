@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-16 19:52 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
+**Updated: 2026-08-16 20:06 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -114,6 +114,37 @@ Restriction is the wrong tool; accountability is the right one. ⛔ **Do NOT bui
    to him.
 4. **Approve-all becomes higher-stakes, not lower.** A shortcut that clears four cards in one press
    is exactly the gesture HQ needs to see logged as a shortcut.
+
+**➕ AND HE ADDED A FOURTH STEP, 19:58:** *"we need one more approval to the HQ i guess ya, but we
+need to make system where this leak of cash or input can be traced down to the root"*.
+
+So the chain is **agent → regional admin → HQ approval**, three approvals, and HQ is not just a
+viewer — it signs too. A day is not finished until HQ approves the region's approval.
+
+**🔎 "TRACED DOWN TO THE ROOT" — what that actually requires, stated concretely so it is not lost:**
+
+A gap of Rp 50.000 has a small number of possible roots: a sale recorded at the wrong price, a
+payment marked Cash that was really Titip, stock that left the vehicle and was never sold, a lost
+stamp, or a regional admin who accepted a number that did not match the envelope. Tracing means
+walking the gap backwards through each of those.
+
+**The one thing that makes it possible, and the one thing missing today: a card must keep the
+records it was BUILT FROM, not just its total.** Today an EOD report stores `cash`, `transfer`,
+`itemsBks` — sums. A sum cannot be traced; you cannot ask a number which sale it came from.
+
+    trace chain:  gap on a card → the transactions inside that card → customer, time, price, method
+                                → who declared it (agent), who accepted it (regional), who signed (HQ)
+
+**Design requirement that falls out of it, for each of the four cards:**
+1. the **list of source record ids** the total was computed from (not the total alone)
+2. **declared** (agent) vs **accepted** (regional) as two separate stored numbers — if only one is
+   stored, a manipulation is invisible by construction
+3. **who** at each of the three steps, and **when**
+4. any gap stored as its own value with its own reason, not implied by subtracting two numbers later
+
+⚠️ **This is a data-shape decision, and it is the whole feature.** The animation is the easy half.
+If the cards ship storing totals only, "trace to the root" can never be added later without a
+migration. **Decide the record shape BEFORE building the four cards.**
 
 **🔴 OPEN — ask before building:** does HQ get a *screen* (a daily digest of every regional
 approval, per region), or a *report* (something pushed/exported)? And is HQ a new permission tier,
