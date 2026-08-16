@@ -177,13 +177,30 @@ export default function CareerDevTools({ db, appId, userId, triggerCapy }) {
                                     Mythic position their blocks at absolute pixel offsets, so a
                                     smaller box tears them off the frame edge. Well sits under the
                                     frame (z-0) because these are frames with a photo inside. */}
-                                <div className="relative w-32 h-32 mb-2 shrink-0">
+                                {/* 🔴 EACH PREVIEW IS A DARK ISLAND, AND THAT IS THE FIX FOR THE
+                                    FRAMES THEMSELVES. His report: *"u should add background inside
+                                    the border panel ... border colour itself is not clear inside
+                                    the light mode especially the diamond one"*.
+                                    These frames are drawn to sit around a PHOTO in a near-black
+                                    app — Diamond is white marble, Platinum is white-on-black
+                                    hazard stripe. Previewing them on a cream page deletes exactly
+                                    the pale ones, and no per-frame colour tweak fixes that without
+                                    changing the frames Aldi designed.
+                                    So the tile carries its own night: `kpm-dark-island` gives the
+                                    subtree the dark palette, `--duke-well-solid` resolves to black
+                                    inside it, and `bg-sunk` becomes the dark recess a photo really
+                                    sits in. Every frame is then previewed on the ground it was
+                                    built for, identically in both themes.
+                                    ⚠️ The LABEL stays outside the island — it sits on the page and
+                                    must follow the page's theme. `text-white` there was the other
+                                    half of his report. */}
+                                <div className="kpm-dark-island relative w-32 h-32 mb-2 shrink-0 bg-[var(--duke-well-solid)]">
                                     <div className="absolute inset-[14px] bg-sunk z-0 overflow-hidden flex items-center justify-center">
                                         <User size={26} style={{ color: previewHex, opacity: 0.6 }} />
                                     </div>
                                     <RankBorder styleId={b.id} index={n} hex={previewHex} />
                                 </div>
-                                <span className="text-[11px] font-bold text-white leading-tight">{b.name}</span>
+                                <span className="text-[11px] font-bold text-ink leading-tight">{b.name}</span>
                                 <span className="text-[10px] text-ink-muted font-mono">Beban: {BORDER_LOAD[b.cost] || b.cost}</span>
                             </div>
                         );
@@ -194,7 +211,7 @@ export default function CareerDevTools({ db, appId, userId, triggerCapy }) {
             <select
                 value={agentId}
                 onChange={e => setAgentId(e.target.value)}
-                className="w-full bg-sunk border border-line px-3 py-2 text-sm text-white mb-4 focus:border-accent-edge focus:outline-none"
+                className="w-full bg-sunk border border-line px-3 py-2 text-sm text-ink mb-4 focus:border-accent-edge focus:outline-none"
             >
                 <option value="">— Pilih agen —</option>
                 {agents.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
@@ -205,7 +222,7 @@ export default function CareerDevTools({ db, appId, userId, triggerCapy }) {
                     <div className="grid grid-cols-2 gap-3 mb-4 text-[11px] font-mono">
                         <div className="bg-sunk/60 p-3">
                             <div className="text-ink-muted uppercase">Total XP</div>
-                            <div className="text-lg text-white font-black">{num(currentXP)}</div>
+                            <div className="text-lg text-ink font-black">{num(currentXP)}</div>
                         </div>
                         <div className="bg-sunk/60 p-3">
                             <div className="text-ink-muted uppercase">Rank sekarang</div>
@@ -238,7 +255,7 @@ export default function CareerDevTools({ db, appId, userId, triggerCapy }) {
                             {/* Grouped while typing so a big XP figure stays readable; stored raw. */}
                             <input type="text" inputMode="numeric" value={xpInput ? num(xpInput) : ''} onFocus={e => e.target.select()}
                                 onChange={e => setXpInput(parseGroupedNumber(e.target.value) || '')} placeholder="jumlah bebas"
-                                className="flex-1 bg-sunk border border-line px-3 py-2 text-sm text-white font-mono focus:border-accent-edge focus:outline-none" />
+                                className="flex-1 bg-sunk border border-line px-3 py-2 text-sm text-ink font-mono focus:border-accent-edge focus:outline-none" />
                             <button disabled={busy || !xpInput} onClick={() => { addXP(Number(xpInput)); setXpInput(''); }}
                                 className="px-4 bg-gold hover:bg-gold text-black text-[11px] font-black uppercase disabled:opacity-40 transition-colors">
                                 Tambah

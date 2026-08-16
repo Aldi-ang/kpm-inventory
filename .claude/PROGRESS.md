@@ -15,6 +15,22 @@
 
 ## ▶ NOW
 
+### ✅ HIS FOUR 08:23 REPORTS — all fixed, 548/548
+
+1. **"system active button on top is not visible on light mode"** — it was `text-[#f0e2c0]/70`,
+   cream at 70% on a cream header. ⚠️ **A hex WITH an alpha compiles fine**, so nothing errored; it
+   just printed cream on cream. Now `--ink-dim`: **light 6,75:1 · dark 5,87:1**, measured live.
+2. **"the border name text even not visible"** — `text-white` on the rank-frame labels, plus three
+   more `text-white` siblings in the same file (an input, a number, a mono field). → `text-ink`.
+3. + 4. **"add background inside the border panel" / "border colour itself is not clear ...
+   especially the diamond one"** — 🔑 **NOT a colour bug.** Those frames are drawn to sit around a
+   PHOTO in a near-black app: Diamond is white marble, Platinum is white-on-black stripe. On a
+   cream page the pale ones simply cease to exist, and no per-frame tweak fixes that without
+   redesigning frames he made. **Each preview tile is now a `kpm-dark-island`** with
+   `--duke-well-solid` behind it, so every frame is previewed on the ground it was built for,
+   identically in both themes.
+   ⚠️ **Reach for the island whenever a thing is DESIGNED for one theme rather than themed.**
+
 ### ✅ THE PAGE IS CREAM IN THE REAL APP — `f44978f`, seen on screen, 2026-08-16 08:18
 
 **Two elements were covering a correct body**, and no file-reading could have found either: the

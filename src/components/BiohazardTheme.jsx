@@ -780,7 +780,11 @@ export default function BiohazardTheme({
                                 are looking at it. Calm cream when connected; red still earns
                                 attention when it is not. */}
                             <div className={`h-1.5 w-1.5 rounded-full ${user ? 'bg-[#f0e2c0]' : 'bg-red-500 animate-pulse'}`}></div>
-                            <span className={`text-[11px] font-mono uppercase ${user ? 'text-[#f0e2c0]/70' : 'text-red-500'}`}>{user ? "System Active" : "Disconnected"}</span>
+                            {/* ⚠️ WAS `text-[#f0e2c0]/70` — cream at 70%, which is invisible on a
+                                cream header. His report: *"system active button on top is not
+                                visible on light mode"*. A hex with an alpha DOES compile, so
+                                nothing errored; it just printed cream on cream. */}
+                            <span className={`text-[11px] font-mono uppercase ${user ? 'text-[var(--ink-dim)]' : 'text-[var(--danger-ink)]'}`}>{user ? "System Active" : "Disconnected"}</span>
                         </div>
                         {/* `text-shadow-glow` is gone: a white blur around white letterforms is
                             the one 2015 thing left in this row, and it softens the very edges the
