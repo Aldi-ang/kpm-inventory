@@ -58,6 +58,26 @@ clause now assert **relationships** (light is darker than dark; the token is a r
 the numbers to `contrast.selfcheck.mjs`. Group 39 already carried this lesson in its own words —
 **do not write another check that freezes a value.**
 
+### ✅ THE LIGHT PALETTE IS APPROVED — his words, 2026-08-16
+
+*"regarding the color i like it we can use this color"*, after looking at the showroom.
+**Locked, do not re-litigate:** `--ground #D2C9B4` · `--panel #E1DAC8` · `--raised #EDE7D8` ·
+`--inset #C6BDA9` · `--sunk #B9B0A0`. This closes the 2026-08-13 *"light mode is white"* thread.
+
+### 🔴 A SCREEN CAN BE EXEMPT FROM THE THEME — `fdc9bbb`, 548/548
+
+*"for the master vault panel, let the textbox to stay dark, light or dark mode should not affect
+the loading screen"*. **He thinks in SCREENS, not components** — once a screen is exempt,
+everything inside it is, including whatever is added later.
+⚠️ **The first  COPIED a list of ~20 tokens** and missed every app-level one, so
+’s input (painted with ) still flipped inside a near-black card. **A list of
+exceptions is complete only on the day it is written.** The island is now a second selector on
+BOTH dark  blocks, so it rides the palette instead of copying it and cannot fall behind.
+▸ Measured: card, field bg/ink/border, label and button are **byte-identical in light, dark AND
+lite**.
+⚠️  matched the literal string , which stopped existing — it
+parsed ZERO dark tokens and cried 88 failures. **It now aborts if it parses under 50 tokens.**
+
 ### 🔴 35 CLASSES WERE PAINTING NOTHING — `a5d0beb`, group 44. **547/547**
 
 Found while surveying the next screen; **jumped the queue because it is in screens already signed
