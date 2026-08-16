@@ -55,6 +55,13 @@
      would have lost their outline entirely and bled into the page. */
   --glass-edge:    rgba(245, 230, 200, .18);
   --glass-edge-2:  rgba(245, 230, 200, .12);
+  /* 🔴 THE OPAQUE FALLBACK LITE MODE SWAPS IN FOR THE BLUR, AND IT IS A THEME VALUE, NOT A FIXED
+     ONE. Aldi's law, 2026-08-16: *"lite item use to sacrifice the animation but not the color"*.
+     Both the header and the dock hardcoded #14110e here, so turning Lite Mode on in LIGHT mode
+     painted the top bar near-black under light-mode ink — his report: *"the lite light mode
+     causing the system active settings text to gone"*. Lite Mode drops motion and effects. It
+     has never had permission to change a colour. */
+  --glass-solid:   #14110e;
 
   /* lines. Three weights: whisper, structure, control edge. */
   --line:          #26231F;   /* 1,3:1 — decorative only, never a control's only edge */
@@ -191,6 +198,8 @@ html.light {
   /* the glass outline inverts; the lip above it does not — see the note on the dark block */
   --glass-edge:    rgba(46, 38, 26, .30);
   --glass-edge-2:  rgba(46, 38, 26, .22);
+  /* the same pane with the blur switched off: one step above the page, never black */
+  --glass-solid:   #e3dbca;
 
   --line:          #6E6A64;   /* 3,0:1 — the old value was 2,0:1 and vanished */
   --line-2:        #5E5A55;   /* 3,9:1 */
@@ -1659,12 +1668,12 @@ html.lite-mode .kpm-topbar { transition: none; }
      bitten this panel once already, when it stopped painting its own background.
      `@supports not` covers the same hole for a browser that never had backdrop-filter at all. */
   html.lite-mode .kpm-rail-pod::before {
-    background-color: #14110e; background-image: none;
+    background-color: var(--glass-solid); background-image: none;
     -webkit-backdrop-filter: none; backdrop-filter: none;
     box-shadow: 0 18px 50px rgba(0, 0, 0, .55);
   }
   @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-    .kpm-rail-pod::before { background-color: #14110e; background-image: none; }
+    .kpm-rail-pod::before { background-color: var(--glass-solid); background-image: none; }
   }
   /* an absolutely-positioned ::before paints in the POSITIONED layer, which is above ordinary
      in-flow children — without these two z-indexes the surface covers the marks */
@@ -2013,12 +2022,12 @@ html.lite-mode .kpm-topbar { transition: none; }
      a 4%-tinted bar with no blur is an invisible header. The opaque ground lives here, not in the
      rule above, or it would sit in FRONT of the blur and there would be nothing to see through. */
   html.lite-mode .kpm-topbar.kpm-topbar {
-    background-color: #14110e; background-image: none;
+    background-color: var(--glass-solid); background-image: none;
     -webkit-backdrop-filter: none; backdrop-filter: none;
     box-shadow: 0 18px 46px rgba(0, 0, 0, .42);
   }
   @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-    .kpm-topbar.kpm-topbar { background-color: #14110e; background-image: none; }
+    .kpm-topbar.kpm-topbar { background-color: var(--glass-solid); background-image: none; }
   }
   /* the band drew its own bottom rule as a wall; a floating pane has edges instead */
   .kpm-topbar.kpm-topbar { border-bottom-color: var(--glass-edge-2); }
@@ -2290,7 +2299,7 @@ button[data-kpm-del] {
   width: 38px; height: 38px; padding: 0; flex: none;
   position: relative; overflow: hidden; cursor: pointer;
   border: 1px solid #3e3226; border-radius: 999px;
-  background-color: #14110e; background-image: none; color: #8b7256;
+  background-color: var(--glass-solid); background-image: none; color: #8b7256;
   box-shadow: 0 2px 10px rgba(0,0,0,.35);
   -webkit-tap-highlight-color: transparent;
   transition: width 300ms cubic-bezier(.22, 1, .36, 1), border-radius 300ms cubic-bezier(.22, 1, .36, 1),
@@ -2591,8 +2600,12 @@ html.lite-mode .kpm-title-rule { animation: none; width: 100%; }
   border-bottom: 2px solid var(--danger); }
 /* line 1 — the slot code: which band this belongs to and its order in it. Information, not
    decoration; it is how he refers to a module out loud. */
-.kpm-head .slot { display: block; font-family: var(--font-mono); font-size: 10px;
-  letter-spacing: .26em; text-transform: uppercase; color: var(--ink-dim); }
+/* 11px, not 10 — his ask, 2026-08-16: *"make the font little bit bigger especially for the small
+   description, without sacrificing any aesthetics"*. Tracking eases from .26em to .24em with it:
+   letter-spacing is set for a size, and carrying the old value onto a larger glyph is what makes
+   a bumped label look stretched rather than bigger. */
+.kpm-head .slot { display: block; font-family: var(--font-mono); font-size: 11px;
+  letter-spacing: .24em; text-transform: uppercase; color: var(--ink-dim); }
 /* 🟡 AMBER IS RATIONED FROM HERE ON. His call, 2026-08-15: *"i feel like there is too much yellow
    gold color, u should replace it with few amber color and more black and white for the theme"*.
    A live module used to carry FOUR amber marks — the stripe, this slot code, the rule under the
@@ -2618,7 +2631,7 @@ html.lite-mode .kpm-title-rule { animation: none; width: 100%; }
 /* line 3 — the description. Body face, not caps: it is a sentence, and it must not compete
    with the title for the same reading. */
 .kpm-desc { margin: var(--s2) 0 0; max-width: 62ch;
-  font-family: var(--font-body); font-size: 13px; line-height: 1.55; color: var(--ink-muted);
+  font-family: var(--font-body); font-size: 14px; line-height: 1.6; color: var(--ink-muted);
   letter-spacing: 0; text-transform: none; }
 
 /* ---- SHELF: where the controls live. Its own ground and its own top rule, so "things you can
@@ -3153,7 +3166,7 @@ html.lite-mode .kpm-title-rule { animation: none; width: 100%; }
   /* the house texture, kept: the old panel's scanline was the one decoration in this tab that
      survived Lite Mode, and a printed caption strip is where it belongs */
   background-color: var(--inset); background-image: var(--hatch);
-  font-family: var(--font-mono); font-size: 10px; letter-spacing: .22em;
+  font-family: var(--font-mono); font-size: 11px; letter-spacing: .2em;
   text-transform: uppercase; color: var(--ink); }
 /* the band keeps the red WORD and the red border and loses the red ground, for the same reason as
    the head below it: three red surfaces stacked read as one red region, and the fence disappears

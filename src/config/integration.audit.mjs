@@ -1251,8 +1251,8 @@ check(G25, 'the capsule paints on a hoverless desk, in Lite Mode, and in a brows
   railGateAt > 0 &&
   /backdrop-filter: blur\(30px\) saturate\(1\.9\) brightness\(1\.06\)/.test(themeCss.slice(0, railGateAt)) &&
   /html\.lite-mode \.kpm-rail-pod::before \{[\s\S]{0,220}?backdrop-filter: none/.test(themeCss) &&
-  /html\.lite-mode \.kpm-rail-pod::before \{\s*\n?\s*background-color: #14110e/.test(themeCss) &&
-  /@supports not \(\(backdrop-filter: blur\(1px\)\)[\s\S]{0,220}?background-color: #14110e/.test(themeCss) &&
+  /html\.lite-mode \.kpm-rail-pod::before \{\s*\n?\s*background-color: var\(--glass-solid\)/.test(themeCss) &&
+  /@supports not \(\(backdrop-filter: blur\(1px\)\)[\s\S]{0,220}?background-color: var\(--glass-solid\)/.test(themeCss) &&
   !/lg:bg-black\/95/.test(shellSrc),
   'the panel itself paints nothing, so the pod IS the sidebar — leave the appearance behind the ' +
   'hover gate and a touch laptop gets nothing; leave out the Lite Mode ground and Lite Mode ' +
@@ -1631,7 +1631,17 @@ check(G25, 'it is black at rest and red only under the finger',
 check(G25, 'the header floats on the same ground as the dock, and survives Lite Mode',
   /backdrop-filter: blur\(18px\) saturate\(1\.5\)/.test(themeCss) &&
   /html\.lite-mode \.kpm-topbar\.kpm-topbar \{[\s\S]{0,200}?backdrop-filter: none/.test(themeCss) &&
-  /html\.lite-mode \.kpm-topbar\.kpm-topbar \{\s*\n?\s*background-color: #14110e/.test(themeCss) &&
+  /* 🔴 WAS `#14110e`, AND THE CHECK WAS PROTECTING THE BUG. Aldi, 2026-08-16: *"the lite light
+     mode causing the system active settings text to gone, since it causing the background for
+     that top panel to be black. lite item use to sacrifice the animation but not the color"*.
+     Lite Mode strips the blur, so an opaque fallback is load-bearing — but the fallback was a
+     fixed near-black, so Lite Mode in LIGHT mode painted the bar black under light-mode ink.
+     ⚠️ LITE MODE MAY CHANGE MOTION AND EFFECTS. IT MAY NEVER CHANGE A COLOUR. */
+  /html\.lite-mode \.kpm-topbar\.kpm-topbar \{\s*\n?\s*background-color: var\(--glass-solid\)/.test(themeCss) &&
+  (() => {
+    const v = [...themeCss.matchAll(/--glass-solid:\s*(#[0-9a-fA-F]{6})/g)].map(m => m[1]);
+    return v.length === 2 && v[0].toLowerCase() !== v[1].toLowerCase();
+  })() &&
   /* the ground exists at all — glass over a flat wall is a grey rectangle, and both panes were
      spending a blur on nothing until the body got a light source */
   /background-attachment: fixed;/.test(indexCss) &&
@@ -3052,6 +3062,38 @@ const editorLeft = [...new Set(editor.match(
   /(?:hover:|focus:)?(?:text|border)-(?:red|orange|amber|yellow)-\d+(?:\/\d+)?/g) || [])];
 check(G42, 'the product editor carries no accent that cannot change theme', !editorLeft.length,
   'left behind: ' + editorLeft.join(' ') + ' — every field in here sits on the cream panel');
+
+/* ── 43. Lite Mode changes motion, never colour ──────────────────────────────
+   🔴 HIS LAW, VERBATIM, 2026-08-16: *"lite item use to sacrifice the animation but not the color"*.
+   Reported as: *"the lite light mode causing the system active settings text to gone, since it
+   causing the background for that top panel to be black"*.
+   Lite Mode strips `backdrop-filter`, so the header and the dock genuinely need an OPAQUE
+   fallback — without one the glass panes vanish, which is a bug this file already guards. But the
+   fallback was `#14110e`, a fixed near-black, so switching Lite Mode on in LIGHT mode painted the
+   top bar black underneath light-mode ink and the title disappeared.
+   ⚠️ AND THE CHECK THAT PINNED THAT LITERAL WAS PROTECTING THE BUG — shape 7 for the fourth time
+   in two days. This group asserts the LAW instead of any value, so it cannot rot the same way. */
+const G43 = '43. Lite Mode sacrifices motion, never colour';
+/* a sprite frame is `background-position`, not a colour — Lite Mode freezing an animation to a
+   fixed frame is exactly what it is for, so those must not trip this */
+const COLOUR_DECL = /(?:^|[;{\s])(?:background-color|color|border(?:-[a-z]+)?-color|background|border)\s*:\s*[^;}]*#[0-9a-fA-F]{3,8}/;
+const liteColour = [];
+for (const src of [themeCss, indexCss]) {
+  for (const m of src.matchAll(/html\.lite-mode[^{}]*\{([^}]*)\}/g)) {
+    if (COLOUR_DECL.test(m[1])) liteColour.push(m[0].split('{')[0].trim().slice(0, 70));
+  }
+}
+check(G43, 'no Lite Mode rule paints a literal colour', !liteColour.length,
+  'these change colour when Lite Mode is switched on: ' + liteColour.join(' | ') +
+  ' — a fixed colour in a Lite Mode rule is a colour that cannot change theme, applied to ' +
+  'whoever turned Lite Mode on. Lite Mode may drop motion, blur and shadow; never a hue.');
+/* the fallback still has to EXIST — this is the other half, and dropping it would make the
+   header and the dock invisible for every Lite Mode user */
+check(G43, 'the glass panes still get an opaque fallback, as a token',
+  /--glass-solid:/.test(themeCss) &&
+  (themeCss.match(/background-color: var\(--glass-solid\)/g) || []).length >= 4,
+  'Lite Mode strips backdrop-filter, so a 4%-tinted bar with no blur is an invisible header — ' +
+  'the opaque ground is not decoration');
 
 /* ── report ──────────────────────────────────────────────────────────────── */
 let last = '';
