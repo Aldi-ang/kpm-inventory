@@ -125,4 +125,40 @@ assert.equal(sourcesTotal(undefined), 0);
 assert.equal(declareCard(emptyCard('cash'), [], 'b', AT).declared, 0);
 assert.equal(acceptCard(declareCard(emptyCard('cash'), [], 'b', AT), 0, 'r', AT).state, CARD_STATE.ACCEPTED);
 
-console.log('eod-record self-check: 10/10 pass');
+/* 11. ONE SOURCE ROW PER PRODUCT LINE — the property Aldi protected on 2026-08-17:
+      "what if there are a lot of item types at once missing item on onetype wont make a good
+      record to the data". A single goods total passes every check above and still loses the
+      answer to "which product is short", because the loss happens at the point of ENTRY, before
+      any of the machinery here gets a chance. So the check is: a goods card built from per-line
+      rows must be able to name the short product, and one built from a single total must not. */
+const goodsLines = [
+  T('goods:p1', 40, { label: 'Cello Green', expected: 40 }),
+  T('goods:p2', 11, { label: 'Cello Merah', expected: 12 }),
+  T('goods:p3', 25, { label: 'Sigaret Kretek', expected: 25 })
+];
+const goods = declareCard(emptyCard('goods'), goodsLines, 'bagas', AT);
+assert.equal(goods.declared, 76, 'the card total is the sum of the lines the agent typed');
+const shortLines = traceCard(goods).candidates.filter(r => r.amount !== r.expected);
+assert.equal(shortLines.length, 1, 'exactly one product line is short');
+assert.equal(shortLines[0].label, 'Cello Merah', 'the gap names the product, not "goods"');
+
+const lumped = declareCard(emptyCard('goods'), [T('counted:goods', 76)], 'bagas', AT);
+assert.equal(lumped.declared, goods.declared, 'both cards declare the same total…');
+assert.equal(
+  traceCard(lumped).candidates.filter(r => r.expected !== undefined && r.amount !== r.expected).length,
+  0,
+  '…and the lumped one can name nothing — this is the flaw the per-line card removes'
+);
+
+/* 12. PITA CUKAI'S TWO LINES ARE OUTCOMES, NOT PRODUCTS. Stamps are one pool, so the split the
+      old second card owned — handed over vs lost — is what its rows carry, and the declared total
+      is returned + lost, exactly the figure that card used to submit as `cukai`. */
+const cukai = declareCard(emptyCard('cukai'), [
+  T('cukai:returned', 120, { label: 'Stamps handed over', expected: 128 }),
+  T('cukai:lost', 8, { label: 'Stamps lost', expected: 0 })
+], 'bagas', AT);
+assert.equal(cukai.declared, 128, 'returned + lost is what the agent accounts for');
+assert.equal(cukai.sources.find(r => r.txId === 'cukai:lost').amount, 8,
+  'the lost count survives on the record — it is what the cash fine is charged on');
+
+console.log('eod-record self-check: 12/12 pass');

@@ -55,13 +55,13 @@
     "semantic_hash": ""
   },
   "src/ConsignmentFinanceView.jsx": {
-    "mtime": 1786184080.2401636,
-    "ast_hash": "a7850b9e3444e5b5d5371f3dd6f0e892",
+    "mtime": 1786873614.6732006,
+    "ast_hash": "323dc438afe8588c9e583091acb14b9e",
     "semantic_hash": ""
   },
   "src/EODReconciliationView.jsx": {
-    "mtime": 1786091596.8258054,
-    "ast_hash": "27ced7b932c62cb9270aa9ec8abb7254",
+    "mtime": 1786907157.3435998,
+    "ast_hash": "b6acebc2e9bee91c17e9f0f9b7559fd6",
     "semantic_hash": ""
   },
   "src/FleetCanvasManager.jsx": {
@@ -100,8 +100,8 @@
     "semantic_hash": ""
   },
   "src/StockOpnameView.jsx": {
-    "mtime": 1786184080.2802992,
-    "ast_hash": "56b8a59680c0e9193db4af9b592142a5",
+    "mtime": 1786873529.4396045,
+    "ast_hash": "b2c7aedb58b3dc0bf8678e0f047fefcd",
     "semantic_hash": ""
   },
   "src/components/AuditVaultView.jsx": {
@@ -130,8 +130,8 @@
     "semantic_hash": ""
   },
   "src/components/CustomerManager.jsx": {
-    "mtime": 1786557237.979504,
-    "ast_hash": "b0f55bd84f5eed2abc19e4be047650ed",
+    "mtime": 1786873529.4245381,
+    "ast_hash": "aed945ba814ba465d733b958bb81e513",
     "semantic_hash": ""
   },
   "src/components/DashboardBenchmarks.jsx": {
@@ -140,8 +140,8 @@
     "semantic_hash": ""
   },
   "src/components/DashboardView.jsx": {
-    "mtime": 1785566673.141695,
-    "ast_hash": "350151e937de82e96837962159caaa79",
+    "mtime": 1786873529.4416049,
+    "ast_hash": "c320ace1467835810e0e69b63cf22e27",
     "semantic_hash": ""
   },
   "src/components/ExamineModal.jsx": {
@@ -150,7 +150,7 @@
     "semantic_hash": ""
   },
   "src/components/HistoryReportView.jsx": {
-    "mtime": 1786787801.9162555,
+    "mtime": 1786873614.6742008,
     "ast_hash": "151a13ec5bc21477e1b5775ab94b3d0b",
     "semantic_hash": ""
   },
@@ -180,8 +180,8 @@
     "semantic_hash": ""
   },
   "src/components/SamplingManager.jsx": {
-    "mtime": 1786870649.5128956,
-    "ast_hash": "e43b56f171d45856dba891dbcb7820cb",
+    "mtime": 1786876014.9846551,
+    "ast_hash": "2960ff29504ebf6da021cc186233fc7e",
     "semantic_hash": ""
   },
   "src/components/SettingsView.jsx": {
@@ -540,8 +540,8 @@
     "semantic_hash": ""
   },
   "src/config/integration.audit.mjs": {
-    "mtime": 1786870837.035433,
-    "ast_hash": "9b7706c7d5ef172b858e09f39a53478a",
+    "mtime": 1786897479.5627234,
+    "ast_hash": "f89562566205132e9ab78c2107ed9a3d",
     "semantic_hash": ""
   },
   "src/config/nextStop.selfcheck.mjs": {
@@ -570,8 +570,8 @@
     "semantic_hash": ""
   },
   ".claude/PROGRESS.md": {
-    "mtime": 1786870850.9455118,
-    "ast_hash": "3bad1bb86e9048a30b84a9987cf6b96c",
+    "mtime": 1786903512.4080038,
+    "ast_hash": "ee5c4527d46d5cb4efaf0fe4dbda737d",
     "semantic_hash": ""
   },
   ".claude/pre-compact-context.md": {
@@ -727,6 +727,31 @@
   "tools/theme-showroom.html": {
     "mtime": 1786841559.190808,
     "ast_hash": "06f1a48e682e16198cd04c9b42e1bec7",
+    "semantic_hash": ""
+  },
+  "src/components/EODAgentFlow.jsx": {
+    "mtime": 1786907041.500277,
+    "ast_hash": "3dcaa1db367976cf5fbcb2fa3e4c6d4e",
+    "semantic_hash": ""
+  },
+  "src/components/EODCardDeck.jsx": {
+    "mtime": 1786906964.4299705,
+    "ast_hash": "bf56f8339937a9d5ae5e99c201975f03",
+    "semantic_hash": ""
+  },
+  "src/components/EODLetter.jsx": {
+    "mtime": 1786907868.779123,
+    "ast_hash": "41445f1c9525e02e48b102f5b9c99c27",
+    "semantic_hash": ""
+  },
+  "src/config/eodRecord.selfcheck.mjs": {
+    "mtime": 1786907173.3647094,
+    "ast_hash": "ca70205b0cd18de9bc546a18dcbdc4e7",
+    "semantic_hash": ""
+  },
+  "src/utils/eodRecord.js": {
+    "mtime": 1786906969.8956137,
+    "ast_hash": "cd511494b73c680415107a2c151d0573",
     "semantic_hash": ""
   }
 }

@@ -29,6 +29,11 @@ export const CARD_LABELS = {
   cukai:    'Pita cukai'
 };
 
+/* Which cards are rupiah and which are physical objects. It lives here rather than in a component
+   because the deck, the letter and the admin's review all format a card's figure, and a stack of
+   128 stamps printed as "Rp 128" is the bug that follows from any two of them disagreeing. */
+export const isMoneyCard = (id) => id === 'cash' || id === 'transfer';
+
 /* HQ checks MONEY and SALES DATA only. Aldi, 2026-08-16: *"HQ just care about the money
    transferred and the sales data ... since HQ cant monitor the real supply number on the regional
    warehouse then the HQ will just trust the regional admin for that"*. So stock cards are

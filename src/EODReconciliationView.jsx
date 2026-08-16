@@ -359,10 +359,14 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                 </div>
                             )}
                             
-                            {/* 🚀 CARD 1: FINANCIAL & STOCK HANDOVER */}
-                            <div className="bg-black/20 border border-[var(--line)] rounded-2xl p-6 shadow-xl flex flex-col h-full relative overflow-hidden">
-                                <div className="absolute top-0 right-0 w-32 h-32 bg-[var(--gold)] rounded-bl-full pointer-events-none"></div>
-                                <h3 className="text-lg font-black text-[var(--ink)] uppercase tracking-widest border-b border-[var(--line)] pb-4 mb-6 flex items-center gap-2 relative z-10"><Wallet className="text-[var(--ink-dim)]"/> Cash & Stock</h3>
+                            {/* 🚀 CARD 1: FINANCIAL & STOCK HANDOVER
+                                ⚠️ NO `overflow-hidden` WHILE THE COUNTING FLOW IS INSIDE. A confirmed
+                                card flies UPWARD out of the deck into the letter, so a clipping
+                                ancestor deletes the only animation on the screen.
+                                ⚠️ The decorative gold quarter-circle is gone from both cards — it
+                                overflowed the corner radius and was part of what he read as broken. */}
+                            <div className={`bg-black/20 border border-[var(--line)] rounded-2xl p-5 md:p-6 shadow-xl flex flex-col h-full relative ${agentData.cashStatus === 'READY' ? 'md:col-span-2' : 'overflow-hidden'}`}>
+                                <h3 className="text-lg font-black text-[var(--ink)] uppercase tracking-widest border-b border-[var(--line)] pb-4 mb-5 flex items-center gap-2 relative z-10"><Wallet className="text-[var(--ink-dim)]"/> {agentData.cashStatus === 'READY' ? 'Close The Day' : 'Cash & Stock'}</h3>
                                 
                                 <div className="flex-1">
                                     {agentData.cashStatus === 'PENDING' ? (
@@ -391,6 +395,19 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                     moves until "Accept short" ships — and that needs his rules deploy first. */}
                                 {agentData.cashStatus === 'READY' && (
                                     <div className="mt-6">
+                                        {/* 🔢 ONE INPUT PER LINE. Aldi, 2026-08-17: *"what if there are a lot of item
+                                            types at once missing item on onetype wont make a good record to the data"*.
+                                            A single goods total hides a one-product shortfall, so each product in the
+                                            vehicle is counted on its own row and becomes its own source record.
+                                            ⚠️ PITA CUKAI IS NOT PER PRODUCT — `expectedCukai` is one pool (calcTotal +
+                                            credit + legacy debt), so there is no per-product figure to count against.
+                                            Its two lines are the two OUTCOMES the old second card owned: handed over,
+                                            and lost. declared = returned + lost, exactly what that card submitted.
+
+                                            🧾 TWO REPORTS, ONE SEND. The old screen had two submit buttons writing two
+                                            separate documents; the letter now covers both, so it writes both. Same two
+                                            documents, same shapes, same `handleVerifyEOD` — the change is that the agent
+                                            presses once instead of twice, not that anything downstream moved. */}
                                         <EODAgentFlow
                                             expected={{
                                                 cash: agentData.expectedCash,
@@ -402,45 +419,84 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                                 cash: agentData.cashSources,
                                                 transfer: agentData.transferSources
                                             }}
-                                            details={{
-                                                goods: (agentData.activeStock || []).length === 0
-                                                    ? <p className="text-[11px] text-[var(--ink-dim)] uppercase tracking-widest text-center py-1">Vehicle is empty.</p>
-                                                    : (agentData.activeStock || []).map((item, n) => (
-                                                        <div key={item.productId || n} className="flex justify-between gap-2 text-[11px] py-0.5">
-                                                            <span className="text-[var(--ink)] truncate">{item.name}</span>
-                                                            <span className="font-mono tabular-nums text-[var(--ink-dim)] shrink-0">{item.qty} {item.unit || 'Bks'}</span>
-                                                        </div>
-                                                    )),
-                                                cukai: <p className="text-[11px] text-[var(--ink-dim)]">
-                                                    {agentData.todaysSamplings?.length || 0} sampling records deployed today.
-                                                </p>
+                                            lines={{
+                                                goods: (agentData.activeStock || []).map((item, n) => ({
+                                                    key: String(item.productId || `row-${n}`),
+                                                    name: item.name,
+                                                    unit: item.unit || 'Bks',
+                                                    expected: Number(item.qty) || 0
+                                                })),
+                                                cukai: [
+                                                    { key: 'returned', name: 'Stamps handed over', unit: 'pcs', expected: agentData.expectedCukai, hint: 'Physical stamps going to the admin' },
+                                                    { key: 'lost',     name: 'Stamps lost',        unit: 'pcs', expected: 0,                      hint: 'You pay a cash fine for each one' }
+                                                ]
                                             }}
-                                            onSubmit={(letter) => onSubmitEOD({
-                                                cash: agentData.expectedCash,
-                                                transfer: agentData.expectedTransfer,
-                                                cukai: 0,
-                                                remainingStock: agentData.activeStock,
-                                                damagedStockToReturn: agentData.damagedItemsToReturn,
-                                                deployedSamples: [],
-                                                reportType: 'CASH_STOCK',
-                                                agentId: effectiveId,
-                                                agentName: resolveIdentityName(),
-                                                dayKey: getLocalDayKey(),
-                                                storesServed: agentData.storesServed,
-                                                cukaiRemaining: agentData.cukaiRemaining,
-                                                titipCollected: agentData.titipCollected,
-                                                itemsBks: agentData.itemsBks,
-                                                // 🆕 additive: what the agent actually counted, with the rows behind it
-                                                cards: letter.cards
-                                            })}
+                                            notes={{
+                                                cukai: (rows) => {
+                                                    const lost = parseInt(String(rows.lost || '').replace(/[^0-9]/g, ''), 10) || 0;
+                                                    if (lost <= 0) return null;
+                                                    return (
+                                                        <div className="rounded-lg border border-[var(--danger)] bg-[var(--danger)] px-3 py-2 text-center">
+                                                            <p className="text-[10px] font-bold uppercase tracking-[.18em] text-[var(--danger-ink)] flex items-center justify-center gap-1"><AlertCircle size={11}/> Cash fine required</p>
+                                                            <p className="text-lg font-black text-[var(--danger-ink)] leading-tight">{formatRupiah(lost * cukaiFinePrice)}</p>
+                                                            <p className="text-[10px] text-[var(--danger-ink)] uppercase tracking-widest">{formatRupiah(cukaiFinePrice)} per lost stamp</p>
+                                                        </div>
+                                                    );
+                                                }
+                                            }}
+                                            onSubmit={(letter) => {
+                                                const cukaiRows = letter.cards.cukai?.sources || [];
+                                                const returned = Number(cukaiRows.find(r => r.txId === 'cukai:returned')?.amount) || 0;
+                                                const lost = Number(cukaiRows.find(r => r.txId === 'cukai:lost')?.amount) || 0;
+
+                                                onSubmitEOD({
+                                                    cash: agentData.expectedCash,
+                                                    transfer: agentData.expectedTransfer,
+                                                    cukai: 0,
+                                                    remainingStock: agentData.activeStock,
+                                                    damagedStockToReturn: agentData.damagedItemsToReturn,
+                                                    deployedSamples: [],
+                                                    reportType: 'CASH_STOCK',
+                                                    agentId: effectiveId,
+                                                    agentName: resolveIdentityName(),
+                                                    dayKey: getLocalDayKey(),
+                                                    storesServed: agentData.storesServed,
+                                                    cukaiRemaining: agentData.cukaiRemaining,
+                                                    titipCollected: agentData.titipCollected,
+                                                    itemsBks: agentData.itemsBks,
+                                                    // 🆕 additive: what the agent actually counted, with the rows behind it
+                                                    cards: letter.cards
+                                                });
+
+                                                if (agentData.cukaiStatus === 'READY') {
+                                                    onSubmitEOD({
+                                                        cash: 0, transfer: 0,
+                                                        cukaiReturned: returned,
+                                                        cukaiPaid: lost,
+                                                        cukaiFine: lost * cukaiFinePrice,
+                                                        cukai: returned + lost,
+                                                        remainingStock: [],
+                                                        deployedSamples: agentData.todaysSamplings,
+                                                        reportType: 'CUKAI',
+                                                        agentId: effectiveId,
+                                                        agentName: resolveIdentityName()
+                                                    });
+                                                }
+                                            }}
                                         />
                                     </div>
                                 )}
                             </div>
 
-                            {/* 🚀 CARD 2: PITA CUKAI HANDOVER & FINE SYSTEM */}
+                            {/* 🚀 CARD 2: PITA CUKAI HANDOVER & FINE SYSTEM
+                                ⚠️ IT DISAPPEARS WHILE THE COUNTING FLOW IS LIVE, and that is the point of the
+                                redesign rather than a tidy-up. The deck's fourth card counts stamps — handed
+                                over and lost — and the letter writes the CUKAI report, so leaving this card on
+                                screen showed the agent the same job twice with two different submit buttons.
+                                It stays for the PENDING and VERIFIED states, which the letter does not cover,
+                                and for legacy days where cukai is still open after cash was submitted. */}
+                            {agentData.cashStatus !== 'READY' && (
                             <div className="bg-black/20 border border-[var(--accent-edge)] rounded-2xl p-6 shadow-xl flex flex-col h-full relative overflow-hidden">
-                                <div className="absolute top-0 right-0 w-32 h-32 bg-[var(--gold)] rounded-bl-full pointer-events-none"></div>
                                 <h3 className="text-lg font-black text-[var(--ink)] uppercase tracking-widest border-b border-[var(--accent-edge)] pb-4 mb-6 flex items-center gap-2 relative z-10"><Tag className="text-[var(--accent-ink)]"/> Pita Cukai</h3>
                                 
                                 <div className="flex-1">
@@ -537,6 +593,7 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                     </button>
                                 )}
                             </div>
+                            )}
                         </>
                     )}
                 </div>
