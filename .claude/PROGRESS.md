@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-16 17:32 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
+**Updated: 2026-08-16 18:22 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -14,6 +14,40 @@
 > and `A-Brain/Wiki/Log.md` hold how it got there.
 
 ## ▶ NOW
+
+### 🔴 2026-08-16 18:20 — EOD CONCEPTS ARE PUBLISHED AND HE IS CHOOSING
+
+He picked EOD Setoran to brainstorm first, then rejected prose: *"i cant imagine those, why dont u
+generate all of that inside artifact and i choose, u can do research on the animation or the
+concept that we are about to do as well. i want to see the full concept complete with the
+animation"*.
+
+**Artifact — "Three Ways to Close a Shift":**
+`https://claude.ai/code/artifact/1f903a9f-d032-4098-8b5f-0719481affad`
+Source of truth is `scratchpad/eod-concepts.html`; republish that same path to update the URL.
+
+Three playable concepts, all in the REAL palette lifted from `theme.css` (both themes), with
+light / dark / **Lite** / slow-mo toggles — the format he already said yes to on 2026-08-16.
+
+| | concept | what it is |
+|---|---|---|
+| A | **The Shift Close** | one guided sequence; each step folds away in 3D into a ledger line; envelope seals at the end. **My recommendation.** |
+| B | **The Sheriff's Desk** | leans into the WANTED / bounty / sheriff theme ALREADY in `EODReconciliationView.jsx`; strongbox, poster peel, stamp slam |
+| C | **The Closing Sequence** | vault door, six lock pins light as figures are confirmed, door turns. Cheapest, most like the rest of the app |
+
+**⏳ WAITING ON HIM — two answers, both in the artifact's last panel:**
+1. 🔴 Which concept (mixing allowed — "A with C's clothes" is my pick).
+2. ❓ Does an exact match get a colour? Proposed: **no** — celebrate a clean close with MOTION, keep
+   the palette law that "fine" has no colour. He may overrule and ask for gold.
+
+**The diagnosis behind all three, measured, not guessed:** the screen has **2 typing boxes total**
+(both for cukai) — the agent never counts the cash, the app calculates it and they press submit, so
+nothing can be right or wrong and nothing can be scored. And **60 of 101 text sizes are 10–11px**
+uppercase, 68 uppercase labels, 58 `tracking-widest`. The concept change under all three is
+**count first, then reveal the variance**.
+
+⚠️ **Do not start building until he picks.** The logic stays untouched — he said "keep the logic"
+on every one of these screens.
 
 ### 🎮 2026-08-16 17:30 — THE BIG ONE HE ASKED FOR: animation, 3D, gamification
 
