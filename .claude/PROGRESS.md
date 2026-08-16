@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-16 20:12 WIB (KPM app session)** · 🔴 EOD HANDOVER IS THE FIRST SECTION BELOW · branch `phase0-solid-ground` · last code commit: run `git log -1`
+**Updated: 2026-08-16 20:28 WIB (KPM app session)** · 🔴 EOD HANDOVER IS THE FIRST SECTION BELOW · branch `phase0-solid-ground` · last code commit: run `git log -1`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -58,6 +58,48 @@ that there is no leak in the work process"*.
 
     POSTER          unpaid bounties ONLY - missing item / cukai / cash / transfer
     REPAYMENT       separate feature -> bounties receipt -> admin confirms -> cleared animation
+
+## 3b. 🏛️ WHAT HQ ACTUALLY CHECKS — he narrowed it himself, 2026-08-16 ~20:25
+
+Asked what an HQ rejection should DO, he answered a better question instead — what HQ is even for.
+**Verbatim:**
+
+> *"HQ just care about the money transferred and the sales data, so the stock that return is going
+> back to the regional warehouse not on normal EOD not the Master vault, for special occasion like
+> return damaged goods or expired pita cukai then it will go back to the master vault, on the other
+> words for the normal EOD, as long as the money is sent to the headquarters should match the amount
+> of sales recorded that day and since HQ cant monitor the real supply number on the regional
+> warehouse then the HQ will just trust the regional admin for that, as long as the total money
+> transferred to the HQ is the same value with total goods sent to the regional warehouse"*
+
+**This SHRINKS the HQ panel a lot, and that is good news:**
+
+1. **HQ checks MONEY + SALES DATA. Not stock counts.** *"HQ cant monitor the real supply number on
+   the regional warehouse"*, so HQ trusts the regional admin on stock entirely. **Do not build a
+   stock reconciliation into the HQ panel.**
+2. **Normal EOD returns go to the REGIONAL warehouse, not the Master Vault.**
+3. **Damaged goods and expired pita cukai go to the MASTER VAULT** — a different destination.
+
+**✅ CHECKED AGAINST THE CODE (App.jsx:1749-1775, 1820, 1839):** point 2 already works. A
+field-level agent in a real region returns stock to `branches/{location}/inventory`; Tier 3+ and
+HQ/unassigned go to `products` (Master Vault), decided by `useBranchWarehouse`.
+
+🔴 **POINT 3 DOES NOT MATCH THE CODE.** `damagedRefs` uses the **same** `useBranchWarehouse` flag as
+healthy stock (:1771-1773), so for a field agent **damaged goods go to the branch warehouse today,
+not the Master Vault.** His rule and the code disagree. **This is a real bug or a real behaviour
+change — surface it, do not silently "fix" it, and note it also affects expired pita cukai which has
+no separate return path at all right now.**
+
+**🔴 STILL AMBIGUOUS — THE HQ EQUATION. Ask before building; this is money logic.** He stated two
+different checks and they are not the same:
+- **(A) daily:** *"the money is sent to the headquarters should match the amount of sales recorded
+  that day"* — money in == today's recorded sales.
+- **(B) running:** *"the total money transferred to the HQ is the same value with total goods sent
+  to the regional warehouse"* — a standing account between HQ and the region: goods shipped out vs
+  money come back, with the difference being stock still sitting at the region.
+
+They can both be true (A is the daily check, B is the ledger), but **the panel is built around one
+of them.** Do not guess.
 
 ## 4. 🔴 THE HARD PART, AND IT IS NOT THE ANIMATION
 
