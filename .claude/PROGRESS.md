@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-16 18:22 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
+**Updated: 2026-08-16 18:28 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -15,7 +15,42 @@
 
 ## ▶ NOW
 
-### 🔴 2026-08-16 18:20 — EOD CONCEPTS ARE PUBLISHED AND HE IS CHOOSING
+### 🔴 2026-08-16 18:25 — EOD v2: HE KILLED C, KEPT A+B, AND NAMED A MISSING RULE
+
+His words: *"what if there is some miscount or lost pita cukai or lost item in the EOD? , btw im
+okay with 1 and 2 i dont like 3, i want u to make few other options for this and just delete 3 keep
+1 and 2 for comparison later. give me another gamification concept, anyway EOD needs approval from
+the regional admin to be accepted, EOD wont be complete without admin approval"*.
+
+**The vault-door concept is deleted.** A (Shift Close) and B (Sheriff's Desk) survive. Two new ones
+added: **C · Two Keys** (approval IS the concept — neither key alone moves the bolt) and
+**D · The Clean Run** (a chain of links; a shortfall welds a CRACKED link that stays visible — a
+layer that can ride on top of A, B or C rather than a rival to them).
+
+**🔴 WHAT THE CODE ACTUALLY DOES WITH A SHORTFALL — read before designing anything here:**
+
+| loss | today |
+|---|---|
+| lost **pita cukai** | ✅ handled — becomes `cukaiDebts` on the agent, per product, survives the day; cleared by a separate BOUNTY cash payment the admin also verifies. `cleanCukaiDays` only ticks when it is zero |
+| short **cash** | ❌ nothing. No field for what the admin actually received; `handleVerifyEOD` credits `report.cash + report.transfer` exactly as calculated |
+| missing **goods** | ❌ nothing. Damaged stock has a return path; simply-gone stock has none, and `activeCanvas` is wiped to `[]` on verify regardless |
+
+⚠️ **Approval is all-or-nothing.** The admin's only two actions are `handleVerifyEOD` (accept the
+calculated number) and `handleResetEOD` (delete the submission so the agent redoes it, App.jsx:2014).
+There is no "accept but short by X". **Proposed third outcome: Accept short → mints a debt, exactly
+how lost cukai already behaves.** ⛔ It touches money — do NOT build it until he says yes.
+
+**✅ THE GAMIFICATION ALREADY EXISTS AND FIRES ON ADMIN APPROVAL**, not on submit: `dayXP`,
+`xpBreakdown`, `checkBadges()`, `daysVerified`, `cleanCukaiDays`, streak via `lastVerifiedDay`
+(App.jsx ~1931-2006). It is invisible in the UI. **Any concept should surface what is already
+there before inventing new scoring.**
+
+**⏳ THREE ANSWERS OWED — all in the artifact's last panel:**
+1. 🔴 Which flow: A, B or C (D can ride on any of them — "C plus D" is a valid answer).
+2. 🔴 Does he want **Accept short**? Money logic, needs an explicit yes.
+3. ❓ Does an exact match get a colour? Proposed: no — motion only.
+
+### 🔴 2026-08-16 18:20 — EOD CONCEPTS PUBLISHED (v1 superseded by the entry above)
 
 He picked EOD Setoran to brainstorm first, then rejected prose: *"i cant imagine those, why dont u
 generate all of that inside artifact and i choose, u can do research on the animation or the
