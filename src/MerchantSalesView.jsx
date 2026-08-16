@@ -1611,7 +1611,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                         <button onClick={() => handleFulfillIOU(iou)} className="bg-[var(--duke-brass-2)] hover:bg-[var(--duke-brass)] text-[var(--duke-on-plate)] px-2 py-1 rounded font-bold uppercase transition-colors">Fulfill</button>
                                     ) : (
                                         /* palette law: "done" is never a hue. Gold plate + tick, same as everywhere else. */
-                                        <span className="text-[var(--duke-brass-ink)] font-bold uppercase px-2 py-1 border border-[var(--duke-brass-edge)]/50 rounded bg-[var(--duke-brass)]/10"><Check size={10} className="inline mr-1"/> Added</span>
+                                        <span className="text-[var(--duke-brass-ink)] font-bold uppercase px-2 py-1 border border-[color-mix(in_srgb,var(--duke-brass-edge)_50%,transparent)] rounded bg-[color-mix(in_srgb,var(--duke-brass)_10%,transparent)]"><Check size={10} className="inline mr-1"/> Added</span>
                                     )}
                                 </div>
                             );
@@ -1719,7 +1719,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                             <Lock size={12}/> Sample Locked (Requires GPS)
                                         </button>
                                     ) : (
-                                        <button onClick={() => setShowSampleModal(true)} className="w-full mt-1 bg-[var(--duke-fill-ground)] border border-[var(--duke-amber-edge)]/50 hover:bg-[var(--duke-amber)] text-[var(--duke-amber-ink)] hover:text-black text-[10px] font-bold uppercase tracking-widest p-2 rounded shadow-md flex items-center justify-center gap-2 transition-colors active:scale-95">
+                                        <button onClick={() => setShowSampleModal(true)} className="w-full mt-1 bg-[var(--duke-fill-ground)] border border-[color-mix(in_srgb,var(--duke-amber-edge)_50%,transparent)] hover:bg-[var(--duke-amber)] text-[var(--duke-amber-ink)] hover:text-black text-[10px] font-bold uppercase tracking-widest p-2 rounded shadow-md flex items-center justify-center gap-2 transition-colors active:scale-95">
                                             <Package size={12}/> Deploy Free Sample
                                         </button>
                                     )}
@@ -1750,7 +1750,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                 </div>
 
                 {paymentMethod === 'Titip' && !isReturMode && (
-                    <div className="mt-3 bg-[var(--duke-fill-plank)] border border-[var(--duke-amber-edge)]/50 p-3 rounded shadow-inner animate-fade-in">
+                    <div className="mt-3 bg-[var(--duke-fill-plank)] border border-[color-mix(in_srgb,var(--duke-amber-edge)_50%,transparent)] p-3 rounded shadow-inner animate-fade-in">
                         <label className="text-[10px] font-bold text-[var(--duke-ink-1)] mb-2 flex items-center justify-between uppercase tracking-widest">
                             <span>Jatuh Tempo (Due Date)</span>
                             <span className="bg-[var(--duke-amber)] text-black px-2 py-0.5 rounded shadow-sm text-[10px]">{tempoDays} Hari</span>
@@ -1782,7 +1782,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                 controls a salesman uses most ended up furthest apart exactly when the basket
                 was biggest. The cap is a max-height, not a fixed one, so a basket of one line
                 does not leave a hole. */}
-            <div className="flex-1 min-h-0 max-h-[min(54vh,540px)] overflow-y-auto p-2 md:p-3 relative z-10 space-y-2 kpm-scroll bg-[var(--duke-paper-2)]/50">
+            <div className="flex-1 min-h-0 max-h-[min(54vh,540px)] overflow-y-auto p-2 md:p-3 relative z-10 space-y-2 kpm-scroll bg-[color-mix(in_srgb,var(--duke-paper-2)_50%,transparent)]">
                 {cart.length === 0 ? (
                     <div className="text-center opacity-50 mt-8 font-bold uppercase text-xs md:text-sm">Manifest Empty</div>
                 ) : (
@@ -1790,7 +1790,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                         const mergedTiers = new Set(allowedTiers);
                         if (lockedTier) mergedTiers.add(lockedTier);
                         return (
-                        <div key={idx} className={`kpm-row-in flex flex-col border-b-2 border-dashed border-[var(--duke-edge-on-paper)]/30 p-3 md:p-4 mb-1 rounded border shadow-sm ${isReturMode ? (returType === 'EXCHANGE' ? 'bg-[var(--duke-paper-3)] border-[var(--duke-brass-edge-2)]' : 'bg-[var(--duke-paper-7)] border-[var(--duke-danger-edge)]') : 'bg-[var(--duke-paper)] border-[var(--duke-edge-on-paper)]/50'}`}>
+                        <div key={idx} className={`kpm-row-in flex flex-col border-b-2 border-dashed border-[color-mix(in_srgb,var(--duke-edge-on-paper)_30%,transparent)] p-3 md:p-4 mb-1 rounded border shadow-sm ${isReturMode ? (returType === 'EXCHANGE' ? 'bg-[var(--duke-paper-3)] border-[var(--duke-brass-edge-2)]' : 'bg-[var(--duke-paper-7)] border-[var(--duke-danger-edge)]') : 'bg-[var(--duke-paper)] border-[color-mix(in_srgb,var(--duke-edge-on-paper)_50%,transparent)]'}`}>
                             <div className="flex justify-between items-start mb-2">
                                 <span className={`text-[10px] md:text-xs font-black w-40 leading-tight uppercase break-words whitespace-normal ${isReturMode ? (returType === 'EXCHANGE' ? 'text-[var(--duke-brass-ink-2)]' : 'text-red-900') : 'text-[var(--duke-ink-7)]'}`}>
                                     {item.name} {isReturMode && (returType === 'EXCHANGE' ? '(TUKAR GANTI)' : '(BUYBACK)')}
@@ -1832,12 +1832,12 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                     })()}
                                 </div>
                             )}
-                            <div className={`flex items-center gap-1 md:gap-2 p-1 rounded border ${isReturMode ? (returType === 'EXCHANGE' ? 'bg-[var(--duke-paper-4)]/60 border-[var(--duke-brass-edge-2)]' : 'bg-red-200/50 border-red-300') : 'bg-[var(--duke-paper-2)] border-[var(--duke-edge-on-paper)]/30'}`}>
+                            <div className={`flex items-center gap-1 md:gap-2 p-1 rounded border ${isReturMode ? (returType === 'EXCHANGE' ? 'bg-[color-mix(in_srgb,var(--duke-paper-4)_60%,transparent)] border-[var(--duke-brass-edge-2)]' : 'bg-red-200/50 border-red-300') : 'bg-[var(--duke-paper-2)] border-[color-mix(in_srgb,var(--duke-edge-on-paper)_30%,transparent)]'}`}>
                                 <input type="number" value={item.qty} disabled={item.isIouFulfillment} onChange={(e) => updateCartItem(item.productId, 'qty', e.target.value === '' ? '' : parseInt(e.target.value))} onBlur={(e) => { if (!e.target.value || parseInt(e.target.value) < 1) updateCartItem(item.productId, 'qty', 1); }} className={`w-20 md:w-24 bg-white border border-[var(--duke-edge-3)] text-center text-xs md:text-sm font-bold tabular-nums outline-none focus:border-[var(--duke-amber-edge)] rounded p-1 text-[var(--duke-ink-7)] ${item.isIouFulfillment ? 'opacity-50' : ''}`} />
                                 {/* 🚀 Phase 8: unit + price-tier directly change how much money is charged —
                                     bumped to text-sm specifically, not just the general 11px pass, since
                                     these two decide the price, not just describe something. */}
-                                <select value={item.unit} disabled={item.isIouFulfillment} onChange={(e) => updateCartItem(item.productId, 'unit', e.target.value)} className={`bg-transparent text-sm font-bold uppercase outline-none text-[var(--duke-ink-7)] border-r border-[var(--duke-edge-on-paper)]/30 pr-1 md:pr-2 ${item.isIouFulfillment ? 'opacity-50' : ''}`}><option>Bks</option><option>Slop</option><option>Bal</option><option>Karton</option></select>
+                                <select value={item.unit} disabled={item.isIouFulfillment} onChange={(e) => updateCartItem(item.productId, 'unit', e.target.value)} className={`bg-transparent text-sm font-bold uppercase outline-none text-[var(--duke-ink-7)] border-r border-[color-mix(in_srgb,var(--duke-edge-on-paper)_30%,transparent)] pr-1 md:pr-2 ${item.isIouFulfillment ? 'opacity-50' : ''}`}><option>Bks</option><option>Slop</option><option>Bal</option><option>Karton</option></select>
                                 <select value={item.priceTier} onChange={(e) => updateCartItem(item.productId, 'priceTier', e.target.value)} disabled={!!lockedTier || item.isIouFulfillment} className={`bg-transparent text-sm font-bold uppercase outline-none text-[var(--duke-ink-7)] pl-1 ${lockedTier || item.isIouFulfillment ? 'opacity-50 cursor-not-allowed text-red-700' : ''}`}>
                                     {Array.from(mergedTiers).map(tier => ( <option key={tier} value={tier}>{tier}</option> ))}
                                 </select>
@@ -1845,7 +1845,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
 
                             {/* 🚀 ITEM-LEVEL FORENSIC TAGGING (RETUR ONLY) */}
                             {isReturMode && !item.isIouFulfillment && (
-                                <div className={`mt-2 pt-2 border-t flex flex-col gap-2 ${returType === 'EXCHANGE' ? 'border-[var(--duke-brass-edge-2)]/50' : 'border-red-300/50'}`}>
+                                <div className={`mt-2 pt-2 border-t flex flex-col gap-2 ${returType === 'EXCHANGE' ? 'border-[color-mix(in_srgb,var(--duke-brass-edge-2)_50%,transparent)]' : 'border-red-300/50'}`}>
                                     <div className="flex gap-2">
                                         <select 
                                             value={item.condition || 'GOOD'} 
@@ -1886,8 +1886,8 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                     {/* EXCHANGE MODE ONLY: FULFILL NOW VS IOU */}
                                     {returType === 'EXCHANGE' && (
                                         <div className="flex gap-2 mt-1">
-                                            <button onClick={() => updateCartItem(item.productId, 'fulfillment', 'NOW')} className={`flex-1 py-1.5 text-[11px] font-bold uppercase rounded border transition-all ${item.fulfillment !== 'IOU' ? 'bg-[var(--duke-brass)] border-[var(--duke-brass-edge-2)] text-[var(--duke-on-plate)] shadow-md' : 'bg-[var(--duke-bar-3)] border-[var(--duke-edge-3)]/50 text-[var(--duke-ink-3)] hover:text-[var(--duke-ink-hi)]'}`}>Give Replacement Now</button>
-                                            <button onClick={() => updateCartItem(item.productId, 'fulfillment', 'IOU')} className={`flex-1 py-1.5 text-[11px] font-bold uppercase rounded border transition-all ${item.fulfillment === 'IOU' ? 'bg-[var(--duke-brass-3)] border-[var(--duke-brass-edge-4)] text-[var(--duke-on-fill)] shadow-md' : 'bg-[var(--duke-bar-3)] border-[var(--duke-edge-3)]/50 text-[var(--duke-ink-3)] hover:text-[var(--duke-ink-hi)]'}`}>Hutang Barang (IOU)</button>
+                                            <button onClick={() => updateCartItem(item.productId, 'fulfillment', 'NOW')} className={`flex-1 py-1.5 text-[11px] font-bold uppercase rounded border transition-all ${item.fulfillment !== 'IOU' ? 'bg-[var(--duke-brass)] border-[var(--duke-brass-edge-2)] text-[var(--duke-on-plate)] shadow-md' : 'bg-[var(--duke-bar-3)] border-[color-mix(in_srgb,var(--duke-edge-3)_50%,transparent)] text-[var(--duke-ink-3)] hover:text-[var(--duke-ink-hi)]'}`}>Give Replacement Now</button>
+                                            <button onClick={() => updateCartItem(item.productId, 'fulfillment', 'IOU')} className={`flex-1 py-1.5 text-[11px] font-bold uppercase rounded border transition-all ${item.fulfillment === 'IOU' ? 'bg-[var(--duke-brass-3)] border-[var(--duke-brass-edge-4)] text-[var(--duke-on-fill)] shadow-md' : 'bg-[var(--duke-bar-3)] border-[color-mix(in_srgb,var(--duke-edge-3)_50%,transparent)] text-[var(--duke-ink-3)] hover:text-[var(--duke-ink-hi)]'}`}>Hutang Barang (IOU)</button>
                                         </div>
                                     )}
                                 </div>
@@ -2300,7 +2300,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                             {item.stock <= 0 ? (
                                                 <span className="text-[10px] lg:text-xs font-black px-1.5 py-0.5 lg:px-2 lg:py-1 rounded-md border-2 inline-block bg-red-900/20 text-red-500 border-red-900/50">EMPTY</span>
                                             ) : item.stock <= (item.minStock || 50) ? (
-                                                <span className="text-[10px] lg:text-xs font-black px-1.5 py-0.5 lg:px-2 lg:py-1 rounded-md border-2 inline-block bg-[var(--duke-brass-4)] text-[var(--duke-amber-ink)] border-[var(--duke-amber-edge)]/50">LOW</span>
+                                                <span className="text-[10px] lg:text-xs font-black px-1.5 py-0.5 lg:px-2 lg:py-1 rounded-md border-2 inline-block bg-[var(--duke-brass-4)] text-[var(--duke-amber-ink)] border-[color-mix(in_srgb,var(--duke-amber-edge)_50%,transparent)]">LOW</span>
                                             ) : null}
                                         </div>
                                         <div className="text-left lg:text-right lg:w-auto lg:mt-0 lg:pt-0 lg:border-none">
@@ -2779,7 +2779,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                         <button onClick={() => setNooForm({...nooForm, photoUrl: null, photoFile: null})} className="absolute top-2 right-2 bg-red-600 text-[var(--duke-on-fill)] p-1.5 rounded-full"><X size={14}/></button>
                                     </div>
                                 ) : (
-                                    <button onClick={() => fileInputRef.current.click()} className="w-full border-2 border-dashed border-[var(--duke-edge-ctl)] hover:border-orange-500 bg-[var(--duke-fill-panel)]/50 hover:bg-[var(--duke-fill-panel)] text-[var(--duke-ink-3)] hover:text-orange-400 transition-colors py-8 rounded-lg flex flex-col items-center justify-center gap-2">
+                                    <button onClick={() => fileInputRef.current.click()} className="w-full border-2 border-dashed border-[var(--duke-edge-ctl)] hover:border-orange-500 bg-[color-mix(in_srgb,var(--duke-fill-panel)_50%,transparent)] hover:bg-[var(--duke-fill-panel)] text-[var(--duke-ink-3)] hover:text-orange-400 transition-colors py-8 rounded-lg flex flex-col items-center justify-center gap-2">
                                         <Camera size={32} />
                                         <span className="text-xs font-bold uppercase tracking-widest">Capture Live Photo</span>
                                         <span className="text-[11px] opacity-60">(Live Camera Only - Gallery Disabled)</span>
@@ -2818,7 +2818,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
             {/* --- SAMPLING DEPLOYMENT MODAL --- */}
             {showSampleModal && (
                 <div className="fixed inset-0 z-[300] bg-[var(--duke-scrim-hi)] flex items-center justify-center p-4 font-sans backdrop-blur-md">
-                    <div className="bg-[var(--duke-fill-ground)] w-full max-w-md border-2 border-[var(--duke-brass-edge)]/50 rounded-2xl shadow-[0_0_50px_rgba(99,102,241,0.2)] flex flex-col animate-fade-in-up">
+                    <div className="bg-[var(--duke-fill-ground)] w-full max-w-md border-2 border-[color-mix(in_srgb,var(--duke-brass-edge)_50%,transparent)] rounded-2xl shadow-[0_0_50px_rgba(99,102,241,0.2)] flex flex-col animate-fade-in-up">
                         <div className="p-5 border-b border-[var(--duke-edge-1)] bg-[var(--duke-bar)] flex justify-between items-center">
                             <div>
                                 <h2 className="text-lg font-black text-[var(--duke-ink-hi)] flex items-center gap-2 uppercase tracking-wider"><Package size={20} className="text-[var(--duke-brass-ink)]"/> Deploy Marketing Sample</h2>
@@ -2845,7 +2845,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                 </select>
                             </div>
 
-                            <div className="grid grid-cols-2 gap-4 bg-[var(--duke-fill-panel)]/50 p-3 rounded-xl border border-[var(--duke-edge-1)]">
+                            <div className="grid grid-cols-2 gap-4 bg-[color-mix(in_srgb,var(--duke-fill-panel)_50%,transparent)] p-3 rounded-xl border border-[var(--duke-edge-1)]">
                                 <div>
                                     <label className="text-[10px] font-bold text-[var(--duke-ink-3)] uppercase tracking-widest mb-1 block text-center">Bungkus</label>
                                     <input type="number" min="0" placeholder="0" value={sampleForm.qtyBks === 0 ? '' : sampleForm.qtyBks} onChange={e=>setSampleForm({...sampleForm, qtyBks: parseInt(e.target.value)||0})} className="w-full p-2 border rounded bg-[var(--duke-fill-ground)] border-[var(--duke-edge-ctl)] text-[var(--duke-ink-hi)] text-center font-bold text-lg focus:border-[var(--duke-brass-edge)] outline-none" />
@@ -2871,7 +2871,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                 </div>
                             </div>
                             
-                            <div className="bg-[var(--duke-brass)]/10 p-3 rounded border border-[var(--duke-brass-edge)]/30 text-[var(--duke-brass-ink)] text-[10px] uppercase tracking-widest font-bold flex items-start gap-2">
+                            <div className="bg-[color-mix(in_srgb,var(--duke-brass)_10%,transparent)] p-3 rounded border border-[color-mix(in_srgb,var(--duke-brass-edge)_30%,transparent)] text-[var(--duke-brass-ink)] text-[10px] uppercase tracking-widest font-bold flex items-start gap-2">
                                 <AlertCircle size={14} className="shrink-0 mt-0.5"/>
                                 <p>Warning: You must collect the Pita Cukai for every open pack. This will be demanded during EOD Setoran.</p>
                             </div>

@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-16 (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
+**Updated: 2026-08-16 07:40 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -743,6 +743,16 @@ order:
 - ✅ **The Firebase authorized domain is DONE** — *"already"*. `192.168.1.109` can sign in.
 
 ## 📓 LOG — newest first, about five entries; `git log` keeps the rest
+
+### 2026-08-16 07:40 (KPM app session) — no KPM work this session, timestamp touch only
+
+`/alucard` wifi troubleshooting again (3rd recurrence — Instagram/TikTok slow on his home wifi).
+Nothing in `src/` touched by me; `integration.audit.mjs` mtime changed from some other process.
+Diagnosis this round: his router is a Linksys E1000 v2 (2011, discontinued, single 2.4GHz band,
+no 5GHz). DNS fix (phone + router-level) and one reboot each bought temporary relief, then it came
+back — points to router hardware (memory leak / connection-table overflow under load), not a
+config problem. Told him: daily reboot as a workaround, or replace the router as the real fix.
+Waiting on him to confirm reboot fixes it again (would confirm the theory) or to decide.
 
 ### 2026-08-15 20:46 (KPM app session) — light mode switched on for the first time, and the terminal got a light bench
 

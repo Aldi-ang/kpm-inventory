@@ -3095,6 +3095,35 @@ check(G43, 'the glass panes still get an opaque fallback, as a token',
   'Lite Mode strips backdrop-filter, so a 4%-tinted bar with no blur is an invisible header — ' +
   'the opaque ground is not decoration');
 
+/* ── 44. an opacity modifier on a token emits NOTHING ────────────────────────
+   🔴 FOUND 2026-08-16, AND IT HAD BEEN TRUE FOR WEEKS. Tailwind's `/N` opacity modifier needs a
+   colour it can parse so it can rewrite it as `rgb(r g b / a)`. `var(--x)` is opaque to it, so
+   `bg-[var(--duke-amber)]/10` is a class that matches NO RULE. Not a wrong colour — no colour at
+   all. **35 distinct classes across 54 sites**, in App.jsx and in the sales terminal he had
+   already approved: the vault's amber buttons had no background and no border, the gate's inputs
+   had no border, the nota's paper tints were absent.
+   ⚠️ NOTHING CAUGHT IT because nothing here reads the BUILT CSS — every check in this file greps
+   the source, and the source looked perfectly correct. That is
+   [[Anti-Recurrence Check]] shape 4 exactly: a check that greps the source proves the class was
+   TYPED, never that it applies.
+   The fix is `color-mix(in srgb, var(--x) N%, transparent)`, which compiles — verified by listing
+   the emitted declarations, not by reading the source back. */
+const G44 = '44. No opacity modifier on a token';
+const deadAlpha = [];
+for (const [file, txt] of [['App.jsx', app], ['MerchantSalesView.jsx', duke],
+                          ['SettingsView.jsx', settings]])
+  for (const m of txt.matchAll(
+      /(?:[a-z-]+:)*(?:bg|text|border|border-[btlrxy]|ring|divide|from|via|to|outline|decoration|placeholder|caret|fill|stroke|accent)-\[var\(--[a-z0-9-]+\)\]\/\d+/g))
+    deadAlpha.push(`${file}:${m[0]}`);
+check(G44, 'no class applies an opacity modifier to a var() token', !deadAlpha.length,
+  'these compile to nothing at all: ' + [...new Set(deadAlpha)].join(' ') +
+  ' — use color-mix(in_srgb,var(--token)_N%,transparent) instead');
+/* the positive half: the replacement is actually in use and actually reaches the stylesheet */
+check(G44, 'the color-mix form is used instead',
+  /color-mix\(in_srgb,var\(--[a-z0-9-]+\)_\d+%,transparent\)/.test(app),
+  'the fix is a syntax, not a deletion — dropping the alpha instead would change every one of ' +
+  'these surfaces to fully opaque');
+
 /* ── report ──────────────────────────────────────────────────────────────── */
 let last = '';
 for (const r of results) {

@@ -3658,7 +3658,7 @@ const handleGitHubMirror = async () => {
               wearing one shell" was always supposed to look like. */}
           {/* 320 on a phone, 384 from md up — his ask: "i want the login panel to be a little bit
               bigger on pc". The preview's 264 was sized for a small demo stage, not a monitor. */}
-          <div className={`bg-[rgba(4,3,2,0.9)] border border-[var(--shell-orange-edge)]/20 p-6 md:p-8 max-w-[320px] md:max-w-[384px] w-full text-center shadow-[0_20px_46px_-12px_rgba(0,0,0,0.95)] relative z-10 overflow-hidden transition-all ${authShake ? 'animate-shake' : ''} ${isUnlocking && gateIsRich() ? 'opacity-0 scale-[.86] pointer-events-none duration-[420ms]' : ''}`}>
+          <div className={`bg-[rgba(4,3,2,0.9)] border border-[color-mix(in_srgb,var(--shell-orange-edge)_20%,transparent)] p-6 md:p-8 max-w-[320px] md:max-w-[384px] w-full text-center shadow-[0_20px_46px_-12px_rgba(0,0,0,0.95)] relative z-10 overflow-hidden transition-all ${authShake ? 'animate-shake' : ''} ${isUnlocking && gateIsRich() ? 'opacity-0 scale-[.86] pointer-events-none duration-[420ms]' : ''}`}>
 
             {/* The top stripe marks a mode that is NOT the everyday one, so it still carries
                 meaning. Standard login has none — the preview's gate is a plain card. */}
@@ -3679,17 +3679,17 @@ const handleGitHubMirror = async () => {
                         {/* One ring, drawn once. It does NOT rotate: Lite Mode's law is that
                             nothing spins, and a spinner here would also be a lie — the vault is
                             already open by the time this branch renders. */}
-                        <div className="absolute inset-0 rounded-full border border-[var(--duke-amber-edge)]/25 kpm-unlock-ring"></div>
+                        <div className="absolute inset-0 rounded-full border border-[color-mix(in_srgb,var(--duke-amber-edge)_25%,transparent)] kpm-unlock-ring"></div>
                         <Unlock size={30} className="text-[var(--shell-ink)] kpm-unlock-icon" />
                     </div>
                     <div>
                         <h3 className="text-[var(--shell-ink)] font-black text-2xl uppercase mb-2 kpm-unlock-title">Access Granted</h3>
-                        <p className="text-[var(--shell-ink)]/40 font-mono text-[10px] uppercase tracking-[0.25em]">Master Vault</p>
+                        <p className="text-[color-mix(in_srgb,var(--shell-ink)_40%,transparent)] font-mono text-[10px] uppercase tracking-[0.25em]">Master Vault</p>
                     </div>
                     {/* A single sweep, not a progress bar. Nothing is loading here, so a bar that
                         appears to measure work is telling him something untrue — the old one
                         stuttered for 2.4s to sell a decryption that never happened. */}
-                    <div className="w-full h-px bg-[var(--duke-amber)]/15 overflow-hidden">
+                    <div className="w-full h-px bg-[color-mix(in_srgb,var(--duke-amber)_15%,transparent)] overflow-hidden">
                         <div className="h-full w-full origin-left bg-[var(--duke-amber)] kpm-unlock-sweep"></div>
                     </div>
                     <style>{`
@@ -3725,7 +3725,7 @@ const handleGitHubMirror = async () => {
                 <div className="space-y-4 text-left">
                     {/* 🚀 NEW: The Welcome Bridge UI */}
                     {pendingMigration ? (
-                        <div className="mb-6 text-center border-b border-[var(--duke-amber-edge)]/30 pb-4 animate-fade-in">
+                        <div className="mb-6 text-center border-b border-[color-mix(in_srgb,var(--duke-amber-edge)_30%,transparent)] pb-4 animate-fade-in">
                             <h3 className="text-xl font-black text-[var(--duke-ink-hi)] uppercase tracking-widest mb-1">Welcome to {appSettings?.companyName || "The Platform"}</h3>
                             <p className="text-[var(--duke-amber-ink)] text-[10px] uppercase tracking-[0.2em] font-bold">First-Time Setup: Initialize Vault</p>
                             <p className="text-[var(--duke-ink-3)] text-[10px] mt-2 leading-relaxed">Your Architect has provisioned your clearance. Create your Master Credentials to secure your database and finalize your account migration.</p>
@@ -3740,7 +3740,7 @@ const handleGitHubMirror = async () => {
                             placeholder="CREATE MASTER PASSWORD"
                             value={setupPassword}
                             onChange={(e) => setSetupPassword(e.target.value)}
-                            className="w-full bg-[var(--duke-well-solid)] border border-[var(--duke-amber-edge)]/30 p-4 text-center text-[var(--shell-ink)] text-lg outline-none focus:border-[var(--duke-amber-edge)] font-mono placeholder:text-[var(--duke-ink-hi)]/20 transition-colors" 
+                            className="w-full bg-[var(--duke-well-solid)] border border-[color-mix(in_srgb,var(--duke-amber-edge)_30%,transparent)] p-4 text-center text-[var(--shell-ink)] text-lg outline-none focus:border-[var(--duke-amber-edge)] font-mono placeholder:text-[color-mix(in_srgb,var(--duke-ink-hi)_20%,transparent)] transition-colors" 
                             maxLength={25}
                         />
                         
@@ -3768,12 +3768,12 @@ const handleGitHubMirror = async () => {
                         placeholder="SECRET RECOVERY WORD" 
                         value={setupSecret}
                         onChange={(e) => setSetupSecret(e.target.value)}
-                        className="w-full bg-[var(--duke-well-solid)] border border-[var(--duke-amber-edge)]/30 p-4 text-center text-[var(--shell-ink)] text-xs outline-none focus:border-[var(--duke-amber-edge)] uppercase tracking-widest placeholder:text-[var(--duke-ink-hi)]/20 font-mono transition-colors" 
+                        className="w-full bg-[var(--duke-well-solid)] border border-[color-mix(in_srgb,var(--duke-amber-edge)_30%,transparent)] p-4 text-center text-[var(--shell-ink)] text-xs outline-none focus:border-[var(--duke-amber-edge)] uppercase tracking-widest placeholder:text-[color-mix(in_srgb,var(--duke-ink-hi)_20%,transparent)] font-mono transition-colors" 
                     />
                     
                     <button 
                         onClick={handleSetupSecurity} 
-                        className={`w-full py-4 font-bold uppercase text-xs tracking-[0.2em] transition-all shadow-lg font-mono border ${calculateStrength(setupPassword).score === 5 && setupSecret ? 'bg-[var(--duke-amber)]/10 hover:bg-[var(--duke-amber)]/25 border-[var(--duke-amber-edge)]/50 text-[var(--duke-amber-ink)] hover:text-[var(--shell-ink)] cursor-pointer' : 'bg-[var(--duke-well-solid)] border-[var(--duke-edge-1)] text-[var(--duke-ink-3)] cursor-not-allowed opacity-50'}`}
+                        className={`w-full py-4 font-bold uppercase text-xs tracking-[0.2em] transition-all shadow-lg font-mono border ${calculateStrength(setupPassword).score === 5 && setupSecret ? 'bg-[color-mix(in_srgb,var(--duke-amber)_10%,transparent)] hover:bg-[color-mix(in_srgb,var(--duke-amber)_25%,transparent)] border-[color-mix(in_srgb,var(--duke-amber-edge)_50%,transparent)] text-[var(--duke-amber-ink)] hover:text-[var(--shell-ink)] cursor-pointer' : 'bg-[var(--duke-well-solid)] border-[var(--duke-edge-1)] text-[var(--duke-ink-3)] cursor-not-allowed opacity-50'}`}
                         disabled={calculateStrength(setupPassword).score < 5 || !setupSecret}
                     >
                         Save Credentials
@@ -3784,17 +3784,17 @@ const handleGitHubMirror = async () => {
                 <div className="space-y-4 animate-fade-in">
                     <p className="text-[10px] text-[var(--duke-amber-ink)] uppercase font-bold mb-4 tracking-widest">Verify Email Authorization</p>
                     <p className="text-xs text-[var(--duke-ink-3)] mb-4">A 6-digit code has been sent to your registered Admin Email.</p>
-                    <input type="number" placeholder="• • • • • •" className="w-full bg-[var(--duke-well-solid)] border border-[var(--duke-amber-edge)]/30 p-4 text-center text-[var(--shell-ink)] text-2xl outline-none tracking-[0.5em] focus:border-[var(--duke-amber-edge)] font-mono transition-colors" value={inputOtp} onChange={(e) => setInputOtp(e.target.value)} autoFocus maxLength={6} onKeyDown={(e) => e.key === 'Enter' && handleVerifyOtp()} />
+                    <input type="number" placeholder="• • • • • •" className="w-full bg-[var(--duke-well-solid)] border border-[color-mix(in_srgb,var(--duke-amber-edge)_30%,transparent)] p-4 text-center text-[var(--shell-ink)] text-2xl outline-none tracking-[0.5em] focus:border-[var(--duke-amber-edge)] font-mono transition-colors" value={inputOtp} onChange={(e) => setInputOtp(e.target.value)} autoFocus maxLength={6} onKeyDown={(e) => e.key === 'Enter' && handleVerifyOtp()} />
                     <div className="flex gap-3 mt-4">
                         <button onClick={() => { setIsOtpMode(false); setIsResetMode(true); setInputOtp(""); }} className="flex-1 py-3 border border-[var(--duke-veil-edge)] text-[var(--duke-ink-2)] text-xs font-bold uppercase hover:text-[var(--duke-ink-hi)] hover:bg-[var(--duke-veil)] font-mono tracking-widest transition-colors">Abort</button>
-                        <button onClick={handleVerifyOtp} className="flex-1 py-3 bg-[var(--duke-amber)]/10 hover:bg-[var(--duke-amber)]/25 border border-[var(--duke-amber-edge)]/50 text-[var(--duke-amber-ink)] hover:text-[var(--shell-ink)] text-xs font-bold uppercase font-mono tracking-widest transition-colors">Verify Code</button>
+                        <button onClick={handleVerifyOtp} className="flex-1 py-3 bg-[color-mix(in_srgb,var(--duke-amber)_10%,transparent)] hover:bg-[color-mix(in_srgb,var(--duke-amber)_25%,transparent)] border border-[color-mix(in_srgb,var(--duke-amber-edge)_50%,transparent)] text-[var(--duke-amber-ink)] hover:text-[var(--shell-ink)] text-xs font-bold uppercase font-mono tracking-widest transition-colors">Verify Code</button>
                     </div>
                 </div>
             ) : isResetMode ? (
                 /* CASE 2: RECOVERY MODE (Now with Loading State) */
                 <div className="space-y-4">
                     <p className="text-[10px] text-orange-400 uppercase font-bold mb-4 tracking-widest">Enter Secret Word</p>
-                   <input type="password" id="resetWord" placeholder="ENTER SECRET WORD..." className="w-full bg-[var(--duke-well-solid)] border border-orange-500/30 p-4 text-center text-[var(--duke-ink-hi)] text-xl outline-none tracking-widest focus:border-orange-500 font-mono placeholder:text-[var(--duke-ink-hi)]/20 transition-colors" autoFocus disabled={isSendingEmail} onKeyDown={(e) => e.key === 'Enter' && handleResetPin(e.target.value)}/>
+                   <input type="password" id="resetWord" placeholder="ENTER SECRET WORD..." className="w-full bg-[var(--duke-well-solid)] border border-orange-500/30 p-4 text-center text-[var(--duke-ink-hi)] text-xl outline-none tracking-widest focus:border-orange-500 font-mono placeholder:text-[color-mix(in_srgb,var(--duke-ink-hi)_20%,transparent)] transition-colors" autoFocus disabled={isSendingEmail} onKeyDown={(e) => e.key === 'Enter' && handleResetPin(e.target.value)}/>
                     <div className="flex gap-3 mt-4">
                         <button onClick={() => setIsResetMode(false)} disabled={isSendingEmail} className="flex-1 py-3 border border-[var(--duke-veil-edge)] text-[var(--duke-ink-2)] text-xs font-bold uppercase hover:text-[var(--duke-ink-hi)] hover:bg-[var(--duke-veil)] font-mono tracking-widest transition-colors">Abort</button>
                         <button onClick={() => handleResetPin(document.getElementById('resetWord').value)} disabled={isSendingEmail} className={`flex-1 py-3 border text-xs font-bold uppercase font-mono tracking-widest transition-colors ${isSendingEmail ? 'bg-orange-900/50 border-orange-800 text-orange-700 cursor-wait' : 'bg-orange-600/20 hover:bg-orange-600 border-orange-500/50 text-orange-500 hover:text-[var(--duke-ink-hi)]'}`}>
@@ -3830,7 +3830,7 @@ const handleGitHubMirror = async () => {
                     autoCapitalize="off"
                     spellCheck={false}
                     placeholder="MASTER PASSWORD"
-                    className="w-full bg-transparent border-0 border-b border-[var(--shell-orange-edge)]/20 py-[11px] px-1.5 text-center font-mono text-[13px] tracking-[0.42em] text-[var(--shell-ink-2)] outline-none focus:border-[var(--shell-orange-edge)] placeholder:text-[#5f4a2c] placeholder:tracking-[0.16em] placeholder:text-[9.5px] transition-colors"
+                    className="w-full bg-transparent border-0 border-b border-[color-mix(in_srgb,var(--shell-orange-edge)_20%,transparent)] py-[11px] px-1.5 text-center font-mono text-[13px] tracking-[0.42em] text-[var(--shell-ink-2)] outline-none focus:border-[var(--shell-orange-edge)] placeholder:text-[#5f4a2c] placeholder:tracking-[0.16em] placeholder:text-[9.5px] transition-colors"
                     value={inputPin}
                     onChange={(e) => setInputPin(e.target.value)}
                     /* Labels the phone's own return key GO instead of "return". */
@@ -3846,7 +3846,7 @@ const handleGitHubMirror = async () => {
                        registers on the first tap rather than after the browser has finished
                        deciding whether a second one is coming. */
                     style={{ touchAction: 'manipulation' }}
-                    className="w-full mt-[15px] py-3 font-mono text-[9.5px] font-bold uppercase tracking-[0.24em] bg-transparent text-[var(--shell-ink-2)] border border-[var(--shell-orange-edge)]/30 hover:border-[var(--shell-orange-edge)] hover:text-[#ffb066] hover:bg-[var(--shell-orange)]/[0.09] active:scale-[.975] transition-[transform,background-color,border-color,color] duration-150"
+                    className="w-full mt-[15px] py-3 font-mono text-[9.5px] font-bold uppercase tracking-[0.24em] bg-transparent text-[var(--shell-ink-2)] border border-[color-mix(in_srgb,var(--shell-orange-edge)_30%,transparent)] hover:border-[var(--shell-orange-edge)] hover:text-[#ffb066] hover:bg-[var(--shell-orange)]/[0.09] active:scale-[.975] transition-[transform,background-color,border-color,color] duration-150"
                 >
                     Open the vault
                 </button>
@@ -3901,7 +3901,7 @@ const handleGitHubMirror = async () => {
                 <button onClick={() => window.location.reload()} className="px-10 py-4 border-2 border-amber-500/50 text-amber-400 font-black uppercase text-xs hover:bg-amber-900/30 transition-all shadow-[0_0_15px_rgba(245,158,11,0.2)] mb-4">
                     Retry
                 </button>
-                <button onClick={handleLogout} className="px-10 py-4 border-2 border-[var(--duke-edge-2)]/50 text-[var(--duke-ink-3)] font-black uppercase text-xs hover:bg-[var(--duke-fill-panel)]/30 transition-all">
+                <button onClick={handleLogout} className="px-10 py-4 border-2 border-[color-mix(in_srgb,var(--duke-edge-2)_50%,transparent)] text-[var(--duke-ink-3)] font-black uppercase text-xs hover:bg-[color-mix(in_srgb,var(--duke-fill-panel)_30%,transparent)] transition-all">
                     Disconnect Session
                 </button>
             </div>
@@ -3913,7 +3913,7 @@ const handleGitHubMirror = async () => {
                    showed it in a green nothing else in the app uses. A JSX {comment} cannot go
                    here — inside fallback={...} this is a JS expression slot, not children. */
                 <div className="flex flex-col items-center justify-center min-h-[60vh] text-[var(--duke-amber-ink)] font-mono space-y-4">
-                    <div className="w-12 h-12 border-4 border-[var(--duke-amber-edge)]/20 border-t-[#ff9d00] rounded-full animate-spin"></div>
+                    <div className="w-12 h-12 border-4 border-[color-mix(in_srgb,var(--duke-amber-edge)_20%,transparent)] border-t-[#ff9d00] rounded-full animate-spin"></div>
                     <p className="animate-pulse text-xs tracking-[0.2em] uppercase mt-4">Downloading Tactical Modules...</p>
                 </div>
             }>
@@ -4451,7 +4451,7 @@ const handleGitHubMirror = async () => {
                               <button onClick={() => setShowFlightRecorder(false)} className="text-[var(--duke-ink-3)] hover:text-[var(--duke-danger-ink)]"><X size={20}/></button>
                           </div>
                           
-                          <div className="p-4 bg-[var(--duke-fill-well)]/60 flex justify-between items-center border-b border-[var(--duke-edge-1)]/60 shrink-0">
+                          <div className="p-4 bg-[color-mix(in_srgb,var(--duke-fill-well)_60%,transparent)] flex justify-between items-center border-b border-[color-mix(in_srgb,var(--duke-edge-1)_60%,transparent)] shrink-0">
                               <div className="flex gap-4">
                                   <div className="text-center"><p className="text-[10px] text-[var(--duke-ink-3)] uppercase tracking-widest font-bold">Pending Receipts</p><p className="text-xl font-black text-[var(--duke-amber-ink)]">{pendingCount.transactions}</p></div>
                                   {/* was text-blue-500 — slate and blue were the only two colours
@@ -4459,7 +4459,7 @@ const handleGitHubMirror = async () => {
                                       an alarm, so it takes the quieter gold. */}
                                   <div className="text-center"><p className="text-[10px] text-[var(--duke-ink-3)] uppercase tracking-widest font-bold">Pending NOO</p><p className="text-xl font-black text-[var(--duke-brass-ink)]">{pendingCount.noo}</p></div>
                               </div>
-                              <button onClick={clearFlightRecorder} className="px-3 py-1.5 bg-[var(--danger)]/20 text-[var(--duke-danger-ink)] border border-[var(--duke-danger-edge)]/40 rounded text-[11px] uppercase font-bold tracking-widest hover:bg-[var(--danger-plate)] hover:text-[var(--danger-plate-ink)] transition-colors">Clear Logs</button>
+                              <button onClick={clearFlightRecorder} className="px-3 py-1.5 bg-[color-mix(in_srgb,var(--danger)_20%,transparent)] text-[var(--duke-danger-ink)] border border-[color-mix(in_srgb,var(--duke-danger-edge)_40%,transparent)] rounded text-[11px] uppercase font-bold tracking-widest hover:bg-[var(--danger-plate)] hover:text-[var(--danger-plate-ink)] transition-colors">Clear Logs</button>
                           </div>
 
                           <div className="p-4 overflow-y-auto custom-scrollbar flex-1 space-y-2 bg-[var(--duke-well-solid)] font-mono">
@@ -4473,14 +4473,14 @@ const handleGitHubMirror = async () => {
                                       
                                       <div className="space-y-3 max-h-64 overflow-y-auto custom-scrollbar pr-2">
                                           {pendingTxData.map((tx, idx) => (
-                                              <details key={idx} className="bg-[var(--duke-fill-panel)] border border-[var(--duke-amber-edge)]/40 rounded-lg shadow-inner group">
+                                              <details key={idx} className="bg-[var(--duke-fill-panel)] border border-[color-mix(in_srgb,var(--duke-amber-edge)_40%,transparent)] rounded-lg shadow-inner group">
                                                   <summary className="p-3 flex justify-between items-center cursor-pointer select-none list-none outline-none">
                                                       <div>
                                                           <span className="text-[var(--duke-ink-hi)] font-bold uppercase block text-xs">{tx.customerName}</span>
                                                           <span className="text-[var(--duke-ink-3)] text-[10px] uppercase">{tx.date}</span>
                                                       </div>
                                                       <div className="flex items-center gap-3">
-                                                          <span className="bg-[var(--duke-amber)]/20 text-[var(--shell-orange-ink)] font-bold px-2 py-1 rounded text-[10px] uppercase border border-[var(--duke-amber-edge)]/50">
+                                                          <span className="bg-[color-mix(in_srgb,var(--duke-amber)_20%,transparent)] text-[var(--shell-orange-ink)] font-bold px-2 py-1 rounded text-[10px] uppercase border border-[color-mix(in_srgb,var(--duke-amber-edge)_50%,transparent)]">
                                                               IN QUEUE
                                                           </span>
                                                           <span className="text-[var(--shell-orange-ink)] text-[10px] uppercase font-bold bg-[var(--duke-bar-2)] px-2 py-1 rounded group-open:bg-[var(--duke-shade)] hover:text-[var(--duke-ink-hi)] transition-colors">
@@ -4490,10 +4490,10 @@ const handleGitHubMirror = async () => {
                                                   </summary>
                                                   
                                                   {/* EXPANDED RECEIPT DETAILS */}
-                                                  <div className="p-3 pt-0 border-t border-[var(--duke-edge-1)]/50 mt-1 bg-[var(--duke-bar-3)] rounded-b-lg">
+                                                  <div className="p-3 pt-0 border-t border-[color-mix(in_srgb,var(--duke-edge-1)_50%,transparent)] mt-1 bg-[var(--duke-bar-3)] rounded-b-lg">
                                                       <div className="space-y-1 mb-2 mt-2">
                                                           {tx.items?.map((item, i) => (
-                                                              <div key={i} className="flex justify-between text-[10px] text-[var(--duke-ink-1)] border-b border-[var(--duke-edge-1)]/30 pb-1 mb-1">
+                                                              <div key={i} className="flex justify-between text-[10px] text-[var(--duke-ink-1)] border-b border-[color-mix(in_srgb,var(--duke-edge-1)_30%,transparent)] pb-1 mb-1">
                                                                   <span>{item.qty} {item.unit} <span className="font-bold text-[var(--duke-paper-ink)]">{item.name}</span></span>
                                                                   <span className="font-mono">Rp {new Intl.NumberFormat('id-ID').format(item.calculatedPrice * item.qty)}</span>
                                                               </div>
@@ -4525,7 +4525,7 @@ const handleGitHubMirror = async () => {
                                      resting row is just the panel's own surface. Red and orange
                                      stay: those two are earning attention. */
                                   syncLogs.map((log) => (
-                                      <div key={log.id} className={`kpm-log-row p-3 rounded border text-xs leading-relaxed ${log.type === 'ERROR' ? 'bg-[var(--danger)]/15 border-[var(--duke-danger-edge)] text-[var(--duke-danger-ink)]' : log.type === 'SUCCESS' ? 'bg-[var(--duke-brass-2)]/10 border-[var(--duke-brass-3)]/60 text-[var(--duke-brass-ink)]' : log.type === 'OFFLINE' ? 'bg-[var(--duke-amber)]/15 border-[var(--duke-amber-edge)]/60 text-[var(--shell-orange-ink)]' : 'bg-[var(--duke-fill-well)] border-[var(--duke-edge-1)] text-[var(--duke-ink-1)]'}`}>
+                                      <div key={log.id} className={`kpm-log-row p-3 rounded border text-xs leading-relaxed ${log.type === 'ERROR' ? 'bg-[color-mix(in_srgb,var(--danger)_15%,transparent)] border-[var(--duke-danger-edge)] text-[var(--duke-danger-ink)]' : log.type === 'SUCCESS' ? 'bg-[color-mix(in_srgb,var(--duke-brass-2)_10%,transparent)] border-[color-mix(in_srgb,var(--duke-brass-3)_60%,transparent)] text-[var(--duke-brass-ink)]' : log.type === 'OFFLINE' ? 'bg-[color-mix(in_srgb,var(--duke-amber)_15%,transparent)] border-[color-mix(in_srgb,var(--duke-amber-edge)_60%,transparent)] text-[var(--shell-orange-ink)]' : 'bg-[var(--duke-fill-well)] border-[var(--duke-edge-1)] text-[var(--duke-ink-1)]'}`}>
                                           <div className="text-[11px] opacity-50 mb-1">{new Date(log.timestamp).toLocaleString()}</div>
                                           <div>{log.message}</div>
                                       </div>
