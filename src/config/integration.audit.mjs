@@ -2973,17 +2973,32 @@ check(G40, 'the shell crosses no role either', !appCrossed.length,
    tokens it uses back to their dark values, so anything added inside it later is correct for
    free. This group is what stops the island drifting from the dark block it copies. */
 const G41 = '41. A screen that stays dark keeps dark ink';
-const island = (themeCss.match(/\.kpm-dark-island\s*\{([^}]*)\}/) || [, ''])[1];
-/* the bare `:root` blocks are the dark ones; `:root.light` and `:root.dark` are selector lists */
-const darkBlocks = [...themeCss.matchAll(/(^|\n):root\s*\{([^}]*)\}/g)].map(m => m[2]).join('\n');
-const islandToks = [...island.matchAll(/(--[a-z0-9-]+):\s*([^;]+);/g)].map(m => [m[1], m[2].trim()]);
-const drifted = islandToks.filter(([t, v]) => {
-  const m = darkBlocks.match(new RegExp(t + ':\\s*([^;]+);'));
-  return !m || m[1].trim() !== v;
+/* 🔴 THE ISLAND IS A SELECTOR, NOT A COPIED LIST — and that distinction IS the check.
+   The first version copied ~20 token names into a `.kpm-dark-island { … }` block. It was
+   incomplete the day it was written: it carried the `--duke-*`/`--shell-*` names the App.jsx
+   gate uses and missed every APP-level token, so `.kpm-field`'s input — painted with `--inset` —
+   still went pale inside a near-black card. His report: *"for the master vault panel, let the
+   textbox to stay dark"*.
+   Riding both dark `:root` blocks makes the island complete by construction, forever. */
+const darkRootSelectors = [...themeCss.matchAll(/(^|\n)((?::root|\.kpm-dark-island|,|\s)+)\{/g)]
+  .map(m => m[2].replace(/\s+/g, ' ').trim())
+  .filter(s => /^:root\b/.test(s));
+check(G41, 'the island rides BOTH dark :root blocks instead of copying them',
+  darkRootSelectors.length >= 2 && darkRootSelectors.every(s => s.includes('.kpm-dark-island')),
+  'dark :root selectors found: ' + JSON.stringify(darkRootSelectors) +
+  ' — a dark block the island does not ride is a family of tokens that still flips inside it');
+/* ⚠️ THE DISTINCTION IS NOT "WHICH LINE IT STARTS ON" — in BOTH the correct form
+   (`:root,\n.kpm-dark-island {`) and the bug (`\n.kpm-dark-island {`) the class sits at a line
+   start. Two spellings of this needle failed on correct code before that was obvious. What
+   actually separates them is whether the class is a CONTINUATION of a selector list, so the test
+   is the last non-whitespace character before it: a comma means it rides another block. */
+const islandStandalone = [...themeCss.matchAll(/\.kpm-dark-island\s*\{/g)].some(m => {
+  const before = themeCss.slice(0, m.index).replace(/\s+$/, '');
+  return !before.endsWith(',');
 });
-check(G41, 'every island token is EXACTLY its dark-mode value', islandToks.length > 15 && !drifted.length,
-  'copied by hand and now stale: ' + drifted.map(([t, v]) => `${t}=${v}`).join(' ') +
-  ' — an island that has drifted is a screen painted in colours that exist nowhere else');
+check(G41, 'no hand-copied token list has grown back on the island', !islandStandalone,
+  'a standalone `.kpm-dark-island { --x: … }` block is the exact bug this replaced: complete on ' +
+  'the day it is written, silently short of every token added afterwards');
 /* an overlay that covers the whole viewport has no themed page behind it to agree with, so it
    is its own world; if it is dark it must carry the island or its ink flips out from under it */
 const stops = [...app.matchAll(/className="([^"]*fixed inset-0 z-\[9999\][^"]*)"/g)].map(m => m[1]);

@@ -18,17 +18,32 @@ const css = fs.readFileSync('src/styles/theme.css', 'utf8');
    `:root {` and a second `:root.light,` further down the file, and an indexOf that stopped at the
    first match read none of it — 54 tokens would have gone unmeasured while this still printed
    "all pairs pass". A measuring tool that quietly measures less than it claims is worse than none. */
-const blocks = (start) => {
+/* 🔴 MATCHED ON THE SELECTOR, NOT ON THE LITERAL STRING `:root {` — 2026-08-16. The dark blocks
+   grew a second selector (`.kpm-dark-island`, so a subtree can keep the dark values), which made
+   the exact text `:root {` vanish from the file. This script then parsed ZERO dark tokens and
+   reported 88 failures — it was measuring an empty palette, not a broken one.
+   ⚠️ The same class of fault this file's own comment warns about, one level up: an anchor that
+   depends on incidental formatting rather than on the thing it means. */
+const blocks = (re) => {
   const out = [];
-  for (let i = css.indexOf(start); i !== -1; i = css.indexOf(start, i + 1))
-    out.push(css.slice(i, css.indexOf('}', i)));
+  for (const m of css.matchAll(re)) {
+    const open = css.indexOf('{', m.index);
+    if (open !== -1) out.push(css.slice(open, css.indexOf('}', open)));
+  }
   return out.join('\n');
 };
 const parse = (text) => Object.fromEntries(
   [...text.matchAll(/--([a-z0-9-]+):\s*(#[0-9a-fA-F]{3,8})\s*;/g)].map(m => [m[1], m[2]]));
 
-const dark = parse(blocks(':root {'));
-const light = { ...dark, ...parse(blocks(':root.light,')) };
+/* `(?![.\w-])` keeps the DARK matcher off `:root.light` and `:root.dark`, while still allowing
+   `:root {` and `:root,` — the two shapes a dark block is allowed to take. */
+const dark = parse(blocks(/(^|\n):root(?![.\w-])[^{]*\{/g));
+const light = { ...dark, ...parse(blocks(/(^|\n):root\.light[^{]*\{/g)) };
+if (Object.keys(dark).length < 50) {
+  console.error(`only ${Object.keys(dark).length} dark tokens parsed — the block matcher is ` +
+    'broken, and every "pass" below would be measuring a palette that is not there.');
+  process.exit(1);
+}
 
 const srgb = (hex) => {
   const h = hex.replace('#', '');

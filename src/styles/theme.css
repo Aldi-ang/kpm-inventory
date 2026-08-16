@@ -19,7 +19,14 @@
    accepted so it works whichever class the toggle sets.
    ============================================================================ */
 
-:root {
+/* ⚠️ `.kpm-dark-island` RIDES THIS BLOCK ON PURPOSE — see the note at the class further down.
+   A subtree that must stay dark gets EVERY dark token by being a second selector here, rather
+   than by copying a list of them. A copied list is complete on the day it is written; this one
+   cannot fall behind, because adding a token to dark mode adds it to the island in the same
+   keystroke. An element's own declaration beats anything it would otherwise inherit from
+   `html.light`, which is what makes this work at all. */
+:root,
+.kpm-dark-island {
   /* surfaces — warm near-black, never pure #000 (kills the machined look) */
   --ground:        #0A0908;
   --sunk:          #050403;
@@ -313,7 +320,9 @@ html.light { color-scheme: light; }
        does not — #ff9d00 on pale oak is unreadable. That is why one hex became an
        -ink token AND a fill token, split by how it was used, not by what it was.
    ============================================================================ */
-:root {
+/* the island rides this block too — the gate uses both vocabularies */
+:root,
+.kpm-dark-island {
   /* ---- ink: text ------------------------------------------------------- */
   --duke-ink-1:        #d4c5a3;   /* parchment text on dark wood */
   --duke-ink-2:        #a89070;
@@ -3205,33 +3214,20 @@ html.lite-mode .kpm-mod.arrive { animation: none; }
    near-black in BOTH themes, a light-mode ink is near-black text on a near-black card. Look at
    his screenshot again: MASTER VAULT, the button label, "Lost your key?" are all barely there.
 
-   So the gate does not get converted site by site. It re-declares the tokens it uses back to
-   their DARK values for the whole subtree, and anything added inside it later is dark-correct
-   without anyone remembering this rule. Same idea as `.kpm-mod.gate` printing literal hexes,
-   generalised — and unlike the literals, this one keeps working when a token's value moves.
-   ⚠️ Values are copied from the dark `:root` blocks above. A check holds them equal. */
-.kpm-dark-island {
-  --duke-well-solid:   #000000;
-  --duke-scrim-hi:     rgba(0, 0, 0, .95);
-  --duke-fill-panel:   #26211c;
-  --duke-ink-hi:       #ffffff;
-  --duke-ink-2:        #a89070;
-  --duke-ink-3:        #a08768;
-  --duke-edge-1:       #3e3226;
-  --duke-edge-2:       #7d6a48;
-  --duke-amber:        #ff9d00;
-  --duke-amber-edge:   #ff9d00;
-  --duke-amber-ink:    #ff9d00;
-  --shell-ink:         #f0e2c0;
-  --shell-ink-2:       #f7e9c8;
-  --shell-ink-3:       #8a7048;
-  --shell-orange:      #e7700f;
-  --shell-orange-edge: #e7700f;
-  --shell-orange-ink:  #e7700f;
-  --duke-veil:         rgba(255, 255, 255, .05);
-  --duke-veil-2:       rgba(255, 255, 255, .10);
-  --duke-veil-edge:    rgba(255, 255, 255, .10);
-}
+   So the gate does not get converted site by site — the whole subtree keeps the dark values.
+
+   🔴 THE FIRST VERSION OF THIS COPIED A LIST OF TOKENS HERE, AND THE LIST WAS INCOMPLETE THE DAY
+   IT WAS WRITTEN. It carried the `--duke-*` and `--shell-*` names the App.jsx gate uses, and
+   missed every APP-level token — so `.kpm-field`'s input, which is painted with `--inset`, still
+   went pale inside a near-black card. His report: *"for the master vault panel, let the textbox
+   to stay dark, light or dark mode should not affect the loading screen"*.
+
+   ⚠️ SO THE LIST IS GONE. `.kpm-dark-island` is now a second selector on BOTH dark `:root`
+   blocks, which means it inherits every dark token there is and cannot fall behind — adding a
+   token to dark mode adds it to the island in the same keystroke. This works because an
+   element's OWN custom-property declaration beats the value it would otherwise inherit from
+   `html.light` on the root.
+   ⚠️ Do not "tidy" the island back into a list. The list is the bug. */
 
 /* ---- and the FORMAT, not only the colour. His follow-up the same night: the middle panel
    should have *"the same color theme of our panel inside vault gate as well, and similar
