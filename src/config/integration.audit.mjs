@@ -3387,6 +3387,71 @@ check(G47, 'the three signatures are enforced as a sequence',
   'three approvals only mean something in order — a regional signature with no agent signature, ' +
   'or an HQ signature with no regional one, is a broken chain');
 
+/* =============================================================================================
+   48. A PHYSICAL COUNT CANNOT EXCEED WHAT WAS CARRIED
+   Aldi, 2026-08-17: *"i add more item and submit on the EOD it still allow us to sent the item
+   data more than what the agent bring, this is really niche happen tho"*. Niche and expensive:
+   `handleVerifyEOD` spends `report.cukai` against the debt ledger and turns any surplus into a
+   NEGATIVE `global_credit`, which permanently reduces what the agent owes on later days. So an
+   over-count does not just record a wrong number — it mints stamp credit nobody earned.
+   ⚠️ These assert the RELATIONSHIP (a ceiling exists, and it is enforced where the number is
+   written, not only where it is typed), never a specific figure — group 39's rule.
+   ============================================================================================= */
+const G48 = '48. A physical count cannot exceed what was carried';
+const deckSrc = fs.existsSync('src/components/EODCardDeck.jsx')
+  ? fs.readFileSync('src/components/EODCardDeck.jsx', 'utf8') : '';
+const eodView = fs.existsSync('src/EODReconciliationView.jsx')
+  ? fs.readFileSync('src/EODReconciliationView.jsx', 'utf8') : '';
+
+check(G48, 'a counted line is clamped to that line\'s own load',
+  /clampLine/.test(deckSrc) && /Math\.min\(n,\s*max\)/.test(deckSrc),
+  'you cannot hand back more packs than the van was loaded with — an impossible number is refused ' +
+  'at entry rather than recorded as a gap');
+
+check(G48, 'the clamp is applied where the record is BUILT, not only in the input',
+  /amount:\s*clampLine\(/.test(deckSrc),
+  'the input clamp is what the agent sees; a record that trusts its own UI is not a record');
+
+check(G48, 'lines that each fit can still be refused for adding up too high',
+  /maxTotal/.test(deckSrc) && /overTotal/.test(deckSrc),
+  '128 stamps handed over plus 128 lost is 256 against a debt of 128 — every line legal, the pair ' +
+  'impossible');
+
+check(G48, 'the composer forwards the total cap to the deck',
+  /maxTotal=\{maxTotal\}/.test(
+    fs.existsSync('src/components/EODAgentFlow.jsx')
+      ? fs.readFileSync('src/components/EODAgentFlow.jsx', 'utf8') : ''),
+  'the cap was added to the deck and to the screen and dropped in the middle — the guard existed ' +
+  'and did nothing, which is worse than no guard');
+
+check(G48, 'money cards are deliberately NOT capped',
+  !/max:\s*agentData\.expected(Cash|Transfer)/.test(eodView),
+  'an agent genuinely can hold more cash than the app expected, and that over IS a real gap worth ' +
+  'keeping — the ceiling belongs to physical objects only');
+
+check(G48, 'the legacy stamp card clamps too, at the input and at the submit',
+  /clampStamps/.test(eodView) && /cukaiOverCount/.test(eodView) &&
+  /Math\.min\(cukaiReturnedNum,\s*cukaiOwed\)/.test(eodView),
+  'that card is still reachable whenever cash was submitted first, and it writes the same ' +
+  '`cukai` figure the debt ledger is spent against');
+
+/* ⚠️ COMMENTS STRIPPED FIRST. Both of these failed on their first run against the very comment
+   written to explain the fix — the sentence "the two fields were `bg-black/60`" is not a
+   `bg-black/60`. A check that cannot tell code from prose about code reports the bug forever. */
+const eodViewCode = noCmt(eodView);
+
+check(G48, 'no gold slab carries gold ink anywhere on this screen',
+  !/bg-\[var\(--gold\)\][^"'`]*text-\[var\(--ink-dim\)\]/.test(eodViewCode) &&
+  !/bg-\[var\(--gold\)\][^"'`]*text-\[var\(--accent-ink\)\]/.test(eodViewCode),
+  'his verdict on the old card: "the color pallete and design is really bad". Gold ink on a gold ' +
+  'plate is not a contrast nit, it is text that is not there. `--gold-ink` is the ink that plate ' +
+  'has; `--accent-ink` IS the gold');
+
+check(G48, 'the stamp card decides no colour of its own',
+  !/bg-black\/60/.test(eodViewCode),
+  'a hardcoded black lets the dark theme decide what light mode looks like — no token, no palette ' +
+  'law and no contrast check can see it');
+
 /* ── report ──────────────────────────────────────────────────────────────── */
 let last = '';
 for (const r of results) {

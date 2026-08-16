@@ -45,12 +45,33 @@ const HINTS = {
 
 const toNum = (v) => Number(String(v).replace(/[^0-9-]/g, '')) || 0;
 
+/* ⚠️ A PHYSICAL COUNT HAS A CEILING AND MONEY DOES NOT. Aldi, 2026-08-17: *"i add more item and
+   submit on the EOD it still allow us to sent the item data more than what the agent bring"*.
+   He is right, and the cost is not cosmetic: `handleVerifyEOD` turns any stamp figure above the
+   agent's actual debt into a NEGATIVE `global_credit` (App.jsx:1918-1920), which permanently
+   reduces what they owe on later days. So an over-count on a physical card mints credit nobody
+   earned.
+
+   You cannot hand back more packs than the van was loaded with, and you cannot return more stamps
+   than you owe — those are impossible, not merely unlikely, so they are refused at entry rather
+   than recorded as a gap. Cash and transfer stay UNCAPPED on purpose: an agent genuinely can be
+   holding more money than the app expected, and that over IS a real gap worth keeping.
+
+   ⚠️ THIS DOES REVEAL THE EXPECTED FIGURE for a physical line, which the money cards deliberately
+   hide. It is an acceptable trade only because the vehicle's own load is not a secret — the agent
+   can read it on their Agent Inventory screen — while which sales made up today's cash is. */
+const clampLine = (raw, max) => {
+  const n = Math.max(0, toNum(raw));
+  return typeof max === 'number' ? Math.min(n, max) : n;
+};
+
 /* `details` is a node per card — extra context the agent needs in order to count at all.
    `notes` is a function per card, called with the current line values, for anything that must
    react to what is being typed (the pita cukai fine is the only one today). */
 export default function EODCardDeck({
   expected = {},
   lines = {},
+  maxTotal = {},
   details = {},
   notes = {},
   mouthRef,
@@ -68,8 +89,17 @@ export default function EODCardDeck({
   const activeLines = lines[active];
 
   const filled = activeLines ? activeLines.filter(l => rows[l.key] !== undefined && rows[l.key] !== '').length : 0;
+
+  /* Per-line caps stop one line going too high; this stops the LINES ADDING UP too high, which is
+     the pita cukai case — 128 handed over plus 128 lost is 256 stamps against a debt of 128. Goods
+     needs no such ceiling: each line is capped at its own product's load, so the sum cannot
+     overshoot by construction. */
+  const lineTotal = activeLines ? activeLines.reduce((s, l) => s + toNum(rows[l.key]), 0) : 0;
+  const cap = maxTotal[active];
+  const overTotal = typeof cap === 'number' && lineTotal > cap;
+
   const ready = activeLines
-    ? (activeLines.length === 0 || filled === activeLines.length)   // an empty vehicle is countable
+    ? (activeLines.length === 0 || (filled === activeLines.length && !overTotal))
     : entry !== '';
 
   /* Measure the trip from the card that is about to leave to the letter it is going into.
@@ -97,7 +127,9 @@ export default function EODCardDeck({
       ? activeLines.map(l => ({
           txId: `${active}:${l.key}`,
           label: l.name,
-          amount: toNum(rows[l.key]),
+          /* clamped AGAIN here, not just in the input. The input clamp is what the agent sees; this
+             is what the record stores, and a record that trusts its own UI is not a record. */
+          amount: clampLine(rows[l.key], l.max),
           expected: Number(l.expected) || 0
         }))
       : null;
@@ -172,6 +204,7 @@ export default function EODCardDeck({
                     <div className="max-h-[152px] overflow-y-auto rounded-lg border bg-[var(--inset)] border-[var(--line)] p-1.5">
                       {cardLines.map((l, n) => {
                         const val = rows[l.key] ?? '';
+                        const atCap = typeof l.max === 'number' && val !== '' && toNum(val) >= l.max;
                         return (
                           <label
                             key={l.key}
@@ -179,15 +212,25 @@ export default function EODCardDeck({
                           >
                             <span className="flex-1 min-w-0">
                               <span className="block text-[13px] font-bold text-[var(--ink)] truncate leading-tight">{l.name}</span>
-                              {l.hint && (
+                              {atCap ? (
+                                <span className="block text-[11px] font-bold text-[var(--accent-ink)] leading-tight">
+                                  That is everything this line carried.
+                                </span>
+                              ) : l.hint ? (
                                 <span className="block text-[11px] text-[var(--ink-dim)] leading-tight">{l.hint}</span>
-                              )}
+                              ) : null}
                             </span>
                             <input
                               type="text"
                               inputMode="numeric"
                               value={offset === 0 ? val : ''}
-                              onChange={e => setRows(p => ({ ...p, [l.key]: e.target.value }))}
+                              onChange={e => setRows(p => ({
+                                ...p,
+                                /* an empty box stays empty — clamping '' to 0 would turn "I have not
+                                   counted this yet" into "there are none", the exact collapse the
+                                   per-line card exists to prevent */
+                                [l.key]: e.target.value === '' ? '' : String(clampLine(e.target.value, l.max))
+                              }))}
                               onKeyDown={e => {
                                 if (e.key !== 'Enter') return;
                                 const next = e.currentTarget.closest('label')?.nextElementSibling?.querySelector('input');
@@ -224,7 +267,21 @@ export default function EODCardDeck({
                     </div>
                   )}
 
-                  {offset === 0 && notes[id] && <div className="mt-2">{notes[id](rows)}</div>}
+                  {/* the lines each fit and still do not add up. Says the number, because unlike a
+                      product's load this ceiling IS the thing being reconciled — the agent is told
+                      what they owe on this card from the moment it opens. */}
+                  {offset === 0 && overTotal && (
+                    <p className="mt-2 rounded-lg border border-[var(--danger)] bg-[var(--danger)] px-3 py-1.5 text-center text-[11px] font-bold uppercase tracking-[.14em] text-[var(--danger-ink)]">
+                      That is {lineTotal} against {cap} owed
+                    </p>
+                  )}
+
+                  {/* ⚠️ THE NOTE AND THE OVER-COUNT MESSAGE ARE MUTUALLY EXCLUSIVE, for two reasons.
+                      Quoting a Rp 1.920.000 fine for a count that cannot happen is a wrong number
+                      stated confidently. And stacking both pushed the card past the deck's fixed
+                      344px, so the confirm button was painted straight through the fine plate —
+                      "collapsing", in his word for it. */}
+                  {offset === 0 && !overTotal && notes[id] && <div className="mt-2">{notes[id](rows)}</div>}
                 </>
               ) : (
                 /* ── one number for the whole card ──────────────────────────── */
@@ -265,9 +322,11 @@ export default function EODCardDeck({
         >
           {ready
             ? `Put ${CARD_LABELS[active]} in the letter`
-            : activeLines
-              ? `Count all ${activeLines.length} lines first`
-              : `Enter what you counted`}
+            : overTotal
+              ? 'Too many — check the count'
+              : activeLines
+                ? `Count all ${activeLines.length} lines first`
+                : 'Enter what you counted'}
         </button>
       )}
     </div>

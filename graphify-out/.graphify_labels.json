@@ -2,7 +2,6 @@
   "0": "App.jsx",
   "1": "MapMissionControl.jsx",
   "2": "dependencies",
-  "3": "permissions.js",
   "4": "devDependencies",
   "5": "mixedUnits.selfcheck.mjs",
   "6": "savePhotoAndGetReference",
@@ -21,7 +20,6 @@
   "19": "tailwind.config.js",
   "20": "vite.config.js",
   "21": "Animation prompts — Pip-Boy style, capybara merchant",
-  "22": "savePhotoAndGetReference",
   "23": "JourneyView.jsx",
   "24": "hasClearance",
   "25": "Sales Terminal — test list",
@@ -37,10 +35,8 @@
   "35": "MerchantSalesView.jsx",
   "36": "KPMInventoryApp",
   "37": "toastSeverity.selfcheck.mjs",
-  "38": "mixedUnits.selfcheck.mjs",
   "39": "vaultGrace.selfcheck.mjs",
   "40": "CapybaraMascot.jsx",
-  "41": "🔴 LOG 2026-08-13 08:15 WIB — QUOTA 100%. Architect redesign UNFINISHED. Fire sprite done, uncommitted. (KPM app session)",
   "42": "check",
   "43": "🔴 LOG 00:37 WIB — superseded: 4 blockers found, now all fixed.",
   "44": "✅ LOG 08:36 WIB — the rules question is ANSWERED, and G6 is HALF done. One question owed.",
@@ -49,6 +45,5 @@
   "47": "nextStop.js",
   "48": "customerBrief.selfcheck.mjs",
   "49": "dayStats.selfcheck.mjs",
-  "50": "MerchantSalesView.jsx",
-  "51": "dayStats.selfcheck.mjs"
+  "50": "MerchantSalesView.jsx"
 }

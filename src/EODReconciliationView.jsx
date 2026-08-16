@@ -183,6 +183,23 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
         return { expectedCash, expectedTransfer, expectedCukai, activeStock: resolvedCanvas, damagedItemsToReturn, todaysSamplings, cashStatus, cukaiStatus, storesServed, titipCollected, itemsBks, cukaiRemaining: expectedCukai, cashSources, transferSources };
     }, [effectiveId, samplings, transactions, agentCanvas, eodReports, motorists, agentProfileId]);
 
+    /* 🔒 THE STAMP CEILING — Aldi, 2026-08-17: *"it still allow us to sent the item data more than
+       what the agent bring"*. The cost is real and it is not cosmetic: `handleVerifyEOD` turns any
+       figure above the agent's actual debt into a NEGATIVE `global_credit` (App.jsx:1918-1920),
+       which permanently lowers what they owe on every later day. So an over-count here mints stamp
+       credit nobody earned. Returned + lost can never exceed what is owed — one is stamps in a
+       hand, the other is stamps that were in that hand and are not any more, and there were only
+       ever `expectedCukai` of them. */
+    const cukaiOwed = Number(agentData?.expectedCukai) || 0;
+    const cukaiReturnedNum = parseInt(cukaiReturnedInput, 10) || 0;
+    const cukaiPaidNum = parseInt(cukaiPaidInput, 10) || 0;
+    const cukaiOverCount = (cukaiReturnedNum + cukaiPaidNum) > cukaiOwed;
+    const clampStamps = (raw) => {
+        if (raw === '') return '';
+        const n = Math.max(0, parseInt(String(raw).replace(/[^0-9]/g, ''), 10) || 0);
+        return String(Math.min(n, cukaiOwed));
+    };
+
     useEffect(() => {
         if (agentData && cukaiReturnedInput === "" && cukaiPaidInput === "") {
             setCukaiReturnedInput(agentData.expectedCukai);
@@ -424,13 +441,20 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                                     key: String(item.productId || `row-${n}`),
                                                     name: item.name,
                                                     unit: item.unit || 'Bks',
-                                                    expected: Number(item.qty) || 0
+                                                    expected: Number(item.qty) || 0,
+                                                    // 🔒 you cannot hand back more of a product than the van was loaded with
+                                                    max: Number(item.qty) || 0
                                                 })),
                                                 cukai: [
-                                                    { key: 'returned', name: 'Stamps handed over', unit: 'pcs', expected: agentData.expectedCukai, hint: 'Physical stamps going to the admin' },
-                                                    { key: 'lost',     name: 'Stamps lost',        unit: 'pcs', expected: 0,                      hint: 'You pay a cash fine for each one' }
+                                                    { key: 'returned', name: 'Stamps handed over', unit: 'pcs', expected: agentData.expectedCukai, max: agentData.expectedCukai, hint: 'Physical stamps going to the admin' },
+                                                    { key: 'lost',     name: 'Stamps lost',        unit: 'pcs', expected: 0,                       max: agentData.expectedCukai, hint: 'You pay a cash fine for each one' }
                                                 ]
                                             }}
+                                            /* 🔒 handed over + lost can never exceed what is owed. Each line alone
+                                               fits under the debt; together they must too, or the submitted `cukai`
+                                               figure mints credit at App.jsx:1918. Goods needs no total cap — every
+                                               line is already capped at its own product's load. */
+                                            maxTotal={{ cukai: agentData.expectedCukai }}
                                             notes={{
                                                 cukai: (rows) => {
                                                     const lost = parseInt(String(rows.lost || '').replace(/[^0-9]/g, ''), 10) || 0;
@@ -494,10 +518,13 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                 over and lost — and the letter writes the CUKAI report, so leaving this card on
                                 screen showed the agent the same job twice with two different submit buttons.
                                 It stays for the PENDING and VERIFIED states, which the letter does not cover,
-                                and for legacy days where cukai is still open after cash was submitted. */}
+                                and for legacy days where cukai is still open after cash was submitted.
+                                ⚠️ It also wears the same EDGE as Cash & Stock beside it now. A gold-outlined
+                                card next to a plain one reads as two different systems, and the accent is
+                                already carried by the icon. */}
                             {agentData.cashStatus !== 'READY' && (
-                            <div className="bg-black/20 border border-[var(--accent-edge)] rounded-2xl p-6 shadow-xl flex flex-col h-full relative overflow-hidden">
-                                <h3 className="text-lg font-black text-[var(--ink)] uppercase tracking-widest border-b border-[var(--accent-edge)] pb-4 mb-6 flex items-center gap-2 relative z-10"><Tag className="text-[var(--accent-ink)]"/> Pita Cukai</h3>
+                            <div className="bg-black/20 border border-[var(--line)] rounded-2xl p-5 md:p-6 shadow-xl flex flex-col h-full relative overflow-hidden">
+                                <h3 className="text-lg font-black text-[var(--ink)] uppercase tracking-widest border-b border-[var(--line)] pb-4 mb-5 flex items-center gap-2 relative z-10"><Tag className="text-[var(--accent-ink)]"/> Pita Cukai</h3>
                                 
                                 <div className="flex-1">
                                     {agentData.cukaiStatus === 'PENDING' ? (
@@ -513,34 +540,56 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                             <p className="text-[10px] text-[var(--ink-dim)] uppercase tracking-widest text-center">Tax stamps successfully verified.</p>
                                         </div>
                                     ) : (
-                                        <div className="space-y-6">
-                                            
-                                            <div className="bg-[var(--gold)] border border-[var(--accent-edge)] p-4 rounded-xl shadow-inner">
-                                                <p className="text-[10px] font-bold text-[var(--ink-dim)] uppercase tracking-widest mb-4 text-center">Total Stamps You Owe: <strong className="text-[var(--accent-ink)]">{agentData.expectedCukai} Pcs</strong></p>
-                                                
-                                                <div className="grid grid-cols-2 gap-4">
-                                                    <div className="bg-black/60 border-b-2 border-[var(--accent-edge)] p-3 rounded text-center">
-                                                        <p className="text-[11px] font-bold text-[var(--accent-ink)] uppercase mb-2">Physical Returned</p>
-                                                        <input 
-                                                            type="number" min="0" value={cukaiReturnedInput} onChange={(e) => setCukaiReturnedInput(e.target.value)}
-                                                            className="w-full bg-transparent text-[var(--accent-ink)] font-black text-3xl text-center outline-none"
-                                                        />
-                                                    </div>
+                                        <div className="space-y-5">
 
-                                                    <div className="bg-black/60 border-b-2 border-[var(--danger)] p-3 rounded text-center">
-                                                        <p className="text-[11px] font-bold text-[var(--danger-ink)] uppercase mb-2">Lost (Pay Cash)</p>
-                                                        <input 
-                                                            type="number" min="0" value={cukaiPaidInput} onChange={(e) => setCukaiPaidInput(e.target.value)}
-                                                            className="w-full bg-transparent text-[var(--danger-ink)] font-black text-3xl text-center outline-none"
+                                            {/* 🎨 REBUILT ON THE TOKENS, 2026-08-17. His verdict on the old version: *"the color
+                                                pallete and design is really bad, make sure it follow our theme"*, and he was right
+                                                on the mechanism as much as the taste — the panel was a full `--gold` slab carrying
+                                                `--ink-dim` text, which is gold on gold, and the two fields were `bg-black/60`, a
+                                                hardcoded black that decides what light mode looks like.
+                                                ⚠️ HIS LAW APPLIED: colour marks what needs ATTENTION; "fine" is the ABSENCE of
+                                                colour. The debt is information, so it wears the surface. Red appears only when
+                                                stamps are actually lost, and it arrives as a BORDER plus a plate — never as ink on
+                                                a light ground, where it has to fight the paper to be read. */}
+                                            <div className="rounded-xl border border-[var(--line-3)] bg-[var(--inset)] p-4">
+                                                <p className="text-[11px] font-bold text-[var(--ink-dim)] uppercase tracking-[.18em] text-center">Total stamps you owe</p>
+                                                <p className="mt-1 mb-4 text-center font-mono text-3xl font-black tabular-nums text-[var(--ink)] leading-none">
+                                                    {cukaiOwed}<span className="ml-1 text-sm font-bold text-[var(--ink-dim)]">pcs</span>
+                                                </p>
+
+                                                <div className="grid grid-cols-2 gap-3">
+                                                    <label className="block rounded-lg border-2 p-3 text-center bg-[var(--raised)] border-[var(--line)] focus-within:border-[var(--accent-edge)]">
+                                                        <span className="block text-[11px] font-bold text-[var(--ink-dim)] uppercase tracking-wider mb-1.5">Handed over</span>
+                                                        <input
+                                                            type="number" min="0" max={cukaiOwed} value={cukaiReturnedInput}
+                                                            onChange={(e) => setCukaiReturnedInput(clampStamps(e.target.value))}
+                                                            className="w-full bg-transparent text-[var(--ink)] font-mono font-black text-3xl tabular-nums text-center outline-none"
                                                         />
-                                                    </div>
+                                                    </label>
+
+                                                    {/* the lost field turns red by BORDER, not by ink — the number stays on `--ink`
+                                                        so it is legible in both themes at any count */}
+                                                    <label className={`block rounded-lg border-2 p-3 text-center bg-[var(--raised)] focus-within:border-[var(--accent-edge)] ${cukaiPaidNum > 0 ? 'border-[var(--danger)]' : 'border-[var(--line)]'}`}>
+                                                        <span className="block text-[11px] font-bold text-[var(--ink-dim)] uppercase tracking-wider mb-1.5">Lost</span>
+                                                        <input
+                                                            type="number" min="0" max={cukaiOwed} value={cukaiPaidInput}
+                                                            onChange={(e) => setCukaiPaidInput(clampStamps(e.target.value))}
+                                                            className="w-full bg-transparent text-[var(--ink)] font-mono font-black text-3xl tabular-nums text-center outline-none"
+                                                        />
+                                                    </label>
                                                 </div>
 
-                                                {(parseInt(cukaiPaidInput) || 0) > 0 && (
-                                                    <div className="mt-4 p-3 bg-[var(--danger)] border border-[var(--danger)] rounded text-center animate-fade-in">
-                                                        <p className="text-[10px] text-[var(--danger-ink)] uppercase font-bold tracking-widest flex justify-center items-center gap-1"><AlertCircle size={12}/> Cash Fine Required</p>
-                                                        <p className="text-xl font-black text-[var(--danger-ink)] mt-1">{formatRupiah((parseInt(cukaiPaidInput) || 0) * cukaiFinePrice)}</p>
-                                                        <p className="text-[11px] text-[var(--danger-ink)] mt-1 uppercase tracking-widest">({formatRupiah(cukaiFinePrice)} per lost stamp)</p>
+                                                {cukaiOverCount && (
+                                                    <p className="mt-3 rounded-lg border border-[var(--danger)] bg-[var(--danger)] px-3 py-1.5 text-center text-[11px] font-bold uppercase tracking-[.14em] text-[var(--danger-ink)]">
+                                                        That is {cukaiReturnedNum + cukaiPaidNum} against {cukaiOwed} owed
+                                                    </p>
+                                                )}
+
+                                                {cukaiPaidNum > 0 && !cukaiOverCount && (
+                                                    <div className="mt-3 p-3 bg-[var(--danger)] border border-[var(--danger)] rounded-lg text-center animate-fade-in">
+                                                        <p className="text-[10px] text-[var(--danger-ink)] uppercase font-bold tracking-[.18em] flex justify-center items-center gap-1"><AlertCircle size={12}/> Cash fine required</p>
+                                                        <p className="text-xl font-black text-[var(--danger-ink)] mt-0.5 leading-tight">{formatRupiah(cukaiPaidNum * cukaiFinePrice)}</p>
+                                                        <p className="text-[10px] text-[var(--danger-ink)] uppercase tracking-widest">{formatRupiah(cukaiFinePrice)} per lost stamp</p>
                                                     </div>
                                                 )}
                                             </div>
@@ -558,8 +607,10 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                                             if (physicalBtg > 0) displayQty += `${physicalBtg} Btg`;
 
                                                             return (
-                                                                <span key={`cukai-${idx}`} className="text-[10px] bg-[var(--gold)] text-[var(--accent-ink)] px-2 py-1 rounded border border-[var(--accent-edge)] shadow-inner">
-                                                                    {sample.productName}: <strong className="text-[var(--ink)]">{displayQty.trim() || '0 Bks'}</strong>
+                                                                /* was a gold plate carrying gold ink — the same gold-on-gold as the
+                                                                   panel above it. A deployment record needs no colour at all. */
+                                                                <span key={`cukai-${idx}`} className="text-[11px] bg-[var(--inset)] text-[var(--ink-dim)] px-2 py-1 rounded-md border border-[var(--line)]">
+                                                                    {sample.productName}: <strong className="font-mono tabular-nums text-[var(--ink)]">{displayQty.trim() || '0 Bks'}</strong>
                                                                 </span>
                                                             );
                                                         })}
@@ -573,23 +624,27 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                 {agentData.cukaiStatus === 'READY' && (
                                     <button 
                                         onClick={() => {
-                                            const returned = parseInt(cukaiReturnedInput) || 0;
-                                            const paid = parseInt(cukaiPaidInput) || 0;
-                                            onSubmitEOD({ 
-                                                cash: 0, transfer: 0, 
-                                                cukaiReturned: returned, 
-                                                cukaiPaid: paid, 
-                                                cukaiFine: paid * cukaiFinePrice, 
-                                                cukai: returned + paid, 
+                                            /* ⚠️ CLAMPED AGAIN AT THE WRITE, not only in the input. The input clamp is
+                                               what the agent sees; this is what reaches Firestore, and a submit that
+                                               trusts its own UI is not a guard. `cukai` is the figure App.jsx:1906
+                                               spends against the debt ledger. */
+                                            const returned = Math.min(cukaiReturnedNum, cukaiOwed);
+                                            const paid = Math.min(cukaiPaidNum, Math.max(0, cukaiOwed - returned));
+                                            onSubmitEOD({
+                                                cash: 0, transfer: 0,
+                                                cukaiReturned: returned,
+                                                cukaiPaid: paid,
+                                                cukaiFine: paid * cukaiFinePrice,
+                                                cukai: returned + paid,
                                                 remainingStock: [], deployedSamples: agentData.todaysSamplings, reportType: 'CUKAI',
                                                 agentId: effectiveId,
-                                                agentName: resolveIdentityName() 
+                                                agentName: resolveIdentityName()
                                             })
                                         }}
-                                        disabled={(!cukaiReturnedInput && !cukaiPaidInput) || (parseInt(cukaiReturnedInput) === 0 && parseInt(cukaiPaidInput) === 0)}
-                                        className={`w-full mt-6 py-4 rounded-xl font-black uppercase tracking-[0.2em] flex items-center justify-center gap-2 shadow-lg transition-transform ${((!cukaiReturnedInput && !cukaiPaidInput) || (parseInt(cukaiReturnedInput) === 0 && parseInt(cukaiPaidInput) === 0)) ? 'bg-[var(--raised)] text-[var(--ink-dim)] cursor-not-allowed' : 'bg-[var(--gold)] hover:bg-[var(--gold)] text-[var(--gold-ink)] active:scale-95'} `}
+                                        disabled={cukaiOverCount || (cukaiReturnedNum === 0 && cukaiPaidNum === 0)}
+                                        className={`w-full mt-6 py-4 rounded-xl font-black uppercase tracking-[0.2em] flex items-center justify-center gap-2 shadow-md transition-transform ${(cukaiOverCount || (cukaiReturnedNum === 0 && cukaiPaidNum === 0)) ? 'bg-[var(--inset)] text-[var(--ink-dim)] border border-[var(--line)] cursor-not-allowed' : 'bg-[var(--gold)] text-[var(--gold-ink)] border border-[var(--accent-edge)] active:scale-[.98]'} `}
                                     >
-                                        <Upload size={18}/> Submit Stamps & Fines
+                                        <Upload size={18}/> {cukaiOverCount ? 'Too many — check the count' : 'Submit stamps & fines'}
                                     </button>
                                 )}
                             </div>
@@ -723,7 +778,7 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                                                 if (physicalBtg > 0) displayQty += `${physicalBtg} Btg`;
 
                                                                 return (
-                                                                    <span key={`cukai-${idx}`} className="text-[10px] bg-[var(--gold)] text-[var(--accent-ink)] px-2 py-1 rounded border border-[var(--accent-edge)]">
+                                                                    <span key={`cukai-${idx}`} className="text-[11px] bg-[var(--inset)] text-[var(--ink-dim)] px-2 py-1 rounded-md border border-[var(--line)]">
                                                                         {sample.productName}: <strong className="text-[var(--accent-ink)]">{displayQty.trim() || '0 Bks'}</strong>
                                                                     </span>
                                                                 );
@@ -852,7 +907,8 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                                                                                             {!report.reportType && <span className="w-2 h-2 rounded-full bg-[var(--gold)]"></span>}
                                                                                                             {report.reportType === 'BOUNTY' ? <span className="text-[var(--danger-ink)] tracking-widest">Bounty Cleared</span> : report.reportType === 'CUKAI' ? 'Cukai Return' : 'EOD Cash/Stock'}
                                                                                                             {/* 🚀 NEW: quick hint badge, click the row for the full breakdown */}
-                                                                                                            {hasDamaged && <span className="text-[11px] bg-[var(--gold)] text-[var(--accent-ink)] border border-[var(--accent-edge)] px-1.5 py-0.5 rounded uppercase tracking-widest">Damaged</span>}
+                                                                                                            {/* a warning KEEPS its gold plate — but wears --gold-ink on it, not --accent-ink, which is the gold itself */}
+                                                                                                            {hasDamaged && <span className="text-[11px] bg-[var(--gold)] text-[var(--gold-ink)] border border-[var(--accent-edge)] px-1.5 py-0.5 rounded uppercase tracking-widest">Damaged</span>}
                                                                                                             <ChevronDown size={10} className={`text-[var(--ink-dim)] transition-transform ${isExpanded ? 'rotate-180' : ''} `}/>
                                                                                                         </h4>
                                                                                                         <p className="text-[11px] text-[var(--ink-dim)] flex items-center gap-1 mt-1 font-mono">
