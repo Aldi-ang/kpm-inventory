@@ -261,7 +261,18 @@ export default function BiohazardTheme({
     const TotemMark = visibleMenu.find(i => i.id === activeTab)?.icon || LayoutGrid;
 
     return (
-        <div className="print-reset h-[100dvh] w-full bg-black text-gray-300 font-sans tracking-wide overflow-hidden flex relative">
+        /* 🔴 THIS ONE CLASS WAS THE WHOLE OF *"the background is still black on light mode"*.
+            `bg-black` on the app's root wrapper covers the entire viewport, so it painted over
+            `body` no matter what the theme said. Measured live in his running app on 2026-08-16:
+            body computed `rgb(210,201,180)` — correct cream — with this element sitting on top of
+            it at `rgb(0,0,0)`. Three separate "fixed" claims died here.
+            ⚠️ TRANSPARENT, NOT A TOKEN. `body` already paints the ground AND the lit-corner
+            gradient; an opaque wrapper of any colour hides that gradient, which is why the glass
+            header and dock have been blurring a flat wall this whole time. The showroom he
+            approved has no wrapper, so transparent is what he actually signed off on.
+            ⚠️ `text-gray-300` went with it — a cold grey default ink, unreadable on cream, and
+            slate-adjacent besides. */
+        <div className="print-reset h-[100dvh] w-full bg-transparent text-[var(--ink-muted)] font-sans tracking-wide overflow-hidden flex relative">
             <style>{`
                 @keyframes reRequiem {
                     0% { opacity: 0; transform: scale(0.98) translateY(10px); filter: blur(3px); }
@@ -321,7 +332,7 @@ export default function BiohazardTheme({
             {isMobileMenuOpen && (
                 <div
                     onClick={() => setIsMobileMenuOpen(false)}
-                    className="hide-on-print lg:hidden fixed inset-0 z-[85] bg-black/60 backdrop-blur-[2px] animate-fade-in"
+                    className="hide-on-print lg:hidden fixed inset-0 z-[85] bg-[var(--duke-scrim)] backdrop-blur-[2px] animate-fade-in"
                 ></div>
             )}
 
@@ -620,7 +631,7 @@ export default function BiohazardTheme({
                         })}
                     </nav>
 
-                <div key={`bot-${isAdmin}`} className="kpm-rail-foot mt-auto mb-2 border-t border-[#3e3226] lg:border-white/10 pt-3 boot-3">
+                <div key={`bot-${isAdmin}`} className="kpm-rail-foot mt-auto mb-2 border-t border-[#3e3226] lg:border-[var(--duke-veil-edge)] pt-3 boot-3">
                     {/* 🚀 HIDDEN DOOR: Show Master Vault button if they aren't fully unlocked but have Tier 2 settings */}
                     {hasClearance(userRole, 'view_master_vault') && !isAdmin && (
                         <div className="px-0 lg:px-2 mb-3">
@@ -666,11 +677,11 @@ export default function BiohazardTheme({
                                 <img
                                     src={agentPhoto || user.photoURL}
                                     title={user.email || 'Signed in'}
-                                    className="w-9 h-9 rounded-full border border-[#5c4b3a] lg:border-white/30 object-cover bg-black shrink-0"
+                                    className="w-9 h-9 rounded-full border border-[#5c4b3a] lg:border-[var(--duke-veil-edge-3)] object-cover bg-black shrink-0"
                                     alt="Profile"
                                 />
                             ) : (
-                                <div title={user.email || 'Signed in'} className="w-9 h-9 rounded-full border border-[#5c4b3a] lg:border-white/30 bg-black text-[#8b7256] flex items-center justify-center shrink-0">
+                                <div title={user.email || 'Signed in'} className="w-9 h-9 rounded-full border border-[#5c4b3a] lg:border-[var(--duke-veil-edge-3)] bg-black text-[#8b7256] flex items-center justify-center shrink-0">
                                     <User size={16} />
                                 </div>
                             )}
@@ -709,7 +720,16 @@ export default function BiohazardTheme({
             </div>
             )}
 
-            <div className="print-reset relative z-10 flex-1 flex flex-col overflow-hidden bg-gradient-to-br from-transparent to-black/80">
+            {/* ⚠️ THE SECOND SKIN, AND IT HID BEHIND THE FIRST. `bg-gradient-to-br
+                from-transparent to-black/80` painted a black vignette across the whole content
+                area — background-IMAGE, not background-colour, which is why the first fix (making
+                the root wrapper transparent) measured as correct and still looked black.
+                It also duplicated a job `body` already does: index.css puts one light source
+                top-left and lets it fall away to `--ground-lo` bottom-right. Two falloffs
+                fighting, and the louder one could not change theme.
+                ⚠️ When a surface still looks wrong after its background-COLOR checks out, read
+                background-image before assuming the measurement lied. */}
+            <div className="print-reset relative z-10 flex-1 flex flex-col overflow-hidden">
                 {/* kpm-topbar: on a phone pt-16 already clears the fixed menu button. On a desk
                     the button used to be hidden, so lg:pt-6 reclaimed that space — but the
                     button is on desktop now too, and with the panel CLOSED it sits directly on
@@ -750,7 +770,7 @@ export default function BiohazardTheme({
                             letter-spacing exists to sharpen. The gold rule under the title already
                             carries the emphasis, and it MOVES when you change tab, which is the
                             part that means something. */}
-                        <div className="text-xl lg:text-2xl text-white font-bold tracking-[0.15em] uppercase truncate">
+                        <div className="text-xl lg:text-2xl text-[var(--ink)] font-bold tracking-[0.15em] uppercase truncate">
                             {activeTab.replace(/_/g, ' ')}
                         </div>
                         {/* Re-keyed on the tab, so the rule redraws itself every time you move.
@@ -814,7 +834,7 @@ export default function BiohazardTheme({
                     </div>
                 </div>
 
-                <div className="hide-on-print hidden lg:flex h-8 border-t border-white/10 items-center px-6 gap-6 text-[10px] text-gray-500 font-bold uppercase bg-black/80 backdrop-blur shrink-0">
+                <div className="hide-on-print hidden lg:flex h-8 border-t border-[var(--duke-veil-edge)] items-center px-6 gap-6 text-[10px] text-[var(--ink-dim)] font-bold uppercase bg-[var(--duke-badge)] backdrop-blur shrink-0">
                     <span className="flex items-center gap-2"><span className="kpm-read on">L-Click</span> Select</span>
                     <span className="flex items-center gap-2"><span className="kpm-read">Scroll</span> Navigate</span>
                 </div>
