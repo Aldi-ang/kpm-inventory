@@ -58,7 +58,21 @@ clause now assert **relationships** (light is darker than dark; the token is a r
 the numbers to `contrast.selfcheck.mjs`. Group 39 already carried this lesson in its own words —
 **do not write another check that freezes a value.**
 
-✅ **VAULT IS CURRENT — A-Brain `da2a46a`, 11 files, 434 insertions, 0 deletions.** The 20-commit
+### 🔴 LITE MODE MAY NEVER CHANGE A COLOUR — his law, 2026-08-16, group 43. **545/545**
+
+*"the lite light moe causing the system acitve settings text to gone, since it causing the
+background for that top panel to be black"* → *"lite item use to sacrifice the animation but not
+the color"*. The header and dock need an opaque fallback because Lite Mode strips the blur — but
+it was `#14110e`, fixed, so **light + Lite painted the bar black under light ink**. Five sites →
+`--glass-solid` (`#14110e` dark / `#e3dbca` light). Measured: SETTINGS **15,25:1** in light+Lite,
+dark+Lite byte-identical.
+⚠️ **THREE AUDIT CHECKS WERE PINNING THAT LITERAL — they were protecting the bug.** Shape 7, 4th
+time in two days. **Group 43 asserts the LAW, not a value**, and was verified RED against the
+pre-fix file.
+▸ Type bumped on his ask: `.kpm-desc` 13→14px, mono eyebrow + caption 10→11px, **tracking eased
+with the size** (.26→.24em, .22→.2em). The gate card's 9px is his and untouched.
+
+✅ **VAULT IS CURRENT — A-Brain `da2a46a` + the taste ripple, 0 deletions.** The 20-commit
 gap is closed. New page [[Looking at the App]]; `Aldi's Design Taste` now records that the
 2026-08-13 *"light mode is white"* question is **CLOSED** (he chose the modules' cream family, so
 the Phase-3 bench-steel law is superseded — the "no `#FFFFFF` surface" half survives).
