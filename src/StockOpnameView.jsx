@@ -508,65 +508,65 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
             
             {viewingImage && (
                 <div className="fixed inset-0 z-[500] bg-black/95 backdrop-blur-sm flex items-center justify-center p-4">
-                    <button onClick={() => setViewingImage(null)} className="absolute top-6 right-6 text-slate-400 hover:text-white bg-black/50 p-2 rounded-full"><X size={32}/></button>
-                    <img src={viewingImage} alt="Damaged Item Proof" className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl border border-white/20" />
+                    <button onClick={() => setViewingImage(null)} className="absolute top-6 right-6 text-[var(--ink-dim)] hover:text-[var(--ink)] bg-black/50 p-2 rounded-full"><X size={32}/></button>
+                    <img src={viewingImage} alt="Damaged Item Proof" className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl border border-[var(--line)]" />
                 </div>
             )}
 
             {resolutionModal && (
                 <div className="fixed inset-0 z-[400] bg-black/90 backdrop-blur-md flex items-center justify-center p-4 animate-pop-in">
-                    <div className={`w-full max-w-md bg-[#0a0a0a] rounded-2xl border-2 shadow-2xl flex flex-col overflow-hidden ${resolutionModal.method === 'SAMPLING' ? 'border-purple-500 shadow-[0_0_40px_rgba(168,85,247,0.2)]' : resolutionModal.method === 'RTV' ? 'border-blue-500 shadow-[0_0_40px_rgba(59,130,246,0.2)]' : 'border-red-600 shadow-[0_0_40px_rgba(220,38,38,0.3)]'}`}>
-                        <div className={`p-4 border-b border-white/10 flex justify-between items-center ${resolutionModal.method === 'SAMPLING' ? 'bg-purple-900/30 text-purple-400' : resolutionModal.method === 'RTV' ? 'bg-blue-900/30 text-blue-400' : 'bg-red-900/30 text-red-500'}`}>
+                    <div className={`w-full max-w-md bg-[#0a0a0a] rounded-2xl border-2 shadow-2xl flex flex-col overflow-hidden ${resolutionModal.method === 'SAMPLING' ? 'border-purple-500 shadow-[0_0_40px_rgba(168,85,247,0.2)]' : resolutionModal.method === 'RTV' ? 'border-blue-500 shadow-[0_0_40px_rgba(59,130,246,0.2)]' : 'border-red-600 shadow-[0_0_40px_rgba(220,38,38,0.3)]'} `}>
+                        <div className={`p-4 border-b border-[var(--line)] flex justify-between items-center ${resolutionModal.method === 'SAMPLING' ? 'bg-[var(--gold)] text-[var(--ink-dim)]' : resolutionModal.method === 'RTV' ? 'bg-[var(--gold)] text-[var(--ink-dim)]' : 'bg-[var(--danger)] text-[var(--danger-ink)]'} `}>
                             <h3 className="font-black uppercase tracking-widest flex items-center gap-2">
                                 {resolutionModal.method === 'SAMPLING' && <FlaskConical size={18}/>}
                                 {resolutionModal.method === 'RTV' && <Undo2 size={18}/>}
                                 {resolutionModal.method === 'PENALTY' && <BadgeDollarSign size={18}/>}
                                 {resolutionModal.method} PROTOCOL
                             </h3>
-                            <button onClick={() => setResolutionModal(null)} className="hover:text-white"><X size={20}/></button>
+                            <button onClick={() => setResolutionModal(null)} className="hover:text-[var(--ink)]"><X size={20}/></button>
                         </div>
                         <form onSubmit={executeResolution} className="p-6 space-y-5">
-                            <div className="bg-white/5 p-4 rounded-xl border border-white/10">
-                                <p className="text-[10px] text-slate-400 uppercase tracking-widest mb-1">Target Asset</p>
-                                <p className="font-bold text-white uppercase">{resolutionModal.item.name}</p>
-                                <p className="text-[10px] text-orange-400 font-mono mt-1">Available in Quarantine: {resolutionModal.item.damagedStock} Bks</p>
+                            <div className="bg-[var(--raised)] p-4 rounded-xl border border-[var(--line)]">
+                                <p className="text-[10px] text-[var(--ink-dim)] uppercase tracking-widest mb-1">Target Asset</p>
+                                <p className="font-bold text-[var(--ink)] uppercase">{resolutionModal.item.name}</p>
+                                <p className="text-[10px] text-[var(--accent-ink)] font-mono mt-1">Available in Quarantine: {resolutionModal.item.damagedStock} Bks</p>
                             </div>
                             
                             <div>
-                                <label className="text-[10px] text-slate-400 uppercase tracking-widest mb-2 block">Quantity to Resolve (Bks)</label>
-                                <input name="qty" type="number" max={resolutionModal.item.damagedStock} min="1" defaultValue={resolutionModal.item.damagedStock} className="w-full bg-black border border-white/20 p-3 rounded-lg text-white font-mono text-lg font-black focus:border-orange-500 outline-none" required/>
+                                <label className="text-[10px] text-[var(--ink-dim)] uppercase tracking-widest mb-2 block">Quantity to Resolve (Bks)</label>
+                                <input name="qty" type="number" max={resolutionModal.item.damagedStock} min="1" defaultValue={resolutionModal.item.damagedStock} className="w-full bg-[var(--sunk)] border border-[var(--line)] p-3 rounded-lg text-[var(--ink)] font-mono text-lg font-black focus:border-[var(--accent-edge)] outline-none" required/>
                             </div>
 
                             {resolutionModal.method === 'SAMPLING' && (
                                 <div>
-                                    <label className="text-[10px] text-slate-400 uppercase tracking-widest mb-2 block">Marketing Event / Reason</label>
-                                    <input name="reason" type="text" placeholder="e.g., Given to Event Staff" className="w-full bg-black border border-white/20 p-3 rounded-lg text-white focus:border-purple-500 outline-none" required/>
+                                    <label className="text-[10px] text-[var(--ink-dim)] uppercase tracking-widest mb-2 block">Marketing Event / Reason</label>
+                                    <input name="reason" type="text" placeholder="e.g., Given to Event Staff" className="w-full bg-[var(--sunk)] border border-[var(--line)] p-3 rounded-lg text-[var(--ink)] focus:border-[var(--line)] outline-none" required/>
                                 </div>
                             )}
 
                             {resolutionModal.method === 'RTV' && (
                                 <div>
-                                    <label className="text-[10px] text-slate-400 uppercase tracking-widest mb-2 block">Surat Jalan Retur (RTV Number)</label>
-                                    <input name="rtvRef" type="text" placeholder="e.g., SJR-2026-001" className="w-full bg-black border border-white/20 p-3 rounded-lg text-white focus:border-blue-500 outline-none font-mono uppercase" required/>
+                                    <label className="text-[10px] text-[var(--ink-dim)] uppercase tracking-widest mb-2 block">Surat Jalan Retur (RTV Number)</label>
+                                    <input name="rtvRef" type="text" placeholder="e.g., SJR-2026-001" className="w-full bg-[var(--sunk)] border border-[var(--line)] p-3 rounded-lg text-[var(--ink)] focus:border-[var(--line)] outline-none font-mono uppercase" required/>
                                 </div>
                             )}
 
                             {resolutionModal.method === 'PENALTY' && (
                                 <div>
-                                    <label className="text-[10px] text-slate-400 uppercase tracking-widest mb-2 block">Target Personnel for Fine</label>
-                                    <select name="agentId" className="w-full bg-black border border-red-500/50 p-3 rounded-lg text-white focus:border-red-500 outline-none uppercase tracking-widest text-xs font-bold" required>
-                                        <option value="" className="bg-slate-900">-- SELECT PERSONNEL --</option>
+                                    <label className="text-[10px] text-[var(--ink-dim)] uppercase tracking-widest mb-2 block">Target Personnel for Fine</label>
+                                    <select name="agentId" className="w-full bg-[var(--sunk)] border border-[var(--danger)] p-3 rounded-lg text-[var(--ink)] focus:border-[var(--danger)] outline-none uppercase tracking-widest text-xs font-bold" required>
+                                        <option value="" className="bg-[var(--sunk)]">-- SELECT PERSONNEL --</option>
                                         {safeMotorists.filter(m => m && m.id !== 'master_owner').map(m => (
-                                            <option key={m.id} value={m.id} className="bg-slate-900">{m.name} ({m.role || 'Staff'})</option>
+                                            <option key={m.id} value={m.id} className="bg-[var(--sunk)]">{m.name} ({m.role || 'Staff'})</option>
                                         ))}
                                     </select>
-                                    <div className="mt-3 p-3 bg-red-900/20 border border-red-500/30 rounded text-[11px] text-red-400 uppercase tracking-widest leading-relaxed">
+                                    <div className="mt-3 p-3 bg-[var(--danger)] border border-[var(--danger)] rounded text-[11px] text-[var(--danger-ink)] uppercase tracking-widest leading-relaxed">
                                         Warning: This will issue a Bounty/Penalty debt to the selected personnel. They must pay this fine during their daily EOD Setoran.
                                     </div>
                                 </div>
                             )}
 
-                            <button type="submit" disabled={isProcessingAudit} className={`w-full py-4 rounded-xl font-black uppercase tracking-widest shadow-lg flex justify-center items-center gap-2 transition-all active:scale-95 ${resolutionModal.method === 'SAMPLING' ? 'bg-purple-600 hover:bg-purple-500 text-white' : resolutionModal.method === 'RTV' ? 'bg-blue-600 hover:bg-blue-500 text-white' : 'bg-red-600 hover:bg-red-500 text-white'}`}>
+                            <button type="submit" disabled={isProcessingAudit} className={`w-full py-4 rounded-xl font-black uppercase tracking-widest shadow-lg flex justify-center items-center gap-2 transition-all active:scale-95 ${resolutionModal.method === 'SAMPLING' ? 'bg-[var(--gold)] hover:bg-[var(--gold)] text-[var(--ink)]' : resolutionModal.method === 'RTV' ? 'bg-[var(--gold)] hover:bg-[var(--gold)] text-[var(--gold-ink)]' : 'bg-[var(--danger)] hover:bg-[var(--danger)] text-[var(--gold-ink)]'} `}>
                                 {isProcessingAudit ? <RefreshCcw size={18} className="animate-spin"/> : <Check size={18}/>} Execute Protocol
                             </button>
                         </form>
@@ -574,35 +574,35 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                 </div>
             )}
 
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-end bg-slate-900 border border-slate-700 p-4 rounded-xl shadow-lg gap-4 shrink-0 z-10 relative">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-end bg-[var(--sunk)] border border-[var(--line)] p-4 rounded-xl shadow-lg gap-4 shrink-0 z-10 relative">
                 <div>
-                    <h2 className="text-2xl font-black text-white flex items-center gap-2 tracking-widest uppercase">
-                        {viewMode === 'count' && <><ClipboardList size={24} className="text-emerald-500"/> Warehouse Opname</>}
-                        {viewMode === 'review' && <><ShieldAlert size={24} className="text-blue-500"/> HQ Recon Board</>}
-                        {viewMode === 'quarantine' && <><Biohazard size={24} className="text-orange-500 animate-pulse"/> Quarantine Vault</>}
-                        {viewMode === 'monitor' && <><BarChart size={24} className="text-blue-500 animate-pulse"/> Supply Telemetry</>}
+                    <h2 className="text-2xl font-black text-[var(--ink)] flex items-center gap-2 tracking-widest uppercase">
+                        {viewMode === 'count' && <><ClipboardList size={24} className="text-[var(--ink-dim)]"/> Warehouse Opname</>}
+                        {viewMode === 'review' && <><ShieldAlert size={24} className="text-[var(--ink-dim)]"/> HQ Recon Board</>}
+                        {viewMode === 'quarantine' && <><Biohazard size={24} className="text-[var(--accent-ink)] animate-pulse"/> Quarantine Vault</>}
+                        {viewMode === 'monitor' && <><BarChart size={24} className="text-[var(--ink-dim)] animate-pulse"/> Supply Telemetry</>}
                     </h2>
-                    <p className="text-[10px] text-slate-400 font-mono mt-1 flex items-center gap-2">
+                    <p className="text-[10px] text-[var(--ink-dim)] font-mono mt-1 flex items-center gap-2">
                         {viewMode === 'count' && `AUDITING: ${isAreaAdmin ? user.location : 'MASTER VAULT'}`}
                         {viewMode === 'review' && 'VERIFY REGIONAL STOCK OVERWRITES'}
                         {viewMode === 'quarantine' && 'DAMAGED GOODS LIQUIDATION & HISTORY'}
                         {viewMode === 'monitor' && 'REAL-TIME FACILITY OVERWATCH'}
-                        {!isHighCommand && viewMode === 'count' && <span className="bg-red-900/30 text-red-500 border border-red-500/50 px-2 py-0.5 rounded text-[11px] font-black tracking-widest flex items-center gap-1"><EyeOff size={10}/> BLIND COUNT ENFORCED</span>}
+                        {!isHighCommand && viewMode === 'count' && <span className="bg-[var(--danger)] text-[var(--danger-ink)] border border-[var(--danger)] px-2 py-0.5 rounded text-[11px] font-black tracking-widest flex items-center gap-1"><EyeOff size={10}/> BLIND COUNT ENFORCED</span>}
                     </p>
                 </div>
                 
                 {isHighCommand && (
-                    <div className="flex bg-black/50 rounded-lg p-1 border border-slate-700 w-full md:w-auto overflow-x-auto custom-scrollbar">
-                        <button onClick={() => setViewMode('monitor')} className={`px-4 py-2 rounded-md text-[10px] uppercase tracking-widest font-bold transition-all flex items-center gap-2 whitespace-nowrap ${viewMode === 'monitor' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:text-white'}`}>
+                    <div className="flex bg-black/50 rounded-lg p-1 border border-[var(--line)] w-full md:w-auto overflow-x-auto custom-scrollbar">
+                        <button onClick={() => setViewMode('monitor')} className={`px-4 py-2 rounded-md text-[10px] uppercase tracking-widest font-bold transition-all flex items-center gap-2 whitespace-nowrap ${viewMode === 'monitor' ? 'bg-[var(--gold)] text-[var(--gold-ink)] shadow-md' : 'text-[var(--ink-dim)] hover:text-[var(--ink)]'} `}>
                             <BarChart size={14}/> Monitor
                         </button>
-                        <button onClick={() => setViewMode('review')} className={`px-4 py-2 rounded-md text-[10px] uppercase tracking-widest font-bold transition-all flex items-center gap-2 whitespace-nowrap ${viewMode === 'review' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 hover:text-white'}`}>
-                            <ShieldAlert size={14}/> HQ Audits {pendingAudits.length > 0 && <span className="bg-red-500 text-white text-[11px] px-1.5 py-0.5 rounded-full">{pendingAudits.length}</span>}
+                        <button onClick={() => setViewMode('review')} className={`px-4 py-2 rounded-md text-[10px] uppercase tracking-widest font-bold transition-all flex items-center gap-2 whitespace-nowrap ${viewMode === 'review' ? 'bg-[var(--gold)] text-[var(--gold-ink)] shadow-md' : 'text-[var(--ink-dim)] hover:text-[var(--ink)]'} `}>
+                            <ShieldAlert size={14}/> HQ Audits {pendingAudits.length > 0 && <span className="bg-[var(--danger)] text-[var(--gold-ink)] text-[11px] px-1.5 py-0.5 rounded-full">{pendingAudits.length}</span>}
                         </button>
-                        <button onClick={() => setViewMode('quarantine')} className={`px-4 py-2 rounded-md text-[10px] uppercase tracking-widest font-bold transition-all flex items-center gap-2 whitespace-nowrap ${viewMode === 'quarantine' ? 'bg-orange-600 text-white shadow-md' : 'text-slate-400 hover:text-white'}`}>
+                        <button onClick={() => setViewMode('quarantine')} className={`px-4 py-2 rounded-md text-[10px] uppercase tracking-widest font-bold transition-all flex items-center gap-2 whitespace-nowrap ${viewMode === 'quarantine' ? 'bg-[var(--gold)] text-[var(--gold-ink)] shadow-md' : 'text-[var(--ink-dim)] hover:text-[var(--ink)]'} `}>
                             <Biohazard size={14}/> Quarantine
                         </button>
-                        <button onClick={() => setViewMode('count')} className={`px-4 py-2 rounded-md text-[10px] uppercase tracking-widest font-bold transition-all flex items-center gap-2 whitespace-nowrap ${viewMode === 'count' ? 'bg-emerald-600 text-white shadow-md' : 'text-slate-400 hover:text-white'}`}>
+                        <button onClick={() => setViewMode('count')} className={`px-4 py-2 rounded-md text-[10px] uppercase tracking-widest font-bold transition-all flex items-center gap-2 whitespace-nowrap ${viewMode === 'count' ? 'bg-[var(--gold)] text-[var(--gold-ink)] shadow-md' : 'text-[var(--ink-dim)] hover:text-[var(--ink)]'} `}>
                             <ClipboardList size={14}/> New Count
                         </button>
                     </div>
@@ -613,13 +613,13 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
             {/* VIEW MODE 0: THE LIVE BRANCH MONITOR                     */}
             {/* ======================================================== */}
             {viewMode === 'monitor' && isHighCommand && (
-                <div className="flex-1 flex flex-col min-h-0 bg-black/40 rounded-xl border border-blue-500/20 shadow-inner p-4 relative overflow-hidden animate-fade-in">
+                <div className="flex-1 flex flex-col min-h-0 bg-black/40 rounded-xl border border-[var(--line)] shadow-inner p-4 relative overflow-hidden animate-fade-in">
                     
-                    <div className="flex items-center gap-2 bg-slate-900 border border-blue-500/50 rounded-lg p-2 px-3 mb-6 w-full md:w-64 z-10 relative">
-                        <MapPin size={16} className="text-blue-500"/>
-                        <select value={monitorFacility} onChange={(e) => setMonitorFacility(e.target.value)} className="bg-transparent text-sm text-white font-black uppercase tracking-widest outline-none w-full">
-                            <option value="MASTER" className="bg-slate-900 text-white">Master Vault (HQ)</option>
-                            {uniqueBranches.map(branch => <option key={branch} value={branch} className="bg-slate-900 text-white">{branch}</option>)}
+                    <div className="flex items-center gap-2 bg-[var(--sunk)] border border-[var(--line)] rounded-lg p-2 px-3 mb-6 w-full md:w-64 z-10 relative">
+                        <MapPin size={16} className="text-[var(--ink-dim)]"/>
+                        <select value={monitorFacility} onChange={(e) => setMonitorFacility(e.target.value)} className="bg-transparent text-sm text-[var(--ink)] font-black uppercase tracking-widest outline-none w-full">
+                            <option value="MASTER" className="bg-[var(--sunk)] text-[var(--ink)]">Master Vault (HQ)</option>
+                            {uniqueBranches.map(branch => <option key={branch} value={branch} className="bg-[var(--sunk)] text-[var(--ink)]">{branch}</option>)}
                         </select>
                     </div>
 
@@ -631,21 +631,21 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                             const isLowStock = stat.vault <= (p.minStock || 5);
 
                             return (
-                                <div key={p.id} className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl overflow-hidden flex flex-col shadow-lg transition-all hover:border-blue-500/50 relative group">
+                                <div key={p.id} className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl overflow-hidden flex flex-col shadow-lg transition-all hover:border-[var(--line)] relative group">
                                     
                                     {/* Background Accent */}
                                     <div className="absolute -top-4 -right-4 p-4 opacity-5 pointer-events-none group-hover:scale-110 transition-transform">
-                                        <BarChart size={100} className="text-blue-500" />
+                                        <BarChart size={100} className="text-[var(--ink-dim)]" />
                                     </div>
 
                                     {/* Header */}
-                                    <div className="flex items-center p-4 border-b border-[#2a2a2a] bg-black/40 z-10">
-                                        <div className="w-12 h-12 bg-black border border-[#333] rounded-lg overflow-hidden shrink-0 flex items-center justify-center shadow-inner">
-                                            {p.images?.front ? <img src={p.images.front} className="w-full h-full object-cover"/> : <ImageIcon size={20} className="text-slate-400"/>}
+                                    <div className="flex items-center p-4 border-b border-[#2a2a2a] bg-black/40 z-10 border-[var(--line)]">
+                                        <div className="w-12 h-12 bg-[var(--sunk)] border border-[#333] rounded-lg overflow-hidden shrink-0 flex items-center justify-center shadow-inner border-[var(--line)]">
+                                            {p.images?.front ? <img src={p.images.front} className="w-full h-full object-cover"/> : <ImageIcon size={20} className="text-[var(--ink-dim)]"/>}
                                         </div>
                                         <div className="ml-3 flex-1 overflow-hidden">
-                                            <h3 className="font-black text-white text-sm uppercase truncate tracking-wider drop-shadow-md">{p.name}</h3>
-                                            <p className="text-[10px] text-slate-400 font-mono mt-0.5">ID: {p.id}</p>
+                                            <h3 className="font-black text-[var(--ink)] text-sm uppercase truncate tracking-wider drop-shadow-md">{p.name}</h3>
+                                            <p className="text-[10px] text-[var(--ink-dim)] font-mono mt-0.5">ID: {p.id}</p>
                                         </div>
                                     </div>
 
@@ -653,55 +653,55 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                                     <div className="p-4 z-10 flex flex-col gap-3">
                                         
                                         {/* Vault vs Initial Row */}
-                                        <div className="flex items-center justify-between bg-black/60 border border-blue-500/20 rounded-lg p-3 shadow-inner">
+                                        <div className="flex items-center justify-between bg-black/60 border border-[var(--line)] rounded-lg p-3 shadow-inner">
                                             <div>
-                                                <p className="text-[11px] text-blue-400 font-bold uppercase tracking-widest mb-1">Vault / Initial</p>
+                                                <p className="text-[11px] text-[var(--ink-dim)] font-bold uppercase tracking-widest mb-1">Vault / Initial</p>
                                                 <div className="flex items-baseline gap-1.5">
                                                     <span 
-                                                        className={`text-2xl font-black text-white font-mono leading-none ${userRole === 'DEVELOPER' || userRole === 'COMPANY_OWNER' ? 'cursor-pointer hover:text-blue-400 transition-colors' : ''}`}
+                                                        className={`text-2xl font-black text-[var(--ink)] font-mono leading-none ${userRole === 'DEVELOPER' || userRole === 'COMPANY_OWNER' ? 'cursor-pointer hover:text-[var(--ink-dim)] transition-colors' : ''} `}
                                                         onClick={() => handleGodModeEdit(p.id, p.name, stat.vault)}
                                                         title={userRole === 'DEVELOPER' || userRole === 'COMPANY_OWNER' ? 'God Mode Edit Vault Stock' : ''}
                                                     >
                                                         {stat.vault}
                                                     </span>
-                                                    <span className="text-sm font-bold text-slate-400 font-mono">/ {stat.initial}</span>
+                                                    <span className="text-sm font-bold text-[var(--ink-dim)] font-mono">/ {stat.initial}</span>
                                                 </div>
                                             </div>
                                             <div className="text-right">
-                                                <p className="text-[11px] text-slate-400 font-bold uppercase tracking-widest mb-2">Status</p>
+                                                <p className="text-[11px] text-[var(--ink-dim)] font-bold uppercase tracking-widest mb-2">Status</p>
                                                 {isLowStock ? (
-                                                    <span className="bg-red-900/30 text-red-500 border border-red-500/50 px-2 py-1 rounded text-[11px] font-black uppercase tracking-widest shadow-[0_0_10px_rgba(220,38,38,0.2)] animate-pulse">Low Stock</span>
+                                                    <span className="bg-[var(--danger)] text-[var(--danger-ink)] border border-[var(--danger)] px-2 py-1 rounded text-[11px] font-black uppercase tracking-widest shadow-[0_0_10px_rgba(220,38,38,0.2)] animate-pulse">Low Stock</span>
                                                 ) : (
-                                                    <span className="bg-emerald-900/30 text-emerald-500 border border-emerald-500/50 px-2 py-1 rounded text-[11px] font-black uppercase tracking-widest">Healthy</span>
+                                                    <span className="bg-[var(--gold)] text-[var(--ink-dim)] border border-[var(--line)] px-2 py-1 rounded text-[11px] font-black uppercase tracking-widest">Healthy</span>
                                                 )}
                                             </div>
                                         </div>
 
                                         {/* Breakdowns Row */}
                                         <div className="grid grid-cols-3 gap-2">
-                                            <div className="bg-[#111] border border-[#2a2a2a] rounded-lg p-2.5 text-center shadow-inner hover:border-orange-500/30 transition-colors">
-                                                <span className="text-[11px] text-orange-400/70 font-bold uppercase tracking-widest mb-1 block">Field</span>
-                                                <span className="text-orange-500 font-black font-mono text-sm">{stat.field}</span>
+                                            <div className="bg-[#111] border border-[#2a2a2a] rounded-lg p-2.5 text-center shadow-inner hover:border-[var(--accent-edge)] transition-colors">
+                                                <span className="text-[11px] text-[var(--accent-ink)] font-bold uppercase tracking-widest mb-1 block">Field</span>
+                                                <span className="text-[var(--accent-ink)] font-black font-mono text-sm">{stat.field}</span>
                                             </div>
-                                            <div className="bg-[#111] border border-[#2a2a2a] rounded-lg p-2.5 text-center shadow-inner hover:border-emerald-500/30 transition-colors">
-                                                <span className="text-[11px] text-emerald-400/70 font-bold uppercase tracking-widest mb-1 block">Sold</span>
-                                                <span className="text-emerald-500 font-black font-mono text-sm">{stat.sold}</span>
+                                            <div className="bg-[#111] border border-[#2a2a2a] rounded-lg p-2.5 text-center shadow-inner hover:border-[var(--line)] transition-colors">
+                                                <span className="text-[11px] text-[var(--ink-dim)] font-bold uppercase tracking-widest mb-1 block">Sold</span>
+                                                <span className="text-[var(--ink-dim)] font-black font-mono text-sm">{stat.sold}</span>
                                             </div>
-                                            <div className="bg-[#111] border border-[#2a2a2a] rounded-lg p-2.5 text-center shadow-inner hover:border-red-500/30 transition-colors">
-                                                <span className="text-[11px] text-red-400/70 font-bold uppercase tracking-widest mb-1 block">Damaged</span>
-                                                <span className="text-red-500 font-black font-mono text-sm">{stat.damaged}</span>
+                                            <div className="bg-[#111] border border-[#2a2a2a] rounded-lg p-2.5 text-center shadow-inner hover:border-[var(--danger)] transition-colors">
+                                                <span className="text-[11px] text-[var(--danger-ink)] font-bold uppercase tracking-widest mb-1 block">Damaged</span>
+                                                <span className="text-[var(--danger-ink)] font-black font-mono text-sm">{stat.damaged}</span>
                                             </div>
                                         </div>
                                     </div>
                                     
                                     {/* Multi-Color Progress Bar */}
-                                    <div className="h-1.5 w-full bg-[#111] flex mt-auto border-t border-[#2a2a2a]">
+                                    <div className="h-1.5 w-full bg-[#111] flex mt-auto border-t border-[#2a2a2a] border-[var(--line)]">
                                         {stat.initial > 0 && (
                                             <>
-                                                <div className="h-full bg-blue-500" style={{ width: `${(stat.vault / stat.initial) * 100}%` }} title={`Vault: ${stat.vault}`}></div>
-                                                <div className="h-full bg-orange-500" style={{ width: `${(stat.field / stat.initial) * 100}%` }} title={`Field: ${stat.field}`}></div>
-                                                <div className="h-full bg-emerald-500" style={{ width: `${(stat.sold / stat.initial) * 100}%` }} title={`Sold: ${stat.sold}`}></div>
-                                                <div className="h-full bg-red-600" style={{ width: `${(stat.damaged / stat.initial) * 100}%` }} title={`Damaged: ${stat.damaged}`}></div>
+                                                <div className="h-full bg-[var(--gold)]" style={{ width: `${(stat.vault / stat.initial) * 100}%` }} title={`Vault: ${stat.vault}`}></div>
+                                                <div className="h-full bg-[var(--gold)]" style={{ width: `${(stat.field / stat.initial) * 100}%` }} title={`Field: ${stat.field}`}></div>
+                                                <div className="h-full bg-[var(--gold)]" style={{ width: `${(stat.sold / stat.initial) * 100}%` }} title={`Sold: ${stat.sold}`}></div>
+                                                <div className="h-full bg-[var(--danger)]" style={{ width: `${(stat.damaged / stat.initial) * 100}%` }} title={`Damaged: ${stat.damaged}`}></div>
                                             </>
                                         )}
                                     </div>
@@ -716,42 +716,42 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
             {/* VIEW MODE 1.5: THE QUARANTINE VAULT                      */}
             {/* ======================================================== */}
             {viewMode === 'quarantine' && isHighCommand && (
-                <div className="flex-1 flex flex-col min-h-0 bg-black/40 rounded-xl border border-orange-500/20 shadow-inner p-4 relative overflow-hidden animate-fade-in">
+                <div className="flex-1 flex flex-col min-h-0 bg-black/40 rounded-xl border border-[var(--accent-edge)] shadow-inner p-4 relative overflow-hidden animate-fade-in">
                     <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(249,115,22,0.05),transparent_70%)] pointer-events-none"></div>
                     
-                    <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 border-b border-orange-500/20 pb-4">
+                    <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 border-b border-[var(--accent-edge)] pb-4">
                         <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto">
-                            <div className="flex bg-slate-900 rounded-lg p-1 border border-orange-500/30">
-                                <button onClick={() => setQuarSubTab('active')} className={`px-4 py-2 rounded-md text-[10px] uppercase tracking-widest font-bold transition-all flex items-center gap-2 ${quarSubTab === 'active' ? 'bg-orange-600 text-white' : 'text-slate-400 hover:text-orange-400'}`}>
+                            <div className="flex bg-[var(--sunk)] rounded-lg p-1 border border-[var(--accent-edge)]">
+                                <button onClick={() => setQuarSubTab('active')} className={`px-4 py-2 rounded-md text-[10px] uppercase tracking-widest font-bold transition-all flex items-center gap-2 ${quarSubTab === 'active' ? 'bg-[var(--gold)] text-[var(--gold-ink)]' : 'text-[var(--ink-dim)] hover:text-[var(--accent-ink)]'} `}>
                                     <AlertTriangle size={14}/> Active Quarantine
                                 </button>
-                                <button onClick={() => setQuarSubTab('history')} className={`px-4 py-2 rounded-md text-[10px] uppercase tracking-widest font-bold transition-all flex items-center gap-2 ${quarSubTab === 'history' ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-white'}`}>
+                                <button onClick={() => setQuarSubTab('history')} className={`px-4 py-2 rounded-md text-[10px] uppercase tracking-widest font-bold transition-all flex items-center gap-2 ${quarSubTab === 'history' ? 'bg-[var(--raised)] text-[var(--ink)]' : 'text-[var(--ink-dim)] hover:text-[var(--ink)]'} `}>
                                     <History size={14}/> Liquidation History
                                 </button>
                             </div>
 
                             {quarSubTab === 'active' ? (
-                                <select value={quarantineFacility} onChange={(e) => setQuarantineFacility(e.target.value)} className="w-full md:w-48 bg-slate-900 border border-orange-500/50 rounded-lg p-2.5 text-xs text-white font-bold uppercase tracking-widest outline-none focus:border-orange-400">
-                                    <option value="ALL" className="bg-slate-900 text-white">All Facilities</option>
-                                    <option value="MASTER" className="bg-slate-900 text-white">Master Vault (HQ)</option>
-                                    {uniqueBranches.map(branch => <option key={branch} value={branch} className="bg-slate-900 text-white">{branch}</option>)}
+                                <select value={quarantineFacility} onChange={(e) => setQuarantineFacility(e.target.value)} className="w-full md:w-48 bg-[var(--sunk)] border border-[var(--accent-edge)] rounded-lg p-2.5 text-xs text-[var(--ink)] font-bold uppercase tracking-widest outline-none focus:border-[var(--accent-edge)]">
+                                    <option value="ALL" className="bg-[var(--sunk)] text-[var(--ink)]">All Facilities</option>
+                                    <option value="MASTER" className="bg-[var(--sunk)] text-[var(--ink)]">Master Vault (HQ)</option>
+                                    {uniqueBranches.map(branch => <option key={branch} value={branch} className="bg-[var(--sunk)] text-[var(--ink)]">{branch}</option>)}
                                 </select>
                             ) : (
-                                <div className="flex items-center gap-2 bg-slate-900 border border-slate-700 rounded-lg p-1.5 px-3">
-                                    <Filter size={14} className="text-slate-400"/>
-                                    <select value={regionFilter} onChange={(e) => setRegionFilter(e.target.value)} className="bg-transparent text-xs text-white font-bold uppercase tracking-widest outline-none">
-                                        <option value="ALL" className="bg-slate-900 text-white">All Facilities</option>
-                                        <option value="MASTER" className="bg-slate-900 text-white">Master Vault (HQ)</option>
-                                        {uniqueBranches.map(branch => <option key={branch} value={branch} className="bg-slate-900 text-white">{branch}</option>)}
+                                <div className="flex items-center gap-2 bg-[var(--sunk)] border border-[var(--line)] rounded-lg p-1.5 px-3">
+                                    <Filter size={14} className="text-[var(--ink-dim)]"/>
+                                    <select value={regionFilter} onChange={(e) => setRegionFilter(e.target.value)} className="bg-transparent text-xs text-[var(--ink)] font-bold uppercase tracking-widest outline-none">
+                                        <option value="ALL" className="bg-[var(--sunk)] text-[var(--ink)]">All Facilities</option>
+                                        <option value="MASTER" className="bg-[var(--sunk)] text-[var(--ink)]">Master Vault (HQ)</option>
+                                        {uniqueBranches.map(branch => <option key={branch} value={branch} className="bg-[var(--sunk)] text-[var(--ink)]">{branch}</option>)}
                                     </select>
                                 </div>
                             )}
                         </div>
                         
                         {quarSubTab === 'active' && (
-                            <div className="text-right w-full md:w-auto bg-orange-950/30 p-3 rounded-lg border border-orange-500/30">
-                                <p className="text-[11px] text-orange-400 uppercase font-bold tracking-widest mb-1">Sunk Capital (Dead Asset Value)</p>
-                                <p className="text-xl font-black text-orange-500 font-mono">
+                            <div className="text-right w-full md:w-auto bg-[var(--gold)] p-3 rounded-lg border border-[var(--accent-edge)]">
+                                <p className="text-[11px] text-[var(--accent-ink)] uppercase font-bold tracking-widest mb-1">Sunk Capital (Dead Asset Value)</p>
+                                <p className="text-xl font-black text-[var(--accent-ink)] font-mono">
                                     {formatRupiah(quarantineInventory.reduce((sum, item) => sum + ((item.damagedStock || 0) * Number(item.priceDistributor || item.hpp || 0)), 0))}
                                 </p>
                             </div>
@@ -762,36 +762,36 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                         {quarSubTab === 'active' ? (
                             quarantineInventory.length === 0 ? (
                                 <div className="flex flex-col items-center justify-center h-full opacity-50 space-y-3 pt-10">
-                                    <CheckCircle size={48} className="text-emerald-500"/>
-                                    <p className="text-sm font-bold text-emerald-400 uppercase tracking-widest">No Damaged Assets in this zone.</p>
+                                    <CheckCircle size={48} className="text-[var(--ink-dim)]"/>
+                                    <p className="text-sm font-bold text-[var(--ink-dim)] uppercase tracking-widest">No Damaged Assets in this zone.</p>
                                 </div>
                             ) : (
                                 quarantineInventory.map(item => {
                                     const hpp = Number(item.priceDistributor || item.hpp || item.costPrice || 0);
                                     return (
-                                        <div key={item.id} className="bg-slate-900 border border-slate-700 rounded-xl p-4 flex flex-col xl:flex-row justify-between xl:items-center gap-4 hover:border-orange-500/50 transition-colors shadow-md">
+                                        <div key={item.id} className="bg-[var(--sunk)] border border-[var(--line)] rounded-xl p-4 flex flex-col xl:flex-row justify-between xl:items-center gap-4 hover:border-[var(--accent-edge)] transition-colors shadow-md">
                                             <div className="flex items-center gap-4">
-                                                <div className="p-3 bg-orange-900/20 text-orange-500 rounded-full border border-orange-500/30 shrink-0"><PackageMinus size={24}/></div>
+                                                <div className="p-3 bg-[var(--gold)] text-[var(--accent-ink)] rounded-full border border-[var(--accent-edge)] shrink-0"><PackageMinus size={24}/></div>
                                                 <div>
-                                                    <h3 className="font-bold text-white text-base uppercase tracking-wider">{item.name}</h3>
+                                                    <h3 className="font-bold text-[var(--ink)] text-base uppercase tracking-wider">{item.name}</h3>
                                                     <div className="flex items-center gap-3 mt-1 text-xs font-mono">
-                                                        <span className="text-orange-400 font-bold">{item.damagedStock} Bks Damaged</span>
-                                                        <span className="text-slate-400">|</span>
-                                                        <span className="text-slate-400">Total HPP Loss: {formatRupiah(item.damagedStock * hpp)}</span>
-                                                        <span className="text-slate-400">|</span>
-                                                        <span className="text-blue-400 uppercase tracking-widest text-[11px]">{item.facility}</span>
+                                                        <span className="text-[var(--accent-ink)] font-bold">{item.damagedStock} Bks Damaged</span>
+                                                        <span className="text-[var(--ink-dim)]">|</span>
+                                                        <span className="text-[var(--ink-dim)]">Total HPP Loss: {formatRupiah(item.damagedStock * hpp)}</span>
+                                                        <span className="text-[var(--ink-dim)]">|</span>
+                                                        <span className="text-[var(--ink-dim)] uppercase tracking-widest text-[11px]">{item.facility}</span>
                                                     </div>
                                                 </div>
                                             </div>
                                             
-                                            <div className="flex flex-col sm:flex-row gap-2 w-full xl:w-auto shrink-0 border-t border-slate-700 xl:border-none pt-3 xl:pt-0 mt-2 xl:mt-0">
-                                                <button onClick={() => setResolutionModal({item, method: 'SAMPLING'})} className="flex-1 xl:flex-none px-4 py-2 bg-purple-900/30 hover:bg-purple-600 border border-purple-500/50 text-purple-400 hover:text-white rounded-lg text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-colors">
+                                            <div className="flex flex-col sm:flex-row gap-2 w-full xl:w-auto shrink-0 border-t border-[var(--line)] xl:border-none pt-3 xl:pt-0 mt-2 xl:mt-0">
+                                                <button onClick={() => setResolutionModal({item, method: 'SAMPLING'})} className="flex-1 xl:flex-none px-4 py-2 bg-[var(--gold)] hover:bg-[var(--gold)] border border-[var(--line)] text-[var(--ink-dim)] hover:text-[var(--ink)] rounded-lg text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-colors">
                                                     <FlaskConical size={14}/> Convert to Sample
                                                 </button>
-                                                <button onClick={() => setResolutionModal({item, method: 'RTV'})} className="flex-1 xl:flex-none px-4 py-2 bg-blue-900/30 hover:bg-blue-600 border border-blue-500/50 text-blue-400 hover:text-white rounded-lg text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-colors">
+                                                <button onClick={() => setResolutionModal({item, method: 'RTV'})} className="flex-1 xl:flex-none px-4 py-2 bg-[var(--gold)] hover:bg-[var(--gold)] border border-[var(--line)] text-[var(--ink-dim)] hover:text-[var(--gold-ink)] rounded-lg text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-colors">
                                                     <Undo2 size={14}/> RTV Factory
                                                 </button>
-                                                <button onClick={() => setResolutionModal({item, method: 'PENALTY'})} className="flex-1 xl:flex-none px-4 py-2 bg-red-900/30 hover:bg-red-600 border border-red-500/50 text-red-500 hover:text-white rounded-lg text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-colors shadow-lg">
+                                                <button onClick={() => setResolutionModal({item, method: 'PENALTY'})} className="flex-1 xl:flex-none px-4 py-2 bg-[var(--danger)] hover:bg-[var(--danger)] border border-[var(--danger)] text-[var(--danger-ink)] hover:text-[var(--gold-ink)] rounded-lg text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-colors shadow-lg">
                                                     <BadgeDollarSign size={14}/> Penalty Charge
                                                 </button>
                                             </div>
@@ -802,36 +802,36 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                         ) : (
                             displayedQuarantineLogs.length === 0 ? (
                                 <div className="flex flex-col items-center justify-center h-full opacity-50 space-y-3 pt-10">
-                                    <History size={48} className="text-slate-400"/>
-                                    <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">No liquidation history found.</p>
+                                    <History size={48} className="text-[var(--ink-dim)]"/>
+                                    <p className="text-sm font-bold text-[var(--ink-dim)] uppercase tracking-widest">No liquidation history found.</p>
                                 </div>
                             ) : (
                                 displayedQuarantineLogs.map(log => {
                                     const timeStr = log.timestamp?.seconds ? new Date(log.timestamp.seconds * 1000).toLocaleString('id-ID') : 'Unknown Time';
                                     return (
-                                        <div key={log.id} className="bg-slate-900 border border-slate-700 rounded-xl p-4 flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+                                        <div key={log.id} className="bg-[var(--sunk)] border border-[var(--line)] rounded-xl p-4 flex flex-col sm:flex-row justify-between sm:items-center gap-4">
                                             <div>
                                                 <div className="flex items-center gap-2 mb-1">
-                                                    <span className={`text-[11px] font-black uppercase tracking-widest px-2 py-0.5 rounded flex items-center gap-1 ${log.method === 'SAMPLING' ? 'bg-purple-900/30 text-purple-400 border border-purple-500/50' : log.method === 'RTV' ? 'bg-blue-900/30 text-blue-400 border border-blue-500/50' : 'bg-red-900/30 text-red-400 border border-red-500/50'}`}>
+                                                    <span className={`text-[11px] font-black uppercase tracking-widest px-2 py-0.5 rounded flex items-center gap-1 ${log.method === 'SAMPLING' ? 'bg-[var(--gold)] text-[var(--ink-dim)] border border-[var(--line)]' : log.method === 'RTV' ? 'bg-[var(--gold)] text-[var(--ink-dim)] border border-[var(--line)]' : 'bg-[var(--danger)] text-[var(--danger-ink)] border border-[var(--danger)]'} `}>
                                                         {log.method === 'SAMPLING' && <FlaskConical size={10}/>}
                                                         {log.method === 'RTV' && <Undo2 size={10}/>}
                                                         {log.method === 'PENALTY' && <BadgeDollarSign size={10}/>}
                                                         {log.method}
                                                     </span>
-                                                    <span className="text-[10px] text-slate-400 font-mono">{timeStr}</span>
+                                                    <span className="text-[10px] text-[var(--ink-dim)] font-mono">{timeStr}</span>
                                                 </div>
-                                                <h4 className="font-bold text-white uppercase text-sm">{log.qty} Bks • {log.productName}</h4>
-                                                <p className="text-[10px] text-slate-400 font-mono mt-1">Facility: {log.facility} | Executed By: {log.resolvedBy?.toUpperCase()}</p>
+                                                <h4 className="font-bold text-[var(--ink)] uppercase text-sm">{log.qty} Bks • {log.productName}</h4>
+                                                <p className="text-[10px] text-[var(--ink-dim)] font-mono mt-1">Facility: {log.facility} | Executed By: {log.resolvedBy?.toUpperCase()}</p>
                                                 
-                                                <div className="mt-2 text-[10px] text-slate-300 font-mono bg-black/30 p-2 rounded border border-slate-800">
+                                                <div className="mt-2 text-[10px] text-[var(--ink-dim)] font-mono bg-black/30 p-2 rounded border border-[var(--line)]">
                                                     {log.method === 'SAMPLING' && `Reason: ${log.details?.reason}`}
                                                     {log.method === 'RTV' && `RTV Surat Jalan: ${log.details?.rtvRef}`}
                                                     {log.method === 'PENALTY' && `Bounty Charged To: ${log.details?.agentName} (Rp ${new Intl.NumberFormat('id-ID').format(log.totalValueHpp)})`}
                                                 </div>
                                             </div>
                                             <div className="text-right">
-                                                <p className="text-[11px] text-slate-400 uppercase font-bold tracking-widest">Liquidated Value (HPP)</p>
-                                                <p className="font-black text-slate-300 font-mono text-sm">{formatRupiah(log.totalValueHpp)}</p>
+                                                <p className="text-[11px] text-[var(--ink-dim)] uppercase font-bold tracking-widest">Liquidated Value (HPP)</p>
+                                                <p className="font-black text-[var(--ink-dim)] font-mono text-sm">{formatRupiah(log.totalValueHpp)}</p>
                                             </div>
                                         </div>
                                     )
@@ -849,20 +849,20 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                 <div className="flex-1 flex flex-col min-h-0 animate-fade-in">
                     
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
-                        <div className="flex bg-slate-900 rounded-lg p-1 border border-slate-700 w-full md:w-auto">
-                            <button onClick={() => setAuditSubTab('pending')} className={`flex-1 md:flex-none px-4 py-2 rounded-md text-[10px] uppercase tracking-widest font-bold transition-all flex items-center justify-center gap-2 ${auditSubTab === 'pending' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-blue-400'}`}>
+                        <div className="flex bg-[var(--sunk)] rounded-lg p-1 border border-[var(--line)] w-full md:w-auto">
+                            <button onClick={() => setAuditSubTab('pending')} className={`flex-1 md:flex-none px-4 py-2 rounded-md text-[10px] uppercase tracking-widest font-bold transition-all flex items-center justify-center gap-2 ${auditSubTab === 'pending' ? 'bg-[var(--gold)] text-[var(--gold-ink)]' : 'text-[var(--ink-dim)] hover:text-[var(--ink-dim)]'} `}>
                                 <Clock size={14}/> Pending HQ Approval
                             </button>
-                            <button onClick={() => setAuditSubTab('history')} className={`flex-1 md:flex-none px-4 py-2 rounded-md text-[10px] uppercase tracking-widest font-bold transition-all flex items-center justify-center gap-2 ${auditSubTab === 'history' ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-white'}`}>
+                            <button onClick={() => setAuditSubTab('history')} className={`flex-1 md:flex-none px-4 py-2 rounded-md text-[10px] uppercase tracking-widest font-bold transition-all flex items-center justify-center gap-2 ${auditSubTab === 'history' ? 'bg-[var(--raised)] text-[var(--ink)]' : 'text-[var(--ink-dim)] hover:text-[var(--ink)]'} `}>
                                 <History size={14}/> Audit History
                             </button>
                         </div>
-                        <div className="flex items-center gap-2 bg-slate-900 border border-slate-700 rounded-lg p-1.5 px-3 w-full md:w-auto">
-                            <Filter size={14} className="text-slate-400"/>
-                            <select value={regionFilter} onChange={(e) => setRegionFilter(e.target.value)} className="bg-transparent text-xs text-white font-bold uppercase tracking-widest outline-none w-full">
-                                <option value="ALL" className="bg-slate-900 text-white">All Regions</option>
-                                <option value="MASTER" className="bg-slate-900 text-white">Master Vault (HQ)</option>
-                                {uniqueBranches.map(branch => <option key={branch} value={branch} className="bg-slate-900 text-white">{branch}</option>)}
+                        <div className="flex items-center gap-2 bg-[var(--sunk)] border border-[var(--line)] rounded-lg p-1.5 px-3 w-full md:w-auto">
+                            <Filter size={14} className="text-[var(--ink-dim)]"/>
+                            <select value={regionFilter} onChange={(e) => setRegionFilter(e.target.value)} className="bg-transparent text-xs text-[var(--ink)] font-bold uppercase tracking-widest outline-none w-full">
+                                <option value="ALL" className="bg-[var(--sunk)] text-[var(--ink)]">All Regions</option>
+                                <option value="MASTER" className="bg-[var(--sunk)] text-[var(--ink)]">Master Vault (HQ)</option>
+                                {uniqueBranches.map(branch => <option key={branch} value={branch} className="bg-[var(--sunk)] text-[var(--ink)]">{branch}</option>)}
                             </select>
                         </div>
                     </div>
@@ -870,8 +870,8 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                     <div className="flex-1 overflow-y-auto custom-scrollbar space-y-3 pb-4">
                         {displayedAudits.length === 0 ? (
                             <div className="flex flex-col items-center justify-center h-full opacity-50 space-y-3 mt-8">
-                                {auditSubTab === 'pending' ? <CheckCircle size={48} className="text-emerald-500"/> : <History size={48} className="text-slate-400"/>}
-                                <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">
+                                {auditSubTab === 'pending' ? <CheckCircle size={48} className="text-[var(--ink-dim)]"/> : <History size={48} className="text-[var(--ink-dim)]"/>}
+                                <p className="text-sm font-bold text-[var(--ink-dim)] uppercase tracking-widest">
                                     {auditSubTab === 'pending' ? 'No pending warehouse audits.' : 'No audit history found.'}
                                 </p>
                             </div>
@@ -894,28 +894,28 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                                 let resolvedTime = audit.resolvedAt?.seconds ? new Date(audit.resolvedAt.seconds * 1000).toLocaleString('id-ID') : '';
 
                                 return (
-                                    <div key={audit.id} className={`bg-slate-900 border rounded-xl overflow-hidden transition-all ${isHistory ? (audit.status === 'APPROVED' ? 'border-emerald-500/30' : 'border-red-500/30') : (hasIssues ? 'border-red-500/50' : 'border-emerald-500/50')}`}>
-                                        <div onClick={() => setExpandedAudit(isExpanded ? null : audit.id)} className="p-4 flex items-center justify-between cursor-pointer hover:bg-slate-800/50 transition-colors">
+                                    <div key={audit.id} className={`bg-[var(--sunk)] border rounded-xl overflow-hidden transition-all border-[var(--line)] ${isHistory ? (audit.status === 'APPROVED' ? 'border-[var(--line)]' : 'border-[var(--danger)]') : (hasIssues ? 'border-[var(--danger)]' : 'border-[var(--line)]')} `}>
+                                        <div onClick={() => setExpandedAudit(isExpanded ? null : audit.id)} className="p-4 flex items-center justify-between cursor-pointer hover:bg-[var(--raised)] transition-colors">
                                             <div className="flex items-center gap-4">
-                                                <div className={`p-3 rounded-full ${isHistory ? (audit.status === 'APPROVED' ? 'bg-emerald-500/20 text-emerald-500' : 'bg-red-500/20 text-red-500') : (hasIssues ? 'bg-red-500/20 text-red-500' : 'bg-emerald-500/20 text-emerald-500')}`}>
+                                                <div className={`p-3 rounded-full ${isHistory ? (audit.status === 'APPROVED' ? 'bg-[var(--gold)] text-[var(--ink-dim)]' : 'bg-[var(--danger)] text-[var(--danger-ink)]') : (hasIssues ? 'bg-[var(--danger)] text-[var(--danger-ink)]' : 'bg-[var(--gold)] text-[var(--ink-dim)]')} `}>
                                                     {isHistory ? (audit.status === 'APPROVED' ? <CheckCircle size={20}/> : <X size={20}/>) : (hasIssues ? <AlertTriangle size={20}/> : <CheckCircle size={20}/>)}
                                                 </div>
                                                 <div>
                                                     <div className="flex items-center gap-2">
-                                                        <h3 className="font-black text-white flex items-center gap-2 uppercase">
-                                                            <Database size={14} className="text-purple-500"/> {audit.branchLocation}
+                                                        <h3 className="font-black text-[var(--ink)] flex items-center gap-2 uppercase">
+                                                            <Database size={14} className="text-[var(--ink-dim)]"/> {audit.branchLocation}
                                                         </h3>
                                                         {isHistory && (
-                                                            <span className={`text-[11px] border px-2 py-0.5 rounded font-black tracking-widest uppercase ${audit.status === 'APPROVED' ? 'bg-emerald-900/30 text-emerald-400 border-emerald-500/50' : 'bg-red-900/30 text-red-400 border-red-500/50'}`}>
+                                                            <span className={`text-[11px] border px-2 py-0.5 rounded font-black tracking-widest uppercase border-[var(--line)] ${audit.status === 'APPROVED' ? 'bg-[var(--gold)] text-[var(--ink-dim)] border-[var(--line)]' : 'bg-[var(--danger)] text-[var(--danger-ink)] border-[var(--danger)]'} `}>
                                                                 {audit.status}
                                                             </span>
                                                         )}
                                                     </div>
-                                                    <p className="text-xs text-slate-400 font-mono flex items-center gap-1 mt-1">
+                                                    <p className="text-xs text-[var(--ink-dim)] font-mono flex items-center gap-1 mt-1">
                                                         <User size={12}/> Count By: {audit.agentName.toUpperCase()} • {displayTime}
                                                     </p>
                                                     {isHistory && audit.resolvedBy && (
-                                                        <p className="text-[10px] text-slate-400 font-mono mt-0.5">
+                                                        <p className="text-[10px] text-[var(--ink-dim)] font-mono mt-0.5">
                                                             Resolved By: {audit.resolvedBy.toUpperCase()} • {resolvedTime}
                                                         </p>
                                                     )}
@@ -923,53 +923,53 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                                             </div>
                                             <div className="flex items-center gap-6">
                                                 <div className="text-right hidden md:block">
-                                                    {purelyMissing > 0 && <p className="text-[10px] uppercase font-bold text-red-500">{purelyMissing} Bks Missing</p>}
-                                                    {totalDamaged > 0 && <p className="text-[10px] uppercase font-bold text-orange-500">{totalDamaged} Bks Damaged</p>}
-                                                    {!hasIssues && <p className="text-sm uppercase font-black text-emerald-500">PERFECT MATCH</p>}
+                                                    {purelyMissing > 0 && <p className="text-[10px] uppercase font-bold text-[var(--danger-ink)]">{purelyMissing} Bks Missing</p>}
+                                                    {totalDamaged > 0 && <p className="text-[10px] uppercase font-bold text-[var(--accent-ink)]">{totalDamaged} Bks Damaged</p>}
+                                                    {!hasIssues && <p className="text-sm uppercase font-black text-[var(--ink-dim)]">PERFECT MATCH</p>}
                                                 </div>
-                                                {isExpanded ? <ChevronUp size={20} className="text-slate-400"/> : <ChevronDown size={20} className="text-slate-400"/>}
+                                                {isExpanded ? <ChevronUp size={20} className="text-[var(--ink-dim)]"/> : <ChevronDown size={20} className="text-[var(--ink-dim)]"/>}
                                             </div>
                                         </div>
 
                                         {isExpanded && (
-                                            <div className="border-t border-slate-700 bg-black/20 p-4">
+                                            <div className="border-t border-[var(--line)] bg-black/20 p-4">
                                                 
                                                 {isHistory && audit.status === 'REJECTED' && audit.rejectReason && (
-                                                    <div className="mb-4 bg-red-900/20 border border-red-500/30 p-3 rounded text-[10px] font-mono text-red-400">
+                                                    <div className="mb-4 bg-[var(--danger)] border border-[var(--danger)] p-3 rounded text-[10px] font-mono text-[var(--danger-ink)]">
                                                         <span className="font-bold uppercase tracking-widest block mb-1">Rejection Reason:</span>
                                                         {audit.rejectReason}
                                                     </div>
                                                 )}
 
-                                                <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">Itemized Count Report</h4>
+                                                <h4 className="text-[10px] font-bold text-[var(--ink-dim)] uppercase tracking-widest mb-3">Itemized Count Report</h4>
                                                 
                                                 <div className="space-y-2 mb-4 max-h-[40vh] overflow-y-auto custom-scrollbar pr-2">
                                                     {audit.items.map((item, idx) => {
                                                         const isMissing = item.variance < 0;
                                                         
                                                         return (
-                                                            <div key={idx} className="flex flex-col bg-slate-800 p-3 rounded-lg border border-slate-700">
-                                                                <div className="flex justify-between items-center mb-2 border-b border-slate-700/50 pb-2">
-                                                                    <span className="font-bold text-xs text-white uppercase">{item.name}</span>
+                                                            <div key={idx} className="flex flex-col bg-[var(--raised)] p-3 rounded-lg border border-[var(--line)]">
+                                                                <div className="flex justify-between items-center mb-2 border-b border-[var(--line)] pb-2">
+                                                                    <span className="font-bold text-xs text-[var(--ink)] uppercase">{item.name}</span>
                                                                     <div className="flex items-center gap-4 text-xs font-mono">
-                                                                        <span className="text-slate-400">SYS: {item.expectedStock}</span>
-                                                                        <span className="text-slate-400">→</span>
-                                                                        <span className="text-blue-400 font-bold">FND: {item.totalFound}</span>
-                                                                        <span className={`w-12 text-right font-black ${item.variance === 0 ? 'text-emerald-500' : 'text-red-500'}`}>
+                                                                        <span className="text-[var(--ink-dim)]">SYS: {item.expectedStock}</span>
+                                                                        <span className="text-[var(--ink-dim)]">→</span>
+                                                                        <span className="text-[var(--ink-dim)] font-bold">FND: {item.totalFound}</span>
+                                                                        <span className={`w-12 text-right font-black ${item.variance === 0 ? 'text-emerald-500' : 'text-[var(--danger-ink)]'} `}>
                                                                             {item.variance > 0 ? '+' : ''}{item.variance}
                                                                         </span>
                                                                     </div>
                                                                 </div>
                                                                 
                                                                 <div className="flex gap-4 items-center">
-                                                                    <div className="bg-slate-900 px-3 py-1.5 rounded border border-slate-700 flex-1 flex justify-between items-center text-[10px] font-mono">
-                                                                        <span className="text-slate-400">Good Condition:</span>
-                                                                        <span className="text-emerald-400 font-bold">{item.goodCount} Bks</span>
+                                                                    <div className="bg-[var(--sunk)] px-3 py-1.5 rounded border border-[var(--line)] flex-1 flex justify-between items-center text-[10px] font-mono">
+                                                                        <span className="text-[var(--ink-dim)]">Good Condition:</span>
+                                                                        <span className="text-[var(--ink-dim)] font-bold">{item.goodCount} Bks</span>
                                                                     </div>
                                                                     {item.damagedCount > 0 && (
-                                                                        <div className="bg-orange-900/20 px-3 py-1.5 rounded border border-orange-500/30 flex-1 flex justify-between items-center text-[10px] font-mono">
-                                                                            <span className="text-orange-400">Damaged Claims:</span>
-                                                                            <span className="text-orange-500 font-bold">{item.damagedCount} Bks</span>
+                                                                        <div className="bg-[var(--gold)] px-3 py-1.5 rounded border border-[var(--accent-edge)] flex-1 flex justify-between items-center text-[10px] font-mono">
+                                                                            <span className="text-[var(--accent-ink)]">Damaged Claims:</span>
+                                                                            <span className="text-[var(--accent-ink)] font-bold">{item.damagedCount} Bks</span>
                                                                         </div>
                                                                     )}
                                                                 </div>
@@ -977,11 +977,11 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                                                                 {(isMissing || item.damagedPhotoUrl) && (
                                                                     <div className="mt-2 flex items-center justify-between bg-black/30 p-2 rounded">
                                                                         {isMissing ? (
-                                                                            <span className="text-[11px] text-red-500 font-bold uppercase tracking-widest flex items-center gap-1"><AlertTriangle size={10}/> Unaccounted Shrinkage Detected</span>
+                                                                            <span className="text-[11px] text-[var(--danger-ink)] font-bold uppercase tracking-widest flex items-center gap-1"><AlertTriangle size={10}/> Unaccounted Shrinkage Detected</span>
                                                                         ) : <span></span>}
 
                                                                         {item.damagedPhotoUrl && (
-                                                                            <button onClick={() => setViewingImage(item.damagedPhotoUrl)} className="text-[11px] bg-blue-900/30 text-blue-400 hover:text-white border border-blue-500/50 px-2 py-1 rounded font-bold uppercase flex items-center gap-1 transition-colors">
+                                                                            <button onClick={() => setViewingImage(item.damagedPhotoUrl)} className="text-[11px] bg-[var(--gold)] text-[var(--ink-dim)] hover:text-[var(--ink)] border border-[var(--line)] px-2 py-1 rounded font-bold uppercase flex items-center gap-1 transition-colors">
                                                                                 <ImageIcon size={10}/> View Damage Proof
                                                                             </button>
                                                                         )}
@@ -993,11 +993,11 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                                                 </div>
 
                                                 {!isHistory && (
-                                                    <div className="flex gap-3 pt-2 border-t border-slate-700">
-                                                        <button onClick={() => handleRejectAudit(audit)} disabled={isProcessingAudit} className="flex-1 bg-red-950/30 hover:bg-red-900 border border-red-500/50 text-red-500 hover:text-white py-3 rounded-lg font-bold text-xs flex items-center justify-center gap-2 transition-colors uppercase tracking-widest">
+                                                    <div className="flex gap-3 pt-2 border-t border-[var(--line)]">
+                                                        <button onClick={() => handleRejectAudit(audit)} disabled={isProcessingAudit} className="flex-1 bg-[var(--danger)] hover:bg-[var(--danger)] border border-[var(--danger)] text-[var(--danger-ink)] hover:text-[var(--gold-ink)] py-3 rounded-lg font-bold text-xs flex items-center justify-center gap-2 transition-colors uppercase tracking-widest">
                                                             <X size={14}/> Reject Count
                                                         </button>
-                                                        <button onClick={() => handleApproveAudit(audit)} disabled={isProcessingAudit} className="flex-[2] bg-emerald-600 hover:bg-emerald-500 text-white py-3 rounded-lg font-black text-xs flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(16,185,129,0.3)] transition-colors uppercase tracking-widest">
+                                                        <button onClick={() => handleApproveAudit(audit)} disabled={isProcessingAudit} className="flex-[2] bg-[var(--gold)] hover:bg-[var(--gold)] text-[var(--gold-ink)] py-3 rounded-lg font-black text-xs flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(16,185,129,0.3)] transition-colors uppercase tracking-widest">
                                                             <Check size={16}/> Approve & Quarantine Damages
                                                         </button>
                                                     </div>
@@ -1016,10 +1016,10 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
             {/* VIEW MODE 2: THE COUNT WORKSHEET (BLIND THEN REVEAL)     */}
             {/* ======================================================== */}
             {viewMode === 'count' && (
-                <div className="flex-1 bg-slate-900 rounded-xl border border-slate-700 shadow-inner overflow-hidden flex flex-col relative animate-fade-in z-10">
-                    <div className="p-3 border-b border-slate-700 bg-black/50 relative">
-                        <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Scan or Search Product..." className="bg-black border border-slate-600 pl-9 pr-4 py-3 rounded-lg text-sm w-full focus:border-emerald-500 outline-none text-white font-mono"/>
-                        <Search size={16} className="absolute left-6 top-6 text-slate-400"/>
+                <div className="flex-1 bg-[var(--sunk)] rounded-xl border border-[var(--line)] shadow-inner overflow-hidden flex flex-col relative animate-fade-in z-10">
+                    <div className="p-3 border-b border-[var(--line)] bg-black/50 relative">
+                        <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Scan or Search Product..." className="bg-[var(--sunk)] border border-[var(--line)] pl-9 pr-4 py-3 rounded-lg text-sm w-full focus:border-[var(--line)] outline-none text-[var(--ink)] font-mono"/>
+                        <Search size={16} className="absolute left-6 top-6 text-[var(--ink-dim)]"/>
                     </div>
                     <div className="overflow-y-auto flex-1 z-10 relative custom-scrollbar p-3">
                         <div className="space-y-3">
@@ -1032,40 +1032,40 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                                 const isRevealed = hasEntry && (goodVal !== '' || damagedVal !== '');
 
                                 return (
-                                    <div key={item.id} className={`bg-slate-800 rounded-lg border transition-all ${isRevealed ? (variance === 0 ? 'border-emerald-500/50 shadow-[0_0_15px_rgba(16,185,129,0.1)]' : 'border-red-500/50 shadow-[0_0_15px_rgba(220,38,38,0.1)]') : 'border-slate-700 hover:border-slate-500'}`}>
+                                    <div key={item.id} className={`bg-[var(--raised)] rounded-lg border transition-all border-[var(--line)] ${isRevealed ? (variance === 0 ? 'border-emerald-500/50 shadow-[0_0_15px_rgba(16,185,129,0.1)]' : 'border-red-500/50 shadow-[0_0_15px_rgba(220,38,38,0.1)]') : 'border-[var(--line)] hover:border-[var(--line)]'} `}>
                                         <div className="p-4 flex flex-col md:flex-row justify-between md:items-center gap-4">
                                             <div className="flex-1">
-                                                <div className="font-bold text-white text-sm uppercase tracking-wider">{item.name}</div>
-                                                <div className="text-[10px] text-slate-400 font-mono mt-0.5">ID: {item.id}</div>
+                                                <div className="font-bold text-[var(--ink)] text-sm uppercase tracking-wider">{item.name}</div>
+                                                <div className="text-[10px] text-[var(--ink-dim)] font-mono mt-0.5">ID: {item.id}</div>
                                             </div>
                                             <div className="flex items-center gap-3">
                                                 <div className="relative">
-                                                    <label className="text-[11px] text-emerald-500 font-bold uppercase tracking-widest absolute -top-2 left-2 bg-slate-800 px-1">Good Stock</label>
-                                                    <input type="number" min="0" placeholder="0" value={goodVal} onChange={(e) => handleCountChange(item.id, 'good', e.target.value)} className="w-24 text-center p-3 rounded-lg border border-slate-600 bg-black text-emerald-400 focus:border-emerald-500 outline-none font-black text-lg font-mono placeholder:text-slate-700"/>
+                                                    <label className="text-[11px] text-[var(--ink-dim)] font-bold uppercase tracking-widest absolute -top-2 left-2 bg-[var(--raised)] px-1">Good Stock</label>
+                                                    <input type="number" min="0" placeholder="0" value={goodVal} onChange={(e) => handleCountChange(item.id, 'good', e.target.value)} className="w-24 text-center p-3 rounded-lg border border-[var(--line)] bg-[var(--sunk)] text-[var(--ink-dim)] focus:border-[var(--line)] outline-none font-black text-lg font-mono placeholder:text-[var(--ink)]"/>
                                                 </div>
-                                                <span className="text-slate-400 font-bold text-lg">+</span>
+                                                <span className="text-[var(--ink-dim)] font-bold text-lg">+</span>
                                                 <div className="relative">
-                                                    <label className="text-[11px] text-orange-500 font-bold uppercase tracking-widest absolute -top-2 left-2 bg-slate-800 px-1">Damaged</label>
-                                                    <input type="number" min="0" placeholder="0" value={damagedVal} onChange={(e) => handleCountChange(item.id, 'damaged', e.target.value)} className="w-24 text-center p-3 rounded-lg border border-slate-600 bg-black text-orange-400 focus:border-orange-500 outline-none font-black text-lg font-mono placeholder:text-slate-700"/>
+                                                    <label className="text-[11px] text-[var(--accent-ink)] font-bold uppercase tracking-widest absolute -top-2 left-2 bg-[var(--raised)] px-1">Damaged</label>
+                                                    <input type="number" min="0" placeholder="0" value={damagedVal} onChange={(e) => handleCountChange(item.id, 'damaged', e.target.value)} className="w-24 text-center p-3 rounded-lg border border-[var(--line)] bg-[var(--sunk)] text-[var(--accent-ink)] focus:border-[var(--accent-edge)] outline-none font-black text-lg font-mono placeholder:text-[var(--ink)]"/>
                                                 </div>
                                             </div>
                                         </div>
 
                                         {isRevealed && (
-                                            <div className="p-4 pt-0 border-t border-slate-700/50 mt-2 bg-black/20 rounded-b-lg flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                                            <div className="p-4 pt-0 border-t border-[var(--line)] mt-2 bg-black/20 rounded-b-lg flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                                                 <div className="flex items-center gap-4 text-xs font-mono">
-                                                    <div className="bg-slate-900 px-3 py-1.5 rounded border border-slate-700"><span className="text-slate-400 mr-2">SYS EXPECTED:</span><span className="text-slate-300 font-bold">{item.stock || 0}</span></div>
-                                                    <span className="text-slate-400">vs</span>
-                                                    <div className="bg-slate-900 px-3 py-1.5 rounded border border-slate-700"><span className="text-slate-400 mr-2">TOTAL FOUND:</span><span className="text-blue-400 font-bold">{totalFound}</span></div>
-                                                    <div className={`px-3 py-1.5 rounded border font-black ${variance === 0 ? 'bg-emerald-900/20 border-emerald-500/30 text-emerald-500' : 'bg-red-900/20 border-red-500/30 text-red-500'}`}>{variance > 0 ? '+' : ''}{variance}</div>
+                                                    <div className="bg-[var(--sunk)] px-3 py-1.5 rounded border border-[var(--line)]"><span className="text-[var(--ink-dim)] mr-2">SYS EXPECTED:</span><span className="text-[var(--ink-dim)] font-bold">{item.stock || 0}</span></div>
+                                                    <span className="text-[var(--ink-dim)]">vs</span>
+                                                    <div className="bg-[var(--sunk)] px-3 py-1.5 rounded border border-[var(--line)]"><span className="text-[var(--ink-dim)] mr-2">TOTAL FOUND:</span><span className="text-[var(--ink-dim)] font-bold">{totalFound}</span></div>
+                                                    <div className={`px-3 py-1.5 rounded border font-black border-[var(--line)] ${variance === 0 ? 'bg-emerald-900/20 border-emerald-500/30 text-emerald-500' : 'bg-[var(--danger)] border-[var(--danger)] text-[var(--danger-ink)]'} `}>{variance > 0 ? '+' : ''}{variance}</div>
                                                 </div>
 
                                                 {Number(damagedVal) > 0 && (
                                                     <div className="w-full md:w-auto">
                                                         {entry.photo ? (
-                                                            <div className="flex items-center gap-2 bg-orange-900/20 border border-orange-500/30 px-3 py-1.5 rounded"><ImageIcon size={14} className="text-orange-400"/><span className="text-[10px] text-orange-400 font-bold uppercase tracking-widest">Damage Proof Attached</span><button onClick={() => handleClearPhoto(item.id)} className="ml-2 text-red-400 hover:text-red-300"><X size={12}/></button></div>
+                                                            <div className="flex items-center gap-2 bg-[var(--gold)] border border-[var(--accent-edge)] px-3 py-1.5 rounded"><ImageIcon size={14} className="text-[var(--accent-ink)]"/><span className="text-[10px] text-[var(--accent-ink)] font-bold uppercase tracking-widest">Damage Proof Attached</span><button onClick={() => handleClearPhoto(item.id)} className="ml-2 text-[var(--danger-ink)] hover:text-[var(--danger-ink)]"><X size={12}/></button></div>
                                                         ) : (
-                                                            <label className="cursor-pointer flex items-center gap-2 bg-black hover:bg-slate-900 border border-dashed border-orange-500/50 px-4 py-2 rounded text-[10px] font-bold text-orange-500 uppercase tracking-widest transition-colors"><Camera size={14}/> Upload Damaged Proof<input type="file" accept="image/*" className="hidden" onChange={(e) => handlePhotoUpload(item.id, e.target.files[0])} /></label>
+                                                            <label className="cursor-pointer flex items-center gap-2 bg-[var(--sunk)] hover:bg-[var(--sunk)] border border-dashed border-[var(--accent-edge)] px-4 py-2 rounded text-[10px] font-bold text-[var(--accent-ink)] uppercase tracking-widest transition-colors"><Camera size={14}/> Upload Damaged Proof<input type="file" accept="image/*" className="hidden" onChange={(e) => handlePhotoUpload(item.id, e.target.files[0])} /></label>
                                                         )}
                                                     </div>
                                                 )}
@@ -1077,11 +1077,11 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                         </div>
                     </div>
 
-                    <div className="p-4 bg-black/80 border-t border-slate-700 flex flex-col md:flex-row justify-between items-center gap-4 z-10 relative">
-                        <div className="text-xs text-slate-400 font-bold uppercase w-full md:w-auto text-center md:text-left tracking-widest">{Object.keys(counts).length} Wares Counted</div>
+                    <div className="p-4 bg-black/80 border-t border-[var(--line)] flex flex-col md:flex-row justify-between items-center gap-4 z-10 relative">
+                        <div className="text-xs text-[var(--ink-dim)] font-bold uppercase w-full md:w-auto text-center md:text-left tracking-widest">{Object.keys(counts).length} Wares Counted</div>
                         <div className="flex w-full md:w-auto gap-3">
-                            <button onClick={() => setCounts({})} className="flex-1 md:flex-none justify-center px-4 py-3 md:py-2 text-slate-400 hover:text-white font-bold text-xs flex items-center gap-2 transition-colors bg-slate-800 border border-slate-700 rounded-lg"><RefreshCcw size={14}/> Reset</button>
-                            <button onClick={handleCommit} disabled={isSubmitting || Object.keys(counts).length === 0} className="flex-1 md:flex-none justify-center bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed text-white px-8 py-3 md:py-2 rounded-lg font-black shadow-lg flex items-center gap-2 transition-all active:scale-95 tracking-widest uppercase text-xs shadow-emerald-900/50">{isSubmitting ? <RefreshCcw size={16} className="animate-spin"/> : <Send size={16}/>} Submit to HQ</button>
+                            <button onClick={() => setCounts({})} className="flex-1 md:flex-none justify-center px-4 py-3 md:py-2 text-[var(--ink-dim)] hover:text-[var(--ink)] font-bold text-xs flex items-center gap-2 transition-colors bg-[var(--raised)] border border-[var(--line)] rounded-lg"><RefreshCcw size={14}/> Reset</button>
+                            <button onClick={handleCommit} disabled={isSubmitting || Object.keys(counts).length === 0} className="flex-1 md:flex-none justify-center bg-[var(--gold)] hover:bg-[var(--gold)] disabled:opacity-50 disabled:cursor-not-allowed text-[var(--gold-ink)] px-8 py-3 md:py-2 rounded-lg font-black shadow-lg flex items-center gap-2 transition-all active:scale-95 tracking-widest uppercase text-xs shadow-emerald-900/50">{isSubmitting ? <RefreshCcw size={16} className="animate-spin"/> : <Send size={16}/>} Submit to HQ</button>
                         </div>
                     </div>
                 </div>

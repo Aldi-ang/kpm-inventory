@@ -89,77 +89,77 @@ export const CustomerDetailView = ({ customer, db, appId, user, onBack, logAudit
 
     return (
         <div className="animate-fade-in space-y-6">
-            <button onClick={onBack} className="flex items-center gap-2 text-slate-400 hover:text-orange-500 transition-colors"><ArrowRight className="rotate-180" size={20}/> Back to List</button>
+            <button onClick={onBack} className="flex items-center gap-2 text-[var(--ink-dim)] hover:text-[var(--accent-ink)] transition-colors"><ArrowRight className="rotate-180" size={20}/> Back to List</button>
             
             <div className="flex flex-col md:flex-row gap-6">
                 <div className="md:w-1/3 space-y-6">
-                    <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border dark:border-slate-700">
-                        <h2 className="text-2xl font-bold dark:text-white mb-1">{customer.name}</h2>
-                        <div className="text-sm text-slate-400 mb-4 flex items-center gap-2"><MapPin size={14}/> {customer.city} {customer.region}</div>
+                    <div className="bg-[var(--raised)] p-6 rounded-2xl shadow-sm border border-[var(--line)]">
+                        <h2 className="text-2xl font-bold mb-1">{customer.name}</h2>
+                        <div className="text-sm text-[var(--ink-dim)] mb-4 flex items-center gap-2"><MapPin size={14}/> {customer.city} {customer.region}</div>
                         
                         <div className="space-y-3 mb-6">
-                            <div className="p-3 bg-slate-50 dark:bg-slate-900 rounded-xl flex items-center gap-3"><Phone size={18} className="text-slate-400"/><span className="font-bold dark:text-white">{customer.phone || "-"}</span></div>
-                            <div className="p-3 bg-slate-50 dark:bg-slate-900 rounded-xl flex items-start gap-3">
-                                <MapPin size={18} className="text-slate-400 mt-1"/>
+                            <div className="p-3 bg-[var(--inset)] rounded-xl flex items-center gap-3"><Phone size={18} className="text-[var(--ink-dim)]"/><span className="font-bold">{customer.phone || "-"}</span></div>
+                            <div className="p-3 bg-[var(--inset)] rounded-xl flex items-start gap-3">
+                                <MapPin size={18} className="text-[var(--ink-dim)] mt-1"/>
                                 <div>
-                                    <span className="text-sm dark:text-slate-300 block">{customer.address || "No Address"}</span>
-                                    {customer.latitude && <span className="text-[10px] text-emerald-500 font-mono mt-1 block">GPS: {customer.latitude}, {customer.longitude}</span>}
-                                    {customer.mapFolder && <span className="text-[10px] bg-orange-100 text-orange-600 px-2 py-0.5 rounded font-bold inline-block mt-1 uppercase tracking-widest"><Folder size={10} className="inline mr-1"/> {customer.mapFolder}</span>}
+                                    <span className="text-sm block">{customer.address || "No Address"}</span>
+                                    {customer.latitude && <span className="text-[10px] text-[var(--ink-dim)] font-mono mt-1 block">GPS: {customer.latitude}, {customer.longitude}</span>}
+                                    {customer.mapFolder && <span className="text-[10px] bg-[var(--inset)] text-[var(--accent-ink)] px-2 py-0.5 rounded font-bold inline-block mt-1 uppercase tracking-widest"><Folder size={10} className="inline mr-1"/> {customer.mapFolder}</span>}
                                 </div>
                             </div>
                             {customer.description && (
-                                <div className="p-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl border border-indigo-100 dark:border-indigo-800">
-                                    <p className="text-[10px] text-indigo-500 font-bold uppercase tracking-widest mb-1">Store Notes / Map Marker Data</p>
-                                    <p className="text-xs dark:text-slate-300 whitespace-pre-line">{customer.description}</p>
+                                <div className="p-3 bg-[var(--inset)] rounded-xl border border-[var(--line)]">
+                                    <p className="text-[10px] text-[var(--ink-dim)] font-bold uppercase tracking-widest mb-1">Store Notes / Map Marker Data</p>
+                                    <p className="text-xs whitespace-pre-line">{customer.description}</p>
                                 </div>
                             )}
                         </div>
 
                         {/* MAP CONTAINER */}
-                        <div className="rounded-xl overflow-hidden border dark:border-slate-700 h-64 bg-slate-100 relative group">
+                        <div className="rounded-xl overflow-hidden border h-64 bg-[var(--inset)] relative group border-[var(--line)]">
                             {renderMap()}
                             
                             {!customer.embedHtml && (
                                 <div className="absolute bottom-4 right-4 flex flex-col gap-2">
-                                    <button onClick={() => setMapMode(mapMode === 'map' ? 'street' : 'map')} className="bg-white dark:bg-slate-800 text-slate-800 dark:text-white px-4 py-2 rounded-lg text-xs font-bold shadow-lg flex items-center justify-center gap-2 hover:scale-105 transition-transform">
-                                        {mapMode === 'map' ? <><User size={14} className="text-orange-500"/> Street View</> : <><MapPin size={14} className="text-blue-500"/> Map View</>}
+                                    <button onClick={() => setMapMode(mapMode === 'map' ? 'street' : 'map')} className="bg-[var(--raised)] text-[var(--ink)] px-4 py-2 rounded-lg text-xs font-bold shadow-lg flex items-center justify-center gap-2 hover:scale-105 transition-transform">
+                                        {mapMode === 'map' ? <><User size={14} className="text-[var(--accent-ink)]"/> Street View</> : <><MapPin size={14} className="text-[var(--ink-dim)]"/> Map View</>}
                                     </button>
                                 </div>
                             )}
                         </div>
                         {customer.embedHtml ? 
-                            <p className="text-[10px] text-emerald-500 mt-2 text-center font-bold">Using Custom Embed View</p> :
-                            <p className="text-[10px] text-slate-400 mt-2 text-center">{customer.latitude ? "Exact GPS Location" : "Approximate Address Location"}</p>
+                            <p className="text-[10px] text-[var(--ink-dim)] mt-2 text-center font-bold">Using Custom Embed View</p> :
+                            <p className="text-[10px] text-[var(--ink-dim)] mt-2 text-center">{customer.latitude ? "Exact GPS Location" : "Approximate Address Location"}</p>
                         }
                         
                         <button onClick={() => {
                             sessionStorage.setItem('targetMapStore', customer.id);
                             if (onNavigateToMap) onNavigateToMap();
                             else window.dispatchEvent(new CustomEvent('switchTab', { detail: 'map' }));
-                        }} className="w-full mt-4 py-3 bg-slate-800 hover:bg-orange-600 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-colors shadow-md group">
-                            <Globe size={16} className="text-orange-400 group-hover:text-white" /> Open in Map Mission Control
+                        }} className="w-full mt-4 py-3 bg-[var(--raised)] hover:bg-[var(--gold)] text-[var(--gold-ink)] rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-colors shadow-md group">
+                            <Globe size={16} className="text-[var(--accent-ink)] group-hover:text-[var(--ink)]" /> Open in Map Mission Control
                         </button>
                     </div>
                 </div>
 
                 {/* COMPETITOR CATALOG */}
                 <div className="md:w-2/3">
-                    <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border dark:border-slate-700 h-full flex flex-col">
+                    <div className="bg-[var(--raised)] p-6 rounded-2xl shadow-sm border h-full flex flex-col border-[var(--line)]">
                         <div className="flex justify-between items-center mb-6">
-                            <div><h3 className="font-bold text-lg dark:text-white flex items-center gap-2"><ShieldAlert size={20} className="text-red-500"/> Competitor Intelligence</h3><p className="text-xs text-slate-400">Track benchmark prices at this specific store.</p></div>
+                            <div><h3 className="font-bold text-lg flex items-center gap-2"><ShieldAlert size={20} className="text-[var(--danger-ink)]"/> Competitor Intelligence</h3><p className="text-xs text-[var(--ink-dim)]">Track benchmark prices at this specific store.</p></div>
                         </div>
-                        <form onSubmit={handleAddBenchmark} className="bg-slate-50 dark:bg-slate-900 p-4 rounded-xl border dark:border-slate-700 mb-6">
+                        <form onSubmit={handleAddBenchmark} className="bg-[var(--inset)] p-4 rounded-xl border mb-6 border-[var(--line)]">
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
-                                <input value={newBench.brand} onChange={e=>setNewBench({...newBench, brand:e.target.value})} placeholder="Brand" className="p-2 text-sm rounded border dark:bg-slate-800 dark:border-slate-600 dark:text-white"/>
-                                <input value={newBench.product} onChange={e=>setNewBench({...newBench, product:e.target.value})} placeholder="Product Name" className="p-2 text-sm rounded border dark:bg-slate-800 dark:border-slate-600 dark:text-white"/>
-                                <input type="number" step="any" value={newBench.price} onChange={e=>setNewBench({...newBench, price:e.target.value})} placeholder="Price (Rp)" className="p-2 text-sm rounded border dark:bg-slate-800 dark:border-slate-600 dark:text-white"/>
-                                <select value={newBench.volume} onChange={e=>setNewBench({...newBench, volume:e.target.value})} className="p-2 text-sm rounded border dark:bg-slate-800 dark:border-slate-600 dark:text-white"><option>High Sales</option><option>Medium</option><option>Slow Moving</option></select>
+                                <input value={newBench.brand} onChange={e=>setNewBench({...newBench, brand:e.target.value})} placeholder="Brand" className="p-2 text-sm rounded border border-[var(--line)]"/>
+                                <input value={newBench.product} onChange={e=>setNewBench({...newBench, product:e.target.value})} placeholder="Product Name" className="p-2 text-sm rounded border border-[var(--line)]"/>
+                                <input type="number" step="any" value={newBench.price} onChange={e=>setNewBench({...newBench, price:e.target.value})} placeholder="Price (Rp)" className="p-2 text-sm rounded border border-[var(--line)]"/>
+                                <select value={newBench.volume} onChange={e=>setNewBench({...newBench, volume:e.target.value})} className="p-2 text-sm rounded border border-[var(--line)]"><option>High Sales</option><option>Medium</option><option>Slow Moving</option></select>
                             </div>
-                            <div className="flex gap-3"><input value={newBench.notes} onChange={e=>setNewBench({...newBench, notes:e.target.value})} placeholder="Notes (e.g. Promos)" className="flex-1 p-2 text-sm rounded border dark:bg-slate-800 dark:border-slate-600 dark:text-white"/><button className="bg-orange-500 text-white px-4 py-2 rounded-lg font-bold text-sm hover:bg-orange-600">Add Log</button></div>
+                            <div className="flex gap-3"><input value={newBench.notes} onChange={e=>setNewBench({...newBench, notes:e.target.value})} placeholder="Notes (e.g. Promos)" className="flex-1 p-2 text-sm rounded border border-[var(--line)]"/><button className="bg-[var(--gold)] text-[var(--gold-ink)] px-4 py-2 rounded-lg font-bold text-sm hover:bg-[var(--gold)]">Add Log</button></div>
                         </form>
                         <div className="flex-1 overflow-y-auto overflow-x-auto pb-2">
                             <table className="w-full text-sm text-left min-w-[600px]">
-                                <thead className="text-slate-400 font-bold border-b dark:border-slate-700">
+                                <thead className="text-[var(--ink-dim)] font-bold border-b border-[var(--line)]">
                                     <tr>
                                         <th className="pb-3 pl-2 w-1/3">Product</th>
                                         <th className="pb-3 w-1/6">Price</th>
@@ -168,24 +168,24 @@ export const CustomerDetailView = ({ customer, db, appId, user, onBack, logAudit
                                         <th className="pb-3 text-right pr-2">Action</th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
+                                <tbody className="divide-y divide-[var(--line)]">
                                     {benchmarks.map(b => (
-                                        <tr key={b.id} className="hover:bg-slate-50 dark:hover:bg-slate-900/50">
+                                        <tr key={b.id} className="hover:bg-[var(--inset)]">
                                             <td className="py-3 pl-2">
-                                                <div className="font-bold dark:text-white truncate max-w-[150px]">{b.product}</div>
-                                                <div className="text-xs text-slate-400">{b.brand}</div>
+                                                <div className="font-bold truncate max-w-[150px]">{b.product}</div>
+                                                <div className="text-xs text-[var(--ink-dim)]">{b.brand}</div>
                                             </td>
-                                            <td className="py-3 font-mono text-red-500 font-bold whitespace-nowrap">
+                                            <td className="py-3 font-mono text-[var(--danger-ink)] font-bold whitespace-nowrap">
                                                 {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(b.price)}
                                             </td>
                                             <td className="py-3">
-                                                <span className={`text-[10px] px-2 py-1 rounded-full border whitespace-nowrap ${b.volume === 'High Sales' ? 'bg-green-100 text-green-700 border-green-200' : b.volume === 'Slow Moving' ? 'bg-red-100 text-red-700 border-red-200' : 'bg-yellow-100 text-yellow-700 border-yellow-200'}`}>
+                                                <span className={`text-[10px] px-2 py-1 rounded-full border whitespace-nowrap border-[var(--line)] ${b.volume === 'High Sales' ? 'bg-[var(--inset)] text-[var(--ink)] border-[var(--line)]' : b.volume === 'Slow Moving' ? 'bg-[var(--danger-well)] text-[var(--danger-ink)] border-[var(--danger)]' : 'bg-[var(--inset)] text-[var(--accent-ink)] border-[var(--line)]'} `}>
                                                     {b.volume}
                                                 </span>
                                             </td>
-                                            <td className="py-3 text-slate-400 text-xs italic truncate max-w-[150px]">{b.notes}</td>
+                                            <td className="py-3 text-[var(--ink-dim)] text-xs italic truncate max-w-[150px]">{b.notes}</td>
                                             <td className="py-3 text-right pr-2">
-                                                <button data-kpm-del data-label="Delete" onClick={()=>handleDeleteBenchmark(b.id)} className="text-slate-300 hover:text-red-500"><Trash2 size={14}/></button>
+                                                <button data-kpm-del data-label="Delete" onClick={()=>handleDeleteBenchmark(b.id)} className="text-[var(--ink-dim)] hover:text-[var(--danger-ink)]"><Trash2 size={14}/></button>
                                             </td>
                                         </tr>
                                     ))}
@@ -1100,7 +1100,7 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
     return (
         <div className="max-w-5xl mx-auto space-y-6 animate-fade-in">
             <div className="flex justify-between items-center">
-                <h2 className="text-2xl font-bold dark:text-white flex items-center gap-2"><Store size={24} className="text-orange-500"/> Customer Directory</h2>
+                <h2 className="text-2xl font-bold flex items-center gap-2"><Store size={24} className="text-[var(--accent-ink)]"/> Customer Directory</h2>
                 {isAdmin && (
                     <div className="flex gap-2">
                         {/* Only shown when there is actually something to repair, so it stops
@@ -1109,7 +1109,7 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                         {customers.some(c => !c.priceTier && c.pricingTier) && (
                             <button
                                 onClick={handleRepairTierField}
-                                className="bg-amber-600 hover:bg-amber-500 text-white px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest cursor-pointer shadow-[0_0_15px_rgba(217,119,6,0.4)] transition-all active:scale-95 flex items-center gap-2"
+                                className="bg-[var(--gold)] hover:bg-[var(--gold)] text-[var(--gold-ink)] px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest cursor-pointer shadow-[0_0_15px_rgba(217,119,6,0.4)] transition-all active:scale-95 flex items-center gap-2"
                                 title="Some stores saved their price level under the old field name and can be hidden from agents. This copies it across. Nothing is deleted."
                             >
                                 <ShieldAlert size={14}/> Repair {customers.filter(c => !c.priceTier && c.pricingTier).length} Store Tiers
@@ -1118,19 +1118,19 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                         <button
                             onClick={handleFindDuplicates}
                             disabled={dupScanning}
-                            className="bg-orange-700 hover:bg-orange-600 disabled:opacity-60 text-white px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest cursor-pointer shadow-md transition-all active:scale-95 flex items-center gap-2"
+                            className="bg-[var(--gold)] hover:bg-[var(--gold)] disabled:opacity-60 text-[var(--gold-ink)] px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest cursor-pointer shadow-md transition-all active:scale-95 flex items-center gap-2"
                             title="Report stores that look like the same shop recorded twice. Changes nothing."
                         >
                             <Search size={14}/> {dupScanning ? 'Scanning…' : 'Find Duplicates'}
                         </button>
                         <button
                             onClick={handleEnterpriseDataScrub}
-                            className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest cursor-pointer shadow-[0_0_15px_rgba(16,185,129,0.4)] transition-all active:scale-95 flex items-center gap-2"
+                            className="bg-[var(--gold)] hover:bg-[var(--gold)] text-[var(--gold-ink)] px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest cursor-pointer shadow-[0_0_15px_rgba(16,185,129,0.4)] transition-all active:scale-95 flex items-center gap-2"
                             title="Hard-map all UNMAPPED stores into the Database permanently"
                         >
                             <ShieldAlert size={14}/> Data Scrub
                         </button>
-                        <label className="bg-orange-600 hover:bg-orange-500 text-white px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest cursor-pointer shadow-md transition-all active:scale-95 flex items-center gap-2">
+                        <label className="bg-[var(--gold)] hover:bg-[var(--gold)] text-[var(--gold-ink)] px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest cursor-pointer shadow-md transition-all active:scale-95 flex items-center gap-2">
                             <Folder size={14}/> Import Map Marker (KML)
                             <input type="file" accept=".kml" onChange={handleImportKML} className="hidden" />
                         </label>
@@ -1141,15 +1141,15 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
             {/* Duplicate report. Deliberately has no delete or merge control — see the comment on
                 handleFindDuplicates. It shows what is there and stops. */}
             {isAdmin && dupReport && (
-                <div className="border border-orange-500/40 bg-orange-50 dark:bg-[#1e1512] rounded-xl p-4">
+                <div className="border border-[var(--accent-edge)] bg-[var(--inset)] rounded-xl p-4">
                     <div className="flex justify-between items-start gap-4 mb-3">
                         <div>
-                            <h3 className="font-black uppercase tracking-widest text-sm text-orange-700 dark:text-orange-400">
+                            <h3 className="font-black uppercase tracking-widest text-sm text-[var(--accent-ink)]">
                                 {dupVisible.length === 0
                                     ? 'Nothing left to review'
                                     : `${dupVisible.length} possible duplicate${dupVisible.length === 1 ? '' : 's'}`}
                             </h3>
-                            <p className="text-[11px] text-gray-600 dark:text-gray-400 mt-1">
+                            <p className="text-[11px] text-[var(--ink)] mt-1">
                                 {dupVisible.length === 0
                                     ? `Checked all ${customers.length} stores. Nothing new shares a name or sits within 40 metres of another.`
                                     : `Checked ${customers.length} stores. Matched on identical name, or within 40 metres of each other. Nothing has been changed or deleted — this is a report.`}
@@ -1157,35 +1157,35 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                             {/* Cleared groups must stay countable and reversible, or the button
                                 becomes a black hole he cannot audit. */}
                             {dupIgnored.size > 0 && (
-                                <p className="text-[11px] text-gray-500 dark:text-gray-500 mt-1">
+                                <p className="text-[11px] text-[var(--ink-dim)] mt-1">
                                     {dupIgnored.size} group{dupIgnored.size === 1 ? '' : 's'} marked “not duplicates”.{' '}
-                                    <button onClick={() => setDupShowIgnored(v => !v)} className="underline hover:text-orange-600 dark:hover:text-orange-400">
+                                    <button onClick={() => setDupShowIgnored(v => !v)} className="underline hover:text-[var(--accent-ink)]">
                                         {dupShowIgnored ? 'Hide them' : 'Show them'}
                                     </button>{' · '}
-                                    <button onClick={handleResetIgnores} className="underline hover:text-orange-600 dark:hover:text-orange-400">
+                                    <button onClick={handleResetIgnores} className="underline hover:text-[var(--accent-ink)]">
                                         Bring them all back
                                     </button>
                                 </p>
                             )}
                         </div>
                         <button onClick={() => setDupReport(null)}
-                            className="text-xs font-bold uppercase text-gray-500 hover:text-gray-800 dark:hover:text-white shrink-0">
+                            className="text-xs font-bold uppercase text-[var(--ink-dim)] hover:text-[var(--ink)] shrink-0">
                             Close
                         </button>
                     </div>
 
                     <div className="space-y-3 max-h-[28rem] overflow-y-auto">
                         {dupVisible.map((g, gi) => (
-                            <div key={groupKey(g) || gi} className={`bg-white dark:bg-black/30 rounded-lg p-3 border ${dupIgnored.has(groupKey(g)) ? 'border-dashed border-gray-400 dark:border-white/20 opacity-60' : 'border-gray-200 dark:border-white/10'}`}>
-                                <div className="text-[10px] font-black uppercase tracking-widest text-orange-600 dark:text-orange-400 mb-2">
+                            <div key={groupKey(g) || gi} className={`bg-[var(--raised)] rounded-lg p-3 border border-[var(--line)] ${dupIgnored.has(groupKey(g)) ? 'border-dashed border-gray-400 dark:border-white/20 opacity-60' : 'border-[var(--line)]'} `}>
+                                <div className="text-[10px] font-black uppercase tracking-widest text-[var(--accent-ink)] mb-2">
                                     {g.members.length} copies · matched by {g.reason === 'both' ? 'name and location' : g.reason}
                                     {g.widestMetres !== null && <> · {g.widestMetres >= 1000 ? (g.widestMetres/1000).toFixed(1)+' km' : g.widestMetres+' m'} apart</>}
                                     {dupIgnored.has(groupKey(g))
-                                        ? <span className="ml-2 normal-case tracking-normal text-gray-500">— already marked not duplicates</span>
+                                        ? <span className="ml-2 normal-case tracking-normal text-[var(--ink-dim)]">— already marked not duplicates</span>
                                         : (
                                             <button
                                                 onClick={() => handleNotDuplicate(g)}
-                                                className="ml-2 px-2 py-0.5 rounded bg-gray-200 dark:bg-white/10 hover:bg-gray-300 dark:hover:bg-white/20 text-[9px] font-black uppercase tracking-wider text-gray-700 dark:text-gray-200"
+                                                className="ml-2 px-2 py-0.5 rounded bg-[var(--inset)] hover:bg-[var(--ink-disabled)] text-[9px] font-black uppercase tracking-wider text-[var(--ink)]"
                                                 title="These are different shops. Clear this group so it stops coming back on every scan. Nothing is changed or deleted."
                                             >✓ Not duplicates</button>
                                         )}
@@ -1194,49 +1194,49 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                                     name repeating across a city is a coincidence, and treating it
                                     as a duplicate is how a live store gets deleted. */}
                                 {g.sameNameFarApart && (
-                                    <div className="mb-2 border-l-[3px] border-yellow-500 bg-yellow-500/10 px-2 py-1.5 text-[11px] leading-snug text-yellow-800 dark:text-yellow-300">
+                                    <div className="mb-2 border-l-[3px] border-[var(--accent-edge)] bg-[var(--gold)] px-2 py-1.5 text-[11px] leading-snug text-[var(--accent-ink)]">
                                         <b>Probably NOT duplicates.</b> Same name only, and far apart.
                                         A shop registered twice by mistake sits within a few metres of itself —
                                         this looks like different shops sharing a common name. Open them before deleting anything.
                                     </div>
                                 )}
                                 {g.members.map((m, mi) => (
-                                    <div key={m.id ?? mi} className="flex flex-wrap items-center gap-x-3 gap-y-1.5 py-2 border-t border-gray-100 dark:border-white/5 first:border-t-0">
-                                        <span className="font-bold text-sm dark:text-white">{m.name || '(no name)'}</span>
+                                    <div key={m.id ?? mi} className="flex flex-wrap items-center gap-x-3 gap-y-1.5 py-2 border-t border-[var(--line)] first:border-t-0">
+                                        <span className="font-bold text-sm">{m.name || '(no name)'}</span>
                                         {/* The automatic label. Identical names in every list are exactly
                                             why these are impossible to tell apart, so each row carries where
                                             it actually is — the scrubbed location if it has one, raw
                                             coordinates if it does not. */}
-                                        <span className="text-[10px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded bg-gray-200 dark:bg-white/10 text-gray-700 dark:text-gray-200">
+                                        <span className="text-[10px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded bg-[var(--inset)] text-[var(--ink)]">
                                             📍 {dupPlace(m)}
                                         </span>
                                         {mi === 0 && (
-                                            <span className="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded bg-orange-600 text-white">
+                                            <span className="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded bg-[var(--gold)] text-[var(--gold-ink)]">
                                                 oldest — likely the original
                                             </span>
                                         )}
                                         {g.distances[mi] > 0 && (
-                                            <span className="text-[10px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded bg-yellow-500/20 text-yellow-800 dark:text-yellow-300">
+                                            <span className="text-[10px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded bg-[var(--gold)] text-[var(--accent-ink)]">
                                                 {g.distances[mi] >= 1000 ? (g.distances[mi]/1000).toFixed(1)+' km' : g.distances[mi]+' m'} from the oldest
                                             </span>
                                         )}
-                                        <span className="text-[11px] text-gray-500 dark:text-gray-400">{dupDate(m)}</span>
-                                        <span className="text-[11px] text-gray-500 dark:text-gray-400">
+                                        <span className="text-[11px] text-[var(--ink-dim)]">{dupDate(m)}</span>
+                                        <span className="text-[11px] text-[var(--ink-dim)]">
                                             {m.assignedAgent && m.assignedAgent !== 'Unassigned' ? m.assignedAgent : 'unassigned'}
                                         </span>
-                                        {m.mapFolder && <span className="text-[11px] text-gray-500 dark:text-gray-400">📁 {m.mapFolder}</span>}
-                                        {m.lastVisit && <span className="text-[11px] text-gray-500 dark:text-gray-400">last visit {m.lastVisit}</span>}
-                                        <span className="text-[10px] font-mono text-gray-400 dark:text-gray-600">{m.id}</span>
+                                        {m.mapFolder && <span className="text-[11px] text-[var(--ink-dim)]">📁 {m.mapFolder}</span>}
+                                        {m.lastVisit && <span className="text-[11px] text-[var(--ink-dim)]">last visit {m.lastVisit}</span>}
+                                        <span className="text-[10px] font-mono text-[var(--ink-dim)]">{m.id}</span>
 
                                         <span className="ml-auto flex gap-1.5 shrink-0">
                                             <button
                                                 onClick={() => openForEdit(m)}
-                                                className="px-2.5 py-1.5 rounded-lg bg-gray-200 dark:bg-white/10 hover:bg-gray-300 dark:hover:bg-white/20 text-[10px] font-black uppercase tracking-wider dark:text-white"
+                                                className="px-2.5 py-1.5 rounded-lg bg-[var(--inset)] hover:bg-[var(--ink-disabled)] text-[10px] font-black uppercase tracking-wider"
                                                 title="Open this store in the edit form, inside its own folder, so you can change its data"
                                             >Edit</button>
                                             <button
                                                 onClick={() => handleDeleteDuplicate(m, g)}
-                                                className="px-2.5 py-1.5 rounded-lg bg-red-700/90 hover:bg-red-600 text-white text-[10px] font-black uppercase tracking-wider"
+                                                className="px-2.5 py-1.5 rounded-lg bg-[var(--danger)] hover:bg-[var(--danger)] text-[var(--gold-ink)] text-[10px] font-black uppercase tracking-wider"
                                                 title="Permanently delete this store. It asks first and tells you exactly what you are removing."
                                             >Delete</button>
                                         </span>
@@ -1251,45 +1251,45 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
             {/* 🚀 CUSTOMER DIRECTORY PERMISSION TIER: view_only hides Add/Edit entirely — the
                 directory stays fully browsable, but nothing here can be saved. */}
             {!canAddOrEditAnything && (
-                <div className="bg-slate-50 dark:bg-slate-900/50 border border-dashed dark:border-slate-700 rounded-2xl p-6 text-center text-sm text-slate-400 dark:text-slate-400">
-                    <ShieldAlert size={20} className="mx-auto mb-2 text-slate-400"/>
+                <div className="bg-[var(--inset)] border border-dashed rounded-2xl p-6 text-center text-sm text-[var(--ink-dim)] border-[var(--line)]">
+                    <ShieldAlert size={20} className="mx-auto mb-2 text-[var(--ink-dim)]"/>
                     Your access level is <strong>View Only</strong> for the Customer Directory. You can browse and look up stores, but adding or editing is turned off.
                 </div>
             )}
             {canAddOrEditAnything && (
-            <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border dark:border-slate-700">
+            <div className="bg-[var(--raised)] p-6 rounded-2xl shadow-sm border border-[var(--line)]">
                 <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-                    <div className="flex justify-between items-center mb-2"><h3 className="font-bold text-sm text-slate-400 uppercase">{editingId ? 'Edit Customer' : 'Add New Customer'}</h3>{editingId && <button type="button" onClick={() => { setEditingId(null); setFormData({name:'', phone:'', province:'', region:'', city:'', address:'', gmapsUrl:'', embedHtml: '', latitude: '', longitude: '', storeImage:'', tier: 'Silver', priceTier: 'Retail', visitFreq: 7, lastVisit: '', picName: '', description: '', mapFolder: ''}); setCoordInput(""); }} className="text-xs text-red-500 hover:underline">Cancel Edit</button>}</div>
+                    <div className="flex justify-between items-center mb-2"><h3 className="font-bold text-sm text-[var(--ink-dim)] uppercase">{editingId ? 'Edit Customer' : 'Add New Customer'}</h3>{editingId && <button type="button" onClick={() => { setEditingId(null); setFormData({name:'', phone:'', province:'', region:'', city:'', address:'', gmapsUrl:'', embedHtml: '', latitude: '', longitude: '', storeImage:'', tier: 'Silver', priceTier: 'Retail', visitFreq: 7, lastVisit: '', picName: '', description: '', mapFolder: ''}); setCoordInput(""); }} className="text-xs text-[var(--danger-ink)] hover:underline">Cancel Edit</button>}</div>
                     
                     <div className="flex flex-col md:flex-row gap-4">
-                        <div className="flex-1"><label className="text-xs font-bold text-slate-400 uppercase">Store Name</label><input value={formData.name} onChange={e=>setFormData({...formData, name: e.target.value})} className="w-full p-2 border rounded dark:bg-slate-900 dark:border-slate-600 dark:text-white" required/></div>
-                        <div className="flex-1"><label className="text-xs font-bold text-slate-400 uppercase">Phone</label><input value={formData.phone} onChange={e=>setFormData({...formData, phone: e.target.value})} className="w-full p-2 border rounded dark:bg-slate-900 dark:border-slate-600 dark:text-white" /></div>
+                        <div className="flex-1"><label className="text-xs font-bold text-[var(--ink-dim)] uppercase">Store Name</label><input value={formData.name} onChange={e=>setFormData({...formData, name: e.target.value})} className="w-full p-2 border rounded border-[var(--line)]" required/></div>
+                        <div className="flex-1"><label className="text-xs font-bold text-[var(--ink-dim)] uppercase">Phone</label><input value={formData.phone} onChange={e=>setFormData({...formData, phone: e.target.value})} className="w-full p-2 border rounded border-[var(--line)]" /></div>
                     </div>
 
-                   <div className="grid grid-cols-1 md:grid-cols-5 gap-4 bg-indigo-50 dark:bg-slate-900/50 p-3 rounded-xl border border-indigo-100 dark:border-slate-700">
+                   <div className="grid grid-cols-1 md:grid-cols-5 gap-4 bg-[var(--inset)] p-3 rounded-xl border border-[var(--line)]">
                         <div>
-                            <label className="text-[10px] font-bold text-indigo-500 uppercase mb-1 block">Map Pin Tier</label>
-                            <select value={formData.tier} onChange={e=>setFormData({...formData, tier: e.target.value})} className="w-full h-10 px-2 text-sm border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white font-bold outline-none">
+                            <label className="text-[10px] font-bold text-[var(--ink-dim)] uppercase mb-1 block">Map Pin Tier</label>
+                            <select value={formData.tier} onChange={e=>setFormData({...formData, tier: e.target.value})} className="w-full h-10 px-2 text-sm border rounded font-bold outline-none border-[var(--line)]">
                                 {tierSettings && tierSettings.map(t => <option key={t.id} value={t.id}>{t.label}</option>)}
                                 {!tierSettings && <option value="Silver">Silver</option>}
                             </select>
                         </div>
                         <div>
-                            <label className="text-[10px] font-bold text-orange-500 uppercase mb-1 block">Pricing Type</label>
-                            <select value={formData.priceTier} onChange={e=>setFormData({...formData, priceTier: e.target.value})} className="w-full h-10 px-2 text-sm border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white font-bold outline-none text-orange-500">
+                            <label className="text-[10px] font-bold text-[var(--accent-ink)] uppercase mb-1 block">Pricing Type</label>
+                            <select value={formData.priceTier} onChange={e=>setFormData({...formData, priceTier: e.target.value})} className="w-full h-10 px-2 text-sm border rounded font-bold outline-none text-[var(--accent-ink)] border-[var(--line)]">
                                 <option value="Grosir">Grosir (Wholesale)</option>
                                 <option value="Retail">Retail</option>
                                 <option value="Ecer">Ecer (Individual)</option>
                             </select>
                         </div>
                         <div>
-                            <label className="text-[10px] font-bold text-indigo-500 uppercase mb-1 block">T3/T4 PIC (Penanggung Jawab)</label>
+                            <label className="text-[10px] font-bold text-[var(--ink-dim)] uppercase mb-1 block">T3/T4 PIC (Penanggung Jawab)</label>
                             <input 
                                 list="pic-suggestions"
                                 placeholder="Type or select Wholesaler name..."
                                 value={formData.picName} 
                                 onChange={e=>setFormData({...formData, picName: e.target.value})} 
-                                className="w-full h-10 px-2 text-sm border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white font-bold outline-none text-indigo-600"
+                                className="w-full h-10 px-2 text-sm border rounded font-bold outline-none text-[var(--ink)] border-[var(--line)]"
                             />
                             <datalist id="pic-suggestions">
                                 {/* Dynamically lists unique PICs already existing in your customer list */}
@@ -1299,16 +1299,16 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                             </datalist>
                         </div>
                         <div>
-                            <label className="text-[10px] font-bold text-indigo-500 uppercase mb-1 block">Last Visit</label>
-                            <input type="date" value={formData.lastVisit} onChange={e=>setFormData({...formData, lastVisit: e.target.value})} className="w-full h-10 px-2 text-sm border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white outline-none"/>
+                            <label className="text-[10px] font-bold text-[var(--ink-dim)] uppercase mb-1 block">Last Visit</label>
+                            <input type="date" value={formData.lastVisit} onChange={e=>setFormData({...formData, lastVisit: e.target.value})} className="w-full h-10 px-2 text-sm border rounded outline-none border-[var(--line)]"/>
                         </div>
                         
                         <div>
-                            <label className="text-[10px] font-bold text-indigo-500 uppercase mb-1 block">Store Photo</label>
+                            <label className="text-[10px] font-bold text-[var(--ink-dim)] uppercase mb-1 block">Store Photo</label>
                             <div className="flex items-center gap-2 h-10">
-                                <label className="flex-1 h-full cursor-pointer bg-white dark:bg-slate-800 border dark:border-slate-600 hover:border-indigo-500 rounded p-2 flex items-center justify-center gap-2 transition-colors">
-                                    <Camera size={16} className="text-indigo-500"/>
-                                    <span className="text-xs font-bold dark:text-white">Upload</span>
+                                <label className="flex-1 h-full cursor-pointer bg-[var(--raised)] border hover:border-[var(--line)] rounded p-2 flex items-center justify-center gap-2 transition-colors">
+                                    <Camera size={16} className="text-[var(--ink-dim)]"/>
+                                    <span className="text-xs font-bold">Upload</span>
                                     <input type="file" accept="image/*" className="hidden" onChange={handleFileSelect} />
                                 </label>
                                 {formData.storeImage && (
@@ -1321,7 +1321,7 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                                                 win.document.close();
                                             }}
                                             title="View full image"
-                                            className="w-10 h-full rounded border border-indigo-200 dark:border-indigo-500/30 overflow-hidden hover:opacity-80 transition-opacity focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                            className="w-10 h-full rounded border border-[var(--line)] overflow-hidden hover:opacity-80 transition-opacity focus:outline-none focus:ring-2"
                                         >
                                             <img src={formData.storeImage} className="w-full h-full object-cover" alt="Store" />
                                         </button>
@@ -1332,7 +1332,7 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                                                     setFormData({...formData, storeImage: ''});
                                                 }
                                             }} 
-                                            className="h-full aspect-square bg-slate-50 dark:bg-slate-800 hover:bg-red-50 dark:hover:bg-red-500/20 text-slate-400 hover:text-red-500 border border-slate-200 dark:border-slate-600 hover:border-red-200 dark:hover:border-red-500/50 rounded flex items-center justify-center transition-all"
+                                            className="h-full aspect-square bg-[var(--inset)] hover:bg-[var(--danger-well)] text-[var(--ink-dim)] hover:text-[var(--danger-ink)] border border-[var(--line)] hover:border-[var(--danger)] rounded flex items-center justify-center transition-all"
                                             title="Remove Photo"
                                         >
                                             <Trash2 size={14} />
@@ -1343,17 +1343,17 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                         </div>
                     </div>
 
-                    <div className="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border dark:border-slate-700 space-y-3">
+                    <div className="bg-[var(--inset)] p-4 rounded-xl border space-y-3 border-[var(--line)]">
                         <div className="flex items-center justify-between mb-2">
                             <div className="flex items-center gap-2">
-                                <MapPin size={16} className="text-orange-500"/>
-                                <span className="font-bold text-sm dark:text-white">Location & Street View</span>
+                                <MapPin size={16} className="text-[var(--accent-ink)]"/>
+                                <span className="font-bold text-sm">Location & Street View</span>
                             </div>
                             <div className="flex gap-2">
-                                <button type="button" onClick={handleAutoGeocode} disabled={isLocating} className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-xs font-bold flex items-center gap-1 shadow-md">
+                                <button type="button" onClick={handleAutoGeocode} disabled={isLocating} className="bg-[var(--gold)] hover:bg-[var(--gold)] text-[var(--gold-ink)] px-3 py-1 rounded text-xs font-bold flex items-center gap-1 shadow-md">
                                     {isLocating ? <RefreshCcw size={12} className="animate-spin"/> : <Search size={12}/>} Auto-Find
                                 </button>
-                                <button type="button" onClick={handleGetLocation} className="bg-white dark:bg-slate-700 border dark:border-slate-600 px-3 rounded text-xs font-bold hover:bg-slate-100 flex items-center gap-1">
+                                <button type="button" onClick={handleGetLocation} className="bg-[var(--raised)] border px-3 rounded text-xs font-bold hover:bg-[var(--inset)] flex items-center gap-1 border-[var(--line)]">
                                     <MapPin size={12}/> My GPS
                                 </button>
                             </div>
@@ -1366,7 +1366,7 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                                     list="provinsi-list"
                                     value={formData.province} 
                                     onChange={e=>setFormData({...formData, province: e.target.value.toUpperCase()})} 
-                                    className="w-full p-2 text-xs font-bold border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white outline-none focus:border-orange-500 transition-colors" 
+                                    className="w-full p-2 text-xs font-bold border rounded outline-none focus:border-[var(--accent-edge)] transition-colors" 
                                     placeholder="PROVINSI" 
                                 />
                                 <datalist id="provinsi-list">
@@ -1380,7 +1380,7 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                                     list="kabupaten-list"
                                     value={formData.region} 
                                     onChange={e=>setFormData({...formData, region: e.target.value.toUpperCase()})} 
-                                    className="w-full p-2 text-xs font-bold border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white outline-none focus:border-orange-500 transition-colors" 
+                                    className="w-full p-2 text-xs font-bold border rounded outline-none focus:border-[var(--accent-edge)] transition-colors" 
                                     placeholder="KABUPATEN" 
                                 />
                                 <datalist id="kabupaten-list">
@@ -1394,7 +1394,7 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                                     list="kecamatan-list"
                                     value={formData.city} 
                                     onChange={e=>setFormData({...formData, city: e.target.value.toUpperCase()})} 
-                                    className="w-full p-2 text-xs font-bold border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white outline-none focus:border-orange-500 transition-colors" 
+                                    className="w-full p-2 text-xs font-bold border rounded outline-none focus:border-[var(--accent-edge)] transition-colors" 
                                     placeholder="KECAMATAN" 
                                 />
                                 <datalist id="kecamatan-list">
@@ -1403,27 +1403,27 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                             </div>
                         </div>
 
-                        <input value={formData.address} onChange={e=>setFormData({...formData, address: e.target.value})} className="w-full p-2 text-xs border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white" placeholder="Address..." />
+                        <input value={formData.address} onChange={e=>setFormData({...formData, address: e.target.value})} className="w-full p-2 text-xs border rounded border-[var(--line)]" placeholder="Address..." />
                         
                         <textarea 
                             value={formData.description} 
                             onChange={e=>setFormData({...formData, description: e.target.value})} 
-                            className="w-full p-2 text-xs border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white resize-none" 
+                            className="w-full p-2 text-xs border rounded resize-none border-[var(--line)]" 
                             placeholder="Store Description or Internal Notes (e.g. Imported Map Marker data)..." 
                             rows="2"
                         />
                         
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
-                                <label className="text-[10px] font-bold text-slate-400 uppercase">GPS Coordinates</label>
-                                <input ref={coordRef} type="text" placeholder="-7.6043, 110.2055" className="w-full p-2 text-sm border rounded bg-white dark:bg-slate-800 dark:border-slate-600 dark:text-white font-mono" value={coordInput} onChange={handleCoordInputChange} />
+                                <label className="text-[10px] font-bold text-[var(--ink-dim)] uppercase">GPS Coordinates</label>
+                                <input ref={coordRef} type="text" placeholder="-7.6043, 110.2055" className="w-full p-2 text-sm border rounded bg-[var(--raised)] font-mono border-[var(--line)]" value={coordInput} onChange={handleCoordInputChange} />
                             </div>
                             <div>
-                                <label className="text-[10px] font-bold text-slate-400 uppercase">Street View Link (Iframe/URL)</label>
+                                <label className="text-[10px] font-bold text-[var(--ink-dim)] uppercase">Street View Link (Iframe/URL)</label>
                                 <input 
                                     type="text" 
                                     placeholder="Paste Google Maps Link or Embed Code here..." 
-                                    className="w-full p-2 text-sm border rounded bg-white dark:bg-slate-800 dark:border-slate-600 dark:text-white" 
+                                    className="w-full p-2 text-sm border rounded bg-[var(--raised)] border-[var(--line)]" 
                                     value={formData.embedHtml} 
                                     onChange={e => setFormData({...formData, embedHtml: e.target.value})} 
                                 />
@@ -1432,7 +1432,7 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                     </div>
 
                     <div className="flex justify-end pt-2">
-                        <button className={`text-white px-8 py-3 rounded-xl font-bold shadow-lg transition-transform active:scale-95 ${editingId ? 'bg-emerald-500 hover:bg-emerald-600' : 'bg-orange-500 hover:bg-orange-600'}`}>{editingId ? 'Update Profile' : 'Save Customer'}</button>
+                        <button className={`text-[var(--ink)] px-8 py-3 rounded-xl font-bold shadow-lg transition-transform active:scale-95 ${editingId ? 'bg-emerald-500 hover:bg-emerald-600' : 'bg-[var(--gold)] hover:bg-[var(--gold)]'} `}>{editingId ? 'Update Profile' : 'Save Customer'}</button>
                     </div>
                 </form>
             </div>
@@ -1440,13 +1440,13 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
 
             {/* 🚀 GLOBAL SEARCH BAR */}
             <div className="relative mb-6">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none"><Search size={20} className="text-slate-400" /></div>
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none"><Search size={20} className="text-[var(--ink-dim)]" /></div>
                 <input 
                     type="text" 
                     placeholder="Search store name, region, city, or salesperson..." 
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-12 pr-4 py-3 bg-white dark:bg-slate-800 border dark:border-slate-700 rounded-xl text-slate-900 dark:text-white focus:border-orange-500 outline-none shadow-sm transition-all"
+                    className="w-full pl-12 pr-4 py-3 bg-[var(--raised)] border rounded-xl text-[var(--ink)] focus:border-[var(--accent-edge)] outline-none shadow-sm transition-all"
                 />
             </div>
 
@@ -1454,15 +1454,15 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
             <div className="animate-fade-in relative z-10">
                 {/* BREADCRUMB NAVIGATION */}
                 {(selectedProvince || selectedRegion || selectedCity) && (
-                    <div className="flex flex-wrap items-center gap-2 mb-6 bg-slate-100 dark:bg-slate-800 p-3 rounded-lg w-fit">
-                        <button onClick={() => { setSelectedProvince(null); setSelectedRegion(null); setSelectedCity(null); }} className="text-slate-400 hover:text-orange-500 font-bold text-sm flex items-center gap-1">
+                    <div className="flex flex-wrap items-center gap-2 mb-6 bg-[var(--inset)] p-3 rounded-lg w-fit">
+                        <button onClick={() => { setSelectedProvince(null); setSelectedRegion(null); setSelectedCity(null); }} className="text-[var(--ink-dim)] hover:text-[var(--accent-ink)] font-bold text-sm flex items-center gap-1">
                             <Folder size={16}/> Indonesia
                         </button>
                         
                         {selectedProvince && (
                             <>
-                                <ArrowRight size={14} className="text-slate-400"/>
-                                <button onClick={() => { setSelectedRegion(null); setSelectedCity(null); }} className={`font-bold text-sm ${!selectedRegion ? 'text-orange-500' : 'text-slate-400 hover:text-orange-500'}`}>
+                                <ArrowRight size={14} className="text-[var(--ink-dim)]"/>
+                                <button onClick={() => { setSelectedRegion(null); setSelectedCity(null); }} className={`font-bold text-sm ${!selectedRegion ? 'text-orange-500' : 'text-[var(--ink-dim)] hover:text-[var(--accent-ink)]'} `}>
                                     {selectedProvince}
                                 </button>
                             </>
@@ -1470,8 +1470,8 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
 
                         {selectedRegion && (
                             <>
-                                <ArrowRight size={14} className="text-slate-400"/>
-                                <button onClick={() => setSelectedCity(null)} className={`font-bold text-sm ${!selectedCity ? 'text-orange-500' : 'text-slate-400 hover:text-orange-500'}`}>
+                                <ArrowRight size={14} className="text-[var(--ink-dim)]"/>
+                                <button onClick={() => setSelectedCity(null)} className={`font-bold text-sm ${!selectedCity ? 'text-[var(--accent-ink)]' : 'text-[var(--ink-dim)] hover:text-[var(--accent-ink)]'} `}>
                                     {selectedRegion}
                                 </button>
                             </>
@@ -1479,8 +1479,8 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                         
                         {selectedCity && (
                             <>
-                                <ArrowRight size={14} className="text-slate-400"/>
-                                <span className="font-bold text-sm text-orange-500">{selectedCity}</span>
+                                <ArrowRight size={14} className="text-[var(--ink-dim)]"/>
+                                <span className="font-bold text-sm text-[var(--accent-ink)]">{selectedCity}</span>
                             </>
                         )}
                     </div>
@@ -1489,35 +1489,35 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                {/* LEVEL 0: PROVINSI */}
                 {!selectedProvince && (
                     <div className="space-y-4">
-                        <div className="flex justify-between items-center bg-slate-800 p-3 rounded-xl border border-slate-700">
-                            <h4 className="text-[10px] uppercase tracking-widest text-slate-300 font-bold">Indonesia (Provinsi Level)</h4>
-                            <button onClick={() => handleAddFolder('Provinsi', null)} className="text-[10px] px-3 py-1.5 rounded bg-blue-600/20 text-blue-400 hover:bg-blue-600 hover:text-white font-bold uppercase transition-colors border border-blue-500/50 flex items-center gap-1 shadow-md"><Plus size={12}/> Folder</button>
+                        <div className="flex justify-between items-center bg-[var(--raised)] p-3 rounded-xl border border-[var(--line)]">
+                            <h4 className="text-[10px] uppercase tracking-widest text-[var(--ink-dim)] font-bold">Indonesia (Provinsi Level)</h4>
+                            <button onClick={() => handleAddFolder('Provinsi', null)} className="text-[10px] px-3 py-1.5 rounded bg-[var(--gold)] text-[var(--ink-dim)] hover:bg-[var(--gold)] hover:text-[var(--gold-ink)] font-bold uppercase transition-colors border border-[var(--line)] flex items-center gap-1 shadow-md"><Plus size={12}/> Folder</button>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                             {Object.entries(folderStructure).map(([prov, data]) => (
-                                <div key={prov} onClick={() => setSelectedProvince(prov)} className="bg-white dark:bg-slate-800 p-6 rounded-xl border dark:border-slate-700 shadow-sm cursor-pointer hover:shadow-md hover:border-orange-500 transition-all group">
+                                <div key={prov} onClick={() => setSelectedProvince(prov)} className="bg-[var(--raised)] p-6 rounded-xl border shadow-sm cursor-pointer hover:shadow-md hover:border-[var(--accent-edge)] transition-all group">
                                     <div className="flex items-start justify-between mb-4">
-                                        <div className="p-3 bg-red-100 dark:bg-slate-700 rounded-lg text-red-600 group-hover:bg-red-500 group-hover:text-white transition-colors"><MapPin size={24} /></div>
+                                        <div className="p-3 bg-[var(--danger-well)] rounded-lg text-[var(--danger-ink)] group-hover:bg-[var(--danger)] group-hover:text-[var(--gold-ink)] transition-colors"><MapPin size={24} /></div>
                                         <div className="flex flex-col items-end gap-2">
-                                            {data.pending > 0 && <span className="bg-red-500 text-white text-[10px] font-bold px-2 py-1 rounded-full animate-pulse">{data.pending} Pending</span>}
+                                            {data.pending > 0 && <span className="bg-[var(--danger)] text-[var(--gold-ink)] text-[10px] font-bold px-2 py-1 rounded-full animate-pulse">{data.pending} Pending</span>}
                                             {isAdmin && (
                                                 <div className="flex gap-1" onClick={e => e.stopPropagation()}>
                                                     <button onClick={(e) => {
                                                         let stores = [];
                                                         Object.values(data.regions).forEach(r => Object.values(r.cities).forEach(c => stores.push(...c.stores)));
                                                         handleDeleteFolder(e, 'Provinsi', prov, stores);
-                                                    }} className="text-[10px] font-bold text-slate-400 hover:text-red-500 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 px-2 py-1 rounded transition-colors flex items-center gap-1 hover:border-red-500"><Trash2 size={10}/> DEL</button>
+                                                    }} className="text-[10px] font-bold text-[var(--ink-dim)] hover:text-[var(--danger-ink)] bg-[var(--inset)] border border-[var(--line)] px-2 py-1 rounded transition-colors flex items-center gap-1 hover:border-[var(--danger)]"><Trash2 size={10}/> DEL</button>
                                                     <button onClick={(e) => {
                                                         let stores = [];
                                                         Object.values(data.regions).forEach(r => Object.values(r.cities).forEach(c => stores.push(...c.stores)));
                                                         handleBulkRename(e, 'Provinsi', prov, stores);
-                                                    }} className="text-[10px] font-bold text-slate-400 hover:text-blue-500 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 px-2 py-1 rounded transition-colors flex items-center gap-1 hover:border-blue-500"><Pencil size={10}/> EDIT</button>
+                                                    }} className="text-[10px] font-bold text-[var(--ink-dim)] hover:text-[var(--ink-dim)] bg-[var(--inset)] border border-[var(--line)] px-2 py-1 rounded transition-colors flex items-center gap-1 hover:border-[var(--line)]"><Pencil size={10}/> EDIT</button>
                                                 </div>
                                             )}
                                         </div>
                                     </div>
-                                    <h3 className="font-bold text-lg dark:text-white mb-2 truncate">{prov}</h3>
-                                    <p className="text-[10px] text-slate-400 uppercase tracking-widest font-bold">{data.count} Total Stores</p>
+                                    <h3 className="font-bold text-lg mb-2 truncate">{prov}</h3>
+                                    <p className="text-[10px] text-[var(--ink-dim)] uppercase tracking-widest font-bold">{data.count} Total Stores</p>
                                 </div>
                             ))}
                             {Object.keys(folderStructure).length === 0 && <div className="col-span-full text-center py-12 opacity-50"><Folder size={48} className="mx-auto mb-4"/><p className="font-bold tracking-widest uppercase">No Data Found</p></div>}
@@ -1528,35 +1528,35 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                 {/* LEVEL 1: KABUPATEN */}
                 {selectedProvince && !selectedRegion && activeProv && (
                     <div className="space-y-4">
-                        <div className="flex justify-between items-center bg-slate-800 p-3 rounded-xl border border-slate-700">
-                            <h4 className="text-[10px] uppercase tracking-widest text-slate-300 font-bold">{selectedProvince} (Kabupaten Level)</h4>
-                            <button onClick={() => handleAddFolder('Kabupaten', selectedProvince)} className="text-[10px] px-3 py-1.5 rounded bg-blue-600/20 text-blue-400 hover:bg-blue-600 hover:text-white font-bold uppercase transition-colors border border-blue-500/50 flex items-center gap-1 shadow-md"><Plus size={12}/> Folder</button>
+                        <div className="flex justify-between items-center bg-[var(--raised)] p-3 rounded-xl border border-[var(--line)]">
+                            <h4 className="text-[10px] uppercase tracking-widest text-[var(--ink-dim)] font-bold">{selectedProvince} (Kabupaten Level)</h4>
+                            <button onClick={() => handleAddFolder('Kabupaten', selectedProvince)} className="text-[10px] px-3 py-1.5 rounded bg-[var(--gold)] text-[var(--ink-dim)] hover:bg-[var(--gold)] hover:text-[var(--gold-ink)] font-bold uppercase transition-colors border border-[var(--line)] flex items-center gap-1 shadow-md"><Plus size={12}/> Folder</button>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                             {Object.entries(activeProv?.regions || {}).map(([kab, data]) => (
-                                <div key={kab} onClick={() => setSelectedRegion(kab)} className="bg-white dark:bg-slate-800 p-6 rounded-xl border dark:border-slate-700 shadow-sm cursor-pointer hover:shadow-md hover:border-orange-500 transition-all group">
+                                <div key={kab} onClick={() => setSelectedRegion(kab)} className="bg-[var(--raised)] p-6 rounded-xl border shadow-sm cursor-pointer hover:shadow-md hover:border-[var(--accent-edge)] transition-all group">
                                     <div className="flex items-start justify-between mb-4">
-                                        <div className="p-3 bg-orange-100 dark:bg-slate-700 rounded-lg text-orange-600 group-hover:bg-orange-500 group-hover:text-white transition-colors"><Folder size={24} /></div>
+                                        <div className="p-3 bg-[var(--inset)] rounded-lg text-[var(--accent-ink)] group-hover:bg-[var(--gold)] group-hover:text-[var(--gold-ink)] transition-colors"><Folder size={24} /></div>
                                         <div className="flex flex-col items-end gap-2">
-                                            {data.pending > 0 && <span className="bg-red-500 text-white text-[10px] font-bold px-2 py-1 rounded-full animate-pulse">{data.pending} Pending</span>}
+                                            {data.pending > 0 && <span className="bg-[var(--danger)] text-[var(--gold-ink)] text-[10px] font-bold px-2 py-1 rounded-full animate-pulse">{data.pending} Pending</span>}
                                             {isAdmin && (
                                                 <div className="flex gap-1" onClick={e => e.stopPropagation()}>
                                                     <button onClick={(e) => {
                                                         let stores = [];
                                                         Object.values(data.cities).forEach(c => stores.push(...c.stores));
                                                         handleDeleteFolder(e, 'Kabupaten', kab, stores);
-                                                    }} className="text-[10px] font-bold text-slate-400 hover:text-red-500 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 px-2 py-1 rounded transition-colors flex items-center gap-1 hover:border-red-500"><Trash2 size={10}/> DEL</button>
+                                                    }} className="text-[10px] font-bold text-[var(--ink-dim)] hover:text-[var(--danger-ink)] bg-[var(--inset)] border border-[var(--line)] px-2 py-1 rounded transition-colors flex items-center gap-1 hover:border-[var(--danger)]"><Trash2 size={10}/> DEL</button>
                                                     <button onClick={(e) => {
                                                         let stores = [];
                                                         Object.values(data.cities).forEach(c => stores.push(...c.stores));
                                                         handleBulkRename(e, 'Kabupaten', kab, stores);
-                                                    }} className="text-[10px] font-bold text-slate-400 hover:text-blue-500 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 px-2 py-1 rounded transition-colors flex items-center gap-1 hover:border-blue-500"><Pencil size={10}/> EDIT</button>
+                                                    }} className="text-[10px] font-bold text-[var(--ink-dim)] hover:text-[var(--ink-dim)] bg-[var(--inset)] border border-[var(--line)] px-2 py-1 rounded transition-colors flex items-center gap-1 hover:border-[var(--line)]"><Pencil size={10}/> EDIT</button>
                                                 </div>
                                             )}
                                         </div>
                                     </div>
-                                    <h3 className="font-bold text-lg dark:text-white mb-2 truncate">{kab}</h3>
-                                    <p className="text-[10px] text-slate-400 uppercase tracking-widest font-bold">{data.count} Registered</p>
+                                    <h3 className="font-bold text-lg mb-2 truncate">{kab}</h3>
+                                    <p className="text-[10px] text-[var(--ink-dim)] uppercase tracking-widest font-bold">{data.count} Registered</p>
                                 </div>
                             ))}
                         </div>
@@ -1566,31 +1566,31 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                 {/* LEVEL 2: KECAMATAN */}
                 {selectedProvince && selectedRegion && !selectedCity && activeKab && (
                     <div className="space-y-4">
-                        <div className="flex justify-between items-center bg-slate-800 p-3 rounded-xl border border-slate-700">
-                            <h4 className="text-[10px] uppercase tracking-widest text-slate-300 font-bold">{selectedRegion} (Kecamatan Level)</h4>
-                            <button onClick={() => handleAddFolder('Kecamatan', selectedRegion)} className="text-[10px] px-3 py-1.5 rounded bg-blue-600/20 text-blue-400 hover:bg-blue-600 hover:text-white font-bold uppercase transition-colors border border-blue-500/50 flex items-center gap-1 shadow-md"><Plus size={12}/> Folder</button>
+                        <div className="flex justify-between items-center bg-[var(--raised)] p-3 rounded-xl border border-[var(--line)]">
+                            <h4 className="text-[10px] uppercase tracking-widest text-[var(--ink-dim)] font-bold">{selectedRegion} (Kecamatan Level)</h4>
+                            <button onClick={() => handleAddFolder('Kecamatan', selectedRegion)} className="text-[10px] px-3 py-1.5 rounded bg-[var(--gold)] text-[var(--ink-dim)] hover:bg-[var(--gold)] hover:text-[var(--gold-ink)] font-bold uppercase transition-colors border border-[var(--line)] flex items-center gap-1 shadow-md"><Plus size={12}/> Folder</button>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                             {Object.entries(activeKab?.cities || {}).map(([kec, data]) => (
-                                <div key={kec} onClick={() => setSelectedCity(kec)} className="bg-white dark:bg-slate-800 p-6 rounded-xl border dark:border-slate-700 shadow-sm cursor-pointer hover:shadow-md hover:border-blue-500 transition-all group">
+                                <div key={kec} onClick={() => setSelectedCity(kec)} className="bg-[var(--raised)] p-6 rounded-xl border shadow-sm cursor-pointer hover:shadow-md hover:border-[var(--line)] transition-all group">
                                     <div className="flex items-start justify-between mb-4">
-                                        <div className="p-3 bg-blue-100 dark:bg-slate-700 rounded-lg text-blue-600 group-hover:bg-blue-500 group-hover:text-white transition-colors"><Folder size={24} /></div>
+                                        <div className="p-3 bg-[var(--inset)] rounded-lg text-[var(--ink)] group-hover:bg-[var(--gold)] group-hover:text-[var(--gold-ink)] transition-colors"><Folder size={24} /></div>
                                         <div className="flex flex-col items-end gap-2">
-                                            {data.pending > 0 && <span className="bg-red-500 text-white text-[10px] font-bold px-2 py-1 rounded-full animate-pulse">{data.pending} Pending</span>}
+                                            {data.pending > 0 && <span className="bg-[var(--danger)] text-[var(--gold-ink)] text-[10px] font-bold px-2 py-1 rounded-full animate-pulse">{data.pending} Pending</span>}
                                             {isAdmin && (
                                                 <div className="flex gap-1" onClick={e => e.stopPropagation()}>
                                                     <button onClick={(e) => {
                                                         handleDeleteFolder(e, 'Kecamatan', kec, data.stores);
-                                                    }} className="text-[10px] font-bold text-slate-400 hover:text-red-500 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 px-2 py-1 rounded transition-colors flex items-center gap-1 hover:border-red-500"><Trash2 size={10}/> DEL</button>
+                                                    }} className="text-[10px] font-bold text-[var(--ink-dim)] hover:text-[var(--danger-ink)] bg-[var(--inset)] border border-[var(--line)] px-2 py-1 rounded transition-colors flex items-center gap-1 hover:border-[var(--danger)]"><Trash2 size={10}/> DEL</button>
                                                     <button onClick={(e) => {
                                                         handleBulkRename(e, 'Kecamatan', kec, data.stores);
-                                                    }} className="text-[10px] font-bold text-slate-400 hover:text-blue-500 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 px-2 py-1 rounded transition-colors flex items-center gap-1 hover:border-blue-500"><Pencil size={10}/> EDIT</button>
+                                                    }} className="text-[10px] font-bold text-[var(--ink-dim)] hover:text-[var(--ink-dim)] bg-[var(--inset)] border border-[var(--line)] px-2 py-1 rounded transition-colors flex items-center gap-1 hover:border-[var(--line)]"><Pencil size={10}/> EDIT</button>
                                                 </div>
                                             )}
                                         </div>
                                     </div>
-                                    <h3 className="font-bold text-lg dark:text-white mb-2 truncate">{kec}</h3>
-                                    <p className="text-[10px] text-slate-400 uppercase tracking-widest font-bold">{data.count} Registered</p>
+                                    <h3 className="font-bold text-lg mb-2 truncate">{kec}</h3>
+                                    <p className="text-[10px] text-[var(--ink-dim)] uppercase tracking-widest font-bold">{data.count} Registered</p>
                                 </div>
                             ))}
                         </div>
@@ -1603,54 +1603,54 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                         {(activeKec?.stores || []).map(c => {
                             const tierDef = tierSettings ? tierSettings.find(t => t.id === c.tier) : null;
                             return (
-                                <div key={c.id} onClick={() => openDetail(c)} className={`bg-white dark:bg-slate-800 p-5 rounded-xl border dark:border-slate-700 shadow-sm flex flex-col justify-between cursor-pointer hover:shadow-md hover:border-orange-500 transition-all group ${editingId === c.id ? 'ring-2 ring-emerald-500 bg-emerald-50 dark:bg-slate-700' : ''}`}>
+                                <div key={c.id} onClick={() => openDetail(c)} className={`bg-[var(--raised)] p-5 rounded-xl border shadow-sm flex flex-col justify-between cursor-pointer hover:shadow-md hover:border-[var(--accent-edge)] transition-all group ${editingId === c.id ? 'ring-2 ring-emerald-500 bg-emerald-50 dark:bg-slate-700' : ''} `}>
                                     
                                     {/* TOP: Store Header */}
-                                    <div className="flex justify-between items-start mb-4 pb-4 border-b border-slate-100 dark:border-slate-700">
+                                    <div className="flex justify-between items-start mb-4 pb-4 border-b border-[var(--line)]">
                                         <div className="flex items-center gap-3">
                                             {c.storeImage ? (
-                                                <img src={c.storeImage} className="w-14 h-14 rounded-lg object-cover border border-slate-200 dark:border-slate-600 shrink-0 shadow-sm" alt={c.name} />
+                                                <img src={c.storeImage} className="w-14 h-14 rounded-lg object-cover border border-[var(--line)] shrink-0 shadow-sm" alt={c.name} />
                                             ) : (
-                                                <div className="w-14 h-14 rounded-lg bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 flex items-center justify-center shrink-0">
-                                                    <Store size={24} className="text-slate-400" />
+                                                <div className="w-14 h-14 rounded-lg bg-[var(--inset)] border border-[var(--line)] flex items-center justify-center shrink-0">
+                                                    <Store size={24} className="text-[var(--ink-dim)]" />
                                                 </div>
                                             )}
                                             <div className="min-w-0 pr-2">
-                                                <h3 className="font-bold text-lg leading-tight dark:text-white group-hover:text-orange-500 transition-colors truncate">{c.name}</h3>
+                                                <h3 className="font-bold text-lg leading-tight group-hover:text-[var(--accent-ink)] transition-colors truncate">{c.name}</h3>
                                                 <div className="flex gap-2 items-center mt-1.5">
                                                     {tierDef ? (
-                                                        <span className="text-[10px] px-2 py-0.5 rounded-md border flex items-center gap-1 font-bold w-fit" style={{ borderColor: tierDef.color, backgroundColor: `${tierDef.color}15`, color: tierDef.color }}>
+                                                        <span className="text-[10px] px-2 py-0.5 rounded-md border flex items-center gap-1 font-bold w-fit border-[var(--line)]" style={{ borderColor: tierDef.color, backgroundColor: `${tierDef.color}15`, color: tierDef.color }}>
                                                             {tierDef.iconType === 'image' ? <img src={tierDef.value} className="w-3 h-3 object-contain"/> : tierDef.value} {tierDef.label}
                                                         </span>
-                                                    ) : ( <span className="text-[10px] px-2 py-0.5 rounded-md border bg-slate-100 text-slate-400 border-slate-300">{c.tier}</span> )}
-                                                    <span className={`text-[11px] px-2 py-0.5 rounded-md border font-bold uppercase tracking-widest ${c.priceTier === 'Grosir' ? 'bg-blue-100 text-blue-700 border-blue-200' : c.priceTier === 'Ecer' ? 'bg-yellow-100 text-yellow-700 border-yellow-200' : 'bg-emerald-100 text-emerald-700 border-emerald-200'}`}>
+                                                    ) : ( <span className="text-[10px] px-2 py-0.5 rounded-md border bg-[var(--inset)] text-[var(--ink-dim)] border-[var(--line)]">{c.tier}</span> )}
+                                                    <span className={`text-[11px] px-2 py-0.5 rounded-md border font-bold uppercase tracking-widest border-[var(--line)] ${c.priceTier === 'Grosir' ? 'bg-[var(--inset)] text-[var(--ink)] border-[var(--line)]' : c.priceTier === 'Ecer' ? 'bg-[var(--inset)] text-[var(--accent-ink)] border-[var(--line)]' : 'bg-[var(--inset)] text-[var(--ink)] border-[var(--line)]'} `}>
                                                         {c.priceTier || 'Retail'}
                                                     </span>
                                                 </div>
                                             </div>
                                         </div>
-                                        {c.latitude ? <MapPin size={20} className="text-emerald-500 shrink-0"/> : <MapPin size={20} className="text-slate-300 shrink-0"/>}
+                                        {c.latitude ? <MapPin size={20} className="text-[var(--ink-dim)] shrink-0"/> : <MapPin size={20} className="text-[var(--ink-dim)] shrink-0"/>}
                                     </div>
 
                                     {/* MIDDLE: Accountability Block */}
                                     <div className="grid grid-cols-2 gap-4 mb-4">
                                         <div>
-                                            <p className="text-[11px] text-slate-400 font-bold uppercase tracking-widest mb-0.5">T3/T4 PIC</p>
-                                            <p className="text-xs font-bold text-indigo-600 dark:text-indigo-400 truncate">{c.picName || 'Unassigned'}</p>
+                                            <p className="text-[11px] text-[var(--ink-dim)] font-bold uppercase tracking-widest mb-0.5">T3/T4 PIC</p>
+                                            <p className="text-xs font-bold text-[var(--ink)] truncate">{c.picName || 'Unassigned'}</p>
                                         </div>
                                         <div>
-                                            <p className="text-[11px] text-slate-400 font-bold uppercase tracking-widest mb-0.5">NOO By</p>
-                                            <p className="text-xs font-bold text-slate-700 dark:text-slate-300 truncate">{c.nooAgentName || 'Admin'}</p>
+                                            <p className="text-[11px] text-[var(--ink-dim)] font-bold uppercase tracking-widest mb-0.5">NOO By</p>
+                                            <p className="text-xs font-bold text-[var(--ink)] truncate">{c.nooAgentName || 'Admin'}</p>
                                         </div>
                                     </div>
 
                                    {/* BOTTOM: Admin Actions */}
                                    {isAdmin && (
-                                        <div className="flex gap-2 justify-end items-center mt-auto pt-3 border-t border-slate-100 dark:border-slate-700 flex-wrap">
+                                        <div className="flex gap-2 justify-end items-center mt-auto pt-3 border-t border-[var(--line)] flex-wrap">
                                             <select 
                                                 value={c.city || 'Unknown Kecamatan'}
                                                 onChange={(e) => handleFastStoreMove(c.id, e.target.value, selectedRegion)}
-                                                className="text-[11px] font-bold uppercase tracking-widest bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-300 border border-slate-300 dark:border-slate-600 rounded px-2 py-1.5 max-w-[110px] outline-none cursor-pointer hover:border-blue-500 transition-colors shrink-0"
+                                                className="text-[11px] font-bold uppercase tracking-widest bg-[var(--inset)] text-[var(--ink-dim)] border border-[var(--line)] rounded px-2 py-1.5 max-w-[110px] outline-none cursor-pointer hover:border-[var(--line)] transition-colors shrink-0"
                                                 title="Move to another Kecamatan"
                                                 onClick={e => e.stopPropagation()}
                                             >
@@ -1661,7 +1661,7 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                                             </select>
                                             
                                             {c.status === 'PENDING' && (
-                                                <button onClick={(e) => handleApproveNOO(e, c.id, c.name)} className="px-3 py-1.5 text-xs bg-emerald-500/10 text-emerald-600 border border-emerald-200 font-bold rounded-lg hover:bg-emerald-500 hover:text-white transition-all animate-pulse shadow-sm">
+                                                <button onClick={(e) => handleApproveNOO(e, c.id, c.name)} className="px-3 py-1.5 text-xs bg-[var(--gold)] text-[var(--ink)] border border-[var(--line)] font-bold rounded-lg hover:bg-[var(--gold)] hover:text-[var(--gold-ink)] transition-all animate-pulse shadow-sm">
                                                     Verify
                                                 </button>
                                             )}
@@ -1671,10 +1671,10 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                                                 sessionStorage.setItem('targetMapStore', c.id);
                                                 if (onNavigateToMap) onNavigateToMap();
                                                 else window.dispatchEvent(new CustomEvent('switchTab', { detail: 'map' }));
-                                            }} className="px-3 py-1.5 text-xs font-bold bg-orange-50 border border-orange-200 dark:border-orange-500/30 dark:bg-orange-500/10 rounded-lg hover:bg-orange-500 hover:text-white text-orange-600 dark:text-orange-400 transition-colors flex items-center gap-1 shadow-sm"><Globe size={12}/> Map</button>
+                                            }} className="px-3 py-1.5 text-xs font-bold bg-[var(--inset)] border border-[var(--line)] rounded-lg hover:bg-[var(--gold)] hover:text-[var(--gold-ink)] text-[var(--accent-ink)] transition-colors flex items-center gap-1 shadow-sm"><Globe size={12}/> Map</button>
 
-                                            <button onClick={(e) => { e.stopPropagation(); handleEdit(c); }} className="px-3 py-1.5 text-xs font-bold bg-slate-50 border border-slate-200 dark:border-slate-600 dark:bg-slate-700 rounded-lg hover:bg-blue-50 text-slate-400 dark:text-slate-300 transition-colors">Edit</button>
-                                            <button onClick={(e) => { e.stopPropagation(); handleDelete(c.id, c.name); }} className="px-3 py-1.5 text-xs font-bold bg-slate-50 border border-slate-200 dark:border-slate-600 dark:bg-slate-700 rounded-lg hover:bg-red-50 hover:border-red-200 text-red-500 transition-colors">Del</button>
+                                            <button onClick={(e) => { e.stopPropagation(); handleEdit(c); }} className="px-3 py-1.5 text-xs font-bold bg-[var(--inset)] border border-[var(--line)] rounded-lg hover:bg-[var(--inset)] text-[var(--ink-dim)] transition-colors">Edit</button>
+                                            <button onClick={(e) => { e.stopPropagation(); handleDelete(c.id, c.name); }} className="px-3 py-1.5 text-xs font-bold bg-[var(--inset)] border border-[var(--line)] rounded-lg hover:bg-[var(--danger-well)] hover:border-[var(--danger)] text-[var(--danger-ink)] transition-colors">Del</button>
                                         </div>
                                     )}
 
@@ -1682,11 +1682,11 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                                         gated by view_only / own_region / global. Delete/Verify/Move/DataScrub
                                         stay boss-mode-only above — those are separate, stronger powers. */}
                                     {!isAdmin && customerAccessLevel !== 'view_only' && (
-                                        <div className="flex justify-end items-center mt-auto pt-3 border-t border-slate-100 dark:border-slate-700">
+                                        <div className="flex justify-end items-center mt-auto pt-3 border-t border-[var(--line)]">
                                             {canEditCustomer(c) ? (
-                                                <button onClick={(e) => { e.stopPropagation(); handleEdit(c); }} className="px-3 py-1.5 text-xs font-bold bg-slate-50 border border-slate-200 dark:border-slate-600 dark:bg-slate-700 rounded-lg hover:bg-blue-50 text-slate-400 dark:text-slate-300 transition-colors">Edit</button>
+                                                <button onClick={(e) => { e.stopPropagation(); handleEdit(c); }} className="px-3 py-1.5 text-xs font-bold bg-[var(--inset)] border border-[var(--line)] rounded-lg hover:bg-[var(--inset)] text-[var(--ink-dim)] transition-colors">Edit</button>
                                             ) : (
-                                                <span title="This store is outside your assigned region" className="text-[10px] text-slate-400 italic px-1">Outside your region</span>
+                                                <span title="This store is outside your assigned region" className="text-[10px] text-[var(--ink-dim)] italic px-1">Outside your region</span>
                                             )}
                                         </div>
                                     )}

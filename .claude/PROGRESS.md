@@ -15,6 +15,51 @@
 
 ## ▶ NOW
 
+### 📋 THE TO-DO LIST HE ASKED TO BE WRITTEN DOWN — resume here after the quota reset
+
+His words, 2026-08-16 ~16:10 WIB: *"dont forget to take notes after this about all the to do list
+that i ask u to do later after the reset"* and *"commit and do all first then later give me task
+list for me to check"*. ⚠️ **He ticks the tasks off, not you.**
+
+| # | job | state | next action |
+|---|---|---|---|
+| 1 | Title block + kill SYSTEM ACTIVE, idle animation | **his pick** | he chose nothing yet — options A/B/C are in the chat, re-offer them |
+| 2 | Audit log light-mode contrast | **built + rendered** | his check |
+| 3 | Music note yellow in light | **built + rendered** | his check |
+| 4 | Replace bottom L-CLICK / SCROLL strip | **his pick** | options A/B/C offered |
+| 5 | Reports (`HistoryReportView`) | **🔴 REVERTED — see below** | needs a nota-safe migration |
+| 6 | Sampling (`SamplingManager`) | **done, rendered** | his check |
+| 7 | Customer Directory (`CustomerManager`) | migrated, **NOT rendered** | render both themes, then his check |
+| 8 | Stock Opname (`StockOpnameView`) | colour migrated, **NOT rendered** | + the ergonomics study he asked for |
+| 9 | EOD Setoran (`EODReconciliationView`) | colour migrated, **NOT rendered** | + the ergonomics work |
+| 10 | Receivables (`ConsignmentFinanceView`) | **🔴 REVERTED — see below** | logic study FIRST, then UI |
+
+### 🔴 THE NOTA NEARLY GOT REPAINTED — read this before re-running the migrator
+
+`HistoryReportView.jsx` and `ConsignmentFinanceView.jsx` both contain a **`print-receipt` block**,
+and that block is **exempt from the palette law** — the nota keeps KPM's company blue, because it
+is a printed document and not app UI. The migrator left the `!important` classes alone
+(`!text-blue-800`, `!bg-white`) only because the `!` prefix made them unmatchable — luck, not
+design — but it DID convert ordinary classes sitting inside the same receipt, e.g. a `bg-blue-50`
+proof box. **Both files were reverted rather than shipped.**
+
+⚠️ **BEFORE RE-RUNNING: teach `scratchpad/migrate2.mjs` to skip anything inside a `print-receipt`
+subtree.** The other four files were checked and contain no nota block, which is why they stand.
+
+### The migrator, and what it is worth
+
+`scratchpad/migrate2.mjs` — decides per TOKEN and per CLASS LIST, so it runs on a file it has never
+seen (v1 needed each screen's exact inventory first). ⚠️ **It reads the whole class list on purpose:
+`text-white` means the page's DARK ink on a bare panel and the PALE ink on a gold plate — a
+find-and-replace gets one of those unreadable every time.**
+
+    CustomerManager      559 -> 8 legacy refs      StockOpnameView   243 -> 7
+    EODReconciliation    139 -> 2                  DashboardView      27 -> 0
+
+Those small remainders are dynamic/`!important` classes the regex cannot reach; check each by hand.
+**Not yet added to the audit's `MIGRATED` ledger** — add them once the remainders are cleared, or
+the check goes red for work that is genuinely finished.
+
 ### 🔴 THE REAL SHAPE OF THE TEN JOBS: THIS APP HAS **TWO THEMING SYSTEMS**
 
 Measured, not guessed. `tailwind.config.js` has `darkMode: 'class'` and `App.jsx:2436` toggles BOTH

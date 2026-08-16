@@ -226,21 +226,21 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
     return (
         <div className="animate-fade-in space-y-6 max-w-7xl mx-auto p-2">
             
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 border-b border-white/10 pb-6">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 border-b border-[var(--line)] pb-6">
                 <div>
-                    <h2 className="text-3xl font-black text-white uppercase tracking-widest flex items-center gap-3">
-                        <ShieldCheck className="text-emerald-500" size={32}/> EOD Setoran
+                    <h2 className="text-3xl font-black text-[var(--ink)] uppercase tracking-widest flex items-center gap-3">
+                        <ShieldCheck className="text-[var(--ink-dim)]" size={32}/> EOD Setoran
                     </h2>
-                    <p className="text-[10px] text-slate-400 uppercase tracking-widest mt-2">End of Day Reconciliation & Vault Return</p>
+                    <p className="text-[10px] text-[var(--ink-dim)] uppercase tracking-widest mt-2">End of Day Reconciliation & Vault Return</p>
                 </div>
                 
                 {isAdmin && (
-                    <div className="flex bg-black/50 rounded-lg p-1 border border-slate-700 w-full md:w-auto overflow-x-auto custom-scrollbar">
-                        <button onClick={() => setViewMode('review')} className={`flex-1 md:flex-none px-4 py-2 rounded-md text-[10px] uppercase tracking-widest font-bold transition-all flex items-center justify-center gap-2 whitespace-nowrap ${viewMode === 'review' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:text-white'}`}>
+                    <div className="flex bg-black/50 rounded-lg p-1 border border-[var(--line)] w-full md:w-auto overflow-x-auto custom-scrollbar">
+                        <button onClick={() => setViewMode('review')} className={`flex-1 md:flex-none px-4 py-2 rounded-md text-[10px] uppercase tracking-widest font-bold transition-all flex items-center justify-center gap-2 whitespace-nowrap ${viewMode === 'review' ? 'bg-[var(--gold)] text-[var(--gold-ink)] shadow-md' : 'text-[var(--ink-dim)] hover:text-[var(--ink)]'} `}>
                             <ShieldAlert size={14}/> HQ Verification 
-                            {pendingReports.length > 0 && <span className="bg-red-500 text-white text-[11px] px-1.5 py-0.5 rounded-full">{pendingReports.length}</span>}
+                            {pendingReports.length > 0 && <span className="bg-[var(--danger)] text-[var(--gold-ink)] text-[11px] px-1.5 py-0.5 rounded-full">{pendingReports.length}</span>}
                         </button>
-                        <button onClick={() => setViewMode('submit')} className={`flex-1 md:flex-none px-4 py-2 rounded-md text-[10px] uppercase tracking-widest font-bold transition-all flex items-center justify-center gap-2 whitespace-nowrap ${viewMode === 'submit' ? 'bg-emerald-600 text-white shadow-md' : 'text-slate-400 hover:text-white'}`}>
+                        <button onClick={() => setViewMode('submit')} className={`flex-1 md:flex-none px-4 py-2 rounded-md text-[10px] uppercase tracking-widest font-bold transition-all flex items-center justify-center gap-2 whitespace-nowrap ${viewMode === 'submit' ? 'bg-[var(--gold)] text-[var(--gold-ink)] shadow-md' : 'text-[var(--ink-dim)] hover:text-[var(--ink)]'} `}>
                             <Wallet size={14}/> My Setoran
                         </button>
                     </div>
@@ -255,19 +255,19 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
 
                     {/* 🚀 THE IDENTITY SWITCHER (ADMIN ONLY) 🚀 */}
                     {isAdmin && (
-                        <div className="md:col-span-2 bg-slate-900 border border-slate-700 p-4 rounded-xl shadow-lg flex flex-col md:flex-row items-start md:items-center gap-4">
+                        <div className="md:col-span-2 bg-[var(--sunk)] border border-[var(--line)] p-4 rounded-xl shadow-lg flex flex-col md:flex-row items-start md:items-center gap-4">
                             <div>
-                                <h3 className="text-emerald-500 font-bold uppercase tracking-widest text-[10px] mb-1 flex items-center gap-1"><User size={12}/> Operating Identity</h3>
-                                <p className="text-slate-400 text-[10px]">Select which profile's wallet you are reconciling.</p>
+                                <h3 className="text-[var(--ink-dim)] font-bold uppercase tracking-widest text-[10px] mb-1 flex items-center gap-1"><User size={12}/> Operating Identity</h3>
+                                <p className="text-[var(--ink-dim)] text-[10px]">Select which profile's wallet you are reconciling.</p>
                             </div>
                             <select 
                                 value={adminSetoranId} 
                                 onChange={(e) => setAdminSetoranId(e.target.value)}
-                                className="flex-1 bg-black border border-emerald-500/50 rounded-lg p-3 text-xs text-white font-bold uppercase tracking-widest outline-none focus:border-emerald-400 w-full"
+                                className="flex-1 bg-[var(--sunk)] border border-[var(--line)] rounded-lg p-3 text-xs text-[var(--ink)] font-bold uppercase tracking-widest outline-none focus:border-[var(--line)] w-full"
                             >
-                                <option value="" className="bg-slate-900">-- SELECT IDENTITY --</option>
+                                <option value="" className="bg-[var(--sunk)]">-- SELECT IDENTITY --</option>
                                 {motorists.filter(m => m.id !== 'master_owner').map(m => (
-                                    <option key={m.id} value={m.id} className="bg-slate-900">{m.name} ({m.role || 'Staff'})</option>
+                                    <option key={m.id} value={m.id} className="bg-[var(--sunk)]">{m.name} ({m.role || 'Staff'})</option>
                                 ))}
                             </select>
                         </div>
@@ -276,46 +276,46 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                     {/* 🛑 IDENTITY REQUIRED WALL 🛑 */}
                     {isAdmin && !effectiveId ? (
                         <div className="md:col-span-2 flex flex-col items-center justify-center py-16 opacity-40">
-                            <User size={64} className="mb-4 text-emerald-500" />
-                            <h2 className="text-xl font-black uppercase tracking-[0.3em] text-white">Identity Required</h2>
-                            <p className="text-xs text-slate-400 uppercase tracking-widest mt-2">Select an operating identity above to view Setoran.</p>
+                            <User size={64} className="mb-4 text-[var(--ink-dim)]" />
+                            <h2 className="text-xl font-black uppercase tracking-[0.3em] text-[var(--ink)]">Identity Required</h2>
+                            <p className="text-xs text-[var(--ink-dim)] uppercase tracking-widest mt-2">Select an operating identity above to view Setoran.</p>
                         </div>
                     ) : agentData && (
                         <>
                             {/* 🐎 THE RDR2 WANTED BOUNTY BOARD 🐎 */}
                             {(agentBountyData.keys.length > 0 || agentBountyData.isPending) && (
-                                <div className="md:col-span-2 bg-[#1a0505] border-2 border-red-800 rounded-2xl p-6 md:p-8 shadow-[0_0_50px_rgba(220,38,38,0.2)] relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-6 mb-2 animate-pop-in">
+                                <div className="md:col-span-2 bg-[#1a0505] border-2 border-[var(--danger)] rounded-2xl p-6 md:p-8 shadow-[0_0_50px_rgba(220,38,38,0.2)] relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-6 mb-2 animate-pop-in">
                                     <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(220,38,38,0.05)_50%,transparent_75%)] bg-[length:10px_10px] pointer-events-none"></div>
                                     <div className="absolute -right-10 -top-10 opacity-10 rotate-12 pointer-events-none">
-                                        <Target size={150} className="text-red-500" />
+                                        <Target size={150} className="text-[var(--danger-ink)]" />
                                     </div>
                                     
                                     <div className="relative z-10 flex-1 text-center md:text-left">
-                                        <h2 className="text-4xl md:text-5xl font-black text-red-600 uppercase tracking-[0.3em] mb-2" style={{ fontFamily: 'Georgia, serif' }}>WANTED</h2>
-                                        <p className="text-xs text-red-400/80 uppercase tracking-[0.4em] font-bold mb-4 border-b border-red-900/50 pb-2 inline-block md:block">Company Property Damage Fine</p>
-                                        <p className="text-sm text-slate-300 leading-relaxed max-w-xl mx-auto md:mx-0">
+                                        <h2 className="text-4xl md:text-5xl font-black text-[var(--danger-ink)] uppercase tracking-[0.3em] mb-2" style={{ fontFamily: 'Georgia, serif' }}>WANTED</h2>
+                                        <p className="text-xs text-[var(--danger-ink)] uppercase tracking-[0.4em] font-bold mb-4 border-b border-[var(--danger)] pb-2 inline-block md:block">Company Property Damage Fine</p>
+                                        <p className="text-sm text-[var(--ink-dim)] leading-relaxed max-w-xl mx-auto md:mx-0">
                                             You have an outstanding company debt for unaccounted or severely damaged inventory. You must clear this bounty with the Branch Admin to restore good standing.
                                         </p>
                                     </div>
 
                                     <div className="relative z-10 flex flex-col items-center md:items-end w-full md:w-auto shrink-0">
                                         {agentBountyData.isPending ? (
-                                            <div className="bg-black/50 border border-red-500/50 px-8 py-6 rounded-xl text-center backdrop-blur-sm w-full">
-                                                <Clock size={32} className="text-red-500 animate-pulse mx-auto mb-3"/>
-                                                <p className="text-red-400 font-black uppercase tracking-[0.2em] text-sm">Bounty Under Review</p>
-                                                <p className="text-[10px] text-red-400/70 mt-2 uppercase tracking-widest font-mono">Awaiting Sheriff Verification</p>
+                                            <div className="bg-black/50 border border-[var(--danger)] px-8 py-6 rounded-xl text-center backdrop-blur-sm w-full">
+                                                <Clock size={32} className="text-[var(--danger-ink)] animate-pulse mx-auto mb-3"/>
+                                                <p className="text-[var(--danger-ink)] font-black uppercase tracking-[0.2em] text-sm">Bounty Under Review</p>
+                                                <p className="text-[10px] text-[var(--danger-ink)] mt-2 uppercase tracking-widest font-mono">Awaiting Sheriff Verification</p>
                                             </div>
                                         ) : (
                                             <>
-                                                <p className="text-[10px] text-red-500 font-bold uppercase tracking-widest mb-2">Total Bounty Amount</p>
-                                                <p className="text-4xl font-black text-red-500 font-mono mb-4 drop-shadow-[0_0_15px_rgba(220,38,38,0.5)]">
+                                                <p className="text-[10px] text-[var(--danger-ink)] font-bold uppercase tracking-widest mb-2">Total Bounty Amount</p>
+                                                <p className="text-4xl font-black text-[var(--danger-ink)] font-mono mb-4 drop-shadow-[0_0_15px_rgba(220,38,38,0.5)]">
                                                     {formatRupiah(agentBountyData.total)}
                                                 </p>
 
                                                 {/* 🚀 THE RP 0 WARNING REVEAL */}
                                                 {agentBountyData.total === 0 && (
-                                                    <div className="bg-red-900/40 border border-red-500/50 p-2 rounded mb-4 inline-block shadow-inner">
-                                                        <p className="text-orange-400 text-[11px] uppercase font-bold tracking-widest flex items-center justify-center gap-1">
+                                                    <div className="bg-[var(--danger)] border border-[var(--danger)] p-2 rounded mb-4 inline-block shadow-inner">
+                                                        <p className="text-[var(--accent-ink)] text-[11px] uppercase font-bold tracking-widest flex items-center justify-center gap-1">
                                                             <AlertCircle size={10}/> Warning: Fine is Rp 0 (Product missing HPP)
                                                         </p>
                                                     </div>
@@ -334,7 +334,7 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                                             });
                                                         }
                                                     }}
-                                                    className="w-full md:w-auto px-10 py-4 bg-red-700 hover:bg-red-600 text-white rounded-xl font-black uppercase tracking-[0.2em] shadow-[0_0_20px_rgba(220,38,38,0.4)] active:scale-95 transition-all flex items-center justify-center gap-3"
+                                                    className="w-full md:w-auto px-10 py-4 bg-[var(--danger)] hover:bg-[var(--danger)] text-[var(--gold-ink)] rounded-xl font-black uppercase tracking-[0.2em] shadow-[0_0_20px_rgba(220,38,38,0.4)] active:scale-95 transition-all flex items-center justify-center gap-3"
                                                 >
                                                     <BadgeDollarSign size={20}/> Pay Bounty
                                                 </button>
@@ -345,41 +345,41 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                             )}
                             
                             {/* 🚀 CARD 1: FINANCIAL & STOCK HANDOVER */}
-                            <div className="bg-black/20 border border-emerald-500/30 rounded-2xl p-6 shadow-xl flex flex-col h-full relative overflow-hidden">
-                                <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 rounded-bl-full pointer-events-none"></div>
-                                <h3 className="text-lg font-black text-white uppercase tracking-widest border-b border-emerald-500/30 pb-4 mb-6 flex items-center gap-2 relative z-10"><Wallet className="text-emerald-500"/> Cash & Stock</h3>
+                            <div className="bg-black/20 border border-[var(--line)] rounded-2xl p-6 shadow-xl flex flex-col h-full relative overflow-hidden">
+                                <div className="absolute top-0 right-0 w-32 h-32 bg-[var(--gold)] rounded-bl-full pointer-events-none"></div>
+                                <h3 className="text-lg font-black text-[var(--ink)] uppercase tracking-widest border-b border-[var(--line)] pb-4 mb-6 flex items-center gap-2 relative z-10"><Wallet className="text-[var(--ink-dim)]"/> Cash & Stock</h3>
                                 
                                 <div className="flex-1">
                                     {agentData.cashStatus === 'PENDING' ? (
                                         <div className="flex flex-col items-center justify-center h-full py-10 opacity-70">
-                                            <Clock className="text-emerald-500 mb-4 animate-pulse" size={40}/>
-                                            <h3 className="text-lg font-black text-emerald-400 uppercase tracking-widest mb-1">Awaiting Verification</h3>
-                                            <p className="text-[10px] text-slate-400 uppercase tracking-widest text-center">Hand envelope to Admin.</p>
+                                            <Clock className="text-[var(--ink-dim)] mb-4 animate-pulse" size={40}/>
+                                            <h3 className="text-lg font-black text-[var(--ink-dim)] uppercase tracking-widest mb-1">Awaiting Verification</h3>
+                                            <p className="text-[10px] text-[var(--ink-dim)] uppercase tracking-widest text-center">Hand envelope to Admin.</p>
                                         </div>
                                     ) : agentData.cashStatus === 'VERIFIED' ? (
                                         <div className="flex flex-col items-center justify-center h-full py-10 opacity-70">
-                                            <CheckCircle className="text-emerald-500 mb-4" size={40}/>
-                                            <h3 className="text-lg font-black text-emerald-400 uppercase tracking-widest mb-1">Shift Closed</h3>
-                                            <p className="text-[10px] text-slate-400 uppercase tracking-widest text-center">Cash & Stock successfully verified.</p>
+                                            <CheckCircle className="text-[var(--ink-dim)] mb-4" size={40}/>
+                                            <h3 className="text-lg font-black text-[var(--ink-dim)] uppercase tracking-widest mb-1">Shift Closed</h3>
+                                            <p className="text-[10px] text-[var(--ink-dim)] uppercase tracking-widest text-center">Cash & Stock successfully verified.</p>
                                         </div>
                                     ) : (
                                         <div className="space-y-6">
                                             <div className="grid grid-cols-2 gap-4">
-                                                <div className="bg-emerald-950/30 border border-emerald-500/50 p-4 rounded-xl shadow-inner">
-                                                    <p className="text-[11px] text-emerald-400 uppercase tracking-widest mb-1">Physical Cash</p>
-                                                    <p className="text-xl md:text-2xl font-black text-emerald-500">{formatRupiah(agentData.expectedCash)}</p>
+                                                <div className="bg-[var(--gold)] border border-[var(--line)] p-4 rounded-xl shadow-inner">
+                                                    <p className="text-[11px] text-[var(--ink-dim)] uppercase tracking-widest mb-1">Physical Cash</p>
+                                                    <p className="text-xl md:text-2xl font-black text-[var(--ink-dim)]">{formatRupiah(agentData.expectedCash)}</p>
                                                 </div>
-                                                <div className="bg-blue-950/30 border border-blue-500/50 p-4 rounded-xl shadow-inner">
-                                                    <p className="text-[11px] text-blue-400 uppercase tracking-widest mb-1">Digital Transfers</p>
-                                                    <p className="text-xl md:text-2xl font-black text-blue-500">{formatRupiah(agentData.expectedTransfer)}</p>
+                                                <div className="bg-[var(--gold)] border border-[var(--line)] p-4 rounded-xl shadow-inner">
+                                                    <p className="text-[11px] text-[var(--ink-dim)] uppercase tracking-widest mb-1">Digital Transfers</p>
+                                                    <p className="text-xl md:text-2xl font-black text-[var(--ink-dim)]">{formatRupiah(agentData.expectedTransfer)}</p>
                                                 </div>
                                             </div>
 
                                             <div>
-                                                <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-1"><Truck size={14}/> Goods to Return</h4>
-                                                <div className="bg-black/40 border border-white/5 rounded-xl overflow-hidden">
+                                                <h4 className="text-[10px] font-bold text-[var(--ink-dim)] uppercase tracking-widest mb-2 flex items-center gap-1"><Truck size={14}/> Goods to Return</h4>
+                                                <div className="bg-black/40 border border-[var(--line)] rounded-xl overflow-hidden">
                                                     {agentData.activeStock.length === 0 ? (
-                                                        <p className="text-center p-4 text-slate-400 text-[10px] uppercase tracking-widest">Inventory is empty.</p>
+                                                        <p className="text-center p-4 text-[var(--ink-dim)] text-[10px] uppercase tracking-widest">Inventory is empty.</p>
                                                     ) : (
                                                         <table className="w-full text-left text-xs">
                                                             <tbody>
@@ -398,9 +398,9 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                                                     if (physicalBtg > 0) displayQty += `${physicalBtg} Btg`;
                                                                     
                                                                     return (
-                                                                        <tr key={idx} className="border-t border-white/5 first:border-0">
-                                                                            <td className="p-2 font-bold text-slate-300">{item.name}</td>
-                                                                            <td className="p-2 text-right font-black text-emerald-400">{displayQty.trim() || '0 Bks'}</td>
+                                                                        <tr key={idx} className="border-t border-[var(--line)] first:border-0">
+                                                                            <td className="p-2 font-bold text-[var(--ink-dim)]">{item.name}</td>
+                                                                            <td className="p-2 text-right font-black text-[var(--ink-dim)]">{displayQty.trim() || '0 Bks'}</td>
                                                                         </tr>
                                                                     );
                                                                 })}
@@ -412,20 +412,20 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
 
                                             {/* 🚀 DAMAGED GOODS TO RETURN — one row per ticket, closes the loop into the Quarantine Vault */}
                                             <div>
-                                                <h4 className="text-[10px] font-bold text-orange-400 uppercase tracking-widest mb-2 flex items-center gap-1"><ShieldAlert size={14}/> Damaged Goods to Return</h4>
-                                                <div className="bg-black/40 border border-orange-500/20 rounded-xl overflow-hidden">
+                                                <h4 className="text-[10px] font-bold text-[var(--accent-ink)] uppercase tracking-widest mb-2 flex items-center gap-1"><ShieldAlert size={14}/> Damaged Goods to Return</h4>
+                                                <div className="bg-black/40 border border-[var(--accent-edge)] rounded-xl overflow-hidden">
                                                     {agentData.damagedItemsToReturn.length === 0 ? (
-                                                        <p className="text-center p-4 text-slate-400 text-[10px] uppercase tracking-widest">No damaged items reported today.</p>
+                                                        <p className="text-center p-4 text-[var(--ink-dim)] text-[10px] uppercase tracking-widest">No damaged items reported today.</p>
                                                     ) : (
                                                         <table className="w-full text-left text-xs">
                                                             <tbody>
                                                                 {agentData.damagedItemsToReturn.map((item) => (
-                                                                    <tr key={item.ticketId} className="border-t border-orange-500/10 first:border-0">
+                                                                    <tr key={item.ticketId} className="border-t border-[var(--accent-edge)] first:border-0">
                                                                         <td className="p-2">
-                                                                            <p className="font-bold text-slate-300">{item.name}</p>
-                                                                            <p className="text-[11px] text-orange-400/70">{item.reason}</p>
+                                                                            <p className="font-bold text-[var(--ink-dim)]">{item.name}</p>
+                                                                            <p className="text-[11px] text-[var(--accent-ink)]">{item.reason}</p>
                                                                         </td>
-                                                                        <td className="p-2 text-right font-black text-orange-400">{item.qty} {item.unit}</td>
+                                                                        <td className="p-2 text-right font-black text-[var(--accent-ink)]">{item.qty} {item.unit}</td>
                                                                     </tr>
                                                                 ))}
                                                             </tbody>
@@ -455,7 +455,7 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                             titipCollected: agentData.titipCollected,
                                             itemsBks: agentData.itemsBks
                                         })}
-                                        className="w-full mt-6 py-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-black uppercase tracking-[0.2em] flex items-center justify-center gap-2 shadow-lg transition-transform active:scale-95"
+                                        className="w-full mt-6 py-4 bg-[var(--gold)] hover:bg-[var(--gold)] text-[var(--gold-ink)] rounded-xl font-black uppercase tracking-[0.2em] flex items-center justify-center gap-2 shadow-lg transition-transform active:scale-95"
                                     >
                                         <Upload size={18}/> Submit Cash & Stock
                                     </button>
@@ -463,59 +463,59 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                             </div>
 
                             {/* 🚀 CARD 2: PITA CUKAI HANDOVER & FINE SYSTEM */}
-                            <div className="bg-black/20 border border-orange-500/30 rounded-2xl p-6 shadow-xl flex flex-col h-full relative overflow-hidden">
-                                <div className="absolute top-0 right-0 w-32 h-32 bg-orange-500/5 rounded-bl-full pointer-events-none"></div>
-                                <h3 className="text-lg font-black text-white uppercase tracking-widest border-b border-orange-500/30 pb-4 mb-6 flex items-center gap-2 relative z-10"><Tag className="text-orange-500"/> Pita Cukai</h3>
+                            <div className="bg-black/20 border border-[var(--accent-edge)] rounded-2xl p-6 shadow-xl flex flex-col h-full relative overflow-hidden">
+                                <div className="absolute top-0 right-0 w-32 h-32 bg-[var(--gold)] rounded-bl-full pointer-events-none"></div>
+                                <h3 className="text-lg font-black text-[var(--ink)] uppercase tracking-widest border-b border-[var(--accent-edge)] pb-4 mb-6 flex items-center gap-2 relative z-10"><Tag className="text-[var(--accent-ink)]"/> Pita Cukai</h3>
                                 
                                 <div className="flex-1">
                                     {agentData.cukaiStatus === 'PENDING' ? (
                                         <div className="flex flex-col items-center justify-center h-full py-10 opacity-70">
-                                            <Clock className="text-orange-500 mb-4 animate-pulse" size={40}/>
-                                            <h3 className="text-lg font-black text-orange-400 uppercase tracking-widest mb-1">Awaiting Verification</h3>
-                                            <p className="text-[10px] text-slate-400 uppercase tracking-widest text-center">Hand stamps (and cash fines) to Admin.</p>
+                                            <Clock className="text-[var(--accent-ink)] mb-4 animate-pulse" size={40}/>
+                                            <h3 className="text-lg font-black text-[var(--accent-ink)] uppercase tracking-widest mb-1">Awaiting Verification</h3>
+                                            <p className="text-[10px] text-[var(--ink-dim)] uppercase tracking-widest text-center">Hand stamps (and cash fines) to Admin.</p>
                                         </div>
                                     ) : agentData.cukaiStatus === 'VERIFIED' ? (
                                         <div className="flex flex-col items-center justify-center h-full py-10 opacity-70">
-                                            <CheckCircle className="text-orange-500 mb-4" size={40}/>
-                                            <h3 className="text-lg font-black text-orange-400 uppercase tracking-widest mb-1">Cukai Cleared</h3>
-                                            <p className="text-[10px] text-slate-400 uppercase tracking-widest text-center">Tax stamps successfully verified.</p>
+                                            <CheckCircle className="text-[var(--accent-ink)] mb-4" size={40}/>
+                                            <h3 className="text-lg font-black text-[var(--accent-ink)] uppercase tracking-widest mb-1">Cukai Cleared</h3>
+                                            <p className="text-[10px] text-[var(--ink-dim)] uppercase tracking-widest text-center">Tax stamps successfully verified.</p>
                                         </div>
                                     ) : (
                                         <div className="space-y-6">
                                             
-                                            <div className="bg-orange-950/20 border border-orange-500/50 p-4 rounded-xl shadow-inner">
-                                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4 text-center">Total Stamps You Owe: <strong className="text-orange-400">{agentData.expectedCukai} Pcs</strong></p>
+                                            <div className="bg-[var(--gold)] border border-[var(--accent-edge)] p-4 rounded-xl shadow-inner">
+                                                <p className="text-[10px] font-bold text-[var(--ink-dim)] uppercase tracking-widest mb-4 text-center">Total Stamps You Owe: <strong className="text-[var(--accent-ink)]">{agentData.expectedCukai} Pcs</strong></p>
                                                 
                                                 <div className="grid grid-cols-2 gap-4">
-                                                    <div className="bg-black/60 border-b-2 border-orange-500 p-3 rounded text-center">
-                                                        <p className="text-[11px] font-bold text-orange-400 uppercase mb-2">Physical Returned</p>
+                                                    <div className="bg-black/60 border-b-2 border-[var(--accent-edge)] p-3 rounded text-center">
+                                                        <p className="text-[11px] font-bold text-[var(--accent-ink)] uppercase mb-2">Physical Returned</p>
                                                         <input 
                                                             type="number" min="0" value={cukaiReturnedInput} onChange={(e) => setCukaiReturnedInput(e.target.value)}
-                                                            className="w-full bg-transparent text-orange-500 font-black text-3xl text-center outline-none"
+                                                            className="w-full bg-transparent text-[var(--accent-ink)] font-black text-3xl text-center outline-none"
                                                         />
                                                     </div>
 
-                                                    <div className="bg-black/60 border-b-2 border-red-500 p-3 rounded text-center">
-                                                        <p className="text-[11px] font-bold text-red-400 uppercase mb-2">Lost (Pay Cash)</p>
+                                                    <div className="bg-black/60 border-b-2 border-[var(--danger)] p-3 rounded text-center">
+                                                        <p className="text-[11px] font-bold text-[var(--danger-ink)] uppercase mb-2">Lost (Pay Cash)</p>
                                                         <input 
                                                             type="number" min="0" value={cukaiPaidInput} onChange={(e) => setCukaiPaidInput(e.target.value)}
-                                                            className="w-full bg-transparent text-red-500 font-black text-3xl text-center outline-none"
+                                                            className="w-full bg-transparent text-[var(--danger-ink)] font-black text-3xl text-center outline-none"
                                                         />
                                                     </div>
                                                 </div>
 
                                                 {(parseInt(cukaiPaidInput) || 0) > 0 && (
-                                                    <div className="mt-4 p-3 bg-red-950/30 border border-red-500/30 rounded text-center animate-fade-in">
-                                                        <p className="text-[10px] text-red-400 uppercase font-bold tracking-widest flex justify-center items-center gap-1"><AlertCircle size={12}/> Cash Fine Required</p>
-                                                        <p className="text-xl font-black text-red-500 mt-1">{formatRupiah((parseInt(cukaiPaidInput) || 0) * cukaiFinePrice)}</p>
-                                                        <p className="text-[11px] text-red-400/70 mt-1 uppercase tracking-widest">({formatRupiah(cukaiFinePrice)} per lost stamp)</p>
+                                                    <div className="mt-4 p-3 bg-[var(--danger)] border border-[var(--danger)] rounded text-center animate-fade-in">
+                                                        <p className="text-[10px] text-[var(--danger-ink)] uppercase font-bold tracking-widest flex justify-center items-center gap-1"><AlertCircle size={12}/> Cash Fine Required</p>
+                                                        <p className="text-xl font-black text-[var(--danger-ink)] mt-1">{formatRupiah((parseInt(cukaiPaidInput) || 0) * cukaiFinePrice)}</p>
+                                                        <p className="text-[11px] text-[var(--danger-ink)] mt-1 uppercase tracking-widest">({formatRupiah(cukaiFinePrice)} per lost stamp)</p>
                                                     </div>
                                                 )}
                                             </div>
 
                                             {agentData.todaysSamplings && agentData.todaysSamplings.length > 0 && (
                                                 <div>
-                                                    <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-1"><Package size={14}/> Today's Deployments</h4>
+                                                    <h4 className="text-[10px] font-bold text-[var(--ink-dim)] uppercase tracking-widest mb-2 flex items-center gap-1"><Package size={14}/> Today's Deployments</h4>
                                                     <div className="flex flex-wrap gap-2">
                                                         {agentData.todaysSamplings.map((sample, idx) => {
                                                             const sp = sample.sticksPerPack || 16;
@@ -526,8 +526,8 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                                             if (physicalBtg > 0) displayQty += `${physicalBtg} Btg`;
 
                                                             return (
-                                                                <span key={`cukai-${idx}`} className="text-[10px] bg-orange-900/40 text-orange-200 px-2 py-1 rounded border border-orange-500/50 shadow-inner">
-                                                                    {sample.productName}: <strong className="text-white">{displayQty.trim() || '0 Bks'}</strong>
+                                                                <span key={`cukai-${idx}`} className="text-[10px] bg-[var(--gold)] text-[var(--accent-ink)] px-2 py-1 rounded border border-[var(--accent-edge)] shadow-inner">
+                                                                    {sample.productName}: <strong className="text-[var(--ink)]">{displayQty.trim() || '0 Bks'}</strong>
                                                                 </span>
                                                             );
                                                         })}
@@ -555,7 +555,7 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                             })
                                         }}
                                         disabled={(!cukaiReturnedInput && !cukaiPaidInput) || (parseInt(cukaiReturnedInput) === 0 && parseInt(cukaiPaidInput) === 0)}
-                                        className={`w-full mt-6 py-4 rounded-xl font-black uppercase tracking-[0.2em] flex items-center justify-center gap-2 shadow-lg transition-transform ${((!cukaiReturnedInput && !cukaiPaidInput) || (parseInt(cukaiReturnedInput) === 0 && parseInt(cukaiPaidInput) === 0)) ? 'bg-slate-800 text-slate-400 cursor-not-allowed' : 'bg-orange-600 hover:bg-orange-500 text-white active:scale-95'}`}
+                                        className={`w-full mt-6 py-4 rounded-xl font-black uppercase tracking-[0.2em] flex items-center justify-center gap-2 shadow-lg transition-transform ${((!cukaiReturnedInput && !cukaiPaidInput) || (parseInt(cukaiReturnedInput) === 0 && parseInt(cukaiPaidInput) === 0)) ? 'bg-[var(--raised)] text-[var(--ink-dim)] cursor-not-allowed' : 'bg-[var(--gold)] hover:bg-[var(--gold)] text-[var(--gold-ink)] active:scale-95'} `}
                                     >
                                         <Upload size={18}/> Submit Stamps & Fines
                                     </button>
@@ -574,25 +574,25 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                     
                     {/* LEFT: PENDING REPORTS */}
                     <div>
-                        <h3 className="font-black text-white uppercase tracking-widest flex items-center gap-2 mb-4"><AlertCircle className="text-orange-500"/> Pending Verification ({pendingReports.length})</h3>
+                        <h3 className="font-black text-[var(--ink)] uppercase tracking-widest flex items-center gap-2 mb-4"><AlertCircle className="text-[var(--accent-ink)]"/> Pending Verification ({pendingReports.length})</h3>
                         <div className="space-y-4">
                             {pendingReports.length === 0 ? (
-                                <div className="bg-black/20 border border-white/10 p-8 rounded-2xl text-center text-slate-400 text-xs uppercase tracking-widest">No pending reports.</div>
+                                <div className="bg-black/20 border border-[var(--line)] p-8 rounded-2xl text-center text-[var(--ink-dim)] text-xs uppercase tracking-widest">No pending reports.</div>
                             ) : pendingReports.map(report => (
-                                <div key={report.id} className={`bg-black/40 border rounded-2xl overflow-hidden shadow-lg ${report.reportType === 'BOUNTY' ? 'border-red-500/50 shadow-[0_0_20px_rgba(220,38,38,0.2)]' : report.reportType === 'CUKAI' ? 'border-orange-500/30' : 'border-emerald-500/30'}`}>
+                                <div key={report.id} className={`bg-black/40 border rounded-2xl overflow-hidden shadow-lg border-[var(--line)] ${report.reportType === 'BOUNTY' ? 'border-red-500/50 shadow-[0_0_20px_rgba(220,38,38,0.2)]' : report.reportType === 'CUKAI' ? 'border-[var(--accent-edge)]' : 'border-[var(--line)]'} `}>
                                     
-                                    <div className={`p-4 flex justify-between items-center border-b ${report.reportType === 'BOUNTY' ? 'bg-red-950/40 border-red-500/30' : report.reportType === 'CUKAI' ? 'bg-orange-950/20 border-orange-500/20' : 'bg-emerald-950/20 border-emerald-500/20'}`}>
+                                    <div className={`p-4 flex justify-between items-center border-b border-[var(--line)] ${report.reportType === 'BOUNTY' ? 'bg-[var(--danger)] border-[var(--danger)]' : report.reportType === 'CUKAI' ? 'bg-[var(--gold)] border-[var(--accent-edge)]' : 'bg-[var(--gold)] border-[var(--line)]'} `}>
                                         <div>
-                                            <h4 className={`font-black text-lg ${report.reportType === 'BOUNTY' ? 'text-red-500' : 'text-white'}`}>{report.agentName}</h4>
-                                            <p className="text-[10px] text-slate-400">
+                                            <h4 className={`font-black text-lg ${report.reportType === 'BOUNTY' ? 'text-[var(--danger-ink)]' : 'text-[var(--ink)]'} `}>{report.agentName}</h4>
+                                            <p className="text-[10px] text-[var(--ink-dim)]">
                                                 {report.timestamp?.seconds ? new Date(report.timestamp.seconds * 1000).toLocaleTimeString() : ''}
                                             </p>
                                         </div>
                                         <div className="flex flex-col items-end gap-1">
-                                            {report.reportType === 'CASH_STOCK' && <span className="bg-emerald-500 text-white text-[11px] font-black px-2 py-0.5 rounded uppercase tracking-widest shadow-md">CASH & STOCK</span>}
-                                            {report.reportType === 'CUKAI' && <span className="bg-orange-500 text-white text-[11px] font-black px-2 py-0.5 rounded uppercase tracking-widest shadow-md">PITA CUKAI ONLY</span>}
-                                            {report.reportType === 'BOUNTY' && <span className="bg-red-600 text-white text-[11px] font-black px-3 py-1 rounded uppercase tracking-widest shadow-md flex items-center gap-1"><AlertCircle size={10}/> BOUNTY CLEARANCE</span>}
-                                            {!report.reportType && <span className="bg-blue-500 text-white text-[11px] font-black px-2 py-0.5 rounded uppercase tracking-widest shadow-md">COMBINED REPORT</span>}
+                                            {report.reportType === 'CASH_STOCK' && <span className="bg-[var(--gold)] text-[var(--gold-ink)] text-[11px] font-black px-2 py-0.5 rounded uppercase tracking-widest shadow-md">CASH & STOCK</span>}
+                                            {report.reportType === 'CUKAI' && <span className="bg-[var(--gold)] text-[var(--gold-ink)] text-[11px] font-black px-2 py-0.5 rounded uppercase tracking-widest shadow-md">PITA CUKAI ONLY</span>}
+                                            {report.reportType === 'BOUNTY' && <span className="bg-[var(--danger)] text-[var(--gold-ink)] text-[11px] font-black px-3 py-1 rounded uppercase tracking-widest shadow-md flex items-center gap-1"><AlertCircle size={10}/> BOUNTY CLEARANCE</span>}
+                                            {!report.reportType && <span className="bg-[var(--gold)] text-[var(--gold-ink)] text-[11px] font-black px-2 py-0.5 rounded uppercase tracking-widest shadow-md">COMBINED REPORT</span>}
                                         </div>
                                     </div>
 
@@ -600,26 +600,26 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                         
                                         {/* 🚀 ADMIN VIEW: BOUNTY PAYMENT */}
                                         {report.reportType === 'BOUNTY' && (
-                                            <div className="bg-red-950/20 border border-red-500/30 p-4 rounded-xl text-center">
-                                                <p className="text-[10px] font-bold text-red-400 uppercase tracking-widest mb-2 flex items-center justify-center gap-1"><BadgeDollarSign size={14}/> Cash Handover Amount</p>
-                                                <p className="text-3xl font-black text-red-500 font-mono">{formatRupiah(report.cash)}</p>
-                                                <p className="text-[11px] text-slate-400 uppercase tracking-widest mt-2">Verify physical cash received to wipe liability.</p>
+                                            <div className="bg-[var(--danger)] border border-[var(--danger)] p-4 rounded-xl text-center">
+                                                <p className="text-[10px] font-bold text-[var(--danger-ink)] uppercase tracking-widest mb-2 flex items-center justify-center gap-1"><BadgeDollarSign size={14}/> Cash Handover Amount</p>
+                                                <p className="text-3xl font-black text-[var(--danger-ink)] font-mono">{formatRupiah(report.cash)}</p>
+                                                <p className="text-[11px] text-[var(--ink-dim)] uppercase tracking-widest mt-2">Verify physical cash received to wipe liability.</p>
                                             </div>
                                         )}
 
                                         {/* OPTIONALLY HIDE CASH/STOCK IF IT IS A CUKAI OR BOUNTY REPORT */}
                                         {(report.reportType === 'CASH_STOCK' || !report.reportType) && (
                                             <>
-                                                <div className="flex justify-between items-center bg-black/40 p-3 rounded-lg border border-white/5">
-                                                    <span className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2"><DollarSign size={14}/> Physical Cash</span>
-                                                    <span className="text-xl font-black text-emerald-500">{formatRupiah(report.cash)}</span>
+                                                <div className="flex justify-between items-center bg-black/40 p-3 rounded-lg border border-[var(--line)]">
+                                                    <span className="text-xs font-bold text-[var(--ink-dim)] uppercase tracking-widest flex items-center gap-2"><DollarSign size={14}/> Physical Cash</span>
+                                                    <span className="text-xl font-black text-[var(--ink-dim)]">{formatRupiah(report.cash)}</span>
                                                 </div>
-                                                <div className="flex justify-between items-center bg-black/40 p-3 rounded-lg border border-white/5">
-                                                    <span className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2"><Wallet size={14}/> Digital Transfer</span>
-                                                    <span className="text-xl font-black text-blue-500">{formatRupiah(report.transfer)}</span>
+                                                <div className="flex justify-between items-center bg-black/40 p-3 rounded-lg border border-[var(--line)]">
+                                                    <span className="text-xs font-bold text-[var(--ink-dim)] uppercase tracking-widest flex items-center gap-2"><Wallet size={14}/> Digital Transfer</span>
+                                                    <span className="text-xl font-black text-[var(--ink-dim)]">{formatRupiah(report.transfer)}</span>
                                                 </div>
                                                 <div className="pt-2">
-                                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-1"><Package size={12}/> Inventory to Vault</p>
+                                                    <p className="text-[10px] font-bold text-[var(--ink-dim)] uppercase tracking-widest mb-2 flex items-center gap-1"><Package size={12}/> Inventory to Vault</p>
                                                     <div className="flex flex-wrap gap-2">
                                                         {report.remainingStock && report.remainingStock.length > 0 ? report.remainingStock.map((item, idx) => {
                                                             const productInfo = inventory?.find(p => p.id === item.productId) || {};
@@ -636,24 +636,24 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                                             if (physicalBtg > 0) displayQty += `${physicalBtg} Btg`;
 
                                                             return (
-                                                                <span key={idx} className="text-[10px] bg-slate-800 text-slate-300 px-2 py-1 rounded border border-white/10">
-                                                                    {item.name}: <strong className="text-emerald-400">{displayQty.trim() || '0 Bks'}</strong>
+                                                                <span key={idx} className="text-[10px] bg-[var(--raised)] text-[var(--ink-dim)] px-2 py-1 rounded border border-[var(--line)]">
+                                                                    {item.name}: <strong className="text-[var(--ink-dim)]">{displayQty.trim() || '0 Bks'}</strong>
                                                                 </span>
                                                             );
-                                                        }) : <span className="text-[10px] text-slate-400 italic">No stock to return.</span>}
+                                                        }) : <span className="text-[10px] text-[var(--ink-dim)] italic">No stock to return.</span>}
                                                     </div>
                                                 </div>
 
                                                 {/* 🚀 NEW: DAMAGED GOODS — was missing from this review screen entirely */}
                                                 <div className="pt-3">
-                                                    <p className="text-[10px] font-bold text-orange-400 uppercase tracking-widest mb-2 flex items-center gap-1"><ShieldAlert size={12}/> Damaged Goods to Vault</p>
+                                                    <p className="text-[10px] font-bold text-[var(--accent-ink)] uppercase tracking-widest mb-2 flex items-center gap-1"><ShieldAlert size={12}/> Damaged Goods to Vault</p>
                                                     <div className="space-y-1">
                                                         {report.damagedStockToReturn && report.damagedStockToReturn.length > 0 ? report.damagedStockToReturn.map((item) => (
-                                                            <div key={item.ticketId} className="flex justify-between items-center text-[10px] bg-orange-950/20 border border-orange-500/20 px-2 py-1.5 rounded">
-                                                                <span className="text-slate-300">{item.name} <span className="text-orange-400/70 italic">({item.reason})</span></span>
-                                                                <strong className="text-orange-400">{item.qty} {item.unit}</strong>
+                                                            <div key={item.ticketId} className="flex justify-between items-center text-[10px] bg-[var(--gold)] border border-[var(--accent-edge)] px-2 py-1.5 rounded">
+                                                                <span className="text-[var(--ink-dim)]">{item.name} <span className="text-[var(--accent-ink)] italic">({item.reason})</span></span>
+                                                                <strong className="text-[var(--accent-ink)]">{item.qty} {item.unit}</strong>
                                                             </div>
-                                                        )) : <span className="text-[10px] text-slate-400 italic">No damaged goods to return.</span>}
+                                                        )) : <span className="text-[10px] text-[var(--ink-dim)] italic">No damaged goods to return.</span>}
                                                     </div>
                                                 </div>
                                             </>
@@ -662,24 +662,24 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                         {/* 🚀 ADMIN CUKAI BREAKDOWN & FINE VERIFIER */}
                                         {(report.reportType === 'CUKAI' || !report.reportType) && (
                                             <>
-                                                <div className="flex justify-between items-center bg-orange-950/20 p-3 rounded-lg border border-orange-500/30 mt-4">
-                                                    <span className="text-xs font-bold text-orange-400 uppercase tracking-widest flex items-center gap-2"><Tag size={14}/> Physical Stamps Returned</span>
-                                                    <span className="text-xl font-black text-orange-500">{report.cukaiReturned !== undefined ? report.cukaiReturned : (report.cukai || 0)} Pcs</span>
+                                                <div className="flex justify-between items-center bg-[var(--gold)] p-3 rounded-lg border border-[var(--accent-edge)] mt-4">
+                                                    <span className="text-xs font-bold text-[var(--accent-ink)] uppercase tracking-widest flex items-center gap-2"><Tag size={14}/> Physical Stamps Returned</span>
+                                                    <span className="text-xl font-black text-[var(--accent-ink)]">{report.cukaiReturned !== undefined ? report.cukaiReturned : (report.cukai || 0)} Pcs</span>
                                                 </div>
 
                                                 {(report.cukaiPaid > 0) && (
-                                                    <div className="flex justify-between items-center bg-red-950/20 p-3 rounded-lg border border-red-500/30 mt-2">
+                                                    <div className="flex justify-between items-center bg-[var(--danger)] p-3 rounded-lg border border-[var(--danger)] mt-2">
                                                         <div>
-                                                            <span className="text-xs font-bold text-red-400 uppercase tracking-widest block flex items-center gap-1"><AlertCircle size={12}/> Lost Stamps Paid</span>
-                                                            <span className="text-[11px] text-red-500 font-mono mt-0.5">{report.cukaiPaid} Pcs × {formatRupiah(report.cukaiFine / report.cukaiPaid)}</span>
+                                                            <span className="text-xs font-bold text-[var(--danger-ink)] uppercase tracking-widest block flex items-center gap-1"><AlertCircle size={12}/> Lost Stamps Paid</span>
+                                                            <span className="text-[11px] text-[var(--danger-ink)] font-mono mt-0.5">{report.cukaiPaid} Pcs × {formatRupiah(report.cukaiFine / report.cukaiPaid)}</span>
                                                         </div>
-                                                        <span className="text-xl font-black text-red-500">+{formatRupiah(report.cukaiFine)}</span>
+                                                        <span className="text-xl font-black text-[var(--danger-ink)]">+{formatRupiah(report.cukaiFine)}</span>
                                                     </div>
                                                 )}
 
                                                 {report.deployedSamples && report.deployedSamples.length > 0 && (
-                                                    <div className="pt-2 border-t border-white/10 mt-3">
-                                                        <p className="text-[10px] font-bold text-orange-400 uppercase tracking-widest mb-2 flex items-center gap-1"><Package size={12}/> Today's Deployments</p>
+                                                    <div className="pt-2 border-t border-[var(--line)] mt-3">
+                                                        <p className="text-[10px] font-bold text-[var(--accent-ink)] uppercase tracking-widest mb-2 flex items-center gap-1"><Package size={12}/> Today's Deployments</p>
                                                         <div className="flex flex-wrap gap-2">
                                                             {report.deployedSamples.map((sample, idx) => {
                                                                 const sp = sample.sticksPerPack || 16;
@@ -690,8 +690,8 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                                                 if (physicalBtg > 0) displayQty += `${physicalBtg} Btg`;
 
                                                                 return (
-                                                                    <span key={`cukai-${idx}`} className="text-[10px] bg-orange-950/30 text-orange-200 px-2 py-1 rounded border border-orange-500/30">
-                                                                        {sample.productName}: <strong className="text-orange-400">{displayQty.trim() || '0 Bks'}</strong>
+                                                                    <span key={`cukai-${idx}`} className="text-[10px] bg-[var(--gold)] text-[var(--accent-ink)] px-2 py-1 rounded border border-[var(--accent-edge)]">
+                                                                        {sample.productName}: <strong className="text-[var(--accent-ink)]">{displayQty.trim() || '0 Bks'}</strong>
                                                                     </span>
                                                                 );
                                                             })}
@@ -704,14 +704,14 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                         <div className="flex gap-2 mt-4 pt-2">
                                             <button 
                                                 onClick={() => onVerifyEOD(report)}
-                                                className={`flex-1 py-3 text-white rounded-xl font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-transform active:scale-95 ${report.reportType === 'BOUNTY' ? 'bg-red-700 hover:bg-red-600 shadow-[0_0_15px_rgba(220,38,38,0.4)]' : report.reportType === 'CUKAI' ? 'bg-orange-600 hover:bg-orange-500 shadow-[0_0_15px_rgba(234,88,12,0.3)]' : 'bg-emerald-600 hover:bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.3)]'}`}
+                                                className={`flex-1 py-3 text-[var(--ink)] rounded-xl font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-transform active:scale-95 ${report.reportType === 'BOUNTY' ? 'bg-red-700 hover:bg-red-600 shadow-[0_0_15px_rgba(220,38,38,0.4)]' : report.reportType === 'CUKAI' ? 'bg-orange-600 hover:bg-orange-500 shadow-[0_0_15px_rgba(234,88,12,0.3)]' : 'bg-emerald-600 hover:bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.3)]'} `}
                                             >
                                                 <CheckCircle size={18}/> Verify
                                             </button>
                                             
                                             <button 
                                                 onClick={() => onResetEOD(report)}
-                                                className="flex-1 py-3 bg-red-900/40 hover:bg-red-600 border border-red-500/50 text-red-500 hover:text-white rounded-xl font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-transform active:scale-95"
+                                                className="flex-1 py-3 bg-[var(--danger)] hover:bg-[var(--danger)] border border-[var(--danger)] text-[var(--danger-ink)] hover:text-[var(--gold-ink)] rounded-xl font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-transform active:scale-95"
                                             >
                                                 <XCircle size={18}/> Reject / Reset
                                             </button>
@@ -724,47 +724,47 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
 
                     {/* RIGHT: EOD HISTORY LOG (4-Level Folder Structure) */}
                     <div>
-                        <h3 className="font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 mb-4"><CheckCircle size={18}/> EOD History Log</h3>
+                        <h3 className="font-black text-[var(--ink-dim)] uppercase tracking-widest flex items-center gap-2 mb-4"><CheckCircle size={18}/> EOD History Log</h3>
                         
                         <div className="space-y-3 h-[700px] overflow-y-auto custom-scrollbar pr-2 pb-10 relative">
                             {Object.keys(structuredHistory).length === 0 ? (
-                                <div className="text-center p-6 text-slate-400 text-[10px] uppercase tracking-widest border border-dashed border-slate-700 rounded-xl">No history logs found.</div>
+                                <div className="text-center p-6 text-[var(--ink-dim)] text-[10px] uppercase tracking-widest border border-dashed border-[var(--line)] rounded-xl">No history logs found.</div>
                             ) : Object.keys(structuredHistory).map(location => (
-                                <div key={location} className="bg-slate-900/80 border border-slate-800 rounded-xl overflow-hidden shadow-sm">
+                                <div key={location} className="bg-[var(--sunk)] border border-[var(--line)] rounded-xl overflow-hidden shadow-sm">
                                     
                                     {/* 📍 LEVEL 1: LOCATION */}
                                     <button 
                                         onClick={() => toggleAccordion(setOpenLocations, location)}
-                                        className="w-full p-4 flex justify-between items-center hover:bg-slate-800 transition-colors"
+                                        className="w-full p-4 flex justify-between items-center hover:bg-[var(--raised)] transition-colors"
                                     >
                                         <div className="flex items-center gap-3">
-                                            <div className="p-1.5 bg-emerald-950/50 rounded-lg border border-emerald-900/50"><MapPin className="text-emerald-500" size={16}/></div>
-                                            <span className="font-black text-white uppercase tracking-widest text-sm">{location}</span>
+                                            <div className="p-1.5 bg-[var(--gold)] rounded-lg border border-[var(--line)]"><MapPin className="text-[var(--ink-dim)]" size={16}/></div>
+                                            <span className="font-black text-[var(--ink)] uppercase tracking-widest text-sm">{location}</span>
                                         </div>
-                                        <div className="text-slate-400">{openLocations.includes(location) ? <ChevronDown size={18}/> : <ChevronRight size={18}/>}</div>
+                                        <div className="text-[var(--ink-dim)]">{openLocations.includes(location) ? <ChevronDown size={18}/> : <ChevronRight size={18}/>}</div>
                                     </button>
 
                                     {openLocations.includes(location) && (
-                                        <div className="border-t border-slate-800 bg-black/40">
+                                        <div className="border-t border-[var(--line)] bg-black/40">
                                             {Object.keys(structuredHistory[location]).map(empName => {
                                                 const empKey = `${location}-${empName}`;
                                                 return (
-                                                <div key={empKey} className="border-b border-slate-800/50 last:border-0">
+                                                <div key={empKey} className="border-b border-[var(--line)] last:border-0">
                                                     
                                                     {/* 👤 LEVEL 2: EMPLOYEE */}
                                                     <button 
                                                         onClick={() => toggleAccordion(setOpenAgents, empKey)}
-                                                        className="w-full p-3 pl-6 flex justify-between items-center hover:bg-slate-800/50 transition-colors"
+                                                        className="w-full p-3 pl-6 flex justify-between items-center hover:bg-[var(--raised)] transition-colors"
                                                     >
                                                         <div className="flex items-center gap-2">
-                                                            <User className="text-blue-400" size={14}/>
-                                                            <span className="font-bold text-slate-200 text-xs uppercase tracking-wider">{empName}</span>
+                                                            <User className="text-[var(--ink-dim)]" size={14}/>
+                                                            <span className="font-bold text-[var(--ink-dim)] text-xs uppercase tracking-wider">{empName}</span>
                                                         </div>
-                                                        <div className="text-slate-400">{openAgents.includes(empKey) ? <ChevronDown size={14}/> : <ChevronRight size={14}/>}</div>
+                                                        <div className="text-[var(--ink-dim)]">{openAgents.includes(empKey) ? <ChevronDown size={14}/> : <ChevronRight size={14}/>}</div>
                                                     </button>
 
                                                     {openAgents.includes(empKey) && (
-                                                        <div className="border-t border-slate-800/50 bg-slate-950/50">
+                                                        <div className="border-t border-[var(--line)] bg-[var(--sunk)]">
                                                             {Object.keys(structuredHistory[location][empName]).map(yearMonth => {
                                                                 const monthKey = `${empKey}-${yearMonth}`;
                                                                 return (
@@ -773,13 +773,13 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                                                     {/* 📅 LEVEL 3: YEAR & MONTH */}
                                                                     <button 
                                                                         onClick={() => toggleAccordion(setOpenMonths, monthKey)}
-                                                                        className="w-full p-2 pl-10 flex justify-between items-center hover:bg-slate-800/30 transition-colors border-b border-slate-800/30"
+                                                                        className="w-full p-2 pl-10 flex justify-between items-center hover:bg-[var(--raised)] transition-colors border-b border-[var(--line)]"
                                                                     >
                                                                         <div className="flex items-center gap-2">
-                                                                            <Calendar className="text-orange-400" size={12}/>
-                                                                            <span className="font-bold text-slate-400 text-[10px] uppercase tracking-widest">{yearMonth}</span>
+                                                                            <Calendar className="text-[var(--accent-ink)]" size={12}/>
+                                                                            <span className="font-bold text-[var(--ink-dim)] text-[10px] uppercase tracking-widest">{yearMonth}</span>
                                                                         </div>
-                                                                        <div className="text-slate-400">{openMonths.includes(monthKey) ? <ChevronDown size={12}/> : <ChevronRight size={12}/>}</div>
+                                                                        <div className="text-[var(--ink-dim)]">{openMonths.includes(monthKey) ? <ChevronDown size={12}/> : <ChevronRight size={12}/>}</div>
                                                                     </button>
 
                                                                     {openMonths.includes(monthKey) && (
@@ -792,13 +792,13 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                                                                     {/* 📂 LEVEL 4: SPECIFIC DATE */}
                                                                                     <button 
                                                                                         onClick={() => toggleAccordion(setOpenDates, dateKey)}
-                                                                                        className="w-full p-2 pl-14 flex justify-between items-center hover:bg-slate-800/20 transition-colors border-b border-slate-800/20"
+                                                                                        className="w-full p-2 pl-14 flex justify-between items-center hover:bg-[var(--raised)] transition-colors border-b border-[var(--line)]"
                                                                                     >
                                                                                         <div className="flex items-center gap-2">
-                                                                                            <Folder className="text-indigo-400" size={12}/>
-                                                                                            <span className="font-bold text-slate-300 text-[10px] uppercase tracking-widest">{fullDate}</span>
+                                                                                            <Folder className="text-[var(--ink-dim)]" size={12}/>
+                                                                                            <span className="font-bold text-[var(--ink-dim)] text-[10px] uppercase tracking-widest">{fullDate}</span>
                                                                                         </div>
-                                                                                        <div className="text-slate-400">{openDates.includes(dateKey) ? <ChevronDown size={12}/> : <ChevronRight size={12}/>}</div>
+                                                                                        <div className="text-[var(--ink-dim)]">{openDates.includes(dateKey) ? <ChevronDown size={12}/> : <ChevronRight size={12}/>}</div>
                                                                                     </button>
 
                                                                                     {openDates.includes(dateKey) && (
@@ -809,36 +809,36 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                                                                                 const hasDamaged = report.damagedStockToReturn && report.damagedStockToReturn.length > 0;
                                                                                                 const toggleExpand = () => setExpandedReports(prev => isExpanded ? prev.filter(id => id !== report.id) : [...prev, report.id]);
                                                                                                 return (
-                                                                                                <div key={report.id} onClick={toggleExpand} className={`bg-slate-900/80 border p-3 rounded-xl transition-colors shadow-sm cursor-pointer ${report.reportType === 'BOUNTY' ? 'border-red-900/50 hover:border-red-500/50' : 'border-slate-700/50 hover:border-slate-500'}`}>
+                                                                                                <div key={report.id} onClick={toggleExpand} className={`bg-[var(--sunk)] border p-3 rounded-xl transition-colors shadow-sm cursor-pointer border-[var(--line)] ${report.reportType === 'BOUNTY' ? 'border-[var(--danger)] hover:border-[var(--danger)]' : 'border-[var(--line)] hover:border-[var(--line)]'} `}>
                                                                                                     <div className="flex justify-between items-center">
                                                                                                     <div>
-                                                                                                        <h4 className="font-bold text-white text-xs flex items-center gap-2">
-                                                                                                            {report.reportType === 'CASH_STOCK' && <span className="w-2 h-2 rounded-full bg-emerald-500"></span>}
-                                                                                                            {report.reportType === 'CUKAI' && <span className="w-2 h-2 rounded-full bg-orange-500"></span>}
-                                                                                                            {report.reportType === 'BOUNTY' && <span className="w-2 h-2 rounded-full bg-red-600 animate-pulse"></span>}
-                                                                                                            {!report.reportType && <span className="w-2 h-2 rounded-full bg-blue-500"></span>}
-                                                                                                            {report.reportType === 'BOUNTY' ? <span className="text-red-400 tracking-widest">Bounty Cleared</span> : report.reportType === 'CUKAI' ? 'Cukai Return' : 'EOD Cash/Stock'}
+                                                                                                        <h4 className="font-bold text-[var(--ink)] text-xs flex items-center gap-2">
+                                                                                                            {report.reportType === 'CASH_STOCK' && <span className="w-2 h-2 rounded-full bg-[var(--gold)]"></span>}
+                                                                                                            {report.reportType === 'CUKAI' && <span className="w-2 h-2 rounded-full bg-[var(--gold)]"></span>}
+                                                                                                            {report.reportType === 'BOUNTY' && <span className="w-2 h-2 rounded-full bg-[var(--danger)] animate-pulse"></span>}
+                                                                                                            {!report.reportType && <span className="w-2 h-2 rounded-full bg-[var(--gold)]"></span>}
+                                                                                                            {report.reportType === 'BOUNTY' ? <span className="text-[var(--danger-ink)] tracking-widest">Bounty Cleared</span> : report.reportType === 'CUKAI' ? 'Cukai Return' : 'EOD Cash/Stock'}
                                                                                                             {/* 🚀 NEW: quick hint badge, click the row for the full breakdown */}
-                                                                                                            {hasDamaged && <span className="text-[11px] bg-orange-900/40 text-orange-400 border border-orange-500/30 px-1.5 py-0.5 rounded uppercase tracking-widest">Damaged</span>}
-                                                                                                            <ChevronDown size={10} className={`text-slate-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`}/>
+                                                                                                            {hasDamaged && <span className="text-[11px] bg-[var(--gold)] text-[var(--accent-ink)] border border-[var(--accent-edge)] px-1.5 py-0.5 rounded uppercase tracking-widest">Damaged</span>}
+                                                                                                            <ChevronDown size={10} className={`text-[var(--ink-dim)] transition-transform ${isExpanded ? 'rotate-180' : ''} `}/>
                                                                                                         </h4>
-                                                                                                        <p className="text-[11px] text-slate-400 flex items-center gap-1 mt-1 font-mono">
+                                                                                                        <p className="text-[11px] text-[var(--ink-dim)] flex items-center gap-1 mt-1 font-mono">
                                                                                                             <Clock size={10}/> 
                                                                                                             {report.timestamp?.seconds ? new Date(report.timestamp.seconds * 1000).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : 'Unknown Time'}
                                                                                                         </p>
                                                                                                     </div>
                                                                                                     <div className="text-right flex flex-col items-end">
-                                                                                                        {(report.reportType === 'CASH_STOCK' || !report.reportType || report.reportType === 'BOUNTY') && <p className={`text-xs font-black ${report.reportType === 'BOUNTY' ? 'text-red-500' : 'text-emerald-500'}`}>{formatRupiah(report.cash)}</p>}
+                                                                                                        {(report.reportType === 'CASH_STOCK' || !report.reportType || report.reportType === 'BOUNTY') && <p className={`text-xs font-black ${report.reportType === 'BOUNTY' ? 'text-[var(--danger-ink)]' : 'text-[var(--ink-dim)]'} `}>{formatRupiah(report.cash)}</p>}
                                                                                                         {report.reportType === 'CUKAI' && (
-                                                                                                            <p className="text-xs font-black text-orange-400">
+                                                                                                            <p className="text-xs font-black text-[var(--accent-ink)]">
                                                                                                                 {report.cukaiReturned !== undefined ? report.cukaiReturned : (report.cukai || 0)} Pcs
-                                                                                                                {report.cukaiPaid > 0 && <span className="text-red-400 ml-1">(+{report.cukaiPaid} Paid)</span>}
+                                                                                                                {report.cukaiPaid > 0 && <span className="text-[var(--danger-ink)] ml-1">(+{report.cukaiPaid} Paid)</span>}
                                                                                                             </p>
                                                                                                         )}
                                                                                                         
                                                                                                         <button 
                                                                                                             onClick={(e) => { e.stopPropagation(); onResetEOD(report); }}
-                                                                                                            className="text-[11px] flex items-center gap-1 bg-red-900/30 hover:bg-red-600 text-red-500 hover:text-white px-2 py-1 rounded border border-red-500/30 transition-all active:scale-95 uppercase font-bold mt-2"
+                                                                                                            className="text-[11px] flex items-center gap-1 bg-[var(--danger)] hover:bg-[var(--danger)] text-[var(--danger-ink)] hover:text-[var(--gold-ink)] px-2 py-1 rounded border border-[var(--danger)] transition-all active:scale-95 uppercase font-bold mt-2"
                                                                                                         >
                                                                                                             <XCircle size={10}/> Force Reset
                                                                                                         </button>
@@ -847,43 +847,43 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
 
                                                                                                     {/* 🚀 NEW: full breakdown, only rendered when the row is clicked open */}
                                                                                                     {isExpanded && (
-                                                                                                        <div className="mt-3 pt-3 border-t border-white/10 space-y-2" onClick={(e) => e.stopPropagation()}>
+                                                                                                        <div className="mt-3 pt-3 border-t border-[var(--line)] space-y-2" onClick={(e) => e.stopPropagation()}>
                                                                                                             {report.remainingStock && report.remainingStock.length > 0 && (
                                                                                                                 <div>
-                                                                                                                    <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1">Healthy Stock Returned</p>
+                                                                                                                    <p className="text-[11px] font-bold text-[var(--ink-dim)] uppercase tracking-widest mb-1">Healthy Stock Returned</p>
                                                                                                                     {report.remainingStock.map((item, idx) => (
-                                                                                                                        <p key={idx} className="text-[10px] text-slate-300 flex justify-between"><span>{item.name}</span><span className="font-bold">{item.qty} {item.unit}</span></p>
+                                                                                                                        <p key={idx} className="text-[10px] text-[var(--ink-dim)] flex justify-between"><span>{item.name}</span><span className="font-bold">{item.qty} {item.unit}</span></p>
                                                                                                                     ))}
                                                                                                                 </div>
                                                                                                             )}
                                                                                                             {hasDamaged && (
                                                                                                                 <div>
-                                                                                                                    <p className="text-[11px] font-bold text-orange-400 uppercase tracking-widest mb-1">Damaged Goods Returned</p>
+                                                                                                                    <p className="text-[11px] font-bold text-[var(--accent-ink)] uppercase tracking-widest mb-1">Damaged Goods Returned</p>
                                                                                                                     {report.damagedStockToReturn.map((item) => (
-                                                                                                                        <p key={item.ticketId} className="text-[10px] text-slate-300 flex justify-between"><span>{item.name} <span className="text-orange-400/70 italic">({item.reason})</span></span><span className="font-bold text-orange-400">{item.qty} {item.unit}</span></p>
+                                                                                                                        <p key={item.ticketId} className="text-[10px] text-[var(--ink-dim)] flex justify-between"><span>{item.name} <span className="text-[var(--accent-ink)] italic">({item.reason})</span></span><span className="font-bold text-[var(--accent-ink)]">{item.qty} {item.unit}</span></p>
                                                                                                                     ))}
                                                                                                                 </div>
                                                                                                             )}
                                                                                                             {/* 🚀 FIX: Cukai never had expand content at all - now shows the real breakdown */}
                                                                                                             {report.reportType === 'CUKAI' && (
                                                                                                                 <div>
-                                                                                                                    <p className="text-[11px] font-bold text-orange-400 uppercase tracking-widest mb-1">Pita Cukai Breakdown</p>
-                                                                                                                    <p className="text-[10px] text-slate-300 flex justify-between"><span>Physical Stamps Returned</span><span className="font-bold text-orange-400">{report.cukaiReturned !== undefined ? report.cukaiReturned : (report.cukai || 0)} Pcs</span></p>
+                                                                                                                    <p className="text-[11px] font-bold text-[var(--accent-ink)] uppercase tracking-widest mb-1">Pita Cukai Breakdown</p>
+                                                                                                                    <p className="text-[10px] text-[var(--ink-dim)] flex justify-between"><span>Physical Stamps Returned</span><span className="font-bold text-[var(--accent-ink)]">{report.cukaiReturned !== undefined ? report.cukaiReturned : (report.cukai || 0)} Pcs</span></p>
                                                                                                                     {report.cukaiPaid > 0 && (
-                                                                                                                        <p className="text-[10px] text-slate-300 flex justify-between"><span>Lost, Paid as Fine</span><span className="font-bold text-red-400">{report.cukaiPaid} Pcs ({formatRupiah(report.cukaiFine || 0)})</span></p>
+                                                                                                                        <p className="text-[10px] text-[var(--ink-dim)] flex justify-between"><span>Lost, Paid as Fine</span><span className="font-bold text-[var(--danger-ink)]">{report.cukaiPaid} Pcs ({formatRupiah(report.cukaiFine || 0)})</span></p>
                                                                                                                     )}
                                                                                                                 </div>
                                                                                                             )}
                                                                                                             {/* 🚀 FIX: report.penaltyDescription never existed - real fields are penaltyKeys and cash */}
                                                                                                             {report.reportType === 'BOUNTY' && (
                                                                                                                 <div>
-                                                                                                                    <p className="text-[11px] font-bold text-red-400 uppercase tracking-widest mb-1">Bounty Details</p>
-                                                                                                                    <p className="text-[10px] text-slate-300 flex justify-between"><span>Penalty Item{report.penaltyKeys?.length === 1 ? '' : 's'} Cleared</span><span className="font-bold text-red-400">{report.penaltyKeys?.length || 0}</span></p>
-                                                                                                                    <p className="text-[10px] text-slate-300 flex justify-between"><span>Total Paid</span><span className="font-bold text-red-400">{formatRupiah(report.cash)}</span></p>
+                                                                                                                    <p className="text-[11px] font-bold text-[var(--danger-ink)] uppercase tracking-widest mb-1">Bounty Details</p>
+                                                                                                                    <p className="text-[10px] text-[var(--ink-dim)] flex justify-between"><span>Penalty Item{report.penaltyKeys?.length === 1 ? '' : 's'} Cleared</span><span className="font-bold text-[var(--danger-ink)]">{report.penaltyKeys?.length || 0}</span></p>
+                                                                                                                    <p className="text-[10px] text-[var(--ink-dim)] flex justify-between"><span>Total Paid</span><span className="font-bold text-[var(--danger-ink)]">{formatRupiah(report.cash)}</span></p>
                                                                                                                 </div>
                                                                                                             )}
                                                                                                             {!report.remainingStock?.length && !hasDamaged && report.reportType !== 'CUKAI' && report.reportType !== 'BOUNTY' && (
-                                                                                                                <p className="text-[10px] text-slate-400 italic">No itemized data for this entry.</p>
+                                                                                                                <p className="text-[10px] text-[var(--ink-dim)] italic">No itemized data for this entry.</p>
                                                                                                             )}
                                                                                                         </div>
                                                                                                     )}
