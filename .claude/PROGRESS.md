@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-16 19:42 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
+**Updated: 2026-08-16 19:52 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -68,6 +68,62 @@ the Georgia serif are already in `EODReconciliationView.jsx`.
 3. **"Missing transfer" = BOTH cases**, his answer: (a) recorded as paid by transfer but nothing
    ever landed, and (b) it arrived for LESS than the sale was recorded at. The poster has to say
    which of the two it is, so they cannot be chased the same way.
+
+### 🏛️ 2026-08-16 19:50 — HE ADDED A THIRD LAYER: HQ OVERSIGHT. Read this before building approval.
+
+**His words, verbatim:**
+
+> *"well at the end of the day we gave admin power and we should trust them but on the other hands
+> if there is some missing input data to the factory then all the blame will go to the regional
+> admin, every day regional admin approval need to be sent to the HQ, so HQ should be able to check
+> whether there is some cheating or manipulation been done by the regional team"*
+
+**This answers the approve-all safeguard question, and answers it better than the question was
+asked.** The proposal was to BLOCK the shortcut when a day does not balance. His answer is to block
+nothing: **trust the regional admin, and make the record good enough that HQ can audit them.**
+Restriction is the wrong tool; accountability is the right one. ⛔ **Do NOT build the grey-out.**
+
+**So EOD is a THREE-party chain, not two:**
+
+    agent  →  regional admin  →  HQ
+    counts    approves the day   reviews the region's approvals, daily
+
+**What that requires, and none of it exists today:**
+
+1. **Every regional approval is sent to HQ daily.** His words: *"every day regional admin approval
+   need to be sent to the HQ"*. So an approval is not the end of the chain — it is an event that
+   gets reported upward.
+2. **The record must make manipulation VISIBLE**, since HQ's job is to check *"whether there is
+   some cheating or manipulation been done by the regional team"*. That means storing, per card:
+   what the agent declared, what the admin recorded, **who approved it, and when**.
+   ⚠️ **CHECKED, and the answer is half-good** (App.jsx:2504-2528, :2009):
+   - The EOD report document itself stores only `status: 'VERIFIED'` + `verifiedAt` — **no approver.**
+   - But `logAudit()` DOES store `user: user.email` + `timestamp`, and `handleVerifyEOD` calls it
+     as `logAudit("EOD_VERIFIED", "Verified {type} for {agentName}")`. So **WHO approved is already
+     captured**, in `audit_logs` and `audit_vault/{dateKey}/logs`.
+   - 🔴 **What is NOT captured is the only thing that reveals manipulation: the NUMBERS.** The audit
+     line names the agent and nothing else — not what was declared, not what was accepted, not the
+     gap. HQ can currently see *that* someone approved a day, never *what they approved*.
+   **So the work is not "start logging approvals" — it is "put the figures in the line that already
+   exists".** Cheapest real fix in the whole feature, and it is the one that does the actual job.
+   ⚠️ `audit_logs` is subscribed ADMIN-only and gated to 7 days (`useDatabaseSync.js:84`) — check
+   whether HQ's review window needs longer before relying on it.
+3. **The motive he named is real and specific:** if data is missing at the factory, *"all the blame
+   will go to the regional admin"*. The record protects the honest admin as much as it catches a
+   dishonest one — that is the framing to design toward, and the framing to use when explaining it
+   to him.
+4. **Approve-all becomes higher-stakes, not lower.** A shortcut that clears four cards in one press
+   is exactly the gesture HQ needs to see logged as a shortcut.
+
+**🔴 OPEN — ask before building:** does HQ get a *screen* (a daily digest of every regional
+approval, per region), or a *report* (something pushed/exported)? And is HQ a new permission tier,
+or the existing top-tier admin? `src/config/permissions.js` and the tier ladder decide this and
+have NOT been checked yet.
+
+⚠️ **The Audit Vault may already be half of this.** `audit_logs` + `audit_vault/{date}/logs` are
+written by `logAudit()`, and `handleVerifyEOD` already calls `logAudit("EOD_VERIFIED", ...)`.
+Check what that entry contains before designing a new HQ store — same "finish what exists" pattern
+as the bounty engine.
 
 **Build order when the quota resets:** the four swapping cards → the letter (fill, seal, send) →
 the admin's stack + per-card approval + approve-all → the letter approved and returned → the poster
