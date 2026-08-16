@@ -497,9 +497,9 @@ export const SamplingFolderView = ({ samplings, isAdmin, onRecordSample, onDelet
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
                     {years.map(year => (
-                        <button key={year} onClick={() => setSelectedYear(year)} className="w-full text-left block bg-gradient-to-br text-[var(--ink)] p-6 rounded-xl shadow-lg cursor-pointer hover:scale-105 transition-transform relative overflow-hidden group">
-                            <Folder size={100} className="absolute -right-6 -bottom-6 text-[var(--ink)] opacity-5 group-hover:opacity-10 transition-opacity pointer-events-none"/>
-                            <div className="relative z-10 pointer-events-none"><h3 className="text-3xl font-bold mb-1">{year}</h3><div className="h-1 w-12 bg-[var(--gold)] rounded mb-3"></div><p className="text-sm text-[var(--ink-dim)] font-mono">{Object.keys(folderStructure[year] || {}).length} Months Active</p></div>
+                        <button key={year} onClick={() => setSelectedYear(year)} className="w-full text-left block bg-[var(--raised)] border border-[var(--line)] text-[var(--ink)] p-6 rounded-xl shadow-lg cursor-pointer hover:-translate-y-1 hover:shadow-xl hover:border-[var(--accent-edge)] transition-all duration-300 relative overflow-hidden group">
+                            <Folder size={100} className="absolute -right-6 -bottom-6 text-[var(--accent-edge)] opacity-60 group-hover:opacity-100 group-hover:-rotate-6 group-hover:scale-110 transition-all duration-300 pointer-events-none origin-bottom-right"/>
+                            <div className="relative z-10 pointer-events-none"><h3 className="text-3xl font-bold mb-1">{year}</h3><div className="h-1 w-12 bg-[var(--gold)] rounded mb-3 group-hover:w-20 transition-all duration-300"></div><p className="text-sm text-[var(--ink-dim)] font-mono">{Object.keys(folderStructure[year] || {}).length} Months Active</p></div>
                         </button>
                     ))}
                 </div>

@@ -3309,6 +3309,30 @@ check(G46, 'a bare `border` never survives a migration',
            !t.some(x => x.startsWith('border-['));
   })),
   'Tailwind\'s default border colour is a THIRD palette on the page and follows neither theme');
+
+/* 🎨 A GRADIENT WITH NO STOPS PAINTS NOTHING. `bg-gradient-to-br` on its own sets a
+   linear-gradient whose colour stops are undefined, so the element renders fully transparent and
+   takes the page ground instead. It fails SILENTLY — no error, no warning, and on a light ground
+   the card simply disappears into the page. Aldi found exactly this on the Sampling year card
+   (2026-08-16): "the folder in sampling have the same color with it background".
+   The migration caused it — dropping `from-slate-800 to-slate-900` left the direction behind.
+   Named stops (`from-gold`, `from-verified`) are real stops and pass. */
+const jsxFiles = (d, out = []) => {
+  for (const e of fs.readdirSync(d, { withFileTypes: true })) {
+    const p = d + '/' + e.name;
+    if (e.isDirectory()) jsxFiles(p, out); else if (/\.jsx?$/.test(e.name)) out.push(p);
+  }
+  return out;
+};
+const stopless = [];
+for (const f of jsxFiles('src')) {
+  for (const c of noCmt(fs.readFileSync(f, 'utf8')).match(/className="[^"]*"/g) || []) {
+    if (/bg-gradient-to-/.test(c) && !/(^|\s)(from|via)-/.test(c)) stopless.push(f.split('/').pop() + ': ' + c.slice(0, 70));
+  }
+}
+check(G46, 'no gradient is left without its colour stops', stopless.length === 0,
+  `${stopless[0] || ''} — the element paints nothing and takes the page background, which reads ` +
+  'as an invisible card rather than as a bug');
 check(G46, 'the ON bar is a named part the stylesheet can reach',
   /kpm-rail-bar/.test(noCmt(themeSrc)) &&
   /html\.light[^{]*\.kpm-rail-bar\s*\{/.test(clockCss),

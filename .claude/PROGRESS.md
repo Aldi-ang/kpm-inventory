@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-16 14:52 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
+**Updated: 2026-08-16 17:32 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -14,6 +14,43 @@
 > and `A-Brain/Wiki/Log.md` hold how it got there.
 
 ## ▶ NOW
+
+### 🎮 2026-08-16 17:30 — THE BIG ONE HE ASKED FOR: animation, 3D, gamification
+
+His words, verbatim, after seeing Sampling and Customer Directory rendered:
+
+> 1. *"sc1 the folder in sampling ihave the same color with it background it is not clear enough on
+>    the dark or light mode i suggest redesign the whole sampling segment to looks better but keep
+>    the logic"*
+> 2. *"sc2 customer segment also needed to be redesign the UI and animation better increase
+>    ergonomics and usefullness as well, color is not clear enough as u can see here, i was thinking
+>    about making some animated card for each customer and animated folder for each 3D animated
+>    cards should looks really cool lets brainstorm about this later"*
+> 3. *"stock opname also need whole redesign for this concept and UI and animation as well
+>    brainstorm topic for later"*
+> 4. *"EOD setoran looks really bad need redesign for later as well, we need new concept for this
+>    segment as well lets use animation and 3D more with gamification on all of this segment"*
+
+**Three of the four are explicitly "later / brainstorm topic".** Do not start 2, 3 or 4 as code —
+they are a DESIGN conversation first. The through-line he stated: **animation + 3D + gamification
+across every segment**, ergonomics and usefulness, logic untouched.
+
+**What was done immediately (the one concrete bug in sc1):** `SamplingManager.jsx:500` — the year
+card carried `bg-gradient-to-br` with **no colour stops left**, so it painted nothing and took the
+page ground. That is why his folder "had the same color with its background". Fixed to
+`bg-[var(--raised)]` + `--line` border, the 100px folder watermark moved from `--ink` at 5% opacity
+to `--accent-edge` at 60% (visible in BOTH themes), plus lift/rotate/underline-grow on hover.
+**Rendered in both themes before claiming it.** A new audit check now fails on any stopless
+gradient anywhere in `src/` — verified red on the pre-fix file, green after.
+
+**⚠️ sc2 IS A STALE SCREENSHOT.** The green DATA SCRUB and blue Auto-Find he photographed are NOT
+in the source any more — both are `bg-[var(--gold)]` (CustomerManager.jsx:1128, 1353) and render
+gold in both themes. He is looking at an old build. **Tell him to hard-refresh / restart the dev
+server before judging Customer Directory.** His colour complaint about that screen may evaporate.
+
+Noticed while rendering, NOT yet raised with him: in light mode the native `<select>`/`<input>`
+fields render **pure white**, and theme.css states `#FFFFFF appears nowhere as a surface`. Form
+fields are the one place the rule is broken. Worth a token, low priority.
 
 ### 📋 THE TO-DO LIST HE ASKED TO BE WRITTEN DOWN — resume here after the quota reset
 
