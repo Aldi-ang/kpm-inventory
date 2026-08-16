@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-16 23:31 WIB (KPM app session)** · 🔴 EOD HANDOVER IS THE FIRST SECTION BELOW · branch `phase0-solid-ground` · last code commit: run `git log -1`
+**Updated: 2026-08-16 23:55 WIB (KPM app session)** · 🔴 EOD HANDOVER IS THE FIRST SECTION BELOW · branch `phase0-solid-ground` · last code commit: run `git log -1`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -37,6 +37,22 @@ mid-swap transform `matrix(0.947, -0.0929, …)` (a live rotation), opacity `0.1
 9 transitions in flight, ledger row written, heading advanced to "Transfer". Rendered light + dark
 inside a real 390px phone frame: `overflowing=0`, card 360px, deck height 248px.
 
+**Slice 3 · the letter** — `src/components/EODLetter.jsx`. The four counted cards drop in with a
+90ms stagger, the flap swings shut, the wax lands on the corner, and on send it flies right and
+fades. Its copy states the honest thing: *"Nothing is credited yet. Your day closes when the region
+approves it and HQ signs it off."*
+✅ Verified in Lite: `liteWaxOpacity=1`, `liteWaxBg=rgb(122,76,12)` (= `--gold`, colour untouched),
+flap transform identity (= closed), 4 cards inside, `overflowing=0` in a 390px frame.
+**Two real bugs found by looking and fixed:** the wax was centred and landed on top of two of the
+four figures (moved to the corner, half-overhanging); and the flap's triangle painted OVER the
+first row, clipping `Rp 4.850.000` (contents given `z-10`, so the flap now shuts behind the list).
+
+⚠️ **A HARNESS TRAP THAT COST A RENDER CYCLE: Tailwind only emits classes it has SEEN.** The
+harness links the built `dist/assets/index-*.css`, so a component written after the last
+`npm run build` renders with none of its arbitrary classes (`w-[290px]`, `duration-[700ms]`) and
+the layout collapses into a heap. **Always `npm run build` after writing a component and BEFORE
+rendering it**, and re-point the harness at the new hashed filename — the hash changes every build.
+
 **Verification recipe worth reusing** — it is the only way found to prove a React component's
 motion without signing into the app:
 ```
@@ -48,7 +64,7 @@ document.getAnimations().forEach(a => { a.pause(); a.currentTime = duration * 0.
 when nothing is wrong. **Wrap the component in a fixed-width div and measure**, never judge phone
 width from the crop.
 
-**NEXT:** wire `EODCardDeck` into `EODReconciliationView.jsx`'s agent view (it is currently
+**NEXT:** wire `EODCardDeck` + `EODLetter` into `EODReconciliationView.jsx`'s agent view (it is currently
 standalone and writes nothing), then the letter → the admin stack → HQ.
 
 # 🔴🔴 THE SPEC — EOD SETORAN REDESIGN, FULL HANDOVER
