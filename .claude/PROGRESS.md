@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-16 20:46 WIB (KPM app session)** · 🔴 EOD HANDOVER IS THE FIRST SECTION BELOW · branch `phase0-solid-ground` · last code commit: run `git log -1`
+**Updated: 2026-08-16 20:56 WIB (KPM app session)** · 🔴 EOD HANDOVER IS THE FIRST SECTION BELOW · branch `phase0-solid-ground` · last code commit: run `git log -1`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -189,12 +189,28 @@ not media queries.**
    `view_reports_global`; do NOT invent an 'HQ' tier. ⚠️ The `'HQ'` string in StockOpnameView is a
    **location** (`branchLocation: user.location || 'HQ'`) and a legacy role tag, not a tier.
 
-   🔴 **GAP FOUND, and it blocks his damaged-goods plan:** **T3 AREA_ADMIN does NOT have
-   `view_stock_opname`** — only T2 does (:59 vs :63). So the *regional admin cannot open Stock
-   Opname at all*, yet his plan is that damaged goods travel regional vault → HQ **through Stock
-   Opname**. Somebody has to run that count at the region. **Ask him who: the regional admin (needs
-   a new permission) or the fleet captain?** Same shape as the Fleet Captain Permission Gap already
-   in the vault — check that note before deciding.
+   ✅ **RESOLVED — HE FIXES IT HIMSELF, NO CODE CHANGE.** *"regional admin should be able to do it,
+   i can edit it in the matrix"*. Verified he can: `view_stock_opname` is listed in `ALL_FEATURES`
+   (SettingsView.jsx:1396) so it appears in the permission matrix UI, and `injectDynamicPermissions`
+   merges the Firebase matrix over the defaults in `permissions.js`. **Tick it for T3 and it works.**
+
+   ✅ **AND StockOpnameView ALREADY HANDLES THE REGIONAL CASE CORRECTLY** (:27-52) — nothing to
+   build. `isHighCommand = userRole === 'ADMIN'`; `isAreaAdmin = !isHighCommand`; an area admin gets
+   `branchInventory` from `branches/{user.location}/inventory` — **their own regional warehouse** —
+   and opens in `'count'` mode while high command opens in `'monitor'`. So the moment T3 has the
+   permission they see their own branch's stock, ready to count. ⚠️ Note the check is *"not
+   ADMIN"*, not *"is T3"*, so any tier granted the permission is treated as an area admin.
+
+   🔴 **LATENT BUG FOUND NEXT DOOR — branch path built two different ways.** EOD sanitises the
+   location before writing: `safeBranchPath = agentLocation.replace(/\//g, '-')` (App.jsx:1755),
+   but Stock Opname reads it raw: `branches/${user.location}/inventory` (StockOpnameView.jsx:44).
+   **For any location containing a `/` these are different Firestore paths** — EOD writes to
+   `branches/Kudus-Jepara/inventory` while Stock Opname reads `branches/Kudus/Jepara/inventory`,
+   which is a different depth entirely. The `.replace()` exists because someone already hit this.
+   **Returned stock would silently not appear in that region's count.** Not triggered unless a
+   location has a slash — check `motorists[].location` values before deciding urgency. Same
+   "two places compute the same key differently" shape as the tier-check drift `permissions.js`
+   warns about at :20-25.
 3. `audit_logs` is admin-only and **7-day gated** (`useDatabaseSync.js:84`) — is that long enough
    for HQ's review window?
 4. Week-vs-last-week on the dashboard **would** cost extra reads. Left out. Does he want it?
