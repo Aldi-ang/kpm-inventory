@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-16 20:28 WIB (KPM app session)** · 🔴 EOD HANDOVER IS THE FIRST SECTION BELOW · branch `phase0-solid-ground` · last code commit: run `git log -1`
+**Updated: 2026-08-16 20:38 WIB (KPM app session)** · 🔴 EOD HANDOVER IS THE FIRST SECTION BELOW · branch `phase0-solid-ground` · last code commit: run `git log -1`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -90,16 +90,46 @@ not the Master Vault.** His rule and the code disagree. **This is a real bug or 
 change — surface it, do not silently "fix" it, and note it also affects expired pita cukai which has
 no separate return path at all right now.**
 
-**🔴 STILL AMBIGUOUS — THE HQ EQUATION. Ask before building; this is money logic.** He stated two
-different checks and they are not the same:
-- **(A) daily:** *"the money is sent to the headquarters should match the amount of sales recorded
-  that day"* — money in == today's recorded sales.
-- **(B) running:** *"the total money transferred to the HQ is the same value with total goods sent
-  to the regional warehouse"* — a standing account between HQ and the region: goods shipped out vs
-  money come back, with the difference being stock still sitting at the region.
+**✅ ANSWERED 2026-08-16 ~20:35 — THE HQ PANEL SHOWS BOTH.** His words: *"in the headquarter panel
+i think showing both dashboard to monitor the money convert ratio with the available supply on the
+regional warehouse"*. So:
+- **(A) daily:** money received today == sales recorded today.
+- **(B) running:** goods shipped to the region vs money come back — the *"money convert ratio"*
+  against the stock still sitting at that regional warehouse. This is the leak detector: a region
+  bleeding money shows up as that ratio drifting, not as a single bad day.
 
-They can both be true (A is the daily check, B is the ledger), but **the panel is built around one
-of them.** Do not guess.
+## 3c. ✅ HE CORRECTED ME ON DAMAGED GOODS — AND THE HQ LAYER ALREADY EXISTS IN THIS APP
+
+> *"yea they went to the regional vault first and then on the stock opname allow the damaged goods
+> to be sent to the headquarters right, and yea we need to make new path for the pita cukai as well"*
+
+**So the code is NOT wrong** — the two-step is intentional: damaged goods land at the **regional
+vault at EOD**, and go up to HQ **later, through Stock Opname**. My earlier flag ("point 3 does not
+match the code") was a misread of his intent, not a bug. The routing at App.jsx:1771 stays.
+
+**🎁 WHAT CHECKING STOCK OPNAME TURNED UP — the HQ approval layer is already half-built:**
+
+| already there | where |
+|---|---|
+| **`status: 'PENDING_HQ_APPROVAL'`** — a real HQ review state | StockOpnameView.jsx:219, filtered at :83 |
+| HQ gets **notified** the moment a count arrives | :241-244 |
+| `logAudit("STOCK_OPNAME_SUBMITTED", "Submitted warehouse audit to HQ.")` | :253 |
+| **Damaged stock tracked PER FACILITY** — `MASTER` vs each branch, via `quarantineInventory` | :111-151 |
+| Damaged counted separately from good, **with a photo** (`damagedPhotoUrl`) | :223-234 |
+| Variance vs expected: `totalFound - (stock + damagedStock)` | :198, :233 |
+| An `'HQ'` role tag is already referenced | :21 |
+
+**So HQ is not a new idea in this app — it is new to EOD.** Reuse the `PENDING_HQ_APPROVAL` shape
+rather than inventing a second HQ pipeline, and reuse the quarantine-per-facility data rather than
+recomputing where damaged stock sits.
+
+**🔴 WHAT IS ACTUALLY MISSING (build these):**
+1. **A transfer action** moving damaged units branch → Master Vault. Stock Opname today submits a
+   *count* for HQ verification; it does not *move* anything. His *"allow the damaged goods to be
+   sent to the headquarters"* is that missing action.
+2. **A pita cukai return path** — expired stamps have no route at all today. His words: *"we need to
+   make new path for the pita cukai as well"*.
+3. The EOD-side HQ approval (section 3 above).
 
 ## 4. 🔴 THE HARD PART, AND IT IS NOT THE ANIMATION
 
@@ -141,7 +171,7 @@ not media queries.**
 
 ## 7. 🔴 Still open — ask him, do not assume
 
-1. Does HQ get a **screen** (daily digest per region) or a **report** (pushed/exported)?
+1. ✅ ANSWERED — a SCREEN, showing BOTH dashboards (daily money-vs-sales, and the running money-convert-ratio against regional stock). See 3b.
 2. Is HQ a **new permission tier**, or the existing top admin? `src/config/permissions.js` has NOT
    been checked.
 3. `audit_logs` is admin-only and **7-day gated** (`useDatabaseSync.js:84`) — is that long enough
