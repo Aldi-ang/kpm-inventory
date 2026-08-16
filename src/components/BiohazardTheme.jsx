@@ -284,8 +284,25 @@ export default function BiohazardTheme({
                 .boot-4 { animation: reRequiem 0.4s cubic-bezier(0.1, 0.9, 0.2, 1) 0.35s forwards; opacity: 0; }
             `}</style>
             
-            <div className="hide-on-print absolute inset-0 bg-[url('https://wallpapers.com/images/hd/resident-evil-background-2834-x-1594-c7m6q8j3q8j3q8j3.jpg')] bg-cover bg-center opacity-40 pointer-events-none"></div>
-            <div className="hide-on-print absolute inset-0 bg-gradient-to-r from-black via-black/90 to-transparent pointer-events-none"></div>
+            {/* 🔴 THE ATMOSPHERE LAYER IS A DARK-MODE THING, AND IT WAS RENDERING IN BOTH.
+                His report, with a screenshot: *"its not fully converted it is half converted"* —
+                and he was reading these two exactly. A full-screen
+                `linear-gradient(to right, black, rgba(0,0,0,.9), transparent)` puts solid black
+                down the left of the page and lets the cream show on the right. That IS the half.
+                In light mode the page already has its atmosphere: a cream ground with one lit
+                corner, from `index.css`. A second, darker atmosphere on top of it is not a mood,
+                it is a stain — so this renders only when the app is actually dark.
+
+                ⚠️ AND THE WALLPAPER WAS HOTLINKED FROM `wallpapers.com`. A third-party image,
+                fetched at runtime, in an OFFLINE-FIRST business app: it is someone else's
+                copyright, it breaks when the host does, and it cannot load on a van with no
+                signal — which is the one place this app has to work. Aldi has already been
+                told once why a watermarked stock clip could not ship; this is the same rule.
+                Removed rather than themed. If he wants a backdrop, it gets generated and
+                bundled, the way the blue pixel flame was. */}
+            {darkMode && (
+              <div className="hide-on-print absolute inset-0 bg-gradient-to-r from-black via-black/90 to-transparent pointer-events-none"></div>
+            )}
 
             {/* NOT RENDERED while the vault gate is up, rather than hidden with a class.
                 The class route was tried first and did not work in the DEV server: the prop
