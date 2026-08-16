@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-16 19:03 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
+**Updated: 2026-08-16 19:18 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -14,6 +14,47 @@
 > and `A-Brain/Wiki/Log.md` hold how it got there.
 
 ## ▶ NOW
+
+### 📱 2026-08-16 19:15 — v4: PHONE, THE FREE DASHBOARD, AND THE ANIMATION THAT SHOWED NOTHING
+
+**His three inputs this round:**
+1. *"this EOD will work as submission and also mini dashboard and performance summary for that
+   person in that day compared to yesterday and should show data in a week (monday to saturday) if
+   it is not wasting so much usage on the firebase tho, if it cost more then dont do this"*
+2. *"u should check ur work before handing the work to me, why dont u check option C and D and
+   looks how the animation doesnt work for both of those option"*
+3. *"something to consider that the EOD will mostly be done in phone so make it looks good
+   especially in phone"*
+
+**🟢 THE FIREBASE ANSWER IS: ZERO EXTRA READS.** `useDatabaseSync.js` gates EVERY listener to the
+last 7 days — `transactions` (:72), `samplings` (:73), **`eod_reports` (:95)**, audit, procurement,
+notifications, transfers. The phone is already downloading and paying for a full week on every cold
+start. Monday→Saturday of the current week is always inside a rolling 7-day window, so the strip is
+free. Today-vs-yesterday is free too, and `src/utils/dayStats.js` **already implements it** (used by
+the sales terminal) — comparing against the SAME TIME yesterday, not yesterday's finished total.
+⚠️ **The one thing that WOULD cost extra: this week vs LAST week.** By Saturday, last Monday is 12
+days old and outside the window. Left out; needs a new query or a rollup doc if he wants it.
+`career` has no time gate either, so lifetime totals and streaks are also free.
+
+**🔴 THE ANIMATION LESSON — this one is about how I verify, not about CSS.** My check read
+`getComputedStyle(el).animationName` and saw `keyTurn`, so it "passed". That proves an animation was
+ASSIGNED, never that anything moved. **The rotating part was a featureless circle** — the notch that
+shows rotation was a SIBLING of the barrel, not a child — so it turned 96° perfectly and looked
+frozen. A mark that does not travel with the thing that moves is not a mark.
+Also fixed: C and D now **build once and mutate** instead of rebuilding the DOM, so plain CSS
+transitions work; C showed its key turned before the press; A's flap had stopped animating.
+Full write-up in `A-Brain/Wiki/Concepts/Silent Failure Disease.md`.
+
+**📱 PHONE:** the page now uses **container queries** (`@container page`), not media queries, so the
+same rules serve a real phone AND the new **Phone** toggle in the artifact's top bar — the preview
+cannot drift from the real thing. Fixed a genuine bug: `.bar` had `margin:0 -20px` for a padded
+parent it does not have, so **every phone scrolled 20px sideways**. The two locks stay side by side
+at 390px on purpose (stacking them loses the concept), and the 18-link chain was 2px too wide and
+wrapped — link 15→13px, gap 4→3px.
+
+Verified: `outsideFrame=0` · `horizontalScroll=false` · `chainOneRow=true` · `keysSideBySide=true` ·
+barrel end transform = `matrix(-0.104528, 0.994522, …)` = rotate(96°) · bolt `right:0px` ·
+link `scale(1.38)` · run counter 18 in normal AND Lite · a paused 42% frame showing real mid-motion.
 
 ### ⚙️ 2026-08-16 19:00 — v3: C AND D HAD NO MOTION, AND THE REASON IS REUSABLE
 
