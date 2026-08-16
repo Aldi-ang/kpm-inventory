@@ -8,6 +8,13 @@
       "port": 5173,
       "url": "https://localhost:5173",
       "autoPort": true
+    },
+    {
+      "name": "theme-lab",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["tools/theme-lab-server.mjs"],
+      "port": 4180,
+      "url": "http://localhost:4180"
     }
   ]
 }

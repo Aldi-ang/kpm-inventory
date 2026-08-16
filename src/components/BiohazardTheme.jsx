@@ -15,6 +15,124 @@ import MusicPlayer from '../MusicPlayer';
 import { hasClearance } from '../config/permissions'; 
 import { confirmAction } from './ConfirmGate.jsx';
 
+/* ── THE SLIDING CLOCK ───────────────────────────────────────────────────────
+   His ask, 2026-08-16: the 21st.dev / motion-primitives `SlidingNumber` look.
+   That component is NOT what shipped here, on purpose. It animates with JS
+   (`useSpring` writing `style.transform` every frame), and `html.lite-mode *`
+   can only force `animation` and `transition` to none — it cannot stop a JS
+   animation. On the one setting that exists for cheap phones the digits would
+   keep sliding forever. It also wants `motion` (~50KB) + `react-use-measure`
+   in an offline-first app, for a clock.
+
+   Same look, as a CSS transition: one reel of 0-9 per digit position, moved by
+   `transform: translateY()`. Lite Mode and reduced-motion kill it for free
+   because it IS a transition, and it adds nothing to the bundle.
+
+   ⚠️ THE OLD CLOCK NEVER TICKED. It was `new Date()` written inline in the
+   header — no state, no timer — so it printed whatever time the shell last
+   happened to re-render at. Fixing that by putting the timer in the header
+   would re-render every screen in the app once a second. The state lives down
+   here instead, so a tick re-renders eight spans and nothing else.
+
+   ⚠️ 9 -> 0 rolls the reel BACKWARDS past every digit. That is also what the
+   component he pasted does (a spring from 9 to 0 travels back through them),
+   so it is the reference behaviour, not a defect. Rolling forward would need
+   an 11th row plus a silent reset, i.e. JS state per digit. */
+const REEL = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
+
+function SlidingDigit({ char }) {
+    /* a colon is not a digit and must never get a reel — it would translate to
+       row NaN, which resolves to no transform at all and prints a stack of ten
+       digits where the separator should be. */
+    if (char < '0' || char > '9') return <span className="kpm-dig-sep">{char}</span>;
+    return (
+        <span className="kpm-dig">
+            <span className="kpm-dig-reel" style={{ '--d': char }}>
+                {REEL.map(d => <span key={d}>{d}</span>)}
+            </span>
+        </span>
+    );
+}
+
+/* his format and his spelling, 2026-08-16: *"use this date format 16 agustus
+   2026"* — lowercase, as he wrote it. Written out rather than asked of
+   `toLocaleDateString('id-ID', { month: 'long' })` because that depends on the
+   runtime shipping full ICU data; where it does not, the month quietly comes
+   back in English and nobody notices until a customer does. */
+const BULAN = ['januari', 'februari', 'maret', 'april', 'mei', 'juni',
+               'juli', 'agustus', 'september', 'oktober', 'november', 'desember'];
+/* how long the date stays up before the clock comes back. His number. */
+const DATE_HOLD_MS = 5000;
+
+function ShellClock() {
+    const [now, setNow] = useState(() => new Date());
+    const [showDate, setShowDate] = useState(false);
+
+    useEffect(() => {
+        /* re-armed to land ON the next second rather than 1000ms after mount,
+           so the digit changes when the real second does. A plain setInterval
+           drifts away from the wall clock and eventually skips a number. */
+        let id;
+        const tick = () => {
+            setNow(new Date());
+            id = setTimeout(tick, 1000 - (Date.now() % 1000));
+        };
+        id = setTimeout(tick, 1000 - (Date.now() % 1000));
+        return () => clearTimeout(id);
+    }, []);
+
+    /* the date shows itself out — his ask, 2026-08-16: *"swapped into dates for
+       5 second then animate back in into clock display"*. Keyed on the state
+       rather than started inside the click, so pressing again cancels the
+       pending return instead of leaving a stray timer to snap the face away. */
+    useEffect(() => {
+        if (!showDate) return;
+        const id = setTimeout(() => setShowDate(false), DATE_HOLD_MS);
+        return () => clearTimeout(id);
+    }, [showDate]);
+
+    /* en-GB, not the system locale: it is the only way to guarantee 24h with
+       colons and no AM/PM. A 12h locale would append two letters and change
+       the chip's width twice a day. */
+    const time = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    const longDate = `${now.getDate()} ${BULAN[now.getMonth()]} ${now.getFullYear()}`;
+
+    /* A BUTTON, not the div this used to be. It stopped being a readout the
+       moment it answered a press, and a div that responds to a click is
+       unreachable by keyboard and announced as nothing. */
+    return (
+        <button
+            type="button"
+            onClick={() => setShowDate(v => !v)}
+            className={`kpm-chip kpm-clock hidden md:flex ${showDate ? 'is-date' : ''}`}
+            title={showDate ? 'Back to the clock' : 'Press for the full date'}
+            aria-label={showDate ? longDate : `${time} — press for the full date`}
+        >
+            <span className="kpm-clock-win">
+                {/* FACE 1 — the clock. `aria-hidden` follows the flip because an
+                    element at opacity 0 is still read out loud; without this the
+                    button announces both faces at once. */}
+                <span className="kpm-clock-face" aria-hidden={showDate}>
+                    <span className="kpm-clock-date">{now.toLocaleDateString()}</span>
+                    {/* the index is a safe key here: the string is always the same
+                        eight characters in the same eight positions. */}
+                    <span className="kpm-clock-time">
+                        {time.split('').map((c, i) => <SlidingDigit key={i} char={c} />)}
+                    </span>
+                </span>
+                {/* FACE 2 — the date. The two rows swap ROLES rather than one of
+                    them being replaced: the small line takes the time, the big
+                    line takes the date. Same two heights, so the flip cannot
+                    change the chip's size. */}
+                <span className="kpm-clock-face" aria-hidden={!showDate}>
+                    <span className="kpm-clock-date">{time}</span>
+                    <span className="kpm-clock-long">{longDate}</span>
+                </span>
+            </span>
+        </button>
+    );
+}
+
 export default function BiohazardTheme({
     activeTab, setActiveTab, children, user, appSettings,
     isAdmin, onLogin, userRole, setShowAdminLogin, showAdminLogin, agentSettings,
@@ -842,10 +960,7 @@ export default function BiohazardTheme({
                             no plate — a chip, a switch, a bell, and then bare text — which is why
                             it read as left over rather than placed. Same .kpm-chip as its
                             neighbours, so the right cluster is one language instead of four. */}
-                        <div className="kpm-chip kpm-clock hidden md:flex" title="Local date and time">
-                            <span className="kpm-clock-date">{new Date().toLocaleDateString()}</span>
-                            <span className="kpm-clock-time">{new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
-                        </div>
+                        <ShellClock />
                     </div>
                 </div>
 

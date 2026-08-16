@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-16 08:32 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
+**Updated: 2026-08-16 09:21 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -14,6 +14,72 @@
 > and `A-Brain/Wiki/Log.md` hold how it got there.
 
 ## ▶ NOW
+
+### 🔴 THREE NEW LIGHT-MODE COMPLAINTS — NOT STARTED. Plan quota hit 97%, session stopped here.
+
+He sent three screenshots and three sentences at 09:21 WIB, right as the quota alarm fired.
+**Nothing was investigated, nothing was changed.** His words, verbatim — do not paraphrase, do not
+merge them into one "contrast pass", they are three different problems:
+
+1. *"i want the transparant example text inside the text to be more clear in the light mode"*
+   — screenshot: the form fields **OFFICIAL ADDRESS** and **CONTACT NUMBER**. The greyed example
+   text inside an empty box (the **placeholder**) is pale slate on the beige field. Start at the
+   placeholder colour token in `theme.css`, light theme only.
+
+2. *"i want the black color text need to be clearer maybe add little bit thickness in color could
+   help? nah i'll just let u think about that"*
+   — screenshot: the striped banner **THIS DEVICE · NOTHING HERE LEAVES THE PHONE**. He is asking
+   for more weight/darkness on the dark text. ⚠️ **The stripes behind it are half the problem** —
+   text sitting on a moving-contrast pattern reads as washed out even when the ink is dark enough.
+   Measure the ink against BOTH stripe colours before touching the font weight.
+
+3. *"yellow color glow inside the sidebar on light mode is not good because it is not clear, feels
+   like the color is menyatu with the background human eyes hard to see light on light combination
+   like that"*
+   — screenshot: the sidebar's active-item **glow**, amber on a light background. `menyatu` =
+   *blends into / merges with*. Light-on-light. The glow is doing nothing in light mode; the honest
+   fix is probably a different signal there (ring, solid chip, darker gold), not a brighter glow.
+   ⚠️ Palette law still holds: no blue, no green, and gold is never text on light.
+
+**All three are LIGHT MODE ONLY.** Do not touch the dark theme values.
+**Run `node src/config/contrast.selfcheck.mjs` before and after** — that is the check that goes red.
+
+### ✅ THE SLIDING CLOCK IS BUILT — 563/563, audit group 45. Committed this session (`git log -1`).
+
+Closes open question 0. His answer: *"create one using CSS like u recommended before"* → **option A**,
+no `motion`, no `react-use-measure`. Then he extended it mid-session: *"i want the clock to swapped
+into dates for 5 second then animate back in into clock display can u do that, and use this date
+format 16 agustus 2026, i want this action works on press"*. **Both are done.**
+
+🔴 **THE CLOCK HAD NEVER TICKED.** `new Date()` was written inline in the header — no state, no
+timer — so it printed whatever time the shell last happened to re-render at. Nothing errored; a
+frozen clock still looks like a clock. `ShellClock` is now its own component in the same file:
+⚠️ **putting the timer in the header would have re-rendered every screen in the app once a second.**
+
+**How the motion works, both layers the same way:** a strip behind a clipping window, moved by
+`transform`, driven by a CSS custom property the JSX writes. **`html.lite-mode *` already kills
+`transition` outright, so Lite Mode gets the snap for free** — that is the whole reason the library
+was refused, since it can not reach a JS spring.
+▸ digits: a 0-9 reel per position, `--d` × one row · ▸ faces: clock and date **in the same grid
+cell**, so the chip is `120 × 36` in BOTH states and the header cluster never moves.
+
+**Measured live against the built stylesheet** (`--d` 0/1/7 → `0 / -14.95 / -104.65px`, exactly one
+and seven rows of 14.95; both faces ±25.29 = one window; lite-mode → `0.001s`).
+🔴 **NO FRAME WAS CAPTURED — the Browser pane will not composite and there is no headless browser
+installed.** Geometry, state and timing are proven; **appearance is not.** His eyes are the check
+that has not run.
+
+⚠️ Deliberate, tell him: the resting chip is now **~40px wider**, because the grid cell is sized for
+the longest date it can show. That is what buys "no jump on press"; the alternative is a reflow of
+the right-hand cluster on every press.
+⚠️ `.kpm-chip.kpm-clock:hover` — the rule that reset the clock's hover, reasoned *"it is a readout,
+not a control"* — **was deleted on purpose.** It answers a press now.
+✅ **TEST:** press the clock in the header. Date should rise into place reading **`16 agustus 2026`**,
+the small line should show the time, and it should slide back by itself after 5s. Press again inside
+the 5s → it should go back immediately. Then Lite Mode: everything **snaps**, no slide, no colour
+change. Seconds now tick, in both themes.
+❓ **STILL UNANSWERED: seconds in the header.** Built as `HH:MM:SS` because that is what the
+component he pasted shows. **One line reverts it** — drop `second: '2-digit'` in `ShellClock`.
 
 ### ✅ HIS FOUR 08:23 REPORTS — all fixed, 548/548
 
@@ -365,6 +431,7 @@ batch them: he has to look at each one. `AgentProfileView` is already clean (0 s
 | `src/index.css` | **the page ground** — `body` paints `--ground-base` + the lit-corner gradient |
 | `src/components/BiohazardTheme.jsx` | **the SHELL that actually covers the page** — root wrapper, dock, drawer, status strip |
 | `tools/dev-proxy.mjs` | **NEW 2026-08-16** — plain HTTP in front of the HTTPS dev server, so a browser can open the REAL app |
+| `.claude/launch.json` | **theme-lab entry added 2026-08-16** — `preview_start {name:"theme-lab"}` opens the lab on 4180 without a shell |
 | `tools/theme-showroom.html` | **NEW 2026-08-16** — every colour in place, both themes; the page Aldi comments on |
 | `tools/theme-lab.html` + `theme-lab-server.mjs` | the measurement harness (`/lab`); serves the showroom at `/` |
 | `tools/make-preview.mjs` | flattens either page into one file that opens from disk, no server |
@@ -558,8 +625,10 @@ order:
 
 ### 🔴 OPEN — asked 2026-08-16, NOT answered
 
-0. **THE SLIDING CLOCK.** He pasted a 21st.dev/motion-primitives `SlidingNumber` component and
-   said *"and change the clock UI into this"*. **NOT BUILT — three facts make the paste-in wrong
+0. ✅ **ANSWERED AND BUILT — see the entry at the top. He chose A (pure CSS) and added the
+   press-to-flip. Only the SECONDS half is still open.** Kept below for the reasoning:
+   **He pasted a 21st.dev/motion-primitives `SlidingNumber` component and
+   said *"and change the clock UI into this"*. Three facts made the paste-in wrong
    for this repo, and he was asked to choose before anything was installed:**
    - ⚠️ **The guide assumes TypeScript + shadcn + `@/components/ui/`.** This repo is **JavaScript**
      (`.jsx`), has its own `.kpm-*` control system instead of shadcn, uses `src/components/`, and
@@ -871,7 +940,18 @@ order:
   device. **Nothing to build.**
 - ✅ **The Firebase authorized domain is DONE** — *"already"*. `192.168.1.109` can sign in.
 
-## 📓 LOG — newest first, about five entries; `git log` keeps the rest
+## 📓 LOG
+
+- **2026-08-16 09:21 WIB (KPM)** — Sliding clock shipped and committed (CSS reel + press-to-flip
+  date, 563/563). Found and fixed the real bug behind it: the header clock had never ticked. Then
+  Aldi filed three light-mode legibility complaints (placeholder text, dark text on the striped
+  banner, sidebar glow) — captured verbatim in ▶ NOW, **not started**, plan quota hit 97%. — newest first, about five entries; `git log` keeps the rest
+
+- **2026-08-16 09:22 (KPM app)** — Sliding clock built, option A, pure CSS, no new dependency.
+  Found and fixed that the header clock never ticked at all. Added press-to-flip to
+  `16 agustus 2026`, self-returning after 5s, both faces in one grid cell so nothing moves.
+  Audit group 45, 563/563. **Uncommitted — he has not asked.** No frame captured: the Browser
+  pane will not composite and no headless browser is installed. Vault: A-Brain `524fc47`.
 
 ### 2026-08-16 08:18 (KPM app session) — the app was finally OPENED, and two skins were painting over the page
 

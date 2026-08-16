@@ -3139,6 +3139,84 @@ check(G44, 'the color-mix form is used instead',
   'the fix is a syntax, not a deletion — dropping the alpha instead would change every one of ' +
   'these surfaces to fully opaque');
 
+/* ── 45. the clock ticks, and it slides in CSS ───────────────────────────────
+   Two separate faults, fixed together 2026-08-16.
+   1. THE CLOCK WAS FROZEN. It was `new Date()` written inline in the header —
+      no state, no timer — so it printed the time the shell last re-rendered.
+      Nothing failed; it just quietly stopped being a clock.
+   2. He asked for the motion-primitives SlidingNumber look. That library
+      animates in JS, and `html.lite-mode *` can only force `animation` and
+      `transition` to none — a JS spring runs straight through it. On the
+      setting that exists for cheap phones the digits would never stop.
+   These checks assert the SHAPE that makes both true, never a duration or a
+   colour — group 43's lesson, and the fourth time a pinned literal protected
+   the bug it was supposed to catch. */
+const G45 = '45. The clock ticks, and its slide is CSS';
+/* ⚠️ These read the code with its COMMENTS REMOVED, and that is not tidiness.
+   The first run of this group failed twice — on the comment above .kpm-dig-reel,
+   which contains the words "never an animation:", and on the comment above
+   ShellClock, which names `useSpring` to say why it is not used. A check that
+   greps prose is checking the explanation, not the code. */
+const noCmt = s => s.replace(/\/\*[\s\S]*?\*\//g, '');
+const clockCss = noCmt(themeCss), clockSrc = noCmt(themeSrc);
+check(G45, 'the clock re-arms itself on a timer',
+  /function ShellClock\s*\(/.test(clockSrc) && /setTimeout\(tick/.test(clockSrc),
+  'without a timer this is not a clock — it is the time the shell last rendered');
+check(G45, 'the tick is isolated from the shell, not run in its body',
+  /<ShellClock\s*\/>/.test(clockSrc) &&
+  clockSrc.indexOf('function ShellClock') < clockSrc.indexOf('export default function BiohazardTheme'),
+  'state in the header would re-render every screen in the app once a second');
+check(G45, 'no JS animation library reaches the clock',
+  !/from\s+['"](framer-)?motion['"]/.test(clockSrc) && !/useSpring/.test(clockSrc),
+  'Lite Mode cannot stop a JS animation — his law is that Lite sacrifices motion, ' +
+  'and a spring it cannot reach makes that untrue');
+check(G45, 'the reel moves on a transition, not an animation',
+  /\.kpm-dig-reel\s*\{[^}]*transition:\s*transform/.test(clockCss) &&
+  !/\.kpm-dig-reel\s*\{[^}]*animation:/.test(clockCss),
+  'html.lite-mode * kills both, but only a transition here keeps the resting position correct');
+check(G45, 'the digit window clips its reel',
+  /\.kpm-dig\s*\{[^}]*overflow:\s*hidden/.test(clockCss),
+  'without the clip every position prints all ten digits stacked down the page');
+check(G45, 'reduced motion snaps the digits',
+  /@media \(prefers-reduced-motion: reduce\) \{ \.kpm-dig-reel \{ transition: none/.test(clockCss),
+  'the lite-mode sweep does not cover a user who asked the OS for less motion');
+check(G45, 'the reel rows and the window share one number',
+  (clockCss.match(/var\(--row\)/g) || []).length >= 4 && /--row:\s*[\d.]+em/.test(clockCss),
+  'a window and a reel measured separately drift apart at the second digit');
+check(G45, 'the clock still relies on tabular figures',
+  /\.kpm-chip\.kpm-clock\s*\{[^}]*font-variant-numeric:\s*tabular-nums/.test(clockCss),
+  '1ch is every digit\'s width only under tabular figures — proportional ones ' +
+  'unalign each window from the reel behind it');
+
+/* ── the press, added the same day: *"i want the clock to swapped into dates for 5 second then
+   animate back in into clock display ... i want this action works on press"* ── */
+/* ⚠️ `[^>]*` cannot span JSX attributes — an arrow function in onClick contains a literal `>`
+   and ends the run. Second time this file has grepped its own punctuation and been wrong. */
+check(G45, 'the clock is a real button, not a clickable div',
+  /<button[\s\S]{0,400}?className=\{`kpm-chip kpm-clock/.test(clockSrc) &&
+  !/<div[\s\S]{0,200}?className="kpm-chip kpm-clock/.test(clockSrc),
+  'it answers a press now, so a div would be unreachable by keyboard and announced as nothing');
+check(G45, 'the date face returns on its own',
+  /DATE_HOLD_MS\s*=\s*\d+/.test(clockSrc) && /setTimeout\(\(\) => setShowDate\(false\), DATE_HOLD_MS\)/.test(clockSrc),
+  'he asked for it to come back by itself — a flip with no return is a mode, not a peek');
+check(G45, 'the two faces share one grid cell',
+  /\.kpm-clock-win\s*\{[^}]*display:\s*grid/.test(clockCss) &&
+  /\.kpm-clock-face\s*\{[^}]*grid-area:\s*1\s*\/\s*1/.test(clockCss),
+  'separate boxes make the chip resize on every press, which moves the whole header cluster');
+check(G45, 'neither face animates a width or a height',
+  !/\.kpm-clock-face[^{]*\{[^}]*transition:[^;]*(width|height)/.test(clockCss),
+  'animating a box size reflows the header 60 times a second; transform and opacity do not');
+check(G45, 'the hidden face is hidden from screen readers too',
+  /aria-hidden=\{showDate\}/.test(clockSrc) && /aria-hidden=\{!showDate\}/.test(clockSrc),
+  'opacity 0 is still read aloud, so the button would announce both faces at once');
+check(G45, 'the month names are a literal table, not ICU',
+  /const BULAN = \[/.test(clockSrc) && /'agustus'/.test(clockSrc) &&
+  !/month:\s*'long'/.test(clockSrc),
+  'toLocaleDateString needs full ICU data — where it is absent the month silently returns English');
+check(G45, 'reduced motion snaps the face swap as well as the digits',
+  /@media \(prefers-reduced-motion: reduce\) \{ \.kpm-clock-face \{ transition: none/.test(clockCss),
+  'the digits were covered and the face was not — the same guard has to reach both');
+
 /* ── report ──────────────────────────────────────────────────────────────── */
 let last = '';
 for (const r of results) {

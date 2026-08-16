@@ -1550,15 +1550,77 @@ html.lite-mode .kpm-topbar-ghost { opacity: .04; }
    digits change width as the minute ticks, so the whole chip twitches once a minute. */
 .kpm-chip.kpm-clock {
   flex-direction: column; align-items: flex-end; gap: 0; line-height: 1.15;
-  padding-top: 5px; padding-bottom: 5px; cursor: default;
+  padding-top: 5px; padding-bottom: 5px; cursor: pointer;
   font-variant-numeric: tabular-nums;
 }
-/* the clock does not light up under the pointer — it is a readout, not a control. Same tokens
-   as the resting chip, so "no hover" keeps meaning "no change" in both themes. */
-.kpm-chip.kpm-clock:hover { color: var(--duke-ink-3); border-color: var(--duke-edge-1);
-                            box-shadow: none; }
+/* ⚠️ THE "NO HOVER" RULE THAT USED TO LIVE HERE IS GONE ON PURPOSE. It reset the clock's hover
+   back to the resting tokens with the reason *"it is a readout, not a control"* — true until
+   2026-08-16, when he asked it to answer a press. A control that gives nothing back under the
+   pointer reads as broken, so it now takes .kpm-chip's own hover like the bell and the sync pill.
+   Do not restore the override without also removing the press. */
+
+/* ---------- THE CLOCK HAS TWO FACES ----------
+   His ask, 2026-08-16: *"i want the clock to swapped into dates for 5 second then animate back
+   in into clock display ... i want this action works on press"*.
+
+   🔑 BOTH FACES SIT IN THE SAME GRID CELL. That is the whole reason nothing in the header moves
+   when it flips: the window is automatically as tall and as wide as the WIDER of the two faces,
+   in both states, so the right-hand cluster never shifts. Measuring the faces separately and
+   animating a width or a height is where a control like this normally starts jumping — and the
+   resting chip being sized for the date it can show is the price, paid once, instead of a
+   reflow paid on every press.
+   ⚠️ It slides on the same clock and the same curve as the digits inside it. One motion
+   vocabulary for one control; `html.lite-mode *` kills both together. */
+.kpm-clock-win { display: grid; overflow: hidden; }
+.kpm-clock-face {
+  grid-area: 1 / 1; display: flex; flex-direction: column; align-items: flex-end;
+  transition: transform 320ms cubic-bezier(.2, .9, .2, 1), opacity 180ms linear;
+}
+/* at rest the date is parked one full window BELOW, so it rises into place and the clock leaves
+   upward — one direction, so the pair reads as a single strip moving, not two things crossing */
+.kpm-clock-face:nth-child(2) { transform: translateY(100%); opacity: 0; }
+.kpm-clock.is-date .kpm-clock-face:nth-child(1) { transform: translateY(-100%); opacity: 0; }
+.kpm-clock.is-date .kpm-clock-face:nth-child(2) { transform: translateY(0); opacity: 1; }
+/* his format, lowercase, and it must never wrap — a two-line date would break the chip's height */
+.kpm-clock-long { font-size: 13px; font-weight: 700; color: var(--shell-ink-2);
+                  letter-spacing: .01em; white-space: nowrap; text-transform: none; }
+@media (prefers-reduced-motion: reduce) { .kpm-clock-face { transition: none; } }
 .kpm-clock-date { font-size: 9px; letter-spacing: .1em; opacity: .75; }
-.kpm-clock-time { font-size: 13px; font-weight: 700; color: var(--shell-ink-2); letter-spacing: .04em; }
+.kpm-clock-time { font-size: 13px; font-weight: 700; color: var(--shell-ink-2); letter-spacing: .04em;
+                  display: flex; align-items: flex-start; --row: 1.15em; }
+
+/* ---------- THE DIGITS SLIDE ----------
+   His ask: the motion-primitives SlidingNumber look, built as a CSS transition
+   instead of a JS spring. See the comment above ShellClock in BiohazardTheme.jsx
+   for why the library version could not ship.
+
+   🔑 Each digit is a 1-character WINDOW with a strip of 0-9 behind it. The JSX
+   writes the digit into `--d`; everything else is one transform. No keyframes,
+   no timers in CSS, nothing to keep in sync with the clock.
+
+   `--row` is the only number here. It is the chip's own line-height, so the
+   reel's rows are exactly the line box this text already occupied and the
+   header does not change height.
+
+   ⚠️ `overflow: hidden` is load-bearing, not tidiness — without it every digit
+   prints all ten numbers stacked down the page.
+   ⚠️ `1ch` is the width of a "0", which equals every digit's advance ONLY
+   because .kpm-chip.kpm-clock sets `font-variant-numeric: tabular-nums`. Drop
+   that and the windows stop lining up with their reels. */
+.kpm-dig { display: block; width: 1ch; height: var(--row); overflow: hidden; }
+.kpm-dig-reel {
+  display: block;
+  transform: translateY(calc(var(--d) * var(--row) * -1));
+  /* a TRANSITION, deliberately, and never an animation: `html.lite-mode *`
+     kills both, so Lite Mode gets the instant snap for nothing. 260ms leaves
+     the digit settled well before the next second arrives — a slide that is
+     still moving when the clock ticks again reads as a permanent shimmer. */
+  transition: transform 260ms cubic-bezier(.2, .9, .2, 1);
+}
+.kpm-dig-reel > span { display: block; height: var(--row); line-height: var(--row); text-align: center; }
+/* the colon keeps the same line box as the reels or the row loses its baseline */
+.kpm-dig-sep { display: block; height: var(--row); line-height: var(--row); }
+@media (prefers-reduced-motion: reduce) { .kpm-dig-reel { transition: none; } }
 html.kpm-sheet-over-header .kpm-topbar { opacity: 0; pointer-events: none; }
 html.lite-mode .kpm-topbar { transition: none; }
 @media (prefers-reduced-motion: reduce) { .kpm-topbar { transition: none; } }
