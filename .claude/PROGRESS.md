@@ -58,6 +58,34 @@ clause now assert **relationships** (light is darker than dark; the token is a r
 the numbers to `contrast.selfcheck.mjs`. Group 39 already carried this lesson in its own words —
 **do not write another check that freezes a value.**
 
+### 🔴 35 CLASSES WERE PAINTING NOTHING — `a5d0beb`, group 44. **547/547**
+
+Found while surveying the next screen; **jumped the queue because it is in screens already signed
+off.** Tailwind's `/N` opacity modifier needs a colour it can PARSE, and `var(--x)` is opaque to
+it — so **`bg-[var(--duke-amber)]/10` matches no rule at all.** Not a wrong colour: no colour.
+**35 distinct classes, 54 sites**, in `App.jsx` AND `MerchantSalesView.jsx`. The vault's amber
+buttons had no background and no border; the gate's inputs had no border; the nota's paper tints
+were absent. Six were mine from that night; the rest had been dead for weeks.
+▸ Fixed to `color-mix(in_srgb,var(--x)_N%,transparent)`. **Verified by listing the emitted
+DECLARATIONS** — 35 asked, 35 emitted, 0 missing. Group 44 verified RED at 55 sites pre-fix.
+⚠️ **NOTHING CAUGHT IT BECAUSE EVERY CHECK IN THE AUDIT GREPS THE SOURCE.** The source was correct
+*as text*. **When the question is "does this render", `dist/assets/*.css` is the only witness.**
+⚠️ **Four wrong readings in that one investigation came from shell-escaping regexes inside
+`node -e`.** Probes with regexes go in a scratchpad `.mjs`, and **always include a control whose
+answer you already know** — one bad reading agreed with the hypothesis under test.
+
+### ▶ NEXT SCREEN: the survey changed the plan. **Six of ten have NO dark mode at all.**
+
+Zero `dark:` variants, zero tokens — hardcoded dark panels, so **in light mode they stay black**:
+`MapMissionControl` · `FleetCanvasManager` · `JourneyView` · `StockOpnameView` ·
+`EODReconciliationView` · `RestockVaultView`. The other four (`HistoryReportView`,
+`CustomerManager`, `SamplingManager`, `ConsignmentFinanceView`) DO have both themes — they are
+just off-palette. **670 banned-hue sites (blue/indigo/emerald/green) across the ten.**
+▸ **Pilot chosen: `EODReconciliationView`** — smallest of the six that is genuinely broken
+(12 panels, 44 banned). Survey done, conversion NOT started.
+⚠️ `emerald` = verified/closed, `blue` = Digital Transfers. Both banned. Plan was gold for
+verified, brass for digital — **not yet run past Aldi.**
+
 ### 🔴 LITE MODE MAY NEVER CHANGE A COLOUR — his law, 2026-08-16, group 43. **545/545**
 
 *"the lite light moe causing the system acitve settings text to gone, since it causing the
