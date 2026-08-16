@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-16 18:28 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
+**Updated: 2026-08-16 19:03 WIB (KPM app session)** · branch `phase0-solid-ground` · last code commit: run `git log -1`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -14,6 +14,30 @@
 > and `A-Brain/Wiki/Log.md` hold how it got there.
 
 ## ▶ NOW
+
+### ⚙️ 2026-08-16 19:00 — v3: C AND D HAD NO MOTION, AND THE REASON IS REUSABLE
+
+His words: *"where is the animation for C and D"*. He was right. **A CSS transition never plays on
+an element that was just created** — the demos rebuild their DOM on every state change, so the key
+was born `.turned` and the chain link born `.forged`, with no previous value to interpolate from.
+A and B looked animated only because they used `@keyframes`, which DO replay on insert.
+
+**The pattern now used everywhere in that file, and the one to carry into the real screen:**
+
+    st.anim = 'agentKey';            // the event names itself
+    class="keyhole turned just"      // paint() reads st.anim on the next render
+    st.anim = null;                  // cleared at the END of render()
+
+`.turned` owns the END STATE, `.turned.just` owns the MOVEMENT. Lite keeps the turned key and drops
+only the turning; an unrelated re-render never replays it. Full write-up in
+`A-Brain/Wiki/Concepts/Silent Failure Disease.md`.
+
+Also fixed: C showed its key already turned before "Turn your key" was pressed, and A's envelope
+flap had stopped animating in v2 for the same born-finished reason.
+
+Verified by reading `getComputedStyle(el).animationName` for each: `flapClose`, `slam`, `keyTurn`,
+`boltSlide`, `boltThunk`, `forge`, `tug`, `crackShake`; plus no-replay-on-seat-switch, and the JS
+run counter landing on 18 in BOTH normal and Lite.
 
 ### 🔴 2026-08-16 18:25 — EOD v2: HE KILLED C, KEPT A+B, AND NAMED A MISSING RULE
 
