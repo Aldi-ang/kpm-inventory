@@ -18,13 +18,17 @@ if (!cssName) {
   console.error('no stylesheet in dist/assets declares --ground — run `npm run build` first');
   process.exit(1);
 }
+/* which page to flatten — the showroom by default, since that is the one Aldi looks at.
+   `node tools/make-preview.mjs theme-lab.html` still gets the measurement harness. */
+const page = process.argv[2] || 'theme-showroom.html';
+const out_name = page.replace('theme-', '').replace('.html', '');
 const css = fs.readFileSync(path.join(assets, cssName), 'utf8');
-const html = fs.readFileSync(path.join('tools', 'theme-lab.html'), 'utf8')
+const html = fs.readFileSync(path.join('tools', page), 'utf8')
   /* ⚠️ The <link> becomes a <style>. Anything the stylesheet loads BY URL (a font file, a sprite)
      will not resolve from the file system, so treat this as a colour and layout preview, not a
      pixel-perfect one. The lab over the server stays the reference. */
   .replace(/<link rel="stylesheet" href="__CSS__" \/>/, `<style>\n${css}\n</style>`);
 
-const out = path.join('tools', 'theme-preview.html');
+const out = path.join('tools', `theme-preview-${out_name}.html`);
 fs.writeFileSync(out, html);
 console.log(`${out}  (${(html.length / 1024).toFixed(0)} KB, css: ${cssName})`);

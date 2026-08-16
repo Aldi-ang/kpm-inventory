@@ -41,8 +41,13 @@ if (!findCss()) { console.error('no stylesheet in dist/assets declares --ground'
 
 http.createServer((req, res) => {
   const url = decodeURIComponent((req.url || '/').split('?')[0]);
-  if (url === '/' || url === '/lab' || url === '/index.html') {
-    const html = fs.readFileSync('tools/theme-lab.html', 'utf8')
+  /* `/` is the SHOWROOM — the page built for Aldi to look at and comment on.
+     `/lab` is the measurement harness, kept lean so a sweep stays fast. */
+  const page = (url === '/lab') ? 'theme-lab.html'
+             : (url === '/' || url === '/showroom' || url === '/index.html') ? 'theme-showroom.html'
+             : null;
+  if (page) {
+    const html = fs.readFileSync('tools/' + page, 'utf8')
                    .replace('__CSS__', `/assets/${findCss()}`);
     res.writeHead(200, { 'Content-Type': 'text/html', 'Cache-Control': 'no-store' });
     return res.end(html);

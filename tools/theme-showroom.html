@@ -1,0 +1,264 @@
+<!doctype html>
+<!-- THE SHOWROOM — every colour the app owns, in place, in both themes.
+     ============================================================================================
+     🔴 HIS ASK, 2026-08-16: *"i want to see the color in action so that i can comment, i cant see
+     i cant give suggestion"*. Contrast tables are not a design review. This is the page that lets
+     him point at something and say "that one".
+
+     ⚠️ EVERY CLASS BELOW IS COPIED OUT OF A REAL COMPONENT, never approximated. The lab already
+     made that mistake once: it guessed `.kpm-matrix two` for the FULL/LITE control, matched no
+     rule, and measured a plain button. A harness that invents markup measures the harness.
+
+     ⚠️ THE SWATCH GRID IS READ FROM THE STYLESHEET AT RUNTIME, not typed here. Type a token list
+     by hand and it goes stale the first time someone adds a colour — the grid would then be
+     confidently, silently incomplete. It walks the real `:root` rule instead, so it cannot lie
+     about which tokens exist.
+
+     Serve with tools/theme-lab-server.mjs, or inline it with tools/make-preview.mjs to get one
+     file that opens from disk with no server and no login. -->
+<html lang="en" class="kpm-cursor light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>KPM Colour Showroom</title>
+    <link rel="stylesheet" href="__CSS__" />
+    <style>
+      /* the showroom's own furniture, deliberately plain so it is never mistaken for the app */
+      .sr-bar { position: fixed; top: 0; left: 0; right: 0; z-index: 99999;
+        display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+        padding: 10px 14px; background: #1b1b1b; color: #fff;
+        font: 600 12px/1 ui-monospace, monospace; }
+      .sr-bar button { padding: 8px 14px; border: 1px solid #666; background: #2b2b2b;
+        color: #fff; border-radius: 4px; cursor: pointer; font: inherit; }
+      .sr-bar button[data-on="1"] { background: #ff9d00; color: #000; border-color: #ff9d00; }
+      .sr-bar .sr-note { opacity: .6; font-weight: 400; }
+      .sr-page { padding: 64px 20px 120px; max-width: 1180px; margin: 0 auto; }
+      .sr-h { font: 700 11px/1 ui-monospace, monospace; letter-spacing: .28em;
+        text-transform: uppercase; opacity: .55; margin: 44px 0 14px;
+        padding-bottom: 8px; border-bottom: 1px dashed currentColor; }
+      .sr-row { display: flex; gap: 14px; flex-wrap: wrap; align-items: flex-start; }
+      .sr-grid { display: grid; gap: 10px;
+        grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); }
+      .sr-tok { display: flex; align-items: center; gap: 9px; font: 500 11px/1.35 ui-monospace, monospace; }
+      .sr-chip { width: 40px; height: 40px; flex: none; border-radius: 5px;
+        border: 1px solid rgba(128,128,128,.55);
+        /* the checker shows through anything translucent, which is most of the film tokens */
+        background-image: linear-gradient(45deg,#8883 25%,transparent 25%,transparent 75%,#8883 75%),
+                          linear-gradient(45deg,#8883 25%,transparent 25%,transparent 75%,#8883 75%);
+        background-size: 12px 12px; background-position: 0 0, 6px 6px; }
+      .sr-chip i { display: block; width: 100%; height: 100%; border-radius: 4px; }
+      .sr-tok b { font-weight: 700; display: block; word-break: break-all; }
+      .sr-tok span { opacity: .65; }
+      .sr-cap { font: 400 11px/1.5 ui-monospace, monospace; opacity: .6; margin: -6px 0 12px; }
+    </style>
+  </head>
+  <body>
+    <div class="sr-bar">
+      <button id="b-light">light</button>
+      <button id="b-dark">dark</button>
+      <button id="b-lite">lite mode</button>
+      <span class="sr-note" id="sr-state"></span>
+      <span class="sr-note">— point at anything and tell me what to change</span>
+    </div>
+
+    <div class="sr-page">
+
+      <!-- ================= THE SHELL ================= -->
+      <div class="sr-h">The shell — header, chips, clock</div>
+      <header class="kpm-topbar" style="display:flex;align-items:center;justify-content:space-between;margin-left:0">
+        <div>
+          <div class="kpm-topbar-eyebrow">System active</div>
+          <div class="kpm-topbar-title">Settings</div>
+        </div>
+        <div style="display:flex;gap:10px;align-items:center">
+          <span class="kpm-chip">Synced</span>
+          <span class="kpm-chip on">Live</span>
+          <span class="kpm-chip warn">Offline</span>
+          <span class="kpm-chip kpm-clock">
+            <span class="kpm-clock-date">8/16/2026</span>
+            <span class="kpm-clock-time">07:43 AM</span>
+          </span>
+        </div>
+      </header>
+      <p class="sr-cap">The header is GLASS — it has no colour of its own, it blurs the page behind it.</p>
+
+      <!-- ================= COMMAND CENTRE ================= -->
+      <div class="sr-h">Command centre head &amp; buttons</div>
+      <div class="kpm-cmd">
+        <div>
+          <h2>Command Center</h2>
+          <p class="clearance tier1">Clearance: Tier 1 (Overseer)</p>
+        </div>
+        <div class="kpm-acts">
+          <button type="button" class="kpm-btn">Reset indicators</button>
+          <button type="button" class="kpm-btn key">Lock terminal</button>
+          <button type="button" class="kpm-btn hazard">Delete record</button>
+          <button type="button" class="kpm-btn" disabled>Unavailable</button>
+        </div>
+      </div>
+
+      <!-- ================= NAV ================= -->
+      <div class="sr-h">Tabs — open, closed, tier 1</div>
+      <div class="kpm-nav" style="max-width:280px">
+        <button type="button" aria-current="page">General &amp; brand</button>
+        <button type="button">Tiers &amp; logic</button>
+        <button type="button">Security &amp; data</button>
+        <button type="button" class="tier1">Architect (Tier 1)</button>
+      </div>
+
+      <!-- ================= MODULES ================= -->
+      <div class="sr-h">Modules — the four states</div>
+      <section class="kpm-band"><span class="slot">This device &middot; nothing here leaves the phone</span></section>
+      <section class="kpm-mod">
+        <div class="kpm-head"><span class="slot">Device &middot; 01</span><h3>Graphics</h3></div>
+        <p class="kpm-desc"><b>Lite</b> drops blur, animation and the heavy effects so a cheap phone stays quick and the battery lasts. Nothing is hidden and no data changes.</p>
+        <div class="kpm-shelf split">
+          <div class="kpm-switch" role="group" aria-label="Graphics mode">
+            <button type="button" aria-pressed="true">Full</button>
+            <button type="button" aria-pressed="false">Lite</button>
+          </div>
+        </div>
+      </section>
+      <section class="kpm-mod live">
+        <div class="kpm-head"><span class="slot">Live &middot; 02</span><h3>Sync status</h3></div>
+        <p class="kpm-desc">A module in its <b>live</b> state — something is happening right now.</p>
+      </section>
+      <section class="kpm-band hazard"><span class="slot">Danger &middot; this cannot be undone</span></section>
+      <section class="kpm-mod hazard">
+        <div class="kpm-head"><span class="slot">Hazard &middot; 03</span><h3>Wipe device data</h3></div>
+        <p class="kpm-desc">A module in its <b>hazard</b> state — the red is rationed to things that destroy data.</p>
+      </section>
+      <section class="kpm-mod idle">
+        <div class="kpm-head"><span class="slot">Idle &middot; 04</span><h3>Archived shift</h3></div>
+        <p class="kpm-desc">A module in its <b>idle</b> state — present, but not asking for attention.</p>
+      </section>
+
+      <!-- ================= CONTROLS ================= -->
+      <div class="sr-h">Controls — readouts, switches, fields</div>
+      <div class="sr-row">
+        <span class="kpm-read">Readout</span>
+        <span class="kpm-read on">Readout ON</span>
+        <span class="kpm-read alert">Readout ALERT</span>
+        <!-- the dot and the swatch take their colour from tier DATA, not from a token, so they
+             are shown with the real default rank colours rather than left blank -->
+        <span class="kpm-dot" style="background-color:#f59e0b"></span>
+        <span class="kpm-dot" style="background-color:#6b5a40"></span>
+        <span class="kpm-swatch sm" style="border-color:#f59e0b"></span>
+        <span class="kpm-rank">Mythic</span>
+        <kbd class="kpm-kbd">F2</kbd>
+      </div>
+      <div class="sr-row" style="margin-top:14px">
+        <button type="button" class="kpm-toggle" aria-pressed="true" aria-label="allowed"><span class="kpm-sw" aria-hidden="true"></span></button>
+        <button type="button" class="kpm-toggle" aria-pressed="false" aria-label="blocked"><span class="kpm-sw" aria-hidden="true"></span></button>
+        <div class="kpm-chips">
+          <button type="button" aria-pressed="true">All</button>
+          <button type="button" aria-pressed="false">Pending</button>
+          <button type="button" aria-pressed="false">Closed</button>
+        </div>
+      </div>
+      <div class="kpm-permrow" style="margin-top:14px">
+        <span class="feat">View customer directory</span>
+        <button type="button" class="kpm-toggle" aria-pressed="true" aria-label="allowed"><span class="kpm-sw" aria-hidden="true"></span></button>
+      </div>
+      <div class="kpm-permrow">
+        <span class="feat edit">Edit customer directory</span>
+        <button type="button" class="kpm-toggle" aria-pressed="false" aria-label="blocked"><span class="kpm-sw" aria-hidden="true"></span></button>
+      </div>
+      <section class="kpm-mod" style="margin-top:14px">
+        <div class="kpm-shelf">
+          <label class="kpm-field"><span>Company name</span><input type="text" value="KPM Inventory" /></label>
+          <label class="kpm-field"><span>Official address</span><input type="text" placeholder="Jl. Jendral Sudirman No.129, Jakarta" /></label>
+          <label class="kpm-field"><span>Disabled field</span><input type="text" value="Locked" disabled /></label>
+        </div>
+        <div class="kpm-shelf split">
+          <div class="kpm-acts"><button type="button" class="kpm-btn key">Save letterhead</button></div>
+        </div>
+      </section>
+
+      <!-- ================= LOG ROWS ================= -->
+      <div class="sr-h">Flight recorder — the four log types</div>
+      <div style="display:flex;flex-direction:column;gap:8px;font-family:ui-monospace,monospace;font-size:12px">
+        <div class="kpm-log-row p-3 rounded border bg-[var(--duke-fill-well)] border-[var(--duke-edge-1)] text-[var(--duke-ink-1)]">INFO &mdash; ordinary line</div>
+        <div class="kpm-log-row p-3 rounded border bg-[color-mix(in_srgb,var(--duke-brass-2)_10%,transparent)] border-[color-mix(in_srgb,var(--duke-brass-3)_60%,transparent)] text-[var(--duke-brass-ink)]">SUCCESS &mdash; receipt synced</div>
+        <div class="kpm-log-row p-3 rounded border bg-[color-mix(in_srgb,var(--duke-amber-edge)_15%,transparent)] border-[color-mix(in_srgb,var(--duke-amber-edge)_60%,transparent)] text-[var(--shell-orange-ink)]">OFFLINE &mdash; queued for later</div>
+        <div class="kpm-log-row p-3 rounded border bg-[color-mix(in_srgb,var(--danger)_15%,transparent)] border-[color-mix(in_srgb,var(--duke-danger-edge)_60%,transparent)] text-[var(--duke-danger-ink)]">ERROR &mdash; write rejected</div>
+      </div>
+
+      <!-- ================= DARK ISLAND ================= -->
+      <div class="sr-h">The vault gate — stays dark in BOTH themes on purpose</div>
+      <div class="kpm-dark-island" style="padding:28px;border-radius:8px;background:var(--duke-well-solid)">
+        <div class="kpm-mod gate" style="margin:0 auto">
+          <div class="kpm-head"><span class="slot">KPM Inventory</span><h3>Master Vault</h3></div>
+          <div class="kpm-shelf">
+            <label class="kpm-field"><span>Master password</span><input type="password" value="secret" /></label>
+          </div>
+          <div class="kpm-shelf split"><div class="kpm-acts"><button type="button" class="kpm-btn key">Open the vault</button></div></div>
+        </div>
+      </div>
+
+      <!-- ================= TOKENS ================= -->
+      <div class="sr-h">Every colour the app owns — live values in this theme</div>
+      <p class="sr-cap">Read from the stylesheet itself, so it cannot go stale. Checkerboard = see-through.</p>
+      <div class="sr-grid" id="sr-tokens"></div>
+    </div>
+
+    <script>
+      const H = document.documentElement;
+      const state = () => document.getElementById('sr-state').textContent =
+        '[' + (H.classList.contains('dark') ? 'dark' : 'light') +
+        (H.classList.contains('lite-mode') ? ' + lite' : '') + ']';
+      const setTheme = (t) => { H.classList.remove('light', 'dark'); H.classList.add(t); paint(); state(); };
+      document.getElementById('b-light').onclick = () => setTheme('light');
+      document.getElementById('b-dark').onclick  = () => setTheme('dark');
+      document.getElementById('b-lite').onclick  = (e) => {
+        H.classList.toggle('lite-mode');
+        e.target.dataset.on = H.classList.contains('lite-mode') ? '1' : '0';
+        paint(); state();
+      };
+
+      /* ⚠️ NAMES COME FROM THE STYLESHEET, NEVER FROM A LIST TYPED HERE. A hand-typed list is
+         complete on the day it is written and quietly wrong forever after. */
+      function tokenNames() {
+        const names = new Set();
+        for (const sheet of document.styleSheets) {
+          let rules; try { rules = sheet.cssRules; } catch (e) { continue; }
+          for (const r of rules) {
+            if (!r.selectorText || !/^:root|^html\.(light|dark)/.test(r.selectorText)) continue;
+            for (const p of r.style) if (p.startsWith('--')) names.add(p);
+          }
+        }
+        return [...names].sort();
+      }
+
+      function paint() {
+        const cs = getComputedStyle(H);
+        const box = document.getElementById('sr-tokens');
+        box.innerHTML = '';
+        for (const n of tokenNames()) {
+          const v = cs.getPropertyValue(n).trim();
+          if (!v || /gradient|url\(/.test(v)) continue;   /* gradients are not one colour */
+          const el = document.createElement('div');
+          el.className = 'sr-tok';
+          const chip = document.createElement('span');
+          chip.className = 'sr-chip';
+          const fill = document.createElement('i');
+          fill.style.background = v;
+          chip.appendChild(fill);
+          const label = document.createElement('div');
+          label.innerHTML = '<b></b><span></span>';
+          label.querySelector('b').textContent = n;
+          label.querySelector('span').textContent = v;
+          el.append(chip, label);
+          box.appendChild(el);
+        }
+      }
+
+      /* the same guard the lab uses: a page with no stylesheet must not look like a page with
+         no problems */
+      if (!getComputedStyle(H).getPropertyValue('--ground').trim()) {
+        document.body.innerHTML = '<pre style="padding:40px;font:700 16px/1.7 ui-monospace,monospace;color:#c00">'
+          + 'STYLESHEET DID NOT LOAD — nothing on this page means anything.\n\nRun `npm run build`, then reopen.</pre>';
+      } else { paint(); state(); }
+    </script>
+  </body>
+</html>
