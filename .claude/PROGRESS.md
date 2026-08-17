@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-17 08:48 WIB (KPM app session)** · ❓ HIS QUESTION IS THE FIRST SECTION — AWAITING HIS PICK · review verified 44/78 · branch `phase0-solid-ground`
+**Updated: 2026-08-17 09:06 WIB (KPM app session)** · ❓ TWO OPEN QUESTIONS ARE THE FIRST SECTION — transfer bounty, and the card carousel · branch `phase0-solid-ground`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -15,7 +15,64 @@
 
 ## ▶ NOW
 
-# ❓ 2026-08-17 08:48 — WAITING ON ALDI. HIS QUESTION, VERBATIM:
+# ❓ 2026-08-17 09:06 — TWO OPEN QUESTIONS. HIS WORDS, VERBATIM.
+
+### ❓ Q1 — the transfer shortfall. ASKED, NOT ANSWERED. Nothing is charged until he replies.
+
+> *"if less give the agent option to write the real value so that the system can count what missing
+> value needed to be repaid by the agent and add it to the bounties"*
+
+**Built:** the detection, the per-customer record, and the shortfall figure on the card
+(*"Rp 180.000 did not arrive"*). **Not built:** minting the bounty.
+⚠️ **Why it was not just done:** a customer who never sent a transfer may not be the agent's fault.
+Lost stamps are the agent's because they physically held them; an unpaid transfer may be the
+CUSTOMER's unpaid bill. Billing the agent on the wrong premise puts a debt against an employee's
+name. The question put to him: **agent / customer / agent-only-if-they-cannot-name-the-customer.**
+The mint would live in `handleVerifyEOD` (admin approval), writing a `PENALTY_*` key into
+`cukaiDebts` — the same mechanism `agentBountyData` already reads.
+
+### 🔴 Q2 — the card carousel. He sent a VIDEO and I watched it. Awaiting a number.
+
+> *"what if u make the cards animation to be like this, more like flashcard and not receipt shape
+> of cards"* · *"slideable to the side, like cards carousel"*
+
+**Video:** `…ScreenSketch…/Recordings/20260817-0203-30.4359742.mp4`, 7.7s. Frames extracted to
+`scratchpad/vid/f01-23.png` — **look at them, do not re-read this paragraph.** What is in it: five
+TALL PORTRAIT cards in an ARC pivoting from a point below, centre card upright/largest/in front,
+neighbours rotating progressively outward and sitting lower, dragged sideways to rotate the fan.
+
+**The mapping I gave him** — take: all four visible at once, drag-to-move (which also fixes a real
+hole, today you cannot go BACK to a card), portrait ~300x400 shape. **Change:** the centre card
+must come fully upright and full width, because unlike his reference these cards are TYPED INTO.
+The clip already does this, so it is not a compromise.
+⚠️ **What a carousel costs that the stack does not:** today confirming forces you forward, so a
+card cannot be skipped. Swiping can. Needs "2 cards still uncounted" on the send button.
+**His options were 1 build now / 2 build after the admin letter stack / 3 playable prototype first.
+I recommended 3 then 1.** The flight, the caps and the record shape all survive either way.
+
+# ✅ 2026-08-17 09:06 — TRANSFER IS NOW CHECKED, NOT COUNTED. `git log -1`
+
+He answered the earlier "typed vs confirm-and-next" question by picking **C and extending it**:
+a list of today's receipts, tick each one. Shipped.
+
+- Three verdicts per row — **landed / less / not yet** — because his rule needed both cases
+  (*"never arrived, AND arrived for less than recorded"*). "Less" opens one box and is NOT decided
+  until a figure is typed.
+- Each row keeps its own `txId`, so a gap names a customer. Driven end to end, the stored record
+  reads `Kios Melati:landed:700000/700000 | Warung Jaya:less:320000/500000`, declared 1.020.000
+  against 1.200.000 recorded.
+- **Audit group 49** is new and pins all of it, including that `EODAgentFlow` FORWARDS `receipts`
+  (the `maxTotal` drop-in-the-middle already happened once on this component).
+
+🔬 **A MEASURED BUG CLASS, NOW CLOSED — read this before touching the deck.** The cards are
+`absolute` inside a **fixed `h-[344px]` box**, so a card taller than the box does NOT clip: it
+spills over the confirm button and eats the taps. Measured: pita cukai **354px**, transfer
+**350px** — both over. Cause was a progress row that had finished its job still sitting beside the
+plate that mattered; it retires now. Re-measured every card: **261-318px, worst margin 26px.**
+**The harness reports `boxH` / `cardH` / `cardOverflowsBox` on every stage — check it after any
+card edit.**
+
+# ❓ 2026-08-17 08:48 — (ANSWERED — he picked C) the typed-vs-confirm question
 
 > *"regarding the EOD there is some difference with the design that u made, on the artifact all the
 > value is stated there and the user just check, confirm and next, while in this integrated one u
