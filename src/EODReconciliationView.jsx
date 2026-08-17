@@ -436,6 +436,24 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                                 cash: agentData.cashSources,
                                                 transfer: agentData.transferSources
                                             }}
+                                            /* 🧾 THE TRANSFER CARD IS A RECEIPT LIST, NOT A NUMBER PAD.
+                                               Aldi, 2026-08-17: *"it is better when there is some list of the
+                                               receipt that been printed today, if less give the agent option to
+                                               write the real value"*. You do not COUNT a bank transfer — it
+                                               reached the account or it did not — so a typed total is arithmetic
+                                               the agent should not be doing, and it loses the only fact worth
+                                               having. These are the same rows that already back the total, so
+                                               nothing new is read: `transferSources` is built in the same loop as
+                                               `expectedTransfer` and already carries the customer and the method. */
+                                            receipts={{
+                                                transfer: (agentData.transferSources || []).map((t, n) => ({
+                                                    key: t.txId || `tf-${n}`,
+                                                    txId: t.txId,
+                                                    customer: t.customerName || 'Unknown store',
+                                                    amount: Number(t.amount) || 0,
+                                                    method: t.method
+                                                }))
+                                            }}
                                             lines={{
                                                 goods: (agentData.activeStock || []).map((item, n) => ({
                                                     key: String(item.productId || `row-${n}`),

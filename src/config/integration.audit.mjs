@@ -3417,6 +3417,48 @@ check(G48, 'lines that each fit can still be refused for adding up too high',
   '128 stamps handed over plus 128 lost is 256 against a debt of 128 — every line legal, the pair ' +
   'impossible');
 
+/* =============================================================================================
+   49. A TRANSFER IS CHECKED, NOT COUNTED
+   Aldi, 2026-08-17, choosing this over typing a total: *"it is better when there is some list of
+   the receipt that been printed today, if less give the agent option to write the real value"*.
+   Cash, goods and stamps are things in a hand. A bank transfer is not — it reached the account or
+   it did not — so a typed total is arithmetic the agent should not be doing, and it destroys the
+   only fact worth having: typing 700.000 against 1.200.000 says half a million is missing; ticking
+   says WHICH customer's payment never landed.
+   ============================================================================================= */
+const G49 = '49. A transfer is checked, not counted';
+
+check(G49, 'the transfer card offers all three verdicts he specified',
+  /'landed'/.test(deckSrc) && /'less'/.test(deckSrc) && /'missing'/.test(deckSrc),
+  'his rule was BOTH cases — "never arrived, AND arrived for less than recorded" — so two states ' +
+  'is not enough; "less" is the one that needs a figure typed');
+
+check(G49, 'a receipt row keeps its own transaction id',
+  /txId:\s*r\.txId/.test(deckSrc),
+  'a synthetic key would make the row untraceable back to the sale it came from, which is the ' +
+  'entire reason this card stopped being a number pad');
+
+check(G49, '"less" is not decided until a figure is typed',
+  /t\.v\s*!==\s*'less'\s*\|\|/.test(deckSrc),
+  '"short by an unknown amount" is not a record anybody can act on');
+
+check(G49, 'the composer forwards the receipt rows to the deck',
+  /receipts=\{receipts\}/.test(
+    fs.existsSync('src/components/EODAgentFlow.jsx')
+      ? fs.readFileSync('src/components/EODAgentFlow.jsx', 'utf8') : ''),
+  'the same drop-in-the-middle that made `maxTotal` a guard which existed at both ends and did ' +
+  'nothing — checked here because it has already happened once on this component');
+
+/* ⚠️ THE CARDS ARE ABSOLUTELY POSITIONED IN A FIXED-HEIGHT BOX, so a card taller than the box does
+   not clip — it spills over the confirm button and eats the taps. Measured in the harness: with
+   the progress row AND the fine plate both showing, the pita cukai card was 354px inside a 344px
+   box; the transfer card was 350px. Neither figure is asserted here (group 39's rule) — what is
+   asserted is that the finished-progress row retires, which is what bought the room back. */
+check(G49, 'the progress row retires once its card is complete',
+  /filled\s*<\s*cardLines\.length/.test(deckSrc),
+  '"2 of 2 counted" beside a cash-fine plate is a line that has finished its job still taking ' +
+  'room a fixed-height card does not have');
+
 check(G48, 'the composer forwards the total cap to the deck',
   /maxTotal=\{maxTotal\}/.test(
     fs.existsSync('src/components/EODAgentFlow.jsx')

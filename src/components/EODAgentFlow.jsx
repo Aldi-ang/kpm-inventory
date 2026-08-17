@@ -22,6 +22,7 @@ import { CARD_IDS, CARD_LABELS, emptyLetter, emptyCard, declareCard, canSend } f
 export default function EODAgentFlow({
   expected = {},
   lines = {},
+  receipts = {},
   maxTotal = {},
   details = {},
   notes = {},
@@ -130,6 +131,7 @@ export default function EODAgentFlow({
         <EODCardDeck
           expected={expected}
           lines={lines}
+          receipts={receipts}
           maxTotal={maxTotal}
           details={details}
           notes={notes}

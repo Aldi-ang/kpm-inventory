@@ -1,5 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { Wallet, Send, Package, Tag } from 'lucide-react';
+import { formatRupiah } from '../utils/helpers';
 import { CARD_IDS, CARD_LABELS } from '../utils/eodRecord';
 
 /* THE FOUR CARDS THE AGENT COUNTS, AS A DECK.
@@ -38,7 +39,7 @@ const ICONS = { cash: Wallet, transfer: Send, goods: Package, cukai: Tag };
 
 const HINTS = {
   cash:     'Count every note and coin in the envelope.',
-  transfer: 'Confirm the payments that actually landed in the account.',
+  transfer: 'Check each receipt against the bank account.',
   goods:    'Count each product going back to the warehouse.',
   cukai:    'Split the stamps: handed over, and lost.'
 };
@@ -68,9 +69,35 @@ const clampLine = (raw, max) => {
 /* `details` is a node per card — extra context the agent needs in order to count at all.
    `notes` is a function per card, called with the current line values, for anything that must
    react to what is being typed (the pita cukai fine is the only one today). */
+/* ⚠️ A TRANSFER IS NOT COUNTED, IT IS CHECKED. Aldi, 2026-08-17, choosing this over typing a
+   total: *"it is better when there is some list of the receipt that been printed today, if less
+   give the agent option to write the real value"*.
+
+   Cash, goods and stamps are things in a hand — you count them. A bank transfer is not: it either
+   reached the account or it did not, so asking for a typed total makes the agent do arithmetic
+   instead of checking, and throws away the only thing worth knowing. Typing `700.000` against
+   `1.200.000` says half a million is missing. Ticking says **Warung Jaya's Rp 500.000 never
+   landed** — a name, on the day it happened, which is what "traced down to the root" means.
+
+   His own spec needed both cases: *"never arrived, AND arrived for less than recorded"*. So a row
+   has three verdicts, not two. */
+const VERDICTS = [
+  { key: 'landed',  label: 'Landed',  tone: 'ok' },
+  { key: 'less',    label: 'Less',    tone: 'warn' },
+  { key: 'missing', label: 'Not yet', tone: 'bad' }
+];
+
+/* What a decided row is actually worth. `less` is the only one that reads a typed figure. */
+const receiptActual = (r, t) =>
+  !t ? 0
+  : t.v === 'landed' ? Number(r.amount) || 0
+  : t.v === 'less' ? Math.min(toNum(t.amt), Number(r.amount) || 0)
+  : 0;
+
 export default function EODCardDeck({
   expected = {},
   lines = {},
+  receipts = {},
   maxTotal = {},
   details = {},
   notes = {},
@@ -81,14 +108,28 @@ export default function EODCardDeck({
   const [step, setStep] = useState(0);
   const [entry, setEntry] = useState('');     // single-value cards
   const [rows, setRows] = useState({});       // per-line cards, keyed by line key
+  const [ticks, setTicks] = useState({});     // receipt cards: key -> { v, amt }
   const [flown, setFlown] = useState({});     // card id -> the measured flight to the letter
   const activeRef = useRef(null);
 
   const active = CARD_IDS[step];
   const finished = step >= CARD_IDS.length;
   const activeLines = lines[active];
+  const activeReceipts = receipts[active];
 
   const filled = activeLines ? activeLines.filter(l => rows[l.key] !== undefined && rows[l.key] !== '').length : 0;
+
+  /* A receipt row is DECIDED, not filled — and "less" is only decided once a figure is typed,
+     because "less by an unknown amount" is not a record anybody can act on. */
+  const decided = activeReceipts
+    ? activeReceipts.filter(r => {
+        const t = ticks[r.key];
+        return t && (t.v !== 'less' || (t.amt !== undefined && t.amt !== ''));
+      }).length
+    : 0;
+  const receiptRecorded = activeReceipts ? activeReceipts.reduce((s, r) => s + (Number(r.amount) || 0), 0) : 0;
+  const receiptLanded = activeReceipts ? activeReceipts.reduce((s, r) => s + receiptActual(r, ticks[r.key]), 0) : 0;
+  const receiptShort = receiptRecorded - receiptLanded;
 
   /* Per-line caps stop one line going too high; this stops the LINES ADDING UP too high, which is
      the pita cukai case — 128 handed over plus 128 lost is 256 stamps against a debt of 128. Goods
@@ -98,9 +139,11 @@ export default function EODCardDeck({
   const cap = maxTotal[active];
   const overTotal = typeof cap === 'number' && lineTotal > cap;
 
-  const ready = activeLines
-    ? (activeLines.length === 0 || (filled === activeLines.length && !overTotal))
-    : entry !== '';
+  const ready = activeReceipts
+    ? (activeReceipts.length === 0 || decided === activeReceipts.length)
+    : activeLines
+      ? (activeLines.length === 0 || (filled === activeLines.length && !overTotal))
+      : entry !== '';
 
   /* Measure the trip from the card that is about to leave to the letter it is going into.
      Taken BEFORE the state change, while the card is still at rest — the numbers are meaningless
@@ -123,21 +166,38 @@ export default function EODCardDeck({
 
     /* Per-line cards hand back the real rows. This is the traceability: a gap on the goods card
        leads back to "Cello Green", not to "goods". */
-    const src = activeLines
-      ? activeLines.map(l => ({
-          txId: `${active}:${l.key}`,
-          label: l.name,
-          /* clamped AGAIN here, not just in the input. The input clamp is what the agent sees; this
-             is what the record stores, and a record that trusts its own UI is not a record. */
-          amount: clampLine(rows[l.key], l.max),
-          expected: Number(l.expected) || 0
-        }))
-      : null;
+    /* ⚠️ THE RECEIPT ROW KEEPS ITS OWN TRANSACTION ID, not a synthetic one. `expected` is what the
+       sale was recorded as, `amount` is what actually reached the account, and `verdict` says which
+       of his two cases it was. A gap on this card therefore names a customer and a payment, which
+       is the whole reason the record shape exists. */
+    const src = activeReceipts
+      ? activeReceipts.map(r => {
+          const t = ticks[r.key] || {};
+          return {
+            txId: r.txId || `${active}:${r.key}`,
+            label: r.customer || r.label || 'Unknown store',
+            amount: receiptActual(r, t),
+            expected: Number(r.amount) || 0,
+            method: r.method,
+            verdict: t.v || 'missing'
+          };
+        })
+      : activeLines
+        ? activeLines.map(l => ({
+            txId: `${active}:${l.key}`,
+            label: l.name,
+            /* clamped AGAIN here, not just in the input. The input clamp is what the agent sees;
+               this is what the record stores, and a record that trusts its own UI is not a record. */
+            amount: clampLine(rows[l.key], l.max),
+            expected: Number(l.expected) || 0
+          }))
+        : null;
     const counted = src ? src.reduce((s, r) => s + r.amount, 0) : toNum(entry);
 
     setFlown(prev => ({ ...prev, [active]: measure() }));
     setEntry('');
     setRows({});
+    setTicks({});
     setStep(s => s + 1);
     if (onConfirm) onConfirm(active, counted, Number(expected[active] ?? 0), src);
   };
@@ -193,7 +253,93 @@ export default function EODCardDeck({
 
               <p className="text-[13px] text-[var(--ink-dim)] mb-3">{HINTS[id]}</p>
 
-              {cardLines ? (
+              {receipts[id] ? (
+                /* ── one receipt per row: landed / less / not yet ───────────── */
+                <>
+                  {receipts[id].length === 0 ? (
+                    <p className="rounded-lg border border-dashed border-[var(--line-3)] bg-[var(--inset)] px-3 py-6 text-center text-[11px] uppercase tracking-[.18em] text-[var(--ink-dim)]">
+                      No transfers recorded today
+                    </p>
+                  ) : (
+                    <div className="max-h-[150px] overflow-y-auto rounded-lg border bg-[var(--inset)] border-[var(--line)] p-1.5">
+                      {receipts[id].map(r => {
+                        const t = ticks[r.key] || {};
+                        return (
+                          <div key={r.key} className="rounded-md px-2 py-1.5">
+                            <div className="flex items-baseline justify-between gap-2">
+                              <span className="text-[13px] font-bold text-[var(--ink)] truncate">{r.customer}</span>
+                              <span className="shrink-0 font-mono tabular-nums text-[12px] text-[var(--ink-dim)]">
+                                {formatRupiah(r.amount)}
+                              </span>
+                            </div>
+                            <div className="mt-1 flex gap-1">
+                              {VERDICTS.map(v => {
+                                const on = t.v === v.key;
+                                return (
+                                  <button
+                                    key={v.key}
+                                    type="button"
+                                    disabled={offset !== 0 || disabled}
+                                    onClick={() => setTicks(p => ({ ...p, [r.key]: { v: v.key, amt: v.key === 'less' ? (p[r.key]?.amt ?? '') : '' } }))}
+                                    /* colour marks what needs attention: a landed payment is the
+                                       normal case and stays plain, the two problem verdicts light up */
+                                    className={`flex-1 rounded-md border py-1.5 text-[11px] font-bold uppercase tracking-wider transition-colors ${
+                                      !on ? 'border-[var(--line)] bg-[var(--raised)] text-[var(--ink-dim)]'
+                                        : v.tone === 'ok' ? 'border-[var(--accent-edge)] bg-[var(--raised)] text-[var(--ink)]'
+                                        : 'border-[var(--danger)] bg-[var(--danger)] text-[var(--gold-ink)]'
+                                    }`}
+                                  >
+                                    {v.label}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                            {t.v === 'less' && (
+                              <label className="mt-1 flex items-center gap-2">
+                                <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--ink-dim)]">Actually got</span>
+                                <input
+                                  type="text"
+                                  inputMode="numeric"
+                                  autoFocus
+                                  value={t.amt ?? ''}
+                                  onChange={e => setTicks(p => ({ ...p, [r.key]: { v: 'less', amt: e.target.value } }))}
+                                  placeholder="0"
+                                  disabled={offset !== 0 || disabled}
+                                  aria-label={`Amount actually received from ${r.customer}`}
+                                  className="flex-1 rounded-lg border-2 px-2 py-1.5 text-right font-mono tabular-nums text-[14px] font-black bg-[var(--raised)] border-[var(--danger)] text-[var(--ink)] outline-none"
+                                />
+                              </label>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {/* ⚠️ THE SHORTFALL REPLACES THE PROGRESS ROW, it does not stack under it. Two
+                      reasons, and the second is measured. Once every row is checked, "2 of 2
+                      checked" has finished its job and the only line worth the space is the money.
+                      And stacking them put the card at 350px inside a 344px box — the cards are
+                      absolutely positioned, so a card taller than the box does not clip, it spills
+                      over the confirm button and eats the taps. */}
+                  {offset === 0 && receipts[id].length > 0 && (
+                    receiptShort > 0 && decided === receipts[id].length ? (
+                      <p className="mt-2 rounded-lg border border-[var(--danger)] bg-[var(--danger)] px-3 py-1.5 text-center text-[11px] font-bold uppercase tracking-[.14em] text-[var(--gold-ink)]">
+                        {formatRupiah(receiptShort)} did not arrive
+                      </p>
+                    ) : (
+                      <div className="mt-2 flex items-center justify-between gap-3">
+                        <span className="text-[11px] font-bold uppercase tracking-[.16em] text-[var(--ink-dim)]">
+                          {decided} of {receipts[id].length} checked
+                        </span>
+                        <span className="font-mono tabular-nums text-[12px] font-bold text-[var(--ink)]">
+                          {formatRupiah(receiptLanded)} landed
+                        </span>
+                      </div>
+                    )
+                  )}
+                </>
+              ) : cardLines ? (
                 /* ── one input per line ─────────────────────────────────────── */
                 <>
                   {cardLines.length === 0 ? (
@@ -252,8 +398,13 @@ export default function EODCardDeck({
                     </div>
                   )}
 
-                  {/* the count of counted lines, so a half-done card cannot look finished */}
-                  {cardLines.length > 0 && offset === 0 && (
+                  {/* The count of counted lines, so a half-done card cannot look finished — and it
+                      RETIRES once the card is done. "2 of 2 counted" beside a cash-fine plate is a
+                      line that has finished its job still taking the room, and the room is not
+                      free: the cards are absolutely positioned inside a fixed 344px box, so a card
+                      that grows past it spills over the confirm button rather than clipping.
+                      Measured at 354px with both showing; 300px with only the one that matters. */}
+                  {cardLines.length > 0 && offset === 0 && filled < cardLines.length && (
                     <div className="mt-2 flex items-center justify-between gap-3">
                       <span className="text-[11px] font-bold uppercase tracking-[.16em] text-[var(--ink-dim)]">
                         {filled} of {cardLines.length} counted
@@ -324,9 +475,11 @@ export default function EODCardDeck({
             ? `Put ${CARD_LABELS[active]} in the letter`
             : overTotal
               ? 'Too many — check the count'
-              : activeLines
-                ? `Count all ${activeLines.length} lines first`
-                : 'Enter what you counted'}
+              : activeReceipts
+                ? `Check all ${activeReceipts.length} transfers first`
+                : activeLines
+                  ? `Count all ${activeLines.length} lines first`
+                  : 'Enter what you counted'}
         </button>
       )}
     </div>
