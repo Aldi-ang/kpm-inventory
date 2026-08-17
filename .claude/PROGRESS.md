@@ -15,6 +15,34 @@
 
 ## ▶ NOW
 
+# 🔎 2026-08-17 17:1x — LOGIC REVIEW: 7 FLAWS FOUND, ALL WRITTEN TO THE BACKLOG
+
+> *"i want u to do heavy job that includes review on the logic of this app and i want u to find
+> flaw inside this app"* · *"add the needed fix to the to do list but make sure u use simple
+> english to tell me what is wrong"*
+
+**Read the flaws in `A-Brain/Backlog/`, not here.** Each is its own file, in plain English, with
+`file:line` and the smallest fix. Index updated. Commits: 5 on the A-Brain repo.
+
+| # | Flaw | Why it costs money |
+|---|---|---|
+| 1 | **Offline sales never reduce the van stock** | receipt is saved, van is not touched, sync never replays it → agent looks short at EOD AND the warehouse is credited for sold goods |
+| 2 | **The sale path asks `navigator.onLine`**, the flag this codebase documents as a liar (`useTransactionEngine.js:45` vs `:355`) | signal bars with no internet → the sale takes the online path and can vanish |
+| 3 | **Consignment returns skip unit conversion** (`:420`, `:425`, `:496`) and read the wrong row's unit (`:415`) | returning 2 Slop adds 2 packs |
+| 4 | **Two debt calculators on one screen** (`MerchantSalesView.jsx:102` and `:145`) | returns reduce one and not the other; both rendered at `:1622` / `:1765` |
+| 5 | **`returnTotal` has a writer and no reader** | damaged goods handed back are taken into quarantine AND still billed to the store |
+| 6 | **Approving a stock count overwrites today** (`StockOpnameView.jsx:281`) | HQ approves the morning number at night; the day's sales and EOD returns are erased |
+| 7 | **Pack-size maths copy-pasted 6× and disagrees** — `App.jsx:3132`/`:3142` know Slop only | root cause of 3; fixing it makes 3 impossible |
+
+⚠️ **Every finding above was read in the source and cited — none are guesses.** `returnTotal`
+having no reader was confirmed with a control grep (`grep -rn returnTotal src/` → writers only).
+**None have been fixed.** No app code was touched by this review.
+
+**Not yet reviewed** (ran out of hour, not out of suspicion): `JourneyView`, `MapMissionControl`,
+`FleetCanvasManager`, `CustomerManager`, `SettingsView`'s permission matrix vs `firestore.rules`
+(the matrix can grant any permission to any tier; the rules hardcode role strings — the
+UI-says-yes shape, structurally).
+
 # 💵 2026-08-17 17:0x — NEXT BUILD: THE CASH CARD BECOMES A STORE LIST. SPEC IS HERE.
 
 > *"there is one more before putting it in, on the "cash" section, i want u to put all the receipts
