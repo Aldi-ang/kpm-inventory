@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-17 09:34 WIB (KPM app session)** · 🎴 CAROUSEL PROTOTYPE IS PUBLISHED — link in the first section · branch `phase0-solid-ground`
+**Updated: 2026-08-17 13:36 WIB (KPM app session)** · 🎴 CAROUSEL v2 PUBLISHED — full product names, no truncation · branch `phase0-solid-ground`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -14,6 +14,44 @@
 > and `A-Brain/Wiki/Log.md` hold how it got there.
 
 ## ▶ NOW
+
+# 🎴 2026-08-17 13:36 — CAROUSEL v2. HE APPROVED THE FAN, REJECTED THE TRUNCATED NAMES.
+
+> *"its good but adjust the spacing and sizing, i dont want to see this kind of format, because
+> i want to see the product in full name to avoid mistake in the future"*
+> (with a screenshot of the goods card reading `Cell… / Cell… / Siga… / Djar…`)
+
+**The fan itself is APPROVED — "its good".** Only the row format was wrong. What changed in
+`scratchpad/fan-deck.html`, republished to the SAME url:
+
+| was | now | why |
+|---|---|---|
+| `.card` 232×372 | **264×416** | the name needs the width; the list needs the height |
+| `.stage` 430 | **476** | follows the card |
+| `.row .nm` `nowrap` + `text-overflow:ellipsis` | **`overflow-wrap:anywhere`, no ellipsis** | two products share a prefix — *Cello Green 16* / *Cello Merah 12* — so a 4-char ellipsis hides the only part that tells them apart. It wraps now; it never truncates. |
+| `.row input` 70 content-box | **56 border-box** | 4 digits need 40px, the rest was going to the name |
+| `.list` `max-height:196` | **`flex:1`** on a flex-column card, `.foot` `margin-top:auto` | no magic number can clip the footer any more |
+| fan travel `d*88`, `W=88` | **`d*98`, `W=98`** | the card grew 32px, so the neighbours had to move out or vanish behind it |
+
+**Measured at a REAL 390px viewport** (`scratchpad/probe390.html` renders the deck inside a
+390px iframe and reads the numbers out — `--window-size` is ignored by headless Chrome on this
+box, it reported 500 and 518 for the same flag):
+- all six names `boxW == textW`, height 16px → **one line each, nothing clipped**
+- goods list `clientH 277 == scrollH 277` → the scrollbar is gone (it had been eating 15px of
+  the name column, which is why the first fix still wrapped)
+- `docScrollWidth 375 < innerWidth 390` → **no sideways scroll.** This CLOSES the unresolved
+  warning from the 09:34 entry: it does not scroll sideways at 390, the theme-lab server had
+  been serving stale bytes.
+- frames: `scratchpad/carousel_goods_dark.png`, `carousel_goods_light.png`
+
+**https://claude.ai/code/artifact/36945918-0170-4595-916c-3f87ce3f04a9**
+Source: `scratchpad/fan-deck.html` — republish that SAME path, and pass `url:` if the session
+did not publish it itself, or a second artifact is created.
+⚠️ The Artifact tool refuses to republish after a compaction until the URL is `WebFetch`ed once.
+
+The only name that still wraps is `Stamps handed over` — a phrase, not a product. Left alone.
+
+---
 
 # 🎴 2026-08-17 09:34 — THE FAN CAROUSEL PROTOTYPE IS PUBLISHED. HE ASKED TO SEE IT FIRST.
 
