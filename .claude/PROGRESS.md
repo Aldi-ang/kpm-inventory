@@ -44,7 +44,37 @@ instantly max rank) · IOU→Cash (`MerchantSalesView.jsx:930`) · buyback never
 (`BranchWarehouseManager.jsx:294`) · customer view-only unenforceable (`firestore.rules:138`) ·
 employee-email hijack (`firestore.rules:214`).
 
-## 🧪 BENCHMARK IN FLIGHT — task `wigrgqk7b`, run `wf_e9afba9b-f08`
+## 🧪 BENCHMARK DONE — RESULT IS **NEGATIVE**. Task `wigrgqk7b`, run `wf_e9afba9b-f08`.
+
+**Setting `model` on a subagent does not work in this environment — it kills the agent.**
+`model:'haiku'` → `cc/claude-haiku-4-5-20251001` → *"may not exist or you may not have access"*.
+`model:'sonnet'` → resolves to **`cc/claude-opus-5`** → same death. 6 of 9 agents dead in ~1.3s
+having done zero work; the 3 opus agents (plain `claude-opus-5`, no `cc/` prefix) ran fine.
+Reproduced by two isolated single-agent probes. **Omitting `model` works.**
+
+`alucard` §9 amended: **do NOT set `model` here**, plus the levers that do work — fewer agents,
+narrower per-agent scope, `effort:'low'`, structured output. The 1.69M-token sweep was expensive
+because 14 agents each re-derived context, not only because of the tier.
+
+### 🔴 THE BY-CATCH MATTERED MORE THAN THE BENCHMARK
+
+The 3 Opus control agents re-checked 3 claims **the same model had already verified**.
+**It disagreed with itself on all three.** Every fact in both passes was true; each pass found one
+fact the other missed, and that fact flipped the answer.
+
+| Claim | New fact | Effect |
+|---|---|---|
+| Excise / landed cost | `priceDistributor` is ALSO the Distributor **selling** price (`App.jsx:2947`) — so "just type the true cost in" would reprice every distributor sale | **REFUTED → CONFIRMED.** Un-killed. Score now **76 / 21** |
+| `BranchWarehouseManager.jsx:294` | photo upload is a **no-op by default**; the real window is offline persistence (`firebase.js:23`); 4 other files share the flaw | HIGHEST → **MEDIUM**, and it is a pattern not a site |
+| `BranchWarehouseManager.jsx:152` | button only renders while status is IN_TRANSIT (`:414`/`:452`) | HIGH → **LOW** |
+
+**One verification pass is evidence, not proof.** Written into the KILLED file, the three Backlog
+items, alucard §9, and memory. A-Brain `559e376`.
+
+⚠️ **This also means the other 72 findings carry the same uncertainty.** Reproduce any HIGHEST by
+hand before working on it — cheaper and more certain than another robot pass.
+
+### The original benchmark design (kept — it was sound, the environment wasn't)
 
 9 agents: haiku × sonnet × opus, on the **same 3 claims with known answers**.
 ⚠️ The original workflow script was deleted with the old temp dir, so the Opus verify prompt could
