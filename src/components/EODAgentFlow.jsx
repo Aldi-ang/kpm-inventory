@@ -73,7 +73,6 @@ export default function EODAgentFlow({
     const d = letter.cards[id].declared;
     if (d !== null) counted[id] = d;
   }
-  const allCounted = canSend(letter);
 
   const send = () => {
     setStage('launching');
@@ -108,15 +107,24 @@ export default function EODAgentFlow({
 
       <EODLetter counted={counted} stage={stage} mouthRef={mouthRef} onSend={send} disabled={submitting} />
 
-      {/* ⚠️ `overflow` STAYS VISIBLE WHILE COUNTING. The confirmed card leaves the deck upwards to
-          reach the letter, so clipping here would delete the flight. It only clips once every card
-          is in — and the collapse starts at 820ms, after the last flight has landed. */}
+      {/* ⚠️ GATED ON `stage`, NOT ON THE CARD COUNT — and the difference is the whole fourth flight.
+          `canSend(letter)` becomes true on the SAME render that launches card 4. Driving it in a
+          harness, 45% into that card's 760ms flight: the wrapper already read `overflow: hidden`,
+          `max-height: 151.87px` and `opacity: 0.1998`, while the card sat 130px ABOVE the wrapper's
+          top edge. `overflow` is not an animatable property, so it lands in frame 1. Cards 1-3 flew
+          into the letter; the fourth — the one that completes it — was clipped and faded out on the
+          spot. `stage` only leaves 'open' on the 820ms timer below, which is 60ms after the flight
+          lands, so the collapse now starts when the deck is genuinely empty.
+          ⚠️ THE COMMENT THAT USED TO BE HERE CLAIMED THIS ALREADY WORKED: "it only clips once every
+          card is in — and the collapse starts at 820ms". The 820ms timer sets `stage`; it never
+          touched this wrapper. A comment asserting a guarantee the code does not provide is worse
+          than no comment, because it stops the next reader from checking. */}
       <div
         className="transition-all duration-500 ease-out"
         style={{
-          maxHeight: allCounted ? 0 : 760,
-          opacity: allCounted ? 0 : 1,
-          overflow: allCounted ? 'hidden' : 'visible'
+          maxHeight: stage === 'open' ? 760 : 0,
+          opacity: stage === 'open' ? 1 : 0,
+          overflow: stage === 'open' ? 'visible' : 'hidden'
         }}
       >
         <EODCardDeck

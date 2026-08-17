@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-17 04:00 WIB (KPM app session)** · 🔴 EOD REVIEW RAN BUT NOTHING WAS VERIFIED — FIRST SECTION · code committed: `661498f` `23d1977` · branch `phase0-solid-ground`
+**Updated: 2026-08-17 08:48 WIB (KPM app session)** · ❓ HIS QUESTION IS THE FIRST SECTION — AWAITING HIS PICK · review verified 44/78 · branch `phase0-solid-ground`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -15,7 +15,84 @@
 
 ## ▶ NOW
 
-# 🔴 2026-08-17 ~04:00 — EOD REVIEW RAN. 78 FINDINGS, **ZERO VERIFIED**. QUOTA HIT 100%.
+# ❓ 2026-08-17 08:48 — WAITING ON ALDI. HIS QUESTION, VERBATIM:
+
+> *"regarding the EOD there is some difference with the design that u made, on the artifact all the
+> value is stated there and the user just check, confirm and next, while in this integrated one u
+> made it like stock opname, which we must enter our value ourself and send it to the regional
+> admin for confirmation, do you think which one better in most scenario"*
+
+**Answered in chat, awaiting his pick. Do not re-pitch, do not re-derive — the options are:**
+
+- **A** — all four cards confirm-and-next (his artifact). Fastest. **Cannot ever detect a shortfall**:
+  a pre-filled number you tap confirm on makes `declared === expected` by construction, which is
+  the exact flaw of the screen this replaced.
+- **B** — all four typed (what ships today). ~10 numbers on a phone at the end of a long day. That
+  friction is why it *"look like stock opname"* to him, and he is right that it does.
+- **C — MY RECOMMENDATION.** Cash / goods / stamps stay typed; **transfer becomes a tick-list**
+  ("landed" / "didn't" per payment). You do not COUNT a transfer — it either arrived or it did not
+  — so typing a total there is busywork AND less precise. `transferSources` already carries each
+  payment with `customerName` and `method`, so the rows exist; only the card changes. This also
+  covers his own *"arrived for less than recorded"* case for the first time.
+- **D** — confirm-and-next everywhere, but **record which cards were accepted without counting**.
+  One boolean per card. Matches his *"give the power, keep the record"* law.
+
+⚠️ **My error to own when he answers:** typing was applied uniformly to all four cards without
+noticing that transfer is not a physical count. That was not a decision, it was an oversight.
+
+# ✅ 2026-08-17 08:48 — REVIEW VERIFIED: **44 CONFIRMED, 34 REFUTED**. FIRST FIX LANDED.
+
+The 7-lens review's verify phase re-ran from cache after the quota reset (`w72m7xugk`). The
+adversarial pass **killed 34 of 78**, so the survivors are worth acting on.
+
+**FIXED AND PROVED (uncommitted at the time of writing — commit before anything else):**
+🔴 **The fourth card never flew into the letter.** `EODAgentFlow.jsx` gated the deck's collapse on
+`canSend(letter)`, which turns true on the SAME render that launches card 4. `overflow` is not
+animatable, so it clipped in frame 1. **Measured before:** `overflow:hidden`, `max-height:151.87px`,
+`opacity:0.1998`, card 130px *above* the wrapper. **After:** `visible` / `760px` / `1`, and a frame
+(`scratchpad/f4_mid.png`) shows the Pita cukai card airborne at 66% scale. Now gated on
+`stage !== 'open'` — the 820ms timer, which is 60ms after the 760ms flight lands.
+⚠️ The comment that used to sit there **claimed this already worked**. A comment asserting a
+guarantee the code does not provide is worse than none.
+
+## 🔨 CONFIRMED AND STILL TO DO — none of these need his decision
+1. **`--danger-ink` on `--danger` is 1.91:1 dark / 1.95:1 light** — the cash-fine amount and the
+   over-count refusal, the two strings that MUST be read, are unreadable. `EODCardDeck.jsx:274` and
+   five sites in `EODReconciliationView.jsx`.
+2. **Gold ink on a gold plate on the ADMIN side = 1.00:1 in dark** (`--accent-ink` and `--gold` are
+   both `#D08A2E`). `EODReconciliationView.jsx:741,742,753-755,674,675`. ⚠️ **Audit group 48 missed
+   it because the plate is on the parent and the ink on a child** — widen the regex with the fix.
+3. **The Verify button is `bg-emerald-600`** (`:795`) — green, banned, and it marks the routine
+   "fine" path. Plus hardcoded rgba glows and `border-red-500/50` at `:670`.
+4. **`<EODAgentFlow>` has no `key`** (`:428`) — switching operating identity mid-count submits
+   agent A's counted money under agent B's id. One-token fix: `key={effectiveId}`.
+5. **`agentData` useMemo omits `inventory`** (`:184`) — `itemsBks` silently uses fallback unit
+   multipliers.
+6. **`submitting` is never passed** (`:428`) so both `disabled` guards in the flow are dead.
+7. **`letter.signatures` is dropped** at `:492` — only `cards` is sent, so the agent's own signature
+   never reaches Firestore.
+8. **`bg-black/N` across the whole admin half** (`:670,701,705,668,270,836,874,893`).
+9. **Lite Mode kills `transition-duration` but not `transition-delay`** (`src/index.css:91`), so
+   Lite is a series of dead pauses. One line in the block that already exists.
+10. **Force Reset is a 24px destructive target** (`:930`) next to 30px month/date rows.
+
+## 🔴 NEEDS HIS DECISION — collected for him, do not act
+- **The vault is credited the full van load, not what he counted** (`:480` sends `activeStock`).
+  Count 8 back out of 10 and the warehouse is still credited 10.
+- **No agent carrying stamps can ever have a clean cukai day** (`cukaiRemaining` sends the debt
+  *before* counting; `App.jsx:1966` needs `<= 0`). Fixing it rewrites past days via the backfill.
+- **Money accepts negatives** (`toNum` has no floor) — is a floor of zero a violation of his
+  "money is uncapped" law?
+- **Fractional packs cannot be entered** — `0.5` becomes `5`.
+- **Reject deletes the whole letter** instead of returning one card; `returnCard()` has no caller.
+- **Force Reset on a VERIFIED row** deletes the record without reversing the XP or the stock.
+- **`prefers-reduced-motion`** is honoured app-wide elsewhere but not here — fixing it is a
+  one-rule APP-WIDE change, so the blast radius is his call.
+
+**Full verified output:** `…\tasks\w72m7xugk.output` · re-run:
+`Workflow({scriptPath: "…\eod-full-review-wf_fe80416e-316.js", resumeFromRunId: "wf_fe80416e-316"})`
+
+# 🔴 2026-08-17 ~04:00 — the unverified first pass of that review (superseded by the entry above)
 
 **Aldi went to sleep and asked for a full EOD review + backlog work. The review's FIND phase
 finished; every VERIFY agent and the critic died on `You've hit your session limit`.**
