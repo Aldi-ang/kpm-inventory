@@ -15,6 +15,51 @@
 
 ## ▶ NOW
 
+# 💵 2026-08-17 17:0x — NEXT BUILD: THE CASH CARD BECOMES A STORE LIST. SPEC IS HERE.
+
+> *"there is one more before putting it in, on the "cash" section, i want u to put all the receipts
+> link to that card, i want it to have similar logic like the transfer section, there should be
+> data of every stores been visited that day and its order, and also the total cash needed to be
+> return that day"*
+
+**This also answers Q2: the carousel goes into the real screen AFTER this.** *"one more before
+putting it in"*.
+
+✅ **The data already exists and is already passed.** `cashSources` is built in the SAME loop as
+`transferSources` (`EODReconciliationView.jsx:109-125`) and is ALREADY handed to the composer at
+`:436` as `sources.cash` — the cash card just ignores it and draws a number pad. `expectedCash` is
+computed in the same loop. Rows carry `txId, amount, customerName, method, at`.
+**Missing: the order itself.** Add `items: t.items` to the row at `:115-121` — one field.
+
+⚠️ **`EODCardDeck.jsx:256` is `{receipts[id] ? (`** — the card renders as a tick-list purely
+because a `receipts` entry exists. So the LITERAL version of his ask is one line: add `cash:` to
+the `receipts` prop at `:448`. **Do not just do that.**
+
+🔴 **THE OBJECTION, TOLD TO HIM 17:0x — cash is not transfer.** His own rule from 2026-08-17 is
+*"a transfer is checked, not counted"*: it reached the bank or it did not, and the agent never held
+it. **Cash the agent physically holds, in one pile, not in per-store envelopes.** So if the total
+is DERIVED from the ticks: agent collects from 9 stores, ticks all 9 paid, hands over Rp 200.000
+less than the sum — the app reports the full amount and the gap is never seen. That is the exact
+leak he asked to close on 2026-08-16 (*"this leak of cash or input can be traced down to the
+root"*).
+
+**BUILDING THE SUPERSET, not the literal ask** (ticks-only is a subset — trivial to cut later):
+1. per-store list on the cash card: store, amount, tap to see the order (`items`)
+2. **keep the counted total** — what is actually in the envelope
+3. show the **gap** between the two, and when there is one, the agent says WHICH store, reusing
+   the transfer card's `less` mechanic
+4. show `expectedCash` — *"total cash needed to be return that day"*
+
+⚠️ **This knowingly ends the blind cash count.** Listing each store's order reveals the expected
+total, so counting can become copying. Accepted deliberately: naming WHICH store is short beats an
+anonymous gap, and it is the same trade already taken on the transfer card. **Recorded so it is
+not rediscovered as a bug.**
+
+**Touching:** `EODReconciliationView.jsx` (row gains `items`, `receipts.cash` passed) ·
+`EODCardDeck.jsx` (cash = list + count + gap) · `EODAgentFlow.jsx` (forward, if it filters) ·
+`integration.audit.mjs` (pin `receipts.cash` forwarding, same as group 49 pinned transfer).
+**Verify by:** `npm run build; node src/config/integration.audit.mjs` then the headless harness.
+
 # 🎴 2026-08-17 13:36 — CAROUSEL v2. HE APPROVED THE FAN, REJECTED THE TRUNCATED NAMES.
 
 > *"its good but adjust the spacing and sizing, i dont want to see this kind of format, because
