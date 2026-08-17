@@ -89,6 +89,35 @@ against agents with no ruling step — the exact thing he ruled out today.
 ✅ **`getLocalDayKey()` already exists** (`helpers.js:28`) and its own comment describes flaw 16
 exactly. Used only by the career ledger today.
 
+# 🔴🔴 2026-08-17 18:0x — QUOTA KILLED THE WORKFLOW MID-RUN. READ THIS BEFORE TRUSTING ITS OUTPUT.
+
+**Workflow `wf_dc12c56c-e08` finished with `confirmed: []` and `refutedCount: 14`.**
+⚠️ **THAT IS NOT 14 REFUTED FINDINGS. IT IS 14 UNVERIFIED ONES.** 7 of 8 agents died on
+`You've hit your session limit · resets 6:20pm`, **including the refuter**. Every entry in
+`refutedTitles` ends with *"no verdict returned"* — that string is the tell. My script counts a
+finding as refuted unless a verdict says otherwise, so a dead refuter looks identical to a
+successful kill. **The script's post-processing is wrong and must be fixed before re-running.**
+
+🔁 **THIS IS THE SECOND TIME.** Commit `07f0672` says *"EOD review findings are UNVERIFIED - quota
+killed the verify phase"*. Same failure, same cause, 5 days apart. Worth a Lesson.
+
+**What survived:** only `hunt:map` ran. It read ~3,200 lines of `MapMissionControl.jsx` and returned
+**14 UNVERIFIED claims** — several look serious (a Save button that never writes; map-created stores
+invisible to salesmen; `getDoc` not imported so tier targets never load; stores without GPS stamped
+onto one hardcoded coordinate; zone revenue keyed by store name). **Full text is in the task output
+and the journal — do not re-derive it:**
+`.../tasks/wj7wkwphv.output` and `.../subagents/workflows/wf_dc12c56c-e08/journal.jsonl`
+
+**NEXT COMMAND when quota returns** — resume with a fixed script, do not re-run from scratch
+(`hunt:map` replays from cache for free):
+1. Edit `.../workflows/scripts/kpm-logic-review-sweep-wf_dc12c56c-e08.js` so a MISSING verdict is
+   `unverified`, never `refuted`. Return three lists: confirmed / refuted / unverified.
+2. `Workflow({scriptPath: "<that path>", resumeFromRunId: "wf_dc12c56c-e08"})`
+3. Then write the survivors into `A-Brain/Backlog/` in plain English, same as the 19.
+
+**The 19 hand-found flaws are unaffected** — every one was read and cited by me directly, and three
+were control-grepped. Only the workflow's 14 are in doubt.
+
 ## FIFTH PASS, 17:5x — two more, total 19. AND A WORKFLOW IS RUNNING.
 
 🤖 **Workflow `wj7wkwphv` / run `wf_dc12c56c-e08` is sweeping the files I have NOT read** — 7
