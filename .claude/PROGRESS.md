@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-17 03:34 WIB (KPM app session)** · ✅ 5 OF HIS REPORTS BUILT — `661498f` + `23d1977` · 🔴 WHAT IS LEFT IS THE FIRST SECTION BELOW · branch `phase0-solid-ground` · last code commit: run `git log -1`
+**Updated: 2026-08-17 04:00 WIB (KPM app session)** · 🔴 EOD REVIEW RAN BUT NOTHING WAS VERIFIED — FIRST SECTION · code committed: `661498f` `23d1977` · branch `phase0-solid-ground`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -14,6 +14,42 @@
 > and `A-Brain/Wiki/Log.md` hold how it got there.
 
 ## ▶ NOW
+
+# 🔴 2026-08-17 ~04:00 — EOD REVIEW RAN. 78 FINDINGS, **ZERO VERIFIED**. QUOTA HIT 100%.
+
+**Aldi went to sleep and asked for a full EOD review + backlog work. The review's FIND phase
+finished; every VERIFY agent and the critic died on `You've hit your session limit`.**
+
+⚠️ **SO ALL 78 FINDINGS ARE [guessing] — `refuted:false` in that output means NO VERDICT WAS
+RETURNED, not "confirmed".** Do not fix from this list without checking each claim first.
+
+**Full output:** `C:\Users\ASUS\AppData\Local\Temp\claude\D--APP-DEVELOPMENT-kpm-inventory-main-FILES-kpm-inventory-main\88186f56-3ed2-4ac1-8809-b58f176b5661\tasks\wlchbbk36.output`
+**Per-agent journal:** `…\subagents\workflows\wf_fe80416e-316\journal.jsonl`
+**Re-run just the verify half (find phase replays from cache, costs nothing):**
+`Workflow({scriptPath: "…\workflows\scripts\eod-full-review-wf_fe80416e-316.js", resumeFromRunId: "wf_fe80416e-316"})`
+
+### The five that look most real to me — CHECK EACH BEFORE TOUCHING
+1. **The 4th card never flies.** `EODAgentFlow.jsx:117` — `allCounted` flips `overflow:hidden` on
+   the deck wrapper in the SAME render that launches card 4, so the last flight is clipped at
+   frame 1. Claimed fix: gate on `stage !== 'open'`, not on the card count.
+2. **The send arc races its own unmount.** `EODAgentFlow.jsx:81` — `onSubmit` fires synchronously,
+   Firestore's local cache flips `cashStatus` to PENDING, the parent swaps the flow out mid-launch.
+3. **Neither `setTimeout` is cleaned up**, and the 820ms one is scheduled INSIDE a `setLetter`
+   updater (`EODAgentFlow.jsx:65`) — impure, double-fires in StrictMode.
+4. **Lite Mode kills durations but not `transition-delay`** (`src/index.css:91`), so Lite is a
+   series of dead pauses. Claimed one-line fix: add `transition-delay: 0s !important` there.
+5. **The admin half is still the pre-redesign screen** — the `cards` field the agent submits is read
+   by NOTHING, and the Verify button is `bg-emerald-600` (green — palette law) with hardcoded rgba
+   glows. Also `letter.signatures` is dropped at the boundary (`EODReconciliationView.jsx:492`).
+
+### ✅ What DID land tonight and is committed
+`661498f` per-line goods + one letter + flight · `23d1977` stamp ceiling + card restyled ·
+`a88c74c` PROGRESS. 594/594 audit, 12/12 self-check, rendered light/dark/Lite.
+
+### 📋 Backlog written for him (A-Brain, committed separately)
+7 new items: admin letter stack · show the admin what the agent counted · money in the audit line ·
+damaged goods + expired stamps route to HQ · WANTED poster + repayment · HQ money-vs-stock
+dashboard · the three screens he asked to redesign.
 
 # 🔴 2026-08-17 03:34 — THE STAMP CEILING. `23d1977`. READ THE MONEY NOTE.
 
