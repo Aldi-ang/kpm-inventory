@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-17 09:06 WIB (KPM app session)** · ❓ TWO OPEN QUESTIONS ARE THE FIRST SECTION — transfer bounty, and the card carousel · branch `phase0-solid-ground`
+**Updated: 2026-08-17 09:34 WIB (KPM app session)** · 🎴 CAROUSEL PROTOTYPE IS PUBLISHED — link in the first section · branch `phase0-solid-ground`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -14,6 +14,35 @@
 > and `A-Brain/Wiki/Log.md` hold how it got there.
 
 ## ▶ NOW
+
+# 🎴 2026-08-17 09:34 — THE FAN CAROUSEL PROTOTYPE IS PUBLISHED. HE ASKED TO SEE IT FIRST.
+
+> *"show me the artifact first then we talk"*
+
+**https://claude.ai/code/artifact/36945918-0170-4595-916c-3f87ce3f04a9**
+Source: `scratchpad/fan-deck.html` — republish that SAME path to keep the URL.
+
+Four cards in an arc pivoting from below (`transform-origin:50% 150%`), centre card upright and
+typable, neighbours rotated 11° per step and dimmed, drag to rotate, pips double as progress.
+Real content in every card (cash number pad, transfer tick-list, 6 goods lines, 2 stamp lines) so
+he can judge whether TYPING inside a portrait card actually works. KPM's own tokens lifted verbatim
+out of `dist/assets/index-*.css` — light + dark + Lite + slow-mo toggles.
+
+⚠️ **KNOWN, UNRESOLVED, TELL HIM:** the page still scrolled sideways at 390px in my last local
+render. **Two consecutive fixes produced BYTE-IDENTICAL frames**, which is evidence the theme-lab
+server was serving a STALE copy rather than that the fixes failed — `dist/fan-deck.html` was being
+overwritten each time, so suspect server-side caching in `tools/theme-lab-server.mjs`. The published
+artifact does not go through that server. **Check the live URL before touching the CSS again.**
+
+📐 **What the video actually showed** (frames at `scratchpad/vid/f01-23.png`, 7.7s clip):
+five TALL PORTRAIT cards in an arc, centre upright/largest/in front, neighbours rotating outward and
+sitting lower, dragged sideways. **The one deliberate change from his reference:** the centre card
+comes fully upright and full width, because unlike his clip these cards are TYPED INTO, not looked at.
+
+⚠️ **What a carousel costs that the stack does not:** confirming currently FORCES you forward, so
+a card cannot be skipped. Swiping can. The prototype's send button carries the count
+("2 cards still uncounted") — keep that if the carousel ships.
+
 
 # ❓ 2026-08-17 09:06 — TWO OPEN QUESTIONS. HIS WORDS, VERBATIM.
 
