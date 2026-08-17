@@ -84,19 +84,46 @@ a card cannot be skipped. Swiping can. The prototype's send button carries the c
 
 # ❓ 2026-08-17 09:06 — TWO OPEN QUESTIONS. HIS WORDS, VERBATIM.
 
-### ❓ Q1 — the transfer shortfall. ASKED, NOT ANSWERED. Nothing is charged until he replies.
+### ✅ Q1 — the transfer shortfall. **ANSWERED 2026-08-17 13:5x. Do not ask again.**
 
-> *"if less give the agent option to write the real value so that the system can count what missing
-> value needed to be repaid by the agent and add it to the bounties"*
+> *"well if there is a scenario, where customer use transfer to buy the product, show the agent
+> faked bukti transfer and agent bring that fake bukti transfer to the admin, then there will be
+> investigation towards this, if confirm the store already receive the item then it is customer
+> unpaid bill, but if there is no proof even that the customer did not buy and the agent make fake
+> receipts instead then it will be put on the agent bounties"*
 
-**Built:** the detection, the per-customer record, and the shortfall figure on the card
-(*"Rp 180.000 did not arrive"*). **Not built:** minting the bounty.
-⚠️ **Why it was not just done:** a customer who never sent a transfer may not be the agent's fault.
-Lost stamps are the agent's because they physically held them; an unpaid transfer may be the
-CUSTOMER's unpaid bill. Billing the agent on the wrong premise puts a debt against an employee's
-name. The question put to him: **agent / customer / agent-only-if-they-cannot-name-the-customer.**
-The mint would live in `handleVerifyEOD` (admin approval), writing a `PENALTY_*` key into
-`cukaiDebts` — the same mechanism `agentBountyData` already reads.
+**His rule: the owner follows the GOODS, not the money.**
+
+| evidence | owner |
+|---|---|
+| the store really received the item | **customer's unpaid bill** |
+| no proof the customer ever bought — agent faked the receipt | **agent's bounty** |
+| not yet ruled | **nobody — the shortfall is DISPUTED** |
+
+**Neither destination needs a new ledger — both already exist:**
+- customer side = the **FIFO debt engine**, `MerchantSalesView.jsx:101-142` — `titipTotal -
+  paymentTotal`, *derived from transactions*, not a stored field. So putting a shortfall on the
+  customer is **not a write**: you decline to record the payment and the debt reappears by itself.
+- agent side = `cukaiDebts[key]` on the agent doc (`MerchantSalesView.jsx:882`, minted in
+  `handleVerifyEOD`), which `agentBountyData` already reads.
+
+⚠️ **THE THIRD STATE IS FORCED, NOT A CHOICE.** The investigation does not finish tonight; the EOD
+does. So the mint CANNOT live at verify time the way the 09:06 plan assumed — at verify the
+shortfall has no owner yet. It must land in a DISPUTED state and only become customer-debt or
+agent-bounty when someone rules.
+
+⚠️ **The evidence problem, told to him:** "confirm the store already received the item" — using
+which record? The sale was typed by the **agent**, who is the suspect. The agent's own entry can
+never clear the agent. Independent evidence is only: the customer confirming, or the van count.
+
+✅ **The van count already catches half of this for free, tonight.** Fake receipt + goods still on
+the van → the physical goods count (built 2026-08-16) shows they never left → same-day catch, no
+investigation. Fake receipt + goods sold off-book for cash → the count balances and only the
+customer can reveal it. **Only the second shape ever reaches the dispute queue.**
+
+### 🔴 Q1b — THE ONLY THING STILL BLOCKING THE BUILD: who rules on a dispute?
+Regional admin (verifies the letter, knows the customers) or HQ (a bounty is a money penalty
+against an employee)? That answer decides which screen gets the dispute queue. Asked 13:5x.
 
 ### 🔴 Q2 — the card carousel. He sent a VIDEO and I watched it. Awaiting a number.
 
