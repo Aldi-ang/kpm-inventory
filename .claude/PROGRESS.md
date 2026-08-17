@@ -34,9 +34,28 @@
 | 6 | **Approving a stock count overwrites today** (`StockOpnameView.jsx:281`) | HQ approves the morning number at night; the day's sales and EOD returns are erased |
 | 7 | **Pack-size maths copy-pasted 6× and disagrees** — `App.jsx:3132`/`:3142` know Slop only | root cause of 3; fixing it makes 3 impossible |
 
-⚠️ **Every finding above was read in the source and cited — none are guesses.** `returnTotal`
-having no reader was confirmed with a control grep (`grep -rn returnTotal src/` → writers only).
-**None have been fixed.** No app code was touched by this review.
+## SECOND PASS, 17:3x — four more, total 11
+
+| # | Flaw | Why it costs money |
+|---|---|---|
+| 8 | **Clear Canvas credits stale quantities** (`FleetCanvasManager.jsx:359` vs `:307`) | admin's screen data, not the live van → anything sold while the screen was open is returned to stock twice |
+| 9 | **Load Canvas adds packs onto a Slop row** (`:321` vs `:379`) | 7th copy of the unit maths, 3rd broken one — folded into flaw 7 |
+| 10 | **Nothing is linked by id, only by name** | NO transaction writes a customer id; 142 joins on `customerName`. Two same-named shops share one debt — the app's own duplicate-finder already warns those exist |
+| 11 | **Two failures are completely silent** (`JourneyView.jsx:528` empty catch, `useTransactionEngine.js:504`) | the Journey one fires AFTER the screen was updated optimistically — breaks "every action must report" |
+
+⚠️ **Every finding was read in the source and cited — none are guesses.** Two were confirmed with
+control greps: `returnTotal` (writers only, no reader) and `customerId` (absent from every
+transaction payload). **None have been fixed.** No app code was touched by this review.
+
+📏 **COVERAGE, honestly:** ~2,600 lines read of **34,961** — about **7%**. Told him the number
+when he asked, after first answering vaguely. Files read end to end: `useTransactionEngine.js`,
+`useOfflineEngine.js`. `FleetCanvasManager.jsx` read to :430 of 1240. Still unread: `JourneyView`
+(except `:505-530`), `MapMissionControl` (2567, untouched), `CustomerManager` (sampled),
+`SettingsView`, and `firestore.rules` (grepped only).
+
+✅ **A claim I made and then had to correct:** I told him `firestore.rules` only knows fixed role
+names. It does not — `firestore.rules:132-141` reads the `settings/permission_matrix` document.
+The corrected version is in the Backlog item, framed as a check to run rather than a bug found.
 
 **Not yet reviewed** (ran out of hour, not out of suspicion): `JourneyView`, `MapMissionControl`,
 `FleetCanvasManager`, `CustomerManager`, `SettingsView`'s permission matrix vs `firestore.rules`
