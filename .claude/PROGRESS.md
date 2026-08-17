@@ -61,7 +61,35 @@ already there"**, not "write a helper" — my first write-up of it was wrong and
 Backlog item. The price-tier ladder has the same disease with no helper yet
 (`MerchantSalesView.jsx:82, 541, 602, 667, 1405`).
 
-📏 **COVERAGE, honestly:** ~3,000 lines read of **34,961** — about **8-9%**. Told him the number
+## FOURTH PASS, 17:5x — four more, total 17. ONE OF THEM OUTRANKS EVERYTHING ELSE.
+
+# 🔴 17 — THE EOD SUBMITS EXPECTED FIGURES, NOT COUNTED ONES (`EODReconciliationView.jsx:494-511`)
+
+```
+cash:           agentData.expectedCash        <- NOT what he counted
+transfer:       agentData.expectedTransfer    <- NOT what he checked
+remainingStock: agentData.activeStock         <- NOT the goods he counted
+cards:          letter.cards                  <- the real counts, read by NOTHING
+```
+
+**The submitted cash figure IS the expected figure, so a shortage can never be detected.** The
+counting flow records and never compares. The goods half of this was already on his decision list
+("vault credited full van load"); **the cash and transfer half looks unnoticed, and it is the half
+today's bounty rule depends on.** Backlog item is marked HIGHEST with an explicit warning: do NOT
+change the payload before deciding what happens when the counted figure is lower, or shortages post
+against agents with no ruling step — the exact thing he ruled out today.
+
+| # | Flaw | Note |
+|---|---|---|
+| 14 | **Journey Plan silently reassigns stores on load** (`JourneyView.jsx:550-582`) | two-way substring match on agent names → Andika's stores land on Andi; no match ⇒ field deleted; `.catch(() => {})` = 8th silent failure. A bulk write triggered by OPENING A SCREEN |
+| 15 | **Permission matrix saved twice, one merged** (`SettingsView.jsx:1555-1556`) | merge never removes, so a deleted tier survives in `appSettings/` and the loader falls back to it at `:1363`. Two separate awaits, so they can diverge while the toast says "Deployed" |
+| 16 | **The day rolls over at 07:00, not midnight** (`helpers.js:23` UTC) | route board resets mid-morning. ✅ **EOD money is NOT affected** — it compares timestamps against the local day at `:100-101`. Checked before writing it up |
+| 17 | **the EOD payload above** | HIGHEST |
+
+✅ **`getLocalDayKey()` already exists** (`helpers.js:28`) and its own comment describes flaw 16
+exactly. Used only by the career ledger today.
+
+📏 **COVERAGE, honestly:** ~3,700 lines read of **34,961** — about **11%**. Told him the number
 when he asked, after first answering vaguely. Files read end to end: `useTransactionEngine.js`,
 `useOfflineEngine.js`. `FleetCanvasManager.jsx` read to :430 of 1240. Still unread: `JourneyView`
 (except `:505-530`), `MapMissionControl` (2567, untouched), `CustomerManager` (sampled),
