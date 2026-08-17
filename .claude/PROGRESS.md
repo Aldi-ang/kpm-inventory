@@ -89,7 +89,22 @@ against agents with no ruling step — the exact thing he ruled out today.
 ✅ **`getLocalDayKey()` already exists** (`helpers.js:28`) and its own comment describes flaw 16
 exactly. Used only by the career ledger today.
 
-📏 **COVERAGE, honestly:** ~3,700 lines read of **34,961** — about **11%**. Told him the number
+## FIFTH PASS, 17:5x — two more, total 19. AND A WORKFLOW IS RUNNING.
+
+🤖 **Workflow `wj7wkwphv` / run `wf_dc12c56c-e08` is sweeping the files I have NOT read** — 7
+readers (App.jsx halves, MerchantSalesView, MapMissionControl, Restock+Branch, reporting+career,
+`firestore.rules` vs the UI matrix), each followed by a skeptic told to REFUTE its findings and to
+default to refuted when unsure. He asked for it explicitly (*"use workflow is possible"*).
+Script: `.../workflows/scripts/kpm-logic-review-sweep-wf_dc12c56c-e08.js`. **Findings from it are
+NOT yet in the Backlog — read the returned `confirmed` list and write them up.**
+
+| # | Flaw | Note |
+|---|---|---|
+| 18 | **`PENALTY_` guard missing from the 3rd copy of the cukai formula** (`AgentInventoryView.jsx:101-102`) | `cukaiDebts` holds stamp counts AND rupiah bounties, split by name prefix. `EODReconciliationView:86` and `App.jsx:1910` skip `PENALTY_`; the agent's own dashboard does not → a Rp 200.000 bounty shows as **200.040 stamps owed**. **Dormant until the bounty feature he decided today mints its first key.** |
+| 19 | **Duplicate notifications listener** (`useDatabaseSync.js:112-119`) | filters on `targetRole`/`targetId`, which NO write sets (control-grepped), and the result is never read. ✅ **The bell itself works** — `App.jsx:320-336` has a permissive listener. I nearly reported the bell as broken; checked first |
+
+📏 **COVERAGE, honestly:** ~4,400 lines read of **34,961** — about **13%** by hand, plus whatever
+the workflow covers. Told him the number
 when he asked, after first answering vaguely. Files read end to end: `useTransactionEngine.js`,
 `useOfflineEngine.js`. `FleetCanvasManager.jsx` read to :430 of 1240. Still unread: `JourneyView`
 (except `:505-530`), `MapMissionControl` (2567, untouched), `CustomerManager` (sampled),
