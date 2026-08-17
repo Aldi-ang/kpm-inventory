@@ -143,11 +143,35 @@ then falls back to **TIER_5 FIELD_OPERATIVE permissions** when the matrix has no
 salesman clearance and be missing from every management check. Same shape as the Fleet Captain
 Permission Gap already in the vault. **The tier has to be added in code, not only in Firebase.**
 
-### 🔴 Q1c — BLOCKING THE BUILD: is the supervisor locked to one region, or roaming?
-*"HQ will sent them to the regional area"* reads as roaming — dispatched wherever the case is,
-which means they must read customer + agent data **across** regions, and the Option B region-lock
-does not apply to them. Confirm before the tier is written, because the region-lock is a security
-rule, not a UI toggle. **Assumed answer if he does not reply: roaming, HQ-scoped.** Asked 14:0x.
+### ✅ Q1c — **CLOSED 2026-08-17 16:5x. HE SCOPED IT OUT, AND HE IS RIGHT.**
+
+> *"yea it is outside of this app really but i can add that to the matrix, but well it is the
+> company orders we dont need to do anything extra, this app main objective is just just focus on
+> monitoring and managing sales data and make sure that the company have full control of the agent
+> behaviour and the market itself right"*
+
+**DO NOT BUILD:** supervisor dispatch, case files, visit tracking, a supervisor phone screen, or
+the AREA_SALES_SUPERVISOR tier. The investigation happens in the real world on company orders. The
+region-lock question dies with it. My earlier four-step-workflow framing was scope creep — dropped.
+
+**The tier is only needed if that person ever LOGS IN.** If he adds the row in Settings and they
+never sign in, nothing breaks. If they do sign in, the `permissions.js:96` fallback still gives
+them FIELD_OPERATIVE clearance — that warning survives, narrowed to that one condition.
+
+⚠️ **THE ONE THING THE APP STILL CANNOT SKIP**, because "do nothing extra" and "the company has
+full control of agent behaviour" collide exactly here: at verify time the shortfall has to *go*
+somewhere. Charge the agent → wrong whenever the store really got the goods. Charge nobody → the
+money leaves the books at the precise moment fraud happened, which defeats his own stated
+objective. So the minimum is **a state, not a workflow**:
+
+1. verify records the shortfall as **DISPUTED** — visible on the agent's record and the customer's,
+   charged to neither, no expiry;
+2. two buttons record the verdict the company already reached in the field —
+   **"store got the goods"** → customer's unpaid bill · **"no sale happened"** → agent's bounty.
+
+**My call, not a question for him:** the two buttons live on the **regional admin's** EOD screen.
+The admin is *recording* a verdict, not making one, so the grade-your-own-work objection does not
+apply. No new tier, no new screen.
 
 ### 🔴 Q2 — the card carousel. He sent a VIDEO and I watched it. Awaiting a number.
 
