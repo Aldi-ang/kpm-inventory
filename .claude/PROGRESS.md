@@ -89,7 +89,47 @@ against agents with no ruling step — the exact thing he ruled out today.
 ✅ **`getLocalDayKey()` already exists** (`helpers.js:28`) and its own comment describes flaw 16
 exactly. Used only by the career ledger today.
 
-# 🔴🔴 2026-08-17 18:0x — QUOTA KILLED THE WORKFLOW MID-RUN. READ THIS BEFORE TRUSTING ITS OUTPUT.
+# ✅🔴 2026-08-17 18:3x — WORKFLOW RESUMED: 3 CONFIRMED, ~60 UNVERIFIED. QUOTA OUT AGAIN (resets 23:20).
+
+**Run `wf_dc12c56c-e08`, resume `wzhzc5jhf`. 14 agents, 8 done, 6 refuters died on the session
+limit.** The script fix worked — a missing verdict is now `unverified`, never `refuted`.
+
+## ✅ THREE FINDINGS THAT PASSED A REAL SKEPTIC — write these to the Backlog first
+
+Only the `warehouse` area got both a hunter AND a refuter. All three survived with cited reasoning:
+
+1. **`BranchWarehouseManager.jsx:294` — HIGHEST.** Shipping to a branch writes
+   `stock: (hqProduct.stock || 0) - item.qty` where `hqProduct` comes from the **`globalInventory`
+   React prop**, cached before two long awaits (photo compress `:287`, upload `:289`). A sale during
+   that gap is erased and the vault is overstated forever. The guard at `:280` reads the same stale
+   array so it cannot catch it. **Fix: `increment(-qty)`, exactly as `RestockVaultView.jsx:113`.**
+   ⚠️ The refuter corrected one sub-claim: it is NOT the only hand-rolled copy, but it IS the only
+   one whose base number comes from a client-cached prop rather than a fresh read.
+2. **`BranchWarehouseManager.jsx:152` — HIGH** (refuter downgraded from HIGHEST). The receipt
+   transaction reads the order doc and **never checks `orderData.status`**, so a retried/double
+   press credits the branch twice (0→100→200) while HQ is debited once. **`App.jsx:1788-1791` does
+   the identical read and DOES guard it**, under a comment saying stock gets double-credited
+   without it. Fix: one `if (orderData.status !== 'IN_TRANSIT') throw` after `:154`.
+3. **`RestockVaultView.jsx:90` — MEDIUM** (downgraded from HIGH). `trueLandedTotal` (base + cukai +
+   shipping + labour) is written at `:90/:118/:289` and read ONLY by three `Intl.NumberFormat`
+   display calls. Every margin in the app uses `product.priceDistributor`, which `:73` seeds
+   *before* excise is added — so cukai is by construction outside the cost basis. On a 1,000-Bks
+   batch carrying Rp 6.000.000 excise, profit is overstated by ~Rp 6.400/Bks.
+
+## 🔴 EVERYTHING ELSE IS UNVERIFIED — NOT REFUTED, NOT REAL
+
+6 hunters returned findings whose refuters died: `app-money`, `app-rest`, `merchant-sales`, `map`,
+`reporting`, `rules`. **Full text (162k chars) is in the task output — do not re-derive it:**
+`.../tasks/wzhzc5jhf.output` · per-agent: `.../subagents/workflows/wf_dc12c56c-e08/journal.jsonl`
+
+**NEXT COMMAND after 23:20** — cached hunters replay free, only the 6 refuters run:
+`Workflow({scriptPath: ".../workflows/scripts/kpm-logic-review-sweep-wf_dc12c56c-e08.js", resumeFromRunId: "wf_dc12c56c-e08"})`
+Then write survivors to `A-Brain/Backlog/` in plain English, same shape as the 19.
+
+**Hand-found count stays 19** — all read and cited by me, three control-grepped. The 3 above make
+**22 with verification**. Nothing in the app has been changed by any of this.
+
+# 🔴🔴 2026-08-17 18:0x — FIRST RUN: QUOTA KILLED THE VERIFY PHASE (fixed, see above)
 
 **Workflow `wf_dc12c56c-e08` finished with `confirmed: []` and `refutedCount: 14`.**
 ⚠️ **THAT IS NOT 14 REFUTED FINDINGS. IT IS 14 UNVERIFIED ONES.** 7 of 8 agents died on
