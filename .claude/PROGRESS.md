@@ -15,6 +15,55 @@
 
 ## ▶ NOW
 
+# ✅ 2026-08-18 01:4x — WORKFLOW FINISHED CLEAN: 14/14 AGENTS, 0 ERRORS. FINDINGS NOT YET WRITTEN UP.
+
+**Task `w70zq4fqw`, run `wf_dc12c56c-e08`.** Every hunter AND every skeptic completed. 970k subagent
+tokens, 8 minutes. **The `confirmed` list is real verification this time**, not the quota-death
+artefact from the first two attempts.
+
+🔴 **THE FULL RESULT IS 200k CHARS — DO NOT RE-DERIVE IT, READ IT:**
+`.../tasks/w70zq4fqw.output` · per-agent: `.../subagents/workflows/wf_dc12c56c-e08/journal.jsonl`
+
+**Three confirmed headliners visible in the truncated preview** (there are more in the file):
+1. **`App.jsx:1641` — "Transfer Complete" bells are sent BEFORE the batch that moves the money**
+   (`:1688`), and nothing deletes them if it fails. Skeptic **downgraded HIGHEST → MEDIUM**: it
+   refuted the claim that non-owners can reach the button (`view_master_vault` is TIER_1/2 only)
+   and that the 450-op chunk boundary is reachable (7-day listener). **The ordering bug stands.**
+2. **`App.jsx:1842` — damaged EOD goods credited with NO unit conversion** while good stock is
+   converted 26 lines above at `:1812-1816`. Return 2 Bal of crushed packs → quarantine credited
+   **2 instead of 400**, and the admin notification repeats the wrong number as "Bks". Skeptic
+   confirmed, HIGHEST → HIGH. Fix: `increment(convertToBks(item.qty, item.unit, masterProduct))`.
+3. **`MerchantSalesView.jsx:930` — fulfilling an IOU rewrites the whole basket to Cash.** Add a
+   Rp 3.000.000 Titip sale to a basket containing one IOU fulfilment and `cart.some(...)` forces
+   `dbMethod='Cash'` → every debt reader keys on `paymentType==='Titip'`, so **the debt does not
+   exist anywhere**, and the receipt prints "IOU Fulfillment" so the store has no paper either.
+   Fix: `cart.every(...)` instead of `cart.some(...)`. Skeptic CONFIRMED.
+
+**NEXT TURN, in this order:**
+1. Read the output file, write every confirmed finding into `A-Brain/Backlog/` in plain English
+   (same shape as the 22 already there). Keep the skeptic's severity corrections and its refutations
+   — a downgrade is information, not noise.
+2. Then the Haiku benchmark below.
+
+# 🧪 2026-08-18 — RUN THIS AFTER THE RESET: the cheap-model benchmark he ordered
+
+> *"run that lower model right after reset"* · *"u wasted 3 times quota reset already, i dont want
+> it to happen again"*
+
+**The control already exists:** the 3 warehouse findings have full Opus verdicts with citations
+(`BranchWarehouseManager.jsx:294` and `:152`, `RestockVaultView.jsx:90`). Re-run **those exact three
+claims** through a refuter with `{ model: 'haiku' }`, then with `{ model: 'sonnet' }`, and compare
+verdict + citation against the Opus answer. 3 claims, near-zero cost.
+
+**Pass = same verdicts AND the same load-bearing citation.** The Opus verdict that matters found a
+guard in a DIFFERENT file (`App.jsx:1788`) — that cross-file catch is the bar. Record the result in
+the vault so the tier boundary is never guessed again.
+
+✅ **Rule already written into `~/.claude/skills/alucard/SKILL.md` §9** (this turn): pick the model
+before any fan-out, never inherit; Haiku mechanical / Sonnet bounded-reading / Opus cross-file
+reasoning; and the trap that a cheap model plus a *"default to X when unsure"* instruction is a
+silent-loss machine — which is exactly what my refuter prompt says.
+
 # 🔎 2026-08-17 17:1x — LOGIC REVIEW: 7 FLAWS FOUND, ALL WRITTEN TO THE BACKLOG
 
 > *"i want u to do heavy job that includes review on the logic of this app and i want u to find
