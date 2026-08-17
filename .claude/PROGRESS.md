@@ -47,7 +47,21 @@
 control greps: `returnTotal` (writers only, no reader) and `customerId` (absent from every
 transaction payload). **None have been fixed.** No app code was touched by this review.
 
-📏 **COVERAGE, honestly:** ~2,600 lines read of **34,961** — about **7%**. Told him the number
+## THIRD PASS, 17:4x — two more, total 13
+
+| # | Flaw | Why it costs money |
+|---|---|---|
+| 12 | **Five consecutive silent saves in the map store panel** (`MapMissionControl.jsx:1204, 1213, 1221, 1231, 1244`) | one of them is the **price tier**; `handleDeleteStore` at `:1247` reports properly, so this is omission not house style. Folded into flaw 11 → **7 silent failures total** |
+| 13 | **Store transfer rewrites sales history** (`App.jsx:1628-1638`) | every past sale is re-stamped with the NEW agent — real seller erased, new agent inherits sales he never made, and same-named shops are dragged along. `mappedBy` overwritten while `mappedById` is not |
+
+✅ **The biggest fix got SMALLER on inspection:** `convertToBks(qty, unit, product)` already exists
+at `utils/helpers.js:97-107`, handles all four sizes, and is already called from three places.
+~10 places hand-write it instead, 3 of them wrongly. So flaw 7 is **"call the helper that is
+already there"**, not "write a helper" — my first write-up of it was wrong and is corrected in the
+Backlog item. The price-tier ladder has the same disease with no helper yet
+(`MerchantSalesView.jsx:82, 541, 602, 667, 1405`).
+
+📏 **COVERAGE, honestly:** ~3,000 lines read of **34,961** — about **8-9%**. Told him the number
 when he asked, after first answering vaguely. Files read end to end: `useTransactionEngine.js`,
 `useOfflineEngine.js`. `FleetCanvasManager.jsx` read to :430 of 1240. Still unread: `JourneyView`
 (except `:505-530`), `MapMissionControl` (2567, untouched), `CustomerManager` (sampled),
