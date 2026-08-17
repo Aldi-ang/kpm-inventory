@@ -15,7 +15,55 @@
 
 ## ▶ NOW
 
-# ✅ 2026-08-18 01:4x — WORKFLOW FINISHED CLEAN: 14/14 AGENTS, 0 ERRORS. FINDINGS NOT YET WRITTEN UP.
+# ✅ 2026-08-18 — ALL 75 FINDINGS WRITTEN UP. BENCHMARK RUNNING.
+
+**The 200k output file is READ and TRANSLATED.** Commit `442e21c` in A-Brain, 13 files, 1,775 lines.
+
+**Counts: 75 confirmed · 22 refuted · 0 unverified.** 20,080 lines of code read by the 14 agents.
+
+**Where it now lives — `A-Brain/Backlog/`:**
+- `SWEEP 2026-08-18 - START HERE.md` ← the ranked list + the 8 that move money silently + 🔴 the
+  three fix-order options Aldi must choose between
+- one file per screen: sales terminal (16) · map (15) · App.jsx handlers (18) ·
+  history+audit (7) · agent profile (5) · warehouse+restock (7) · rules vs UI (6)
+- `SWEEP - 22 claims that got KILLED.md` — so nobody re-chases a refuted claim
+
+**Three existing Backlog items were CORRECTED by the sweep** (a downgrade is information):
+- *Confirming a shipment twice* — the single-user double-press path is **REFUTED**
+  (`ConfirmGate.jsx:124` is a full-screen overlay). Only the two-user path stands. Fix unchanged.
+- *Shipping stock to a branch* — added `FleetCanvasManager.jsx:294-296`, whose comment proves
+  **this repo already found and fixed this exact bug in another file** and missed this site.
+- *Excise/cukai* — a second checker **killed it as a defect** and reframed it as a missing feature
+  (weighted-average landed cost). The Rp 6.400/pack figure depends on what Aldi typed into
+  DISTRIBUTOR (MODAL), not on a code fact. **The open question is now the whole item.**
+
+**The 8 HIGHEST after correction:** rank-in-rupiah-vs-XP (`AgentProfileView.jsx:557`, every agent
+instantly max rank) · IOU→Cash (`MerchantSalesView.jsx:930`) · buyback never restocks
+(`useTransactionEngine.js:163`) · sector settings never save (`MapMissionControl.jsx:611`) ·
+"Pricing Tier" writes a game rank (`MapMissionControl.jsx:1869`) · HQ stock overwritten from cache
+(`BranchWarehouseManager.jsx:294`) · customer view-only unenforceable (`firestore.rules:138`) ·
+employee-email hijack (`firestore.rules:214`).
+
+## 🧪 BENCHMARK IN FLIGHT — task `wigrgqk7b`, run `wf_e9afba9b-f08`
+
+9 agents: haiku × sonnet × opus, on the **same 3 claims with known answers**.
+⚠️ The original workflow script was deleted with the old temp dir, so the Opus verify prompt could
+not be recovered. **Opus is therefore re-run as a control on the new prompt** — comparing haiku on
+prompt-B against opus on lost-prompt-A would prove nothing.
+
+**Pass bar = the cross-file catch**, not the verdict alone:
+- Claim A (`BranchWarehouseManager.jsx:294`) — defect REAL, but the claim's own supporting sentence
+  ("every other writer uses increment()") is FALSE. Must separate the two.
+- Claim B (`:152`) — defect REAL, but the single-user path dies on **`ConfirmGate.jsx:124`**, a file
+  the claim never mentions. **This is THE test.**
+- Claim C (`RestockVaultView.jsx:90`) — **REFUTED**; needs `App.jsx:4144` "DISTRIBUTOR (MODAL)" and
+  `useTransactionEngine.js:62`. Resisting a plausible money story.
+
+Result goes in the vault as a permanent tier rule. `alucard` §9 already carries the habit.
+
+---
+
+# 2026-08-18 01:4x — WORKFLOW FINISHED CLEAN: 14/14 AGENTS, 0 ERRORS *(superseded above)*
 
 **Task `w70zq4fqw`, run `wf_dc12c56c-e08`.** Every hunter AND every skeptic completed. 970k subagent
 tokens, 8 minutes. **The `confirmed` list is real verification this time**, not the quota-death
