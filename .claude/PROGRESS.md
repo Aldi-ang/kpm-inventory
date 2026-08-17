@@ -121,9 +121,33 @@ the van → the physical goods count (built 2026-08-16) shows they never left �
 investigation. Fake receipt + goods sold off-book for cash → the count balances and only the
 customer can reveal it. **Only the second shape ever reaches the dispute queue.**
 
-### 🔴 Q1b — THE ONLY THING STILL BLOCKING THE BUILD: who rules on a dispute?
-Regional admin (verifies the letter, knows the customers) or HQ (a bounty is a money penalty
-against an employee)? That answer decides which screen gets the dispute queue. Asked 13:5x.
+### ✅ Q1b — who rules on a dispute? **ANSWERED 2026-08-17 14:0x.**
+
+> *"there is this position named "area sales supervisor" this is his job to do that HQ will sent
+> them to the regional area to check"*
+
+**Neither the regional admin nor HQ desk — a field role HQ dispatches into the region.** The chain
+is four steps, not three: agent submits → **regional admin** raises the dispute at verify → **HQ**
+dispatches → **Area Sales Supervisor** visits the store and rules.
+
+✅ **His instinct is structurally right and worth keeping:** the regional admin is the person who
+*accepted* the fake bukti transfer. Letting them rule is letting them grade their own acceptance.
+The ruler has to come from outside the region.
+
+⚠️ **THE ROLE DOES NOT EXIST IN THE APP.** `src/config/permissions.js:2-9` has exactly six tiers —
+DEVELOPER, COMPANY_OWNER, AREA_ADMIN, FLEET_CAPTAIN, FIELD_OPERATIVE, ROOKIE. No supervisor.
+⚠️ **And adding it only through Settings → Permission Matrix silently makes them a salesman:**
+`translateLegacyRole` (`:26-35`) leaves an unknown role id untouched, `hasClearance` (`:96-99`)
+then falls back to **TIER_5 FIELD_OPERATIVE permissions** when the matrix has no row for it, and
+`isFieldLevelTier`/`isFleetManagementTier` both return **false** — so the new supervisor would get
+salesman clearance and be missing from every management check. Same shape as the Fleet Captain
+Permission Gap already in the vault. **The tier has to be added in code, not only in Firebase.**
+
+### 🔴 Q1c — BLOCKING THE BUILD: is the supervisor locked to one region, or roaming?
+*"HQ will sent them to the regional area"* reads as roaming — dispatched wherever the case is,
+which means they must read customer + agent data **across** regions, and the Option B region-lock
+does not apply to them. Confirm before the tier is written, because the region-lock is a security
+rule, not a UI toggle. **Assumed answer if he does not reply: roaming, HQ-scoped.** Asked 14:0x.
 
 ### 🔴 Q2 — the card carousel. He sent a VIDEO and I watched it. Awaiting a number.
 
