@@ -12,7 +12,7 @@ import {
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css'; 
 import { doc, collection, getDocs, setDoc, deleteDoc, updateDoc, writeBatch } from 'firebase/firestore';
-import { commitInChunks, convertToBks, formatRupiah } from './utils/helpers';
+import { commitInChunks, convertToBks, formatRupiah, storeKey } from './utils/helpers';
 import { loadBorderCache, saveBorderCache, clearBorderCache } from './utils/borderCache';
 import { confirmAction, promptAction } from './components/ConfirmGate.jsx';
 import { notify } from './components/Toast.jsx';
@@ -1151,7 +1151,14 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
         if (!store?.name) return { totalRev: 0, currentConsignment: 0, activeItems: [] };
 
         const safeTrans = Array.isArray(transactions) ? transactions : [];
-        const storeTrans = safeTrans.filter(t => t && t.customerName === store.name);
+        /* 🚀 FIX — SUM SITE. This feeds the pin's revenue and, through totalTitip - totalPaid,
+           the outstanding consignment debt. It used a raw `===` between store.name (from the
+           customer document) and t.customerName (typed at the counter): one capital letter or a
+           legacy " (Retail)" ending apart and the shop showed no sales, no stock and NO DEBT —
+           a shop with money outstanding read as settled. Matched through storeKey now, so those
+           rows come back and the debt goes UP toward its true value. */
+        const key = storeKey(store.name);
+        const storeTrans = safeTrans.filter(t => t && storeKey(t.customerName) === key);
         
         const totalRev = storeTrans.filter(t => t.type === 'SALE').reduce((sum, t) => sum + (Number(t.total) || 0), 0);
         const totalTitip = storeTrans.filter(t => t.type === 'SALE' && t.paymentType === 'Titip').reduce((sum, t) => sum + (Number(t.total) || 0), 0);
@@ -1189,7 +1196,9 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
         if (!store?.name) return [];
         const safeTrans = Array.isArray(transactions) ? transactions : [];
         return safeTrans
-            .filter(t => t && t.customerName === store.name && t.type === 'SALE')
+            /* DISPLAY SITE — the last five sales on the pin. No sum, so the only change is that
+               rows filed under an older spelling of the name are visible again. */
+            .filter(t => t && storeKey(t.customerName) === storeKey(store.name) && t.type === 'SALE')
             .sort((a, b) => {
                 const dateA = a.timestamp?.seconds ? a.timestamp.seconds * 1000 : new Date(a.date || 0).getTime();
                 const dateB = b.timestamp?.seconds ? b.timestamp.seconds * 1000 : new Date(b.date || 0).getTime();
@@ -1576,7 +1585,16 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
 
                 safeTrans.forEach(t => {
                     const tType = String(t.type || (t.total < 0 ? 'RETUR' : 'SALE')).toUpperCase();
-                    const isMatch = (t.customerName || t.customer || '').trim().toLowerCase() === (store.name || '').trim().toLowerCase();
+                    /* 🚀 SUM SITE, AND IT WRITES. lifetimeXP and seasonXP are committed to the
+                       store documents at the end of this function, so a shop whose history was
+                       split by spelling has been banked at a lower XP than it earned. This was
+                       also a private trim+lowercase copy of the shared rule — the same mistake
+                       removed from customerBrief.js in f1e3b28.
+
+                       The `|| t.customer` fallback is KEPT: no transaction in this codebase
+                       writes a `customer` field (checked), but proving that for every row ever
+                       written offline is not possible from here, and keeping it costs nothing. */
+                    const isMatch = storeKey(t.customerName || t.customer) === storeKey(store.name);
 
                     if (t && isMatch && tType === 'SALE') {
                         const val = (Number(String(t.total).replace(/[^0-9-]/g, '')) || 0);
@@ -2025,10 +2043,15 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
 
         const safeTrans = Array.isArray(transactions) ? transactions : [];
 
+        /* 🚀 SUM SITE — per-store revenue, added up per zone below to colour the heatmap.
+           Keyed on storeKey now, so two customer documents that differ only by spelling share
+           ONE entry instead of computing the same rows twice under two keys. */
         mapPoints.forEach(store => {
-            storeRevs[store.name] = safeTrans
+            const key = storeKey(store.name);
+            if (storeRevs[key] !== undefined) return;
+            storeRevs[key] = safeTrans
                 .filter(t => {
-                    if (t.customerName !== store.name || t.type !== 'SALE') return false;
+                    if (storeKey(t.customerName) !== key || t.type !== 'SALE') return false;
                     if (timeFilter === 'All-Time') return true;
                     if (!t.date) return false;
                     const txDate = new Date(t.date);
@@ -2050,10 +2073,20 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
             const geoData = boundary.feature || boundary.geometry;
             if (!geoData || !geoData.type) return;
 
+            /* 🚀 Each distinct shop counts ONCE per zone. Two customer documents sharing a name
+               return the SAME transactions — the rows are indistinguishable, there is no
+               customerId to separate them — so adding both was counting one shop's takings
+               twice and colouring the zone hotter than it earned. That was already true for
+               identical names before this change; matching by key would have widened it to
+               every spelling variant, so the count is de-duplicated here rather than left. */
             let totalRev = 0;
+            const counted = new Set();
             mapPoints.forEach(store => {
                 if (checkPointInGeoJSON(store.longitude, store.latitude, geoData)) {
-                    totalRev += (storeRevs[store.name] || 0);
+                    const key = storeKey(store.name);
+                    if (counted.has(key)) return;
+                    counted.add(key);
+                    totalRev += (storeRevs[key] || 0);
                 }
             });
             revMap[boundary.id] = totalRev;

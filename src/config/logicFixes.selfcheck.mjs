@@ -402,5 +402,63 @@ ok('and its one-match guard is untouched', /if \(exact\.length === 1\) handleCus
   ok('an empty, blank, null or suffix-only name normalises to nothing selectable',
      ['', '   ', null, undefined, ' (Retail)'].every(v => key(v) === '')); }
 
+/* ── S4 · the map matched a store's history with a raw === ─────────────────────────────── */
+section('S4. The map finds a shop by key, and counts each shop once');
+
+ok('the raw === match is gone', !/t\.customerName === store\.name/.test(map));
+ok('the raw !== match is gone', !/t\.customerName !== store\.name/.test(map));
+ok('the private trim+lowercase copy is gone',
+   !/\(t\.customerName \|\| t\.customer \|\| ''\)\.trim\(\)\.toLowerCase\(\)/.test(map));
+ok('storeKey is imported in the map', imports(map, 'storeKey'));
+ok('the XP loop matches by key and keeps the t.customer fallback',
+   /storeKey\(t\.customerName \|\| t\.customer\) === storeKey\(store\.name\)/.test(map));
+ok('per-store revenue is computed once per key', /if \(storeRevs\[key\] !== undefined\) return;/.test(map));
+ok('a zone counts each distinct shop once', /const counted = new Set\(\);/.test(map) && /if \(counted\.has\(key\)\) return;/.test(map));
+
+/* BEHAVIOUR — real rupiah, and the BEFORE is stated next to the AFTER for every sum, because
+   each of these numbers is on a screen Aldi reads. */
+{ const key = (n) => String(n ?? '').trim().replace(/\s*\((?:Retail|Individual|Wholesale)\)$/i, '').trim().toLowerCase();
+  const raw = (n) => String(n ?? '');
+  const tx = [
+    { type: 'SALE', paymentType: 'Titip', customerName: 'Warung Bu Sari (Retail)', total: 1200000 },
+    { type: 'SALE', paymentType: 'Titip', customerName: 'warung bu sari ',         total:  800000 },
+    { type: 'SALE', paymentType: 'Cash',  customerName: 'Warung Bu Sari',          total:  300000 },
+    { type: 'CONSIGNMENT_PAYMENT',        customerName: 'WARUNG BU SARI',     amountPaid: 500000 },
+    { type: 'SALE', paymentType: 'Cash',  customerName: 'Warung Sari Rasa',        total:  700000 } ];
+  const store = { name: 'Warung Bu Sari' };
+
+  const statsFor = (match) => { const mine = tx.filter(t => match(t.customerName, store.name));
+    const rev   = mine.filter(t => t.type === 'SALE').reduce((s, t) => s + t.total, 0);
+    const titip = mine.filter(t => t.type === 'SALE' && t.paymentType === 'Titip').reduce((s, t) => s + t.total, 0);
+    const paid  = mine.filter(t => t.type === 'CONSIGNMENT_PAYMENT').reduce((s, t) => s + t.amountPaid, 0);
+    return { rev, debt: Math.max(0, titip - paid) }; };
+
+  const before = statsFor((a, b) => raw(a) === raw(b));
+  const after  = statsFor((a, b) => key(a) === key(b));
+  ok('BEFORE: the pin saw one row - revenue 300.000, debt 0, so the shop read as settled',
+     before.rev === 300000 && before.debt === 0);
+  ok('AFTER: revenue 2.300.000 and the debt that was hidden is 1.500.000',
+     after.rev === 2300000 && after.debt === 1500000);
+  ok('the shop that merely shares a word is still excluded',
+     after.rev !== 3000000);
+
+  // The XP loop banks a number into the store document, so a split history under-banked it.
+  const xp = (match) => tx.filter(t => t.type === 'SALE' && match(t.customerName, store.name))
+                          .reduce((s, t) => s + t.total, 0);
+  ok('BEFORE: lifetimeXP was banked at 300.000', xp((a, b) => raw(a) === raw(b)) === 300000);
+  ok('AFTER: it banks the 2.300.000 the shop actually earned', xp((a, b) => key(a) === key(b)) === 2300000);
+
+  // Two customer documents, one shop's worth of rows: a zone must not count it twice.
+  const twins = [ { name: 'Toko Jaya', longitude: 1, latitude: 1 },
+                  { name: 'toko jaya (Retail)', longitude: 1, latitude: 1 } ];
+  const revs = {}; twins.forEach(s => { const k = key(s.name); if (revs[k] === undefined) revs[k] = 400000; });
+  ok('twin documents share ONE revenue entry', Object.keys(revs).length === 1);
+  let zone = 0; const counted = new Set();
+  twins.forEach(s => { const k = key(s.name); if (counted.has(k)) return; counted.add(k); zone += revs[k] || 0; });
+  ok('AFTER: the zone counts that shop once - 400.000', zone === 400000);
+  let zoneOld = 0; twins.forEach(s => { zoneOld += revs[key(s.name)] || 0; });
+  ok('BEFORE the de-duplication it would have been 800.000 - the same takings twice',
+     zoneOld === 800000); }
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);
