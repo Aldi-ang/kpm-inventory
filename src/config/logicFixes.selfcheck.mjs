@@ -651,5 +651,42 @@ ok(`no size ladder stops before Karton${truncated.length ? ' — ' + truncated.j
   ok('AFTER: a 2-Karton row is 1600 packs', karton.qty * convertToBks(1, karton.unit, prod) === 1600);
   ok('BEFORE: the Slop-only ladder called it 2 packs', karton.qty * 1 === 2); }
 
+/* ── S9 · approving a stock count used to erase the day it was counted on ──────────────── */
+section('S9. A count corrects the stock, it does not replace it');
+const opname = read('src/StockOpnameView.jsx');
+
+ok('approval applies the counted difference through increment()',
+   /stock:\s+increment\(Number\(item\.goodCount \|\| 0\)\s+- Number\(item\.expectedStock \|\| 0\)\)/.test(opname));
+ok('damaged stock is corrected the same way',
+   /damagedStock: increment\(Number\(item\.damagedCount \|\| 0\) - Number\(item\.expectedDamagedStock \|\| 0\)\)/.test(opname));
+ok('the blind overwrite is gone from the normal path',
+   !/data: \{ stock: item\.goodCount, damagedStock: item\.damagedCount \}/.test(opname));
+ok('the count still snapshots what the system believed AT COUNT TIME',
+   /expectedStock: item\.stock \|\| 0/.test(opname) && /expectedDamagedStock: item\.damagedStock \|\| 0/.test(opname));
+ok('audits submitted before the snapshot existed still fall back to the overwrite',
+   /const hasSnapshot = item\.expectedStock !== undefined/.test(opname));
+ok('the confirmation no longer promises an overwrite',
+   !/permanently overwrite the inventory/.test(opname) && /Sales and returns made since the count are kept/.test(opname));
+
+/* BEHAVIOUR — the whole day, in order. */
+{ const apply = (expected, counted, movements, useDelta) => {
+    let stock = expected;
+    movements.forEach(m => { stock += m; });          // the day happens between count and approval
+    return useDelta ? stock + (counted - expected) : counted; };
+
+  ok('BEFORE: count 100 at 08:00, sell 30, take 20 back, approve at 20:00 -> stock 100, ten from nowhere',
+     apply(100, 100, [-30, +20], false) === 100);
+  ok('AFTER: the same day ends at the real 90', apply(100, 100, [-30, +20], true) === 90);
+
+  ok('AFTER: a real shortage still lands - expected 100, only 95 found, then the same day -> 85',
+     apply(100, 95, [-30, +20], true) === 85);
+  ok('BEFORE: that shortage would have read 95, hiding the day AND flattering the loss',
+     apply(100, 95, [-30, +20], false) === 95);
+
+  ok('a count with nothing happening afterwards is unchanged by the fix',
+     apply(100, 95, [], true) === 95 && apply(100, 95, [], false) === 95);
+  ok('an extra found on the shelf still increases stock',
+     apply(100, 103, [-30], true) === 73); }
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

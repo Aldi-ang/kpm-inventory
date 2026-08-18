@@ -260,7 +260,9 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
     };
 
     const handleApproveAudit = async (audit) => {
-        if (!await confirmAction(`APPROVE AUDIT: This will permanently overwrite the inventory for ${audit.branchLocation}. Proceed?`)) return;
+        // The old wording promised an overwrite, which is what this used to do and what made the
+        // damage look deliberate. It applies the counted difference now, so the message says so.
+        if (!await confirmAction(`APPROVE AUDIT: applies the counted difference to ${audit.branchLocation}'s stock. Sales and returns made since the count are kept. Proceed?`)) return;
         setIsProcessingAudit(true);
         try {
             // 🚀 FIX: Build the operations list and hand it to commitInChunks instead of a
@@ -274,13 +276,32 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
 
             for (const item of audit.items) {
                 const itemRef = doc(db, basePath, item.productId);
+
+                /* 🚀 FIX: apply the DIFFERENCE the counter found, not the number they counted.
+                   Overwriting is right at the moment of counting and wrong by the evening: the
+                   branch counts 100 at 08:00, sells 30, takes 20 back at EOD, and HQ approving
+                   at 20:00 wrote 100 over a real 90 — ten packs from nowhere and a whole day of
+                   movement erased, with nothing on screen to notice.
+
+                   `expectedStock` is what the system believed AT COUNT TIME, snapshotted into
+                   the audit when it was submitted, so the counter's real correction is
+                   (counted - expected). increment() applies it server-side and atomically,
+                   which also settles the second half of the problem: these writes go through a
+                   batch with no read, so reading the current stock here to subtract from would
+                   race anything that sells while HQ is deciding. */
+                const hasSnapshot = item.expectedStock !== undefined && item.expectedDamagedStock !== undefined;
+                const data = hasSnapshot
+                    ? { stock:        increment(Number(item.goodCount || 0)    - Number(item.expectedStock || 0)),
+                        damagedStock: increment(Number(item.damagedCount || 0) - Number(item.expectedDamagedStock || 0)) }
+                    /* Audits submitted before the snapshot existed carry no expected values, so
+                       there is no difference to compute and the old overwrite is the only honest
+                       answer for them. */
+                    : { stock: Number(item.goodCount || 0), damagedStock: Number(item.damagedCount || 0) };
+
                 if (audit.auditType === 'BRANCH_WAREHOUSE') {
-                    // 🚀 FIX: damagedStock is now SET to the physical count, matching how 'stock'
-                    // already works — a blind count replaces the system's belief with reality,
-                    // it doesn't pile on top of it.
-                    operations.push({ type: 'set', ref: itemRef, data: { stock: item.goodCount, damagedStock: item.damagedCount }, options: { merge: true } });
+                    operations.push({ type: 'set', ref: itemRef, data, options: { merge: true } });
                 } else {
-                    operations.push({ type: 'update', ref: itemRef, data: { stock: item.goodCount, damagedStock: item.damagedCount } });
+                    operations.push({ type: 'update', ref: itemRef, data });
                 }
             }
 
