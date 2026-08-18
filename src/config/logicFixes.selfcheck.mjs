@@ -971,5 +971,53 @@ ok('a product he did not count keeps its expected row',
   ok('counting MORE than expected is reported too, and is not a dispute',
      over.cashVariance === 200000 && over.countStatus === 'CLEAN'); }
 
+/* ── S18 · a short EOD count becomes a bounty the agent can repay ──────────────────────── */
+section('S18. A short count is approved, recorded as a bounty, and repayable');
+
+ok('the shortfall is money short on cash AND transfer, never a negative',
+   /Math\.max\(0, -Number\(report\.cashVariance \|\| 0\)\)\s*\n?\s*\+ Math\.max\(0, -Number\(report\.transferVariance \|\| 0\)\)/.test(app));
+ok('the admin is told the amount before approving', /records that as a bounty in their name/.test(app));
+ok('the bounty is minted onto the agent as a PENALTY key',
+   /currentDebts\[`PENALTY_EOD_\$\{report\.id\}`\] = eodShortfall;/.test(app));
+ok('it is ASSIGNED, not added to, so a double-approve cannot charge twice',
+   !/currentDebts\[`PENALTY_EOD_\$\{report\.id\}`\] \+=/.test(app));
+/* The repayment half already existed and must keep working — these guard it, they are not new. */
+ok('the agent still sums every PENALTY key on his WANTED board',
+   /pid\.startsWith\('PENALTY_'\)/.test(eod));
+ok('and clearing a bounty still deletes those keys',
+   /report\.penaltyKeys[\s\S]{0,160}delete currentDebts\[key\]/.test(app));
+
+/* BEHAVIOUR — the night, the fine, and paying it off. */
+{ const mint = (report, debts) => { const next = { ...debts };
+    const short = Math.max(0, -Number(report.cashVariance || 0)) + Math.max(0, -Number(report.transferVariance || 0));
+    if (short > 0 && report.id) next[`PENALTY_EOD_${report.id}`] = short;
+    return next; };
+  const owed = (debts) => Object.entries(debts)
+    .filter(([k]) => k.startsWith('PENALTY_'))
+    .reduce((s, [, v]) => s + (v || 0), 0);
+
+  const night = { id: 'r1', cashVariance: -200000, transferVariance: 0 };
+  const after = mint(night, {});
+  ok('counting 200.000 short mints a 200.000 bounty', owed(after) === 200000);
+  ok('approving the same report twice still owes 200.000, not 400.000',
+     owed(mint(night, after)) === 200000);
+
+  const both = mint({ id: 'r2', cashVariance: -150000, transferVariance: -50000 }, {});
+  ok('a gap on cash AND transfer adds up to one 200.000 bounty', owed(both) === 200000);
+
+  ok('counting MORE than expected mints nothing',
+     owed(mint({ id: 'r3', cashVariance: 300000, transferVariance: 0 }, {})) === 0);
+  ok('a clean night mints nothing', owed(mint({ id: 'r4' }, {})) === 0);
+
+  // Repayment: the clearance report names the keys, and verifying deletes them.
+  const paid = { ...after };
+  Object.keys(paid).filter(k => k.startsWith('PENALTY_')).forEach(k => delete paid[k]);
+  ok('repaying through the EOD screen clears it back to zero', owed(paid) === 0);
+
+  // A bounty from somewhere else must survive an unrelated EOD approval.
+  const mixed = mint({ id: 'r5', cashVariance: 0 }, { PENALTY_OLD: 75000, global_credit: 1000 });
+  ok('an older bounty is untouched by a clean night', owed(mixed) === 75000);
+  ok('and non-penalty balances are left alone', mixed.global_credit === 1000); }
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

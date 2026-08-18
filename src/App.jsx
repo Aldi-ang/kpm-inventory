@@ -1761,9 +1761,17 @@ const handleGitHubMirror = async () => {
 
   const handleVerifyEOD = async (report) => {
       // 🚀 DYNAMIC CONFIRMATION: Adapt message based on the report type
+      /* A short count becomes a bounty in the agent's name, so the admin is told the amount
+         BEFORE approving, not after. Aldi's rule, 2026-08-18: "admin can approve but it will add
+         up to the agent's bounties instead". Approving is allowed — it is simply not silent. */
+      const eodShortfall = Math.max(0, -Number(report.cashVariance || 0))
+                         + Math.max(0, -Number(report.transferVariance || 0));
+
       const confirmMsg = report.reportType === 'BOUNTY'
           ? `Verify Bounty Clearance of Rp ${new Intl.NumberFormat('id-ID').format(report.cash)} for ${report.agentName}? This will wipe their quarantine debt.`
-          : `Verify EOD for ${report.agentName}? This clears their inventory and returns it to the Vault.`;
+          : eodShortfall > 0
+              ? `Verify EOD for ${report.agentName}?\n\nThey counted Rp ${new Intl.NumberFormat('id-ID').format(eodShortfall)} LESS than expected. Approving records that as a bounty in their name, which they can repay from their own EOD screen.\n\nThis also clears their inventory and returns it to the Vault.`
+              : `Verify EOD for ${report.agentName}? This clears their inventory and returns it to the Vault.`;
 
       if(!await confirmAction(confirmMsg)) return;
 
@@ -1952,6 +1960,24 @@ const handleGitHubMirror = async () => {
 
                       if (remainingPayment > 0) {
                           currentDebts['global_credit'] = (currentDebts['global_credit'] || 0) - remainingPayment;
+                      }
+
+                      /* 🤠 A SHORT COUNT BECOMES A BOUNTY. Aldi, 2026-08-18: "admin can approve but
+                         it will add up to the agent's bounties instead, and for the bounties, the
+                         agent can repay their debt through the EOD screen even after bounties
+                         recorded on their name". Both halves of that already existed — the WANTED
+                         board sums every PENALTY_ key, and a BOUNTY clearance report pays them off
+                         from the agent's own EOD screen. Only the minting was missing.
+
+                         Keyed by the REPORT id and ASSIGNED, never added to: verifying the same
+                         report twice writes the same key with the same number, so a double-approve
+                         cannot charge a man twice for one night.
+
+                         Money only. A goods shortage rides along on the report as `goodsShort` and
+                         is deliberately not priced into a fine here — what a missing pack is worth
+                         is his call, not an assumption to bury in a transaction. */
+                      if (eodShortfall > 0 && report.id) {
+                          currentDebts[`PENALTY_EOD_${report.id}`] = eodShortfall;
                       }
 
                       // 🚀 ANTI-WIPE BUG FIX: If they just submitted a Cukai report, do NOT wipe their stock!
