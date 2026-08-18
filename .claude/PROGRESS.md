@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-18 17:17 WIB (KPM app session)** · 🔧 28 FIXES · 📋 ONE PROMPT READY · branch `phase0-solid-ground`
+**Updated: 2026-08-18 17:38 WIB (KPM app session)** · 🔧 29 FIXES · ❓ ONE QUESTION FOR ALDI · branch `phase0-solid-ground`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -12,6 +12,25 @@
 > 📏 **KEEP THIS FILE UNDER ~350 LINES.** When it passes that, cut the oldest day into the same
 > archive rather than letting it grow back. This file holds WHERE THE WORK STANDS; the archive
 > and `A-Brain/Wiki/Log.md` hold how it got there.
+
+## 🟠 2026-08-18 17:38 — EOD: the count finally decides the report. `d859d41`
+
+`git show d859d41`. Every figure that ACTED was the system's own expectation — the submitted cash
+WAS the expected cash, so a shortage could not exist. Counted figures now go up with the gap named
+(`cashVariance`, `transferVariance`, `goodsShort`, `countStatus`), and the warehouse is credited
+what he counted. Build clean · 599/0 · **240/0 → 255/0** · eod-record 12/12. Red-first 248/7.
+
+❓ **HALF DONE ON PURPOSE — the admin screen needs his answer first.** A DISPUTED report is
+recorded but shown to nobody yet. The question, and the three options, are written verbatim at the
+top of `.claude/NEXT-SESSION.md`. **Do not build the option that turns a gap into an agent's debt
+until he says it out loud** — his own rule is that a shortfall waits for the company to rule.
+
+📌 **His shipping call, 2026-08-18:** *"we might it later if we done with everything"* — the
+538-commit merge to `main` happens at the END. Branch is NOT behind main, so it stays clean.
+
+🧪 **Test card published for him:** https://claude.ai/code/artifact/a42ce819-9d1a-46a8-8ae8-0291df6765ef
+— 12 field tests. A BROKEN result outranks the whole queue.
+📄 Plain-English write-up of all 15 fixes: https://claude.ai/code/artifact/7924dad9-a56d-4912-890e-d39cfe52680d
 
 ## 🟠 2026-08-18 17:17 — one debt number, and 23 silent failures given a voice
 
