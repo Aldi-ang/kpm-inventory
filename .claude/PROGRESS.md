@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-18 15:5x WIB (KPM app session)** · 🔧 17 FIXES · 📋 ONE PROMPT READY · branch `phase0-solid-ground`
+**Updated: 2026-08-18 16:29 WIB (KPM app session)** · 🔧 18 FIXES · 📋 ONE DECISION WAITING · branch `phase0-solid-ground`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -12,6 +12,44 @@
 > 📏 **KEEP THIS FILE UNDER ~350 LINES.** When it passes that, cut the oldest day into the same
 > archive rather than letting it grow back. This file holds WHERE THE WORK STANDS; the archive
 > and `A-Brain/Wiki/Log.md` hold how it got there.
+
+## 🟠 2026-08-18 16:29 WIB — KPM app track — THE GUARD, AND THE 8 IT FOUND: SHIPPED `ef437b1`
+
+Four private copies of the store-name rule had been found one at a time, one session each. This
+session wrote the **finder** instead: scan every file under `src/`, comments stripped, for a
+`.trim().toLowerCase()` next to `customerName` / `storeName` / `store.name`, fail with
+`file:line`.
+
+**It found 8. Five were on no list.**
+
+| site | kind |
+|---|---|
+| `App.jsx:1530` hand-off duplicate check | guard |
+| `App.jsx:1540` picks the customer doc a hand-off pins to | selection |
+| `App.jsx:1644` selects which rows a hand-off moves | **WRITES** |
+| `JourneyView:278` builds today's visit map | key |
+| `JourneyView:1085/1142` reads it — both had their own copy | key must match |
+| `MerchantSalesView:105` FIFO debt engine | **SUM — what the counter says a shop owes** |
+| `MerchantSalesView:1099` rank metric vs tier target | **SUM** |
+| `EODReconciliationView:131` `storesServed` | **COUNT, banked with `increment()`** |
+
+BEFORE → AFTER, pinned on real rupiah: counter debt `300.000` → **`1.500.000`** · tier omset
+`800.000` → **`2.000.000`** · stores served `3` → **`2`**.
+
+- **Verified:** build clean · audit **599/0** · logic **130/0 → 150/0** · brief 9/9 · daystats
+  7/7 · txSize 6/6. Red-first: 141/9 against the pre-fix code.
+- **Two of my own claims were wrong and the checks caught both.** JourneyView's `.trim()` does
+  NOT throw on a nameless row — line 264 coerces through `String(... || '')` first. And the old
+  debt rule DID trim, so it subtracted a payment from a debt it could not see: BEFORE was
+  300.000, not the 800.000 I first asserted. **A prompt from a previous session is not evidence.**
+- **Files touched (5):** `App.jsx` · `MerchantSalesView.jsx` · `JourneyView.jsx` ·
+  `EODReconciliationView.jsx` · `logicFixes.selfcheck.mjs`. Over the 3-file rule on purpose —
+  the guard cannot ship green while any violation stands.
+
+🔴 **NEXT IS A DECISION, NOT CODE — `.claude/NEXT-SESSION.md` holds the question for him.** Old
+names are still written in the data; every screen shows whichever spelling came first, so a shop
+can read as "Warung Bu Sari (Retail)" forever. Cleaning that means writing to his live book.
+**The migration was deliberately NOT written** — a script that exists is a script someone runs.
 
 ## 🟠 2026-08-18 15:5x WIB — KPM app track — MAP NAME MATCHING: SHIPPED `a3a9cf6`
 
@@ -2808,6 +2846,8 @@ price ladder; performance rank is now the Tier Automation Engine's job.
 
 ## 📓 LOG
 
+- **2026-08-18 16:29** — wrote the guard that finds private name rules; it found 8 across 3 files,
+  all fixed. `ef437b1`. 599/0, 150/0, 9/9, 7/7, 6/6.
 - **2026-08-18 15:5x** — map: 4 raw-name sites on `storeKey`, zone sum de-duplicated, every sum
   site given a BEFORE/AFTER rupiah check. `a3a9cf6`. 599/0, 130/0, 9/9, 7/7.
 - **2026-08-18 15:5x** — name sweep: `customerBrief` / `dayStats` / auto-pick on `storeKey`, one
