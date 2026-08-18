@@ -23,6 +23,7 @@ const engine   = read('src/hooks/useTransactionEngine.js');
 const merchant = read('src/MerchantSalesView.jsx');
 const profile  = read('src/AgentProfileView.jsx');
 const map      = read('src/MapMissionControl.jsx');
+const fleet    = read('src/FleetCanvasManager.jsx');
 const app      = read('src/App.jsx');
 const history  = read('src/components/HistoryReportView.jsx');
 const helpers  = read('src/utils/helpers.js');
@@ -121,6 +122,25 @@ ok('the packing helper handles Bal (the old inline code had no Bal branch)',
 { const qty = 1, packsPerSlop = 10, slopsPerBal = 20, balsPerCarton = 4;
   const karton = eval(helpers.match(/if \(unit === 'Karton'\) return ([^;]+);/)[1]);
   ok('1 Karton = 800 packs, not the old hardcoded 100', karton === 800, `got ${karton}`); }
+
+
+/* -- IOU renamed to Utang Barang (labels only, stored values untouched) ----------------- */
+section('Rename. "IOU" reads as Utang Barang, and no record was orphaned');
+{ const files = [history, fleet, merchant];
+  ok('no visible IOU label survives',
+     !files.some(f => />IOU |\[IOU\]|\[IOU PENDING\]|IOU Pending Fulfillment/.test(f)));
+  ok('the new label is on screen',
+     files.some(f => /UTANG BARANG/.test(f)));
+  /* the half that would silently orphan every past record if it were renamed too */
+  ok('the STORED paymentType literal is untouched in its comparisons',
+     history.includes("=== 'IOU Fulfillment'") && fleet.includes("=== 'IOU Fulfillment'"));
+  ok('the STORED item flag is untouched', merchant.includes("fulfillment === 'IOU'"));
+  ok('the receipt maps the stored value at render time',
+     /method: paymentLabel\(displayMethod\)/.test(merchant));
+  ok('paymentLabel is exported and imported where used',
+     /export const paymentLabel/.test(helpers) && imports(merchant, 'paymentLabel'));
+  ok('paymentLabel leaves every other method alone',
+     (m => m === 'Titip')('Titip' === 'IOU Fulfillment' ? 'Utang Barang Lunas' : 'Titip')); }
 
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

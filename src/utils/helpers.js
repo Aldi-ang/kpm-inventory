@@ -211,3 +211,10 @@ export const compressImageToBase64 = (file) => {
         reader.onerror = (err) => reject(err);
     });
 };
+
+/* Display name for a stored paymentType. The database still holds 'IOU Fulfillment' — that
+   literal is compared in HistoryReportView and FleetCanvasManager and sits on every past
+   record, so it must never change. Only what a human reads changes here.
+   Aldi, 2026-08-18: "what IOU again i forgot" -> "yeah utang barang should do". */
+export const paymentLabel = (method) =>
+    method === 'IOU Fulfillment' ? 'Utang Barang Lunas' : (method || '');

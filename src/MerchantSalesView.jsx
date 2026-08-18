@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { Search, Box, Zap, X, DollarSign, List, ChevronDown, Printer, MessageSquare, ArrowRight, ArrowLeft, MapPin, AlertCircle, Camera, Store, Map, Lock, Package, AlertTriangle, Check, Eye } from 'lucide-react';
 import { doc, setDoc, collection, getDoc, getDocs, updateDoc, addDoc, onSnapshot, serverTimestamp, runTransaction } from 'firebase/firestore'; 
 import { hasClearance } from './config/permissions';
-import { savePhotoAndGetReference, convertToBks, splitToUnits } from './utils/helpers';
+import { savePhotoAndGetReference, convertToBks, splitToUnits, paymentLabel } from './utils/helpers';
 import { dayStats, agoLabel } from './utils/dayStats';
 import { customerBrief, reorderFromLast } from './utils/customerBrief';
 import { nextStop, directionsUrl, metresLabel } from './utils/nextStop';
@@ -684,7 +684,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
     const handleFulfillIOU = (iou) => {
         const product = inventory.find(p => p.id === iou.productId);
         if (!product) return notify("Product no longer exists in inventory!");
-        if (product.stock < iou.qty) return notify("You don't have enough healthy stock in your vehicle to fulfill this IOU!");
+        if (product.stock < iou.qty) return notify("You don't have enough healthy stock in your vehicle to settle this Utang Barang!");
 
         setCart(prev => [...prev, {
             productId: product.id, name: product.name, qty: iou.qty, unit: iou.unit,
@@ -1143,7 +1143,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
             }
 
             setReceiptData({
-                customer: finalCust, method: displayMethod, items: finalCart, total: finalTotal,
+                customer: finalCust, method: paymentLabel(displayMethod), items: finalCart, total: finalTotal,
                 date: new Date().toLocaleString('id-ID'), agentName: agentFallback 
             });
 
@@ -1601,7 +1601,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                 {/* --- 🚀 TEAMWORK IOU BANNER --- */}
                 {selectedCustomerInfo?.pendingIOUs?.length > 0 && !isReturMode && (
                     <div className="bg-[var(--duke-fill-panel-3)] border-2 border-[var(--duke-brass-edge)] p-3 rounded mb-3 shadow-[0_0_15px_rgba(212,175,55,0.28)] animate-fade-in-up">
-                        <h4 className="text-[var(--duke-brass-ink)] font-black uppercase text-[10px] flex items-center gap-1 mb-2"><AlertCircle size={14}/> IOU Pending Fulfillment</h4>
+                        <h4 className="text-[var(--duke-brass-ink)] font-black uppercase text-[10px] flex items-center gap-1 mb-2"><AlertCircle size={14}/> Utang Barang Belum Dikirim</h4>
                         {selectedCustomerInfo.pendingIOUs.map((iou, i) => {
                             const isAlreadyInCart = cart.some(ci => ci.iouId === iou.id);
                             return (

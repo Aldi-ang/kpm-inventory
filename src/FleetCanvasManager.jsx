@@ -408,7 +408,7 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
             viewingReceipt.items.forEach(item => {
                 text += `${item.qty} ${item.unit} ${item.name}`;
                 if (item.condition === 'DAMAGED') text += ` [DAMAGED]`;
-                if (item.fulfillment === 'IOU') text += ` [IOU PENDING]`;
+                if (item.fulfillment === 'IOU') text += ` [UTANG BARANG]`;
                 if (item.isIouFulfillment) text += ` [IOU FULFILLED]`;
                 text += `\n   Rp ${new Intl.NumberFormat('id-ID').format((item.calculatedPrice || 0) * item.qty)}\n`;
             });
@@ -493,8 +493,8 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                                             <div className="font-bold uppercase text-xs !text-black flex flex-wrap gap-1 items-center">
                                                 {item.name}
                                                 {item.condition === 'DAMAGED' && <span className="text-[11px] bg-red-100 !text-red-800 border !border-red-300 px-1 rounded shadow-sm">DAMAGED</span>}
-                                                {item.fulfillment === 'IOU' && <span className="text-[11px] bg-blue-100 !text-blue-800 border !border-blue-300 px-1 rounded shadow-sm">IOU PENDING</span>}
-                                                {item.isIouFulfillment && <span className="text-[11px] bg-emerald-100 !text-emerald-800 border !border-emerald-300 px-1 rounded shadow-sm">IOU FULFILLED</span>}
+                                                {item.fulfillment === 'IOU' && <span className="text-[11px] bg-blue-100 !text-blue-800 border !border-blue-300 px-1 rounded shadow-sm">UTANG BARANG</span>}
+                                                {item.isIouFulfillment && <span className="text-[11px] bg-emerald-100 !text-emerald-800 border !border-emerald-300 px-1 rounded shadow-sm">UTANG BARANG LUNAS</span>}
                                             </div>
                                             {item.condition === 'DAMAGED' && item.returnReason && (
                                                 <div className="text-[11px] italic !text-slate-400 mb-0.5 mt-0.5">Reason: {item.returnReason === 'Other' ? item.otherReasonDetail : item.returnReason}</div>
@@ -1163,7 +1163,7 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                                                                             ) : isExchange ? (
                                                                                 <span className="text-[11px] font-black px-1 py-0.5 rounded uppercase tracking-widest bg-blue-500 text-white shadow-md">EXCHANGE</span>
                                                                             ) : isIouFulfill ? (
-                                                                                <span className="text-[11px] font-black px-1 py-0.5 rounded uppercase tracking-widest bg-emerald-500 text-white shadow-md">IOU FULFILLED</span>
+                                                                                <span className="text-[11px] font-black px-1 py-0.5 rounded uppercase tracking-widest bg-emerald-500 text-white shadow-md">UTANG BARANG LUNAS</span>
                                                                             ) : null}
                                                                         </div>
                                                                         <p className="text-[10px] text-slate-400 font-mono mt-0.5">{tx.timestamp ? new Date(tx.timestamp.seconds * 1000).toLocaleTimeString('id-ID') : 'Today'} • {tx.paymentType}</p>

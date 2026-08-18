@@ -569,14 +569,14 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                                                                                 ) : isExchange ? (
                                                                                     <span className="text-[11px] font-black px-1 py-0.5 rounded uppercase tracking-widest bg-blue-100 text-blue-600 border border-blue-300">EXCHANGE</span>
                                                                                 ) : isIouFulfill ? (
-                                                                                    <span className="text-[11px] font-black px-1 py-0.5 rounded uppercase tracking-widest bg-emerald-100 text-emerald-600 border border-emerald-300">IOU FULFILLED</span>
+                                                                                    <span className="text-[11px] font-black px-1 py-0.5 rounded uppercase tracking-widest bg-emerald-100 text-emerald-600 border border-emerald-300">UTANG BARANG LUNAS</span>
                                                                                 ) : null}
                                                                              </div>
                                                                              <p className="text-[10px] text-slate-400 uppercase mt-0.5 truncate">
                                                                                  {t.type === 'CONSIGNMENT_PAYMENT' ? 'STORE AUDIT' : t.items ? t.items.map(i => {
                                                                                      let lbl = `${i.qty} ${i.unit} ${i.name}`;
                                                                                      if (i.condition === 'DAMAGED') lbl += ' [DMG]';
-                                                                                     if (i.fulfillment === 'IOU') lbl += ' [IOU]';
+                                                                                     if (i.fulfillment === 'IOU') lbl += ' [UTANG BARANG]';
                                                                                      if (i.isIouFulfillment) lbl += ' [FULFILLED]';
                                                                                      return lbl;
                                                                                  }).join(", ") : 'N/A'}
@@ -792,7 +792,7 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                                                             ) : isExchange ? (
                                                                 <span className="px-2 py-1 rounded text-[11px] uppercase tracking-widest font-black bg-blue-100 text-blue-700 border border-blue-300">EXCHANGE</span>
                                                             ) : isIouFulfill ? (
-                                                                <span className="px-2 py-1 rounded text-[11px] uppercase tracking-widest font-black bg-emerald-100 text-emerald-700 border border-emerald-300">IOU FULFILLED</span>
+                                                                <span className="px-2 py-1 rounded text-[11px] uppercase tracking-widest font-black bg-emerald-100 text-emerald-700 border border-emerald-300">UTANG BARANG LUNAS</span>
                                                             ) : t.type === 'CONSIGNMENT_PAYMENT' ? (
                                                                 <span className="px-2 py-1 rounded text-[11px] uppercase tracking-widest font-black bg-purple-100 text-purple-700 border border-purple-300">STORE AUDIT</span>
                                                             ) : (
@@ -810,7 +810,7 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                                                                 t.items ? t.items.map(i => {
                                                                     let lbl = `${i.qty} ${i.unit} ${i.name}`;
                                                                     if (i.condition === 'DAMAGED') lbl += ' [DMG]';
-                                                                    if (i.fulfillment === 'IOU') lbl += ' [IOU]';
+                                                                    if (i.fulfillment === 'IOU') lbl += ' [UTANG BARANG]';
                                                                     if (i.isIouFulfillment) lbl += ' [FULFILLED]';
                                                                     return lbl;
                                                                 }).join(", ") : 'N/A'
@@ -969,8 +969,8 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                                                             <div className="font-bold uppercase text-xs !text-black flex flex-wrap gap-1 items-center">
                                                                 {item.name}
                                                                 {item.condition === 'DAMAGED' && <span className="text-[11px] bg-red-100 !text-red-800 border !border-red-300 px-1 rounded shadow-sm">DAMAGED</span>}
-                                                                {item.fulfillment === 'IOU' && <span className="text-[11px] bg-blue-100 !text-blue-800 border !border-blue-300 px-1 rounded shadow-sm">IOU PENDING</span>}
-                                                                {item.isIouFulfillment && <span className="text-[11px] bg-emerald-100 !text-emerald-800 border !border-emerald-300 px-1 rounded shadow-sm">IOU FULFILLED</span>}
+                                                                {item.fulfillment === 'IOU' && <span className="text-[11px] bg-blue-100 !text-blue-800 border !border-blue-300 px-1 rounded shadow-sm">UTANG BARANG</span>}
+                                                                {item.isIouFulfillment && <span className="text-[11px] bg-emerald-100 !text-emerald-800 border !border-emerald-300 px-1 rounded shadow-sm">UTANG BARANG LUNAS</span>}
                                                             </div>
                                                             {item.condition === 'DAMAGED' && item.returnReason && (
                                                                 <div className="text-[11px] italic !text-slate-400 mb-0.5 mt-0.5">Reason: {item.returnReason === 'Other' ? item.otherReasonDetail : item.returnReason}</div>
@@ -1066,8 +1066,8 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                                                             <div className="flex flex-wrap gap-1 items-center mb-1">
                                                                 {item.name}
                                                                 {item.condition === 'DAMAGED' && <span className="text-[11px] bg-red-100 !text-red-800 border !border-red-300 px-1 rounded">DAMAGED</span>}
-                                                                {item.fulfillment === 'IOU' && <span className="text-[11px] bg-blue-100 !text-blue-800 border !border-blue-300 px-1 rounded">IOU PENDING</span>}
-                                                                {item.isIouFulfillment && <span className="text-[11px] bg-emerald-100 !text-emerald-800 border !border-emerald-300 px-1 rounded">IOU FULFILLED</span>}
+                                                                {item.fulfillment === 'IOU' && <span className="text-[11px] bg-blue-100 !text-blue-800 border !border-blue-300 px-1 rounded">UTANG BARANG</span>}
+                                                                {item.isIouFulfillment && <span className="text-[11px] bg-emerald-100 !text-emerald-800 border !border-emerald-300 px-1 rounded">UTANG BARANG LUNAS</span>}
                                                             </div>
                                                             {item.condition === 'DAMAGED' && item.returnReason && (
                                                                 <div className="text-[10px] italic !text-slate-400 font-normal">Reason: {item.returnReason === 'Other' ? item.otherReasonDetail : item.returnReason}</div>
@@ -1132,7 +1132,7 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                                         viewingReceipt.items.forEach(item => { 
                                             text += `${item.qty} ${item.unit} ${item.name}`;
                                             if (item.condition === 'DAMAGED') text += ` [DAMAGED]`;
-                                            if (item.fulfillment === 'IOU') text += ` [IOU PENDING]`;
+                                            if (item.fulfillment === 'IOU') text += ` [UTANG BARANG]`;
                                             if (item.isIouFulfillment) text += ` [IOU FULFILLED]`;
                                             text += `\n   Rp ${new Intl.NumberFormat('id-ID').format((item.calculatedPrice||0) * item.qty)}\n`; 
                                         });

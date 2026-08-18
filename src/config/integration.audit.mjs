@@ -202,7 +202,7 @@ for (const [label, needle] of [
   ['retur: buyback',      'Buyback (Refund)'],
   ['retur: exchange',     'Exchange (Tukar)'],
   ['retur: damage reason','Select Reason'],
-  ['IOU: pending banner', 'IOU Pending Fulfillment'],
+  ['Utang Barang: pending banner', 'Utang Barang Belum Dikirim'],
   ['IOU: hutang barang',  'Hutang Barang (IOU)'],
   ['NOO registration',    'Outlet Registration'],
   ['NOO: live photo',     'Capture Live Photo'],
