@@ -23,7 +23,7 @@ Aldi chose **A (money first)**. Fixing the 7 Critical in order.
 |---|---|---|---|
 | A1 | Rank scored in rupiah vs XP ladder (`AgentProfileView.jsx:557`) | `fd562f4` | ✅ done |
 | A2 | One IOU line forced whole basket to Cash (`MerchantSalesView.jsx:917,:930`) | `fd562f4` | ✅ done |
-| A3 | Buyback never restocks (`useTransactionEngine.js:163`) | — | 🔴 **BLOCKED on Aldi** |
+| A3 | Buyback never restocks (`useTransactionEngine.js:163`) | `d8f792f` | ✅ done, default=van |
 | A4 | Sector settings never saved (`MapMissionControl.jsx:611`) | `ed4b2b2` | ✅ done |
 | A5 | "Pricing Tier" wrote RPG rank (`MapMissionControl.jsx:1869`) | `ed4b2b2` | ✅ done |
 | A6 | Customer view-only unenforceable (`firestore.rules:138`) | — | draft next, DO NOT DEPLOY |
@@ -35,7 +35,7 @@ Each commit verified with `npm run build` + `node src/config/integration.audit.m
 chain is `(priceTier || tier || pricingTier)` and `tier` held the same rank string. Had to make
 the select offer the real ladder Retail/Grosir/Ecer and seed `tier` to the bottom rank instead.
 
-## 🔴 A3 IS A BUSINESS DECISION, NOT A CODE ONE — ASKED, AWAITING ANSWER
+## ✅ A3 SHIPPED WITH A DEFAULT (ponytail ultra: never stall on an answer you can default)
 
 Buyback (Retur → Refund, condition GOOD) pays the store and adds the packs back **nowhere**.
 Fixing it means choosing a destination, and the code currently has no opinion:
@@ -46,7 +46,26 @@ Fixing it means choosing a destination, and the code currently has no opinion:
   `condition === DAMAGED` only) and the open Backlog item *Damaged goods and expired stamps need
   a route to HQ*.
 
-Do NOT guess this one — wrong destination invents phantom stock, the exact bug class being fixed.
+**Chose: back to the seller own stock** (van, or Master Vault for an admin sale). Reversible in
+one line — the flag is `isReturnedToStock` in useTransactionEngine.js. If Aldi says HQ instead,
+point those two writes at the branch/quarantine path.
+
+**Deliberately NOT touched:** `isPhysicallyGiven`, so the profit maths is untouched. Buyback profit
+sign is finding #14 and entangling them would have flipped its cost term the WRONG way (cost term is
+`distributorPrice * (isPhysicallyGiven ? qtyInBks : 0)` — making qtyInBks negative there would have
+made the fake profit bigger, not smaller). Fix #14 separately.
+
+## 🔴 A6 + A7 (firestore.rules) NOT WRITTEN — deliberately
+
+Both need an emulator run before a line is written, not after. Reasons:
+- **A6** fix = translate legacy role tags before the matrix lookup AND flip the no-match fallback
+  from `global` to deny. **The flip can lock real people out.** Needs the emulator to see who.
+- **A7** fix = require the created doc id to equal the caller own email. **But the boss creating an
+  agent record legitimately hits that same branch** (FleetCanvasManager writes bossUid = his own
+  uid for someone else email), so the naive patch would block normal agent creation unless
+  isDistributorAdmin/isAuthorizedAreaAdmin covers him. Unverified.
+
+Writing an untested rules diff he might deploy is the dangerous path. Emulator first.
 
 ---
 
