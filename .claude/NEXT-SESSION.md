@@ -29,7 +29,8 @@ dialog gate (`confirmAction` in `src/components/ConfirmGate.jsx`) replaced all 6
 prompts; a blocked native dialog does nothing, which is exactly how duplicate data gets explained
 away. The fix here is state, not a dialog.
 
-LEAVE A CHECK: `src/config/logicFixes.selfcheck.mjs`, next section is S23 (S22 is the retail-price bounty). Prove it red before
+LEAVE A CHECK: `src/config/logicFixes.selfcheck.mjs`, next section is **S25** (S22 retail bounty, S23 price-tier
+setting, S24 approve button are all taken). Prove it red before
 writing the fix — a guard that `submitting=` is passed at the call site, and a behaviour check that
 two rapid submissions produce one payload. Run:
 `npm run build; node src/config/integration.audit.mjs; node src/config/logicFixes.selfcheck.mjs`
@@ -55,17 +56,19 @@ CONTEXT ALREADY ESTABLISHED, do not re-derive:
 
 ## The queue underneath — promote ONE of these next time, never paste this part
 
-✅ **WAITING ON ALDI — the shakedown test card is still unanswered.**
+✅ **The ONLY thing on Aldi's side — the shakedown test card, 19 tests, still unanswered.**
 https://claude.ai/code/artifact/a42ce819-9d1a-46a8-8ae8-0291df6765ef
+A BROKEN result on any of them outranks this whole queue. Do not chase him for it; he tests when
+he tests. Every question he was asked on 2026-08-18 is answered and shipped.
 
 Still open on his confirmed list (items 2, 3, 5, 8, 9, 10 in PROGRESS):
 - **Gold ink on a gold plate = 1,00:1 in dark** on the admin side. The plate is on the parent and
   the ink on a child, which is why audit group 48 missed it — widen the regex with the fix. S20
   has the same ceiling written into it.
-- ~~The Verify button is green~~ **DONE `a0d27b5`** — option B in amber, his pick. `--amber` now
-  exists as a token PAIR (`#F59E0B` dark / `#92400E` light) and is measured; reuse it rather than
-  inventing another amber. **The same hardcoded-colour sweep is still owed on the OTHER screens** —
-  `bg-emerald-*`, `bg-orange-*`, `bg-red-*` and rgba glows outside EODReconciliationView.
+- **The hardcoded-colour sweep on the OTHER screens.** The EOD approve button is done
+  (`a0d27b5`); `bg-emerald-*`, `bg-orange-*`, `bg-red-*` and rgba glows still sit outside
+  `EODReconciliationView`. `--amber` already exists as a token PAIR (`#F59E0B` dark / `#92400E`
+  light) and is measured — reuse it rather than inventing another amber.
 - `agentData` useMemo omits `inventory`, so `itemsBks` uses fallback pack multipliers.
 - `bg-black/N` across the whole admin half; Lite Mode kills `transition-duration` but not
   `transition-delay`; Force Reset is a 24px destructive target.

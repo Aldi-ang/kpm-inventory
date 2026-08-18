@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-18 20:53 WIB (KPM app session)** · 🔧 36 FIXES · 📋 ONE PROMPT READY · branch `phase0-solid-ground`
+**Updated: 2026-08-18 20:58 WIB (KPM app session)** · 🔧 36 FIXES · 📋 ONE PROMPT READY · branch `phase0-solid-ground`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -26,12 +26,22 @@ https://claude.ai/code/artifact/a42ce819-9d1a-46a8-8ae8-0291df6765ef
 > verbatim** section further down this file. That section was NOT touched by this trim.
 
 
-## 🟠 2026-08-18 20:53 — timestamp only; the note below was already current
+## 🟠 2026-08-18 20:58 — SESSION ENDED CLEAN. He is taking the night off.
 
-No code, no state change. The approve button shipped at 20:52 and is written up under this. Log cut
-from 8 entries back to 5 — the two housekeeping entries and the oldest work entry went to
-`A-Brain/Archive/PROGRESS-archive-2026-08-14.md`; `git log --oneline` has the rest for free.
-**WAITING ON ALDI is empty for the first time today.**
+*"im taking break tonight lets continue tomorrow instead, prepare stuff for next session i will
+clear this chat"*. Everything is on disk; nothing is half-done and nothing is uncommitted.
+
+- **Nothing is waiting on him.** All three questions from today are answered and shipped.
+- **Next session: paste the one block at the top of `.claude/NEXT-SESSION.md`** — the double-tap
+  that submits a setoran twice. No decision needed, traps written down, next check section is S25.
+- Shipped today, newest first: `a0d27b5` approve button · `bf75678` penalty price is a setting ·
+  `43f8059` retail-priced bounties, itemised · `b904db2` identity key · `44efb69` red-on-red ·
+  `ce70287` the admin sees the gap. Vault `f2d8172`. Lessons loop unjammed and working.
+- Final state: build clean · audit 599/0 · logic 337/0 · contrast all pairs pass · both repos clean.
+
+
+
+
 
 
 ## 🟠 2026-08-18 20:52 — the approve button is quiet, and amber is a real colour now. `a0d27b5`
