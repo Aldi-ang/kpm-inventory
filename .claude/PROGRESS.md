@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-18 13:2x WIB (KPM app session)** · 🔧 14 FIXES · 📋 ONE PROMPT READY · branch `phase0-solid-ground`
+**Updated: 2026-08-18 14:4x WIB (KPM app session)** · 🔧 15 FIXES · 📋 ONE PROMPT READY · branch `phase0-solid-ground`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -12,6 +12,34 @@
 > 📏 **KEEP THIS FILE UNDER ~350 LINES.** When it passes that, cut the oldest day into the same
 > archive rather than letting it grow back. This file holds WHERE THE WORK STANDS; the archive
 > and `A-Brain/Wiki/Log.md` hold how it got there.
+
+## 🟠 2026-08-18 14:4x WIB — KPM app track — STORE-DEBT TALLY: SHIPPED `4b63118`
+
+Quota reset, work resumed, the queued job is done. (The 13:3x pause entry below is resolved.)
+
+`storeDebt` in `AgentProfileView` — the agent's own "who owes me" list — keyed on the raw
+`customerName`. After `264c138` one shop could sit in it as "Warung Bu Sari (Retail)" AND
+"Warung Bu Sari", each holding part of the debt, and a payment filed under one spelling never
+cancelled the other.
+
+- **Keyed on `storeKey` now**, same helper as the sale engine and the receivables screen. The
+  raw name is kept for DISPLAY — the key is lowercased, the list Aldi reads is not.
+- **The `&& storeDebt[key]` guard STAYS.** With the key unified, the only case left where it
+  fires is a payment whose Titip sale is outside the loaded window, and there the debt is
+  already absent, so subtracting would invent a negative for a shop that owes nothing. The
+  alternative — drop the guard, clamp the map afterwards — is more code for a number the
+  existing `> 0` filter already hides. **The self-check runs that rejected branch too** and pins
+  what it would have produced (−400.000), so it cannot be quietly re-adopted.
+- **Files touched (2):** `AgentProfileView.jsx` · `logicFixes.selfcheck.mjs` (13 new checks).
+- **Verified:** build clean · audit 599/0 · self-check **86/0 → 99/0**. The 5 regression guards
+  were watched failing first (stash the file, run the check, 94/5, restore).
+- **Vault:** `A-Brain` `376396f`. ⚠️ The first vault commit carried a GUESSED commit hash —
+  corrected in a follow-up. Never write a hash before `git log -1` prints it.
+
+📋 **`.claude/NEXT-SESSION.md` rewritten** — one job: finish the name sweep in the three places
+still using their own rule. The interesting one is `src/utils/customerBrief.js`, which carries a
+PRIVATE copy of the name rule (trim + lowercase, no suffix strip), so the door-step panel reports
+"no recent order" for a shop with older "(Retail)" rows and the salesman walks in blind.
 
 ## 🟠 2026-08-18 13:3x WIB — KPM app track — PAUSED ON QUOTA, NOTHING HALF-DONE
 
@@ -2710,6 +2738,8 @@ price ladder; performance rank is now the Tier Automation Engine's job.
 
 ## 📓 LOG
 
+- **2026-08-18 14:4x** — agent's store-debt tally keyed on `storeKey`, display name kept; the
+  rejected "drop the guard" branch is pinned by a check. `4b63118`. build clean, 599/0, 99/0.
 - **2026-08-18 13:2x** — sale engine: exact store lookup + tier suffix dropped, old names
   tolerated by `storeKey()`. `264c138`. build clean, 599/0, 86/0.
 

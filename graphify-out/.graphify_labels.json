@@ -2,7 +2,6 @@
   "0": "App.jsx",
   "1": "MapMissionControl.jsx",
   "2": "dependencies",
-  "3": "getCurrentDate",
   "4": "devDependencies",
   "5": "mixedUnits.selfcheck.mjs",
   "6": "savePhotoAndGetReference",
@@ -34,13 +33,11 @@
   "32": "dayStats.selfcheck.mjs",
   "33": "docChanges.selfcheck.mjs",
   "34": "plan-quota.mjs",
-  "35": "MerchantSalesView.jsx",
   "36": "KPMInventoryApp",
   "37": "toastSeverity.selfcheck.mjs",
   "38": "PROGRESS.md",
   "39": "vaultGrace.selfcheck.mjs",
   "40": "CapybaraMascot.jsx",
-  "41": "📓 LOG",
   "42": "check",
   "43": "🔴 LOG 00:37 WIB — superseded: 4 blockers found, now all fixed.",
   "44": "✅ LOG 08:36 WIB — the rules question is ANSWERED, and G6 is HALF done. One question owed.",
@@ -55,6 +52,5 @@
   "53": "context-watch.mjs",
   "54": "firebase.js",
   "55": "txSize.selfcheck.mjs",
-  "56": "CapybaraMascot.jsx",
-  "57": "nextStop.js"
+  "56": "CapybaraMascot.jsx"
 }

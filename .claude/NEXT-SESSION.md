@@ -2,62 +2,62 @@
 
 ---
 
-Fix the agent's own "who owes me" tally. It groups store debt by the raw customer name, so the
-same shop can sit in it twice and a payment can fail to cancel its debt.
+Finish the name sweep. Three places still compare store names by their own rule, so a shop saved
+under the old "(Retail)" naming still looks like a different shop to each of them. `storeKey()`
+already exists and is already used by the sale engine, the receivables screen and the agent's
+debt tally — these three were left out.
 
-WHERE: src/AgentProfileView.jsx, inside the big transaction loop — the `storeDebt` map, written
-around line 492 and read again around line 512. Read the file, do not trust those numbers.
+Read the files, do not trust any line number below.
 
-WHAT IT DOES NOW:
+**1. `src/utils/customerBrief.js` — the worst of the three, it is the salesman's door-step panel.**
+Line ~24 defines its OWN normalizer:
 
-    if (t.paymentType === 'Titip') {
-        if (t.customerName) {
-            if (!storeDebt[t.customerName]) storeDebt[t.customerName] = 0;
-            storeDebt[t.customerName] += (t.total || 0);
-        }
-    }
-    ...
-    if (t.type === 'CONSIGNMENT_PAYMENT') {
-        if (t.customerName && storeDebt[t.customerName]) storeDebt[t.customerName] -= (t.amountPaid || t.total || 0);
-    }
+    const key = (name) => String(name || '').trim().toLowerCase();
 
-WHY IT COSTS HIM MONEY — two separate faults in those six lines:
+Trim and lowercase, no suffix rule. Its comment already explains why a raw match is wrong
+("Warung Bu Sari" vs "warung bu sari ") — it just stops one step short. A shop whose older rows
+say "Warung Bu Sari (Retail)" returns "no recent order" when the brief is asked for the clean
+name, so the salesman walks in blind to a shop he sold to last week. Replace the local `key` with
+`storeKey` imported from `./helpers` and delete the duplicate.
 
-1. RAW NAME AS THE KEY. Commit 264c138 stopped the sale engine welding the price tier onto a
-   store's name, so rows written before it say "Warung Bu Sari (Retail)" and rows written after
-   say "Warung Bu Sari". This map keys on the raw string, so that one shop appears as two
-   entries, each holding half its debt. Stray spacing and a capital letter split it further:
-   "Toko Jaya" and "toko jaya " are two different keys here.
+**2. `src/utils/dayStats.js` ~line 49 and ~53.**
 
-2. THE PAYMENT IS SILENTLY DROPPED. `&& storeDebt[t.customerName]` means a CONSIGNMENT_PAYMENT
-   whose matching Titip sale is not in the same loaded window — or is filed under the other
-   spelling — subtracts from nothing. No error. The agent keeps seeing a debt he has already
-   been paid, and chases a shop that settled.
+    if (tx.customerName) storesToday.add(tx.customerName);
 
-THE FIX: `storeKey` already exists — `src/utils/helpers.js`, exported, and already used by
-`useTransactionEngine.js` and `ConsignmentFinanceView.jsx`. Key this map on `storeKey(t.customerName)`
-the same way, and keep the raw trimmed name for display.
+A Set of RAW names, so one shop under two spellings counts as two stores visited. That number is
+on his dashboard — it inflates his own day. Add `storeKey(...)` to the Set instead.
 
-THE TRAP, and it is the whole job: fault 2 is NOT a free fix. Dropping the `&& storeDebt[...]`
-guard lets a payment create a NEGATIVE debt entry for a shop with no sale in the window, and a
-negative number in that list is worse than a stale one — it reads as the agent owing the shop.
-Decide which of these you are doing and say so in the reply: (a) key on storeKey and leave the
-guard, which fixes the split only; or (b) key on storeKey, drop the guard, and clamp the whole
-map with `Math.max(0, ...)` after the loop, the way ConsignmentFinanceView already clamps its
-balances. Whichever you choose, the behaviour check has to run the case you did NOT choose and
-show what it would have produced.
+**3. `src/MerchantSalesView.jsx` ~line 530, the auto-pick.**
 
-Second trap: line ~486 decides `isEcer` partly by sniffing the customer name for "ecer" and
-"walk-in". That is the same "the name carries data" mistake, but it is NOT in scope — the tier
-suffix was "(Individual)" for Ecer, never "(Ecer)", so 264c138 did not change what it matches.
-Mention it, do not touch it.
+    const exact = customers.filter(c => (c.name || '').trim().toLowerCase() === needle);
+    if (exact.length === 1) handleCustomerSelect(exact[0]);
+
+Typing the clean name does not auto-pick a shop saved under the legacy suffix. The sale still
+books to the right shop (the engine resolves it through `storeKey`), so this is convenience, not
+money — do it last, and keep the `exact.length === 1` rule exactly as it is.
+
+**THE TRAP, and it is the whole job:** `exact.length === 1` is a SAFETY guard, not a
+convenience. His book holds three shops sharing a name 14.5 km apart, and auto-picking the wrong
+one bills a shop that bought nothing. Normalising the comparison makes MORE names collide, not
+fewer — "Toko Jaya" and "Toko Jaya (Retail)" become one match where they were two. That is
+correct when they are the same shop and WRONG if they are two different shops that happen to
+differ only by a suffix. Say in the reply which way you resolved that, and put a behaviour check
+on the case where two DIFFERENT customer documents normalise to the same key: the count must
+still be 2, so the dropdown stays open and Aldi chooses.
+
+Second trap: `dayStats` counts stores, so changing the key changes a number he sees. Check the
+existing `src/config/dayStats.selfcheck.mjs` first — if it asserts a store count on fixture data,
+the fixture may need a case ADDED rather than a number edited. Never edit an assertion to make it
+pass.
 
 CONTEXT ALREADY ESTABLISHED, do not re-derive: no transaction in this app carries a customerId,
-only customerName and agentId — see A-Brain/Wiki/Concepts/A Store Name Is Not a Store.md.
+only customerName and agentId. `storeKey()` lives in `src/utils/helpers.js` — trim, strip a
+TRAILING " (Retail|Individual|Wholesale)", lowercase, `String()`-coerced. Background:
+A-Brain/Wiki/Concepts/A Store Name Is Not a Store.md.
 
 Verify chain, paste the numbers:
-npm run build; node src/config/integration.audit.mjs; node src/config/logicFixes.selfcheck.mjs
-Expected: build clean, 599/0, 86/0 plus whatever you add.
+npm run build; node src/config/integration.audit.mjs; node src/config/logicFixes.selfcheck.mjs; node src/config/dayStats.selfcheck.mjs
+Expected: build clean, 599/0, 99/0 plus whatever you add, dayStats green.
 
 When it is committed, rewrite this file (.claude/NEXT-SESSION.md) with the NEXT single job.
 
@@ -66,13 +66,13 @@ When it is committed, rewrite this file (.claude/NEXT-SESSION.md) with the NEXT 
 <details>
 <summary>Queue behind it — for the next session to promote from, not to paste</summary>
 
-- `src/utils/customerBrief.js` and `src/utils/dayStats.js` also read `customerName`; check whether
-  either groups on it. Same storeKey treatment if they do.
-- `MerchantSalesView.jsx` (~line 530) auto-picks a store only on an EXACT raw-name match. A shop
-  saved under the legacy "(Retail)" name no longer auto-picks when the agent types the clean name.
-  The sale still books correctly — the engine resolves it through storeKey — so this is a
-  convenience gap, not a money bug. Would be closed by comparing with storeKey there too.
-- The receivables row still DISPLAYS whichever spelling was written first, so a shop can show as
-  "Warung Bu Sari (Retail)" forever. A one-off cleanup of the customer documents would end it;
-  that is a data migration and needs Aldi's word before anything writes.
+- The receivables row and the debt tally both DISPLAY whichever spelling was written first, so a
+  shop can read as "Warung Bu Sari (Retail)" forever. Ending that means a one-off cleanup of the
+  customer documents — a data migration, needs Aldi's word before anything writes.
+- `src/EODReconciliationView.jsx`, `src/JourneyView.jsx`, `src/MapMissionControl.jsx` and
+  `src/hooks/useOfflineEngine.js` all read `customerName`. Not yet checked for whether any of them
+  GROUPS or MATCHES on it. One grep each, then either fix or record as clean.
+- A `logicFixes` guard that no file may define its own name normalizer — grep for
+  `.trim().toLowerCase()` next to a customer name and fail. Would have caught customerBrief's
+  private copy without anyone reading the file.
 </details>

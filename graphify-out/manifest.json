@@ -45,8 +45,8 @@
     "semantic_hash": ""
   },
   "src/AgentProfileView.jsx": {
-    "mtime": 1787022237.823528,
-    "ast_hash": "427d4f084c75e678858be6f62354a879",
+    "mtime": 1787038447.715996,
+    "ast_hash": "3fa47d4e3e815c80c8f377341e844d76",
     "semantic_hash": ""
   },
   "src/App.jsx": {
@@ -570,8 +570,8 @@
     "semantic_hash": ""
   },
   ".claude/PROGRESS.md": {
-    "mtime": 1787032518.761509,
-    "ast_hash": "41b6bea624f06069b07cadda1173467f",
+    "mtime": 1787038307.983989,
+    "ast_hash": "2b1a83037af8be8777e1f9bcffabdf59",
     "semantic_hash": ""
   },
   ".claude/pre-compact-context.md": {
@@ -755,13 +755,13 @@
     "semantic_hash": ""
   },
   "src/config/logicFixes.selfcheck.mjs": {
-    "mtime": 1787033656.121347,
-    "ast_hash": "9982a4ab36e88bc05c7af053f50f32a9",
+    "mtime": 1787038440.1776607,
+    "ast_hash": "6f6b449b8e59d3f34fefb113d2da46f7",
     "semantic_hash": ""
   },
   ".claude/NEXT-SESSION.md": {
-    "mtime": 1787031109.9241781,
-    "ast_hash": "d43a6830f5db86308f07329b91e346f9",
+    "mtime": 1787033860.066961,
+    "ast_hash": "f68629552636bd11cfd1b172c26f4df3",
     "semantic_hash": ""
   }
 }
