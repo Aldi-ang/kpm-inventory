@@ -194,5 +194,54 @@ ok('the owner branch nulls bossUid and keeps their own user object',
 { const bossUid = 'BOSS', userUid = 'BOSS';           // what the hijack produces for an agent
   ok('userId and user.uid resolve to the same vault', (bossUid || userUid) === userUid); }
 
+
+/* -- Store hand-off matched shops by NAME, and his book has three shops sharing one ------- */
+section('Hand-off. Approving a transfer moves only the SENDER-held rows for that shop');
+ok('the request pins the customer document id',
+   /customerId: mine\.length === 1 \? mine\[0\]\.id : null,/.test(app));
+ok('an ambiguous name is split by the sender own ownership before pinning',
+   /sameName\.length > 1 \? sameName\.filter\(c => c\.mappedBy === fromAgentName\) : sameName/.test(app));
+ok('the transaction sweep is scoped to the sending agent',
+   /const storeTx = transactions\.filter\(t => sameName\(t\.customerName\) && heldBySender\(t\)\);/.test(app));
+ok('the unscoped name-only sweep is gone',
+   !/transactions\.filter\(t => \(t\.customerName \|\| ''\)\.trim\(\)\.toLowerCase\(\) === request\.storeName/.test(app));
+ok('ADMIN hand-offs still pick up legacy rows that carry no agentId',
+   /\(!t\.agentId \|\| t\.agentId === 'ADMIN'\)/.test(app));
+ok('the customer doc is resolved by the pinned id first',
+   /request\.customerId[\s\S]{0,90}customers\.find\(c => c\.id === request\.customerId\)/.test(app));
+ok('an ambiguous name writes mappedBy to NOBODY rather than to the first twin',
+   /nameMatches\.length === 1 \? nameMatches\[0\] : null/.test(app));
+ok('the first-match customer lookup is gone',
+   !/customers\.find\(c => \(c\.name \|\| ''\)\.trim\(\)\.toLowerCase\(\) === request\.storeName/.test(app));
+
+/* BEHAVIOUR - two shops called "Toko Jaya", one held by agent A, one by agent B. */
+{ const tx = [
+    { id: 't1', customerName: 'Toko Jaya',  agentId: 'A', total: 500000 },
+    { id: 't2', customerName: 'toko jaya ', agentId: 'A', total: 300000 },
+    { id: 't3', customerName: 'Toko Jaya',  agentId: 'B', total: 900000 },
+    { id: 't4', customerName: 'Toko Lain',  agentId: 'A', total: 100000 } ];
+  const req = { storeName: 'Toko Jaya', fromAgentId: 'A', toAgentId: 'C' };
+  const sameName = (v) => (v || '').trim().toLowerCase() === req.storeName.trim().toLowerCase();
+  const heldBySender = (t) => req.fromAgentId === 'ADMIN'
+      ? (!t.agentId || t.agentId === 'ADMIN')
+      : t.agentId === req.fromAgentId;
+  const moved = tx.filter(t => sameName(t.customerName) && heldBySender(t));
+  ok('agent A hands over both of HIS rows, stray spacing and case included',
+     moved.map(t => t.id).join(',') === 't1,t2');
+  ok('the twin shop held by agent B is left alone', !moved.some(t => t.agentId === 'B'));
+  ok('agent B keeps his 900k receivable',
+     tx.filter(t => t.agentId === 'B').reduce((s, t) => s + t.total, 0) === 900000);
+  ok('the old name-only sweep would have taken it - this is the bug being guarded',
+     tx.filter(t => sameName(t.customerName)).length === 3 && moved.length === 2);
+  const adminReq = { storeName: 'Toko Jaya', fromAgentId: 'ADMIN' };
+  const legacy = [ { id: 'L1', customerName: 'Toko Jaya' },
+                   { id: 'L2', customerName: 'Toko Jaya', agentId: 'ADMIN' },
+                   { id: 'L3', customerName: 'Toko Jaya', agentId: 'A' } ];
+  const adminHeld = (t) => adminReq.fromAgentId === 'ADMIN'
+      ? (!t.agentId || t.agentId === 'ADMIN')
+      : t.agentId === adminReq.fromAgentId;
+  ok('an ADMIN hand-off takes its own plus the legacy rows, never the agent rows',
+     legacy.filter(adminHeld).map(t => t.id).join(',') === 'L1,L2'); }
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);
