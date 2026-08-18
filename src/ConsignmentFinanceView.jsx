@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { FileSpreadsheet, ShieldCheck, AlertCircle, XCircle, MessageSquare, Box, Package, ArrowRight, DollarSign, Store, Truck, Plus, Wallet, RotateCcw, Lock, Trash2, ArrowLeftRight, Check, X, ClipboardList, ScanSearch, Calculator, Printer, User, MapPin, Search } from 'lucide-react';
-import { convertToBks, formatRupiah, storeKey } from './utils/helpers';
+import { convertToBks, formatRupiah, storeKey, storeLabel } from './utils/helpers';
 import { confirmAction } from './components/ConfirmGate.jsx';
 import { notify } from './components/Toast.jsx';
 
@@ -172,7 +172,7 @@ export default function ConsignmentFinanceView({ transactions = [], inventory = 
                name was written first — only the grouping is normalised. */
             const name = storeKey(t.customerName);
 
-            if (!customers[name]) customers[name] = { name: String(t.customerName).trim(), items: {}, balance: 0, lastActivity: t.date, ownerName: t.agentName || 'Admin' };
+            if (!customers[name]) customers[name] = { name: storeLabel(t.customerName), items: {}, balance: 0, lastActivity: t.date, ownerName: t.agentName || 'Admin' };
             
             if (t.type === 'SALE' && t.paymentType === 'Titip') { 
                 customers[name].balance += (t.total || 0); 

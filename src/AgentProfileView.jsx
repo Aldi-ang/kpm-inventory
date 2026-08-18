@@ -14,7 +14,7 @@ import { RankBorder, RANK_BORDERS, BORDER_KEYFRAMES, FrameFilters } from './conf
 import Cropper from 'react-easy-crop';
 import { hasClearance, DYNAMIC_TIERS } from './config/permissions';
 import HallOfFameView from './HallOfFameView';
-import { savePhotoAndGetReference, deletePhotoFromStorage, formatNumber, parseGroupedNumber, storeKey } from './utils/helpers';
+import { savePhotoAndGetReference, deletePhotoFromStorage, formatNumber, parseGroupedNumber, storeKey, storeLabel } from './utils/helpers';
 import { careerXP, DEFAULT_XP, totals, DEFAULT_BADGES, STAT_LABELS, BADGE_SOURCES, statLabel } from './config/career';
 import { notify } from './components/Toast.jsx';
 
@@ -496,7 +496,7 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
                            name is kept for DISPLAY — the key is lowercased, the list is not. */
                         if(t.customerName) {
                             const key = storeKey(t.customerName);
-                            if(!storeDebt[key]) storeDebt[key] = { store: String(t.customerName).trim(), amount: 0 };
+                            if(!storeDebt[key]) storeDebt[key] = { store: storeLabel(t.customerName), amount: 0 };
                             storeDebt[key].amount += (t.total || 0);
                         }
                     }

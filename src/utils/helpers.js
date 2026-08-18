@@ -35,6 +35,20 @@ export const storeKey = (name) => String(name ?? '')
     .trim()
     .toLowerCase();
 
+/* 🚀 What a store is CALLED on screen. storeKey answers "same shop?"; this answers "what do I
+   print?". Same suffix rule, but the name keeps its capitals and its spacing — "Warung Bu Sari
+   (Retail)" shows as "Warung Bu Sari", not "warung bu sari".
+
+   Nothing in the database is rewritten. Aldi asked for the old names cleaned up on 2026-08-18;
+   rewriting the customer documents is a live-data migration, and this reaches the same screens
+   with no write at all. The one place the raw name must survive is the backup: App.jsx exports
+   the in-memory customer list and a restore writes it straight back with set(), so a display
+   name reaching that path would turn one restore into a silent permanent rename of every shop. */
+export const storeLabel = (name) => String(name ?? '')
+    .trim()
+    .replace(/\s*\((?:Retail|Individual|Wholesale)\)$/i, '')
+    .trim();
+
 export const getCurrentDate = () => new Date().toISOString().split('T')[0];
 
 // getCurrentDate() above is UTC — fine for record-keeping timestamps, wrong for "what day is it

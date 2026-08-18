@@ -99,7 +99,7 @@ import {
 
 // --- CONFIG & UTILITIES IMPORTS ---
 import { auth, db, storage, googleProvider, appId } from './config/firebase';
-import { formatRupiah, getCurrentDate, getLocalDayKey, getRandomColor, convertToBks, commitInChunks, savePhotoAndGetReference, storeKey } from './utils/helpers';
+import { formatRupiah, getCurrentDate, getLocalDayKey, getRandomColor, convertToBks, commitInChunks, savePhotoAndGetReference, storeKey, storeLabel } from './utils/helpers';
 import { computeDayXP, DEFAULT_XP, checkBadges, DEFAULT_BADGES } from './config/career';
 import { confirmAction, promptAction } from './components/ConfirmGate.jsx';
 import { notify } from './components/Toast.jsx';
@@ -2990,10 +2990,21 @@ const handleGitHubMirror = async () => {
 
   const removeFromCart = (pid) => setCart(p => p.filter(i => i.productId !== pid));
 
+  /* 🚀 DISPLAY COPY, never the stored one. The sale engine used to weld the price tier onto a
+     store's name, so older customer documents literally say "Warung Bu Sari (Retail)". Every
+     comparison in the app already ignores that suffix (storeKey); this is what stops him from
+     READING it. Nothing is written — `customers` itself stays exactly as Firestore sent it,
+     which is what the backup export at exportData.customers depends on: a restore writes that
+     array straight back with set(), so a display name reaching it would rename every shop for
+     real. The customer directory (CustomerManager) also keeps the raw list on purpose — it is
+     the one screen that writes customer documents in bulk. */
+  const displayCustomers = React.useMemo(
+      () => (customers || []).map(c => ({ ...c, name: storeLabel(c.name) })), [customers]);
+
   // --- CUSTOM HOOKS ---
   const { processTransaction, handleMerchantSale, handleConsignmentPayment, handleConsignmentReturn } = useTransactionEngine({
       db, appId, userId, userRole, agentProfileId, adminSalesMode,
-      logAudit, triggerCapy, setCart, customers, user 
+      logAudit, triggerCapy, setCart, customers: displayCustomers, user
   });
 
  const handleAddGoodsToCustomer = (name) => { notify(`Go to Sales Terminal for ${name}`); setActiveTab('sales'); };
@@ -3492,6 +3503,10 @@ const handleGitHubMirror = async () => {
       });
   }, [customers, userRole, agentSettings.allowedTiers]);
 
+  /* The permitted list, with the legacy tier suffix hidden the same way. Used only by views. */
+  const displayPermitted = React.useMemo(
+      () => (permittedCustomers || []).map(c => ({ ...c, name: storeLabel(c.name) })), [permittedCustomers]);
+
   const chartData = React.useMemo(() => {
       const dataMap = {};
       const customers = new Set();
@@ -3985,17 +4000,17 @@ const handleGitHubMirror = async () => {
     handleSaveDashboardTargets={handleSaveDashboardTargets}    
     inventory={inventory} // 🚀 REQUIRED FOR ANALYTICS
     motorists={motorists}  // 🚀 REQUIRED FOR LEADERBOARD
-    customers={customers}  // 🚀 REQUIRED FOR BENCHMARKS
+    customers={displayCustomers}  // 🚀 REQUIRED FOR BENCHMARKS
 />
             )
           )}
 
 
           {/* MAP SYSTEM: Shows ALL customers (Read-only for agents to maintain situational awareness) */}
-          {activeTab === 'map_war_room' && <MapMissionControl customers={userRole === 'ADMIN' ? customers : permittedCustomers} transactions={transactions} inventory={inventory} db={db} appId={appId} user={user} logAudit={logAudit} triggerCapy={triggerCapy} isAdmin={isAdmin} savedHome={appSettings?.mapHome} onSetHome={handleSetMapHome} tierSettings={tierSettings} motorists={motorists} onNavigateToDirectory={() => setActiveTab('customers')} />}
+          {activeTab === 'map_war_room' && <MapMissionControl customers={userRole === 'ADMIN' ? displayCustomers : displayPermitted} transactions={transactions} inventory={inventory} db={db} appId={appId} user={user} logAudit={logAudit} triggerCapy={triggerCapy} isAdmin={isAdmin} savedHome={appSettings?.mapHome} onSetHome={handleSetMapHome} tierSettings={tierSettings} motorists={motorists} onNavigateToDirectory={() => setActiveTab('customers')} />}
           
          {/* JOURNEY PLAN: Strictly locked down to ONLY show Admin's authorized Pricing Tiers */}
-         {activeTab === 'journey' && <JourneyView transactions={transactions} customers={permittedCustomers} db={db} appId={appId} user={user} userRole={userRole} logAudit={logAudit} triggerCapy={triggerCapy} setActiveTab={setActiveTab} tierSettings={tierSettings} isAdmin={isAdmin} isLiteMode={isLiteMode} appSettings={appSettings} />}
+         {activeTab === 'journey' && <JourneyView transactions={transactions} customers={displayPermitted} db={db} appId={appId} user={user} userRole={userRole} logAudit={logAudit} triggerCapy={triggerCapy} setActiveTab={setActiveTab} tierSettings={tierSettings} isAdmin={isAdmin} isLiteMode={isLiteMode} appSettings={appSettings} />}
           {/* 🚀 UPGRADED FLEET ROUTER: Now fully controlled by the Matrix */}
           {activeTab === 'fleet' && (
             <FleetCanvasManager 
@@ -4272,7 +4287,7 @@ const handleGitHubMirror = async () => {
                           inventory={salesTerminalInventory} 
                           user={user} 
                           appSettings={appSettings}
-                          customers={customers} 
+                          customers={displayCustomers}
                           // 🚀 BUG FIX: Wire the exact Boss Car or Vault ID to the Sales Terminal
                           /* The SAME id every other database call in this file uses (`:318`,
                              `bossUid || user.uid`). The terminal used to re-derive its own without
@@ -4428,7 +4443,7 @@ const handleGitHubMirror = async () => {
           )}
           
           {/* --- PINPOINT: Main App Render Block (Line 2618) --- */}
-          {activeTab === 'transactions' && <HistoryReportView transactions={transactions} inventory={inventory} onDeleteFolder={handleDeleteHistory} onDeleteTransaction={handleDeleteSingleTransaction} isAdmin={isAdmin} user={user} appId={appId} db={db} appSettings={appSettings} userRole={userRole} agentProfileId={agentProfileId} fetchHistoricalTransactions={fetchHistoricalTransactions} motorists={motorists} customers={customers} />}
+          {activeTab === 'transactions' && <HistoryReportView transactions={transactions} inventory={inventory} onDeleteFolder={handleDeleteHistory} onDeleteTransaction={handleDeleteSingleTransaction} isAdmin={isAdmin} user={user} appId={appId} db={db} appSettings={appSettings} userRole={userRole} agentProfileId={agentProfileId} fetchHistoricalTransactions={fetchHistoricalTransactions} motorists={motorists} customers={displayCustomers} />}
           
          {activeTab === 'audit' && (
              <AuditVaultView db={db} storage={storage} appId={appId} user={user} userId={userId} isAdmin={isAdmin} logAudit={logAudit} setBackupToast={setBackupToast} auditLogs={auditLogs} />

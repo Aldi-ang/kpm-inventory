@@ -556,5 +556,46 @@ ok('the EOD store count is keyed', /map\(t => storeKey\(t\.customerName\)\)/.tes
   ok('and so does the same shop written clean', !!visits[key('warung bu sari')]);
   ok('a shop nobody visited stays empty', !visits[key('Toko Lain')]); }
 
+/* ── S7 · the old names are hidden on screen, and NOT rewritten in the book ─────────────── */
+section('S7. Legacy names cleaned at display, with the backup path left raw');
+
+ok('storeLabel exists and strips only a TRAILING suffix',
+   helpers.includes('export const storeLabel') &&
+   (helpers.split('export const storeLabel')[1] || '').slice(0, 200).includes('(?:Retail|Individual|Wholesale)\\)$/i'));
+ok('storeLabel does NOT lowercase - it is a label, not a key',
+   !/storeLabel[\s\S]{0,220}toLowerCase\(\)/.test(helpers));
+ok('the app builds a display copy of the customer list',
+   /const displayCustomers = React\.useMemo\(/.test(app) && /const displayPermitted = React\.useMemo\(/.test(app));
+ok('the sale engine is given the display copy, so new rows are written clean',
+   /customers: displayCustomers/.test(app));
+/* The one path that must never see a display name. exportData.customers is written straight back
+   by a restore with set(), so a stripped name there is a permanent rename of every shop. */
+ok('the backup export still reads the RAW customer list',
+   /exportData\.customers = deepCustomers/.test(app) && !/for \(const cust of displayCustomers\)/.test(app));
+ok('the customer directory still receives the RAW list - it writes documents in bulk',
+   /activeTab === 'customers' && \([\s\S]{0,300}customers=\{customers\}/.test(app));
+ok('the receivables row and the debt tally display the cleaned label',
+   /name: storeLabel\(t\.customerName\)/.test(finance) && /store: storeLabel\(t\.customerName\)/.test(profile));
+
+/* BEHAVIOUR — the invariant that makes this safe: relabelling can never change WHO a row is. */
+{ const key   = (n) => String(n ?? '').trim().replace(/\s*\((?:Retail|Individual|Wholesale)\)$/i, '').trim().toLowerCase();
+  const label = (n) => String(n ?? '').trim().replace(/\s*\((?:Retail|Individual|Wholesale)\)$/i, '').trim();
+
+  ok('the suffix disappears from the label', label('Warung Bu Sari (Retail)') === 'Warung Bu Sari');
+  ok('and the capitals survive - it is what he reads, not what the code matches on',
+     label('WARUNG BU SARI (Wholesale)') === 'WARUNG BU SARI');
+  ok('a name that merely contains a tier word in the middle is untouched',
+     label('Warung (Retail) Jaya') === 'Warung (Retail) Jaya');
+  ok('an empty or missing name stays empty', label('') === '' && label(null) === '' && label(undefined) === '');
+
+  /* THE INVARIANT: a shop shown under its cleaned label still matches every row ever written
+     under the old one. If this can ever fail, renaming on screen silently loses history. */
+  const written = ['Warung Bu Sari (Retail)', 'warung bu sari ', 'WARUNG BU SARI', 'Warung Bu Sari'];
+  ok('every stored spelling still resolves to the same shop after relabelling',
+     written.every(n => key(label(n)) === key(n)) &&
+     new Set(written.map(n => key(label(n)))).size === 1);
+  ok('and relabelling never merges two shops that were separate',
+     key(label('Warung Sari Rasa')) !== key(label('Warung Bu Sari'))); }
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);
