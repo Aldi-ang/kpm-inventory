@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-18 20:38 WIB (KPM app session)** · 🔧 35 FIXES · 📋 ONE PROMPT READY · branch `phase0-solid-ground`
+**Updated: 2026-08-18 20:52 WIB (KPM app session)** · 🔧 36 FIXES · 📋 ONE PROMPT READY · branch `phase0-solid-ground`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -15,16 +15,9 @@
 
 ## ⏳ WAITING ON ALDI — verbatim, do not paraphrase
 
-**1. What colour replaces the green Verify button?** He asked *"what verify button that u meant?"* —
-answered in chat: the big button under each pending setoran on the ADMIN side of the EOD screen,
-the one next to Reject / Reset. It is `bg-emerald-600`, green, banned by his own palette law.
-He then asked to SEE it: **https://claude.ai/code/artifact/a39c7890-430e-4506-99ec-6d0a4dec9ab5**
-— three options in his real tokens, light/dark toggle, measured. **Reply expected: A, B, or leave it.**
-- **A gold plate** (recommended) 6,97 dark / 6,86 light · **B quiet raised + gold edge** 13,84 / 15,17
-- **C what is there today** — green **2,98 in dark**, orange **2,81 both**. Not merely off-palette:
-  the label on the button he presses nightly is under the 4,5 line, on the screen he uses at night.
-- The red short-count button stays red (5,11) whichever he picks.
-(`bg-orange-600` and `bg-red-700` on that same button are hardcoded too — all three move together.)
+~~**1. The green Verify button.**~~ ✅ **ANSWERED AND SHIPPED `a0d27b5`.** His words:
+*"B is better but i like amber color more than gold TBH"*. Option B, in amber. Nothing is waiting
+on him right now.
 
 ✅ **Untested by him:** the shakedown card, now **19 tests** (18 and 19 are the retail bounties) —
 https://claude.ai/code/artifact/a42ce819-9d1a-46a8-8ae8-0291df6765ef
@@ -32,6 +25,27 @@ https://claude.ai/code/artifact/a42ce819-9d1a-46a8-8ae8-0291df6765ef
 > Older open questions (tukar barang, and others) still live in the **❓ WAITING ON ALDI —
 > verbatim** section further down this file. That section was NOT touched by this trim.
 
+
+## 🟠 2026-08-18 20:52 — the approve button is quiet, and amber is a real colour now. `a0d27b5`
+
+**His pick, verbatim:** *"B is better but i like amber color more than gold TBH"*.
+
+- Normal night: plain `--raised` surface, amber edge, `--ink` label — **13,84:1 dark / 15,17:1 light**,
+  against the green's 2,98. Cukai night: same surface, amber label. Short count: the measured red
+  plate (6,42). No hardcoded colours and no rgba glows left on that button.
+- **`--amber` is a PAIR** and that is the keeper: no single amber works in both themes — bright amber
+  is 10,60 on the dark surface and **1,34** on the light one. `#F59E0B` dark, `#92400E` light, the
+  deepest amber that still reads amber not brown. Measured in `contrast.selfcheck`, not asserted.
+- Artifact updated to show what shipped: https://claude.ai/code/artifact/a39c7890-430e-4506-99ec-6d0a4dec9ab5
+
+⚠️ **The guard took three attempts and that is the lesson.** Scoping by colour string caught a
+bystander twice — the WANTED total's drop-shadow, then the Pay Bounty button, both of which use the
+same rgba honestly. It now slices the source between the button's own `onClick` and the end of its
+tag. **Recorded in `lessons.md`** — first real use of the unjammed loop, which archived an entry by
+the new rule and accepted the new one. The health check also had two bugs of its own: it counted
+the archive ledger as part of whichever entry it sat next to. Fixed. `8319f94` `7e887e1`
+
+11 checks (S24), red first. build clean · audit 599/0 · logic 337/0 · contrast all pairs pass
 
 ## 🟠 2026-08-18 20:38 — he asked to see the button colours, so they were measured
 
