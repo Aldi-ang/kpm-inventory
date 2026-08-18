@@ -413,9 +413,9 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                 if (snap.exists()) {
                     const dbColors = snap.data();
                     setAgentColors(dbColors);
-                    localStorage.setItem(`cello_colors_${appId}`, JSON.stringify(dbColors)); 
+                    localStorage.setItem(`cello_colors_${appId}`, JSON.stringify(dbColors));
                 }
-            } catch(e) {}
+            } catch(e) { /* agent colours fall back to the defaults; nothing on this screen depends on them */ }
         };
         loadColors();
     }, [db, appId, user]);
@@ -445,7 +445,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
             try {
                 const cached = await loadBorderCache(appId);
                 if (cached.length > 0) setBoundaries(cached.filter(b => b && !b.isHidden));
-            } catch(e) {}
+            } catch(e) { /* cache paint only — the live fetch below is the real load */ }
 
             const userId = user?.uid || user?.id || 'default';
             if (!db || !appId || !userId) return;
@@ -460,7 +460,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                                 data.geometry = JSON.parse(data.geometryString);
                                 data.name = String(data.name || 'Unnamed Region');
                                 loaded.push(data);
-                            } catch(e) {}
+                            } catch(e) { /* one corrupt boundary is skipped rather than taking the whole map down */ }
                         }
                     }
                 });
@@ -469,7 +469,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                     setBoundaries(activeBorders);
                     saveBorderCache(appId, loaded);
                 }
-            } catch(e) {}
+            } catch(e) { /* borders are decoration on this screen; the cache paint above already ran */ }
         };
         loadBorders();
     }, [db, appId, user]);
@@ -526,7 +526,12 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                 updatedAt: serverTimestamp()
             });
             if (logAudit) logAudit("AGENT_ASSIGNED", `Assigned ${agentName} to store.`);
-        } catch (error) {}
+        } catch (error) {
+            /* An empty catch: the assignment failed, the audit line was never written, and the
+               screen said nothing at all. Assigning a store decides whose receivable it is. */
+            console.error(error);
+            notify(`Could not assign ${agentName} to this store. Nothing was saved — try again.`);
+        }
     };
 
     useEffect(() => {
@@ -542,7 +547,12 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                 const motoristsSnap = await getDocs(collection(db, `artifacts/${appId}/users/${userId}/motorists`));
                 const allAgents = motoristsSnap.docs.map(doc => String(doc.data().name || '')).filter(Boolean).sort();
                 setAgentsList(allAgents);
-            } catch (error) {}
+            } catch (error) {
+                /* An empty dropdown with no explanation is the exact bug the comment above
+                   describes. If the list cannot load, say so rather than showing nothing. */
+                console.error(error);
+                notify("Could not load the agent list. Reopen this panel once you have signal.");
+            }
         };
         fetchAgents();
     }, [db, appId, user]);
@@ -703,7 +713,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                     const flippedCoords = data.routes[0].geometry.coordinates.map(coord => [coord[1], coord[0]]);
                     setStreetRoute(flippedCoords);
                 }
-            } catch (error) {}
+            } catch (error) { /* the routing service is outside this app; the straight line stays drawn */ }
         };
         fetchRoute();
     }, [orderedRoute]); 

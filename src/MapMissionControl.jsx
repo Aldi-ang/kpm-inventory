@@ -19,7 +19,7 @@ import { notify } from './components/Toast.jsx';
 import MarkerClusterGroup from 'react-leaflet-cluster'; // 🚀 INJECTED SUPERCLUSTER ENGINE
 
 // 🚀 GOOGLE MAPS STYLE: THE SMART AVATAR ENGINE
-try { delete L.Icon.Default.prototype._getIconUrl; } catch(e) {}
+try { delete L.Icon.Default.prototype._getIconUrl; } catch(e) { /* leaflet internals differ by build; the mergeOptions below is what matters */ }
 L.Icon.Default.mergeOptions({
     iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
     iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
@@ -148,7 +148,7 @@ const MapEffectController = ({ selectedRegion, selectedCity, mapPoints, savedHom
                 const mapWidth = map.getSize().x;
                 const leftPad = mapWidth > 650 ? 400 : 20; 
                 map.fitBounds(bounds, { paddingTopLeft: [leftPad, 20], paddingBottomRight: [20, 20], maxZoom: 13, duration: 1.2 });
-            } catch(e) {}
+            } catch(e) { /* a zone with unusable geometry just does not get framed; the map stays where it is */ }
         }
     }, [selectedZone, map]);
 
@@ -810,7 +810,7 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
                             try {
                                 if (feature.geometry.type === 'Polygon') firstCoord = [feature.geometry.coordinates[0][0][1], feature.geometry.coordinates[0][0][0]];
                                 else if (feature.geometry.type === 'MultiPolygon') firstCoord = [feature.geometry.coordinates[0][0][0][1], feature.geometry.coordinates[0][0][0][0]];
-                            } catch(err) {}
+                            } catch(err) { /* an odd geometry shape leaves firstCoord null; the label just is not placed */ }
                         }
                         if (!newBoundaries.find(b => b.name === name && (b.folderName || b.level) === targetFolder)) {
                             const newBoundary = { 
@@ -1217,7 +1217,10 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
             const updates = { storeType: newType };
             if (newType === 'Wholesaler') updates.suppliedBy = null;
             await updateDoc(ref, updates);
-        } catch (error) { console.error(error); } finally { setIsLinking(false); }
+        } catch (error) {
+            console.error(error);
+            notify("Could not change the store type. Nothing was saved — check your signal and try again.");
+        } finally { setIsLinking(false); }
     };
 
     const handleAssignHub = async (hubId) => {
@@ -1225,26 +1228,41 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
         setIsLinking(true);
         try { 
             const userId = user?.uid || user?.id;
-            await updateDoc(doc(db, `artifacts/${appId}/users/${userId}/customers`, store.id), { suppliedBy: hubId === "none" ? null : hubId }); 
-        } catch (error) { console.error(error); } finally { setIsLinking(false); }
+            await updateDoc(doc(db, `artifacts/${appId}/users/${userId}/customers`, store.id), { suppliedBy: hubId === "none" ? null : hubId });
+        } catch (error) {
+            console.error(error);
+            notify("Could not change which hub supplies this store. Nothing was saved.");
+        } finally { setIsLinking(false); }
     };
 
     const handleSaveLocalScale = async () => {
         if (!db || !appId || !store?.id) return;
         try { 
             const userId = user?.uid || user?.id;
-            await updateDoc(doc(db, `artifacts/${appId}/users/${userId}/customers`, store.id), { catchmentScale: localScale }); 
-        } catch (error) { console.error(error); }
+            await updateDoc(doc(db, `artifacts/${appId}/users/${userId}/customers`, store.id), { catchmentScale: localScale });
+        } catch (error) {
+            console.error(error);
+            notify("Could not save the catchment scale. Nothing was saved.");
+        }
     };
 
     const handleSaveVisitFreq = async (newFreq) => {
         const freq = Math.max(1, parseInt(newFreq) || 7);
+        /* The screen is updated BEFORE the write, so a failure used to look exactly like a
+           success — the new number sat there having reached nothing. The old value is kept so
+           the display can be put back, which is the difference between a silent lie and a
+           message he can act on. */
+        const previous = visitFreq;
         setVisitFreq(freq);
         if (!db || !appId || !user || !store?.id) return;
-        try { 
+        try {
             const userId = user?.uid || user?.id;
-            await updateDoc(doc(db, `artifacts/${appId}/users/${userId}/customers`, store.id), { visitFreq: freq }); 
-        } catch (error) { console.error(error); }
+            await updateDoc(doc(db, `artifacts/${appId}/users/${userId}/customers`, store.id), { visitFreq: freq });
+        } catch (error) {
+            console.error(error);
+            setVisitFreq(previous);
+            notify("Could not save the visit frequency. The old value has been put back.");
+        }
     };
 
     const handleSaveTier = async (newTier) => {
@@ -1257,7 +1275,12 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
             if (setLocalTierUpdates) {
                 setLocalTierUpdates(prev => ({ ...prev, [store.id]: newTier }));
             }
-        } catch (error) { console.error(error); }
+        } catch (error) {
+            /* The worst of the five to lose quietly: the tier decides what this store pays for
+               everything, and the agent would sell on a price level the database never took. */
+            console.error(error);
+            notify("PRICE TIER NOT SAVED. This store is still on its old tier — do not sell at the new price until this saves.");
+        }
     };
 
     const handleDeleteStore = async () => {
@@ -1474,7 +1497,7 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
                                                 displayDate = rawDate.toLocaleString('id-ID', {day:'numeric', month:'short', year:'numeric'});
                                                 displayTime = rawDate.toLocaleString('id-ID', {hour:'2-digit', minute:'2-digit'});
                                             }
-                                        } catch(err) {}
+                                        } catch(err) { /* an unparseable timestamp keeps the placeholder date; never worth a toast */ }
 
                                         return (
                                             <div key={tx.id} className="bg-slate-900 p-3 rounded-lg border border-slate-600 shadow-inner">
@@ -1529,7 +1552,12 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
                 if (snap.exists() && snap.data().rules) { setRules(snap.data().rules); return; }
                 const mainSnap = await getDoc(doc(db, `artifacts/${appId}/users/${userId}`, 'appSettings'));
                 if (mainSnap.exists() && mainSnap.data().tierRules) setRules(mainSnap.data().tierRules);
-            } catch(e) {}
+            } catch(e) {
+                /* Not silent: with no rules the tier simulation below scores everything against
+                   zero targets, which reads as "everyone qualifies". */
+                console.error(e);
+                notify("Could not load the tier rules. The rank simulation on this screen is not reliable until it loads.");
+            }
         };
         loadSettings();
     }, [db, appId, userId]);
@@ -1918,7 +1946,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
             try {
                 const cached = await loadBorderCache(appId);
                 if (cached.length > 0) setBoundaries(cached);
-            } catch(e) {}
+            } catch(e) { /* cache paint only — the live fetch below is the real load */ }
 
             if (db && appId && userId) {
                 try {
@@ -1931,7 +1959,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                                 try {
                                     data.geometry = JSON.parse(data.geometryString);
                                     loaded.push(data);
-                                } catch(e) {}
+                                } catch(e) { /* one corrupt boundary is skipped rather than taking the whole map down */ }
                             }
                         }
                     });
@@ -1939,7 +1967,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                         setBoundaries(loaded);
                         saveBorderCache(appId, loaded);
                     }
-                } catch(e) {}
+                } catch(e) { /* borders are decoration on this screen; the cache paint above already ran */ }
             }
         };
         loadBorders();

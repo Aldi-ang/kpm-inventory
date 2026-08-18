@@ -876,5 +876,42 @@ ok('overdue is decided from UNPAID debts only',
   ok('a fresh consignment inside its tempo is not overdue',
      fifo([{ day: 999, type: 'SALE', paymentType: 'Titip', total: 100000, tempoDays: 7 }]).isOverdue === false); }
 
+/* ── S16 · saves that failed in silence ────────────────────────────────────────────────── */
+section('S16. A failed save says so — his law: every action reports');
+
+/* The whole store-detail panel. Five saves in a row caught their own error and told nobody, on a
+   phone, where there is no console to read. Counted rather than matched one by one: the number
+   is what stops a sixth being added silently. */
+{ const panel = stripComments(map);
+  const silent = (panel.match(/catch \(error\) \{ console\.error\(error\); \}/g) || []).length;
+  ok(`no save in the map store panel swallows its error (${silent} left)`, silent === 0);
+  ok('the price tier failure names the money consequence',
+     /PRICE TIER NOT SAVED[\s\S]{0,120}do not sell at the new price/.test(map));
+  ok('the store type, hub, scale and visit frequency all report',
+     /Could not change the store type/.test(map) && /Could not change which hub supplies/.test(map)
+     && /Could not save the catchment scale/.test(map) && /Could not save the visit frequency/.test(map)); }
+
+/* The visit-frequency box updated the screen BEFORE the write, so failure and success looked
+   identical. It must put the old value back, not just apologise. */
+ok('a failed visit-frequency save restores the value on screen',
+   /const previous = visitFreq;/.test(map) && /setVisitFreq\(previous\);/.test(map));
+
+ok('assigning a store to an agent says what did not happen',
+   /Could not assign \$\{agentName\} to this store/.test(journey));
+
+/* App-wide: a catch with NOTHING in it at all. Deliberately NOT comment-stripped — this codebase
+   uses `catch (e) { /* offline cache miss * / }` on purpose in several places, and a comment
+   saying why is the difference between a decision and an oversight. Stripping comments first
+   flagged eighteen of those and would have had the check deleted by the end of the week. */
+{ const files = ['src/App.jsx', 'src/MapMissionControl.jsx', 'src/JourneyView.jsx', 'src/MerchantSalesView.jsx',
+                 'src/StockOpnameView.jsx', 'src/FleetCanvasManager.jsx', 'src/ConsignmentFinanceView.jsx',
+                 'src/EODReconciliationView.jsx', 'src/AgentProfileView.jsx', 'src/hooks/useTransactionEngine.js'];
+  const empties = files.flatMap(f => read(f).split('\n')
+    .map((text, i) => ({ f, line: i + 1, text }))
+    .filter(l => /catch\s*\([^)]*\)\s*\{\s*\}/.test(l.text))
+    .map(l => `${l.f}:${l.line}`));
+  ok(`no wordlessly empty catch in the money screens${empties.length ? ' — ' + empties.join(', ') : ''}`,
+     empties.length === 0); }
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

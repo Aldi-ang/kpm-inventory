@@ -149,7 +149,7 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
                 if (snap.exists() && snap.data().badges) { setBadgeData(snap.data().badges); return; }
                 const legacySnap = await getDoc(doc(db, `artifacts/${appId}/settings`, 'achievements'));
                 if (legacySnap.exists() && legacySnap.data().badges) setBadgeData(legacySnap.data().badges);
-            } catch (e) {}
+            } catch (e) { /* badges fall back to the built-in set; no money or stock reads this */ }
         };
         fetchBadges();
     }, [db, appId, userId]);

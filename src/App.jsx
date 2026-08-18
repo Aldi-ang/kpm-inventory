@@ -2914,8 +2914,12 @@ const handleGitHubMirror = async () => {
       } 
       if(isAdmin && user && updatedProduct.id) { 
           try { 
-              await updateDoc(doc(db, `artifacts/${appId}/users/${user.uid}/products`, updatedProduct.id), { dimensions: updatedProduct.dimensions }); 
-          } catch(e) {} 
+              await updateDoc(doc(db, `artifacts/${appId}/users/${user.uid}/products`, updatedProduct.id), { dimensions: updatedProduct.dimensions });
+          } catch(e) {
+              // A write, so it reports. The form already shows the new dimensions.
+              console.error(e);
+              notify("Could not save the product dimensions. The rest of the product was saved.");
+          }
       } 
   };
 
