@@ -725,5 +725,15 @@ ok('the pack-size conversion still takes the unit from the van row',
   ok('a live row of 3 Slop credits 30 packs, not 3',
      credit([{ productId: 'p1', qty: 3, unit: 'Slop' }]) === 30); }
 
+/* ── S11 · the sale path asked the flag the app already knows is lying ─────────────────── */
+section('S11. Every path asks the real internet probe');
+
+/* Comments stripped — the note explaining this fix names the banned flag, and without stripping
+   the guard reads its own prose and reports the bug as still present. Third time in this file. */
+ok('the sale interceptor no longer asks navigator.onLine', !/navigator\.onLine/.test(stripComments(engine)));
+ok('all three interceptors ask isOnline',
+   (engine.match(/if \(!isOnline\)/g) || []).length === 3);
+ok('isOnline still comes from useOfflineEngine', /const \{ isOnline,[^}]*\} = useOfflineEngine\(\)/.test(engine));
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

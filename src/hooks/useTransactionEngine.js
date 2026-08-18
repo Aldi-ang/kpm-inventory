@@ -41,8 +41,14 @@ export default function useTransactionEngine({
 
         let finalAgentName = user?.displayName || user?.email?.split('@')[0] || 'Admin';
 
-        // 🚀 THE OFFLINE INTERCEPTOR
-        if (!navigator.onLine) {
+        /* 🚀 THE OFFLINE INTERCEPTOR
+           FIX: asks `isOnline`, the real internet probe, instead of `navigator.onLine`.
+           useOfflineEngine exists because that flag LIES — it reports online whenever any
+           network adapter is up, so a phone showing signal bars with no working internet
+           answered "online" here. The sale then took the online path, the write never landed,
+           and nothing was saved to the Ghost Ledger either: the sale simply vanished. The
+           consignment paths in this same file already ask the honest one. */
+        if (!isOnline) {
             try {
                 // 🚀 FIX: Resolve the actual registered agent name the same way the online
                 // path does (Fleet profile), instead of falling back to the signed-in
