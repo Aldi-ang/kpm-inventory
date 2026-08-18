@@ -467,7 +467,10 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                             separate documents; the letter now covers both, so it writes both. Same two
                                             documents, same shapes, same `handleVerifyEOD` — the change is that the agent
                                             presses once instead of twice, not that anything downstream moved. */}
-                                        <EODAgentFlow
+                                        {/* Keyed on the identity: the admin can switch whose setoran he is
+                                            entering, and React would otherwise reuse this component and keep
+                                            the previous agent's counted figures in its own state. */}
+                                        <EODAgentFlow key={effectiveId}
                                             expected={{
                                                 cash: agentData.expectedCash,
                                                 transfer: agentData.expectedTransfer,

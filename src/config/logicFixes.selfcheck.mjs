@@ -1098,5 +1098,16 @@ section('S20. --danger is an edge and a fill, never the ground under --danger-in
   ok('a hover that flips to the filled red is still allowed - it swaps the ink with it',
      /hover:bg-\[var\(--danger\)\] .*hover:text-\[var\(--gold-ink\)\]/.test(eod)); }
 
+
+/* --- S21 . the counting flow kept one agent's numbers when the identity changed --------- */
+/* The admin picks whose setoran he is entering. React reuses a component in the same slot,
+   so switching from agent A to agent B mid-count left A's counted cash, transfer and goods
+   sitting in the flow's own state - and the next Send posted them under B's id. A key makes
+   the identity part of what the component IS, so React remounts it and the count starts blank. */
+section('S21. Changing operating identity restarts the count');
+
+ok('the counting flow is keyed on the identity being counted for',
+   /<EODAgentFlow\s+key=\{effectiveId\}/.test(eod));
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);
