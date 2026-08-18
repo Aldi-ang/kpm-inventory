@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-18 12:50 WIB (KPM app session)** · 🔧 13 FIXES · 📋 ONE PROMPT READY · branch `phase0-solid-ground`
+**Updated: 2026-08-18 12:58 WIB (KPM app session)** · 🔧 13 FIXES · 📋 ONE PROMPT READY · branch `phase0-solid-ground`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -2671,6 +2671,27 @@ price ladder; performance rank is now the Tier Automation Engine's job.
 - ✅ **The Firebase authorized domain is DONE** — *"already"*. `192.168.1.109` can sign in.
 
 ## 📓 LOG
+
+### 2026-08-18 12:58 (KPM app session) — alucard now auto-loads caveman ULTRA + karpathy every call
+
+His words: *"i dont want to add some cap but i want u to add caveman ultra talking habits while
+giving full accuracy of info ... to avoid bloat and increase token efficiency, add caveman skill
+and karpathy guidelines skill inside alucard and all the skills must be applied to the session
+everytime i call alucard automatically"*.
+
+**Done:** new §0 at the top of `C:UsersASUS.claudeskillsalucardSKILL.md`. First action of
+every `/alucard` is now `Skill(anthropic-skills:caveman)` at **ULTRA** plus
+`Skill(anthropic-skills:karpathy-guidelines)`, before any real tool call.
+
+**He rejected the length cap** offered earlier the same session. The lever is DENSITY, not
+deletion — every fact still gets stated, as a table row or a fragment instead of a sentence.
+**Accuracy is never what gets compressed.** Carve-outs still outrank ultra: questions to him stay
+descriptive with a worked example, security and irreversible-action text stays in full sentences,
+and every reply still ends with what was just done.
+
+ULTRA rules: abbreviate prose words (DB/auth/config/fn/impl), strip conjunctions, arrows for
+causality. **Never** abbreviate code symbols, function names, error strings, file paths, numbers.
+
 
 ### 2026-08-18 12:50 (KPM app session) — he caught the caveman drift
 
