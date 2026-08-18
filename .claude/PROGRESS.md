@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-18 12:24 WIB (KPM app session)** · 🔧 12 FIXES · 📋 ONE PROMPT READY · branch `phase0-solid-ground`
+**Updated: 2026-08-18 12:32 WIB (KPM app session)** · 🔧 13 FIXES · 📋 ONE PROMPT READY · branch `phase0-solid-ground`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -2671,6 +2671,38 @@ price ladder; performance rank is now the Tier Automation Engine's job.
 - ✅ **The Firebase authorized domain is DONE** — *"already"*. `192.168.1.109` can sign in.
 
 ## 📓 LOG
+
+### 2026-08-18 12:32 (KPM app session) — store hand-off stopped reassigning every shop that shares a name
+
+**The brief was wrong and the code said so.** `.claude/NEXT-SESSION.md` prescribed filtering
+transactions on `t.customerId === request.customerId`. **No transaction in this app has ever
+carried a customerId** — `useTransactionEngine.js` writes `customerName` and `agentId`, nothing
+else. Following it literally would have marked the hand-off APPROVED, fired both "transfer
+complete" notifications, and moved **zero** rows. Silent, and it would fire on every new request.
+
+**What shipped instead** (`505ddcf`, `App.jsx` + selfcheck, 75 insertions): the sweep in
+`handleAdminApproveTransfer` now takes the store name **and** `fromAgentId`, so only the rows the
+sending agent actually holds move. An ADMIN hand-off also picks up legacy rows with no `agentId`,
+the same rule the HQ filter in `ConsignmentFinanceView` already uses. The request pins
+`customerId` when the customer document is unambiguous (narrowed by `mappedBy` when the name is
+shared); with a shared name and no pin, **no** customer document is written at all — stamping
+`mappedBy` onto the wrong twin relabels a shop nobody handed over.
+
+**Still open, deliberately:** if ONE agent holds both same-named shops they stay merged — the
+receivables screen groups by `customerName`, so it merged them before the transfer was even
+requested. Fixing that means re-keying `ConsignmentFinanceView` on customer id. Queued as job 7.
+
+**Checks:** guards run RED first (8 failed before the edit), then build clean · `599/0` ·
+selfcheck **59/0 → 72/0** (8 regression guards + 5 behaviour checks).
+
+**Vault:** `A-Brain` commit `f871b45` — new concept **A Store Name Is Not a Store**, summary
+**Store Hand-off Name Collision**, the raw source, and a `Wiki/Log.md` entry. Linked from all
+three places.
+
+**Next prompt written:** the two name bugs in `handleMerchantSale` — the `.includes()` substring
+lookup and the `" (Retail)"` suffix welded onto new store names. Trap recorded in the prompt:
+dropping the suffix alone splits every existing shop into two rows on a name-keyed screen.
+
 
 ### 2026-08-18 12:16 (KPM app session) — 12 fixes, a self-check harness, a locked rule, one finding killed, and the next six jobs written out
 
