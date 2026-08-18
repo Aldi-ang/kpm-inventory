@@ -688,5 +688,42 @@ ok('the confirmation no longer promises an overwrite',
   ok('an extra found on the shelf still increases stock',
      apply(100, 103, [-30], true) === 73); }
 
+/* ── S10 · Clear Canvas credited the warehouse from a screen, not from the vehicle ─────── */
+section('S10. Emptying a vehicle reads what is in it now');
+
+/* Scoped to handleClearCanvas ONLY. Tested against the whole file these guards were vacuous:
+   handleLoadCanvas, fifty lines above, already contains the very lines being asserted, so they
+   passed against the unfixed code. A guard that cannot fail is worse than no guard — it reports
+   the fix as present. */
+const clearBody = fleet2.split('handleClearCanvas')[1] || '';
+
+ok('the canvas is read inside the clear transaction',
+   /const agentSnap = await t\.get\(agentRef\);[\s\S]{0,160}activeCanvas \|\| \[\]/.test(clearBody));
+ok('the cached screen copy is no longer the source',
+   !/const currentCanvas = selectedAgent\.activeCanvas \|\| \[\];/.test(clearBody));
+ok('the goods returned are built from the live list', /const itemsToReturn = liveCanvas/.test(clearBody));
+/* Firestore forbids a read after a write in one transaction, and it fails at RUNTIME only. */
+{ const readAt = clearBody.indexOf('await t.get(agentRef)');
+  const firstWrite = Math.min(...['t.set(', 't.update('].map(w => { const i = clearBody.indexOf(w); return i < 0 ? Infinity : i; }));
+  ok('the read exists AND happens before the first write', readAt > -1 && readAt < firstWrite); }
+ok('the pack-size conversion still takes the unit from the van row',
+   /convertToBks\(r\.item\.qty, r\.item\.unit, r\.product\)/.test(fleet2));
+
+/* BEHAVIOUR — the race itself, not just the read. */
+{ const product = { packsPerSlop: 10, slopsPerBal: 20, balsPerCarton: 4 };
+  const screenLoadedAt1400 = [{ productId: 'p1', qty: 50, unit: 'Bks' }];
+  const vanRightNow      = [{ productId: 'p1', qty: 30, unit: 'Bks' }];   // 20 sold at 14:05
+  const warehouse = 200;
+
+  const credit = (list) => list.reduce((s, i) => s + (i.unit === 'Slop' ? i.qty * product.packsPerSlop : i.qty), 0);
+  ok('BEFORE: the warehouse gained 50 while the store kept 20 - 20 packs invented',
+     warehouse + credit(screenLoadedAt1400) === 250);
+  ok('AFTER: it gains the 30 actually left in the van', warehouse + credit(vanRightNow) === 230);
+  ok('and the vehicle still ends empty either way', [].length === 0);
+
+  // A van row counted in Slop must not be credited as packs.
+  ok('a live row of 3 Slop credits 30 packs, not 3',
+     credit([{ productId: 'p1', qty: 3, unit: 'Slop' }]) === 30); }
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

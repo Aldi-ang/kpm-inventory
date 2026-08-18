@@ -366,16 +366,30 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
         if (!await confirmAction(`Are you sure you want to empty ${selectedAgent.name}'s vehicle inventory? This will securely return all their unsold stock back into the ${destinationLabel}.`)) return;
 
         try {
-            const currentCanvas = selectedAgent.activeCanvas || [];
-            const itemsToReturn = currentCanvas
-                .map(item => ({ item, product: inventory.find(p => p.id === item.productId) }))
-                .filter(x => x.product);
+            const agentRef = doc(db, collPath, selectedAgent.id);
 
             // 🚀 FIX: Upgraded from writeBatch to runTransaction so we can safely READ the
             // correct destination's current stock first — writeBatch can't read, so it was
             // trusting the viewer's own (possibly wrong-region) cached branch numbers.
             await runTransaction(db, async (t) => {
                 // 📖 PHASE 1: READS
+                /* 🚀 FIX: the vehicle's contents are read HERE, live, instead of from
+                   selectedAgent.activeCanvas — which is whatever the admin's screen loaded,
+                   possibly hours ago. The van showed 50 packs at 14:00, the agent sold 20 at
+                   14:05, and clearing at 14:10 credited the warehouse with all 50 and then
+                   emptied the van: 20 packs existed in two places at once, sold to a store and
+                   back on the shelf. handleLoadCanvas fifty lines above already re-read the
+                   agent inside its transaction; this is the same read.
+
+                   It sits at the top of the READ phase on purpose. Firestore forbids a read
+                   after a write in a transaction, and that failure only appears at runtime,
+                   when somebody actually clears a vehicle. */
+                const agentSnap = await t.get(agentRef);
+                const liveCanvas = agentSnap.exists() ? (agentSnap.data().activeCanvas || []) : [];
+                const itemsToReturn = liveCanvas
+                    .map(item => ({ item, product: inventory.find(p => p.id === item.productId) }))
+                    .filter(x => x.product);
+
                 const destRefs = itemsToReturn.map(({ item, product }) => ({
                     item, product,
                     ref: useBranchWarehouse
@@ -397,7 +411,6 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                     }
                 });
 
-                const agentRef = doc(db, collPath, selectedAgent.id);
                 t.update(agentRef, { activeCanvas: [] });
             });
 
