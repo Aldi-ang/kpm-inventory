@@ -112,6 +112,9 @@ const PAIRS = [
   ['quiet text on inset',          'ink-dim',        'inset',        4.5],
   ['quiet text on the ground',     'ink-dim',        'ground',       4.5],
   ['quiet text in the red well',   'ink-dim',        'danger-well',  4.5],
+  /* the EOD/opname screens moved every red panel off --danger and onto the well, 2026-08-18 */
+  ['plain text in the red well',   'ink',            'danger-well',  4.5],
+  ['gold text in the red well',    'accent-ink',     'danger-well',  4.5],
   ['quiet text on the bench',      'ink-dim',        'duke-fill-ground', 4.5],
   ['quiet text in a Duke well',    'ink-dim',        'duke-fill-well',   4.5],
   ['quiet text on a Duke panel',   'ink-dim',        'duke-fill-panel',  4.5],

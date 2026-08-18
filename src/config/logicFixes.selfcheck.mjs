@@ -1070,5 +1070,33 @@ section('S19. Expected beside counted, the short products named, and the card it
   ok('a product never counted keeps its expected row and is not called short',
      Array.isArray(uncounted) && uncounted.length === 0); }
 
+
+/* --- S20 . red text on a red plate measures 1,94:1 - unreadable ------------------------- */
+/* --danger is a FILL and an EDGE. --danger-ink is red-as-TEXT, and it needs the red WELL
+   under it: 7,04:1 dark and 7,54:1 light, against 1,94:1 and 1,95:1 on --danger itself.
+   The two strings that MUST be read on this screen - the cash fine and the short-count
+   warning - were both on the unreadable pair.
+   ponytail: same-element only. A plate on the parent with the ink on a child slips past this,
+   which is the exact trap the gold audit hit; widen it if that shape ever ships again. */
+section('S20. --danger is an edge and a fill, never the ground under --danger-ink');
+
+{ const BG = /(^|[\s"`])bg-\[var\(--danger\)\]/;
+  const hits = [];
+  for (const f of ['src/EODReconciliationView.jsx', 'src/StockOpnameView.jsx',
+                   'src/components/EODCardDeck.jsx', 'src/components/CustomerManager.jsx']) {
+    read(f).split('\n').forEach((line, i) => {
+      for (const m of line.matchAll(/className=(?:"([^"]*)"|\{`([^`]*)`\})/g)) {
+        const c = m[1] || m[2] || '';
+        if (BG.test(c) && /text-\[var\(--danger-ink\)\]/.test(c)) hits.push(`${f}:${i + 1}`);
+      }
+    });
+  }
+  ok('no element sets --danger as its ground and --danger-ink as its text',
+     hits.length === 0, hits.join(' '));
+  ok('the readable red ground is what the EOD screen uses instead',
+     /bg-\[var\(--danger-well\)\]/.test(eod));
+  ok('a hover that flips to the filled red is still allowed - it swaps the ink with it',
+     /hover:bg-\[var\(--danger\)\] .*hover:text-\[var\(--gold-ink\)\]/.test(eod)); }
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

@@ -422,7 +422,7 @@ export default function EODCardDeck({
                       product's load this ceiling IS the thing being reconciled — the agent is told
                       what they owe on this card from the moment it opens. */}
                   {offset === 0 && overTotal && (
-                    <p className="mt-2 rounded-lg border border-[var(--danger)] bg-[var(--danger)] px-3 py-1.5 text-center text-[11px] font-bold uppercase tracking-[.14em] text-[var(--danger-ink)]">
+                    <p className="mt-2 rounded-lg border border-[var(--danger)] bg-[var(--danger-well)] px-3 py-1.5 text-center text-[11px] font-bold uppercase tracking-[.14em] text-[var(--danger-ink)]">
                       That is {lineTotal} against {cap} owed
                     </p>
                   )}

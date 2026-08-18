@@ -581,7 +581,7 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                                             <option key={m.id} value={m.id} className="bg-[var(--sunk)]">{m.name} ({m.role || 'Staff'})</option>
                                         ))}
                                     </select>
-                                    <div className="mt-3 p-3 bg-[var(--danger)] border border-[var(--danger)] rounded text-[11px] text-[var(--danger-ink)] uppercase tracking-widest leading-relaxed">
+                                    <div className="mt-3 p-3 bg-[var(--danger-well)] border border-[var(--danger)] rounded text-[11px] text-[var(--danger-ink)] uppercase tracking-widest leading-relaxed">
                                         Warning: This will issue a Bounty/Penalty debt to the selected personnel. They must pay this fine during their daily EOD Setoran.
                                     </div>
                                 </div>
@@ -608,7 +608,7 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                         {viewMode === 'review' && 'VERIFY REGIONAL STOCK OVERWRITES'}
                         {viewMode === 'quarantine' && 'DAMAGED GOODS LIQUIDATION & HISTORY'}
                         {viewMode === 'monitor' && 'REAL-TIME FACILITY OVERWATCH'}
-                        {!isHighCommand && viewMode === 'count' && <span className="bg-[var(--danger)] text-[var(--danger-ink)] border border-[var(--danger)] px-2 py-0.5 rounded text-[11px] font-black tracking-widest flex items-center gap-1"><EyeOff size={10}/> BLIND COUNT ENFORCED</span>}
+                        {!isHighCommand && viewMode === 'count' && <span className="bg-[var(--danger-well)] text-[var(--danger-ink)] border border-[var(--danger)] px-2 py-0.5 rounded text-[11px] font-black tracking-widest flex items-center gap-1"><EyeOff size={10}/> BLIND COUNT ENFORCED</span>}
                     </p>
                 </div>
                 
@@ -691,7 +691,7 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                                             <div className="text-right">
                                                 <p className="text-[11px] text-[var(--ink-dim)] font-bold uppercase tracking-widest mb-2">Status</p>
                                                 {isLowStock ? (
-                                                    <span className="bg-[var(--danger)] text-[var(--danger-ink)] border border-[var(--danger)] px-2 py-1 rounded text-[11px] font-black uppercase tracking-widest shadow-[0_0_10px_rgba(220,38,38,0.2)] animate-pulse">Low Stock</span>
+                                                    <span className="bg-[var(--danger-well)] text-[var(--danger-ink)] border border-[var(--danger)] px-2 py-1 rounded text-[11px] font-black uppercase tracking-widest shadow-[0_0_10px_rgba(220,38,38,0.2)] animate-pulse">Low Stock</span>
                                                 ) : (
                                                     <span className="bg-[var(--gold)] text-[var(--ink-dim)] border border-[var(--line)] px-2 py-1 rounded text-[11px] font-black uppercase tracking-widest">Healthy</span>
                                                 )}
@@ -812,7 +812,7 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                                                 <button onClick={() => setResolutionModal({item, method: 'RTV'})} className="flex-1 xl:flex-none px-4 py-2 bg-[var(--gold)] hover:bg-[var(--gold)] border border-[var(--line)] text-[var(--ink-dim)] hover:text-[var(--gold-ink)] rounded-lg text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-colors">
                                                     <Undo2 size={14}/> RTV Factory
                                                 </button>
-                                                <button onClick={() => setResolutionModal({item, method: 'PENALTY'})} className="flex-1 xl:flex-none px-4 py-2 bg-[var(--danger)] hover:bg-[var(--danger)] border border-[var(--danger)] text-[var(--danger-ink)] hover:text-[var(--gold-ink)] rounded-lg text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-colors shadow-lg">
+                                                <button onClick={() => setResolutionModal({item, method: 'PENALTY'})} className="flex-1 xl:flex-none px-4 py-2 bg-[var(--danger-well)] hover:bg-[var(--danger)] border border-[var(--danger)] text-[var(--danger-ink)] hover:text-[var(--gold-ink)] rounded-lg text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-colors shadow-lg">
                                                     <BadgeDollarSign size={14}/> Penalty Charge
                                                 </button>
                                             </div>
@@ -956,7 +956,7 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                                             <div className="border-t border-[var(--line)] bg-black/20 p-4">
                                                 
                                                 {isHistory && audit.status === 'REJECTED' && audit.rejectReason && (
-                                                    <div className="mb-4 bg-[var(--danger)] border border-[var(--danger)] p-3 rounded text-[10px] font-mono text-[var(--danger-ink)]">
+                                                    <div className="mb-4 bg-[var(--danger-well)] border border-[var(--danger)] p-3 rounded text-[10px] font-mono text-[var(--danger-ink)]">
                                                         <span className="font-bold uppercase tracking-widest block mb-1">Rejection Reason:</span>
                                                         {audit.rejectReason}
                                                     </div>
@@ -1015,7 +1015,7 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
 
                                                 {!isHistory && (
                                                     <div className="flex gap-3 pt-2 border-t border-[var(--line)]">
-                                                        <button onClick={() => handleRejectAudit(audit)} disabled={isProcessingAudit} className="flex-1 bg-[var(--danger)] hover:bg-[var(--danger)] border border-[var(--danger)] text-[var(--danger-ink)] hover:text-[var(--gold-ink)] py-3 rounded-lg font-bold text-xs flex items-center justify-center gap-2 transition-colors uppercase tracking-widest">
+                                                        <button onClick={() => handleRejectAudit(audit)} disabled={isProcessingAudit} className="flex-1 bg-[var(--danger-well)] hover:bg-[var(--danger)] border border-[var(--danger)] text-[var(--danger-ink)] hover:text-[var(--gold-ink)] py-3 rounded-lg font-bold text-xs flex items-center justify-center gap-2 transition-colors uppercase tracking-widest">
                                                             <X size={14}/> Reject Count
                                                         </button>
                                                         <button onClick={() => handleApproveAudit(audit)} disabled={isProcessingAudit} className="flex-[2] bg-[var(--gold)] hover:bg-[var(--gold)] text-[var(--gold-ink)] py-3 rounded-lg font-black text-xs flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(16,185,129,0.3)] transition-colors uppercase tracking-widest">

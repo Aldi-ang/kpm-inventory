@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-18 18:56 WIB (KPM app session)** · 🔧 30 FIXES · 📋 ONE PROMPT READY · branch `phase0-solid-ground`
+**Updated: 2026-08-18 19:44 WIB (KPM app session)** · 🔧 31 FIXES · 📋 ONE PROMPT READY · branch `phase0-solid-ground`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -12,6 +12,28 @@
 > 📏 **KEEP THIS FILE UNDER ~350 LINES.** When it passes that, cut the oldest day into the same
 > archive rather than letting it grow back. This file holds WHERE THE WORK STANDS; the archive
 > and `A-Brain/Wiki/Log.md` hold how it got there.
+
+## 🟠 2026-08-18 19:44 — The admin can now SEE the gap. `ce70287`
+
+**EOD integration is finished.** The count decides the report (`d859d41`), a short count mints a
+bounty on approval (`7f96d19`), and now the card shows why. Full story in the commit message.
+
+- Expected sits beside counted with the gap named, on both money lines. Older reports keep the
+  single figure they were submitted with — history is not rewritten.
+- The short **products** are named row by row. `shortStockRows` in `helpers.js` does the compare,
+  in the row's own unit. His rule: one goods total hides a one-product shortfall.
+- A disputed report cannot be approved by reflex: red card, SHORT COUNT badge, a banner naming the
+  rupiah, and the button reads **Approve Short Count** instead of Verify. Approving is still
+  allowed — his ruling — it is just not silent.
+- Missing `countStatus` = CLEAN. Stacked on a phone, three columns on a desk.
+
+16 checks (logic S19), proved red first. build clean · audit 599/0 · logic 285/0 · eod-record 12/12.
+
+❓ **STILL HIS CALL:** what a missing pack is worth in rupiah. Until he answers, a goods shortage
+is shown and flagged but never priced into a bounty.
+
+✅ **STILL UNTESTED BY HIM:** the shakedown card —
+https://claude.ai/code/artifact/a42ce819-9d1a-46a8-8ae8-0291df6765ef
 
 ## 🟠 2026-08-18 18:56 — EOD shortfall → bounty. ANSWERED AND SHIPPED. `7f96d19`
 

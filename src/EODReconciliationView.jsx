@@ -388,7 +388,7 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
 
                                                 {/* 🚀 THE RP 0 WARNING REVEAL */}
                                                 {agentBountyData.total === 0 && (
-                                                    <div className="bg-[var(--danger)] border border-[var(--danger)] p-2 rounded mb-4 inline-block shadow-inner">
+                                                    <div className="bg-[var(--danger-well)] border border-[var(--danger)] p-2 rounded mb-4 inline-block shadow-inner">
                                                         <p className="text-[var(--accent-ink)] text-[11px] uppercase font-bold tracking-widest flex items-center justify-center gap-1">
                                                             <AlertCircle size={10}/> Warning: Fine is Rp 0 (Product missing HPP)
                                                         </p>
@@ -520,7 +520,7 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                                     const lost = parseInt(String(rows.lost || '').replace(/[^0-9]/g, ''), 10) || 0;
                                                     if (lost <= 0) return null;
                                                     return (
-                                                        <div className="rounded-lg border border-[var(--danger)] bg-[var(--danger)] px-3 py-2 text-center">
+                                                        <div className="rounded-lg border border-[var(--danger)] bg-[var(--danger-well)] px-3 py-2 text-center">
                                                             <p className="text-[10px] font-bold uppercase tracking-[.18em] text-[var(--danger-ink)] flex items-center justify-center gap-1"><AlertCircle size={11}/> Cash fine required</p>
                                                             <p className="text-lg font-black text-[var(--danger-ink)] leading-tight">{formatRupiah(lost * cukaiFinePrice)}</p>
                                                             <p className="text-[10px] text-[var(--danger-ink)] uppercase tracking-widest">{formatRupiah(cukaiFinePrice)} per lost stamp</p>
@@ -704,13 +704,13 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                                 </div>
 
                                                 {cukaiOverCount && (
-                                                    <p className="mt-3 rounded-lg border border-[var(--danger)] bg-[var(--danger)] px-3 py-1.5 text-center text-[11px] font-bold uppercase tracking-[.14em] text-[var(--danger-ink)]">
+                                                    <p className="mt-3 rounded-lg border border-[var(--danger)] bg-[var(--danger-well)] px-3 py-1.5 text-center text-[11px] font-bold uppercase tracking-[.14em] text-[var(--danger-ink)]">
                                                         That is {cukaiReturnedNum + cukaiPaidNum} against {cukaiOwed} owed
                                                     </p>
                                                 )}
 
                                                 {cukaiPaidNum > 0 && !cukaiOverCount && (
-                                                    <div className="mt-3 p-3 bg-[var(--danger)] border border-[var(--danger)] rounded-lg text-center animate-fade-in">
+                                                    <div className="mt-3 p-3 bg-[var(--danger-well)] border border-[var(--danger)] rounded-lg text-center animate-fade-in">
                                                         <p className="text-[10px] text-[var(--danger-ink)] uppercase font-bold tracking-[.18em] flex justify-center items-center gap-1"><AlertCircle size={12}/> Cash fine required</p>
                                                         <p className="text-xl font-black text-[var(--danger-ink)] mt-0.5 leading-tight">{formatRupiah(cukaiPaidNum * cukaiFinePrice)}</p>
                                                         <p className="text-[10px] text-[var(--danger-ink)] uppercase tracking-widest">{formatRupiah(cukaiFinePrice)} per lost stamp</p>
@@ -816,7 +816,7 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                             {report.reportType === 'CUKAI' && <span className="bg-[var(--gold)] text-[var(--gold-ink)] text-[11px] font-black px-2 py-0.5 rounded uppercase tracking-widest shadow-md">PITA CUKAI ONLY</span>}
                                             {report.reportType === 'BOUNTY' && <span className="bg-[var(--danger)] text-[var(--gold-ink)] text-[11px] font-black px-3 py-1 rounded uppercase tracking-widest shadow-md flex items-center gap-1"><AlertCircle size={10}/> BOUNTY CLEARANCE</span>}
                                             {!report.reportType && <span className="bg-[var(--gold)] text-[var(--gold-ink)] text-[11px] font-black px-2 py-0.5 rounded uppercase tracking-widest shadow-md">COMBINED REPORT</span>}
-                                            {disputed && <span className="bg-[var(--danger)] text-[var(--danger-ink)] text-[11px] font-black px-3 py-1 rounded uppercase tracking-widest shadow-md flex items-center gap-1"><AlertCircle size={10}/> SHORT COUNT</span>}
+                                            {disputed && <span className="bg-[var(--danger-well)] text-[var(--danger-ink)] text-[11px] font-black px-3 py-1 rounded uppercase tracking-widest shadow-md flex items-center gap-1"><AlertCircle size={10}/> SHORT COUNT</span>}
                                         </div>
                                     </div>
 
@@ -825,7 +825,7 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                         {/* The count came up short. Approving is allowed - Aldi's
                                             ruling - it just is not silent about what it does. */}
                                         {disputed && (
-                                            <div className="bg-[var(--danger)] border border-[var(--danger)] p-4 rounded-xl">
+                                            <div className="bg-[var(--danger-well)] border border-[var(--danger)] p-4 rounded-xl">
                                                 <p className="text-[10px] font-bold text-[var(--danger-ink)] uppercase tracking-widest mb-1 flex items-center gap-1"><AlertCircle size={14}/> He Counted Less Than Expected</p>
                                                 {moneyShort > 0 ? (
                                                     <p className="text-[11px] text-[var(--danger-ink)] leading-relaxed">
@@ -841,7 +841,7 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
 
                                         {/* 🚀 ADMIN VIEW: BOUNTY PAYMENT */}
                                         {report.reportType === 'BOUNTY' && (
-                                            <div className="bg-[var(--danger)] border border-[var(--danger)] p-4 rounded-xl text-center">
+                                            <div className="bg-[var(--danger-well)] border border-[var(--danger)] p-4 rounded-xl text-center">
                                                 <p className="text-[10px] font-bold text-[var(--danger-ink)] uppercase tracking-widest mb-2 flex items-center justify-center gap-1"><BadgeDollarSign size={14}/> Cash Handover Amount</p>
                                                 <p className="text-3xl font-black text-[var(--danger-ink)] font-mono">{formatRupiah(report.cash)}</p>
                                                 <p className="text-[11px] text-[var(--ink-dim)] uppercase tracking-widest mt-2">Verify physical cash received to wipe liability.</p>
@@ -888,7 +888,7 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                                         <p className="text-[10px] font-bold text-[var(--danger-ink)] uppercase tracking-widest mb-2 flex items-center gap-1"><AlertCircle size={12}/> Short on Return ({shortRows.length})</p>
                                                         <div className="space-y-1">
                                                             {shortRows.map(row => (
-                                                                <div key={row.productId} className="flex justify-between items-center gap-2 text-[10px] bg-[var(--danger)] border border-[var(--danger)] px-2 py-1.5 rounded">
+                                                                <div key={row.productId} className="flex justify-between items-center gap-2 text-[10px] bg-[var(--danger-well)] border border-[var(--danger)] px-2 py-1.5 rounded">
                                                                     <span className="text-[var(--danger-ink)]">{row.name}</span>
                                                                     <strong className="text-[var(--danger-ink)] tabular-nums whitespace-nowrap">{row.counted} of {row.expected} {row.unit} &middot; short {row.short}</strong>
                                                                 </div>
@@ -921,7 +921,7 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                                 </div>
 
                                                 {(report.cukaiPaid > 0) && (
-                                                    <div className="flex justify-between items-center bg-[var(--danger)] p-3 rounded-lg border border-[var(--danger)] mt-2">
+                                                    <div className="flex justify-between items-center bg-[var(--danger-well)] p-3 rounded-lg border border-[var(--danger)] mt-2">
                                                         <div>
                                                             <span className="text-xs font-bold text-[var(--danger-ink)] uppercase tracking-widest block flex items-center gap-1"><AlertCircle size={12}/> Lost Stamps Paid</span>
                                                             <span className="text-[11px] text-[var(--danger-ink)] font-mono mt-0.5">{report.cukaiPaid} Pcs × {formatRupiah(report.cukaiFine / report.cukaiPaid)}</span>
@@ -964,7 +964,7 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                             
                                             <button 
                                                 onClick={() => onResetEOD(report)}
-                                                className="flex-1 py-3 bg-[var(--danger)] hover:bg-[var(--danger)] border border-[var(--danger)] text-[var(--danger-ink)] hover:text-[var(--gold-ink)] rounded-xl font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-transform active:scale-95"
+                                                className="flex-1 py-3 bg-[var(--danger-well)] hover:bg-[var(--danger)] border border-[var(--danger)] text-[var(--danger-ink)] hover:text-[var(--gold-ink)] rounded-xl font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-transform active:scale-95"
                                             >
                                                 <XCircle size={18}/> Reject / Reset
                                             </button>
@@ -1093,7 +1093,7 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                                                                                         
                                                                                                         <button 
                                                                                                             onClick={(e) => { e.stopPropagation(); onResetEOD(report); }}
-                                                                                                            className="text-[11px] flex items-center gap-1 bg-[var(--danger)] hover:bg-[var(--danger)] text-[var(--danger-ink)] hover:text-[var(--gold-ink)] px-2 py-1 rounded border border-[var(--danger)] transition-all active:scale-95 uppercase font-bold mt-2"
+                                                                                                            className="text-[11px] flex items-center gap-1 bg-[var(--danger-well)] hover:bg-[var(--danger)] text-[var(--danger-ink)] hover:text-[var(--gold-ink)] px-2 py-1 rounded border border-[var(--danger)] transition-all active:scale-95 uppercase font-bold mt-2"
                                                                                                         >
                                                                                                             <XCircle size={10}/> Force Reset
                                                                                                         </button>

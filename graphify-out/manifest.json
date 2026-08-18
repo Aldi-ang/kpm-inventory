@@ -60,8 +60,8 @@
     "semantic_hash": ""
   },
   "src/EODReconciliationView.jsx": {
-    "mtime": 1787049487.5452409,
-    "ast_hash": "d11d2c8e58256929ce0d8308929c19c6",
+    "mtime": 1787056953.0333161,
+    "ast_hash": "87716432ccad42f06d22bad288f0fa5e",
     "semantic_hash": ""
   },
   "src/FleetCanvasManager.jsx": {
@@ -225,8 +225,8 @@
     "semantic_hash": ""
   },
   "src/utils/helpers.js": {
-    "mtime": 1787045747.6986866,
-    "ast_hash": "01f97565df1a3aed0ef6a2f01174ddc6",
+    "mtime": 1787056793.8043373,
+    "ast_hash": "f4ef0de6b1920fd8e1d2eae3725541f8",
     "semantic_hash": ""
   },
   "tailwind.config.js": {
@@ -570,8 +570,8 @@
     "semantic_hash": ""
   },
   ".claude/PROGRESS.md": {
-    "mtime": 1787049608.4308841,
-    "ast_hash": "ba36f17e8b392adceaacd2f184c03b1a",
+    "mtime": 1787054231.8811593,
+    "ast_hash": "b5f4ac4268509484ee4f17f8ea8c638b",
     "semantic_hash": ""
   },
   ".claude/pre-compact-context.md": {
@@ -755,13 +755,13 @@
     "semantic_hash": ""
   },
   "src/config/logicFixes.selfcheck.mjs": {
-    "mtime": 1787054095.2853382,
-    "ast_hash": "0efdc9b560946298af6ab846403d8a11",
+    "mtime": 1787056776.5891123,
+    "ast_hash": "03a7ddcea6dce0e9915e21ff505f7a02",
     "semantic_hash": ""
   },
   ".claude/NEXT-SESSION.md": {
-    "mtime": 1787049574.3257043,
-    "ast_hash": "7754a408e9718fb54074ec36bdcefeb6",
+    "mtime": 1787054194.4928222,
+    "ast_hash": "7d22c99e63ff54911dda2f41ef837f7b",
     "semantic_hash": ""
   }
 }
