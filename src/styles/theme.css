@@ -102,6 +102,11 @@
      yet `.kpm-btn.key` shipped with `color: var(--gold)` — 1,19:1 on the light ground.
      A law in a comment did not stop it. `src/config/contrast.selfcheck.mjs` measures every pair
      in both themes and fails the build's audit if one drops below 4,5:1. */
+  /* AMBER. Aldi, 2026-08-18: "B is better but i like amber color more than gold TBH". Chosen by
+     measurement, not by eye: no single amber works in both themes — bright amber is 10,6:1 on the
+     dark surface and 1,3:1 on the light one. So it is a PAIR, like every other token here.
+     #F59E0B measures 8,16:1 as text on --raised, 8,78:1 as an edge against --panel. */
+  --amber:         #F59E0B;
   --accent-ink:    #D08A2E;   /* gold-as-TEXT. Same as gold in dark; goes dark in light. */
   --accent-edge:   #D08A2E;   /* gold-as-BORDER. 3:1 minimum against its surface. */
   --danger-ink:    #E08C82;   /* red-as-TEXT. */
@@ -251,6 +256,9 @@ html.light {
      4,5:1 on every surface this ink is actually printed on (ground 5,22 · panel 6,36 · raised
      7,20 · inset 4,82) and is the last step down that still reads as GOLD rather than brown.
      Its dark twin does not move: #D08A2E stays 6,97:1 on the dark ground. */
+  /* the light twin of --amber. #F59E0B is 1,74:1 here and unreadable; this is the deepest amber
+     that still reads AMBER rather than brown: 5,75:1 as text on --raised, 5,09:1 as an edge. */
+  --amber:         #92400E;
   --accent-ink:    #4F3603;
   --accent-edge:   #7A5A12;
   --danger-ink:    #611A14;   /* darkened 2026-08-13: #7E2A22 measured 4,00:1 on --inset */

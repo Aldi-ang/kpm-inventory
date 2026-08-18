@@ -1235,5 +1235,41 @@ ok('the company can change it without a developer',
   ok('a product with no price on the chosen tier still says the price is missing',
      /no Grosir price set/.test(eodBountyLines(report, [{ id: 'p1', name: 'Cello' }], 'Grosir')[0].label)); }
 
+
+/* --- S24 . the button he presses every night ------------------------------------------- */
+/* Aldi picked option B in amber off the colour sheet: "B is better but i like amber color more
+   than gold TBH". What it replaced was not merely off-palette - green measured 2,98:1 in dark
+   and the cukai orange 2,81:1 in both, under the 4,5 line, on the screen he uses at night. */
+section('S24. The EOD approve button is quiet, tokened, and readable in both themes');
+
+ok('no green anywhere on the approve button - his palette law, and it was unreadable',
+   !/bg-emerald-\d+/.test(eod));
+ok('no hardcoded orange on the cukai branch either', !/bg-orange-\d+/.test(eod));
+ok('and no raw red - the short-count branch uses the measured red plate',
+   !/bg-red-\d+/.test(eod));
+ok('the normal night is a quiet surface with an amber edge',
+   /'bg-\[var\(--raised\)\] border-\[var\(--amber\)\] text-\[var\(--ink\)\]'/.test(eod));
+ok('the cukai night is the same surface, amber label, so it differs without shouting',
+   /'bg-\[var\(--raised\)\] border-\[var\(--amber\)\] text-\[var\(--amber\)\]'/.test(eod));
+ok('a short count still gets the red plate, because that one is meant to stop him',
+   /'bg-\[var\(--danger-plate\)\] border-\[var\(--danger\)\] text-\[var\(--danger-plate-ink\)\]'/.test(eod));
+/* Scoped to the BUTTON, by slicing the source between its onClick and the end of its tag.
+   Two earlier attempts scoped it by colour string instead and both caught a bystander - first the
+   WANTED total's drop-shadow, then the Pay Bounty button, which happen to use the same rgba. A
+   guard that fires on an innocent element is a guard someone relaxes later. */
+{ const from = eod.indexOf('onVerifyEOD(report)}');
+  const tag = from === -1 ? '' : eod.slice(from, eod.indexOf('>', eod.indexOf('className', from)));
+  ok('the approve button exists and was found by its own handler', from !== -1 && tag.length > 0);
+  ok('and carries no rgba glow of its own - quiet means quiet', !/rgba\(/.test(tag)); }
+
+{ const theme = read('src/styles/theme.css');
+  ok('--amber is a PAIR, defined in both themes, because no single amber works in both',
+     (theme.match(/--amber:\s*#[0-9A-Fa-f]{6}/g) || []).length === 2);
+  ok('the dark one is the bright amber', /--amber:\s*#F59E0B/.test(theme));
+  ok('the light one is the deep amber, not the same value dimmed by hope',
+     /--amber:\s*#92400E/.test(theme));
+  ok('and both are measured, not asserted',
+     /\['amber label on that surface'/.test(read('src/config/contrast.selfcheck.mjs'))); }
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

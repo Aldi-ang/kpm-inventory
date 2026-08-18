@@ -112,6 +112,10 @@ const PAIRS = [
   ['quiet text on inset',          'ink-dim',        'inset',        4.5],
   ['quiet text on the ground',     'ink-dim',        'ground',       4.5],
   ['quiet text in the red well',   'ink-dim',        'danger-well',  4.5],
+  /* the EOD approve button, 2026-08-18: label is --ink on --raised, the edge is --amber */
+  ['approve label on its surface', 'ink',            'raised',       4.5],
+  ['amber label on that surface',  'amber',          'raised',       4.5],
+  ['amber edge against the card',  'amber',          'panel',        3],
   /* the EOD/opname screens moved every red panel off --danger and onto the well, 2026-08-18 */
   ['plain text in the red well',   'ink',            'danger-well',  4.5],
   ['gold text in the red well',    'accent-ink',     'danger-well',  4.5],

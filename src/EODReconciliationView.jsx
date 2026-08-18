@@ -994,7 +994,15 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                         <div className="flex gap-2 mt-4 pt-2">
                                             <button 
                                                 onClick={() => onVerifyEOD(report)}
-                                                className={`flex-1 py-3 text-[var(--ink)] rounded-xl font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-transform active:scale-95 ${disputed ? 'bg-red-700 hover:bg-red-600 shadow-[0_0_15px_rgba(220,38,38,0.4)]' : report.reportType === 'BOUNTY' ? 'bg-red-700 hover:bg-red-600 shadow-[0_0_15px_rgba(220,38,38,0.4)]' : report.reportType === 'CUKAI' ? 'bg-orange-600 hover:bg-orange-500 shadow-[0_0_15px_rgba(234,88,12,0.3)]' : 'bg-emerald-600 hover:bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.3)]'} `}
+                                                /* Aldi picked B off the colour sheet, in amber: "B is better but
+                                                   i like amber color more than gold TBH". Approving a normal
+                                                   night is the thing he does fifty times a week, so it is quiet —
+                                                   a plain surface with an amber edge — and only the problems
+                                                   carry colour. The green it replaced measured 2,98:1 in dark
+                                                   and the cukai orange 2,81:1: both under the readable line, on
+                                                   the screen he uses at night. No hardcoded colours left here,
+                                                   and no rgba glows: quiet means quiet. */
+                                                className={`flex-1 py-3 rounded-xl font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-colors active:scale-95 border ${(disputed || report.reportType === 'BOUNTY') ? 'bg-[var(--danger-plate)] border-[var(--danger)] text-[var(--danger-plate-ink)]' : report.reportType === 'CUKAI' ? 'bg-[var(--raised)] border-[var(--amber)] text-[var(--amber)]' : 'bg-[var(--raised)] border-[var(--amber)] text-[var(--ink)]'} `}
                                             >
                                                 <CheckCircle size={18}/> {disputed ? 'Approve Short Count' : 'Verify'}
                                             </button>
