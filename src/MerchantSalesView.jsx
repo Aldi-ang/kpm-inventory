@@ -906,6 +906,20 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
         } catch (err) { notify("Failed to deploy sample: " + err); } finally { setIsProcessingSale(false); }
     };
 
+    /* Clearing the terminal after a deal. Extracted because a sale that COMMITS and then hits a
+       failure in a later step must also clear — otherwise the cart survives, the agent is told
+       "Transaction Failed", and he presses MAKE DEAL again on a sale that already went through. */
+    const resetTerminalAfterDeal = () => {
+        setCart([]); setCustomerName(""); setLockedTier(null); setSelectedCustomerInfo(null);
+        setGpsStatus('idle'); setAgentLocation(null); setTxProofPhoto(null);
+        setIsReturMode(false); setManualOverride(false); setReturType('EXCHANGE');
+        setNooForm({ phone: '', address: '', requestedTier: defaultNooTier, photoUrl: null });
+        // territoryClaim is only ever written by handleCustomerSelect. A walk-in sale typed by
+        // hand never calls it, so without this the PREVIOUS customer's owner name stays in state
+        // and stamps territoryOverride on an innocent sale. proximityAck: same reason.
+        setTerritoryClaim(null); setProximityHit(null); setProximityAck(null);
+    };
+
     const handleFinalDeal = async () => {
         if (cart.length === 0 || !customerName.trim() || !txProofPhoto || isProcessingSale) return;
         setIsProcessingSale(true); 
@@ -913,6 +927,8 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
         const finalCust = customerName.trim();
         const finalCart = [...cart];
         const finalTotal = isReturMode && returType === 'EXCHANGE' ? 0 : cartTotal;
+
+        let committed = false;   // see the catch: a post-commit failure must not read as "failed"
 
         // The company owes nothing back on a completed sale, so a cash refund is a granted
         // privilege, not a default one. Hiding the switch is not enough on its own — returType
@@ -972,6 +988,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
             };
 
             const trueAgentName = await onProcessSale(finalCust, dbMethod, finalCart, newStorePayload, proofPayload);
+            committed = true;   // everything past this point is POST-commit: the sale already exists
             const agentFallback = typeof trueAgentName === 'string' ? trueAgentName : (user?.displayName || user?.email?.split('@')[0] || 'Admin');
          
             const generatedIOUs = finalCart.filter(i => isReturMode && returType === 'EXCHANGE' && i.fulfillment === 'IOU').map(i => ({
@@ -1156,15 +1173,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
 
             window.dispatchEvent(new CustomEvent('trigger-telemetry-ping'));
 
-            setCart([]); setCustomerName(""); setLockedTier(null); setSelectedCustomerInfo(null);
-            setGpsStatus('idle'); setAgentLocation(null); setTxProofPhoto(null);
-            setIsReturMode(false); setManualOverride(false); setReturType('EXCHANGE');
-            setNooForm({ phone: '', address: '', requestedTier: defaultNooTier, photoUrl: null });
-            // territoryClaim is only ever written by handleCustomerSelect. A walk-in sale
-            // typed by hand never calls it, so without this line the PREVIOUS customer's
-            // owner name stays in state and stamps territoryOverride on an innocent sale.
-            // proximityAck is cleared for the same reason: it must not carry to the next NOO.
-            setTerritoryClaim(null); setProximityHit(null); setProximityAck(null);
+            resetTerminalAfterDeal();
             // The merchant has no permanent space on screen - he shows up on a committed
             // deal and leaves, borrowing CapybaraMascot's slide-in/out. Deal commit ONLY:
             // never on add-to-cart, so a 15-line basket stays silent until it is paid.
@@ -1197,7 +1206,18 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                showing it. The alcove bubble keys off the mood, so it goes quiet on schedule
                either way. */
             setTimeout(() => setMerchantMood("idle"), 3000);
-        } catch (error) { notify("Transaction Failed! Please try again."); }
+        } catch (error) {
+            if (committed) {
+                /* The sale is ALREADY in the database. Saying "failed" here is what made agents
+                   press MAKE DEAL again and bill the customer twice, because the cart was still
+                   on screen. Report the truth and clear the terminal. */
+                console.error("Post-commit step failed:", error);
+                notify("Sale SAVED. A follow-up step failed (Utang Barang record or store update). Do NOT repeat this sale - tell the admin.");
+                resetTerminalAfterDeal();
+            } else {
+                notify("Transaction Failed! Please try again.");
+            }
+        }
         finally { setIsProcessingSale(false); }
     };
 

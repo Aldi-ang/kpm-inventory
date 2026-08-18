@@ -159,5 +159,21 @@ ok('App passes it down to the terminal', /allowCashRefund=\{userRole === 'ADMIN'
 ok('Fleet & Roster can grant it, and new agents start without it',
    /allowCashRefund: false,/.test(fleet) && /newAgent\.allowCashRefund/.test(fleet));
 
+
+/* -- #9 . a post-commit failure said "failed", cart survived, agent sold it twice --------- */
+section('#9. A sale that already committed never reads as "failed"');
+ok('the commit is flagged the moment onProcessSale returns',
+   /await onProcessSale\([^)]*\);\s*[\r\n]+\s*committed = true;/.test(merchant));
+ok('the flag starts false inside the handler', /let committed = false;/.test(merchant));
+ok('the catch branches on it instead of always saying failed',
+   /if \(committed\) \{[\s\S]{0,600}\} else \{[\s\S]{0,200}Transaction Failed/.test(merchant));
+ok('the committed path tells him NOT to repeat the sale',
+   /Do NOT repeat this sale/.test(merchant));
+ok('the committed path CLEARS the terminal, which is what stops the double sale',
+   /Do NOT repeat this sale[\s\S]{0,200}resetTerminalAfterDeal\(\)/.test(merchant));
+ok('the reset exists once, not copy-pasted into both paths',
+   (merchant.match(/const resetTerminalAfterDeal = \(\) => \{/g) || []).length === 1 &&
+   (merchant.match(/resetTerminalAfterDeal\(\);/g) || []).length === 2);
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);
