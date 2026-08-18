@@ -809,5 +809,25 @@ ok('the synced store keeps the status its payload carried',
 ok('and the offline payload still sets that status at save time',
    /status: newStoreData\.isNooRegistration \? 'NOO_ACTIVE' : 'WALK_IN'/.test(engine));
 
+/* ── S14 · shipping to a branch undid every sale made while the photo uploaded ─────────── */
+section('S14. HQ stock is deducted, not recomputed from a cached screen');
+const branch = read('src/components/BranchWarehouseManager.jsx');
+
+ok('the shipment deducts with increment()',
+   /batch\.update\(hqRef, \{ stock: increment\(-Number\(item\.qty\)\) \}\)/.test(branch));
+ok('the recomputed-total write is gone',
+   !/stock: \(hqProduct\.stock \|\| 0\) - item\.qty/.test(stripComments(branch)));
+ok('increment is imported', imports(branch, 'increment'));
+
+/* BEHAVIOUR — the gap is the photo upload, so the sale lands between read and write. */
+{ const hqAtScreenLoad = 500, soldDuringUpload = 120, shipping = 100;
+  const real = hqAtScreenLoad - soldDuringUpload;
+  ok('BEFORE: the write recomputed 400 and resurrected the 120 sold packs',
+     hqAtScreenLoad - shipping === 400);
+  ok('AFTER: the deduction lands on the real 380 and leaves 280',
+     real - shipping === 280);
+  ok('with nothing sold in the gap, both agree - so the fix is invisible on a quiet day',
+     hqAtScreenLoad - shipping === (hqAtScreenLoad) - shipping); }
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Package, ArrowRight, CheckCircle, XCircle, AlertCircle, Clock, Send, Truck, ShieldCheck, Globe, MapPin, Pencil, MinusCircle, PlusCircle, User, FileText, Camera, UploadCloud, ChevronDown, ChevronUp, Check, Eye, Trash2, Save, X } from 'lucide-react';
-import { collection, doc, onSnapshot, writeBatch, serverTimestamp, updateDoc, deleteDoc, runTransaction } from 'firebase/firestore';
+import { collection, doc, onSnapshot, writeBatch, serverTimestamp, updateDoc, deleteDoc, runTransaction, increment } from 'firebase/firestore';
 import { savePhotoAndGetReference, compressImageToBase64 } from '../utils/helpers';
 import { confirmAction } from './ConfirmGate.jsx';
 import { notify } from './Toast.jsx';
@@ -288,10 +288,23 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
             const photoPath = `artifacts/${appId}/users/${masterUserId}/photos/shipment_${isFulfilling.id}_${Date.now()}.jpg`;
             const photoUrl = await savePhotoAndGetReference(storage, base64Photo, photoPath, appSettings?.usePhotoStorage);
 
+            /* 🚀 FIX: ship the DIFFERENCE, not a recomputed total. This wrote
+               (the number my screen was showing) - (what I am shipping), and the number the
+               screen was showing was read before the two long waits above — compressing the
+               package photo and uploading it, which on a phone is seconds and sometimes minutes.
+               Anything sold in that gap was silently undone: HQ holds 500, a salesman sells 120
+               while the photo uploads, shipping 100 wrote 400 instead of 280 and the 120 sold
+               packs came back from the dead, permanently. increment() applies the deduction
+               server-side against whatever the stock really is when the write lands.
+
+               ponytail: the over-ship guard above still reads the screen's copy, so it stays
+               best-effort — a sale during the gap can now drive stock slightly negative instead
+               of silently inflating it. That failure is visible and self-correcting; the old one
+               was neither. Make it exact by moving the check into a runTransaction if it ever
+               bites. */
             for (const item of fulfillmentCart) {
-                const hqProduct = globalInventory.find(p => p.id === item.productId);
                 const hqRef = doc(db, `artifacts/${appId}/users/${masterUserId}/products`, item.productId);
-                batch.update(hqRef, { stock: (hqProduct.stock || 0) - item.qty });
+                batch.update(hqRef, { stock: increment(-Number(item.qty)) });
             }
 
             const orderRef = doc(db, `artifacts/${appId}/users/${masterUserId}/stock_requests`, isFulfilling.id);
