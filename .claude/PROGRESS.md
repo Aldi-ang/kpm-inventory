@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-18 16:38 WIB (KPM app session)** · 🔧 19 FIXES · 📋 ONE PROMPT READY · branch `phase0-solid-ground`
+**Updated: 2026-08-18 16:47 WIB (KPM app session)** · 🔧 20 FIXES · 📋 ONE PROMPT READY · branch `phase0-solid-ground`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -12,6 +12,14 @@
 > 📏 **KEEP THIS FILE UNDER ~350 LINES.** When it passes that, cut the oldest day into the same
 > archive rather than letting it grow back. This file holds WHERE THE WORK STANDS; the archive
 > and `A-Brain/Wiki/Log.md` hold how it got there.
+
+## 🟠 2026-08-18 16:47 — pack-size maths: 4 broken conversions → `convertToBks`. `f51a3a9`
+
+`git show f51a3a9` for the story. Worst: Load Canvas added packs onto a Slop-counted row —
+warehouse lost 10, van gained 100. Build clean · 599/0 · 177/0 · mixed-units 11/11 · 6/6 · 9/9 ·
+7/7. Red-first 171/6. Next job: **stock-count approval erases the day** (`.claude/NEXT-SESSION.md`).
+
+*(First entry written under the tell-it-once rule below — one line and a hash, not the story.)*
 
 ## 📏 STANDING RULE — TELL IT ONCE (Aldi, 2026-08-18: *"yes"*)
 

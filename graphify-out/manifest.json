@@ -50,8 +50,8 @@
     "semantic_hash": ""
   },
   "src/App.jsx": {
-    "mtime": 1787045747.6966898,
-    "ast_hash": "5197cce83f4ff39990c771fe910dc00d",
+    "mtime": 1787046325.7703216,
+    "ast_hash": "ed9cc1470394d2d9447486b7e69e557c",
     "semantic_hash": ""
   },
   "src/ConsignmentFinanceView.jsx": {
@@ -65,8 +65,8 @@
     "semantic_hash": ""
   },
   "src/FleetCanvasManager.jsx": {
-    "mtime": 1787029075.0617447,
-    "ast_hash": "502bd543a6804af2126609d59bb0ebdd",
+    "mtime": 1787046325.7713218,
+    "ast_hash": "0bb618b5ebadd120d09bda83733b61df",
     "semantic_hash": ""
   },
   "src/HallOfFameView.jsx": {
@@ -85,8 +85,8 @@
     "semantic_hash": ""
   },
   "src/MerchantSalesView.jsx": {
-    "mtime": 1787045242.939018,
-    "ast_hash": "406c0a589ed2478f8647d9dca352ffca",
+    "mtime": 1787046325.7733207,
+    "ast_hash": "1a9d8e6d0452f27fb44e7664e2c5c82d",
     "semantic_hash": ""
   },
   "src/MusicPlayer.jsx": {
@@ -210,8 +210,8 @@
     "semantic_hash": ""
   },
   "src/hooks/useTransactionEngine.js": {
-    "mtime": 1787033726.783957,
-    "ast_hash": "f2d861b458e1e5e985da6c3b5ad72cda",
+    "mtime": 1787046325.7733207,
+    "ast_hash": "b9039925d81ce0bbfdf8e36c9e53bb92",
     "semantic_hash": ""
   },
   "src/main.jsx": {
@@ -570,8 +570,8 @@
     "semantic_hash": ""
   },
   ".claude/PROGRESS.md": {
-    "mtime": 1787045413.214745,
-    "ast_hash": "97f74efbcb51f381cd0617f17e21458b",
+    "mtime": 1787046130.9056287,
+    "ast_hash": "74edec159efad1234fb613f191f41abe",
     "semantic_hash": ""
   },
   ".claude/pre-compact-context.md": {
@@ -755,13 +755,13 @@
     "semantic_hash": ""
   },
   "src/config/logicFixes.selfcheck.mjs": {
-    "mtime": 1787045762.79697,
-    "ast_hash": "858207b9bc7005b883e50f56027ad7ea",
+    "mtime": 1787046316.7312646,
+    "ast_hash": "97b1e05777220eb259ed0b82f66020f1",
     "semantic_hash": ""
   },
   ".claude/NEXT-SESSION.md": {
-    "mtime": 1787045337.4418697,
-    "ast_hash": "9023375e368ff0f2fa94dee720103861",
+    "mtime": 1787045891.7806487,
+    "ast_hash": "4739aa6a53115301a07541d794e4ef56",
     "semantic_hash": ""
   }
 }

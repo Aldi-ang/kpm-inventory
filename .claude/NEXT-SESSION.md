@@ -2,61 +2,59 @@
 
 ---
 
-The pack-size maths is hand-written in about ten places and three of them are wrong. The correct
-version already exists as `convertToBks(qty, unit, product)` in `src/utils/helpers.js`. This is not
-"write a helper" — it is "call the helper that is already there", and then make it impossible to
-hand-write an eleventh copy.
+Approving a stock count silently undoes the whole day. Fix it so a count corrects the stock
+instead of replacing it.
 
-Read the files, do not trust these line numbers.
+WHERE: `src/StockOpnameView.jsx` — approval writes the counted number around ~281 and ~283, and
+the count is snapshotted at submit around ~220-236. Read the file, do not trust those numbers.
 
-**THE THREE THAT ARE WRONG — fix these first, by REPLACING the maths with a `convertToBks` call,
-never by patching the arithmetic in place:**
+WHAT HAPPENS: the branch counts in the morning and submits. HQ approves that evening. On approval
+the app writes the MORNING number straight over stock as it is NOW.
 
-1. `src/FleetCanvasManager.jsx` ~321 — the worst one. Load Canvas always loads in PACKS, and when
-   the van already has a row for that product it adds the two numbers together with no conversion
-   at all. If that row is counted in Slop, loading 10 packs adds **10 Slop**: the warehouse loses
-   10 and the van gains 100. Clear Canvas, about sixty lines below in the same file (~379),
-   converts properly — which is exactly how the two ends stop agreeing.
-2. `src/hooks/useTransactionEngine.js` ~415 — on a consignment return it converts the VAN's stock
-   using the unit of the **returned item** instead of the unit of the **van row**. Van row in Slop
-   plus a return in packs means Slop numbers treated as pack numbers.
-3. `src/App.jsx` ~3132 and ~3142 — the sampling edit screen handles **Slop only**. A van row counted
-   in Bal or Karton is treated as single packs, so editing a sample can wipe out or invent a large
-   amount of stock. The correct four-size version sits about sixty lines above it in the same file.
+    08:00  branch counts 100 packs, submits
+    daytime  30 sold
+    18:00  an agent returns 20 at EOD
+           real stock is 90
+    20:00  HQ approves. Stock is set to 100.
 
-**THE TRAP, and it is the whole job: `convertToBks` takes a UNIT, and which unit you pass is the
-bug.** Site 2 above is already calling correct maths — with the wrong unit. Copy a call over with
-`item.unit` where the code needs `vanRow.unit` and you have reproduced the same defect in tidier
-clothes, with the check passing. For every site you touch, say in the reply WHOSE unit it must be —
-the row being changed, or the thing changing it — and put that in a behaviour check: a van row
-counted in Slop, a movement expressed in packs, and the resulting van quantity in packs.
+Ten packs appear from nowhere, the day's movement is erased, and nobody is told. It is easy to
+miss because the confirmation says "this will permanently overwrite the inventory" — which is
+CORRECT at the moment of counting, and wrong hours later.
 
-Second trap: site 1 is not only a missing conversion. Before editing, establish what unit that van
-row actually stores — if rows are held in their own unit rather than in packs, converting the
-incoming quantity is only half of it and the sum has to end up in the row's unit. Read Clear Canvas
-at ~379 first; it is the end that already works, and it decides the answer.
+THE FIX: the audit already stores `expectedStock`, what the system believed at count time. So the
+real correction the counter found is already known. Apply the DIFFERENCE, not the number:
 
-**THEN WRITE THE FINDER, the same way `S5` in `logicFixes.selfcheck.mjs` did for store names.**
-That guard found 8 private copies of the name rule in one run after four sessions of finding them
-by hand, three at a time. Do the same here: scan `src/`, comments stripped, for hand-written
-pack-size maths — the tell is `packsPerSlop` or `slopsPerBal` or `balsPerCarton` appearing in a
-file **outside a `convertToBks` call** — and fail with `file:line`. Allow `helpers.js`, which is
-where the real rule lives. Expect it red; the remaining ~7 correct-but-duplicated copies are the
-list of what to replace. Replace what you can, and if any must stay, say which and why.
+    new stock = stock right now + (what was counted - what the system expected at count time)
 
-Third trap: the guard's tell must not fire on `helpers.js` itself, on the checks in `src/config/`,
-or on a product FORM that legitimately edits `packsPerSlop` as a field. Scope it and say what it
-deliberately ignores — a guard that cries wolf gets deleted in a week.
+The day's sales survive and the counter's correction still lands.
+
+THE TRAP, and it is the whole job: `expectedStock` must be the value at COUNT time, not at
+approval time. If any code path refreshes or recomputes it when the approval screen opens, the
+difference collapses to zero and the fix quietly does nothing — no error, no wrong number, just a
+correction that never applies. Prove which one it is before editing, and put a behaviour check on
+the full sequence: expected 100, counted 100, then 30 sold and 20 returned, approve → 90, not 100.
+Then the case that matters most: expected 100, counted 95 (five really missing), 30 sold, 20
+returned, approve → 85.
+
+Second trap: stock can move between approval being pressed and the write landing. If the write is
+not already inside a `runTransaction`, adding a difference to a stale read is its own version of
+this bug. Check first; if it is a plain read-then-write, that is part of the fix, not a follow-up.
+
+THE ALTERNATIVE, and say which you chose and why: refuse the approval when current stock no longer
+matches `expectedStock`, and ask for a fresh count. Safer, but it costs Aldi a second count every
+time a day's trading happens between count and approval — which is every time. Recommend the
+difference method unless the file shows a reason it cannot work; either way, put the rejected one
+in a check so it cannot be quietly adopted later.
 
 CONTEXT ALREADY ESTABLISHED, do not re-derive: `convertToBks(qty, unit, product)` in
-`src/utils/helpers.js` handles all four sizes (Bks → Slop → Bal → Karton) and defaults sensibly.
-`FleetCanvasManager.jsx:379`, `MerchantSalesView.jsx:1410` and `ConsignmentFinanceView.jsx` already
-call it. Backlog source: `A-Brain/Backlog/The pack-size maths is copy-pasted in six places and they
-disagree.md` (title says seven; a seventh copy turned up on a second pass).
+`src/utils/helpers.js` is the ONE pack-size rule — four hand-written copies were replaced with it
+in `f51a3a9`, and `logicFixes.selfcheck.mjs` fails any one-line size ladder that stops before
+Karton. If this fix touches unit maths, call the helper. Backlog source:
+`A-Brain/Backlog/Approving a stock count erases everything that happened since the count.md`.
 
 Verify chain, paste the numbers:
 npm run build; node src/config/integration.audit.mjs; node src/config/logicFixes.selfcheck.mjs; node src/config/mixedUnits.selfcheck.mjs
-Expected: build clean, 599/0, 163/0 plus whatever you add, mixedUnits green.
+Expected: build clean, 599/0, 177/0 plus whatever you add, 11/11.
 
 When it is committed, rewrite this file (.claude/NEXT-SESSION.md) with the NEXT single job.
 
@@ -65,17 +63,13 @@ When it is committed, rewrite this file (.claude/NEXT-SESSION.md) with the NEXT 
 <details>
 <summary>Queue behind it — for the next session to promote from, not to paste</summary>
 
-- **Same disease, no helper yet:** the price-tier ladder `priceRetail / priceEcer / priceGrosir` is
-  written out five separate times in `MerchantSalesView.jsx` (~82, ~541, ~602, ~667, ~1405). None is
-  wrong today. By the same argument there should be one helper and one guard.
+- `Clear Canvas can create stock out of thin air.md` — same screen family, read it next to this one.
+- ~20 correct-but-duplicated pack-size copies remain. Not urgent. Replace one when its file is
+  being edited anyway; do not open a sweep for them.
+- Same disease, no helper yet: the price ladder `priceRetail / priceEcer / priceGrosir` is written
+  out five times in `MerchantSalesView.jsx` (~82, ~541, ~602, ~667, ~1405). None wrong today.
 - **Tell him before he presses it:** the RPG Migration button in `MapMissionControl` re-banks
-  `lifetimeXP` / `seasonXP`. After `a3a9cf6` those numbers come out HIGHER for shops whose history
-  was split by spelling. Nothing is wrong until he presses it.
-- **Known gap from `883a62e`:** the customer directory (`CustomerManager`) still shows the legacy
-  "(Retail)" ending, because it is the one screen that writes customer documents in bulk and must
-  keep receiving raw names. Closing it means stripping at its render sites only, not at its data.
-- The `S5` name guard only catches `.trim().toLowerCase()`. `.toLowerCase().trim()` or
-  `String(x).toLowerCase()` would slip past. Widen it next time anything touches that check.
-- `storesServed` in the career doc is accumulated with `increment()`, so days submitted before
-  `ef437b1` are banked with the inflated count. Nothing can correct them retroactively.
+  XP; after `a3a9cf6` those numbers come out higher for shops whose history was split by spelling.
+- Known gap from `883a62e`: the customer directory still shows the legacy "(Retail)" ending,
+  because it is the one screen that writes customer documents in bulk.
 </details>
