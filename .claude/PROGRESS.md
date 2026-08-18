@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-18 20:14 WIB (KPM app session)** · 🔧 34 FIXES · 📋 ONE PROMPT READY · branch `phase0-solid-ground`
+**Updated: 2026-08-18 20:16 WIB (KPM app session)** · 🔧 34 FIXES · 📋 ONE PROMPT READY · branch `phase0-solid-ground`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -15,24 +15,33 @@
 
 ## ⏳ WAITING ON ALDI — verbatim, do not paraphrase
 
-~~**1. What is a missing pack worth in rupiah?**~~ ✅ **ANSWERED 20:14, SHIPPED `43f8059`.**
-His words: *"if there is missing pack then agent needs to buy the missing pack on retail price as
-a compensation ... the bounties panel need to specify how the bounties number are calculated"*.
-
-**2. What colour replaces the green Verify button?** Green is banned by his own palette law and the
+**1. What colour replaces the green Verify button?** Green is banned by his own palette law and the
 button marks the routine EOD path. Picking the replacement is taste, not logic. Gold, slate, or
 something else.
 
-**3. The Alucard lessons file is jammed** — 5 of 5 slots used and all have fired, so nothing new
+**2. The Alucard lessons file is jammed** — 5 of 5 slots used and all have fired, so nothing new
 can be recorded. His pick: (a) archive the oldest into `A-Brain/Wiki/Lessons-Archive.md` anyway,
 or (b) change §8's archive rule. Alucard may not edit SKILL.md itself.
 
-✅ **Untested by him:** the shakedown card, now 17 tests —
+**3. Should a DAMAGED-goods penalty be retail too?** He ruled that a MISSING pack is bought back
+at retail. The quarantine charge in Stock Opname still uses cost price (HPP) — a different case,
+damaged rather than missing, and he has not ruled on it. Left untouched on purpose.
+
+✅ **Untested by him:** the shakedown card, now **19 tests** (18 and 19 are the retail bounties) —
 https://claude.ai/code/artifact/a42ce819-9d1a-46a8-8ae8-0291df6765ef
 
 > Older open questions (tukar barang, and others) still live in the **❓ WAITING ON ALDI —
 > verbatim** section further down this file. That section was NOT touched by this trim.
 
+
+## 🟠 2026-08-18 20:16 — notes only, no code
+
+Question 1 answered and shipped, so it moved out of WAITING and into the log below. One NEW
+question took its place: **damaged goods still charge cost price, not retail** — he ruled on
+MISSING packs, not damaged ones, so Stock Opname was deliberately left alone. Test card is at 19.
+
+Today's log is 8 entries, over the ~5 target; the older ones stay until the next notes pass,
+because the file's real weight is the reference material below ▶ NOW, not these.
 
 ## 🟠 2026-08-18 20:14 — a missing pack is bought back at retail. ANSWERED AND SHIPPED. `43f8059`
 
