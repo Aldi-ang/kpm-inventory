@@ -108,7 +108,16 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
         let debts = [];
         custTrans.forEach(t => {
             if (t.type === 'SALE' && t.paymentType === 'Titip') {
-                debts.push({ date: t.date, remaining: t.total });
+                /* tempo travels WITH its own debt. The orange panel used to work out "overdue"
+                   from its own separate pass; now that both numbers come from this engine, the
+                   per-sale due date has to live on the debt it belongs to — a shop can hold two
+                   consignments agreed on different terms. */
+                debts.push({
+                    date: t.date,
+                    remaining: t.total,
+                    tempo: t.tempoDays || 7,
+                    saleMs: t.timestamp?.seconds ? t.timestamp.seconds * 1000 : new Date(t.date).getTime()
+                });
             }
             if (t.type === 'CONSIGNMENT_PAYMENT' || t.type === 'RETURN') {
                 let deduction = t.type === 'RETURN' ? Math.abs(t.total) : (t.amountPaid || 0);
@@ -139,29 +148,33 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
         if (ageDays >= 14) status = 'RED';
         else if (ageDays >= 8) status = 'YELLOW';
 
-        return { totalDebt, ageDays, status, oldestDate };
+        // Overdue means any UNPAID consignment is past its own agreed tempo.
+        const now = Date.now();
+        const isOverdue = activeDebts.some(d => now > (d.saleMs + (d.tempo * 86400000)));
+
+        return { totalDebt, ageDays, status, oldestDate, isOverdue };
     }, [customerName, transactions]);
 
-    const selectedCustomerDebts = React.useMemo(() => {
-        if (!customerName || !transactions || transactions.length === 0) return { totalDebt: 0, isOverdue: false };
-        let titipTotal = 0; let paymentTotal = 0; let isOverdue = false;
-        const now = new Date().getTime();
+    /* 🚀 ONE debt number, not two. This screen used to work out what a store owes TWICE — the red
+       "OWES" line from the FIFO engine above, and this panel from its own separate pass — and then
+       showed both at once. They disagreed three ways:
 
-        transactions.forEach(t => {
-            const tCust = t.customerName || t.customer;
-            if (tCust?.toLowerCase() === customerName.toLowerCase()) {
-                if (t.paymentType === 'Titip' || t.method === 'Titip') {
-                    titipTotal += (t.total || 0);
-                    const saleDate = t.timestamp?.seconds ? t.timestamp.seconds * 1000 : (t.timestamp || new Date(t.date).getTime());
-                    const tempo = t.tempoDays || 7;
-                    if (now > (saleDate + (tempo * 86400000))) isOverdue = true;
-                }
-                if (t.type === 'CONSIGNMENT_PAYMENT') paymentTotal += (t.amountPaid || t.total || 0);
-            }
-        });
-        const totalDebt = titipTotal - paymentTotal;
-        return { totalDebt: Math.max(0, totalDebt), isOverdue: totalDebt > 0 ? isOverdue : false };
-    }, [customerName, transactions]); 
+         · RETURNS. The engine subtracts goods the store handed back. This pass ignored them, so
+           returned goods never reduced what the store appeared to owe.
+         · WHAT COUNTS. The engine counts a consignment SALE. This counted anything marked Titip,
+           including record types that are not sales.
+         · THE NAME. The engine now matches through storeKey; this compared raw lowercased names,
+           so a stray trailing space made it a different shop. (Fixed app-wide in f1e3b28.)
+
+       It reads the engine now. The overdue flag was the one thing this pass had that the engine
+       did not, so the tempo moved onto each debt up there rather than being dropped.
+
+       The `t.customer` fallback that used to be here is gone: no transaction in this codebase
+       writes that field. */
+    const selectedCustomerDebts = React.useMemo(() => ({
+        totalDebt: debtInfo?.totalDebt || 0,
+        isOverdue: debtInfo?.isOverdue || false
+    }), [debtInfo]);
 
     // --- GEO-FENCE & NOO STATE ---
     const [selectedCustomerInfo, setSelectedCustomerInfo] = useState(null);

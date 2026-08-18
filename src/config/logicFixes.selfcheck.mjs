@@ -829,5 +829,52 @@ ok('increment is imported', imports(branch, 'increment'));
   ok('with nothing sold in the gap, both agree - so the fix is invisible on a quiet day',
      hqAtScreenLoad - shipping === (hqAtScreenLoad) - shipping); }
 
+/* ── S15 · the sales screen showed two different debts for one shop ────────────────────── */
+section('S15. One debt number, from one calculation');
+
+ok('the panel reads the FIFO engine instead of its own pass',
+   /const selectedCustomerDebts = React\.useMemo\(\(\) => \(\{[\s\S]{0,140}debtInfo\?\.totalDebt/.test(merchant));
+ok('the second, return-blind calculation is gone',
+   !/titipTotal \+= \(t\.total \|\| 0\)/.test(stripComments(merchant)));
+ok('the loose "anything marked Titip" rule is gone',
+   !/t\.paymentType === 'Titip' \|\| t\.method === 'Titip'/.test(stripComments(merchant)));
+ok('tempo now travels with the debt it belongs to',
+   /debts\.push\(\{[\s\S]{0,200}tempo: t\.tempoDays \|\| 7/.test(merchant));
+ok('overdue is decided from UNPAID debts only',
+   /const isOverdue = activeDebts\.some\(d => now > \(d\.saleMs \+ \(d\.tempo \* 86400000\)\)\)/.test(merchant));
+
+/* BEHAVIOUR — the returns case, which is the one that moved money. */
+{ const DAY = 86400000, now = 1_000 * DAY;
+  const fifo = (rows) => { const debts = [];
+    rows.slice().sort((a, b) => a.day - b.day).forEach(t => {
+      if (t.type === 'SALE' && t.paymentType === 'Titip')
+        debts.push({ remaining: t.total, tempo: t.tempoDays || 7, saleMs: t.day * DAY });
+      if (t.type === 'CONSIGNMENT_PAYMENT' || t.type === 'RETURN') {
+        let left = t.type === 'RETURN' ? Math.abs(t.total) : (t.amountPaid || 0);
+        for (const d of debts) { if (left <= 0) break;
+          const take = Math.min(left, d.remaining); d.remaining -= take; left -= take; } }
+    });
+    const active = debts.filter(d => d.remaining > 0.01);
+    return { totalDebt: active.reduce((s, d) => s + d.remaining, 0),
+             isOverdue: active.some(d => now > d.saleMs + d.tempo * DAY) }; };
+
+  const rows = [
+    { day: 990, type: 'SALE', paymentType: 'Titip', total: 2000000, tempoDays: 7 },
+    { day: 995, type: 'CONSIGNMENT_PAYMENT', amountPaid: 500000 },
+    { day: 996, type: 'RETURN', total: -300000 } ];
+
+  ok('AFTER: 2.000.000 owed, 500.000 paid, 300.000 returned as goods -> 1.200.000',
+     fifo(rows).totalDebt === 1200000);
+  ok('BEFORE: the panel ignored the return and demanded 1.500.000',
+     2000000 - 500000 === 1500000);
+  ok('a return bigger than the debt floors at zero, it never goes negative',
+     fifo([rows[0], { day: 996, type: 'RETURN', total: -5000000 }]).totalDebt === 0);
+  ok('overdue fires when an unpaid consignment passes its own tempo',
+     fifo(rows).isOverdue === true);
+  ok('a fully settled shop is not overdue',
+     fifo([rows[0], { day: 991, type: 'CONSIGNMENT_PAYMENT', amountPaid: 2000000 }]).isOverdue === false);
+  ok('a fresh consignment inside its tempo is not overdue',
+     fifo([{ day: 999, type: 'SALE', paymentType: 'Titip', total: 100000, tempoDays: 7 }]).isOverdue === false); }
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);
