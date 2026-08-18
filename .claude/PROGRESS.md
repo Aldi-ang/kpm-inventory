@@ -13,6 +13,15 @@
 > archive rather than letting it grow back. This file holds WHERE THE WORK STANDS; the archive
 > and `A-Brain/Wiki/Log.md` hold how it got there.
 
+## 🟠 2026-08-18 13:3x WIB — KPM app track — PAUSED ON QUOTA, NOTHING HALF-DONE
+
+Plan quota hit 99%. **No work in flight, no uncommitted file, no half-edit.** The sale-engine
+fix below is shipped and committed; the vault is committed; `.claude/NEXT-SESSION.md` already
+holds the single next job (the `storeDebt` tally in `AgentProfileView.jsx`).
+
+**Exact next command when the quota resets** — open a fresh session, paste the only block in
+`.claude/NEXT-SESSION.md`. Nothing needs re-deriving first.
+
 ## 🟠 2026-08-18 13:2x WIB — KPM app track — SALE-ENGINE NAME BUGS: SHIPPED `264c138`
 
 Both name bugs in `handleMerchantSale` fixed together — same root cause, the engine treated the
