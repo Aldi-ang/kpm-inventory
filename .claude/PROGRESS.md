@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-18 20:32 WIB (KPM app session)** · 🔧 35 FIXES · 📋 ONE PROMPT READY · branch `phase0-solid-ground`
+**Updated: 2026-08-18 20:38 WIB (KPM app session)** · 🔧 35 FIXES · 📋 ONE PROMPT READY · branch `phase0-solid-ground`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -18,9 +18,13 @@
 **1. What colour replaces the green Verify button?** He asked *"what verify button that u meant?"* —
 answered in chat: the big button under each pending setoran on the ADMIN side of the EOD screen,
 the one next to Reject / Reset. It is `bg-emerald-600`, green, banned by his own palette law.
-**Recommendation given: the gold plate**, which the Stock Opname approve button already uses.
-Waiting on his yes. (`bg-orange-600` on the cukai branch and `bg-red-700` on the bounty branch are
-hardcoded too and would move to tokens in the same pass.)
+He then asked to SEE it: **https://claude.ai/code/artifact/a39c7890-430e-4506-99ec-6d0a4dec9ab5**
+— three options in his real tokens, light/dark toggle, measured. **Reply expected: A, B, or leave it.**
+- **A gold plate** (recommended) 6,97 dark / 6,86 light · **B quiet raised + gold edge** 13,84 / 15,17
+- **C what is there today** — green **2,98 in dark**, orange **2,81 both**. Not merely off-palette:
+  the label on the button he presses nightly is under the 4,5 line, on the screen he uses at night.
+- The red short-count button stays red (5,11) whichever he picks.
+(`bg-orange-600` and `bg-red-700` on that same button are hardcoded too — all three move together.)
 
 ✅ **Untested by him:** the shakedown card, now **19 tests** (18 and 19 are the retail bounties) —
 https://claude.ai/code/artifact/a42ce819-9d1a-46a8-8ae8-0291df6765ef
@@ -28,6 +32,18 @@ https://claude.ai/code/artifact/a42ce819-9d1a-46a8-8ae8-0291df6765ef
 > Older open questions (tukar barang, and others) still live in the **❓ WAITING ON ALDI —
 > verbatim** section further down this file. That section was NOT touched by this trim.
 
+
+## 🟠 2026-08-18 20:38 — he asked to see the button colours, so they were measured
+
+*"i want to see it myself the color can u make artifact for that?"* → artifact published, three
+options rendered in his real tokens with a light/dark toggle. **The measuring turned a taste
+question into a defect:** today's green scores **2,98** in dark mode and the cukai orange **2,81**
+in both — under the 4,5 readability line, on the button pressed every night. Waiting on A / B / leave it.
+
+Verification note: the Browser pane would not composite a screenshot again. Did not fight it —
+served the page over `tools/theme-lab-server.mjs` and read the COMPUTED colours back instead, which
+caught a real bug a screenshot might not have: the sample card inherited the page's ink, so the
+light-mode sample had near-white text on a light card. Fixed and re-verified before republishing.
 
 ## 🟠 2026-08-18 20:32 — timestamp only; the note below was already current
 
