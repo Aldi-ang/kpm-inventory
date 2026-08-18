@@ -47,12 +47,6 @@
   "45": "dev-proxy.mjs",
   "46": "firebase.js",
   "47": "nextStop.js",
-  "48": "customerBrief.selfcheck.mjs",
-  "49": "dayStats.selfcheck.mjs",
   "50": "MerchantSalesView.jsx",
-  "51": "MerchantSalesView.jsx",
-  "52": "mixedUnits.selfcheck.mjs",
-  "53": "context-watch.mjs",
-  "55": "✅ THE LIGHT DUKE'S LEDGER IS BUILT — 524/524, contrast self-check passes",
-  "56": "🎉 PHASE 6 IS COMPLETE. `SettingsView.jsx` IS FULLY ON THE CONTROL SYSTEM."
+  "53": "context-watch.mjs"
 }
