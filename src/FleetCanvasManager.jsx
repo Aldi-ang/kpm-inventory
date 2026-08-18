@@ -322,7 +322,13 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                 const existingItemIndex = updatedCanvas.findIndex(item => item.productId === masterProduct.id);
 
                 if (existingItemIndex >= 0) {
-                    updatedCanvas[existingItemIndex].qty += qtyToLoad;
+                    /* 🚀 FIX: loading is always counted in packs, but the van row is counted in
+                       its OWN unit. Adding the two numbers raw meant loading 10 packs onto a
+                       Slop-counted row added 10 SLOP: the warehouse lost 10 and the van gained
+                       100. Clear Canvas, sixty lines below, already converts — which is how the
+                       two ends stopped agreeing. */
+                    const rowSize = convertToBks(1, updatedCanvas[existingItemIndex].unit, masterProduct);
+                    updatedCanvas[existingItemIndex].qty += loadInBks / rowSize;
                 } else {
                     updatedCanvas.push({ 
                         productId: masterProduct.id, 

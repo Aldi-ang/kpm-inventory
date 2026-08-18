@@ -451,12 +451,17 @@ export default function useTransactionEngine({
 
                 if (currentAgentProfileId && agentDoc && agentDoc.exists()) {
                     const canvasIdx = updatedCanvas.findIndex(c => c.productId === item.productId);
-                    let mCanvas = item.unit === 'Slop' ? (pData.packsPerSlop || 10) : item.unit === 'Bal' ? ((pData.slopsPerBal || 20) * (pData.packsPerSlop || 10)) : item.unit === 'Karton' ? ((pData.balsPerCarton || 4) * (pData.slopsPerBal || 20) * (pData.packsPerSlop || 10)) : 1;
-
+                    /* 🚀 FIX: the ratio must come from the VAN ROW's unit, not the returned
+                       item's. This built it from item.unit and then applied it to cItem.qty, so
+                       a van row counted in Slop plus a return counted in packs had Slop numbers
+                       treated as pack numbers. The incoming quantity is converted with its OWN
+                       unit — the two are different questions and were being answered once. */
                     if (canvasIdx > -1) {
                         let cItem = updatedCanvas[canvasIdx];
+                        const mCanvas = convertToBks(1, cItem.unit, pData);
                         const currentCanvasBks = cItem.qty * mCanvas;
-                        updatedCanvas[canvasIdx] = { ...cItem, qty: (currentCanvasBks + (item.qty * 1)) / mCanvas }; 
+                        const returnedBks = convertToBks(item.qty, item.unit, pData);
+                        updatedCanvas[canvasIdx] = { ...cItem, qty: (currentCanvasBks + returnedBks) / mCanvas };
                     } else {
                         updatedCanvas.push({ productId: item.productId, name: item.name, qty: item.qty, unit: 'Bks', priceTier: item.priceTier || 'Retail', calculatedPrice: pData.priceRetail || 0 });
                     }

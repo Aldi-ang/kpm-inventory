@@ -597,5 +597,59 @@ ok('the receivables row and the debt tally display the cleaned label',
   ok('and relabelling never merges two shops that were separate',
      key(label('Warung Sari Rasa')) !== key(label('Warung Bu Sari'))); }
 
+/* ── S8 · pack-size maths: four hand-written copies that disagreed with the helper ─────── */
+section('S8. Van-row conversions go through convertToBks, and use the ROW\'s unit');
+const fleet2 = read('src/FleetCanvasManager.jsx');
+
+ok('the consignment return converts the van row by the ROW unit',
+   /const mCanvas = convertToBks\(1, cItem\.unit, pData\);/.test(engine));
+ok('and converts the returned goods by their OWN unit',
+   /const returnedBks = convertToBks\(item\.qty, item\.unit, pData\);/.test(engine));
+ok('the cukai deduction handles Karton', /const mCanvas = convertToBks\(1, cItem\.unit, product\);/.test(merchant));
+ok('both sampling-edit sides handle all four sizes',
+   /convertToBks\(1, cItem\.unit, oldPData\)/.test(app) && /convertToBks\(1, cItem\.unit, newPData\)/.test(app));
+ok('Load Canvas converts packs into the van row\'s unit',
+   /const rowSize = convertToBks\(1, updatedCanvas\[existingItemIndex\]\.unit, masterProduct\);/.test(fleet2));
+
+/* THE FINDER, scoped to the shape that was actually broken: a one-line size ladder that starts
+   at Slop and stops early. Every correct copy names balsPerCarton; all three broken ones did
+   not. Deliberately NOT a ban on hand-written conversion — about twenty correct copies exist,
+   and a check that is red on day one is a check that gets deleted in a week. */
+const truncated = ['src/App.jsx', 'src/MerchantSalesView.jsx', 'src/hooks/useTransactionEngine.js',
+                   'src/FleetCanvasManager.jsx', 'src/StockOpnameView.jsx', 'src/EODReconciliationView.jsx']
+  .flatMap(f => stripComments(read(f)).split('\n')
+    .map((text, i) => ({ f, line: i + 1, text }))
+    .filter(l => /unit === 'Slop' \?/.test(l.text) && !/balsPerCarton/.test(l.text)))
+  .map(l => `${l.f}:${l.line}`);
+ok(`no size ladder stops before Karton${truncated.length ? ' — ' + truncated.join(', ') : ''}`,
+   truncated.length === 0);
+
+/* BEHAVIOUR — the REAL helper, imported, not a copy. Writing the maths out again here would be
+   the exact disease this section is about. */
+{ const { convertToBks } = await import('../utils/helpers.js');
+  const prod = { packsPerSlop: 10, slopsPerBal: 20, balsPerCarton: 4 };
+
+  ok('a Slop is 10 packs, a Bal 200, a Karton 800',
+     convertToBks(1, 'Slop', prod) === 10 && convertToBks(1, 'Bal', prod) === 200 && convertToBks(1, 'Karton', prod) === 800);
+  ok('an unknown unit leaves the quantity alone', convertToBks(7, 'Bks', prod) === 7);
+
+  // Consignment return: van row 3 Slop (30 packs), store returns 25 packs.
+  const row = { qty: 3, unit: 'Slop' };
+  const after = ((row.qty * convertToBks(1, row.unit, prod)) + convertToBks(25, 'Bks', prod)) / convertToBks(1, row.unit, prod);
+  ok('AFTER: 3 Slop plus 25 packs is 5.5 Slop, which is 55 packs', after === 5.5);
+  const brokenRatio = convertToBks(1, 'Bks', prod);   // the old code built this from the RETURNED item
+  ok('BEFORE: the same return made it 28 - it read 3 Slop as 3 packs',
+     ((row.qty * brokenRatio) + 25) / brokenRatio === 28);
+
+  // Load Canvas: van row 3 Slop, load 10 packs.
+  const loaded = row.qty + (10 / convertToBks(1, row.unit, prod));
+  ok('AFTER: loading 10 packs onto a 3-Slop row gives 4 Slop, which is 40 packs', loaded === 4);
+  ok('BEFORE: it gave 13 Slop - 130 packs, from a warehouse that only lost 10', row.qty + 10 === 13);
+
+  // Sampling edit: van row 2 Karton.
+  const karton = { qty: 2, unit: 'Karton' };
+  ok('AFTER: a 2-Karton row is 1600 packs', karton.qty * convertToBks(1, karton.unit, prod) === 1600);
+  ok('BEFORE: the Slop-only ladder called it 2 packs', karton.qty * 1 === 2); }
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

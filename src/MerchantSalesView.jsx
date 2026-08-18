@@ -879,7 +879,9 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                         if (canvasIdx === -1) throw "Product not found in your vehicle!";
                         
                         let cItem = updatedCanvas[canvasIdx];
-                        let mCanvas = cItem.unit === 'Slop' ? (product.packsPerSlop || 10) : cItem.unit === 'Bal' ? ((product.slopsPerBal || 20) * (product.packsPerSlop || 10)) : 1;
+                        /* 🚀 FIX: this chain stopped at Bal, so a van row counted in Karton was
+                           treated as single packs. convertToBks knows all four sizes. */
+                        const mCanvas = convertToBks(1, cItem.unit, product);
                         const newCanvasBks = (cItem.qty * mCanvas) - totalQtyDecimal;
                         if (newCanvasBks < 0) throw "Not enough stock in your vehicle!";
                         updatedCanvas[canvasIdx] = { ...cItem, qty: newCanvasBks / mCanvas };

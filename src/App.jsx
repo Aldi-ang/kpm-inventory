@@ -3170,7 +3170,10 @@ const handleGitHubMirror = async () => {
                       const oldCanvasIdx = updatedCanvas.findIndex(c => c.productId === editingSample.productId);
                       if (oldCanvasIdx > -1) {
                           let cItem = updatedCanvas[oldCanvasIdx];
-                          let mCanvas = cItem.unit === 'Slop' ? (oldPData.packsPerSlop || 10) : 1;
+                          /* 🚀 FIX: knew Slop only, so a van row counted in Bal or Karton was
+                             treated as single packs and editing a sample could invent or wipe
+                             out a large amount of stock. */
+                          const mCanvas = convertToBks(1, cItem.unit, oldPData);
                           updatedCanvas[oldCanvasIdx] = { ...cItem, qty: cItem.qty + (oldQtyInBks / mCanvas) };
                       } else {
                           updatedCanvas.push({ productId: editingSample.productId, name: editingSample.productName, qty: oldQtyInBks, unit: 'Bks' });
@@ -3180,7 +3183,7 @@ const handleGitHubMirror = async () => {
                       const newCanvasIdx = updatedCanvas.findIndex(c => c.productId === newProductId);
                       if (newCanvasIdx > -1) {
                           let cItem = updatedCanvas[newCanvasIdx];
-                          let mCanvas = cItem.unit === 'Slop' ? (newPData.packsPerSlop || 10) : 1;
+                          const mCanvas = convertToBks(1, cItem.unit, newPData);   // 🚀 same fix, deduct side
                           const currentBks = cItem.qty * mCanvas;
                           if (currentBks < newQtyInBks) throw `Not enough ${newProductName} in vehicle!`;
                           updatedCanvas[newCanvasIdx] = { ...cItem, qty: (currentBks - newQtyInBks) / mCanvas };
