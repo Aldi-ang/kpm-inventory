@@ -15,6 +15,43 @@
 
 ## ▶ NOW
 
+# 🔧 2026-08-18 — PLAN A UNDERWAY. 4 OF 7 CRITICAL FIXED + VERIFIED.
+
+Aldi chose **A (money first)**. Fixing the 7 Critical in order.
+
+| # | Fix | Commit | State |
+|---|---|---|---|
+| A1 | Rank scored in rupiah vs XP ladder (`AgentProfileView.jsx:557`) | `fd562f4` | ✅ done |
+| A2 | One IOU line forced whole basket to Cash (`MerchantSalesView.jsx:917,:930`) | `fd562f4` | ✅ done |
+| A3 | Buyback never restocks (`useTransactionEngine.js:163`) | — | 🔴 **BLOCKED on Aldi** |
+| A4 | Sector settings never saved (`MapMissionControl.jsx:611`) | `ed4b2b2` | ✅ done |
+| A5 | "Pricing Tier" wrote RPG rank (`MapMissionControl.jsx:1869`) | `ed4b2b2` | ✅ done |
+| A6 | Customer view-only unenforceable (`firestore.rules:138`) | — | draft next, DO NOT DEPLOY |
+| A7 | Employee-email hijack (`firestore.rules:214`) | — | draft next, DO NOT DEPLOY |
+
+Each commit verified with `npm run build` + `node src/config/integration.audit.mjs` → **599/0**.
+
+**A5 note — the obvious fix was wrong.** Dropping `priceTier` alone does NOT work: the read
+chain is `(priceTier || tier || pricingTier)` and `tier` held the same rank string. Had to make
+the select offer the real ladder Retail/Grosir/Ecer and seed `tier` to the bottom rank instead.
+
+## 🔴 A3 IS A BUSINESS DECISION, NOT A CODE ONE — ASKED, AWAITING ANSWER
+
+Buyback (Retur → Refund, condition GOOD) pays the store and adds the packs back **nowhere**.
+Fixing it means choosing a destination, and the code currently has no opinion:
+- **back onto the van** (`activeCanvas`) — agent can resell today; but the canvas `.map()` at
+  `useTransactionEngine.js:218` only touches products ALREADY on the van, so a product he is not
+  carrying needs a NEW canvas line pushed.
+- **to quarantine / HQ** — matches the existing `quarantineCargo` path (built at :25-26 from
+  `condition === DAMAGED` only) and the open Backlog item *Damaged goods and expired stamps need
+  a route to HQ*.
+
+Do NOT guess this one — wrong destination invents phantom stock, the exact bug class being fixed.
+
+---
+
+## ▶ NOW
+
 # ✅ 2026-08-18 — ALL 75 RE-VERIFIED AGAINST REAL CODE. 73 CONFIRMED, 1 DOWNGRADED, 0 IMAGINARY.
 
 Aldi doubted some findings ("some of the problem, i havent sees it exist tho"). Every claim was
