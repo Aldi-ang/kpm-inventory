@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-18 17:06 WIB (KPM app session)** · 🔧 26 FIXES · 📋 ONE PROMPT READY · branch `phase0-solid-ground`
+**Updated: 2026-08-18 17:17 WIB (KPM app session)** · 🔧 28 FIXES · 📋 ONE PROMPT READY · branch `phase0-solid-ground`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -12,6 +12,30 @@
 > 📏 **KEEP THIS FILE UNDER ~350 LINES.** When it passes that, cut the oldest day into the same
 > archive rather than letting it grow back. This file holds WHERE THE WORK STANDS; the archive
 > and `A-Brain/Wiki/Log.md` hold how it got there.
+
+## 🟠 2026-08-18 17:17 — one debt number, and 23 silent failures given a voice
+
+- **`2dbfc66`** — the sales screen worked out what a shop owes TWICE and showed both. One
+  subtracted returned goods, the other ignored them; one counted consignment sales, the other
+  counted anything marked Titip. Now one calculation, and the overdue flag moved onto each debt
+  so nothing was lost. 2.000.000 owed − 500.000 paid − 300.000 returned = **1.200.000**, where the
+  panel used to demand 1.500.000. This figure also decides transfer shortfalls and bounties.
+- **`b3f6dae`** — his law is every action reports. The map's store-detail panel had **five saves
+  in a row** that failed to a console that does not exist on a phone, including the **price tier**,
+  which decides what a shop pays for everything. Visit frequency also updated the screen BEFORE
+  the write, so failure looked identical to success — it puts the old value back now.
+  Then swept the class: 16 wordlessly empty catches across the money screens, 2 real (product
+  dimensions, the agent dropdown) now report, 14 cosmetic ones each carry one line saying why
+  silence is right there.
+- **Verified:** build clean · 599/0 · logic **223/0 → 240/0** · 11/11 · 9/9 · 7/7 · toast 54/0.
+
+⚠️ **Guard lesson that inverts the earlier one:** the empty-catch sweep must NOT strip comments —
+this codebase uses commented empty catches deliberately, and stripping made a decision look like an
+oversight (18 false hits). **Strip comments when a comment could FAKE a fix; keep them when the
+comment IS the fix.**
+
+Next: **the app day rolls over at 07:00, not midnight** — the route board forgets an early
+morning. Money is unaffected and that is already checked. `.claude/NEXT-SESSION.md`.
 
 ## 🟠 2026-08-18 17:06 — five stock bugs of ONE shape, all shipped
 
