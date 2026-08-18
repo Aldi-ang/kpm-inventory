@@ -15,6 +15,15 @@
 
 ## ▶ NOW
 
+> 📋 **Ready-made prompts for a fresh session: ** — copy one, paste,
+> go. Correct paths for the repo, the vault and the alucard skill are in it.
+> **Alucard now runs Karpathy + Caveman by DEFAULT** (§4 and §5, set 2026-08-18 on his word:
+> *"add karpathy guidelines while using caveman on default inside alucard"*), so neither has to
+> be asked for again. Caveman carve-outs: **questions stay descriptive**, and **every reply ends
+> with what was just done**.
+
+
+
 # 🔧 PLAN A UNDERWAY — 12 FIXES SHIPPED, EVERY ONE SELF-CHECKED
 
 Aldi chose **A (money first)** off the 75-problem register, then re-scoped how I work twice:
