@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-18 12:16 WIB (KPM app session)** · 🔧 12 FIXES · 📋 6 JOB PROMPTS READY · branch `phase0-solid-ground`
+**Updated: 2026-08-18 12:24 WIB (KPM app session)** · 🔧 12 FIXES · 📋 ONE PROMPT READY · branch `phase0-solid-ground`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -15,13 +15,11 @@
 
 ## ▶ NOW
 
-> 📋 **`.claude/NEXT-SESSION.md` holds SIX job-specific prompts — copy one, paste, go.**
-> Not a generic "keep going": each block names the exact file and line, quotes what the code
-> actually does, says what it costs him, gives the smallest fix, **and names the trap that would
-> make a lazy patch wrong.** Order: 1 hand-off-by-name (`App.jsx:1628`, start here) · 2 the two
-> name-join bugs in the sale engine (paired, same root cause) · 3 Consignment Risk reading Rp 0 ·
-> 4 `getDoc` never imported · 5 the two `firestore.rules` holes (alone, emulator, never deploy) ·
-> 6 build tukar barang. Repo, vault and alucard paths are all spelled out in it.
+> 📋 **`.claude/NEXT-SESSION.md` holds exactly ONE job — copy the only block on it, paste, go.**
+> **It is a standing duty to rewrite that file with the next single job before any session that
+> shipped work ends.** Aldi, 2026-08-18: *"just prepare me 1 each time instead"* — a menu is how
+> the wrong prompt gets pasted. The remaining queue lives in a collapsed block underneath it, for
+> the next session to promote from, never for him to copy.
 >
 > ✅ **Workflows are ALLOWED again** — he reversed the earlier ban on 2026-08-18: *"correct
 > workflow"*. Still the wrong tool for a single-file fix; use one focused pass there. Reach for a
@@ -2111,7 +2109,7 @@ batch them: he has to look at each one. `AgentProfileView` is already clean (0 s
 | `A-Brain/Backlog/TESTS - check these when you feel like it.md` | **NEW 2026-08-18** — every test Aldi owes, taken off his plate |
 | `A-Brain/Backlog/SWEEP*.md` (9 files) | **NEW 2026-08-18** — all 75 confirmed problems in plain English, plus the 21 refuted |
 | `A-Brain/Wiki/Concepts/Sale Is Final - no refund, no credit.md` | **NEW 2026-08-18** — the locked no-refund/no-credit rule and everything it kills |
-| `.claude/NEXT-SESSION.md` | **NEW 2026-08-18** — six ready-to-paste job prompts, each with its file, trap and verify step |
+| `.claude/NEXT-SESSION.md` | **NEW 2026-08-18** — ONE ready-to-paste job, rewritten every session. Queue collapsed underneath |
 | `index.html` | the pre-paint theme stamp — must agree with `App.jsx`'s theme effect |
 | `src/index.css` | **the page ground** — `body` paints `--ground-base` + the lit-corner gradient |
 | `src/components/BiohazardTheme.jsx` | **the SHELL that actually covers the page** — root wrapper, dock, drawer, status strip |
