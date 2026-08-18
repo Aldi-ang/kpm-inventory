@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-18 11:47 WIB (KPM app session)** · 🔧 10 FIXES SHIPPED, EACH SELF-CHECKED · branch `phase0-solid-ground`
+**Updated: 2026-08-18 11:58 WIB (KPM app session)** · 🔧 11 FIXES SHIPPED · 🔒 SALE IS FINAL locked · branch `phase0-solid-ground`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -15,7 +15,7 @@
 
 ## ▶ NOW
 
-# 🔧 PLAN A UNDERWAY — 10 FIXES SHIPPED, EVERY ONE SELF-CHECKED
+# 🔧 PLAN A UNDERWAY — 11 FIXES SHIPPED, EVERY ONE SELF-CHECKED
 
 Aldi chose **A (money first)** off the 75-problem register, then re-scoped how I work twice:
 *"i want u to check every single update that u made yourself from now on, find solution to do
@@ -32,7 +32,7 @@ not finished.** Verify chain after every change:
 npm run build; node src/config/integration.audit.mjs; node src/config/logicFixes.selfcheck.mjs
 ```
 
-Currently **build clean · 599/0 · 42/0**.
+Currently **build clean · 599/0 · 49/0**.
 
 ⚠️ **Two process faults it caught before the code did — both now written into its comments:**
 1. A python patch **silently no-matched**: this repo is **CRLF** and the anchor assumed LF.
@@ -44,7 +44,7 @@ Currently **build clean · 599/0 · 42/0**.
 That guard exists because **bug #24 is a call to `getDoc` that was never imported** — it threw
 into an empty `catch(e){}` and silently disabled the rank engine. **A build does not catch that.**
 
-## Shipped (10) — each verified BEFORE its commit
+## Shipped (11) — each verified BEFORE its commit
 
 | # | Fix | Commit |
 |---|---|---|
@@ -57,6 +57,7 @@ into an empty `catch(e){}` and silently disabled the rank engine. **A build does
 | #8 | Damaged EOD goods converted (2 Bal = 400, not 2) | `ec3fda7` |
 | #12 | Edit modal uses real packing; `slopPerKarton` now 0 hits repo-wide | `ec3fda7` |
 | — | **IOU renamed → Utang Barang** (labels only, stored values untouched) | `8f8fac3` |
+| — | **Cash refund locked behind a per-agent grant, OFF by default** | `6bea493` |
 
 **A5 trap:** dropping `priceTier` alone does NOT fix it — the read chain is
 `(priceTier || tier || pricingTier)` and `tier` held the same rank string.
@@ -76,8 +77,27 @@ app makes every one of them "fail" for the wrong reason.
 
 1. **A6+A7 `firestore.rules`** — emulator FIRST, **DO NOT DEPLOY** (draft-and-report rule)
 2. ✅ done — IOU → Utang Barang rename
-3. **Store credit design** — solves his cash-refund problem AND the healthy-swap feature in one
-4. **in progress** — the remaining 66 problems, High severity first
+3. ✅ done — **store credit REJECTED by Aldi**, recorded as a locked decision. Do not re-propose.
+4. **in progress** — the remaining 65 problems, High severity first
+
+## 🔒 LOCKED 2026-08-18 — SALE IS FINAL
+
+> *"no there is no credit, contract is done its nothing, no responsibility, no credit"*
+
+Full reasoning: **`A-Brain/Wiki/Concepts/Sale Is Final - no refund, no credit.md`**. Store credit
+was proposed, and **rejected** — it is what most distribution software does, so it WILL look like
+the obvious fix again to whoever next reads the returns code. It is wrong here for a contractual
+reason that cannot be inferred from the codebase.
+
+**What it changed immediately:** cash refund (`Retur → Buyback`) is now a **granted privilege**,
+mirroring the existing `allowRetur` flag — per-agent, default FALSE, checkbox in Fleet & Roster,
+admin always true, read with `=== true` so a missing field denies. **Two gates, not one:** the
+switch is hidden without the grant AND `handleFinalDeal` refuses a BUYBACK submit, because
+`returType` can still be BUYBACK from before a grant was revoked. **Exchange (Tukar) is
+deliberately NOT gated** — goods-for-goods on an already-paid item owes nobody anything.
+
+**And it made *tukar barang* simpler, not blocked:** money only ever flows towards the company.
+New goods cost more → customer pays the difference. Cost less → **nothing comes back.**
 
 ## 🔴 NEXT, in damage order
 
@@ -2056,6 +2076,7 @@ batch them: he has to look at each one. `AgentProfileView` is already clean (0 s
 | `src/utils/helpers.js` → `paymentLabel()` | **NEW 2026-08-18** — renders the stored `'IOU Fulfillment'` as "Utang Barang Lunas" without changing the stored value |
 | `A-Brain/Backlog/TESTS - check these when you feel like it.md` | **NEW 2026-08-18** — every test Aldi owes, taken off his plate |
 | `A-Brain/Backlog/SWEEP*.md` (9 files) | **NEW 2026-08-18** — all 75 confirmed problems in plain English, plus the 21 refuted |
+| `A-Brain/Wiki/Concepts/Sale Is Final - no refund, no credit.md` | **NEW 2026-08-18** — the locked no-refund/no-credit rule and everything it kills |
 | `index.html` | the pre-paint theme stamp — must agree with `App.jsx`'s theme effect |
 | `src/index.css` | **the page ground** — `body` paints `--ground-base` + the lit-corner gradient |
 | `src/components/BiohazardTheme.jsx` | **the SHELL that actually covers the page** — root wrapper, dock, drawer, status strip |
@@ -2259,20 +2280,22 @@ His words: *"what u mean by store credit?, btw i want ur question to be descript
 ⚠️ **Standing style note from that same line: keep SUMMARIES caveman-short, but make every
 QUESTION descriptive.** He cannot answer a question he does not understand.
 
-**1. Store credit — does it replace cash refunds?** Both of his brainstorms are blocked on this
-one answer. His words:
+**1. ✅ ANSWERED — store credit REJECTED, cash refund gated instead (`6bea493`).** Kept for the
+reasoning, because the rejected idea will look obvious again. His words:
 > *"on the buyback refund by cash, it should make the cash number on the agent inventory minus
 > until there is some sales right ... but there is flaw in this logic, the factory usualy didnt
 > affect refund by cash, because when selling happen, it is contract done and factory have no
 > responsibility of that items anymore, we also need brainstorm on how to modify this logic tho,
 > what is the solution for this"*
 
-Proposed: goods come back, **no money moves**, the store gets a credit note spent on its next
-order. Factory keeps "sale is final"; the agent's cash never goes negative; it is Titip in
-reverse, same ledger opposite sign. Genuine cash out becomes a separate **admin-approved** EOD
-payout, never silently the agent's own money.
+Store credit was proposed as the standard answer to "refund without moving cash". He rejected it
+outright: *"no there is no credit, contract is done its nothing, no responsibility, no credit"*.
+He then chose **option B** for the buyback button — *"B is realistic use that instead"* — keep it,
+but locked behind a per-agent grant, because shop-closing and dispute cases are real and he would
+rather see them than have agents hide them.
 
-**2. Healthy-for-healthy swap (tukar barang).** His words:
+**2. 🔴 STILL OPEN — build the healthy-for-healthy swap (tukar barang)?** Now UNBLOCKED and much
+simpler than when he asked, because his no-credit rule removed the refund half. His words:
 > *"why there is return mode but tukar healthy goods with another healthy goods, there is should
 > be logic added into this ... the differences in price then should be added or returned to the
 > customer for that, but this kind of transaction for returning also needed to have toggle on off
@@ -2281,9 +2304,10 @@ payout, never silently the agent's own money.
 > brainstorm towards this, this is kinda niche to be happen on the real world tbh but we need it"*
 
 Answered: **do not build a third retur mode** — a swap is a return line + a sale line in one
-basket, total = the difference. Gate it on a new permission-matrix key, default OFF for every
-tier, owner grants per tier. ⚠️ Mixed baskets are exactly what caused problem #2, so ship the
-equal-or-customer-pays case first; the negative case needs store credit (question 1).
+basket, total = the difference. Gate it behind its own grant, exactly like the cash-refund flag
+just shipped in `6bea493`. ⚠️ Mixed baskets are what caused problem #2, so keep the guard tight.
+**The awkward case is gone:** new goods cheaper → nothing comes back, per the locked rule.
+**He has not yet said go.**
 
 **3. Did he test the vanishing healthy return on the NEW build or the LIVE app?** His words:
 > *"i found new bug, when i use return on healthy stock, that stock is written on the receipt and
@@ -2615,42 +2639,28 @@ price ladder; performance rank is now the Tier Automation Engine's job.
 
 ## 📓 LOG
 
-### 2026-08-18 11:47 (KPM app session) — plan A: 10 fixes shipped, and every change now checks itself
+### 2026-08-18 11:58 (KPM app session) — plan A: 11 fixes, a self-check harness, and one locked rule
 
-He picked **A (money first)** off the 75-problem register, then re-scoped how I work twice:
+He picked **A (money first)** off the 75-problem register, then re-scoped how I work three times:
 *"i want u to check every single update that u made yourself from now on"* → built
-`src/config/logicFixes.selfcheck.mjs` (42 checks, one regression guard + one behaviour check per
-fix); and *"im kinda dizzy looking at all the test"* → every ✅ TEST ask moved into
-`A-Brain/Backlog/TESTS - check these when you feel like it.md`. Ponytail set to **ultra**.
+`src/config/logicFixes.selfcheck.mjs` (49 checks: one regression guard + one behaviour check per
+fix; **a fix without a line in it is not finished**); *"im kinda dizzy looking at all the test"* →
+every ✅ TEST ask moved to `A-Brain/Backlog/TESTS - check these when you feel like it.md`; and
+*"i want ur question to be descriptive as always"* — summaries stay caveman-short, **questions do
+not**. Ponytail set to **ultra**.
 
-Shipped `fd562f4` `ed4b2b2` `d8f792f` `14e0f62` `ec3fda7` `8f8fac3` — rank units, the Utang
-Barang basket leak, buyback restock and its profit sign, damaged-EOD conversion, the nonexistent
-`slopPerKarton` field, and the IOU→Utang Barang rename. Each verified build + 599/0 + 42/0
-**before** its commit, per his standing rule.
+Shipped `fd562f4` `ed4b2b2` `d8f792f` `14e0f62` `ec3fda7` `8f8fac3` `6bea493` — rank units, the
+Utang Barang basket leak, buyback restock and its profit sign, damaged-EOD conversion, the
+nonexistent `slopPerKarton` field, the IOU→Utang Barang rename, and the cash-refund grant. Each
+verified build + 599/0 + 49/0 **before** its commit.
 
-Two process faults caught by the harness rather than by me: a patch script that **silently did
-nothing** on CRLF line endings, and an import-guard regex **destroyed by JS string escaping**.
-Both are now written into the harness comments. `integration.audit.mjs:205` also failed on the
-rename — correctly — and was updated rather than worked around.
+**The decision that outlives the code:** he killed store credit — *"contract is done its nothing,
+no responsibility, no credit"* — now locked in the vault, because it is the standard fix and will
+look obvious to the next reader. It also made *tukar barang* simpler rather than blocked.
 
-- **2026-08-16 14:52 WIB (KPM)** — All three approved in the real app (`0b9b784`, `f5f1810`).
-  Chrome now runs against a KEPT profile at `<scratch>/chrome-kpm` with `--ignore-certificate-errors`,
-  launched via `cmd //c start ""` so it survives the turn — that profile holds his Google session,
-  so the real app can be photographed on request. **Repo still uncommitted.**
-- **2026-08-16 14:24 WIB (KPM)** — The three light-mode complaints fixed, 571/571, and the first
-  real FRAME of this app's CSS ever captured in this environment (headless Chrome, no install).
-  Root cause of the sidebar one: hardcoded `#ff9d00` in the JSX, so light mode was never consulted.
-  Vault `0b9b784`. **Repo not committed — he has not asked.**
-- **2026-08-16 09:21 WIB (KPM)** — Sliding clock shipped and committed (CSS reel + press-to-flip
-  date, 563/563). Found and fixed the real bug behind it: the header clock had never ticked. Then
-  Aldi filed three light-mode legibility complaints (placeholder text, dark text on the striped
-  banner, sidebar glow) — captured verbatim in ▶ NOW, **not started**, plan quota hit 97%. — newest first, about five entries; `git log` keeps the rest
-
-- **2026-08-16 09:22 (KPM app)** — Sliding clock built, option A, pure CSS, no new dependency.
-  Found and fixed that the header clock never ticked at all. Added press-to-flip to
-  `16 agustus 2026`, self-returning after 5s, both faces in one grid cell so nothing moves.
-  Audit group 45, 563/563. **Uncommitted — he has not asked.** No frame captured: the Browser
-  pane will not composite and no headless browser is installed. Vault: A-Brain `524fc47`.
+Two process faults the harness caught, not me: a patch script that **silently did nothing** on
+CRLF, and an import-guard regex **destroyed by JS string escaping**. `integration.audit.mjs:205`
+also failed on the rename — correctly — and was updated rather than worked around.
 
 ### 2026-08-16 08:18 (KPM app session) — the app was finally OPENED, and two skins were painting over the page
 
