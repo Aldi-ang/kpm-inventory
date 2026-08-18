@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-18 20:30 WIB (KPM app session)** · 🔧 35 FIXES · 📋 ONE PROMPT READY · branch `phase0-solid-ground`
+**Updated: 2026-08-18 20:32 WIB (KPM app session)** · 🔧 35 FIXES · 📋 ONE PROMPT READY · branch `phase0-solid-ground`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -27,6 +27,14 @@ https://claude.ai/code/artifact/a42ce819-9d1a-46a8-8ae8-0291df6765ef
 
 > Older open questions (tukar barang, and others) still live in the **❓ WAITING ON ALDI —
 > verbatim** section further down this file. That section was NOT touched by this trim.
+
+
+## 🟠 2026-08-18 20:32 — timestamp only; the note below was already current
+
+No code and no state change. The penalty-price setting and the lessons fix were both written up at
+20:30 and are unchanged. Today's log cut from 9 entries to 5 — the two housekeeping entries and the
+oldest work entry went to `A-Brain/Archive/PROGRESS-archive-2026-08-14.md`; `git log --oneline` has
+the rest for free.
 
 
 ## 🟠 2026-08-18 20:30 — the penalty price is a SETTING now. `bf75678`
@@ -60,15 +68,6 @@ needed"*): the Alucard lessons loop is unjammed. §8 no longer says "or don't wr
 18 checks (S23), red first. Four older guards repinned onto the new signature, not relaxed.
 build clean · audit 599/0 · logic 325/0 · contrast all pairs pass
 
-## 🟠 2026-08-18 20:16 — notes only, no code
-
-Question 1 answered and shipped, so it moved out of WAITING and into the log below. One NEW
-question took its place: **damaged goods still charge cost price, not retail** — he ruled on
-MISSING packs, not damaged ones, so Stock Opname was deliberately left alone. Test card is at 19.
-
-Today's log is 8 entries, over the ~5 target; the older ones stay until the next notes pass,
-because the file's real weight is the reference material below ▶ NOW, not these.
-
 ## 🟠 2026-08-18 20:14 — a missing pack is bought back at retail. ANSWERED AND SHIPPED. `43f8059`
 
 **His ruling, verbatim:** *"if there is missing pack then agent needs to buy the missing pack on
@@ -89,17 +88,6 @@ detailed needed"*.
 
 18 checks (S22), red first, including his own example arithmetic. S18/S19 repinned onto the moved
 rule, not relaxed. build clean · audit 599/0 · logic 306/0 · contrast all pairs pass
-
-## 🟠 2026-08-18 19:57 — notes trimmed, not the work
-
-Today's log cut from 15 entries to 6; the earlier half of 2026-08-18 moved to
-`A-Brain/Archive/PROGRESS-archive-2026-08-14.md` (223 lines). The commit messages hold the
-detail — `git log --oneline` is free. Open questions hoisted to the TOP of this file, verbatim.
-
-⚠️ **Still owed:** this file is 3.2k lines against its own ~350 target. The bulk below ▶ NOW is
-reference, not log — the 75-problem review passes, the EOD spec handover, the Duke's Ledger
-brief. Cutting those needs judgement about what is still live, so it was not done blind at the
-end of a long session. It is the next notes job.
 
 ## 🟠 2026-08-18 19:54 — two off his OWN to-do list, both found while shipping the card
 
@@ -165,74 +153,6 @@ recorded on their name"*.
 
 Next: the admin's report card should show expected vs counted, and name the products that came up
 short. **No decision needed** — presentation only. `.claude/NEXT-SESSION.md`.
-
-## 🟠 2026-08-18 17:38 — EOD: the count finally decides the report. `d859d41`
-
-`git show d859d41`. Every figure that ACTED was the system's own expectation — the submitted cash
-WAS the expected cash, so a shortage could not exist. Counted figures now go up with the gap named
-(`cashVariance`, `transferVariance`, `goodsShort`, `countStatus`), and the warehouse is credited
-what he counted. Build clean · 599/0 · **240/0 → 255/0** · eod-record 12/12. Red-first 248/7.
-
-❓ **HALF DONE ON PURPOSE — the admin screen needs his answer first.** A DISPUTED report is
-recorded but shown to nobody yet. The question, and the three options, are written verbatim at the
-top of `.claude/NEXT-SESSION.md`. **Do not build the option that turns a gap into an agent's debt
-until he says it out loud** — his own rule is that a shortfall waits for the company to rule.
-
-📌 **His shipping call, 2026-08-18:** *"we might it later if we done with everything"* — the
-538-commit merge to `main` happens at the END. Branch is NOT behind main, so it stays clean.
-
-🧪 **Test card published for him:** https://claude.ai/code/artifact/a42ce819-9d1a-46a8-8ae8-0291df6765ef
-— 12 field tests. A BROKEN result outranks the whole queue.
-📄 Plain-English write-up of all 15 fixes: https://claude.ai/code/artifact/7924dad9-a56d-4912-890e-d39cfe52680d
-
-## 🟠 2026-08-18 17:17 — one debt number, and 23 silent failures given a voice
-
-- **`2dbfc66`** — the sales screen worked out what a shop owes TWICE and showed both. One
-  subtracted returned goods, the other ignored them; one counted consignment sales, the other
-  counted anything marked Titip. Now one calculation, and the overdue flag moved onto each debt
-  so nothing was lost. 2.000.000 owed − 500.000 paid − 300.000 returned = **1.200.000**, where the
-  panel used to demand 1.500.000. This figure also decides transfer shortfalls and bounties.
-- **`b3f6dae`** — his law is every action reports. The map's store-detail panel had **five saves
-  in a row** that failed to a console that does not exist on a phone, including the **price tier**,
-  which decides what a shop pays for everything. Visit frequency also updated the screen BEFORE
-  the write, so failure looked identical to success — it puts the old value back now.
-  Then swept the class: 16 wordlessly empty catches across the money screens, 2 real (product
-  dimensions, the agent dropdown) now report, 14 cosmetic ones each carry one line saying why
-  silence is right there.
-- **Verified:** build clean · 599/0 · logic **223/0 → 240/0** · 11/11 · 9/9 · 7/7 · toast 54/0.
-
-⚠️ **Guard lesson that inverts the earlier one:** the empty-catch sweep must NOT strip comments —
-this codebase uses commented empty catches deliberately, and stripping made a decision look like an
-oversight (18 false hits). **Strip comments when a comment could FAKE a fix; keep them when the
-comment IS the fix.**
-
-Next: **the app day rolls over at 07:00, not midnight** — the route board forgets an early
-morning. Money is unaffected and that is already checked. `.claude/NEXT-SESSION.md`.
-
-## 🟠 2026-08-18 17:06 — five stock bugs of ONE shape, all shipped
-
-`git show <hash>` for each. **Shape: a stock figure trusted after the moment it was true.**
-
-| commit | what it stops |
-|---|---|
-| `ec45ab9` | Clear Canvas credited the warehouse from a screen loaded an hour ago |
-| `4c38b91` | the sale path asked `navigator.onLine`, which lies → a sale could vanish entirely |
-| `ac492c3` | offline sales never came off the van → agent looked short, warehouse over-credited |
-| `553cf91` | a store registered offline synced into a status no screen reads |
-| `655e7f1` | shipping to a branch recomputed HQ stock from before the photo upload |
-
-- **`increment()` was the cure twice** — a write that ADJUSTS needs no read, so there is no stale
-  number to be wrong.
-- **Class swept, not waited on:** every other `stock: cached ± qty` in `src/` checked — all inside
-  `runTransaction` or sub-second windows where the value is also needed for the low-stock alert.
-  One real instance. Do not re-sweep without a new reason.
-- **Three guards I wrote could not fail** (matched a sibling function twice, matched my own
-  comment once) — all three fixed and re-proved red. Two OLDER guards went red on the canvas
-  extraction and were **repinned, not relaxed**.
-- Build clean · 599/0 · logic **189/0 → 223/0** · 11/11 · 6/6.
-
-Next: **two different debt numbers for the same store** (`.claude/NEXT-SESSION.md`) — and its
-name-match third of the problem is already fixed, so the prompt says so.
 
 ## 📏 STANDING RULE — TELL IT ONCE (Aldi, 2026-08-18: *"yes"*)
 
