@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-18 14:4x WIB (KPM app session)** · 🔧 15 FIXES · 📋 ONE PROMPT READY · branch `phase0-solid-ground`
+**Updated: 2026-08-18 15:5x WIB (KPM app session)** · 🔧 16 FIXES · 📋 ONE PROMPT READY · branch `phase0-solid-ground`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -12,6 +12,38 @@
 > 📏 **KEEP THIS FILE UNDER ~350 LINES.** When it passes that, cut the oldest day into the same
 > archive rather than letting it grow back. This file holds WHERE THE WORK STANDS; the archive
 > and `A-Brain/Wiki/Log.md` hold how it got there.
+
+## 🟠 2026-08-18 15:5x WIB — KPM app track — NAME SWEEP: SHIPPED `f1e3b28`
+
+Three files each compared store names by their own rule. All three now use `storeKey`.
+
+- **`customerBrief.js`** — the door-step panel. Carried its OWN normalizer (trim + lowercase,
+  no suffix rule), so a shop with older "(Retail)" rows returned "no recent order" and the
+  salesman opened that door blind. Private copy deleted.
+- **`dayStats.js`** — counted stores by raw name → one shop under two spellings counted as two
+  stores visited, inflating his own day on the rail.
+- **`MerchantSalesView`** auto-pick — compares by key now. **`exact.length === 1` untouched**,
+  and it matters MORE after this: normalising makes more names collide, so two documents
+  reducing to one key still count 2 and the dropdown stays open for him to choose. Checked.
+- **Files touched (5):** the three above · `logicFixes.selfcheck.mjs` (14 new) ·
+  `integration.audit.mjs` (one check repinned, see below).
+- **Verified:** build clean · audit **599/0** · logic **99/0 → 115/0** · customer-brief 9/9 ·
+  day-stats 7/7, **no fixture edited**. 6 of 7 new guards watched failing first.
+
+**Two things worth knowing, both caught by running checks rather than by reading code:**
+1. The two utils are executed directly by node in their own self-checks, and node's ESM resolver
+   does not add `.js` the way Vite does — an extensionless `./helpers` import crashed both. A
+   build would never catch it. The `.js` is deliberate now and there is a check on it.
+2. `integration.audit` G18 ("an empty name never selects anything") was pinned to the LITERAL
+   `typed.trim().toLowerCase()`, so it went red on a correct rename — and would have stayed
+   green if someone kept the spelling and deleted the gate. Repinned on the gate; the behaviour
+   is now asserted on real values (`''`, `'   '`, `null`, `undefined`, `' (Retail)'` → all `''`).
+   **A guard that goes red on a rename is the thing to look at first, not the rename.**
+
+📋 **`.claude/NEXT-SESSION.md` rewritten** — one job: `MapMissionControl.jsx`, which matches a
+store's history with a raw `t.customerName === store.name` in three places plus a fourth private
+copy. Strictest comparison left in the app: one capital letter apart and the pin shows no sales,
+no history, no debt, so a shop with an open Titip balance can look settled.
 
 ## 🟠 2026-08-18 14:4x WIB — KPM app track — STORE-DEBT TALLY: SHIPPED `4b63118`
 
@@ -2738,6 +2770,8 @@ price ladder; performance rank is now the Tier Automation Engine's job.
 
 ## 📓 LOG
 
+- **2026-08-18 15:5x** — name sweep: `customerBrief` / `dayStats` / auto-pick on `storeKey`, one
+  audit check repinned from a spelling to a behaviour. `f1e3b28`. 599/0, 115/0, 9/9, 7/7.
 - **2026-08-18 14:4x** — agent's store-debt tally keyed on `storeKey`, display name kept; the
   rejected "drop the guard" branch is pinned by a check. `4b63118`. build clean, 599/0, 99/0.
 - **2026-08-18 13:2x** — sale engine: exact store lookup + tier suffix dropped, old names
