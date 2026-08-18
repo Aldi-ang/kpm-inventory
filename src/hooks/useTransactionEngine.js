@@ -1,5 +1,5 @@
 import { doc, collection, serverTimestamp, writeBatch, getDoc, addDoc } from 'firebase/firestore';
-import { getCurrentDate, stripCartItemForStorage } from '../utils/helpers';
+import { getCurrentDate, stripCartItemForStorage, convertToBks } from '../utils/helpers';
 import useOfflineEngine from './useOfflineEngine';
 import { notify } from '../components/Toast.jsx';
 
@@ -163,6 +163,14 @@ export default function useTransactionEngine({
                 if (proofPayload?.type === 'RETUR') isPhysicallyGiven = false; // Buyback: Store is returning stock to us
                 if (item.fulfillment === 'IOU') isPhysicallyGiven = false; // Exchange: We owe them, nothing given today
 
+                // Buyback of resellable stock: the packs physically came BACK to us, so they go
+                // back where the sale would have taken them from. Without this the company pays
+                // for goods that re-enter no ledger at all, and the surplus surfaces at EOD as
+                // if the agent had miscounted. DAMAGED lines are untouched — they keep going to
+                // quarantineCargo. ponytail: returns to the seller's own stock (van, or vault for
+                // an admin sale); route to HQ instead if that becomes the policy.
+                const isReturnedToStock = proofPayload?.type === 'RETUR' && item.condition !== 'DAMAGED';
+
                 // If Admin Vault is processing, deduct from Master Vault
                 if (!currentAgentProfileId && isPhysicallyGiven) {
                     if(prodData.stock < qtyInBks) throw `Not enough stock in Vault for ${item.name}`;
@@ -172,6 +180,11 @@ export default function useTransactionEngine({
                     if (newStock <= (prodData.minStock || 50)) {
                         lowStockAlerts.push(`${prodData.name || item.name} (${newStock} Bks left)`);
                     }
+                }
+
+                // Admin Vault buyback: put it straight back in the Master Vault.
+                if (!currentAgentProfileId && isReturnedToStock) {
+                    updatesToPerform.push({ ref: prodRef, newStock: (prodData.stock || 0) + qtyInBks });
                 }
 
                 // 🛑 DELETED: The illegal badStock Master Vault write that caused Permission Denied for Tier 6!
@@ -186,6 +199,7 @@ export default function useTransactionEngine({
                     profitSnapshot: itemProfit, 
                     prodData,
                     isPhysicallyGiven,
+                    isReturnedToStock,
                     qtyInBks
                 }); 
             } 
@@ -230,6 +244,18 @@ export default function useTransactionEngine({
                     }
                     return c;
                 });
+                // Buyback: put the resellable packs back on the van. New line if he was not
+                // carrying that product — the map above only touches lines that already exist.
+                transactionItems.filter(t => t.isReturnedToStock).forEach(t => {
+                    const idx = updatedCanvas.findIndex(c => c.productId === t.productId);
+                    if (idx >= 0) {
+                        const c = updatedCanvas[idx];
+                        updatedCanvas[idx] = { ...c, qty: c.qty + (t.qtyInBks / convertToBks(1, c.unit, t.prodData)) };
+                    } else {
+                        updatedCanvas.push({ productId: t.productId, name: t.name, qty: t.qtyInBks, unit: 'Bks' });
+                    }
+                });
+
                 batch.update(agentRef, { activeCanvas: updatedCanvas.filter(c => c.qty > 0) });
             }
 
