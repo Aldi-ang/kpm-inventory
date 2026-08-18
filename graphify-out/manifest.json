@@ -80,8 +80,8 @@
     "semantic_hash": ""
   },
   "src/MapMissionControl.jsx": {
-    "mtime": 1787022364.880686,
-    "ast_hash": "248f531b4cd5c58c98491fd63cd383b2",
+    "mtime": 1787043294.6786082,
+    "ast_hash": "25a5544812ff2705eb175c0ad1dd9357",
     "semantic_hash": ""
   },
   "src/MerchantSalesView.jsx": {
@@ -570,8 +570,8 @@
     "semantic_hash": ""
   },
   ".claude/PROGRESS.md": {
-    "mtime": 1787038623.1984444,
-    "ast_hash": "acf0cec3b1c1a60354492884c507dd08",
+    "mtime": 1787043064.104094,
+    "ast_hash": "a0d46158687824a1b646afb5c0b6a073",
     "semantic_hash": ""
   },
   ".claude/pre-compact-context.md": {
@@ -755,13 +755,13 @@
     "semantic_hash": ""
   },
   "src/config/logicFixes.selfcheck.mjs": {
-    "mtime": 1787042880.8330822,
-    "ast_hash": "5969f3b5ffd548dbd0fe7d9ec4735a63",
+    "mtime": 1787043287.1587756,
+    "ast_hash": "e15501bbd7ee71d7d7b800cbdcf03bfd",
     "semantic_hash": ""
   },
   ".claude/NEXT-SESSION.md": {
-    "mtime": 1787038545.3451262,
-    "ast_hash": "54fe310dfcb0af70c2c7387a0ea20b5d",
+    "mtime": 1787042971.8112884,
+    "ast_hash": "7588a36fe1e8182623568ad6d5ee210a",
     "semantic_hash": ""
   }
 }

@@ -2,49 +2,59 @@
 
 ---
 
-The map still matches store history with a raw `===` on the name. It is the strictest comparison
-left in the app: a single capital letter, one trailing space, or a legacy " (Retail)" ending and
-the shop's whole history reads as empty.
+Stop the pattern instead of the instances. Four files have now been caught defining their own
+private rule for "is this the same store?" — `customerBrief.js`, `MapMissionControl.jsx`, and two
+still standing. Each was found by hand, one session at a time. Write the check that finds them
+all, then fix whatever it turns red.
 
-WHERE: `src/MerchantSalesView.jsx` and the utils are done — this is `src/MapMissionControl.jsx`,
-four sites. Read the file, do not trust these numbers:
+**STEP 1 — write the guard first, in `src/config/logicFixes.selfcheck.mjs`.** Scan every file
+under `src/` for a name comparison that does NOT go through `storeKey`: the shape to catch is
+`.trim().toLowerCase()` sitting on or next to something called `customerName`, `customer`,
+`storeName` or `store.name`. Fail with the file and line, not just a count — a guard that says
+"3 failures" and not where is a guard nobody acts on. Allow `helpers.js` itself, which is where
+the real rule lives.
 
-    ~1154   const storeTrans = safeTrans.filter(t => t && t.customerName === store.name);
-    ~1192   .filter(t => t && t.customerName === store.name && t.type === 'SALE')
-    ~2031   if (t.customerName !== store.name || t.type !== 'SALE') return false;
-    ~1579   const isMatch = (t.customerName || t.customer || '').trim().toLowerCase() === (store.name || '').trim().toLowerCase();
+Expect it to go RED immediately. That is the point: watch it red, then fix what it names.
 
-Three of them are RAW `===`. The fourth is a private trim+lowercase copy of the shared rule — the
-same private-copy mistake that was just removed from `customerBrief.js`, still living here.
+**STEP 2 — the two already known.** Do not trust these line numbers, read the files:
 
-WHY IT COSTS HIM MONEY: `store.name` comes from the customer DOCUMENT (the book) and
-`t.customerName` is what the agent typed at the counter. They agree only by luck. When they do
-not, that shop's pin on the map shows no sales, no history and no debt — so a shop with an
-outstanding Titip balance can look settled, and a route decision gets made on a blank record.
+    src/JourneyView.jsx ~278    const storeName = tx.customerName.trim().toLowerCase();
 
-THE FIX: `storeKey` from `src/utils/helpers.js`, on both sides of all four comparisons. It is
-already the rule in `useTransactionEngine.js`, `ConsignmentFinanceView.jsx`,
-`AgentProfileView.jsx`, `customerBrief.js`, `dayStats.js` and `MerchantSalesView.jsx`. Delete the
-private copy at ~1579 rather than leaving a second rule behind.
+  A private copy AND an unguarded `.trim()` — `tx.customerName` with no `|| ''` throws on a row
+  whose name field is missing, and the whole journey view goes blank. Two faults, one line.
 
-THE TRAP, and it is the whole job: these four are not the same KIND of comparison. Some select
-ONE store's rows for display; if the site aggregates money (a total, a debt, a "last order"),
-normalising merges rows that were previously separate, and a number he reads changes. Before
-editing each site, say what it feeds — a display list, or a sum. For any site that feeds a sum,
-the behaviour check must run real rupiah through it and state the before and after, so a changed
-number on his screen is a number that was decided, not one that moved on its own.
+    src/EODReconciliationView.jsx ~131    todaysTrans.filter(t => t.type === 'SALE').map(t => t.customerName)
 
-Second trap: `(t.customerName || t.customer || '')` at ~1579 reads a SECOND field, `t.customer`.
-Find out whether any row actually carries it before dropping it — one grep for `\.customer\b`
-across `src/`. If rows do carry it, keep the fallback and normalise both.
+  Check what this feeds FIRST. If it lands in a `Set` or a distinct-store count, it double-counts
+  one shop under two spellings exactly the way `dayStats` did before `f1e3b28`. If it only feeds a
+  display list, say so and leave it.
+
+**THE TRAP, and it is the whole job: a guard that greps source text can be satisfied by a
+comment.** That already happened once here — a regression guard for `.includes(inputTrimmed)`
+went red against the FIXED code because the explanatory comment above the fix contained the
+phrase. Strip comments before scanning, or write the pattern so prose cannot match it, and prove
+it: add a file whose COMMENT contains the banned shape and confirm the guard stays green, or
+assert the scan on a fixture string rather than on real files.
+
+Second trap: `.trim().toLowerCase()` is a legitimate shape on things that are not store names —
+an email, a search box, a product name. A guard that fails on those is a guard that gets deleted
+in a week. Scope it to the four name identifiers above and say in the reply what it deliberately
+ignores.
 
 CONTEXT ALREADY ESTABLISHED, do not re-derive: no transaction carries a customerId, only
-customerName and agentId. `storeKey()` — trim, strip a TRAILING " (Retail|Individual|Wholesale)",
-lowercase, `String()`-coerced. Background: A-Brain/Wiki/Concepts/A Store Name Is Not a Store.md.
+customerName and agentId. `storeKey()` in `src/utils/helpers.js` — trim, strip a TRAILING
+" (Retail|Individual|Wholesale)", lowercase, `String()`-coerced. Already used by
+`useTransactionEngine`, `ConsignmentFinanceView`, `AgentProfileView`, `customerBrief`, `dayStats`,
+`MerchantSalesView`, `MapMissionControl`. Background:
+A-Brain/Wiki/Concepts/A Store Name Is Not a Store.md.
+
+Note for the utils: `customerBrief.js` and `dayStats.js` import `'./helpers.js'` WITH the
+extension because node runs them directly in their own self-checks and its ESM resolver does not
+add it. Keep that if you touch their imports.
 
 Verify chain, paste the numbers:
-npm run build; node src/config/integration.audit.mjs; node src/config/logicFixes.selfcheck.mjs
-Expected: build clean, 599/0, 115/0 plus whatever you add.
+npm run build; node src/config/integration.audit.mjs; node src/config/logicFixes.selfcheck.mjs; node src/config/customerBrief.selfcheck.mjs; node src/config/dayStats.selfcheck.mjs
+Expected: build clean, 599/0, 130/0 plus whatever you add, 9/9, 7/7.
 
 When it is committed, rewrite this file (.claude/NEXT-SESSION.md) with the NEXT single job.
 
@@ -53,15 +63,13 @@ When it is committed, rewrite this file (.claude/NEXT-SESSION.md) with the NEXT 
 <details>
 <summary>Queue behind it — for the next session to promote from, not to paste</summary>
 
-- `src/JourneyView.jsx` ~278 — `tx.customerName.trim().toLowerCase()`, another private copy, and
-  it throws on a row with no name (no `|| ''` guard). Small, quick, do it right after the map.
-- `src/EODReconciliationView.jsx` ~131 — `.map(t => t.customerName)`; check whether it feeds a
-  Set of distinct stores. If it does, it double-counts the same way `dayStats` did.
-- A `logicFixes` guard that no file may define its own name normalizer — grep for
-  `.trim().toLowerCase()` sitting next to a customer name and fail. Three private copies have now
-  been found by hand (`customerBrief`, `MapMissionControl`, `JourneyView`); a check would have
-  found all three at once. **This is the one that stops the pattern instead of the instances.**
-- The receivables row and the debt tally still DISPLAY whichever spelling was written first, so a
-  shop can read as "Warung Bu Sari (Retail)" forever. Ending that means a one-off cleanup of the
-  customer documents — a data migration, needs Aldi's word before anything writes.
+- The receivables row, the debt tally and the map pin all DISPLAY whichever spelling was written
+  first, so a shop can read as "Warung Bu Sari (Retail)" forever. Ending that means a one-off
+  cleanup of the customer documents — a data migration, needs Aldi's word before anything writes.
+- The RPG Migration button in `MapMissionControl` re-banks `lifetimeXP` / `seasonXP` from
+  transactions. After `a3a9cf6` those numbers come out HIGHER for any shop whose history was split
+  by spelling. Nothing is wrong until he presses it, but he should be told what will move before
+  he does.
+- `src/hooks/useOfflineEngine.js` only logs `customerName` into a sync message — checked, no
+  matching or grouping. Recorded so nobody re-greps it.
 </details>

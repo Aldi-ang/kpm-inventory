@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-18 15:5x WIB (KPM app session)** · 🔧 16 FIXES · 📋 ONE PROMPT READY · branch `phase0-solid-ground`
+**Updated: 2026-08-18 15:5x WIB (KPM app session)** · 🔧 17 FIXES · 📋 ONE PROMPT READY · branch `phase0-solid-ground`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -12,6 +12,44 @@
 > 📏 **KEEP THIS FILE UNDER ~350 LINES.** When it passes that, cut the oldest day into the same
 > archive rather than letting it grow back. This file holds WHERE THE WORK STANDS; the archive
 > and `A-Brain/Wiki/Log.md` hold how it got there.
+
+## 🟠 2026-08-18 15:5x WIB — KPM app track — MAP NAME MATCHING: SHIPPED `a3a9cf6`
+
+The map compared `store.name` (customer document) with `t.customerName` (typed at the counter)
+using a raw `===`. One capital letter apart → the pin showed no sales, no stock and **no debt**,
+so a shop with money outstanding read as settled.
+
+**Four sites, labelled BEFORE editing — they were not the same kind of comparison:**
+
+| site | kind | what changes |
+|---|---|---|
+| `stats` ~1154 | **SUM** | pin revenue + the consignment debt on that pin |
+| `recentSales` ~1192 | display | last 5 sales, no arithmetic |
+| XP loop ~1579 | **SUM, AND IT WRITES** | `lifetimeXP`/`seasonXP` banked into store docs |
+| `storeRevs` ~2031 | **SUM** | per-store revenue → heatmap zone colour |
+
+- **One fix beyond the four.** Two customer documents sharing a name return the SAME rows (no
+  customerId to separate them), so a zone added one shop's takings twice. Already true for
+  identical names; matching by key would have widened it to every spelling variant — so the zone
+  now counts each distinct key once. **A fix owns the pre-existing bug it widens.**
+- **Also:** the XP loop held a private trim+lowercase copy of the rule, same mistake as
+  `customerBrief`. Its `|| t.customer` fallback KEPT — no transaction writes that field
+  (checked), but that can't be proven for every offline row and keeping it costs nothing.
+- **Verified:** build clean · audit **599/0** · logic **115/0 → 130/0** · brief 9/9 · daystats
+  7/7. All 7 new guards watched failing first (123/7).
+- **Every sum site has a BEFORE/AFTER behaviour check on real rupiah**, because each is a number
+  he reads: a pin at "revenue 300.000, debt 0" now reads "2.300.000, debt 1.500.000"; XP banked
+  at 300.000 becomes 2.300.000; a zone that counted 800.000 counts the 400.000 actually taken.
+
+🔴 **HE SHOULD KNOW BEFORE HE PRESSES IT:** the RPG Migration button in the map re-banks
+`lifetimeXP`/`seasonXP` from transactions. After this fix those numbers come out **higher** for
+any shop whose history was split by spelling. Nothing is wrong until he presses it — but the
+numbers will move, and he should be told first.
+
+📋 **`.claude/NEXT-SESSION.md` rewritten** — one job: write the guard that FINDS private name
+rules instead of catching them one session at a time, then fix what it turns red (`JourneyView`
+~278 is a private copy plus an unguarded `.trim()` that throws on a nameless row;
+`EODReconciliationView` ~131 needs checking for a distinct-store count).
 
 ## 🟠 2026-08-18 15:5x WIB — KPM app track — NAME SWEEP: SHIPPED `f1e3b28`
 
@@ -2770,6 +2808,8 @@ price ladder; performance rank is now the Tier Automation Engine's job.
 
 ## 📓 LOG
 
+- **2026-08-18 15:5x** — map: 4 raw-name sites on `storeKey`, zone sum de-duplicated, every sum
+  site given a BEFORE/AFTER rupiah check. `a3a9cf6`. 599/0, 130/0, 9/9, 7/7.
 - **2026-08-18 15:5x** — name sweep: `customerBrief` / `dayStats` / auto-pick on `storeKey`, one
   audit check repinned from a spelling to a behaviour. `f1e3b28`. 599/0, 115/0, 9/9, 7/7.
 - **2026-08-18 14:4x** — agent's store-debt tally keyed on `storeKey`, display name kept; the
