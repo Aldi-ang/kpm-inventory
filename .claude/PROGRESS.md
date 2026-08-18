@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-18 17:38 WIB (KPM app session)** · 🔧 29 FIXES · ❓ ONE QUESTION FOR ALDI · branch `phase0-solid-ground`
+**Updated: 2026-08-18 18:56 WIB (KPM app session)** · 🔧 30 FIXES · 📋 ONE PROMPT READY · branch `phase0-solid-ground`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -12,6 +12,27 @@
 > 📏 **KEEP THIS FILE UNDER ~350 LINES.** When it passes that, cut the oldest day into the same
 > archive rather than letting it grow back. This file holds WHERE THE WORK STANDS; the archive
 > and `A-Brain/Wiki/Log.md` hold how it got there.
+
+## 🟠 2026-08-18 18:56 — EOD shortfall → bounty. ANSWERED AND SHIPPED. `7f96d19`
+
+**His ruling, verbatim:** *"admin can approve but it will add up to the agent's bounties instead,
+and for the bounties, the agent can repay their debt through the EOD screen even after bounties
+recorded on their name"*.
+
+- **Two-thirds already existed.** The WANTED board already summed every `PENALTY_` key, and a
+  `BOUNTY` clearance report from the agent's own EOD screen already cleared them. Only the
+  **minting** was missing — one line.
+- `PENALTY_EOD_<reportId>`, **assigned not incremented** → a double-approve cannot fine a man
+  twice for one night. Cash and transfer floored at zero **separately** → extra cash cannot pay
+  off a missing transfer.
+- **Money only.** A goods shortage rides along as `goodsShort` and is deliberately NOT priced —
+  ❓ **what a missing pack is worth in rupiah is still his call**, queued.
+- Admin is told the rupiah **before** approving, and that the agent can repay it. Approving is
+  allowed, as he asked; it is just not silent.
+- Build clean · 599/0 · **255/0 → 269/0** · eod-record 12/12. Red-first 266/3.
+
+Next: the admin's report card should show expected vs counted, and name the products that came up
+short. **No decision needed** — presentation only. `.claude/NEXT-SESSION.md`.
 
 ## 🟠 2026-08-18 17:38 — EOD: the count finally decides the report. `d859d41`
 
