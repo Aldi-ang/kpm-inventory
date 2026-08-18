@@ -243,5 +243,50 @@ ok('the first-match customer lookup is gone',
   ok('an ADMIN hand-off takes its own plus the legacy rows, never the agent rows',
      legacy.filter(adminHeld).map(t => t.id).join(',') === 'L1,L2'); }
 
+/* ── S1 · the sale engine matched part of a name, and welded the price tier onto it ────── */
+section('S1. A store name identifies a store, and nothing else is added to it');
+const finance = read('src/ConsignmentFinanceView.jsx');
+
+ok('the loose .includes() lookup is gone', !/\.includes\(inputTrimmed\)/.test(engine));
+ok('the sale engine resolves a store by exact storeKey',
+   /customers\.find\(c => storeKey\(c\.name\) === needle\)/.test(engine));
+ok('the price tier is no longer appended to the name',
+   !/finalName \+= " \((?:Retail|Individual|Wholesale)\)"/.test(engine));
+ok('storeKey is imported where it is called', imports(engine, 'storeKey') && imports(finance, 'storeKey'));
+ok('the receivables screen groups on storeKey, not on the raw name',
+   /const name = storeKey\(t\.customerName\)/.test(finance));
+ok('the tier suffix is stripped only at the END of a name',
+   helpers.includes('(?:Retail|Individual|Wholesale)\\)$/i'));
+
+/* BEHAVIOUR — the two halves this fix has to keep together, run on real rupiah.
+   storeKey lives in helpers.js, which imports firebase/storage and so cannot be imported by
+   node here; the form below is the same one, and the check above pins the file's copy. */
+{ const key = (n) => String(n ?? '').trim().replace(/\s*\((?:Retail|Individual|Wholesale)\)$/i, '').trim().toLowerCase();
+
+  // Old rows carry the suffix, new rows do not. One shop, one balance — not two half-rows.
+  const tx = [ { customerName: 'Warung Bu Sari (Retail)', total: 1200000 },
+               { customerName: 'warung bu sari ',         total:  800000 },
+               { customerName: 'Warung Sari Rasa',        total:  500000 } ];
+  const grouped = {};
+  tx.forEach(t => { const k = key(t.customerName); grouped[k] = (grouped[k] || 0) + t.total; });
+  ok('a legacy "(Retail)" row and a new row land on ONE receivable',
+     grouped['warung bu sari'] === 2000000);
+  ok('the shop that only shares a word keeps its own row',
+     Object.keys(grouped).length === 2 && grouped['warung sari rasa'] === 500000);
+  ok('grouping on the raw name would have split it into three - the bug being guarded',
+     new Set(tx.map(t => t.customerName)).size === 3);
+
+  // The lookup: exact only.
+  const book = [ { name: 'WARUNG SARI RASA' }, { name: 'Warung Bu Sari (Retail)' }, { id: 'no-name' } ];
+  const find = (typed) => book.find(c => key(c.name) === key(typed)) || null;
+  ok('a walk-in typed as "SARI" matches no store at all', find('SARI') === null);
+  ok('the old loose lookup WOULD have billed WARUNG SARI RASA - the bug being guarded',
+     book.some(c => String(c.name || '').toLowerCase().includes('sari')));
+  ok('typing the full name still finds the shop saved under the legacy suffix',
+     find('warung bu sari')?.name === 'Warung Bu Sari (Retail)');
+  ok('a customer document with no name field does not throw', find('anything') === null);
+  ok('a real name containing "(Retail)" in the middle is left alone',
+     key('Warung (Retail) Jaya') === 'warung (retail) jaya'); }
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

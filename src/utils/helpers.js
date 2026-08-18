@@ -20,6 +20,21 @@ export const formatNumber = (number) =>
    because every value this is used for (XP, thresholds) is a whole number. */
 export const parseGroupedNumber = (value) => Number(String(value ?? '').replace(/\D/g, '')) || 0;
 
+/* 🚀 A store is identified by its NAME in this app — no transaction carries a customerId, only
+   customerName and agentId. So every comparison between two store names has to agree on one
+   form, or one shop quietly becomes two.
+
+   Trailing " (Retail)", " (Individual)" and " (Wholesale)" are LEGACY. The sale engine used to
+   weld the price tier onto the name of a store it had never seen, so rows written before that
+   fix carry the suffix and rows written after do not. Stripping it here is what keeps those two
+   halves on ONE receivable. Never strip anywhere but the end — "Warung (Retail) Jaya" is a real
+   name, not a tier. */
+export const storeKey = (name) => String(name ?? '')
+    .trim()
+    .replace(/\s*\((?:Retail|Individual|Wholesale)\)$/i, '')
+    .trim()
+    .toLowerCase();
+
 export const getCurrentDate = () => new Date().toISOString().split('T')[0];
 
 // getCurrentDate() above is UTC — fine for record-keeping timestamps, wrong for "what day is it

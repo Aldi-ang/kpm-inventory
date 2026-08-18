@@ -1,5 +1,5 @@
 import { doc, collection, serverTimestamp, writeBatch, getDoc, addDoc } from 'firebase/firestore';
-import { getCurrentDate, stripCartItemForStorage, convertToBks } from '../utils/helpers';
+import { getCurrentDate, stripCartItemForStorage, convertToBks, storeKey } from '../utils/helpers';
 import useOfflineEngine from './useOfflineEngine';
 import { notify } from '../components/Toast.jsx';
 
@@ -358,19 +358,25 @@ export default function useTransactionEngine({
     };
 
     const handleMerchantSale = async (custName, payMethod, cartItems, newStoreData = null, proofPayload = null) => { 
-        const inputTrimmed = custName ? custName.trim().toLowerCase() : "Walk-in Customer";
-        const existingProfile = customers.find(c => c.name.toLowerCase() === inputTrimmed || c.name.toLowerCase().includes(inputTrimmed));
-        
-        let finalName = existingProfile ? existingProfile.name : (custName || "Walk-in Customer").replace(/\b\w/g, l => l.toUpperCase());
+        /* 🚀 FIX A — EXACT match only, the same rule the sales screen already uses to auto-pick a
+           store (MerchantSalesView's `exact.length === 1` guard). The old lookup also matched on
+           a PART of the name, so an agent typing "SARI" for a walk-in booked the sale AND
+           its Titip debt onto "WARUNG SARI RASA" — a shop that bought nothing. The screen was
+           careful and the engine then redid the lookup loosely and overrode that care.
 
-        if (!existingProfile && finalName !== "Walk-in Customer") {
-            const hasEcer = cartItems.some(i => i.priceTier === 'Ecer');
-            const hasGrosir = cartItems.some(i => i.priceTier === 'Grosir');
-            
-            if (hasEcer) finalName += " (Individual)";
-            else if (hasGrosir) finalName += " (Wholesale)";
-            else finalName += " (Retail)";
-        }
+           storeKey() also ignores a legacy " (Retail)" suffix, so a store saved under the old
+           naming still resolves to its own profile instead of becoming a second shop. It coerces
+           through String(), so a customer document with no name field cannot throw here. */
+        const needle = storeKey(custName || "Walk-in Customer");
+        const existingProfile = customers.find(c => storeKey(c.name) === needle);
+
+        /* 🚀 FIX B — the price tier is NOT part of the store's name. This used to append
+           " (Individual)" / " (Wholesale)" / " (Retail)" to any store not yet in the book, so the
+           next visit typed the real name, matched nothing, and the debt, the last order and the
+           visit history all vanished from the panel. Through the NOO modal the customer DOCUMENT
+           was created with the suffix, permanently. Nothing is lost by dropping it: the tier is
+           already on every cart line as item.priceTier. */
+        const finalName = existingProfile ? existingProfile.name : (custName || "Walk-in Customer").replace(/\b\w/g, l => l.toUpperCase());
 
         return await processTransaction(null, { customerName: finalName, paymentType: payMethod, cart: cartItems, newStoreData, proofPayload });
     };

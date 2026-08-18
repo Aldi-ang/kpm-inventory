@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { FileSpreadsheet, ShieldCheck, AlertCircle, XCircle, MessageSquare, Box, Package, ArrowRight, DollarSign, Store, Truck, Plus, Wallet, RotateCcw, Lock, Trash2, ArrowLeftRight, Check, X, ClipboardList, ScanSearch, Calculator, Printer, User, MapPin, Search } from 'lucide-react';
-import { convertToBks, formatRupiah } from './utils/helpers';
+import { convertToBks, formatRupiah, storeKey } from './utils/helpers';
 import { confirmAction } from './components/ConfirmGate.jsx';
 import { notify } from './components/Toast.jsx';
 
@@ -165,9 +165,14 @@ export default function ConsignmentFinanceView({ transactions = [], inventory = 
         
         sortedTransactions.forEach(t => {
             if (!t.customerName) return; 
-            const name = String(t.customerName).trim(); 
-            
-            if (!customers[name]) customers[name] = { name, items: {}, balance: 0, lastActivity: t.date, ownerName: t.agentName || 'Admin' };
+            /* 🚀 FIX — group on storeKey, not on the raw name. Rows written before the sale engine
+               stopped welding the price tier on say "Warung Bu Sari (Retail)"; rows written after
+               say "Warung Bu Sari". Keyed on the raw name that is ONE shop shown as two rows, each
+               holding half its balance, with no error anywhere. The row still DISPLAYS whatever
+               name was written first — only the grouping is normalised. */
+            const name = storeKey(t.customerName);
+
+            if (!customers[name]) customers[name] = { name: String(t.customerName).trim(), items: {}, balance: 0, lastActivity: t.date, ownerName: t.agentName || 'Admin' };
             
             if (t.type === 'SALE' && t.paymentType === 'Titip') { 
                 customers[name].balance += (t.total || 0); 
@@ -222,7 +227,7 @@ export default function ConsignmentFinanceView({ transactions = [], inventory = 
         return Object.values(customers).filter(c => c.balance > 0 || Object.values(c.items).some(i => i.qty > 0));
     }, [myTransactions, inventory]);
 
-    const activeCustomer = selectedCustomer ? customerData.find(c => c.name === selectedCustomer.name) || selectedCustomer : null;
+    const activeCustomer = selectedCustomer ? customerData.find(c => storeKey(c.name) === storeKey(selectedCustomer.name)) || selectedCustomer : null;
     
     // 3. TRANSFER ROUTING ENGINE
     const { incomingRequests, outgoingRequests, pendingAdminRequests } = useMemo(() => {
