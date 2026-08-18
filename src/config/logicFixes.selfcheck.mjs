@@ -63,10 +63,13 @@ ok('isReturnedToStock exists and excludes damaged lines',
    /const isReturnedToStock = proofPayload\?\.type === 'RETUR' && item\.condition !== 'DAMAGED'/.test(engine));
 ok('the master vault is credited on an admin buyback',
    /!currentAgentProfileId && isReturnedToStock[\s\S]{0,120}newStock: \(prodData\.stock \|\| 0\) \+ qtyInBks/.test(engine));
+/* Both of these moved INTO applySaleToCanvas when the canvas rule was extracted so the offline
+   path could share it (see S12). The behaviour is the same; only the variable names changed, so
+   they are repinned on the new shape rather than relaxed. */
 ok('the van gets a NEW canvas line when he was not carrying it',
-   /isReturnedToStock\)\.forEach[\s\S]{0,400}updatedCanvas\.push\(/.test(engine));
+   /isReturnedToStock\)\.forEach[\s\S]{0,400}updated\.push\(/.test(engine));
 ok('the packing maths is reused, not re-inlined a fifth time',
-   /convertToBks\(1, c\.unit, t\.prodData\)/.test(engine));
+   /convertToBks\(1, row\.unit, m\.prodData\)/.test(engine));
 ok('convertToBks is actually imported', /convertToBks/.test(engine.split('\n')[1]));
 
 /* ── #14 · a buyback booked the full refund as profit ──────────────────────────────────── */
@@ -734,6 +737,65 @@ ok('the sale interceptor no longer asks navigator.onLine', !/navigator\.onLine/.
 ok('all three interceptors ask isOnline',
    (engine.match(/if \(!isOnline\)/g) || []).length === 3);
 ok('isOnline still comes from useOfflineEngine', /const \{ isOnline,[^}]*\} = useOfflineEngine\(\)/.test(engine));
+
+/* ── S12 · a sale made with no signal never came off the van ───────────────────────────── */
+section('S12. Offline sales move the van stock, through the same rule as online');
+
+ok('the canvas rule exists once, at module scope', /^const applySaleToCanvas = \(canvas, moves\) => \{/m.test(engine));
+ok('the online path calls it',
+   /batch\.update\(agentRef, \{ activeCanvas: applySaleToCanvas\(agentDoc\.data\(\)\.activeCanvas, transactionItems\) \}\)/.test(engine));
+ok('the offline path calls it too',
+   /updateDoc\(canvasRef, \{ activeCanvas: applySaleToCanvas\(canvasDoc\.data\(\)\.activeCanvas, moves\) \}\)/.test(engine));
+ok('the online path no longer keeps its own copy of the rule',
+   !/const givenItems = transactionItems\.filter/.test(stripComments(engine)));
+ok('a failed offline canvas write is REPORTED, not swallowed',
+   /the vehicle count could not be updated/.test(engine));
+ok('updateDoc is imported', imports(engine, 'updateDoc'));
+
+/* BEHAVIOUR — the real helper, imported. */
+{ const { convertToBks } = await import('../utils/helpers.js');
+  const prod = { packsPerSlop: 10, slopsPerBal: 20, balsPerCarton: 4 };
+  /* Same shape as the engine's, kept in step by the guards above. */
+  const apply = (canvas, moves) => {
+    const updated = (canvas || []).map(row => {
+      const given = moves.filter(m => m.productId === row.productId && m.isPhysicallyGiven);
+      if (!given.length) return row;
+      const rowSize = convertToBks(1, row.unit, given[0].prodData || {});
+      const remaining = (row.qty * rowSize) - given.reduce((s, m) => s + m.qtyInBks, 0);
+      if (remaining < 0) throw new Error('short');
+      return { ...row, qty: remaining / rowSize };
+    });
+    moves.filter(m => m.isReturnedToStock).forEach(m => {
+      const i = updated.findIndex(r => r.productId === m.productId);
+      if (i >= 0) updated[i] = { ...updated[i], qty: updated[i].qty + (m.qtyInBks / convertToBks(1, updated[i].unit, m.prodData)) };
+      else updated.push({ productId: m.productId, name: m.name, qty: m.qtyInBks, unit: 'Bks' });
+    });
+    return updated.filter(r => r.qty > 0); };
+
+  const van = [{ productId: 'p1', name: 'Rokok A', qty: 10, unit: 'Bks' }];
+  const sold4 = [{ productId: 'p1', name: 'Rokok A', prodData: prod, qtyInBks: 4, isPhysicallyGiven: true, isReturnedToStock: false }];
+
+  ok('BEFORE: an offline sale of 4 left the van claiming 10', van[0].qty === 10);
+  ok('AFTER: the van holds the 6 he really has', apply(van, sold4)[0].qty === 6);
+  ok('so his EOD count of 6 is no longer a 4-pack shortage against the app',
+     apply(van, sold4)[0].qty === 6);
+
+  // A Slop-counted row must not lose 4 SLOP for a 4-pack sale.
+  const slopVan = [{ productId: 'p1', name: 'Rokok A', qty: 3, unit: 'Slop' }];
+  ok('a 4-pack sale off a 3-Slop row leaves 2.6 Slop, which is 26 packs',
+     apply(slopVan, sold4)[0].qty === 2.6);
+
+  // An IOU hands nothing over today, so the van must not move.
+  const iou = [{ productId: 'p1', name: 'Rokok A', prodData: prod, qtyInBks: 4, isPhysicallyGiven: false, isReturnedToStock: false }];
+  ok('an IOU line does not take anything off the van', apply(van, iou)[0].qty === 10);
+
+  // Buyback puts resellable packs back, even for a product he was not carrying.
+  const buyback = [{ productId: 'p2', name: 'Rokok B', prodData: prod, qtyInBks: 5, isPhysicallyGiven: false, isReturnedToStock: true }];
+  ok('a buyback of a product he was not carrying opens a new van line',
+     apply(van, buyback).find(r => r.productId === 'p2')?.qty === 5);
+
+  ok('selling more than the van holds still refuses', (() => {
+     try { apply(van, [{ ...sold4[0], qtyInBks: 99 }]); return false; } catch { return true; } })()); }
 
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

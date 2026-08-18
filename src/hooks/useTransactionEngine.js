@@ -1,6 +1,43 @@
-import { doc, collection, serverTimestamp, writeBatch, getDoc, addDoc } from 'firebase/firestore';
+import { doc, collection, serverTimestamp, writeBatch, getDoc, addDoc, updateDoc } from 'firebase/firestore';
 import { getCurrentDate, stripCartItemForStorage, convertToBks, storeKey } from '../utils/helpers';
 import useOfflineEngine from './useOfflineEngine';
+
+/* 🚀 What a sale does to the van, in ONE place, called by the online path and the offline one.
+
+   It used to live only in the online path, so a sale made with no signal saved the receipt and
+   never touched the vehicle. The van still claimed 10 packs when the agent really had 6, so at
+   EOD the count came up short and the app treated the agent as having lost stock — and the
+   warehouse was credited at EOD with goods that had already been sold, growing the stock number
+   on paper every time somebody sold without signal.
+
+   `moves` carries only what this decision needs: productId, qtyInBks, the product's packing
+   data, and the two flags. Pricing and profit stay where they were — the offline path has no
+   business recomputing those to move stock. */
+const applySaleToCanvas = (canvas, moves) => {
+    const updated = (canvas || []).map(row => {
+        const given = moves.filter(m => m.productId === row.productId && m.isPhysicallyGiven);
+        if (given.length === 0) return row;
+
+        const rowSize = convertToBks(1, row.unit, given[0].prodData || {});
+        const remainingBks = (row.qty * rowSize) - given.reduce((sum, m) => sum + m.qtyInBks, 0);
+        if (remainingBks < 0) throw `Vehicle doesn't have enough ${given[0].name} left!`;
+
+        return { ...row, qty: remainingBks / rowSize };
+    });
+
+    // Buyback: resellable packs come back onto the van. New line if he was not carrying it.
+    moves.filter(m => m.isReturnedToStock).forEach(m => {
+        const idx = updated.findIndex(row => row.productId === m.productId);
+        if (idx >= 0) {
+            const row = updated[idx];
+            updated[idx] = { ...row, qty: row.qty + (m.qtyInBks / convertToBks(1, row.unit, m.prodData)) };
+        } else {
+            updated.push({ productId: m.productId, name: m.name, qty: m.qtyInBks, unit: 'Bks' });
+        }
+    });
+
+    return updated.filter(row => row.qty > 0);
+};
 import { notify } from '../components/Toast.jsx';
 
 export default function useTransactionEngine({
@@ -129,6 +166,39 @@ export default function useTransactionEngine({
                     await saveOfflineNOO(storePayload);
                 }
 
+                /* 🚀 FIX: take the goods off the van offline too. Firestore's persistent cache
+                   queues this write and applies it to the local copy immediately, so the agent's
+                   own screen tells the truth straight away and the change lands upstream when
+                   signal returns. Without it the van still claimed stock that had been sold: the
+                   agent came up short at his own EOD count and looked like he had lost goods,
+                   and the warehouse was credited at EOD for packs that no longer existed.
+
+                   The four facts the van needs are computed here rather than reusing the online
+                   loop, which also does pricing, profit and vault deductions — none of which
+                   belong on this path. */
+                if (currentAgentProfileId) {
+                    const canvasRef = doc(db, `artifacts/${appId}/users/${userId}/motorists`, currentAgentProfileId);
+                    try {
+                        const canvasDoc = await getDoc(canvasRef);
+                        if (canvasDoc.exists()) {
+                            const moves = activeCart.map(item => ({
+                                productId: item.productId,
+                                name: item.name,
+                                prodData: item.product || {},
+                                qtyInBks: convertToBks(item.qty, item.unit, item.product || {}),
+                                isPhysicallyGiven: !(proofPayload?.type === 'RETUR' || item.fulfillment === 'IOU'),
+                                isReturnedToStock: proofPayload?.type === 'RETUR' && item.condition !== 'DAMAGED'
+                            }));
+                            await updateDoc(canvasRef, { activeCanvas: applySaleToCanvas(canvasDoc.data().activeCanvas, moves) });
+                        }
+                    } catch (e) {
+                        /* Reported, never swallowed: the receipt is already safe in the Ghost
+                           Ledger, so the sale is not lost — but the van count is now stale and
+                           he has to know that, or he finds out at EOD as a shortage. */
+                        notify("Sale saved offline, but the vehicle count could not be updated: " + (e.message || e));
+                    }
+                }
+
                 if (!manualData && setCart) setCart([]);
                 triggerCapy("⚠️ Offline Mode: Sale recorded to Ghost Ledger! Will auto-sync when signal returns.");
                 window.dispatchEvent(new CustomEvent('trigger-telemetry-ping'));
@@ -238,38 +308,7 @@ export default function useTransactionEngine({
             
             // 🚀 SMART AGENT INVENTORY DEDUCTION
             if (agentDoc && agentDoc.exists()) {
-                let currentCanvas = agentDoc.data().activeCanvas || [];
-                
-                let updatedCanvas = currentCanvas.map(c => {
-                    // Find if this product was physically given to the customer in this transaction
-                    const givenItems = transactionItems.filter(cartItem => cartItem.productId === c.productId && cartItem.isPhysicallyGiven);
-                    
-                    if (givenItems.length > 0) {
-                        const pData = givenItems[0].prodData || {};
-                        let mCanvas = c.unit === 'Slop' ? (pData.packsPerSlop || 10) : c.unit === 'Bal' ? ((pData.slopsPerBal || 20) * (pData.packsPerSlop || 10)) : c.unit === 'Karton' ? ((pData.balsPerCarton || 4) * (pData.slopsPerBal || 20) * (pData.packsPerSlop || 10)) : 1;
-                        
-                        const totalGivenBks = givenItems.reduce((sum, gi) => sum + gi.qtyInBks, 0);
-                        const currentCanvasBks = (c.qty * mCanvas) - totalGivenBks;
-                        
-                        if (currentCanvasBks < 0) throw `Vehicle doesn't have enough ${givenItems[0].name} left!`;
-
-                        return { ...c, qty: currentCanvasBks / mCanvas }; 
-                    }
-                    return c;
-                });
-                // Buyback: put the resellable packs back on the van. New line if he was not
-                // carrying that product — the map above only touches lines that already exist.
-                transactionItems.filter(t => t.isReturnedToStock).forEach(t => {
-                    const idx = updatedCanvas.findIndex(c => c.productId === t.productId);
-                    if (idx >= 0) {
-                        const c = updatedCanvas[idx];
-                        updatedCanvas[idx] = { ...c, qty: c.qty + (t.qtyInBks / convertToBks(1, c.unit, t.prodData)) };
-                    } else {
-                        updatedCanvas.push({ productId: t.productId, name: t.name, qty: t.qtyInBks, unit: 'Bks' });
-                    }
-                });
-
-                batch.update(agentRef, { activeCanvas: updatedCanvas.filter(c => c.qty > 0) });
+                batch.update(agentRef, { activeCanvas: applySaleToCanvas(agentDoc.data().activeCanvas, transactionItems) });
             }
 
             // Clean up the temporary tracking flags AND the embedded master product before
