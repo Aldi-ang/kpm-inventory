@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-18 12:32 WIB (KPM app session)** · 🔧 13 FIXES · 📋 ONE PROMPT READY · branch `phase0-solid-ground`
+**Updated: 2026-08-18 12:50 WIB (KPM app session)** · 🔧 13 FIXES · 📋 ONE PROMPT READY · branch `phase0-solid-ground`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -2671,6 +2671,20 @@ price ladder; performance rank is now the Tier Automation Engine's job.
 - ✅ **The Firebase authorized domain is DONE** — *"already"*. `192.168.1.109` can sign in.
 
 ## 📓 LOG
+
+### 2026-08-18 12:50 (KPM app session) — he caught the caveman drift
+
+His words: *"talk like e caveman this should be on the alucard habit but why this chat still so
+much talking, and i also ask alucard to have karpathy guidelines for their working methods"*.
+
+**Both were already defaults** — alucard §4 (Karpathy) and §5 (Caveman), set 2026-08-18. The file
+was right; the execution drifted. The trigger is a turn with MANY findings: each one gets written
+up as prose instead of a table row. **More findings must mean more compression, not less.**
+
+⏳ **WAITING ON ALDI:** should the skill get a hard cap — a normal reply capped at 8 lines of
+prose, excluding code blocks, tables and the closing summary? I cannot edit `alucard/SKILL.md`
+myself (his 2026-08-09 rule); the wording needs his approval first.
+
 
 ### 2026-08-18 12:32 (KPM app session) — store hand-off stopped reassigning every shop that shares a name
 
