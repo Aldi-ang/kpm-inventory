@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-17 13:36 WIB (KPM app session)** · 🎴 CAROUSEL v2 PUBLISHED — full product names, no truncation · branch `phase0-solid-ground`
+**Updated: 2026-08-18 11:47 WIB (KPM app session)** · 🔧 10 FIXES SHIPPED, EACH SELF-CHECKED · branch `phase0-solid-ground`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -15,292 +15,84 @@
 
 ## ▶ NOW
 
-# 🔧 2026-08-18 — 9 FIXES SHIPPED. SELF-CHECKING HARNESS BUILT.
+# 🔧 PLAN A UNDERWAY — 10 FIXES SHIPPED, EVERY ONE SELF-CHECKED
 
-Aldi: *"keep fixing all the problems"* + *"i want u to check every single update that u made
-yourself from now on, find solution to do that"*.
+Aldi chose **A (money first)** off the 75-problem register, then re-scoped how I work twice:
+*"i want u to check every single update that u made yourself from now on, find solution to do
+that"*, and *"im kinda dizzy looking at all the test"* — so testing moved off his plate entirely.
+Ponytail is set to **ultra**.
 
-## ✅ THE SOLUTION TO THE SECOND ASK: `src/config/logicFixes.selfcheck.mjs`
+## ✅ THE SELF-CHECK HARNESS — `src/config/logicFixes.selfcheck.mjs`
 
-Follows the repo's own `*.selfcheck.mjs` pattern. **Every fix leaves two assertions:**
-a **regression guard** (the broken form must not come back) and a **behaviour check** (the maths
-re-run on real numbers). **A fix without a line in that file is not finished.**
+**Every fix leaves two assertions there: a regression guard (the broken form must not come back)
+and a behaviour check (the maths re-run on real numbers). A fix without a line in that file is
+not finished.** Verify chain after every change:
 
-Full verify chain, run after every change:
 ```
 npm run build; node src/config/integration.audit.mjs; node src/config/logicFixes.selfcheck.mjs
 ```
-Currently **build clean · 599/0 · 35/0**.
 
-**The harness caught two of its own bugs before the code did** — both worth remembering:
-1. A python patch silently no-matched because this repo is **CRLF** and the anchor assumed LF.
-   `s.replace()` returns the string unchanged on no match, so it printed success and did nothing.
-   **Every patch script now uses `s.index()` / an explicit assert, never a bare replace.**
-2. The `imports()` guard was written as a JS **single-quoted string** used as a regex, so `\s`
-   `\{` `` collapsed to `s`, `{`, backspace. It reported both real imports as MISSING.
-   Rewritten with `matchAll` + exact name match, no dynamic escaping.
+Currently **build clean · 599/0 · 42/0**.
+
+⚠️ **Two process faults it caught before the code did — both now written into its comments:**
+1. A python patch **silently no-matched**: this repo is **CRLF** and the anchor assumed LF.
+   `str.replace()` returns the string unchanged on a miss, so it printed success and did nothing.
+   **Use `s.index()` or an explicit assert in every patch script, never a bare replace.**
+2. An `imports()` guard written as a JS **single-quoted string used as a regex** — the escapes
+   collapsed and it reported real imports as MISSING. Use `matchAll`, not a built string.
 
 That guard exists because **bug #24 is a call to `getDoc` that was never imported** — it threw
-into an empty `catch(e){}` and silently disabled the rank engine. A build does not catch that.
+into an empty `catch(e){}` and silently disabled the rank engine. **A build does not catch that.**
 
-## Shipped (9)
+## Shipped (10) — each verified BEFORE its commit
 
 | # | Fix | Commit |
 |---|---|---|
-| A1 | Rank scored in XP, not rupiah | `fd562f4` |
-| A2 | One IOU line no longer forces the basket to Cash | `fd562f4` |
-| A4 | Sector settings actually save, and report failure | `ed4b2b2` |
-| A5 | "Pricing Tier" offers Retail/Grosir/Ecer | `ed4b2b2` |
-| A3 | Buyback returns resellable goods to stock | `d8f792f` |
+| A1 | Rank scored in XP, not rupiah (everyone was instantly max rank) | `fd562f4` |
+| A2 | One Utang Barang line no longer forces the whole basket to Cash | `fd562f4` |
+| A4 | Sector settings actually save, and a failure is now reported | `ed4b2b2` |
+| A5 | "Pricing Tier" offers Retail/Grosir/Ecer, not the RPG rank ladder | `ed4b2b2` |
+| A3 | Buyback returns resellable goods to stock (van, or vault for admin) | `d8f792f` |
 | #14 | Buyback books a loss, not profit | `14e0f62` |
-| #8 | Damaged EOD goods converted to packs (2 Bal = 400, not 2) | `ec3fda7` |
+| #8 | Damaged EOD goods converted (2 Bal = 400, not 2) | `ec3fda7` |
 | #12 | Edit modal uses real packing; `slopPerKarton` now 0 hits repo-wide | `ec3fda7` |
+| — | **IOU renamed → Utang Barang** (labels only, stored values untouched) | `8f8fac3` |
 
-## 📋 Aldi's testing moved OFF his plate
+**A5 trap:** dropping `priceTier` alone does NOT fix it — the read chain is
+`(priceTier || tier || pricingTier)` and `tier` held the same rank string.
 
-He said *"im kinda dizzy looking at all the test"*. All ✅ TEST items now live in
-**`A-Brain/Backlog/TESTS - check these when you feel like it.md`** — no order, no deadline.
-**Stop putting test asks in chat replies.** Add them to that file.
+**Rename trap:** the stored `'IOU Fulfillment'` paymentType and `fulfillment === 'IOU'` were
+deliberately NOT renamed — both are compared against documents already in the database. The
+receipt maps at render time via `paymentLabel()` in `helpers.js`. Four selfcheck assertions hold
+that line so nobody "tidies" it later and orphans his history.
 
-⚠️ That file warns: the tests need the NEW build. Testing the live/deployed app will
-"fail" every one of them for the wrong reason.
+## 📋 Testing is OFF his plate — stop putting ✅ TEST asks in chat replies
 
-## Task list (harness tasks, survives compaction)
-1. A6+A7 firestore.rules — **emulator first, DO NOT DEPLOY**
-2. Rename IOU → awaiting his pick (Utang Barang / Belum Kirim / Sisa Kirim); labels only, the
-   stored `"IOU Fulfillment"` value must NOT change or every past record stops matching
-3. Store credit design — solves BOTH his cash-refund problem and the healthy-swap feature
-4. **in progress** — work down the remaining 66, High first
+All of it lives in **`A-Brain/Backlog/TESTS - check these when you feel like it.md`**. No order,
+no deadline. ⚠️ That file warns the tests need the **NEW build** — testing the live/deployed
+app makes every one of them "fail" for the wrong reason.
 
-## 🔴 Open with Aldi
-- IOU new name?
-- Did he test #2 (healthy return vanishing) on the new build or the live app? That is A3, fixed.
-- Store credit: yes/no. It replaces cash refunds and unblocks tukar-barang in one mechanism.
+## Task list (harness tasks — survives compaction)
 
----
+1. **A6+A7 `firestore.rules`** — emulator FIRST, **DO NOT DEPLOY** (draft-and-report rule)
+2. ✅ done — IOU → Utang Barang rename
+3. **Store credit design** — solves his cash-refund problem AND the healthy-swap feature in one
+4. **in progress** — the remaining 66 problems, High severity first
 
-## ▶ NOW
+## 🔴 NEXT, in damage order
 
-# 🔧 2026-08-18 — PLAN A UNDERWAY. 4 OF 7 CRITICAL FIXED + VERIFIED.
+`MerchantSalesView.jsx:1193` post-commit failure → agent sells it twice ·
+`App.jsx:2613/:2627/:2646` delegated admin deletes nothing but is told it worked ·
+`App.jsx:1628` hand-off matches by NAME · `AgentProfileView.jsx:530` Consignment Risk built from
+the 7-day feed · `useTransactionEngine.js:329/:331` substring customer match + welded name suffix ·
+`MapMissionControl.jsx:1512` `getDoc` never imported.
 
-Aldi chose **A (money first)**. Fixing the 7 Critical in order.
-
-| # | Fix | Commit | State |
-|---|---|---|---|
-| A1 | Rank scored in rupiah vs XP ladder (`AgentProfileView.jsx:557`) | `fd562f4` | ✅ done |
-| A2 | One IOU line forced whole basket to Cash (`MerchantSalesView.jsx:917,:930`) | `fd562f4` | ✅ done |
-| A3 | Buyback never restocks (`useTransactionEngine.js:163`) | `d8f792f` | ✅ done, default=van |
-| A4 | Sector settings never saved (`MapMissionControl.jsx:611`) | `ed4b2b2` | ✅ done |
-| A5 | "Pricing Tier" wrote RPG rank (`MapMissionControl.jsx:1869`) | `ed4b2b2` | ✅ done |
-| A6 | Customer view-only unenforceable (`firestore.rules:138`) | — | draft next, DO NOT DEPLOY |
-| A7 | Employee-email hijack (`firestore.rules:214`) | — | draft next, DO NOT DEPLOY |
-
-Each commit verified with `npm run build` + `node src/config/integration.audit.mjs` → **599/0**.
-
-**A5 note — the obvious fix was wrong.** Dropping `priceTier` alone does NOT work: the read
-chain is `(priceTier || tier || pricingTier)` and `tier` held the same rank string. Had to make
-the select offer the real ladder Retail/Grosir/Ecer and seed `tier` to the bottom rank instead.
-
-## ✅ A3 SHIPPED WITH A DEFAULT (ponytail ultra: never stall on an answer you can default)
-
-Buyback (Retur → Refund, condition GOOD) pays the store and adds the packs back **nowhere**.
-Fixing it means choosing a destination, and the code currently has no opinion:
-- **back onto the van** (`activeCanvas`) — agent can resell today; but the canvas `.map()` at
-  `useTransactionEngine.js:218` only touches products ALREADY on the van, so a product he is not
-  carrying needs a NEW canvas line pushed.
-- **to quarantine / HQ** — matches the existing `quarantineCargo` path (built at :25-26 from
-  `condition === DAMAGED` only) and the open Backlog item *Damaged goods and expired stamps need
-  a route to HQ*.
-
-**Chose: back to the seller own stock** (van, or Master Vault for an admin sale). Reversible in
-one line — the flag is `isReturnedToStock` in useTransactionEngine.js. If Aldi says HQ instead,
-point those two writes at the branch/quarantine path.
-
-**Deliberately NOT touched:** `isPhysicallyGiven`, so the profit maths is untouched. Buyback profit
-sign is finding #14 and entangling them would have flipped its cost term the WRONG way (cost term is
-`distributorPrice * (isPhysicallyGiven ? qtyInBks : 0)` — making qtyInBks negative there would have
-made the fake profit bigger, not smaller). Fix #14 separately.
-
-## 🔴 A6 + A7 (firestore.rules) NOT WRITTEN — deliberately
-
-Both need an emulator run before a line is written, not after. Reasons:
-- **A6** fix = translate legacy role tags before the matrix lookup AND flip the no-match fallback
-  from `global` to deny. **The flip can lock real people out.** Needs the emulator to see who.
-- **A7** fix = require the created doc id to equal the caller own email. **But the boss creating an
-  agent record legitimately hits that same branch** (FleetCanvasManager writes bossUid = his own
-  uid for someone else email), so the naive patch would block normal agent creation unless
-  isDistributorAdmin/isAuthorizedAreaAdmin covers him. Unverified.
-
-Writing an untested rules diff he might deploy is the dangerous path. Emulator first.
+⚠️ **Do NOT rename the writer for RETUR/RETURN** (`MerchantSalesView.jsx:928` vs
+`useTransactionEngine.js:485`). `HistoryReportView:186/:255/:265/:271` read `'RETUR'` and would
+break. Widen the four debt readers instead — and note RETUR totals are positive while RETURN
+totals are negative.
 
 ---
-
-## ▶ NOW
-
-# ✅ 2026-08-18 — ALL 75 RE-VERIFIED AGAINST REAL CODE. 73 CONFIRMED, 1 DOWNGRADED, 0 IMAGINARY.
-
-Aldi doubted some findings ("some of the problem, i havent sees it exist tho"). Every claim was
-taken back to the source and the real line read and quoted. **No verdict counted without the code.**
-
-**Result: 73/75 present exactly as described. 0 NOT_FOUND.**
-- **#72** (returns debited from Cash) → **PARTLY**: code is verbatim, but `stats.payments` is
-  **never rendered** — dead computation, he could never have seen it. Honest fix = delete it.
-- **#26** (GOD Edit Ranks rule) and **#61** (Fleet Captain canvas) → **not re-checked**, session
-  limit hit mid-run. Marked unproven in the register.
-
-**Hardest confirmations (undeniable, no judgement needed):**
-- `MapMissionControl.jsx:14` imports `{doc, collection, getDocs, setDoc, deleteDoc, updateDoc,
-  writeBatch}` — **no `getDoc`** — while `:1512` and `:1514` both CALL `getDoc`. Guaranteed
-  ReferenceError into a bare `catch(e){}`. The rank engine has never read his targets. (#24)
-- `MapMissionControl.jsx:611-644` handleSaveBoundary: setBoundaries → saveBorderCache → toast →
-  close. `saveBoundaryToFirebase` call sites are ONLY :523/:651/:667; `saveBoundariesInChunks` only
-  :698/:825. **Nothing in 611-644 persists.** (#4)
-- `activeTiers` defaults (`:1802-1808`) are literally id `Mythic|Epic|Grandmaster|Bronze|Unranked`,
-  the select is `value={t.id}` (`:2195`), written to BOTH `tier` and `priceTier` (`:1868-1869`),
-  and `MerchantSalesView:498-502` substring-maps → Grandmaster matches nothing → Retail. (#5)
-- `permissions.js:117-119` = global→own_region→view_only. `firestore.rules:142-144` = the exact
-  inverse. (#75) · `permissions.js:33` translates 'AGENT'→TIER_5, `FleetCanvasManager:91/184/193/205`
-  default to raw `'AGENT'`, rules index `matrix['AGENT']` → miss → `'global'`. (#6)
-- `firestore.rules:214-218` create gated only on `bossUid == auth.uid`, doc ID `{email}` free. (#7)
-- `MapMissionControl:1863-1876` new-store payload: no `region`, no `city`, no dup check. (#51)
-
-⚠️ **TWO MAY NOT APPLY TO HIM — he must check two settings:**
-- **#1** dies if *Settings → XP source* is already "Career history" (`SettingsView:953-970` renders
-  that toggle; `useCareerLedger` defaults false at `AgentProfileView:125`).
-- **#24** only bites if he set custom rank targets; otherwise he never saw a difference.
-
-## 📖 THE DELIVERABLE
-**https://claude.ai/code/artifact/a394be49-4ab3-48e8-88b4-71dab447b794**
-All 75, plain English, ranked, each with What's wrong / Why fix it / How to fix it + file:line, and
-now a **tick per entry**: ✓ verified in code (72) · ◐ real but dead (1) · ○ not re-checked (2).
-Republish the same scratchpad path to update — do NOT create a new artifact.
-
-## 🔴 STILL OWED BY ALDI
-1. **Fix order** — A money-first (recommended) / B one screen at a time / C cheapest first.
-2. **Cukai**: when he works out profit on a pack, does he subtract the cukai? Explained to him in
-   full — the app's own form treats it as a cost (sits with shipping+labour, summed into
-   "TOTAL LANDED VALUE" at `RestockVaultView:90`) but every profit path uses `priceDistributor`
-   (`useTransactionEngine:180`, seeded at `RestockVaultView:73`). **The cheap fix is blocked**:
-   `App.jsx:2947` uses `priceDistributor` as the Distributor-tier SELLING price too.
-
-## 🚫 CONSTRAINTS LEARNED THIS SESSION
-- **No workflows** — his instruction after the quota burn. Verify by hand with Grep/Read.
-- **Never set `model` on a subagent** — `cc/`-prefixed routes are unreachable; agent dies instantly.
-- The `cc/` classifier also intermittently blocks Bash/Artifact. Read-only tools always work.
-
-## NEXT
-Nothing is blocked on me. On his answer to the fix order, start fixing — **read the file first,
-reproduce, then change**. #26 and #61 still need their one-file check.
-
----
-
-# ✅ 2026-08-18 — ALL 75 FINDINGS WRITTEN UP. BENCHMARK RUNNING.
-
-**The 200k output file is READ and TRANSLATED.** Commit `442e21c` in A-Brain, 13 files, 1,775 lines.
-
-**Counts: 75 confirmed · 22 refuted · 0 unverified.** 20,080 lines of code read by the 14 agents.
-
-**Where it now lives — `A-Brain/Backlog/`:**
-- `SWEEP 2026-08-18 - START HERE.md` ← the ranked list + the 8 that move money silently + 🔴 the
-  three fix-order options Aldi must choose between
-- one file per screen: sales terminal (16) · map (15) · App.jsx handlers (18) ·
-  history+audit (7) · agent profile (5) · warehouse+restock (7) · rules vs UI (6)
-- `SWEEP - 22 claims that got KILLED.md` — so nobody re-chases a refuted claim
-
-**Three existing Backlog items were CORRECTED by the sweep** (a downgrade is information):
-- *Confirming a shipment twice* — the single-user double-press path is **REFUTED**
-  (`ConfirmGate.jsx:124` is a full-screen overlay). Only the two-user path stands. Fix unchanged.
-- *Shipping stock to a branch* — added `FleetCanvasManager.jsx:294-296`, whose comment proves
-  **this repo already found and fixed this exact bug in another file** and missed this site.
-- *Excise/cukai* — a second checker **killed it as a defect** and reframed it as a missing feature
-  (weighted-average landed cost). The Rp 6.400/pack figure depends on what Aldi typed into
-  DISTRIBUTOR (MODAL), not on a code fact. **The open question is now the whole item.**
-
-**The 8 HIGHEST after correction:** rank-in-rupiah-vs-XP (`AgentProfileView.jsx:557`, every agent
-instantly max rank) · IOU→Cash (`MerchantSalesView.jsx:930`) · buyback never restocks
-(`useTransactionEngine.js:163`) · sector settings never save (`MapMissionControl.jsx:611`) ·
-"Pricing Tier" writes a game rank (`MapMissionControl.jsx:1869`) · HQ stock overwritten from cache
-(`BranchWarehouseManager.jsx:294`) · customer view-only unenforceable (`firestore.rules:138`) ·
-employee-email hijack (`firestore.rules:214`).
-
-## 🧪 BENCHMARK DONE — RESULT IS **NEGATIVE**. Task `wigrgqk7b`, run `wf_e9afba9b-f08`.
-
-**Setting `model` on a subagent does not work in this environment — it kills the agent.**
-`model:'haiku'` → `cc/claude-haiku-4-5-20251001` → *"may not exist or you may not have access"*.
-`model:'sonnet'` → resolves to **`cc/claude-opus-5`** → same death. 6 of 9 agents dead in ~1.3s
-having done zero work; the 3 opus agents (plain `claude-opus-5`, no `cc/` prefix) ran fine.
-Reproduced by two isolated single-agent probes. **Omitting `model` works.**
-
-`alucard` §9 amended: **do NOT set `model` here**, plus the levers that do work — fewer agents,
-narrower per-agent scope, `effort:'low'`, structured output. The 1.69M-token sweep was expensive
-because 14 agents each re-derived context, not only because of the tier.
-
-### 🔴 THE BY-CATCH MATTERED MORE THAN THE BENCHMARK
-
-The 3 Opus control agents re-checked 3 claims **the same model had already verified**.
-**It disagreed with itself on all three.** Every fact in both passes was true; each pass found one
-fact the other missed, and that fact flipped the answer.
-
-| Claim | New fact | Effect |
-|---|---|---|
-| Excise / landed cost | `priceDistributor` is ALSO the Distributor **selling** price (`App.jsx:2947`) — so "just type the true cost in" would reprice every distributor sale | **REFUTED → CONFIRMED.** Un-killed. Score now **76 / 21** |
-| `BranchWarehouseManager.jsx:294` | photo upload is a **no-op by default**; the real window is offline persistence (`firebase.js:23`); 4 other files share the flaw | HIGHEST → **MEDIUM**, and it is a pattern not a site |
-| `BranchWarehouseManager.jsx:152` | button only renders while status is IN_TRANSIT (`:414`/`:452`) | HIGH → **LOW** |
-
-**One verification pass is evidence, not proof.** Written into the KILLED file, the three Backlog
-items, alucard §9, and memory. A-Brain `559e376`.
-
-⚠️ **This also means the other 72 findings carry the same uncertainty.** Reproduce any HIGHEST by
-hand before working on it — cheaper and more certain than another robot pass.
-
-### The original benchmark design (kept — it was sound, the environment wasn't)
-
-9 agents: haiku × sonnet × opus, on the **same 3 claims with known answers**.
-⚠️ The original workflow script was deleted with the old temp dir, so the Opus verify prompt could
-not be recovered. **Opus is therefore re-run as a control on the new prompt** — comparing haiku on
-prompt-B against opus on lost-prompt-A would prove nothing.
-
-**Pass bar = the cross-file catch**, not the verdict alone:
-- Claim A (`BranchWarehouseManager.jsx:294`) — defect REAL, but the claim's own supporting sentence
-  ("every other writer uses increment()") is FALSE. Must separate the two.
-- Claim B (`:152`) — defect REAL, but the single-user path dies on **`ConfirmGate.jsx:124`**, a file
-  the claim never mentions. **This is THE test.**
-- Claim C (`RestockVaultView.jsx:90`) — **REFUTED**; needs `App.jsx:4144` "DISTRIBUTOR (MODAL)" and
-  `useTransactionEngine.js:62`. Resisting a plausible money story.
-
-Result goes in the vault as a permanent tier rule. `alucard` §9 already carries the habit.
-
----
-
-# 2026-08-18 01:4x — WORKFLOW FINISHED CLEAN: 14/14 AGENTS, 0 ERRORS *(superseded above)*
-
-**Task `w70zq4fqw`, run `wf_dc12c56c-e08`.** Every hunter AND every skeptic completed. 970k subagent
-tokens, 8 minutes. **The `confirmed` list is real verification this time**, not the quota-death
-artefact from the first two attempts.
-
-🔴 **THE FULL RESULT IS 200k CHARS — DO NOT RE-DERIVE IT, READ IT:**
-`.../tasks/w70zq4fqw.output` · per-agent: `.../subagents/workflows/wf_dc12c56c-e08/journal.jsonl`
-
-**Three confirmed headliners visible in the truncated preview** (there are more in the file):
-1. **`App.jsx:1641` — "Transfer Complete" bells are sent BEFORE the batch that moves the money**
-   (`:1688`), and nothing deletes them if it fails. Skeptic **downgraded HIGHEST → MEDIUM**: it
-   refuted the claim that non-owners can reach the button (`view_master_vault` is TIER_1/2 only)
-   and that the 450-op chunk boundary is reachable (7-day listener). **The ordering bug stands.**
-2. **`App.jsx:1842` — damaged EOD goods credited with NO unit conversion** while good stock is
-   converted 26 lines above at `:1812-1816`. Return 2 Bal of crushed packs → quarantine credited
-   **2 instead of 400**, and the admin notification repeats the wrong number as "Bks". Skeptic
-   confirmed, HIGHEST → HIGH. Fix: `increment(convertToBks(item.qty, item.unit, masterProduct))`.
-3. **`MerchantSalesView.jsx:930` — fulfilling an IOU rewrites the whole basket to Cash.** Add a
-   Rp 3.000.000 Titip sale to a basket containing one IOU fulfilment and `cart.some(...)` forces
-   `dbMethod='Cash'` → every debt reader keys on `paymentType==='Titip'`, so **the debt does not
-   exist anywhere**, and the receipt prints "IOU Fulfillment" so the store has no paper either.
-   Fix: `cart.every(...)` instead of `cart.some(...)`. Skeptic CONFIRMED.
-
-**NEXT TURN, in this order:**
-1. Read the output file, write every confirmed finding into `A-Brain/Backlog/` in plain English
-   (same shape as the 22 already there). Keep the skeptic's severity corrections and its refutations
-   — a downgrade is information, not noise.
-2. Then the Haiku benchmark below.
 
 # 🧪 2026-08-18 — RUN THIS AFTER THE RESET: the cheap-model benchmark he ordered
 
@@ -2260,6 +2052,10 @@ batch them: he has to look at each one. `AgentProfileView` is already clean (0 s
 | `src/components/AuthoritySelect.jsx` | **NEW 2026-08-15** — the custom listbox in the permission matrix |
 | `src/config/contrast.selfcheck.mjs` | measures every text/surface pair in BOTH themes |
 | `src/config/integration.audit.mjs` | 526 checks; groups 38 (light switch) and 39 (Duke's Ledger) |
+| `src/config/logicFixes.selfcheck.mjs` | **NEW 2026-08-18** — one regression guard + one behaviour check per logic fix. 42 checks |
+| `src/utils/helpers.js` → `paymentLabel()` | **NEW 2026-08-18** — renders the stored `'IOU Fulfillment'` as "Utang Barang Lunas" without changing the stored value |
+| `A-Brain/Backlog/TESTS - check these when you feel like it.md` | **NEW 2026-08-18** — every test Aldi owes, taken off his plate |
+| `A-Brain/Backlog/SWEEP*.md` (9 files) | **NEW 2026-08-18** — all 75 confirmed problems in plain English, plus the 21 refuted |
 | `index.html` | the pre-paint theme stamp — must agree with `App.jsx`'s theme effect |
 | `src/index.css` | **the page ground** — `body` paints `--ground-base` + the lit-corner gradient |
 | `src/components/BiohazardTheme.jsx` | **the SHELL that actually covers the page** — root wrapper, dock, drawer, status strip |
@@ -2455,6 +2251,50 @@ order:
    and it must stay >= `.kpm-rail-pod`'s width or the open dock paints over the title.
 
 ## ❓ WAITING ON ALDI — verbatim, do not paraphrase
+
+### 🔴 OPEN — asked 2026-08-18, NOT answered
+
+**0. He asked what store credit even is — mid-turn, 11:47. ANSWER THAT FIRST, descriptively.**
+His words: *"what u mean by store credit?, btw i want ur question to be descriptive as always"*.
+⚠️ **Standing style note from that same line: keep SUMMARIES caveman-short, but make every
+QUESTION descriptive.** He cannot answer a question he does not understand.
+
+**1. Store credit — does it replace cash refunds?** Both of his brainstorms are blocked on this
+one answer. His words:
+> *"on the buyback refund by cash, it should make the cash number on the agent inventory minus
+> until there is some sales right ... but there is flaw in this logic, the factory usualy didnt
+> affect refund by cash, because when selling happen, it is contract done and factory have no
+> responsibility of that items anymore, we also need brainstorm on how to modify this logic tho,
+> what is the solution for this"*
+
+Proposed: goods come back, **no money moves**, the store gets a credit note spent on its next
+order. Factory keeps "sale is final"; the agent's cash never goes negative; it is Titip in
+reverse, same ledger opposite sign. Genuine cash out becomes a separate **admin-approved** EOD
+payout, never silently the agent's own money.
+
+**2. Healthy-for-healthy swap (tukar barang).** His words:
+> *"why there is return mode but tukar healthy goods with another healthy goods, there is should
+> be logic added into this ... the differences in price then should be added or returned to the
+> customer for that, but this kind of transaction for returning also needed to have toggle on off
+> button so that not every agent can do that, higher tiers should give be able them (agent) the
+> power to do so but as default this authority is off, what u do think of my logic tho lets
+> brainstorm towards this, this is kinda niche to be happen on the real world tbh but we need it"*
+
+Answered: **do not build a third retur mode** — a swap is a return line + a sale line in one
+basket, total = the difference. Gate it on a new permission-matrix key, default OFF for every
+tier, owner grants per tier. ⚠️ Mixed baskets are exactly what caused problem #2, so ship the
+equal-or-customer-pays case first; the negative case needs store credit (question 1).
+
+**3. Did he test the vanishing healthy return on the NEW build or the LIVE app?** His words:
+> *"i found new bug, when i use return on healthy stock, that stock is written on the receipt and
+> just gone, especially when i use master vault for that"*
+
+That is **A3, fixed in `d8f792f`**, Master Vault branch included — but only in the new build. The
+**"written on the receipt"** half was a second, separate bug (#14: a buyback stored a positive
+total and positive profit), fixed in `14e0f62`.
+
+**4. Does he want the rank dropdown back on the map's new-store form?** A5 replaced it with the
+price ladder; performance rank is now the Tier Automation Engine's job.
 
 ### 🔴 OPEN — asked 2026-08-16, NOT answered
 
@@ -2774,6 +2614,24 @@ order:
 - ✅ **The Firebase authorized domain is DONE** — *"already"*. `192.168.1.109` can sign in.
 
 ## 📓 LOG
+
+### 2026-08-18 11:47 (KPM app session) — plan A: 10 fixes shipped, and every change now checks itself
+
+He picked **A (money first)** off the 75-problem register, then re-scoped how I work twice:
+*"i want u to check every single update that u made yourself from now on"* → built
+`src/config/logicFixes.selfcheck.mjs` (42 checks, one regression guard + one behaviour check per
+fix); and *"im kinda dizzy looking at all the test"* → every ✅ TEST ask moved into
+`A-Brain/Backlog/TESTS - check these when you feel like it.md`. Ponytail set to **ultra**.
+
+Shipped `fd562f4` `ed4b2b2` `d8f792f` `14e0f62` `ec3fda7` `8f8fac3` — rank units, the Utang
+Barang basket leak, buyback restock and its profit sign, damaged-EOD conversion, the nonexistent
+`slopPerKarton` field, and the IOU→Utang Barang rename. Each verified build + 599/0 + 42/0
+**before** its commit, per his standing rule.
+
+Two process faults caught by the harness rather than by me: a patch script that **silently did
+nothing** on CRLF line endings, and an import-guard regex **destroyed by JS string escaping**.
+Both are now written into the harness comments. `integration.audit.mjs:205` also failed on the
+rename — correctly — and was updated rather than worked around.
 
 - **2026-08-16 14:52 WIB (KPM)** — All three approved in the real app (`0b9b784`, `f5f1810`).
   Chrome now runs against a KEPT profile at `<scratch>/chrome-kpm` with `--ignore-certificate-errors`,
