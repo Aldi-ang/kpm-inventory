@@ -342,5 +342,65 @@ ok('the list reads the stored display name, not the key',
   ok('the guard never blocks a payment that HAS a matching sale',
      chosen['warung bu sari'].amount === unchosen['warung bu sari'].amount); }
 
+/* ── S3 · three files still carried their own idea of what a store name is ─────────────── */
+section('S3. One name rule, everywhere — no private copies left');
+const brief    = read('src/utils/customerBrief.js');
+const daystats = read('src/utils/dayStats.js');
+
+ok('customerBrief no longer defines its own normalizer',
+   !/const key = \(name\) => String/.test(brief));
+ok('customerBrief imports the shared rule', /import \{ storeKey as key \} from '\.\/helpers\.js'/.test(brief));
+ok('dayStats counts today\'s stores by key', /storesToday\.add\(storeKey\(/.test(daystats));
+ok('dayStats counts yesterday\'s stores by key', /storesYesterday\.add\(storeKey\(/.test(daystats));
+/* Both files are executed by node in their own self-checks, where the ESM resolver does NOT
+   add the extension Vite adds. Dropping the ".js" breaks those runs, not the build. */
+ok('both node-executed modules import helpers WITH the .js extension',
+   /from '\.\/helpers\.js'/.test(brief) && /from '\.\/helpers\.js'/.test(daystats));
+ok('the sales terminal auto-pick compares by key',
+   /const exact = customers\.filter\(c => storeKey\(c\.name\) === needle\)/.test(merchant));
+ok('and its one-match guard is untouched', /if \(exact\.length === 1\) handleCustomerSelect/.test(merchant));
+
+/* BEHAVIOUR — normalising makes MORE names collide. The guard has to survive that. */
+{ const key = (n) => String(n ?? '').trim().replace(/\s*\((?:Retail|Individual|Wholesale)\)$/i, '').trim().toLowerCase();
+  const pick = (book, typed) => { const needle = key(typed);
+    const exact = book.filter(c => key(c.name) === needle);
+    return exact.length === 1 ? exact[0] : null; };
+
+  // Two DIFFERENT shops that reduce to one key: 14.5 km apart, same name. Never auto-pick.
+  const twins = [ { id: 'north', name: 'Warung Sembako Sumber Rejeki' },
+                  { id: 'south', name: 'warung sembako sumber rejeki (Retail)' } ];
+  ok('two documents sharing a key auto-pick NOTHING - the dropdown stays open',
+     pick(twins, 'Warung Sembako Sumber Rejeki') === null);
+  ok('and the collision is real, not avoided by luck',
+     twins.filter(c => key(c.name) === key('warung sembako sumber rejeki')).length === 2);
+
+  // One shop saved under the legacy name, agent types the clean one.
+  const one = [ { id: 'sari', name: 'Warung Bu Sari (Retail)' }, { id: 'rasa', name: 'Warung Sari Rasa' } ];
+  ok('typing the clean name now picks the shop saved with the legacy suffix',
+     pick(one, 'warung bu sari')?.id === 'sari');
+  ok('the raw compare it replaced would have picked nothing - the bug being guarded',
+     one.filter(c => (c.name || '').trim().toLowerCase() === 'warung bu sari').length === 0);
+  ok('a partial name still picks nothing', pick(one, 'sari') === null);
+
+  // The door-step brief: history filed under the legacy name must still be found.
+  const tx = [ { customerName: 'Warung Bu Sari (Retail)', total: 900000 },
+               { customerName: 'warung bu sari ',         total: 100000 },
+               { customerName: 'Warung Sari Rasa',        total: 500000 } ];
+  const mine = tx.filter(t => key(t.customerName) === key('Warung Bu Sari'));
+  ok('the brief finds the legacy rows instead of reporting "no recent order"', mine.length === 2);
+  ok('and does not swallow the shop that merely shares a word',
+     mine.reduce((s, t) => s + t.total, 0) === 1000000);
+
+  // Stores-visited is a count, so a split inflates his day.
+  ok('three spellings of one shop count as ONE store visited',
+     new Set(tx.map(t => key(t.customerName))).size === 2);
+
+  /* The empty-name gate, now pinned by maths rather than by the spelling of the normalizer —
+     integration.audit used to require the literal `typed.trim().toLowerCase()` and went red on
+     a rename while the behaviour was untouched. Pressing space in an empty field must select
+     nothing, and a name that is ONLY a tier suffix is empty too. */
+  ok('an empty, blank, null or suffix-only name normalises to nothing selectable',
+     ['', '   ', null, undefined, ' (Retail)'].every(v => key(v) === '')); }
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

@@ -9,6 +9,13 @@
    helper is UTC, and WIB is UTC+7, so a UTC day boundary rolls over at 07:00 local —
    right in the middle of a morning route. The comment on getCurrentDate says as much. */
 
+/* 🚀 "Stores visited" is a COUNT of distinct shops, so it needs the one name rule the rest of
+   the app uses — "Warung Bu Sari (Retail)" and "Warung Bu Sari" are one shop, and counting them
+   as two inflates his own day on the rail he glances at without auditing. */
+/* `.js` on purpose — node runs this file directly in dayStats.selfcheck.mjs, and its ESM
+   resolver does not add the extension the way Vite does. */
+import { storeKey } from './helpers.js';
+
 /* Firestore hands back a Timestamp, the offline queue writes a plain {seconds}, and a
    serverTimestamp() that has not resolved yet is null. Handle all three rather than
    assuming, because the offline path is the one that is hardest to notice breaking. */
@@ -46,11 +53,11 @@ export function dayStats(transactions = [], now = new Date()) {
 
     if (s >= dayStart) {
       today += total;
-      if (tx.customerName) storesToday.add(tx.customerName);
+      if (tx.customerName) storesToday.add(storeKey(tx.customerName));
       if (s > lastAt) { lastAt = s; last = tx; }
     } else if (s >= prevStart && s <= prevCutoff) {
       yesterday += total;
-      if (tx.customerName) storesYesterday.add(tx.customerName);
+      if (tx.customerName) storesYesterday.add(storeKey(tx.customerName));
     }
   }
 

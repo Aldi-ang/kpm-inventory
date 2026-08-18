@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { Search, Box, Zap, X, DollarSign, List, ChevronDown, Printer, MessageSquare, ArrowRight, ArrowLeft, MapPin, AlertCircle, Camera, Store, Map, Lock, Package, AlertTriangle, Check, Eye } from 'lucide-react';
 import { doc, setDoc, collection, getDoc, getDocs, updateDoc, addDoc, onSnapshot, serverTimestamp, runTransaction } from 'firebase/firestore'; 
 import { hasClearance } from './config/permissions';
-import { savePhotoAndGetReference, convertToBks, splitToUnits, paymentLabel } from './utils/helpers';
+import { savePhotoAndGetReference, convertToBks, splitToUnits, paymentLabel, storeKey } from './utils/helpers';
 import { dayStats, agoLabel } from './utils/dayStats';
 import { customerBrief, reorderFromLast } from './utils/customerBrief';
 import { nextStop, directionsUrl, metresLabel } from './utils/nextStop';
@@ -526,9 +526,14 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
            called "warung sembako sumber rejeki" 14.5 km apart; auto-picking the first would bill
            the wrong shop, which is real money and unpickable afterwards. Several matches means
            the dropdown stays open and he chooses. */
-        const needle = typed.trim().toLowerCase();
+        /* 🚀 Compared through storeKey now, so typing the clean name also finds a shop saved
+           under the legacy "(Retail)" naming. The `exact.length === 1` rule below is NOT a
+           convenience — it is the guard, and it is untouched. Normalising makes MORE names
+           collide, not fewer, so if two customer documents reduce to the same key the count is
+           2, nothing is auto-picked, and the dropdown stays open for Aldi to choose. */
+        const needle = storeKey(typed);
         if (needle) {
-            const exact = customers.filter(c => (c.name || '').trim().toLowerCase() === needle);
+            const exact = customers.filter(c => storeKey(c.name) === needle);
             if (exact.length === 1) handleCustomerSelect(exact[0]);
         }
     };

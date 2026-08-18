@@ -20,8 +20,17 @@ export const briefSeconds = (tx) => {
 
 /* Names are typed by hand at the counter, so "Warung Bu Sari" and "warung bu sari " are the
    same shop. Matching on the raw string would split one customer's history in two and
-   under-report what they usually buy. */
-const key = (name) => String(name || '').trim().toLowerCase();
+   under-report what they usually buy.
+
+   🚀 This file used to carry its OWN copy of that rule — trim and lowercase, and nothing else.
+   It stopped one step short: the sale engine used to weld the price tier onto a store name, so
+   a shop's older rows say "Warung Bu Sari (Retail)". Asked for the clean name, the private rule
+   found none of them and the panel reported "no recent order" — the salesman walking into a shop
+   he sold to last week with nothing in front of him. The shared storeKey strips that suffix. A
+   private copy of a shared rule is how a fixed bug comes back one file over. */
+/* `.js` on purpose — this module is executed directly by node in customerBrief.selfcheck.mjs,
+   and node's ESM resolver does not add the extension the way Vite does. */
+import { storeKey as key } from './helpers.js';
 
 export function customerBrief(transactions = [], customerName = '') {
     const want = key(customerName);

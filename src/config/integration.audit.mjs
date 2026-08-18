@@ -848,8 +848,13 @@ check(G18, 'it goes through the same handler the dropdown uses',
   /exact\.length === 1\) handleCustomerSelect\(/.test(termSrc),
   'a second selection path that skips the tier mapping, territory bar or telemetry ping is '
   + 'exactly how the pricingTier bug got in');
+/* Pinned on the GATE, not on the spelling of the normalizer. This used to require the literal
+   `typed.trim().toLowerCase()`, and went red when the comparison moved to the shared storeKey()
+   — while the behaviour it exists to protect never changed. What matters is that the needle is
+   normalised and that nothing is selected when it comes out empty; storeKey returns '' for '',
+   '   ', null and undefined, and logicFixes.selfcheck asserts that on real values. */
 check(G18, 'an empty or whitespace-only name never selects anything',
-  /const needle = typed\.trim\(\)\.toLowerCase\(\);\s*if \(needle\)/.test(termSrc),
+  /const needle = [^;\n]+;\s*if \(needle\)/.test(termSrc),
   'pressing space in an empty field must not match a store');
 
 /* ── 19. the vault gate can never fail in silence ──────────────────────────
