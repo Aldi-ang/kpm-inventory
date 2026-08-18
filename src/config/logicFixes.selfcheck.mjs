@@ -974,13 +974,18 @@ ok('a product he did not count keeps its expected row',
 /* ── S18 · a short EOD count becomes a bounty the agent can repay ──────────────────────── */
 section('S18. A short count is approved, recorded as a bounty, and repayable');
 
-ok('the shortfall is money short on cash AND transfer, never a negative',
-   /Math\.max\(0, -Number\(report\.cashVariance \|\| 0\)\)\s*\n?\s*\+ Math\.max\(0, -Number\(report\.transferVariance \|\| 0\)\)/.test(app));
-ok('the admin is told the amount before approving', /records that as a bounty in their name/.test(app));
-ok('the bounty is minted onto the agent as a PENALTY key',
-   /currentDebts\[`PENALTY_EOD_\$\{report\.id\}`\] = eodShortfall;/.test(app));
+/* Repinned 2026-08-18: the cash+transfer sum moved into eodBountyLines when goods became
+   billable too. The rule did not relax, it moved - so the guard follows it. */
+ok('the shortfall is every bounty line the report mints, summed',
+   /const bountyLines = eodBountyLines\(report, inventory\)/.test(app)
+   && /bountyLines\.reduce\(\(sum, line\) => sum \+ line\.amount, 0\)/.test(app));
+ok('the admin is told the amount AND the lines before approving',
+   /records each of those as a bounty in their name/.test(app)
+   && /bountyLines\.map\(/.test(app) && /\$\{l\.label\}/.test(app));
+ok('the bounty is minted onto the agent, one PENALTY key per reason',
+   /currentDebts\[line\.key\] = line\.amount;/.test(app));
 ok('it is ASSIGNED, not added to, so a double-approve cannot charge twice',
-   !/currentDebts\[`PENALTY_EOD_\$\{report\.id\}`\] \+=/.test(app));
+   !/currentDebts\[line\.key\] \+=/.test(app));
 /* The repayment half already existed and must keep working — these guard it, they are not new. */
 ok('the agent still sums every PENALTY key on his WANTED board',
    /pid\.startsWith\('PENALTY_'\)/.test(eod));
@@ -1036,9 +1041,8 @@ section('S19. Expected beside counted, the short products named, and the card it
      /disputed \? 'Approve Short Count'/.test(card));
   ok('and the card changes with it, so the gap is not just a number on a normal card',
      /disputed \? 'border-\[var\(--danger\)\]/.test(card));
-  ok('the rupiah that becomes a bounty is named before approving, by the rule App.jsx mints with',
-     /Math\.max\(0, -Number\(report\.cashVariance \|\| 0\)\)/.test(card)
-     && /Math\.max\(0, -Number\(report\.transferVariance \|\| 0\)\)/.test(card)); }
+  ok('the rupiah named before approving comes from the SAME rule App.jsx mints with',
+     /eodBountyLines\(report, inventory\)/.test(card)); }
 
 { const H = await import('../utils/helpers.js');
   ok('shortStockRows is exported from helpers, where the shared rules live',
@@ -1108,6 +1112,72 @@ section('S21. Changing operating identity restarts the count');
 
 ok('the counting flow is keyed on the identity being counted for',
    /<EODAgentFlow\s+key=\{effectiveId\}/.test(eod));
+
+
+/* --- S22 . a missing pack is bought back at retail, and every bounty says why ---------- */
+/* Aldi, 2026-08-18, verbatim: "if there is missing pack then agent needs to buy the missing
+   pack on retail price as a compensation, well u can add that to the bounties and the bounties
+   panel need to specify how the bounties number are calculated, for example missing pita = 5000
+   (4 agustus 2026), cello chocolate 5 bks = 50,000 (7 agustus 2026), transfer loss 30,000
+   (8agustus 2026) this kind of detailed needed".
+   So: ONE KEY PER REASON, each with its own label and date. A lump sum cannot be explained. */
+section('S22. Goods are billed at retail, and every bounty line carries its own reason');
+
+ok('the pricing rule lives in helpers, so both the admin card and App.jsx use the same one',
+   /export const eodBountyLines/.test(helpers));
+ok('the label and date travel beside the money, keyed the same way',
+   /currentNotes\[line\.key\] = \{ label: line\.label, date: line\.date \}/.test(app)
+   && /cukaiDebtNotes: currentNotes/.test(app));
+ok('clearing a bounty removes its note too, or the panel grows forever',
+   /delete currentNotes\[key\]/.test(app));
+ok('the WANTED board shows one line per reason, not one total',
+   /agentBountyData\.items\.map/.test(eod));
+ok('a bounty from before the notes existed still gets a name on the board',
+   /Damaged goods penalty/.test(eod) && /End-of-day shortfall/.test(eod));
+ok('the quarantine damage charge writes its own note too, so nothing lands unexplained',
+   /cukaiDebtNotes: \{\s*\[penaltyId\]: \{/.test(read('src/StockOpnameView.jsx')));
+
+{ const { eodBountyLines } = await import('../utils/helpers.js');
+  const INV = [{ id: 'p1', name: 'Cello Chocolate', priceRetail: 10000, packsPerSlop: 10 },
+               { id: 'p2', name: 'Surya 16',        priceRetail: 25000, packsPerSlop: 10, slopsPerBal: 20 },
+               { id: 'p3', name: 'No Price Yet',    packsPerSlop: 10 }];
+
+  const report = {
+    id: 'r9', dayKey: '2026-08-07', cashVariance: 0, transferVariance: -30000,
+    expectedStock: [{ productId: 'p1', name: 'Cello Chocolate', qty: 12, unit: 'Bks' },
+                    { productId: 'p2', name: 'Surya 16',        qty: 3,  unit: 'Slop' },
+                    { productId: 'p3', name: 'No Price Yet',    qty: 4,  unit: 'Bks' }],
+    remainingStock: [{ productId: 'p1', qty: 7 },
+                     { productId: 'p2', qty: 3 },
+                     { productId: 'p3', qty: 2 }],
+  };
+  const lines = eodBountyLines(report, INV);
+  const by = (frag) => lines.find(l => l.key.includes(frag));
+
+  ok('5 packs of a 10.000 product missing costs 50.000 at retail',
+     by('GOODS_p1')?.amount === 50000);
+  ok('his example line reads back the way he wrote it',
+     by('GOODS_p1')?.label === 'Cello Chocolate 5 Bks' && by('GOODS_p1')?.date === '2026-08-07');
+  ok('a short SLOP is converted to packs before it is priced, not billed as one',
+     eodBountyLines({ ...report, remainingStock: [{ productId: 'p2', qty: 2 }] }, INV)
+       .find(l => l.key.includes('GOODS_p2'))?.amount === 250000);
+  ok('a product counted in full is not billed', !by('GOODS_p2'));
+  ok('a transfer loss is its own line, with its own words',
+     by('_TRANSFER')?.amount === 30000 && by('_TRANSFER')?.label === 'Transfer short');
+  ok('cash that matched mints no cash line', !by('_CASH'));
+  ok('every line is keyed by the report, so approving twice writes the same keys',
+     lines.every(l => l.key.startsWith('PENALTY_EOD_r9_')));
+
+  const noPrice = by('GOODS_p3');
+  ok('a product with no retail price still gets a LINE, so the gap is visible',
+     !!noPrice && noPrice.amount === 0);
+  ok('and the line says why it is zero rather than pretending nothing is missing',
+     /no retail price/.test(noPrice?.label || ''));
+
+  ok('a clean night mints nothing at all',
+     eodBountyLines({ id: 'r0', cashVariance: 0, transferVariance: 0 }, INV).length === 0);
+  ok('an older report with no counted stock mints no goods line',
+     eodBountyLines({ id: 'r1', cashVariance: -5000 }, INV).length === 1); }
 
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

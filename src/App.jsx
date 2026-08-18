@@ -99,7 +99,7 @@ import {
 
 // --- CONFIG & UTILITIES IMPORTS ---
 import { auth, db, storage, googleProvider, appId } from './config/firebase';
-import { formatRupiah, getCurrentDate, getLocalDayKey, getRandomColor, convertToBks, commitInChunks, savePhotoAndGetReference, storeKey, storeLabel } from './utils/helpers';
+import { formatRupiah, getCurrentDate, getLocalDayKey, getRandomColor, convertToBks, commitInChunks, savePhotoAndGetReference, storeKey, storeLabel, eodBountyLines } from './utils/helpers';
 import { computeDayXP, DEFAULT_XP, checkBadges, DEFAULT_BADGES } from './config/career';
 import { confirmAction, promptAction } from './components/ConfirmGate.jsx';
 import { notify } from './components/Toast.jsx';
@@ -1764,13 +1764,17 @@ const handleGitHubMirror = async () => {
       /* A short count becomes a bounty in the agent's name, so the admin is told the amount
          BEFORE approving, not after. Aldi's rule, 2026-08-18: "admin can approve but it will add
          up to the agent's bounties instead". Approving is allowed — it is simply not silent. */
-      const eodShortfall = Math.max(0, -Number(report.cashVariance || 0))
-                         + Math.max(0, -Number(report.transferVariance || 0));
+      /* One line per reason - cash, transfer, and each product that did not come back, billed
+         at its retail price. Aldi, 2026-08-18: "if there is missing pack then agent needs to buy
+         the missing pack on retail price as a compensation". The arithmetic lives in helpers so
+         the card the admin reads and the ledger he writes cannot drift apart. */
+      const bountyLines = eodBountyLines(report, inventory);
+      const eodShortfall = bountyLines.reduce((sum, line) => sum + line.amount, 0);
 
       const confirmMsg = report.reportType === 'BOUNTY'
           ? `Verify Bounty Clearance of Rp ${new Intl.NumberFormat('id-ID').format(report.cash)} for ${report.agentName}? This will wipe their quarantine debt.`
           : eodShortfall > 0
-              ? `Verify EOD for ${report.agentName}?\n\nThey counted Rp ${new Intl.NumberFormat('id-ID').format(eodShortfall)} LESS than expected. Approving records that as a bounty in their name, which they can repay from their own EOD screen.\n\nThis also clears their inventory and returns it to the Vault.`
+              ? `Verify EOD for ${report.agentName}?\n\nThey are short Rp ${new Intl.NumberFormat('id-ID').format(eodShortfall)}:\n${bountyLines.map(l => `  \u2022 ${l.label} \u2014 Rp ${new Intl.NumberFormat('id-ID').format(l.amount)}`).join('\n')}\n\nApproving records each of those as a bounty in their name, which they can repay from their own EOD screen.\n\nThis also clears their inventory and returns it to the Vault.`
               : `Verify EOD for ${report.agentName}? This clears their inventory and returns it to the Vault.`;
 
       if(!await confirmAction(confirmMsg)) return;
@@ -1928,6 +1932,10 @@ const handleGitHubMirror = async () => {
               // 2B. Update Agent Profile & Financial Wallets
               if (agentRef && agentDoc && agentDoc.exists()) {
                   let currentDebts = agentDoc.data().cukaiDebts || {};
+                  /* Why a sibling map and not a richer value under PENALTY_: every existing sum
+                     on that key expects a plain number. Changing the shape would have broken the
+                     WANTED board, the clearance report and the stamp arithmetic at once. */
+                  let currentNotes = agentDoc.data().cukaiDebtNotes || {};
                   let currentCanvas = agentDoc.data().activeCanvas || [];
 
                   // 🤠 RDR2 BOUNTY PROTOCOL 🤠
@@ -1935,10 +1943,11 @@ const handleGitHubMirror = async () => {
                       if (report.penaltyKeys && Array.isArray(report.penaltyKeys)) {
                           report.penaltyKeys.forEach(key => {
                               delete currentDebts[key]; // Physically eradicate the debt from the ledger
+                              delete currentNotes[key]; // and the line that explained it, or the panel grows forever
                           });
                       }
                       // Update ONLY the debt wallet. Do NOT wipe their vehicle canvas for a mid-day fine payment!
-                      t.update(agentRef, { cukaiDebts: currentDebts });
+                      t.update(agentRef, { cukaiDebts: currentDebts, cukaiDebtNotes: currentNotes });
                   
                   } else {
                       // 📦 STANDARD EOD / CUKAI PROTOCOL 📦
@@ -1969,21 +1978,26 @@ const handleGitHubMirror = async () => {
                          board sums every PENALTY_ key, and a BOUNTY clearance report pays them off
                          from the agent's own EOD screen. Only the minting was missing.
 
-                         Keyed by the REPORT id and ASSIGNED, never added to: verifying the same
-                         report twice writes the same key with the same number, so a double-approve
-                         cannot charge a man twice for one night.
+                         ONE KEY PER REASON, on his later word: "the bounties panel need to specify
+                         how the bounties number are calculated". A lump sum cannot be explained to
+                         the man paying it. `cukaiDebtNotes` carries the label and the date beside
+                         each key, so the board can read the arithmetic back; the money itself stays
+                         a plain number under PENALTY_, which is what every existing sum expects.
 
-                         Money only. A goods shortage rides along on the report as `goodsShort` and
-                         is deliberately not priced into a fine here — what a missing pack is worth
-                         is his call, not an assumption to bury in a transaction. */
-                      if (eodShortfall > 0 && report.id) {
-                          currentDebts[`PENALTY_EOD_${report.id}`] = eodShortfall;
+                         ASSIGNED, never added to: verifying the same report twice writes the same
+                         keys with the same numbers, so a double-approve cannot charge a man twice
+                         for one night. */
+                      if (report.id) {
+                          bountyLines.forEach(line => {
+                              currentDebts[line.key] = line.amount;
+                              currentNotes[line.key] = { label: line.label, date: line.date };
+                          });
                       }
 
                       // 🚀 ANTI-WIPE BUG FIX: If they just submitted a Cukai report, do NOT wipe their stock!
                       const finalCanvas = (report.reportType === 'CUKAI') ? currentCanvas : [];
 
-                      t.update(agentRef, { activeCanvas: finalCanvas, cukaiDebts: currentDebts, cukaiDebt: 0 });
+                      t.update(agentRef, { activeCanvas: finalCanvas, cukaiDebts: currentDebts, cukaiDebtNotes: currentNotes, cukaiDebt: 0 });
                   }
               }
 

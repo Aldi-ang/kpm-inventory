@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { ShieldCheck, Wallet, Truck, CheckCircle, Upload, AlertCircle, Clock, DollarSign, Package, XCircle, Tag, ChevronDown, ChevronRight, MapPin, User, Calendar, Folder, Target, BadgeDollarSign, ShieldAlert } from 'lucide-react';
-import { formatRupiah, getLocalDayKey, storeKey, shortStockRows } from './utils/helpers';
+import { formatRupiah, getLocalDayKey, storeKey, shortStockRows, eodBountyLines } from './utils/helpers';
 import { confirmAction } from './components/ConfirmGate.jsx';
 import EODAgentFlow from './components/EODAgentFlow.jsx';
 
@@ -68,19 +68,36 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
 
     // --- 🚀 BOUNTY & PENALTY INTERCEPTOR ---
     const agentBountyData = useMemo(() => {
-        if (!effectiveId) return { total: 0, keys: [], isPending: false };
+        if (!effectiveId) return { total: 0, keys: [], items: [], isPending: false };
         const agentProfile = motorists.find(m => m.id === effectiveId) || {};
         const cDebts = agentProfile.cukaiDebts || {};
-        
+        /* The label and date for each key, written when the bounty was minted. Aldi, 2026-08-18:
+           "the bounties panel need to specify how the bounties number are calculated". */
+        const cNotes = agentProfile.cukaiDebtNotes || {};
+
+        /* A bounty from before the notes existed still has to say something. The key shape is
+           what is left to read it from: PENALTY_<epoch-ms> is a quarantine damage charge and
+           carries its own date; PENALTY_EOD_<reportId> is the old single-figure night. */
+        const describe = (pid) => {
+            if (cNotes[pid]) return { label: cNotes[pid].label || 'Bounty', date: cNotes[pid].date || '' };
+            const stamp = /^PENALTY_(\d{10,})$/.exec(pid);
+            if (stamp) return { label: 'Damaged goods penalty', date: new Date(Number(stamp[1])).toISOString().split('T')[0] };
+            if (pid.startsWith('PENALTY_EOD_')) return { label: 'End-of-day shortfall', date: '' };
+            return { label: 'Bounty', date: '' };
+        };
+
         let total = 0;
         let keys = [];
+        let items = [];
         for (let [pid, val] of Object.entries(cDebts)) {
             // 🚀 THE FIX: Removed the "val > 0" blindspot. It will now catch Rp 0 fines!
             if (pid.startsWith('PENALTY_')) {
                 total += (val || 0);
                 keys.push(pid);
+                items.push({ key: pid, amount: Number(val) || 0, ...describe(pid) });
             }
         }
+        items.sort((a, b) => String(b.date).localeCompare(String(a.date)) || b.amount - a.amount);
         
         const todaysReports = eodReports.filter(r => {
             if (r.agentId !== effectiveId) return false;
@@ -89,7 +106,7 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
         });
         const pendingBounty = todaysReports.find(r => r.status === 'PENDING' && r.reportType === 'BOUNTY');
 
-        return { total, keys, isPending: !!pendingBounty };
+        return { total, keys, items, isPending: !!pendingBounty };
     }, [effectiveId, motorists, eodReports]);
 
 
@@ -385,6 +402,23 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                                 <p className="text-4xl font-black text-[var(--danger-ink)] font-mono mb-4 drop-shadow-[0_0_15px_rgba(220,38,38,0.5)]">
                                                     {formatRupiah(agentBountyData.total)}
                                                 </p>
+
+                                                {/* One line per reason, with the arithmetic on it. His example:
+                                                    "cello chocolate 5 bks = 50,000 (7 agustus 2026)". */}
+                                                {agentBountyData.items.length > 0 && (
+                                                    <div className="w-full md:w-80 mb-4 space-y-1 text-left">
+                                                        <p className="text-[10px] text-[var(--danger-ink)] font-bold uppercase tracking-widest mb-1">What it is made of</p>
+                                                        {agentBountyData.items.map(item => (
+                                                            <div key={item.key} className="flex justify-between items-baseline gap-3 bg-[var(--danger-well)] border border-[var(--danger)] px-2 py-1.5 rounded">
+                                                                <span className="text-[11px] text-[var(--danger-ink)] leading-tight">
+                                                                    {item.label}
+                                                                    {item.date && <span className="text-[10px] text-[var(--ink-dim)] block">{item.date}</span>}
+                                                                </span>
+                                                                <strong className="text-[12px] text-[var(--danger-ink)] font-mono tabular-nums whitespace-nowrap">{formatRupiah(item.amount)}</strong>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
 
                                                 {/* 🚀 THE RP 0 WARNING REVEAL */}
                                                 {agentBountyData.total === 0 && (
@@ -800,8 +834,8 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                 /* The same rule App.jsx mints with, so the rupiah named here is
                                    the rupiah he will actually owe. Floored separately: extra
                                    cash does not pay off a missing transfer. */
-                                const moneyShort = Math.max(0, -Number(report.cashVariance || 0))
-                                                 + Math.max(0, -Number(report.transferVariance || 0));
+                                const moneyShort = eodBountyLines(report, inventory)
+                                                     .reduce((sum, line) => sum + line.amount, 0);
                                 const shortRows = shortStockRows(report.expectedStock, report.remainingStock);
 
                                 return (
@@ -832,11 +866,11 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                                 <p className="text-[10px] font-bold text-[var(--danger-ink)] uppercase tracking-widest mb-1 flex items-center gap-1"><AlertCircle size={14}/> He Counted Less Than Expected</p>
                                                 {moneyShort > 0 ? (
                                                     <p className="text-[11px] text-[var(--danger-ink)] leading-relaxed">
-                                                        Approving records <strong className="font-black">{formatRupiah(moneyShort)}</strong> as a bounty on {report.agentName}. He can repay it from his own EOD screen.
+                                                        Approving records <strong className="font-black">{formatRupiah(moneyShort)}</strong> as a bounty on {report.agentName} &mdash; cash, transfer and any missing packs at retail price, each as its own line. He can repay it from his own EOD screen.
                                                     </p>
                                                 ) : (
                                                     <p className="text-[11px] text-[var(--danger-ink)] leading-relaxed">
-                                                        The money matches. The shortfall is goods, listed below, and is not turned into a bounty.
+                                                        The money matches and nothing is priced &mdash; the short products below have no retail price set, so nothing can be charged for them yet.
                                                     </p>
                                                 )}
                                             </div>

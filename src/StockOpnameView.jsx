@@ -393,9 +393,18 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                 const agentRef = doc(db, `artifacts/${appId}/users/${masterId}/motorists`, agentId);
                 const penaltyId = `PENALTY_${Date.now()}`;
                 
+                /* The note beside the money, same shape the EOD bounties write. Aldi, 2026-08-18:
+                   "the bounties panel need to specify how the bounties number are calculated".
+                   Without it this charge shows on his board as an unexplained number. */
                 batch.set(agentRef, { 
                     cukaiDebts: {
                         [penaltyId]: totalValue
+                    },
+                    cukaiDebtNotes: {
+                        [penaltyId]: {
+                            label: `${resolutionModal.item.name} ${qtyToResolve} damaged`,
+                            date: new Date().toISOString().split('T')[0]
+                        }
                     }
                 }, { merge: true });
 

@@ -278,3 +278,44 @@ export const shortStockRows = (expected = [], counted = []) => {
         return rows;
     }, []);
 };
+
+/* Every bounty line one EOD report mints: priced, labelled, dated. Aldi, 2026-08-18, verbatim:
+   "if there is missing pack then agent needs to buy the missing pack on retail price as a
+   compensation, well u can add that to the bounties and the bounties panel need to specify how
+   the bounties number are calculated, for example missing pita = 5000 (4 agustus 2026), cello
+   chocolate 5 bks = 50,000 (7 agustus 2026), transfer loss 30,000 (8agustus 2026) this kind of
+   detailed needed".
+
+   So ONE KEY PER REASON. A single lump sum cannot be explained to the man paying it, and the
+   agent is entitled to see the arithmetic on his own name.
+
+   - Cash and transfer are floored at zero SEPARATELY: extra cash does not quietly settle a
+     missing transfer.
+   - Goods are billed at the RETAIL price of the packs that did not come back, because he is
+     buying them. The short quantity is converted to packs first — a short Slop is ten packs.
+   - A product with no retail price still gets a line, at Rp 0, so the gap is visible on the
+     board instead of silently absent. The board already handles Rp 0 fines on purpose. */
+export const eodBountyLines = (report = {}, inventory = []) => {
+    const date = report.dayKey || '';
+    const id = report.id || '';
+    const lines = [];
+
+    const cashShort     = Math.max(0, -Number(report.cashVariance || 0));
+    const transferShort = Math.max(0, -Number(report.transferVariance || 0));
+    if (cashShort > 0)     lines.push({ key: `PENALTY_EOD_${id}_CASH`,     amount: cashShort,     label: 'Cash short',     date });
+    if (transferShort > 0) lines.push({ key: `PENALTY_EOD_${id}_TRANSFER`, amount: transferShort, label: 'Transfer short', date });
+
+    shortStockRows(report.expectedStock, report.remainingStock).forEach(row => {
+        const product = (inventory || []).find(p => p && p.id === row.productId) || {};
+        const retail = Number(product.priceRetail || 0);
+        const packs = convertToBks(row.short, row.unit, product);
+        lines.push({
+            key: `PENALTY_EOD_${id}_GOODS_${row.productId}`,
+            amount: Math.round(packs * retail),
+            label: `${row.name} ${row.short} ${row.unit}${retail > 0 ? '' : ' (no retail price set)'}`,
+            date,
+        });
+    });
+
+    return lines;
+};
