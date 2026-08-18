@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-18 12:58 WIB (KPM app session)** · 🔧 13 FIXES · 📋 ONE PROMPT READY · branch `phase0-solid-ground`
+**Updated: 2026-08-18 13:2x WIB (KPM app session)** · 🔧 14 FIXES · 📋 ONE PROMPT READY · branch `phase0-solid-ground`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -12,6 +12,35 @@
 > 📏 **KEEP THIS FILE UNDER ~350 LINES.** When it passes that, cut the oldest day into the same
 > archive rather than letting it grow back. This file holds WHERE THE WORK STANDS; the archive
 > and `A-Brain/Wiki/Log.md` hold how it got there.
+
+## 🟠 2026-08-18 13:2x WIB — KPM app track — SALE-ENGINE NAME BUGS: SHIPPED `264c138`
+
+Both name bugs in `handleMerchantSale` fixed together — same root cause, the engine treated the
+store name as something it could guess at AND rewrite.
+
+- **A · loose lookup gone.** It matched on part of a name, so "SARI" typed for a walk-in booked
+  the sale and its Titip debt onto "WARUNG SARI RASA". Now an exact match, the same rule the
+  sales terminal already used.
+- **B · the price tier is no longer welded onto the name.** No more "Warung Bu Sari (Retail)"
+  customer documents. The tier was already on every cart line as `item.priceTier`.
+- **The trap, handled.** Dropping the suffix alone would SPLIT every shop that already carries
+  it — one shop, two receivable rows, half the balance each, no error. Old names are tolerated
+  when COMPARING, in one shared helper: `storeKey()` in `src/utils/helpers.js`. Used by the
+  engine and by `ConsignmentFinanceView`, which now groups on it.
+- **Files touched (4):** `useTransactionEngine.js` (the two fixes) · `helpers.js` (the helper)
+  · `ConsignmentFinanceView.jsx` (the trap) · `logicFixes.selfcheck.mjs` (14 new checks).
+- **Verified:** build clean · integration audit 599/0 · self-check **72/0 → 86/0**. The six
+  regression guards were watched failing first — stash the three source files, run the check,
+  see 80 passed / 6 failed, restore. Vault: `264c138`'s story is in
+  `A-Brain/Wiki/Concepts/A Store Name Is Not a Store.md` + `Wiki/Log.md`.
+- **Left alone on purpose:** `MerchantSalesView` auto-pick still compares raw names, so a shop
+  saved under the legacy "(Retail)" name no longer auto-picks when the clean name is typed —
+  the sale still books to the right shop, so it is a convenience gap, not a money bug.
+  `AgentProfileView`'s `storeDebt` map still keys on the raw name; that is the next job.
+
+📋 **`.claude/NEXT-SESSION.md` rewritten** — one job: the `storeDebt` tally in
+`AgentProfileView.jsx`, which splits the same way AND silently drops a payment whose sale is not
+in the loaded window.
 
 ## ▶ NOW
 
@@ -2671,6 +2700,9 @@ price ladder; performance rank is now the Tier Automation Engine's job.
 - ✅ **The Firebase authorized domain is DONE** — *"already"*. `192.168.1.109` can sign in.
 
 ## 📓 LOG
+
+- **2026-08-18 13:2x** — sale engine: exact store lookup + tier suffix dropped, old names
+  tolerated by `storeKey()`. `264c138`. build clean, 599/0, 86/0.
 
 ### 2026-08-18 12:58 (KPM app session) — alucard now auto-loads caveman ULTRA + karpathy every call
 

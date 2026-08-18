@@ -55,8 +55,8 @@
     "semantic_hash": ""
   },
   "src/ConsignmentFinanceView.jsx": {
-    "mtime": 1786873614.6732006,
-    "ast_hash": "323dc438afe8588c9e583091acb14b9e",
+    "mtime": 1787033683.3259716,
+    "ast_hash": "56759d68377a4cb2158808e434e32986",
     "semantic_hash": ""
   },
   "src/EODReconciliationView.jsx": {
@@ -210,8 +210,8 @@
     "semantic_hash": ""
   },
   "src/hooks/useTransactionEngine.js": {
-    "mtime": 1787025001.1409311,
-    "ast_hash": "4197583edf1fbf7579c5c3561e649dc3",
+    "mtime": 1787033726.783957,
+    "ast_hash": "f2d861b458e1e5e985da6c3b5ad72cda",
     "semantic_hash": ""
   },
   "src/main.jsx": {
@@ -225,8 +225,8 @@
     "semantic_hash": ""
   },
   "src/utils/helpers.js": {
-    "mtime": 1787028365.827744,
-    "ast_hash": "36bc1a482d4926b19b081aeed41f10a5",
+    "mtime": 1787033683.3269696,
+    "ast_hash": "7543d39549c7361922ad93405b01608a",
     "semantic_hash": ""
   },
   "tailwind.config.js": {
@@ -570,8 +570,8 @@
     "semantic_hash": ""
   },
   ".claude/PROGRESS.md": {
-    "mtime": 1787030424.6685984,
-    "ast_hash": "d87f901ea64795604f58b784c4d5ece7",
+    "mtime": 1787032518.761509,
+    "ast_hash": "41b6bea624f06069b07cadda1173467f",
     "semantic_hash": ""
   },
   ".claude/pre-compact-context.md": {
@@ -755,13 +755,13 @@
     "semantic_hash": ""
   },
   "src/config/logicFixes.selfcheck.mjs": {
-    "mtime": 1787030761.9124105,
-    "ast_hash": "d814981319f2e12eb0ac543c7150a43f",
+    "mtime": 1787033656.121347,
+    "ast_hash": "9982a4ab36e88bc05c7af053f50f32a9",
     "semantic_hash": ""
   },
   ".claude/NEXT-SESSION.md": {
-    "mtime": 1787030379.75448,
-    "ast_hash": "2962c3230be849910c6c8b77c860ce6b",
+    "mtime": 1787031109.9241781,
+    "ast_hash": "d43a6830f5db86308f07329b91e346f9",
     "semantic_hash": ""
   }
 }
