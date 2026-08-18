@@ -496,11 +496,75 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                                 const returned = Number(cukaiRows.find(r => r.txId === 'cukai:returned')?.amount) || 0;
                                                 const lost = Number(cukaiRows.find(r => r.txId === 'cukai:lost')?.amount) || 0;
 
+                                                /* 🚀 THE COUNT NOW DECIDES THE REPORT.
+                                                   Until this, every figure that ACTED was the
+                                                   system's own expectation: cash, transfer and the
+                                                   van list were all "what should have been there",
+                                                   and what the agent actually counted travelled
+                                                   alongside as a note nothing read. So a shortage
+                                                   could not be detected — the submitted cash figure
+                                                   WAS the expected figure, and the two could never
+                                                   disagree. The whole counting flow felt finished
+                                                   while the comparison never happened.
+
+                                                   `declared` is what he counted, `expected` is what
+                                                   the app believed; the letter has carried both all
+                                                   along. Both go up now, with the gap named. */
+                                                const card = (id) => letter.cards?.[id] || {};
+                                                const declaredOr = (id, fallback) => {
+                                                    const d = card(id).declared;
+                                                    return (d === null || d === undefined) ? Number(fallback || 0) : Number(d);
+                                                };
+
+                                                const countedCash     = declaredOr('cash', agentData.expectedCash);
+                                                const countedTransfer = declaredOr('transfer', agentData.expectedTransfer);
+
+                                                /* The goods card counts line by line and its rows are
+                                                   keyed `goods:<productId>`, so the counted quantity
+                                                   maps straight back onto the van list, unit and all.
+                                                   A product he did not count keeps its expected row —
+                                                   silence is not the same as zero. */
+                                                const countedByProduct = {};
+                                                (card('goods').sources || []).forEach(r => {
+                                                    const pid = String(r.txId || '').startsWith('goods:')
+                                                        ? String(r.txId).slice('goods:'.length) : '';
+                                                    if (pid) countedByProduct[pid] = Number(r.amount) || 0;
+                                                });
+                                                const countedStock = (agentData.activeStock || []).map(item => {
+                                                    const pid = String(item.productId);
+                                                    return pid in countedByProduct ? { ...item, qty: countedByProduct[pid] } : item;
+                                                });
+
+                                                const cashVariance     = countedCash - Number(agentData.expectedCash || 0);
+                                                const transferVariance = countedTransfer - Number(agentData.expectedTransfer || 0);
+                                                const goodsShort = (agentData.activeStock || []).some(item => {
+                                                    const pid = String(item.productId);
+                                                    return pid in countedByProduct && countedByProduct[pid] < (Number(item.qty) || 0);
+                                                });
+
+                                                /* DISPUTED only FLAGS the gap. Nothing here posts a
+                                                   shortfall against the agent, because the rule Aldi
+                                                   set for transfers is that a shortfall waits for the
+                                                   company to rule on it. Sending the counted figure
+                                                   without that ruling step is the one thing he said
+                                                   must not happen, so the flag travels and the
+                                                   judgement stays with the admin. */
+                                                const countStatus = (cashVariance < 0 || transferVariance < 0 || goodsShort)
+                                                    ? 'DISPUTED' : 'CLEAN';
+
                                                 onSubmitEOD({
-                                                    cash: agentData.expectedCash,
-                                                    transfer: agentData.expectedTransfer,
+                                                    cash: countedCash,
+                                                    transfer: countedTransfer,
                                                     cukai: 0,
-                                                    remainingStock: agentData.activeStock,
+                                                    remainingStock: countedStock,
+                                                    // what the app expected, kept beside the count so the admin sees both
+                                                    expectedCash: Number(agentData.expectedCash || 0),
+                                                    expectedTransfer: Number(agentData.expectedTransfer || 0),
+                                                    expectedStock: agentData.activeStock,
+                                                    cashVariance,
+                                                    transferVariance,
+                                                    goodsShort,
+                                                    countStatus,
                                                     damagedStockToReturn: agentData.damagedItemsToReturn,
                                                     deployedSamples: [],
                                                     reportType: 'CASH_STOCK',

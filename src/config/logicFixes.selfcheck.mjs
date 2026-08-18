@@ -913,5 +913,63 @@ ok('assigning a store to an agent says what did not happen',
   ok(`no wordlessly empty catch in the money screens${empties.length ? ' — ' + empties.join(', ') : ''}`,
      empties.length === 0); }
 
+/* ── S17 · what the agent counted at EOD was never used for anything ───────────────────── */
+section('S17. The EOD count decides the report, and a gap is named');
+
+ok('the report sends the COUNTED cash and transfer',
+   /cash: countedCash,\s*\n\s*transfer: countedTransfer,/.test(eod));
+ok('the expected figures are sent beside them, not instead of them',
+   /expectedCash: Number\(agentData\.expectedCash \|\| 0\)/.test(eod) &&
+   /expectedTransfer: Number\(agentData\.expectedTransfer \|\| 0\)/.test(eod));
+ok('the warehouse is credited the goods he counted',
+   /remainingStock: countedStock,/.test(eod));
+/* Scoped to the PAYLOAD. `expected={{ cash: agentData.expectedCash, ... }}` is a different line
+   entirely — it is how the count cards learn what to compare against, and it must stay. */
+ok('the old "send the expectation" form is gone from the payload',
+   !/onSubmitEOD\(\{\s*cash: agentData\.expectedCash/.test(stripComments(eod)));
+ok('the gap is carried as a number, not just a mood',
+   /cashVariance,/.test(eod) && /transferVariance,/.test(eod) && /goodsShort,/.test(eod));
+ok('a shortfall is FLAGGED, never posted against the agent here',
+   /countStatus = \(cashVariance < 0 \|\| transferVariance < 0 \|\| goodsShort\)/.test(eod) &&
+   /\? 'DISPUTED' : 'CLEAN'/.test(eod));
+ok('a product he did not count keeps its expected row',
+   /pid in countedByProduct \? \{ \.\.\.item, qty: countedByProduct\[pid\] \} : item/.test(eod));
+
+/* BEHAVIOUR — the shortage that used to be undetectable. */
+{ const build = (expectedCash, expectedTransfer, stock, counted) => {
+    const declaredOr = (id, fallback) => (counted[id] === null || counted[id] === undefined) ? Number(fallback || 0) : Number(counted[id]);
+    const countedCash = declaredOr('cash', expectedCash);
+    const countedTransfer = declaredOr('transfer', expectedTransfer);
+    const byProduct = counted.goods || {};
+    const countedStock = stock.map(i => (String(i.productId) in byProduct ? { ...i, qty: byProduct[String(i.productId)] } : i));
+    const cashVariance = countedCash - expectedCash;
+    const transferVariance = countedTransfer - expectedTransfer;
+    const goodsShort = stock.some(i => String(i.productId) in byProduct && byProduct[String(i.productId)] < i.qty);
+    return { cash: countedCash, transfer: countedTransfer, countedStock, cashVariance, transferVariance, goodsShort,
+             countStatus: (cashVariance < 0 || transferVariance < 0 || goodsShort) ? 'DISPUTED' : 'CLEAN' }; };
+
+  const stock = [{ productId: 'p1', qty: 10, unit: 'Bks' }, { productId: 'p2', qty: 4, unit: 'Slop' }];
+
+  const short = build(4500000, 0, stock, { cash: 4300000, goods: {} });
+  ok('BEFORE: the submitted cash WAS the expected cash, so a 200.000 gap could not exist',
+     4500000 - 4500000 === 0);
+  ok('AFTER: counting 4.300.000 against an expected 4.500.000 reports a gap of -200.000',
+     short.cash === 4300000 && short.cashVariance === -200000);
+  ok('and that report is marked DISPUTED', short.countStatus === 'DISPUTED');
+
+  const clean = build(4500000, 1000000, stock, { cash: 4500000, transfer: 1000000, goods: { p1: 10, p2: 4 } });
+  ok('a night that balances is CLEAN', clean.countStatus === 'CLEAN' && clean.cashVariance === 0);
+
+  const goods = build(0, 0, stock, { goods: { p1: 6 } });
+  ok('the warehouse is credited the 6 he counted, not the 10 the app expected',
+     goods.countedStock.find(i => i.productId === 'p1').qty === 6);
+  ok('the product he never counted keeps its 4 Slop, untouched',
+     goods.countedStock.find(i => i.productId === 'p2').qty === 4);
+  ok('a goods shortage also raises DISPUTED', goods.goodsShort === true && goods.countStatus === 'DISPUTED');
+
+  const over = build(4500000, 0, stock, { cash: 4700000, goods: {} });
+  ok('counting MORE than expected is reported too, and is not a dispute',
+     over.cashVariance === 200000 && over.countStatus === 'CLEAN'); }
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);
