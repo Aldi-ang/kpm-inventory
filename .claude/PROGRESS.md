@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-18 20:16 WIB (KPM app session)** · 🔧 34 FIXES · 📋 ONE PROMPT READY · branch `phase0-solid-ground`
+**Updated: 2026-08-18 20:30 WIB (KPM app session)** · 🔧 35 FIXES · 📋 ONE PROMPT READY · branch `phase0-solid-ground`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -15,17 +15,12 @@
 
 ## ⏳ WAITING ON ALDI — verbatim, do not paraphrase
 
-**1. What colour replaces the green Verify button?** Green is banned by his own palette law and the
-button marks the routine EOD path. Picking the replacement is taste, not logic. Gold, slate, or
-something else.
-
-**2. The Alucard lessons file is jammed** — 5 of 5 slots used and all have fired, so nothing new
-can be recorded. His pick: (a) archive the oldest into `A-Brain/Wiki/Lessons-Archive.md` anyway,
-or (b) change §8's archive rule. Alucard may not edit SKILL.md itself.
-
-**3. Should a DAMAGED-goods penalty be retail too?** He ruled that a MISSING pack is bought back
-at retail. The quarantine charge in Stock Opname still uses cost price (HPP) — a different case,
-damaged rather than missing, and he has not ruled on it. Left untouched on purpose.
+**1. What colour replaces the green Verify button?** He asked *"what verify button that u meant?"* —
+answered in chat: the big button under each pending setoran on the ADMIN side of the EOD screen,
+the one next to Reject / Reset. It is `bg-emerald-600`, green, banned by his own palette law.
+**Recommendation given: the gold plate**, which the Stock Opname approve button already uses.
+Waiting on his yes. (`bg-orange-600` on the cukai branch and `bg-red-700` on the bounty branch are
+hardcoded too and would move to tokens in the same pass.)
 
 ✅ **Untested by him:** the shakedown card, now **19 tests** (18 and 19 are the retail bounties) —
 https://claude.ai/code/artifact/a42ce819-9d1a-46a8-8ae8-0291df6765ef
@@ -33,6 +28,37 @@ https://claude.ai/code/artifact/a42ce819-9d1a-46a8-8ae8-0291df6765ef
 > Older open questions (tukar barang, and others) still live in the **❓ WAITING ON ALDI —
 > verbatim** section further down this file. That section was NOT touched by this trim.
 
+
+## 🟠 2026-08-18 20:30 — the penalty price is a SETTING now. `bf75678`
+
+**His ruling, verbatim:** *"if the damaged goods taken from store and the agent bring it back then
+there is no bounties for the agent, if there is damaged good because of agent mistake then agent
+need to buy it in retail price, but since i dont know the real rules that the company applies we
+should add this to the setting about this logic so that company can change how this logic going to
+work, can be retail, wholesale or ecer its companies decision, i just want to make sure that this
+app is flexible enought so that i can sell it to multiple company instead of one only"*.
+
+- **His first rule needed no code.** Store damage the agent brings back is resolved as SAMPLING or
+  RTV in Stock Opname and charges him nothing. PENALTY is a third button the admin picks. The split
+  he described is already the shape of that screen — verified, not assumed.
+- **His second rule was backwards in the code.** The damage penalty charged `priceDistributor` —
+  what the company PAID — not retail.
+- **Settings · Company · 05**, Tier 1: *"What a lost or damaged pack costs the salesman"*. Retail /
+  Grosir / Ecer / Distributor. Default **Retail**, his rule. Drives BOTH the EOD missing-pack bounty
+  and the damaged-goods charge.
+- `tierPrice()` in helpers is the one lookup. Unknown tier, or a tier the product has no price for,
+  falls back to Retail — **never zero**, because a fine that silently becomes nothing goes unnoticed.
+  The tier is printed on the bounty line: *Cello Chocolate 5 Bks @ Retail*.
+- ⚠️ `MerchantSalesView` and `useTransactionEngine` still carry their own copies of the tier → field
+  mapping for SALES. Untouched, noted in the helper. That is a wider change.
+
+**Also, on his permission** (*"u fix that lesson file then, i give u permission to upgrade if
+needed"*): the Alucard lessons loop is unjammed. §8 no longer says "or don't write" at 5/5-all-fired
+— it archives one anyway and makes you name the reason. One entry archived (superseded in part AND
+5x over the length cap), its live half carried forward. Health check agrees: `LESSONS: OK`. `74c9a88`
+
+18 checks (S23), red first. Four older guards repinned onto the new signature, not relaxed.
+build clean · audit 599/0 · logic 325/0 · contrast all pairs pass
 
 ## 🟠 2026-08-18 20:16 — notes only, no code
 
@@ -2314,6 +2340,7 @@ batch them: he has to look at each one. `AgentProfileView` is already clean (0 s
 | `src/config/contrast.selfcheck.mjs` | measures every text/surface pair in BOTH themes |
 | `src/config/integration.audit.mjs` | 526 checks; groups 38 (light switch) and 39 (Duke's Ledger) |
 | `src/config/logicFixes.selfcheck.mjs` | one regression guard + one behaviour check per logic fix. **289 checks, sections A1–S21** |
+| `src/utils/helpers.js` → `tierPrice()` + `PRICE_TIERS` | **NEW 2026-08-18** — one pack's price on a chosen tier. The company picks the tier in Settings · Company · 05; falls back to Retail, never to zero |
 | `src/utils/helpers.js` → `eodBountyLines()` | **NEW 2026-08-18** — one report → its bounty lines, priced at retail and labelled. The ONLY place a shortfall becomes rupiah; App.jsx and the admin card both call it |
 | `src/utils/helpers.js` → `shortStockRows()` | **NEW 2026-08-18** — which products came back short, named one by one in the row's own unit. Used by the admin's EOD card; behaviour-checked in logic S19 |
 | `src/utils/helpers.js` → `paymentLabel()` | **NEW 2026-08-18** — renders the stored `'IOU Fulfillment'` as "Utang Barang Lunas" without changing the stored value |

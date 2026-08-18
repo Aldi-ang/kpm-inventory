@@ -39,8 +39,11 @@ CONTEXT ALREADY ESTABLISHED, do not re-derive:
   approval, goods priced at `priceRetail` (`7f96d19`, `43f8059`); the admin's card shows expected
   vs counted and names the short products (`ce70287`); the WANTED board itemises every bounty from
   `cukaiDebtNotes` (`43f8059`). EOD integration is FINISHED.
-- `eodBountyLines()` in `helpers.js` is the ONLY place a shortfall becomes rupiah. Do not compute a
-  fine anywhere else.
+- `eodBountyLines()` in `helpers.js` is the ONLY place a shortfall becomes rupiah, and `tierPrice()`
+  beside it is the ONLY place a tier becomes a price. Do not compute a fine anywhere else.
+- What a penalty is priced at is a COMPANY SETTING (`appSettings.penaltyPriceTier`, Settings ·
+  Company · 05, default Retail) — `bf75678`. Aldi is selling this app to more than one company, so
+  a rule that differs between companies belongs in Settings, not in code.
 - Red panels moved from `--danger` to `--danger-well` (`44efb69`, check S20). `--danger` stays the
   EDGE and the fill for dots and bars.
 - The counting flow is keyed on `effectiveId` (`b904db2`, check S21).
@@ -56,8 +59,10 @@ Still open on his confirmed list (items 2, 3, 5, 8, 9, 10 in PROGRESS):
 - **Gold ink on a gold plate = 1,00:1 in dark** on the admin side. The plate is on the parent and
   the ink on a child, which is why audit group 48 missed it — widen the regex with the fix. S20
   has the same ceiling written into it.
-- **The Verify button is `bg-emerald-600`** — green is banned by his palette law, and it marks the
-  routine path. Picking the replacement is a taste call; ask him.
+- **The Verify button is `bg-emerald-600`** — green, banned. He has been asked and RECOMMENDED the
+  gold plate (`bg-[var(--gold)] text-[var(--gold-ink)]`, as Stock Opname's approve button already
+  uses). Do not change it until he says yes. `bg-orange-600` (cukai) and `bg-red-700` (bounty) on
+  the same button are hardcoded too — move all three to tokens in one pass.
 - `agentData` useMemo omits `inventory`, so `itemsBks` uses fallback pack multipliers.
 - `bg-black/N` across the whole admin half; Lite Mode kills `transition-duration` but not
   `transition-delay`; Force Reset is a 24px destructive target.
