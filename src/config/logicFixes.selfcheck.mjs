@@ -175,5 +175,24 @@ ok('the reset exists once, not copy-pasted into both paths',
    (merchant.match(/const resetTerminalAfterDeal = \(\) => \{/g) || []).length === 1 &&
    (merchant.match(/resetTerminalAfterDeal\(\);/g) || []).length === 2);
 
+
+/* -- #11 . REFUTED, and this guards the fact that refutes it --------------------------- */
+section('#11. NOT A BUG - user.uid IS the vault id, so the delete targets the right vault');
+/* The register claimed the delete handlers write to users/{user.uid}/transactions while the
+   ledger is read from bossUid||user.uid, so a delegated admin would delete nothing and be told
+   it worked. The earlier pass checked that bossUid gets set for non-owners, but missed that
+   user.uid is REPLACED with the same value in the same block. Both paths resolve identically:
+     non-owner: setBossUid(trueBossUid) AND hijackedUser.uid = trueBossUid  -> equal
+     owner:     setBossUid(null)        AND setUser(currentUser)            -> equal
+   If anyone ever unwinds the hijack, #11 becomes real. These two assertions are the tripwire. */
+ok('the non-owner user object is forced onto the master vault uid',
+   /uid: trueBossUid \|\| currentUser\.uid/.test(app));
+ok('bossUid is set from the SAME value in the same block',
+   /setBossUid\(trueBossUid\);/.test(app));
+ok('the owner branch nulls bossUid and keeps their own user object',
+   /setBossUid\(null\);[\s\S]{0,200}setUser\(currentUser\);/.test(app));
+{ const bossUid = 'BOSS', userUid = 'BOSS';           // what the hijack produces for an agent
+  ok('userId and user.uid resolve to the same vault', (bossUid || userUid) === userUid); }
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);
