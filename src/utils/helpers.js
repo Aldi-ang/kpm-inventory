@@ -291,11 +291,30 @@ export const shortStockRows = (expected = [], counted = []) => {
 
    - Cash and transfer are floored at zero SEPARATELY: extra cash does not quietly settle a
      missing transfer.
-   - Goods are billed at the RETAIL price of the packs that did not come back, because he is
-     buying them. The short quantity is converted to packs first — a short Slop is ten packs.
-   - A product with no retail price still gets a line, at Rp 0, so the gap is visible on the
-     board instead of silently absent. The board already handles Rp 0 fines on purpose. */
-export const eodBountyLines = (report = {}, inventory = []) => {
+   - Goods are billed at the packs that did not come back, priced on the company's chosen tier
+     (Retail unless SettingsView says otherwise). The short quantity is converted to packs first —
+     a short Slop is ten packs.
+   - A product with no price on that tier still gets a line, at Rp 0, saying so. The gap must be
+     visible on the board rather than silently absent; the board handles Rp 0 fines on purpose. */
+/* What one pack costs at a given price tier. Aldi, 2026-08-18: "we should add this to the setting
+   about this logic so that company can change how this logic going to work, can be retail,
+   wholesale or ecer its companies decision, i just want to make sure that this app is flexible
+   enought so that i can sell it to multiple company instead of one only."
+
+   Retail is the default because that is the rule he gave for his own company. A tier the product
+   has no price for falls back to Retail rather than charging nothing — a penalty that silently
+   becomes zero is worse than one priced on the wrong tier, because nobody notices it.
+
+   ponytail: MerchantSalesView and useTransactionEngine still each carry their own copy of this
+   mapping for SALES. Those are not touched here; folding them in is a separate, wider change. */
+export const PRICE_TIERS = ['Retail', 'Grosir', 'Ecer', 'Distributor'];
+
+export const tierPrice = (product = {}, tier = 'Retail') => {
+    const field = { Retail: 'priceRetail', Grosir: 'priceGrosir', Ecer: 'priceEcer', Distributor: 'priceDistributor' }[tier];
+    return Number((field && product?.[field]) || product?.priceRetail || 0);
+};
+
+export const eodBountyLines = (report = {}, inventory = [], priceTier = 'Retail') => {
     const date = report.dayKey || '';
     const id = report.id || '';
     const lines = [];
@@ -305,14 +324,17 @@ export const eodBountyLines = (report = {}, inventory = []) => {
     if (cashShort > 0)     lines.push({ key: `PENALTY_EOD_${id}_CASH`,     amount: cashShort,     label: 'Cash short',     date });
     if (transferShort > 0) lines.push({ key: `PENALTY_EOD_${id}_TRANSFER`, amount: transferShort, label: 'Transfer short', date });
 
+    const tier = PRICE_TIERS.includes(priceTier) ? priceTier : 'Retail';
     shortStockRows(report.expectedStock, report.remainingStock).forEach(row => {
         const product = (inventory || []).find(p => p && p.id === row.productId) || {};
-        const retail = Number(product.priceRetail || 0);
+        const price = tierPrice(product, tier);
         const packs = convertToBks(row.short, row.unit, product);
         lines.push({
             key: `PENALTY_EOD_${id}_GOODS_${row.productId}`,
-            amount: Math.round(packs * retail),
-            label: `${row.name} ${row.short} ${row.unit}${retail > 0 ? '' : ' (no retail price set)'}`,
+            amount: Math.round(packs * price),
+            /* The tier is named on the line. A man being charged for stock is entitled to know
+               which price list the number came off. */
+            label: `${row.name} ${row.short} ${row.unit}${price > 0 ? ` @ ${tier}` : ` (no ${tier} price set)`}`,
             date,
         });
     });

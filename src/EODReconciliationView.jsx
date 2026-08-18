@@ -834,7 +834,7 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                 /* The same rule App.jsx mints with, so the rupiah named here is
                                    the rupiah he will actually owe. Floored separately: extra
                                    cash does not pay off a missing transfer. */
-                                const moneyShort = eodBountyLines(report, inventory)
+                                const moneyShort = eodBountyLines(report, inventory, appSettings?.penaltyPriceTier)
                                                      .reduce((sum, line) => sum + line.amount, 0);
                                 const shortRows = shortStockRows(report.expectedStock, report.remainingStock);
 

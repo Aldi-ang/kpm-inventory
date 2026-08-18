@@ -1768,7 +1768,7 @@ const handleGitHubMirror = async () => {
          at its retail price. Aldi, 2026-08-18: "if there is missing pack then agent needs to buy
          the missing pack on retail price as a compensation". The arithmetic lives in helpers so
          the card the admin reads and the ledger he writes cannot drift apart. */
-      const bountyLines = eodBountyLines(report, inventory);
+      const bountyLines = eodBountyLines(report, inventory, appSettings?.penaltyPriceTier);
       const eodShortfall = bountyLines.reduce((sum, line) => sum + line.amount, 0);
 
       const confirmMsg = report.reportType === 'BOUNTY'

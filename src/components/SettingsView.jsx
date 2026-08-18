@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { PRICE_TIERS } from '../utils/helpers';
 
 /* the mascot-peek notice's timer. Module scope, not a useRef, on purpose: every hook in this
    file below line ~95 sits AFTER `if (!isAdmin) return (...)`, so each one added there is one
@@ -457,6 +458,47 @@ export default function SettingsView({
                                                   if (user) setDoc(doc(db, `artifacts/${appId}/users/${user.uid}/settings/general`), { cukaiFinePrice: val }, {merge: true});
                                               }}
                                               placeholder="5000"/>
+                                      </label>
+                                  </div>
+                              </div>
+                          )}
+
+                          {/* 🚀 TIER 1 ONLY, same reason as the stamp fine above: this decides how much
+                              real money comes off a salesman. Aldi, 2026-08-18: "we should add this to
+                              the setting about this logic so that company can change how this logic
+                              going to work, can be retail, wholesale or ecer its companies decision, i
+                              just want to make sure that this app is flexible enought so that i can sell
+                              it to multiple company instead of one only." */}
+                          {isSystemOwner && (
+                              <div className="kpm-mod live">
+                                  <div className="kpm-head">
+                                      <span className="slot">Company · 05</span>
+                                      <div className="line">
+                                          <h3>What a lost or damaged pack costs the salesman</h3>
+                                          <span className="kpm-read on">Charges salesmen</span>
+                                      </div>
+                                      <p className="kpm-desc">
+                                          When stock does not come back at the end of the day, or a salesman damages
+                                          it himself, he buys it. This chooses which of your price lists that is
+                                          charged from. It does not change what customers pay — only the bill to the
+                                          salesman. Damage he brings back from a shop is settled as Sampling or
+                                          Return-to-Factory instead and costs him nothing.
+                                      </p>
+                                  </div>
+                                  <div className="kpm-shelf split">
+                                      <label className="kpm-field">
+                                          <span>Charge from this price list</span>
+                                          <select value={appSettings?.penaltyPriceTier || 'Retail'}
+                                              onChange={(e) => {
+                                                  const val = PRICE_TIERS.includes(e.target.value) ? e.target.value : 'Retail';
+                                                  setAppSettings(prev => ({...prev, penaltyPriceTier: val}));
+                                                  if (user) setDoc(doc(db, `artifacts/${appId}/users/${user.uid}/settings/general`), { penaltyPriceTier: val }, {merge: true});
+                                              }}>
+                                              <option value="Retail">Retail — the normal shop price</option>
+                                              <option value="Grosir">Grosir — the wholesale price</option>
+                                              <option value="Ecer">Ecer — the single-stick price</option>
+                                              <option value="Distributor">Distributor — what you paid for it</option>
+                                          </select>
                                       </label>
                                   </div>
                               </div>

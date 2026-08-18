@@ -7,7 +7,7 @@ import {
     Biohazard, FlaskConical, Undo2, BadgeDollarSign, History, Filter, BarChart, MapPin
 } from 'lucide-react';
 import { collection, addDoc, getDocs, updateDoc, doc, writeBatch, serverTimestamp, query, where, onSnapshot, increment } from "firebase/firestore";
-import { savePhotoAndGetReference, deletePhotoFromStorage, commitInChunks, formatRupiah, compressImageToBase64 } from './utils/helpers';
+import { savePhotoAndGetReference, deletePhotoFromStorage, commitInChunks, formatRupiah, compressImageToBase64, tierPrice } from './utils/helpers';
 import { confirmAction, promptAction } from './components/ConfirmGate.jsx';
 import { notify } from './components/Toast.jsx';
 
@@ -345,7 +345,14 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
         setIsProcessingAudit(true);
         try {
             const batch = writeBatch(db);
-            const hpp = Number(resolutionModal.item.priceDistributor || resolutionModal.item.hpp || resolutionModal.item.costPrice || 0);
+            /* What a damaged pack costs the agent is the COMPANY's decision, not this file's.
+               Aldi, 2026-08-18: "can be retail, wholesale or ecer its companies decision". It was
+               hardcoded to distributor price; it now reads the same setting the EOD bounty uses,
+               which defaults to Retail — the rule he gave for agent-fault damage.
+               Note this only ever runs on the PENALTY path. Damage the agent brought back from a
+               store is resolved as SAMPLING or RTV and charges him nothing, which is his other
+               rule and needed no code. */
+            const hpp = tierPrice(resolutionModal.item, appSettings?.penaltyPriceTier);
             const totalValue = qtyToResolve * hpp;
 
             const targetFacility = resolutionModal.item.facility || quarantineFacility;

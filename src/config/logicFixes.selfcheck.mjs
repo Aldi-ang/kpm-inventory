@@ -977,7 +977,7 @@ section('S18. A short count is approved, recorded as a bounty, and repayable');
 /* Repinned 2026-08-18: the cash+transfer sum moved into eodBountyLines when goods became
    billable too. The rule did not relax, it moved - so the guard follows it. */
 ok('the shortfall is every bounty line the report mints, summed',
-   /const bountyLines = eodBountyLines\(report, inventory\)/.test(app)
+   /const bountyLines = eodBountyLines\(report, inventory, appSettings\?\.penaltyPriceTier\)/.test(app)
    && /bountyLines\.reduce\(\(sum, line\) => sum \+ line\.amount, 0\)/.test(app));
 ok('the admin is told the amount AND the lines before approving',
    /records each of those as a bounty in their name/.test(app)
@@ -1042,7 +1042,7 @@ section('S19. Expected beside counted, the short products named, and the card it
   ok('and the card changes with it, so the gap is not just a number on a normal card',
      /disputed \? 'border-\[var\(--danger\)\]/.test(card));
   ok('the rupiah named before approving comes from the SAME rule App.jsx mints with',
-     /eodBountyLines\(report, inventory\)/.test(card)); }
+     /eodBountyLines\(report, inventory, appSettings\?\.penaltyPriceTier\)/.test(card)); }
 
 { const H = await import('../utils/helpers.js');
   ok('shortStockRows is exported from helpers, where the shared rules live',
@@ -1156,8 +1156,10 @@ ok('the quarantine damage charge writes its own note too, so nothing lands unexp
 
   ok('5 packs of a 10.000 product missing costs 50.000 at retail',
      by('GOODS_p1')?.amount === 50000);
-  ok('his example line reads back the way he wrote it',
-     by('GOODS_p1')?.label === 'Cello Chocolate 5 Bks' && by('GOODS_p1')?.date === '2026-08-07');
+  /* His example was "cello chocolate 5 bks = 50,000 (7 agustus 2026)". The price tier was
+     added to the label when the tier became a company setting - more information, not less. */
+  ok('his example line reads back the way he wrote it, now naming the price list too',
+     by('GOODS_p1')?.label === 'Cello Chocolate 5 Bks @ Retail' && by('GOODS_p1')?.date === '2026-08-07');
   ok('a short SLOP is converted to packs before it is priced, not billed as one',
      eodBountyLines({ ...report, remainingStock: [{ productId: 'p2', qty: 2 }] }, INV)
        .find(l => l.key.includes('GOODS_p2'))?.amount === 250000);
@@ -1172,12 +1174,66 @@ ok('the quarantine damage charge writes its own note too, so nothing lands unexp
   ok('a product with no retail price still gets a LINE, so the gap is visible',
      !!noPrice && noPrice.amount === 0);
   ok('and the line says why it is zero rather than pretending nothing is missing',
-     /no retail price/.test(noPrice?.label || ''));
+     /no Retail price set/.test(noPrice?.label || ''));
 
   ok('a clean night mints nothing at all',
      eodBountyLines({ id: 'r0', cashVariance: 0, transferVariance: 0 }, INV).length === 0);
   ok('an older report with no counted stock mints no goods line',
      eodBountyLines({ id: 'r1', cashVariance: -5000 }, INV).length === 1); }
+
+
+/* --- S23 . what a penalty is PRICED at is the company's decision, not the app's ---------- */
+/* Aldi, 2026-08-18, verbatim: "if the damaged goods taken from store and the agent bring it back
+   then there is no bounties for the agent, if there is damaged good because of agent mistake then
+   agent need to buy it in retail price, but since i dont know the real rules that the company
+   applies we should add this to the setting about this logic so that company can change how this
+   logic going to work, can be retail, wholesale or ecer its companies decision, i just want to
+   make sure that this app is flexible enought so that i can sell it to multiple company instead
+   of one only."
+   One setting, one price lookup, two chargers. Default Retail, because that is the rule he gave. */
+section('S23. The penalty price tier is a company setting, and one lookup serves every charger');
+
+ok('the tier -> price-field lookup lives in helpers, not copied a seventh time',
+   /export const tierPrice/.test(helpers));
+ok('the EOD bounty prices goods through the setting, defaulted to Retail',
+   /eodBountyLines = \(report = \{\}, inventory = \[\], priceTier = 'Retail'\)/.test(helpers));
+ok('App.jsx passes the company setting in',
+   /eodBountyLines\(report, inventory, appSettings\?\.penaltyPriceTier\)/.test(app));
+ok('the admin card prices with the SAME setting, so the two cannot disagree',
+   /eodBountyLines\(report, inventory, appSettings\?\.penaltyPriceTier\)/.test(eod));
+ok('the damaged-goods charge stopped hardcoding distributor price',
+   !/const hpp = Number\(resolutionModal\.item\.priceDistributor \|\| resolutionModal\.item\.hpp/.test(read('src/StockOpnameView.jsx')));
+ok('and prices through the same setting instead',
+   /tierPrice\(resolutionModal\.item, appSettings\?\.penaltyPriceTier\)/.test(read('src/StockOpnameView.jsx')));
+ok('the company can change it without a developer',
+   /penaltyPriceTier/.test(read('src/components/SettingsView.jsx')));
+
+{ const { tierPrice, eodBountyLines } = await import('../utils/helpers.js');
+  const prod = { id: 'p1', name: 'Cello', priceRetail: 10000, priceGrosir: 8000, priceEcer: 12000, priceDistributor: 6000 };
+
+  ok('Retail is the default when a company has not chosen', tierPrice(prod) === 10000);
+  ok('Retail',      tierPrice(prod, 'Retail') === 10000);
+  ok('Grosir - the wholesale price he named',  tierPrice(prod, 'Grosir') === 8000);
+  ok('Ecer',        tierPrice(prod, 'Ecer') === 12000);
+  ok('Distributor', tierPrice(prod, 'Distributor') === 6000);
+  ok('a tier the product has no price for falls back to Retail rather than charging zero',
+     tierPrice({ priceRetail: 10000 }, 'Grosir') === 10000);
+  ok('a tier nobody recognises still charges Retail, never nothing',
+     tierPrice(prod, 'NonsenseTier') === 10000);
+  ok('a product with no prices at all is zero, not NaN', tierPrice({}, 'Retail') === 0);
+
+  const report = { id: 'r1', dayKey: '2026-08-07', cashVariance: 0, transferVariance: 0,
+    expectedStock: [{ productId: 'p1', name: 'Cello', qty: 12, unit: 'Bks' }],
+    remainingStock: [{ productId: 'p1', qty: 7 }] };
+
+  ok('5 missing packs cost 50.000 on the default Retail setting',
+     eodBountyLines(report, [prod])[0].amount === 50000);
+  ok('the same 5 packs cost 40.000 when the company chose wholesale',
+     eodBountyLines(report, [prod], 'Grosir')[0].amount === 40000);
+  ok('and the line SAYS which tier it was charged at, so the agent can check it',
+     /Grosir/.test(eodBountyLines(report, [prod], 'Grosir')[0].label));
+  ok('a product with no price on the chosen tier still says the price is missing',
+     /no Grosir price set/.test(eodBountyLines(report, [{ id: 'p1', name: 'Cello' }], 'Grosir')[0].label)); }
 
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);
