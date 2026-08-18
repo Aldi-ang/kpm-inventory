@@ -797,5 +797,17 @@ ok('updateDoc is imported', imports(engine, 'updateDoc'));
   ok('selling more than the van holds still refuses', (() => {
      try { apply(van, [{ ...sold4[0], qtyInBks: 99 }]); return false; } catch { return true; } })()); }
 
+/* ── S13 · a store registered offline landed in a status no screen knows ───────────────── */
+section('S13. An offline store syncs with the status the online path writes');
+
+ok('the status nothing reads is gone', !/PENDING_OFFLINE_SYNC/.test(stripComments(app)));
+/* Scoped to the NOO flush. The transaction flush twenty lines below is character-identical, so
+   an unscoped test passes on the unfixed code by matching the wrong one — the second vacuous
+   guard caught today. Anchored on `customers` + processedNoo, which only the NOO block has. */
+ok('the synced store keeps the status its payload carried',
+   /customers`\)\);[\s\S]{0,600}data: \{ \.\.\.payload, syncedAt: serverTimestamp\(\) \}[\s\S]{0,120}processedNoo\.push/.test(app));
+ok('and the offline payload still sets that status at save time',
+   /status: newStoreData\.isNooRegistration \? 'NOO_ACTIVE' : 'WALK_IN'/.test(engine));
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

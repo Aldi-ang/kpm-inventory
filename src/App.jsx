@@ -250,7 +250,12 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
                       delete payload.localId; // Strip the local ID before sending to cloud
 
                       const ref = doc(collection(db, `artifacts/${appId}/users/${userId}/customers`));
-                      operations.push({ type: 'set', ref, data: { ...payload, status: 'PENDING_OFFLINE_SYNC', syncedAt: serverTimestamp() } });
+                      /* 🚀 FIX: the payload already carries the status the online path writes —
+                         NOO_ACTIVE for a real registration, WALK_IN otherwise — set when the
+                         store was saved to the Ghost Ledger. This line used to overwrite it with
+                         a value nothing in src/ reads and nothing ever changes back, so a store
+                         registered without signal ended up in a state no screen understood. */
+                      operations.push({ type: 'set', ref, data: { ...payload, syncedAt: serverTimestamp() } });
 
                       processedNoo.push(localId);
                   }
