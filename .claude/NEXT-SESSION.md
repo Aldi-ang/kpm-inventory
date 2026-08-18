@@ -29,7 +29,7 @@ dialog gate (`confirmAction` in `src/components/ConfirmGate.jsx`) replaced all 6
 prompts; a blocked native dialog does nothing, which is exactly how duplicate data gets explained
 away. The fix here is state, not a dialog.
 
-LEAVE A CHECK: `src/config/logicFixes.selfcheck.mjs`, next section is S22. Prove it red before
+LEAVE A CHECK: `src/config/logicFixes.selfcheck.mjs`, next section is S23 (S22 is the retail-price bounty). Prove it red before
 writing the fix — a guard that `submitting=` is passed at the call site, and a behaviour check that
 two rapid submissions produce one payload. Run:
 `npm run build; node src/config/integration.audit.mjs; node src/config/logicFixes.selfcheck.mjs`
