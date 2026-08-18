@@ -13,6 +13,20 @@
 > archive rather than letting it grow back. This file holds WHERE THE WORK STANDS; the archive
 > and `A-Brain/Wiki/Log.md` hold how it got there.
 
+## 📏 STANDING RULE — TELL IT ONCE (Aldi, 2026-08-18: *"yes"*)
+
+Measured: 2,359 lines written *about* the work vs 195 lines of actual fix, in one session. 12:1.
+
+**Full story goes in the COMMIT MESSAGE only.** Everything else points at it:
+this file gets one line + the hash · A-Brain gets the *lesson*, never the retelling · the reply
+to him gets the ask, the numbers, done. If an entry could be replaced by `git show <hash>`, it
+should be.
+
+**Not shortened:** the self-checks (they caught two of my own wrong claims the day this rule was
+made), comments saying why something must NOT change, security warnings, and questions to him.
+
+Entries above this line are the old long style — leave them, they are already written.
+
 ## 🟠 2026-08-18 16:38 WIB — KPM app track — OLD NAMES CLEANED ON SCREEN: SHIPPED `883a62e`
 
 He decided: *"clean it then move on"*. Done at **display**, not in the database.
