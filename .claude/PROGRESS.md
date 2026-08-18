@@ -15,7 +15,7 @@
 
 ## ▶ NOW
 
-> 📋 **Ready-made prompts for a fresh session: ** — copy one, paste,
+> 📋 **Ready-made prompts for a fresh session: `.claude/NEXT-SESSION.md`** — copy one, paste,
 > go. Correct paths for the repo, the vault and the alucard skill are in it.
 > **Alucard now runs Karpathy + Caveman by DEFAULT** (§4 and §5, set 2026-08-18 on his word:
 > *"add karpathy guidelines while using caveman on default inside alucard"*), so neither has to
