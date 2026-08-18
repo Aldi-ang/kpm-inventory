@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-18 19:57 WIB (KPM app session)** · 🔧 33 FIXES · 📋 ONE PROMPT READY · branch `phase0-solid-ground`
+**Updated: 2026-08-18 20:14 WIB (KPM app session)** · 🔧 34 FIXES · 📋 ONE PROMPT READY · branch `phase0-solid-ground`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -15,9 +15,9 @@
 
 ## ⏳ WAITING ON ALDI — verbatim, do not paraphrase
 
-**1. What is a missing pack worth in rupiah?** Cash and transfer shortfalls become a bounty on
-approval. Goods cannot, because pricing them means inventing a fine. Cost price, selling price or
-a flat charge — his call. Until he answers, a goods shortage is shown and flagged, never priced.
+~~**1. What is a missing pack worth in rupiah?**~~ ✅ **ANSWERED 20:14, SHIPPED `43f8059`.**
+His words: *"if there is missing pack then agent needs to buy the missing pack on retail price as
+a compensation ... the bounties panel need to specify how the bounties number are calculated"*.
 
 **2. What colour replaces the green Verify button?** Green is banned by his own palette law and the
 button marks the routine EOD path. Picking the replacement is taste, not logic. Gold, slate, or
@@ -33,6 +33,27 @@ https://claude.ai/code/artifact/a42ce819-9d1a-46a8-8ae8-0291df6765ef
 > Older open questions (tukar barang, and others) still live in the **❓ WAITING ON ALDI —
 > verbatim** section further down this file. That section was NOT touched by this trim.
 
+
+## 🟠 2026-08-18 20:14 — a missing pack is bought back at retail. ANSWERED AND SHIPPED. `43f8059`
+
+**His ruling, verbatim:** *"if there is missing pack then agent needs to buy the missing pack on
+retail price as a compensation, well u can add that to the bounties and the bounties panel need to
+specify how the bounties number are calculated, for example missing pita = 5000 (4 agustus 2026),
+cello chocolate 5 bks = 50,000 (7 agustus 2026), transfer loss 30,000 (8agustus 2026) this kind of
+detailed needed"*.
+
+- `eodBountyLines()` in `helpers.js` prices a report. Goods → `priceRetail` × packs, **converted
+  first** so a short Slop is ten packs. Cash and transfer still floored separately.
+- **One PENALTY key per reason**, not a lump sum: `_CASH`, `_TRANSFER`, `_GOODS_<productId>`.
+  `cukaiDebtNotes` carries `{label, date}` beside each key — **deliberately a sibling map**, because
+  every existing sum on `PENALTY_` expects a plain number and a richer value would have broken the
+  board, the clearance report and the stamp arithmetic at once.
+- The board reads back his format: *Cello Chocolate 5 Bks — Rp 50.000*, dated, newest first. Old
+  bounties still get a name; the quarantine charge now writes its own note.
+- A product with **no retail price** still gets a line at Rp 0 saying so. Unpriceable is not absent.
+
+18 checks (S22), red first, including his own example arithmetic. S18/S19 repinned onto the moved
+rule, not relaxed. build clean · audit 599/0 · logic 306/0 · contrast all pairs pass
 
 ## 🟠 2026-08-18 19:57 — notes trimmed, not the work
 
@@ -2284,6 +2305,7 @@ batch them: he has to look at each one. `AgentProfileView` is already clean (0 s
 | `src/config/contrast.selfcheck.mjs` | measures every text/surface pair in BOTH themes |
 | `src/config/integration.audit.mjs` | 526 checks; groups 38 (light switch) and 39 (Duke's Ledger) |
 | `src/config/logicFixes.selfcheck.mjs` | one regression guard + one behaviour check per logic fix. **289 checks, sections A1–S21** |
+| `src/utils/helpers.js` → `eodBountyLines()` | **NEW 2026-08-18** — one report → its bounty lines, priced at retail and labelled. The ONLY place a shortfall becomes rupiah; App.jsx and the admin card both call it |
 | `src/utils/helpers.js` → `shortStockRows()` | **NEW 2026-08-18** — which products came back short, named one by one in the row's own unit. Used by the admin's EOD card; behaviour-checked in logic S19 |
 | `src/utils/helpers.js` → `paymentLabel()` | **NEW 2026-08-18** — renders the stored `'IOU Fulfillment'` as "Utang Barang Lunas" without changing the stored value |
 | `A-Brain/Backlog/TESTS - check these when you feel like it.md` | **NEW 2026-08-18** — every test Aldi owes, taken off his plate |

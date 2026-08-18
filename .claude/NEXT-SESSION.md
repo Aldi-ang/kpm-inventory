@@ -35,9 +35,12 @@ two rapid submissions produce one payload. Run:
 `npm run build; node src/config/integration.audit.mjs; node src/config/logicFixes.selfcheck.mjs`
 
 CONTEXT ALREADY ESTABLISHED, do not re-derive:
-- The EOD count decides the report (`d859d41`), a short count mints `PENALTY_EOD_<reportId>` on
-  approval (`7f96d19`), and the admin's card now shows expected vs counted and names the short
-  products (`ce70287`). EOD integration is otherwise FINISHED.
+- The EOD count decides the report (`d859d41`); a short count mints one PENALTY key PER REASON on
+  approval, goods priced at `priceRetail` (`7f96d19`, `43f8059`); the admin's card shows expected
+  vs counted and names the short products (`ce70287`); the WANTED board itemises every bounty from
+  `cukaiDebtNotes` (`43f8059`). EOD integration is FINISHED.
+- `eodBountyLines()` in `helpers.js` is the ONLY place a shortfall becomes rupiah. Do not compute a
+  fine anywhere else.
 - Red panels moved from `--danger` to `--danger-well` (`44efb69`, check S20). `--danger` stays the
   EDGE and the fill for dots and bars.
 - The counting flow is keyed on `effectiveId` (`b904db2`, check S21).
@@ -45,11 +48,6 @@ CONTEXT ALREADY ESTABLISHED, do not re-derive:
 ---
 
 ## The queue underneath — promote ONE of these next time, never paste this part
-
-❓ **WAITING ON ALDI — what is a missing pack worth in rupiah?** Cash and transfer shortfalls
-become a bounty automatically. Goods cannot, because pricing them means inventing a fine. Cost
-price, selling price, or a flat charge — his call. Until then a goods shortage is shown and
-flagged but never priced.
 
 ✅ **WAITING ON ALDI — the shakedown test card is still unanswered.**
 https://claude.ai/code/artifact/a42ce819-9d1a-46a8-8ae8-0291df6765ef
