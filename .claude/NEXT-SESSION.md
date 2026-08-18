@@ -47,6 +47,9 @@ CONTEXT ALREADY ESTABLISHED, do not re-derive:
 - Red panels moved from `--danger` to `--danger-well` (`44efb69`, check S20). `--danger` stays the
   EDGE and the fill for dots and bars.
 - The counting flow is keyed on `effectiveId` (`b904db2`, check S21).
+- Guards are scoped to the ELEMENT, not to a string on it — slice the source between the element's
+  own handler and the end of its tag. A file-wide match catches bystanders; it did twice tonight,
+  and that is now a lesson in `lessons.md`.
 
 ---
 
@@ -59,10 +62,10 @@ Still open on his confirmed list (items 2, 3, 5, 8, 9, 10 in PROGRESS):
 - **Gold ink on a gold plate = 1,00:1 in dark** on the admin side. The plate is on the parent and
   the ink on a child, which is why audit group 48 missed it — widen the regex with the fix. S20
   has the same ceiling written into it.
-- **The Verify button is `bg-emerald-600`** — green, banned. He has been asked and RECOMMENDED the
-  gold plate (`bg-[var(--gold)] text-[var(--gold-ink)]`, as Stock Opname's approve button already
-  uses). Do not change it until he says yes. `bg-orange-600` (cukai) and `bg-red-700` (bounty) on
-  the same button are hardcoded too — move all three to tokens in one pass.
+- ~~The Verify button is green~~ **DONE `a0d27b5`** — option B in amber, his pick. `--amber` now
+  exists as a token PAIR (`#F59E0B` dark / `#92400E` light) and is measured; reuse it rather than
+  inventing another amber. **The same hardcoded-colour sweep is still owed on the OTHER screens** —
+  `bg-emerald-*`, `bg-orange-*`, `bg-red-*` and rgba glows outside EODReconciliationView.
 - `agentData` useMemo omits `inventory`, so `itemsBks` uses fallback pack multipliers.
 - `bg-black/N` across the whole admin half; Lite Mode kills `transition-duration` but not
   `transition-delay`; Force Reset is a 24px destructive target.
