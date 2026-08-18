@@ -554,7 +554,7 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
         // so rank stops falling back to Bronze after a sick week. See config/career.js.
         const lifetimeEXP = useCareerLedger
             ? careerXP(career?.[activeAgent.id] || {}, DEFAULT_XP)
-            : (lifetimeOmset * (rpgData.expMultiplier || 1)) + (activeAgent.manualExp || 0);
+            : (Math.floor(lifetimeOmset / DEFAULT_XP.rupiahPerXp) * (rpgData.expMultiplier || 1)) + (activeAgent.manualExp || 0);
         const sortedRanks = [...rpgData.ranks].sort((a,b) => Number(a.min) - Number(b.min));
         
         let currentTier = sortedRanks[0] || { name: 'Unranked', hex: '#64748b', min: 0 }; 

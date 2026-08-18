@@ -914,7 +914,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
         const finalCart = [...cart];
         const finalTotal = isReturMode && returType === 'EXCHANGE' ? 0 : cartTotal;
 
-        const displayMethod = isReturMode ? (returType === 'EXCHANGE' ? 'Tukar Ganti' : 'Retur/BS') : (cart.some(i => i.isIouFulfillment) ? 'IOU Fulfillment' : paymentMethod);
+        const displayMethod = isReturMode ? (returType === 'EXCHANGE' ? 'Tukar Ganti' : 'Retur/BS') : (cart.every(i => i.isIouFulfillment) ? 'IOU Fulfillment' : paymentMethod);
         
         let dbMethod = paymentMethod;
         let txType = 'SALE';
@@ -927,7 +927,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                 dbMethod = 'Retur/BS'; 
                 txType = 'RETUR';      
             }
-        } else if (cart.some(i => i.isIouFulfillment)) {
+        } else if (cart.every(i => i.isIouFulfillment)) {
             dbMethod = 'Cash';
             txType = 'SALE';
         }
