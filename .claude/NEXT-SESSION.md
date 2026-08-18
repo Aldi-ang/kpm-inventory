@@ -2,62 +2,80 @@
 
 ---
 
-The store name is settled. Every comparison in the app now goes through `storeKey`, and a guard
-in `logicFixes.selfcheck.mjs` fails the build check if any file grows its own copy again. What is
-left from that work is a DECISION Aldi has to make, not code — read it to him and get an answer
-before writing anything.
+The pack-size maths is hand-written in about ten places and three of them are wrong. The correct
+version already exists as `convertToBks(qty, unit, product)` in `src/utils/helpers.js`. This is not
+"write a helper" — it is "call the helper that is already there", and then make it impossible to
+hand-write an eleventh copy.
 
-**THE DECISION: the old names are still written in the data.**
+Read the files, do not trust these line numbers.
 
-Nothing was rewritten. Every comparison tolerates a trailing " (Retail)" / " (Individual)" /
-" (Wholesale)", so one shop behaves as one shop everywhere. But the rows themselves still say
-what they said, and every screen DISPLAYS whichever spelling was written first. So a shop can
-read as "Warung Bu Sari (Retail)" on the receivables list, the debt tally and the map pin,
-forever, even though the app knows it is the same shop as "Warung Bu Sari".
+**THE THREE THAT ARE WRONG — fix these first, by REPLACING the maths with a `convertToBks` call,
+never by patching the arithmetic in place:**
 
-Two options, and they are not close in risk:
+1. `src/FleetCanvasManager.jsx` ~321 — the worst one. Load Canvas always loads in PACKS, and when
+   the van already has a row for that product it adds the two numbers together with no conversion
+   at all. If that row is counted in Slop, loading 10 packs adds **10 Slop**: the warehouse loses
+   10 and the van gains 100. Clear Canvas, about sixty lines below in the same file (~379),
+   converts properly — which is exactly how the two ends stop agreeing.
+2. `src/hooks/useTransactionEngine.js` ~415 — on a consignment return it converts the VAN's stock
+   using the unit of the **returned item** instead of the unit of the **van row**. Van row in Slop
+   plus a return in packs means Slop numbers treated as pack numbers.
+3. `src/App.jsx` ~3132 and ~3142 — the sampling edit screen handles **Slop only**. A van row counted
+   in Bal or Karton is treated as single packs, so editing a sample can wipe out or invent a large
+   amount of stock. The correct four-size version sits about sixty lines above it in the same file.
 
-  (a) LEAVE IT. Costs nothing, changes nothing, and he sees a slightly ugly name on old shops
-      until those shops stop appearing. Zero risk.
-  (b) CLEAN THE CUSTOMER DOCUMENTS. A one-off pass that strips the suffix from `name` on every
-      customer document that carries one. Names get tidy everywhere at once. This is a WRITE to
-      his live book — it is a data migration, it is not reversible without a backup, and it must
-      not be run by anyone but him, on his word, with a backup taken first.
+**THE TRAP, and it is the whole job: `convertToBks` takes a UNIT, and which unit you pass is the
+bug.** Site 2 above is already calling correct maths — with the wrong unit. Copy a call over with
+`item.unit` where the code needs `vanRow.unit` and you have reproduced the same defect in tidier
+clothes, with the check passing. For every site you touch, say in the reply WHOSE unit it must be —
+the row being changed, or the thing changing it — and put that in a behaviour check: a van row
+counted in Slop, a movement expressed in packs, and the resulting van quantity in packs.
 
-Ask him plainly, do not assume: does he want the old names cleaned up, or left alone? If he says
-leave it, record that in A-Brain and this file's job is done — pick the next item from the queue
-below instead. If he says clean them, the FIRST thing to establish is how a backup is taken and
-verified, before a single document is touched.
+Second trap: site 1 is not only a missing conversion. Before editing, establish what unit that van
+row actually stores — if rows are held in their own unit rather than in packs, converting the
+incoming quantity is only half of it and the sum has to end up in the row's unit. Read Clear Canvas
+at ~379 first; it is the end that already works, and it decides the answer.
 
-**Do not write the migration "ready to run" while waiting for his answer.** A script that exists
-is a script someone runs.
+**THEN WRITE THE FINDER, the same way `S5` in `logicFixes.selfcheck.mjs` did for store names.**
+That guard found 8 private copies of the name rule in one run after four sessions of finding them
+by hand, three at a time. Do the same here: scan `src/`, comments stripped, for hand-written
+pack-size maths — the tell is `packsPerSlop` or `slopsPerBal` or `balsPerCarton` appearing in a
+file **outside a `convertToBks` call** — and fail with `file:line`. Allow `helpers.js`, which is
+where the real rule lives. Expect it red; the remaining ~7 correct-but-duplicated copies are the
+list of what to replace. Replace what you can, and if any must stay, say which and why.
 
-CONTEXT ALREADY ESTABLISHED, do not re-derive: no transaction carries a customerId, only
-customerName and agentId — a name is the only key there is, which is exactly why rewriting names
-is dangerous. `storeKey()` in `src/utils/helpers.js`. Background:
-A-Brain/Wiki/Concepts/A Store Name Is Not a Store.md.
+Third trap: the guard's tell must not fire on `helpers.js` itself, on the checks in `src/config/`,
+or on a product FORM that legitimately edits `packsPerSlop` as a field. Scope it and say what it
+deliberately ignores — a guard that cries wolf gets deleted in a week.
 
-Verify chain if any code is touched, paste the numbers:
-npm run build; node src/config/integration.audit.mjs; node src/config/logicFixes.selfcheck.mjs; node src/config/customerBrief.selfcheck.mjs; node src/config/dayStats.selfcheck.mjs
-Expected: build clean, 599/0, 150/0 plus whatever you add, 9/9, 7/7.
+CONTEXT ALREADY ESTABLISHED, do not re-derive: `convertToBks(qty, unit, product)` in
+`src/utils/helpers.js` handles all four sizes (Bks → Slop → Bal → Karton) and defaults sensibly.
+`FleetCanvasManager.jsx:379`, `MerchantSalesView.jsx:1410` and `ConsignmentFinanceView.jsx` already
+call it. Backlog source: `A-Brain/Backlog/The pack-size maths is copy-pasted in six places and they
+disagree.md` (title says seven; a seventh copy turned up on a second pass).
 
-When it is committed — or when he answers and the answer is recorded — rewrite this file
-(.claude/NEXT-SESSION.md) with the NEXT single job.
+Verify chain, paste the numbers:
+npm run build; node src/config/integration.audit.mjs; node src/config/logicFixes.selfcheck.mjs; node src/config/mixedUnits.selfcheck.mjs
+Expected: build clean, 599/0, 163/0 plus whatever you add, mixedUnits green.
+
+When it is committed, rewrite this file (.claude/NEXT-SESSION.md) with the NEXT single job.
 
 ---
 
 <details>
 <summary>Queue behind it — for the next session to promote from, not to paste</summary>
 
+- **Same disease, no helper yet:** the price-tier ladder `priceRetail / priceEcer / priceGrosir` is
+  written out five separate times in `MerchantSalesView.jsx` (~82, ~541, ~602, ~667, ~1405). None is
+  wrong today. By the same argument there should be one helper and one guard.
 - **Tell him before he presses it:** the RPG Migration button in `MapMissionControl` re-banks
-  `lifetimeXP` / `seasonXP` from transactions. After `a3a9cf6` those numbers come out HIGHER for
-  any shop whose history was split by spelling. Nothing is wrong until he presses it.
-- `storesServed` in the career doc is accumulated with `increment()`, so days submitted BEFORE
-  `ef437b1` are already banked with the inflated count. Nothing here can correct them. If he ever
-  cares about the lifetime number being exact, that is its own conversation.
-- The S5 guard only catches `.trim().toLowerCase()`. A file could still write
-  `.toLowerCase().trim()`, or `String(x).toLowerCase()`, and slip past. Widening the pattern is
-  cheap; do it the next time anything touches that check, not as its own job.
-- `src/hooks/useOfflineEngine.js` only logs `customerName` into a sync message — checked, no
-  matching or grouping. Recorded so nobody re-greps it.
+  `lifetimeXP` / `seasonXP`. After `a3a9cf6` those numbers come out HIGHER for shops whose history
+  was split by spelling. Nothing is wrong until he presses it.
+- **Known gap from `883a62e`:** the customer directory (`CustomerManager`) still shows the legacy
+  "(Retail)" ending, because it is the one screen that writes customer documents in bulk and must
+  keep receiving raw names. Closing it means stripping at its render sites only, not at its data.
+- The `S5` name guard only catches `.trim().toLowerCase()`. `.toLowerCase().trim()` or
+  `String(x).toLowerCase()` would slip past. Widen it next time anything touches that check.
+- `storesServed` in the career doc is accumulated with `increment()`, so days submitted before
+  `ef437b1` are banked with the inflated count. Nothing can correct them retroactively.
 </details>

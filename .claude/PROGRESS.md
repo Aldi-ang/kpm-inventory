@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-18 16:29 WIB (KPM app session)** · 🔧 18 FIXES · 📋 ONE DECISION WAITING · branch `phase0-solid-ground`
+**Updated: 2026-08-18 16:38 WIB (KPM app session)** · 🔧 19 FIXES · 📋 ONE PROMPT READY · branch `phase0-solid-ground`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -12,6 +12,38 @@
 > 📏 **KEEP THIS FILE UNDER ~350 LINES.** When it passes that, cut the oldest day into the same
 > archive rather than letting it grow back. This file holds WHERE THE WORK STANDS; the archive
 > and `A-Brain/Wiki/Log.md` hold how it got there.
+
+## 🟠 2026-08-18 16:38 WIB — KPM app track — OLD NAMES CLEANED ON SCREEN: SHIPPED `883a62e`
+
+He decided: *"clean it then move on"*. Done at **display**, not in the database.
+
+- `storeLabel()` joins `storeKey()` in helpers. Same suffix rule, keeps capitals and spacing —
+  `storeKey` answers "same shop?", `storeLabel` answers "what do I print?".
+- `App.jsx` derives `displayCustomers` / `displayPermitted` → sales terminal, map, journey,
+  history report, and the sale engine. Receivables row + agent debt tally use `storeLabel`
+  directly (their label comes from a transaction, not a customer document).
+- **Nothing was written to his book.** Reversible by deleting one function.
+
+🔴 **Why not the migration he authorised — a fact found mid-work, not a second-guess.** The backup
+round-trips the in-memory customer list: `exportData.customers` is built from it and a RESTORE
+writes it back with `set()`. Stripping names on load (the one-line version) would have made any
+future restore a **silent permanent rename of every shop**. Checked before writing anything.
+
+- **Deliberately left on RAW names, both recorded as guards:** the backup export, and the customer
+  directory (`CustomerManager` — the one screen that writes customer docs in bulk). **The
+  directory still shows "(Retail)". Known gap, queued.**
+- **The quiet win:** the engine resolves against the display copy, so a store's NEXT sale is
+  written with the clean name. Old names retire as shops are served — no migration, no backup,
+  no button.
+- **Verified:** build clean · audit **599/0** · logic **150/0 → 163/0** · brief 9/9 · daystats
+  7/7. 4 of 8 new checks watched failing first; the other 4 guard what must NOT change.
+- Invariant pinned: every spelling ever written still resolves to the same shop after
+  relabelling, and relabelling never merges two shops that were separate.
+
+📋 **`.claude/NEXT-SESSION.md` rewritten** — next job from his Backlog: **the pack-size maths**,
+hand-written in ~10 places, 3 of them wrong, while `convertToBks()` already exists in helpers.
+Worst one: Load Canvas adds packs onto a Slop-counted row — warehouse loses 10, van gains 100.
+Same shape as today's win: call the helper that exists, then write the finder.
 
 ## 🟠 2026-08-18 16:29 WIB — KPM app track — THE GUARD, AND THE 8 IT FOUND: SHIPPED `ef437b1`
 
@@ -2846,6 +2878,8 @@ price ladder; performance rank is now the Tier Automation Engine's job.
 
 ## 📓 LOG
 
+- **2026-08-18 16:38** — legacy "(Retail)" endings hidden at display via `storeLabel`; backup and
+  the customer directory deliberately kept raw. `883a62e`. 599/0, 163/0, 9/9, 7/7.
 - **2026-08-18 16:29** — wrote the guard that finds private name rules; it found 8 across 3 files,
   all fixed. `ef437b1`. 599/0, 150/0, 9/9, 7/7, 6/6.
 - **2026-08-18 15:5x** — map: 4 raw-name sites on `storeKey`, zone sum de-duplicated, every sum
