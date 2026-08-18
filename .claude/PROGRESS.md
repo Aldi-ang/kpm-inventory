@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-18 12:10 WIB (KPM app session)** · 🔧 12 FIXES · ✗ #11 REFUTED (74 real, not 75) · branch `phase0-solid-ground`
+**Updated: 2026-08-18 12:16 WIB (KPM app session)** · 🔧 12 FIXES · 📋 6 JOB PROMPTS READY · branch `phase0-solid-ground`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -15,8 +15,18 @@
 
 ## ▶ NOW
 
-> 📋 **Ready-made prompts for a fresh session: `.claude/NEXT-SESSION.md`** — copy one, paste,
-> go. Correct paths for the repo, the vault and the alucard skill are in it.
+> 📋 **`.claude/NEXT-SESSION.md` holds SIX job-specific prompts — copy one, paste, go.**
+> Not a generic "keep going": each block names the exact file and line, quotes what the code
+> actually does, says what it costs him, gives the smallest fix, **and names the trap that would
+> make a lazy patch wrong.** Order: 1 hand-off-by-name (`App.jsx:1628`, start here) · 2 the two
+> name-join bugs in the sale engine (paired, same root cause) · 3 Consignment Risk reading Rp 0 ·
+> 4 `getDoc` never imported · 5 the two `firestore.rules` holes (alone, emulator, never deploy) ·
+> 6 build tukar barang. Repo, vault and alucard paths are all spelled out in it.
+>
+> ✅ **Workflows are ALLOWED again** — he reversed the earlier ban on 2026-08-18: *"correct
+> workflow"*. Still the wrong tool for a single-file fix; use one focused pass there. Reach for a
+> fan-out only on a genuine sweep across many files, and **never set `model` on a subagent** —
+> the `cc/`-prefixed routes are unreachable and the agent dies instantly.
 > **Alucard now runs Karpathy + Caveman by DEFAULT** (§4 and §5, set 2026-08-18 on his word:
 > *"add karpathy guidelines while using caveman on default inside alucard"*), so neither has to
 > be asked for again. Caveman carve-outs: **questions stay descriptive**, and **every reply ends
@@ -2101,6 +2111,7 @@ batch them: he has to look at each one. `AgentProfileView` is already clean (0 s
 | `A-Brain/Backlog/TESTS - check these when you feel like it.md` | **NEW 2026-08-18** — every test Aldi owes, taken off his plate |
 | `A-Brain/Backlog/SWEEP*.md` (9 files) | **NEW 2026-08-18** — all 75 confirmed problems in plain English, plus the 21 refuted |
 | `A-Brain/Wiki/Concepts/Sale Is Final - no refund, no credit.md` | **NEW 2026-08-18** — the locked no-refund/no-credit rule and everything it kills |
+| `.claude/NEXT-SESSION.md` | **NEW 2026-08-18** — six ready-to-paste job prompts, each with its file, trap and verify step |
 | `index.html` | the pre-paint theme stamp — must agree with `App.jsx`'s theme effect |
 | `src/index.css` | **the page ground** — `body` paints `--ground-base` + the lit-corner gradient |
 | `src/components/BiohazardTheme.jsx` | **the SHELL that actually covers the page** — root wrapper, dock, drawer, status strip |
@@ -2663,7 +2674,7 @@ price ladder; performance rank is now the Tier Automation Engine's job.
 
 ## 📓 LOG
 
-### 2026-08-18 12:10 (KPM app session) — plan A: 12 fixes, a self-check harness, a locked rule, and one finding killed
+### 2026-08-18 12:16 (KPM app session) — 12 fixes, a self-check harness, a locked rule, one finding killed, and the next six jobs written out
 
 He picked **A (money first)** off the 75-problem register, then re-scoped how I work three times:
 *"i want u to check every single update that u made yourself from now on"* → built
@@ -2682,6 +2693,13 @@ verified build + 599/0 + 49/0 **before** its commit.
 **And #11 was REFUTED rather than fixed** (`07fd2ac`) — the delete-targets-wrong-vault finding
 is false, because the non-owner's `user.uid` IS the boss vault id. No code changed; four
 assertions added so the fact cannot quietly stop being true. **74 real problems, not 75.**
+
+**Handover built at the end:** `.claude/NEXT-SESSION.md` — six job-specific prompts so a cleared
+session starts on a named fix with no re-explaining, and alucard §4/§5 now carry **Karpathy and
+Caveman as standing defaults** on his word: *"add karpathy guidelines while using caveman on
+default inside alucard"*. Caveman carve-outs recorded in his own words: **questions stay
+descriptive**, and **every reply ends with what was just done**. He also reversed the workflow
+ban — *"correct workflow"* — so fan-outs are permitted again, though not for single-file fixes.
 
 **The decision that outlives the code:** he killed store credit — *"contract is done its nothing,
 no responsibility, no credit"* — now locked in the vault, because it is the standard fix and will
