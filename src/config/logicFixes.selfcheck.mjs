@@ -23,6 +23,14 @@ const engine   = read('src/hooks/useTransactionEngine.js');
 const merchant = read('src/MerchantSalesView.jsx');
 const profile  = read('src/AgentProfileView.jsx');
 const map      = read('src/MapMissionControl.jsx');
+const app      = read('src/App.jsx');
+const history  = read('src/components/HistoryReportView.jsx');
+const helpers  = read('src/utils/helpers.js');
+
+/* Every helper a fix calls must be IMPORTED. Bug #24 here was a call to getDoc that was never
+   imported: it threw into an empty catch and silently disabled the rank engine for months. The
+   build does not catch that. This does. */
+const imports = (src, name) => [...src.matchAll(/import\s*\{([^}]*)\}/g)].some(m => m[1].split(',').map(x => x.trim()).includes(name));
 
 /* ── A1 · rank was scored in rupiah against an XP ladder ───────────────────────────────── */
 section('A1. Rank is scored in the same unit as the ladder');
@@ -89,6 +97,30 @@ ok('priceTier is saved from the price field',
    /priceTier: newStoreForm\.priceTier/.test(map));
 ok('tier is no longer written from the same box',
    !/tier: newStoreForm\.tier,\s*\n\s*priceTier: newStoreForm\.tier/.test(map));
+
+
+/* -- #8 . damaged EOD goods credited without converting the unit ------------------------- */
+section('#8. Damaged EOD returns are converted to packs');
+ok('convertToBks is imported in App.jsx', imports(app, 'convertToBks'));
+ok('damagedStock is credited in Bks, not raw qty',
+   /const damagedBks = convertToBks\(item\.qty, item\.unit, masterProduct\)/.test(app));
+ok('no raw increment(item.qty) survives on the damaged path',
+   !/damagedStock: increment\(item\.qty\)/.test(app));
+{ const packs = 2 * 20 * 10;
+  ok('2 Bal now credits 400, not 2', packs === 400, `got ${packs}`); }
+
+/* -- #12 . edit modal repriced from a product field that does not exist ------------------ */
+section('#12. The edit modal converts units from real packing fields');
+ok('convertToBks is imported in HistoryReportView', imports(history, 'convertToBks'));
+ok('slopPerKarton is gone from the entire file', !/slopPerKarton/.test(history));
+ok('all four multipliers use convertToBks',
+   (history.match(/convertToBks\(1, /g) || []).length === 4,
+   `found ${(history.match(/convertToBks\(1, /g) || []).length}`);
+ok('the packing helper handles Bal (the old inline code had no Bal branch)',
+   /unit === 'Bal'/.test(helpers));
+{ const qty = 1, packsPerSlop = 10, slopsPerBal = 20, balsPerCarton = 4;
+  const karton = eval(helpers.match(/if \(unit === 'Karton'\) return ([^;]+);/)[1]);
+  ok('1 Karton = 800 packs, not the old hardcoded 100', karton === 800, `got ${karton}`); }
 
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

@@ -1836,10 +1836,15 @@ const handleGitHubMirror = async () => {
               damagedDocs.forEach((dSnap, index) => {
                   const item = damagedRefs[index].itemData;
                   const masterProduct = inventory.find(p => p.id === item.productId);
+                  // Good stock 26 lines above converts Slop/Bal/Karton into Bks before crediting.
+                  // This loop did not: returning 2 Bal of crushed packs credited the Quarantine
+                  // Vault 2 instead of 400, and the unit was dropped at write time so nothing
+                  // downstream could recover the real figure.
+                  const damagedBks = convertToBks(item.qty, item.unit, masterProduct);
                   if (useBranchWarehouse) {
-                      t.set(damagedRefs[index].ref, { productId: item.productId, name: masterProduct?.name || item.name, damagedStock: increment(item.qty) }, { merge: true });
+                      t.set(damagedRefs[index].ref, { productId: item.productId, name: masterProduct?.name || item.name, damagedStock: increment(damagedBks) }, { merge: true });
                   } else {
-                      t.set(damagedRefs[index].ref, { damagedStock: increment(item.qty) }, { merge: true });
+                      t.set(damagedRefs[index].ref, { damagedStock: increment(damagedBks) }, { merge: true });
                   }
               });
 

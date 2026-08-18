@@ -316,10 +316,10 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
         if (field === 'productId' || field === 'unit' || field === 'qty') {
             const product = inventory.find(p => p.id === newItems[index].productId);
             const tier = editingTrans.priceTier || 'Retail';
-            const currentMultiplier = currentItem.unit === 'Slop' ? 10 : currentItem.unit === 'Karton' ? ((Number(product?.slopPerKarton) || 10) * 10) : 1;
+            const currentMultiplier = convertToBks(1, currentItem.unit, product);
             const fallbackPackPrice = (Number(currentItem.calculatedPrice) || 0) / currentMultiplier;
             const basePrice = getProductPrice(product, tier, fallbackPackPrice);
-            const multiplier = newItems[index].unit === 'Slop' ? 10 : newItems[index].unit === 'Karton' ? ((Number(product?.slopPerKarton) || 10) * 10) : 1;
+            const multiplier = convertToBks(1, newItems[index].unit, product);
             newItems[index].calculatedPrice = basePrice * multiplier;
         }
 
@@ -331,10 +331,10 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
         const newTier = e.target.value;
         const newItems = (editingTrans.items || []).map(item => {
             const product = inventory.find(p => p.id === item.productId);
-            const currentMultiplier = item.unit === 'Slop' ? 10 : item.unit === 'Karton' ? ((Number(product?.slopPerKarton) || 10) * 10) : 1;
+            const currentMultiplier = convertToBks(1, item.unit, product);
             const fallbackPackPrice = (Number(item.calculatedPrice) || 0) / currentMultiplier;
             const basePrice = getProductPrice(product, newTier, fallbackPackPrice);
-            const multiplier = item.unit === 'Slop' ? 10 : item.unit === 'Karton' ? ((Number(product?.slopPerKarton) || 10) * 10) : 1;
+            const multiplier = convertToBks(1, item.unit, product);
             return { ...item, calculatedPrice: basePrice * multiplier };
         });
         const newTotal = newItems.reduce((sum, item) => sum + ((Number(item.calculatedPrice) || 0) * (Number(item.qty) || 0)), 0);
