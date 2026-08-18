@@ -247,3 +247,34 @@ export const compressImageToBase64 = (file) => {
    Aldi, 2026-08-18: "what IOU again i forgot" -> "yeah utang barang should do". */
 export const paymentLabel = (method) =>
     method === 'IOU Fulfillment' ? 'Utang Barang Lunas' : (method || '');
+
+/* Which products came back short, named one by one. Aldi's rule, in his words: a single goods
+   total hides a one-product shortfall — which is why the EOD goods card counts line by line in
+   the first place, and why the admin's report card must not undo that by showing one number.
+
+   Both lists are van rows: productId, name, qty, unit. The counted list is built FROM the
+   expected list, so a row keeps its own unit and never needs converting. A product that was
+   never counted carries its expected qty forward — silence is not zero, so it is not short. */
+export const shortStockRows = (expected = [], counted = []) => {
+    const countedByProduct = {};
+    (counted || []).forEach(row => {
+        countedByProduct[String(row?.productId)] = Number(row?.qty) || 0;
+    });
+    return (expected || []).reduce((rows, item) => {
+        const pid = String(item?.productId);
+        if (!(pid in countedByProduct)) return rows;
+        const expectedQty = Number(item?.qty) || 0;
+        const countedQty  = countedByProduct[pid];
+        if (countedQty < expectedQty) {
+            rows.push({
+                productId: pid,
+                name: item?.name || pid,
+                unit: item?.unit || 'Bks',
+                expected: expectedQty,
+                counted: countedQty,
+                short: expectedQty - countedQty,
+            });
+        }
+        return rows;
+    }, []);
+};

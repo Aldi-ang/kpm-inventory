@@ -1,8 +1,45 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { ShieldCheck, Wallet, Truck, CheckCircle, Upload, AlertCircle, Clock, DollarSign, Package, XCircle, Tag, ChevronDown, ChevronRight, MapPin, User, Calendar, Folder, Target, BadgeDollarSign, ShieldAlert } from 'lucide-react';
-import { formatRupiah, getLocalDayKey, storeKey } from './utils/helpers';
+import { formatRupiah, getLocalDayKey, storeKey, shortStockRows } from './utils/helpers';
 import { confirmAction } from './components/ConfirmGate.jsx';
 import EODAgentFlow from './components/EODAgentFlow.jsx';
+
+/* Expected beside counted, with the gap named. A lone figure could never look wrong - the admin
+   was approving a number he had nothing to compare it against, which is the whole reason the
+   count exists. Reports from before the count carry no expected value, so they keep the single
+   figure they were submitted with. Stacked on a phone, three columns on a desk; the type never
+   shrinks to fit. */
+const MoneyLine = ({ icon, label, expected, counted }) => {
+    const has = expected !== undefined && expected !== null;
+    const gap = Number(counted || 0) - Number(expected || 0);
+    const gapInk = gap < 0 ? 'text-[var(--danger-ink)]' : 'text-[var(--ink-dim)]';
+    const cell = 'text-[10px] font-bold text-[var(--ink-dim)] uppercase tracking-widest';
+
+    return (
+        <div className="bg-black/40 p-3 rounded-lg border border-[var(--line)]">
+            <div className="flex justify-between items-center">
+                <span className="text-xs font-bold text-[var(--ink-dim)] uppercase tracking-widest flex items-center gap-2">{icon} {label}</span>
+                {!has && <span className="text-xl font-black text-[var(--ink-dim)]">{formatRupiah(counted)}</span>}
+            </div>
+            {has && (
+                <div className="mt-2 space-y-1 sm:space-y-0 sm:grid sm:grid-cols-3 sm:gap-2 sm:text-center tabular-nums">
+                    <div className="flex justify-between items-baseline sm:block">
+                        <p className={cell}>Expected</p>
+                        <p className="text-sm font-black text-[var(--ink-dim)]">{formatRupiah(expected)}</p>
+                    </div>
+                    <div className="flex justify-between items-baseline sm:block">
+                        <p className={cell}>Counted</p>
+                        <p className="text-sm font-black text-[var(--ink)]">{formatRupiah(counted)}</p>
+                    </div>
+                    <div className="flex justify-between items-baseline sm:block">
+                        <p className={`${cell} ${gap < 0 ? 'text-[var(--danger-ink)]' : ''}`}>{gap < 0 ? 'Short by' : gap > 0 ? 'Over by' : 'Matches'}</p>
+                        <p className={`text-sm font-black ${gapInk}`}>{gap === 0 ? '\u2014' : formatRupiah(Math.abs(gap))}</p>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+};
 
 const EODReconciliationView = ({ samplings = [], transactions = [], inventory = [], agentCanvas = [], agentProfileId, motorists = [], eodReports = [], user, appSettings, onSubmitEOD, onVerifyEOD, onResetEOD, isAdmin }) => {
     
@@ -753,12 +790,23 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                         <div className="space-y-4">
                             {pendingReports.length === 0 ? (
                                 <div className="bg-black/20 border border-[var(--line)] p-8 rounded-2xl text-center text-[var(--ink-dim)] text-xs uppercase tracking-widest">No pending reports.</div>
-                            ) : pendingReports.map(report => (
-                                <div key={report.id} className={`bg-black/40 border rounded-2xl overflow-hidden shadow-lg border-[var(--line)] ${report.reportType === 'BOUNTY' ? 'border-red-500/50 shadow-[0_0_20px_rgba(220,38,38,0.2)]' : report.reportType === 'CUKAI' ? 'border-[var(--accent-edge)]' : 'border-[var(--line)]'} `}>
+                            ) : pendingReports.map(report => {
+                                /* A report with no countStatus predates the count entirely.
+                                   That is CLEAN - history is never painted as disputed. */
+                                const disputed = report.countStatus === 'DISPUTED';
+                                /* The same rule App.jsx mints with, so the rupiah named here is
+                                   the rupiah he will actually owe. Floored separately: extra
+                                   cash does not pay off a missing transfer. */
+                                const moneyShort = Math.max(0, -Number(report.cashVariance || 0))
+                                                 + Math.max(0, -Number(report.transferVariance || 0));
+                                const shortRows = shortStockRows(report.expectedStock, report.remainingStock);
+
+                                return (
+                                <div key={report.id} className={`bg-black/40 border rounded-2xl overflow-hidden shadow-lg ${disputed ? 'border-[var(--danger)] shadow-[0_0_20px_rgba(220,38,38,0.2)]' : report.reportType === 'BOUNTY' ? 'border-red-500/50 shadow-[0_0_20px_rgba(220,38,38,0.2)]' : report.reportType === 'CUKAI' ? 'border-[var(--accent-edge)]' : 'border-[var(--line)]'} `}>
                                     
-                                    <div className={`p-4 flex justify-between items-center border-b border-[var(--line)] ${report.reportType === 'BOUNTY' ? 'bg-[var(--danger)] border-[var(--danger)]' : report.reportType === 'CUKAI' ? 'bg-[var(--gold)] border-[var(--accent-edge)]' : 'bg-[var(--gold)] border-[var(--line)]'} `}>
+                                    <div className={`p-4 flex justify-between items-center border-b border-[var(--line)] ${disputed ? 'bg-[var(--danger)] border-[var(--danger)]' : report.reportType === 'BOUNTY' ? 'bg-[var(--danger)] border-[var(--danger)]' : report.reportType === 'CUKAI' ? 'bg-[var(--gold)] border-[var(--accent-edge)]' : 'bg-[var(--gold)] border-[var(--line)]'} `}>
                                         <div>
-                                            <h4 className={`font-black text-lg ${report.reportType === 'BOUNTY' ? 'text-[var(--danger-ink)]' : 'text-[var(--ink)]'} `}>{report.agentName}</h4>
+                                            <h4 className={`font-black text-lg ${(disputed || report.reportType === 'BOUNTY') ? 'text-[var(--danger-ink)]' : 'text-[var(--ink)]'} `}>{report.agentName}</h4>
                                             <p className="text-[10px] text-[var(--ink-dim)]">
                                                 {report.timestamp?.seconds ? new Date(report.timestamp.seconds * 1000).toLocaleTimeString() : ''}
                                             </p>
@@ -768,11 +816,29 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                             {report.reportType === 'CUKAI' && <span className="bg-[var(--gold)] text-[var(--gold-ink)] text-[11px] font-black px-2 py-0.5 rounded uppercase tracking-widest shadow-md">PITA CUKAI ONLY</span>}
                                             {report.reportType === 'BOUNTY' && <span className="bg-[var(--danger)] text-[var(--gold-ink)] text-[11px] font-black px-3 py-1 rounded uppercase tracking-widest shadow-md flex items-center gap-1"><AlertCircle size={10}/> BOUNTY CLEARANCE</span>}
                                             {!report.reportType && <span className="bg-[var(--gold)] text-[var(--gold-ink)] text-[11px] font-black px-2 py-0.5 rounded uppercase tracking-widest shadow-md">COMBINED REPORT</span>}
+                                            {disputed && <span className="bg-[var(--danger)] text-[var(--danger-ink)] text-[11px] font-black px-3 py-1 rounded uppercase tracking-widest shadow-md flex items-center gap-1"><AlertCircle size={10}/> SHORT COUNT</span>}
                                         </div>
                                     </div>
 
                                     <div className="p-6 space-y-4">
                                         
+                                        {/* The count came up short. Approving is allowed - Aldi's
+                                            ruling - it just is not silent about what it does. */}
+                                        {disputed && (
+                                            <div className="bg-[var(--danger)] border border-[var(--danger)] p-4 rounded-xl">
+                                                <p className="text-[10px] font-bold text-[var(--danger-ink)] uppercase tracking-widest mb-1 flex items-center gap-1"><AlertCircle size={14}/> He Counted Less Than Expected</p>
+                                                {moneyShort > 0 ? (
+                                                    <p className="text-[11px] text-[var(--danger-ink)] leading-relaxed">
+                                                        Approving records <strong className="font-black">{formatRupiah(moneyShort)}</strong> as a bounty on {report.agentName}. He can repay it from his own EOD screen.
+                                                    </p>
+                                                ) : (
+                                                    <p className="text-[11px] text-[var(--danger-ink)] leading-relaxed">
+                                                        The money matches. The shortfall is goods, listed below, and is not turned into a bounty.
+                                                    </p>
+                                                )}
+                                            </div>
+                                        )}
+
                                         {/* 🚀 ADMIN VIEW: BOUNTY PAYMENT */}
                                         {report.reportType === 'BOUNTY' && (
                                             <div className="bg-[var(--danger)] border border-[var(--danger)] p-4 rounded-xl text-center">
@@ -785,14 +851,10 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                         {/* OPTIONALLY HIDE CASH/STOCK IF IT IS A CUKAI OR BOUNTY REPORT */}
                                         {(report.reportType === 'CASH_STOCK' || !report.reportType) && (
                                             <>
-                                                <div className="flex justify-between items-center bg-black/40 p-3 rounded-lg border border-[var(--line)]">
-                                                    <span className="text-xs font-bold text-[var(--ink-dim)] uppercase tracking-widest flex items-center gap-2"><DollarSign size={14}/> Physical Cash</span>
-                                                    <span className="text-xl font-black text-[var(--ink-dim)]">{formatRupiah(report.cash)}</span>
-                                                </div>
-                                                <div className="flex justify-between items-center bg-black/40 p-3 rounded-lg border border-[var(--line)]">
-                                                    <span className="text-xs font-bold text-[var(--ink-dim)] uppercase tracking-widest flex items-center gap-2"><Wallet size={14}/> Digital Transfer</span>
-                                                    <span className="text-xl font-black text-[var(--ink-dim)]">{formatRupiah(report.transfer)}</span>
-                                                </div>
+                                                <MoneyLine icon={<DollarSign size={14}/>} label="Physical Cash"
+                                                           expected={report.expectedCash} counted={report.cash} />
+                                                <MoneyLine icon={<Wallet size={14}/>} label="Digital Transfer"
+                                                           expected={report.expectedTransfer} counted={report.transfer} />
                                                 <div className="pt-2">
                                                     <p className="text-[10px] font-bold text-[var(--ink-dim)] uppercase tracking-widest mb-2 flex items-center gap-1"><Package size={12}/> Inventory to Vault</p>
                                                     <div className="flex flex-wrap gap-2">
@@ -818,6 +880,22 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                                         }) : <span className="text-[10px] text-[var(--ink-dim)] italic">No stock to return.</span>}
                                                     </div>
                                                 </div>
+
+                                                {/* One goods total hides a one-product shortfall - Aldi's
+                                                    rule, and the reason the goods card counts line by line. */}
+                                                {shortRows.length > 0 && (
+                                                    <div className="pt-3">
+                                                        <p className="text-[10px] font-bold text-[var(--danger-ink)] uppercase tracking-widest mb-2 flex items-center gap-1"><AlertCircle size={12}/> Short on Return ({shortRows.length})</p>
+                                                        <div className="space-y-1">
+                                                            {shortRows.map(row => (
+                                                                <div key={row.productId} className="flex justify-between items-center gap-2 text-[10px] bg-[var(--danger)] border border-[var(--danger)] px-2 py-1.5 rounded">
+                                                                    <span className="text-[var(--danger-ink)]">{row.name}</span>
+                                                                    <strong className="text-[var(--danger-ink)] tabular-nums whitespace-nowrap">{row.counted} of {row.expected} {row.unit} &middot; short {row.short}</strong>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                )}
 
                                                 {/* 🚀 NEW: DAMAGED GOODS — was missing from this review screen entirely */}
                                                 <div className="pt-3">
@@ -879,9 +957,9 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                         <div className="flex gap-2 mt-4 pt-2">
                                             <button 
                                                 onClick={() => onVerifyEOD(report)}
-                                                className={`flex-1 py-3 text-[var(--ink)] rounded-xl font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-transform active:scale-95 ${report.reportType === 'BOUNTY' ? 'bg-red-700 hover:bg-red-600 shadow-[0_0_15px_rgba(220,38,38,0.4)]' : report.reportType === 'CUKAI' ? 'bg-orange-600 hover:bg-orange-500 shadow-[0_0_15px_rgba(234,88,12,0.3)]' : 'bg-emerald-600 hover:bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.3)]'} `}
+                                                className={`flex-1 py-3 text-[var(--ink)] rounded-xl font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-transform active:scale-95 ${disputed ? 'bg-red-700 hover:bg-red-600 shadow-[0_0_15px_rgba(220,38,38,0.4)]' : report.reportType === 'BOUNTY' ? 'bg-red-700 hover:bg-red-600 shadow-[0_0_15px_rgba(220,38,38,0.4)]' : report.reportType === 'CUKAI' ? 'bg-orange-600 hover:bg-orange-500 shadow-[0_0_15px_rgba(234,88,12,0.3)]' : 'bg-emerald-600 hover:bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.3)]'} `}
                                             >
-                                                <CheckCircle size={18}/> Verify
+                                                <CheckCircle size={18}/> {disputed ? 'Approve Short Count' : 'Verify'}
                                             </button>
                                             
                                             <button 
@@ -893,7 +971,8 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                         </div>
                                     </div>
                                 </div>
-                            ))}
+                                );
+                            })}
                         </div>
                     </div>
 

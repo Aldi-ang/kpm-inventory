@@ -1019,5 +1019,56 @@ ok('and clearing a bounty still deletes those keys',
   ok('an older bounty is untouched by a clean night', owed(mixed) === 75000);
   ok('and non-penalty balances are left alone', mixed.global_credit === 1000); }
 
+
+/* ── S19 · the admin sees the gap; a short count cannot be approved by reflex ───────────── */
+section('S19. Expected beside counted, the short products named, and the card itself changed');
+
+{ const card = stripComments(eod);
+  ok('the card reads countStatus, not only the numbers',
+     /report\.countStatus === 'DISPUTED'/.test(card));
+  ok('a missing countStatus is CLEAN — history is never painted as disputed',
+     !/countStatus !== 'CLEAN'/.test(card) && !/countStatus \|\| 'DISPUTED'/.test(card));
+  ok('what the app expected is rendered beside what he counted',
+     /expected=\{report\.expectedCash\}/.test(card) && /expected=\{report\.expectedTransfer\}/.test(card));
+  ok('the short products are named row by row, never one goods total',
+     /shortStockRows\(report\.expectedStock, report\.remainingStock\)/.test(card));
+  ok('the approve button changes its own words when the count is short',
+     /disputed \? 'Approve Short Count'/.test(card));
+  ok('and the card changes with it, so the gap is not just a number on a normal card',
+     /disputed \? 'border-\[var\(--danger\)\]/.test(card));
+  ok('the rupiah that becomes a bounty is named before approving, by the rule App.jsx mints with',
+     /Math\.max\(0, -Number\(report\.cashVariance \|\| 0\)\)/.test(card)
+     && /Math\.max\(0, -Number\(report\.transferVariance \|\| 0\)\)/.test(card)); }
+
+{ const H = await import('../utils/helpers.js');
+  ok('shortStockRows is exported from helpers, where the shared rules live',
+     typeof H.shortStockRows === 'function');
+  const shortStockRows = H.shortStockRows || (() => null);
+
+  const expected = [{ productId: 'p1', name: 'Surya 16', qty: 12, unit: 'Bks' },
+                    { productId: 'p2', name: 'Gudang Garam', qty: 3, unit: 'Slop' },
+                    { productId: 'p3', name: 'Djarum 76', qty: 2, unit: 'Bal' }];
+
+  const rows = shortStockRows(expected,
+    [{ productId: 'p1', name: 'Surya 16', qty: 9, unit: 'Bks' },
+     { productId: 'p2', name: 'Gudang Garam', qty: 3, unit: 'Slop' },
+     { productId: 'p3', name: 'Djarum 76', qty: 5, unit: 'Bal' }]);
+
+  ok('only the product that came up short is listed', rows && rows.length === 1);
+  ok('it is named, so a one-product gap cannot hide inside a total', rows?.[0]?.name === 'Surya 16');
+  ok("counted in the row's own unit, not converted", rows?.[0]?.unit === 'Bks');
+  ok('and the gap is stated', rows?.[0]?.short === 3 && rows?.[0]?.counted === 9 && rows?.[0]?.expected === 12);
+  ok('a product counted exactly right is not listed',
+     Array.isArray(rows) && !rows.some(r => r.productId === 'p2'));
+  ok('a product counted OVER is not a shortfall',
+     Array.isArray(rows) && !rows.some(r => r.productId === 'p3'));
+
+  const legacy = shortStockRows(undefined, [{ productId: 'p1', qty: 0, unit: 'Bks' }]);
+  ok('an older report with no expectedStock shows nothing short — history is never painted red',
+     Array.isArray(legacy) && legacy.length === 0);
+  const uncounted = shortStockRows(expected, []);
+  ok('a product never counted keeps its expected row and is not called short',
+     Array.isArray(uncounted) && uncounted.length === 0); }
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);
