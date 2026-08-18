@@ -13,7 +13,7 @@ import { notify } from './components/Toast.jsx';
 /* `onAdminSalesMode` is undefined for everyone but the boss, and that IS the permission check —
    App only hands it over on `userRole === 'ADMIN'`, the same test that used to gate the bar it
    replaces. Absent prop, absent switch. */
-const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, onProcessSale, onInspect, appSettings, customers = [], allowedPayments = ['Cash'], allowedTiers = ['Retail', 'Ecer'], transactions = [], allowRetur = true, db, appId, agentProfileId, storage, masterUserId, adminSalesMode, onAdminSalesMode }) => {
+const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, onProcessSale, onInspect, appSettings, customers = [], allowedPayments = ['Cash'], allowedTiers = ['Retail', 'Ecer'], transactions = [], allowRetur = true, allowCashRefund = false, db, appId, agentProfileId, storage, masterUserId, adminSalesMode, onAdminSalesMode }) => {
     /* WHOSE VAULT THE CUSTOMER RECORDS LIVE IN — and the answer must be the same one App used to
        fetch them, or a write lands in a document nobody reads.
 
@@ -914,6 +914,13 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
         const finalCart = [...cart];
         const finalTotal = isReturMode && returType === 'EXCHANGE' ? 0 : cartTotal;
 
+        // The company owes nothing back on a completed sale, so a cash refund is a granted
+        // privilege, not a default one. Hiding the switch is not enough on its own — returType
+        // can still be BUYBACK from before the grant was revoked.
+        if (isReturMode && returType === 'BUYBACK' && !allowCashRefund) {
+            return notify("You do not have clearance to refund cash. Use Exchange (Tukar), or ask an admin to grant Cash Refund in Fleet & Roster.");
+        }
+
         const displayMethod = isReturMode ? (returType === 'EXCHANGE' ? 'Tukar Ganti' : 'Retur/BS') : (cart.every(i => i.isIouFulfillment) ? 'IOU Fulfillment' : paymentMethod);
         
         let dbMethod = paymentMethod;
@@ -1587,7 +1594,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                 </div>
 
                 {/* --- 🚀 SUB MODE TOGGLE (BUYBACK VS EXCHANGE) --- */}
-                {isReturMode && (
+                {isReturMode && allowCashRefund && (
                     <div className="flex bg-[var(--duke-fill-panel-2)] rounded border border-[var(--duke-edge-2)] p-1 mb-2 shadow-inner">
                         {/* Muted plates, no emoji. These two are a mode switch, not an alert —
                             a saturated orange and a bright gold shouting at each other was the

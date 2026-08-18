@@ -93,6 +93,7 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
         province: myProfile?.province || 'Central Java',
         canEditRoster: false,
         allowRetur: false,
+        allowCashRefund: false,
         joinDate: ''
     };
     const [newAgent, setNewAgent] = useState(defaultAgentState);
@@ -184,6 +185,7 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                     userRole: newAgent.userRole || 'AGENT', location: newAgent.location || 'Headquarters', province: newAgent.province || 'Central Java',
                     canEditRoster: newAgent.canEditRoster || false,
                     allowRetur: newAgent.allowRetur || false,
+                    allowCashRefund: newAgent.allowCashRefund || false,
                     joinDate: newAgent.joinDate || ''
                 });
 
@@ -231,7 +233,8 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
             allowedPayments: agent.allowedPayments || ['Cash'], allowedTiers: agent.allowedTiers || ['Retail', 'Ecer'],
             userRole: agent.userRole || 'AGENT', location: agent.location || 'Headquarters', province: agent.province || 'Central Java',
             canEditRoster: agent.canEditRoster || false,
-            allowRetur: agent.allowRetur || false
+            allowRetur: agent.allowRetur || false,
+            allowCashRefund: agent.allowCashRefund || false
         });
         setEditingAgentId(agent.id);
         setIsReadOnlyMode(false);
@@ -245,7 +248,8 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
             allowedPayments: agent.allowedPayments || ['Cash'], allowedTiers: agent.allowedTiers || ['Retail', 'Ecer'],
             userRole: agent.userRole || 'AGENT', location: agent.location || 'Headquarters', province: agent.province || 'Central Java',
             canEditRoster: agent.canEditRoster || false,
-            allowRetur: agent.allowRetur || false
+            allowRetur: agent.allowRetur || false,
+            allowCashRefund: agent.allowCashRefund || false
         });
         setEditingAgentId(agent.id);
         setIsReadOnlyMode(true);
@@ -735,6 +739,14 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                                     <label className={`flex items-center gap-2 cursor-pointer text-xs font-bold px-3 py-2 rounded-lg border transition-colors ${isReadOnlyMode ? 'opacity-70 cursor-not-allowed' : ''} ${newAgent.allowRetur ? 'bg-red-900/30 border-red-500 text-red-400' : 'bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-500'}`}>
                                         <input type="checkbox" className="hidden" disabled={isReadOnlyMode} checked={newAgent.allowRetur} onChange={() => setNewAgent({...newAgent, allowRetur: !newAgent.allowRetur})} />
                                         Allow Tarik Barang / Retur (Return Unsold Goods)
+                                    </label>
+                                    {/* Aldi, 2026-08-18: "contract is done its nothing, no responsibility, no
+                                        credit" — the company owes nothing back, so paying cash out is not a
+                                        normal agent power. He chose to keep it for real cases (shop closing,
+                                        dispute) but locked: OFF by default, granted per person. */}
+                                    <label className={`mt-2 flex items-center gap-2 cursor-pointer text-xs font-bold px-3 py-2 rounded-lg border transition-colors ${isReadOnlyMode ? 'opacity-70 cursor-not-allowed' : ''} ${newAgent.allowCashRefund ? 'bg-red-900/30 border-red-500 text-red-400' : 'bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-500'}`}>
+                                        <input type="checkbox" className="hidden" disabled={isReadOnlyMode} checked={!!newAgent.allowCashRefund} onChange={() => setNewAgent({...newAgent, allowCashRefund: !newAgent.allowCashRefund})} />
+                                        Allow Cash Refund / Buyback (pays money OUT)
                                     </label>
                                 </div>
 

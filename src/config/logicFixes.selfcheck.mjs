@@ -142,5 +142,22 @@ section('Rename. "IOU" reads as Utang Barang, and no record was orphaned');
   ok('paymentLabel leaves every other method alone',
      (m => m === 'Titip')('Titip' === 'IOU Fulfillment' ? 'Utang Barang Lunas' : 'Titip')); }
 
+
+/* -- Cash refund is a granted privilege, not a default ---------------------------------- */
+section('Buyback. Cash refund is OFF unless granted (Aldi: "no responsibility, no credit")');
+ok('the sales terminal takes the grant and defaults it to FALSE',
+   /allowCashRefund = false/.test(merchant));
+ok('the Buyback switch is hidden without the grant',
+   /isReturMode && allowCashRefund && \(/.test(merchant));
+ok('submit REFUSES a buyback without the grant (hiding the button is not a gate)',
+   /returType === 'BUYBACK' && !allowCashRefund/.test(merchant));
+ok('Exchange is NOT gated by it — tukar stays a normal power',
+   !/returType === 'EXCHANGE' && !allowCashRefund/.test(merchant));
+ok('App reads it securely with === true, so a missing field means denied',
+   /allowCashRefund: data\.allowCashRefund === true/.test(app));
+ok('App passes it down to the terminal', /allowCashRefund=\{userRole === 'ADMIN'/.test(app));
+ok('Fleet & Roster can grant it, and new agents start without it',
+   /allowCashRefund: false,/.test(fleet) && /newAgent\.allowCashRefund/.test(fleet));
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

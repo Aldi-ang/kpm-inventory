@@ -1438,7 +1438,8 @@ const handleGitHubMirror = async () => {
                   setAgentSettings({
                       allowedPayments: data.allowedPayments || ['Cash'],
                       allowedTiers: data.allowedTiers || ['Retail', 'Ecer'],
-                      allowRetur: data.allowRetur === true // Defaults to false
+                      allowRetur: data.allowRetur === true, // Defaults to false
+                      allowCashRefund: data.allowCashRefund === true // Defaults to false
                   });
               }
           }, (err) => console.warn("Agent canvas listener:", err.code));
@@ -1448,7 +1449,8 @@ const handleGitHubMirror = async () => {
           setAgentSettings({ 
               allowedPayments: ['Cash', 'QRIS', 'Transfer', 'Titip'], 
               allowedTiers: ['Retail', 'Grosir', 'Ecer'],
-              allowRetur: true // Admin can always Retur
+              allowRetur: true, // Admin can always Retur
+              allowCashRefund: true // Admin can always refund
           });
       }
   }, [userRole, agentProfileId, db, appId, userId]);
@@ -4260,6 +4262,7 @@ const handleGitHubMirror = async () => {
                           allowedPayments={agentSettings.allowedPayments}
                           allowedTiers={agentSettings.allowedTiers}
                           allowRetur={userRole === 'ADMIN' ? true : (agentSettings.allowRetur || false)}
+                          allowCashRefund={userRole === 'ADMIN' ? true : (agentSettings.allowCashRefund || false)}
                           onProcessSale={handleMerchantSale}
                           onInspect={(item) => setExaminingProduct(item)} 
                           // 🚀 FIXED: Plugged in ALL missing database and RPG engine connections!
