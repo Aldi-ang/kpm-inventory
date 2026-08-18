@@ -2,51 +2,47 @@
 
 ---
 
-Clear Canvas can invent stock. Emptying a vehicle credits the warehouse from the admin's cached
-screen data instead of the vehicle's live contents, so anything the agent sells while that screen
-sits open is returned to the warehouse AND stays sold.
+The sales screen works out what a store owes TWICE, in two different pieces of code, and shows
+both at the same time. They disagree, so one shop can display two different debts on one screen.
 
-WHERE: `src/FleetCanvasManager.jsx`, `handleClearCanvas` — it reads the cached list around ~359 and
-wipes the vehicle around ~391. Read the file, do not trust those numbers.
+WHERE: `src/MerchantSalesView.jsx` — the red "OWES" warning uses the FIFO debt engine near the top
+of the file (`debtInfo`, around ~105); the orange "Unpaid titip" panel uses a second calculation
+further down. Read the file and find both before editing; do not trust line numbers.
 
-    14:00  admin opens Fleet & Canvas, the van shows 50 packs
-    14:05  the agent sells 20, the van really holds 30
-    14:10  admin presses Clear Canvas
-           warehouse credited 50, van emptied
-           20 packs invented
+THEY DISAGREE THREE WAYS. One is already fixed — check it, do not redo it:
 
-THE FIX IS FIFTY LINES ABOVE IT. `handleLoadCanvas` in the same file already re-reads the agent
-document INSIDE the transaction and works from that live copy. `handleClearCanvas` skips that and
-trusts `selectedAgent.activeCanvas`, which is whatever the screen loaded. Copy the pattern: read
-the agent doc inside the transaction, credit the warehouse from THAT list, then wipe.
+1. **Returns.** The debt engine subtracts goods the store gave back. The panel ignores returns
+   completely, so returned goods never reduce what the store appears to owe. **This is the money
+   one.**
+2. **What counts as debt.** The engine counts a proper consignment sale. The panel counts ANY
+   record marked "Titip", including record types that are not sales at all.
+3. **The name match.** ~~One trimmed the store name, the other did not.~~ Both go through
+   `storeKey` as of `f1e3b28`, and `logicFixes.selfcheck.mjs` fails any file that grows its own
+   name rule. **Verify this is still true and move on — do not re-fix it.**
 
-THE TRAP, and it is the whole job: the reads must all happen before any write in the transaction.
-That function already reads the destination inventory documents first and writes afterwards, so
-the new agent read has to join the READ phase — adding it lower down will throw at runtime, not at
-build time, and only when someone actually clears a van. Say in the reply where you put it, and
-check that no write precedes it.
+THE FIX: one calculation, called twice. The debt engine is the correct one — it is the one the
+transfer-shortfall rule and the agent's bounty already read. Delete the panel's private version and
+have it call the engine's result.
 
-Second trap: the pack-size conversion in that credit already uses `convertToBks` correctly. When
-the list it iterates changes from the cached one to the live one, keep that call and keep taking
-the unit from the VAN ROW, not from anywhere else — `f51a3a9` fixed four bugs of exactly that kind
-in this codebase, one of them in this same file.
+THE TRAP, and it is the whole job: the two numbers are not just computed differently, they may be
+ANSWERING different questions. Before deleting either, say in the reply what each is meant to show
+— "everything this store owes" and "goods still out on consignment" are different quantities, and
+if the panel is the second one then merging them hides information rather than fixing a bug. Read
+what each is labelled on screen, not just what it computes. If they really are the same question,
+merge; if not, keep both and make the LABELS honest instead.
 
-Third: the behaviour check has to run the RACE, not just the fix — van 50, sell 20 while the
-screen is stale, clear, warehouse must gain 30 and the van must end empty. A check that only
-proves "it reads the agent doc" passes on code that reads it and then ignores it.
+Second trap: whatever you keep must subtract returns. Put a behaviour check on it — 2.000.000 of
+Titip, 500.000 paid, 300.000 returned as goods, the shop owes 1.200.000 — and check the case where
+returns exceed the debt, which must floor at zero rather than show a negative.
 
-CONTEXT ALREADY ESTABLISHED, do not re-derive: `convertToBks(qty, unit, product)` in
-`src/utils/helpers.js` is the one pack-size rule. Backlog source:
-`A-Brain/Backlog/Clear Canvas can create stock out of thin air.md`.
-
-**Worth saying to Aldi when this lands:** this is the third bug of one shape — *a stock figure is
-trusted after the moment it was true.* The other two are the stock-count approval (`5c4d3c7`) and
-offline sales never reducing van stock (still open). After this one, the fourth is worth hunting
-as a class rather than waiting for it to be reported.
+CONTEXT ALREADY ESTABLISHED, do not re-derive: no transaction carries a customerId, only
+customerName and agentId; `storeKey` in `src/utils/helpers.js` is the one name rule; `convertToBks`
+is the one pack-size rule. Backlog source:
+`A-Brain/Backlog/Two different debt numbers for the same store.md`.
 
 Verify chain, paste the numbers:
 npm run build; node src/config/integration.audit.mjs; node src/config/logicFixes.selfcheck.mjs; node src/config/mixedUnits.selfcheck.mjs
-Expected: build clean, 599/0, 189/0 plus whatever you add, 11/11.
+Expected: build clean, 599/0, 223/0 plus whatever you add, 11/11.
 
 When it is committed, rewrite this file (.claude/NEXT-SESSION.md) with the NEXT single job.
 
@@ -55,13 +51,16 @@ When it is committed, rewrite this file (.claude/NEXT-SESSION.md) with the NEXT 
 <details>
 <summary>Queue behind it — for the next session to promote from, not to paste</summary>
 
-- `Offline sales never reduce the van stock.md` — the same "trusted after it was true" shape, and
-  the natural pair to this one.
-- ~20 correct-but-duplicated pack-size copies remain. Replace one when its file is being edited
-  anyway; do not open a sweep.
-- The price ladder `priceRetail / priceEcer / priceGrosir` is written out five times in
-  `MerchantSalesView.jsx` (~82, ~541, ~602, ~667, ~1405). None wrong today, no helper yet.
-- **Tell him before he presses it:** the RPG Migration button in `MapMissionControl` re-banks XP;
-  after `a3a9cf6` those numbers come out higher for shops whose history was split by spelling.
-- Known gap from `883a62e`: the customer directory still shows the legacy "(Retail)" ending.
+- `Some failures are hidden from the user completely.md` — his own law is that every action reports.
+- `The app day rolls over at 7am instead of midnight.md`
+- `What the agent counts at EOD is never used for anything.md`
+- `Approving a stock count...`, `Clear Canvas...`, `Offline sales...`, `Shipping stock to a
+  branch...` and `The pack-size maths...` are all **Done** — 2026-08-18.
+- The stale-read class was swept on 2026-08-18: one real instance (`655e7f1`). The rest are inside
+  `runTransaction` (safe) or have sub-second windows where the computed value is needed for a
+  low-stock alert. Do not re-sweep it without a new reason.
+- The price ladder `priceRetail / priceEcer / priceGrosir` is written five times in
+  `MerchantSalesView.jsx`. None wrong today, no helper yet.
+- **Tell him before he presses it:** the RPG Migration button re-banks XP; after `a3a9cf6` those
+  numbers come out higher for shops whose history was split by spelling.
 </details>

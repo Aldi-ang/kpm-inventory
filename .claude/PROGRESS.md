@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-18 16:54 WIB (KPM app session)** · 🔧 21 FIXES · 📋 ONE PROMPT READY · branch `phase0-solid-ground`
+**Updated: 2026-08-18 17:06 WIB (KPM app session)** · 🔧 26 FIXES · 📋 ONE PROMPT READY · branch `phase0-solid-ground`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -12,6 +12,31 @@
 > 📏 **KEEP THIS FILE UNDER ~350 LINES.** When it passes that, cut the oldest day into the same
 > archive rather than letting it grow back. This file holds WHERE THE WORK STANDS; the archive
 > and `A-Brain/Wiki/Log.md` hold how it got there.
+
+## 🟠 2026-08-18 17:06 — five stock bugs of ONE shape, all shipped
+
+`git show <hash>` for each. **Shape: a stock figure trusted after the moment it was true.**
+
+| commit | what it stops |
+|---|---|
+| `ec45ab9` | Clear Canvas credited the warehouse from a screen loaded an hour ago |
+| `4c38b91` | the sale path asked `navigator.onLine`, which lies → a sale could vanish entirely |
+| `ac492c3` | offline sales never came off the van → agent looked short, warehouse over-credited |
+| `553cf91` | a store registered offline synced into a status no screen reads |
+| `655e7f1` | shipping to a branch recomputed HQ stock from before the photo upload |
+
+- **`increment()` was the cure twice** — a write that ADJUSTS needs no read, so there is no stale
+  number to be wrong.
+- **Class swept, not waited on:** every other `stock: cached ± qty` in `src/` checked — all inside
+  `runTransaction` or sub-second windows where the value is also needed for the low-stock alert.
+  One real instance. Do not re-sweep without a new reason.
+- **Three guards I wrote could not fail** (matched a sibling function twice, matched my own
+  comment once) — all three fixed and re-proved red. Two OLDER guards went red on the canvas
+  extraction and were **repinned, not relaxed**.
+- Build clean · 599/0 · logic **189/0 → 223/0** · 11/11 · 6/6.
+
+Next: **two different debt numbers for the same store** (`.claude/NEXT-SESSION.md`) — and its
+name-match third of the problem is already fixed, so the prompt says so.
 
 ## 🟠 2026-08-18 16:54 — stock-count approval corrects instead of overwrites. `5c4d3c7`
 

@@ -50,8 +50,8 @@
     "semantic_hash": ""
   },
   "src/App.jsx": {
-    "mtime": 1787046325.7703216,
-    "ast_hash": "ed9cc1470394d2d9447486b7e69e557c",
+    "mtime": 1787047418.2664678,
+    "ast_hash": "9a25b37a680f0f1fd5c8b5e7928d93cf",
     "semantic_hash": ""
   },
   "src/ConsignmentFinanceView.jsx": {
@@ -65,8 +65,8 @@
     "semantic_hash": ""
   },
   "src/FleetCanvasManager.jsx": {
-    "mtime": 1787046325.7713218,
-    "ast_hash": "0bb618b5ebadd120d09bda83733b61df",
+    "mtime": 1787046993.3071804,
+    "ast_hash": "aa3f6cae137ff904d30fd5ef5be19492",
     "semantic_hash": ""
   },
   "src/HallOfFameView.jsx": {
@@ -210,8 +210,8 @@
     "semantic_hash": ""
   },
   "src/hooks/useTransactionEngine.js": {
-    "mtime": 1787046325.7733207,
-    "ast_hash": "b9039925d81ce0bbfdf8e36c9e53bb92",
+    "mtime": 1787047269.348495,
+    "ast_hash": "79e8ff90f7ba056896aefdf20ec604b1",
     "semantic_hash": ""
   },
   "src/main.jsx": {
@@ -570,8 +570,8 @@
     "semantic_hash": ""
   },
   ".claude/PROGRESS.md": {
-    "mtime": 1787046453.531434,
-    "ast_hash": "32af13dc96e0764868b12238054b5336",
+    "mtime": 1787046866.4100096,
+    "ast_hash": "e8b0b3c747a2bc321cfb322ba33f8aaa",
     "semantic_hash": ""
   },
   ".claude/pre-compact-context.md": {
@@ -755,13 +755,13 @@
     "semantic_hash": ""
   },
   "src/config/logicFixes.selfcheck.mjs": {
-    "mtime": 1787046739.4800515,
-    "ast_hash": "e046d7fa0984800335f77f44fa09396f",
+    "mtime": 1787047409.8058805,
+    "ast_hash": "a84e58ebfb28787529c2fe06df8f2833",
     "semantic_hash": ""
   },
   ".claude/NEXT-SESSION.md": {
-    "mtime": 1787046424.2038405,
-    "ast_hash": "b784534f89fe5cd5f72936fde47afeda",
+    "mtime": 1787046850.534216,
+    "ast_hash": "b359930ecab59a5f562fd919ef061875",
     "semantic_hash": ""
   }
 }
