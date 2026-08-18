@@ -14,7 +14,7 @@ import { RankBorder, RANK_BORDERS, BORDER_KEYFRAMES, FrameFilters } from './conf
 import Cropper from 'react-easy-crop';
 import { hasClearance, DYNAMIC_TIERS } from './config/permissions';
 import HallOfFameView from './HallOfFameView';
-import { savePhotoAndGetReference, deletePhotoFromStorage, formatNumber, parseGroupedNumber } from './utils/helpers';
+import { savePhotoAndGetReference, deletePhotoFromStorage, formatNumber, parseGroupedNumber, storeKey } from './utils/helpers';
 import { careerXP, DEFAULT_XP, totals, DEFAULT_BADGES, STAT_LABELS, BADGE_SOURCES, statLabel } from './config/career';
 import { notify } from './components/Toast.jsx';
 
@@ -488,9 +488,16 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
                     
                     if (t.paymentType === 'Titip') {
                         titipIssued += (t.total || 0);
+                        /* 🚀 FIX — key the tally on storeKey, not on the raw name. "Warung Bu Sari
+                           (Retail)" (written before the sale engine stopped welding the tier on),
+                           "Warung Bu Sari" and "warung bu sari " are ONE shop; keyed raw they were
+                           three rows in his "who owes me" list, each holding part of the debt, and
+                           a payment filed under one spelling never cancelled the others. The raw
+                           name is kept for DISPLAY — the key is lowercased, the list is not. */
                         if(t.customerName) {
-                            if(!storeDebt[t.customerName]) storeDebt[t.customerName] = 0;
-                            storeDebt[t.customerName] += (t.total || 0);
+                            const key = storeKey(t.customerName);
+                            if(!storeDebt[key]) storeDebt[key] = { store: String(t.customerName).trim(), amount: 0 };
+                            storeDebt[key].amount += (t.total || 0);
                         }
                     }
                     if (txDateStr === todayStr) {
@@ -511,7 +518,14 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
                 }
                 if (t.type === 'CONSIGNMENT_PAYMENT') {
                     titipCollected += (t.amountPaid || t.total || 0);
-                    if(t.customerName && storeDebt[t.customerName]) storeDebt[t.customerName] -= (t.amountPaid || t.total || 0);
+                    /* The payment cancels the debt through the SAME key, so a payment written
+                       "warung bu sari" now clears a sale written "Warung Bu Sari (Retail)".
+                       The `&& storeDebt[key]` guard stays: with the key unified, the only case
+                       left where it fires is a payment whose Titip sale is outside the loaded
+                       window — and there the debt is already absent, so subtracting would invent
+                       a negative entry for a shop that owes nothing. */
+                    const debtKey = t.customerName ? storeKey(t.customerName) : null;
+                    if(debtKey && storeDebt[debtKey]) storeDebt[debtKey].amount -= (t.amountPaid || t.total || 0);
                 }
             }
         });
@@ -528,7 +542,7 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
         const isTopAgentOfYear = (activeAgent.id === topAgentId) && maxYearOmset > 0;
 
         const activeTitipResponsibility = Math.max(0, titipIssued - titipCollected);
-        const activeDebtList = Object.keys(storeDebt).filter(k => storeDebt[k] > 0).map(k => ({ store: k, amount: storeDebt[k] })).sort((a,b) => b.amount - a.amount);
+        const activeDebtList = Object.values(storeDebt).filter(s => s.amount > 0).map(s => ({ store: s.store, amount: s.amount })).sort((a,b) => b.amount - a.amount);
         
         let canvasValue = 0;
         const canvasBreakdown = [];

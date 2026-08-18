@@ -288,5 +288,59 @@ ok('the tier suffix is stripped only at the END of a name',
   ok('a real name containing "(Retail)" in the middle is left alone',
      key('Warung (Retail) Jaya') === 'warung (retail) jaya'); }
 
+/* ── S2 · the agent's own "who owes me" tally split the same way ───────────────────────── */
+section('S2. The store-debt tally keys on storeKey, and still displays the written name');
+
+ok('the raw-name key is gone from the tally', !/storeDebt\[t\.customerName\]/.test(profile));
+ok('the tally keys on storeKey', /const key = storeKey\(t\.customerName\)/.test(profile));
+ok('the payment cancels through the same key', /storeDebt\[debtKey\]\.amount -=/.test(profile));
+ok('storeKey is imported in the profile view', imports(profile, 'storeKey'));
+ok('the list reads the stored display name, not the key',
+   /Object\.values\(storeDebt\)\.filter\(s => s\.amount > 0\)/.test(profile));
+
+/* BEHAVIOUR — one shop under three spellings, and a payment filed under a fourth. */
+{ const key = (n) => String(n ?? '').trim().replace(/\s*\((?:Retail|Individual|Wholesale)\)$/i, '').trim().toLowerCase();
+  const tx = [
+    { type: 'SALE', paymentType: 'Titip', customerName: 'Warung Bu Sari (Retail)', total: 1200000 },
+    { type: 'SALE', paymentType: 'Titip', customerName: 'Warung Bu Sari',          total:  800000 },
+    { type: 'SALE', paymentType: 'Titip', customerName: 'warung bu sari ',         total:  500000 },
+    { type: 'CONSIGNMENT_PAYMENT',        customerName: 'WARUNG BU SARI',     amountPaid: 1500000 },
+    { type: 'CONSIGNMENT_PAYMENT',        customerName: 'Toko Belum Beli',    amountPaid:  400000 } ];
+
+  const tally = (keepGuard) => { const d = {};
+    tx.forEach(t => {
+      if (t.type === 'SALE' && t.paymentType === 'Titip' && t.customerName) {
+        const k = key(t.customerName);
+        if (!d[k]) d[k] = { store: String(t.customerName).trim(), amount: 0 };
+        d[k].amount += (t.total || 0);
+      }
+      if (t.type === 'CONSIGNMENT_PAYMENT') {
+        const k = t.customerName ? key(t.customerName) : null;
+        if (k && (keepGuard ? d[k] : true)) { if (!d[k]) d[k] = { store: t.customerName, amount: 0 };
+          d[k].amount -= (t.amountPaid || t.total || 0); } }
+    });
+    return d; };
+
+  const chosen = tally(true);                       // (a) key on storeKey, KEEP the guard — shipped
+  const list = Object.values(chosen).filter(s => s.amount > 0).map(s => ({ store: s.store, amount: s.amount }));
+  ok('three spellings of one shop are ONE debt row', list.length === 1);
+  ok('that row carries the whole 2.500.000 less the 1.500.000 paid',
+     list[0].amount === 1000000);
+  ok('the payment filed under a FOURTH spelling still cancelled',
+     Object.values(chosen).length === 1 && chosen['warung bu sari'].amount === 1000000);
+  ok('the row displays the name as it was written, not the lowercased key',
+     list[0].store === 'Warung Bu Sari (Retail)');
+  ok('keying on the raw name would have shown three rows - the bug being guarded',
+     new Set(tx.filter(t => t.type === 'SALE').map(t => t.customerName)).size === 3);
+
+  /* The branch NOT chosen: drop the guard so an unmatched payment always subtracts. */
+  const unchosen = tally(false);
+  ok('dropping the guard invents a negative entry for a shop with no sale in the window',
+     unchosen['toko belum beli'].amount === -400000);
+  ok('the > 0 filter hides it, so dropping the guard buys nothing and risks a negative',
+     Object.values(unchosen).filter(s => s.amount > 0).length === 1);
+  ok('the guard never blocks a payment that HAS a matching sale',
+     chosen['warung bu sari'].amount === unchosen['warung bu sari'].amount); }
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);
