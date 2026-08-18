@@ -631,6 +631,12 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
                 
                 // 🛡️ SHOCK ABSORBER 2.0: IndexedDB cache — no localStorage quota, non-fatal on failure
                 saveBorderCache(appId, updatedList);
+
+                // 🚀 THE ACTUAL SAVE. Without this the panel only ever wrote the local cache,
+                // and the next page load overwrote that cache from the un-updated server copy —
+                // so every name / colour / targetRev / assignedAgent edit was silently lost.
+                // Same call toggleVisibility already makes a few lines below.
+                await saveBoundaryToFirebase(updatedBoundary);
                 
                 // 📻 RADIO DISPATCH: Broadcast the signal directly to Capy!
                 window.dispatchEvent(new CustomEvent('CAPY_COMMS', { detail: "Sector Configuration Saved! 🚀" }));
@@ -640,6 +646,7 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
             }
         } catch (error) {
             console.error("Save Boundary Crash:", error);
+            notify("Sector settings could not be saved to the database. Your change is on this device only — reload and try again.");
         }
     };
 
@@ -1851,7 +1858,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
     const canAddManualPin = isAdmin === true || user?.tier === 1 || user?.tier === 2 || user?.tier === '1' || user?.tier === '2' || user?.role?.toLowerCase() === 'admin';
 
     const [pendingNewStore, setPendingNewStore] = useState(null);
-    const [newStoreForm, setNewStoreForm] = useState({ name: '', phone: '', address: '', tier: activeTiers[0]?.id || 'Retail' });
+    const [newStoreForm, setNewStoreForm] = useState({ name: '', phone: '', address: '', priceTier: 'Retail' });
     const [isSavingStore, setIsSavingStore] = useState(false);
 
     const handleSaveNewStore = async () => {
@@ -1865,8 +1872,8 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                 name: newStoreForm.name.toUpperCase(),
                 phone: newStoreForm.phone || "",
                 address: newStoreForm.address || "",
-                tier: newStoreForm.tier,
-                priceTier: newStoreForm.tier,
+                tier: activeTiers[activeTiers.length - 1]?.id || 'Unranked',
+                priceTier: newStoreForm.priceTier,
                 storeType: 'Retailer',
                 latitude: pendingNewStore.lat,
                 longitude: pendingNewStore.lng,
@@ -2151,7 +2158,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                                     setPendingNewStore({ lat: finalLat, lng: finalLng });
                                     setIsAddingMode(false);
                                     setDragPinCoords(null);
-                                    setNewStoreForm({ name: '', phone: '', address: '', tier: activeTiers[0]?.id || 'Retail' });
+                                    setNewStoreForm({ name: '', phone: '', address: '', priceTier: 'Retail' });
                                 }
                             }}
                             className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white py-1.5 rounded-lg text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-1 shadow-md transition-all active:scale-95 px-4"
@@ -2191,8 +2198,15 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                             </div>
                             <div>
                                 <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Pricing Tier</label>
-                                <select value={newStoreForm.tier} onChange={e => setNewStoreForm({...newStoreForm, tier: e.target.value})} className="w-full bg-slate-800 border border-slate-600 text-white p-3 rounded font-bold uppercase outline-none focus:border-orange-500">
-                                    {activeTiers.map(t => <option key={t.id} value={t.id}>{t.label}</option>)}
+                                <select value={newStoreForm.priceTier} onChange={e => setNewStoreForm({...newStoreForm, priceTier: e.target.value})} className="w-full bg-slate-800 border border-slate-600 text-white p-3 rounded font-bold uppercase outline-none focus:border-orange-500">
+                                    {/* The PRICE ladder, not the RPG rank ladder. This select is
+                                        labelled "Pricing Tier" and its value decides what the store
+                                        is charged (MerchantSalesView reads priceTier first), so it
+                                        must offer prices. Performance rank is the Tier Automation
+                                        Engine's job, not a field typed at registration. */}
+                                    <option value="Retail">Retail</option>
+                                    <option value="Grosir">Grosir</option>
+                                    <option value="Ecer">Ecer</option>
                                 </select>
                             </div>
                             
