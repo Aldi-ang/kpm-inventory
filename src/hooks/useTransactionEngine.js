@@ -190,7 +190,14 @@ export default function useTransactionEngine({
                 // 🛑 DELETED: The illegal badStock Master Vault write that caused Permission Denied for Tier 6!
                 
                 const distributorPrice = prodData.priceDistributor || 0; 
-                const itemProfit = (item.calculatedPrice * item.qty) - (distributorPrice * (isPhysicallyGiven ? qtyInBks : 0)); 
+                // A buyback is money going OUT. The old form multiplied the cost term by zero
+                // (isPhysicallyGiven is false for RETUR) and booked the full refund as PROFIT, so
+                // buying back Rp 1.000.000 of stock raised "Net Profit (Cuan)" by a million.
+                // What actually happens: we pay calculatedPrice*qty and receive goods worth
+                // distributorPrice*qtyInBks (nothing, if they are damaged).
+                const itemProfit = proofPayload?.type === 'RETUR'
+                    ? ((isReturnedToStock ? distributorPrice * qtyInBks : 0) - (item.calculatedPrice * item.qty))
+                    : ((item.calculatedPrice * item.qty) - (distributorPrice * (isPhysicallyGiven ? qtyInBks : 0))); 
                 
                 totalProfit += itemProfit;
                 transactionItems.push({ 
