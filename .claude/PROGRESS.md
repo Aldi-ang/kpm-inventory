@@ -15,6 +15,72 @@
 
 ## ▶ NOW
 
+# 🔧 2026-08-18 — 9 FIXES SHIPPED. SELF-CHECKING HARNESS BUILT.
+
+Aldi: *"keep fixing all the problems"* + *"i want u to check every single update that u made
+yourself from now on, find solution to do that"*.
+
+## ✅ THE SOLUTION TO THE SECOND ASK: `src/config/logicFixes.selfcheck.mjs`
+
+Follows the repo's own `*.selfcheck.mjs` pattern. **Every fix leaves two assertions:**
+a **regression guard** (the broken form must not come back) and a **behaviour check** (the maths
+re-run on real numbers). **A fix without a line in that file is not finished.**
+
+Full verify chain, run after every change:
+```
+npm run build; node src/config/integration.audit.mjs; node src/config/logicFixes.selfcheck.mjs
+```
+Currently **build clean · 599/0 · 35/0**.
+
+**The harness caught two of its own bugs before the code did** — both worth remembering:
+1. A python patch silently no-matched because this repo is **CRLF** and the anchor assumed LF.
+   `s.replace()` returns the string unchanged on no match, so it printed success and did nothing.
+   **Every patch script now uses `s.index()` / an explicit assert, never a bare replace.**
+2. The `imports()` guard was written as a JS **single-quoted string** used as a regex, so `\s`
+   `\{` `` collapsed to `s`, `{`, backspace. It reported both real imports as MISSING.
+   Rewritten with `matchAll` + exact name match, no dynamic escaping.
+
+That guard exists because **bug #24 is a call to `getDoc` that was never imported** — it threw
+into an empty `catch(e){}` and silently disabled the rank engine. A build does not catch that.
+
+## Shipped (9)
+
+| # | Fix | Commit |
+|---|---|---|
+| A1 | Rank scored in XP, not rupiah | `fd562f4` |
+| A2 | One IOU line no longer forces the basket to Cash | `fd562f4` |
+| A4 | Sector settings actually save, and report failure | `ed4b2b2` |
+| A5 | "Pricing Tier" offers Retail/Grosir/Ecer | `ed4b2b2` |
+| A3 | Buyback returns resellable goods to stock | `d8f792f` |
+| #14 | Buyback books a loss, not profit | `14e0f62` |
+| #8 | Damaged EOD goods converted to packs (2 Bal = 400, not 2) | `ec3fda7` |
+| #12 | Edit modal uses real packing; `slopPerKarton` now 0 hits repo-wide | `ec3fda7` |
+
+## 📋 Aldi's testing moved OFF his plate
+
+He said *"im kinda dizzy looking at all the test"*. All ✅ TEST items now live in
+**`A-Brain/Backlog/TESTS - check these when you feel like it.md`** — no order, no deadline.
+**Stop putting test asks in chat replies.** Add them to that file.
+
+⚠️ That file warns: the tests need the NEW build. Testing the live/deployed app will
+"fail" every one of them for the wrong reason.
+
+## Task list (harness tasks, survives compaction)
+1. A6+A7 firestore.rules — **emulator first, DO NOT DEPLOY**
+2. Rename IOU → awaiting his pick (Utang Barang / Belum Kirim / Sisa Kirim); labels only, the
+   stored `"IOU Fulfillment"` value must NOT change or every past record stops matching
+3. Store credit design — solves BOTH his cash-refund problem and the healthy-swap feature
+4. **in progress** — work down the remaining 66, High first
+
+## 🔴 Open with Aldi
+- IOU new name?
+- Did he test #2 (healthy return vanishing) on the new build or the live app? That is A3, fixed.
+- Store credit: yes/no. It replaces cash refunds and unblocks tukar-barang in one mechanism.
+
+---
+
+## ▶ NOW
+
 # 🔧 2026-08-18 — PLAN A UNDERWAY. 4 OF 7 CRITICAL FIXED + VERIFIED.
 
 Aldi chose **A (money first)**. Fixing the 7 Critical in order.
