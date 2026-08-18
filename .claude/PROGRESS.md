@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-18 11:58 WIB (KPM app session)** · 🔧 11 FIXES SHIPPED · 🔒 SALE IS FINAL locked · branch `phase0-solid-ground`
+**Updated: 2026-08-18 12:10 WIB (KPM app session)** · 🔧 12 FIXES · ✗ #11 REFUTED (74 real, not 75) · branch `phase0-solid-ground`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -15,7 +15,7 @@
 
 ## ▶ NOW
 
-# 🔧 PLAN A UNDERWAY — 11 FIXES SHIPPED, EVERY ONE SELF-CHECKED
+# 🔧 PLAN A UNDERWAY — 12 FIXES SHIPPED, EVERY ONE SELF-CHECKED
 
 Aldi chose **A (money first)** off the 75-problem register, then re-scoped how I work twice:
 *"i want u to check every single update that u made yourself from now on, find solution to do
@@ -32,7 +32,7 @@ not finished.** Verify chain after every change:
 npm run build; node src/config/integration.audit.mjs; node src/config/logicFixes.selfcheck.mjs
 ```
 
-Currently **build clean · 599/0 · 49/0**.
+Currently **build clean · 599/0 · 59/0**.
 
 ⚠️ **Two process faults it caught before the code did — both now written into its comments:**
 1. A python patch **silently no-matched**: this repo is **CRLF** and the anchor assumed LF.
@@ -44,7 +44,7 @@ Currently **build clean · 599/0 · 49/0**.
 That guard exists because **bug #24 is a call to `getDoc` that was never imported** — it threw
 into an empty `catch(e){}` and silently disabled the rank engine. **A build does not catch that.**
 
-## Shipped (11) — each verified BEFORE its commit
+## Shipped (12) — each verified BEFORE its commit
 
 | # | Fix | Commit |
 |---|---|---|
@@ -58,6 +58,7 @@ into an empty `catch(e){}` and silently disabled the rank engine. **A build does
 | #12 | Edit modal uses real packing; `slopPerKarton` now 0 hits repo-wide | `ec3fda7` |
 | — | **IOU renamed → Utang Barang** (labels only, stored values untouched) | `8f8fac3` |
 | — | **Cash refund locked behind a per-agent grant, OFF by default** | `6bea493` |
+| #9 | **A committed sale no longer reports "failed"** — the double-sale bug | `0bafb39` |
 
 **A5 trap:** dropping `priceTier` alone does NOT fix it — the read chain is
 `(priceTier || tier || pricingTier)` and `tier` held the same rank string.
@@ -99,10 +100,24 @@ deliberately NOT gated** — goods-for-goods on an already-paid item owes nobody
 **And it made *tukar barang* simpler, not blocked:** money only ever flows towards the company.
 New goods cost more → customer pays the difference. Cost less → **nothing comes back.**
 
+## ✗ #11 REFUTED — no code changed. **Score is 74 real, not 75.**
+
+The register said the delete handlers write to `users/{user.uid}/transactions` while the ledger
+reads `bossUid || user.uid`, so a delegated admin would delete nothing and be told it worked.
+**Wrong.** `App.jsx:2279` builds the non-owner's user object with `uid: trueBossUid ||
+currentUser.uid` (*"Forces connection to the Master Vault"*) **and** `:2275` sets `bossUid` to the
+same value; the owner branch nulls bossUid and keeps their own object. **Both resolve
+identically.** The earlier pass checked that bossUid gets set and never checked that `user.uid`
+was replaced beside it. `HistoryReportView:355` is the same story — also fine.
+
+**Four assertions now guard that fact** (`logicFixes.selfcheck.mjs`), so if anyone unwinds the
+user-object swap the check fails the same day. Commit `07fd2ac`. Register updated at the same URL.
+
+**Two of the original 75 have now been overturned on a second reading** (this and the excise one,
+which went the other way). Every fact both cited was true; both stopped one fact short.
+
 ## 🔴 NEXT, in damage order
 
-`MerchantSalesView.jsx:1193` post-commit failure → agent sells it twice ·
-`App.jsx:2613/:2627/:2646` delegated admin deletes nothing but is told it worked ·
 `App.jsx:1628` hand-off matches by NAME · `AgentProfileView.jsx:530` Consignment Risk built from
 the 7-day feed · `useTransactionEngine.js:329/:331` substring customer match + welded name suffix ·
 `MapMissionControl.jsx:1512` `getDoc` never imported.
@@ -2639,7 +2654,7 @@ price ladder; performance rank is now the Tier Automation Engine's job.
 
 ## 📓 LOG
 
-### 2026-08-18 11:58 (KPM app session) — plan A: 11 fixes, a self-check harness, and one locked rule
+### 2026-08-18 12:10 (KPM app session) — plan A: 12 fixes, a self-check harness, a locked rule, and one finding killed
 
 He picked **A (money first)** off the 75-problem register, then re-scoped how I work three times:
 *"i want u to check every single update that u made yourself from now on"* → built
@@ -2649,10 +2664,15 @@ every ✅ TEST ask moved to `A-Brain/Backlog/TESTS - check these when you feel l
 *"i want ur question to be descriptive as always"* — summaries stay caveman-short, **questions do
 not**. Ponytail set to **ultra**.
 
-Shipped `fd562f4` `ed4b2b2` `d8f792f` `14e0f62` `ec3fda7` `8f8fac3` `6bea493` — rank units, the
+Shipped `fd562f4` `ed4b2b2` `d8f792f` `14e0f62` `ec3fda7` `8f8fac3` `6bea493` `0bafb39` — the
+double-sale bug (a committed sale reporting "failed" while the cart survived), rank units, the
 Utang Barang basket leak, buyback restock and its profit sign, damaged-EOD conversion, the
 nonexistent `slopPerKarton` field, the IOU→Utang Barang rename, and the cash-refund grant. Each
 verified build + 599/0 + 49/0 **before** its commit.
+
+**And #11 was REFUTED rather than fixed** (`07fd2ac`) — the delete-targets-wrong-vault finding
+is false, because the non-owner's `user.uid` IS the boss vault id. No code changed; four
+assertions added so the fact cannot quietly stop being true. **74 real problems, not 75.**
 
 **The decision that outlives the code:** he killed store credit — *"contract is done its nothing,
 no responsibility, no credit"* — now locked in the vault, because it is the standard fix and will
