@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-18 16:47 WIB (KPM app session)** · 🔧 20 FIXES · 📋 ONE PROMPT READY · branch `phase0-solid-ground`
+**Updated: 2026-08-18 16:54 WIB (KPM app session)** · 🔧 21 FIXES · 📋 ONE PROMPT READY · branch `phase0-solid-ground`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -12,6 +12,15 @@
 > 📏 **KEEP THIS FILE UNDER ~350 LINES.** When it passes that, cut the oldest day into the same
 > archive rather than letting it grow back. This file holds WHERE THE WORK STANDS; the archive
 > and `A-Brain/Wiki/Log.md` hold how it got there.
+
+## 🟠 2026-08-18 16:54 — stock-count approval corrects instead of overwrites. `5c4d3c7`
+
+`git show 5c4d3c7`. Morning count no longer wipes the day; applies (counted − expected) via
+atomic `increment()`. Build clean · 599/0 · 189/0 · 11/11. Red-first 184/5. Next: **Clear Canvas
+credits the warehouse from a stale screen** (`.claude/NEXT-SESSION.md`).
+
+🔁 **Third bug of one shape today** — *a stock figure trusted after the moment it was true.*
+Fourth candidate (offline sales not reducing van stock) is queued.
 
 ## 🟠 2026-08-18 16:47 — pack-size maths: 4 broken conversions → `convertToBks`. `f51a3a9`
 
