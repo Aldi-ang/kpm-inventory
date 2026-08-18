@@ -2,65 +2,75 @@
 
 ---
 
-Show the admin the gap. The EOD count now decides the report (`d859d41`) and a short count becomes
-a bounty on approval (`7f96d19`), and the confirmation names the rupiah — but the report CARD in
-the approval list still shows only one set of numbers. No decision is needed from Aldi for this
-one; he has already ruled. This is presentation.
+A double-tap on Send submits the EOD twice. `<EODAgentFlow>` accepts a `submitting` prop and
+guards two controls with it, but `src/EODReconciliationView.jsx` never passes it, so both guards
+are dead. This is a money bug, not polish: the agent's setoran can post twice, and the second one
+is a second pending report on the same night. It is item 6 on Aldi's own confirmed-and-still-to-do
+list in PROGRESS, and it needs no decision from him.
 
-WHERE: `src/EODReconciliationView.jsx`, the admin's list of reports awaiting approval — the block
-that renders each report card (search for `reportType === 'BOUNTY'` styling, the cards are around
-there). Read the file, do not trust line numbers.
+WHERE: `src/EODReconciliationView.jsx`. `<EODAgentFlow key={effectiveId} ... />` is the call site
+(read the file, do not trust the line number). `src/components/EODAgentFlow.jsx` already declares
+`submitting = false` and uses it on `<EODLetter ... disabled={submitting}>` and on one button —
+that component needs no change at all.
 
-WHAT THE REPORT ALREADY CARRIES, so nothing has to be computed or stored:
-`cash` / `expectedCash` · `transfer` / `expectedTransfer` · `remainingStock` / `expectedStock` ·
-`cashVariance` · `transferVariance` · `goodsShort` · `countStatus` ('DISPUTED' or 'CLEAN').
+WHAT TO DO: hold a `submitting` boolean in EODReconciliationView, set it true the moment the
+flow's `onSubmit` handler starts, and clear it after the awaited work finishes. The handler is the
+long block that builds the payload and calls `onSubmitEOD`. It can fire TWICE in one submission —
+once for `CASH_STOCK` and, when `agentData.cukaiStatus === 'READY'`, again for `CUKAI`. Both must
+be inside the same guarded window, or the flag clears between them and the door reopens.
 
-WHAT TO SHOW: expected, counted, and the difference — side by side for cash and for transfer. For
-goods, name the PRODUCTS that came up short, not a single total. That rule is already written into
-this screen's own comments in Aldi's words: *"a single goods total hides a one-product shortfall"*,
-which is why the goods card counts line by line in the first place. `expectedStock` and
-`remainingStock` are both arrays of van rows with productId, name, qty and unit, so the short
-products are a comparison of the two, in the row's own unit.
+THE TRAP: `onSubmitEOD` comes from App.jsx and the handler is not currently awaited. Clearing the
+flag in a `finally` only helps if the work is actually awaited — make the handler `async` and await
+it, otherwise the flag clears on the same tick and guards nothing. Check what `onSubmitEOD`
+returns before assuming it is a promise.
 
-THE TRAP, and it is the whole job: **a DISPUTED report must be impossible to approve by reflex.**
-The number being on the card is not enough — the count was always recorded, and being recorded and
-being seen is exactly the difference this whole piece of work is about. The disputed state has to
-change the card itself: its heading, and the approve button's own words. The BOUNTY cards on this
-same screen already do this (red border, a BOUNTY CLEARANCE badge) — match that treatment rather
-than inventing a new one, and read `A-Brain/Wiki/Concepts/Aldi's Design Taste.md` before choosing
-colours. Palette law: no blue, no green; slate IS the blue; gold never as text on light.
+SECOND TRAP: do not reach for `window.confirm` or a disabled-looking button that still fires. The
+dialog gate (`confirmAction` in `src/components/ConfirmGate.jsx`) replaced all 69 confirms and
+prompts; a blocked native dialog does nothing, which is exactly how duplicate data gets explained
+away. The fix here is state, not a dialog.
 
-Second trap: older reports have no `countStatus` at all, because they predate the field. A missing
-`countStatus` is CLEAN — never paint history as disputed. Put a fixture with no `countStatus` in
-the behaviour check.
+LEAVE A CHECK: `src/config/logicFixes.selfcheck.mjs`, next section is S22. Prove it red before
+writing the fix — a guard that `submitting=` is passed at the call site, and a behaviour check that
+two rapid submissions produce one payload. Run:
+`npm run build; node src/config/integration.audit.mjs; node src/config/logicFixes.selfcheck.mjs`
 
-Third: this screen is used on a phone. Four numbers side by side is a desktop layout. Check the
-narrow width, and if it does not fit, stack expected-over-counted rather than shrinking the type.
-
-CONTEXT ALREADY ESTABLISHED, do not re-derive: minting is `PENALTY_EOD_<reportId>` on the agent's
-`cukaiDebts`, assigned not added, so a double-approve cannot charge twice. Repayment already works
-end to end: the WANTED board sums every `PENALTY_` key and a `BOUNTY` clearance report from the
-agent's own EOD screen clears them. Do not rebuild either. Backlog source:
-`A-Brain/Backlog/What the agent counts at EOD is never used for anything.md`.
-
-Verify chain, paste the numbers:
-npm run build; node src/config/integration.audit.mjs; node src/config/logicFixes.selfcheck.mjs; node src/config/eodRecord.selfcheck.mjs
-Expected: build clean, 599/0, 269/0 plus whatever you add, 12/12.
-
-When it is committed, rewrite this file (.claude/NEXT-SESSION.md) with the NEXT single job.
+CONTEXT ALREADY ESTABLISHED, do not re-derive:
+- The EOD count decides the report (`d859d41`), a short count mints `PENALTY_EOD_<reportId>` on
+  approval (`7f96d19`), and the admin's card now shows expected vs counted and names the short
+  products (`ce70287`). EOD integration is otherwise FINISHED.
+- Red panels moved from `--danger` to `--danger-well` (`44efb69`, check S20). `--danger` stays the
+  EDGE and the fill for dots and bars.
+- The counting flow is keyed on `effectiveId` (`b904db2`, check S21).
 
 ---
 
-<details>
-<summary>Queue behind it — for the next session to promote from, not to paste</summary>
+## The queue underneath — promote ONE of these next time, never paste this part
 
-- **Merge to main — the LAST job.** Aldi, 2026-08-18: *"we might it later if we done with
-  everything"*. 538 commits on `phase0-solid-ground`, branch NOT behind main, so it is clean. Two
-  checks before, one after.
-- Test results: https://claude.ai/code/artifact/a42ce819-9d1a-46a8-8ae8-0291df6765ef — if he sends
-  back a BROKEN item, it outranks everything here.
-- What a missing PACK is worth in rupiah — needed before a goods shortage can become a fine like a
-  cash one does. His decision, not a code question.
-- `The app day rolls over at 7am instead of midnight.md` — money verified unaffected.
-- `Three screens he asked to redesign - Sampling, Customers, Stock Opname.md`
-</details>
+❓ **WAITING ON ALDI — what is a missing pack worth in rupiah?** Cash and transfer shortfalls
+become a bounty automatically. Goods cannot, because pricing them means inventing a fine. Cost
+price, selling price, or a flat charge — his call. Until then a goods shortage is shown and
+flagged but never priced.
+
+✅ **WAITING ON ALDI — the shakedown test card is still unanswered.**
+https://claude.ai/code/artifact/a42ce819-9d1a-46a8-8ae8-0291df6765ef
+
+Still open on his confirmed list (items 2, 3, 5, 8, 9, 10 in PROGRESS):
+- **Gold ink on a gold plate = 1,00:1 in dark** on the admin side. The plate is on the parent and
+  the ink on a child, which is why audit group 48 missed it — widen the regex with the fix. S20
+  has the same ceiling written into it.
+- **The Verify button is `bg-emerald-600`** — green is banned by his palette law, and it marks the
+  routine path. Picking the replacement is a taste call; ask him.
+- `agentData` useMemo omits `inventory`, so `itemsBks` uses fallback pack multipliers.
+- `bg-black/N` across the whole admin half; Lite Mode kills `transition-duration` but not
+  `transition-delay`; Force Reset is a 24px destructive target.
+
+Elsewhere in the backlog:
+- **The day rolls over at 07:00, not midnight.** `getCurrentDate()` in `helpers.js` is UTC and has
+  26 call sites across 6 files; `getLocalDayKey()` is the correct one. Each site needs judging —
+  "what day is it for this agent" takes the local key, a record timestamp does not. Money already
+  verified unaffected.
+- Three screens he asked to redesign: Sampling, Customers, Stock Opname.
+
+🔴 **THE LAST JOB — merge to main.** His words: *"we might it later if we done with everything"*.
+538+ commits on `phase0-solid-ground`, branch is not behind main, so it is clean. Do not do this
+until the list above is empty or he says so.

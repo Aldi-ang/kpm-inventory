@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-18 19:44 WIB (KPM app session)** · 🔧 31 FIXES · 📋 ONE PROMPT READY · branch `phase0-solid-ground`
+**Updated: 2026-08-18 19:54 WIB (KPM app session)** · 🔧 33 FIXES · 📋 ONE PROMPT READY · branch `phase0-solid-ground`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -12,6 +12,28 @@
 > 📏 **KEEP THIS FILE UNDER ~350 LINES.** When it passes that, cut the oldest day into the same
 > archive rather than letting it grow back. This file holds WHERE THE WORK STANDS; the archive
 > and `A-Brain/Wiki/Log.md` hold how it got there.
+
+## 🟠 2026-08-18 19:54 — two off his OWN to-do list, both found while shipping the card
+
+`44efb69` · **Red text on a red plate was 1,94:1 — nobody could read it.** `--danger-ink` on
+`--danger` measures 1,94:1 dark and 1,95:1 light. The palette already had the answer
+(`--danger-well`, 7,04:1 and 7,54:1), and one site was already using it. 18 class strings across
+the EOD, Stock Opname and card-deck screens moved their GROUND to the well; the red EDGE stays.
+Left alone deliberately: 9 gold-on-red badges (4,02:1, bold), hover states that swap the ink with
+the plate, and the two pure fills — the bounty dot and the damaged-share bar — because a 2px dot
+in near-black is not a warning. **Three of the 11 broken sites were mine, one hour old.** That is
+how a defect class spreads, so it left check S20 behind instead of a paragraph.
+
+`b904db2` · **`key={effectiveId}` on the counting flow.** The admin picks whose setoran he is
+entering; React reuses the component in that slot, so switching identity mid-count kept agent A's
+counted cash and posted it under agent B's id. One token. Check S21.
+
+His list, updated: **item 1 DONE, item 4 DONE, item 7 was stale** (there is no `letter.signatures`
+— the flow produces `cards` only). **Item 6 is next and it is a money bug:** `submitting` is never
+passed to `<EODAgentFlow>`, so both `disabled` guards inside it are dead and a double-tap on Send
+submits the EOD twice.
+
+build clean · audit 599/0 · logic 289/0 · contrast all pairs pass
 
 ## 🟠 2026-08-18 19:44 — The admin can now SEE the gap. `ce70287`
 
@@ -971,7 +993,7 @@ animatable, so it clipped in frame 1. **Measured before:** `overflow:hidden`, `m
 guarantee the code does not provide is worse than none.
 
 ## 🔨 CONFIRMED AND STILL TO DO — none of these need his decision
-1. **`--danger-ink` on `--danger` is 1.91:1 dark / 1.95:1 light** — the cash-fine amount and the
+1. ✅ **DONE 2026-08-18 `44efb69`** — was 1,94:1 dark / 1,95:1 light — the cash-fine amount and the
    over-count refusal, the two strings that MUST be read, are unreadable. `EODCardDeck.jsx:274` and
    five sites in `EODReconciliationView.jsx`.
 2. **Gold ink on a gold plate on the ADMIN side = 1.00:1 in dark** (`--accent-ink` and `--gold` are
@@ -979,12 +1001,12 @@ guarantee the code does not provide is worse than none.
    it because the plate is on the parent and the ink on a child** — widen the regex with the fix.
 3. **The Verify button is `bg-emerald-600`** (`:795`) — green, banned, and it marks the routine
    "fine" path. Plus hardcoded rgba glows and `border-red-500/50` at `:670`.
-4. **`<EODAgentFlow>` has no `key`** (`:428`) — switching operating identity mid-count submits
+4. ✅ **DONE 2026-08-18 `b904db2`** — `<EODAgentFlow>` had no `key` — switching operating identity mid-count submits
    agent A's counted money under agent B's id. One-token fix: `key={effectiveId}`.
 5. **`agentData` useMemo omits `inventory`** (`:184`) — `itemsBks` silently uses fallback unit
    multipliers.
 6. **`submitting` is never passed** (`:428`) so both `disabled` guards in the flow are dead.
-7. **`letter.signatures` is dropped** at `:492` — only `cards` is sent, so the agent's own signature
+7. ❌ **STALE — there is no `signatures` field.** The flow produces `cards` only. Was: dropped at `:492` — only `cards` is sent, so the agent's own signature
    never reaches Firestore.
 8. **`bg-black/N` across the whole admin half** (`:670,701,705,668,270,836,874,893`).
 9. **Lite Mode kills `transition-duration` but not `transition-delay`** (`src/index.css:91`), so
