@@ -102,7 +102,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
     const debtInfo = React.useMemo(() => {
         if (!customerName) return null;
         const custTrans = transactions.filter(t => 
-            (t.customerName || '').trim().toLowerCase() === customerName.trim().toLowerCase()
+            storeKey(t.customerName) === storeKey(customerName)
         ).sort((a,b) => new Date(a.date) - new Date(b.date));
 
         let debts = [];
@@ -1096,7 +1096,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
 
                             safeTrans.forEach(t => {
                                 const tType = String(t.type || (t.total < 0 ? 'RETUR' : 'SALE')).toUpperCase();
-                                const isMatch = (t.customerName || t.customer || '').trim().toLowerCase() === finalCust.toLowerCase();
+                                const isMatch = storeKey(t.customerName || t.customer) === storeKey(finalCust);
                                 if (t && isMatch && tType === 'SALE') {
                                     if (getSafeTime(t) >= cutoff.getTime()) {
                                         if (isOmset) metricTotal += (Number(String(t.total).replace(/[^0-9-]/g, '')) || 0);

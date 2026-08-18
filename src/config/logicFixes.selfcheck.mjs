@@ -460,5 +460,101 @@ ok('a zone counts each distinct shop once', /const counted = new Set\(\);/.test(
   ok('BEFORE the de-duplication it would have been 800.000 - the same takings twice',
      zoneOld === 800000); }
 
+/* ── S5 · no file may keep its own private idea of what a store name is ────────────────── */
+section('S5. One name rule, enforced — not re-found by hand every session');
+
+/* Four private copies of the name rule were found one at a time, one session each:
+   customerBrief.js, MapMissionControl's XP loop, and JourneyView on both sides of a lookup.
+   Each was a real bug — a shop reading as unvisited, unsold or debt-free. This finds the CLASS.
+
+   Comments are stripped FIRST, and that is not tidiness. A regression guard for
+   `.includes(inputTrimmed)` once went red against the FIXED code because the comment explaining
+   the fix contained the phrase. A text scan that reads prose reports the opposite of the truth. */
+const stripComments = (src) => src
+  .replace(/\/\*[\s\S]*?\*\//g, (m) => m.replace(/[^\n]/g, ' '))   // keep the newlines, keep line numbers
+  .replace(/\/\/[^\n]*/g, '');
+
+/* Scoped to store-name identifiers on purpose. `.trim().toLowerCase()` is correct and normal on
+   an email, a search box or a product name — a guard that fails on those gets deleted in a week. */
+const NAME_ID = /customerName|storeName|store\.name/;
+const OWN_RULE = /\.trim\(\)\s*\.toLowerCase\(\)/;
+
+const scanSource = (src) => stripComments(src).split('\n')
+  .map((line, i) => ({ line: i + 1, text: line }))
+  .filter(l => OWN_RULE.test(l.text) && NAME_ID.test(l.text));
+
+/* Proof the guard cannot be satisfied by prose — the trap this exact check was written to dodge. */
+ok('a banned shape inside a COMMENT does not count as a violation',
+   scanSource(`/* store.name.trim().toLowerCase() is banned */\n// customerName.trim().toLowerCase()\nconst x = 1;`).length === 0);
+ok('and the same shape in real code DOES count',
+   scanSource(`const k = tx.customerName.trim().toLowerCase();`).length === 1);
+ok('a trim+lowercase on something that is not a store name is left alone',
+   scanSource(`const q = searchTerm.trim().toLowerCase();`).length === 0);
+
+/* src/config holds the checks themselves, which quote these shapes as patterns; helpers.js is
+   where the one real rule lives. Everything else is app code and must go through storeKey. */
+const appFiles = fs.readdirSync('src', { recursive: true })
+  .map(f => `src/${String(f).replace(/\\/g, '/')}`)
+  .filter(f => /\.(js|jsx)$/.test(f))
+  .filter(f => !f.startsWith('src/config/') && f !== 'src/utils/helpers.js');
+
+const violations = appFiles.flatMap(f => scanSource(read(f)).map(v => `${f}:${v.line}`));
+ok(`no file defines its own store-name rule${violations.length ? ' — ' + violations.join(', ') : ''}`,
+   violations.length === 0);
+
+/* ── S6 · what the S5 guard turned red, and what each site was feeding ──────────────────── */
+section('S6. The eight sites the guard found — three of them sums');
+const journey = read('src/JourneyView.jsx');
+const eod     = read('src/EODReconciliationView.jsx');
+
+ok('the FIFO debt engine matches by key', /storeKey\(t\.customerName\) === storeKey\(customerName\)/.test(merchant));
+ok('the rank metric matches by key', /storeKey\(t\.customerName \|\| t\.customer\) === storeKey\(finalCust\)/.test(merchant));
+ok('the hand-off duplicate check matches by key', /storeKey\(r\.storeName\) === storeKey\(storeName\)/.test(app));
+ok('the hand-off row sweep matches by key', /const sameName = \(v\) => storeKey\(v\) === storeKey\(request\.storeName\)/.test(app));
+ok('the visit map is BUILT with the key', /const storeName = storeKey\(tx\.customerName\)/.test(journey));
+ok('and READ with the same key in both places',
+   (journey.match(/todaysVisits\[storeKey\(store\.name\)\]/g) || []).length === 2);
+ok('the EOD store count is keyed', /map\(t => storeKey\(t\.customerName\)\)/.test(eod));
+
+/* BEHAVIOUR — the three sums, on real rupiah, BEFORE next to AFTER. */
+{ const key = (n) => String(n ?? '').trim().replace(/\s*\((?:Retail|Individual|Wholesale)\)$/i, '').trim().toLowerCase();
+  const raw = (n) => String(n ?? '').trim().toLowerCase();
+  const tx = [
+    { type: 'SALE', paymentType: 'Titip', customerName: 'Warung Bu Sari (Retail)', total: 1200000 },
+    { type: 'SALE', paymentType: 'Titip', customerName: 'Warung Bu Sari',          total:  800000 },
+    { type: 'CONSIGNMENT_PAYMENT',        customerName: 'warung bu sari ',    amountPaid: 500000 },
+    { type: 'SALE', paymentType: 'Cash',  customerName: 'Warung Sari Rasa',        total:  700000 } ];
+  const typed = 'Warung Bu Sari';
+
+  // 1. FIFO debt engine — what the salesman is told the shop owes, at the counter.
+  const debt = (m) => { const mine = tx.filter(t => m(t.customerName, typed));
+    const owed = mine.filter(t => t.type === 'SALE' && t.paymentType === 'Titip').reduce((s, t) => s + t.total, 0);
+    const paid = mine.filter(t => t.type === 'CONSIGNMENT_PAYMENT').reduce((s, t) => s + t.amountPaid, 0);
+    return Math.max(0, owed - paid); };
+  /* The old rule DID trim and lowercase, so the 500.000 payment matched while the 1.200.000
+     legacy sale did not: the counter subtracted a payment from a debt it could not see. */
+  ok('BEFORE: the counter showed 300.000 owed - payment counted, legacy sale invisible',
+     debt((a, b) => raw(a) === raw(b)) === 300000);
+  ok('AFTER: it shows the real 1.500.000, and the payment still counts',
+     debt((a, b) => key(a) === key(b)) === 1500000);
+
+  // 2. Rank metric — omset against a tier target.
+  const omset = (m) => tx.filter(t => t.type === 'SALE' && m(t.customerName, typed)).reduce((s, t) => s + t.total, 0);
+  ok('BEFORE: the shop counted 800.000 toward its tier', omset((a, b) => raw(a) === raw(b)) === 800000);
+  ok('AFTER: it counts the 2.000.000 it actually bought', omset((a, b) => key(a) === key(b)) === 2000000);
+
+  // 3. storesServed — a COUNT, banked into the career doc with increment().
+  const sales = tx.filter(t => t.type === 'SALE');
+  ok('BEFORE: one shop under two spellings counted as 3 stores served',
+     new Set(sales.map(t => raw(t.customerName))).size === 3);
+  ok('AFTER: it counts the 2 shops he actually served',
+     new Set(sales.map(t => key(t.customerName))).size === 2);
+
+  // 4. The visit map: build side and read side must agree, or every pin reads "not visited".
+  const visits = {}; tx.forEach(t => { visits[key(t.customerName)] = 'Budi'; });
+  ok('a pin named "Warung Bu Sari (Retail)" finds today\'s visit', !!visits[key('Warung Bu Sari (Retail)')]);
+  ok('and so does the same shop written clean', !!visits[key('warung bu sari')]);
+  ok('a shop nobody visited stays empty', !visits[key('Toko Lain')]); }
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

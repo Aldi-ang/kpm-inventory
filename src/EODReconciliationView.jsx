@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { ShieldCheck, Wallet, Truck, CheckCircle, Upload, AlertCircle, Clock, DollarSign, Package, XCircle, Tag, ChevronDown, ChevronRight, MapPin, User, Calendar, Folder, Target, BadgeDollarSign, ShieldAlert } from 'lucide-react';
-import { formatRupiah, getLocalDayKey } from './utils/helpers';
+import { formatRupiah, getLocalDayKey, storeKey } from './utils/helpers';
 import { confirmAction } from './components/ConfirmGate.jsx';
 import EODAgentFlow from './components/EODAgentFlow.jsx';
 
@@ -127,8 +127,13 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
         // 🚀 CAREER LEDGER STATS (Phase 2): stamped onto the CASH_STOCK payload at submit time,
         // read once by handleVerifyEOD into the career doc. Product Map built once, outside any loop.
         const productMap = new Map(inventory.map(p => [p.id, p]));
+        /* 🚀 A COUNT, and it is banked: storesServed is stamped onto the EOD payload and added to
+           the agent's career doc with increment(), so a shop counted twice under two spellings
+           inflated a lifetime stat permanently. Keyed now. Past increments are not rewritten —
+           they are already summed into the career doc and there is nothing here to correct them
+           with; only days submitted from now on are counted honestly. */
         const storesServed = new Set(
-            todaysTrans.filter(t => t.type === 'SALE').map(t => t.customerName)
+            todaysTrans.filter(t => t.type === 'SALE').map(t => storeKey(t.customerName))
         ).size;
         const titipCollected = todaysTrans
             .filter(t => t.type === 'CONSIGNMENT_PAYMENT')

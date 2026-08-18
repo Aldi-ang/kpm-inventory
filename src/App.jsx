@@ -99,7 +99,7 @@ import {
 
 // --- CONFIG & UTILITIES IMPORTS ---
 import { auth, db, storage, googleProvider, appId } from './config/firebase';
-import { formatRupiah, getCurrentDate, getLocalDayKey, getRandomColor, convertToBks, commitInChunks, savePhotoAndGetReference } from './utils/helpers';
+import { formatRupiah, getCurrentDate, getLocalDayKey, getRandomColor, convertToBks, commitInChunks, savePhotoAndGetReference, storeKey } from './utils/helpers';
 import { computeDayXP, DEFAULT_XP, checkBadges, DEFAULT_BADGES } from './config/career';
 import { confirmAction, promptAction } from './components/ConfirmGate.jsx';
 import { notify } from './components/Toast.jsx';
@@ -1527,7 +1527,7 @@ const handleGitHubMirror = async () => {
   // 🚀 ACCOUNT TRANSFER HANDLERS (3-KEY PROTOCOL) 🚀
   const handleRequestTransfer = async (storeName, toAgentId, toAgentName, note) => {
       const isAlreadyPending = transferRequests.some(r => 
-          (r.storeName || '').trim().toLowerCase() === (storeName || '').trim().toLowerCase() && 
+          storeKey(r.storeName) === storeKey(storeName) &&
           (r.status === 'PENDING_AGENT' || r.status === 'PENDING_ADMIN')
       );
       if (isAlreadyPending) return notify(`Hold on! A transfer request for ${storeName} is already pending.`);
@@ -1537,7 +1537,7 @@ const handleGitHubMirror = async () => {
       // Pin the customer document HERE, while the sender is still known. A name that even the
       // sender's own ownership cannot split stays null, and approval falls back to the name.
       const fromAgentName = user.displayName || user.email.split('@')[0];
-      const sameName = customers.filter(c => (c.name || '').trim().toLowerCase() === (storeName || '').trim().toLowerCase());
+      const sameName = customers.filter(c => storeKey(c.name) === storeKey(storeName));
       const mine = sameName.length > 1 ? sameName.filter(c => c.mappedBy === fromAgentName) : sameName;
 
       try {
@@ -1641,7 +1641,7 @@ const handleGitHubMirror = async () => {
               // customerId, so the name still selects the shop and fromAgentId scopes it to the rows
               // he actually holds. Legacy rows with no agentId belong to ADMIN, the same rule the HQ
               // filter in ConsignmentFinanceView already uses.
-              const sameName = (v) => (v || '').trim().toLowerCase() === request.storeName.trim().toLowerCase();
+              const sameName = (v) => storeKey(v) === storeKey(request.storeName);
               const heldBySender = (t) => request.fromAgentId === 'ADMIN'
                   ? (!t.agentId || t.agentId === 'ADMIN')
                   : t.agentId === request.fromAgentId;

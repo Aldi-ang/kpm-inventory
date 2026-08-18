@@ -3,6 +3,7 @@ import { Truck, MapPin, CheckCircle, Calendar, Phone, Store, Navigation, X, Save
 import { doc, updateDoc, serverTimestamp, deleteField, collection, getDocs, getDoc, setDoc } from "firebase/firestore";
 import { MapContainer, TileLayer, Marker, Polyline, GeoJSON, Tooltip as LeafletTooltip, Popup, useMap, useMapEvents } from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-cluster';
+import { storeKey } from './utils/helpers';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { loadBorderCache, saveBorderCache } from './utils/borderCache';
@@ -275,7 +276,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
         const todaysTx = transactions.filter(t => t?.date === todayDate);
         todaysTx.forEach(tx => {
             if (tx && tx.customerName) {
-                const storeName = tx.customerName.trim().toLowerCase();
+                const storeName = storeKey(tx.customerName);
                 visitData[storeName] = tx.agentName || 'Unknown Agent';
             }
         });
@@ -1082,7 +1083,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                         disableClusteringAtZoom={editingStoreId ? 1 : 16}
                     >
                     {orderedRoute.map((store) => {
-                        const hasLiveTxToday = !!todaysVisits[store.name.trim().toLowerCase()];
+                        const hasLiveTxToday = !!todaysVisits[storeKey(store.name)];
                         const isVisited = store.lastVisit === todayDate || hasLiveTxToday;
                         const activeTag = String(hasLiveTxToday ? '' : (store.lastVisitTag || ''));
 
@@ -1139,7 +1140,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                                             {isVisited ? (
                                                 <span className="flex items-center gap-1">
                                                     <CheckCircle size={12} className="text-emerald-400"/> 
-                                                    SECURED BY {String(todaysVisits[store.name.trim().toLowerCase()] || store.lastVisitedBy || 'FLEET').toUpperCase().split(' ')[0]}
+                                                    SECURED BY {String(todaysVisits[storeKey(store.name)] || store.lastVisitedBy || 'FLEET').toUpperCase().split(' ')[0]}
                                                 </span>
                                             ) : (
                                                 <><span style={{color: ringColor}} className="mr-1">#{stopNum}</span> {store.name}</>
