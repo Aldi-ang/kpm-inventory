@@ -13,7 +13,7 @@ import { notify } from './components/Toast.jsx';
 /* `onAdminSalesMode` is undefined for everyone but the boss, and that IS the permission check —
    App only hands it over on `userRole === 'ADMIN'`, the same test that used to gate the bar it
    replaces. Absent prop, absent switch. */
-const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, onProcessSale, onInspect, appSettings, customers = [], allowedPayments = ['Cash'], allowedTiers = ['Retail', 'Ecer'], transactions = [], allowRetur = true, allowCashRefund = false, db, appId, agentProfileId, storage, masterUserId, adminSalesMode, onAdminSalesMode }) => {
+const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, onProcessSale, onInspect, appSettings, customers = [], allowedPayments = ['Cash'], allowedTiers = ['Retail', 'Ecer'], transactions = [], allowRetur = true, allowCashRefund = false, db, appId, agentProfileId, storage, masterUserId, adminSalesMode, onAdminSalesMode, isOnline = navigator.onLine }) => {
     /* WHOSE VAULT THE CUSTOMER RECORDS LIVE IN — and the answer must be the same one App used to
        fetch them, or a write lands in a document nobody reads.
 
@@ -986,7 +986,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
             // today's raw base64 behavior. The offline path never reaches here with
             // navigator.onLine true, so it stays pure base64 with zero Storage attempt.
             let finalPhotoData = txProofPhoto;
-            if (navigator.onLine) {
+            if (isOnline) {
                 try {
                     const masterUid = user?.uid || user?.id || 'default';
                     const storagePath = `artifacts/${appId}/users/${masterUid}/photos/sale_${Date.now()}.jpg`;
@@ -1034,7 +1034,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
             // Forensic data is perfectly secured inside the transactions document layout.
             // Agent Inventory will dynamically read from the transaction ledger instead.
 
-            if (navigator.onLine && !isReturMode && !finalCart.some(i => i.isIouFulfillment)) {
+            if (isOnline && !isReturMode && !finalCart.some(i => i.isIouFulfillment)) {
                 try {
                     const userId = dataOwnerId;   // see dataOwnerId — must match where `customers` was read from
                     let rules = null;

@@ -16,7 +16,7 @@ import {
 import emailjs from '@emailjs/browser';
 import useTransactionEngine from './hooks/useTransactionEngine';
 import useDatabaseSync from './hooks/useDatabaseSync'; 
-import useOfflineEngine from './hooks/useOfflineEngine';
+import useOfflineEngine, { canReachInternet } from './hooks/useOfflineEngine';
 import MusicPlayer from './MusicPlayer';
 import { injectDynamicPermissions, isFieldLevelTier } from './config/permissions';
 
@@ -63,7 +63,7 @@ const SampleEntryModal = lazy(() => import('./components/SamplingManager').then(
    Must be a class; React has no hook form of getDerivedStateFromError. Keyed on activeTab at the
    call site, so leaving a broken tab clears the failure. Pinned by S26. */
 class LazyTabBoundary extends React.Component {
-  state = { failed: false };
+  state = { failed: false, checking: false };
   static getDerivedStateFromError() { return { failed: true }; }
   /* Reloading with no signal is only safe if the offline helper has the whole app stored. On the
      dev server it stores the page but NOT the code, so a reload there paints a white page and he
@@ -71,8 +71,11 @@ class LazyTabBoundary extends React.Component {
      the screen retries, fails again if it still cannot be fetched, and shows this box again. The
      app is never thrown away. Online, a reload is the only thing that clears a failed import,
      because React caches the rejection for the life of the page. */
-  retry = () => {
-    if (navigator.onLine) { window.location.reload(); return; }
+  retry = async () => {
+    this.setState({ checking: true });
+    const reachable = await canReachInternet();
+    this.setState({ checking: false });
+    if (reachable) { window.location.reload(); return; }
     this.setState({ failed: false });
   };
   render() {
@@ -86,7 +89,7 @@ class LazyTabBoundary extends React.Component {
           This screen could not load without signal. Reconnect, then try again.
         </p>
         <button onClick={this.retry} className="px-10 py-4 border-2 border-amber-500/50 text-amber-400 font-black uppercase text-xs hover:bg-amber-900/30 transition-all shadow-[0_0_15px_rgba(245,158,11,0.2)]">
-          Try Again
+          {this.state.checking ? 'Checking…' : 'Try Again'}
         </button>
       </div>
     );
@@ -4371,6 +4374,7 @@ const handleGitHubMirror = async () => {
                  a phone back the ~60px this bar was reserving above everything. */
               <div className="h-full w-full relative bg-[var(--duke-well-solid)]">
                       <MerchantSalesView
+                          isOnline={isOnline}
                           adminSalesMode={adminSalesMode}
                           onAdminSalesMode={userRole === 'ADMIN' ? setAdminSalesMode : undefined}
                           inventory={salesTerminalInventory} 

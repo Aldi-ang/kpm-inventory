@@ -27,7 +27,7 @@ const REACHABILITY_URL = 'https://www.gstatic.com/generate_204';
 const PROBE_EVERY_MS = 30000;
 const PROBE_TIMEOUT_MS = 5000;
 
-async function canReachInternet() {
+export async function canReachInternet() {
     if (typeof navigator !== 'undefined' && navigator.onLine === false) return false;
     const ctrl = new AbortController();
     const timer = setTimeout(() => ctrl.abort(), PROBE_TIMEOUT_MS);

@@ -1349,10 +1349,17 @@ section('S26. A failed tab download shows a retry, not a black screen');
 /* <Suspense> covers a chunk that is still LOADING. Nothing in React covers a chunk that FAILED
    to load, and an uncaught render error unmounts the whole page - that is the black screen Aldi
    hit on his phone with airplane mode on, 2026-08-19. */
+/* The end anchor is '\n}' and NOT '\n}\n': this repo's files are CRLF, so '\n}\n' never matched,
+   indexOf returned -1, and slice(from, -1) quietly handed back 267 KB - the whole rest of the
+   file - instead of the 1.9 KB class. Every check below then passed by finding its string
+   somewhere else in App.jsx. A slice end must never be a raw indexOf result. */
 const boundary = (() => {
   const from = app.indexOf('class LazyTabBoundary');
-  return from === -1 ? '' : app.slice(from, app.indexOf('\n}\n', from));
+  const to = app.indexOf('\n}', from);
+  return (from === -1 || to === -1) ? '' : app.slice(from, to + 2);
 })();
+ok('the boundary slice is the class alone, not most of App.jsx',
+   boundary.length > 500 && boundary.length < 4000, `sliced ${boundary.length} chars`);
 
 ok('the catcher exists, and it is a class - there is no hook form of getDerivedStateFromError',
    /class LazyTabBoundary extends React\.Component/.test(app));
@@ -1380,8 +1387,10 @@ ok('the fallback draws a retry button, not an empty box',
    survives if the offline helper holds the whole app; the dev server holds the page but not the
    code. So the reload must be guarded by navigator.onLine, and the offline path must clear the
    error rather than navigate - a white page loses the working app entirely. */
-ok('the retry only reloads when there IS signal',
-   /if \(navigator\.onLine\) \{ window\.location\.reload\(\); return; \}/.test(boundary));
+ok('the retry only reloads when the real probe says the internet is reachable',
+   /await canReachInternet\(\)/.test(boundary));
+ok('the boundary never trusts navigator.onLine - on a LAN with no internet it says yes',
+   !/navigator\.onLine/.test(boundary));
 ok('and with no signal it clears the error instead of navigating away',
    /this\.setState\(\{ failed: false \}\)/.test(boundary));
 ok('the button calls that guarded handler, not reload directly',
@@ -1401,6 +1410,63 @@ ok('and it says in plain words why the screen is missing',
      /devOptions:\s*\{[^}]*enabled:\s*true/.test(vite));
   ok('and it sits inside VitePWA, not loose in the config where it does nothing',
      vite.indexOf('devOptions') > vite.indexOf('VitePWA(')); }
+
+/* --- S27 . navigator.onLine lies on a LAN, and it froze a sale ---------------------------- */
+section('S27. The Sales Terminal asks the real probe, not the flag that lies');
+
+/* 2026-08-19, Aldi on his phone: airplane mode ON but wifi still ON, reading the app off the
+   preview server on his own PC. navigator.onLine was therefore TRUE - a network existed - while
+   Firestore could not reach Google at all. The sale saved to the Ghost Ledger and the toast
+   appeared, then MerchantSalesView entered its `if (navigator.onLine)` auto-promoter block and
+   awaited a Firestore write that can never resolve without the internet. No receipt, and the
+   button sat on PROCESSING forever. useOfflineEngine.js already had the honest answer. */
+{ const offlineEngine = read('src/hooks/useOfflineEngine.js');
+  ok('the real probe is exported so anything can ask it',
+     /export async function canReachInternet/.test(offlineEngine));
+  ok('the probe is NOT same-origin - a same-origin one would be answered from the offline cache',
+     /REACHABILITY_URL = 'https:\/\/www\.gstatic\.com/.test(offlineEngine)); }
+
+{ const from = merchant.indexOf('const MerchantSalesView = ({');
+  const sig = from === -1 ? '' : merchant.slice(from, merchant.indexOf('}) =>', from));
+  ok('the terminal was found and is handed the real online flag',
+     from !== -1 && /isOnline/.test(sig)); }
+ok('App hands it down', /isOnline=\{isOnline\}/.test(app));
+ok('no decision in the terminal is made on navigator.onLine any more',
+   !/if \(navigator\.onLine/.test(merchant));
+
+/* --- S28 . big money collided on the van header ------------------------------------------ */
+section('S28. Big money on the van header shrinks instead of colliding');
+
+/* Aldi, 2026-08-19, with a screenshot: the three IF SOLD figures ran into each other with no
+   gap - "Rp90.000.000Rp79.125.000Rp77.625.000". Every figure carried a fixed `text-sm md:text-xl`
+   and a third of a phone is not wide enough for twelve digits at that size. */
+{ const agent = read('src/AgentInventoryView.jsx');
+  ok('there is ONE auto-fit money component, not five hand-tuned sizes',
+     /const Money = \(\{ value/.test(agent));
+  ok('it sizes from the formatted length, so it cannot be fooled by the raw number',
+     /s\.length > 15/.test(agent) && /s\.length > 12/.test(agent));
+  ok('the digits never wrap and never reflow between widths',
+     /tabular-nums whitespace-nowrap/.test(agent));
+
+  /* Anchored on the JSX label, not the bare words: 'If Sold' also appears in a comment 80
+     lines earlier, and starting there swept in the Cash card and miscounted. */
+  const from = agent.indexOf('<TrendingUp size={14}/> If Sold');
+  const to = agent.indexOf('Grosir', from);
+  const row = (from === -1 || to === -1) ? '' : agent.slice(from, Math.min(to + 400, agent.length));
+  ok('the If Sold row was found', row.length > 0);
+  ok('all three tier figures go through the auto-fit component',
+     (row.match(/<Money value=/g) || []).length === 3);
+  ok('each column may shrink, so a long number cannot shove its neighbour',
+     (row.match(/min-w-0/g) || []).length === 3);
+  /* Shrinking the font is not enough on its own: 'Rp 90.000.000' is 13 characters and a third of
+     a phone is about 106px. On a phone the three tiers stack, one per line, label left and figure
+     right - which cannot collide at any number length. Three columns return at md. */
+  ok('on a phone the three tiers stack instead of sharing one line',
+     /grid-cols-1 md:grid-cols-3/.test(row));
+  ok('and the divider follows the direction they are laid out in',
+     /divide-y md:divide-y-0 md:divide-x/.test(row));
+  ok('no money value on this header carries a hardcoded size any more',
+     !/text-sm md:text-xl font-black text-ink">\{formatRupiah/.test(agent)); }
 
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

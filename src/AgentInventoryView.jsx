@@ -6,6 +6,19 @@ import { formatRupiah } from './utils/helpers';
 const getCurrentDate = () => new Date().toISOString().split('T')[0];
 
 // 🚀 ACCEPT 'samplings' PROP HERE
+/* AUTO-FIT MONEY. Aldi, 2026-08-19, with a screenshot: the three IF SOLD figures ran into each
+   other with no gap - "Rp90.000.000Rp79.125.000Rp77.625.000". Every one carried a fixed
+   `text-sm md:text-xl`, and a third of a phone is not wide enough for twelve digits at that size.
+   Sized from the formatted string's LENGTH rather than measured on screen: deterministic, no
+   measure-then-resize loop, and length is the only thing that decides whether it fits. */
+const Money = ({ value, className = '' }) => {
+    const s = formatRupiah(value);
+    const fit = s.length > 15 ? 'text-[10px] md:text-base'
+              : s.length > 12 ? 'text-xs md:text-lg'
+              :                 'text-sm md:text-xl';
+    return <span className={`${fit} font-black tabular-nums whitespace-nowrap ${className}`}>{s}</span>;
+};
+
 const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [], transactions = [], samplings = [], user, motorists = [] }) => {
     const [canvasItems, setCanvasItems] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -184,12 +197,12 @@ const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [],
                         
                         <div className="bg-ground border border-line-2 rounded-none p-2 md:p-3 flex flex-col justify-center items-center text-center shadow-inner">
                             <span className="text-[11px] md:text-xs text-ink-dim font-bold uppercase tracking-widest flex items-center gap-1 mb-1"><Wallet size={12}/> Modal</span>
-                            <span className="text-sm md:text-xl font-black text-ink">{formatRupiah(invValue)}</span>
+                            <Money value={invValue} className="text-ink" />
                         </div>
                         
                         <div className="bg-panel border border-line-2 rounded-none p-2 md:p-3 flex flex-col justify-center items-center text-center shadow-inner">
                             <span className="text-[11px] md:text-xs text-ink-dim font-bold uppercase tracking-widest flex items-center gap-1 mb-1"><Coins size={12}/> Cash</span>
-                            <span className="text-sm md:text-xl font-black text-ink kpm-num inline-flex items-center gap-2"><i className="kpm-coin lg" aria-hidden="true"></i>{formatRupiah(todayRevenue)}</span>
+                            <span className="font-black text-ink kpm-num inline-flex items-center gap-2 min-w-0"><i className="kpm-coin lg" aria-hidden="true"></i><Money value={todayRevenue} className="text-ink" /></span>
                             {/* 🚀 NEW RETUR DEDUCTION DISPLAY */}
                             {totalRetur > 0 && (
                                 <span className="text-[11px] text-danger-text font-bold mt-1 bg-danger-well px-2 py-0.5 rounded border border-danger-rail">
@@ -210,18 +223,18 @@ const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [],
                         <div className="flex items-center justify-center md:justify-start mb-2 border-b border-line-2 pb-2">
                             <span className="text-[10px] md:text-xs text-ink-dim font-bold uppercase tracking-widest flex items-center gap-1"><TrendingUp size={14}/> If Sold</span>
                         </div>
-                        <div className="grid grid-cols-3 gap-2 divide-x divide-line-2">
-                            <div className="flex flex-col items-center text-center">
-                                <span className="text-[11px] md:text-xs text-ink-dim font-bold uppercase tracking-wider mb-1">Ecer</span>
-                                <span className="text-sm md:text-xl font-black text-ink">{formatRupiah(revEcer)}</span>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-1 md:gap-2 divide-y md:divide-y-0 md:divide-x divide-line-2">
+                            <div className="flex flex-row items-center justify-between py-1.5 md:py-0 md:flex-col md:justify-center text-center min-w-0">
+                                <span className="text-[11px] md:text-xs text-ink-dim font-bold uppercase tracking-wider md:mb-1">Ecer</span>
+                                <Money value={revEcer} className="text-ink" />
                             </div>
-                            <div className="flex flex-col items-center text-center pl-2">
-                                <span className="text-[11px] md:text-xs text-ink-dim font-bold uppercase tracking-wider mb-1">Retail</span>
-                                <span className="text-sm md:text-xl font-black text-ink">{formatRupiah(revRetail)}</span>
+                            <div className="flex flex-row items-center justify-between py-1.5 md:py-0 md:flex-col md:justify-center text-center md:pl-2 min-w-0">
+                                <span className="text-[11px] md:text-xs text-ink-dim font-bold uppercase tracking-wider md:mb-1">Retail</span>
+                                <Money value={revRetail} className="text-ink" />
                             </div>
-                            <div className="flex flex-col items-center text-center pl-2">
-                                <span className="text-[11px] md:text-xs text-ink-dim font-bold uppercase tracking-wider mb-1">Grosir</span>
-                                <span className="text-sm md:text-xl font-black text-ink">{formatRupiah(revGrosir)}</span>
+                            <div className="flex flex-row items-center justify-between py-1.5 md:py-0 md:flex-col md:justify-center text-center md:pl-2 min-w-0">
+                                <span className="text-[11px] md:text-xs text-ink-dim font-bold uppercase tracking-wider md:mb-1">Grosir</span>
+                                <Money value={revGrosir} className="text-ink" />
                             </div>
                         </div>
                     </div>
