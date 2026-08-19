@@ -57,6 +57,32 @@ const SamplingCartView = lazy(() => import('./components/SamplingManager').then(
 const SamplingFolderView = lazy(() => import('./components/SamplingManager').then(m => ({ default: m.SamplingFolderView })));
 const SampleEntryModal = lazy(() => import('./components/SamplingManager').then(m => ({ default: m.SampleEntryModal })));
 
+/* 🚨 THE LAZY-TAB CATCHER. The <Suspense> below covers a tab chunk that is still DOWNLOADING.
+   A chunk that FAILS to download — no signal, cache miss — throws, nothing catches it, and React
+   throws away the whole page: the black frozen screen Aldi hit with airplane mode on, 2026-08-19.
+   Must be a class; React has no hook form of getDerivedStateFromError. Keyed on activeTab at the
+   call site, so leaving a broken tab clears the failure. Pinned by S26. */
+class LazyTabBoundary extends React.Component {
+  state = { failed: false };
+  static getDerivedStateFromError() { return { failed: true }; }
+  render() {
+    if (!this.state.failed) return this.props.children;
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] px-6 text-center animate-fade-in">
+        <p className="text-[var(--duke-amber-ink)] font-black uppercase text-sm tracking-[0.2em] mb-3">
+          [{String(this.props.tab || 'screen').toUpperCase()}] failed to load
+        </p>
+        <p className="text-[var(--duke-ink-3)] text-xs font-bold uppercase tracking-widest max-w-md leading-relaxed mb-8">
+          This screen could not load without signal. Reconnect, then try again.
+        </p>
+        <button onClick={() => window.location.reload()} className="px-10 py-4 border-2 border-amber-500/50 text-amber-400 font-black uppercase text-xs hover:bg-amber-900/30 transition-all shadow-[0_0_15px_rgba(245,158,11,0.2)]">
+          Try Again
+        </button>
+      </div>
+    );
+  }
+}
+
 
 // --- FIREBASE IMPORTS ---
 import { initializeApp } from "firebase/app";
@@ -4005,6 +4031,7 @@ const handleGitHubMirror = async () => {
         ) : (
             <>
             {/* 🚀 SUSPENSE BOUNDARY: Master wrapper for all lazy-loaded tabs */}
+            <LazyTabBoundary key={activeTab} tab={activeTab}>
             <Suspense fallback={
                 /* palette law: this spinner was the first thing the app ever showed, and it
                    showed it in a green nothing else in the app uses. A JSX {comment} cannot go
@@ -4528,6 +4555,7 @@ const handleGitHubMirror = async () => {
               />
           )}
             </Suspense> {/* 🚀 CLOSING SUSPENSE BOUNDARY */}
+            </LazyTabBoundary>
             </>
         )}
         </>

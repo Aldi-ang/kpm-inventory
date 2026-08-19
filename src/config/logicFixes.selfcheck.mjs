@@ -1343,5 +1343,42 @@ ok('and reopens in a finally, so a thrown write cannot leave the screen locked f
   ok('and the gate stayed shut across both writes - it does not reopen between them',
      sawShut.length === 2 && sawShut.every(Boolean)); }
 
+/* --- S26 . the lazy tabs have a catcher, and it catches into something he can tap --------- */
+section('S26. A failed tab download shows a retry, not a black screen');
+
+/* <Suspense> covers a chunk that is still LOADING. Nothing in React covers a chunk that FAILED
+   to load, and an uncaught render error unmounts the whole page - that is the black screen Aldi
+   hit on his phone with airplane mode on, 2026-08-19. */
+const boundary = (() => {
+  const from = app.indexOf('class LazyTabBoundary');
+  return from === -1 ? '' : app.slice(from, app.indexOf('\n}\n', from));
+})();
+
+ok('the catcher exists, and it is a class - there is no hook form of getDerivedStateFromError',
+   /class LazyTabBoundary extends React\.Component/.test(app));
+ok('it declares getDerivedStateFromError', /static getDerivedStateFromError\(\)/.test(boundary));
+
+{ const from = app.indexOf('<LazyTabBoundary');
+  const wrap = from === -1 ? '' : app.slice(from, app.indexOf('</LazyTabBoundary>', from));
+  ok('the catcher is mounted', from !== -1 && wrap.length > 0);
+  ok('and the whole lazy-tab <Suspense> sits inside it',
+     /<Suspense fallback=/.test(wrap) && /<\/Suspense>/.test(wrap));
+  ok('it is keyed on activeTab, so leaving a broken tab clears the failure',
+     /<LazyTabBoundary key=\{activeTab\}/.test(app)); }
+
+/* The state key getDerivedStateFromError RETURNS must be the key render TESTS. Returning
+   { hasError: true } while render reads this.state.failed is a catcher that catches and then
+   draws nothing - the same black screen in a new colour. */
+{ const returned = (boundary.match(/getDerivedStateFromError\(\)\s*\{\s*return\s*\{\s*(\w+):/) || [])[1];
+  const tested   = (boundary.match(/if \(!this\.state\.(\w+)\)/) || [])[1];
+  ok('getDerivedStateFromError returns the same state key that render branches on',
+     Boolean(returned) && returned === tested, `returns ${returned}, render reads ${tested}`); }
+
+ok('the fallback draws a retry button, not an empty box',
+   /Try Again/.test(boundary) && /window\.location\.reload\(\)/.test(boundary));
+ok('it names the screen that failed', /this\.props\.tab/.test(boundary));
+ok('and it says in plain words why the screen is missing',
+   /could not load without signal/i.test(boundary));
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

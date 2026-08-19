@@ -1,75 +1,80 @@
 # The one job for next session
 
+/alucard talk like caveman ultra to reduce token usage and increase token efficiency also use
+ponytail ultra and use karpathy guidelines
+
 ## Read this before you write a single word to Aldi
 
-He asked for one change in how you talk, 2026-08-19: "too many hard to understand words, too many
-unfamiliar terms". Short sentences were not the problem. Hard WORDS were. Cut the vocabulary, not
-just the length.
-
-Say "the screen went blank and froze", not "the root unmounted". Say "the app forgets who you
-are", not "the credential is destroyed". Say "I argued against my own answer to check it", not
-"adversarial pass". Say "a fix that would make it worse", not "landmine". Keep file names,
-function names, numbers and error text exactly as they are — that is how he finds things.
+Hard WORDS are the problem, not long sentences. Say "the screen went blank and froze", not "the
+root unmounted". Say "the app forgets who you are", not "the credential is destroyed". Keep file
+names, function names, numbers and error text exactly as they are — that is how he finds things.
 
 ---
 
-/anthropic-skills:caveman ultra, /ponytail:ponytail ultra
+Build the per-tier switch for the expected number in Stock Count, and rename the default tiers.
+**He already decided both on 2026-08-19.** Nothing here needs his approval before you start; his
+exact words are in `.claude/PROGRESS.md`. This is a build job, not a research job.
 
-The Sales Terminal goes black and freezes when there is no signal, and the whole app dies with it.
-Aldi found it on his phone with airplane mode on: "its all black screen cant move cant do
-anything".
+WHAT HE WANTS. While an agent counts stock, tiers 1, 2 and 3 see the number the system expects
+next to what they typed. Tiers 4, 5 and 6 do not — they count blind, and the expected number only
+appears after they have typed theirs, which the screen already does. His reason, verbatim:
+*"encourage them to really count the number right"*.
 
-READ FIRST: `.claude/SWEEP-2026-08-19.md`, the `locate:offline-terminal` part and the check that
-follows it. Every fact below is in there with the file and line number. Do not work it out again.
+WHERE THE PIECES ARE.
 
-WHAT IS BROKEN. `MerchantSalesView` is loaded on demand, not at startup — `const MerchantSalesView
-= lazy(() => import('./MerchantSalesView'))` at `src/App.jsx:41`. It is drawn inside the one
-`<Suspense>` block that opens at `src/App.jsx:4008` and closes at `src/App.jsx:4530`. `<Suspense>`
-handles a screen that is still LOADING. It does not handle a screen that FAILED to load. With no
-signal the file cannot be fetched, the load fails, and the failure escapes. Nothing in the whole
-`src/` folder catches it — searching for `ErrorBoundary`, `componentDidCatch` and
-`getDerivedStateFromError` finds nothing, and `src/main.jsx:57` draws `<App/>` with nothing around
-it. When React meets a failure nobody catches, it throws away the entire page. That is the black
-screen.
+- The list of what each tier may do is `ROLE_PERMISSIONS` at `src/config/permissions.js:56`. Each
+  tier is an array of plain strings such as `'view_eod'`. Tier 1 holds only `'ALL_ACCESS'` and is
+  handled separately at `src/config/permissions.js:104`, so tier 1 needs no new entry.
+- The check is `hasClearance(userRole, 'the_key')` at `src/config/permissions.js:90`.
+- The expected number is drawn as `SYS: {item.expectedStock}` at `src/StockOpnameView.jsx:992`.
+  **Confirm first whether that line is the live counting row or the review list shown afterwards**
+  — the review list must keep showing it for everyone. Gate the live counting row only. Search
+  `src/StockOpnameView.jsx` for the other `expectedStock` uses (`228`, `292`, `294`) — those are
+  the saved snapshot and the maths, never the display, and must not be touched.
+- The default tier names are `DYNAMIC_TIERS` at `src/config/permissions.js:12`.
 
-THE FIX. Add one catcher around the `<Suspense>` at `src/App.jsx:4008`. When it catches, it must
-show something he can act on: which screen failed, a plain line such as "this screen could not
-load without signal", and a button to try again. A catcher that shows an empty box is the same bug
-in a new colour.
+THE RENAME, labels only:
 
-TRAP 1. In React this catcher can only be written as a `class`. `getDerivedStateFromError` and
-`componentDidCatch` do not exist as hooks, and `useErrorBoundary` is not a real thing. Do not try
-to write it with hooks and do not install anything — it is about 20 lines.
+| line | now | becomes |
+|---|---|---|
+| `permissions.js:13` | `T2: OWNER` | `T2: OWNER` (unchanged) |
+| `permissions.js:14` | `T3: REGIONAL` | `T3: HQ SALES MANAGER` |
+| `permissions.js:15` | `T4: CAPTAIN` | `T4: REGIONAL ADMIN` |
+| `permissions.js:16` | `T5: OPERATIVE` | `T5: SALES CANVAS` |
+| `permissions.js:17` | `T6: ROOKIE` | `T6: SALES MOTORIST` |
 
-TRAP 2. This does NOT explain the other half of his report, where the app makes him sign in with
-Google again. That cause is still unknown, and the first guess at it was checked and thrown out.
-DANGER: removing the `await` from the two `deleteDoc` lines at `src/App.jsx:2333-2334` lets the
-code run on to `signOut(auth)` at `src/App.jsx:2336`. With no signal that wipes his sign-in for
-good, turning an occasional annoyance into a permanent one. The offline path already calls
-`setUser(currentUser)` at `src/App.jsx:2387` and `src/App.jsx:2411`. Do not touch the sign-in code
-in this job.
+TRAP 1, the one that will make you claim a false success. Both of these lists get **overwritten
+from Firebase** by `injectDynamicPermissions()` at `src/config/permissions.js:81`. If Aldi has ever
+saved the permission screen, his saved copy replaces the defaults, so a key you add to
+`ROLE_PERMISSIONS` will be **missing** on his real account and the number will stay hidden for
+tier 2 and 3 no matter what your code says. Decide how a saved matrix picks up a brand-new key —
+the honest options are (a) treat the key as ON when the tier's saved list predates it, or (b) tell
+him he must open the permission screen once and press save. Say which one you chose and why.
 
-TRAP 3. He tests on the development server over his home wifi (`https://192.168.1.141:5173`, see
-the note at `vite.config.js:7`). `npm run dev` does not install the offline helper — there is no
-`devOptions` block at `vite.config.js:21` — so in that mode nothing is stored for offline use and
-the fetch always fails. A real build DOES store `MerchantSalesView` and serve the page offline.
-The catcher is still the right fix, but tell him plainly that offline behaviour can only be judged
-from a real build, and that adding `devOptions: { enabled: true }` is what would make his phone
-test mean something. Do not change how he tests without saying so.
+TRAP 2. Do NOT touch the ids in `CORPORATE_TIERS` at `src/config/permissions.js:2`. Those strings
+are stored on every user document in Firebase. Changing `FLEET_CAPTAIN` to anything would strip
+those people of every permission they have. Labels change; ids never do.
 
-LEAVE A CHECK in `src/config/logicFixes.selfcheck.mjs`. The next free section is S26 (S25 is the
-EOD submit gate). Make it fail first — one check that the catcher class exists and wraps the
-`<Suspense>`, and one that `getDerivedStateFromError` returns a state which draws a try-again
-button rather than nothing.
+TRAP 3. `DYNAMIC_TIERS` also carries a `color:` on each row, and three of them are off-palette
+(`text-purple-400`, `text-blue-400`, `text-emerald-400`). The palette law is no blue, no green.
+That is a separate job in the queue — mention it, do not fix it inside this one.
+
+LEAVE A CHECK in `src/config/logicFixes.selfcheck.mjs`. Next free section is **S27** (S26 is the
+offline tab catcher). Make it fail first. Pin: the new key is present for tier 2 and tier 3 and
+absent for tier 4, 5 and 6; the counting row is wrapped in a `hasClearance(...)` call on that exact
+key; the five labels read exactly as the table above; and the six `CORPORATE_TIERS` ids are
+byte-for-byte unchanged.
 
 Run: `npm run build; node src/config/integration.audit.mjs; node src/config/logicFixes.selfcheck.mjs`
 
 ALREADY SETTLED, do not work it out again:
-- Every EOD save on `EODReconciliationView` goes through one `submit(...payloads)` gate that holds
-  a `submitting` flag (`4c12840`, check S25).
-- `eodBountyLines()` and `tierPrice()` in `helpers.js` are the only places a shortfall turns into
-  rupiah and a tier turns into a price.
-- What a penalty is priced at is a company setting (`appSettings.penaltyPriceTier`) — `bf75678`.
+- The offline black screen is fixed. `LazyTabBoundary` in `src/App.jsx` catches a tab that fails
+  to download and shows a Try Again button. Pinned by S26.
+- `npm run dev` installs no service worker (no `devOptions` at `vite.config.js:21`), so **offline
+  behaviour can only be judged from a real build**, never from `https://192.168.1.141:5173`.
+- Every EOD save goes through one `submit(...payloads)` gate (`4c12840`, check S25).
+- `eodBountyLines()` and `tierPrice()` in `helpers.js` are the only places a shortfall becomes
+  rupiah and a tier becomes a price.
 - Checks are aimed at one element or one block, never at a word that appears all over the file.
 
 When you finish, rewrite this file with the next single job.
@@ -79,32 +84,27 @@ When you finish, rewrite this file with the next single job.
 <details>
 <summary>The queue underneath — promote ONE next time, never paste this part</summary>
 
-HE DECIDED TWO THINGS ON 2026-08-19. His exact words are in `.claude/PROGRESS.md`. Neither is
-built yet.
+**Decided but unbuilt:** the whole app says TITIP, never consignment. Labels only — code names such
+as `CONSIGNMENT_PAYMENT` stay. Subtitles were a maybe-later, not a job.
 
-1. Stock count, expected number = a per-tier switch in the permission matrix. ON by default for
-   tier 1, 2, 3 (number shown side by side while counting). OFF by default for tier 4, 5, 6
-   (blind — the number only appears after they type one, which the panel already does). His
-   reason: "encourage them to really count the number right". Same job: change the default tier
-   NAMES to T2 OWNER, T3 HQ SALES MANAGER, T4 REGIONAL ADMIN, T5 SALES CANVAS, T6 SALES MOTORIST.
-2. The whole app says TITIP, never consignment. Labels only — code names such as
-   `CONSIGNMENT_PAYMENT` stay. Subtitles were a maybe-later, not a job.
+Six reported items from 2026-08-19, evidence with file and line numbers in
+`.claude/SWEEP-2026-08-19.md`. One is now fixed. Ranked by what they cost him:
 
-All six of his reported items are investigated, none fixed. Evidence with file and line numbers in
-`.claude/SWEEP-2026-08-19.md`. Ranked by how much they cost him:
-
-- The forced Google sign-in — cause UNKNOWN, first guess thrown out, obvious fix is dangerous.
+- The forced Google sign-in — cause UNKNOWN, first guess thrown out. DANGER: removing the `await`
+  from the two `deleteDoc` lines at `src/App.jsx:2333-2334` lets the code reach `signOut(auth)` at
+  `src/App.jsx:2336` and wipes his sign-in for good with no signal. Do not take that shortcut.
 - Wrong agent name — confirmed, and it is a DATA problem not a display problem. The name is copied
   into each sale when the sale is saved; for tier 1 that is the Google account name. Old records
   keep the wrong name for good, so he must decide about repairing them before any code is written.
   He also asked for ONE EMAIL, ONE PROFILE — a bigger identity change, not a label fix.
 - Reconcile and Clear — no tier check at `FleetCanvasManager.jsx:1056`, but `firestore.rules:479`
   already refuses the save for a plain tier 3 or 4, so it is a button that lies rather than lost
-  data. His rule is already clear: tier 1 only, returns go through EOD, red sold rows stay until
-  EOD is done.
+  data. His rule: tier 1 only, returns go through EOD, red sold rows stay until EOD is done.
 - Unreadable colours — fixed colour codes (`bg-[#1a1a1a]`, `bg-black/40`, `bg-[#111]`) in
-  `src/StockOpnameView.jsx` that never change with the theme.
+  `src/StockOpnameView.jsx` that never change with the theme. Also the three off-palette tier
+  colours in `DYNAMIC_TIERS`, and `text-emerald-500` at `src/StockOpnameView.jsx:995`.
 - IOU in the map customer panel — asked for, located, not built.
+- ~~Black screen with no signal~~ — FIXED 2026-08-19, S26.
 
 Older, still open: gold on gold on the admin side; the `bg-black/N` sweep; the `agentData` memo is
 missing `inventory` so `itemsBks` uses fallback pack sizes; Lite Mode stops `transition-duration`
