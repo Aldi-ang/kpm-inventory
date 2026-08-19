@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-20 05:35 WIB (KPM app session)** · 🛠 OFFLINE SALE UNFROZEN + TERMINAL DRAFT · ✅ NOTHING WAITING, 5 THINGS UNTESTED · branch `phase0-solid-ground`
+**Updated: 2026-08-20 06:05 WIB (KPM app session)** · 🛠 FROZEN SALE, SECOND AND DEEPER FIX · ✅ NOTHING WAITING, 4 THINGS UNTESTED · branch `phase0-solid-ground`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -25,12 +25,13 @@
 `npm run preview -- --host`). **His phone caches the app, so open `/?fresh=1` or Chrome will keep
 showing the old copy — that is what made him report "i dont see no change".**
 
-1. An offline sale now reaches the receipt and releases the button.
+1. An offline sale now reaches the receipt and releases the button. **Failed his test once on
+   2026-08-20 05:5x and was fixed again, deeper** — two copies of the online flag disagreed. The
+   receipt is now drawn before any optional work, so this shape cannot come back.
 2. PROJECTED VALUE stacks one tier per line on a phone.
 3. Try Again on a failed screen no longer paints white.
 4. The sale syncs when signal returns.
-5. Type half a sale, leave the Sales Terminal, come back — it should all still be there, with a
-   "Draft restored" toast. Empty the cart to throw it away.
+5. ~~The draft~~ — **CONFIRMED WORKING by him, 2026-08-20: "draft is working"**.
 
 > Everything below this line was written at 11:34 and was true then. He answered both open questions on 2026-08-19 at 11:34 — the per-tier live-number rule
 and TITIP everywhere. Both are recorded verbatim in the log entry directly below, together with
@@ -2884,6 +2885,14 @@ price ladder; performance rank is now the Tier Automation Engine's job.
 
 ## 📓 LOG
 
+- **2026-08-20 06:05** — the frozen sale, second and deeper fix. The first one only moved the lie:
+  `useOfflineEngine()` was called TWICE (`App.jsx:260`, `useTransactionEngine.js:48`) and each copy
+  kept its own `isOnline` and its own 30s probe, so the engine could be offline while App was still
+  online — exactly his test window. The flag now lives once at module scope behind
+  `useSyncExternalStore`. **And the part that makes the theory irrelevant: the receipt and the
+  button release now happen immediately after `committed = true`, before the IOU ledger and the
+  auto-promoter.** A finished sale never waits for optional work again. S30, 9 checks, red first.
+  `d622ce5`. 599/0, 421/0.
 - **2026-08-20 05:35** — the Sales Terminal now keeps a half-typed sale across a tab change. It
   was never a bug: App unmounts the screen behind `activeTab === 'sales' &&`, so there was nowhere
   for the typing to live. Draft in `localStorage` (`kpm_sales_draft_v1`), holding only what he

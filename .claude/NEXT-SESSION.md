@@ -78,6 +78,12 @@ ALREADY SETTLED, do not work it out again:
   in `.claude/launch.json`. `npm run dev` cannot do it at any setting: it has no built modules to
   cache. His phone also caches the app, so send him `/?fresh=1` or he sees the old copy and reports
   "no change" - that happened on 2026-08-20.
+- **A finished sale must never wait for optional work.** `setReceiptData` and the button release
+  run immediately after `committed = true` in `handleFinalDeal`; the IOU ledger and the tier
+  auto-promoter run after. S30 pins that order by offset. Do not move anything back above it.
+- **`useOfflineEngine()` shares ONE `isOnline` at module scope** (`useSyncExternalStore`). It is
+  called from two places and used to keep two copies with two probes; they disagreed for 30s and
+  froze a sale. Never reintroduce a per-instance copy.
 - **`navigator.onLine` is a liar and it froze a sale.** It says a network exists, not that packets
   arrive. Use `canReachInternet()` from `useOfflineEngine.js`, or `isOnline`. Trusting a NO is fine;
   trusting a YES is the bug. Full story: `A-Brain/Wiki/Concepts/A Network Is Not The Internet.md`,
