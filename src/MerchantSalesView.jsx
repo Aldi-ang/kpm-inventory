@@ -13,6 +13,27 @@ import { notify } from './components/Toast.jsx';
 /* `onAdminSalesMode` is undefined for everyone but the boss, and that IS the permission check —
    App only hands it over on `userRole === 'ADMIN'`, the same test that used to gate the bar it
    replaces. Absent prop, absent switch. */
+/* DRAFT — Aldi, 2026-08-20: "everytime i open sales terminal and i input all the data and i go to
+   other app segment ... i dont have to fill everything over again". App renders this screen behind
+   `activeTab === 'sales' &&`, so leaving the tab UNMOUNTS it and every field is destroyed.
+
+   Only what he TYPED is kept. Anything MEASURED - the GPS fix, the distance, the proximity hit,
+   the territory claim - is deliberately left out. A restored one would stamp an old place onto a
+   new sale, which is the same class of bug as the previous customer's territoryOverride leaking
+   into an innocent walk-in (see resetTerminalAfterDeal). */
+const DRAFT_KEY = 'kpm_sales_draft_v1';
+/* His day starts at 07:00. A draft must not survive into the next one: it carries price snapshots
+   taken when the basket was built, and yesterday's price is a wrong sale, not a saved one. */
+const DRAFT_MAX_AGE_MS = 12 * 60 * 60 * 1000;
+const readDraft = (uid) => {
+    try {
+        const d = JSON.parse(localStorage.getItem(DRAFT_KEY) || 'null');
+        if (!d || d.uid !== uid) return null;   // a shared phone must not hand one agent another's basket
+        if (Date.now() - (d.at || 0) > DRAFT_MAX_AGE_MS) { localStorage.removeItem(DRAFT_KEY); return null; }
+        return d;
+    } catch { return null; }
+};
+
 const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, onProcessSale, onInspect, appSettings, customers = [], allowedPayments = ['Cash'], allowedTiers = ['Retail', 'Ecer'], transactions = [], allowRetur = true, allowCashRefund = false, db, appId, agentProfileId, storage, masterUserId, adminSalesMode, onAdminSalesMode, isOnline = navigator.onLine }) => {
     /* WHOSE VAULT THE CUSTOMER RECORDS LIVE IN — and the answer must be the same one App used to
        fetch them, or a write lands in a document nobody reads.
@@ -37,10 +58,13 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
     const dataOwnerId = masterUserId || user?.uid || user?.id || 'default';
     /* Phase A items 1-2: the two-tab bar is gone. The manifest is a bottom drawer that
        is dragged between three snap points, so the wares list never has to be left. */
+    /* Read ONCE, on the mount that restores it - not on every render. */
+    const [draft] = useState(() => readDraft(user?.uid));
+
     const [drawerH, setDrawerH] = useState(104); // 52 grip + 52 customer bar — see DRAWER_CLOSED
     const [isDragging, setIsDragging] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
-    const [cart, setCart] = useState([]);
+    const [cart, setCart] = useState(draft?.cart || []);
     const [activeCategory, setActiveCategory] = useState("ALL");
     // which ware the examine shelf is showing — one write per hover, never per frame
     const [examineItem, setExamineItem] = useState(null);
@@ -58,17 +82,17 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
     const lastChatterRef = useRef(0);   // throttles how often he reacts to a tap
 
     // 🚀 DUAL RETUR ENGINE
-    const [isReturMode, setIsReturMode] = useState(false);
-    const [returType, setReturType] = useState('EXCHANGE'); // 'BUYBACK' | 'EXCHANGE'
+    const [isReturMode, setIsReturMode] = useState(draft?.isReturMode || false);
+    const [returType, setReturType] = useState(draft?.returType || 'EXCHANGE'); // 'BUYBACK' | 'EXCHANGE'
 
     // --- FORM STATE ---
-    const [customerName, setCustomerName] = useState("");
-    const [paymentMethod, setPaymentMethod] = useState(allowedPayments[0] || "Cash");
+    const [customerName, setCustomerName] = useState(draft?.customerName || "");
+    const [paymentMethod, setPaymentMethod] = useState(draft?.paymentMethod || allowedPayments[0] || "Cash");
     const [isProcessingSale, setIsProcessingSale] = useState(false); 
     const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
     const [receiptData, setReceiptData] = useState(null); 
-    const [lockedTier, setLockedTier] = useState(null); 
-    const [tempoDays, setTempoDays] = useState(appSettings?.defaultTempoDays || 7); 
+    const [lockedTier, setLockedTier] = useState(draft?.lockedTier ?? null); 
+    const [tempoDays, setTempoDays] = useState(draft?.tempoDays ?? appSettings?.defaultTempoDays ?? 7); 
     const [printFormat, setPrintFormat] = useState('thermal'); 
 
     const canOverrideGps = isAdmin === true || user?.tier === 1 || user?.tier === 2 || user?.tier === '1' || user?.tier === '2' || user?.role?.toLowerCase() === 'admin' || user?.isAdmin === true;
@@ -177,7 +201,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
     }), [debtInfo]);
 
     // --- GEO-FENCE & NOO STATE ---
-    const [selectedCustomerInfo, setSelectedCustomerInfo] = useState(null);
+    const [selectedCustomerInfo, setSelectedCustomerInfo] = useState(draft?.selectedCustomerInfo ?? null);
     const [gpsStatus, setGpsStatus] = useState('idle'); 
     const [distanceToStore, setDistanceToStore] = useState(null);
     const [agentLocation, setAgentLocation] = useState(null);
@@ -202,11 +226,46 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
     const [sampleForm, setSampleForm] = useState({ productId: '', qtyBks: 0, qtyBatang: 0 });
     
     const defaultNooTier = allowedTiers[allowedTiers.length - 1] || 'Retail';
-    const [nooForm, setNooForm] = useState({ phone: '', address: '', requestedTier: defaultNooTier, photoUrl: null });
+    const [nooForm, setNooForm] = useState(draft?.nooForm || { phone: '', address: '', requestedTier: defaultNooTier, photoUrl: null });
     const fileInputRef = useRef(null);
 
     const scrollContainerRef = useRef(null);
-    const [txProofPhoto, setTxProofPhoto] = useState(null);
+    const [txProofPhoto, setTxProofPhoto] = useState(draft?.txProofPhoto ?? null);
+
+    /* SAVE THE DRAFT. Debounced: localStorage.setItem is synchronous, and without the delay this
+       would run on every keystroke carrying a few hundred KB of photo. An empty terminal DELETES
+       the draft, which makes emptying the cart the discard button - no new control to explain. */
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            if (cart.length === 0 && !customerName.trim() && !txProofPhoto) {
+                localStorage.removeItem(DRAFT_KEY);
+                return;
+            }
+            const body = { uid: user?.uid || null, at: Date.now(), cart, customerName,
+                selectedCustomerInfo, paymentMethod, lockedTier, tempoDays, isReturMode,
+                returType, txProofPhoto, nooForm };
+            try { localStorage.setItem(DRAFT_KEY, JSON.stringify(body)); }
+            catch {
+                /* The whole store is about 5 MB and a proof photo is a large slice of it. Losing
+                   the photo is annoying; losing the basket is the thing he asked us to fix. */
+                try {
+                    localStorage.setItem(DRAFT_KEY, JSON.stringify({ ...body, txProofPhoto: null,
+                        nooForm: { ...nooForm, photoUrl: null } }));
+                    notify("Basket saved, but the proof photo was too big to keep. Take it again before you deal.");
+                } catch { /* nothing left to try; the basket is still on screen, just not saved */ }
+            }
+        }, 400);
+        return () => clearTimeout(timer);
+    }, [cart, customerName, selectedCustomerInfo, paymentMethod, lockedTier, tempoDays,
+        isReturMode, returType, txProofPhoto, nooForm, user?.uid]);
+
+    /* Every action must report. He has to know this basket is one he typed earlier and not a
+       fresh screen, or a leftover line gets sold to the wrong shop. Once, on the restoring mount. */
+    useEffect(() => {
+        if (!draft) return;
+        const n = draft.cart?.length || 0;
+        notify(`Draft restored — ${n} item${n === 1 ? '' : 's'}${draft.customerName ? ` for ${draft.customerName}` : ''}. Empty the cart to discard it.`);
+    }, []);
 
     const handleTxPhotoCapture = (e) => {
         const file = e.target.files[0];

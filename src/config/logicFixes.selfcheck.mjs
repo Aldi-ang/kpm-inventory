@@ -1470,5 +1470,51 @@ section('S28. Big money on the van header shrinks instead of colliding');
   ok('no money value on this header carries a hardcoded size any more',
      !/text-sm md:text-xl font-black text-ink">\{formatRupiah/.test(agent)); }
 
+/* --- S29 . the terminal forgets everything the moment he leaves the tab -------------------- */
+section('S29. A half-typed sale survives a trip to another screen');
+
+/* Aldi, 2026-08-20: "everytime i open sales terminal and i input all the data and i go to other
+   app segment ... i dont have to fill everything over again". App renders the terminal behind
+   `activeTab === 'sales' &&`, so leaving UNMOUNTS it and every useState is destroyed. The draft
+   keeps what he TYPED. It must never keep what was MEASURED - a restored GPS fix or proximity
+   hit would stamp an old location onto a new sale. */
+{ const TYPED = ['cart', 'customerName', 'selectedCustomerInfo', 'paymentMethod', 'lockedTier',
+                 'tempoDays', 'isReturMode', 'returType', 'txProofPhoto', 'nooForm'];
+  const MEASURED = ['gpsStatus', 'agentLocation', 'distanceToStore', 'proximityHit',
+                    'proximityAck', 'territoryClaim', 'nearbyStores', 'revisitToday'];
+
+  ok('the draft key is versioned, so a shape change cannot resurrect an old one',
+     /const DRAFT_KEY = 'kpm_sales_draft_v\d+'/.test(merchant));
+  ok('the draft expires', /DRAFT_MAX_AGE_MS/.test(merchant));
+  ok('and it is scoped to the signed-in user', /d\.uid !== uid/.test(merchant));
+
+  for (const f of TYPED)
+    ok(`${f} comes back from the draft`, new RegExp(`useState\\(\\s*draft\\?\\.${f}`).test(merchant)
+       || new RegExp(`draft\\?\\.${f}\\s*(\\?\\?|\\|\\|)`).test(merchant), 'not restored');
+  for (const f of MEASURED)
+    ok(`${f} is NOT restored - it is measured, and a stale one lies`,
+       !new RegExp(`draft\\?\\.${f}`).test(merchant));
+
+  ok('the write is debounced - localStorage.setItem is synchronous and this fires on every keystroke',
+     /setTimeout\(/.test(merchant) && /clearTimeout\(/.test(merchant));
+  ok('an empty terminal deletes the draft, so emptying the cart IS the discard button',
+     /localStorage\.removeItem\(DRAFT_KEY\)/.test(merchant));
+  ok('a full disk drops the photos rather than losing the whole basket',
+     /txProofPhoto: null/.test(merchant));
+  ok('and the restore is reported, never silent', /Draft restored/.test(merchant)); }
+
+/* BEHAVIOUR. The two gates that decide whether a draft is allowed back, run on real values. */
+{ const MAX = 12 * 60 * 60 * 1000, NOW = 1_000_000_000_000;
+  const allow = (d, uid, now) => !(!d || d.uid !== uid || now - (d.at || 0) > MAX);
+  ok('a fresh draft from the same user comes back',
+     allow({ uid: 'a', at: NOW - 60_000 }, 'a', NOW));
+  ok("another agent's draft on a shared phone does NOT",
+     !allow({ uid: 'b', at: NOW - 60_000 }, 'a', NOW));
+  ok('yesterday\'s draft does NOT - his day starts at 07:00 and stale prices must not return',
+     !allow({ uid: 'a', at: NOW - 13 * 60 * 60 * 1000 }, 'a', NOW));
+  ok('a draft with no timestamp is treated as ancient, not as brand new',
+     !allow({ uid: 'a' }, 'a', NOW)); }
+
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);
