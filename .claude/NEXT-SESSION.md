@@ -70,6 +70,10 @@ Run: `npm run build; node src/config/integration.audit.mjs; node src/config/logi
 ALREADY SETTLED, do not work it out again:
 - The offline black screen is fixed. `LazyTabBoundary` in `src/App.jsx` catches a tab that fails
   to download and shows a Try Again button. Pinned by S26.
+- **The Sales Terminal keeps a draft** in `localStorage` (`kpm_sales_draft_v1`), because leaving
+  the tab unmounts the screen. Typed fields only; measured ones (GPS, proximity, territory) are
+  deliberately excluded and S29 guards each one by name. Adding a new typed field means adding it
+  to the draft AND to S29's TYPED list.
 - **Offline can only be tested from a real build.** `npm run preview -- --host`, entry `kpm-preview`
   in `.claude/launch.json`. `npm run dev` cannot do it at any setting: it has no built modules to
   cache. His phone also caches the app, so send him `/?fresh=1` or he sees the old copy and reports

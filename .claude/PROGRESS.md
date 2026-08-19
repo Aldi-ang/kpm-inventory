@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-20 05:28 WIB (KPM app session)** · 🛠 OFFLINE SALE UNFROZEN · ✅ NOTHING WAITING, 4 THINGS UNTESTED · branch `phase0-solid-ground`
+**Updated: 2026-08-20 05:35 WIB (KPM app session)** · 🛠 OFFLINE SALE UNFROZEN + TERMINAL DRAFT · ✅ NOTHING WAITING, 5 THINGS UNTESTED · branch `phase0-solid-ground`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -29,6 +29,8 @@ showing the old copy — that is what made him report "i dont see no change".**
 2. PROJECTED VALUE stacks one tier per line on a phone.
 3. Try Again on a failed screen no longer paints white.
 4. The sale syncs when signal returns.
+5. Type half a sale, leave the Sales Terminal, come back — it should all still be there, with a
+   "Draft restored" toast. Empty the cart to throw it away.
 
 > Everything below this line was written at 11:34 and was true then. He answered both open questions on 2026-08-19 at 11:34 — the per-tier live-number rule
 and TITIP everywhere. Both are recorded verbatim in the log entry directly below, together with
@@ -2312,6 +2314,7 @@ batch them: he has to look at each one. `AgentProfileView` is already clean (0 s
 | `A-Brain/Backlog/TESTS - check these when you feel like it.md` | **NEW 2026-08-18** — every test Aldi owes, taken off his plate |
 | `src/hooks/useOfflineEngine.js` → `canReachInternet()` | **EXPORTED 2026-08-20** — the ONLY honest answer to "is there internet". `navigator.onLine` is allowed to be trusted when it says NO, never when it says YES. See `A-Brain/Wiki/Concepts/A Network Is Not The Internet.md` |
 | `src/App.jsx` → `LazyTabBoundary` | **NEW 2026-08-19** — the only error boundary in the app; catches a screen that fails to download and offers Try Again. Pinned by S26 |
+| `src/MerchantSalesView.jsx` → `DRAFT_KEY` / `readDraft()` | **NEW 2026-08-20** — the half-typed sale, kept in `localStorage` across a tab change. TYPED fields only; GPS, distance, proximity and territory are deliberately excluded. A new typed field must be added here AND to S29's `TYPED` list |
 | `src/AgentInventoryView.jsx` → `Money` | **NEW 2026-08-20** — money that shrinks by string length. Use it for any figure in a narrow column |
 | `.claude/launch.json` → `kpm-preview` | **NEW 2026-08-20** — `npm run preview -- --host`, the ONLY way to test offline. `npm run dev` cannot: it has no built modules to cache |
 | `tools/theme-lab-server.mjs` | plain HTTP over `dist/` at :4180 — how to LOOK at the real stylesheet when a self-signed cert locks the browser out |
@@ -2881,6 +2884,13 @@ price ladder; performance rank is now the Tier Automation Engine's job.
 
 ## 📓 LOG
 
+- **2026-08-20 05:35** — the Sales Terminal now keeps a half-typed sale across a tab change. It
+  was never a bug: App unmounts the screen behind `activeTab === 'sales' &&`, so there was nowhere
+  for the typing to live. Draft in `localStorage` (`kpm_sales_draft_v1`), holding only what he
+  TYPED — never the GPS fix, distance, proximity or territory claim, which would stamp an old
+  place on a new sale. Scoped to his uid, expires in 12h (price snapshots), debounced 400ms, drops
+  the photo before the basket if the disk is full, deleted when the cart is emptied. S29, 24
+  checks, red first. `b9fafd3`. 599/0, 412/0.
 - **2026-08-20 05:28** — the frozen offline sale, root cause: **`navigator.onLine` says a network
   exists, not that the internet works.** His wifi was on (he reads the app off the PC) so the flag
   said yes, the terminal awaited a Firestore write, and a Firestore write never resolves until the
@@ -2894,10 +2904,6 @@ price ladder; performance rank is now the Tier Automation Engine's job.
   the customer directory deliberately kept raw. `883a62e`. 599/0, 163/0, 9/9, 7/7.
 - **2026-08-18 16:29** — wrote the guard that finds private name rules; it found 8 across 3 files,
   all fixed. `ef437b1`. 599/0, 150/0, 9/9, 7/7, 6/6.
-- **2026-08-18 15:5x** — map: 4 raw-name sites on `storeKey`, zone sum de-duplicated, every sum
-  site given a BEFORE/AFTER rupiah check. `a3a9cf6`. 599/0, 130/0, 9/9, 7/7.
-- **2026-08-18 15:5x** — name sweep: `customerBrief` / `dayStats` / auto-pick on `storeKey`, one
-  audit check repinned from a spelling to a behaviour. `f1e3b28`. 599/0, 115/0, 9/9, 7/7.
 ### 2026-08-18 12:58 (KPM app session) — alucard now auto-loads caveman ULTRA + karpathy every call
 
 His words: *"i dont want to add some cap but i want u to add caveman ultra talking habits while
