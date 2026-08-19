@@ -50,8 +50,8 @@
     "semantic_hash": ""
   },
   "src/App.jsx": {
-    "mtime": 1787059503.5101867,
-    "ast_hash": "e930ce97b55388f6e920f2b1980eeb31",
+    "mtime": 1787141813.322735,
+    "ast_hash": "a528243a0fbd7d58036795525083c5ab",
     "semantic_hash": ""
   },
   "src/ConsignmentFinanceView.jsx": {
@@ -570,8 +570,8 @@
     "semantic_hash": ""
   },
   ".claude/PROGRESS.md": {
-    "mtime": 1787061392.48884,
-    "ast_hash": "6ce867f51c3cb35592e5e80a44c0538c",
+    "mtime": 1787114110.430418,
+    "ast_hash": "36137b84ec9edd7a97cb5b706a991cc6",
     "semantic_hash": ""
   },
   ".claude/pre-compact-context.md": {
@@ -755,13 +755,18 @@
     "semantic_hash": ""
   },
   "src/config/logicFixes.selfcheck.mjs": {
-    "mtime": 1787100616.3833563,
-    "ast_hash": "6cc841942ac641ac8d6e5cf67dbe623c",
+    "mtime": 1787141763.509132,
+    "ast_hash": "436e2cdfbfcd5f1f1801fe308ee765d0",
     "semantic_hash": ""
   },
   ".claude/NEXT-SESSION.md": {
-    "mtime": 1787061392.2661219,
-    "ast_hash": "acc1ed5f0a3ae8821c376f0f4060397d",
+    "mtime": 1787142113.6566036,
+    "ast_hash": "76bbea6c5ea0cc8ce345412325b5d325",
+    "semantic_hash": ""
+  },
+  ".claude/SWEEP-2026-08-19.md": {
+    "mtime": 1787113286.992414,
+    "ast_hash": "098e5d78184186e8f646f80b527873db",
     "semantic_hash": ""
   }
 }
