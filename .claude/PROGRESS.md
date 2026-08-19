@@ -2870,6 +2870,12 @@ price ladder; performance rank is now the Tier Automation Engine's job.
 
 ## 📓 LOG
 
+- **2026-08-19 20:0x** — phone test: the catcher WORKS, he got "failed to load" where the screen
+  used to go black. But Try Again painted a WHITE PAGE, because a reload with no signal only
+  survives if the offline helper holds the whole app - the dev server holds the page and not the
+  code. Retry is now guarded by `navigator.onLine`; offline it clears the error instead of
+  navigating. S26 +3 checks, proven to reject the old form. **Offline can only be tested from
+  `npm run preview`, never `npm run dev`.** 599/0, 366/0.
 - **2026-08-19 19:45** — his phone could not reach the dev server at all: the router had moved the
   PC from `192.168.1.141` to `192.168.1.109`. Server was up the whole time (0.0.0.0:5173
   LISTENING; `.109` answers 200, `.141` answers nothing). Every note that hardcoded the old

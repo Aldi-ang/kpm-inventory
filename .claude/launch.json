@@ -4,7 +4,12 @@
     {
       "name": "kpm-dev",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev", "--", "--host"],
+      "runtimeArgs": [
+        "run",
+        "dev",
+        "--",
+        "--host"
+      ],
       "port": 5173,
       "url": "https://localhost:5173",
       "autoPort": true
@@ -12,9 +17,24 @@
     {
       "name": "theme-lab",
       "runtimeExecutable": "node",
-      "runtimeArgs": ["tools/theme-lab-server.mjs"],
+      "runtimeArgs": [
+        "tools/theme-lab-server.mjs"
+      ],
       "port": 4180,
       "url": "http://localhost:4180"
+    },
+    {
+      "name": "kpm-preview",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "preview",
+        "--",
+        "--host"
+      ],
+      "port": 4173,
+      "url": "https://localhost:4173",
+      "autoPort": true
     }
   ]
 }

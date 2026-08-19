@@ -1376,6 +1376,16 @@ ok('it declares getDerivedStateFromError', /static getDerivedStateFromError\(\)/
 
 ok('the fallback draws a retry button, not an empty box',
    /Try Again/.test(boundary) && /window\.location\.reload\(\)/.test(boundary));
+/* Aldi tapped Try Again with no signal and got a WHITE PAGE, 2026-08-19. A reload offline only
+   survives if the offline helper holds the whole app; the dev server holds the page but not the
+   code. So the reload must be guarded by navigator.onLine, and the offline path must clear the
+   error rather than navigate - a white page loses the working app entirely. */
+ok('the retry only reloads when there IS signal',
+   /if \(navigator\.onLine\) \{ window\.location\.reload\(\); return; \}/.test(boundary));
+ok('and with no signal it clears the error instead of navigating away',
+   /this\.setState\(\{ failed: false \}\)/.test(boundary));
+ok('the button calls that guarded handler, not reload directly',
+   /onClick=\{this\.retry\}/.test(boundary));
 ok('it names the screen that failed', /this\.props\.tab/.test(boundary));
 ok('and it says in plain words why the screen is missing',
    /could not load without signal/i.test(boundary));

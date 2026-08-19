@@ -65,6 +65,16 @@ const SampleEntryModal = lazy(() => import('./components/SamplingManager').then(
 class LazyTabBoundary extends React.Component {
   state = { failed: false };
   static getDerivedStateFromError() { return { failed: true }; }
+  /* Reloading with no signal is only safe if the offline helper has the whole app stored. On the
+     dev server it stores the page but NOT the code, so a reload there paints a white page and he
+     loses the working app - Aldi hit exactly that, 2026-08-19. Offline we clear the error instead:
+     the screen retries, fails again if it still cannot be fetched, and shows this box again. The
+     app is never thrown away. Online, a reload is the only thing that clears a failed import,
+     because React caches the rejection for the life of the page. */
+  retry = () => {
+    if (navigator.onLine) { window.location.reload(); return; }
+    this.setState({ failed: false });
+  };
   render() {
     if (!this.state.failed) return this.props.children;
     return (
@@ -75,7 +85,7 @@ class LazyTabBoundary extends React.Component {
         <p className="text-[var(--duke-ink-3)] text-xs font-bold uppercase tracking-widest max-w-md leading-relaxed mb-8">
           This screen could not load without signal. Reconnect, then try again.
         </p>
-        <button onClick={() => window.location.reload()} className="px-10 py-4 border-2 border-amber-500/50 text-amber-400 font-black uppercase text-xs hover:bg-amber-900/30 transition-all shadow-[0_0_15px_rgba(245,158,11,0.2)]">
+        <button onClick={this.retry} className="px-10 py-4 border-2 border-amber-500/50 text-amber-400 font-black uppercase text-xs hover:bg-amber-900/30 transition-all shadow-[0_0_15px_rgba(245,158,11,0.2)]">
           Try Again
         </button>
       </div>
