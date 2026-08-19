@@ -1271,5 +1271,77 @@ ok('a short count still gets the red plate, because that one is meant to stop hi
   ok('and both are measured, not asserted',
      /\['amber label on that surface'/.test(read('src/config/contrast.selfcheck.mjs'))); }
 
+/* --- S25 . one tap, one setoran - the screen has one door to onSubmitEOD ----------------- */
+/* The letter's Send button was NOT the hole. `send()` in EODAgentFlow sets stage='launching'
+   in the same discrete-event flush, EODLetter disables the button on that stage, and at 'sent'
+   the button unmounts - so a real double-tap never reached onSubmit twice. The `submitting`
+   prop EODAgentFlow declares was genuinely dead, but dead is not the same as needed.
+   The hole was the two buttons nobody named. Pay Bounty and the legacy 'Submit stamps & fines'
+   each called onSubmitEOD straight out of onClick, changed no local state, and stayed mounted
+   and enabled for the whole Firestore round-trip. Two taps there = two PENDING reports on the
+   same night, and the second one is real money. All three paths route through one guarded
+   submit() now, so the letter gets the honest flag as a side effect of fixing the other two. */
+section('S25. Every EOD write on this screen goes through one submitting gate');
+
+{ const from = eod.indexOf('<EODAgentFlow');
+  const head = from === -1 ? '' : eod.slice(from, eod.indexOf('onSubmit={', from));
+  ok('the flow call site was found', from !== -1 && head.length > 0);
+  ok('and it is told when a write is in flight - the prop it declares is no longer dead',
+     /submitting=\{submitting\}/.test(head)); }
+
+ok('exactly ONE place calls onSubmitEOD - the guarded submit(), not three loose onClicks',
+   (eod.match(/onSubmitEOD\(/g) || []).length === 1);
+ok('the gate shuts before the first write',
+   /if \(submitting\) return;/.test(eod) && /setSubmitting\(true\)/.test(eod));
+ok('and reopens in a finally, so a thrown write cannot leave the screen locked forever',
+   /finally \{ setSubmitting\(false\); \}/.test(eod));
+
+/* Scoped to each BUTTON by slicing between its own handler and its own label. A file-wide
+   match catches bystanders - it did twice on the S24 night, and that is a lesson now. */
+{ const from = eod.indexOf('CLAMPED AGAIN AT THE WRITE');
+  const tag = from === -1 ? '' : eod.slice(from, eod.indexOf('Submit stamps & fines', from));
+  ok('the legacy cukai button was found by its own handler comment', from !== -1 && tag.length > 0);
+  ok('it posts through the gate, not straight at onSubmitEOD', /submit\(\{/.test(tag));
+  ok('and it goes dark while a write is in flight, so a second tap has nothing to hit',
+     /disabled=\{[^}]*submitting/.test(tag)); }
+
+{ const from = eod.indexOf('Hand over exactly');
+  const tag = from === -1 ? '' : eod.slice(from, eod.indexOf('Pay Bounty', from));
+  ok('the Pay Bounty button was found by its own dialog line', from !== -1 && tag.length > 0);
+  ok('it posts through the gate too - same defect, same door', /submit\(\{/.test(tag));
+  ok('and it goes dark while the bounty is being written',
+     /disabled=\{[^}]*submitting/.test(tag)); }
+
+/* BEHAVIOUR. The gate is a closure over React state, so the shape is re-run here on real calls
+   rather than mounted. The regex guards above are what pin this shape to the file.
+   Honest ceiling: modelled `submitting` updates synchronously, React state does not. What stops
+   a same-tick double call in the real screen is the DOM `disabled` attribute plus React 19
+   flushing discrete click events before the next one is dispatched - not this closure read. */
+{ const posted = [], sawShut = [];
+  let submitting = false;
+  const setSubmitting = (v) => { submitting = v; };
+  const onSubmitEOD = async (p) => { sawShut.push(submitting); await null; posted.push(p.reportType); };
+  const submit = async (...payloads) => {
+      if (submitting) return;
+      setSubmitting(true);
+      try { for (const p of payloads) await onSubmitEOD(p); }
+      finally { setSubmitting(false); }
+  };
+
+  await Promise.all([
+      submit({ reportType: 'CASH_STOCK' }),
+      submit({ reportType: 'CASH_STOCK' })
+  ]);
+  ok('two rapid submissions post ONE report, not two', posted.length === 1);
+  ok('and the gate reopened afterwards, so the agent is not locked out of his own night',
+     submitting === false);
+
+  posted.length = 0; sawShut.length = 0;
+  await submit({ reportType: 'CASH_STOCK' }, { reportType: 'CUKAI' });
+  ok('a READY cukai night still posts BOTH documents from one tap',
+     posted.join(',') === 'CASH_STOCK,CUKAI');
+  ok('and the gate stayed shut across both writes - it does not reopen between them',
+     sawShut.length === 2 && sawShut.every(Boolean)); }
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

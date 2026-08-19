@@ -49,6 +49,28 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
     // 🚀 THE FIX: Removed the redundant default. Forces Admin to actively select an identity.
     const [adminSetoranId, setAdminSetoranId] = useState(''); 
 
+    /* 🚦 ONE DOOR FOR EVERY EOD WRITE ON THIS SCREEN.
+       Three controls posted straight at `onSubmitEOD` out of their own onClick: the letter's
+       Send, Pay Bounty, and the legacy "Submit stamps & fines". The letter was already safe by
+       accident — its own `stage` disables the button on the same flush and unmounts it at
+       'sent' — but the other two changed no local state and stayed mounted and enabled for the
+       whole Firestore round-trip. Two taps there wrote two PENDING reports on the same night,
+       and the second one is real money the admin then has to unpick by hand.
+       The variadic call is what the cukai night needs: CASH_STOCK and CUKAI are two documents
+       from ONE tap, and they have to sit inside the SAME shut window — a flag that clears
+       between them reopens the door mid-submission.
+       ponytail: the gate reads React state, which is not synchronous. What actually stops a
+       same-tick double call is `disabled` on the DOM node plus React 19 flushing a discrete
+       click before dispatching the next. A ref would close the programmatic case too — add one
+       if anything ever calls submit() from code instead of from a tap. */
+    const [submitting, setSubmitting] = useState(false);
+    const submit = async (...payloads) => {
+        if (submitting) return;
+        setSubmitting(true);
+        try { for (const p of payloads) await onSubmitEOD(p); }
+        finally { setSubmitting(false); }
+    };
+
     // 🚀 DYNAMIC ID ENGINE
     const effectiveId = isAdmin ? adminSetoranId : agentProfileId;
     
@@ -432,7 +454,7 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                                 <button 
                                                     onClick={async () => {
                                                         if (await confirmAction(`Hand over exactly ${formatRupiah(agentBountyData.total)} in cash to the Admin to clear this bounty?`)) {
-                                                            onSubmitEOD({ 
+                                                            submit({ 
                                                                 cash: agentBountyData.total, 
                                                                 transfer: 0, cukai: 0, 
                                                                 reportType: 'BOUNTY', 
@@ -442,7 +464,8 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                                             });
                                                         }
                                                     }}
-                                                    className="w-full md:w-auto px-10 py-4 bg-[var(--danger)] hover:bg-[var(--danger)] text-[var(--gold-ink)] rounded-xl font-black uppercase tracking-[0.2em] shadow-[0_0_20px_rgba(220,38,38,0.4)] active:scale-95 transition-all flex items-center justify-center gap-3"
+                                                    disabled={submitting}
+                                                    className="w-full md:w-auto px-10 py-4 disabled:opacity-40 bg-[var(--danger)] hover:bg-[var(--danger)] text-[var(--gold-ink)] rounded-xl font-black uppercase tracking-[0.2em] shadow-[0_0_20px_rgba(220,38,38,0.4)] active:scale-95 transition-all flex items-center justify-center gap-3"
                                                 >
                                                     <BadgeDollarSign size={20}/> Pay Bounty
                                                 </button>
@@ -505,6 +528,7 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                             entering, and React would otherwise reuse this component and keep
                                             the previous agent's counted figures in its own state. */}
                                         <EODAgentFlow key={effectiveId}
+                                            submitting={submitting}
                                             expected={{
                                                 cash: agentData.expectedCash,
                                                 transfer: agentData.expectedTransfer,
@@ -626,7 +650,7 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                                 const countStatus = (cashVariance < 0 || transferVariance < 0 || goodsShort)
                                                     ? 'DISPUTED' : 'CLEAN';
 
-                                                onSubmitEOD({
+                                                submit({
                                                     cash: countedCash,
                                                     transfer: countedTransfer,
                                                     cukai: 0,
@@ -651,10 +675,12 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                                     itemsBks: agentData.itemsBks,
                                                     // 🆕 additive: what the agent actually counted, with the rows behind it
                                                     cards: letter.cards
-                                                });
-
-                                                if (agentData.cukaiStatus === 'READY') {
-                                                    onSubmitEOD({
+                                                },
+                                                /* 🧾 TWO DOCUMENTS, ONE SHUT WINDOW. CUKAI is a second write
+                                                   from the same tap, so it travels as a second payload rather
+                                                   than a second call. As two calls the flag cleared between
+                                                   them and the door reopened mid-submission. */
+                                                ...(agentData.cukaiStatus === 'READY' ? [{
                                                         cash: 0, transfer: 0,
                                                         cukaiReturned: returned,
                                                         cukaiPaid: lost,
@@ -665,8 +691,7 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                                         reportType: 'CUKAI',
                                                         agentId: effectiveId,
                                                         agentName: resolveIdentityName()
-                                                    });
-                                                }
+                                                    }] : []));
                                             }}
                                         />
                                     </div>
@@ -791,7 +816,7 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                                spends against the debt ledger. */
                                             const returned = Math.min(cukaiReturnedNum, cukaiOwed);
                                             const paid = Math.min(cukaiPaidNum, Math.max(0, cukaiOwed - returned));
-                                            onSubmitEOD({
+                                            submit({
                                                 cash: 0, transfer: 0,
                                                 cukaiReturned: returned,
                                                 cukaiPaid: paid,
@@ -802,8 +827,8 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                                 agentName: resolveIdentityName()
                                             })
                                         }}
-                                        disabled={cukaiOverCount || (cukaiReturnedNum === 0 && cukaiPaidNum === 0)}
-                                        className={`w-full mt-6 py-4 rounded-xl font-black uppercase tracking-[0.2em] flex items-center justify-center gap-2 shadow-md transition-transform ${(cukaiOverCount || (cukaiReturnedNum === 0 && cukaiPaidNum === 0)) ? 'bg-[var(--inset)] text-[var(--ink-dim)] border border-[var(--line)] cursor-not-allowed' : 'bg-[var(--gold)] text-[var(--gold-ink)] border border-[var(--accent-edge)] active:scale-[.98]'} `}
+                                        disabled={cukaiOverCount || submitting || (cukaiReturnedNum === 0 && cukaiPaidNum === 0)}
+                                        className={`w-full mt-6 py-4 rounded-xl font-black uppercase tracking-[0.2em] flex items-center justify-center gap-2 shadow-md transition-transform ${(cukaiOverCount || submitting || (cukaiReturnedNum === 0 && cukaiPaidNum === 0)) ? 'bg-[var(--inset)] text-[var(--ink-dim)] border border-[var(--line)] cursor-not-allowed' : 'bg-[var(--gold)] text-[var(--gold-ink)] border border-[var(--accent-edge)] active:scale-[.98]'} `}
                                     >
                                         <Upload size={18}/> {cukaiOverCount ? 'Too many — check the count' : 'Submit stamps & fines'}
                                     </button>
