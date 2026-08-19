@@ -1516,5 +1516,49 @@ section('S29. A half-typed sale survives a trip to another screen');
      !allow({ uid: 'a' }, 'a', NOW)); }
 
 
+/* --- S30 . two copies of "am I online", and a receipt that waited for optional work -------- */
+section('S30. One answer about the internet, and a receipt that never waits');
+
+/* 2026-08-20, second report of the same freeze after the first fix: "the sales terminal still
+   stuck in the processing and didnt show me the receipt after that, ghost ledger and agent
+   inventory is still saved tho". useOfflineEngine() was called TWICE - App.jsx and
+   useTransactionEngine.js - and each copy kept its own isOnline state and its own 30-second
+   probe. They disagreed: the engine had already flipped offline and saved to the Ghost Ledger
+   while App still said online, so the terminal ran its online-only follow-up and awaited a
+   Firestore write that never resolves. Two fixes: one shared answer, and a receipt that does not
+   depend on optional work finishing. */
+{ const offlineEngine = read('src/hooks/useOfflineEngine.js');
+  ok('the online flag lives at module scope, so every caller reads the same one',
+     /let sharedOnline/.test(offlineEngine));
+  ok('callers subscribe to it rather than each keeping a copy',
+     /useSyncExternalStore\(/.test(offlineEngine));
+  ok('no per-instance copy of the flag survives',
+     !/const \[isOnline, setIsOnline\] = useState/.test(offlineEngine));
+  ok('one probe still drives it', /PROBE_EVERY_MS/.test(offlineEngine)); }
+
+/* BEHAVIOUR: two subscribers, one flip, one answer. This is the whole point of the change. */
+{ let shared = true; const ls = new Set();
+  const set = (v) => { if (v === shared) return; shared = v; ls.forEach(l => l()); };
+  const readA = []; const readB = [];
+  ls.add(() => readA.push(shared)); ls.add(() => readB.push(shared));
+  set(false); set(false); set(true);
+  ok('both readers saw the same sequence, and a repeat did not fire',
+     readA.join(',') === 'false,true' && readB.join(',') === 'false,true'); }
+
+{ const from = merchant.indexOf('const handleFinalDeal');
+  const to = merchant.indexOf('finally { setIsProcessingSale(false); }', from);
+  const deal = (from === -1 || to === -1) ? '' : merchant.slice(from, to);
+  ok('the deal handler was found', deal.length > 500);
+
+  const iCommit   = deal.indexOf('committed = true');
+  const iReceipt  = deal.indexOf('setReceiptData({');
+  const iPromoter = deal.indexOf('if (isOnline && !isReturMode');
+  ok('the receipt is drawn after the sale is actually committed', iCommit !== -1 && iReceipt > iCommit);
+  ok('and BEFORE the optional follow-up that talks to the server - a finished sale must never wait',
+     iPromoter !== -1 && iReceipt < iPromoter, `receipt at ${iReceipt}, follow-up at ${iPromoter}`);
+  ok('the button is released with the receipt, not only once the follow-up returns',
+     deal.indexOf('setIsProcessingSale(false)') > iCommit); }
+
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

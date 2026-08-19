@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useSyncExternalStore } from 'react';
 import { openDB } from 'idb';
 
 const DB_NAME = 'kpm_ghost_ledger';
@@ -41,12 +41,27 @@ export async function canReachInternet() {
     }
 }
 
+/* ONE ANSWER, SHARED BY EVERY CALLER. This hook is called twice - App.jsx and
+   useTransactionEngine.js - and each copy used to hold its own isOnline state and run its own
+   30-second probe. They could disagree for up to 30 seconds, and on 2026-08-20 that gap froze a
+   sale: the engine had already flipped offline and written to the Ghost Ledger while App still
+   said online, so the Sales Terminal ran its online-only follow-up and awaited a Firestore write
+   that never resolves. Two components cannot hold two opinions about one fact. */
+let sharedOnline = typeof navigator !== 'undefined' ? navigator.onLine : true;
+const onlineListeners = new Set();
+const subscribeOnline = (l) => { onlineListeners.add(l); return () => onlineListeners.delete(l); };
+/* Returns whether this was an actual FLIP, so the log fires once per change and not once per
+   probe, and not once per hook instance either. */
+const setSharedOnline = (next) => {
+    if (next === sharedOnline) return false;
+    sharedOnline = next;
+    onlineListeners.forEach(l => l());
+    return true;
+};
+
 export default function useOfflineEngine() {
     // 1. HARDWARE SENSORS
-    const [isOnline, setIsOnline] = useState(navigator.onLine);
-    /* Mirrors isOnline so the probe can tell a real change from a repeat without depending on
-       stale state inside the interval closure — and so the log only fires on an actual flip. */
-    const onlineRef = useRef(navigator.onLine);
+    const isOnline = useSyncExternalStore(subscribeOnline, () => sharedOnline);
     const [syncLogs, setSyncLogs] = useState([]);
     const [pendingCount, setPendingCount] = useState({ transactions: 0, noo: 0 });
     const [pendingTxData, setPendingTxData] = useState([]); // 🚀 WAITING ROOM DATA
@@ -156,9 +171,7 @@ export default function useOfflineEngine() {
     useEffect(() => {
         /* One place that changes the flag, so the badge and the log can never disagree. */
         const apply = (next) => {
-            if (onlineRef.current === next) return;
-            onlineRef.current = next;
-            setIsOnline(next);
+            if (!setSharedOnline(next)) return;   // a repeat is not a flip, and must not log
             logSyncEvent(
                 next ? "📡 SIGNAL ACQUIRED: Entering Online Mode" : "⚠️ CONNECTION LOST: Entering Offline Mode",
                 next ? 'INFO' : 'OFFLINE'

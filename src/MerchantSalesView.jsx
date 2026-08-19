@@ -1069,6 +1069,58 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
             const trueAgentName = await onProcessSale(finalCust, dbMethod, finalCart, newStorePayload, proofPayload);
             committed = true;   // everything past this point is POST-commit: the sale already exists
             const agentFallback = typeof trueAgentName === 'string' ? trueAgentName : (user?.displayName || user?.email?.split('@')[0] || 'Admin');
+
+            /* THE RECEIPT COMES FIRST, and the button is released with it. Everything below this
+               point - the IOU ledger, the tier auto-promoter - is optional bookkeeping that talks
+               to Firestore, and on 2026-08-20 it hung on a write that never resolves and took the
+               receipt with it: the sale was saved, the stock was cut, and the screen sat on
+               PROCESSING forever. A finished sale must never wait for optional work.
+
+               Safe to move: every value below is a local or a state binding captured when this
+               handler was created, so resetTerminalAfterDeal() cannot pull them out from under
+               the bookkeeping that still has to run. */
+            setReceiptData({
+                customer: finalCust, method: paymentLabel(displayMethod), items: finalCart, total: finalTotal,
+                date: new Date().toLocaleString('id-ID'), agentName: agentFallback 
+            });
+
+            window.dispatchEvent(new CustomEvent('trigger-telemetry-ping'));
+
+            resetTerminalAfterDeal();
+            // The merchant has no permanent space on screen - he shows up on a committed
+            // deal and leaves, borrowing CapybaraMascot's slide-in/out. Deal commit ONLY:
+            // never on add-to-cart, so a 15-line basket stays silent until it is paid.
+            // Line is original writing; the old one was a direct Resident Evil 4 quote.
+            const DEAL_LINES = [
+                "Deal's done. Good haul.",
+                "Stock's moving. I like that.",
+                "Clean trade. Next route?",
+                "Counted and paid. We're square.",
+            ];
+            const line = DEAL_LINES[Math.floor(Math.random() * DEAL_LINES.length)];
+            setMerchantMood("deal");
+            setMerchantLine(line);          // the alcove bubble, for the desktop path
+            // Committing the sale IS the user gesture browsers require before audio can
+            // play, so unlock here. The signing sound comes first and the mumble follows it
+            // rather than landing on top - two sounds at the same instant read as one mess.
+            unlockSounds().then(() => {
+                playSound('sign');
+                setTimeout(() => speakMumble(line), 520);
+            });
+            // DESKTOP has the alcove, which is already showing him: a corner mascot as well
+            // would be two merchants and two coins on one screen. Below lg he has no alcove,
+            // so the corner appearance is the only way he can react at all.
+            if (window.innerWidth < 1024) {
+                window.dispatchEvent(new CustomEvent('CAPY_COMMS', {
+                    detail: { message: line, sprite: 'kpm-merch-deal' }
+                }));
+            }
+            /* His line is deliberately NOT cleared here — the receipt is still open and is
+               showing it. The alcove bubble keys off the mood, so it goes quiet on schedule
+               either way. */
+            setTimeout(() => setMerchantMood("idle"), 3000);
+            setIsProcessingSale(false);
+
          
             const generatedIOUs = finalCart.filter(i => isReturMode && returType === 'EXCHANGE' && i.fulfillment === 'IOU').map(i => ({
                 id: `IOU_${Date.now()}_${Math.random().toString(36).substr(2,9)}`,
@@ -1245,46 +1297,6 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                 } catch (e) { console.error("Auto-Promoter Failed:", e); }
             }
 
-            setReceiptData({
-                customer: finalCust, method: paymentLabel(displayMethod), items: finalCart, total: finalTotal,
-                date: new Date().toLocaleString('id-ID'), agentName: agentFallback 
-            });
-
-            window.dispatchEvent(new CustomEvent('trigger-telemetry-ping'));
-
-            resetTerminalAfterDeal();
-            // The merchant has no permanent space on screen - he shows up on a committed
-            // deal and leaves, borrowing CapybaraMascot's slide-in/out. Deal commit ONLY:
-            // never on add-to-cart, so a 15-line basket stays silent until it is paid.
-            // Line is original writing; the old one was a direct Resident Evil 4 quote.
-            const DEAL_LINES = [
-                "Deal's done. Good haul.",
-                "Stock's moving. I like that.",
-                "Clean trade. Next route?",
-                "Counted and paid. We're square.",
-            ];
-            const line = DEAL_LINES[Math.floor(Math.random() * DEAL_LINES.length)];
-            setMerchantMood("deal");
-            setMerchantLine(line);          // the alcove bubble, for the desktop path
-            // Committing the sale IS the user gesture browsers require before audio can
-            // play, so unlock here. The signing sound comes first and the mumble follows it
-            // rather than landing on top - two sounds at the same instant read as one mess.
-            unlockSounds().then(() => {
-                playSound('sign');
-                setTimeout(() => speakMumble(line), 520);
-            });
-            // DESKTOP has the alcove, which is already showing him: a corner mascot as well
-            // would be two merchants and two coins on one screen. Below lg he has no alcove,
-            // so the corner appearance is the only way he can react at all.
-            if (window.innerWidth < 1024) {
-                window.dispatchEvent(new CustomEvent('CAPY_COMMS', {
-                    detail: { message: line, sprite: 'kpm-merch-deal' }
-                }));
-            }
-            /* His line is deliberately NOT cleared here — the receipt is still open and is
-               showing it. The alcove bubble keys off the mood, so it goes quiet on schedule
-               either way. */
-            setTimeout(() => setMerchantMood("idle"), 3000);
         } catch (error) {
             if (committed) {
                 /* The sale is ALREADY in the database. Saying "failed" here is what made agents

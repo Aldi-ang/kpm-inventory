@@ -85,8 +85,8 @@
     "semantic_hash": ""
   },
   "src/MerchantSalesView.jsx": {
-    "mtime": 1787178819.6592107,
-    "ast_hash": "99236f0acbf19dc3edefa9f19cc1f04c",
+    "mtime": 1787183630.0519066,
+    "ast_hash": "f59ad475fff835aba6c875364febb22b",
     "semantic_hash": ""
   },
   "src/MusicPlayer.jsx": {
@@ -205,8 +205,8 @@
     "semantic_hash": ""
   },
   "src/hooks/useOfflineEngine.js": {
-    "mtime": 1787177173.6603239,
-    "ast_hash": "21b3723b2cedfb0d2190a109ad02070f",
+    "mtime": 1787183630.0489066,
+    "ast_hash": "122ca08097dc338621a0f867dcbdb34a",
     "semantic_hash": ""
   },
   "src/hooks/useTransactionEngine.js": {
@@ -570,8 +570,8 @@
     "semantic_hash": ""
   },
   ".claude/PROGRESS.md": {
-    "mtime": 1787178574.651833,
-    "ast_hash": "90b3c14212d5a0fb03b4723675fe9422",
+    "mtime": 1787178966.57054,
+    "ast_hash": "04daa7e8d6060273103ae69e67bd9a4e",
     "semantic_hash": ""
   },
   ".claude/pre-compact-context.md": {
@@ -755,13 +755,13 @@
     "semantic_hash": ""
   },
   "src/config/logicFixes.selfcheck.mjs": {
-    "mtime": 1787178761.0681117,
-    "ast_hash": "0bc56f73395a99a847841af1914fa22e",
+    "mtime": 1787183575.6288729,
+    "ast_hash": "29ef44e4d2e83aedfed0aff233225121",
     "semantic_hash": ""
   },
   ".claude/NEXT-SESSION.md": {
-    "mtime": 1787178574.6528337,
-    "ast_hash": "d8460f7cd4c35f47fd184916de29b025",
+    "mtime": 1787178914.6194987,
+    "ast_hash": "27d1257d6e4839268b3aa149b14fb76b",
     "semantic_hash": ""
   },
   ".claude/SWEEP-2026-08-19.md": {
