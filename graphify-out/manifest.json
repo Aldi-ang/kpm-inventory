@@ -40,8 +40,8 @@
     "semantic_hash": ""
   },
   "src/AgentInventoryView.jsx": {
-    "mtime": 1787177547.7736528,
-    "ast_hash": "e07a1d382f4b978252ffa59ac912497e",
+    "mtime": 1787178404.2686572,
+    "ast_hash": "42e1154265c9f8c5a9cbfa28d2529dd8",
     "semantic_hash": ""
   },
   "src/AgentProfileView.jsx": {
@@ -570,8 +570,8 @@
     "semantic_hash": ""
   },
   ".claude/PROGRESS.md": {
-    "mtime": 1787147348.185961,
-    "ast_hash": "edcd5837350225a07e69841363e67e52",
+    "mtime": 1787177622.9316928,
+    "ast_hash": "d6c544ddbe21d81ae4cf59bd8008fad4",
     "semantic_hash": ""
   },
   ".claude/pre-compact-context.md": {
@@ -755,8 +755,8 @@
     "semantic_hash": ""
   },
   "src/config/logicFixes.selfcheck.mjs": {
-    "mtime": 1787177547.937109,
-    "ast_hash": "0d390adc4c3695f92614ebf19d62432d",
+    "mtime": 1787178404.2706425,
+    "ast_hash": "a8f3c33857f4cb72f757ee1b95c5864a",
     "semantic_hash": ""
   },
   ".claude/NEXT-SESSION.md": {

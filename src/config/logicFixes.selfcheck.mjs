@@ -1448,12 +1448,14 @@ section('S28. Big money on the van header shrinks instead of colliding');
   ok('the digits never wrap and never reflow between widths',
      /tabular-nums whitespace-nowrap/.test(agent));
 
-  /* Anchored on the JSX label, not the bare words: 'If Sold' also appears in a comment 80
-     lines earlier, and starting there swept in the Cash card and miscounted. */
-  const from = agent.indexOf('<TrendingUp size={14}/> If Sold');
+  /* Anchored on the JSX label, not the bare words: the name also appears in a comment 80 lines
+     earlier, and starting there swept in the Cash card and miscounted. */
+  const from = agent.indexOf('<TrendingUp size={14}/> Projected Value');
+  ok('the row is called Projected Value - he rejected "IF SOLD" as inelegant, 2026-08-19',
+     from !== -1 && !/> If Sold</.test(agent));
   const to = agent.indexOf('Grosir', from);
   const row = (from === -1 || to === -1) ? '' : agent.slice(from, Math.min(to + 400, agent.length));
-  ok('the If Sold row was found', row.length > 0);
+  ok('the Projected Value row was found', row.length > 0);
   ok('all three tier figures go through the auto-fit component',
      (row.match(/<Money value=/g) || []).length === 3);
   ok('each column may shrink, so a long number cannot shove its neighbour',

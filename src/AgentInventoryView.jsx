@@ -143,7 +143,7 @@ const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [],
         // Inventory Value = Total Cost (Distributor Price * Bks)
         invValue += (bksQty * cost);
         
-        // If Sold = Pure gross value at different tiers
+        // Projected Value = pure gross value at different tiers (labelled "IF SOLD" until 2026-08-19)
         revEcer += (bksQty * ecer);
         revRetail += (bksQty * retail);
         revGrosir += (bksQty * grosir);
@@ -221,7 +221,7 @@ const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [],
                     {/* BOTTOM ROW: 3-Tier Revenue Box (Wide & Readable) */}
                     <div className="bg-panel border border-line-2 rounded-none p-3 shadow-inner">
                         <div className="flex items-center justify-center md:justify-start mb-2 border-b border-line-2 pb-2">
-                            <span className="text-[10px] md:text-xs text-ink-dim font-bold uppercase tracking-widest flex items-center gap-1"><TrendingUp size={14}/> If Sold</span>
+                            <span className="text-[10px] md:text-xs text-ink-dim font-bold uppercase tracking-widest flex items-center gap-1"><TrendingUp size={14}/> Projected Value</span>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-1 md:gap-2 divide-y md:divide-y-0 md:divide-x divide-line-2">
                             <div className="flex flex-row items-center justify-between py-1.5 md:py-0 md:flex-col md:justify-center text-center min-w-0">
