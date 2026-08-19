@@ -21,6 +21,18 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       injectRegister: 'auto',
+      /* DEV ONLY — Aldi tests offline on a real phone, and `npm run dev` normally installs no
+         service worker at all. That means nothing is stored for offline use on the dev server,
+         every screen fails to download the moment signal drops, and an airplane-mode test there
+         proves nothing about the built app. This makes the dev server behave like a real build.
+         Turned on 2026-08-19 on his word: "sure so that i can test the offline mode".
+
+         The cost, and it is real: the dev server now serves screens from that offline store, so
+         after an edit the phone can show an OLD copy until it is reloaded twice, or until the
+         tab is closed and reopened. If a change refuses to appear, that is this, not a bug.
+         Production is unaffected — devOptions applies to the dev server only.
+         To undo: delete this comment and the devOptions line. */
+      devOptions: { enabled: true },
       workbox: {
         /* sprites/ only - the full-size masters in public/ are megabytes each and
            must never enter the precache. Add new art under sprites/, resized. */

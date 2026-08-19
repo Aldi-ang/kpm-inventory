@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-19 19:22 WIB (KPM app session)** · 🛠 OFFLINE BLACK SCREEN FIXED · ❓ ONE QUESTION OPEN · branch `phase0-solid-ground`
+**Updated: 2026-08-19 19:36 WIB (KPM app session)** · 🛠 OFFLINE BLACK SCREEN FIXED · ✅ NOTHING WAITING · branch `phase0-solid-ground`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -15,16 +15,16 @@
 
 ## ⏳ WAITING ON ALDI — verbatim, do not paraphrase
 
-❓ **ONE QUESTION, asked 2026-08-19 19:22 — should the dev server pretend to be offline?**
-His phone test at `https://192.168.1.141:5173` cannot show offline behaviour at all. `npm run dev`
-does not install the offline helper (there is no `devOptions` block at `vite.config.js:21`), so
-nothing is stored for offline use and every tab download fails the moment signal drops. Adding
-`devOptions: { enabled: true }` would make the dev server behave like a real build. It changes how
-he tests, so it was NOT done. He answers yes or no.
+Nothing. He answered the dev-server question at 19:31, verbatim: **"sure so that i can test the
+offline mode"** — `devOptions: { enabled: true }` is in `vite.config.js` and pinned by S26.
 
-> Everything below this line was written at 11:34 and was true then.
+✅ **Untested by him, and it may not work on his phone:** Chrome will not install a service worker
+on an address whose certificate it does not trust, and `https://192.168.1.141:5173` is self-signed.
+His one-step test: load with signal, airplane mode, reload. App opens = it worked. Chrome's own
+no-internet page = the certificate blocked it, and the deployed site is the fallback. Ask what he
+saw before changing anything.
 
-Nothing. He answered both open questions on 2026-08-19 at 11:34 — the per-tier live-number rule
+> Everything below this line was written at 11:34 and was true then. He answered both open questions on 2026-08-19 at 11:34 — the per-tier live-number rule
 and TITIP everywhere. Both are recorded verbatim in the log entry directly below, together with
 the tier names he wants as defaults.
 
@@ -2870,6 +2870,10 @@ price ladder; performance rank is now the Tier Automation Engine's job.
 
 ## 📓 LOG
 
+- **2026-08-19 19:36** — dev server can now be tested offline: `devOptions: { enabled: true }` in
+  `vite.config.js` on his word. Proof it serves: `/dev-sw.js` answers 200 with a 16 KB Workbox
+  worker; production build unchanged at 73 precache entries. Open risk: the self-signed
+  certificate may stop Chrome installing it on his phone. 599/0, 363/0.
 - **2026-08-19 19:22** — offline black screen fixed. `LazyTabBoundary` in `src/App.jsx` catches a
   tab that fails to download and draws the screen name, a plain line and a Try Again button
   instead of letting React discard the whole page. There was no error boundary anywhere in `src/`

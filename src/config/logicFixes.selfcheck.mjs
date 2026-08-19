@@ -1380,5 +1380,16 @@ ok('it names the screen that failed', /this\.props\.tab/.test(boundary));
 ok('and it says in plain words why the screen is missing',
    /could not load without signal/i.test(boundary));
 
+/* Aldi tests offline on his phone, against the DEV server at https://192.168.1.141:5173. Without
+   devOptions the dev server installs no service worker at all, so nothing is stored for offline
+   use and every tab download fails by construction - the catcher above would fire on every tab
+   and the test would prove nothing about the real app. He said yes to turning it on, 2026-08-19:
+   "sure so that i can test the offline mode". Dev only; production is built from a real build. */
+{ const vite = read('vite.config.js');
+  ok('the dev server installs the offline helper, so his phone test means something',
+     /devOptions:\s*\{[^}]*enabled:\s*true/.test(vite));
+  ok('and it sits inside VitePWA, not loose in the config where it does nothing',
+     vite.indexOf('devOptions') > vite.indexOf('VitePWA(')); }
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

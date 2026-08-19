@@ -70,8 +70,12 @@ Run: `npm run build; node src/config/integration.audit.mjs; node src/config/logi
 ALREADY SETTLED, do not work it out again:
 - The offline black screen is fixed. `LazyTabBoundary` in `src/App.jsx` catches a tab that fails
   to download and shows a Try Again button. Pinned by S26.
-- `npm run dev` installs no service worker (no `devOptions` at `vite.config.js:21`), so **offline
-  behaviour can only be judged from a real build**, never from `https://192.168.1.141:5173`.
+- The dev server now installs the offline helper (`devOptions: { enabled: true }` in
+  `vite.config.js`, pinned by S26), so `npm run dev` can be tested offline. UNCONFIRMED on his
+  phone: Chrome refuses to install a service worker on an address whose certificate it does not
+  trust, and `https://192.168.1.141:5173` uses a self-signed one. If his airplane-mode reload
+  shows Chrome's own no-internet page, that is the cause, and the deployed Vercel site is the
+  fallback test. Ask him what he saw before changing anything.
 - Every EOD save goes through one `submit(...payloads)` gate (`4c12840`, check S25).
 - `eodBountyLines()` and `tierPrice()` in `helpers.js` are the only places a shortfall becomes
   rupiah and a tier becomes a price.
