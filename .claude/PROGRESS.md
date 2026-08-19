@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-19 11:34 WIB (KPM app session)** · 🔎 6 ITEMS INVESTIGATED, 0 FIXED · ✅ BOTH QUESTIONS ANSWERED · branch `phase0-solid-ground`
+**Updated: 2026-08-19 19:22 WIB (KPM app session)** · 🛠 OFFLINE BLACK SCREEN FIXED · ❓ ONE QUESTION OPEN · branch `phase0-solid-ground`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -14,6 +14,15 @@
 > and `A-Brain/Wiki/Log.md` hold how it got there.
 
 ## ⏳ WAITING ON ALDI — verbatim, do not paraphrase
+
+❓ **ONE QUESTION, asked 2026-08-19 19:22 — should the dev server pretend to be offline?**
+His phone test at `https://192.168.1.141:5173` cannot show offline behaviour at all. `npm run dev`
+does not install the offline helper (there is no `devOptions` block at `vite.config.js:21`), so
+nothing is stored for offline use and every tab download fails the moment signal drops. Adding
+`devOptions: { enabled: true }` would make the dev server behave like a real build. It changes how
+he tests, so it was NOT done. He answers yes or no.
+
+> Everything below this line was written at 11:34 and was true then.
 
 Nothing. He answered both open questions on 2026-08-19 at 11:34 — the per-tier live-number rule
 and TITIP everywhere. Both are recorded verbatim in the log entry directly below, together with
@@ -2861,6 +2870,10 @@ price ladder; performance rank is now the Tier Automation Engine's job.
 
 ## 📓 LOG
 
+- **2026-08-19 19:22** — offline black screen fixed. `LazyTabBoundary` in `src/App.jsx` catches a
+  tab that fails to download and draws the screen name, a plain line and a Try Again button
+  instead of letting React discard the whole page. There was no error boundary anywhere in `src/`
+  before this. S26 added, all 9 checks seen red first. `e0c706b`. 599/0, 361/0.
 - **2026-08-18 16:38** — legacy "(Retail)" endings hidden at display via `storeLabel`; backup and
   the customer directory deliberately kept raw. `883a62e`. 599/0, 163/0, 9/9, 7/7.
 - **2026-08-18 16:29** — wrote the guard that finds private name rules; it found 8 across 3 files,
