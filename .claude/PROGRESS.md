@@ -2870,6 +2870,12 @@ price ladder; performance rank is now the Tier Automation Engine's job.
 
 ## 📓 LOG
 
+- **2026-08-19 20:5x** — the frozen offline sale: `navigator.onLine` was TRUE because his wifi was
+  still on (he reads the app off the PC), while Firestore could reach nothing. The terminal then
+  awaited a Firestore write that never resolves. `canReachInternet()` in `useOfflineEngine.js` is
+  now exported and used by the terminal and the error boundary. Also: IF SOLD figures auto-fit and
+  stack on a phone. **S26's slice anchor was broken by CRLF and 12 checks had been passing against
+  the whole of App.jsx** - fixed and pinned. S27+S28, 8 checks, red first. `110a975`. 599/0, 382/0.
 - **2026-08-19 20:0x** — phone test: the catcher WORKS, he got "failed to load" where the screen
   used to go black. But Try Again painted a WHITE PAGE, because a reload with no signal only
   survives if the offline helper holds the whole app - the dev server holds the page and not the

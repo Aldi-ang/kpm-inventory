@@ -40,8 +40,8 @@
     "semantic_hash": ""
   },
   "src/AgentInventoryView.jsx": {
-    "mtime": 1785516001.1050496,
-    "ast_hash": "fa5ddc72fffe1da72a09e5ed7040421b",
+    "mtime": 1787177547.7736528,
+    "ast_hash": "e07a1d382f4b978252ffa59ac912497e",
     "semantic_hash": ""
   },
   "src/AgentProfileView.jsx": {
@@ -50,8 +50,8 @@
     "semantic_hash": ""
   },
   "src/App.jsx": {
-    "mtime": 1787147291.4334724,
-    "ast_hash": "ce0cbcd607ad5fd10343d5f5a8e508af",
+    "mtime": 1787177185.6004891,
+    "ast_hash": "0f0019f91090fa5b73df64cde9b73cf6",
     "semantic_hash": ""
   },
   "src/ConsignmentFinanceView.jsx": {
@@ -85,8 +85,8 @@
     "semantic_hash": ""
   },
   "src/MerchantSalesView.jsx": {
-    "mtime": 1787047956.140635,
-    "ast_hash": "81d2b751686aab5592b19fd65ff47100",
+    "mtime": 1787177173.664338,
+    "ast_hash": "2fa3ffba432dc1bf808249fdbf99de0c",
     "semantic_hash": ""
   },
   "src/MusicPlayer.jsx": {
@@ -205,8 +205,8 @@
     "semantic_hash": ""
   },
   "src/hooks/useOfflineEngine.js": {
-    "mtime": 1786313179.6319807,
-    "ast_hash": "4aee5e9e5fb95062c9840fe2c7bd3765",
+    "mtime": 1787177173.6603239,
+    "ast_hash": "21b3723b2cedfb0d2190a109ad02070f",
     "semantic_hash": ""
   },
   "src/hooks/useTransactionEngine.js": {
@@ -755,8 +755,8 @@
     "semantic_hash": ""
   },
   "src/config/logicFixes.selfcheck.mjs": {
-    "mtime": 1787147291.74677,
-    "ast_hash": "80d5fdcf3abcb1a90723633cf8dfabfe",
+    "mtime": 1787177547.937109,
+    "ast_hash": "0d390adc4c3695f92614ebf19d62432d",
     "semantic_hash": ""
   },
   ".claude/NEXT-SESSION.md": {
