@@ -70,12 +70,19 @@ Run: `npm run build; node src/config/integration.audit.mjs; node src/config/logi
 ALREADY SETTLED, do not work it out again:
 - The offline black screen is fixed. `LazyTabBoundary` in `src/App.jsx` catches a tab that fails
   to download and shows a Try Again button. Pinned by S26.
-- The dev server now installs the offline helper (`devOptions: { enabled: true }` in
-  `vite.config.js`, pinned by S26), so `npm run dev` can be tested offline. UNCONFIRMED on his
-  phone: Chrome refuses to install a service worker on an address whose certificate it does not
-  trust, and the dev server uses a self-signed one. If his airplane-mode reload
-  shows Chrome's own no-internet page, that is the cause, and the deployed Vercel site is the
-  fallback test. Ask him what he saw before changing anything.
+- **Offline can only be tested from a real build.** `npm run preview -- --host`, entry `kpm-preview`
+  in `.claude/launch.json`. `npm run dev` cannot do it at any setting: it has no built modules to
+  cache. His phone also caches the app, so send him `/?fresh=1` or he sees the old copy and reports
+  "no change" - that happened on 2026-08-20.
+- **`navigator.onLine` is a liar and it froze a sale.** It says a network exists, not that packets
+  arrive. Use `canReachInternet()` from `useOfflineEngine.js`, or `isOnline`. Trusting a NO is fine;
+  trusting a YES is the bug. Full story: `A-Brain/Wiki/Concepts/A Network Is Not The Internet.md`,
+  pinned by S27.
+- **A slice end must never be a raw `indexOf` result.** Files here are CRLF; `'
+}
+'` never matches,
+  `indexOf` returns -1, and `slice(from, -1)` hands back the whole file. Twelve S26 checks passed
+  that way for a day. Anchor on CRLF-safe text and pin the slice's length.
 - Every EOD save goes through one `submit(...payloads)` gate (`4c12840`, check S25).
 - `eodBountyLines()` and `tierPrice()` in `helpers.js` are the only places a shortfall becomes
   rupiah and a tier becomes a price.

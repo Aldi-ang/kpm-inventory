@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-19 19:36 WIB (KPM app session)** · 🛠 OFFLINE BLACK SCREEN FIXED · ✅ NOTHING WAITING · branch `phase0-solid-ground`
+**Updated: 2026-08-20 05:28 WIB (KPM app session)** · 🛠 OFFLINE SALE UNFROZEN · ✅ NOTHING WAITING, 4 THINGS UNTESTED · branch `phase0-solid-ground`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -15,14 +15,20 @@
 
 ## ⏳ WAITING ON ALDI — verbatim, do not paraphrase
 
-Nothing. He answered the dev-server question at 19:31, verbatim: **"sure so that i can test the
-offline mode"** — `devOptions: { enabled: true }` is in `vite.config.js` and pinned by S26.
+**Nothing is blocked.** Everything he was asked has an answer, all from 2026-08-19/20:
 
-✅ **Untested by him, and it may not work on his phone:** Chrome will not install a service worker
-on an address whose certificate it does not trust, and the dev server's is self-signed.
-His one-step test: load with signal, airplane mode, reload. App opens = it worked. Chrome's own
-no-internet page = the certificate blocked it, and the deployed site is the fallback. Ask what he
-saw before changing anything.
+- dev server offline mode — **"sure so that i can test the offline mode"**
+- the IF SOLD label — he picked **PROJECTED VALUE** from four offered, after **"i think we better
+  have better language than 'if sold' sounds not elegantly"**
+
+✅ **UNTESTED BY HIM — all four need his phone**, at `https://192.168.1.109:4173` (a real build;
+`npm run preview -- --host`). **His phone caches the app, so open `/?fresh=1` or Chrome will keep
+showing the old copy — that is what made him report "i dont see no change".**
+
+1. An offline sale now reaches the receipt and releases the button.
+2. PROJECTED VALUE stacks one tier per line on a phone.
+3. Try Again on a failed screen no longer paints white.
+4. The sale syncs when signal returns.
 
 > Everything below this line was written at 11:34 and was true then. He answered both open questions on 2026-08-19 at 11:34 — the per-tier live-number rule
 and TITIP everywhere. Both are recorded verbatim in the log entry directly below, together with
@@ -2304,6 +2310,11 @@ batch them: he has to look at each one. `AgentProfileView` is already clean (0 s
 | `src/utils/helpers.js` → `shortStockRows()` | **NEW 2026-08-18** — which products came back short, named one by one in the row's own unit. Used by the admin's EOD card; behaviour-checked in logic S19 |
 | `src/utils/helpers.js` → `paymentLabel()` | **NEW 2026-08-18** — renders the stored `'IOU Fulfillment'` as "Utang Barang Lunas" without changing the stored value |
 | `A-Brain/Backlog/TESTS - check these when you feel like it.md` | **NEW 2026-08-18** — every test Aldi owes, taken off his plate |
+| `src/hooks/useOfflineEngine.js` → `canReachInternet()` | **EXPORTED 2026-08-20** — the ONLY honest answer to "is there internet". `navigator.onLine` is allowed to be trusted when it says NO, never when it says YES. See `A-Brain/Wiki/Concepts/A Network Is Not The Internet.md` |
+| `src/App.jsx` → `LazyTabBoundary` | **NEW 2026-08-19** — the only error boundary in the app; catches a screen that fails to download and offers Try Again. Pinned by S26 |
+| `src/AgentInventoryView.jsx` → `Money` | **NEW 2026-08-20** — money that shrinks by string length. Use it for any figure in a narrow column |
+| `.claude/launch.json` → `kpm-preview` | **NEW 2026-08-20** — `npm run preview -- --host`, the ONLY way to test offline. `npm run dev` cannot: it has no built modules to cache |
+| `tools/theme-lab-server.mjs` | plain HTTP over `dist/` at :4180 — how to LOOK at the real stylesheet when a self-signed cert locks the browser out |
 | `A-Brain/Backlog/SWEEP*.md` (9 files) | **NEW 2026-08-18** — all 75 confirmed problems in plain English, plus the 21 refuted |
 | `A-Brain/Wiki/Concepts/Sale Is Final - no refund, no credit.md` | **NEW 2026-08-18** — the locked no-refund/no-credit rule and everything it kills |
 | `.claude/NEXT-SESSION.md` | **NEW 2026-08-18** — ONE ready-to-paste job, rewritten every session. Queue collapsed underneath |
@@ -2870,31 +2881,15 @@ price ladder; performance rank is now the Tier Automation Engine's job.
 
 ## 📓 LOG
 
-- **2026-08-19 20:5x** — the frozen offline sale: `navigator.onLine` was TRUE because his wifi was
-  still on (he reads the app off the PC), while Firestore could reach nothing. The terminal then
-  awaited a Firestore write that never resolves. `canReachInternet()` in `useOfflineEngine.js` is
-  now exported and used by the terminal and the error boundary. Also: IF SOLD figures auto-fit and
-  stack on a phone. **S26's slice anchor was broken by CRLF and 12 checks had been passing against
-  the whole of App.jsx** - fixed and pinned. S27+S28, 8 checks, red first. `110a975`. 599/0, 382/0.
-- **2026-08-19 20:0x** — phone test: the catcher WORKS, he got "failed to load" where the screen
-  used to go black. But Try Again painted a WHITE PAGE, because a reload with no signal only
-  survives if the offline helper holds the whole app - the dev server holds the page and not the
-  code. Retry is now guarded by `navigator.onLine`; offline it clears the error instead of
-  navigating. S26 +3 checks, proven to reject the old form. **Offline can only be tested from
-  `npm run preview`, never `npm run dev`.** 599/0, 366/0.
-- **2026-08-19 19:45** — his phone could not reach the dev server at all: the router had moved the
-  PC from `192.168.1.141` to `192.168.1.109`. Server was up the whole time (0.0.0.0:5173
-  LISTENING; `.109` answers 200, `.141` answers nothing). Every note that hardcoded the old
-  number now points at vite's "Network:" startup line instead. **Read that line, never a written
-  address.**
-- **2026-08-19 19:36** — dev server can now be tested offline: `devOptions: { enabled: true }` in
-  `vite.config.js` on his word. Proof it serves: `/dev-sw.js` answers 200 with a 16 KB Workbox
-  worker; production build unchanged at 73 precache entries. Open risk: the self-signed
-  certificate may stop Chrome installing it on his phone. 599/0, 363/0.
-- **2026-08-19 19:22** — offline black screen fixed. `LazyTabBoundary` in `src/App.jsx` catches a
-  tab that fails to download and draws the screen name, a plain line and a Try Again button
-  instead of letting React discard the whole page. There was no error boundary anywhere in `src/`
-  before this. S26 added, all 9 checks seen red first. `e0c706b`. 599/0, 361/0.
+- **2026-08-20 05:28** — the frozen offline sale, root cause: **`navigator.onLine` says a network
+  exists, not that the internet works.** His wifi was on (he reads the app off the PC) so the flag
+  said yes, the terminal awaited a Firestore write, and a Firestore write never resolves until the
+  server answers. No receipt, button stuck. `canReachInternet()` in `useOfflineEngine.js` existed
+  for this exact lie and was not exported; now it is, and the terminal and the error boundary both
+  use it. PROJECTED VALUE (his rename) auto-fits and stacks one tier per line on a phone — measured
+  105.7px → 333px per figure at 390px wide. **S26's slice anchor was broken by CRLF, so 12 checks
+  had been passing against the whole of App.jsx**; fixed, and the slice size is now itself a check.
+  S27+S28. `4219909`. 599/0, 383/0.
 - **2026-08-18 16:38** — legacy "(Retail)" endings hidden at display via `storeLabel`; backup and
   the customer directory deliberately kept raw. `883a62e`. 599/0, 163/0, 9/9, 7/7.
 - **2026-08-18 16:29** — wrote the guard that finds private name rules; it found 8 across 3 files,
@@ -2903,11 +2898,6 @@ price ladder; performance rank is now the Tier Automation Engine's job.
   site given a BEFORE/AFTER rupiah check. `a3a9cf6`. 599/0, 130/0, 9/9, 7/7.
 - **2026-08-18 15:5x** — name sweep: `customerBrief` / `dayStats` / auto-pick on `storeKey`, one
   audit check repinned from a spelling to a behaviour. `f1e3b28`. 599/0, 115/0, 9/9, 7/7.
-- **2026-08-18 14:4x** — agent's store-debt tally keyed on `storeKey`, display name kept; the
-  rejected "drop the guard" branch is pinned by a check. `4b63118`. build clean, 599/0, 99/0.
-- **2026-08-18 13:2x** — sale engine: exact store lookup + tier suffix dropped, old names
-  tolerated by `storeKey()`. `264c138`. build clean, 599/0, 86/0.
-
 ### 2026-08-18 12:58 (KPM app session) — alucard now auto-loads caveman ULTRA + karpathy every call
 
 His words: *"i dont want to add some cap but i want u to add caveman ultra talking habits while
