@@ -1380,7 +1380,8 @@ ok('it names the screen that failed', /this\.props\.tab/.test(boundary));
 ok('and it says in plain words why the screen is missing',
    /could not load without signal/i.test(boundary));
 
-/* Aldi tests offline on his phone, against the DEV server at https://192.168.1.141:5173. Without
+/* Aldi tests offline on his phone, against the DEV server on his wifi (the address vite prints
+   as "Network:" at startup - it is handed out by the router and it moves). Without
    devOptions the dev server installs no service worker at all, so nothing is stored for offline
    use and every tab download fails by construction - the catcher above would fire on every tab
    and the test would prove nothing about the real app. He said yes to turning it on, 2026-08-19:

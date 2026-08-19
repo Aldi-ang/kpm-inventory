@@ -73,7 +73,7 @@ ALREADY SETTLED, do not work it out again:
 - The dev server now installs the offline helper (`devOptions: { enabled: true }` in
   `vite.config.js`, pinned by S26), so `npm run dev` can be tested offline. UNCONFIRMED on his
   phone: Chrome refuses to install a service worker on an address whose certificate it does not
-  trust, and `https://192.168.1.141:5173` uses a self-signed one. If his airplane-mode reload
+  trust, and the dev server uses a self-signed one. If his airplane-mode reload
   shows Chrome's own no-internet page, that is the cause, and the deployed Vercel site is the
   fallback test. Ask him what he saw before changing anything.
 - Every EOD save goes through one `submit(...payloads)` gate (`4c12840`, check S25).

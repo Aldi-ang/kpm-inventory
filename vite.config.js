@@ -13,7 +13,12 @@ export default defineConfig({
      The certificate is self-signed, so the phone shows a "not private" warning once and he
      taps through. That warning is expected and is not a problem with the app.
      To undo: delete the import, this comment and the `server` block. Nothing else depends
-     on it, and production is unaffected — Vercel already serves https. */
+     on it, and production is unaffected — Vercel already serves https.
+
+     📍 NEVER TRUST A WRITTEN-DOWN ADDRESS. The .141 above is what the router handed this PC
+     in August 2026; it changed to .109 on 2026-08-19 and cost a test session. `host: true` makes
+     vite print the real one as "Network:" every time `npm run dev` starts — read that line, or
+     run `ipconfig`. */
   server: { https: true, host: true },
   plugins: [
     basicSsl(),

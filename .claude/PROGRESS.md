@@ -19,7 +19,7 @@ Nothing. He answered the dev-server question at 19:31, verbatim: **"sure so that
 offline mode"** — `devOptions: { enabled: true }` is in `vite.config.js` and pinned by S26.
 
 ✅ **Untested by him, and it may not work on his phone:** Chrome will not install a service worker
-on an address whose certificate it does not trust, and `https://192.168.1.141:5173` is self-signed.
+on an address whose certificate it does not trust, and the dev server's is self-signed.
 His one-step test: load with signal, airplane mode, reload. App opens = it worked. Chrome's own
 no-internet page = the certificate blocked it, and the deployed site is the fallback. Ask what he
 saw before changing anything.
@@ -2870,6 +2870,11 @@ price ladder; performance rank is now the Tier Automation Engine's job.
 
 ## 📓 LOG
 
+- **2026-08-19 19:45** — his phone could not reach the dev server at all: the router had moved the
+  PC from `192.168.1.141` to `192.168.1.109`. Server was up the whole time (0.0.0.0:5173
+  LISTENING; `.109` answers 200, `.141` answers nothing). Every note that hardcoded the old
+  number now points at vite's "Network:" startup line instead. **Read that line, never a written
+  address.**
 - **2026-08-19 19:36** — dev server can now be tested offline: `devOptions: { enabled: true }` in
   `vite.config.js` on his word. Proof it serves: `/dev-sw.js` answers 200 with a 16 KB Workbox
   worker; production build unchanged at 73 precache entries. Open risk: the self-signed
