@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-19 11:22 WIB (KPM app session)** · 🔎 6 ITEMS INVESTIGATED, 0 FIXED · ⛔ 2 QUESTIONS OPEN · branch `phase0-solid-ground`
+**Updated: 2026-08-19 11:25 WIB (KPM app session)** · 🔎 6 ITEMS INVESTIGATED, 0 FIXED · ⛔ 2 QUESTIONS OPEN · branch `phase0-solid-ground`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -38,7 +38,7 @@ https://claude.ai/code/artifact/a42ce819-9d1a-46a8-8ae8-0291df6765ef
 > Older open questions (tukar barang, and others) still live in the **❓ WAITING ON ALDI —
 > verbatim** section further down this file. That section was NOT touched by this trim.
 
-## 🟠 2026-08-19 11:22 — SIX ITEMS INVESTIGATED, NONE FIXED. Evidence banked, quota ran out.
+## 🟠 2026-08-19 11:25 — SIX ITEMS INVESTIGATED, NONE FIXED. Evidence banked, quota ran out.
 
 **Read `.claude/SWEEP-2026-08-19.md` first — 9 agents, 896k tokens, every claim cited file:line.**
 Nothing was edited. This entry is the handover.
@@ -170,27 +170,6 @@ needed"*): the Alucard lessons loop is unjammed. §8 no longer says "or don't wr
 18 checks (S23), red first. Four older guards repinned onto the new signature, not relaxed.
 build clean · audit 599/0 · logic 325/0 · contrast all pairs pass
 
-## 🟠 2026-08-18 20:14 — a missing pack is bought back at retail. ANSWERED AND SHIPPED. `43f8059`
-
-**His ruling, verbatim:** *"if there is missing pack then agent needs to buy the missing pack on
-retail price as a compensation, well u can add that to the bounties and the bounties panel need to
-specify how the bounties number are calculated, for example missing pita = 5000 (4 agustus 2026),
-cello chocolate 5 bks = 50,000 (7 agustus 2026), transfer loss 30,000 (8agustus 2026) this kind of
-detailed needed"*.
-
-- `eodBountyLines()` in `helpers.js` prices a report. Goods → `priceRetail` × packs, **converted
-  first** so a short Slop is ten packs. Cash and transfer still floored separately.
-- **One PENALTY key per reason**, not a lump sum: `_CASH`, `_TRANSFER`, `_GOODS_<productId>`.
-  `cukaiDebtNotes` carries `{label, date}` beside each key — **deliberately a sibling map**, because
-  every existing sum on `PENALTY_` expects a plain number and a richer value would have broken the
-  board, the clearance report and the stamp arithmetic at once.
-- The board reads back his format: *Cello Chocolate 5 Bks — Rp 50.000*, dated, newest first. Old
-  bounties still get a name; the quarantine charge now writes its own note.
-- A product with **no retail price** still gets a line at Rp 0 saying so. Unpriceable is not absent.
-
-18 checks (S22), red first, including his own example arithmetic. S18/S19 repinned onto the moved
-rule, not relaxed. build clean · audit 599/0 · logic 306/0 · contrast all pairs pass
-
 ## 📏 STANDING RULE — TELL IT ONCE (Aldi, 2026-08-18: *"yes"*)
 
 Measured: 2,359 lines written *about* the work vs 195 lines of actual fix, in one session. 12:1.
@@ -207,10 +186,20 @@ Entries above this line are the old long style — leave them, they are already 
 
 ## ▶ NOW
 
-**Live front, 2026-08-19 07:55 — EOD writes are gated (`4c12840`, check S25). Next: the `agentData`
-useMemo in `src/EODReconciliationView.jsx` is missing `inventory` in its dependency array, so
-`itemsBks` ships fallback pack multipliers into every submitted report. Brief is already written
-and its premise already verified — it is the only block in `.claude/NEXT-SESSION.md`.**
+**Live front, 2026-08-19 11:25 — BLOCKED ON ALDI, not on code.** He reported six items; all six
+are investigated and NONE are fixed (`.claude/SWEEP-2026-08-19.md`). Two questions must be typed
+by him before item 3 or item 6 can start — see WAITING ON ALDI, and note that Q1's premise was
+wrong, so he has to be told the panel is ALREADY blind before he chooses.
+
+The unblocked job is the offline black screen: `MerchantSalesView` is `lazy()` under a `<Suspense>`
+that catches suspensions but not rejections, and there is no error boundary anywhere in `src/`, so
+an offline chunk fetch unmounts the whole React root. That brief is the only block in
+`.claude/NEXT-SESSION.md`. ☠️ It carries a landmine warning: the obvious auth "fix" reaches
+`signOut(auth)` at `App.jsx:2336` and offline destroys the credential.
+
+Older and still true: the `agentData` useMemo in `src/EODReconciliationView.jsx` is missing
+`inventory` in its deps, so `itemsBks` ships fallback pack multipliers into every submitted
+report. Premise verified, brief demoted to the queue when the six items landed.
 
 > 📋 **`.claude/NEXT-SESSION.md` holds exactly ONE job — copy the only block on it, paste, go.**
 > **It is a standing duty to rewrite that file with the next single job before any session that
@@ -2311,6 +2300,7 @@ batch them: he has to look at each one. `AgentProfileView` is already clean (0 s
 | `A-Brain/Backlog/SWEEP*.md` (9 files) | **NEW 2026-08-18** — all 75 confirmed problems in plain English, plus the 21 refuted |
 | `A-Brain/Wiki/Concepts/Sale Is Final - no refund, no credit.md` | **NEW 2026-08-18** — the locked no-refund/no-credit rule and everything it kills |
 | `.claude/NEXT-SESSION.md` | **NEW 2026-08-18** — ONE ready-to-paste job, rewritten every session. Queue collapsed underneath |
+| `.claude/SWEEP-2026-08-19.md` | **NEW 2026-08-19** — the six reported items, located and adversarially verified, every claim cited `file:line`. 640 lines. Nothing in it is fixed. Read it before touching any of the six |
 | `index.html` | the pre-paint theme stamp — must agree with `App.jsx`'s theme effect |
 | `src/index.css` | **the page ground** — `body` paints `--ground-base` + the lit-corner gradient |
 | `src/components/BiohazardTheme.jsx` | **the SHELL that actually covers the page** — root wrapper, dock, drawer, status strip |
