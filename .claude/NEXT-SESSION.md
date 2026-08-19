@@ -1,66 +1,67 @@
 # The one job for next session
 
-Copy the block below. It is the only thing on this page meant to be pasted.
+STOP. Do NOT paste a build job yet. Two questions are open and both were "answered" by an
+automated event, not by Aldi. Read the WAITING ON ALDI section in `.claude/PROGRESS.md` first,
+ask him Q1 and Q2 in plain text, and wait for him to type an answer. Item 6 depends on Q1.
+
+Once he has answered, run the job below.
 
 ---
 
 /anthropic-skills:caveman ultra, /ponytail:ponytail ultra
 
-The stick count on every EOD report is computed from an empty product list on first paint, and
-the memo that computes it never recomputes when the real list arrives. `itemsBks` is written
-into the submitted report, so the admin reads a wrong number and nothing warns anyone.
+The Sales Terminal goes to a dead black screen with no signal, and the whole app dies with it.
+Aldi found it on his phone in airplane mode: "its all black screen cant move cant do anything".
 
-WHERE: `src/EODReconciliationView.jsx`. Read the file, do not trust these line numbers.
-- The `agentData` useMemo starts around line 136 and its dependency array is around line 265.
-- Inside it, `productMap` is built as `new Map(inventory.map(p => [p.id, p]))`.
-- `itemsBks` is around line 217: for each SALE line it looks the product up in `productMap` and
-  multiplies by `packsPerSlop` / `slopsPerBal` / `balsPerCarton`, each with a hardcoded fallback
-  (`|| 10`, `|| 20`, `|| 4`) when the product is not found.
-- The payload writes `itemsBks: agentData.itemsBks` around line 675.
+READ FIRST: `.claude/SWEEP-2026-08-19.md`, the `locate:offline-terminal` section and the
+refutation that follows it. Every claim below is cited there with file:line. Do not re-derive it.
 
-WHAT IS ACTUALLY BROKEN: `inventory` is used inside the memo but is NOT in its dependency array.
-The array is `[effectiveId, samplings, transactions, agentCanvas, eodReports, motorists,
-agentProfileId]`. On the first render the Firestore listener has not delivered inventory yet, so
-`inventory` is `[]`, `productMap` is empty, every lookup misses, and EVERY product silently uses
-10 packs per slop, 20 slops per bal, 4 bals per carton. When inventory arrives the memo does not
-re-run, because React has no reason to. A product whose real pack maths differs from those three
-numbers ships a wrong stick total into the report.
+WHAT IS BROKEN: `MerchantSalesView` is code-split — `const MerchantSalesView = lazy(() =>
+import('./MerchantSalesView'))` at `src/App.jsx:41` — and renders inside the one app-wide
+`<Suspense>` that opens at `src/App.jsx:4008` and closes at `src/App.jsx:4530`. Suspense absorbs
+a *suspension*. It does not catch a *rejection*. Offline the dynamic import cannot fetch the
+chunk, the promise rejects, and the rejection escapes render. There is no error boundary anywhere
+in `src/` — grep for `ErrorBoundary`, `componentDidCatch`, `getDerivedStateFromError` returns zero
+hits, and `src/main.jsx:57` renders `<App/>` bare. React answers an uncaught render error by
+unmounting the entire root, so `#root` empties and the page is a dead dark body until reload.
 
-THE FIX: add `inventory` to that dependency array. One word. Do not restructure the memo.
+THE FIX: one error boundary wrapping the `<Suspense>` at `src/App.jsx:4008`. It must render
+something a person can act on — the screen name, "this screen could not load offline", and a
+retry that re-mounts the child. A boundary rendering a blank div is the same bug in a new colour.
 
-THE TRAP: the component signature has `inventory = []` as a default. When the prop is genuinely
-undefined that default mints a NEW empty array on every render, so with `inventory` in the deps
-the memo would recompute every render instead of never. Check what App.jsx actually passes for
-`inventory` at the `<EODReconciliationView` call site BEFORE you claim the fix is free. If App
-passes a stable array from state, adding the dep is correct as-is and you can say so with the
-call site as your evidence. If it can pass undefined, say that in your report and let Aldi decide
-whether the extra recomputes matter — do not silently add a `useMemo` around the default.
+THE TRAP: an error boundary MUST be a class component. `getDerivedStateFromError` and
+`componentDidCatch` have no hook equivalent and `useErrorBoundary` does not exist in React. Do
+not write it with hooks and do not add a dependency — it is about 20 lines of class.
 
-SECOND TRAP: do not "fix" this by deleting the `|| 10` / `|| 20` / `|| 4` fallbacks. A product
-genuinely missing its pack fields still has to produce a number, and a crash on the setoran
-screen is worse than an approximate one. The fallbacks are correct; firing them for EVERY product
-is the bug.
+SECOND TRAP: this does NOT explain the forced Google re-login he also reported, and that
+diagnosis was REFUTED. DANGER: dropping the `await` on `deleteDoc` at `src/App.jsx:2333-2334`
+lets control reach `signOut(auth)` at `src/App.jsx:2336`, which offline destroys the credential
+and makes the reported re-login PERMANENT. The offline catch already calls `setUser(currentUser)`
+at `src/App.jsx:2387` and `src/App.jsx:2411`, so `user` is not left null. Do not touch the auth
+handler in this job. That cause is still unknown and gets its own investigation.
 
-LEAVE A CHECK: `src/config/logicFixes.selfcheck.mjs`, next section is **S26** (S25 is the EOD
-submitting gate, taken 2026-08-19). Prove it red before writing the fix — a guard that
-`inventory` appears in that memo's dependency array (scope it by slicing the source between
-`const agentData = useMemo(` and its closing `}, [`, not a file-wide match), and a behaviour
-check that a product with real pack fields and a product missing them produce different stick
-totals from the same sale, so the fallback path is proven distinguishable rather than assumed.
+THIRD TRAP: he tests on the LAN dev server (`https://192.168.1.141:5173`, see the comment at
+`vite.config.js:7`). `npm run dev` registers NO service worker — `vite.config.js:21` has no
+`devOptions` block — so in dev nothing is precached and the chunk fetch always fails offline. A
+production build DOES precache `MerchantSalesView` and serves `index.html` via a NavigationRoute.
+The boundary is still the real fix, but tell him plainly that offline behaviour can only be judged
+from a production build, and that `devOptions: { enabled: true }` is what would make his phone
+test meaningful. Do not silently change how he tests — say it and let him choose.
+
+LEAVE A CHECK: `src/config/logicFixes.selfcheck.mjs`, next section is S26 (S25 is the EOD
+submitting gate). Prove it red first — a guard that an error boundary class exists and that the
+lazy `<Suspense>` is wrapped by it, and a behaviour check that `getDerivedStateFromError` returns
+a state that renders a retry affordance rather than null.
 
 Run: `npm run build; node src/config/integration.audit.mjs; node src/config/logicFixes.selfcheck.mjs`
 
 CONTEXT ALREADY ESTABLISHED, do not re-derive:
-- EOD integration is FINISHED. The count decides the report (`d859d41`), a short count mints one
-  PENALTY key per reason on approval (`7f96d19`, `43f8059`), the admin card names the short
-  products (`ce70287`), the WANTED board itemises every bounty (`43f8059`).
-- `eodBountyLines()` in `helpers.js` is the ONLY place a shortfall becomes rupiah; `tierPrice()`
-  beside it is the ONLY place a tier becomes a price. Never compute a fine anywhere else.
-- Penalty pricing is a COMPANY SETTING (`appSettings.penaltyPriceTier`, Settings · Company · 05,
-  default Retail) — `bf75678`. Aldi sells this app to more than one company.
-- Every EOD write on this screen now goes through one `submit(...payloads)` gate holding a
-  `submitting` flag (`4c12840`, check S25). Do not add a second write path around it.
-- Guards are scoped to the ELEMENT or the BLOCK, never to a string that appears file-wide.
+- Every EOD write on `EODReconciliationView` goes through one `submit(...payloads)` gate holding a
+  `submitting` flag (`4c12840`, check S25).
+- `eodBountyLines()` and `tierPrice()` in `helpers.js` are the ONLY places a shortfall becomes
+  rupiah and a tier becomes a price.
+- Penalty pricing is a COMPANY SETTING (`appSettings.penaltyPriceTier`) — `bf75678`.
+- Guards are scoped to the ELEMENT or the BLOCK, never a string that appears file-wide.
 
 When you finish, rewrite this file with the next single job.
 
@@ -69,36 +70,31 @@ When you finish, rewrite this file with the next single job.
 <details>
 <summary>The queue underneath — promote ONE next time, never paste this part</summary>
 
-✅ **The only thing on Aldi's side — the shakedown test card, 19 tests, still unanswered.**
-https://claude.ai/code/artifact/a42ce819-9d1a-46a8-8ae8-0291df6765ef
-A BROKEN result on any of them outranks this whole queue. Do not chase him for it.
+All six of his 2026-08-19 items are investigated and NONE are fixed. Full evidence with file:line
+in `.claude/SWEEP-2026-08-19.md`. Ranked by harm:
 
-**New, found 2026-08-19 while fixing the submitting gate:** a failed EOD write notifies, but the
-letter has already marched to `stage='sent'` and its Send button has unmounted, so the agent sees
-"Waiting on the regional admin" over a submission that never happened. He can recover by
-reloading the screen, so it is confusion rather than data loss — but it is exactly the
-UI-says-yes-server-says-no pattern in his own vault.
+1. Offline black screen — the job above.
+2. The forced Google re-login — cause UNKNOWN, first diagnosis refuted, obvious fix is a landmine.
+3. Wrong agent name — CONFIRMED and it is a DATA problem, not a display problem. Every site prints
+   the `agentName` baked into the transaction at write time; for tier 1 that is the Google
+   `displayName`. Historical documents carry the wrong name permanently, so a backfill decision is
+   needed before code. He also asked for ONE EMAIL ONE PROFILE — an identity-model change.
+4. Reconcile and Clear — no tier gate at `FleetCanvasManager.jsx:1056`, but `firestore.rules:479`
+   already blocks a plain Tier 3/4 write, so it is UI-says-yes / server-says-no rather than data
+   destruction. His policy call is already clear: tier 1 only, returns go through EOD, red sold
+   rows persist until EOD is done.
+5. Contrast — hardcoded non-token plates (`bg-[#1a1a1a]`, `bg-black/40`, `bg-[#111]`) in
+   `src/StockOpnameView.jsx` that never flip with the theme.
+6. Titip wording and IOU in the map customer panel — blocked on Q2.
+7. Stock Opname redesign — blocked on Q1, and the premise needs correcting first: the panel
+   ALREADY hides the expected number until the counter types one.
 
-Still open on his confirmed list (items 2, 3, 5, 8, 9, 10 in PROGRESS):
-- **Gold ink on a gold plate = 1,00:1 in dark** on the admin side. Plate on the parent, ink on a
-  child — that is why audit group 48 missed it. Widen the regex with the fix; S20 has the same
-  ceiling written into it.
-- **The hardcoded-colour sweep on the OTHER screens.** The EOD approve button is done
-  (`a0d27b5`); Pay Bounty now carries `disabled:opacity-40` but still `bg-[var(--danger)]` with an
-  rgba glow. `bg-emerald-*`, `bg-orange-*`, `bg-red-*` and rgba glows still sit outside
-  `EODReconciliationView`. `--amber` already exists as a measured token PAIR (`#F59E0B` dark /
-  `#92400E` light) — reuse it, do not invent another amber.
-- `bg-black/N` across the whole admin half; Lite Mode kills `transition-duration` but not
-  `transition-delay`; Force Reset is a 24px destructive target.
+Older, still open: gold-ink-on-gold-plate on the admin side; the `bg-black/N` sweep; `agentData`
+useMemo missing `inventory` in its deps so `itemsBks` ships fallback pack multipliers; Lite Mode
+kills `transition-duration` but not `transition-delay`; Force Reset is a 24px destructive target;
+`getCurrentDate()` is UTC across 26 call sites when the day rolls at 07:00; the Sampling,
+Customers and Stock Opname redesigns.
 
-Elsewhere in the backlog:
-- **The day rolls over at 07:00, not midnight.** `getCurrentDate()` in `helpers.js` is UTC, 26
-  call sites across 6 files; `getLocalDayKey()` is the correct one. Each site needs judging.
-  Money already verified unaffected.
-- Three screens he asked to redesign: Sampling, Customers, Stock Opname.
-
-🔴 **THE LAST JOB — merge to main.** His words: *"we might it later if we done with everything"*.
-Branch is not behind main, so it is clean. Do not do this until the list above is empty or he
-says so.
+THE LAST JOB — merge to main. "we might it later if we done with everything". Not yet.
 
 </details>

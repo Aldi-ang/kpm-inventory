@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-19 07:55 WIB (KPM app session)** · 🔧 37 FIXES · 📋 ONE PROMPT READY · branch `phase0-solid-ground`
+**Updated: 2026-08-19 11:22 WIB (KPM app session)** · 🔎 6 ITEMS INVESTIGATED, 0 FIXED · ⛔ 2 QUESTIONS OPEN · branch `phase0-solid-ground`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -15,16 +15,65 @@
 
 ## ⏳ WAITING ON ALDI — verbatim, do not paraphrase
 
-Nothing. Nothing was asked of him on 2026-08-19 either — the double-submit job needed no decision
-and it is shipped. His three questions from 2026-08-18 (retail-price rule, damaged-goods setting,
-approve button) are all answered and shipped. Next session takes the one job at the top of
-`.claude/NEXT-SESSION.md` and goes.
+🔴 **TWO QUESTIONS ARE OPEN. He has not answered either.** An `AskUserQuestion` returned answers
+on 2026-08-19, and the runtime then flagged that turn as an automated event with *"no human input
+has been received"*. Those answers are VOID. Ask again, in plain text, and wait.
+
+**Q1 — the stock count.** Asked verbatim: *"During a stock count, should the person counting see
+the number the system expects?"* He must be told first that the app ALREADY hides it until he
+types (blind-count-then-reveal, deliberate), so choosing "show it live" REMOVES a control rather
+than adding a feature. That fact was not in front of him when the void answer appeared.
+
+**Q2 — the wording.** Asked verbatim: *"You said 'consignment' in the map and 'titip' in the sales
+terminal is confusing. Which single word should the whole app use?"* Options were TITIP
+everywhere / CONSIGNMENT everywhere / TITIP (Consignment) on both. Code identifiers like
+`CONSIGNMENT_PAYMENT` are never renamed either way — labels only.
+
+His six reported items from 2026-08-19 are all investigated and none are fixed. Evidence:
+`.claude/SWEEP-2026-08-19.md`.
 
 ✅ **Untested by him:** the shakedown card, now **19 tests** (18 and 19 are the retail bounties) —
 https://claude.ai/code/artifact/a42ce819-9d1a-46a8-8ae8-0291df6765ef
 
 > Older open questions (tukar barang, and others) still live in the **❓ WAITING ON ALDI —
 > verbatim** section further down this file. That section was NOT touched by this trim.
+
+## 🟠 2026-08-19 11:22 — SIX ITEMS INVESTIGATED, NONE FIXED. Evidence banked, quota ran out.
+
+**Read `.claude/SWEEP-2026-08-19.md` first — 9 agents, 896k tokens, every claim cited file:line.**
+Nothing was edited. This entry is the handover.
+
+⛔ **TWO ANSWERS WERE NOT HIS.** An `AskUserQuestion` returned "Show it live, side by side" and
+"TITIP everywhere", then the runtime flagged the turn as an automated event with *"no human input
+has been received"*. **Both questions are still OPEN** — see WAITING ON ALDI. Do not build either
+choice until he types it himself.
+
+The adversarial pass refuted 2 of 3 gating diagnoses. What survived:
+
+- **#1 black screen — CONFIRMED.** `MerchantSalesView` is `lazy()` (App.jsx:41) under one app-wide
+  `<Suspense>` (App.jsx:4008-4530). Suspense absorbs *suspensions*, not *rejections*. Zero error
+  boundaries anywhere in `src/` (grep: 0 hits). Offline the chunk fetch rejects → React unmounts
+  the whole root → black, dead, reload-only. He tests on the LAN **dev** server, and `npm run dev`
+  registers no service worker (vite.config.js has no `devOptions`), so nothing is precached.
+- **#1 forced Google re-login — CAUSE STILL UNKNOWN.** The first diagnosis was refuted: the offline
+  catch already calls `setUser(currentUser)` (App.jsx:2387 and :2411), so `user` is not left null,
+  and the awaited writes at 2223/2224 are unreachable on any device that has been online once.
+  ☠️ **The proposed fix was a landmine** — dropping the awaits at App.jsx:2333-2334 lets control
+  reach `signOut(auth)` at :2336, which offline destroys the credential and causes the reported
+  re-login **permanently**. Do not apply it. Re-investigate from the dev-server angle first.
+- **#2 wrong agent name — CONFIRMED, and it is a DATA problem.** Every display site prints the
+  `agentName` string baked into the transaction at write time; for a tier-1 owner that string is
+  the Google `displayName`. A display-side fix repairs nothing historical. Verifier did NOT refute.
+- **#4 Reconcile & Clear — real, but milder than reported.** No tier gate at all (only condition:
+  vehicle non-empty, FleetCanvasManager.jsx:1056). But firestore.rules:479-480 already blocks a
+  plain Tier 3/4 write, so they see a button that fails — UI-says-yes/server-says-no, not data
+  destruction. It returns unsold canvas stock only. Red rows keyed on `item.currentBks > 0`.
+- **#5 both screens — located.** Cause is hardcoded non-token plates (`bg-[#1a1a1a]`, `bg-black/40`,
+  `bg-[#111]`) that never flip with the theme. Both live in `src/StockOpnameView.jsx`.
+- **#6 the premise was wrong.** The New Count panel **already has** the expected quantity in scope
+  and **already renders it — after** the counter types a number. That is blind-count-then-reveal,
+  and it is deliberate. His ask ("show the live number") would REMOVE an existing control. He has
+  to be told that before he answers.
 
 
 ## 🟠 2026-08-19 07:55 — THE EOD DOUBLE-SUBMIT. The named button was already safe; two others were not.
