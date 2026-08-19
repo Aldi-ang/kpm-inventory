@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-19 11:32 WIB (KPM app session)** · 🔎 6 ITEMS INVESTIGATED, 0 FIXED · ✅ BOTH QUESTIONS ANSWERED · branch `phase0-solid-ground`
+**Updated: 2026-08-19 11:34 WIB (KPM app session)** · 🔎 6 ITEMS INVESTIGATED, 0 FIXED · ✅ BOTH QUESTIONS ANSWERED · branch `phase0-solid-ground`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -15,7 +15,7 @@
 
 ## ⏳ WAITING ON ALDI — verbatim, do not paraphrase
 
-Nothing. He answered both open questions on 2026-08-19 at 11:32 — the per-tier live-number rule
+Nothing. He answered both open questions on 2026-08-19 at 11:34 — the per-tier live-number rule
 and TITIP everywhere. Both are recorded verbatim in the log entry directly below, together with
 the tier names he wants as defaults.
 
@@ -31,7 +31,7 @@ https://claude.ai/code/artifact/a42ce819-9d1a-46a8-8ae8-0291df6765ef
 > Older open questions (tukar barang, and others) still live in the **❓ WAITING ON ALDI —
 > verbatim** section further down this file. That section was NOT touched by this trim.
 
-## 🟠 2026-08-19 11:32 — HE ANSWERED BOTH. And he told me to stop using hard words.
+## 🟠 2026-08-19 11:34 — HE ANSWERED BOTH. And he told me to stop using hard words.
 
 **His words, do not paraphrase:**
 
@@ -180,20 +180,24 @@ Entries above this line are the old long style — leave them, they are already 
 
 ## ▶ NOW
 
-**Live front, 2026-08-19 11:25 — BLOCKED ON ALDI, not on code.** He reported six items; all six
-are investigated and NONE are fixed (`.claude/SWEEP-2026-08-19.md`). Two questions must be typed
-by him before item 3 or item 6 can start — see WAITING ON ALDI, and note that Q1's premise was
-wrong, so he has to be told the panel is ALREADY blind before he chooses.
+**Live front, 2026-08-19 11:34 — NOTHING IS WAITING ON ALDI.** He answered both questions (see
+the log entry above for his exact words) and neither answer is built yet. His six reported items
+are all investigated and none are fixed — evidence with file and line numbers in
+`.claude/SWEEP-2026-08-19.md`.
 
-The unblocked job is the offline black screen: `MerchantSalesView` is `lazy()` under a `<Suspense>`
-that catches suspensions but not rejections, and there is no error boundary anywhere in `src/`, so
-an offline chunk fetch unmounts the whole React root. That brief is the only block in
-`.claude/NEXT-SESSION.md`. ☠️ It carries a landmine warning: the obvious auth "fix" reaches
-`signOut(auth)` at `App.jsx:2336` and offline destroys the credential.
+The next job is the offline black screen, and it is the only block in `.claude/NEXT-SESSION.md`:
+`MerchantSalesView` is fetched on demand, the fetch fails with no signal, and nothing in `src/`
+catches that failure, so React throws the whole page away. ☠️ That brief carries a warning — the
+obvious-looking fix for the SEPARATE sign-in problem runs on into `signOut(auth)` at
+`App.jsx:2336` and would delete his sign-in permanently. Do not apply it.
 
-Older and still true: the `agentData` useMemo in `src/EODReconciliationView.jsx` is missing
-`inventory` in its deps, so `itemsBks` ships fallback pack multipliers into every submitted
-report. Premise verified, brief demoted to the queue when the six items landed.
+**Before writing anything to him, read the top of `.claude/NEXT-SESSION.md`.** He said the replies
+use too many hard words. Short sentences were never the problem; the vocabulary was. Also saved to
+the `feedback_explain_in_plain_english` memory, which loads on its own after a clear.
+
+Queued and unbuilt, both decided 2026-08-19: the per-tier live-number switch with the new default
+tier names, and TITIP everywhere. Older and still true: the `agentData` memo in
+`src/EODReconciliationView.jsx` is missing `inventory`, so `itemsBks` uses fallback pack sizes.
 
 > 📋 **`.claude/NEXT-SESSION.md` holds exactly ONE job — copy the only block on it, paste, go.**
 > **It is a standing duty to rewrite that file with the next single job before any session that
