@@ -235,8 +235,8 @@
     "semantic_hash": ""
   },
   "vite.config.js": {
-    "mtime": 1786328775.6640368,
-    "ast_hash": "08dbb04b5631773540cf010e4506fa4d",
+    "mtime": 1787142767.5251315,
+    "ast_hash": "44e5849e4fd747ddc47814a9a8554fe3",
     "semantic_hash": ""
   },
   ".github/workflows/build-check.yml": {
@@ -570,8 +570,8 @@
     "semantic_hash": ""
   },
   ".claude/PROGRESS.md": {
-    "mtime": 1787114110.430418,
-    "ast_hash": "36137b84ec9edd7a97cb5b706a991cc6",
+    "mtime": 1787142958.7011359,
+    "ast_hash": "12af7bc4ee9d20cccb789206e8883752",
     "semantic_hash": ""
   },
   ".claude/pre-compact-context.md": {
@@ -755,13 +755,13 @@
     "semantic_hash": ""
   },
   "src/config/logicFixes.selfcheck.mjs": {
-    "mtime": 1787141763.509132,
-    "ast_hash": "436e2cdfbfcd5f1f1801fe308ee765d0",
+    "mtime": 1787142741.4741654,
+    "ast_hash": "4fa7c8e51d7e60cd94c5cd56011725d9",
     "semantic_hash": ""
   },
   ".claude/NEXT-SESSION.md": {
-    "mtime": 1787142113.6566036,
-    "ast_hash": "76bbea6c5ea0cc8ce345412325b5d325",
+    "mtime": 1787142925.8374162,
+    "ast_hash": "f41d67bdd2d52cfb51cbbea3f7b712c0",
     "semantic_hash": ""
   },
   ".claude/SWEEP-2026-08-19.md": {

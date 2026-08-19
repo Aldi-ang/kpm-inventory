@@ -1,7 +1,7 @@
 # Graph Report - kpm-inventory-main  (2026-08-19)
 
 ## Corpus Check
-- 108 files · ~674,662 words
+- 108 files · ~675,222 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
@@ -10,7 +10,7 @@
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `e0c706bb`
+- Built from commit: `c4ae06e7`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
