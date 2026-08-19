@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-19 11:25 WIB (KPM app session)** · 🔎 6 ITEMS INVESTIGATED, 0 FIXED · ⛔ 2 QUESTIONS OPEN · branch `phase0-solid-ground`
+**Updated: 2026-08-19 11:32 WIB (KPM app session)** · 🔎 6 ITEMS INVESTIGATED, 0 FIXED · ✅ BOTH QUESTIONS ANSWERED · branch `phase0-solid-ground`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -15,28 +15,53 @@
 
 ## ⏳ WAITING ON ALDI — verbatim, do not paraphrase
 
-🔴 **TWO QUESTIONS ARE OPEN. He has not answered either.** An `AskUserQuestion` returned answers
-on 2026-08-19, and the runtime then flagged that turn as an automated event with *"no human input
-has been received"*. Those answers are VOID. Ask again, in plain text, and wait.
+Nothing. He answered both open questions on 2026-08-19 at 11:32 — the per-tier live-number rule
+and TITIP everywhere. Both are recorded verbatim in the log entry directly below, together with
+the tier names he wants as defaults.
 
-**Q1 — the stock count.** Asked verbatim: *"During a stock count, should the person counting see
-the number the system expects?"* He must be told first that the app ALREADY hides it until he
-types (blind-count-then-reveal, deliberate), so choosing "show it live" REMOVES a control rather
-than adding a feature. That fact was not in front of him when the void answer appeared.
+One standing instruction from the same message, not a question: **stop using hard words.** He said
+the short replies were still full of unfamiliar terms. Saved to the
+`feedback_explain_in_plain_english` memory. Fix that about yourself before writing anything else.
 
-**Q2 — the wording.** Asked verbatim: *"You said 'consignment' in the map and 'titip' in the sales
-terminal is confusing. Which single word should the whole app use?"* Options were TITIP
-everywhere / CONSIGNMENT everywhere / TITIP (Consignment) on both. Code identifiers like
-`CONSIGNMENT_PAYMENT` are never renamed either way — labels only.
-
-His six reported items from 2026-08-19 are all investigated and none are fixed. Evidence:
-`.claude/SWEEP-2026-08-19.md`.
+His six reported items are all investigated and none are fixed: `.claude/SWEEP-2026-08-19.md`.
 
 ✅ **Untested by him:** the shakedown card, now **19 tests** (18 and 19 are the retail bounties) —
 https://claude.ai/code/artifact/a42ce819-9d1a-46a8-8ae8-0291df6765ef
 
 > Older open questions (tukar barang, and others) still live in the **❓ WAITING ON ALDI —
 > verbatim** section further down this file. That section was NOT touched by this trim.
+
+## 🟠 2026-08-19 11:32 — HE ANSWERED BOTH. And he told me to stop using hard words.
+
+**His words, do not paraphrase:**
+
+> *"i want live number options added into the matrix, and on default this live number for the
+> stock opname is only available side by side for tier 1,2,3 and i want u to change the default
+> tiers name into shown in sc1, for tiers below tier 3 i want it leave it blind if its wise i
+> guess, encourage them to really count the number right"*
+
+> *"and i want all into titip instead, maybe we should add some subtitles change in the future?"*
+
+> *"why the caveman ultra not working, alucard still talk like it used to be not caveman that i
+> ask tho, too many hard to understand words, too many unfamiliar terms i want this to change on
+> next session after i/ll clear this chat"*
+
+**DECISION 1 — the stock count expected number is a PER-TIER SETTING in the permission matrix.**
+Default ON (shown side by side while counting) for tier 1, 2, 3. Default OFF (blind, the number
+appears only after he types one) for tier 4, 5, 6. His reason, kept: *"encourage them to really
+count the number right"*. He also wants the default tier NAMES changed to the ones in his
+screenshot: T2 OWNER, T3 HQ SALES MANAGER, T4 REGIONAL ADMIN, T5 SALES CANVAS, T6 SALES MOTORIST.
+
+**DECISION 2 — the whole app says TITIP.** Not consignment. Labels only; code names such as
+`CONSIGNMENT_PAYMENT` never change. Subtitles were raised as a maybe-later, not a job.
+
+**DECISION 3 — how I write to him.** Caveman was cutting sentence LENGTH and not hard WORDS, so
+replies stayed full of specialist terms. Short plus jargon still fails him. Saved to the
+`feedback_explain_in_plain_english` memory so it survives a clear, and to `A-Brain/Wiki/Log.md`
+(`4267589`). **This is the first thing the next session must fix about itself.**
+
+Still nothing fixed in code. Quota ran out at 91%. `.claude/SWEEP-2026-08-19.md` holds the
+evidence for all six reported items.
 
 ## 🟠 2026-08-19 11:25 — SIX ITEMS INVESTIGATED, NONE FIXED. Evidence banked, quota ran out.
 
@@ -138,37 +163,6 @@ the new rule and accepted the new one. The health check also had two bugs of its
 the archive ledger as part of whichever entry it sat next to. Fixed. `8319f94` `7e887e1`
 
 11 checks (S24), red first. build clean · audit 599/0 · logic 337/0 · contrast all pairs pass
-
-## 🟠 2026-08-18 20:30 — the penalty price is a SETTING now. `bf75678`
-
-**His ruling, verbatim:** *"if the damaged goods taken from store and the agent bring it back then
-there is no bounties for the agent, if there is damaged good because of agent mistake then agent
-need to buy it in retail price, but since i dont know the real rules that the company applies we
-should add this to the setting about this logic so that company can change how this logic going to
-work, can be retail, wholesale or ecer its companies decision, i just want to make sure that this
-app is flexible enought so that i can sell it to multiple company instead of one only"*.
-
-- **His first rule needed no code.** Store damage the agent brings back is resolved as SAMPLING or
-  RTV in Stock Opname and charges him nothing. PENALTY is a third button the admin picks. The split
-  he described is already the shape of that screen — verified, not assumed.
-- **His second rule was backwards in the code.** The damage penalty charged `priceDistributor` —
-  what the company PAID — not retail.
-- **Settings · Company · 05**, Tier 1: *"What a lost or damaged pack costs the salesman"*. Retail /
-  Grosir / Ecer / Distributor. Default **Retail**, his rule. Drives BOTH the EOD missing-pack bounty
-  and the damaged-goods charge.
-- `tierPrice()` in helpers is the one lookup. Unknown tier, or a tier the product has no price for,
-  falls back to Retail — **never zero**, because a fine that silently becomes nothing goes unnoticed.
-  The tier is printed on the bounty line: *Cello Chocolate 5 Bks @ Retail*.
-- ⚠️ `MerchantSalesView` and `useTransactionEngine` still carry their own copies of the tier → field
-  mapping for SALES. Untouched, noted in the helper. That is a wider change.
-
-**Also, on his permission** (*"u fix that lesson file then, i give u permission to upgrade if
-needed"*): the Alucard lessons loop is unjammed. §8 no longer says "or don't write" at 5/5-all-fired
-— it archives one anyway and makes you name the reason. One entry archived (superseded in part AND
-5x over the length cap), its live half carried forward. Health check agrees: `LESSONS: OK`. `74c9a88`
-
-18 checks (S23), red first. Four older guards repinned onto the new signature, not relaxed.
-build clean · audit 599/0 · logic 325/0 · contrast all pairs pass
 
 ## 📏 STANDING RULE — TELL IT ONCE (Aldi, 2026-08-18: *"yes"*)
 
