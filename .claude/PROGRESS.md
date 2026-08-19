@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-18 20:58 WIB (KPM app session)** · 🔧 36 FIXES · 📋 ONE PROMPT READY · branch `phase0-solid-ground`
+**Updated: 2026-08-19 07:55 WIB (KPM app session)** · 🔧 37 FIXES · 📋 ONE PROMPT READY · branch `phase0-solid-ground`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -25,6 +25,30 @@ https://claude.ai/code/artifact/a42ce819-9d1a-46a8-8ae8-0291df6765ef
 > Older open questions (tukar barang, and others) still live in the **❓ WAITING ON ALDI —
 > verbatim** section further down this file. That section was NOT touched by this trim.
 
+
+## 🟠 2026-08-19 07:55 — THE EOD DOUBLE-SUBMIT. The named button was already safe; two others were not.
+
+`4c12840` · build ✓ · audit 599/599 · selfcheck **352/352** (red at 344/352 before the edit)
+
+- **Item 6 is done, and the brief that described it was half wrong.** The letter's Send button
+  never had the hole: `send()` sets `stage='launching'` on the same flush, `EODLetter` disables
+  the button on that stage, and at `'sent'` it unmounts. React 19 flushes a discrete click
+  before the next is dispatched, so a real double-tap already hit a dead button.
+- **The hole was Pay Bounty and the legacy "Submit stamps & fines".** Both called `onSubmitEOD`
+  straight from `onClick`, changed no local state, and stayed mounted and enabled for the whole
+  Firestore round-trip. Two taps = two PENDING reports on the same night. Real money.
+- **Fix: one `submit(...payloads)` gate** in `EODReconciliationView`, holding `submitting`
+  across the awaited writes, reopening in a `finally`. All three paths route through it. The
+  letter's CUKAI document is a second **payload**, not a second call — as two calls the flag
+  cleared between them and the door reopened mid-submission.
+- **S25** pins it: 8 guards + a behaviour check (two rapid submits → one report; a READY cukai
+  night still posts both documents from one tap). Each button guard scoped by slicing between
+  its own handler and its own label, per the S24 bystander lesson.
+- **Found, NOT fixed — new backlog item.** A failed write notifies, but the letter has already
+  marched to `'sent'` and its Send button has unmounted, so the agent cannot retry. A failed
+  submission looks like a successful one.
+- Vault: `A-Brain` `83721b3` — `Wiki/Concepts/The Named Path Was Already Shut.md`, linked from
+  Index, MOC and the Concepts index.
 
 ## 🟠 2026-08-18 20:58 — SESSION ENDED CLEAN. He is taking the night off.
 
