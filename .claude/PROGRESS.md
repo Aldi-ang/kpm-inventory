@@ -15,9 +15,10 @@
 
 ## ⏳ WAITING ON ALDI — verbatim, do not paraphrase
 
-Nothing. Every question he was asked today is answered and shipped — the retail-price rule,
-the damaged-goods setting, and the approve button. The next session should just take the job
-at the top of `.claude/NEXT-SESSION.md` and go.
+Nothing. Nothing was asked of him on 2026-08-19 either — the double-submit job needed no decision
+and it is shipped. His three questions from 2026-08-18 (retail-price rule, damaged-goods setting,
+approve button) are all answered and shipped. Next session takes the one job at the top of
+`.claude/NEXT-SESSION.md` and goes.
 
 ✅ **Untested by him:** the shakedown card, now **19 tests** (18 and 19 are the retail bounties) —
 https://claude.ai/code/artifact/a42ce819-9d1a-46a8-8ae8-0291df6765ef
@@ -141,28 +142,6 @@ detailed needed"*.
 18 checks (S22), red first, including his own example arithmetic. S18/S19 repinned onto the moved
 rule, not relaxed. build clean · audit 599/0 · logic 306/0 · contrast all pairs pass
 
-## 🟠 2026-08-18 19:54 — two off his OWN to-do list, both found while shipping the card
-
-`44efb69` · **Red text on a red plate was 1,94:1 — nobody could read it.** `--danger-ink` on
-`--danger` measures 1,94:1 dark and 1,95:1 light. The palette already had the answer
-(`--danger-well`, 7,04:1 and 7,54:1), and one site was already using it. 18 class strings across
-the EOD, Stock Opname and card-deck screens moved their GROUND to the well; the red EDGE stays.
-Left alone deliberately: 9 gold-on-red badges (4,02:1, bold), hover states that swap the ink with
-the plate, and the two pure fills — the bounty dot and the damaged-share bar — because a 2px dot
-in near-black is not a warning. **Three of the 11 broken sites were mine, one hour old.** That is
-how a defect class spreads, so it left check S20 behind instead of a paragraph.
-
-`b904db2` · **`key={effectiveId}` on the counting flow.** The admin picks whose setoran he is
-entering; React reuses the component in that slot, so switching identity mid-count kept agent A's
-counted cash and posted it under agent B's id. One token. Check S21.
-
-His list, updated: **item 1 DONE, item 4 DONE, item 7 was stale** (there is no `letter.signatures`
-— the flow produces `cards` only). **Item 6 is next and it is a money bug:** `submitting` is never
-passed to `<EODAgentFlow>`, so both `disabled` guards inside it are dead and a double-tap on Send
-submits the EOD twice.
-
-build clean · audit 599/0 · logic 289/0 · contrast all pairs pass
-
 ## 📏 STANDING RULE — TELL IT ONCE (Aldi, 2026-08-18: *"yes"*)
 
 Measured: 2,359 lines written *about* the work vs 195 lines of actual fix, in one session. 12:1.
@@ -178,6 +157,11 @@ made), comments saying why something must NOT change, security warnings, and que
 Entries above this line are the old long style — leave them, they are already written.
 
 ## ▶ NOW
+
+**Live front, 2026-08-19 07:55 — EOD writes are gated (`4c12840`, check S25). Next: the `agentData`
+useMemo in `src/EODReconciliationView.jsx` is missing `inventory` in its dependency array, so
+`itemsBks` ships fallback pack multipliers into every submitted report. Brief is already written
+and its premise already verified — it is the only block in `.claude/NEXT-SESSION.md`.**
 
 > 📋 **`.claude/NEXT-SESSION.md` holds exactly ONE job — copy the only block on it, paste, go.**
 > **It is a standing duty to rewrite that file with the next single job before any session that
