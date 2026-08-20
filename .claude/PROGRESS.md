@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-20 11:29 WIB (KPM app session)** · ✅ FROZEN SALE FIXED AND CONFIRMED BY HIM · ✅ NOTHING WAITING · branch `phase0-solid-ground`
+**Updated: 2026-08-20 14:18 WIB (KPM app session)** · 🔎 STOCK OPNAME DIAGNOSED, 0 CHANGED · ❓ ONE QUESTION BLOCKING · branch `phase0-solid-ground`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -15,7 +15,17 @@
 
 ## ⏳ WAITING ON ALDI — verbatim, do not paraphrase
 
-Nothing. **The frozen offline sale is FIXED and he confirmed it himself, 2026-08-20 11:04:
+❓ **BLOCKING, asked 2026-08-20 14:18 — which order for the five Stock Opname findings?**
+He said, verbatim: *"stock opname is the most important lets fix that"*, then *"i want u to check
+whats wrong first then make the changes"* and *"its part of your learning as well"*. So it was
+diagnosed and **nothing was changed** — tree is green at 441/441. Proposed order **1 → 5 → 4 → 2
+→ 3**; he has not answered yet. The five are in the log entry below.
+
+Two taste calls he ALREADY made for this screen, do not re-ask:
+- Colours **follow light/dark** (not a dark island) — replace the fixed hexes with theme tokens.
+- A matching count is **gold/amber**, a mismatch stays red. Green stays banned.
+
+Nothing else is waiting. **The frozen offline sale is FIXED and he confirmed it himself, 2026-08-20 11:04:
 *"its working now nice"*.** Cause was `useTransactionEngine.js:192` — an awaited Firestore write
 inside the offline branch, which can never settle. Measured with `disableNetwork()`, not guessed.
 The build id now prints in the Flight Recorder, so "which build is on the phone" is never a
@@ -2894,6 +2904,20 @@ price ladder; performance rank is now the Tier Automation Engine's job.
 
 ## 📓 LOG
 
+- **2026-08-20 14:18** — **Stock Opname diagnosed, nothing changed** (he stopped me mid-edit:
+  *"i want u to check whats wrong first then make the changes"*). Five findings, ranked:
+  **1.** The row lies whenever a product has damaged stock — `SYS EXPECTED` prints healthy stock
+  only (`StockOpnameView.jsx:1094`, and `:992` in the review list) while `TOTAL FOUND` and the
+  variance both include damaged. 100 healthy + 5 damaged counts as `SYS 100 → FND 105 → VAR 0`.
+  The variance is right; the EXPECTED number is the one leaving damage out.
+  **2.** The expected number is read LIVE while counting, but the snapshot that is saved is taken
+  at SUBMIT — a sale mid-count moves the target.
+  **3.** Legacy audits with no snapshot take an absolute `set` (`:296-299`) and wipe any
+  concurrent change; newer ones correctly `increment` by the difference.
+  **4.** 25 fixed near-blacks (`#1a1a1a`, `#111`, `#0a0a0a`, `bg-black/N`) make light mode dark on
+  dark, plus banned green and stray blue/purple borders.
+  **5.** Blind counting is all-or-nothing — his per-tier rule is not built.
+  S34 was drafted and **reverted** so the tree stays green. 599/0, 441/0.
 - **2026-08-20 11:29** — **tier 1 merge, STAGE A done.** He corrected the task list: *"i ask u to
   make only 1 profile for tier 1 account not 2"*, and the other job is *"fixing the UI and system
   on the stock opname"*. Cause of the double profile: he is THREE documents in \`motorists\` —
