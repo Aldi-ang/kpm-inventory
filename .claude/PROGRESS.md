@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-20 10:12 WIB (KPM app session)** · 🔴 FROZEN SALE STILL NOT FIXED (3rd report) · ❓ ONE QUESTION BLOCKING · branch `phase0-solid-ground`
+**Updated: 2026-08-20 10:26 WIB (KPM app session)** · 🔴 FROZEN SALE STILL NOT FIXED (3rd report) · ❓ ONE QUESTION BLOCKING · branch `phase0-solid-ground`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -2899,6 +2899,14 @@ price ladder; performance rank is now the Tier Automation Engine's job.
 
 ## 📓 LOG
 
+- **2026-08-20 10:26** — Alucard §9a rewritten to his two orders, verbatim: *"dont use workflow,
+  edit alucard rules for this"* and *"if want to use workflow then only use sonnet or haiku"*.
+  Default is now NO fan-out at all, only on his own words, and every agent must carry
+  `model: 'haiku'|'sonnet'`. **The collision is written down, not hidden:** the 2026-08-18
+  benchmark says setting `model` here kills the agent, so obeying him means probing with one
+  throwaway haiku agent and, if it dies, doing the job solo — never falling back to omitting the
+  field, which is what put the last fan-out on Opus. In practice: **no workflows until that probe
+  passes.** `c2daf1d` in `~/.claude/skills/alucard`.
 - **2026-08-20 10:12** — Alucard gained a hard **fan-out gate** (§9a) on his instruction, *"i want u
   to update alucard to make sure its not happening again"*: quota >=80% means ZERO agents, no
   standing mode outranks his quota, a two-grep test per agent, and **a dead agent is UNKNOWN, never
