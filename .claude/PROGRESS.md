@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-20 10:52 WIB (KPM app session)** · 🔴 FROZEN SALE STILL NOT FIXED (3rd report) · ❓ ONE QUESTION BLOCKING · branch `phase0-solid-ground`
+**Updated: 2026-08-20 11:04 WIB (KPM app session)** · ✅ FROZEN SALE FIXED AND CONFIRMED BY HIM · ✅ NOTHING WAITING · branch `phase0-solid-ground`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -15,16 +15,11 @@
 
 ## ⏳ WAITING ON ALDI — verbatim, do not paraphrase
 
-❓ **BLOCKING, asked 2026-08-20 07:30 — what build code does his phone show?**
-He reported the frozen sale a THIRD time: *"not working, it still stuck in the processing after i
-press the sign manifest button and receipt still not showing"*. Two real fixes have landed and
-neither cured it — **and a phone quietly serving old chunks is indistinguishable from a fix that
-does not work.** So the Flight Recorder (cloud icon in the header) now prints the build id.
-
-**Do not change any more sale code until he reads it out.** It should say `ce5a300`, which is what
-`https://192.168.1.109:4173` was serving at 07:30 (checked on the wire, not just on disk).
-- says `ce5a300` → the fixes are on the device and genuinely do not work. Real information.
-- says anything else → all three of his reports were against code that never reached him.
+Nothing. **The frozen offline sale is FIXED and he confirmed it himself, 2026-08-20 11:04:
+*"its working now nice"*.** Cause was `useTransactionEngine.js:192` — an awaited Firestore write
+inside the offline branch, which can never settle. Measured with `disableNetwork()`, not guessed.
+The build id now prints in the Flight Recorder, so "which build is on the phone" is never a
+guessing game again.
 
 Everything else he was asked has an answer, all from 2026-08-19/20:
 

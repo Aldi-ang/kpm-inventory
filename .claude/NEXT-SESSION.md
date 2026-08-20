@@ -78,6 +78,13 @@ ALREADY SETTLED, do not work it out again:
   in `.claude/launch.json`. `npm run dev` cannot do it at any setting: it has no built modules to
   cache. His phone also caches the app, so send him `/?fresh=1` or he sees the old copy and reports
   "no change" - that happened on 2026-08-20.
+- **NEVER `await` a Firestore WRITE inside an offline branch.** Measured 2026-08-20 with
+  `disableNetwork()`: `setDoc`/`updateDoc` stay pending forever, `getDoc` resolves from cache.
+  This froze every offline sale by an agent with a vehicle for three rounds. Fire the write, catch
+  it, carry on. S32 slices the offline branch and fails on ANY awaited write, at any line.
+- **The Flight Recorder prints the build id** (git short hash, injected by `vite.config.js`). When
+  he says a fix did not work, ASK FOR THAT CODE FIRST — a stale cache and a broken fix look
+  identical.
 - **A finished sale must never wait for optional work.** `setReceiptData` and the button release
   run immediately after `committed = true` in `handleFinalDeal`; the IOU ledger and the tier
   auto-promoter run after. S30 pins that order by offset. Do not move anything back above it.
