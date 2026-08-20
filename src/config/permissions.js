@@ -8,6 +8,20 @@ export const CORPORATE_TIERS = {
     TIER_6: 'ROOKIE'             
 };
 
+/* ONE PERSON, ONE PROFILE. Aldi, 2026-08-20: "i ask u to make only 1 profile for tier 1 account
+   not 2". The boss exists as three documents in `motorists`: master_owner (him), ADMIN_VEHICLE
+   (his van, created automatically at useDatabaseSync.js:126) and VAULT (his warehouse). Only the
+   first is a PERSON. The other two are places, and listing them as people is what put him in the
+   roster twice. 'ADMIN' is the legacy tag for the van, already translated at App.jsx:1828.
+
+   He chose to MERGE rather than hide, so these are staged: A folds them in the roster (done,
+   pinned by S33), B copies the van's record onto master_owner, C flips the writes and deletes
+   ADMIN_VEHICLE. C before B would show his van as empty, so the order is not optional. */
+export const TIER_ONE_ID = 'master_owner';
+export const TIER_ONE_ALIAS_IDS = ['ADMIN_VEHICLE', 'VAULT', 'ADMIN'];
+/* Reads only. Old sales and EOD reports still carry the alias, and they must keep answering. */
+export const resolveTierOneId = (id) => TIER_ONE_ALIAS_IDS.includes(id) ? TIER_ONE_ID : id;
+
 // 🚀 DYNAMIC TIER LABELS
 export let DYNAMIC_TIERS = [
     { id: CORPORATE_TIERS.TIER_2, label: 'T2: OWNER', color: 'text-yellow-500' },

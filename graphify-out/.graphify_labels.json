@@ -62,5 +62,10 @@
   "60": "✅🔴 2026-08-17 18:3x — WORKFLOW RESUMED: 3 CONFIRMED, ~60 UNVERIFIED. QUOTA OUT AGAIN (resets 23:20).",
   "61": "firebase.js",
   "62": "nextStop.js",
-  "67": "nextStop.js"
+  "63": "notify",
+  "64": "MapMissionControl.jsx",
+  "65": "JourneyView.jsx",
+  "66": "StockOpnameView.jsx",
+  "67": "nextStop.js",
+  "68": "ResidentEvilInventory.jsx"
 }

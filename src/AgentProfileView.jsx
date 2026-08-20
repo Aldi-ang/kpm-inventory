@@ -12,7 +12,7 @@ import {
 import { doc, getDoc, setDoc, updateDoc, collection, increment, serverTimestamp } from 'firebase/firestore';
 import { RankBorder, RANK_BORDERS, BORDER_KEYFRAMES, FrameFilters } from './config/rankBorders';
 import Cropper from 'react-easy-crop';
-import { hasClearance, DYNAMIC_TIERS } from './config/permissions';
+import { hasClearance, DYNAMIC_TIERS, TIER_ONE_ID, TIER_ONE_ALIAS_IDS } from './config/permissions';
 import HallOfFameView from './HallOfFameView';
 import { savePhotoAndGetReference, deletePhotoFromStorage, formatNumber, parseGroupedNumber, storeKey, storeLabel } from './utils/helpers';
 import { careerXP, DEFAULT_XP, totals, DEFAULT_BADGES, STAT_LABELS, BADGE_SOURCES, statLabel } from './config/career';
@@ -182,9 +182,18 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
         }
     }, [db, appId, userId, userRole]);
 
+    /* STAGE A of the tier-1 merge. The van and the vault are not people; they are folded into
+       his one entry and the van's load is carried onto it, so the roster shows him once and
+       nothing disappears from view. Nothing is written and nothing is deleted here - every old
+       record still resolves through resolveTierOneId. Pinned by S33. */
     const allAgents = useMemo(() => {
-        let list = [...(motorists || [])];
-        if (ownerProfile && !list.find(m => m.id === 'master_owner')) list.unshift(ownerProfile);
+        const src = motorists || [];
+        const vehicle = src.find(m => m.id === 'ADMIN_VEHICLE');
+        let list = src.filter(m => !TIER_ONE_ALIAS_IDS.includes(m.id));
+        if (ownerProfile && !list.find(m => m.id === TIER_ONE_ID)) list.unshift({
+            ...ownerProfile,
+            activeCanvas: ownerProfile.activeCanvas?.length ? ownerProfile.activeCanvas : (vehicle?.activeCanvas || []),
+        });
         return list;
     }, [motorists, ownerProfile]);
 

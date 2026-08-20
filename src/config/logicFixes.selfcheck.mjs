@@ -1617,5 +1617,55 @@ section('S32. No offline branch waits for a write that can never finish');
      reachedAfterFire === true); }
 
 
+/* --- S33 . one person, one profile for tier 1 (stage A of the merge) --------------------- */
+section('S33. The boss appears once in the roster, and his van goes with him');
+
+/* Aldi, 2026-08-20: "i ask u to make only 1 profile for tier 1 account not 2". He exists as three
+   records in `motorists`: master_owner (the person), ADMIN_VEHICLE (his van, created
+   automatically at useDatabaseSync.js:126) and VAULT (his warehouse). Only the first is a person;
+   listing the other two as people is what showed him twice.
+
+   He chose MERGE over hide, so this is stage A of three: fold them in the roster and carry the
+   van's load onto his entry, writing and deleting NOTHING. Stage B copies the record, stage C
+   flips the writes and removes ADMIN_VEHICLE. Doing C before B would show his van as empty. */
+{ const perms = read('src/config/permissions.js');
+  ok('there is ONE list of the ids that are not people',
+     /export const TIER_ONE_ALIAS_IDS/.test(perms));
+  ok('and it names all three of them',
+     /ADMIN_VEHICLE/.test(perms) && /VAULT/.test(perms) && /'ADMIN'/.test(perms));
+  ok('the canonical tier-1 id is master_owner',
+     /export const TIER_ONE_ID = 'master_owner'/.test(perms));
+  ok('a resolver maps any alias onto it, so old records still answer',
+     /export const resolveTierOneId/.test(perms)); }
+
+{ const from = profile.indexOf('const allAgents = useMemo');
+  const to = profile.indexOf('}, [motorists, ownerProfile]);', from);
+  const roster = (from === -1 || to === -1) ? '' : profile.slice(from, to + 30);
+  ok('the roster builder was found', roster.length > 100 && roster.length < 2500,
+     `sliced ${roster.length} chars`);
+  ok('the alias ids are filtered out of the people list',
+     /TIER_ONE_ALIAS_IDS/.test(roster));
+  ok('and the van\'s load is carried onto his one entry, so nothing vanishes from view',
+     /activeCanvas/.test(roster)); }
+
+/* BEHAVIOUR: the fold, on a roster shaped like his. */
+{ const ALIASES = ['ADMIN_VEHICLE', 'VAULT', 'ADMIN'];
+  const motorists = [
+    { id: 'ADMIN_VEHICLE', name: 'Admin (Boss Vehicle)', activeCanvas: [{ productId: 'p1', qty: 40 }] },
+    { id: 'VAULT', name: 'Master Vault', activeCanvas: [] },
+    { id: 'agent_budi', name: 'Budi', activeCanvas: [] },
+  ];
+  const owner = { id: 'master_owner', name: 'Master Owner' };
+  const vehicle = motorists.find(m => m.id === 'ADMIN_VEHICLE');
+  const list = motorists.filter(m => !ALIASES.includes(m.id));
+  list.unshift({ ...owner, activeCanvas: owner.activeCanvas?.length ? owner.activeCanvas : (vehicle?.activeCanvas || []) });
+
+  ok('he appears exactly once', list.filter(m => m.id === 'master_owner').length === 1);
+  ok('the van is no longer a person in the list', !list.some(m => ALIASES.includes(m.id)));
+  ok('his real salesmen are untouched', list.some(m => m.id === 'agent_budi') && list.length === 2);
+  ok('and the van load moved onto him rather than disappearing',
+     list[0].activeCanvas.length === 1 && list[0].activeCanvas[0].qty === 40); }
+
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);
