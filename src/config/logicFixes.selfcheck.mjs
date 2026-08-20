@@ -1560,5 +1560,21 @@ section('S30. One answer about the internet, and a receipt that never waits');
      deal.indexOf('setIsProcessingSale(false)') > iCommit); }
 
 
+/* --- S31 . which build is on the phone must be readable, not guessed -------------------- */
+section('S31. The running build says which build it is');
+
+/* 2026-08-20. Three rounds of "it is still broken" and no way to tell a real failure from a phone
+   showing yesterday's chunks. The app is a PWA that precaches every chunk, so a fix can be live
+   on the server and absent on the device, and the symptoms are identical. A build stamp he can
+   read out loud ends that argument in one message. */
+{ const vite = read('vite.config.js');
+  ok('the build id is injected at build time from git, not typed by hand',
+     /__BUILD_ID__/.test(vite) && /rev-parse --short HEAD/.test(vite));
+  ok('and it falls back rather than breaking a build outside git',
+     /catch/.test(vite.slice(vite.indexOf('BUILD_ID'), vite.indexOf('BUILD_ID') + 400)));
+  ok('the Flight Recorder shows it - the one panel he can open without signing in again',
+     /__BUILD_ID__/.test(app) && /Flight Recorder/.test(app)); }
+
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

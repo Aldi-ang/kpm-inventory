@@ -4587,7 +4587,12 @@ const handleGitHubMirror = async () => {
                           time the panel opens because the rows are mounted fresh. */}
                       <div className="kpm-recorder bg-[var(--duke-well-solid)] border border-[var(--duke-edge-1)] w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[80vh]">
                           <div className="bg-[var(--duke-fill-well)] p-4 border-b border-[var(--duke-edge-1)] flex justify-between items-center shrink-0">
-                              <h3 className="text-[var(--duke-ink-hi)] font-black uppercase tracking-widest flex items-center gap-2"><Activity size={18} className="text-[var(--duke-amber-ink)]"/> Flight Recorder</h3>
+                              <h3 className="text-[var(--duke-ink-hi)] font-black uppercase tracking-widest flex items-center gap-2"><Activity size={18} className="text-[var(--duke-amber-ink)]"/> Flight Recorder
+                                  {/* The build actually running on THIS device. Read it out when a fix
+                                      looks like it did not land - a stale cache and a real failure look
+                                      the same from the outside. */}
+                                  <span className="font-mono text-[10px] tracking-normal text-[var(--duke-ink-3)] normal-case">v{APP_VERSION} · {typeof __BUILD_ID__ === 'string' ? __BUILD_ID__ : 'dev'}</span>
+                              </h3>
                               <button onClick={() => setShowFlightRecorder(false)} className="text-[var(--duke-ink-3)] hover:text-[var(--duke-danger-ink)]"><X size={20}/></button>
                           </div>
                           

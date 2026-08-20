@@ -2,8 +2,20 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 import basicSsl from '@vitejs/plugin-basic-ssl'
+import { execSync } from 'node:child_process'
+
+/* WHICH BUILD IS THIS? Aldi tests on a phone, and this app is a PWA that stores every chunk for
+   offline use. A fix can be live on the server and absent on the device, and the two look
+   identical from the outside - on 2026-08-20 that cost three rounds of "it is still broken" with
+   no way to tell a real failure from a stale cache. The Flight Recorder now prints this, so he
+   can read it out and we know in one message. */
+const BUILD_ID = (() => {
+    try { return execSync('git rev-parse --short HEAD').toString().trim(); }
+    catch { return 'nogit'; }   // a build outside a checkout must still build
+})();
 
 export default defineConfig({
+  define: { __BUILD_ID__: JSON.stringify(BUILD_ID) },
   /* DEV ONLY — this never reaches a build. `npm run dev` now serves https://, because
      `crypto.subtle` (which hashes the master password) exists only in a SECURE CONTEXT:
      https, or localhost. Aldi's PC is localhost so it always worked; his phone reaches
