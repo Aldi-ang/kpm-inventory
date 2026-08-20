@@ -1442,6 +1442,7 @@ const PermissionMatrixEditor = ({ db, appId, userRole, userId }) => {
         { id: 'view_settings', label: 'Settings Panel' },
         { id: 'view_agent_profile', label: 'Agent Profile' },
         { id: 'can_unrestricted_sample', label: 'Bypass GPS for Sampling' }, 
+        { id: 'view_expected_count', label: 'Stock Count: see expected number while counting' },
         { id: 'edit_agent_roles', label: '[GOD] Promote Agents' },
         { id: 'edit_rank_config', label: '[GOD] Edit Ranks' }
     ];

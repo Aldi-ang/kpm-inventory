@@ -54,18 +54,12 @@
   "52": "mixedUnits.selfcheck.mjs",
   "53": "context-watch.mjs",
   "54": "🔴 2026-08-17 ~04:00 — the unverified first pass of that review (superseded by the entry above)",
-  "55": "txSize.selfcheck.mjs",
   "56": "CapybaraMascot.jsx",
   "57": "🔎 2026-08-17 17:1x — LOGIC REVIEW: 7 FLAWS FOUND, ALL WRITTEN TO THE BACKLOG",
   "58": "mixedUnits.selfcheck.mjs",
   "59": "✅ 2026-08-17 08:48 — REVIEW VERIFIED: **44 CONFIRMED, 34 REFUTED**. FIRST FIX LANDED.",
   "60": "✅🔴 2026-08-17 18:3x — WORKFLOW RESUMED: 3 CONFIRMED, ~60 UNVERIFIED. QUOTA OUT AGAIN (resets 23:20).",
   "61": "firebase.js",
-  "62": "nextStop.js",
   "63": "notify",
-  "64": "MapMissionControl.jsx",
-  "65": "JourneyView.jsx",
-  "66": "StockOpnameView.jsx",
-  "67": "nextStop.js",
-  "68": "ResidentEvilInventory.jsx"
+  "64": "MapMissionControl.jsx"
 }

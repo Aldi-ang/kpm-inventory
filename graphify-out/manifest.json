@@ -100,8 +100,8 @@
     "semantic_hash": ""
   },
   "src/StockOpnameView.jsx": {
-    "mtime": 1787059503.5185182,
-    "ast_hash": "c96bca3db10567f987ca1036405e8cd5",
+    "mtime": 1787210579.7120016,
+    "ast_hash": "966ec531fda919db23c5da3c25971ae5",
     "semantic_hash": ""
   },
   "src/components/AuditVaultView.jsx": {
@@ -185,8 +185,8 @@
     "semantic_hash": ""
   },
   "src/components/SettingsView.jsx": {
-    "mtime": 1787059554.3635645,
-    "ast_hash": "954072c68197f80372114f2f573ae191",
+    "mtime": 1787210501.1683364,
+    "ast_hash": "3755de851ecd5b84eb9aba7db72b693e",
     "semantic_hash": ""
   },
   "src/config/firebase.js": {
@@ -195,8 +195,8 @@
     "semantic_hash": ""
   },
   "src/config/permissions.js": {
-    "mtime": 1787200615.625515,
-    "ast_hash": "fd4bf4d0148b852bb336663c00332470",
+    "mtime": 1787210501.1653235,
+    "ast_hash": "97f6c5d329382fde4f563d797908391a",
     "semantic_hash": ""
   },
   "src/hooks/useDatabaseSync.js": {
@@ -570,8 +570,8 @@
     "semantic_hash": ""
   },
   ".claude/PROGRESS.md": {
-    "mtime": 1787200226.2235794,
-    "ast_hash": "100aaffb3a8f080da4846272c47ff445",
+    "mtime": 1787210365.8867867,
+    "ast_hash": "d51ae829eb2fff941532db6fbcf21ca6",
     "semantic_hash": ""
   },
   ".claude/pre-compact-context.md": {
@@ -755,8 +755,8 @@
     "semantic_hash": ""
   },
   "src/config/logicFixes.selfcheck.mjs": {
-    "mtime": 1787200595.1015563,
-    "ast_hash": "5e7ba3a4a9472b391bfb4d768abd35a7",
+    "mtime": 1787210579.972437,
+    "ast_hash": "3119e7a803a6b85e57a54d7ef9f5eeb8",
     "semantic_hash": ""
   },
   ".claude/NEXT-SESSION.md": {

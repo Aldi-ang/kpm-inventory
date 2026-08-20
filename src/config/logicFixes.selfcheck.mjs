@@ -1667,5 +1667,72 @@ section('S33. The boss appears once in the roster, and his van goes with him');
      list[0].activeCanvas.length === 1 && list[0].activeCanvas[0].qty === 40); }
 
 
+/* --- S34 . who sees the expected number WHILE counting ------------------------------------ */
+section('S34. Tier 3 and above count with the number beside them; below that, blind');
+
+/* Aldi, 2026-08-20: "comparison healthy and found side by side is higher tier only on default,
+   which is tier 3 and above only, toggle button should be added to the matrix". His reason,
+   2026-08-19: "encourage them to really count the number right". Blind counting already existed
+   for everyone - `isRevealed` only shows the figures once something is typed - so the change is
+   to let tier 3 and above see it BEFORE typing, and to make it a switch he can flip per tier. */
+{ const perms   = read('src/config/permissions.js');
+  const opname  = read('src/StockOpnameView.jsx');
+  const settings = read('src/components/SettingsView.jsx');
+
+  const tierBlock = (t) => {
+      const from = perms.indexOf(`[CORPORATE_TIERS.TIER_${t}]:`);
+      const to = perms.indexOf('],', from);
+      return (from === -1 || to === -1) ? '' : perms.slice(from, to);
+  };
+  ok('tier 2 has it by default', /view_expected_count/.test(tierBlock(2)));
+  ok('tier 3 has it by default', /view_expected_count/.test(tierBlock(3)));
+  for (const t of [4, 5, 6])
+      ok(`tier ${t} does NOT - they count blind`, !/view_expected_count/.test(tierBlock(t)));
+
+  ok('it is a toggle in the permission matrix, not a hidden constant',
+     /id: 'view_expected_count'/.test(settings));
+  ok('and the toggle says what it does in plain words',
+     /view_expected_count'[^}]*label: '[^']*[Ee]xpected/.test(settings));
+
+  ok('one helper decides it, so the screen cannot disagree with the matrix',
+     /export const canSeeExpectedCount/.test(perms));
+  ok('the counting screen asks that helper', /canSeeExpectedCount\(/.test(opname));
+  ok('and the screen is told which tier is looking', /userRole/.test(opname));
+
+  const from = opname.indexOf('const isRevealed');
+  const to = opname.indexOf('\n', from);
+  const line = (from === -1 || to === -1) ? '' : opname.slice(from, to);
+  ok('the reveal gate was found', line.length > 20 && line.length < 300, `got ${line.length} chars`);
+  ok('a high tier sees it without typing, everyone else still has to type first',
+     /showExpectedWhileCounting/.test(line) && /hasEntry/.test(line));
+  ok('and that flag comes from the helper, not from a local guess',
+     /const showExpectedWhileCounting = canSeeExpectedCount\(userRole\)/.test(opname));
+  /* The screen derives its own userRole at line 24 and every other permission decision on it
+     uses that one. Taking a prop of the same name collided with it and, worse, was read before it
+     existed. The flag must sit BELOW that declaration. */
+  ok('the flag is computed after the role it depends on, not above it',
+     opname.indexOf('const showExpectedWhileCounting') > opname.indexOf("const userRole = user?.userRole")); }
+
+/* BEHAVIOUR. The trap this feature dies on: ROLE_PERMISSIONS is REPLACED wholesale by the matrix
+   he saved in Firebase, so a brand-new key is simply ABSENT there. Absence must mean "use the
+   tier default", or the number never appears for tier 2 or 3 and the code looks broken while
+   being right. Once the key exists anywhere in his saved matrix he has configured it, and his
+   choice then wins in BOTH directions. */
+{ const KEY = 'view_expected_count';
+  const DEFAULT_ON = ['DEVELOPER', 'COMPANY_OWNER', 'AREA_ADMIN'];   // tier 3 and above
+  const decide = (role, ownPerms, matrixKnowsKey) =>
+      matrixKnowsKey ? ownPerms.includes(KEY) : DEFAULT_ON.includes(role);
+
+  ok('a matrix saved BEFORE the key still shows the number to tier 3',
+     decide('AREA_ADMIN', ['view_sales'], false) === true);
+  ok('and still hides it from tier 5', decide('FIELD_OPERATIVE', ['view_sales'], false) === false);
+  ok('tier 4 is blind by default - he named tier 3 as the cut',
+     decide('FLEET_CAPTAIN', ['view_sales'], false) === false);
+  ok('once he flips it ON for tier 4, tier 4 sees it',
+     decide('FLEET_CAPTAIN', ['view_sales', KEY], true) === true);
+  ok('and when he flips it OFF for tier 2, tier 2 loses it',
+     decide('COMPANY_OWNER', ['view_sales'], true) === false); }
+
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

@@ -70,11 +70,11 @@ export const isFleetManagementTier = (userRole) => {
 export let ROLE_PERMISSIONS = {
     [CORPORATE_TIERS.TIER_1]: ['ALL_ACCESS'], 
     [CORPORATE_TIERS.TIER_2]: [ 
-        'view_dashboard', 'view_map', 'view_journey', 'view_fleet', 'view_master_vault', 'view_restock_vault', 'view_sales', 'view_receivables', 'view_eod', 'view_stock_opname', 'view_customers', 'view_sampling', 'view_audit_logs', 'view_settings', 'view_agent_profile', 'edit_agent_roles', 'edit_rank_config', 'can_unrestricted_sample',
+        'view_dashboard', 'view_map', 'view_journey', 'view_fleet', 'view_master_vault', 'view_restock_vault', 'view_sales', 'view_receivables', 'view_eod', 'view_stock_opname', 'view_customers', 'view_sampling', 'view_audit_logs', 'view_settings', 'view_agent_profile', 'edit_agent_roles', 'edit_rank_config', 'can_unrestricted_sample', 'view_expected_count',
         'view_reports_global' // 🚀 THE DROPDOWN AUTHORITY
     ],
     [CORPORATE_TIERS.TIER_3]: [ 
-        'view_dashboard', 'view_map', 'view_journey', 'view_fleet', 'view_agent_inventory', 'view_restock_vault', 'view_sales', 'view_receivables', 'view_eod', 'view_agent_profile', 'can_unrestricted_sample',
+        'view_dashboard', 'view_map', 'view_journey', 'view_fleet', 'view_agent_inventory', 'view_restock_vault', 'view_sales', 'view_receivables', 'view_eod', 'view_agent_profile', 'can_unrestricted_sample', 'view_expected_count',
         'view_reports_regional' // 🚀 THE DROPDOWN AUTHORITY
     ],
     [CORPORATE_TIERS.TIER_4]: [ 
@@ -117,6 +117,27 @@ export const hasClearance = (userRole, requiredFeature) => {
     // even if it somehow ends up saved inside another tier's permission array.
     if (role === CORPORATE_TIERS.TIER_1 && activePerms.includes('ALL_ACCESS')) return true;
     return activePerms.includes(requiredFeature) || false;
+};
+
+/* STOCK COUNT: does this tier see the expected number WHILE counting?
+   Aldi, 2026-08-20: "comparison healthy and found side by side is higher tier only on default,
+   which is tier 3 and above only". His reason, the day before: "encourage them to really count
+   the number right" - a counter who can see the answer will drift towards it.
+
+   THE TRAP this would otherwise die on: `injectDynamicPermissions` REPLACES ROLE_PERMISSIONS
+   with whatever he saved in Firebase, so a brand-new key is simply ABSENT from his live matrix.
+   Read as a plain missing permission that means "no", and the number would never appear for
+   tier 2 or 3 - the feature would look broken while the code was right. So absence means
+   "use the tier default". The moment the key appears anywhere in his saved matrix he has
+   configured it deliberately, and from then on his switch wins in BOTH directions. */
+const EXPECTED_COUNT_KEY = 'view_expected_count';
+export const canSeeExpectedCount = (userRole) => {
+    const role = translateLegacyRole(userRole);
+    if (role === CORPORATE_TIERS.TIER_1) return true;
+    const matrixKnowsKey = Object.values(ROLE_PERMISSIONS)
+        .some(list => Array.isArray(list) && list.includes(EXPECTED_COUNT_KEY));
+    if (matrixKnowsKey) return hasClearance(userRole, EXPECTED_COUNT_KEY);
+    return role === CORPORATE_TIERS.TIER_2 || role === CORPORATE_TIERS.TIER_3;
 };
 
 // 🚀 THE 3 CUSTOMER DIRECTORY EDIT MODES (mirrors the view_reports_* pattern)

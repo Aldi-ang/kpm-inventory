@@ -10,6 +10,7 @@ import { collection, addDoc, getDocs, updateDoc, doc, writeBatch, serverTimestam
 import { savePhotoAndGetReference, deletePhotoFromStorage, commitInChunks, formatRupiah, compressImageToBase64, tierPrice } from './utils/helpers';
 import { confirmAction, promptAction } from './components/ConfirmGate.jsx';
 import { notify } from './components/Toast.jsx';
+import { canSeeExpectedCount } from './config/permissions';
 
 const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId, user, isAdmin, logAudit, triggerCapy, motorists = [], appSettings }) => {
     
@@ -18,6 +19,12 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
     const safeMotorists = motorists || [];
 
     const userRole = user?.userRole || 'AGENT';
+    /* Tier 3 and above count with the expected number beside them; below that they count blind
+       and it only appears once they have typed. One switch per tier in the permission matrix.
+       Deliberately reuses the userRole this screen already derives on the line above rather than
+       taking a prop of the same name - App does pass one, and destructuring it here collided with
+       this declaration and would have been read before it existed. */
+    const showExpectedWhileCounting = canSeeExpectedCount(userRole);
     // 🚀 FIX: This used to also treat 'COMPANY_OWNER', 'DEVELOPER', and 'HQ' role tags,
     // and the bare `isAdmin` PIN-unlock flag on its own, as "high command" — broader
     // than what Firestore's rules actually allow to read `pending_audits`/
@@ -1066,7 +1073,7 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                                 const goodVal = entry?.good ?? '';
                                 const damagedVal = entry?.damaged ?? '';
                                 const { totalFound, variance } = getVariance(item);
-                                const isRevealed = hasEntry && (goodVal !== '' || damagedVal !== '');
+                                const isRevealed = showExpectedWhileCounting || (hasEntry && (goodVal !== '' || damagedVal !== ''));
 
                                 return (
                                     <div key={item.id} className={`bg-[var(--raised)] rounded-lg border transition-all border-[var(--line)] ${isRevealed ? (variance === 0 ? 'border-emerald-500/50 shadow-[0_0_15px_rgba(16,185,129,0.1)]' : 'border-red-500/50 shadow-[0_0_15px_rgba(220,38,38,0.1)]') : 'border-[var(--line)] hover:border-[var(--line)]'} `}>
