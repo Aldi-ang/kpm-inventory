@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-20 10:31 WIB (KPM app session)** · 🔴 FROZEN SALE STILL NOT FIXED (3rd report) · ❓ ONE QUESTION BLOCKING · branch `phase0-solid-ground`
+**Updated: 2026-08-20 10:52 WIB (KPM app session)** · 🔴 FROZEN SALE STILL NOT FIXED (3rd report) · ❓ ONE QUESTION BLOCKING · branch `phase0-solid-ground`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -2899,6 +2899,14 @@ price ladder; performance rank is now the Tier Automation Engine's job.
 
 ## 📓 LOG
 
+- **2026-08-20 10:52** — **FOUND IT, and measured it instead of guessing.** Ran Firestore's own
+  `disableNetwork()` in node: `setDoc` and `updateDoc` are STILL PENDING after 4s and never settle;
+  `getDoc` resolves from cache. `useTransactionEngine.js:192` awaited exactly such a write inside
+  the sale's OFFLINE branch, 11 lines above the Ghost Ledger toast — so for any agent WITH A
+  VEHICLE the sale saved, stock cut, then execution stopped dead: no toast, no receipt, button
+  stuck for good. **Aldi never hit that line** — a plain ADMIN gets `currentAgentProfileId = null`
+  at line 77 and skips the block, which is why his report and the code looked inconsistent for
+  three rounds. Write is now fired, not awaited. S32, 6 checks, red first. `d2d3ee1`. 599/0, 430/0.
 - **2026-08-20 10:26** — Alucard §9a rewritten to his two orders, verbatim: *"dont use workflow,
   edit alucard rules for this"* and *"if want to use workflow then only use sonnet or haiku"*.
   Default is now NO fan-out at all, only on his own words, and every agent must carry
