@@ -4671,8 +4671,8 @@ const handleGitHubMirror = async () => {
                                      stay: those two are earning attention. */
                                   syncLogs.map((log) => (
                                       <div key={log.id} className={`kpm-log-row p-3 rounded border text-xs leading-relaxed ${log.type === 'ERROR' ? 'bg-[color-mix(in_srgb,var(--danger)_15%,transparent)] border-[var(--duke-danger-edge)] text-[var(--duke-danger-ink)]' : log.type === 'SUCCESS' ? 'bg-[color-mix(in_srgb,var(--duke-brass-2)_10%,transparent)] border-[color-mix(in_srgb,var(--duke-brass-3)_60%,transparent)] text-[var(--duke-brass-ink)]' : log.type === 'OFFLINE' ? 'bg-[color-mix(in_srgb,var(--duke-amber)_15%,transparent)] border-[color-mix(in_srgb,var(--duke-amber-edge)_60%,transparent)] text-[var(--shell-orange-ink)]' : 'bg-[var(--duke-fill-well)] border-[var(--duke-edge-1)] text-[var(--duke-ink-1)]'}`}>
-                                          <div className="text-[11px] opacity-50 mb-1">{new Date(log.timestamp).toLocaleString()}</div>
-                                          <div>{log.message}</div>
+                                          <div className="text-[11px] font-bold opacity-70 mb-1 tabular-nums">{new Date(log.timestamp).toLocaleString()}</div>
+                                          <div className="font-semibold">{log.message}</div>
                                       </div>
                                   ))
                               )}

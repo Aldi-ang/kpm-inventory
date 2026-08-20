@@ -610,7 +610,7 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                                 </div>
                             )}
 
-                            <button type="submit" disabled={isProcessingAudit} className={`w-full py-4 rounded-xl font-black uppercase tracking-widest shadow-lg flex justify-center items-center gap-2 transition-all active:scale-95 ${resolutionModal.method === 'SAMPLING' ? 'bg-[var(--gold)] hover:bg-[var(--gold)] text-[var(--gold-ink)]' : resolutionModal.method === 'RTV' ? 'bg-[var(--gold)] hover:bg-[var(--gold)] text-[var(--gold-ink)]' : 'bg-[var(--danger)] hover:bg-[var(--danger)] text-[var(--gold-ink)]'} `}>
+                            <button type="submit" disabled={isProcessingAudit} className={`w-full py-4 rounded-xl font-black uppercase tracking-widest shadow-lg flex justify-center items-center gap-2 transition-all active:scale-95 ${resolutionModal.method === 'SAMPLING' ? 'bg-[color-mix(in_srgb,var(--gold)_12%,transparent)] hover:bg-[color-mix(in_srgb,var(--gold)_22%,transparent)] border border-[var(--accent-edge)] text-[var(--accent-ink)]' : resolutionModal.method === 'RTV' ? 'bg-[color-mix(in_srgb,var(--gold)_12%,transparent)] hover:bg-[color-mix(in_srgb,var(--gold)_22%,transparent)] border border-[var(--accent-edge)] text-[var(--accent-ink)]' : 'bg-[color-mix(in_srgb,var(--danger)_14%,transparent)] hover:bg-[color-mix(in_srgb,var(--danger)_24%,transparent)] border border-[var(--danger)] text-[var(--danger-ink)]'} `}>
                                 {isProcessingAudit ? <RefreshCcw size={18} className="animate-spin"/> : <Check size={18}/>} Execute Protocol
                             </button>
                         </form>
@@ -716,7 +716,7 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                                                 {isLowStock ? (
                                                     <span className="bg-[var(--danger-well)] text-[var(--danger-ink)] border border-[var(--danger)] px-2 py-1 rounded text-[11px] font-black uppercase tracking-widest shadow-[0_0_10px_rgba(220,38,38,0.2)] animate-pulse">Low Stock</span>
                                                 ) : (
-                                                    <span className="bg-[var(--sunk)] text-[var(--accent-ink)] border border-[var(--line)] px-2 py-1 rounded text-[11px] font-black uppercase tracking-widest">Healthy</span>
+                                                    <span className="bg-[var(--sunk)] text-[var(--accent-ink)] border border-[var(--accent-edge)] px-2 py-1 rounded text-[11px] font-black uppercase tracking-widest">Healthy</span>
                                                 )}
                                             </div>
                                         </div>
@@ -829,13 +829,13 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                                             </div>
                                             
                                             <div className="flex flex-col sm:flex-row gap-2 w-full xl:w-auto shrink-0 border-t border-[var(--line)] xl:border-none pt-3 xl:pt-0 mt-2 xl:mt-0">
-                                                <button onClick={() => setResolutionModal({item, method: 'SAMPLING'})} className="flex-1 xl:flex-none px-4 py-2 bg-[var(--sunk)] hover:bg-[var(--raised)] border border-[var(--alt-edge)] text-[var(--alt-ink)] rounded-lg text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-colors active:scale-[0.97]">
+                                                <button onClick={() => setResolutionModal({item, method: 'SAMPLING'})} className="flex-1 xl:flex-none px-4 py-2 bg-[var(--raised)] hover:bg-[color-mix(in_srgb,var(--alt-ink)_12%,var(--raised))] border border-[var(--alt-edge)] text-[var(--alt-ink)] rounded-lg text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-colors active:scale-[0.97]">
                                                     <FlaskConical size={14}/> Convert to Sample
                                                 </button>
-                                                <button onClick={() => setResolutionModal({item, method: 'RTV'})} className="flex-1 xl:flex-none px-4 py-2 bg-[var(--sunk)] hover:bg-[var(--raised)] border border-[var(--line)] text-[var(--ink)] rounded-lg text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-colors active:scale-[0.97]">
+                                                <button onClick={() => setResolutionModal({item, method: 'RTV'})} className="flex-1 xl:flex-none px-4 py-2 bg-[var(--raised)] hover:bg-[color-mix(in_srgb,var(--ink)_8%,var(--raised))] border border-[var(--line)] text-[var(--ink)] rounded-lg text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-colors active:scale-[0.97]">
                                                     <Undo2 size={14}/> RTV Factory
                                                 </button>
-                                                <button onClick={() => setResolutionModal({item, method: 'PENALTY'})} className="kpm-rim-neon flex-1 xl:flex-none px-4 py-2 bg-[var(--danger-well)] hover:bg-[var(--danger)] border border-[var(--danger)] text-[var(--danger-ink)] hover:text-[var(--gold-ink)] rounded-lg text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-colors shadow-lg">
+                                                <button onClick={() => setResolutionModal({item, method: 'PENALTY'})} className="kpm-rim-neon flex-1 xl:flex-none px-4 py-2 bg-[var(--raised)] hover:bg-[color-mix(in_srgb,var(--danger)_14%,var(--raised))] border border-[var(--danger)] text-[var(--danger-ink)] rounded-lg text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-colors shadow-lg">
                                                     <BadgeDollarSign size={14}/> Penalty Charge
                                                 </button>
                                             </div>
@@ -1038,7 +1038,7 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
 
                                                 {!isHistory && (
                                                     <div className="flex gap-3 pt-2 border-t border-[var(--line)]">
-                                                        <button onClick={() => handleRejectAudit(audit)} disabled={isProcessingAudit} className="flex-1 bg-[var(--danger-well)] hover:bg-[var(--danger)] border border-[var(--danger)] text-[var(--danger-ink)] hover:text-[var(--gold-ink)] py-3 rounded-lg font-bold text-xs flex items-center justify-center gap-2 transition-colors uppercase tracking-widest">
+                                                        <button onClick={() => handleRejectAudit(audit)} disabled={isProcessingAudit} className="flex-1 bg-[var(--raised)] hover:bg-[color-mix(in_srgb,var(--danger)_14%,var(--raised))] border border-[var(--danger)] text-[var(--danger-ink)] py-3 rounded-lg font-bold text-xs flex items-center justify-center gap-2 transition-colors uppercase tracking-widest">
                                                             <X size={14}/> Reject Count
                                                         </button>
                                                         <button onClick={() => handleApproveAudit(audit)} disabled={isProcessingAudit} className="flex-[2] bg-[var(--gold)] hover:bg-[var(--gold)] text-[var(--gold-ink)] py-3 rounded-lg font-black text-xs flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(16,185,129,0.3)] transition-colors uppercase tracking-widest">
