@@ -1774,9 +1774,15 @@ section('S35. The counting card is readable in both themes and cannot overlap it
    light mode. Two are gone; the rest are the next job and are counted here so the number cannot
    quietly grow. */
 { const opname = read('src/StockOpnameView.jsx');
-  const fixed = (opname.match(/bg-black\/|bg-\[#|border-\[#/g) || []).length;
-  ok('the theme-blind colours left on this screen are down to a known number, not growing',
-     fixed <= 24, `${fixed} left - lower this number when you remove some, never raise it`); }
+  const fixed = (opname.match(/bg-black\/|bg-\[#|border-\[#|text-\[#/g) || []).length;
+  ok('NO fixed colour is left anywhere on this screen - Monitor, Quarantine and HQ Audits included',
+     fixed === 0, `${fixed} left`);
+  /* Palette law: no blue, no green. The three quarantine outcomes were purple, blue and red;
+     they are gold, neutral and red now, which is the vocabulary the rest of the app already
+     uses. Full-screen scrims stay dark in BOTH themes on purpose - a photo lightbox is meant to
+     be - but they say so with --duke-scrim-hi rather than a raw black. */
+  const banned = (opname.match(/emerald|green-[0-9]|blue-[0-9]|purple-[0-9]|indigo-[0-9]/g) || []).length;
+  ok('and no banned hue survives on it either', banned === 0, `${banned} left`); }
 
 
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);

@@ -551,15 +551,15 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
         <div className="h-full flex flex-col animate-fade-in space-y-4 relative">
             
             {viewingImage && (
-                <div className="fixed inset-0 z-[500] bg-black/95 backdrop-blur-sm flex items-center justify-center p-4">
-                    <button onClick={() => setViewingImage(null)} className="absolute top-6 right-6 text-[var(--ink-dim)] hover:text-[var(--ink)] bg-black/50 p-2 rounded-full"><X size={32}/></button>
+                <div className="fixed inset-0 z-[500] bg-[var(--duke-scrim-hi)] backdrop-blur-sm flex items-center justify-center p-4">
+                    <button onClick={() => setViewingImage(null)} className="absolute top-6 right-6 text-[var(--ink-dim)] hover:text-[var(--ink)] bg-[var(--sunk)] p-2 rounded-full"><X size={32}/></button>
                     <img src={viewingImage} alt="Damaged Item Proof" className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl border border-[var(--line)]" />
                 </div>
             )}
 
             {resolutionModal && (
-                <div className="fixed inset-0 z-[400] bg-black/90 backdrop-blur-md flex items-center justify-center p-4 animate-pop-in">
-                    <div className={`w-full max-w-md bg-[#0a0a0a] rounded-2xl border-2 shadow-2xl flex flex-col overflow-hidden ${resolutionModal.method === 'SAMPLING' ? 'border-purple-500 shadow-[0_0_40px_rgba(168,85,247,0.2)]' : resolutionModal.method === 'RTV' ? 'border-blue-500 shadow-[0_0_40px_rgba(59,130,246,0.2)]' : 'border-red-600 shadow-[0_0_40px_rgba(220,38,38,0.3)]'} `}>
+                <div className="fixed inset-0 z-[400] bg-[var(--duke-scrim-hi)] backdrop-blur-md flex items-center justify-center p-4 animate-pop-in">
+                    <div className={`w-full max-w-md bg-[var(--panel)] rounded-2xl border-2 shadow-2xl flex flex-col overflow-hidden ${resolutionModal.method === 'SAMPLING' ? 'border-[var(--accent-edge)]' : resolutionModal.method === 'RTV' ? 'border-[var(--line)]' : 'border-[var(--danger)]'} `}>
                         <div className={`p-4 border-b border-[var(--line)] flex justify-between items-center ${resolutionModal.method === 'SAMPLING' ? 'bg-[var(--gold)] text-[var(--ink-dim)]' : resolutionModal.method === 'RTV' ? 'bg-[var(--gold)] text-[var(--ink-dim)]' : 'bg-[var(--danger)] text-[var(--danger-ink)]'} `}>
                             <h3 className="font-black uppercase tracking-widest flex items-center gap-2">
                                 {resolutionModal.method === 'SAMPLING' && <FlaskConical size={18}/>}
@@ -657,7 +657,7 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
             {/* VIEW MODE 0: THE LIVE BRANCH MONITOR                     */}
             {/* ======================================================== */}
             {viewMode === 'monitor' && isHighCommand && (
-                <div className="flex-1 flex flex-col min-h-0 bg-black/40 rounded-xl border border-[var(--line)] shadow-inner p-4 relative overflow-hidden animate-fade-in">
+                <div className="flex-1 flex flex-col min-h-0 bg-[var(--sunk)] rounded-xl border border-[var(--line)] shadow-inner p-4 relative overflow-hidden animate-fade-in">
                     
                     <div className="flex items-center gap-2 bg-[var(--sunk)] border border-[var(--line)] rounded-lg p-2 px-3 mb-6 w-full md:w-64 z-10 relative">
                         <MapPin size={16} className="text-[var(--ink-dim)]"/>
@@ -675,7 +675,7 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                             const isLowStock = stat.vault <= (p.minStock || 5);
 
                             return (
-                                <div key={p.id} className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl overflow-hidden flex flex-col shadow-lg transition-all hover:border-[var(--line)] relative group">
+                                <div key={p.id} className="bg-[var(--raised)] border border-[var(--line)] rounded-xl overflow-hidden flex flex-col shadow-lg transition-all hover:border-[var(--line)] relative group">
                                     
                                     {/* Background Accent */}
                                     <div className="absolute -top-4 -right-4 p-4 opacity-5 pointer-events-none group-hover:scale-110 transition-transform">
@@ -683,8 +683,8 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                                     </div>
 
                                     {/* Header */}
-                                    <div className="flex items-center p-4 border-b border-[#2a2a2a] bg-black/40 z-10 border-[var(--line)]">
-                                        <div className="w-12 h-12 bg-[var(--sunk)] border border-[#333] rounded-lg overflow-hidden shrink-0 flex items-center justify-center shadow-inner border-[var(--line)]">
+                                    <div className="flex items-center p-4 border-b border-[var(--line)] bg-[var(--sunk)] z-10 border-[var(--line)]">
+                                        <div className="w-12 h-12 bg-[var(--sunk)] border border-[var(--line)] rounded-lg overflow-hidden shrink-0 flex items-center justify-center shadow-inner border-[var(--line)]">
                                             {p.images?.front ? <img src={p.images.front} className="w-full h-full object-cover"/> : <ImageIcon size={20} className="text-[var(--ink-dim)]"/>}
                                         </div>
                                         <div className="ml-3 flex-1 overflow-hidden">
@@ -697,7 +697,7 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                                     <div className="p-4 z-10 flex flex-col gap-3">
                                         
                                         {/* Vault vs Initial Row */}
-                                        <div className="flex items-center justify-between bg-black/60 border border-[var(--line)] rounded-lg p-3 shadow-inner">
+                                        <div className="flex items-center justify-between bg-[var(--sunk)] border border-[var(--line)] rounded-lg p-3 shadow-inner">
                                             <div>
                                                 <p className="text-[11px] text-[var(--ink-dim)] font-bold uppercase tracking-widest mb-1">Vault / Initial</p>
                                                 <div className="flex items-baseline gap-1.5">
@@ -723,15 +723,15 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
 
                                         {/* Breakdowns Row */}
                                         <div className="grid grid-cols-3 gap-2">
-                                            <div className="bg-[#111] border border-[#2a2a2a] rounded-lg p-2.5 text-center shadow-inner hover:border-[var(--accent-edge)] transition-colors">
+                                            <div className="bg-[var(--sunk)] border border-[var(--line)] rounded-lg p-2.5 text-center shadow-inner hover:border-[var(--accent-edge)] transition-colors">
                                                 <span className="text-[11px] text-[var(--accent-ink)] font-bold uppercase tracking-widest mb-1 block">Field</span>
                                                 <span className="text-[var(--accent-ink)] font-black font-mono text-sm">{stat.field}</span>
                                             </div>
-                                            <div className="bg-[#111] border border-[#2a2a2a] rounded-lg p-2.5 text-center shadow-inner hover:border-[var(--line)] transition-colors">
+                                            <div className="bg-[var(--sunk)] border border-[var(--line)] rounded-lg p-2.5 text-center shadow-inner hover:border-[var(--line)] transition-colors">
                                                 <span className="text-[11px] text-[var(--ink-dim)] font-bold uppercase tracking-widest mb-1 block">Sold</span>
                                                 <span className="text-[var(--ink-dim)] font-black font-mono text-sm">{stat.sold}</span>
                                             </div>
-                                            <div className="bg-[#111] border border-[#2a2a2a] rounded-lg p-2.5 text-center shadow-inner hover:border-[var(--danger)] transition-colors">
+                                            <div className="bg-[var(--sunk)] border border-[var(--line)] rounded-lg p-2.5 text-center shadow-inner hover:border-[var(--danger)] transition-colors">
                                                 <span className="text-[11px] text-[var(--danger-ink)] font-bold uppercase tracking-widest mb-1 block">Damaged</span>
                                                 <span className="text-[var(--danger-ink)] font-black font-mono text-sm">{stat.damaged}</span>
                                             </div>
@@ -739,7 +739,7 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                                     </div>
                                     
                                     {/* Multi-Color Progress Bar */}
-                                    <div className="h-1.5 w-full bg-[#111] flex mt-auto border-t border-[#2a2a2a] border-[var(--line)]">
+                                    <div className="h-1.5 w-full bg-[var(--sunk)] flex mt-auto border-t border-[var(--line)] border-[var(--line)]">
                                         {stat.initial > 0 && (
                                             <>
                                                 <div className="h-full bg-[var(--gold)]" style={{ width: `${(stat.vault / stat.initial) * 100}%` }} title={`Vault: ${stat.vault}`}></div>
@@ -760,7 +760,7 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
             {/* VIEW MODE 1.5: THE QUARANTINE VAULT                      */}
             {/* ======================================================== */}
             {viewMode === 'quarantine' && isHighCommand && (
-                <div className="flex-1 flex flex-col min-h-0 bg-black/40 rounded-xl border border-[var(--accent-edge)] shadow-inner p-4 relative overflow-hidden animate-fade-in">
+                <div className="flex-1 flex flex-col min-h-0 bg-[var(--sunk)] rounded-xl border border-[var(--accent-edge)] shadow-inner p-4 relative overflow-hidden animate-fade-in">
                     <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(249,115,22,0.05),transparent_70%)] pointer-events-none"></div>
                     
                     <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 border-b border-[var(--accent-edge)] pb-4">
@@ -815,7 +815,7 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                                     return (
                                         <div key={item.id} className="bg-[var(--sunk)] border border-[var(--line)] rounded-xl p-4 flex flex-col xl:flex-row justify-between xl:items-center gap-4 hover:border-[var(--accent-edge)] transition-colors shadow-md">
                                             <div className="flex items-center gap-4">
-                                                <div className="p-3 bg-[var(--gold)] text-[var(--accent-ink)] rounded-full border border-[var(--accent-edge)] shrink-0"><PackageMinus size={24}/></div>
+                                                <div className="p-3 bg-[var(--gold)] text-[var(--gold-ink)] rounded-full border border-[var(--accent-edge)] shrink-0"><PackageMinus size={24}/></div>
                                                 <div>
                                                     <h3 className="font-bold text-[var(--ink)] text-base uppercase tracking-wider">{item.name}</h3>
                                                     <div className="flex items-center gap-3 mt-1 text-xs font-mono">
@@ -867,7 +867,7 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                                                 <h4 className="font-bold text-[var(--ink)] uppercase text-sm">{log.qty} Bks • {log.productName}</h4>
                                                 <p className="text-[10px] text-[var(--ink-dim)] font-mono mt-1">Facility: {log.facility} | Executed By: {log.resolvedBy?.toUpperCase()}</p>
                                                 
-                                                <div className="mt-2 text-[10px] text-[var(--ink-dim)] font-mono bg-black/30 p-2 rounded border border-[var(--line)]">
+                                                <div className="mt-2 text-[10px] text-[var(--ink-dim)] font-mono bg-[var(--sunk)] p-2 rounded border border-[var(--line)]">
                                                     {log.method === 'SAMPLING' && `Reason: ${log.details?.reason}`}
                                                     {log.method === 'RTV' && `RTV Surat Jalan: ${log.details?.rtvRef}`}
                                                     {log.method === 'PENALTY' && `Bounty Charged To: ${log.details?.agentName} (Rp ${new Intl.NumberFormat('id-ID').format(log.totalValueHpp)})`}
@@ -976,7 +976,7 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                                         </div>
 
                                         {isExpanded && (
-                                            <div className="border-t border-[var(--line)] bg-black/20 p-4">
+                                            <div className="border-t border-[var(--line)] bg-[var(--sunk)] p-4">
                                                 
                                                 {isHistory && audit.status === 'REJECTED' && audit.rejectReason && (
                                                     <div className="mb-4 bg-[var(--danger-well)] border border-[var(--danger)] p-3 rounded text-[10px] font-mono text-[var(--danger-ink)]">
@@ -999,7 +999,7 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                                                                         <span className="text-[var(--ink-dim)]">SYS: {item.expectedStock}</span>
                                                                         <span className="text-[var(--ink-dim)]">→</span>
                                                                         <span className="text-[var(--ink-dim)] font-bold">FND: {item.totalFound}</span>
-                                                                        <span className={`w-12 text-right font-black ${item.variance === 0 ? 'text-emerald-500' : 'text-[var(--danger-ink)]'} `}>
+                                                                        <span className={`w-12 text-right font-black ${item.variance === 0 ? 'text-[var(--accent-ink)]' : 'text-[var(--danger-ink)]'} `}>
                                                                             {item.variance > 0 ? '+' : ''}{item.variance}
                                                                         </span>
                                                                     </div>
@@ -1019,7 +1019,7 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                                                                 </div>
 
                                                                 {(isMissing || item.damagedPhotoUrl) && (
-                                                                    <div className="mt-2 flex items-center justify-between bg-black/30 p-2 rounded">
+                                                                    <div className="mt-2 flex items-center justify-between bg-[var(--sunk)] p-2 rounded">
                                                                         {isMissing ? (
                                                                             <span className="text-[11px] text-[var(--danger-ink)] font-bold uppercase tracking-widest flex items-center gap-1"><AlertTriangle size={10}/> Unaccounted Shrinkage Detected</span>
                                                                         ) : <span></span>}
