@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-20 10:26 WIB (KPM app session)** · 🔴 FROZEN SALE STILL NOT FIXED (3rd report) · ❓ ONE QUESTION BLOCKING · branch `phase0-solid-ground`
+**Updated: 2026-08-20 10:31 WIB (KPM app session)** · 🔴 FROZEN SALE STILL NOT FIXED (3rd report) · ❓ ONE QUESTION BLOCKING · branch `phase0-solid-ground`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -2906,7 +2906,9 @@ price ladder; performance rank is now the Tier Automation Engine's job.
   benchmark says setting `model` here kills the agent, so obeying him means probing with one
   throwaway haiku agent and, if it dies, doing the job solo — never falling back to omitting the
   field, which is what put the last fan-out on Opus. In practice: **no workflows until that probe
-  passes.** `c2daf1d` in `~/.claude/skills/alucard`.
+  passes.** `c2daf1d` in `~/.claude/skills/alucard`. **CLOSED at 10:31 — told the tier route is
+  dead, he said "okay then no workflow". Now marked LOCKED in §9a: never use one, never propose
+  one, never ask.**
 - **2026-08-20 10:12** — Alucard gained a hard **fan-out gate** (§9a) on his instruction, *"i want u
   to update alucard to make sure its not happening again"*: quota >=80% means ZERO agents, no
   standing mode outranks his quota, a two-grep test per agent, and **a dead agent is UNKNOWN, never
