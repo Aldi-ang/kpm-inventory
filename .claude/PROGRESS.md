@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-20 17:05 WIB (KPM app session)** · ✅ AMBER DRAWS LINES, NOT BOXES · ❓ SYSTEM REDESIGN NOT STARTED · branch `phase0-solid-ground`
+**Updated: 2026-08-20 17:22 WIB (KPM app session)** · ✅ HANDOFF WRITTEN, SAFE TO /clear · ❓ 4 STOCK OPNAME FINDINGS UNRANKED · branch `phase0-solid-ground`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -2908,6 +2908,16 @@ price ladder; performance rank is now the Tier Automation Engine's job.
 - ✅ **The Firebase authorized domain is DONE** — *"already"*. `192.168.1.109` can sign in.
 
 ## 📓 LOG
+
+- **2026-08-20 17:22** — **side strip type bumped** (`c6ad61a`) and **the full job list written to
+  `.claude/NEXT-SESSION.md`** at his request: *"take notes of all of this task in your job list and
+  i will clear after and make prompt to continue the jobs"*. **He is about to `/clear` — that file
+  is the whole handoff.** The strip: 24 sizes in one panel, largest-first so labels could not be
+  bumped twice (labels 9.5→11, sub-lines →11.5/12, headings and deltas 11→12.5, names 13→15, the
+  two big figures 21→26), bounded by the panel's own heading and closing note so it cannot leak.
+  **Still unranked by him: the four Stock Opname findings**, #1 being the row that lies when a
+  product has damaged stock (`SYS 100 → FND 105 → VAR 0`), and #4 being the "tokopedia/indomaret
+  level" system redesign he has asked for twice. Current build `c6ad61a`. 599/0, 501/0.
 
 - **2026-08-20 17:05** — **amber draws the line, never fills the box** (`87cc10c`). His rule:
   *"stop fill the background with amber color, better use it in all situation or most situation

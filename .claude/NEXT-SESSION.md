@@ -6,139 +6,159 @@ ponytail ultra and use karpathy guidelines
 ## Read this before you write a single word to Aldi
 
 Hard WORDS are the problem, not long sentences. Say "the screen went blank and froze", not "the
-root unmounted". Say "the app forgets who you are", not "the credential is destroyed". Keep file
-names, function names, numbers and error text exactly as they are — that is how he finds things.
+root unmounted". Keep file names, function names, numbers and error text exactly as they are.
+
+🔒 **NO WORKFLOWS, NO SUBAGENTS.** Settled 2026-08-20: *"dont use workflow"* … *"okay then no
+workflow"*. Do not use one, do not propose one, do not ask. See Alucard §9a.
+
+🔴 **DIAGNOSE FIRST, THEN CHANGE.** His instruction, 2026-08-20: *"i want u to check whats wrong
+first then make the changes"* … *"its part of your learning as well"*. On any screen he names:
+report the findings ranked with file and line, and write NO code — **not even a check** — until he
+picks the order.
+
+⚠️ **HIS SCREENSHOTS CAN BE FROM AN OLD BUILD.** It happened twice on 2026-08-20 — two things
+were already fixed. The Flight Recorder header prints the build id (git short hash). **Ask for it
+before believing a screenshot.** Current build: `c6ad61a`.
 
 ---
 
-Build the per-tier switch for the expected number in Stock Count, and rename the default tiers.
-**He already decided both on 2026-08-19.** Nothing here needs his approval before you start; his
-exact words are in `.claude/PROGRESS.md`. This is a build job, not a research job.
+# THE JOB: finish Stock Opname
 
-WHAT HE WANTS. While an agent counts stock, tiers 1, 2 and 3 see the number the system expects
-next to what they typed. Tiers 4, 5 and 6 do not — they count blind, and the expected number only
-appears after they have typed theirs, which the screen already does. His reason, verbatim:
-*"encourage them to really count the number right"*.
+He said it plainly: *"stock opname is the most important lets fix that"*. Colours and the per-tier
+rule are DONE. **Four findings remain, and he has never ranked them — ask him first.**
 
-WHERE THE PIECES ARE.
+## The four, in the order I would do them
 
-- The list of what each tier may do is `ROLE_PERMISSIONS` at `src/config/permissions.js:56`. Each
-  tier is an array of plain strings such as `'view_eod'`. Tier 1 holds only `'ALL_ACCESS'` and is
-  handled separately at `src/config/permissions.js:104`, so tier 1 needs no new entry.
-- The check is `hasClearance(userRole, 'the_key')` at `src/config/permissions.js:90`.
-- The expected number is drawn as `SYS: {item.expectedStock}` at `src/StockOpnameView.jsx:992`.
-  **Confirm first whether that line is the live counting row or the review list shown afterwards**
-  — the review list must keep showing it for everyone. Gate the live counting row only. Search
-  `src/StockOpnameView.jsx` for the other `expectedStock` uses (`228`, `292`, `294`) — those are
-  the saved snapshot and the maths, never the display, and must not be touched.
-- The default tier names are `DYNAMIC_TIERS` at `src/config/permissions.js:12`.
+**1 · THE ROW LIES WHEN THERE IS DAMAGED STOCK.** Wrong maths people act on, and tier 3+ now see
+it earlier in the count, so more eyes land on it.
 
-THE RENAME, labels only:
+- `SYS EXPECTED` prints **healthy stock only** — `src/StockOpnameView.jsx:1094` (live counting
+  row) and `:992` (review list, reading `item.expectedStock`).
+- `TOTAL FOUND` is `good + damaged`, and `getVariance()` (`:188`) compares against
+  `item.stock + item.damagedStock`.
+- So 100 healthy + 5 damaged, counted correctly, prints **`SYS 100 → FND 105 → VAR 0`**. The
+  variance is right; the EXPECTED figure is the one leaving damage out.
+- The saved record has the same split — `:227-233` stores `expectedStock` and
+  `expectedDamagedStock` separately but a single `totalFound`.
+- **Decide with him:** show expected as `healthy + damaged` (one number, matching the variance), or
+  show both side by side. Do not guess — it changes what an agent signs off on.
 
-| line | now | becomes |
-|---|---|---|
-| `permissions.js:13` | `T2: OWNER` | `T2: OWNER` (unchanged) |
-| `permissions.js:14` | `T3: REGIONAL` | `T3: HQ SALES MANAGER` |
-| `permissions.js:15` | `T4: CAPTAIN` | `T4: REGIONAL ADMIN` |
-| `permissions.js:16` | `T5: OPERATIVE` | `T5: SALES CANVAS` |
-| `permissions.js:17` | `T6: ROOKIE` | `T6: SALES MOTORIST` |
+**2 · THE EXPECTED NUMBER MOVES WHILE HE COUNTS.** The counting row reads `item.stock` live, but
+the snapshot that is saved is taken at SUBMIT (`:227`). A sale mid-count moves the target. Consider
+snapshotting when the count STARTS.
 
-TRAP 1, the one that will make you claim a false success. Both of these lists get **overwritten
-from Firebase** by `injectDynamicPermissions()` at `src/config/permissions.js:81`. If Aldi has ever
-saved the permission screen, his saved copy replaces the defaults, so a key you add to
-`ROLE_PERMISSIONS` will be **missing** on his real account and the number will stay hidden for
-tier 2 and 3 no matter what your code says. Decide how a saved matrix picks up a brand-new key —
-the honest options are (a) treat the key as ON when the tier's saved list predates it, or (b) tell
-him he must open the permission screen once and press save. Say which one you chose and why.
+**3 · OLD AUDITS OVERWRITE INSTEAD OF ADJUSTING.** `:292-299`. Records with a snapshot correctly
+`increment(counted - expected)`; ones without do an absolute `set`, wiping any concurrent change.
+Legacy only, low risk, but real.
 
-TRAP 2. Do NOT touch the ids in `CORPORATE_TIERS` at `src/config/permissions.js:2`. Those strings
-are stored on every user document in Firebase. Changing `FLEET_CAPTAIN` to anything would strip
-those people of every permission they have. Labels change; ids never do.
+**4 · THE SYSTEM REDESIGN — his real ask, not started.** *"i want system like tokopedia and
+indomaret level"* … *"we need better system for the stock opname to reach that level"*. My proposal,
+unranked by him:
+- Count in **sessions** — pick a shelf or category, count it, close it. Today it is every product
+  at once with no save point.
+- **Progress you can see** — "18 of 47 counted", and resume tomorrow without losing typed work.
+- **Scan, not scroll** — the search box exists; a barcode scan jumping to the row is the difference.
+- **Fix the maths first** (finding 1). No polish matters while the numbers lie.
+- **Sign-off with a reason** — a difference needs a cause picked from a list, not just a number.
 
-TRAP 3. `DYNAMIC_TIERS` also carries a `color:` on each row, and three of them are off-palette
-(`text-purple-400`, `text-blue-400`, `text-emerald-400`). The palette law is no blue, no green.
-That is a separate job in the queue — mention it, do not fix it inside this one.
+Run after every change:
+`npm run build; node src/config/integration.audit.mjs; node src/config/logicFixes.selfcheck.mjs`
 
-LEAVE A CHECK in `src/config/logicFixes.selfcheck.mjs`. Next free section is **S27** (S26 is the
-offline tab catcher). Make it fail first. Pin: the new key is present for tier 2 and tier 3 and
-absent for tier 4, 5 and 6; the counting row is wrapped in a `hasClearance(...)` call on that exact
-key; the five labels read exactly as the table above; and the six `CORPORATE_TIERS` ids are
-byte-for-byte unchanged.
+---
 
-Run: `npm run build; node src/config/integration.audit.mjs; node src/config/logicFixes.selfcheck.mjs`
+## DESIGN LAWS SET ON 2026-08-20 — do not re-litigate, do not undo
 
-ALREADY SETTLED, do not work it out again:
-- The offline black screen is fixed. `LazyTabBoundary` in `src/App.jsx` catches a tab that fails
-  to download and shows a Try Again button. Pinned by S26.
-- **The Sales Terminal keeps a draft** in `localStorage` (`kpm_sales_draft_v1`), because leaving
-  the tab unmounts the screen. Typed fields only; measured ones (GPS, proximity, territory) are
-  deliberately excluded and S29 guards each one by name. Adding a new typed field means adding it
-  to the draft AND to S29's TYPED list.
-- **Offline can only be tested from a real build.** `npm run preview -- --host`, entry `kpm-preview`
-  in `.claude/launch.json`. `npm run dev` cannot do it at any setting: it has no built modules to
-  cache. His phone also caches the app, so send him `/?fresh=1` or he sees the old copy and reports
-  "no change" - that happened on 2026-08-20.
-- **NEVER `await` a Firestore WRITE inside an offline branch.** Measured 2026-08-20 with
-  `disableNetwork()`: `setDoc`/`updateDoc` stay pending forever, `getDoc` resolves from cache.
-  This froze every offline sale by an agent with a vehicle for three rounds. Fire the write, catch
-  it, carry on. S32 slices the offline branch and fails on ANY awaited write, at any line.
-- **The Flight Recorder prints the build id** (git short hash, injected by `vite.config.js`). When
-  he says a fix did not work, ASK FOR THAT CODE FIRST — a stale cache and a broken fix look
-  identical.
-- **A finished sale must never wait for optional work.** `setReceiptData` and the button release
-  run immediately after `committed = true` in `handleFinalDeal`; the IOU ledger and the tier
-  auto-promoter run after. S30 pins that order by offset. Do not move anything back above it.
-- **`useOfflineEngine()` shares ONE `isOnline` at module scope** (`useSyncExternalStore`). It is
-  called from two places and used to keep two copies with two probes; they disagreed for 30s and
-  froze a sale. Never reintroduce a per-instance copy.
-- **`navigator.onLine` is a liar and it froze a sale.** It says a network exists, not that packets
-  arrive. Use `canReachInternet()` from `useOfflineEngine.js`, or `isOnline`. Trusting a NO is fine;
-  trusting a YES is the bug. Full story: `A-Brain/Wiki/Concepts/A Network Is Not The Internet.md`,
-  pinned by S27.
-- **A slice end must never be a raw `indexOf` result.** Files here are CRLF; `'
-}
-'` never matches,
-  `indexOf` returns -1, and `slice(from, -1)` hands back the whole file. Twelve S26 checks passed
-  that way for a day. Anchor on CRLF-safe text and pin the slice's length.
-- Every EOD save goes through one `submit(...payloads)` gate (`4c12840`, check S25).
-- `eodBountyLines()` and `tierPrice()` in `helpers.js` are the only places a shortfall becomes
-  rupiah and a tier becomes a price.
-- Checks are aimed at one element or one block, never at a word that appears all over the file.
+- **Amber draws lines, it does not fill boxes.** His words: *"stop fill the background with amber
+  color, better use it in all situation or most situation for the line only to looks more
+  expensive"*, and *"dont use put amber and black, too dominant … dark is 90% 5% light and other
+  color can be variative"*. A chip, pill, badge or disc is **dark surface + 1px coloured edge +
+  coloured ink**. Gold fills ONLY a selected tab, a primary button, or a bar whose LENGTH is the
+  data. **S37 pins this as a number: at most 18 gold fills in `StockOpnameView.jsx`. Lower it,
+  never raise it.**
+- **Ink on a PLATE is not ink on a PANEL.** `--accent-ink` is *gold-as-text* and in dark mode it is
+  the SAME hex as `--gold` (#D08A2E) — gold on gold measured **1.00**, the identical colour. On any
+  filled plate use **`--gold-ink`** or **`--duke-on-fill`**. This bug appeared four separate times.
+- **The third accent is violet**: `--alt-ink` / `--alt-edge`, both themes, ink and edges only.
+  Blue and green are banned by the palette law; warm is taken by gold and red. Measured 9.10:1
+  dark, 5.67:1 light.
+- **In light mode `--sunk` (#B9B0A0) is DARKER than the panel.** A control on it reads as a hole.
+  Buttons belong on `--raised` (#EDE7D8 light / #1B1917 dark).
+- **No `filter`, ever.** The audit rule *"nothing depends on a shadow, a blur or a filter"* exists
+  because Lite Mode deletes all four and a screen once collapsed into one column. An exemption was
+  available for the neon rim and was NOT taken.
+- **Tints use `color-mix(in_srgb,var(--x)_12%,transparent)`, never `/N`.** Tailwind cannot parse
+  `var()` through the opacity modifier — 35 classes in this app once painted nothing.
+- **Motion:** `.kpm-rim-neon` (one 1px red arc, 5s, on the penalty button only) and `.kpm-hazard`
+  (breathes 3.6s, opacity floor 0.72, never blinks). **Both are removed outright in Lite Mode and
+  under reduced-motion** — never frozen, a stopped animation reads as a bug.
+
+---
+
+## THE OTHER OPEN JOBS
+
+**TIER 1 = ONE PROFILE — stages B and C.** He chose MERGE over hide. He is three documents in
+`motorists`: `master_owner` (the person), `ADMIN_VEHICLE` (his van, auto-created at
+`useDatabaseSync.js:126`) and `VAULT` (his warehouse). **Stage A is done** (`447e3dd`, S33): the
+roster folds them and carries the van's load onto his one entry. Nothing is written or deleted yet.
+- **B:** copy the van's `activeCanvas`, `allowedPayments`, `allowedTiers` onto `master_owner`,
+  after a backup.
+- **C:** only once he confirms B — flip the writes and delete `ADMIN_VEHICLE`.
+- **C before B shows his van as EMPTY.** 60 sites across 10 files read these ids. The order is not
+  optional. `TIER_ONE_ID`, `TIER_ONE_ALIAS_IDS` and `resolveTierOneId` are in `permissions.js`.
+
+**TITIP everywhere, never "consignment"** — labels only; code names like `CONSIGNMENT_PAYMENT` stay.
+
+**Tier renames he decided 2026-08-19, still unbuilt** — `DYNAMIC_TIERS` in `permissions.js`:
+T3 → `HQ SALES MANAGER`, T4 → `REGIONAL ADMIN`, T5 → `SALES CANVAS`, T6 → `SALES MOTORIST`.
+**Labels only — never touch the ids in `CORPORATE_TIERS`, they are on every user document.**
+
+**The forced Google sign-in** — cause UNKNOWN. ⚠️ DANGER: removing the `await` from the two
+`deleteDoc` lines at `src/App.jsx:2333-2334` lets execution reach `signOut(auth)` at `:2336` and
+destroys his sign-in permanently with no signal.
+
+**Wrong agent name** — a DATA problem. The name is copied into each sale at save time; old records
+keep the wrong one for good. He must decide about repairing them first. He also asked for ONE
+EMAIL, ONE PROFILE, which is the tier-1 merge above.
+
+**Reconcile and Clear** — no tier check at `FleetCanvasManager.jsx:1056`; `firestore.rules:479`
+already refuses the save, so it is a button that lies rather than lost data. His rule: tier 1 only.
+
+**IOU in the map customer panel** — asked for, located, not built.
+
+Older: gold on gold on the admin side · the `bg-black/N` sweep on OTHER screens · the `agentData`
+memo missing `inventory` so `itemsBks` uses fallback pack sizes · Lite Mode stops
+`transition-duration` but not `transition-delay` · Force Reset is a 24px destructive button ·
+`getCurrentDate()` is UTC in 26 places · the Sampling and Customers redesigns.
+
+**LAST OF ALL — merge to main.** *"we might it later if we done with everything"*. Not yet.
+
+---
+
+## SETTLED TODAY — do not work these out again
+
+- **Never `await` a Firestore WRITE in an offline branch.** MEASURED with `disableNetwork()`:
+  `setDoc`/`updateDoc` stay pending forever, `getDoc` resolves from cache. This froze every offline
+  sale by an agent with a vehicle for three rounds (`useTransactionEngine.js:192`). S32 slices the
+  offline branch and fails on ANY awaited write, at any line.
+- **A finished sale never waits for optional work.** `setReceiptData` + the button release run
+  immediately after `committed = true` in `handleFinalDeal`; the IOU ledger and auto-promoter run
+  after. S30 pins the order by offset.
+- **`useOfflineEngine()` shares ONE `isOnline`** at module scope via `useSyncExternalStore`. Two
+  copies with two probes disagreed for 30s and froze a sale. Never reintroduce a per-instance copy.
+- **`navigator.onLine` lies** — it says a network exists, not that packets arrive. Use
+  `canReachInternet()` or `isOnline`. Trusting a NO is fine; trusting a YES is the bug.
+- **The Sales Terminal keeps a draft** in `localStorage` (`kpm_sales_draft_v1`) — typed fields only,
+  never measured ones (GPS, proximity, territory). Adding a typed field means adding it to the
+  draft AND to S29's TYPED list. **He confirmed this working.**
+- **The lazy-tab catcher** `LazyTabBoundary` (S26) — a failed tab download shows a retry, not a
+  black screen. Its retry probes the real internet before reloading.
+- **A slice end must never be a raw `indexOf` result.** Files here are CRLF; a missed anchor
+  returns -1 and `slice(from, -1)` hands back the whole file. Twelve S26 checks passed that way for
+  a day.
+- **There are TWO css files in `dist/assets/`.** `head -1` picked the wrong one and reported six
+  working classes as missing. Check both.
+- **Offline can only be tested from a real build** — `npm run preview -- --host`, entry
+  `kpm-preview` in `.claude/launch.json`. Send him `/?fresh=1` or his phone serves the old copy.
+- **His LAN address moves.** Read the `Network:` line vite prints, never a written-down number.
 
 When you finish, rewrite this file with the next single job.
-
----
-
-<details>
-<summary>The queue underneath — promote ONE next time, never paste this part</summary>
-
-**Decided but unbuilt:** the whole app says TITIP, never consignment. Labels only — code names such
-as `CONSIGNMENT_PAYMENT` stay. Subtitles were a maybe-later, not a job.
-
-Six reported items from 2026-08-19, evidence with file and line numbers in
-`.claude/SWEEP-2026-08-19.md`. One is now fixed. Ranked by what they cost him:
-
-- The forced Google sign-in — cause UNKNOWN, first guess thrown out. DANGER: removing the `await`
-  from the two `deleteDoc` lines at `src/App.jsx:2333-2334` lets the code reach `signOut(auth)` at
-  `src/App.jsx:2336` and wipes his sign-in for good with no signal. Do not take that shortcut.
-- Wrong agent name — confirmed, and it is a DATA problem not a display problem. The name is copied
-  into each sale when the sale is saved; for tier 1 that is the Google account name. Old records
-  keep the wrong name for good, so he must decide about repairing them before any code is written.
-  He also asked for ONE EMAIL, ONE PROFILE — a bigger identity change, not a label fix.
-- Reconcile and Clear — no tier check at `FleetCanvasManager.jsx:1056`, but `firestore.rules:479`
-  already refuses the save for a plain tier 3 or 4, so it is a button that lies rather than lost
-  data. His rule: tier 1 only, returns go through EOD, red sold rows stay until EOD is done.
-- Unreadable colours — fixed colour codes (`bg-[#1a1a1a]`, `bg-black/40`, `bg-[#111]`) in
-  `src/StockOpnameView.jsx` that never change with the theme. Also the three off-palette tier
-  colours in `DYNAMIC_TIERS`, and `text-emerald-500` at `src/StockOpnameView.jsx:995`.
-- IOU in the map customer panel — asked for, located, not built.
-- ~~Black screen with no signal~~ — FIXED 2026-08-19, S26.
-
-Older, still open: gold on gold on the admin side; the `bg-black/N` sweep; the `agentData` memo is
-missing `inventory` so `itemsBks` uses fallback pack sizes; Lite Mode stops `transition-duration`
-but not `transition-delay`; Force Reset is a 24px destructive button; `getCurrentDate()` uses UTC
-in 26 places when his day starts at 07:00; the Sampling, Customers and Stock Opname redesigns.
-
-THE LAST JOB — merge to main. "we might it later if we done with everything". Not yet.
-
-</details>
