@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-20 14:46 WIB (KPM app session)** · 🛠 STOCK OPNAME 1 OF 5 DONE · ✅ NOTHING WAITING · branch `phase0-solid-ground`
+**Updated: 2026-08-20 15:07 WIB (KPM app session)** · 🛠 STOCK OPNAME CARD REBUILT · ❓ SYSTEM REDESIGN NOT STARTED · branch `phase0-solid-ground`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -2909,6 +2909,16 @@ price ladder; performance rank is now the Tier Automation Engine's job.
 
 ## 📓 LOG
 
+- **2026-08-20 15:07** — **counting card rebuilt** (`3ee39b4`). His screenshot held a real defect,
+  not just taste: the field labels were `absolute -top-2` ON the inputs, so "GOOD STOCK" wrapped
+  to two lines and covered the number. Labels are now siblings above the field. Card is theme
+  tokens only, match=gold / mismatch=red, three equal figures, grouped tabular digits, a state
+  rail down the edge, name truncates. Search bar and footer off `bg-black/N`. S35, 11 checks, one
+  of them a **ratchet: 24 theme-blind colours left on this screen, it fails if that grows**.
+  ⚠️ **UNSEEN BY ME** — the browser pane will not composite here.
+  🔴 **HE WANTS MORE:** *"i want system like tokopedia and indomaret level not this kind"* and
+  *"we need better system for the stock opname to reach that level"*. That is a SYSTEM redesign,
+  not styling, and it is NOT started — quota was at 75%. Findings 1-4 also still open. 599/0, 470/0.
 - **2026-08-20 14:46** — **Stock Opname finding 5 DONE.** \`view_expected_count\` is on tier 2 and 3
   by default (tier 1 has ALL_ACCESS), off for 4/5/6, and appears in the permission matrix as a
   toggle he can flip himself. **The trap it would have died on:** \`injectDynamicPermissions\`
