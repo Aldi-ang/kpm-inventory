@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-20 16:04 WIB (KPM app session)** · ✅ STOCK OPNAME COLOURS ALL CLEAN · ❓ SYSTEM REDESIGN NOT STARTED · branch `phase0-solid-ground`
+**Updated: 2026-08-20 16:42 WIB (KPM app session)** · ✅ AMBER IS AN ACCENT NOW · ❓ SYSTEM REDESIGN NOT STARTED · branch `phase0-solid-ground`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -2908,6 +2908,23 @@ price ladder; performance rank is now the Tier Automation Engine's job.
 - ✅ **The Firebase authorized domain is DONE** — *"already"*. `192.168.1.109` can sign in.
 
 ## 📓 LOG
+
+- **2026-08-20 16:42** — **amber demoted from surface to accent** (`1219526`). His rule, verbatim:
+  *"dont use put amber and black, too dominant, add some color variety ... as long as dark is 90%
+  5% light and other color can be variative"*. **Every unreadable thing in his five screenshots
+  was ONE mistake: gold as a large FILL with dim or gold ink on it.** Fixing the ink alone would
+  have left the screen 40% amber, so the FILL went instead — dark surface, one thin coloured
+  line, coloured ink. **Gold fills 27 → 18**, and the 18 left are all legitimate (selected tabs,
+  2 primary buttons, 3 data bars whose LENGTH is the data). A chip, pill, badge or disc is never
+  filled again — S37 pins that as a number.
+  **New third accent** `--alt-ink` / `--alt-edge` (violet — the only hue left, blue and green are
+  banned, warm is taken): dark 9.10:1 on `--sunk`, light 5.67:1. Ink and edges only, never a
+  fill. The three quarantine actions now read by consequence: sample violet, RTV neutral, penalty
+  red and the only filled one.
+  **Hazard mark**: was `animate-pulse` (opacity 1→0.5, 2s) — a blinking lamp on a header icon
+  that is always on screen. Emil's frequency rule says reduce, not improve: red now, breathing on
+  3.6s with an opacity floor of 0.72, off in Lite Mode and reduced-motion.
+  ⚠️ **Still unseen by me** — the browser pane will not composite here. 599/0, 501/0.
 
 - **2026-08-20 16:04** — **Stock Opname colour sweep DONE** (`5000617`) + **the neon rim**
   (`752ac5a`). 17 rules / 26 sites: every `bg-black/N` and every hex became a surface token, the
