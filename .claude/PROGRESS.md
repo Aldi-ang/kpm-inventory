@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-20 15:31 WIB (KPM app session)** · 🛠 CONTRAST FIXED, CARD REBUILT · ❓ SYSTEM REDESIGN NOT STARTED · branch `phase0-solid-ground`
+**Updated: 2026-08-20 16:04 WIB (KPM app session)** · ✅ STOCK OPNAME COLOURS ALL CLEAN · ❓ SYSTEM REDESIGN NOT STARTED · branch `phase0-solid-ground`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -2908,6 +2908,18 @@ price ladder; performance rank is now the Tier Automation Engine's job.
 - ✅ **The Firebase authorized domain is DONE** — *"already"*. `192.168.1.109` can sign in.
 
 ## 📓 LOG
+
+- **2026-08-20 16:04** — **Stock Opname colour sweep DONE** (`5000617`) + **the neon rim**
+  (`752ac5a`). 17 rules / 26 sites: every `bg-black/N` and every hex became a surface token, the
+  purple and blue quarantine outcomes became gold / neutral / red, and one more gold-on-gold icon
+  was fixed. **The S35 ratchet is now ZERO** for both fixed colours and banned hues on that
+  screen, so neither can creep back a line at a time. Measured body text on every surface used:
+  light `--sunk` 8.71, `--panel` 13.42, `--raised` 15.17; dark 16.18 / 14.89 / 13.84.
+  The rim: one 1px red arc walking the PENALTY CHARGE button every 5s, a masked conic gradient,
+  no JS, removed outright in Lite Mode and under reduced-motion. **The audit caught my first
+  version** — it used `drop-shadow`, and the rule *"nothing depends on a shadow, a blur or a
+  filter"* exists because Lite Mode deletes them; an exemption was available and was NOT taken,
+  the gradient ramp does the bloom instead. S36, 12 checks. ⚠️ **Still unseen by me.** 599/0, 484/0.
 
 - **2026-08-20 15:31** — **four contrast fixes from his screenshots** (`5931b57`). **The lesson:
   `--accent-ink` is gold-as-TEXT-on-a-panel; in DARK MODE it is the same hex as `--gold`
