@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-20 06:05 WIB (KPM app session)** · 🛠 FROZEN SALE, SECOND AND DEEPER FIX · ✅ NOTHING WAITING, 4 THINGS UNTESTED · branch `phase0-solid-ground`
+**Updated: 2026-08-20 07:30 WIB (KPM app session)** · 🔴 FROZEN SALE STILL NOT FIXED (3rd report) · ❓ ONE QUESTION BLOCKING · branch `phase0-solid-ground`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -15,7 +15,18 @@
 
 ## ⏳ WAITING ON ALDI — verbatim, do not paraphrase
 
-**Nothing is blocked.** Everything he was asked has an answer, all from 2026-08-19/20:
+❓ **BLOCKING, asked 2026-08-20 07:30 — what build code does his phone show?**
+He reported the frozen sale a THIRD time: *"not working, it still stuck in the processing after i
+press the sign manifest button and receipt still not showing"*. Two real fixes have landed and
+neither cured it — **and a phone quietly serving old chunks is indistinguishable from a fix that
+does not work.** So the Flight Recorder (cloud icon in the header) now prints the build id.
+
+**Do not change any more sale code until he reads it out.** It should say `ce5a300`, which is what
+`https://192.168.1.109:4173` was serving at 07:30 (checked on the wire, not just on disk).
+- says `ce5a300` → the fixes are on the device and genuinely do not work. Real information.
+- says anything else → all three of his reports were against code that never reached him.
+
+Everything else he was asked has an answer, all from 2026-08-19/20:
 
 - dev server offline mode — **"sure so that i can test the offline mode"**
 - the IF SOLD label — he picked **PROJECTED VALUE** from four offered, after **"i think we better
@@ -25,9 +36,11 @@
 `npm run preview -- --host`). **His phone caches the app, so open `/?fresh=1` or Chrome will keep
 showing the old copy — that is what made him report "i dont see no change".**
 
-1. An offline sale now reaches the receipt and releases the button. **Failed his test once on
-   2026-08-20 05:5x and was fixed again, deeper** — two copies of the online flag disagreed. The
-   receipt is now drawn before any optional work, so this shape cannot come back.
+1. An offline sale reaching the receipt. **FAILED HIS TEST THREE TIMES** (05:1x, 05:5x, 07:2x).
+   Two real causes found and fixed; neither was enough. **Blocked on the build-id question above.**
+   Trap for the next session: `onProcessSale` is NOT the engine — it is `handleMerchantSale`
+   (`useTransactionEngine.js:405`), a two-line wrapper that returns `await processTransaction(...)`.
+   Two rounds of analysis were done against the wrong function. Read the wrapper first.
 2. PROJECTED VALUE stacks one tier per line on a phone.
 3. Try Again on a failed screen no longer paints white.
 4. The sale syncs when signal returns.
@@ -2316,6 +2329,7 @@ batch them: he has to look at each one. `AgentProfileView` is already clean (0 s
 | `src/hooks/useOfflineEngine.js` → `canReachInternet()` | **EXPORTED 2026-08-20** — the ONLY honest answer to "is there internet". `navigator.onLine` is allowed to be trusted when it says NO, never when it says YES. See `A-Brain/Wiki/Concepts/A Network Is Not The Internet.md` |
 | `src/App.jsx` → `LazyTabBoundary` | **NEW 2026-08-19** — the only error boundary in the app; catches a screen that fails to download and offers Try Again. Pinned by S26 |
 | `src/MerchantSalesView.jsx` → `DRAFT_KEY` / `readDraft()` | **NEW 2026-08-20** — the half-typed sale, kept in `localStorage` across a tab change. TYPED fields only; GPS, distance, proximity and territory are deliberately excluded. A new typed field must be added here AND to S29's `TYPED` list |
+| `vite.config.js` → `__BUILD_ID__` + Flight Recorder header | **NEW 2026-08-20** — the short git hash of the running build, printed where he can read it. ASK FOR THIS before believing any "it is still broken" report from a phone |
 | `src/AgentInventoryView.jsx` → `Money` | **NEW 2026-08-20** — money that shrinks by string length. Use it for any figure in a narrow column |
 | `.claude/launch.json` → `kpm-preview` | **NEW 2026-08-20** — `npm run preview -- --host`, the ONLY way to test offline. `npm run dev` cannot: it has no built modules to cache |
 | `tools/theme-lab-server.mjs` | plain HTTP over `dist/` at :4180 — how to LOOK at the real stylesheet when a self-signed cert locks the browser out |
@@ -2885,6 +2899,13 @@ price ladder; performance rank is now the Tier Automation Engine's job.
 
 ## 📓 LOG
 
+- **2026-08-20 07:30** — third report of the frozen sale. Stopped shipping fixes and made the build
+  identifiable instead: `vite.config.js` injects `__BUILD_ID__` from `git rev-parse --short HEAD`
+  and the Flight Recorder prints it. **A PWA that precaches every chunk makes a stale device look
+  exactly like a broken fix, and that ambiguity has cost more of this session than the bugs.**
+  Also learned, the hard way: `onProcessSale` is `handleMerchantSale` at
+  `useTransactionEngine.js:405`, a wrapper — not the function whose offline branch I had been
+  reading. S31, 3 checks, red first. `ce5a300`. 599/0, 424/0.
 - **2026-08-20 06:05** — the frozen sale, second and deeper fix. The first one only moved the lie:
   `useOfflineEngine()` was called TWICE (`App.jsx:260`, `useTransactionEngine.js:48`) and each copy
   kept its own `isOnline` and its own 30s probe, so the engine could be offline while App was still
@@ -2911,8 +2932,6 @@ price ladder; performance rank is now the Tier Automation Engine's job.
   S27+S28. `4219909`. 599/0, 383/0.
 - **2026-08-18 16:38** — legacy "(Retail)" endings hidden at display via `storeLabel`; backup and
   the customer directory deliberately kept raw. `883a62e`. 599/0, 163/0, 9/9, 7/7.
-- **2026-08-18 16:29** — wrote the guard that finds private name rules; it found 8 across 3 files,
-  all fixed. `ef437b1`. 599/0, 150/0, 9/9, 7/7, 6/6.
 ### 2026-08-18 12:58 (KPM app session) — alucard now auto-loads caveman ULTRA + karpathy every call
 
 His words: *"i dont want to add some cap but i want u to add caveman ultra talking habits while
