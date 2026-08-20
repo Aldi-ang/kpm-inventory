@@ -3476,3 +3476,63 @@ html.lite-mode .kpm-mod.arrive { animation: none; }
   .kpm-mod.gate .kpm-btn.key:hover { background: rgba(231, 112, 15, .09); color: #ffb066;
     border-color: #E7700F; }
 }
+
+
+/* ── THE TRAVELLING RIM ─────────────────────────────────────────────────────────────────────
+   Aldi, 2026-08-20, about the PENALTY CHARGE button: "how great if u add red neon light moving
+   effect around the side of this panel mengingkari sisinya, to make it elegant animation should
+   not be too much, minimalist expensive looks and HD".
+
+   So: ONE arc, one pixel wide, walking the border once every five seconds. Nothing pulses,
+   nothing changes colour, the button itself does not move. Those are the things that read as
+   cheap; a single quiet highlight tracing the edge is what reads as expensive.
+
+   HOW IT IS DRAWN. A conic-gradient is rotated behind the element and then MASKED down to the
+   border box only, so it follows whatever border-radius the button already has, exactly, with no
+   second radius to keep in sync. That is one composited layer and no JavaScript.
+
+   `@property` is what makes an angle animatable at all - a plain custom property would jump from
+   0 to 1turn instead of sweeping. Where it is unsupported the gradient simply sits still, which
+   is a perfectly good fallback: a static hairline, not a broken one.
+
+   The bloom is a drop-shadow on the ARC, not a glow on the whole button, so the light appears to
+   travel rather than the button appearing to be lit. */
+@property --kpm-rim-angle { syntax: '<angle>'; initial-value: 0deg; inherits: false; }
+
+.kpm-rim-neon { position: relative; }
+.kpm-rim-neon::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;                       /* the rim thickness, and nothing thicker */
+  background: conic-gradient(from var(--kpm-rim-angle),
+      transparent 0turn,
+      transparent 0.60turn,
+      color-mix(in srgb, var(--danger-ink) 45%, transparent) 0.71turn,
+      var(--danger-ink) 0.78turn,
+      color-mix(in srgb, var(--danger-ink) 45%, transparent) 0.85turn,
+      transparent 0.96turn,
+      transparent 1turn);
+  /* keep the fill, drop the middle: this is what leaves only the border showing */
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+          mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+          mask-composite: exclude;
+  /* NO filter, deliberately. The audit rule "nothing depends on a shadow, a blur or a filter"
+     exists because Lite Mode deletes all four and a screen once collapsed into one column when
+     its separation lived in shadows. A drop-shadow here would have been pure decoration and the
+     rim vanishes in Lite Mode anyway - but the honest fix is to not need one. The bloom comes
+     from the gradient ramping 45%% -> full -> 45%% instead, which reads as a light travelling
+     rather than a lamp switched on. */
+  animation: kpm-rim-walk 5s linear infinite;
+  pointer-events: none;
+}
+@keyframes kpm-rim-walk { to { --kpm-rim-angle: 1turn; } }
+
+/* HIS LAW: nothing rotates in Lite Mode. The rim is removed outright rather than frozen
+   mid-arc, because a stopped arc looks like a rendering fault rather than a setting. */
+html.lite-mode .kpm-rim-neon::before { display: none; }
+@media (prefers-reduced-motion: reduce) {
+  .kpm-rim-neon::before { display: none; }
+}

@@ -835,7 +835,7 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                                                 <button onClick={() => setResolutionModal({item, method: 'RTV'})} className="flex-1 xl:flex-none px-4 py-2 bg-[var(--gold)] hover:bg-[var(--gold)] border border-[var(--line)] text-[var(--ink-dim)] hover:text-[var(--gold-ink)] rounded-lg text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-colors">
                                                     <Undo2 size={14}/> RTV Factory
                                                 </button>
-                                                <button onClick={() => setResolutionModal({item, method: 'PENALTY'})} className="flex-1 xl:flex-none px-4 py-2 bg-[var(--danger-well)] hover:bg-[var(--danger)] border border-[var(--danger)] text-[var(--danger-ink)] hover:text-[var(--gold-ink)] rounded-lg text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-colors shadow-lg">
+                                                <button onClick={() => setResolutionModal({item, method: 'PENALTY'})} className="kpm-rim-neon flex-1 xl:flex-none px-4 py-2 bg-[var(--danger-well)] hover:bg-[var(--danger)] border border-[var(--danger)] text-[var(--danger-ink)] hover:text-[var(--gold-ink)] rounded-lg text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-colors shadow-lg">
                                                     <BadgeDollarSign size={14}/> Penalty Charge
                                                 </button>
                                             </div>

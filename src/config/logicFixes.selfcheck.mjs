@@ -1785,5 +1785,40 @@ section('S35. The counting card is readable in both themes and cannot overlap it
   ok('and no banned hue survives on it either', banned === 0, `${banned} left`); }
 
 
+/* --- S36 . the travelling rim on the penalty button --------------------------------------- */
+section('S36. The neon rim is one arc, and it obeys Lite Mode');
+
+/* Aldi, 2026-08-20: "red neon light moving effect around the side of this panel ... animation
+   should not be too much, minimalist expensive looks and HD". The restraint is the feature, so
+   it is pinned: one arc, one pixel, one revolution every five seconds, and nothing else moving. */
+{ const css = read('src/styles/theme.css');
+  const opname = read('src/StockOpnameView.jsx');
+  const from = css.indexOf('.kpm-rim-neon::before');
+  const to = css.indexOf('@keyframes kpm-rim-walk', from);
+  const rim = (from === -1 || to === -1) ? '' : css.slice(from, to);
+
+  ok('the rim exists and is its own block', rim.length > 300 && rim.length < 2500);
+  ok('the angle is declared with @property, or it would jump instead of sweep',
+     /@property --kpm-rim-angle/.test(css));
+  ok('it is masked down to the border box, so it follows the button radius exactly',
+     /mask-composite: exclude/.test(rim));
+  ok('the rim is one pixel - restraint is the whole request', /padding: 1px;/.test(rim));
+  /* No filter: the audit bans depending on one, because Lite Mode deletes them. The softness
+     comes from the gradient ramp instead, so the effect survives that deletion by not using it. */
+  ok('it uses no filter at all - Lite Mode deletes those', !/filter:/.test(rim));
+  ok('the softness comes from the gradient ramping up and back down',
+     (rim.match(/color-mix\(in srgb, var\(--danger-ink\) 45%/g) || []).length === 2);
+  ok('it walks once every five seconds, slowly', /animation: kpm-rim-walk 5s linear infinite/.test(rim));
+  ok('nothing pulses or changes colour - one arc only',
+     !/pulse|hue-rotate|alternate/.test(rim));
+  ok('HIS LAW: it does not rotate in Lite Mode',
+     /html\.lite-mode \.kpm-rim-neon::before \{ display: none; \}/.test(css));
+  ok('and reduced motion removes it too',
+     /prefers-reduced-motion: reduce\)[\s\S]{0,120}kpm-rim-neon::before \{ display: none/.test(css));
+  ok('the penalty button wears it', /kpm-rim-neon flex-1 xl:flex-none/.test(opname));
+  ok('and only that one button does - it is an accent, not a theme',
+     (opname.match(/kpm-rim-neon/g) || []).length === 1); }
+
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);
