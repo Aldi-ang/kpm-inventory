@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-20 07:30 WIB (KPM app session)** · 🔴 FROZEN SALE STILL NOT FIXED (3rd report) · ❓ ONE QUESTION BLOCKING · branch `phase0-solid-ground`
+**Updated: 2026-08-20 07:36 WIB (KPM app session)** · 🔴 FROZEN SALE STILL NOT FIXED (3rd report) · ❓ ONE QUESTION BLOCKING · branch `phase0-solid-ground`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -2899,6 +2899,11 @@ price ladder; performance rank is now the Tier Automation Engine's job.
 
 ## 📓 LOG
 
+- **2026-08-20 07:36** — quota 91%, session wound down. **Cost lesson, his complaint:** a 4-lens
+  workflow with refuters was launched for the frozen sale and every agent inherited Opus. Two
+  greps would have done it. The model-tier memory says never set `model` on a subagent here, so
+  the only real lever is NOT FANNING OUT — read it yourself when the question is "what does this
+  file do". Run wh1pwuvxk stopped unread.
 - **2026-08-20 07:30** — third report of the frozen sale. Stopped shipping fixes and made the build
   identifiable instead: `vite.config.js` injects `__BUILD_ID__` from `git rev-parse --short HEAD`
   and the Flight Recorder prints it. **A PWA that precaches every chunk makes a stale device look
