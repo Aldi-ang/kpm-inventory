@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-20 11:04 WIB (KPM app session)** · ✅ FROZEN SALE FIXED AND CONFIRMED BY HIM · ✅ NOTHING WAITING · branch `phase0-solid-ground`
+**Updated: 2026-08-20 11:29 WIB (KPM app session)** · ✅ FROZEN SALE FIXED AND CONFIRMED BY HIM · ✅ NOTHING WAITING · branch `phase0-solid-ground`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -2894,6 +2894,15 @@ price ladder; performance rank is now the Tier Automation Engine's job.
 
 ## 📓 LOG
 
+- **2026-08-20 11:29** — **tier 1 merge, STAGE A done.** He corrected the task list: *"i ask u to
+  make only 1 profile for tier 1 account not 2"*, and the other job is *"fixing the UI and system
+  on the stock opname"*. Cause of the double profile: he is THREE documents in \`motorists\` —
+  \`master_owner\` (person), \`ADMIN_VEHICLE\` (van, auto-created at \`useDatabaseSync.js:126\`) and
+  \`VAULT\` (warehouse); the last two are places listed as people. Offered hide-or-merge, **he chose
+  MERGE**. 60 sites across 10 files read these ids, so it is staged — **A: fold the roster (done,
+  \`447e3dd\`, S33) · B: copy the van record onto master_owner after a backup · C: flip the writes
+  and delete ADMIN_VEHICLE.** C before B would show his van as EMPTY; the order is not optional.
+  599/0, 441/0.
 - **2026-08-20 10:52** — **FOUND IT, and measured it instead of guessing.** Ran Firestore's own
   `disableNetwork()` in node: `setDoc` and `updateDoc` are STILL PENDING after 4s and never settle;
   `getDoc` resolves from cache. `useTransactionEngine.js:192` awaited exactly such a write inside
