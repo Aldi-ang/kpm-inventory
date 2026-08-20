@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-20 15:07 WIB (KPM app session)** · 🛠 STOCK OPNAME CARD REBUILT · ❓ SYSTEM REDESIGN NOT STARTED · branch `phase0-solid-ground`
+**Updated: 2026-08-20 15:31 WIB (KPM app session)** · 🛠 CONTRAST FIXED, CARD REBUILT · ❓ SYSTEM REDESIGN NOT STARTED · branch `phase0-solid-ground`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -2909,6 +2909,14 @@ price ladder; performance rank is now the Tier Automation Engine's job.
 
 ## 📓 LOG
 
+- **2026-08-20 15:31** — **four contrast fixes from his screenshots** (`5931b57`). **The lesson:
+  `--accent-ink` is gold-as-TEXT-on-a-panel; in DARK MODE it is the same hex as `--gold`
+  (#D08A2E), so gold text on a gold plate measured 1.00 — identical colour, not low contrast.
+  Use `--gold-ink` / `--duke-on-fill` on any FILLED plate.** Measured: dark 1.00 -> 6.97, light
+  1.54 -> 6.86. **SUBMIT TO HQ was not a colour bug at all** — it is disabled until something is
+  counted and `opacity-50` on a pale page made it a ghost; it now reads as switched off. Tab bar
+  off `bg-black/50`; search placeholder had NO colour set. S35 gained an on-plate-token check.
+  ⚠️ Still **UNSEEN BY ME** — the browser pane will not composite here. 599/0, 471/0.
 - **2026-08-20 15:07** — **counting card rebuilt** (`3ee39b4`). His screenshot held a real defect,
   not just taste: the field labels were `absolute -top-2` ON the inputs, so "GOOD STOCK" wrapped
   to two lines and covered the number. Labels are now siblings above the field. Card is theme
