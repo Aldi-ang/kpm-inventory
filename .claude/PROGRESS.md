@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-20 14:18 WIB (KPM app session)** · 🔎 STOCK OPNAME DIAGNOSED, 0 CHANGED · ❓ ONE QUESTION BLOCKING · branch `phase0-solid-ground`
+**Updated: 2026-08-20 14:46 WIB (KPM app session)** · 🛠 STOCK OPNAME 1 OF 5 DONE · ✅ NOTHING WAITING · branch `phase0-solid-ground`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -15,7 +15,12 @@
 
 ## ⏳ WAITING ON ALDI — verbatim, do not paraphrase
 
-❓ **BLOCKING, asked 2026-08-20 14:18 — which order for the five Stock Opname findings?**
+✅ **ANSWERED 14:46.** He picked the order himself: *"dont forget comparison healthy and found
+side by side is higher tier only on default, which is tier 3 and above only, toggle button should
+be added to the matrix, do this first then reports"*. Finding **5 is DONE** (`6adb36e`). The other
+four are still open and he has not ranked them — ask before starting one.
+
+✖ ~~which order for the five Stock Opname findings?~~
 He said, verbatim: *"stock opname is the most important lets fix that"*, then *"i want u to check
 whats wrong first then make the changes"* and *"its part of your learning as well"*. So it was
 diagnosed and **nothing was changed** — tree is green at 441/441. Proposed order **1 → 5 → 4 → 2
@@ -2904,6 +2909,14 @@ price ladder; performance rank is now the Tier Automation Engine's job.
 
 ## 📓 LOG
 
+- **2026-08-20 14:46** — **Stock Opname finding 5 DONE.** \`view_expected_count\` is on tier 2 and 3
+  by default (tier 1 has ALL_ACCESS), off for 4/5/6, and appears in the permission matrix as a
+  toggle he can flip himself. **The trap it would have died on:** \`injectDynamicPermissions\`
+  REPLACES \`ROLE_PERMISSIONS\` with his saved Firebase matrix, so a new key is simply ABSENT there
+  — \`canSeeExpectedCount\` treats absence as "use the tier default", and once the key exists in his
+  saved matrix his switch wins both ways. Two self-inflicted misses caught by the build, not by
+  me: the screen already derives its own \`userRole\` (prop collision) and my flag sat ABOVE that
+  declaration. S34, 16 checks, red first. \`6adb36e\`. 599/0, 460/0.
 - **2026-08-20 14:18** — **Stock Opname diagnosed, nothing changed** (he stopped me mid-edit:
   *"i want u to check whats wrong first then make the changes"*). Five findings, ranked:
   **1.** The row lies whenever a product has damaged stock — `SYS EXPECTED` prints healthy stock
