@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-20 16:42 WIB (KPM app session)** · ✅ AMBER IS AN ACCENT NOW · ❓ SYSTEM REDESIGN NOT STARTED · branch `phase0-solid-ground`
+**Updated: 2026-08-20 17:05 WIB (KPM app session)** · ✅ AMBER DRAWS LINES, NOT BOXES · ❓ SYSTEM REDESIGN NOT STARTED · branch `phase0-solid-ground`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -2908,6 +2908,21 @@ price ladder; performance rank is now the Tier Automation Engine's job.
 - ✅ **The Firebase authorized domain is DONE** — *"already"*. `192.168.1.109` can sign in.
 
 ## 📓 LOG
+
+- **2026-08-20 17:05** — **amber draws the line, never fills the box** (`87cc10c`). His rule:
+  *"stop fill the background with amber color, better use it in all situation or most situation
+  for the line only to looks more expensive"*. EXECUTE PROTOCOL is an outline with a 12% tint
+  (22% on hover) instead of a slab. **The light-mode fix that matters:** the three quarantine
+  buttons sat on `--sunk`, which in light is `#B9B0A0` — *darker* than the panel behind them, so
+  they read as holes. They use `--raised` now (`#EDE7D8` light / `#1B1917` dark) — one class,
+  raised in both directions. Reject Count got the same destructive treatment as Penalty Charge.
+  Flight Recorder log text is semibold with bold tabular timestamps at 70% instead of 50%.
+  **⚠️ TWO TRAPS HIT AND SURVIVED:** (1) his screenshots span two builds — the Flight Recorder
+  said `22e5192` while another shot showed violet that only exists in `1219526`; HEALTHY and the
+  modal header were **already fixed**, so checking the code beat trusting the photo. (2) my
+  paint-check looked at the WRONG one of the two CSS files and reported all six `color-mix`
+  classes missing — they are all present in `index-DnuSD6ab.css`, along with both `--alt` tokens.
+  ⚠️ **Still unseen by me.** 599/0, 501/0.
 
 - **2026-08-20 16:42** — **amber demoted from surface to accent** (`1219526`). His rule, verbatim:
   *"dont use put amber and black, too dominant, add some color variety ... as long as dark is 90%
