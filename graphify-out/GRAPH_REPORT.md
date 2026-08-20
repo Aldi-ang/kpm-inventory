@@ -1,16 +1,16 @@
 # Graph Report - kpm-inventory-main  (2026-08-20)
 
 ## Corpus Check
-- 108 files · ~678,359 words
+- 108 files · ~680,037 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 1004 nodes · 1671 edges · 65 communities (61 shown, 4 thin omitted)
+- 1005 nodes · 1672 edges · 64 communities (58 shown, 6 thin omitted)
 - Extraction: 99% EXTRACTED · 1% INFERRED · 0% AMBIGUOUS · INFERRED: 22 edges (avg confidence: 0.77)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `f02773ff`
+- Built from commit: `51fcc7f2`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -32,6 +32,7 @@
 - React + Vite
 - Duke3D.jsx
 - CLAUDE.md
+- vite.config.js
 - Animation prompts — Pip-Boy style, capybara merchant
 - dayStats.selfcheck.mjs
 - JourneyView.jsx
@@ -74,7 +75,6 @@
 - ✅🔴 2026-08-17 18:3x — WORKFLOW RESUMED: 3 CONFIRMED, ~60 UNVERIFIED. QUOTA OUT AGAIN (resets 23:20).
 - firebase.js
 - nextStop.js
-- firebase.js
 - nextStop.js
 
 ## God Nodes (most connected - your core abstractions)
@@ -90,10 +90,10 @@
 10. `AgentProfileView()` - 16 edges
 
 ## Surprising Connections (you probably didn't know these)
-- `AuthoritySelect()` --indirect_call--> `k()`  [INFERRED]
-  src/components/AuthoritySelect.jsx → .claude/context-watch.mjs
 - `JourneyView()` --indirect_call--> `k()`  [INFERRED]
   src/JourneyView.jsx → .claude/context-watch.mjs
+- `AuthoritySelect()` --indirect_call--> `k()`  [INFERRED]
+  src/components/AuthoritySelect.jsx → .claude/context-watch.mjs
 - `KPMInventoryApp()` --references--> `react`  [EXTRACTED]
   src/App.jsx → package.json
 - `PermissionMatrixEditor()` --references--> `react`  [EXTRACTED]
@@ -104,7 +104,7 @@
 ## Import Cycles
 - None detected.
 
-## Communities (65 total, 4 thin omitted)
+## Communities (64 total, 6 thin omitted)
 
 ### Community 0 - "App.jsx"
 Cohesion: 0.08
@@ -119,8 +119,8 @@ Cohesion: 0.05
 Nodes (36): @emailjs/browser, firebase, idb, leaflet, lucide-react, dependencies, @emailjs/browser, firebase (+28 more)
 
 ### Community 3 - "CustomerManager.jsx"
-Cohesion: 0.29
-Nodes (6): big, line, naive, product, size(), stripped
+Cohesion: 0.21
+Nodes (10): easeInOut(), easeOut(), rndWord(), VaultGate(), big, line, naive, product (+2 more)
 
 ### Community 4 - "devDependencies"
 Cohesion: 0.06
@@ -175,8 +175,8 @@ Cohesion: 0.06
 Nodes (34): ?, ?, ?, ?, ?, ?, ?, ? (+26 more)
 
 ### Community 23 - "JourneyView.jsx"
-Cohesion: 0.08
-Nodes (34): hook, k(), left, lines, pct, AuthoritySelect(), L, AGENT_COLORS (+26 more)
+Cohesion: 0.11
+Nodes (31): checkPointInGeoJSON(), CustomerDetailView(), CustomerManagement(), isPointInPolygon(), CORPORATE_TIERS, getCustomerAccessLevel(), hasClearance(), isFieldLevelTier() (+23 more)
 
 ### Community 24 - "hasClearance"
 Cohesion: 0.02
@@ -203,12 +203,12 @@ Cohesion: 0.18
 Nodes (8): bgRe, byGround, edgeRe, inkRe, lines, rows, stack, tally
 
 ### Community 30 - "BiohazardTheme.jsx"
-Cohesion: 0.22
-Nodes (6): BULAN, REEL, NotificationBell(), DETECTED_TRACKS, musicModules, MusicPlayer()
+Cohesion: 0.19
+Nodes (8): BiohazardTheme(), BULAN, REEL, NotificationBell(), gateCanvasOn(), DETECTED_TRACKS, musicModules, MusicPlayer()
 
 ### Community 31 - "txSize.selfcheck.mjs"
 Cohesion: 0.07
-Nodes (68): AgentProfileView(), BADGE_CATEGORIES, createImage(), DynamicIconMap, getCroppedImg(), AuditVaultView(), BranchWarehouseManager(), CareerDevTools() (+60 more)
+Nodes (63): AgentProfileView(), BADGE_CATEGORIES, createImage(), DynamicIconMap, getCroppedImg(), AchievementTester(), BASE_STATS, buildFakeCareer() (+55 more)
 
 ### Community 32 - "dayStats.selfcheck.mjs"
 Cohesion: 0.08
@@ -223,12 +223,12 @@ Cohesion: 0.29
 Nodes (5): b64(), candidates, connId, mint(), saved
 
 ### Community 35 - "useTransactionEngine.js"
-Cohesion: 0.32
-Nodes (6): FADE, MASCOT_CHATTER, MASCOT_FAILURES, STICKY, isFailure(), isSticky()
+Cohesion: 0.28
+Nodes (7): FADE, MASCOT_CHATTER, MASCOT_FAILURES, report(), STICKY, isFailure(), isSticky()
 
 ### Community 36 - "KPMInventoryApp"
-Cohesion: 0.31
-Nodes (8): getDocOfflineSafe(), KPMInventoryApp(), computeDayXP(), report(), clearGrace(), graceIsValid(), readGrace(), touchGrace()
+Cohesion: 0.29
+Nodes (9): getDocOfflineSafe(), KPMInventoryApp(), gateHoldMs(), gateIsRich(), computeDayXP(), clearGrace(), graceIsValid(), readGrace() (+1 more)
 
 ### Community 37 - "toastSeverity.selfcheck.mjs"
 Cohesion: 0.25
@@ -280,23 +280,23 @@ Nodes (7): css, dark, light, lum(), PAIRS, ratio(), srgb()
 
 ### Community 51 - "VaultGate.jsx"
 Cohesion: 0.19
-Nodes (9): justAfterLocalMidnight, justBeforeLocalMidnight, NOW, rows, s, shuffled, withReturn, dayStats() (+1 more)
+Nodes (10): justAfterLocalMidnight, justBeforeLocalMidnight, NOW, rows, s, shuffled, withReturn, dayStats() (+2 more)
 
 ### Community 52 - "mixedUnits.selfcheck.mjs"
 Cohesion: 0.36
 Nodes (10): back(), MerchantSalesView(), readDraft(), reorderFromLast(), agoLabel(), convertToBks(), paymentLabel(), splitToUnits() (+2 more)
 
 ### Community 53 - "context-watch.mjs"
-Cohesion: 0.36
-Nodes (8): BiohazardTheme(), easeInOut(), easeOut(), gateCanvasOn(), gateHoldMs(), gateIsRich(), rndWord(), VaultGate()
+Cohesion: 0.25
+Nodes (6): hook, k(), left, lines, pct, AuthoritySelect()
 
 ### Community 54 - "🔴 2026-08-17 ~04:00 — the unverified first pass of that review (superseded by the entry above)"
 Cohesion: 0.50
 Nodes (4): 🔴 2026-08-17 ~04:00 — the unverified first pass of that review (superseded by the entry above), 📋 Backlog written for him (A-Brain, committed separately), The five that look most real to me — CHECK EACH BEFORE TOUCHING, ✅ What DID land tonight and is committed
 
 ### Community 55 - "txSize.selfcheck.mjs"
-Cohesion: 0.17
-Nodes (13): AgentInventoryView(), getCurrentDate(), Money(), DashboardBenchmarks(), CustomTooltip(), DashboardView(), formatAdvancedStock(), ItemInspector() (+5 more)
+Cohesion: 0.08
+Nodes (32): AgentInventoryView(), getCurrentDate(), Money(), DashboardBenchmarks(), CustomTooltip(), DashboardView(), formatAdvancedStock(), ItemInspector() (+24 more)
 
 ### Community 56 - "CapybaraMascot.jsx"
 Cohesion: 0.40
@@ -319,37 +319,29 @@ Cohesion: 0.67
 Nodes (3): ✅🔴 2026-08-17 18:3x — WORKFLOW RESUMED: 3 CONFIRMED, ~60 UNVERIFIED. QUOTA OUT AGAIN (resets 23:20)., 🔴 EVERYTHING ELSE IS UNVERIFIED — NOT REFUTED, NOT REAL, ✅ THREE FINDINGS THAT PASSED A REAL SKEPTIC — write these to the Backlog first
 
 ### Community 61 - "firebase.js"
-Cohesion: 0.22
-Nodes (9): LazyTabBoundary, canReachInternet(), onlineListeners, setSharedOnline(), subscribeOnline(), useOfflineEngine(), applySaleToCanvas(), useTransactionEngine() (+1 more)
-
-### Community 62 - "nextStop.js"
-Cohesion: 0.31
-Nodes (12): AchievementTester(), BASE_STATS, buildFakeCareer(), fmtValue(), LIVE_ONLY_STATS, ROOT_STATS, checkBadges(), DEFAULT_BADGES (+4 more)
-
-### Community 66 - "firebase.js"
-Cohesion: 0.47
-Nodes (6): createdMillis(), findDuplicates(), groupKey(), hasCoords(), metresBetween(), normaliseName()
+Cohesion: 0.36
+Nodes (8): canReachInternet(), onlineListeners, setSharedOnline(), subscribeOnline(), useOfflineEngine(), applySaleToCanvas(), useTransactionEngine(), stripCartItemForStorage()
 
 ### Community 67 - "nextStop.js"
 Cohesion: 0.70
 Nodes (4): km(), mine(), nextStop(), visitedWithinCycle()
 
 ## Knowledge Gaps
-- **528 isolated node(s):** `root`, `note`, `hook`, `now`, `hook` (+523 more)
+- **529 isolated node(s):** `root`, `note`, `hook`, `now`, `hook` (+524 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **4 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **6 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `devDependencies` connect `devDependencies` to `dependencies`?**
   _High betweenness centrality (0.036) - this node is a cross-community bridge._
-- **Why does `formatRupiah()` connect `txSize.selfcheck.mjs` to `App.jsx`, `dayStats.selfcheck.mjs`, `AgentProfileView.jsx`, `JourneyView.jsx`, `txSize.selfcheck.mjs`?**
+- **Why does `formatRupiah()` connect `txSize.selfcheck.mjs` to `App.jsx`, `dayStats.selfcheck.mjs`, `AgentProfileView.jsx`, `txSize.selfcheck.mjs`?**
   _High betweenness centrality (0.020) - this node is a cross-community bridge._
 - **Are the 2 inferred relationships involving `KPMInventoryApp()` (e.g. with `t()` and `report()`) actually correct?**
   _`KPMInventoryApp()` has 2 INFERRED edges - model-reasoned connections that need verification._
 - **What connects `root`, `note`, `hook` to the rest of the system?**
-  _528 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _529 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `App.jsx` be split into smaller, more focused modules?**
   _Cohesion score 0.07741935483870968 - nodes in this community are weakly interconnected._
 - **Should `dependencies` be split into smaller, more focused modules?**

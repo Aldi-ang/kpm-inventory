@@ -50,8 +50,8 @@
     "semantic_hash": ""
   },
   "src/App.jsx": {
-    "mtime": 1787177185.6004891,
-    "ast_hash": "0f0019f91090fa5b73df64cde9b73cf6",
+    "mtime": 1787185763.1233268,
+    "ast_hash": "11684d2c471d4a54cad04c457a8ba1e9",
     "semantic_hash": ""
   },
   "src/ConsignmentFinanceView.jsx": {
@@ -210,8 +210,8 @@
     "semantic_hash": ""
   },
   "src/hooks/useTransactionEngine.js": {
-    "mtime": 1787047269.348495,
-    "ast_hash": "79e8ff90f7ba056896aefdf20ec604b1",
+    "mtime": 1787199729.3452706,
+    "ast_hash": "40cd8d6af1b06536f5b88c46a2494376",
     "semantic_hash": ""
   },
   "src/main.jsx": {
@@ -235,8 +235,8 @@
     "semantic_hash": ""
   },
   "vite.config.js": {
-    "mtime": 1787143587.909503,
-    "ast_hash": "d97ba2572b51b1e7e5e44973193e217f",
+    "mtime": 1787185763.1201563,
+    "ast_hash": "7d722286861e91c398281d01684caeec",
     "semantic_hash": ""
   },
   ".github/workflows/build-check.yml": {
@@ -570,8 +570,8 @@
     "semantic_hash": ""
   },
   ".claude/PROGRESS.md": {
-    "mtime": 1787178966.57054,
-    "ast_hash": "04daa7e8d6060273103ae69e67bd9a4e",
+    "mtime": 1787199500.6332357,
+    "ast_hash": "cf0dd43c1e70e72c640601d9912fb9ad",
     "semantic_hash": ""
   },
   ".claude/pre-compact-context.md": {
@@ -755,13 +755,13 @@
     "semantic_hash": ""
   },
   "src/config/logicFixes.selfcheck.mjs": {
-    "mtime": 1787183575.6288729,
-    "ast_hash": "29ef44e4d2e83aedfed0aff233225121",
+    "mtime": 1787199714.7774918,
+    "ast_hash": "98b19dff328eed0ce2cc9cb4e34f4d38",
     "semantic_hash": ""
   },
   ".claude/NEXT-SESSION.md": {
-    "mtime": 1787178914.6194987,
-    "ast_hash": "27d1257d6e4839268b3aa149b14fb76b",
+    "mtime": 1787183761.6294408,
+    "ast_hash": "34eb81afb4ca4e192e6ac5f3756d29d2",
     "semantic_hash": ""
   },
   ".claude/SWEEP-2026-08-19.md": {

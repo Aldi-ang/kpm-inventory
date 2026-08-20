@@ -1576,5 +1576,46 @@ section('S31. The running build says which build it is');
      /__BUILD_ID__/.test(app) && /Flight Recorder/.test(app)); }
 
 
+/* --- S32 . an awaited Firestore write inside an OFFLINE branch never returns --------------- */
+section('S32. No offline branch waits for a write that can never finish');
+
+/* MEASURED 2026-08-20, not assumed. Firestore's own disableNetwork() was switched on in node and
+   the same three calls were raced against a 4s timer:
+       setDoc    -> STILL PENDING after 4000ms
+       updateDoc -> STILL PENDING after 4000ms
+       getDoc    -> RESOLVED (from cache)
+   A write promise settles only on a SERVER acknowledgement, so awaiting one with no internet
+   freezes the caller for good. useTransactionEngine.js:192 awaited exactly that, one line before
+   the Ghost Ledger toast, inside the sale's offline branch. Every offline sale by an agent who
+   has a vehicle froze there with no toast and no receipt. Aldi never hit it himself only because
+   a plain ADMIN gets currentAgentProfileId = null and skipped the block entirely. */
+{ const from = engine.indexOf('if (!isOnline)');
+  const to = engine.indexOf('return finalAgentName;', from);
+  const branch = (from === -1 || to === -1) ? '' : engine.slice(from, to);
+  ok('the sale offline branch was found and is a sane size',
+     branch.length > 1000 && branch.length < 12000, `sliced ${branch.length} chars`);
+  const WRITES = /await\s+(updateDoc|setDoc|addDoc|deleteDoc)\s*\(|await\s+\w*\.commit\s*\(\)|await\s+runTransaction\s*\(/g;
+  const found = branch.match(WRITES) || [];
+  ok('it awaits NO Firestore write - reads are fine, writes never settle',
+     found.length === 0, `found ${found.join(' / ')}`);
+  ok('the van-count write is still made, just not waited for',
+     /updateDoc\(canvasRef, \{ activeCanvas/.test(branch));
+  ok('and a failed one is reported rather than dropped',
+     /\.catch\(/.test(branch)); }
+
+/* BEHAVIOUR: the difference between awaiting a never-settling promise and firing it. */
+{ const neverSettles = () => new Promise(() => {});
+  let reachedAfterAwait = false;
+  const awaited = (async () => { await neverSettles(); reachedAfterAwait = true; })();
+  await Promise.race([awaited, new Promise(r => setTimeout(r, 40))]);
+  ok('awaiting a write that never settles never reaches the next line', reachedAfterAwait === false);
+
+  let reachedAfterFire = false;
+  (async () => { neverSettles().catch(() => {}); reachedAfterFire = true; })();
+  await new Promise(r => setTimeout(r, 20));
+  ok('firing it and carrying on DOES reach the next line - the toast, and the return',
+     reachedAfterFire === true); }
+
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

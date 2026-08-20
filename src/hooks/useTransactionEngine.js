@@ -189,7 +189,21 @@ export default function useTransactionEngine({
                                 isPhysicallyGiven: !(proofPayload?.type === 'RETUR' || item.fulfillment === 'IOU'),
                                 isReturnedToStock: proofPayload?.type === 'RETUR' && item.condition !== 'DAMAGED'
                             }));
-                            await updateDoc(canvasRef, { activeCanvas: applySaleToCanvas(canvasDoc.data().activeCanvas, moves) });
+                            /* NOT AWAITED, and that is the entire point. MEASURED 2026-08-20 with
+                               Firestore's own disableNetwork(): setDoc and updateDoc are still
+                               pending after 4 seconds and never settle, because a write promise
+                               resolves only on a SERVER acknowledgement. getDoc resolves fine,
+                               from cache. Awaiting this line froze every offline sale made by an
+                               agent who has a vehicle - execution never reached the Ghost Ledger
+                               toast eleven lines below, never returned to the Sales Terminal, and
+                               the button sat on PROCESSING for good. Aldi did not hit it himself
+                               only because a plain ADMIN gets currentAgentProfileId = null and
+                               skips this block; his salesmen would have hit it every time.
+
+                               There is nothing to wait for: the local copy is updated the moment
+                               this is called and it syncs when signal returns. Pinned by S32. */
+                            updateDoc(canvasRef, { activeCanvas: applySaleToCanvas(canvasDoc.data().activeCanvas, moves) })
+                                .catch(e => notify("Sale saved offline, but the vehicle count could not be updated: " + (e.message || e)));
                         }
                     } catch (e) {
                         /* Reported, never swallowed: the receipt is already safe in the Ghost
