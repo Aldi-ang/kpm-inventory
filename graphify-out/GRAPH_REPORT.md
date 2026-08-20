@@ -1,16 +1,16 @@
 # Graph Report - kpm-inventory-main  (2026-08-20)
 
 ## Corpus Check
-- 108 files · ~682,152 words
+- 108 files · ~682,866 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 1008 nodes · 1683 edges · 63 communities (57 shown, 6 thin omitted)
+- 1008 nodes · 1685 edges · 62 communities (56 shown, 6 thin omitted)
 - Extraction: 99% EXTRACTED · 1% INFERRED · 0% AMBIGUOUS · INFERRED: 22 edges (avg confidence: 0.77)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `e973f41f`
+- Built from commit: `dc08be0a`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -69,7 +69,6 @@
 - 🔴 2026-08-17 ~04:00 — the unverified first pass of that review (superseded by the entry above)
 - CapybaraMascot.jsx
 - 🔎 2026-08-17 17:1x — LOGIC REVIEW: 7 FLAWS FOUND, ALL WRITTEN TO THE BACKLOG
-- mixedUnits.selfcheck.mjs
 - ✅ 2026-08-17 08:48 — REVIEW VERIFIED: **44 CONFIRMED, 34 REFUTED**. FIRST FIX LANDED.
 - ✅🔴 2026-08-17 18:3x — WORKFLOW RESUMED: 3 CONFIRMED, ~60 UNVERIFIED. QUOTA OUT AGAIN (resets 23:20).
 - firebase.js
@@ -95,31 +94,31 @@
   src/components/AuthoritySelect.jsx → .claude/context-watch.mjs
 - `KPMInventoryApp()` --references--> `react`  [EXTRACTED]
   src/App.jsx → package.json
-- `MapRecenter()` --references--> `react`  [EXTRACTED]
-  src/JourneyView.jsx → package.json
-- `MerchantSalesView()` --references--> `react`  [EXTRACTED]
-  src/MerchantSalesView.jsx → package.json
+- `PermissionMatrixEditor()` --references--> `react`  [EXTRACTED]
+  src/components/SettingsView.jsx → package.json
+- `SettingsView()` --references--> `react`  [EXTRACTED]
+  src/components/SettingsView.jsx → package.json
 
 ## Import Cycles
 - None detected.
 
-## Communities (63 total, 6 thin omitted)
+## Communities (62 total, 6 thin omitted)
 
 ### Community 0 - "App.jsx"
-Cohesion: 0.08
-Nodes (23): AgentInventoryView, AgentProfileView, BranchWarehouseManager, ConsignmentFinanceView, DashboardView, EODReconciliationView, FleetCanvasManager, getDocOfflineSafe() (+15 more)
+Cohesion: 0.09
+Nodes (21): AgentInventoryView, AgentProfileView, BranchWarehouseManager, ConsignmentFinanceView, DashboardView, EODReconciliationView, FleetCanvasManager, HistoryReportView (+13 more)
 
 ### Community 1 - "MapMissionControl.jsx"
 Cohesion: 0.50
 Nodes (3): F — Phone, G — Nothing old was lost, KPM Sales Terminal — test results
 
 ### Community 2 - "dependencies"
-Cohesion: 0.06
-Nodes (33): @emailjs/browser, firebase, idb, leaflet, lucide-react, dependencies, @emailjs/browser, firebase (+25 more)
+Cohesion: 0.05
+Nodes (36): @emailjs/browser, firebase, idb, leaflet, lucide-react, dependencies, @emailjs/browser, firebase (+28 more)
 
 ### Community 3 - "CustomerManager.jsx"
-Cohesion: 0.29
-Nodes (6): big, line, naive, product, size(), stripped
+Cohesion: 0.28
+Nodes (7): FADE, MASCOT_CHATTER, MASCOT_FAILURES, report(), STICKY, isFailure(), isSticky()
 
 ### Community 4 - "devDependencies"
 Cohesion: 0.06
@@ -222,8 +221,8 @@ Cohesion: 0.29
 Nodes (5): b64(), candidates, connId, mint(), saved
 
 ### Community 36 - "KPMInventoryApp"
-Cohesion: 0.50
-Nodes (4): clearGrace(), graceIsValid(), readGrace(), touchGrace()
+Cohesion: 0.36
+Nodes (7): getDocOfflineSafe(), KPMInventoryApp(), computeDayXP(), clearGrace(), graceIsValid(), readGrace(), touchGrace()
 
 ### Community 37 - "toastSeverity.selfcheck.mjs"
 Cohesion: 0.25
@@ -282,8 +281,8 @@ Cohesion: 0.30
 Nodes (12): MerchantSalesView(), readDraft(), reorderFromLast(), agoLabel(), paymentLabel(), splitToUnits(), directionsUrl(), km() (+4 more)
 
 ### Community 53 - "context-watch.mjs"
-Cohesion: 0.08
-Nodes (32): hook, k(), left, lines, pct, react, react, AuthoritySelect() (+24 more)
+Cohesion: 0.25
+Nodes (6): hook, k(), left, lines, pct, AuthoritySelect()
 
 ### Community 54 - "🔴 2026-08-17 ~04:00 — the unverified first pass of that review (superseded by the entry above)"
 Cohesion: 0.50
@@ -297,10 +296,6 @@ Nodes (4): CapybaraMascot(), LOCKED_MESSAGES, LOGGED_IN_MESSAGES, NO_MESSAGES
 Cohesion: 0.50
 Nodes (4): 🔎 2026-08-17 17:1x — LOGIC REVIEW: 7 FLAWS FOUND, ALL WRITTEN TO THE BACKLOG, FOURTH PASS, 17:5x — four more, total 17. ONE OF THEM OUTRANKS EVERYTHING ELSE., SECOND PASS, 17:3x — four more, total 11, THIRD PASS, 17:4x — two more, total 13
 
-### Community 58 - "mixedUnits.selfcheck.mjs"
-Cohesion: 0.25
-Nodes (7): back(), bksPerUnit(), cello, custom, d, real, totalBks()
-
 ### Community 59 - "✅ 2026-08-17 08:48 — REVIEW VERIFIED: **44 CONFIRMED, 34 REFUTED**. FIRST FIX LANDED."
 Cohesion: 0.67
 Nodes (3): ✅ 2026-08-17 08:48 — REVIEW VERIFIED: **44 CONFIRMED, 34 REFUTED**. FIRST FIX LANDED., 🔨 CONFIRMED AND STILL TO DO — none of these need his decision, 🔴 NEEDS HIS DECISION — collected for him, do not act
@@ -310,16 +305,16 @@ Cohesion: 0.67
 Nodes (3): ✅🔴 2026-08-17 18:3x — WORKFLOW RESUMED: 3 CONFIRMED, ~60 UNVERIFIED. QUOTA OUT AGAIN (resets 23:20)., 🔴 EVERYTHING ELSE IS UNVERIFIED — NOT REFUTED, NOT REAL, ✅ THREE FINDINGS THAT PASSED A REAL SKEPTIC — write these to the Backlog first
 
 ### Community 61 - "firebase.js"
-Cohesion: 0.27
-Nodes (6): LazyTabBoundary, canReachInternet(), onlineListeners, setSharedOnline(), subscribeOnline(), useOfflineEngine()
+Cohesion: 0.08
+Nodes (26): LazyTabBoundary, formatAdvancedStock(), ItemInspector(), ResidentEvilInventory(), back(), bksPerUnit(), cello, custom (+18 more)
 
 ### Community 63 - "notify"
-Cohesion: 0.08
-Nodes (61): AgentInventoryView(), getCurrentDate(), Money(), KPMInventoryApp(), AuditVaultView(), BranchWarehouseManager(), confirmAction(), promptAction() (+53 more)
+Cohesion: 0.07
+Nodes (63): AuditVaultView(), BranchWarehouseManager(), confirmAction(), promptAction(), CrownTransferProtocol(), checkPointInGeoJSON(), CustomerDetailView(), CustomerManagement() (+55 more)
 
 ### Community 64 - "MapMissionControl.jsx"
-Cohesion: 0.08
-Nodes (39): checkPointInGeoJSON(), CustomerDetailView(), CustomerManagement(), isPointInPolygon(), L, store(), AGENT_COLORS, checkPointInGeoJSON() (+31 more)
+Cohesion: 0.07
+Nodes (45): AgentInventoryView(), getCurrentDate(), Money(), DashboardBenchmarks(), CustomTooltip(), DashboardView(), SafetyStatus(), L (+37 more)
 
 ## Knowledge Gaps
 - **529 isolated node(s):** `root`, `note`, `hook`, `now`, `hook` (+524 more)
@@ -331,15 +326,15 @@ _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `devDependencies` connect `devDependencies` to `dependencies`?**
   _High betweenness centrality (0.036) - this node is a cross-community bridge._
-- **Why does `dependencies` connect `dependencies` to `context-watch.mjs`?**
-  _High betweenness centrality (0.023) - this node is a cross-community bridge._
-- **Why does `storeKey()` connect `notify` to `App.jsx`, `MapMissionControl.jsx`, `dayStats.selfcheck.mjs`, `VaultGate.jsx`, `mixedUnits.selfcheck.mjs`, `txSize.selfcheck.mjs`?**
+- **Why does `storeKey()` connect `MapMissionControl.jsx` to `App.jsx`, `KPMInventoryApp`, `dayStats.selfcheck.mjs`, `VaultGate.jsx`, `mixedUnits.selfcheck.mjs`, `txSize.selfcheck.mjs`, `firebase.js`, `notify`?**
   _High betweenness centrality (0.018) - this node is a cross-community bridge._
 - **Are the 2 inferred relationships involving `KPMInventoryApp()` (e.g. with `t()` and `report()`) actually correct?**
   _`KPMInventoryApp()` has 2 INFERRED edges - model-reasoned connections that need verification._
 - **What connects `root`, `note`, `hook` to the rest of the system?**
   _529 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `App.jsx` be split into smaller, more focused modules?**
-  _Cohesion score 0.08307692307692308 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.09057971014492754 - nodes in this community are weakly interconnected._
 - **Should `dependencies` be split into smaller, more focused modules?**
-  _Cohesion score 0.058823529411764705 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.05405405405405406 - nodes in this community are weakly interconnected._
+- **Should `devDependencies` be split into smaller, more focused modules?**
+  _Cohesion score 0.06451612903225806 - nodes in this community are weakly interconnected._

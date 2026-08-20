@@ -1734,5 +1734,45 @@ section('S34. Tier 3 and above count with the number beside them; below that, bl
      decide('COMPANY_OWNER', ['view_sales'], true) === false); }
 
 
+/* --- S35 . the counting card, rebuilt from his screenshot --------------------------------- */
+section('S35. The counting card is readable in both themes and cannot overlap itself');
+
+/* His screenshot, 2026-08-20: "GOOD STOCK" had wrapped onto two lines and was sitting ON TOP of
+   the input, hiding the number. Cause: the label was `absolute -top-2 left-2` over the field, so
+   the moment the label needed two lines it covered it. His verdict on the rest: "it doesnt align
+   with our theme and this is poorly designed". */
+{ const opname = read('src/StockOpnameView.jsx');
+  const from = opname.indexOf('THE COUNTING CARD');
+  const to = opname.indexOf('{Number(damagedVal) > 0', from);
+  const card = (from === -1 || to === -1) ? '' : opname.slice(from, to);
+  ok('the counting card was found and is a sane size',
+     card.length > 1500 && card.length < 9000, `sliced ${card.length} chars`);
+
+  ok('no label is positioned ON a field any more - that is what caused the overlap',
+     !/absolute -top-2/.test(card));
+  ok('the labels come BEFORE their inputs, in normal flow',
+     card.indexOf('Good stock') < card.indexOf('value={goodVal}'));
+  ok('a long product name is clipped rather than pushing the fields off screen',
+     /truncate/.test(card) && /min-w-0/.test(card));
+  ok('the figures are tabular, so digits line up between rows',
+     (card.match(/tabular-nums/g) || []).length >= 4);
+  ok('the counts are grouped - a four figure number is unreadable raw',
+     /formatNumber\(totalFound\)/.test(card));
+  ok('a match reads gold and a mismatch red - never green, which the palette law bans',
+     /bg-\[var\(--gold\)\]/.test(card) && /bg-\[var\(--danger\)\]/.test(card));
+  ok('nothing in the card is painted a fixed colour that ignores the theme',
+     !/emerald|bg-black\/|#[0-9a-fA-F]{3,6}/.test(card));
+  ok('and it is told apart at a glance by a rail, not by colour alone',
+     /aria-hidden="true"/.test(card)); }
+
+/* The whole screen, not just the card: these are the fixed near-blacks he could not read in
+   light mode. Two are gone; the rest are the next job and are counted here so the number cannot
+   quietly grow. */
+{ const opname = read('src/StockOpnameView.jsx');
+  const fixed = (opname.match(/bg-black\/|bg-\[#|border-\[#/g) || []).length;
+  ok('the theme-blind colours left on this screen are down to a known number, not growing',
+     fixed <= 24, `${fixed} left - lower this number when you remove some, never raise it`); }
+
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

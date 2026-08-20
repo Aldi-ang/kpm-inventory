@@ -7,7 +7,7 @@ import {
     Biohazard, FlaskConical, Undo2, BadgeDollarSign, History, Filter, BarChart, MapPin
 } from 'lucide-react';
 import { collection, addDoc, getDocs, updateDoc, doc, writeBatch, serverTimestamp, query, where, onSnapshot, increment } from "firebase/firestore";
-import { savePhotoAndGetReference, deletePhotoFromStorage, commitInChunks, formatRupiah, compressImageToBase64, tierPrice } from './utils/helpers';
+import { savePhotoAndGetReference, deletePhotoFromStorage, commitInChunks, formatRupiah, formatNumber, compressImageToBase64, tierPrice } from './utils/helpers';
 import { confirmAction, promptAction } from './components/ConfirmGate.jsx';
 import { notify } from './components/Toast.jsx';
 import { canSeeExpectedCount } from './config/permissions';
@@ -1061,7 +1061,7 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
             {/* ======================================================== */}
             {viewMode === 'count' && (
                 <div className="flex-1 bg-[var(--sunk)] rounded-xl border border-[var(--line)] shadow-inner overflow-hidden flex flex-col relative animate-fade-in z-10">
-                    <div className="p-3 border-b border-[var(--line)] bg-black/50 relative">
+                    <div className="p-3 border-b border-[var(--line)] bg-[var(--sunk)] relative">
                         <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Scan or Search Product..." className="bg-[var(--sunk)] border border-[var(--line)] pl-9 pr-4 py-3 rounded-lg text-sm w-full focus:border-[var(--line)] outline-none text-[var(--ink)] font-mono"/>
                         <Search size={16} className="absolute left-6 top-6 text-[var(--ink-dim)]"/>
                     </div>
@@ -1073,35 +1073,55 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                                 const goodVal = entry?.good ?? '';
                                 const damagedVal = entry?.damaged ?? '';
                                 const { totalFound, variance } = getVariance(item);
-                                const isRevealed = showExpectedWhileCounting || (hasEntry && (goodVal !== '' || damagedVal !== ''));
+                                const hasTyped = goodVal !== '' || damagedVal !== '';
+                                const isRevealed = showExpectedWhileCounting || (hasEntry && hasTyped);
 
+                                /* THE COUNTING CARD, rebuilt 2026-08-20 from his screenshot. The old labels were
+                                        positioned ON TOP of the inputs, so "GOOD STOCK" wrapped to two lines and
+                                        covered the number he had just typed. Labels now sit ABOVE the field and
+                                        cannot collide with it at any width. Theme tokens only: the fixed blacks and
+                                        the greens are gone, per the palette law and his own answer - a match is
+                                        gold, a mismatch is red. */
                                 return (
-                                    <div key={item.id} className={`bg-[var(--raised)] rounded-lg border transition-all border-[var(--line)] ${isRevealed ? (variance === 0 ? 'border-emerald-500/50 shadow-[0_0_15px_rgba(16,185,129,0.1)]' : 'border-red-500/50 shadow-[0_0_15px_rgba(220,38,38,0.1)]') : 'border-[var(--line)] hover:border-[var(--line)]'} `}>
-                                        <div className="p-4 flex flex-col md:flex-row justify-between md:items-center gap-4">
-                                            <div className="flex-1">
-                                                <div className="font-bold text-[var(--ink)] text-sm uppercase tracking-wider">{item.name}</div>
-                                                <div className="text-[10px] text-[var(--ink-dim)] font-mono mt-0.5">ID: {item.id}</div>
+                                    
+                                    <div key={item.id} className={`relative overflow-hidden bg-[var(--raised)] rounded-xl border transition-colors ${hasTyped ? (variance === 0 ? 'border-[var(--accent-edge)]' : 'border-[var(--danger)]') : 'border-[var(--line)]'} `}>
+                                        {/* one glance down the list says which rows are done and which are off */}
+                                        <span className={`absolute left-0 top-0 bottom-0 w-1 ${hasTyped ? (variance === 0 ? 'bg-[var(--accent-edge)]' : 'bg-[var(--danger)]') : 'bg-[var(--line)]'} `} aria-hidden="true"></span>
+                                        <div className="pl-4 pr-3 py-3 md:py-4 flex flex-col md:flex-row md:items-end gap-3 md:gap-6">
+                                            <div className="min-w-0 flex-1">
+                                                <div className="font-bold text-[var(--ink)] text-sm uppercase tracking-wide truncate">{item.name}</div>
+                                                <div className="text-[10px] text-[var(--ink-dim)] font-mono mt-0.5 truncate">ID: {item.id}</div>
                                             </div>
-                                            <div className="flex items-center gap-3">
-                                                <div className="relative">
-                                                    <label className="text-[11px] text-[var(--ink-dim)] font-bold uppercase tracking-widest absolute -top-2 left-2 bg-[var(--raised)] px-1">Good Stock</label>
-                                                    <input type="number" min="0" placeholder="0" value={goodVal} onChange={(e) => handleCountChange(item.id, 'good', e.target.value)} className="w-24 text-center p-3 rounded-lg border border-[var(--line)] bg-[var(--sunk)] text-[var(--ink-dim)] focus:border-[var(--line)] outline-none font-black text-lg font-mono placeholder:text-[var(--ink)]"/>
-                                                </div>
-                                                <span className="text-[var(--ink-dim)] font-bold text-lg">+</span>
-                                                <div className="relative">
-                                                    <label className="text-[11px] text-[var(--accent-ink)] font-bold uppercase tracking-widest absolute -top-2 left-2 bg-[var(--raised)] px-1">Damaged</label>
-                                                    <input type="number" min="0" placeholder="0" value={damagedVal} onChange={(e) => handleCountChange(item.id, 'damaged', e.target.value)} className="w-24 text-center p-3 rounded-lg border border-[var(--line)] bg-[var(--sunk)] text-[var(--accent-ink)] focus:border-[var(--accent-edge)] outline-none font-black text-lg font-mono placeholder:text-[var(--ink)]"/>
-                                                </div>
+                                            <div className="grid grid-cols-2 gap-3 w-full md:w-auto md:shrink-0">
+                                                <label className="flex flex-col gap-1 min-w-0">
+                                                    <span className="text-[10px] text-[var(--ink-dim)] font-bold uppercase tracking-widest whitespace-nowrap">Good stock</span>
+                                                    <input type="number" inputMode="numeric" min="0" placeholder="0" value={goodVal} onChange={(e) => handleCountChange(item.id, 'good', e.target.value)} className="w-full md:w-28 text-center py-2.5 rounded-lg border border-[var(--line)] bg-[var(--sunk)] text-[var(--ink)] focus:border-[var(--accent-edge)] outline-none font-black text-lg font-mono tabular-nums placeholder:text-[var(--ink-dim)]"/>
+                                                </label>
+                                                <label className="flex flex-col gap-1 min-w-0">
+                                                    <span className="text-[10px] text-[var(--accent-ink)] font-bold uppercase tracking-widest whitespace-nowrap">Damaged</span>
+                                                    <input type="number" inputMode="numeric" min="0" placeholder="0" value={damagedVal} onChange={(e) => handleCountChange(item.id, 'damaged', e.target.value)} className="w-full md:w-28 text-center py-2.5 rounded-lg border border-[var(--line)] bg-[var(--sunk)] text-[var(--accent-ink)] focus:border-[var(--accent-edge)] outline-none font-black text-lg font-mono tabular-nums placeholder:text-[var(--ink-dim)]"/>
+                                                </label>
                                             </div>
                                         </div>
 
                                         {isRevealed && (
-                                            <div className="p-4 pt-0 border-t border-[var(--line)] mt-2 bg-black/20 rounded-b-lg flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                                                <div className="flex items-center gap-4 text-xs font-mono">
-                                                    <div className="bg-[var(--sunk)] px-3 py-1.5 rounded border border-[var(--line)]"><span className="text-[var(--ink-dim)] mr-2">SYS EXPECTED:</span><span className="text-[var(--ink-dim)] font-bold">{item.stock || 0}</span></div>
-                                                    <span className="text-[var(--ink-dim)]">vs</span>
-                                                    <div className="bg-[var(--sunk)] px-3 py-1.5 rounded border border-[var(--line)]"><span className="text-[var(--ink-dim)] mr-2">TOTAL FOUND:</span><span className="text-[var(--ink-dim)] font-bold">{totalFound}</span></div>
-                                                    <div className={`px-3 py-1.5 rounded border font-black border-[var(--line)] ${variance === 0 ? 'bg-emerald-900/20 border-emerald-500/30 text-emerald-500' : 'bg-[var(--danger)] border-[var(--danger)] text-[var(--danger-ink)]'} `}>{variance > 0 ? '+' : ''}{variance}</div>
+                                            <div className="pl-4 pr-3 pb-3 md:pb-4 pt-0 flex flex-col md:flex-row justify-between items-stretch md:items-center gap-3">
+                                                {/* Three figures, equal weight, one line. Grouped digits: a four-figure
+                                                    count is unreadable without them, and these are the numbers he
+                                                    signs off on. */}
+                                                <div className="grid grid-cols-3 gap-px bg-[var(--line)] rounded-lg overflow-hidden text-center w-full md:w-auto md:inline-grid">
+                                                    <div className="bg-[var(--sunk)] px-3 py-2 md:px-4">
+                                                        <div className="text-[9px] text-[var(--ink-dim)] font-bold uppercase tracking-widest">Expected</div>
+                                                        <div className="text-sm font-black font-mono tabular-nums text-[var(--ink)]">{formatNumber(item.stock || 0)}</div>
+                                                    </div>
+                                                    <div className="bg-[var(--sunk)] px-3 py-2 md:px-4">
+                                                        <div className="text-[9px] text-[var(--ink-dim)] font-bold uppercase tracking-widest">Found</div>
+                                                        <div className="text-sm font-black font-mono tabular-nums text-[var(--ink)]">{formatNumber(totalFound)}</div>
+                                                    </div>
+                                                    <div className={`px-3 py-2 md:px-4 ${variance === 0 ? 'bg-[var(--gold)]' : 'bg-[var(--danger)]'} `}>
+                                                        <div className={`text-[9px] font-bold uppercase tracking-widest ${variance === 0 ? 'text-[var(--accent-ink)]' : 'text-[var(--danger-ink)]'} `}>{variance === 0 ? 'Match' : 'Difference'}</div>
+                                                        <div className={`text-sm font-black font-mono tabular-nums ${variance === 0 ? 'text-[var(--accent-ink)]' : 'text-[var(--danger-ink)]'} `}>{variance > 0 ? '+' : ''}{formatNumber(variance)}</div>
+                                                    </div>
                                                 </div>
 
                                                 {Number(damagedVal) > 0 && (
@@ -1121,7 +1141,7 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                         </div>
                     </div>
 
-                    <div className="p-4 bg-black/80 border-t border-[var(--line)] flex flex-col md:flex-row justify-between items-center gap-4 z-10 relative">
+                    <div className="p-4 bg-[var(--sunk)] border-t border-[var(--line)] flex flex-col md:flex-row justify-between items-center gap-4 z-10 relative">
                         <div className="text-xs text-[var(--ink-dim)] font-bold uppercase w-full md:w-auto text-center md:text-left tracking-widest">{Object.keys(counts).length} Wares Counted</div>
                         <div className="flex w-full md:w-auto gap-3">
                             <button onClick={() => setCounts({})} className="flex-1 md:flex-none justify-center px-4 py-3 md:py-2 text-[var(--ink-dim)] hover:text-[var(--ink)] font-bold text-xs flex items-center gap-2 transition-colors bg-[var(--raised)] border border-[var(--line)] rounded-lg"><RefreshCcw size={14}/> Reset</button>
