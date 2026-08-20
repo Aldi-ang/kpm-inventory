@@ -100,8 +100,8 @@
     "semantic_hash": ""
   },
   "src/StockOpnameView.jsx": {
-    "mtime": 1787213248.1164167,
-    "ast_hash": "e3e17e510891f056830ccd60846d50bf",
+    "mtime": 1787231691.2327502,
+    "ast_hash": "b7bf22ba2dcebace4628e474f743bbac",
     "semantic_hash": ""
   },
   "src/components/AuditVaultView.jsx": {
@@ -570,8 +570,8 @@
     "semantic_hash": ""
   },
   ".claude/PROGRESS.md": {
-    "mtime": 1787212870.4715931,
-    "ast_hash": "737a7979d9033381fc67c09acd6db6d7",
+    "mtime": 1787213445.0069456,
+    "ast_hash": "a392022d1846db610109fc58dc3f3467",
     "semantic_hash": ""
   },
   ".claude/pre-compact-context.md": {
@@ -755,8 +755,8 @@
     "semantic_hash": ""
   },
   "src/config/logicFixes.selfcheck.mjs": {
-    "mtime": 1787213320.295452,
-    "ast_hash": "4f0314b0230f631ce073d75b91f0de19",
+    "mtime": 1787231723.5085938,
+    "ast_hash": "8efd8dab152037e48bd51648d11d0926",
     "semantic_hash": ""
   },
   ".claude/NEXT-SESSION.md": {

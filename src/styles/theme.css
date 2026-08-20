@@ -110,6 +110,14 @@
   --accent-ink:    #D08A2E;   /* gold-as-TEXT. Same as gold in dark; goes dark in light. */
   --accent-edge:   #D08A2E;   /* gold-as-BORDER. 3:1 minimum against its surface. */
   --danger-ink:    #E08C82;   /* red-as-TEXT. */
+  /* A THIRD ACCENT, so the palette is not only amber and red. Aldi, 2026-08-20: "dont use put
+     amber and black, too dominant, add some color variety ... as long as dark is 90% 5% light
+     and other color can be variative". Violet is the one hue left open to us - blue and green
+     are banned by the palette law, and everything warm is already spoken for by gold and red.
+     It is for INK and thin EDGES only, never a fill, which is what keeps the 90/5 ratio true.
+     Measured on --sunk 9,10:1 and on --raised 7,78:1. */
+  --alt-ink:       #C2A0D9;
+  --alt-edge:      #5A3F6B;
 
   /* orange — warning. Aldi asked for more of it. */
   --orange:        #FF8C1A;
@@ -262,6 +270,9 @@ html.light {
   --accent-ink:    #4F3603;
   --accent-edge:   #7A5A12;
   --danger-ink:    #611A14;   /* darkened 2026-08-13: #7E2A22 measured 4,00:1 on --inset */
+  /* The same third accent, reversed for light mode. Measured on --sunk 5,67:1 and --raised 9,87:1. */
+  --alt-ink:       #4A2560;
+  --alt-edge:      #9A7FA8;
 
   --orange:        #FF8C1A;
   --orange-ink:    #0A0603;
@@ -3535,4 +3546,28 @@ html.lite-mode .kpm-mod.arrive { animation: none; }
 html.lite-mode .kpm-rim-neon::before { display: none; }
 @media (prefers-reduced-motion: reduce) {
   .kpm-rim-neon::before { display: none; }
+}
+
+
+/* ── THE QUARANTINE HAZARD MARK ─────────────────────────────────────────────────────────────
+   He asked for a better animation on the biohazard symbol. It was `animate-pulse`: opacity
+   1 -> 0,5 -> 1 every two seconds, which reads as a blinking warning light and is the loudest
+   thing on a screen full of stock figures.
+
+   This is a HEADER icon - it is on screen the whole time someone works in Quarantine, which by
+   Emil Kowalski's frequency rule means the animation must be drastically reduced rather than
+   improved. So: a slow breath, 3,6s, amplitude small enough that you notice it only if you look
+   for it. Opacity floor is 0,72 rather than 0,5, so the mark never reads as disabled. Transform
+   and opacity only, both off the main thread. */
+.kpm-hazard {
+  transform-origin: center;
+  animation: kpm-hazard-breathe 3.6s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+@keyframes kpm-hazard-breathe {
+  0%, 100% { opacity: 0.72; transform: scale(1); }
+  50%      { opacity: 1;    transform: scale(1.06); }
+}
+html.lite-mode .kpm-hazard { animation: none; opacity: 1; }
+@media (prefers-reduced-motion: reduce) {
+  .kpm-hazard { animation: none; opacity: 1; }
 }

@@ -1820,5 +1820,71 @@ section('S36. The neon rim is one arc, and it obeys Lite Mode');
      (opname.match(/kpm-rim-neon/g) || []).length === 1); }
 
 
+/* --- S37 . amber is an accent, not a surface -------------------------------------------- */
+section('S37. Quarantine and HQ Audits: gold is ink and edges, never a slab');
+
+/* Aldi, 2026-08-20, with five screenshots: "dont use put amber and black, too dominant, add some
+   color variety, thats fine for the symbol and few box line, as long as dark is 90% 5% light and
+   other color can be variative, reverse color on light mode of course".
+
+   Every unreadable thing he photographed was the same mistake - gold used as a big FILL with dim
+   or gold ink on top. Fixing the ink alone would have kept the screen 40% amber. So the fill is
+   what went: dark surface, one thin coloured line, coloured text. That answers the contrast AND
+   the ratio in one move. */
+{ const css = read('src/styles/theme.css');
+  const opname = read('src/StockOpnameView.jsx');
+
+  /* A third accent, because two colours cannot tell three actions apart. Violet is the only hue
+     left - blue and green are banned outright, and warm is taken by gold and red. */
+  ok('the third accent exists in BOTH themes, not just one',
+     (css.match(/--alt-ink:/g) || []).length === 2 && (css.match(/--alt-edge:/g) || []).length === 2);
+  ok('it is a real token, not a raw colour dropped into markup',
+     !/#C2A0D9|#4A2560/.test(opname));
+
+  /* Three actions, three readings. Sample is reversible, RTV is routine, penalty takes money -
+     and only the one that takes money is filled. */
+  const from = opname.indexOf('Convert to Sample');
+  const to = opname.indexOf('Penalty Charge', from);
+  const actions = (from === -1 || to === -1) ? '' : opname.slice(from - 700, to);
+  ok('the action row was found', actions.length > 500 && actions.length < 3000);
+  ok('sample carries the third accent', /border-\[var\(--alt-edge\)\] text-\[var\(--alt-ink\)\]/.test(actions));
+  ok('RTV stays neutral - it is the routine one', /border-\[var\(--line\)\] text-\[var\(--ink\)\]/.test(actions));
+  ok('none of the quarantine actions is a gold slab any more',
+     !/bg-\[var\(--gold\)\]/.test(actions));
+  ok('and they answer a press, which a slab never did', (actions.match(/active:scale-\[0\.97\]/g) || []).length === 2);
+
+  /* The hazard mark. animate-pulse is opacity 1 -> 0,5 -> 1 every 2s: a blinking warning lamp,
+     and it is on screen the whole time someone works in Quarantine. Reduced, not improved. */
+  ok('the hazard mark no longer blinks', !/Biohazard size=\{24\}[^/]*animate-pulse/.test(opname));
+  ok('it is red, as he asked', /kpm-hazard text-\[var\(--danger-ink\)\]/.test(opname));
+  ok('it breathes slowly rather than flashing', /kpm-hazard-breathe 3\.6s/.test(css));
+  ok('and it never dips to half opacity, which would read as disabled',
+     /opacity: 0\.72/.test(css) && !/kpm-hazard-breathe[\s\S]{0,200}opacity: 0\.5/.test(css));
+  ok('HIS LAW: it does not move in Lite Mode',
+     /html\.lite-mode \.kpm-hazard \{ animation: none/.test(css));
+  ok('and reduced motion stops it too',
+     /prefers-reduced-motion: reduce\)[\s\S]{0,120}\.kpm-hazard \{ animation: none/.test(css));
+
+  /* The HQ audit row he photographed twice: a filled gold disc with --ink-dim on it, and an
+     APPROVED chip the same way. Both are dark now, ringed and inked in the accent. */
+  ok('the audit status disc is a ring, not a filled coin',
+     /p-3 rounded-full border bg-\[var\(--sunk\)\]/.test(opname));
+  ok('and the APPROVED chip is dark with gold ink, not gold with dim ink',
+     /bg-\[var\(--sunk\)\] text-\[var\(--accent-ink\)\] border-\[var\(--accent-edge\)\]/.test(opname));
+  ok('no dim ink is left sitting on a gold plate anywhere on this screen',
+     !/bg-\[var\(--gold\)\] text-\[var\(--ink-dim\)\]/.test(opname));
+
+  /* THE RATIO, as a number. Gold may fill the ONE selected tab and nothing else; every other use
+     must be ink or a one pixel edge. This is what stops the screen drifting back to amber. */
+  const goldFills = (opname.match(/bg-\[var\(--gold\)\]/g) || []).length;
+  /* 18 is the measured floor after the sweep, and every one of them is legitimate: four main
+     tabs and two sub-tabs (only ONE is selected at a time, so at most one is on screen), two
+     primary buttons, three data bars whose LENGTH is the data, the match chip and the selected
+     modal method, plus their hover twins. Chips, pills, badges and discs are dark with a
+     coloured edge. Lower this number, never raise it. */
+  ok('gold fills only selected states, primary actions and data bars - never a chip or a panel',
+     goldFills <= 18, `${goldFills} gold fills left`); }
+
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);
