@@ -2699,19 +2699,19 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                         </div>
                     ) : (
                         <div key="today" className="kpm-rail-panel">
-                            <h3 className="m-0 mb-3 font-mono text-[11px] font-black uppercase tracking-[0.16em] text-[var(--duke-brass-ink)]">Today</h3>
+                            <h3 className="m-0 mb-3 font-mono text-[12.5px] font-black uppercase tracking-[0.16em] text-[var(--duke-brass-ink)]">Today</h3>
 
                             <div>
-                                <div className="font-mono text-[9.5px] font-black uppercase tracking-[0.16em] text-[var(--ink-dim)] mb-1.5">Taken</div>
-                                <div className="font-mono text-[21px] font-black tabular-nums text-[var(--duke-price-ink)] leading-none">
+                                <div className="font-mono text-[11px] font-black uppercase tracking-[0.16em] text-[var(--ink-dim)] mb-1.5">Taken</div>
+                                <div className="font-mono text-[26px] font-black tabular-nums text-[var(--duke-price-ink)] leading-none">
                                     Rp {new Intl.NumberFormat('id-ID').format(today.today)}
                                 </div>
                                 {/* Direction is carried by the ARROW first and colour second: the palette
                                     bans green, so an up/down pair could never lean on red/green anyway. */}
                                 {today.pct === null ? (
-                                    <p className="m-0 mt-1.5 font-mono text-[10px] text-[var(--ink-dim)]">no sales yesterday to compare</p>
+                                    <p className="m-0 mt-1.5 font-mono text-[11.5px] text-[var(--ink-dim)]">no sales yesterday to compare</p>
                                 ) : (
-                                    <p className={`m-0 mt-1.5 flex items-baseline gap-1.5 font-mono text-[11px] font-black tabular-nums ${today.pct >= 0 ? 'text-[var(--duke-brass-ink)]' : 'text-[var(--duke-danger-ink)]'}`}>
+                                    <p className={`m-0 mt-1.5 flex items-baseline gap-1.5 font-mono text-[12.5px] font-black tabular-nums ${today.pct >= 0 ? 'text-[var(--duke-brass-ink)]' : 'text-[var(--duke-danger-ink)]'}`}>
                                         <span aria-hidden="true">{today.pct >= 0 ? '▲' : '▼'}</span>
                                         {Math.abs(today.pct)}%
                                         <span className="font-normal text-[var(--ink-dim)]">vs yesterday, {clockLabel}</span>
@@ -2720,10 +2720,10 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                             </div>
 
                             <div className="mt-3 border-t border-[var(--line)] pt-3">
-                                <div className="font-mono text-[9.5px] font-black uppercase tracking-[0.16em] text-[var(--ink-dim)] mb-1.5">Stores done</div>
-                                <div className="font-mono text-[21px] font-black tabular-nums text-[var(--ink)] leading-none">{today.stores}</div>
+                                <div className="font-mono text-[11px] font-black uppercase tracking-[0.16em] text-[var(--ink-dim)] mb-1.5">Stores done</div>
+                                <div className="font-mono text-[26px] font-black tabular-nums text-[var(--ink)] leading-none">{today.stores}</div>
                                 {today.storesYesterday > 0 && (
-                                    <p className={`m-0 mt-1.5 flex items-baseline gap-1.5 font-mono text-[11px] font-black tabular-nums ${today.storesDelta >= 0 ? 'text-[var(--duke-brass-ink)]' : 'text-[var(--duke-danger-ink)]'}`}>
+                                    <p className={`m-0 mt-1.5 flex items-baseline gap-1.5 font-mono text-[12.5px] font-black tabular-nums ${today.storesDelta >= 0 ? 'text-[var(--duke-brass-ink)]' : 'text-[var(--duke-danger-ink)]'}`}>
                                         <span aria-hidden="true">{today.storesDelta >= 0 ? '▲' : '▼'}</span>
                                         {Math.abs(today.storesDelta)}
                                         <span className="font-normal text-[var(--ink-dim)]">vs yesterday</span>
@@ -2733,9 +2733,9 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
 
                             {today.last && (
                                 <div className="mt-3 border-t border-[var(--line)] pt-3">
-                                    <div className="font-mono text-[9.5px] font-black uppercase tracking-[0.16em] text-[var(--ink-dim)] mb-1.5">Last customer</div>
-                                    <div className="font-mono text-[13px] font-black uppercase text-[var(--ink)] leading-tight break-words">{today.last.customerName}</div>
-                                    <p className="m-0 mt-1 font-mono text-[10.5px] tabular-nums text-[var(--ink-dim)]">
+                                    <div className="font-mono text-[11px] font-black uppercase tracking-[0.16em] text-[var(--ink-dim)] mb-1.5">Last customer</div>
+                                    <div className="font-mono text-[15px] font-black uppercase text-[var(--ink)] leading-tight break-words">{today.last.customerName}</div>
+                                    <p className="m-0 mt-1 font-mono text-[12px] tabular-nums text-[var(--ink-dim)]">
                                         {agoLabel(today.lastAt)} &middot; Rp {new Intl.NumberFormat('id-ID').format(Number(today.last.total) || 0)}
                                     </p>
                                 </div>
@@ -2743,9 +2743,9 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
 
                             {lowestStock && (
                                 <div className="mt-3 border-t border-[var(--line)] pt-3">
-                                    <div className="font-mono text-[9.5px] font-black uppercase tracking-[0.16em] text-[var(--ink-dim)] mb-1.5">Running low</div>
-                                    <div className="font-mono text-[13px] font-black uppercase text-[var(--duke-danger-ink)] leading-tight break-words">{lowestStock.name}</div>
-                                    <p className="m-0 mt-1 font-mono text-[10.5px] tabular-nums text-[var(--ink-dim)]">
+                                    <div className="font-mono text-[11px] font-black uppercase tracking-[0.16em] text-[var(--ink-dim)] mb-1.5">Running low</div>
+                                    <div className="font-mono text-[15px] font-black uppercase text-[var(--duke-danger-ink)] leading-tight break-words">{lowestStock.name}</div>
+                                    <p className="m-0 mt-1 font-mono text-[12px] tabular-nums text-[var(--ink-dim)]">
                                         {new Intl.NumberFormat('id-ID').format(lowestStock.stock)} Bks left in the vehicle
                                     </p>
                                 </div>
@@ -2760,13 +2760,13 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                 often has no location permission at all. */}
                             {!agentLocation && (
                                 <div className="mt-3 border-t border-[var(--line)] pt-3">
-                                    <div className="font-mono text-[9.5px] font-black uppercase tracking-[0.16em] text-[var(--ink-dim)] mb-1.5">Next stop</div>
-                                    <p className="m-0 font-mono text-[10.5px] leading-relaxed text-[var(--ink-dim)]">
+                                    <div className="font-mono text-[11px] font-black uppercase tracking-[0.16em] text-[var(--ink-dim)] mb-1.5">Next stop</div>
+                                    <p className="m-0 font-mono text-[12px] leading-relaxed text-[var(--ink-dim)]">
                                         Needs a GPS fix to know what is nearest.
                                     </p>
                                     <button
                                         onClick={() => verifyLocation(true)}
-                                        className="kpm-hover kpm-press mt-2 flex h-9 w-full items-center justify-center gap-2 rounded border border-[var(--duke-edge-1)] bg-[var(--duke-fill-ground)] font-mono text-[10px] font-black uppercase tracking-[0.14em] text-[var(--duke-ink-3)] hover:text-[var(--duke-amber-ink)] hover:border-[var(--duke-amber-edge)] transition-colors"
+                                        className="kpm-hover kpm-press mt-2 flex h-9 w-full items-center justify-center gap-2 rounded border border-[var(--duke-edge-1)] bg-[var(--duke-fill-ground)] font-mono text-[11.5px] font-black uppercase tracking-[0.14em] text-[var(--duke-ink-3)] hover:text-[var(--duke-amber-ink)] hover:border-[var(--duke-amber-edge)] transition-colors"
                                     >
                                         <MapPin size={13}/> Find me
                                     </button>
@@ -2775,8 +2775,8 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
 
                             {agentLocation && !upNext && (
                                 <div className="mt-3 border-t border-[var(--line)] pt-3">
-                                    <div className="font-mono text-[9.5px] font-black uppercase tracking-[0.16em] text-[var(--ink-dim)] mb-1.5">Next stop</div>
-                                    <p className="m-0 font-mono text-[10.5px] leading-relaxed text-[var(--ink-dim)]">
+                                    <div className="font-mono text-[11px] font-black uppercase tracking-[0.16em] text-[var(--ink-dim)] mb-1.5">Next stop</div>
+                                    <p className="m-0 font-mono text-[12px] leading-relaxed text-[var(--ink-dim)]">
                                         Nothing left nearby — every store assigned to you has been visited today.
                                     </p>
                                 </div>
@@ -2784,9 +2784,9 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
 
                             {upNext && (
                                 <div className="mt-3 border-t border-[var(--line)] pt-3">
-                                    <div className="font-mono text-[9.5px] font-black uppercase tracking-[0.16em] text-[var(--ink-dim)] mb-1.5">Next stop</div>
-                                    <div className="font-mono text-[13px] font-black uppercase leading-tight text-[var(--ink)] break-words">{upNext.customer.name}</div>
-                                    <p className="m-0 mt-1 font-mono text-[10.5px] tabular-nums text-[var(--ink-dim)]">
+                                    <div className="font-mono text-[11px] font-black uppercase tracking-[0.16em] text-[var(--ink-dim)] mb-1.5">Next stop</div>
+                                    <div className="font-mono text-[15px] font-black uppercase leading-tight text-[var(--ink)] break-words">{upNext.customer.name}</div>
+                                    <p className="m-0 mt-1 font-mono text-[12px] tabular-nums text-[var(--ink-dim)]">
                                         {metresLabel(upNext.metres)} &middot; {upNext.remaining} left today
                                     </p>
                                     {directionsUrl(upNext.customer) && (
@@ -2797,7 +2797,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                             href={directionsUrl(upNext.customer)}
                                             target="_blank"
                                             rel="noopener noreferrer"
-                                            className="kpm-hover kpm-press mt-2 flex h-9 w-full items-center justify-center gap-2 rounded border border-[var(--duke-edge-1)] bg-[var(--duke-fill-ground)] font-mono text-[10px] font-black uppercase tracking-[0.14em] text-[var(--duke-ink-3)] no-underline hover:text-[var(--duke-amber-ink)] hover:border-[var(--duke-amber-edge)] transition-colors"
+                                            className="kpm-hover kpm-press mt-2 flex h-9 w-full items-center justify-center gap-2 rounded border border-[var(--duke-edge-1)] bg-[var(--duke-fill-ground)] font-mono text-[11.5px] font-black uppercase tracking-[0.14em] text-[var(--duke-ink-3)] no-underline hover:text-[var(--duke-amber-ink)] hover:border-[var(--duke-amber-edge)] transition-colors"
                                         >
                                             <Map size={13}/> Directions
                                         </a>
@@ -2805,7 +2805,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                 </div>
                             )}
 
-                            <p className="mt-auto pt-3 border-t border-[var(--line)] m-0 font-mono text-[10px] leading-relaxed text-[var(--ink-dim)]">
+                            <p className="mt-auto pt-3 border-t border-[var(--line)] m-0 font-mono text-[11.5px] leading-relaxed text-[var(--ink-dim)]">
                                 Point at a ware to inspect it here.
                             </p>
                         </div>
