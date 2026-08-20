@@ -1760,8 +1760,13 @@ section('S35. The counting card is readable in both themes and cannot overlap it
      /formatNumber\(totalFound\)/.test(card));
   ok('a match reads gold and a mismatch red - never green, which the palette law bans',
      /bg-\[var\(--gold\)\]/.test(card) && /bg-\[var\(--danger\)\]/.test(card));
+  /* Comments are stripped first: the card now documents WHY --accent-ink was wrong by naming
+     the hex it collides with, and a naive scan reads that as paint. Only markup is judged. */
+  const painted = card.replace(/\{\/\*[\s\S]*?\*\/\}/g, '');
   ok('nothing in the card is painted a fixed colour that ignores the theme',
-     !/emerald|bg-black\/|#[0-9a-fA-F]{3,6}/.test(card));
+     !/emerald|bg-black\/|#[0-9a-fA-F]{3,6}/.test(painted));
+  ok('and ink on a filled plate uses the on-plate tokens, never the as-text ones',
+     /text-\[var\(--gold-ink\)\]/.test(painted) && !/bg-\[var\(--gold\)\][^>]*--accent-ink/.test(painted));
   ok('and it is told apart at a glance by a rail, not by colour alone',
      /aria-hidden="true"/.test(card)); }
 

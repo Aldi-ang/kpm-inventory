@@ -636,7 +636,7 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                 </div>
                 
                 {isHighCommand && (
-                    <div className="flex bg-black/50 rounded-lg p-1 border border-[var(--line)] w-full md:w-auto overflow-x-auto custom-scrollbar">
+                    <div className="flex bg-[var(--sunk)] rounded-lg p-1 border border-[var(--line)] w-full md:w-auto overflow-x-auto custom-scrollbar">
                         <button onClick={() => setViewMode('monitor')} className={`px-4 py-2 rounded-md text-[10px] uppercase tracking-widest font-bold transition-all flex items-center gap-2 whitespace-nowrap ${viewMode === 'monitor' ? 'bg-[var(--gold)] text-[var(--gold-ink)] shadow-md' : 'text-[var(--ink-dim)] hover:text-[var(--ink)]'} `}>
                             <BarChart size={14}/> Monitor
                         </button>
@@ -1062,7 +1062,7 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
             {viewMode === 'count' && (
                 <div className="flex-1 bg-[var(--sunk)] rounded-xl border border-[var(--line)] shadow-inner overflow-hidden flex flex-col relative animate-fade-in z-10">
                     <div className="p-3 border-b border-[var(--line)] bg-[var(--sunk)] relative">
-                        <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Scan or Search Product..." className="bg-[var(--sunk)] border border-[var(--line)] pl-9 pr-4 py-3 rounded-lg text-sm w-full focus:border-[var(--line)] outline-none text-[var(--ink)] font-mono"/>
+                        <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Scan or Search Product..." className="bg-[var(--sunk)] border border-[var(--line)] pl-9 pr-4 py-3 rounded-lg text-sm w-full focus:border-[var(--accent-edge)] outline-none text-[var(--ink)] placeholder:text-[var(--ink-dim)] font-mono"/>
                         <Search size={16} className="absolute left-6 top-6 text-[var(--ink-dim)]"/>
                     </div>
                     <div className="overflow-y-auto flex-1 z-10 relative custom-scrollbar p-3">
@@ -1118,9 +1118,13 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                                                         <div className="text-[9px] text-[var(--ink-dim)] font-bold uppercase tracking-widest">Found</div>
                                                         <div className="text-sm font-black font-mono tabular-nums text-[var(--ink)]">{formatNumber(totalFound)}</div>
                                                     </div>
+                                                    {/* INK ON A PLATE, NOT INK ON A PANEL. --accent-ink means "gold as text",
+                                                        and in dark mode it is the SAME hex as --gold (#D08A2E) - so this block
+                                                        was gold on gold, invisible, exactly as he photographed it. --gold-ink
+                                                        and --duke-on-fill are the tokens meant to sit ON a filled plate. */}
                                                     <div className={`px-3 py-2 md:px-4 ${variance === 0 ? 'bg-[var(--gold)]' : 'bg-[var(--danger)]'} `}>
-                                                        <div className={`text-[9px] font-bold uppercase tracking-widest ${variance === 0 ? 'text-[var(--accent-ink)]' : 'text-[var(--danger-ink)]'} `}>{variance === 0 ? 'Match' : 'Difference'}</div>
-                                                        <div className={`text-sm font-black font-mono tabular-nums ${variance === 0 ? 'text-[var(--accent-ink)]' : 'text-[var(--danger-ink)]'} `}>{variance > 0 ? '+' : ''}{formatNumber(variance)}</div>
+                                                        <div className={`text-[9px] font-bold uppercase tracking-widest ${variance === 0 ? 'text-[var(--gold-ink)]' : 'text-[var(--duke-on-fill)]'} `}>{variance === 0 ? 'Match' : 'Difference'}</div>
+                                                        <div className={`text-sm font-black font-mono tabular-nums ${variance === 0 ? 'text-[var(--gold-ink)]' : 'text-[var(--duke-on-fill)]'} `}>{variance > 0 ? '+' : ''}{formatNumber(variance)}</div>
                                                     </div>
                                                 </div>
 
@@ -1145,7 +1149,7 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                         <div className="text-xs text-[var(--ink-dim)] font-bold uppercase w-full md:w-auto text-center md:text-left tracking-widest">{Object.keys(counts).length} Wares Counted</div>
                         <div className="flex w-full md:w-auto gap-3">
                             <button onClick={() => setCounts({})} className="flex-1 md:flex-none justify-center px-4 py-3 md:py-2 text-[var(--ink-dim)] hover:text-[var(--ink)] font-bold text-xs flex items-center gap-2 transition-colors bg-[var(--raised)] border border-[var(--line)] rounded-lg"><RefreshCcw size={14}/> Reset</button>
-                            <button onClick={handleCommit} disabled={isSubmitting || Object.keys(counts).length === 0} className="flex-1 md:flex-none justify-center bg-[var(--gold)] hover:bg-[var(--gold)] disabled:opacity-50 disabled:cursor-not-allowed text-[var(--gold-ink)] px-8 py-3 md:py-2 rounded-lg font-black shadow-lg flex items-center gap-2 transition-all active:scale-95 tracking-widest uppercase text-xs shadow-emerald-900/50">{isSubmitting ? <RefreshCcw size={16} className="animate-spin"/> : <Send size={16}/>} Submit to HQ</button>
+                            <button onClick={handleCommit} disabled={isSubmitting || Object.keys(counts).length === 0} className="flex-1 md:flex-none justify-center bg-[var(--gold)] hover:bg-[var(--gold)] text-[var(--gold-ink)] disabled:bg-[var(--sunk)] disabled:text-[var(--ink-dim)] disabled:border disabled:border-[var(--line)] disabled:shadow-none disabled:cursor-not-allowed px-8 py-3 md:py-2 rounded-lg font-black shadow-lg flex items-center gap-2 transition-all active:scale-95 tracking-widest uppercase text-xs">{isSubmitting ? <RefreshCcw size={16} className="animate-spin"/> : <Send size={16}/>} Submit to HQ</button>
                         </div>
                     </div>
                 </div>
