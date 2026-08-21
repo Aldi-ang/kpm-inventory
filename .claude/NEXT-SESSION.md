@@ -2,101 +2,78 @@
 
 /alucard
 
-**Stock Opname: count a difference TWICE before HQ ever sees it.**
+**Give a stock count DIFFERENCE a cause, the same way damage already has one.**
 
-Findings 1 and 2 shipped on 2026-08-21. This is the next one on the ranked list, and it is the
-cheapest thing on that list with the largest effect on whether a count can be trusted.
+Recount shipped 2026-08-21, so a difference now survives two counts before HQ sees it. HQ still
+receives it as a naked number with no explanation.
 
 ## What happens today
 
-`src/StockOpnameView.jsx` — the agent types a good count and a damaged count, the row shows
-`MATCH` or `DIFFERENCE`, and `handleCommit` sends every counted row straight to HQ with
-`status: 'PENDING_HQ_APPROVAL'`. A difference of one pack and a difference of two hundred travel
-the same path and land in the same queue.
+`src/StockOpnameView.jsx` — a confirmed difference is saved with `variance`, `countPasses` and
+`countedTwice`, and nothing else. HQ opens the audit, sees `-3`, and has to guess whether that is a
+miscount, an unrecorded sale, breakage, theft, or a supplier who shipped short.
 
 ## Why that costs Aldi money
 
-Most count differences in a real warehouse are **miscounts, not theft** — a row skipped, a carton
-counted as a slop, a number typed into the wrong box. Today every one of those reaches HQ as a
-naked number with no cause, HQ approves it, and `increment(counted - expected)` writes the
-miscount into the real stock. The wrong figure then becomes the expected figure for the next
-count, so one bad count poisons the next one.
+The cause decides what happens next, exactly as it does for damage: an unrecorded sale is a
+bookkeeping fix, breakage is a write-off, theft is a person. Approving a difference without a cause
+turns every one of those into the same silent stock adjustment, and the pattern that would have
+identified a leak never gets recorded.
+
+Leak detection (shipped) already tells HQ *which* products repeat. The cause tells them *why*.
 
 ## The smallest fix
 
-When a row's variance is not zero, **hand that row back for a second count before it can be
-submitted** — clear the boxes, ask for the number again, and only escalate to HQ if the second
-count disagrees with the system too. Recounting one row costs the agent thirty seconds; it removes
-the majority of false variances before anyone acts on them.
+Add a reason picker to a row whose difference has been confirmed, offering:
 
-Then, if there is room in the same session: a **cause for the variance**, picked the same way the
-damage kinds now are — miscount · unrecorded sale · breakage · theft · supplier short. The damage
-reel built on 2026-08-21 is the pattern to copy; do not invent a second one.
+    miscount · unrecorded sale · breakage · theft · supplier short
 
-## The trap that makes a lazy version wrong
+**REUSE THE DAMAGE REEL. Do not invent a second control.** `DAMAGE_REASONS` + `.kpm-dmg-*` in
+`theme.css` already do exactly this: one box, press the name to swipe down, arrows to step, dots
+for the level. Copy the pattern, add a second list. Aldi approved that control by eye on
+2026-08-21; a different-looking one on the same screen is the mistake here.
 
-**Do not re-read the expected figures when the row is recounted.** They are snapshotted on the
-first keystroke (`expStock` / `expDamaged` in `counts[id]`, set in `handleCountChange`) precisely
-so a sale landing mid-count cannot move the target. A recount that refreshes the snapshot
-re-opens the bug that was just closed, and it will look like it is working.
+Save it as `varianceReason` on the item in the audit payload, and show it on HQ's review row beside
+the existing damage-kind chips.
 
-**And keep the tier rule.** `showExpectedWhileCounting` (`canSeeExpectedCount`, tier 3 and above)
-decides whether the figures are visible while counting at all. Below that the agent counts blind —
-so for those tiers the recount prompt must not leak the expected number by saying what is wrong
-with it. Say "count this one again", never "you are 5 short".
+Then, if there is room: a **tolerance threshold** — a difference of one or two packs auto-accepts
+and logs instead of going to HQ. Everything goes to HQ today, so HQ drowns and starts approving
+without looking, which is worse than not checking at all.
 
-## How the recount actually works — agreed with him 2026-08-21
+## The traps
 
-1. A row's variance is not zero → the app **clears that row** and asks for the number again.
-2. It must **not show him the first number**. If he sees 98 he will simply retype 98.
-3. Then compare the two counts:
-
-| Count 1 | Count 2 | Meaning | What happens |
-|---|---|---|---|
-| 98 | 100 | he miscounted once | keep 100, no difference, **nothing goes to HQ** |
-| 98 | 98 | the shortage is real | goes to HQ **marked "counted twice"** |
-| 98 | 97 | he is guessing | ask a third time |
-
-**A miscount must die on his phone.** Only a difference that survived two counts may change real
-stock — because HQ approving one writes it in through `increment()`, and that wrong figure becomes
-the EXPECTED figure for the next count. One typo poisons two months.
-
-## ✅ All four are ANSWERED — do not re-ask any of them
-
-1. **Third disagreement → HE CHOSE B: send all three counts to HQ.** Do not take count 3 as final.
-   Save all three numbers on the record, marked as a three-way disagreement.
-2. **Per-product count history → YES, and it is already SHIPPED** as leak detection on HQ's review
-   row (`shortageStreak()` / `isLeak()`). Nothing left to build here.
-3. **A full count takes under 30 minutes** — *"stock opname is really fast, 30 mins less usually
-   done"*. **Counting sessions are DROPPED. Do not propose them again.**
-4. **No barcodes** — *"there is no barcode in the product so far"*. **Scan-to-row is DROPPED.**
-
-So the entire remaining Stock Opname plan is: **recount (this job) → a cause for the variance →
-a tolerance threshold.** Nothing else.
+- **Do not put the picker before the recount.** A cause typed on the first guess is a guess. It
+  belongs on the row only once `recountState(...).confirmed` or `.disagreement` is true.
+- **Do not name the difference in any label.** Tiers below 3 count blind; "explain why you are 5
+  short" hands them the number the screen withholds.
+- **Store full strings, never short labels.** Same trap the damage kinds have: reports group on the
+  stored value, so `"Unrecorded sale"` and `"unrecorded"` become two different causes forever.
 
 ## Verify
 
 ```
 npm run build; node src/config/integration.audit.mjs; node src/config/logicFixes.selfcheck.mjs
 ```
-Currently 599/599 and 519/519. Leave a line in `logicFixes.selfcheck.mjs`: one regression guard
-(a non-zero variance cannot reach `addDoc` on the first pass) and one behaviour check (the maths
-on real numbers). Prove the check fails before trusting it.
+Currently 599/599 and 543/543. Leave lines in `logicFixes.selfcheck.mjs`, and **lift any constant
+you assert from the source rather than retyping it** — a threshold retyped into its own check made
+a whole block of checks decorative on 2026-08-21, and only a deliberate probe found it. Break the
+shipped rule on purpose and watch the check go red before you trust it.
 
 **When you finish, rewrite this file with the next single job.**
 
 <details>
 <summary>The rest of the queue — do not paste this, it is here so the next session knows what to promote</summary>
 
-- **Stock Opname finding 3** — legacy audits overwrite instead of adjusting
-  (`StockOpnameView.jsx`, the `hasSnapshot` fallback). I recommend skipping; Aldi has not answered.
-- **Stock Opname, what is left** — a **cause** for a variance (miscount · unrecorded sale ·
-  breakage · theft · supplier short), picked with the same reel the damage kinds use, then a
-  **tolerance threshold** so small differences auto-accept instead of drowning HQ.
-  ⛔ Sessions, barcode scan and ABC cycle counting are all **dropped on his answers** — a count
-  takes under 30 minutes and the products have no barcodes.
-- **TIER 1 = ONE PROFILE, stages B and C** — B copies the van's `activeCanvas`,
-  `allowedPayments`, `allowedTiers` onto `master_owner` after a backup; C deletes `ADMIN_VEHICLE`.
+⛔ **Dropped on his answers, do not propose again:** counting sessions (a full count takes under 30
+minutes), barcode scan (no barcodes on the products), ABC cycle counting (wrong size of business).
+Stock Opname finding 3, the legacy overwrite path, is **closed** — he asked "is 1 damaging?", the
+answer was no.
+
+- **⚠️ HE HAS NEVER SEEN ANY OF 2026-08-21'S WORK ON A REAL SCREEN.** Four features shipped that
+  day proven only by audits and by an approved prototype. Ask him to look before building more on
+  top of them.
+- **TIER 1 = ONE PROFILE, stages B and C** — B copies the van's `activeCanvas`, `allowedPayments`,
+  `allowedTiers` onto `master_owner` after a backup; C deletes `ADMIN_VEHICLE`.
   **C before B shows his van as EMPTY.** Stage A is done (`447e3dd`).
 - **Tier renames** — `DYNAMIC_TIERS` labels only: T3 `HQ SALES MANAGER`, T4 `REGIONAL ADMIN`,
   T5 `SALES CANVAS`, T6 `SALES MOTORIST`. Never touch the ids in `CORPORATE_TIERS`.

@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-21 15:46 WIB (🟠 KPM app session)** · ✅ LEAK DETECTION SHIPPED · ❓ NOTHING WAITING — NEXT JOB IS RECOUNT, FULLY SPECIFIED · branch `phase0-solid-ground`
+**Updated: 2026-08-21 15:51 WIB (🟠 KPM app session)** · ✅ RECOUNT SHIPPED — THE COUNT PATH IS NOW WHOLE · ❓ NOTHING WAITING · ✅ HE HAS NOT SEEN ANY OF IT ON A REAL SCREEN · branch `phase0-solid-ground`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **TRIMMED 2026-08-21 ON ALDI'S WORD.** *"sure trim it"*, on his own condition:
@@ -21,6 +21,36 @@
 >
 > 📏 **KEEP THIS FILE UNDER ~350 LINES.** Past that, cut the oldest day into the same archive.
 > ⚠️ **TWO TRACKS SHARE THIS FILE** — 🟠 KPM and 🟢 Lancelot. Never trim or re-sort across them.
+
+## 🟠 2026-08-21 15:51 — RECOUNT SHIPPED. 599/599 and 543/543. The count path is whole.
+
+A row whose variance is not zero **cannot be submitted** — it offers *"clear and count again"*.
+Same number twice → real, goes to HQ marked `countedTwice`. Different → a third count. **All three
+different → his option B: all three go to HQ and the app picks none.**
+
+**The prompt never names the difference.** *"You are 5 short"* hands a blind tier the answer the
+screen exists to withhold, and tells any tier exactly what to type to make the warning disappear.
+
+⚠️ **THREE WAYS A LAZY VERSION OF THIS QUIETLY STOPS WORKING — all three now pinned by checks:**
+1. **Showing him the previous number.** He retypes it and the second count proves nothing.
+2. **Re-taking the expected snapshot on the recount** — re-opens the morning's moving-target bug
+   while still looking like it works.
+3. **Letting an already-counted row be deleted by emptying both boxes** — that drops `passes`, so
+   clearing and retyping the same wrong number submits with no recount at all. **Found while
+   writing the feature, not after.**
+
+Proven by breaking the shipped rule two ways (first difference not demanding a recount; a
+three-way disagreement recorded as confirmed) — each turned exactly one check red.
+
+### ▶ WHAT IS LEFT ON STOCK OPNAME — two things, then it is finished
+
+1. **A cause for a variance** — miscount · unrecorded sale · breakage · theft · supplier short.
+   **Reuse the damage reel**, do not invent a second control.
+2. **A tolerance threshold** so small differences auto-accept instead of drowning HQ.
+
+⚠️ **HE HAS STILL NEVER SEEN ANY OF TODAY'S WORK ON A REAL SCREEN.** Everything is proven by the
+audits and by the approved prototype; the count screen needs a login and real data, and the
+Browser pane would not composite a frame. **His eyes remain the outstanding check.**
 
 ## 🟠 2026-08-21 15:46 — LEAK DETECTION SHIPPED. 599/599 and 529/529.
 
@@ -322,6 +352,7 @@ Ponytail is set to **ultra**.
 | `A-Brain/Backlog/TESTS - check these when you feel like it.md` | **NEW 2026-08-18** — every test Aldi owes, taken off his plate |
 | `A-Brain/Wiki/Concepts/Where KPM Is Going.md` | **NEW 2026-08-21 — READ THIS FIRST.** The theme, every locked decision and the direction. He asked for it by name. Put settled decisions here, not in PROGRESS |
 | `src/StockOpnameView.jsx` → `DAMAGE_REASONS` | **NEW 2026-08-21** — the five kinds of damage, stored with the sales terminal's own long strings. Deliberately a SUBSET of the terminal's list: no `Other`, because free text cannot be grouped or counted |
+| `src/StockOpnameView.jsx` → `recountState()` + `samePass()` + `startRecount()` | **NEW 2026-08-21** — a difference is counted twice before HQ sees it. ⚠️ `startRecount` must NEVER re-take `expStock`/`expDamaged`, and must never show the previous numbers back |
 | `src/StockOpnameView.jsx` → `shortageStreak()` + `isLeak()` | **NEW 2026-08-21** — leak detection. Short in ≥2 of the last ≥3 counts, five-count window. **Lives on HQ's review row on purpose** — agents cannot read `pending_audits`, and warning the counter would bias a blind count |
 | `src/StockOpnameView.jsx` → `damageBlocked()` | **NEW 2026-08-21** — the reconcile rule. The damaged total is the truth; the kinds under it must sum to exactly it or the submit refuses and names the product |
 | `src/styles/theme.css` → `.kpm-dmg-*` / `.kpm-dot` | **NEW 2026-08-21** — the damage reel, same mechanism as `.kpm-clock`. ⚠️ The dot ring is a BORDER, never an inset shadow: Lite Mode strips shadows and the dots would vanish |
