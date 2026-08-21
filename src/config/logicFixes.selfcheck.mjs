@@ -1873,7 +1873,15 @@ ${opname.slice(bOpen + 1, bEnd)}
   const sEnd   = opname.indexOf(';', opname.indexOf('=>', sStart));
   ok('the recount rule could be lifted out of the component to be tested',
      rStart > -1 && rOpen > rStart && rEnd > rOpen && sStart > -1 && sEnd > sStart);
+  /* recountState calls BOTH helpers, so both are lifted into its scope - and lifted, never
+     retyped, so loosening either one in the source turns these checks red. */
+  const tolLift  = opname.indexOf('export const withinTolerance');
+  const tolLiftE = opname.indexOf(';', opname.indexOf('=>', tolLift));
+  ok('both helpers the recount depends on could be lifted with it',
+     sStart > -1 && tolLift > -1 && tolLiftE > tolLift);
   const recountState = new Function('entry', 'target', `
+     const VARIANCE_TOLERANCE_BKS = ${(opname.match(/VARIANCE_TOLERANCE_BKS = (\d+)/) || [])[1]};
+     const withinTolerance = ${opname.slice(opname.indexOf('(', tolLift), tolLiftE)};
      const samePass = ${opname.slice(opname.indexOf('(', sStart), sEnd)};
 ${opname.slice(rOpen + 1, rEnd)}
   `);
@@ -1911,6 +1919,37 @@ ${opname.slice(rOpen + 1, rEnd)}
      && /Count these again before submitting/.test(opname));
   ok('every attempt is saved on the record, with the two flags HQ needs',
      /countPasses:/.test(opname) && /countedTwice:/.test(opname) && /threeWayDisagreement:/.test(opname));
+
+  /* ---- WHAT IS TOO SMALL TO CHASE (2026-08-21) ----
+     Aldi: "few batang wont worth my time, few bks is still money bruv we need that". So the line
+     is one PACK. This is not comfort: selling in Batang divides stock by sticksPerPack
+     (App.jsx:3127), so a product with loose sticks holds a FRACTION of a pack, while the count box
+     is parseInt and can only take whole Bks. Without the tolerance that row's variance can never
+     reach zero, and the recount demands a second count and files a fake shortage every week. */
+  const tolStart = opname.indexOf('export const withinTolerance');
+  const tolEnd   = opname.indexOf(';', opname.indexOf('=>', tolStart));
+  ok('the tolerance could be lifted out of the component to be tested',
+     tolStart > -1 && tolEnd > tolStart);
+  const withinTolerance = new Function('variance',
+     `const VARIANCE_TOLERANCE_BKS = ${(opname.match(/VARIANCE_TOLERANCE_BKS = (\d+)/) || [])[1]};
+      return (${opname.slice(opname.indexOf('=>', tolStart) + 2, tolEnd)});`);
+
+  ok('an exact count is within tolerance',            withinTolerance(0) === true);
+  ok('loose sticks are noise - 0,44 of a pack passes', withinTolerance(-0.4375) === true);
+  ok('and so does a surplus of loose sticks',          withinTolerance(0.5625) === true);
+  ok('ONE WHOLE PACK IS MONEY and is never waved through', withinTolerance(-1) === false);
+  ok('nor is a whole pack the other way',             withinTolerance(1) === false);
+  ok('nor anything larger',                           withinTolerance(-7) === false);
+  /* REGRESSION GUARD — the batang row is the reason this exists. */
+  ok('a batang-carrying row no longer demands an endless recount',
+     recountState({ good: 99, damaged: 0 }, { stock: 99.4375, damaged: 0 }).needsRecount === false);
+  ok('but a whole pack short still does',
+     recountState({ good: 98, damaged: 0 }, { stock: 99.4375, damaged: 0 }).needsRecount === true);
+  /* comments stripped first: the fix documents the dead field by name, and a naive scan reads
+     that prose as if the bug were still there. Only markup is judged. */
+  const opnameCode = opname.replace(/\{\/\*[\s\S]*?\*\/\}/g, '').replace(/\/\*[\s\S]*?\*\//g, '');
+  ok('HQ judges a saved row by the same rule, not by a field that does not exist',
+     /withinTolerance\(item\.variance\)/.test(opnameCode) && !/item\.matched/.test(opnameCode));
 
   /* ---- A CONFIRMED DIFFERENCE MUST SAY WHY (2026-08-21) ----
      HQ used to receive a bare "-3" and had to guess between a bookkeeping fix, a write-off and a

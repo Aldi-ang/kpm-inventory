@@ -74,6 +74,21 @@ export const DAMAGE_REASONS = [
    Aldi chose the three-way rule himself, 2026-08-21 — option B: when three counts all disagree,
    ALL THREE go to HQ rather than the app picking the last one. Three different numbers mean
    something other than counting is wrong, and that is a judgement, not an arithmetic problem. */
+/* WHAT IS TOO SMALL TO CHASE — Aldi, 2026-08-21, asked what size difference is not worth his time:
+   *"few batang wont worth my time, few bks is still money bruv we need that"*.
+
+   So the line is exactly one PACK. Below a whole Bks is loose sticks and noise; one Bks is money.
+
+   ⚠️ THIS IS NOT A CONVENIENCE. Selling in Batang divides stock by sticksPerPack
+   (`App.jsx:3127`), so a product that has had loose sticks sold from it holds a FRACTION of a
+   pack — 99.44, say. The count box is parseInt, whole Bks only (`handleCountChange`), so the agent
+   can type 99 or 100 and the variance can never reach zero. Before the recount landed that was
+   merely a wrong number on screen; with the recount it forces a pointless second count and files
+   a fake half-pack shortage every single week. The tolerance is what makes counting a
+   batang-carrying product possible at all. */
+export const VARIANCE_TOLERANCE_BKS = 1;
+export const withinTolerance = (variance) => Math.abs(Number(variance || 0)) < VARIANCE_TOLERANCE_BKS;
+
 export const samePass = (a, b) =>
     Number((a && a.good) || 0) === Number((b && b.good) || 0) &&
     Number((a && a.damaged) || 0) === Number((b && b.damaged) || 0);
@@ -85,8 +100,10 @@ export const recountState = (entry, target) => {
     const current = { good, damaged };
     const variance = (good + damaged) - (Number(target.stock || 0) + Number(target.damaged || 0));
 
-    /* A count that matches the system needs nothing, no matter how it got here. */
-    if (variance === 0) return { needsRecount: false, confirmed: false, disagreement: false, passes: passes.length };
+    /* A count that matches the system needs nothing, no matter how it got here — and anything
+       under a whole pack counts as matching, because it is loose sticks the box cannot even
+       express. See VARIANCE_TOLERANCE_BKS. */
+    if (withinTolerance(variance)) return { needsRecount: false, confirmed: false, disagreement: false, passes: passes.length };
 
     if (passes.length === 0) return { needsRecount: true, confirmed: false, disagreement: false, passes: 0 };
 
@@ -1320,7 +1337,10 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                                                                         </span>
                                                                         <span className="text-[var(--ink-dim)]">→</span>
                                                                         <span className="text-[var(--ink-dim)] font-bold">FND: {item.totalFound}</span>
-                                                                        <span className={`w-12 text-right font-black ${item.variance === 0 ? 'text-[var(--accent-ink)]' : 'text-[var(--danger-ink)]'} `}>
+                                                                        {/* the SAME rule the agent's row uses. `item.matched` is not a
+                                                                            field on the record - a blanket rename put it here and it would
+                                                                            have painted every HQ row red, on a value that never exists. */}
+                                                                        <span className={`w-12 text-right font-black ${withinTolerance(item.variance) ? 'text-[var(--accent-ink)]' : 'text-[var(--danger-ink)]'} `}>
                                                                             {item.variance > 0 ? '+' : ''}{item.variance}
                                                                         </span>
                                                                     </div>
@@ -1432,6 +1452,10 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                                 /* frozen when he started this row, so a sale landing mid-count
                                    cannot move the number he is counting against */
                                 const target = expectedOf(item, entry);
+                                /* under one whole pack is loose sticks, not a difference - see
+                                   VARIANCE_TOLERANCE_BKS. The FIGURE is still printed exactly as
+                                   counted; only the verdict treats it as a match. */
+                                const matched = withinTolerance(variance);
                                 const recount = hasTyped ? recountState(entry, target)
                                                          : { needsRecount: false, confirmed: false, disagreement: false, passes: 0 };
                                 const hasTyped = goodVal !== '' || damagedVal !== '';
@@ -1445,9 +1469,9 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                                         gold, a mismatch is red. */
                                 return (
                                     
-                                    <div key={item.id} className={`relative overflow-hidden bg-[var(--raised)] rounded-xl border transition-colors ${hasTyped ? (variance === 0 ? 'border-[var(--accent-edge)]' : 'border-[var(--danger)]') : 'border-[var(--line)]'} `}>
+                                    <div key={item.id} className={`relative overflow-hidden bg-[var(--raised)] rounded-xl border transition-colors ${hasTyped ? (matched ? 'border-[var(--accent-edge)]' : 'border-[var(--danger)]') : 'border-[var(--line)]'} `}>
                                         {/* one glance down the list says which rows are done and which are off */}
-                                        <span className={`absolute left-0 top-0 bottom-0 w-1 ${hasTyped ? (variance === 0 ? 'bg-[var(--accent-edge)]' : 'bg-[var(--danger)]') : 'bg-[var(--line)]'} `} aria-hidden="true"></span>
+                                        <span className={`absolute left-0 top-0 bottom-0 w-1 ${hasTyped ? (matched ? 'bg-[var(--accent-edge)]' : 'bg-[var(--danger)]') : 'bg-[var(--line)]'} `} aria-hidden="true"></span>
                                         <div className="pl-4 pr-3 py-3 md:py-4 flex flex-col md:flex-row md:items-end gap-3 md:gap-6">
                                             <div className="min-w-0 flex-1">
                                                 <div className="font-bold text-[var(--ink)] text-sm uppercase tracking-wide truncate">{item.name}</div>
@@ -1493,9 +1517,9 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                                                         strips box-shadow — the verdict would have lost its only edge on a
                                                         cheap phone. Every plate carries a transparent border so the coloured
                                                         one costs no shift. */}
-                                                    <div className={`bg-[var(--sunk)] px-3 py-2 md:px-4 border ${variance === 0 ? 'border-[var(--accent-edge)]' : 'border-[var(--danger)]'} `}>
-                                                        <div className={`text-[9px] font-bold uppercase tracking-widest ${variance === 0 ? 'text-[var(--accent-ink)]' : 'text-[var(--danger-ink)]'} `}>{variance === 0 ? 'Match' : 'Difference'}</div>
-                                                        <div className={`text-sm font-black font-mono tabular-nums ${variance === 0 ? 'text-[var(--accent-ink)]' : 'text-[var(--danger-ink)]'} `}>{variance > 0 ? '+' : ''}{formatNumber(variance)}</div>
+                                                    <div className={`bg-[var(--sunk)] px-3 py-2 md:px-4 border ${matched ? 'border-[var(--accent-edge)]' : 'border-[var(--danger)]'} `}>
+                                                        <div className={`text-[9px] font-bold uppercase tracking-widest ${matched ? 'text-[var(--accent-ink)]' : 'text-[var(--danger-ink)]'} `}>{matched ? 'Match' : 'Difference'}</div>
+                                                        <div className={`text-sm font-black font-mono tabular-nums ${matched ? 'text-[var(--accent-ink)]' : 'text-[var(--danger-ink)]'} `}>{variance > 0 ? '+' : ''}{formatNumber(variance)}</div>
                                                     </div>
                                                 </div>
 
