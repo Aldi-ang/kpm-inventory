@@ -1456,10 +1456,18 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                                    VARIANCE_TOLERANCE_BKS. The FIGURE is still printed exactly as
                                    counted; only the verdict treats it as a match. */
                                 const matched = withinTolerance(variance);
-                                const recount = hasTyped ? recountState(entry, target)
-                                                         : { needsRecount: false, confirmed: false, disagreement: false, passes: 0 };
                                 const hasTyped = goodVal !== '' || damagedVal !== '';
                                 const isRevealed = showExpectedWhileCounting || (hasEntry && hasTyped);
+                                /* ⚠️ AFTER `hasTyped`, AND THAT ORDER IS THE WHOLE POINT.
+                                   This line sat two lines ABOVE the `const hasTyped` it reads, so
+                                   every render threw "Cannot access 'hasTyped' before
+                                   initialization" and the entire screen fell through to
+                                   LazyTabBoundary — a `const` is in the temporal dead zone until
+                                   its own line runs. `npm run build` compiled it happily and both
+                                   audit suites stayed green, because neither one RENDERS anything.
+                                   Only opening the screen in a browser found it. */
+                                const recount = hasTyped ? recountState(entry, target)
+                                                         : { needsRecount: false, confirmed: false, disagreement: false, passes: 0 };
 
                                 /* THE COUNTING CARD, rebuilt 2026-08-20 from his screenshot. The old labels were
                                         positioned ON TOP of the inputs, so "GOOD STOCK" wrapped to two lines and

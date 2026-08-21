@@ -1920,6 +1920,19 @@ ${opname.slice(rOpen + 1, rEnd)}
   ok('every attempt is saved on the record, with the two flags HQ needs',
      /countPasses:/.test(opname) && /countedTwice:/.test(opname) && /threeWayDisagreement:/.test(opname));
 
+  /* ⚠️ THE ONE THING THIS WHOLE FILE CANNOT SEE, WRITTEN DOWN SO IT IS NOT FORGOTTEN.
+     On 2026-08-21 the count row read `hasTyped` two lines ABOVE its own `const hasTyped`. A const
+     is in the temporal dead zone until its line runs, so every render threw and the ENTIRE Stock
+     Opname screen fell into LazyTabBoundary — a blank "FAILED TO LOAD". It shipped, and sat
+     through two more commits, while `npm run build` compiled it and BOTH suites reported green:
+     599/599 and 565/565 on a screen that did not render. Neither suite renders anything.
+     Only opening it in a real browser found it.
+     A GUARD FOR IT WAS WRITTEN HERE AND THEN DELETED, ON PURPOSE. It passed on the broken code
+     as readily as on the fixed code — a probe that restored the bad ordering did not turn it red,
+     so it was decorative. That is the second decoration caught in one day, and the rule earned
+     twice over is: PROVE A CHECK FAILS BEFORE TRUSTING IT, and delete it when it cannot.
+     There is no static check for "the component renders". Open the screen. */
+
   /* ---- WHAT IS TOO SMALL TO CHASE (2026-08-21) ----
      Aldi: "few batang wont worth my time, few bks is still money bruv we need that". So the line
      is one PACK. This is not comfort: selling in Batang divides stock by sticksPerPack
