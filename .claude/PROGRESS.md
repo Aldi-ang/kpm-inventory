@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-21 16:51 WIB (🟠 KPM app session)** · ✅ STOCK OPNAME IS FEATURE-COMPLETE · 🔴 HE MUST NAME THE FIVE CAUSES — MINE ARE PLACEHOLDERS · 🔴 HE ASKED CLAUDE TO TEST IT — SEE THE ANSWER BELOW · branch `phase0-solid-ground`
+**Updated: 2026-08-21 17:12 WIB (🟠 KPM app session)** · 🔴 THE SCREEN WAS CRASHING ALL AFTERNOON — FIXED · ✅ CHROME TESTING WORKS, SETUP BELOW · 🔴 HE MUST NAME THE FIVE CAUSES · branch `phase0-solid-ground`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **TRIMMED 2026-08-21 ON ALDI'S WORD.** *"sure trim it"*, on his own condition:
@@ -21,6 +21,45 @@
 >
 > 📏 **KEEP THIS FILE UNDER ~350 LINES.** Past that, cut the oldest day into the same archive.
 > ⚠️ **TWO TRACKS SHARE THIS FILE** — 🟠 KPM and 🟢 Lancelot. Never trim or re-sort across them.
+
+## 🔴 2026-08-21 17:12 — THE WHOLE STOCK OPNAME SCREEN WAS CRASHING, AND EVERY CHECK WAS GREEN
+
+**Read this before trusting a green suite ever again.**
+
+```
+ReferenceError: Cannot access 'hasTyped' before initialization
+[STOCK_OPNAME] FAILED TO LOAD
+```
+
+The count row read `hasTyped` **two lines above its own `const hasTyped`**. A `const` is in the
+temporal dead zone until its own line runs, so every render threw and the entire tab fell into
+`LazyTabBoundary` — a blank screen.
+
+**It shipped in the recount commit and survived two more commits.** `npm run build` compiled it.
+`integration.audit` said **599/599** and `logicFixes.selfcheck` said **565/565** — on a screen that
+did not render at all. **Neither suite renders anything.** They read source and run lifted
+functions. **Every check in this repo can be green while the app is a black rectangle.**
+
+Only opening it in a browser found it, which is what Aldi asked for and was right about.
+
+⚠️ **A static guard for it was written and then DELETED.** It passed on the broken code as readily
+as on the fixed code — a probe restoring the bad ordering did not turn it red. **That is the
+second decorative check caught in one day.** The rule, earned twice: **prove a check fails before
+trusting it, and delete it when it cannot.**
+
+### ✅ HOW TO TEST IN HIS REAL BROWSER — this worked, reuse it
+
+1. `preview_start` with `{name: "kpm-dev"}` → serves **today's code** at `https://localhost:5173/`.
+   The Vercel site does NOT have the new work.
+2. `mcp__claude-in-chrome__list_connected_browsers` — his extension is installed and ON.
+3. Navigate that tab to localhost. **HE logs in himself** — Claude never touches the password.
+4. Screenshots DO work in his Chrome (they failed only on a `chrome://` page, which is normal).
+5. ⚠️ **The sidebar is the awkward part.** Clicking the collapsed rail worked once and then
+   stopped; `find` returns a ref for the hidden nav button but clicking it does nothing. The
+   sequence that worked: reload, click **(32, 40)** to open the rail, then **(79, 286)** for the
+   clipboard icon, then **(1442, 177)** for NEW COUNT.
+6. It talks to **REAL Firebase**. Type counts, but **do not press submit** — that writes a real
+   audit. For end-to-end, set up the emulator instead.
 
 ## 🟠 2026-08-21 16:51 — TOLERANCE SHIPPED, AND IT FIXED A BUG FROM THIS MORNING. 599/599, 565/565.
 
