@@ -664,8 +664,14 @@ ok('damaged stock is corrected the same way',
    /damagedStock: increment\(Number\(item\.damagedCount \|\| 0\) - Number\(item\.expectedDamagedStock \|\| 0\)\)/.test(opname));
 ok('the blind overwrite is gone from the normal path',
    !/data: \{ stock: item\.goodCount, damagedStock: item\.damagedCount \}/.test(opname));
+/* ⚠️ THIS CHECK'S NAME ONLY BECAME TRUE ON 2026-08-21. It always claimed "AT COUNT TIME", but
+   the regex pinned `item.stock` read inside handleCommit — which is SUBMIT time. A sale landing
+   between the first keystroke and the submit moved the target, and the check said nothing,
+   because it was pinning the shape of the wrong line. The pair is now frozen on the first
+   keystroke for that row, so the name and the behaviour finally agree. */
 ok('the count still snapshots what the system believed AT COUNT TIME',
-   /expectedStock: item\.stock \|\| 0/.test(opname) && /expectedDamagedStock: item\.damagedStock \|\| 0/.test(opname));
+   /expectedStock: Number\(entry\.expStock \?\? item\.stock \?\? 0\)/.test(opname)
+   && /expectedDamagedStock: Number\(entry\.expDamaged \?\? item\.damagedStock \?\? 0\)/.test(opname));
 ok('audits submitted before the snapshot existed still fall back to the overwrite',
    /const hasSnapshot = item\.expectedStock !== undefined/.test(opname));
 ok('the confirmation no longer promises an overwrite',
@@ -1825,6 +1831,28 @@ ${opname.slice(bOpen + 1, bEnd)}
 
   /* The reel is the whole control - if its motion were a shadow or a filter, Lite Mode would
      erase it. It is a transform, and the level dots are borders, not inset shadows. */
+  /* ---- THE TARGET IS FROZEN WHEN THE ROW IS STARTED (2026-08-21) ----
+     The expected figures used to be read live off the product at every render AND again at
+     submit, so a sale landing mid-count moved the number he was counting against and turned a
+     correct count into a variance. HQ then applies increment(counted - expected), so the pair
+     saved has to be the pair he was actually looking at. */
+  ok('the expected figures are snapshotted on the first keystroke for a row',
+     /expStock:\s*Number\(src\.stock/.test(opname) && /expDamaged:\s*Number\(src\.damagedStock/.test(opname));
+  ok('the variance compares against the snapshot, not the live document',
+     /const target = expectedOf\(item, entry\)/.test(opname)
+     && /variance: totalFound - \(target\.stock \+ target\.damaged\)/.test(opname));
+  ok('and the saved record carries the snapshot, not the figures at submit time',
+     /expectedStock: Number\(entry\.expStock/.test(opname)
+     && /expectedDamagedStock: Number\(entry\.expDamaged/.test(opname));
+  /* REGRESSION GUARD — the count row must not read the live product for either figure again. */
+  ok('no live stock figure is printed on the count row any more',
+     !/formatNumber\(item\.stock \|\| 0\)/.test(opname) && !/formatNumber\(item\.damagedStock \|\| 0\)/.test(opname));
+  /* HQ's list had the identical fault: healthy-only expected beside a good+damaged found. */
+  ok('HQ\'s review list compares like for like, and legacy audits still render',
+     /SYS: \{\(item\.expectedStock \|\| 0\) \+ \(item\.expectedDamagedStock \|\| 0\)\}/.test(opname));
+  ok('and HQ can see what kind of damage it is approving',
+     /item\.damageKinds\.map/.test(opname));
+
   const reelCss = read('src/styles/theme.css');
   ok('the damage reel moves by transform, and its dots are borders not shadows',
      /\.kpm-dmg-reel \{[\s\S]{0,160}transform: translateY/.test(reelCss)

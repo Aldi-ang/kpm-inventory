@@ -205,7 +205,22 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
     const handleCountChange = (id, type, value) => {
         setCounts(prev => {
             const newCounts = { ...prev };
-            if (!newCounts[id]) newCounts[id] = { good: '', damaged: '', photo: null };
+            if (!newCounts[id]) {
+                /* THE TARGET IS FROZEN THE MOMENT HE STARTS COUNTING THIS ROW.
+                   It used to be read live off `item` at every render and again at submit, so a
+                   sale landing mid-count moved the number he was counting against and turned a
+                   correct count into a variance. The snapshot is taken here, on the first
+                   keystroke for this product, and everything downstream - the plates, the
+                   variance, the saved record - reads it instead of the live document.
+                   Clearing both boxes deletes the row, which drops the snapshot too: that is
+                   correct, because starting over should re-target on today's figures. */
+                const src = (activeInventory || []).find(i => i && i.id === id) || {};
+                newCounts[id] = {
+                    good: '', damaged: '', photo: null,
+                    expStock: Number(src.stock || 0),
+                    expDamaged: Number(src.damagedStock || 0)
+                };
+            }
             newCounts[id][type] = value === '' ? '' : Math.max(0, parseInt(value) || 0);
             if (newCounts[id].good === '' && newCounts[id].damaged === '') delete newCounts[id];
             return newCounts;
@@ -274,6 +289,13 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
         if (previousUrl) await deletePhotoFromStorage(storage, previousUrl);
     };
 
+    /* What this row is being counted AGAINST. The snapshot taken on the first keystroke wins;
+       a row that has not been typed into yet has nothing frozen, so it shows today's figures. */
+    const expectedOf = (item, entry) => ({
+        stock:   Number(entry?.expStock   ?? item?.stock        ?? 0),
+        damaged: Number(entry?.expDamaged ?? item?.damagedStock ?? 0)
+    });
+
     const getVariance = (item) => {
         if (!item || !item.id) return { totalFound: 0, variance: 0 };
         const entry = counts[item.id];
@@ -281,11 +303,13 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
         const good = Number(entry.good || 0);
         const damaged = Number(entry.damaged || 0);
         const totalFound = good + damaged;
-        // 🚀 FIX: Compare against everything the system already expects (healthy + already-known
-        // damaged), not just healthy stock — otherwise re-counting the same known damaged units
-        // every time looks like "new" variance forever.
-        return { totalFound, variance: totalFound - ((item.stock || 0) + (item.damagedStock || 0)) };
+        const target = expectedOf(item, entry);
+        return { totalFound, variance: totalFound - (target.stock + target.damaged) };
     };
+
+    /* ⚠️ THE COMPARISON IS AGAINST HEALTHY *PLUS* ALREADY-KNOWN DAMAGED, never healthy alone -
+       otherwise re-counting the same known damaged units reads as new variance forever. That was
+       already true; what changed is that both halves now come from the frozen snapshot. */
 
     const handleCommit = async () => {
         const countedItems = activeInventory.filter(i => i && i.id && counts[i.id] !== undefined);
@@ -326,8 +350,11 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                     return {
                         productId: item.id,
                         name: item.name || 'Unknown',
-                        expectedStock: item.stock || 0,
-                        expectedDamagedStock: item.damagedStock || 0,
+                        /* the snapshot taken when he STARTED this row, not the live document at
+                           submit. HQ's approval applies increment(counted - expected), so this
+                           pair has to be the same pair he was looking at while counting. */
+                        expectedStock: Number(entry.expStock ?? item.stock ?? 0),
+                        expectedDamagedStock: Number(entry.expDamaged ?? item.damagedStock ?? 0),
                         goodCount: good,
                         damagedCount: damaged,
                         totalFound: totalFound,
@@ -1096,7 +1123,20 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                                                                 <div className="flex justify-between items-center mb-2 border-b border-[var(--line)] pb-2">
                                                                     <span className="font-bold text-xs text-[var(--ink)] uppercase">{item.name}</span>
                                                                     <div className="flex items-center gap-4 text-xs font-mono">
-                                                                        <span className="text-[var(--ink-dim)]">SYS: {item.expectedStock}</span>
+                                                                        {/* SAME FAULT AS THE COUNT ROW, ON HQ's SIDE. This printed
+                                                                            expectedStock alone - healthy only - next to a totalFound
+                                                                            that counts good + damaged, so a perfect count of 100
+                                                                            healthy and 5 damaged read "SYS 100 -> FND 105 -> 0" and
+                                                                            looked like five boxes appearing from nowhere. The damaged
+                                                                            half is now named, so both sides measure the same thing.
+                                                                            `|| 0` matters: audits saved before the split have no
+                                                                            expectedDamagedStock at all. */}
+                                                                        <span className="text-[var(--ink-dim)]">
+                                                                            SYS: {(item.expectedStock || 0) + (item.expectedDamagedStock || 0)}
+                                                                            {(item.expectedDamagedStock || 0) > 0 && (
+                                                                                <span className="text-[var(--danger-ink)]"> ({item.expectedDamagedStock} dmg)</span>
+                                                                            )}
+                                                                        </span>
                                                                         <span className="text-[var(--ink-dim)]">→</span>
                                                                         <span className="text-[var(--ink-dim)] font-bold">FND: {item.totalFound}</span>
                                                                         <span className={`w-12 text-right font-black ${item.variance === 0 ? 'text-[var(--accent-ink)]' : 'text-[var(--danger-ink)]'} `}>
@@ -1104,7 +1144,22 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                                                                         </span>
                                                                     </div>
                                                                 </div>
-                                                                
+
+                                                                {/* WHAT KIND OF DAMAGE, for the person deciding what it costs.
+                                                                    HQ resolves quarantine as RTV, SAMPLING or PENALTY, and only
+                                                                    PENALTY charges the agent - so the cause is the input to that
+                                                                    decision, not decoration. Absent on older audits, which simply
+                                                                    show nothing here. */}
+                                                                {Array.isArray(item.damageKinds) && item.damageKinds.length > 0 && (
+                                                                    <div className="flex flex-wrap gap-1.5 mb-2">
+                                                                        {item.damageKinds.map((k, ki) => (
+                                                                            <span key={ki} className="text-[9px] font-bold uppercase tracking-widest px-2 py-1 rounded bg-[var(--sunk)] border border-[var(--danger)] text-[var(--danger-ink)]">
+                                                                                {k.reason === 'Other' && item.damageOtherDetail ? item.damageOtherDetail : k.reason} · {k.qty}
+                                                                            </span>
+                                                                        ))}
+                                                                    </div>
+                                                                )}
+
                                                                 <div className="flex gap-4 items-center">
                                                                     <div className="bg-[var(--sunk)] px-3 py-1.5 rounded border border-[var(--line)] flex-1 flex justify-between items-center text-[10px] font-mono">
                                                                         <span className="text-[var(--ink-dim)]">Good Condition:</span>
@@ -1173,6 +1228,9 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                                 const goodVal = entry?.good ?? '';
                                 const damagedVal = entry?.damaged ?? '';
                                 const { totalFound, variance } = getVariance(item);
+                                /* frozen when he started this row, so a sale landing mid-count
+                                   cannot move the number he is counting against */
+                                const target = expectedOf(item, entry);
                                 const hasTyped = goodVal !== '' || damagedVal !== '';
                                 const isRevealed = showExpectedWhileCounting || (hasEntry && hasTyped);
 
@@ -1218,11 +1276,11 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                                                 <div className="grid grid-cols-2 md:grid-cols-4 gap-px bg-[var(--line)] rounded-lg overflow-hidden text-center w-full md:w-auto md:inline-grid">
                                                     <div className="bg-[var(--sunk)] px-3 py-2 md:px-4 border border-transparent">
                                                         <div className="text-[9px] text-[var(--ink-dim)] font-bold uppercase tracking-widest whitespace-nowrap">Expected good</div>
-                                                        <div className="text-sm font-black font-mono tabular-nums text-[var(--ink)]">{formatNumber(item.stock || 0)}</div>
+                                                        <div className="text-sm font-black font-mono tabular-nums text-[var(--ink)]">{formatNumber(target.stock)}</div>
                                                     </div>
                                                     <div className="bg-[var(--sunk)] px-3 py-2 md:px-4 border border-transparent">
                                                         <div className="text-[9px] text-[var(--danger-ink)] font-bold uppercase tracking-widest whitespace-nowrap">Expected damaged</div>
-                                                        <div className="text-sm font-black font-mono tabular-nums text-[var(--danger-ink)]">{formatNumber(item.damagedStock || 0)}</div>
+                                                        <div className="text-sm font-black font-mono tabular-nums text-[var(--danger-ink)]">{formatNumber(target.damaged)}</div>
                                                     </div>
                                                     <div className="bg-[var(--sunk)] px-3 py-2 md:px-4 border border-transparent">
                                                         <div className="text-[9px] text-[var(--ink-dim)] font-bold uppercase tracking-widest whitespace-nowrap">Total found</div>
