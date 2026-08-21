@@ -269,6 +269,9 @@ on into `signOut(auth)` at `App.jsx:2336` and would delete his sign-in permanent
 ⚠️ **Two open questions are logged under WAITING ON ALDI** — finding 3 skip-or-fix, and whether
 `Other` covers "add another one" or he wants permanent custom damage kinds.
 
+📎 **Still live from 2026-08-19, do not lose it:** his six reported items were all investigated
+and none are fixed. Evidence with file and line numbers is in `.claude/SWEEP-2026-08-19.md`.
+
 📏 **THIS FILE IS 3,505 LINES AND ITS OWN RULE SAYS ~350.** The 2026-08-14 archive has grown back
 ten times over, and it is read in full at every session start. It needs cutting into
 `A-Brain/Archive/` — but it carries BOTH the 🟠 KPM and 🟢 Lancelot tracks interleaved, so it is
