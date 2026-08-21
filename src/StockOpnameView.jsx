@@ -25,8 +25,11 @@ export const DAMAGE_REASONS = [
     { value: 'Water / Weather Damage',   label: 'Water damage' },
     { value: 'Torn / Crushed Packaging', label: 'Torn / crushed' },
     { value: 'Pest / Rodent Damage',     label: 'Pest damage' },
-    { value: 'Factory Defect',           label: 'Factory defect' },
-    { value: 'Other',                    label: 'Other' }
+    { value: 'Factory Defect',           label: 'Factory defect' }
+    /* ⚠️ NO "Other" HERE, ON PURPOSE. Aldi, 2026-08-21: "we dont need damaged kinds just erase
+       other button". The sales terminal still offers it, so this list is deliberately a SUBSET
+       of the terminal's — the self-check asserts subset, not equality. A free-text cause is a
+       reporting hole anyway: it cannot be grouped, counted, or acted on. */
 ];
 
 /* How many damaged units have been given a cause. */
@@ -45,10 +48,6 @@ export const damageBlocked = (entry) => {
     if (sorted !== total) {
         return sorted < total ? `${total - sorted} damaged not sorted yet`
                               : 'kinds add up to more than the total';
-    }
-    if (Number(((entry && entry.kinds) || {})['Other'] || 0) > 0
-        && !String((entry && entry.otherDetail) || '').trim()) {
-        return '"Other" needs the detail typed';
     }
     return null;
 };
@@ -259,14 +258,6 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
         });
     };
 
-    const setDamageOtherDetail = (id, value) => {
-        setCounts(prev => {
-            const next = { ...prev };
-            if (!next[id]) next[id] = { good: '', damaged: '', photo: null };
-            next[id] = { ...next[id], otherDetail: value };
-            return next;
-        });
-    };
 
     const handlePhotoUpload = async (id, file) => {
         if (!file) return;
@@ -364,7 +355,6 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                         damageKinds: Object.entries(entry.kinds || {})
                             .map(([reason, qty]) => ({ reason, qty: Number(qty || 0) }))
                             .filter(k => k.qty > 0),
-                        damageOtherDetail: String(entry.otherDetail || '').trim() || null,
                         damagedPhotoUrl: entry.photo || null
                     };
                 })
@@ -1154,7 +1144,7 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                                                                     <div className="flex flex-wrap gap-1.5 mb-2">
                                                                         {item.damageKinds.map((k, ki) => (
                                                                             <span key={ki} className="text-[9px] font-bold uppercase tracking-widest px-2 py-1 rounded bg-[var(--sunk)] border border-[var(--danger)] text-[var(--danger-ink)]">
-                                                                                {k.reason === 'Other' && item.damageOtherDetail ? item.damageOtherDetail : k.reason} · {k.qty}
+                                                                                {k.reason} · {k.qty}
                                                                             </span>
                                                                         ))}
                                                                     </div>
@@ -1348,14 +1338,9 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                                                                                 {DAMAGE_REASONS.slice().reverse().map(r => (
                                                                                     <div key={r.value} className="kpm-dmg-face">
                                                                                         <button type="button" onClick={() => stepDamageKind(item.id, 1)}
-                                                                                            className={`flex-1 min-w-0 text-left truncate text-[11px] font-black uppercase tracking-wider ${r.value === 'Other' ? 'text-[var(--alt-ink)]' : 'text-[var(--accent-ink)]'} `}>
+                                                                                            className="flex-1 min-w-0 text-left truncate text-[11px] font-black uppercase tracking-wider text-[var(--accent-ink)]">
                                                                                             {r.label}
                                                                                         </button>
-                                                                                        {r.value === 'Other' && (
-                                                                                            <input type="text" value={entry?.otherDetail || ''} placeholder="Say what happened"
-                                                                                                onChange={(e) => setDamageOtherDetail(item.id, e.target.value)}
-                                                                                                className="flex-1 min-w-0 text-[11px] px-2 py-1.5 rounded bg-[var(--raised)] text-[var(--ink)] border border-[var(--alt-edge)] outline-none placeholder:text-[var(--ink-dim)]"/>
-                                                                                        )}
                                                                                         <input type="number" min="0" inputMode="numeric" placeholder="0"
                                                                                             value={kinds[r.value] ?? ''}
                                                                                             aria-label={`How many ${r.label}`}

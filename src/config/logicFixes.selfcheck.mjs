@@ -1796,9 +1796,13 @@ section('S35. The counting card is readable in both themes and cannot overlap it
       .map(m => m[1])
       .filter(v => /Expired|Water|Torn|Pest|Factory|^Other$/.test(v));
   const opnameReasons = [...opname.matchAll(/value:\s*'([^']+)',\s*label:/g)].map(m => m[1]);
+  /* SUBSET, not equality. Aldi dropped "Other" from the count screen on 2026-08-21 - a free-text
+     cause cannot be grouped or counted - while the terminal still offers it. So every string the
+     count screen uses must exist in the terminal, and "Other" must NOT be one of them. */
   ok('the stock count stores the sales terminal\'s own damage strings, not its short labels',
-     terminalReasons.length === 6 && opnameReasons.length === 6
-     && terminalReasons.every(r => opnameReasons.includes(r)),
+     opnameReasons.length === 5
+     && opnameReasons.every(r => terminalReasons.includes(r))
+     && !opnameReasons.includes('Other'),
      `terminal [${terminalReasons}] vs opname [${opnameReasons}]`);
 
   /* BEHAVIOUR CHECK — the reconcile rule re-run on real numbers, using the exact source of
@@ -1819,15 +1823,15 @@ ${opname.slice(bOpen + 1, bEnd)}
   ok('5 damaged sorted 2 + 1 is still refused',    /2 damaged not sorted/.test(damageBlocked({ damaged: 5, kinds: { 'Pest / Rodent Damage': 2, 'Water / Weather Damage': 1 } })));
   ok('kinds adding up past the total is refused',  /more than the total/.test(damageBlocked({ damaged: 5, kinds: { 'Pest / Rodent Damage': 6 } })));
   ok('3 pest + 2 water against 5 damaged passes',  damageBlocked({ damaged: 5, kinds: { 'Pest / Rodent Damage': 3, 'Water / Weather Damage': 2 } }) === null);
-  ok('"Other" with no detail typed is refused',    /Other/.test(String(damageBlocked({ damaged: 2, kinds: { Other: 2 }, otherDetail: '  ' }))));
-  ok('"Other" with the detail typed passes',       damageBlocked({ damaged: 2, kinds: { Other: 2 }, otherDetail: 'gudang bocor' }) === null);
+  ok('no free-text escape hatch is left in the rule',
+     !/otherDetail/.test(opname), 'a free-text cause cannot be grouped or counted');
 
   /* REGRESSION GUARD — the refusal must land BEFORE the confirm dialog, or he is asked to
      approve a count the app then throws away. */
   ok('unaccounted damage is refused before he is asked to confirm',
      opname.indexOf('const unaccounted') < opname.indexOf('Submit Stock Opname for'));
   ok('and the kinds are actually written into the saved record',
-     /damageKinds:\s*Object\.entries/.test(opname) && /damageOtherDetail:/.test(opname));
+     /damageKinds:\s*Object\.entries/.test(opname));
 
   /* The reel is the whole control - if its motion were a shadow or a filter, Lite Mode would
      erase it. It is a transform, and the level dots are borders, not inset shadows. */
