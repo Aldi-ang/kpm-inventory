@@ -1795,7 +1795,12 @@ section('S35. The counting card is readable in both themes and cannot overlap it
   const terminalReasons = [...merchant.matchAll(/<option value="([^"]+)">/g)]
       .map(m => m[1])
       .filter(v => /Expired|Water|Torn|Pest|Factory|^Other$/.test(v));
-  const opnameReasons = [...opname.matchAll(/value:\s*'([^']+)',\s*label:/g)].map(m => m[1]);
+  /* ⚠️ SCOPED TO THE DAMAGE ARRAY. This scraped the whole file until VARIANCE_REASONS was added
+     on 2026-08-21, at which point it started reading the cause list as damage kinds and failed.
+     A second array of the same shape is exactly the kind of thing that arrives later. */
+  const dmgBlock = opname.slice(opname.indexOf('export const DAMAGE_REASONS'),
+                                opname.indexOf('];', opname.indexOf('export const DAMAGE_REASONS')));
+  const opnameReasons = [...dmgBlock.matchAll(/value:\s*'([^']+)',\s*label:/g)].map(m => m[1]);
   /* SUBSET, not equality. Aldi dropped "Other" from the count screen on 2026-08-21 - a free-text
      cause cannot be grouped or counted - while the terminal still offers it. So every string the
      count screen uses must exist in the terminal, and "Other" must NOT be one of them. */
@@ -1906,6 +1911,51 @@ ${opname.slice(rOpen + 1, rEnd)}
      && /Count these again before submitting/.test(opname));
   ok('every attempt is saved on the record, with the two flags HQ needs',
      /countPasses:/.test(opname) && /countedTwice:/.test(opname) && /threeWayDisagreement:/.test(opname));
+
+  /* ---- A CONFIRMED DIFFERENCE MUST SAY WHY (2026-08-21) ----
+     HQ used to receive a bare "-3" and had to guess between a bookkeeping fix, a write-off and a
+     person. ⚠️ The five words are Claude's and Aldi has NOT approved them - his law is that only he
+     names the categories in his trade. They are provisional and a check pins that they are. */
+  const vStart = opname.indexOf('export const varianceReasonMissing');
+  const vEnd   = opname.indexOf(';', opname.indexOf('=>', vStart));
+  ok('the cause rule could be lifted out of the component to be tested',
+     vStart > -1 && vEnd > vStart);
+  const varianceReasonMissing = new Function('entry', 'state',
+     `return (${opname.slice(opname.indexOf('=>', vStart) + 2, vEnd)});`);
+
+  const clean = { confirmed: false, disagreement: false };
+  const twice = { confirmed: true,  disagreement: false };
+  const three = { confirmed: false, disagreement: true  };
+
+  ok('a row that matched the system is never asked why',
+     varianceReasonMissing({}, clean) === false);
+  ok('a difference counted twice MUST say why',
+     varianceReasonMissing({}, twice) === true);
+  ok('three disagreeing counts must say why too',
+     varianceReasonMissing({}, three) === true);
+  ok('a cause that is only spaces does not count as an answer',
+     varianceReasonMissing({ varianceReason: '   ' }, twice) === true);
+  ok('a real cause satisfies it',
+     varianceReasonMissing({ varianceReason: 'Unrecorded Sale' }, twice) === false);
+
+  /* REGRESSION GUARDS. */
+  ok('the cause control is only offered AFTER the recount, never on the first guess',
+     /\(recount\.confirmed \|\| recount\.disagreement\) && \(\(\) =>/.test(opname));
+  ok('it starts unset, and "tap to say what happened" is a face it can never return to',
+     /Tap to say what happened/.test(opname)
+     && /const started = current !== undefined && current >= 0/.test(opname));
+  ok('the block lands before the confirm dialog, and never names the difference',
+     opname.indexOf('const noCause') < opname.indexOf('Submit Stock Opname for')
+     && /Say what happened with these before submitting/.test(opname));
+  ok('the cause and the evidence both reach HQ',
+     /varianceReason: String\(entry\.varianceReason/.test(opname)
+     && /Cause: \{item\.varianceReason\}/.test(opname)
+     && /Three different counts — you decide/.test(opname));
+  /* ⚠️ THIS ONE IS A REMINDER, NOT A RULE. It fails the day someone edits the list, which is the
+     moment to check the new words are HIS words and to delete this check. */
+  ok('the five provisional causes are still the provisional ones Aldi has not yet approved',
+     /'Miscount'[\s\S]{0,220}'Supplier Short'/.test(opname),
+     'if this failed because he renamed them, that is good - delete this check');
 
   /* ---- LEAK DETECTION (2026-08-21) ----
      "u can add leak detection for this trigger for everytime stock opname is done, which is each

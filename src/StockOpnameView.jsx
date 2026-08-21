@@ -20,6 +20,30 @@ import { canSeeExpectedCount } from './config/permissions';
    what the chip prints. Store "Pest Damage" instead of "Pest / Rodent Damage" and every report
    that groups by reason — AgentInventoryView.jsx:163 and EODReconciliationView.jsx:254 both do —
    splits one reason into two buckets forever. A self-check pins these two lists together. */
+/* WHY THE COUNT DISAGREES WITH THE SYSTEM — the cause of a confirmed difference.
+   Damage already had to say what kind; a shortage did not, so HQ received a bare `-3` and had to
+   guess between a bookkeeping fix, a write-off and a person.
+
+   🔴 THESE FIVE WORDS ARE CLAUDE'S, NOT ALDI'S, AND HE HAS NOT APPROVED THEM YET.
+   His standing law is that only he names the categories in his own trade. They are provisional so
+   the control could be built and looked at; the `value` strings are what Firestore keeps, and
+   records already saved keep whatever string was used at the time. **Change them here BEFORE
+   agents start counting with this, not after.** */
+export const VARIANCE_REASONS = [
+    { value: 'Miscount',          label: 'Miscount' },
+    { value: 'Unrecorded Sale',   label: 'Unrecorded sale' },
+    { value: 'Breakage / Damage', label: 'Breakage' },
+    { value: 'Theft',             label: 'Theft' },
+    { value: 'Supplier Short',    label: 'Supplier short' }
+];
+
+/* A difference that has survived the recount must say WHY before it can be submitted.
+   ⚠️ THE CONTROL STARTS UNSET AND NEVER CYCLES BACK TO UNSET. A picker resting on a default gets
+   submitted unread, and this field decides whether a shortage is filed as a bookkeeping fix or as
+   a person — the same argument that put "TAP TO SET" in front of the damage kinds. */
+export const varianceReasonMissing = (entry, state) =>
+    (state.confirmed || state.disagreement) && !((entry && entry.varianceReason) || '').trim();
+
 export const DAMAGE_REASONS = [
     { value: 'Expired / Out of Date',    label: 'Expired' },
     { value: 'Water / Weather Damage',   label: 'Water damage' },
@@ -308,6 +332,29 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
 
     /* --- the damage reel: which kind is showing, and whether the panel is open ---
        UI state only, kept out of `counts` so clearing a row's numbers cannot strand it. */
+    /* the cause reel's position. -1 means he has not pressed it, which is a state the control can
+       leave but never re-enter. */
+    const [varPos, setVarPos] = useState({});
+    const [varSnap, setVarSnap] = useState({});
+
+    const stepVarianceReason = (id, dir) => {
+        const n = VARIANCE_REASONS.length;
+        const current = varPos[id];
+        const started = current !== undefined && current >= 0;
+        const next = !started ? 0
+                   : (dir > 0 ? (current + 1) % n : (current - 1 + n) % n);
+        const wraps = started && ((dir > 0 && current === n - 1) || (dir < 0 && current === 0));
+        setVarPos(prev => ({ ...prev, [id]: next }));
+        setCounts(prev => {
+            const entry = prev[id];
+            if (!entry) return prev;
+            return { ...prev, [id]: { ...entry, varianceReason: VARIANCE_REASONS[next].value } };
+        });
+        if (!wraps) return;
+        setVarSnap(prev => ({ ...prev, [id]: true }));
+        setTimeout(() => setVarSnap(prev => { const c = { ...prev }; delete c[id]; return c; }), 240);
+    };
+
     const [dmgPos, setDmgPos] = useState({});
     const [dmgOpen, setDmgOpen] = useState({});
     const [dmgSnap, setDmgSnap] = useState({});
@@ -421,6 +468,15 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
             return notify(`Count these again before submitting:\n\n${needRecount.join('\n')}`);
         }
 
+        /* A CONFIRMED DIFFERENCE MUST SAY WHY. Also named without the figures, for the same reason
+           the recount prompt is: tiers below 3 count blind. */
+        const noCause = countedItems
+            .filter(i => varianceReasonMissing(counts[i.id], recountState(counts[i.id], expectedOf(i, counts[i.id]))))
+            .map(i => i.name || i.id);
+        if (noCause.length) {
+            return notify(`Say what happened with these before submitting:\n\n${noCause.join('\n')}`);
+        }
+
         if (!await confirmAction(`Submit Stock Opname for ${countedItems.length} items to HQ for verification?`)) return;
 
         setIsSubmitting(true);
@@ -458,6 +514,9 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                            `countedTwice` is what tells HQ this difference survived a second look
                            rather than being a first guess. `threeWayDisagreement` is his option B:
                            three different answers go to HQ intact and the app picks none of them. */
+                        /* why the count disagrees. Null on a row that matched, because a matching
+                           row was never asked. */
+                        varianceReason: String(entry.varianceReason || '').trim() || null,
                         countPasses: [...((entry.passes) || []), { good, damaged }],
                         countedTwice: !!recountState(entry, {
                             stock: Number(entry.expStock ?? item.stock ?? 0),
@@ -1272,6 +1331,26 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                                                                     PENALTY charges the agent - so the cause is the input to that
                                                                     decision, not decoration. Absent on older audits, which simply
                                                                     show nothing here. */}
+                                                                {(item.varianceReason || item.threeWayDisagreement || item.countedTwice) && (
+                                                                    <div className="flex flex-wrap gap-1.5 mb-2">
+                                                                        {item.varianceReason && (
+                                                                            <span className="text-[9px] font-bold uppercase tracking-widest px-2 py-1 rounded bg-[var(--sunk)] border border-[var(--alt-edge)] text-[var(--alt-ink)]">
+                                                                                Cause: {item.varianceReason}
+                                                                            </span>
+                                                                        )}
+                                                                        {/* what the agent's number is WORTH as evidence */}
+                                                                        {item.threeWayDisagreement ? (
+                                                                            <span className="text-[9px] font-bold uppercase tracking-widest px-2 py-1 rounded bg-[var(--sunk)] border border-[var(--danger)] text-[var(--danger-ink)]">
+                                                                                Three different counts — you decide
+                                                                            </span>
+                                                                        ) : item.countedTwice && (
+                                                                            <span className="text-[9px] font-bold uppercase tracking-widest px-2 py-1 rounded bg-[var(--sunk)] border border-[var(--accent-edge)] text-[var(--accent-ink)]">
+                                                                                Counted twice
+                                                                            </span>
+                                                                        )}
+                                                                    </div>
+                                                                )}
+
                                                                 {Array.isArray(item.damageKinds) && item.damageKinds.length > 0 && (
                                                                     <div className="flex flex-wrap gap-1.5 mb-2">
                                                                         {item.damageKinds.map((k, ki) => (
@@ -1457,6 +1536,42 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                                                         Three different counts — all three go to HQ
                                                     </div>
                                                 )}
+
+                                                {/* ---- WHY IT DISAGREES ----
+                                                    Only once the difference has survived the recount. A cause typed
+                                                    on the first guess is a guess. Same reel as the damage kinds -
+                                                    he approved that control by eye, and a second control that looked
+                                                    different on the same screen would be the mistake here. */}
+                                                {(recount.confirmed || recount.disagreement) && (() => {
+                                                    const vPos = varPos[item.id];
+                                                    const chosen = vPos !== undefined && vPos >= 0;
+                                                    const missing = varianceReasonMissing(entry, recount);
+                                                    return (
+                                                        <div className="flex gap-2 items-stretch">
+                                                            <div className={`kpm-dmg-win ${varSnap[item.id] ? 'is-snap' : ''} flex-1 min-w-0 rounded-lg bg-[var(--sunk)] border ${missing ? 'border-[var(--danger)]' : 'border-[var(--accent-edge)]'} `}>
+                                                                <div className="kpm-dmg-reel" style={{ '--i': chosen ? VARIANCE_REASONS.length - 1 - vPos : VARIANCE_REASONS.length }}>
+                                                                    {VARIANCE_REASONS.slice().reverse().map(r => (
+                                                                        <button key={r.value} type="button" onClick={() => stepVarianceReason(item.id, 1)}
+                                                                            className="kpm-dmg-face w-full text-left text-[11px] font-black uppercase tracking-wider text-[var(--accent-ink)]">
+                                                                            <span className="truncate">{r.label}</span>
+                                                                        </button>
+                                                                    ))}
+                                                                    {/* face 0 of the strip, and the one it can never come back to */}
+                                                                    <button type="button" onClick={() => stepVarianceReason(item.id, 1)}
+                                                                        className="kpm-dmg-face w-full text-left text-[11px] font-black uppercase tracking-wider text-[var(--danger-ink)]">
+                                                                        <span className="truncate">Tap to say what happened</span>
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                            <div className="flex flex-col gap-1 shrink-0">
+                                                                <button type="button" aria-label="Previous cause" onClick={() => stepVarianceReason(item.id, -1)}
+                                                                    className="w-9 flex-1 rounded-md border border-[var(--line)] text-[var(--ink-dim)] text-[10px] hover:text-[var(--accent-ink)] hover:border-[var(--accent-edge)] transition-colors">{'▲'}</button>
+                                                                <button type="button" aria-label="Next cause" onClick={() => stepVarianceReason(item.id, 1)}
+                                                                    className="w-9 flex-1 rounded-md border border-[var(--line)] text-[var(--ink-dim)] text-[10px] hover:text-[var(--accent-ink)] hover:border-[var(--accent-edge)] transition-colors">{'▼'}</button>
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })()}
 
                                                 {/* ---- WHAT KIND OF DAMAGE ----
                                                     One line until pressed, because a wall-to-wall count is forty rows and
