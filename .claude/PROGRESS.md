@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-21 16:43 WIB (🟠 KPM app session)** · ✅ VARIANCE CAUSE SHIPPED · 🔴 HE MUST NAME THE FIVE CAUSES — MINE ARE PLACEHOLDERS · ✅ TEST: NONE OF TODAY SEEN ON A REAL SCREEN · branch `phase0-solid-ground`
+**Updated: 2026-08-21 16:44 WIB (🟠 KPM app session)** · ✅ VARIANCE CAUSE SHIPPED · 🔴 HE MUST NAME THE FIVE CAUSES — MINE ARE PLACEHOLDERS · ✅ TEST: NONE OF TODAY SEEN ON A REAL SCREEN · branch `phase0-solid-ground`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **TRIMMED 2026-08-21 ON ALDI'S WORD.** *"sure trim it"*, on his own condition:
@@ -22,7 +22,10 @@
 > 📏 **KEEP THIS FILE UNDER ~350 LINES.** Past that, cut the oldest day into the same archive.
 > ⚠️ **TWO TRACKS SHARE THIS FILE** — 🟠 KPM and 🟢 Lancelot. Never trim or re-sort across them.
 
-## 🟠 2026-08-21 16:43 — A CONFIRMED DIFFERENCE NOW SAYS WHY. 599/599 and 554/554.
+## 🟠 2026-08-21 16:44 — A CONFIRMED DIFFERENCE NOW SAYS WHY. 599/599 and 554/554.
+
+*(16:44 is a stamp bump only — the entry below was already written at 16:43 and is unchanged. The
+log was trimmed to five entries at the same time, and the two new files were added to the table.)*
 
 HQ used to get a bare `-3`. It now arrives with a cause, and with whether the number was **counted
 twice** or is **one of three that disagreed**. Same reel as the damage kinds — he approved that
@@ -134,49 +137,11 @@ started.** Knowledge was banked instead, so the next session opens at full speed
   Use the Browser pane (`get_page_text`) to read a page instead. **Do not report a page as
   unreachable without trying the browser first.**
 
-## 🟠 2026-08-21 10:07 — `Other` ERASED, FINDING 3 CLOSED, VAULT PAGE WRITTEN
+## 🟠 EARLIER TODAY (10:00 and 10:07) RETIRED FROM THE LOG
 
-- **Finding 3 is CLOSED, not open.** He asked *"is 1 damaging?"*, I answered no — legacy audits
-  only, no live data loss — and he moved on. Do not re-raise it.
-- **`Other` is gone from the damage kinds.** His words: *"we dont need damaged kinds just erase
-  other button"*. Five named kinds, no free text. A typed cause cannot be grouped or counted.
-  The count screen's list is now deliberately a **subset** of the sales terminal's, and the
-  self-check asserts subset rather than equality.
-- **New vault page: `A-Brain/Wiki/Concepts/Where KPM Is Going.md`** — the theme, every locked
-  decision, and the direction, written because he asked for it: *"just take some notes on
-  important points that our app have, like the theme and all the decision that i made so u know
-  for sure where are we going on this project"*. Linked from Index, Concepts index and MOC.
-  **A cold session should read that page, not reconstruct his decisions from here.**
-- **Reply style changed on his instruction** — a few sentences, decisions only, no summary block
-  and no checks tally. Saved to CC memory as `feedback_kpm_reply_size_cap`.
-
-Tree green: **integration.audit 599/599, logicFixes.selfcheck 518/518** (one check retired with
-`Other`, one rewritten to subset).
-
-## 🟠 2026-08-21 10:00 — STOCK OPNAME: FINDINGS 1 AND 2 ARE SHIPPED
-
-Build `ac5e7b7` (finding 1 + the damage ledger) and the commit after it (finding 2).
-**Tree green: integration.audit 599/599, logicFixes.selfcheck 519/519.**
-
-- **Finding 1 DONE.** Expected damage has its own plate, every label written out in full
-  (`EXPECTED GOOD` / `EXPECTED DAMAGED` / `TOTAL FOUND` / `MATCH`). Both halves of the comparison
-  now measure the same thing. The same fault was fixed on HQ's review list.
-- **Damage now carries a cause.** One box holding all six of the sales terminal's kinds, each
-  with its own quantity; the kinds must sum to the damaged total or the submit refuses and names
-  the product. Stored with the terminal's own long strings — a self-check pins the two lists
-  together and was **proven to fail** when one string was drifted on purpose.
-- **Finding 2 DONE.** The expected pair is frozen on the first keystroke for a row, so a sale
-  landing mid-count can no longer move the target. An old check *claimed* this was already true
-  and was pinning the wrong line — see the commit.
-- **Finding 3 (legacy audits overwrite instead of adjusting):** I recommend **skipping** it.
-  Only records saved before the snapshot existed take that path. He has not answered.
-- **Finding 4 (the system redesign):** not started. Ranked plan is in `NEXT-SESSION.md`.
-
-Prototype he approved, still live: https://claude.ai/code/artifact/b18e8164-348c-4635-87fa-dbfe7350c615
-
-⚠️ **NOT SEEN IN THE REAL APP YET.** Everything above is verified by the audits and by the
-prototype; the count screen itself needs login + data, and the Browser pane would not composite a
-frame this session. **His eyes are the outstanding check.**
+Findings 1 and 2, the damage kinds, the `Other` removal and the vault page. Full story in
+`git log -p`, and the decisions themselves in `A-Brain/Wiki/Concepts/Where KPM Is Going.md`.
+Five entries is the working depth this file keeps.
 
 ## ⏳ WAITING ON ALDI — verbatim, do not paraphrase
 
@@ -355,6 +320,8 @@ Ponytail is set to **ultra**.
 | `A-Brain/Backlog/TESTS - check these when you feel like it.md` | **NEW 2026-08-18** — every test Aldi owes, taken off his plate |
 | `A-Brain/Wiki/Concepts/Where KPM Is Going.md` | **NEW 2026-08-21 — READ THIS FIRST.** The theme, every locked decision and the direction. He asked for it by name. Put settled decisions here, not in PROGRESS |
 | `src/StockOpnameView.jsx` → `DAMAGE_REASONS` | **NEW 2026-08-21** — the five kinds of damage, stored with the sales terminal's own long strings. Deliberately a SUBSET of the terminal's list: no `Other`, because free text cannot be grouped or counted |
+| `A-Brain/Backlog/Test the new Stock Opname on a real screen.md` | **NEW 2026-08-21, HIS TO-DO** — numbered walkthrough of everything shipped that day. **Only he can run it.** Ask whether he has, before building on top |
+| `src/StockOpnameView.jsx` → `VARIANCE_REASONS` + `varianceReasonMissing()` | **NEW 2026-08-21** — why a confirmed difference happened. 🔴 the five words are Claude's placeholders, NOT Aldi's — he must name them before agents use it |
 | `src/StockOpnameView.jsx` → `recountState()` + `samePass()` + `startRecount()` | **NEW 2026-08-21** — a difference is counted twice before HQ sees it. ⚠️ `startRecount` must NEVER re-take `expStock`/`expDamaged`, and must never show the previous numbers back |
 | `src/StockOpnameView.jsx` → `shortageStreak()` + `isLeak()` | **NEW 2026-08-21** — leak detection. Short in ≥2 of the last ≥3 counts, five-count window. **Lives on HQ's review row on purpose** — agents cannot read `pending_audits`, and warning the counter would bias a blind count |
 | `src/StockOpnameView.jsx` → `damageBlocked()` | **NEW 2026-08-21** — the reconcile rule. The damaged total is the truth; the kinds under it must sum to exactly it or the submit refuses and names the product |
