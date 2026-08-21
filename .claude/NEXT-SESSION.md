@@ -61,15 +61,18 @@ with it. Say "count this one again", never "you are 5 short".
 stock — because HQ approving one writes it in through `increment()`, and that wrong figure becomes
 the EXPECTED figure for the next count. One typo poisons two months.
 
-## ❓ Four things he has not answered — ask before or while building
+## ✅ All four are ANSWERED — do not re-ask any of them
 
-1. **On a third disagreement** — take count 3 as final, or send all three to HQ and let them decide?
-2. **Per-product count history** — *"has this product been short before?"* One short count is a
-   mistake; the same product short three months running is theft. The data is already in
-   `pending_audits`, nothing new to collect. He has not said yes or no.
-3. **How long does a full stock opname take** — under an hour, or a whole day? This decides whether
-   counting sessions are worth building at all.
-4. **Do his products carry barcodes** an agent could scan? Decides whether scan-to-row is real.
+1. **Third disagreement → HE CHOSE B: send all three counts to HQ.** Do not take count 3 as final.
+   Save all three numbers on the record, marked as a three-way disagreement.
+2. **Per-product count history → YES, and it is already SHIPPED** as leak detection on HQ's review
+   row (`shortageStreak()` / `isLeak()`). Nothing left to build here.
+3. **A full count takes under 30 minutes** — *"stock opname is really fast, 30 mins less usually
+   done"*. **Counting sessions are DROPPED. Do not propose them again.**
+4. **No barcodes** — *"there is no barcode in the product so far"*. **Scan-to-row is DROPPED.**
+
+So the entire remaining Stock Opname plan is: **recount (this job) → a cause for the variance →
+a tolerance threshold.** Nothing else.
 
 ## Verify
 
@@ -87,10 +90,11 @@ on real numbers). Prove the check fails before trusting it.
 
 - **Stock Opname finding 3** — legacy audits overwrite instead of adjusting
   (`StockOpnameView.jsx`, the `hasSnapshot` fallback). I recommend skipping; Aldi has not answered.
-- **Stock Opname finding 4, the rest of the redesign** — variance thresholds so small differences
-  auto-accept instead of drowning HQ · counting **sessions** (pick a shelf, count it, close it,
-  resume tomorrow) · freeze the SKU while a session is open · barcode scan jumping to the row ·
-  ABC cycle counting last. Sessions are also the only real fix for the phone list being long.
+- **Stock Opname, what is left** — a **cause** for a variance (miscount · unrecorded sale ·
+  breakage · theft · supplier short), picked with the same reel the damage kinds use, then a
+  **tolerance threshold** so small differences auto-accept instead of drowning HQ.
+  ⛔ Sessions, barcode scan and ABC cycle counting are all **dropped on his answers** — a count
+  takes under 30 minutes and the products have no barcodes.
 - **TIER 1 = ONE PROFILE, stages B and C** — B copies the van's `activeCanvas`,
   `allowedPayments`, `allowedTiers` onto `master_owner` after a backup; C deletes `ADMIN_VEHICLE`.
   **C before B shows his van as EMPTY.** Stage A is done (`447e3dd`).

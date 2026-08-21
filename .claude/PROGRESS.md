@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-21 15:37 WIB (🟠 KPM app session)** · ✅ TRIMMED 3,575 → 413 LINES, NOTHING LOST · ❓ 2 QUESTIONS OPEN · NEXT JOB: RECOUNT · branch `phase0-solid-ground`
+**Updated: 2026-08-21 15:46 WIB (🟠 KPM app session)** · ✅ LEAK DETECTION SHIPPED · ❓ NOTHING WAITING — NEXT JOB IS RECOUNT, FULLY SPECIFIED · branch `phase0-solid-ground`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **TRIMMED 2026-08-21 ON ALDI'S WORD.** *"sure trim it"*, on his own condition:
@@ -21,6 +21,30 @@
 >
 > 📏 **KEEP THIS FILE UNDER ~350 LINES.** Past that, cut the oldest day into the same archive.
 > ⚠️ **TWO TRACKS SHARE THIS FILE** — 🟠 KPM and 🟢 Lancelot. Never trim or re-sort across them.
+
+## 🟠 2026-08-21 15:46 — LEAK DETECTION SHIPPED. 599/599 and 529/529.
+
+His ask: *"u can add leak detection for this trigger for everytime stock opname is done, which is
+each week actually"*. One short count is a miscount; the same product short week after week is a
+leak, and no screen could see that before because every audit was filed alone.
+
+⚠️ **IT IS ON HQ'S REVIEW ROW, NOT THE COUNT ROW, AND THAT IS DELIBERATE.** Two reasons, either of
+which would have made the obvious placement useless or harmful:
+1. `auditHistory` only loads when `isHighCommand` — the rules refuse `pending_audits` to everyone
+   else, so a counting agent would see an empty result and conclude all was well.
+2. **Telling the person counting "this one is usually short" biases the count.** Blind counting
+   exists so the shelf decides the number, not the expectation.
+
+Threshold, deliberately dull: **at least three counts on record, short in at least two.** Weekly
+counts = three weeks of evidence. A surplus never triggers it; an old problem ages out after five
+counts. `shortageStreak()` and `isLeak()` are exported and behaviour-checked on real numbers.
+
+🔴 **A LESSON WORTH MORE THAN THE FEATURE.** The first self-check RETYPED the threshold instead of
+reading it from the source. A probe that loosened the shipped rule to "short once in one count"
+changed nothing — every check still passed, because they were testing the check file's own copy.
+**Both the streak and the threshold are now lifted out of the component**, and the same probe
+correctly turns two checks red. **Retyping a constant into its own check makes the check a
+decoration. Lift it from the source.**
 
 ## 🟠 2026-08-21 15:37 — THIS FILE WAS TRIMMED, 3,575 → 413 LINES
 
@@ -103,13 +127,14 @@ frame this session. **His eyes are the outstanding check.**
 
 ## ⏳ WAITING ON ALDI — verbatim, do not paraphrase
 
-❓ **TWO OPEN**, both written out in full in `.claude/NEXT-SESSION.md`:
-- **On a recount, when the two counts disagree a THIRD time** — take count 3 as final, or send all
-  three to HQ? (My pick: send all three. Three different numbers means something other than
-  counting is wrong.)
-- **Per-product count history** — build it? *"has this product been short before?"* One short count
-  is a mistake; the same product short three months running is theft. The data is already in
-  `pending_audits`, nothing new to collect.
+✅ **NOTHING IS WAITING ON ALDI.** Both questions answered 15:4x and both are now built or
+specified:
+
+✖ ~~third disagreement on a recount~~ — **he chose B: send all three counts to HQ.** Build it that
+way; do not re-ask.
+
+✖ ~~per-product count history~~ — **he said yes**, in his own framing: *"u can add leak detection
+for this trigger for everytime stock opname is done, which is each week actually"*. **SHIPPED.**
 
 ✖ ~~how long does a stock opname take, and do the products have barcodes?~~ **ANSWERED**, and both
 answers KILL a job: *"stock opname is really fast, 30 mins less usually done"* and *"there is no
@@ -297,6 +322,7 @@ Ponytail is set to **ultra**.
 | `A-Brain/Backlog/TESTS - check these when you feel like it.md` | **NEW 2026-08-18** — every test Aldi owes, taken off his plate |
 | `A-Brain/Wiki/Concepts/Where KPM Is Going.md` | **NEW 2026-08-21 — READ THIS FIRST.** The theme, every locked decision and the direction. He asked for it by name. Put settled decisions here, not in PROGRESS |
 | `src/StockOpnameView.jsx` → `DAMAGE_REASONS` | **NEW 2026-08-21** — the five kinds of damage, stored with the sales terminal's own long strings. Deliberately a SUBSET of the terminal's list: no `Other`, because free text cannot be grouped or counted |
+| `src/StockOpnameView.jsx` → `shortageStreak()` + `isLeak()` | **NEW 2026-08-21** — leak detection. Short in ≥2 of the last ≥3 counts, five-count window. **Lives on HQ's review row on purpose** — agents cannot read `pending_audits`, and warning the counter would bias a blind count |
 | `src/StockOpnameView.jsx` → `damageBlocked()` | **NEW 2026-08-21** — the reconcile rule. The damaged total is the truth; the kinds under it must sum to exactly it or the submit refuses and names the product |
 | `src/styles/theme.css` → `.kpm-dmg-*` / `.kpm-dot` | **NEW 2026-08-21** — the damage reel, same mechanism as `.kpm-clock`. ⚠️ The dot ring is a BORDER, never an inset shadow: Lite Mode strips shadows and the dots would vanish |
 | `src/hooks/useOfflineEngine.js` → `canReachInternet()` | **EXPORTED 2026-08-20** — the ONLY honest answer to "is there internet". `navigator.onLine` is allowed to be trusted when it says NO, never when it says YES. See `A-Brain/Wiki/Concepts/A Network Is Not The Internet.md` |
