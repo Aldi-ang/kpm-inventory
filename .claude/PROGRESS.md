@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-21 15:51 WIB (🟠 KPM app session)** · ✅ RECOUNT SHIPPED — THE COUNT PATH IS NOW WHOLE · ❓ NOTHING WAITING · ✅ HE HAS NOT SEEN ANY OF IT ON A REAL SCREEN · branch `phase0-solid-ground`
+**Updated: 2026-08-21 15:53 WIB (🟠 KPM app session)** · ✅ RECOUNT SHIPPED — THE COUNT PATH IS NOW WHOLE · ❓ NOTHING WAITING · ✅ TEST: HE HAS NOT SEEN ANY OF IT ON A REAL SCREEN · branch `phase0-solid-ground`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **TRIMMED 2026-08-21 ON ALDI'S WORD.** *"sure trim it"*, on his own condition:
@@ -239,38 +239,9 @@ https://claude.ai/code/artifact/a42ce819-9d1a-46a8-8ae8-0291df6765ef
 > Older open questions (tukar barang, and others) still live in the **❓ WAITING ON ALDI —
 > verbatim** section further down this file. That section was NOT touched by this trim.
 
-## 🟠 2026-08-19 11:34 — HE ANSWERED BOTH. And he told me to stop using hard words.
+## 🟠 LOG TRIMMED HERE — older entries live in `git log -p -- .claude/PROGRESS.md`
 
-**His words, do not paraphrase:**
-
-> *"i want live number options added into the matrix, and on default this live number for the
-> stock opname is only available side by side for tier 1,2,3 and i want u to change the default
-> tiers name into shown in sc1, for tiers below tier 3 i want it leave it blind if its wise i
-> guess, encourage them to really count the number right"*
-
-> *"and i want all into titip instead, maybe we should add some subtitles change in the future?"*
-
-> *"why the caveman ultra not working, alucard still talk like it used to be not caveman that i
-> ask tho, too many hard to understand words, too many unfamiliar terms i want this to change on
-> next session after i/ll clear this chat"*
-
-**DECISION 1 — the stock count expected number is a PER-TIER SETTING in the permission matrix.**
-Default ON (shown side by side while counting) for tier 1, 2, 3. Default OFF (blind, the number
-appears only after he types one) for tier 4, 5, 6. His reason, kept: *"encourage them to really
-count the number right"*. He also wants the default tier NAMES changed to the ones in his
-screenshot: T2 OWNER, T3 HQ SALES MANAGER, T4 REGIONAL ADMIN, T5 SALES CANVAS, T6 SALES MOTORIST.
-
-**DECISION 2 — the whole app says TITIP.** Not consignment. Labels only; code names such as
-`CONSIGNMENT_PAYMENT` never change. Subtitles were raised as a maybe-later, not a job.
-
-**DECISION 3 — how I write to him.** Caveman was cutting sentence LENGTH and not hard WORDS, so
-replies stayed full of specialist terms. Short plus jargon still fails him. Saved to the
-`feedback_explain_in_plain_english` memory so it survives a clear, and to `A-Brain/Wiki/Log.md`
-(`4267589`). **This is the first thing the next session must fix about itself.**
-
-Still nothing fixed in code. Quota ran out at 91%. `.claude/SWEEP-2026-08-19.md` holds the
-evidence for all six reported items.
-
+and in `A-Brain/Archive/PROGRESS-archive-2026-08-21.md`. Six entries is the working depth.
 
 ## ▶ NOW
 
