@@ -1857,6 +1857,53 @@ ${opname.slice(bOpen + 1, bEnd)}
   ok('and HQ can see what kind of damage it is approving',
      /item\.damageKinds\.map/.test(opname));
 
+  /* ---- LEAK DETECTION (2026-08-21) ----
+     "u can add leak detection for this trigger for everytime stock opname is done, which is each
+     week actually". One short count is a miscount; the same product short week after week is a
+     leak. Runs off audits already on file. */
+  const lStart = opname.indexOf('export const shortageStreak');
+  const lOpen  = opname.indexOf('{', lStart);
+  const lEnd   = opname.indexOf('\n};', lOpen);
+  ok('the shortage rule could be lifted out of the component to be tested',
+     lStart > -1 && lOpen > lStart && lEnd > lOpen);
+  const shortageStreak = new Function('history', 'productId', 'sample', `
+     sample = sample || 5;
+${opname.slice(lOpen + 1, lEnd)}
+  `);
+  /* ⚠️ THE THRESHOLD IS LIFTED FROM THE SOURCE, NOT RETYPED HERE. It was retyped first, and a
+     deliberate probe that loosened the shipped rule to "short once in one count" changed nothing:
+     every check still passed, because they were testing this file's copy. A check that cannot
+     fail proves nothing. Lifting it means loosening the real rule now turns these red. */
+  const iStart = opname.indexOf('export const isLeak');
+  const iArrow = opname.indexOf('=>', iStart);
+  const iEnd   = opname.indexOf(';', iArrow);
+  ok('the leak threshold could be lifted out of the component too',
+     iStart > -1 && iArrow > iStart && iEnd > iArrow);
+  const isLeak = new Function('s', `const { short, total } = s; return (${opname.slice(iArrow + 2, iEnd)});`);
+  const audit = (variance) => ({ items: [{ productId: 'P1', variance }] });
+
+  ok('a product never counted has no history and cannot be accused',
+     JSON.stringify(shortageStreak([], 'P1')) === '{"short":0,"total":0}');
+  ok('one short count is a miscount, not a leak',
+     !isLeak(shortageStreak([audit(-2)], 'P1')));
+  ok('two short counts out of two is still too little evidence',
+     !isLeak(shortageStreak([audit(-2), audit(-1)], 'P1')));
+  ok('short in two of three counts IS a leak - three weeks of evidence',
+     isLeak(shortageStreak([audit(-2), audit(0), audit(-1)], 'P1')));
+  ok('counting correctly three times running clears it',
+     !isLeak(shortageStreak([audit(0), audit(0), audit(0)], 'P1')));
+  ok('a SURPLUS is never a leak, however often it happens',
+     !isLeak(shortageStreak([audit(3), audit(2), audit(5), audit(1)], 'P1')));
+  ok('only the last five counts are weighed, so an old problem ages out',
+     shortageStreak([audit(0), audit(0), audit(0), audit(0), audit(0), audit(-9)], 'P1').short === 0);
+  ok('audits that never mention the product are skipped entirely',
+     shortageStreak([{ items: [{ productId: 'OTHER', variance: -9 }] }, audit(-1)], 'P1').total === 1);
+
+  /* REGRESSION GUARD — it must stay on HQ's side. `auditHistory` only loads when isHighCommand,
+     and telling the person counting "this is usually short" would bias a blind count. */
+  ok('leak detection reads the approved history, and sits where HQ can see it',
+     /shortageStreak\(auditHistory, item\.productId\)/.test(opname));
+
   const reelCss = read('src/styles/theme.css');
   ok('the damage reel moves by transform, and its dots are borders not shadows',
      /\.kpm-dmg-reel \{[\s\S]{0,160}transform: translateY/.test(reelCss)

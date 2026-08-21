@@ -32,6 +32,34 @@ export const DAMAGE_REASONS = [
        reporting hole anyway: it cannot be grouped, counted, or acted on. */
 ];
 
+/* LEAK DETECTION — Aldi, 2026-08-21: "u can add leak detection for this trigger for everytime
+   stock opname is done, which is each week actually".
+
+   One short count is a miscount. The SAME product short week after week is a leak, and nothing in
+   the app could see that before, because every audit was filed on its own and never compared with
+   the last one. No new data is collected — this reads the approved audits already on file.
+
+   ⚠️ IT LIVES ON HQ'S SIDE, NOT ON THE COUNT ROW, for two reasons that both matter:
+     1. `auditHistory` only loads when `isHighCommand`; the rules refuse `pending_audits` to
+        everyone else, so a counting agent would see an empty result and think all is well.
+     2. Telling the person counting "this one is usually short" biases the count. Blind counting
+        exists precisely so the shelf decides the number, not the expectation.
+   HQ is who acts on a leak anyway. */
+export const shortageStreak = (history, productId, sample = 5) => {
+    const rows = (history || [])
+        .filter(a => Array.isArray(a.items) && a.items.some(i => i.productId === productId))
+        .slice(0, sample)
+        .map(a => a.items.find(i => i.productId === productId));
+    const short = rows.filter(r => Number(r.variance || 0) < 0).length;
+    return { short, total: rows.length };
+};
+
+/* THE THRESHOLD, and it is deliberately dull: at least three counts on record and short in at
+   least two of them. He counts weekly, so that is three weeks of evidence before the app accuses
+   anyone of anything. Flagging on one or two counts would cry leak at ordinary miscounts, and a
+   warning that is usually wrong gets ignored — which is worse than no warning. */
+export const isLeak = ({ short, total }) => total >= 3 && short >= 2;
+
 /* How many damaged units have been given a cause. */
 export const damageSorted = (entry) =>
     Object.values((entry && entry.kinds) || {}).reduce((sum, n) => sum + Number(n || 0), 0);
@@ -1111,7 +1139,22 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                                                         return (
                                                             <div key={idx} className="flex flex-col bg-[var(--raised)] p-3 rounded-lg border border-[var(--line)]">
                                                                 <div className="flex justify-between items-center mb-2 border-b border-[var(--line)] pb-2">
-                                                                    <span className="font-bold text-xs text-[var(--ink)] uppercase">{item.name}</span>
+                                                                    <span className="flex items-center gap-2 min-w-0">
+                                                                        <span className="font-bold text-xs text-[var(--ink)] uppercase truncate">{item.name}</span>
+                                                                        {/* LEAK, not miscount. Reads the audits already on file - short in at
+                                                                            least two of the last three or more counts. Dark plate, red edge,
+                                                                            red ink: it is a warning, not a slab. */}
+                                                                        {(() => {
+                                                                            const streak = shortageStreak(auditHistory, item.productId);
+                                                                            if (!isLeak(streak)) return null;
+                                                                            return (
+                                                                                <span title="This product has come up short repeatedly. That is a leak, not a counting mistake."
+                                                                                      className="shrink-0 text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded bg-[var(--sunk)] border border-[var(--danger)] text-[var(--danger-ink)] whitespace-nowrap">
+                                                                                    Short {streak.short} of last {streak.total}
+                                                                                </span>
+                                                                            );
+                                                                        })()}
+                                                                    </span>
                                                                     <div className="flex items-center gap-4 text-xs font-mono">
                                                                         {/* SAME FAULT AS THE COUNT ROW, ON HQ's SIDE. This printed
                                                                             expectedStock alone - healthy only - next to a totalFound
