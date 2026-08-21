@@ -45,6 +45,32 @@ decides whether the figures are visible while counting at all. Below that the ag
 so for those tiers the recount prompt must not leak the expected number by saying what is wrong
 with it. Say "count this one again", never "you are 5 short".
 
+## How the recount actually works — agreed with him 2026-08-21
+
+1. A row's variance is not zero → the app **clears that row** and asks for the number again.
+2. It must **not show him the first number**. If he sees 98 he will simply retype 98.
+3. Then compare the two counts:
+
+| Count 1 | Count 2 | Meaning | What happens |
+|---|---|---|---|
+| 98 | 100 | he miscounted once | keep 100, no difference, **nothing goes to HQ** |
+| 98 | 98 | the shortage is real | goes to HQ **marked "counted twice"** |
+| 98 | 97 | he is guessing | ask a third time |
+
+**A miscount must die on his phone.** Only a difference that survived two counts may change real
+stock — because HQ approving one writes it in through `increment()`, and that wrong figure becomes
+the EXPECTED figure for the next count. One typo poisons two months.
+
+## ❓ Four things he has not answered — ask before or while building
+
+1. **On a third disagreement** — take count 3 as final, or send all three to HQ and let them decide?
+2. **Per-product count history** — *"has this product been short before?"* One short count is a
+   mistake; the same product short three months running is theft. The data is already in
+   `pending_audits`, nothing new to collect. He has not said yes or no.
+3. **How long does a full stock opname take** — under an hour, or a whole day? This decides whether
+   counting sessions are worth building at all.
+4. **Do his products carry barcodes** an agent could scan? Decides whether scan-to-row is real.
+
 ## Verify
 
 ```

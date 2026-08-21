@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-21 10:07 WIB (🟠 KPM app session)** · ✅ FINDINGS 1+2 SHIPPED, 3 SKIPPED ON HIS WORD, `Other` ERASED · ❓ TRIM THIS FILE? · branch `phase0-solid-ground`
+**Updated: 2026-08-21 10:16 WIB (🟠 KPM app session)** · ✅ SESSION CLOSED CLEAN, HE LEFT · ❓ 5 QUESTIONS WAITING, ALL IN `NEXT-SESSION.md` · branch `phase0-solid-ground`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -12,6 +12,27 @@
 > 📏 **KEEP THIS FILE UNDER ~350 LINES.** When it passes that, cut the oldest day into the same
 > archive rather than letting it grow back. This file holds WHERE THE WORK STANDS; the archive
 > and `A-Brain/Wiki/Log.md` hold how it got there.
+
+## 🟠 2026-08-21 10:16 — HE LEFT. NOTHING STARTED THAT COULD STRAND.
+
+**Plan quota was 83% used when he said he was going.** Recount is a submit-flow change plus UI
+plus checks — the same size as this morning's work, which cost more than 17%. **Deliberately not
+started.** Knowledge was banked instead, so the next session opens at full speed.
+
+- **His YouTube link was a red herring, and that is recorded so nobody chases it again.** It is
+  *"How to Build an Inventory Management System with Claude Code in Next.js"* (AyyazTech) — a
+  beginner tutorial covering products, stock in/out, low-stock alerts and a dashboard. **KPM
+  shipped all four long ago.** Behind this app, not ahead.
+- **Gap analysis written to `A-Brain/Wiki/Concepts/Where KPM Is Going.md`** — what KPM already has
+  (blind counting, counter≠approver, delta corrections, audit trail: the hard parts) versus the
+  holes, which all sit in the gap between *"the agent found a different number"* and *"stock
+  changed"*.
+- **New idea, unanswered: per-product count history.** One short count is a mistake; the same
+  product short three months running is theft. The data is already in `pending_audits`.
+- ⚠️ **`WebSearch` and `WebFetch` are BROKEN in this environment** — both die on
+  `cc/claude-haiku-4-5-20251001`, the same routing fault that kills subagent `model:` overrides.
+  Use the Browser pane (`get_page_text`) to read a page instead. **Do not report a page as
+  unreachable without trying the browser first.**
 
 ## 🟠 2026-08-21 10:07 — `Other` ERASED, FINDING 3 CLOSED, VAULT PAGE WRITTEN
 
@@ -59,7 +80,11 @@ frame this session. **His eyes are the outstanding check.**
 
 ## ⏳ WAITING ON ALDI — verbatim, do not paraphrase
 
-❓ **THE ONLY THING OPEN, 2026-08-21 10:07 — may PROGRESS.md be trimmed?** It is 3,505 lines
+❓ **FIVE OPEN, 2026-08-21 10:16.** Four are written out in full in `.claude/NEXT-SESSION.md`:
+the third-disagreement rule on a recount · whether to build per-product count history · how long a
+full stock opname takes · whether his products carry barcodes. The fifth is below.
+
+❓ **May PROGRESS.md be trimmed?** It is 3,517 lines
 against its own ~350 limit. He said *"well as long as the memories saved in A brain u can comeback
 anytime"*, which reads as yes, but he has not said go, and the file carries BOTH the 🟠 KPM and
 🟢 Lancelot tracks interleaved. **Ask before cutting.** Plan: everything before 2026-08-19 into
