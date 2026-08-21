@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-21 10:05 WIB (🟠 KPM app session)** · ✅ STOCK OPNAME FINDINGS 1 AND 2 SHIPPED · ❓ FINDING 3 PROPOSED FOR SKIP, 4 NOT STARTED · branch `phase0-solid-ground`
+**Updated: 2026-08-21 10:00 WIB (🟠 KPM app session)** · ✅ STOCK OPNAME FINDINGS 1 AND 2 SHIPPED · ❓ FINDING 3 PROPOSED FOR SKIP, 4 NOT STARTED · branch `phase0-solid-ground`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -13,7 +13,7 @@
 > archive rather than letting it grow back. This file holds WHERE THE WORK STANDS; the archive
 > and `A-Brain/Wiki/Log.md` hold how it got there.
 
-## 🟠 2026-08-21 — STOCK OPNAME: FINDINGS 1 AND 2 ARE SHIPPED
+## 🟠 2026-08-21 10:00 — STOCK OPNAME: FINDINGS 1 AND 2 ARE SHIPPED
 
 Build `ac5e7b7` (finding 1 + the damage ledger) and the commit after it (finding 2).
 **Tree green: integration.audit 599/599, logicFixes.selfcheck 519/519.**
@@ -253,16 +253,26 @@ Entries above this line are the old long style — leave them, they are already 
 
 ## ▶ NOW
 
-**Live front, 2026-08-19 11:34 — NOTHING IS WAITING ON ALDI.** He answered both questions (see
-the log entry above for his exact words) and neither answer is built yet. His six reported items
-are all investigated and none are fixed — evidence with file and line numbers in
-`.claude/SWEEP-2026-08-19.md`.
+**Live front, 2026-08-21 10:00 — STOCK OPNAME.** Findings 1 and 2 are shipped (`ac5e7b7` and the
+commit after it). Tree green: **integration.audit 599/599, logicFixes.selfcheck 519/519**.
 
-The next job is the offline black screen, and it is the only block in `.claude/NEXT-SESSION.md`:
-`MerchantSalesView` is fetched on demand, the fetch fails with no signal, and nothing in `src/`
-catches that failure, so React throws the whole page away. ☠️ That brief carries a warning — the
-obvious-looking fix for the SEPARATE sign-in problem runs on into `signOut(auth)` at
-`App.jsx:2336` and would delete his sign-in permanently. Do not apply it.
+**The next job is the only block in `.claude/NEXT-SESSION.md`: count a difference TWICE before HQ
+ever sees it.** Every counted row goes straight to `PENDING_HQ_APPROVAL` today, so a miscount gets
+approved and `increment(counted - expected)` writes it into real stock — where it becomes next
+month's expected figure. ⚠️ That brief carries the trap: a recount must NOT refresh the expected
+snapshot, or it re-opens finding 2, and it must not leak the expected number to tiers that count
+blind.
+
+☠️ **Still true and still unrelated:** the obvious-looking fix for the forced Google sign-in runs
+on into `signOut(auth)` at `App.jsx:2336` and would delete his sign-in permanently. Do not apply it.
+
+⚠️ **Two open questions are logged under WAITING ON ALDI** — finding 3 skip-or-fix, and whether
+`Other` covers "add another one" or he wants permanent custom damage kinds.
+
+📏 **THIS FILE IS 3,505 LINES AND ITS OWN RULE SAYS ~350.** The 2026-08-14 archive has grown back
+ten times over, and it is read in full at every session start. It needs cutting into
+`A-Brain/Archive/` — but it carries BOTH the 🟠 KPM and 🟢 Lancelot tracks interleaved, so it is
+not a job to do casually or unasked. **Raise it with Aldi before trimming.**
 
 **Before writing anything to him, read the top of `.claude/NEXT-SESSION.md`.** He said the replies
 use too many hard words. Short sentences were never the problem; the vocabulary was. Also saved to
