@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-21 15:53 WIB (🟠 KPM app session)** · ✅ RECOUNT SHIPPED — THE COUNT PATH IS NOW WHOLE · ❓ NOTHING WAITING · ✅ TEST: HE HAS NOT SEEN ANY OF IT ON A REAL SCREEN · branch `phase0-solid-ground`
+**Updated: 2026-08-21 16:43 WIB (🟠 KPM app session)** · ✅ VARIANCE CAUSE SHIPPED · 🔴 HE MUST NAME THE FIVE CAUSES — MINE ARE PLACEHOLDERS · ✅ TEST: NONE OF TODAY SEEN ON A REAL SCREEN · branch `phase0-solid-ground`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **TRIMMED 2026-08-21 ON ALDI'S WORD.** *"sure trim it"*, on his own condition:
@@ -21,6 +21,29 @@
 >
 > 📏 **KEEP THIS FILE UNDER ~350 LINES.** Past that, cut the oldest day into the same archive.
 > ⚠️ **TWO TRACKS SHARE THIS FILE** — 🟠 KPM and 🟢 Lancelot. Never trim or re-sort across them.
+
+## 🟠 2026-08-21 16:43 — A CONFIRMED DIFFERENCE NOW SAYS WHY. 599/599 and 554/554.
+
+HQ used to get a bare `-3`. It now arrives with a cause, and with whether the number was **counted
+twice** or is **one of three that disagreed**. Same reel as the damage kinds — he approved that
+control by eye, so a second control that looked different would be the mistake.
+
+Offered **only after the recount confirms**, because a cause given on the first guess is a guess.
+Starts unset on *"tap to say what happened"* and can never cycle back to it — a picker resting on
+a default gets submitted unread, and this field decides whether a shortage is filed as arithmetic
+or as a person.
+
+🔴 **THE FIVE WORDS ARE MINE AND HE HAS NOT APPROVED THEM** — miscount · unrecorded sale ·
+breakage · theft · supplier short. **His law is that only he names the categories in his own
+trade.** They are placeholders so the control could be looked at. **Saved records keep whatever
+string was used, so settle the list BEFORE agents count with it.** A check pins that the list is
+still the provisional one; when he renames them that check fails, and that is the moment to
+delete it. `VARIANCE_REASONS` at the top of `src/StockOpnameView.jsx`.
+
+⚠️ **Caught by its own suite:** the check pinning the damage strings against the sales terminal
+scraped the WHOLE file for `value:`/`label:` pairs, so a second array of the same shape made it
+read the causes as damage kinds. Now scoped to the `DAMAGE_REASONS` block. **A file-wide regex in
+a check is a trap that springs the day someone adds a similar list.**
 
 ## 🟠 2026-08-21 15:51 — RECOUNT SHIPPED. 599/599 and 543/543. The count path is whole.
 
@@ -157,8 +180,17 @@ frame this session. **His eyes are the outstanding check.**
 
 ## ⏳ WAITING ON ALDI — verbatim, do not paraphrase
 
-✅ **NOTHING IS WAITING ON ALDI.** Both questions answered 15:4x and both are now built or
-specified:
+🔴 **ONE THING, AND ONLY HE CAN ANSWER IT — WHAT ARE THE FIVE CAUSES CALLED?**
+Mine are placeholders: *miscount · unrecorded sale · breakage · theft · supplier short*. His law:
+**only Aldi names the categories in his own trade.** Change `VARIANCE_REASONS` at the top of
+`src/StockOpnameView.jsx` to his words **before agents count with it** — a saved record keeps the
+string it was written with, so renaming later splits one cause into two forever.
+
+✅ **ON HIS TO-DO LIST, HE ASKED FOR IT:** `A-Brain/Backlog/Test the new Stock Opname on a real
+screen.md` — numbered items with the exact words each control should show, and the reminder to
+send the build id with any screenshot. **Nothing shipped today has been seen running.**
+
+Everything else is answered and built:
 
 ✖ ~~third disagreement on a recount~~ — **he chose B: send all three counts to HQ.** Build it that
 way; do not re-ask.
