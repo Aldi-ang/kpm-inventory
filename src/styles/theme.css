@@ -3571,3 +3571,52 @@ html.lite-mode .kpm-hazard { animation: none; opacity: 1; }
 @media (prefers-reduced-motion: reduce) {
   .kpm-hazard { animation: none; opacity: 1; }
 }
+
+/* ---------- THE DAMAGE REEL (Stock Opname count row) ----------
+   Aldi, 2026-08-21: "make it into 1 box instead of 2", "keep swiping down until u reach the
+   bottom part and fast swiping up when press at the bottom last back to number 1".
+
+   Same mechanism as .kpm-clock: one grid window, a strip behind it, one transform. The strip is
+   built in REVERSE, so stepping FORWARD lowers --i, the strip travels DOWN and the next kind
+   arrives from above. Wrapping past the last one sends --i the whole way back in one move, and
+   .is-snap swaps in the faster curve for that single flick.
+
+   ⚠️ NOTHING HERE DEPENDS ON A SHADOW, A BLUR OR A FILTER. Lite Mode deletes every transition
+   below outright - a stopped animation reads as a bug, so it is removed, never frozen. */
+.kpm-dmg-win { --dmg-row: 46px; height: var(--dmg-row); overflow: hidden; }
+.kpm-dmg-reel {
+  display: block;
+  transform: translateY(calc(var(--i) * var(--dmg-row) * -1));
+  transition: transform 340ms cubic-bezier(.2, .9, .2, 1);
+}
+.kpm-dmg-win.is-snap .kpm-dmg-reel { transition: transform 200ms cubic-bezier(.4, 0, .2, 1); }
+.kpm-dmg-face {
+  height: var(--dmg-row);
+  display: flex; align-items: center; gap: 8px; padding: 0 6px 0 12px;
+}
+
+/* the panel closes by ROW HEIGHT, so nothing has to be measured in JS.
+   Closing is quicker than opening: opening is the screen showing you something, closing is you
+   already finished with it. */
+.kpm-dmg-panel { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 190ms cubic-bezier(.23,1,.32,1); }
+.kpm-dmg-panel.is-open { grid-template-rows: 1fr; transition-duration: 260ms; }
+.kpm-dmg-inner { overflow: hidden; }
+
+/* the level indicator. ⚠️ THE EMPTY RING IS --ink-dim, NOT --line: --line measured 1,19:1 on
+   --panel in dark mode, which is black on black, and he reported it as invisible.
+
+   ⚠️ AND A BORDER, NOT AN INSET box-shadow. The ring WAS a shadow and the integration audit
+   caught it: Lite Mode strips box-shadow, so every unvisited position would have gone invisible
+   again - the same fault he photographed, arriving by a different door. The ring IS the control
+   here, so it may not be a shadow. */
+.kpm-dot {
+  width: 6px; height: 6px; border-radius: 50%; background: transparent;
+  border: 1px solid var(--ink-dim); box-sizing: border-box;
+  transition: background 160ms linear, border-color 160ms linear, transform 160ms cubic-bezier(.2,.9,.2,1);
+}
+.kpm-dot.has { border-color: var(--accent-edge); }
+.kpm-dot.now { background: var(--accent-edge); border-color: var(--accent-edge); transform: scale(1.5); }
+
+@media (prefers-reduced-motion: reduce) {
+  .kpm-dmg-reel, .kpm-dmg-panel, .kpm-dot { transition: none; }
+}

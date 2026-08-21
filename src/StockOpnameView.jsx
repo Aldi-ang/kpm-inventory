@@ -12,6 +12,47 @@ import { confirmAction, promptAction } from './components/ConfirmGate.jsx';
 import { notify } from './components/Toast.jsx';
 import { canSeeExpectedCount } from './config/permissions';
 
+/* THE KINDS OF DAMAGE — Aldi, 2026-08-21: "our sales terminal give solid few options then we
+   should able to add another one in the stock opname".
+
+   ⚠️ THESE ARE THE SALES TERMINAL'S OWN STRINGS, COPIED EXACTLY from MerchantSalesView.jsx's
+   returnReason <select>. The long `value` is what Firestore keeps; the short `label` is only
+   what the chip prints. Store "Pest Damage" instead of "Pest / Rodent Damage" and every report
+   that groups by reason — AgentInventoryView.jsx:163 and EODReconciliationView.jsx:254 both do —
+   splits one reason into two buckets forever. A self-check pins these two lists together. */
+export const DAMAGE_REASONS = [
+    { value: 'Expired / Out of Date',    label: 'Expired' },
+    { value: 'Water / Weather Damage',   label: 'Water damage' },
+    { value: 'Torn / Crushed Packaging', label: 'Torn / crushed' },
+    { value: 'Pest / Rodent Damage',     label: 'Pest damage' },
+    { value: 'Factory Defect',           label: 'Factory defect' },
+    { value: 'Other',                    label: 'Other' }
+];
+
+/* How many damaged units have been given a cause. */
+export const damageSorted = (entry) =>
+    Object.values((entry && entry.kinds) || {}).reduce((sum, n) => sum + Number(n || 0), 0);
+
+/* THE RECONCILE RULE. Returns null when the row may be submitted, or the reason it may not.
+   A warehouse row holds several kinds of damage at once, so the total is the truth and the kinds
+   under it must add up to exactly that. Damage that enters with no cause is the hole this whole
+   control exists to close — the same guard the terminal already applies at
+   MerchantSalesView.jsx:1548. */
+export const damageBlocked = (entry) => {
+    const total = Number((entry && entry.damaged) || 0);
+    if (total <= 0) return null;
+    const sorted = damageSorted(entry);
+    if (sorted !== total) {
+        return sorted < total ? `${total - sorted} damaged not sorted yet`
+                              : 'kinds add up to more than the total';
+    }
+    if (Number(((entry && entry.kinds) || {})['Other'] || 0) > 0
+        && !String((entry && entry.otherDetail) || '').trim()) {
+        return '"Other" needs the detail typed';
+    }
+    return null;
+};
+
 const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId, user, isAdmin, logAudit, triggerCapy, motorists = [], appSettings }) => {
     
     const safeInventory = inventory || [];
@@ -171,6 +212,47 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
         });
     };
 
+    /* --- the damage reel: which kind is showing, and whether the panel is open ---
+       UI state only, kept out of `counts` so clearing a row's numbers cannot strand it. */
+    const [dmgPos, setDmgPos] = useState({});
+    const [dmgOpen, setDmgOpen] = useState({});
+    const [dmgSnap, setDmgSnap] = useState({});
+
+    const toggleDamagePanel = (id) => setDmgOpen(prev => ({ ...prev, [id]: !prev[id] }));
+
+    /* One step through the kinds. Forward normally; on the last one it wraps to the first and
+       `is-snap` gives that single long move the faster curve, which is the flick he asked for. */
+    const stepDamageKind = (id, dir) => {
+        const n = DAMAGE_REASONS.length;
+        const current = dmgPos[id] || 0;
+        const wraps = (dir > 0 && current === n - 1) || (dir < 0 && current === 0);
+        setDmgPos(prev => ({ ...prev, [id]: (current + dir + n) % n }));
+        if (!wraps) return;
+        setDmgSnap(prev => ({ ...prev, [id]: true }));
+        setTimeout(() => setDmgSnap(prev => { const next = { ...prev }; delete next[id]; return next; }), 240);
+    };
+
+    const setDamageKindQty = (id, reason, value) => {
+        setCounts(prev => {
+            const next = { ...prev };
+            if (!next[id]) next[id] = { good: '', damaged: '', photo: null };
+            const kinds = { ...(next[id].kinds || {}) };
+            const qty = Math.max(0, parseInt(value) || 0);
+            if (qty === 0) delete kinds[reason]; else kinds[reason] = qty;
+            next[id] = { ...next[id], kinds };
+            return next;
+        });
+    };
+
+    const setDamageOtherDetail = (id, value) => {
+        setCounts(prev => {
+            const next = { ...prev };
+            if (!next[id]) next[id] = { good: '', damaged: '', photo: null };
+            next[id] = { ...next[id], otherDetail: value };
+            return next;
+        });
+    };
+
     const handlePhotoUpload = async (id, file) => {
         if (!file) return;
         try {
@@ -208,6 +290,18 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
     const handleCommit = async () => {
         const countedItems = activeInventory.filter(i => i && i.id && counts[i.id] !== undefined);
         if (countedItems.length === 0) return notify("No items counted! Please enter at least one physical count.");
+
+        /* DAMAGE WITHOUT A CAUSE NEVER LEAVES THIS SCREEN. Checked before the confirm, so he is
+           never asked to approve a count that cannot be saved. The reason decides who pays —
+           an RTV charges nobody, a PENALTY charges the agent at retail (see executeResolution) —
+           so a blank cause is a money bug, not a tidiness one. */
+        const unaccounted = countedItems
+            .map(i => ({ name: i.name || i.id, why: damageBlocked(counts[i.id]) }))
+            .filter(r => r.why);
+        if (unaccounted.length) {
+            return notify(`Damage not accounted for:\n\n${unaccounted.map(r => `${r.name} — ${r.why}`).join('\n')}`);
+        }
+
         if (!await confirmAction(`Submit Stock Opname for ${countedItems.length} items to HQ for verification?`)) return;
 
         setIsSubmitting(true);
@@ -238,6 +332,12 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                         damagedCount: damaged,
                         totalFound: totalFound,
                         variance: totalFound - ((item.stock || 0) + (item.damagedStock || 0)),
+                        /* what KIND of damage, and how much of each. Written with the sales
+                           terminal's own strings so the two screens group into one bucket. */
+                        damageKinds: Object.entries(entry.kinds || {})
+                            .map(([reason, qty]) => ({ reason, qty: Number(qty || 0) }))
+                            .filter(k => k.qty > 0),
+                        damageOtherDetail: String(entry.otherDetail || '').trim() || null,
                         damagedPhotoUrl: entry.photo || null
                     };
                 })
@@ -1105,26 +1205,36 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                                         </div>
 
                                         {isRevealed && (
-                                            <div className="pl-4 pr-3 pb-3 md:pb-4 pt-0 flex flex-col md:flex-row justify-between items-stretch md:items-center gap-3">
-                                                {/* Three figures, equal weight, one line. Grouped digits: a four-figure
-                                                    count is unreadable without them, and these are the numbers he
-                                                    signs off on. */}
-                                                <div className="grid grid-cols-3 gap-px bg-[var(--line)] rounded-lg overflow-hidden text-center w-full md:w-auto md:inline-grid">
-                                                    <div className="bg-[var(--sunk)] px-3 py-2 md:px-4">
-                                                        <div className="text-[9px] text-[var(--ink-dim)] font-bold uppercase tracking-widest">Expected</div>
+                                            <div className="pl-4 pr-3 pb-3 md:pb-4 pt-0 flex flex-col gap-3">
+                                              <div className="flex flex-col md:flex-row justify-between items-stretch md:items-center gap-3">
+                                                {/* FOUR figures, not three, and every label written out in full.
+                                                    "SYS EXPECTED" printed healthy stock only while "FOUND" counted good +
+                                                    damaged, so 100 healthy + 5 damaged counted perfectly read
+                                                    "EXPECTED 100 -> FOUND 105 -> MATCH 0" and looked like five extra
+                                                    boxes. The expected damage now has a plate of its own, so both halves
+                                                    of the comparison measure the same thing.
+                                                    ⚠️ THE VERDICT IS AN EDGE, NOT A GOLD SLAB. Aldi, 2026-08-21: "stop
+                                                    using amber background i said, i hate it, use it for little things". */}
+                                                <div className="grid grid-cols-2 md:grid-cols-4 gap-px bg-[var(--line)] rounded-lg overflow-hidden text-center w-full md:w-auto md:inline-grid">
+                                                    <div className="bg-[var(--sunk)] px-3 py-2 md:px-4 border border-transparent">
+                                                        <div className="text-[9px] text-[var(--ink-dim)] font-bold uppercase tracking-widest whitespace-nowrap">Expected good</div>
                                                         <div className="text-sm font-black font-mono tabular-nums text-[var(--ink)]">{formatNumber(item.stock || 0)}</div>
                                                     </div>
-                                                    <div className="bg-[var(--sunk)] px-3 py-2 md:px-4">
-                                                        <div className="text-[9px] text-[var(--ink-dim)] font-bold uppercase tracking-widest">Found</div>
+                                                    <div className="bg-[var(--sunk)] px-3 py-2 md:px-4 border border-transparent">
+                                                        <div className="text-[9px] text-[var(--danger-ink)] font-bold uppercase tracking-widest whitespace-nowrap">Expected damaged</div>
+                                                        <div className="text-sm font-black font-mono tabular-nums text-[var(--danger-ink)]">{formatNumber(item.damagedStock || 0)}</div>
+                                                    </div>
+                                                    <div className="bg-[var(--sunk)] px-3 py-2 md:px-4 border border-transparent">
+                                                        <div className="text-[9px] text-[var(--ink-dim)] font-bold uppercase tracking-widest whitespace-nowrap">Total found</div>
                                                         <div className="text-sm font-black font-mono tabular-nums text-[var(--ink)]">{formatNumber(totalFound)}</div>
                                                     </div>
-                                                    {/* INK ON A PLATE, NOT INK ON A PANEL. --accent-ink means "gold as text",
-                                                        and in dark mode it is the SAME hex as --gold (#D08A2E) - so this block
-                                                        was gold on gold, invisible, exactly as he photographed it. --gold-ink
-                                                        and --duke-on-fill are the tokens meant to sit ON a filled plate. */}
-                                                    <div className={`px-3 py-2 md:px-4 ${variance === 0 ? 'bg-[var(--gold)]' : 'bg-[var(--danger)]'} `}>
-                                                        <div className={`text-[9px] font-bold uppercase tracking-widest ${variance === 0 ? 'text-[var(--gold-ink)]' : 'text-[var(--duke-on-fill)]'} `}>{variance === 0 ? 'Match' : 'Difference'}</div>
-                                                        <div className={`text-sm font-black font-mono tabular-nums ${variance === 0 ? 'text-[var(--gold-ink)]' : 'text-[var(--duke-on-fill)]'} `}>{variance > 0 ? '+' : ''}{formatNumber(variance)}</div>
+                                                    {/* A BORDER, NOT A RING. Tailwind's `ring` is a box-shadow, and Lite Mode
+                                                        strips box-shadow — the verdict would have lost its only edge on a
+                                                        cheap phone. Every plate carries a transparent border so the coloured
+                                                        one costs no shift. */}
+                                                    <div className={`bg-[var(--sunk)] px-3 py-2 md:px-4 border ${variance === 0 ? 'border-[var(--accent-edge)]' : 'border-[var(--danger)]'} `}>
+                                                        <div className={`text-[9px] font-bold uppercase tracking-widest ${variance === 0 ? 'text-[var(--accent-ink)]' : 'text-[var(--danger-ink)]'} `}>{variance === 0 ? 'Match' : 'Difference'}</div>
+                                                        <div className={`text-sm font-black font-mono tabular-nums ${variance === 0 ? 'text-[var(--accent-ink)]' : 'text-[var(--danger-ink)]'} `}>{variance > 0 ? '+' : ''}{formatNumber(variance)}</div>
                                                     </div>
                                                 </div>
 
@@ -1137,6 +1247,88 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                                                         )}
                                                     </div>
                                                 )}
+                                              </div>
+
+                                                {/* ---- WHAT KIND OF DAMAGE ----
+                                                    One line until pressed, because a wall-to-wall count is forty rows and
+                                                    an open panel on each is unusable. Closed, the line still carries the
+                                                    number, the progress and the red state, so nothing is hidden that has
+                                                    a problem in it. */}
+                                                {Number(damagedVal) > 0 && (() => {
+                                                    const dmgTotal = Number(damagedVal || 0);
+                                                    const kinds = entry?.kinds || {};
+                                                    const sorted = damageSorted(entry);
+                                                    const blocked = damageBlocked(entry);
+                                                    const pos = dmgPos[item.id] || 0;
+                                                    const isOpen = !!dmgOpen[item.id];
+                                                    const kindCount = Object.keys(kinds).length;
+                                                    return (
+                                                        <div>
+                                                            <button type="button" onClick={() => toggleDamagePanel(item.id)}
+                                                                aria-expanded={isOpen}
+                                                                className={`w-full min-h-[44px] flex items-center gap-3 px-3.5 py-2.5 rounded-lg bg-[var(--sunk)] border text-left transition-colors ${blocked ? 'border-[var(--danger)] text-[var(--danger-ink)]' : 'border-[var(--accent-edge)] text-[var(--accent-ink)]'} `}>
+                                                                <span className="text-[11px] font-black uppercase tracking-widest whitespace-nowrap">{formatNumber(dmgTotal)} Damaged</span>
+                                                                <span className="flex-1 min-w-0 truncate text-[11px] font-bold font-mono tabular-nums text-[var(--ink-dim)]">
+                                                                    {blocked ? `${sorted} of ${dmgTotal} sorted` : `${kindCount} kind${kindCount === 1 ? '' : 's'} recorded`}
+                                                                </span>
+                                                                <span className="text-[10px] shrink-0" aria-hidden="true">{isOpen ? '▴' : '▾'}</span>
+                                                            </button>
+
+                                                            <div className={`kpm-dmg-panel ${isOpen ? 'is-open' : ''} `}>
+                                                              <div className="kpm-dmg-inner">
+                                                                <div className="pt-2.5 flex flex-col gap-2.5">
+                                                                    {/* the ONE amber fill left on this control, and its LENGTH is the data */}
+                                                                    <div className="h-[3px] rounded-sm bg-[var(--sunk)] overflow-hidden">
+                                                                        <span className={`block h-full ${blocked ? 'bg-[var(--danger)]' : 'bg-[var(--gold)]'} `}
+                                                                              style={{ width: `${dmgTotal ? Math.min(100, (sorted / dmgTotal) * 100) : 0}%` }}></span>
+                                                                    </div>
+
+                                                                    <div className="flex gap-2 items-stretch">
+                                                                        <div className={`kpm-dmg-win ${dmgSnap[item.id] ? 'is-snap' : ''} flex-1 min-w-0 rounded-lg bg-[var(--sunk)] border border-[var(--accent-edge)]`}>
+                                                                            {/* built in REVERSE so a press lowers --i and the strip travels DOWN */}
+                                                                            <div className="kpm-dmg-reel" style={{ '--i': DAMAGE_REASONS.length - 1 - pos }}>
+                                                                                {DAMAGE_REASONS.slice().reverse().map(r => (
+                                                                                    <div key={r.value} className="kpm-dmg-face">
+                                                                                        <button type="button" onClick={() => stepDamageKind(item.id, 1)}
+                                                                                            className={`flex-1 min-w-0 text-left truncate text-[11px] font-black uppercase tracking-wider ${r.value === 'Other' ? 'text-[var(--alt-ink)]' : 'text-[var(--accent-ink)]'} `}>
+                                                                                            {r.label}
+                                                                                        </button>
+                                                                                        {r.value === 'Other' && (
+                                                                                            <input type="text" value={entry?.otherDetail || ''} placeholder="Say what happened"
+                                                                                                onChange={(e) => setDamageOtherDetail(item.id, e.target.value)}
+                                                                                                className="flex-1 min-w-0 text-[11px] px-2 py-1.5 rounded bg-[var(--raised)] text-[var(--ink)] border border-[var(--alt-edge)] outline-none placeholder:text-[var(--ink-dim)]"/>
+                                                                                        )}
+                                                                                        <input type="number" min="0" inputMode="numeric" placeholder="0"
+                                                                                            value={kinds[r.value] ?? ''}
+                                                                                            aria-label={`How many ${r.label}`}
+                                                                                            onChange={(e) => setDamageKindQty(item.id, r.value, e.target.value)}
+                                                                                            className="w-[60px] shrink-0 text-center px-1 py-1.5 rounded bg-[var(--raised)] text-[var(--accent-ink)] border border-[var(--line)] focus:border-[var(--accent-edge)] outline-none font-mono tabular-nums font-black text-[15px]"/>
+                                                                                    </div>
+                                                                                ))}
+                                                                            </div>
+                                                                        </div>
+                                                                        <div className="flex flex-col gap-1 shrink-0">
+                                                                            <button type="button" aria-label="Previous kind of damage" onClick={() => stepDamageKind(item.id, -1)}
+                                                                                className="w-9 flex-1 rounded-md border border-[var(--line)] text-[var(--ink-dim)] text-[10px] hover:text-[var(--accent-ink)] hover:border-[var(--accent-edge)] transition-colors">{'▲'}</button>
+                                                                            <button type="button" aria-label="Next kind of damage" onClick={() => stepDamageKind(item.id, 1)}
+                                                                                className="w-9 flex-1 rounded-md border border-[var(--line)] text-[var(--ink-dim)] text-[10px] hover:text-[var(--accent-ink)] hover:border-[var(--accent-edge)] transition-colors">{'▼'}</button>
+                                                                        </div>
+                                                                    </div>
+
+                                                                    <div className="flex items-center justify-center gap-2.5">
+                                                                        <div className="flex gap-1.5 items-center">
+                                                                            {DAMAGE_REASONS.map((r, i) => (
+                                                                                <span key={r.value} className={`kpm-dot ${Number(kinds[r.value] || 0) > 0 ? 'has' : ''} ${i === pos ? 'now' : ''} `}></span>
+                                                                            ))}
+                                                                        </div>
+                                                                        <span className="text-[9px] font-black tracking-widest text-[var(--ink-dim)] font-mono tabular-nums">{pos + 1} / {DAMAGE_REASONS.length}</span>
+                                                                    </div>
+                                                                </div>
+                                                              </div>
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })()}
                                             </div>
                                         )}
                                     </div>

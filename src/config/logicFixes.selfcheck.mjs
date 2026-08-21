@@ -1758,15 +1758,78 @@ section('S35. The counting card is readable in both themes and cannot overlap it
      (card.match(/tabular-nums/g) || []).length >= 4);
   ok('the counts are grouped - a four figure number is unreadable raw',
      /formatNumber\(totalFound\)/.test(card));
+  /* ⚠️ REWRITTEN 2026-08-21, and the RULE did not change - only the form it takes. Aldi:
+     "stop using amber background i said, i hate it, use it for little things and u can do
+     better animation or UI for the damaged item not just all amber". The verdict was a solid
+     gold slab; it is now a dark plate with a coloured edge and coloured ink. A match still
+     reads gold and a mismatch still reads red, and green is still banned. */
   ok('a match reads gold and a mismatch red - never green, which the palette law bans',
-     /bg-\[var\(--gold\)\]/.test(card) && /bg-\[var\(--danger\)\]/.test(card));
+     /border-\[var\(--accent-edge\)\]/.test(card) && /border-\[var\(--danger\)\]/.test(card)
+     && /text-\[var\(--accent-ink\)\]/.test(card) && /text-\[var\(--danger-ink\)\]/.test(card));
   /* Comments are stripped first: the card now documents WHY --accent-ink was wrong by naming
      the hex it collides with, and a naive scan reads that as paint. Only markup is judged. */
   const painted = card.replace(/\{\/\*[\s\S]*?\*\/\}/g, '');
   ok('nothing in the card is painted a fixed colour that ignores the theme',
      !/emerald|bg-black\/|#[0-9a-fA-F]{3,6}/.test(painted));
-  ok('and ink on a filled plate uses the on-plate tokens, never the as-text ones',
-     /text-\[var\(--gold-ink\)\]/.test(painted) && !/bg-\[var\(--gold\)\][^>]*--accent-ink/.test(painted));
+  /* The old form of this check asserted --gold-ink was present, because the verdict was a filled
+     plate and ink on a plate needs the on-plate token. There is no filled plate in this card any
+     more, so the check now pins the thing that actually matters: no gold slab, and never the
+     as-text gold sitting on one. */
+  ok('the verdict is an edge and an ink, never a gold slab',
+     !/bg-\[var\(--gold\)\]/.test(painted) && !/bg-\[var\(--gold\)\][^>]*--accent-ink/.test(painted));
+
+  /* ---- WHAT KIND OF DAMAGE (2026-08-21) ----
+     He asked for the kinds of damage to be recorded at count time, and for the stock opname to
+     use the options the sales terminal already has. The money reason: the kind decides who pays.
+     An RTV charges nobody; a PENALTY charges the agent at retail. */
+
+  /* REGRESSION GUARD, and the highest-value line here. The two screens must store the SAME
+     strings or every report that groups by reason silently splits one cause into two buckets.
+     AgentInventoryView.jsx:163 and EODReconciliationView.jsx:254 both group on this field. */
+  const terminalReasons = [...merchant.matchAll(/<option value="([^"]+)">/g)]
+      .map(m => m[1])
+      .filter(v => /Expired|Water|Torn|Pest|Factory|^Other$/.test(v));
+  const opnameReasons = [...opname.matchAll(/value:\s*'([^']+)',\s*label:/g)].map(m => m[1]);
+  ok('the stock count stores the sales terminal\'s own damage strings, not its short labels',
+     terminalReasons.length === 6 && opnameReasons.length === 6
+     && terminalReasons.every(r => opnameReasons.includes(r)),
+     `terminal [${terminalReasons}] vs opname [${opnameReasons}]`);
+
+  /* BEHAVIOUR CHECK — the reconcile rule re-run on real numbers, using the exact source of
+     damageBlocked lifted out of the component, so this tests the shipped maths and not a copy. */
+  const bStart = opname.indexOf('export const damageBlocked');
+  const bOpen  = opname.indexOf('{', bStart);
+  const bEnd   = opname.indexOf('\n};', bOpen);
+  /* ⚠️ a missed anchor here returns -1 and slice() would hand back most of the file, so the
+     offsets are asserted before the body is ever run. Files here are CRLF. */
+  ok('the reconcile rule could be lifted out of the component to be tested',
+     bStart > -1 && bOpen > bStart && bEnd > bOpen);
+  const damageBlocked = new Function('entry', `
+     const damageSorted = (e) => Object.values((e && e.kinds) || {}).reduce((s, n) => s + Number(n || 0), 0);
+${opname.slice(bOpen + 1, bEnd)}
+  `);
+  ok('no damage means nothing to sort',            damageBlocked({ damaged: 0 }) === null);
+  ok('5 damaged and none sorted is refused',       /5 damaged not sorted/.test(damageBlocked({ damaged: 5, kinds: {} })));
+  ok('5 damaged sorted 2 + 1 is still refused',    /2 damaged not sorted/.test(damageBlocked({ damaged: 5, kinds: { 'Pest / Rodent Damage': 2, 'Water / Weather Damage': 1 } })));
+  ok('kinds adding up past the total is refused',  /more than the total/.test(damageBlocked({ damaged: 5, kinds: { 'Pest / Rodent Damage': 6 } })));
+  ok('3 pest + 2 water against 5 damaged passes',  damageBlocked({ damaged: 5, kinds: { 'Pest / Rodent Damage': 3, 'Water / Weather Damage': 2 } }) === null);
+  ok('"Other" with no detail typed is refused',    /Other/.test(String(damageBlocked({ damaged: 2, kinds: { Other: 2 }, otherDetail: '  ' }))));
+  ok('"Other" with the detail typed passes',       damageBlocked({ damaged: 2, kinds: { Other: 2 }, otherDetail: 'gudang bocor' }) === null);
+
+  /* REGRESSION GUARD — the refusal must land BEFORE the confirm dialog, or he is asked to
+     approve a count the app then throws away. */
+  ok('unaccounted damage is refused before he is asked to confirm',
+     opname.indexOf('const unaccounted') < opname.indexOf('Submit Stock Opname for'));
+  ok('and the kinds are actually written into the saved record',
+     /damageKinds:\s*Object\.entries/.test(opname) && /damageOtherDetail:/.test(opname));
+
+  /* The reel is the whole control - if its motion were a shadow or a filter, Lite Mode would
+     erase it. It is a transform, and the level dots are borders, not inset shadows. */
+  const reelCss = read('src/styles/theme.css');
+  ok('the damage reel moves by transform, and its dots are borders not shadows',
+     /\.kpm-dmg-reel \{[\s\S]{0,160}transform: translateY/.test(reelCss)
+     && /\.kpm-dot \{[\s\S]{0,200}border: 1px solid/.test(reelCss)
+     && !/\.kpm-dot \{[\s\S]{0,200}box-shadow/.test(reelCss));
   ok('and it is told apart at a glance by a rail, not by colour alone',
      /aria-hidden="true"/.test(card)); }
 
