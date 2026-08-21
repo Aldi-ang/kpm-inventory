@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-20 17:22 WIB (KPM app session)** · ✅ HANDOFF WRITTEN, SAFE TO /clear · ❓ 4 STOCK OPNAME FINDINGS UNRANKED · branch `phase0-solid-ground`
+**Updated: 2026-08-21 10:05 WIB (🟠 KPM app session)** · ✅ STOCK OPNAME FINDINGS 1 AND 2 SHIPPED · ❓ FINDING 3 PROPOSED FOR SKIP, 4 NOT STARTED · branch `phase0-solid-ground`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -13,7 +13,39 @@
 > archive rather than letting it grow back. This file holds WHERE THE WORK STANDS; the archive
 > and `A-Brain/Wiki/Log.md` hold how it got there.
 
+## 🟠 2026-08-21 — STOCK OPNAME: FINDINGS 1 AND 2 ARE SHIPPED
+
+Build `ac5e7b7` (finding 1 + the damage ledger) and the commit after it (finding 2).
+**Tree green: integration.audit 599/599, logicFixes.selfcheck 519/519.**
+
+- **Finding 1 DONE.** Expected damage has its own plate, every label written out in full
+  (`EXPECTED GOOD` / `EXPECTED DAMAGED` / `TOTAL FOUND` / `MATCH`). Both halves of the comparison
+  now measure the same thing. The same fault was fixed on HQ's review list.
+- **Damage now carries a cause.** One box holding all six of the sales terminal's kinds, each
+  with its own quantity; the kinds must sum to the damaged total or the submit refuses and names
+  the product. Stored with the terminal's own long strings — a self-check pins the two lists
+  together and was **proven to fail** when one string was drifted on purpose.
+- **Finding 2 DONE.** The expected pair is frozen on the first keystroke for a row, so a sale
+  landing mid-count can no longer move the target. An old check *claimed* this was already true
+  and was pinning the wrong line — see the commit.
+- **Finding 3 (legacy audits overwrite instead of adjusting):** I recommend **skipping** it.
+  Only records saved before the snapshot existed take that path. He has not answered.
+- **Finding 4 (the system redesign):** not started. Ranked plan is in `NEXT-SESSION.md`.
+
+Prototype he approved, still live: https://claude.ai/code/artifact/b18e8164-348c-4635-87fa-dbfe7350c615
+
+⚠️ **NOT SEEN IN THE REAL APP YET.** Everything above is verified by the audits and by the
+prototype; the count screen itself needs login + data, and the Browser pane would not composite a
+frame this session. **His eyes are the outstanding check.**
+
 ## ⏳ WAITING ON ALDI — verbatim, do not paraphrase
+
+❓ **OPEN, 2026-08-21:** finding 3 — skip it, or fix it? And does he want permanent custom damage
+kinds, or is the `Other` slot with free text enough? He said *"we should able to add another one
+in the stock opname"* and `Other` is how that was built.
+
+✅ **ANSWERED 2026-08-21.** *"looks fine i guess, u can integrate first, then continue do your job
+list that u made for u last time"* — the reveal row and the damage reel are approved as built.
 
 ✅ **ANSWERED 14:46.** He picked the order himself: *"dont forget comparison healthy and found
 side by side is higher tier only on default, which is tier 3 and above only, toggle button should
