@@ -32,6 +32,53 @@ export const DAMAGE_REASONS = [
        reporting hole anyway: it cannot be grouped, counted, or acted on. */
 ];
 
+/* RECOUNT — a difference is counted TWICE before HQ ever sees it.
+
+   Why it exists, in money terms: HQ approving a count applies increment(counted - expected), so a
+   miscount is written into real stock — and that wrong figure becomes the EXPECTED figure for the
+   next count. One typo poisons two months. Most differences in a real warehouse are miscounts, not
+   theft, so the cheapest correct thing is to count again before anyone acts.
+
+   ⚠️ THE PREVIOUS NUMBERS ARE NEVER SHOWN BACK TO HIM. If he sees 98 he will simply retype 98 and
+   the second count proves nothing. `startRecount` clears the boxes and keeps the attempt in
+   `passes`, where only the submit path reads it.
+
+   ⚠️ AND THE SNAPSHOT IS NOT REFRESHED. `expStock` / `expDamaged` were frozen on the first
+   keystroke precisely so a mid-count sale cannot move the target; re-taking them on a recount
+   would silently re-open that bug and still look like it worked.
+
+   Aldi chose the three-way rule himself, 2026-08-21 — option B: when three counts all disagree,
+   ALL THREE go to HQ rather than the app picking the last one. Three different numbers mean
+   something other than counting is wrong, and that is a judgement, not an arithmetic problem. */
+export const samePass = (a, b) =>
+    Number((a && a.good) || 0) === Number((b && b.good) || 0) &&
+    Number((a && a.damaged) || 0) === Number((b && b.damaged) || 0);
+
+export const recountState = (entry, target) => {
+    const passes = (entry && entry.passes) || [];
+    const good = Number((entry && entry.good) || 0);
+    const damaged = Number((entry && entry.damaged) || 0);
+    const current = { good, damaged };
+    const variance = (good + damaged) - (Number(target.stock || 0) + Number(target.damaged || 0));
+
+    /* A count that matches the system needs nothing, no matter how it got here. */
+    if (variance === 0) return { needsRecount: false, confirmed: false, disagreement: false, passes: passes.length };
+
+    if (passes.length === 0) return { needsRecount: true, confirmed: false, disagreement: false, passes: 0 };
+
+    if (passes.length === 1) {
+        /* Counted the same twice: the shortage is real, and HQ should be told it was checked. */
+        if (samePass(current, passes[0])) return { needsRecount: false, confirmed: true, disagreement: false, passes: 1 };
+        return { needsRecount: true, confirmed: false, disagreement: false, passes: 1 };
+    }
+
+    /* Third attempt done. If any two agree we treat it as confirmed; if all three differ it is
+       his option B — everything goes to HQ, flagged, and the app decides nothing. */
+    const all = [...passes, current];
+    const agrees = all.some((p, i) => all.some((q, j) => i !== j && samePass(p, q)));
+    return { needsRecount: false, confirmed: agrees, disagreement: !agrees, passes: passes.length };
+};
+
 /* LEAK DETECTION — Aldi, 2026-08-21: "u can add leak detection for this trigger for everytime
    stock opname is done, which is each week actually".
 
@@ -249,7 +296,12 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                 };
             }
             newCounts[id][type] = value === '' ? '' : Math.max(0, parseInt(value) || 0);
-            if (newCounts[id].good === '' && newCounts[id].damaged === '') delete newCounts[id];
+            /* ⚠️ A ROW THAT HAS ALREADY BEEN COUNTED ONCE IS NEVER DELETED BY EMPTYING IT.
+               Dropping it would drop `passes` with it, and he could then clear the boxes, retype
+               the same wrong number and submit without ever recounting — the exact check this
+               feature exists to enforce, removed by pressing backspace twice. */
+            const startedOver = (newCounts[id].passes || []).length === 0;
+            if (startedOver && newCounts[id].good === '' && newCounts[id].damaged === '') delete newCounts[id];
             return newCounts;
         });
     };
@@ -261,6 +313,20 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
     const [dmgSnap, setDmgSnap] = useState({});
 
     const toggleDamagePanel = (id) => setDmgOpen(prev => ({ ...prev, [id]: !prev[id] }));
+
+    /* Bank the attempt and blank the boxes. Everything about the row's TARGET is kept —
+       `expStock` / `expDamaged` must survive, or the recount re-opens the moving-target bug —
+       and so are the damage kinds, because re-sorting damage he already classified is busywork.
+       What is deliberately NOT kept is anything that would show him what he typed last time. */
+    const startRecount = (id) => {
+        setCounts(prev => {
+            const entry = prev[id];
+            if (!entry) return prev;
+            const passes = [...(entry.passes || []), { good: Number(entry.good || 0), damaged: Number(entry.damaged || 0) }];
+            return { ...prev, [id]: { ...entry, good: '', damaged: '', passes } };
+        });
+        setDmgOpen(prev => ({ ...prev, [id]: false }));
+    };
 
     /* One step through the kinds. Forward normally; on the last one it wraps to the first and
        `is-snap` gives that single long move the faster curve, which is the flick he asked for. */
@@ -345,6 +411,16 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
             return notify(`Damage not accounted for:\n\n${unaccounted.map(r => `${r.name} — ${r.why}`).join('\n')}`);
         }
 
+        /* A DIFFERENCE MAY NOT LEAVE THIS SCREEN UNTIL IT HAS BEEN COUNTED TWICE.
+           Named, but never with the figures: tiers below 3 count blind, and "you are 5 short"
+           would hand them the answer this whole screen is built to withhold. */
+        const needRecount = countedItems
+            .filter(i => recountState(counts[i.id], expectedOf(i, counts[i.id])).needsRecount)
+            .map(i => i.name || i.id);
+        if (needRecount.length) {
+            return notify(`Count these again before submitting:\n\n${needRecount.join('\n')}`);
+        }
+
         if (!await confirmAction(`Submit Stock Opname for ${countedItems.length} items to HQ for verification?`)) return;
 
         setIsSubmitting(true);
@@ -378,6 +454,19 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                         damagedCount: damaged,
                         totalFound: totalFound,
                         variance: totalFound - ((item.stock || 0) + (item.damagedStock || 0)),
+                        /* HOW MANY TIMES THIS ROW WAS COUNTED, and every number he reached.
+                           `countedTwice` is what tells HQ this difference survived a second look
+                           rather than being a first guess. `threeWayDisagreement` is his option B:
+                           three different answers go to HQ intact and the app picks none of them. */
+                        countPasses: [...((entry.passes) || []), { good, damaged }],
+                        countedTwice: !!recountState(entry, {
+                            stock: Number(entry.expStock ?? item.stock ?? 0),
+                            damaged: Number(entry.expDamaged ?? item.damagedStock ?? 0)
+                        }).confirmed,
+                        threeWayDisagreement: !!recountState(entry, {
+                            stock: Number(entry.expStock ?? item.stock ?? 0),
+                            damaged: Number(entry.expDamaged ?? item.damagedStock ?? 0)
+                        }).disagreement,
                         /* what KIND of damage, and how much of each. Written with the sales
                            terminal's own strings so the two screens group into one bucket. */
                         damageKinds: Object.entries(entry.kinds || {})
@@ -1264,6 +1353,8 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                                 /* frozen when he started this row, so a sale landing mid-count
                                    cannot move the number he is counting against */
                                 const target = expectedOf(item, entry);
+                                const recount = hasTyped ? recountState(entry, target)
+                                                         : { needsRecount: false, confirmed: false, disagreement: false, passes: 0 };
                                 const hasTyped = goodVal !== '' || damagedVal !== '';
                                 const isRevealed = showExpectedWhileCounting || (hasEntry && hasTyped);
 
@@ -1339,6 +1430,33 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                                                     </div>
                                                 )}
                                               </div>
+
+                                                {/* ---- COUNT IT AGAIN ----
+                                                    ⚠️ NEVER NAMES THE DIFFERENCE. "You are 5 short" hands a blind
+                                                    tier the answer the screen exists to withhold, and it tells any
+                                                    tier exactly what to type to make the warning go away. */}
+                                                {recount.needsRecount && (
+                                                    <div className="flex flex-col sm:flex-row sm:items-center gap-2.5 p-3 rounded-lg bg-[var(--sunk)] border border-[var(--danger)]">
+                                                        <span className="flex-1 min-w-0 text-[11px] font-bold text-[var(--danger-ink)] leading-relaxed">
+                                                            <span className="font-black uppercase tracking-widest">Count this one again.</span>{' '}
+                                                            Most differences are miscounts. It is only reported once the same number comes up twice.
+                                                        </span>
+                                                        <button type="button" onClick={() => startRecount(item.id)}
+                                                            className="shrink-0 min-h-[40px] px-4 rounded-lg text-[10px] font-black uppercase tracking-widest bg-[var(--raised)] border border-[var(--danger)] text-[var(--danger-ink)] hover:border-[var(--danger-ink)] transition-colors">
+                                                            Clear and count again
+                                                        </button>
+                                                    </div>
+                                                )}
+                                                {recount.confirmed && (
+                                                    <div className="px-3 py-2 rounded-lg bg-[var(--sunk)] border border-[var(--accent-edge)] text-[10px] font-black uppercase tracking-widest text-[var(--accent-ink)]">
+                                                        Counted twice — same answer, this goes to HQ
+                                                    </div>
+                                                )}
+                                                {recount.disagreement && (
+                                                    <div className="px-3 py-2 rounded-lg bg-[var(--sunk)] border border-[var(--alt-edge)] text-[10px] font-black uppercase tracking-widest text-[var(--alt-ink)]">
+                                                        Three different counts — all three go to HQ
+                                                    </div>
+                                                )}
 
                                                 {/* ---- WHAT KIND OF DAMAGE ----
                                                     One line until pressed, because a wall-to-wall count is forty rows and

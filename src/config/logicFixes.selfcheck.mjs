@@ -1857,6 +1857,56 @@ ${opname.slice(bOpen + 1, bEnd)}
   ok('and HQ can see what kind of damage it is approving',
      /item\.damageKinds\.map/.test(opname));
 
+  /* ---- RECOUNT: A DIFFERENCE IS COUNTED TWICE BEFORE HQ SEES IT (2026-08-21) ----
+     HQ approving a count applies increment(counted - expected), so a miscount is written into real
+     stock and becomes the EXPECTED figure for the next count. One typo poisons two months.
+     ⚠️ Lifted from the source, never retyped — see the leak-detection note below for why. */
+  const rStart = opname.indexOf('export const recountState');
+  const rOpen  = opname.indexOf('{', opname.indexOf('=>', rStart));
+  const rEnd   = opname.indexOf('\n};', rOpen);
+  const sStart = opname.indexOf('export const samePass');
+  const sEnd   = opname.indexOf(';', opname.indexOf('=>', sStart));
+  ok('the recount rule could be lifted out of the component to be tested',
+     rStart > -1 && rOpen > rStart && rEnd > rOpen && sStart > -1 && sEnd > sStart);
+  const recountState = new Function('entry', 'target', `
+     const samePass = ${opname.slice(opname.indexOf('(', sStart), sEnd)};
+${opname.slice(rOpen + 1, rEnd)}
+  `);
+  const T = { stock: 100, damaged: 0 };
+  const r = (entry) => recountState(entry, T);
+
+  ok('a count that matches the system is never recounted',
+     r({ good: 100, damaged: 0 }).needsRecount === false);
+  ok('the FIRST difference always demands a second count',
+     r({ good: 98, damaged: 0 }).needsRecount === true);
+  ok('a second count that now matches the system ends it - nothing goes to HQ',
+     r({ good: 100, damaged: 0, passes: [{ good: 98, damaged: 0 }] }).needsRecount === false);
+  ok('the SAME wrong number twice is a real shortage, and marked as counted twice',
+     r({ good: 98, damaged: 0, passes: [{ good: 98, damaged: 0 }] }).confirmed === true);
+  ok('a DIFFERENT wrong number the second time demands a third',
+     r({ good: 97, damaged: 0, passes: [{ good: 98, damaged: 0 }] }).needsRecount === true);
+  ok('two of three agreeing is confirmed, not a disagreement',
+     r({ good: 98, damaged: 0, passes: [{ good: 98, damaged: 0 }, { good: 97, damaged: 0 }] }).confirmed === true);
+  /* HIS OPTION B, 2026-08-21: three different answers all go to HQ; the app picks none. */
+  ok('three different counts is a DISAGREEMENT and is never asked for a fourth',
+     r({ good: 96, damaged: 0, passes: [{ good: 98, damaged: 0 }, { good: 97, damaged: 0 }] }).disagreement === true
+     && r({ good: 96, damaged: 0, passes: [{ good: 98, damaged: 0 }, { good: 97, damaged: 0 }] }).needsRecount === false);
+  ok('damaged counts are compared too, not just the good ones',
+     r({ good: 100, damaged: 2, passes: [{ good: 100, damaged: 5 }] }).needsRecount === true);
+
+  /* REGRESSION GUARDS — the three ways a lazy version of this quietly stops working. */
+  ok('the recount NEVER re-takes the expected snapshot, which would re-open the moving target',
+     !/startRecount[\s\S]{0,600}expStock:/.test(opname));
+  ok('and it never shows him what he typed last time',
+     /good: '', damaged: '', passes/.test(opname));
+  ok('emptying a row that has already been counted does not delete it, passes and all',
+     /const startedOver = \(newCounts\[id\]\.passes \|\| \[\]\)\.length === 0/.test(opname));
+  ok('the block lands before the confirm dialog, and never names the difference',
+     opname.indexOf('const needRecount') < opname.indexOf('Submit Stock Opname for')
+     && /Count these again before submitting/.test(opname));
+  ok('every attempt is saved on the record, with the two flags HQ needs',
+     /countPasses:/.test(opname) && /countedTwice:/.test(opname) && /threeWayDisagreement:/.test(opname));
+
   /* ---- LEAK DETECTION (2026-08-21) ----
      "u can add leak detection for this trigger for everytime stock opname is done, which is each
      week actually". One short count is a miscount; the same product short week after week is a
