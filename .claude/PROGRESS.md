@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-21 16:44 WIB (🟠 KPM app session)** · ✅ VARIANCE CAUSE SHIPPED · 🔴 HE MUST NAME THE FIVE CAUSES — MINE ARE PLACEHOLDERS · ✅ TEST: NONE OF TODAY SEEN ON A REAL SCREEN · branch `phase0-solid-ground`
+**Updated: 2026-08-21 16:51 WIB (🟠 KPM app session)** · ✅ STOCK OPNAME IS FEATURE-COMPLETE · 🔴 HE MUST NAME THE FIVE CAUSES — MINE ARE PLACEHOLDERS · 🔴 HE ASKED CLAUDE TO TEST IT — SEE THE ANSWER BELOW · branch `phase0-solid-ground`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **TRIMMED 2026-08-21 ON ALDI'S WORD.** *"sure trim it"*, on his own condition:
@@ -21,6 +21,25 @@
 >
 > 📏 **KEEP THIS FILE UNDER ~350 LINES.** Past that, cut the oldest day into the same archive.
 > ⚠️ **TWO TRACKS SHARE THIS FILE** — 🟠 KPM and 🟢 Lancelot. Never trim or re-sort across them.
+
+## 🟠 2026-08-21 16:51 — TOLERANCE SHIPPED, AND IT FIXED A BUG FROM THIS MORNING. 599/599, 565/565.
+
+His answer to "what difference is not worth your time": *"few batang wont worth my time, few bks
+is still money bruv we need that"*. **The line is one pack.**
+
+🔴 **IT WAS NOT A COMFORT SETTING — THE RECOUNT HAD BROKEN BATANG PRODUCTS.** Selling in Batang
+stores `qty / sticksPerPack` (`App.jsx:3127`), so a product with loose sticks sold from it holds a
+**fraction** of a pack — 99.44. The count box is `parseInt`, whole Bks only, so the agent can type
+99 or 100 and **the variance can never reach zero**. Before the recount that was a wrong number on
+screen; after it, that product demanded a pointless second count and filed a **fake half-pack
+shortage every week**. The tolerance is what makes counting a batang product possible at all.
+
+The figure is still printed exactly as counted. Only the **verdict** treats a sub-pack difference
+as a match — his granularity, not a rounding.
+
+⚠️ **A blanket rename in this change put `item.matched` on HQ's review row** — a field that does
+not exist on a saved record, so every row would have painted red on `undefined`. Caught before
+commit, and now pinned by a check that strips comments first.
 
 ## 🟠 2026-08-21 16:44 — A CONFIRMED DIFFERENCE NOW SAYS WHY. 599/599 and 554/554.
 
@@ -145,7 +164,26 @@ Five entries is the working depth this file keeps.
 
 ## ⏳ WAITING ON ALDI — verbatim, do not paraphrase
 
-🔴 **ONE THING, AND ONLY HE CAN ANSWER IT — WHAT ARE THE FIVE CAUSES CALLED?**
+🔴 **HE ASKED CLAUDE TO TEST THE APP ITSELF, 2026-08-21 16:5x** — *"can u do testing yourself, u
+have your own web and hands to do that right i can give u the access for the app also"*.
+
+**Claude may NOT take his login.** Typing a password to authenticate is a prohibited action, and
+that does not change because he offers. It is not reluctance, it is a hard rule.
+
+**What CAN work, in order of least effort for him:**
+1. **He signs in himself in his own Chrome, then Claude drives that tab** with the
+   `claude-in-chrome` MCP — his session, his credentials, never seen by Claude. This is the
+   realistic one.
+2. **The Firebase emulator with seeded fake data** — no real account at all. Slower to set up, but
+   it is repeatable and can be re-run every session.
+3. He keeps doing it himself against
+   `A-Brain/Backlog/Test the new Stock Opname on a real screen.md`.
+
+**⚠️ Option 1 needs the Chrome extension connected**, and the browser pane in this session would
+not composite a frame at all — text tools worked, screenshots did not. **Check that a screenshot
+actually returns before promising him a visual pass.**
+
+🔴 **AND ONLY HE CAN ANSWER — WHAT ARE THE FIVE CAUSES CALLED?**
 Mine are placeholders: *miscount · unrecorded sale · breakage · theft · supplier short*. His law:
 **only Aldi names the categories in his own trade.** Change `VARIANCE_REASONS` at the top of
 `src/StockOpnameView.jsx` to his words **before agents count with it** — a saved record keeps the
