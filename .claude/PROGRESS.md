@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-21 10:00 WIB (🟠 KPM app session)** · ✅ STOCK OPNAME FINDINGS 1 AND 2 SHIPPED · ❓ FINDING 3 PROPOSED FOR SKIP, 4 NOT STARTED · branch `phase0-solid-ground`
+**Updated: 2026-08-21 10:07 WIB (🟠 KPM app session)** · ✅ FINDINGS 1+2 SHIPPED, 3 SKIPPED ON HIS WORD, `Other` ERASED · ❓ TRIM THIS FILE? · branch `phase0-solid-ground`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **ARCHIVED 2026-08-14 on Aldi's word.** This file had reached 3,489 lines and was read in
@@ -12,6 +12,25 @@
 > 📏 **KEEP THIS FILE UNDER ~350 LINES.** When it passes that, cut the oldest day into the same
 > archive rather than letting it grow back. This file holds WHERE THE WORK STANDS; the archive
 > and `A-Brain/Wiki/Log.md` hold how it got there.
+
+## 🟠 2026-08-21 10:07 — `Other` ERASED, FINDING 3 CLOSED, VAULT PAGE WRITTEN
+
+- **Finding 3 is CLOSED, not open.** He asked *"is 1 damaging?"*, I answered no — legacy audits
+  only, no live data loss — and he moved on. Do not re-raise it.
+- **`Other` is gone from the damage kinds.** His words: *"we dont need damaged kinds just erase
+  other button"*. Five named kinds, no free text. A typed cause cannot be grouped or counted.
+  The count screen's list is now deliberately a **subset** of the sales terminal's, and the
+  self-check asserts subset rather than equality.
+- **New vault page: `A-Brain/Wiki/Concepts/Where KPM Is Going.md`** — the theme, every locked
+  decision, and the direction, written because he asked for it: *"just take some notes on
+  important points that our app have, like the theme and all the decision that i made so u know
+  for sure where are we going on this project"*. Linked from Index, Concepts index and MOC.
+  **A cold session should read that page, not reconstruct his decisions from here.**
+- **Reply style changed on his instruction** — a few sentences, decisions only, no summary block
+  and no checks tally. Saved to CC memory as `feedback_kpm_reply_size_cap`.
+
+Tree green: **integration.audit 599/599, logicFixes.selfcheck 518/518** (one check retired with
+`Other`, one rewritten to subset).
 
 ## 🟠 2026-08-21 10:00 — STOCK OPNAME: FINDINGS 1 AND 2 ARE SHIPPED
 
@@ -40,9 +59,15 @@ frame this session. **His eyes are the outstanding check.**
 
 ## ⏳ WAITING ON ALDI — verbatim, do not paraphrase
 
-❓ **OPEN, 2026-08-21:** finding 3 — skip it, or fix it? And does he want permanent custom damage
-kinds, or is the `Other` slot with free text enough? He said *"we should able to add another one
-in the stock opname"* and `Other` is how that was built.
+❓ **THE ONLY THING OPEN, 2026-08-21 10:07 — may PROGRESS.md be trimmed?** It is 3,505 lines
+against its own ~350 limit. He said *"well as long as the memories saved in A brain u can comeback
+anytime"*, which reads as yes, but he has not said go, and the file carries BOTH the 🟠 KPM and
+🟢 Lancelot tracks interleaved. **Ask before cutting.** Plan: everything before 2026-08-19 into
+`A-Brain/Archive/`, both tracks kept intact.
+
+✖ ~~finding 3, and whether he wants custom damage kinds~~ — both answered 10:07. Finding 3 is
+skipped (*"is 1 damaging?"* → no). Custom kinds are refused: *"we dont need damaged kinds just
+erase other button"*.
 
 ✅ **ANSWERED 2026-08-21.** *"looks fine i guess, u can integrate first, then continue do your job
 list that u made for u last time"* — the reveal row and the damage reel are approved as built.
@@ -253,8 +278,11 @@ Entries above this line are the old long style — leave them, they are already 
 
 ## ▶ NOW
 
-**Live front, 2026-08-21 10:00 — STOCK OPNAME.** Findings 1 and 2 are shipped (`ac5e7b7` and the
-commit after it). Tree green: **integration.audit 599/599, logicFixes.selfcheck 519/519**.
+**Live front, 2026-08-21 10:07 — STOCK OPNAME.** Findings 1 and 2 shipped (`ac5e7b7`, `dad37df`),
+finding 3 skipped on his word, `Other` erased. Tree green: **599/599 and 518/518**.
+
+📖 **A cold session should read `A-Brain/Wiki/Concepts/Where KPM Is Going.md` first** — the theme,
+every locked decision and the direction now live there instead of only in this file.
 
 **The next job is the only block in `.claude/NEXT-SESSION.md`: count a difference TWICE before HQ
 ever sees it.** Every counted row goes straight to `PENDING_HQ_APPROVAL` today, so a miscount gets
@@ -2381,6 +2409,10 @@ batch them: he has to look at each one. `AgentProfileView` is already clean (0 s
 | `src/utils/helpers.js` → `shortStockRows()` | **NEW 2026-08-18** — which products came back short, named one by one in the row's own unit. Used by the admin's EOD card; behaviour-checked in logic S19 |
 | `src/utils/helpers.js` → `paymentLabel()` | **NEW 2026-08-18** — renders the stored `'IOU Fulfillment'` as "Utang Barang Lunas" without changing the stored value |
 | `A-Brain/Backlog/TESTS - check these when you feel like it.md` | **NEW 2026-08-18** — every test Aldi owes, taken off his plate |
+| `A-Brain/Wiki/Concepts/Where KPM Is Going.md` | **NEW 2026-08-21 — READ THIS FIRST.** The theme, every locked decision and the direction. He asked for it by name. Put settled decisions here, not in PROGRESS |
+| `src/StockOpnameView.jsx` → `DAMAGE_REASONS` | **NEW 2026-08-21** — the five kinds of damage, stored with the sales terminal's own long strings. Deliberately a SUBSET of the terminal's list: no `Other`, because free text cannot be grouped or counted |
+| `src/StockOpnameView.jsx` → `damageBlocked()` | **NEW 2026-08-21** — the reconcile rule. The damaged total is the truth; the kinds under it must sum to exactly it or the submit refuses and names the product |
+| `src/styles/theme.css` → `.kpm-dmg-*` / `.kpm-dot` | **NEW 2026-08-21** — the damage reel, same mechanism as `.kpm-clock`. ⚠️ The dot ring is a BORDER, never an inset shadow: Lite Mode strips shadows and the dots would vanish |
 | `src/hooks/useOfflineEngine.js` → `canReachInternet()` | **EXPORTED 2026-08-20** — the ONLY honest answer to "is there internet". `navigator.onLine` is allowed to be trusted when it says NO, never when it says YES. See `A-Brain/Wiki/Concepts/A Network Is Not The Internet.md` |
 | `src/App.jsx` → `LazyTabBoundary` | **NEW 2026-08-19** — the only error boundary in the app; catches a screen that fails to download and offers Try Again. Pinned by S26 |
 | `src/MerchantSalesView.jsx` → `DRAFT_KEY` / `readDraft()` | **NEW 2026-08-20** — the half-typed sale, kept in `localStorage` across a tab change. TYPED fields only; GPS, distance, proximity and territory are deliberately excluded. A new typed field must be added here AND to S29's `TYPED` list |
