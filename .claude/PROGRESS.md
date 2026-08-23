@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-23 10:09 WIB (🟠 KPM app session)** · 🔴 HE MUST PICK: **A clock fix** or **B freshness chain** · ✅ ARRIVAL CHECK SHIPPED (`4a781e6`) · ✅ CAUSES LIVE (`a3c0dff`) · 📄 ROADMAP CORRECTED — NO SUPPLIER, GAP 8 REPLACED · ⚠️ NOTHING SINCE 08-21 SEEN ON A REAL SCREEN · branch `phase0-solid-ground`
+**Updated: 2026-08-23 11:20 WIB (🟠 KPM app session)** · ✅ CLOCK FIXED (`60c53d8`) — 609/609 · ❓ ONE QUESTION: repair old date stamps or leave them · ▶ NEXT IS **B, THE FRESHNESS CHAIN** — he said design it next · ⚠️ NOTHING SINCE 08-21 SEEN ON A REAL SCREEN · branch `phase0-solid-ground`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **TRIMMED 2026-08-21 ON ALDI'S WORD.** *"sure trim it"*, on his own condition:
@@ -21,6 +21,37 @@
 >
 > 📏 **KEEP THIS FILE UNDER ~350 LINES.** Past that, cut the oldest day into the same archive.
 > ⚠️ **TWO TRACKS SHARE THIS FILE** — 🟠 KPM and 🟢 Lancelot. Never trim or re-sort across them.
+
+## 🟠 2026-08-23 11:20 — THE CLOCK. IT WAS NEVER TWO BUGS. 599/599, 609/609.
+
+**He picked A** — *"sure fix the clock time first then then we can design the next one"*. **Done,
+`60c53d8`.** Next job is **B, the freshness chain — he asked for it to be designed next.**
+
+**There was no 7am rule.** Nobody configured one, which is why nobody could find it.
+`getCurrentDate()` was `new Date().toISOString().split('T')[0]` — the **UTC** date — and WIB is
+UTC+7, so the UTC date flips at 07:00 local. One bug wearing two names on the backlog for six days.
+
+**The cure was already in the file.** `getLocalDayKey` sat directly below the broken helper with a
+comment describing exactly this, while all 26 call sites used the UTC one. Fixed at the definition;
+every caller wanted local. The one that cost money is `useTransactionEngine` — seven write paths
+stamp `date`, so a sale at 06:30 was filed under yesterday.
+
+`AgentInventoryView.jsx` kept its **own private copy** of the UTC helper — it would have stayed a
+day behind even after the shared fix. Deleted; a check now refuses any second date rule anywhere.
+
+**Two non-findings, both pinned:** `dayStats` was already right (it refused the broken helper and
+computed local midnight itself), and the sales-draft cap is an AGE — twelve hours — never a day
+boundary, despite being captioned *"his day starts at 07:00"* for months. Caption corrected in the
+source and in its check.
+
+**Proven non-decorative:** reverting the helper to UTC, restoring the private copy, and switching
+the day key to UTC getters turned **seven checks red** on this machine (offset −420 = UTC+7);
+restoring turned them green. The behaviour checks carry an honest note that a machine running in
+UTC could not tell the implementations apart — which is why the source checks stay too.
+
+❓ **ONE QUESTION FOR HIM, NOT DECIDED:** old records keep their UTC `date`, so past sales between
+midnight and 07:00 WIB are still filed under the previous day. Repairing means rewriting `date` on
+every historical transaction from its `timestamp`. **Left open on purpose.**
 
 ## 🟠 2026-08-23 10:09 — TWO FACTS FROM ALDI REWROTE THE ROADMAP. 599/599, 596/596.
 
@@ -338,9 +369,10 @@ and in `A-Brain/Archive/PROGRESS-archive-2026-08-21.md`. Six entries is the work
 **Live front, 2026-08-23 10:09 — THE WAREHOUSE CHAIN.** Stock Opname is finished. The receiving
 door is finished. What is left is a ranked roadmap and **one decision Aldi has not made yet.**
 
-🔴 **NOTHING STARTS UNTIL HE PICKS A OR B** — both written verbatim under WAITING ON ALDI above.
-A is the clock fix (small, unblocks two things). B is the freshness chain (bigger, makes money).
-Claude's pick is B. **Do not start either without his word.**
+✅ **A is done** (`60c53d8`). ▶ **B IS NEXT AND HE HAS ASKED FOR IT** — *"then we can design the
+next one"*. The freshness chain: **G8 birth date at intake → G1 batch travels to branches → G2
+oldest ships first + ageing warning.** Design it before building it; he wants to see the shape.
+⚠️ One number is HIS to give: **how long is too long for a kretek to sit.** Nobody else can know it.
 
 📖 **A cold session reads two files before anything else:**
 `A-Brain/Wiki/Concepts/Where KPM Is Going.md` — the theme and every locked decision.
