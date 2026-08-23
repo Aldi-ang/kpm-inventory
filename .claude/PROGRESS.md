@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-21 17:12 WIB (🟠 KPM app session)** · 🔴 THE SCREEN WAS CRASHING ALL AFTERNOON — FIXED · ✅ CHROME TESTING WORKS, SETUP BELOW · 🔴 HE MUST NAME THE FIVE CAUSES · branch `phase0-solid-ground`
+**Updated: 2026-08-23 WIB (🟠 KPM app session)** · ✅ ARRIVAL CHECK SHIPPED (`4a781e6`) · 📄 ROADMAP RANKED — 8 GAPS, VAULT NOTE · 🔴 HE OWES TWO ANSWERS · ⚠️ NOTHING SINCE 08-21 SEEN ON A REAL SCREEN · branch `phase0-solid-ground`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **TRIMMED 2026-08-21 ON ALDI'S WORD.** *"sure trim it"*, on his own condition:
@@ -21,6 +21,62 @@
 >
 > 📏 **KEEP THIS FILE UNDER ~350 LINES.** Past that, cut the oldest day into the same archive.
 > ⚠️ **TWO TRACKS SHARE THIS FILE** — 🟠 KPM and 🟢 Lancelot. Never trim or re-sort across them.
+
+## 🟠 2026-08-23 — THE COUNT MOVED TO THE DOOR, AND THE ROADMAP GOT RANKED
+
+**Two things shipped. Neither has been seen on a real screen.**
+
+### The arrival check — `4a781e6`
+
+Receiving a shipment was one yes/no button, and the branch was credited whatever HQ *said* it
+shipped. A short box therefore became branch stock that does not exist, invisible until the weekly
+Stock Opname weeks later — where it looks exactly like theft at the branch. Wrong person blamed,
+and the claim against HQ or the courier long dead.
+
+Receiving is now a count. **Partial blind** on his decision: the receiver sees WHICH products
+should be in the box, never HOW MANY, and the quantities are hidden from the branch card while the
+shipment is in transit. The branch is credited what it COUNTED. Any difference or any damage files
+the order as `DISPUTED`, which sorts to the top of HQ's active list with the line-by-line record of
+sent versus received. **No tolerance here, unlike Stock Opname** — a sealed box carries no fraction
+of a pack.
+
+Fixed on the same path: confirming a shipment twice credited the branch twice. The guard reads the
+order status *inside* the transaction, not from the listener snapshot.
+
+**594/594 selfcheck, 599/599 audit — and the new checks were PROVEN non-decorative:** three shipped
+rules broken on purpose turned four checks red, restoring turned them green.
+
+### The research — vault note + artifact
+
+`A-Brain/Wiki/Concepts/The Eight Warehouse Gaps.md` and the artifact
+`https://claude.ai/code/artifact/2a94825e-e349-42a7-bf52-9404d0c19c2c`.
+
+Several assumed gaps turned out not to be gaps — `batchNo`, `minStock` and the whole excise-band
+system already exist. What is actually missing is narrower: `batchNo` never travels past the
+purchase order, and `minStock` is a flat 50 that knows nothing about sales speed or lead time.
+
+**Build order: G7 clock → G6 damaged route home → G3 suggested order qty → G5 accuracy panel →
+G1 batch identity → G2 expiry/FEFO → G4 ids instead of names.**
+
+### 🔴 HE STILL OWES TWO ANSWERS
+
+1. **The five shortage cause words.** Shape settled 2026-08-23 — short main list + a "Lainnya"
+   second level, **no free typing by the regional admin** — but the words are still Claude's.
+   Drop "kiriman kurang": the arrival check catches that at the door now.
+2. **Do old-year excise bands have a legal cut-off?** Decides whether gap G8 exists. Supplier or
+   Bea Cukai, not a search engine. Nothing was assumed.
+
+### Skills installed 2026-08-23
+
+82 design skills (bergside 67, Leonxlnx taste 13, vercel web-design-guidelines, playwright-cli).
+**Alucard section `1a` now auto-loads the design stack** — his taste note, `impeccable`,
+`emil-design-eng`, `ui-ux-pro-max`, `ui-styling` — on any design or redesign ask. The 67 style
+packs are a **catalog, never auto-loaded, and never pointed at KPM**: they are competing
+aesthetics and the palette law outranks all of them. His component/animation reference sites are
+`A-Brain/Wiki/Concepts/Design Inspiration Sources.md`.
+
+⚠️ **Installing bergside overwrote his `impeccable/SKILL.md`** — same skill name, different skill.
+Repaired with `npx impeccable skills install`; the intruder lives at `impeccable-typeui`.
 
 ## 🔴 2026-08-21 17:12 — THE WHOLE STOCK OPNAME SCREEN WAS CRASHING, AND EVERY CHECK WAS GREEN
 
