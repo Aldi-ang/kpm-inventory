@@ -180,6 +180,63 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
         ...prev, [productId]: { ...(prev[productId] || {}), [field]: value }
     }));
 
+    /* Which branch HQ is looking at. Empty until it picks — an owner who lands on a
+       branch he did not choose reads the numbers as company-wide. */
+    const [viewBranch, setViewBranch] = useState('');
+
+    /* Every branch that has ever asked HQ for stock, which is every branch that has any.
+       Derived from the requests already on screen rather than read separately: there is no
+       branch registry in this app, and inventing one to power a dropdown would be a second
+       list to keep true. */
+    const branchesSeen = [...new Set((requests || []).map(r => r && r.branch).filter(Boolean))].sort();
+
+    /* ONE card, drawn the same way for the branch admin and for HQ. The age line below is the
+       whole reason HQ needed this view, so it must not be a second copy that drifts. */
+    const stockCard = (item) => {
+        const arrivals = productArrivals(requests, isAreaAdmin ? branchLocation : viewBranch, item.productId || item.id);
+        const { held, unexplained } = arrivalsOnHand(arrivals, item.stock);
+        const days = oldestStockDays(held, Math.floor(Date.now() / 1000));
+        return (
+            <div key={item.id} className="bg-black/40 p-3 sm:p-4 rounded-xl border border-line-2 shadow-inner">
+                <div className="flex justify-between items-center gap-2">
+                    <span className="font-bold text-white uppercase text-sm truncate">{item.name}</span>
+                    <span className="text-lg font-black text-gold shrink-0">{item.stock} <span className="text-[10px] text-ink-muted font-bold">Bks</span></span>
+                </div>
+                {(days !== null || unexplained > 0) && (
+                    <details className="group/age mt-2 pt-2 border-t border-line-2">
+                        <summary className="list-none [&::-webkit-details-marker]:hidden cursor-pointer flex items-center justify-between gap-2 text-[10px] uppercase tracking-widest text-ink-muted hover:text-ink">
+                            <span className="tabular-nums">
+                                {days !== null
+                                    ? <>Paling lama di sini <b className="text-ink font-black">{days} hari</b></>
+                                    : <>Umur belum tercatat</>}
+                                {held.length > 1 && <span className="text-ink-muted"> · {held.length} kiriman</span>}
+                            </span>
+                            <ChevronDown size={12} className="group-open/age:rotate-180 transition-transform shrink-0"/>
+                        </summary>
+                        <div className="mt-2 space-y-1">
+                            {held.map(h => (
+                                <div key={h.orderId} className="flex justify-between gap-2 text-[10px] font-mono tabular-nums text-ink-muted">
+                                    <span>{new Date(h.at * 1000).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: '2-digit' })}</span>
+                                    <span className="truncate opacity-60">{h.orderId}</span>
+                                    <span className="text-ink font-bold shrink-0">{h.qty} Bks</span>
+                                </div>
+                            ))}
+                            {/* Said out loud rather than hidden. Stock the shipment records cannot
+                                account for is older than the records themselves — pretending it is
+                                part of the newest delivery would make the age read younger than it is. */}
+                            {unexplained > 0 && (
+                                <div className="flex justify-between gap-2 text-[10px] font-mono tabular-nums text-ink-muted border-t border-line-2 pt-1 mt-1">
+                                    <span className="italic">sebelum ada catatan</span>
+                                    <span className="text-ink font-bold shrink-0">{unexplained} Bks</span>
+                                </div>
+                            )}
+                        </div>
+                    </details>
+                )}
+            </div>
+        );
+    };
+
     const getAdminName = () => appSettings?.adminDisplayName || user?.displayName || (user?.email || "").split('@')[0] || "HQ Admin";
 
     useEffect(() => {
@@ -203,16 +260,26 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
             setIsLoading(false);
         }, (err) => { console.warn("Restock requests listener:", err.code); setIsLoading(false); });
 
+        /* Which warehouse's shelf to watch. The branch admin gets their own and has no choice;
+           HQ gets whichever one it picked, and nothing until it picks — Aldi, 2026-08-23:
+           *"i think tier 1 also need to see regional warehouse components that only regional
+           admin could see because me as tier 1 cant see that"*. He owns the company and could
+           not see his own branches' shelves. */
+        const watching = isAreaAdmin ? branchLocation : viewBranch;
         let unsubStock = () => {};
-        if (isAreaAdmin && branchLocation !== 'UNASSIGNED') {
-            const stockRef = collection(db, `artifacts/${appId}/users/${masterUserId}/branches/${branchLocation}/inventory`);
+        if (watching && watching !== 'UNASSIGNED') {
+            const stockRef = collection(db, `artifacts/${appId}/users/${masterUserId}/branches/${watching}/inventory`);
             unsubStock = onSnapshot(stockRef, (snap) => {
                 setBranchStock(snap.docs.map(d => ({ id: d.id, ...d.data() })));
             }, (err) => console.warn("Branch inventory listener:", err.code));
+        } else {
+            /* Cleared, not left behind. Switching branch must never show the previous
+               branch's shelf under the new branch's name. */
+            setBranchStock([]);
         }
 
         return () => { unsubReq(); unsubStock(); };
-    }, [db, appId, masterUserId, isAreaAdmin, branchLocation]);
+    }, [db, appId, masterUserId, isAreaAdmin, branchLocation, viewBranch]);
 
     const handleAddToCart = () => {
         if (!selectedProduct || !requestQty || Number(requestQty) <= 0) return notify("Select a product and valid quantity.");
@@ -768,53 +835,7 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
                                     <div className="col-span-full text-center p-8 bg-black/20 rounded-xl border border-dashed border-line-2 text-ink-muted text-xs uppercase tracking-widest">
                                         Warehouse is empty. Request stock from HQ using the form below.
                                     </div>
-                                ) : branchStock.map(item => {
-                                    /* The freshness line. Read-only, derived, no threshold —
-                                       it says how long the stock has stood here and leaves the
-                                       judgement to whoever is reading it. */
-                                    const arrivals = productArrivals(requests, branchLocation, item.productId || item.id);
-                                    const { held, unexplained } = arrivalsOnHand(arrivals, item.stock);
-                                    const days = oldestStockDays(held, Math.floor(Date.now() / 1000));
-                                    return (
-                                        <div key={item.id} className="bg-black/40 p-3 sm:p-4 rounded-xl border border-line-2 shadow-inner">
-                                            <div className="flex justify-between items-center gap-2">
-                                                <span className="font-bold text-white uppercase text-sm truncate">{item.name}</span>
-                                                <span className="text-lg font-black text-gold shrink-0">{item.stock} <span className="text-[10px] text-ink-muted font-bold">Bks</span></span>
-                                            </div>
-                                            {(days !== null || unexplained > 0) && (
-                                                <details className="group/age mt-2 pt-2 border-t border-line-2">
-                                                    <summary className="list-none [&::-webkit-details-marker]:hidden cursor-pointer flex items-center justify-between gap-2 text-[10px] uppercase tracking-widest text-ink-muted hover:text-ink">
-                                                        <span className="tabular-nums">
-                                                            {days !== null
-                                                                ? <>Paling lama di sini <b className="text-ink font-black">{days} hari</b></>
-                                                                : <>Umur belum tercatat</>}
-                                                            {held.length > 1 && <span className="text-ink-muted"> · {held.length} kiriman</span>}
-                                                        </span>
-                                                        <ChevronDown size={12} className="group-open/age:rotate-180 transition-transform shrink-0"/>
-                                                    </summary>
-                                                    <div className="mt-2 space-y-1">
-                                                        {held.map(h => (
-                                                            <div key={h.orderId} className="flex justify-between gap-2 text-[10px] font-mono tabular-nums text-ink-muted">
-                                                                <span>{new Date(h.at * 1000).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: '2-digit' })}</span>
-                                                                <span className="truncate opacity-60">{h.orderId}</span>
-                                                                <span className="text-ink font-bold shrink-0">{h.qty} Bks</span>
-                                                            </div>
-                                                        ))}
-                                                        {/* Said out loud rather than hidden. Stock the shipment records cannot
-                                                            account for is older than the records themselves — pretending it is
-                                                            part of the newest delivery would make the age read younger than it is. */}
-                                                        {unexplained > 0 && (
-                                                            <div className="flex justify-between gap-2 text-[10px] font-mono tabular-nums text-ink-muted border-t border-line-2 pt-1 mt-1">
-                                                                <span className="italic">sebelum ada catatan</span>
-                                                                <span className="text-ink font-bold shrink-0">{unexplained} Bks</span>
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                </details>
-                                            )}
-                                        </div>
-                                    );
-                                })}
+                                ) : branchStock.map(stockCard)}
                             </div>
                         </details>
 
@@ -1024,6 +1045,51 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
                             </div>
                         )}
                     </div>
+                </div>
+            )}
+
+            {/* ============ WHAT IS ON A BRANCH'S SHELF — HQ SIDE ============
+                Aldi, 2026-08-23: *"i think tier 1 also need to see regional warehouse components
+                that only regional admin could see because me as tier 1 cant see that"*. He owns
+                the company and could not look at his own branches' shelves; `isAreaAdmin` was a
+                hard either/or, so HQ saw the pipeline and nothing else.
+
+                READ-ONLY on purpose. HQ picks a branch and sees its shelf and its stock ages —
+                the same card the branch admin sees, drawn by the same function so the two cannot
+                drift apart. It does NOT get the request form or the receive button: a shipment
+                must still be asked for by the branch that needs it and counted by the branch that
+                receives it, or the separation the arrival check exists to create is gone. */}
+            {isAdmin && (
+                <div className="bg-panel p-4 sm:p-6 rounded-2xl border border-line-2 shadow-xl mb-6">
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-line-2 pb-4 mb-4">
+                        <h3 className="text-base sm:text-lg font-black text-gold uppercase tracking-widest flex items-center gap-2">
+                            <MapPin size={18}/> Isi Gudang Cabang
+                        </h3>
+                        <div className="flex items-center gap-2 w-full sm:w-auto">
+                            <span className="text-[10px] text-ink-muted uppercase tracking-widest shrink-0">Lihat cabang</span>
+                            <select
+                                value={viewBranch}
+                                onChange={e => setViewBranch(e.target.value)}
+                                className="flex-1 sm:flex-none bg-black/50 border border-line-3 rounded-lg p-2 text-xs text-ink outline-none focus:border-gold uppercase tracking-widest font-bold"
+                            >
+                                <option value="">— pilih —</option>
+                                {branchesSeen.map(b => <option key={b} value={b}>{b}</option>)}
+                            </select>
+                        </div>
+                    </div>
+                    {!viewBranch ? (
+                        <div className="text-center p-8 bg-black/20 rounded-xl border border-dashed border-line-2 text-ink-muted text-xs uppercase tracking-widest">
+                            Pilih cabang untuk melihat isi gudangnya
+                        </div>
+                    ) : branchStock.length === 0 ? (
+                        <div className="text-center p-8 bg-black/20 rounded-xl border border-dashed border-line-2 text-ink-muted text-xs uppercase tracking-widest">
+                            Gudang {viewBranch} kosong
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
+                            {branchStock.map(stockCard)}
+                        </div>
+                    )}
                 </div>
             )}
 
