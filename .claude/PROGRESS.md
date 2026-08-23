@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-23 13:40 WIB (🟠 KPM app session)** · ✅ TIER POV SWITCH SHIPPED (`51c1d78`) · ✅ DAMAGE LINE REFUSES ON SIGHT (`080fda8`) — 599/599, **679/679**, build clean · ▶ **NEXT: HE TESTS THE POV SWITCH IN HIS CHROME, THEN G6** · branch `phase0-solid-ground`
+**Updated: 2026-08-23 13:49 WIB (🟠 KPM app session)** · ✅ TIER POV SWITCH SHIPPED (`51c1d78`) · ✅ DAMAGE LINE REFUSES ON SIGHT (`080fda8`) — 599/599, **679/679**, build clean · ▶ **NEXT: HE TESTS THE POV SWITCH IN HIS CHROME, THEN G6** · branch `phase0-solid-ground`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **TRIMMED 2026-08-21 ON ALDI'S WORD.** *"sure trim it"*, on his own condition:
@@ -22,7 +22,12 @@
 > 📏 **KEEP THIS FILE UNDER ~350 LINES.** Past that, cut the oldest day into the same archive.
 > ⚠️ **TWO TRACKS SHARE THIS FILE** — 🟠 KPM and 🟢 Lancelot. Never trim or re-sort across them.
 
-## 🟠 2026-08-23 13:40 — THE POV SWITCH IS BUILT AND UNTESTED ON GLASS. 599/599, 679/679.
+> ✂️ **TRIMMED 2026-08-23 13:49.** Three same-day entries dropped: *the POV switch is spec'd,
+> not started* (superseded by the entry above it) and both clock entries (shipped — `60c53d8`
+> and `e3663c6` carry the whole story, including that the first fix missed 21 more copies).
+> Nothing was archived because nothing was lost: `git log` has all three in full.
+
+## 🟠 2026-08-23 13:49 — THE POV SWITCH IS BUILT AND UNTESTED ON GLASS. 599/599, 679/679.
 
 `51c1d78` — **the tier POV switch.** His own face at the foot of the sidebar is a door now:
 press it, pick a tier, the app redraws as that tier sees it, and a gold bar at the bottom says
@@ -68,30 +73,6 @@ with **zero workflows**. Rule removed, reason recorded in `.gitignore`. Full ind
 `Archive/n8n-workflow-index.md`; 8 of 347 are malformed JSON upstream, saved but unindexed, named.
 **n8n is NOT installed here** — parts bin, not a live system. Alucard §1 now routes automation
 questions to the index.
-
-## 🟠 2026-08-23 12:05 — THE POV SWITCH IS SPEC'D, NOT STARTED. QUOTA STOPPED IT, NOTHING IS HALF-BUILT.
-
-**Nothing was begun that could strand.** Tree clean at `227a3d1`. The whole brief is
-`.claude/NEXT-SESSION.md` with his words verbatim — read that, not this.
-
-**He approved the design and added to it:** hidden from the sidebar (*"not all employee can open
-setting right"*), a **cool animated button**, locked to **`adikaryasukses99@gmail.com` by email,
-not by tier**, an undismissable *MELIHAT SEBAGAI* banner, never surviving a reload — and he
-**overruled the safe default: writes ARE allowed**, *"saving is needed for further testing
-actually"*. Plus **fake test accounts, one per tier**, reachable only from his account.
-
-✅ **THE LIVE-DATA QUESTION IS CLOSED — DO NOT REOPEN IT.** He was told in full that test accounts
-with saving on would write real sales, stock, audits and EOD records into the live database and
-land in his revenue and his weekly counts. He answered: *"oh thats fine if its impacting the real
-stock and real counting for the data actually no worry about that, we dont need emulator"*.
-**Build against live. The emulator is off the table unless he raises it himself.** He was right
-that a test identity fixes ATTRIBUTION — no wrong name on a nota — it just does not fix the
-numbers, and he accepted that knowingly. One cheap non-blocking idea is in the brief: stamp test
-writes with `isTest: true` so they can be found later if he ever wants them gone.
-
-**Also approved and unbuilt:** the `9 of 5 sorted` line should refuse visibly the moment the damage
-kinds exceed the total. Ten minutes — `damageBlocked()` already computes it, the line just does not
-read it.
 
 ## 🟠 2026-08-23 11:53 — IT WAS TESTED ON A REAL SCREEN AT LAST, AND IT WORKS. 599/599, 632/632.
 
@@ -146,55 +127,6 @@ records cannot explain is shown as *"sebelum ada catatan"* rather than folded in
 ⚠️ **THE REAL RISK NOW IS THAT NONE OF THIS HAS BEEN SEEN RUNNING.** Three features shipped today
 on top of two days of unseen work. The in-app browser will not load the dev server's self-signed
 certificate — **this needs his own Chrome, and it should come before more building.**
-
-## 🟠 2026-08-23 11:45 — THE CLOCK FIX WAS INCOMPLETE, AND SAYING SO IS THE POINT. 599/599, 612/612.
-
-`60c53d8` claimed the clock was fixed at the definition. True for the 26 call sites that USED the
-helper — and **21 more inline copies of the same UTC expression sat in 12 files that never called
-it at all.** Swept in `e3663c6`.
-
-**Two of them made things WORSE, not merely unfixed.** `AgentProfileView` buckets its weekly chart
-by day string and compares against each transaction's own `date`; once sales stamped local dates
-while the buckets stayed UTC, the chart became *inconsistent with the data it was reading*. And
-`RestockVaultView` stamps `poDate` at factory intake — **the production date the whole freshness
-chain is about to key off.**
-
-**The pattern is now BANNED, not just removed** — a scanner refuses any app file taking a UTC date
-inline, same shape as the existing `storeKey` scanner. Hand-fixing 21 occurrences only fixes 21.
-Proven: reintroducing one turned two checks red and named the file.
-
-✅ **History stays as it is** — his call, *"we can leave history alone and continue our work"*.
-
-## 🟠 2026-08-23 11:20 — THE CLOCK. IT WAS NEVER TWO BUGS. 599/599, 609/609.
-
-**He picked A** — *"sure fix the clock time first then then we can design the next one"*. **Done,
-`60c53d8`.** Next job is **B, the freshness chain — he asked for it to be designed next.**
-
-**There was no 7am rule.** Nobody configured one, which is why nobody could find it.
-`getCurrentDate()` was `new Date().toISOString().split('T')[0]` — the **UTC** date — and WIB is
-UTC+7, so the UTC date flips at 07:00 local. One bug wearing two names on the backlog for six days.
-
-**The cure was already in the file.** `getLocalDayKey` sat directly below the broken helper with a
-comment describing exactly this, while all 26 call sites used the UTC one. Fixed at the definition;
-every caller wanted local. The one that cost money is `useTransactionEngine` — seven write paths
-stamp `date`, so a sale at 06:30 was filed under yesterday.
-
-`AgentInventoryView.jsx` kept its **own private copy** of the UTC helper — it would have stayed a
-day behind even after the shared fix. Deleted; a check now refuses any second date rule anywhere.
-
-**Two non-findings, both pinned:** `dayStats` was already right (it refused the broken helper and
-computed local midnight itself), and the sales-draft cap is an AGE — twelve hours — never a day
-boundary, despite being captioned *"his day starts at 07:00"* for months. Caption corrected in the
-source and in its check.
-
-**Proven non-decorative:** reverting the helper to UTC, restoring the private copy, and switching
-the day key to UTC getters turned **seven checks red** on this machine (offset −420 = UTC+7);
-restoring turned them green. The behaviour checks carry an honest note that a machine running in
-UTC could not tell the implementations apart — which is why the source checks stay too.
-
-❓ **ONE QUESTION FOR HIM, NOT DECIDED:** old records keep their UTC `date`, so past sales between
-midnight and 07:00 WIB are still filed under the previous day. Repairing means rewriting `date` on
-every historical transaction from its `timestamp`. **Left open on purpose.**
 
 ## 🟠 2026-08-23 — THE COUNT MOVED TO THE DOOR, AND THE ROADMAP GOT RANKED
 
@@ -298,6 +230,11 @@ the decisions themselves live in `A-Brain/Wiki/Concepts/Where KPM Is Going.md` a
 `A-Brain/Wiki/Concepts/The Eight Warehouse Gaps.md`. Five entries is this file's working depth.
 
 ## ⏳ WAITING ON ALDI — verbatim, do not paraphrase
+
+✅ **THE POV SWITCH AND THE DAMAGE LINE NEED HIS EYES, 2026-08-23 13:49.** Both shipped
+untested on glass — Chrome was not connected. **The 8-step list is in `.claude/NEXT-SESSION.md`.**
+Step 3 is the one that matters: while wearing tier 5, no admin panel may open.
+
 
 🔴 **HE ASKED CLAUDE TO TEST THE APP ITSELF, 2026-08-21 16:5x** — *"can u do testing yourself, u
 have your own web and hands to do that right i can give u the access for the app also"*.
@@ -502,6 +439,8 @@ Evidence with file and line numbers in `.claude/SWEEP-2026-08-19.md`.
 | `src/StockOpnameView.jsx` → `DAMAGE_REASONS` | **NEW 2026-08-21** — the five kinds of damage, stored with the sales terminal's own long strings. Deliberately a SUBSET of the terminal's list: no `Other`, because free text cannot be grouped or counted |
 | `A-Brain/Backlog/Test the new Stock Opname on a real screen.md` | **NEW 2026-08-21, HIS TO-DO** — numbered walkthrough of everything shipped that day. **Only he can run it.** Ask whether he has, before building on top |
 | `src/StockOpnameView.jsx` → `VARIANCE_REASONS` + `varianceReasonMissing()` | **NEW 2026-08-21, LIVE 2026-08-23** — why a confirmed difference happened. Running as the DEFAULT on his word; still his words to rename. ⚠️ No cause may mention a supplier — there is none in this chain. "Cause unknown" is deliberate: the admin cannot type their own reason, so an honest bucket stops them picking a wrong one |
+| `src/config/povPreview.js` | **NEW 2026-08-23** — the whole tier POV preview as arithmetic on plain values: who may open it (his EMAIL, not his tier), the five `[TEST]` staff, and `previewIdentity()`, which forces `isAdmin` and `isSystemOwner` FALSE no matter what the real account holds. **A costume only ever takes power away.** Never teach this file to save — a refresh is the way out, and a check enforces that |
+| `src/components/TierPovSwitch.jsx` | **NEW 2026-08-23** — the picker and the undismissable *MELIHAT SEBAGAI* bar. The bar has no close button on purpose: the only way to dismiss the label is to take the costume off. Trigger is his own face in the rail (`BiohazardTheme.jsx`), never a nav mark — his rule |
 | `src/components/BranchWarehouseManager.jsx` → `receiptLines()` / `receiptBlocked()` / `receiptDisputed()` | **NEW 2026-08-23** — the arrival check. The branch is credited what it COUNTED, never what HQ claimed. Partial blind: quantities hidden while `IN_TRANSIT`, product names kept so a missing product is counted as 0. Any difference or damage → `DISPUTED`, top of HQ's list. **No tolerance here** unlike Stock Opname — a sealed box carries no fraction of a pack |
 | `A-Brain/Wiki/Concepts/The Eight Warehouse Gaps.md` | **NEW 2026-08-23 — THE ROADMAP.** Eight ranked gaps, the forced build order, and what was rejected on purpose. Artifact version: `https://claude.ai/code/artifact/2a94825e-e349-42a7-bf52-9404d0c19c2c` |
 | `src/components/BranchWarehouseManager.jsx` → `productArrivals()` / `arrivalsOnHand()` / `oldestStockDays()` + `stockCard()` | **NEW 2026-08-23** — how long stock has stood at a branch. Derived by subtraction against `stock`, so it cannot drift; NO new write path. `stockCard` is drawn for BOTH the branch admin and HQ — never make a second copy. ⚠️ **No threshold and no blocking, on his word.** Two checks refuse to let either be added |
