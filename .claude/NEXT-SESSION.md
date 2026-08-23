@@ -2,114 +2,91 @@
 
 /alucard
 
-**Build the tier POV switch. Every open question on it is answered — start coding.**
+**Watch Aldi test the tier POV switch on a real screen. It has never run. Then G6.**
 
-Asked for by Aldi 2026-08-23, in full:
+Built 2026-08-23 (`51c1d78`), verified by 679 checks and a clean build and by **nothing else** —
+Chrome was not connected when it was written. Two commits are waiting to be seen:
 
-> *"i want one extra admin tier 1 features where i can change the account tier in an instant to
-> see their POV ui instead of login and logout each time waste a time TBH can u design this
-> featue"*
+| commit | what to look at |
+|---|---|
+| `51c1d78` | the tier POV switch |
+| `080fda8` | the damage line refusing on sight instead of at submit |
 
-and then, approving the design and adding to it:
+**The commit messages hold the whole story.** Do not re-derive it from the code.
 
-> *"yes make all of it and make this option hidden on the sidebar because not all employee can
-> open setting right on recent system, maybe add some cool animated button to change the tier
-> control manually for my adikaryasukses99@gmail.com only because it is my tier 1 account, other
-> account cant do this, and saving is needed for further testing actually, without disturbing
-> other gmail account what if we can make like test account for each tier to test this out but
-> these account only can be accessed from my tier 1 account more like fake agent account for test"*
+## ✅ TEST LIST — read it to him one line at a time, in this order
 
-## What he approved
+**Getting there:** he opens the Claude **side panel** in Chrome and signs in there (installed and
+enabled is NOT enough), then `navigate` to `https://localhost:5173/`. The in-app browser is
+useless — it refuses the self-signed certificate. Sidebar rail: click **(34, 43)**.
 
-1. **A POV switch.** Pick a tier, the whole UI redraws as that tier sees it. Snap back to owner.
-2. **Hidden from the sidebar.** Not a nav item — *"not all employee can open setting right"*.
-   It lives somewhere only he would find, and it renders for **`adikaryasukses99@gmail.com` only**,
-   checked on the email, not on the tier.
-3. **A cool animated button** for the switch. His words. The design stack in alucard §1a loads
-   automatically; the palette law still applies and it must survive Lite Mode.
-4. **A permanent, undismissable banner** while previewing — *MELIHAT SEBAGAI: SALES CANVAS ·
-   KEMBALI KE OWNER*. Forgetting the costume is the whole risk.
-5. **Never survives a reload.** Refresh returns him to owner.
-6. **WRITES ARE ALLOWED** — he overruled the safer default: *"saving is needed for further
-   testing actually"*. That decision is what makes the trap below the most important part.
-7. **Fake test accounts, one per tier**, reachable only from his tier-1 account —
-   *"more like fake agent account for test"*.
+1. **The door only he has.** At the foot of the rail his profile photo now has a thin gold ring.
+   Press it → a panel opens saying **LIHAT SEBAGAI** with five tiers. *(If there is no ring, the
+   email check failed — that is the first thing to debug, not the panel.)*
+2. **Wear tier 5.** Pick SALES CANVAS. The app should land on Journey, the sidebar should shrink
+   to a salesman's marks, and a gold bar should appear at the bottom: **MELIHAT SEBAGAI: …**
+3. **The vault key stays behind.** While wearing tier 5, the music player should be gone and no
+   admin-only panel should be reachable. This is the single most important line on this list.
+4. **Hop without leaving.** Press the ringed face again, pick REGIONAL ADMIN. It should switch
+   straight across — no logout, no reload.
+5. **The fake staff exist.** Open Fleet & Canvas as owner. There should be `[TEST]` rows for
+   exactly the tiers he tried, and none for the ones he did not. They are deletable like any agent.
+6. **Refresh is the way out.** Reload the page. He must be himself again, with no bar.
+7. **Nobody else sees it.** If a second account is handy, its photo must have no ring.
+8. **The damage line.** Stock Opname → a row with damaged stock → sort MORE kinds than the
+   damaged total. The line must go red and say **"4 SORTED MORE THAN THE TOTAL"** immediately —
+   not `9 OF 5 SORTED`, and not silence until submit.
 
-## ✅ THE LIVE-DATA QUESTION IS ANSWERED — DO NOT ASK IT AGAIN
+⚠️ **Writes are live and he approved that.** A test sale made while wearing a costume lands in
+his real revenue, signed `[TEST] SALES CANVAS`. Say it once before he starts; do not re-ask.
 
-He was told plainly that fake accounts with saving enabled write real sales, stock, audits and EOD
-records into the live database, and that they would land in his revenue, his leaderboards and his
-weekly counts. He answered:
+## Then: G6 — damaged stock has no route home
 
-> *"oh thats fine if its impacting the real stock and real counting for the data actually no worry
-> about that, we dont need emulator"*
+📄 `A-Brain/Wiki/Concepts/The Eight Warehouse Gaps.md`. Damaged units are counted, sorted by
+cause and credited to `damagedStock` — and then they sit there forever. There is no way to write
+them off, send them back to the factory, or liquidate them. **Ask him which of those three he
+actually does** before designing anything; the answer decides the whole shape.
 
-**That is his decision and it is final. Build against the live database.** He owns the business and
-the books; the risk was named once, in full, and he accepted it. Re-raising it costs him a session
-and reads as not listening. The emulator is **off the table** unless he brings it up himself.
-
-He was also right about the half that this does fix, and it is worth keeping:
-
-> *"this way the system wont be confused to write which name on the receipt and all of that right"*
-
-Correct — a dedicated test identity per tier stops a test sale being attributed to a real agent on
-a nota, in the audit log or on a leaderboard. Borrowing a real account would be worse.
-
-**One cheap thing to do anyway, not a re-litigation and not a blocker:** stamp every document a
-test account writes with `isTest: true`. It changes nothing today, costs one field, and means that
-if he ever does want them gone they can be found in one query instead of by memory. If it gets in
-the way, drop it.
-
-**The honest limit still holds and is worth repeating once in the UI, not in a question:** the
-switch changes what the SCREEN shows, never what the rules allow. Firestore evaluates his real
-tier-1 account, so a POV preview can never prove the server would refuse a tier 5.
-
-## Also outstanding, small
-
-**The `9 of 5 sorted` finding, approved to fix** — sorting more damaged kinds than the damaged
-total shows a full bar and no error until submit. Make the line refuse visibly the moment it goes
-over. Ten minutes. `damageBlocked()` already computes the refusal; the line just does not read it.
+Remaining after that, in order: **G3** suggested order quantity · **G5** accuracy and shrinkage
+panel · **G1** batch identity through the chain · **G4** ids instead of names.
 
 ## Verify
 
 ```
 npm run build; node src/config/integration.audit.mjs; node src/config/logicFixes.selfcheck.mjs
 ```
-Currently **599/599** and **632/632**. Lift every constant from source rather than retyping it, and
+Currently **599/599** and **679/679**. Lift every constant from source rather than retyping it, and
 **break the shipped rule on purpose and watch the check go red before trusting it** — that probe
-has caught two decorative checks and one incomplete fix this week.
+has now caught two decorative checks, one incomplete fix, and two of this session's own checks
+that were passing for the wrong reason.
 
 **When you finish, rewrite this file with the next single job.**
 
 <details>
 <summary>The rest of the queue — do not paste this, it is here so the next session knows what to promote</summary>
 
-📄 **The roadmap is `A-Brain/Wiki/Concepts/The Eight Warehouse Gaps.md`.** Remaining, in order:
-**G6** damaged stock has no route home · **G3** suggested order quantity · **G5** accuracy and
-shrinkage panel · **G1** batch identity through the chain · **G4** ids instead of names.
-G7 (clock) and G2 (stock age) are done. G8 as originally written was deleted — no government angle
-on excise bands.
-
-⚠️ **STILL UNSEEN ON A REAL SCREEN:** the arrival check and the HQ branch-shelf panel (`ccdb5b8`).
-Both need a branch with stock and a shipment in transit. **Chrome testing is proven and the recipe
-is in PROGRESS.md** — he opens the Claude side panel and signs in there, then `navigate` reaches
-the dev server. The in-app browser is useless: it refuses the self-signed certificate.
+⚠️ **ALSO STILL UNSEEN ON A REAL SCREEN:** the arrival check and the HQ branch-shelf panel
+(`ccdb5b8`). Both need a branch with stock and a shipment in transit — the POV switch does not
+help with that; only real data does.
 
 ⛔ **Rejected, do not propose again:** counting sessions · barcode scanning · ABC cycle counting ·
 bin/rack locations · demand forecasting · automatic reordering without a person · a freshness
 threshold or any blocking on stock age (**two checks refuse this**) · anything framed as a supplier
-or carrier claim — **there is no third party in this chain, the factory is his own**.
+or carrier claim — **there is no third party in this chain, the factory is his own** · the
+Firebase emulator (**closed 2026-08-23, he said build against live**).
 
 - **TIER 1 = ONE PROFILE, stages B and C** — B copies the van's `activeCanvas`, `allowedPayments`,
   `allowedTiers` onto `master_owner` after a backup; C deletes `ADMIN_VEHICLE`.
   **C before B shows his van as EMPTY.** Stage A is done (`447e3dd`).
 - **Tier renames** — `DYNAMIC_TIERS` labels only: T3 `HQ SALES MANAGER`, T4 `REGIONAL ADMIN`,
   T5 `SALES CANVAS`, T6 `SALES MOTORIST`. Never touch the ids in `CORPORATE_TIERS`.
+  *(The POV picker already prints whatever he renames them to.)*
 - **TITIP everywhere, never "consignment"** — labels only, code names stay.
 - **Reconcile and Clear** — no tier check at `FleetCanvasManager.jsx:1056`; the rules already
   refuse the save, so it is a button that lies rather than lost data. Tier 1 only.
 - **The forced Google sign-in** — cause unknown. ⚠️ DANGER: removing `await` from the two
-  `deleteDoc` lines at `src/App.jsx:2333-2334` reaches `signOut(auth)` and destroys his sign-in.
+  `deleteDoc` lines in `src/App.jsx` (search `deleteDoc(uidRef)`) reaches `signOut(auth)` and
+  destroys his sign-in.
 - **A sale can be booked to the wrong store** · **Opening Journey Plan can reassign stores** ·
   **IOU in the map customer panel** · **wrong agent name on old sales** · Sampling and Customers
   redesigns.

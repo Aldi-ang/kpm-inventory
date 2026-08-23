@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-23 12:15 WIB (🟠 KPM app session)** · ✅ TESTED IN HIS CHROME — STOCK OPNAME WORKS · ✅ HQ CAN SEE BRANCH SHELVES (`ccdb5b8`) — 632/632 · ▶ **NEXT JOB FULLY SPEC'D AND FULLY ANSWERED: THE TIER POV SWITCH — JUST BUILD IT** · branch `phase0-solid-ground`
+**Updated: 2026-08-23 13:40 WIB (🟠 KPM app session)** · ✅ TIER POV SWITCH SHIPPED (`51c1d78`) · ✅ DAMAGE LINE REFUSES ON SIGHT (`080fda8`) — 599/599, **679/679**, build clean · ▶ **NEXT: HE TESTS THE POV SWITCH IN HIS CHROME, THEN G6** · branch `phase0-solid-ground`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **TRIMMED 2026-08-21 ON ALDI'S WORD.** *"sure trim it"*, on his own condition:
@@ -21,6 +21,26 @@
 >
 > 📏 **KEEP THIS FILE UNDER ~350 LINES.** Past that, cut the oldest day into the same archive.
 > ⚠️ **TWO TRACKS SHARE THIS FILE** — 🟠 KPM and 🟢 Lancelot. Never trim or re-sort across them.
+
+## 🟠 2026-08-23 13:40 — THE POV SWITCH IS BUILT AND UNTESTED ON GLASS. 599/599, 679/679.
+
+`51c1d78` — **the tier POV switch.** His own face at the foot of the sidebar is a door now:
+press it, pick a tier, the app redraws as that tier sees it, and a gold bar at the bottom says
+MELIHAT SEBAGAI until he leaves. Refresh puts him back. Hidden from the sidebar, gated on his
+EMAIL not his tier, one `[TEST]` agent per tier created the first time it is worn.
+**The commit message is the full story — read it there, not here.**
+
+`080fda8` — **`9 OF 5 SORTED` is gone.** The damage line prints the refusal the moment the
+kinds go past the total, instead of a true-but-finished-looking tally and a full bar.
+
+⚠️ **NEITHER HAS BEEN SEEN ON A SCREEN.** Chrome was not connected when they were built —
+his side panel was closed — so this is verified by 679 checks and a clean build and by nothing
+else. **The test list is in `.claude/NEXT-SESSION.md` and it is the next session's first job.**
+
+The one thing worth repeating out of the commit, because it is the whole safety story: a costume
+can only ever take power away. `previewIdentity()` forces `isAdmin` and `isSystemOwner` false no
+matter what the real account holds, previewing tier 1 does nothing, and an unknown tier is no
+costume at all. All four rules were proven by breaking them on purpose and watching them go red.
 
 ## 🔧 2026-08-23 12:5x — TOOLING TRACK (no app code touched). Graphify hook now ANSWERS, not nags.
 
