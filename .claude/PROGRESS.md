@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-23 WIB (🟠 KPM app session)** · ✅ ARRIVAL CHECK SHIPPED (`4a781e6`) · 📄 ROADMAP RANKED — 8 GAPS, VAULT NOTE · 🔴 HE OWES TWO ANSWERS · ⚠️ NOTHING SINCE 08-21 SEEN ON A REAL SCREEN · branch `phase0-solid-ground`
+**Updated: 2026-08-23 10:09 WIB (🟠 KPM app session)** · 🔴 HE MUST PICK: **A clock fix** or **B freshness chain** · ✅ ARRIVAL CHECK SHIPPED (`4a781e6`) · ✅ CAUSES LIVE (`a3c0dff`) · 📄 ROADMAP CORRECTED — NO SUPPLIER, GAP 8 REPLACED · ⚠️ NOTHING SINCE 08-21 SEEN ON A REAL SCREEN · branch `phase0-solid-ground`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **TRIMMED 2026-08-21 ON ALDI'S WORD.** *"sure trim it"*, on his own condition:
@@ -21,6 +21,45 @@
 >
 > 📏 **KEEP THIS FILE UNDER ~350 LINES.** Past that, cut the oldest day into the same archive.
 > ⚠️ **TWO TRACKS SHARE THIS FILE** — 🟠 KPM and 🟢 Lancelot. Never trim or re-sort across them.
+
+## 🟠 2026-08-23 10:09 — TWO FACTS FROM ALDI REWROTE THE ROADMAP. 599/599, 596/596.
+
+🔴 **WAITING ON HIM — he must pick A or B before anything starts:**
+- **A · Fix the clock.** Small, one session. Day rolls at 7am and `getCurrentDate()` is UTC in 26
+  places, so anything counted per-day is wrong at the edges. Unblocks order-quantity + accuracy.
+- **B · The freshness chain.** Birth date at intake → batch travels to branches → oldest ships
+  first + ageing warning. Three sessions. Does NOT need the clock. **Claude's pick.**
+
+**His two facts, verbatim, because both invalidated written work:**
+
+> *"there is no supplier between this restock, because goods is made by company own factory and we
+> sell our product ourself"*
+
+> *"pita cukai is bought by company and company are be able to sell the product with it, and if its
+> expired it is still cant be sell and there is no problem with our government ... the problem is
+> with our customer, when the customer see old pita cukai on the product means that the cigarette is
+> old and they assume this product is tidak laku or tidak enak ... on the cigarette it have some
+> sauce that put into the product and it causing the new fresh sauced cigarette to taste better"*
+
+**What that changed.** No third party anywhere in the chain — factory → HQ → branch → van → store —
+so nothing may be framed as a supplier or carrier claim; a shortage is an internal leak. Excise
+gap **deleted**, no government angle at all. But freshness became the **highest-value item on the
+list**: old stock costs margin AND reputation, and the thing to track is **age**, not an expiry
+date that does not exist. G1 is also cheaper than it looked — `RestockVaultView` already has a
+Batch / Serial No. field, so the work is *carrying* the batch, not inventing it. A new gap 8
+replaces the deleted one: factory intake credits whatever is typed, with no production date, and
+that is the only moment a batch's age can ever be recorded.
+
+**Shipped `a3c0dff` — the cause list is live** on his word *"for the 5 cause we can just add that
+as default for now"*. Still his words to rename; the `value` strings are what Firestore keeps.
+**"Supplier Short" removed** — it could never be true, and its internal version is caught at the
+receiving door now. Replaced by **"Cause unknown"**: the admin cannot type their own reason (his
+rule), so without an honest bucket someone picks the nearest wrong word and the report lies with
+confidence. Two checks: one reminder pinning the default list, one HARD rule refusing any cause
+that mentions a supplier.
+
+📄 Roadmap: `A-Brain/Wiki/Concepts/The Eight Warehouse Gaps.md` · artifact
+`https://claude.ai/code/artifact/2a94825e-e349-42a7-bf52-9404d0c19c2c` (both corrected).
 
 ## 🟠 2026-08-23 — THE COUNT MOVED TO THE DOOR, AND THE ROADMAP GOT RANKED
 
@@ -162,100 +201,11 @@ scraped the WHOLE file for `value:`/`label:` pairs, so a second array of the sam
 read the causes as damage kinds. Now scoped to the `DAMAGE_REASONS` block. **A file-wide regex in
 a check is a trap that springs the day someone adds a similar list.**
 
-## 🟠 2026-08-21 15:51 — RECOUNT SHIPPED. 599/599 and 543/543. The count path is whole.
+## 🟠 LOG TRIMMED TO FIVE ENTRIES, 2026-08-23 10:09
 
-A row whose variance is not zero **cannot be submitted** — it offers *"clear and count again"*.
-Same number twice → real, goes to HQ marked `countedTwice`. Different → a third count. **All three
-different → his option B: all three go to HQ and the app picks none.**
-
-**The prompt never names the difference.** *"You are 5 short"* hands a blind tier the answer the
-screen exists to withhold, and tells any tier exactly what to type to make the warning disappear.
-
-⚠️ **THREE WAYS A LAZY VERSION OF THIS QUIETLY STOPS WORKING — all three now pinned by checks:**
-1. **Showing him the previous number.** He retypes it and the second count proves nothing.
-2. **Re-taking the expected snapshot on the recount** — re-opens the morning's moving-target bug
-   while still looking like it works.
-3. **Letting an already-counted row be deleted by emptying both boxes** — that drops `passes`, so
-   clearing and retyping the same wrong number submits with no recount at all. **Found while
-   writing the feature, not after.**
-
-Proven by breaking the shipped rule two ways (first difference not demanding a recount; a
-three-way disagreement recorded as confirmed) — each turned exactly one check red.
-
-### ▶ WHAT IS LEFT ON STOCK OPNAME — two things, then it is finished
-
-1. **A cause for a variance** — miscount · unrecorded sale · breakage · theft · supplier short.
-   **Reuse the damage reel**, do not invent a second control.
-2. **A tolerance threshold** so small differences auto-accept instead of drowning HQ.
-
-⚠️ **HE HAS STILL NEVER SEEN ANY OF TODAY'S WORK ON A REAL SCREEN.** Everything is proven by the
-audits and by the approved prototype; the count screen needs a login and real data, and the
-Browser pane would not composite a frame. **His eyes remain the outstanding check.**
-
-## 🟠 2026-08-21 15:46 — LEAK DETECTION SHIPPED. 599/599 and 529/529.
-
-His ask: *"u can add leak detection for this trigger for everytime stock opname is done, which is
-each week actually"*. One short count is a miscount; the same product short week after week is a
-leak, and no screen could see that before because every audit was filed alone.
-
-⚠️ **IT IS ON HQ'S REVIEW ROW, NOT THE COUNT ROW, AND THAT IS DELIBERATE.** Two reasons, either of
-which would have made the obvious placement useless or harmful:
-1. `auditHistory` only loads when `isHighCommand` — the rules refuse `pending_audits` to everyone
-   else, so a counting agent would see an empty result and conclude all was well.
-2. **Telling the person counting "this one is usually short" biases the count.** Blind counting
-   exists so the shelf decides the number, not the expectation.
-
-Threshold, deliberately dull: **at least three counts on record, short in at least two.** Weekly
-counts = three weeks of evidence. A surplus never triggers it; an old problem ages out after five
-counts. `shortageStreak()` and `isLeak()` are exported and behaviour-checked on real numbers.
-
-🔴 **A LESSON WORTH MORE THAN THE FEATURE.** The first self-check RETYPED the threshold instead of
-reading it from the source. A probe that loosened the shipped rule to "short once in one count"
-changed nothing — every check still passed, because they were testing the check file's own copy.
-**Both the streak and the threshold are now lifted out of the component**, and the same probe
-correctly turns two checks red. **Retyping a constant into its own check makes the check a
-decoration. Lift it from the source.**
-
-## 🟠 2026-08-21 15:37 — THIS FILE WAS TRIMMED, 3,575 → 413 LINES
-
-On his word, *"sure trim it"*, and on his own condition — the full file was copied to
-`A-Brain/Archive/PROGRESS-archive-2026-08-21.md` **first**, byte for byte, both tracks intact.
-Nothing was deleted anywhere.
-
-**What it buys him:** this file is read in full at every session start, before he types. ~50,000
-tokens of his quota per session, spent on history a fresh session cannot use.
-
-**Two of his answers killed two jobs outright** — *"stock opname is really fast, 30 mins less
-usually done"* and *"there is no barcode in the product so far"*. **Counting sessions and
-scan-to-row are dropped.** The remaining Stock Opname work is recount → variance cause →
-threshold, and nothing else.
-
-## 🟠 2026-08-21 10:16 — HE LEFT. NOTHING STARTED THAT COULD STRAND.
-
-**Plan quota was 83% used when he said he was going.** Recount is a submit-flow change plus UI
-plus checks — the same size as this morning's work, which cost more than 17%. **Deliberately not
-started.** Knowledge was banked instead, so the next session opens at full speed.
-
-- **His YouTube link was a red herring, and that is recorded so nobody chases it again.** It is
-  *"How to Build an Inventory Management System with Claude Code in Next.js"* (AyyazTech) — a
-  beginner tutorial covering products, stock in/out, low-stock alerts and a dashboard. **KPM
-  shipped all four long ago.** Behind this app, not ahead.
-- **Gap analysis written to `A-Brain/Wiki/Concepts/Where KPM Is Going.md`** — what KPM already has
-  (blind counting, counter≠approver, delta corrections, audit trail: the hard parts) versus the
-  holes, which all sit in the gap between *"the agent found a different number"* and *"stock
-  changed"*.
-- **New idea, unanswered: per-product count history.** One short count is a mistake; the same
-  product short three months running is theft. The data is already in `pending_audits`.
-- ⚠️ **`WebSearch` and `WebFetch` are BROKEN in this environment** — both die on
-  `cc/claude-haiku-4-5-20251001`, the same routing fault that kills subagent `model:` overrides.
-  Use the Browser pane (`get_page_text`) to read a page instead. **Do not report a page as
-  unreachable without trying the browser first.**
-
-## 🟠 EARLIER TODAY (10:00 and 10:07) RETIRED FROM THE LOG
-
-Findings 1 and 2, the damage kinds, the `Other` removal and the vault page. Full story in
-`git log -p`, and the decisions themselves in `A-Brain/Wiki/Concepts/Where KPM Is Going.md`.
-Five entries is the working depth this file keeps.
+Everything before 2026-08-21 16:44 retired. Full story in `git log -p -- .claude/PROGRESS.md`;
+the decisions themselves live in `A-Brain/Wiki/Concepts/Where KPM Is Going.md` and
+`A-Brain/Wiki/Concepts/The Eight Warehouse Gaps.md`. Five entries is this file's working depth.
 
 ## ⏳ WAITING ON ALDI — verbatim, do not paraphrase
 
@@ -278,11 +228,21 @@ that does not change because he offers. It is not reluctance, it is a hard rule.
 not composite a frame at all — text tools worked, screenshots did not. **Check that a screenshot
 actually returns before promising him a visual pass.**
 
-🔴 **AND ONLY HE CAN ANSWER — WHAT ARE THE FIVE CAUSES CALLED?**
-Mine are placeholders: *miscount · unrecorded sale · breakage · theft · supplier short*. His law:
-**only Aldi names the categories in his own trade.** Change `VARIANCE_REASONS` at the top of
-`src/StockOpnameView.jsx` to his words **before agents count with it** — a saved record keeps the
-string it was written with, so renaming later splits one cause into two forever.
+🔴 **THE ONLY OPEN DECISION — A OR B, verbatim as it was put to him 2026-08-23 10:09:**
+
+> **A — Fix the clock.** Small, one session. Day rolls at 7am and dates run in UTC, so anything
+> counted per-day is wrong at the edges. Unblocks order-quantity and the accuracy panel.
+> **B — The freshness chain.** Birth date at intake → batch travels to branches → oldest ships
+> first + an ageing warning. Bigger, maybe three sessions. Doesn't need the clock.
+> My pick: **B.** It's the one that makes money, and you clearly feel that pain already.
+
+✖ ~~what are the five causes called~~ — **answered 2026-08-23:** *"for the 5 cause we can just add
+that as default for now"*. **SHIPPED `a3c0dff`**, minus "Supplier Short" which could never be true
+(his own factory, no third party), replaced by "Cause unknown". Still his words to rename later.
+
+✖ ~~do old-year excise bands have a legal cut-off~~ — **answered 2026-08-23: NO.** No government
+angle at all. The cost is the customer reading the band year as *tidak laku*, plus the sauce going
+flat. That makes freshness a **money** problem, not a compliance one.
 
 ✅ **ON HIS TO-DO LIST, HE ASKED FOR IT:** `A-Brain/Backlog/Test the new Stock Opname on a real
 screen.md` — numbered items with the exact words each control should show, and the reminder to
@@ -375,66 +335,36 @@ and in `A-Brain/Archive/PROGRESS-archive-2026-08-21.md`. Six entries is the work
 
 ## ▶ NOW
 
-**Live front, 2026-08-21 10:07 — STOCK OPNAME.** Findings 1 and 2 shipped (`ac5e7b7`, `dad37df`),
-finding 3 skipped on his word, `Other` erased. Tree green: **599/599 and 518/518**.
+**Live front, 2026-08-23 10:09 — THE WAREHOUSE CHAIN.** Stock Opname is finished. The receiving
+door is finished. What is left is a ranked roadmap and **one decision Aldi has not made yet.**
 
-📖 **A cold session should read `A-Brain/Wiki/Concepts/Where KPM Is Going.md` first** — the theme,
-every locked decision and the direction now live there instead of only in this file.
+🔴 **NOTHING STARTS UNTIL HE PICKS A OR B** — both written verbatim under WAITING ON ALDI above.
+A is the clock fix (small, unblocks two things). B is the freshness chain (bigger, makes money).
+Claude's pick is B. **Do not start either without his word.**
 
-**The next job is the only block in `.claude/NEXT-SESSION.md`: count a difference TWICE before HQ
-ever sees it.** Every counted row goes straight to `PENDING_HQ_APPROVAL` today, so a miscount gets
-approved and `increment(counted - expected)` writes it into real stock — where it becomes next
-month's expected figure. ⚠️ That brief carries the trap: a recount must NOT refresh the expected
-snapshot, or it re-opens finding 2, and it must not leak the expected number to tiers that count
-blind.
+📖 **A cold session reads two files before anything else:**
+`A-Brain/Wiki/Concepts/Where KPM Is Going.md` — the theme and every locked decision.
+`A-Brain/Wiki/Concepts/The Eight Warehouse Gaps.md` — the ranked roadmap, the build order, and
+what was deliberately rejected so it does not get re-proposed.
+
+⚠️ **TWO FACTS THAT INVALIDATE OLDER NOTES IN THIS FILE.** There is **no supplier** — the company
+owns the factory, so nothing may be framed as a supplier or carrier claim; every shortage is an
+internal leak. And **excise bands carry no legal deadline** — the cost of old stock is the customer
+reading the band year as *tidak laku* plus the sauce going flat. Any older note implying otherwise
+is wrong.
+
+⚠️ **NOTHING SHIPPED SINCE 2026-08-21 HAS BEEN SEEN ON A REAL SCREEN.** The in-app browser will not
+load the dev server's self-signed certificate; this needs his own Chrome. His checklist is
+`A-Brain/Backlog/Test the new Stock Opname on a real screen.md`. **A green suite is not a working
+screen** — the 08-21 crash entry below is what that lesson cost.
 
 ☠️ **Still true and still unrelated:** the obvious-looking fix for the forced Google sign-in runs
 on into `signOut(auth)` at `App.jsx:2336` and would delete his sign-in permanently. Do not apply it.
 
-⚠️ **Two open questions are logged under WAITING ON ALDI** — finding 3 skip-or-fix, and whether
-`Other` covers "add another one" or he wants permanent custom damage kinds.
+📎 **Still live from 2026-08-19:** his six reported items were investigated and none are fixed.
+Evidence with file and line numbers in `.claude/SWEEP-2026-08-19.md`.
 
-📎 **Still live from 2026-08-19, do not lose it:** his six reported items were all investigated
-and none are fixed. Evidence with file and line numbers is in `.claude/SWEEP-2026-08-19.md`.
-
-📏 **THIS FILE IS 3,505 LINES AND ITS OWN RULE SAYS ~350.** The 2026-08-14 archive has grown back
-ten times over, and it is read in full at every session start. It needs cutting into
-`A-Brain/Archive/` — but it carries BOTH the 🟠 KPM and 🟢 Lancelot tracks interleaved, so it is
-not a job to do casually or unasked. **Raise it with Aldi before trimming.**
-
-**Before writing anything to him, read the top of `.claude/NEXT-SESSION.md`.** He said the replies
-use too many hard words. Short sentences were never the problem; the vocabulary was. Also saved to
-the `feedback_explain_in_plain_english` memory, which loads on its own after a clear.
-
-Queued and unbuilt, both decided 2026-08-19: the per-tier live-number switch with the new default
-tier names, and TITIP everywhere. Older and still true: the `agentData` memo in
-`src/EODReconciliationView.jsx` is missing `inventory`, so `itemsBks` uses fallback pack sizes.
-
-> 📋 **`.claude/NEXT-SESSION.md` holds exactly ONE job — copy the only block on it, paste, go.**
-> **It is a standing duty to rewrite that file with the next single job before any session that
-> shipped work ends.** Aldi, 2026-08-18: *"just prepare me 1 each time instead"* — a menu is how
-> the wrong prompt gets pasted. The remaining queue lives in a collapsed block underneath it, for
-> the next session to promote from, never for him to copy.
->
-> ✅ **Workflows are ALLOWED again** — he reversed the earlier ban on 2026-08-18: *"correct
-> workflow"*. Still the wrong tool for a single-file fix; use one focused pass there. Reach for a
-> fan-out only on a genuine sweep across many files, and **never set `model` on a subagent** —
-> the `cc/`-prefixed routes are unreachable and the agent dies instantly.
-> **Alucard now runs Karpathy + Caveman by DEFAULT** (§4 and §5, set 2026-08-18 on his word:
-> *"add karpathy guidelines while using caveman on default inside alucard"*), so neither has to
-> be asked for again. Caveman carve-outs: **questions stay descriptive**, and **every reply ends
-> with what was just done**.
-
-
-
-# 🔧 PLAN A UNDERWAY — 12 FIXES SHIPPED, EVERY ONE SELF-CHECKED
-
-Aldi chose **A (money first)** off the 75-problem register, then re-scoped how I work twice:
-*"i want u to check every single update that u made yourself from now on, find solution to do
-that"*, and *"im kinda dizzy looking at all the test"* — so testing moved off his plate entirely.
-Ponytail is set to **ultra**.
-
-
+**Before writing anything to him, read the top of `.claude/NEXT-SESSION.md`.**
 ## 📂 Where things live
 
 
@@ -454,7 +384,10 @@ Ponytail is set to **ultra**.
 | `A-Brain/Wiki/Concepts/Where KPM Is Going.md` | **NEW 2026-08-21 — READ THIS FIRST.** The theme, every locked decision and the direction. He asked for it by name. Put settled decisions here, not in PROGRESS |
 | `src/StockOpnameView.jsx` → `DAMAGE_REASONS` | **NEW 2026-08-21** — the five kinds of damage, stored with the sales terminal's own long strings. Deliberately a SUBSET of the terminal's list: no `Other`, because free text cannot be grouped or counted |
 | `A-Brain/Backlog/Test the new Stock Opname on a real screen.md` | **NEW 2026-08-21, HIS TO-DO** — numbered walkthrough of everything shipped that day. **Only he can run it.** Ask whether he has, before building on top |
-| `src/StockOpnameView.jsx` → `VARIANCE_REASONS` + `varianceReasonMissing()` | **NEW 2026-08-21** — why a confirmed difference happened. 🔴 the five words are Claude's placeholders, NOT Aldi's — he must name them before agents use it |
+| `src/StockOpnameView.jsx` → `VARIANCE_REASONS` + `varianceReasonMissing()` | **NEW 2026-08-21, LIVE 2026-08-23** — why a confirmed difference happened. Running as the DEFAULT on his word; still his words to rename. ⚠️ No cause may mention a supplier — there is none in this chain. "Cause unknown" is deliberate: the admin cannot type their own reason, so an honest bucket stops them picking a wrong one |
+| `src/components/BranchWarehouseManager.jsx` → `receiptLines()` / `receiptBlocked()` / `receiptDisputed()` | **NEW 2026-08-23** — the arrival check. The branch is credited what it COUNTED, never what HQ claimed. Partial blind: quantities hidden while `IN_TRANSIT`, product names kept so a missing product is counted as 0. Any difference or damage → `DISPUTED`, top of HQ's list. **No tolerance here** unlike Stock Opname — a sealed box carries no fraction of a pack |
+| `A-Brain/Wiki/Concepts/The Eight Warehouse Gaps.md` | **NEW 2026-08-23 — THE ROADMAP.** Eight ranked gaps, the forced build order, and what was rejected on purpose. Artifact version: `https://claude.ai/code/artifact/2a94825e-e349-42a7-bf52-9404d0c19c2c` |
+| `A-Brain/Wiki/Concepts/Design Inspiration Sources.md` | **NEW 2026-08-23** — the five sites his component and animation ideas come from, and the four rules an idea must clear (repalette · survive Lite Mode · no native dialog · must report). Alucard loads it on any design ask |
 | `src/StockOpnameView.jsx` → `recountState()` + `samePass()` + `startRecount()` | **NEW 2026-08-21** — a difference is counted twice before HQ sees it. ⚠️ `startRecount` must NEVER re-take `expStock`/`expDamaged`, and must never show the previous numbers back |
 | `src/StockOpnameView.jsx` → `shortageStreak()` + `isLeak()` | **NEW 2026-08-21** — leak detection. Short in ≥2 of the last ≥3 counts, five-count window. **Lives on HQ's review row on purpose** — agents cannot read `pending_audits`, and warning the counter would bias a blind count |
 | `src/StockOpnameView.jsx` → `damageBlocked()` | **NEW 2026-08-21** — the reconcile rule. The damaged total is the truth; the kinds under it must sum to exactly it or the submit refuses and names the product |
