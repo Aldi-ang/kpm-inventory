@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-23 11:53 WIB (🟠 KPM app session)** · ✅ TESTED IN HIS CHROME — STOCK OPNAME WORKS · ✅ HQ CAN SEE BRANCH SHELVES (`ccdb5b8`) — 632/632 · 🔴 HE OWES ONE ANSWER: POV SWITCH, BLOCK WRITES OR NOT · branch `phase0-solid-ground`
+**Updated: 2026-08-23 12:05 WIB (🟠 KPM app session)** · ✅ TESTED IN HIS CHROME — STOCK OPNAME WORKS · ✅ HQ CAN SEE BRANCH SHELVES (`ccdb5b8`) — 632/632 · ▶ **NEXT JOB IS SPEC'D IN FULL: THE TIER POV SWITCH** · 🔴 **RAISE THE LIVE-DATA TRAP WITH HIM FIRST** · branch `phase0-solid-ground`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **TRIMMED 2026-08-21 ON ALDI'S WORD.** *"sure trim it"*, on his own condition:
@@ -48,6 +48,30 @@ with **zero workflows**. Rule removed, reason recorded in `.gitignore`. Full ind
 `Archive/n8n-workflow-index.md`; 8 of 347 are malformed JSON upstream, saved but unindexed, named.
 **n8n is NOT installed here** — parts bin, not a live system. Alucard §1 now routes automation
 questions to the index.
+
+## 🟠 2026-08-23 12:05 — THE POV SWITCH IS SPEC'D, NOT STARTED. QUOTA STOPPED IT, NOTHING IS HALF-BUILT.
+
+**Nothing was begun that could strand.** Tree clean at `227a3d1`. The whole brief is
+`.claude/NEXT-SESSION.md` with his words verbatim — read that, not this.
+
+**He approved the design and added to it:** hidden from the sidebar (*"not all employee can open
+setting right"*), a **cool animated button**, locked to **`adikaryasukses99@gmail.com` by email,
+not by tier**, an undismissable *MELIHAT SEBAGAI* banner, never surviving a reload — and he
+**overruled the safe default: writes ARE allowed**, *"saving is needed for further testing
+actually"*. Plus **fake test accounts, one per tier**, reachable only from his account.
+
+🔴 **THE TRAP, AND IT MUST BE RAISED BEFORE BUILDING.** Writes go to the LIVE database. A fake
+tier-5 that can save writes real sales, stock, audits and EOD records into the same Firestore the
+business runs on, and nothing marks them fake. **He is right that a test identity fixes
+attribution** — his point, *"this way the system wont be confused to write which name on the
+receipt"* — but **it fixes attribution, not pollution**: the numbers still land in real revenue and
+the real weekly count, just under a name that reads TEST. Offer the **Firebase emulator** first
+(a whole second database on his machine, one session to set up, reusable forever), then a
+quarantined `TEST` branch, then what he asked for unguarded.
+
+**Also approved and unbuilt:** the `9 of 5 sorted` line should refuse visibly the moment the damage
+kinds exceed the total. Ten minutes — `damageBlocked()` already computes it, the line just does not
+read it.
 
 ## 🟠 2026-08-23 11:53 — IT WAS TESTED ON A REAL SCREEN AT LAST, AND IT WORKS. 599/599, 632/632.
 
@@ -247,25 +271,6 @@ trusting it, and delete it when it cannot.**
 6. It talks to **REAL Firebase**. Type counts, but **do not press submit** — that writes a real
    audit. For end-to-end, set up the emulator instead.
 
-## 🟠 2026-08-21 16:51 — TOLERANCE SHIPPED, AND IT FIXED A BUG FROM THIS MORNING. 599/599, 565/565.
-
-His answer to "what difference is not worth your time": *"few batang wont worth my time, few bks
-is still money bruv we need that"*. **The line is one pack.**
-
-🔴 **IT WAS NOT A COMFORT SETTING — THE RECOUNT HAD BROKEN BATANG PRODUCTS.** Selling in Batang
-stores `qty / sticksPerPack` (`App.jsx:3127`), so a product with loose sticks sold from it holds a
-**fraction** of a pack — 99.44. The count box is `parseInt`, whole Bks only, so the agent can type
-99 or 100 and **the variance can never reach zero**. Before the recount that was a wrong number on
-screen; after it, that product demanded a pointless second count and filed a **fake half-pack
-shortage every week**. The tolerance is what makes counting a batang product possible at all.
-
-The figure is still printed exactly as counted. Only the **verdict** treats a sub-pack difference
-as a match — his granularity, not a rounding.
-
-⚠️ **A blanket rename in this change put `item.matched` on HQ's review row** — a field that does
-not exist on a saved record, so every row would have painted red on `undefined`. Caught before
-commit, and now pinned by a check that strips comments first.
-
 ## 🟠 LOG TRIMMED TO FIVE ENTRIES, 2026-08-23 10:09
 
 Everything before 2026-08-21 16:44 retired. Full story in `git log -p -- .claude/PROGRESS.md`;
@@ -292,6 +297,10 @@ that does not change because he offers. It is not reluctance, it is a hard rule.
 **⚠️ Option 1 needs the Chrome extension connected**, and the browser pane in this session would
 not composite a frame at all — text tools worked, screenshots did not. **Check that a screenshot
 actually returns before promising him a visual pass.**
+
+✅ ~~POV switch, block writes or allow~~ — **ANSWERED: allow.** *"saving is needed for further
+testing actually"*. And ~~the `9 of 5 sorted` fix~~ — **ANSWERED: yes, make all of it.** Both are
+in `.claude/NEXT-SESSION.md`; the trap that must be raised first is in there too.
 
 🔴 **THE POV SWITCH — his ask, 2026-08-23:**
 
@@ -420,8 +429,9 @@ door is finished. What is left is a ranked roadmap and **one decision Aldi has n
 he opens the Claude side panel and signs in there, then `navigate` reaches the dev server. The
 in-app browser is useless for this: it refuses the self-signed certificate.
 
-🔴 **ONE DECISION OUTSTANDING, then a small build.** He asked for a tier-1 POV switch. Design was
-given; the open question is under WAITING ON ALDI, verbatim.
+▶ **THE NEXT JOB IS FULLY SPEC'D IN `.claude/NEXT-SESSION.md`** — the tier POV switch, approved
+with his additions. **Do not open with code: open by raising the live-data trap.** He chose to
+allow writes, and fake accounts that can save will put fiction into his real books.
 
 ⚠️ **Still unseen:** the arrival check and the HQ branch-shelf panel. Both need a branch that has
 stock and a shipment in transit. **A tier 5/6 login or the emulator is the only way past this.**
