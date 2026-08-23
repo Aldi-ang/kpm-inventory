@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Package, Truck, AlertCircle, TrendingUp, Wallet, Coins, Receipt, Tag, AlertOctagon, ShieldAlert, User } from 'lucide-react';
 import { doc, onSnapshot } from 'firebase/firestore';
-import { formatRupiah } from './utils/helpers';
-
-const getCurrentDate = () => new Date().toISOString().split('T')[0];
+/* `getCurrentDate` is IMPORTED, not redefined. This file used to keep its own copy —
+   `new Date().toISOString()`, the UTC one — so it stayed a day behind between midnight and 07:00
+   WIB even after the shared helper was fixed. A second copy of a date rule is a second bug
+   waiting for someone to fix only the first. */
+import { formatRupiah, getCurrentDate } from './utils/helpers';
 
 // 🚀 ACCEPT 'samplings' PROP HERE
 /* AUTO-FIT MONEY. Aldi, 2026-08-19, with a screenshot: the three IF SOLD figures ran into each

@@ -22,8 +22,11 @@ import { notify } from './components/Toast.jsx';
    new sale, which is the same class of bug as the previous customer's territoryOverride leaking
    into an innocent walk-in (see resetTerminalAfterDeal). */
 const DRAFT_KEY = 'kpm_sales_draft_v1';
-/* His day starts at 07:00. A draft must not survive into the next one: it carries price snapshots
-   taken when the basket was built, and yesterday's price is a wrong sale, not a saved one. */
+/* A draft must not survive into the next selling day: it carries price snapshots taken when the
+   basket was built, and yesterday's price is a wrong sale, not a saved one.
+   ⚠️ This is an AGE CAP, not a day boundary — twelve hours from when the basket was saved, which
+   is why it was never affected by the UTC date bug. The old comment here said "his day starts at
+   07:00"; there was never such a rule, that was only the UTC helper flipping at 07:00 WIB. */
 const DRAFT_MAX_AGE_MS = 12 * 60 * 60 * 1000;
 const readDraft = (uid) => {
     try {

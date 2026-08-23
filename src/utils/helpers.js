@@ -49,17 +49,40 @@ export const storeLabel = (name) => String(name ?? '')
     .replace(/\s*\((?:Retail|Individual|Wholesale)\)$/i, '')
     .trim();
 
-export const getCurrentDate = () => new Date().toISOString().split('T')[0];
+/* WHAT DAY IS IT, WHERE THE AGENT IS STANDING.
 
-// getCurrentDate() above is UTC — fine for record-keeping timestamps, wrong for "what day is it
-// for this agent right now." WIB is UTC+7, so toISOString() flips to tomorrow at 07:00 local,
-// right in the middle of a morning route. Uses local Date methods instead, no hardcoded offset.
+   ⚠️ THERE WAS NEVER A 7AM RULE. It was described for months as "the app day rolls over at 7am",
+   as though someone had chosen that, and it was only ever a symptom: this used to be
+   `new Date().toISOString().split('T')[0]`, which is the **UTC** date. WIB is UTC+7, so the UTC
+   date flips at 07:00 local — mid morning route. One bug wearing two names.
+
+   The cure was already written and simply never adopted: `getLocalDayKey` sat directly below the
+   broken helper, with a comment describing exactly this, while all 26 call sites went on using
+   the UTC one. Fixed at the definition rather than at the call sites — a guard in the shared
+   function is a smaller diff than a guard in every caller, and every caller wanted local anyway:
+   backup filenames, the `date` stamped on a transaction, and the default date on a report picker
+   all mean "today, here".
+
+   LOCAL, not a hardcoded +7. Indonesia has no daylight saving, so a fixed offset would be correct
+   for WIB today — but it would silently mis-stamp a phone in WITA or WIT, and a device already
+   knows its own zone. No offset to keep in sync with reality.
+
+   ⚠️ OLD RECORDS WERE NOT REWRITTEN. A transaction saved before this fix keeps the UTC `date` it
+   was written with, so anything sold between midnight and 07:00 WIB in the past is still filed
+   under the previous day. Going forward it is right; backwards it is unchanged, deliberately —
+   repairing history means rewriting the `date` on every historical transaction from its
+   `timestamp`, and that is Aldi's decision, not a side effect of this fix. */
 export const getLocalDayKey = (date = new Date()) => {
   const y = date.getFullYear();
   const m = String(date.getMonth() + 1).padStart(2, '0');
   const d = String(date.getDate()).padStart(2, '0');
   return `${y}-${m}-${d}`;
 };
+
+/* The name 26 call sites already use. Same function, one behaviour — prefer `getLocalDayKey` in
+   new code, and never reintroduce a second date helper: the duplicate that used to live at
+   `AgentInventoryView.jsx:6` kept its own UTC copy and survived every fix aimed at this one. */
+export const getCurrentDate = () => getLocalDayKey();
 
 export const getRandomColor = (str) => {
     let hash = 0;

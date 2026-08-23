@@ -1516,7 +1516,10 @@ section('S29. A half-typed sale survives a trip to another screen');
      allow({ uid: 'a', at: NOW - 60_000 }, 'a', NOW));
   ok("another agent's draft on a shared phone does NOT",
      !allow({ uid: 'b', at: NOW - 60_000 }, 'a', NOW));
-  ok('yesterday\'s draft does NOT - his day starts at 07:00 and stale prices must not return',
+  /* An AGE cap, not a day boundary — twelve hours from when the basket was saved. Named wrongly
+     until 2026-08-23 ("his day starts at 07:00"), which was never a rule, only the UTC helper
+     flipping at 07:00 WIB. */
+  ok('a draft older than twelve hours does NOT - stale prices must not return',
      !allow({ uid: 'a', at: NOW - 13 * 60 * 60 * 1000 }, 'a', NOW));
   ok('a draft with no timestamp is treated as ancient, not as brand new',
      !allow({ uid: 'a' }, 'a', NOW)); }
@@ -2299,6 +2302,82 @@ section('S37. Quarantine and HQ Audits: gold is ink and edges, never a slab');
      && branch.indexOf('receivingOrder && (() =>') < branch.indexOf('{requests.map(req => {'));
   ok('and nothing else in the file writes a receipt count - only the two boxes',
      (branch.match(/setReceiptCount\(/g) || []).length === 2);
+}
+
+
+/* ============================================================================
+   THE CLOCK (2026-08-23) — there was never a 7am rule
+
+   For months this was written down as two bugs: "the app day rolls over at 7am"
+   and "getCurrentDate() is UTC in 26 places". It was one. `toISOString()` returns
+   the UTC date, WIB is UTC+7, so the UTC date flips at 07:00 local — mid morning
+   route. The rollover was the symptom and the timezone was the cause.
+
+   The cure was already in the file. `getLocalDayKey` sat immediately below the
+   broken helper carrying a comment describing exactly this, and all 26 call sites
+   went on using the UTC one anyway. Fixed at the definition.
+   ============================================================================ */
+{
+  const hlp = read('src/utils/helpers.js');
+
+  /* ---- SOURCE: the UTC date is gone from the day helpers ---- */
+  ok('getCurrentDate no longer takes the UTC date',
+     !/getCurrentDate = \(\) => new Date\(\)\.toISOString/.test(hlp));
+  ok('and it is the same function as getLocalDayKey, not a second rule',
+     /getCurrentDate = \(\) => getLocalDayKey\(\)/.test(hlp));
+  ok('the day key is built from LOCAL date parts',
+     /getFullYear\(\)/.test(hlp) && /getMonth\(\) \+ 1/.test(hlp) && /getDate\(\)/.test(hlp));
+
+  /* NO HARDCODED OFFSET. Indonesia has no daylight saving so a fixed +7 would be
+     right for WIB today — and silently wrong for a phone in WITA or WIT, and one
+     more constant to keep in step with reality. The device knows its own zone. */
+  ok('and never from a hardcoded +7 offset',
+     !/25200|7 \* 60 \* 60|utcOffset|UTC_OFFSET/.test(hlp));
+
+  /* ---- NO SECOND COPY ANYWHERE ---- the duplicate at AgentInventoryView.jsx:6
+     kept its own UTC version and survived every fix aimed at the shared one. */
+  const dateDupes = appFiles.filter(f =>
+     f !== 'src/utils/helpers.js' && /const getCurrentDate\s*=/.test(read(f)));
+  ok('no file keeps its own copy of the date rule',
+     dateDupes.length === 0, dateDupes.join(', '));
+  ok('AgentInventoryView imports the shared helper instead of redefining it',
+     /import \{[^}]*getCurrentDate[^}]*\} from '\.\/utils\/helpers'/.test(read('src/AgentInventoryView.jsx')));
+
+  /* ---- BEHAVIOUR ---- the shipped helper, lifted, run on a real date.
+     ⚠️ HONEST LIMIT: a machine whose own clock is set to UTC cannot tell the two
+     implementations apart, because there local IS UTC. That is exactly why the
+     source checks above exist as well — do not delete them as duplicates. */
+  const kStart = hlp.indexOf('export const getLocalDayKey');
+  const kEnd   = hlp.indexOf('\n};', kStart);
+  ok('the day-key rule could be lifted out of helpers to be tested',
+     kStart > -1 && kEnd > kStart);
+  const getLocalDayKey = new Function(
+     hlp.slice(kStart, kEnd + 3).replace('export const', 'const')
+     + '\nreturn getLocalDayKey;')();
+
+  /* 06:30 in whatever zone this machine is in, on 23 Aug 2026. The UTC version
+     returns 2026-08-22 for this moment anywhere east of UTC — Jakarta included. */
+  ok('06:30 on the 23rd is the 23rd, not the 22nd',
+     getLocalDayKey(new Date(2026, 7, 23, 6, 30)) === '2026-08-23');
+  ok('one minute past midnight is already the new day',
+     getLocalDayKey(new Date(2026, 7, 23, 0, 1)) === '2026-08-23');
+  ok('one minute before midnight is still the old one',
+     getLocalDayKey(new Date(2026, 7, 22, 23, 59)) === '2026-08-22');
+  ok('single-digit months and days are padded, or the string sorts wrongly',
+     getLocalDayKey(new Date(2026, 0, 5, 12, 0)) === '2026-01-05');
+
+  /* ---- THE ROLLING RAIL WAS ALREADY RIGHT ---- dayStats refused the broken
+     helper and computed local midnight itself. It must keep doing so. */
+  const ds = read('src/utils/dayStats.js');
+  ok('the day rail still sets its own local midnight',
+     /midnight\.setHours\(0, 0, 0, 0\)/.test(ds));
+
+  /* ---- THE DRAFT CAP IS AN AGE, NOT A BOUNDARY ---- it was captioned "his day
+     starts at 07:00" for months, which was never a rule. Twelve hours from when
+     the basket was saved, unaffected by any of this. */
+  ok('the sales draft still expires on AGE, not on a day boundary',
+     /DRAFT_MAX_AGE_MS = 12 \* 60 \* 60 \* 1000/.test(merchant)
+     && !/his day starts at 07:00/.test(merchant));
 }
 
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
