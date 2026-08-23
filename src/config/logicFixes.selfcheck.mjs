@@ -1830,6 +1830,21 @@ ${opname.slice(bOpen + 1, bEnd)}
   ok('5 damaged and none sorted is refused',       /5 damaged not sorted/.test(damageBlocked({ damaged: 5, kinds: {} })));
   ok('5 damaged sorted 2 + 1 is still refused',    /2 damaged not sorted/.test(damageBlocked({ damaged: 5, kinds: { 'Pest / Rodent Damage': 2, 'Water / Weather Damage': 1 } })));
   ok('kinds adding up past the total is refused',  /more than the total/.test(damageBlocked({ damaged: 5, kinds: { 'Pest / Rodent Damage': 6 } })));
+  /* 🔴 SEEN ON A REAL SCREEN 2026-08-23, and approved to fix: sorting 9 kinds against 5
+     damaged printed "9 OF 5 SORTED" beside a bar clamped to 100%. True arithmetic that
+     reads as PROGRESS — nothing on the row said no until submit did. Two halves to it:
+     the sentence has to carry the overshoot, and the row has to PRINT the sentence
+     rather than re-deriving a tally of its own and keeping only the red border. */
+  ok('the refusal says by HOW MUCH it is over, not just that it is',
+     /4 sorted more than the total/.test(damageBlocked({ damaged: 5, kinds: { 'Pest / Rodent Damage': 9 } })));
+  ok('and the under case still says how many are left',
+     /3 damaged not sorted yet/.test(damageBlocked({ damaged: 5, kinds: { 'Pest / Rodent Damage': 2 } })));
+  ok('the closed damage line prints the refusal itself',
+     /\{blocked \? blocked\.toUpperCase\(\)/.test(opname));
+  ok('and the tally that read as progress while over is gone',
+     !/\$\{sorted\} of \$\{dmgTotal\} sorted/.test(opname));
+  ok('the words go red with the border, so the refusal is not carried by colour alone',
+     /blocked \? 'text-\[var\(--danger-ink\)\]'/.test(opname));
   ok('3 pest + 2 water against 5 damaged passes',  damageBlocked({ damaged: 5, kinds: { 'Pest / Rodent Damage': 3, 'Water / Weather Damage': 2 } }) === null);
   ok('no free-text escape hatch is left in the rule',
      !/otherDetail/.test(opname), 'a free-text cause cannot be grouped or counted');

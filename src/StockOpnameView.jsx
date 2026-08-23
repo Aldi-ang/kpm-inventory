@@ -175,8 +175,13 @@ export const damageBlocked = (entry) => {
     if (total <= 0) return null;
     const sorted = damageSorted(entry);
     if (sorted !== total) {
+        /* BOTH SENTENCES CARRY THE NUMBER. The over case used to be the bare phrase
+           "kinds add up to more than the total", which is true and tells you nothing
+           about how far over you are. Now it says by how much, in the same shape as
+           the under case, because this string is what the row PRINTS — see the closed
+           damage line below. */
         return sorted < total ? `${total - sorted} damaged not sorted yet`
-                              : 'kinds add up to more than the total';
+                              : `${sorted - total} sorted more than the total`;
     }
     return null;
 };
@@ -1637,8 +1642,16 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                                                                 aria-expanded={isOpen}
                                                                 className={`w-full min-h-[44px] flex items-center gap-3 px-3.5 py-2.5 rounded-lg bg-[var(--sunk)] border text-left transition-colors ${blocked ? 'border-[var(--danger)] text-[var(--danger-ink)]' : 'border-[var(--accent-edge)] text-[var(--accent-ink)]'} `}>
                                                                 <span className="text-[11px] font-black uppercase tracking-widest whitespace-nowrap">{formatNumber(dmgTotal)} Damaged</span>
-                                                                <span className="flex-1 min-w-0 truncate text-[11px] font-bold font-mono tabular-nums text-[var(--ink-dim)]">
-                                                                    {blocked ? `${sorted} of ${dmgTotal} sorted` : `${kindCount} kind${kindCount === 1 ? '' : 's'} recorded`}
+                                                                {/* 🔴 THE LINE PRINTS THE REFUSAL, not a tally of its own.
+                                                                    It used to say "9 of 5 sorted" — arithmetic that is true and
+                                                                    reads as PROGRESS, next to a bar clamped to 100%. Nothing on
+                                                                    the row said it was wrong until submit refused it.
+                                                                    `damageBlocked` had already worked out the reason and the row
+                                                                    was throwing the words away and keeping only the red. Now the
+                                                                    sentence it computed is the sentence that shows, so the row
+                                                                    refuses the moment the count goes over instead of at the end. */}
+                                                                <span className={`flex-1 min-w-0 truncate text-[11px] font-bold font-mono tabular-nums ${blocked ? 'text-[var(--danger-ink)]' : 'text-[var(--ink-dim)]'} `}>
+                                                                    {blocked ? blocked.toUpperCase() : `${kindCount} kind${kindCount === 1 ? '' : 's'} recorded`}
                                                                 </span>
                                                                 <span className="text-[10px] shrink-0" aria-hidden="true">{isOpen ? '▴' : '▾'}</span>
                                                             </button>
