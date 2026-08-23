@@ -87,7 +87,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "C:/Users/ASUS/.local/bin/graphify.EXE hook-guard search"
+            "command": "node \"D:/APP DEVELOPMENT/kpm inventory main FILES/A-Brain/automation/graphify-answer-hook.mjs\" search",
+            "timeout": 15
           }
         ]
       },
@@ -96,7 +97,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "C:/Users/ASUS/.local/bin/graphify.EXE hook-guard read"
+            "command": "node \"D:/APP DEVELOPMENT/kpm inventory main FILES/A-Brain/automation/graphify-answer-hook.mjs\" read",
+            "timeout": 15
           }
         ]
       }

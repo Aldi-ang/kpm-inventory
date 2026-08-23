@@ -22,6 +22,33 @@
 > 📏 **KEEP THIS FILE UNDER ~350 LINES.** Past that, cut the oldest day into the same archive.
 > ⚠️ **TWO TRACKS SHARE THIS FILE** — 🟠 KPM and 🟢 Lancelot. Never trim or re-sort across them.
 
+## 🔧 2026-08-23 12:5x — TOOLING TRACK (no app code touched). Graphify hook now ANSWERS, not nags.
+
+**The `MANDATORY: run graphify query` block is gone.** `.claude/settings.json` `PreToolUse` now runs
+`A-Brain/automation/graphify-answer-hook.mjs`, which keeps `hook-guard`'s judgement about *when* to
+fire and replaces its message with the **actual query result** — ~12 `NODE ... [src=file loc=Lnnn]`
+lines, injected before the search happens. Silent 600ms, delivering 1533ms; the gap is the proof it
+queried. Fail-open everywhere — bad JSON, missing binary, timeout all exit 0, because a throwing
+PreToolUse hook blocks *every* tool call.
+
+Idea from **basemode** (`ChristopherKahler/base`), which Aldi asked about. **NOT installed, and
+should not be**: PolyForm **Noncommercial** licence (he intends to sell KPM), it rewrites the very
+hooks he depends on, and it self-updates in the background. Only the one idea was taken.
+
+⚠️ **Correction on the record:** an earlier claim here that graphify's hook nagged on unrelated
+calls was **wrong** — it is correctly silent for `curl` and `git status`. Only the wording was bad.
+The still-true half is baked into the new message: *graphify's call edges undercount, so confirm
+"who calls X" with grep.*
+
+**347 n8n workflow templates archived permanently** — `A-Brain/Archive/awesome-n8n-templates/`,
+8.1MB, 392 files, tracked in vault git. Its upstream `.git` was deleted on purpose so the files
+survive an upstream takedown (his ask); the cost is no `git pull`, re-clone to refresh. A
+`.gitignore` rule had been silently excluding all of it — first commit landed the index and note
+with **zero workflows**. Rule removed, reason recorded in `.gitignore`. Full index at
+`Archive/n8n-workflow-index.md`; 8 of 347 are malformed JSON upstream, saved but unindexed, named.
+**n8n is NOT installed here** — parts bin, not a live system. Alucard §1 now routes automation
+questions to the index.
+
 ## 🟠 2026-08-23 11:53 — IT WAS TESTED ON A REAL SCREEN AT LAST, AND IT WORKS. 599/599, 632/632.
 
 **First time anything from 08-21 or 08-23 has been seen running.** Claude drove HIS Chrome against
