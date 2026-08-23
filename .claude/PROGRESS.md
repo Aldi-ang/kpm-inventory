@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-23 11:45 WIB (🟠 KPM app session)** · ✅ CLOCK FULLY FIXED (`60c53d8` + `e3663c6`) — 612/612 · ✅ HISTORY LEFT ALONE, his call · ▶ NEXT IS **B, THE FRESHNESS CHAIN** — design it before building · ⚠️ NOTHING SINCE 08-21 SEEN ON A REAL SCREEN · branch `phase0-solid-ground`
+**Updated: 2026-08-23 12:30 WIB (🟠 KPM app session)** · ✅ CLOCK FULLY FIXED · ✅ STOCK AGE SHIPPED (`42fefe8`) — 632/632 · ⚠️ **NOTHING SINCE 08-21 SEEN ON A REAL SCREEN — THIS IS NOW THE BIGGEST RISK** · branch `phase0-solid-ground`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **TRIMMED 2026-08-21 ON ALDI'S WORD.** *"sure trim it"*, on his own condition:
@@ -21,6 +21,35 @@
 >
 > 📏 **KEEP THIS FILE UNDER ~350 LINES.** Past that, cut the oldest day into the same archive.
 > ⚠️ **TWO TRACKS SHARE THIS FILE** — 🟠 KPM and 🟢 Lancelot. Never trim or re-sort across them.
+
+## 🟠 2026-08-23 12:30 — STOCK AGE SHIPPED, AND HIS SCOPE CUT MADE IT ONE SESSION NOT THREE. 599/599, 632/632.
+
+**He scoped it before it was built, and the scope IS the design:**
+
+> *"we just system that only care about the data related stuff on the company, as long as the
+> product is sold its job done, company can take care of the item management inside the warehouse
+> our app didnt need that much details for now"*
+
+So it **reports age and nothing else** — no threshold he has to invent, no warning, no
+oldest-ships-first rule, nothing blocked. **Two checks pin that scope**: no threshold may be
+invented, nothing may be refused on age. A future session adding either is going against him.
+
+**Why it collapsed from three sessions to one.** The sketched version split every product into
+per-batch buckets and taught every stock-removing path which batch it was taking from. Instead
+**nothing about how stock leaves changed at all** — what is still on hand is derived by subtraction
+against `stock`, walking arrivals newest-first. Two consequences: **no new write path and nothing
+new to type** (every arrival is already on the shipment record from this morning's arrival check,
+so it works retroactively), and **the ages cannot drift**, because `stock` stays the one source of
+truth — correct it at a count and the ages correct themselves.
+
+**Three honesty rules, each pinned by a check:** damaged units are not shelf stock · stock the
+records cannot explain is shown as *"sebelum ada catatan"* rather than folded into the oldest batch
+(which would make the age read younger) · an unknown timestamp gives **no** age, never zero —
+"brand new" and "we do not know" must not look the same.
+
+⚠️ **THE REAL RISK NOW IS THAT NONE OF THIS HAS BEEN SEEN RUNNING.** Three features shipped today
+on top of two days of unseen work. The in-app browser will not load the dev server's self-signed
+certificate — **this needs his own Chrome, and it should come before more building.**
 
 ## 🟠 2026-08-23 11:45 — THE CLOCK FIX WAS INCOMPLETE, AND SAYING SO IS THE POINT. 599/599, 612/612.
 
@@ -387,10 +416,12 @@ and in `A-Brain/Archive/PROGRESS-archive-2026-08-21.md`. Six entries is the work
 **Live front, 2026-08-23 10:09 — THE WAREHOUSE CHAIN.** Stock Opname is finished. The receiving
 door is finished. What is left is a ranked roadmap and **one decision Aldi has not made yet.**
 
-✅ **A is done** (`60c53d8`). ▶ **B IS NEXT AND HE HAS ASKED FOR IT** — *"then we can design the
-next one"*. The freshness chain: **G8 birth date at intake → G1 batch travels to branches → G2
-oldest ships first + ageing warning.** Design it before building it; he wants to see the shape.
-⚠️ One number is HIS to give: **how long is too long for a kretek to sit.** Nobody else can know it.
+✅ **A and B are both done** — clock (`60c53d8` + `e3663c6`), stock age (`42fefe8`). **He asked for
+no threshold and none was built; do not add one.**
+
+🔴 **THE NEXT THING IS NOT MORE FEATURES — IT IS LOOKING AT THE APP.** Three shipped today, none
+seen running, on top of two days the same. The 08-21 entry below is what that costs. Needs HIS
+Chrome; the in-app browser refuses the dev server's certificate.
 
 📖 **A cold session reads two files before anything else:**
 `A-Brain/Wiki/Concepts/Where KPM Is Going.md` — the theme and every locked decision.
