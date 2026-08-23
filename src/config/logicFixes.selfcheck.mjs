@@ -2180,5 +2180,118 @@ section('S37. Quarantine and HQ Audits: gold is ink and edges, never a slab');
      goldFills <= 18, `${goldFills} gold fills left`); }
 
 
+
+/* ============================================================================
+   THE ARRIVAL CHECK — counting the box at the door (2026-08-23)
+
+   Before this, receiving a shipment was one yes/no button and the branch was
+   credited whatever HQ SAID it shipped. A short box therefore became branch
+   stock that did not exist, and it only surfaced weeks later at Stock Opname as
+   a mystery shortage that looks like theft at the branch. Wrong person blamed,
+   and the claim against HQ or the courier long dead — a discrepancy has to be
+   filed BEFORE a clean receipt is signed.
+   ============================================================================ */
+{
+  const branch = read('src/components/BranchWarehouseManager.jsx');
+
+  /* Lifted verbatim between the two anchors, so these run the SHIPPED rules. A
+     threshold retyped into its own check made a whole block decorative on
+     2026-08-21; nothing here is retyped. */
+  const aStart = branch.indexOf('export const receiptLines');
+  const aEnd   = branch.indexOf('export default function BranchWarehouseManager');
+  ok('the arrival-check rules could be lifted out of the file to be tested',
+     aStart > -1 && aEnd > aStart);
+  const { receiptLines, receiptBlocked, receiptDisputed } = new Function(
+      branch.slice(aStart, aEnd).replace(/export const/g, 'const')
+      + '\nreturn { receiptLines, receiptBlocked, receiptDisputed };')();
+
+  const shipped = [{ productId: 'A', name: 'Cello Coffee', qty: 100 },
+                   { productId: 'B', name: 'Djarum Super',  qty: 50 }];
+  const at = (counts) => receiptLines(shipped, counts);
+
+  /* A BLANK IS NOT A ZERO. Reading it as one would let an uncounted product be
+     written off in silence, which is the exact failure this screen exists to
+     stop happening at the other end. */
+  ok('a blank line is refused rather than read as zero',
+     /count every line/.test(receiptBlocked(at({ A: { counted: '100' } }))));
+  ok('but a typed 0 is a real answer - a product that never arrived',
+     receiptBlocked(at({ A: { counted: '100' }, B: { counted: '0' } })) === null);
+  ok('an empty shipment cannot be received at all',
+     /no items/.test(receiptBlocked(receiptLines([], {}))));
+
+  ok('an exact count is not a dispute',
+     receiptDisputed(at({ A: { counted: '100' }, B: { counted: '50' } })) === false);
+  const short = at({ A: { counted: '95' }, B: { counted: '50' } });
+  ok('five short is a dispute', receiptDisputed(short) === true);
+  ok('and the difference is SIGNED, so HQ can tell a shortage from an overage',
+     short[0].diff === -5);
+  ok('an overage is a dispute too, not a quiet gift',
+     receiptDisputed(at({ A: { counted: '105' }, B: { counted: '50' } })) === true);
+
+  /* Damage is its own event: the right number of boxes can arrive with five of
+     them crushed, and that is still a claim. */
+  ok('the right count with crushed boxes in it is still a dispute',
+     receiptDisputed(at({ A: { counted: '100', damaged: '5' }, B: { counted: '50' } })) === true);
+  ok('more damaged than arrived is refused, and NAMES the product',
+     /Cello Coffee: damaged cannot be more/.test(
+        receiptBlocked(at({ A: { counted: '4', damaged: '9' }, B: { counted: '50' } }))));
+  ok('a negative count is refused',
+     /cannot be negative/.test(receiptBlocked(at({ A: { counted: '-1' }, B: { counted: '50' } }))));
+
+  /* NO TOLERANCE AT THE DOOR, deliberately. Stock Opname forgives one pack
+     because selling in Batang leaves stock carrying a fraction of a pack; a
+     sealed shipment carries no such fraction. One short is short. */
+  ok('one pack short is a dispute here, unlike the weekly count',
+     receiptDisputed(at({ A: { counted: '99' }, B: { counted: '50' } })) === true);
+
+  /* ---- WHAT GETS WRITTEN ---- */
+  ok('THE POINT OF THE SCREEN: the branch is credited what it COUNTED',
+     /stock: \(current\.stock \|\| 0\) \+ good/.test(branch));
+  ok('and never again what HQ claimed to have sent',
+     !/currentStock \+ Number\(data\.item\.qty\)/.test(branch));
+  ok('good stock excludes the damaged ones',
+     /const good = line\.counted - line\.damaged/.test(branch));
+  ok('but damaged units still enter the warehouse, on the damaged shelf',
+     /damagedStock: \(current\.damagedStock \|\| 0\) \+ line\.damaged/.test(branch));
+  ok('what arrived is written down line by line, beside what was sent',
+     /receivedItems: lines\.map/.test(branch) && /shipped: l\.shipped, counted: l\.counted/.test(branch));
+
+  /* The double-credit bug: two taps used to add the stock twice. */
+  ok('a second tap cannot credit the same shipment twice',
+     /orderData\.status === 'DELIVERED' \|\| orderData\.status === 'DISPUTED'/.test(branch));
+  ok('and that guard reads the order INSIDE the transaction, not the stale prop',
+     branch.indexOf('const orderData = orderSnap.data()') < branch.indexOf("orderData.status === 'DELIVERED'"));
+  ok('the receive button does not come back after a dispute',
+     /order\.status === 'DELIVERED' \|\| order\.status === 'DISPUTED'/.test(branch));
+
+  /* ---- PARTIAL BLIND ---- his decision, 2026-08-23. */
+  ok('the quantities are hidden from the branch while the box is in transit',
+     /req\.status === 'IN_TRANSIT' \?[\s\S]{0,300}JENIS BARANG/.test(branch));
+  ok('but the product NAMES stay, so a missing product is counted as 0 not missed',
+     /itemsToProcess\.map\(i => i\.name\)\.join/.test(branch));
+  ok('the panel says a difference EXISTS without ever saying how big',
+     /Hitungan Anda tidak sama dengan kiriman HQ/.test(branch));
+
+  /* ---- HQ ACTUALLY SEES IT ---- a report filed into a list nobody opens is
+     the same as no report. */
+  ok('a disputed shipment stays in HQ active list', /r\.status === 'DISPUTED'/.test(branch));
+  ok('and sorts above everything else there', /'DISPUTED': 0/.test(branch));
+  ok('the branch is told in words, not only by a colour',
+     /SELISIH DILAPORKAN KE HQ/.test(branch));
+  ok('and the variance is written to the audit log under its own action',
+     /STOCK_RECEIVE_VARIANCE/.test(branch));
+
+  /* The count inputs must NOT live inside OrderTrackingModule: that component is
+     redeclared on every render, so React remounts it and an input inside would
+     lose focus after each keystroke. ⚠️ THIS IS A PLACEMENT CHECK, NOT PROOF IT
+     DOES NOT REMOUNT — there is no static check for "the field kept focus".
+     Only typing into it in a browser proves that. */
+  ok('the count panel is rendered in the list block, not inside OrderTrackingModule',
+     branch.indexOf('receivingOrder && (() =>') > -1
+     && branch.indexOf('receivingOrder && (() =>') < branch.indexOf('{requests.map(req => {'));
+  ok('and nothing else in the file writes a receipt count - only the two boxes',
+     (branch.match(/setReceiptCount\(/g) || []).length === 2);
+}
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

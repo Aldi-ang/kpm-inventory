@@ -5,6 +5,63 @@ import { savePhotoAndGetReference, compressImageToBase64 } from '../utils/helper
 import { confirmAction } from './ConfirmGate.jsx';
 import { notify } from './Toast.jsx';
 
+/* ===========================================================================
+   THE ARRIVAL CHECK — a count at the door, PARTIAL BLIND.
+
+   Before this existed, `handleConfirmReceipt` was one yes/no button and the
+   branch was credited whatever HQ SAID it shipped. A short shipment therefore
+   became branch stock that does not physically exist, and it only surfaced
+   weeks later at Stock Opname — as a mystery shortage that looks like theft at
+   the branch. Wrong person blamed, and by then the claim against HQ or the
+   courier is long dead: the industry rule is that a discrepancy must be filed
+   BEFORE a clean receipt is signed.
+
+   PARTIAL BLIND, on Aldi's decision 2026-08-23: the receiver sees WHICH
+   products should be in the box but never HOW MANY. Same rule Stock Opname
+   already uses for tiers below 3 — a number on screen anchors the count.
+   Not FULLY blind (no product list either) because these products carry no
+   barcodes, so a hand-written list would spawn "Cello Coffee" and "cello kopi"
+   as two different things inside a week. Keeping the line visible also catches
+   a product that is missing ENTIRELY — the receiver types 0 against it, where
+   a fully blind count would simply never write that line.
+   =========================================================================== */
+
+/* One row per shipped line. `counted` stays null while the box is blank, which
+   is what `receiptBlocked` refuses on — a blank is NOT a zero, and treating it
+   as one would silently write off a whole product. */
+export const receiptLines = (items, counts) => (items || []).map(item => {
+    const entry = (counts || {})[item.productId] || {};
+    const counted = parseInt(entry.counted, 10);
+    const damaged = parseInt(entry.damaged, 10);
+    const shipped = Number(item.qty) || 0;
+    const hasCount = Number.isFinite(counted);
+    return {
+        productId: item.productId,
+        name: item.name,
+        shipped,
+        counted: hasCount ? counted : null,
+        damaged: Number.isFinite(damaged) ? damaged : 0,
+        diff: hasCount ? counted - shipped : null
+    };
+});
+
+/* Returns the reason it cannot be submitted, or null when it can. Message, not
+   a boolean, so the screen can NAME the problem instead of just going grey. */
+export const receiptBlocked = (lines) => {
+    if (!lines || lines.length === 0) return 'this shipment has no items on it';
+    if (lines.some(l => l.counted === null)) return 'count every line before you submit';
+    if (lines.some(l => l.counted < 0 || l.damaged < 0)) return 'a count cannot be negative';
+    const over = lines.find(l => l.damaged > l.counted);
+    if (over) return `${over.name}: damaged cannot be more than what arrived`;
+    return null;
+};
+
+/* Any difference at all, or any damage, makes it a dispute. NO TOLERANCE HERE,
+   deliberately — Stock Opname tolerates one pack because selling in Batang
+   leaves stock carrying a fraction of a pack, but a sealed shipment has no such
+   fraction. A box is short or it is not. */
+export const receiptDisputed = (lines) => (lines || []).some(l => l.diff !== 0 || l.damaged > 0);
+
 export default function BranchWarehouseManager({ db, storage, appId, user, userRole, userLocation, isAdmin, masterUserId, globalInventory, triggerCapy, logAudit, appSettings }) {
     
     const isAreaAdmin = !isAdmin; // 🚀 THE FIX: Dynamically adapts to any custom Tier rank
@@ -38,7 +95,20 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
     const [editTrackingNo, setEditTrackingNo] = useState("");
     const [isProcessingOrder, setIsProcessingOrder] = useState(false);
 
-    const [expandedRequest, setExpandedRequest] = useState(null); 
+    const [expandedRequest, setExpandedRequest] = useState(null);
+
+    /* the arrival check. `receivingOrder` holds the order being counted; the
+       counts live beside it keyed by productId so closing the panel throws the
+       numbers away rather than half-writing them. */
+    const [receivingOrder, setReceivingOrder] = useState(null);
+    const [receiptCounts, setReceiptCounts] = useState({});
+
+    /* Kept as the typed STRING, never coerced here. Coercing on every keystroke
+       turns a half-typed "" into 0, and a 0 is a real answer — it would let a
+       blank line pass the "count every line" guard. */
+    const setReceiptCount = (productId, field, value) => setReceiptCounts(prev => ({
+        ...prev, [productId]: { ...(prev[productId] || {}), [field]: value }
+    }));
 
     const getAdminName = () => appSettings?.adminDisplayName || user?.displayName || (user?.email || "").split('@')[0] || "HQ Admin";
 
@@ -137,64 +207,103 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
     };
 
     // 🚀 THE FIX: TRANSACTION READ BEFORE WRITE ENGINE 🚀
-    const handleConfirmReceipt = async (order) => {
-        if (!await confirmAction(`Confirm receipt of items for ${order.id}?\n\nItems will be officially added to your ${branchLocation} branch warehouse.`)) return;
+    const handleConfirmReceipt = async (order, lines) => {
+        const blocked = receiptBlocked(lines);
+        if (blocked) return notify(`BELUM BISA DISIMPAN\n\n${blocked}.`);
+
+        const disputed = receiptDisputed(lines);
+        const summary = lines
+            .filter(l => l.diff !== 0 || l.damaged > 0)
+            .map(l => `• ${l.name}: dikirim ${l.shipped}, diterima ${l.counted}${l.damaged > 0 ? `, rusak ${l.damaged}` : ''}`)
+            .join('\n');
+
+        const question = disputed
+            ? `SELISIH DITEMUKAN — ${order.id}\n\n${summary}\n\nStok gudang ${branchLocation} akan bertambah sesuai HITUNGAN ANDA, bukan angka kiriman HQ, dan selisih ini dilaporkan ke HQ. Lanjutkan?`
+            : `Semua cocok — ${order.id}\n\nBarang masuk ke gudang ${branchLocation}. Lanjutkan?`;
+
+        if (!await confirmAction(question)) return;
         setIsProcessing(true);
 
         try {
-            const itemsToProcess = order.fulfilledItems || order.requestedItems || order.items || [];
-            
             await runTransaction(db, async (t) => {
                 // --- PHASE 1: EXECUTE ALL READS ---
-                
+
                 // 1. Read Order Document
                 const orderRef = doc(db, `artifacts/${appId}/users/${masterUserId}/stock_requests`, order.id);
                 const orderSnap = await t.get(orderRef);
                 if (!orderSnap.exists()) throw new Error("Order not found in database!");
                 const orderData = orderSnap.data();
 
-                // 2. Read All Branch Inventory Documents
-                const inventorySnaps = await Promise.all(itemsToProcess.map(async (item) => {
-                    const branchItemRef = doc(db, `artifacts/${appId}/users/${masterUserId}/branches/${order.branch}/inventory`, item.productId);
+                /* 2. REFUSE A SECOND CREDIT. Read inside the transaction, not from
+                   the `order` prop — the prop is a snapshot from the listener and a
+                   second tap can reach here before it refreshes. Without this, two
+                   taps credited the branch twice and invented stock out of nothing. */
+                if (orderData.status === 'DELIVERED' || orderData.status === 'DISPUTED') {
+                    throw new Error("Kiriman ini sudah diterima. Stok tidak ditambah dua kali.");
+                }
+
+                // 3. Read All Branch Inventory Documents
+                const inventorySnaps = await Promise.all(lines.map(async (line) => {
+                    const branchItemRef = doc(db, `artifacts/${appId}/users/${masterUserId}/branches/${order.branch}/inventory`, line.productId);
                     const snap = await t.get(branchItemRef);
-                    return { ref: branchItemRef, snap, item };
+                    return { ref: branchItemRef, snap, line };
                 }));
 
                 // --- PHASE 2: EXECUTE ALL WRITES ---
-                
-                // 1. Write to Branch Inventory
-                inventorySnaps.forEach(data => {
-                    let currentStock = 0;
-                    if (data.snap.exists()) {
-                        currentStock = data.snap.data().stock || 0;
-                    }
-                    t.set(data.ref, {
-                        productId: data.item.productId,
-                        name: data.item.name,
-                        stock: currentStock + Number(data.item.qty), 
+
+                /* 1. Write to Branch Inventory. THE WHOLE POINT OF THIS SCREEN IS
+                   THIS LINE: the branch is credited what it COUNTED, never what HQ
+                   claimed to have sent. Damaged units arrived, so they are real
+                   stock — they just are not sellable, and go to `damagedStock`
+                   exactly as Stock Opname already models them. */
+                inventorySnaps.forEach(({ ref, snap, line }) => {
+                    const current = snap.exists() ? snap.data() : {};
+                    const good = line.counted - line.damaged;
+                    t.set(ref, {
+                        productId: line.productId,
+                        name: line.name,
+                        stock: (current.stock || 0) + good,
+                        damagedStock: (current.damagedStock || 0) + line.damaged,
                         lastReceivedAt: serverTimestamp(),
                         lastReceivedFrom: order.id
                     }, { merge: true });
                 });
 
                 // 2. Write Order Update
+                const receiverName = user.displayName || (user.email || "").split('@')[0];
                 const updatedTimeline = [...(orderData.workflowTimeline || [])];
                 updatedTimeline.push({
-                    status: 'DELIVERED',
+                    status: disputed ? 'DISPUTED' : 'DELIVERED',
                     time: new Date().toISOString(),
-                    msg: `Received & verified by ${user.displayName || (user.email || "").split('@')[0]} at branch.` 
+                    msg: disputed
+                        ? `Dihitung ulang oleh ${receiverName} di gudang — ADA SELISIH:\n${summary}`
+                        : `Dihitung oleh ${receiverName} di gudang — jumlah cocok dengan kiriman.`
                 });
 
                 t.update(orderRef, {
-                    status: 'DELIVERED',
+                    status: disputed ? 'DISPUTED' : 'DELIVERED',
+                    /* what actually arrived, line by line, kept beside what was sent.
+                       This is the OS&D record — the evidence a claim is made from. */
+                    receivedItems: lines.map(l => ({
+                        productId: l.productId, name: l.name,
+                        shipped: l.shipped, counted: l.counted, damaged: l.damaged, diff: l.diff
+                    })),
+                    receiptVariance: disputed,
                     receivedAt: serverTimestamp(),
                     receivedBy: user.email,
                     workflowTimeline: updatedTimeline
                 });
             });
 
-            triggerCapy(`${branchLocation} Inventory updated! Thank you. ✅`);
-            logAudit("STOCK_RECEIVE", `${branchLocation} confirmed receipt of ${order.id}`);
+            if (disputed) {
+                notify(`SELISIH DILAPORKAN KE HQ\n\nGudang ${branchLocation} dikredit sesuai hitungan Anda. HQ melihat kiriman ${order.id} sebagai bersengketa.`);
+                logAudit("STOCK_RECEIVE_VARIANCE", `${branchLocation} reported a variance on ${order.id}: ${summary.replace(/\n/g, ' | ')}`);
+            } else {
+                triggerCapy(`${branchLocation} Inventory updated! Thank you. ✅`);
+                logAudit("STOCK_RECEIVE", `${branchLocation} confirmed receipt of ${order.id}`);
+            }
+            setReceivingOrder(null);
+            setReceiptCounts({});
             setIsProcessing(false);
         } catch(e) {
             console.error(e);
@@ -399,6 +508,10 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
             'REJECTED': 'bg-danger-well text-danger-text border border-danger/50',
             'IN_TRANSIT': 'bg-raised text-gold border border-gold/50 animate-pulse',
             'DELIVERED': 'bg-verified-fill text-verified border border-verified/50',
+            /* DISPUTED is a real outcome, not a failure — the goods ARE in the
+               warehouse and the count IS filed. Red because HQ still owes an
+               answer, never grey: a grey chip reads as "nothing to do here". */
+            'DISPUTED': 'bg-danger-well text-danger-text border border-danger/50',
             'SYSTEM_EDIT': 'bg-raised text-ink-muted border border-line-3',
         };
         const icons = {
@@ -406,6 +519,7 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
             'REJECTED': <XCircle size={12}/>,
             'IN_TRANSIT': <Truck size={12}/>,
             'DELIVERED': <CheckCircle size={12}/>,
+            'DISPUTED': <AlertCircle size={12}/>,
             'SYSTEM_EDIT': <Pencil size={12}/>,
         };
         const labels = {
@@ -413,6 +527,7 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
             'REJECTED': 'Ditolak',
             'IN_TRANSIT': 'Dalam Pengiriman',
             'DELIVERED': 'Diterima',
+            'DISPUTED': 'Diterima — Ada Selisih',
             'SYSTEM_EDIT': 'Sistem Edit',
         }
         return (
@@ -423,7 +538,11 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
     };
 
     const OrderTrackingModule = ({ order }) => {
-        const isDelivered = order.status === 'DELIVERED';
+        /* DISPUTED counts as delivered: the goods are physically in the warehouse
+           and the count is filed. What is still open is HQ's answer, not the
+           receipt — so the receive button must not come back and offer a second
+           credit. */
+        const isDelivered = order.status === 'DELIVERED' || order.status === 'DISPUTED';
         const isFulfillableByTier3 = isAreaAdmin && order.status === 'IN_TRANSIT';
 
         return (
@@ -462,15 +581,44 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
                             </div>
                         )}
                         
+                        {/* Opens the arrival check. The count panel itself is rendered OUTSIDE
+                            this component on purpose — `OrderTrackingModule` is declared inside
+                            `BranchWarehouseManager`, so it is a new function on every render and
+                            React remounts it. An input living in here would lose focus after
+                            every single keystroke. */}
                         {isFulfillableByTier3 && (
-                            <button onClick={() => handleConfirmReceipt(order)} disabled={isProcessing} className="w-full mt-5 py-3.5 bg-verified hover:bg-verified/90 text-ink-inverse rounded-lg font-black uppercase tracking-widest text-xs shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2 relative z-10">
-                                {isProcessing ? <Clock className="animate-spin" size={16}/> : <Check size={18}/>}
-                                KONFIRMASI TERIMA BARANG
+                            <button onClick={() => { setReceivingOrder(order); setReceiptCounts({}); }} disabled={isProcessing} className="w-full mt-5 py-3.5 bg-gold hover:bg-gold/90 text-gold-ink rounded-lg font-black uppercase tracking-widest text-xs shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2 relative z-10">
+                                <Package size={18}/>
+                                HITUNG & TERIMA BARANG
                             </button>
                         )}
                         {isDelivered && (
-                            <div className="mt-5 py-3 bg-verified-fill border border-verified/50 text-verified rounded-lg text-center text-xs font-bold flex items-center justify-center gap-2 relative z-10">
-                                <Check size={16}/> Barang Sudah Diterima Branch
+                            <div className={`mt-5 py-3 rounded-lg text-center text-xs font-bold flex items-center justify-center gap-2 relative z-10 border ${order.receiptVariance ? 'bg-danger-well border-danger/50 text-danger-text' : 'bg-verified-fill border-verified/50 text-verified'}`}>
+                                {order.receiptVariance
+                                    ? <><AlertCircle size={16}/> Diterima dengan Selisih — Dilaporkan ke HQ</>
+                                    : <><Check size={16}/> Barang Sudah Diterima Branch</>}
+                            </div>
+                        )}
+                        {/* What actually arrived, beside what was sent. This is the OS&D record:
+                            the evidence the branch argues a claim from, so it stays on the card
+                            forever rather than living only in the timeline text. */}
+                        {isDelivered && Array.isArray(order.receivedItems) && order.receivedItems.length > 0 && (
+                            <div className="mt-3 bg-black/40 rounded-lg border border-line-2 p-3 relative z-10">
+                                <h5 className="text-[10px] font-bold text-ink-muted uppercase tracking-widest mb-2">Hasil Hitung di Gudang</h5>
+                                <div className="space-y-1.5">
+                                    {order.receivedItems.map(r => (
+                                        <div key={r.productId} className="flex justify-between items-center gap-3 text-[11px]">
+                                            <span className="text-ink font-bold uppercase truncate">{r.name}</span>
+                                            <span className="font-mono shrink-0 tabular-nums">
+                                                <span className="text-ink-muted">{r.shipped}</span>
+                                                <span className="text-ink-muted mx-1">→</span>
+                                                <span className={r.diff === 0 ? 'text-ink' : 'text-danger-text font-black'}>{r.counted}</span>
+                                                {r.diff !== 0 && <span className="text-danger-text font-black ml-1">({r.diff > 0 ? '+' : ''}{r.diff})</span>}
+                                                {r.damaged > 0 && <span className="text-danger-text ml-2">rusak {r.damaged}</span>}
+                                            </span>
+                                        </div>
+                                    ))}
+                                </div>
                             </div>
                         )}
                     </div>
@@ -572,6 +720,90 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
                                 </div>
                             ) : (
                                 <div className="space-y-4">
+                                    {/* ===== THE ARRIVAL CHECK =====
+                                        Lives out here, not inside OrderTrackingModule, because that
+                                        component is redeclared every render and its children remount —
+                                        an input in there would lose focus on every keystroke. */}
+                                    {receivingOrder && (() => {
+                                        const items = receivingOrder.fulfilledItems || receivingOrder.requestedItems || receivingOrder.items || [];
+                                        const lines = receiptLines(items, receiptCounts);
+                                        const blocked = receiptBlocked(lines);
+                                        const disputed = receiptDisputed(lines);
+                                        const counted = lines.filter(l => l.counted !== null).length;
+
+                                        return (
+                                            <div className="bg-panel rounded-2xl border border-gold/60 p-4 sm:p-5 shadow-2xl">
+                                                <div className="flex justify-between items-start gap-3 border-b border-line-2 pb-3 mb-4">
+                                                    <div className="min-w-0">
+                                                        <h4 className="text-xs font-black text-gold uppercase tracking-widest flex items-center gap-2"><Package size={14}/> Hitung Barang Datang</h4>
+                                                        <p className="text-[10px] text-ink-muted font-mono tracking-widest uppercase mt-1 truncate">{receivingOrder.id}</p>
+                                                    </div>
+                                                    <button onClick={() => { setReceivingOrder(null); setReceiptCounts({}); }} className="text-ink-muted hover:text-white shrink-0 p-1"><X size={18}/></button>
+                                                </div>
+
+                                                {/* Says WHY the number is missing. Without this line the screen
+                                                    just looks broken, and a counter who thinks it is broken goes
+                                                    looking for the surat jalan — which is the one thing this
+                                                    whole screen exists to keep out of their hands. */}
+                                                <div className="bg-raised border border-line-3 rounded-lg p-3 mb-4 text-[11px] text-ink-muted leading-relaxed">
+                                                    <span className="font-black text-ink uppercase tracking-widest block mb-1">Hitung dulu, jangan lihat surat jalan.</span>
+                                                    Jumlah kiriman HQ sengaja disembunyikan sampai Anda selesai menghitung. Isi apa yang benar-benar ada di dalam kardus. Kalau satu produk tidak ada sama sekali, tulis <span className="font-black text-ink">0</span>.
+                                                </div>
+
+                                                <div className="space-y-3">
+                                                    {lines.map(line => {
+                                                        const entry = receiptCounts[line.productId] || {};
+                                                        const bad = line.counted !== null && line.damaged > line.counted;
+                                                        return (
+                                                            <div key={line.productId} className={`rounded-xl border p-3 ${bad ? 'border-danger/60 bg-danger-well' : 'border-line-2 bg-black/40'}`}>
+                                                                <p className="text-[11px] font-black text-ink uppercase tracking-wide mb-2.5 break-words">{line.name}</p>
+                                                                <div className="grid grid-cols-2 gap-2.5">
+                                                                    <label className="block">
+                                                                        <span className="text-[9px] font-bold text-ink-muted uppercase tracking-widest block mb-1">Diterima (Bks)</span>
+                                                                        <input
+                                                                            type="number" inputMode="numeric" min="0" placeholder="—"
+                                                                            value={entry.counted ?? ''}
+                                                                            onChange={e => setReceiptCount(line.productId, 'counted', e.target.value)}
+                                                                            className="w-full bg-black/50 border border-line-3 rounded-lg p-2.5 text-center font-black text-lg text-gold outline-none focus:border-gold tabular-nums"
+                                                                        />
+                                                                    </label>
+                                                                    <label className="block">
+                                                                        <span className="text-[9px] font-bold text-ink-muted uppercase tracking-widest block mb-1">Rusak (Bks)</span>
+                                                                        <input
+                                                                            type="number" inputMode="numeric" min="0" placeholder="0"
+                                                                            value={entry.damaged ?? ''}
+                                                                            onChange={e => setReceiptCount(line.productId, 'damaged', e.target.value)}
+                                                                            className="w-full bg-black/50 border border-line-3 rounded-lg p-2.5 text-center font-black text-lg text-danger-text outline-none focus:border-danger tabular-nums"
+                                                                        />
+                                                                    </label>
+                                                                </div>
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+
+                                                <div className="mt-4 pt-3 border-t border-line-2">
+                                                    <p className="text-[10px] text-ink-muted uppercase tracking-widest text-center mb-3 tabular-nums">{counted} dari {lines.length} produk sudah dihitung</p>
+                                                    {blocked ? (
+                                                        <div className="py-3 px-3 rounded-lg bg-raised border border-line-3 text-center text-[11px] font-bold text-ink-muted uppercase tracking-wide">{blocked}</div>
+                                                    ) : (
+                                                        <button onClick={() => handleConfirmReceipt(receivingOrder, lines)} disabled={isProcessing}
+                                                            className={`w-full py-4 rounded-xl font-black uppercase tracking-widest shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2 text-sm ${disputed ? 'bg-danger text-ink-inverse hover:bg-danger/90' : 'bg-gold text-gold-ink hover:bg-gold/90'}`}>
+                                                            {isProcessing ? <Clock size={18} className="animate-spin"/> : disputed ? <AlertCircle size={18}/> : <Check size={18}/>}
+                                                            {disputed ? 'Simpan & Laporkan Selisih' : 'Simpan — Jumlah Cocok'}
+                                                        </button>
+                                                    )}
+                                                    {/* Tells them a difference was found WITHOUT naming it. The size of
+                                                        the gap is HQ's to see; a counter who knows they are 5 short is
+                                                        a counter who "finds" 5 more. */}
+                                                    {!blocked && disputed && (
+                                                        <p className="text-[10px] text-danger-text uppercase tracking-widest text-center mt-2 font-bold">Hitungan Anda tidak sama dengan kiriman HQ</p>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        );
+                                    })()}
+
                                     {requests.map(req => {
                                         const isExpanded = expandedRequest === req.id;
                                         const itemsToProcess = req.fulfilledItems || req.requestedItems || req.items || [];
@@ -583,10 +815,26 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
                                                     <div className="w-full sm:w-auto mb-2 sm:mb-0">
                                                         <span className="text-[10px] text-ink-muted font-mono tracking-widest uppercase block truncate">{req.id} • REQ BY: {req.requestedByName || (req.requestedBy || "").split('@')[0]}</span>
                                                         <p className="text-[11px] text-ink-muted font-mono mt-0.5 mb-1.5">Time: {new Date(req.timestamp?.seconds*1000).toLocaleString()}</p>
-                                                        {/* 🚀 THE FIX: LIST ALL ITEM DETAILS RIGHT ON THE CARD */}
+                                                        {/* 🚀 THE FIX: LIST ALL ITEM DETAILS RIGHT ON THE CARD
+                                                            ...EXCEPT THE QUANTITIES, WHILE THE BOX IS STILL IN TRANSIT.
+                                                            The arrival check is partial blind: a number printed here would
+                                                            anchor the count at the door and the whole check becomes a
+                                                            rubber stamp. Product names stay — they are what makes a
+                                                            missing product countable as 0 instead of invisible. Every
+                                                            figure comes back the moment the count is filed, because that
+                                                            is when the branch needs them to argue a claim. */}
                                                         <div className="text-[10px] text-ink font-medium">
-                                                            <span className="font-bold text-orange mr-1">📦 {itemsToProcess.reduce((sum,i)=>sum+Number(i.qty),0)} Bks:</span> 
-                                                            <span className="text-ink-muted">{itemsToProcess.map(i => `${i.qty} ${i.name}`).join(', ')}</span>
+                                                            {req.status === 'IN_TRANSIT' ? (
+                                                                <>
+                                                                    <span className="font-bold text-orange mr-1">📦 {itemsToProcess.length} JENIS BARANG:</span>
+                                                                    <span className="text-ink-muted">{itemsToProcess.map(i => i.name).join(', ')}</span>
+                                                                </>
+                                                            ) : (
+                                                                <>
+                                                                    <span className="font-bold text-orange mr-1">📦 {itemsToProcess.reduce((sum,i)=>sum+Number(i.qty),0)} Bks:</span>
+                                                                    <span className="text-ink-muted">{itemsToProcess.map(i => `${i.qty} ${i.name}`).join(', ')}</span>
+                                                                </>
+                                                            )}
                                                         </div>
                                                     </div>
                                                     <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto mt-2 sm:mt-0">
@@ -675,11 +923,19 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
                         <h3 className="text-xl font-black text-white uppercase tracking-widest flex items-center gap-3">
                             <Clock className="text-orange"/> Active Pipeline
                         </h3>
-                        <p className="text-[10px] text-ink-muted uppercase tracking-widest">Pending & In-Transit Requests Only</p>
+                        <p className="text-[10px] text-ink-muted uppercase tracking-widest">Pending, In-Transit & Disputed</p>
                     </div>
-                    
+
                     {(() => {
-                        const activeRequests = requests.filter(r => r.status === 'PENDING' || r.status === 'IN_TRANSIT');
+                        /* DISPUTED belongs in HQ's active list. The branch has already taken the
+                           goods in, so nothing is pending on their side — what is outstanding is
+                           HQ's answer on the difference. Leave it out of this filter and the
+                           report is filed into a list nobody opens, which is the same as not
+                           filing it. Disputes sort to the top for the same reason. */
+                        const rank = { 'DISPUTED': 0, 'PENDING': 1, 'IN_TRANSIT': 2 };
+                        const activeRequests = requests
+                            .filter(r => r.status === 'PENDING' || r.status === 'IN_TRANSIT' || r.status === 'DISPUTED')
+                            .sort((a, b) => (rank[a.status] ?? 9) - (rank[b.status] ?? 9));
                         
                         if (isLoading) {
                             return <div className="text-center p-10 text-ink-muted animate-pulse italic text-xs uppercase tracking-widest">Loading Logistics Logs...</div>;
