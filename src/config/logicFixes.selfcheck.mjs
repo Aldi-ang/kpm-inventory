@@ -2399,5 +2399,98 @@ section('S37. Quarantine and HQ Audits: gold is ink and edges, never a slab');
      /poDate: getLocalDayKey\(\)/.test(read('src/RestockVaultView.jsx')));
 }
 
+
+/* ============================================================================
+   HOW OLD IS THE STOCK STANDING HERE (2026-08-23) — read-only, derived
+
+   Scoped by Aldi: *"we just system that only care about the data related stuff
+   on the company, as long as the product is sold its job done, company can take
+   care of the item management inside the warehouse"*. So it REPORTS age and
+   nothing else — no threshold, no warning, no rule about which box leaves first,
+   nothing blocked. Checks that try to add any of that back are wrong.
+
+   No new write path exists and none should appear: every arrival is already on
+   the shipment record, written by the arrival check.
+   ============================================================================ */
+{
+  const bw = read('src/components/BranchWarehouseManager.jsx');
+
+  const fStart = bw.indexOf('export const productArrivals');
+  const fEnd   = bw.indexOf('export default function BranchWarehouseManager');
+  ok('the freshness rules could be lifted out of the file to be tested',
+     fStart > -1 && fEnd > fStart);
+  const { productArrivals, arrivalsOnHand, oldestStockDays } = new Function('txSeconds',
+      bw.slice(fStart, fEnd).replace(/export const/g, 'const')
+      + '\nreturn { productArrivals, arrivalsOnHand, oldestStockDays };'
+  )((tx) => tx?.timestamp?.seconds ?? null);
+
+  const DAY = 86400, NOW = 1_800_000_000;
+  const order = (id, at, counted, damaged = 0, status = 'DELIVERED') => ({
+      id, branch: 'MALANG', status, receivedAt: { seconds: at },
+      receivedItems: [{ productId: 'P1', name: 'Cello Coffee', shipped: counted, counted, damaged }]
+  });
+  const ORDERS = [
+      order('A', NOW - 70 * DAY, 300),
+      order('B', NOW - 26 * DAY, 400),
+      order('C', NOW -  4 * DAY, 200),
+  ];
+
+  /* ---- WHICH ARRIVALS COUNT ---- */
+  const arr = productArrivals(ORDERS, 'MALANG', 'P1');
+  ok('every received shipment of that product is an arrival', arr.length === 3);
+  ok('and they come back newest first', arr[0].orderId === 'C' && arr[2].orderId === 'A');
+  ok('a shipment to another branch is not this branch\'s stock',
+     productArrivals(ORDERS, 'SURABAYA', 'P1').length === 0);
+  ok('a shipment still in transit has not arrived yet',
+     productArrivals([order('D', NOW, 100, 0, 'IN_TRANSIT')], 'MALANG', 'P1').length === 0);
+  /* A disputed shipment IS in the warehouse - the goods were taken in and the branch
+     was credited. What is unresolved is HQ's answer, not the delivery. */
+  ok('a DISPUTED shipment still counts as arrived - the goods are here',
+     productArrivals([order('E', NOW, 100, 0, 'DISPUTED')], 'MALANG', 'P1').length === 1);
+  ok('damaged units are not counted as stock standing on the shelf',
+     productArrivals([order('F', NOW, 100, 30)], 'MALANG', 'P1')[0].qty === 70);
+  /* Deliveries received before the arrival check existed have no counted figure. */
+  ok('an old delivery with no count still shows up, at its shipped quantity',
+     productArrivals([{ id: 'G', branch: 'MALANG', status: 'DELIVERED',
+        receivedAt: { seconds: NOW }, fulfilledItems: [{ productId: 'P1', qty: 55 }] }],
+        'MALANG', 'P1')[0].qty === 55);
+
+  /* ---- WHAT IS STILL HERE, BY SUBTRACTION ---- 900 arrived in total. */
+  const h450 = arrivalsOnHand(arr, 450);
+  ok('450 left is the newest 200 plus part of the batch before it',
+     h450.held.length === 2 && h450.held[0].orderId === 'B' && h450.held[1].orderId === 'C');
+  ok('and the part-used batch reports only the part still here',
+     h450.held[0].qty === 250 && h450.held[1].qty === 200);
+  ok('oldest first, so the age is read off the front',
+     oldestStockDays(h450.held, NOW) === 26);
+
+  ok('150 left is all from the newest delivery',
+     arrivalsOnHand(arr, 150).held.length === 1 && oldestStockDays(arrivalsOnHand(arr, 150).held, NOW) === 4);
+  ok('an empty shelf has no age at all',
+     oldestStockDays(arrivalsOnHand(arr, 0).held, NOW) === null);
+
+  /* ---- THE HONEST REMAINDER ---- */
+  const over = arrivalsOnHand(arr, 1000);
+  ok('stock the records cannot account for is REPORTED, not folded into a batch',
+     over.unexplained === 100);
+  ok('and it never inflates a batch beyond what actually arrived',
+     over.held.reduce((s, x) => s + x.qty, 0) === 900);
+  ok('nothing is unexplained when the records cover the shelf',
+     h450.unexplained === 0);
+
+  /* "we do not know" must never render as "brand new". */
+  ok('an unknown arrival time gives no age rather than an age of zero',
+     oldestStockDays([{ at: null }], NOW) === null);
+
+  /* ---- NO NEW WRITE PATH, AND NO ENFORCEMENT ---- both are the scope he set. */
+  ok('the age view writes nothing - it is arithmetic over records that already exist',
+     !/productArrivals[\s\S]{0,4000}?(setDoc|updateDoc|writeBatch|runTransaction)\(/.test(
+        bw.slice(fStart, fEnd)));
+  ok('no freshness threshold was invented for him',
+     !/MAX_AGE_DAYS|STALE_AFTER|FRESH_LIMIT|tooOld/.test(bw));
+  ok('and nothing is blocked or refused on age',
+     !/oldestStockDays\([^)]*\)\s*>[\s\S]{0,80}(return notify|disabled|refus)/i.test(bw));
+}
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

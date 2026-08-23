@@ -2,6 +2,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Package, ArrowRight, CheckCircle, XCircle, AlertCircle, Clock, Send, Truck, ShieldCheck, Globe, MapPin, Pencil, MinusCircle, PlusCircle, User, FileText, Camera, UploadCloud, ChevronDown, ChevronUp, Check, Eye, Trash2, Save, X } from 'lucide-react';
 import { collection, doc, onSnapshot, writeBatch, serverTimestamp, updateDoc, deleteDoc, runTransaction, increment } from 'firebase/firestore';
 import { savePhotoAndGetReference, compressImageToBase64 } from '../utils/helpers';
+/* Reused rather than rewritten: a Firestore Timestamp, an offline `{seconds}` and an unresolved
+   serverTimestamp() are three different shapes, and this already handles all three. */
+import { txSeconds } from '../utils/dayStats.js';
 import { confirmAction } from './ConfirmGate.jsx';
 import { notify } from './Toast.jsx';
 
@@ -61,6 +64,73 @@ export const receiptBlocked = (lines) => {
    leaves stock carrying a fraction of a pack, but a sealed shipment has no such
    fraction. A box is short or it is not. */
 export const receiptDisputed = (lines) => (lines || []).some(l => l.diff !== 0 || l.damaged > 0);
+
+/* ===========================================================================
+   HOW OLD IS THE STOCK STANDING HERE — the freshness chain, read-only.
+
+   Scoped by Aldi 2026-08-23: *"we just system that only care about the data
+   related stuff on the company, as long as the product is sold its job done,
+   company can take care of the item management inside the warehouse our app
+   didnt need that much details for now"*. So this REPORTS age. It does not
+   enforce which box leaves first, it does not warn, it does not block a
+   shipment, and it asks him for no threshold. Handling stock in the warehouse
+   is the company's job; the app's job is knowing.
+
+   ⚠️ NO NEW WRITE PATH, AND NOTHING NEW TO TYPE. Every arrival is already on
+   the shipment record — `receivedItems` and `receivedAt`, written by the
+   arrival check — so this is pure arithmetic over documents that already exist,
+   and it works on shipments received before it was built.
+
+   The trick that keeps it honest: what is still on hand is DERIVED by
+   subtraction against `stock`, never tracked separately. `stock` stays the one
+   source of truth, so the ages cannot drift away from it — correct the stock at
+   a weekly count and the ages correct themselves in the same breath.
+   =========================================================================== */
+
+/* Every arrival of one product at one branch, NEWEST FIRST.
+   `counted` is preferred over `shipped` because the branch was credited what it
+   counted; falling back to the shipped figure covers deliveries received before
+   the arrival check existed, which would otherwise vanish from the history. */
+export const productArrivals = (orders, branch, productId) => (orders || [])
+    .filter(o => o && o.branch === branch && (o.status === 'DELIVERED' || o.status === 'DISPUTED'))
+    .map(o => {
+        const line = (o.receivedItems || []).find(r => r.productId === productId);
+        const fallback = (o.fulfilledItems || o.requestedItems || o.items || [])
+            .find(i => i.productId === productId);
+        const qty = line ? Number(line.counted) - Number(line.damaged || 0)
+                  : fallback ? Number(fallback.qty) : 0;
+        return { orderId: o.id, at: txSeconds({ timestamp: o.receivedAt }), qty: Number(qty) || 0 };
+    })
+    .filter(a => a.qty > 0 && a.at != null)
+    .sort((a, b) => b.at - a.at);
+
+/* Which of those arrivals is still standing here, OLDEST FIRST.
+   Walks newest-first spending the quantity on hand, so whatever the total does
+   not stretch to is treated as long gone. `unexplained` is the remainder the
+   records cannot account for — stock that arrived before any of this was
+   recorded, or that came in some other way. It is reported rather than hidden:
+   a age built on a number that does not add up is worse than no age at all. */
+export const arrivalsOnHand = (arrivals, stock) => {
+    let left = Math.max(0, Number(stock) || 0);
+    const held = [];
+    for (const a of (arrivals || [])) {
+        if (left <= 0) break;
+        const take = Math.min(left, a.qty);
+        held.push({ ...a, qty: take });
+        left -= take;
+    }
+    return { held: held.reverse(), unexplained: left };
+};
+
+/* Whole days since the oldest stock still standing here arrived. null when the
+   records cannot say — never 0, because "brand new" and "we do not know" must
+   not look the same. */
+export const oldestStockDays = (held, nowSeconds) => {
+    if (!held || held.length === 0) return null;
+    const at = held[0].at;
+    if (at == null) return null;
+    return Math.max(0, Math.floor((nowSeconds - at) / 86400));
+};
 
 export default function BranchWarehouseManager({ db, storage, appId, user, userRole, userLocation, isAdmin, masterUserId, globalInventory, triggerCapy, logAudit, appSettings }) {
     
@@ -698,12 +768,53 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
                                     <div className="col-span-full text-center p-8 bg-black/20 rounded-xl border border-dashed border-line-2 text-ink-muted text-xs uppercase tracking-widest">
                                         Warehouse is empty. Request stock from HQ using the form below.
                                     </div>
-                                ) : branchStock.map(item => (
-                                    <div key={item.id} className="flex justify-between items-center bg-black/40 p-3 sm:p-4 rounded-xl border border-line-2 shadow-inner">
-                                        <span className="font-bold text-white uppercase text-sm truncate pr-2">{item.name}</span>
-                                        <span className="text-lg font-black text-gold shrink-0">{item.stock} <span className="text-[10px] text-ink-muted font-bold">Bks</span></span>
-                                    </div>
-                                ))}
+                                ) : branchStock.map(item => {
+                                    /* The freshness line. Read-only, derived, no threshold —
+                                       it says how long the stock has stood here and leaves the
+                                       judgement to whoever is reading it. */
+                                    const arrivals = productArrivals(requests, branchLocation, item.productId || item.id);
+                                    const { held, unexplained } = arrivalsOnHand(arrivals, item.stock);
+                                    const days = oldestStockDays(held, Math.floor(Date.now() / 1000));
+                                    return (
+                                        <div key={item.id} className="bg-black/40 p-3 sm:p-4 rounded-xl border border-line-2 shadow-inner">
+                                            <div className="flex justify-between items-center gap-2">
+                                                <span className="font-bold text-white uppercase text-sm truncate">{item.name}</span>
+                                                <span className="text-lg font-black text-gold shrink-0">{item.stock} <span className="text-[10px] text-ink-muted font-bold">Bks</span></span>
+                                            </div>
+                                            {(days !== null || unexplained > 0) && (
+                                                <details className="group/age mt-2 pt-2 border-t border-line-2">
+                                                    <summary className="list-none [&::-webkit-details-marker]:hidden cursor-pointer flex items-center justify-between gap-2 text-[10px] uppercase tracking-widest text-ink-muted hover:text-ink">
+                                                        <span className="tabular-nums">
+                                                            {days !== null
+                                                                ? <>Paling lama di sini <b className="text-ink font-black">{days} hari</b></>
+                                                                : <>Umur belum tercatat</>}
+                                                            {held.length > 1 && <span className="text-ink-muted"> · {held.length} kiriman</span>}
+                                                        </span>
+                                                        <ChevronDown size={12} className="group-open/age:rotate-180 transition-transform shrink-0"/>
+                                                    </summary>
+                                                    <div className="mt-2 space-y-1">
+                                                        {held.map(h => (
+                                                            <div key={h.orderId} className="flex justify-between gap-2 text-[10px] font-mono tabular-nums text-ink-muted">
+                                                                <span>{new Date(h.at * 1000).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: '2-digit' })}</span>
+                                                                <span className="truncate opacity-60">{h.orderId}</span>
+                                                                <span className="text-ink font-bold shrink-0">{h.qty} Bks</span>
+                                                            </div>
+                                                        ))}
+                                                        {/* Said out loud rather than hidden. Stock the shipment records cannot
+                                                            account for is older than the records themselves — pretending it is
+                                                            part of the newest delivery would make the age read younger than it is. */}
+                                                        {unexplained > 0 && (
+                                                            <div className="flex justify-between gap-2 text-[10px] font-mono tabular-nums text-ink-muted border-t border-line-2 pt-1 mt-1">
+                                                                <span className="italic">sebelum ada catatan</span>
+                                                                <span className="text-ink font-bold shrink-0">{unexplained} Bks</span>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </details>
+                                            )}
+                                        </div>
+                                    );
+                                })}
                             </div>
                         </details>
 
