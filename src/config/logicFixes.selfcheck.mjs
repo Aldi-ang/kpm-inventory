@@ -2378,6 +2378,25 @@ section('S37. Quarantine and HQ Audits: gold is ink and edges, never a slab');
   ok('the sales draft still expires on AGE, not on a day boundary',
      /DRAFT_MAX_AGE_MS = 12 \* 60 \* 60 \* 1000/.test(merchant)
      && !/his day starts at 07:00/.test(merchant));
+
+  /* ---- THE PATTERN IS BANNED, NOT JUST REMOVED ----
+     ⚠️ Fixing the shared helper was NOT the whole job, and the first commit said it
+     was. 21 inline copies of the same UTC expression sat in 12 more files that had
+     never called the helper at all — including the production date the freshness
+     work keys off, and the weekly chart's day buckets, which compare against a
+     transaction's own `date`. Fixing the helper alone made that chart INCONSISTENT
+     rather than merely wrong: local dates going in, UTC buckets reading them.
+     Hand-fixing the 21 only fixes the 21. The ban is what holds. */
+  const inlineUtc = appFiles.filter(f =>
+     /toISOString\(\)\.split\('T'\)\[0\]|toISOString\(\)\.slice\(0, ?10\)/.test(read(f)));
+  ok('no app file takes a UTC date inline instead of calling the helper',
+     inlineUtc.length === 0, inlineUtc.join(', '));
+
+  /* The two that would have been silently wrong the longest. */
+  ok('the weekly chart buckets a day the same way a sale stamps its date',
+     /date: getLocalDayKey\(d\)/.test(profile));
+  ok('the production date at factory intake is local — the freshness work keys off it',
+     /poDate: getLocalDayKey\(\)/.test(read('src/RestockVaultView.jsx')));
 }
 
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);

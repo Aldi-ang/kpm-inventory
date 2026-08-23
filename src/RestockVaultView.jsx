@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { PackagePlus, Receipt, Calculator, Calendar, UploadCloud, CheckCircle, AlertCircle, FileText, Search, Save, X, ShoppingCart, Truck, RefreshCcw, History, ArrowRight, ChevronDown, ChevronUp, Folder, Printer, Pencil, Trash2, ExternalLink, Image as ImageIcon, User, Eye, Check, XCircle, Target, Activity, PlusCircle } from 'lucide-react';
 import { doc, collection, setDoc, updateDoc, deleteDoc, serverTimestamp, writeBatch, onSnapshot, increment } from 'firebase/firestore';
-import { savePhotoAndGetReference, deletePhotoFromStorage, compressImageToBase64 } from './utils/helpers';
+import { savePhotoAndGetReference, deletePhotoFromStorage, compressImageToBase64, getLocalDayKey} from './utils/helpers';
 import { confirmAction } from './components/ConfirmGate.jsx';
 import { notify } from './components/Toast.jsx';
 
@@ -36,7 +36,7 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, storage, appI
     const [poData, setPoData] = useState({
         supplierName: '',
         poNumber: `SJ-${Date.now().toString().slice(-6)}`, 
-        poDate: new Date().toISOString().split('T')[0],
+        poDate: getLocalDayKey(),
         shippingCost: 0,
         exciseTax: 0,
         laborCost: 0,
@@ -128,7 +128,7 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, storage, appI
             if (triggerCapy) triggerCapy(`Production Recorded! ${totalItemsReceived} units instantly injected to Master Vault!`);
             
             setCart([]);
-            setPoData({ supplierName: '', poNumber: `SJ-${Date.now().toString().slice(-6)}`, poDate: new Date().toISOString().split('T')[0], shippingCost: 0, exciseTax: 0, laborCost: 0, expiryDate: '' });
+            setPoData({ supplierName: '', poNumber: `SJ-${Date.now().toString().slice(-6)}`, poDate: getLocalDayKey(), shippingCost: 0, exciseTax: 0, laborCost: 0, expiryDate: '' });
             setReceiptFile(null);
             setViewMode('targets'); 
             
@@ -182,7 +182,7 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, storage, appI
         const structure = {};
         
         procurements.forEach(po => {
-            const dateStr = po.date || (po.timestamp ? new Date(po.timestamp.seconds * 1000).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]);
+            const dateStr = po.date || (po.timestamp ? getLocalDayKey(new Date(po.timestamp.seconds * 1000)) : getLocalDayKey());
             const d = new Date(dateStr);
             const year = d.getFullYear();
             const month = d.toLocaleString('default', { month: 'long' });
@@ -194,7 +194,7 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, storage, appI
         });
 
         stockRequests.forEach(req => {
-            const dateStr = req.timestamp ? new Date(req.timestamp.seconds * 1000).toISOString().split('T')[0] : new Date().toISOString().split('T')[0];
+            const dateStr = req.timestamp ? getLocalDayKey(new Date(req.timestamp.seconds * 1000)) : getLocalDayKey();
             const d = new Date(dateStr);
             const year = d.getFullYear();
             const month = d.toLocaleString('default', { month: 'long' });

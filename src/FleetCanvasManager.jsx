@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import { collection, doc, setDoc, deleteDoc, updateDoc, writeBatch, runTransaction, onSnapshot, serverTimestamp } from 'firebase/firestore';
 import { DYNAMIC_TIERS, isFieldLevelTier } from './config/permissions';
-import { convertToBks, isSafeDocIdEmail } from './utils/helpers';
+import { convertToBks, isSafeDocIdEmail, getLocalDayKey} from './utils/helpers';
 import { confirmAction } from './components/ConfirmGate.jsx';
 import { notify } from './components/Toast.jsx';
 
@@ -440,7 +440,7 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
         window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
     };
 
-    const todayStr = new Date().toISOString().split('T')[0];
+    const todayStr = getLocalDayKey();
     
     // 🚀 FORENSIC UPDATE: Ensure we grab BOTH sales AND return logs for the agent today
     const agentSales = transactions.filter(t => t.agentId === selectedAgent?.id && t.date === todayStr && ['SALE', 'RETUR'].includes(t.type || 'SALE'));
@@ -572,7 +572,7 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                                     <div className="text-right shrink-0">
                                         <h2 className="text-xl md:text-2xl font-bold !text-blue-800 uppercase tracking-widest">SURAT JALAN</h2>
                                         <p className="text-[10px] uppercase font-bold !text-slate-400 tracking-widest mt-1">OFFICIAL DELIVERY ORDER</p>
-                                        <p className="text-sm font-mono font-black mt-2 !text-black">SJ-{new Date().toISOString().split('T')[0].replace(/-/g,'')}-{selectedAgent.id.slice(-4)}</p>
+                                        <p className="text-sm font-mono font-black mt-2 !text-black">SJ-{getLocalDayKey().replace(/-/g,'')}-{selectedAgent.id.slice(-4)}</p>
                                     </div>
                                 </div>
 

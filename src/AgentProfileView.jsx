@@ -14,7 +14,7 @@ import { RankBorder, RANK_BORDERS, BORDER_KEYFRAMES, FrameFilters } from './conf
 import Cropper from 'react-easy-crop';
 import { hasClearance, DYNAMIC_TIERS, TIER_ONE_ID, TIER_ONE_ALIAS_IDS } from './config/permissions';
 import HallOfFameView from './HallOfFameView';
-import { savePhotoAndGetReference, deletePhotoFromStorage, formatNumber, parseGroupedNumber, storeKey, storeLabel } from './utils/helpers';
+import { savePhotoAndGetReference, deletePhotoFromStorage, formatNumber, parseGroupedNumber, storeKey, storeLabel, getLocalDayKey} from './utils/helpers';
 import { careerXP, DEFAULT_XP, totals, DEFAULT_BADGES, STAT_LABELS, BADGE_SOURCES, statLabel } from './config/career';
 import { notify } from './components/Toast.jsx';
 
@@ -420,7 +420,7 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
         let totalItemsSold = 0; let ecerItemsSold = 0;
         const yearlyAgentOmset = {};
 
-        const today = new Date(); const todayStr = today.toISOString().split('T')[0];
+        const today = new Date(); const todayStr = getLocalDayKey(today);
         const currentMonth = today.getMonth(); const currentYear = today.getFullYear();
         
         const getMonday = (d) => {
@@ -432,7 +432,7 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
         
         const thisWeek = Array.from({length: 7}, (_, i) => {
             const d = new Date(currentMonday); d.setDate(currentMonday.getDate() + i);
-            return { date: d.toISOString().split('T')[0], label: d.toLocaleDateString('id-ID', {weekday:'short'}), dayIndex: d.getDay(), cash: 0, titip: 0 };
+            return { date: getLocalDayKey(d), label: d.toLocaleDateString('id-ID', {weekday:'short'}), dayIndex: d.getDay(), cash: 0, titip: 0 };
         }).filter(day => (rpgData.workingDays || [1,2,3,4,5,6]).includes(day.dayIndex));
 
         const thisMonth = [ { label: 'Wk 1', cash: 0, titip: 0 }, { label: 'Wk 2', cash: 0, titip: 0 }, { label: 'Wk 3', cash: 0, titip: 0 }, { label: 'Wk 4', cash: 0, titip: 0 } ];
@@ -448,7 +448,7 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
                 let txDateStr = t.date;
                 try {
                     if (!txDateStr && t.timestamp && t.timestamp.seconds) {
-                        txDateStr = new Date(t.timestamp.seconds * 1000).toISOString().split('T')[0];
+                        txDateStr = getLocalDayKey(new Date(t.timestamp.seconds * 1000));
                     }
                 } catch(e) { txDateStr = null; }
 
@@ -469,7 +469,7 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
                 try {
                     if (!txDateStr && t.timestamp && t.timestamp.seconds) {
                         txDateObj = new Date(t.timestamp.seconds * 1000);
-                        txDateStr = txDateObj.toISOString().split('T')[0];
+                        txDateStr = getLocalDayKey(txDateObj);
                     } else if (txDateStr) {
                         txDateObj = new Date(txDateStr);
                     }

@@ -492,7 +492,7 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
   // --- DOWNLOAD ENGINE HELPERS ---
   const getCurrentTimestamp = () => {
     const now = new Date();
-    const date = now.toISOString().split('T')[0]; // YYYY-MM-DD
+    const date = getLocalDayKey(now); // YYYY-MM-DD
     const h = now.getHours().toString().padStart(2, '0');
     const m = now.getMinutes().toString().padStart(2, '0');
     return `${date}_${h}-${m}`; // Example: 2026-02-13_08-30

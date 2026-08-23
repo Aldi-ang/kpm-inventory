@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Search, Plus, Package, AlertCircle, ImageIcon, Maximize2 } from 'lucide-react';
-import { formatRupiah, convertToBks } from '../utils/helpers';
+import { formatRupiah, convertToBks, getLocalDayKey} from '../utils/helpers';
 
 // 🚀 NEW: ADVANCED STOCK FORMATTER (Handles Batang, Slops, and Bal)
 export const formatAdvancedStock = (stock, item) => {
@@ -246,7 +246,7 @@ export default function ResidentEvilInventory({ inventory, motorists = [], trans
                                     <div className="flex items-center gap-2 mt-1.5 flex-wrap">
                                         {(() => {
                                             if (!isAdmin) return <p className="text-sm font-mono text-slate-400 font-bold">STK: **</p>;
-                                            const todayStr = new Date().toISOString().split('T')[0];
+                                            const todayStr = getLocalDayKey();
                                             let fieldBks = 0;
                                             motorists.forEach(m => {
                                                 const cItem = (m.activeCanvas || []).find(c => c.productId === item.id);

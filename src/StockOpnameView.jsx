@@ -7,7 +7,7 @@ import {
     Biohazard, FlaskConical, Undo2, BadgeDollarSign, History, Filter, BarChart, MapPin
 } from 'lucide-react';
 import { collection, addDoc, getDocs, updateDoc, doc, writeBatch, serverTimestamp, query, where, onSnapshot, increment } from "firebase/firestore";
-import { savePhotoAndGetReference, deletePhotoFromStorage, commitInChunks, formatRupiah, formatNumber, compressImageToBase64, tierPrice } from './utils/helpers';
+import { savePhotoAndGetReference, deletePhotoFromStorage, commitInChunks, formatRupiah, formatNumber, compressImageToBase64, tierPrice, getLocalDayKey} from './utils/helpers';
 import { confirmAction, promptAction } from './components/ConfirmGate.jsx';
 import { notify } from './components/Toast.jsx';
 import { canSeeExpectedCount } from './config/permissions';
@@ -714,7 +714,7 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                     unit: 'Bks',
                     reason: `QUARANTINE CONVERSION: ${reason}`,
                     sourceId: targetFacility === 'MASTER' ? 'VAULT' : targetFacility,
-                    date: new Date().toISOString().split('T')[0],
+                    date: getLocalDayKey(),
                     timestamp: serverTimestamp()
                 });
                 if (logAudit) await logAudit("QUARANTINE_SAMPLING", `Converted ${qtyToResolve}x ${resolutionModal.item.name} to sampling.`);
@@ -740,7 +740,7 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                     cukaiDebtNotes: {
                         [penaltyId]: {
                             label: `${resolutionModal.item.name} ${qtyToResolve} damaged`,
-                            date: new Date().toISOString().split('T')[0]
+                            date: getLocalDayKey()
                         }
                     }
                 }, { merge: true });

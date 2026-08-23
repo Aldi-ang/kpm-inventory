@@ -103,7 +103,7 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
         const describe = (pid) => {
             if (cNotes[pid]) return { label: cNotes[pid].label || 'Bounty', date: cNotes[pid].date || '' };
             const stamp = /^PENALTY_(\d{10,})$/.exec(pid);
-            if (stamp) return { label: 'Damaged goods penalty', date: new Date(Number(stamp[1])).toISOString().split('T')[0] };
+            if (stamp) return { label: 'Damaged goods penalty', date: getLocalDayKey(new Date(Number(stamp[1]))) };
             if (pid.startsWith('PENALTY_EOD_')) return { label: 'End-of-day shortfall', date: '' };
             return { label: 'Bounty', date: '' };
         };

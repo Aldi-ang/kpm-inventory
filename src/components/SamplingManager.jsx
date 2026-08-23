@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { ArrowRight, Wallet, Package, Truck, ClipboardList, Lock, Calendar, RefreshCcw, Save, Store, Pencil, Trash2, MapPin, Folder, X, Edit, TrendingUp, Plus } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts';
-import { getCurrentDate } from '../utils/helpers';
+import { getCurrentDate, getLocalDayKey} from '../utils/helpers';
 import { notify } from './Toast.jsx';
 
 // 🚀 HELPER: Safely formats decimal Bks back into "X Bks Y Btg"
@@ -194,7 +194,7 @@ export const SamplingCartView = ({ inventory, isAdmin, onCancel, onSubmit }) => 
     const [cart, setCart] = useState([]);
     const [location, setLocation] = useState("");
     const [note, setNote] = useState("");
-    const [targetDate, setTargetDate] = useState(new Date().toISOString().split('T')[0]);
+    const [targetDate, setTargetDate] = useState(getLocalDayKey());
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const filteredInventory = inventory.filter(i => i.name.toLowerCase().includes(searchTerm.toLowerCase()));

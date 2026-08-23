@@ -3,7 +3,7 @@ import { Truck, MapPin, CheckCircle, Calendar, Phone, Store, Navigation, X, Save
 import { doc, updateDoc, serverTimestamp, deleteField, collection, getDocs, getDoc, setDoc } from "firebase/firestore";
 import { MapContainer, TileLayer, Marker, Polyline, GeoJSON, Tooltip as LeafletTooltip, Popup, useMap, useMapEvents } from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-cluster';
-import { storeKey } from './utils/helpers';
+import { storeKey, getLocalDayKey} from './utils/helpers';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { loadBorderCache, saveBorderCache } from './utils/borderCache';
@@ -268,7 +268,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
         }));
     }, [rawTransactions]);
 
-    const todayDate = new Date().toISOString().split('T')[0];
+    const todayDate = getLocalDayKey();
     const [selectedDay, setSelectedDay] = useState(new Date().toLocaleDateString('en-US', { weekday: 'long' }));
     
     const todaysVisits = useMemo(() => {

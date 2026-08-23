@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { collection, query, orderBy, onSnapshot, addDoc, deleteDoc, doc, serverTimestamp, updateDoc, getDocs, getDoc, setDoc, writeBatch } from 'firebase/firestore';
-import { commitInChunks } from '../utils/helpers';
+import { commitInChunks, getLocalDayKey} from '../utils/helpers';
 import { findDuplicates, createdMillis, groupKey } from '../utils/findDuplicates';
 import { loadBorderCache, saveBorderCache } from '../utils/borderCache';
 import { getCustomerAccessLevel } from '../config/permissions';
@@ -245,7 +245,7 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
         name: '', phone: '', province: '', region: '', city: '', address: '', 
         gmapsUrl: '', embedHtml: '', 
         latitude: '', longitude: '', storeImage: '', 
-        tier: 'Silver', priceTier: 'Retail', visitFreq: 7, lastVisit: new Date().toISOString().split('T')[0],
+        tier: 'Silver', priceTier: 'Retail', visitFreq: 7, lastVisit: getLocalDayKey(),
         picName: '', description: '', mapFolder: '' 
     });
     const [editingId, setEditingId] = useState(null);
@@ -994,7 +994,7 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                     triggerCapy("Customer added and approved!"); 
                 }
             } 
-            setFormData({ name: '', phone: '', province: '', region: '', city: '', address: '', gmapsUrl: '', embedHtml: '', latitude: '', longitude: '', storeImage: '', tier: 'Silver', priceTier: 'Retail', visitFreq: 7, lastVisit: new Date().toISOString().split('T')[0], picName: '', description: '', mapFolder: '' });
+            setFormData({ name: '', phone: '', province: '', region: '', city: '', address: '', gmapsUrl: '', embedHtml: '', latitude: '', longitude: '', storeImage: '', tier: 'Silver', priceTier: 'Retail', visitFreq: 7, lastVisit: getLocalDayKey(), picName: '', description: '', mapFolder: '' });
             setCoordInput("");
         } catch (err) {
             console.error(err);
@@ -1013,7 +1013,7 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
             address: c.address || '', gmapsUrl: c.gmapsUrl || '', embedHtml: c.embedHtml || '',
             storeImage: c.storeImage || '',
             latitude: c.latitude || '', longitude: c.longitude || '',
-            tier: c.tier || 'Silver', priceTier: c.priceTier || 'Retail', visitFreq: c.visitFreq || 7, lastVisit: c.lastVisit || new Date().toISOString().split('T')[0],
+            tier: c.tier || 'Silver', priceTier: c.priceTier || 'Retail', visitFreq: c.visitFreq || 7, lastVisit: c.lastVisit || getLocalDayKey(),
             description: c.description || '', mapFolder: c.mapFolder || ''
         }); 
         setCoordInput(c.latitude && c.longitude ? `${c.latitude}, ${c.longitude}` : "");
