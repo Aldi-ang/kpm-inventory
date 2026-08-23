@@ -18,7 +18,9 @@ import useTransactionEngine from './hooks/useTransactionEngine';
 import useDatabaseSync from './hooks/useDatabaseSync'; 
 import useOfflineEngine, { canReachInternet } from './hooks/useOfflineEngine';
 import MusicPlayer from './MusicPlayer';
-import { injectDynamicPermissions, isFieldLevelTier } from './config/permissions';
+import { injectDynamicPermissions, isFieldLevelTier, hasClearance } from './config/permissions';
+import { POV_OWNER_EMAIL, previewIdentity, testAccountDoc, canUsePovSwitch } from './config/povPreview';
+import TierPovSwitch, { PovBanner } from './components/TierPovSwitch';
 
 // --- REUSABLE UI COMPONENTS (Keep these static for fast initial load) ---
 import NotificationBell from './components/NotificationBell';
@@ -220,11 +222,38 @@ const getDocOfflineSafe = async (ref) => {
 // --- MAIN APP COMPONENT ---
 export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
 
-  const [user, setUser] = useState(null);
+  /* 🎭 WHO THE APP THINKS YOU ARE vs WHO YOU SIGNED IN AS.
+     Five pieces of identity are STATE, written only by the sign-in flow, and five
+     are what the screen reads. In normal use they are the same values. While Aldi
+     is previewing another tier they differ, and `previewIdentity` is the single
+     place that decides how — including the two it forces to false no matter what.
+     Every `setUser` / `setIsAdmin` / `setUserRole` call in this file still writes
+     the TRUE value; nothing downstream had to change, which is the point. */
+  const [trueUser, setUser] = useState(null);
   // ... rest of your code ...
-  const [isAdmin, setIsAdmin] = useState(false); // 🚨 FIXED: Default to locked out!
+  const [vaultUnlocked, setIsAdmin] = useState(false); // 🚨 FIXED: Default to locked out!
   const [sessionStatus, setSessionStatus] = useState({ recovery: false, usb: false, cloud: false });
-  const [isSystemOwner, setIsSystemOwner] = useState(false);
+  const [trueSystemOwner, setIsSystemOwner] = useState(false);
+  /* MOVED UP from the RBAC block below so all five live together — the derivation
+     has to come before the first reader, and `user` is read within twenty lines. */
+  const [trueRole, setUserRole] = useState('ADMIN');
+  const [trueAgentProfileId, setAgentProfileId] = useState(null);
+
+  /* THE COSTUME. Plain state, and it must stay plain state: it is never written to
+     localStorage, so a refresh always puts him back in his own chair. His rule. */
+  const [pov, setPov] = useState(null);
+  const [showPovSwitch, setShowPovSwitch] = useState(false);
+
+  const { user, userRole, agentProfileId, isAdmin, isSystemOwner, previewing } = useMemo(
+      () => previewIdentity(pov, {
+          user: trueUser, userRole: trueRole, agentProfileId: trueAgentProfileId,
+          isAdmin: vaultUnlocked, isSystemOwner: trueSystemOwner
+      }),
+      /* `user` MUST be memoized. useDatabaseSync takes it as a dependency, and a
+         freshly-spread object every render would tear down and rebuild every
+         Firestore listener in the app on every render. */
+      [pov, trueUser, trueRole, trueAgentProfileId, vaultUnlocked, trueSystemOwner]
+  );
   const [showAdminLogin, setShowAdminLogin] = useState(false);
   const [showCrownTransfer, setShowCrownTransfer] = useState(false); // 🚀 ADD THIS
   const [adminPin, setAdminPin] = useState(null);       
@@ -335,9 +364,11 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
   }, [isOnline, user]);
 
 // --- PHASE 2: ROLE-BASED ACCESS CONTROL (RBAC) STATE ---
-  const [userRole, setUserRole] = useState('ADMIN'); 
+  /* `userRole` and `agentProfileId` USED TO BE DECLARED HERE. They now live at the
+     top of the component with the rest of the identity, because the POV preview
+     derives all five together and `user` is read long before this line. The setters
+     are unchanged and still land on the true values. */
   const [bossUid, setBossUid] = useState(null);
-  const [agentProfileId, setAgentProfileId] = useState(null);
   const [agentCanvas, setAgentCanvas] = useState([]);
  
   const [adminSalesMode, setAdminSalesMode] = useState('VAULT'); // 'VAULT' or 'VEHICLE'
@@ -2245,7 +2276,9 @@ const handleGitHubMirror = async () => {
 
             // 🚀 MASTER VIP LIST: the Architect can never be locked out. Defined before the
             // try block so the offline crash handler in the catch below can see it too.
-            const masterVIPs = ['adikaryasukses99@gmail.com'];
+            /* The email lives in povPreview.js now, so the POV switch and the VIP list can
+               never disagree about which address is his. Same string, one owner. */
+            const masterVIPs = [POV_OWNER_EMAIL];
             const isDeveloper = masterVIPs.includes(email);
 
             try {
@@ -3096,6 +3129,42 @@ const handleGitHubMirror = async () => {
   });
 
  const handleAddGoodsToCustomer = (name) => { notify(`Go to Sales Terminal for ${name}`); setActiveTab('sales'); };
+
+  /* 🎭 PUT ON A TIER. The fake staff member is created the first time that tier is
+     worn and never before — no empty test rows appear in his roster for tiers he
+     has not opened. It is a `motorists` document and NOTHING ELSE: deliberately no
+     `employee_directory` entry, because that is the record that lets a human sign
+     in, and a fake agent must never become a way into the company.
+
+     EVERY ACTION REPORTS. Creating the account, wearing it, and failing to do
+     either all say so out loud. */
+  const handlePickPov = async (account) => {
+      if (!canUsePovSwitch(trueUser?.email)) return notify("POV switch is restricted to the owner account.");
+      try {
+          const ref = doc(db, `artifacts/${appId}/users/${userId}/motorists`, account.id);
+          const snap = await getDocOfflineSafe(ref);
+          if (!snap.exists()) {
+              await setDoc(ref, { ...testAccountDoc(account), createdAt: serverTimestamp() });
+              notify(`AKUN UJI DIBUAT: ${account.name}. Hapus lewat Fleet kapan saja.`);
+          }
+          setPov({ tier: account.tier });
+          setShowPovSwitch(false);
+          /* Land where that tier actually lands. Staying on a tab the costume cannot
+             open would show him a locked screen and read as a broken feature. */
+          setActiveTab(hasClearance(account.tier, 'view_dashboard') ? 'dashboard' : 'journey');
+          notify(`MELIHAT SEBAGAI ${account.name}. Refresh untuk kembali ke owner.`);
+      } catch (e) {
+          notify(`GAGAL MASUK POV: ${e.message}`);
+      }
+  };
+
+  const handleExitPov = () => {
+      const worn = previewing?.name;
+      setPov(null);
+      setShowPovSwitch(false);
+      setActiveTab('dashboard');
+      notify(worn ? `KEMBALI KE OWNER. ${worn} dilepas.` : "KEMBALI KE OWNER.");
+  };
   
  // --- UPGRADED: SAMPLING ENGINE (VEHICLE DEDUCTION & BATANG SUPPORT) ---
   const handleBatchSamplingSubmit = async (cartItems, location, date, note) => {
@@ -3666,6 +3735,14 @@ const handleGitHubMirror = async () => {
             /* 🎭 MATRIX VIEW FIX: Instantly strip Admin UI privileges if masquerading as Tier 3/4 */
             isAdmin={isAdmin && (userRole === 'ADMIN' || userRole === 'AREA_ADMIN')}
             userRole={userRole}
+            /* 🎭 THE HIDDEN DOOR. His rule: *"make this option hidden on the sidebar
+               because not all employee can open setting right on recent system"* — so
+               it is not a nav mark, not a Settings row, and not in any menu. It is his
+               own face at the foot of the rail, and it is only a button when the TRUE
+               signed-in email is his. Every other account, and his own account while
+               it is wearing a costume, gets the plain photograph it has always had. */
+            onOpenPov={canUsePovSwitch(trueUser?.email) ? () => setShowPovSwitch(true) : null}
+            povActive={!!previewing}
             onLogin={handleLogin} 
             setShowAdminLogin={setShowAdminLogin}
             agentSettings={agentSettings}
@@ -4012,6 +4089,21 @@ const handleGitHubMirror = async () => {
       {/* 3. MAIN TABS (Only render if user exists) */}
       {user && (
         <>
+        {/* 🎭 THE COSTUME LABEL AND THE COSTUME RACK. The banner is rendered from the
+            derived `previewing`, not from `pov`, so it can only ever appear when the
+            app really is showing him another tier — the label and the disguise cannot
+            come apart. Both gate on the TRUE email: wearing a tier-5 costume must not
+            let the tier-5 screen open the rack and put on tier 2. */}
+        <PovBanner account={previewing} onExit={handleExitPov} />
+        {canUsePovSwitch(trueUser?.email) && (
+            <TierPovSwitch
+                open={showPovSwitch}
+                current={previewing}
+                onPick={handlePickPov}
+                onExit={handleExitPov}
+                onClose={() => setShowPovSwitch(false)}
+            />
+        )}
         {/* 🚀 THE HARD STOP: Blocks any email not found in the KPM Employee Directory */}
         {userRole === 'UNAUTHORIZED' ? (
             <div className="kpm-dark-island fixed inset-0 z-[9999] bg-[var(--duke-scrim-hi)] flex flex-col items-center justify-center text-center p-6 font-mono">

@@ -2492,5 +2492,176 @@ section('S37. Quarantine and HQ Audits: gold is ink and edges, never a slab');
      !/oldestStockDays\([^)]*\)\s*>[\s\S]{0,80}(return notify|disabled|refus)/i.test(bw));
 }
 
+
+/* ============================================================================
+   THE TIER POV SWITCH (2026-08-23) — wearing a tier must only ever REMOVE power
+
+   Aldi asked to see other tiers' screens without logging out, and he overruled
+   the safe default and allowed the preview to SAVE: *"saving is needed for
+   further testing actually"*, and *"oh thats fine if its impacting the real
+   stock and real counting for the data actually no worry about that, we dont
+   need emulator"*. Those two decisions together are why this block exists — a
+   costume that can write to the live database must never also carry the vault
+   key, and must never outlive a refresh.
+
+   ⚠️ THE LIMIT THESE CHECKS DO NOT COVER, and cannot: Firestore still evaluates
+   his real tier-1 account. The switch changes the SCREEN, never the SERVER. The
+   picker says so in words; no assertion here can make it otherwise.
+   ============================================================================ */
+section('S · The tier POV switch takes authority away and never hands it out');
+{
+  const pov = await import('./povPreview.js');
+  const { CORPORATE_TIERS } = await import('./permissions.js');
+  const { POV_OWNER_EMAIL, canUsePovSwitch, TEST_ACCOUNTS, testAccountFor,
+          testAccountDoc, previewIdentity } = pov;
+
+  /* ---- WHO CAN OPEN IT ---- checked on the EMAIL, not on the tier. His rule:
+     *"other account cant do this"*, and a second tier-1 account must not inherit it. */
+  ok('his own email opens the switch', canUsePovSwitch(POV_OWNER_EMAIL));
+  ok('and a stray capital or space does not lock him out',
+     canUsePovSwitch('  Adikaryasukses99@Gmail.com  '));
+  ok('another account cannot open it, whatever its tier',
+     !canUsePovSwitch('someone.else@gmail.com'));
+  ok('a missing or non-string email is a no, not a crash',
+     !canUsePovSwitch(null) && !canUsePovSwitch(undefined) && !canUsePovSwitch({}) && !canUsePovSwitch(''));
+  /* The email used to be typed into App.jsx by hand as the master VIP list. Two
+     copies of one address is how "he can sign in but the switch is missing" happens. */
+  ok('App.jsx spells the address ZERO times - it reads the one constant',
+     !/adikaryasukses99@gmail\.com/i.test(app.replace(/POV_OWNER_EMAIL/g, '')));
+  ok('and it reads it for the VIP list too, so the two can never disagree',
+     /masterVIPs\s*=\s*\[\s*POV_OWNER_EMAIL\s*\]/.test(app));
+
+  /* ---- THE FAKE STAFF ---- one per tier, and TIER 1 IS NOT AMONG THEM. */
+  ok('there is one test account for every tier below him, and no more',
+     TEST_ACCOUNTS.length === 5);
+  ok('tier 1 has no costume - "preview yourself" is the OFF switch, not an option',
+     !TEST_ACCOUNTS.some(a => a.tier === CORPORATE_TIERS.TIER_1));
+  ok('every tier from 2 to 6 has one',
+     [2, 3, 4, 5, 6].every(n => !!testAccountFor(CORPORATE_TIERS[`TIER_${n}`])));
+  ok('every id announces itself as a test account',
+     TEST_ACCOUNTS.every(a => a.id.startsWith('TEST_')));
+  ok('no two costumes share an id',
+     new Set(TEST_ACCOUNTS.map(a => a.id)).size === TEST_ACCOUNTS.length);
+  ok('and every name says [TEST] on the face of it, which is what a receipt prints',
+     TEST_ACCOUNTS.every(a => a.name.startsWith('[TEST]')));
+
+  const doc5 = testAccountDoc(testAccountFor(CORPORATE_TIERS.TIER_5));
+  ok('the document a costume writes is stamped isTest',
+     doc5.isTest === true);
+  ok('and it carries the tier it claims to be',
+     doc5.userRole === CORPORATE_TIERS.TIER_5);
+  /* A motorist document with an email is half a login. The other half is an
+     employee_directory entry keyed by that email - which this feature never writes.
+     Keeping the email blank means a fake agent cannot become a way into the company
+     even if someone later adds the directory row by hand. */
+  ok('a fake agent has no email, so it can never become a way to sign in',
+     doc5.email === '');
+  ok('and the switch never writes an employee_directory row',
+     !/employee_directory[\s\S]{0,400}TEST_TIER|handlePickPov[\s\S]{0,900}employee_directory/.test(app));
+
+  /* ---- THE PREVIEW ITSELF ---- */
+  const REAL_USER = { uid: 'aldi-real-uid', email: POV_OWNER_EMAIL, displayName: 'Aldi' };
+  const REAL = { user: REAL_USER, userRole: 'ADMIN', agentProfileId: null,
+                 isAdmin: true, isSystemOwner: true };
+
+  const off = previewIdentity(null, REAL);
+  ok('with no costume on, every real value passes through untouched',
+     off.userRole === 'ADMIN' && off.agentProfileId === null &&
+     off.isAdmin === true && off.isSystemOwner === true && off.previewing === null);
+  /* Identity, not equality. useDatabaseSync takes `user` as a dependency; a fresh
+     object every render would tear down and rebuild every Firestore listener. */
+  ok('and the user object is the SAME object, so no listener is rebuilt',
+     off.user === REAL_USER);
+
+  const on = previewIdentity({ tier: CORPORATE_TIERS.TIER_5 }, REAL);
+  ok('wearing tier 5 shows the tier-5 screen',
+     on.userRole === CORPORATE_TIERS.TIER_5);
+  ok('and the work is signed by the test operative, not by him',
+     on.agentProfileId === 'TEST_TIER_5' && on.user.displayName === '[TEST] SALES CANVAS');
+  /* 🔴 THE ONE THAT MATTERS. He allowed the costume to WRITE. A costume that also
+     carried the vault key would be tier 1 wearing a tier-5 face - the exact thing
+     the preview exists to rule out. */
+  ok('THE VAULT KEY IS LEFT BEHIND - isAdmin is false even though he really is admin',
+     on.isAdmin === false);
+  ok('and so are the architect screens - isSystemOwner is false',
+     on.isSystemOwner === false);
+  /* The uid is his real sign-in and must never be faked: it is what Firestore
+     evaluates, and pretending otherwise is the lie this feature must not tell. */
+  ok('his real sign-in is untouched - the uid never moves',
+     on.user.uid === 'aldi-real-uid' && on.user.email === POV_OWNER_EMAIL);
+  ok('and the banner has something to name, so the label cannot come apart from the disguise',
+     on.previewing && on.previewing.name === '[TEST] SALES CANVAS');
+
+  /* ---- A COSTUME THAT DOES NOT EXIST IS NO COSTUME ---- */
+  ok('previewing tier 1 does nothing - it cannot become a way to HAND OUT tier 1',
+     previewIdentity({ tier: CORPORATE_TIERS.TIER_1 }, REAL).previewing === null);
+  ok('a stale or unknown tier strands nobody in a costume they cannot see',
+     previewIdentity({ tier: 'WHATEVER' }, REAL).previewing === null &&
+     previewIdentity({}, REAL).previewing === null);
+  ok('and an unknown tier leaves every real value exactly as it was',
+     previewIdentity({ tier: 'WHATEVER' }, REAL).isAdmin === true);
+
+  /* ---- IT MUST NEVER SURVIVE A RELOAD ---- his rule, and it is guaranteed by the
+     costume living in ordinary React state and NOWHERE else. The moment anything
+     here learns to save, a refresh stops being the way out. */
+  /* Comments stripped first, and it is load-bearing: the note in povPreview.js that
+     EXPLAINS why nothing saves contains the word localStorage, and a scan that reads
+     prose reports the exact opposite of the truth. */
+  const povSrc = stripComments(read('src/config/povPreview.js'));
+  const povUi  = stripComments(read('src/components/TierPovSwitch.jsx'));
+  ok('the preview rules save nothing, anywhere',
+     !/localStorage|sessionStorage|indexedDB/.test(povSrc + povUi));
+  ok('and App.jsx never persists the costume either',
+     !/localStorage[\s\S]{0,60}pov|pov[\s\S]{0,30}localStorage/i.test(app));
+  ok('the costume is plain React state, which is what makes a refresh the way out',
+     /const \[pov, setPov\] = useState\(null\)/.test(app));
+
+  /* ---- THE COSTUME CANNOT REACH THE RACK ---- both gates read the TRUE email, so
+     a tier-5 preview cannot open the picker and promote itself to tier 2. */
+  ok('the picker is gated on the TRUE signed-in email, not the previewed one',
+     /canUsePovSwitch\(trueUser\?\.email\)/.test(app) &&
+     !/canUsePovSwitch\(user\?\.email\)/.test(app));
+  ok('and so is the hidden door in the sidebar',
+     (app.match(/canUsePovSwitch\(trueUser\?\.email\)/g) || []).length >= 2);
+  ok('the handler refuses too, so a stray call cannot put a costume on',
+     /handlePickPov[\s\S]{0,200}canUsePovSwitch\(trueUser\?\.email\)/.test(app));
+
+  /* ---- THE DERIVATION ACTUALLY REACHES THE APP ---- the rules above are worth
+     nothing if App.jsx still declares its own isAdmin beside them. */
+  ok('App.jsx reads its identity from previewIdentity',
+     /const \{ user, userRole, agentProfileId, isAdmin, isSystemOwner, previewing \} = useMemo/.test(app));
+  ok('and no shadow copy of the old state is left behind',
+     !/const \[user, setUser\] = useState/.test(app) &&
+     !/const \[isAdmin, setIsAdmin\] = useState/.test(app) &&
+     !/const \[isSystemOwner, setIsSystemOwner\] = useState/.test(app) &&
+     !/const \[userRole, setUserRole\] = useState/.test(app) &&
+     !/const \[agentProfileId, setAgentProfileId\] = useState/.test(app));
+  /* The memo's dependency list is load-bearing, not decoration - see the note above it. */
+  ok('the memo watches every value it derives from',
+     /\[pov, trueUser, trueRole, trueAgentProfileId, vaultUnlocked, trueSystemOwner\]/.test(app));
+
+  /* ---- THE BANNER IS UNDISMISSABLE ---- forgetting the costume is the whole risk,
+     so the only way to close the label is to take the costume off. */
+  ok('the banner is drawn from the DERIVED costume, not from the raw state',
+     /<PovBanner account=\{previewing\}/.test(app));
+  /* Scoped to the banner's OWN function body. An unbounded [\s\S]*? would run past it
+     and match the picker's close button further down the file, which is allowed to exist. */
+  const bannerBody = povUi.slice(povUi.indexOf('export function PovBanner'),
+                                 povUi.indexOf('export default function TierPovSwitch'));
+  ok('the banner body was found, so the check below is reading something',
+     bannerBody.length > 400);
+  ok('and it has no close button - only a way out of the costume',
+     !/onClose/.test(bannerBody) && /onExit/.test(bannerBody));
+  ok('neither the banner nor the picker prints on a nota',
+     (povUi.match(/hide-on-print/g) || []).length >= 2);
+
+  /* ---- PALETTE LAW AND LITE MODE ---- no blue, no green, and nothing that only
+     exists while it is animating (Lite Mode cuts every transition to 0.001s). */
+  ok('no blue and no green anywhere in the switch',
+     !/blue-|green-|emerald-|sky-|indigo-|cyan-|teal-/.test(povUi));
+  ok('the owner-only ring is a border, which Lite Mode keeps',
+     /povActive \? 'border-\[var\(--duke-amber\)\]/.test(read('src/components/BiohazardTheme.jsx')));
+}
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

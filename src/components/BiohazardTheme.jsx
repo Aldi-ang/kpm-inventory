@@ -140,7 +140,10 @@ export default function BiohazardTheme({
     activeTab, setActiveTab, children, user, appSettings,
     isAdmin, onLogin, userRole, setShowAdminLogin, showAdminLogin, agentSettings,
     notifications, onNotificationClick, appVersion,
-    darkMode, setDarkMode, syncIndicator, agentPhoto
+    darkMode, setDarkMode, syncIndicator, agentPhoto,
+    /* null for everyone except the owner's own signed-in account — see the note at
+       the call site in App.jsx. When it is null the face below is a plain <img>. */
+    onOpenPov, povActive
 }) {
     /* CLOSED AT EVERY WIDTH — his call, 2026-08-14, about the PC: *"it should be hidden until we
        press the sidebar button"*. It used to open itself on anything 1024px and wider, on the
@@ -815,18 +818,42 @@ export default function BiohazardTheme({
                                 the Google account picture, then a plain mark. The dicebear robot
                                 and appSettings.mascotImage are both gone — one of them was a
                                 network request on every load for a face nobody chose. */}
-                            {agentPhoto || user?.photoURL ? (
-                                <img
-                                    src={agentPhoto || user.photoURL}
-                                    title={user.email || 'Signed in'}
-                                    className="w-9 h-9 rounded-full border border-[#5c4b3a] lg:border-[var(--duke-veil-edge-3)] object-cover bg-black shrink-0"
-                                    alt="Profile"
-                                />
-                            ) : (
-                                <div title={user.email || 'Signed in'} className="w-9 h-9 rounded-full border border-[#5c4b3a] lg:border-[var(--duke-veil-edge-3)] bg-black text-[#8b7256] flex items-center justify-center shrink-0">
-                                    <User size={16} />
-                                </div>
-                            )}
+                            {/* 🎭 THE FACE IS THE DOOR. For every account in the company this is
+                                exactly what it has always been — a photograph. For the owner's
+                                own account it is also the way into the tier preview, marked by a
+                                gold ring rather than by a word, because a word here would be a
+                                menu item and he asked for this NOT to be one.
+                                A <button> only when there is something to press: a face wrapped
+                                in a dead button is a control that lies. */}
+                            {(() => {
+                                const Face = agentPhoto || user?.photoURL ? (
+                                    <img
+                                        src={agentPhoto || user.photoURL}
+                                        className="w-9 h-9 rounded-full border border-[#5c4b3a] lg:border-[var(--duke-veil-edge-3)] object-cover bg-black shrink-0"
+                                        alt="Profile"
+                                    />
+                                ) : (
+                                    <div className="w-9 h-9 rounded-full border border-[#5c4b3a] lg:border-[var(--duke-veil-edge-3)] bg-black text-[#8b7256] flex items-center justify-center shrink-0">
+                                        <User size={16} />
+                                    </div>
+                                );
+                                if (!onOpenPov) return <span title={user.email || 'Signed in'}>{Face}</span>;
+                                return (
+                                    <button
+                                        onClick={() => { onOpenPov(); setIsMobileMenuOpen(false); }}
+                                        title={`${user.email || 'Signed in'} — Lihat sebagai tier lain`}
+                                        aria-label="Lihat sebagai tier lain"
+                                        /* The ring is a BORDER, and that is deliberate: Lite Mode
+                                           deletes shadows and filters, so a glow here would leave
+                                           the door invisible in exactly the mode he uses on a slow
+                                           phone. A border is a border in every mode. */
+                                        className={`shrink-0 rounded-full p-[3px] border-2 transition-colors
+                                                    ${povActive ? 'border-[var(--duke-amber)]' : 'border-[var(--duke-veil-edge-3)] hover:border-[var(--duke-amber)]'}`}
+                                    >
+                                        {Face}
+                                    </button>
+                                );
+                            })()}
                             {/* The OPERATIVE plate and the account name were desk-only and needed
                                 the 256px. The face is the identity in a strip; the account is on
                                 its tooltip, and Agent Profile is one mark away. */}
