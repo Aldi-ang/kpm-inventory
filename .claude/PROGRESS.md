@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-23 12:05 WIB (🟠 KPM app session)** · ✅ TESTED IN HIS CHROME — STOCK OPNAME WORKS · ✅ HQ CAN SEE BRANCH SHELVES (`ccdb5b8`) — 632/632 · ▶ **NEXT JOB IS SPEC'D IN FULL: THE TIER POV SWITCH** · 🔴 **RAISE THE LIVE-DATA TRAP WITH HIM FIRST** · branch `phase0-solid-ground`
+**Updated: 2026-08-23 12:15 WIB (🟠 KPM app session)** · ✅ TESTED IN HIS CHROME — STOCK OPNAME WORKS · ✅ HQ CAN SEE BRANCH SHELVES (`ccdb5b8`) — 632/632 · ▶ **NEXT JOB FULLY SPEC'D AND FULLY ANSWERED: THE TIER POV SWITCH — JUST BUILD IT** · branch `phase0-solid-ground`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **TRIMMED 2026-08-21 ON ALDI'S WORD.** *"sure trim it"*, on his own condition:
@@ -60,14 +60,14 @@ not by tier**, an undismissable *MELIHAT SEBAGAI* banner, never surviving a relo
 **overruled the safe default: writes ARE allowed**, *"saving is needed for further testing
 actually"*. Plus **fake test accounts, one per tier**, reachable only from his account.
 
-🔴 **THE TRAP, AND IT MUST BE RAISED BEFORE BUILDING.** Writes go to the LIVE database. A fake
-tier-5 that can save writes real sales, stock, audits and EOD records into the same Firestore the
-business runs on, and nothing marks them fake. **He is right that a test identity fixes
-attribution** — his point, *"this way the system wont be confused to write which name on the
-receipt"* — but **it fixes attribution, not pollution**: the numbers still land in real revenue and
-the real weekly count, just under a name that reads TEST. Offer the **Firebase emulator** first
-(a whole second database on his machine, one session to set up, reusable forever), then a
-quarantined `TEST` branch, then what he asked for unguarded.
+✅ **THE LIVE-DATA QUESTION IS CLOSED — DO NOT REOPEN IT.** He was told in full that test accounts
+with saving on would write real sales, stock, audits and EOD records into the live database and
+land in his revenue and his weekly counts. He answered: *"oh thats fine if its impacting the real
+stock and real counting for the data actually no worry about that, we dont need emulator"*.
+**Build against live. The emulator is off the table unless he raises it himself.** He was right
+that a test identity fixes ATTRIBUTION — no wrong name on a nota — it just does not fix the
+numbers, and he accepted that knowingly. One cheap non-blocking idea is in the brief: stamp test
+writes with `isTest: true` so they can be found later if he ever wants them gone.
 
 **Also approved and unbuilt:** the `9 of 5 sorted` line should refuse visibly the moment the damage
 kinds exceed the total. Ten minutes — `damageBlocked()` already computes it, the line just does not
@@ -298,6 +298,9 @@ that does not change because he offers. It is not reluctance, it is a hard rule.
 not composite a frame at all — text tools worked, screenshots did not. **Check that a screenshot
 actually returns before promising him a visual pass.**
 
+✅ ~~live data or emulator~~ — **ANSWERED: live, no emulator.** *"oh thats fine if its impacting the
+real stock and real counting for the data actually no worry about that"*. **Do not re-ask.**
+
 ✅ ~~POV switch, block writes or allow~~ — **ANSWERED: allow.** *"saving is needed for further
 testing actually"*. And ~~the `9 of 5 sorted` fix~~ — **ANSWERED: yes, make all of it.** Both are
 in `.claude/NEXT-SESSION.md`; the trap that must be raised first is in there too.
@@ -429,9 +432,9 @@ door is finished. What is left is a ranked roadmap and **one decision Aldi has n
 he opens the Claude side panel and signs in there, then `navigate` reaches the dev server. The
 in-app browser is useless for this: it refuses the self-signed certificate.
 
-▶ **THE NEXT JOB IS FULLY SPEC'D IN `.claude/NEXT-SESSION.md`** — the tier POV switch, approved
-with his additions. **Do not open with code: open by raising the live-data trap.** He chose to
-allow writes, and fake accounts that can save will put fiction into his real books.
+▶ **THE NEXT JOB IS FULLY SPEC'D AND FULLY ANSWERED IN `.claude/NEXT-SESSION.md`** — the tier POV
+switch. **Nothing is left to ask; open with code.** Writes go to the live database on his explicit
+decision, and the emulator is off the table.
 
 ⚠️ **Still unseen:** the arrival check and the HQ branch-shelf panel. Both need a branch that has
 stock and a shipment in transit. **A tier 5/6 login or the emulator is the only way past this.**

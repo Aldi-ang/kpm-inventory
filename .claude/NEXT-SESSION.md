@@ -2,7 +2,7 @@
 
 /alucard
 
-**Build the tier POV switch — and read the trap at the bottom before writing a line of it.**
+**Build the tier POV switch. Every open question on it is answered — start coding.**
 
 Asked for by Aldi 2026-08-23, in full:
 
@@ -35,40 +35,34 @@ and then, approving the design and adding to it:
 7. **Fake test accounts, one per tier**, reachable only from his tier-1 account —
    *"more like fake agent account for test"*.
 
-## 🔴 THE TRAP — raise this with him BEFORE building the test accounts
+## ✅ THE LIVE-DATA QUESTION IS ANSWERED — DO NOT ASK IT AGAIN
 
-**Writes go to the live database.** A fake tier-5 agent that can save will write real sales, real
-stock movements, real audits and real EOD records into the same Firestore his business runs on.
-Nothing marks them as fake. They will land in his revenue totals, his agent leaderboards, his stock
-figures and his weekly counts — and unpicking them later means finding every document a test
-session touched, across collections that reference each other by name.
+He was told plainly that fake accounts with saving enabled write real sales, stock, audits and EOD
+records into the live database, and that they would land in his revenue, his leaderboards and his
+weekly counts. He answered:
 
-**HE IS RIGHT ABOUT ONE HALF OF IT**, and it should be said back to him plainly — his words:
-*"this way the system wont be confused to write which name on the receipt and all of that right"*.
-Correct: a dedicated test identity per tier stops a test sale being attributed to a real agent's
-name on a nota, in the audit log, on the leaderboard. Borrowing a real agent's account would be
-worse in exactly that way.
+> *"oh thats fine if its impacting the real stock and real counting for the data actually no worry
+> about that, we dont need emulator"*
 
-**But it solves attribution, not pollution.** The test sale still lands in real revenue, real stock
-and the real weekly count — just under a name that reads TEST. The books are still wrong; they are
-only wrong legibly.
+**That is his decision and it is final. Build against the live database.** He owns the business and
+the books; the risk was named once, in full, and he accepted it. Re-raising it costs him a session
+and reads as not listening. The emulator is **off the table** unless he brings it up himself.
 
-**Three ways out, in the order they should be offered:**
+He was also right about the half that this does fix, and it is worth keeping:
 
-- **A · The Firebase emulator.** A complete second copy of the database on his own machine, seeded
-  with fake data. Test accounts can save anything, and none of it can ever reach the real
-  business. This is what the emulator exists for. Costs a session to set up and is reusable
-  forever. **This is the right answer and it should be recommended plainly.**
-- **B · Test accounts that are real, but quarantined** — a `TEST` branch/location that no report,
-  no leaderboard and no stock figure ever reads. Cheaper than A, but every aggregate in the app
-  has to be taught to exclude it, and the one that gets missed is the one that lies.
-- **C · What he asked for, unguarded.** Fake accounts writing straight into the live data. Fastest
-  today, and it puts fiction into the books.
+> *"this way the system wont be confused to write which name on the receipt and all of that right"*
 
-He was told the honest limit already and it still holds: **the switch changes what the SCREEN
-shows, never what the rules allow.** Firestore evaluates his real tier-1 account, so a POV preview
-can never prove the server would refuse a tier 5. Only a real low-tier login against the emulator
-does that.
+Correct — a dedicated test identity per tier stops a test sale being attributed to a real agent on
+a nota, in the audit log or on a leaderboard. Borrowing a real account would be worse.
+
+**One cheap thing to do anyway, not a re-litigation and not a blocker:** stamp every document a
+test account writes with `isTest: true`. It changes nothing today, costs one field, and means that
+if he ever does want them gone they can be found in one query instead of by memory. If it gets in
+the way, drop it.
+
+**The honest limit still holds and is worth repeating once in the UI, not in a question:** the
+switch changes what the SCREEN shows, never what the rules allow. Firestore evaluates his real
+tier-1 account, so a POV preview can never prove the server would refuse a tier 5.
 
 ## Also outstanding, small
 
