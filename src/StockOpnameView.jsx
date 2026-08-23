@@ -24,17 +24,30 @@ import { canSeeExpectedCount } from './config/permissions';
    Damage already had to say what kind; a shortage did not, so HQ received a bare `-3` and had to
    guess between a bookkeeping fix, a write-off and a person.
 
-   🔴 THESE FIVE WORDS ARE CLAUDE'S, NOT ALDI'S, AND HE HAS NOT APPROVED THEM YET.
-   His standing law is that only he names the categories in his own trade. They are provisional so
-   the control could be built and looked at; the `value` strings are what Firestore keeps, and
-   records already saved keep whatever string was used at the time. **Change them here BEFORE
-   agents start counting with this, not after.** */
+   ✅ RUNNING AS THE DEFAULT ON ALDI'S WORD, 2026-08-23: *"for the 5 cause we can just add that as
+   default for now"*. Still Claude's words, still his to rename — the `value` strings are what
+   Firestore keeps and a saved record keeps whatever string it was written with, so a rename later
+   splits one cause into two forever. Rename them here, not in the label.
+
+   ⚠️ "Supplier Short" WAS REMOVED, and it was not a wording choice. Aldi, same day: *"there is no
+   supplier between this restock, because goods is made by company own factory and we sell our
+   product ourself"*. There is no third party in this chain, so the category could never be true.
+   The internal version of it — HQ sent fewer than it said — is now caught at the receiving door by
+   the arrival check in BranchWarehouseManager.jsx, before the goods are ever credited.
+
+   It is replaced by "Cause unknown" on purpose. Without an honest bucket, a counter who cannot
+   type and cannot find the right word picks the nearest wrong one, and the report then lies with
+   confidence. A cause that admits it does not know is worth more than a confident wrong one.
+
+   The shape he settled: this short list first, and a second level of rarer causes behind
+   "Lainnya". **The regional admin never types their own reason** — his instruction, so that every
+   record stays countable. The second level is not built yet. */
 export const VARIANCE_REASONS = [
     { value: 'Miscount',          label: 'Miscount' },
     { value: 'Unrecorded Sale',   label: 'Unrecorded sale' },
     { value: 'Breakage / Damage', label: 'Breakage' },
     { value: 'Theft',             label: 'Theft' },
-    { value: 'Supplier Short',    label: 'Supplier short' }
+    { value: 'Cause Unknown',     label: 'Cause unknown' }
 ];
 
 /* A difference that has survived the recount must say WHY before it can be submitted.

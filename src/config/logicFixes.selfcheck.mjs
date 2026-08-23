@@ -2004,10 +2004,18 @@ ${opname.slice(rOpen + 1, rEnd)}
      && /Cause: \{item\.varianceReason\}/.test(opname)
      && /Three different counts — you decide/.test(opname));
   /* ⚠️ THIS ONE IS A REMINDER, NOT A RULE. It fails the day someone edits the list, which is the
-     moment to check the new words are HIS words and to delete this check. */
-  ok('the five provisional causes are still the provisional ones Aldi has not yet approved',
-     /'Miscount'[\s\S]{0,220}'Supplier Short'/.test(opname),
+     moment to check the new words are HIS words and to delete this check. Running as the default
+     on his word 2026-08-23; the words are still Claude's and still his to rename. */
+  ok('the five causes are still the default list, not yet renamed in his own words',
+     /'Miscount'[\s\S]{0,220}'Cause Unknown'/.test(opname),
      'if this failed because he renamed them, that is good - delete this check');
+  /* A HARD RULE, not a reminder. There is no supplier anywhere in this chain - the factory is the
+     company's own - so a cause blaming one could never be true, and the internal version of it is
+     caught at the receiving door before stock is ever credited. */
+  ok('no cause blames a supplier, because there is no supplier in this chain',
+     !/Supplier/i.test(opname.slice(opname.indexOf('VARIANCE_REASONS'), opname.indexOf('VARIANCE_REASONS') + 400)));
+  ok('and an honest "do not know" bucket exists, so nobody has to pick a wrong one',
+     /'Cause Unknown'/.test(opname));
 
   /* ---- LEAK DETECTION (2026-08-21) ----
      "u can add leak detection for this trigger for everytime stock opname is done, which is each
