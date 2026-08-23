@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-23 12:30 WIB (🟠 KPM app session)** · ✅ CLOCK FULLY FIXED · ✅ STOCK AGE SHIPPED (`42fefe8`) — 632/632 · ⚠️ **NOTHING SINCE 08-21 SEEN ON A REAL SCREEN — THIS IS NOW THE BIGGEST RISK** · branch `phase0-solid-ground`
+**Updated: 2026-08-23 11:53 WIB (🟠 KPM app session)** · ✅ TESTED IN HIS CHROME — STOCK OPNAME WORKS · ✅ HQ CAN SEE BRANCH SHELVES (`ccdb5b8`) — 632/632 · 🔴 HE OWES ONE ANSWER: POV SWITCH, BLOCK WRITES OR NOT · branch `phase0-solid-ground`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **TRIMMED 2026-08-21 ON ALDI'S WORD.** *"sure trim it"*, on his own condition:
@@ -21,6 +21,31 @@
 >
 > 📏 **KEEP THIS FILE UNDER ~350 LINES.** Past that, cut the oldest day into the same archive.
 > ⚠️ **TWO TRACKS SHARE THIS FILE** — 🟠 KPM and 🟢 Lancelot. Never trim or re-sort across them.
+
+## 🟠 2026-08-23 11:53 — IT WAS TESTED ON A REAL SCREEN AT LAST, AND IT WORKS. 599/599, 632/632.
+
+**First time anything from 08-21 or 08-23 has been seen running.** Claude drove HIS Chrome against
+the dev server on the live database. **Nothing was submitted** — no stock audit, no receipt.
+
+**Passed, with eyes on it:** Stock Opname LOADS (the 08-21 killer) · the four figures in full words
+· the recount panel · `5 DAMAGED · 0 of 5 sorted` · **the reel steps EXPIRED → WATER DAMAGE →
+TORN / CRUSHED with dots 1/5 → 2/5 → 3/5** · the sorted counter and bar update live · HQ pipeline
+reads `PENDING, IN-TRANSIT & DISPUTED` · factory intake says FACTORY PRODUCTION, not supplier.
+Full record: `A-Brain/Backlog/Test the new Stock Opname on a real screen.md`.
+
+⚠️ **ONE FINDING, NOT YET FIXED.** Sorting 9 damaged kinds against a total of 5 shows
+`9 of 5 sorted` with a **full bar and nothing marking it wrong**. The refusal is real but only
+fires at submit — the "UI says yes" shape. He was asked whether to fix it; **no answer yet.**
+
+**Could not be reached and why:** the arrival check (pipeline empty, no shipment in transit, and
+creating one writes real stock) · blind counting (he is tier 1, seeing expected is correct).
+
+**`ccdb5b8` — HQ can now look at a branch's shelf.** His words: *"i think tier 1 also need to see
+regional warehouse components that only regional admin could see because me as tier 1 cant see
+that"*. `isAreaAdmin` was a hard either/or, so the owner could not see his own warehouses — which
+also meant the stock ages shipped an hour earlier were invisible to the only account he uses.
+Restock Vault → **Isi Gudang Cabang**, pick a branch. **READ-ONLY on purpose:** no request form and
+no receive button for HQ, or the send/count separation the arrival check exists to create is gone.
 
 ## 🟠 2026-08-23 12:30 — STOCK AGE SHIPPED, AND HIS SCOPE CUT MADE IT ONE SESSION NOT THREE. 599/599, 632/632.
 
@@ -99,45 +124,6 @@ UTC could not tell the implementations apart — which is why the source checks 
 ❓ **ONE QUESTION FOR HIM, NOT DECIDED:** old records keep their UTC `date`, so past sales between
 midnight and 07:00 WIB are still filed under the previous day. Repairing means rewriting `date` on
 every historical transaction from its `timestamp`. **Left open on purpose.**
-
-## 🟠 2026-08-23 10:09 — TWO FACTS FROM ALDI REWROTE THE ROADMAP. 599/599, 596/596.
-
-🔴 **WAITING ON HIM — he must pick A or B before anything starts:**
-- **A · Fix the clock.** Small, one session. Day rolls at 7am and `getCurrentDate()` is UTC in 26
-  places, so anything counted per-day is wrong at the edges. Unblocks order-quantity + accuracy.
-- **B · The freshness chain.** Birth date at intake → batch travels to branches → oldest ships
-  first + ageing warning. Three sessions. Does NOT need the clock. **Claude's pick.**
-
-**His two facts, verbatim, because both invalidated written work:**
-
-> *"there is no supplier between this restock, because goods is made by company own factory and we
-> sell our product ourself"*
-
-> *"pita cukai is bought by company and company are be able to sell the product with it, and if its
-> expired it is still cant be sell and there is no problem with our government ... the problem is
-> with our customer, when the customer see old pita cukai on the product means that the cigarette is
-> old and they assume this product is tidak laku or tidak enak ... on the cigarette it have some
-> sauce that put into the product and it causing the new fresh sauced cigarette to taste better"*
-
-**What that changed.** No third party anywhere in the chain — factory → HQ → branch → van → store —
-so nothing may be framed as a supplier or carrier claim; a shortage is an internal leak. Excise
-gap **deleted**, no government angle at all. But freshness became the **highest-value item on the
-list**: old stock costs margin AND reputation, and the thing to track is **age**, not an expiry
-date that does not exist. G1 is also cheaper than it looked — `RestockVaultView` already has a
-Batch / Serial No. field, so the work is *carrying* the batch, not inventing it. A new gap 8
-replaces the deleted one: factory intake credits whatever is typed, with no production date, and
-that is the only moment a batch's age can ever be recorded.
-
-**Shipped `a3c0dff` — the cause list is live** on his word *"for the 5 cause we can just add that
-as default for now"*. Still his words to rename; the `value` strings are what Firestore keeps.
-**"Supplier Short" removed** — it could never be true, and its internal version is caught at the
-receiving door now. Replaced by **"Cause unknown"**: the admin cannot type their own reason (his
-rule), so without an honest bucket someone picks the nearest wrong word and the report lies with
-confidence. Two checks: one reminder pinning the default list, one HARD rule refusing any cause
-that mentions a supplier.
-
-📄 Roadmap: `A-Brain/Wiki/Concepts/The Eight Warehouse Gaps.md` · artifact
-`https://claude.ai/code/artifact/2a94825e-e349-42a7-bf52-9404d0c19c2c` (both corrected).
 
 ## 🟠 2026-08-23 — THE COUNT MOVED TO THE DOOR, AND THE ROADMAP GOT RANKED
 
@@ -253,32 +239,6 @@ as a match — his granularity, not a rounding.
 not exist on a saved record, so every row would have painted red on `undefined`. Caught before
 commit, and now pinned by a check that strips comments first.
 
-## 🟠 2026-08-21 16:44 — A CONFIRMED DIFFERENCE NOW SAYS WHY. 599/599 and 554/554.
-
-*(16:44 is a stamp bump only — the entry below was already written at 16:43 and is unchanged. The
-log was trimmed to five entries at the same time, and the two new files were added to the table.)*
-
-HQ used to get a bare `-3`. It now arrives with a cause, and with whether the number was **counted
-twice** or is **one of three that disagreed**. Same reel as the damage kinds — he approved that
-control by eye, so a second control that looked different would be the mistake.
-
-Offered **only after the recount confirms**, because a cause given on the first guess is a guess.
-Starts unset on *"tap to say what happened"* and can never cycle back to it — a picker resting on
-a default gets submitted unread, and this field decides whether a shortage is filed as arithmetic
-or as a person.
-
-🔴 **THE FIVE WORDS ARE MINE AND HE HAS NOT APPROVED THEM** — miscount · unrecorded sale ·
-breakage · theft · supplier short. **His law is that only he names the categories in his own
-trade.** They are placeholders so the control could be looked at. **Saved records keep whatever
-string was used, so settle the list BEFORE agents count with it.** A check pins that the list is
-still the provisional one; when he renames them that check fails, and that is the moment to
-delete it. `VARIANCE_REASONS` at the top of `src/StockOpnameView.jsx`.
-
-⚠️ **Caught by its own suite:** the check pinning the damage strings against the sales terminal
-scraped the WHOLE file for `value:`/`label:` pairs, so a second array of the same shape made it
-read the causes as damage kinds. Now scoped to the `DAMAGE_REASONS` block. **A file-wide regex in
-a check is a trap that springs the day someone adds a similar list.**
-
 ## 🟠 LOG TRIMMED TO FIVE ENTRIES, 2026-08-23 10:09
 
 Everything before 2026-08-21 16:44 retired. Full story in `git log -p -- .claude/PROGRESS.md`;
@@ -306,13 +266,26 @@ that does not change because he offers. It is not reluctance, it is a hard rule.
 not composite a frame at all — text tools worked, screenshots did not. **Check that a screenshot
 actually returns before promising him a visual pass.**
 
-🔴 **THE ONLY OPEN DECISION — A OR B, verbatim as it was put to him 2026-08-23 10:09:**
+🔴 **THE POV SWITCH — his ask, 2026-08-23:**
 
-> **A — Fix the clock.** Small, one session. Day rolls at 7am and dates run in UTC, so anything
-> counted per-day is wrong at the edges. Unblocks order-quantity and the accuracy panel.
-> **B — The freshness chain.** Birth date at intake → batch travels to branches → oldest ships
-> first + an ageing warning. Bigger, maybe three sessions. Doesn't need the clock.
-> My pick: **B.** It's the one that makes money, and you clearly feel that pain already.
+> *"i want one extra admin tier 1 features where i can change the account tier in an instant to
+> see their POV ui instead of login and logout each time waste a time TBH can u design this
+> featue"*
+
+**Design given, one question back to him, verbatim as asked:**
+
+> **Your call on one thing:** should writes be **blocked** while previewing (my pick — safest, and
+> testing UI doesn't need saving), or **allowed** so you can test a full flow end-to-end?
+
+⚠️ **The honest limit, already told to him:** it changes what the SCREEN shows, not what the
+database allows. Firestore rules answer to his real tier-1 account, so it can never prove the
+server would refuse a tier 5. **That needs the emulator with a real low-tier login.** Design also
+carries: a permanent undismissable banner, and it must never survive a reload.
+
+🔴 **ALSO UNANSWERED — the `9 of 5 sorted` finding.** Over-sorting damage shows a full bar and no
+error until submit. Offered to make the line go red the moment it goes over; he has not replied.
+
+✖ ~~A or B~~ — **both done.** Clock `60c53d8` + `e3663c6`, stock age `42fefe8`.
 
 ✖ ~~what are the five causes called~~ — **answered 2026-08-23:** *"for the 5 cause we can just add
 that as default for now"*. **SHIPPED `a3c0dff`**, minus "Supplier Short" which could never be true
@@ -416,12 +389,15 @@ and in `A-Brain/Archive/PROGRESS-archive-2026-08-21.md`. Six entries is the work
 **Live front, 2026-08-23 10:09 — THE WAREHOUSE CHAIN.** Stock Opname is finished. The receiving
 door is finished. What is left is a ranked roadmap and **one decision Aldi has not made yet.**
 
-✅ **A and B are both done** — clock (`60c53d8` + `e3663c6`), stock age (`42fefe8`). **He asked for
-no threshold and none was built; do not add one.**
+✅ **Tested at last, and Stock Opname works.** See the 11:53 entry. **Chrome testing is proven** —
+he opens the Claude side panel and signs in there, then `navigate` reaches the dev server. The
+in-app browser is useless for this: it refuses the self-signed certificate.
 
-🔴 **THE NEXT THING IS NOT MORE FEATURES — IT IS LOOKING AT THE APP.** Three shipped today, none
-seen running, on top of two days the same. The 08-21 entry below is what that costs. Needs HIS
-Chrome; the in-app browser refuses the dev server's certificate.
+🔴 **ONE DECISION OUTSTANDING, then a small build.** He asked for a tier-1 POV switch. Design was
+given; the open question is under WAITING ON ALDI, verbatim.
+
+⚠️ **Still unseen:** the arrival check and the HQ branch-shelf panel. Both need a branch that has
+stock and a shipment in transit. **A tier 5/6 login or the emulator is the only way past this.**
 
 📖 **A cold session reads two files before anything else:**
 `A-Brain/Wiki/Concepts/Where KPM Is Going.md` — the theme and every locked decision.
@@ -468,6 +444,7 @@ Evidence with file and line numbers in `.claude/SWEEP-2026-08-19.md`.
 | `src/StockOpnameView.jsx` → `VARIANCE_REASONS` + `varianceReasonMissing()` | **NEW 2026-08-21, LIVE 2026-08-23** — why a confirmed difference happened. Running as the DEFAULT on his word; still his words to rename. ⚠️ No cause may mention a supplier — there is none in this chain. "Cause unknown" is deliberate: the admin cannot type their own reason, so an honest bucket stops them picking a wrong one |
 | `src/components/BranchWarehouseManager.jsx` → `receiptLines()` / `receiptBlocked()` / `receiptDisputed()` | **NEW 2026-08-23** — the arrival check. The branch is credited what it COUNTED, never what HQ claimed. Partial blind: quantities hidden while `IN_TRANSIT`, product names kept so a missing product is counted as 0. Any difference or damage → `DISPUTED`, top of HQ's list. **No tolerance here** unlike Stock Opname — a sealed box carries no fraction of a pack |
 | `A-Brain/Wiki/Concepts/The Eight Warehouse Gaps.md` | **NEW 2026-08-23 — THE ROADMAP.** Eight ranked gaps, the forced build order, and what was rejected on purpose. Artifact version: `https://claude.ai/code/artifact/2a94825e-e349-42a7-bf52-9404d0c19c2c` |
+| `src/components/BranchWarehouseManager.jsx` → `productArrivals()` / `arrivalsOnHand()` / `oldestStockDays()` + `stockCard()` | **NEW 2026-08-23** — how long stock has stood at a branch. Derived by subtraction against `stock`, so it cannot drift; NO new write path. `stockCard` is drawn for BOTH the branch admin and HQ — never make a second copy. ⚠️ **No threshold and no blocking, on his word.** Two checks refuse to let either be added |
 | `A-Brain/Wiki/Concepts/Design Inspiration Sources.md` | **NEW 2026-08-23** — the five sites his component and animation ideas come from, and the four rules an idea must clear (repalette · survive Lite Mode · no native dialog · must report). Alucard loads it on any design ask |
 | `src/StockOpnameView.jsx` → `recountState()` + `samePass()` + `startRecount()` | **NEW 2026-08-21** — a difference is counted twice before HQ sees it. ⚠️ `startRecount` must NEVER re-take `expStock`/`expDamaged`, and must never show the previous numbers back |
 | `src/StockOpnameView.jsx` → `shortageStreak()` + `isLeak()` | **NEW 2026-08-21** — leak detection. Short in ≥2 of the last ≥3 counts, five-count window. **Lives on HQ's review row on purpose** — agents cannot read `pending_audits`, and warning the counter would bias a blind count |
