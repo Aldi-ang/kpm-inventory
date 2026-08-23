@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-23 11:20 WIB (🟠 KPM app session)** · ✅ CLOCK FIXED (`60c53d8`) — 609/609 · ❓ ONE QUESTION: repair old date stamps or leave them · ▶ NEXT IS **B, THE FRESHNESS CHAIN** — he said design it next · ⚠️ NOTHING SINCE 08-21 SEEN ON A REAL SCREEN · branch `phase0-solid-ground`
+**Updated: 2026-08-23 11:45 WIB (🟠 KPM app session)** · ✅ CLOCK FULLY FIXED (`60c53d8` + `e3663c6`) — 612/612 · ✅ HISTORY LEFT ALONE, his call · ▶ NEXT IS **B, THE FRESHNESS CHAIN** — design it before building · ⚠️ NOTHING SINCE 08-21 SEEN ON A REAL SCREEN · branch `phase0-solid-ground`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **TRIMMED 2026-08-21 ON ALDI'S WORD.** *"sure trim it"*, on his own condition:
@@ -21,6 +21,24 @@
 >
 > 📏 **KEEP THIS FILE UNDER ~350 LINES.** Past that, cut the oldest day into the same archive.
 > ⚠️ **TWO TRACKS SHARE THIS FILE** — 🟠 KPM and 🟢 Lancelot. Never trim or re-sort across them.
+
+## 🟠 2026-08-23 11:45 — THE CLOCK FIX WAS INCOMPLETE, AND SAYING SO IS THE POINT. 599/599, 612/612.
+
+`60c53d8` claimed the clock was fixed at the definition. True for the 26 call sites that USED the
+helper — and **21 more inline copies of the same UTC expression sat in 12 files that never called
+it at all.** Swept in `e3663c6`.
+
+**Two of them made things WORSE, not merely unfixed.** `AgentProfileView` buckets its weekly chart
+by day string and compares against each transaction's own `date`; once sales stamped local dates
+while the buckets stayed UTC, the chart became *inconsistent with the data it was reading*. And
+`RestockVaultView` stamps `poDate` at factory intake — **the production date the whole freshness
+chain is about to key off.**
+
+**The pattern is now BANNED, not just removed** — a scanner refuses any app file taking a UTC date
+inline, same shape as the existing `storeKey` scanner. Hand-fixing 21 occurrences only fixes 21.
+Proven: reintroducing one turned two checks red and named the file.
+
+✅ **History stays as it is** — his call, *"we can leave history alone and continue our work"*.
 
 ## 🟠 2026-08-23 11:20 — THE CLOCK. IT WAS NEVER TWO BUGS. 599/599, 609/609.
 
