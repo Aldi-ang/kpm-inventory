@@ -133,6 +133,17 @@ const PAIRS = [
   ['the ON plate against the rail', 'gold',          'glass-solid',  3],
   ['the ON icon on its plate',      'gold-ink',      'gold',         4.5],
 
+  /* 🔴 AND THE OTHER SIXTEEN MARKS, 2026-08-24 — the pair above was grading the wrong surface
+     twice over, which is why it stayed green through a bug he had to photograph for us.
+     It watched the ON plate, one mark of seventeen, and it measured against `--glass-solid`,
+     which is the LITE MODE fallback. In normal light mode there was no solid ground at all:
+     the rail was a lens onto a page that falls off darker toward the bottom, so the ink met a
+     different colour at every row and faded down the column. A check cannot see a moving ground.
+     `--plate` is a real opaque surface now, so these three pairs finally measure what renders. */
+  ['a resting mark on the faceplate', 'plate-ink',   'plate',        4.5],
+  ['the ON plate on the faceplate',   'gold',        'plate',        3],
+  ['the lamp lit, against the plate', 'lamp-on',     'plate',        3],
+
   /* ── THE DUKE'S LEDGER, the sales terminal's own palette ──────────────────────────
      WARNING: THESE PAIRS WERE DISCOVERED, NOT INVENTED. The first version of this block listed
      pairs I assumed the screen rendered, and several of them did not exist. A check that asserts
@@ -216,7 +227,18 @@ const PAIRS = [
    not clear 4,5:1, and that is a real finding worth acting on, but "improve the terminal's dark
    contrast" is a decision he has to make, because it costs him a re-test. Failing the build on
    it would be this file overruling him rather than informing him. Reported loudly, not enforced. */
-const softInDark = () => false;   // nothing is exempt any more — see the note in PAIRS
+/* ⚠️ ONE EXEMPTION, AND IT IS A FINDING BEING REPORTED, NOT A RULE BEING LOOSENED.
+   The rail pairs added 2026-08-24 measure the resting mark against the rail's own surface in
+   BOTH themes, because that is the check that would have caught the light-mode fade Aldi had to
+   photograph. Turning it on immediately exposed a SECOND, older problem: the DARK rail's resting
+   icons are #6b5845 on #14110e = 2,78:1, well under 4,5. That is real and pre-existing — it is
+   what the JSX has always rendered — but Aldi's instruction on 2026-08-24 was explicit that the
+   dark rail is not to be touched in this pass, and failing his build on a decision he has not
+   made would be this file overruling him. So it reports as `note`, loudly, every run, until he
+   decides. Exactly the reason this hook existed before it was emptied.
+   🔴 DO NOT ADD A SECOND STRING HERE without his word. One exemption is a finding; a list is a
+   loophole, and the light half of this very pair is enforced at full strength. */
+const softInDark = (what) => what === 'a resting mark on the faceplate';
 
 let fail = 0, noted = 0;
 for (const [theme, tokens] of [['DARK ', dark], ['LIGHT', light]]) {

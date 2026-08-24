@@ -770,7 +770,17 @@ export default function BiohazardTheme({
                                         dark theme's, and an anonymous span gives the stylesheet nothing to
                                         aim at. With the class, `html.light .kpm-rail-bar` is two classes to
                                         Tailwind's one and wins the cascade regardless of file order. */}
-                                    {on && <span className="kpm-rail-bar absolute right-0 top-2 bottom-2 w-[3px] rounded-l-full bg-[#ff9d00] shadow-[0_0_10px_rgba(255,157,0,.6)]"></span>}
+                                    {/* 🔴 ALWAYS RENDERED NOW, AND THE COLOURS MOVED TO CSS.
+                                        It used to be `{on && <span … bg-[#ff9d00] shadow-[…]>}`,
+                                        so an unlit mark had no lamp to light. In light mode this
+                                        is an indicator lamp that strikes on hover and holds when
+                                        active; in dark mode CSS hides it unless `.on` and repaints
+                                        the exact same amber bar and spill, so the dark rail is
+                                        pixel-for-pixel what it was. The two hexes had to leave the
+                                        JSX regardless — a Tailwind literal here is the dark theme
+                                        deciding what light mode looks like, which is the root fault
+                                        this whole block exists to undo. */}
+                                    <span className="kpm-rail-bar absolute right-0 top-2 bottom-2 w-[3px] rounded-l-full" aria-hidden="true"></span>
                                 </button>
                             );
                         })}

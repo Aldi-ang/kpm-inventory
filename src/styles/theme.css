@@ -69,6 +69,19 @@
      causing the system active settings text to gone"*. Lite Mode drops motion and effects. It
      has never had permission to change a colour. */
   --glass-solid:   #14110e;
+  /* THE RAIL'S OWN SURFACE AND ITS LAMP, named so contrast.selfcheck can measure them.
+     Dark mode's rail ground IS the glass fallback, and its lamp is the amber bar that has
+     always been there — these are descriptions of what already renders, not new colours.
+     Light mode gives the same four names an anodised faceplate; see the note down at the
+     `html.light` block. Both themes must define them or the check reports MISSING. */
+  --plate:         #14110e;
+  --plate-ink:     #6b5845;
+  --plate-edge:    #3a3226;
+  --plate-lit:     #2a241c;
+  --plate-shade:   #0c0a08;
+  --lamp-on:       #ff9d00;
+  --lamp-rim:      #8a6e14;
+  --lamp-off:      rgba(245, 230, 200, .14);
 
   /* lines. Three weights: whisper, structure, control edge. */
   --line:          #26231F;   /* 1,3:1 — decorative only, never a control's only edge */
@@ -220,6 +233,22 @@ html.light {
   --glass-edge-2:  rgba(46, 38, 26, .22);
   /* the same pane with the blur switched off: one step above the page, never black */
   --glass-solid:   #e3dbca;
+  /* THE ANODISED FACEPLATE. Same four names dark mode gives its glass rail, so
+     contrast.selfcheck can measure the rail in both themes. `--plate` is DARKER
+     than `--ground` (#D2C9B4) on purpose: metal is not paper, and an opaque plate
+     is what stops the page's own falloff showing through the rail. Full note at
+     `html.light .kpm-rail-pod::before`.
+     `--lamp-on` deliberately does NOT flip — a real indicator does not change
+     colour when the room light comes on. It is a FILL and never text, so the
+     "gold is never text on light" law is not in play here. */
+  --plate:         #C6BFAE;
+  --plate-ink:     #2A241B;
+  --plate-edge:    #8E856F;
+  --plate-lit:     #E6E0D0;
+  --plate-shade:   #6E664F;
+  --lamp-on:       #9A4200;
+  --lamp-rim:      #4A1E00;
+  --lamp-off:      rgba(46, 38, 26, .20);
 
   --line:          #6E6A64;   /* 3,0:1 — the old value was 2,0:1 and vanished */
   --line-2:        #5E5A55;   /* 3,9:1 */
@@ -2343,6 +2372,69 @@ html.lite-mode .kpm-rail-mark:active { transform: none; }
    place still inventing its own answer.
    MEASURED, and pinned in contrast.selfcheck so it cannot drift back: the ON plate stands off
    the rail's own surface at 5,32:1, and its icon sits on that plate at 6,86:1. */
+/* ============================================================================
+   🔴 THE ANODISED FACEPLATE — light mode gets its own MATERIAL, 2026-08-24
+
+   His photograph: the marks fade down the rail, readable at the top and nearly
+   gone at the bottom. A fade, not a failure, is the fingerprint of a moving
+   ground under one ink — and the ground was moving because THE RAIL HAD NO
+   GROUND. `.kpm-rail-pod::before` is a LENS: a 0.02→0.10 dark wash over a blur,
+   which darkens a dark page and does nothing at all to a cream one. So in light
+   mode the rail showed the page through itself, and the page is lit from the
+   top-left and falls away darker toward the bottom-right. That falloff IS the
+   fade.
+
+   The block above already fixed the ON mark. It could not fix the other
+   sixteen, because their problem was never the ink.
+
+   HIS CALL, 2026-08-24, offered a paler glass or a solid panel and inventing a
+   third: *"what if some laboratory panel kind of design for the light mode and
+   keep the glass one for the dark mode?"*, then *"i like anodized the most"*.
+   He is right, and it is on-theme by his own name for it — RE9 "Ark Lab".
+
+   Why a faceplate beats a paler glass, beyond taste: it is opaque, so there is
+   nothing left to see through and no falloff to leak. And it is built ONLY from
+   border, fill and a 1px background pattern — so **Lite Mode takes nothing away
+   from it.** Lite Mode strips blur and shadow, which is the entire personality
+   of the glass; this material has neither.
+
+   ⚠️ DARK MODE IS NOT TOUCHED. Everything here is `html.light`.
+   ============================================================================ */
+html.light .kpm-rail-pod::before {
+  /* DARKER than the page (--ground #D2C9B4), not lighter. That inversion is the
+     whole fix: metal is not paper, and a plate that reads as metal gives the ink
+     one predictable ground instead of seventeen. */
+  background-color: var(--plate);
+  /* the brush. 1px on, 2px off, at 28% — grain, not stripes. Anything heavier
+     reads as a barcode; this is the extrusion direction on a real faceplate. */
+  background-image: repeating-linear-gradient(90deg,
+      rgba(255, 252, 244, .28) 0 1px, transparent 1px 3px);
+  /* the blur was the lens. With an opaque plate there is nothing to blur, and
+     leaving it on costs a compositor pass for no pixels. */
+  -webkit-backdrop-filter: none; backdrop-filter: none;
+  border-color: var(--plate-edge);
+  /* machined bevel: lit top edge, shadowed bottom edge. Two inset hairlines are
+     what makes a flat rectangle read as a plate with thickness. */
+  box-shadow: inset 0 1px 0 var(--plate-lit),
+              inset 0 -1px 0 var(--plate-shade),
+              0 10px 28px rgba(46, 38, 26, .18);
+}
+/* Lite Mode strips the blur for everyone — but its fallback paints `--glass-solid`
+   (#e3dbca), which is LIGHTER than the page and puts the fade straight back. The
+   faceplate keeps its own colour there; only the grain goes, and grain is the one
+   part that costs anything to paint. */
+html.lite-mode.light .kpm-rail-pod::before {
+  background-color: var(--plate); background-image: none;
+  box-shadow: inset 0 1px 0 var(--plate-lit), inset 0 -1px 0 var(--plate-shade);
+}
+
+/* THE SIXTEEN MARKS THAT WERE FADING. Near-black, because the plate is now a
+   known mid-tone and there is no reason to spend contrast on a brown. The JSX
+   pins `text-[#6b5845]`, one Tailwind class; `html.light .kpm-rail-mark` is two,
+   so this wins without touching the component. The `.on` rule below is three and
+   still wins over this — order and specificity both checked, not eyeballed. */
+html.light .kpm-rail-mark { color: var(--plate-ink); }
+
 html.light .kpm-rail-mark::before {
   /* resting and hover: a well pressed INTO the surface, not a lamp laid on top of it */
   background: rgba(46, 38, 26, .10);
@@ -2361,8 +2453,77 @@ html.light .kpm-rail-mark.on { color: var(--gold-ink); }
    the edge of the one icon whose whole job is to be the sharpest thing in the column. */
 html.light .kpm-rail-mark.on .kpm-rail-icon,
 html.light .kpm-rail-mark.hot .kpm-rail-icon { filter: none; }
-/* the 3px bar at the right edge, and the ten pixels of orange spill that go with it */
-html.light .kpm-rail-bar { background: var(--gold); box-shadow: none; }
+/* ============================================================================
+   THE INDICATOR LAMP — dark mode first, so nothing there moves
+
+   The bar renders on every mark now (see the note in BiohazardTheme). These two
+   rules put dark mode back exactly where it was: hidden unless `.on`, then the
+   same #ff9d00 bar with the same ten pixels of spill that used to be Tailwind
+   literals in the JSX. Nothing about the dark rail changed.
+   ============================================================================ */
+.kpm-rail-bar { display: none; }
+.kpm-rail-mark.on .kpm-rail-bar {
+  display: block; background: #ff9d00; box-shadow: 0 0 10px rgba(255, 157, 0, .6); }
+
+/* ── LIGHT MODE: the lamp is a LIGHT SOURCE, not a surface ──────────────────
+   His note, 2026-08-24: *"make sure u make the amber color more dense more like
+   LED ... this color is too light on top of light theme"*. He is right, and the
+   reason is a category error I made: `--gold` is a SURFACE token, and in light
+   mode it is a dark brown-amber meant to be painted UNDER pale ink. Asked to be
+   a lamp it read as a smudge.
+
+   ⚠️ SO THE LAMP DOES NOT FLIP WITH THE THEME, and that is deliberate — a real
+   indicator does not change colour when you turn the room light on. `--lamp-on`
+   is one dense amber for both themes. It is a FILL and never text, so the "gold
+   is never text on light" law is not in play; the icon beside it stays near-black.
+
+   Dense reads as dense because of three parts, not one: a saturated core, a dark
+   rim a shade under it, and a lit top edge. On a 3px bar the rim is 1px and it is
+   what stops the amber dissolving into cream. */
+/* ⚠️ THE LAMP AND PLATE TOKENS LIVE IN THE MAIN LIGHT BLOCK AT THE TOP OF THIS FILE,
+   not here. contrast.selfcheck parses that one block for the light theme; a second
+   `html.light { }` further down is invisible to it, and the pairs came back reading
+   DARK values while claiming to be LIGHT — green on a measurement of the wrong theme.
+   The audit also refuses a literal hue inside any `html.lite-mode` rule, which is why
+   the faceplate is tokens and not hexes. */
+html.light .kpm-rail-bar {
+  display: block; background: var(--lamp-off);
+  border: 1px solid rgba(46, 38, 26, .30); border-right: 0;
+  box-shadow: none;
+  transition: background 90ms ease-out, border-color 90ms ease-out;
+}
+/* HOVER STRIKES. His pick out of four, after watching all of them run:
+   *"A is minimalist and looks cooler"*, then the flicker. Two stutters over
+   200ms, on the way UP only — a lamp coming on, not a lamp that is faulty. The
+   420ms triple-flicker he saw first was too much across seventeen marks; sweeping
+   the rail read as a fault rather than as equipment.
+   ⚠️ NOTHING LOOPS. `steps(1)` and a single iteration. An infinite pulse here
+   would break his rule that nothing rotates, and Lite Mode would freeze it
+   mid-cycle — a stopped animation reads as a bug. */
+html.light .kpm-rail-mark:hover .kpm-rail-bar,
+html.light .kpm-rail-mark:focus-visible .kpm-rail-bar {
+  background: var(--lamp-on); border-color: var(--lamp-rim);
+  animation: kpm-lamp-strike 200ms steps(1) 1;
+}
+/* ACTIVE IS STEADY. Lit, no strike, no hover reaction — steady means "you are
+   here", flicker means "you are touching this". The animation is cancelled
+   explicitly or the hover rule above would re-strike the mark you are already on. */
+html.light .kpm-rail-mark.on .kpm-rail-bar,
+html.light .kpm-rail-mark.on:hover .kpm-rail-bar {
+  display: block; background: var(--lamp-on);
+  border-color: var(--lamp-rim); border-top-color: #C86A10;
+  box-shadow: none; animation: none;
+}
+@keyframes kpm-lamp-strike {
+  0%   { background: var(--lamp-off); }
+  25%  { background: #D4720C; }
+  45%  { background: #9C8F72; }
+  70%  { background: var(--lamp-on); }
+}
+/* Lite Mode cuts every animation to 0.001s, so the strike becomes an instant snap
+   to lit. Correct, just undecorated — and the lamp is still THERE, which is the
+   thing the glass rail could not promise. No rule needed; this note is here so
+   nobody "fixes" it by adding one. */
 /* 🔴 AND THE CLOSED RAIL, WHICH THE FIRST PASS MISSED — his screenshot, 2026-08-16: *"can u do
    the same format for the darkbrown plate when the sidebar is closed as well? because it is still
    the old yellow color instead"*.
