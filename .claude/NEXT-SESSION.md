@@ -1,5 +1,21 @@
 # The one job for next session
 
+## 📋 PASTE THIS — it is the whole prompt, nothing else needed
+
+```
+/alucard
+
+Do the brown-plate swap in .claude/NEXT-SESSION.md. Read that file first — the amber
+value, the plate-and-ink trap and the verify order are all in it. Start with the
+two-line token edit, run contrast.selfcheck before and after, then show me the three
+screens on my Chrome: Sampling, Customer Directory, Settings.
+```
+
+Everything below is the briefing that prompt refers to. He does not need to read it; the
+next session does.
+
+---
+
 /alucard
 
 **Swap ONE token pair and 68 brown plates across the app go Ark Lab amber. Start with the two-line edit, then let the contrast suite tell you what else moved.**
