@@ -27,6 +27,21 @@
 > and `e3663c6` carry the whole story, including that the first fix missed 21 more copies).
 > Nothing was archived because nothing was lost: `git log` has all three in full.
 
+## 🔧 2026-08-24 — TOOLING TRACK (no app code). The lessons cap is gone; a Stop hook now forces the write.
+
+Aldi compared alucard's lesson loop against the `task-observer` meta-skill (Eoghan Henn,
+CC BY 4.0) and took the three parts of it that are better. **Full story: A-Brain `289c41e`.**
+
+- **No more cap of 5.** Entries carry `LIKELY` / `LIVE` / `RETIRED (date)`; archive-on-write
+  clears anything retired before today. The jam state (5/5, nothing to evict) cannot be reached.
+- **A never-firing rule is broken, not archivable.** LIKELY for 14+ days -> retire it, or make
+  it structural and retire the prose.
+- **`lessons-flush.mjs` on Stop blocks ONCE** if `lessons.md` was never touched this session.
+  Satisfy it with a lesson, or by dating the `Last checked:` footer line.
+
+`SKILL.md` §8 rewritten as §8a-8c. `lessons-health.mjs` rewritten to enforce it, every fault
+class tested against a fixture; the flush hook tested on all four paths. Both fail open.
+
 ## 🟠 2026-08-23 13:49 — THE POV SWITCH IS BUILT AND UNTESTED ON GLASS. 599/599, 679/679.
 
 `51c1d78` — **the tier POV switch.** His own face at the foot of the sidebar is a door now:
