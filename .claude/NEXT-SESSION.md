@@ -14,6 +14,40 @@ screens on my Chrome: Sampling, Customer Directory, Settings.
 Everything below is the briefing that prompt refers to. He does not need to read it; the
 next session does.
 
+## 🧰 THE SKILLS THIS WORK RUNS ON — `/alucard` loads all of them, do not load them by hand
+
+His ask, 2026-08-24: *"make sure all the skills use here is included in the next session"*.
+**Typing `/alucard` is the whole answer** — it is one word and it pulls in everything below.
+Listed here so the next session can tell at a glance whether it is actually running them,
+and so nothing gets loaded twice.
+
+| Loaded by `/alucard` | What it does here |
+|---|---|
+| `anthropic-skills:caveman` **at ULTRA** | terse register. §0 of alucard forces it, first action, every invocation |
+| `anthropic-skills:karpathy-guidelines` | plan before coding · simplest thing · surgical diffs · verifiable criteria |
+| `ponytail` (its own hook, already on) | laziest working solution. Do not restate it, do not fight it |
+| `graphify` | code navigation. Query BEFORE grepping — a hook reminds but does not block |
+
+**Design work auto-loads a second stack (alucard §1a) — this job counts as design work:**
+`A-Brain/Wiki/Concepts/Aldi's Design Taste.md` (his taste, outranks every skill) ·
+`Design Inspiration Sources.md` · `impeccable` · `emil-design-eng` · `ui-ux-pro-max` ·
+`ui-styling` when actually writing code · `web-design-guidelines` as the review pass.
+
+⚠️ **FOR THIS PARTICULAR JOB, MOST OF THAT STACK IS THE WRONG TOOL AND HE ALREADY ASKED ABOUT IT.**
+*"i wast expecting to find some skills to help this task to be more effective"* — the honest answer
+given, and it still holds: **no skill makes a two-line token swap safer.** The leverage is
+`src/config/contrast.selfcheck.mjs`, which already measures gold/gold-ink on five grounds in both
+themes. Read `Aldi's Design Taste.md` (it now carries the Ark Lab entry from this work), then use
+the check. Loading `impeccable` and `ui-ux-pro-max` to change two hex values is the kind of spend
+the caveman/ponytail rules exist to prevent.
+
+⛔ **NEVER load one of the 67 style packs** (brutalism, glassmorphism, neon, terracotta…). They are
+competing looks and they will happily overwrite the palette law. His theme is RE9 "Ark Lab" and it
+is locked.
+
+⛔ **No workflows, no subagent fan-out.** Settled 2026-08-20 in his own words: *"okay then no
+workflow"*. A mode telling you to be exhaustive does not outrank him.
+
 ---
 
 /alucard
