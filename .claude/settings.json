@@ -77,6 +77,12 @@
             "command": "node \"D:/APP DEVELOPMENT/kpm inventory main FILES/kpm-inventory-main/.claude/check-progress.mjs\" \"D:/APP DEVELOPMENT/kpm inventory main FILES/kpm-inventory-main\"",
             "timeout": 15,
             "statusMessage": "Checking the progress note is current..."
+          },
+          {
+            "type": "command",
+            "command": "node \"D:/APP DEVELOPMENT/kpm inventory main FILES/A-Brain/automation/lessons-flush.mjs\"",
+            "timeout": 15,
+            "statusMessage": "Checking a lesson was written..."
           }
         ]
       }
