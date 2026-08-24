@@ -3251,19 +3251,40 @@ check(G46, 'an empty field is still told apart from a filled one',
 check(G46, 'the band caption carries its own weight',
   /\.kpm-band \{[^}]*font-weight:\s*700/.test(clockCss),
   '11px mono over a 1px hatch: the stripe wins against a normal-weight stroke');
+/* ⚠️ THE RULE IS "A PLATE FROM A TOKEN", NOT "THE TOKEN NAMED --gold". This guard used to
+   pin `var(--gold)` by name and it went red on 2026-08-24 against code that obeyed it
+   perfectly — the rail moved to `--lamp-on` because `--gold` in light mode is a brown meant
+   to sit UNDER pale ink, and used as a lamp it read as a brown coin. He photographed it:
+   *"it looks darker bro it looks more brown than amber"*. A guard that names an
+   implementation fails the next correct fix; this one asserts what actually matters — some
+   token, painted as a background, with no bloom. */
 check(G46, 'the light rail marks ON with a plate, not a glow',
-  /html\.light[^{]*\.kpm-rail-mark\.on::before\s*\{[^}]*background:\s*var\(--gold\)/.test(clockCss),
+  /html\.light[^{]*\.kpm-rail-mark\.on::before\s*\{[^}]*background:\s*var\(--[a-z-]+\)/.test(clockCss) &&
+  !/html\.light[^{]*\.kpm-rail-mark\.on::before\s*\{[^}]*box-shadow:\s*0/.test(clockCss),
   'a bloom adds light, and on a cream ground there is none left to add — his word: menyatu');
 check(G46, 'the light rail drops the drop-shadow',
   /html\.light[^{]*\.kpm-rail-mark[^{]*\.kpm-rail-icon\s*\{[^}]*filter:\s*none/.test(clockCss),
   'a glow needs a dark ground to bloom into; on cream it only softens the icon it marks');
 check(G46, 'the active mark takes its ink from the theme, not from a fixed hex',
-  /html\.light[^{]*\.kpm-rail-mark\.on \{[^}]*color:\s*var\(--gold-ink\)/.test(clockCss),
+  /html\.light[^{]*\.kpm-rail-mark\.on \{[^}]*color:\s*var\(--[a-z-]+\)/.test(clockCss),
   'the JSX pins #ff9d00, which is the dark theme deciding what light mode looks like');
-check(G46, 'the CLOSED rail wears the same plate as the open one',
-  /html\.light[^{]*\.kpm-rail-totem\s*\{[^}]*background:\s*var\(--gold\)/.test(clockCss) &&
-  /html\.light[^{]*\.kpm-rail-totem\s*\{[^}]*color:\s*var\(--gold-ink\)/.test(clockCss),
-  'collapsed, the whole rail IS one circle — and it was still painting the dark theme\'s #ff9d00');
+/* 🔴 THE STRONGEST FORM OF THIS CHECK IS A COMPARISON, NOT A NAME. It reads the token the OPEN
+   rail's ON mark uses and the token the COLLAPSED disc uses, and requires them to be the SAME
+   one — whatever that one is.
+   Pinning `var(--gold)` by name would have passed on 2026-08-24 while the open rail moved to
+   amber and the totem stayed brown, which is his 2026-08-16 report exactly: *"can u do the same
+   format for the darkbrown plate when the sidebar is closed as well? because it is still the old
+   yellow color instead"*. The whole point of this check is that the two agree; naming one of them
+   is how it came to be able to pass while they disagreed.
+   A check that survives the next correct fix is worth more than a check that names this one. */
+{
+  const onPlate = clockCss.match(/html\.light[^{]*\.kpm-rail-mark\.on::before\s*\{[^}]*background:\s*var\((--[a-z-]+)\)/);
+  const totemPlate = clockCss.match(/html\.light[^{]*\.kpm-rail-totem\s*\{[^}]*background:\s*var\((--[a-z-]+)\)/);
+  const totemInk = clockCss.match(/html\.light[^{]*\.kpm-rail-totem\s*\{[^}]*color:\s*var\((--[a-z-]+)\)/);
+  check(G46, 'the CLOSED rail wears the same plate as the open one',
+    !!onPlate && !!totemPlate && !!totemInk && onPlate[1] === totemPlate[1],
+    'collapsed, the whole rail IS one circle — and it was still painting the dark theme\'s #ff9d00');
+}
 /* 📏 His ask: *"make all this button bigger but dont allow it to exceed the given box space"*.
    The header declares no height — it grows to its tallest child — so the ceiling is a MEASURED
    fact, not a written one: inner box 48px, set by the two lines of text on the left. This asserts

@@ -141,8 +141,20 @@ const PAIRS = [
      different colour at every row and faded down the column. A check cannot see a moving ground.
      `--plate` is a real opaque surface now, so these three pairs finally measure what renders. */
   ['a resting mark on the faceplate', 'plate-ink',   'plate',        4.5],
-  ['the ON plate on the faceplate',   'gold',        'plate',        3],
-  ['the lamp lit, against the plate', 'lamp-on',     'plate',        3],
+  /* ⚠️ NOT `gold` ANY MORE — the rail's ON disc is `--lamp-on` since 2026-08-24, and a pair
+     that measures a colour the screen has stopped drawing is worse than no pair at all. Its
+     rim is what the eye finds: a bright amber disc on a pale plate is 1,5:1 by luminance and
+     legible only by hue, so the bezel below carries the separation and the ink pair carries
+     the content. */
+  ['the ON disc rim against the plate', 'lamp-rim',  'plate',        3],
+  /* ⚠️ THE BEZEL IS WHAT SEPARATES A LAMP FROM ITS PANEL, NOT THE CORE. Measuring the amber
+     core against a pale plate is measuring the wrong edge: it forced the lamp down to #9A4200 to
+     pass, and he photographed the result — *"it looks more brown than amber"*. A real indicator
+     is a bright core inside a dark rim, and the rim is the boundary the eye actually finds. So
+     the rim carries the 3:1 separation and the core is free to be true amber, which is then
+     checked in its own right against the ink that sits on it when the mark is active. */
+  ['the lamp bezel against the plate', 'lamp-rim',   'plate',        3],
+  ['the ON icon on the lit plate',     'lamp-ink',   'lamp-on',      4.5],
 
   /* ── THE DUKE'S LEDGER, the sales terminal's own palette ──────────────────────────
      WARNING: THESE PAIRS WERE DISCOVERED, NOT INVENTED. The first version of this block listed

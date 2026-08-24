@@ -81,6 +81,7 @@
   --plate-shade:   #0c0a08;
   --lamp-on:       #ff9d00;
   --lamp-rim:      #8a6e14;
+  --lamp-ink:      #2b2318;
   --lamp-off:      rgba(245, 230, 200, .14);
 
   /* lines. Three weights: whisper, structure, control edge. */
@@ -246,8 +247,9 @@ html.light {
   --plate-edge:    #8E856F;
   --plate-lit:     #E6E0D0;
   --plate-shade:   #6E664F;
-  --lamp-on:       #9A4200;
-  --lamp-rim:      #4A1E00;
+  --lamp-on:       #FF9D00;
+  --lamp-rim:      #6B3400;
+  --lamp-ink:      #2B2318;
   --lamp-off:      rgba(46, 38, 26, .20);
 
   --line:          #6E6A64;   /* 3,0:1 — the old value was 2,0:1 and vanished */
@@ -2447,8 +2449,25 @@ html.light .kpm-rail-mark.hot { color: var(--accent-ink); }
 /* ⚠️ `.on` IS DECLARED AFTER `.hot` ON PURPOSE. A mark can be both — the finger is on the screen
    you are already looking at — and at equal specificity the later rule wins. The other order put
    dark gold ink on the dark amber plate, which is the same bug in a different direction. */
-html.light .kpm-rail-mark.on::before { background: var(--gold); box-shadow: none; }
-html.light .kpm-rail-mark.on { color: var(--gold-ink); }
+/* 🔴 AMBER PLATE, DARK INK — corrected 2026-08-24 on his photograph: *"it looks
+   darker bro it looks more brown than amber"*. He was right, and both browns were
+   mine to answer for.
+   `--gold` in light mode is #7A4C0C, and that is CORRECT for what it is: a surface
+   token meant to be painted under PALE ink. Used as the rail's "you are here" it
+   reads as a brown coin, because brown is what it is. The Duke's Ledger already
+   solved this exact problem the other way round and it is measured in
+   contrast.selfcheck: a #ff9d00 plate carrying #2b2318 ink, 7,43:1. The rail was
+   the last place still doing it backwards.
+   ⚠️ `--gold` ITSELF IS NOT TOUCHED — it is used across the whole app in light mode
+   and changing it is a decision about every screen, not about this rail. The rail
+   uses its own lamp token, which is the same amber in both themes on purpose. */
+/* the same dark bezel the lamp wears. A bright amber disc on a pale plate has hue
+   but almost no LUMINANCE difference (1,5:1) — the rim is what gives it an edge, and
+   it is the rim the check measures. The state is carried by three things, none of
+   them the disc's brightness: this rim, the near-black ink on it, and the lamp. */
+html.light .kpm-rail-mark.on::before {
+  background: var(--lamp-on); box-shadow: inset 0 0 0 1px var(--lamp-rim); }
+html.light .kpm-rail-mark.on { color: var(--lamp-ink); }
 /* a drop-shadow needs a dark ground to bloom into. On cream it does not glow, it just softens
    the edge of the one icon whose whole job is to be the sharpest thing in the column. */
 html.light .kpm-rail-mark.on .kpm-rail-icon,
@@ -2502,7 +2521,7 @@ html.light .kpm-rail-bar {
    mid-cycle — a stopped animation reads as a bug. */
 html.light .kpm-rail-mark:hover .kpm-rail-bar,
 html.light .kpm-rail-mark:focus-visible .kpm-rail-bar {
-  background: var(--lamp-on); border-color: var(--lamp-rim);
+  background: var(--lamp-on); border-color: var(--lamp-rim); border-width: 1px;
   animation: kpm-lamp-strike 200ms steps(1) 1;
 }
 /* ACTIVE IS STEADY. Lit, no strike, no hover reaction — steady means "you are
@@ -2511,12 +2530,11 @@ html.light .kpm-rail-mark:focus-visible .kpm-rail-bar {
 html.light .kpm-rail-mark.on .kpm-rail-bar,
 html.light .kpm-rail-mark.on:hover .kpm-rail-bar {
   display: block; background: var(--lamp-on);
-  border-color: var(--lamp-rim); border-top-color: #C86A10;
-  box-shadow: none; animation: none;
+  border-color: var(--lamp-rim); box-shadow: none; animation: none;
 }
 @keyframes kpm-lamp-strike {
   0%   { background: var(--lamp-off); }
-  25%  { background: #D4720C; }
+  25%  { background: #FFC55E; }
   45%  { background: #9C8F72; }
   70%  { background: var(--lamp-on); }
 }
@@ -2538,7 +2556,14 @@ html.light .kpm-rail-mark.on:hover .kpm-rail-bar {
    would turn the OPEN sidebar into a slab. The totem is exactly 56x56 at the same corner and the
    same radius, it already covers the capsule, and it already fades itself out on hover, so the
    open panel he has approved is not touched at all. */
-html.light .kpm-rail-totem { background: var(--gold); color: var(--gold-ink); }
+/* ⚠️ MOVED TO THE LAMP TOKENS WITH THE OPEN RAIL, 2026-08-24, AND IT HAD TO. This is
+   the COLLAPSED rail — the single 56px disc he looks at most — and its whole job is to
+   wear the same plate the open rail's ON mark wears. Leaving it on `--gold` while the
+   open rail went amber would have put his 2026-08-16 bug straight back: *"can u do the
+   same format for the darkbrown plate when the sidebar is closed as well? because it is
+   still the old yellow color instead"*. The audit check below now compares the two
+   tokens to each other rather than naming one, so they cannot drift apart again. */
+html.light .kpm-rail-totem { background: var(--lamp-on); color: var(--lamp-ink); }
 /* the music note is a rail mark whose icon is ALWAYS the accent — it has no resting grey to fall
    back to, so it was the loudest light-on-light thing in the dock. Two states, two answers: dark
    gold on the bare rail, pale ink once the mark's plate is under it. */
