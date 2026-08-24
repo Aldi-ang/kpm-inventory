@@ -2407,10 +2407,18 @@ html.light .kpm-rail-pod::before {
      whole fix: metal is not paper, and a plate that reads as metal gives the ink
      one predictable ground instead of seventeen. */
   background-color: var(--plate);
-  /* the brush. 1px on, 2px off, at 28% — grain, not stripes. Anything heavier
-     reads as a barcode; this is the extrusion direction on a real faceplate. */
-  background-image: repeating-linear-gradient(90deg,
-      rgba(255, 252, 244, .28) 0 1px, transparent 1px 3px);
+  /* NO GRAIN. He asked for it gone, 2026-08-24: *"i dont like the lines on the sidebar
+     background for the light mode can u change to other plate instead, this line make the
+     color that is intact on it seems darker as well"*. He is right twice over: a 1px light
+     line every 3px covers a THIRD of the plate, so the surface the marks actually meet was
+     never --plate, and contrast.selfcheck was grading a colour that is not fully there. A
+     busy ground also makes the ink on it read harsher, which is the part he could see.
+     The machined bevel below is what makes this read as a plate with thickness -- the grain
+     was never doing that job.
+     WARNING: do NOT put a gradient here instead. A vertical fade re-creates the moving
+     ground that made the sixteen marks fade down the column before this plate existed.
+     Flat, or nothing. Lite Mode has shipped exactly this flat faceplate since it was built. */
+  background-image: none;
   /* the blur was the lens. With an opaque plate there is nothing to blur, and
      leaving it on costs a compositor pass for no pixels. */
   -webkit-backdrop-filter: none; backdrop-filter: none;
