@@ -22,6 +22,10 @@
 > 📏 **KEEP THIS FILE UNDER ~350 LINES.** Past that, cut the oldest day into the same archive.
 > ⚠️ **TWO TRACKS SHARE THIS FILE** — 🟠 KPM and 🟢 Lancelot. Never trim or re-sort across them.
 
+> ✂️ **TRIMMED 2026-08-24 10:36.** One 🟠 KPM entry dropped: *the POV switch is built and
+> untested on glass* (2026-08-23 13:49) — it is fully superseded by the 09:26 entry above, which
+> is the same feature after it was tested. `git log -p` has it. 🟢 Lancelot untouched.
+
 ## 🟠 2026-08-24 10:36 — THE RAIL HAS A MATERIAL NOW, AND IT IS AMBER. 599/599, 762/762.
 
 `2149f8a` + `3aac9cf`. **He rejected both options I offered and invented a third** — *"what if some
@@ -123,26 +127,6 @@ CC BY 4.0) and took the three parts of it that are better. **Full story: A-Brain
 
 `SKILL.md` §8 rewritten as §8a-8c. `lessons-health.mjs` rewritten to enforce it, every fault
 class tested against a fixture; the flush hook tested on all four paths. Both fail open.
-
-## 🟠 2026-08-23 13:49 — THE POV SWITCH IS BUILT AND UNTESTED ON GLASS. 599/599, 679/679.
-
-`51c1d78` — **the tier POV switch.** His own face at the foot of the sidebar is a door now:
-press it, pick a tier, the app redraws as that tier sees it, and a gold bar at the bottom says
-MELIHAT SEBAGAI until he leaves. Refresh puts him back. Hidden from the sidebar, gated on his
-EMAIL not his tier, one `[TEST]` agent per tier created the first time it is worn.
-**The commit message is the full story — read it there, not here.**
-
-`080fda8` — **`9 OF 5 SORTED` is gone.** The damage line prints the refusal the moment the
-kinds go past the total, instead of a true-but-finished-looking tally and a full bar.
-
-⚠️ **NEITHER HAS BEEN SEEN ON A SCREEN.** Chrome was not connected when they were built —
-his side panel was closed — so this is verified by 679 checks and a clean build and by nothing
-else. **The test list is in `.claude/NEXT-SESSION.md` and it is the next session's first job.**
-
-The one thing worth repeating out of the commit, because it is the whole safety story: a costume
-can only ever take power away. `previewIdentity()` forces `isAdmin` and `isSystemOwner` false no
-matter what the real account holds, previewing tier 1 does nothing, and an unknown tier is no
-costume at all. All four rules were proven by breaking them on purpose and watching them go red.
 
 ## 🔧 2026-08-23 12:5x — TOOLING TRACK (no app code touched). Graphify hook now ANSWERS, not nags.
 
