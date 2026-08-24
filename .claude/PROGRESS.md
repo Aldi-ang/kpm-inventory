@@ -1,7 +1,44 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-24 10:53 WIB (🟠 KPM app session)** · ✅ **THE RAIL IS ANODISED AND AMBER, SEEN IN HIS CHROME** (`2149f8a`, `3aac9cf`) · ✅ POV switch + fleet permission + G3 all shipped — 599/599, **762/762**, all contrast pairs, build clean · ▶ **HE CLEARED HERE. NEXT JOB = PASTE THE BLOCK AT THE TOP OF `.claude/NEXT-SESSION.md` — it starts with `/alucard`, which loads every skill this work runs on** · he owes 2 answers · branch `phase0-solid-ground`
+**Updated: 2026-08-24 11:0x WIB (🟠 KPM app session)** · ⛔ **THE BROWN SWEEP IS BLOCKED — PROVED IMPOSSIBLE, NOT HARD.** No code changed; the trial was reverted and all contrast pairs pass · ▶ **NEXT JOB = PASTE THE BLOCK AT THE TOP OF `.claude/NEXT-SESSION.md` — it now asks him ONE question first** · he owes 3 answers · branch `phase0-solid-ground`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
+
+## 🟠 2026-08-24 11:0x — THE AMBER PLATE SWAP IS IMPOSSIBLE UNDER THE CURRENT CONTRAST RULE
+
+**Nothing shipped. Nothing was broken. The finding IS the work.** Quota was at 87% on entry, so
+the browser pass was never started — that is deliberate, not abandoned.
+
+Last session's brief said the brown sweep was a two-line token edit. **Tried it, measured it,
+reverted it.** `--gold #7A4C0C → #E07C00` with `--gold-ink #FCF7EE → #2B2318` fails four pairs:
+
+```
+FAIL  2.14:1 (needs 3)  the gold PLATE against a panel   #E07C00 on #E1DAC8
+FAIL  1.60:1 (needs 3)  the gold PLATE against a well    #E07C00 on #C6BDA9
+FAIL  2.41:1 (needs 3)  the gold PLATE against raised    #E07C00 on #EDE7D8
+FAIL  2.16:1 (needs 3)  the ON plate against the rail    #E07C00 on #e3dbca
+```
+The ink half was FINE — `#2B2318` on `#E07C00` = **5.20:1**. The plate half is what dies.
+
+⛔ **AND NO OTHER COLOUR SAVES IT.** Computed from the real ground tokens: to clear 3:1 against
+the darkest light ground the plate needs luminance **≤ 0.1376**; to carry dark ink at 4.5:1 it
+needs **≥ 0.2552**. The windows do not overlap, so this is not "no amber" — it is **no colour**.
+`--gold` is `#7A4C0C` (L **0.0933**) with pale ink precisely because the check forces it.
+**The plates are brown BY LAW, not by neglect.**
+
+✅ **The way out is the one he already accepted for the rail, six hours earlier in this same
+file:** *"a lamp is separated from its panel by its BEZEL, not its core"*. `--gold-edge` measured
+**4.57:1** against a panel in the trial. The rule at `contrast.selfcheck.mjs` ~91-93 and ~133
+measures the plate's CORE against the ground; for a rimmed plate that is the wrong part.
+
+🔴 **SO HE OWES A THIRD ANSWER, and it is a design call, not a technical one** — full wording is
+in `.claude/NEXT-SESSION.md`: *do you want ON plates to be bright amber with a dark outline,
+instead of dark brown with no outline?* Yes → repoint 4 pairs from `gold` to `gold-edge`
+(**never move the 3:1 bar, only what it measures**), then swap the two tokens. **First check that
+all 68 `--gold` fills actually have the rim** — an amber plate with no rim is an invisible ON
+state and the check would no longer catch it.
+
+✔️ Also settled while looking: **`--gold` has ZERO text uses in `src/`**. The old brief warned to
+hunt for one; the only hits are the audit's own guard strings and comments. That trap is dead.
 
 > ✅ **TRIMMED 2026-08-21 ON ALDI'S WORD.** *"sure trim it"*, on his own condition:
 > *"why dont u just save the old one in the A brain and make a trimmed version"*.
