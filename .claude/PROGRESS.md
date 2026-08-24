@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-23 13:49 WIB (🟠 KPM app session)** · ✅ TIER POV SWITCH SHIPPED (`51c1d78`) · ✅ DAMAGE LINE REFUSES ON SIGHT (`080fda8`) — 599/599, **679/679**, build clean · ▶ **NEXT: HE TESTS THE POV SWITCH IN HIS CHROME, THEN G6** · branch `phase0-solid-ground`
+**Updated: 2026-08-24 08:5x WIB (🟠 KPM app session)** · ✅ **POV SWITCH TESTED ON A REAL SCREEN AND IT WORKS** · ✅ FLEET/CANVAS EDIT MOVED INTO THE MATRIX (`7496258`) — 599/599, **711/711**, build clean · ▶ **HE OWES ONE ANSWER: tier 3 can open SETTINGS** · branch `phase0-solid-ground`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **TRIMMED 2026-08-21 ON ALDI'S WORD.** *"sure trim it"*, on his own condition:
@@ -21,6 +21,28 @@
 >
 > 📏 **KEEP THIS FILE UNDER ~350 LINES.** Past that, cut the oldest day into the same archive.
 > ⚠️ **TWO TRACKS SHARE THIS FILE** — 🟠 KPM and 🟢 Lancelot. Never trim or re-sort across them.
+
+## 🟠 2026-08-24 08:5x — THE POV SWITCH RAN, AND ON ITS FIRST DAY IT FOUND TWO REAL HOLES.
+
+**Claude drove his Chrome, he watched, all 8 steps passed.** The gold ring on his own face opens
+the picker · tier 5 cut the sidebar from 17 marks to 7 · **the vault key stayed behind** (music
+player gone, vault figures `****`, UNLOCK VAULT offered) · hopped 5→3 with no logout · both
+`[TEST]` agents landed in the Fleet roster · refresh restored owner · the damage line printed
+**`5 DAMAGED · 4 SORTED MORE THAN THE TOTAL`** in red. Nothing was submitted.
+
+`7496258` — **the two things the run exposed, both fixed.** (1) One tier wore two names at once:
+the banner said HQ SALES MANAGER, the created agent said `[TEST] REGIONAL ADMIN`, and the agent's
+is what prints on a nota. One naming function now. (2) **A tier 6 could edit the fleet and move
+canvas stock** — his own find. `isAreaAdmin` was only `!isGlobalAdmin`, so it was never a tier
+check; Load and Reconcile & Clear were not gated at all. Now one row in Settings › Permissions.
+**The commit message is the full story.**
+
+⚠️ **NOT SEEN ON GLASS: the new Settings row.** The Master Vault password screen came up and
+Claude may not type it. **It is the first thing to look at next session.**
+
+🔴 **HE OWES ONE ANSWER, and it is the bigger hole:** his live tier 3 sees **Master Vault,
+Stock Opname, Customers, Sampling, Audit Logs and SETTINGS** on top of the built-in tier-3 list.
+Settings is the permission matrix itself — a tier 3 can grant themselves anything.
 
 > ✂️ **TRIMMED 2026-08-23 13:49.** Three same-day entries dropped: *the POV switch is spec'd,
 > not started* (superseded by the entry above it) and both clock entries (shipped — `60c53d8`
