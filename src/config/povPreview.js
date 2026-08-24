@@ -16,7 +16,7 @@
    rules would refuse a tier 5.
    ============================================================================ */
 
-import { CORPORATE_TIERS, DYNAMIC_TIERS } from './permissions.js';
+import { CORPORATE_TIERS, tierWord } from './permissions.js';
 
 /* ONE EMAIL, and it is checked on the EMAIL, not on the tier — his words:
    *"for my adikaryasukses99@gmail.com only because it is my tier 1 account,
@@ -42,10 +42,10 @@ export const canUsePovSwitch = (email) =>
    exercise. */
 export const TEST_ACCOUNTS = [
     { tier: CORPORATE_TIERS.TIER_2, id: 'TEST_TIER_2', fallback: 'OWNER' },
-    { tier: CORPORATE_TIERS.TIER_3, id: 'TEST_TIER_3', fallback: 'AREA ADMIN' },
-    { tier: CORPORATE_TIERS.TIER_4, id: 'TEST_TIER_4', fallback: 'FLEET CAPTAIN' },
-    { tier: CORPORATE_TIERS.TIER_5, id: 'TEST_TIER_5', fallback: 'FIELD OPERATIVE' },
-    { tier: CORPORATE_TIERS.TIER_6, id: 'TEST_TIER_6', fallback: 'ROOKIE' }
+    { tier: CORPORATE_TIERS.TIER_3, id: 'TEST_TIER_3', fallback: 'HQ SALES MANAGER' },
+    { tier: CORPORATE_TIERS.TIER_4, id: 'TEST_TIER_4', fallback: 'REGIONAL ADMIN' },
+    { tier: CORPORATE_TIERS.TIER_5, id: 'TEST_TIER_5', fallback: 'SALES CANVAS' },
+    { tier: CORPORATE_TIERS.TIER_6, id: 'TEST_TIER_6', fallback: 'SALES MOTORIST' }
 ];
 
 export const testAccountFor = (tier) => TEST_ACCOUNTS.find(a => a.tier === tier) || null;
@@ -59,11 +59,7 @@ export const testAccountFor = (tier) => TEST_ACCOUNTS.find(a => a.tier === tier)
    renames win, because they are what the rest of the app says. `fallback` is only for a tier he
    has never renamed, and it is written in the code's own vocabulary so nobody mistakes it for a
    label he chose. */
-export const tierLabel = (account) => {
-    const dyn = DYNAMIC_TIERS.find(t => t.id === account.tier);
-    /* 'T5: OPERATIVE' -> 'OPERATIVE'. The number is already on the plate beside it. */
-    return dyn?.label ? dyn.label.replace(/^T\d+:\s*/, '').trim() : account.fallback;
-};
+export const tierLabel = (account) => tierWord(account.tier) || account.fallback;
 
 export const testAccountName = (account) => `[TEST] ${tierLabel(account)}`;
 

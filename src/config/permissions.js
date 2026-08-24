@@ -22,14 +22,39 @@ export const TIER_ONE_ALIAS_IDS = ['ADMIN_VEHICLE', 'VAULT', 'ADMIN'];
 /* Reads only. Old sales and EOD reports still carry the alias, and they must keep answering. */
 export const resolveTierOneId = (id) => TIER_ONE_ALIAS_IDS.includes(id) ? TIER_ONE_ID : id;
 
-// 🚀 DYNAMIC TIER LABELS
+/* 🚀 DYNAMIC TIER LABELS — HIS WORDS ARE THE DEFAULT NOW.
+
+   Aldi, 2026-08-24: *"yea better change the code to follow my tier name make it as default"*.
+   These used to read REGIONAL / CAPTAIN / OPERATIVE / ROOKIE while his live company called the
+   same five tiers something else entirely, and the gap was not cosmetic — it is what made his own
+   sentence *"regional manager can edit the fleet"* ambiguous for a whole exchange, because his
+   REGIONAL ADMIN is the code's FLEET_CAPTAIN and his HQ SALES MANAGER is the code's AREA_ADMIN.
+
+   ⚠️ THE `id`s ABOVE DID NOT MOVE AND MUST NEVER MOVE. `AREA_ADMIN`, `FLEET_CAPTAIN` and the rest
+   are written into every employee document, every sale and every audit line already on file.
+   Renaming a LABEL changes a word on a screen; renaming an ID orphans the history. Labels only.
+
+   These are the fallbacks: `injectDynamicPermissions` replaces this whole array with whatever he
+   saved in Settings, so his live app already shows these words. What this fixes is everything
+   BEFORE that fetch lands, and every tier he has not saved a name for.
+
+   🎨 Two banned colours went with the rename: `text-blue-400` on T4 and `text-emerald-400` on T5.
+   Palette law is no blue and no green, and these are read live by AgentProfileView's identity
+   chip. Amber, orange and stone keep the five apart without breaking it. */
 export let DYNAMIC_TIERS = [
-    { id: CORPORATE_TIERS.TIER_2, label: 'T2: OWNER', color: 'text-yellow-500' },
-    { id: CORPORATE_TIERS.TIER_3, label: 'T3: REGIONAL', color: 'text-purple-400' },
-    { id: CORPORATE_TIERS.TIER_4, label: 'T4: CAPTAIN', color: 'text-blue-400' },
-    { id: CORPORATE_TIERS.TIER_5, label: 'T5: OPERATIVE', color: 'text-emerald-400' },
-    { id: CORPORATE_TIERS.TIER_6, label: 'T6: ROOKIE', color: 'text-slate-400' }
+    { id: CORPORATE_TIERS.TIER_2, label: 'T2: OWNER',             color: 'text-yellow-500' },
+    { id: CORPORATE_TIERS.TIER_3, label: 'T3: HQ SALES MANAGER',  color: 'text-purple-400' },
+    { id: CORPORATE_TIERS.TIER_4, label: 'T4: REGIONAL ADMIN',    color: 'text-amber-400' },
+    { id: CORPORATE_TIERS.TIER_5, label: 'T5: SALES CANVAS',      color: 'text-orange-400' },
+    { id: CORPORATE_TIERS.TIER_6, label: 'T6: SALES MOTORIST',    color: 'text-stone-400' }
 ];
+
+/* ONE PLACE THAT TURNS A ROLE ID INTO THE WORD HE USES FOR IT. 'T5: SALES CANVAS' -> 'SALES
+   CANVAS'; the number is already beside it wherever this is printed. Returns '' for a tier with
+   no label so the caller can fall back — never a raw id, which is what put `AREA_ADMIN` on the
+   fleet roster in the first place. */
+export const tierWord = (roleId) =>
+    (DYNAMIC_TIERS.find(t => t.id === roleId)?.label || '').replace(/^T\d+:\s*/, '').trim();
 
 // 🚀 SHARED: normalizes legacy/old Firebase role tags (ADMIN, DEVELOPER, COMPANY_OWNER,
 // AREA_ADMIN, FLEET_CAPTAIN, ROOKIE, AGENT/Motorist/Canvas/Salesman) into the canonical

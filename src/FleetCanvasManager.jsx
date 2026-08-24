@@ -5,7 +5,7 @@ import {
     ShieldCheck, ChevronDown, ChevronUp, FileText, Printer, MessageSquare, Globe, Search, Plus
 } from 'lucide-react';
 import { collection, doc, setDoc, deleteDoc, updateDoc, writeBatch, runTransaction, onSnapshot, serverTimestamp } from 'firebase/firestore';
-import { DYNAMIC_TIERS, isFieldLevelTier, canEditFleetRoster } from './config/permissions';
+import { DYNAMIC_TIERS, isFieldLevelTier, canEditFleetRoster, tierWord } from './config/permissions';
 import { convertToBks, isSafeDocIdEmail, getLocalDayKey} from './utils/helpers';
 import { confirmAction } from './components/ConfirmGate.jsx';
 import { notify } from './components/Toast.jsx';
@@ -878,7 +878,11 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                                                                 <div className="flex-1 min-w-0">
                                                                     <h3 className={`font-bold truncate text-sm ${m.userRole === 'ADMIN' ? 'text-orange-400' : m.userRole === 'AREA_ADMIN' ? 'text-purple-400' : 'text-white'}`}>{m.name}</h3>
                                                                     <p className="text-[10px] text-slate-400 truncate mt-0.5">
-                                                                        {m.userRole === 'ADMIN' ? <span className="text-orange-500 font-bold uppercase">👑 Master Admin (Global)</span> : m.userRole === 'AREA_ADMIN' ? <span className="text-purple-400 font-bold uppercase">📍 Area Admin ({m.location})</span> : <>{m.role} {m.vehicle ? `• ${m.vehicle}` : ''}</>}
+                                                                        {/* HIS WORD FOR THE TIER, not the code's. This card printed a hardcoded "Area Admin"
+    while his company calls that tier HQ SALES MANAGER — the same mismatch that made a
+    whole exchange about who may edit the fleet ambiguous. `tierWord` reads the labels he
+    set in Settings, so a rename shows up here without anyone editing this line. */}
+{m.userRole === 'ADMIN' ? <span className="text-orange-500 font-bold uppercase">👑 Master Admin (Global)</span> : m.userRole === 'AREA_ADMIN' ? <span className="text-purple-400 font-bold uppercase">📍 {tierWord('AREA_ADMIN') || 'HQ Sales Manager'} ({m.location})</span> : <>{m.role} {m.vehicle ? `• ${m.vehicle}` : ''}</>}
                                                                     </p>
                                                                 </div>
                                                             </div>

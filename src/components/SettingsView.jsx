@@ -763,7 +763,9 @@ export default function SettingsView({
                                           </span>
                                       </div>
                                       <p className="kpm-desc">
-                                          When on, Tier 1-4 (Developer, Company Owner, Area Admin, Fleet Captain) can paint
+                                          {/* The four code role names used to be spelled out here and they went
+                                              stale the moment he renamed a tier. Numbers do not go stale. */}
+                                          When on, Tier 1-4 can paint
                                           squad colours and map boundaries on Journey Plan. When off it is hidden for
                                           everyone, whatever their tier.
                                       </p>

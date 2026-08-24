@@ -2832,5 +2832,84 @@ section('T · Fleet & canvas: who may look, and who may change');
      (setSrc.match(/value: 'fleet_(edit|view_only)'/g) || []).length === 2);
 }
 
+
+/* ============================================================================
+   HIS WORDS ARE THE DEFAULT (2026-08-24)
+
+   Aldi: *"yea better change the code to follow my tier name make it as default"*.
+   The bundled labels said REGIONAL / CAPTAIN / OPERATIVE while his company calls
+   the same tiers something else, and the gap was not cosmetic: his REGIONAL ADMIN
+   is the code's FLEET_CAPTAIN and his HQ SALES MANAGER is the code's AREA_ADMIN,
+   which made his own sentence about who may edit the fleet ambiguous for a whole
+   exchange.
+
+   ⚠️ LABELS MOVED. IDS DID NOT, AND MUST NOT. `AREA_ADMIN`, `FLEET_CAPTAIN` and
+   the rest are written into every employee document, every sale and every audit
+   line on file. Renaming a label changes a word on a screen; renaming an id
+   orphans the history. The first block below is the guard on that.
+   ============================================================================ */
+section('U · His tier names are the default, and the ids underneath never moved');
+{
+  const { CORPORATE_TIERS: CT, DYNAMIC_TIERS: DT, tierWord } = await import('./permissions.js');
+  const povMod = await import('./povPreview.js');
+
+  /* ---- 🔴 THE IDS. This is the locked one. ---- */
+  ok('🔴 the six role ids are byte-for-byte what every stored document already says',
+     CT.TIER_1 === 'DEVELOPER' && CT.TIER_2 === 'COMPANY_OWNER' && CT.TIER_3 === 'AREA_ADMIN' &&
+     CT.TIER_4 === 'FLEET_CAPTAIN' && CT.TIER_5 === 'FIELD_OPERATIVE' && CT.TIER_6 === 'ROOKIE');
+  ok('and the label list still keys off those ids rather than carrying names of its own',
+     DT.every(t => Object.values(CT).includes(t.id)));
+
+  /* ---- HIS FIVE WORDS ---- */
+  const labelOf = (tier) => (DT.find(t => t.id === tier) || {}).label;
+  ok('tier 3 is HQ SALES MANAGER, which is what he calls it',
+     labelOf(CT.TIER_3) === 'T3: HQ SALES MANAGER');
+  ok('tier 4 is REGIONAL ADMIN - the tier he drew the fleet line at',
+     labelOf(CT.TIER_4) === 'T4: REGIONAL ADMIN');
+  ok('tier 5 is SALES CANVAS and tier 6 is SALES MOTORIST',
+     labelOf(CT.TIER_5) === 'T5: SALES CANVAS' && labelOf(CT.TIER_6) === 'T6: SALES MOTORIST');
+  ok('every label still leads with its tier number, which is the part that never goes stale',
+     DT.every(t => /^T\d+: \S/.test(t.label)));
+
+  /* ---- ONE FUNCTION TURNS AN ID INTO HIS WORD ---- */
+  ok('tierWord drops the number and hands back the word',
+     tierWord(CT.TIER_4) === 'REGIONAL ADMIN' && tierWord(CT.TIER_6) === 'SALES MOTORIST');
+  /* '' rather than the id: returning `AREA_ADMIN` is exactly what put a code name on the
+     fleet roster, so an unknown tier must give the caller nothing to print by accident. */
+  ok('an unknown tier gives back nothing, never the raw id',
+     tierWord('NOT_A_TIER') === '' && tierWord(undefined) === '' && tierWord(CT.TIER_1) === '');
+  ok('the POV picker reads that one function instead of repeating it',
+     /tierWord\(account\.tier\) \|\| account\.fallback/.test(read('src/config/povPreview.js')));
+  ok('and the test staff fall back to his words too',
+     povMod.TEST_ACCOUNTS.map(a => a.fallback).join('|') ===
+     'OWNER|HQ SALES MANAGER|REGIONAL ADMIN|SALES CANVAS|SALES MOTORIST');
+
+  /* ---- 🔴 THE CODE VOCABULARY MUST NOT REACH A SCREEN AGAIN ---- comments may say
+     AREA_ADMIN all day; that is what a comment is for. Rendered text may not. ---- */
+  const nameLeak = /Area Admin|Fleet Captain|Field Operative|T3: REGIONAL|T4: CAPTAIN|T5: OPERATIVE|T6: ROOKIE/;
+  const srcFiles = fs.readdirSync('src', { recursive: true })
+      .map(f => `src/${String(f).split('\\').join('/')}`)
+      .filter(f => /\.(jsx|js)$/.test(f));
+  const leaking = srcFiles.filter(f => nameLeak.test(stripComments(read(f))));
+  ok('no screen anywhere still spells a tier the way the code names it',
+     leaking.length === 0, leaking.join(', '));
+  /* Proof the scan reads code and not prose, so it can neither be satisfied by a comment
+     nor set off by one. */
+  ok('the leak scan ignores comments and still catches real code',
+     !nameLeak.test(stripComments('/* Area Admin */\n// Fleet Captain\nconst x = 1;')) &&
+     nameLeak.test(stripComments('const t = "Area Admin";')));
+
+  /* The roster card was the one that showed it to him. It reads the label now, so a rename
+     in Settings reaches this line without anyone editing it. */
+  ok('the fleet roster card asks for his word rather than printing one of its own',
+     /tierWord\('AREA_ADMIN'\)/.test(stripComments(read('src/FleetCanvasManager.jsx'))));
+
+  /* ---- PALETTE LAW rides along, because these five lines were rewritten anyway ---- */
+  ok('no banned colour survives in the tier list - it is read live by the profile chip',
+     !DT.some(t => /blue|green|emerald|sky|cyan|indigo|teal|slate/.test(t.color || '')));
+  ok('and every tier still has a colour to be read',
+     DT.every(t => typeof t.color === 'string' && t.color.length > 0));
+}
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);
