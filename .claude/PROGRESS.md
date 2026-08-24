@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-24 10:05 WIB (🟠 KPM app session)** · ✅ **POV SWITCH + FLEET PERMISSION BOTH SEEN WORKING IN HIS BROWSER** (`7496258`, `86fde13`, `4c76842`) · ✅ **G3 REORDER ADVICE BUILT** (`33700ec`) — 599/599, **762/762**, build clean · ▶ **HE OWES ONE ANSWER: his TIER 3 IS A COPY OF THE OWNER** · branch `phase0-solid-ground`
+**Updated: 2026-08-24 10:20 WIB (🟠 KPM app session)** · ✅ **POV SWITCH + FLEET PERMISSION BOTH SEEN WORKING IN HIS BROWSER** (`7496258`, `86fde13`, `4c76842`) · ✅ **G3 REORDER ADVICE BUILT** (`33700ec`) — 599/599, **762/762**, build clean · ▶ **HE OWES ONE ANSWER: his TIER 3 IS A COPY OF THE OWNER** · branch `phase0-solid-ground`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **TRIMMED 2026-08-21 ON ALDI'S WORD.** *"sure trim it"*, on his own condition:
@@ -250,6 +250,23 @@ the decisions themselves live in `A-Brain/Wiki/Concepts/Where KPM Is Going.md` a
 `A-Brain/Wiki/Concepts/The Eight Warehouse Gaps.md`. Five entries is this file's working depth.
 
 ## ⏳ WAITING ON ALDI — verbatim, do not paraphrase
+
+🔴 **UNANSWERED, 2026-08-24 10:20 — THE SIDEBAR IN LIGHT MODE. His report, verbatim:**
+
+> *"i have something to put to your to do list, as u can see on the light background the text on
+> the sidebar almost invisible maybe we should change the color or edit the transparancy"*
+
+**DIAGNOSED, NOT FIXED** — he asked for it on the list, and the fix is a choice only he makes.
+Full trace + the two options in `A-Brain/Backlog/Sidebar marks fade out in light mode.md`.
+Short version: the marks **fade down the rail** rather than failing outright, which is the
+fingerprint of a moving ground under one ink. `.kpm-rail-pod::before` is a **lens, not a surface** —
+its tint is a fixed DARK wash that does not flip, so in light mode the rail shows whatever is
+behind it, and the page itself falls off from pale top-left to dark bottom-right.
+**A** give the rail its own pale ground in light mode (keeps the glass) · **B** make it a solid
+panel in light mode (simplest, loses the glass). Recommended **A**.
+⚠️ **And the contrast check must be pointed at the real ground either way** — its one rail pair
+measures the ON plate against `--glass-solid`, which is the LITE MODE fallback, so it has been
+grading a surface nobody sees.
 
 🔴 **UNANSWERED, 2026-08-24 — THE TIER 3 QUESTION. Asked verbatim:**
 
