@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-24 08:59 WIB (🟠 KPM app session)** · ✅ **POV SWITCH TESTED ON A REAL SCREEN AND IT WORKS** · ✅ FLEET/CANVAS EDIT MOVED INTO THE MATRIX (`7496258`) — 599/599, **711/711**, build clean · ▶ **HE OWES ONE ANSWER: tier 3 can open SETTINGS** · branch `phase0-solid-ground`
+**Updated: 2026-08-24 09:12 WIB (🟠 KPM app session)** · ✅ **POV SWITCH + FLEET PERMISSION BOTH SEEN WORKING IN HIS BROWSER** (`7496258`, `86fde13`) — 599/599, **712/712**, build clean · ▶ **HE OWES ONE ANSWER: his TIER 3 IS A COPY OF THE OWNER** · branch `phase0-solid-ground`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **TRIMMED 2026-08-21 ON ALDI'S WORD.** *"sure trim it"*, on his own condition:
@@ -26,7 +26,7 @@
 > described in their own commit messages: the first real-screen test (`42fefe8` and earlier) and
 > stock age (`42fefe8`). `git log` has them in full; nothing was archived because nothing was lost.
 
-## 🟠 2026-08-24 08:59 — THE POV SWITCH RAN, AND ON ITS FIRST DAY IT FOUND TWO REAL HOLES.
+## 🟠 2026-08-24 09:12 — THE POV SWITCH RAN, FOUND TWO REAL HOLES, AND BOTH ARE SHUT AND SEEN.
 
 **Claude drove his Chrome, he watched, all 8 steps passed.** The gold ring on his own face opens
 the picker · tier 5 cut the sidebar from 17 marks to 7 · **the vault key stayed behind** (music
@@ -41,8 +41,11 @@ canvas stock** — his own find. `isAreaAdmin` was only `!isGlobalAdmin`, so it 
 check; Load and Reconcile & Clear were not gated at all. Now one row in Settings › Permissions.
 **The commit message is the full story.**
 
-⚠️ **NOT SEEN ON GLASS: the new Settings row.** The Master Vault password screen came up and
-Claude may not type it. **It is the first thing to look at next session.**
+**`86fde13` — his line, drawn at tier 4.** *"regional manager can edit the fleet and canvas, tier
+below that cannot"*. ⚠️ **His tier NAMES do not match the code roles**: T3 `HQ SALES MANAGER` is
+`AREA_ADMIN`, T4 `REGIONAL ADMIN` is `FLEET_CAPTAIN`. The POV picker prints both now, which is how
+this got settled. **Everything above was then seen working in his browser** — the Settings row,
+tier 6 with no edit controls, tier 4 with them back and scoped to its own area.
 
 🔴 **HE OWES ONE ANSWER, and it is the bigger hole:** his live tier 3 sees **Master Vault,
 Stock Opname, Customers, Sampling, Audit Logs and SETTINGS** on top of the built-in tier-3 list.
@@ -218,11 +221,17 @@ the decisions themselves live in `A-Brain/Wiki/Concepts/Where KPM Is Going.md` a
 
 ## ⏳ WAITING ON ALDI — verbatim, do not paraphrase
 
-🔴 **UNANSWERED, 2026-08-24 08:59 — THE TIER 3 QUESTION. Asked verbatim:**
+🔴 **UNANSWERED, 2026-08-24 — THE TIER 3 QUESTION. Asked verbatim:**
 
 > **ANSWER WHEN YOU CAN: your tier 3 can open Settings — that's the permission matrix itself, so a
 > tier 3 can promote themselves to anything. Which of these six should they lose? Master Vault ·
 > Stock Opname · Customers · Sampling · Audit Logs · **Settings**.**
+
+**MEASURED ON HIS LIVE MATRIX 09:0x, and it is worse than that question says: T3 `HQ SALES MANAGER`
+is a TOGGLE-FOR-TOGGLE COPY OF T2 `OWNER`.** Every switch matches, including **Settings Panel**,
+**[GOD] Promote Agents** and **[GOD] Edit Ranks**, plus Customer directory = Global and Reporting =
+Global. So a tier 3 can promote themselves, edit ranks and rewrite the matrix. **T4 is properly
+restricted** — all three of those are off. The leak is tier 3 alone.
 
 **DO NOT CHANGE HIS MATRIX FOR HIM.** It decides what his real staff can open and a wrong guess
 locks someone out mid-shift. He unticks them himself in Settings › Permissions.
@@ -230,9 +239,15 @@ locks someone out mid-shift. He unticks them himself in Settings › Permissions
 ✅ ~~the POV switch and the damage line need his eyes~~ — **DONE 2026-08-24, all 8 steps passed
 in his Chrome while he watched.** See the entry at the top.
 
-⚠️ **STILL NEEDS HIS EYES: the new Fleet & canvas authority row in Settings.** The Master Vault
-password screen came up and **Claude may not type it** — a hard rule, not a preference. Also worth
-saying out loud: **tier 4 defaults to view only and that was Claude's call, not his.**
+✅ ~~the Fleet & canvas authority row needs his eyes~~ — **SEEN WORKING 2026-08-24 09:0x**, he
+opened the vault himself. Row present under the Fleet toggle, T2/T3/T4 View & edit, T5/T6 View
+only. Tier 6 has no add, edit or delete control at all; tier 4 has them back, scoped to its own
+area. ~~tier 4 was Claude's guess~~ — **he settled it: "regional manager can edit the fleet and
+canvas, tier below that cannot"**, then *"yes so tier 4 can edit but they are limited on seeing
+their own regional teams"* (`86fde13`).
+
+⚠️ **HIS MATRIX WAS NOT DEPLOYED.** The row shows built-in defaults until he presses
+**Deploy matrix** himself — Claude does not save his permission config for him.
 
 
 🔴 **HE ASKED CLAUDE TO TEST THE APP ITSELF, 2026-08-21 16:5x** — *"can u do testing yourself, u
@@ -438,7 +453,7 @@ Evidence with file and line numbers in `.claude/SWEEP-2026-08-19.md`.
 | `src/StockOpnameView.jsx` → `DAMAGE_REASONS` | **NEW 2026-08-21** — the five kinds of damage, stored with the sales terminal's own long strings. Deliberately a SUBSET of the terminal's list: no `Other`, because free text cannot be grouped or counted |
 | `A-Brain/Backlog/Test the new Stock Opname on a real screen.md` | **NEW 2026-08-21, HIS TO-DO** — numbered walkthrough of everything shipped that day. **Only he can run it.** Ask whether he has, before building on top |
 | `src/StockOpnameView.jsx` → `VARIANCE_REASONS` + `varianceReasonMissing()` | **NEW 2026-08-21, LIVE 2026-08-23** — why a confirmed difference happened. Running as the DEFAULT on his word; still his words to rename. ⚠️ No cause may mention a supplier — there is none in this chain. "Cause unknown" is deliberate: the admin cannot type their own reason, so an honest bucket stops them picking a wrong one |
-| `src/config/permissions.js` → `canEditFleetRoster()` + `defaultFleetAccess()` | **NEW 2026-08-24** — may this tier change the fleet and the canvas, or only look. Replaces a per-person `canEditRoster` checkbox and an `isAreaAdmin` test that was only `!isGlobalAdmin`, which is how a tier 6 could terminate staff. ⚠️ **Absence of the key means "use the tier default", never "no"** — same rule as `canSeeExpectedCount`, and reading it the other way would strip the roster from his branch admins. `defaultFleetAccess` is the SAME function the Settings dropdown displays, so the screen cannot promise what the app will not do |
+| `src/config/permissions.js` → `canEditFleetRoster()` + `defaultFleetAccess()` | **NEW 2026-08-24** — may this tier change the fleet and the canvas, or only look. **The cut is between tier 4 and tier 5 and it is HIS**, not a judgement call: an area is run, a van is ridden. Replaces a per-person `canEditRoster` checkbox and an `isAreaAdmin` test that was only `!isGlobalAdmin`, which is how a tier 6 could terminate staff. ⚠️ **Absence of the key means "use the tier default", never "no"** — same rule as `canSeeExpectedCount`, and reading it the other way would strip the roster from his branch admins. `defaultFleetAccess` is the SAME function the Settings dropdown displays, so the screen cannot promise what the app will not do |
 | `src/config/povPreview.js` | **NEW 2026-08-23** — the whole tier POV preview as arithmetic on plain values: who may open it (his EMAIL, not his tier), the five `[TEST]` staff, and `previewIdentity()`, which forces `isAdmin` and `isSystemOwner` FALSE no matter what the real account holds. **A costume only ever takes power away.** Never teach this file to save — a refresh is the way out, and a check enforces that |
 | `src/components/TierPovSwitch.jsx` | **NEW 2026-08-23** — the picker and the undismissable *MELIHAT SEBAGAI* bar. The bar has no close button on purpose: the only way to dismiss the label is to take the costume off. Trigger is his own face in the rail (`BiohazardTheme.jsx`), never a nav mark — his rule |
 | `src/components/BranchWarehouseManager.jsx` → `receiptLines()` / `receiptBlocked()` / `receiptDisputed()` | **NEW 2026-08-23** — the arrival check. The branch is credited what it COUNTED, never what HQ claimed. Partial blind: quantities hidden while `IN_TRANSIT`, product names kept so a missing product is counted as 0. Any difference or damage → `DISPUTED`, top of HQ's list. **No tolerance here** unlike Stock Opname — a sealed box carries no fraction of a pack |
