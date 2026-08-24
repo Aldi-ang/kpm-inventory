@@ -78,7 +78,7 @@ export let ROLE_PERMISSIONS = {
         'view_reports_regional' // 🚀 THE DROPDOWN AUTHORITY
     ],
     [CORPORATE_TIERS.TIER_4]: [ 
-        'view_map', 'view_journey', 'view_agent_inventory', 'view_fleet', 'view_sales', 'view_receivables', 'view_eod', 'view_agent_profile',
+        'view_map', 'view_journey', 'view_agent_inventory', 'view_fleet', 'view_sales', 'view_receivables', 'view_eod', 'view_agent_profile', 'fleet_edit',
         'view_reports_regional' // 🚀 THE DROPDOWN AUTHORITY
     ],
     [CORPORATE_TIERS.TIER_5]: [ 
@@ -167,13 +167,19 @@ export const canSeeExpectedCount = (userRole) => {
 export const FLEET_EDIT_PERMS = ['fleet_edit', 'fleet_view_only'];
 
 /* The answer for a tier he has never set, and the SAME function the Settings dropdown shows so
-   the screen can never promise something the app does not do. The owner and the branch admin who
-   actually keeps a roster may edit; a captain runs a squad but does not hire or fire it, and the
-   field never could. Anything unrecognised - including a custom tier he invents later - lands on
-   view only, because the safe end is the one that cannot delete a person. */
-export const defaultFleetAccess = (tierId) =>
-    (tierId === CORPORATE_TIERS.TIER_1 || tierId === CORPORATE_TIERS.TIER_2 || tierId === CORPORATE_TIERS.TIER_3)
-        ? 'fleet_edit' : 'fleet_view_only';
+   the screen can never promise something the app does not do.
+
+   🔑 THE LINE IS DRAWN BY ALDI, 2026-08-24: *"regional manager can edit the fleet and canvas, tier
+   below that cannot"*. That is TIER 4 - `REGIONAL ADMIN` is his own name for it in DYNAMIC_TIERS -
+   so the cut runs between tier 4 and tier 5. It had shipped a few hours earlier with tier 4 on
+   view only, flagged to him as a guess rather than his decision; this is him overruling it.
+
+   In plain terms: everyone who runs an area may hire, fire and load a van. Nobody who rides in
+   one may. Anything unrecognised - including a custom tier he invents later - lands on view only,
+   because the safe end is the one that cannot delete a person. */
+export const defaultFleetAccess = (tierId) => [
+    CORPORATE_TIERS.TIER_1, CORPORATE_TIERS.TIER_2, CORPORATE_TIERS.TIER_3, CORPORATE_TIERS.TIER_4
+].includes(tierId) ? 'fleet_edit' : 'fleet_view_only';
 
 export const canEditFleetRoster = (userRole) => {
     const role = translateLegacyRole(userRole);

@@ -2722,10 +2722,17 @@ section('T · Fleet & canvas: who may look, and who may change');
      canEditFleetRoster(T.TIER_6) === false);
   ok('and neither can a field operative',
      canEditFleetRoster(T.TIER_5) === false);
-  ok('a fleet captain runs a squad but does not hire or fire it',
-     canEditFleetRoster(T.TIER_4) === false);
-  ok('the branch admin who actually keeps a roster still can',
+  /* 🔑 THE LINE IS HIS, 2026-08-24: *"regional manager can edit the fleet and canvas, tier below
+     that cannot"*. REGIONAL ADMIN is his own name for tier 4, so the cut runs between 4 and 5:
+     everyone who runs an area may hire, fire and load a van; nobody who rides in one may.
+     It shipped hours earlier with tier 4 on view only — flagged to him as a guess, and he
+     overruled it. If this check ever needs changing again, it needs HIS words, not a judgement. */
+  ok('the regional admin who runs an area CAN - his line, drawn at tier 4',
+     canEditFleetRoster(T.TIER_4) === true);
+  ok('and so can every tier above them',
      canEditFleetRoster(T.TIER_3) === true);
+  ok('the cut is between tier 4 and tier 5, nowhere else',
+     canEditFleetRoster(T.TIER_4) === true && canEditFleetRoster(T.TIER_5) === false);
   ok('and so can the owner and tier 1',
      canEditFleetRoster(T.TIER_2) === true && canEditFleetRoster(T.TIER_1) === true);
 
@@ -2760,7 +2767,7 @@ section('T · Fleet & canvas: who may look, and who may change');
 
   injectDynamicPermissions(withoutFleet, null);
   ok('a saved matrix that has never heard of the key falls back to the tier default',
-     canEditFleetRoster(T.TIER_3) === true && canEditFleetRoster(T.TIER_6) === false);
+     canEditFleetRoster(T.TIER_4) === true && canEditFleetRoster(T.TIER_5) === false);
 
   injectDynamicPermissions({ ...withoutFleet, [T.TIER_6]: [...withoutFleet[T.TIER_6], 'fleet_edit'] }, null);
   ok('if he DELIBERATELY gives a rookie the roster, he gets it - his switch, his call',
