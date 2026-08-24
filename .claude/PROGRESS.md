@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-24 09:12 WIB (🟠 KPM app session)** · ✅ **POV SWITCH + FLEET PERMISSION BOTH SEEN WORKING IN HIS BROWSER** (`7496258`, `86fde13`) — 599/599, **712/712**, build clean · ▶ **HE OWES ONE ANSWER: his TIER 3 IS A COPY OF THE OWNER** · branch `phase0-solid-ground`
+**Updated: 2026-08-24 09:26 WIB (🟠 KPM app session)** · ✅ **POV SWITCH + FLEET PERMISSION BOTH SEEN WORKING IN HIS BROWSER** (`7496258`, `86fde13`, `4c76842`) — 599/599, **727/727**, build clean · ▶ **HE OWES ONE ANSWER: his TIER 3 IS A COPY OF THE OWNER** · branch `phase0-solid-ground`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **TRIMMED 2026-08-21 ON ALDI'S WORD.** *"sure trim it"*, on his own condition:
@@ -26,7 +26,7 @@
 > described in their own commit messages: the first real-screen test (`42fefe8` and earlier) and
 > stock age (`42fefe8`). `git log` has them in full; nothing was archived because nothing was lost.
 
-## 🟠 2026-08-24 09:12 — THE POV SWITCH RAN, FOUND TWO REAL HOLES, AND BOTH ARE SHUT AND SEEN.
+## 🟠 2026-08-24 09:26 — THE POV SWITCH RAN, FOUND TWO REAL HOLES, AND BOTH ARE SHUT AND SEEN.
 
 **Claude drove his Chrome, he watched, all 8 steps passed.** The gold ring on his own face opens
 the picker · tier 5 cut the sidebar from 17 marks to 7 · **the vault key stayed behind** (music
@@ -40,6 +40,14 @@ is what prints on a nota. One naming function now. (2) **A tier 6 could edit the
 canvas stock** — his own find. `isAreaAdmin` was only `!isGlobalAdmin`, so it was never a tier
 check; Load and Reconcile & Clear were not gated at all. Now one row in Settings › Permissions.
 **The commit message is the full story.**
+
+**`4c76842` — HIS TIER NAMES ARE THE CODE'S DEFAULT NOW.** *"yea better change the code to follow
+my tier name make it as default"*. T2 OWNER · T3 HQ SALES MANAGER · T4 REGIONAL ADMIN · T5 SALES
+CANVAS · T6 SALES MOTORIST. ⚠️ **LABELS MOVED, IDS DID NOT** — `AREA_ADMIN` and `FLEET_CAPTAIN`
+are in every stored document; a check now asserts all six ids byte for byte. **Invisible in his
+app on purpose** (his saved names already won); it fixes the pre-fetch state and the next install.
+Two screens that still printed code vocabulary now ask `tierWord()`, and a scan bans it from
+rendered text everywhere in `src`. Two banned colours (`blue-400`, `emerald-400`) went with it.
 
 **`86fde13` — his line, drawn at tier 4.** *"regional manager can edit the fleet and canvas, tier
 below that cannot"*. ⚠️ **His tier NAMES do not match the code roles**: T3 `HQ SALES MANAGER` is
@@ -453,6 +461,7 @@ Evidence with file and line numbers in `.claude/SWEEP-2026-08-19.md`.
 | `src/StockOpnameView.jsx` → `DAMAGE_REASONS` | **NEW 2026-08-21** — the five kinds of damage, stored with the sales terminal's own long strings. Deliberately a SUBSET of the terminal's list: no `Other`, because free text cannot be grouped or counted |
 | `A-Brain/Backlog/Test the new Stock Opname on a real screen.md` | **NEW 2026-08-21, HIS TO-DO** — numbered walkthrough of everything shipped that day. **Only he can run it.** Ask whether he has, before building on top |
 | `src/StockOpnameView.jsx` → `VARIANCE_REASONS` + `varianceReasonMissing()` | **NEW 2026-08-21, LIVE 2026-08-23** — why a confirmed difference happened. Running as the DEFAULT on his word; still his words to rename. ⚠️ No cause may mention a supplier — there is none in this chain. "Cause unknown" is deliberate: the admin cannot type their own reason, so an honest bucket stops them picking a wrong one |
+| `src/config/permissions.js` → `DYNAMIC_TIERS` + `tierWord()` | **HIS WORDS ARE THE DEFAULT, 2026-08-24.** T2 OWNER · T3 HQ SALES MANAGER · T4 REGIONAL ADMIN · T5 SALES CANVAS · T6 SALES MOTORIST. ⚠️ **NEVER RENAME THE `CORPORATE_TIERS` IDS** — `AREA_ADMIN`, `FLEET_CAPTAIN` and the rest are in every stored document; a check asserts all six byte for byte. `tierWord(roleId)` is the ONE way to turn an id into the word he uses; it returns `''`, never the raw id, and a scan bans code vocabulary from rendered text across `src` |
 | `src/config/permissions.js` → `canEditFleetRoster()` + `defaultFleetAccess()` | **NEW 2026-08-24** — may this tier change the fleet and the canvas, or only look. **The cut is between tier 4 and tier 5 and it is HIS**, not a judgement call: an area is run, a van is ridden. Replaces a per-person `canEditRoster` checkbox and an `isAreaAdmin` test that was only `!isGlobalAdmin`, which is how a tier 6 could terminate staff. ⚠️ **Absence of the key means "use the tier default", never "no"** — same rule as `canSeeExpectedCount`, and reading it the other way would strip the roster from his branch admins. `defaultFleetAccess` is the SAME function the Settings dropdown displays, so the screen cannot promise what the app will not do |
 | `src/config/povPreview.js` | **NEW 2026-08-23** — the whole tier POV preview as arithmetic on plain values: who may open it (his EMAIL, not his tier), the five `[TEST]` staff, and `previewIdentity()`, which forces `isAdmin` and `isSystemOwner` FALSE no matter what the real account holds. **A costume only ever takes power away.** Never teach this file to save — a refresh is the way out, and a check enforces that |
 | `src/components/TierPovSwitch.jsx` | **NEW 2026-08-23** — the picker and the undismissable *MELIHAT SEBAGAI* bar. The bar has no close button on purpose: the only way to dismiss the label is to take the costume off. Trigger is his own face in the rail (`BiohazardTheme.jsx`), never a nav mark — his rule |
