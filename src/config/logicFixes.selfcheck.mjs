@@ -2526,9 +2526,10 @@ section('S37. Quarantine and HQ Audits: gold is ink and edges, never a slab');
 section('S · The tier POV switch takes authority away and never hands it out');
 {
   const pov = await import('./povPreview.js');
+  const povSrcRaw = read('src/config/povPreview.js');
   const { CORPORATE_TIERS } = await import('./permissions.js');
   const { POV_OWNER_EMAIL, canUsePovSwitch, TEST_ACCOUNTS, testAccountFor,
-          testAccountDoc, previewIdentity } = pov;
+          testAccountDoc, previewIdentity, tierLabel, testAccountName } = pov;
 
   /* ---- WHO CAN OPEN IT ---- checked on the EMAIL, not on the tier. His rule:
      *"other account cant do this"*, and a second tier-1 account must not inherit it. */
@@ -2558,9 +2559,20 @@ section('S · The tier POV switch takes authority away and never hands it out');
   ok('no two costumes share an id',
      new Set(TEST_ACCOUNTS.map(a => a.id)).size === TEST_ACCOUNTS.length);
   ok('and every name says [TEST] on the face of it, which is what a receipt prints',
-     TEST_ACCOUNTS.every(a => a.name.startsWith('[TEST]')));
+     TEST_ACCOUNTS.every(a => testAccountName(a).startsWith('[TEST] ')));
+  /* 🔴 ONE NAME FUNCTION. Found live 2026-08-23: the banner said HQ SALES MANAGER while the
+     created agent said [TEST] REGIONAL ADMIN - one tier, two names, and the agent's is the one
+     that prints on a nota. The cause was two copies of the naming rule. */
+  ok('the picker does not keep its own copy of the naming rule',
+     !/const tierLabel\s*=/.test(read('src/components/TierPovSwitch.jsx')));
+  ok('it imports the one in povPreview instead',
+     /import \{[^}]*tierLabel[^}]*\} from '\.\.\/config\/povPreview/.test(read('src/components/TierPovSwitch.jsx')));
+  ok('and no plate carries a hand-written description that a rename could contradict',
+     !/blurb/.test(read('src/components/TierPovSwitch.jsx') + povSrcRaw));
 
   const doc5 = testAccountDoc(testAccountFor(CORPORATE_TIERS.TIER_5));
+  ok('the document is named by the same function the banner uses',
+     doc5.name === testAccountName(testAccountFor(CORPORATE_TIERS.TIER_5)));
   ok('the document a costume writes is stamped isTest',
      doc5.isTest === true);
   ok('and it carries the tier it claims to be',
@@ -2592,7 +2604,8 @@ section('S · The tier POV switch takes authority away and never hands it out');
   ok('wearing tier 5 shows the tier-5 screen',
      on.userRole === CORPORATE_TIERS.TIER_5);
   ok('and the work is signed by the test operative, not by him',
-     on.agentProfileId === 'TEST_TIER_5' && on.user.displayName === '[TEST] SALES CANVAS');
+     on.agentProfileId === 'TEST_TIER_5' &&
+     on.user.displayName === testAccountName(testAccountFor(CORPORATE_TIERS.TIER_5)));
   /* 🔴 THE ONE THAT MATTERS. He allowed the costume to WRITE. A costume that also
      carried the vault key would be tier 1 wearing a tier-5 face - the exact thing
      the preview exists to rule out. */
@@ -2605,7 +2618,7 @@ section('S · The tier POV switch takes authority away and never hands it out');
   ok('his real sign-in is untouched - the uid never moves',
      on.user.uid === 'aldi-real-uid' && on.user.email === POV_OWNER_EMAIL);
   ok('and the banner has something to name, so the label cannot come apart from the disguise',
-     on.previewing && on.previewing.name === '[TEST] SALES CANVAS');
+     on.previewing && on.previewing.tier === CORPORATE_TIERS.TIER_5);
 
   /* ---- A COSTUME THAT DOES NOT EXIST IS NO COSTUME ---- */
   ok('previewing tier 1 does nothing - it cannot become a way to HAND OUT tier 1',
@@ -2676,6 +2689,140 @@ section('S · The tier POV switch takes authority away and never hands it out');
      !/blue-|green-|emerald-|sky-|indigo-|cyan-|teal-/.test(povUi));
   ok('the owner-only ring is a border, which Lite Mode keeps',
      /povActive \? 'border-\[var\(--duke-amber\)\]/.test(read('src/components/BiohazardTheme.jsx')));
+}
+
+
+/* ============================================================================
+   FLEET & CANVAS: LOOK, OR ALSO CHANGE (2026-08-23)
+
+   Aldi found this himself, with the POV switch, on the day it shipped:
+   *"i just checked looks like my tier 6 account can edit the fleet and canvas"*.
+   He was right, and it was never a tier check at all. FleetCanvasManager read:
+
+       const isAreaAdmin = !isGlobalAdmin;                    // tiers 3,4,5,6 alike
+       const canEditFleet = isAdmin || (isAreaAdmin && myProfile?.canEditRoster);
+
+   so a ROOKIE carrying a stale per-person flag could add, edit and terminate
+   staff — and Load / Reconcile & Clear, which move real stock between the
+   warehouse and a van, were not gated by anything whatsoever.
+
+   His instruction: *"moved that into matrix on setting instead"*. One rule, in
+   config/permissions.js, answering to the same matrix as every other permission.
+   ============================================================================ */
+section('T · Fleet & canvas: who may look, and who may change');
+{
+  const perms = await import('./permissions.js');
+  const { CORPORATE_TIERS: T, canEditFleetRoster, defaultFleetAccess,
+          FLEET_EDIT_PERMS, ROLE_PERMISSIONS, injectDynamicPermissions } = perms;
+  const fleetSrc = stripComments(read('src/FleetCanvasManager.jsx'));
+  const setSrc   = stripComments(read('src/components/SettingsView.jsx'));
+
+  /* ---- THE BUG HE FOUND, FIRST ---- */
+  ok('🔴 A ROOKIE CANNOT EDIT THE FLEET - the hole he found is shut',
+     canEditFleetRoster(T.TIER_6) === false);
+  ok('and neither can a field operative',
+     canEditFleetRoster(T.TIER_5) === false);
+  ok('a fleet captain runs a squad but does not hire or fire it',
+     canEditFleetRoster(T.TIER_4) === false);
+  ok('the branch admin who actually keeps a roster still can',
+     canEditFleetRoster(T.TIER_3) === true);
+  ok('and so can the owner and tier 1',
+     canEditFleetRoster(T.TIER_2) === true && canEditFleetRoster(T.TIER_1) === true);
+
+  /* Old Firebase tags must answer the same way - this is the exact class of drift the shared
+     translator in permissions.js exists for. */
+  ok('the legacy tags translate, so an old document cannot smuggle edit rights in',
+     canEditFleetRoster('ROOKIE') === false && canEditFleetRoster('AGENT') === false &&
+     canEditFleetRoster('Motorist') === false && canEditFleetRoster('ADMIN') === true);
+  ok('and a missing role is treated as the field, not as an admin',
+     canEditFleetRoster(undefined) === false && canEditFleetRoster(null) === false);
+
+  /* ---- THE SCREEN AND THE APP MUST AGREE ---- the dropdown shows defaultFleetAccess, so if the
+     two ever disagreed Settings would display a promise the app does not keep. */
+  ok('what Settings shows for an unset tier is what the app actually does',
+     [T.TIER_1, T.TIER_2, T.TIER_3, T.TIER_4, T.TIER_5, T.TIER_6].every(
+        id => (defaultFleetAccess(id) === 'fleet_edit') === canEditFleetRoster(id)));
+  ok('and Settings reads that very function rather than repeating the rule',
+     /defaultFleetAccess\(tierId\)/.test(setSrc) &&
+     /import \{[^}]*defaultFleetAccess[^}]*\} from '\.\.\/config\/permissions'/.test(setSrc));
+  /* An invented tier is a real case - he can add tiers in Settings. The safe end is the one that
+     cannot delete a person. */
+  ok('a tier he invents later starts on view only',
+     defaultFleetAccess('SOME_TIER_HE_ADDS_LATER') === 'fleet_view_only');
+
+  /* ---- HIS SWITCH WINS IN BOTH DIRECTIONS ONCE HE SETS IT ---- and until then, absence means
+     "use the tier default", never "no". Getting this backwards would have taken the roster away
+     from his branch admins the moment this shipped. */
+  const SAVED = JSON.parse(JSON.stringify(ROLE_PERMISSIONS));
+  const withoutFleet = {};
+  for (const [tier, list] of Object.entries(SAVED))
+      withoutFleet[tier] = (Array.isArray(list) ? list : []).filter(p => !FLEET_EDIT_PERMS.includes(p));
+
+  injectDynamicPermissions(withoutFleet, null);
+  ok('a saved matrix that has never heard of the key falls back to the tier default',
+     canEditFleetRoster(T.TIER_3) === true && canEditFleetRoster(T.TIER_6) === false);
+
+  injectDynamicPermissions({ ...withoutFleet, [T.TIER_6]: [...withoutFleet[T.TIER_6], 'fleet_edit'] }, null);
+  ok('if he DELIBERATELY gives a rookie the roster, he gets it - his switch, his call',
+     canEditFleetRoster(T.TIER_6) === true);
+
+  injectDynamicPermissions({ ...withoutFleet, [T.TIER_3]: [...withoutFleet[T.TIER_3], 'fleet_view_only'] }, null);
+  ok('and if he takes it off his branch admin, it comes off - the switch cuts both ways',
+     canEditFleetRoster(T.TIER_3) === false);
+  /* Tier 1 is the one thing no switch may touch. */
+  ok('tier 1 can never be locked out of its own roster',
+     canEditFleetRoster(T.TIER_1) === true);
+
+  injectDynamicPermissions(SAVED, null);   // put the module back the way it was
+  ok('the matrix was restored, so nothing after this block is reading a rigged one',
+     canEditFleetRoster(T.TIER_3) === true && canEditFleetRoster(T.TIER_6) === false);
+
+  /* ---- FLEETCANVASMANAGER NO LONGER DECIDES FOR ITSELF ---- */
+  ok('the screen asks the shared rule',
+     /const canEditFleet = canEditFleetRoster\(userRole\)/.test(fleetSrc));
+  ok('the old per-person flag is not read anywhere any more',
+     !/canEditRoster/.test(fleetSrc));
+  ok('and nothing writes it either, so no second opinion can grow back',
+     !/canEditRoster:/.test(fleetSrc));
+  /* `isAdmin` is the VAULT being unlocked. Reading it here is what let a tier-1 preview of tier 5
+     keep powers tier 5 does not have, and it is a different question from "may this tier hire". */
+  ok('the vault-unlocked flag is out of the decision',
+     !/canEditFleet = [^\n]*isAdmin/.test(fleetSrc));
+
+  /* ---- THE CANVAS HALF, WHICH WAS THE UNGUARDED ONE ---- these two move real stock. A hidden
+     button is a promise; the handler is the actual door, so both are checked. */
+  for (const fn of ['handleLoadCanvas', 'handleClearCanvas']) {
+      const start = fleetSrc.indexOf(`const ${fn} = async`);
+      /* Whitespace collapsed first: stripComments blanks a comment but KEEPS its newlines to
+         preserve line numbers, so the five-line note above this guard would otherwise eat the
+         whole window and the check would go red against correct code. */
+      const head  = fleetSrc.slice(start, start + 900).replace(/\s+/g, ' ');
+      ok(`${fn} refuses before it does anything`,
+         start > -1 && /const \w+ = async \( ?\) => \{ if \(!canEditFleet\) return notify\(/.test(head));
+  }
+  ok('and both buttons are hidden as well as guarded',
+     /\{canEditFleet && \(?\s*<button onClick=\{handleLoadCanvas\}/.test(fleetSrc) &&
+     /\{canEditFleet && <button onClick=\{handleClearCanvas\}/.test(fleetSrc));
+  /* Reconcile & Clear was on the backlog on its own as "a button that lies" - the database rules
+     already refused the save, so pressing it gave a failure and no reason. */
+  ok('the refusal explains itself and names where to change it',
+     /cannot reconcile a canvas[\s\S]{0,80}Settings/.test(fleetSrc));
+
+  /* ---- THE ROW EXISTS IN SETTINGS, IN BOTH LAYOUTS ---- the phone list and the desk table are
+     two separate renders in this file; a row added to one only is a row he cannot reach on the
+     screen he happens to be holding. */
+  ok('the fleet authority row is rendered twice - once for the phone, once for the table',
+     (setSrc.match(/Fleet &amp; canvas authority/g) || []).length === 2);
+  ok('it sits with the Fleet toggle, where the question belongs',
+     (setSrc.match(/feature\.id === 'view_fleet'/g) || []).length === 2);
+  ok('both options are real permissions and BOTH get written',
+     /tierPerms\.push\(newAccessLevel\);\s*\n\s*newMatrix\[tierId\] = tierPerms;/.test(setSrc));
+  /* 'fleet_view_only' must be STORED, not left absent: absence is what means "use the default",
+     so an unwritten view-only choice would silently do nothing for tiers 1-3. */
+  ok('view only is stored rather than left absent, or it could not overrule the default',
+     !/newAccessLevel !== 'none'[\s\S]{0,120}FLEET_EDIT_PERMS/.test(setSrc));
+  ok('and there are exactly two choices - there is no half-way on this one',
+     (setSrc.match(/value: 'fleet_(edit|view_only)'/g) || []).length === 2);
 }
 
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);

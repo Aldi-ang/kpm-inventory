@@ -1,7 +1,6 @@
 import React from 'react';
 import { Eye, X, ShieldOff, CornerUpLeft, Lock } from 'lucide-react';
-import { TEST_ACCOUNTS } from '../config/povPreview.js';
-import { DYNAMIC_TIERS } from '../config/permissions.js';
+import { TEST_ACCOUNTS, tierLabel } from '../config/povPreview.js';
 
 /* ============================================================================
    THE COSTUME RACK, and the label that says you are wearing one.
@@ -21,15 +20,12 @@ import { DYNAMIC_TIERS } from '../config/permissions.js';
    already finished. Borders survive Lite Mode; that is why the emphasis is one.
    ============================================================================ */
 
-/* His rename wins. He can call tier 5 whatever he likes in Settings, and the
-   costume rack should say what the rest of the app says. The bundled name is
-   only the fallback for a tier he has never renamed. */
-const tierLabel = (account) => {
-    const dyn = DYNAMIC_TIERS.find(t => t.id === account.tier);
-    if (!dyn?.label) return account.name;
-    /* 'T5: OPERATIVE' -> 'OPERATIVE'. The number is already on the plate. */
-    return dyn.label.replace(/^T\d+:\s*/, '');
-};
+/* `tierLabel` is IMPORTED, not defined here, and that is the fix for the bug the
+   first live run found: this file had its own copy of the naming rule while the
+   created agent used a different one, so the banner said HQ SALES MANAGER and the
+   receipt said [TEST] REGIONAL ADMIN — one tier, two names on screen at once.
+   One function now, in povPreview.js, read by the banner, the picker, the toast
+   and the document that gets written. */
 
 export function PovBanner({ account, onExit }) {
     if (!account) return null;
@@ -144,8 +140,15 @@ export default function TierPovSwitch({ open, current, onPick, onExit, onClose }
                                     <span className="kpm-pov-txt block text-[12px] font-black uppercase tracking-[0.12em] text-[var(--duke-ink-hi)] truncate">
                                         {tierLabel(account)}
                                     </span>
-                                    <span className="kpm-pov-txt block mt-0.5 text-[10px] font-bold text-[var(--duke-ink-3)] leading-snug">
-                                        {account.blurb}
+                                    {/* THE UNDERLYING ROLE, not a description. Each plate used to carry a
+                                        sentence about what that tier does — written against the code's
+                                        role names, so once he renamed his tiers the sentence described
+                                        one thing and the heading above it named another. This line is
+                                        the role id the permission rules actually answer to, which is
+                                        always true and is the thing worth knowing when a rename and a
+                                        behaviour disagree. */}
+                                    <span className="kpm-pov-txt block mt-0.5 text-[10px] font-bold font-mono text-[var(--duke-ink-3)] leading-snug truncate">
+                                        {account.tier}
                                     </span>
                                 </span>
                                 {isOn && <Eye size={15} className="kpm-pov-txt shrink-0 text-[var(--duke-amber-ink)]" />}

@@ -5,7 +5,7 @@ import {
     ShieldCheck, ChevronDown, ChevronUp, FileText, Printer, MessageSquare, Globe, Search, Plus
 } from 'lucide-react';
 import { collection, doc, setDoc, deleteDoc, updateDoc, writeBatch, runTransaction, onSnapshot, serverTimestamp } from 'firebase/firestore';
-import { DYNAMIC_TIERS, isFieldLevelTier } from './config/permissions';
+import { DYNAMIC_TIERS, isFieldLevelTier, canEditFleetRoster } from './config/permissions';
 import { convertToBks, isSafeDocIdEmail, getLocalDayKey} from './utils/helpers';
 import { confirmAction } from './components/ConfirmGate.jsx';
 import { notify } from './components/Toast.jsx';
@@ -40,7 +40,19 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
     const searchLocation = String(rawLocation).trim().toLowerCase();
     const branchPathLocation = String(rawLocation).trim(); 
 
-    const canEditFleet = isAdmin || (isAreaAdmin && myProfile?.canEditRoster === true);
+    /* 🔴 WHO MAY CHANGE ANYTHING ON THIS SCREEN — the permission matrix decides, nothing else.
+
+       This line used to read `isAdmin || (isAreaAdmin && myProfile?.canEditRoster === true)`, and
+       `isAreaAdmin` is only `!isGlobalAdmin` — it is true for tier 3, 4, 5 AND 6 alike. So it was
+       never a tier check: any rookie whose own profile carried a stale `canEditRoster: true` could
+       add, edit and terminate staff. Aldi caught it with the POV switch on its first run:
+       *"i just checked looks like my tier 6 account can edit the fleet and canvas"*.
+       His instruction was to move the decision: *"moved that into matrix on setting instead"*.
+       `isAdmin` is gone from it deliberately too — that flag is the VAULT being unlocked, which is
+       a different question from whether this tier may hire people, and reading it here is what let
+       a tier-1 preview of tier 5 keep powers tier 5 does not have. The rule now lives in
+       config/permissions.js and answers to the same matrix as every other permission. */
+    const canEditFleet = canEditFleetRoster(userRole);
 
     const agents = useMemo(() => {
         if (isAreaAdmin) {
@@ -91,7 +103,6 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
         userRole: 'AGENT',
         location: isAreaAdmin ? branchPathLocation : 'Headquarters',
         province: myProfile?.province || 'Central Java',
-        canEditRoster: false,
         allowRetur: false,
         allowCashRefund: false,
         joinDate: ''
@@ -183,7 +194,6 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                     name: newAgent.name, phone: newAgent.phone, vehicle: newAgent.vehicle, role: newAgent.role, email: emailKey,
                     allowedPayments: newAgent.allowedPayments, allowedTiers: newAgent.allowedTiers,
                     userRole: newAgent.userRole || 'AGENT', location: newAgent.location || 'Headquarters', province: newAgent.province || 'Central Java',
-                    canEditRoster: newAgent.canEditRoster || false,
                     allowRetur: newAgent.allowRetur || false,
                     allowCashRefund: newAgent.allowCashRefund || false,
                     joinDate: newAgent.joinDate || ''
@@ -194,7 +204,6 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                 batch.set(doc(db, `artifacts/${appId}/employee_directory`, emailKey), {
                     bossUid: userId, agentId: editingAgentId, role: newAgent.role, userRole: newAgent.userRole || 'AGENT', status: 'Active',
                     location: newAgent.location || 'Headquarters',
-                    canEditRoster: newAgent.canEditRoster || false 
                 }, { merge: true });
 
             } else {
@@ -206,7 +215,6 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                 batch.set(doc(db, `artifacts/${appId}/employee_directory`, emailKey), {
                     bossUid: userId, agentId: newId, role: newAgent.role, userRole: newAgent.userRole || 'AGENT', status: 'Active',
                     location: newAgent.location || 'Headquarters',
-                    canEditRoster: newAgent.canEditRoster || false
                 });
             }
 
@@ -232,7 +240,6 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
             name: agent.name, phone: agent.phone || '', vehicle: agent.vehicle || '', role: agent.role || 'Motorist', email: agent.email || '',
             allowedPayments: agent.allowedPayments || ['Cash'], allowedTiers: agent.allowedTiers || ['Retail', 'Ecer'],
             userRole: agent.userRole || 'AGENT', location: agent.location || 'Headquarters', province: agent.province || 'Central Java',
-            canEditRoster: agent.canEditRoster || false,
             allowRetur: agent.allowRetur || false,
             allowCashRefund: agent.allowCashRefund || false
         });
@@ -247,7 +254,6 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
             name: agent.name, phone: agent.phone || '', vehicle: agent.vehicle || '', role: agent.role || 'Motorist', email: agent.email || '',
             allowedPayments: agent.allowedPayments || ['Cash'], allowedTiers: agent.allowedTiers || ['Retail', 'Ecer'],
             userRole: agent.userRole || 'AGENT', location: agent.location || 'Headquarters', province: agent.province || 'Central Java',
-            canEditRoster: agent.canEditRoster || false,
             allowRetur: agent.allowRetur || false,
             allowCashRefund: agent.allowCashRefund || false
         });
@@ -271,6 +277,11 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
     };
 
     const handleLoadCanvas = async () => {
+        /* THE CANVAS HALF OF THE SAME HOLE, AND IT WAS WORSE: Load and Reconcile & Clear move real
+           stock between the warehouse and a van, and neither was gated by anything at all. The
+           button is hidden below as well — this guard is here because a hidden button is a UI
+           promise and a handler is the actual door. */
+        if (!canEditFleet) return notify("VIEW ONLY: your tier cannot load a canvas. Ask an admin to change it in Settings › Permissions.");
         if (!selectedProduct || !loadQty || isNaN(loadQty) || Number(loadQty) <= 0) return notify("Select a product and valid quantity.");
         if (!selectedAgent) return;
 
@@ -354,6 +365,10 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
     };
 
     const handleClearCanvas = async () => {
+        /* Was on the backlog on its own as *"a button that lies"* — the database rules already
+           refused the save, so a tier that could press it got a failure and no explanation.
+           It now refuses on the screen, in words, before anything is attempted. */
+        if (!canEditFleet) return notify("VIEW ONLY: your tier cannot reconcile a canvas. Ask an admin to change it in Settings › Permissions.");
         if (!selectedAgent) return;
 
         // 🚀 FIX: Route based on the SELECTED AGENT's own tier/region, not the viewer's.
@@ -743,15 +758,14 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                             <div className="bg-slate-900 border border-slate-700 rounded-lg p-3 mb-4 shadow-inner">
                                 <h4 className="text-[10px] font-bold text-emerald-500 flex items-center gap-1 uppercase tracking-widest mb-3 border-b border-slate-700 pb-1"><ShieldCheck size={12}/> Agent Security Limits</h4>
                                 
-                                {(newAgent.userRole === 'AREA_ADMIN' || newAgent.userRole === 'FLEET_CAPTAIN') && isAdmin && !isReadOnlyMode && (
-                                    <div className="mb-4">
-                                        <label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest block mb-2">Branch Privileges</label>
-                                        <label className={`flex items-center gap-2 cursor-pointer text-xs font-bold px-3 py-2 rounded-lg border transition-colors ${newAgent.canEditRoster ? 'bg-purple-900/30 border-purple-500 text-purple-400' : 'bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-500'}`}>
-                                            <input type="checkbox" className="hidden" checked={newAgent.canEditRoster} onChange={() => setNewAgent({...newAgent, canEditRoster: !newAgent.canEditRoster})} />
-                                            Allow Roster Management (Add / Edit / Terminate)
-                                        </label>
-                                    </div>
-                                )}
+                                {/* 🗑️ "ALLOW ROSTER MANAGEMENT" USED TO BE A CHECKBOX HERE, PER PERSON.
+                                    It is gone on his word — *"moved that into matrix on setting
+                                    instead"* — and it had to go rather than stay as a second
+                                    opinion: two places deciding one thing is how a rookie ended up
+                                    able to terminate staff. The answer is now one row in
+                                    Settings › Permissions, where all six tiers are visible at once.
+                                    Nothing writes `canEditRoster` any more; the field survives on
+                                    old documents and is simply never read. */}
 
                                 <div className="mb-4">
                                     <label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest block mb-2">Operational Privileges</label>
@@ -1044,9 +1058,11 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                                         <label className="text-[10px] text-emerald-400 font-bold uppercase tracking-widest mb-1 block">Qty (Bungkus)</label>
                                         <input type="number" min="1" value={loadQty} onChange={(e) => setLoadQty(e.target.value)} className="w-full bg-slate-900 border border-emerald-500/50 rounded-lg p-3 text-sm font-bold text-white outline-none focus:border-emerald-500 text-center" placeholder="0"/>
                                     </div>
+                                    {canEditFleet && (
                                     <button onClick={handleLoadCanvas} className="w-full lg:w-auto bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 px-6 rounded-lg flex items-center justify-center gap-2 transition-colors uppercase tracking-widest text-xs h-[46px] shrink-0 shadow-lg shadow-emerald-900/20">
                                         Load <ArrowRight size={16}/>
                                     </button>
+                                    )}
                                 </div>
                             </div>
 
@@ -1056,7 +1072,7 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                                 {(selectedAgent.activeCanvas || []).length > 0 && (
                                     <div className="flex items-center gap-2">
                                         <button onClick={() => setViewingSuratJalan(true)} className="text-[11px] bg-blue-600 text-white hover:bg-blue-500 px-3 py-1.5 rounded uppercase tracking-widest font-bold transition-colors shadow-lg flex items-center gap-1"><Printer size={12}/> Surat Jalan</button>
-                                        <button onClick={handleClearCanvas} className="text-[11px] bg-red-900/30 text-red-400 hover:bg-red-500 hover:text-white px-3 py-1.5 rounded uppercase tracking-widest font-bold transition-colors">Reconcile & Clear</button>
+                                        {canEditFleet && <button onClick={handleClearCanvas} className="text-[11px] bg-red-900/30 text-red-400 hover:bg-red-500 hover:text-white px-3 py-1.5 rounded uppercase tracking-widest font-bold transition-colors">Reconcile & Clear</button>}
                                     </div>
                                 )}
                             </div>

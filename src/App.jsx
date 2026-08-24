@@ -19,7 +19,7 @@ import useDatabaseSync from './hooks/useDatabaseSync';
 import useOfflineEngine, { canReachInternet } from './hooks/useOfflineEngine';
 import MusicPlayer from './MusicPlayer';
 import { injectDynamicPermissions, isFieldLevelTier, hasClearance } from './config/permissions';
-import { POV_OWNER_EMAIL, previewIdentity, testAccountDoc, canUsePovSwitch } from './config/povPreview';
+import { POV_OWNER_EMAIL, previewIdentity, testAccountDoc, testAccountName, canUsePovSwitch } from './config/povPreview';
 import TierPovSwitch, { PovBanner } from './components/TierPovSwitch';
 
 // --- REUSABLE UI COMPONENTS (Keep these static for fast initial load) ---
@@ -3140,26 +3140,34 @@ const handleGitHubMirror = async () => {
      either all say so out loud. */
   const handlePickPov = async (account) => {
       if (!canUsePovSwitch(trueUser?.email)) return notify("POV switch is restricted to the owner account.");
+      const worn = testAccountName(account);
       try {
           const ref = doc(db, `artifacts/${appId}/users/${userId}/motorists`, account.id);
           const snap = await getDocOfflineSafe(ref);
           if (!snap.exists()) {
               await setDoc(ref, { ...testAccountDoc(account), createdAt: serverTimestamp() });
-              notify(`AKUN UJI DIBUAT: ${account.name}. Hapus lewat Fleet kapan saja.`);
+              notify(`AKUN UJI DIBUAT: ${worn}. Hapus lewat Fleet kapan saja.`);
+          } else if (snap.data()?.name !== worn) {
+              /* He renamed the tier in Settings after this costume was already made. Only the NAME
+                 moves — a full re-write would wipe the canvas and the stock the test agent is
+                 holding. This is what keeps the nota, the roster and the banner all saying the
+                 same thing after a rename. */
+              await setDoc(ref, { name: worn }, { merge: true });
+              notify(`AKUN UJI DIGANTI NAMA: ${worn}.`);
           }
           setPov({ tier: account.tier });
           setShowPovSwitch(false);
           /* Land where that tier actually lands. Staying on a tab the costume cannot
              open would show him a locked screen and read as a broken feature. */
           setActiveTab(hasClearance(account.tier, 'view_dashboard') ? 'dashboard' : 'journey');
-          notify(`MELIHAT SEBAGAI ${account.name}. Refresh untuk kembali ke owner.`);
+          notify(`MELIHAT SEBAGAI ${worn}. Refresh untuk kembali ke owner.`);
       } catch (e) {
           notify(`GAGAL MASUK POV: ${e.message}`);
       }
   };
 
   const handleExitPov = () => {
-      const worn = previewing?.name;
+      const worn = previewing ? testAccountName(previewing) : null;
       setPov(null);
       setShowPovSwitch(false);
       setActiveTab('dashboard');

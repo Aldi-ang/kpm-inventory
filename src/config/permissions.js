@@ -70,11 +70,11 @@ export const isFleetManagementTier = (userRole) => {
 export let ROLE_PERMISSIONS = {
     [CORPORATE_TIERS.TIER_1]: ['ALL_ACCESS'], 
     [CORPORATE_TIERS.TIER_2]: [ 
-        'view_dashboard', 'view_map', 'view_journey', 'view_fleet', 'view_master_vault', 'view_restock_vault', 'view_sales', 'view_receivables', 'view_eod', 'view_stock_opname', 'view_customers', 'view_sampling', 'view_audit_logs', 'view_settings', 'view_agent_profile', 'edit_agent_roles', 'edit_rank_config', 'can_unrestricted_sample', 'view_expected_count',
+        'view_dashboard', 'view_map', 'view_journey', 'view_fleet', 'view_master_vault', 'view_restock_vault', 'view_sales', 'view_receivables', 'view_eod', 'view_stock_opname', 'view_customers', 'view_sampling', 'view_audit_logs', 'view_settings', 'view_agent_profile', 'edit_agent_roles', 'edit_rank_config', 'can_unrestricted_sample', 'view_expected_count', 'fleet_edit',
         'view_reports_global' // 🚀 THE DROPDOWN AUTHORITY
     ],
     [CORPORATE_TIERS.TIER_3]: [ 
-        'view_dashboard', 'view_map', 'view_journey', 'view_fleet', 'view_agent_inventory', 'view_restock_vault', 'view_sales', 'view_receivables', 'view_eod', 'view_agent_profile', 'can_unrestricted_sample', 'view_expected_count',
+        'view_dashboard', 'view_map', 'view_journey', 'view_fleet', 'view_agent_inventory', 'view_restock_vault', 'view_sales', 'view_receivables', 'view_eod', 'view_agent_profile', 'can_unrestricted_sample', 'view_expected_count', 'fleet_edit',
         'view_reports_regional' // 🚀 THE DROPDOWN AUTHORITY
     ],
     [CORPORATE_TIERS.TIER_4]: [ 
@@ -138,6 +138,50 @@ export const canSeeExpectedCount = (userRole) => {
         .some(list => Array.isArray(list) && list.includes(EXPECTED_COUNT_KEY));
     if (matrixKnowsKey) return hasClearance(userRole, EXPECTED_COUNT_KEY);
     return role === CORPORATE_TIERS.TIER_2 || role === CORPORATE_TIERS.TIER_3;
+};
+
+/* FLEET & CANVAS: may this tier only LOOK, or also change things?
+
+   Aldi found this himself with the POV switch on its first run, 2026-08-23: *"i just checked
+   looks like my tier 6 account can edit the fleet and canvas"*. He was right, and the reason is
+   worth writing down because it was never a tier check at all. FleetCanvasManager decided with:
+
+       const isAreaAdmin = !isGlobalAdmin;                                  // ← tiers 3,4,5,6 alike
+       const canEditFleet = isAdmin || (isAreaAdmin && myProfile?.canEditRoster === true);
+
+   `isAreaAdmin` means nothing more than "not tier 1 or 2", so a ROOKIE carrying a stale
+   `canEditRoster: true` on their own profile could add, edit and terminate staff. And the canvas
+   half - Load and Reconcile & Clear, which move real stock between the warehouse and a van - was
+   not gated at all, by anything.
+
+   His instruction: *"moved that into matrix on setting instead"*. So the per-person checkbox is
+   gone and the answer comes from the permission matrix, next to every other permission, where he
+   can see all six tiers at once.
+
+   ABSENCE MEANS "USE THE TIER DEFAULT", exactly like view_expected_count above, and for the same
+   reason: injectDynamicPermissions REPLACES a saved tier's list wholesale, so a brand-new key is
+   simply missing from his live matrix. Read as a plain missing permission it would mean "no", and
+   his branch admins would lose the roster the moment this shipped - the feature would look broken
+   while the code was right. The moment the key appears anywhere in his matrix he has chosen
+   deliberately, and from then on his switch wins in BOTH directions. */
+export const FLEET_EDIT_PERMS = ['fleet_edit', 'fleet_view_only'];
+
+/* The answer for a tier he has never set, and the SAME function the Settings dropdown shows so
+   the screen can never promise something the app does not do. The owner and the branch admin who
+   actually keeps a roster may edit; a captain runs a squad but does not hire or fire it, and the
+   field never could. Anything unrecognised - including a custom tier he invents later - lands on
+   view only, because the safe end is the one that cannot delete a person. */
+export const defaultFleetAccess = (tierId) =>
+    (tierId === CORPORATE_TIERS.TIER_1 || tierId === CORPORATE_TIERS.TIER_2 || tierId === CORPORATE_TIERS.TIER_3)
+        ? 'fleet_edit' : 'fleet_view_only';
+
+export const canEditFleetRoster = (userRole) => {
+    const role = translateLegacyRole(userRole);
+    if (role === CORPORATE_TIERS.TIER_1) return true;
+    const matrixKnowsKey = Object.values(ROLE_PERMISSIONS)
+        .some(list => Array.isArray(list) && list.some(p => FLEET_EDIT_PERMS.includes(p)));
+    if (matrixKnowsKey) return hasClearance(userRole, 'fleet_edit');
+    return defaultFleetAccess(role) === 'fleet_edit';
 };
 
 // 🚀 THE 3 CUSTOMER DIRECTORY EDIT MODES (mirrors the view_reports_* pattern)

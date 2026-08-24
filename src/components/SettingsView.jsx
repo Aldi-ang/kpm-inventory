@@ -9,7 +9,7 @@ let capyPeekTimer = null;
 /* `TrendingUp` and `Package` went with the tiers conversion: they were the two glyphs stuffed
    inside the old omset/volume select, which is a labelled field now. Removed because THIS change
    orphaned them — no other dead import in this file was touched. */
-import { Lock, ShieldCheck, ShieldAlert, UploadCloud, Copy, User, Settings, Trash2, ScanFace, Plus, Tag, Download, Upload, Image as ImageIcon, Edit, Save, X, Music, ChevronLeft, ChevronRight, LayoutDashboard, ToggleLeft, ToggleRight, BarChart2, Store } from 'lucide-react';
+import { Lock, ShieldCheck, ShieldAlert, UploadCloud, Copy, User, Settings, Trash2, ScanFace, Plus, Tag, Download, Upload, Image as ImageIcon, Edit, Save, X, Music, ChevronLeft, ChevronRight, LayoutDashboard, ToggleLeft, ToggleRight, BarChart2, Store, Truck } from 'lucide-react';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 
 import LandlordDashboard from './LandlordDashboard';
@@ -21,7 +21,7 @@ import ReceiptPreview from './ReceiptPreview';
 import AuthoritySelect from './AuthoritySelect';
 
 // 🚀 IMPORT THE MATRIX BRAIN
-import { CORPORATE_TIERS, ROLE_PERMISSIONS, DYNAMIC_TIERS, injectDynamicPermissions, CUSTOMER_EDIT_PERMS } from '../config/permissions';
+import { CORPORATE_TIERS, ROLE_PERMISSIONS, DYNAMIC_TIERS, injectDynamicPermissions, CUSTOMER_EDIT_PERMS, FLEET_EDIT_PERMS, defaultFleetAccess } from '../config/permissions';
 import { confirmAction, promptAction } from './ConfirmGate.jsx';
 import { notify } from './Toast.jsx';
 
@@ -1469,6 +1469,33 @@ const PermissionMatrixEditor = ({ db, appId, userRole, userId }) => {
         { value: 'view_reports_global',   short: 'Global',    label: 'God Mode — the global master data' },
     ];
 
+    /* 🚀 FLEET & CANVAS: LOOK, OR ALSO CHANGE. Asked for by Aldi 2026-08-23 after the POV switch
+       showed him his own hole: *"i just checked looks like my tier 6 account can edit the fleet
+       and canvas ... moved that into matrix on setting instead"*.
+       Two options, not three — there is no half-way here. Either a tier can add, edit and
+       terminate people and move stock onto a van, or it can only read the roster. */
+    const FLEET_ACCESS_OPTIONS = [
+        { value: 'fleet_edit',      short: 'View & edit', label: 'View & edit — add, edit and terminate staff, load and clear a canvas' },
+        { value: 'fleet_view_only', short: 'View only',   label: 'View only — can read the roster, cannot change anything' },
+    ];
+
+    const changeFleetAccess = (tierId, newAccessLevel) => {
+        const newMatrix = { ...matrix };
+        const tierPerms = (newMatrix[tierId] || []).filter(p => !FLEET_EDIT_PERMS.includes(p));
+        /* Both values are REAL permissions and both get written, unlike Reporting's 'none'.
+           'fleet_view_only' has to be stored rather than left absent, because absence is what
+           tells config/permissions.js to fall back to the tier default — see the note there.
+           Writing it is how he overrules that default in the restrictive direction. */
+        tierPerms.push(newAccessLevel);
+        newMatrix[tierId] = tierPerms;
+        setMatrix(newMatrix);
+    };
+
+    /* What the dropdown shows for a tier he has never set. It calls the SAME function the app
+       calls, so the screen cannot promise something the app does not do. */
+    const fleetAccessOf = (tierId) =>
+        (matrix[tierId] || []).find(p => FLEET_EDIT_PERMS.includes(p)) || defaultFleetAccess(tierId);
+
     const togglePermission = (tierId, featureId) => {
         const newMatrix = { ...matrix };
         const tierPerms = [...(newMatrix[tierId] || [])];
@@ -1702,6 +1729,19 @@ const PermissionMatrixEditor = ({ db, appId, userRole, userId }) => {
                                                 <span className="kpm-sw" aria-hidden="true" />
                                             </button>
                                         </div>
+                                        {/* 🚀 FLEET & CANVAS AUTHORITY: sits right under the Fleet toggle, because
+                                            "can they see it" and "can they change it" are one thought. */}
+                                        {feature.id === 'view_fleet' && (
+                                            <div className="kpm-field kpm-authority">
+                                                <span><Truck size={12}/> Fleet &amp; canvas authority</span>
+                                                <AuthoritySelect
+                                                    label={`Fleet and canvas authority for ${activeTier.label}`}
+                                                    options={FLEET_ACCESS_OPTIONS}
+                                                    value={fleetAccessOf(activeTier.id)}
+                                                    onChange={(v) => changeFleetAccess(activeTier.id, v)}
+                                                />
+                                            </div>
+                                        )}
                                         {/* 🚀 CUSTOMER DIRECTORY ACCESS: sits right after the Customers toggle */}
                                         {feature.id === 'view_customers' && (
                                             /* a div, not a label: the control inside is a button now, and a label
@@ -1796,6 +1836,22 @@ const PermissionMatrixEditor = ({ db, appId, userRole, userId }) => {
                                         );
                                     })}
                                 </tr>
+                                {/* 🚀 FLEET & CANVAS AUTHORITY: sits right under the Fleet toggle */}
+                                {feature.id === 'view_fleet' && (
+                                    <tr className="authority">
+                                        <td className="feat"><Truck size={14} className="inline"/> Fleet &amp; canvas authority</td>
+                                        {tiers.map(tier => (
+                                            <td key={`fleet-access-${tier.id}`} className="text-center">
+                                                <AuthoritySelect
+                                                    label={`Fleet and canvas authority for ${tier.label}`}
+                                                    options={FLEET_ACCESS_OPTIONS}
+                                                    value={fleetAccessOf(tier.id)}
+                                                    onChange={(v) => changeFleetAccess(tier.id, v)}
+                                                />
+                                            </td>
+                                        ))}
+                                    </tr>
+                                )}
                                 {/* 🚀 CUSTOMER DIRECTORY ACCESS: sits right after the Customers toggle */}
                                 {feature.id === 'view_customers' && (
                                     <tr className="authority">
