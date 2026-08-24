@@ -2911,5 +2911,161 @@ section('U · His tier names are the default, and the ids underneath never moved
      DT.every(t => typeof t.color === 'string' && t.color.length > 0));
 }
 
+
+/* ============================================================================
+   HOW MANY SHOULD I ASK FOR (G3, 2026-08-24) — measured, never guessed
+
+   A branch admin used to pick a product and type into an empty box. Nothing told
+   them how fast it sells here, how long HQ takes, or that a truck was already on
+   its way — which is how a branch orders twice and drowns.
+
+   Everything is derived from records that already exist. The rule that keeps it
+   honest: ANY MISSING INPUT MAKES THE SUGGESTION null, never a guess. A confident
+   wrong number is worse than an empty box, because the empty box makes him think.
+
+   ⛔ AND IT ONLY EVER SUGGESTS. "automatic reordering without a person" is on his
+   rejected list; the last two checks here refuse it.
+   ============================================================================ */
+section('V · The reorder suggestion is measured from his own history, or it is silent');
+{
+  const bw = read('src/components/BranchWarehouseManager.jsx');
+  const fStart = bw.indexOf('export const productArrivals');
+  const fEnd   = bw.indexOf('export default function BranchWarehouseManager');
+  ok('the reorder maths could be lifted out of the file to be tested',
+     fStart > -1 && fEnd > fStart && bw.indexOf('export const reorderAdvice') > fStart);
+  const { productArrivals, shipmentRhythm, inTransitQty, reorderAdvice } = new Function('txSeconds',
+      bw.slice(fStart, fEnd).replace(/export const/g, 'const')
+      + '\nreturn { productArrivals, shipmentRhythm, inTransitQty, reorderAdvice };'
+  )((tx) => tx?.timestamp?.seconds ?? null);
+
+  const D = 86400, NOW = 1_800_000_000;
+  /* asked -> got is the lead time; the gap between two `asked` is the cadence. */
+  const order = (id, askedDaysAgo, gotDaysAgo, qty, status = 'DELIVERED') => ({
+      id, branch: 'MALANG', status,
+      timestamp: { seconds: NOW - askedDaysAgo * D },
+      receivedAt: gotDaysAgo == null ? null : { seconds: NOW - gotDaysAgo * D },
+      receivedItems: gotDaysAgo == null ? null : [{ productId: 'P1', counted: qty, damaged: 0 }],
+      requestedItems: [{ productId: 'P1', qty }]
+  });
+
+  /* Ordered every 10 days, arriving 5 days later, 100 packs each time. */
+  const HISTORY = [
+      order('A', 40, 35, 100),
+      order('B', 30, 25, 100),
+      order('C', 20, 15, 100),
+      order('D', 10,  5, 100),
+  ];
+
+  /* ---- THE RHYTHM, both halves measured ---- */
+  const r = shipmentRhythm(HISTORY, 'MALANG');
+  ok('how long HQ takes is measured, not typed in by anyone', r.leadDays === 5);
+  ok('and how often this branch orders is measured too', r.cadenceDays === 10);
+  ok('it says how much history it had to work with', r.deliveries === 4 && r.orders === 4);
+  /* The median, not the mean: one shipment stuck for a month must not drag the answer. */
+  const stuck = shipmentRhythm([...HISTORY, order('E', 60, 0, 100)], 'MALANG');
+  ok('one shipment stuck for two months does not drag the lead time with it',
+     stuck.leadDays === 5);
+  ok('a branch with no history at all gets null, never a made-up number',
+     shipmentRhythm([], 'MALANG').leadDays === null &&
+     shipmentRhythm([], 'MALANG').cadenceDays === null);
+  ok('another branch\'s shipments are not this branch\'s rhythm',
+     shipmentRhythm(HISTORY, 'SURABAYA').leadDays === null);
+  /* A shipment asked for but never received cannot say how long HQ takes. */
+  ok('a shipment still in the air has no lead time to contribute',
+     shipmentRhythm([order('X', 3, null, 50, 'IN_TRANSIT')], 'MALANG').leadDays === null);
+  ok('but it still counts as an order, so the cadence keeps learning',
+     shipmentRhythm([order('X', 3, null, 50, 'IN_TRANSIT'), order('Y', 13, null, 50, 'PENDING')],
+        'MALANG').cadenceDays === 10);
+  /* Same-day delivery is real and still must not read as zero: nothing can be relied
+     on to arrive before you need it. */
+  ok('a same-day delivery still counts as one day, never zero',
+     shipmentRhythm([order('F', 2, 2, 10), order('G', 12, 12, 10)], 'MALANG').leadDays === 1);
+
+  /* ---- WHAT IS ALREADY ON ITS WAY ---- the number that stops a double order. */
+  ok('packs already on a truck are counted',
+     inTransitQty([order('X', 2, null, 300, 'IN_TRANSIT')], 'MALANG', 'P1') === 300);
+  ok('a request HQ has not shipped yet still counts - he asked for it already',
+     inTransitQty([order('X', 2, null, 300, 'PENDING')], 'MALANG', 'P1') === 300);
+  ok('what has ALREADY landed is not counted twice - it is in the shelf figure',
+     inTransitQty(HISTORY, 'MALANG', 'P1') === 0);
+  ok('and a refused request is not on its way to anywhere',
+     inTransitQty([order('X', 2, null, 300, 'REJECTED')], 'MALANG', 'P1') === 0);
+  ok('another product on the same truck is not this product',
+     inTransitQty([order('X', 2, null, 300, 'IN_TRANSIT')], 'MALANG', 'P2') === 0);
+
+  /* ---- THE RATE, BY SUBTRACTION ---- 400 packs arrived, the oldest 35 days ago,
+     100 still on the shelf. So 300 left in 35 days. No sales feed needed, and it
+     cannot drift from the shelf because the shelf is one of its two inputs.
+     ⚠️ The window starts at the oldest ARRIVAL, not the oldest ORDER — the first
+     was asked for 40 days ago and landed 35 days ago, and nothing could leave
+     before it got here. */
+  const arr = productArrivals(HISTORY, 'MALANG', 'P1');
+  const a = reorderAdvice(arr, 100, 0, r, NOW);
+  ok('how fast it leaves is derived from what arrived minus what is still here',
+     Math.abs(a.ratePerDay - (300 / 35)) < 1e-9);
+  ok('and the shelf is reported back so the screen and the maths cannot disagree',
+     a.shelf === 100 && a.coming === 0);
+  ok('days left is the shelf at that rate', a.daysLeft === Math.floor(100 / (300 / 35)));
+  /* cover = the wait for it (5) plus the gap until he orders again (10).
+     15 days x 7.5 a day = 112.5 -> 113, minus 100 on the shelf = 13. */
+  ok('the cover is the wait PLUS the gap until the next order, both measured',
+     a.coverDays === 15);
+  /* 15 days x 300/35 a day = 128.6 -> 129, less the 100 already on the shelf. */
+  ok('and the suggestion is what that costs, minus what is already here',
+     a.suggest === Math.ceil((300 / 35) * 15) - 100);
+  ok('what is already on a truck comes off the suggestion too',
+     reorderAdvice(arr, 100, 50, r, NOW).suggest === 0);
+  /* 350 of the 400 still here, so 50 left in 35 days: slow enough that 15 days of
+     cover is already on the shelf several times over. */
+  ok('a shelf that is already over-covered asks for nothing, never a negative',
+     reorderAdvice(arr, 350, 0, r, NOW).suggest === 0);
+  /* A shelf HOLDING more than the records can account for is a different thing again:
+     nothing they know about has left, so the rate is a truthful zero and the answer
+     is silence, not "order nothing". */
+  ok('a shelf bigger than the whole recorded history stays silent rather than guessing',
+     reorderAdvice(arr, 5000, 0, r, NOW).ratePerDay === 0 &&
+     reorderAdvice(arr, 5000, 0, r, NOW).suggest === null);
+
+  /* ---- SILENCE IS AN ANSWER ---- every one of these must be null, not a guess. */
+  ok('one arrival is not a history - no rate, no suggestion',
+     reorderAdvice(arr.slice(0, 1), 100, 0, r, NOW).ratePerDay === null &&
+     reorderAdvice(arr.slice(0, 1), 100, 0, r, NOW).suggest === null);
+  ok('less than a day of history cannot give a per-day rate',
+     reorderAdvice([{ at: NOW - 3600, qty: 10 }, { at: NOW - 7200, qty: 10 }], 5, 0, r, NOW).ratePerDay === null);
+  ok('a rate without a measured lead time suggests nothing',
+     reorderAdvice(arr, 100, 0, { leadDays: null, cadenceDays: 10 }, NOW).suggest === null);
+  ok('and a rate without a measured order gap suggests nothing either',
+     reorderAdvice(arr, 100, 0, { leadDays: 5, cadenceDays: null }, NOW).suggest === null);
+  ok('a rhythm that is missing entirely does not crash the panel',
+     reorderAdvice(arr, 100, 0, null, NOW).suggest === null &&
+     reorderAdvice(arr, 100, 0, undefined, NOW).ratePerDay !== null);
+  /* Nothing has moved: the rate is a truthful zero, but "days left" would be infinity
+     and a suggestion would be meaningless. Both must stay null. */
+  ok('a product that has not moved at all reports zero, and still suggests nothing',
+     reorderAdvice(arr, 400, 0, r, NOW).ratePerDay === 0 &&
+     reorderAdvice(arr, 400, 0, r, NOW).daysLeft === null &&
+     reorderAdvice(arr, 400, 0, r, NOW).suggest === null);
+
+  /* ---- ⛔ IT SUGGESTS. IT DOES NOT ORDER. ---- his rejected list, twice over. */
+  const panel = stripComments(bw);
+  ok('the suggestion reaches the box only through a button the branch presses',
+     /onClick=\{\(\) => setRequestQty\(String\(advice\.suggest\)\)\}/.test(panel));
+  ok('nothing fills the quantity box on its own',
+     !/useEffect\([^)]*\)\s*=>\s*setRequestQty\(/.test(panel) &&
+     !/setRequestQty\(String\(advice\.suggest\)\)[^;]*;\s*\n\s*handleAddToCart/.test(panel));
+  ok('and no part of this writes to the database - it is arithmetic over records that exist',
+     !/reorderAdvice[\s\S]{0,3000}?(setDoc|updateDoc|writeBatch|runTransaction)\(/.test(
+        bw.slice(bw.indexOf('export const shipmentRhythm'), fEnd)));
+  /* When it cannot advise it must SAY so. A blank space reads as "nothing to see". */
+  ok('when it cannot suggest a number it explains why instead of showing nothing',
+     /Belum bisa menyarankan jumlah/.test(bw));
+  ok('and the warning that matters is spelled out, not left as three numbers',
+     /pesan sekarang/.test(bw) && /tooLate/.test(panel));
+  /* Palette law: this panel is new, and gold plus the danger token is the whole range. */
+  ok('no blue and no green in the new panel',
+     !/blue-|green-|emerald-|sky-|indigo-|cyan-|teal-/.test(
+        bw.slice(bw.indexOf('HOW MANY SHOULD I ASK FOR (G3) ====='), bw.indexOf('placeholder="Qty (Bks)"'))));
+}
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

@@ -132,6 +132,127 @@ export const oldestStockDays = (held, nowSeconds) => {
     return Math.max(0, Math.floor((nowSeconds - at) / 86400));
 };
 
+/* ===========================================================================
+   HOW MANY SHOULD I ASK FOR (G3) — measured, never guessed, never automatic
+
+   Today a branch admin picks a product and types a number into an empty box.
+   Nothing on the screen tells them how fast it sells here, how long HQ takes,
+   or that 500 of it is already on a truck — which is the classic way a branch
+   orders twice and drowns.
+
+   Everything below is DERIVED FROM RECORDS THAT ALREADY EXIST. No new setting,
+   no new field, no lead-time number for anyone to type and forget. Two of the
+   three inputs are measured from his own shipping history, and the third comes
+   out by subtraction the same way the stock-age view works: everything that
+   arrived is either still on the shelf or has left, so what left is the
+   difference.
+
+   ⛔ IT ONLY EVER SUGGESTS. Automatic reordering without a person is on his
+   rejected list, and the box stays typeable — the suggestion is a button he can
+   ignore. A check refuses any auto-fill.
+   =========================================================================== */
+
+const DAY = 86400;
+const middle = (nums) => {
+    const s = [...nums].sort((a, b) => a - b);
+    if (!s.length) return null;
+    const mid = Math.floor(s.length / 2);
+    return s.length % 2 ? s[mid] : (s[mid - 1] + s[mid]) / 2;
+};
+
+/* THE BRANCH'S SHIPPING RHYTHM, both halves from the same list in one pass:
+   `leadDays`   - how long HQ actually takes, ordered to arrived. The MEDIAN of
+                  recent deliveries, not the mean: one shipment stuck for a month
+                  should not drag the whole answer with it.
+   `cadenceDays`- how often this branch orders at all, measured from the gaps
+                  between its own requests. This is what stops the size of the
+                  suggestion being a number somebody made up: a delivery has to
+                  last until the NEXT order lands, and only his own history knows
+                  how long that is.
+   Both are null when there is not enough history, and null must stay null all
+   the way to the screen — "we have not measured this yet" is the honest answer
+   and it is different from zero. */
+export const shipmentRhythm = (orders, branch, sample = 6) => {
+    const mine = (orders || [])
+        .filter(o => o && o.branch === branch)
+        .map(o => ({
+            asked: txSeconds({ timestamp: o.timestamp }),
+            got: txSeconds({ timestamp: o.receivedAt })
+        }))
+        .filter(o => o.asked != null)
+        .sort((a, b) => b.asked - a.asked);
+
+    const leads = mine.filter(o => o.got != null && o.got >= o.asked)
+        .slice(0, sample)
+        .map(o => (o.got - o.asked) / DAY);
+    /* Rounded up, and never below one: a shipment that arrived the same afternoon
+       still cannot be relied on to arrive before you need it. */
+    const leadDays = leads.length ? Math.max(1, Math.ceil(middle(leads))) : null;
+
+    const gaps = [];
+    for (let i = 0; i + 1 < mine.length && gaps.length < sample; i++) {
+        gaps.push((mine[i].asked - mine[i + 1].asked) / DAY);
+    }
+    const cadenceDays = gaps.length ? Math.max(1, Math.round(middle(gaps))) : null;
+
+    return { leadDays, cadenceDays, deliveries: leads.length, orders: mine.length };
+};
+
+/* Packs of this product already on their way here and NOT yet on the shelf.
+   The single most useful number on the panel: ordering again while a truck is
+   still moving is how a branch ends up with a year of stock.
+   REJECTED and DELIVERED and DISPUTED are all settled — the first never arrives,
+   the other two already did and are counted in the shelf figure. */
+const SETTLED = ['DELIVERED', 'DISPUTED', 'REJECTED'];
+export const inTransitQty = (orders, branch, productId) => (orders || [])
+    .filter(o => o && o.branch === branch && !SETTLED.includes(o.status))
+    .reduce((sum, o) => {
+        const line = (o.fulfilledItems || o.requestedItems || o.items || [])
+            .find(i => i && i.productId === productId);
+        return sum + (Number(line?.qty) || 0);
+    }, 0);
+
+/* THE ADVICE. Everything it says, and why it can say it:
+
+     rate      how many leave here a day. Everything that ever arrived is either
+               still on the shelf or gone, so gone = arrived - stillHere, over
+               the days since the first arrival. Needs two arrivals and a day of
+               history before it will answer at all.
+     daysLeft  what is on the shelf, at that rate.
+     coverDays how long the delivery has to last: the wait for it PLUS the gap
+               until he next places an order. Both measured. Neither invented.
+     suggest   what to ask for so the shelf is not empty when the next one lands,
+               minus what is here and what is already coming.
+
+   Any missing input makes `suggest` null rather than a guess. A confident wrong
+   number is worse than an empty box, because the empty box makes him think. */
+export const reorderAdvice = (arrivals, onHand, inTransit, rhythm, nowSeconds) => {
+    const list = arrivals || [];
+    const shelf = Math.max(0, Number(onHand) || 0);
+    const coming = Math.max(0, Number(inTransit) || 0);
+    const out = { ratePerDay: null, daysLeft: null, coverDays: null, suggest: null, shelf, coming };
+
+    if (list.length < 2) return out;
+    const oldest = list[list.length - 1].at;
+    const days = (nowSeconds - oldest) / DAY;
+    if (!(days >= 1)) return out;
+
+    const arrived = list.reduce((s, a) => s + a.qty, 0);
+    const { held } = arrivalsOnHand(list, shelf);
+    const stillHere = held.reduce((s, a) => s + a.qty, 0);
+    const gone = Math.max(0, arrived - stillHere);
+
+    out.ratePerDay = gone / days;
+    out.daysLeft = out.ratePerDay > 0 ? Math.floor(shelf / out.ratePerDay) : null;
+
+    const lead = rhythm?.leadDays, cadence = rhythm?.cadenceDays;
+    if (lead == null || cadence == null || out.ratePerDay <= 0) return out;
+
+    out.coverDays = lead + cadence;
+    out.suggest = Math.max(0, Math.ceil(out.ratePerDay * out.coverDays) - shelf - coming);
+    return out;
+};
+
 export default function BranchWarehouseManager({ db, storage, appId, user, userRole, userLocation, isAdmin, masterUserId, globalInventory, triggerCapy, logAudit, appSettings }) {
     
     const isAreaAdmin = !isAdmin; // 🚀 THE FIX: Dynamically adapts to any custom Tier rank
@@ -1000,6 +1121,66 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
                                     <option value="">-- Choose Product --</option>
                                     {globalInventory.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                                 </select>
+                                {/* ===== HOW MANY SHOULD I ASK FOR (G3) =====
+                                    Sits between choosing the product and typing the number,
+                                    because that is the second the question is actually asked.
+                                    Everything here is measured from his own shipping history —
+                                    see the note above `shipmentRhythm`. It never fills the box
+                                    by itself; PAKAI is a button, and Add is still a second press. */}
+                                {selectedProduct && (() => {
+                                    const now = Math.floor(Date.now() / 1000);
+                                    const shelfRow = branchStock.find(s => (s.productId || s.id) === selectedProduct);
+                                    const arrivals = productArrivals(requests, branchLocation, selectedProduct);
+                                    const rhythm = shipmentRhythm(requests, branchLocation);
+                                    const advice = reorderAdvice(arrivals, shelfRow?.stock || 0,
+                                        inTransitQty(requests, branchLocation, selectedProduct), rhythm, now);
+                                    /* The one sentence worth the whole panel: at this speed the shelf
+                                       runs dry BEFORE a shipment ordered today could land. */
+                                    const tooLate = advice.daysLeft != null && rhythm.leadDays != null
+                                        && advice.daysLeft < rhythm.leadDays;
+                                    return (
+                                        <div className="mb-3 rounded-xl border border-line-2 bg-black/40 p-3 text-[11px] font-bold tabular-nums">
+                                            <div className="flex flex-wrap gap-x-4 gap-y-1 text-ink-muted uppercase tracking-widest">
+                                                <span>Di gudang <b className="text-ink font-black">{advice.shelf}</b></span>
+                                                <span>Di jalan <b className={`font-black ${advice.coming > 0 ? 'text-gold' : 'text-ink'}`}>{advice.coming}</b></span>
+                                                <span>Keluar {advice.ratePerDay != null
+                                                    ? <b className="text-ink font-black">± {advice.ratePerDay.toFixed(1)}/hari</b>
+                                                    : <b className="text-ink font-black">belum terukur</b>}</span>
+                                            </div>
+
+                                            {advice.daysLeft != null && (
+                                                <p className={`mt-2 pt-2 border-t border-line-2 uppercase tracking-widest ${tooLate ? 'text-danger-text' : 'text-ink-muted'}`}>
+                                                    Habis dalam ± <b className="font-black">{advice.daysLeft} hari</b>
+                                                    {tooLate && rhythm.leadDays != null &&
+                                                        <> — kiriman butuh ± {rhythm.leadDays} hari, <b className="font-black">pesan sekarang</b></>}
+                                                </p>
+                                            )}
+
+                                            {advice.suggest != null ? (
+                                                <div className="mt-2 pt-2 border-t border-line-2 flex items-center justify-between gap-3">
+                                                    <span className="text-ink-muted uppercase tracking-widest">
+                                                        Saran <b className="text-gold font-black text-sm">{advice.suggest}</b> Bks
+                                                        <span className="block mt-0.5 normal-case tracking-normal text-[10px] font-normal">
+                                                            cukup ± {advice.coverDays} hari — kirim ± {rhythm.leadDays}, pesan tiap ± {rhythm.cadenceDays}
+                                                        </span>
+                                                    </span>
+                                                    <button type="button" onClick={() => setRequestQty(String(advice.suggest))}
+                                                        className="shrink-0 px-3 py-2 rounded-lg border border-gold/60 text-gold uppercase tracking-widest text-[10px] font-black hover:bg-gold hover:text-gold-ink transition-colors">
+                                                        Pakai
+                                                    </button>
+                                                </div>
+                                            ) : (
+                                                /* Say WHY there is no number rather than showing nothing. */
+                                                <p className="mt-2 pt-2 border-t border-line-2 text-ink-muted normal-case text-[10px] font-normal leading-snug">
+                                                    Belum bisa menyarankan jumlah — butuh minimal dua pengiriman produk ini
+                                                    {rhythm.leadDays == null && ' dan satu penerimaan yang tercatat'}
+                                                    {rhythm.cadenceDays == null && ' dan dua permintaan untuk mengukur jarak pesan'}.
+                                                </p>
+                                            )}
+                                        </div>
+                                    );
+                                })()}
+
                                 <div className="grid grid-cols-[1fr,auto] gap-2 w-full">
                                     <input type="number" min="1" placeholder="Qty (Bks)" value={requestQty} onChange={e => setRequestQty(e.target.value)} className="w-full bg-black/50 border border-line-3 rounded-lg p-3 text-sm text-white font-bold outline-none focus:border-gold text-center transition-colors"/>
                                     <button onClick={handleAddToCart} className="bg-gold hover:bg-gold/90 text-gold-ink px-4 font-bold uppercase tracking-widest rounded-lg shadow-lg shrink-0 whitespace-nowrap text-xs transition-colors flex items-center justify-center gap-1.5">
