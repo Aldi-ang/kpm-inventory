@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-24 10:30 WIB (🟠 KPM app session)** · ✅ **POV SWITCH + FLEET PERMISSION BOTH SEEN WORKING IN HIS BROWSER** (`7496258`, `86fde13`, `4c76842`) · ✅ **G3 REORDER ADVICE BUILT** (`33700ec`) — 599/599, **762/762**, build clean · ▶ **HE OWES ONE ANSWER: his TIER 3 IS A COPY OF THE OWNER** · branch `phase0-solid-ground`
+**Updated: 2026-08-24 10:36 WIB (🟠 KPM app session)** · ✅ **THE RAIL IS ANODISED AND AMBER, SEEN IN HIS CHROME** (`2149f8a`, `3aac9cf`) · ✅ POV switch + fleet permission + G3 all shipped — 599/599, **762/762**, all contrast pairs, build clean · ▶ **HE OWES THREE ANSWERS — see WAITING** · branch `phase0-solid-ground`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **TRIMMED 2026-08-21 ON ALDI'S WORD.** *"sure trim it"*, on his own condition:
@@ -21,6 +21,29 @@
 >
 > 📏 **KEEP THIS FILE UNDER ~350 LINES.** Past that, cut the oldest day into the same archive.
 > ⚠️ **TWO TRACKS SHARE THIS FILE** — 🟠 KPM and 🟢 Lancelot. Never trim or re-sort across them.
+
+## 🟠 2026-08-24 10:36 — THE RAIL HAS A MATERIAL NOW, AND IT IS AMBER. 599/599, 762/762.
+
+`2149f8a` + `3aac9cf`. **He rejected both options I offered and invented a third** — *"what if some
+laboratory panel kind of design for the light mode and keep the glass one for the dark mode?"* →
+anodised faceplate, near-black marks (**2,78:1 → 8,39:1**), indicator lamp that strikes twice on
+hover and holds steady when active. **Dark mode untouched. Seen rendering in his Chrome.**
+
+⚠️ **TWO THINGS I GOT WRONG AND HE CAUGHT BOTH BY LOOKING:**
+1. My three mockups all sat on near-white; his real ground is `--ground #D2C9B4`. *"most of the
+   background is not really difference"*. **Mock on the real ground or the comparison is fake.**
+2. *"it looks more brown than amber"*. I measured the lamp's **core** against a pale plate, which
+   forced it to `#9A4200` — brown. **A lamp is separated from its panel by its BEZEL, not its
+   core.** Rim carries 3:1 (5,42:1), core is true `#FF9D00`, same in both themes.
+
+⚠️ **THREE AUDIT GUARDS WERE NAMING THE FIX, NOT THE RULE.** Two went red against correct code
+because they pinned `var(--gold)` by name; the third would have **PASSED while the open rail went
+amber and the collapsed disc stayed brown** — the exact bug it exists to stop. All three now assert
+the rule, and the totem one compares the two tokens to each other.
+
+⚠️ **`integration.audit` READS THE BUILT OUTPUT.** A probe that edits source without rebuilding
+proves nothing; it refused to report, which is how this was caught. **Rebuild on both sides of any
+audit probe.** `logicFixes.selfcheck` reads source directly and does not need it.
 
 ## 🟠 2026-08-24 10:05 — G6 WAS ALREADY BUILT. G3 IS NOT, SO G3 GOT BUILT. 599/599, 762/762.
 
@@ -259,6 +282,24 @@ measured.
 ⚠️ **ONE OLDER PROBLEM IT EXPOSED, HIS CALL:** the **DARK** rail's resting icons are **2,78:1**
 (`#6b5845` on `#14110e`). Pre-existing; he said dark is not to be touched this pass, so
 `softInDark` reports it every run instead of failing the build. **Ask him whether to fix it.**
+
+🔴 **UNANSWERED, 2026-08-24 10:36 — THE BROWN SWEEP. His words, verbatim:**
+
+> *"apply this color to other components as well because most of them is too brown, but make sure
+> that its not too bright that sharp to the eye level"*
+
+**MEASURED, AND THE SHAPE OF THE ASK IS WRONG — say this to him before touching anything:**
+`--accent-ink` (#4F3603) is used **129×**, `--gold` (#7A4C0C) **88×**. Those are brown **because
+they are TEXT**, and his own locked law is that gold is never text on light — `#FF9D00` as text on
+cream is **1,9:1**, which IS the "too bright, sharp to the eye" he is warning about. The rail could
+go amber only because there amber is a **PLATE with near-black ink on it**.
+**So the fix is per component, converting a brown text usage into an amber plate — the move the
+rail just made — not a token swap. A global swap makes 217 places unreadable at once.**
+❓ **Asked back: which two or three screens actually look too brown to him.** 217 sites is a
+multi-session job and starting it at 78% quota would strand it half done.
+
+❓ **Also unanswered: he typed `/anthropic-skills:find-skills` with no context.** His design stack
+already auto-loads (alucard §1a). Ask what he was hunting for before spending a load on it.
 
 ❓ **UNANSWERED, 2026-08-24 10:35 — WHICH LOGIC? His words, verbatim:**
 
@@ -527,6 +568,7 @@ Evidence with file and line numbers in `.claude/SWEEP-2026-08-19.md`.
 | `src/StockOpnameView.jsx` → `DAMAGE_REASONS` | **NEW 2026-08-21** — the five kinds of damage, stored with the sales terminal's own long strings. Deliberately a SUBSET of the terminal's list: no `Other`, because free text cannot be grouped or counted |
 | `A-Brain/Backlog/Test the new Stock Opname on a real screen.md` | **NEW 2026-08-21, HIS TO-DO** — numbered walkthrough of everything shipped that day. **Only he can run it.** Ask whether he has, before building on top |
 | `src/StockOpnameView.jsx` → `VARIANCE_REASONS` + `varianceReasonMissing()` | **NEW 2026-08-21, LIVE 2026-08-23** — why a confirmed difference happened. Running as the DEFAULT on his word; still his words to rename. ⚠️ No cause may mention a supplier — there is none in this chain. "Cause unknown" is deliberate: the admin cannot type their own reason, so an honest bucket stops them picking a wrong one |
+| `src/styles/theme.css` → `--plate*` / `--lamp*` | **NEW 2026-08-24 — the rail's own MATERIAL.** Light mode is an anodised faceplate (`--plate #C6BFAE`, DARKER than the page) with near-black marks; dark mode keeps the glass and the same four names describe it. ⚠️ **`--lamp-on` #FF9D00 does NOT flip** — an indicator does not change colour when the room light comes on — and its 3:1 separation is carried by `--lamp-rim`, the BEZEL, never by the core. Darkening the core to pass a check is how it came out brown the first time. Measured in `contrast.selfcheck`; `--gold` is untouched and still app-wide |
 | `src/components/BranchWarehouseManager.jsx` → `shipmentRhythm()` / `inTransitQty()` / `reorderAdvice()` | **NEW 2026-08-24 — how many should I ask for (G3).** All three MEASURED from his own shipping history: lead time and order-gap are medians of past orders, the sell-through rate comes out by subtraction (arrived − still here). ⚠️ **Any missing input must return `null`, never a guess** — five checks hold that. ⛔ Suggests only; auto-fill is refused by check. Reuses `productArrivals`/`arrivalsOnHand`, so it cannot drift from the shelf |
 | `src/config/permissions.js` → `DYNAMIC_TIERS` + `tierWord()` | **HIS WORDS ARE THE DEFAULT, 2026-08-24.** T2 OWNER · T3 HQ SALES MANAGER · T4 REGIONAL ADMIN · T5 SALES CANVAS · T6 SALES MOTORIST. ⚠️ **NEVER RENAME THE `CORPORATE_TIERS` IDS** — `AREA_ADMIN`, `FLEET_CAPTAIN` and the rest are in every stored document; a check asserts all six byte for byte. `tierWord(roleId)` is the ONE way to turn an id into the word he uses; it returns `''`, never the raw id, and a scan bans code vocabulary from rendered text across `src` |
 | `src/config/permissions.js` → `canEditFleetRoster()` + `defaultFleetAccess()` | **NEW 2026-08-24** — may this tier change the fleet and the canvas, or only look. **The cut is between tier 4 and tier 5 and it is HIS**, not a judgement call: an area is run, a van is ridden. Replaces a per-person `canEditRoster` checkbox and an `isAreaAdmin` test that was only `!isGlobalAdmin`, which is how a tier 6 could terminate staff. ⚠️ **Absence of the key means "use the tier default", never "no"** — same rule as `canSeeExpectedCount`, and reading it the other way would strip the roster from his branch admins. `defaultFleetAccess` is the SAME function the Settings dropdown displays, so the screen cannot promise what the app will not do |
