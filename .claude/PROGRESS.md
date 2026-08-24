@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-24 10:36 WIB (🟠 KPM app session)** · ✅ **THE RAIL IS ANODISED AND AMBER, SEEN IN HIS CHROME** (`2149f8a`, `3aac9cf`) · ✅ POV switch + fleet permission + G3 all shipped — 599/599, **762/762**, all contrast pairs, build clean · ▶ **HE OWES THREE ANSWERS — see WAITING** · branch `phase0-solid-ground`
+**Updated: 2026-08-24 10:52 WIB (🟠 KPM app session)** · ✅ **THE RAIL IS ANODISED AND AMBER, SEEN IN HIS CHROME** (`2149f8a`, `3aac9cf`) · ✅ POV switch + fleet permission + G3 all shipped — 599/599, **762/762**, all contrast pairs, build clean · ▶ **NEXT JOB IS TWO LINES AND FULLY SPEC'D IN `.claude/NEXT-SESSION.md`** · he owes 2 answers · branch `phase0-solid-ground`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **TRIMMED 2026-08-21 ON ALDI'S WORD.** *"sure trim it"*, on his own condition:
@@ -272,15 +272,19 @@ measured.
 > *"apply this color to other components as well because most of them is too brown, but make sure
 > that its not too bright that sharp to the eye level"*
 
-**MEASURED, AND THE SHAPE OF THE ASK IS WRONG — say this to him before touching anything:**
-`--accent-ink` (#4F3603) is used **129×**, `--gold` (#7A4C0C) **88×**. Those are brown **because
-they are TEXT**, and his own locked law is that gold is never text on light — `#FF9D00` as text on
-cream is **1,9:1**, which IS the "too bright, sharp to the eye" he is warning about. The rail could
-go amber only because there amber is a **PLATE with near-black ink on it**.
-**So the fix is per component, converting a brown text usage into an amber plate — the move the
-rail just made — not a token swap. A global swap makes 217 places unreadable at once.**
-❓ **Asked back: which two or three screens actually look too brown to him.** 217 sites is a
-multi-session job and starting it at 78% quota would strand it half done.
+❌ **THE FIRST DIAGNOSIS WAS WRONG AND IS RETRACTED.** It said those browns are brown *because
+they are TEXT*, so the fix had to be per component. **He answered with three screenshots** —
+*"sc1 is sampling,customer directory and seeting most of them have brown color not ARK Lab enough
+lol"* — and every brown in them is a **FILLED PLATE**: New Sample, View Analytics, FULL, FIND
+DUPLICATES, DATA SCRUB, IMPORT MAP MARKER, Auto-Find.
+
+✅ **RE-MEASURED, and it is TWO LINES, not 217 edits.** `--gold` is a FILL token (**68 fills, 1
+text**), `--gold-ink` is its paired ink (60 sites), and `--accent-ink` is the separate gold-as-TEXT
+token (129 sites) that must NOT move. Every plate already pairs fill+ink correctly, so swapping the
+pair in the light block turns all 68 amber at once.
+⚠️ **The plate and its ink must flip in the SAME edit** — amber plate with today's pale ink is
+1,9:1, which is exactly the *"too bright that sharp to the eye level"* he warned about.
+▶ **Fully spec'd with the traps in `.claude/NEXT-SESSION.md`. Not started — 85% quota.**
 
 ❓ **Also unanswered: he typed `/anthropic-skills:find-skills` with no context.** His design stack
 already auto-loads (alucard §1a). Ask what he was hunting for before spending a load on it.

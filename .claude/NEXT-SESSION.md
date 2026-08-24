@@ -2,94 +2,109 @@
 
 /alucard
 
-**Get his answer on tier 3, then look at the new Settings row on a real screen. Then G6.**
+**Swap ONE token pair and 68 brown plates across the app go Ark Lab amber. Start with the two-line edit, then let the contrast suite tell you what else moved.**
 
-## 🔴 THE ANSWER HE OWES — ask this first, it is a security hole
+Aldi, 2026-08-24, with three screenshots (Sampling, Customer Directory, Settings):
 
-His live **tier 3** can open **Settings**, which is the permission matrix itself. A tier 3 can
-therefore grant themselves anything, including everything tier 1 has. On top of the built-in
-tier-3 list his saved matrix also gives them:
+> *"sc1 is sampling,customer directory and seeting most of them have brown color not ARK Lab
+> enough lol"*
 
-> **Master Vault · Stock Opname · Customers · Sampling · Audit Logs · Settings**
+and earlier the same hour:
 
-Found 2026-08-24 with the POV switch, on its first run. **Do not change his matrix for him** —
-it decides what his real staff can open, and a wrong guess locks someone out mid-shift. Ask which
-of the six to untick, then he does it in Settings › Permissions (or he says "all six" and it is
-one visit). **Settings is the one that cannot wait.**
+> *"apply this color to other components as well because most of them is too brown, but make sure
+> that its not too bright that sharp to the eye level"*
 
-## ✅ THEN TEST — the Settings row has never been seen
+## ⚠️ READ THIS BEFORE YOU BELIEVE THE OLD NOTE
 
-`7496258` added **Fleet & canvas authority** to the permission matrix: VIEW & EDIT / VIEW ONLY,
-per tier, sitting directly under the Fleet toggle. It could not be checked on a screen because the
-**Master Vault password** screen came up and Claude may not type it — that is a hard rule, not a
-preference. He unlocks the vault, then:
+The previous session pushed back on this ask and **was wrong**. The reasoning was "those browns are
+brown because they are TEXT, and gold as text on cream is 1,9:1" — true as a law, false as a
+diagnosis of what he photographed. **Every brown in his three screenshots is a FILLED PLATE**, not
+text: New Sample, View Analytics, FULL, FIND DUPLICATES, DATA SCRUB, IMPORT MAP MARKER, Auto-Find.
 
-1. Settings › Permissions → under **Fleet**, a row called **Fleet & canvas authority** with a
-   dropdown on every tier. Tiers 1–3 read **View & edit**, tiers 4–6 read **View only**.
-2. Check it on the **phone list** too, not only the wide table — they are two separate renders.
-3. ⚠️ **TIER 4 IS CLAUDE'S CALL, NOT HIS.** A captain runs a squad but does not hire or fire it.
-   One dropdown if he disagrees — say so rather than assuming he agreed.
-4. Wear tier 6 with the POV switch → Fleet & Canvas: **no add button, no edit or delete pencils,
-   no Load button, no Reconcile & Clear**. That is the hole he found, shut.
-5. Press **Deploy matrix** once. Until he saves, every tier is running on the built-in default.
+Measured 2026-08-24, and this is what makes the job small:
 
-## Then: G6 — damaged stock has no route home
+| token | light value | used as |
+|---|---|---|
+| `--gold` | `#7A4C0C` | **68 fills**, 1 text |
+| `--gold-ink` | `#FCF7EE` | 60 — its paired ink, *"ink to place ON gold"* |
+| `--accent-ink` | `#4F3603` | the gold-as-TEXT token, 129 sites |
 
-📄 `A-Brain/Wiki/Concepts/The Eight Warehouse Gaps.md`. Damaged units are counted, sorted by cause
-and credited to `damagedStock` — then they sit there forever. No write-off, no return to the
-factory, no liquidation. **Ask him which of those three he actually does** before designing
-anything; the answer decides the whole shape.
+**The fill token and the text token are already separate, and every plate already pairs them
+correctly.** So this is not 217 hand edits. It is a two-line change:
 
-After that, in order: **G3** suggested order quantity · **G5** accuracy and shrinkage panel ·
-**G1** batch identity through the chain · **G4** ids instead of names.
+```
+src/styles/theme.css, the light block (~line 252 and ~284)
+  --gold:      #7A4C0C   ->  a dense Ark Lab amber
+  --gold-ink:  #FCF7EE   ->  near-black (#2B2318 is the value the rail and the Duke's Ledger use)
+```
+
+`--accent-ink` **does not move.** Gold as text on cream really is unreadable; that half of his
+palette law stands and is not what he is complaining about.
+
+## The trap that makes a lazy version wrong
+
+⚠️ **The ink must flip in the same edit as the plate.** `--gold-ink` is pale today because the
+plate is dark today. Change the plate to amber and leave the ink pale and you get white on
+`#FF9D00` — **1,9:1**, which is precisely the *"too bright that sharp to the eye level"* he warned
+about. They are one change or the app gets worse.
+
+⚠️ **Which amber?** The rail settled this on 2026-08-24 and it is measured: core `#FF9D00`, the
+same value in both themes, with the 3:1 separation carried by a **rim**, never by darkening the
+core. Darkening a lamp until it passes a check is how it came out brown the first time and he
+photographed that too. Start from `--lamp-on` and only deviate with a measurement.
+
+⚠️ **`--gold` has ONE text use.** Find it (`grep -rn "color: *var(--gold)" src/`) and give it
+`--accent-ink` before the swap, or it becomes amber text on cream.
 
 ## Verify
 
 ```
-npm run build; node src/config/integration.audit.mjs; node src/config/logicFixes.selfcheck.mjs
+npm run build; node src/config/integration.audit.mjs; node src/config/logicFixes.selfcheck.mjs; node src/config/contrast.selfcheck.mjs
 ```
-Currently **599/599** and **711/711**. Lift every constant from source rather than retyping it, and
-**break the shipped rule on purpose and watch the check go red before trusting it** — that probe
-has now caught two decorative checks, one incomplete fix, and three checks of Claude's own that
-were passing for the wrong reason.
+Currently **599/599**, **762/762**, all contrast pairs pass.
+
+**`contrast.selfcheck` is the whole safety net here** — it already measures gold/gold-ink pairs on
+five grounds in both themes, so the swap either comes back green or it hands you the exact list of
+places to fix. Run it FIRST, before the edit, and keep the output: the diff between the two runs is
+the work.
+
+⚠️ **`integration.audit` reads the BUILT output.** A probe that edits source without rebuilding
+proves nothing — it silently describes the previous build. Rebuild on both sides of any audit
+probe. `logicFixes.selfcheck` and `contrast.selfcheck` read source directly and do not need it.
+
+✅ **Then get eyes on it.** He opens the Claude side panel in Chrome, then `navigate` to
+`https://localhost:5173/`. Check the three screens he named: Sampling, Customer Directory,
+Settings. A ratio is proof of a ratio; only a frame is proof of an appearance.
 
 **When you finish, rewrite this file with the next single job.**
 
 <details>
 <summary>The rest of the queue — do not paste this, it is here so the next session knows what to promote</summary>
 
-✅ **The POV switch works and is proven on glass** (2026-08-24, all 8 steps). Chrome testing recipe:
-he opens the Claude **side panel** and signs in there, then `navigate` to `https://localhost:5173/`.
-The in-app browser refuses the self-signed certificate. **The vault password is his to type.**
+🔴 **HE STILL OWES TWO ANSWERS** (both verbatim in `.claude/PROGRESS.md` under WAITING ON ALDI):
+tier 3 is a toggle-for-toggle copy of the owner including Settings and both [GOD] switches · which
+logic he wants redesigned in Fleet + Receivables.
 
-⚠️ **STILL UNSEEN ON A REAL SCREEN:** the arrival check and the HQ branch-shelf panel (`ccdb5b8`).
-Both need a branch with stock and a shipment in transit — the POV switch does not help, only data
-does. Also the **branch stock-age line** and **blind counting**, which the POV switch now CAN reach
-(wear tier 3 for the branch view, tier 5/6 for blind).
+❓ **He asked about skills:** *"i wast expecting to find some skills to help this task to be more
+effective"*. The honest answer is that no skill helps here — the leverage is his own
+`contrast.selfcheck`, and the reason this job is two lines instead of 217 edits is that the theme
+already separates the fill token from the text token. Tell him that rather than loading a stack.
 
-⛔ **Rejected, do not propose again:** counting sessions · barcode scanning · ABC cycle counting ·
-bin/rack locations · demand forecasting · automatic reordering without a person · a freshness
-threshold or any blocking on stock age (**two checks refuse this**) · anything framed as a supplier
-or carrier claim — **there is no third party in this chain, the factory is his own** · the
-Firebase emulator (**closed 2026-08-23, build against live**).
-
-- **TIER 1 = ONE PROFILE, stages B and C** — B copies the van's `activeCanvas`, `allowedPayments`,
-  `allowedTiers` onto `master_owner` after a backup; C deletes `ADMIN_VEHICLE`.
-  **C before B shows his van as EMPTY.** Stage A is done (`447e3dd`).
-- **Tier renames** — `DYNAMIC_TIERS` labels only. He has already renamed T3 → `HQ SALES MANAGER`
-  and T4 → `REGIONAL ADMIN` in his live app; the POV picker and the test agents follow those names
-  automatically now. Never touch the ids in `CORPORATE_TIERS`.
-- **TITIP everywhere, never "consignment"** — labels only, code names stay.
-- ~~Reconcile and Clear has no tier check~~ — **FIXED in `7496258`.**
-- **The forced Google sign-in** — cause unknown. ⚠️ DANGER: removing `await` from the two
-  `deleteDoc` lines in `src/App.jsx` (search `deleteDoc(uidRef)`) reaches `signOut(auth)` and
-  destroys his sign-in.
-- **A sale can be booked to the wrong store** · **Opening Journey Plan can reassign stores** ·
-  **IOU in the map customer panel** · **wrong agent name on old sales** · Sampling and Customers
-  redesigns.
-- **His own older test list**, five items, none done: `A-Brain/Backlog/TESTS - check these when you
-  feel like it.md` — IOU+Titip in one visit · buyback raises van stock · buyback shows as a loss ·
-  agent ranks look sane · sector settings survive a reload.
-- **Merge to main** — last of all. *"we might it later if we done with everything"*.
+- **Redesign Receivables & Fleet** — `A-Brain/Backlog/Redesign Receivables and Fleet - logic must
+  survive.md`. Both are **0% tokenised** (293 and 191 banned colour classes, ZERO tokens), so they
+  will NOT be fixed by the token swap above — they have no light mode at all. Receivables first:
+  it writes nothing, seven callbacks are the whole contract. Fleet has two `runTransaction` stock
+  moves that must not be touched.
+- ⚠️ **DARK rail resting icons are 2,78:1** (`#6b5845` on `#14110e`). Pre-existing, reported by
+  `softInDark` every run, his call whether to fix.
+- ⚠️ **The left column's lamps land in the rail's middle gutter** on the two-column layout. Seen,
+  not changed, he has not objected.
+- 📄 **Roadmap:** `A-Brain/Wiki/Concepts/The Eight Warehouse Gaps.md`. G7, G6 and G3 are done
+  (G6 was never a gap — it shipped long ago; read the correction there before touching the list).
+  Remaining: **G5** accuracy and shrinkage panel · **G1** batch identity · **G2** age and
+  oldest-first · **G4** ids instead of names.
+- ⚠️ **STILL UNSEEN ON A REAL SCREEN:** the arrival check, the HQ branch-shelf panel, and the new
+  G3 reorder advice. All three need a branch with a shipping history.
+- **Merge to main** — last of all.
 
 </details>
