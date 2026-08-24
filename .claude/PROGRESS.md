@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-24 09:26 WIB (🟠 KPM app session)** · ✅ **POV SWITCH + FLEET PERMISSION BOTH SEEN WORKING IN HIS BROWSER** (`7496258`, `86fde13`, `4c76842`) — 599/599, **727/727**, build clean · ▶ **HE OWES ONE ANSWER: his TIER 3 IS A COPY OF THE OWNER** · branch `phase0-solid-ground`
+**Updated: 2026-08-24 10:05 WIB (🟠 KPM app session)** · ✅ **POV SWITCH + FLEET PERMISSION BOTH SEEN WORKING IN HIS BROWSER** (`7496258`, `86fde13`, `4c76842`) · ✅ **G3 REORDER ADVICE BUILT** (`33700ec`) — 599/599, **762/762**, build clean · ▶ **HE OWES ONE ANSWER: his TIER 3 IS A COPY OF THE OWNER** · branch `phase0-solid-ground`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **TRIMMED 2026-08-21 ON ALDI'S WORD.** *"sure trim it"*, on his own condition:
@@ -21,6 +21,28 @@
 >
 > 📏 **KEEP THIS FILE UNDER ~350 LINES.** Past that, cut the oldest day into the same archive.
 > ⚠️ **TWO TRACKS SHARE THIS FILE** — 🟠 KPM and 🟢 Lancelot. Never trim or re-sort across them.
+
+## 🟠 2026-08-24 10:05 — G6 WAS ALREADY BUILT. G3 IS NOT, SO G3 GOT BUILT. 599/599, 762/762.
+
+⚠️ **THE ROADMAP WAS WRONG ABOUT SHIPPED CODE.** *"G6 — damaged stock has no route home"* is
+false: **Stock Opname › Quarantine Vault** has held it the whole time — SAMPLING, RTV (back to the
+factory) and PENALTY (charge an agent), each decrementing `damagedStock` and writing a
+`quarantine_logs` row, at the vault or at any branch, with four self-checks already on it.
+`A-Brain/Wiki/Concepts/The Eight Warehouse Gaps.md` is corrected. **The lesson is written next to
+it: anything on that list gets a grep before it gets a design.**
+
+**`33700ec` — G3, the real one: a branch used to type its order into an empty box.** The reorder
+form now says what is on the shelf, **what is already on a truck** (the double-order trap), how
+fast it leaves, how many days that leaves, and what to ask for — and says **PESAN SEKARANG** when
+the shelf will run dry before a shipment ordered today could land.
+
+**Nothing is invented.** Lead time = median of his own deliveries. Order gap = median of his own
+past requests (this is what stops the SIZE being a made-up number). Rate = by subtraction, the
+stock-age trick. **Any missing input → no suggestion, and it says which history it lacks.**
+⛔ It suggests, never orders — PAKAI is a button, Add is a second press.
+
+⚠️ **NOT SEEN ON A SCREEN.** Needs a branch with a shipping history — the same thing the arrival
+check has been waiting for. **The commit message is the full story.**
 
 > ✂️ **TRIMMED 2026-08-24 08:59.** Two 2026-08-23 entries dropped, both shipped and both fully
 > described in their own commit messages: the first real-screen test (`42fefe8` and earlier) and
@@ -461,6 +483,7 @@ Evidence with file and line numbers in `.claude/SWEEP-2026-08-19.md`.
 | `src/StockOpnameView.jsx` → `DAMAGE_REASONS` | **NEW 2026-08-21** — the five kinds of damage, stored with the sales terminal's own long strings. Deliberately a SUBSET of the terminal's list: no `Other`, because free text cannot be grouped or counted |
 | `A-Brain/Backlog/Test the new Stock Opname on a real screen.md` | **NEW 2026-08-21, HIS TO-DO** — numbered walkthrough of everything shipped that day. **Only he can run it.** Ask whether he has, before building on top |
 | `src/StockOpnameView.jsx` → `VARIANCE_REASONS` + `varianceReasonMissing()` | **NEW 2026-08-21, LIVE 2026-08-23** — why a confirmed difference happened. Running as the DEFAULT on his word; still his words to rename. ⚠️ No cause may mention a supplier — there is none in this chain. "Cause unknown" is deliberate: the admin cannot type their own reason, so an honest bucket stops them picking a wrong one |
+| `src/components/BranchWarehouseManager.jsx` → `shipmentRhythm()` / `inTransitQty()` / `reorderAdvice()` | **NEW 2026-08-24 — how many should I ask for (G3).** All three MEASURED from his own shipping history: lead time and order-gap are medians of past orders, the sell-through rate comes out by subtraction (arrived − still here). ⚠️ **Any missing input must return `null`, never a guess** — five checks hold that. ⛔ Suggests only; auto-fill is refused by check. Reuses `productArrivals`/`arrivalsOnHand`, so it cannot drift from the shelf |
 | `src/config/permissions.js` → `DYNAMIC_TIERS` + `tierWord()` | **HIS WORDS ARE THE DEFAULT, 2026-08-24.** T2 OWNER · T3 HQ SALES MANAGER · T4 REGIONAL ADMIN · T5 SALES CANVAS · T6 SALES MOTORIST. ⚠️ **NEVER RENAME THE `CORPORATE_TIERS` IDS** — `AREA_ADMIN`, `FLEET_CAPTAIN` and the rest are in every stored document; a check asserts all six byte for byte. `tierWord(roleId)` is the ONE way to turn an id into the word he uses; it returns `''`, never the raw id, and a scan bans code vocabulary from rendered text across `src` |
 | `src/config/permissions.js` → `canEditFleetRoster()` + `defaultFleetAccess()` | **NEW 2026-08-24** — may this tier change the fleet and the canvas, or only look. **The cut is between tier 4 and tier 5 and it is HIS**, not a judgement call: an area is run, a van is ridden. Replaces a per-person `canEditRoster` checkbox and an `isAreaAdmin` test that was only `!isGlobalAdmin`, which is how a tier 6 could terminate staff. ⚠️ **Absence of the key means "use the tier default", never "no"** — same rule as `canSeeExpectedCount`, and reading it the other way would strip the roster from his branch admins. `defaultFleetAccess` is the SAME function the Settings dropdown displays, so the screen cannot promise what the app will not do |
 | `src/config/povPreview.js` | **NEW 2026-08-23** — the whole tier POV preview as arithmetic on plain values: who may open it (his EMAIL, not his tier), the five `[TEST]` staff, and `previewIdentity()`, which forces `isAdmin` and `isSystemOwner` FALSE no matter what the real account holds. **A costume only ever takes power away.** Never teach this file to save — a refresh is the way out, and a check enforces that |
