@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-24 08:5x WIB (🟠 KPM app session)** · ✅ **POV SWITCH TESTED ON A REAL SCREEN AND IT WORKS** · ✅ FLEET/CANVAS EDIT MOVED INTO THE MATRIX (`7496258`) — 599/599, **711/711**, build clean · ▶ **HE OWES ONE ANSWER: tier 3 can open SETTINGS** · branch `phase0-solid-ground`
+**Updated: 2026-08-24 08:59 WIB (🟠 KPM app session)** · ✅ **POV SWITCH TESTED ON A REAL SCREEN AND IT WORKS** · ✅ FLEET/CANVAS EDIT MOVED INTO THE MATRIX (`7496258`) — 599/599, **711/711**, build clean · ▶ **HE OWES ONE ANSWER: tier 3 can open SETTINGS** · branch `phase0-solid-ground`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **TRIMMED 2026-08-21 ON ALDI'S WORD.** *"sure trim it"*, on his own condition:
@@ -22,7 +22,11 @@
 > 📏 **KEEP THIS FILE UNDER ~350 LINES.** Past that, cut the oldest day into the same archive.
 > ⚠️ **TWO TRACKS SHARE THIS FILE** — 🟠 KPM and 🟢 Lancelot. Never trim or re-sort across them.
 
-## 🟠 2026-08-24 08:5x — THE POV SWITCH RAN, AND ON ITS FIRST DAY IT FOUND TWO REAL HOLES.
+> ✂️ **TRIMMED 2026-08-24 08:59.** Two 2026-08-23 entries dropped, both shipped and both fully
+> described in their own commit messages: the first real-screen test (`42fefe8` and earlier) and
+> stock age (`42fefe8`). `git log` has them in full; nothing was archived because nothing was lost.
+
+## 🟠 2026-08-24 08:59 — THE POV SWITCH RAN, AND ON ITS FIRST DAY IT FOUND TWO REAL HOLES.
 
 **Claude drove his Chrome, he watched, all 8 steps passed.** The gold ring on his own face opens
 the picker · tier 5 cut the sidebar from 17 marks to 7 · **the vault key stayed behind** (music
@@ -110,60 +114,6 @@ with **zero workflows**. Rule removed, reason recorded in `.gitignore`. Full ind
 `Archive/n8n-workflow-index.md`; 8 of 347 are malformed JSON upstream, saved but unindexed, named.
 **n8n is NOT installed here** — parts bin, not a live system. Alucard §1 now routes automation
 questions to the index.
-
-## 🟠 2026-08-23 11:53 — IT WAS TESTED ON A REAL SCREEN AT LAST, AND IT WORKS. 599/599, 632/632.
-
-**First time anything from 08-21 or 08-23 has been seen running.** Claude drove HIS Chrome against
-the dev server on the live database. **Nothing was submitted** — no stock audit, no receipt.
-
-**Passed, with eyes on it:** Stock Opname LOADS (the 08-21 killer) · the four figures in full words
-· the recount panel · `5 DAMAGED · 0 of 5 sorted` · **the reel steps EXPIRED → WATER DAMAGE →
-TORN / CRUSHED with dots 1/5 → 2/5 → 3/5** · the sorted counter and bar update live · HQ pipeline
-reads `PENDING, IN-TRANSIT & DISPUTED` · factory intake says FACTORY PRODUCTION, not supplier.
-Full record: `A-Brain/Backlog/Test the new Stock Opname on a real screen.md`.
-
-⚠️ **ONE FINDING, NOT YET FIXED.** Sorting 9 damaged kinds against a total of 5 shows
-`9 of 5 sorted` with a **full bar and nothing marking it wrong**. The refusal is real but only
-fires at submit — the "UI says yes" shape. He was asked whether to fix it; **no answer yet.**
-
-**Could not be reached and why:** the arrival check (pipeline empty, no shipment in transit, and
-creating one writes real stock) · blind counting (he is tier 1, seeing expected is correct).
-
-**`ccdb5b8` — HQ can now look at a branch's shelf.** His words: *"i think tier 1 also need to see
-regional warehouse components that only regional admin could see because me as tier 1 cant see
-that"*. `isAreaAdmin` was a hard either/or, so the owner could not see his own warehouses — which
-also meant the stock ages shipped an hour earlier were invisible to the only account he uses.
-Restock Vault → **Isi Gudang Cabang**, pick a branch. **READ-ONLY on purpose:** no request form and
-no receive button for HQ, or the send/count separation the arrival check exists to create is gone.
-
-## 🟠 2026-08-23 12:30 — STOCK AGE SHIPPED, AND HIS SCOPE CUT MADE IT ONE SESSION NOT THREE. 599/599, 632/632.
-
-**He scoped it before it was built, and the scope IS the design:**
-
-> *"we just system that only care about the data related stuff on the company, as long as the
-> product is sold its job done, company can take care of the item management inside the warehouse
-> our app didnt need that much details for now"*
-
-So it **reports age and nothing else** — no threshold he has to invent, no warning, no
-oldest-ships-first rule, nothing blocked. **Two checks pin that scope**: no threshold may be
-invented, nothing may be refused on age. A future session adding either is going against him.
-
-**Why it collapsed from three sessions to one.** The sketched version split every product into
-per-batch buckets and taught every stock-removing path which batch it was taking from. Instead
-**nothing about how stock leaves changed at all** — what is still on hand is derived by subtraction
-against `stock`, walking arrivals newest-first. Two consequences: **no new write path and nothing
-new to type** (every arrival is already on the shipment record from this morning's arrival check,
-so it works retroactively), and **the ages cannot drift**, because `stock` stays the one source of
-truth — correct it at a count and the ages correct themselves.
-
-**Three honesty rules, each pinned by a check:** damaged units are not shelf stock · stock the
-records cannot explain is shown as *"sebelum ada catatan"* rather than folded into the oldest batch
-(which would make the age read younger) · an unknown timestamp gives **no** age, never zero —
-"brand new" and "we do not know" must not look the same.
-
-⚠️ **THE REAL RISK NOW IS THAT NONE OF THIS HAS BEEN SEEN RUNNING.** Three features shipped today
-on top of two days of unseen work. The in-app browser will not load the dev server's self-signed
-certificate — **this needs his own Chrome, and it should come before more building.**
 
 ## 🟠 2026-08-23 — THE COUNT MOVED TO THE DOOR, AND THE ROADMAP GOT RANKED
 
@@ -268,9 +218,21 @@ the decisions themselves live in `A-Brain/Wiki/Concepts/Where KPM Is Going.md` a
 
 ## ⏳ WAITING ON ALDI — verbatim, do not paraphrase
 
-✅ **THE POV SWITCH AND THE DAMAGE LINE NEED HIS EYES, 2026-08-23 13:49.** Both shipped
-untested on glass — Chrome was not connected. **The 8-step list is in `.claude/NEXT-SESSION.md`.**
-Step 3 is the one that matters: while wearing tier 5, no admin panel may open.
+🔴 **UNANSWERED, 2026-08-24 08:59 — THE TIER 3 QUESTION. Asked verbatim:**
+
+> **ANSWER WHEN YOU CAN: your tier 3 can open Settings — that's the permission matrix itself, so a
+> tier 3 can promote themselves to anything. Which of these six should they lose? Master Vault ·
+> Stock Opname · Customers · Sampling · Audit Logs · **Settings**.**
+
+**DO NOT CHANGE HIS MATRIX FOR HIM.** It decides what his real staff can open and a wrong guess
+locks someone out mid-shift. He unticks them himself in Settings › Permissions.
+
+✅ ~~the POV switch and the damage line need his eyes~~ — **DONE 2026-08-24, all 8 steps passed
+in his Chrome while he watched.** See the entry at the top.
+
+⚠️ **STILL NEEDS HIS EYES: the new Fleet & canvas authority row in Settings.** The Master Vault
+password screen came up and **Claude may not type it** — a hard rule, not a preference. Also worth
+saying out loud: **tier 4 defaults to view only and that was Claude's call, not his.**
 
 
 🔴 **HE ASKED CLAUDE TO TEST THE APP ITSELF, 2026-08-21 16:5x** — *"can u do testing yourself, u
@@ -476,6 +438,7 @@ Evidence with file and line numbers in `.claude/SWEEP-2026-08-19.md`.
 | `src/StockOpnameView.jsx` → `DAMAGE_REASONS` | **NEW 2026-08-21** — the five kinds of damage, stored with the sales terminal's own long strings. Deliberately a SUBSET of the terminal's list: no `Other`, because free text cannot be grouped or counted |
 | `A-Brain/Backlog/Test the new Stock Opname on a real screen.md` | **NEW 2026-08-21, HIS TO-DO** — numbered walkthrough of everything shipped that day. **Only he can run it.** Ask whether he has, before building on top |
 | `src/StockOpnameView.jsx` → `VARIANCE_REASONS` + `varianceReasonMissing()` | **NEW 2026-08-21, LIVE 2026-08-23** — why a confirmed difference happened. Running as the DEFAULT on his word; still his words to rename. ⚠️ No cause may mention a supplier — there is none in this chain. "Cause unknown" is deliberate: the admin cannot type their own reason, so an honest bucket stops them picking a wrong one |
+| `src/config/permissions.js` → `canEditFleetRoster()` + `defaultFleetAccess()` | **NEW 2026-08-24** — may this tier change the fleet and the canvas, or only look. Replaces a per-person `canEditRoster` checkbox and an `isAreaAdmin` test that was only `!isGlobalAdmin`, which is how a tier 6 could terminate staff. ⚠️ **Absence of the key means "use the tier default", never "no"** — same rule as `canSeeExpectedCount`, and reading it the other way would strip the roster from his branch admins. `defaultFleetAccess` is the SAME function the Settings dropdown displays, so the screen cannot promise what the app will not do |
 | `src/config/povPreview.js` | **NEW 2026-08-23** — the whole tier POV preview as arithmetic on plain values: who may open it (his EMAIL, not his tier), the five `[TEST]` staff, and `previewIdentity()`, which forces `isAdmin` and `isSystemOwner` FALSE no matter what the real account holds. **A costume only ever takes power away.** Never teach this file to save — a refresh is the way out, and a check enforces that |
 | `src/components/TierPovSwitch.jsx` | **NEW 2026-08-23** — the picker and the undismissable *MELIHAT SEBAGAI* bar. The bar has no close button on purpose: the only way to dismiss the label is to take the costume off. Trigger is his own face in the rail (`BiohazardTheme.jsx`), never a nav mark — his rule |
 | `src/components/BranchWarehouseManager.jsx` → `receiptLines()` / `receiptBlocked()` / `receiptDisputed()` | **NEW 2026-08-23** — the arrival check. The branch is credited what it COUNTED, never what HQ claimed. Partial blind: quantities hidden while `IN_TRANSIT`, product names kept so a missing product is counted as 0. Any difference or damage → `DISPUTED`, top of HQ's list. **No tolerance here** unlike Stock Opname — a sealed box carries no fraction of a pack |
