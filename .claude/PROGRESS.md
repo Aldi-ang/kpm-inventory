@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-24 10:35 WIB (🟠 KPM app session)** · ✅ **POV SWITCH + FLEET PERMISSION BOTH SEEN WORKING IN HIS BROWSER** (`7496258`, `86fde13`, `4c76842`) · ✅ **G3 REORDER ADVICE BUILT** (`33700ec`) — 599/599, **762/762**, build clean · ▶ **HE OWES ONE ANSWER: his TIER 3 IS A COPY OF THE OWNER** · branch `phase0-solid-ground`
+**Updated: 2026-08-24 10:30 WIB (🟠 KPM app session)** · ✅ **POV SWITCH + FLEET PERMISSION BOTH SEEN WORKING IN HIS BROWSER** (`7496258`, `86fde13`, `4c76842`) · ✅ **G3 REORDER ADVICE BUILT** (`33700ec`) — 599/599, **762/762**, build clean · ▶ **HE OWES ONE ANSWER: his TIER 3 IS A COPY OF THE OWNER** · branch `phase0-solid-ground`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **TRIMMED 2026-08-21 ON ALDI'S WORD.** *"sure trim it"*, on his own condition:
@@ -250,6 +250,15 @@ the decisions themselves live in `A-Brain/Wiki/Concepts/Where KPM Is Going.md` a
 `A-Brain/Wiki/Concepts/The Eight Warehouse Gaps.md`. Five entries is this file's working depth.
 
 ## ⏳ WAITING ON ALDI — verbatim, do not paraphrase
+
+✅ ~~sidebar fades in light mode~~ — **FIXED AND SEEN, `2149f8a`.** He rejected both options and
+invented a third: *"what if some laboratory panel kind of design for the light mode and keep the
+glass one for the dark mode?"* → anodised faceplate, near-black marks (2,78:1 → **8,39:1**),
+indicator lamp that strikes on hover. **Dark mode untouched.** Rendered in his Chrome, not only
+measured.
+⚠️ **ONE OLDER PROBLEM IT EXPOSED, HIS CALL:** the **DARK** rail's resting icons are **2,78:1**
+(`#6b5845` on `#14110e`). Pre-existing; he said dark is not to be touched this pass, so
+`softInDark` reports it every run instead of failing the build. **Ask him whether to fix it.**
 
 ❓ **UNANSWERED, 2026-08-24 10:35 — WHICH LOGIC? His words, verbatim:**
 
