@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-24 10:20 WIB (🟠 KPM app session)** · ✅ **POV SWITCH + FLEET PERMISSION BOTH SEEN WORKING IN HIS BROWSER** (`7496258`, `86fde13`, `4c76842`) · ✅ **G3 REORDER ADVICE BUILT** (`33700ec`) — 599/599, **762/762**, build clean · ▶ **HE OWES ONE ANSWER: his TIER 3 IS A COPY OF THE OWNER** · branch `phase0-solid-ground`
+**Updated: 2026-08-24 10:35 WIB (🟠 KPM app session)** · ✅ **POV SWITCH + FLEET PERMISSION BOTH SEEN WORKING IN HIS BROWSER** (`7496258`, `86fde13`, `4c76842`) · ✅ **G3 REORDER ADVICE BUILT** (`33700ec`) — 599/599, **762/762**, build clean · ▶ **HE OWES ONE ANSWER: his TIER 3 IS A COPY OF THE OWNER** · branch `phase0-solid-ground`
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 > ✅ **TRIMMED 2026-08-21 ON ALDI'S WORD.** *"sure trim it"*, on his own condition:
@@ -250,6 +250,24 @@ the decisions themselves live in `A-Brain/Wiki/Concepts/Where KPM Is Going.md` a
 `A-Brain/Wiki/Concepts/The Eight Warehouse Gaps.md`. Five entries is this file's working depth.
 
 ## ⏳ WAITING ON ALDI — verbatim, do not paraphrase
+
+❓ **UNANSWERED, 2026-08-24 10:35 — WHICH LOGIC? His words, verbatim:**
+
+> *"receivable and consignment UI also needs to be redesign but make sure the logic still intact"*
+> *"we need to redesign the UI for the whole fleet and roster but make sure the logic and features
+> remain intact as well put this on your to do list and actually there is few logic that we need
+> to redesign as well"*
+
+**He has not said WHICH logic. Ask before starting either screen** — a logic change decided
+halfway through a repaint is how both end up half-done.
+
+⚠️ **MEASURED, AND IT IS BIGGER THAN "IT LOOKS DATED":** `FleetCanvasManager.jsx` is 1291 lines
+with **293 banned colour classes and ZERO design tokens**; `ConsignmentFinanceView.jsx` is 993
+lines with **191 and ZERO**. Nothing flips — **these two screens have no light mode at all**, which
+is the sidebar bug at ten times the scale. Plan, risk ranking and the exact seams:
+`A-Brain/Backlog/Redesign Receivables and Fleet - logic must survive.md`.
+**Receivables first — it writes NOTHING** (seven callbacks from App.jsx are the whole contract).
+**Fleet is the dangerous one** — two `runTransaction` stock moves that must not be touched.
 
 🔴 **UNANSWERED, 2026-08-24 10:20 — THE SIDEBAR IN LIGHT MODE. His report, verbatim:**
 
