@@ -1,6 +1,38 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-24 11:0x WIB (🟠 KPM app session)** · ⛔ **THE BROWN SWEEP IS BLOCKED — PROVED IMPOSSIBLE, NOT HARD.** No code changed; the trial was reverted and all contrast pairs pass · ▶ **NEXT JOB = PASTE THE BLOCK AT THE TOP OF `.claude/NEXT-SESSION.md` — it now asks him ONE question first** · he owes 3 answers · branch `phase0-solid-ground`
+**Updated: 2026-08-24 18:10 WIB (🟠 KPM app session)** · ✅ **RAIL GRAIN REMOVED — flat faceplate, 599/599 + 762/762 + all contrast pairs** · ⛔ the amber-fill sweep stays BLOCKED and is now blocked for a SECOND, better reason: his own law bans amber slabs · ▶ **HE OWES: does he like the flat plate (file sent), and may the brown buttons become outline+amber-word instead of fills** · branch `phase0-solid-ground`
+
+## 🟠 2026-08-24 18:10 — THE GRAIN IS GONE, AND THE BROWN-BUTTON FIX TURNED OUT TO BE THE OPPOSITE OF THE PLAN
+
+**Shipped:** `1 commit` — light-mode rail faceplate loses its brush grain, and the theme lab
+learned to render the rail. 599/599 integration, 762/762 logicFixes, all contrast pairs.
+
+His report, mid-session, with a screenshot: *"btw i dont like the lines on the sidebar background
+for the light mode can u change to other plate instead, this line make the color that is intact
+on it seems darker as well"*. **He is right on the mechanism, not just the look** — a 1px light
+line every 3px covers a THIRD of the plate, so the surface the sixteen marks meet was never
+`--plate`, and `contrast.selfcheck` has been grading a colour that is not fully on screen. Third
+time he has found a contrast fault by eye. Flat plate now; **Lite Mode had already shipped exactly
+this**, so the two modes agree. ⚠️ Never put a gradient there — it re-creates the moving ground.
+
+🔴 **THE BIG ONE — I ALMOST BROKE A LAW HE STATED TWICE, AND HE CAUGHT IT BY ASKING A QUESTION.**
+He asked *"already load all the skills to do the job?"*. I had skipped the design stack. Loading it
+surfaced `Aldi's Design Taste.md`: **AMBER IS AN EDGE AND AN INK. IT IS NOT A FILL.** — *"stop
+using amber background i said, i hate it"*. The plan was 68 amber fills. **The brown is the law
+working, not a bug.** A fill must be dark to clear 3:1 on cream, and dark amber reads brown.
+
+✅ **The right fix is his own house pattern:** `.kpm-btn.key` — transparent body, amber edge, amber
+word, fill only on press. The buttons he photographed are Tailwind ones that never adopted it.
+Convert them and both complaints resolve at once, with **no token change and no contrast-rule
+change**. Everything I proved impossible earlier stops mattering.
+
+📏 **Refinement recorded in the vault:** his rail screenshot shows a bright amber DISC he is happy
+with, so the law bans amber **slabs**, not amber marks. Small and bright is legal.
+
+⚠️ **UNSEEN ON GLASS.** The Browser pane will not composite ("pane is not displayed"), the dev
+server is HTTPS+login as always, `agent-browser` hung for 30 minutes and was aborted, and no
+headless browser is installed. `tools/theme-preview-lab.html` was generated and sent to him to
+double-click. **The flat plate is verified by three check suites and NOT by a frame.**
 **Lancelot session last wrote 2026-08-13 23:40 WIB** — see the entry further down. Two clocks, one file.
 
 ## 🟠 2026-08-24 11:0x — THE AMBER PLATE SWAP IS IMPOSSIBLE UNDER THE CURRENT CONTRAST RULE
