@@ -50,6 +50,16 @@ const compactRp = (v) => {
 
 const pct = (a, b) => (b > 0 ? Math.round((a / b) * 100) : 0);
 
+/* 🔴 "better to add some commas here" — his screenshot of the goals form, 2026-08-25, showing
+   `500000000` in the omzet box. Nine unbroken digits cannot be read; you count them.
+   ⚠️ The separator is a DOT, not a comma. `formatRupiah` runs on `id-ID`, where the thousands
+   separator is a dot and the decimal mark is the comma — printing commas here would disagree
+   with every rupiah figure the app already renders.
+   The FIELD stays digits-only: the grouping is added on the way out and stripped on the way in,
+   so nothing downstream ever sees a formatted string. */
+const groupDigits = (v) =>
+    String(v ?? '').replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+
 export default function DashboardBenchmarks({
     transactions = [], inventory = [], appSettings, onSaveTargets, canEditGoals,
     auditLogs = [], sessionStatus, period = 'bulan', onPeriod,
@@ -199,7 +209,17 @@ export default function DashboardBenchmarks({
           down; the second is rotated to start where the first ended. `transformOrigin` is in USER
           units — percentages need transform-box: fill-box and are the usual reason a ring spins
           around the wrong point. ── */
-    const R = 40, C = 2 * Math.PI * R;
+    /* 🔴 "percentage is too big that its collapsing with the circle" — his screenshot, 2026-08-25,
+       showing 100% touching the ring on both sides. The hole is the readout, so the hole has to be
+       big enough to hold the widest thing that can land in it, and that is "100%" at four glyphs.
+       Measured: r 40 with a 15 stroke leaves an inner diameter of 65px, and 26px Barlow Condensed
+       renders "100%" at roughly 52px — before the hover thickened the stroke to 22 and took the
+       hole down to 58px. Three changes, all in the same direction: a slightly larger radius, a
+       thinner stroke, and a smaller figure.
+       ⚠️ A stroked circle grows BOTH ways, so every point of hover thickness costs half of it out
+       of the hole. That is why the hover step is now 4px and not 7. */
+    const R = 41, C = 2 * Math.PI * R;
+    const STROKE = 13, STROKE_ON = 17;
     const arc = (fraction, fromFraction) => ({
         strokeDasharray: C,
         strokeDashoffset: arrived ? C - fraction * C : C,
@@ -372,23 +392,25 @@ export default function DashboardBenchmarks({
                     <div className="kpm-ring-wrap" style={{ marginTop: 'var(--s4)' }}>
                         <svg viewBox="0 0 108 108" width="108" height="108" role="img"
                              aria-label={`Filter ${M.skm} persen, kretek ${100 - M.skm} persen`}>
-                            <circle cx="54" cy="54" r={R} fill="none" stroke="var(--raised)" strokeWidth="15" />
+                            <circle cx="54" cy="54" r={R} fill="none" stroke="var(--raised)" strokeWidth={STROKE} />
                             <circle className="kpm-arc" cx="54" cy="54" r={R} fill="none"
-                                    stroke="var(--ink)" strokeWidth={ringOn === 'skm' ? 22 : 15}
+                                    stroke="var(--ink)" strokeWidth={ringOn === 'skm' ? STROKE_ON : STROKE}
                                     style={arc(M.skm / 100, 0)}
                                     onPointerEnter={() => setRingOn('skm')}
                                     onPointerDown={() => setRingOn('skm')}
                                     onPointerLeave={(e) => { if (e.pointerType !== 'touch') setRingOn(null); }} />
                             <circle className="kpm-arc" cx="54" cy="54" r={R} fill="none"
-                                    stroke="var(--lamp-on)" strokeWidth={ringOn === 'skt' ? 22 : 15}
+                                    stroke="var(--lamp-on)" strokeWidth={ringOn === 'skt' ? STROKE_ON : STROKE}
                                     style={arc((100 - M.skm) / 100, M.skm / 100)}
                                     onPointerEnter={() => setRingOn('skt')}
                                     onPointerDown={() => setRingOn('skt')}
                                     onPointerLeave={(e) => { if (e.pointerType !== 'touch') setRingOn(null); }} />
-                            <text className={`kpm-ring-txt${ringOn ? ' on' : ''}`} x="54" y="55">
+                            <text className={`kpm-ring-txt${ringOn ? ' on' : ''}`} x="54" y="49"
+                                  dominantBaseline="central">
                                 {ringOn === 'skt' ? `${100 - M.skm}%` : `${M.skm}%`}
                             </text>
-                            <text className={`kpm-ring-sub${ringOn ? ' on' : ''}`} x="54" y="69">
+                            <text className={`kpm-ring-sub${ringOn ? ' on' : ''}`} x="54" y="64"
+                                  dominantBaseline="central">
                                 {ringOn === 'skt' ? 'SKT' : 'SKM'}
                             </text>
                         </svg>
@@ -441,7 +463,7 @@ export default function DashboardBenchmarks({
                         <form className="kpm-shelf" onSubmit={handleSave}>
                             <label className="kpm-field">
                                 <span>Target omzet per bulan (Rp)</span>
-                                <input type="text" inputMode="numeric" value={form.targetMonthlyRevenue ?? ''}
+                                <input type="text" inputMode="numeric" value={groupDigits(form.targetMonthlyRevenue)}
                                        onChange={(e) => setForm({ ...form, targetMonthlyRevenue: e.target.value.replace(/\D/g, '') })}
                                        required />
                             </label>
@@ -488,17 +510,17 @@ export default function DashboardBenchmarks({
                                 </p>
                                 <label className="kpm-field">
                                     <span>Target omzet per hari (Rp) — otomatis {compactRp(monthlyTarget / 30)}</span>
-                                    <input type="text" inputMode="numeric" value={form.targetRevenue_hari ?? ''}
+                                    <input type="text" inputMode="numeric" value={groupDigits(form.targetRevenue_hari)}
                                            onChange={(e) => setForm({ ...form, targetRevenue_hari: e.target.value.replace(/\D/g, '') })} />
                                 </label>
                                 <label className="kpm-field">
                                     <span>Target omzet per minggu (Rp) — otomatis {compactRp((monthlyTarget / 30) * 7)}</span>
-                                    <input type="text" inputMode="numeric" value={form.targetRevenue_minggu ?? ''}
+                                    <input type="text" inputMode="numeric" value={groupDigits(form.targetRevenue_minggu)}
                                            onChange={(e) => setForm({ ...form, targetRevenue_minggu: e.target.value.replace(/\D/g, '') })} />
                                 </label>
                                 <label className="kpm-field">
                                     <span>Target omzet per tahun (Rp) — otomatis {compactRp(monthlyTarget * 12)}</span>
-                                    <input type="text" inputMode="numeric" value={form.targetRevenue_tahun ?? ''}
+                                    <input type="text" inputMode="numeric" value={groupDigits(form.targetRevenue_tahun)}
                                            onChange={(e) => setForm({ ...form, targetRevenue_tahun: e.target.value.replace(/\D/g, '') })} />
                                 </label>
                             </div>

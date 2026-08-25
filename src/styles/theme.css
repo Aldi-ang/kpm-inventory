@@ -4009,11 +4009,18 @@ html.lite-mode .kpm-hazard { animation: none; opacity: 1; }
 .kpm-arc { cursor: pointer;
   transition: stroke-dashoffset 300ms cubic-bezier(.2,.8,.3,1),
               stroke-width 140ms cubic-bezier(.2,.8,.3,1); }
-.kpm-arc:hover { stroke-width: 22; }
-.kpm-ring-txt { font-family: var(--font-display); font-weight: 700; font-size: 26px;
+/* ⚠️ NO :hover STROKE RULE HERE. There was one at 22, and CSS beats an SVG presentation
+   attribute, so it silently overrode the width the component was setting — two owners for one
+   number, and the component's was the one that lost. The panel drives it from state instead,
+   which is also what makes it work on a tap. */
+/* 20px, not 26 — "100%" at 26px is about 52px wide and the hole is 69px across, which looked
+   fine until the hover thickened the ring and took it down to 61. See the measurement note in
+   DashboardBenchmarks.jsx. `dominant-baseline: central` puts the y coordinate at the visual
+   middle, so the pair does not have to be nudged by eye. */
+.kpm-ring-txt { font-family: var(--font-display); font-weight: 700; font-size: 20px;
   fill: var(--ink); text-anchor: middle; opacity: 0;
   transition: opacity 140ms cubic-bezier(.2,.8,.3,1); }
-.kpm-ring-sub { font-family: var(--font-mono); font-size: 9px; letter-spacing: .2em;
+.kpm-ring-sub { font-family: var(--font-mono); font-size: 8px; letter-spacing: .18em;
   fill: var(--ink-dim); text-anchor: middle; opacity: 0;
   transition: opacity 140ms cubic-bezier(.2,.8,.3,1); }
 .kpm-ring-txt.on, .kpm-ring-sub.on { opacity: 1; }

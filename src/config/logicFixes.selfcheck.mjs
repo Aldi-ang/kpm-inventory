@@ -3158,5 +3158,30 @@ ok('the product editor no longer pre-fills 50 into an unset minimum',
    'it wrote the old hardcoded default into the product the moment anyone opened the form');
 
 
+section('D7. Two things his screenshots caught');
+/* "better to add some commas here" — nine unbroken digits in the omzet box */
+ok('every rupiah box in the goals form is grouped as it is typed',
+   (code(dashPanel).match(/value=\{groupDigits\(form\./g) || []).length === 4,
+   'monthly + the three per-period overrides');
+ok('and the field still stores digits only, so nothing downstream sees a formatted string',
+   (code(dashPanel).match(/e\.target\.value\.replace\(/g) || []).length >= 4,
+   'the grouping goes on the way out and is stripped on the way in');
+ok('the separator is a dot, because formatRupiah runs on id-ID',
+   /\(\$1\)\+\}\)\/g, '\.'\)|\+\}\)\/g, '\.'\)/.test(code(dashPanel)) ||
+   /g, '\.'\)/.test(code(dashPanel)),
+   'commas here would disagree with every rupiah figure the app renders');
+
+/* "percentage is too big that its collapsing with the circle" */
+ok('the ring figure is small enough for the hole it sits in',
+   /\.kpm-ring-txt \{[^}]*font-size: 20px/.test(themeCss),
+   '"100%" at 26px is ~52px wide and the hovered hole is only 61px across');
+ok('the ring stroke has ONE owner, and it is the component',
+   !/\.kpm-arc:hover \{[^}]*stroke-width/.test(themeCss),
+   'CSS beats an SVG presentation attribute, so a :hover rule here silently overrode the width '
+   + 'the panel was setting');
+ok('and the hover step is small, because a stroked circle grows inward too',
+   /STROKE = 13, STROKE_ON = 17/.test(dashPanel));
+
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);
