@@ -4190,6 +4190,7 @@ const handleGitHubMirror = async () => {
                     auditLogs={auditLogs}
                     appSettings={appSettings}
                     handleSaveDashboardTargets={handleSaveDashboardTargets}
+                    customers={displayCustomers}
                 />
             )
           )}

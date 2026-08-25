@@ -4138,3 +4138,10 @@ html.lite-mode .kpm-arr { opacity: 1; transform: none; }
 .kpm-scrim { position: fixed; inset: 0; z-index: 9999; display: flex;
   align-items: center; justify-content: center; padding: var(--s4);
   background: rgba(0, 0, 0, .72); }
+
+/* the unclassified row is NOT a region and must not look like one: the name goes quiet and
+   italic, and its bar takes the danger rail, because what it actually reports is a data-quality
+   problem wearing the shape of a result. */
+.kpm-vrow.unset { cursor: default; }
+.kpm-vrow.unset:hover { background: transparent; }
+.kpm-vrow.unset .nm { color: var(--ink-dim); font-style: italic; }

@@ -3183,5 +3183,30 @@ ok('and the hover step is small, because a stroked circle grows inward too',
    /STROKE = 13, STROKE_ON = 17/.test(dashPanel));
 
 
+section('D8. The regional panel survives an unknown number of regions');
+/* "if there are so much division we might need to design this panel to fit in the free space" —
+   he named the hard part. `region` is free text on the customer, so the count is not knowable
+   from the code and a typo makes one more. Everything here guards the two ways that bites. */
+ok('the list is ranked and capped, so twenty regions cannot stretch the panel',
+   /\.slice\(0, 6\)/.test(code(dashView)) && /sort\(\(a, b\) => b\.omzet - a\.omzet\)/.test(code(dashView)));
+ok('and the tail is COUNTED rather than silently cut',
+   /wilayah lain, lebih kecil dari ini/.test(dashView),
+   'a list that stops at six without saying so reads as "these are all of them"');
+ok('revenue whose customer matches no record gets its own row instead of vanishing',
+   /Belum diberi wilayah/.test(dashView),
+   'a sale stores customerName, not a customer id, so the join is by NAME and will miss some');
+ok('the name join is case- and whitespace-insensitive on BOTH sides',
+   (code(dashView).match(/String\(v \|\| ''\)\.trim\(\)\.toLowerCase\(\)/g) || []).length >= 1 &&
+   (code(dashView).match(/key\(t\.customerName\)/g) || []).length >= 2 &&
+   /key\(c\.name\)/.test(code(dashView)),
+   'otherwise "Toko Jaya " and "toko jaya" become two different customers');
+ok('a customer with a blank region is not counted as a region named ""',
+   /if \(c\.name && r\)/.test(code(dashView)));
+ok('the panel follows the same period switch as everything else',
+   /periodWindow\(period\)/.test(code(dashView).slice(code(dashView).indexOf('const regions'))));
+ok('the unclassified row cannot be mistaken for a result',
+   /\.kpm-vrow\.unset \.nm \{ color: var\(--ink-dim\); font-style: italic/.test(themeCss));
+
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

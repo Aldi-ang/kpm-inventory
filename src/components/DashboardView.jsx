@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect } from 'react';
-import { Users, Activity, PackageX } from 'lucide-react';
+import { Users, Activity, PackageX, MapPin } from 'lucide-react';
 import { formatRupiah, convertToBks, splitToUnits } from '../utils/helpers';
 import { isLowStock, minStockBks, daysOfCover } from '../utils/stockThreshold';
 import { periodWindow, periodDays, periodMeta, txDate } from '../utils/period';
@@ -43,7 +43,7 @@ const dominant = (bks, product) => {
 export default function DashboardView({
     isAdmin, transactions = [], lowStockItems = [], setActiveTab,
     sessionStatus, auditLogs = [], appSettings, handleSaveDashboardTargets,
-    inventory = [],
+    inventory = [], customers = [],
 }) {
     const [period, setPeriod] = useState('bulan');
     const [openRow, setOpenRow] = useState(null);
@@ -123,6 +123,70 @@ export default function DashboardView({
         const max = top.length ? Math.max(...top.map(r => r.bks), 1) : 1;
         return top.map(r => ({ ...r, pct: Math.round((r.bks / max) * 100) }));
     }, [transactions, inventory, period, appSettings]);
+
+    /* ── KINERJA REGIONAL. His ask, 2026-08-25: *"add one more panel, each performance graph
+          for regional division, but if there are so much division we might need to design this
+          panel to fit in the free space"*.
+
+          HE NAMED THE HARD PART AND HE WAS RIGHT: how many regions there are is not knowable from
+          the code. `region` is FREE TEXT on the customer (province -> region -> city, see
+          CustomerManager), so a real database can hold three or sixty, and one typo silently makes
+          another. A grid of small charts would look right at four and fall apart at twenty. A
+          RANKED LIST works at both, puts the biggest first, and its height is bounded by showing
+          six and COUNTING the rest -- which is the "fit in the free space" half of the ask.
+
+          WARNING: A SALE IS JOINED TO A REGION BY CUSTOMER NAME, because a transaction stores
+          `customerName` and not a customer id. Every sale whose name matches no customer record
+          lands in one honest "belum diberi wilayah" row rather than being quietly dropped -- a
+          region panel that silently loses a fifth of the revenue is worse than no panel. ── */
+    const regions = useMemo(() => {
+        const w = periodWindow(period);
+        const key = (v) => String(v || '').trim().toLowerCase();
+
+        const regionOf = new Map();
+        customers.forEach(c => {
+            const r = String(c.region || '').trim();
+            if (c.name && r) regionOf.set(key(c.name), r);
+        });
+
+        const acc = new Map();
+        const unknown = { omzet: 0, nota: 0, names: new Set() };
+
+        transactions.forEach(t => {
+            if (t.type !== 'SALE') return;
+            const d = txDate(t);
+            if (isNaN(d) || d < w.start) return;
+
+            const region = regionOf.get(key(t.customerName));
+            if (!region) {
+                unknown.omzet += (t.total || 0);
+                unknown.nota += 1;
+                if (t.customerName) unknown.names.add(key(t.customerName));
+                return;
+            }
+            if (!acc.has(region)) acc.set(region, { region, omzet: 0, laba: 0, nota: 0, toko: new Set() });
+            const a = acc.get(region);
+            a.omzet += (t.total || 0);
+            a.laba  += (t.totalProfit || 0);
+            a.nota  += 1;
+            a.toko.add(key(t.customerName));
+        });
+
+        const rows = [...acc.values()]
+            .map(a => ({ ...a, toko: a.toko.size }))
+            .sort((a, b) => b.omzet - a.omzet);
+
+        const total = rows.reduce((sum, r) => sum + r.omzet, 0) + unknown.omzet;
+        const max = rows.length ? Math.max(rows[0].omzet, 1) : 1;
+        const share = (v) => (total > 0 ? Math.round((v / total) * 100) : 0);
+
+        return {
+            rows: rows.map(r => ({ ...r, pct: Math.round((r.omzet / max) * 100), share: share(r.omzet) })),
+            unknown: unknown.nota > 0
+                ? { omzet: unknown.omzet, nota: unknown.nota, toko: unknown.names.size, share: share(unknown.omzet) }
+                : null,
+        };
+    }, [transactions, customers, period]);
 
     /* ── WHO SOLD, today. The panel that stays one line tall until there is something in it. ── */
     const agents = useMemo(() => {
@@ -244,6 +308,68 @@ export default function DashboardView({
                             ))}
                         </div>
                     </div>
+
+                    {isAdmin && (regions.rows.length > 0 || regions.unknown) && (
+                        <div className={`kpm-mod ${arr()}`}>
+                            <div className="kpm-head">
+                                <span className="slot">WILAYAH · {meta.title.toUpperCase()}</span>
+                                <div className="line">
+                                    <h3><MapPin size={15} style={{ verticalAlign: '-2px' }} /> Kinerja regional</h3>
+                                    <span className="kpm-safety-hint" style={{ margin: 0 }}>
+                                        {regions.rows.length} wilayah
+                                    </span>
+                                </div>
+                            </div>
+                            <div className="kpm-shelf">
+                                {regions.rows.slice(0, 6).map((r, i) => (
+                                    <button
+                                        key={r.region}
+                                        type="button"
+                                        className={`kpm-vrow${openRow === 'r-' + r.region ? ' on' : ''}`}
+                                        onClick={() => setOpenRow(openRow === 'r-' + r.region ? null : 'r-' + r.region)}
+                                    >
+                                        <span className="rk">{String(i + 1).padStart(2, '0')}</span>
+                                        <span className="nm">{r.region}</span>
+                                        <span className="bar">
+                                            <span className="kpm-trk">
+                                                <i style={{ width: arrived ? Math.max(2, r.pct) + '%' : 0 }} />
+                                            </span>
+                                        </span>
+                                        <span className="figs">
+                                            <em>{formatRupiah(r.omzet)}</em> · {r.share}% · {r.toko} toko
+                                        </span>
+                                    </button>
+                                ))}
+
+                                {/* the tail is COUNTED, never silently cut — a list that stops at six
+                                    without saying so reads as "these are all of them" */}
+                                {regions.rows.length > 6 && (
+                                    <p className="kpm-safety-hint" style={{ marginTop: 'var(--s3)' }}>
+                                        + {regions.rows.length - 6} wilayah lain, lebih kecil dari ini
+                                    </p>
+                                )}
+
+                                {/* NOT a region. This is revenue whose customer name matched no
+                                    record, shown so the panel cannot quietly lose money. */}
+                                {regions.unknown && (
+                                    <div className="kpm-vrow unset">
+                                        <span className="rk">—</span>
+                                        <span className="nm">Belum diberi wilayah</span>
+                                        <span className="bar">
+                                            <span className="kpm-trk neg">
+                                                <i style={{ width: arrived ? Math.max(2, regions.unknown.share) + '%' : 0 }} />
+                                            </span>
+                                        </span>
+                                        <span className="figs">
+                                            <em>{formatRupiah(regions.unknown.omzet)}</em> ·{' '}
+                                            <span className="low">{regions.unknown.share}%</span> ·{' '}
+                                            {regions.unknown.toko} toko
+                                        </span>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
 
                     <div className={`kpm-mod ${agents.length ? '' : 'idle'} ${arr()}`}>
                         <div className="kpm-head">
