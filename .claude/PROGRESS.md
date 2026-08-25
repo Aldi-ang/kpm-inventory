@@ -1,6 +1,38 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-24 20:15 WIB (🟠 KPM app session)** · ✅ **LITE-MODE SIDEBAR BUG FIXED — a dark scrim was covering the left column of every screen** · 606/606 + 762/762 + all contrast pairs · ▶ **NEXT = control-colour sweep, blocked on ONE question (near-black or amber for switched-ON controls)** · 8-screen redesign queued behind it · branch `phase0-solid-ground`
+**Updated: 2026-08-25 12:13 WIB (🟠 KPM app session)** · ✅ **SWITCHED-ON CONTROLS ARE STENCIL (seen)** · ✅ **HISTORY REPORTS: 559 banned classes → 0 tokens (NOT seen — app is locked)** · 606/606 + 762/762 + all contrast pairs · ▶ **ASK HIM TO UNLOCK THE MASTER VAULT, then screenshot it** · 7 screens left · branch `phase0-solid-ground`
+
+## 🟠 2026-08-25 12:13 — CONTROLS SWEPT TO STENCIL; HISTORY REPORTS CONVERTED. 606/606, 762/762.
+
+⚠️ **DATE CORRECTION, NOT A REWRITE.** The five entries below are stamped `2026-08-24` and the
+real date is **2026-08-25** — one session's clock was read wrong and every later entry copied it.
+**Their content is accurate; only the day is off.** Left in place on purpose (add, never rewrite).
+
+✅ **SWITCHED-ON CONTROLS TAKE THE STENCIL PLATE** — his answer: *"stencil is good for most button
+u can do that"*. Segmented switch, toggle track fill, selected pick-list row, range slider
+(`accent-color`), EOD progress fill. **`--sw-on` DELETED** — it existed for two commits only,
+for the window when `--gold` was a pale plate and a pale fill was 1.68:1 on its track; the stencil
+is 9.39:1 there. The segmented switch's rim went the same way (12.57:1 unaided). **Seen in his
+Chrome.**
+
+✅ **HISTORY REPORTS / TRANSACTIONS — the worst screen, palette converted.** It was worse than
+first reported: **392 banned colour uses in 1157 lines**, zero tokens. 269 slate · 59 emerald ·
+42 blue · 12 indigo · 10 purple. **559 classes replaced, 0 banned left.**
+📐 **Done with an ORDERED MAPPING TABLE, not by hand** —
+`scratchpad/convert.mjs`, and **it is reusable**: point it at Fleet, Consignment and the Vaults
+next and each screen costs a fraction of this one.
+Two colours were REPLACED, not deleted, because they carried meaning: **purple → `--alt-ink` /
+`--alt-edge`** (the theme's sanctioned secondary accent) and **emerald → `--verified`** (a neutral
+"settled" ink — green is banned, but the meaning still needs saying). **Money is no longer blue.**
+G51 caught and fixed **7** plates whose ink did not follow.
+
+⚠️ **NOT SEEN — the app auto-locked to the Master Vault password screen.** I do not enter his
+password. **Verified by checks only: 0 banned classes, 606/606, 762/762, all contrast pairs.**
+⚠️ **This is the PALETTE half.** Markup untouched, so the *"looks good for the UI design and
+animation"* half of his ask is the next pass on this screen.
+
+📏 **THIS FILE IS 917 LINES, WELL OVER THE ~350 CAP.** Next session: cut the oldest 🟠 entries into
+`A-Brain/Archive/`. ⚠️ Do not trim across tracks — 🔧 and 🟢 entries are other sessions'.
 
 ## 🟠 2026-08-24 20:15 — LITE MODE SIDEBAR BUG FIXED. 606/606, 762/762, ALL CONTRAST PAIRS.
 
@@ -470,6 +502,25 @@ the decisions themselves live in `A-Brain/Wiki/Concepts/Where KPM Is Going.md` a
 
 ## ⏳ WAITING ON ALDI — verbatim, do not paraphrase
 
+### 🔴 OPEN, 2026-08-25 — the nine-screenshot ask
+
+> *"make sure u change all this button as well,slider color as well, most of the brown and yellow
+> color looks bad here. we also need to redesign the restock vault, history reports,consignment
+> and receivable, master vault, fleet and roster, journey map , dashboard and agent profile as
+> well to follow our theme and also looks good for the UI design and animation as well, another
+> thing that i see broke is actually sidebar on lite mode u may check it"*
+
+> *"stencil is good for most button u can do that and also start whenever is the worst old
+> designed one up to u"*
+
+**Answered so far:** the Lite Mode sidebar bug is FIXED · switched-ON controls are stencil ·
+History Reports palette is converted. **Still owed by me, not by him:**
+- ⚠️ **ONE THING BLOCKS ME RIGHT NOW: the app is locked to the Master Vault screen.** I need him to
+  unlock it before History Reports can be looked at. **Never type his password.**
+- the **`ALL` / `SKT` chips** and **`BUYBACK` / `EXCHANGE (TUKAR)`** from his screenshots were not
+  located by literal search — they are dynamic. Find them by looking, on the screen that owns them.
+- seven screens still to convert; the mapping table makes each cheaper than the first.
+
 ✅ ~~sidebar fades in light mode~~ — **FIXED AND SEEN, `2149f8a`.** He rejected both options and
 invented a third: *"what if some laboratory panel kind of design for the light mode and keep the
 glass one for the dark mode?"* → anodised faceplate, near-black marks (2,78:1 → **8,39:1**),
@@ -711,6 +762,28 @@ and in `A-Brain/Archive/PROGRESS-archive-2026-08-21.md`. Six entries is the work
 
 ## ▶ NOW
 
+**Live front, 2026-08-25 — THE LIGHT-MODE RESTYLE, then the eight-screen redesign.**
+The theme work is settled and shipped: buttons and every switched-ON control are the **stencil
+plate** (`--gold #1B1917` + bone ink), marks stay amber, the rail is a flat faceplate, and Lite
+Mode no longer veils the left column. **History Reports is the first of eight screens converted.**
+
+▶ **IMMEDIATE:** ask him to unlock the Master Vault, then screenshot History Reports in his Chrome
+(light AND dark). It is verified by checks and **has never been rendered**.
+▶ **THEN:** the remaining seven, worst-first — Fleet & Roster, Consignment & Receivables, the two
+Vaults (all un-themed, 15–25 banned classes each), then Dashboard, Agent Profile, Journey Map
+(themed already, polish only). **Reuse `scratchpad/convert.mjs`.**
+⚠️ **Fleet has two `runTransaction` stock moves that must not be touched** —
+`A-Brain/Backlog/Redesign Receivables and Fleet - logic must survive.md`.
+
+**The viewing path that works:** `claude-in-chrome` against HIS Chrome on `https://localhost:5173`.
+⛔ The in-app Browser pane never composites · `agent-browser` hangs for 30 minutes · your own dev
+server is unreachable (self-signed cert + Google login). Rail opens on `hover (35, 42)`.
+📐 **Measure with `javascript_tool` + `getComputedStyle` before theorising** — it settled the Lite
+Mode bug in one call after three wrong guesses.
+
+<details>
+<summary>The previous NOW (2026-08-23) — the warehouse chain, still true underneath</summary>
+
 **Live front, 2026-08-23 10:09 — THE WAREHOUSE CHAIN.** Stock Opname is finished. The receiving
 door is finished. What is left is a ranked roadmap and **one decision Aldi has not made yet.**
 
@@ -724,6 +797,8 @@ decision, and the emulator is off the table.
 
 ⚠️ **Still unseen:** the arrival check and the HQ branch-shelf panel. Both need a branch that has
 stock and a shipment in transit. **A tier 5/6 login or the emulator is the only way past this.**
+
+</details>
 
 📖 **A cold session reads two files before anything else:**
 `A-Brain/Wiki/Concepts/Where KPM Is Going.md` — the theme and every locked decision.
