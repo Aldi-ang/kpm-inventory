@@ -1,6 +1,41 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-25 15:0x WIB (🟠 KPM app session)** · 🔴 **STOPPED AT 98% PLAN QUOTA — NO CODE CHANGED, tree clean** · ✅ rail leak + dark panels shipped and seen (607/607, 762/762) · ▶ **NEXT = REMAKE the Dashboard (not repair) and bring him INSPIRATION OPTIONS first — his new ask is recorded verbatim below** · branch `phase0-solid-ground`
+**Updated: 2026-08-25 20:26 WIB (🟠 KPM app session)** · ✅ **DASHBOARD REBUILT AND COMMITTED — `b7d9f0f` + `f798c80`** (build · 607/607 · 791/791 · 26/26 · all contrast pairs) · ▶ **NEXT = his newest ask, a REGIONAL PERFORMANCE panel** · 🔴 **still never opened in a browser — claude-in-chrome was down the whole session** · branch `phase0-solid-ground`
+
+## 🟠 2026-08-25 20:26 — THE DASHBOARD IS BUILT. `b7d9f0f` + `f798c80`.
+
+Design phase over, real code shipped. **build · 607/607 integration · 791/791 logicFixes (+29 new)
+· 26/26 new stockThreshold · all contrast pairs.**
+
+**What landed**
+- **Period switch — HARI / MINGGU / BULAN / TAHUN, no totals anywhere.** His words:
+  *"i want to see daily week, month and year only, dont use total"*. It **deleted two panels by
+  itself** — month trajectory and the 7-day chart were one cumulative chart on two settings.
+- Rebuilt in `.kpm-mod`. **That was the actual bug**: this was the only main screen never moved to
+  the module system, so it wore pre-system `rounded-2xl` + `backdrop-blur` + `shadow-lg`.
+- **Stok menipis counts in Bal, not Bks** — *"few bal is considered as low not BKS bruh"*.
+- **Both colour bugs killed at the root.** `getRandomColor()` **DELETED** from `helpers.js` (a
+  colour computed from a string cannot obey a palette law); SafetyStatus is tokens.
+- Responsive by **container queries**, not media queries — the rail opens/closes so the window
+  width lies. 44px targets, tap = hover, tapped values stay.
+- `f798c80`: rupiah inputs group as typed (**DOT, not comma — `formatRupiah` is `id-ID`**), and
+  the mix ring's `100%` no longer collides. Found underneath it: a CSS `:hover` rule was setting
+  the same stroke width the component set from state, and **CSS beats an SVG presentation
+  attribute**, so the component silently lost. One owner now.
+
+✅ **TEST CHECKLIST — he has seen NONE of this**
+1. Press **HARI / MINGGU / BULAN / TAHUN** — every figure and the chart follow.
+2. **Drag across the chart** — crosshair + dot + "vs pace" in one line, nothing else moves.
+3. **Atur target** → **Batas menipis** + **Bal/Karton/Slop/Bks dropdown**, three blank-means-auto
+   omzet overrides.
+4. **Stok menipis** in Bal, worst first. 5. **Lite Mode** — layout identical, motion stops.
+6. **Narrow window** — one column.
+
+⚠️ **FOLLOW-UPS, none blocking:** 4 files still inline `minStock || 50`
+(`useTransactionEngine.js:270`, `MerchantSalesView.jsx:2423`, `ResidentEvilInventory.jsx:236`,
+`StockOpnameView.jsx:1003` — **that one says `|| 5`**); they should route through `isLowStock()`.
+Money owed still deferred. **A check that greps source also reads the comment describing the bug**
+— 3 guards failed on first run for that; `logicFixes.selfcheck.mjs` now has a `code()` stripper.
 
 ## 🟠 2026-08-25 (later) — DASHBOARD OPTIONS STUDY DELIVERED. WAITING ON HIS PICK.
 
@@ -734,6 +769,28 @@ the decisions themselves live in `A-Brain/Wiki/Concepts/Where KPM Is Going.md` a
 
 ## ⏳ WAITING ON ALDI — verbatim, do not paraphrase
 
+### 🔴 OPEN, 2026-08-25 20:26 — the regional panel (NEWEST, nothing built yet)
+
+> *"add one more panel, each performance graph for regional division, but if there are so much
+> division we might need to design this panel to fit in the free space"*
+
+Not started. ⚠️ **He named the hard part himself: the layout depends on HOW MANY regions exist.**
+`region` lives on the CUSTOMER (`CustomerManager.jsx`), and `location` on the employee/motorist
+(`App.jsx:4559` → `employeeRegion`). There is a `view_reports_regional` permission
+(`BiohazardTheme.jsx:373`). **Count the distinct regions in his real data before choosing a shape.**
+
+### ✅ ANSWERED 2026-08-25, do not re-ask
+- Periods: **daily / week / month / year, never a total** — built.
+- Targets: **calculate, but let him override** — built (blank = automatic).
+- Low stock: **under X Bal**, with a **unit dropdown** — built. He rejected days-of-cover as the
+  RULE (*"what the use for x days left here?"*); it only sorts the panel, invisibly.
+- Alert location: **red dashboard panel only.** No bell, no sell-time warning.
+- Hour/rhythm strip: **DROPPED.** He asked *"why do we need this panel?"* and it does not fit a
+  distributor whose agents are on routes. **The version that DOES fit is which AGENT/ROUTE sold
+  what** — offer that, not the hour, if it resurfaces.
+- Both colour bugs: **fix them** — done.
+
+
 ### 🔴 OPEN, 2026-08-25 — the nine-screenshot ask
 
 > *"make sure u change all this button as well,slider color as well, most of the brown and yellow
@@ -1061,6 +1118,10 @@ Evidence with file and line numbers in `.claude/SWEEP-2026-08-19.md`.
 | File | What it owns |
 |---|---|
 | `src/styles/theme.css` | all tokens, both themes, + the `--duke-*` block for the terminal |
+| `src/utils/period.js` | **NEW 2026-08-25** — `periodWindow()`, the ONE definition of hari/minggu/bulan/tahun. Both dashboard panels read it. ⚠️ Never duplicate this: two copies of the boundary maths drift silently, and a velocity list headed BULAN INI would quietly count a different month than the figure above it. **Minggu is a ROLLING 7 days** — a calendar week is empty on Monday morning |
+| `src/utils/stockThreshold.js` | **NEW 2026-08-25** — `isLowStock()` / `minStockBks()` / `daysOfCover()`. The ONE answer to "what counts as low". Replaced a literal typed into 7 files, two of which had drifted to `5` while the rest said `50`. Company default is a **quantity + a unit**, converted per product by its own packing |
+| `src/config/stockThreshold.selfcheck.mjs` | **NEW 2026-08-25** — 26 checks: the unit conversion maths, plus regression guards that the hardcoded fallbacks cannot return |
+| `src/styles/theme.css` → `.kpm-dash*` | **NEW 2026-08-25** — the dashboard vocabulary and the app's **first container queries**. `@container dash`, not `@media`: the rail opens and closes, so the window width is not the width the screen gets |
 | `src/components/AuthoritySelect.jsx` | **NEW 2026-08-15** — the custom listbox in the permission matrix |
 | `src/config/contrast.selfcheck.mjs` | measures every text/surface pair in BOTH themes |
 | `src/config/integration.audit.mjs` | 526 checks; groups 38 (light switch) and 39 (Duke's Ledger) |
