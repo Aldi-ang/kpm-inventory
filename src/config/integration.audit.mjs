@@ -3572,6 +3572,43 @@ check(G51, 'no gold plate carries --ink, --accent-ink or --ink-dim',
   inkOffenders.length === 0,
   inkOffenders.join(' · ') || 'the paired ink is --gold-ink, 15,82:1 on the stencil plate');
 
+
+/* ============================================================================
+   G52 - LITE MODE MUST NOT PAINT THE DESK RAIL.
+   Aldi, 2026-08-24: *"another thing that i see broke is actually sidebar on lite mode"*.
+   Measured in his Chrome: the sidebar panel was painting rgba(46,38,26,.72) across 351x688px,
+   dimming the entire left column of every screen in Lite Mode.
+
+   CAUSE: the panel carries `backdrop-blur-xl`, and index.css has a blanket
+   `html.lite-mode [class*="backdrop-blur"] { background-color: var(--duke-scrim) !important }`
+   whose own comment claims every element it hits is a scrim or an overlay. On a desk this one
+   is neither - it is an invisible window, and the capsule inside it is the sidebar. An
+   !important beat the panel own `lg:bg-transparent`, and a blanket attribute selector could
+   not tell a window from a scrim.
+
+   The fix hands the background back at >=1024px only. TWO halves, and both are asserted:
+   the rail must be transparent on a desk, AND the blur must still be stripped, or Lite Mode
+   would be quietly paying for a blur on the exact phones it exists to protect.
+   ============================================================================ */
+const G52 = 'G52 · Lite Mode leaves the desk rail alone';
+const LITE_RAIL = 'html.lite-mode [data-kpm-rail][data-kpm-rail]{background-color:transparent!important}';
+
+check(G52, 'the desk rail keeps a transparent background in Lite Mode',
+  css.includes(LITE_RAIL),
+  'without it the panel paints --duke-scrim over the whole left column');
+
+check(G52, 'that override is scoped to the desk, not to the phone',
+  css.includes(LITE_RAIL) &&
+  css.slice(Math.max(0, css.indexOf(LITE_RAIL) - 400), css.indexOf(LITE_RAIL)).includes('min-width:1024px'),
+  'below 1024px the rail IS a drawer over the page and the scrim is correct there');
+
+check(G52, 'Lite Mode still strips the blur from everything',
+  /* the minifier drops the quotes inside an attribute selector, so this asserts the BUILT
+     form - a first attempt matched the source form and went red against working CSS. */
+  css.includes('[class*=backdrop-blur]') &&
+  css.includes('backdrop-filter:none!important'),
+  'handing the background back must not hand the blur back too');
+
 const G49 = '49. A transfer is checked, not counted';
 
 check(G49, 'the transfer card offers all three verdicts he specified',

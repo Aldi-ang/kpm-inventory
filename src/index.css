@@ -106,6 +106,25 @@ html.lite-mode [class*="backdrop-blur"] {
     background-color: var(--duke-scrim) !important;
 }
 
+/* 🔴 ...EXCEPT THE DESK RAIL. Aldi, 2026-08-24: *"another thing that i see broke is actually
+   sidebar on lite mode"*. Measured in his Chrome: the sidebar panel was painting
+   rgba(46,38,26,.72) across 351x688px, dimming the whole left column of every screen.
+
+   The panel carries `backdrop-blur-xl`, so `[class*="backdrop-blur"]` above swept it up, and
+   the `!important` beat its own `lg:bg-transparent`. On a desk that element is an invisible
+   WINDOW - it paints nothing, and the capsule inside it is the sidebar you actually see. The
+   rule above says "every element this rule overrides is a scrim or an overlay"; this one is
+   neither, and a blanket attribute selector could not tell the difference.
+
+   ⚠️ SCOPED TO THE DESK ON PURPOSE. Below 1024px the rail IS a drawer over the page, and there
+   the scrim is correct - do not lift this out of the media query.
+   ⚠️ The blur is still removed for the rail by the rule above; only the BACKGROUND is given
+   back. Lite Mode keeps its whole point on a weak phone. */
+@media (min-width: 1024px) {
+    html.lite-mode [data-kpm-rail][data-kpm-rail] { background-color: transparent !important; }
+}
+
+
 /* 3. Kill massive glowing box-shadows (Huge GPU overdraw culprit) */
 html.lite-mode [class*="shadow-"] {
     box-shadow: none !important;
