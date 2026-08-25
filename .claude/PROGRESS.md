@@ -1,6 +1,33 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-25 14:50 WIB (🟠 KPM app session)** · ✅ **LITE-MODE RAIL LEAK FIXED (his 2nd report, different cause)** · ✅ **DASHBOARD PANELS WERE LITERAL BLACK — 25 surfaces + 16 inks fixed, all seen** · 607/607 + 762/762 + all contrast pairs · ▶ **NEXT = Dashboard LAYOUT redesign (colour half is done), brief in NEXT-SESSION.md** · branch `phase0-solid-ground`
+**Updated: 2026-08-25 15:0x WIB (🟠 KPM app session)** · 🔴 **STOPPED AT 98% PLAN QUOTA — NO CODE CHANGED, tree clean** · ✅ rail leak + dark panels shipped and seen (607/607, 762/762) · ▶ **NEXT = REMAKE the Dashboard (not repair) and bring him INSPIRATION OPTIONS first — his new ask is recorded verbatim below** · branch `phase0-solid-ground`
+
+## 🟠 2026-08-25 15:0x — STOPPED AT 98% PLAN QUOTA. NO CODE CHANGED. NEW ASK RECORDED.
+
+**Nothing was started.** He asked for a full Dashboard remake and I stopped on the quota rule
+before doing any of it. Working tree clean; last commit is the rail leak + dark panels.
+
+🔴 **HIS NEW ASK, VERBATIM — this supersedes the Dashboard brief in `NEXT-SESSION.md`, which is
+scoped to *fixing* the current layout rather than replacing it:**
+
+> *"we need to remake and redesign the whole dashboard, i want it to looks better for a dashboard
+> like screen i want u to research and find inspiration for this kind of design while im finding
+> myself also"*
+
+**Two things that changes:**
+1. **REMAKE, not repair.** The six layout faults listed in `NEXT-SESSION.md` are still accurate as
+   a description of what is wrong, but the instruction is now a new screen, not a patched one.
+2. **HE WANTS RESEARCH AND INSPIRATION, and he is looking too** — so the first deliverable is
+   OPTIONS TO CHOOSE FROM, not a built screen. Same shape as the button study that worked
+   (`https://claude.ai/code/artifact/6bc6de23-c628-464a-8545-71086545be85`): real components on the
+   real ground `#D2C9B4`, measured, and let him pick.
+
+⚠️ **WEB SEARCH IS DEAD HERE** — `WebSearch`/`WebFetch` route through a haiku tier this account
+cannot reach; firecrawl needs a paid key. **Say so plainly and work from knowledge**, as with the
+RE research. Do not silently present recalled knowledge as fresh sourcing.
+
+⚠️ **A SWATCH IS NOT A SCREEN** — he reversed a colour choice today after seeing it in the app.
+Expect one reversal on the layout too and budget for it.
 
 ## 🟠 2026-08-25 14:50 — THE RAIL LEAK AND THE DARK PANELS. 607/607, 762/762, ALL SEEN.
 
