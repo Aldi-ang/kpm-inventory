@@ -4,7 +4,25 @@
 
 ## 🟠 2026-08-25 (later) — DASHBOARD OPTIONS STUDY DELIVERED. WAITING ON HIS PICK.
 
-🔴 **HE OWES ONE ANSWER: A, B or C** (or a mix — "B's left column with C's headline" is valid).
+✅ **HE PICKED B** — *"B looks okay but put more graph so that it easier to see and put more
+animation?"*. Second pass delivered: **https://claude.ai/code/artifact/b65c3d49-47ff-4ddb-aded-b56f975e5eac**
+Source `scratchpad/dashboard-front-panel.html`. B now carries **5 graphs, not 1**: a PACE LINE
+(cumulative month vs the straight line to Rp 500 jt — under it = behind, no percentage to read),
+14-day bal columns against the 50 target, the mix as a RING, a new HOUR-OF-DAY RHYTHM strip, and
+the 7-day chart with values printed and today marked. **9 things move on arrival**, one sequence,
+300ms each, nothing loops; page has a `Slow it down 4×` button to inspect the order.
+
+🔴 **HE OWES THREE ANSWERS** (all on the artifact's last panel):
+1. Is this the one — build it?
+2. **The rhythm strip needs data nothing in the app reads yet** (the HOUR off each invoice). Keep or drop?
+3. The two bugs below — fix with the rebuild?
+
+⚠️ **THE ARTIFACT WAS NEVER RENDER-CHECKED IN A BROWSER** — claude-in-chrome was disconnected
+at the time. Script passes `node --check` and tags balance, and the ring dash math was reworked
+(a dash cannot shrink by moving its offset; each arc is a full-circumference dash revealed by
+pulling the offset from C to C-arc, with the second arc ROTATED to start where the first ended,
+`transform-origin` in user units not percent). **If the ring looks wrong when he opens it, that is
+where to look first.**
 
 **The study:** https://claude.ai/code/artifact/c442cf70-ae95-46fd-bbda-b2bfb1b0edd6
 Source: `scratchpad/dashboard-options.html` (session scratchpad — republish the SAME path to update
