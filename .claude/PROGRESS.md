@@ -23,6 +23,30 @@ low, invoices today). Everything else is revealed: **scrub** the pace line (cros
 readout**. Three speeds only: 140ms hover · 300ms arrival · instant press (1px down, amber edge).
 Every reveal has a keyboard path and sits in a RESERVED line so nothing reflows.
 
+✅ **FOURTH PASS — RESPONSIVE + THE CEO METRICS.** Same URL, refreshed:
+**https://claude.ai/code/artifact/52794e2f-47c4-42f6-af85-08ec318d35dd**
+He asked *"what should u think we want to see as CEO"* and *"make sure this both work on phones and
+laptop whatever happen"*. **The phone/laptop question is CLOSED — he said BOTH. Never ask it again.**
+One live screen, **CONTAINER queries** (not media queries — it must answer to the frame/sidebar it
+sits in, not the window) at **390 / 768 / 1240**, switchable on the page. Phone-first CSS, 44px
+targets, tap = hover and a tapped value STAYS, rows wrap instead of overflowing.
+
+🔴 **MY RECOMMENDATION, HE HAS NOT RULED ON IT — swap 3 vanity figures:**
+| out | in | why |
+|---|---|---|
+| Total Vault Assets | **Days of cover** (stock ÷ sales/day) | "1" beside a product selling 4/day is an ORDER, not a statistic |
+| Global Revenue (all time) | **Money owed · how much overdue** | an all-time total only goes up, so it can never be news |
+| Net Profit (all time) | **Margin this month vs last** | all-time profit hides a bad month completely |
+The 4 questions an owner opens a dashboard for: will I make the month · am I about to lose a sale
+· is my money stuck · am I actually making money.
+⚠️ **Days of cover is computable from existing transactions. MONEY OWED IS NOT** — it lives on
+`ConsignmentFinanceView.jsx` and needs wiring across. That is the expensive half of the ask.
+
+⚠️ **STILL NEVER OPENED IN A BROWSER** (claude-in-chrome disconnected). Checks that DID run:
+tags balance, every JS id resolves, `node --check` passes. Two bugs were caught by reading:
+the safety readout was bound to the whole live module and the bal columns would have written
+their label into it; and the pace chart's series ended at 135,6 jt while the headline said 312,45.
+
 ⚠️ **THE TRADE, STATED ON THE PAGE:** a phone has no cursor. Taps work, but on mobile those 4
 resting figures are all he gets until he taps — **so "phone or laptop" is now a real question, not
 a nicety.**
