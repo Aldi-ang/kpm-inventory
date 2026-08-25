@@ -1,6 +1,42 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-24 18:10 WIB (🟠 KPM app session)** · ✅ **RAIL GRAIN REMOVED — flat faceplate, 599/599 + 762/762 + all contrast pairs** · ⛔ the amber-fill sweep stays BLOCKED and is now blocked for a SECOND, better reason: his own law bans amber slabs · ▶ **HE OWES: does he like the flat plate (file sent), and may the brown buttons become outline+amber-word instead of fills** · branch `phase0-solid-ground`
+**Updated: 2026-08-24 18:35 WIB (🟠 KPM app session)** · 📊 **BUTTON STUDY PUBLISHED — stencil plate beats brown on all three measures, no token change needed** · ✅ rail grain removed and committed · 🔴 **HE OWES THE PICK: A stencil / B steel / C outline** · nothing applied to the app yet · branch `phase0-solid-ground`
+
+## 🟠 2026-08-24 18:35 — RE RESEARCH → THE STENCIL PLATE. STUDY PUBLISHED, HE OWES THE PICK.
+
+He asked for research and *"a better color to make it clearer"*. ⚠️ **BOTH WEB-SEARCH TOOLS ARE
+DEAD** — `WebSearch`/`WebFetch` route through `cc/claude-haiku-4-5` which this account cannot
+reach, and firecrawl needs a paid key. Answered from series knowledge, said so on the page.
+
+**The finding is an inversion, not a colour.** Modern RE interfaces make the PLATE bright and the
+INK dark (RE4's attaché case, RE2's menus, Village's briefcase). KPM light mode does the reverse —
+a dark plate with pale ink, which is a dark-mode habit in light-mode clothes. A fill must be dark
+to clear 3:1 on cream, and dark amber IS brown. **Brown is the last colour standing after the
+rules finish.**
+
+📊 **MEASURED, all four on the real ground `#D2C9B4`:**
+
+| treatment | word on plate | plate vs page | amber lamp |
+|---|---|---|---|
+| today (brown) | 6.86 | 4.45 | 3.51 |
+| **A stencil `#1B1917` + bone `#F7F3E9`** | **15.82** | **10.65** | **8.41** |
+| B steel `#F7F3E9` + dark ink | 13.97 | 1.49 ❌ | 1.88 ❌ |
+| C outline (`.kpm-btn.key`) | 8.09 | 4.57 edge | n/a |
+
+✅ **A wins outright and needs NO token change and NO contrast-rule repoint** — it passes every
+existing check with 2-3x margin, the exact opposite of the amber-fill plan. B is the most
+"laboratory" and is rejected because a bright amber lamp on a bright plate is 1.88:1 — it kills
+the one thing he likes.
+
+📐 **The rule that ships with it: stencil is a RANK, not a repaint.** One rank-1 button per screen,
+everything else outline, amber lamp for state, red outline for destructive. 68 near-black buttons
+would be as wrong as 68 brown ones.
+
+🔗 **Study (real buttons, pressable, on the real ground):**
+`https://claude.ai/code/artifact/6bc6de23-c628-464a-8545-71086545be85`
+⚠️ **Republish that same URL to update it — do not publish a second one.**
+
+🔴 **WAITING ON ALDI: which treatment, A / B / C.** Nothing is applied to the app yet.
 
 ## 🟠 2026-08-24 18:10 — THE GRAIN IS GONE, AND THE BROWN-BUTTON FIX TURNED OUT TO BE THE OPPOSITE OF THE PLAN
 
