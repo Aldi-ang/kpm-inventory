@@ -1,6 +1,44 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-24 19:05 WIB (🟠 KPM app session)** · ✅ **STEEL FACEPLATE SHIPPED — light --gold is a pale plate, the rim carries it, marks kept amber** · 603/603 + 762/762 + all contrast pairs · ⚠️ unseen on glass · ▶ **NEXT: pick rank-1 button per screen** · branch `phase0-solid-ground`
+**Updated: 2026-08-24 19:50 WIB (🟠 KPM app session)** · ✅ **STENCIL PLATE SHIPPED AND SEEN IN HIS CHROME** — 21 invisible-ink bugs found by LOOKING, all fixed · 603/603 + 762/762 + all contrast pairs · green gone from Customer Directory · 🔴 **HE OWES: amber or stencil for the segmented switch ON** · branch `phase0-solid-ground`
+
+## 🟠 2026-08-24 19:50 — STENCIL SHIPPED, AND THE APP WAS FINALLY SEEN. 603/603, 762/762.
+
+✅ **FIRST FRAMES EVER TAKEN OF THIS PROJECT.** The path that worked: **`claude-in-chrome` MCP
+against HIS Chrome on `https://localhost:5173`** — his own dev server, already logged in, cert
+already accepted. ⚠️ The in-app Browser pane will not composite, `agent-browser` hangs for 30
+minutes, and my own dev server on another port is useless because of the login. **Ask him to keep
+5173 running and drive his Chrome. Do not try the other three routes again.**
+Rail hover: `[data-kpm-rail]` events live on the pod only, so hover **(35, 42)** and do not move.
+
+**He reversed his own choice after seeing it:** *"wait i think it may look better with the stencil
+and an amber light tho, i look on the app and i dont really like it"*. Light `--gold` is
+`#1B1917` + bone ink. Plate clears **9.39–14.21:1** alone, so the rim rule and its guard were
+deleted with the plate that needed them, and the contrast pairs grade the core again. Amber on it
+is **8.41:1 bare**.
+
+🔴 **THE BUG LOOKING FOUND, THAT NO CHECK HAD BEEN ASKED:** Sampling's two top buttons paired the
+plate with `--ink` — **1.04:1, invisible**. **21 ink references across 5 files** used `--ink` /
+`--accent-ink` / `--ink-dim` instead of `--gold-ink`. Most were never readable: `--accent-ink` on
+the OLD brown was **1.54:1**. **`G51` now enforces the token pair.**
+
+⚠️ **G51 HAD TO BE REWRITTEN BEFORE IT WAS WORTH KEEPING.** v1 scanned LINES → 30 hits, ~26 wrong
+(a ternary's other branch, a `group-hover:` pair that switches together, two elements on one
+line). v2 scopes to one `className` value and only fires when the bad ink is in the STATIC part.
+**Third time the element-vs-line mistake has cost a session.**
+
+✅ **Green removed from Customer Directory** — emerald fill, emerald glow, and `ring-2
+ring-emerald-500 bg-emerald-50 dark:bg-slate-700` all marked *"the record you are editing"*.
+Replaced with an amber EDGE, not deleted: the meaning had to survive. Also Lite-safe — a `ring` is
+a box-shadow and Lite Mode deletes it, so that mark was already invisible on a cheap phone.
+
+🔴 **ONE QUESTION OPEN — the FULL/LITE segmented switch in Settings is now a big bright amber
+slab** (`--lamp-on`). It went amber when the plate was pale and 1.68:1 on its track; the plate is
+near-black now and measures **9.39:1** there, so `--gold` would work and would stop being an amber
+slab. **Ask him: amber or stencil for segmented ON?** Same question covers the picklist selected
+row and `--sw-on` — if he says stencil, `--sw-on` can be deleted entirely.
+
+▶ **THEN: rank 1 per screen.** All 63 buttons are stencil; one loud button per screen, rest outline.
 
 ## 🟠 2026-08-24 19:05 — HE CHOSE STEEL. IT IS SHIPPED. 603/603, 762/762, ALL CONTRAST PAIRS.
 
