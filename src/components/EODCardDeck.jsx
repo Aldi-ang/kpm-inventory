@@ -411,7 +411,7 @@ export default function EODCardDeck({
                       </span>
                       <span className="h-1 flex-1 rounded-full bg-[var(--inset)] overflow-hidden">
                         <span
-                          className="block h-full rounded-full bg-[var(--lamp-on)] transition-[width] duration-300 ease-out"
+                          className="block h-full rounded-full bg-[var(--gold)] transition-[width] duration-300 ease-out"
                           style={{ width: `${(filled / cardLines.length) * 100}%` }}
                         />
                       </span>

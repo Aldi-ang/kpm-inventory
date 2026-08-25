@@ -158,8 +158,7 @@ const PAIRS = [
      --inset track, and a pale fill measures 1,68:1 against it. He would have flipped a switch
      in Settings and not been able to tell whether it was on. They take --lamp-on now, and
      these pairs exist so the next person who repaints a token finds out here instead. */
-  ['toggle ON fill on its track',   'sw-on',         'inset',        3],
-  ['segmented ON ink on the fill',  'lamp-ink',      'lamp-on',      4.5],
+  ['toggle ON fill on its track',   'gold',          'inset',        3],
   /* the segmented switch and the selected picklist row are bright amber in BOTH themes, and
      in light that is only 1,9:1 against the panel - so their rim is load-bearing exactly the
      way a gold plate rim is. It is already measured by the three plate RIM pairs above. A
