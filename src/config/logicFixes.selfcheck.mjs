@@ -3067,5 +3067,96 @@ section('V · The reorder suggestion is measured from his own history, or it is 
         bw.slice(bw.indexOf('HOW MANY SHOULD I ASK FOR (G3) ====='), bw.indexOf('placeholder="Qty (Bks)"'))));
 }
 
+/* -- THE DASHBOARD REBUILD, 2026-08-25 -----------------------------------------------------
+   Two colour faults lived on this screen for months and no sweep could see either of them,
+   because neither was written as a colour token. One was raw Tailwind, the other was
+   arithmetic that produced a hex. Both are guarded here rather than described in a comment,
+   because a comment cannot fail. */
+/* ⚠️ A CHECK THAT GREPS SOURCE ALSO READS THE COMMENT DESCRIBING THE BUG. All three colour
+   guards below failed on first run for exactly that reason: the files explain what was removed,
+   and spell the removed class names out while doing it. Stripping comments first is the honest
+   fix — the guard should ask what the code DOES, not what the file says about it. */
+const code = (src) => src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+
+section('D1. The dashboard cannot paint outside the palette');
+const dashView  = read('src/components/DashboardView.jsx');
+const dashPanel = read('src/components/DashboardBenchmarks.jsx');
+const safety    = read('src/components/SafetyStatus.jsx');
+const helpersJs = read('src/utils/helpers.js');
+const periodJs  = read('src/utils/period.js');
+const themeCss  = read('src/styles/theme.css');
+
+ok('SafetyStatus no longer paints green or raw red',
+   !/emerald-|green-|red-\d|orange-\d|blue-|sky-|teal-|cyan-|indigo-/.test(code(safety)),
+   'the three indicators were text-emerald-500 / bg-emerald-500 / text-red-500');
+ok('the dashboard files carry no Tailwind colour scale at all',
+   !/(emerald|green|blue|sky|teal|cyan|indigo|violet|fuchsia|rose|red|orange|yellow|amber)-\d{2,3}/
+     .test(code(dashView) + code(dashPanel)));
+ok('getRandomColor is gone from helpers',
+   !/export const getRandomColor/.test(helpersJs),
+   'it hashed a product name into an arbitrary hex and handed it to a chart');
+ok('nothing imports it any more',
+   !/getRandomColor\(/.test(code(app) + code(dashView) + code(dashPanel)));
+ok('and the deletion left a note saying why, so it is not re-added as a convenience',
+   /getRandomColor WAS DELETED HERE/.test(helpersJs));
+
+section('D2. No running totals - his rule, "dont use total"');
+ok('the all-time revenue reduce is gone',
+   !/type === 'SALE' \|\| t\.type === 'RETURN'\)\.reduce/.test(dashView));
+ok('the dashboard reads a period window instead',
+   /periodWindow/.test(dashView) && /periodWindow/.test(dashPanel));
+ok('both panels take that window from the SAME function',
+   /from '\.\.\/utils\/period'/.test(dashView) && /from '\.\.\/utils\/period'/.test(dashPanel),
+   'two copies of the boundary maths would drift silently');
+ok('the switch offers exactly hari, minggu, bulan, tahun',
+   ['hari','minggu','bulan','tahun'].every(k => new RegExp("'" + k + "'").test(periodJs)));
+ok('minggu is a ROLLING seven days, not a calendar week',
+   /6 \* DAY/.test(periodJs),
+   'a calendar week is empty on Monday morning and the dashboard would read as a collapse');
+
+section('D3. It speaks the module vocabulary the rest of the app uses');
+ok('the dashboard is built from .kpm-mod, not floating cards',
+   /kpm-mod/.test(dashView) && /kpm-mod/.test(dashPanel));
+ok('no pre-system card survives on the dashboard',
+   !/rounded-2xl|rounded-xl|backdrop-blur|shadow-lg/.test(dashView + dashPanel),
+   'radius + blur + drop shadow is what made this screen look like a different app');
+
+section('D4. Lite Mode keeps every value and only loses motion');
+ok('the arrival is guarded, because it hides by default rather than by moving',
+   /html\.lite-mode \.kpm-arr \{ opacity: 1/.test(themeCss),
+   'with transitions dead an unguarded .kpm-arr would sit at opacity 0 forever');
+ok('the velocity figures are guarded for the same reason',
+   /html\.lite-mode \.kpm-vrow \.figs \{ opacity: 1/.test(themeCss));
+ok('nothing in the dashboard block needs a shadow to be visible',
+   /* slice from the first RULE, not from the header comment: starting mid-comment leaves an
+      unmatched close and the stripper cannot see a pair to remove */
+   !/box-shadow/.test(code(themeCss.slice(themeCss.indexOf('.kpm-dash { container-type')))));
+
+section('D5. Responsive by CONTAINER, so an opening rail cannot lie to it');
+ok('the dashboard declares a container',
+   /\.kpm-dash \{ container-type: inline-size/.test(themeCss));
+ok('and queries it at two widths',
+   (themeCss.match(/@container dash \(min-width/g) || []).length === 2);
+ok('the big figure is sized in container units so it fits a 390px phone',
+   /clamp\(28px, 9cqw, 42px\)/.test(themeCss));
+ok('every control clears the 44px thumb target',
+   /\.kpm-period button \{ min-height: 44px/.test(themeCss) &&
+   /\.kpm-key-row \{[\s\S]{0,120}min-height: 44px/.test(themeCss) &&
+   /\.kpm-cover-c \{[\s\S]{0,160}min-height: 44px/.test(themeCss));
+
+section('D6. The low-stock rule is one rule, and it speaks in units');
+ok('the shared rule exists and exports its unit list',
+   /export const MIN_STOCK_UNITS/.test(read('src/utils/stockThreshold.js')));
+ok('the settings form offers the unit dropdown he asked for',
+   /MIN_STOCK_UNITS\.map/.test(dashPanel),
+   '"add extra option so that i can setting bal karton slop or bks"');
+ok('the running-out panel prints a counted unit, never bare Bks',
+   /splitToUnits/.test(dashView),
+   '"few bal is considered as low not BKS bruh"');
+ok('the product editor no longer pre-fills 50 into an unset minimum',
+   !/editingProduct\.minStock \|\| 50/.test(app),
+   'it wrote the old hardcoded default into the product the moment anyone opened the form');
+
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

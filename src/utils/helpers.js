@@ -84,12 +84,14 @@ export const getLocalDayKey = (date = new Date()) => {
    `AgentInventoryView.jsx:6` kept its own UTC copy and survived every fix aimed at this one. */
 export const getCurrentDate = () => getLocalDayKey();
 
-export const getRandomColor = (str) => {
-    let hash = 0;
-    for (let i = 0; i < str.length; i++) { hash = str.charCodeAt(i) + ((hash << 5) - hash); }
-    const c = (hash & 0x00FFFFFF).toString(16).toUpperCase();
-    return '#' + "00000".substring(0, 6 - c.length) + c;
-};
+/* 🔴 getRandomColor WAS DELETED HERE, 2026-08-25, and must not come back.
+   It hashed a product name into an arbitrary hex and handed it to the dashboard chart as a bar
+   colour. That is a colour picked by a string, so it could and did return blue and green — both
+   banned by the palette law — as well as near-black on the dark ground and near-white on the
+   cream one, where the bar simply vanished. No token sweep could ever have found it: the file
+   contained no colour at all, only arithmetic that produced one.
+   A chart series takes a token. If a future chart needs more than two, add named tokens for
+   them; do not compute a colour.                                                              */
 
 // 🚀 SHARED FIX: A raw '/' in a user-typed email (a typo, or a stray character from
 // autofill/autocomplete) silently turns a single Firestore document ID into extra path

@@ -3890,3 +3890,244 @@ html.lite-mode .kpm-hazard { animation: none; opacity: 1; }
 @media (prefers-reduced-motion: reduce) {
   .kpm-dmg-reel, .kpm-dmg-panel, .kpm-dot { transition: none; }
 }
+
+/* ============================================================================
+   THE DASHBOARD — rebuilt 2026-08-25.
+
+   His brief, in his words: *"the layout is pretty bad i want u to redesign a new one"*, then
+   *"do not put too much number in there but hover to show the extra number"*, then the one that
+   decided the shape: *"i want to see daily week, month and year only, dont use total"*.
+
+   THREE IDEAS, and everything below is one of them:
+
+   1. IT SPEAKS THE APP'S OWN LANGUAGE. The dashboard was the only main screen never rebuilt as
+      modules — SettingsView spends `.kpm-mod` twenty-six times and this screen spent it zero,
+      so it was still pre-system floating cards with a radius, a blur and a drop shadow. That is
+      why it read as a different app rather than as a badly arranged one.
+
+   2. A PERIOD, NEVER A TOTAL. An all-time figure only ever goes up, so it can never be good or
+      bad news. One switch — hari / minggu / bulan / tahun — governs every money figure under it.
+      That switch DELETED TWO PANELS on its own: "month trajectory" and the "7-day revenue chart"
+      were the same chart on two different settings all along.
+
+   3. FOUR FIGURES AT REST. Everything else is shape, and the digits arrive under the cursor or
+      the thumb. Each readout owns a RESERVED line so a value appearing never moves the layout —
+      pointing at one thing must never push another.
+
+   ⚠️ CONTAINER QUERIES, NOT MEDIA QUERIES, and this is the first place in the app to use them.
+   The dashboard sits inside a shell with a rail that opens and closes, so the window's width is
+   not the width it gets. `@container` asks the box it is actually in. Same markup at 390 and at
+   1240; there is no phone version to keep in sync with a laptop version.
+
+   ⚠️ NOTHING HERE NEEDS A LITE-MODE GUARD EXCEPT WHERE MARKED. `html.lite-mode *` kills
+   animation, transition, box-shadow, text-shadow and filter outright, and every rule below is
+   border, background-color, width, height, transform or stroke. Lite Mode loses the motion and
+   keeps every value. Do not "improve" any of it with a shadow.
+   ============================================================================ */
+
+.kpm-dash { container-type: inline-size; container-name: dash; }
+.kpm-dash-grid { display: grid; grid-template-columns: 1fr; gap: var(--s4); align-items: start; }
+.kpm-dash-work { display: grid; gap: var(--s4); }
+
+/* ---- THE PERIOD SWITCH. The only control on the screen shaped like a switch, because it is the
+   only one that changes what every figure below it MEANS. Full width and 44px tall at every size:
+   on a phone it is the first thing a thumb reaches.
+   ⚠️ The chosen side is a --gold PLATE carrying --gold-ink. A plate carries its own ink; --gold
+   with --ink is 1,04:1 and G51 fails the build over it. */
+.kpm-period { display: grid; grid-template-columns: repeat(4, 1fr);
+  border: 1px solid var(--line-3); }
+.kpm-period button { min-height: 44px; padding: 0 var(--s1); cursor: pointer;
+  background: transparent; color: var(--ink-muted);
+  border: 0; border-right: 1px solid var(--line);
+  font-family: var(--font-mono); font-size: 11px; letter-spacing: .16em;
+  text-transform: uppercase; font-weight: 700;
+  transition: background-color 140ms cubic-bezier(.2,.8,.3,1), color 140ms cubic-bezier(.2,.8,.3,1); }
+.kpm-period button:last-child { border-right: 0; }
+.kpm-period button:hover { background: var(--raised); color: var(--ink); }
+.kpm-period button:focus-visible { outline: 2px solid var(--accent-edge); outline-offset: -2px; }
+.kpm-period button:active { transform: translateY(1px); }
+.kpm-period button[aria-pressed="true"] { background: var(--gold); color: var(--gold-ink); }
+
+/* ---- THE ONE BIG FIGURE. Sized in CONTAINER units so Rp 3.284.600.000 on Tahun fits a 390px
+   phone without wrapping and still fills the column on a laptop. A fixed size would have to be
+   chosen for the worst case and would look timid everywhere else. */
+.kpm-omzet { font-family: var(--font-display); font-weight: 700;
+  font-variant-numeric: tabular-nums; line-height: .92; color: var(--ink);
+  font-size: clamp(28px, 9cqw, 42px); }
+
+/* ---- THE READOUT: one reserved line per block. Empty at rest — the space IS the design. */
+.kpm-ro { min-height: 24px; display: flex; align-items: baseline; gap: var(--s2);
+  font-family: var(--font-mono); font-size: 12px; font-variant-numeric: tabular-nums;
+  color: var(--ink); opacity: 0; transition: opacity 140ms cubic-bezier(.2,.8,.3,1); }
+.kpm-ro.on { opacity: 1; }
+.kpm-ro .k { color: var(--ink-dim); letter-spacing: .18em; text-transform: uppercase; font-size: 11px; }
+.kpm-ro .v { margin-left: auto; text-align: right; }
+.kpm-ro .neg { color: var(--danger-ink); }
+
+/* ---- THE PACE CHART. Cumulative inside the period against the straight line to target, so the
+   shape means the same thing on all four settings: under the dashed line is behind.
+   The line stops short of the right edge by exactly how much of the period is left to run —
+   that gap is information, not a rendering accident. */
+.kpm-spark { position: relative; cursor: crosshair; touch-action: none; }
+.kpm-spark svg { display: block; }
+.kpm-spark:focus-visible { outline: 2px solid var(--accent-edge); outline-offset: 4px; }
+.kpm-cross { position: absolute; top: 0; bottom: 0; width: 1px; background: var(--line-3);
+  opacity: 0; pointer-events: none; transition: opacity 140ms cubic-bezier(.2,.8,.3,1); }
+.kpm-scrub { position: absolute; width: 10px; height: 10px; margin: -5px 0 0 -5px;
+  border-radius: 50%; background: var(--lamp-on); border: 1px solid var(--accent-edge);
+  opacity: 0; pointer-events: none; transition: opacity 140ms cubic-bezier(.2,.8,.3,1); }
+.kpm-spark.on .kpm-cross, .kpm-spark:hover .kpm-cross,
+.kpm-spark.on .kpm-scrub, .kpm-spark:hover .kpm-scrub { opacity: 1; }
+
+/* ---- A TRACK AND ITS MARK. The fill is --lamp-on with an --accent-edge hairline: the lamp
+   colour does not flip between themes because a real indicator does not change colour when the
+   room light comes on, and the hairline is what holds it against a cream ground. */
+.kpm-trk { display: block; height: 8px; background: var(--raised);
+  border: 1px solid var(--line); overflow: hidden; }
+.kpm-trk > i { display: block; height: 100%; width: 0; background: var(--lamp-on);
+  border-right: 1px solid var(--accent-edge);
+  transition: width 300ms cubic-bezier(.2,.8,.3,1); }
+.kpm-trk.neg > i { background: var(--danger-rail); border-right-color: var(--danger); }
+
+/* ---- TWO FIGURES AND WHAT THEY DID SINCE LAST TIME. The delta is the half that means
+   something; a margin of 15,3% is neither good nor bad until you know it was 16,1%. */
+.kpm-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 2px;
+  background: var(--line-2); border: 1px solid var(--line-2); }
+.kpm-pair > div { background: var(--panel); padding: var(--s3); }
+.kpm-pair .k { display: block; font-family: var(--font-mono); font-size: 11px;
+  letter-spacing: .2em; text-transform: uppercase; color: var(--ink-dim); margin-bottom: var(--s2); }
+.kpm-pair .v { display: block; font-family: var(--font-display); font-weight: 700;
+  font-size: 26px; line-height: 1; font-variant-numeric: tabular-nums; color: var(--ink); }
+.kpm-pair .delta { display: block; font-family: var(--font-mono); font-size: 11px;
+  margin-top: var(--s2); color: var(--ink-muted); }
+.kpm-pair .delta.down { color: var(--danger-ink); }
+
+/* ---- THE MIX RING. The hole is the readout: it was empty space doing nothing, and it is the
+   reason a ring beats two bars here. Nothing is printed in it until you point at an arc. */
+.kpm-ring-wrap { display: flex; align-items: center; gap: var(--s5); flex-wrap: wrap; }
+.kpm-ring-wrap svg { flex: 0 0 108px; overflow: visible; }
+.kpm-arc { cursor: pointer;
+  transition: stroke-dashoffset 300ms cubic-bezier(.2,.8,.3,1),
+              stroke-width 140ms cubic-bezier(.2,.8,.3,1); }
+.kpm-arc:hover { stroke-width: 22; }
+.kpm-ring-txt { font-family: var(--font-display); font-weight: 700; font-size: 26px;
+  fill: var(--ink); text-anchor: middle; opacity: 0;
+  transition: opacity 140ms cubic-bezier(.2,.8,.3,1); }
+.kpm-ring-sub { font-family: var(--font-mono); font-size: 9px; letter-spacing: .2em;
+  fill: var(--ink-dim); text-anchor: middle; opacity: 0;
+  transition: opacity 140ms cubic-bezier(.2,.8,.3,1); }
+.kpm-ring-txt.on, .kpm-ring-sub.on { opacity: 1; }
+
+/* ---- A KEY ROW / A LAMP ROW. 44px because a thumb needs it, everywhere, not only on a phone. */
+.kpm-key-row { display: flex; align-items: center; gap: var(--s2); min-height: 44px;
+  width: 100%; cursor: pointer; background: transparent;
+  border: 0; border-bottom: 1px solid var(--line);
+  color: var(--ink-muted); font-family: var(--font-mono); font-size: 11px;
+  letter-spacing: .22em; text-transform: uppercase; text-align: left;
+  transition: color 140ms cubic-bezier(.2,.8,.3,1); }
+.kpm-key-row:last-child { border-bottom: 0; }
+.kpm-key-row:hover, .kpm-key-row.on { color: var(--ink); }
+.kpm-key-row:focus-visible { outline: 2px solid var(--accent-edge); outline-offset: 2px; }
+.kpm-key-row > i { width: 10px; height: 10px; flex: 0 0 10px; display: block; }
+
+/* ---- THE SAFETY STRIP. Was a full-width card carrying three tiny labels across 1400px. */
+.kpm-safety-row { display: flex; gap: var(--s4); align-items: center; flex-wrap: wrap; }
+.kpm-safety-lamp { display: inline-flex; align-items: center; gap: var(--s2);
+  min-height: 32px; padding: 0; background: transparent; border: 0; cursor: pointer;
+  color: var(--ink-muted); transition: color 140ms cubic-bezier(.2,.8,.3,1); }
+.kpm-safety-lamp:hover { color: var(--ink); }
+.kpm-safety-lamp:focus-visible { outline: 2px solid var(--accent-edge); outline-offset: 2px; }
+.kpm-lamp-dot { display: inline-block; width: 9px; height: 9px; flex: 0 0 9px;
+  border-radius: 50%; border: 1px solid var(--line-3); }
+.kpm-lamp-label { font-family: var(--font-mono); font-size: 11px; letter-spacing: .2em;
+  text-transform: uppercase; }
+.kpm-safety-hint { margin: var(--s2) 0 0; min-height: 18px;
+  font-family: var(--font-mono); font-size: 11px; letter-spacing: .14em;
+  text-transform: uppercase; color: var(--ink-dim); }
+
+/* ---- A VELOCITY ROW. Name and bar at rest; the digits arrive with the cursor. On a phone they
+   are simply always there, because there is no cursor to arrive with. */
+.kpm-vrow { display: flex; align-items: center; gap: var(--s2);
+  padding: var(--s2); margin: 0 calc(var(--s2) * -1); min-height: 52px;
+  width: calc(100% + var(--s4)); cursor: pointer; flex-wrap: wrap; text-align: left;
+  background: transparent; color: inherit;
+  border: 0; border-bottom: 1px solid var(--line);
+  transition: background-color 140ms cubic-bezier(.2,.8,.3,1); }
+.kpm-vrow:last-child { border-bottom: 0; }
+.kpm-vrow:hover, .kpm-vrow.on { background: var(--raised); }
+.kpm-vrow:focus-visible { outline: 2px solid var(--accent-edge); outline-offset: -2px; }
+.kpm-vrow .rk { display: none; flex: 0 0 20px; font-family: var(--font-mono);
+  font-size: 11px; color: var(--ink-dim); }
+.kpm-vrow .nm { flex: 1 1 100%; font-family: var(--font-body); font-size: 14px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ink);
+  text-transform: none; letter-spacing: 0; }
+.kpm-vrow .bar { flex: 1 1 auto; }
+.kpm-vrow:hover .kpm-trk > i, .kpm-vrow.on .kpm-trk > i { background: var(--ink); }
+.kpm-vrow:hover .kpm-trk.neg > i, .kpm-vrow.on .kpm-trk.neg > i { background: var(--danger-ink); }
+.kpm-vrow .figs { flex: 0 0 auto; font-family: var(--font-mono); font-size: 12px;
+  font-variant-numeric: tabular-nums; color: var(--ink-muted); }
+.kpm-vrow .figs em { font-style: normal; color: var(--ink); }
+.kpm-vrow .figs .low { color: var(--danger-ink); }
+
+/* ---- RUNNING OUT. His rule, 2026-08-25: *"few bal is considered as low not BKS bruh"* — so the
+   quantity is printed in the units a salesman counts in, and the threshold that decided it is a
+   company setting with a unit of its own. The panel is SORTED by how long the shelf lasts, which
+   is deliberately NOT shown: the ordering does that work silently. */
+.kpm-cover { display: grid; gap: var(--s3); }
+.kpm-cover-c { display: flex; align-items: center; gap: var(--s3); width: 100%;
+  min-height: 44px; padding: var(--s3); cursor: pointer; text-align: left;
+  border: 1px solid var(--line); background: transparent; color: inherit;
+  transition: background-color 140ms cubic-bezier(.2,.8,.3,1),
+              border-color 140ms cubic-bezier(.2,.8,.3,1); }
+.kpm-cover-c:hover { background: var(--raised); border-color: var(--danger); }
+.kpm-cover-c:focus-visible { outline: 2px solid var(--accent-edge); outline-offset: 2px; }
+.kpm-cover-c:active { transform: translateY(1px); }
+.kpm-cover-c .qty { flex: 0 0 auto; min-width: 74px; font-family: var(--font-display);
+  font-weight: 700; font-size: 26px; line-height: 1; color: var(--danger-ink);
+  font-variant-numeric: tabular-nums; }
+.kpm-cover-c .qty small { display: block; margin-top: var(--s1); font-family: var(--font-mono);
+  font-size: 11px; letter-spacing: .14em; color: var(--ink-dim); }
+.kpm-cover-c .t { flex: 1 1 auto; min-width: 0; }
+.kpm-cover-c .t b { display: block; font-family: var(--font-body); font-size: 14px;
+  font-weight: 600; color: var(--ink); overflow: hidden; text-overflow: ellipsis;
+  white-space: nowrap; }
+.kpm-cover-c .t span { font-family: var(--font-mono); font-size: 11px; color: var(--ink-muted);
+  letter-spacing: .1em; }
+
+/* ---- ARRIVAL. One name, so the dashboard does not invent its own. */
+.kpm-arr { opacity: 0; transform: translateY(10px);
+  transition: opacity 300ms cubic-bezier(.2,.8,.3,1), transform 300ms cubic-bezier(.2,.8,.3,1); }
+.kpm-arr.in { opacity: 1; transform: none; }
+/* ⚠️ Lite Mode kills the transition, which would strand this at opacity 0 — the one rule on the
+   screen that DOES need a guard, because it hides by default rather than by moving. */
+html.lite-mode .kpm-arr { opacity: 1; transform: none; }
+@media (prefers-reduced-motion: reduce) { .kpm-arr { opacity: 1; transform: none; } }
+
+/* ══════ TABLET — 700px of CONTAINER, not of window ══════ */
+@container dash (min-width: 700px) {
+  .kpm-dash-grid, .kpm-dash-work { gap: var(--s5); }
+  .kpm-cover { grid-template-columns: 1fr 1fr; }
+  .kpm-vrow { flex-wrap: nowrap; min-height: 44px; }
+  .kpm-vrow .rk { display: block; }
+  .kpm-vrow .nm { flex: 0 0 180px; }
+  .kpm-vrow .figs { flex: 0 0 170px; text-align: right; opacity: 0; transform: translateX(6px);
+    transition: opacity 140ms cubic-bezier(.2,.8,.3,1), transform 140ms cubic-bezier(.2,.8,.3,1); }
+  .kpm-vrow:hover .figs, .kpm-vrow:focus-visible .figs, .kpm-vrow.on .figs {
+    opacity: 1; transform: none; }
+  /* ⚠️ same trap as .kpm-arr: with transitions dead the figures would never fade in */
+  html.lite-mode .kpm-vrow .figs { opacity: 1; transform: none; }
+}
+
+/* ══════ LAPTOP — the front panel appears here ══════ */
+@container dash (min-width: 1000px) {
+  .kpm-dash-grid { grid-template-columns: 376px 1fr; gap: var(--s6); }
+  .kpm-dash-work { gap: var(--s6); }
+}
+
+/* ---- SCRIM. The app already dims behind a dialog with a literal black wash in ConfirmGate;
+   this is that, named, so the dashboard modal does not invent a third one. Black in BOTH
+   themes on purpose: a scrim is a shadow cast over the page, not a surface of its own, and a
+   cream-tinted veil over cream reads as fog rather than as depth. */
+.kpm-scrim { position: fixed; inset: 0; z-index: 9999; display: flex;
+  align-items: center; justify-content: center; padding: var(--s4);
+  background: rgba(0, 0, 0, .72); }

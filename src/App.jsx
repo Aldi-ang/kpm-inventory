@@ -140,7 +140,8 @@ import {
 
 // --- CONFIG & UTILITIES IMPORTS ---
 import { auth, db, storage, googleProvider, appId } from './config/firebase';
-import { formatRupiah, getCurrentDate, getLocalDayKey, getRandomColor, convertToBks, commitInChunks, savePhotoAndGetReference, storeKey, storeLabel, eodBountyLines } from './utils/helpers';
+import { formatRupiah, getCurrentDate, getLocalDayKey, convertToBks, commitInChunks, savePhotoAndGetReference, storeKey, storeLabel, eodBountyLines } from './utils/helpers';
+import { isLowStock } from './utils/stockThreshold';
 import { computeDayXP, DEFAULT_XP, checkBadges, DEFAULT_BADGES } from './config/career';
 import { confirmAction, promptAction } from './components/ConfirmGate.jsx';
 import { notify } from './components/Toast.jsx';
@@ -1287,10 +1288,13 @@ const handleGitHubMirror = async () => {
   const hasAlertedLowStock = useRef(false);
 
 
-  // 1. Calculate low stock items (Threshold is minStock or default to 5)
+  /* 1. Low stock. The threshold lives in ONE place now — see src/utils/stockThreshold.js.
+        The comment here used to say "default to 5" while the code said 50, and two other
+        screens really did use 5, which is how the Dashboard ended up ten times quieter than
+        the rest of the app. */
   const lowStockItems = useMemo(() => {
-      return inventory.filter(item => item.stock <= (item.minStock || 50));
-  }, [inventory]);
+      return inventory.filter(item => isLowStock(item, appSettings));
+  }, [inventory, appSettings]);
 
   // 2. Capybara Intercept on Login
   useEffect(() => {
@@ -1937,7 +1941,7 @@ const handleGitHubMirror = async () => {
                   }
 
                   // 🔔 NEW: Flag if this product is still below its minimum even after the return
-                  if (newStock <= (masterProduct?.minStock || 50)) {
+                  if (isLowStock({ ...(masterProduct || {}), stock: newStock }, appSettings)) {
                       lowStockAlerts.push(`${masterProduct?.name || item.name} (${newStock} Bks left)`);
                   }
               });
@@ -3675,19 +3679,8 @@ const handleGitHubMirror = async () => {
   const displayPermitted = React.useMemo(
       () => (permittedCustomers || []).map(c => ({ ...c, name: storeLabel(c.name) })), [permittedCustomers]);
 
-  const chartData = React.useMemo(() => {
-      const dataMap = {};
-      const customers = new Set();
-      transactions.filter(t => t.type === 'SALE' || t.type === 'RETURN').forEach(t => {
-          const date = t.date;
-          if (!dataMap[date]) dataMap[date] = { date };
-          const cName = (t.customerName || 'Unknown').trim();
-          if (!dataMap[date][cName]) dataMap[date][cName] = 0;
-          dataMap[date][cName] += t.total;
-          customers.add(cName);
-      });
-      return { data: Object.values(dataMap).sort((a,b) => new Date(a.date) - new Date(b.date)).slice(-7), keys: Array.from(customers) };
-  }, [transactions]);
+  /* the 7-day chart this fed was deleted with the dashboard rebuild — that view is now the
+     live panel's chart on MINGGU, computed from the same period window as everything else. */
 
 
 
@@ -4187,25 +4180,17 @@ const handleGitHubMirror = async () => {
                     <button onClick={() => setShowAdminLogin(true)} className="px-10 py-4 border-2 border-[var(--duke-edge-4)] text-[var(--duke-ink-hi)] font-black uppercase text-xs hover:bg-[var(--duke-amber)] hover:text-black transition-all">Unlock System</button>
                 </div>
             ) : (
-                <DashboardView 
-    isAdmin={isAdmin} 
-    userRole={userRole} 
-    totalStockValue={totalStockValue}
-    transactions={transactions} 
-    isUsbSecure={isUsbSecure}
-    handleBackupData={handleBackupData} 
-    lowStockItems={lowStockItems}
-    setActiveTab={setActiveTab} 
-    chartData={chartData} 
-    backupToast={backupToast}
-    sessionStatus={sessionStatus} 
-    auditLogs={auditLogs}
-    appSettings={appSettings}                                  
-    handleSaveDashboardTargets={handleSaveDashboardTargets}    
-    inventory={inventory} // 🚀 REQUIRED FOR ANALYTICS
-    motorists={motorists}  // 🚀 REQUIRED FOR LEADERBOARD
-    customers={displayCustomers}  // 🚀 REQUIRED FOR BENCHMARKS
-/>
+                <DashboardView
+                    isAdmin={isAdmin}
+                    transactions={transactions}
+                    inventory={inventory}
+                    lowStockItems={lowStockItems}
+                    setActiveTab={setActiveTab}
+                    sessionStatus={sessionStatus}
+                    auditLogs={auditLogs}
+                    appSettings={appSettings}
+                    handleSaveDashboardTargets={handleSaveDashboardTargets}
+                />
             )
           )}
 
@@ -4322,7 +4307,7 @@ const handleGitHubMirror = async () => {
                                   {/* --- PINPOINT: Edit Product Modal --- */}
                                     <div className="grid grid-cols-4 gap-2">
                                         <div><label className="text-[10px] text-[var(--duke-ink-8)] block mb-1 tracking-widest">STOCK</label><input name="stock" type="number" step="any" defaultValue={editingProduct.stock} className="w-full p-2 bg-[var(--duke-veil)] border border-[var(--duke-veil-edge)] text-[var(--shell-ink)] focus:border-[var(--duke-amber-edge)] outline-none transition-colors"/></div>
-                                        <div><label className="text-[10px] text-[var(--duke-ink-8)] block mb-1 tracking-widest">MIN. ALERT</label><input name="minStock" type="number" step="any" defaultValue={editingProduct.minStock || 50} className="w-full p-2 bg-[var(--duke-veil)] border border-[var(--duke-danger-edge)] text-[var(--duke-danger-ink)] focus:border-[var(--duke-danger-edge)] outline-none"/></div>
+                                        <div><label className="text-[10px] text-[var(--duke-ink-8)] block mb-1 tracking-widest">MIN. ALERT (BKS)</label><input name="minStock" type="number" step="any" defaultValue={editingProduct.minStock || ''} placeholder={`pakai batas perusahaan (${appSettings?.defaultMinStockQty || 3} ${appSettings?.defaultMinStockUnit || 'Bal'})`} className="w-full p-2 bg-[var(--duke-veil)] border border-[var(--duke-danger-edge)] text-[var(--duke-danger-ink)] focus:border-[var(--duke-danger-edge)] outline-none"/></div>
                                         {/* 🚀 NEW: STICKS PER PACK INPUT */}
                                         <div><label className="text-[10px] text-[var(--duke-ink-8)] block mb-1 tracking-widest">STICKS / BKS</label><input name="sticksPerPack" type="number" step="any" defaultValue={editingProduct.sticksPerPack || 16} className="w-full p-2 bg-[var(--duke-veil)] border border-[var(--duke-veil-edge)] text-[var(--shell-ink)] focus:border-[var(--duke-amber-edge)] outline-none transition-colors"/></div>
                                         <div><label className="text-[10px] text-[var(--duke-ink-8)] block mb-1 tracking-widest">TYPE</label><input name="type" defaultValue={editingProduct.type} className="w-full p-2 bg-[var(--duke-veil)] border border-[var(--duke-veil-edge-2)] text-[var(--duke-ink-hi)] focus:border-[var(--duke-veil-edge-3)] outline-none"/></div>

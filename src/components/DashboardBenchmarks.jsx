@@ -1,205 +1,517 @@
-import React, { useMemo, useState, useEffect } from 'react';
-import { createPortal } from 'react-dom'; // 🚀 IMPORT PORTAL
-import { Target, TrendingUp, Flame, Settings, X, Save } from 'lucide-react';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
-import { formatRupiah } from '../utils/helpers';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
+import { Settings, X, Save } from 'lucide-react';
+import { formatRupiah, convertToBks } from '../utils/helpers';
+import { MIN_STOCK_UNITS, DEFAULT_MIN_QTY, DEFAULT_MIN_UNIT } from '../utils/stockThreshold';
+import { PERIODS, periodWindow, txDate } from '../utils/period';
+import SafetyStatus from './SafetyStatus';
 
-export default function DashboardBenchmarks({ transactions = [], inventory = [], appSettings, onSaveTargets, canEditGoals }) {
-    
-    const TARGET_MONTHLY_REVENUE = appSettings?.targetMonthlyRevenue || 500000000; 
-    const TARGET_DAILY_BAL = appSettings?.targetDailyBal || 50; 
-    const TARGET_FILTER_RATIO = appSettings?.targetFilterRatio || 60; 
+/* THE LIVE PANEL — what used to be three "Executive Targets" cards.
+   ────────────────────────────────────────────────────────────────────────────
+   Aldi, 2026-08-25: *"i want to see daily week, month and year only, dont use total"*.
 
+   That one sentence decided this file. Every figure here reads for the period on the switch, and
+   there is no running total anywhere on the dashboard any more — an all-time number only ever
+   goes up, so it can never be good or bad news.
+
+   ⚠️ THE SWITCH DELETED TWO PANELS. "Monthly Trajectory" and the separate "7-Day Revenue Graph"
+   were the same chart on two different settings. One chart, four settings, and the screen got
+   the space back that he asked for without anything being sacrificed for it.
+
+   ⚠️ THE CHART IS CUMULATIVE AGAINST A PACE LINE, not a bar per bucket. That is what makes one
+   chart work for all four periods: the dashed line is where you would be if you were exactly on
+   target, so "under the line" means the same thing whether the line covers thirteen hours or
+   twelve months. A bar chart would have to be re-read every time the period changed.
+
+   ⚠️ NUMBERS ARE NOT PRINTED ON THE CHART. His ask: *"do not put too much number in there but
+   hover to show the extra number"*. Scrubbing writes into ONE reserved line, so nothing on the
+   screen moves when a value appears.                                                          */
+
+/* Bal is the unit the business counts in, and every product packs differently, so a quantity is
+   only meaningful once it has been through that product's own packing. Shared by the volume
+   figure and the mix ring. */
+const toBal = (item, product) => {
+    const packsPerSlop = product.packsPerSlop || 10;
+    const slopsPerBal  = product.slopsPerBal  || 20;
+    const packsPerBal  = packsPerSlop * slopsPerBal;
+    if (packsPerBal <= 0) return 0;
+    if (item.unit === 'Bal')    return item.qty;
+    if (item.unit === 'Karton') return item.qty * (product.balsPerCarton || 4);
+    return convertToBks(item.qty, item.unit, product) / packsPerBal;
+};
+
+/* a short rupiah for a label, where the exact figure would only be noise */
+const compactRp = (v) => {
+    const n = Number(v) || 0;
+    if (n >= 1e9) return `Rp ${(n / 1e9).toFixed(1).replace('.', ',')} M`;
+    if (n >= 1e6) return `Rp ${Math.round(n / 1e6)} jt`;
+    return formatRupiah(n);
+};
+
+const pct = (a, b) => (b > 0 ? Math.round((a / b) * 100) : 0);
+
+export default function DashboardBenchmarks({
+    transactions = [], inventory = [], appSettings, onSaveTargets, canEditGoals,
+    auditLogs = [], sessionStatus, period = 'bulan', onPeriod,
+}) {
     const [isEditing, setIsEditing] = useState(false);
-    const [editForm, setEditForm] = useState({
-        targetMonthlyRevenue: TARGET_MONTHLY_REVENUE,
-        targetDailyBal: TARGET_DAILY_BAL,
-        targetFilterRatio: TARGET_FILTER_RATIO
+    const [scrub, setScrub]   = useState(null);   // index being read, or null
+    const [ringOn, setRingOn] = useState(null);   // 'skm' | 'skt' | null
+    const [arrived, setArrived] = useState(false);
+    const sparkRef = useRef(null);
+
+    const monthlyTarget = Number(appSettings?.targetMonthlyRevenue) || 500000000;
+    const dailyBalTarget = Number(appSettings?.targetDailyBal) || 50;
+    const filterTarget = Number(appSettings?.targetFilterRatio) || 60;
+
+    /* CALCULATED, WITH AN OVERRIDE — his call, 2026-08-25. He sets the month and the day; the
+       week and the year follow from the month unless he types something else. A blank override
+       is not zero, it means "work it out", which is why every read goes through this. */
+    const revTarget = (p) => {
+        const o = Number(appSettings?.[`targetRevenue_${p}`]);
+        if (Number.isFinite(o) && o > 0) return o;
+        if (p === 'hari')   return monthlyTarget / 30;
+        if (p === 'minggu') return (monthlyTarget / 30) * 7;
+        if (p === 'tahun')  return monthlyTarget * 12;
+        return monthlyTarget;
+    };
+    const balTarget = (p) => {
+        const o = Number(appSettings?.[`targetBal_${p}`]);
+        if (Number.isFinite(o) && o > 0) return o;
+        if (p === 'minggu') return dailyBalTarget * 7;
+        if (p === 'bulan')  return dailyBalTarget * 30;
+        if (p === 'tahun')  return dailyBalTarget * 365;
+        return dailyBalTarget;
+    };
+
+    const [form, setForm] = useState({});
+    useEffect(() => {
+        if (!isEditing) return;
+        setForm({
+            targetMonthlyRevenue: monthlyTarget,
+            targetDailyBal: dailyBalTarget,
+            targetFilterRatio: filterTarget,
+            targetRevenue_hari:   appSettings?.targetRevenue_hari   || '',
+            targetRevenue_minggu: appSettings?.targetRevenue_minggu || '',
+            targetRevenue_tahun:  appSettings?.targetRevenue_tahun  || '',
+            defaultMinStockQty:  appSettings?.defaultMinStockQty  || DEFAULT_MIN_QTY,
+            defaultMinStockUnit: appSettings?.defaultMinStockUnit || DEFAULT_MIN_UNIT,
+        });
+    }, [isEditing, appSettings]); // eslint-disable-line react-hooks/exhaustive-deps
+
+    /* ── EVERYTHING THE PANEL SHOWS, for this period and the one before it ── */
+    const M = useMemo(() => {
+        const now = new Date();
+        const prod = new Map(inventory.map(p => [p.id, p]));
+
+        /* ⚠️ the window comes from utils/period so the velocity list below cannot drift onto a
+           different month than this panel — see the note in that file. */
+        const w = periodWindow(period, now);
+        const { start, prevStart, buckets, done, bucketOf, tickOf } = w;
+
+        const perBucket = new Array(buckets).fill(0);
+        let omzet = 0, laba = 0, bal = 0, filterBal = 0, kretekBal = 0;
+        let prevOmzet = 0, prevLaba = 0;
+
+        transactions.forEach(t => {
+            if (t.type !== 'SALE') return;
+            const d = txDate(t);
+            if (isNaN(d)) return;
+            const total = t.total || 0, profit = t.totalProfit || 0;
+
+            if (d >= start) {
+                omzet += total; laba += profit;
+                const b = bucketOf(d);
+                if (b >= 0 && b < buckets) perBucket[b] += total;
+                (t.items || []).forEach(item => {
+                    const p = prod.get(item.productId) || {};
+                    const q = toBal(item, p);
+                    bal += q;
+                    const name = (item.name || '').toLowerCase();
+                    const type = (item.type || '').toLowerCase();
+                    if (name.includes('filter') || type.includes('skm') || name.includes('mild')) filterBal += q;
+                    else kretekBal += q;
+                });
+            } else if (d >= prevStart) {
+                prevOmzet += total; prevLaba += profit;
+            }
+        });
+
+        /* cumulative, so the shape can be compared with a straight pace line */
+        const series = [0];
+        for (let i = 0; i < Math.min(done, buckets); i++) series.push(series[series.length - 1] + perBucket[i]);
+
+        const margin     = omzet > 0 ? (laba / omzet) * 100 : 0;
+        const prevMargin = prevOmzet > 0 ? (prevLaba / prevOmzet) * 100 : 0;
+        const totalMix   = filterBal + kretekBal;
+
+        return {
+            omzet, laba, margin, bal, series, buckets, done, tickOf,
+            labaDelta:   prevLaba > 0 ? ((laba - prevLaba) / prevLaba) * 100 : null,
+            marginDelta: prevOmzet > 0 ? margin - prevMargin : null,
+            skm: totalMix > 0 ? Math.round((filterBal / totalMix) * 100) : 0,
+            revTarget: revTarget(period),
+            balTarget: balTarget(period),
+        };
+    }, [transactions, inventory, period, appSettings]); // eslint-disable-line react-hooks/exhaustive-deps
+
+    /* one arrival on mount, and again whenever the period changes */
+    useEffect(() => {
+        setArrived(false);
+        setScrub(null);
+        const id = requestAnimationFrame(() => requestAnimationFrame(() => setArrived(true)));
+        return () => cancelAnimationFrame(id);
+    }, [period]);
+
+    /* ── the chart geometry. viewBox units; the SVG stretches, the maths does not. ── */
+    const VB = { w: 336, h: 92, top: 8, bot: 86 };
+    const span = VB.w * (M.done / M.buckets);
+    const n = M.series.length;
+    const X = (i) => (n < 2 ? 0 : (i * span) / (n - 1));
+    const Y = (v) => VB.bot - Math.min(1, v / (M.revTarget || 1)) * (VB.bot - VB.top);
+    const points = M.series.map((v, i) => `${X(i)},${Y(v)}`).join(' L');
+
+    const onScrub = (e) => {
+        const el = sparkRef.current;
+        if (!el || n < 2) return;
+        const r = el.getBoundingClientRect();
+        if (!r.width) return;
+        const frac = Math.max(0, Math.min(1, ((e.clientX - r.left) / r.width) / (M.done / M.buckets || 1)));
+        setScrub(Math.round(frac * (n - 1)));
+    };
+    const onScrubKey = (e) => {
+        if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+        e.preventDefault();
+        const cur = scrub === null ? n - 1 : scrub;
+        setScrub(Math.max(0, Math.min(n - 1, cur + (e.key === 'ArrowRight' ? 1 : -1))));
+    };
+
+    /* what the scrub line says: the value at that point, and how far off the pace it was */
+    let scrubKey = '', scrubVal = null, scrubGap = 0;
+    if (scrub !== null && n > 1) {
+        const need = (scrub / (n - 1)) * (M.done / M.buckets) * M.revTarget;
+        scrubVal = M.series[scrub];
+        scrubGap = scrubVal - need;
+        scrubKey = scrub === 0 ? 'Mulai' : M.tickOf(scrub - 1);
+    }
+
+    /* ── the ring. Each arc is a dash of the full circumference revealed by pulling the offset
+          down; the second is rotated to start where the first ended. `transformOrigin` is in USER
+          units — percentages need transform-box: fill-box and are the usual reason a ring spins
+          around the wrong point. ── */
+    const R = 40, C = 2 * Math.PI * R;
+    const arc = (fraction, fromFraction) => ({
+        strokeDasharray: C,
+        strokeDashoffset: arrived ? C - fraction * C : C,
+        transformOrigin: '54px 54px',
+        transform: `rotate(${-90 + fromFraction * 360}deg)`,
     });
 
-    useEffect(() => {
-        if (isEditing) {
-            setEditForm({
-                targetMonthlyRevenue: appSettings?.targetMonthlyRevenue || 500000000,
-                targetDailyBal: appSettings?.targetDailyBal || 50,
-                targetFilterRatio: appSettings?.targetFilterRatio || 60
-            });
-        }
-    }, [isEditing, appSettings]);
+    const p = PERIODS.find(x => x.key === period) || PERIODS[2];
+    const left = M.buckets - M.done;
+    const balPct = Math.min(100, pct(M.bal, M.balTarget));
 
     const handleSave = (e) => {
         e.preventDefault();
+        const num = (v) => (v === '' || v === null || v === undefined ? '' : Number(v));
         onSaveTargets({
-            targetMonthlyRevenue: Number(editForm.targetMonthlyRevenue),
-            targetDailyBal: Number(editForm.targetDailyBal),
-            targetFilterRatio: Number(editForm.targetFilterRatio)
+            targetMonthlyRevenue: Number(form.targetMonthlyRevenue) || monthlyTarget,
+            targetDailyBal: Number(form.targetDailyBal) || dailyBalTarget,
+            targetFilterRatio: Number(form.targetFilterRatio) || filterTarget,
+            targetRevenue_hari:   num(form.targetRevenue_hari),
+            targetRevenue_minggu: num(form.targetRevenue_minggu),
+            targetRevenue_tahun:  num(form.targetRevenue_tahun),
+            defaultMinStockQty:  Number(form.defaultMinStockQty) || DEFAULT_MIN_QTY,
+            defaultMinStockUnit: MIN_STOCK_UNITS.includes(form.defaultMinStockUnit)
+                ? form.defaultMinStockUnit : DEFAULT_MIN_UNIT,
         });
         setIsEditing(false);
     };
 
-    const metrics = useMemo(() => {
-        const now = new Date();
-        const currentMonth = now.getMonth();
-        const currentYear = now.getFullYear();
-        const todayStr = now.toLocaleDateString();
-
-        let monthlyRevenue = 0;
-        let dailyBalSold = 0;
-        let filterSales = 0;
-        let kretekSales = 0;
-
-        transactions.forEach(t => {
-            if (t.type !== 'SALE') return;
-            const tDate = new Date(t.timestamp?.seconds ? t.timestamp.seconds * 1000 : t.date);
-            
-            if (tDate.getMonth() === currentMonth && tDate.getFullYear() === currentYear) {
-                monthlyRevenue += (t.total || 0);
-            }
-
-            if (tDate.toLocaleDateString() === todayStr) {
-                (t.items || []).forEach(item => {
-                    const prodData = inventory.find(p => p.id === item.productId) || {};
-                    let bksQty = item.qty;
-                    if (item.unit === 'Batang') bksQty = item.qty / (prodData.sticksPerPack || 16);
-                    
-                    let multToBal = 0;
-                    const packsPerSlop = prodData.packsPerSlop || 10;
-                    const slopsPerBal = prodData.slopsPerBal || 20;
-                    const packsPerBal = packsPerSlop * slopsPerBal;
-
-                    if (item.unit === 'Slop' || item.unit === 'Batang' || item.unit === 'Bks') {
-                        multToBal = (item.unit === 'Slop' ? item.qty * packsPerSlop : bksQty) / packsPerBal;
-                    } else if (item.unit === 'Bal') {
-                        multToBal = item.qty;
-                    } else if (item.unit === 'Karton') {
-                        multToBal = item.qty * (prodData.balsPerCarton || 4);
-                    }
-
-                    dailyBalSold += multToBal;
-
-                    const name = (item.name || '').toLowerCase();
-                    const type = (item.type || '').toLowerCase();
-                    const isFilter = name.includes('filter') || type.includes('skm') || name.includes('mild');
-                    
-                    if (isFilter) filterSales += multToBal;
-                    else kretekSales += multToBal; 
-                });
-            }
-        });
-
-        const totalProportionSales = filterSales + kretekSales;
-        const filterPercent = totalProportionSales > 0 ? Math.round((filterSales / totalProportionSales) * 100) : 0;
-        const kretekPercent = totalProportionSales > 0 ? Math.round((kretekSales / totalProportionSales) * 100) : 0;
-
-        return { monthlyRevenue, dailyBalSold: dailyBalSold.toFixed(1), filterPercent, kretekPercent };
-    }, [transactions, inventory]);
-
-    const pieData = [
-        /* Recharts writes `fill` as an SVG attribute, where var() does not resolve,
-           so these two carry the literal token values: --ink and --orange. */
-        { name: 'Filter (SKM)', value: metrics.filterPercent, color: '#E8E4DE' },
-        { name: 'Kretek (SKT)', value: metrics.kretekPercent, color: '#FF8C1A' }
-    ];
-
     return (
-        <div className="relative mb-8 boot-1">
-            <div className="flex justify-between items-end mb-4 border-b border-[var(--line-2)] pb-2">
-                <div>
-                    <h2 className="text-lg font-bold text-[var(--ink)] uppercase tracking-widest">Executive Targets</h2>
-                    <p className="text-[10px] text-ink-muted font-mono uppercase tracking-[0.2em]">Live System Benchmarks</p>
+        <div className={`kpm-mod live ${arrived ? 'kpm-arr in' : 'kpm-arr'}`}>
+            <div className="kpm-head">
+                <span className="slot">PANEL · LIVE</span>
+                <div className="line">
+                    <h3>{p.title}</h3>
+                    {canEditGoals && (
+                        <button type="button" className="kpm-btn" onClick={() => setIsEditing(true)}>
+                            <Settings size={13} /> Atur target
+                        </button>
+                    )}
                 </div>
-                {canEditGoals && (
-                    <button onClick={() => setIsEditing(true)} className="flex items-center gap-2 bg-[var(--raised)] hover:bg-[var(--raised)] text-ink-muted hover:text-[var(--ink)] px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase transition-colors border border-[var(--line-2)]">
-                        <Settings size={14}/> Adjust Goals
-                    </button>
-                )}
+                <SafetyStatus auditLogs={auditLogs} sessionStatus={sessionStatus} />
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className="bg-[var(--panel)] border border-[var(--line-2)] p-6 rounded-2xl relative overflow-hidden group">
-                    <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity"><TrendingUp size={80}/></div>
-                    <h3 className="text-[10px] font-bold text-verified uppercase tracking-widest mb-1">Monthly Trajectory</h3>
-                    <p className="text-2xl font-black text-[var(--ink)] mb-4">{formatRupiah(metrics.monthlyRevenue)}</p>
-                    <div className="w-full bg-[var(--raised)] h-2 rounded-full overflow-hidden mb-2">
-                        <div className="bg-verified h-full shadow-[0_0_10px_rgba(228,223,214,0.35)] transition-all duration-1000" style={{ width: `${Math.min((metrics.monthlyRevenue / TARGET_MONTHLY_REVENUE) * 100, 100)}%` }}></div>
+            <div className="kpm-shelf">
+                <div className="kpm-period" role="group" aria-label="Periode">
+                    {PERIODS.map(x => (
+                        <button
+                            key={x.key}
+                            type="button"
+                            aria-pressed={x.key === period}
+                            onClick={() => onPeriod && onPeriod(x.key)}
+                        >{x.label}</button>
+                    ))}
+                </div>
+
+                {/* ── OMZET, and the pace chart ── */}
+                <div style={{ marginTop: 'var(--s5)' }}>
+                    <div className="kpm-ro on" style={{ minHeight: 0 }}>
+                        <span className="k">Omzet</span>
+                        <span className="v">{left > 0 ? `${left} ${p.unit} lagi` : 'periode penuh'}</span>
                     </div>
-                    <div className="flex justify-between text-[11px] font-mono text-ink-muted uppercase">
-                        <span>{Math.round((metrics.monthlyRevenue / TARGET_MONTHLY_REVENUE) * 100)}% to Goal</span>
-                        <span>Target: {formatRupiah(TARGET_MONTHLY_REVENUE)}</span>
+                    <div className="kpm-omzet" style={{ marginTop: 'var(--s2)' }}>
+                        {formatRupiah(M.omzet)}
+                    </div>
+
+                    <div
+                        className={`kpm-spark${scrub !== null ? ' on' : ''}`}
+                        ref={sparkRef}
+                        tabIndex={0}
+                        role="img"
+                        aria-label={`Omzet ${p.title} dibanding target. Panah kiri kanan untuk membaca.`}
+                        onPointerMove={onScrub}
+                        onPointerDown={onScrub}
+                        onPointerLeave={(e) => { if (e.pointerType !== 'touch') setScrub(null); }}
+                        onKeyDown={onScrubKey}
+                        style={{ marginTop: 'var(--s3)' }}
+                    >
+                        <svg viewBox={`0 0 ${VB.w} ${VB.h}`} width="100%" height="92"
+                             preserveAspectRatio="none" aria-hidden="true">
+                            <line x1="0" y1={VB.bot} x2={VB.w} y2={VB.bot}
+                                  stroke="var(--line-3)" strokeWidth="1" vectorEffect="non-scaling-stroke" />
+                            <line x1="0" y1={VB.bot} x2={VB.w} y2={VB.top}
+                                  stroke="var(--line-3)" strokeWidth="1" strokeDasharray="4 4"
+                                  vectorEffect="non-scaling-stroke"
+                                  style={{ opacity: arrived ? 1 : 0, transition: 'opacity 300ms cubic-bezier(.2,.8,.3,1)' }} />
+                            {n > 1 && (
+                                <>
+                                    <path d={`M0,${VB.bot} L${points} L${X(n - 1)},${VB.bot} Z`}
+                                          fill="var(--lamp-on)" fillOpacity=".13"
+                                          style={{ opacity: arrived ? 1 : 0, transition: 'opacity 300ms cubic-bezier(.2,.8,.3,1)' }} />
+                                    <path d={`M${points}`} fill="none" stroke="var(--lamp-on)" strokeWidth="2"
+                                          strokeLinejoin="round" strokeLinecap="round"
+                                          vectorEffect="non-scaling-stroke" />
+                                </>
+                            )}
+                        </svg>
+                        {scrub !== null && n > 1 && (
+                            <>
+                                <div className="kpm-cross" style={{ opacity: 1, left: `${(X(scrub) / VB.w) * 100}%` }} />
+                                <div className="kpm-scrub" style={{
+                                    opacity: 1,
+                                    left: `${(X(scrub) / VB.w) * 100}%`,
+                                    top:  `${(Y(M.series[scrub]) / VB.h) * 100}%`,
+                                }} />
+                            </>
+                        )}
+                    </div>
+
+                    <div className={`kpm-ro${scrub !== null ? ' on' : ''}`}>
+                        <span className="k">{scrubKey}</span>
+                        <span className="v">
+                            {scrubVal !== null && (
+                                <>
+                                    {compactRp(scrubVal)}{' · '}
+                                    <span className={scrubGap < 0 ? 'neg' : ''}>
+                                        {scrubGap < 0 ? '' : '+'}{compactRp(scrubGap)} vs pace
+                                    </span>
+                                </>
+                            )}
+                        </span>
+                    </div>
+
+                    <div className="kpm-ro on">
+                        <span className="k">{pct(M.omzet, M.revTarget)}% dari target</span>
+                        <span className="v">Target {compactRp(M.revTarget)}</span>
                     </div>
                 </div>
 
-                <div className="bg-[var(--panel)] border border-[var(--line-2)] p-6 rounded-2xl relative overflow-hidden group">
-                    <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity"><Target size={80}/></div>
-                    <h3 className="text-[10px] font-bold text-orange uppercase tracking-widest mb-1">Daily Volume (Bal)</h3>
-                    <div className="flex items-baseline gap-2 mb-4">
-                        <p className="text-3xl font-black text-[var(--ink)] leading-none">{metrics.dailyBalSold}</p>
-                        <p className="text-xs text-ink-muted font-bold uppercase tracking-widest mb-0.5">/ {TARGET_DAILY_BAL} BAL</p>
+                {/* ── LABA and MARGIN, each against the period before ── */}
+                <div className="kpm-pair" style={{ marginTop: 'var(--s5)' }}>
+                    <div>
+                        <span className="k">Laba</span>
+                        <span className="v">{formatRupiah(M.laba)}</span>
+                        <span className={`delta${M.labaDelta !== null && M.labaDelta < 0 ? ' down' : ''}`}>
+                            {M.labaDelta === null ? 'belum ada pembanding'
+                              : `${M.labaDelta >= 0 ? '+' : '−'}${Math.abs(M.labaDelta).toFixed(1).replace('.', ',')}% vs sebelumnya`}
+                        </span>
                     </div>
-                    <div className="w-full bg-[var(--raised)] h-2 rounded-full overflow-hidden mb-2">
-                        <div className="bg-orange h-full shadow-[0_0_10px_rgba(255,140,26,0.5)] transition-all duration-1000" style={{ width: `${Math.min((metrics.dailyBalSold / TARGET_DAILY_BAL) * 100, 100)}%` }}></div>
-                    </div>
-                    <div className="flex justify-between text-[11px] font-mono text-ink-muted uppercase">
-                        <span>Pace: {metrics.dailyBalSold >= TARGET_DAILY_BAL ? 'Target Met!' : 'Behind Schedule'}</span>
-                        <span>{Math.max(0, TARGET_DAILY_BAL - metrics.dailyBalSold).toFixed(1)} Bal Remaining</span>
+                    <div>
+                        <span className="k">Margin</span>
+                        <span className="v">{M.margin.toFixed(1).replace('.', ',')}%</span>
+                        <span className={`delta${M.marginDelta !== null && M.marginDelta < 0 ? ' down' : ''}`}>
+                            {M.marginDelta === null ? 'belum ada pembanding'
+                              : `${M.marginDelta >= 0 ? '+' : '−'}${Math.abs(M.marginDelta).toFixed(1).replace('.', ',')} pts`}
+                        </span>
                     </div>
                 </div>
 
-                <div className="bg-[var(--panel)] border border-[var(--line-2)] p-4 rounded-2xl flex items-center justify-between">
-                    <div className="flex-1">
-                        <h3 className="text-[10px] font-bold text-ink uppercase tracking-widest mb-2 flex items-center gap-2"><Flame size={12}/> Product Shift</h3>
-                        <div className="space-y-2">
-                            <div>
-                                <div className="flex justify-between text-[10px] font-bold mb-1"><span className="text-ink">Filter (SKM)</span><span className="text-[var(--ink)]">{metrics.filterPercent}%</span></div>
-                                <div className="w-full bg-[var(--raised)] h-1.5 rounded-full overflow-hidden"><div className="bg-ink h-full" style={{ width: `${metrics.filterPercent}%` }}></div></div>
-                            </div>
-                            <div>
-                                <div className="flex justify-between text-[10px] font-bold mb-1"><span className="text-orange">Kretek (SKT)</span><span className="text-[var(--ink)]">{metrics.kretekPercent}%</span></div>
-                                <div className="w-full bg-[var(--raised)] h-1.5 rounded-full overflow-hidden"><div className="bg-orange h-full" style={{ width: `${metrics.kretekPercent}%` }}></div></div>
-                            </div>
-                            <p className="text-[11px] font-mono text-ink-muted uppercase mt-2">Target Ratio: {TARGET_FILTER_RATIO}% Filter</p>
+                {/* ── VOLUME ── */}
+                <div style={{ marginTop: 'var(--s5)', borderTop: '1px solid var(--line)', paddingTop: 'var(--s5)' }}>
+                    <div className="kpm-ro on" style={{ minHeight: 0 }}>
+                        <span className="k">Bal keluar</span>
+                        <span className="v">{balPct}% dari {Math.round(M.balTarget)} bal</span>
+                    </div>
+                    <div className="kpm-omzet" style={{ fontSize: '30px', marginTop: 'var(--s2)' }}>
+                        {M.bal >= 100 ? Math.round(M.bal).toLocaleString('id-ID')
+                                      : M.bal.toFixed(1).replace('.', ',')}
+                    </div>
+                    <span className="kpm-trk" style={{ marginTop: 'var(--s3)' }}>
+                        <i style={{ width: arrived ? `${balPct}%` : 0 }} />
+                    </span>
+                </div>
+
+                {/* ── THE MIX. Nothing is printed in the ring until you point at an arc. ── */}
+                <div style={{ marginTop: 'var(--s5)', borderTop: '1px solid var(--line)', paddingTop: 'var(--s5)' }}>
+                    <div className="kpm-ro on" style={{ minHeight: 0 }}>
+                        <span className="k">Campuran</span>
+                        <span className="v">target {filterTarget}% filter</span>
+                    </div>
+                    <div className="kpm-ring-wrap" style={{ marginTop: 'var(--s4)' }}>
+                        <svg viewBox="0 0 108 108" width="108" height="108" role="img"
+                             aria-label={`Filter ${M.skm} persen, kretek ${100 - M.skm} persen`}>
+                            <circle cx="54" cy="54" r={R} fill="none" stroke="var(--raised)" strokeWidth="15" />
+                            <circle className="kpm-arc" cx="54" cy="54" r={R} fill="none"
+                                    stroke="var(--ink)" strokeWidth={ringOn === 'skm' ? 22 : 15}
+                                    style={arc(M.skm / 100, 0)}
+                                    onPointerEnter={() => setRingOn('skm')}
+                                    onPointerDown={() => setRingOn('skm')}
+                                    onPointerLeave={(e) => { if (e.pointerType !== 'touch') setRingOn(null); }} />
+                            <circle className="kpm-arc" cx="54" cy="54" r={R} fill="none"
+                                    stroke="var(--lamp-on)" strokeWidth={ringOn === 'skt' ? 22 : 15}
+                                    style={arc((100 - M.skm) / 100, M.skm / 100)}
+                                    onPointerEnter={() => setRingOn('skt')}
+                                    onPointerDown={() => setRingOn('skt')}
+                                    onPointerLeave={(e) => { if (e.pointerType !== 'touch') setRingOn(null); }} />
+                            <text className={`kpm-ring-txt${ringOn ? ' on' : ''}`} x="54" y="55">
+                                {ringOn === 'skt' ? `${100 - M.skm}%` : `${M.skm}%`}
+                            </text>
+                            <text className={`kpm-ring-sub${ringOn ? ' on' : ''}`} x="54" y="69">
+                                {ringOn === 'skt' ? 'SKT' : 'SKM'}
+                            </text>
+                        </svg>
+                        <div style={{ flex: '1 1 140px' }}>
+                            <button type="button"
+                                    className={`kpm-key-row${ringOn === 'skm' ? ' on' : ''}`}
+                                    onPointerEnter={() => setRingOn('skm')}
+                                    onFocus={() => setRingOn('skm')}
+                                    onPointerLeave={(e) => { if (e.pointerType !== 'touch') setRingOn(null); }}
+                                    onBlur={() => setRingOn(null)}>
+                                <i style={{ background: 'var(--ink)' }} /> Filter · SKM
+                            </button>
+                            <button type="button"
+                                    className={`kpm-key-row${ringOn === 'skt' ? ' on' : ''}`}
+                                    onPointerEnter={() => setRingOn('skt')}
+                                    onFocus={() => setRingOn('skt')}
+                                    onPointerLeave={(e) => { if (e.pointerType !== 'touch') setRingOn(null); }}
+                                    onBlur={() => setRingOn(null)}>
+                                <i style={{ background: 'var(--lamp-on)', border: '1px solid var(--accent-edge)' }} />
+                                Kretek · SKT
+                            </button>
+                            <p className="kpm-safety-hint" style={{
+                                color: M.skm >= filterTarget ? 'var(--ink-muted)' : 'var(--danger-ink)',
+                            }}>
+                                {M.skm >= filterTarget ? 'target tercapai'
+                                    : `${filterTarget - M.skm} pts di bawah target`}
+                            </p>
                         </div>
                     </div>
-                    <div className="w-24 h-24 shrink-0">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <PieChart>
-                                <Pie data={pieData} innerRadius={25} outerRadius={40} dataKey="value" stroke="none">
-                                    {pieData.map((entry, index) => (<Cell key={`cell-${index}`} fill={entry.color} />))}
-                                </Pie>
-                                <Tooltip contentStyle={{ backgroundColor: 'var(--panel)', border: '1px solid var(--line-3)', fontSize: '10px', borderRadius: '8px' }} itemStyle={{ color: 'var(--ink)', fontWeight: 'bold' }} />
-                            </PieChart>
-                        </ResponsiveContainer>
-                    </div>
                 </div>
             </div>
 
-            {/* 🚀 THE PORTAL FIX: Renders Modal directly to document.body! */}
             {isEditing && createPortal(
-                <div className="fixed inset-0 z-[999999] bg-[var(--panel)] backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}>
-                    <div className="bg-ground border border-[var(--line-2)] p-8 rounded-2xl w-full max-w-md shadow-[0_0_50px_rgba(0,0,0,1)] relative font-mono">
-                        <button onClick={() => setIsEditing(false)} className="absolute top-4 right-4 text-ink-muted hover:text-danger-text transition-colors"><X size={24}/></button>
-                        <h2 className="text-xl font-bold text-[var(--ink)] mb-6 flex items-center gap-3 uppercase tracking-widest"><Settings className="text-orange"/> Edit Goals</h2>
-                        <form onSubmit={handleSave} className="space-y-5">
-                            <div>
-                                <label className="text-[10px] text-verified font-bold block mb-2 uppercase tracking-widest">Target Monthly Revenue (Rp)</label>
-                                <input type="text" value={editForm.targetMonthlyRevenue} onChange={(e) => setEditForm({...editForm, targetMonthlyRevenue: e.target.value.replace(/\D/g, '')})} className="w-full p-3 bg-black border border-verified/30 text-[var(--ink)] rounded outline-none focus:border-verified" required/>
+                <div className="kpm-scrim" onClick={() => setIsEditing(false)}>
+                    <div className="kpm-mod live" onClick={(e) => e.stopPropagation()}
+                         style={{ width: '100%', maxWidth: '520px', maxHeight: '90vh', overflowY: 'auto' }}>
+                        <div className="kpm-head">
+                            <span className="slot">PENGATURAN · TARGET</span>
+                            <div className="line">
+                                <h3>Atur target</h3>
+                                <button type="button" className="kpm-btn" onClick={() => setIsEditing(false)}>
+                                    <X size={14} /> Tutup
+                                </button>
                             </div>
-                            <div>
-                                <label className="text-[10px] text-orange font-bold block mb-2 uppercase tracking-widest">Target Daily Volume (Bal)</label>
-                                <input type="text" value={editForm.targetDailyBal} onChange={(e) => setEditForm({...editForm, targetDailyBal: e.target.value.replace(/[^0-9.]/g, '')})} className="w-full p-3 bg-black border border-orange/30 text-[var(--ink)] rounded outline-none focus:border-orange" required/>
+                            <p className="kpm-desc">
+                                Isi bulan dan hari saja. Minggu dan tahun dihitung sendiri dari target bulanan —
+                                kosongkan kalau mau dihitung otomatis.
+                            </p>
+                        </div>
+                        <form className="kpm-shelf" onSubmit={handleSave}>
+                            <label className="kpm-field">
+                                <span>Target omzet per bulan (Rp)</span>
+                                <input type="text" inputMode="numeric" value={form.targetMonthlyRevenue ?? ''}
+                                       onChange={(e) => setForm({ ...form, targetMonthlyRevenue: e.target.value.replace(/\D/g, '') })}
+                                       required />
+                            </label>
+                            <label className="kpm-field">
+                                <span>Target bal per hari</span>
+                                <input type="text" inputMode="decimal" value={form.targetDailyBal ?? ''}
+                                       onChange={(e) => setForm({ ...form, targetDailyBal: e.target.value.replace(/[^0-9.]/g, '') })}
+                                       required />
+                            </label>
+                            <label className="kpm-field">
+                                <span>Target proporsi filter (%)</span>
+                                <input type="text" inputMode="numeric" maxLength={3} value={form.targetFilterRatio ?? ''}
+                                       onChange={(e) => setForm({ ...form, targetFilterRatio: e.target.value.replace(/\D/g, '') })}
+                                       required />
+                            </label>
+
+                            {/* ── the low-stock rule. His ask, 2026-08-25: a quantity AND a unit,
+                                  because "50" meant fifty Bks and nobody stocks in Bks. ── */}
+                            <div style={{ borderTop: '1px solid var(--line)', paddingTop: 'var(--s4)' }}>
+                                <p className="kpm-desc" style={{ marginTop: 0 }}>
+                                    Barang dianggap <b>menipis</b> kalau sisanya sampai angka ini. Berlaku untuk semua
+                                    barang yang belum punya MIN. ALERT sendiri.
+                                </p>
+                                <div style={{ display: 'flex', gap: 'var(--s3)' }}>
+                                    <label className="kpm-field" style={{ flex: '1 1 auto' }}>
+                                        <span>Batas menipis</span>
+                                        <input type="text" inputMode="decimal" value={form.defaultMinStockQty ?? ''}
+                                               onChange={(e) => setForm({ ...form, defaultMinStockQty: e.target.value.replace(/[^0-9.]/g, '') })}
+                                               required />
+                                    </label>
+                                    <label className="kpm-field" style={{ flex: '0 0 130px' }}>
+                                        <span>Satuan</span>
+                                        <select value={form.defaultMinStockUnit ?? DEFAULT_MIN_UNIT}
+                                                onChange={(e) => setForm({ ...form, defaultMinStockUnit: e.target.value })}>
+                                            {MIN_STOCK_UNITS.map(u => <option key={u} value={u}>{u}</option>)}
+                                        </select>
+                                    </label>
+                                </div>
                             </div>
-                            <div>
-                                <label className="text-[10px] text-ink font-bold block mb-2 uppercase tracking-widest">Target Filter Proportion (%)</label>
-                                <input type="text" maxLength={3} value={editForm.targetFilterRatio} onChange={(e) => setEditForm({...editForm, targetFilterRatio: e.target.value.replace(/\D/g, '')})} className="w-full p-3 bg-black border border-line-3 text-[var(--ink)] rounded outline-none focus:border-ink" required/>
-                                <p className="text-[11px] text-ink-muted mt-2">Example: 60 = Aiming for 60% Filter / 40% Kretek.</p>
+
+                            <div style={{ borderTop: '1px solid var(--line)', paddingTop: 'var(--s4)' }}>
+                                <p className="kpm-desc" style={{ marginTop: 0 }}>
+                                    Kosongkan tiga ini kalau mau dihitung otomatis dari target bulanan.
+                                </p>
+                                <label className="kpm-field">
+                                    <span>Target omzet per hari (Rp) — otomatis {compactRp(monthlyTarget / 30)}</span>
+                                    <input type="text" inputMode="numeric" value={form.targetRevenue_hari ?? ''}
+                                           onChange={(e) => setForm({ ...form, targetRevenue_hari: e.target.value.replace(/\D/g, '') })} />
+                                </label>
+                                <label className="kpm-field">
+                                    <span>Target omzet per minggu (Rp) — otomatis {compactRp((monthlyTarget / 30) * 7)}</span>
+                                    <input type="text" inputMode="numeric" value={form.targetRevenue_minggu ?? ''}
+                                           onChange={(e) => setForm({ ...form, targetRevenue_minggu: e.target.value.replace(/\D/g, '') })} />
+                                </label>
+                                <label className="kpm-field">
+                                    <span>Target omzet per tahun (Rp) — otomatis {compactRp(monthlyTarget * 12)}</span>
+                                    <input type="text" inputMode="numeric" value={form.targetRevenue_tahun ?? ''}
+                                           onChange={(e) => setForm({ ...form, targetRevenue_tahun: e.target.value.replace(/\D/g, '') })} />
+                                </label>
                             </div>
-                            <button type="submit" className="w-full mt-4 bg-[var(--raised)] hover:bg-white text-[var(--ink)] hover:text-black py-4 rounded font-bold uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-2">
-                                <Save size={16}/> Save Master Targets
-                            </button>
+
+                            <div className="kpm-acts">
+                                <button type="submit" className="kpm-btn key">
+                                    <Save size={14} /> Simpan
+                                </button>
+                            </div>
                         </form>
                     </div>
                 </div>,
-                document.body // Appends directly to the root HTML body!
+                document.body
             )}
         </div>
     );

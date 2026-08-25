@@ -1,265 +1,279 @@
-import React, { useMemo } from 'react';
-import { ShieldAlert, AlertCircle, ShieldCheck, Users, Box, Activity, TrendingDown, TrendingUp } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import SafetyStatus from './SafetyStatus';
-import { formatRupiah, getRandomColor } from '../utils/helpers';
+import React, { useMemo, useState, useEffect } from 'react';
+import { Users, Activity, PackageX } from 'lucide-react';
+import { formatRupiah, convertToBks, splitToUnits } from '../utils/helpers';
+import { isLowStock, minStockBks, daysOfCover } from '../utils/stockThreshold';
+import { periodWindow, periodDays, periodMeta, txDate } from '../utils/period';
 import DashboardBenchmarks from './DashboardBenchmarks';
 
-const CustomTooltip = ({ active, payload, label }) => {
-  if (active && payload && payload.length) {
-    const total = payload.reduce((sum, entry) => sum + entry.value, 0);
-    return (
-      <div className="bg-[var(--raised)] p-4 border shadow-xl rounded-xl text-sm border-[var(--line)]">
-        <p className="font-bold mb-2 border-b pb-1 border-[var(--line)]">{label}</p>
-        {payload.map((entry, index) => (
-          <div key={index} className="flex justify-between items-center gap-4 mb-1">
-             <span style={{ color: entry.color }} className="font-medium">{entry.name}:</span>
-             <span className="font-mono">{formatRupiah(entry.value)}</span>
-          </div>
-        ))}
-        <div className="mt-2 pt-2 border-t flex justify-between font-bold border-[var(--line)]">
-            <span>Total Sales:</span>
-            <span>{formatRupiah(total)}</span>
-        </div>
-      </div>
-    );
-  }
-  return null;
+/* THE DASHBOARD.
+   ────────────────────────────────────────────────────────────────────────────
+   Rebuilt 2026-08-25 after: *"the dark screen and the UI on the dashboard is not fixed yet, panel
+   looks dark and bad the layout is pretty bad i want u to redesign a new one"*.
+
+   The layout was not badly spaced. It was written in a language the rest of the app had stopped
+   speaking: this was the only main screen never rebuilt as `.kpm-mod` modules, so while
+   SettingsView spent that vocabulary twenty-six times, the dashboard was still floating cards
+   with a radius, a backdrop blur and a drop shadow. That is why it read as a different app.
+
+   WHAT LEFT, and why — all four are his calls, recorded so they are not quietly re-added:
+     · Six equal cards (Total Vault / Global Revenue / Net Profit + three targets). All-time
+       figures only ever go up, so none of them could ever be news. *"dont use total"*.
+     · The separate 7-Day Revenue graph — it is the live panel's chart on MINGGU.
+     · `getRandomColor()` on the chart bars. It hashed a product name into an arbitrary hex, so
+       it could return blue, green, near-black on the dark ground or near-white on the cream one.
+       A chart that picks its own colours cannot obey a palette law.
+     · The hour-of-day strip I proposed. He asked *"why do we need this panel?"* and the honest
+       answer was that it fits a shop with a counter, not a distributor whose agents are on
+       routes — the hour on a nota records when an agent got back. The question worth answering
+       is WHICH AGENT sold what, which is the leaderboard below, on data that already exists.
+
+   WHAT ARRIVED: one period switch governing every figure, and a "running out" panel that counts
+   in Bal instead of Bks — *"few bal is considered as low not BKS bruh"*. The threshold behind it
+   is a company setting with a unit of its own; see src/utils/stockThreshold.js.                */
+
+/* the largest unit a quantity actually fills, because "sisa 640 Bks" is not how anyone speaks */
+const dominant = (bks, product) => {
+    const u = splitToUnits(bks, product);
+    if (u.Karton > 0) return { n: u.Karton, unit: 'KARTON', rest: u.Bal ? `${u.Bal} bal` : '' };
+    if (u.Bal    > 0) return { n: u.Bal,    unit: 'BAL',    rest: u.Slop ? `${u.Slop} slop` : '' };
+    if (u.Slop   > 0) return { n: u.Slop,   unit: 'SLOP',   rest: u.Bks ? `${u.Bks} bks` : '' };
+    return { n: u.Bks, unit: 'BKS', rest: '' };
 };
 
-export default function DashboardView({ 
-    isAdmin, userRole, totalStockValue, transactions, isUsbSecure, 
-    handleBackupData, lowStockItems, setActiveTab, chartData, 
-    backupToast, sessionStatus, auditLogs,
-    appSettings, handleSaveDashboardTargets,
-    inventory, motorists, customers // 🚀 NOW RECEIVING THESE
+export default function DashboardView({
+    isAdmin, transactions = [], lowStockItems = [], setActiveTab,
+    sessionStatus, auditLogs = [], appSettings, handleSaveDashboardTargets,
+    inventory = [],
 }) {
+    const [period, setPeriod] = useState('bulan');
+    const [openRow, setOpenRow] = useState(null);
+    const [arrived, setArrived] = useState(false);
 
-    // --- AGENT LEADERBOARD ---
-    const agentPerformance = useMemo(() => {
-        const todayStr = new Date().toLocaleDateString();
-        const perf = {};
-        
-        transactions.forEach(t => {
-            if (t.type === 'SALE' && new Date(t.timestamp?.seconds ? t.timestamp.seconds * 1000 : t.date).toLocaleDateString() === todayStr) {
-                const agent = t.agentName || 'Admin / Unknown';
-                if (!perf[agent]) perf[agent] = { revenue: 0, profit: 0, count: 0 };
-                perf[agent].revenue += (t.total || 0);
-                perf[agent].profit += (t.totalProfit || 0);
-                perf[agent].count += 1;
-            }
-        });
-        return Object.entries(perf).map(([name, data]) => ({ name, ...data })).sort((a,b) => b.revenue - a.revenue);
-    }, [transactions]);
+    useEffect(() => {
+        const id = requestAnimationFrame(() => requestAnimationFrame(() => setArrived(true)));
+        return () => cancelAnimationFrame(id);
+    }, []);
 
-    // --- VAULT VELOCITY ---
-    const vaultVelocity = useMemo(() => {
-        if (!inventory) return { fastest: [], slowest: [] }; // Safety check
-        const salesCount = {};
-        inventory.forEach(i => salesCount[i.id] = { name: i.name, soldBks: 0, stock: i.stock, isLow: i.stock <= (i.minStock || 5) });
-        
+    /* ── RUNNING OUT. What is low is decided by quantity (his rule); the ORDER is decided by how
+          long the shelf lasts, which is deliberately not printed. A product with no sales sorts
+          last because nothing is running it down. ── */
+    const runningOut = useMemo(() => {
         const thirtyDaysAgo = new Date();
         thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
+        const soldBks = new Map();
         transactions.forEach(t => {
-            if (t.type === 'SALE') {
-                const tDate = new Date(t.timestamp?.seconds ? t.timestamp.seconds * 1000 : t.date);
-                if (tDate >= thirtyDaysAgo) {
-                    (t.items || []).forEach(item => {
-                        if (salesCount[item.productId]) {
-                            let bksQty = item.qty;
-                            const pData = inventory.find(p => p.id === item.productId) || {};
-                            if (item.unit === 'Batang') bksQty = item.qty / (pData.sticksPerPack || 16);
-                            if (item.unit === 'Slop') bksQty = item.qty * (pData.packsPerSlop || 10);
-                            if (item.unit === 'Bal') bksQty = item.qty * (pData.slopsPerBal || 20) * (pData.packsPerSlop || 10);
-                            if (item.unit === 'Karton') bksQty = item.qty * (pData.balsPerCarton || 4) * (pData.slopsPerBal || 20) * (pData.packsPerSlop || 10);
-                            
-                            salesCount[item.productId].soldBks += bksQty;
-                        }
-                    });
-                }
-            }
+            if (t.type !== 'SALE') return;
+            const d = txDate(t);
+            if (isNaN(d) || d < thirtyDaysAgo) return;
+            (t.items || []).forEach(item => {
+                const p = inventory.find(x => x.id === item.productId);
+                if (!p) return;
+                soldBks.set(item.productId,
+                    (soldBks.get(item.productId) || 0) + convertToBks(item.qty, item.unit, p));
+            });
         });
-        
-        const sorted = Object.values(salesCount).sort((a,b) => b.soldBks - a.soldBks);
-        return {
-            fastest: sorted.slice(0, 5),
-            slowest: sorted.filter(item => item.stock > 0).reverse().slice(0, 5) 
-        };
-    }, [transactions, inventory]);
+
+        return lowStockItems
+            .map(item => {
+                const perDay = (soldBks.get(item.id) || 0) / 30;
+                return {
+                    item,
+                    days: daysOfCover(item.stock, perDay),
+                    left: dominant(item.stock, item),
+                    limit: dominant(minStockBks(item, appSettings), item),
+                };
+            })
+            .sort((a, b) => a.days - b.days);
+    }, [lowStockItems, transactions, inventory, appSettings]);
+
+    /* ── VELOCITY, for the period on the switch. Same window as the live panel, from the same
+          function, so the heading and the figures above it can never mean different things. ── */
+    const velocity = useMemo(() => {
+        const w = periodWindow(period);
+        const days = periodDays(period, w);
+        const moved = new Map();
+
+        transactions.forEach(t => {
+            if (t.type !== 'SALE') return;
+            const d = txDate(t);
+            if (isNaN(d) || d < w.start) return;
+            (t.items || []).forEach(item => {
+                const p = inventory.find(x => x.id === item.productId);
+                if (!p) return;
+                moved.set(item.productId,
+                    (moved.get(item.productId) || 0) + convertToBks(item.qty, item.unit, p));
+            });
+        });
+
+        const rows = inventory.map(p => {
+            const bks = moved.get(p.id) || 0;
+            return {
+                id: p.id, name: p.name,
+                out: dominant(bks, p),
+                left: dominant(p.stock || 0, p),
+                bks,
+                low: isLowStock(p, appSettings),
+                dead: bks === 0 && (p.stock || 0) > 0,
+                perDay: bks / days,
+            };
+        }).sort((a, b) => b.bks - a.bks);
+
+        const top = rows.slice(0, 6);
+        const max = top.length ? Math.max(...top.map(r => r.bks), 1) : 1;
+        return top.map(r => ({ ...r, pct: Math.round((r.bks / max) * 100) }));
+    }, [transactions, inventory, period, appSettings]);
+
+    /* ── WHO SOLD, today. The panel that stays one line tall until there is something in it. ── */
+    const agents = useMemo(() => {
+        const today = new Date().toLocaleDateString();
+        const perf = {};
+        transactions.forEach(t => {
+            if (t.type !== 'SALE') return;
+            const d = txDate(t);
+            if (isNaN(d) || d.toLocaleDateString() !== today) return;
+            const agent = t.agentName || 'Admin';
+            if (!perf[agent]) perf[agent] = { revenue: 0, profit: 0, count: 0 };
+            perf[agent].revenue += (t.total || 0);
+            perf[agent].profit  += (t.totalProfit || 0);
+            perf[agent].count   += 1;
+        });
+        return Object.entries(perf)
+            .map(([name, d]) => ({ name, ...d }))
+            .sort((a, b) => b.revenue - a.revenue);
+    }, [transactions]);
+
+    const meta = periodMeta(period);
+    const arr = (step) => `kpm-arr${arrived ? ' in' : ''}`;
 
     return (
-        <div className="space-y-8 relative pb-20">
-            <SafetyStatus auditLogs={auditLogs} sessionStatus={sessionStatus} />
+        <div className="kpm-dash">
+            <div className="kpm-dash-grid">
 
-            {/* --- ROW 1: THE NORTH STAR (BENCHMARKS) --- */}
-            {isAdmin && (
-                <DashboardBenchmarks 
-                    transactions={transactions} 
-                    inventory={inventory} 
+                <DashboardBenchmarks
+                    transactions={transactions}
+                    inventory={inventory}
                     appSettings={appSettings}
                     onSaveTargets={handleSaveDashboardTargets}
-                    canEditGoals={isAdmin} 
+                    canEditGoals={isAdmin}
+                    auditLogs={auditLogs}
+                    sessionStatus={sessionStatus}
+                    period={period}
+                    onPeriod={setPeriod}
                 />
-            )}
 
-            {/* --- ROW 2: TOTAL ASSET CARDS --- */}
-            <div key={`cards-${isAdmin}`} className="grid grid-cols-1 lg:grid-cols-3 gap-6 boot-2">
-                <div className="border-l-4 border-[var(--line)] bg-[var(--raised)] p-6 backdrop-blur-sm shadow-lg">
-                    <h3 className="text-ink-muted text-xs font-bold uppercase tracking-widest mb-1">Total Vault Assets</h3>
-                    <p className="text-4xl font-bold text-[var(--ink)]">{isAdmin ? formatRupiah(totalStockValue) : "****"}</p>
-                </div>
-                <div className="border-l-4 border-[var(--accent-edge)] bg-[var(--raised)] p-6 backdrop-blur-sm shadow-lg">
-                    <h3 className="text-[var(--accent-ink)] text-xs font-bold uppercase tracking-widest mb-1">Global Revenue (All Time)</h3>
-                    <p className="text-4xl font-bold text-[var(--ink)]">{isAdmin ? formatRupiah(transactions.filter(t => t.type === 'SALE' || t.type === 'RETURN').reduce((acc, t) => acc + (t.total || 0), 0)) : "****"}</p>
-                </div>
-                <div className="border-l-4 border-verified bg-[var(--raised)] p-6 backdrop-blur-sm shadow-lg">
-                    <h3 className="text-verified text-xs font-bold uppercase tracking-widest mb-1">Net Profit (All Time)</h3>
-                    <p className="text-4xl font-bold text-[var(--ink)]">{isAdmin ? formatRupiah(transactions.filter(t => t.type === 'SALE').reduce((acc, t) => acc + (t.totalProfit || 0), 0)) : "****"}</p>
-                </div>
-            </div>
+                <div className="kpm-dash-work">
 
-            {/* --- ROW 3 & 4 CONTAINER: INTELLIGENCE SPLIT --- */}
-            {isAdmin && (
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 boot-3">
-                    
-                    {/* LEADERBOARD WIDGET */}
-                    <div className="bg-[var(--panel)] border border-[var(--line)] rounded-2xl p-6">
-                        <div className="flex items-center gap-3 mb-6 border-b border-[var(--line)] pb-4">
-                            <Users className="text-ink-muted" size={24}/>
-                            <div>
-                                <h3 className="text-[var(--ink)] font-bold uppercase tracking-widest">Agent Leaderboard</h3>
-                                <p className="text-[10px] text-ink-muted font-mono uppercase tracking-widest">Today's Live Performance</p>
+                    {isAdmin && runningOut.length > 0 && (
+                        <div className={`kpm-mod hazard ${arr()}`}>
+                            <div className="kpm-head">
+                                <span className="slot" style={{ color: 'var(--danger-ink)' }}>
+                                    KERJAKAN HARI INI
+                                </span>
+                                <div className="line">
+                                    <h3 style={{ color: 'var(--danger-ink)' }}>Stok menipis</h3>
+                                    <button type="button" className="kpm-btn hazard"
+                                            onClick={() => setActiveTab('inventory')}>
+                                        <PackageX size={13} /> {runningOut.length} barang
+                                    </button>
+                                </div>
+                            </div>
+                            <div className="kpm-shelf">
+                                <div className="kpm-cover">
+                                    {runningOut.slice(0, 6).map(({ item, left, limit }) => (
+                                        <button
+                                            key={item.id}
+                                            type="button"
+                                            className="kpm-cover-c"
+                                            onClick={() => setActiveTab('inventory')}
+                                        >
+                                            <span className="qty">
+                                                {left.n}
+                                                <small>{left.unit}</small>
+                                            </span>
+                                            <span className="t">
+                                                <b>{item.name}</b>
+                                                <span>
+                                                    {left.rest ? `+ ${left.rest} · ` : ''}
+                                                    batas {limit.n} {limit.unit.toLowerCase()}
+                                                </span>
+                                            </span>
+                                        </button>
+                                    ))}
+                                </div>
                             </div>
                         </div>
+                    )}
 
-                        {agentPerformance.length === 0 ? (
-                            <p className="text-ink-muted text-xs italic text-center py-10 uppercase tracking-widest">No sales recorded today.</p>
-                        ) : (
-                            <div className="space-y-4">
-                                {agentPerformance.map((agent, idx) => (
-                                    <div key={idx} className="flex items-center justify-between p-4 bg-[var(--raised)] border border-[var(--line)] rounded-xl">
-                                        <div className="flex items-center gap-4">
-                                            <div className={`w-8 h-8 rounded-full flex items-center justify-center font-black text-sm ${idx === 0 ? 'bg-gold/20 text-gold border border-gold/50 shadow-[0_0_10px_rgba(234,179,8,0.3)]' : idx === 1 ? 'bg-inset/20 text-ink border border-line-3/50 border-[var(--line)]' : idx === 2 ? 'bg-gold/20 text-gold border border-gold/50 border-[var(--line)]' : 'bg-[var(--raised)] text-ink-muted'} `}>
-                                                #{idx + 1}
-                                            </div>
-                                            <div>
-                                                <p className="text-[var(--ink)] font-bold text-sm">{agent.name}</p>
-                                                <p className="text-[11px] text-ink-muted font-mono uppercase">{agent.count} Invoices Processed</p>
-                                            </div>
-                                        </div>
-                                        <div className="text-right">
-                                            <p className="text-verified font-bold text-sm">{formatRupiah(agent.revenue)}</p>
-                                            <p className="text-[11px] text-verified/70 font-mono uppercase tracking-widest">PROFIT: {formatRupiah(agent.profit)}</p>
-                                        </div>
+                    <div className={`kpm-mod ${arr()}`}>
+                        <div className="kpm-head">
+                            <span className="slot">PERGERAKAN · {meta.title.toUpperCase()}</span>
+                            <div className="line">
+                                <h3>Vault velocity</h3>
+                                <span className="kpm-safety-hint" style={{ margin: 0 }}>
+                                    <Activity size={12} style={{ verticalAlign: '-2px' }} /> tekan satu baris
+                                </span>
+                            </div>
+                        </div>
+                        <div className="kpm-shelf">
+                            {velocity.length === 0 ? (
+                                <p className="kpm-safety-hint" style={{ margin: 0 }}>
+                                    belum ada pergerakan di periode ini
+                                </p>
+                            ) : velocity.map((r, i) => (
+                                <button
+                                    key={r.id}
+                                    type="button"
+                                    className={`kpm-vrow${openRow === r.id ? ' on' : ''}`}
+                                    onClick={() => setOpenRow(openRow === r.id ? null : r.id)}
+                                >
+                                    <span className="rk">{String(i + 1).padStart(2, '0')}</span>
+                                    <span className="nm">{r.name}</span>
+                                    <span className="bar">
+                                        <span className={`kpm-trk${r.dead ? ' neg' : ''}`}>
+                                            <i style={{ width: arrived ? `${Math.max(2, r.pct)}%` : 0 }} />
+                                        </span>
+                                    </span>
+                                    <span className="figs">
+                                        <em>{r.out.n} {r.out.unit.toLowerCase()}</em> keluar ·{' '}
+                                        <span className={r.low ? 'low' : ''}>
+                                            {r.left.n} {r.left.unit.toLowerCase()}
+                                        </span> sisa
+                                    </span>
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div className={`kpm-mod ${agents.length ? '' : 'idle'} ${arr()}`}>
+                        <div className="kpm-head">
+                            <span className="slot">AGEN · HARI INI</span>
+                            <div className="line">
+                                <h3><Users size={15} style={{ verticalAlign: '-2px' }} /> Leaderboard</h3>
+                                {agents.length === 0 && (
+                                    <span className="kpm-safety-hint" style={{ margin: 0 }}>
+                                        belum ada penjualan hari ini
+                                    </span>
+                                )}
+                            </div>
+                        </div>
+                        {/* an empty panel earns no height — the head IS the whole panel until
+                            somebody sells something */}
+                        {agents.length > 0 && (
+                            <div className="kpm-shelf">
+                                {agents.map((a, i) => (
+                                    <div key={a.name} className="kpm-vrow" style={{ cursor: 'default' }}>
+                                        <span className="rk">{String(i + 1).padStart(2, '0')}</span>
+                                        <span className="nm">{a.name}</span>
+                                        <span className="figs">
+                                            <em>{formatRupiah(a.revenue)}</em> · {a.count} nota
+                                        </span>
                                     </div>
                                 ))}
                             </div>
                         )}
                     </div>
-
-                    {/* VAULT VELOCITY WIDGET */}
-                    <div className="bg-[var(--panel)] border border-[var(--line)] rounded-2xl p-6">
-                        <div className="flex items-center gap-3 mb-6 border-b border-[var(--line)] pb-4">
-                            <Activity className="text-[var(--accent-ink)]" size={24}/>
-                            <div>
-                                <h3 className="text-[var(--ink)] font-bold uppercase tracking-widest">Vault Velocity</h3>
-                                <p className="text-[10px] text-ink-muted font-mono uppercase tracking-widest">30-Day Product Movement</p>
-                            </div>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div>
-                                <h4 className="text-[10px] font-bold text-verified uppercase tracking-widest mb-3 flex items-center gap-2"><TrendingUp size={12}/> High Demand</h4>
-                                <div className="space-y-2">
-                                    {vaultVelocity.fastest.map((item, idx) => (
-                                        <div key={idx} className="flex justify-between items-center bg-verified-fill/10 border border-verified/20 p-2 rounded-lg border-[var(--line)]">
-                                            <span className="text-xs text-[var(--ink)] truncate max-w-[120px]">{item.name}</span>
-                                            <div className="text-right shrink-0">
-                                                <span className="text-xs font-bold text-verified">{Math.floor(item.soldBks)} <span className="text-[11px]">BKS</span></span>
-                                                {item.isLow && <span className="block text-[11px] text-danger-text uppercase font-bold animate-pulse">Low Stock</span>}
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                            <div>
-                                <h4 className="text-[10px] font-bold text-danger-text uppercase tracking-widest mb-3 flex items-center gap-2"><TrendingDown size={12}/> Dead Stock Watch</h4>
-                                <div className="space-y-2">
-                                    {vaultVelocity.slowest.map((item, idx) => (
-                                        <div key={idx} className="flex justify-between items-center bg-danger-well/10 border border-danger/20 p-2 rounded-lg border-[var(--line)]">
-                                            <span className="text-xs text-[var(--ink)] truncate max-w-[120px]">{item.name}</span>
-                                            <div className="text-right shrink-0">
-                                                <span className="text-[11px] text-ink-muted uppercase block">Sold: {Math.floor(item.soldBks)}</span>
-                                                <span className="text-xs font-bold text-danger-text">Vault: {Math.floor(item.stock)}</span>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
                 </div>
-            )}
-
-            {/* CRITICAL ALERTS & PHYSICAL SECURITY */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 boot-4">
-                {isAdmin && lowStockItems.length > 0 && (
-                    <div className="bg-danger-well/20 border border-danger/30 p-6 rounded-2xl shadow-lg relative overflow-hidden h-full border-[var(--line)]">
-                        <div className="absolute top-0 left-0 w-1 h-full bg-danger animate-pulse"></div>
-                        <div className="flex items-center gap-3 mb-4">
-                            <AlertCircle className="text-danger-text animate-pulse" size={24}/>
-                            <h3 className="text-danger-text font-bold uppercase tracking-widest text-sm">Critical Stock Alerts</h3>
-                            <span className="bg-danger text-[var(--ink)] text-[10px] font-bold px-2 py-0.5 rounded-full">{lowStockItems.length} Items</span>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                            {lowStockItems.slice(0, 4).map(item => ( 
-                                <div key={item.id} className="bg-[var(--panel)] border border-danger/20 p-3 rounded-xl flex justify-between items-center cursor-pointer hover:bg-danger-well/30 transition-colors border-[var(--line)]" onClick={() => { setActiveTab('inventory'); }}>
-                                    <div className="min-w-0 flex-1">
-                                        <p className="text-[var(--ink)] text-xs font-bold truncate">{item.name}</p>
-                                    </div>
-                                    <div className="text-right ml-2 shrink-0 bg-danger-well/50 px-2 py-1 rounded border border-danger-rail/50 border-[var(--line)]">
-                                        <p className="text-danger-text font-black text-sm leading-none">{item.stock}</p>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                        {lowStockItems.length > 4 && (
-                            <button onClick={() => setActiveTab('inventory')} className="w-full mt-3 py-2 bg-danger-well/20 hover:bg-danger-well/40 text-danger-text text-[10px] font-bold rounded-lg border border-danger-rail/50 transition-colors uppercase tracking-widest border-[var(--line)]">
-                                View All {lowStockItems.length} Depleted Items
-                            </button>
-                        )}
-                    </div>
-                )}
-
-                {isAdmin && !isUsbSecure && (
-                    <div className="bg-[var(--gold)] border border-[var(--accent-edge)] p-6 rounded-2xl flex flex-col justify-center items-center text-center animate-pulse h-full">
-                        <ShieldAlert className="text-[var(--gold-ink)] mb-3" size={32}/>
-                        <h3 className="text-sm text-[var(--gold-ink)] font-bold uppercase tracking-wider mb-1">Physical Security Protocol Required</h3>
-                        <p className="text-[10px] text-[var(--gold-ink)] uppercase tracking-widest mb-4">No offline backup detected in last 7 days.</p>
-                        <button onClick={handleBackupData} className="bg-[var(--gold)] hover:bg-[var(--gold)] text-[var(--gold-ink)] px-8 py-3 rounded-xl font-bold text-xs uppercase tracking-widest shadow-lg transition-all active:scale-95">
-                            Run USB Safe Backup
-                        </button>
-                    </div>
-                )}
-            </div>
-
-            {/* PERFORMANCE GRAPH (7-DAY HISTORY) */}
-            <div key={`graph-${isAdmin}`} className="bg-[var(--panel)] border border-[var(--line)] p-6 h-96 boot-4 mt-8 rounded-2xl">
-                <h3 className="text-[var(--ink)] mb-4 uppercase text-xs font-bold tracking-widest border-b border-[var(--line)] pb-2">7-Day Revenue Graph</h3>
-                <ResponsiveContainer width="100%" height="100%" minHeight={300}>
-                      <BarChart data={chartData.data}>
-                          <CartesianGrid strokeDasharray="3 3" opacity={0.1} stroke="#fff"/>
-                          <XAxis dataKey="date" stroke="#666" fontSize={10} tick={{fill: '#999'}}/>
-                          <YAxis stroke="#666" fontSize={10} tick={{fill: '#999'}}/>
-                          <Tooltip content={<CustomTooltip />} cursor={{fill: 'rgba(255,255,255,0.1)'}}/>
-                          <Legend />
-                          {chartData.keys.map((key) => (
-                              <Bar key={key} dataKey={key} stackId="a" fill={getRandomColor(key)} />
-                          ))}
-                      </BarChart>
-                </ResponsiveContainer>
             </div>
         </div>
     );
