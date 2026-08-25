@@ -124,7 +124,7 @@ export default function DashboardView({
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 boot-3">
                     
                     {/* LEADERBOARD WIDGET */}
-                    <div className="bg-black/50 border border-[var(--line)] rounded-2xl p-6">
+                    <div className="bg-[var(--panel)] border border-[var(--line)] rounded-2xl p-6">
                         <div className="flex items-center gap-3 mb-6 border-b border-[var(--line)] pb-4">
                             <Users className="text-ink-muted" size={24}/>
                             <div>
@@ -159,7 +159,7 @@ export default function DashboardView({
                     </div>
 
                     {/* VAULT VELOCITY WIDGET */}
-                    <div className="bg-black/50 border border-[var(--line)] rounded-2xl p-6">
+                    <div className="bg-[var(--panel)] border border-[var(--line)] rounded-2xl p-6">
                         <div className="flex items-center gap-3 mb-6 border-b border-[var(--line)] pb-4">
                             <Activity className="text-[var(--accent-ink)]" size={24}/>
                             <div>
@@ -215,7 +215,7 @@ export default function DashboardView({
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                             {lowStockItems.slice(0, 4).map(item => ( 
-                                <div key={item.id} className="bg-black/50 border border-danger/20 p-3 rounded-xl flex justify-between items-center cursor-pointer hover:bg-danger-well/30 transition-colors border-[var(--line)]" onClick={() => { setActiveTab('inventory'); }}>
+                                <div key={item.id} className="bg-[var(--panel)] border border-danger/20 p-3 rounded-xl flex justify-between items-center cursor-pointer hover:bg-danger-well/30 transition-colors border-[var(--line)]" onClick={() => { setActiveTab('inventory'); }}>
                                     <div className="min-w-0 flex-1">
                                         <p className="text-[var(--ink)] text-xs font-bold truncate">{item.name}</p>
                                     </div>
@@ -246,7 +246,7 @@ export default function DashboardView({
             </div>
 
             {/* PERFORMANCE GRAPH (7-DAY HISTORY) */}
-            <div key={`graph-${isAdmin}`} className="bg-black/40 border border-[var(--line)] p-6 h-96 boot-4 mt-8 rounded-2xl">
+            <div key={`graph-${isAdmin}`} className="bg-[var(--panel)] border border-[var(--line)] p-6 h-96 boot-4 mt-8 rounded-2xl">
                 <h3 className="text-[var(--ink)] mb-4 uppercase text-xs font-bold tracking-widest border-b border-[var(--line)] pb-2">7-Day Revenue Graph</h3>
                 <ResponsiveContainer width="100%" height="100%" minHeight={300}>
                       <BarChart data={chartData.data}>

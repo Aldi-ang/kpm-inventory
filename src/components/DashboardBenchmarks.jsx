@@ -103,24 +103,24 @@ export default function DashboardBenchmarks({ transactions = [], inventory = [],
 
     return (
         <div className="relative mb-8 boot-1">
-            <div className="flex justify-between items-end mb-4 border-b border-white/10 pb-2">
+            <div className="flex justify-between items-end mb-4 border-b border-[var(--line-2)] pb-2">
                 <div>
-                    <h2 className="text-lg font-bold text-white uppercase tracking-widest">Executive Targets</h2>
+                    <h2 className="text-lg font-bold text-[var(--ink)] uppercase tracking-widest">Executive Targets</h2>
                     <p className="text-[10px] text-ink-muted font-mono uppercase tracking-[0.2em]">Live System Benchmarks</p>
                 </div>
                 {canEditGoals && (
-                    <button onClick={() => setIsEditing(true)} className="flex items-center gap-2 bg-white/5 hover:bg-white/10 text-ink-muted hover:text-white px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase transition-colors border border-white/10">
+                    <button onClick={() => setIsEditing(true)} className="flex items-center gap-2 bg-[var(--raised)] hover:bg-[var(--raised)] text-ink-muted hover:text-[var(--ink)] px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase transition-colors border border-[var(--line-2)]">
                         <Settings size={14}/> Adjust Goals
                     </button>
                 )}
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className="bg-black/50 border border-white/10 p-6 rounded-2xl relative overflow-hidden group">
+                <div className="bg-[var(--panel)] border border-[var(--line-2)] p-6 rounded-2xl relative overflow-hidden group">
                     <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity"><TrendingUp size={80}/></div>
                     <h3 className="text-[10px] font-bold text-verified uppercase tracking-widest mb-1">Monthly Trajectory</h3>
-                    <p className="text-2xl font-black text-white mb-4">{formatRupiah(metrics.monthlyRevenue)}</p>
-                    <div className="w-full bg-white/5 h-2 rounded-full overflow-hidden mb-2">
+                    <p className="text-2xl font-black text-[var(--ink)] mb-4">{formatRupiah(metrics.monthlyRevenue)}</p>
+                    <div className="w-full bg-[var(--raised)] h-2 rounded-full overflow-hidden mb-2">
                         <div className="bg-verified h-full shadow-[0_0_10px_rgba(228,223,214,0.35)] transition-all duration-1000" style={{ width: `${Math.min((metrics.monthlyRevenue / TARGET_MONTHLY_REVENUE) * 100, 100)}%` }}></div>
                     </div>
                     <div className="flex justify-between text-[11px] font-mono text-ink-muted uppercase">
@@ -129,14 +129,14 @@ export default function DashboardBenchmarks({ transactions = [], inventory = [],
                     </div>
                 </div>
 
-                <div className="bg-black/50 border border-white/10 p-6 rounded-2xl relative overflow-hidden group">
+                <div className="bg-[var(--panel)] border border-[var(--line-2)] p-6 rounded-2xl relative overflow-hidden group">
                     <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity"><Target size={80}/></div>
                     <h3 className="text-[10px] font-bold text-orange uppercase tracking-widest mb-1">Daily Volume (Bal)</h3>
                     <div className="flex items-baseline gap-2 mb-4">
-                        <p className="text-3xl font-black text-white leading-none">{metrics.dailyBalSold}</p>
+                        <p className="text-3xl font-black text-[var(--ink)] leading-none">{metrics.dailyBalSold}</p>
                         <p className="text-xs text-ink-muted font-bold uppercase tracking-widest mb-0.5">/ {TARGET_DAILY_BAL} BAL</p>
                     </div>
-                    <div className="w-full bg-white/5 h-2 rounded-full overflow-hidden mb-2">
+                    <div className="w-full bg-[var(--raised)] h-2 rounded-full overflow-hidden mb-2">
                         <div className="bg-orange h-full shadow-[0_0_10px_rgba(255,140,26,0.5)] transition-all duration-1000" style={{ width: `${Math.min((metrics.dailyBalSold / TARGET_DAILY_BAL) * 100, 100)}%` }}></div>
                     </div>
                     <div className="flex justify-between text-[11px] font-mono text-ink-muted uppercase">
@@ -145,17 +145,17 @@ export default function DashboardBenchmarks({ transactions = [], inventory = [],
                     </div>
                 </div>
 
-                <div className="bg-black/50 border border-white/10 p-4 rounded-2xl flex items-center justify-between">
+                <div className="bg-[var(--panel)] border border-[var(--line-2)] p-4 rounded-2xl flex items-center justify-between">
                     <div className="flex-1">
                         <h3 className="text-[10px] font-bold text-ink uppercase tracking-widest mb-2 flex items-center gap-2"><Flame size={12}/> Product Shift</h3>
                         <div className="space-y-2">
                             <div>
-                                <div className="flex justify-between text-[10px] font-bold mb-1"><span className="text-ink">Filter (SKM)</span><span className="text-white">{metrics.filterPercent}%</span></div>
-                                <div className="w-full bg-white/5 h-1.5 rounded-full overflow-hidden"><div className="bg-ink h-full" style={{ width: `${metrics.filterPercent}%` }}></div></div>
+                                <div className="flex justify-between text-[10px] font-bold mb-1"><span className="text-ink">Filter (SKM)</span><span className="text-[var(--ink)]">{metrics.filterPercent}%</span></div>
+                                <div className="w-full bg-[var(--raised)] h-1.5 rounded-full overflow-hidden"><div className="bg-ink h-full" style={{ width: `${metrics.filterPercent}%` }}></div></div>
                             </div>
                             <div>
-                                <div className="flex justify-between text-[10px] font-bold mb-1"><span className="text-orange">Kretek (SKT)</span><span className="text-white">{metrics.kretekPercent}%</span></div>
-                                <div className="w-full bg-white/5 h-1.5 rounded-full overflow-hidden"><div className="bg-orange h-full" style={{ width: `${metrics.kretekPercent}%` }}></div></div>
+                                <div className="flex justify-between text-[10px] font-bold mb-1"><span className="text-orange">Kretek (SKT)</span><span className="text-[var(--ink)]">{metrics.kretekPercent}%</span></div>
+                                <div className="w-full bg-[var(--raised)] h-1.5 rounded-full overflow-hidden"><div className="bg-orange h-full" style={{ width: `${metrics.kretekPercent}%` }}></div></div>
                             </div>
                             <p className="text-[11px] font-mono text-ink-muted uppercase mt-2">Target Ratio: {TARGET_FILTER_RATIO}% Filter</p>
                         </div>
@@ -175,25 +175,25 @@ export default function DashboardBenchmarks({ transactions = [], inventory = [],
 
             {/* 🚀 THE PORTAL FIX: Renders Modal directly to document.body! */}
             {isEditing && createPortal(
-                <div className="fixed inset-0 z-[999999] bg-black/90 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}>
-                    <div className="bg-ground border border-white/20 p-8 rounded-2xl w-full max-w-md shadow-[0_0_50px_rgba(0,0,0,1)] relative font-mono">
+                <div className="fixed inset-0 z-[999999] bg-[var(--panel)] backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}>
+                    <div className="bg-ground border border-[var(--line-2)] p-8 rounded-2xl w-full max-w-md shadow-[0_0_50px_rgba(0,0,0,1)] relative font-mono">
                         <button onClick={() => setIsEditing(false)} className="absolute top-4 right-4 text-ink-muted hover:text-danger-text transition-colors"><X size={24}/></button>
-                        <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-3 uppercase tracking-widest"><Settings className="text-orange"/> Edit Goals</h2>
+                        <h2 className="text-xl font-bold text-[var(--ink)] mb-6 flex items-center gap-3 uppercase tracking-widest"><Settings className="text-orange"/> Edit Goals</h2>
                         <form onSubmit={handleSave} className="space-y-5">
                             <div>
                                 <label className="text-[10px] text-verified font-bold block mb-2 uppercase tracking-widest">Target Monthly Revenue (Rp)</label>
-                                <input type="text" value={editForm.targetMonthlyRevenue} onChange={(e) => setEditForm({...editForm, targetMonthlyRevenue: e.target.value.replace(/\D/g, '')})} className="w-full p-3 bg-black border border-verified/30 text-white rounded outline-none focus:border-verified" required/>
+                                <input type="text" value={editForm.targetMonthlyRevenue} onChange={(e) => setEditForm({...editForm, targetMonthlyRevenue: e.target.value.replace(/\D/g, '')})} className="w-full p-3 bg-black border border-verified/30 text-[var(--ink)] rounded outline-none focus:border-verified" required/>
                             </div>
                             <div>
                                 <label className="text-[10px] text-orange font-bold block mb-2 uppercase tracking-widest">Target Daily Volume (Bal)</label>
-                                <input type="text" value={editForm.targetDailyBal} onChange={(e) => setEditForm({...editForm, targetDailyBal: e.target.value.replace(/[^0-9.]/g, '')})} className="w-full p-3 bg-black border border-orange/30 text-white rounded outline-none focus:border-orange" required/>
+                                <input type="text" value={editForm.targetDailyBal} onChange={(e) => setEditForm({...editForm, targetDailyBal: e.target.value.replace(/[^0-9.]/g, '')})} className="w-full p-3 bg-black border border-orange/30 text-[var(--ink)] rounded outline-none focus:border-orange" required/>
                             </div>
                             <div>
                                 <label className="text-[10px] text-ink font-bold block mb-2 uppercase tracking-widest">Target Filter Proportion (%)</label>
-                                <input type="text" maxLength={3} value={editForm.targetFilterRatio} onChange={(e) => setEditForm({...editForm, targetFilterRatio: e.target.value.replace(/\D/g, '')})} className="w-full p-3 bg-black border border-line-3 text-white rounded outline-none focus:border-ink" required/>
+                                <input type="text" maxLength={3} value={editForm.targetFilterRatio} onChange={(e) => setEditForm({...editForm, targetFilterRatio: e.target.value.replace(/\D/g, '')})} className="w-full p-3 bg-black border border-line-3 text-[var(--ink)] rounded outline-none focus:border-ink" required/>
                                 <p className="text-[11px] text-ink-muted mt-2">Example: 60 = Aiming for 60% Filter / 40% Kretek.</p>
                             </div>
-                            <button type="submit" className="w-full mt-4 bg-white/10 hover:bg-white text-white hover:text-black py-4 rounded font-bold uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-2">
+                            <button type="submit" className="w-full mt-4 bg-[var(--raised)] hover:bg-white text-[var(--ink)] hover:text-black py-4 rounded font-bold uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-2">
                                 <Save size={16}/> Save Master Targets
                             </button>
                         </form>

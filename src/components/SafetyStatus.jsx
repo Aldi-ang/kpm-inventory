@@ -31,32 +31,32 @@ export default function SafetyStatus({ auditLogs = [], sessionStatus }) {
     const isRecoverySecure = sessionStatus?.recovery || todaySnapshots > 0;
 
     return (
-        <div className="bg-white/5 border border-white/10 p-4 rounded-2xl backdrop-blur-sm flex gap-6 shadow-lg mb-6">
+        <div className="bg-[var(--raised)] border border-[var(--line-2)] p-4 rounded-2xl backdrop-blur-sm flex gap-6 shadow-lg mb-6">
             <div className="flex-1">
-                <p className="text-[10px] text-slate-400 font-bold uppercase mb-1 tracking-widest">Cloud Sync</p>
+                <p className="text-[10px] text-[var(--ink-muted)] font-bold uppercase mb-1 tracking-widest">Cloud Sync</p>
                 <div className={`text-sm font-black flex items-center gap-2 ${isCloudSecure ? 'text-emerald-500' : 'text-red-500'}`}>
                     <div className={`w-2 h-2 rounded-full animate-pulse ${isCloudSecure ? 'bg-emerald-500' : 'bg-red-500'}`}></div>
                     {isCloudSecure ? 'SECURE' : 'REQUIRED'}
                 </div>
             </div>
             
-            <div className="w-[1px] bg-white/10"></div>
+            <div className="w-[1px] bg-[var(--raised)]"></div>
             
             <div className="flex-1 text-center">
-                <p className="text-[10px] text-slate-400 font-bold uppercase mb-1 tracking-widest">USB Safe</p>
+                <p className="text-[10px] text-[var(--ink-muted)] font-bold uppercase mb-1 tracking-widest">USB Safe</p>
                 <div className={`text-sm font-black flex justify-center items-center gap-2 ${isUsbSecure ? 'text-emerald-500' : 'text-orange-500'}`}>
                     <div className={`w-2 h-2 rounded-full animate-pulse ${isUsbSecure ? 'bg-emerald-500' : 'bg-orange-500'}`}></div>
                     {isUsbSecure ? 'SECURE' : 'OUTDATED'}
                 </div>
             </div>
             
-            <div className="w-[1px] bg-white/10"></div>
+            <div className="w-[1px] bg-[var(--raised)]"></div>
             
             <div className="flex-1 text-right">
-                <p className="text-[10px] text-slate-400 font-bold uppercase mb-1 tracking-widest">Save Points</p>
-                <div className={`text-sm font-black flex justify-end items-center gap-2 font-mono ${isRecoverySecure ? 'text-emerald-400' : 'text-slate-400'}`}>
+                <p className="text-[10px] text-[var(--ink-muted)] font-bold uppercase mb-1 tracking-widest">Save Points</p>
+                <div className={`text-sm font-black flex justify-end items-center gap-2 font-mono ${isRecoverySecure ? 'text-emerald-400' : 'text-[var(--ink-muted)]'}`}>
                     <History size={14} className={isRecoverySecure ? "animate-pulse" : "opacity-30"}/>
-                    {todaySnapshots.toString().padStart(2, '0')} <span className="text-[11px] text-slate-400">TODAY</span>
+                    {todaySnapshots.toString().padStart(2, '0')} <span className="text-[11px] text-[var(--ink-muted)]">TODAY</span>
                 </div>
             </div>
         </div>

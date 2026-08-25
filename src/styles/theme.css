@@ -2001,6 +2001,26 @@ html.lite-mode .kpm-topbar { transition: none; }
   [data-kpm-rail]:has(:focus-visible) .kpm-rail-pod > *:not(.kpm-rail-totem) {
     opacity: 1; transition: opacity 260ms ease-out 120ms;
   }
+  /* LITE MODE WAS LEAVING THE CLOSED RAIL OPEN. Aldi, 2026-08-25, second report of the same
+     screenshot: "lite mode still broke the sidebar ... some of the buttons and profile photo is
+     still outside even when the sidebar is closed". Different cause from the scrim fixed earlier:
+     that one painted the panel, this one un-hides its contents.
+
+     App.jsx pins .lite-mode .boot-1 ... .boot-4 { opacity: 1 !important } so the staggered menu
+     reveal cannot leave the nav invisible on a phone that drops the animation. But the rail three
+     children ARE boot-1, boot-2 and boot-3 (brand, grid, foot), and the COLLAPSE above is also
+     expressed in opacity - so !important beat it and the closed rail kept printing its buttons,
+     its music note and his profile photo onto the bare page with no plate behind them.
+
+     THE ANIMATION RULE IS NOT WRONG AND IS NOT TOUCHED. Two different jobs were sharing one
+     property: "never end up invisible because an animation did not run" and "be invisible because
+     you are closed". These restate the second at equal weight, and only on a desk - below 1024px
+     the rail is a drawer and pinning boot-* is exactly right there. */
+  html.lite-mode .kpm-rail-pod > *:not(.kpm-rail-totem) { opacity: 0 !important; }
+  html.lite-mode [data-kpm-rail]:hover .kpm-rail-pod > *:not(.kpm-rail-totem),
+  html.lite-mode [data-kpm-rail]:has(:focus-visible) .kpm-rail-pod > *:not(.kpm-rail-totem) {
+    opacity: 1 !important;
+  }
   /* the whole circle is the target, not the 22px glyph inside it */
   .kpm-rail-totem {
     display: flex; align-items: center; justify-content: center;
