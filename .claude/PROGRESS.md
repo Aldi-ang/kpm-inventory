@@ -23,6 +23,38 @@ low, invoices today). Everything else is revealed: **scrub** the pace line (cros
 readout**. Three speeds only: 140ms hover · 300ms arrival · instant press (1px down, amber edge).
 Every reveal has a keyboard path and sits in a RESERVED line so nothing reflows.
 
+🟢 **THE DASHBOARD IS BUILT AND COMMITTED — `b7d9f0f`.** Design phase over; this is real code.
+✅ build · **607/607** integration · **785/785** logicFixes (+23 new) · **26/26** new
+`stockThreshold.selfcheck.mjs` · all contrast pairs.
+
+✅ **TEST CHECKLIST FOR ALDI — he has NOT seen any of this yet:**
+1. Dashboard → press **HARI / MINGGU / BULAN / TAHUN**. Every figure + the chart follow.
+2. **Drag across the chart** — crosshair + dot + "vs pace" in one line, nothing else moves.
+3. **Atur target** → new **Batas menipis** with a **Bal/Karton/Slop/Bks dropdown**, and three
+   blank-means-automatic omzet overrides (hari/minggu/tahun).
+4. **Stok menipis** panel counts in **Bal**, not Bks, sorted worst-first.
+5. **Lite Mode** → layout identical, motion stops, no value disappears.
+6. **Narrow the window / phone** → one column, figures stay readable.
+
+🆕 **NEW FILES:** `src/utils/period.js` (the ONE window both panels read — never duplicate
+this or the velocity list will silently count a different month than the figure above it) ·
+`src/utils/stockThreshold.js` (the ONE low-stock rule) · `src/config/stockThreshold.selfcheck.mjs`.
+
+✅ **BOTH COLOUR BUGS KILLED AT THE ROOT.** `getRandomColor()` is **DELETED from helpers.js**,
+not patched — a colour computed from a string cannot obey a palette law. SafetyStatus is tokens.
+
+🔴 **STILL NOT SEEN IN A BROWSER.** claude-in-chrome was down all session. Checks are evidence,
+not proof — **first job next session: look at it.**
+
+⚠️ **FOLLOW-UPS THIS TURN CREATED, none blocking:**
+- 4 files still inline their own `minStock || 50`: `useTransactionEngine.js:270`,
+  `MerchantSalesView.jsx:2423`, `ResidentEvilInventory.jsx:236`, `StockOpnameView.jsx:1003`
+  (**that last one says `|| 5`**). They should route through `isLowStock()`. Not done — blast
+  radius on money paths, and he did not rank it.
+- **Money owed** on the dashboard still deferred (needs `ConsignmentFinanceView` wiring).
+- A check that greps source ALSO reads the comment describing the bug — 3 guards failed on first
+  run for that reason. `logicFixes.selfcheck.mjs` now has a `code()` comment-stripper; use it.
+
 ✅ **FIFTH PASS — HE ANSWERED. DESIGN IS NEARLY SETTLED.** Same URL:
 **https://claude.ai/code/artifact/52794e2f-47c4-42f6-af85-08ec318d35dd**
 
