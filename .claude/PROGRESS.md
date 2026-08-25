@@ -1,6 +1,33 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-24 19:50 WIB (🟠 KPM app session)** · ✅ **STENCIL PLATE SHIPPED AND SEEN IN HIS CHROME** — 21 invisible-ink bugs found by LOOKING, all fixed · 603/603 + 762/762 + all contrast pairs · green gone from Customer Directory · 🔴 **HE OWES: amber or stencil for the segmented switch ON** · branch `phase0-solid-ground`
+**Updated: 2026-08-24 20:15 WIB (🟠 KPM app session)** · ✅ **LITE-MODE SIDEBAR BUG FIXED — a dark scrim was covering the left column of every screen** · 606/606 + 762/762 + all contrast pairs · ▶ **NEXT = control-colour sweep, blocked on ONE question (near-black or amber for switched-ON controls)** · 8-screen redesign queued behind it · branch `phase0-solid-ground`
+
+## 🟠 2026-08-24 20:15 — LITE MODE SIDEBAR BUG FIXED. 606/606, 762/762, ALL CONTRAST PAIRS.
+
+His report: *"another thing that i see broke is actually sidebar on lite mode u may check it"*.
+**Reproduced and measured in his Chrome after three wrong theories** — `getComputedStyle` settled
+it in one call. The sidebar panel was painting **`rgba(46,38,26,.72)` across 351×688px** over the
+whole left column of every screen.
+
+**Cause:** `src/index.css` has a blanket
+`html.lite-mode [class*="backdrop-blur"] { background-color: var(--duke-scrim) !important }`.
+The desk panel carries `backdrop-blur-xl` → matched → `!important` beat its own
+`lg:bg-transparent`. **On a desk that panel is an invisible WINDOW, not a scrim** — the rule's own
+comment claimed otherwise, and a comment cannot check itself.
+**Fix:** background handed back at `≥1024px` only (below that the rail IS a drawer and the scrim
+is right). **Blur stays stripped.** `G52` asserts both halves + the media scoping, on BUILT CSS.
+⚠️ G52 went red against working CSS first — **the minifier drops the quotes**
+(`[class*=backdrop-blur]`). Write built-output checks against `dist`, never against the source.
+
+🔴 **HIS BIG ASK IS NOW QUEUED, NOT DONE** — 9 screenshots, two different sizes of work:
+1. **Control-colour sweep** (segmented switches, sliders, toggles, chips still brown/orange) —
+   **this is the next session's one job, and it is blocked on ONE question**: should a switched-ON
+   control be near-black like the buttons, or stay amber? Near-black measures 9.39:1 on its track,
+   so it is taste, not legibility. Full brief in `.claude/NEXT-SESSION.md`.
+2. **Redesign 8 screens.** ⚠️ **Two groups, and they are not the same job.** Transactions, Fleet &
+   Roster, Consignment, and the two Vaults are **UN-themed, not off-theme** — navy, blue and
+   purple, 15–25 banned colour classes each, zero tokens. Those are a session apiece. Dashboard,
+   Agent Profile and Journey Map are themed already and only need polish.
 
 ## 🟠 2026-08-24 19:50 — STENCIL SHIPPED, AND THE APP WAS FINALLY SEEN. 603/603, 762/762.
 
