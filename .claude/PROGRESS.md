@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-25 20:26 WIB (🟠 KPM app session)** · ✅ **DASHBOARD REBUILT AND COMMITTED — `b7d9f0f` + `f798c80`** (build · 607/607 · 791/791 · 26/26 · all contrast pairs) · ▶ **NEXT = his newest ask, a REGIONAL PERFORMANCE panel** · 🔴 **still never opened in a browser — claude-in-chrome was down the whole session** · branch `phase0-solid-ground`
+**Updated: 2026-08-25 20:4x WIB (🟠 KPM app session)** · ✅ **DASHBOARD REBUILT AND COMMITTED — `b7d9f0f` + `f798c80`** (build · 607/607 · 791/791 · 26/26 · all contrast pairs) · ✅ **REGIONAL PANEL BUILT TOO — `2cb9e61`, 798/798** · 🔴 **still never opened in a browser — claude-in-chrome was down the whole session** · branch `phase0-solid-ground`
 
 ## 🟠 2026-08-25 20:26 — THE DASHBOARD IS BUILT. `b7d9f0f` + `f798c80`.
 
@@ -769,15 +769,28 @@ the decisions themselves live in `A-Brain/Wiki/Concepts/Where KPM Is Going.md` a
 
 ## ⏳ WAITING ON ALDI — verbatim, do not paraphrase
 
-### 🔴 OPEN, 2026-08-25 20:26 — the regional panel (NEWEST, nothing built yet)
+### ✅ BUILT 2026-08-25 20:4x — the regional panel (`2cb9e61`)
 
 > *"add one more panel, each performance graph for regional division, but if there are so much
 > division we might need to design this panel to fit in the free space"*
 
-Not started. ⚠️ **He named the hard part himself: the layout depends on HOW MANY regions exist.**
+Built as a **RANKED LIST**, not a grid of charts — he named the hard part and he was right:
+**the layout depends on how many regions exist, and the code cannot know.**
 `region` lives on the CUSTOMER (`CustomerManager.jsx`), and `location` on the employee/motorist
 (`App.jsx:4559` → `employeeRegion`). There is a `view_reports_regional` permission
-(`BiohazardTheme.jsx:373`). **Count the distinct regions in his real data before choosing a shape.**
+(`BiohazardTheme.jsx:373`).
+
+⚠️ **TWO TRAPS, both now guarded (D8, 7 checks):**
+1. **`region` is FREE TEXT** — three regions or sixty, and a typo makes another. So: ranked by
+   omzet, top 6 shown, **the tail is COUNTED not cut** ("+ N wilayah lain").
+2. **A SALE STORES `customerName`, NOT A CUSTOMER ID.** The join is BY NAME, lowercased and
+   trimmed on both sides. Whatever still misses gets its own **"Belum diberi wilayah"** row with
+   its share of revenue — quiet italic name, danger rail — because a panel that silently loses a
+   fifth of the money is worse than no panel. **If he says a region looks too small, check that
+   row first.**
+
+🔴 **HE HAS NOT SEEN IT.** If his real data has very few regions the panel will look sparse;
+that is the trade for holding at sixty. Ask before changing it.
 
 ### ✅ ANSWERED 2026-08-25, do not re-ask
 - Periods: **daily / week / month / year, never a total** — built.
