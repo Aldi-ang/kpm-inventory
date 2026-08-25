@@ -365,24 +365,24 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
             
             {/* 🚀 THE GLOBAL COMMAND CENTER 🚀 */}
             {!reportView && (
-                <div className="bg-slate-900 rounded-2xl p-6 mb-8 shadow-xl flex flex-col md:flex-row justify-between items-center gap-4 animate-fade-in relative overflow-hidden border border-slate-700">
-                    <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl"></div>
+                <div className="bg-[var(--panel)] rounded-2xl p-6 mb-8 shadow-xl flex flex-col md:flex-row justify-between items-center gap-4 animate-fade-in relative overflow-hidden border border-[var(--line)]">
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-[var(--gold)] rounded-full blur-3xl"></div>
                     <div className="z-10 flex-1 w-full">
-                        <h2 className="text-white text-lg font-black tracking-widest uppercase mb-1 flex items-center gap-2">
-                            <Database size={20} className="text-indigo-400"/> Operational Command
+                        <h2 className="text-[var(--ink)] text-lg font-black tracking-widest uppercase mb-1 flex items-center gap-2">
+                            <Database size={20} className="text-[var(--ink-muted)]"/> Operational Command
                         </h2>
-                        <p className="text-slate-400 text-[10px] font-mono uppercase tracking-widest">Filter dates & extract deep historical records</p>
+                        <p className="text-[var(--ink-muted)] text-[10px] font-mono uppercase tracking-widest">Filter dates & extract deep historical records</p>
                     </div>
                     <div className="z-10 flex flex-wrap md:flex-nowrap items-center gap-3 w-full md:w-auto">
-                        <select value={rangeType} onChange={e=>setRangeType(e.target.value)} className="bg-slate-800 border border-slate-700 text-white p-3 rounded-xl font-bold uppercase text-[10px] tracking-widest outline-none">
+                        <select value={rangeType} onChange={e=>setRangeType(e.target.value)} className="bg-[var(--raised)] border border-[var(--line)] text-[var(--ink)] p-3 rounded-xl font-bold uppercase text-[10px] tracking-widest outline-none">
                             <option value="daily">Daily</option>
                             <option value="weekly">Weekly</option>
                             <option value="monthly">Monthly</option>
                             <option value="yearly">Yearly</option>
                         </select>
-                        <input type="date" value={targetDate} onChange={e=>setTargetDate(e.target.value)} className="bg-slate-800 border border-slate-700 text-white p-3 rounded-xl font-bold outline-none" />
+                        <input type="date" value={targetDate} onChange={e=>setTargetDate(e.target.value)} className="bg-[var(--raised)] border border-[var(--line)] text-[var(--ink)] p-3 rounded-xl font-bold outline-none" />
                         {!isFieldAgent && (
-                            <button onClick={handlePullArchive} disabled={isFetchingHistory} className="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all whitespace-nowrap flex items-center gap-2 shadow-[0_0_15px_rgba(79,70,229,0.4)] disabled:opacity-50 active:scale-95">
+                            <button onClick={handlePullArchive} disabled={isFetchingHistory} className="bg-[var(--gold)] hover:bg-[var(--gold)] text-[var(--gold-ink)] px-6 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all whitespace-nowrap flex items-center gap-2 shadow-[0_0_15px_rgba(79,70,229,0.4)] disabled:opacity-50 active:scale-95">
                                 {isFetchingHistory ? <RotateCw className="animate-spin" size={16}/> : <Database size={16}/>}
                                 {isFetchingHistory ? 'Extracting...' : 'Pull Archive'}
                             </button>
@@ -393,19 +393,19 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
 
             {/* BREADCRUMB NAVIGATION */}
             {!reportView && (
-                <div className="flex flex-wrap gap-2 items-center mb-6 text-xs font-black uppercase tracking-widest text-slate-400 bg-white dark:bg-slate-800 p-3 rounded-xl border dark:border-slate-700 shadow-sm">
+                <div className="flex flex-wrap gap-2 items-center mb-6 text-xs font-black uppercase tracking-widest text-[var(--ink-muted)] bg-[var(--raised)] dark:bg-[var(--raised)] p-3 rounded-xl border dark:border-[var(--line)] shadow-sm">
                     {reportAccessLevel === 'global' && (
-                        <span onClick={()=> {setSelectedRegion(null); setSelectedAgent(null); setSelectedProv(null); setSelectedKab(null); setSelectedKec(null); setSelectedCustomer(null);}} className="cursor-pointer hover:text-orange-500 flex items-center gap-1"><Globe size={14}/> Master HQ</span>
+                        <span onClick={()=> {setSelectedRegion(null); setSelectedAgent(null); setSelectedProv(null); setSelectedKab(null); setSelectedKec(null); setSelectedCustomer(null);}} className="cursor-pointer hover:text-[var(--accent-ink)] flex items-center gap-1"><Globe size={14}/> Master HQ</span>
                     )}
                     
                     {/* 🚀 UI LOCK: Field Agents cannot navigate UP to team folders */}
-                    {selectedRegion && <> {!isFieldAgent && <ChevronRight size={14}/>} <span onClick={()=> { if(!isFieldAgent) {setSelectedAgent(null); setSelectedProv(null); setSelectedKab(null); setSelectedKec(null); setSelectedCustomer(null);} }} className={`flex items-center gap-1 ${!isFieldAgent ? 'cursor-pointer hover:text-orange-500 text-blue-500' : 'text-slate-400'}`}><MapPin size={14}/> {selectedRegion}</span> </>}
-                    {selectedAgent && <> <ChevronRight size={14}/> <span onClick={()=> { if(!isFieldAgent) {setSelectedProv(null); setSelectedKab(null); setSelectedKec(null); setSelectedCustomer(null);} }} className={`flex items-center gap-1 ${!isFieldAgent ? 'cursor-pointer hover:text-orange-500 text-emerald-500' : 'text-slate-400'}`}><User size={14}/> {selectedAgent}</span> </>}
+                    {selectedRegion && <> {!isFieldAgent && <ChevronRight size={14}/>} <span onClick={()=> { if(!isFieldAgent) {setSelectedAgent(null); setSelectedProv(null); setSelectedKab(null); setSelectedKec(null); setSelectedCustomer(null);} }} className={`flex items-center gap-1 ${!isFieldAgent ? 'cursor-pointer hover:text-[var(--accent-ink)] text-[var(--ink)]' : 'text-[var(--ink-muted)]'}`}><MapPin size={14}/> {selectedRegion}</span> </>}
+                    {selectedAgent && <> <ChevronRight size={14}/> <span onClick={()=> { if(!isFieldAgent) {setSelectedProv(null); setSelectedKab(null); setSelectedKec(null); setSelectedCustomer(null);} }} className={`flex items-center gap-1 ${!isFieldAgent ? 'cursor-pointer hover:text-[var(--accent-ink)] text-[var(--verified)]' : 'text-[var(--ink-muted)]'}`}><User size={14}/> {selectedAgent}</span> </>}
                     
-                    {selectedProv && <> <ChevronRight size={14}/> <span onClick={()=> {setSelectedKab(null); setSelectedKec(null); setSelectedCustomer(null);}} className="cursor-pointer hover:text-orange-500 text-purple-500 flex items-center gap-1">{selectedProv}</span> </>}
-                    {selectedKab && <> <ChevronRight size={14}/> <span onClick={()=> {setSelectedKec(null); setSelectedCustomer(null);}} className="cursor-pointer hover:text-orange-500 text-pink-500 flex items-center gap-1">{selectedKab}</span> </>}
-                    {selectedKec && <> <ChevronRight size={14}/> <span onClick={()=> setSelectedCustomer(null)} className="cursor-pointer hover:text-orange-500 text-red-500 flex items-center gap-1">{selectedKec}</span> </>}
-                    {selectedCustomer && <> <ChevronRight size={14}/> <span className="text-slate-800 dark:text-white flex items-center gap-1"><Store size={14}/> {selectedCustomer}</span> </>}
+                    {selectedProv && <> <ChevronRight size={14}/> <span onClick={()=> {setSelectedKab(null); setSelectedKec(null); setSelectedCustomer(null);}} className="cursor-pointer hover:text-[var(--accent-ink)] text-[var(--alt-ink)] flex items-center gap-1">{selectedProv}</span> </>}
+                    {selectedKab && <> <ChevronRight size={14}/> <span onClick={()=> {setSelectedKec(null); setSelectedCustomer(null);}} className="cursor-pointer hover:text-[var(--accent-ink)] text-pink-500 flex items-center gap-1">{selectedKab}</span> </>}
+                    {selectedKec && <> <ChevronRight size={14}/> <span onClick={()=> setSelectedCustomer(null)} className="cursor-pointer hover:text-[var(--accent-ink)] text-[var(--danger-text)] flex items-center gap-1">{selectedKec}</span> </>}
+                    {selectedCustomer && <> <ChevronRight size={14}/> <span className="text-[var(--ink)] dark:text-[var(--ink)] flex items-center gap-1"><Store size={14}/> {selectedCustomer}</span> </>}
                 </div>
             )}
 
@@ -414,13 +414,13 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                 <div className="flex flex-col md:flex-row gap-4 mb-8">
                     <div className="relative w-full shadow-sm rounded-xl group transition-shadow hover:shadow-md focus-within:shadow-md">
                         <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                            <Search size={20} className={`transition-colors ${searchTerm ? 'text-orange-500' : 'text-slate-400 group-focus-within:text-orange-500'}`} />
+                            <Search size={20} className={`transition-colors ${searchTerm ? 'text-[var(--accent-ink)]' : 'text-[var(--ink-muted)] group-focus-within:text-[var(--accent-ink)]'}`} />
                         </div>
-                        <input type="text" placeholder="Search product, value, or store..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-12 pr-12 py-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:border-orange-500 rounded-xl text-slate-900 dark:text-white font-medium text-sm outline-none transition-all"/>
-                        {searchTerm && <button onClick={() => setSearchTerm('')} className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-red-500 transition-colors"><X size={20} /></button>}
+                        <input type="text" placeholder="Search product, value, or store..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-12 pr-12 py-3.5 bg-[var(--raised)] dark:bg-[var(--raised)] border border-[var(--line-2)] dark:border-[var(--line)] focus:border-[var(--accent-edge)] rounded-xl text-[var(--ink)] dark:text-[var(--ink)] font-medium text-sm outline-none transition-all"/>
+                        {searchTerm && <button onClick={() => setSearchTerm('')} className="absolute inset-y-0 right-0 pr-4 flex items-center text-[var(--ink-muted)] hover:text-[var(--danger-text)] transition-colors"><X size={20} /></button>}
                     </div>
                     
-                    <button onClick={() => setReportView(true)} className="bg-orange-600 hover:bg-orange-500 border border-orange-400 px-6 py-3 rounded-xl shadow-md flex items-center justify-center gap-2 font-bold text-white transition-all whitespace-nowrap active:scale-95 text-xs uppercase tracking-widest">
+                    <button onClick={() => setReportView(true)} className="bg-[var(--gold)] hover:bg-[var(--gold)] border border-[var(--accent-edge)] px-6 py-3 rounded-xl shadow-md flex items-center justify-center gap-2 font-bold text-[var(--gold-ink)] transition-all whitespace-nowrap active:scale-95 text-xs uppercase tracking-widest">
                         <Calendar size={16}/> Context Analytics
                     </button>
                 </div>
@@ -430,50 +430,50 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
             {reportView && (
                 <div className="animate-fade-in relative z-10">
                      <div className="print:hidden mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                        <button onClick={() => setReportView(false)} className="flex items-center gap-2 text-slate-400 hover:text-orange-500 transition-colors font-bold uppercase tracking-widest text-xs"><ArrowRight className="rotate-180" size={16}/> Back to Folders</button>
+                        <button onClick={() => setReportView(false)} className="flex items-center gap-2 text-[var(--ink-muted)] hover:text-[var(--accent-ink)] transition-colors font-bold uppercase tracking-widest text-xs"><ArrowRight className="rotate-180" size={16}/> Back to Folders</button>
                         <div className="flex items-center gap-3">
-                            <div className="hidden md:flex items-center gap-2 bg-white dark:bg-slate-800 px-3 py-2 rounded-xl border dark:border-slate-700 shadow-sm print:hidden">
-                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Scale</span>
+                            <div className="hidden md:flex items-center gap-2 bg-[var(--raised)] dark:bg-[var(--raised)] px-3 py-2 rounded-xl border dark:border-[var(--line)] shadow-sm print:hidden">
+                                <span className="text-[10px] font-bold text-[var(--ink-muted)] uppercase tracking-widest">Scale</span>
                                 <input type="range" min="50" max="150" step="5" value={printScale} onChange={(e) => setPrintScale(Number(e.target.value))} className="w-20 accent-orange-500 cursor-pointer" />
-                                <span className="text-[10px] font-mono text-slate-400 w-8 text-right">{printScale}%</span>
+                                <span className="text-[10px] font-mono text-[var(--ink-muted)] w-8 text-right">{printScale}%</span>
                             </div>
-                            <button onClick={() => window.print()} className="bg-slate-800 hover:bg-slate-900 text-white px-6 py-2.5 rounded-xl shadow-sm text-xs font-bold uppercase tracking-widest flex items-center gap-2"><Printer size={16}/> Print PDF</button>
+                            <button onClick={() => window.print()} className="bg-[var(--raised)] hover:bg-[var(--panel)] text-[var(--ink)] px-6 py-2.5 rounded-xl shadow-sm text-xs font-bold uppercase tracking-widest flex items-center gap-2"><Printer size={16}/> Print PDF</button>
                         </div>
                      </div>
 
                      <style>{` @media print { .print-container { zoom: ${printScale / 100} !important; -moz-transform: scale(${printScale / 100}); -moz-transform-origin: top left; } } `}</style>
 
-                     <div className="print-container bg-white dark:bg-slate-800 dark:print:bg-white p-8 rounded-2xl shadow-xl border dark:border-slate-700 print:shadow-none print:border-none print:p-0">
+                     <div className="print-container bg-[var(--raised)] dark:bg-[var(--raised)] dark:print:bg-[var(--raised)] p-8 rounded-2xl shadow-xl border dark:border-[var(--line)] print:shadow-none print:border-none print:p-0">
                          {/* MACRO VIEW: GLOBAL STATS */}
-                         <div className="flex justify-between items-end mb-8 print:mb-4 border-b-2 border-orange-500 pb-4 print:pb-2">
+                         <div className="flex justify-between items-end mb-8 print:mb-4 border-b-2 border-[var(--accent-edge)] pb-4 print:pb-2">
                              <div>
-                                 <h1 className="text-3xl print:text-xl font-bold text-slate-900 dark:text-white dark:print:text-black uppercase tracking-tight">
+                                 <h1 className="text-3xl print:text-xl font-bold text-[var(--ink)] dark:text-[var(--ink)] dark:print:text-[var(--ink)] uppercase tracking-tight">
                                      {isFieldAgent ? 'My Performance' : selectedAgent ? `${selectedAgent}'s Performance` : selectedRegion ? `${selectedRegion} Operations` : 'Global Master Analytics'}
                                  </h1>
-                                 <p className="text-slate-400 dark:print:text-slate-400 font-mono text-sm print:text-[10px] mt-1 uppercase">{rangeType} Recap • {new Date(targetDate).toLocaleDateString()}</p>
+                                 <p className="text-[var(--ink-muted)] dark:print:text-[var(--ink-muted)] font-mono text-sm print:text-[10px] mt-1 uppercase">{rangeType} Recap • {new Date(targetDate).toLocaleDateString()}</p>
                              </div>
-                             <div className="text-right"><p className="text-xs print:text-[10px] text-slate-400 uppercase tracking-widest font-bold">Context Revenue</p><h2 className="text-4xl print:text-2xl font-bold text-emerald-600 dark:print:text-emerald-700">{formatRupiah(stats.totalRev)}</h2></div>
+                             <div className="text-right"><p className="text-xs print:text-[10px] text-[var(--ink-muted)] uppercase tracking-widest font-bold">Context Revenue</p><h2 className="text-4xl print:text-2xl font-bold text-[var(--verified)] dark:print:text-[var(--verified)]">{formatRupiah(stats.totalRev)}</h2></div>
                          </div>
                          
                          <div className="grid grid-cols-1 md:grid-cols-3 print:grid-cols-3 gap-4 md:gap-6 print:gap-2 mb-8 print:mb-4">
-                             <div className="p-4 print:p-2 bg-slate-50 dark:bg-slate-900 dark:print:bg-slate-100 rounded-xl border dark:border-slate-700 print:border-slate-200"><p className="text-xs print:text-[11px] uppercase text-slate-400 font-bold mb-1 print:mb-0">Transactions</p><p className="text-2xl print:text-base font-bold text-slate-800 dark:text-white dark:print:text-black">{stats.count}</p></div>
-                             <div className="p-4 print:p-2 bg-slate-50 dark:bg-slate-900 dark:print:bg-slate-100 rounded-xl border dark:border-slate-700 print:border-slate-200"><p className="text-xs print:text-[11px] uppercase text-slate-400 font-bold mb-1 print:mb-0">Items Moved (Bks)</p><p className="text-2xl print:text-base font-bold text-blue-600">{Object.values(stats.items).reduce((a,b)=>a+b.qty,0)}</p></div>
-                             <div className="p-4 print:p-2 bg-slate-50 dark:bg-slate-900 dark:print:bg-slate-100 rounded-xl border dark:border-slate-700 print:border-slate-200"><p className="text-xs print:text-[11px] uppercase text-slate-400 font-bold mb-1 print:mb-0">Net Profit (Cuan)</p><p className="text-2xl print:text-base font-bold text-emerald-500">{formatRupiah(stats.totalProfit)}</p></div>
+                             <div className="p-4 print:p-2 bg-[var(--raised)] dark:bg-[var(--panel)] dark:print:bg-[var(--raised)] rounded-xl border dark:border-[var(--line)] print:border-[var(--line-2)]"><p className="text-xs print:text-[11px] uppercase text-[var(--ink-muted)] font-bold mb-1 print:mb-0">Transactions</p><p className="text-2xl print:text-base font-bold text-[var(--ink)] dark:text-[var(--ink)] dark:print:text-[var(--ink)]">{stats.count}</p></div>
+                             <div className="p-4 print:p-2 bg-[var(--raised)] dark:bg-[var(--panel)] dark:print:bg-[var(--raised)] rounded-xl border dark:border-[var(--line)] print:border-[var(--line-2)]"><p className="text-xs print:text-[11px] uppercase text-[var(--ink-muted)] font-bold mb-1 print:mb-0">Items Moved (Bks)</p><p className="text-2xl print:text-base font-bold text-[var(--ink)]">{Object.values(stats.items).reduce((a,b)=>a+b.qty,0)}</p></div>
+                             <div className="p-4 print:p-2 bg-[var(--raised)] dark:bg-[var(--panel)] dark:print:bg-[var(--raised)] rounded-xl border dark:border-[var(--line)] print:border-[var(--line-2)]"><p className="text-xs print:text-[11px] uppercase text-[var(--ink-muted)] font-bold mb-1 print:mb-0">Net Profit (Cuan)</p><p className="text-2xl print:text-base font-bold text-[var(--verified)]">{formatRupiah(stats.totalProfit)}</p></div>
                          </div>
 
                          <div className="mb-8 print:mb-0">
-                             <h3 className="font-bold text-lg print:text-sm mb-4 print:mb-2 text-slate-800 dark:text-white dark:print:text-black flex items-center gap-2"><Package size={20} className="print:w-4 print:h-4 text-orange-500"/> Product Performance</h3>
+                             <h3 className="font-bold text-lg print:text-sm mb-4 print:mb-2 text-[var(--ink)] dark:text-[var(--ink)] dark:print:text-[var(--ink)] flex items-center gap-2"><Package size={20} className="print:w-4 print:h-4 text-[var(--accent-ink)]"/> Product Performance</h3>
                              <div className="overflow-x-auto pb-2">
                                  <table className="w-full text-sm print:text-[10px] text-left border-collapse min-w-[450px]">
-                                    <thead className="text-slate-400 border-b-2 border-slate-100 dark:border-slate-700 dark:print:border-slate-300">
+                                    <thead className="text-[var(--ink-muted)] border-b-2 border-[var(--line-2)] dark:border-[var(--line)] dark:print:border-[var(--line-2)]">
                                         <tr><th className="py-2 print:py-1 w-1/2">Product Name</th><th className="py-2 print:py-1 text-right pr-6 w-1/4">Qty (Bks)</th><th className="py-2 print:py-1 text-right w-1/4">Revenue</th></tr>
                                     </thead>
-                                    <tbody className="divide-y divide-slate-100 dark:divide-slate-700 dark:print:divide-slate-200">
+                                    <tbody className="divide-y divide-[var(--line)] dark:divide-[var(--line)] dark:print:divide-[var(--line)]">
                                         {Object.entries(stats.items).sort((a,b) => b[1].val - a[1].val).map(([name, data]) => (
-                                            <tr key={name} className="hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
-                                                <td className="py-3 print:py-1.5 font-bold text-slate-700 dark:text-slate-200 dark:print:text-black uppercase text-xs">{name}</td>
-                                                <td className="py-3 print:py-1.5 text-right pr-6 text-slate-400 dark:text-slate-400 dark:print:text-black font-mono">{data.qty}</td>
-                                                <td className="py-3 print:py-1.5 text-right font-bold text-emerald-600">{formatRupiah(data.val)}</td>
+                                            <tr key={name} className="hover:bg-[var(--raised)] dark:hover:bg-[var(--raised)] transition-colors">
+                                                <td className="py-3 print:py-1.5 font-bold text-[var(--ink)] dark:text-[var(--ink)] dark:print:text-[var(--ink)] uppercase text-xs">{name}</td>
+                                                <td className="py-3 print:py-1.5 text-right pr-6 text-[var(--ink-muted)] dark:text-[var(--ink-muted)] dark:print:text-[var(--ink)] font-mono">{data.qty}</td>
+                                                <td className="py-3 print:py-1.5 text-right font-bold text-[var(--verified)]">{formatRupiah(data.val)}</td>
                                             </tr>
                                         ))}
                                     </tbody>
@@ -482,9 +482,9 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                          </div>
 
                          {/* MICRO VIEW: AGENT PERFORMANCE ROSTER */}
-                         <div className="mt-12 pt-8 border-t border-slate-200 dark:border-slate-700">
-                             <h3 className="font-black text-xl mb-6 text-slate-800 dark:text-white flex items-center gap-2 uppercase tracking-widest">
-                                 <User size={24} className="text-blue-500"/> {isFieldAgent ? 'My Detailed Breakdown' : 'Agent Roster'}
+                         <div className="mt-12 pt-8 border-t border-[var(--line-2)] dark:border-[var(--line)]">
+                             <h3 className="font-black text-xl mb-6 text-[var(--ink)] dark:text-[var(--ink)] flex items-center gap-2 uppercase tracking-widest">
+                                 <User size={24} className="text-[var(--ink)]"/> {isFieldAgent ? 'My Detailed Breakdown' : 'Agent Roster'}
                              </h3>
                              <div className="space-y-4">
                                  {stats.agentRoster.map(agent => {
@@ -492,7 +492,7 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                                      const agentProfile = motorists?.find(m => m.id === agent.agentId) || {};
                                      
                                      return (
-                                         <div key={agent.name} className={`border rounded-2xl overflow-hidden transition-all duration-300 ${isExpanded ? 'border-blue-500 shadow-lg dark:bg-slate-800/80' : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-slate-400'}`}>
+                                         <div key={agent.name} className={`border rounded-2xl overflow-hidden transition-all duration-300 ${isExpanded ? 'border-[var(--accent-edge)] shadow-lg dark:bg-[var(--raised)]' : 'border-[var(--line-2)] dark:border-[var(--line)] bg-[var(--raised)] dark:bg-[var(--raised)] hover:border-[var(--line-2)]'}`}>
                                              {/* Accordion Header */}
                                              <button 
                                                 onClick={() => setExpandedAgent(isExpanded ? null : agent.name)}
@@ -500,24 +500,24 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                                              >
                                                  <div className="flex items-center gap-4">
                                                      {agentProfile.photoURL ? (
-                                                         <img src={agentProfile.photoURL} className="w-12 h-12 rounded-full object-cover border-2 border-slate-200 dark:border-slate-600 shrink-0" alt={agent.name} />
+                                                         <img src={agentProfile.photoURL} className="w-12 h-12 rounded-full object-cover border-2 border-[var(--line-2)] dark:border-[var(--line)] shrink-0" alt={agent.name} />
                                                      ) : (
-                                                         <div className="w-12 h-12 rounded-full bg-blue-100 dark:bg-slate-700 flex items-center justify-center shrink-0">
-                                                             <User size={24} className="text-blue-500" />
+                                                         <div className="w-12 h-12 rounded-full bg-[var(--raised)] dark:bg-[var(--raised)] flex items-center justify-center shrink-0">
+                                                             <User size={24} className="text-[var(--ink)]" />
                                                          </div>
                                                      )}
                                                      <div>
-                                                         <h4 className="font-bold text-lg dark:text-white leading-none mb-1">{agent.name}</h4>
-                                                         <p className="text-[10px] text-slate-400 uppercase tracking-widest">{agent.count} Receipts</p>
+                                                         <h4 className="font-bold text-lg dark:text-[var(--ink)] leading-none mb-1">{agent.name}</h4>
+                                                         <p className="text-[10px] text-[var(--ink-muted)] uppercase tracking-widest">{agent.count} Receipts</p>
                                                      </div>
                                                  </div>
                                                  <div className="flex items-center gap-6">
                                                      <div className="text-right">
-                                                         <p className="text-[10px] text-slate-400 uppercase tracking-widest font-bold mb-0.5">Agent Total</p>
-                                                         <p className={`font-black text-lg ${agent.total < 0 ? 'text-red-500' : 'text-emerald-500'}`}>{formatRupiah(agent.total)}</p>
+                                                         <p className="text-[10px] text-[var(--ink-muted)] uppercase tracking-widest font-bold mb-0.5">Agent Total</p>
+                                                         <p className={`font-black text-lg ${agent.total < 0 ? 'text-[var(--danger-text)]' : 'text-[var(--verified)]'}`}>{formatRupiah(agent.total)}</p>
                                                      </div>
                                                      {!isFieldAgent && (
-                                                        <div className="p-2 bg-slate-50 dark:bg-slate-900 rounded-full text-slate-400">
+                                                        <div className="p-2 bg-[var(--raised)] dark:bg-[var(--panel)] rounded-full text-[var(--ink-muted)]">
                                                             {isExpanded ? <ChevronUp size={20}/> : <ChevronDown size={20}/>}
                                                         </div>
                                                      )}
@@ -526,19 +526,19 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
 
                                              {/* Accordion Body (Deep Dive) */}
                                              {isExpanded && (
-                                                 <div className="p-6 bg-slate-50 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-700 animate-fade-in">
+                                                 <div className="p-6 bg-[var(--raised)] dark:bg-[var(--panel)] border-t border-[var(--line-2)] dark:border-[var(--line)] animate-fade-in">
                                                      
                                                      {/* Agent's Product Breakdown */}
                                                      <div className="mb-8">
-                                                         <h5 className="font-bold text-sm text-slate-400 dark:text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2"><Package size={16}/> Items Sold by {agent.name}</h5>
+                                                         <h5 className="font-bold text-sm text-[var(--ink-muted)] dark:text-[var(--ink-muted)] uppercase tracking-widest mb-3 flex items-center gap-2"><Package size={16}/> Items Sold by {agent.name}</h5>
                                                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                                                              {Object.entries(agent.items).sort((a,b) => b[1].val - a[1].val).map(([pName, pData]) => (
-                                                                 <div key={pName} className="bg-white dark:bg-slate-800 p-3 rounded-lg border dark:border-slate-700 flex justify-between items-center shadow-sm">
+                                                                 <div key={pName} className="bg-[var(--raised)] dark:bg-[var(--raised)] p-3 rounded-lg border dark:border-[var(--line)] flex justify-between items-center shadow-sm">
                                                                      <div>
-                                                                         <p className="text-xs font-bold dark:text-white uppercase mb-0.5 truncate max-w-[120px]">{pName}</p>
-                                                                         <p className="text-[10px] text-slate-400 font-mono">{pData.qty} Bks</p>
+                                                                         <p className="text-xs font-bold dark:text-[var(--ink)] uppercase mb-0.5 truncate max-w-[120px]">{pName}</p>
+                                                                         <p className="text-[10px] text-[var(--ink-muted)] font-mono">{pData.qty} Bks</p>
                                                                      </div>
-                                                                     <p className="text-sm font-black text-emerald-500">{formatRupiah(pData.val)}</p>
+                                                                     <p className="text-sm font-black text-[var(--verified)]">{formatRupiah(pData.val)}</p>
                                                                  </div>
                                                              ))}
                                                          </div>
@@ -546,7 +546,7 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
 
                                                      {/* Agent's Transaction Timeline */}
                                                      <div>
-                                                         <h5 className="font-bold text-sm text-slate-400 dark:text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2"><Clock size={16}/> Chronological Ledger</h5>
+                                                         <h5 className="font-bold text-sm text-[var(--ink-muted)] dark:text-[var(--ink-muted)] uppercase tracking-widest mb-3 flex items-center gap-2"><Clock size={16}/> Chronological Ledger</h5>
                                                          <div className="space-y-2">
                                                              {agent.transactions.map(t => {
                                                                  // 🚀 FORENSIC BADGES
@@ -555,24 +555,24 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                                                                  const isIouFulfill = t.paymentType === 'IOU Fulfillment';
 
                                                                  return (
-                                                                 <div key={t.id} className="bg-white dark:bg-slate-800 p-4 rounded-xl border dark:border-slate-700 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shadow-sm hover:shadow-md transition-shadow">
+                                                                 <div key={t.id} className="bg-[var(--raised)] dark:bg-[var(--raised)] p-4 rounded-xl border dark:border-[var(--line)] flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shadow-sm hover:shadow-md transition-shadow">
                                                                      <div className="flex items-center gap-4 w-full md:w-auto">
-                                                                         <div className="bg-slate-100 dark:bg-slate-700 px-3 py-2 rounded-lg text-center shrink-0">
-                                                                             <p className="text-[10px] text-slate-400 font-bold uppercase">{t.date.split('-').reverse().join('/')}</p>
-                                                                             <p className="text-xs font-mono font-black dark:text-white">{t.timestamp ? new Date(t.timestamp.seconds*1000).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}) : '--:--'}</p>
+                                                                         <div className="bg-[var(--raised)] dark:bg-[var(--raised)] px-3 py-2 rounded-lg text-center shrink-0">
+                                                                             <p className="text-[10px] text-[var(--ink-muted)] font-bold uppercase">{t.date.split('-').reverse().join('/')}</p>
+                                                                             <p className="text-xs font-mono font-black dark:text-[var(--ink)]">{t.timestamp ? new Date(t.timestamp.seconds*1000).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}) : '--:--'}</p>
                                                                          </div>
                                                                          <div className="min-w-0">
                                                                              <div className="flex items-center gap-2 mb-0.5">
-                                                                                <p className="font-bold text-sm dark:text-white truncate uppercase">{t.customerName}</p>
+                                                                                <p className="font-bold text-sm dark:text-[var(--ink)] truncate uppercase">{t.customerName}</p>
                                                                                 {isRetur ? (
-                                                                                    <span className="text-[11px] font-black px-1 py-0.5 rounded uppercase tracking-widest bg-red-100 text-red-600 border border-red-300">RETUR</span>
+                                                                                    <span className="text-[11px] font-black px-1 py-0.5 rounded uppercase tracking-widest bg-[var(--danger-well)] text-[var(--danger-text)] border border-[var(--danger)]">RETUR</span>
                                                                                 ) : isExchange ? (
-                                                                                    <span className="text-[11px] font-black px-1 py-0.5 rounded uppercase tracking-widest bg-blue-100 text-blue-600 border border-blue-300">EXCHANGE</span>
+                                                                                    <span className="text-[11px] font-black px-1 py-0.5 rounded uppercase tracking-widest bg-[var(--raised)] text-[var(--ink)] border border-[var(--accent-edge)]">EXCHANGE</span>
                                                                                 ) : isIouFulfill ? (
-                                                                                    <span className="text-[11px] font-black px-1 py-0.5 rounded uppercase tracking-widest bg-emerald-100 text-emerald-600 border border-emerald-300">UTANG BARANG LUNAS</span>
+                                                                                    <span className="text-[11px] font-black px-1 py-0.5 rounded uppercase tracking-widest bg-[var(--verified-fill)] text-[var(--verified)] border border-[var(--line-2)]">UTANG BARANG LUNAS</span>
                                                                                 ) : null}
                                                                              </div>
-                                                                             <p className="text-[10px] text-slate-400 uppercase mt-0.5 truncate">
+                                                                             <p className="text-[10px] text-[var(--ink-muted)] uppercase mt-0.5 truncate">
                                                                                  {t.type === 'CONSIGNMENT_PAYMENT' ? 'STORE AUDIT' : t.items ? t.items.map(i => {
                                                                                      let lbl = `${i.qty} ${i.unit} ${i.name}`;
                                                                                      if (i.condition === 'DAMAGED') lbl += ' [DMG]';
@@ -584,8 +584,8 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                                                                          </div>
                                                                      </div>
                                                                      <div className="text-right shrink-0 w-full md:w-auto flex justify-between md:block items-center">
-                                                                         <span className={`text-[11px] px-2 py-1 rounded font-bold uppercase tracking-widest ${t.paymentType === 'Titip' ? 'bg-orange-100 text-orange-600' : 'bg-slate-200 text-slate-400'}`}>{t.paymentType || 'Cash'}</span>
-                                                                         <p className={`font-black text-base mt-1 ${isRetur && (t.amountPaid || t.total) > 0 ? 'text-red-500' : 'text-emerald-500'}`}>
+                                                                         <span className={`text-[11px] px-2 py-1 rounded font-bold uppercase tracking-widest ${t.paymentType === 'Titip' ? 'bg-[var(--raised)] text-[var(--accent-ink)]' : 'bg-[var(--raised)] text-[var(--ink-muted)]'}`}>{t.paymentType || 'Cash'}</span>
+                                                                         <p className={`font-black text-base mt-1 ${isRetur && (t.amountPaid || t.total) > 0 ? 'text-[var(--danger-text)]' : 'text-[var(--verified)]'}`}>
                                                                             {isRetur && (t.amountPaid || t.total) > 0 ? '-' : ''}{formatRupiah(t.amountPaid || t.total)}
                                                                          </p>
                                                                      </div>
@@ -599,7 +599,7 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                                          </div>
                                      );
                                  })}
-                                 {stats.agentRoster.length === 0 && <p className="text-center text-slate-400 py-6 font-bold uppercase tracking-widest">No agent activity logged.</p>}
+                                 {stats.agentRoster.length === 0 && <p className="text-center text-[var(--ink-muted)] py-6 font-bold uppercase tracking-widest">No agent activity logged.</p>}
                              </div>
                          </div>
 
@@ -613,18 +613,18 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
             {!reportView && reportAccessLevel === 'global' && !selectedRegion && (
                 <div className="animate-fade-in relative z-10">
                     {Object.keys(reportData).length === 0 ? (
-                        <div className="text-center py-20 opacity-50"><MapPin size={48} className="mx-auto mb-4 text-blue-500"/><p className="text-lg font-bold tracking-widest uppercase text-slate-400">No Regions Active</p></div>
+                        <div className="text-center py-20 opacity-50"><MapPin size={48} className="mx-auto mb-4 text-[var(--ink)]"/><p className="text-lg font-bold tracking-widest uppercase text-[var(--ink-muted)]">No Regions Active</p></div>
                     ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                             {Object.values(reportData).sort((a,b) => b.total - a.total).map(r => (
-                                <div key={r.name} onClick={() => setSelectedRegion(r.name)} className="bg-gradient-to-br from-blue-50 to-white dark:from-slate-800 dark:to-slate-900 p-6 rounded-2xl border dark:border-slate-700 shadow-sm cursor-pointer hover:shadow-lg hover:border-blue-500 transition-all group">
+                                <div key={r.name} onClick={() => setSelectedRegion(r.name)} className="bg-gradient-to-br from-[var(--panel)] to-white dark:from-[var(--panel)] dark:to-[var(--raised)] p-6 rounded-2xl border dark:border-[var(--line)] shadow-sm cursor-pointer hover:shadow-lg hover:border-[var(--accent-edge)] transition-all group">
                                     <div className="flex items-start justify-between mb-6">
-                                        <div className="p-4 bg-blue-100 dark:bg-slate-800 rounded-xl text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-colors shadow-sm"><MapPin size={28} /></div>
+                                        <div className="p-4 bg-[var(--raised)] dark:bg-[var(--raised)] rounded-xl text-[var(--ink)] group-hover:bg-[var(--gold)] group-hover:text-[var(--gold-ink)] transition-colors shadow-sm"><MapPin size={28} /></div>
                                     </div>
-                                    <h3 className="font-black text-xl dark:text-white mb-2 tracking-wide">{r.name}</h3>
-                                    <div className="flex justify-between items-end border-t border-slate-200 dark:border-slate-700 pt-4 mt-4">
-                                        <div><p className="text-[10px] text-slate-400 uppercase tracking-widest font-bold">Regional Gross</p><p className="font-black text-blue-600 text-xl">{formatRupiah(r.total)}</p></div>
-                                        <div className="text-right"><p className="text-[10px] text-slate-400 uppercase tracking-widest font-bold">Sales</p><p className="font-black dark:text-white text-xl">{r.count}</p></div>
+                                    <h3 className="font-black text-xl dark:text-[var(--ink)] mb-2 tracking-wide">{r.name}</h3>
+                                    <div className="flex justify-between items-end border-t border-[var(--line-2)] dark:border-[var(--line)] pt-4 mt-4">
+                                        <div><p className="text-[10px] text-[var(--ink-muted)] uppercase tracking-widest font-bold">Regional Gross</p><p className="font-black text-[var(--ink)] text-xl">{formatRupiah(r.total)}</p></div>
+                                        <div className="text-right"><p className="text-[10px] text-[var(--ink-muted)] uppercase tracking-widest font-bold">Sales</p><p className="font-black dark:text-[var(--ink)] text-xl">{r.count}</p></div>
                                     </div>
                                 </div>
                             ))}
@@ -638,14 +638,14 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                 <div className="animate-fade-in relative z-10">
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         {Object.values(reportData[selectedRegion]?.agents || {}).sort((a,b) => b.total - a.total).map(a => (
-                            <div key={a.name} onClick={() => setSelectedAgent(a.name)} className="bg-white dark:bg-slate-800 p-6 rounded-2xl border dark:border-slate-700 shadow-sm cursor-pointer hover:shadow-md hover:border-emerald-500 transition-all group">
+                            <div key={a.name} onClick={() => setSelectedAgent(a.name)} className="bg-[var(--raised)] dark:bg-[var(--raised)] p-6 rounded-2xl border dark:border-[var(--line)] shadow-sm cursor-pointer hover:shadow-md hover:border-[var(--line-2)] transition-all group">
                                 <div className="flex items-start justify-between mb-4">
-                                    <div className="p-3 bg-emerald-50 dark:bg-slate-700 rounded-xl text-emerald-600 group-hover:bg-emerald-500 group-hover:text-white transition-colors"><User size={24} /></div>
+                                    <div className="p-3 bg-[var(--verified-fill)] dark:bg-[var(--raised)] rounded-xl text-[var(--verified)] group-hover:bg-[var(--verified-fill)]0 group-hover:text-[var(--ink)] transition-colors"><User size={24} /></div>
                                 </div>
-                                <h3 className="font-bold text-lg dark:text-white mb-4 truncate">{a.name}</h3>
-                                <div className="flex justify-between items-end border-t border-slate-100 dark:border-slate-700 pt-3">
-                                    <div><p className="text-[11px] text-slate-400 uppercase tracking-widest font-bold">Agent Gross</p><p className="font-black text-emerald-600 text-lg">{formatRupiah(a.total)}</p></div>
-                                    <div className="text-right"><p className="text-[11px] text-slate-400 uppercase tracking-widest font-bold">Stops</p><p className="font-black dark:text-white text-lg">{a.count}</p></div>
+                                <h3 className="font-bold text-lg dark:text-[var(--ink)] mb-4 truncate">{a.name}</h3>
+                                <div className="flex justify-between items-end border-t border-[var(--line-2)] dark:border-[var(--line)] pt-3">
+                                    <div><p className="text-[11px] text-[var(--ink-muted)] uppercase tracking-widest font-bold">Agent Gross</p><p className="font-black text-[var(--verified)] text-lg">{formatRupiah(a.total)}</p></div>
+                                    <div className="text-right"><p className="text-[11px] text-[var(--ink-muted)] uppercase tracking-widest font-bold">Stops</p><p className="font-black dark:text-[var(--ink)] text-lg">{a.count}</p></div>
                                 </div>
                             </div>
                         ))}
@@ -657,18 +657,18 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
             {!reportView && selectedRegion && selectedAgent && !selectedProv && (
                 <div className="animate-fade-in relative z-10">
                     {Object.keys(reportData[selectedRegion]?.agents[selectedAgent]?.provinsi || {}).length === 0 ? (
-                         <div className="text-center py-20 opacity-50"><Folder size={48} className="mx-auto mb-4 text-purple-500"/><p className="text-lg font-bold tracking-widest uppercase text-slate-400">No Provinces Visited</p></div>
+                         <div className="text-center py-20 opacity-50"><Folder size={48} className="mx-auto mb-4 text-[var(--alt-ink)]"/><p className="text-lg font-bold tracking-widest uppercase text-[var(--ink-muted)]">No Provinces Visited</p></div>
                     ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                             {Object.values(reportData[selectedRegion]?.agents[selectedAgent]?.provinsi || {}).sort((a,b) => b.total - a.total).map(p => (
-                                <div key={p.name} onClick={() => setSelectedProv(p.name)} className="bg-white dark:bg-slate-800 p-5 rounded-2xl border dark:border-slate-700 shadow-sm cursor-pointer hover:shadow-md hover:border-purple-500 transition-all group">
+                                <div key={p.name} onClick={() => setSelectedProv(p.name)} className="bg-[var(--raised)] dark:bg-[var(--raised)] p-5 rounded-2xl border dark:border-[var(--line)] shadow-sm cursor-pointer hover:shadow-md hover:border-[var(--alt-edge)] transition-all group">
                                     <div className="flex items-start justify-between mb-3">
-                                        <div className="p-2.5 rounded-xl transition-colors bg-purple-100 dark:bg-slate-700 text-purple-600 group-hover:bg-purple-500 group-hover:text-white"><MapPin size={20}/></div>
+                                        <div className="p-2.5 rounded-xl transition-colors bg-[var(--raised)] dark:bg-[var(--raised)] text-[var(--alt-ink)] group-hover:bg-[var(--gold)] group-hover:text-[var(--gold-ink)]"><MapPin size={20}/></div>
                                     </div>
-                                    <h3 className="font-black text-base dark:text-white mb-3 truncate uppercase tracking-wide">{p.name}</h3>
-                                    <div className="flex justify-between items-end border-t border-slate-100 dark:border-slate-700 pt-3">
-                                        <div><p className="text-[11px] text-slate-400 uppercase tracking-widest font-bold">Prov. Value</p><p className="font-bold text-sm text-purple-500">{formatRupiah(p.total)}</p></div>
-                                        <div className="text-right"><p className="text-[11px] text-slate-400 uppercase tracking-widest font-bold">Stops</p><p className="font-bold dark:text-white text-sm">{p.count}</p></div>
+                                    <h3 className="font-black text-base dark:text-[var(--ink)] mb-3 truncate uppercase tracking-wide">{p.name}</h3>
+                                    <div className="flex justify-between items-end border-t border-[var(--line-2)] dark:border-[var(--line)] pt-3">
+                                        <div><p className="text-[11px] text-[var(--ink-muted)] uppercase tracking-widest font-bold">Prov. Value</p><p className="font-bold text-sm text-[var(--alt-ink)]">{formatRupiah(p.total)}</p></div>
+                                        <div className="text-right"><p className="text-[11px] text-[var(--ink-muted)] uppercase tracking-widest font-bold">Stops</p><p className="font-bold dark:text-[var(--ink)] text-sm">{p.count}</p></div>
                                     </div>
                                 </div>
                             ))}
@@ -682,14 +682,14 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                 <div className="animate-fade-in relative z-10">
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         {Object.values(reportData[selectedRegion]?.agents[selectedAgent]?.provinsi[selectedProv]?.kabupaten || {}).sort((a,b) => b.total - a.total).map(k => (
-                            <div key={k.name} onClick={() => setSelectedKab(k.name)} className="bg-white dark:bg-slate-800 p-5 rounded-2xl border dark:border-slate-700 shadow-sm cursor-pointer hover:shadow-md hover:border-pink-500 transition-all group">
+                            <div key={k.name} onClick={() => setSelectedKab(k.name)} className="bg-[var(--raised)] dark:bg-[var(--raised)] p-5 rounded-2xl border dark:border-[var(--line)] shadow-sm cursor-pointer hover:shadow-md hover:border-pink-500 transition-all group">
                                 <div className="flex items-start justify-between mb-3">
-                                    <div className="p-2.5 rounded-xl transition-colors bg-pink-100 dark:bg-slate-700 text-pink-600 group-hover:bg-pink-500 group-hover:text-white"><Folder size={20}/></div>
+                                    <div className="p-2.5 rounded-xl transition-colors bg-pink-100 dark:bg-[var(--raised)] text-pink-600 group-hover:bg-pink-500 group-hover:text-[var(--ink)]"><Folder size={20}/></div>
                                 </div>
-                                <h3 className="font-black text-base dark:text-white mb-3 truncate uppercase tracking-wide">{k.name}</h3>
-                                <div className="flex justify-between items-end border-t border-slate-100 dark:border-slate-700 pt-3">
-                                    <div><p className="text-[11px] text-slate-400 uppercase tracking-widest font-bold">Kab. Value</p><p className="font-bold text-sm text-pink-500">{formatRupiah(k.total)}</p></div>
-                                    <div className="text-right"><p className="text-[11px] text-slate-400 uppercase tracking-widest font-bold">Stops</p><p className="font-bold dark:text-white text-sm">{k.count}</p></div>
+                                <h3 className="font-black text-base dark:text-[var(--ink)] mb-3 truncate uppercase tracking-wide">{k.name}</h3>
+                                <div className="flex justify-between items-end border-t border-[var(--line-2)] dark:border-[var(--line)] pt-3">
+                                    <div><p className="text-[11px] text-[var(--ink-muted)] uppercase tracking-widest font-bold">Kab. Value</p><p className="font-bold text-sm text-pink-500">{formatRupiah(k.total)}</p></div>
+                                    <div className="text-right"><p className="text-[11px] text-[var(--ink-muted)] uppercase tracking-widest font-bold">Stops</p><p className="font-bold dark:text-[var(--ink)] text-sm">{k.count}</p></div>
                                 </div>
                             </div>
                         ))}
@@ -702,14 +702,14 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                 <div className="animate-fade-in relative z-10">
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         {Object.values(reportData[selectedRegion]?.agents[selectedAgent]?.provinsi[selectedProv]?.kabupaten[selectedKab]?.kecamatan || {}).sort((a,b) => b.total - a.total).map(c => (
-                            <div key={c.name} onClick={() => setSelectedKec(c.name)} className="bg-white dark:bg-slate-800 p-5 rounded-2xl border dark:border-slate-700 shadow-sm cursor-pointer hover:shadow-md hover:border-red-500 transition-all group">
+                            <div key={c.name} onClick={() => setSelectedKec(c.name)} className="bg-[var(--raised)] dark:bg-[var(--raised)] p-5 rounded-2xl border dark:border-[var(--line)] shadow-sm cursor-pointer hover:shadow-md hover:border-[var(--danger)] transition-all group">
                                 <div className="flex items-start justify-between mb-3">
-                                    <div className="p-2.5 rounded-xl transition-colors bg-red-100 dark:bg-slate-700 text-red-600 group-hover:bg-red-500 group-hover:text-white"><Folder size={20}/></div>
+                                    <div className="p-2.5 rounded-xl transition-colors bg-[var(--danger-well)] dark:bg-[var(--raised)] text-[var(--danger-text)] group-hover:bg-[var(--danger-plate)] group-hover:text-[var(--ink)]"><Folder size={20}/></div>
                                 </div>
-                                <h3 className="font-black text-base dark:text-white mb-3 truncate uppercase tracking-wide">{c.name}</h3>
-                                <div className="flex justify-between items-end border-t border-slate-100 dark:border-slate-700 pt-3">
-                                    <div><p className="text-[11px] text-slate-400 uppercase tracking-widest font-bold">Kec. Value</p><p className="font-bold text-sm text-red-500">{formatRupiah(c.total)}</p></div>
-                                    <div className="text-right"><p className="text-[11px] text-slate-400 uppercase tracking-widest font-bold">Stops</p><p className="font-bold dark:text-white text-sm">{c.count}</p></div>
+                                <h3 className="font-black text-base dark:text-[var(--ink)] mb-3 truncate uppercase tracking-wide">{c.name}</h3>
+                                <div className="flex justify-between items-end border-t border-[var(--line-2)] dark:border-[var(--line)] pt-3">
+                                    <div><p className="text-[11px] text-[var(--ink-muted)] uppercase tracking-widest font-bold">Kec. Value</p><p className="font-bold text-sm text-[var(--danger-text)]">{formatRupiah(c.total)}</p></div>
+                                    <div className="text-right"><p className="text-[11px] text-[var(--ink-muted)] uppercase tracking-widest font-bold">Stops</p><p className="font-bold dark:text-[var(--ink)] text-sm">{c.count}</p></div>
                                 </div>
                             </div>
                         ))}
@@ -724,16 +724,16 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                         {Object.values(reportData[selectedRegion]?.agents[selectedAgent]?.provinsi[selectedProv]?.kabupaten[selectedKab]?.kecamatan[selectedKec]?.stores || {}).sort((a,b) => b.total - a.total).map(c => {
                             const isIndiv = c.name === "Individuals (Ecer)";
                             return (
-                                <div key={c.name} onClick={() => setSelectedCustomer(c.name)} className={`relative bg-white dark:bg-slate-800 p-5 rounded-2xl border shadow-sm cursor-pointer hover:shadow-md transition-all group ${isIndiv ? 'border-emerald-200 dark:border-emerald-900/50 hover:border-emerald-500' : 'dark:border-slate-700 hover:border-orange-500'}`}>
+                                <div key={c.name} onClick={() => setSelectedCustomer(c.name)} className={`relative bg-[var(--raised)] dark:bg-[var(--raised)] p-5 rounded-2xl border shadow-sm cursor-pointer hover:shadow-md transition-all group ${isIndiv ? 'border-[var(--line-2)] dark:border-[var(--line-2)] hover:border-[var(--line-2)]' : 'dark:border-[var(--line)] hover:border-[var(--accent-edge)]'}`}>
                                     <div className="flex items-start justify-between mb-3">
-                                        <div className={`p-2.5 rounded-xl transition-colors ${isIndiv ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 group-hover:bg-emerald-500 group-hover:text-white' : 'bg-orange-100 dark:bg-slate-700 text-orange-600 group-hover:bg-orange-500 group-hover:text-white'}`}>
+                                        <div className={`p-2.5 rounded-xl transition-colors ${isIndiv ? 'bg-[var(--verified-fill)] dark:bg-[var(--verified-fill)] text-[var(--verified)] group-hover:bg-[var(--verified-fill)]0 group-hover:text-[var(--ink)]' : 'bg-[var(--raised)] dark:bg-[var(--raised)] text-[var(--accent-ink)] group-hover:bg-[var(--gold)] group-hover:text-[var(--gold-ink)]'}`}>
                                             {isIndiv ? <User size={20}/> : <Store size={20} />}
                                         </div>
                                     </div>
-                                    <h3 className="font-black text-base dark:text-white mb-3 truncate">{c.name}</h3>
-                                    <div className="flex justify-between items-end border-t border-slate-100 dark:border-slate-700 pt-3">
-                                        <div><p className="text-[11px] text-slate-400 uppercase tracking-widest font-bold">Value</p><p className={`font-bold text-sm ${isIndiv ? 'text-emerald-500' : 'text-orange-500'}`}>{formatRupiah(c.total)}</p></div>
-                                        <div className="text-right"><p className="text-[11px] text-slate-400 uppercase tracking-widest font-bold">Receipts</p><p className="font-bold dark:text-white text-sm">{c.count}</p></div>
+                                    <h3 className="font-black text-base dark:text-[var(--ink)] mb-3 truncate">{c.name}</h3>
+                                    <div className="flex justify-between items-end border-t border-[var(--line-2)] dark:border-[var(--line)] pt-3">
+                                        <div><p className="text-[11px] text-[var(--ink-muted)] uppercase tracking-widest font-bold">Value</p><p className={`font-bold text-sm ${isIndiv ? 'text-[var(--verified)]' : 'text-[var(--accent-ink)]'}`}>{formatRupiah(c.total)}</p></div>
+                                        <div className="text-right"><p className="text-[11px] text-[var(--ink-muted)] uppercase tracking-widest font-bold">Receipts</p><p className="font-bold dark:text-[var(--ink)] text-sm">{c.count}</p></div>
                                     </div>
                                 </div>
                             );
@@ -745,26 +745,26 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
             {/* --- LEVEL 7: RECEIPT ARCHIVE --- */}
             {!reportView && selectedRegion && selectedAgent && selectedProv && selectedKab && selectedKec && selectedCustomer && (
                 <div className="animate-fade-in relative z-10">
-                    <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border dark:border-slate-700 overflow-hidden">
+                    <div className="bg-[var(--raised)] dark:bg-[var(--raised)] rounded-2xl shadow-xl border dark:border-[var(--line)] overflow-hidden">
                         {(() => {
                             const cObj = reportData[selectedRegion]?.agents[selectedAgent]?.provinsi[selectedProv]?.kabupaten[selectedKab]?.kecamatan[selectedKec]?.stores[selectedCustomer];
                             if (!cObj) return null;
                             
                             return (
                                 <>
-                                    <div className="bg-slate-900 text-white p-6 md:p-8">
+                                    <div className="bg-[var(--panel)] text-[var(--ink)] p-6 md:p-8">
                                         <div className="flex justify-between items-start">
                                             <div>
-                                                <p className="text-orange-500 font-bold tracking-widest text-[10px] uppercase mb-1">Audit Log • {selectedAgent}</p>
+                                                <p className="text-[var(--accent-ink)] font-bold tracking-widest text-[10px] uppercase mb-1">Audit Log • {selectedAgent}</p>
                                                 <h1 className="text-2xl md:text-3xl font-black">{cObj.name}</h1>
                                             </div>
                                             <div className="flex items-start gap-4">
                                                 <div className="text-right">
                                                     <p className="text-[10px] uppercase tracking-widest opacity-70 font-bold">Account Total</p>
-                                                    <p className={`text-xl md:text-2xl font-black ${cObj.total < 0 ? 'text-red-400' : 'text-emerald-400'}`}>{formatRupiah(cObj.total)}</p>
+                                                    <p className={`text-xl md:text-2xl font-black ${cObj.total < 0 ? 'text-[var(--danger-text)]' : 'text-[var(--verified)]'}`}>{formatRupiah(cObj.total)}</p>
                                                 </div>
                                                 {isAdmin && (
-                                                    <button data-kpm-del data-label="Delete" onClick={() => onDeleteFolder(cObj.name, selectedAgent)} title="Delete ALL history for this store" className="p-2 bg-red-900/40 hover:bg-red-600 text-red-400 hover:text-white border border-red-500/50 rounded-lg transition-colors shrink-0">
+                                                    <button data-kpm-del data-label="Delete" onClick={() => onDeleteFolder(cObj.name, selectedAgent)} title="Delete ALL history for this store" className="p-2 bg-[var(--danger-plate)] hover:bg-[var(--danger-plate)] text-[var(--danger-text)] hover:text-[var(--ink)] border border-[var(--danger)] rounded-lg transition-colors shrink-0">
                                                         <Trash2 size={16}/>
                                                     </button>
                                                 )}
@@ -773,10 +773,10 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                                     </div>
                                     <div className="p-4 md:p-6 overflow-x-auto">
                                         <table className="w-full text-sm text-left min-w-[600px]">
-                                            <thead className="bg-slate-50 dark:bg-slate-700/50 text-slate-400 uppercase text-[10px] font-bold tracking-widest">
+                                            <thead className="bg-[var(--raised)] dark:bg-[var(--raised)] text-[var(--ink-muted)] uppercase text-[10px] font-bold tracking-widest">
                                                 <tr><th className="p-3 rounded-l-lg">Date / Time</th><th className="p-3">Type</th><th className="p-3">Details</th><th className="p-3 text-right">Amount</th><th className="p-3 rounded-r-lg text-center">Action</th></tr>
                                             </thead>
-                                            <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
+                                            <tbody className="divide-y divide-[var(--line)] dark:divide-[var(--line)]">
                                                 {cObj.history.map(t => {
                                                     // 🚀 FORENSIC BADGES
                                                     const isRetur = t.type === 'RETUR' || t.paymentType === 'Retur/BS';
@@ -784,22 +784,22 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                                                     const isIouFulfill = t.paymentType === 'IOU Fulfillment';
 
                                                     return (
-                                                    <tr key={t.id} className="hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-colors">
-                                                        <td className="p-3 font-mono text-slate-400 dark:text-slate-400 text-xs font-bold">{t.date}<br/><span className="text-[10px] opacity-70">{t.timestamp ? new Date(t.timestamp.seconds*1000).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}) : ''}</span></td>
+                                                    <tr key={t.id} className="hover:bg-[var(--raised)] dark:hover:bg-[var(--panel)] transition-colors">
+                                                        <td className="p-3 font-mono text-[var(--ink-muted)] dark:text-[var(--ink-muted)] text-xs font-bold">{t.date}<br/><span className="text-[10px] opacity-70">{t.timestamp ? new Date(t.timestamp.seconds*1000).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}) : ''}</span></td>
                                                         <td className="p-3">
                                                             {isRetur ? (
-                                                                <span className="px-2 py-1 rounded text-[11px] uppercase tracking-widest font-black bg-red-100 text-red-700 border border-red-300">RETUR</span>
+                                                                <span className="px-2 py-1 rounded text-[11px] uppercase tracking-widest font-black bg-[var(--danger-well)] text-[var(--danger-text)] border border-[var(--danger)]">RETUR</span>
                                                             ) : isExchange ? (
-                                                                <span className="px-2 py-1 rounded text-[11px] uppercase tracking-widest font-black bg-blue-100 text-blue-700 border border-blue-300">EXCHANGE</span>
+                                                                <span className="px-2 py-1 rounded text-[11px] uppercase tracking-widest font-black bg-[var(--raised)] text-[var(--ink)] border border-[var(--accent-edge)]">EXCHANGE</span>
                                                             ) : isIouFulfill ? (
-                                                                <span className="px-2 py-1 rounded text-[11px] uppercase tracking-widest font-black bg-emerald-100 text-emerald-700 border border-emerald-300">UTANG BARANG LUNAS</span>
+                                                                <span className="px-2 py-1 rounded text-[11px] uppercase tracking-widest font-black bg-[var(--verified-fill)] text-[var(--verified)] border border-[var(--line-2)]">UTANG BARANG LUNAS</span>
                                                             ) : t.type === 'CONSIGNMENT_PAYMENT' ? (
-                                                                <span className="px-2 py-1 rounded text-[11px] uppercase tracking-widest font-black bg-purple-100 text-purple-700 border border-purple-300">STORE AUDIT</span>
+                                                                <span className="px-2 py-1 rounded text-[11px] uppercase tracking-widest font-black bg-[var(--raised)] text-[var(--alt-ink)] border border-[var(--alt-edge)]">STORE AUDIT</span>
                                                             ) : (
-                                                                <span className="px-2 py-1 rounded text-[11px] uppercase tracking-widest font-black bg-emerald-100 text-emerald-700 border border-emerald-300">SALE</span>
+                                                                <span className="px-2 py-1 rounded text-[11px] uppercase tracking-widest font-black bg-[var(--verified-fill)] text-[var(--verified)] border border-[var(--line-2)]">SALE</span>
                                                             )}
                                                         </td>
-                                                        <td className="p-3 text-slate-700 dark:text-slate-300 text-xs font-bold leading-relaxed max-w-[250px] break-words uppercase">
+                                                        <td className="p-3 text-[var(--ink)] dark:text-[var(--ink-muted)] text-xs font-bold leading-relaxed max-w-[250px] break-words uppercase">
                                                             {t.type === 'CONSIGNMENT_PAYMENT' ? (
                                                                 <div className="space-y-1">
                                                                     {(t.itemsPaid || []).concat(t.itemsReturned || [], t.itemsRemaining || []).reduce((acc, curr) => {
@@ -815,18 +815,18 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                                                                     return lbl;
                                                                 }).join(", ") : 'N/A'
                                                             )}
-                                                            {t.paymentType === 'Titip' && <span className="block mt-1 text-[11px] text-orange-500 tracking-widest border border-orange-500/30 w-fit px-1 rounded">(CONSIGNMENT)</span>}
-                                                            {t.paymentType !== 'Titip' && t.paymentType !== 'Cash' && t.paymentType && !isExchange && !isIouFulfill && <span className="block mt-1 text-[11px] text-blue-500 tracking-widest">({t.paymentType})</span>}
+                                                            {t.paymentType === 'Titip' && <span className="block mt-1 text-[11px] text-[var(--accent-ink)] tracking-widest border border-[var(--accent-edge)] w-fit px-1 rounded">(CONSIGNMENT)</span>}
+                                                            {t.paymentType !== 'Titip' && t.paymentType !== 'Cash' && t.paymentType && !isExchange && !isIouFulfill && <span className="block mt-1 text-[11px] text-[var(--ink)] tracking-widest">({t.paymentType})</span>}
                                                         </td>
-                                                        <td className={`p-3 text-right font-black ${isRetur && (t.amountPaid || t.total) > 0 ? 'text-red-500' : 'text-emerald-500'}`}>
+                                                        <td className={`p-3 text-right font-black ${isRetur && (t.amountPaid || t.total) > 0 ? 'text-[var(--danger-text)]' : 'text-[var(--verified)]'}`}>
                                                             {isRetur && (t.amountPaid || t.total) > 0 ? '-' : ''}{formatRupiah(t.amountPaid || t.total)}
                                                         </td>
                                                         <td className="p-3 text-center">
                                                             <div className="flex justify-center gap-2">
-                                                                {t.deliveryProof && <button onClick={() => setViewingPhoto(t.deliveryProof)} className="p-2 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-200 rounded-lg transition-colors"><Camera size={14}/></button>}
-                                                                <button onClick={() => setViewingReceipt(t)} className="p-2 bg-slate-100 dark:bg-slate-700 text-slate-400 dark:text-slate-300 hover:text-orange-500 rounded-lg transition-colors"><FileText size={14}/></button>
-                                                                {isAdmin && <button onClick={() => setEditingTrans(t)} className="p-2 bg-slate-100 dark:bg-slate-700 text-slate-400 dark:text-slate-300 hover:text-blue-500 rounded-lg transition-colors"><Pencil size={14}/></button>}
-                                                                {isAdmin && <button data-kpm-del data-label="Delete" onClick={() => onDeleteTransaction(t)} className="p-2 bg-slate-100 dark:bg-slate-700 text-slate-400 dark:text-slate-300 hover:text-red-500 rounded-lg transition-colors"><Trash2 size={14}/></button>}
+                                                                {t.deliveryProof && <button onClick={() => setViewingPhoto(t.deliveryProof)} className="p-2 bg-[var(--verified-fill)] dark:bg-[var(--verified-fill)] text-[var(--verified)] dark:text-[var(--verified)] hover:bg-[var(--verified-fill)] rounded-lg transition-colors"><Camera size={14}/></button>}
+                                                                <button onClick={() => setViewingReceipt(t)} className="p-2 bg-[var(--raised)] dark:bg-[var(--raised)] text-[var(--ink-muted)] dark:text-[var(--ink-muted)] hover:text-[var(--accent-ink)] rounded-lg transition-colors"><FileText size={14}/></button>
+                                                                {isAdmin && <button onClick={() => setEditingTrans(t)} className="p-2 bg-[var(--raised)] dark:bg-[var(--raised)] text-[var(--ink-muted)] dark:text-[var(--ink-muted)] hover:text-[var(--ink)] rounded-lg transition-colors"><Pencil size={14}/></button>}
+                                                                {isAdmin && <button data-kpm-del data-label="Delete" onClick={() => onDeleteTransaction(t)} className="p-2 bg-[var(--raised)] dark:bg-[var(--raised)] text-[var(--ink-muted)] dark:text-[var(--ink-muted)] hover:text-[var(--danger-text)] rounded-lg transition-colors"><Trash2 size={14}/></button>}
                                                             </div>
                                                         </td>
                                                     </tr>
@@ -844,14 +844,14 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
 
             {/* MODALS */}
             {viewingPhoto && (
-                 <div className="fixed inset-0 z-[600] bg-black/95 flex flex-col items-center justify-center p-4 animate-fade-in">
-                     <button onClick={() => setViewingPhoto(null)} className="absolute top-6 right-6 text-white hover:text-red-500 z-50 bg-black/50 p-2 rounded-full transition-colors"><X size={32}/></button>
-                     <div className="bg-white p-2 rounded-xl shadow-2xl max-w-2xl w-full relative">
+                 <div className="fixed inset-0 z-[600] bg-[var(--panel)] flex flex-col items-center justify-center p-4 animate-fade-in">
+                     <button onClick={() => setViewingPhoto(null)} className="absolute top-6 right-6 text-[var(--ink)] hover:text-[var(--danger-text)] z-50 bg-[var(--panel)] p-2 rounded-full transition-colors"><X size={32}/></button>
+                     <div className="bg-[var(--raised)] p-2 rounded-xl shadow-2xl max-w-2xl w-full relative">
                          <img src={viewingPhoto.photo || viewingPhoto} className="w-full h-auto max-h-[80vh] object-contain rounded-lg" alt="Delivery Proof" />
                      </div>
                      {viewingPhoto.latitude && (
-                         <div className="text-white mt-4 font-mono text-xs text-center bg-black/60 px-6 py-3 rounded-xl border border-white/10 shadow-lg">
-                             <p className="font-bold text-emerald-400 mb-1">GPS VERIFIED LOCATION</p>
+                         <div className="text-[var(--ink)] mt-4 font-mono text-xs text-center bg-[var(--panel)] px-6 py-3 rounded-xl border border-[var(--line-2)] shadow-lg">
+                             <p className="font-bold text-[var(--verified)] mb-1">GPS VERIFIED LOCATION</p>
                              <p>LAT/LNG: {viewingPhoto.latitude.toFixed(5)}, {viewingPhoto.longitude.toFixed(5)}</p>
                              <p>TIME: {new Date(viewingPhoto.capturedAt).toLocaleString('id-ID')}</p>
                          </div>
@@ -860,16 +860,16 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
              )}
 
             {editingTrans && (
-                <div className="fixed inset-0 z-[100] bg-black/60 flex items-center justify-center p-4 animate-fade-in">
-                    <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl w-full max-w-2xl shadow-2xl max-h-[90vh] flex flex-col border dark:border-slate-700">
-                        <h3 className="font-black text-xl mb-4 dark:text-white flex items-center gap-2"><Pencil size={22} className="text-orange-500"/> DATA AUDIT</h3>
+                <div className="fixed inset-0 z-[100] bg-[var(--panel)] flex items-center justify-center p-4 animate-fade-in">
+                    <div className="bg-[var(--raised)] dark:bg-[var(--raised)] p-6 rounded-2xl w-full max-w-2xl shadow-2xl max-h-[90vh] flex flex-col border dark:border-[var(--line)]">
+                        <h3 className="font-black text-xl mb-4 dark:text-[var(--ink)] flex items-center gap-2"><Pencil size={22} className="text-[var(--accent-ink)]"/> DATA AUDIT</h3>
                         <div className="overflow-y-auto flex-1 pr-2 custom-scrollbar space-y-5">
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-slate-50 dark:bg-slate-900 p-4 rounded-xl border dark:border-slate-700">
-                                <div><label className="text-[10px] font-bold text-slate-400 uppercase">Date</label><input type="date" value={editingTrans.date || ''} onChange={e=>setEditingTrans({...editingTrans, date: e.target.value})} className="w-full p-2 text-sm border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white outline-none"/></div>
-                                <div><label className="text-[10px] font-bold text-slate-400 uppercase">Customer Name</label><input type="text" value={editingTrans.customerName || ''} onChange={e=>setEditingTrans({...editingTrans, customerName: e.target.value})} className="w-full p-2 text-sm border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white outline-none"/></div>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-[var(--raised)] dark:bg-[var(--panel)] p-4 rounded-xl border dark:border-[var(--line)]">
+                                <div><label className="text-[10px] font-bold text-[var(--ink-muted)] uppercase">Date</label><input type="date" value={editingTrans.date || ''} onChange={e=>setEditingTrans({...editingTrans, date: e.target.value})} className="w-full p-2 text-sm border rounded dark:bg-[var(--raised)] dark:border-[var(--line)] dark:text-[var(--ink)] outline-none"/></div>
+                                <div><label className="text-[10px] font-bold text-[var(--ink-muted)] uppercase">Customer Name</label><input type="text" value={editingTrans.customerName || ''} onChange={e=>setEditingTrans({...editingTrans, customerName: e.target.value})} className="w-full p-2 text-sm border rounded dark:bg-[var(--raised)] dark:border-[var(--line)] dark:text-[var(--ink)] outline-none"/></div>
                                 <div>
-                                    <label className="text-[10px] font-bold text-orange-500 uppercase">Pricing Tier</label>
-                                    <select value={editingTrans.priceTier || 'Retail'} onChange={handleEditTierChange} className="w-full p-2 text-sm border rounded dark:bg-slate-800 dark:border-slate-600 font-bold text-orange-500 outline-none">
+                                    <label className="text-[10px] font-bold text-[var(--accent-ink)] uppercase">Pricing Tier</label>
+                                    <select value={editingTrans.priceTier || 'Retail'} onChange={handleEditTierChange} className="w-full p-2 text-sm border rounded dark:bg-[var(--raised)] dark:border-[var(--line)] font-bold text-[var(--accent-ink)] outline-none">
                                         <option value="Grosir">Grosir</option>
                                         <option value="Retail">Retail</option>
                                         <option value="Ecer">Ecer</option>
@@ -877,44 +877,44 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                                 </div>
                             </div>
 
-                            <div className="border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden shadow-sm">
-                                <div className="bg-indigo-50 dark:bg-indigo-900/20 p-3 flex justify-between items-center border-b border-indigo-100 dark:border-indigo-900/50">
-                                    <span className="font-bold text-xs uppercase tracking-widest text-indigo-600 dark:text-indigo-400">Itemized Receipt</span>
-                                    <button type="button" onClick={() => setEditingTrans({...editingTrans, items: [...(editingTrans.items||[]), { productId: '', name: 'Select Product', qty: 1, unit: 'Bks', calculatedPrice: 0 }]})} className="text-[10px] bg-indigo-500 text-white px-3 py-1.5 rounded font-bold hover:bg-indigo-600 shadow active:scale-95 transition-transform">+ ADD ITEM</button>
+                            <div className="border border-[var(--line-2)] dark:border-[var(--line)] rounded-xl overflow-hidden shadow-sm">
+                                <div className="bg-[var(--raised)] dark:bg-[var(--gold)] p-3 flex justify-between items-center border-b border-[var(--accent-edge)] dark:border-[var(--accent-edge)]">
+                                    <span className="font-bold text-xs uppercase tracking-widest text-[var(--ink)] dark:text-[var(--ink-muted)]">Itemized Receipt</span>
+                                    <button type="button" onClick={() => setEditingTrans({...editingTrans, items: [...(editingTrans.items||[]), { productId: '', name: 'Select Product', qty: 1, unit: 'Bks', calculatedPrice: 0 }]})} className="text-[10px] bg-[var(--gold)] text-[var(--gold-ink)] px-3 py-1.5 rounded font-bold hover:bg-[var(--gold)] shadow active:scale-95 transition-transform">+ ADD ITEM</button>
                                 </div>
-                                <div className="p-3 space-y-2 bg-white dark:bg-slate-800">
+                                <div className="p-3 space-y-2 bg-[var(--raised)] dark:bg-[var(--raised)]">
                                     {(editingTrans.items || []).map((item, idx) => (
-                                        <div key={idx} className="flex flex-wrap md:flex-nowrap gap-2 items-center bg-slate-50 dark:bg-slate-900 p-2 rounded-lg border dark:border-slate-700">
-                                            <select value={item.productId || ''} onChange={(e) => handleEditItemChange(idx, 'productId', e.target.value)} className="flex-1 p-2 text-xs font-bold border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white outline-none min-w-[150px]">
+                                        <div key={idx} className="flex flex-wrap md:flex-nowrap gap-2 items-center bg-[var(--raised)] dark:bg-[var(--panel)] p-2 rounded-lg border dark:border-[var(--line)]">
+                                            <select value={item.productId || ''} onChange={(e) => handleEditItemChange(idx, 'productId', e.target.value)} className="flex-1 p-2 text-xs font-bold border rounded dark:bg-[var(--raised)] dark:border-[var(--line)] dark:text-[var(--ink)] outline-none min-w-[150px]">
                                                 <option value="">-- Select Product --</option>
                                                 {inventory.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                                             </select>
-                                            <input type="number" min="1" value={item.qty} onChange={(e) => handleEditItemChange(idx, 'qty', Number(e.target.value))} className="w-16 p-2 text-xs text-center border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white font-bold outline-none" />
-                                            <select value={item.unit} onChange={(e) => handleEditItemChange(idx, 'unit', e.target.value)} className="w-20 p-2 text-xs font-bold border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white outline-none">
+                                            <input type="number" min="1" value={item.qty} onChange={(e) => handleEditItemChange(idx, 'qty', Number(e.target.value))} className="w-16 p-2 text-xs text-center border rounded dark:bg-[var(--raised)] dark:border-[var(--line)] dark:text-[var(--ink)] font-bold outline-none" />
+                                            <select value={item.unit} onChange={(e) => handleEditItemChange(idx, 'unit', e.target.value)} className="w-20 p-2 text-xs font-bold border rounded dark:bg-[var(--raised)] dark:border-[var(--line)] dark:text-[var(--ink)] outline-none">
                                                 <option value="Bks">Bks</option>
                                                 <option value="Slop">Slop</option>
                                                 <option value="Karton">Karton</option>
                                             </select>
-                                            <input type="number" value={item.calculatedPrice} onChange={(e) => handleEditItemChange(idx, 'calculatedPrice', Number(e.target.value))} className="w-28 p-2 text-xs text-right border rounded dark:bg-slate-800 dark:border-slate-600 dark:text-white text-emerald-600 font-bold outline-none" placeholder="Price/Unit" />
+                                            <input type="number" value={item.calculatedPrice} onChange={(e) => handleEditItemChange(idx, 'calculatedPrice', Number(e.target.value))} className="w-28 p-2 text-xs text-right border rounded dark:bg-[var(--raised)] dark:border-[var(--line)] dark:text-[var(--ink)] text-[var(--verified)] font-bold outline-none" placeholder="Price/Unit" />
                                             <button data-kpm-del data-label="Delete" type="button" onClick={() => {
                                                 const newItems = editingTrans.items.filter((_, i) => i !== idx);
                                                 const newTotal = newItems.reduce((sum, it) => sum + ((it.calculatedPrice || 0) * it.qty), 0);
                                                 setEditingTrans({...editingTrans, items: newItems, total: newTotal, amountPaid: newTotal});
-                                            }} className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded transition-colors"><Trash2 size={16}/></button>
+                                            }} className="p-2 text-[var(--ink-muted)] hover:text-[var(--danger-text)] hover:bg-[var(--danger-well)] dark:hover:bg-[var(--danger-plate)] rounded transition-colors"><Trash2 size={16}/></button>
                                         </div>
                                     ))}
                                 </div>
                             </div>
-                            <div className="flex justify-between items-center bg-emerald-50 dark:bg-emerald-900/20 p-4 rounded-xl border border-emerald-100 dark:border-emerald-900/50">
+                            <div className="flex justify-between items-center bg-[var(--verified-fill)] dark:bg-[var(--verified-fill)] p-4 rounded-xl border border-[var(--line-2)] dark:border-[var(--line-2)]">
                                 <div>
-                                    <span className="font-black text-sm uppercase tracking-widest text-emerald-600 dark:text-emerald-400 block">Grand Total</span>
+                                    <span className="font-black text-sm uppercase tracking-widest text-[var(--verified)] dark:text-[var(--verified)] block">Grand Total</span>
                                 </div>
-                                <input type="number" value={editingTrans.total} onChange={e=>setEditingTrans({...editingTrans, total: Number(e.target.value), amountPaid: Number(e.target.value)})} className="w-40 p-2 text-right border-2 border-emerald-200 dark:border-emerald-800 rounded-lg bg-white dark:bg-slate-800 dark:text-white font-black text-xl text-emerald-600 outline-none focus:border-emerald-500 transition-colors" />
+                                <input type="number" value={editingTrans.total} onChange={e=>setEditingTrans({...editingTrans, total: Number(e.target.value), amountPaid: Number(e.target.value)})} className="w-40 p-2 text-right border-2 border-[var(--line-2)] dark:border-[var(--line-2)] rounded-lg bg-[var(--raised)] dark:bg-[var(--raised)] dark:text-[var(--ink)] font-black text-xl text-[var(--verified)] outline-none focus:border-[var(--line-2)] transition-colors" />
                             </div>
                         </div>
                         <div className="flex gap-3 pt-5 mt-2 shrink-0">
-                            <button type="button" onClick={()=>setEditingTrans(null)} className="flex-1 py-3.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-white rounded-xl font-bold transition-colors">Cancel</button>
-                            <button type="button" onClick={handleEditSubmit} className="flex-1 py-3.5 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-bold shadow-lg transition-all active:scale-95">Save Changes</button>
+                            <button type="button" onClick={()=>setEditingTrans(null)} className="flex-1 py-3.5 bg-[var(--raised)] hover:bg-[var(--raised)] dark:bg-[var(--raised)] dark:hover:bg-[var(--inset)] text-[var(--ink)] dark:text-[var(--ink)] rounded-xl font-bold transition-colors">Cancel</button>
+                            <button type="button" onClick={handleEditSubmit} className="flex-1 py-3.5 bg-[var(--gold)] hover:bg-[var(--gold)] text-[var(--gold-ink)] rounded-xl font-bold shadow-lg transition-all active:scale-95">Save Changes</button>
                         </div>
                     </div>
                 </div>
@@ -938,62 +938,62 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                 const displayTotal = viewingReceipt.total || viewingReceipt.amountPaid || 0;
                 
                 return (
-                    <div className="print-modal-wrapper fixed inset-0 z-[500] bg-black/90 flex items-center justify-center p-4">
-                        <div className={`print-receipt format-${printFormat} !bg-white !text-black w-full ${printFormat === 'thermal' ? 'max-w-sm' : 'max-w-4xl'} shadow-2xl relative flex flex-col text-sm border-t-8 ${printFormat === 'a4' ? '!border-blue-800' : '!border-slate-800'} animate-fade-in rounded-b-lg max-h-[90vh] overflow-y-auto custom-scrollbar`}>
+                    <div className="print-modal-wrapper fixed inset-0 z-[500] bg-[var(--panel)] flex items-center justify-center p-4">
+                        <div className={`print-receipt format-${printFormat} !bg-[var(--raised)] !text-[var(--ink)] w-full ${printFormat === 'thermal' ? 'max-w-sm' : 'max-w-4xl'} shadow-2xl relative flex flex-col text-sm border-t-8 ${printFormat === 'a4' ? '!border-[var(--accent-edge)]' : '!border-[var(--line)]'} animate-fade-in rounded-b-lg max-h-[90vh] overflow-y-auto custom-scrollbar`}>
                             {printFormat === 'thermal' && (
                                 <div className="p-4 shrink-0 font-mono text-xs">
                                     <div className="text-center mb-4">
-                                        <h2 className="text-base font-black uppercase tracking-widest !text-black">{appSettings?.companyName || "KPM INVENTORY"}</h2>
-                                        <p className="text-[10px] font-bold mt-1 !text-slate-400">
+                                        <h2 className="text-base font-black uppercase tracking-widest !text-[var(--ink)]">{appSettings?.companyName || "KPM INVENTORY"}</h2>
+                                        <p className="text-[10px] font-bold mt-1 !text-[var(--ink-muted)]">
                                             {viewingReceipt.type === 'CONSIGNMENT_PAYMENT' ? 'STORE AUDIT' : 
                                              isReturReceipt ? 'RETURN RECEIPT' : 
                                              viewingReceipt.paymentType === 'Tukar Ganti' ? 'EXCHANGE RECEIPT' : 'SALES RECEIPT'}
                                         </p>
                                     </div>
-                                    <div className="text-left mb-3 space-y-0.5 border-y border-dashed !border-slate-400 py-2">
+                                    <div className="text-left mb-3 space-y-0.5 border-y border-dashed !border-[var(--line-2)] py-2">
                                         <div className="flex"><span className="w-12 font-bold">TGL</span><span>: {receiptDateStr}</span></div>
                                         <div className="flex"><span className="w-12 font-bold">JAM</span><span>: {receiptTimeStr}</span></div>
                                         <div className="flex"><span className="w-12 font-bold">CUST</span><span className="uppercase break-words flex-1">: {viewingReceipt.customerName}</span></div>
                                         {viewingReceipt.agentName && viewingReceipt.agentName !== 'Admin' && <div className="flex"><span className="w-12 font-bold">SALES</span><span className="uppercase break-words flex-1">: {viewingReceipt.agentName}</span></div>}
-                                        <div className="flex"><span className="w-12 font-bold">TYPE</span><span className={`font-black uppercase ${isReturReceipt ? '!text-red-600' : viewingReceipt.paymentType === 'Tukar Ganti' ? '!text-blue-600' : '!text-black'}`}>: {viewingReceipt.paymentType || 'Cash'}</span></div>
+                                        <div className="flex"><span className="w-12 font-bold">TYPE</span><span className={`font-black uppercase ${isReturReceipt ? '!text-[var(--danger-text)]' : viewingReceipt.paymentType === 'Tukar Ganti' ? '!text-[var(--ink)]' : '!text-[var(--ink)]'}`}>: {viewingReceipt.paymentType || 'Cash'}</span></div>
                                     </div>
-                                    <div className="border-b border-dashed !border-slate-400 pb-2 mb-2 min-h-[100px]">
+                                    <div className="border-b border-dashed !border-[var(--line-2)] pb-2 mb-2 min-h-[100px]">
                                         {isNormalSale && (
                                             <div className="w-full text-left">
-                                                <div className="flex justify-between border-b border-dashed !border-slate-400 pb-1 mb-2 font-bold">
+                                                <div className="flex justify-between border-b border-dashed !border-[var(--line-2)] pb-1 mb-2 font-bold">
                                                     <span>ITEM</span><span>TOTAL</span>
                                                 </div>
                                                 <div>
                                                     {viewingReceipt.items && viewingReceipt.items.length > 0 ? viewingReceipt.items.map((item, i) => (
                                                         <div key={i} className="mb-2">
-                                                            <div className="font-bold uppercase text-xs !text-black flex flex-wrap gap-1 items-center">
+                                                            <div className="font-bold uppercase text-xs !text-[var(--ink)] flex flex-wrap gap-1 items-center">
                                                                 {item.name}
-                                                                {item.condition === 'DAMAGED' && <span className="text-[11px] bg-red-100 !text-red-800 border !border-red-300 px-1 rounded shadow-sm">DAMAGED</span>}
-                                                                {item.fulfillment === 'IOU' && <span className="text-[11px] bg-blue-100 !text-blue-800 border !border-blue-300 px-1 rounded shadow-sm">UTANG BARANG</span>}
-                                                                {item.isIouFulfillment && <span className="text-[11px] bg-emerald-100 !text-emerald-800 border !border-emerald-300 px-1 rounded shadow-sm">UTANG BARANG LUNAS</span>}
+                                                                {item.condition === 'DAMAGED' && <span className="text-[11px] bg-[var(--danger-well)] !text-[var(--danger-text)] border !border-[var(--danger)] px-1 rounded shadow-sm">DAMAGED</span>}
+                                                                {item.fulfillment === 'IOU' && <span className="text-[11px] bg-[var(--raised)] !text-[var(--ink)] border !border-[var(--accent-edge)] px-1 rounded shadow-sm">UTANG BARANG</span>}
+                                                                {item.isIouFulfillment && <span className="text-[11px] bg-[var(--verified-fill)] !text-[var(--verified)] border !border-[var(--line-2)] px-1 rounded shadow-sm">UTANG BARANG LUNAS</span>}
                                                             </div>
                                                             {item.condition === 'DAMAGED' && item.returnReason && (
-                                                                <div className="text-[11px] italic !text-slate-400 mb-0.5 mt-0.5">Reason: {item.returnReason === 'Other' ? item.otherReasonDetail : item.returnReason}</div>
+                                                                <div className="text-[11px] italic !text-[var(--ink-muted)] mb-0.5 mt-0.5">Reason: {item.returnReason === 'Other' ? item.otherReasonDetail : item.returnReason}</div>
                                                             )}
                                                             <div className="flex justify-between text-xs mt-0.5">
-                                                                <span className="!text-slate-400">{item.qty} {item.unit} x {new Intl.NumberFormat('id-ID').format(item.calculatedPrice || 0)}</span>
-                                                                <span className={`font-black ${isReturReceipt && item.calculatedPrice > 0 ? '!text-red-600' : '!text-black'}`}>
+                                                                <span className="!text-[var(--ink-muted)]">{item.qty} {item.unit} x {new Intl.NumberFormat('id-ID').format(item.calculatedPrice || 0)}</span>
+                                                                <span className={`font-black ${isReturReceipt && item.calculatedPrice > 0 ? '!text-[var(--danger-text)]' : '!text-[var(--ink)]'}`}>
                                                                     {isReturReceipt && item.calculatedPrice > 0 ? '-' : ''}{new Intl.NumberFormat('id-ID').format((item.calculatedPrice || 0) * item.qty)}
                                                                 </span>
                                                             </div>
                                                         </div>
-                                                    )) : <div className="text-center py-4 text-[10px] italic !text-slate-400">No Itemized Data</div>}
+                                                    )) : <div className="text-center py-4 text-[10px] italic !text-[var(--ink-muted)]">No Itemized Data</div>}
                                                 </div>
                                             </div>
                                         )}
                                         {!isNormalSale && (
-                                            <div className="space-y-4"><div className="font-black text-center uppercase tracking-widest border-b border-dashed !border-slate-400 pb-1 mb-2">AUDIT BREAKDOWN</div>
+                                            <div className="space-y-4"><div className="font-black text-center uppercase tracking-widest border-b border-dashed !border-[var(--line-2)] pb-1 mb-2">AUDIT BREAKDOWN</div>
                                                 {(viewingReceipt.itemsPaid || []).concat(viewingReceipt.itemsReturned || [], viewingReceipt.itemsRemaining || []).reduce((acc, curr) => { if (!acc.find(i => i.productId === curr.productId)) acc.push(curr); return acc; }, []).map((item, i) => {
                                                     const paidItem = (viewingReceipt.itemsPaid || []).find(p => p.productId === item.productId); const returItem = (viewingReceipt.itemsReturned || []).find(r => r.productId === item.productId); const remainItem = (viewingReceipt.itemsRemaining || []).find(s => s.productId === item.productId);
                                                     if (!paidItem && !returItem && !remainItem) return null;
                                                     return (
-                                                        <div key={i} className="mb-3"><div className="font-bold uppercase break-words leading-tight">{item.name}</div><div className="text-[10px] !text-slate-800 font-bold border-b border-dashed !border-slate-300 pb-0.5 mb-1">Total Consigned: {(paidItem?.qty || 0) + (returItem?.qty || 0) + (remainItem?.qty || 0)} Bks</div><div className="pl-2 space-y-0.5 text-[10px] !text-slate-400 font-mono">
-                                                                {paidItem && paidItem.qty > 0 && <div className="flex justify-between"><span>• Sold: {paidItem.qty}</span><span className="font-black !text-black">Rp {new Intl.NumberFormat('id-ID').format((paidItem.calculatedPrice || 0) * paidItem.qty)}</span></div>}
+                                                        <div key={i} className="mb-3"><div className="font-bold uppercase break-words leading-tight">{item.name}</div><div className="text-[10px] !text-[var(--ink)] font-bold border-b border-dashed !border-[var(--line-2)] pb-0.5 mb-1">Total Consigned: {(paidItem?.qty || 0) + (returItem?.qty || 0) + (remainItem?.qty || 0)} Bks</div><div className="pl-2 space-y-0.5 text-[10px] !text-[var(--ink-muted)] font-mono">
+                                                                {paidItem && paidItem.qty > 0 && <div className="flex justify-between"><span>• Sold: {paidItem.qty}</span><span className="font-black !text-[var(--ink)]">Rp {new Intl.NumberFormat('id-ID').format((paidItem.calculatedPrice || 0) * paidItem.qty)}</span></div>}
                                                                 {returItem && returItem.qty > 0 && <div className="flex justify-between"><span>• Retur: {returItem.qty}</span><span>-</span></div>}
                                                                 {remainItem && remainItem.qty > 0 && <div className="flex justify-between"><span>• Sisa: {remainItem.qty}</span><span>-</span></div>}
                                                             </div></div>
@@ -1002,18 +1002,18 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                                             </div>
                                         )}
                                     </div>
-                                    <div className="flex justify-between items-center text-sm font-black mb-4 !text-black">
+                                    <div className="flex justify-between items-center text-sm font-black mb-4 !text-[var(--ink)]">
                                         <span>TOTAL</span>
-                                        <span className={isReturReceipt && displayTotal > 0 ? '!text-red-600' : '!text-black'}>
+                                        <span className={isReturReceipt && displayTotal > 0 ? '!text-[var(--danger-text)]' : '!text-[var(--ink)]'}>
                                             {isReturReceipt && displayTotal > 0 ? '-' : ''}Rp {new Intl.NumberFormat('id-ID').format(displayTotal)}
                                         </span>
                                     </div>
-                                    <div className="text-center text-[10px] mb-2 font-bold !text-slate-400"><p>*** THANK YOU ***</p></div>
+                                    <div className="text-center text-[10px] mb-2 font-bold !text-[var(--ink-muted)]"><p>*** THANK YOU ***</p></div>
                                 </div>
                             )}
 
                             {printFormat === 'a4' && (
-                                <div className="w-full overflow-x-auto custom-scrollbar border-b !border-slate-300">
+                                <div className="w-full overflow-x-auto custom-scrollbar border-b !border-[var(--line-2)]">
                                     <div className="a4-print-jail p-8 md:p-12 shrink-0 font-sans relative min-w-[800px] mx-auto" style={{ backgroundColor: '#ffffff', color: '#000000', boxSizing: 'border-box' }}>
                                         {/* ── THE WATERMARK ──────────────────────────────────────
                                             INSIDE the sheet, not on the modal shell around it. It
@@ -1031,88 +1031,88 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                                         {watermarkSrc && (
                                             <img src={watermarkSrc} alt="" className={WATERMARK_POSITION} style={WATERMARK_STYLE} />
                                         )}
-                                        <div className="border-b-4 !border-blue-800 pb-4 mb-6 flex justify-between items-end gap-8">
+                                        <div className="border-b-4 !border-[var(--accent-edge)] pb-4 mb-6 flex justify-between items-end gap-8">
                                             <div className="flex-1">
-                                                <h1 className="text-2xl md:text-3xl font-black !text-blue-900 tracking-widest uppercase break-words">{appSettings?.companyName || "PT KARYAMEGA PUTERA MANDIRI"}</h1>
-                                                <p className="text-xs md:text-sm font-bold !text-slate-700 mt-1 whitespace-pre-line">{appSettings?.companyAddress || 'Jl. Raya Magelang - Purworejo Km. 11'}</p>
+                                                <h1 className="text-2xl md:text-3xl font-black !text-[var(--ink)] tracking-widest uppercase break-words">{appSettings?.companyName || "PT KARYAMEGA PUTERA MANDIRI"}</h1>
+                                                <p className="text-xs md:text-sm font-bold !text-[var(--ink)] mt-1 whitespace-pre-line">{appSettings?.companyAddress || 'Jl. Raya Magelang - Purworejo Km. 11'}</p>
                                             </div>
                                             <div className="text-right shrink-0">
-                                                <h2 className="text-xl md:text-2xl font-bold !text-blue-800 uppercase tracking-widest">
+                                                <h2 className="text-xl md:text-2xl font-bold !text-[var(--ink)] uppercase tracking-widest">
                                                     {viewingReceipt.type === 'CONSIGNMENT_PAYMENT' ? 'STORE AUDIT REPORT' : 
                                                      isReturReceipt ? 'NOTA RETUR' : 
                                                      viewingReceipt.paymentType === 'Tukar Ganti' ? 'NOTA TUKAR GANTI' : 'NOTA PENJUALAN'}
                                                 </h2>
-                                                <p className="text-[10px] uppercase font-bold !text-slate-400 tracking-widest mt-1">REPRINT COPY</p>
+                                                <p className="text-[10px] uppercase font-bold !text-[var(--ink-muted)] tracking-widest mt-1">REPRINT COPY</p>
                                             </div>
                                         </div>
                                         <div className="flex justify-between mb-8 text-sm">
                                             <table className="w-1/3"><tbody>
-                                                <tr><td className="font-bold py-1 w-24 !text-slate-400 uppercase align-top">Tanggal</td><td className="font-bold py-1 !text-slate-900">: {receiptDateStr}</td></tr>
-                                                {receiptTimeStr && <tr><td className="font-bold py-1 w-24 !text-slate-400 uppercase align-top">Waktu</td><td className="font-bold py-1 !text-slate-900">: {receiptTimeStr}</td></tr>}
-                                                <tr><td className="font-bold py-1 !text-slate-400 uppercase align-top">Sales / Agent</td><td className="font-bold py-1 !text-slate-900 uppercase">: {viewingReceipt.agentName === 'Admin' ? (appSettings?.adminDisplayName || 'Admin') : (viewingReceipt.agentName || 'Sales')}</td></tr>
-                                                <tr><td className="font-bold py-1 !text-slate-400 uppercase align-top">Tipe Transaksi</td><td className="font-bold py-1 !text-slate-900 uppercase">: {viewingReceipt.paymentType || 'Cash'}</td></tr>
+                                                <tr><td className="font-bold py-1 w-24 !text-[var(--ink-muted)] uppercase align-top">Tanggal</td><td className="font-bold py-1 !text-[var(--ink)]">: {receiptDateStr}</td></tr>
+                                                {receiptTimeStr && <tr><td className="font-bold py-1 w-24 !text-[var(--ink-muted)] uppercase align-top">Waktu</td><td className="font-bold py-1 !text-[var(--ink)]">: {receiptTimeStr}</td></tr>}
+                                                <tr><td className="font-bold py-1 !text-[var(--ink-muted)] uppercase align-top">Sales / Agent</td><td className="font-bold py-1 !text-[var(--ink)] uppercase">: {viewingReceipt.agentName === 'Admin' ? (appSettings?.adminDisplayName || 'Admin') : (viewingReceipt.agentName || 'Sales')}</td></tr>
+                                                <tr><td className="font-bold py-1 !text-[var(--ink-muted)] uppercase align-top">Tipe Transaksi</td><td className="font-bold py-1 !text-[var(--ink)] uppercase">: {viewingReceipt.paymentType || 'Cash'}</td></tr>
                                             </tbody></table>
-                                            <div className="w-1/3 border-2 !border-slate-800 p-3 rounded-lg bg-slate-50 shadow-sm flex flex-col justify-center">
-                                                <p className="font-bold !text-slate-400 text-xs mb-1">KEPADA YTH,</p><p className="text-xl font-black uppercase !text-slate-900">{viewingReceipt.customerName}</p>
+                                            <div className="w-1/3 border-2 !border-[var(--line)] p-3 rounded-lg bg-[var(--raised)] shadow-sm flex flex-col justify-center">
+                                                <p className="font-bold !text-[var(--ink-muted)] text-xs mb-1">KEPADA YTH,</p><p className="text-xl font-black uppercase !text-[var(--ink)]">{viewingReceipt.customerName}</p>
                                             </div>
                                         </div>
                                         {isNormalSale ? (
-                                            <table className="w-full text-sm border-collapse border-2 !border-slate-800 mb-8 shadow-sm">
-                                                <thead className="!bg-blue-50 !text-blue-900"><tr><th className="border-2 !border-slate-800 p-3 text-center w-12 font-black">NO</th><th className="border-2 !border-slate-800 p-3 text-left font-black">MACAM BARANG (KATALOG)</th><th className="border-2 !border-slate-800 p-3 text-center w-24 font-black">QTY</th><th className="border-2 !border-slate-800 p-3 text-right w-40 font-black">JUMLAH</th></tr></thead>
+                                            <table className="w-full text-sm border-collapse border-2 !border-[var(--line)] mb-8 shadow-sm">
+                                                <thead className="!bg-[var(--raised)] !text-[var(--ink)]"><tr><th className="border-2 !border-[var(--line)] p-3 text-center w-12 font-black">NO</th><th className="border-2 !border-[var(--line)] p-3 text-left font-black">MACAM BARANG (KATALOG)</th><th className="border-2 !border-[var(--line)] p-3 text-center w-24 font-black">QTY</th><th className="border-2 !border-[var(--line)] p-3 text-right w-40 font-black">JUMLAH</th></tr></thead>
                                                 <tbody>{viewingReceipt.items?.map((item, i) => (
                                                     <tr key={i}>
-                                                        <td className="border-2 !border-slate-800 p-2 text-center !text-slate-400 font-bold align-top">{i+1}</td>
-                                                        <td className="border-2 !border-slate-800 p-2 font-bold !text-slate-900 uppercase align-top">
+                                                        <td className="border-2 !border-[var(--line)] p-2 text-center !text-[var(--ink-muted)] font-bold align-top">{i+1}</td>
+                                                        <td className="border-2 !border-[var(--line)] p-2 font-bold !text-[var(--ink)] uppercase align-top">
                                                             <div className="flex flex-wrap gap-1 items-center mb-1">
                                                                 {item.name}
-                                                                {item.condition === 'DAMAGED' && <span className="text-[11px] bg-red-100 !text-red-800 border !border-red-300 px-1 rounded">DAMAGED</span>}
-                                                                {item.fulfillment === 'IOU' && <span className="text-[11px] bg-blue-100 !text-blue-800 border !border-blue-300 px-1 rounded">UTANG BARANG</span>}
-                                                                {item.isIouFulfillment && <span className="text-[11px] bg-emerald-100 !text-emerald-800 border !border-emerald-300 px-1 rounded">UTANG BARANG LUNAS</span>}
+                                                                {item.condition === 'DAMAGED' && <span className="text-[11px] bg-[var(--danger-well)] !text-[var(--danger-text)] border !border-[var(--danger)] px-1 rounded">DAMAGED</span>}
+                                                                {item.fulfillment === 'IOU' && <span className="text-[11px] bg-[var(--raised)] !text-[var(--ink)] border !border-[var(--accent-edge)] px-1 rounded">UTANG BARANG</span>}
+                                                                {item.isIouFulfillment && <span className="text-[11px] bg-[var(--verified-fill)] !text-[var(--verified)] border !border-[var(--line-2)] px-1 rounded">UTANG BARANG LUNAS</span>}
                                                             </div>
                                                             {item.condition === 'DAMAGED' && item.returnReason && (
-                                                                <div className="text-[10px] italic !text-slate-400 font-normal">Reason: {item.returnReason === 'Other' ? item.otherReasonDetail : item.returnReason}</div>
+                                                                <div className="text-[10px] italic !text-[var(--ink-muted)] font-normal">Reason: {item.returnReason === 'Other' ? item.otherReasonDetail : item.returnReason}</div>
                                                             )}
                                                         </td>
-                                                        <td className="border-2 !border-slate-800 p-2 text-center font-black text-lg !text-blue-700 align-top">{item.qty} <span className="text-sm font-bold">{item.unit}</span></td>
-                                                        <td className="border-2 !border-slate-800 p-2 text-right font-black text-lg !text-slate-900 align-top">
+                                                        <td className="border-2 !border-[var(--line)] p-2 text-center font-black text-lg !text-[var(--ink)] align-top">{item.qty} <span className="text-sm font-bold">{item.unit}</span></td>
+                                                        <td className="border-2 !border-[var(--line)] p-2 text-right font-black text-lg !text-[var(--ink)] align-top">
                                                             {isReturReceipt && item.calculatedPrice > 0 ? '-' : ''}{new Intl.NumberFormat('id-ID').format((item.calculatedPrice || 0) * item.qty)}
                                                         </td>
                                                     </tr>
                                                 ))}</tbody>
-                                                <tfoot><tr className="!bg-blue-100"><td colSpan="3" className="border-2 !border-slate-800 p-4 text-right font-black text-xl !text-blue-900 tracking-widest">GRAND TOTAL</td><td className={`border-2 !border-slate-800 p-4 text-right font-black text-2xl ${isReturReceipt && displayTotal > 0 ? '!text-red-600' : '!text-blue-900'}`}>{isReturReceipt && displayTotal > 0 ? '-' : ''}Rp {new Intl.NumberFormat('id-ID').format(displayTotal)}</td></tr></tfoot>
+                                                <tfoot><tr className="!bg-[var(--raised)]"><td colSpan="3" className="border-2 !border-[var(--line)] p-4 text-right font-black text-xl !text-[var(--ink)] tracking-widest">GRAND TOTAL</td><td className={`border-2 !border-[var(--line)] p-4 text-right font-black text-2xl ${isReturReceipt && displayTotal > 0 ? '!text-[var(--danger-text)]' : '!text-[var(--ink)]'}`}>{isReturReceipt && displayTotal > 0 ? '-' : ''}Rp {new Intl.NumberFormat('id-ID').format(displayTotal)}</td></tr></tfoot>
                                             </table>
                                         ) : (
-                                            <table className="w-full text-sm border-collapse border-2 !border-slate-800 mb-8 shadow-sm">
-                                                <thead className="!bg-blue-50 !text-blue-900"><tr><th className="border-2 !border-slate-800 p-3 text-center w-12 font-black">NO</th><th className="border-2 !border-slate-800 p-3 text-left font-black">AUDITED PRODUCT</th><th className="border-2 !border-slate-800 p-3 text-center w-24 font-black">INITIAL STOCK</th><th className="border-2 !border-slate-800 p-3 text-center w-32 font-black">BREAKDOWN</th><th className="border-2 !border-slate-800 p-3 text-right w-40 font-black">TAGIHAN (Rp)</th></tr></thead>
+                                            <table className="w-full text-sm border-collapse border-2 !border-[var(--line)] mb-8 shadow-sm">
+                                                <thead className="!bg-[var(--raised)] !text-[var(--ink)]"><tr><th className="border-2 !border-[var(--line)] p-3 text-center w-12 font-black">NO</th><th className="border-2 !border-[var(--line)] p-3 text-left font-black">AUDITED PRODUCT</th><th className="border-2 !border-[var(--line)] p-3 text-center w-24 font-black">INITIAL STOCK</th><th className="border-2 !border-[var(--line)] p-3 text-center w-32 font-black">BREAKDOWN</th><th className="border-2 !border-[var(--line)] p-3 text-right w-40 font-black">TAGIHAN (Rp)</th></tr></thead>
                                                 <tbody>
                                                     {(viewingReceipt.itemsPaid || []).concat(viewingReceipt.itemsReturned || [], viewingReceipt.itemsRemaining || []).reduce((acc, curr) => { if (!acc.find(i => i.productId === curr.productId)) acc.push(curr); return acc; }, []).map((item, i) => {
                                                         const paidItem = (viewingReceipt.itemsPaid || []).find(p => p.productId === item.productId); const returItem = (viewingReceipt.itemsReturned || []).find(r => r.productId === item.productId); const remainItem = (viewingReceipt.itemsRemaining || []).find(s => s.productId === item.productId);
                                                         if (!paidItem && !returItem && !remainItem) return null; const initialQty = (paidItem?.qty || 0) + (returItem?.qty || 0) + (remainItem?.qty || 0);
                                                         return (
-                                                            <tr key={i}><td className="border-2 !border-slate-800 p-2 text-center !text-slate-400 font-bold align-top">{i+1}</td><td className="border-2 !border-slate-800 p-2 font-bold !text-slate-900 uppercase align-top">{item.name}</td><td className="border-2 !border-slate-800 p-2 text-center font-bold !text-slate-700 align-top">{initialQty} Bks</td>
-                                                                <td className="border-2 !border-slate-800 p-2 text-[10px] font-mono align-top">
-                                                                    {paidItem && paidItem.qty > 0 && <div className="text-emerald-700 font-bold mb-1">• LAKU: {paidItem.qty}</div>}
-                                                                    {returItem && returItem.qty > 0 && <div className="text-red-600 font-bold mb-1">• RETUR: {returItem.qty}</div>}
-                                                                    {remainItem && remainItem.qty > 0 && <div className="!text-slate-400 font-bold">• SISA: {remainItem.qty}</div>}
+                                                            <tr key={i}><td className="border-2 !border-[var(--line)] p-2 text-center !text-[var(--ink-muted)] font-bold align-top">{i+1}</td><td className="border-2 !border-[var(--line)] p-2 font-bold !text-[var(--ink)] uppercase align-top">{item.name}</td><td className="border-2 !border-[var(--line)] p-2 text-center font-bold !text-[var(--ink)] align-top">{initialQty} Bks</td>
+                                                                <td className="border-2 !border-[var(--line)] p-2 text-[10px] font-mono align-top">
+                                                                    {paidItem && paidItem.qty > 0 && <div className="text-[var(--verified)] font-bold mb-1">• LAKU: {paidItem.qty}</div>}
+                                                                    {returItem && returItem.qty > 0 && <div className="text-[var(--danger-text)] font-bold mb-1">• RETUR: {returItem.qty}</div>}
+                                                                    {remainItem && remainItem.qty > 0 && <div className="!text-[var(--ink-muted)] font-bold">• SISA: {remainItem.qty}</div>}
                                                                 </td>
-                                                                <td className="border-2 !border-slate-800 p-2 text-right font-black text-lg !text-slate-900 align-bottom">{paidItem ? new Intl.NumberFormat('id-ID').format((paidItem.calculatedPrice || 0) * paidItem.qty) : '-'}</td>
+                                                                <td className="border-2 !border-[var(--line)] p-2 text-right font-black text-lg !text-[var(--ink)] align-bottom">{paidItem ? new Intl.NumberFormat('id-ID').format((paidItem.calculatedPrice || 0) * paidItem.qty) : '-'}</td>
                                                             </tr>
                                                         );
                                                     })}
                                                 </tbody>
-                                                <tfoot><tr className="!bg-emerald-100"><td colSpan="4" className="border-2 !border-slate-800 p-4 text-right font-black text-xl !text-emerald-900 tracking-widest">TOTAL TAGIHAN COLLECTED</td><td className="border-2 !border-slate-800 p-4 text-right font-black text-2xl !text-emerald-900">Rp {new Intl.NumberFormat('id-ID').format(displayTotal)}</td></tr></tfoot>
+                                                <tfoot><tr className="!bg-[var(--verified-fill)]"><td colSpan="4" className="border-2 !border-[var(--line)] p-4 text-right font-black text-xl !text-[var(--verified)] tracking-widest">TOTAL TAGIHAN COLLECTED</td><td className="border-2 !border-[var(--line)] p-4 text-right font-black text-2xl !text-[var(--verified)]">Rp {new Intl.NumberFormat('id-ID').format(displayTotal)}</td></tr></tfoot>
                                             </table>
                                         )}
                                     </div>
                                 </div>
                             )}
 
-                            <div className="no-print !bg-slate-100 p-3 flex justify-center gap-6 border-t !border-slate-300 shrink-0">
-                                <label className="flex items-center gap-2 text-xs font-bold !text-slate-400 cursor-pointer hover:!text-black"><input type="radio" checked={printFormat === 'thermal'} onChange={() => setPrintFormat('thermal')} name="format" className="w-4 h-4 accent-slate-800"/>Thermal POS (58mm)</label>
-                                <label className="flex items-center gap-2 text-xs font-bold !text-blue-600 cursor-pointer hover:!text-blue-800"><input type="radio" checked={printFormat === 'a4'} onChange={() => setPrintFormat('a4')} name="format" className="w-4 h-4 accent-blue-600"/>Standard Invoice (A4)</label>
+                            <div className="no-print !bg-[var(--raised)] p-3 flex justify-center gap-6 border-t !border-[var(--line-2)] shrink-0">
+                                <label className="flex items-center gap-2 text-xs font-bold !text-[var(--ink-muted)] cursor-pointer hover:!text-[var(--ink)]"><input type="radio" checked={printFormat === 'thermal'} onChange={() => setPrintFormat('thermal')} name="format" className="w-4 h-4 accent-slate-800"/>Thermal POS (58mm)</label>
+                                <label className="flex items-center gap-2 text-xs font-bold !text-[var(--ink)] cursor-pointer hover:!text-[var(--ink)]"><input type="radio" checked={printFormat === 'a4'} onChange={() => setPrintFormat('a4')} name="format" className="w-4 h-4 accent-blue-600"/>Standard Invoice (A4)</label>
                             </div>
                             
-                            <div className="no-print !bg-slate-200 p-4 flex gap-3 border-t !border-slate-300 mt-auto shrink-0">
+                            <div className="no-print !bg-[var(--raised)] p-4 flex gap-3 border-t !border-[var(--line-2)] mt-auto shrink-0">
                                 <button onClick={() => {
                                     const receipt = document.querySelector('.print-receipt'); if (!receipt) return;
                                     const clone = receipt.cloneNode(true); clone.querySelectorAll('.no-print').forEach(el => el.remove()); clone.classList.remove('max-h-[90vh]', 'overflow-y-auto', 'shadow-2xl', 'rounded-b-lg', 'max-w-sm', 'max-w-4xl');
@@ -1122,7 +1122,7 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                                     const doc = iframe.contentWindow.document; doc.open();
                                     doc.write(`<!DOCTYPE html><html><head><title>KPM Invoice</title><meta name="viewport" content="width=device-width, initial-scale=1.0">${parentStyles}<style>@media print { @page { margin: 0; } html, body { background: #ffffff !important; color: #000000 !important; margin: 0 !important; padding: 0 !important; width: ${isThermal ? '48mm' : '210mm'} !important; height: max-content !important; min-height: 0 !important; overflow: hidden !important; display: block !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; } .print-receipt { width: ${isThermal ? '48mm' : '100%'} !important; max-width: 100% !important; margin: 0 !important; padding: 0 !important; box-sizing: border-box !important; box-shadow: none !important; border: none !important; page-break-after: avoid !important; } .format-thermal { font-family: 'Courier New', Courier, monospace !important; } .format-thermal * { font-size: 11px !important; line-height: 1.2 !important; color: #000000 !important; } .format-thermal .font-bold { font-weight: bold !important; } .format-thermal .font-black { font-weight: 900 !important; } .format-thermal table { width: 100% !important; border-collapse: collapse !important; } .format-thermal th, .format-thermal td { padding: 2px 0 !important; } .format-thermal .text-right { text-align: right !important; } .format-thermal .text-center { text-align: center !important; } .format-thermal .border-dashed { border-style: dashed !important; border-color: #000000 !important; } .format-thermal .border-y { border-top: 1px dashed #000000 !important; border-bottom: 1px dashed #000000 !important; } .format-thermal .border-b { border-bottom: 1px dashed #000000 !important; border-top: none !important; border-left: none !important; border-right: none !important; } .format-thermal .flex { display: flex !important; } .format-thermal .justify-between { justify-content: space-between !important; } .format-thermal h2 { font-size: 14px !important; text-align: center !important; font-weight: 900 !important; } } body { background: white; margin: 0; padding: 0; display: block; }</style></head><body>${clone.outerHTML}<script>window.onload = () => { setTimeout(() => { window.focus(); window.print(); }, 500); };</script></body></html>`);
                                     doc.close(); setTimeout(() => { if (document.body.contains(iframe)) document.body.removeChild(iframe); }, 10000);
-                                }} className="flex-1 !bg-slate-800 !text-white py-3 rounded-lg uppercase font-bold flex items-center justify-center gap-2 hover:!bg-slate-950 transition-colors tracking-widest text-[10px] shadow-md active:scale-95">
+                                }} className="flex-1 !bg-[var(--raised)] !text-[var(--ink)] py-3 rounded-lg uppercase font-bold flex items-center justify-center gap-2 hover:!bg-[var(--panel)] transition-colors tracking-widest text-[10px] shadow-md active:scale-95">
                                     <Printer size={14}/> Print Document
                                 </button>
                                 
@@ -1142,12 +1142,12 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                                     }
                                     text += `------------------------\n*TOTAL: ${isReturReceipt && displayTotal > 0 ? '-' : ''}Rp ${new Intl.NumberFormat('id-ID').format(displayTotal)}*\n\nThank you for your business!`;
                                     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
-                                }} className="flex-1 !bg-[#25D366] !text-white py-3 rounded-lg uppercase font-bold flex items-center justify-center gap-2 hover:!bg-[#128C7E] transition-colors tracking-widest text-[10px] shadow-md active:scale-95">
+                                }} className="flex-1 !bg-[#25D366] !text-[var(--ink)] py-3 rounded-lg uppercase font-bold flex items-center justify-center gap-2 hover:!bg-[#128C7E] transition-colors tracking-widest text-[10px] shadow-md active:scale-95">
                                     <MessageSquare size={14}/> Share
                                 </button>
                             </div>
                             
-                            <button onClick={() => { setViewingReceipt(null); }} className="no-print w-full shrink-0 !bg-red-600 hover:!bg-red-700 !text-white py-4 font-black uppercase tracking-[0.2em] shadow-[0_-5px_20px_rgba(0,0,0,0.2)] active:scale-95 transition-transform rounded-b-lg flex items-center justify-center gap-2"><X size={20}/> CLOSE RECEIPT</button>
+                            <button onClick={() => { setViewingReceipt(null); }} className="no-print w-full shrink-0 !bg-[var(--danger-plate)] hover:!bg-[var(--danger-plate)] !text-[var(--ink)] py-4 font-black uppercase tracking-[0.2em] shadow-[0_-5px_20px_rgba(0,0,0,0.2)] active:scale-95 transition-transform rounded-b-lg flex items-center justify-center gap-2"><X size={20}/> CLOSE RECEIPT</button>
                         </div>
                     </div>
                 );
