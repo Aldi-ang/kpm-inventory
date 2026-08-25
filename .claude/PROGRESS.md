@@ -1,6 +1,34 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-25 12:31 WIB (🟠 KPM app session)** · ✅ **HISTORY REPORTS CONVERTED AND SEEN — clean, no navy, no blue money** · ✅ **LITE MODE was dimming cards app-wide, not just the sidebar — fixed in BOTH twin rules** · 607/607 + 762/762 + all contrast pairs · ▶ **6 screens left; then the layout+motion pass** · branch `phase0-solid-ground`
+**Updated: 2026-08-25 14:50 WIB (🟠 KPM app session)** · ✅ **LITE-MODE RAIL LEAK FIXED (his 2nd report, different cause)** · ✅ **DASHBOARD PANELS WERE LITERAL BLACK — 25 surfaces + 16 inks fixed, all seen** · 607/607 + 762/762 + all contrast pairs · ▶ **NEXT = Dashboard LAYOUT redesign (colour half is done), brief in NEXT-SESSION.md** · branch `phase0-solid-ground`
+
+## 🟠 2026-08-25 14:50 — THE RAIL LEAK AND THE DARK PANELS. 607/607, 762/762, ALL SEEN.
+
+✅ **LITE MODE WAS LEAVING THE CLOSED RAIL OPEN — his SECOND report of it, and a DIFFERENT cause
+from the scrim.** *"some of the buttons and profile photo is still outside even when the sidebar is
+closed"*. `App.jsx` pins `.lite-mode .boot-1…4 { opacity: 1 !important }` so the staggered reveal
+cannot strand the nav invisible. **The rail's three children ARE boot-1/2/3** (brand, grid, foot)
+and **the collapse is also opacity** — so `!important` beat it. Two jobs sharing one property.
+Collapse restated at equal weight, **desk only**. Measured closed: totem 1, children 0.
+
+✅ **THE DARK PANELS WERE LITERAL BLACK.** `bg-black/50` and `bg-white/5` — no token — so in light
+mode they were dark slabs on cream. **25 surfaces** across 3 Dashboard files now take
+`--panel`/`--raised`/`--inset`.
+⚠️ **Flipping the surface exposed the paired half: 16 inks were pale** because they were sized for
+a dark card — the monthly trajectory figure was **white on cream**. Same bug class as the gold
+plate inks. **When a surface flips, its ink flips.**
+
+⚠️ **102 MORE OF THESE LITERALS IN TEN OTHER FILES** — `RestockVaultView` alone has **56**. They
+belong to each screen's own conversion, not to a blind sweep.
+
+📖 **The purple/cyan chart is NOT a bug.** Those are the **rank colours** (Platinum `#22d3ee`,
+Diamond `#c084fc`) in `AgentProfileView`. A deliberate exception — **ask before recolouring ranks**,
+it changes what the badges mean.
+
+🔴 **HIS DASHBOARD ASK IS THE NEXT JOB AND IT IS LAYOUT, NOT COLOUR** — *"the layout is pretty bad i
+want u to redesign a new one"*. The colour half is done and seen. Full brief with the six specific
+layout faults is in `.claude/NEXT-SESSION.md`. **Scope was called honestly at 78% quota rather than
+starting a redesign that could not finish.**
 
 ## 🟠 2026-08-25 12:31 — HISTORY REPORTS SEEN AND CLEAN; LITE MODE WAS DIMMING THE WHOLE APP. 607/607.
 

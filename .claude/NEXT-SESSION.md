@@ -5,115 +5,103 @@
 ```
 /alucard
 
-Do the control-colour sweep in .claude/NEXT-SESSION.md — the segmented switches, sliders and
-toggles that still read brown or bright-orange. Ask me to open the app first so you can see
-it; the route that works is in the file. Show me each control before and after.
+Redesign the Dashboard layout — the brief is in .claude/NEXT-SESSION.md. The palette is
+already fixed; this is the LAYOUT and MOTION half. Ask me to keep the dev server on 5173
+so you can see it, and show me the layout before you build all of it.
 ```
 
 ---
 
-## ⚠️ READ THIS FIRST — THE VIEWING PATH, AND THE THREE THAT DO NOT WORK
+## ⚠️ THE VIEWING PATH — this is the only one that works
 
-**Ask him to keep his dev server on `https://localhost:5173` and drive HIS Chrome:**
-`mcp__claude-in-chrome__*` — `tabs_context_mcp` → `navigate` → `computer{screenshot}`.
-His browser is already logged in and has already accepted the certificate.
-
-⛔ **Do NOT retry these — an hour was spent proving each one dead on 2026-08-24:**
-the in-app Browser pane (never composites: *"the Browser pane is not displayed"*) ·
-`agent-browser` (hung 30 minutes, had to be aborted) · your own `preview_start` dev server
-(HTTPS self-signed + Google login, and the in-app browser refuses the cert).
-
-**Opening the rail:** its events live on the pod only. `hover` at **(35, 42)** and do not move the
-mouse. `read_page{filter:"interactive"}` then gives every nav button as a ref.
-**Measuring, not guessing:** `javascript_tool` with `getComputedStyle` settled the Lite Mode bug
-in one call after three wrong theories. Reach for it early.
+**`claude-in-chrome` against HIS Chrome on `https://localhost:5173`.**
+`tabs_context_mcp` → `navigate` → `computer{screenshot}`. Already logged in, cert accepted.
+⛔ **Do not retry:** the in-app Browser pane (never composites) · `agent-browser` (hung 30 min) ·
+your own `preview_start` server (self-signed cert + Google login).
+**Rail opens on `hover (35, 42)`** and its events live on the pod only — do not move the mouse.
+**`javascript_tool` + `getComputedStyle` before theorising.** It has settled three bugs in one
+call each today, after wrong guesses every time.
 
 ---
 
-## 🎨 THE JOB — the controls still read brown and bright-orange
+## 🎨 THE JOB — the Dashboard LAYOUT, not its colours
 
-His words, 2026-08-24, with nine screenshots:
+> *"the dark screen and the UI on the dashboard is not fixed yet, panel looks dark and bad the
+> the layout is pretty bad i want u to redesign a new one for this dashboard"*
 
-> *"make sure u change all this button as well, slider color as well, most of the brown and
-> yellow color looks bad here"*
+✅ **The colour half is DONE and seen** — `bg-black/50` and `bg-white/5` became `--panel` /
+`--raised` / `--inset`, and 16 inks that had been sized for dark cards were repaired. Nothing on
+this screen is dark or unreadable any more. **Do not redo that. The complaint left is LAYOUT.**
 
-The button PLATES are done (near-black stencil, `--gold #1B1917`). **These are the controls that
-did not follow**, each measured against its own ground:
+### What is actually wrong with it, from the frames
 
-| control | now | problem |
-|---|---|---|
-| segmented switch ON (`FULL`/`LITE`, `MASTER VAULT`/`BOSS CAR`) | `--lamp-on #FF9D00` slab | **a large amber SLAB — his 2026-08-21 law bans exactly this** |
-| toggle track fill (permission matrix) | `--sw-on #6B3400` | deep brown; he says brown reads bad |
-| mascot SIZE slider | `accent-color: var(--accent-edge)` `#7A5A12` | olive-brown track and thumb |
-| `ALL` / `SKT` chips | brown fill + brown border | the "yellow/brown looks bad" complaint |
-| `EXCHANGE (TUKAR)` | olive `#6B5A18`-ish slab | same |
+| problem | what to do |
+|---|---|
+| **Two card rows say the same thing twice.** EXECUTIVE TARGETS (3 cards) then TOTAL VAULT / GLOBAL REVENUE / NET PROFIT (3 cards) — six equal boxes, no hierarchy, nothing tells you where to look | one hero figure, then supporting rows. Money the business is judged on gets size; benchmarks get a strip |
+| **Every card is the same size and weight** | rank them. His own rule from the buttons applies here: **one loud thing per screen** |
+| **The status bar (CLOUD SYNC / USB SAFE / SAVE POINTS) is a wide empty band** carrying three tiny labels across 1400px | it is a status STRIP — compress it, or fold it into the header |
+| **AGENT LEADERBOARD is a huge empty panel** saying *"NO SALES RECORDED TODAY"* | an empty state should be small. A panel earns its height by having content |
+| **VAULT VELOCITY is the densest, most useful thing on the screen** and it is below the fold, same weight as an empty box | promote it |
+| **No motion at all** | he asked for it. Numbers that count up on load, a bar that fills. **Keep it under 300ms, `ease-out`, and it must survive Lite Mode** (no shadow/blur/filter carrying meaning) |
 
-🔴 **THE DECISION HE STILL OWES, AND IT UNBLOCKS ALL FIVE ROWS.** Ask it before editing:
+### The laws this must not break
 
-> The buttons are near-black now. The switches and sliders are still amber or brown. **Should a
-> switched-ON control be near-black like the buttons, or stay amber?** Near-black now measures
-> **9.39:1** against its track, so it is legible either way — this is only taste. If you say
-> near-black, the `--sw-on` token I added today disappears and everything matches.
+- **Palette:** no blue, no green. Slate IS the blue. Plates are `--gold` (near-black stencil) with
+  `--gold-ink`; marks may be amber; `--verified` is the neutral "settled" ink; `--alt-ink` is the
+  sanctioned purple.
+- ⛔ **Amber is an EDGE, an INK and a LAMP — never a slab.** Stated twice, and he hates it.
+- ⚠️ **Lite Mode strips shadow, blur and filter.** Nothing may depend on them to be visible.
+- ⚠️ **A plate carries its OWN ink** — `--gold` with `--ink` is 1.04:1. `G51` enforces it.
+- 📖 Read `A-Brain/Wiki/Concepts/Aldi's Design Taste.md` first — the whole restyle is recorded
+  there, including the two reversals and why.
 
-**Whichever he picks, the same rule applies to all five rows** — do not let the segmented switch
-and the toggle end up different.
-
-⚠️ **`--lamp-on` is NOT in scope.** The little amber disc on the rail is the one thing he has said
-he likes. Small and bright is legal; his law is about SLABS.
+**Show him a layout before building all of it.** He reversed a colour decision today after seeing
+it in the app; a swatch is not a screen, and a layout described in prose is not a layout.
 
 ## Verify
 
 ```
 npm run build; node src/config/integration.audit.mjs; node src/config/logicFixes.selfcheck.mjs; node src/config/contrast.selfcheck.mjs
 ```
-Baseline: **606/606**, **762/762**, all contrast pairs.
-⚠️ `integration.audit` reads the BUILT output — rebuild on both sides of any probe, and it will
-refuse to report on a stale dist. The other two read source directly.
-⚠️ **Any new pair must measure the state against ITS OWN ground**, not against its own fill — a
-pair that graded a rim against the fill it sits on went red on a perfectly visible control today.
+Baseline: **607/607**, **762/762**, all contrast pairs.
+⚠️ `integration.audit` reads BUILT output and refuses to run on a stale `dist` — rebuild on both
+sides of any probe. A check that reads built CSS must match the MINIFIED form (the minifier drops
+quotes inside attribute selectors).
 
 **When you finish, rewrite this file with the next single job.**
 
 <details>
-<summary>The rest of the queue — do not paste this, it is here so the next session knows what to promote</summary>
+<summary>The rest of the queue — do not paste this</summary>
 
-### 🔨 THE REDESIGN PROGRAM — 8 screens, his ask, one at a time
+### 🔨 SIX SCREENS LEFT of his eight
 
-> *"we also need to redesign the restock vault, history reports, consignment and receivable,
-> master vault, fleet and roster, journey map, dashboard and agent profile as well to follow our
-> theme and also looks good for the UI design and animation as well"*
+**Group A — un-themed, not off-theme.** Zero tokens, 15–25 banned colour classes each. A session
+apiece. **Reuse the mapping table: `scratchpad/convert.mjs`** — point it at the file, it does the
+palette in one pass, then LOOK for what it cannot see (arbitrary `rgba()` glows, decorative blur
+blobs, inks that were sized for a dark surface).
+- **Fleet & Roster** (`FleetCanvasManager.jsx`) ⚠️ two `runTransaction` stock moves must not be
+  touched — `A-Brain/Backlog/Redesign Receivables and Fleet - logic must survive.md`
+- **Consignment & Receivables** (`ConsignmentFinanceView.jsx`) — writes nothing, seven callbacks
+  are the whole contract
+- **Restock Vault** (`RestockVaultView.jsx`) — **56 `bg-black/` + `bg-white/` literals**, the worst
+  remaining
+- **Master Vault** (`BranchWarehouseManager.jsx`, 17)
 
-**These are not all the same job.** Two groups, and the order matters:
+**Group B — themed, polish only:** Agent Profile, Journey Map.
+⚠️ **Agent Profile's 7-day revenue chart is purple/cyan** — those are the **rank colours**
+(Platinum `#22d3ee`, Diamond `#c084fc`), a deliberate exception, not stray literals. Ask before
+changing them; recolouring ranks changes what the badges mean.
 
-**Group A — NOT off-theme, UN-themed. Zero tokens, navy and blue, palette law broken outright:**
-- **Transactions / History Reports** — navy panel, a purple `PULL ARCHIVE` button, blue location
-  cards, blue money figures. `HistoryReportView.jsx` has 23 banned colour classes.
-- **Fleet & Roster** — navy, blue avatars, purple region rows. `FleetCanvasManager.jsx` has 25.
-- **Consignment & Receivables** — 15. ⚠️ `A-Brain/Backlog/Redesign Receivables and Fleet - logic
-  must survive.md` — Receivables writes nothing, seven callbacks are the whole contract; Fleet has
-  two `runTransaction` stock moves that must not be touched.
-- **Restock Vault / Master Vault** — black panels with orange accents, and a purple gradient
-  behind the product image.
-
-**Group B — themed already, just not good enough yet:** Dashboard (the olive EXECUTIVE TARGETS
-slabs sit oddly against the cream money cards), Agent Profile, Journey Map.
-
-**Recommended order: Group A first, biggest violation first** — Transactions, then Fleet & Roster,
-then Consignment, then the vaults. A screen with zero tokens cannot be "adjusted"; it has to be
-rebuilt against the token set, and that is a whole session each. Group B afterwards.
-
-### Other open items
-- 🔴 **HE STILL OWES TWO OLDER ANSWERS** (verbatim in `.claude/PROGRESS.md` under WAITING ON ALDI):
-  tier 3 is a toggle-for-toggle copy of the owner including Settings and both [GOD] switches ·
-  which logic he wants redesigned in Fleet + Receivables.
-- ▶ **Rank 1 per screen.** All 63 buttons are stencil plates right now, which is too many loud
-  things. One plate per screen, everything else the outline pattern (`.kpm-btn.key`).
-- ⚠️ **DARK rail resting icons are 2,78:1** (`#6b5845` on `#14110e`). Pre-existing, reported by
-  `softInDark` every run, his call.
-- 📄 **Roadmap:** `A-Brain/Wiki/Concepts/The Eight Warehouse Gaps.md`. G7, G6, G3 done. Remaining:
-  **G5** accuracy/shrinkage · **G1** batch identity · **G2** age and oldest-first · **G4** ids.
-- ⚠️ **STILL UNSEEN:** the arrival check, the HQ branch-shelf panel, the G3 reorder advice — all
-  need a branch with a shipping history.
+### Also open
+- 🔴 **Two older answers he owes** — verbatim in `PROGRESS.md` under WAITING ON ALDI: tier 3 as a
+  toggle-for-toggle copy of the owner · which logic to redesign in Fleet + Receivables.
+- ▶ **Rank 1 per screen.** All 63 buttons are stencil plates; that is too many loud things. One
+  plate per screen, the rest outline (`.kpm-btn.key`). History Reports has two competing already.
+- ⚠️ **`ALL`/`SKT` chips and `BUYBACK`/`EXCHANGE (TUKAR)`** from his screenshots are generated
+  dynamically and were not findable by search — catch them by looking at the screen that owns them.
+- ⚠️ **DARK rail resting icons are 2,78:1**, pre-existing, his call.
+- 📏 **`PROGRESS.md` is ~960 lines against a ~350 cap** — cut the oldest 🟠 entries into
+  `A-Brain/Archive/`. ⚠️ Never trim across tracks; 🔧 and 🟢 belong to other sessions.
 - **Merge to main** — last of all.
 
 </details>
