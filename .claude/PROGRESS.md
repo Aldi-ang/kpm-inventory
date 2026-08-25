@@ -23,6 +23,33 @@ low, invoices today). Everything else is revealed: **scrub** the pace line (cros
 readout**. Three speeds only: 140ms hover · 300ms arrival · instant press (1px down, amber edge).
 Every reveal has a keyboard path and sits in a RESERVED line so nothing reflows.
 
+✅ **FIFTH PASS — HE ANSWERED. DESIGN IS NEARLY SETTLED.** Same URL:
+**https://claude.ai/code/artifact/52794e2f-47c4-42f6-af85-08ec318d35dd**
+
+🟢 **HIS DECISIONS — TREAT AS LOCKED, DO NOT RE-ASK:**
+1. **"i want to see daily week, month and year only, dont use total"** — he rejected my 3-swap
+   proposal and gave a better one. **NO ALL-TIME TOTALS ANYWHERE.** Every money figure reads for a
+   period: **HARI · MINGGU · BULAN · TAHUN**, a 4-way plate switch above everything it governs.
+   ✅ **This DELETED TWO PANELS by itself** — "month trajectory" and "7-day revenue chart" were the
+   same chart on different settings. Six panels → four. He got his space back for free.
+2. **Money owed → LATER.** Not in this rebuild. Needs wiring to `ConsignmentFinanceView.jsx`.
+3. **Hour/rhythm strip → DROPPED.** He asked *"why do we need this panel?"* and the honest answer
+   was that it does not fit his business: he runs DISTRIBUTION with agents on routes, so the hour a
+   nota was written records when an agent got back, not when selling happened. ⚠️ **The useful
+   version of that question is WHICH AGENT/ROUTE sold what — i.e. the Agent Leaderboard grown up,
+   on data he already has.** Offer that instead if it comes up again.
+4. **Both colour bugs → FIX with the rebuild.** (green lamps in `SafetyStatus.jsx`,
+   `getRandomColor()` chart bars in `DashboardView.jsx`.)
+
+🔴 **ONLY TWO ANSWERS LEFT before code:**
+- **Sisa hari stok** (days of cover) replacing "Critical Stock Alerts" — keep that shape?
+- **Targets per period.** He has monthly (Rp 500 jt) + daily (50 bal) in appSettings. Derive week
+  and year from the monthly one, or let him type all four?
+
+⚠️ **"I DON'T UNDERSTAND YOUR QUESTION" happened here.** Four jargon questions in one reply
+failed. What worked: plain-language `AskUserQuestion` with clickable options, each one defining its
+own terms. **Use that tool for decisions from now on — not prose lists.**
+
 ✅ **FOURTH PASS — RESPONSIVE + THE CEO METRICS.** Same URL, refreshed:
 **https://claude.ai/code/artifact/52794e2f-47c4-42f6-af85-08ec318d35dd**
 He asked *"what should u think we want to see as CEO"* and *"make sure this both work on phones and
