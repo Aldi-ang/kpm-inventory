@@ -12,7 +12,26 @@ Source `scratchpad/dashboard-front-panel.html`. B now carries **5 graphs, not 1*
 the 7-day chart with values printed and today marked. **9 things move on arrival**, one sequence,
 300ms each, nothing loops; page has a `Slow it down 4×` button to inspect the order.
 
-🔴 **HE OWES THREE ANSWERS** (all on the artifact's last panel):
+✅ **THIRD PASS — "THE QUIET PANEL", interactive + minimalist. HIS ASK:** *"even better if all
+the graph and panel is interactive with all the animation when hover or press and do not put too
+much number in there but hover to show the extra number ... a lot of space while being minimalist
+and cool"*.
+**https://claude.ai/code/artifact/52794e2f-47c4-42f6-af85-08ec318d35dd**
+Source `scratchpad/dashboard-quiet-panel.html`. **29 resting numbers → 4** (month Rp, bal, items
+low, invoices today). Everything else is revealed: **scrub** the pace line (crosshair + dot +
+"vs pace" readout), **hover** a column / hour / velocity row, the **hole in the mix ring IS the
+readout**. Three speeds only: 140ms hover · 300ms arrival · instant press (1px down, amber edge).
+Every reveal has a keyboard path and sits in a RESERVED line so nothing reflows.
+
+⚠️ **THE TRADE, STATED ON THE PAGE:** a phone has no cursor. Taps work, but on mobile those 4
+resting figures are all he gets until he taps — **so "phone or laptop" is now a real question, not
+a nicety.**
+
+⚠️ **WEB SEARCH IS DEAD** (haiku tier unreachable; firecrawl needs a paid key). The references
+section is labelled as RECALLED, not sourced — Tufte data-ink, aircraft panels, Braun dials,
+activity rings, trading-terminal scrub-to-read, Linear/Stripe row hover. Do not present it as research.
+
+🔴 **HE OWES FOUR ANSWERS** (all on the artifact's last panel):
 1. Is this the one — build it?
 2. **The rhythm strip needs data nothing in the app reads yet** (the HOUR off each invoice). Keep or drop?
 3. The two bugs below — fix with the rebuild?
