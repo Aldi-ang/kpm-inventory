@@ -290,19 +290,24 @@ html.light {
      ⚠️ SO THE PLATE INVERTS IN LIGHT AND ITS INK INVERTS WITH IT. A dark amber plate carrying
      pale ink, instead of a bright plate carrying dark ink. 4,13:1 against the panel and 3,12:1
      against an inset, so the state is unmistakable on every ground it lands on. */
- /* 🔴 IN LIGHT MODE --gold IS A PLATE, NOT A COLOUR. Aldi picked the steel faceplate,
-     2026-08-24: *"A and B looks cool but B is more minimalistic and similar to our theme
-     more, i think we we will go with that one"*. The name still says gold because it is the
-     KEY surface in both themes; in dark it really is amber (#D08A2E), in light it is bone.
-     ⚠️ THE GOLDNESS MOVED, IT DID NOT LEAVE: it lives in the 1px rim (--lamp-rim) and in the
-     lamp on the plate. A pale plate is 1,49:1 on the page, so THE RIM IS THE SEPARATION and
-     removing it makes the button vanish. See the rim rule further down, and the four PLATE
-     pairs in contrast.selfcheck that now measure the rim instead of the core.
+ /* 🔴 IN LIGHT MODE --gold IS A STENCIL PLATE. Aldi picked the steel faceplate first,
+     then LOOKED AT IT IN THE APP and reversed: *"wait i think it may look better with the
+     stencil and an amber light tho, i look on the app and i dont really like it"*. He is the
+     only one who has seen either of them render, so that outranks the measurements - which
+     had favoured this one anyway (15,82:1 ink, and it beat steel on every row).
+     The name still says gold because it is the KEY surface in both themes; in dark it really
+     is amber (#D08A2E), in light it is near-black.
+     ⚠️ NO RIM HERE, AND THAT IS THE POINT. The steel version needed one because a pale plate
+     is 1,49:1 on the page; this plate is 9,39-14,21:1 against every ground, so the CORE is the
+     boundary and the contrast pairs grade the core again. A rim rule and its built-stylesheet
+     guard existed for two commits and were deleted with the plate that needed them.
+     ⚠️ THE AMBER GOT BRIGHTER, NOT DIMMER. #FF9D00 on this plate is 8,41:1 BARE - no rim on the
+     lamp either. That is what he means by "an amber light": it can finally be a light.
      ⚠️ MARKS DO NOT FOLLOW PLATES HERE. A switch fill, a progress fill and a selected row
      used to take --gold; at 1,68:1 on their own track a pale fill would have made ON and OFF
      look identical. They take --lamp-on now. Slab vs mark, which is his own rule. */
-  --gold:          #F7F3E9;
-  --gold-ink:      #2B2318;
+  --gold:          #1B1917;
+  --gold-ink:      #F7F3E9;
   --knob-on:       #FCF7EE;
 
   /* ...but gold AS TEXT and gold AS A BORDER must darken here, or they measure 1,19:1 and 1,19:1
@@ -3115,36 +3120,23 @@ html.lite-mode .kpm-title-rule { animation: none; width: 100%; }
 .kpm-btn:focus-visible { outline: 2px solid var(--accent-edge); outline-offset: -4px; }
 
 /* ============================================================================
-   THE RIM IS WHAT MAKES A PALE PLATE A BUTTON. Aldi chose the steel faceplate
-   over the stencil one on 2026-08-24. A plate at #F7F3E9 measures 1,49:1 against
-   the page and 1,11:1 against a raised card - on its own it is not a shape, it is
-   a slightly different white. The 1px rim carries ALL of the separation:
-   --lamp-rim #6B3400 measures 5,32:1 in the darkest well and 8,04:1 on raised.
+   A BUTTON THAT IS ONLY GOLD ON HOVER MUST STILL BE READABLE BEFORE YOU HOVER IT.
+   22 buttons carry text-[var(--gold-ink)] permanently but hover:bg-[var(--gold)] - the plate
+   arrives on hover, the ink never leaves. With a bone --gold-ink that is 1,11:1 on a raised
+   card: the word is INVISIBLE until the pointer touches it, and on a phone there is no hover
+   at all. Pre-existing, and it came back the moment the plate went dark again.
 
-   WHY --lamp-rim AND NOT --accent-edge. accent-edge only reaches 3,41:1 in the
-   well - it clears the 3:1 floor by 0,41 and nothing else in this app sits that
-   close to a floor. lamp-rim is also already the rail amber rim, so this adds no
-   new value to the palette.
+   The :not([class~="bg-[var(--gold)]"]) is load-bearing - several buttons carry BOTH the plate
+   and the hover variant, and those are gold at rest, so their ink must stay bone.
 
-   WHY ONE ATTRIBUTE SELECTOR AND NOT 63 EDITS. Tailwind emits the arbitrary class
-   verbatim, so this matches every gold plate that exists AND every one written
-   tomorrow. A rim added by hand is a rim someone forgets. The ~= operator matches
-   a WHOLE class token, so the hover-only variant does not match the first selector
-   and gets its rim only while hovered - a permanent rim on a hover-only button
-   would draw a box around something that is not a plate yet.
-
-   OUTLINE, NOT BOX-SHADOW, AND NOT BORDER. A border would change layout on 63
-   elements. A box-shadow loses to Tailwind own shadow utilities, which come later
-   in the cascade and would silently delete the rim - and Lite Mode strips shadows,
-   which is the exact door the invisible-dot bug came through. Outline is neither:
-   it survives Lite Mode, costs no layout, and outline-offset:-1px draws it inside
-   the radius.
+   One rule rather than 22 edits, for the same reason the rim rule was one rule: a fix applied
+   by hand is a fix the 23rd button never gets.
    ============================================================================ */
-html.light [class~="bg-[var(--gold)]"],
-html.light [class~="hover:bg-[var(--gold)]"]:hover,
-html.light .group:hover [class~="group-hover:bg-[var(--gold)]"] {
-  outline: 1px solid var(--lamp-rim);
-  outline-offset: -1px;
+/* ⚠️ ONE LINE ON PURPOSE. Broken across two lines this compound selector grew a
+   DESCENDANT COMBINATOR - the whitespace before :not() made it match something inside
+   the button instead of the button. Caught before it ran; do not re-wrap it. */
+html.light [class~="hover:bg-[var(--gold)]"][class~="text-[var(--gold-ink)]"]:not([class~="bg-[var(--gold)]"]):not(:hover) {
+  color: var(--accent-ink);
 }
 
 /* ---- HOLD: the confirmation that lives INSIDE the button. See HoldButton.jsx for why a hold and

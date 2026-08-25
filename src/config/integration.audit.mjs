@@ -3454,49 +3454,123 @@ check(G48, 'lines that each fit can still be refused for adding up too high',
    ============================================================================================= */
 
 /* ============================================================================
-   G50 - A PALE PLATE WITHOUT ITS RIM IS AN INVISIBLE BUTTON.
-   Aldi chose the steel faceplate on 2026-08-24, so in light mode --gold is #F7F3E9. It
-   measures 1,11-1,68:1 against its grounds and is NOT a shape on its own; the 1px rim is
-   the entire separation.
+   G50 - A BUTTON THAT IS GOLD ONLY ON HOVER MUST BE READABLE BEFORE IT IS HOVERED.
+   22 buttons carry text-[var(--gold-ink)] permanently while the plate arrives on hover. With
+   a bone --gold-ink that is 1,11:1 at rest on a raised card, and a phone never hovers at all.
+   theme.css fixes all 22 with one rule; this asserts the rule survived the BUILD, because a
+   contrast pair can prove the COLOUR is readable and never that the rule reaches the button.
 
-   WHY THIS HAD TO EXIST BEFORE THE PLATE COULD SHIP. The four contrast pairs that used to
-   grade the plate CORE were repointed to grade the RIM. That is honest for a rimmed plate
-   and dishonest for an unrimmed one, and those pairs cannot tell the difference - they
-   compare two token values and never look at a page. So the thing that proves the rim is
-   actually applied lives here, and it reads the BUILT stylesheet, which is the only place
-   that shows Tailwind did not drop an attribute selector on the way through.
-
-   Plain string matching on purpose: the selector is dense with brackets and parens, and two
-   attempts to write it as a regex died on their own escaping before this ran once.
+   This slot previously guarded a 1px rim, for the two commits when light mode used a pale
+   steel plate. Aldi looked at that in the app and reversed it - the plate is near-black again
+   and carries itself at 9,39:1, so the rim and its guard went with it.
    ============================================================================ */
-const G50 = 'G50 · the steel plate keeps its rim';
-const RIM_SEL = 'html.light [class~="bg-[var(--gold)]"]';
-const RIM_DECL = 'outline:1px solid var(--lamp-rim)';
-const rimBlock = css.slice(css.indexOf(RIM_SEL), css.indexOf(RIM_SEL) + 400);
+const G50 = 'G50 · a hover-only gold button reads at rest';
+const REST_SEL = 'html.light [class~="hover:bg-[var(--gold)]"][class~="text-[var(--gold-ink)]"]';
 
-check(G50, 'the gold plate carries a 1px rim in the BUILT stylesheet',
-  css.includes(RIM_SEL) && rimBlock.includes(RIM_DECL),
-  'without it a #F7F3E9 plate is 1,11:1 on a raised card - a button nobody can see');
+check(G50, 'the hover-only rest rule survived the build',
+  css.includes(REST_SEL),
+  'without it 22 buttons show bone ink on a pale card at 1,11:1 until you hover them');
 
-/* Lite Mode strips box-shadow, and Tailwind shadow utilities come later in the cascade than
-   theme.css - either one would silently delete a shadow-based rim. Outline is neither. */
-check(G50, 'the rim is an outline, so Lite Mode cannot strip it',
-  css.includes(RIM_SEL) && !rimBlock.includes('box-shadow'),
-  'a box-shadow rim loses to Lite Mode and to Tailwind shadow utilities');
+check(G50, 'a button that is ALWAYS gold keeps its bone ink',
+  css.includes(REST_SEL) &&
+  css.slice(css.indexOf(REST_SEL), css.indexOf(REST_SEL) + 260)
+     .includes(String.fromCharCode(58) + 'not([class~="bg-[var(--gold)]"])'),
+  'several buttons carry both the plate and the hover variant - those are gold at rest');
 
-check(G50, 'a hover-only gold plate gets its rim only while hovered',
-  css.includes('[class~="hover:bg-[var(--gold)]"]:hover'),
-  'a permanent rim on a not-yet-amber button draws a box around nothing');
+check(G50, 'the rest rule is one compound selector, not a descendant selector',
+  css.includes(REST_SEL + String.fromCharCode(58) + 'not('),
+  'whitespace before :not() would match something INSIDE the button instead of the button');
 
-/* a class-keyed rule can never reach an inline style, so that form must not appear. */
-const jsxAll = fs.readdirSync('src/components')
-  .filter(f => f.endsWith('.jsx'))
-  .map(f => fs.readFileSync('src/components/' + f, 'utf8')).join(String.fromCharCode(10));
-check(G50, 'nothing paints --gold as an inline background',
-  !jsxAll.includes('backgroundColor: "var(--gold)"')
-  && !jsxAll.includes("backgroundColor: 'var(--gold)'")
-  && !jsxAll.includes("background: 'var(--gold)'"),
-  'an inline style is keyed to no class, so the central rim rule cannot find it');
+
+/* ============================================================================
+   G51 - THE GOLD PLATE MUST CARRY ITS OWN INK.
+   --gold and --gold-ink are a PAIR. Any other ink token on a gold plate is a dark-on-dark
+   accident in light mode, and this was not hypothetical: the two buttons at the top of Sampling
+   read --ink on the plate, which measured 1,04:1 once the plate went stencil. Aldi saw it in the
+   app in the first screenshot ever taken of this project.
+
+   It had been broken far longer. --accent-ink on the OLD brown plate measured 1,54:1, so those
+   notes and badges had never been readable in light mode - nobody had ever looked at them.
+   16 ink references were repaired in one pass; this is what stops the 17th.
+
+   ⚠️ THIS GUARD IS SCOPED TO THE ELEMENT, NOT TO THE LINE, AND THAT IS THE WHOLE DESIGN.
+   The first version scanned lines and fired 30 times, of which about 26 were lookalikes:
+     - a ternary whose OTHER branch carried --ink-dim, on an element that is never gold;
+     - group-hover:bg-[var(--gold)] paired with group-hover:text-[var(--gold-ink)], which is
+       correct code - the pair switches together;
+     - two unrelated elements sharing one source line, one gold, one grey.
+   So it reads one className value at a time, and only complains when the bad ink is in the
+   STATIC part of that value while gold can actually apply. A guard that cries wolf gets
+   switched off, which is worse than no guard.
+   ============================================================================ */
+const G51 = 'G51 · the gold plate carries its own ink';
+const BAD_INKS = ['text-[var(--ink)]', 'text-[var(--accent-ink)]', 'text-[var(--ink-dim)]'];
+
+/* every className value in a file, whether written as "..." or as {`...`} */
+const classValues = (src) => {
+  const out = [];
+  let i = 0;
+  for (;;) {
+    const k = src.indexOf('className=', i);
+    if (k < 0) return out;
+    let j = k + 10;
+    if (src[j] === '"') {
+      const end = src.indexOf('"', j + 1);
+      if (end < 0) return out;
+      out.push(src.slice(j + 1, end));
+      i = end + 1;
+    } else if (src[j] === '{') {
+      /* brace-count so a nested ${...} does not end the value early */
+      let depth = 0, end = -1;
+      for (let p = j; p < src.length; p++) {
+        if (src[p] === '{') depth++;
+        else if (src[p] === '}') { depth--; if (depth === 0) { end = p; break; } }
+      }
+      if (end < 0) return out;
+      out.push(src.slice(j + 1, end));
+      i = end + 1;
+    } else i = j;
+  }
+};
+
+/* the part that always applies - everything outside a ${...} interpolation */
+const staticPart = (cls) => {
+  let out = '', depth = 0;
+  for (let p = 0; p < cls.length; p++) {
+    if (cls[p] === '$' && cls[p + 1] === '{') { depth++; p++; continue; }
+    if (depth > 0) { if (cls[p] === '{') depth++; else if (cls[p] === '}') depth--; continue; }
+    out += cls[p];
+  }
+  return out;
+};
+
+/* a class that is NOT behind a variant prefix. `group-hover:bg-[var(--gold)]` only paints on
+   hover and switches its ink in the same breath; `disabled:text-[var(--ink-dim)]` comes with
+   its own `disabled:bg-[var(--sunk)]`. Both are correct code, and both tripped this guard
+   before the prefix test was applied to the INK side as well as the plate side. */
+const hasPlain = (cls, needle) => {
+  let at = cls.indexOf(needle);
+  while (at > -1) {
+    if (at === 0 || cls[at - 1] !== ':') return true;
+    at = cls.indexOf(needle, at + 1);
+  }
+  return false;
+};
+
+const inkOffenders = [];
+for (const dir of ['src', 'src/components']) {
+  for (const f of fs.readdirSync(dir).filter(n => n.endsWith('.jsx'))) {
+    const path = dir + '/' + f;
+    for (const cls of classValues(fs.readFileSync(path, 'utf8'))) {
+      if (!hasPlain(cls, 'bg-[var(--gold)]')) continue;
+      const stat = staticPart(cls);
+      for (const bad of BAD_INKS) if (hasPlain(stat, bad)) inkOffenders.push(path + ' ' + bad);
+    }
+  }
+}
+check(G51, 'no gold plate carries --ink, --accent-ink or --ink-dim',
+  inkOffenders.length === 0,
+  inkOffenders.join(' · ') || 'the paired ink is --gold-ink, 15,82:1 on the stencil plate');
 
 const G49 = '49. A transfer is checked, not counted';
 

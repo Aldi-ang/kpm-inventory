@@ -965,8 +965,8 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                                     <div className="space-y-1">
                                                         {report.damagedStockToReturn && report.damagedStockToReturn.length > 0 ? report.damagedStockToReturn.map((item) => (
                                                             <div key={item.ticketId} className="flex justify-between items-center text-[10px] bg-[var(--gold)] border border-[var(--accent-edge)] px-2 py-1.5 rounded">
-                                                                <span className="text-[var(--ink-dim)]">{item.name} <span className="text-[var(--accent-ink)] italic">({item.reason})</span></span>
-                                                                <strong className="text-[var(--accent-ink)]">{item.qty} {item.unit}</strong>
+                                                                <span className="text-[var(--gold-ink)]">{item.name} <span className="text-[var(--gold-ink)] italic">({item.reason})</span></span>
+                                                                <strong className="text-[var(--gold-ink)]">{item.qty} {item.unit}</strong>
                                                             </div>
                                                         )) : <span className="text-[10px] text-[var(--ink-dim)] italic">No damaged goods to return.</span>}
                                                     </div>
@@ -978,8 +978,8 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                         {(report.reportType === 'CUKAI' || !report.reportType) && (
                                             <>
                                                 <div className="flex justify-between items-center bg-[var(--gold)] p-3 rounded-lg border border-[var(--accent-edge)] mt-4">
-                                                    <span className="text-xs font-bold text-[var(--accent-ink)] uppercase tracking-widest flex items-center gap-2"><Tag size={14}/> Physical Stamps Returned</span>
-                                                    <span className="text-xl font-black text-[var(--accent-ink)]">{report.cukaiReturned !== undefined ? report.cukaiReturned : (report.cukai || 0)} Pcs</span>
+                                                    <span className="text-xs font-bold text-[var(--gold-ink)] uppercase tracking-widest flex items-center gap-2"><Tag size={14}/> Physical Stamps Returned</span>
+                                                    <span className="text-xl font-black text-[var(--gold-ink)]">{report.cukaiReturned !== undefined ? report.cukaiReturned : (report.cukai || 0)} Pcs</span>
                                                 </div>
 
                                                 {(report.cukaiPaid > 0) && (
@@ -1062,7 +1062,7 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                         className="w-full p-4 flex justify-between items-center hover:bg-[var(--raised)] transition-colors"
                                     >
                                         <div className="flex items-center gap-3">
-                                            <div className="p-1.5 bg-[var(--gold)] rounded-lg border border-[var(--line)]"><MapPin className="text-[var(--ink-dim)]" size={16}/></div>
+                                            <div className="p-1.5 bg-[var(--gold)] rounded-lg border border-[var(--line)]"><MapPin className="text-[var(--gold-ink)]" size={16}/></div>
                                             <span className="font-black text-[var(--ink)] uppercase tracking-widest text-sm">{location}</span>
                                         </div>
                                         <div className="text-[var(--ink-dim)]">{openLocations.includes(location) ? <ChevronDown size={18}/> : <ChevronRight size={18}/>}</div>

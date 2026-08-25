@@ -1125,7 +1125,7 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                         </button>
                         <button
                             onClick={handleEnterpriseDataScrub}
-                            className="bg-[var(--gold)] hover:bg-[var(--gold)] text-[var(--gold-ink)] px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest cursor-pointer shadow-[0_0_15px_rgba(16,185,129,0.4)] transition-all active:scale-95 flex items-center gap-2"
+                            className="bg-[var(--gold)] hover:bg-[var(--gold)] text-[var(--gold-ink)] px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest cursor-pointer shadow-[0_0_15px_rgba(217,119,6,0.4)] transition-all active:scale-95 flex items-center gap-2"
                             title="Hard-map all UNMAPPED stores into the Database permanently"
                         >
                             <ShieldAlert size={14}/> Data Scrub
@@ -1194,7 +1194,7 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                                     name repeating across a city is a coincidence, and treating it
                                     as a duplicate is how a live store gets deleted. */}
                                 {g.sameNameFarApart && (
-                                    <div className="mb-2 border-l-[3px] border-[var(--accent-edge)] bg-[var(--gold)] px-2 py-1.5 text-[11px] leading-snug text-[var(--accent-ink)]">
+                                    <div className="mb-2 border-l-[3px] border-[var(--accent-edge)] bg-[var(--gold)] px-2 py-1.5 text-[11px] leading-snug text-[var(--gold-ink)]">
                                         <b>Probably NOT duplicates.</b> Same name only, and far apart.
                                         A shop registered twice by mistake sits within a few metres of itself —
                                         this looks like different shops sharing a common name. Open them before deleting anything.
@@ -1216,7 +1216,7 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                                             </span>
                                         )}
                                         {g.distances[mi] > 0 && (
-                                            <span className="text-[10px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded bg-[var(--gold)] text-[var(--accent-ink)]">
+                                            <span className="text-[10px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded bg-[var(--gold)] text-[var(--gold-ink)]">
                                                 {g.distances[mi] >= 1000 ? (g.distances[mi]/1000).toFixed(1)+' km' : g.distances[mi]+' m'} from the oldest
                                             </span>
                                         )}
@@ -1432,7 +1432,7 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                     </div>
 
                     <div className="flex justify-end pt-2">
-                        <button className={`text-[var(--ink)] px-8 py-3 rounded-xl font-bold shadow-lg transition-transform active:scale-95 ${editingId ? 'bg-emerald-500 hover:bg-emerald-600' : 'bg-[var(--gold)] hover:bg-[var(--gold)]'} `}>{editingId ? 'Update Profile' : 'Save Customer'}</button>
+                        <button className={`text-[var(--gold-ink)] px-8 py-3 rounded-xl font-bold shadow-lg transition-transform active:scale-95 ${editingId ? 'bg-[var(--gold)] hover:bg-[var(--gold)] border-2 border-[var(--lamp-on)]' : 'bg-[var(--gold)] hover:bg-[var(--gold)] border-2 border-transparent'} `}>{editingId ? 'Update Profile' : 'Save Customer'}</button>
                     </div>
                 </form>
             </div>
@@ -1491,7 +1491,7 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                     <div className="space-y-4">
                         <div className="flex justify-between items-center bg-[var(--raised)] p-3 rounded-xl border border-[var(--line)]">
                             <h4 className="text-[10px] uppercase tracking-widest text-[var(--ink-dim)] font-bold">Indonesia (Provinsi Level)</h4>
-                            <button onClick={() => handleAddFolder('Provinsi', null)} className="text-[10px] px-3 py-1.5 rounded bg-[var(--gold)] text-[var(--ink-dim)] hover:bg-[var(--gold)] hover:text-[var(--gold-ink)] font-bold uppercase transition-colors border border-[var(--line)] flex items-center gap-1 shadow-md"><Plus size={12}/> Folder</button>
+                            <button onClick={() => handleAddFolder('Provinsi', null)} className="text-[10px] px-3 py-1.5 rounded bg-[var(--gold)] text-[var(--gold-ink)] hover:bg-[var(--gold)] hover:text-[var(--gold-ink)] font-bold uppercase transition-colors border border-[var(--line)] flex items-center gap-1 shadow-md"><Plus size={12}/> Folder</button>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                             {Object.entries(folderStructure).map(([prov, data]) => (
@@ -1530,7 +1530,7 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                     <div className="space-y-4">
                         <div className="flex justify-between items-center bg-[var(--raised)] p-3 rounded-xl border border-[var(--line)]">
                             <h4 className="text-[10px] uppercase tracking-widest text-[var(--ink-dim)] font-bold">{selectedProvince} (Kabupaten Level)</h4>
-                            <button onClick={() => handleAddFolder('Kabupaten', selectedProvince)} className="text-[10px] px-3 py-1.5 rounded bg-[var(--gold)] text-[var(--ink-dim)] hover:bg-[var(--gold)] hover:text-[var(--gold-ink)] font-bold uppercase transition-colors border border-[var(--line)] flex items-center gap-1 shadow-md"><Plus size={12}/> Folder</button>
+                            <button onClick={() => handleAddFolder('Kabupaten', selectedProvince)} className="text-[10px] px-3 py-1.5 rounded bg-[var(--gold)] text-[var(--gold-ink)] hover:bg-[var(--gold)] hover:text-[var(--gold-ink)] font-bold uppercase transition-colors border border-[var(--line)] flex items-center gap-1 shadow-md"><Plus size={12}/> Folder</button>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                             {Object.entries(activeProv?.regions || {}).map(([kab, data]) => (
@@ -1568,7 +1568,7 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                     <div className="space-y-4">
                         <div className="flex justify-between items-center bg-[var(--raised)] p-3 rounded-xl border border-[var(--line)]">
                             <h4 className="text-[10px] uppercase tracking-widest text-[var(--ink-dim)] font-bold">{selectedRegion} (Kecamatan Level)</h4>
-                            <button onClick={() => handleAddFolder('Kecamatan', selectedRegion)} className="text-[10px] px-3 py-1.5 rounded bg-[var(--gold)] text-[var(--ink-dim)] hover:bg-[var(--gold)] hover:text-[var(--gold-ink)] font-bold uppercase transition-colors border border-[var(--line)] flex items-center gap-1 shadow-md"><Plus size={12}/> Folder</button>
+                            <button onClick={() => handleAddFolder('Kecamatan', selectedRegion)} className="text-[10px] px-3 py-1.5 rounded bg-[var(--gold)] text-[var(--gold-ink)] hover:bg-[var(--gold)] hover:text-[var(--gold-ink)] font-bold uppercase transition-colors border border-[var(--line)] flex items-center gap-1 shadow-md"><Plus size={12}/> Folder</button>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                             {Object.entries(activeKab?.cities || {}).map(([kec, data]) => (
@@ -1603,7 +1603,7 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                         {(activeKec?.stores || []).map(c => {
                             const tierDef = tierSettings ? tierSettings.find(t => t.id === c.tier) : null;
                             return (
-                                <div key={c.id} onClick={() => openDetail(c)} className={`bg-[var(--raised)] p-5 rounded-xl border shadow-sm flex flex-col justify-between cursor-pointer hover:shadow-md hover:border-[var(--accent-edge)] transition-all group ${editingId === c.id ? 'ring-2 ring-emerald-500 bg-emerald-50 dark:bg-slate-700' : ''} `}>
+                                <div key={c.id} onClick={() => openDetail(c)} className={`bg-[var(--raised)] p-5 rounded-xl border shadow-sm flex flex-col justify-between cursor-pointer hover:shadow-md hover:border-[var(--accent-edge)] transition-all group ${editingId === c.id ? 'border-[var(--lamp-on)]' : ''} `}>
                                     
                                     {/* TOP: Store Header */}
                                     <div className="flex justify-between items-start mb-4 pb-4 border-b border-[var(--line)]">
@@ -1661,7 +1661,7 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                                             </select>
                                             
                                             {c.status === 'PENDING' && (
-                                                <button onClick={(e) => handleApproveNOO(e, c.id, c.name)} className="px-3 py-1.5 text-xs bg-[var(--gold)] text-[var(--ink)] border border-[var(--line)] font-bold rounded-lg hover:bg-[var(--gold)] hover:text-[var(--gold-ink)] transition-all animate-pulse shadow-sm">
+                                                <button onClick={(e) => handleApproveNOO(e, c.id, c.name)} className="px-3 py-1.5 text-xs bg-[var(--gold)] text-[var(--gold-ink)] border border-[var(--line)] font-bold rounded-lg hover:bg-[var(--gold)] hover:text-[var(--gold-ink)] transition-all animate-pulse shadow-sm">
                                                     Verify
                                                 </button>
                                             )}

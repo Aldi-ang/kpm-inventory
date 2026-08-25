@@ -316,7 +316,7 @@ export const SamplingCartView = ({ inventory, isAdmin, onCancel, onSubmit }) => 
                     )}
                 </div>
                 <div className="p-4 border-t border-[var(--line)]">
-                    <button onClick={handleFinalSubmit} disabled={isSubmitting || cart.length === 0} className={`w-full py-4 rounded-xl font-bold text-[var(--ink)] shadow-lg flex items-center justify-center gap-2 transition-transform active:scale-95 ${isSubmitting ? 'bg-[var(--ink-disabled)]' : 'bg-[var(--gold)] hover:brightness-110'}`}>
+                    <button onClick={handleFinalSubmit} disabled={isSubmitting || cart.length === 0} className={`w-full py-4 rounded-xl font-bold text-[var(--gold-ink)] shadow-lg flex items-center justify-center gap-2 transition-transform active:scale-95 ${isSubmitting ? 'bg-[var(--ink-disabled)]' : 'bg-[var(--gold)] hover:brightness-110'}`}>
                         {isSubmitting ? <RefreshCcw className="animate-spin"/> : <Save size={20}/>}
                         {isSubmitting ? 'Saving...' : `Save ${cart.length} Products`}
                     </button>
@@ -485,11 +485,11 @@ export const SamplingFolderView = ({ samplings, isAdmin, onRecordSample, onDelet
                 <h2 className="text-2xl font-bold flex items-center gap-2"><Folder size={24} className="text-[var(--accent-ink)]"/> Sampling Archives</h2>
                 <div className="flex gap-2">
                     {isAdmin && (
-                        <button onClick={onRecordSample} className="flex items-center gap-2 bg-[var(--gold)] hover:brightness-110 text-[var(--ink)] px-4 py-2 rounded-lg font-bold shadow-lg transition-all">
+                        <button onClick={onRecordSample} className="flex items-center gap-2 bg-[var(--gold)] hover:brightness-110 text-[var(--gold-ink)] px-4 py-2 rounded-lg font-bold shadow-lg transition-all">
                             <Plus size={18}/> New Sample
                         </button>
                     )}
-                    <button onClick={onShowAnalytics} className="flex items-center gap-2 bg-[var(--gold)] hover:brightness-110 text-[var(--ink)] px-4 py-2 rounded-lg font-bold shadow-lg transition-all"><TrendingUp size={18}/> View Analytics</button>
+                    <button onClick={onShowAnalytics} className="flex items-center gap-2 bg-[var(--gold)] hover:brightness-110 text-[var(--gold-ink)] px-4 py-2 rounded-lg font-bold shadow-lg transition-all"><TrendingUp size={18}/> View Analytics</button>
                 </div>
             </div>
             {years.length === 0 ? (
@@ -602,7 +602,7 @@ export const SampleEntryModal = ({ isOpen, onClose, onSubmit, initialData, inven
                         <input value={formData.note} onChange={e=>setFormData({...formData, note: e.target.value})} className="w-full p-2 border rounded border-[var(--line)]" placeholder="e.g. Area 1"/>
                     </div>
                     
-                    <button className="w-full py-3 bg-[var(--gold)] hover:brightness-110 text-[var(--ink)] font-bold rounded-xl mt-2 shadow-lg">
+                    <button className="w-full py-3 bg-[var(--gold)] hover:brightness-110 text-[var(--gold-ink)] font-bold rounded-xl mt-2 shadow-lg">
                         {initialData?.isNew ? 'Add to Folder' : 'Save Changes'}
                     </button>
                 </form>

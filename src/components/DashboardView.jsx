@@ -235,10 +235,10 @@ export default function DashboardView({
 
                 {isAdmin && !isUsbSecure && (
                     <div className="bg-[var(--gold)] border border-[var(--accent-edge)] p-6 rounded-2xl flex flex-col justify-center items-center text-center animate-pulse h-full">
-                        <ShieldAlert className="text-[var(--accent-ink)] mb-3" size={32}/>
-                        <h3 className="text-sm text-[var(--accent-ink)] font-bold uppercase tracking-wider mb-1">Physical Security Protocol Required</h3>
-                        <p className="text-[10px] text-[var(--accent-ink)] uppercase tracking-widest mb-4">No offline backup detected in last 7 days.</p>
-                        <button onClick={handleBackupData} className="bg-[var(--gold)] hover:bg-[var(--gold)] text-[var(--ink)] px-8 py-3 rounded-xl font-bold text-xs uppercase tracking-widest shadow-lg transition-all active:scale-95">
+                        <ShieldAlert className="text-[var(--gold-ink)] mb-3" size={32}/>
+                        <h3 className="text-sm text-[var(--gold-ink)] font-bold uppercase tracking-wider mb-1">Physical Security Protocol Required</h3>
+                        <p className="text-[10px] text-[var(--gold-ink)] uppercase tracking-widest mb-4">No offline backup detected in last 7 days.</p>
+                        <button onClick={handleBackupData} className="bg-[var(--gold)] hover:bg-[var(--gold)] text-[var(--gold-ink)] px-8 py-3 rounded-xl font-bold text-xs uppercase tracking-widest shadow-lg transition-all active:scale-95">
                             Run USB Safe Backup
                         </button>
                     </div>
