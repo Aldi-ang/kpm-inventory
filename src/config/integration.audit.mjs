@@ -3452,6 +3452,52 @@ check(G48, 'lines that each fit can still be refused for adding up too high',
    only fact worth having: typing 700.000 against 1.200.000 says half a million is missing; ticking
    says WHICH customer's payment never landed.
    ============================================================================================= */
+
+/* ============================================================================
+   G50 - A PALE PLATE WITHOUT ITS RIM IS AN INVISIBLE BUTTON.
+   Aldi chose the steel faceplate on 2026-08-24, so in light mode --gold is #F7F3E9. It
+   measures 1,11-1,68:1 against its grounds and is NOT a shape on its own; the 1px rim is
+   the entire separation.
+
+   WHY THIS HAD TO EXIST BEFORE THE PLATE COULD SHIP. The four contrast pairs that used to
+   grade the plate CORE were repointed to grade the RIM. That is honest for a rimmed plate
+   and dishonest for an unrimmed one, and those pairs cannot tell the difference - they
+   compare two token values and never look at a page. So the thing that proves the rim is
+   actually applied lives here, and it reads the BUILT stylesheet, which is the only place
+   that shows Tailwind did not drop an attribute selector on the way through.
+
+   Plain string matching on purpose: the selector is dense with brackets and parens, and two
+   attempts to write it as a regex died on their own escaping before this ran once.
+   ============================================================================ */
+const G50 = 'G50 · the steel plate keeps its rim';
+const RIM_SEL = 'html.light [class~="bg-[var(--gold)]"]';
+const RIM_DECL = 'outline:1px solid var(--lamp-rim)';
+const rimBlock = css.slice(css.indexOf(RIM_SEL), css.indexOf(RIM_SEL) + 400);
+
+check(G50, 'the gold plate carries a 1px rim in the BUILT stylesheet',
+  css.includes(RIM_SEL) && rimBlock.includes(RIM_DECL),
+  'without it a #F7F3E9 plate is 1,11:1 on a raised card - a button nobody can see');
+
+/* Lite Mode strips box-shadow, and Tailwind shadow utilities come later in the cascade than
+   theme.css - either one would silently delete a shadow-based rim. Outline is neither. */
+check(G50, 'the rim is an outline, so Lite Mode cannot strip it',
+  css.includes(RIM_SEL) && !rimBlock.includes('box-shadow'),
+  'a box-shadow rim loses to Lite Mode and to Tailwind shadow utilities');
+
+check(G50, 'a hover-only gold plate gets its rim only while hovered',
+  css.includes('[class~="hover:bg-[var(--gold)]"]:hover'),
+  'a permanent rim on a not-yet-amber button draws a box around nothing');
+
+/* a class-keyed rule can never reach an inline style, so that form must not appear. */
+const jsxAll = fs.readdirSync('src/components')
+  .filter(f => f.endsWith('.jsx'))
+  .map(f => fs.readFileSync('src/components/' + f, 'utf8')).join(String.fromCharCode(10));
+check(G50, 'nothing paints --gold as an inline background',
+  !jsxAll.includes('backgroundColor: "var(--gold)"')
+  && !jsxAll.includes("backgroundColor: 'var(--gold)'")
+  && !jsxAll.includes("background: 'var(--gold)'"),
+  'an inline style is keyed to no class, so the central rim rule cannot find it');
+
 const G49 = '49. A transfer is checked, not counted';
 
 check(G49, 'the transfer card offers all three verdicts he specified',

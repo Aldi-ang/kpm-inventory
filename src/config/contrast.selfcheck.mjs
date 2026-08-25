@@ -88,9 +88,21 @@ const PAIRS = [
      app, and in light mode it stood off the panel at 1,61:1 while measuring perfectly for its
      own ink. An unreadable state is as broken as unreadable text and nothing here was watching
      for it. 3:1 is the WCAG floor for a non-text indicator. */
-  ['the gold PLATE against a panel','gold',           'panel',        3],
-  ['the gold PLATE against a well', 'gold',           'inset',        3],
-  ['the gold PLATE against raised', 'gold',           'raised',       3],
+  /* MEASURING THE RIM, NOT THE CORE, SINCE 2026-08-24 - and the 3:1 bar has NOT moved.
+     Aldi chose the steel faceplate for light mode, so the plate is now #F7F3E9 and sits at
+     1,11-1,68:1 against its grounds. On a filled plate the core IS the boundary and grading
+     it was right; on a rimmed plate the boundary is the rim, and grading the core would fail
+     a button that a person can see perfectly. WCAG 1.4.11 asks for the visual information
+     needed to IDENTIFY the control, which is the rim here.
+     ⚠️ THIS IS ONLY HONEST IF THE RIM IS REALLY THERE. A pale plate with no rim is invisible,
+     and these pairs can no longer catch that - they compare two tokens, not the DOM. The
+     guard that every gold plate actually carries the rim lives in integration.audit.mjs and
+     reads the BUILT stylesheet. If that guard is ever deleted, put these pairs back first.
+     ⚠️ In DARK mode --gold is still amber (#D08A2E) and its own core clears 6:1 on every
+     ground, so nothing is being loosened there - the rim simply is not the load-bearing part. */
+  ['the gold plate RIM on a panel', 'lamp-rim',       'panel',        3],
+  ['the gold plate RIM in a well',  'lamp-rim',       'inset',        3],
+  ['the gold plate RIM on raised',  'lamp-rim',       'raised',       3],
   /* ⚠️ THE KNOB-AGAINST-TRACK RATIO IS DELIBERATELY NOT CHECKED. In dark it is 2,25:1 and has
      been since the switch was built from his video — because the state is carried by WHERE THE
      KNOB IS, not by how it contrasts with the track. That is the entire reason it is a sliding
@@ -130,8 +142,22 @@ const PAIRS = [
      in the JSX, so both themes got the value that was tuned for the black one. --glass-solid
      is the rail's own surface. 3:1 is the floor for a non-text indicator, same as the plate
      pairs above, and for the same reason: an unreadable STATE is as broken as unreadable text. */
-  ['the ON plate against the rail', 'gold',          'glass-solid',  3],
+  ['the ON plate RIM on the rail',  'lamp-rim',      'glass-solid',  3],
   ['the ON icon on its plate',      'gold-ink',      'gold',         4.5],
+
+  /* 🔴 THE MARKS THAT DID NOT FOLLOW THE PLATE, 2026-08-24. When --gold went pale, three
+     things that use it as a STATE FILL would have broken in a way no pair here was watching:
+     the toggle switch fill, the segmented switch ON, and the EOD progress bar all sit on an
+     --inset track, and a pale fill measures 1,68:1 against it. He would have flipped a switch
+     in Settings and not been able to tell whether it was on. They take --lamp-on now, and
+     these pairs exist so the next person who repaints a token finds out here instead. */
+  ['toggle ON fill on its track',   'sw-on',         'inset',        3],
+  ['segmented ON ink on the fill',  'lamp-ink',      'lamp-on',      4.5],
+  /* the segmented switch and the selected picklist row are bright amber in BOTH themes, and
+     in light that is only 1,9:1 against the panel - so their rim is load-bearing exactly the
+     way a gold plate rim is. It is already measured by the three plate RIM pairs above. A
+     rim-against-its-own-fill pair was tried here and was the WRONG relationship: it failed in
+     dark at 2,33:1 while describing a control that is perfectly visible. */
 
   /* 🔴 AND THE OTHER SIXTEEN MARKS, 2026-08-24 — the pair above was grading the wrong surface
      twice over, which is why it stayed green through a bug he had to photograph for us.
