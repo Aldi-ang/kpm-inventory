@@ -3066,9 +3066,29 @@ const indexSlate = [...new Set(indexCss.match(/#(?:0f172a|475569|94a3b8|1e293b|3
 check(G42, 'index.css carries no slate either', !indexSlate.length,
   'left behind: ' + indexSlate.join(' ') + ' — this file is not the shell, not App and not the ' +
   'player, which is exactly why slate kept shipping from it');
+/* ⚠️ REWRITTEN 2026-08-25, AFTER IT FAILED ON PROSE. This was one regex spanning selector to
+   declaration inside a 900-character window; a comment added above the declaration pushed it
+   out of reach and the check went red against correct CSS. Same shape as the three that broke
+   on their own explanations on 2026-08-13. Assert the FACTS separately, never the distance
+   between them. */
+const scrimDecl = 'background-color: var(--duke-scrim) !important';
 check(G42, 'the Lite Mode blur fallback is a token, and a scrim',
-  /\.lite-mode \.backdrop-blur[\s\S]{0,900}background-color:\s*var\(--duke-scrim\)\s*!important/.test(app),
+  app.includes('.lite-mode .backdrop-blur') && app.includes(scrimDecl),
   'in Lite Mode this rule paints every backdrop in the app, so a literal here is the whole app');
+
+/* 🔴 AND IT MUST NOT REPAINT AN ELEMENT THAT NAMED ITS OWN BACKGROUND. Aldi reported the sidebar
+   broken in Lite Mode; measuring found FIVE elements wearing the scrim on the Dashboard alone,
+   including three money cards that say bg-[var(--raised)] and were overridden purely for
+   carrying backdrop-blur-sm.
+   ⚠️ BOTH FILES OR NEITHER. The rule is written twice - once in App.jsx, once in index.css -
+   and both carry !important, so narrowing one and not the other changes nothing at all. That is
+   exactly what happened first: index.css was narrowed, the cards stayed dark, and App.jsx was
+   the one winning. This check exists so the pair cannot drift again. */
+const SCRIM_GUARD = ':not([class*="bg-[var("])';
+check(G42, 'the Lite Mode scrim skips anything that declared its own background',
+  app.includes(SCRIM_GUARD) && indexCss.includes(SCRIM_GUARD),
+  'App.jsx has it: ' + app.includes(SCRIM_GUARD) + ', index.css has it: ' +
+  indexCss.includes(SCRIM_GUARD) + ' — both carry !important, so one without the other fixes nothing');
 /* ⚠️ THESE TWO BLOCKS ARE THE SAME SCREEN WRITTEN TWICE, AND THEY HAVE ALREADY DRIFTED ONCE —
    the name sweep converted App's disc to a token that flips and left SettingsView's as `bg-black`,
    so one of them was about to show a dark-red lock on a cream disc. The disc is a PLATE: it

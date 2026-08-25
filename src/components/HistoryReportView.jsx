@@ -366,7 +366,11 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
             {/* 🚀 THE GLOBAL COMMAND CENTER 🚀 */}
             {!reportView && (
                 <div className="bg-[var(--panel)] rounded-2xl p-6 mb-8 shadow-xl flex flex-col md:flex-row justify-between items-center gap-4 animate-fade-in relative overflow-hidden border border-[var(--line)]">
-                    <div className="absolute top-0 right-0 w-64 h-64 bg-[var(--gold)] rounded-full blur-3xl"></div>
+                    {/* the ambient glow blob is GONE, 2026-08-25. It was a blue haze softening a navy
+                        panel; against the faceplate it rendered as a black cloud bleeding out of the
+                        corner, which is what Aldi saw. And it was a Lite Mode trap besides: Lite strips
+                        the blur, so a cheap phone would have drawn a hard 256px near-black disc. This
+                        theme does not do ambient light - the material is flat and the edges do the work. */}
                     <div className="z-10 flex-1 w-full">
                         <h2 className="text-[var(--ink)] text-lg font-black tracking-widest uppercase mb-1 flex items-center gap-2">
                             <Database size={20} className="text-[var(--ink-muted)]"/> Operational Command
@@ -382,7 +386,7 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                         </select>
                         <input type="date" value={targetDate} onChange={e=>setTargetDate(e.target.value)} className="bg-[var(--raised)] border border-[var(--line)] text-[var(--ink)] p-3 rounded-xl font-bold outline-none" />
                         {!isFieldAgent && (
-                            <button onClick={handlePullArchive} disabled={isFetchingHistory} className="bg-[var(--gold)] hover:bg-[var(--gold)] text-[var(--gold-ink)] px-6 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all whitespace-nowrap flex items-center gap-2 shadow-[0_0_15px_rgba(79,70,229,0.4)] disabled:opacity-50 active:scale-95">
+                            <button onClick={handlePullArchive} disabled={isFetchingHistory} className="bg-[var(--gold)] hover:bg-[var(--gold)] text-[var(--gold-ink)] px-6 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all whitespace-nowrap flex items-center gap-2 shadow-[0_0_15px_rgba(217,119,6,0.4)] disabled:opacity-50 active:scale-95">
                                 {isFetchingHistory ? <RotateCw className="animate-spin" size={16}/> : <Database size={16}/>}
                                 {isFetchingHistory ? 'Extracting...' : 'Pull Archive'}
                             </button>

@@ -3804,11 +3804,23 @@ const handleGitHubMirror = async () => {
                       animation-delay: 0s !important;
                       animation-iteration-count: 1 !important;
                   }
-                  .lite-mode .backdrop-blur, .lite-mode .backdrop-blur-md, .lite-mode .backdrop-blur-sm, .lite-mode .backdrop-blur-\\[2px\\] {
-                      /* ⚠️ WAS THE DARKEST SLATE — the blue the palette law bans, and a literal
-                         besides, so in Lite Mode every backdrop in the app turned navy and
-                         stayed navy in light mode. Every element this rule overrides is a
-                         scrim or an overlay, and a scrim is dark in BOTH themes by law. */
+                  .lite-mode .backdrop-blur:not([class*="bg-[var("]), .lite-mode .backdrop-blur-md:not([class*="bg-[var("]), .lite-mode .backdrop-blur-sm:not([class*="bg-[var("]), .lite-mode .backdrop-blur-\\[2px\\]:not([class*="bg-[var("]) {
+                      /* 🔴 THE :not() IS LOAD-BEARING, 2026-08-25. "Every element this rule
+                         overrides is a scrim or an overlay" — the sentence directly below this
+                         one — was FALSE, and it was false in two files. Measured on the
+                         Dashboard in Lite Mode: five elements were painted rgba(46,38,26,.72),
+                         including the three money cards, which say bg-[var(--raised)] and were
+                         overridden to dark purely for carrying backdrop-blur-sm.
+
+                         An element that names its own background token has said what colour it
+                         is; only an element with NO background of its own should borrow the
+                         scrim. The twin of this rule lives in index.css and was narrowed the
+                         same way — fixing one and not the other fixes nothing, because both
+                         carry !important and either can win.
+
+                         ⚠️ WAS THE DARKEST SLATE before that — the blue the palette law bans, and
+                         a literal besides, so in Lite Mode every backdrop in the app turned navy
+                         and stayed navy in light mode. A scrim is dark in BOTH themes by law. */
                       background-color: var(--duke-scrim) !important; /* Fast solid fallback */
                   }
                   .lite-mode .rank-frame {

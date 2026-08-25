@@ -99,10 +99,31 @@ html.lite-mode .bg-black\/95,
 html.lite-mode [class*="backdrop-blur"] {
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
-    /* ⚠️ WAS THE DARKEST SLATE — the blue the palette law bans, and a literal, applied with
-       !important to every backdrop in the app. Its twin inside App.jsx was fixed first; THIS is
-       the one that actually ships, and it survived because the audit read the JSX, not this
-       file. A scrim is dark in both themes by law, which is what this token is. */
+}
+
+/* 🔴 THE SCRIM IS A SEPARATE RULE NOW, AND IT MUST NOT REPAINT ANYTHING THAT ALREADY DECLARED ITS
+   OWN BACKGROUND. Measured on the Dashboard in Lite Mode, 2026-08-25: FIVE elements were being
+   painted rgba(46,38,26,.72), including the three money cards. Those cards say
+   `bg-[var(--raised)]` — a pale surface — and were overridden to dark purely because they also
+   carry `backdrop-blur-sm` for a decorative frost. Aldi reported this as *"sidebar on lite mode"*
+   broken; the sidebar was one symptom of a rule that was dimming cards across the whole app.
+
+   THE DISCRIMINATOR IS INTENT, AND IT CAN BE WRITTEN DOWN. A real overlay declares no background
+   of its own and borrows the scrim. A card that already names a token has said what colour it is,
+   and nothing here should argue with it. `:not([class*="bg-[var("])` is exactly that sentence.
+
+   ⚠️ THE BLUR STILL GOES FOR EVERYONE — that half is the rule above, and it is what Lite Mode is
+   actually for. Only the repaint is narrowed.
+
+   ⚠️ WAS THE DARKEST SLATE before all of this — the blue the palette law bans, a literal, applied
+   with !important to every backdrop in the app. Its twin inside App.jsx was fixed first; THIS is
+   the one that actually ships, and it survived because the audit read the JSX, not this file.
+   A scrim is dark in both themes by law, which is what this token is. */
+html.lite-mode .backdrop-blur-md:not([class*="bg-[var("]),
+html.lite-mode .backdrop-blur-sm:not([class*="bg-[var("]),
+html.lite-mode .backdrop-blur-lg:not([class*="bg-[var("]),
+html.lite-mode .bg-black\/95:not([class*="bg-[var("]),
+html.lite-mode [class*="backdrop-blur"]:not([class*="bg-[var("]) {
     background-color: var(--duke-scrim) !important;
 }
 
