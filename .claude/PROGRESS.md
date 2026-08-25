@@ -2,6 +2,34 @@
 
 **Updated: 2026-08-25 15:0x WIB (🟠 KPM app session)** · 🔴 **STOPPED AT 98% PLAN QUOTA — NO CODE CHANGED, tree clean** · ✅ rail leak + dark panels shipped and seen (607/607, 762/762) · ▶ **NEXT = REMAKE the Dashboard (not repair) and bring him INSPIRATION OPTIONS first — his new ask is recorded verbatim below** · branch `phase0-solid-ground`
 
+## 🟠 2026-08-25 (later) — DASHBOARD OPTIONS STUDY DELIVERED. WAITING ON HIS PICK.
+
+🔴 **HE OWES ONE ANSWER: A, B or C** (or a mix — "B's left column with C's headline" is valid).
+
+**The study:** https://claude.ai/code/artifact/c442cf70-ae95-46fd-bbda-b2bfb1b0edd6
+Source: `scratchpad/dashboard-options.html` (session scratchpad — republish the SAME path to update
+the same URL). Three full 1240px dashboards drawn with the real theme.css tokens, dark/light switch,
+Lite Mode switch, 280ms count-up + bar fill.
+- **A — instrument rack:** hero live module + a rack of `.kpm-mod` at 20px pitch. Cheapest.
+- **B — front panel:** fixed 340px gauge column (month/day/mix/safety) + work area right.
+- **C — day sheet:** one huge condensed sentence, rules instead of cards, alerts in the margin.
+
+✅ **THE ROOT CAUSE OF "LAYOUT IS PRETTY BAD", FOUND:** the Dashboard is the ONLY main screen
+never built in the app's own module language. `SettingsView.jsx` uses `.kpm-mod` **26 times**;
+`DashboardView.jsx` uses it **0 times** — it is still pre-system `rounded-2xl` + `backdrop-blur` +
+`shadow-lg` floating cards. That is why it reads as a different app, not merely a badly spaced one.
+
+🔴 **TWO LIVE BUGS FOUND WHILE READING IT — both still on his screen, both invisible to any
+token sweep because neither is written as a token:**
+1. `SafetyStatus.jsx` L37-58 — `text-emerald-500` / `bg-emerald-500` / `text-red-500` /
+   `text-orange-500` / `text-emerald-400`. **GREEN, against the palette law.** Raw Tailwind.
+2. `DashboardView.jsx` L253-259 — chart axes hardcoded `#fff` / `#666` / `#999` (the grid is
+   invisible in light mode), and bars use `getRandomColor()` (`helpers.js` L87) which hashes the
+   product name into an **arbitrary hex — blue and green included**, and can land on near-black
+   over the dark ground or near-white over the cream one.
+
+⚠️ **NO APP CODE CHANGED.** Tree clean apart from this note. Nothing is built until he picks.
+
 ## 🟠 2026-08-25 15:0x — STOPPED AT 98% PLAN QUOTA. NO CODE CHANGED. NEW ASK RECORDED.
 
 **Nothing was started.** He asked for a full Dashboard remake and I stopped on the quota rule
