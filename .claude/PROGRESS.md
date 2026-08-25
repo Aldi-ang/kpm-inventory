@@ -1,6 +1,48 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-24 18:35 WIB (🟠 KPM app session)** · 📊 **BUTTON STUDY PUBLISHED — stencil plate beats brown on all three measures, no token change needed** · ✅ rail grain removed and committed · 🔴 **HE OWES THE PICK: A stencil / B steel / C outline** · nothing applied to the app yet · branch `phase0-solid-ground`
+**Updated: 2026-08-24 19:05 WIB (🟠 KPM app session)** · ✅ **STEEL FACEPLATE SHIPPED — light --gold is a pale plate, the rim carries it, marks kept amber** · 603/603 + 762/762 + all contrast pairs · ⚠️ unseen on glass · ▶ **NEXT: pick rank-1 button per screen** · branch `phase0-solid-ground`
+
+## 🟠 2026-08-24 19:05 — HE CHOSE STEEL. IT IS SHIPPED. 603/603, 762/762, ALL CONTRAST PAIRS.
+
+**Shipped:** light mode `--gold` is now the steel plate `#F7F3E9` with near-black ink `#2B2318`.
+*"A and B looks cool but B is more minimalistic and similar to our theme more"* — **A measured
+better on every row and lost on taste.** Numbers shortlist; taste picks.
+
+| what | before | after |
+|---|---|---|
+| word on the button | 6.86 | **13.97** |
+| what holds it off the page | plate core 4.45 | **rim 5.32–8.04** |
+| the amber lamp on it | 3.51 | **8.95** (core + `#6B3400` rim) |
+
+**How 63 plates got a rim in one rule:** `html.light [class~="bg-[var(--gold)]"] { outline: 1px
+solid var(--lamp-rim) }`. `~=` matches a whole class token, so `hover:` variants get the rim only
+while hovered. **Outline, not box-shadow** — Lite Mode deletes shadows and Tailwind's shadow
+utilities come later in the cascade.
+
+**Contrast pairs repointed from the plate CORE to the RIM. ⚠️ THE 3:1 BAR DID NOT MOVE — only what
+it measures.** Those pairs compare tokens and never see a page, so **`G50` in `integration.audit`
+asserts the rim against the BUILT stylesheet.** If G50 is ever deleted, put the core pairs back
+first.
+
+⚠️ **THE PART THAT NEARLY SHIPPED BROKEN — MARKS DO NOT FOLLOW PLATES.** The toggle, the segmented
+switch and the EOD progress bar fill `--gold` on an `--inset` track: a pale fill is **1.68:1**
+there, so a switch in Settings would have looked the same ON as OFF. They keep amber. **New token
+`--sw-on`** (light `#6B3400`, dark `#ff9d00`) because the toggle is the one mark whose ground
+inverses — bright amber on the light track is 1.12:1.
+
+✅ **Two bugs caught by checks, not by review:** a rim written as `box-shadow` (Lite Mode deletes
+it), and a contrast pair of mine grading a rim against its own fill instead of the panel — red at
+2.33:1 on a control that is perfectly visible.
+
+⚠️ **STILL UNSEEN ON GLASS.** Browser pane will not composite, dev server is HTTPS+login,
+`agent-browser` hangs. `tools/theme-preview-lab.html` regenerated and sent. Verified by three
+suites, NOT by a frame.
+
+▶ **NEXT: rank 1 per screen.** The plate is live everywhere `--gold` was, which is 63 buttons —
+one loud button per screen, everything else the outline pattern. Sampling, Customer Directory,
+Settings.
+
+🔗 Study updated in place (same URL): `https://claude.ai/code/artifact/6bc6de23-c628-464a-8545-71086545be85`
 
 ## 🟠 2026-08-24 18:35 — RE RESEARCH → THE STENCIL PLATE. STUDY PUBLISHED, HE OWES THE PICK.
 
