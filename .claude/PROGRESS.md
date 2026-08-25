@@ -1,6 +1,35 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-25 12:13 WIB (🟠 KPM app session)** · ✅ **SWITCHED-ON CONTROLS ARE STENCIL (seen)** · ✅ **HISTORY REPORTS: 559 banned classes → 0 tokens (NOT seen — app is locked)** · 606/606 + 762/762 + all contrast pairs · ▶ **ASK HIM TO UNLOCK THE MASTER VAULT, then screenshot it** · 7 screens left · branch `phase0-solid-ground`
+**Updated: 2026-08-25 12:31 WIB (🟠 KPM app session)** · ✅ **HISTORY REPORTS CONVERTED AND SEEN — clean, no navy, no blue money** · ✅ **LITE MODE was dimming cards app-wide, not just the sidebar — fixed in BOTH twin rules** · 607/607 + 762/762 + all contrast pairs · ▶ **6 screens left; then the layout+motion pass** · branch `phase0-solid-ground`
+
+## 🟠 2026-08-25 12:31 — HISTORY REPORTS SEEN AND CLEAN; LITE MODE WAS DIMMING THE WHOLE APP. 607/607.
+
+✅ **HISTORY REPORTS RENDERED IN HIS CHROME AND IT IS RIGHT.** No navy, no blue money, no purple.
+Two things looking caught that no class-based sweep could:
+- **an ambient glow blob** — `w-64 h-64 ... blur-3xl`, a navy-panel softener that became a **black
+  cloud** bleeding out of the corner once `--gold` went near-black. **Deleted, not retinted** — and
+  it was a Lite trap too: Lite strips the blur, leaving a hard 256px near-black disc.
+- **an indigo glow written as `rgba(79,70,229,0.4)`** — an arbitrary value, invisible to a
+  class-based map. Now the amber glow the other primary buttons use.
+
+🔴 **THE BIG ONE — HIS "SIDEBAR ON LITE MODE" WAS ONE SYMPTOM OF A WHOLE-APP BUG.** Measured on the
+Dashboard: **5 elements wearing `rgba(46,38,26,.72)`**, including **three money cards** that
+explicitly say `bg-[var(--raised)]` and were overridden purely for carrying `backdrop-blur-sm`.
+**The scrim rule now skips anything that declared its own background token**
+(`:not([class*="bg-[var("])`). An overlay names no background and borrows the scrim; a card that
+named a token has already said what colour it is. **Blur still goes for everyone.**
+
+⚠️ **THE RULE IS WRITTEN TWICE — `App.jsx` AND `index.css`, BOTH `!important`.** Narrowing
+index.css alone changed **nothing**, because App.jsx was winning. **A check now asserts BOTH carry
+the guard.** If you touch one, touch the other.
+
+⚠️ **One existing check had to be rewritten:** it spanned selector→declaration in a 900-char window
+and went red when a comment pushed them apart — **failing on prose, not on code**, the same shape
+that broke three checks on 2026-08-13. It asserts the two facts separately now.
+
+📐 **NEXT ON THIS SCREEN (the half not done):** *"looks good for the UI design and animation"*.
+Markup is untouched. Two stencil plates compete on one screen (PULL ARCHIVE + CONTEXT ANALYTICS —
+rank 2 should be outline), and the region cards are flat and empty.
 
 ## 🟠 2026-08-25 12:13 — CONTROLS SWEPT TO STENCIL; HISTORY REPORTS CONVERTED. 606/606, 762/762.
 
