@@ -1,6 +1,25 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-26 09:15 WIB (🟠 KPM app session)** · ✅ **DASHBOARD REBUILT, SEEN AND WORKING** — period switch, pace chart, regional list+chart, supply panel, technical terminology · **build · 607/607 · 813/813 · 26/26 · contrast · lint:undef clean** · 🔴 **HE MUST RELOAD+UNLOCK ONCE to see the supply panel — lazy chunk, not a bug** · branch `phase0-solid-ground`
+**Updated: 2026-08-26 09:21 WIB (🟠 KPM app session)** · ✅ **DASHBOARD REBUILT, SEEN AND WORKING** — period switch, pace chart, regional list+chart, supply panel, technical terminology · **build · 607/607 · 818/818 · 26/26 · contrast · lint:undef clean** · 🔴 **HE MUST RELOAD+UNLOCK ONCE to see the supply panel — lazy chunk, not a bug** · branch `phase0-solid-ground`
+
+## 🟠 2026-08-26 09:21 — A CONTROL CANNOT LIVE INSIDE WHAT ITS OWN VALUE EMPTIES. `cfdc79e`. **818/818.**
+
+🔴 *"i press bandung and it crashed close and the panel is gone"* — **NOTHING CRASHED.**
+BANDUNG's warehouse is genuinely EMPTY (0 items; MUNTILAN has 5). The gate was
+`supply.rows.length > 0`, so an empty warehouse **unmounted the panel WITH the switch inside it**
+and left no way back to Semua. Gate is `inventory.length > 0` now; an empty warehouse gets a
+LINE inside a panel that stays.
+⚠️ **THE RULE, now check D10:** *a control must never sit inside the region its own value can
+empty.* Worse than an error, because an error at least announces itself.
+
+✅ **PERCENTAGES ON EACH COLOUR**, his ask. Printed INSIDE its own segment but only where the
+segment is ≥12% wide — a figure spilling out of a 3% sliver reads worse than none — and always
+in full on the detail line. Bar 14px → 20px so the label is not clipped; **each segment carries
+its OWN ink** (`--ink-inverse` on sold, `--orange-ink` on field, `--ink` on shelf).
+Shares round independently, so they can total 99 or 101. Forcing 100 would be false precision.
+
+⚠️ **HE MUST RELOAD + UNLOCK to see it — the Dashboard is a LAZY chunk and cannot hot-swap.**
+CSS edits DO apply live; JSX edits do not.
 
 ## 🟠 2026-08-26 09:15 — SUPPLY PANEL + TECHNICAL TERMS. `58041b1` `aa61478`.
 
