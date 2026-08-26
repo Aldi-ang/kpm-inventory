@@ -1,6 +1,41 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-26 09:5x WIB (🟠 KPM app session)** · ✅ **DASHBOARD REBUILT, SEEN AND WORKING** — period switch, pace chart, regional list+chart, supply panel, technical terminology · **build · 607/607 · 825/825 · 26/26 · contrast · lint:undef clean** · 🔴 **HE MUST RELOAD+UNLOCK ONCE to see the supply panel — lazy chunk, not a bug** · branch `phase0-solid-ground`
+**Updated: 2026-08-26 10:1x WIB (🟠 KPM app session)** · ✅ **DASHBOARD REBUILT, SEEN AND WORKING** — period switch, pace chart, regional list+chart, supply panel, technical terminology · **build · 607/607 · 825/825 · 26/26 · contrast · lint:undef clean** · 🔴 **HE MUST RELOAD+UNLOCK ONCE to see the supply panel — lazy chunk, not a bug** · branch `phase0-solid-ground`
+
+## 🔴 2026-08-26 10:1x — HIS TWO ASKS. **NOTHING BUILT** (88% plan quota). VERIFIED FINDING BELOW.
+
+### 🔴 1. STILL OWED: split Stok Kritis per warehouse + a minimum-stock setting per warehouse
+His words: *"split the stock kritis and add option to setting minimum stock to trigger this"*.
+Already answered YES to the split and why: **master low = ORDER FROM SUPPLIER, regional low =
+MOVE STOCK FROM MASTER.** Different jobs, so one merged alert cannot say which, and a full master
+hides an empty branch.
+**Where the work is:** `lowStockItems` in `App.jsx` (~L1292) is master-only — it filters
+`inventory` alone. Branch shelves are already loaded as **`branchStock`** from `useDatabaseSync`,
+so the data is there; the panel and the threshold are what need splitting.
+⚠️ The threshold setting is per-COMPANY today (`defaultMinStockQty` + `defaultMinStockUnit` in
+`utils/stockThreshold.js`). He now wants it settable **per warehouse**, which means the shape
+becomes something like `minStockByWarehouse: { MASTER: {qty,unit}, MUNTILAN: {...} }` with the
+company value as the fallback. **Do not silently reinterpret the existing field** — every product
+already carries a `minStock` in BKS and the company default is the only part that speaks units.
+
+### ✅ 2. VERIFIED: THERE IS **NO HQ-INITIATED PUSH**. He is right.
+His question: *"how do we sent our product from HQ to regional warehouse on purpose without
+fullfill regional admin request tho, i dont think we have that features yet"*.
+
+**Checked every write path into `branches/{loc}/inventory`. There are exactly three, and none of
+them is HQ deciding to send something:**
+1. **The branch asks first.** `BranchWarehouseManager.jsx:438` creates a `stock_requests` doc with
+   `status:'PENDING'` — and it is created BY the branch, from the branch screen. HQ fulfils; the
+   branch then RECEIVES and `:505` credits the branch with **what it counted**, not what HQ claimed.
+2. **An agent's end-of-day return** — `App.jsx:1877` / `:1888`.
+3. **A van being loaded or unloaded** — `FleetCanvasManager.jsx:305` / `:411`.
+
+⚠️ **THIS BLUNTS THE STOK KRITIS SPLIT.** If the dashboard says "Muntilan is critically low",
+the only action the app offers is *"ask Muntilan to raise a request"*. The alert would name a job
+the software cannot do. **Worth deciding the push feature BEFORE or WITH the split**, not after.
+A push would reuse the same `stock_requests` doc, created at HQ, skipping PENDING and landing in
+whatever state means "shipped, awaiting count" — so the branch still COUNTS what arrives, which is
+the rule that screen exists to protect and must not be bypassed.
 
 ## 🟠 2026-08-26 09:5x — DARK BARS, HOVER READOUT, UNIT SETTING, FULL-WIDTH BARS. **825/825.**
 
