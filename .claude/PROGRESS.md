@@ -1,6 +1,72 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-26 20:41 WIB (🟠 KPM app session)** · ✅ **RESTOCK VAULT DONE + DRIVEN LIVE** — `aea7de4` `4387c86` `390d5fa`, build green, **615/615** · 🔴 **NEXT: Global Logistics Command readout.** One open question below. · branch `phase0-solid-ground`
+**Updated: 2026-08-26 20:54 WIB (🟠 KPM app session)** · ✅ **RESTOCK VAULT DONE + DRIVEN LIVE**, date capitalised, a dead `style` prop killed — `284602b`, **616/616** · 🔴 **NEXT: the desk gets a Minta tab.** Sidebar question open below. · branch `phase0-solid-ground`
+
+## 🟢 2026-08-26 20:54 — DATE CAPITALS, A DEAD `style` PROP, AND THE SIDEBAR VERDICT. `284602b`. **616/616.**
+
+**NOW:** Restock Vault is done and driven live. Four commits today: `aea7de4` `4387c86` `390d5fa`
+`284602b`. **Next build is the desk's 4th tab (Minta) — he answered the Active Pipeline question.**
+
+**What just landed**
+- **Date is `26 Agustus 2026`**, confirmed in the running app. The lowercase was recorded as *his*
+  instruction from 16 Aug (*"use this date format 16 agustus 2026"*) — the comment had read his
+  typing as the spec. It was the FORMAT that was the instruction. **Both messages now sit beside
+  `BULAN` in `BiohazardTheme.jsx`** so nobody restores lowercase from the older one.
+- 🔴 **A real bug, found sideways: the rail's `<nav>` had TWO `style` props.** JSX keeps only the
+  LAST, silently — so `touchAction:'none'` never ran and the paragraph explaining why it mattered
+  described a fix that was not there. Merged. **Nothing warns you about a duplicate prop.**
+  Its check anchors on the class name: `/<nav[\s\S]*?>/` reports 0 props because the tag contains
+  arrow functions and the scan stops at the `>` in `(e) => {`.
+- **The "bottom panel" he asked me to delete is NOT his app.** Zero matches in the whole DOM — it is
+  the Claude-in-Chrome overlay painted on my screenshots. Never tell him to look for it.
+
+**🔴 WAITING ON ALDI — verbatim**
+
+> "looks like the sidebar is gone bruh or maybe not visible here, check it"
+
+**Checked, and it is NOT gone — but I could not finish the test.** On desktop it is deliberately a
+**64px collapsed capsule** (his own 2026-08-14 design: *"a sidebar that shrink in to 1 button big
+and when it hover it opens all the way"*). `[data-kpm-rail][data-kpm-rail]` (0,2,0) outranks
+`.lg:relative` (0,1,0), so it stays `position:fixed; width:64px` under
+`(min-width:1024px) and (hover:hover) and (pointer:fine)`. **The marks sit at x=-124 inside a box
+that starts at 0 and clips**, and **synthetic hover never fired `:hover`** — so I cannot tell
+whether the expand is broken or whether automation simply cannot trigger it.
+**The question put to him:** *"does the sidebar open when you hover it on your screen?"*
+🔴 **Do not rewrite the shell until he answers** — it has burned multiple sessions before.
+
+**HIS QUEUE, verbatim, none of it built yet**
+
+> "redesign the request panel as well or maybe just add it on the panel that we just made, just add
+> extra tab for request"
+
+**This ANSWERS the old Active Pipeline question** — it moves into the desk as a 4th tab (Minta),
+carrying **"Siapkan Pengiriman"** (`BranchWarehouseManager.jsx:1350`), which is the only way HQ can
+ship a request. Buku only reads.
+
+> "make sure that every team registered on the fleet and roster have their own storage option"
+
+Not started. 🔴 **Find where fleet/roster teams are registered first** — today Tujuan is derived from
+`stockRequests[].branch`, i.e. only branches that have already been shipped to. A team with no
+history is invisible.
+
+> "for the global logistic command i want u to redesign that ... regional warehouse current stock,
+> on field, sold as well just like what we have on the dashboard, so HQ know how many bks should be
+> send to them again"
+
+Shape agreed: per-warehouse **di gudang · di jalan · di tangan agen · terjual**.
+🔴 **Name the collection for on-field and sold before promising either number.**
+
+**Also queued:** Branch Manager redesign · split Stok Kritis + per-warehouse minimum · route the
+four inline `minStock` fallbacks through the shared rule.
+
+**Where things live (new since 19:0x)**
+| Thing | Path |
+|---|---|
+| gallery-vs-camera tier rule | `src/config/permissions.js` → `canPickFromGallery` |
+| the date table + both of his instructions | `src/components/BiohazardTheme.jsx` → `BULAN` |
+| the rail nav (one style prop now) | `src/components/BiohazardTheme.jsx` → `.kpm-rail-grid` |
+| all 8 guards | `src/config/integration.audit.mjs` → group **53** |
+
 
 ## 🟢 2026-08-26 20:41 — CAMERA-ONLY PHOTOS + THE NOTA UNBLOCKED. `390d5fa`. **615/615.**
 
@@ -141,76 +207,7 @@ click-to-add interaction, the no-wrap total, and light mode. Chrome's renderer b
 
 
 
-## 🟠 2026-08-26 15:0x — THE LOGISTICS AUDIT + REDESIGN. Artifact published and verified.
-
-**Artifact:** `https://claude.ai/code/artifact/dab76630-8f26-402b-8a41-f6dad8049000` — "Ark Lab
-Logistics". Rendered in **dark, light AND Lite Mode** before claiming it (screenshots taken).
-Design stack loaded per SKILL.md §1a: his taste file + Design Inspiration Sources + `impeccable`
-(audit) + `redesign-skill` + `taste-skill` + `emil-design-eng` + `artifact-design`.
-**Dropped `ui-ux-pro-max`** — it is palette/font LOOKUP data and the palette here is locked by law,
-so there was nothing for it to decide. Said so out loud, per the §1a clash order.
-
-**The four answers, all read from code with file:line**
-- **ADD:** a cause on damaged units (`BranchWarehouseManager.jsx:534` writes a bare int) · its own
-  minimum + own Stok Kritis (`App.jsx:1296`) · carry `batchNo` (**0 occurrences** in the branch
-  screen) · age flag on uncollected `IN_TRANSIT` · an HQ send entry point.
-- **BROKEN:** 🔴 **"low stock" means FOUR different things** — three files say 50,
-  `StockOpnameView.jsx:1003` says **5** · `MapMissionControl.jsx:1551`/`:1553` `getDoc` unimported
-  inside try/catch, silent for months · 3 screens re-open branch listeners · over-ship guard reads
-  a pre-upload copy.
-- **MORE WORKFLOW? NO.** The 5 states are right. Missing = a door in, a window on the middle
-  state, a cause field. A 2nd collection = two inboxes for the branch.
-- **REDESIGN:** *one waybill, two directions*. Three reusable parts — **Transit Strip**,
-  **Count Sheet** (blind), **Waybill Row** (lamp/route/age).
-
-⚠️ **I CORRECTED MYSELF:** in-transit is NOT "summed nowhere" — `BranchWarehouseManager.jsx:1145`
-already shows Di gudang / Di jalan / Keluar per product with a lead-time warning. Only the
-**company-wide** figure at HQ is missing. Correction written into the vault in place.
-
-⚠️ **Two mistakes I made and fixed this session, both caught by reading the commit stat:**
-1. An append anchored on a heading that lives in the OTHER logistics note → the "audit saved"
-   commit contained only a timestamp. Re-done against a real anchor, grep-verified before commit.
-2. `graphify update Wiki` rewrites the ROOT `manifest.json` as a side effect, so the new Stop hook
-   dirtied ~2,200 lines of a stale graph every session. **Root `graphify-out/` is now untracked**
-   (files kept on disk, history intact). A-Brain `8f72f6f` + the follow-up.
-
-🔴 **STILL UNANSWERED BY HIM:** the haiku model line (`settings.json:7`) that kills `WebSearch` ·
-the broken `ask` guard path on SKILL.md · whether to commit this repo's new Stop-hook line.
-
-
-
-## 🟠 2026-08-26 14:1x — ALUCARD'S MEMORY WAS BROKEN. FIXED AND VERIFIED. No app code touched.
-
-**Why this came first:** he asked why alucard answered a logistics question from cold knowledge
-while researched notes sat in the vault. *"i want my brain recall and my agentic agent alucard to
-work"*. Three separate breaks, all measured before anything changed:
-
-1. A-Brain's graph was built **2026-08-13** and never refreshed — 13 days of notes invisible.
-2. `graphify query "logistic"` → **"No matching nodes found."** Rebuilding at the vault ROOT made
-   it worse: it swallowed the 1,200-skill `Skills-Library/`, 1,778 → **67,224 nodes, 71 MB**, and
-   answered "Eight Warehouse Gaps" with a **ransomware tabletop template**.
-3. **Nothing was TITLED with his word.** Graphify matches node NAMES, not meaning.
-
-**Fixed:**
-- Recall graph scoped to **`Wiki/` alone** — 629 nodes, 8s, no LLM. `warehouse` → The Eight
-  Warehouse Gaps · `permission tier` → Tier System + Fleet Captain Permission Gap ·
-  **Skills-Library leakage = 0**. Polluted root graph restored from `ad3eec8`.
-- **`A-Brain/automation/wiki-graph-refresh.mjs`** on the **Stop** hook — rebuilds only when a note
-  changed. ⚠️ v1 used `graph.json`'s mtime and fired forever, because graphify caches by CONTENT
-  and leaves the file alone when nothing changed; it stamps `.last-refresh` itself now. Falsified
-  4 ways (stale→rebuild, current→silent, touch→rebuild, →silent).
-- New hub **`Wiki/Concepts/Logistics and Stock Movement.md`** — the general repair: when a topic
-  returns nothing, write a hub note, do NOT add a rule.
-- `SKILL.md`: §2 now carries ONE topic-agnostic memory-query rule (his correction: *"alucard is
-  not only use for logistic so pulling logistic knowledge everytime will not worth doing"*), and
-  §11a's four A-Brain triggers became **five** — research/brainstorm counts **even with no
-  decision yet**. My earlier hardcoded topic→file row was reverted.
-
-⚠️ **`.claude/settings.json` (this repo) has the new Stop hook and is UNCOMMITTED** — his call.
-⚠️ **Web research is dead:** `settings.json:7` points haiku at `cc/claude-haiku-4-5-20251001`,
-which this account cannot reach, and `WebSearch`/`WebFetch` both run on it. He has not answered.
-
 
 ---
 
-*Older entries trimmed 2026-08-26 20:41 — `git log -p .claude/PROGRESS.md` has every one of them.*
+*Older entries trimmed — `git log -p .claude/PROGRESS.md` has every one of them.*
