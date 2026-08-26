@@ -42,6 +42,11 @@ const dominant = (bks, product) => {
     return { n: u.Bks, unit: 'BKS', rest: '' };
 };
 
+/* a whole-number share of a product's own total. Rounded independently per series, so three
+   shares can add to 99 or 101 — printing them to a decimal to force 100 would be false precision
+   on figures nobody sums by eye. */
+const share = (part, total) => (total > 0 ? Math.round((part / total) * 100) : 0);
+
 export default function DashboardView({
     isAdmin, transactions = [], lowStockItems = [], setActiveTab,
     sessionStatus, auditLogs = [], appSettings, handleSaveDashboardTargets,
@@ -376,7 +381,15 @@ export default function DashboardView({
                         </div>
                     </div>
 
-                    {isAdmin && supply.rows.length > 0 && (
+                    {/* 🔴 THE GATE USED TO BE `supply.rows.length > 0`, AND THAT DELETED THE
+                        CONTROL. Aldi, 2026-08-26: *"i press bandung and it crashed close and the
+                        panel is gone"*. Nothing crashed — Bandung's warehouse is empty, so the
+                        row list came back empty and the whole panel unmounted, taking the switch
+                        that chooses the warehouse with it. There was no way back to Semua.
+                        ⚠️ A CONTROL MUST NEVER BE INSIDE THE THING ITS OWN VALUE CAN EMPTY.
+                        The panel is gated on there being products at all; a warehouse with
+                        nothing in it gets an empty LINE, not a missing panel. */}
+                    {isAdmin && inventory.length > 0 && (
                         <div className={`kpm-mod ${arr()}`}>
                             <div className="kpm-head">
                                 <span className="slot">PERSEDIAAN · {meta.title.toUpperCase()}</span>
@@ -415,6 +428,12 @@ export default function DashboardView({
                                     <span><i className="shelf" /> Stok gudang</span>
                                 </div>
 
+                                {supply.rows.length === 0 && (
+                                    <p className="kpm-safety-hint" style={{ margin: 0 }}>
+                                        Tidak ada data untuk gudang ini pada periode {meta.title.toLowerCase()}
+                                    </p>
+                                )}
+
                                 {supply.rows.slice(0, 8).map(r => {
                                     const w = (v) => `${(v / supply.max) * 100}%`;
                                     const sold = dominant(r.sold, r.product);
@@ -430,17 +449,27 @@ export default function DashboardView({
                                         >
                                             <span className="nm">{r.name}</span>
                                             <span className="bar">
+                                                {/* the share is printed INSIDE its own colour, and only
+                                                    where the segment is wide enough to hold it — a
+                                                    number spilling out of a 3% sliver is worse than no
+                                                    number. The rest are on the detail line. */}
                                                 <span className="kpm-stack">
-                                                    <i className="sold"  style={{ width: arrived ? w(r.sold)  : 0 }} />
-                                                    <i className="field" style={{ width: arrived ? w(r.field) : 0 }} />
-                                                    <i className="shelf" style={{ width: arrived ? w(r.shelf) : 0 }} />
+                                                    <i className="sold" style={{ width: arrived ? w(r.sold) : 0 }}>
+                                                        {share(r.sold, r.total) >= 12 && `${share(r.sold, r.total)}%`}
+                                                    </i>
+                                                    <i className="field" style={{ width: arrived ? w(r.field) : 0 }}>
+                                                        {share(r.field, r.total) >= 12 && `${share(r.field, r.total)}%`}
+                                                    </i>
+                                                    <i className="shelf" style={{ width: arrived ? w(r.shelf) : 0 }}>
+                                                        {share(r.shelf, r.total) >= 12 && `${share(r.shelf, r.total)}%`}
+                                                    </i>
                                                 </span>
                                             </span>
                                             <span className="figs">
-                                                <em>{sold.n} {sold.unit.toLowerCase()}</em> terjual ·{' '}
-                                                {field.n} transit ·{' '}
+                                                <em>{sold.n} {sold.unit.toLowerCase()}</em> terjual {share(r.sold, r.total)}% ·{' '}
+                                                {field.n} transit {share(r.field, r.total)}% ·{' '}
                                                 <span className={still ? 'dorm' : ''}>
-                                                    {shelf.n} {shelf.unit.toLowerCase()} gudang
+                                                    {shelf.n} {shelf.unit.toLowerCase()} gudang {share(r.shelf, r.total)}%
                                                 </span>
                                             </span>
                                         </button>

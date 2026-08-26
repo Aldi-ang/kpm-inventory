@@ -3270,5 +3270,23 @@ ok('the selected row is marked by a stripe, which Lite Mode cannot eat',
    /\.kpm-vrow\[aria-pressed="true"\] \{ border-left: 3px solid var\(--accent-edge\)/.test(themeCss));
 
 
+section('D10. A control never lives inside the thing its own value can empty');
+/* 2026-08-26: he pressed Bandung, whose warehouse is empty, and the whole supply panel vanished
+   — the row list came back empty, the gate was on that list, and the switch that chooses the
+   warehouse went with it. Nothing threw. There was simply no way back to Semua. */
+ok('the supply panel is gated on there BEING products, not on the current filter matching any',
+   /isAdmin && inventory\.length > 0 &&/.test(code(dashView)),
+   'gating on supply.rows.length deletes the warehouse switch the moment a warehouse is empty');
+ok('and an empty warehouse gets a line inside the panel instead',
+   /supply\.rows\.length === 0 &&/.test(code(dashView)));
+ok('every share is printed as a percentage of the product own total',
+   /const share = \(part, total\)/.test(code(dashView)));
+ok('a share is only printed inside a segment wide enough to hold it',
+   /share\(r\.sold, r\.total\) >= 12/.test(code(dashView)),
+   'a figure spilling out of a 3% sliver is worse than no figure');
+ok('and each segment carries its own ink, because the grounds differ',
+   /\.kpm-stack > i\.sold[^}]*color: var\(--ink-inverse\)/.test(themeCss) &&
+   /\.kpm-stack > i\.field[^}]*color: var\(--orange-ink\)/.test(themeCss));
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

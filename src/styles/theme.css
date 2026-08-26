@@ -4216,13 +4216,19 @@ html.lite-mode .kpm-pace-fill { opacity: 1; animation: none; }
    ⚠️ BAR LENGTH IS COMPARABLE ACROSS PRODUCTS. Each bar is scaled against the largest product,
    not against its own total — his ask was *"so that we can compare the value"*. Scaling each to
    its own 100% would make a product with nine packs look exactly like one with nine thousand. */
-.kpm-stack { display: flex; height: 14px; width: 100%; background: var(--raised);
+.kpm-stack { display: flex; height: 20px; width: 100%; background: var(--raised);
   border: 1px solid var(--line); overflow: hidden; }
-.kpm-stack > i { display: block; height: 100%; min-width: 0;
+/* 20px, not 14: the share is printed inside its own colour, so the bar has to be tall enough to
+   hold a 9px figure without clipping it. ⚠️ Each segment carries ITS OWN ink — a percentage on an
+   amber segment cannot use the same colour as one on a near-black segment. */
+.kpm-stack > i { display: flex; align-items: center; justify-content: center;
+  height: 100%; min-width: 0; overflow: hidden; white-space: nowrap;
+  font-family: var(--font-mono); font-size: 9px; letter-spacing: .06em; font-weight: 700;
   transition: width 300ms cubic-bezier(.2, .8, .3, 1); }
-.kpm-stack > i.sold  { background: var(--ink); }
-.kpm-stack > i.field { background: var(--lamp-on); }
-.kpm-stack > i.shelf { background-color: var(--inset); background-image: var(--hatch); }
+.kpm-stack > i.sold  { background: var(--ink);      color: var(--ink-inverse); }
+.kpm-stack > i.field { background: var(--lamp-on);  color: var(--orange-ink); }
+.kpm-stack > i.shelf { background-color: var(--inset); background-image: var(--hatch);
+  color: var(--ink); }
 /* the tail of the track that no series fills — this is what makes bars comparable */
 .kpm-stack > i.rest  { background: transparent; }
 
