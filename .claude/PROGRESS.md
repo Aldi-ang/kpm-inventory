@@ -4,8 +4,8 @@
 
 ## 🔧 2026-08-26 08:59 — TOOLING TRACK. 1,194 skills stored where they cost nothing.
 
-**No app code touched this session.** The three modified files in the tree (`DashboardView.jsx`,
-`useDatabaseSync.js`, `theme.css`, `supply.js`) belong to the OTHER window and were left alone.
+**No app code touched this session.** The other window shipped the supply panel underneath
+(`58041b1`, `aedc66f`) while this ran; its files were never staged from here. Tree is clean.
 
 19 skill repos were sent and judged; **full verdict table in the vault**, `A-Brain/Wiki/Summaries/
 Skill Repos Evaluated 2026-08-25.md` (`a311958`, `8a68007`). What shipped:
