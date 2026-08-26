@@ -1,6 +1,29 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-26 21:03 WIB (🟠 KPM app session)** · ✅ **RESTOCK VAULT DONE + DRIVEN LIVE**, double scrollbar killed — `999b5a7`, **616/616** · 🟢 Sidebar answered (top-left circle) · 🔨 **NEXT: the desk gets a Minta tab.** · branch `phase0-solid-ground`
+**Updated: 2026-08-26 22:05 WIB (🟠 KPM app session)** · ✅ **RESTOCK VAULT DONE + DRIVEN LIVE** — `999b5a7`, **616/616** · 📋 **Resume brief: `.claude/NEXT-SESSION.md` (`775c791`)** · 🔨 NEXT: Minta tab → Tujuan from roster → Global Logistics readout · branch `phase0-solid-ground`
+
+## 🟢 2026-08-26 22:05 — RESUME BRIEF WRITTEN. `775c791`. Session ready to clear.
+
+**No app code changed since `999b5a7`.** This entry exists so a cleared session knows the notes are
+current and where to start.
+
+**👉 START HERE NEXT SESSION: `.claude/NEXT-SESSION.md`** — it carries the three queued builds in
+his order, the collection behind every number, the sidebar answer, and the traps. This file
+(`PROGRESS.md`) is the state; that file is the plan. Read both, read no code to orient.
+
+**The prompt he was given to paste after `/clear`:**
+> Read .claude/NEXT-SESSION.md first, then run:
+> npm run build; node src/config/integration.audit.mjs
+>
+> Continue the Restock Vault work. Build order:
+> 1. The Minta tab (the desk's 4th tab)
+> 2. Tujuan from the motorists roster, not from past shipments
+> 3. The Global Logistics Command readout
+>
+> Before you touch the shell, ask me how wide my browser window is.
+
+**Tree is clean** apart from `.claude/settings.json`, which was already modified before today.
+
 
 ## 🟢 2026-08-26 21:03 — DOUBLE SCROLLBAR KILLED, SIDEBAR EXPLAINED. `999b5a7`. **616/616.**
 
@@ -199,6 +222,7 @@ per-warehouse minimum) · route the four inline `minStock` fallbacks through the
 | gallery-vs-camera tier rule | `src/config/permissions.js` → `canPickFromGallery` |
 | its 7 guards | `src/config/integration.audit.mjs` → group **53** |
 | where HQ ships a request | `src/components/BranchWarehouseManager.jsx:1350` |
+| the resume brief (START HERE) | `.claude/NEXT-SESSION.md` |
 | the design story | A-Brain `66c5f30`, `Wiki/Concepts/Logistics and Stock Movement.md` |
 
 ⚠️ **Two traps found today.** Artifact pages on claude.ai **cannot be driven** — locked frame, no
@@ -234,23 +258,6 @@ mouse at this width. Reach a screen with `document.querySelectorAll('button')` +
 
 ⚠️ Artifact-viewer tabs on claude.ai **cannot be driven** — locked frame, no input reaches the page.
 To test a prototype: copy it into `public/`, open `https://localhost:5173/<file>.html`, delete after.
-
-## 🟠 2026-08-26 16:4x — RESTOCK VAULT v2. The route field. Vault has the whole story.
-
-His question: *"where is the tujuan textbox tho?"* — and the answer explained the screen.
-**Full write-up: A-Brain `66c5f30`, `Wiki/Concepts/Logistics and Stock Movement.md`.** Read that,
-not this. Artifact (same URL, redeployed): `https://claude.ai/code/artifact/b7c1dd78-30f2-4061-a161-7cc08f4b52bf`
-
-One-line version: **Tujuan was never there**, and every other field he asked for already exists —
-just on the wrong half of the screen. Photo writes only from the branch screen, resi is outbound
-only, nota is inbound only, and the factory's own SJ number has no field. So: **one form, two
-directions**, Target demoted to a strip, its tab given to **Kirim**.
-
-🔴 **VERIFICATION IS PARTIAL AGAIN — say so, do not round up.** Seen: dark mode, layout, the
-Rp total on one line, the completeness meter computing live (proves the script runs clean).
-**Not seen: any interaction, light mode, the Kirim tab.** Chrome's renderer froze on
-`Page.captureScreenshot` twice, in two fresh tabs. **This is the second session in a row.**
-The in-app Browser pane cannot substitute — it is not logged into claude.ai (401/403).
 
 
 ---
