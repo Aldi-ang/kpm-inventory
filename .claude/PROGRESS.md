@@ -1,6 +1,66 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-26 20:54 WIB (🟠 KPM app session)** · ✅ **RESTOCK VAULT DONE + DRIVEN LIVE**, date capitalised, a dead `style` prop killed — `284602b`, **616/616** · 🔴 **NEXT: the desk gets a Minta tab.** Sidebar question open below. · branch `phase0-solid-ground`
+**Updated: 2026-08-26 21:03 WIB (🟠 KPM app session)** · ✅ **RESTOCK VAULT DONE + DRIVEN LIVE**, double scrollbar killed — `999b5a7`, **616/616** · 🟢 Sidebar answered (top-left circle) · 🔨 **NEXT: the desk gets a Minta tab.** · branch `phase0-solid-ground`
+
+## 🟢 2026-08-26 21:03 — DOUBLE SCROLLBAR KILLED, SIDEBAR EXPLAINED. `999b5a7`. **616/616.**
+
+**NOW:** Restock Vault done and driven live. Five commits today: `aea7de4` `4387c86` `390d5fa`
+`284602b` `999b5a7`. **Next build: the desk's 4th tab (Minta).** Nothing is blocked.
+
+**What just landed**
+- **Double scrollbar** — his *"why do we have double slider"*. Restock Vault was the only tab that
+  both scrolled itself AND guessed its height from `100vh`; the guess ran ~38px taller than the
+  shell's padded workspace, so the workspace overflowed by that sliver and drew a second bar.
+  `lg:h-[calc(100vh-140px)]` → **`lg:h-full`** at `App.jsx:4424`. Scroll stays on that box — the tab
+  strip and the completeness footer are pinned by it.
+- ⚠️ **I broke the build and almost reported it green.** The note explaining the fix was a JSX
+  comment placed after `&& (` — a second expression inside those parentheses, which does not parse.
+  Committed a "build green" message before checking, then amended. **Run the build BEFORE writing
+  the claim, every time.** The warning now sits in the comment itself.
+
+**🟢 SIDEBAR — ANSWERED, no longer blocking**
+It is **not gone**. It is the collapsed capsule: a **black circle with a package icon at the very
+top-left** (totem at x=4, y=12, 56×56, `pointer-events:auto`). Hovering it expands the rail to
+351px. **Proved** by forcing `width:351px`: rail → 351, pod → x=0, **all 17 marks visible**.
+⚠️ My earlier "pod at x=-124" reading was **junk** — measured mid-transition (380ms width animation,
+220ms delay). Do not chase it again.
+⚠️ **Synthetic hover never fires `:hover` here**, so this can only be confirmed by a human.
+🔴 **The one remaining unknown:** `.kpm-rail-totem { display:none }` in the BASE block means the
+circle only exists at **≥1024px**. Below that the rail is a phone drawer parked off-screen right and
+**no hamburger was found**. If his window is narrower than 1024px, that is a real bug. His question
+was *"the real question is where is the side bar?"* — answer given; awaiting only his window width.
+
+**HIS QUEUE, verbatim, none built yet**
+> "redesign the request panel as well or maybe just add it on the panel that we just made, just add
+> extra tab for request"
+
+Closes the old Active Pipeline question — it becomes the desk's 4th tab (Minta), carrying
+**"Siapkan Pengiriman"** (`BranchWarehouseManager.jsx:1350`), the only way HQ ships a request.
+
+> "make sure that every team registered on the fleet and roster have their own storage option"
+
+🔴 Find where fleet/roster teams are registered first. Today Tujuan is derived from
+`stockRequests[].branch` — a team never shipped to is invisible.
+
+> "for the global logistic command i want u to redesign that ... regional warehouse current stock,
+> on field, sold as well ... so HQ know how many bks should be send to them again"
+
+Shape agreed: **di gudang · di jalan · di tangan agen · terjual**. 🔴 Name the collection for
+on-field and sold before promising either number.
+
+**Also queued:** Branch Manager redesign · split Stok Kritis + per-warehouse minimum · the four
+inline `minStock` fallbacks.
+
+**Where things live (new since 20:41)**
+| Thing | Path |
+|---|---|
+| the Restock Vault page wrapper (one scrollbar) | `src/App.jsx:4424` |
+| the rail, totem and capsule CSS | `src/styles/theme.css:1877-1971` |
+| all 8 guards | `src/config/integration.audit.mjs` → group **53** |
+
+⚠️ **The "L-CLICK / SCROLL / NAVIGATE" strip is NOT his app** — it is the Claude-in-Chrome overlay
+drawn into his real Chrome while the extension is attached. Zero matches in the DOM. Never hunt it.
+
 
 ## 🟢 2026-08-26 20:54 — DATE CAPITALS, A DEAD `style` PROP, AND THE SIDEBAR VERDICT. `284602b`. **616/616.**
 
@@ -171,41 +231,6 @@ Rp total on one line, the completeness meter computing live (proves the script r
 **Not seen: any interaction, light mode, the Kirim tab.** Chrome's renderer froze on
 `Page.captureScreenshot` twice, in two fresh tabs. **This is the second session in a row.**
 The in-app Browser pane cannot substitute — it is not logged into claude.ai (401/403).
-
-## 🟠 2026-08-26 15:5x — RESTOCK VAULT REDESIGN. Artifact shipped, partly verified.
-
-**Artifact:** `https://claude.ai/code/artifact/b7c1dd78-30f2-4061-a161-7cc08f4b52bf` — **"Surat Jalan"**.
-His instruction: *"design restock vault first we can move on on the branch manager later"*.
-
-**The finding that framed it:** his own code numbers every intake `SJ-######` — **surat jalan**. The
-screen just never looked like one. So the redesign makes the document the layout.
-
-**Measured against `src/RestockVaultView.jsx` (1 097 lines)**
-- **0 theme tokens.** 58 × `text-white`, 17 raw Tailwind colours, 32 `bg-black/xx`. Branch Manager
-  is the same: 0 tokens, 27 × `text-white`, 37 washes. **These two are the last unmigrated screens
-  in the app** — that is why he dislikes them, and why "change the colour" does NOT mean the
-  palette law changes.
-- **Three modes, three DIFFERENT nav bars.** Intake→[Targets][Master Ledger] · Ledger→[Targets]
-  [New Entry] · Targets→[Set Target][Ledger][New Entry]. Same destinations, moved and renamed.
-- Landed cost is last on the screen; history needs **3 clicks** (year→month→date) before anything
-  shows; `bg-orange` slabs + a `from-gold to-gold` gradient (amber-as-fill, twice over).
-
-**The redesign:** one nav (Masuk · Buku · Target) fixed in place with counts · document order
-(header → lines → costs) · **batch as a column** · **landed cost live per pack as you type** ·
-flat book filtered by direction instead of a date drill · every colour a token.
-
-⚠️ **TWO BUGS I SHIPPED AND FIXED, both caught by looking:**
-1. `.body{display:grid}` **outranks the UA sheet's `[hidden]{display:none}`** — all three tabs
-   rendered stacked. Fixed with `.body[hidden]{display:none}`. **Worth remembering for the real
-   app**, which uses the same pattern.
-2. `Rp 2.420.000` wrapped across two lines in the total cell. Fixed with `nowrap` + wider basis.
-
-🔴 **VERIFICATION IS PARTIAL — do not claim otherwise.** Seen with my own eyes: dark mode, the
-whole prototype shell, and the stacking bug before/after. **NOT seen on the fixed build:** the
-click-to-add interaction, the no-wrap total, and light mode. Chrome's renderer began timing out on
-`Page.captureScreenshot` and stopped responding to scroll. Those three need one look.
-
-
 
 
 ---
