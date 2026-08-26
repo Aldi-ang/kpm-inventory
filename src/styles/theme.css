@@ -3934,19 +3934,37 @@ html.lite-mode .kpm-hazard { animation: none; opacity: 1; }
    on a phone it is the first thing a thumb reaches.
    ⚠️ The chosen side is a --gold PLATE carrying --gold-ink. A plate carries its own ink; --gold
    with --ink is 1,04:1 and G51 fails the build over it. */
-.kpm-period { display: grid; grid-template-columns: repeat(4, 1fr);
-  border: 1px solid var(--line-3); }
-.kpm-period button { min-height: 44px; padding: 0 var(--s1); cursor: pointer;
+.kpm-period { position: relative; display: grid; grid-template-columns: repeat(4, 1fr);
+  border: 1px solid var(--line-3); overflow: hidden; }
+/* 🔴 ONE PLATE THAT TRAVELS. His report, 2026-08-26: *"fix the animation when i press these
+   buttons, make it smoother and elegant, right now its only flickering"*.
+   It was flickering for two reasons and both are gone. The panel above was keyed on the period,
+   so every press REMOUNTED it and replayed a 300ms arrival — the screen left and came back for
+   what should be an instant switch. And the chosen state was a background-color on whichever
+   button was pressed, so nothing ever moved between the old place and the new: it repainted in
+   one frame, which the eye reads as a blink rather than as a change.
+   ⚠️ transform ONLY. `left` or `width` would animate layout on a bar that sits above a chart,
+   and every frame would re-lay-out the panel under it. A translate costs nothing. */
+.kpm-period-plate { position: absolute; top: 0; bottom: 0; left: 0; width: 25%;
+  background: var(--gold); pointer-events: none;
+  transform: translateX(calc(var(--i, 0) * 100%));
+  transition: transform 260ms cubic-bezier(.2, .8, .3, 1); }
+.kpm-period button { position: relative; z-index: 1;
+  min-height: 44px; padding: 0 var(--s1); cursor: pointer;
   background: transparent; color: var(--ink-muted);
   border: 0; border-right: 1px solid var(--line);
   font-family: var(--font-mono); font-size: 11px; letter-spacing: .16em;
   text-transform: uppercase; font-weight: 700;
-  transition: background-color 140ms cubic-bezier(.2,.8,.3,1), color 140ms cubic-bezier(.2,.8,.3,1); }
+  transition: color 180ms cubic-bezier(.2,.8,.3,1); }
 .kpm-period button:last-child { border-right: 0; }
-.kpm-period button:hover { background: var(--raised); color: var(--ink); }
+/* ⚠️ the hover tint must never paint OVER the plate, or the chosen segment flashes grey as the
+   pointer crosses it — the same blink in a different costume */
+.kpm-period button:hover:not([aria-pressed="true"]) { color: var(--ink); }
 .kpm-period button:focus-visible { outline: 2px solid var(--accent-edge); outline-offset: -2px; }
-.kpm-period button:active { transform: translateY(1px); }
-.kpm-period button[aria-pressed="true"] { background: var(--gold); color: var(--gold-ink); }
+/* the plate carries its own ink, in both themes. --gold with --ink is 1,04:1 and G51 fails over it */
+.kpm-period button[aria-pressed="true"] { color: var(--gold-ink); }
+/* Lite Mode kills the transition; the plate still lands in the right place, it just arrives
+   instantly. Nothing here depends on the movement to be readable. */
 
 /* ---- THE ONE BIG FIGURE. Sized in CONTAINER units so Rp 3.284.600.000 on Tahun fits a 390px
    phone without wrapping and still fills the column on a laptop. A fixed size would have to be

@@ -3139,10 +3139,19 @@ ok('and queries it at two widths',
    (themeCss.match(/@container dash \(min-width/g) || []).length === 2);
 ok('the big figure is sized in container units so it fits a 390px phone',
    /clamp\(28px, 9cqw, 42px\)/.test(themeCss));
+/* ⚠️ matched on the DECLARATION inside each block, not on the order of its first line. The
+   original form pinned `min-height` as the opening property and fired the moment the period
+   switch grew a `position` — a true positive for the wrong reason, which is a check that will
+   cry wolf until somebody deletes it. */
+const blockHas = (sel, decl) => {
+  const i = themeCss.indexOf(sel + ' {');
+  if (i < 0) return false;
+  return themeCss.slice(i, themeCss.indexOf('}', i)).includes(decl);
+};
 ok('every control clears the 44px thumb target',
-   /\.kpm-period button \{ min-height: 44px/.test(themeCss) &&
-   /\.kpm-key-row \{[\s\S]{0,120}min-height: 44px/.test(themeCss) &&
-   /\.kpm-cover-c \{[\s\S]{0,160}min-height: 44px/.test(themeCss));
+   blockHas('.kpm-period button', 'min-height: 44px') &&
+   blockHas('.kpm-key-row', 'min-height: 44px') &&
+   blockHas('.kpm-cover-c', 'min-height: 44px'));
 
 section('D6. The low-stock rule is one rule, and it speaks in units');
 ok('the shared rule exists and exports its unit list',

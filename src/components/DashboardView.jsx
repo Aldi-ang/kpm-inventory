@@ -254,11 +254,13 @@ export default function DashboardView({
         <div className="kpm-dash">
             <div className="kpm-dash-grid">
 
-                {/* keyed on the period so the panel REMOUNTS on a swap: the arrival replays and
-                    every piece of its own state starts clean, with no effect reaching backwards
-                    to reset it. That reset is what crashed this screen once already. */}
+                {/* 🔴 NO `key` HERE, AND THAT IS THE POINT. It was keyed on the period so the panel
+                    remounted on every press — which is exactly the flicker he reported: the whole
+                    panel left the screen and played its 300ms arrival again for what should be an
+                    instant switch. Mounted once, the VALUES move instead: the ring sweeps to its
+                    new share, the track slides, the line redraws. A switch should feel like a
+                    switch, not like the screen reloading. */}
                 <DashboardBenchmarks
-                    key={period}
                     transactions={transactions}
                     inventory={inventory}
                     appSettings={appSettings}

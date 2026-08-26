@@ -114,17 +114,26 @@ export default function DashboardBenchmarks({
         const { start, prevStart, buckets, done, bucketOf, tickOf } = w;
 
         const perBucket = new Array(buckets).fill(0);
-        let omzet = 0, laba = 0, bal = 0, filterBal = 0, kretekBal = 0;
-        let prevOmzet = 0, prevLaba = 0;
+        /* 🔴 NO PROFIT HERE ANY MORE. His call, 2026-08-26: *"how do u get laba and the margin
+           here? we dont have any data for that on this app yet and we dont need this yet, revenue
+           is all we needed for this"*.
+           He is right about the data even though the field exists: `totalProfit` is real plumbing
+           — useTransactionEngine sums a `profitSnapshot` per line, which is the price sold minus
+           the DISTRIBUTOR price recorded at the moment of sale — but it is only ever as good as
+           the `priceDistributor` filled in on each product, and the live figure came out at a 1,0%
+           margin, which is what an unfilled cost price looks like. A number that is wrong is worse
+           than a number that is absent, so it is absent. */
+        let omzet = 0, bal = 0, filterBal = 0, kretekBal = 0;
+        let prevOmzet = 0;
 
         transactions.forEach(t => {
             if (t.type !== 'SALE') return;
             const d = txDate(t);
             if (isNaN(d)) return;
-            const total = t.total || 0, profit = t.totalProfit || 0;
+            const total = t.total || 0;
 
             if (d >= start) {
-                omzet += total; laba += profit;
+                omzet += total;
                 const b = bucketOf(d);
                 if (b >= 0 && b < buckets) perBucket[b] += total;
                 (t.items || []).forEach(item => {
@@ -137,7 +146,7 @@ export default function DashboardBenchmarks({
                     else kretekBal += q;
                 });
             } else if (d >= prevStart) {
-                prevOmzet += total; prevLaba += profit;
+                prevOmzet += total;
             }
         });
 
@@ -145,14 +154,11 @@ export default function DashboardBenchmarks({
         const series = [0];
         for (let i = 0; i < Math.min(done, buckets); i++) series.push(series[series.length - 1] + perBucket[i]);
 
-        const margin     = omzet > 0 ? (laba / omzet) * 100 : 0;
-        const prevMargin = prevOmzet > 0 ? (prevLaba / prevOmzet) * 100 : 0;
-        const totalMix   = filterBal + kretekBal;
+        const totalMix = filterBal + kretekBal;
 
         return {
-            omzet, laba, margin, bal, series, buckets, done, tickOf,
-            labaDelta:   prevLaba > 0 ? ((laba - prevLaba) / prevLaba) * 100 : null,
-            marginDelta: prevOmzet > 0 ? margin - prevMargin : null,
+            omzet, bal, series, buckets, done, tickOf,
+            omzetDelta: prevOmzet > 0 ? ((omzet - prevOmzet) / prevOmzet) * 100 : null,
             skm: totalMix > 0 ? Math.round((filterBal / totalMix) * 100) : 0,
             revTarget: revTarget(period),
             balTarget: balTarget(period),
@@ -229,7 +235,14 @@ export default function DashboardBenchmarks({
             </div>
 
             <div className="kpm-shelf">
-                <div className="kpm-period" role="group" aria-label="Periode">
+                {/* ⚠️ THE PLATE IS ONE ELEMENT THAT SLIDES, not a background that moves between
+                    four buttons. Swapping a background paints in a single frame with nothing
+                    travelling between the old place and the new, which is precisely the flicker
+                    he reported. The index rides in as a custom property so the CSS can position
+                    it with a transform — the only property that can move without costing layout. */}
+                <div className="kpm-period" role="group" aria-label="Periode"
+                     style={{ '--i': Math.max(0, PERIODS.findIndex(x => x.key === period)) }}>
+                    <span className="kpm-period-plate" aria-hidden="true" />
                     {PERIODS.map(x => (
                         <button
                             key={x.key}
@@ -269,24 +282,14 @@ export default function DashboardBenchmarks({
                     </div>
                 </div>
 
-                {/* ── LABA and MARGIN, each against the period before ── */}
-                <div className="kpm-pair" style={{ marginTop: 'var(--s5)' }}>
-                    <div>
-                        <span className="k">Laba</span>
-                        <span className="v">{formatRupiah(M.laba)}</span>
-                        <span className={`delta${M.labaDelta !== null && M.labaDelta < 0 ? ' down' : ''}`}>
-                            {M.labaDelta === null ? 'belum ada pembanding'
-                              : `${M.labaDelta >= 0 ? '+' : '−'}${Math.abs(M.labaDelta).toFixed(1).replace('.', ',')}% vs sebelumnya`}
-                        </span>
-                    </div>
-                    <div>
-                        <span className="k">Margin</span>
-                        <span className="v">{M.margin.toFixed(1).replace('.', ',')}%</span>
-                        <span className={`delta${M.marginDelta !== null && M.marginDelta < 0 ? ' down' : ''}`}>
-                            {M.marginDelta === null ? 'belum ada pembanding'
-                              : `${M.marginDelta >= 0 ? '+' : '−'}${Math.abs(M.marginDelta).toFixed(1).replace('.', ',')} pts`}
-                        </span>
-                    </div>
+                {/* the only comparison left, and the one he actually asked for: this period
+                    against the one before it. No profit, no margin. */}
+                <div className="kpm-ro on" style={{ marginTop: 'var(--s3)' }}>
+                    <span className="k">vs periode sebelumnya</span>
+                    <span className={`v${M.omzetDelta !== null && M.omzetDelta < 0 ? ' neg' : ''}`}>
+                        {M.omzetDelta === null ? 'belum ada pembanding'
+                            : `${M.omzetDelta >= 0 ? '+' : '−'}${Math.abs(M.omzetDelta).toFixed(1).replace('.', ',')}%`}
+                    </span>
                 </div>
 
                 {/* ── VOLUME ── */}
