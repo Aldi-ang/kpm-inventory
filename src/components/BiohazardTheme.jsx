@@ -54,13 +54,18 @@ function SlidingDigit({ char }) {
     );
 }
 
-/* his format and his spelling, 2026-08-16: *"use this date format 16 agustus
-   2026"* — lowercase, as he wrote it. Written out rather than asked of
-   `toLocaleDateString('id-ID', { month: 'long' })` because that depends on the
-   runtime shipping full ICU data; where it does not, the month quietly comes
-   back in English and nobody notices until a customer does. */
-const BULAN = ['januari', 'februari', 'maret', 'april', 'mei', 'juni',
-               'juli', 'agustus', 'september', 'oktober', 'november', 'desember'];
+/* his format, 2026-08-16: *"use this date format 16 agustus 2026"*. Written out rather than asked
+   of `toLocaleDateString('id-ID', { month: 'long' })` because that depends on the runtime shipping
+   full ICU data; where it does not, the month quietly comes back in English and nobody notices
+   until a customer does.
+
+   ⚠️ CAPITALISED 2026-08-26 on his correction: *"use proper capitalization for the date as well
+   bro"*. It was lowercase because that is how he typed the original example, and the old comment
+   read that as the instruction. It was not — the spelling was incidental, the FORMAT was the
+   instruction. Do not "restore" the lowercase from reading his 16 Aug message alone; both messages
+   are recorded here and the later one wins. */
+const BULAN = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+               'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
 /* how long the date stays up before the clock comes back. His number. */
 const DATE_HOLD_MS = 5000;
 
@@ -688,7 +693,6 @@ export default function BiohazardTheme({
                            touchAction is 'none' now, not 'pan-y'. With nothing to scroll, pan-y
                            only gave the browser a reason to steal a slow vertical drag from the
                            scrub. */
-                        style={{ touchAction: 'none' }}
                         /* 🔴 `overflow-hidden` IS GONE AND MUST STAY GONE. The hover label is a
                            CHILD of the mark, so a clipping grid erased it — which is why the desk
                            label had never once been visible, in the app or in the prototype. His
@@ -708,7 +712,13 @@ export default function BiohazardTheme({
                            spacing even in both directions — *"make the space between columns to be
                            the same with the row to be more even"*. Drop the cap and the evenness
                            quietly comes undone. Desk only; the phone ignores it. */
+                        /* 🔴 ONE style prop. There were TWO on this element — `touchAction` above the
+                           comment block and `--cap` below it — and JSX keeps only the LAST, so
+                           touchAction was silently discarded and the note explaining why it matters
+                           described a fix that was not running. Nothing warns you: a duplicate prop
+                           is legal JSX. Merged, and asserted by a check. */
                         style={{
+                            touchAction: 'none',
                             '--cap': visibleMenu.length > 10
                                 ? `${Math.ceil(visibleMenu.length / 2) * 48 + 4}px`
                                 : `${visibleMenu.length * 60 + 4}px`,

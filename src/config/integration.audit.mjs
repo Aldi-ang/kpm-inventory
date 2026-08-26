@@ -3254,8 +3254,11 @@ check(G45, 'neither face animates a width or a height',
 check(G45, 'the hidden face is hidden from screen readers too',
   /aria-hidden=\{showDate\}/.test(clockSrc) && /aria-hidden=\{!showDate\}/.test(clockSrc),
   'opacity 0 is still read aloud, so the button would announce both faces at once');
+/* 'agustus' → 'Agustus' on 2026-08-26, his correction: *"use proper capitalization for the date as
+   well bro"*. The check asserts the table exists and is not ICU — the CASE is his call and is
+   recorded beside the table itself, not enforced here twice. */
 check(G45, 'the month names are a literal table, not ICU',
-  /const BULAN = \[/.test(clockSrc) && /'agustus'/.test(clockSrc) &&
+  /const BULAN = \[/.test(clockSrc) && /'Agustus'/.test(clockSrc) &&
   !/month:\s*'long'/.test(clockSrc),
   'toLocaleDateString needs full ICU data — where it is absent the month silently returns English');
 check(G45, 'reduced motion snaps the face swap as well as the digits',
@@ -3780,6 +3783,23 @@ check(G53, 'the nota is never a dead control on the outbound side',
   !/disabled=\{isOut\}/.test(restockCode),
   'the nota input must not be disabled on Kirim. An internal transfer usually has no supplier nota, ' +
   'so it is optional there — a blocked control that explains nothing is worse than an empty one');
+
+/* 🔴 A duplicate prop is legal JSX and nothing warns you — the LAST one silently wins. The rail's
+   <nav> carried two `style` props for weeks, so `touchAction:'none'` never ran and the paragraph
+   explaining why it mattered described a fix that was not there. Found 2026-08-26 while chasing a
+   different bug, which is the only way this class of fault is ever found. Counted per element
+   rather than per file: a second `style=` elsewhere in the shell is fine, two on one tag is not. */
+/* ⚠️ NOT a `/<nav[\s\S]*?>/` match. That was tried first and reported 0 style props: the tag
+   contains arrow functions, so the non-greedy scan stops at the `>` in `(e) => {`. Anchor on the
+   class instead and walk back to the tag that owns it. */
+const shellNav = fs.readFileSync('src/components/BiohazardTheme.jsx', 'utf8');
+const railClassAt = shellNav.indexOf('kpm-rail-grid grid');
+const navTag = railClassAt < 0 ? '' : shellNav.slice(shellNav.lastIndexOf('<nav', railClassAt), railClassAt);
+check(G53, 'the rail nav carries exactly one style prop',
+  (navTag.match(/\sstyle=\{/g) || []).length === 1 && /touchAction: 'none'/.test(navTag),
+  `the rail's <nav> has ${(navTag.match(/\sstyle=\{/g) || []).length} style props and touchAction ` +
+  `${/touchAction/.test(navTag) ? 'is' : 'is NOT'} inside the tag — JSX keeps only the last style, ` +
+  'so a second one deletes the first without a warning');
 
 /* ── report ──────────────────────────────────────────────────────────────── */
 let last = '';
