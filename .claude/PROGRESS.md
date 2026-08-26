@@ -769,6 +769,31 @@ the decisions themselves live in `A-Brain/Wiki/Concepts/Where KPM Is Going.md` a
 
 ## ⏳ WAITING ON ALDI — verbatim, do not paraphrase
 
+### ✅ 2026-08-26 08:1x — HIS THREE QUESTIONS, ANSWERED AND SHIPPED. `f8f2f06`
+
+1. **"the animation ... its only flickering"** — it was flickering for TWO reasons, both mine:
+   the panel was `key={period}` so every press **REMOUNTED** it and replayed the 300ms arrival,
+   and the chosen state was a **background-color swap** so nothing travelled between segments.
+   Now: panel stays mounted (values move instead), and ONE `.kpm-period-plate` **translates**
+   260ms. ⚠️ **transform only** — `left`/`width` would re-lay-out the chart under it every frame.
+   ⚠️ Hover is barred from painting over the plate, or the blink returns in another costume.
+
+2. **"how do u get laba and the margin here?"** — **REMOVED, his call.** The honest answer, in
+   case it ever comes back: it IS real plumbing. `useTransactionEngine.js:115` sums a
+   `profitSnapshot` per line = **price sold − `distributorPriceSnapshot`** (the cost recorded at
+   the moment of sale). But it is only as good as **`priceDistributor` on each product**, and the
+   live figure read **1,0% margin** — which is what an unfilled cost price looks like.
+   ⚠️ **If he ever fills in distributor prices, this number becomes real and worth showing.**
+   Replaced by the one comparison he wanted: **omzet vs the same period before it**.
+
+3. **"this 'sisa' value where does it come from?"** — the product's own **`stock`** field, the
+   same number the Inventory screen shows, run through `splitToUnits()` so it prints as the
+   biggest unit it actually fills (karton/bal/slop) instead of raw Bks. Nothing computed.
+
+⚠️ **A GUARD FIRED AND WAS RIGHT.** Reordering the switch rule moved `min-height` off the first
+line and the 44px check had pinned the ORDER, not the declaration. It matches the declaration now.
+**A check that cries wolf gets deleted eventually** — same family as the comment-echo lesson.
+
 ### 🔴 2026-08-26 08:0x — IT CRASHED, AND NOTHING IN THE LOOP COULD HAVE CAUGHT IT. `7e7f3c5`
 
 **The dashboard rendered "[DASHBOARD] FAILED TO LOAD" the first time it was ever opened.**
