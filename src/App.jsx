@@ -4424,12 +4424,13 @@ const handleGitHubMirror = async () => {
                               db={db} 
                               storage={storage} 
                               appId={appId} 
-                              user={user} 
+                              user={user}
                               isAdmin={isAdmin}
-                              logAudit={logAudit} 
+                              userRole={userRole}
+                              logAudit={logAudit}
                               triggerCapy={triggerCapy}
                               appSettings={appSettings}
-                              masterUserId={userId} 
+                              masterUserId={userId}
                           />
                       </div>
                   )}

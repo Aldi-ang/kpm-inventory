@@ -3762,6 +3762,25 @@ check(G53, 'the completeness meter reports but never blocks a save',
   'the save button may only be disabled while submitting or with an empty document. Gating it on ' +
   'donePct turns the meter into a block, and a block explains nothing');
 
+/* A photo of goods or of a nota is evidence, and evidence is taken at the warehouse, now. A gallery
+   pick can be any picture from any day — the exact thing the photo exists to rule out. Both inputs
+   must therefore ask for the camera unless the tier rule says otherwise, and that rule must be the
+   shared one, not a second copy that can drift. */
+check(G53, 'both evidence photos ask for the camera unless the tier rule allows the gallery',
+  /canPickFromGallery/.test(restockCode) &&
+  (restockCode.match(/galleryOk \? \{\} : \{ capture: 'environment' \}/g) || []).length === 2 &&
+  /export const canPickFromGallery/.test(fs.readFileSync('src/config/permissions.js', 'utf8')),
+  'the foto-barang AND nota inputs must both spread capture:"environment" unless canPickFromGallery ' +
+  'says otherwise, and that helper must live in permissions.js beside the other tier checks — a ' +
+  'second copy of the translation is what has caused every tier bug in this project so far');
+
+/* The nota was disabled on Kirim once, and a dead grey control that never says why is the silence
+   he calls a bug. It is optional there, not forbidden. */
+check(G53, 'the nota is never a dead control on the outbound side',
+  !/disabled=\{isOut\}/.test(restockCode),
+  'the nota input must not be disabled on Kirim. An internal transfer usually has no supplier nota, ' +
+  'so it is optional there — a blocked control that explains nothing is worse than an empty one');
+
 /* ── report ──────────────────────────────────────────────────────────────── */
 let last = '';
 for (const r of results) {

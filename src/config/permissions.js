@@ -92,6 +92,20 @@ export const isFleetManagementTier = (userRole) => {
     return role === CORPORATE_TIERS.TIER_1 || role === CORPORATE_TIERS.TIER_2 || role === CORPORATE_TIERS.TIER_3 || role === CORPORATE_TIERS.TIER_4;
 };
 
+// 🚀 SHARED PHOTO-SOURCE RULE: a photo of goods or of a nota is evidence, and evidence has to be
+// taken NOW, at the warehouse. A picture chosen from the gallery can be any picture from any day —
+// which is the exact thing the photo exists to rule out. So field tiers get the camera only.
+// Tier 3 and above may pick from the gallery, because they are the ones who re-file a photo that
+// arrived by WhatsApp or has to be replaced after the fact.
+// ⚠️ `capture` is a request, not a lock: mobile browsers honour it and open the camera directly,
+// desktop browsers ignore it and open a file picker. The rule is enforceable where the photos are
+// actually taken; on a desktop it is a default, not a wall.
+// Mirrors isFieldLevelTier's translation so the tier checks can never drift apart.
+export const canPickFromGallery = (userRole) => {
+    const role = translateLegacyRole(userRole);
+    return role === CORPORATE_TIERS.TIER_1 || role === CORPORATE_TIERS.TIER_2 || role === CORPORATE_TIERS.TIER_3;
+};
+
 export let ROLE_PERMISSIONS = {
     [CORPORATE_TIERS.TIER_1]: ['ALL_ACCESS'], 
     [CORPORATE_TIERS.TIER_2]: [ 

@@ -4,6 +4,7 @@ import { doc, collection, setDoc, updateDoc, deleteDoc, serverTimestamp, writeBa
 import { savePhotoAndGetReference, deletePhotoFromStorage, compressImageToBase64, getLocalDayKey} from './utils/helpers';
 import { confirmAction } from './components/ConfirmGate.jsx';
 import { notify } from './components/Toast.jsx';
+import { canPickFromGallery } from './config/permissions';
 
 /* ═══════════════════════════════════════════════════════════════════════════
    SURAT JALAN — one document, two directions.
@@ -117,7 +118,9 @@ const Proses = ({ steps }) => (
     </div>
 );
 
-const RestockVaultView = ({ inventory = [], procurements = [], db, storage, appId, user, isAdmin, logAudit, triggerCapy, appSettings, masterUserId }) => {
+const RestockVaultView = ({ inventory = [], procurements = [], db, storage, appId, user, isAdmin, userRole, logAudit, triggerCapy, appSettings, masterUserId }) => {
+    /* camera only, unless he is senior enough to re-file a photo that came in some other way */
+    const galleryOk = canPickFromGallery(userRole);
     /* 'in' = surat jalan masuk · 'out' = surat jalan keluar (HQ push) · 'book' = buku besar */
     const [viewMode, setViewMode] = useState('in');
     const [searchTerm, setSearchTerm] = useState('');
@@ -1263,14 +1266,17 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, storage, appI
                                         </div>
                                     ) : (
                                         <label className="h-11 border border-dashed border-line-3 rounded bg-inset flex items-center justify-center gap-2 cursor-pointer text-[10.5px] font-mono text-ink-muted hover:border-orange hover:text-ink transition-colors">
-                                            <Camera size={13}/> ambil foto
-                                            <input type="file" accept="image/*" capture="environment" className="hidden" onChange={e => setPackageFile(e.target.files[0])}/>
+                                            <Camera size={13}/> {galleryOk ? 'ambil / pilih foto' : 'ambil foto'}
+                                            <input type="file" accept="image/*" {...(galleryOk ? {} : { capture: 'environment' })} className="hidden" onChange={e => setPackageFile(e.target.files[0])}/>
                                         </label>
                                     )}
                                 </div>
 
-                                <div className={`border rounded-lg bg-panel p-2.5 flex flex-col gap-1.5 transition-colors ${isOut ? 'opacity-40' : receiptFile ? 'border-orange' : 'border-line-2'}`}>
-                                    <div className="flex items-center gap-2"><Lamp tone={receiptFile ? 'on' : 'off'} /><span className="text-[10px] font-bold text-ink-muted uppercase tracking-widest">Nota / faktur</span></div>
+                                {/* NOT disabled on Kirim. It used to be, and a dead grey box that never
+                                    says why is the silence he calls a bug. An internal transfer usually
+                                    has no supplier nota, so here it is simply optional — never blocked. */}
+                                <div className={`border rounded-lg bg-panel p-2.5 flex flex-col gap-1.5 transition-colors ${receiptFile ? 'border-orange' : 'border-line-2'}`}>
+                                    <div className="flex items-center gap-2"><Lamp tone={receiptFile ? 'on' : 'off'} /><span className="text-[10px] font-bold text-ink-muted uppercase tracking-widest">Nota / faktur{isOut && <span className="normal-case tracking-normal"> · opsional</span>}</span></div>
                                     {receiptFile ? (
                                         <div className="flex items-center justify-between gap-2 h-11 px-2 border border-orange rounded bg-inset">
                                             <span className="text-[11px] font-mono text-ink truncate">{receiptFile.name}</span>
@@ -1278,8 +1284,8 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, storage, appI
                                         </div>
                                     ) : (
                                         <label className="h-11 border border-dashed border-line-3 rounded bg-inset flex items-center justify-center gap-2 cursor-pointer text-[10.5px] font-mono text-ink-muted hover:border-orange hover:text-ink transition-colors">
-                                            <FileText size={13}/> foto nota
-                                            <input type="file" accept="image/*" className="hidden" disabled={isOut} onChange={e => setReceiptFile(e.target.files[0])}/>
+                                            <FileText size={13}/> {galleryOk ? 'ambil / pilih nota' : 'foto nota'}
+                                            <input type="file" accept="image/*" {...(galleryOk ? {} : { capture: 'environment' })} className="hidden" onChange={e => setReceiptFile(e.target.files[0])}/>
                                         </label>
                                     )}
                                 </div>
