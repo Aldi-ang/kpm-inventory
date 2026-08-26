@@ -3208,5 +3208,54 @@ ok('the unclassified row cannot be mistaken for a result',
    /\.kpm-vrow\.unset \.nm \{ color: var\(--ink-dim\); font-style: italic/.test(themeCss));
 
 
+section('D9. The big regional chart - "keep the list and add the big graph"');
+const pace = read('src/components/PaceChart.jsx');
+
+ok('there is ONE pace chart, and both panels use it',
+   /import PaceChart/.test(dashPanel) && /import PaceChart/.test(dashView),
+   'the second caller is why it was extracted - two copies of chart geometry drift silently, '
+   + 'with both charts still drawing and neither meaning what the other does');
+ok('and the geometry left the panel that used to own it',
+   !/const VB = \{ w: 336/.test(dashPanel));
+ok('the viewBox maths lives in the component now',
+   /const VB = \{ w: 336/.test(pace));
+
+ok('the line is REMOUNTED to redraw, not transitioned',
+   /key=\{`l-\$\{drawKey\}`\}/.test(pace),
+   'React keeps the same <path> when only `d` changes, so without a key the first swap animates '
+   + 'and every one after it snaps - a bug nobody reports because nothing looks broken');
+ok('the regional chart passes the region as that key',
+   /drawKey=\{`\$\{shown\.region\}-\$\{period\}`\}/.test(dashView));
+ok('and it is a CSS animation, which is what restarts on a remount',
+   /animation: kpmPaceDraw/.test(themeCss));
+
+ok('the drawn line survives Lite Mode',
+   /html\.lite-mode \.kpm-pace-line \{ stroke-dasharray: none/.test(themeCss),
+   'lite-mode kills animation outright, and an unguarded line stops wherever its dash sat');
+ok('and so does the fill under it',
+   /html\.lite-mode \.kpm-pace-fill \{ opacity: 1/.test(themeCss));
+ok('reduced motion gets the same treatment, not a broken chart',
+   /prefers-reduced-motion[\s\S]{0,260}kpm-pace-line \{ stroke-dasharray: none/.test(themeCss));
+
+ok('a region is scaled to its OWN even pace, never to the company target',
+   /target=\{shown\.evenPace\}/.test(dashView),
+   'there is no per-region target set, and scaling one against the company figure would only '
+   + 'ever show that a region is a fraction of the company');
+ok('the fast-start reading uses the MIDPOINT, not the last point',
+   /const mid = Math\.floor\(\(series\.length - 1\) \/ 2\)/.test(dashView),
+   'the line is scaled so its last point sits ON the pace line by construction, so comparing '
+   + 'those two is always true and says nothing');
+ok('a series too short to have a shape says nothing at all',
+   /steady: series\.length <= 2/.test(dashView));
+
+ok('the rows are the swap control, so there is no second one on screen',
+   /aria-pressed=\{\(wilayah \?\? regions\.rows\[0\]\?\.region\) === r\.region\}/.test(dashView));
+ok('and nothing selected yet still shows a chart',
+   /regions\.rows\.find\(r => r\.region === wilayah\) \|\| regions\.rows\[0\]/.test(dashView),
+   'a chart-shaped hole waiting to be clicked is not an empty state, it is a bug');
+ok('the selected row is marked by a stripe, which Lite Mode cannot eat',
+   /\.kpm-vrow\[aria-pressed="true"\] \{ border-left: 3px solid var\(--accent-edge\)/.test(themeCss));
+
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

@@ -1,10 +1,11 @@
-import React, { useMemo, useState, useEffect, useRef } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Settings, X, Save } from 'lucide-react';
-import { formatRupiah, convertToBks } from '../utils/helpers';
+import { formatRupiah, compactRp, convertToBks } from '../utils/helpers';
 import { MIN_STOCK_UNITS, DEFAULT_MIN_QTY, DEFAULT_MIN_UNIT } from '../utils/stockThreshold';
 import { PERIODS, periodWindow, txDate } from '../utils/period';
 import SafetyStatus from './SafetyStatus';
+import PaceChart from './PaceChart';
 
 /* THE LIVE PANEL — what used to be three "Executive Targets" cards.
    ────────────────────────────────────────────────────────────────────────────
@@ -40,14 +41,6 @@ const toBal = (item, product) => {
     return convertToBks(item.qty, item.unit, product) / packsPerBal;
 };
 
-/* a short rupiah for a label, where the exact figure would only be noise */
-const compactRp = (v) => {
-    const n = Number(v) || 0;
-    if (n >= 1e9) return `Rp ${(n / 1e9).toFixed(1).replace('.', ',')} M`;
-    if (n >= 1e6) return `Rp ${Math.round(n / 1e6)} jt`;
-    return formatRupiah(n);
-};
-
 const pct = (a, b) => (b > 0 ? Math.round((a / b) * 100) : 0);
 
 /* 🔴 "better to add some commas here" — his screenshot of the goals form, 2026-08-25, showing
@@ -65,10 +58,8 @@ export default function DashboardBenchmarks({
     auditLogs = [], sessionStatus, period = 'bulan', onPeriod,
 }) {
     const [isEditing, setIsEditing] = useState(false);
-    const [scrub, setScrub]   = useState(null);   // index being read, or null
     const [ringOn, setRingOn] = useState(null);   // 'skm' | 'skt' | null
     const [arrived, setArrived] = useState(false);
-    const sparkRef = useRef(null);
 
     const monthlyTarget = Number(appSettings?.targetMonthlyRevenue) || 500000000;
     const dailyBalTarget = Number(appSettings?.targetDailyBal) || 50;
@@ -173,37 +164,9 @@ export default function DashboardBenchmarks({
         return () => cancelAnimationFrame(id);
     }, [period]);
 
-    /* ── the chart geometry. viewBox units; the SVG stretches, the maths does not. ── */
-    const VB = { w: 336, h: 92, top: 8, bot: 86 };
-    const span = VB.w * (M.done / M.buckets);
-    const n = M.series.length;
-    const X = (i) => (n < 2 ? 0 : (i * span) / (n - 1));
-    const Y = (v) => VB.bot - Math.min(1, v / (M.revTarget || 1)) * (VB.bot - VB.top);
-    const points = M.series.map((v, i) => `${X(i)},${Y(v)}`).join(' L');
-
-    const onScrub = (e) => {
-        const el = sparkRef.current;
-        if (!el || n < 2) return;
-        const r = el.getBoundingClientRect();
-        if (!r.width) return;
-        const frac = Math.max(0, Math.min(1, ((e.clientX - r.left) / r.width) / (M.done / M.buckets || 1)));
-        setScrub(Math.round(frac * (n - 1)));
-    };
-    const onScrubKey = (e) => {
-        if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
-        e.preventDefault();
-        const cur = scrub === null ? n - 1 : scrub;
-        setScrub(Math.max(0, Math.min(n - 1, cur + (e.key === 'ArrowRight' ? 1 : -1))));
-    };
-
-    /* what the scrub line says: the value at that point, and how far off the pace it was */
-    let scrubKey = '', scrubVal = null, scrubGap = 0;
-    if (scrub !== null && n > 1) {
-        const need = (scrub / (n - 1)) * (M.done / M.buckets) * M.revTarget;
-        scrubVal = M.series[scrub];
-        scrubGap = scrubVal - need;
-        scrubKey = scrub === 0 ? 'Mulai' : M.tickOf(scrub - 1);
-    }
+    /* the chart, its geometry and its scrub readout moved to PaceChart.jsx the moment the
+       regional panel needed the same thing — two copies of that maths would drift silently, with
+       both charts still drawing and neither meaning what the other did. */
 
     /* ── the ring. Each arc is a dash of the full circumference revealed by pulling the offset
           down; the second is rotated to start where the first ended. `transformOrigin` is in USER
@@ -285,61 +248,17 @@ export default function DashboardBenchmarks({
                         {formatRupiah(M.omzet)}
                     </div>
 
-                    <div
-                        className={`kpm-spark${scrub !== null ? ' on' : ''}`}
-                        ref={sparkRef}
-                        tabIndex={0}
-                        role="img"
-                        aria-label={`Omzet ${p.title} dibanding target. Panah kiri kanan untuk membaca.`}
-                        onPointerMove={onScrub}
-                        onPointerDown={onScrub}
-                        onPointerLeave={(e) => { if (e.pointerType !== 'touch') setScrub(null); }}
-                        onKeyDown={onScrubKey}
-                        style={{ marginTop: 'var(--s3)' }}
-                    >
-                        <svg viewBox={`0 0 ${VB.w} ${VB.h}`} width="100%" height="92"
-                             preserveAspectRatio="none" aria-hidden="true">
-                            <line x1="0" y1={VB.bot} x2={VB.w} y2={VB.bot}
-                                  stroke="var(--line-3)" strokeWidth="1" vectorEffect="non-scaling-stroke" />
-                            <line x1="0" y1={VB.bot} x2={VB.w} y2={VB.top}
-                                  stroke="var(--line-3)" strokeWidth="1" strokeDasharray="4 4"
-                                  vectorEffect="non-scaling-stroke"
-                                  style={{ opacity: arrived ? 1 : 0, transition: 'opacity 300ms cubic-bezier(.2,.8,.3,1)' }} />
-                            {n > 1 && (
-                                <>
-                                    <path d={`M0,${VB.bot} L${points} L${X(n - 1)},${VB.bot} Z`}
-                                          fill="var(--lamp-on)" fillOpacity=".13"
-                                          style={{ opacity: arrived ? 1 : 0, transition: 'opacity 300ms cubic-bezier(.2,.8,.3,1)' }} />
-                                    <path d={`M${points}`} fill="none" stroke="var(--lamp-on)" strokeWidth="2"
-                                          strokeLinejoin="round" strokeLinecap="round"
-                                          vectorEffect="non-scaling-stroke" />
-                                </>
-                            )}
-                        </svg>
-                        {scrub !== null && n > 1 && (
-                            <>
-                                <div className="kpm-cross" style={{ opacity: 1, left: `${(X(scrub) / VB.w) * 100}%` }} />
-                                <div className="kpm-scrub" style={{
-                                    opacity: 1,
-                                    left: `${(X(scrub) / VB.w) * 100}%`,
-                                    top:  `${(Y(M.series[scrub]) / VB.h) * 100}%`,
-                                }} />
-                            </>
-                        )}
-                    </div>
-
-                    <div className={`kpm-ro${scrub !== null ? ' on' : ''}`}>
-                        <span className="k">{scrubKey}</span>
-                        <span className="v">
-                            {scrubVal !== null && (
-                                <>
-                                    {compactRp(scrubVal)}{' · '}
-                                    <span className={scrubGap < 0 ? 'neg' : ''}>
-                                        {scrubGap < 0 ? '' : '+'}{compactRp(scrubGap)} vs pace
-                                    </span>
-                                </>
-                            )}
-                        </span>
+                    <div style={{ marginTop: 'var(--s3)' }}>
+                        <PaceChart
+                            series={M.series}
+                            target={M.revTarget}
+                            done={M.done}
+                            buckets={M.buckets}
+                            tickOf={M.tickOf}
+                            drawKey={period}
+                            arrived={arrived}
+                            ariaLabel={`Omzet ${p.title} dibanding target. Panah kiri kanan untuk membaca.`}
+                        />
                     </div>
 
                     <div className="kpm-ro on">

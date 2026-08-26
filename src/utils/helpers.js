@@ -1,5 +1,20 @@
 import { ref, uploadString, getDownloadURL, deleteObject } from 'firebase/storage';
 
+/* A SHORT rupiah, for a place where the exact figure would only be noise — an axis label, a
+   target, a "vs pace" delta. Indonesian shorthand: jt = juta, M = miliar. Never use it for a
+   figure somebody has to act on; that gets formatRupiah and every digit.
+   ⚠️ The decimal mark is a COMMA and the thousands separator is a DOT, matching formatRupiah's
+   id-ID output. Mixing the two conventions on one screen is how a reader loses a factor of a
+   thousand. */
+export const compactRp = (v) => {
+  const n = Number(v) || 0;
+  const sign = n < 0 ? '-' : '';
+  const a = Math.abs(n);
+  if (a >= 1e9) return `${sign}Rp ${(a / 1e9).toFixed(1).replace('.', ',')} M`;
+  if (a >= 1e6) return `${sign}Rp ${Math.round(a / 1e6)} jt`;
+  return formatRupiah(n);
+};
+
 export const formatRupiah = (number) => {
   return new Intl.NumberFormat('id-ID', {
     style: 'currency',

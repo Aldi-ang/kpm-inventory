@@ -50,8 +50,8 @@
     "semantic_hash": ""
   },
   "src/App.jsx": {
-    "mtime": 1787663295.019093,
-    "ast_hash": "a06755cf9b75636e58fa01be57b310c1",
+    "mtime": 1787664637.0376482,
+    "ast_hash": "adb1bb1205875492846fbacb16da25f5",
     "semantic_hash": ""
   },
   "src/ConsignmentFinanceView.jsx": {
@@ -135,13 +135,13 @@
     "semantic_hash": ""
   },
   "src/components/DashboardBenchmarks.jsx": {
-    "mtime": 1787663136.591993,
-    "ast_hash": "1be991d8bcd3d8ee7cff632df3195b17",
+    "mtime": 1787705425.9655995,
+    "ast_hash": "04de02711db4e7cecd6b747c3cce6064",
     "semantic_hash": ""
   },
   "src/components/DashboardView.jsx": {
-    "mtime": 1787663192.9394405,
-    "ast_hash": "7e6b281b05393edd1143a3c541c64625",
+    "mtime": 1787705521.149713,
+    "ast_hash": "4da9be1a8537e5597e007b14bf31dc3d",
     "semantic_hash": ""
   },
   "src/components/ExamineModal.jsx": {
@@ -225,8 +225,8 @@
     "semantic_hash": ""
   },
   "src/utils/helpers.js": {
-    "mtime": 1787663295.0140972,
-    "ast_hash": "131d6cc5414f6026cb1580866caef1bd",
+    "mtime": 1787705396.8891447,
+    "ast_hash": "c8199c8b1a982672223265ca4643a321",
     "semantic_hash": ""
   },
   "tailwind.config.js": {
@@ -570,8 +570,8 @@
     "semantic_hash": ""
   },
   ".claude/PROGRESS.md": {
-    "mtime": 1787662133.0039277,
-    "ast_hash": "25b4839b91e6986df450b6b75cff3247",
+    "mtime": 1787668926.6868193,
+    "ast_hash": "55b1ed8272b396f1806e71885607469a",
     "semantic_hash": ""
   },
   ".claude/pre-compact-context.md": {
@@ -755,8 +755,8 @@
     "semantic_hash": ""
   },
   "src/config/logicFixes.selfcheck.mjs": {
-    "mtime": 1787663434.2211435,
-    "ast_hash": "95985c7ff1962e5afc4632ac0b1e2b83",
+    "mtime": 1787705627.1896365,
+    "ast_hash": "dc5c131927490ed54c485fe44dd8199b",
     "semantic_hash": ""
   },
   ".claude/NEXT-SESSION.md": {
@@ -792,6 +792,11 @@
   "src/utils/stockThreshold.js": {
     "mtime": 1787662626.580104,
     "ast_hash": "67fe7262e5fa960a1b3b54d5d1d470aa",
+    "semantic_hash": ""
+  },
+  "src/components/PaceChart.jsx": {
+    "mtime": 1787705382.7011006,
+    "ast_hash": "21a4a1429c0b64c5caed6e5858f45d71",
     "semantic_hash": ""
   }
 }

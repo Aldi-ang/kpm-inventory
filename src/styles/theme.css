@@ -4145,3 +4145,40 @@ html.lite-mode .kpm-arr { opacity: 1; transform: none; }
 .kpm-vrow.unset { cursor: default; }
 .kpm-vrow.unset:hover { background: transparent; }
 .kpm-vrow.unset .nm { color: var(--ink-dim); font-style: italic; }
+
+/* ---- THE PACE LINE DRAWS ITSELF IN. His ask with the regional panel, 2026-08-25:
+   *"add button to swap wilayah and give cool animation for that"*. The swap animation IS the
+   line redrawing — nothing slides, nothing fades between two charts, the new region simply
+   draws left to right, which is the direction time runs on that axis.
+
+   ⚠️ AN ANIMATION, NOT A TRANSITION, and that is the whole reason it works twice. React keeps
+   the same <path> element when only its `d` changes, and a CSS transition on an element that
+   never left the DOM has nothing to transition FROM — the first swap would animate and every
+   one after it would snap. PaceChart passes the region as a `key`, React remounts the path, and
+   a fresh element runs its animation again.
+
+   ⚠️ `stroke-dasharray: 1000` is a length no path in a 336x92 box can reach, so one dash covers
+   the whole line whatever shape it is. Measuring the real length would need a ref and a layout
+   read on every swap; overshooting costs nothing and cannot be wrong.
+
+   ⚠️ The lite-mode guards are not decoration. `html.lite-mode *` kills animation outright, and
+   an un-guarded line would be left wherever its dash happened to sit. Same trap as `.kpm-arr`. */
+@keyframes kpmPaceDraw { from { stroke-dashoffset: 1000; } to { stroke-dashoffset: 0; } }
+@keyframes kpmPaceFade { from { opacity: 0; } to { opacity: 1; } }
+
+.kpm-pace-line { stroke-dasharray: 1000;
+  animation: kpmPaceDraw 300ms cubic-bezier(.2, .8, .3, 1) both; }
+.kpm-pace-fill { animation: kpmPaceFade 300ms cubic-bezier(.2, .8, .3, 1) 120ms both; }
+
+html.lite-mode .kpm-pace-line { stroke-dasharray: none; stroke-dashoffset: 0; animation: none; }
+html.lite-mode .kpm-pace-fill { opacity: 1; animation: none; }
+@media (prefers-reduced-motion: reduce) {
+  .kpm-pace-line { stroke-dasharray: none; stroke-dashoffset: 0; animation: none; }
+  .kpm-pace-fill { opacity: 1; animation: none; }
+}
+
+/* the selected region row. `.on` already carries the raised ground; this is the mark that says
+   WHICH one the chart above is showing, and it is a stripe rather than a colour so it survives
+   Lite Mode and does not spend the amber a second time. */
+.kpm-vrow[aria-pressed="true"] { border-left: 3px solid var(--accent-edge);
+  padding-left: calc(var(--s2) - 3px); }

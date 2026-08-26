@@ -1,9 +1,10 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { Users, Activity, PackageX, MapPin } from 'lucide-react';
-import { formatRupiah, convertToBks, splitToUnits } from '../utils/helpers';
+import { formatRupiah, compactRp, convertToBks, splitToUnits } from '../utils/helpers';
 import { isLowStock, minStockBks, daysOfCover } from '../utils/stockThreshold';
 import { periodWindow, periodDays, periodMeta, txDate } from '../utils/period';
 import DashboardBenchmarks from './DashboardBenchmarks';
+import PaceChart from './PaceChart';
 
 /* THE DASHBOARD.
    ────────────────────────────────────────────────────────────────────────────
@@ -47,6 +48,7 @@ export default function DashboardView({
 }) {
     const [period, setPeriod] = useState('bulan');
     const [openRow, setOpenRow] = useState(null);
+    const [wilayah, setWilayah] = useState(null);   // which region the big chart is showing
     const [arrived, setArrived] = useState(false);
 
     useEffect(() => {
@@ -164,16 +166,49 @@ export default function DashboardView({
                 if (t.customerName) unknown.names.add(key(t.customerName));
                 return;
             }
-            if (!acc.has(region)) acc.set(region, { region, omzet: 0, laba: 0, nota: 0, toko: new Set() });
+            if (!acc.has(region)) acc.set(region, {
+                region, omzet: 0, laba: 0, nota: 0, toko: new Set(),
+                perBucket: new Array(w.buckets).fill(0),
+            });
             const a = acc.get(region);
             a.omzet += (t.total || 0);
             a.laba  += (t.totalProfit || 0);
             a.nota  += 1;
             a.toko.add(key(t.customerName));
+            const b = w.bucketOf(d);
+            if (b >= 0 && b < w.buckets) a.perBucket[b] += (t.total || 0);
         });
 
+        /* ⚠️ THE DASHED LINE ON A REGION MEANS SOMETHING DIFFERENT FROM THE ONE ON THE LIVE
+           PANEL, and pretending otherwise would be a lie drawn to scale. There is no per-region
+           target — he sets one target, for the whole business — so scaling a region's chart
+           against it would only ever show that a region is a fraction of the company, which is
+           what the ranked list already says.
+           Instead the line is scaled so the dashed pace ENDS where the region actually is. It
+           then reads as STEADY PACE: above it the region started fast and is slowing, below it
+           the region started slow and is speeding up. That is a real reading, and it needs no
+           number nobody has set. */
         const rows = [...acc.values()]
-            .map(a => ({ ...a, toko: a.toko.size }))
+            .map(a => {
+                const series = [0];
+                for (let i = 0; i < Math.min(w.done, w.buckets); i++) {
+                    series.push(series[series.length - 1] + a.perBucket[i]);
+                }
+                const covered = w.buckets > 0 ? w.done / w.buckets : 1;
+                /* ⚠️ DO NOT compare the LAST point against the pace line to decide this. By
+                   construction they are equal — the line is scaled so it ends exactly where the
+                   region did — so that test is always true and says nothing. The midpoint is
+                   where the shape actually differs: ahead of half the total at the halfway mark
+                   means the region front-loaded and is now slowing. */
+                const mid = Math.floor((series.length - 1) / 2);
+                const evenAtMid = series.length > 1 ? a.omzet * (mid / (series.length - 1)) : 0;
+                return {
+                    ...a, toko: a.toko.size, series,
+                    evenPace: covered > 0 ? a.omzet / covered : a.omzet,
+                    fastStart: series.length > 2 && series[mid] > evenAtMid,
+                    steady: series.length <= 2,
+                };
+            })
             .sort((a, b) => b.omzet - a.omzet);
 
         const total = rows.reduce((sum, r) => sum + r.omzet, 0) + unknown.omzet;
@@ -181,6 +216,7 @@ export default function DashboardView({
         const share = (v) => (total > 0 ? Math.round((v / total) * 100) : 0);
 
         return {
+            done: w.done, buckets: w.buckets, tickOf: w.tickOf,
             rows: rows.map(r => ({ ...r, pct: Math.round((r.omzet / max) * 100), share: share(r.omzet) })),
             unknown: unknown.nota > 0
                 ? { omzet: unknown.omzet, nota: unknown.nota, toko: unknown.names.size, share: share(unknown.omzet) }
@@ -206,6 +242,10 @@ export default function DashboardView({
             .map(([name, d]) => ({ name, ...d }))
             .sort((a, b) => b.revenue - a.revenue);
     }, [transactions]);
+
+    /* the big chart follows the list. Nothing selected yet means rank 1, so the panel is never
+       a chart-shaped hole waiting to be clicked. */
+    const shown = regions.rows.find(r => r.region === wilayah) || regions.rows[0] || null;
 
     const meta = periodMeta(period);
     const arr = (step) => `kpm-arr${arrived ? ' in' : ''}`;
@@ -321,12 +361,48 @@ export default function DashboardView({
                                 </div>
                             </div>
                             <div className="kpm-shelf">
+                                {/* ── HIS CALL, 2026-08-25: *"keep the list and add the big graph"*.
+                                    The rows ARE the swap control — they were already buttons with a
+                                    selected state, so a separate row of region tabs would have put a
+                                    second control on screen doing what the first one already did.
+                                    The list answers "which wilayah is behind" (a comparison, and a
+                                    comparison has to be seen all at once); the chart answers "and is
+                                    that one getting better or worse" (a trend, which a bar cannot
+                                    show at any size). Neither replaces the other. ── */}
+                                {shown && (
+                                    <div style={{ marginBottom: 'var(--s4)' }}>
+                                        <div className="kpm-ro on" style={{ minHeight: 0 }}>
+                                            <span className="k">{shown.region}</span>
+                                            <span className="v">
+                                                {formatRupiah(shown.omzet)} · {shown.share}%
+                                            </span>
+                                        </div>
+                                        <PaceChart
+                                            series={shown.series}
+                                            target={shown.evenPace}
+                                            done={regions.done}
+                                            buckets={regions.buckets}
+                                            tickOf={regions.tickOf}
+                                            drawKey={`${shown.region}-${period}`}
+                                            arrived={arrived}
+                                            ariaLabel={`Omzet ${shown.region} sepanjang ${meta.title}. Garis putus-putus adalah laju rata-rata.`}
+                                        />
+                                        <p className="kpm-safety-hint" style={{ margin: 0 }}>
+                                            garis putus-putus = laju rata-rata
+                                            {shown.steady ? '' : shown.fastStart
+                                                ? ' · mulai cepat, lalu melambat'
+                                                : ' · mulai pelan, lalu naik'}
+                                        </p>
+                                    </div>
+                                )}
+
                                 {regions.rows.slice(0, 6).map((r, i) => (
                                     <button
                                         key={r.region}
                                         type="button"
-                                        className={`kpm-vrow${openRow === 'r-' + r.region ? ' on' : ''}`}
-                                        onClick={() => setOpenRow(openRow === 'r-' + r.region ? null : 'r-' + r.region)}
+                                        className={`kpm-vrow${(wilayah ?? regions.rows[0]?.region) === r.region ? ' on' : ''}`}
+                                        aria-pressed={(wilayah ?? regions.rows[0]?.region) === r.region}
+                                        onClick={() => setWilayah(r.region)}
                                     >
                                         <span className="rk">{String(i + 1).padStart(2, '0')}</span>
                                         <span className="nm">{r.region}</span>
