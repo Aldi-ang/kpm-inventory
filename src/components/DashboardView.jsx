@@ -1,6 +1,6 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import { Users, Activity, PackageX, MapPin, Boxes } from 'lucide-react';
-import { formatRupiah, convertToBks, splitToUnits } from '../utils/helpers';
+import { formatRupiah, convertToBks, displayQty } from '../utils/helpers';
 import { isLowStock, minStockBks, daysOfCover } from '../utils/stockThreshold';
 import { periodWindow, periodDays, periodMeta, txDate } from '../utils/period';
 import { MASTER, warehouseList, supplyByProduct, dormant } from '../utils/supply';
@@ -33,19 +33,21 @@ import PaceChart from './PaceChart';
    in Bal instead of Bks — *"few bal is considered as low not BKS bruh"*. The threshold behind it
    is a company setting with a unit of its own; see src/utils/stockThreshold.js.                */
 
-/* the largest unit a quantity actually fills, because "sisa 640 Bks" is not how anyone speaks */
-const dominant = (bks, product) => {
-    const u = splitToUnits(bks, product);
-    if (u.Karton > 0) return { n: u.Karton, unit: 'KARTON', rest: u.Bal ? `${u.Bal} bal` : '' };
-    if (u.Bal    > 0) return { n: u.Bal,    unit: 'BAL',    rest: u.Slop ? `${u.Slop} slop` : '' };
-    if (u.Slop   > 0) return { n: u.Slop,   unit: 'SLOP',   rest: u.Bks ? `${u.Bks} bks` : '' };
-    return { n: u.Bks, unit: 'BKS', rest: '' };
-};
+/* this used to be a private copy of the same logic. It is `displayQty` in helpers now, so the
+   unit setting reaches every panel at once instead of one of them. */
 
 /* a whole-number share of a product's own total. Rounded independently per series, so three
    shares can add to 99 or 101 — printing them to a decimal to force 100 would be false precision
    on figures nobody sums by eye. */
 const share = (part, total) => (total > 0 ? Math.round((part / total) * 100) : 0);
+
+/* named once, so the bar, the legend swatch and the readout can never disagree about which
+   colour means what */
+const SERIES = [
+    { key: 'sold',  label: 'Terjual' },
+    { key: 'field', label: 'Dalam perjalanan' },
+    { key: 'shelf', label: 'Stok gudang' },
+];
 
 export default function DashboardView({
     isAdmin, transactions = [], lowStockItems = [], setActiveTab,
@@ -56,6 +58,12 @@ export default function DashboardView({
     const [openRow, setOpenRow] = useState(null);
     const [wilayah, setWilayah] = useState(null);   // which region the big chart is showing
     const [gudang, setGudang] = useState(null);     // null = every warehouse at once
+    const [seg, setSeg] = useState(null);           // {id, key} of the bar segment being read
+    /* his setting, read once and threaded through every quantity on the screen.
+       useCallback because the memos below call it: a fresh function each render is a dependency
+       that changes every render, which silently disables their memoisation. */
+    const unit = appSettings?.defaultDisplayUnit || 'AUTO';
+    const dominant = useCallback((bks, product) => displayQty(bks, product, unit), [unit]);
     const [arrived, setArrived] = useState(false);
 
     useEffect(() => {
@@ -94,7 +102,7 @@ export default function DashboardView({
                 };
             })
             .sort((a, b) => a.days - b.days);
-    }, [lowStockItems, transactions, inventory, appSettings]);
+    }, [lowStockItems, transactions, inventory, appSettings, dominant]);
 
     /* ── VELOCITY, for the period on the switch. Same window as the live panel, from the same
           function, so the heading and the figures above it can never mean different things. ── */
@@ -131,7 +139,7 @@ export default function DashboardView({
         const top = rows.slice(0, 6);
         const max = top.length ? Math.max(...top.map(r => r.bks), 1) : 1;
         return top.map(r => ({ ...r, pct: Math.round((r.bks / max) * 100) }));
-    }, [transactions, inventory, period, appSettings]);
+    }, [transactions, inventory, period, appSettings, dominant]);
 
     /* ── KINERJA REGIONAL. His ask, 2026-08-25: *"add one more panel, each performance graph
           for regional division, but if there are so much division we might need to design this
@@ -427,6 +435,11 @@ export default function DashboardView({
                                     <span><i className="field" /> Dalam perjalanan</span>
                                     <span><i className="shelf" /> Stok gudang</span>
                                 </div>
+                                {/* the answer to "what is that space" — it is the comparison, and
+                                    it should never have needed asking */}
+                                <p className="kpm-safety-hint" style={{ margin: '0 0 var(--s4)' }}>
+                                    Panjang batang sebanding dengan produk bervolume tertinggi
+                                </p>
 
                                 {supply.rows.length === 0 && (
                                     <p className="kpm-safety-hint" style={{ margin: 0 }}>
@@ -436,9 +449,6 @@ export default function DashboardView({
 
                                 {supply.rows.slice(0, 8).map(r => {
                                     const w = (v) => `${(v / supply.max) * 100}%`;
-                                    const sold = dominant(r.sold, r.product);
-                                    const field = dominant(r.field, r.product);
-                                    const shelf = dominant(r.shelf, r.product);
                                     const still = r.sold === 0 && r.shelf > 0;
                                     return (
                                         <button
@@ -446,31 +456,46 @@ export default function DashboardView({
                                             type="button"
                                             className={`kpm-srow${openRow === 's-' + r.id ? ' on' : ''}`}
                                             onClick={() => setOpenRow(openRow === 's-' + r.id ? null : 's-' + r.id)}
+                                            onPointerLeave={(e) => { if (e.pointerType !== 'touch') setSeg(null); }}
                                         >
                                             <span className="nm">{r.name}</span>
                                             <span className="bar">
                                                 {/* the share is printed INSIDE its own colour, and only
                                                     where the segment is wide enough to hold it — a
                                                     number spilling out of a 3% sliver is worse than no
-                                                    number. The rest are on the detail line. */}
+                                                    number. Pointing at a segment names it below. */}
                                                 <span className="kpm-stack">
-                                                    <i className="sold" style={{ width: arrived ? w(r.sold) : 0 }}>
-                                                        {share(r.sold, r.total) >= 12 && `${share(r.sold, r.total)}%`}
-                                                    </i>
-                                                    <i className="field" style={{ width: arrived ? w(r.field) : 0 }}>
-                                                        {share(r.field, r.total) >= 12 && `${share(r.field, r.total)}%`}
-                                                    </i>
-                                                    <i className="shelf" style={{ width: arrived ? w(r.shelf) : 0 }}>
-                                                        {share(r.shelf, r.total) >= 12 && `${share(r.shelf, r.total)}%`}
-                                                    </i>
+                                                    {SERIES.map(sr => (
+                                                        <i
+                                                            key={sr.key}
+                                                            className={`${sr.key}${seg && seg.id === r.id && seg.key === sr.key ? ' on' : ''}`}
+                                                            style={{ width: arrived ? w(r[sr.key]) : 0 }}
+                                                            onPointerEnter={() => setSeg({ id: r.id, key: sr.key })}
+                                                            onPointerDown={(e) => { e.stopPropagation(); setSeg({ id: r.id, key: sr.key }); }}
+                                                        >
+                                                            {share(r[sr.key], r.total) >= 12 && `${share(r[sr.key], r.total)}%`}
+                                                        </i>
+                                                    ))}
                                                 </span>
                                             </span>
                                             <span className="figs">
-                                                <em>{sold.n} {sold.unit.toLowerCase()}</em> terjual {share(r.sold, r.total)}% ·{' '}
-                                                {field.n} transit {share(r.field, r.total)}% ·{' '}
-                                                <span className={still ? 'dorm' : ''}>
-                                                    {shelf.n} {shelf.unit.toLowerCase()} gudang {share(r.shelf, r.total)}%
-                                                </span>
+                                                {seg && seg.id === r.id ? (() => {
+                                                    const sr = SERIES.find(x => x.key === seg.key);
+                                                    const q = dominant(r[seg.key], r.product);
+                                                    return (
+                                                        <>
+                                                            <i className={`sw ${sr.key}`} />
+                                                            {sr.label} ·{' '}
+                                                            <em>{q.n} {q.unit.toLowerCase()}</em> ·{' '}
+                                                            {share(r[seg.key], r.total)}% dari total produk ini
+                                                        </>
+                                                    );
+                                                })() : (
+                                                    <span className={still ? 'dorm' : ''}>
+                                                        {still ? 'Dorman · tidak ada penjualan pada periode ini'
+                                                               : `Total ${dominant(r.total, r.product).n} ${dominant(r.total, r.product).unit.toLowerCase()}`}
+                                                    </span>
+                                                )}
                                             </span>
                                         </button>
                                     );

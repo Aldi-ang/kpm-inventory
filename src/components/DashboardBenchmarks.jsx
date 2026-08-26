@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Settings, X, Save } from 'lucide-react';
-import { formatRupiah, compactRp, convertToBks } from '../utils/helpers';
+import { formatRupiah, compactRp, convertToBks, DISPLAY_UNITS } from '../utils/helpers';
 import { MIN_STOCK_UNITS, DEFAULT_MIN_QTY, DEFAULT_MIN_UNIT } from '../utils/stockThreshold';
 import { PERIODS, periodWindow, txDate } from '../utils/period';
 import SafetyStatus from './SafetyStatus';
@@ -99,6 +99,7 @@ export default function DashboardBenchmarks({
             targetRevenue_tahun:  appSettings?.targetRevenue_tahun  || '',
             defaultMinStockQty:  appSettings?.defaultMinStockQty  || DEFAULT_MIN_QTY,
             defaultMinStockUnit: appSettings?.defaultMinStockUnit || DEFAULT_MIN_UNIT,
+            defaultDisplayUnit:  appSettings?.defaultDisplayUnit  || 'AUTO',
         });
         setIsEditing(true);
     };
@@ -215,6 +216,8 @@ export default function DashboardBenchmarks({
             defaultMinStockQty:  Number(form.defaultMinStockQty) || DEFAULT_MIN_QTY,
             defaultMinStockUnit: MIN_STOCK_UNITS.includes(form.defaultMinStockUnit)
                 ? form.defaultMinStockUnit : DEFAULT_MIN_UNIT,
+            defaultDisplayUnit: DISPLAY_UNITS.includes(form.defaultDisplayUnit)
+                ? form.defaultDisplayUnit : 'AUTO',
         });
         setIsEditing(false);
     };
@@ -426,6 +429,23 @@ export default function DashboardBenchmarks({
                                         </select>
                                     </label>
                                 </div>
+                            </div>
+
+                            <div style={{ borderTop: '1px solid var(--line)', paddingTop: 'var(--s4)' }}>
+                                <p className="kpm-desc" style={{ marginTop: 0 }}>
+                                    Satuan yang dipakai untuk menampilkan jumlah di seluruh dasbor.
+                                    <b> Otomatis</b> memilih satuan terbesar yang terisi penuh; satuan tetap
+                                    membuat semua baris bisa dibandingkan langsung, tetapi dibulatkan ke bawah.
+                                </p>
+                                <label className="kpm-field">
+                                    <span>Satuan tampilan</span>
+                                    <select value={form.defaultDisplayUnit ?? 'AUTO'}
+                                            onChange={(e) => setForm({ ...form, defaultDisplayUnit: e.target.value })}>
+                                        {DISPLAY_UNITS.map(u => (
+                                            <option key={u} value={u}>{u === 'AUTO' ? 'Otomatis' : u}</option>
+                                        ))}
+                                    </select>
+                                </label>
                             </div>
 
                             <div style={{ borderTop: '1px solid var(--line)', paddingTop: 'var(--s4)' }}>

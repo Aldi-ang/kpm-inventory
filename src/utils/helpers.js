@@ -124,6 +124,35 @@ export const isSafeDocIdEmail = (email) => /^[^\s@/]+@[^\s@/]+\.[^\s@/]+$/.test(
 
    Largest unit first, remainder cascading down, so the result is unique — 1 Bal and
    20 Slop are the same quantity but only one of them is how anyone describes it. */
+/* HOW A QUANTITY IS PRINTED, everywhere. His ask, 2026-08-26: *"i want u to make setting to
+   edit the bal/karton/slop or bks on the graph as well"*.
+
+   AUTO is `splitToUnits` picking the largest unit a quantity actually fills, which is how a
+   salesman says it out loud. A FIXED unit is for when he wants every row in the same currency so
+   the rows can be compared by eye — "4 karton" and "8 slop" are not comparable at a glance, and
+   the whole point of that panel is comparison.
+
+   ⚠️ A FIXED UNIT ROUNDS DOWN, and small quantities therefore land on zero: 3 Bks shown in Karton
+   is 0. That is honest — it IS zero karton — but it is why AUTO stays the default.
+   ⚠️ ONE FUNCTION, so a figure cannot be printed one way in one panel and another way in the
+   next. That is the shared-data rule applied to formatting.                                    */
+export const DISPLAY_UNITS = ['AUTO', 'Karton', 'Bal', 'Slop', 'Bks'];
+
+export const displayQty = (totalBks, product, preferred = 'AUTO') => {
+  const bks = Math.max(0, Math.floor(Number(totalBks) || 0));
+
+  if (preferred && preferred !== 'AUTO' && DISPLAY_UNITS.includes(preferred)) {
+    const per = convertToBks(1, preferred, product || {});
+    return { n: per > 0 ? Math.floor(bks / per) : bks, unit: preferred.toUpperCase(), rest: '' };
+  }
+
+  const u = splitToUnits(bks, product);
+  if (u.Karton > 0) return { n: u.Karton, unit: 'KARTON', rest: u.Bal ? `${u.Bal} bal` : '' };
+  if (u.Bal    > 0) return { n: u.Bal,    unit: 'BAL',    rest: u.Slop ? `${u.Slop} slop` : '' };
+  if (u.Slop   > 0) return { n: u.Slop,   unit: 'SLOP',   rest: u.Bks ? `${u.Bks} bks` : '' };
+  return { n: u.Bks, unit: 'BKS', rest: '' };
+};
+
 export const splitToUnits = (totalBks, product) => {
     const per = {
         Karton: convertToBks(1, 'Karton', product || {}),

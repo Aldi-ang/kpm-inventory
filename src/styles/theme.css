@@ -161,6 +161,11 @@
 
   /* materials — all built from borders and gradients, so Lite Mode keeps them */
   --hatch:      repeating-linear-gradient(135deg, #26231F 0 1px, transparent 1px 4px);
+/* 🔴 --hatch IS DRAWN IN A LINE COLOUR, WHICH IS INVISIBLE ON A DARK PANEL. His screenshot,
+   2026-08-26: *"the graph for dark mode is not visible"* — the stok-gudang segment was #26231F
+   stripes on a #0E0D0C ground, about 1,2:1, so the longest bar on the screen was a rumour.
+   A hatch used as a DATA SERIES has to read like one, so it is drawn in the ink instead. */
+  --hatch-ink:  repeating-linear-gradient(135deg, rgba(232, 228, 222, .34) 0 1px, transparent 1px 4px);
   --hatch-gold: repeating-linear-gradient(135deg, #5A4A1E 0 1px, transparent 1px 4px);
   /* ⚠️ DANGER SURFACES USE THIS, NEVER --hatch-gold. Aldi killed the gold stripe on Crown
      Transfer on sight — *"i dont like yellow line in there"* — and he was right about more than
@@ -345,6 +350,7 @@ html.light {
   --tier-apex:     #7E1A12;
 
   --hatch:      repeating-linear-gradient(135deg, #8F8B84 0 1px, transparent 1px 4px);
+  --hatch-ink:  repeating-linear-gradient(135deg, rgba(19, 18, 17, .38) 0 1px, transparent 1px 4px);
   --hatch-gold: repeating-linear-gradient(135deg, #B49A55 0 1px, transparent 1px 4px);
   --hatch-danger: repeating-linear-gradient(135deg, rgba(126,42,34,.32) 0 1px, transparent 1px 5px);
   /* the two surface gradients move with the ladder — a steel band left behind on a cream page is
@@ -4216,8 +4222,14 @@ html.lite-mode .kpm-pace-fill { opacity: 1; animation: none; }
    ⚠️ BAR LENGTH IS COMPARABLE ACROSS PRODUCTS. Each bar is scaled against the largest product,
    not against its own total — his ask was *"so that we can compare the value"*. Scaling each to
    its own 100% would make a product with nine packs look exactly like one with nine thousand. */
-.kpm-stack { display: flex; height: 20px; width: 100%; background: var(--raised);
-  border: 1px solid var(--line); overflow: hidden; }
+/* ⚠️ THE TRACK IS THE DARKEST THING HERE AND EVERY SERIES SITS ABOVE IT. It was --raised, the
+   same tone the shelf segment wanted, so a bar and its empty remainder were the same colour.
+   ⚠️ THE EMPTY TAIL IS NOT A GAP, IT IS THE COMPARISON. Bars are scaled against the largest
+   product, so a short bar means "this one has less than the biggest" — his question, 2026-08-26:
+   *"the white space there just right side of the stock gudang graph what is that space btw?"*.
+   It is labelled under the legend now, because a reader should never have to ask. */
+.kpm-stack { display: flex; height: 20px; width: 100%; background: var(--inset);
+  border: 1px solid var(--line-3); overflow: hidden; }
 /* 20px, not 14: the share is printed inside its own colour, so the bar has to be tall enough to
    hold a 9px figure without clipping it. ⚠️ Each segment carries ITS OWN ink — a percentage on an
    amber segment cannot use the same colour as one on a near-black segment. */
@@ -4225,10 +4237,18 @@ html.lite-mode .kpm-pace-fill { opacity: 1; animation: none; }
   height: 100%; min-width: 0; overflow: hidden; white-space: nowrap;
   font-family: var(--font-mono); font-size: 9px; letter-spacing: .06em; font-weight: 700;
   transition: width 300ms cubic-bezier(.2, .8, .3, 1); }
-.kpm-stack > i.sold  { background: var(--ink);      color: var(--ink-inverse); }
-.kpm-stack > i.field { background: var(--lamp-on);  color: var(--orange-ink); }
-.kpm-stack > i.shelf { background-color: var(--inset); background-image: var(--hatch);
+.kpm-stack > i { cursor: pointer; }
+.kpm-stack > i.sold  { background: var(--ink);     color: var(--ink-inverse); }
+.kpm-stack > i.field { background: var(--lamp-on); color: var(--orange-ink); }
+.kpm-stack > i.shelf { background-color: var(--raised); background-image: var(--hatch-ink);
   color: var(--ink); }
+/* the segment you are pointing at lifts out of the bar by an inset rim rather than by changing
+   colour — a series that changes colour on hover stops being the series it was */
+/* ⚠️ AN OUTLINE, NOT A SHADOW. The first version used an inset box-shadow with a lite-mode
+   fallback, and the dashboard's own guard caught it: `html.lite-mode *` strips box-shadow, so the
+   mark that says WHICH segment you are reading would have vanished in Lite Mode. An outline is
+   not a shadow, needs no fallback, and draws identically in both. */
+.kpm-stack > i.on { outline: 2px solid var(--accent-edge); outline-offset: -2px; }
 /* the tail of the track that no series fills — this is what makes bars comparable */
 .kpm-stack > i.rest  { background: transparent; }
 
@@ -4254,17 +4274,26 @@ html.lite-mode .kpm-pace-fill { opacity: 1; animation: none; }
 .kpm-srow .nm { flex: 1 1 100%; font-family: var(--font-body); font-size: 14px; color: var(--ink);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .kpm-srow .bar { flex: 1 1 auto; min-width: 0; }
-.kpm-srow .figs { flex: 0 0 auto; font-family: var(--font-mono); font-size: 11px;
-  font-variant-numeric: tabular-nums; color: var(--ink-muted); letter-spacing: .08em; }
+/* 🔴 THE DETAIL MOVED UNDER THE BAR. His ask, 2026-08-26: *"instead of reading left and right
+   ... put the information for sold, on field and dormant to be visible on the coloured graph
+   when we hover or click it"*. Reading a bar on the left and its figures on the right is two
+   saccades for one fact. The line sits under the bar it describes, and it names whichever
+   segment is under the pointer.
+   ⚠️ Reserved height, always. A line that appears from nothing pushes every row below it. */
+.kpm-srow .figs { flex: 1 1 100%; min-height: 18px; font-family: var(--font-mono);
+  font-size: 11px; font-variant-numeric: tabular-nums; color: var(--ink-muted);
+  letter-spacing: .08em; }
 .kpm-srow .figs em { font-style: normal; color: var(--ink); }
 .kpm-srow .figs .dorm { color: var(--danger-ink); }
+.kpm-srow .figs .sw { display: inline-block; width: 9px; height: 9px; margin-right: 6px;
+  border: 1px solid var(--line-3); vertical-align: -1px; }
+.kpm-srow .figs .sw.sold  { background: var(--ink); }
+.kpm-srow .figs .sw.field { background: var(--lamp-on); border-color: var(--accent-edge); }
+.kpm-srow .figs .sw.shelf { background-color: var(--raised); background-image: var(--hatch-ink); }
 
 @container dash (min-width: 700px) {
-  .kpm-srow { flex-wrap: nowrap; min-height: 44px; }
+  /* the name and the bar share a line; the detail keeps its own line underneath, at every width.
+     It used to jump to a 230px column on the right, which is the reading he objected to. */
+  .kpm-srow { min-height: 56px; }
   .kpm-srow .nm { flex: 0 0 180px; }
-  .kpm-srow .figs { flex: 0 0 230px; text-align: right; opacity: 0; transform: translateX(6px);
-    transition: opacity 140ms cubic-bezier(.2,.8,.3,1), transform 140ms cubic-bezier(.2,.8,.3,1); }
-  .kpm-srow:hover .figs, .kpm-srow:focus-visible .figs, .kpm-srow.on .figs {
-    opacity: 1; transform: none; }
-  html.lite-mode .kpm-srow .figs { opacity: 1; transform: none; }
 }

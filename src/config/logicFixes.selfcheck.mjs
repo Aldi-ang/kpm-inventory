@@ -3164,7 +3164,7 @@ ok('the settings form offers the unit dropdown he asked for',
    /MIN_STOCK_UNITS\.map/.test(dashPanel),
    '"add extra option so that i can setting bal karton slop or bks"');
 ok('the running-out panel prints a counted unit, never bare Bks',
-   /splitToUnits/.test(dashView),
+   /displayQty/.test(code(dashView)),
    '"few bal is considered as low not BKS bruh"');
 ok('the product editor no longer pre-fills 50 into an unset minimum',
    !/editingProduct\.minStock \|\| 50/.test(app),
@@ -3282,11 +3282,32 @@ ok('and an empty warehouse gets a line inside the panel instead',
 ok('every share is printed as a percentage of the product own total',
    /const share = \(part, total\)/.test(code(dashView)));
 ok('a share is only printed inside a segment wide enough to hold it',
-   /share\(r\.sold, r\.total\) >= 12/.test(code(dashView)),
+   /share\(r\[sr\.key\], r\.total\) >= 12/.test(code(dashView)),
    'a figure spilling out of a 3% sliver is worse than no figure');
 ok('and each segment carries its own ink, because the grounds differ',
    /\.kpm-stack > i\.sold[^}]*color: var\(--ink-inverse\)/.test(themeCss) &&
    /\.kpm-stack > i\.field[^}]*color: var\(--orange-ink\)/.test(themeCss));
+
+section('D11. One quantity formatter, and a setting that reaches all of it');
+ok('the dashboard no longer keeps a private copy of the unit logic',
+   !/const dominant = \(bks, product\) => \{/.test(code(dashView)),
+   'it had its own splitToUnits wrapper, so a unit setting would have reached one panel only');
+ok('quantities are formatted by the shared helper',
+   /displayQty/.test(code(dashView)) && /export const displayQty/.test(read('src/utils/helpers.js')));
+ok('the chosen unit comes from settings, with AUTO as the fallback',
+   /appSettings\?\.defaultDisplayUnit \|\| .AUTO./.test(code(dashView)));
+ok('and the settings form offers every unit',
+   /DISPLAY_UNITS\.map/.test(code(dashPanel)));
+ok('a fixed unit rounds DOWN rather than inventing a fraction',
+   /Math\.floor\(bks \/ per\)/.test(read('src/utils/helpers.js')),
+   '3 Bks shown in Karton is 0 karton, which is true');
+ok('the segment you point at is marked with an OUTLINE, not a shadow',
+   /\.kpm-stack > i\.on \{ outline:/.test(themeCss) &&
+   !/\.kpm-stack > i\.on \{ box-shadow/.test(themeCss),
+   'lite-mode strips box-shadow, so a shadow mark would vanish exactly where it is needed');
+ok('the detail line sits under its own bar, not out to the right',
+   /\.kpm-srow \.figs \{ flex: 1 1 100%/.test(themeCss),
+   'reading a bar on the left and its figures on the right is two saccades for one fact');
 
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);
