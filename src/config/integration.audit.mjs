@@ -1563,10 +1563,20 @@ const delMarks = DEL_FILES.reduce((n, f) =>
    compacted to a single line on his *"too large … smaller compact minimalistic"*, and a one-line
    row has no room for the word — so that delete went back to a glyph and back under the sweep.
    The word and the mark are alternatives, and which one is right follows the row's width. */
-check(G25, 'every icon-only delete button in the app wears the expanding control', delMarks === 14,
-  `found ${delMarks} marked, expected 14 — a new icon-only delete button needs ` +
+/* 14 → 13 on 2026-08-26, fifth time and the same reason: the Restock Vault became one surat-jalan
+   desk, and its ledger rows now open into a document whose action strip has room for words. Both
+   deletes there — the inbound record and the outbound shipment — read "Hapus" beside the glyph, so
+   neither may be marked or the label prints twice. The words are checked one line below; the pair
+   of edits is what makes this a migration rather than a loss. */
+check(G25, 'every icon-only delete button in the app wears the expanding control', delMarks === 13,
+  `found ${delMarks} marked, expected 13 — a new icon-only delete button needs ` +
   '`data-kpm-del data-label="Delete"` on it, and one that carries its own word ("Remove", "DEL") ' +
   'must NOT be marked or the label prints twice');
+/* the other half of that migration: the count may only drop because a WORD replaced the glyph. */
+const restockDelWords = (fs.readFileSync('src/RestockVaultView.jsx', 'utf8').match(/Hapus<\/button>/g) || []).length;
+check(G25, 'the two Restock Vault deletes say their own word instead', restockDelWords >= 2,
+  `found ${restockDelWords} worded deletes in the Restock Vault, expected at least 2 — the count ` +
+  'above dropped to 13 because these two stopped being glyphs. If the words go, the marks must return');
 check(G25, 'the delete rules outrank the Tailwind classes still on those buttons',
   /button\[data-kpm-del\] \{/.test(themeCss) &&
   /button\[data-kpm-del\]:hover, button\[data-kpm-del\]:focus-visible, button\[data-kpm-del\]:active \{/.test(themeCss) &&
@@ -3696,6 +3706,61 @@ check(G48, 'the stamp card decides no colour of its own',
   !/bg-black\/60/.test(eodViewCode),
   'a hardcoded black lets the dark theme decide what light mode looks like — no token, no palette ' +
   'law and no contrast check can see it');
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   53. One surat jalan, two directions
+
+   The Restock Vault became a single waybill desk on 2026-08-26: Masuk and Kirim
+   are the same form with the route reversed, and Buku opens each row into the
+   document it came from. These five are the load-bearing parts of that — the
+   ones that lose money or lose stock if they quietly revert.
+   ═══════════════════════════════════════════════════════════════════════════ */
+const G53 = '53. One surat jalan, two directions';
+const restockCode = fs.readFileSync('src/RestockVaultView.jsx', 'utf8');
+
+/* This screen was the last one painting itself instead of asking the theme — 58 × text-white and
+   32 × bg-black/xx, which is exactly why light mode could never reach it. */
+/* The printed nota is a documented palette exception — it is white paper in both themes, because
+   --ink-muted would print at 2,3:1 on white. Its lines are excluded by name, not by loosening the
+   needle, so a raw colour anywhere else still fails loudly. */
+const restockThemed = restockCode.split('\n')
+  .filter(l => !l.includes('print-receipt') && !l.includes('no-print')).join('\n');
+const rawWhite = (restockThemed.match(/text-white/g) || []).length;
+const rawBlack = (restockThemed.match(/bg-black\//g) || []).length;
+check(G53, 'the desk asks the theme for every colour instead of painting itself',
+  rawWhite === 0 && rawBlack === 0,
+  `found ${rawWhite} × text-white and ${rawBlack} × bg-black/xx — both must stay 0, or light mode ` +
+  'silently loses this screen again (the printed nota is white on purpose and uses bg-white, not these)');
+
+/* The branch receive screen reads fulfilledItems first and falls back to requestedItems. A push has
+   no request to fall back to, so writing only one key makes the shipment either invisible or
+   impossible to receive — and the stock is already out of HQ by then. */
+check(G53, 'an HQ push writes both item keys, so the branch can still receive it',
+  /requestedItems: lines/.test(restockCode) && /fulfilledItems: lines/.test(restockCode),
+  'handleHQPush must write requestedItems AND fulfilledItems — the branch reads fulfilledItems ' +
+  'first and falls back to requestedItems, and a push that writes neither strands the stock');
+
+/* Same bug BranchWarehouseManager already paid for: a total recomputed from the screen's copy of
+   stock undoes anything sold while the photo uploaded. increment() applies it server-side. */
+check(G53, 'an HQ push deducts the difference server-side, never a recomputed total',
+  /stock: increment\(-line\.qty\)/.test(restockCode),
+  'the push must deduct with increment(-qty). Writing a recomputed total resurrects anything sold ' +
+  'during the photo upload — the exact failure fixed in BranchWarehouseManager');
+
+/* Cukai and upah bongkar are an INTAKE cost. Charging them again on the way out double-counts them
+   into the branch's landed cost and every margin computed from it. */
+check(G53, 'cukai and upah bongkar are not charged twice on the way out',
+  /isOut \? 0 : \(Number\(poData\.laborCost\)\|\|0\) \+ \(Number\(poData\.exciseTax\)\|\|0\)/.test(restockCode),
+  'the outbound total must exclude exciseTax and laborCost — a branch does not pay the factory\'s ' +
+  'cukai a second time, and a double-counted landed cost poisons every margin downstream');
+
+/* His law: a blocked dialog does nothing, so it can never explain itself. The meter reports; it
+   does not gate. Only an empty document or an in-flight save may disable the button. */
+check(G53, 'the completeness meter reports but never blocks a save',
+  /disabled=\{isSubmitting \|\| cart\.length === 0\}/.test(restockCode) &&
+  !/disabled=\{[^}]*donePct/.test(restockCode),
+  'the save button may only be disabled while submitting or with an empty document. Gating it on ' +
+  'donePct turns the meter into a block, and a block explains nothing');
 
 /* ── report ──────────────────────────────────────────────────────────────── */
 let last = '';
