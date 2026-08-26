@@ -17,6 +17,7 @@ export default function useDatabaseSync(db, appId, user, userId, userRole, agent
     const [transferRequests, setTransferRequests] = useState([]);
     const [notifications, setNotifications] = useState([]);
     const [adminCanvas, setAdminCanvas] = useState([]);
+    const [branchStock, setBranchStock] = useState({});
     const [appSettings, setAppSettings] = useState({ mascotImage: '', companyName: 'KPM Inventory', mascotMessages: [] });
     const [editCompanyProfile, setEditCompanyProfile] = useState({ name: "", address: "", phone: "" });
 
@@ -142,6 +143,46 @@ export default function useDatabaseSync(db, appId, user, userId, userRole, agent
         };
     }, [user, db, appId, userId, userRole, agentProfileId]);
 
+    /* ── EVERY REGIONAL WAREHOUSE'S SHELF ──────────────────────────────────────────────────
+       Aldi, 2026-08-26: *"the data taken to make this panel actually should be the same with the
+       one that we have on the stock opname monitor ... there are only 3 teams, bandung, HQ, and
+       muntilan, means that there are only 3 warehouses"*.
+
+       He is pointing at the rule that already works, so this uses the same one rather than a new
+       one: StockOpnameView derives the warehouse list from the ROSTER — every distinct motorist
+       `location` that is not Headquarters. There is no branch registry to read, and Firestore
+       cannot list subcollections from a client, so the roster is the only honest source. HQ is not
+       in this map: Headquarters IS the master vault, which is already `inventory`.
+
+       ⚠️ ONE LISTENER PER BRANCH. That is fine at three and would not be at three hundred; if the
+       roster ever grows that far this needs to become an on-demand read for the selected branch,
+       the way the Stock Opname monitor already does it.
+       ⚠️ Keyed on the branch NAMES, not on the motorists array, or every unrelated roster edit
+       would tear down and rebuild every listener. */
+    const branchKey = [...new Set(
+        (motorists || [])
+            .map(m => m && m.location)
+            .filter(loc => loc && loc !== 'Headquarters' && loc !== 'UNASSIGNED' && loc !== 'UNASSIGNED AREA')
+    )].sort().join('|');
+
+    useEffect(() => {
+        /* no reset when the roster empties. Clearing state synchronously inside an effect is a
+           second render for nothing, and a branch that leaves the roster is filtered at READ
+           time instead — see how DashboardView narrows this map to the current warehouse list,
+           which also stops a deleted branch stock from ever leaking into a total. */
+        if (!db || !appId || !userId || userId === 'default' || !branchKey) return;
+        const names = branchKey.split('|');
+        const unsubs = names.map(name => onSnapshot(
+            collection(db, `artifacts/${appId}/users/${userId}/branches/${name}/inventory`),
+            (snap) => setBranchStock(prev => ({
+                ...prev,
+                [name]: snap.docs.map(d => ({ id: d.id, ...d.data() })),
+            })),
+            (err) => console.warn(`Branch stock listener (${name}):`, err.code)
+        ));
+        return () => unsubs.forEach(u => u());
+    }, [db, appId, userId, branchKey]);
+
     // 🚀 THE TIME MACHINE: On-Demand Historical Fetcher
     // Bypasses the 7-day firewall to pull specific date ranges for auditing
     const fetchHistoricalTransactions = async (startDate, endDate) => {
@@ -176,6 +217,7 @@ export default function useDatabaseSync(db, appId, user, userId, userRole, agent
         transferRequests, setTransferRequests,
         notifications, setNotifications,
         adminCanvas, setAdminCanvas,
+        branchStock,
         appSettings, setAppSettings,
         editCompanyProfile, setEditCompanyProfile
     };

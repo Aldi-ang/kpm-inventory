@@ -3135,8 +3135,12 @@ ok('nothing in the dashboard block needs a shadow to be visible',
 section('D5. Responsive by CONTAINER, so an opening rail cannot lie to it');
 ok('the dashboard declares a container',
    /\.kpm-dash \{ container-type: inline-size/.test(themeCss));
-ok('and queries it at two widths',
-   (themeCss.match(/@container dash \(min-width/g) || []).length === 2);
+/* the COUNT was pinned at two and broke the moment the supply panel added its own tablet rule
+   — a third @container block is more responsive behaviour, not a regression. What actually
+   matters is that BOTH breakpoints still exist. */
+ok('and queries it at both breakpoints',
+   /@container dash \(min-width: 700px\)/.test(themeCss) &&
+   /@container dash \(min-width: 1000px\)/.test(themeCss));
 ok('the big figure is sized in container units so it fits a 390px phone',
    /clamp\(28px, 9cqw, 42px\)/.test(themeCss));
 /* ⚠️ matched on the DECLARATION inside each block, not on the order of its first line. The

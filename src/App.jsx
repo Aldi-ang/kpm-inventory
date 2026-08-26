@@ -418,7 +418,7 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
       samplings, setSamplings, auditLogs, setAuditLogs, procurements, setProcurements,
       motorists, setMotorists, agentInventories, setAgentInventories, eodReports, setEodReports,
       transferRequests, setTransferRequests, notifications, setNotifications,
-      adminCanvas, setAdminCanvas,
+      adminCanvas, setAdminCanvas, branchStock,
       career,
       appSettings, setAppSettings, editCompanyProfile, setEditCompanyProfile
   } = useDatabaseSync(db, appId, user, userId, userRole, agentProfileId);
@@ -4191,6 +4191,8 @@ const handleGitHubMirror = async () => {
                     appSettings={appSettings}
                     handleSaveDashboardTargets={handleSaveDashboardTargets}
                     customers={displayCustomers}
+                    motorists={motorists}
+                    branchStock={branchStock}
                 />
             )
           )}

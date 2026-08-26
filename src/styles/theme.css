@@ -3934,7 +3934,7 @@ html.lite-mode .kpm-hazard { animation: none; opacity: 1; }
    on a phone it is the first thing a thumb reaches.
    ⚠️ The chosen side is a --gold PLATE carrying --gold-ink. A plate carries its own ink; --gold
    with --ink is 1,04:1 and G51 fails the build over it. */
-.kpm-period { position: relative; display: grid; grid-template-columns: repeat(4, 1fr);
+.kpm-period { position: relative; display: grid; grid-template-columns: repeat(var(--n, 4), 1fr);
   border: 1px solid var(--line-3); overflow: hidden; }
 /* 🔴 ONE PLATE THAT TRAVELS. His report, 2026-08-26: *"fix the animation when i press these
    buttons, make it smoother and elegant, right now its only flickering"*.
@@ -3945,7 +3945,9 @@ html.lite-mode .kpm-hazard { animation: none; opacity: 1; }
    one frame, which the eye reads as a blink rather than as a change.
    ⚠️ transform ONLY. `left` or `width` would animate layout on a bar that sits above a chart,
    and every frame would re-lay-out the panel under it. A translate costs nothing. */
-.kpm-period-plate { position: absolute; top: 0; bottom: 0; left: 0; width: 25%;
+/* ⚠️ --n is what lets ONE switch serve both the four periods and a warehouse list whose
+   length nobody knows until the roster is read. Width and travel both derive from it. */
+.kpm-period-plate { position: absolute; top: 0; bottom: 0; left: 0; width: calc(100% / var(--n, 4));
   background: var(--gold); pointer-events: none;
   transform: translateX(calc(var(--i, 0) * 100%));
   transition: transform 260ms cubic-bezier(.2, .8, .3, 1); }
@@ -4200,3 +4202,63 @@ html.lite-mode .kpm-pace-fill { opacity: 1; animation: none; }
    Lite Mode and does not spend the amber a second time. */
 .kpm-vrow[aria-pressed="true"] { border-left: 3px solid var(--accent-edge);
   padding-left: calc(var(--s2) - 3px); }
+
+/* ---- THE SUPPLY BAR. One bar per product, split three ways: what sold, what is riding around
+   on a van, and what is still sitting on a shelf.
+
+   ⚠️ THE THIRD SERIES IS A TEXTURE, NOT A COLOUR, and that is forced rather than decorative.
+   The palette has exactly two marks — ink and amber — and red means danger, so a third hue would
+   have to be invented and would break the law the whole app is built on. Hatching is the house's
+   own texture, it is a background-image so Lite Mode keeps it, and it reads as the right idea:
+   solid = gone, amber = moving, hatched = standing still. A bar that is mostly hatch IS the
+   dormant stock, visible without reading a number.
+
+   ⚠️ BAR LENGTH IS COMPARABLE ACROSS PRODUCTS. Each bar is scaled against the largest product,
+   not against its own total — his ask was *"so that we can compare the value"*. Scaling each to
+   its own 100% would make a product with nine packs look exactly like one with nine thousand. */
+.kpm-stack { display: flex; height: 14px; width: 100%; background: var(--raised);
+  border: 1px solid var(--line); overflow: hidden; }
+.kpm-stack > i { display: block; height: 100%; min-width: 0;
+  transition: width 300ms cubic-bezier(.2, .8, .3, 1); }
+.kpm-stack > i.sold  { background: var(--ink); }
+.kpm-stack > i.field { background: var(--lamp-on); }
+.kpm-stack > i.shelf { background-color: var(--inset); background-image: var(--hatch); }
+/* the tail of the track that no series fills — this is what makes bars comparable */
+.kpm-stack > i.rest  { background: transparent; }
+
+.kpm-legend { display: flex; gap: var(--s4); flex-wrap: wrap; margin: 0 0 var(--s4); }
+.kpm-legend span { display: inline-flex; align-items: center; gap: var(--s2);
+  font-family: var(--font-mono); font-size: 11px; letter-spacing: .16em;
+  text-transform: uppercase; color: var(--ink-muted); }
+.kpm-legend i { width: 12px; height: 12px; display: block; border: 1px solid var(--line); }
+.kpm-legend i.sold  { background: var(--ink); }
+.kpm-legend i.field { background: var(--lamp-on); border-color: var(--accent-edge); }
+.kpm-legend i.shelf { background-color: var(--inset); background-image: var(--hatch); }
+
+/* the supply row reuses the velocity row's behaviour: name and bar at rest, digits on the
+   cursor, always visible on a phone because there is no cursor to wait for */
+.kpm-srow { display: flex; align-items: center; gap: var(--s3); width: 100%;
+  padding: var(--s2); margin: 0 calc(var(--s2) * -1); min-height: 52px;
+  border: 0; border-bottom: 1px solid var(--line); background: transparent; color: inherit;
+  text-align: left; cursor: pointer; flex-wrap: wrap;
+  transition: background-color 140ms cubic-bezier(.2,.8,.3,1); }
+.kpm-srow:last-child { border-bottom: 0; }
+.kpm-srow:hover, .kpm-srow.on { background: var(--raised); }
+.kpm-srow:focus-visible { outline: 2px solid var(--accent-edge); outline-offset: -2px; }
+.kpm-srow .nm { flex: 1 1 100%; font-family: var(--font-body); font-size: 14px; color: var(--ink);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.kpm-srow .bar { flex: 1 1 auto; min-width: 0; }
+.kpm-srow .figs { flex: 0 0 auto; font-family: var(--font-mono); font-size: 11px;
+  font-variant-numeric: tabular-nums; color: var(--ink-muted); letter-spacing: .08em; }
+.kpm-srow .figs em { font-style: normal; color: var(--ink); }
+.kpm-srow .figs .dorm { color: var(--danger-ink); }
+
+@container dash (min-width: 700px) {
+  .kpm-srow { flex-wrap: nowrap; min-height: 44px; }
+  .kpm-srow .nm { flex: 0 0 180px; }
+  .kpm-srow .figs { flex: 0 0 230px; text-align: right; opacity: 0; transform: translateX(6px);
+    transition: opacity 140ms cubic-bezier(.2,.8,.3,1), transform 140ms cubic-bezier(.2,.8,.3,1); }
+  .kpm-srow:hover .figs, .kpm-srow:focus-visible .figs, .kpm-srow.on .figs {
+    opacity: 1; transform: none; }
+  html.lite-mode .kpm-srow .figs { opacity: 1; transform: none; }
+}

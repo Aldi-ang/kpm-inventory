@@ -1,8 +1,9 @@
 import React, { useMemo, useState, useEffect } from 'react';
-import { Users, Activity, PackageX, MapPin } from 'lucide-react';
+import { Users, Activity, PackageX, MapPin, Boxes } from 'lucide-react';
 import { formatRupiah, convertToBks, splitToUnits } from '../utils/helpers';
 import { isLowStock, minStockBks, daysOfCover } from '../utils/stockThreshold';
 import { periodWindow, periodDays, periodMeta, txDate } from '../utils/period';
+import { MASTER, warehouseList, supplyByProduct, dormant } from '../utils/supply';
 import DashboardBenchmarks from './DashboardBenchmarks';
 import PaceChart from './PaceChart';
 
@@ -44,11 +45,12 @@ const dominant = (bks, product) => {
 export default function DashboardView({
     isAdmin, transactions = [], lowStockItems = [], setActiveTab,
     sessionStatus, auditLogs = [], appSettings, handleSaveDashboardTargets,
-    inventory = [], customers = [],
+    inventory = [], customers = [], motorists = [], branchStock = {},
 }) {
     const [period, setPeriod] = useState('bulan');
     const [openRow, setOpenRow] = useState(null);
     const [wilayah, setWilayah] = useState(null);   // which region the big chart is showing
+    const [gudang, setGudang] = useState(null);     // null = every warehouse at once
     const [arrived, setArrived] = useState(false);
 
     useEffect(() => {
@@ -224,6 +226,25 @@ export default function DashboardView({
         };
     }, [transactions, customers, period]);
 
+    /* ── SUPPLY. Where every pack actually is: sold, on a van, or on a shelf — for the whole
+          company or for one warehouse. The maths lives in utils/supply.js; this only picks the
+          window and hands it over. ── */
+    const gudangs = useMemo(() => warehouseList(motorists), [motorists]);
+
+    const supply = useMemo(() => {
+        const w = periodWindow(period);
+        /* narrowed to the warehouses the roster still lists: a branch that was removed keeps its
+           last snapshot in the sync map, and counting it would quietly inflate every total */
+        const live = Object.fromEntries(
+            Object.entries(branchStock).filter(([name]) => gudangs.includes(name))
+        );
+        const rows = supplyByProduct({
+            inventory, branchStock: live, motorists, transactions,
+            since: w.start, warehouse: gudang,
+        });
+        return { rows, max: rows.length ? Math.max(rows[0].total, 1) : 1, dormant: dormant(rows) };
+    }, [inventory, branchStock, motorists, transactions, period, gudang, gudangs]);
+
     /* ── WHO SOLD, today. The panel that stays one line tall until there is something in it. ── */
     const agents = useMemo(() => {
         const today = new Date().toLocaleDateString();
@@ -354,6 +375,91 @@ export default function DashboardView({
                             ))}
                         </div>
                     </div>
+
+                    {isAdmin && supply.rows.length > 0 && (
+                        <div className={`kpm-mod ${arr()}`}>
+                            <div className="kpm-head">
+                                <span className="slot">PERSEDIAAN · {meta.title.toUpperCase()}</span>
+                                <div className="line">
+                                    <h3><Boxes size={15} style={{ verticalAlign: '-2px' }} /> Barang ada di mana</h3>
+                                    {supply.dormant.length > 0 && (
+                                        <span className="kpm-chip warn">
+                                            {supply.dormant.length} tidak bergerak
+                                        </span>
+                                    )}
+                                </div>
+                            </div>
+                            <div className="kpm-shelf">
+                                {/* ONE switch for MASTER plus every warehouse on the roster. `--n`
+                                    is what lets the same control serve a list whose length nobody
+                                    knows until the roster has been read. */}
+                                <div className="kpm-period" role="group" aria-label="Gudang"
+                                     style={{
+                                         '--n': gudangs.length + 1,
+                                         '--i': gudang === null ? 0 : gudangs.indexOf(gudang) + 1,
+                                     }}>
+                                    <span className="kpm-period-plate" aria-hidden="true" />
+                                    <button type="button" aria-pressed={gudang === null}
+                                            onClick={() => setGudang(null)}>Semua</button>
+                                    {gudangs.map(g => (
+                                        <button key={g} type="button" aria-pressed={gudang === g}
+                                                onClick={() => setGudang(g)}>
+                                            {g === MASTER ? 'Master' : g}
+                                        </button>
+                                    ))}
+                                </div>
+
+                                <div className="kpm-legend" style={{ marginTop: 'var(--s4)' }}>
+                                    <span><i className="sold" /> terjual</span>
+                                    <span><i className="field" /> di jalan</span>
+                                    <span><i className="shelf" /> sisa gudang</span>
+                                </div>
+
+                                {supply.rows.slice(0, 8).map(r => {
+                                    const w = (v) => `${(v / supply.max) * 100}%`;
+                                    const sold = dominant(r.sold, r.product);
+                                    const field = dominant(r.field, r.product);
+                                    const shelf = dominant(r.shelf, r.product);
+                                    const still = r.sold === 0 && r.shelf > 0;
+                                    return (
+                                        <button
+                                            key={r.id}
+                                            type="button"
+                                            className={`kpm-srow${openRow === 's-' + r.id ? ' on' : ''}`}
+                                            onClick={() => setOpenRow(openRow === 's-' + r.id ? null : 's-' + r.id)}
+                                        >
+                                            <span className="nm">{r.name}</span>
+                                            <span className="bar">
+                                                <span className="kpm-stack">
+                                                    <i className="sold"  style={{ width: arrived ? w(r.sold)  : 0 }} />
+                                                    <i className="field" style={{ width: arrived ? w(r.field) : 0 }} />
+                                                    <i className="shelf" style={{ width: arrived ? w(r.shelf) : 0 }} />
+                                                </span>
+                                            </span>
+                                            <span className="figs">
+                                                <em>{sold.n} {sold.unit.toLowerCase()}</em> terjual ·{' '}
+                                                {field.n} di jalan ·{' '}
+                                                <span className={still ? 'dorm' : ''}>
+                                                    {shelf.n} {shelf.unit.toLowerCase()} sisa
+                                                </span>
+                                            </span>
+                                        </button>
+                                    );
+                                })}
+
+                                {supply.rows.length > 8 && (
+                                    <p className="kpm-safety-hint" style={{ marginTop: 'var(--s3)' }}>
+                                        + {supply.rows.length - 8} produk lain, lebih kecil dari ini
+                                    </p>
+                                )}
+                                {/* the roster is the only list of warehouses that exists, and saying
+                                    so costs less than someone wondering why a branch is missing */}
+                                <p className="kpm-safety-hint" style={{ marginTop: 'var(--s3)' }}>
+                                    gudang diambil dari lokasi tim di Fleet &amp; Roster
+                                </p>
+                            </div>
+                        </div>
+                    )}
 
                     {isAdmin && (regions.rows.length > 0 || regions.unknown) && (
                         <div className={`kpm-mod ${arr()}`}>
