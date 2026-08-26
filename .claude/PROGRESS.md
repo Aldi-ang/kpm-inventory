@@ -769,6 +769,38 @@ the decisions themselves live in `A-Brain/Wiki/Concepts/Where KPM Is Going.md` a
 
 ## ⏳ WAITING ON ALDI — verbatim, do not paraphrase
 
+### ✅ 2026-08-26 08:3x — "BARANG ADA DI MANA" — SUPPLY PANEL BUILT. `58041b1`. **813/813.**
+
+🔴 **NOT SEEN YET.** Reloading to check logged the app back to the MASTER VAULT lock — his
+password. **Use HMR (edit a file) instead of navigating; a hard reload costs the session.**
+
+**His ask:** total dormant stock + one graph per product of remaining / on field / sold, for the
+company AND each regional warehouse.
+
+✅ **ALL THREE NUMBERS ALREADY EXISTED, in three places:**
+- shelf: master = `users/{owner}/products` · branch = `users/{owner}/branches/{loc}/inventory`
+- **on field = `motorists[].activeCanvas`** — loaded the whole time, never read for this
+- sold = transactions in the period
+
+✅ **WAREHOUSE LIST COMES FROM THE ROSTER — HIS ANSWER, NOT MINE.** *"there are only 3 teams,
+bandung, HQ, and muntilan"*. Same rule `StockOpnameView.jsx:253` already uses: every distinct
+motorist `location` except Headquarters. ⚠️ **Headquarters is NOT a branch — HQ IS the master
+vault.** Firestore cannot list subcollections from a client, so the roster is the only honest
+source. New: `src/utils/supply.js` + `branchStock` in `useDatabaseSync`.
+
+⚠️ **A SALE IS ATTRIBUTED BY ITS AGENT** — transactions store `agentId`, not a location. Sales by
+a deleted agent or by the owner land on MASTER, stated rather than dropped.
+
+⚠️ **THE THIRD SERIES IS A HATCH, NOT A COLOUR** — forced, not decorative. The palette has two
+marks and red means danger, so a third hue would break the law. Solid = gone, amber = moving,
+hatched = standing still. **A mostly-hatched bar IS the dormant stock.** Bars scale against the
+LARGEST product, not each to its own total, or nine packs looks like nine thousand.
+
+🔴 **STILL OWED: split "stok menipis" per warehouse.** He asked and I answered YES — master low
+means ORDER FROM SUPPLIER, regional low means MOVE STOCK FROM MASTER. Different jobs, so one
+merged alert cannot say which, and a full master would hide an empty branch. **Not built yet:**
+`lowStockItems` in `App.jsx` is still master-only.
+
 ### ✅ 2026-08-26 08:1x — HIS THREE QUESTIONS, ANSWERED AND SHIPPED. `f8f2f06`
 
 1. **"the animation ... its only flickering"** — it was flickering for TWO reasons, both mine:
