@@ -1,137 +1,108 @@
-# The job for next session
+# NEXT SESSION — Restock Vault desk, continued
 
-## 📋 PASTE THIS — it is the whole prompt, nothing else needed
+**Branch:** `phase0-solid-ground` · **Last commit:** `5643bf9` · **616 checks, 0 failures**
 
-```
-/alucard
+## First command, before anything else
 
-Two things, in this order. Read .claude/NEXT-SESSION.md first.
-
-1. Brainstorm with me: how HQ sends stock to a regional warehouse ON PURPOSE, without
-   waiting for the regional admin to request it. We do not have that feature. Bring me
-   options before writing any code.
-2. Then split Stok Kritis per warehouse, with a minimum-stock setting per warehouse.
-
-Keep the dev server on 5173. I will unlock the vault when you ask.
+```powershell
+npm run build; node src/config/integration.audit.mjs
 ```
 
----
-
-## ⚠️ THE VIEWING PATH — read this before wasting a turn
-
-**`claude-in-chrome` against HIS Chrome on `https://localhost:5173`.** It works.
-`tabs_context_mcp` → `navigate` → `computer{screenshot}`.
-
-🔴 **THE DASHBOARD IS A LAZY CHUNK.** Vite hot-updates `App.jsx`, `theme.css` and any plain
-import — but **an already-resolved lazy chunk does not hot-swap**, so JSX edits to
-`DashboardView` / `DashboardBenchmarks` need a **full reload**, and a reload drops him at the
-**MASTER VAULT lock screen**. That is his password, not yours. Batch your edits and spend ONE
-unlock, not four. This cost four unlocks last session.
-
-⚠️ **The console is flooded** with ~60 Firestore "update time in the future" warnings.
-`read_console_messages` shows the FIRST n, so pass **`limit: 200`** to reach the real error at
-the tail. A collector armed via `javascript_tool` is wiped by any reload.
-
-⚠️ **`javascript_tool` is blocked** if the script contains a query string (`?t=`) or certain
-literals. Read component props through the React fiber instead — walk up from `.kpm-dash` to the
-first `memoizedProps` with `inventory`. That is how the "supply returns 5 rows" fact was
-established without guessing.
+Then read `.claude/PROGRESS.md` — the top entry has the full state. **Do not re-read the codebase
+to orient.** That habit has cost a quarter of a session before.
 
 ---
 
-## 🧠 JOB 1 — BRAINSTORM FIRST, NO CODE
+## Where things stand
 
-> *"how do we sent our product from HQ to regional warehouse on purpose without fullfill regional
-> admin request tho, i dont think we have that features yet"*
+The **Restock Vault is finished and driven live**. It is now one surat jalan desk:
+**Masuk · Kirim · Buku**, all on theme tokens, verified against his real data.
 
-✅ **HE IS RIGHT. VERIFIED.** Every write path into `branches/{loc}/inventory` was checked. There
-are exactly three, and **none is HQ deciding to send something**:
-
-| path | who starts it |
-|---|---|
-| `BranchWarehouseManager.jsx:438` → `stock_requests` `status:'PENDING'` | **the BRANCH**, from the branch screen |
-| `App.jsx:1877` / `:1888` | an agent's end-of-day return |
-| `FleetCanvasManager.jsx:305` / `:411` | a van being loaded/unloaded |
-
-⚠️ **THE RULE THAT MUST SURVIVE ANY DESIGN:** `BranchWarehouseManager.jsx:505` credits the branch
-with **what the branch COUNTED**, never what HQ claimed to have sent. That screen exists for that
-one line. A push feature must not bypass it — the branch still counts on arrival.
-There is also a double-credit guard at `:499` (a second tap used to invent stock).
-
-**The shape to bring him:** reuse the same `stock_requests` document, created at HQ instead of at
-the branch, skipping PENDING and starting in a "shipped, awaiting count" state. Costs no new
-collection and keeps the count-on-arrival rule. Bring at least one alternative and the trade-offs.
+Five commits today: `aea7de4` `4387c86` `390d5fa` `284602b` `999b5a7` (+ notes `5643bf9`).
+Each commit message carries its own full story — read the message, not the diff.
 
 ---
 
-## 🔨 JOB 2 — SPLIT STOK KRITIS, PER-WAREHOUSE MINIMUM
+## Build queue, in his order
 
-> *"split the stock kritis and add option to setting minimum stock to trigger this"*
+### 1. The Minta tab — the desk's 4th tab
+His words: *"redesign the request panel as well or maybe just add it on the panel that we just
+made, just add extra tab for request"*.
 
-✅ **Already agreed WHY, do not re-litigate:** master low = **order from supplier**; regional low
-= **move stock from master**. Different jobs, so one merged alert cannot say which — and a full
-master would hide an empty branch that has quietly stopped selling.
+This **closes the old Active Pipeline question**. The panel is NOT redundant with Buku:
+it holds **"Siapkan Pengiriman"** (`BranchWarehouseManager.jsx:1350`), the only way HQ fulfils a
+branch request. Buku only reads history.
 
-⚠️ **THE HONEST PROBLEM, tell him:** until Job 1 exists, a "Muntilan is low" alert names an action
-the app cannot perform. The only thing it can say is *"ask Muntilan to raise a request"*. That is
-why the brainstorm comes first.
+- The queue is `stockRequests` filtered to `PENDING` / `DISPUTED` — **already loaded** in
+  `RestockVaultView`, no new listener.
+- Row style: reuse the Buku row + drawer already in the file.
+- ⚠️ The fulfilment modal is ~150 lines in `BranchWarehouseManager`. **Do not duplicate it.**
+  Decide deliberately: move it, lift it to a shared component, or have Minta surface the queue and
+  hand off to the existing control (both render on the same page). Say which and why.
 
-**Where the work is**
-- `App.jsx` (~L1292) — `lowStockItems` filters `inventory` alone. **Master-only.**
-- Branch shelves are **already loaded** as `branchStock` from `useDatabaseSync`. No new listener.
-- `src/utils/stockThreshold.js` — the rule. Today the company default is
-  `defaultMinStockQty` + `defaultMinStockUnit`; he wants it **per warehouse**, so something like
-  `minStockByWarehouse: { MASTER: {qty,unit}, MUNTILAN: {...} }` with the company value as
-  fallback.
-- ⚠️ **DO NOT reinterpret `product.minStock`** — it is in **BKS**, every product already carries a
-  value in that unit, and changing its meaning silently moves every threshold he has ever set.
-  Only the company/warehouse default speaks units.
-- The setting UI lives in **Konfigurasi Target** (`DashboardBenchmarks.jsx`).
+### 2. Tujuan from the roster
+His words: *"make sure that every team registered on the fleet and roster have their own storage
+option"*.
+
+- Teams live in `artifacts/{appId}/users/{uid}/motorists`, each with `.location` (= its branch).
+- Today `RestockVaultView` builds Tujuan from `stockRequests[].branch` — **so a team never shipped
+  to is invisible**. Build it from `[...new Set(motorists.map(m => m.location))]` instead.
+- `motorists` is not currently passed to `RestockVaultView`. Add the prop in `App.jsx:4421`.
+
+### 3. Global Logistics Command readout
+His words: *"redesign that make it more elegant and cool to show the regional warehouse current
+stock, on field, sold as well just like what we have on the dashboard, so HQ know how many bks
+should be send to them again"*.
+
+Columns per warehouse: **di gudang · di jalan · di tangan agen · terjual**.
+
+| Column | Source | Status |
+|---|---|---|
+| di gudang | `branches/{name}/inventory` → `branchStock` (`useDatabaseSync.js:175`) | ✅ loaded |
+| di jalan | `stock_requests` IN_TRANSIT for that branch, sum `fulfilledItems[].qty` | ✅ loaded |
+| di tangan agen | `motorists[].activeCanvas`, grouped by `motorists[].location` | ✅ available |
+| terjual | `transactions` | 🔴 **no branch/location field** |
+
+🔴 **The gate:** *terjual per gudang* must be derived by joining a transaction to its agent and
+reading that agent's `.location`. **Confirm a transaction actually carries an agent id first.**
+If it does not — ship three columns and say why the fourth is missing. Never print a number whose
+collection you cannot name.
+
+### Also queued
+Branch Manager redesign · split Stok Kritis + a per-warehouse minimum · route the four inline
+`minStock` fallbacks (`useTransactionEngine.js:270`, `MerchantSalesView.jsx:2423`,
+`ResidentEvilInventory.jsx:236` say 50; `StockOpnameView.jsx:1003` says **5**) through the shared rule.
 
 ---
 
-## ✅ Verify
+## One thing he still owes an answer on
 
-```
-npm run build; npm run lint:undef; node src/config/integration.audit.mjs; node src/config/logicFixes.selfcheck.mjs; node src/config/stockThreshold.selfcheck.mjs; node src/config/contrast.selfcheck.mjs
-```
-Baseline: **607/607**, **825/825**, **26/26**, all contrast pairs, `lint:undef` clean.
+**The sidebar is NOT broken** — it is the collapsed capsule, a black circle with a package icon at
+the **very top-left** (totem at x=4, y=12, 56×56). Hovering it expands the rail to 351px. Proved by
+forcing `width:351px`: rail → 351, pod → x=0, all 17 marks visible.
 
-🔴 **`npm run lint:undef` IS NOT OPTIONAL.** A green build is not a check that identifiers exist —
-that is exactly how `setScrub is not defined` shipped a blank dashboard last session while all
-five other checks passed. Full lint has ~290 pre-existing findings, so this gates the one rule
-that separates "untidy" from "blank screen".
-
-⚠️ **`integration.audit` reads BUILT output** — rebuild before running it.
+🔴 The only open part: `.kpm-rail-totem { display:none }` in the **base** CSS block means that
+circle exists only at **≥1024px**. Below that the rail is a phone drawer parked off-screen right
+and **no hamburger was found**. If his window is narrower than 1024px, that is a real bug.
+**Ask his window width before touching the shell.**
 
 ---
 
-<details>
-<summary>Locked decisions — do not re-open</summary>
+## Traps — each of these already cost time
 
-- **No running totals anywhere.** HARI/MINGGU/BULAN/TAHUN only. *"dont use total"*.
-- **No laba/margin on the dashboard.** The plumbing is real (`profitSnapshot` = sold − distributor
-  price) but reads 1,0% because cost prices are unfilled. ⚠️ **If he ever fills in distributor
-  prices, it becomes worth showing.**
-- **Warehouse list comes from the ROSTER** — distinct motorist `location` except Headquarters.
-  **HQ IS the master vault**, not a branch. Firestore cannot list subcollections.
-- **Supply bars are each their own 100%** — he reversed the cross-product scaling after seeing it.
-- **Hour-of-day strip: dropped.** Wrong for a distributor. The useful version is *which agent
-  sold what*, which is the leaderboard grown up.
-- **Money owed on the dashboard: deferred.** Needs `ConsignmentFinanceView` wiring.
-- Palette: no blue, no green · amber is an edge/ink/lamp, **never a slab** · a plate carries its
-  own ink · **Lite Mode strips shadow/blur/filter** — never let one carry meaning.
-
-### Also open, unranked
-- 🔴 **`MapMissionControl.jsx:1551` and `:1553` call `getDoc` without importing it**, inside a
-  try/catch, so it fails silently forever. Same shape as the bug that disabled the rank engine
-  for months. Pinned in `undef.check.mjs`'s baseline. He has not ranked it.
-- 4 files still inline their own `minStock || 50`: `useTransactionEngine.js:270`,
-  `MerchantSalesView.jsx:2423`, `ResidentEvilInventory.jsx:236`, **`StockOpnameView.jsx:1003`
-  (says `5`)**. They should route through `isLowStock()`.
-- Stock Opname, Fleet and Master Vault each open **their own** branch listeners for data that is
-  now in `branchStock`. His principle: *"we always use the same database ... so all the
-  components can be connected"*.
-- **Merge to main** — last of all.
-
-</details>
+- **Run the build BEFORE writing "build green".** A commit message claiming it was green had to be
+  amended on 2026-08-26.
+- **A JSX comment after `&& (` does not parse** — it is a second expression inside the parentheses.
+  It broke the build twice in one turn.
+- **A duplicate `style` prop is legal JSX and the last one silently wins.** That killed
+  `touchAction` on the rail nav for weeks.
+- **Never trust a layout measurement taken during a transition.** "pod at x=-124" was junk, read
+  mid-animation on a 380ms width transition with a 220ms delay.
+- **Artifact pages on claude.ai cannot be driven** — locked frame, no input reaches them. To test a
+  prototype, copy it into `public/`, open `https://localhost:5173/<file>.html`, delete it after.
+- **The nav rail is off-canvas at 1463px**, so reach a screen with
+  `document.querySelectorAll('button')` + `.click()`, not a mouse click.
+- **The "L-CLICK / SCROLL / NAVIGATE" strip is not his app** — it is the Claude-in-Chrome overlay
+  drawn into his real Chrome. Zero matches in the DOM. Never hunt for it.
+- **The vault gate re-locks on reload.** He must type the password; you cannot.
+- **`graphify` call edges undercount** — confirm "who calls X" with grep.
