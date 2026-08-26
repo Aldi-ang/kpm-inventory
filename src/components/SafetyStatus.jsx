@@ -49,7 +49,7 @@ export default function SafetyStatus({ auditLogs = [], sessionStatus }) {
         if (!log.isSavePoint || !log.timestamp || !log.timestamp.seconds) return false;
         try {
             return new Date(log.timestamp.seconds * 1000).toLocaleDateString() === todayStr;
-        } catch (e) { return false; }
+        } catch { return false; }
     }).length;
     const isRecoverySecure = sessionStatus?.recovery || todaySnapshots > 0;
 

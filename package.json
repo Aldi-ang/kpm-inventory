@@ -8,7 +8,8 @@
     "build": "cross-env ci=false vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "deploy": "npm version patch --no-git-tag-version && git add . && git commit -m \"Auto-deploy and version bump\" && git push origin main"
+    "deploy": "npm version patch --no-git-tag-version && git add . && git commit -m \"Auto-deploy and version bump\" && git push origin main",
+    "lint:undef": "node src/config/undef.check.mjs"
   },
   "dependencies": {
     "@emailjs/browser": "^4.4.1",

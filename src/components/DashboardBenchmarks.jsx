@@ -85,9 +85,11 @@ export default function DashboardBenchmarks({
         return dailyBalTarget;
     };
 
+    /* ⚠️ THE FORM IS FILLED WHEN THE BUTTON IS PRESSED, not by an effect watching `isEditing`.
+       An effect that sets state synchronously is a second render for nothing, and the linter is
+       right to call it: the value is known at the moment of the click. */
     const [form, setForm] = useState({});
-    useEffect(() => {
-        if (!isEditing) return;
+    const openGoals = () => {
         setForm({
             targetMonthlyRevenue: monthlyTarget,
             targetDailyBal: dailyBalTarget,
@@ -98,7 +100,8 @@ export default function DashboardBenchmarks({
             defaultMinStockQty:  appSettings?.defaultMinStockQty  || DEFAULT_MIN_QTY,
             defaultMinStockUnit: appSettings?.defaultMinStockUnit || DEFAULT_MIN_UNIT,
         });
-    }, [isEditing, appSettings]); // eslint-disable-line react-hooks/exhaustive-deps
+        setIsEditing(true);
+    };
 
     /* ── EVERYTHING THE PANEL SHOWS, for this period and the one before it ── */
     const M = useMemo(() => {
@@ -156,13 +159,12 @@ export default function DashboardBenchmarks({
         };
     }, [transactions, inventory, period, appSettings]); // eslint-disable-line react-hooks/exhaustive-deps
 
-    /* one arrival on mount, and again whenever the period changes */
+    /* one arrival, on mount. The panel is keyed on the period by its parent, so a swap remounts
+       it and this runs again — no synchronous reset, and nothing to get out of step. */
     useEffect(() => {
-        setArrived(false);
-        setScrub(null);
         const id = requestAnimationFrame(() => requestAnimationFrame(() => setArrived(true)));
         return () => cancelAnimationFrame(id);
-    }, [period]);
+    }, []);
 
     /* the chart, its geometry and its scrub readout moved to PaceChart.jsx the moment the
        regional panel needed the same thing — two copies of that maths would drift silently, with
@@ -218,7 +220,7 @@ export default function DashboardBenchmarks({
                 <div className="line">
                     <h3>{p.title}</h3>
                     {canEditGoals && (
-                        <button type="button" className="kpm-btn" onClick={() => setIsEditing(true)}>
+                        <button type="button" className="kpm-btn" onClick={openGoals}>
                             <Settings size={13} /> Atur target
                         </button>
                     )}

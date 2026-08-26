@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { Users, Activity, PackageX, MapPin } from 'lucide-react';
-import { formatRupiah, compactRp, convertToBks, splitToUnits } from '../utils/helpers';
+import { formatRupiah, convertToBks, splitToUnits } from '../utils/helpers';
 import { isLowStock, minStockBks, daysOfCover } from '../utils/stockThreshold';
 import { periodWindow, periodDays, periodMeta, txDate } from '../utils/period';
 import DashboardBenchmarks from './DashboardBenchmarks';
@@ -248,13 +248,17 @@ export default function DashboardView({
     const shown = regions.rows.find(r => r.region === wilayah) || regions.rows[0] || null;
 
     const meta = periodMeta(period);
-    const arr = (step) => `kpm-arr${arrived ? ' in' : ''}`;
+    const arr = () => `kpm-arr${arrived ? ' in' : ''}`;
 
     return (
         <div className="kpm-dash">
             <div className="kpm-dash-grid">
 
+                {/* keyed on the period so the panel REMOUNTS on a swap: the arrival replays and
+                    every piece of its own state starts clean, with no effect reaching backwards
+                    to reset it. That reset is what crashed this screen once already. */}
                 <DashboardBenchmarks
+                    key={period}
                     transactions={transactions}
                     inventory={inventory}
                     appSettings={appSettings}

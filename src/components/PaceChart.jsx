@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { compactRp } from '../utils/helpers';
 
 /* THE PACE CHART — cumulative money against the straight line to target.
@@ -35,6 +35,10 @@ export default function PaceChart({
 }) {
     const [scrub, setScrub] = useState(null);
     const ref = useRef(null);
+
+    /* a readout from the old series must not survive the swap — "Tanggal 14 · Rp 92 jt" left
+       hanging over a different region is worse than showing nothing, because it looks like data */
+    useEffect(() => { setScrub(null); }, [drawKey]);
 
     const n = series.length;
     const covered = buckets > 0 ? done / buckets : 1;
