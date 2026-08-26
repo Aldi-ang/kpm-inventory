@@ -227,7 +227,7 @@ export default function DashboardBenchmarks({
                     <h3>{p.title}</h3>
                     {canEditGoals && (
                         <button type="button" className="kpm-btn" onClick={openGoals}>
-                            <Settings size={13} /> Atur target
+                            <Settings size={13} /> Konfigurasi Target
                         </button>
                     )}
                 </div>
@@ -257,7 +257,7 @@ export default function DashboardBenchmarks({
                 <div style={{ marginTop: 'var(--s5)' }}>
                     <div className="kpm-ro on" style={{ minHeight: 0 }}>
                         <span className="k">Omzet</span>
-                        <span className="v">{left > 0 ? `${left} ${p.unit} lagi` : 'periode penuh'}</span>
+                        <span className="v">{left > 0 ? `Sisa ${left} ${p.unit}` : 'Periode penuh'}</span>
                     </div>
                     <div className="kpm-omzet" style={{ marginTop: 'var(--s2)' }}>
                         {formatRupiah(M.omzet)}
@@ -285,9 +285,9 @@ export default function DashboardBenchmarks({
                 {/* the only comparison left, and the one he actually asked for: this period
                     against the one before it. No profit, no margin. */}
                 <div className="kpm-ro on" style={{ marginTop: 'var(--s3)' }}>
-                    <span className="k">vs periode sebelumnya</span>
+                    <span className="k">Perbandingan periode</span>
                     <span className={`v${M.omzetDelta !== null && M.omzetDelta < 0 ? ' neg' : ''}`}>
-                        {M.omzetDelta === null ? 'belum ada pembanding'
+                        {M.omzetDelta === null ? 'Tidak ada periode pembanding'
                             : `${M.omzetDelta >= 0 ? '+' : '−'}${Math.abs(M.omzetDelta).toFixed(1).replace('.', ',')}%`}
                     </span>
                 </div>
@@ -295,7 +295,7 @@ export default function DashboardBenchmarks({
                 {/* ── VOLUME ── */}
                 <div style={{ marginTop: 'var(--s5)', borderTop: '1px solid var(--line)', paddingTop: 'var(--s5)' }}>
                     <div className="kpm-ro on" style={{ minHeight: 0 }}>
-                        <span className="k">Bal keluar</span>
+                        <span className="k">Volume distribusi</span>
                         <span className="v">{balPct}% dari {Math.round(M.balTarget)} bal</span>
                     </div>
                     <div className="kpm-omzet" style={{ fontSize: '30px', marginTop: 'var(--s2)' }}>
@@ -310,7 +310,7 @@ export default function DashboardBenchmarks({
                 {/* ── THE MIX. Nothing is printed in the ring until you point at an arc. ── */}
                 <div style={{ marginTop: 'var(--s5)', borderTop: '1px solid var(--line)', paddingTop: 'var(--s5)' }}>
                     <div className="kpm-ro on" style={{ minHeight: 0 }}>
-                        <span className="k">Campuran</span>
+                        <span className="k">Komposisi produk</span>
                         <span className="v">target {filterTarget}% filter</span>
                     </div>
                     <div className="kpm-ring-wrap" style={{ marginTop: 'var(--s4)' }}>
@@ -359,7 +359,7 @@ export default function DashboardBenchmarks({
                             <p className="kpm-safety-hint" style={{
                                 color: M.skm >= filterTarget ? 'var(--ink-muted)' : 'var(--danger-ink)',
                             }}>
-                                {M.skm >= filterTarget ? 'target tercapai'
+                                {M.skm >= filterTarget ? 'Target tercapai'
                                     : `${filterTarget - M.skm} pts di bawah target`}
                             </p>
                         </div>
@@ -372,9 +372,9 @@ export default function DashboardBenchmarks({
                     <div className="kpm-mod live" onClick={(e) => e.stopPropagation()}
                          style={{ width: '100%', maxWidth: '520px', maxHeight: '90vh', overflowY: 'auto' }}>
                         <div className="kpm-head">
-                            <span className="slot">PENGATURAN · TARGET</span>
+                            <span className="slot">PARAMETER · TARGET</span>
                             <div className="line">
-                                <h3>Atur target</h3>
+                                <h3>Konfigurasi Target</h3>
                                 <button type="button" className="kpm-btn" onClick={() => setIsEditing(false)}>
                                     <X size={14} /> Tutup
                                 </button>
@@ -408,12 +408,12 @@ export default function DashboardBenchmarks({
                                   because "50" meant fifty Bks and nobody stocks in Bks. ── */}
                             <div style={{ borderTop: '1px solid var(--line)', paddingTop: 'var(--s4)' }}>
                                 <p className="kpm-desc" style={{ marginTop: 0 }}>
-                                    Barang dianggap <b>menipis</b> kalau sisanya sampai angka ini. Berlaku untuk semua
-                                    barang yang belum punya MIN. ALERT sendiri.
+                                    Produk berstatus <b>kritis</b> ketika stok mencapai angka ini. Berlaku untuk seluruh
+                                    produk yang belum memiliki MIN. ALERT tersendiri.
                                 </p>
                                 <div style={{ display: 'flex', gap: 'var(--s3)' }}>
                                     <label className="kpm-field" style={{ flex: '1 1 auto' }}>
-                                        <span>Batas menipis</span>
+                                        <span>Ambang batas stok</span>
                                         <input type="text" inputMode="decimal" value={form.defaultMinStockQty ?? ''}
                                                onChange={(e) => setForm({ ...form, defaultMinStockQty: e.target.value.replace(/[^0-9.]/g, '') })}
                                                required />

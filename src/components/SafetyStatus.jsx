@@ -56,20 +56,20 @@ export default function SafetyStatus({ auditLogs = [], sessionStatus }) {
     const lamps = [
         {
             key: 'cloud', label: 'Cloud', state: isCloudSecure ? 'on' : 'bad',
-            say: isCloudSecure ? 'Tersalin ke cloud' : 'Belum tersalin ke cloud — jalankan Master Backup',
+            say: isCloudSecure ? 'Tersinkronisasi ke cloud' : 'Belum tersinkronisasi — jalankan Master Backup',
         },
         {
             key: 'usb', label: 'USB', state: isUsbSecure ? 'on' : 'off',
             say: isUsbSecure
-                ? (usbAgeDays === null ? 'Backup USB aman' :
+                ? (usbAgeDays === null ? 'Backup USB terverifikasi' :
                    usbAgeDays === 0 ? 'Backup USB hari ini' : `Backup USB ${usbAgeDays} hari lalu`)
-                : 'Backup USB lewat 7 hari — colok flashdisk',
+                : 'Backup USB melewati 7 hari — hubungkan flashdisk',
         },
         {
             key: 'save', label: 'Save point', state: isRecoverySecure ? 'on' : 'off',
             say: todaySnapshots > 0
                 ? `${todaySnapshots} save point hari ini`
-                : 'Belum ada save point hari ini',
+                : 'Tidak ada save point hari ini',
         },
     ];
 

@@ -299,13 +299,13 @@ export default function DashboardView({
                         <div className={`kpm-mod hazard ${arr()}`}>
                             <div className="kpm-head">
                                 <span className="slot" style={{ color: 'var(--danger-ink)' }}>
-                                    KERJAKAN HARI INI
+                                    TINDAKAN PRIORITAS
                                 </span>
                                 <div className="line">
-                                    <h3 style={{ color: 'var(--danger-ink)' }}>Stok menipis</h3>
+                                    <h3 style={{ color: 'var(--danger-ink)' }}>Stok Kritis</h3>
                                     <button type="button" className="kpm-btn hazard"
                                             onClick={() => setActiveTab('inventory')}>
-                                        <PackageX size={13} /> {runningOut.length} barang
+                                        <PackageX size={13} /> {runningOut.length} produk
                                     </button>
                                 </div>
                             </div>
@@ -326,7 +326,7 @@ export default function DashboardView({
                                                 <b>{item.name}</b>
                                                 <span>
                                                     {left.rest ? `+ ${left.rest} · ` : ''}
-                                                    batas {limit.n} {limit.unit.toLowerCase()}
+                                                    ambang {limit.n} {limit.unit.toLowerCase()}
                                                 </span>
                                             </span>
                                         </button>
@@ -340,16 +340,16 @@ export default function DashboardView({
                         <div className="kpm-head">
                             <span className="slot">PERGERAKAN · {meta.title.toUpperCase()}</span>
                             <div className="line">
-                                <h3>Vault velocity</h3>
+                                <h3>Perputaran Inventaris</h3>
                                 <span className="kpm-safety-hint" style={{ margin: 0 }}>
-                                    <Activity size={12} style={{ verticalAlign: '-2px' }} /> tekan satu baris
+                                    <Activity size={12} style={{ verticalAlign: '-2px' }} /> Pilih baris untuk detail
                                 </span>
                             </div>
                         </div>
                         <div className="kpm-shelf">
                             {velocity.length === 0 ? (
                                 <p className="kpm-safety-hint" style={{ margin: 0 }}>
-                                    belum ada pergerakan di periode ini
+                                    Tidak ada pergerakan pada periode ini
                                 </p>
                             ) : velocity.map((r, i) => (
                                 <button
@@ -369,7 +369,7 @@ export default function DashboardView({
                                         <em>{r.out.n} {r.out.unit.toLowerCase()}</em> keluar ·{' '}
                                         <span className={r.low ? 'low' : ''}>
                                             {r.left.n} {r.left.unit.toLowerCase()}
-                                        </span> sisa
+                                        </span> stok
                                     </span>
                                 </button>
                             ))}
@@ -381,10 +381,10 @@ export default function DashboardView({
                             <div className="kpm-head">
                                 <span className="slot">PERSEDIAAN · {meta.title.toUpperCase()}</span>
                                 <div className="line">
-                                    <h3><Boxes size={15} style={{ verticalAlign: '-2px' }} /> Barang ada di mana</h3>
+                                    <h3><Boxes size={15} style={{ verticalAlign: '-2px' }} /> Distribusi Inventaris</h3>
                                     {supply.dormant.length > 0 && (
                                         <span className="kpm-chip warn">
-                                            {supply.dormant.length} tidak bergerak
+                                            {supply.dormant.length} produk dorman
                                         </span>
                                     )}
                                 </div>
@@ -410,9 +410,9 @@ export default function DashboardView({
                                 </div>
 
                                 <div className="kpm-legend" style={{ marginTop: 'var(--s4)' }}>
-                                    <span><i className="sold" /> terjual</span>
-                                    <span><i className="field" /> di jalan</span>
-                                    <span><i className="shelf" /> sisa gudang</span>
+                                    <span><i className="sold" /> Terjual</span>
+                                    <span><i className="field" /> Dalam perjalanan</span>
+                                    <span><i className="shelf" /> Stok gudang</span>
                                 </div>
 
                                 {supply.rows.slice(0, 8).map(r => {
@@ -438,9 +438,9 @@ export default function DashboardView({
                                             </span>
                                             <span className="figs">
                                                 <em>{sold.n} {sold.unit.toLowerCase()}</em> terjual ·{' '}
-                                                {field.n} di jalan ·{' '}
+                                                {field.n} transit ·{' '}
                                                 <span className={still ? 'dorm' : ''}>
-                                                    {shelf.n} {shelf.unit.toLowerCase()} sisa
+                                                    {shelf.n} {shelf.unit.toLowerCase()} gudang
                                                 </span>
                                             </span>
                                         </button>
@@ -449,13 +449,13 @@ export default function DashboardView({
 
                                 {supply.rows.length > 8 && (
                                     <p className="kpm-safety-hint" style={{ marginTop: 'var(--s3)' }}>
-                                        + {supply.rows.length - 8} produk lain, lebih kecil dari ini
+                                        + {supply.rows.length - 8} produk dengan volume lebih rendah
                                     </p>
                                 )}
                                 {/* the roster is the only list of warehouses that exists, and saying
                                     so costs less than someone wondering why a branch is missing */}
                                 <p className="kpm-safety-hint" style={{ marginTop: 'var(--s3)' }}>
-                                    gudang diambil dari lokasi tim di Fleet &amp; Roster
+                                    Sumber gudang: lokasi tim pada Fleet &amp; Roster
                                 </p>
                             </div>
                         </div>
@@ -466,9 +466,9 @@ export default function DashboardView({
                             <div className="kpm-head">
                                 <span className="slot">WILAYAH · {meta.title.toUpperCase()}</span>
                                 <div className="line">
-                                    <h3><MapPin size={15} style={{ verticalAlign: '-2px' }} /> Kinerja regional</h3>
+                                    <h3><MapPin size={15} style={{ verticalAlign: '-2px' }} /> Kinerja Regional</h3>
                                     <span className="kpm-safety-hint" style={{ margin: 0 }}>
-                                        {regions.rows.length} wilayah
+                                        {regions.rows.length} wilayah aktif
                                     </span>
                                 </div>
                             </div>
@@ -500,10 +500,10 @@ export default function DashboardView({
                                             ariaLabel={`Omzet ${shown.region} sepanjang ${meta.title}. Garis putus-putus adalah laju rata-rata.`}
                                         />
                                         <p className="kpm-safety-hint" style={{ margin: 0 }}>
-                                            garis putus-putus = laju rata-rata
+                                            Garis putus-putus: laju rata-rata
                                             {shown.steady ? '' : shown.fastStart
-                                                ? ' · mulai cepat, lalu melambat'
-                                                : ' · mulai pelan, lalu naik'}
+                                                ? ' · deselerasi di paruh kedua'
+                                                : ' · akselerasi di paruh kedua'}
                                         </p>
                                     </div>
                                 )}
@@ -524,7 +524,7 @@ export default function DashboardView({
                                             </span>
                                         </span>
                                         <span className="figs">
-                                            <em>{formatRupiah(r.omzet)}</em> · {r.share}% · {r.toko} toko
+                                            <em>{formatRupiah(r.omzet)}</em> · {r.share}% · {r.toko} pelanggan
                                         </span>
                                     </button>
                                 ))}
@@ -533,7 +533,7 @@ export default function DashboardView({
                                     without saying so reads as "these are all of them" */}
                                 {regions.rows.length > 6 && (
                                     <p className="kpm-safety-hint" style={{ marginTop: 'var(--s3)' }}>
-                                        + {regions.rows.length - 6} wilayah lain, lebih kecil dari ini
+                                        + {regions.rows.length - 6} wilayah dengan kontribusi lebih rendah
                                     </p>
                                 )}
 
@@ -542,7 +542,7 @@ export default function DashboardView({
                                 {regions.unknown && (
                                     <div className="kpm-vrow unset">
                                         <span className="rk">—</span>
-                                        <span className="nm">Belum diberi wilayah</span>
+                                        <span className="nm">Wilayah tidak teridentifikasi</span>
                                         <span className="bar">
                                             <span className="kpm-trk neg">
                                                 <i style={{ width: arrived ? Math.max(2, regions.unknown.share) + '%' : 0 }} />
@@ -551,7 +551,7 @@ export default function DashboardView({
                                         <span className="figs">
                                             <em>{formatRupiah(regions.unknown.omzet)}</em> ·{' '}
                                             <span className="low">{regions.unknown.share}%</span> ·{' '}
-                                            {regions.unknown.toko} toko
+                                            {regions.unknown.toko} pelanggan
                                         </span>
                                     </div>
                                 )}
@@ -566,7 +566,7 @@ export default function DashboardView({
                                 <h3><Users size={15} style={{ verticalAlign: '-2px' }} /> Leaderboard</h3>
                                 {agents.length === 0 && (
                                     <span className="kpm-safety-hint" style={{ margin: 0 }}>
-                                        belum ada penjualan hari ini
+                                        Tidak ada transaksi hari ini
                                     </span>
                                 )}
                             </div>
@@ -580,7 +580,7 @@ export default function DashboardView({
                                         <span className="rk">{String(i + 1).padStart(2, '0')}</span>
                                         <span className="nm">{a.name}</span>
                                         <span className="figs">
-                                            <em>{formatRupiah(a.revenue)}</em> · {a.count} nota
+                                            <em>{formatRupiah(a.revenue)}</em> · {a.count} transaksi
                                         </span>
                                     </div>
                                 ))}
@@ -592,3 +592,4 @@ export default function DashboardView({
         </div>
     );
 }
+

@@ -3203,10 +3203,10 @@ section('D8. The regional panel survives an unknown number of regions');
 ok('the list is ranked and capped, so twenty regions cannot stretch the panel',
    /\.slice\(0, 6\)/.test(code(dashView)) && /sort\(\(a, b\) => b\.omzet - a\.omzet\)/.test(code(dashView)));
 ok('and the tail is COUNTED rather than silently cut',
-   /wilayah lain, lebih kecil dari ini/.test(dashView),
+   /regions\.rows\.length - 6/.test(dashView),
    'a list that stops at six without saying so reads as "these are all of them"');
 ok('revenue whose customer matches no record gets its own row instead of vanishing',
-   /Belum diberi wilayah/.test(dashView),
+   /regions\.unknown &&/.test(dashView) && /unknown\.share/.test(dashView),
    'a sale stores customerName, not a customer id, so the join is by NAME and will miss some');
 ok('the name join is case- and whitespace-insensitive on BOTH sides',
    (code(dashView).match(/String\(v \|\| ''\)\.trim\(\)\.toLowerCase\(\)/g) || []).length >= 1 &&
