@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-25 21:0x WIB (🟠 KPM app session)** · ✅ **DASHBOARD REBUILT AND COMMITTED — `b7d9f0f` + `f798c80`** (build · 607/607 · 791/791 · 26/26 · all contrast pairs) · ✅ **REGIONAL PANEL BUILT — `2cb9e61`, 798/798** · ▶ **NEXT = LIST + DETAIL on that panel, his idea, NOT started (quota). Recorded below** · 🔴 **still never opened in a browser — claude-in-chrome was down the whole session** · branch `phase0-solid-ground`
+**Updated: 2026-08-25 21:3x WIB (🟠 KPM app session)** · ✅ **DASHBOARD REBUILT AND COMMITTED — `b7d9f0f` + `f798c80`** (build · 607/607 · 791/791 · 26/26 · all contrast pairs) · ✅ **REGIONAL PANEL BUILT — `2cb9e61`, 798/798** · ✅ **LIST + DETAIL BUILT — `44b11c7`, 813/813** · ▶ **NEXT = LOOK AT IT IN A BROWSER** · 🔴 **still never opened in a browser — claude-in-chrome was down the whole session** · branch `phase0-solid-ground`
 
 ## 🟠 2026-08-25 20:26 — THE DASHBOARD IS BUILT. `b7d9f0f` + `f798c80`.
 
@@ -769,37 +769,37 @@ the decisions themselves live in `A-Brain/Wiki/Concepts/Where KPM Is Going.md` a
 
 ## ⏳ WAITING ON ALDI — verbatim, do not paraphrase
 
-### 🔴 OPEN, 2026-08-25 21:0x — HIS NEXT IDEA FOR THE REGIONAL PANEL. NOT STARTED.
+### ✅ BUILT 2026-08-25 21:3x — the big regional chart. `44b11c7`. **813/813.**
+
+His call: *"keep the list and add the big graph"*. Done.
+- **The rows ARE the swap control.** They were already buttons with a selected state, so a
+  separate row of region tabs would have been a second control doing the first one's job.
+  `aria-pressed` + a 3px `--accent-edge` stripe marks the chosen one (a stripe, not a colour, so
+  Lite Mode cannot eat it).
+- **🆕 `src/components/PaceChart.jsx`** — the chart was inline in the live panel; it moved out
+  the moment a SECOND caller appeared. ⚠️ **Never let a copy of that geometry exist again** — two
+  copies drift with both charts still drawing and neither meaning what the other does.
+- **`compactRp` moved to `helpers.js`** (next to `formatRupiah`, same id-ID convention).
+
+⚠️ **THREE TRAPS, ALL NOW ENCODED AS CHECKS (D9) — do not rediscover them:**
+1. **The swap animation would have worked ONCE.** React keeps the same `<path>` when only `d`
+   changes, so a transition has nothing to animate from. It is a **CSS animation + a `key` on the
+   path** (`drawKey`), which remounts and replays. A transition here looks correct on the first
+   swap and silently snaps on every one after.
+2. **A region has NO target of its own.** Scaling it against the company target would only ever
+   show that a region is a fraction of the company. The dashed line is scaled so it ENDS where
+   the region did — it means **steady pace**: above = started fast and slowing, below = starting
+   slow and rising.
+3. **Do NOT test "fast start" on the last point.** By construction it sits exactly ON the pace
+   line, so that comparison is always true. It uses the **midpoint**.
+
+### 🟡 SUPERSEDED — the proposal, kept only for the reasoning
 
 > *"what if just give one big graph for 1 wilayah but add button to swap wilayah and give cool
 > animation for that, how that sound"*
 
-⚠️ **NOTHING WAS BUILT. Stopped on the quota rule at 88%.** The panel as shipped (`2cb9e61`)
-is the ranked list only.
-
-**MY ANSWER, already given to him — pick it up here, do not re-derive it:**
-The instinct is right (a bar is too small to show a TREND; a region deserves a real graph), but a
-swapper ALONE loses the thing a dashboard is for. *"Which wilayah is doing badly"* is a
-**comparison**, and a comparison needs them side by side — with a swap button he would have to
-click through twelve regions and hold the numbers in his head.
-
-✅ **THE VERSION THAT KEEPS BOTH — LIST + DETAIL, and it costs almost nothing because the list
-already exists:**
-1. **The rows become the swap buttons.** They are already `<button>` with an `openRow` state
-   (`DashboardView.jsx`, the `.kpm-vrow` in the WILAYAH panel). No separate control needed — one
-   less thing on screen, and the selected row already has an `.on` style.
-2. **One big pace chart above the list**, for the selected region, reusing the SAME cumulative
-   line + dashed pace geometry as the live panel (`DashboardBenchmarks.jsx`, the `.kpm-spark`
-   block). Default selection = rank 1.
-3. **The animation is the line REDRAWING**: `stroke-dashoffset` from full length to 0 over 300ms
-   on the app's `cubic-bezier(.2,.8,.3,1)`. ⚠️ It must be keyed on the region so React remounts
-   the path — otherwise the dash never resets and the second swap does not animate.
-   ⚠️ `html.lite-mode` kills the transition, so the path must be visible WITHOUT it — same trap
-   as `.kpm-arr`, which needed an explicit lite-mode guard for exactly this reason.
-4. Scrubbing it should reuse the live panel's readout pattern, not invent a second one.
-
-⚠️ **If he still wants ONLY the big graph and no list, that is his call** — but say the cost
-out loud first: he loses the at-a-glance comparison, which is the panel's whole reason to exist.
+The answer given: the instinct was right (a bar cannot show a TREND at any size), but a swapper
+ALONE loses the comparison, and *"which wilayah is behind"* is a comparison. He chose both.
 
 ### ✅ BUILT 2026-08-25 20:4x — the regional panel (`2cb9e61`)
 
