@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-25 21:3x WIB (🟠 KPM app session)** · ✅ **DASHBOARD REBUILT AND COMMITTED — `b7d9f0f` + `f798c80`** (build · 607/607 · 791/791 · 26/26 · all contrast pairs) · ✅ **REGIONAL PANEL BUILT — `2cb9e61`, 798/798** · ✅ **LIST + DETAIL BUILT — `44b11c7`, 813/813** · ▶ **NEXT = LOOK AT IT IN A BROWSER** · 🔴 **still never opened in a browser — claude-in-chrome was down the whole session** · branch `phase0-solid-ground`
+**Updated: 2026-08-26 08:0x WIB (🟠 KPM app session)** · ✅ **DASHBOARD REBUILT AND COMMITTED — `b7d9f0f` + `f798c80`** (build · 607/607 · 791/791 · 26/26 · all contrast pairs) · ✅ **REGIONAL PANEL BUILT — `2cb9e61`, 798/798** · ✅ **LIST + DETAIL BUILT — `44b11c7`, 813/813** · ▶ **NEXT = his call; the dashboard is done and verified** · ✅ **SEEN IN THE BROWSER AND WORKING — one crash found and fixed, `7e7f3c5`** · branch `phase0-solid-ground`
 
 ## 🟠 2026-08-25 20:26 — THE DASHBOARD IS BUILT. `b7d9f0f` + `f798c80`.
 
@@ -768,6 +768,39 @@ the decisions themselves live in `A-Brain/Wiki/Concepts/Where KPM Is Going.md` a
 `A-Brain/Wiki/Concepts/The Eight Warehouse Gaps.md`. Five entries is this file's working depth.
 
 ## ⏳ WAITING ON ALDI — verbatim, do not paraphrase
+
+### 🔴 2026-08-26 08:0x — IT CRASHED, AND NOTHING IN THE LOOP COULD HAVE CAUGHT IT. `7e7f3c5`
+
+**The dashboard rendered "[DASHBOARD] FAILED TO LOAD" the first time it was ever opened.**
+`ReferenceError: setScrub is not defined` — pulling the chart into `PaceChart.jsx` took its state
+with it, and an effect in the panel still called the setter that had gone.
+
+⚠️ **EVERY CHECK PASSED WHILE THE SCREEN WAS BROKEN.** build · 607 · 813 · 26 · all contrast.
+A bundler resolves IMPORTS, not free variables. Every selfcheck here reads source as TEXT, so
+none of them knows what a scope is. **My own grep missed it too — I searched `scrub`, the call
+was `setScrub`. Case.**
+
+✅ **THE GATE THAT WOULD HAVE CAUGHT IT NOW EXISTS: `npm run lint:undef`**
+(`src/config/undef.check.mjs`). ESLint knew all along — the repo has had it installed forever,
+but it carries ~290 other findings so nobody runs it. This gates the ONE rule that means the app
+is broken rather than untidy. **Proved by breaking it on purpose before trusting it.**
+→ **Add it to the verify line. It is the only check that catches a blank screen.**
+
+🔴 **PINNED IN THAT GATE'S BASELINE — A REAL BUG HE HAS NOT RANKED:**
+`MapMissionControl.jsx:1551` and `:1553` call **`getDoc` without importing it**, inside a
+try/catch, so it fails silently forever. **Same shape as logic-review bug #24**, which disabled
+the rank engine for months. Pinned, not fixed — outside the dashboard work.
+
+✅ **WHAT WAS ACTUALLY SEEN WORKING** (his Chrome, `https://localhost:5173`, light + Lite Mode):
+period switch changes every figure, the title, BOTH panel headings, the derived weekly target
+(Rp 117 jt from Rp 500 jt) and the velocity ranking · regional rows swap the big chart and it
+redraws each time · container queries resolve to `376px 1005px` · velocity figures visible
+because Lite Mode is on, which is the guard behaving correctly.
+
+⚠️ **VIEWING PATH THAT WORKS — claude-in-chrome, and the Firestore clock noise drowns the real
+error.** `read_console_messages` shows the FIRST n and there are ~60 junk lines; pass
+`limit: 200` to reach the tail. **`retry()` reloads the page**, which wipes any collector armed
+in the console.
 
 ### ✅ BUILT 2026-08-25 21:3x — the big regional chart. `44b11c7`. **813/813.**
 
