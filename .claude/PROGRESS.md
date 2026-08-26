@@ -1,6 +1,31 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-26 09:21 WIB (🟠 KPM app session)** · ✅ **DASHBOARD REBUILT, SEEN AND WORKING** — period switch, pace chart, regional list+chart, supply panel, technical terminology · **build · 607/607 · 818/818 · 26/26 · contrast · lint:undef clean** · 🔴 **HE MUST RELOAD+UNLOCK ONCE to see the supply panel — lazy chunk, not a bug** · branch `phase0-solid-ground`
+**Updated: 2026-08-26 09:5x WIB (🟠 KPM app session)** · ✅ **DASHBOARD REBUILT, SEEN AND WORKING** — period switch, pace chart, regional list+chart, supply panel, technical terminology · **build · 607/607 · 825/825 · 26/26 · contrast · lint:undef clean** · 🔴 **HE MUST RELOAD+UNLOCK ONCE to see the supply panel — lazy chunk, not a bug** · branch `phase0-solid-ground`
+
+## 🟠 2026-08-26 09:5x — DARK BARS, HOVER READOUT, UNIT SETTING, FULL-WIDTH BARS. **825/825.**
+
+✅ **Dark mode fixed.** `--hatch` is drawn in a LINE colour (~1,2:1 on near-black) — fine for a
+divider, invisible as a DATA SERIES. New **`--hatch-ink`** token drawn in the ink, both themes.
+The track is `--inset` now (was `--raised`, the same tone the shelf segment wanted).
+
+✅ **Detail moved UNDER the bar** — *"instead of reading left and right"*. Pointing at a segment
+names it below with its swatch, quantity and share. ⚠️ The "which segment" mark is an **OUTLINE,
+not a box-shadow** — the dashboard's own guard caught that within a minute: **lite-mode strips
+box-shadow**, so the mark would have vanished exactly where it was needed.
+
+✅ **`displayQty()` in `helpers.js` + `appSettings.defaultDisplayUnit`** (AUTO/Karton/Bal/Slop/Bks),
+set in Konfigurasi Target. ⚠️ The dashboard had a PRIVATE copy of the unit logic, so a setting
+would have reached one panel only — moved it to helpers FIRST, then wired the setting.
+**A fixed unit rounds DOWN** (3 Bks in Karton = 0), which is why AUTO stays the default.
+
+✅ **FULL-WIDTH BARS — he reversed my scaling after seeing it:** *"make the graph special for 1
+product type instead and not comparing stocks with other product, so all the graph space is
+used"*. ⚠️ **He asked what the empty tail was TWICE** — that is a design failing to explain
+itself, not a caption problem. Each bar is its own 100% now; the ordering still ranks by total
+and the total prints under each bar, so nothing was lost.
+
+🔴 **STILL OWED: split Stok Kritis per warehouse** (master low = order from supplier,
+regional low = move stock from master). `lowStockItems` in `App.jsx` is still master-only.
 
 ## 🟠 2026-08-26 09:21 — A CONTROL CANNOT LIVE INSIDE WHAT ITS OWN VALUE EMPTIES. `cfdc79e`. **818/818.**
 
