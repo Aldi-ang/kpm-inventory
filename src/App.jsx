@@ -4412,8 +4412,18 @@ const handleGitHubMirror = async () => {
 
 
       {/* MULTI-WAREHOUSE ERP ENGINE */}
+          {/* 🔴 TWO SCROLLBARS — his report, 2026-08-26: *"why do we have double slider"*.
+              This panel is the only tab that both SCROLLS ITSELF and guesses its own height from
+              `100vh`. The guess came out ~38px taller than the shell's padded workspace, so the
+              workspace overflowed by that sliver and drew a second, nearly full-height bar beside
+              this one. `h-full` measures the workspace instead of guessing at the viewport, so the
+              panel ends exactly where its parent does and only one bar is left.
+              ⚠️ Keep the overflow HERE, not on the workspace: the tab strip and the completeness
+              footer are pinned by this box, and moving the scroll outwards unpins both.
+              ⚠️ And keep this comment OUTSIDE the `&& (` — a JSX comment there is a SECOND
+              expression inside the parentheses, which does not parse. That broke the build once. */}
           {activeTab === 'restock_vault' && (
-              <div className="h-auto min-h-[800px] lg:min-h-0 lg:h-[calc(100vh-140px)] w-full max-w-7xl mx-auto border-4 border-[var(--duke-frame)] shadow-[0_0_0_1px_var(--duke-lift)] relative flex flex-col bg-[var(--duke-well-solid)] p-4 overflow-y-auto custom-scrollbar">
+              <div className="h-auto min-h-[800px] lg:min-h-0 lg:h-full w-full max-w-7xl mx-auto border-4 border-[var(--duke-frame)] shadow-[0_0_0_1px_var(--duke-lift)] relative flex flex-col bg-[var(--duke-well-solid)] p-4 overflow-y-auto custom-scrollbar">
                   
                   {/* 🚀 HQ ONLY: FACTORY PROCUREMENT ENGINE (RESI, PHOTOS, DLL) */}
                   {isAdmin && (
