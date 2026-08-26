@@ -1,6 +1,24 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-26 08:0x WIB (🟠 KPM app session)** · ✅ **DASHBOARD REBUILT AND COMMITTED — `b7d9f0f` + `f798c80`** (build · 607/607 · 791/791 · 26/26 · all contrast pairs) · ✅ **REGIONAL PANEL BUILT — `2cb9e61`, 798/798** · ✅ **LIST + DETAIL BUILT — `44b11c7`, 813/813** · ▶ **NEXT = his call; the dashboard is done and verified** · ✅ **SEEN IN THE BROWSER AND WORKING — one crash found and fixed, `7e7f3c5`** · branch `phase0-solid-ground`
+**Updated: 2026-08-26 08:59 WIB (🔧 tooling session — no app code touched)** · ✅ **DASHBOARD REBUILT AND COMMITTED — `b7d9f0f` + `f798c80`** (build · 607/607 · 791/791 · 26/26 · all contrast pairs) · ✅ **REGIONAL PANEL BUILT — `2cb9e61`, 798/798** · ✅ **LIST + DETAIL BUILT — `44b11c7`, 813/813** · ▶ **NEXT = his call; the dashboard is done and verified** · ✅ **SEEN IN THE BROWSER AND WORKING — one crash found and fixed, `7e7f3c5`** · branch `phase0-solid-ground`
+
+## 🔧 2026-08-26 08:59 — TOOLING TRACK. 1,194 skills stored where they cost nothing.
+
+**No app code touched this session.** The three modified files in the tree (`DashboardView.jsx`,
+`useDatabaseSync.js`, `theme.css`, `supply.js`) belong to the OTHER window and were left alone.
+
+19 skill repos were sent and judged; **full verdict table in the vault**, `A-Brain/Wiki/Summaries/
+Skill Repos Evaluated 2026-08-25.md` (`a311958`, `8a68007`). What shipped:
+
+- **`A-Brain/Skills-Library/` — 1,194 skills on disk, OUTSIDE `~/.claude/skills`** so Claude never
+  loads them. Installing them would have cost ~250,000 tokens per session, forever.
+- **`skill-find.mjs`** greps a 343 KB index and offers at most 8 candidates **with their token
+  price**. `skill-index.mjs` rebuilds it. Alucard §1b runs the search automatically and may
+  never load a skill without Aldi picking it.
+- **4 gstack skills installed normally**, marked MANUAL ONLY: `/gstack-office-hours`, `/gstack-spec`,
+  `/gstack-design-shotgun`, `/gstack-investigate`. All four shipped hidden `triggers:` blocks that
+  would have auto-fired them; stripped, and written up as a lesson.
+- **`excalidraw-diagram`** installed — the one genuinely new capability, ~40 tokens.
 
 ## 🟠 2026-08-25 20:26 — THE DASHBOARD IS BUILT. `b7d9f0f` + `f798c80`.
 
