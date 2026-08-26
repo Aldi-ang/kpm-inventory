@@ -4219,15 +4219,15 @@ html.lite-mode .kpm-pace-fill { opacity: 1; animation: none; }
    solid = gone, amber = moving, hatched = standing still. A bar that is mostly hatch IS the
    dormant stock, visible without reading a number.
 
-   ⚠️ BAR LENGTH IS COMPARABLE ACROSS PRODUCTS. Each bar is scaled against the largest product,
-   not against its own total — his ask was *"so that we can compare the value"*. Scaling each to
-   its own 100% would make a product with nine packs look exactly like one with nine thousand. */
+   ⚠️ EACH BAR IS ITS OWN 100%. It was scaled against the largest product for a day, which is a
+   defensible answer to a different question — and the wrong one here. He asked twice what the
+   empty tail was, which is a design failing to explain itself, and the panel exists to show how
+   ONE product is split rather than which product is biggest. The ordering already ranks them and
+   the total is printed under each bar, so nothing was lost by giving the row back its width. */
 /* ⚠️ THE TRACK IS THE DARKEST THING HERE AND EVERY SERIES SITS ABOVE IT. It was --raised, the
    same tone the shelf segment wanted, so a bar and its empty remainder were the same colour.
-   ⚠️ THE EMPTY TAIL IS NOT A GAP, IT IS THE COMPARISON. Bars are scaled against the largest
-   product, so a short bar means "this one has less than the biggest" — his question, 2026-08-26:
-   *"the white space there just right side of the stock gudang graph what is that space btw?"*.
-   It is labelled under the legend now, because a reader should never have to ask. */
+   The track is barely seen now that every bar fills its row, but it still has to be there: a
+   product whose three series round to less than 100 would otherwise show a hairline of panel. */
 .kpm-stack { display: flex; height: 20px; width: 100%; background: var(--inset);
   border: 1px solid var(--line-3); overflow: hidden; }
 /* 20px, not 14: the share is printed inside its own colour, so the bar has to be tall enough to

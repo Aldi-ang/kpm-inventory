@@ -255,7 +255,7 @@ export default function DashboardView({
             inventory, branchStock: live, motorists, transactions,
             since: w.start, warehouse: gudang,
         });
-        return { rows, max: rows.length ? Math.max(rows[0].total, 1) : 1, dormant: dormant(rows) };
+        return { rows, dormant: dormant(rows) };
     }, [inventory, branchStock, motorists, transactions, period, gudang, gudangs]);
 
     /* ── WHO SOLD, today. The panel that stays one line tall until there is something in it. ── */
@@ -435,10 +435,9 @@ export default function DashboardView({
                                     <span><i className="field" /> Dalam perjalanan</span>
                                     <span><i className="shelf" /> Stok gudang</span>
                                 </div>
-                                {/* the answer to "what is that space" — it is the comparison, and
-                                    it should never have needed asking */}
                                 <p className="kpm-safety-hint" style={{ margin: '0 0 var(--s4)' }}>
-                                    Panjang batang sebanding dengan produk bervolume tertinggi
+                                    Setiap batang menampilkan komposisi produk itu sendiri · total ada di
+                                    bawah tiap batang
                                 </p>
 
                                 {supply.rows.length === 0 && (
@@ -448,7 +447,17 @@ export default function DashboardView({
                                 )}
 
                                 {supply.rows.slice(0, 8).map(r => {
-                                    const w = (v) => `${(v / supply.max) * 100}%`;
+                                    /* 🔴 EACH BAR IS ITS OWN 100%, not a fraction of the biggest
+                                       product. His call after seeing it, 2026-08-26: *"make the
+                                       graph special for 1 product type instead and not comparing
+                                       stocks with other product, so all the graph space is used"*.
+                                       He is right for what this panel is FOR. Scaling against the
+                                       largest product answered "which product is biggest", which
+                                       the ordering already answers, and it spent most of every
+                                       row on empty track — the space he asked about twice. The
+                                       question here is how ONE product is split between sold, on
+                                       the road and standing still, and that is a proportion. */
+                                    const w = (v) => `${(v / (r.total || 1)) * 100}%`;
                                     const still = r.sold === 0 && r.shelf > 0;
                                     return (
                                         <button
