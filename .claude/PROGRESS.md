@@ -48,6 +48,26 @@ Closes the old Active Pipeline question — it becomes the desk's 4th tab (Minta
 Shape agreed: **di gudang · di jalan · di tangan agen · terjual**. 🔴 Name the collection for
 on-field and sold before promising either number.
 
+**📍 DATA MAP for that readout — traced 2026-08-26 21:1x, 3 of 4 columns are sourceable:**
+
+| Column | Source | Verdict |
+|---|---|---|
+| **di gudang** | `artifacts/{appId}/users/{uid}/branches/{name}/inventory` — already live in `branchStock` (`useDatabaseSync.js:175`), keyed by branch name | ✅ loaded already |
+| **di jalan** | `stock_requests` where `status==='IN_TRANSIT'` && `branch===name`, sum `fulfilledItems[].qty` — already live in RestockVaultView | ✅ loaded already |
+| **di tangan agen** | `motorists/{id}.activeCanvas`, grouped by `motorists[].location` (that field IS the branch — `App.jsx:492`, `:4455`) | ✅ available, needs the roster list App.jsx already holds |
+| **terjual** | `artifacts/{appId}/users/{uid}/transactions` | 🔴 **NO branch/location/region field on a transaction.** Cannot be split per warehouse directly. |
+
+🔴 **The one real gap.** *Terjual per gudang* has to be derived by joining a transaction to its
+agent and reading that agent's `.location`. **Confirm the transaction actually carries an agent id
+before building the column** — if it does not, the honest move is to ship three columns and say why
+the fourth is missing, never a number that cannot be sourced.
+
+**Roster:** teams/agents live in `artifacts/{appId}/users/{uid}/motorists`, each with `.location`.
+That is also the answer for *"every team registered on the fleet and roster have their own storage
+option"* — Tujuan should list `[...new Set(motorists.map(m => m.location))]`, NOT the branches
+derived from past `stock_requests`, which is what it uses today and which hides any team never
+shipped to.
+
 **Also queued:** Branch Manager redesign · split Stok Kritis + per-warehouse minimum · the four
 inline `minStock` fallbacks.
 
