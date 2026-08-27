@@ -1,6 +1,35 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-27 18:05 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · ✅ **THE BOOK MIRRORS THE SIDEBAR AND OPENS WHERE YOU ARE** — **656/656** · new scene: **Goods Received** · branch `phase0-solid-ground`
+**Updated: 2026-08-27 18:17 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · ✅ **ONE CAPTION, NO FLICKER, HIS OWN SFX** — **656/656** · ⚠️ **2 sound files still needed from him** · branch `phase0-solid-ground`
+
+## 🟠 2026-08-27 18:17 — CAPTION, FLICKER, SFX. **656/656.**
+
+> *"i think u can remove this bottom static text on the tutorial"* · *"there is some flicker when i
+> press section inside the book, very visible when the section is scrolled down"* · *"SFX sound
+> really bad as well"*
+
+**The wide bar is a FALLBACK, not a second copy.** It only shows when a beat has nothing to stand
+beside. Removing the duplicate exposed the bug under it: the room test only asked *"does it fit
+below?"* and went above whenever it did not — **even with no room above either**, so a field low in
+a short stage got its caption sliced by the stage edge. It asks both directions now and stands
+BESIDE the subject when neither fits. Player also gets `lg:min-h-[600px]`; most of the crowding was
+a stage sized to its content.
+
+**The flicker was two page elements remounting on every chapter click** (`key` + a rotateY replay),
+which also threw away the right page's scroll position. Chapter changes are silent now; the
+page-turn animation is keyed on `page` alone.
+
+**🔴 SFX — HIS FILE IS IN, TWO ARE STILL MISSING.** Round 1 borrowed the till, round 2
+synthesised paper (*"sound really bad"*). Round 3 uses
+`RE UI/SFX/click ponder tutorial sound.mp3` → `public/sounds/ponder-open.mp3`, registered in
+`useSound`. The other two are **YouTube links, which cannot be fetched here**, so `bookOpen`,
+`bookPage`, `bookClose` are **silent on purpose** — a wrong sound is worse than none.
+
+**⚠️ WAITING ON ALDI — exactly what to save, verbatim names:**
+`public/sounds/book-page.mp3` (moving between sections) · `public/sounds/book-open.mp3` and
+`public/sounds/book-close.mp3` (the two sounds in the second video). Then add all three to
+`SOURCES` in `src/hooks/useSound.js` and swap the three `return false` lines in
+`src/ponder/sfx.js`. **The header of `sfx.js` spells this out; every call site is already wired.**
 
 ## 🟠 2026-08-27 18:05 — THE BOOK FOLLOWS THE SIDEBAR. **656/656.**
 
