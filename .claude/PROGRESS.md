@@ -1,6 +1,30 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-28 00:20 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · ✅ **HIS FOUR GOODS RECEIVED FAULTS ARE FIXED — nothing half-done** · **663/663** · branch `phase0-solid-ground`, clean at `24673c7`
+**Updated: 2026-08-28 00:55 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · ✅ **HOVER GLOW + RIBBONS SHIPPED** · **666/666** · branch `phase0-solid-ground`, clean at `24673c7`
+
+## 🟢 2026-08-28 00:55 — THE BOOK LIGHTS UP ON HOVER, AND THE COVER STOPS AT THE BOOK. `1ebbabc`, **666/666**.
+
+Two asks shipped. Diagnosis lives in the commit message; what matters next:
+
+**The hover glow is built, under a palette exemption HE GRANTED** ("sure", 2026-08-28). It is
+**bounded and checked**: opacity 0 at rest, sparks only animate under `group-hover`, gone in Lite
+Mode. Unbound it is just the amber background he has rejected twice by name. Three iterations, each
+because the lab showed the last one wrong: a low ellipse that smudged the chip border, then a cream
+spark on cream pages that was invisible, then three of four sparks painted **behind** the cover —
+`preserve-3d` sorts children by DEPTH, not document order. The fix was `translateZ` **inside the
+keyframe**, because the animation would have erased it on the element. Same fault as the caption,
+second file, same day.
+
+**The cover now starts 116px in**, so the ribbons hang 106px outside it and tuck 12px under —
+*"cut the brown background where the book ends not where the ribbon ends"*. Moving that edge also
+moved the reference for `SLAB_SHUT`: the old constant would have left the shut cover overhanging the
+centre fold **by 163px**. Measured, not guessed, and now an arithmetic check.
+
+**The lab grew `?hover`** — a hover cannot be screenshotted otherwise. Headless Chrome has no
+pointer, and the in-app browser pane refuses to composite while it is off screen.
+
+❓ **STILL OPEN, and it is the only thing left:** which chapter next. `sections.js` order puts
+**Sales Terminal (titip vs lunas)** first, and that is the default if he does not care.
 
 ## 🟢 2026-08-28 00:20 — THE HOVER VIDEO HAS BEEN WATCHED. No code changed; **663/663**.
 

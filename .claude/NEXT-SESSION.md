@@ -1,8 +1,8 @@
 # NEXT SESSION — read this, then `.claude/PROGRESS.md`. Read no code to orient.
 
-**Written 2026-08-28 00:20 WIB. 663/663. Branch `phase0-solid-ground`, clean.**
-His four Goods Received faults are fixed and verified. **The hover video has now been watched** —
-the only thing left on it is a palette-law exemption he must grant. Then the next chapter.
+**Written 2026-08-28 00:55 WIB. 666/666. Branch `phase0-solid-ground`, clean at `1ebbabc`.**
+His four Goods Received faults, the hover glow and the ribbon/cover fix are all shipped and verified.
+**One question is left and it is the whole next job: which chapter.**
 
 ## First command
 
@@ -14,39 +14,20 @@ He is on **PowerShell**: `;` not `&&`.
 
 ---
 
-## 🔴 THE ONE JOB — nothing is assigned until he answers
+## 🔴 ONE QUESTION, THEN THE NEXT CHAPTER
 
-Both open items are **questions for Aldi**, not work. Ask them in the first reply, then do whichever
-he picks. Do not start either one before he answers — the last four sessions each began with work he
-had already redirected.
+Ask it in the first reply. Do not start a chapter before he answers — the last four sessions each
+began with work he had already redirected.
 
-### ❓ 1. The book hover animation — still owed, still blocking that one polish item
+### ✅ 1. The book hover animation — DONE, `1ebbabc`
 
-> *"i want this animation when book is hovered https://www.youtube.com/watch?v=vhG5usAFL_g with the
-> light effect as well"*
+Built from the video, under the palette exemption he granted. Glow from the page block, four amber
+sparks rising, all of it gated on hover and stripped in Lite Mode. See it: `?book&shut&hover`.
 
-**✅ THE VIDEO HAS BEEN WATCHED — 2026-08-28. It is no longer blocked on him describing it.**
-`/watch` works on this machine now (`uv tool install yt-dlp`; ffmpeg was already there). **Never
-again write "YouTube cannot be opened from here" — that claim sat in three briefs and was false.**
+**Do not "improve" it without asking.** It is a gold fill living on a written exemption, and three
+checks hold its boundary. If he wants it bigger or brighter, that is a new decision, not a tweak.
 
-What it actually is: 14s, *"Bible, book, fairytales, fantasy, magical"*. An open book on a dark
-ground. Warm gold light escapes **from the gutter between the pages**, brightening over ~8s until
-the paper itself is blown out; a soft cone of light rises above it; gold sparks drift **upward** out
-of the pages, with two or three glowing butterflies among them; then the camera pushes INTO the book
-and everything whites out.
-
-**The one real conflict, and it is his to settle:** that effect is a large warm gold **fill**, and
-the palette law says amber is an edge and an ink, never a fill — the only legal gold fill being a
-3px rule whose length is data. The book's cream pages already hold a written exemption. **A glow
-needs the same exemption or it cannot be built.** Ask for it in one line before building.
-
-Also note the video's ending (white-out + camera push) is the OPEN animation, which already exists —
-the book flies from the chip. Only the *glow and the rising sparks* belong on hover.
-
-Current hover is a stand-in: cover lifts on its spine, chip rises 1px, a specular band crosses the
-leather.
-
-### ❓ 2. Which chapter is next
+### 🔴 THE ONE JOB — which chapter is next
 
 `sections.js` order is **Sales Terminal (titip vs lunas) → Setoran → Stock Opname → Piutang →
 Armada → the rest**. Sales Terminal is the biggest and the one he uses daily, so it is the default
@@ -101,6 +82,14 @@ later, which is why it survived every check and screenshot.
   while pip targets 3.12. Three consecutive briefs told the next session "YouTube cannot be opened
   from here" and it was simply untrue, which left one of his asks blocked for three sessions.
   **Before recording something as impossible, try it once.**
+- **🔴 A HOVER CANNOT BE SCREENSHOTTED — use `?hover`.** Headless Chrome has no pointer, and
+  the in-app browser pane will not composite while it is off screen, so synthetic hover paints
+  nothing there either. `tools/ponder-lab.html?book&shut&hover` freezes the chip's hover state with
+  the sparks paused mid-flight. Also: `--window-size` is in DEVICE pixels, so
+  `--force-device-scale-factor=6 --window-size=1200,540` gives a 200x90 CSS viewport, not 1200x540.
+- **🔴 `preserve-3d` SORTS CHILDREN BY DEPTH, NOT DOCUMENT ORDER.** A later sibling still
+  paints behind a rotated one that leans toward the viewer. Bring it forward with `translateZ` — and
+  if that element is animated, the Z goes in the KEYFRAME, never on the element.
 - **🔴 A headless screenshot narrower than ~518px on Windows is a CROP, not a layout**, and
   **headless virtual time does not drive animation clocks honestly** — the first "after" shots
   showed rings mid-transition and read as a bug that was not there. Use `?probe` and read
