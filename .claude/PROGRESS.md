@@ -1,6 +1,30 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-27 19:43 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · ✅ **THE BOOK HINGES AT ITS SPINE AND HAS THICKNESS** — **657/657** · ⚠️ **sounds still unheard by anyone** · branch `phase0-solid-ground`
+**Updated: 2026-08-27 19:59 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · ✅ **BOOK MOTION: SEQUENCED, SHADED, AND A SHUT BOOK LOOKS SHUT** — **657/657** · ⚠️ **sounds still unheard** · branch `phase0-solid-ground`
+
+## 🟠 2026-08-27 19:59 — THE MOTION. **657/657.** `4cae003`
+
+> *"fix the timing, book should close first before comeback to its position, make the animation
+> smoother, the animation transition is too cheap looking btw"* — three separate faults.
+
+**🔴 IT WAS NEVER SEQUENTIAL.** The leaf and the flight shared **one clock and one duration**,
+with keyframe *offsets* deciding hand-over — so the book shrank while it was still closing.
+**Sequenced by real `delay` now:** cover shuts 520ms with nothing else moving, then the 480ms
+flight. Open = 460ms flight, then a 620ms swing. Totals sit just under his 1,30s / 1,16s sounds.
+
+**🔴 WHY IT LOOKED CHEAP — not the easing.** A page turning away DARKENS and its far side
+brightens as it comes round. Without that it can only ever be a rotating rectangle. Both faces now
+carry a **shading plane** on the leaf's clock. Perspective was **2600px** (nearly orthographic,
+flattens the turn) → **1500px**. The hinge eases in AND out, and travels 3° past flat before
+settling.
+
+**🔴 A SHUT BOOK DID NOT LOOK SHUT.** The cover was the container's *background*, so when the
+leaf landed on the left half the vacated right half stayed on screen as a dark slab beside it. The
+cover is its own element now, **clipped to the left half in step with the leaf**.
+⚠️ **Clipping a SIBLING is safe; clipping the container would flatten `preserve-3d`** and undo the
+hinge — the same trap already noted on the stage.
+
+**Verified at 700ms and at rest.**
 
 ## 🟠 2026-08-27 19:43 — REAL BOOK LOGIC. **657/657.** `dc835a9`
 
