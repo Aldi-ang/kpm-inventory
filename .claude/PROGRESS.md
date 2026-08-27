@@ -1,6 +1,26 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-27 22:30 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · 🛑 **STOPPED ON WEEKLY LIMIT — notes written, nothing half-done** · **657/657** · branch `phase0-solid-ground`
+**Updated: 2026-08-27 23:46 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · ✅ **HIS FOUR GOODS RECEIVED FAULTS ARE FIXED** · **663/663** · branch `phase0-solid-ground`
+
+## 🟢 2026-08-27 23:46 — THE FOUR CAPTION FAULTS ARE FIXED. `8109559`, **663/663**.
+
+All four of his asks shipped, verified against the real components in the lab. Full story is in the
+commit message; the two things worth carrying forward:
+
+**The bug was not the one the brief predicted.** `EST_H = 150` was not too small, it was too large —
+the caption measures 109px. The real fault: `animate-ponder-in` ends on `transform: none` with
+fill-mode `both`, and an animation outranks an inline style, so the `translateY(-100%)` that made
+the caption's `top` mean its BOTTOM edge was thrown away as soon as the 260ms arrival finished. Every
+'above' and every 'beside' caption in every scene sat on top of its own subject. **Fourth of the
+family.** A **fifth** turned up while verifying: `getBoundingClientRect()` is a PAINTED rect, and the
+modal opens from `scale(0.94)`, so the first beat of every scene measured 6% small and stayed small
+until autoplay re-measured it four seconds later.
+
+**Both traps are now checks, and both were mutation-tested to prove they fail when the bug returns:**
+geometry may not live in a transform an animation will overwrite; a rect may not be trusted through
+an ancestor's scale.
+
+✅ **HE SHOULD LOOK AT IT** — `?scene=goods-received`, beats 7, 8 and 9, and press the fields.
 
 ## 🔴 2026-08-27 22:30 — STOPPED ON THE WEEKLY LIMIT. Tree clean at `d8d8904`, **657/657**.
 

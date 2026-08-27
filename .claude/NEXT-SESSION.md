@@ -1,7 +1,8 @@
 # NEXT SESSION — read this, then `.claude/PROGRESS.md`. Read no code to orient.
 
-**Written 2026-08-27 22:30 WIB. 657/657. Branch `phase0-solid-ground`, clean at `d8d8904`.**
-The tutorial engine, the book and two scenes are shipped. Everything below is HIS words, unfixed.
+**Written 2026-08-27 23:46 WIB. 663/663. Branch `phase0-solid-ground`, clean at `8109559`.**
+His four Goods Received faults are fixed and verified. The next job is a decision he owes, then
+the next chapter.
 
 ## First command
 
@@ -13,81 +14,83 @@ He is on **PowerShell**: `;` not `&&`.
 
 ---
 
-## 🔴 THE ONE JOB — four faults on the Goods Received scene, all from one message
+## 🔴 THE ONE JOB — nothing is assigned until he answers
 
-> *"this tiga biaya need fix, the textbox block the view for the 3 biaya and there is no highlights
-> for that 3 biaya as well sc1. this landing cost also collapse with the text box, landed value as
-> well, if there is not much space u can put the text box above it and arrow pointing bottom, and
-> dont make the ponder panel slideable so that the text box is fixed, and then another thing is
-> that i want to be able to press the each of the components inside the ponder panel and when
-> pressed it will snap back to the timeframe where that components is explained"*
+Both open items are **questions for Aldi**, not work. Ask them in the first reply, then do whichever
+he picks. Do not start either one before he answers — the last four sessions each began with work he
+had already redirected.
 
-Four things, in the order they should be fixed:
+### ❓ 1. The book hover animation — still owed, still blocking that one polish item
 
-### 1. The caption covers the thing it explains
-On the *tiga biaya* beat the box sits **on top of** Ongkos kirim / Pita cukai / Upah bongkar. Same
-on the **Total landed value** and **Landed / Bks** beats — the box overlaps the very figure it is
-about. His own instruction is the fix: **when there is not enough room, put the box ABOVE and point
-the arrow down.** The placement code already has an above/below/side decision in
-`src/ponder/PonderOverlay.jsx` (`const near = useMemo(...)`) — it is choosing wrong here, and
-`EST_H = 150` is almost certainly the lie: these captions are three and four lines tall, so the
-room test approves a space the box does not fit in. **Measure the box instead of assuming 150.**
+> *"i want this animation when book is hovered https://www.youtube.com/watch?v=vhG5usAFL_g with the
+> light effect as well"*
 
-### 2. There is no highlight on the three cost fields
-The beat focuses `c:cukai`, so only ONE field lights. He expects all three to be marked, because the
-sentence is about all three. **A beat needs to be able to focus more than one key** — accept
-`focus: ['c:ongkir', 'c:cukai', 'c:bongkar']` and union their rects. The union code already exists
-in `measure()`; only the key-matching is single-valued.
+**YouTube cannot be opened from here.** He must describe it in one line — what moves, and where the
+light comes from. Current hover is a stand-in: cover lifts on its spine, chip rises 1px, a specular
+band crosses the leather.
 
-### 3. The panel must not scroll while a beat is up
-> *"dont make the ponder panel slideable so that the text box is fixed"*
+### ❓ 2. Which chapter is next
 
-The stage scrolls (`overflow-auto`), so the caption drifts away from its subject. Either lock the
-scroller while a beat is playing, or size the stage so the scene never needs to scroll. **Prefer
-sizing it** — a tutorial that has to be scrolled is teaching two things at once.
+`sections.js` order is **Sales Terminal (titip vs lunas) → Setoran → Stock Opname → Piutang →
+Armada → the rest**. Sales Terminal is the biggest and the one he uses daily, so it is the default
+if he does not care. Each chapter is a scene file plus a stage; budget one session per chapter.
 
-### 4. Click a part of the stage → jump to the beat that explains it
-> *"i want to be able to press the each of the components inside the ponder panel and when pressed
-> it will snap back to the timeframe where that components is explained"*
+### ✅ AND HE SHOULD LOOK AT WHAT JUST SHIPPED
 
-This is the last Ponder idea not yet copied, and it is the good one. Every stage element already
-carries `data-ponder`; every step already names a `focus`. So: click anything with a
-`data-ponder`, find the FIRST step whose `focus` matches, `seek()` to it. Roughly fifteen lines in
-`PonderOverlay.jsx` plus a cursor and a hover hint on the stage, so people know it can be pressed.
+Beats 7, 8 and 9 of `?scene=goods-received`, and **press the fields** — that is job 4, which he has
+not seen work. Also **nobody has ever heard the four book sounds.** They are his own files, trimmed
+by measurement, and the levels in `VOLUMES` are still a first guess.
 
 ---
 
-## What he still owes, and it blocks nothing
+## What was just fixed, and the two traps it added
 
-- **The hover animation.** *"i want this animation when book is hovered
-  https://www.youtube.com/watch?v=vhG5usAFL_g with the light effect as well"* — **YouTube cannot be
-  opened from here.** He must describe it in one line. Current hover is a stand-in: cover lifts on
-  its spine, chip rises 1px, a specular band crosses the leather.
-- **Nobody has heard the book sounds.** All four are his own files, trimmed; the levels in
-  `VOLUMES` are a first guess.
+His four faults, all shipped in `8109559` — the commit message carries the whole diagnosis:
+
+1. **Caption covered its subject.** NOT `EST_H` (that was 150 against a real 109 — too *large*).
+   `animate-ponder-in` ends on `transform: none` with fill-mode `both`; an animation outranks an
+   inline style, so `translateY(-100%)` was discarded the moment the arrival finished. Every
+   'above' and 'beside' caption in every scene landed on its own subject.
+2. **Only one of three costs lit.** `focus` takes a list now; the beat names all three keys.
+3. **The stage scrolled under the caption.** Sized to fit (tighter rhythm + taller modal floor),
+   not locked — `overflow-auto` stays as the phone's safety net.
+4. **Click-to-jump built.** Press anything a beat explains, seek to the first beat naming that key.
+
+A **fifth** bug surfaced while verifying and is fixed in the same commit: `getBoundingClientRect()`
+is a PAINTED rect and the modal opens from `scale(0.94)`, so the first beat of every scene measured
+6% small and stayed small — the ring sat 60px short of Upah bongkar. Autoplay healed it four seconds
+later, which is why it survived every check and screenshot.
 
 ---
 
 ## Traps — every one of these has already cost time
 
-- **🔴 THREE BUGS IN `PonderBook.jsx` HAVE BEEN THE SAME FAMILY:** work scheduled or repeated by a
-  mechanism nobody watched, with **nothing thrown and every check green**. A `requestAnimationFrame`
-  cancelled by its own effect cleanup (the spotlight silently did nothing); the same pattern
-  rendering the book at `opacity: 0`; and a `const T = {...}` inside the component putting an
-  unstable object in a dependency array, replaying the whole book on every render. **Anything in a
-  dep array must be stable. Anything that must run on mount should be a keyframe, not a frame you
-  schedule.** No screenshot catches any of this.
+- **🔴 FIVE BUGS IN THE PONDER FILES HAVE NOW BEEN THE SAME FAMILY:** work done by a mechanism
+  nobody watched, with **nothing thrown and every check green**. A `requestAnimationFrame`
+  cancelled by its own effect cleanup; the same pattern rendering the book at `opacity: 0`; a
+  `const T = {...}` inside the component replaying the whole book on every render; an **animation
+  keyframe eating an inline `transform`**; and a **rect measured through an ancestor's scale**.
+  **Anything in a dep array must be stable. Anything that must run on mount should be a keyframe,
+  not a frame you schedule. Geometry that must survive an animation goes in `left`/`top`, never in
+  `transform`. A rect is what is PAINTED, not what the layout says.** No screenshot catches any of
+  these — the last two were caught by reading `getComputedStyle().transform` and
+  `rect.width / offsetWidth` back in a real browser.
+- **🔴 VERIFY IN A REAL BROWSER, NOT FROM THE DIFF.** Both new bugs were found by measuring the DOM
+  through the Browser pane against `tools/ponder-lab.html`. The sweep that proves a scene is sound:
+  for every beat, assert the caption rect does not intersect the ring rect, the ring sits exactly
+  `PAD` outside the union of the lit fields, and `scrollHeight === clientHeight`.
 - **🔴 A headless screenshot narrower than ~518px on Windows is a CROP, not a layout**, and
-  **headless virtual time does not drive animation clocks honestly** — a finished animation reads
-  back `currentTime: 0`. Use `?probe` and read `innerWidth` before believing a narrow frame; do not
-  believe headless timing at all.
+  **headless virtual time does not drive animation clocks honestly** — the first "after" shots
+  showed rings mid-transition and read as a bug that was not there. Use `?probe` and read
+  `innerWidth`; do not believe headless timing at all.
 - **🔴 `overflow-hidden` and `clip-path` flatten `preserve-3d`.** The book's stage deliberately has
   neither; the cover is a clipped SIBLING for exactly this reason. Clip a child, never an ancestor.
 - **The palette law holds, with one written exemption:** the book's pages are cream in BOTH themes,
   like the printed nota. No blue, no green anywhere else. Amber is an edge and an ink, never a fill
   — the only legal gold fill is a 3px rule whose length is the data.
-- **Splitting a component splits its checks.** Five group-55 checks had to be repointed when the
-  stock table moved files. Grep the audit for a filename before assuming a check still reads it.
+- **Splitting a component splits its checks.** Grep the audit for a pattern before assuming a check
+  still reads it — two group-56 checks had to be repointed this session because they asserted
+  against exact lines that the fix rewrote.
 
 ## How to see it
 
@@ -102,7 +105,7 @@ no login, **and the book harness sits inside a real `backdrop-filter` ancestor**
 what broke it in the app once. Frames:
 
 ```
-"/c/Program Files/Google/Chrome/Application/chrome.exe" --headless=new --disable-gpu --hide-scrollbars --virtual-time-budget=6000 --screenshot=out.png --window-size=1360,880 "http://localhost:4187/tools/ponder-lab.html?scene=goods-received&step=6"
+"/c/Program Files/Google/Chrome/Application/chrome.exe" --headless=new --disable-gpu --hide-scrollbars --virtual-time-budget=20000 --screenshot=out.png --window-size=1360,880 "http://localhost:4187/tools/ponder-lab.html?scene=goods-received&step=6"
 ```
 
 ---
@@ -114,13 +117,13 @@ what broke it in the app once. Frames:
 | Session state | `.claude/PROGRESS.md` |
 | Ponder design | `.claude/PONDER-PLAN.md` |
 | The clock | `src/ponder/useScenePlayer.js` |
-| The player — captions, highlight, controls | `src/ponder/PonderOverlay.jsx` |
+| The player — captions, highlight, click-to-jump, controls | `src/ponder/PonderOverlay.jsx` |
 | The book | `src/ponder/PonderBook.jsx` · contents `src/ponder/sections.js` |
 | Scenes | `src/ponder/scenes/` — `stock-by-warehouse.js`, `goods-received.js` |
 | Stages | `src/ponder/stages/` — the extracted stock table, and a schematic intake form |
 | Demo world | `src/ponder/demo/warehouses.js` |
 | Book sounds | `src/ponder/sfx.js` → `public/sounds/` (his files, trimmed) |
-| The 657 checks | `src/config/integration.audit.mjs` — group **56** is Ponder |
+| The 663 checks | `src/config/integration.audit.mjs` — group **56** is Ponder |
 | Viewing harness | `tools/ponder-lab.*` |
 | Lessons | `~/.claude/skills/alucard/lessons.md` |
 
@@ -128,9 +131,9 @@ what broke it in the app once. Frames:
 <summary>Queued behind this — do not start these</summary>
 
 - **Identify-on-hover**: Ponder's pause is really *Identify* — frozen, you hover a part and it names
-  itself. Click-to-jump (job 4) is the same wiring, so build that first and this becomes small.
-- **The remaining 15 chapters**, in `sections.js` order: Sales Terminal (titip vs lunas) → Setoran →
-  Stock Opname → Piutang → Armada → the rest.
+  itself. Click-to-jump is now built and it is the same wiring, so this became small: the `jumpable`
+  set and the per-element walk in `measure()` are already there.
+- **The remaining 15 chapters**, in `sections.js` order.
 - **Untested by anyone: Siapkan Pengiriman and the shipping modal.** Zero open branch requests
   exist; the first real one is the test.
 - **Open, his call:** the panel name `Stock by Warehouse` was mine, not his.
