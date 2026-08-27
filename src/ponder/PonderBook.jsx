@@ -141,6 +141,14 @@ function Library({ anchorRef, initialSection, onClose, onPick }) {
   const [page, setPage] = useState(0);
   const bookRef = useRef(null);
   const leafRef = useRef(null);   // the right half, hinged at the spine
+  /* The two shading planes. A page turning away from the light DARKENS, and its far side brightens
+     as it comes round — that one cue is most of the difference between a sheet of paper and a
+     rotating rectangle, and its absence is what read as cheap. Refs rather than CSS, because they
+     have to run on the leaf's clock. */
+  const shadeFrontRef = useRef(null);
+  const shadeBackRef = useRef(null);
+  /* The cover slab. See the note where it is rendered — it is why a shut book looks shut. */
+  const slabRef = useRef(null);
   const scrimRef = useRef(null);
   const closingRef = useRef(false);
 
@@ -194,28 +202,54 @@ function Library({ anchorRef, initialSection, onClose, onPick }) {
   const OPEN = 'rotateY(0deg)';
   const FLAT = 'translate(0px, 0px) scale(1)';
 
+  /* 🔴 TIMING, SEQUENCED BY DELAY RATHER THAN BY OFFSETS. His note: *"book should close first
+     before comeback to its position"*. The two beats used to share one clock and one duration,
+     with offsets deciding when each took over — so the book was already shrinking while it was
+     still closing, and neither motion read as finished. Separate animations with a real delay is
+     what actually makes one end before the other starts. The totals sit just under his sound
+     files: 1,30s for the open, 1,16s for the close. */
+  const T = {
+    flyIn: 460, leafOpen: 620, leafOpenDelay: 380,      // 1000ms — lands shut, THEN opens
+    leafShut: 520, flyOut: 480, flyOutDelay: 500,       //  980ms — shuts, THEN leaves
+  };
+  /* Paper has mass. A strong ease-out belongs to something that flies to a stop; a hinge wants an
+     ease-in-out, because it has to overcome its own weight first and settle at the end. */
+  const HINGE = 'cubic-bezier(0.62, 0.02, 0.28, 1)';
+  const AWAY = 'cubic-bezier(0.55, 0, 0.85, 0.35)';
+  const shade = (el, frames, duration, delay) => el && el.animate(frames,
+    { duration, delay, easing: 'linear', fill: 'both' });
+  /* The cover's own width. Shut, the book occupies the left half plus the tab column; open, it is
+     the whole spread. Expressed as a clip so nothing reflows. */
+  const SLAB_OPEN = 'inset(0 0 0 0 round 14px)';
+  const SLAB_SHUT = 'inset(0 calc(50% - 62px) 0 0 round 14px)';
+
   useLayoutEffect(() => {
     if (still) return;
     const el = bookRef.current, leaf = leafRef.current;
     const from = flightFrom();
     if (!el || !from || typeof el.animate !== 'function') return;
+    /* The closed book flies in and STOPS. */
     el.animate(
-      [{ transform: from, opacity: 0, offset: 0 },
-       /* lands shut, in place... */
-       { transform: 'translate(0px, 0px) scale(0.97)', opacity: 1, offset: 0.44,
-         easing: 'cubic-bezier(0.23, 1, 0.32, 1)' },
-       { transform: FLAT, opacity: 1, offset: 1 }],
-      { duration: 820, easing: EASE, fill: 'both' },
+      [{ transform: from, opacity: 0 },
+       { transform: FLAT, opacity: 1 }],
+      { duration: T.flyIn, easing: EASE, fill: 'both' },
     );
-    /* ...and only then does the cover swing open. */
+    /* Only then does the cover swing open — and it travels a little past flat before settling,
+       which is what a cover dropped open actually does. */
     leaf?.animate(
       [{ transform: SHUT, offset: 0 },
-       { transform: SHUT, offset: 0.44 },
+       { transform: 'rotateY(3deg)', offset: 0.88 },
        { transform: OPEN, offset: 1 }],
-      { duration: 820, easing: EASE, fill: 'both' },
+      { duration: T.leafOpen, delay: T.leafOpenDelay, easing: HINGE, fill: 'both' },
     );
-    scrimRef.current?.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 260, easing: 'ease-out', fill: 'both' });
-  }, [still, flightFrom, SHUT, OPEN, FLAT]);
+    shade(shadeFrontRef.current, [{ opacity: 0.62 }, { opacity: 0.62, offset: 0.35 }, { opacity: 0 }],
+          T.leafOpen, T.leafOpenDelay);
+    shade(shadeBackRef.current, [{ opacity: 0 }, { opacity: 0.55, offset: 0.55 }, { opacity: 0.75 }],
+          T.leafOpen, T.leafOpenDelay);
+    slabRef.current?.animate([{ clipPath: SLAB_SHUT }, { clipPath: SLAB_OPEN }],
+      { duration: T.leafOpen, delay: T.leafOpenDelay, easing: HINGE, fill: 'both' });
+    scrimRef.current?.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 300, easing: 'ease-out', fill: 'both' });
+  }, [still, flightFrom, SHUT, OPEN, FLAT, T, HINGE, SLAB_OPEN, SLAB_SHUT]);
 
   const shut = useCallback(() => {
     if (closingRef.current) return;
@@ -225,25 +259,26 @@ function Library({ anchorRef, initialSection, onClose, onPick }) {
     const el = bookRef.current;
     const from = flightFrom();
     if (!el || !from || typeof el.animate !== 'function') { onClose(); return; }
-    scrimRef.current?.animate([{ opacity: 1 }, { opacity: 1, offset: 0.5 }, { opacity: 0 }],
-                              { duration: 760, easing: 'ease-in', fill: 'both' });
-    /* The cover swings shut where the book stands... */
+    scrimRef.current?.animate([{ opacity: 1 }, { opacity: 0 }],
+                              { duration: T.flyOut, delay: T.flyOutDelay, easing: 'ease-in', fill: 'both' });
+    /* The cover swings shut where the book stands, and NOTHING else moves while it does. */
     leafRef.current?.animate(
-      [{ transform: OPEN, offset: 0 },
-       { transform: SHUT, offset: 0.5 },
-       { transform: SHUT, offset: 1 }],
-      { duration: 760, easing: 'cubic-bezier(0.4, 0, 0.4, 1)', fill: 'both' },
+      [{ transform: OPEN }, { transform: SHUT }],
+      { duration: T.leafShut, easing: HINGE, fill: 'both' },
     );
-    /* ...and only then is it put back on the shelf. */
+    shade(shadeFrontRef.current, [{ opacity: 0 }, { opacity: 0.62 }], T.leafShut, 0);
+    shade(shadeBackRef.current, [{ opacity: 0.75 }, { opacity: 0 }], T.leafShut, 0);
+    slabRef.current?.animate([{ clipPath: SLAB_OPEN }, { clipPath: SLAB_SHUT }],
+      { duration: T.leafShut, easing: HINGE, fill: 'both' });
+    /* ...and only once it is shut does it go back to the shelf. */
     const anim = el.animate(
-      [{ transform: FLAT, opacity: 1, offset: 0 },
-       { transform: 'translate(0px, 0px) scale(0.97)', opacity: 1, offset: 0.5 },
-       { transform: from, opacity: 0, offset: 1 }],
-      { duration: 760, easing: EASE, fill: 'both' },
+      [{ transform: FLAT, opacity: 1 },
+       { transform: from, opacity: 0 }],
+      { duration: T.flyOut, delay: T.flyOutDelay, easing: AWAY, fill: 'both' },
     );
     anim.onfinish = onClose;
     anim.oncancel = onClose;
-  }, [onClose, flightFrom, FLAT, SHUT, OPEN]);
+  }, [onClose, flightFrom, FLAT, SHUT, OPEN, T, HINGE, AWAY, SLAB_OPEN, SLAB_SHUT]);
 
   useEffect(() => {
     const onKey = (e) => {
@@ -275,13 +310,25 @@ function Library({ anchorRef, initialSection, onClose, onPick }) {
       {/* THE BOOK ITSELF. Big on purpose — his words were *"so black and small"*, and a spread that
           does not take the screen is a dialog wearing a book costume. */}
       <div ref={bookRef} onMouseDown={(e) => e.stopPropagation()}
-           style={{ background: LEATHER, transformOrigin: 'center center' }}
-           className="relative w-[min(1040px,95vw)] h-[min(760px,90vh)] flex rounded-[14px] p-[10px]
-                      border border-accent-edge
-                      shadow-[0_2px_2px_rgba(0,0,0,0.35),0_40px_90px_-30px_rgba(0,0,0,0.95)]">
+           style={{ transformOrigin: 'center center' }}
+           className="relative w-[min(1040px,95vw)] h-[min(760px,90vh)] flex rounded-[14px] p-[10px]">
+
+        {/* 🔴 THE COVER IS ITS OWN ELEMENT SO IT CAN BE CLIPPED, and that is the difference between
+            a book that looks shut and one that looks half-open. When the leaf swings closed it lands
+            on the left half and VACATES the right half — but the cover used to be the container's
+            own background, so the vacated half stayed on screen as a dark slab beside the closed
+            book. Nothing about that read as a closed book.
+
+            As a sibling it can be clipped to the left half in step with the leaf. Clipping a
+            SIBLING is safe; clipping the container would have flattened `preserve-3d` and undone
+            the hinge, which is the trap noted on the stage below. */}
+        <span ref={slabRef} aria-hidden="true"
+              style={{ background: LEATHER, clipPath: 'inset(0 0 0 0 round 14px)' }}
+              className="absolute inset-0 rounded-[14px] border border-accent-edge pointer-events-none
+                         shadow-[0_2px_2px_rgba(0,0,0,0.35),0_40px_90px_-30px_rgba(0,0,0,0.95)]" />
 
         {/* Tabs, cut into the cover's left edge like the reference book */}
-        <div className="hidden lg:flex flex-col gap-1 w-[124px] shrink-0 pt-8 pb-6 pr-[6px] overflow-y-auto">
+        <div className="relative z-10 hidden lg:flex flex-col gap-1 w-[124px] shrink-0 pt-8 pb-6 pr-[6px] overflow-y-auto">
           {SECTIONS.map(s => (
             <button key={s.id} type="button" onClick={() => pickSection(s.id)}
               style={tab(s)}
@@ -298,8 +345,8 @@ function Library({ anchorRef, initialSection, onClose, onPick }) {
             carries `preserve-3d`, and a clip here collapses the hinge back into a flat rotation in
             several engines — which is exactly the bug being fixed. Clipping happens on each face
             instead, where it has no 3D children to flatten. */}
-        <div className="relative flex-1 min-w-0"
-             style={{ transformStyle: 'preserve-3d', perspective: '2600px' }}>
+        <div className="relative z-10 flex-1 min-w-0"
+             style={{ transformStyle: 'preserve-3d', perspective: '1500px' }}>
 
           {/* The page edges, standing proud of the cover on three sides. */}
           <span className="pointer-events-none absolute inset-y-[8px] -left-[5px] w-[6px] rounded-l-[3px]"
@@ -357,7 +404,7 @@ function Library({ anchorRef, initialSection, onClose, onPick }) {
               A gold rule marks the fold, and it belongs to the leaf so it travels with it. */}
           <div ref={leafRef}
                className="absolute inset-y-0 left-0 w-full lg:left-1/2 lg:w-1/2"
-               style={{ transformOrigin: 'left center', transformStyle: 'preserve-3d' }}>
+               style={{ transformOrigin: 'left center', transformStyle: 'preserve-3d', willChange: 'transform' }}>
 
             {/* FRONT OF THE LEAF — the right page */}
             <div className="absolute inset-0 rounded-r-[6px] overflow-hidden"
@@ -366,6 +413,9 @@ function Library({ anchorRef, initialSection, onClose, onPick }) {
               <div className="absolute inset-0 pointer-events-none"
                    style={{ background: 'linear-gradient(90deg, rgba(0,0,0,.20) 0%, rgba(0,0,0,0) 16%, rgba(0,0,0,0) 86%, rgba(0,0,0,.10) 100%)' }} />
               <span className="hidden lg:block absolute inset-y-6 left-0 w-[2px] bg-orange pointer-events-none" />
+              {/* the light leaving this face as it turns away */}
+              <span ref={shadeFrontRef} className="absolute inset-0 pointer-events-none z-20"
+                    style={{ background: 'linear-gradient(90deg, #000 0%, rgba(0,0,0,.55) 60%, rgba(0,0,0,.35) 100%)', opacity: 0 }} />
 
             {/* Keyed on the PAGE only. Turning a page is a motion someone performed and should see;
                 switching chapters is a jump, and animating a jump is what flickered. */}
@@ -443,6 +493,9 @@ function Library({ anchorRef, initialSection, onClose, onPick }) {
             <div className="absolute inset-0 rounded-[6px] border border-accent-edge overflow-hidden"
                  style={{ background: LEATHER, transform: 'rotateY(180deg)', backfaceVisibility: 'hidden' }}>
               <span className="absolute inset-y-5 right-[6px] w-[3px] rounded-full bg-orange" />
+              {/* and arriving on this one as it comes round */}
+              <span ref={shadeBackRef} className="absolute inset-0 pointer-events-none z-20"
+                    style={{ background: 'linear-gradient(270deg, rgba(0,0,0,.75) 0%, rgba(0,0,0,.25) 70%, rgba(0,0,0,0) 100%)', opacity: 0 }} />
               <div className="absolute inset-0 flex flex-col items-center justify-center gap-4">
                 <span className="h-16 w-16 rounded-2xl border border-accent-edge flex items-center justify-center"
                       style={{ background: 'rgba(0,0,0,.28)' }}>
