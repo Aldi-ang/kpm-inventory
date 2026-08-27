@@ -1,6 +1,36 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-27 19:59 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · ✅ **BOOK MOTION: SEQUENCED, SHADED, AND A SHUT BOOK LOOKS SHUT** — **657/657** · ⚠️ **sounds still unheard** · branch `phase0-solid-ground`
+**Updated: 2026-08-27 20:27 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · ✅ **ONE BOOK, TWO SIZES — the chip is the same object** — **657/657** · ❓ **hover video unopenable, waiting on his description** · branch `phase0-solid-ground`
+
+## 🟠 2026-08-27 20:27 — THE CHIP IS THE BOOK. **657/657.** `bd22eba`
+
+> *"erase the scroll white indicator looks really bad"* · *"rather than it close and shrink and
+> gone, i rather make the book fly from its original position to the big screen, then when it close
+> it fly back to the original position, the small version of book on its space"* · *"i want the
+> book size to match the real book, this sizing is very different to start with sc1"*
+
+**🔴 THE CHIP WAS LANDSCAPE — 34×26, wider than tall, which no closed book is.** A closed book
+here is half the spread: 520×760 = **0,68**. The chip is **21×30**, same ratio. Big and small are
+now one object at two sizes, which is the whole reason the flight reads as a movement.
+
+**The white sliver** was a flat cream bar reading as a scrollbar → fine alternating page-edge
+lines, same texture as the big book. **Scrollbars inside the book are hidden** — the global brown
+bar is tuned for dark panels and sits on cream paper like a stripe.
+
+**🔴 THE FLIGHT AIMED AT THE WRONG RECTANGLE.** It scaled the whole 1040px container onto the
+chip, but a shut book is only half the spread plus the tab column — so it drifted sideways while
+shrinking. Now it maps the **closed** book's centre, scaled by **height** (a closed book is
+portrait), subtracting where that centre lands after scaling about the container's middle.
+
+**No more dissolve.** Neither flight touches opacity, and the chip's own book is `visibility:
+hidden` for exactly the span the big one is out — never two, never none.
+
+**❓ WAITING ON ALDI — verbatim:**
+> *"i want this animation when book is hovered https://www.youtube.com/watch?v=vhG5usAFL_g with the
+> light effect as well"*
+
+**YouTube cannot be opened here.** Current hover is a stand-in: cover lifts on its spine, chip
+rises 1px, a specular band crosses the leather. **He needs to describe the video in one line.**
 
 ## 🟠 2026-08-27 19:59 — THE MOTION. **657/657.** `4cae003`
 
