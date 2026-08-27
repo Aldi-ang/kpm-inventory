@@ -1,6 +1,34 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-27 22:22 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · ✅ **THE BOOK NO LONGER REPLAYS ON EVERY RENDER** — **657/657** · ❓ **hover video + sounds still owed by him** · branch `phase0-solid-ground`
+**Updated: 2026-08-27 22:30 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · 🛑 **STOPPED ON WEEKLY LIMIT — notes written, nothing half-done** · **657/657** · branch `phase0-solid-ground`
+
+## 🔴 2026-08-27 22:30 — STOPPED ON THE WEEKLY LIMIT. Tree clean at `d8d8904`, **657/657**.
+
+**Nothing is half-finished.** Every commit builds and audits green. `.claude/NEXT-SESSION.md` holds
+the whole next job.
+
+**🔴 WAITING ON ALDI — HIS WORDS, UNEDITED. These are the next job, not a summary of it:**
+
+> *"this tiga biaya need fix, the textbox block the view for the 3 biaya and there is no highlights
+> for that 3 biaya as well sc1. this landing cost also collapse with the text box, landed value as
+> well, if there is not much space u can put the text box above it and arrow pointing bottom, and
+> dont make the ponder panel slideable so that the text box is fixed, and then another thing is
+> that i want to be able to press the each of the components inside the ponder panel and when
+> pressed it will snap back to the timeframe where that components is explained"*
+
+Four faults, and the brief carries the diagnosis for each: (1) the caption overlaps its own subject
+— `EST_H = 150` in `PonderOverlay.jsx` is a guess and these captions are 3-4 lines, so the room
+test approves space the box does not fit; (2) `focus` is single-valued, so only one of the three
+cost fields lights; (3) the stage scrolls, so the caption drifts off its subject; (4) click-to-jump
+is unbuilt — every element already has `data-ponder` and every step already names a `focus`, so it
+is ~15 lines.
+
+**Also still owed by him, and blocking nothing:**
+> *"i want this animation when book is hovered https://www.youtube.com/watch?v=vhG5usAFL_g with the
+> light effect as well"* — **YouTube cannot be opened from here; he must describe it in one line.**
+
+And **nobody has heard the four book sounds play.** They are his own files, trimmed by measurement;
+the levels are a first guess.
 
 ## 🟠 2026-08-27 22:22 — THE REPLAY BUG. **657/657.** `c05e740`
 
