@@ -1,8 +1,8 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-27 13:18 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · ✅ **PONDER SLICE 2 IS LIVE — the real table on the stage, and a BOOK in the top bar** — **651/651** · the footnote is deleted and check 631 moved · branch `phase0-solid-ground`
+**Updated: 2026-08-27 13:22 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · ✅ **PONDER SLICE 2 IS LIVE — the real table on the stage, and a BOOK in the top bar** — **651/651** · the footnote is deleted and check 631 moved · branch `phase0-solid-ground`
 
-## 🟠 2026-08-27 13:18 — PONDER SLICE 2. **651/651.** `df5c98b` + `7b353a3`.
+## 🟠 2026-08-27 13:22 — PONDER SLICE 2. **651/651.** `df5c98b` + `7b353a3`.
 
 Six asks in one message, all six shipped, all six now checks in group 56:
 
@@ -40,6 +40,34 @@ the spotlight never dimmed anything and no highlight ever appeared; once the who
 `opacity: 0`. **Every check stayed green both times** — only looking found it. The measure is
 synchronous now; the book opens on a keyframe (which cannot lose that race) and closes on a
 transition (which can be reversed).
+
+**🔴 WAITING ON ALDI — two, verbatim**
+
+> *"dont use sebaran stock, use proper elegant english terms for that"*
+
+Answered by me, not by him: the panel reads **Stock by Warehouse**. He has not vetoed it. One string
+in `BranchWarehouseManager.jsx` plus the scene's `title` if he does.
+
+> *"book SFX also needed here"*
+
+Done with the app's OWN audio re-pointed — `commit` cover, `sign` page, `tap` pick, `click` close.
+**If he wants real page-turn sounds** he drops `book-open.mp3` / `page-turn.mp3` / `book-close.mp3`
+into `public/sounds/`, they get added to `SOURCES` in `src/hooks/useSound.js`, and four names change
+in `src/ponder/sfx.js`. Nothing else moves.
+
+**Where things live — new or moved this session**
+
+| What | Where |
+|---|---|
+| The book: top-bar object + two-page spread | `src/ponder/PonderBook.jsx` |
+| The book's contents (DATA — Node can read it, registry.js it cannot) | `src/ponder/sections.js` |
+| Book sounds | `src/ponder/sfx.js` |
+| The stock table, extracted; tutorial and screen share it | `src/ponder/stages/StockByWarehouseTable.jsx` |
+| The stage that feeds it demo data | `src/ponder/stages/StockStage.jsx` |
+| The fixed demo world | `src/ponder/demo/warehouses.js` |
+| Where the book is mounted (shared shell, every screen) | `src/components/BiohazardTheme.jsx` |
+| Tutorial keyframes | `tailwind.config.js` — `ponder-in/-ring/-open/-leaf` |
+| DELETED | `src/ponder/stages/PlaceholderStage.jsx`, and the panel footnote |
 
 **Looking at it:** `npx vite build --config tools/ponder-lab.config.mjs` →
 `python -m http.server 4187 -d dist-ponderlab` → `/tools/ponder-lab.html?book&light&step=N&probe`.
@@ -89,7 +117,7 @@ vault gate), so this builds the REAL overlay against the REAL stylesheet on plai
 to the screen. The scene now carries them too and group 56 asserts it, so 631 can MOVE in slice 2
 rather than be deleted.
 
-**🔴 WAITING ON ALDI — verbatim, one open question** *(still open at 13:18)*
+**🔴 WAITING ON ALDI — verbatim, one open question** *(still open at 13:22)*
 
 > *"dont use sebaran stock, use proper elegant english terms for that"*
 
