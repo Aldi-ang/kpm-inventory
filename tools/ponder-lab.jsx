@@ -57,8 +57,14 @@ function BookLab() {
     const t = setTimeout(() => document.querySelector('[aria-label="Tutorial book"]')?.click(), 60);
     return () => clearTimeout(t);
   }, []);
+  /* 🔴 THE GLASS STRIP IS THE POINT. The real top bar carries `backdrop-filter`, and that makes a
+     containing block for `position: fixed` descendants — which is how the book shipped as a torn
+     ribbon across the header while this lab showed it perfectly. A harness that does not reproduce
+     the ancestor is testing a different page. Anything mounted in the top bar gets tested in here. */
   return (
-    <div className="p-6 flex justify-end">
+    <div className="p-6 flex justify-end"
+         style={{ backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)',
+                  background: 'rgba(255,255,255,.02)', overflow: 'hidden' }}>
       <PonderBookButton />
     </div>
   );

@@ -4253,9 +4253,41 @@ check(G56, 'the book has sounds, and they go through the hook that respects Lite
    playing, because that is just a slow app. */
 check(G56, 'Lite Mode snaps the book shut instead of waiting for an animation',
   /if \(liteOn\(\) \|\| reduced\(\)\) \{ onClose\(\); return; \}/.test(bookSrc) &&
-  /closing \|\| still \? '' : 'animate-ponder-open'/.test(bookSrc),
-  'the close must return immediately under Lite Mode or reduced motion, and the open keyframe ' +
-  'must not be applied there at all');
+  /if \(still\) return;/.test(bookSrc),
+  'the close must return immediately under Lite Mode or reduced motion, and no animation may be ' +
+  'constructed there at all — not a fast one, none');
+
+/* 🔴 PORTALLED, AND THIS IS THE CHECK THAT WOULD HAVE CAUGHT THE SHIPPED BUG. `position: fixed`
+   measures against the viewport only while no ancestor makes a containing block, and
+   `backdrop-filter` makes one — the top bar is glass. Mounted in place, the book resolved
+   `inset-0` against a 90px strip of chrome and rendered as a torn ribbon across the header. Aldi
+   saw it before any check did: *"the book is broken bruh"*. The lab never showed it because the
+   lab has no glass ancestor, which is exactly why this is a check and not a note. */
+check(G56, 'both overlays escape their mount point through a portal',
+  /createPortal\(/.test(bookSrc) && /createPortal\(/.test(overlaySrc) &&
+  /document\.body/.test(bookSrc) && /document\.body/.test(overlaySrc),
+  'the book and the scene player must render into document.body. Either one is mounted inside a ' +
+  'panel or the glass top bar, and any ancestor with backdrop-filter, filter or transform turns ' +
+  'their `fixed` positioning into positioning against that ancestor');
+
+/* *"when we press the book, it should open the book and zoomed in to our screen taking most space
+   then close and shrink and go to its perspective place when close"*. The flight has to start from
+   the chip's MEASURED rectangle — a fixed origin throws the book at a corner that means nothing. */
+check(G56, 'the book flies from the chip that opened it, and back into it',
+  /getBoundingClientRect\(\)/.test(bookSrc) && /el\.animate\(/.test(bookSrc) &&
+  /anim\.onfinish = onClose/.test(bookSrc) && /Math\.max\(a\.width \/ b\.width/.test(bookSrc),
+  'the open and close keyframes must be built from the anchor rect and driven with the Web ' +
+  'Animations API, which starts when called. A state flag flipped inside a requestAnimationFrame ' +
+  'already rendered this book at opacity 0 once, with nothing thrown and every check green');
+
+/* *"the book look so bad there, its so black and small and doesnt look like a book"*. A book is
+   paper, and paper does not go black in a dark room. Theme-exempt on purpose, the same exemption
+   the printed nota already carries — and cream is on the palette, so no law is bent. */
+check(G56, 'the book is paper in both themes, and big enough to be one',
+  /const PAPER = '#EFE8D8'/.test(bookSrc) && /const LEATHER =/.test(bookSrc) &&
+  /w-\[min\(1240px,96vw\)\] h-\[min\(780px,88vh\)\]/.test(bookSrc),
+  'the pages must keep their own cream regardless of theme and the spread must take most of the ' +
+  'screen. Built from --panel it went near-black in dark mode and read as a small black card');
 
 check(G56, 'the scene carries both stock formulas, ready for check 631 to move onto it',
   scenes.some(s => s.steps.some(st => st.text.includes('Sold (7d) ÷ 7 × 30'))) &&

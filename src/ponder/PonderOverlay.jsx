@@ -22,6 +22,7 @@
    the pause, the restart and the timeline are all three of those, and they are the three
    controls Ponder itself puts on screen. */
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Play, Pause, RotateCcw, ChevronLeft, ChevronRight, Timer, BookOpen } from 'lucide-react';
 import { getScene, getStage } from './registry.js';
 import { useScenePlayer } from './useScenePlayer.js';
@@ -261,7 +262,15 @@ export default function PonderOverlay({ sceneId, open, onClose, onBack }) {
     </p>
   );
 
-  return (
+  /* 🔴 PORTALLED TO document.body, AND THIS IS NOT TIDINESS.
+
+     `position: fixed` measures against the viewport ONLY while no ancestor creates a containing
+     block. `backdrop-filter` does — and the app's top bar is glass. Rendered in place, this
+     overlay resolved its `inset-0` against a 90px strip of chrome and shipped as a torn ribbon
+     across the header, which is exactly how Aldi received it: *"the book is broken bruh"*.
+     The lab never showed it because the lab has no glass ancestor. A component that can be
+     mounted anywhere must not assume anything about where. */
+  return createPortal(
     <div role="dialog" aria-modal="true" aria-label={scene.title}
          onMouseDown={leave}
          className="fixed inset-0 z-[9000] flex items-end lg:items-center justify-center
@@ -371,6 +380,7 @@ export default function PonderOverlay({ sceneId, open, onClose, onBack }) {
         </div>
 
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
