@@ -1,6 +1,29 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-27 20:27 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · ✅ **ONE BOOK, TWO SIZES — the chip is the same object** — **657/657** · ❓ **hover video unopenable, waiting on his description** · branch `phase0-solid-ground`
+**Updated: 2026-08-27 20:44 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · ✅ **RIBBONS, AND NO STRAY PAPER** — **657/657** · ❓ **hover video + sounds still owed by him** · branch `phase0-solid-ground`
+
+## 🟠 2026-08-27 20:44 — RIBBONS. **657/657.** `<see git log -1>`
+
+> *"can u remove the white scroll, i dont want to see any of the scroll inside this book, and the
+> section also make it like book ribbons u know to make it more natural and make these section into
+> one line with no scrollable so resize the spacing"*
+
+**🔴 THE CREAM STRIPS WERE NEVER SCROLLBARS — they are the PAGE EDGES.** They were pinned to
+the stage rather than to the halves they are the edge OF, so when the cover shut they stayed put:
+two pale strips hanging in the dark beside a closed book. Left half keeps its own edge + half the
+bottom; the right half's live **inside the leaf** and turn with it. Closed, the fore-edge lands
+opposite the spine, which is correct.
+
+**Tabs → ribbons.** A V cut into the free end (the one shape that reads as fabric), active one
+woven in gold rather than outlined. **17 × 26px + 2px gap = 474px**, so they all fit and the scroll
+container is **gone, not hidden** — nothing left to scroll.
+
+**❓ STILL OWED BY HIM — verbatim:**
+> *"i want this animation when book is hovered https://www.youtube.com/watch?v=vhG5usAFL_g with the
+> light effect as well"*
+
+**YouTube cannot be opened here** — he must describe it in one line. Current hover is a stand-in
+(cover lifts, chip rises, specular band crosses the leather). **Sounds are also still unheard.**
 
 ## 🟠 2026-08-27 20:27 — THE CHIP IS THE BOOK. **657/657.** `bd22eba`
 
