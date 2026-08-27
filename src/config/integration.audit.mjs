@@ -4254,15 +4254,33 @@ check(G56, 'the subject is outlined, and the outline is an edge rather than a fi
    HIS file through `useSound`, which already handles pooling, the unlock gesture and Lite Mode.
    The two sounds he pointed at on YouTube cannot be fetched here, so those calls are SILENT rather
    than borrowed — a wrong sound is worse than none, which is the whole lesson of round 1. */
-check(G56, 'the tutorial sound is his own file, played through the hook that respects Lite Mode',
-  /from '\.\.\/hooks\/useSound\.js'/.test(sfxSrc) && /playSound\('ponderOpen'\)/.test(sfxSrc) &&
+const soundSrc = fs.readFileSync('src/hooks/useSound.js', 'utf8');
+/* 🔴 NO TRANSACTION SOUND MAY REACH THE BOOK. That is the whole of round 1's mistake encoded:
+   `click`, `commit`, `tap` and `sign` already mean money moved in this app, and an ear taught that
+   a page turn is a transaction is an ear taught wrong. His words: *"u re crazy using sales SFX for
+   the book"*. Round 2's synthesis is banned for a different reason — *"SFX sound really bad"* — so
+   nothing here may build its own audio either. Every sound must be a registered file he chose. */
+check(G56, 'every book sound is one of his own files, and none of them is a sales sound',
+  /from '\.\.\/hooks\/useSound\.js'/.test(sfxSrc) &&
+  ['ponderOpen', 'bookOpenS', 'bookPage', 'bookCloseS']
+    .every(n => sfxSrc.includes(`playSound('${n}')`) && soundSrc.includes(n + ':')) &&
+  !/playSound\('(click|commit|tap|sign|error|vaultb)'\)/.test(sfxSrc) &&
   !/new Audio|createBiquadFilter|createOscillator/.test(sfxSrc) &&
-  /ponderOpen: '\/sounds\/ponder-open\.mp3'/.test(fs.readFileSync('src/hooks/useSound.js', 'utf8')) &&
-  /bookOpen\(\)/.test(bookSrc) && /bookPage\(\)/.test(bookSrc) &&
-  /bookPick\(\)/.test(bookSrc) && /bookClose\(\)/.test(bookSrc),
-  'the pick sound must be ponderOpen through playSound, the file must be registered in SOURCES, ' +
-  'and nothing here may build its own audio. All four call sites stay wired even while three of ' +
-  'them are silent, so turning the missing files on is a three-line edit and not a re-wiring');
+  ['ponder-open', 'book-open', 'book-page', 'book-close']
+    .every(f => fs.existsSync('public/sounds/' + f + '.mp3')),
+  'all four sounds must be registered files under public/sounds, played through playSound, and ' +
+  'none may be one of the transaction sounds or synthesised on the spot');
+
+/* ⚠️ AND THEY MUST BE SHORT. The clips he saved ran 4,7s, 6,5s and 5,9s — whole video captures,
+   mostly silence, with the page turn's actual burst sitting 1,7 seconds in. Played raw, the sound
+   would start over a second after the click that caused it and stack on itself on the second
+   click; that reads as an unresponsive app, not as a slow sound. Trimmed on the way in. */
+const TOO_LONG = ['ponder-open', 'book-open', 'book-page', 'book-close']
+  .filter(f => fs.statSync('public/sounds/' + f + '.mp3').size > 40_000);
+check(G56, 'the book sounds are trimmed, not whole video captures',
+  TOO_LONG.length === 0,
+  'oversized: ' + (TOO_LONG.join(', ') || 'none') + '. An MP3 over ~40KB at this bitrate is ' +
+  'seconds long, which for a UI sound means it starts late and overlaps itself');
 
 /* *"i think u can remove this bottom static text on the tutorial"*. A 'near' caption already says
    the sentence beside the thing it is about; printing it again below made the eye choose. */

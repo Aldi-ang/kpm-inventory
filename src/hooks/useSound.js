@@ -31,6 +31,14 @@ const SOURCES = {
      a transaction in this app, and re-pointing them at a tutorial teaches the ear the wrong thing.
      He said so himself: *"u re crazy using sales SFX for the book"*. */
   ponderOpen: '/sounds/ponder-open.mp3',
+  /* The book. Also Aldi's own files, and TRIMMED on the way in: the clips he saved ran 4,7s, 6,5s
+     and 5,9s because they are whole video captures, and a 4,7-second page turn stacks on itself
+     the moment anyone clicks twice. `silencedetect` found the real burst inside each one — the
+     page turn is 0,4s of sound sitting after 1,7s of nothing — and each file is cut to it with a
+     70ms fade so the cut does not click. Originals are untouched in RE UI/SFX. */
+  bookPage:  '/sounds/book-page.mp3',
+  bookOpenS: '/sounds/book-open.mp3',
+  bookCloseS: '/sounds/book-close.mp3',
   mumble1: '/sounds/mumble1.mp3',
   mumble2: '/sounds/mumble2.mp3',
   mumble3: '/sounds/mumble3.mp3',
@@ -50,6 +58,7 @@ const VOLUMES = {
   mumble1: 0.7, mumble2: 0.7, mumble3: 0.7, mumble4: 0.7,
   vaultb: 0.9,
   ponderOpen: 0.95,
+  bookPage: 0.85, bookOpenS: 0.9, bookCloseS: 0.9,
 };
 const DEFAULT_VOLUME = 0.85;
 

@@ -14,22 +14,24 @@
    ROUND 3, here: his own file, through `useSound`, which already solves pooling, the browser's
    unlock gesture, and silence in Lite Mode.
 
-   🔴 TWO SOUNDS ARE STILL MISSING, AND THEY ARE SILENT ON PURPOSE. He named two YouTube clips —
-   one for moving between sections, one holding the open and close pair — and audio cannot be
-   pulled from there here. **A wrong sound is worse than no sound**, which is the whole lesson of
-   round 1, so `bookPage`, `bookOpen` and `bookClose` do nothing until the files exist.
+   ROUND 4 completes it: he recorded the other three and dropped them in the same folder, so every
+   sound in the book is now a real one he chose.
 
-   TO TURN THEM ON — this is the entire job, and it is four lines:
-     1. save the clips into `public/sounds/` as `book-page.mp3`, `book-open.mp3`, `book-close.mp3`
-     2. add each to `SOURCES` in `src/hooks/useSound.js` (a volume in `VOLUMES` is optional)
-     3. swap the three `return false` lines below for `playSound('bookPage')` and so on
-   Nothing else moves: every call site already fires at the right moment. */
+   ⚠️ THEY WERE TRIMMED ON THE WAY IN, and that mattered more than it sounds. The clips ran 4,7s,
+   6,5s and 5,9s — whole video captures, mostly silence. A 4,7-second page turn stacks on itself
+   the second anyone clicks twice, and the sound would start well over a second after the click
+   that caused it, which reads as an unresponsive app rather than as a slow sound. `silencedetect`
+   located the real burst in each (the page turn is 0,4s of sound after 1,7s of nothing) and each
+   file is cut to it with a 70ms fade. The originals are untouched in RE UI/SFX.
+
+   ⚠️ `book-close.mp3` held FOUR bursts, roughly a second apart — takes, or a sound repeated. Only
+   the first is used. If the intended sound was all four together, widen the trim; the note in
+   `useSound.js` records the timings. */
 import { playSound } from '../hooks/useSound.js';
 
-/* Pressing a tutorial. His file, his words: *"this is the SFX when ponder tutorial is pressed"*. */
+/* Pressing a tutorial. His words: *"this is the SFX when ponder tutorial is pressed"*. */
 export const bookPick = () => playSound('ponderOpen');
 
-/* WAITING ON A FILE — see the header. Silent rather than borrowed. */
-export const bookOpen = () => false;
-export const bookPage = () => false;
-export const bookClose = () => false;
+export const bookOpen = () => playSound('bookOpenS');
+export const bookPage = () => playSound('bookPage');
+export const bookClose = () => playSound('bookCloseS');
