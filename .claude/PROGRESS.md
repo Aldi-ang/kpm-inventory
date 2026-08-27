@@ -1,6 +1,55 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-27 07:55 WIB (🟠 KPM app session)** · ✅ **ALL THREE BUILDS DONE AND DRIVEN LIVE** — `20c4a0a`, **628/628** · one real bug found by driving it · branch `phase0-solid-ground`
+**Updated: 2026-08-27 08:12 WIB (🟠 KPM app session)** · ✅ **RESTOCK VAULT DESK + SEBARAN STOK DONE, DRIVEN LIVE** — `d042520`, **630/630** · branch `phase0-solid-ground`
+
+## 🟢 2026-08-27 08:12 — SEBARAN STOK REDESIGNED. `d042520`. **630/630.**
+
+**NOW:** nothing is blocked and nothing is half-done. Six commits today, all driven in his live
+Chrome against his real data: `76de71a` `20c4a0a` `4cc71af` `b667e78` `d042520` (+ notes).
+The Restock Vault desk has its 4th tab, Tujuan comes from the roster, and the HQ logistics screen
+is now one panel — **Sebaran Stok** — that nothing else duplicates.
+
+**🔴 WAITING ON ALDI — verbatim, do not paraphrase**
+
+> *(nothing open.)* Every question asked this session was answered in it: he chose **MOVE it into
+> the tab** for the request queue, and **Delete it** for the old Isi Gudang Cabang panel.
+
+**✅ THE ONE THING NEITHER OF US COULD TEST**
+The **Siapkan Pengiriman** button and the shipping modal behind it. He has **zero** open branch
+requests — all six in the Buku are DELIVERED — and fake rows must never be written into his live
+Firestore to make one. **The next real branch request is the test.**
+
+**What changed today, shortest form** — `git show <sha>` carries each full story
+- `76de71a` Request tab (a MOVE off the branch screen, −332 lines there), Tujuan from the roster,
+  Sebaran Stok built on the dashboard's own `supplyByProduct`
+- `20c4a0a` 🔴 Tujuan was offering **Headquarters** as a shippable cabang beside the real HQ entry.
+  Found by looking at the screen; every static check passed it. Fixed by EXPORTING supply.js's
+  `NON_BRANCH` instead of keeping a second, shorter copy of the rule
+- `4cc71af` banner deleted, Sebaran Stok became the title, every warehouse opens into its shelf.
+  🔴 Also found by looking: every Master Vault row printed *"10.900 TANPA ASAL"* in danger red —
+  the arrivals machinery has no data for the master vault, which is stocked by `procurements`
+- `b667e78` Isi Gudang Cabang deleted (his call), taking `viewBranch`, `branchesSeen` and one
+  Firestore listener with it
+- `d042520` the panel was a `<table>` in a rounded box, so every row rule was sliced at the corner
+  — his *"looks cutted"*. Rebuilt on a grid; the drawer animates on `grid-template-rows` 0fr→1fr
+
+**Where things live**
+
+| What | Where |
+|---|---|
+| The 4-tab desk (Masuk · Kirim · **Request** · Buku) | `src/RestockVaultView.jsx` |
+| Shipping modal + the fulfilment handlers | `src/RestockVaultView.jsx` (moved here from BranchWarehouseManager) |
+| Sebaran Stok — the whole HQ logistics screen | `src/components/BranchWarehouseManager.jsx`, the `isAdmin && logistics.length > 0` block |
+| The supply maths, shared with the dashboard | `src/utils/supply.js` — `supplyByProduct`, `warehouseList`, `NON_BRANCH` |
+| Checks for all of it | `src/config/integration.audit.mjs` groups **54** and **55** |
+
+**Traps this session paid for**
+- **A check that greps source also reads the comment explaining the fix.** G53 had no `noCmt`;
+  my comment quoting `text-white` failed the check forbidding it. G48 already knew this.
+- **Two checks fired on pure copy/signature tweaks** and were re-anchored on the CLAIM, not the
+  punctuation (`7 hari terakhir`) and on the ARRAY, not the callback (`r.detail.map(`).
+- **`.claude/NEXT-SESSION.md`'s trap list is a map of closed paths.** It said the vault gate
+  cannot be opened from here; I spent ~10 tool calls and a 1800s stall proving it right.
 
 ## 🟢 2026-08-27 07:55 — DRIVEN LIVE. `20c4a0a`. **628/628.** One bug caught on screen.
 
@@ -156,162 +205,3 @@ inline `minStock` fallbacks.
 ⚠️ **The "L-CLICK / SCROLL / NAVIGATE" strip is NOT his app** — it is the Claude-in-Chrome overlay
 drawn into his real Chrome while the extension is attached. Zero matches in the DOM. Never hunt it.
 
-
-## 🟢 2026-08-26 20:54 — DATE CAPITALS, A DEAD `style` PROP, AND THE SIDEBAR VERDICT. `284602b`. **616/616.**
-
-**NOW:** Restock Vault is done and driven live. Four commits today: `aea7de4` `4387c86` `390d5fa`
-`284602b`. **Next build is the desk's 4th tab (Minta) — he answered the Active Pipeline question.**
-
-**What just landed**
-- **Date is `26 Agustus 2026`**, confirmed in the running app. The lowercase was recorded as *his*
-  instruction from 16 Aug (*"use this date format 16 agustus 2026"*) — the comment had read his
-  typing as the spec. It was the FORMAT that was the instruction. **Both messages now sit beside
-  `BULAN` in `BiohazardTheme.jsx`** so nobody restores lowercase from the older one.
-- 🔴 **A real bug, found sideways: the rail's `<nav>` had TWO `style` props.** JSX keeps only the
-  LAST, silently — so `touchAction:'none'` never ran and the paragraph explaining why it mattered
-  described a fix that was not there. Merged. **Nothing warns you about a duplicate prop.**
-  Its check anchors on the class name: `/<nav[\s\S]*?>/` reports 0 props because the tag contains
-  arrow functions and the scan stops at the `>` in `(e) => {`.
-- **The "bottom panel" he asked me to delete is NOT his app.** Zero matches in the whole DOM — it is
-  the Claude-in-Chrome overlay painted on my screenshots. Never tell him to look for it.
-
-**🔴 WAITING ON ALDI — verbatim**
-
-> "looks like the sidebar is gone bruh or maybe not visible here, check it"
-
-**Checked, and it is NOT gone — but I could not finish the test.** On desktop it is deliberately a
-**64px collapsed capsule** (his own 2026-08-14 design: *"a sidebar that shrink in to 1 button big
-and when it hover it opens all the way"*). `[data-kpm-rail][data-kpm-rail]` (0,2,0) outranks
-`.lg:relative` (0,1,0), so it stays `position:fixed; width:64px` under
-`(min-width:1024px) and (hover:hover) and (pointer:fine)`. **The marks sit at x=-124 inside a box
-that starts at 0 and clips**, and **synthetic hover never fired `:hover`** — so I cannot tell
-whether the expand is broken or whether automation simply cannot trigger it.
-**The question put to him:** *"does the sidebar open when you hover it on your screen?"*
-🔴 **Do not rewrite the shell until he answers** — it has burned multiple sessions before.
-
-**HIS QUEUE, verbatim, none of it built yet**
-
-> "redesign the request panel as well or maybe just add it on the panel that we just made, just add
-> extra tab for request"
-
-**This ANSWERS the old Active Pipeline question** — it moves into the desk as a 4th tab (Minta),
-carrying **"Siapkan Pengiriman"** (`BranchWarehouseManager.jsx:1350`), which is the only way HQ can
-ship a request. Buku only reads.
-
-> "make sure that every team registered on the fleet and roster have their own storage option"
-
-Not started. 🔴 **Find where fleet/roster teams are registered first** — today Tujuan is derived from
-`stockRequests[].branch`, i.e. only branches that have already been shipped to. A team with no
-history is invisible.
-
-> "for the global logistic command i want u to redesign that ... regional warehouse current stock,
-> on field, sold as well just like what we have on the dashboard, so HQ know how many bks should be
-> send to them again"
-
-Shape agreed: per-warehouse **di gudang · di jalan · di tangan agen · terjual**.
-🔴 **Name the collection for on-field and sold before promising either number.**
-
-**Also queued:** Branch Manager redesign · split Stok Kritis + per-warehouse minimum · route the
-four inline `minStock` fallbacks through the shared rule.
-
-**Where things live (new since 19:0x)**
-| Thing | Path |
-|---|---|
-| gallery-vs-camera tier rule | `src/config/permissions.js` → `canPickFromGallery` |
-| the date table + both of his instructions | `src/components/BiohazardTheme.jsx` → `BULAN` |
-| the rail nav (one style prop now) | `src/components/BiohazardTheme.jsx` → `.kpm-rail-grid` |
-| all 8 guards | `src/config/integration.audit.mjs` → group **53** |
-
-
-## 🟢 2026-08-26 20:41 — CAMERA-ONLY PHOTOS + THE NOTA UNBLOCKED. `390d5fa`. **615/615.**
-
-**NOW:** Restock Vault is fully integrated and driven in the live app. Three commits today:
-`aea7de4` (the surat jalan desk), `4387c86` (live verification), `390d5fa` (photo source + nota).
-**Next build is the Global Logistics Command readout** — he asked for it explicitly.
-
-**What just landed**
-- **The nota was never broken.** He was on **Kirim**, where I had disabled it. A greyed control that
-  never says why is the silence he calls a bug. Now live in both directions, reading `opsional` on
-  the way out. Guarded by a check: `disabled={isOut}` may never come back.
-- **Evidence photos are camera-only.** Both inputs spread `capture="environment"` unless
-  `canPickFromGallery(userRole)` — **new helper in `src/config/permissions.js`**, beside
-  `isFieldLevelTier`, reusing the same `translateLegacyRole` (that file's comment records that a
-  second copy of the translation caused every tier bug so far). Verified across all six tiers:
-  T1/T2/T3 gallery, **T4/T5/T6 camera only**, unknown role → camera.
-- ⚠️ **`capture` is a request, not a lock.** Phones open the camera; desktop browsers ignore it and
-  open a picker. Enforceable where photos are actually taken. Written down beside the helper.
-- `App.jsx` now passes `userRole` to `RestockVaultView`.
-
-**🔴 WAITING ON ALDI — his words, and mine, verbatim**
-
-> "we dont need active pipeline panel anymore right"
-
-**I pushed back with evidence and he has not answered.** Active Pipeline is NOT a duplicate of Buku:
-it holds **"Siapkan Pengiriman"** (`BranchWarehouseManager.jsx:1350`), the button that opens the
-fulfilment modal. **Buku only reads history; it cannot ship anything.** Delete the panel and HQ loses
-the only way to answer a branch request. My proposal, still unanswered:
-
-> "Active Pipeline stops being a history list and becomes a **short action queue** — only what's
-> waiting on you (PENDING / DISPUTED), with the ship button. Everything settled disappears into Buku."
-
-> "for the global logistic command i want u to redesign that make it more elegant and cool to show
-> the regional warehouse current stock, on field, sold as well just like what we have on the
-> dashboard, so HQ know how many bks should be send to them again"
-
-**Approved by him, not yet built.** Shape agreed: per-warehouse **di gudang · di jalan · di tangan
-agen · terjual**. 🔴 **Do this first:** confirm where *on-field* and *sold* actually live per branch
-before promising a number. Do not source a figure you cannot name the collection for.
-
-**✅ TEST HE STILL OWES:** reload and confirm the nota photo opens (it does on Kirim now).
-
-**Also still queued:** Branch Manager redesign · build order step 1 (split Stok Kritis +
-per-warehouse minimum) · route the four inline `minStock` fallbacks through the shared rule.
-
-**Where things live (new this session)**
-| Thing | Path |
-|---|---|
-| the surat jalan desk | `src/RestockVaultView.jsx` (rewritten) |
-| gallery-vs-camera tier rule | `src/config/permissions.js` → `canPickFromGallery` |
-| its 7 guards | `src/config/integration.audit.mjs` → group **53** |
-| where HQ ships a request | `src/components/BranchWarehouseManager.jsx:1350` |
-| the resume brief (START HERE) | `.claude/NEXT-SESSION.md` |
-| the design story | A-Brain `66c5f30`, `Wiki/Concepts/Logistics and Stock Movement.md` |
-
-⚠️ **Two traps found today.** Artifact pages on claude.ai **cannot be driven** — locked frame, no
-input reaches them; serve the prototype from `public/` and delete it after. And **the nav rail sits
-off-canvas at x=-124** in a 1463px window, so a screen has to be reached with
-`document.querySelectorAll('button')` + `.click()`.
-
-
-## 🟢 2026-08-26 ~19:0x — RESTOCK VAULT **INTEGRATED**. Committed `aea7de4`. Needs his eyes.
-
-**The artifact is now the app.** `src/RestockVaultView.jsx` rewritten: Asal→Tujuan route with
-searchable pickers, **Kirim (HQ push — new capability)**, flat Buku whose rows open into the whole
-document + Proses timeline, batch as a column, live landed cost + price drift, evidence row
-(foto/nota/resi+kurir), completeness meter, Target demoted to a strip, **every colour a token**.
-
-**Full story is in the commit message `aea7de4`. Read that, not this.**
-
-- `npm run build` green · **613 checks, 0 failures** (5 new in group 53).
-- Delete-glyph count 14→13 — a migration (both deletes now say "Hapus"), with a paired check.
-- **No firestore.rules change needed** — `stock_requests` already allows create for `isSalesman`.
-
-✅ **DRIVEN IN THE LIVE APP, 2026-08-26 20:1x.** Vault opened, screen opened, all of it works on his
-real data: two lines added, **drift printed `sama · SJ-568714`** under @ Landed, readout `Rp 7.500.000`
-/ `Rp 7.500` per Bks, Kelengkapan 25%. **Buku showed 6 real records**; SJ-568714 opened into its whole
-document + Proses (Dicatat → Barang dihitung 2.000 Bks lengkap → Masuk ke Master Vault, landed
-Rp 9.038/Bks). Old rows read `UNASSIGNED` for batch — the honest fallback working. **Kirim** relabelled
-itself, auto-picked **MUNTILAN**, hid cukai + upah, and switched the ware list to `di gudang N`.
-**Kirim sekarang was NOT pressed** — it moves real stock; that one is his to press.
-Only console errors are the pre-existing dev-server service-worker SSL warnings.
-
-⚠️ **The nav rail sits off-canvas at x=-124 in a 1463px window** — nav buttons cannot be clicked by
-mouse at this width. Reach a screen with `document.querySelectorAll('button')` + `.click()`.
-
-⚠️ Artifact-viewer tabs on claude.ai **cannot be driven** — locked frame, no input reaches the page.
-To test a prototype: copy it into `public/`, open `https://localhost:5173/<file>.html`, delete after.
-
-
----
-
-*Older entries trimmed — `git log -p .claude/PROGRESS.md` has every one of them.*

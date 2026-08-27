@@ -83,6 +83,12 @@
             "command": "node \"D:/APP DEVELOPMENT/kpm inventory main FILES/A-Brain/automation/lessons-flush.mjs\"",
             "timeout": 15,
             "statusMessage": "Checking a lesson was written..."
+          },
+          {
+            "type": "command",
+            "command": "node \"D:/APP DEVELOPMENT/kpm inventory main FILES/A-Brain/automation/wiki-graph-refresh.mjs\"",
+            "timeout": 120,
+            "statusMessage": "Keeping the vault's recall graph current..."
           }
         ]
       }

@@ -1,6 +1,6 @@
-# NEXT SESSION — Restock Vault desk, continued
+# NEXT SESSION — the Restock Vault desk, after the 2026-08-27 run
 
-**Branch:** `phase0-solid-ground` · **Last commit:** `5643bf9` · **616 checks, 0 failures**
+**Branch:** `phase0-solid-ground` · **Last commit:** `d042520` · **630 checks, 0 failures**
 
 ## First command, before anything else
 
@@ -8,101 +8,59 @@
 npm run build; node src/config/integration.audit.mjs
 ```
 
-Then read `.claude/PROGRESS.md` — the top entry has the full state. **Do not re-read the codebase
-to orient.** That habit has cost a quarter of a session before.
+Then read `.claude/PROGRESS.md`. **Do not re-read the codebase to orient** — that habit has cost a
+quarter of a session before.
 
 ---
 
 ## Where things stand
 
-The **Restock Vault is finished and driven live**. It is now one surat jalan desk:
-**Masuk · Kirim · Buku**, all on theme tokens, verified against his real data.
+**The whole 2026-08-27 queue is DONE and driven live.** The Request tab, Tujuan from the roster and
+the Global Logistics readout all shipped, and the readout was then redesigned twice on his notes.
+Nothing is blocked. Nothing is half-built.
 
-Five commits today: `aea7de4` `4387c86` `390d5fa` `284602b` `999b5a7` (+ notes `5643bf9`).
-Each commit message carries its own full story — read the message, not the diff.
-
----
-
-## Build queue, in his order
-
-### 1. The Minta tab — the desk's 4th tab
-His words: *"redesign the request panel as well or maybe just add it on the panel that we just
-made, just add extra tab for request"*.
-
-This **closes the old Active Pipeline question**. The panel is NOT redundant with Buku:
-it holds **"Siapkan Pengiriman"** (`BranchWarehouseManager.jsx:1350`), the only way HQ fulfils a
-branch request. Buku only reads history.
-
-- The queue is `stockRequests` filtered to `PENDING` / `DISPUTED` — **already loaded** in
-  `RestockVaultView`, no new listener.
-- Row style: reuse the Buku row + drawer already in the file.
-- ⚠️ The fulfilment modal is ~150 lines in `BranchWarehouseManager`. **Do not duplicate it.**
-  Decide deliberately: move it, lift it to a shared component, or have Minta surface the queue and
-  hand off to the existing control (both render on the same page). Say which and why.
-
-### 2. Tujuan from the roster
-His words: *"make sure that every team registered on the fleet and roster have their own storage
-option"*.
-
-- Teams live in `artifacts/{appId}/users/{uid}/motorists`, each with `.location` (= its branch).
-- Today `RestockVaultView` builds Tujuan from `stockRequests[].branch` — **so a team never shipped
-  to is invisible**. Build it from `[...new Set(motorists.map(m => m.location))]` instead.
-- `motorists` is not currently passed to `RestockVaultView`. Add the prop in `App.jsx:4421`.
-
-### 3. Global Logistics Command readout
-His words: *"redesign that make it more elegant and cool to show the regional warehouse current
-stock, on field, sold as well just like what we have on the dashboard, so HQ know how many bks
-should be send to them again"*.
-
-Columns per warehouse: **di gudang · di jalan · di tangan agen · terjual**.
-
-| Column | Source | Status |
-|---|---|---|
-| di gudang | `branches/{name}/inventory` → `branchStock` (`useDatabaseSync.js:175`) | ✅ loaded |
-| di jalan | `stock_requests` IN_TRANSIT for that branch, sum `fulfilledItems[].qty` | ✅ loaded |
-| di tangan agen | `motorists[].activeCanvas`, grouped by `motorists[].location` | ✅ available |
-| terjual | `transactions` | 🔴 **no branch/location field** |
-
-🔴 **The gate:** *terjual per gudang* must be derived by joining a transaction to its agent and
-reading that agent's `.location`. **Confirm a transaction actually carries an agent id first.**
-If it does not — ship three columns and say why the fourth is missing. Never print a number whose
-collection you cannot name.
-
-### Also queued
-Branch Manager redesign · split Stok Kritis + a per-warehouse minimum · route the four inline
-`minStock` fallbacks (`useTransactionEngine.js:270`, `MerchantSalesView.jsx:2423`,
-`ResidentEvilInventory.jsx:236` say 50; `StockOpnameView.jsx:1003` says **5**) through the shared rule.
+`git show 76de71a 20c4a0a 4cc71af b667e78 d042520` carries every decision. Read the messages, not
+the diffs.
 
 ---
 
-## One thing he still owes an answer on
+## The only open item
 
-**The sidebar is NOT broken** — it is the collapsed capsule, a black circle with a package icon at
-the **very top-left** (totem at x=4, y=12, 56×56). Hovering it expands the rail to 351px. Proved by
-forcing `width:351px`: rail → 351, pod → x=0, all 17 marks visible.
+**✅ The Siapkan Pengiriman button and the shipping modal are UNTESTED.** He has zero open branch
+requests — all six in the Buku are DELIVERED — and **fake rows must never be written into his live
+Firestore** to manufacture one. When a real branch request arrives: Restock Vault → **Request** tab
+→ the orange **Siapkan** button on a PENDING row → the shipping modal → ship it.
 
-🔴 The only open part: `.kpm-rail-totem { display:none }` in the **base** CSS block means that
-circle exists only at **≥1024px**. Below that the rail is a phone drawer parked off-screen right
-and **no hamburger was found**. If his window is narrower than 1024px, that is a real bug.
-**Ask his window width before touching the shell.**
+## Queued, not started
+
+- Branch Manager redesign
+- Split Stok Kritis, and a per-warehouse minimum
+- Route the four inline `minStock` fallbacks through the shared rule
+  (`useTransactionEngine.js`, `MerchantSalesView.jsx`, `ResidentEvilInventory.jsx` say **50**;
+  `StockOpnameView.jsx` says **5**)
+- The per-SHIPMENT breakdown, if he ever wants it back: deleting Isi Gudang Cabang gave up
+  `stockCard`'s `<details>`, which named each individual kiriman behind a product's stock. He was
+  told and chose the delete. `stockCard` itself still lives, for the branch-side view.
 
 ---
 
-## Traps — each of these already cost time
+## Traps — each of these cost time, most of them THIS session
 
-- **Run the build BEFORE writing "build green".** A commit message claiming it was green had to be
-  amended on 2026-08-26.
-- **A JSX comment after `&& (` does not parse** — it is a second expression inside the parentheses.
-  It broke the build twice in one turn.
-- **A duplicate `style` prop is legal JSX and the last one silently wins.** That killed
-  `touchAction` on the rail nav for weeks.
-- **Never trust a layout measurement taken during a transition.** "pod at x=-124" was junk, read
-  mid-animation on a 380ms width transition with a 220ms delay.
-- **Artifact pages on claude.ai cannot be driven** — locked frame, no input reaches them. To test a
-  prototype, copy it into `public/`, open `https://localhost:5173/<file>.html`, delete it after.
-- **The nav rail is off-canvas at 1463px**, so reach a screen with
-  `document.querySelectorAll('button')` + `.click()`, not a mouse click.
-- **The "L-CLICK / SCROLL / NAVIGATE" strip is not his app** — it is the Claude-in-Chrome overlay
-  drawn into his real Chrome. Zero matches in the DOM. Never hunt for it.
-- **The vault gate re-locks on reload.** He must type the password; you cannot.
+- **Run the build BEFORE writing "build green".** A commit message claiming it had to be amended.
+- **A JSX comment after `&& (` does not parse.** It is a second expression inside the parentheses.
+- **A `*/` inside a JSX comment closes it early.** Broke the build on 2026-08-27 writing a header
+  comment that opened `{/* ====== HEADER ====== */` and then kept writing.
+- **A duplicate `style` prop is legal JSX and the last one silently wins.**
+- **A `<button>` inside a `<button>` renders without a warning and kills the inner click.** The
+  Buku/Request row is a flex PAIR for exactly this reason; check 54 pins it open.
+- **A check that greps source also reads the comment explaining the fix.** Strip comments first —
+  `noCmt` exists in the audit. G53 was written without it and fired on prose about a colour.
+- **Anchor a check on the CLAIM, never the punctuation or a callback signature.** Two checks fired
+  this session on pure copy tweaks and had to be re-anchored.
+- **The vault gate re-locks on every new tab and you cannot type the password.** Do not spend calls
+  proving this. **Ask him to unlock the tab you opened** — that is the whole fix, and it is instant.
+- **`agent_browser_open` can hang for its full 1800s idle timeout.** Not a fallback.
+- **The dev server is HTTPS with a self-signed cert**, so the in-app Browser pane cannot load it.
+  Use the `claude-in-chrome` tools against his real Chrome instead.
+- **Never `SendUserFile` an HTML prototype with `display:"render"`** — the panel runs no scripts.
 - **`graphify` call edges undercount** — confirm "who calls X" with grep.
