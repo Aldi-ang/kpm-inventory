@@ -3840,6 +3840,20 @@ check(G54, 'Tujuan is built from the roster, not only from what has already ship
   'branchesSeen must UNION the motorists roster with the branches seen on past requests. Roster ' +
   'only would drop a live shipment whose location was renamed; requests only is the original bug');
 
+/* 🔴 CAUGHT ON SCREEN, 2026-08-27, and only on screen: the first version of the roster union
+   filtered `!== 'UNASSIGNED'` — its own short list — so "Headquarters" arrived in Tujuan as a
+   CABANG, sitting beside the real "Gudang Pusat (HQ)" entry. Two destinations for one place, on
+   the form that writes stock movements. supply.js already owned the rule and says so in prose:
+   "Headquarters is not a branch — Headquarters IS the master vault". The fix was to export
+   NON_BRANCH and use it, not to lengthen a second copy of the list. */
+check(G54, 'Tujuan asks supply.js what counts as a branch instead of deciding for itself',
+  /import \{ NON_BRANCH \} from '\.\/utils\/supply\.js'/.test(restockCode) &&
+  /!NON_BRANCH\.includes\(n\)/.test(restockCode) &&
+  /export const NON_BRANCH/.test(fs.readFileSync('src/utils/supply.js', 'utf8')),
+  'branchesSeen must filter through the NON_BRANCH exported by supply.js. A local list here drifts ' +
+  'from the one the dashboard counts by, and the first thing that slips through is Headquarters — ' +
+  'which is the master vault, not a cabang you can ship to');
+
 /* 🔴 The half that fails silently. A prop that is never passed defaults to [], the union quietly
    degrades back to history-only, and the screen looks exactly the same as when it was right. */
 const rvTag = appSrc.slice(appSrc.indexOf('<RestockVaultView'), appSrc.indexOf('<RestockVaultView') + 900);

@@ -5,6 +5,8 @@ import { savePhotoAndGetReference, deletePhotoFromStorage, compressImageToBase64
 import { confirmAction } from './components/ConfirmGate.jsx';
 import { notify } from './components/Toast.jsx';
 import { canPickFromGallery } from './config/permissions';
+/* one definition of "what is a branch", shared with the dashboard's supply maths */
+import { NON_BRANCH } from './utils/supply.js';
 
 /* ═══════════════════════════════════════════════════════════════════════════
    SURAT JALAN — one document, two directions.
@@ -218,7 +220,7 @@ const RestockVaultView = ({ inventory = [], procurements = [], motorists = [], d
         () => [...new Set([
             ...motorists.map(m => m?.location),
             ...stockRequests.map(r => r?.branch),
-        ].filter(Boolean).filter(n => n !== 'UNASSIGNED'))].sort(),
+        ].filter(Boolean).filter(n => !NON_BRANCH.includes(n)))].sort(),
         [motorists, stockRequests]
     );
     const suppliersSeen = useMemo(

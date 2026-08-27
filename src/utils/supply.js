@@ -31,7 +31,10 @@ import { convertToBks } from './helpers';
 
 export const MASTER = 'MASTER';
 const HQ_LOCATIONS = ['Headquarters', '', null, undefined];
-const NON_BRANCH = ['Headquarters', 'UNASSIGNED', 'UNASSIGNED AREA'];
+/* exported because the Restock Vault's Tujuan list needs the SAME answer. It filtered on its
+   own shorter list once and 'Headquarters' came back as a shippable cabang beside the real HQ
+   entry — two destinations for one place, on a form that writes stock movements. */
+export const NON_BRANCH = ['Headquarters', 'UNASSIGNED', 'UNASSIGNED AREA'];
 
 /* MASTER first, then every branch on the roster, in a stable order */
 export const warehouseList = (motorists = []) => {
