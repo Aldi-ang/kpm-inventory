@@ -1316,7 +1316,7 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
                                 return (
                                     <div key={r.name} className="border-b border-line-2 last:border-b-0">
 
-                                        <div className={`${COLS} px-5 py-3 transition-colors duration-200 ${open ? 'bg-raised' : 'hover:bg-raised/50'}`}>
+                                        <div className={`${COLS} px-5 transition-colors duration-200 ${open ? 'bg-raised py-3 pb-4' : 'py-3 hover:bg-raised/50'}`}>
                                             <div className="min-w-0">
                                                 <button
                                                     onClick={() => setOpenGudang(open ? null : r.name)}
@@ -1356,13 +1356,21 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
                                             style={{ gridTemplateRows: open ? '1fr' : '0fr' }}
                                         >
                                             <div className="overflow-hidden">
-                                                <div className="bg-inset border-t border-line-2">
+                                                {/* SPACE, not another rule, is what separates a warehouse
+                                                    from its products. His note: *"there should be personal
+                                                    space between the location line and the product lines
+                                                    ... psychology of the expensive wears store shelf"*.
+                                                    A hairline here stacked the two levels into one wall of
+                                                    rows; the border is gone and the padding does the work.
+                                                    The tone change (bg-inset) already says "nested" — a
+                                                    line on top of that was saying it twice. */}
+                                                <div className="bg-inset py-5">
                                                     {r.detail.length === 0 ? (
-                                                        <p className="px-5 py-5 text-[11px] text-ink-muted uppercase tracking-widest text-center">
+                                                        <p className="px-5 py-2 text-[11px] text-ink-muted uppercase tracking-widest text-center">
                                                             No stock recorded at {r.name === MASTER ? 'Master Vault' : r.name}
                                                         </p>
                                                     ) : r.detail.map((p, i) => (
-                                                        <div key={p.id} className={`${COLS} px-5 py-2.5 ${i > 0 ? 'border-t border-line-2/60' : ''}`}>
+                                                        <div key={p.id} className={`${COLS} px-5 py-3.5 ${i > 0 ? 'border-t border-line-2/30' : ''}`}>
                                                             <div className="min-w-0 pl-6">
                                                                 <span className="text-ink font-bold text-[13px] block leading-tight truncate">{p.name}</span>
                                                                 {(p.days !== null || p.unexplained > 0) && (

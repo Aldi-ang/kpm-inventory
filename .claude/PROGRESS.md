@@ -1,6 +1,34 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-27 09:00 WIB (🟠 KPM app session)** · ✅ **SEBARAN STOK NOW SHOWS ITS OWN WORKING** — **631/631** · plain-English columns, per-item rate + depletion · branch `phase0-solid-ground`
+**Updated: 2026-08-27 09:05 WIB (🟠 KPM app session)** · ✅ **SEBARAN STOK NOW SHOWS ITS OWN WORKING** — **631/631** · plain-English columns, per-item rate + depletion · branch `phase0-solid-ground`
+
+## 🟢 2026-08-27 09:05 — DRAWER SPACING. **632/632.** Session ending on quota.
+
+His note: *"there should be personal space between the location line and the product lines ...
+psychology of the expensive wears store shelf ... LV or PRADA"*. The warehouse row and its products
+were one continuous stack of hairlines, so two levels read as one list.
+
+Fixed with SPACE, not another rule: dropped the `border-t` that butted the drawer against the
+warehouse row, added `py-5` inside the drawer, `py-3.5` per product, faded the between-product rules
+to `/30`, and gave the open warehouse row extra bottom padding. The `bg-inset` tone already says
+"nested" — a line on top of it was saying it twice.
+
+**NOW: nothing half-done, tree clean, `632/632`.** Ten commits today, all driven live in his Chrome.
+
+**🔴 WAITING ON ALDI — verbatim, from `.claude/PONDER-PLAN.md` §9**
+
+> 1. **Language.** Scenes in Indonesian, English, or both? His 2026-08-27 rule was *"use english
+>    terms if its shorter and direct"* — but that was for column labels. A teaching sentence is not
+>    a label, and the branch staff reading these may not read English. **Not assumed either way.**
+> 2. **Autoplay or manual.** Ponder auto-runs a stage then waits. Same here, or press → for every beat?
+> 3. **Does a first-time user get pushed into a scene**, or is `?` always opt-in only?
+
+**NEXT SESSION STARTS HERE:** answer those three, then build Ponder slice 1 (engine on one panel),
+then slice 2 (Sebaran Stok — the scene script is already written out in the plan, ready to paste).
+
+**Still untested by anyone:** the **Siapkan Pengiriman** button and shipping modal on the Request
+tab. He has zero open branch requests, and no fake ones were written into his live Firestore. The
+first real request that arrives is the test.
 
 ## 🔴 2026-08-27 09:00 — A WRONG NUMBER SHIPPED AND HE CAUGHT IT. **632/632.**
 
