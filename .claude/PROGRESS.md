@@ -1,6 +1,27 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-27 18:17 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · ✅ **ONE CAPTION, NO FLICKER, HIS OWN SFX** — **656/656** · ⚠️ **2 sound files still needed from him** · branch `phase0-solid-ground`
+**Updated: 2026-08-27 18:51 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · ✅ **ALL FOUR BOOK SOUNDS ARE IN, TRIMMED** — **657/657** · ⚠️ **nobody has heard them play yet** · branch `phase0-solid-ground`
+
+## 🟠 2026-08-27 18:51 — THE SOUNDS ARE ALL HIS NOW. **657/657.**
+
+He recorded the three missing ones into `RE UI/SFX`. Page turn, cover open, cover close, plus the
+tutorial click from before — every sound in the book is one he chose.
+
+**🔴 THEY HAD TO BE TRIMMED, and that was the real work.** The clips ran **4,7s / 6,5s /
+5,9s** — whole video captures, mostly silence. `silencedetect` located the burst inside each: the
+page turn is **0,4s of sound after 1,7s of nothing**. Raw, the sound would start a second and a
+half after the click that caused it and stack on itself on the second click — that reads as an app
+that did not respond, not as a slow sound. Each is cut to its burst with a 70ms fade. **Originals
+untouched in his folder.**
+
+`book-close.mp3` held **four bursts** ~1s apart. **Only the first is used** — timings are recorded
+in `useSound.js` so widening it is one line, not another investigation.
+
+**Two new checks:** no transaction sound (`click`/`commit`/`tap`/`sign`) may ever reach the book,
+and no sound file may exceed ~40KB — at this bitrate that is seconds long, which is the bug above.
+
+⚠️ **NOT VERIFIED: nobody has heard them.** The trims were chosen by measurement, not by
+listening, and the `VOLUMES` levels are a first guess. **He is the first ear.**
 
 ## 🟠 2026-08-27 18:17 — CAPTION, FLICKER, SFX. **656/656.**
 
