@@ -330,9 +330,13 @@ function Library({ anchorRef, initialSection, onClose, onPick }) {
 
   if (typeof document === 'undefined') return null;
 
+  /* A ribbon tail: the free end carries a V cut into it, which is the one shape that says fabric
+     rather than tab. The notch is on the LEFT because that is the end hanging out of the book. */
+  const RIBBON = 'polygon(0 0, 100% 0, 100% 100%, 0 100%, 9px 50%)';
   const tab = (s) => s.id === secId
-    ? { background: PAPER, color: BOOK_INK, borderColor: 'var(--accent-edge)', transform: 'translateX(7px)' }
-    : { background: LEATHER, color: '#B8AC96', borderColor: 'rgba(0,0,0,.5)' };
+    ? { background: 'linear-gradient(90deg, #FF8C1A 0%, #D98A2E 55%, #B9772A 100%)',
+        color: '#241D16', transform: 'translateX(8px)' }
+    : { background: 'linear-gradient(90deg, #4A3A2A 0%, #3A2E22 60%, #2E251B 100%)', color: '#C4B69C' };
 
   return createPortal(
     <div role="dialog" aria-modal="true" aria-label="Tutorial book"
@@ -362,18 +366,20 @@ function Library({ anchorRef, initialSection, onClose, onPick }) {
                          shadow-[0_2px_2px_rgba(0,0,0,0.35),0_40px_90px_-30px_rgba(0,0,0,0.95)]" />
 
         {/* Tabs, cut into the cover's left edge like the reference book */}
-        {/* `[&::-webkit-scrollbar]:hidden` — the app's global scrollbar is a brown bar tuned for
-            dark panels, and on cream paper it reads as a stripe stuck to the page. Nothing inside
-            a book has a scrollbar. */}
-        <div className="relative z-10 hidden lg:flex flex-col gap-1 w-[124px] shrink-0 pt-8 pb-6 pr-[6px]
-                        overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        {/* 🔴 RIBBONS, AND NO SCROLLING. His ask: *"the section also make it like book ribbons u
+            know to make it more natural and make these section into one line with no scrollable so
+            resize the spacing"*. A scrolling list of tabs is a sidebar wearing a book costume; a
+            book has ribbons, and you can see all of them at once or they are not much use as
+            bookmarks. Seventeen at 26px plus 2px of gap is 474px, which fits the shortest book this
+            can be, so `overflow` is gone rather than hidden — there is nothing left to scroll. */}
+        <div className="relative z-10 hidden lg:flex flex-col justify-center gap-[2px] w-[118px] shrink-0 py-4 pr-[6px]">
           {SECTIONS.map(s => (
             <button key={s.id} type="button" onClick={() => pickSection(s.id)}
-              style={tab(s)}
-              className="flex items-center gap-2 h-8 shrink-0 pl-2.5 pr-2 rounded-l-md border border-r-0
-                         font-mono text-[9.5px] uppercase tracking-widest text-left
-                         transition-transform duration-200 ease-out hover:translate-x-[4px]">
-              <Icon name={s.icon} size={12} className="shrink-0" />
+              style={{ ...tab(s), clipPath: RIBBON }}
+              className="flex items-center gap-1.5 h-[26px] shrink-0 pl-3.5 pr-2
+                         font-mono text-[9px] uppercase tracking-[0.14em] text-left
+                         transition-transform duration-200 ease-out hover:translate-x-[5px]">
+              <Icon name={s.icon} size={11} className="shrink-0" />
               <span className="truncate">{s.short || s.label}</span>
             </button>
           ))}
@@ -386,12 +392,16 @@ function Library({ anchorRef, initialSection, onClose, onPick }) {
         <div className="relative z-10 flex-1 min-w-0"
              style={{ transformStyle: 'preserve-3d', perspective: '1500px' }}>
 
-          {/* The page edges, standing proud of the cover on three sides. */}
+          {/* 🔴 THE PAGE EDGES BELONG TO THE HALF THEY ARE THE EDGE OF. They used to be three spans
+              pinned to the stage, so when the cover shut they stayed put — two cream strips hanging
+              in the dark beside a closed book, which is what he saw: *"i dont want to see any of
+              the scroll inside this book"*. They were never scrollbars; they were paper that forgot
+              to move. The LEFT half keeps its own, and the right half's live inside the leaf below
+              so they turn with it. Closed, the fore-edge ends up opposite the spine, which is where
+              a fore-edge goes. */}
           <span className="pointer-events-none absolute inset-y-[8px] -left-[5px] w-[6px] rounded-l-[3px]"
                 style={{ background: EDGES }} />
-          <span className="pointer-events-none absolute inset-y-[8px] -right-[5px] w-[6px] rounded-r-[3px]"
-                style={{ background: EDGES }} />
-          <span className="pointer-events-none absolute -bottom-[5px] inset-x-[10px] h-[5px] rounded-b-[3px]"
+          <span className="pointer-events-none absolute -bottom-[5px] left-[10px] right-1/2 h-[5px]"
                 style={{ background: EDGES_H }} />
 
           {/* THE LEFT HALF. It never moves — a book does not close by swinging both halves. */}
@@ -443,6 +453,12 @@ function Library({ anchorRef, initialSection, onClose, onPick }) {
           <div ref={leafRef}
                className="absolute inset-y-0 left-0 w-full lg:left-1/2 lg:w-1/2"
                style={{ transformOrigin: 'left center', transformStyle: 'preserve-3d', willChange: 'transform' }}>
+
+            {/* this half's own paper, turning with it */}
+            <span className="pointer-events-none absolute inset-y-[8px] -right-[5px] w-[6px] rounded-r-[3px]"
+                  style={{ background: EDGES }} />
+            <span className="pointer-events-none absolute -bottom-[5px] left-0 right-[10px] h-[5px]"
+                  style={{ background: EDGES_H }} />
 
             {/* FRONT OF THE LEAF — the right page */}
             <div className="absolute inset-0 rounded-r-[6px] overflow-hidden"
