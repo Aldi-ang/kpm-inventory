@@ -4248,28 +4248,28 @@ check(G56, 'the subject is outlined, and the outline is an edge rather than a fi
 /* *"book SFX also needed here"*. Routed through useSound rather than raw Audio, because that hook
    already pools elements, waits for the browser unlock gesture, and — the part that matters here —
    is silent in Lite Mode. */
-/* His correction, 2026-08-27: *"u re crazy using sales SFX for the book, use paper or book SFX la
-   bro"*. The first version re-pointed the till and the stepper at a page turn, and those sounds
-   MEAN something else in this app — an ear taught that a page turn is a transaction is an ear
-   taught wrong. Synthesised from filtered noise instead: no files to ship in an offline PWA, and
-   no borrowed meaning. */
-check(G56, 'the book sounds are paper, synthesised, and silent in Lite Mode',
-  /createBiquadFilter\(\)/.test(sfxSrc) && /bandpass/.test(sfxSrc) &&
-  /liteOn\(\)/.test(sfxSrc) && !/useSound/.test(sfxSrc) && !/new Audio/.test(sfxSrc + bookSrc) &&
+/* SOUNDS, THIRD ATTEMPT, and the first two are why this check is worded the way it is.
+   Round 1 re-pointed the till at a page turn — *"u re crazy using sales SFX for the book"*.
+   Round 2 synthesised paper from filtered noise — *"SFX sound really bad as well"*. Round 3 uses
+   HIS file through `useSound`, which already handles pooling, the unlock gesture and Lite Mode.
+   The two sounds he pointed at on YouTube cannot be fetched here, so those calls are SILENT rather
+   than borrowed — a wrong sound is worse than none, which is the whole lesson of round 1. */
+check(G56, 'the tutorial sound is his own file, played through the hook that respects Lite Mode',
+  /from '\.\.\/hooks\/useSound\.js'/.test(sfxSrc) && /playSound\('ponderOpen'\)/.test(sfxSrc) &&
+  !/new Audio|createBiquadFilter|createOscillator/.test(sfxSrc) &&
+  /ponderOpen: '\/sounds\/ponder-open\.mp3'/.test(fs.readFileSync('src/hooks/useSound.js', 'utf8')) &&
   /bookOpen\(\)/.test(bookSrc) && /bookPage\(\)/.test(bookSrc) &&
   /bookPick\(\)/.test(bookSrc) && /bookClose\(\)/.test(bookSrc),
-  'open, page-turn, pick and close must all fire, all built from filtered noise rather than from ' +
-  'the app\'s transaction sounds, and the Lite Mode check must be read at play time — a captured ' +
-  'value goes stale the moment the toggle is flipped');
+  'the pick sound must be ponderOpen through playSound, the file must be registered in SOURCES, ' +
+  'and nothing here may build its own audio. All four call sites stay wired even while three of ' +
+  'them are silent, so turning the missing files on is a three-line edit and not a re-wiring');
 
-/* *"for lite mode then snap the book and close it right back thats fine"*. Lite Mode already
-   flattens the transition; what it must NOT do is still wait 260ms for an animation that is not
-   playing, because that is just a slow app. */
-check(G56, 'Lite Mode snaps the book shut instead of waiting for an animation',
-  /if \(liteOn\(\) \|\| reduced\(\)\) \{ onClose\(\); return; \}/.test(bookSrc) &&
-  /if \(still\) return;/.test(bookSrc),
-  'the close must return immediately under Lite Mode or reduced motion, and no animation may be ' +
-  'constructed there at all — not a fast one, none');
+/* *"i think u can remove this bottom static text on the tutorial"*. A 'near' caption already says
+   the sentence beside the thing it is about; printing it again below made the eye choose. */
+check(G56, 'the caption is never printed twice',
+  /\{!near && \(/.test(overlaySrc),
+  'the wide bottom bar must be gated on there being no near caption. It stays for beats about the ' +
+  'whole stage, which have nothing to stand beside');
 
 /* 🔴 PORTALLED, AND THIS IS THE CHECK THAT WOULD HAVE CAUGHT THE SHIPPED BUG. `position: fixed`
    measures against the viewport only while no ancestor makes a containing block, and

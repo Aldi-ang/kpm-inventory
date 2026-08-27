@@ -26,6 +26,11 @@ const SOURCES = {
      where his name finishes forming, the ticks at 6.70s as the letters leave. It only fits
      that wave — move VaultGate's T_WAVE_DUR and this file has to be regenerated. */
   vaultb: '/sounds/vault-b.mp3',
+  /* The tutorial. Aldi's own file, from RE UI/SFX — *"this is the SFX when ponder tutorial is
+     pressed"*. It is deliberately NOT one of the sounds above: `click` and `commit` already mean
+     a transaction in this app, and re-pointing them at a tutorial teaches the ear the wrong thing.
+     He said so himself: *"u re crazy using sales SFX for the book"*. */
+  ponderOpen: '/sounds/ponder-open.mp3',
   mumble1: '/sounds/mumble1.mp3',
   mumble2: '/sounds/mumble2.mp3',
   mumble3: '/sounds/mumble3.mp3',
@@ -44,6 +49,7 @@ const VOLUMES = {
   click: 1.0, error: 1.0, tap: 0.9, commit: 0.9, sign: 0.9,
   mumble1: 0.7, mumble2: 0.7, mumble3: 0.7, mumble4: 0.7,
   vaultb: 0.9,
+  ponderOpen: 0.95,
 };
 const DEFAULT_VOLUME = 0.85;
 

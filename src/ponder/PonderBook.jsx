@@ -260,7 +260,12 @@ function Library({ anchorRef, initialSection, onClose, onPick }) {
           <div className="relative h-full flex flex-col lg:grid lg:grid-cols-2">
 
             {/* LEFT PAGE — the chapter opening itself */}
-            <div key={`l-${section.id}`} className="hidden lg:flex flex-col justify-between p-9 animate-ponder-leaf">
+            {/* 🔴 NO `key` AND NO ENTRY ANIMATION ON A SECTION CHANGE. Both pages used to remount and
+                replay a rotateY, which is what he saw: *"there is some flicker when i press section
+                inside the book, very visible when the section is scrolled down"*. A remount also
+                throws away the right page's scroll position, so a click low in the tab list blanked
+                and jumped at the same time. Changing text needs no animation to be understood. */}
+            <div className="hidden lg:flex flex-col justify-between p-9">
               <div>
                 <span className="h-14 w-14 rounded-xl flex items-center justify-center border"
                       style={{ background: PAPER_2, borderColor: 'rgba(0,0,0,.16)' }}>
@@ -288,7 +293,9 @@ function Library({ anchorRef, initialSection, onClose, onPick }) {
             </div>
 
             {/* RIGHT PAGE — the entries */}
-            <div key={`r-${section.id}-${page}`} className="flex flex-col min-h-0 p-6 sm:p-9 animate-ponder-leaf">
+            {/* Keyed on the PAGE only. Turning a page is a motion someone performed and should see;
+                switching chapters is a jump, and animating a jump is what flickered. */}
+            <div key={`r-${page}`} className="flex flex-col min-h-0 p-6 sm:p-9 animate-ponder-leaf">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <p className="font-mono text-[10px] uppercase tracking-widest" style={{ color: BOOK_DIM }}>Panduan</p>

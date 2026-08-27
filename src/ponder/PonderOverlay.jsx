@@ -237,13 +237,21 @@ export default function PonderOverlay({ sceneId, open, onClose, onBack }) {
     const clampX = (v) => Math.max(12, Math.min(v, Math.max(12, W - boxW - 12)));
     const cx = spot.x + spot.w / 2, cy = spot.y + spot.h / 2;
 
-    if (spot.h > H * 0.42) {
+    /* 🔴 THE ROOM TEST HAS TO ASK BOTH DIRECTIONS BEFORE CHOOSING ONE.
+       The earlier version only asked "does it fit below?" and went above whenever it did not —
+       including when there was no room above either. A field near the bottom of a short stage then
+       got its caption sliced in half by the stage's own edge. When neither side has room the
+       caption stands BESIDE the subject, where the only limit is the stage's full height. */
+    const roomBelow = H - (spot.y + spot.h + PAD + 12);
+    const roomAbove = spot.y - PAD - 12;
+
+    if (spot.h > H * 0.42 || (roomBelow < EST_H && roomAbove < EST_H)) {
       const boxLeft = cx > W / 2;                       // subject on the right, so stand on the left
       const left = clampX(boxLeft ? spot.x - PAD - 14 - boxW : spot.x + spot.w + PAD + 14);
       return { left, top: Math.max(70, Math.min(cy, H - 70)), boxW, arrow: null,
                dir: boxLeft ? 'right' : 'left', shift: 'translateY(-50%)' };
     }
-    const below = spot.y + spot.h + PAD + 14 + EST_H < H;
+    const below = roomBelow >= EST_H;
     const left = clampX(cx - boxW / 2);
     const arrow = Math.max(18, Math.min(cx - left, boxW - 18));
     return {
@@ -277,7 +285,7 @@ export default function PonderOverlay({ sceneId, open, onClose, onBack }) {
                     bg-[var(--duke-scrim-hi)] backdrop-blur-sm lg:p-6">
 
       <div onMouseDown={(e) => e.stopPropagation()}
-           className="relative w-full min-w-0 lg:max-w-5xl max-h-[92vh] lg:max-h-[88vh]
+           className="relative w-full min-w-0 lg:max-w-5xl max-h-[92vh] lg:max-h-[88vh] lg:min-h-[600px]
                       flex flex-col overflow-hidden bg-panel animate-ponder-open
                       border border-line-2 rounded-t-2xl lg:rounded-2xl
                       shadow-[0_1px_1px_rgba(0,0,0,0.20),0_18px_40px_-28px_rgba(0,0,0,0.85)]">
@@ -341,14 +349,18 @@ export default function PonderOverlay({ sceneId, open, onClose, onBack }) {
           )}
         </div>
 
-        {/* The wide bar. Still here, and still used — a beat that is about the whole table has
-            nothing to stand beside, and forcing it next to one cell would be a lie about scope.
-            It also always carries the text, so a 'near' beat is never the only copy on screen for
-            a reader whose eye is somewhere else. */}
+        {/* 🔴 THE WIDE BAR IS A FALLBACK NOW, NOT A SECOND COPY. It used to print the same
+            sentence that was already floating beside the highlight, so every 'near' beat said
+            everything twice and the eye had to decide which one to read. Aldi: *"i think u can
+            remove this bottom static text on the tutorial"*. It still exists, because a beat about
+            the WHOLE table has nothing to stand beside and forcing it next to one cell would be a
+            lie about scope — it simply no longer duplicates. */}
+        {!near && (
         <div key={`bar-${p.index}`} className="px-5 py-4 bg-raised min-w-0 min-h-[86px] flex items-start gap-3 animate-ponder-in">
           <span className={`mt-1.5 h-[3px] w-8 shrink-0 rounded-full ${TONE_RULE[tone] || TONE_RULE.ink}`} />
           {captionBody}
         </div>
+        )}
 
         {/* The timeline. A 3px rule whose LENGTH is the data — the one gold fill the amber law
             leaves standing, and the same shape as the rule under the panel title. The notches
