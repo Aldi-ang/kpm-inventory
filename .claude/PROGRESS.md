@@ -1,6 +1,26 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-27 18:51 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · ✅ **ALL FOUR BOOK SOUNDS ARE IN, TRIMMED** — **657/657** · ⚠️ **nobody has heard them play yet** · branch `phase0-solid-ground`
+**Updated: 2026-08-27 18:58 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · ✅ **THE BOOK SHUTS BEFORE IT FLIES HOME** — **657/657** · ⚠️ **sounds still unheard by anyone** · branch `phase0-solid-ground`
+
+## 🟠 2026-08-27 18:58 — TWO-BEAT OPEN AND CLOSE. **657/657.** `e7d7f15`
+
+> *"can u make the book closed before comeback to its place when close this way it would fit the
+> audio right"*
+
+He is describing a real object: a book does not shrink into a shelf while still open. It **shuts**,
+then it is **put away**. The old close was one 340ms motion against a **1,16s** sound, so the
+picture ended long before the sound did and the two described different events.
+
+Now: the spread **folds where it stands**, then the closed book flies back into the chip. Opening
+is the same two beats reversed — leaving it as one motion would have made the pair asymmetric for
+no reason. Open **780ms**, close **720ms**, fold at offset ~0.45 either way.
+
+**One `animate()` call with three keyframes, never two chained animations.** A chain needs the
+second to start exactly where the first stopped; any drift shows as a jump at the hand-over.
+
+**The fold is `rotateY(-84deg)`.** At -60 both pages stay legible and it reads as a book TURNED,
+not SHUT — near edge-on is the only angle that says closed. **Verified on a headless frame captured
+mid-flight at 420ms**, rather than shipping motion unseen again.
 
 ## 🟠 2026-08-27 18:51 — THE SOUNDS ARE ALL HIS NOW. **657/657.**
 
