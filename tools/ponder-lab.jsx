@@ -48,11 +48,40 @@ function Lab() {
   return <PonderOverlay sceneId={id} open={open} onClose={() => setOpen(false)} />;
 }
 
+/* 🔴 ?hover FREEZES THE CHIP'S HOVER STATE, AND WITHOUT IT A HOVER CANNOT BE LOOKED AT AT ALL.
+   Headless Chrome has no pointer, so `--screenshot` can never land on a `:hover`; the in-app browser
+   pane refuses to composite when it is not on screen, so synthetic hover does not paint there
+   either. That left the book's hover animation verifiable only by reading CSS back — which is
+   exactly the blind-claim habit this whole harness exists to stop.
+
+   It applies what `.group:hover` would apply, as inline styles, because forcing the real rules would
+   mean re-typing Tailwind's escaped selectors and a typo there fails silently and open. Paused on a
+   chosen frame so the sparks are caught mid-flight and staggered rather than all at t=0. */
+function forceHover(root) {
+  const glow = root.querySelector('span[aria-hidden="true"]');
+  const cover = root.querySelector('span.origin-left');
+  const sparks = [...root.querySelectorAll('span[style*="--spark-drift"]')];
+  if (glow) glow.style.opacity = '1';
+  if (cover) cover.style.transform = 'rotateY(-38deg)';
+  sparks.forEach((s, i) => {
+    s.style.animationName = 'bookSpark';
+    s.style.animationTimingFunction = 'linear';
+    s.style.animationIterationCount = 'infinite';
+    s.getAnimations().forEach(a => { a.currentTime = 420 + i * 190; a.pause(); });
+  });
+  return sparks.length;
+}
+
 /* ?book mounts the top-bar book instead of the player, and clicks it open so a screenshot lands on
    the spread rather than on a 34px closed book. ?shut leaves it closed, for looking at the glyph
-   and its hover state. */
+   and its hover state; add ?hover to that to see the hover itself. */
 function BookLab() {
   React.useEffect(() => {
+    if (q.has('hover')) {
+      /* after the chip has mounted, and only once — the styles are inline so nothing re-applies */
+      const h = setTimeout(() => forceHover(document.body), 80);
+      return () => clearTimeout(h);
+    }
     if (q.has('shut')) return;
     const t = setTimeout(() => document.querySelector('[aria-label="Tutorial book"]')?.click(), 60);
     return () => clearTimeout(t);

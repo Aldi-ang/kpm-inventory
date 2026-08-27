@@ -63,8 +63,23 @@ const OPEN = 'rotateY(0deg)';
 const FLAT = 'translate(0px, 0px) scale(1)';
 /* The cover's own width. Shut, the book is the left half plus the tab column; open, the whole
    spread. Expressed as a clip so nothing reflows. */
+/* 🔴 WHERE THE COVER STARTS, AND IT IS NOT WHERE THE CONTAINER STARTS.
+
+   His note, 2026-08-28: *"there should be no background brown here, because the book is not that
+   long right and there is no background for the book, instead the ribbon for the section should be
+   floating so cut the brown background where the book ends not where the ribbon ends"*.
+
+   The ribbon column is a flex item INSIDE the book container, and the leather was `inset-0` — so the
+   cover stretched out to include the ribbons and the book read as 118px wider than it is. Ribbons on
+   a real book hang OUT past the page edge; that is the whole reason you can grab one. So the leather
+   now starts here, six pixels into the column, and the ribbons stick out over the scrim. */
+const COVER_LEFT = 116;   // px from the container's left edge; the ribbon column is 118 wide
 const SLAB_OPEN = 'inset(0 0 0 0 round 14px)';
-const SLAB_SHUT = 'inset(0 calc(50% - 62px) 0 0 round 14px)';
+/* The shut cover has to stop at the CENTRE FOLD, and the fold did not move when the cover's left
+   edge did — so this offset is measured from the slab's own box, which is now 116px narrower.
+   Was `50% - 62px` when the slab spanned the whole container; half of 116 is 58, so the same screen
+   position is `50% + 58 - 62`. Verified in the lab rather than trusted: `?book`. */
+const SLAB_SHUT = 'inset(0 calc(50% - 4px) 0 0 round 14px)';
 /* Sequenced by DELAY, not by offsets inside a shared clock — that is what makes one beat finish
    before the next begins. The totals sit just under his sound files, 1,30s and 1,16s. */
 const T = {
@@ -95,6 +110,41 @@ const LEATHER = '#241D16';
    as "many pages" rather than "one thick card". */
 const EDGES = 'repeating-linear-gradient(180deg, #E9E1CF 0 2px, #CBBFA4 2px 3px)';
 const EDGES_H = 'repeating-linear-gradient(90deg, #E9E1CF 0 2px, #CBBFA4 2px 3px)';
+
+/* 🔴 THE SECOND WRITTEN EXEMPTION TO THE AMBER LAW, AND IT IS THE ONLY ONE BESIDES THE PAGES.
+
+   The law, his words on 2026-08-21: *"stop using amber background i said, i hate it"* — amber is an
+   edge and an ink, never a fill, and the one legal gold fill is a 3px rule whose LENGTH is the data.
+   A glow is unambiguously a fill, so it needed asking rather than assuming. Asked and granted
+   2026-08-28, against the reference he sent twice (youtu.be/vhG5usAFL_g): an open book on a dark
+   ground with warm light climbing out of the gutter, sparks drifting up off the paper, and finally a
+   camera push into a white-out.
+
+   **The exemption is bounded to THIS glyph's hover.** Two thirds of that video is already built —
+   the white-out and the push are the book opening, which flies from this chip. Only the light and
+   the sparks are new, they exist only while the pointer is on the chip, and they are gone in Lite
+   Mode. If a gold fill ever appears anywhere else, it is not covered by this. */
+/* Two layers, because one could not do both jobs. The first version was a single wide ellipse
+   centred low, and at 21px it pooled along the bottom and touched the chip's own border — which
+   reads as a smudge under the icon, not as light. So: PAGES is the paper itself catching the light,
+   clipped to the page block so it can never spill onto the chip; HALO is the small amount of spill
+   around it, kept to 3px so it stays inside the button. */
+const PAGES = 'radial-gradient(ellipse 86% 76% at 46% 46%, rgba(255,232,178,.88) 0%, ' +
+              'rgba(255,206,122,.66) 44%, rgba(255,186,80,.20) 74%, rgba(255,186,80,0) 100%)';
+const HALO  = 'radial-gradient(ellipse 78% 62% at 58% 42%, rgba(255,206,120,.42) 0%, ' +
+              'rgba(255,184,74,.13) 46%, rgba(255,178,60,0) 74%)';
+
+/* Four sparks, hand-placed rather than random: at 21px wide a random scatter clumps often enough
+   that some hovers would show one spark and some four. `x` is where it starts across the page
+   block, `drift` how far it wanders sideways on the way up. Position lives in `left`/`bottom` and
+   NEVER in transform — the keyframe animates transform, and this session proved an animation's
+   final keyframe erases whatever transform an element was carrying. */
+const SPARKS = [
+  { x: 7,  drift: '3px',  dur: '1500ms', delay: '0ms' },
+  { x: 12, drift: '-2px', dur: '1720ms', delay: '380ms' },
+  { x: 16, drift: '4px',  dur: '1380ms', delay: '760ms' },
+  { x: 10, drift: '-3px', dur: '1840ms', delay: '1120ms' },
+];
 
 /* ── The closed book on the shelf ──────────────────────────────────────────────────────────────
    🔴 PORTRAIT, AND THAT IS THE POINT. It used to be 34x26 — landscape, wider than tall, which no
@@ -132,6 +182,48 @@ function BookGlyph() {
       </span>
       {/* the spine */}
       <span className="absolute inset-y-0 left-0 w-[3px] rounded-l-[2px] bg-orange" />
+
+      {/* THE LIGHT OUT OF THE GUTTER, and the sparks it throws. See GLOW above for the exemption
+          this is built under. Drawn in FRONT so it reads at 21px — behind the cover it would only
+          be visible through the 38 degrees the cover happens to open, which at this size is nothing.
+          Kept inside the glyph's own box on purpose: the top bar is glass and clips, so a spark that
+          escaped upward would be sliced off mid-flight. Twenty pixels of rise is plenty here. */}
+      <span aria-hidden="true"
+            className="pointer-events-none absolute inset-0 opacity-0
+                       transition-opacity duration-[420ms] ease-out
+                       group-hover:opacity-100 group-focus-visible:opacity-100">
+        <span className="absolute -inset-[3px]" style={{ background: HALO }} />
+        {/* clipped to the page block exactly, so the light is the PAPER and never the chip */}
+        <span className="absolute inset-y-[2px] left-[5px] right-0 rounded-r-[2px]"
+              style={{ background: PAGES }} />
+      </span>
+
+      {/* 🔴 THE SPARKS ARE SIBLINGS OF THE COVER, NOT CHILDREN OF THE GLOW, AND THEY CARRY THEIR OWN
+          DEPTH — both of those are bug fixes rather than structure for its own sake.
+
+          Inside the glow wrapper they were painted behind the cover: this glyph is `preserve-3d`, so
+          children sort by DEPTH and not by document order, and a cover rotated -38 degrees about its
+          left edge swings its right half toward the viewer. Three of the four sparks vanished under
+          it and only the one clear of the cover's projected edge ever showed. An opacity wrapper
+          could not fix that either, because a group with opacity flattens the 3D context it sits in.
+
+          So the depth lives in `bookSpark`'s own keyframes — `translateZ(14px)` in both transform
+          stops. Put it on the element instead and the animation's transform would erase it on the
+          first frame, which is precisely the fault fixed in the overlay this morning. Geometry that
+          has to survive an animation belongs INSIDE it. */}
+      {SPARKS.map((s, i) => (
+        <span key={i} aria-hidden="true"
+              /* A DEEP AMBER CORE IN A PALE HALO, and that order matters. The first version was the
+                 reverse — a cream core on cream pages that the lit paper swallowed whole, so four
+                 sparks rendered and animated correctly and not one of them was visible. Amber reads
+                 against the lit page, the halo reads against the dark chip above it, and between
+                 them a spark stays legible for its whole climb. */
+              className="pointer-events-none absolute h-[2px] w-[2px] rounded-full bg-[#F0900E] opacity-0
+                         shadow-[0_0_4px_1.5px_rgba(255,238,196,0.95)] motion-reduce:hidden
+                         group-hover:animate-book-spark group-focus-visible:animate-book-spark"
+              style={{ left: s.x, bottom: 8, '--spark-drift': s.drift,
+                       animationDuration: s.dur, animationDelay: s.delay }} />
+      ))}
     </span>
   );
 }
@@ -364,8 +456,8 @@ function Library({ anchorRef, initialSection, onClose, onPick }) {
             SIBLING is safe; clipping the container would have flattened `preserve-3d` and undone
             the hinge, which is the trap noted on the stage below. */}
         <span ref={slabRef} aria-hidden="true"
-              style={{ background: LEATHER, clipPath: 'inset(0 0 0 0 round 14px)' }}
-              className="absolute inset-0 rounded-[14px] border border-accent-edge pointer-events-none
+              style={{ background: LEATHER, clipPath: 'inset(0 0 0 0 round 14px)', left: COVER_LEFT }}
+              className="absolute inset-y-0 right-0 rounded-[14px] border border-accent-edge pointer-events-none
                          shadow-[0_2px_2px_rgba(0,0,0,0.35),0_40px_90px_-30px_rgba(0,0,0,0.95)]" />
 
         {/* Tabs, cut into the cover's left edge like the reference book */}

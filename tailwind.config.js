@@ -79,6 +79,11 @@ export default {
         'ponder-open':  'ponderOpen 460ms cubic-bezier(0.23,1,0.32,1) both',
         /* A new sheet arriving. NOT a flip — a flip is what the cover does; a page you turn TO
            slides into place. The two halves come out of the fold in opposite directions. */
+        /* a spark leaving the pages on hover. Infinite, but only ever applied under group-hover —
+           four looping animations in a top bar that is always on screen is a battery cost nobody
+           asked for. Lite Mode collapses it to 0.001s, so it lands on its last keyframe and is
+           simply not there, which is the correct fate for decoration. */
+        'book-spark':     'bookSpark 1500ms linear infinite',
         'ponder-slide':   'ponderSlide 320ms cubic-bezier(0.23,1,0.32,1) both',
         'ponder-slide-l': 'ponderSlideL 320ms cubic-bezier(0.23,1,0.32,1) both',
       },
@@ -88,6 +93,20 @@ export default {
           '100%': { opacity: '1' },
         },
         /* a caption arriving beside the thing it points at */
+        /* rises out of the page block and fades. The sideways wander is a per-spark custom property
+           so one keyframe serves all four; scale never starts at 0, because nothing in this world
+           appears out of nothing. */
+        /* 🔴 `translateZ(14px)` IS IN BOTH TRANSFORM STOPS ON PURPOSE. The glyph is `preserve-3d`, so
+           its children sort by depth rather than document order, and the cover swings its right half
+           toward the viewer — at z=0 the sparks were simply behind it. The depth cannot live on the
+           element, because this keyframe animates `transform` and would erase it on frame one, which
+           is exactly the fault fixed in PonderOverlay this morning. */
+        bookSpark: {
+          '0%':   { opacity: '0', transform: 'translateZ(14px) translate(0, 0) scale(0.5)' },
+          '18%':  { opacity: '1' },
+          '70%':  { opacity: '0.85' },
+          '100%': { opacity: '0', transform: 'translateZ(14px) translate(var(--spark-drift, 0px), -21px) scale(1)' },
+        },
         ponderIn: {
           '0%':   { opacity: '0', transform: 'translateY(6px) scale(0.985)' },
           '100%': { opacity: '1', transform: 'none' },

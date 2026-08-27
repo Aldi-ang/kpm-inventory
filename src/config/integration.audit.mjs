@@ -4275,6 +4275,55 @@ check(G56, 'the room test measures the caption instead of assuming a height for 
   'wrong in both directions: too large and the box is pushed away from space it fits in, too ' +
   'small and it overhangs the stage edge it was just approved for');
 
+/* 🔴 THE AMBER LAW'S SECOND EXEMPTION, AND A CHECK THAT KEEPS IT AN EXEMPTION RATHER THAN A LEAK.
+
+   The law, 2026-08-21: *"stop using amber background i said, i hate it"*. The book's hover glow is a
+   gold FILL, so it was asked for rather than assumed, and granted 2026-08-28 against the reference
+   he sent twice. What makes it survivable is that it is BOUNDED: it lives on one 21px glyph, it is
+   invisible until the pointer is on the chip, and Lite Mode collapses it away. Unbound, it is just
+   the amber background he has rejected twice by name.
+
+   So the check is not "is there a gradient" — it is "can this gradient ever be seen when nobody is
+   hovering". Opacity 0 at rest, animation only under group-hover/group-focus-visible. */
+const glowAtRest = /className="pointer-events-none absolute inset-0 opacity-0[\s\S]{0,140}?group-hover:opacity-100/.test(bookSrc);
+const sparksGated = (bookSrc.match(/animate-book-spark/g) || []).length === 2 &&
+  /group-hover:animate-book-spark group-focus-visible:animate-book-spark/.test(bookSrc) &&
+  !/\banimate-book-spark(?!["\s])/.test(bookSrc.replace(/group-(hover|focus-visible):animate-book-spark/g, ''));
+check(G56, 'the hover glow is gold, exempted, and cannot be seen when nobody is hovering',
+  /rgba\(255,\d+,\d+,\.\d+\)/.test(bookSrc) && glowAtRest && sparksGated &&
+  /Asked and granted/.test(fs.readFileSync('src/ponder/PonderBook.jsx', 'utf8')),
+  'the glow must default to opacity 0 and the sparks must only ever animate under group-hover or ' +
+  'group-focus-visible. An always-on gold fill is the amber background he has rejected twice, and ' +
+  'four looping animations in a top bar that is always on screen is a battery cost nobody asked for');
+
+/* 🔴 THE SAME TRAP AS THE CAPTION, ONE FILE OVER, CAUGHT THE SAME DAY. The sparks must sit in FRONT
+   of the cover: the glyph is `preserve-3d`, so its children sort by depth rather than document
+   order, and the cover swings its right half toward the viewer — at z=0 three of the four sparks
+   were painted behind it and simply never appeared. The depth therefore has to be `translateZ` —
+   and it cannot live on the element, because `bookSpark` animates `transform` and would erase it on
+   frame one. It goes in BOTH transform stops of the keyframe instead. */
+const twSrc = fs.readFileSync('tailwind.config.js', 'utf8');
+const sparkStops = [...twSrc.matchAll(/transform: 'translateZ\(14px\) translate/g)];
+check(G56, 'the spark carries its depth inside the keyframe, where the animation cannot erase it',
+  sparkStops.length === 2 && /bookSpark: \{/.test(twSrc) &&
+  !/--spark-drift[^}]*transform:/.test(bookSrc),
+  'both transform keyframes of `bookSpark` must carry translateZ, and the spark element must not ' +
+  'set a transform of its own. Depth on the element is erased by the animation on its first frame ' +
+  'and the sparks disappear behind the cover — the same fault as the caption, in a second file');
+
+/* 🔴 THE COVER STOPS AT THE FOLD, AND THIS ARITHMETIC IS NOT OPTIONAL. His note, 2026-08-28:
+   *"cut the brown background where the book ends not where the ribbon ends"*. Moving the cover's
+   left edge in by COVER_LEFT also moved the reference for SLAB_SHUT, which is measured from the
+   slab's own box — leave the old constant and the shut cover overhangs the centre fold by 163px,
+   measured. The relationship is fixed: half of COVER_LEFT, minus the original 62. */
+const coverLeft = Number((bookSrc.match(/const COVER_LEFT = (\d+)/) || [])[1] || NaN);
+const shutOff = Number((bookSrc.match(/SLAB_SHUT = 'inset\(0 calc\(50% ([-+] ?\d+)px\)/) || [])[1]?.replace(/\s/g, '') || NaN);
+check(G56, 'the shut cover lands on the centre fold, wherever the cover’s left edge is',
+  Number.isFinite(coverLeft) && Number.isFinite(shutOff) && shutOff === coverLeft / 2 - 62,
+  'SLAB_SHUT must equal `calc(50% + COVER_LEFT/2 - 62px)`. It is measured from the slab, and the ' +
+  'slab no longer starts at the container — got ' + shutOff + ', expected ' + (coverLeft / 2 - 62) +
+  ' for COVER_LEFT ' + coverLeft + '. Wrong, the closing book leaves a slab of leather past the fold');
+
 /* 🔴 THE FIFTH OF THE FAMILY, FOUND WHILE VERIFYING THE FOURTH. `getBoundingClientRect()` reports
    PAINTED geometry, and this overlay arrives on `animate-ponder-open`, which opens the modal from
    `scale(0.94)`. The first beat measured after opening therefore came back 6% small and STAYED
