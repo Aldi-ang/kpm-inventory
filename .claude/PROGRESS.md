@@ -1,6 +1,51 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-27 09:10 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · ready to `/clear` · ✅ **SEBARAN STOK NOW SHOWS ITS OWN WORKING** — **631/631** · plain-English columns, per-item rate + depletion · branch `phase0-solid-ground`
+**Updated: 2026-08-27 12:18 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · ✅ **PONDER SLICE 1 IS LIVE — the tutorial plays, pauses, restarts and scrubs** — **645/645** · panel renamed **Stock by Warehouse** · branch `phase0-solid-ground`
+
+## 🟠 2026-08-27 12:18 — PONDER SLICE 1 SHIPPED. **645/645.** The tutorial is real and was looked at.
+
+He answered the three open questions and added a fourth:
+
+> 1. *"teaching just use indonesia, for terms for the features and components just use english"*
+> 2. *"scene play but itself but also add pause button or timeframe to restart the tutorial, just
+>    like the ponder system inside create mod ... i want u to fully research how that works"*
+> 3. *"nope dont push newcomer towards the scene let them figure out by pressing the tutorial button"*
+> 4. *"dont use sebaran stock, use proper elegant english terms for that"*
+
+**All four are now checks, not prose** — audit group 56, 14 of them.
+
+**The panel is `Stock by Warehouse`.** Not "Stock Distribution": that screen already has a
+*Shipping* column, and "distribution" reads as the shipping operation. Not "Stock Across
+Warehouses": 23 uppercase characters wrap to two lines on a phone, and a two-line title is the
+thing he deleted the old banner for.
+
+**What is built** — `src/ponder/`: `useScenePlayer` (the clock), `PonderOverlay` (the player),
+`PonderButton` (the `?` chip in the panel header), `registry.js`, one scene, one throwaway stage.
+Autoplay, a real Pause, Restart, a 3px timeline with a notch per beat, Comfy Reading, arrow keys,
+Esc. Read out of Create's own source, not from memory: its pause is Identify mode, its scrub only
+stops at authored keyframes, and it holds at the end rather than looping.
+
+**The engine is ~95 lines because our world is not Ponder's.** `PonderScene.seekToTime` throws on
+a backwards seek and PonderUI replays from zero to get there — it has to, its blocks have already
+moved. A beat here is a pure function of its index over fixed data, so seeking back is free.
+
+**🔴 A HEADLESS SCREENSHOT NARROWER THAN ~518px ON WINDOWS IS A CROP, NOT A LAYOUT.** Chrome
+will not make a window narrower than that, so `--window-size=375` renders at 518 and saves the
+left 375px of it. Three phone shots "showed" the panel overflowing and the close button gone; the
+same page measured 375px wide with zero overflow in a real browser. `?probe` on the lab now prints
+`innerWidth` into the DOM so a frame can be trusted before it is read.
+
+**The bottom-sheet layout stays anyway** — it was reached from a wrong reading, but a full-height
+panel above three demo rows left a dead void, and a sheet is what he picked for the manifest.
+
+**New: `tools/ponder-lab.*`** — the app cannot be opened here (self-signed HTTPS, Google sign-in,
+vault gate), so this builds the REAL overlay against the REAL stylesheet on plain HTTP:
+`npx vite build --config tools/ponder-lab.config.mjs` → `python -m http.server 4187 -d dist-ponderlab`
+→ `/tools/ponder-lab.html?light&lite&step=N&probe`. Dark, light and narrow frames were looked at.
+
+**🔴 STILL DO NOT DELETE THE STOCK-BY-WAREHOUSE FOOTNOTE.** Check 631 still pins the two formulas
+to the screen. The scene now carries them too and group 56 asserts it, so 631 can MOVE in slice 2
+rather than be deleted.
 
 ## 🟢 2026-08-27 09:10 — RESUME BRIEF WRITTEN. Session ready to clear.
 

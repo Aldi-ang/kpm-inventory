@@ -39,3 +39,6 @@ graphify-out/2*/
 # Regenerate with `node tools/make-preview.mjs`; never review it in a diff.
 tools/theme-preview-*.html
 dev-dist
+
+# tools/ponder-lab.config.mjs writes here — a viewing harness build, never shipped
+dist-ponderlab

@@ -12,6 +12,7 @@ import { txSeconds } from '../utils/dayStats.js';
 import { supplyByProduct, warehouseList, MASTER } from '../utils/supply.js';
 import { confirmAction } from './ConfirmGate.jsx';
 import { notify } from './Toast.jsx';
+import PonderButton from '../ponder/PonderButton.jsx';
 
 /* ===========================================================================
    THE ARRIVAL CHECK — a count at the door, PARTIAL BLIND.
@@ -1279,12 +1280,15 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
                                 <Globe size={18} className="text-accent-ink"/>
                             </span>
                             <div className="min-w-0">
-                                <h3 className="font-display text-xl sm:text-2xl font-black text-ink uppercase tracking-[0.14em] leading-none">Sebaran Stok</h3>
+                                <h3 className="font-display text-xl sm:text-2xl font-black text-ink uppercase tracking-[0.14em] leading-none">Stock by Warehouse</h3>
                                 <div className="h-[3px] w-10 bg-orange rounded-full mt-2"/>
                                 <p className="font-mono text-[10px] text-ink-muted tracking-widest mt-2">every warehouse · in Bks</p>
                             </div>
                         </div>
-                        <p className="font-mono text-[10px] text-ink-muted tracking-widest shrink-0">sales figures cover the last 7 days</p>
+                        <div className="flex items-center gap-2.5 shrink-0">
+                            <p className="font-mono text-[10px] text-ink-muted tracking-widest">sales figures cover the last 7 days</p>
+                            <PonderButton sceneId="stock-by-warehouse" />
+                        </div>
                     </div>
 
                     <div className="overflow-x-auto">

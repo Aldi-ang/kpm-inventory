@@ -4002,6 +4002,162 @@ check(G55, 'the master vault prints no in-transit figure it cannot have',
   'nothing is ever in transit TO the master vault on a stock_request. A 0 there is a claim that ' +
   'was measured; — is the truth, which is that this column does not apply');
 
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   56. PONDER — the in-app tutorial engine (slice 1)
+
+   His ask, 2026-08-27: *"custom instruction menu on each of every components ... so that if our
+   user forgot they can just see it from there"*, built like Create mod's Ponder. A scene is
+   DATA, the engine plays it, and a `?` chip on the panel opens it. Three of his answers are
+   pinned here as checks rather than as prose, because a paragraph goes stale in silence:
+   autoplay with a real pause, a restart, a scrubbable timeline; teaching in Indonesian with the
+   feature names left in English; and nothing that pushes a first-time user into a scene.
+   ═══════════════════════════════════════════════════════════════════════════ */
+const G56 = '56. Ponder — the in-app tutorial';
+
+/* 🔴 STRIPS BOTH COMMENT FORMS, unlike `noCmt` further up, which only removes block comments.
+   Every check in this group greps a file whose own comments DESCRIBE the pattern being
+   asserted — the engine's header explains why the bar is a scaleX written to the DOM, the
+   overlay's explains the spotlight. Group 53 was written without this and went red against
+   correct code, on the comment recording the fix. */
+const pStrip = (s) => s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1');
+const pRead = (f) => pStrip(fs.readFileSync('src/ponder/' + f, 'utf8'));
+const overlaySrc = pRead('PonderOverlay.jsx');
+const playerSrc = pRead('useScenePlayer.js');
+const chipSrc = pRead('PonderButton.jsx');
+const registrySrc = pRead('registry.js');
+const sceneFiles = fs.readdirSync('src/ponder/scenes').filter(f => f.endsWith('.js'));
+const stageSrc = fs.readdirSync('src/ponder/stages')
+  .map(f => pStrip(fs.readFileSync('src/ponder/stages/' + f, 'utf8'))).join('\n');
+const bwmStripped = pStrip(bwmCode);
+
+/* Scenes are IMPORTED, not grepped. They are plain data modules with no JSX in them, so the
+   audit can hold the real objects and read the real steps. A regex over the source would only
+   be checking that the file LOOKS right, which is a different and weaker claim. */
+const scenes = [];
+for (const f of sceneFiles) {
+  const mod = await import('../ponder/scenes/' + f);
+  for (const v of Object.values(mod)) if (v && Array.isArray(v.steps)) scenes.push(v);
+}
+const sceneIds = scenes.map(s => s.id);
+
+/* The SCENES map, sliced from its own declaration rather than read off the whole file, which
+   also holds the STAGES map. An anchor that is not found returns -1, and `slice(x, -1)` quietly
+   means "to one before the end of the file" — so both ends are asserted before the slice runs. */
+const sStart = registrySrc.indexOf('export const SCENES');
+const sEnd = registrySrc.indexOf('export const STAGES');
+const scenesBlock = (sStart > -1 && sEnd > sStart) ? registrySrc.slice(sStart, sEnd) : '';
+
+check(G56, 'every scene file is reachable through the registry',
+  scenesBlock.length > 0 && scenes.length > 0 && sceneIds.every(id => scenesBlock.includes(id)),
+  'a scene that never reaches SCENES cannot be opened by anything, and nothing else in the app ' +
+  'would report it missing — the file just sits there looking finished');
+
+const buttonIds = [...bwmStripped.matchAll(/<PonderButton[^>]*sceneId="([^"]+)"/g)].map(m => m[1]);
+check(G56, 'every ? chip names a scene that actually exists',
+  buttonIds.length > 0 && buttonIds.every(id => sceneIds.includes(id)),
+  'a typo in a sceneId has to fail HERE. Unchecked it renders a ? button that opens nothing, ' +
+  'which is the worst kind of broken: it looks like a feature until someone presses it');
+
+check(G56, 'no beat is silent — every step carries text',
+  scenes.length > 0 && scenes.every(s => Array.isArray(s.steps) && s.steps.length > 0 &&
+    s.steps.every(st => typeof st.text === 'string' && st.text.trim().length > 0)),
+  'a step with no text is a blank screen with a timer running behind it');
+
+/* 🔴 THE CHECK THAT STOPS SCENES ROTTING. A focus key is a promise that some element in the
+   stage carries that key. Rewrite the panel, drop the attribute, and the tutorial keeps playing
+   happily while pointing at nothing — a failure that still looks like it works. */
+const focusKeys = [...new Set(scenes.flatMap(s => s.steps.map(st => st.focus).filter(k => k && k !== '*')))];
+const stageAndPanel = stageSrc + '\n' + bwmStripped;
+const missingKeys = focusKeys.filter(k => !stageAndPanel.includes(k));
+check(G56, 'every focus key exists in the stage it points at, and the stage still emits them',
+  focusKeys.length > 0 && missingKeys.length === 0 && /data-ponder=/.test(stageSrc),
+  'unresolved focus keys: ' + (missingKeys.join(', ') || 'none') + '. The stage must also still ' +
+  'carry data-ponder — the keys existing in an array proves nothing if no element wears them');
+
+/* His rule, 2026-08-27: *"scene play but itself but also add pause button or timeframe to
+   restart the tutorial, just like the ponder system inside create mod"*. Create's pause is a
+   real freeze (its Identify mode literally stops ticking the scene), not a slower speed. */
+check(G56, 'pause stops the clock outright, and restart returns to the first beat',
+  /if \(!open \|\| !playing \|\| finished/.test(playerSrc) &&
+  /seek\(0\); setPlaying\(true\);/.test(playerSrc) &&
+  /Comfy reading/.test(overlaySrc),
+  'the animation loop must be gated on `playing` so a pause is a freeze rather than a slowdown; ' +
+  'restart must seek to beat 0 and resume; and Comfy Reading is the control that lets a slower ' +
+  'reader keep autoplay instead of turning it off');
+
+/* ExamineModal.jsx records what a per-frame setState costs on Aldi's phone: the whole subtree
+   re-rendering ~60 times a second, which reads as flicker rather than as motion. */
+check(G56, 'the progress bar is written to the DOM, never through per-frame state',
+  /bar\.style\.transform = /.test(playerSrc) && !/setProgress|setElapsed|setTick/.test(playerSrc),
+  'the bar must be painted by writing transform onto the node from requestAnimationFrame. Routing ' +
+  'it through useState re-renders the overlay every frame');
+
+/* Lite Mode sets `transition-duration: .001s` on everything, so anything whose meaning lives in
+   a transition arrives already finished. The spotlight therefore sets its END STATE directly and
+   treats the fade as decoration — the half that is allowed to disappear. */
+check(G56, 'the spotlight survives Lite Mode, which strips every transition',
+  /el\.style\.opacity = lit \?/.test(overlaySrc) && /reduced\(\) \? 'none'/.test(overlaySrc),
+  'opacity must be set as a value, not implied by a transition, and reduced motion must drop the ' +
+  'easing while keeping the same end state — the tutorial still has to teach with motion off');
+
+check(G56, 'the tutorial opens no native dialog',
+  !/window\.(confirm|prompt|alert)\s*\(/.test(overlaySrc + playerSrc + chipSrc + stageSrc),
+  'the dialog gate replaced all 69 of these. A blocked native dialog does nothing and explains ' +
+  'nothing, which is exactly the failure a tutorial cannot afford');
+
+/* His answer, 2026-08-27: *"nope dont push newcomer towards the scene let them figure out by
+   pressing the tutorial button"*. Opt-in means there is nothing to remember about a person, so
+   there must be no seen-flag anywhere near this. */
+check(G56, 'the tutorial never opens itself, and remembers nothing about who has watched',
+  /onClick=\{\(\) => setOpen\(true\)\}/.test(chipSrc) &&
+  !/localStorage|sessionStorage|hasSeen|firstRun|autoOpen/.test(chipSrc + overlaySrc),
+  'the chip may only open on a click. A "has this person seen it" flag is what turns an opt-in ' +
+  'tutorial into one that fires at people, and a stale flag means it fires forever or never');
+
+/* The amber law, 2026-08-21: *"stop using amber background i said, i hate it"*. What survived as
+   a legal gold fill is a 3px rule whose LENGTH is the data — at 3px it reads as a line, not a
+   slab. The timeline is exactly that shape, and so is the rule under the panel title. */
+const goldSpots = [...overlaySrc.matchAll(/bg-orange/g)]
+  .map(m => overlaySrc.slice(Math.max(0, m.index - 170), m.index + 40));
+check(G56, 'the timeline is a 3px rule whose length is the data, never a gold slab',
+  /h-\[3px\] bg-inset/.test(overlaySrc) && /bg-orange rounded-full/.test(overlaySrc) &&
+  !/bg-gold/.test(overlaySrc) &&
+  goldSpots.length > 0 && goldSpots.every(w => /h-\[3px\]|h-\[9px\]|w-\[2px\]|inset-0/.test(w)),
+  'every gold surface in the overlay must sit on an element that is a RULE — the 3px track, the ' +
+  'fill stretched inside it, or a 2px notch. A taller gold bar is a gold FILL, which he has ' +
+  'rejected twice by name. Scoped to each bg-orange occurrence rather than banned file-wide, ' +
+  'because the first version of this check matched the notch hover state and went red against ' +
+  'a 2px line — the same over-broad-guard trap as group 48');
+
+/* His rule, 2026-08-27: *"teaching just use indonesia, for terms for the features and components
+   just use english"*. The `**term**` markers are what make an English column name visibly a term
+   inside an Indonesian sentence, so the renderer that turns them into gold ink is load-bearing. */
+check(G56, 'teaching sentences keep their English feature names marked as terms',
+  /function Caption\(/.test(overlaySrc) && /text-accent-ink font-bold/.test(overlaySrc) &&
+  scenes.some(s => s.steps.some(st => st.text.includes('**'))),
+  'the caption renderer must keep bolding **terms** in accent ink. Without it an English column ' +
+  'name reads as a foreign word dropped into an Indonesian sentence instead of as the label the ' +
+  'reader will go looking for on the real screen');
+
+check(G56, 'the stock panel is titled in English and carries its tutorial chip',
+  />Stock by Warehouse<\/h3>/.test(bwmStripped) &&
+  /<PonderButton sceneId="stock-by-warehouse" \/>/.test(bwmStripped),
+  'his instruction was *"dont use sebaran stock, use proper elegant english terms for that"*. ' +
+  'The chip lives in the panel header because the entry point to a tutorial is the thing you ' +
+  'are already confused by, never a manual in a menu');
+
+/* 🔴 PRE-STAGING THE CHECK 631 MIGRATION. The panel footnote is still the live record of these
+   two formulas and check 631 still pins it there. The scene now carries them as well, so when
+   the footnote is deleted in the next slice the coverage already exists and 631 MOVES rather
+   than being deleted. A check removed to let a change pass is how the bug it caught comes back. */
+check(G56, 'the scene carries both stock formulas, ready for check 631 to move onto it',
+  scenes.some(s => s.steps.some(st => st.text.includes('Sold (7d) ÷ 7 × 30'))) &&
+  scenes.some(s => s.steps.some(st => st.text.includes('In stock ÷ (Sold (7d) ÷ 7)'))),
+  'both divisions must be written out longhand in the scene text. They are the answer to *"i want ' +
+  'where u got that calculation"*, and the footnote that currently holds them is scheduled to go');
+
+
 let last = '';
 for (const r of results) {
   if (r.group !== last) { console.log('\n' + r.group); last = r.group; }
