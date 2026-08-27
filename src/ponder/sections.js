@@ -1,77 +1,116 @@
-/* THE BOOK'S TABLE OF CONTENTS — data only, and in its own file on purpose.
+/* THE BOOK'S TABLE OF CONTENTS — data only, and it MIRRORS THE SIDEBAR.
+
+   🔴 EVERY `id` HERE IS AN `activeTab` VALUE FROM `BiohazardTheme`'s nav list, and every label is
+   that nav item's label. That is not a convention, it is the contract: the book opens straight to
+   the section you are standing in, which only works if the two lists use the same keys.
+
+   Aldi, 2026-08-27: *"right now u put it on the gudang section, dont do that we dont have any
+   gudang components in our sidebar, all the section in the book should follow the sidebar and
+   everything on the sidebar should be on the book"*. The first version invented seven categories
+   of its own — Gudang, Kasir, Setoran — and none of them was a thing you can click in this app.
+   **An index that names screens the app does not have is worse than no index.**
 
    `registry.js` imports a stage, and a stage is JSX. The integration audit runs in plain Node, so
-   it cannot import that file at all — but it MUST be able to read these sections, because the
-   check that every entry resolves to a real scene is the one stopping a card that does nothing
-   when pressed. Keeping this as data means the audit holds the real objects instead of grepping
-   for them, which is a different and much weaker claim.
+   it cannot import that file — but it MUST read these sections, because the check that every entry
+   resolves to a real scene is what stops a card that does nothing when pressed. Hence the split.
 
-   His ask, 2026-08-27: *"inside the book i want every section of this app tutorials to be put
-   there"*. An index that lists only what exists teaches nobody what is coming and quietly implies
-   the rest of the app has nothing to explain. So every section is here, and an entry with no
-   scene yet says so on its own face rather than being missing.
+   `short` is the tab label on the book's edge. A tab is ~120px and a truncated tab teaches
+   nothing; the full name is printed across the page it opens.
 
-   `short` is the tab label. A tab is ~110px wide and a truncated tab teaches nothing — the
-   full name is printed across the page it opens, so the tab only has to be recognisable.
+   ⚠️ `icon` is a STRING, resolved to a lucide component inside PonderBook — the same icons the
+   sidebar uses, so a section looks like the thing it is about. Keeping it a string is what lets
+   this file stay data.
 
-   ⚠️ `icon` is a STRING, resolved to a lucide component inside PonderBook. Keeping it a string is
-   what lets this file stay data — the same rule the scenes follow.
-
-   The order is the build order from `.claude/PONDER-PLAN.md`, which is ranked by where a mistake
-   costs money, not by where it is easiest to write. */
+   ORDER = SIDEBAR ORDER. Entries inside a section = TOP-TO-BOTTOM ORDER ON THE SCREEN. His rule
+   for Restock Vault: *"put it in the book section restock vault number 1, since its on top so its
+   number 1 ... then stock by warehouse ... number 2 since its the second panel"*. */
 export const SECTIONS = [
   {
-    id: 'gudang', label: 'Gudang & Stok', short: 'Gudang', icon: 'Globe',
-    blurb: 'Di mana barang berada, dan gudang mana yang harus diisi duluan.',
+    id: 'dashboard', label: 'Command Center', short: 'Command', icon: 'LayoutGrid',
+    blurb: 'Angka ringkasan seluruh perusahaan. Cuma dibaca, tidak mengubah apa pun.',
+    entries: [{ title: 'Membaca Command Center', desc: 'Jendela 7 hari, dan mana yang bukan tren.', icon: 'LayoutGrid', soon: true }],
+  },
+  {
+    id: 'restock_vault', label: 'Restock Vault', short: 'Restock', icon: 'PackagePlus',
+    blurb: 'Barang masuk dari pabrik, kirim ke cabang, dan di mana semua barang berada.',
     entries: [
-      { sceneId: 'stock-by-warehouse', title: 'Stock by Warehouse', desc: 'Baca tabel gudang, dan kenapa tidak ada sisa hari untuk satu gudang penuh.', icon: 'Globe' },
-      { title: 'Stock Opname', desc: 'Hitung buta, dan kenapa angkanya sengaja disembunyikan.', icon: 'Eye', soon: true },
+      { sceneId: 'goods-received', title: 'Goods Received', desc: 'Panel paling atas: mencatat barang yang baru datang, dan biaya yang menempel padanya.', icon: 'PackagePlus' },
+      { sceneId: 'stock-by-warehouse', title: 'Stock by Warehouse', desc: 'Baca tabel gudang, dan kenapa tidak ada sisa hari untuk satu gudang penuh.', icon: 'Package' },
     ],
   },
   {
-    id: 'kasir', label: 'Kasir', short: 'Kasir', icon: 'Package',
-    blurb: 'Menjual, mencetak nota, dan apa yang sudah tidak bisa ditarik lagi.',
-    entries: [
-      { title: 'Titip vs Lunas', desc: 'Beda barang titipan dan barang yang sudah dibayar.', icon: 'Package', soon: true },
-      { title: 'Nota', desc: 'Apa yang terkunci begitu nota dicetak.', icon: 'FileText', soon: true },
-    ],
+    id: 'sales', label: 'Sales Terminal', short: 'Sales', icon: 'Store',
+    blurb: 'Menjual, mencetak nota, dan apa yang tidak bisa ditarik lagi.',
+    entries: [{ title: 'Titip vs Lunas', desc: 'Beda barang titipan dan barang yang sudah dibayar.', icon: 'Store', soon: true }],
   },
   {
-    id: 'setoran', label: 'Setoran', short: 'Setoran', icon: 'FileText',
+    id: 'inventory', label: 'Master Vault', short: 'Vault', icon: 'Package',
+    blurb: 'Daftar barang, harga, dan siapa yang boleh mengubahnya.',
+    entries: [{ title: 'Mengubah barang', desc: 'Apa yang ikut berubah waktu harga diubah.', icon: 'Package', soon: true }],
+  },
+  {
+    id: 'agent_inventory', label: 'Agent Inventory', short: 'Agent', icon: 'Boxes',
+    blurb: 'Barang yang sedang dibawa salesman.',
+    entries: [{ title: 'Stok di tangan agen', desc: 'Sudah sampai, sudah bisa dijual, belum di rak.', icon: 'Boxes', soon: true }],
+  },
+  {
+    id: 'stock_opname', label: 'Stock Opname', short: 'Opname', icon: 'ClipboardList',
+    blurb: 'Hitung fisik, dan membandingkannya dengan catatan.',
+    entries: [{ title: 'Hitung buta', desc: 'Kenapa angka sistem sengaja disembunyikan saat menghitung.', icon: 'ClipboardList', soon: true }],
+  },
+  {
+    id: 'eod', label: 'EOD Setoran', short: 'Setoran', icon: 'Wallet',
     blurb: 'Tutup hari: uang yang dihitung dibandingkan dengan apa.',
-    entries: [
-      { title: 'Setoran harian', desc: 'Angka kamu dibandingkan dengan penjualan hari itu.', icon: 'FileText', soon: true },
-      { title: 'Kenapa tidak bisa diubah', desc: 'Setelah dikirim, setoran jadi catatan, bukan draf.', icon: 'Check', soon: true },
-    ],
+    entries: [{ title: 'Setoran harian', desc: 'Angka kamu dibandingkan dengan penjualan hari itu, dan kenapa tidak bisa diubah.', icon: 'Wallet', soon: true }],
   },
   {
-    id: 'restock', label: 'Restock Vault', short: 'Restock', icon: 'Truck',
-    blurb: 'Permintaan cabang, pengiriman, dan surat jalan.',
-    entries: [
-      { title: 'Siapkan Pengiriman', desc: 'Stok pusat langsung berkurang saat tombol ini ditekan.', icon: 'Truck', soon: true },
-      { title: 'Delivery note', desc: 'Tiga nomor surat jalan, dan siapa yang membuat masing-masing.', icon: 'FileText', soon: true },
-    ],
-  },
-  {
-    id: 'piutang', label: 'Piutang & Titipan', short: 'Piutang', icon: 'User',
+    id: 'receivables', label: 'Receivables & Consignment', short: 'Piutang', icon: 'Receipt',
     blurb: 'Utang yang nyata, dan barang yang cuma dititipkan.',
-    entries: [
-      { title: 'Piutang vs titipan', desc: 'Mana yang uang kamu, mana yang barang kamu.', icon: 'User', soon: true },
-    ],
+    entries: [{ title: 'Piutang vs titipan', desc: 'Mana yang uang kamu, mana yang barang kamu.', icon: 'Receipt', soon: true }],
   },
   {
-    id: 'armada', label: 'Armada & Canvas', short: 'Armada', icon: 'MapPin',
-    blurb: 'Memuat motor, rute, dan stok yang ikut jalan.',
-    entries: [
-      { title: 'Memuat armada', desc: 'Memuat motor MEMINDAHKAN stok, bukan menyalinnya.', icon: 'MapPin', soon: true },
-    ],
+    id: 'fleet', label: 'Fleet & Canvas', short: 'Fleet', icon: 'Truck',
+    blurb: 'Memuat motor, dan stok yang ikut jalan.',
+    entries: [{ title: 'Memuat armada', desc: 'Memuat motor MEMINDAHKAN stok, bukan menyalinnya.', icon: 'Truck', soon: true }],
   },
   {
-    id: 'laporan', label: 'Dashboard & Laporan', short: 'Laporan', icon: 'Clock',
-    blurb: 'Angka yang cuma dibaca, tidak mengubah apa pun.',
-    entries: [
-      { title: 'Membaca dashboard', desc: 'Jendela 7 hari, dan apa yang bukan tren.', icon: 'Clock', soon: true },
-    ],
+    id: 'journey', label: 'Journey Plan', short: 'Journey', icon: 'Route',
+    blurb: 'Rute kunjungan, dan siapa yang dikunjungi hari ini.',
+    entries: [{ title: 'Menyusun rute', desc: 'Urutan kunjungan dan apa yang dicatat di tiap titik.', icon: 'Route', soon: true }],
+  },
+  {
+    id: 'map_war_room', label: 'Map System', short: 'Map', icon: 'Map',
+    blurb: 'Semua titik pelanggan di satu peta.',
+    entries: [{ title: 'Membaca peta', desc: 'Apa arti tiap warna titik.', icon: 'Map', soon: true }],
+  },
+  {
+    id: 'customers', label: 'Customers', short: 'Customer', icon: 'Users',
+    blurb: 'Daftar pelanggan, dan siapa yang boleh melihat siapa.',
+    entries: [{ title: 'Menambah pelanggan', desc: 'Data yang wajib, dan kenapa.', icon: 'Users', soon: true }],
+  },
+  {
+    id: 'sampling', label: 'Sampling', short: 'Sampling', icon: 'Gift',
+    blurb: 'Barang yang keluar tanpa dibayar, dan siapa yang menanggungnya.',
+    entries: [{ title: 'Mencatat sampling', desc: 'Stok tetap berkurang walau tidak ada uang masuk.', icon: 'Gift', soon: true }],
+  },
+  {
+    id: 'transactions', label: 'Reports', short: 'Reports', icon: 'BarChart3',
+    blurb: 'Riwayat transaksi dan laporan. Cuma dibaca.',
+    entries: [{ title: 'Membaca laporan', desc: 'Rentang tanggal, dan apa yang tidak masuk hitungan.', icon: 'BarChart3', soon: true }],
+  },
+  {
+    id: 'agent_profile', label: 'Agent Profile', short: 'Profile', icon: 'User',
+    blurb: 'Profil, tier, dan pencapaian.',
+    entries: [{ title: 'Membaca profil', desc: 'Apa yang menaikkan tier.', icon: 'User', soon: true }],
+  },
+  {
+    id: 'audit', label: 'Audit Logs', short: 'Audit', icon: 'ScrollText',
+    blurb: 'Catatan siapa melakukan apa. Tidak bisa dihapus.',
+    entries: [{ title: 'Membaca audit log', desc: 'Apa yang tercatat otomatis, dan apa yang tidak.', icon: 'ScrollText', soon: true }],
+  },
+  {
+    id: 'settings', label: 'Settings', short: 'Settings', icon: 'Settings',
+    blurb: 'Izin, tier, tema, dan Lite Mode.',
+    entries: [{ title: 'Izin dan tier', desc: 'Siapa boleh melihat dan mengubah apa.', icon: 'Settings', soon: true }],
   },
 ];
-

@@ -986,7 +986,7 @@ export default function BiohazardTheme({
                         {/* First in the row on purpose. The other three report STATE — synced,
                             theme, notifications. This one is the only one that opens content, and
                             a thing you read does not belong wedged between two indicators. */}
-                        <PonderBookButton />
+                        <PonderBookButton activeTab={activeTab} />
 
                         {syncIndicator}
 

@@ -7,6 +7,7 @@ import { notify } from './components/Toast.jsx';
 import { canPickFromGallery } from './config/permissions';
 /* one definition of "what is a branch", shared with the dashboard's supply maths */
 import { NON_BRANCH } from './utils/supply.js';
+import PonderButton from './ponder/PonderButton.jsx';
 
 /* ═══════════════════════════════════════════════════════════════════════════
    SURAT JALAN — one document, two directions.
@@ -1438,6 +1439,27 @@ const RestockVaultView = ({ inventory = [], procurements = [], motorists = [], d
 
                     <div className="flex flex-col min-h-0">
                         <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-3.5">
+
+                            {/* 🔴 THE PANEL FINALLY HAS A NAME. His note, 2026-08-27: *"we need panel
+                                name for every section, we dont have this panel name for sc1, so name
+                                it"* — and he was right, this form had a tab above it and nothing
+                                naming the form itself. "Goods Received" is the standard warehouse
+                                term for recording an arrival, it is two plain words, and it cannot
+                                be read as Kirim (going out) or Request (asking for).
+                                The tutorial chip sits on the intake side only, because that is the
+                                side with a scene written for it. */}
+                            <div className="flex items-end justify-between gap-3 pb-1">
+                                <div className="min-w-0">
+                                    <h3 className="font-display text-lg sm:text-xl font-black text-ink uppercase tracking-[0.14em] leading-none">
+                                        {isOut ? 'Shipment Out' : 'Goods Received'}
+                                    </h3>
+                                    <div className="h-[3px] w-9 bg-orange rounded-full mt-2"/>
+                                    <p className="font-mono text-[10px] text-ink-muted tracking-widest mt-2">
+                                        {isOut ? 'keluar ke cabang · in Bks' : 'masuk dari pabrik · in Bks'}
+                                    </p>
+                                </div>
+                                {!isOut && <PonderButton sceneId="goods-received" />}
+                            </div>
 
                             {/* Target: kept as data, demoted from a whole tab to one strip. */}
                             {!isOut && (

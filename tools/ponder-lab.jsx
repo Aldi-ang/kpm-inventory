@@ -65,7 +65,7 @@ function BookLab() {
     <div className="p-6 flex justify-end"
          style={{ backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)',
                   background: 'rgba(255,255,255,.02)', overflow: 'hidden' }}>
-      <PonderBookButton />
+      <PonderBookButton activeTab={q.get('tab') || 'restock_vault'} />
     </div>
   );
 }

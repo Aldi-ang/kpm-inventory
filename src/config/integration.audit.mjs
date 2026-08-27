@@ -4105,7 +4105,15 @@ const resolvesKey = (k) => {
   const i = k.indexOf(':');
   if (i < 0) return false;
   const prefix = k.slice(0, i), tail = k.slice(i + 1);
-  return stageSrc.includes('data-ponder={`' + prefix + ':${') && stageAndPanel.includes(tail);
+  if (stageSrc.includes('data-ponder={`' + prefix + ':${') && stageAndPanel.includes(tail)) return true;
+  /* Third form, and it is the weakest one allowed on purpose. A stage may hand its keys to a small
+     local component — `<Field k="f:tujuan" …>` renders `data-ponder={k}` — so the key is a literal
+     in the file but never as the attribute. Requiring the attribute spelling would ban a component
+     from ever wrapping a field, which is worse design than this check is worth. So: the exact key
+     must appear quoted in a stage that DOES emit data-ponder somewhere. Deleting the key still
+     fails; renaming it still fails. Only the spelling of the binding is forgiven. */
+  return /data-ponder=\{/.test(stageSrc) &&
+         (stageSrc.includes(`"${k}"`) || stageSrc.includes(`'${k}'`));
 };
 const missingKeys = focusKeys.filter(k => !resolvesKey(k));
 check(G56, 'every focus key resolves to something the stage really wears',
@@ -4200,7 +4208,7 @@ check(G56, 'the stock panel is titled in English and carries its tutorial chip',
    shares, so mounting it anywhere else would be a per-screen decision to forget on the next
    screen. */
 check(G56, 'the book lives in the shared top bar, so every screen has it',
-  /<PonderBookButton \/>/.test(shellSrc) && /from '\.\.\/ponder\/PonderBook\.jsx'/.test(shellSrc),
+  /<PonderBookButton activeTab=\{activeTab\} \/>/.test(shellSrc) && /from '\.\.\/ponder\/PonderBook\.jsx'/.test(shellSrc),
   'PonderBookButton must be mounted in BiohazardTheme, the shell every screen renders inside. ' +
   'Mounted per-view it becomes a thing to remember on every new view, and it will be forgotten');
 
@@ -4240,13 +4248,19 @@ check(G56, 'the subject is outlined, and the outline is an edge rather than a fi
 /* *"book SFX also needed here"*. Routed through useSound rather than raw Audio, because that hook
    already pools elements, waits for the browser unlock gesture, and — the part that matters here —
    is silent in Lite Mode. */
-check(G56, 'the book has sounds, and they go through the hook that respects Lite Mode',
-  /from '\.\.\/hooks\/useSound\.js'/.test(sfxSrc) && /playSound\(/.test(sfxSrc) &&
-  !/new Audio/.test(sfxSrc + bookSrc) &&
+/* His correction, 2026-08-27: *"u re crazy using sales SFX for the book, use paper or book SFX la
+   bro"*. The first version re-pointed the till and the stepper at a page turn, and those sounds
+   MEAN something else in this app — an ear taught that a page turn is a transaction is an ear
+   taught wrong. Synthesised from filtered noise instead: no files to ship in an offline PWA, and
+   no borrowed meaning. */
+check(G56, 'the book sounds are paper, synthesised, and silent in Lite Mode',
+  /createBiquadFilter\(\)/.test(sfxSrc) && /bandpass/.test(sfxSrc) &&
+  /liteOn\(\)/.test(sfxSrc) && !/useSound/.test(sfxSrc) && !/new Audio/.test(sfxSrc + bookSrc) &&
   /bookOpen\(\)/.test(bookSrc) && /bookPage\(\)/.test(bookSrc) &&
   /bookPick\(\)/.test(bookSrc) && /bookClose\(\)/.test(bookSrc),
-  'open, page-turn, pick and close must all fire, and all through playSound. A raw Audio element ' +
-  'would keep making noise in Lite Mode, which is the performance switch');
+  'open, page-turn, pick and close must all fire, all built from filtered noise rather than from ' +
+  'the app\'s transaction sounds, and the Lite Mode check must be read at play time — a captured ' +
+  'value goes stale the moment the toggle is flipped');
 
 /* *"for lite mode then snap the book and close it right back thats fine"*. Lite Mode already
    flattens the transition; what it must NOT do is still wait 260ms for an animation that is not
@@ -4285,9 +4299,33 @@ check(G56, 'the book flies from the chip that opened it, and back into it',
    the printed nota already carries — and cream is on the palette, so no law is bent. */
 check(G56, 'the book is paper in both themes, and big enough to be one',
   /const PAPER = '#EFE8D8'/.test(bookSrc) && /const LEATHER =/.test(bookSrc) &&
-  /w-\[min\(1240px,96vw\)\] h-\[min\(780px,88vh\)\]/.test(bookSrc),
-  'the pages must keep their own cream regardless of theme and the spread must take most of the ' +
-  'screen. Built from --panel it went near-black in dark mode and read as a small black card');
+  /w-\[min\(1040px,95vw\)\] h-\[min\(760px,90vh\)\]/.test(bookSrc),
+  'the pages must keep their own cream regardless of theme, and the spread must be BOOK-shaped. ' +
+  'At 1240x780 it was 1,59:1 and he said it *"doesnt look like a regular book"*; two portrait ' +
+  'pages land near 1,37:1, which is what these numbers are');
+
+/* 🔴 THE BOOK IS THE SIDEBAR. His instruction, 2026-08-27: *"all the section in the book should
+   follow the sidebar and everything on the sidebar should be on the book"*, after the first
+   version invented seven categories — Gudang, Kasir, Setoran — none of which is a thing you can
+   click in this app. Both directions are asserted: a nav item with no chapter is a screen with no
+   way to learn it, and a chapter with no nav item is a screen that does not exist. */
+const NAV_IDS = [...shellSrc.matchAll(/\{ id: '([a-z_]+)', label: '[^']+', feature:/g)].map(m => m[1]);
+const BOOK_IDS = SECTIONS.map(s => s.id);
+const navOnly = NAV_IDS.filter(id => !BOOK_IDS.includes(id));
+const bookOnly = BOOK_IDS.filter(id => !NAV_IDS.includes(id));
+check(G56, 'the book chapters are exactly the sidebar sections',
+  NAV_IDS.length >= 15 && navOnly.length === 0 && bookOnly.length === 0,
+  'in the sidebar but not the book: ' + (navOnly.join(', ') || 'none') +
+  ' · in the book but not the sidebar: ' + (bookOnly.join(', ') || 'none') +
+  '. Section ids are activeTab values, which is also what lets the book open on the screen you ' +
+  'are standing in');
+
+/* *"i want the book when press is auto redirect to the features that we use right now"*. */
+check(G56, 'the book opens on the section you are standing in',
+  /initialSection/.test(bookSrc) &&
+  /SECTIONS\.some\(s => s\.id === initialSection\) \? initialSection : SECTIONS\[0\]\.id/.test(bookSrc),
+  'the active tab must seed the open chapter, and fall back to the first chapter rather than ' +
+  'crashing when a tab has no chapter yet');
 
 check(G56, 'the scene carries both stock formulas, ready for check 631 to move onto it',
   scenes.some(s => s.steps.some(st => st.text.includes('Sold (7d) ÷ 7 × 30'))) &&

@@ -24,14 +24,19 @@
    immediately instead of waiting for something that is not playing. */
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { X, ChevronLeft, ChevronRight, Globe, Package, FileText, Truck, User, MapPin, Clock, Eye, Check, Lock } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, Lock,
+         LayoutGrid, Map, Route, Truck, Package, Boxes, PackagePlus, Store, Receipt,
+         Wallet, ClipboardList, Users, Gift, BarChart3, ScrollText, Settings, User } from 'lucide-react';
 import { SECTIONS, getScene } from './registry.js';
 import PonderOverlay from './PonderOverlay.jsx';
 import { bookOpen, bookPage, bookPick, bookClose } from './sfx.js';
 
-const ICONS = { Globe, Package, FileText, Truck, User, MapPin, Clock, Eye, Check };
+/* The SIDEBAR's own icons, so a chapter looks like the thing you click to reach it. Any name the
+   nav uses can be added here; a name that is not here falls back rather than crashing. */
+const ICONS = { LayoutGrid, Map, Route, Truck, Package, Boxes, PackagePlus, Store, Receipt,
+                Wallet, ClipboardList, Users, Gift, BarChart3, ScrollText, Settings, User };
 const Icon = ({ name, ...rest }) => {
-  const C = ICONS[name] || Globe;
+  const C = ICONS[name] || Package;
   return <C {...rest} />;
 };
 
@@ -77,7 +82,7 @@ function BookGlyph() {
 /* ── The top-bar entry ────────────────────────────────────────────────────────────────────────
    Never opens itself. His rule, 2026-08-27: *"nope dont push newcomer towards the scene let them
    figure out by pressing the tutorial button"*. Nothing here remembers who has watched what. */
-export default function PonderBookButton() {
+export default function PonderBookButton({ activeTab }) {
   const [libOpen, setLibOpen] = useState(false);
   const [sceneId, setSceneId] = useState(null);
   const chipRef = useRef(null);
@@ -104,6 +109,7 @@ export default function PonderBookButton() {
       {libOpen && (
         <Library
           anchorRef={chipRef}
+          initialSection={activeTab}
           onClose={() => setLibOpen(false)}
           onPick={(id) => { bookPick(); setLibOpen(false); setSceneId(id); }}
         />
@@ -120,8 +126,13 @@ export default function PonderBookButton() {
 }
 
 /* ── The spread ───────────────────────────────────────────────────────────────────────────────── */
-function Library({ anchorRef, onClose, onPick }) {
-  const [secId, setSecId] = useState(SECTIONS[0].id);
+/* OPENS ON THE SECTION YOU ARE STANDING IN. His ask, 2026-08-27: *"i want the book when press is
+   auto redirect to the features that we use right now for example im on the restock vault then it
+   should redirect directly to the restock vault section of the book"*. This is the whole reason
+   every section id in sections.js is an `activeTab` value and not a category someone invented. */
+function Library({ anchorRef, initialSection, onClose, onPick }) {
+  const [secId, setSecId] = useState(
+    () => (SECTIONS.some(s => s.id === initialSection) ? initialSection : SECTIONS[0].id));
   const [page, setPage] = useState(0);
   const bookRef = useRef(null);
   const scrimRef = useRef(null);
@@ -218,17 +229,17 @@ function Library({ anchorRef, onClose, onPick }) {
           does not take the screen is a dialog wearing a book costume. */}
       <div ref={bookRef} onMouseDown={(e) => e.stopPropagation()}
            style={{ background: LEATHER, transformOrigin: 'center center' }}
-           className="relative w-[min(1240px,96vw)] h-[min(780px,88vh)] flex rounded-[14px] p-[10px]
+           className="relative w-[min(1040px,95vw)] h-[min(760px,90vh)] flex rounded-[14px] p-[10px]
                       border border-accent-edge
                       shadow-[0_2px_2px_rgba(0,0,0,0.35),0_40px_90px_-30px_rgba(0,0,0,0.95)]">
 
         {/* Tabs, cut into the cover's left edge like the reference book */}
-        <div className="hidden lg:flex flex-col gap-1.5 w-[126px] shrink-0 pt-10 pr-[6px]">
+        <div className="hidden lg:flex flex-col gap-1 w-[124px] shrink-0 pt-8 pb-6 pr-[6px] overflow-y-auto">
           {SECTIONS.map(s => (
             <button key={s.id} type="button" onClick={() => pickSection(s.id)}
               style={tab(s)}
-              className="flex items-center gap-2 h-9 pl-3 pr-2 rounded-l-md border border-r-0
-                         font-mono text-[10px] uppercase tracking-widest text-left
+              className="flex items-center gap-2 h-8 shrink-0 pl-2.5 pr-2 rounded-l-md border border-r-0
+                         font-mono text-[9.5px] uppercase tracking-widest text-left
                          transition-transform duration-200 ease-out hover:translate-x-[4px]">
               <Icon name={s.icon} size={12} className="shrink-0" />
               <span className="truncate">{s.short || s.label}</span>
