@@ -77,7 +77,10 @@ export default {
         'ponder-in':    'ponderIn 260ms cubic-bezier(0.23,1,0.32,1) both',
         'ponder-ring':  'ponderRing 420ms cubic-bezier(0.23,1,0.32,1) both',
         'ponder-open':  'ponderOpen 460ms cubic-bezier(0.23,1,0.32,1) both',
-        'ponder-leaf':  'ponderLeaf 520ms cubic-bezier(0.32,0.72,0,1) both',
+        /* A new sheet arriving. NOT a flip — a flip is what the cover does; a page you turn TO
+           slides into place. The two halves come out of the fold in opposite directions. */
+        'ponder-slide':   'ponderSlide 320ms cubic-bezier(0.23,1,0.32,1) both',
+        'ponder-slide-l': 'ponderSlideL 320ms cubic-bezier(0.23,1,0.32,1) both',
       },
       keyframes: {
         fadeIn: {
@@ -101,10 +104,14 @@ export default {
           '0%':   { opacity: '0', transform: 'translateY(10px) scale(0.94)' },
           '100%': { opacity: '1', transform: 'none' },
         },
-        /* a page turning: the leaf lifts off the spine and lays back down */
-        ponderLeaf: {
-          '0%':   { opacity: '0', transform: 'perspective(1400px) rotateY(-22deg)' },
-          '100%': { opacity: '1', transform: 'perspective(1400px) rotateY(0deg)' },
+        /* a sheet settling into place, out of the fold */
+        ponderSlide: {
+          '0%':   { opacity: '0', transform: 'translateX(-16px)' },
+          '100%': { opacity: '1', transform: 'none' },
+        },
+        ponderSlideL: {
+          '0%':   { opacity: '0', transform: 'translateX(16px)' },
+          '100%': { opacity: '1', transform: 'none' },
         },
       }
     },

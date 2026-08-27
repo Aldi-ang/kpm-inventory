@@ -78,7 +78,31 @@ createRoot(document.getElementById('root')).render(q.has('book') ? <BookLab /> :
    font far wider than the "Arial Narrow" a real Windows Chrome picks. The 375px shot looked
    like the panel overflowed the phone; the same page measured 375px wide with no overflow in a
    real browser. A frame proves an appearance only when the harness renders what the app does. */
-if (q.has('probe')) {
+/* ?book&probe answers the one question a screenshot cannot: does pressing a section RESTART the
+   book's own animation? A replayed animation reports a currentTime back near zero. This exists
+   because "the animation resets every time i press the section" was a real bug that every check
+   and every frame said was fine.
+
+   ⚠️ HEADLESS VIRTUAL TIME DOES NOT DRIVE ANIMATION CLOCKS RELIABLY - a finished animation read
+   back currentTime 0 here, which is not what a real browser reports. Run this one in a real
+   browser; the headless answer cannot be trusted for timing. */
+if (q.has('book') && q.has('probe')) {
+  setTimeout(() => {
+    const dlg = document.querySelector('[role=dialog]');
+    const book = dlg && dlg.children[1];
+    const before = book ? book.getAnimations().map(a => Math.round(a.currentTime || 0)) : null;
+    const tab = dlg && [...dlg.querySelectorAll('button')].find(b => /sales/i.test(b.textContent));
+    if (tab) tab.click();
+    setTimeout(() => {
+      const after = book ? book.getAnimations().map(a => Math.round(a.currentTime || 0)) : null;
+      const el = document.createElement('pre');
+      el.id = 'probe';
+      el.textContent = JSON.stringify({ clicked: tab ? tab.textContent.trim() : 'none', before, after,
+        replayed: !!(before && after && after.some(t => t < 50)) });
+      document.body.appendChild(el);
+    }, 120);
+  }, 1600);
+} else if (q.has('probe')) {
   setTimeout(() => {
     const panel = document.querySelector('[role=dialog] > div');
     const el = document.createElement('pre');

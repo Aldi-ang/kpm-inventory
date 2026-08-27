@@ -48,6 +48,37 @@ const reduced = () => typeof window !== 'undefined' && typeof window.matchMedia 
 const PER_PAGE = 4;
 const EASE = 'cubic-bezier(0.23, 1, 0.32, 1)';
 
+/* 🔴 THESE LIVE AT MODULE SCOPE, AND THAT IS A BUG FIX, NOT TIDYING.
+
+   `T` was an object literal declared inside the component, so React built a NEW one on every
+   render. It sat in the open animation's dependency array, that array therefore changed on every
+   render, and the effect re-ran — replaying the entire fly-in-and-open sequence every time anyone
+   pressed a section. Aldi: *"animation is reset everytime i press the section"*.
+
+   Nothing here depends on props or state, so nothing here belongs inside the component. Strings
+   compare by value and were harmless; the object was not. Anything that ends up in a dependency
+   array has to be stable, and the cheapest way to be stable is to not be recreated. */
+const SHUT = 'rotateY(-180deg)';
+const OPEN = 'rotateY(0deg)';
+const FLAT = 'translate(0px, 0px) scale(1)';
+/* The cover's own width. Shut, the book is the left half plus the tab column; open, the whole
+   spread. Expressed as a clip so nothing reflows. */
+const SLAB_OPEN = 'inset(0 0 0 0 round 14px)';
+const SLAB_SHUT = 'inset(0 calc(50% - 62px) 0 0 round 14px)';
+/* Sequenced by DELAY, not by offsets inside a shared clock — that is what makes one beat finish
+   before the next begins. The totals sit just under his sound files, 1,30s and 1,16s. */
+const T = {
+  flyIn: 460, leafOpen: 620, leafOpenDelay: 380,      // 1000ms — lands shut, THEN opens
+  leafShut: 520, flyOut: 480, flyOutDelay: 500,       //  980ms — shuts, THEN leaves
+};
+/* Paper has mass: a hinge eases in AND out, where something flying to a stop only eases out. */
+const HINGE = 'cubic-bezier(0.62, 0.02, 0.28, 1)';
+const AWAY = 'cubic-bezier(0.55, 0, 0.85, 0.35)';
+/* A ribbon tail: a V cut into the free end, the one shape that says fabric rather than tab. */
+const RIBBON = 'polygon(0 0, 100% 0, 100% 100%, 0 100%, 9px 50%)';
+const shade = (el, frames, duration, delay) => el && el.animate(frames,
+  { duration, delay, easing: 'linear', fill: 'both' });
+
 /* THE BOOK'S OWN PALETTE, and it is theme-exempt on purpose.
 
    [[Aldi's Design Taste]] already records that a screen can opt out of the theme entirely — the
@@ -232,31 +263,6 @@ function Library({ anchorRef, initialSection, onClose, onPick }) {
      started in the same tick with the same duration and complementary offsets, so the book is shut
      before it leaves and open only after it lands. They are not chained — a chain has to resume
      exactly where the last one stopped, and drift there shows as a jump. */
-  const SHUT = 'rotateY(-180deg)';
-  const OPEN = 'rotateY(0deg)';
-  const FLAT = 'translate(0px, 0px) scale(1)';
-
-  /* 🔴 TIMING, SEQUENCED BY DELAY RATHER THAN BY OFFSETS. His note: *"book should close first
-     before comeback to its position"*. The two beats used to share one clock and one duration,
-     with offsets deciding when each took over — so the book was already shrinking while it was
-     still closing, and neither motion read as finished. Separate animations with a real delay is
-     what actually makes one end before the other starts. The totals sit just under his sound
-     files: 1,30s for the open, 1,16s for the close. */
-  const T = {
-    flyIn: 460, leafOpen: 620, leafOpenDelay: 380,      // 1000ms — lands shut, THEN opens
-    leafShut: 520, flyOut: 480, flyOutDelay: 500,       //  980ms — shuts, THEN leaves
-  };
-  /* Paper has mass. A strong ease-out belongs to something that flies to a stop; a hinge wants an
-     ease-in-out, because it has to overcome its own weight first and settle at the end. */
-  const HINGE = 'cubic-bezier(0.62, 0.02, 0.28, 1)';
-  const AWAY = 'cubic-bezier(0.55, 0, 0.85, 0.35)';
-  const shade = (el, frames, duration, delay) => el && el.animate(frames,
-    { duration, delay, easing: 'linear', fill: 'both' });
-  /* The cover's own width. Shut, the book occupies the left half plus the tab column; open, it is
-     the whole spread. Expressed as a clip so nothing reflows. */
-  const SLAB_OPEN = 'inset(0 0 0 0 round 14px)';
-  const SLAB_SHUT = 'inset(0 calc(50% - 62px) 0 0 round 14px)';
-
   useLayoutEffect(() => {
     if (still) return;
     const el = bookRef.current, leaf = leafRef.current;
@@ -284,7 +290,7 @@ function Library({ anchorRef, initialSection, onClose, onPick }) {
     slabRef.current?.animate([{ clipPath: SLAB_SHUT }, { clipPath: SLAB_OPEN }],
       { duration: T.leafOpen, delay: T.leafOpenDelay, easing: HINGE, fill: 'both' });
     scrimRef.current?.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 300, easing: 'ease-out', fill: 'both' });
-  }, [still, flightFrom, SHUT, OPEN, FLAT, T, HINGE, SLAB_OPEN, SLAB_SHUT]);
+  }, [still, flightFrom]);
 
   const shut = useCallback(() => {
     if (closingRef.current) return;
@@ -312,7 +318,7 @@ function Library({ anchorRef, initialSection, onClose, onPick }) {
     );
     anim.onfinish = onClose;
     anim.oncancel = onClose;
-  }, [onClose, flightFrom, FLAT, SHUT, OPEN, T, HINGE, AWAY, SLAB_OPEN, SLAB_SHUT]);
+  }, [onClose, flightFrom]);
 
   useEffect(() => {
     const onKey = (e) => {
@@ -330,9 +336,6 @@ function Library({ anchorRef, initialSection, onClose, onPick }) {
 
   if (typeof document === 'undefined') return null;
 
-  /* A ribbon tail: the free end carries a V cut into it, which is the one shape that says fabric
-     rather than tab. The notch is on the LEFT because that is the end hanging out of the book. */
-  const RIBBON = 'polygon(0 0, 100% 0, 100% 100%, 0 100%, 9px 50%)';
   const tab = (s) => s.id === secId
     ? { background: 'linear-gradient(90deg, #FF8C1A 0%, #D98A2E 55%, #B9772A 100%)',
         color: '#241D16', transform: 'translateX(8px)' }
@@ -410,13 +413,15 @@ function Library({ anchorRef, initialSection, onClose, onPick }) {
             <div className="absolute inset-0 pointer-events-none"
                  style={{ background: 'linear-gradient(90deg, rgba(0,0,0,.12) 0%, rgba(0,0,0,0) 15%, rgba(0,0,0,0) 82%, rgba(0,0,0,.20) 100%)' }} />
 
-            {/* LEFT PAGE — the chapter opening itself */}
-            {/* 🔴 NO `key` AND NO ENTRY ANIMATION ON A SECTION CHANGE. Both pages used to remount and
-                replay a rotateY, which is what he saw: *"there is some flicker when i press section
-                inside the book, very visible when the section is scrolled down"*. A remount also
-                throws away the right page's scroll position, so a click low in the tab list blanked
-                and jumped at the same time. Changing text needs no animation to be understood. */}
-            <div className="relative h-full flex flex-col justify-between p-9">
+            {/* LEFT PAGE — the chapter opening itself.
+                🔴 KEYED ON THE SECTION AGAIN, but the motion is a SHEET SLIDING, not a 3D flip.
+                His ask: *"replace that into book page paper slide instead"*. A flip is what the
+                COVER does; a page you turn TO arrives by sliding into place. The two halves slide
+                out of the fold in opposite directions, which is how paper settles when a spread
+                opens.
+                And the flicker this used to cause was never the keyframe — it was the whole book
+                replaying on every render, fixed at module scope above. */}
+            <div key={`l-${section.id}`} className="relative h-full flex flex-col justify-between p-9 animate-ponder-slide-l">
               <div>
                 <span className="h-14 w-14 rounded-xl flex items-center justify-center border"
                       style={{ background: PAPER_2, borderColor: 'rgba(0,0,0,.16)' }}>
@@ -471,9 +476,8 @@ function Library({ anchorRef, initialSection, onClose, onPick }) {
               <span ref={shadeFrontRef} className="absolute inset-0 pointer-events-none z-20"
                     style={{ background: 'linear-gradient(90deg, #000 0%, rgba(0,0,0,.55) 60%, rgba(0,0,0,.35) 100%)', opacity: 0 }} />
 
-            {/* Keyed on the PAGE only. Turning a page is a motion someone performed and should see;
-                switching chapters is a jump, and animating a jump is what flickered. */}
-            <div key={`r-${page}`} className="relative h-full flex flex-col min-h-0 p-6 sm:p-9 animate-ponder-leaf">
+            {/* Keyed on the section AND the page — both are a new sheet arriving. */}
+            <div key={`r-${section.id}-${page}`} className="relative h-full flex flex-col min-h-0 p-6 sm:p-9 animate-ponder-slide">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <p className="font-mono text-[10px] uppercase tracking-widest" style={{ color: BOOK_DIM }}>Panduan</p>
