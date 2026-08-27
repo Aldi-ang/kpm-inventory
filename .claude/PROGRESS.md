@@ -1,6 +1,35 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-26 22:05 WIB (🟠 KPM app session)** · ✅ **RESTOCK VAULT DONE + DRIVEN LIVE** — `999b5a7`, **616/616** · 📋 **Resume brief: `.claude/NEXT-SESSION.md` (`775c791`)** · 🔨 NEXT: Minta tab → Tujuan from roster → Global Logistics readout · branch `phase0-solid-ground`
+**Updated: 2026-08-27 07:40 WIB (🟠 KPM app session)** · ✅ **ALL THREE QUEUED BUILDS DONE** — `76de71a`, **627/627** · 🔴 **NOT yet driven in the browser — vault gate** · branch `phase0-solid-ground`
+
+## 🟢 2026-08-27 07:40 — REQUEST TAB + ROSTER TUJUAN + SEBARAN STOK. `76de71a`. **627/627.**
+
+**NOW:** all three builds from `.claude/NEXT-SESSION.md` are done and committed. **The only thing
+left is HIS eyes on it** — the vault gate re-locks on a new tab and cannot be opened from here, so
+nothing below has been seen rendering.
+
+**Read `git show 76de71a`** for the full story. It carries every decision and every trap. Do not
+re-derive them from the diff.
+
+**The one-line version of each**
+- **Request tab** — HQ's fulfilment queue MOVED off the branch screen onto the desk as its 4th tab.
+  A move, not a copy: the rows are `bookRows` filtered, only the shipping modal travelled.
+  BranchWarehouseManager lost 332 lines.
+- **Tujuan** — now the motorists roster UNIONED with branches seen on past requests.
+- **Sebaran Stok** — one row per warehouse: di gudang · di jalan · di tangan agen · terjual ·
+  sisa hari. Runs the dashboard's own `supplyByProduct`, so the two screens cannot disagree.
+
+**⚠️ TERJUAL IS 7 DAYS**, because the transactions listener is capped at 7 days. Check 55 ties the
+label to the listener so widening the cap fails loudly.
+
+**Two audit counts moved on purpose** (delete-marks 13→12, camera rule 2→3) and **one check was
+fixed**: the G53 palette check had no `noCmt`, so it failed against the comment explaining the fix.
+Group 48 already paid for that trap; G53 was written without the lesson.
+
+**What he still has to test** — the list is in the session reply, and none of it is verified:
+the 4th tab appears and lists open requests; Siapkan opens the shipping modal and ships; Tujuan on
+Kirim lists every roster team; Sebaran Stok numbers look right against what he knows.
+
 
 ## 🟢 2026-08-26 22:05 — RESUME BRIEF WRITTEN. `775c791`. Session ready to clear.
 
