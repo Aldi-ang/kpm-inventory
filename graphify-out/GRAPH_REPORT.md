@@ -1,16 +1,16 @@
-# Graph Report - kpm-inventory-main  (2026-08-26)
+# Graph Report - kpm-inventory-main  (2026-08-27)
 
 ## Corpus Check
-- 114 files · ~695,123 words
+- 116 files · ~692,570 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 1007 nodes · 1823 edges · 57 communities (52 shown, 5 thin omitted)
-- Extraction: 99% EXTRACTED · 1% INFERRED · 0% AMBIGUOUS · INFERRED: 25 edges (avg confidence: 0.78)
+- 1008 nodes · 1856 edges · 57 communities (53 shown, 4 thin omitted)
+- Extraction: 98% EXTRACTED · 2% INFERRED · 0% AMBIGUOUS · INFERRED: 29 edges (avg confidence: 0.78)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `1c884389`
+- Built from commit: `645ff0c4`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -60,12 +60,12 @@
 - dev-proxy.mjs
 - dayStats.selfcheck.mjs
 - nextStop.js
-- nextStop.js
-- StubAudio
 - MerchantSalesView.jsx
 - VaultGate.jsx
-- context-watch.mjs
+- getLocalDayKey
 - CapybaraMascot.jsx
+- undef.check.mjs
+- context-watch.mjs
 - firebase.js
 - notify
 - MapMissionControl.jsx
@@ -74,30 +74,30 @@
 1. `notify()` - 43 edges
 2. `KPMInventoryApp()` - 39 edges
 3. `confirmAction()` - 37 edges
-4. `formatRupiah()` - 29 edges
-5. `convertToBks()` - 29 edges
-6. `PROGRESS — read this, search for nothing` - 25 edges
-7. `MerchantSalesView()` - 24 edges
-8. `getLocalDayKey()` - 24 edges
-9. `StockOpnameView()` - 22 edges
-10. `storeKey()` - 22 edges
+4. `convertToBks()` - 32 edges
+5. `formatRupiah()` - 29 edges
+6. `MerchantSalesView()` - 25 edges
+7. `getLocalDayKey()` - 24 edges
+8. `StockOpnameView()` - 22 edges
+9. `storeKey()` - 22 edges
+10. `AgentProfileView()` - 19 edges
 
 ## Surprising Connections (you probably didn't know these)
-- `JourneyView()` --indirect_call--> `k()`  [INFERRED]
-  src/JourneyView.jsx → .claude/context-watch.mjs
+- `RestockVaultView()` --indirect_call--> `k()`  [INFERRED]
+  src/RestockVaultView.jsx → .claude/context-watch.mjs
 - `AuthoritySelect()` --indirect_call--> `k()`  [INFERRED]
   src/components/AuthoritySelect.jsx → .claude/context-watch.mjs
+- `JourneyView()` --indirect_call--> `k()`  [INFERRED]
+  src/JourneyView.jsx → .claude/context-watch.mjs
 - `KPMInventoryApp()` --references--> `react`  [EXTRACTED]
   src/App.jsx → package.json
 - `MapRecenter()` --references--> `react`  [EXTRACTED]
   src/JourneyView.jsx → package.json
-- `MerchantSalesView()` --references--> `react`  [EXTRACTED]
-  src/MerchantSalesView.jsx → package.json
 
 ## Import Cycles
 - None detected.
 
-## Communities (57 total, 5 thin omitted)
+## Communities (57 total, 4 thin omitted)
 
 ### Community 0 - "App.jsx"
 Cohesion: 0.08
@@ -109,7 +109,7 @@ Nodes (3): F — Phone, G — Nothing old was lost, KPM Sales Terminal — test 
 
 ### Community 2 - "dependencies"
 Cohesion: 0.06
-Nodes (33): @emailjs/browser, firebase, idb, leaflet, lucide-react, dependencies, @emailjs/browser, firebase (+25 more)
+Nodes (34): @emailjs/browser, firebase, idb, leaflet, lucide-react, dependencies, @emailjs/browser, firebase (+26 more)
 
 ### Community 3 - "CustomerManager.jsx"
 Cohesion: 0.28
@@ -121,11 +121,11 @@ Nodes (31): autoprefixer, cross-env, eslint, @eslint/js, eslint-plugin-react-hoo
 
 ### Community 5 - "mixedUnits.selfcheck.mjs"
 Cohesion: 0.11
-Nodes (16): blank, done, eightDaysAgo, far, free, HERE, minefar, near (+8 more)
+Nodes (17): blank, done, eightDaysAgo, far, free, HERE, minefar, near (+9 more)
 
 ### Community 6 - "savePhotoAndGetReference"
-Cohesion: 0.13
-Nodes (23): ConfirmHost(), ToastHost(), BOOST, boostElement(), buildGainStage(), initSounds(), __isUnlocked(), liteModeOn() (+15 more)
+Cohesion: 0.16
+Nodes (17): ConfirmHost(), BOOST, boostElement(), buildGainStage(), initSounds(), liteModeOn(), makePool(), MUMBLES (+9 more)
 
 ### Community 7 - "getCurrentDate"
 Cohesion: 0.17
@@ -173,7 +173,7 @@ Nodes (9): app, convertToBks(), dash, djisam, isLowStock(), MIN_STOCK_UNITS, min
 
 ### Community 24 - "hasClearance"
 Cohesion: 0.01
-Nodes (121): allJs, allowedHex, app, appCode, appCrossed, appFiles, appSrc, archEnd (+113 more)
+Nodes (132): allJs, allowedHex, app, appCode, appCrossed, appFiles, appSrc, archEnd (+124 more)
 
 ### Community 25 - "Sales Terminal — test list"
 Cohesion: 0.13
@@ -201,7 +201,7 @@ Nodes (14): BiohazardTheme(), BULAN, REEL, NotificationBell(), easeInOut(), ease
 
 ### Community 31 - "txSize.selfcheck.mjs"
 Cohesion: 0.12
-Nodes (30): AgentProfileView(), BADGE_CATEGORIES, createImage(), DynamicIconMap, getCroppedImg(), AchievementTester(), BASE_STATS, buildFakeCareer() (+22 more)
+Nodes (32): AgentProfileView(), BADGE_CATEGORIES, createImage(), DynamicIconMap, getCroppedImg(), AchievementTester(), BASE_STATS, buildFakeCareer() (+24 more)
 
 ### Community 32 - "dayStats.selfcheck.mjs"
 Cohesion: 0.08
@@ -216,20 +216,20 @@ Cohesion: 0.29
 Nodes (5): b64(), candidates, connId, mint(), saved
 
 ### Community 35 - "useTransactionEngine.js"
-Cohesion: 0.30
-Nodes (12): StoreBottomSheet(), MerchantSalesView(), readDraft(), briefSeconds(), customerBrief(), reorderFromLast(), agoLabel(), dayStats() (+4 more)
+Cohesion: 0.28
+Nodes (13): MerchantSalesView(), readDraft(), reorderFromLast(), agoLabel(), dayStats(), paymentLabel(), storeKey(), directionsUrl() (+5 more)
 
 ### Community 36 - "KPMInventoryApp"
 Cohesion: 0.31
 Nodes (8): getDocOfflineSafe(), KPMInventoryApp(), computeDayXP(), canUsePovSwitch(), clearGrace(), graceIsValid(), readGrace(), touchGrace()
 
 ### Community 37 - "BranchWarehouseManager.jsx"
-Cohesion: 0.30
-Nodes (13): arrivalsOnHand(), BranchWarehouseManager(), inTransitQty(), middle(), oldestStockDays(), productArrivals(), receiptBlocked(), receiptDisputed() (+5 more)
+Cohesion: 0.22
+Nodes (6): __isUnlocked(), __reset(), ctx(), makeDoc(), played, StubAudio
 
 ### Community 38 - "customerBrief.selfcheck.mjs"
-Cohesion: 0.17
-Nodes (9): b, guarded, inventory, messy, ok, rows, sameDay, sd (+1 more)
+Cohesion: 0.16
+Nodes (11): b, guarded, inventory, messy, ok, rows, sameDay, sd (+3 more)
 
 ### Community 39 - "vaultGrace.selfcheck.mjs"
 Cohesion: 0.33
@@ -240,8 +240,8 @@ Cohesion: 0.06
 Nodes (29): app, appFiles, boundary, branch, brief, dashPanel, dashView, daystats (+21 more)
 
 ### Community 41 - "✅ THE LIGHT DUKE'S LEDGER IS BUILT — 524/524, contrast self-check passes"
-Cohesion: 0.05
-Nodes (39): 🟢 13:51 WIB (Lancelot session) — no file changes this turn; those `src/**` edits are the app's, 🔴 2026-08-21 17:12 — THE WHOLE STOCK OPNAME SCREEN WAS CRASHING, AND EVERY CHECK WAS GREEN, 🔧 2026-08-23 12:5x — TOOLING TRACK (no app code touched). Graphify hook now ANSWERS, not nags., 🟠 2026-08-23 — THE COUNT MOVED TO THE DOOR, AND THE ROADMAP GOT RANKED, 🟠 2026-08-24 09:26 — THE POV SWITCH RAN, FOUND TWO REAL HOLES, AND BOTH ARE SHUT AND SEEN., 🟠 2026-08-24 10:05 — G6 WAS ALREADY BUILT. G3 IS NOT, SO G3 GOT BUILT. 599/599, 762/762., 🟠 2026-08-24 10:36 — THE RAIL HAS A MATERIAL NOW, AND IT IS AMBER. 599/599, 762/762., 🟠 2026-08-24 11:0x — THE AMBER PLATE SWAP IS IMPOSSIBLE UNDER THE CURRENT CONTRAST RULE (+31 more)
+Cohesion: 0.29
+Nodes (6): 🟢 2026-08-26 21:03 — DOUBLE SCROLLBAR KILLED, SIDEBAR EXPLAINED. `999b5a7`. **616/616.**, 🟢 2026-08-26 22:05 — RESUME BRIEF WRITTEN. `775c791`. Session ready to clear., 🟢 2026-08-27 07:40 — REQUEST TAB + ROSTER TUJUAN + SEBARAN STOK. `76de71a`. **627/627.**, 🟢 2026-08-27 07:55 — DRIVEN LIVE. `20c4a0a`. **628/628.** One bug caught on screen., 🟢 2026-08-27 08:12 — SEBARAN STOK REDESIGNED. `d042520`. **630/630.**, PROGRESS — read this, search for nothing
 
 ### Community 42 - "check"
 Cohesion: 0.67
@@ -260,60 +260,64 @@ Cohesion: 0.20
 Nodes (7): justAfterLocalMidnight, justBeforeLocalMidnight, NOW, rows, s, shuffled, withReturn
 
 ### Community 47 - "nextStop.js"
-Cohesion: 0.20
-Nodes (9): Also open, 📋 PASTE THIS — it is the whole prompt, nothing else needed, 🔨 SIX SCREENS LEFT of his eight, 🎨 THE JOB — the Dashboard LAYOUT, not its colours, The laws this must not break, The one job for next session, ⚠️ THE VIEWING PATH — this is the only one that works, Verify (+1 more)
-
-### Community 48 - "nextStop.js"
-Cohesion: 0.70
-Nodes (4): km(), mine(), nextStop(), visitedWithinCycle()
+Cohesion: 0.29
+Nodes (6): First command, before anything else, NEXT SESSION — the Restock Vault desk, after the 2026-08-27 run, Queued, not started, The only open item, Traps — each of these cost time, most of them THIS session, Where things stand
 
 ### Community 50 - "MerchantSalesView.jsx"
 Cohesion: 0.22
 Nodes (7): css, dark, light, lum(), PAIRS, ratio(), srgb()
 
 ### Community 51 - "VaultGate.jsx"
-Cohesion: 0.08
-Nodes (56): AgentInventoryView(), Money(), AuditVaultView(), confirmAction(), promptAction(), CrownTransferProtocol(), checkPointInGeoJSON(), CustomerDetailView() (+48 more)
+Cohesion: 0.15
+Nodes (21): canPickFromGallery(), num(), REQ_RANK, RestockVaultView(), rp(), DAMAGE_REASONS, damageBlocked(), damageSorted() (+13 more)
 
-### Community 53 - "context-watch.mjs"
-Cohesion: 0.08
-Nodes (40): hook, k(), left, lines, pct, react, react, AuthoritySelect() (+32 more)
+### Community 52 - "getLocalDayKey"
+Cohesion: 0.12
+Nodes (23): AgentInventoryView(), Money(), HistoryReportView(), clampZoom(), ReceiptPreview(), SAMPLE_ROWS, formatAdvancedStock(), ItemInspector() (+15 more)
 
 ### Community 56 - "CapybaraMascot.jsx"
 Cohesion: 0.40
 Nodes (4): CapybaraMascot(), LOCKED_MESSAGES, LOGGED_IN_MESSAGES, NO_MESSAGES
+
+### Community 59 - "undef.check.mjs"
+Cohesion: 0.29
+Nodes (6): BASELINE, eslint, fixed, found, seen, unexpected
+
+### Community 60 - "context-watch.mjs"
+Cohesion: 0.40
+Nodes (4): hook, left, lines, pct
 
 ### Community 61 - "firebase.js"
 Cohesion: 0.22
 Nodes (9): LazyTabBoundary, canReachInternet(), onlineListeners, setSharedOnline(), subscribeOnline(), useOfflineEngine(), applySaleToCanvas(), useTransactionEngine() (+1 more)
 
 ### Community 63 - "notify"
-Cohesion: 0.12
-Nodes (30): DashboardBenchmarks(), groupDigits(), pct(), toBal(), DashboardView(), dominant(), PaceChart(), VB (+22 more)
+Cohesion: 0.08
+Nodes (51): arrivalsOnHand(), BranchWarehouseManager(), inTransitQty(), middle(), oldestStockDays(), productArrivals(), receiptBlocked(), receiptDisputed() (+43 more)
 
 ### Community 64 - "MapMissionControl.jsx"
-Cohesion: 0.10
-Nodes (29): L, store(), AGENT_COLORS, checkPointInGeoJSON(), createJourneyClusterIcon(), getHashColor(), getStoreHierarchy(), getStoreIcon() (+21 more)
+Cohesion: 0.05
+Nodes (81): k(), react, react, AuditVaultView(), AuthoritySelect(), confirmAction(), promptAction(), CrownTransferProtocol() (+73 more)
 
 ## Knowledge Gaps
-- **473 isolated node(s):** `root`, `note`, `hook`, `now`, `hook` (+468 more)
+- **462 isolated node(s):** `root`, `note`, `hook`, `now`, `hook` (+457 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **5 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **4 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `devDependencies` connect `devDependencies` to `dependencies`?**
-  _High betweenness centrality (0.039) - this node is a cross-community bridge._
-- **Why does `dependencies` connect `dependencies` to `context-watch.mjs`?**
-  _High betweenness centrality (0.025) - this node is a cross-community bridge._
-- **Why does `formatRupiah()` connect `VaultGate.jsx` to `App.jsx`, `dayStats.selfcheck.mjs`, `MapMissionControl.jsx`, `useTransactionEngine.js`, `context-watch.mjs`, `notify`?**
-  _High betweenness centrality (0.022) - this node is a cross-community bridge._
+  _High betweenness centrality (0.042) - this node is a cross-community bridge._
+- **Why does `dependencies` connect `dependencies` to `MapMissionControl.jsx`?**
+  _High betweenness centrality (0.026) - this node is a cross-community bridge._
+- **Why does `notify()` connect `MapMissionControl.jsx` to `App.jsx`, `CustomerManager.jsx`, `KPMInventoryApp`, `useTransactionEngine.js`, `VaultGate.jsx`, `getLocalDayKey`, `txSize.selfcheck.mjs`, `firebase.js`, `notify`?**
+  _High betweenness centrality (0.026) - this node is a cross-community bridge._
 - **Are the 2 inferred relationships involving `KPMInventoryApp()` (e.g. with `t()` and `report()`) actually correct?**
   _`KPMInventoryApp()` has 2 INFERRED edges - model-reasoned connections that need verification._
 - **What connects `root`, `note`, `hook` to the rest of the system?**
-  _473 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _462 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `App.jsx` be split into smaller, more focused modules?**
   _Cohesion score 0.07741935483870968 - nodes in this community are weakly interconnected._
 - **Should `dependencies` be split into smaller, more focused modules?**
-  _Cohesion score 0.058823529411764705 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.05714285714285714 - nodes in this community are weakly interconnected._

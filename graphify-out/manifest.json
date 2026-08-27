@@ -5,8 +5,8 @@
     "semantic_hash": ""
   },
   ".claude/settings.json": {
-    "mtime": 1787535204.0480638,
-    "ast_hash": "2f10d53f30f5a3b246072387a16661cc",
+    "mtime": 1787727693.293833,
+    "ast_hash": "bfc05beaf5dc43aa8a2e32a17a6f9607",
     "semantic_hash": ""
   },
   "eslint.config.js": {
@@ -20,8 +20,8 @@
     "semantic_hash": ""
   },
   "package.json": {
-    "mtime": 1786328737.1006064,
-    "ast_hash": "98b8194ea94fb7fc374f4773c8dc3856",
+    "mtime": 1787706314.8181863,
+    "ast_hash": "d2a0a0703dc340e73dcdfa3166aed1c1",
     "semantic_hash": ""
   },
   "postcss.config.js": {
@@ -50,8 +50,8 @@
     "semantic_hash": ""
   },
   "src/App.jsx": {
-    "mtime": 1787664637.0376482,
-    "ast_hash": "adb1bb1205875492846fbacb16da25f5",
+    "mtime": 1787789092.0622149,
+    "ast_hash": "ce474b5b2083af800d961e8d47aa6f30",
     "semantic_hash": ""
   },
   "src/ConsignmentFinanceView.jsx": {
@@ -95,8 +95,8 @@
     "semantic_hash": ""
   },
   "src/RestockVaultView.jsx": {
-    "mtime": 1787455302.829063,
-    "ast_hash": "91b1017a733ae3ed616373aa6383991b",
+    "mtime": 1787791882.2723992,
+    "ast_hash": "cb4f1dd79bae1cd128b07d66992ac45c",
     "semantic_hash": ""
   },
   "src/StockOpnameView.jsx": {
@@ -110,13 +110,13 @@
     "semantic_hash": ""
   },
   "src/components/BiohazardTheme.jsx": {
-    "mtime": 1787541613.1119404,
-    "ast_hash": "acff9fa780da32105e941928ee248539",
+    "mtime": 1787752376.5964346,
+    "ast_hash": "98b786db5d79d237396d7de38f081296",
     "semantic_hash": ""
   },
   "src/components/BranchWarehouseManager.jsx": {
-    "mtime": 1787540279.529949,
-    "ast_hash": "a9ec88c206afc4d3ded4e8310e05a22c",
+    "mtime": 1787792960.7798007,
+    "ast_hash": "32ee68d36878bc182da315489d8e6dac",
     "semantic_hash": ""
   },
   "src/components/CapybaraMascot.jsx": {
@@ -135,13 +135,13 @@
     "semantic_hash": ""
   },
   "src/components/DashboardBenchmarks.jsx": {
-    "mtime": 1787705425.9655995,
-    "ast_hash": "04de02711db4e7cecd6b747c3cce6064",
+    "mtime": 1787712077.8112543,
+    "ast_hash": "ab84321a129deb676d0058d4aea9d882",
     "semantic_hash": ""
   },
   "src/components/DashboardView.jsx": {
-    "mtime": 1787705521.149713,
-    "ast_hash": "4da9be1a8537e5597e007b14bf31dc3d",
+    "mtime": 1787712273.642953,
+    "ast_hash": "b231b9f6f74cde5c9df835f2b8b4affb",
     "semantic_hash": ""
   },
   "src/components/ExamineModal.jsx": {
@@ -175,8 +175,8 @@
     "semantic_hash": ""
   },
   "src/components/SafetyStatus.jsx": {
-    "mtime": 1787662756.6191216,
-    "ast_hash": "24dbbf0cef067a99e97ccd701dd12f62",
+    "mtime": 1787710329.5870662,
+    "ast_hash": "dafe67c2c9fbb1f1ecd2a69f48cebcbb",
     "semantic_hash": ""
   },
   "src/components/SamplingManager.jsx": {
@@ -195,13 +195,13 @@
     "semantic_hash": ""
   },
   "src/config/permissions.js": {
-    "mtime": 1787537974.5463662,
-    "ast_hash": "8449b17bdeb49f8cd4acc19ff8014cbc",
+    "mtime": 1787751554.57165,
+    "ast_hash": "9405afb8ceda93f8a6ddb7c38396fbf5",
     "semantic_hash": ""
   },
   "src/hooks/useDatabaseSync.js": {
-    "mtime": 1786428488.4450493,
-    "ast_hash": "e34e2f3549193ca695d11ee857fe16aa",
+    "mtime": 1787709680.0386934,
+    "ast_hash": "f278e1b8535db5a1ccccbfdc6b1b1b8c",
     "semantic_hash": ""
   },
   "src/hooks/useOfflineEngine.js": {
@@ -225,8 +225,8 @@
     "semantic_hash": ""
   },
   "src/utils/helpers.js": {
-    "mtime": 1787705396.8891447,
-    "ast_hash": "c8199c8b1a982672223265ca4643a321",
+    "mtime": 1787712077.8082068,
+    "ast_hash": "11027acc7560a4c6f484d26c3e58073b",
     "semantic_hash": ""
   },
   "tailwind.config.js": {
@@ -540,8 +540,8 @@
     "semantic_hash": ""
   },
   "src/config/integration.audit.mjs": {
-    "mtime": 1787635765.0473828,
-    "ast_hash": "14527418d1d0ae7cc1a4b8a23141a442",
+    "mtime": 1787792994.1493337,
+    "ast_hash": "2291fc7ada7e6b74c2acd8005540fe57",
     "semantic_hash": ""
   },
   "src/config/nextStop.selfcheck.mjs": {
@@ -570,8 +570,8 @@
     "semantic_hash": ""
   },
   ".claude/PROGRESS.md": {
-    "mtime": 1787668926.6868193,
-    "ast_hash": "55b1ed8272b396f1806e71885607469a",
+    "mtime": 1787793100.6494744,
+    "ast_hash": "e17c4791cd17f2d74f18829f0fec2fc0",
     "semantic_hash": ""
   },
   ".claude/pre-compact-context.md": {
@@ -755,13 +755,13 @@
     "semantic_hash": ""
   },
   "src/config/logicFixes.selfcheck.mjs": {
-    "mtime": 1787705627.1896365,
-    "ast_hash": "dc5c131927490ed54c485fe44dd8199b",
+    "mtime": 1787712181.0547593,
+    "ast_hash": "880201f6c8941627bcac8a4657148e20",
     "semantic_hash": ""
   },
   ".claude/NEXT-SESSION.md": {
-    "mtime": 1787644310.7869027,
-    "ast_hash": "ce1c3e7322448dab5ddf68904c86e4b5",
+    "mtime": 1787793127.5410686,
+    "ast_hash": "f00a434858bd8ae37a7c1be03e4d10aa",
     "semantic_hash": ""
   },
   ".claude/SWEEP-2026-08-19.md": {
@@ -795,8 +795,18 @@
     "semantic_hash": ""
   },
   "src/components/PaceChart.jsx": {
-    "mtime": 1787705382.7011006,
-    "ast_hash": "21a4a1429c0b64c5caed6e5858f45d71",
+    "mtime": 1787705994.692738,
+    "ast_hash": "9063fb67c2728f5c33d690123a6bc209",
+    "semantic_hash": ""
+  },
+  "src/config/undef.check.mjs": {
+    "mtime": 1787706307.468405,
+    "ast_hash": "4576b256acda38fb5c59e3a5c14f70b7",
+    "semantic_hash": ""
+  },
+  "src/utils/supply.js": {
+    "mtime": 1787791882.2430048,
+    "ast_hash": "0b43ee6ae7fa7292e27c014effaeb293",
     "semantic_hash": ""
   }
 }
