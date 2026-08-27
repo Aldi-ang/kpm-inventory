@@ -65,20 +65,41 @@ const LEATHER = '#241D16';
 const EDGES = 'repeating-linear-gradient(180deg, #E9E1CF 0 2px, #CBBFA4 2px 3px)';
 const EDGES_H = 'repeating-linear-gradient(90deg, #E9E1CF 0 2px, #CBBFA4 2px 3px)';
 
-/* ── The closed book, as an object rather than an icon ───────────────────────────────────────── */
+/* ── The closed book on the shelf ──────────────────────────────────────────────────────────────
+   🔴 PORTRAIT, AND THAT IS THE POINT. It used to be 34x26 — landscape, wider than tall, which no
+   closed book has ever been. Aldi: *"i want the book size to match the real book, this sizing is
+   very different to start with sc1"*. A closed book here is half the spread: 520 x 760, so 0,68
+   wide-to-tall. This is 21 x 30 — the same ratio. The big book and the small one are now the same
+   object at two sizes, which is what makes the flight between them read as one movement.
+
+   The pale sliver that used to sit on the right was reported as *"the scroll white indicator looks
+   really bad"* — a flat cream bar reads as a scrollbar, not as paper. Page edges are fine
+   alternating lines now, the same texture the big book uses.
+
+   HOVER: the cover lifts on its spine, the whole book rises a little, and a specular band sweeps
+   across the leather. Transform and opacity only, so Lite Mode simply shows it at rest. */
 function BookGlyph() {
   return (
-    <span className="relative block h-[26px] w-[34px] [perspective:640px]">
-      <span className="absolute inset-y-[3px] left-[6px] right-[1px] rounded-r-[3px]" style={{ background: PAPER_2 }} />
-      <span className="absolute inset-y-[6px] left-[7px] right-[4px] rounded-r-[2px]" style={{ background: PAPER }} />
+    <span className="relative block h-[30px] w-[21px] [perspective:420px]"
+          style={{ transformStyle: 'preserve-3d' }}>
+      {/* the page block, edge-on */}
+      <span className="absolute inset-y-[2px] left-[5px] right-0 rounded-r-[2px]"
+            style={{ background: EDGES_H }} />
+      {/* the cover, hinged on the spine */}
       <span
-        className="absolute inset-0 origin-left rounded-r-[4px] border border-accent-edge
-                   transition-transform duration-300 ease-out
-                   group-hover:[transform:rotateY(-54deg)] group-focus-visible:[transform:rotateY(-54deg)]"
+        className="absolute inset-0 origin-left rounded-r-[3px] overflow-hidden border border-accent-edge
+                   transition-transform duration-[420ms] ease-out
+                   group-hover:[transform:rotateY(-38deg)] group-focus-visible:[transform:rotateY(-38deg)]"
         style={{ background: LEATHER }}>
-        <span className="absolute left-[7px] right-[5px] top-[8px] h-[2px] rounded-full bg-orange" />
-        <span className="absolute left-[7px] right-[9px] top-[13px] h-[2px] rounded-full" style={{ background: BOOK_DIM }} />
+        <span className="absolute left-[5px] right-[3px] top-[7px] h-[2px] rounded-full bg-orange" />
+        <span className="absolute left-[5px] right-[7px] top-[11px] h-[1px] rounded-full" style={{ background: BOOK_DIM }} />
+        {/* the light. It lives off the left edge and crosses the cover on hover. */}
+        <span className="absolute inset-y-[-40%] w-[10px] -left-[14px] rotate-[18deg]
+                         transition-transform duration-[620ms] ease-out
+                         group-hover:translate-x-[34px] group-focus-visible:translate-x-[34px]"
+              style={{ background: 'linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,240,210,.55) 50%, rgba(255,255,255,0) 100%)' }} />
       </span>
+      {/* the spine */}
       <span className="absolute inset-y-0 left-0 w-[3px] rounded-l-[2px] bg-orange" />
     </span>
   );
@@ -104,10 +125,18 @@ export default function PonderBookButton({ activeTab }) {
         title="Tutorial — panduan setiap bagian aplikasi"
         className="kpm-chip group shrink-0 inline-flex items-center gap-2 h-9 px-2.5 rounded-lg
                    border border-line-2 bg-raised text-ink-muted
-                   hover:border-accent-edge hover:text-accent-ink
-                   active:scale-[0.97] transition-[transform,color,border-color] duration-150 ease-out"
+                   hover:border-accent-edge hover:text-accent-ink hover:-translate-y-[1px]
+                   active:scale-[0.97] transition-[transform,color,border-color] duration-200 ease-out"
       >
-        <BookGlyph />
+        {/* 🔴 THE BOOK LEAVES ITS SLOT. His ask: *"rather than it close and shrink and gone, i
+            rather make the book fly from its original position to the big screen, then when it
+            close it fly back to the original position, the small version of book on its space"*.
+            Two objects that cross-fade are two objects; one object that moves is a book being
+            picked up. So while the big one is out, the small one is not here — and it reappears at
+            the exact moment the flight lands. */}
+        <span style={{ visibility: libOpen ? 'hidden' : 'visible' }}>
+          <BookGlyph />
+        </span>
         <span className="hidden xl:inline font-mono text-[10px] uppercase tracking-widest">Tutorial</span>
       </button>
 
@@ -166,15 +195,20 @@ function Library({ anchorRef, initialSection, onClose, onPick }) {
      The keyframes are computed from the chip's REAL rectangle, so the book grows out of the little
      book that was pressed and shrinks back into it. A fixed origin would have been three fewer
      lines and would have thrown the book at a corner that means nothing. */
+  /* 🔴 IT IS THE CLOSED BOOK THAT FLIES, NOT THE CONTAINER. When the cover is shut the visible
+     book is only the left half plus the tab column — `SLAB_SHUT` below is the same measurement —
+     so scaling the whole 1040px container onto the chip aimed the wrong rectangle and the book
+     drifted sideways as it shrank. The maths maps the CLOSED book's centre onto the chip's centre,
+     and it has to subtract where that centre lands after scaling about the container's middle. */
   const flightFrom = useCallback(() => {
     const el = bookRef.current, chip = anchorRef?.current;
     if (!el || !chip) return null;
     const b = el.getBoundingClientRect(), a = chip.getBoundingClientRect();
     if (!b.width || !a.width) return null;
-    /* A uniform scale, floored well above zero. Nothing in the real world appears out of nothing,
-       and a book at scale(0.03) is a dot. */
-    const s = Math.max(a.width / b.width, 0.11);
-    const tx = (a.left + a.width / 2) - (b.left + b.width / 2);
+    const closedW = b.width / 2 + 62;                 // must match SLAB_SHUT
+    const s = Math.max(a.height / b.height, 0.03);    // height, because a closed book is portrait
+    const dx = (closedW / 2) - (b.width / 2);         // closed centre, relative to container centre
+    const tx = (a.left + a.width / 2) - (b.left + b.width / 2) - dx * s;
     const ty = (a.top + a.height / 2) - (b.top + b.height / 2);
     return `translate(${Math.round(tx)}px, ${Math.round(ty)}px) scale(${s.toFixed(3)})`;
   }, [anchorRef]);
@@ -228,10 +262,11 @@ function Library({ anchorRef, initialSection, onClose, onPick }) {
     const el = bookRef.current, leaf = leafRef.current;
     const from = flightFrom();
     if (!el || !from || typeof el.animate !== 'function') return;
-    /* The closed book flies in and STOPS. */
+    /* The closed book flies in and STOPS. No fade at either end: a book that dissolves is not a
+       book being carried, and the chip's own copy is hidden for exactly this span so there is
+       never two of them. */
     el.animate(
-      [{ transform: from, opacity: 0 },
-       { transform: FLAT, opacity: 1 }],
+      [{ transform: from }, { transform: FLAT }],
       { duration: T.flyIn, easing: EASE, fill: 'both' },
     );
     /* Only then does the cover swing open — and it travels a little past flat before settling,
@@ -272,8 +307,7 @@ function Library({ anchorRef, initialSection, onClose, onPick }) {
       { duration: T.leafShut, easing: HINGE, fill: 'both' });
     /* ...and only once it is shut does it go back to the shelf. */
     const anim = el.animate(
-      [{ transform: FLAT, opacity: 1 },
-       { transform: from, opacity: 0 }],
+      [{ transform: FLAT }, { transform: from }],
       { duration: T.flyOut, delay: T.flyOutDelay, easing: AWAY, fill: 'both' },
     );
     anim.onfinish = onClose;
@@ -328,7 +362,11 @@ function Library({ anchorRef, initialSection, onClose, onPick }) {
                          shadow-[0_2px_2px_rgba(0,0,0,0.35),0_40px_90px_-30px_rgba(0,0,0,0.95)]" />
 
         {/* Tabs, cut into the cover's left edge like the reference book */}
-        <div className="relative z-10 hidden lg:flex flex-col gap-1 w-[124px] shrink-0 pt-8 pb-6 pr-[6px] overflow-y-auto">
+        {/* `[&::-webkit-scrollbar]:hidden` — the app's global scrollbar is a brown bar tuned for
+            dark panels, and on cream paper it reads as a stripe stuck to the page. Nothing inside
+            a book has a scrollbar. */}
+        <div className="relative z-10 hidden lg:flex flex-col gap-1 w-[124px] shrink-0 pt-8 pb-6 pr-[6px]
+                        overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {SECTIONS.map(s => (
             <button key={s.id} type="button" onClick={() => pickSection(s.id)}
               style={tab(s)}
@@ -434,7 +472,7 @@ function Library({ anchorRef, initialSection, onClose, onPick }) {
                 </button>
               </div>
 
-              <div className="flex-1 min-h-0 overflow-y-auto mt-5 -mx-1 px-1">
+              <div className="flex-1 min-h-0 overflow-y-auto mt-5 -mx-1 px-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                 <div className="grid sm:grid-cols-2 gap-4">
                   {shownEntries.map((e, i) => {
                     const ready = !e.soon && !!getScene(e.sceneId);

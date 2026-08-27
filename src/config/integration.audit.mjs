@@ -4307,8 +4307,12 @@ check(G56, 'both overlays escape their mount point through a portal',
    the chip's MEASURED rectangle — a fixed origin throws the book at a corner that means nothing. */
 check(G56, 'the book flies from the chip that opened it, and back into it',
   /getBoundingClientRect\(\)/.test(bookSrc) && /el\.animate\(/.test(bookSrc) &&
-  /anim\.onfinish = onClose/.test(bookSrc) && /Math\.max\(a\.width \/ b\.width/.test(bookSrc),
-  'the open and close keyframes must be built from the anchor rect and driven with the Web ' +
+  /anim\.onfinish = onClose/.test(bookSrc) && /Math\.max\(a\.height \/ b\.height/.test(bookSrc) &&
+  /const closedW = b\.width \/ 2 \+ 62;/.test(bookSrc) && /\[\{ transform: from \}, \{ transform: FLAT \}\]/.test(bookSrc) &&
+  /\[\{ transform: FLAT \}, \{ transform: from \}\]/.test(bookSrc),
+  'the flight must map the CLOSED book — half the spread plus the tab column — onto the chip, ' +
+  'scaled by HEIGHT because a closed book is portrait, and it must not fade: a book that ' +
+  'dissolves is not a book being carried. Driven with the Web ' +
   'Animations API, which starts when called. A state flag flipped inside a requestAnimationFrame ' +
   'already rendered this book at opacity 0 once, with nothing thrown and every check green');
 
