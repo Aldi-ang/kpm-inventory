@@ -1220,22 +1220,33 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
             {/* ════════ WHERE EVERY PACK IS — one row per warehouse ════════
                 The panel this screen is named after. It used to be a branch picker that showed one
                 warehouse's shelf and nothing else, so the question it exists to answer — "who needs
-                a delivery?" — took as many clicks as there are branches, and could only ever be
-                answered from the shelf figure alone.
+                a delivery?" — took as many clicks as there are branches.
 
                 ⚠️ THE BAR SHOWS WHERE PACKS ARE, SO IT LEAVES OUT `terjual`. Sold packs are not
                 anywhere any more; putting them in a "where is it" bar would shrink every other
                 segment in proportion to how well a branch is doing, which reads as the exact
-                opposite of the truth. Sold gets a column, never a segment. */}
-            {isAdmin && logistics.length > 0 && (
-                <div className="bg-panel p-4 sm:p-5 rounded-2xl border border-line-2 shadow-xl mb-6">
-                    {/* The page's title now that the banner is gone. Deliberately NOT louder than the
-                        old one — the weight went into the type and the accent rule, and the colour
-                        came OUT: `text-ink` reads at full contrast in both themes, where the gold it
-                        used to be is a mid-tone that has to fight the panel behind it in each. The
-                        gold survives as the icon chip and the rule, which is where an accent earns
-                        its keep — pointing at the title rather than being it. */}
-                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-3 border-b border-line-2 pb-4 mb-5">
+                opposite of the truth. Sold gets a column, never a segment.
+
+                ⚠️ LAID OUT ON A GRID, NOT A <table>, and that is not a style preference. His
+                report, 2026-08-27: *"formatting is really bad, it looks cutted"*. A table wide
+                enough to need `min-w` sat inside a rounded panel and its row rules ran straight
+                into the corner radius, so every separator was visibly sliced at the right edge.
+                Rows are grid rows inside a padded track now: the rules stop where the padding
+                stops, nothing meets the curve, and one COLS constant keeps the header, the
+                warehouse rows, the drawer rows and the total on the same columns — a table's one
+                real advantage, kept without its clipping.
+
+                ⚠️ AND THE DRAWER ANIMATES ON grid-template-rows, 0fr → 1fr. Height cannot be
+                transitioned from `auto`, and a <tr> cannot be transitioned at all, which is why
+                the first version simply appeared. This costs one wrapper and needs no measured
+                pixel height, so it stays smooth whatever the drawer contains. */}
+            {isAdmin && logistics.length > 0 && (() => {
+                /* one definition of the columns, shared by every row in the panel */
+                const COLS = 'grid grid-cols-[minmax(0,1fr)_104px_104px_128px_104px_92px] gap-x-4 items-center';
+                return (
+                <section className="mb-6 rounded-2xl border border-line-2 bg-panel overflow-hidden shadow-[0_1px_1px_rgba(0,0,0,0.20),0_18px_40px_-28px_rgba(0,0,0,0.85)]">
+
+                    <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 px-5 pt-5 pb-4">
                         <div className="flex items-center gap-3 min-w-0">
                             <span className="h-10 w-10 rounded-xl bg-raised border border-line-2 flex items-center justify-center shrink-0">
                                 <Globe size={18} className="text-accent-ink"/>
@@ -1249,110 +1260,112 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
                         <p className="font-mono text-[10px] text-ink-muted tracking-widest shrink-0">terjual · 7 hari terakhir</p>
                     </div>
 
-                    <div className="overflow-x-auto -mx-1 px-1">
-                        <table className="w-full text-sm min-w-[640px]">
-                            <thead>
-                                <tr className="text-[10px] text-ink-muted uppercase tracking-widest">
-                                    <th className="text-left font-bold pb-2 pr-3">Gudang</th>
-                                    <th className="text-right font-bold pb-2 px-2">Di gudang</th>
-                                    <th className="text-right font-bold pb-2 px-2">Di jalan</th>
-                                    <th className="text-right font-bold pb-2 px-2">Di tangan agen</th>
-                                    <th className="text-right font-bold pb-2 px-2">Terjual</th>
-                                    <th className="text-right font-bold pb-2 pl-2">Sisa hari</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {logistics.map(r => {
-                                    const here = r.shelf + (r.transit || 0) + r.field;
-                                    const pct = (v) => here > 0 ? `${(v / here) * 100}%` : '0%';
-                                    /* under a week of cover is the point HQ has to act, because a
-                                       delivery does not arrive the same day it is decided */
-                                    const low = r.daysLeft !== null && r.daysLeft < 7;
-                                    const open = openGudang === r.name;
-                                    return (
-                                    <React.Fragment key={r.name}>
-                                        <tr className={`border-t border-line-2 align-middle ${open ? 'bg-raised' : ''}`}>
-                                            <td className="py-2.5 pr-3">
+                    <div className="overflow-x-auto">
+                        <div className="min-w-[760px]">
+
+                            <div className={`${COLS} px-5 pb-2.5 border-b border-line-2 text-[10px] font-bold text-ink-muted uppercase tracking-widest`}>
+                                <span>Gudang</span>
+                                <span className="text-right">Di gudang</span>
+                                <span className="text-right">Di jalan</span>
+                                <span className="text-right">Di tangan agen</span>
+                                <span className="text-right">Terjual</span>
+                                <span className="text-right">Sisa hari</span>
+                            </div>
+
+                            {logistics.map(r => {
+                                const here = r.shelf + (r.transit || 0) + r.field;
+                                const pct = (v) => here > 0 ? `${(v / here) * 100}%` : '0%';
+                                /* under a week of cover is the point HQ has to act, because a
+                                   delivery does not arrive the same day it is decided */
+                                const low = r.daysLeft !== null && r.daysLeft < 7;
+                                const open = openGudang === r.name;
+                                return (
+                                    <div key={r.name} className="border-b border-line-2 last:border-b-0">
+
+                                        <div className={`${COLS} px-5 py-3 transition-colors duration-200 ${open ? 'bg-raised' : 'hover:bg-raised/50'}`}>
+                                            <div className="min-w-0">
                                                 <button
                                                     onClick={() => setOpenGudang(open ? null : r.name)}
                                                     aria-expanded={open}
-                                                    className="flex items-center gap-2 group text-left"
+                                                    className="flex items-center gap-2 group text-left w-full"
                                                 >
-                                                    <MapPin size={13} className={r.name === MASTER ? 'text-gold shrink-0' : 'text-orange shrink-0'}/>
-                                                    <span className="font-black uppercase tracking-wider text-ink text-[13px] group-hover:text-accent-ink transition-colors">{r.name === MASTER ? 'Master Vault' : r.name}</span>
-                                                    <ChevronDown size={13} className={`text-ink-muted shrink-0 transition-transform ${open ? 'rotate-180' : ''}`}/>
+                                                    <MapPin size={13} className={`shrink-0 ${r.name === MASTER ? 'text-gold' : 'text-orange'}`}/>
+                                                    <span className="font-black uppercase tracking-wider text-ink text-[13px] truncate group-hover:text-accent-ink transition-colors">
+                                                        {r.name === MASTER ? 'Master Vault' : r.name}
+                                                    </span>
+                                                    <ChevronDown size={13} className={`text-ink-muted shrink-0 transition-transform duration-300 ${open ? 'rotate-180' : ''}`}/>
                                                 </button>
-                                                <div className="flex h-1.5 mt-1.5 rounded-full overflow-hidden bg-raised" title="di gudang · di jalan · di tangan agen">
-                                                    <div className="bg-gold" style={{ width: pct(r.shelf) }}/>
-                                                    <div className="bg-orange" style={{ width: pct(r.transit || 0) }}/>
-                                                    <div className="bg-line-3" style={{ width: pct(r.field) }}/>
+                                                <div className="flex h-1.5 mt-2 rounded-full overflow-hidden bg-inset max-w-[280px]" title="di gudang · di jalan · di tangan agen">
+                                                    <div className="bg-gold transition-[width] duration-500 ease-out" style={{ width: pct(r.shelf) }}/>
+                                                    <div className="bg-orange transition-[width] duration-500 ease-out" style={{ width: pct(r.transit || 0) }}/>
+                                                    <div className="bg-line-3 transition-[width] duration-500 ease-out" style={{ width: pct(r.field) }}/>
                                                 </div>
-                                            </td>
-                                            <td className="text-right px-2 font-mono font-black text-gold tabular-nums">{r.shelf.toLocaleString('id-ID')}</td>
-                                            <td className="text-right px-2 font-mono font-bold text-orange tabular-nums">{r.transit === null ? <span className="text-ink-muted">—</span> : r.transit.toLocaleString('id-ID')}</td>
-                                            <td className="text-right px-2 font-mono font-bold text-ink tabular-nums">{r.field.toLocaleString('id-ID')}</td>
-                                            <td className="text-right px-2 font-mono font-bold text-ink tabular-nums">{r.sold.toLocaleString('id-ID')}</td>
-                                            <td className="text-right pl-2 font-mono font-black tabular-nums">
+                                            </div>
+                                            <span className="text-right font-mono font-black text-gold tabular-nums">{r.shelf.toLocaleString('id-ID')}</span>
+                                            <span className="text-right font-mono font-bold tabular-nums">{r.transit === null ? <span className="text-ink-muted">—</span> : <span className="text-orange">{r.transit.toLocaleString('id-ID')}</span>}</span>
+                                            <span className="text-right font-mono font-bold text-ink tabular-nums">{r.field.toLocaleString('id-ID')}</span>
+                                            <span className="text-right font-mono font-bold text-ink tabular-nums">{r.sold.toLocaleString('id-ID')}</span>
+                                            <span className="text-right font-mono font-black tabular-nums">
                                                 {r.daysLeft === null
                                                     ? <span className="text-ink-muted" title="Tidak ada penjualan 7 hari terakhir — tidak ada laju untuk dihitung">—</span>
                                                     : <span className={low ? 'text-danger-text' : 'text-ink'}>{r.daysLeft}</span>}
-                                            </td>
-                                        </tr>
+                                            </span>
+                                        </div>
 
-                                        {open && (
-                                            <tr className="bg-inset">
-                                                <td colSpan={6} className="p-0">
+                                        {/* 0fr → 1fr is the whole animation. `height: auto` cannot be
+                                            transitioned; a grid track can, and it measures itself. */}
+                                        <div
+                                            className="grid transition-[grid-template-rows] duration-300 ease-out"
+                                            style={{ gridTemplateRows: open ? '1fr' : '0fr' }}
+                                        >
+                                            <div className="overflow-hidden">
+                                                <div className="bg-inset border-t border-line-2">
                                                     {r.detail.length === 0 ? (
-                                                        <p className="px-3 py-5 text-[11px] text-ink-muted uppercase tracking-widest text-center">
+                                                        <p className="px-5 py-5 text-[11px] text-ink-muted uppercase tracking-widest text-center">
                                                             Belum ada barang tercatat di {r.name === MASTER ? 'Master Vault' : r.name}
                                                         </p>
-                                                    ) : (
-                                                        <table className="w-full text-[12.5px]">
-                                                            <tbody>
-                                                                {r.detail.map(p => (
-                                                                    <tr key={p.id} className="border-t border-line-2/60">
-                                                                        <td className="py-2.5 pl-9 pr-3">
-                                                                            <span className="text-ink font-bold block leading-tight">{p.name}</span>
-                                                                            {(p.days !== null || p.unexplained > 0) && (
-                                                                                <span className="text-[10px] text-ink-muted uppercase tracking-widest">
-                                                                                    {p.days !== null && <>paling lama di sini <b className="text-ink">{p.days} hari</b>{p.drops > 1 && ` · ${p.drops} kiriman`}</>}
-                                                                                    {p.unexplained > 0 && <span className="text-danger-text">{p.days !== null ? ' · ' : ''}{p.unexplained.toLocaleString('id-ID')} tanpa asal</span>}
-                                                                                </span>
-                                                                            )}
-                                                                        </td>
-                                                                        <td className="text-right px-2 font-mono text-gold tabular-nums w-[110px]">{p.shelf.toLocaleString('id-ID')}</td>
-                                                                        <td className="text-right px-2 font-mono text-orange tabular-nums w-[110px]">{r.transit === null ? <span className="text-ink-muted">—</span> : p.transit.toLocaleString('id-ID')}</td>
-                                                                        <td className="text-right px-2 font-mono text-ink tabular-nums w-[150px]">{p.field.toLocaleString('id-ID')}</td>
-                                                                        <td className="text-right px-2 font-mono text-ink tabular-nums w-[110px]">{p.sold.toLocaleString('id-ID')}</td>
-                                                                        <td className="w-[100px]"/>
-                                                                    </tr>
-                                                                ))}
-                                                            </tbody>
-                                                        </table>
-                                                    )}
-                                                </td>
-                                            </tr>
-                                        )}
-                                    </React.Fragment>
-                                    );
-                                })}
-                                <tr className="border-t-2 border-line-3">
-                                    <td className="py-2.5 pr-3 text-[10px] font-bold text-ink-muted uppercase tracking-widest">Total perusahaan</td>
-                                    <td className="text-right px-2 py-2.5 font-mono font-black text-gold tabular-nums">{gTotal('shelf').toLocaleString('id-ID')}</td>
-                                    <td className="text-right px-2 py-2.5 font-mono font-black text-orange tabular-nums">{gTotal('transit').toLocaleString('id-ID')}</td>
-                                    <td className="text-right px-2 py-2.5 font-mono font-black text-ink tabular-nums">{gTotal('field').toLocaleString('id-ID')}</td>
-                                    <td className="text-right px-2 py-2.5 font-mono font-black text-ink tabular-nums">{gTotal('sold').toLocaleString('id-ID')}</td>
-                                    <td className="text-right pl-2 py-2.5 text-ink-muted">—</td>
-                                </tr>
-                            </tbody>
-                        </table>
+                                                    ) : r.detail.map((p, i) => (
+                                                        <div key={p.id} className={`${COLS} px-5 py-2.5 ${i > 0 ? 'border-t border-line-2/60' : ''}`}>
+                                                            <div className="min-w-0 pl-6">
+                                                                <span className="text-ink font-bold text-[13px] block leading-tight truncate">{p.name}</span>
+                                                                {(p.days !== null || p.unexplained > 0) && (
+                                                                    <span className="text-[10px] text-ink-muted uppercase tracking-widest">
+                                                                        {p.days !== null && <>paling lama di sini <b className="text-ink">{p.days} hari</b>{p.drops > 1 && ` · ${p.drops} kiriman`}</>}
+                                                                        {p.unexplained > 0 && <span className="text-danger-text">{p.days !== null ? ' · ' : ''}{p.unexplained.toLocaleString('id-ID')} tanpa asal</span>}
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                            <span className="text-right font-mono text-gold tabular-nums text-[13px]">{p.shelf.toLocaleString('id-ID')}</span>
+                                                            <span className="text-right font-mono tabular-nums text-[13px]">{r.transit === null ? <span className="text-ink-muted">—</span> : <span className="text-orange">{p.transit.toLocaleString('id-ID')}</span>}</span>
+                                                            <span className="text-right font-mono text-ink tabular-nums text-[13px]">{p.field.toLocaleString('id-ID')}</span>
+                                                            <span className="text-right font-mono text-ink tabular-nums text-[13px]">{p.sold.toLocaleString('id-ID')}</span>
+                                                            <span/>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+
+                            <div className={`${COLS} px-5 py-3.5 border-t-2 border-line-3 bg-raised/40`}>
+                                <span className="text-[10px] font-bold text-ink-muted uppercase tracking-widest">Total perusahaan</span>
+                                <span className="text-right font-mono font-black text-gold tabular-nums">{gTotal('shelf').toLocaleString('id-ID')}</span>
+                                <span className="text-right font-mono font-black text-orange tabular-nums">{gTotal('transit').toLocaleString('id-ID')}</span>
+                                <span className="text-right font-mono font-black text-ink tabular-nums">{gTotal('field').toLocaleString('id-ID')}</span>
+                                <span className="text-right font-mono font-black text-ink tabular-nums">{gTotal('sold').toLocaleString('id-ID')}</span>
+                                <span className="text-right text-ink-muted">—</span>
+                            </div>
+                        </div>
                     </div>
 
-                    <p className="text-[10px] text-ink-muted mt-3 leading-relaxed">
+                    <p className="px-5 py-4 text-[10px] text-ink-muted leading-relaxed border-t border-line-2">
                         <b className="text-ink">Sisa hari</b> = isi gudang dibagi laju jual 7 hari terakhir. Tanda <b className="text-danger-text">merah</b> berarti kurang dari seminggu — gudang itu yang perlu dikirim lagi duluan. Garis <b className="text-ink-muted">—</b> berarti belum ada penjualan minggu ini, jadi lajunya belum bisa dihitung.
                     </p>
-                </div>
-            )}
+                </section>
+                );
+            })()}
 
             {/* "Isi Gudang Cabang" stood here — a picker that showed ONE branch's shelf and
                 nothing else. Deleted 2026-08-27 on his call after the Sebaran Stok drawer replaced

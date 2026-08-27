@@ -3948,7 +3948,7 @@ check(G55, 'App.jsx hands the readout all three collections it counts',
 check(G55, 'a warehouse row and its open drawer are summed from one list',
   /const detail = \[\.\.\.byId\.values\(\)\]/.test(bwmCode) &&
   /: detail\.reduce\(\(s, p\) => s \+ p\.transit, 0\)/.test(bwmCode) &&
-  /r\.detail\.map\(p =>/.test(bwmCode),
+  /r\.detail\.map\(/.test(bwmCode),
   'the di-jalan total must be summed from `detail`, the same array the drawer renders. Summing ' +
   'the row over globalInventory while the drawer renders a filtered list is how the two drift');
 
