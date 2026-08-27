@@ -1,6 +1,21 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-27 08:12 WIB (🟠 KPM app session)** · ✅ **RESTOCK VAULT DESK + SEBARAN STOK DONE, DRIVEN LIVE** — `d042520`, **630/630** · branch `phase0-solid-ground`
+**Updated: 2026-08-27 08:14 WIB (🟠 KPM app session)** · ✅ **RESTOCK VAULT DESK + SEBARAN STOK DONE, DRIVEN LIVE** — `d042520`, **630/630** · branch `phase0-solid-ground`
+
+## 🟢 2026-08-27 08:14 — TIMESTAMP ONLY. No code changed since `d042520`.
+
+He asked what the difference is between **di jalan** and **di tangan agen**. Answered in chat, no
+edit. Keeping the answer here because it is the panel's whole vocabulary and a cleared session
+should not have to re-derive it:
+
+> A pack travels `di gudang HQ` → **di jalan** → `di gudang cabang` → **di tangan agen** → `terjual`,
+> and is counted in exactly ONE column at a time.
+> **Di jalan** = shipped, still with the courier, not yet counted in by the branch — `stock_requests`
+> still IN_TRANSIT. Nobody can sell it.
+> **Di tangan agen** = already arrived and now loaded on a salesman's vehicle — `motorists[].activeCanvas`,
+> grouped by the motorist's location. This is the sellable stock.
+> The master vault prints **—** for di jalan, never 0: shipments only run HQ → cabang, so the column
+> does not apply there and a 0 would be a measurement nobody took.
 
 ## 🟢 2026-08-27 08:12 — SEBARAN STOK REDESIGNED. `d042520`. **630/630.**
 
