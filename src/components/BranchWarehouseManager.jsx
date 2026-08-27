@@ -328,6 +328,9 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
        ⚠️ MASTER has no "di jalan": stock_requests only ever run HQ → branch, so a figure there
        would be an empty sum dressed up as a measurement. It prints — instead. */
     const SEVEN_DAYS = 7;
+    /* which warehouse row is opened out into its per-product detail. One at a time: this table is
+       a comparison between warehouses, and three open drawers is no longer a comparison. */
+    const [openGudang, setOpenGudang] = useState(null);
     const logistics = useMemo(() => {
         if (!isAdmin) return [];
         const since = new Date(Date.now() - SEVEN_DAYS * 86400000);
@@ -348,10 +351,52 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
             const field = rows.reduce((s, r) => s + r.field, 0);
             const sold  = rows.reduce((s, r) => s + r.sold, 0);
 
-            /* nothing is ever in transit TO the master vault on a stock_request */
+            /* ── THE PER-PRODUCT DETAIL. His ask: *"so that i can see the full detail for every
+                  single item status, not just all product as a whole"*. It costs nothing to build —
+                  supplyByProduct already returns one row PER PRODUCT and the four totals above are
+                  just that list summed. The drawer prints the list the totals came from.
+
+               ⚠️ A PRODUCT CAN BE IN TRANSIT TO A WAREHOUSE THAT HOLDS NONE OF IT. supplyByProduct
+                  drops any row whose shelf+field+sold is 0, which is right for a supply picture but
+                  wrong here: a brand-new branch waiting on its first delivery has exactly that
+                  shape, and it is the one case where "what is coming" is the whole answer. So the
+                  in-transit products are UNIONED back in rather than looked up inside the list.
+                  Bandung is that branch today, which is how this was noticed at all. */
+            const byId = new Map(rows.map(p => [p.id, { id: p.id, name: p.name, shelf: p.shelf, field: p.field, sold: p.sold, transit: 0 }]));
+            if (name !== MASTER) {
+                (globalInventory || []).forEach(p => {
+                    const q = inTransitQty(requests, name, p.id);
+                    if (q <= 0) return;
+                    if (!byId.has(p.id)) byId.set(p.id, { id: p.id, name: p.name, shelf: 0, field: 0, sold: 0, transit: 0 });
+                    byId.get(p.id).transit = q;
+                });
+            }
+            /* the age line "Isi Gudang Cabang" prints, carried over with the numbers — it is the
+               half of that panel that is not already in the four columns, and it is the half that
+               tells him WHICH stock to move first. MASTER has no stock_request arrivals to age
+               against, so it comes back null there and simply does not print. */
+            const nowSec = Math.floor(Date.now() / 1000);
+            const detail = [...byId.values()]
+                .map(p => {
+                    /* 🔴 BRANCHES ONLY, and this was wrong on its first run. The whole arrivals
+                       machinery matches shelf stock against the stock_requests that DELIVERED it —
+                       and nothing is ever delivered to the master vault that way. It is stocked by
+                       `procurements`, the surat jalan masuk on the desk above. So asking it to age
+                       master stock returned "no arrivals", which `arrivalsOnHand` correctly reports
+                       as unexplained — and every master row printed "10.900 TANPA ASAL" in danger
+                       red. Perfectly working code, asked a question it has no data for, answering
+                       in the loudest colour on the screen. Master gets no age line at all. */
+                    if (name === MASTER) return { ...p, days: null, drops: 0, unexplained: 0 };
+                    const { held, unexplained } = arrivalsOnHand(productArrivals(requests, name, p.id), p.shelf);
+                    return { ...p, days: oldestStockDays(held, nowSec), drops: held.length, unexplained };
+                })
+                .sort((a, b) => (b.shelf + b.transit + b.field + b.sold) - (a.shelf + a.transit + a.field + a.sold));
+
+            /* summed from the SAME list the drawer prints, so the row total and its detail can
+               never disagree. Nothing is ever in transit TO the master vault on a stock_request. */
             const transit = name === MASTER
                 ? null
-                : (globalInventory || []).reduce((s, p) => s + inTransitQty(requests, name, p.id), 0);
+                : detail.reduce((s, p) => s + p.transit, 0);
 
             /* The reason he asked for the panel: how long the shelf lasts at the rate it is
                actually leaving. No sales in the window means NO RATE — which prints as — rather
@@ -359,7 +404,7 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
             const perDay = sold / SEVEN_DAYS;
             const daysLeft = perDay > 0 ? Math.floor(shelf / perDay) : null;
 
-            return { name, shelf, transit, field, sold, daysLeft, lines: rows.length };
+            return { name, shelf, transit, field, sold, daysLeft, detail };
         });
     }, [isAdmin, motorists, transactions, branchStockMap, globalInventory, requests]);
 
@@ -847,7 +892,16 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
     return (
         <div className="animate-fade-in space-y-6 relative">
             
-            {/* ====== HEADER ====== */}
+            {/* ====== HEADER ======
+                HQ does not get one. His call, 2026-08-27: *"erase the global logistic command,
+                not cool and elegant"*. "GLOBAL LOGISTICS COMMAND / ALL BRANCHES NATIONWIDE" was a
+                banner that named the screen you had just clicked into and then said nothing — two
+                lines of chrome above the only thing on the page worth reading. Sebaran Stok is the
+                title now, and it carries real numbers.
+                A BRANCH user keeps theirs, because for them it is not decoration: it names WHICH
+                hub they are looking at and who the admin is, and neither is obvious from the rest
+                of the screen. */}
+            {!isAdmin && (
             <div className="flex flex-col justify-between items-start border-b border-white/10 pb-6 mb-6">
                 <div className="w-full">
                     {/* Responsive Text Size for Mobile */}
@@ -860,6 +914,7 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
                     </p>
                 </div>
             </div>
+            )}
 
             {/* ====== AREA ADMIN VIEW ====== */}
             {isAreaAdmin && (
@@ -1174,14 +1229,24 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
                 opposite of the truth. Sold gets a column, never a segment. */}
             {isAdmin && logistics.length > 0 && (
                 <div className="bg-panel p-4 sm:p-5 rounded-2xl border border-line-2 shadow-xl mb-6">
-                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-2 border-b border-line-2 pb-3 mb-4">
-                        <div>
-                            <h3 className="text-base sm:text-lg font-black text-gold uppercase tracking-widest flex items-center gap-2">
-                                <Globe size={18}/> Sebaran Stok
-                            </h3>
-                            <p className="text-[10px] text-ink-muted uppercase tracking-widest mt-1">Semua gudang · dalam Bks</p>
+                    {/* The page's title now that the banner is gone. Deliberately NOT louder than the
+                        old one — the weight went into the type and the accent rule, and the colour
+                        came OUT: `text-ink` reads at full contrast in both themes, where the gold it
+                        used to be is a mid-tone that has to fight the panel behind it in each. The
+                        gold survives as the icon chip and the rule, which is where an accent earns
+                        its keep — pointing at the title rather than being it. */}
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-3 border-b border-line-2 pb-4 mb-5">
+                        <div className="flex items-center gap-3 min-w-0">
+                            <span className="h-10 w-10 rounded-xl bg-raised border border-line-2 flex items-center justify-center shrink-0">
+                                <Globe size={18} className="text-accent-ink"/>
+                            </span>
+                            <div className="min-w-0">
+                                <h3 className="font-display text-xl sm:text-2xl font-black text-ink uppercase tracking-[0.14em] leading-none">Sebaran Stok</h3>
+                                <div className="h-[3px] w-10 bg-orange rounded-full mt-2"/>
+                                <p className="font-mono text-[10px] text-ink-muted tracking-widest mt-2">semua gudang · dalam Bks</p>
+                            </div>
                         </div>
-                        <p className="text-[10px] text-ink-muted uppercase tracking-widest">Terjual = 7 hari terakhir</p>
+                        <p className="font-mono text-[10px] text-ink-muted tracking-widest shrink-0">terjual · 7 hari terakhir</p>
                     </div>
 
                     <div className="overflow-x-auto -mx-1 px-1">
@@ -1203,13 +1268,20 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
                                     /* under a week of cover is the point HQ has to act, because a
                                        delivery does not arrive the same day it is decided */
                                     const low = r.daysLeft !== null && r.daysLeft < 7;
+                                    const open = openGudang === r.name;
                                     return (
-                                        <tr key={r.name} className="border-t border-line-2 align-middle">
+                                    <React.Fragment key={r.name}>
+                                        <tr className={`border-t border-line-2 align-middle ${open ? 'bg-raised' : ''}`}>
                                             <td className="py-2.5 pr-3">
-                                                <div className="flex items-center gap-2">
+                                                <button
+                                                    onClick={() => setOpenGudang(open ? null : r.name)}
+                                                    aria-expanded={open}
+                                                    className="flex items-center gap-2 group text-left"
+                                                >
                                                     <MapPin size={13} className={r.name === MASTER ? 'text-gold shrink-0' : 'text-orange shrink-0'}/>
-                                                    <span className="font-black uppercase tracking-wider text-ink text-[13px]">{r.name === MASTER ? 'Master Vault' : r.name}</span>
-                                                </div>
+                                                    <span className="font-black uppercase tracking-wider text-ink text-[13px] group-hover:text-accent-ink transition-colors">{r.name === MASTER ? 'Master Vault' : r.name}</span>
+                                                    <ChevronDown size={13} className={`text-ink-muted shrink-0 transition-transform ${open ? 'rotate-180' : ''}`}/>
+                                                </button>
                                                 <div className="flex h-1.5 mt-1.5 rounded-full overflow-hidden bg-raised" title="di gudang · di jalan · di tangan agen">
                                                     <div className="bg-gold" style={{ width: pct(r.shelf) }}/>
                                                     <div className="bg-orange" style={{ width: pct(r.transit || 0) }}/>
@@ -1226,6 +1298,42 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
                                                     : <span className={low ? 'text-danger-text' : 'text-ink'}>{r.daysLeft}</span>}
                                             </td>
                                         </tr>
+
+                                        {open && (
+                                            <tr className="bg-inset">
+                                                <td colSpan={6} className="p-0">
+                                                    {r.detail.length === 0 ? (
+                                                        <p className="px-3 py-5 text-[11px] text-ink-muted uppercase tracking-widest text-center">
+                                                            Belum ada barang tercatat di {r.name === MASTER ? 'Master Vault' : r.name}
+                                                        </p>
+                                                    ) : (
+                                                        <table className="w-full text-[12.5px]">
+                                                            <tbody>
+                                                                {r.detail.map(p => (
+                                                                    <tr key={p.id} className="border-t border-line-2/60">
+                                                                        <td className="py-2.5 pl-9 pr-3">
+                                                                            <span className="text-ink font-bold block leading-tight">{p.name}</span>
+                                                                            {(p.days !== null || p.unexplained > 0) && (
+                                                                                <span className="text-[10px] text-ink-muted uppercase tracking-widest">
+                                                                                    {p.days !== null && <>paling lama di sini <b className="text-ink">{p.days} hari</b>{p.drops > 1 && ` · ${p.drops} kiriman`}</>}
+                                                                                    {p.unexplained > 0 && <span className="text-danger-text">{p.days !== null ? ' · ' : ''}{p.unexplained.toLocaleString('id-ID')} tanpa asal</span>}
+                                                                                </span>
+                                                                            )}
+                                                                        </td>
+                                                                        <td className="text-right px-2 font-mono text-gold tabular-nums w-[110px]">{p.shelf.toLocaleString('id-ID')}</td>
+                                                                        <td className="text-right px-2 font-mono text-orange tabular-nums w-[110px]">{r.transit === null ? <span className="text-ink-muted">—</span> : p.transit.toLocaleString('id-ID')}</td>
+                                                                        <td className="text-right px-2 font-mono text-ink tabular-nums w-[150px]">{p.field.toLocaleString('id-ID')}</td>
+                                                                        <td className="text-right px-2 font-mono text-ink tabular-nums w-[110px]">{p.sold.toLocaleString('id-ID')}</td>
+                                                                        <td className="w-[100px]"/>
+                                                                    </tr>
+                                                                ))}
+                                                            </tbody>
+                                                        </table>
+                                                    )}
+                                                </td>
+                                            </tr>
+                                        )}
+                                    </React.Fragment>
                                     );
                                 })}
                                 <tr className="border-t-2 border-line-3">

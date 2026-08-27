@@ -3916,8 +3916,8 @@ const dashCode = fs.readFileSync('src/components/DashboardView.jsx', 'utf8');
 check(G55, 'the terjual window and the transactions listener still agree',
   /where\('timestamp', '>=', sevenDaysAgo\)/.test(syncCode) &&
   /const SEVEN_DAYS = 7;/.test(bwmCode) &&
-  /Terjual = 7 hari terakhir/.test(bwmCode),
-  'the panel prints "Terjual = 7 hari terakhir" and divides by SEVEN_DAYS to get the rate. That ' +
+  /7 hari terakhir/.test(bwmCode),
+  'the panel prints a "7 hari terakhir" claim and divides by SEVEN_DAYS to get the rate. That ' +
   'is only true while the transactions listener is capped at sevenDaysAgo — move the cap and ' +
   'both the label and every "sisa hari" become wrong without a single visible symptom');
 
@@ -3940,6 +3940,25 @@ check(G55, 'App.jsx hands the readout all three collections it counts',
   'BranchWarehouseManager needs motorists, transactions AND branchStockMap. Every one of them ' +
   'defaults to empty, so a prop that is never passed prints zeroes instead of failing — the ' +
   'worst possible way for a stock figure to be wrong');
+
+/* His ask, 2026-08-27: *"so that i can see the full detail for every single item status"*, then
+   *"basically isi gudang cabang ... inside the dropdown"*. The drawer must print the SAME list the
+   row totals are summed from — computing it twice is how a row and its own detail start
+   disagreeing, which is worse than not having the drawer at all. */
+check(G55, 'a warehouse row and its open drawer are summed from one list',
+  /const detail = \[\.\.\.byId\.values\(\)\]/.test(bwmCode) &&
+  /: detail\.reduce\(\(s, p\) => s \+ p\.transit, 0\)/.test(bwmCode) &&
+  /r\.detail\.map\(p =>/.test(bwmCode),
+  'the di-jalan total must be summed from `detail`, the same array the drawer renders. Summing ' +
+  'the row over globalInventory while the drawer renders a filtered list is how the two drift');
+
+/* 🔴 supplyByProduct drops any product whose shelf+field+sold is 0 — right for a supply picture,
+   wrong for a branch waiting on its FIRST delivery, where what is coming is the whole answer. */
+check(G55, 'a product in transit to an empty warehouse still appears in its drawer',
+  /if \(!byId\.has\(p\.id\)\) byId\.set/.test(bwmCode),
+  'in-transit products must be UNIONED into the detail, not looked up inside supplyByProduct’s ' +
+  'rows. A brand-new branch holds nothing and has sold nothing, so every one of its incoming ' +
+  'products would be filtered out — the exact branch the drawer matters most for');
 
 /* Sold packs are not anywhere any more. Putting them in a "where is it" bar shrinks every other
    segment in proportion to how WELL a branch is doing, which reads as the opposite of the truth. */
