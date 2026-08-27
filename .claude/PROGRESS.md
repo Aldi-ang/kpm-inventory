@@ -1,6 +1,36 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-27 08:45 WIB (🟠 KPM app session)** · ✅ **SEBARAN STOK NOW SHOWS ITS OWN WORKING** — **631/631** · plain-English columns, per-item rate + depletion · branch `phase0-solid-ground`
+**Updated: 2026-08-27 08:55 WIB (🟠 KPM app session)** · ✅ **SEBARAN STOK NOW SHOWS ITS OWN WORKING** — **631/631** · plain-English columns, per-item rate + depletion · branch `phase0-solid-ground`
+
+## 🟢 2026-08-27 08:55 — PONDER TUTORIAL SYSTEM: PLAN WRITTEN, NOTHING BUILT.
+
+**👉 THE FILE IS `.claude/PONDER-PLAN.md`. Read it before writing a line of this.**
+
+He wants a per-component in-app tutorial modelled on **Create mod's Ponder** (Minecraft). He chose
+**scripted scenes, NOT recorded video** — clips would have gone stale the same day, eight labels
+were renamed on 2026-08-27 alone. He then chose **"write the full plan, build nothing"** because
+only ~23% of the 5-hour quota was left. So: nothing is half-built. The repo is clean at `792ca04`.
+
+**The one decision inside the plan that shapes everything:** scenes render the real component with
+a FIXED DEMO DATASET, not a spotlight over his live data. Ponder builds a schematic world, not your
+base — and a live-data tutorial of Sebaran Stok teaches nothing today, because Bandung is all zeros
+and the screen would be a wall of `—`. Demo data is also the only way to teach a red "3 days left"
+warning he has never actually hit.
+
+**🔴 DO NOT delete the Sebaran Stok footnote before the first scene exists.** It is the only written
+record of the two formulas, and audit check 631 pins them to the screen. The check **moves** into
+the scene file; it is not deleted to make the change pass.
+
+**🔴 WAITING ON ALDI — three questions, verbatim, at the end of PONDER-PLAN.md §9**
+
+> 1. **Language.** Scenes in Indonesian, English, or both? His 2026-08-27 rule was *"use english
+>    terms if its shorter and direct"* — but that was for column labels. A teaching sentence is not
+>    a label, and the branch staff reading these may not read English. **Not assumed either way.**
+> 2. **Autoplay or manual.** Ponder auto-runs a stage then waits. Same here, or press → for every beat?
+> 3. **Does a first-time user get pushed into a scene**, or is `?` always opt-in only?
+
+**Build order when he says go:** slice 1 = engine on one panel with a placeholder scene; slice 2 =
+Sebaran Stok for real (the scene script is already written out in the plan, ready to paste).
 
 ## 🟢 2026-08-27 08:45 — "SJ" SPELLED OUT ON THE DESK. **631/631.**
 
