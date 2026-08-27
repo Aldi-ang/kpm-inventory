@@ -4093,7 +4093,10 @@ check(G56, 'no beat is silent — every step carries text',
 /* 🔴 THE CHECK THAT STOPS SCENES ROTTING. A focus key is a promise that some element in the
    stage carries that key. Rewrite the panel, drop the attribute, and the tutorial keeps playing
    happily while pointing at nothing — a failure that still looks like it works. */
-const focusKeys = [...new Set(scenes.flatMap(s => s.steps.map(st => st.focus).filter(k => k && k !== '*')))];
+/* `focus` is one key or a LIST of keys since 2026-08-27 — flattened here so a plural beat is
+   checked key by key rather than stringified into one nonsense key that resolves to nothing. */
+const focusOfStep = (st) => (st.focus == null ? [] : Array.isArray(st.focus) ? st.focus : [st.focus]);
+const focusKeys = [...new Set(scenes.flatMap(s => s.steps.flatMap(focusOfStep)).filter(k => k && k !== '*'))];
 const stageAndPanel = stageSrc + demoSrc + '\n' + bwmStripped;
 /* A key resolves one of two ways, and BOTH have to be allowed or the check is wrong rather than
    strict. A column is written out — `data-ponder="col:shelf"`. A row or a product cannot be: the
@@ -4237,11 +4240,103 @@ check(G56, 'captions move: both placements are used, and the pointer aims four w
   'without it a column highlight leaves no room above or below and the caption lands on top of ' +
   'the very numbers it is describing');
 
+/* 🔴 THE FOURTH BUG OF THE FAMILY, AND THE ONE ALDI PHOTOGRAPHED: *"the textbox block the view
+   for the 3 biaya"*, *"this landing cost also collapse with the text box, landed value as well"*.
+
+   The caption carries `animate-ponder-in`, whose last keyframe is `transform: none` under
+   fill-mode `both`. An animation origin OUTRANKS an inline style, so the `transform:
+   translateY(-100%)` that turned the caption's `top` into its BOTTOM edge was thrown away the
+   instant the 260ms arrival finished — as was the `translateY(-50%)` that centred a sideways one.
+   Every 'above' caption and every 'beside' caption in every scene then hung downward from a
+   coordinate meant for its bottom and sat straight on the field it was explaining.
+
+   Same shape as the three before it: a mechanism nobody watched, nothing thrown, every check
+   green. It was found by reading `getComputedStyle(box).transform` back as the identity matrix
+   while the inline style still said `translateY(-50%)`. Placement that must survive an animation
+   belongs in `left`/`top`; the element must not offer a transform for the animation to overwrite. */
+const nearStyle = (overlaySrc.match(/animate-ponder-in"[\s\S]{0,120}?style=\{\{([^}]*)\}\}/) || [])[1] || '';
+check(G56, 'the caption is placed in top, never in a transform an animation would overwrite',
+  nearStyle.includes('near.') && /top:\s*near\.top/.test(nearStyle) && !/transform/.test(nearStyle) &&
+  !/shift/.test(overlaySrc) && !/translateY\(-100%\)/.test(overlaySrc),
+  'the near-caption must position with left/top only. The moment any of its geometry moves back ' +
+  'into `transform`, `animate-ponder-in`\'s final `transform: none` erases it on completion and ' +
+  'the box silently returns to sitting on top of its own subject');
+
+/* His instruction was *"if there is not much space u can put the text box above it and arrow ' +
+   pointing bottom"*, which the code already did — badly, because it was guessing the height it
+   needed room for. EST_H was 150 against a real 109, so the room test rejected space the box
+   would have fitted in and drove the caption above or beside far more often than it had to. */
+check(G56, 'the room test measures the caption instead of assuming a height for it',
+  /boxRef\.current\?\.offsetHeight/.test(overlaySrc) &&
+  /const boxH = Math\.min\(capH, H - 24\)/.test(overlaySrc) &&
+  /roomBelow < boxH && roomAbove < boxH/.test(overlaySrc) &&
+  /const below = roomBelow >= boxH/.test(overlaySrc),
+  'above-vs-below must be decided against the caption\'s measured height. A constant guess is ' +
+  'wrong in both directions: too large and the box is pushed away from space it fits in, too ' +
+  'small and it overhangs the stage edge it was just approved for');
+
+/* 🔴 THE FIFTH OF THE FAMILY, FOUND WHILE VERIFYING THE FOURTH. `getBoundingClientRect()` reports
+   PAINTED geometry, and this overlay arrives on `animate-ponder-open`, which opens the modal from
+   `scale(0.94)`. The first beat measured after opening therefore came back 6% small and STAYED
+   small, because nothing re-measures until the layout changes — the ring sat 60px short of Upah
+   bongkar, outlining two and a bit fields under a caption that said three. Autoplay healed it on
+   the next beat about four seconds later, which is precisely why it survived every check and
+   every screenshot. Dividing the ancestor's scale back out fixes the cause instead of one
+   animation's end event, and keeps `spot` in the same untransformed space `clientWidth` speaks. */
+check(G56, 'the highlight is measured in layout space, not through an ancestor animation scale',
+  /wrap\.offsetWidth > 0 && base\.width > 0 \? base\.width \/ wrap\.offsetWidth : 1/.test(overlaySrc) &&
+  /wrap\.offsetHeight > 0 && base\.height > 0 \? base\.height \/ wrap\.offsetHeight : 1/.test(overlaySrc) &&
+  /- base\.left\) \/ kx/.test(overlaySrc) && /- base\.top\) \/ ky/.test(overlaySrc),
+  'every rect the spotlight takes is a painted rect, and the modal opens from scale(0.94). ' +
+  'Without dividing that scale back out the first beat of every scene is measured small and the ' +
+  'highlight stays small until something else forces a re-measure');
+
+/* *"there is no highlights for that 3 biaya as well"*. The caption said "these three" while the
+   ring marked one field, because `focus` could only ever hold a single key. `measure()` already
+   unioned the rects of every hit — the key test was the only single-valued thing in the path. */
+const threeCosts = ['c:ongkir', 'c:cukai', 'c:bongkar'];
+check(G56, 'a beat can mark more than one field, and the three intake costs are marked together',
+  /Array\.isArray\(f\) \? f : \[f\]/.test(overlaySrc) &&
+  scenes.some(s => s.steps.some(st => Array.isArray(st.focus) &&
+    threeCosts.every(k => st.focus.includes(k)))),
+  'a sentence about three fields that lights one of them teaches the wrong three. `focus` takes ' +
+  'a list, a bare string still means a list of one, and the beat naming Ongkos kirim / Pita ' +
+  'cukai / Upah bongkar must name all three keys');
+
+/* *"dont make the ponder panel slideable so that the text box is fixed"*. A caption is positioned
+   against the stage WINDOW while its subject lives in the scroller, so any scroll slides the
+   subject out from under a box that stays put. Goods Received overflowed its window by 27px —
+   enough to drift, too little to read as a scrollbar. Sized to fit rather than locked: locking
+   `overflow` would have made everything below the fold permanently unreachable on a phone, which
+   is a worse bug than the one being fixed. If a future stage grows, re-measure with
+   `tools/ponder-lab.html?scene=<id>` and compare `scrollHeight` against `clientHeight`. */
+const modalMin = Number((overlaySrc.match(/lg:min-h-\[(\d+)px\]/) || [])[1] || 0);
+check(G56, 'the stage window is sized for its scene rather than scrolling under the caption',
+  modalMin >= 700 && /p-4 space-y-3 min-w-\[720px\]/.test(stageSrc) &&
+  /overflow-auto/.test(overlaySrc),
+  'the modal floor must leave the stage window taller than the tallest scene INCLUDING the beats ' +
+  'that also show the wide bottom bar, and the scroller must stay `overflow-auto` as the safety ' +
+  'net for short and narrow windows. A locked scroller hides content instead of fitting it');
+
+/* *"i want to be able to press the each of the components inside the ponder panel and when
+   pressed it will snap back to the timeframe where that components is explained"*. The first beat
+   naming a key wins: a part explained twice is introduced once and referred back to later, and the
+   introduction is what someone pressing it is asking for. Only parts some beat actually covers get
+   a cursor, because a pointer on a part no beat explains promises a jump that cannot happen. */
+check(G56, 'pressing a part of the stage jumps to the beat that explains it',
+  /onClick=\{jumpTo\}/.test(overlaySrc) &&
+  /closest\?\.\('\[data-ponder\]'\)/.test(overlaySrc) &&
+  /p\.steps\.findIndex\(s => focusOf\(s\)\.includes\(k\)\)/.test(overlaySrc) &&
+  /jumpable\.has\(el\.dataset\.ponder\)/.test(overlaySrc) &&
+  /cursor = canJump \? 'pointer'/.test(overlaySrc),
+  'the stage scroller must seek to the first beat whose focus names the pressed key, and only ' +
+  'pressable parts may show a pointer cursor');
+
 /* The highlight is drawn, not merely implied by dimming everything else. An EDGE, never a fill:
    amber is an edge and an ink in this app, and it is not a fill. */
 check(G56, 'the subject is outlined, and the outline is an edge rather than a fill',
   /animate-ponder-ring/.test(overlaySrc) && /border-2 \$\{TONE_EDGE/.test(overlaySrc) &&
-  /const hits = key === '\*' \? \[\] : all\.filter/.test(overlaySrc),
+  /const hits = wide \? \[\] : all\.filter\(el => keys\.includes\(el\.dataset\.ponder\)\)/.test(overlaySrc),
   'the ring must be a border on a box sized to the UNION of the direct hits. Including ancestors ' +
   'would union the whole table and outline nothing in particular');
 

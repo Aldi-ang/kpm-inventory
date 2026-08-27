@@ -38,8 +38,12 @@ export const goodsReceived = {
     { text: 'Cari barang di daftar kiri lalu klik. **Batch** diisi kalau kertasnya menyebut nomor batch, dan **Jumlah** dalam Bks.',
       focus: 't:jumlah', at: 'near', hold: 5400 },
 
+    /* All three keys, because the sentence is about all three. Focusing only `c:cukai` lit one
+       field under a caption that said "these three" — *"there is no highlights for that 3 biaya as
+       well"*. The player unions their rects, so the ring becomes one band across the whole row,
+       which is the shape that says "these, together". */
     { text: 'Tiga biaya ini yang bikin harga barang naik: **Ongkos kirim**, **Pita cukai**, **Upah bongkar**. Semuanya biaya masuk — cabang tidak membayarnya lagi.',
-      focus: 'c:cukai', at: 'near', tone: 'gold', hold: 6800 },
+      focus: ['c:ongkir', 'c:cukai', 'c:bongkar'], at: 'near', tone: 'gold', hold: 6800 },
 
     { text: '**Total landed value** = harga barang + tiga biaya tadi. 900 × Rp 8.500 = Rp 7.650.000, ditambah 250.000 + 180.000 + 90.000, jadi **Rp 8.170.000**.',
       focus: 'sum:total', at: 'near', tone: 'gold', hold: 7400 },

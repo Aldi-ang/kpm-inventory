@@ -28,7 +28,7 @@ const Field = ({ k, label, value, mono = true, dim = false }) => (
 
 export default function GoodsReceivedStage() {
   return (
-    <div className="p-5 space-y-4 min-w-[720px]">
+    <div className="p-4 space-y-3 min-w-[720px]">
 
       <div data-ponder="f:target" className="flex items-center gap-2">
         <span className="text-[9.5px] font-bold text-ink-muted uppercase tracking-widest">Target produksi bulan ini</span>

@@ -33,7 +33,21 @@ const reduced = () => typeof window !== 'undefined' && typeof window.matchMedia 
 
 const CAPTION_W = 380;   // px, clamped to the stage on narrow screens
 const PAD = 6;           // how far the highlight sits outside what it points at
-const EST_H = 150;       // assumed caption height, used only to decide above-vs-below
+const GAP = 12;          // clear air between the highlight's edge and the caption's pointer
+const EST_H = 120;       // first-paint guess ONLY; a real measurement replaces it before paint
+
+/* A beat may focus ONE key or SEVERAL, and the plural case is the one that was missing.
+
+   Aldi's sentence about the intake costs names all three — *"there is no highlights for that 3
+   biaya as well"* — but `focus: 'c:cukai'` could only light one of them, so the caption said
+   "these three" while the ring marked one. `measure()` already unions the rects of every hit; the
+   only single-valued thing in the whole path was the key test. Everything downstream takes a list
+   now, and a bare string still means a list of one. */
+const focusOf = (step) => {
+  const f = step?.focus;
+  if (f == null) return ['*'];
+  return Array.isArray(f) ? f : [f];
+};
 
 /* Terms stay English inside an Indonesian sentence, so they have to LOOK like terms.
    --accent-ink is gold that goes dark in light mode; gold as text on a light ground is the
@@ -64,12 +78,13 @@ const POINT = {
 function SpeechBox({ tone, dir, arrow, children }) {
   const pt = POINT[dir] || POINT.up;
   const vertical = dir === 'left' || dir === 'right';
-  const pos = vertical
-    ? { top: '50%', transform: 'translateY(-50%)' }
-    : { left: (arrow ?? 20) - 8 };
-  const inner = vertical
-    ? { top: '50%', transform: 'translateY(-50%)' }
-    : { left: (arrow ?? 20) - 6.5 };
+  /* The pointer is offset in PIXELS along the box's edge on BOTH axes now. It used to sit at
+     `top: 50%` on the sideways placements, which meant a caption clamped inside the stage aimed at
+     its own middle rather than at its subject — the same lie the horizontal case had already been
+     fixed for. It also drops one more `transform` off an animated element, and a transform on one
+     of those is what caused the fault this whole pass is about. */
+  const pos   = vertical ? { top: (arrow ?? 20) - 8 }   : { left: (arrow ?? 20) - 8 };
+  const inner = vertical ? { top: (arrow ?? 20) - 6.5 } : { left: (arrow ?? 20) - 6.5 };
   return (
     <div className="relative">
       <span className={`${pt.wrap} ${pt.size} bg-line-3`} style={{ ...pos, clipPath: pt.clip }} />
@@ -107,11 +122,34 @@ export default function PonderOverlay({ sceneId, open, onClose, onBack }) {
 
   const wrapRef = useRef(null);     // the visible stage window; every rect is measured against it
   const scrollRef = useRef(null);   // the scroller the stage actually lives in
+  const boxRef = useRef(null);      // the near-caption itself, so its height is read and not guessed
   const [spot, setSpot] = useState(null);
 
   const step = p.steps[p.index] || null;
   const tone = (step && step.tone) || 'ink';
   const placement = (step && step.at) || 'bottom';
+  const keys = useMemo(() => focusOf(step), [step]);
+
+  /* Every key any beat explains. Only these parts of the stage are pressable, because a cursor on
+     a part no beat covers promises a jump that cannot happen. Stable per scene — and the dependency
+     arrays in this file are load-bearing: an unstable object in one of them replayed the entire
+     book on every render, once. */
+  const jumpable = useMemo(() => {
+    const s = new Set();
+    for (const st of p.steps) for (const k of focusOf(st)) if (k !== '*') s.add(k);
+    return s;
+  }, [p.steps]);
+
+  /* 🔴 THE CAPTION'S HEIGHT IS MEASURED, NEVER ASSUMED. `EST_H` was 150 against a real 109, so the
+     room test rejected space the box would have fitted in and pushed the caption above its subject
+     far more often than it had to. No dep array on purpose: it runs after every render, costs one
+     layout read, and settles in a single extra pass because the height only depends on the text and
+     a fixed width. The 1px band stops a sub-pixel height from oscillating forever. */
+  const [capH, setCapH] = useState(EST_H);
+  useLayoutEffect(() => {
+    const h = boxRef.current?.offsetHeight;
+    if (h && Math.abs(h - capH) > 1) setCapH(h);
+  });
 
   /* THE SPOTLIGHT, and it is two jobs at once.
 
@@ -127,24 +165,46 @@ export default function PonderOverlay({ sceneId, open, onClose, onBack }) {
   const measure = useCallback(() => {
     const wrap = wrapRef.current, root = scrollRef.current;
     if (!wrap || !root || !step) return;
-    const key = step.focus || '*';
+    const wide = keys.includes('*');
     const all = Array.from(root.querySelectorAll('[data-ponder]'));
-    const hits = key === '*' ? [] : all.filter(el => el.dataset.ponder === key);
+    const hits = wide ? [] : all.filter(el => keys.includes(el.dataset.ponder));
     const ease = reduced() ? 'none' : 'opacity 240ms cubic-bezier(0.23,1,0.32,1)';
     all.forEach(el => {
-      const lit = key === '*' || hits.some(h => h === el || h.contains(el) || el.contains(h));
+      const lit = wide || hits.some(h => h === el || h.contains(el) || el.contains(h));
       el.style.transition = ease;
       el.style.opacity = lit ? '1' : '0.26';
+      /* The press affordance rides along here because this is the one place that already walks
+         every part of the stage — a second walk would be a second thing to keep in step. */
+      const canJump = jumpable.has(el.dataset.ponder);
+      el.style.cursor = canJump ? 'pointer' : '';
+      if (canJump && !el.title) el.title = 'Klik untuk lompat ke penjelasannya';
     });
     if (!hits.length) { setSpot(null); return; }
     const base = wrap.getBoundingClientRect();
+
+    /* 🔴 A RECT IS A *VISUAL* RECT, AND THIS OVERLAY ARRIVES ON A SCALE ANIMATION.
+       `animate-ponder-open` opens the modal from `scale(0.94)`, and `getBoundingClientRect()`
+       reports what is on screen, not what the layout says — so the first beat measured after the
+       overlay opens came back 6% small, and the highlight stayed 6% small because nothing
+       re-measured. On Goods Received that left the ring 60px short of Upah bongkar: a box drawn
+       around two and a bit fields while the caption said three.
+
+       It healed itself when autoplay reached the next beat ~4s later, which is exactly why it
+       survived — the same shape as the other four: a mechanism nobody watched, nothing thrown,
+       every check green. Dividing the ancestor's scale back out fixes it at the cause rather than
+       at one animation's end event, and keeps `spot` in the same untransformed space that
+       `clientWidth`/`clientHeight` below already speak. `offsetWidth` is the layout width, the
+       rect's width is the painted one, and their ratio is whatever transform is in play. */
+    const kx = wrap.offsetWidth > 0 && base.width > 0 ? base.width / wrap.offsetWidth : 1;
+    const ky = wrap.offsetHeight > 0 && base.height > 0 ? base.height / wrap.offsetHeight : 1;
+
     const rs = hits.map(el => el.getBoundingClientRect());
-    const x = Math.min(...rs.map(r => r.left)) - base.left;
-    const y = Math.min(...rs.map(r => r.top)) - base.top;
-    const w = Math.max(...rs.map(r => r.right)) - base.left - x;
-    const h = Math.max(...rs.map(r => r.bottom)) - base.top - y;
+    const x = (Math.min(...rs.map(r => r.left)) - base.left) / kx;
+    const y = (Math.min(...rs.map(r => r.top)) - base.top) / ky;
+    const w = (Math.max(...rs.map(r => r.right)) - base.left) / kx - x;
+    const h = (Math.max(...rs.map(r => r.bottom)) - base.top) / ky - y;
     setSpot({ x, y, w, h });
-  }, [step]);
+  }, [step, keys, jumpable]);
 
   /* Ponder moves its camera to the subject. The web equivalent is scrolling it into view — and
      it has to happen before the measurement, which is why the measure runs on the scroller's own
@@ -153,12 +213,10 @@ export default function PonderOverlay({ sceneId, open, onClose, onBack }) {
     if (!open || !step) return;
     const root = scrollRef.current;
     if (!root) return;
-    const key = step.focus || '*';
-    if (key !== '*') {
-      const first = root.querySelector(`[data-ponder="${key}"]`);
-      if (first && typeof first.scrollIntoView === 'function') {
-        first.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: reduced() ? 'auto' : 'smooth' });
-      }
+    const first = keys.includes('*') ? null
+      : keys.map(k => root.querySelector(`[data-ponder="${k}"]`)).find(Boolean);
+    if (first && typeof first.scrollIntoView === 'function') {
+      first.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: reduced() ? 'auto' : 'smooth' });
     }
     /* Measured SYNCHRONOUSLY, not inside a requestAnimationFrame. A layout effect already runs
        after the DOM is written and before paint, so the rects are valid here — and the rAF
@@ -167,7 +225,7 @@ export default function PonderOverlay({ sceneId, open, onClose, onBack }) {
        playing, and the whole feature was simply absent. The smooth scroll that the rAF was meant
        to wait for is covered by the scroller's own scroll listener below. */
     measure();
-  }, [open, step, p.index, measure]);
+  }, [open, step, keys, p.index, measure]);
 
   useEffect(() => {
     if (!open) return;
@@ -234,7 +292,9 @@ export default function PonderOverlay({ sceneId, open, onClose, onBack }) {
     if (!spot || placement !== 'near' || !wrap) return null;
     const W = wrap.clientWidth, H = wrap.clientHeight;
     const boxW = Math.min(CAPTION_W, W - 24);
+    const boxH = Math.min(capH, H - 24);
     const clampX = (v) => Math.max(12, Math.min(v, Math.max(12, W - boxW - 12)));
+    const clampY = (v) => Math.max(12, Math.min(v, Math.max(12, H - boxH - 12)));
     const cx = spot.x + spot.w / 2, cy = spot.y + spot.h / 2;
 
     /* 🔴 THE ROOM TEST HAS TO ASK BOTH DIRECTIONS BEFORE CHOOSING ONE.
@@ -242,25 +302,48 @@ export default function PonderOverlay({ sceneId, open, onClose, onBack }) {
        including when there was no room above either. A field near the bottom of a short stage then
        got its caption sliced in half by the stage's own edge. When neither side has room the
        caption stands BESIDE the subject, where the only limit is the stage's full height. */
-    const roomBelow = H - (spot.y + spot.h + PAD + 12);
-    const roomAbove = spot.y - PAD - 12;
+    const roomBelow = H - (spot.y + spot.h + PAD + GAP);
+    const roomAbove = spot.y - PAD - GAP;
 
-    if (spot.h > H * 0.42 || (roomBelow < EST_H && roomAbove < EST_H)) {
+    /* 🔴 EVERY BRANCH RETURNS A FINAL `top`, AND NOT ONE OF THEM ASKS FOR A TRANSFORM.
+       This is the bug Aldi photographed — *"the textbox block the view for the 3 biaya"* — and it
+       was never the room test. The box carries `animate-ponder-in`, whose last keyframe is
+       `transform: none` under fill-mode `both`; an animation outranks an inline style, so the
+       `translateY(-100%)` that turned this coordinate into the box's BOTTOM edge was thrown away
+       the instant the 260ms arrival finished. The box then hung downward from a number meant for
+       its bottom and sat straight on top of the field it was describing — every 'above' caption,
+       every 'beside' caption, in every scene. Nothing threw, and all 657 checks stayed green.
+       Geometry that has to survive an animation goes in `top`, never in `transform`. */
+    if (spot.h > H * 0.42 || (roomBelow < boxH && roomAbove < boxH)) {
       const boxLeft = cx > W / 2;                       // subject on the right, so stand on the left
       const left = clampX(boxLeft ? spot.x - PAD - 14 - boxW : spot.x + spot.w + PAD + 14);
-      return { left, top: Math.max(70, Math.min(cy, H - 70)), boxW, arrow: null,
-               dir: boxLeft ? 'right' : 'left', shift: 'translateY(-50%)' };
+      const top = clampY(cy - boxH / 2);
+      return { left, top, boxW, dir: boxLeft ? 'right' : 'left',
+               arrow: Math.max(18, Math.min(cy - top, boxH - 18)) };
     }
-    const below = roomBelow >= EST_H;
+    const below = roomBelow >= boxH;
     const left = clampX(cx - boxW / 2);
-    const arrow = Math.max(18, Math.min(cx - left, boxW - 18));
     return {
-      left, boxW, arrow,
-      top: below ? spot.y + spot.h + PAD + 12 : spot.y - PAD - 12,
+      left, boxW,
+      top: below ? spot.y + spot.h + PAD + GAP : spot.y - PAD - GAP - boxH,
       dir: below ? 'up' : 'down',
-      shift: below ? 'none' : 'translateY(-100%)',
+      arrow: Math.max(18, Math.min(cx - left, boxW - 18)),
     };
-  }, [spot, placement]);
+  }, [spot, placement, capH]);
+
+  /* JOB 4 — press a part of the stage, jump to the beat that explains it.
+     *"i want to be able to press the each of the components inside the ponder panel and when
+     pressed it will snap back to the timeframe where that components is explained"*.
+     The FIRST beat naming the key wins: a part explained twice is introduced once and referred back
+     to later, and the introduction is what someone pressing it is asking for. Seeking keeps playing,
+     exactly as the timeline notches do — two controls doing the same thing should do it the same. */
+  const jumpTo = useCallback((e) => {
+    const el = e.target?.closest?.('[data-ponder]');
+    const k = el?.dataset.ponder;
+    if (!k) return;
+    const i = p.steps.findIndex(s => focusOf(s).includes(k));
+    if (i >= 0) p.seek(i);
+  }, [p.steps, p.seek]);
 
   if (!open || !scene || !step) return null;
 
@@ -285,7 +368,7 @@ export default function PonderOverlay({ sceneId, open, onClose, onBack }) {
                     bg-[var(--duke-scrim-hi)] backdrop-blur-sm lg:p-6">
 
       <div onMouseDown={(e) => e.stopPropagation()}
-           className="relative w-full min-w-0 lg:max-w-5xl max-h-[92vh] lg:max-h-[88vh] lg:min-h-[600px]
+           className="relative w-full min-w-0 lg:max-w-5xl max-h-[92vh] lg:max-h-[88vh] lg:min-h-[700px]
                       flex flex-col overflow-hidden bg-panel animate-ponder-open
                       border border-line-2 rounded-t-2xl lg:rounded-2xl
                       shadow-[0_1px_1px_rgba(0,0,0,0.20),0_18px_40px_-28px_rgba(0,0,0,0.85)]">
@@ -315,8 +398,17 @@ export default function PonderOverlay({ sceneId, open, onClose, onBack }) {
           </button>
         </div>
 
+        {/* 🔴 THE STAGE WINDOW IS SIZED SO THE SCENE FITS INSIDE IT, RATHER THAN SCROLLING.
+            *"dont make the ponder panel slideable so that the text box is fixed"*. A caption is
+            positioned against the stage window while its subject lives in the scroller, so any
+            scroll slides the subject out from under a box that stays put. Goods Received overflowed
+            by 27px at his window size — enough to drift, not enough to notice as a scrollbar.
+            The modal is tall enough for the tallest stage now, INCLUDING the beats that also show
+            the wide bottom bar, so nothing scrolls in practice. `overflow-auto` stays as the safety
+            net for a phone or a short window: locking it instead would have made anything below the
+            fold unreachable, which is a worse bug than the one being fixed. */}
         <div ref={wrapRef} className="relative bg-inset border-b border-line-2 min-w-0 flex-1 min-h-[220px] lg:min-h-[300px] overflow-hidden">
-          <div ref={scrollRef} className="absolute inset-0 overflow-auto">
+          <div ref={scrollRef} onClick={jumpTo} className="absolute inset-0 overflow-auto">
             {Stage ? <Stage scene={scene} step={step} stepIndex={p.index} /> : null}
           </div>
 
@@ -342,8 +434,8 @@ export default function PonderOverlay({ sceneId, open, onClose, onBack }) {
 
           {/* A caption pinned beside its subject, with a pointer that keeps aiming at it. */}
           {near && (
-            <div key={p.index} className="absolute z-30 animate-ponder-in"
-                 style={{ left: near.left, top: near.top, width: near.boxW, transform: near.shift, maxHeight: '100%' }}>
+            <div key={p.index} ref={boxRef} className="absolute z-30 animate-ponder-in"
+                 style={{ left: near.left, top: near.top, width: near.boxW }}>
               <SpeechBox tone={tone} dir={near.dir} arrow={near.arrow}>{captionBody}</SpeechBox>
             </div>
           )}
