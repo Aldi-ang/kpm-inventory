@@ -1,10 +1,11 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-28 00:47 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · ✅ **HOVER GLOW + RIBBONS SHIPPED, nothing half-done** · **666/666** · branch `phase0-solid-ground`, clean at `341b93f`
+**Updated: 2026-08-28 01:05 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · 🛑 **STOPPED ON THE WEEKLY QUOTA — notes written, nothing half-done** · **666/666** · branch `phase0-solid-ground`, tree clean
 
 ## 🟢 2026-08-28 00:47 — HOVER GLOW AND THE RIBBON/COVER FIX. `1ebbabc`, **666/666**. Tree clean.
 
-**NOW: nothing is in progress. One question is the whole next job — which chapter.** Every commit
+**NOW: stopped on the weekly quota. Nothing is in progress, nothing is half-done. One question is
+the whole next job — which chapter.** Every commit
 builds and audits green. Diagnosis for all of it is in `1ebbabc`; do not re-derive it.
 
 **The hover glow is built under a palette exemption HE GRANTED** (*"sure"*, 2026-08-28), against the

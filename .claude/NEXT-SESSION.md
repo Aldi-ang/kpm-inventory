@@ -1,8 +1,9 @@
 # NEXT SESSION — read this, then `.claude/PROGRESS.md`. Read no code to orient.
 
-**Written 2026-08-28 00:55 WIB. 666/666. Branch `phase0-solid-ground`, clean at `1ebbabc`.**
-His four Goods Received faults, the hover glow and the ribbon/cover fix are all shipped and verified.
-**One question is left and it is the whole next job: which chapter.**
+**Written 2026-08-28 01:05 WIB. 666/666. Branch `phase0-solid-ground`, tree clean.**
+🛑 **STOPPED ON THE WEEKLY QUOTA — nothing is half-finished.** Every commit builds and audits
+green. His four Goods Received faults, the hover glow and the ribbon/cover fix are all shipped and
+verified in a real browser. **One question is left and it is the whole next job: which chapter.**
 
 ## First command
 
@@ -32,6 +33,14 @@ checks hold its boundary. If he wants it bigger or brighter, that is a new decis
 `sections.js` order is **Sales Terminal (titip vs lunas) → Setoran → Stock Opname → Piutang →
 Armada → the rest**. Sales Terminal is the biggest and the one he uses daily, so it is the default
 if he does not care. Each chapter is a scene file plus a stage; budget one session per chapter.
+
+**How a chapter is built, so no one re-derives it:** a scene file in `src/ponder/scenes/` (plain
+data — id, title, section, blurb, stage, steps) plus a stage in `src/ponder/stages/`. Register both
+in `registry.js`. Each step is `{ text, focus, at, tone, hold }`; `focus` takes one key or a LIST,
+and every key must be worn by a `data-ponder` attribute in the stage or check 4119 goes red. Follow
+`goods-received.js` — and **if extracting the real panel starts touching anything that computes a
+total, build a schematic instead**, exactly as that one did. Indonesian sentences, English feature
+names in `**bold**`. Then verify with the DOM sweep below, not by reading the diff.
 
 ### ✅ AND HE SHOULD LOOK AT WHAT JUST SHIPPED
 
