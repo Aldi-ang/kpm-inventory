@@ -1,6 +1,30 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-27 18:58 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · ✅ **THE BOOK SHUTS BEFORE IT FLIES HOME** — **657/657** · ⚠️ **sounds still unheard by anyone** · branch `phase0-solid-ground`
+**Updated: 2026-08-27 19:43 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · ✅ **THE BOOK HINGES AT ITS SPINE AND HAS THICKNESS** — **657/657** · ⚠️ **sounds still unheard by anyone** · branch `phase0-solid-ground`
+
+## 🟠 2026-08-27 19:43 — REAL BOOK LOGIC. **657/657.** `dc835a9`
+
+> *"why did u flip the book like that, first thing first, book must be 3D with its thickness,
+> secondly it should flipped to the middle like how the book works not to the side like that, use
+> book logic"*
+
+**🔴 THE OLD VERSION ROTATED THE WHOLE SPREAD ABOUT ITS OWN CENTRE — that is a card being
+turned over, not a book.** Now the RIGHT HALF is its own leaf with `transform-origin` at the
+spine, swinging **0° → -180°** onto the left half. Past 90° its front face turns away and its BACK
+face — the leather cover with the gold spine and the Tutorial mark — is what you see. **The left
+half never moves**, exactly as it does not on a desk.
+
+**Thickness:** page edges stand proud on three sides, drawn as **fine alternating lines**, because
+a stack of sheets seen edge-on is lines; one flat tone reads as a thick card.
+
+**⚠️ `overflow-hidden` IS DELIBERATELY ABSENT from the `preserve-3d` stage.** A clip on a
+preserve-3d element collapses the hinge back to a flat rotation in several engines — which is the
+exact bug being fixed. Clipping happens on each FACE, where there are no 3D children left.
+
+**Two elements, two animations, one clock:** the leaf swings, the book flies, started in the same
+tick with the same duration and complementary offsets. Never chained.
+
+**Verified mid-flight**: closed cover at 560ms, laid-out spread at the end.
 
 ## 🟠 2026-08-27 18:58 — TWO-BEAT OPEN AND CLOSE. **657/657.** `e7d7f15`
 
