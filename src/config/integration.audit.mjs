@@ -1568,8 +1568,14 @@ const delMarks = DEL_FILES.reduce((n, f) =>
    deletes there — the inbound record and the outbound shipment — read "Hapus" beside the glyph, so
    neither may be marked or the label prints twice. The words are checked one line below; the pair
    of edits is what makes this a migration rather than a loss. */
-check(G25, 'every icon-only delete button in the app wears the expanding control', delMarks === 13,
-  `found ${delMarks} marked, expected 13 — a new icon-only delete button needs ` +
+/* 13 → 12 on 2026-08-27, sixth time, same migration as the fifth: the HQ request queue left the
+   Global Logistics panel for the Restock Vault desk's Request tab. The queue's row carried an
+   icon-only trash glyph; the desk's row opens into the drawer whose action strip already reads
+   "Hapus" beside its glyph — the very delete counted one check below. So the glyph did not go
+   away, it arrived somewhere with room for the word. If the Request tab ever grows its own
+   icon-only delete, this count goes back to 13. */
+check(G25, 'every icon-only delete button in the app wears the expanding control', delMarks === 12,
+  `found ${delMarks} marked, expected 12 — a new icon-only delete button needs ` +
   '`data-kpm-del data-label="Delete"` on it, and one that carries its own word ("Remove", "DEL") ' +
   'must NOT be marked or the label prints twice');
 /* the other half of that migration: the count may only drop because a WORD replaced the glyph. */
@@ -3726,7 +3732,12 @@ const restockCode = fs.readFileSync('src/RestockVaultView.jsx', 'utf8');
 /* The printed nota is a documented palette exception — it is white paper in both themes, because
    --ink-muted would print at 2,3:1 on white. Its lines are excluded by name, not by loosening the
    needle, so a raw colour anywhere else still fails loudly. */
-const restockThemed = restockCode.split('\n')
+/* ⚠️ COMMENTS STRIPPED FIRST — the same trap group 48 already paid for, which this check was
+   written without. It fired on 2026-08-27 against the sentence explaining the fix: the comment
+   "the original was `text-white` on `bg-black/50`" is prose ABOUT a raw colour, not a raw colour.
+   A check that cannot tell the two apart reports the bug forever and teaches you to stop writing
+   the comment, which is the wrong lesson to learn twice. */
+const restockThemed = noCmt(restockCode).split('\n')
   .filter(l => !l.includes('print-receipt') && !l.includes('no-print')).join('\n');
 const rawWhite = (restockThemed.match(/text-white/g) || []).length;
 const rawBlack = (restockThemed.match(/bg-black\//g) || []).length;
@@ -3769,13 +3780,18 @@ check(G53, 'the completeness meter reports but never blocks a save',
    pick can be any picture from any day — the exact thing the photo exists to rule out. Both inputs
    must therefore ask for the camera unless the tier rule says otherwise, and that rule must be the
    shared one, not a second copy that can drift. */
-check(G53, 'both evidence photos ask for the camera unless the tier rule allows the gallery',
+/* 2 → 3 on 2026-08-27: the shipping-proof photo arrived with the Request tab. It is the same kind
+   of evidence and it earns the same rule — a photo of a sealed package with its resi on it is
+   worthless if it can be any picture from any day. Deliberately counted, not loosened to ">= 2":
+   the count is what catches an input that quietly dropped the spread. */
+check(G53, 'all three evidence photos ask for the camera unless the tier rule allows the gallery',
   /canPickFromGallery/.test(restockCode) &&
-  (restockCode.match(/galleryOk \? \{\} : \{ capture: 'environment' \}/g) || []).length === 2 &&
+  (restockCode.match(/galleryOk \? \{\} : \{ capture: 'environment' \}/g) || []).length === 3 &&
   /export const canPickFromGallery/.test(fs.readFileSync('src/config/permissions.js', 'utf8')),
-  'the foto-barang AND nota inputs must both spread capture:"environment" unless canPickFromGallery ' +
-  'says otherwise, and that helper must live in permissions.js beside the other tier checks — a ' +
-  'second copy of the translation is what has caused every tier bug in this project so far');
+  'the foto-barang, the nota AND the shipping-proof inputs must each spread capture:"environment" ' +
+  'unless canPickFromGallery says otherwise, and that helper must live in permissions.js beside ' +
+  'the other tier checks — a second copy of the translation is what has caused every tier bug ' +
+  'in this project so far');
 
 /* The nota was disabled on Kirim once, and a dead grey control that never says why is the silence
    he calls a bug. It is optional there, not forbidden. */
@@ -3801,7 +3817,132 @@ check(G53, 'the rail nav carries exactly one style prop',
   `${/touchAction/.test(navTag) ? 'is' : 'is NOT'} inside the tag — JSX keeps only the last style, ` +
   'so a second one deletes the first without a warning');
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   54. The Request tab, and the roster behind Tujuan
+
+   Built 2026-08-27. HQ's only way to answer a branch request used to live inside
+   BranchWarehouseManager — the BRANCH screen — while every other surat jalan
+   lived on the Restock Vault desk. It moved to the desk's 4th tab. Nothing was
+   copied: the rows, the drawer, the timeline, "Edit resi" and "Hapus" are the
+   Buku machinery, and only the shipping modal travelled.
+   ═══════════════════════════════════════════════════════════════════════════ */
+const G54 = '54. The Request tab, and the roster behind Tujuan';
+/* `appSrc` is the raw App.jsx already read for group 6 — re-reading it would just be a second
+   name for the same string. */
+const bwmCode = fs.readFileSync('src/components/BranchWarehouseManager.jsx', 'utf8');
+
+/* His ask: "make sure that every team registered on the fleet and roster have their own storage
+   option". Built from stockRequests alone, a team that had never been shipped to had no entry —
+   so the warehouse that most needed its first delivery was the only one HQ could not pick. */
+check(G54, 'Tujuan is built from the roster, not only from what has already shipped',
+  /\.\.\.motorists\.map\(m => m\?\.location\)/.test(restockCode) &&
+  /\.\.\.stockRequests\.map\(r => r\?\.branch\)/.test(restockCode),
+  'branchesSeen must UNION the motorists roster with the branches seen on past requests. Roster ' +
+  'only would drop a live shipment whose location was renamed; requests only is the original bug');
+
+/* 🔴 The half that fails silently. A prop that is never passed defaults to [], the union quietly
+   degrades back to history-only, and the screen looks exactly the same as when it was right. */
+const rvTag = appSrc.slice(appSrc.indexOf('<RestockVaultView'), appSrc.indexOf('<RestockVaultView') + 900);
+check(G54, 'App.jsx actually hands the roster to the desk',
+  /motorists=\{motorists\}/.test(rvTag),
+  'RestockVaultView must be given motorists={motorists}. Without it the prop defaults to [], the ' +
+  'roster half of Tujuan silently contributes nothing, and the screen looks identical to the bug');
+
+/* The queue kept all three open states on purpose — PENDING alone would make every shipment
+   already on the road invisible to HQ, which is strictly less than the panel it replaced. */
+check(G54, 'the queue still shows every request that is still HQ’s problem',
+  /const REQ_RANK = \{ DISPUTED: 0, PENDING: 1, IN_TRANSIT: 2 \}/.test(restockCode),
+  'REQ_RANK is both the filter and the sort. Narrowing it to PENDING hides shipments already on ' +
+  'the road; ranking DISPUTED last buries the one state nobody goes looking for');
+
+/* 🔴 A <button> inside a <button> is invalid HTML and the inner one stops receiving clicks. The
+   row had to become a flex PAIR to keep Siapkan Pengiriman at one click. */
+const rowStart = restockCode.indexOf('onClick={() => setExpandedPO(open ? null : row.key)}');
+const siapkanAt = restockCode.indexOf('onClick={() => handleStartFulfillment(po)}');
+check(G54, 'the Siapkan button is a sibling of the row, never nested inside it',
+  rowStart > 0 && siapkanAt > rowStart &&
+  restockCode.slice(rowStart, siapkanAt).includes('</button>'),
+  'the row button must CLOSE before the Siapkan button opens. Nesting them is legal JSX, renders ' +
+  'without a warning, and silently kills the inner click');
+
+/* Same failure BranchWarehouseManager already paid for once: a total recomputed from the screen's
+   copy of stock undoes anything sold while the photo uploads. */
+check(G54, 'shipping deducts the difference server-side, never a recomputed total',
+  /stock: increment\(-Number\(item\.qty\)\)/.test(restockCode),
+  'handleShipItems must deduct with increment(-qty). The screen’s copy of HQ stock is read ' +
+  'before the photo is compressed and uploaded — seconds, sometimes minutes on a phone — and a ' +
+  'recomputed total resurrects everything sold in that gap');
+
+/* It MOVED. If a second copy ever appears, a fix to one silently misses the other — and this one
+   deducts HQ stock, so the drift is money. */
+check(G54, 'the shipping modal exists in exactly one place',
+  /Siapkan pengiriman ke \{isFulfilling\.branch\}/.test(restockCode) &&
+  !/isFulfilling/.test(bwmCode) && !/handleShipItems/.test(bwmCode),
+  'the fulfilment modal belongs to the Request tab alone. BranchWarehouseManager must carry no ' +
+  'isFulfilling state and no handleShipItems — two copies of a stock deduction drift apart, and ' +
+  'the one nobody edited is the one that keeps running');
+
 /* ── report ──────────────────────────────────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════════════════════════
+   55. Global Logistics — where every pack is
+
+   His ask, 2026-08-26: *"show the regional warehouse current stock, on field,
+   sold as well just like what we have on the dashboard, so HQ know how many bks
+   should be send to them again"*. "Just like the dashboard" is not a styling
+   note — it is a correctness requirement, and these checks are what keeps it
+   true after someone edits one screen and not the other.
+   ═══════════════════════════════════════════════════════════════════════════ */
+const G55 = '55. Global Logistics — where every pack is';
+const syncCode = fs.readFileSync('src/hooks/useDatabaseSync.js', 'utf8');
+const dashCode = fs.readFileSync('src/components/DashboardView.jsx', 'utf8');
+
+/* 🔴 The number that can silently lie. `transactions` is a SEVEN-DAY listener, so "terjual" can
+   only ever mean seven days — and the panel prints that claim in words. Widen the listener and
+   the heading keeps saying 7 while the figure means something else; nothing else would notice. */
+check(G55, 'the terjual window and the transactions listener still agree',
+  /where\('timestamp', '>=', sevenDaysAgo\)/.test(syncCode) &&
+  /const SEVEN_DAYS = 7;/.test(bwmCode) &&
+  /Terjual = 7 hari terakhir/.test(bwmCode),
+  'the panel prints "Terjual = 7 hari terakhir" and divides by SEVEN_DAYS to get the rate. That ' +
+  'is only true while the transactions listener is capped at sevenDaysAgo — move the cap and ' +
+  'both the label and every "sisa hari" become wrong without a single visible symptom');
+
+/* The maths is the dashboard's, not a second copy. Two implementations of "where is every pack"
+   WILL drift, and the screen nobody edited is the one that keeps being believed. */
+check(G55, 'the readout runs the dashboard’s supply maths, not its own copy',
+  /import \{ supplyByProduct, warehouseList, MASTER \} from '\.\.\/utils\/supply\.js'/.test(bwmCode) &&
+  /supplyByProduct\(\{/.test(bwmCode) && /supplyByProduct\(\{/.test(dashCode),
+  'BranchWarehouseManager must call supplyByProduct from utils/supply.js — the same function the ' +
+  'dashboard calls. Re-deriving shelf/field/sold here is how the two screens start disagreeing ' +
+  'about the same warehouse');
+
+/* 🔴 Three props, all of which fail SILENTLY: each defaults to an empty value, so a missing one
+   renders a panel full of confident zeroes rather than an error. */
+const bwmTag = appSrc.slice(appSrc.indexOf('<BranchWarehouseManager'), appSrc.indexOf('<BranchWarehouseManager') + 1200);
+check(G55, 'App.jsx hands the readout all three collections it counts',
+  /motorists=\{motorists\}/.test(bwmTag) &&
+  /transactions=\{transactions\}/.test(bwmTag) &&
+  /branchStockMap=\{branchStock\}/.test(bwmTag),
+  'BranchWarehouseManager needs motorists, transactions AND branchStockMap. Every one of them ' +
+  'defaults to empty, so a prop that is never passed prints zeroes instead of failing — the ' +
+  'worst possible way for a stock figure to be wrong');
+
+/* Sold packs are not anywhere any more. Putting them in a "where is it" bar shrinks every other
+   segment in proportion to how WELL a branch is doing, which reads as the opposite of the truth. */
+check(G55, 'the where-is-it bar leaves sold out of its segments',
+  /const here = r\.shelf \+ \(r\.transit \|\| 0\) \+ r\.field;/.test(bwmCode) &&
+  !/const here = [^;]*r\.sold/.test(bwmCode),
+  'the stacked bar may only contain shelf, transit and field. A sold segment makes a branch that ' +
+  'is selling well look like a branch that is holding less');
+
+/* stock_requests only ever run HQ → branch, so a transit figure on MASTER would be an empty sum
+   dressed up as a measurement. It must print as unknown, not as zero. */
+check(G55, 'the master vault prints no in-transit figure it cannot have',
+  /name === MASTER/.test(bwmCode) && /\? null/.test(bwmCode) &&
+  /r\.transit === null \? <span className="text-ink-muted">—<\/span>/.test(bwmCode),
+  'nothing is ever in transit TO the master vault on a stock_request. A 0 there is a claim that ' +
+  'was measured; — is the truth, which is that this column does not apply');
+
 let last = '';
 for (const r of results) {
   if (r.group !== last) { console.log('\n' + r.group); last = r.group; }

@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { UploadCloud, FileText, Search, Save, X, RefreshCcw, History, ChevronDown, Printer, Pencil, Trash2, Image as ImageIcon, Target, PlusCircle, ArrowLeftRight, Send, Camera } from 'lucide-react';
+import { UploadCloud, FileText, Search, Save, X, RefreshCcw, History, ChevronDown, Printer, Pencil, Trash2, Image as ImageIcon, Target, PlusCircle, ArrowLeftRight, Send, Camera, Truck, AlertCircle, MapPin, Clock } from 'lucide-react';
 import { doc, collection, setDoc, updateDoc, deleteDoc, serverTimestamp, writeBatch, onSnapshot, increment } from 'firebase/firestore';
 import { savePhotoAndGetReference, deletePhotoFromStorage, compressImageToBase64, getLocalDayKey} from './utils/helpers';
 import { confirmAction } from './components/ConfirmGate.jsx';
@@ -118,7 +118,13 @@ const Proses = ({ steps }) => (
     </div>
 );
 
-const RestockVaultView = ({ inventory = [], procurements = [], db, storage, appId, user, isAdmin, userRole, logAudit, triggerCapy, appSettings, masterUserId }) => {
+/* The three states a branch request can be in while it is still HQ's problem. DISPUTED sorts
+   FIRST, not last: the goods are already inside the branch and the count is already filed, so
+   nothing is pending on their side — what is outstanding is HQ's answer on the difference. Rank it
+   below IN_TRANSIT and the one state nobody goes looking for is the one buried at the bottom. */
+const REQ_RANK = { DISPUTED: 0, PENDING: 1, IN_TRANSIT: 2 };
+
+const RestockVaultView = ({ inventory = [], procurements = [], motorists = [], db, storage, appId, user, isAdmin, userRole, logAudit, triggerCapy, appSettings, masterUserId }) => {
     /* camera only, unless he is senior enough to re-file a photo that came in some other way */
     const galleryOk = canPickFromGallery(userRole);
     /* 'in' = surat jalan masuk · 'out' = surat jalan keluar (HQ push) · 'book' = buku besar */
@@ -139,6 +145,23 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, storage, appI
     const [editCourier, setEditCourier] = useState("");
     const [editTrackingNo, setEditTrackingNo] = useState("");
     const [isProcessingOrder, setIsProcessingOrder] = useState(false);
+
+    /* ═══ REQUEST — fulfilling what a branch asked for ═══
+       Moved here from BranchWarehouseManager on 2026-08-27. It was the only way HQ could answer a
+       branch request, and it lived inside the BRANCH screen, three screens away from the desk that
+       owns every other surat jalan. Nothing was duplicated: the queue rows, the drawer, the
+       timeline, "Edit resi" and "Hapus" are the Buku machinery already in this file, and only the
+       shipping modal below had to travel. */
+    const [isFulfilling, setIsFulfilling] = useState(null);
+    const [fulfillmentCart, setFulfillmentCart] = useState([]);
+    const [shipSender, setShipSender] = useState("");
+    const [shipCourier, setShipCourier] = useState("");
+    const [shipResi, setShipResi] = useState("");
+    const [shipPhotoFile, setShipPhotoFile] = useState(null);
+    const [shipPhotoPreview, setShipPhotoPreview] = useState(null);
+    /* Deliberately NOT `isSubmitting`. That flag gates the Masuk/Kirim save button, and sharing it
+       would grey out a form the user is not even looking at while a shipment uploads. */
+    const [isShipping, setIsShipping] = useState(false);
 
     const [viewingAcceptance, setViewingAcceptance] = useState(null);
     const [editingPO, setEditingPO] = useState(null);
@@ -184,9 +207,19 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, storage, appI
 
     /* ── the route's own options. Both lists are DERIVED from records that already
        exist, so nothing new has to be maintained by hand. ───────────────────── */
+    /* 🚀 Tujuan comes from the ROSTER, not from shipping history. Built from stockRequests alone,
+       a team that had never been shipped to had no entry here — so the one warehouse that most
+       needed its first delivery was the only one HQ could not select. His words: "make sure that
+       every team registered on the fleet and roster have their own storage option".
+       Still UNIONED with the branches seen on past requests, never replaced by the roster: a
+       location that was renamed, or whose motorist row was deleted, must not disappear from the
+       list while its shipments are still live in the book. */
     const branchesSeen = useMemo(
-        () => [...new Set(stockRequests.map(r => r?.branch).filter(Boolean))].sort(),
-        [stockRequests]
+        () => [...new Set([
+            ...motorists.map(m => m?.location),
+            ...stockRequests.map(r => r?.branch),
+        ].filter(Boolean).filter(n => n !== 'UNASSIGNED'))].sort(),
+        [motorists, stockRequests]
     );
     const suppliersSeen = useMemo(
         () => [...new Set(procurements.map(p => p?.supplierName).filter(Boolean))].sort(),
@@ -569,6 +602,123 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, storage, appI
         }
     };
 
+    /* ═══════════ REQUEST — the fulfilment path ═══════════ */
+
+    const handleStartFulfillment = (req) => {
+        setIsFulfilling(req);
+        setFulfillmentCart((req.requestedItems || req.items || []).map(i => ({ ...i })));
+        setShipSender(getAdminName());
+        setShipCourier("");
+        setShipResi("");
+        setShipPhotoFile(null);
+        setShipPhotoPreview(null);
+    };
+
+    const cancelFulfillment = () => {
+        setIsFulfilling(null);
+        setFulfillmentCart([]);
+        setShipPhotoFile(null);
+        setShipPhotoPreview(null);
+    };
+
+    const handleShipPhoto = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        setShipPhotoFile(file);
+        const reader = new FileReader();
+        reader.onloadend = () => setShipPhotoPreview(reader.result);
+        reader.readAsDataURL(file);
+    };
+
+    /* A zero would silently drop the line from the shipment while still marking the request
+       fulfilled, so the branch would be told it received something that was never sent. */
+    const updateFulfillQty = (pid, newQty) => {
+        if (Number(newQty) <= 0) return;
+        setFulfillmentCart(prev => prev.map(i => i.productId === pid ? { ...i, qty: Number(newQty) } : i));
+    };
+
+    const handleRejectRequest = async () => {
+        if (!isFulfilling) return;
+        if (!await confirmAction(`Tolak permintaan dari ${isFulfilling.branch}?\n\nCabang akan melihat status DITOLAK. Stok HQ tidak dipotong.`)) return;
+        setIsShipping(true);
+        try {
+            const orderRef = doc(db, `artifacts/${appId}/users/${activeUserId}/stock_requests`, isFulfilling.id);
+            const timeline = [...(isFulfilling.workflowTimeline || [])];
+            timeline.push({ status: 'REJECTED', time: new Date().toISOString(), msg: `Request rejected by HQ Admin (${getAdminName()}).` });
+            await updateDoc(orderRef, {
+                status: 'REJECTED',
+                rejectedAt: serverTimestamp(),
+                rejectedBy: user.email,
+                workflowTimeline: timeline,
+            });
+            if (triggerCapy) triggerCapy(`Permintaan ${isFulfilling.branch} ditolak.`);
+            if (logAudit) await logAudit("STOCK_REJECT", `Rejected ${isFulfilling.id} from ${isFulfilling.branch}`);
+            cancelFulfillment();
+        } catch (e) { notify("Gagal menolak: " + e.message); }
+        setIsShipping(false);
+    };
+
+    const handleShipItems = async () => {
+        if (!isFulfilling) return;
+        if (!shipSender || !shipCourier || !shipResi || !shipPhotoFile) {
+            return notify("Belum lengkap.\n\nUntuk mengirim, isi dulu:\n1. Nama pengirim\n2. Kurir / ekspedisi\n3. Nomor resi\n4. Foto bukti paket");
+        }
+        if (fulfillmentCart.some(i => Number(i.qty) <= 0)) return notify("Jumlah kirim harus lebih dari 0.");
+        if (!await confirmAction(`Kirim barang ke ${isFulfilling.branch}?\n\nStok HQ langsung dipotong sekarang. Cabang baru bertambah setelah mereka menghitung barangnya.`)) return;
+
+        setIsShipping(true);
+        try {
+            for (const item of fulfillmentCart) {
+                const hq = inventory.find(p => p.id === item.productId);
+                if (!hq || (hq.stock || 0) < item.qty) {
+                    setIsShipping(false);
+                    return notify(`STOK HQ KURANG!\n\nKurang ${item.qty - (hq?.stock || 0)} ${item.unit || 'Bks'} ${item.name}. Ubah jumlah kirimnya dulu.`);
+                }
+            }
+
+            if (triggerCapy) triggerCapy("Kompres foto & sinkron database... ⏳");
+            const base64 = await compressImageToBase64(shipPhotoFile);
+            const photoPath = `artifacts/${appId}/users/${activeUserId}/photos/shipment_${isFulfilling.id}_${Date.now()}.jpg`;
+            const photoUrl = await savePhotoAndGetReference(storage, base64, photoPath, appSettings?.usePhotoStorage);
+
+            /* 🚀 Deduct the DIFFERENCE server-side, never a recomputed total. The screen's copy of
+               HQ stock is read BEFORE the two long waits above — compressing the package photo and
+               uploading it, which on a phone is seconds and sometimes minutes. Anything sold in
+               that gap used to be silently resurrected. The over-ship guard above still reads the
+               screen's copy, so it stays best-effort: a sale during the gap can drive stock
+               slightly negative, which is visible and self-correcting, where the old failure was
+               neither. Same fix, same reasoning, as the HQ push on the Kirim tab. */
+            const batch = writeBatch(db);
+            for (const item of fulfillmentCart) {
+                batch.update(doc(db, `artifacts/${appId}/users/${activeUserId}/products`, item.productId), { stock: increment(-Number(item.qty)) });
+            }
+
+            const orderRef = doc(db, `artifacts/${appId}/users/${activeUserId}/stock_requests`, isFulfilling.id);
+            const timeline = [...(isFulfilling.workflowTimeline || [])];
+            timeline.push({ status: 'IN_TRANSIT', time: new Date().toISOString(), msg: `Shipped via ${shipCourier} (Resi: ${shipResi}) by ${shipSender}. Photo proof uploaded.` });
+            batch.update(orderRef, {
+                status: 'IN_TRANSIT',
+                senderName: shipSender,
+                courier: shipCourier,
+                trackingNo: shipResi,
+                packagePhotoUrl: photoUrl,
+                fulfilledItems: fulfillmentCart,
+                fulfilledAt: serverTimestamp(),
+                fulfilledBy: user.email,
+                workflowTimeline: timeline,
+            });
+
+            await batch.commit();
+            if (triggerCapy) triggerCapy(`Barang dikirim ke ${isFulfilling.branch}. 🚚`);
+            if (logAudit) await logAudit("STOCK_SHIP", `Shipped ${isFulfilling.id} to ${isFulfilling.branch}. Resi: ${shipResi}`);
+            cancelFulfillment();
+        } catch (e) {
+            console.error(e);
+            notify("Pengiriman gagal: " + e.message);
+        }
+        setIsShipping(false);
+    };
+
     const handleStartEditingOrder = (order) => {
         setEditingOrder(order);
         setEditSenderName(order.senderName || getAdminName());
@@ -652,7 +802,18 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, storage, appI
         return [...inbound, ...outbound].sort((a, b) => String(b.day).localeCompare(String(a.day)));
     }, [procurements, stockRequests, inventory]);
 
-    const shownRows = bookRows.filter(r => bookFilter === 'all' || r.dir === bookFilter);
+    /* PENDING · IN_TRANSIT · DISPUTED — the exact three the Global Logistics panel used to list,
+       kept identical on purpose so moving the queue here loses nothing HQ could see before. */
+    const requestRows = useMemo(
+        () => bookRows
+            .filter(r => r.dir === 'out' && REQ_RANK[r.raw?.status] !== undefined)
+            .sort((a, b) => REQ_RANK[a.raw.status] - REQ_RANK[b.raw.status]),
+        [bookRows]
+    );
+
+    const shownRows = viewMode === 'req'
+        ? requestRows
+        : bookRows.filter(r => bookFilter === 'all' || r.dir === bookFilter);
 
     /* the steps, built from what is actually stored — never invented */
     const stepsFor = (row) => {
@@ -715,9 +876,10 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, storage, appI
     };
 
     const tabs = [
-        { id: 'in',   label: 'Masuk', count: viewMode === 'in' ? cart.length : 0 },
-        { id: 'out',  label: 'Kirim', count: viewMode === 'out' ? cart.length : bookRows.filter(r => r.dir === 'out' && r.live).length },
-        { id: 'book', label: 'Buku',  count: bookRows.length },
+        { id: 'in',   label: 'Masuk',   count: viewMode === 'in' ? cart.length : 0 },
+        { id: 'out',  label: 'Kirim',   count: viewMode === 'out' ? cart.length : bookRows.filter(r => r.dir === 'out' && r.live).length },
+        { id: 'req',  label: 'Request', count: requestRows.length },
+        { id: 'book', label: 'Buku',    count: bookRows.length },
     ];
 
     return (
@@ -922,6 +1084,113 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, storage, appI
                 </div>
             )}
 
+            {/* ═══════════ REQUEST — the shipping modal ═══════════
+                The one part of the old Global Logistics queue that had to travel rather than be
+                reused: everything else on this tab is the Buku row and drawer. Repainted onto the
+                theme on the way over — the original was `text-white` on `bg-black/50`, which is
+                exactly the hardcoding that kept light mode off this screen for months. */}
+            {isFulfilling && (
+                <div className="fixed inset-0 z-[300] bg-sunk/95 backdrop-blur-sm flex items-center justify-center p-4">
+                    <div className="bg-panel w-full max-w-4xl rounded-2xl border border-orange shadow-2xl flex flex-col max-h-[90vh] overflow-hidden animate-pop-in">
+
+                        <div className="p-5 border-b border-line-2 bg-raised flex justify-between items-start gap-4 shrink-0">
+                            <div className="min-w-0">
+                                <h3 className="text-lg font-display font-black text-ink uppercase tracking-widest flex items-center gap-2">
+                                    <Truck className="text-accent-ink shrink-0" size={18}/> Siapkan pengiriman ke {isFulfilling.branch}
+                                </h3>
+                                <p className="text-[10px] text-ink-muted uppercase tracking-widest mt-1 font-mono">{isFulfilling.id} · diminta {isFulfilling.requestedByName || (isFulfilling.requestedBy || '').split('@')[0] || '—'}</p>
+                            </div>
+                            <button onClick={cancelFulfillment} aria-label="Tutup" className="text-ink-muted hover:text-ink shrink-0"><X size={20}/></button>
+                        </div>
+
+                        <div className="flex-1 overflow-y-auto custom-scrollbar p-5 sm:p-6 space-y-6">
+
+                            <div className="bg-inset border border-line-2 rounded-xl p-4">
+                                <h4 className="text-[10px] text-ink-muted font-bold uppercase tracking-widest mb-2 flex items-center gap-2"><MapPin size={13}/> Alamat tujuan</h4>
+                                <p className="text-ink text-sm font-display font-bold uppercase tracking-wider">Gudang {isFulfilling.branch}</p>
+                                {isFulfilling.deliveryAddress ? (
+                                    <p className="text-xs text-ink-muted mt-1.5 leading-relaxed">
+                                        {isFulfilling.deliveryAddress.jalan}<br/>
+                                        Kec. {isFulfilling.deliveryAddress.kecamatan}, {isFulfilling.deliveryAddress.kabupaten}<br/>
+                                        {isFulfilling.deliveryAddress.provinsi} - {isFulfilling.deliveryAddress.postalCode}
+                                    </p>
+                                ) : (
+                                    <p className="text-xs text-danger-text mt-2 border border-danger-rail bg-danger-well px-2.5 py-1.5 rounded inline-block">Cabang belum mengisi alamat lengkap.</p>
+                                )}
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 items-start">
+                                <div className="space-y-3">
+                                    <h4 className="text-[10px] font-bold text-ink-muted uppercase tracking-widest flex items-center gap-2"><FileText size={13}/> Wajib diisi</h4>
+                                    <input type="text" placeholder="Nama pengirim" value={shipSender} onChange={e => setShipSender(e.target.value)} className="w-full bg-inset border border-line-3 rounded-lg p-3 text-sm text-ink font-bold outline-none focus:border-orange"/>
+                                    <input type="text" placeholder="Kurir / ekspedisi (mis. J&T, internal)" value={shipCourier} onChange={e => setShipCourier(e.target.value)} className="w-full bg-inset border border-line-3 rounded-lg p-3 text-sm text-ink font-bold outline-none focus:border-orange"/>
+                                    <input type="text" placeholder="Nomor resi" value={shipResi} onChange={e => setShipResi(e.target.value)} className="w-full bg-inset border border-line-3 rounded-lg p-3 text-sm text-accent-ink font-mono font-bold outline-none focus:border-orange uppercase tracking-wider"/>
+                                    <div className="bg-danger-well border border-danger-rail rounded-lg p-3 text-danger-text text-[11px] flex gap-2.5 items-start leading-relaxed">
+                                        <AlertCircle size={22} className="shrink-0 mt-0.5"/>
+                                        <p><b className="uppercase block">Kenapa wajib:</b> resi dan foto adalah satu-satunya bukti barang benar keluar. Tanpa itu, selisih di cabang tidak bisa ditagihkan ke siapa pun.</p>
+                                    </div>
+                                </div>
+
+                                <div className="bg-inset p-4 rounded-xl border border-line-2 flex flex-col items-center">
+                                    <h4 className="text-[10px] font-bold text-ink-muted uppercase tracking-widest mb-3 flex items-center gap-1.5"><Camera size={12}/> Foto paket + resi</h4>
+                                    {shipPhotoPreview ? (
+                                        <div className="w-full relative">
+                                            <img src={shipPhotoPreview} alt="Bukti paket" className="w-full h-44 object-cover rounded-lg border border-orange"/>
+                                            <button onClick={() => { setShipPhotoFile(null); setShipPhotoPreview(null); }} aria-label="Hapus foto" className="absolute -top-2 -right-2 bg-panel border border-line-2 rounded-full p-1 text-danger-text"><X size={14}/></button>
+                                        </div>
+                                    ) : (
+                                        <label className="w-full h-44 bg-raised rounded-lg border-2 border-dashed border-line-3 flex flex-col items-center justify-center text-ink-muted hover:border-orange hover:text-ink transition-colors gap-2.5 p-4 text-center cursor-pointer">
+                                            <UploadCloud size={34} className="opacity-50"/>
+                                            <span className="font-display font-bold text-[11px] uppercase tracking-widest">{galleryOk ? 'ambil / pilih foto' : 'ambil foto'}</span>
+                                            <span className="text-[10px] opacity-70">Foto paket yang resinya sudah tertempel.</span>
+                                            <input type="file" accept="image/*" {...(galleryOk ? {} : { capture: 'environment' })} className="hidden" onChange={handleShipPhoto}/>
+                                        </label>
+                                    )}
+                                </div>
+                            </div>
+
+                            <div>
+                                <h4 className="text-[10px] font-bold text-ink-muted uppercase tracking-widest mb-3 flex items-center gap-2"><Pencil size={13}/> Jumlah yang benar-benar dikirim</h4>
+                                <div className="space-y-2.5">
+                                    {fulfillmentCart.map(item => {
+                                        const hq = inventory.find(p => p.id === item.productId);
+                                        const hqStock = hq?.stock || 0;
+                                        const enough = hqStock >= item.qty;
+                                        const asked = (isFulfilling.requestedItems || isFulfilling.items || []).find(r => r.productId === item.productId)?.qty || 0;
+                                        return (
+                                            <div key={item.productId} className="bg-inset p-3 rounded-lg border border-line-2 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                                                <div className="min-w-0">
+                                                    <span className="font-bold text-ink uppercase text-sm">{item.name}</span>
+                                                    <div className="flex gap-4 text-[10px] mt-1 font-mono">
+                                                        <span className="text-ink-muted uppercase tracking-widest">Diminta {num(asked)} Bks</span>
+                                                        <span className={`font-bold uppercase tracking-widest ${enough ? 'text-ink-muted' : 'text-danger-text'}`}>Stok HQ {num(hqStock)} Bks</span>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center gap-2 bg-panel px-2.5 py-1.5 rounded-lg border border-line-2 w-full sm:w-40 shrink-0">
+                                                    <label className="text-[10px] text-ink-muted font-bold uppercase tracking-widest shrink-0">Kirim</label>
+                                                    <input type="number" min="1" value={item.qty} onChange={e => updateFulfillQty(item.productId, e.target.value)} className="flex-1 min-w-0 bg-transparent text-right font-mono font-black text-accent-ink text-base outline-none"/>
+                                                    <span className="text-[10px] text-ink-muted shrink-0">Bks</span>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="p-4 border-t border-line-2 bg-raised flex flex-col sm:flex-row gap-3 shrink-0">
+                            <button onClick={handleShipItems} disabled={isShipping} className={`flex-1 py-3.5 rounded-lg font-display font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 transition-transform active:scale-[0.98] ${isShipping ? 'bg-inset text-ink-muted cursor-not-allowed' : 'bg-orange hover:bg-orange/90 text-orange-ink'}`}>
+                                {isShipping ? <RefreshCcw className="animate-spin" size={16}/> : <Send size={16}/>}
+                                {isShipping ? 'Mengirim...' : 'Konfirmasi & kirim barang'}
+                            </button>
+                            <button onClick={handleRejectRequest} disabled={isShipping} className="w-full sm:w-auto px-6 py-3.5 bg-danger-well border border-danger-rail text-danger-text rounded-lg font-display font-black uppercase tracking-widest text-[11px] flex items-center justify-center gap-2 transition-transform active:scale-[0.98]">
+                                <X size={14}/> Tolak
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* ═══════════ THE DESK ═══════════ */}
             <div className="h-full flex flex-col bg-ground border border-line-2 rounded-2xl overflow-hidden">
 
@@ -931,10 +1200,10 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, storage, appI
                         <Lamp tone="on" />
                         <div className="min-w-0">
                             <div className="font-display font-bold uppercase tracking-[0.15em] text-[13px] text-ink truncate">
-                                {viewMode === 'book' ? 'Buku Besar' : isOut ? 'Kirim ke cabang' : 'Master Vault'}
+                                {viewMode === 'req' ? 'Permintaan cabang' : viewMode === 'book' ? 'Buku Besar' : isOut ? 'Kirim ke cabang' : 'Master Vault'}
                             </div>
                             <div className="font-mono text-[10px] text-ink-muted truncate">
-                                {viewMode === 'book' ? 'masuk & keluar' : isOut ? 'surat jalan keluar' : 'HQ · gudang pusat'}
+                                {viewMode === 'req' ? 'menunggu · di jalan · selisih' : viewMode === 'book' ? 'masuk & keluar' : isOut ? 'surat jalan keluar' : 'HQ · gudang pusat'}
                             </div>
                         </div>
                     </div>
@@ -942,7 +1211,7 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, storage, appI
                         {tabs.map(t => (
                             <button
                                 key={t.id}
-                                onClick={() => t.id === 'book' ? setViewMode('book') : setDirection(t.id)}
+                                onClick={() => (t.id === 'book' || t.id === 'req') ? setViewMode(t.id) : setDirection(t.id)}
                                 aria-selected={viewMode === t.id}
                                 className={`text-[11px] font-display font-bold uppercase tracking-[0.16em] px-4 py-3 border-l border-line-2 border-b-2 transition-colors ${
                                     viewMode === t.id ? 'text-ink border-b-orange bg-raised' : 'text-ink-muted border-b-transparent hover:text-ink'
@@ -954,22 +1223,47 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, storage, appI
                     </div>
                 </div>
 
-                {/* ═══════════ BUKU ═══════════ */}
-                {viewMode === 'book' ? (
+                {/* ═══════════ BUKU — and REQUEST, which is the same list filtered ═══════════
+                    One row renderer, two tabs. The Request queue is not a second list: it is
+                    `bookRows` narrowed to the outbound documents that are still open, so a row
+                    opens the same drawer, prints the same timeline and carries the same "Edit
+                    resi" and "Hapus" it does in the book. The ONLY thing Request adds is the
+                    Siapkan button and the shipping modal behind it. */}
+                {viewMode === 'book' || viewMode === 'req' ? (
                     <div className="flex-1 flex flex-col min-h-0">
                         <div className="flex gap-2 flex-wrap items-center px-4 py-3 border-b border-line-2 bg-panel shrink-0">
-                            <span className="text-[10px] font-bold text-ink-muted uppercase tracking-widest mr-auto">Buku besar · masuk &amp; keluar</span>
-                            {[['all','Semua'],['in','Masuk'],['out','Keluar']].map(([k, label]) => (
-                                <button key={k} onClick={() => setBookFilter(k)}
-                                    className={`text-[11px] font-display font-bold uppercase tracking-widest px-3 py-1.5 rounded border transition-transform active:scale-[0.97] ${bookFilter === k ? 'border-orange text-ink bg-raised' : 'border-line-2 text-ink-muted bg-raised hover:text-ink'}`}>
-                                    {label}
-                                </button>
-                            ))}
+                            {viewMode === 'req' ? (
+                                <>
+                                    <span className="text-[10px] font-bold text-ink-muted uppercase tracking-widest mr-auto">Permintaan cabang · yang belum selesai</span>
+                                    {[['DISPUTED','Ada selisih'],['PENDING','Menunggu'],['IN_TRANSIT','Di jalan']].map(([k, label]) => {
+                                        const n = requestRows.filter(r => r.raw?.status === k).length;
+                                        return (
+                                            <span key={k} className={`text-[11px] font-display font-bold uppercase tracking-widest px-3 py-1.5 rounded border ${n === 0 ? 'border-line-2 text-ink-muted bg-raised' : k === 'DISPUTED' ? 'border-danger-rail text-danger-text bg-danger-well' : 'border-orange text-ink bg-raised'}`}>
+                                                {label} <span className="font-mono ml-1">{n}</span>
+                                            </span>
+                                        );
+                                    })}
+                                </>
+                            ) : (
+                                <>
+                                    <span className="text-[10px] font-bold text-ink-muted uppercase tracking-widest mr-auto">Buku besar · masuk &amp; keluar</span>
+                                    {[['all','Semua'],['in','Masuk'],['out','Keluar']].map(([k, label]) => (
+                                        <button key={k} onClick={() => setBookFilter(k)}
+                                            className={`text-[11px] font-display font-bold uppercase tracking-widest px-3 py-1.5 rounded border transition-transform active:scale-[0.97] ${bookFilter === k ? 'border-orange text-ink bg-raised' : 'border-line-2 text-ink-muted bg-raised hover:text-ink'}`}>
+                                            {label}
+                                        </button>
+                                    ))}
+                                </>
+                            )}
                         </div>
 
                         <div className="flex-1 overflow-y-auto custom-scrollbar">
                             {shownRows.length === 0 ? (
-                                <div className="text-center py-20 text-ink-muted"><History size={48} className="mx-auto mb-4 opacity-20"/><p className="tracking-widest uppercase text-sm font-bold opacity-50">Belum ada catatan</p></div>
+                                <div className="text-center py-20 text-ink-muted">
+                                    {viewMode === 'req'
+                                        ? <><Truck size={48} className="mx-auto mb-4 opacity-20"/><p className="tracking-widest uppercase text-sm font-bold opacity-50">Tidak ada permintaan terbuka</p><p className="text-[11px] mt-1.5 opacity-50">Semua permintaan cabang sudah dikirim atau sudah diterima.</p></>
+                                        : <><History size={48} className="mx-auto mb-4 opacity-20"/><p className="tracking-widest uppercase text-sm font-bold opacity-50">Belum ada catatan</p></>}
+                                </div>
                             ) : shownRows.map(row => {
                                 const open = expandedPO === row.key;
                                 const po = row.raw;
@@ -977,10 +1271,11 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, storage, appI
                                 const extra = row.dir === 'in' ? (Number(po.shippingCost)||0) + (Number(po.laborCost)||0) + (Number(po.exciseTax)||0) : 0;
                                 return (
                                     <div key={row.key} className="border-b border-line-2 last:border-b-0 animate-fade-in">
+                                      <div className="flex items-stretch">
                                         <button
                                             onClick={() => setExpandedPO(open ? null : row.key)}
                                             aria-expanded={open}
-                                            className={`w-full flex items-center gap-3 px-3 py-2.5 text-left border-l-2 transition-colors ${open ? 'bg-raised border-l-orange' : 'bg-panel border-l-transparent hover:bg-raised hover:border-l-orange'}`}
+                                            className={`flex-1 min-w-0 flex items-center gap-3 px-3 py-2.5 text-left border-l-2 transition-colors ${open ? 'bg-raised border-l-orange' : 'bg-panel border-l-transparent hover:bg-raised hover:border-l-orange'}`}
                                         >
                                             <Lamp tone={row.tone} live={row.live && row.tone !== 'bad'} />
                                             <span className="font-mono text-[15px] text-ink-muted w-4 text-center shrink-0">{row.dir === 'in' ? '↓' : '↑'}</span>
@@ -991,6 +1286,21 @@ const RestockVaultView = ({ inventory = [], procurements = [], db, storage, appI
                                             <span className={`hidden sm:inline-flex items-center text-[10px] font-display font-bold uppercase tracking-widest border rounded px-2 py-1 whitespace-nowrap ${row.tone === 'bad' ? 'border-danger text-danger-text' : row.tone === 'on' ? 'border-orange text-ink' : 'border-line-2 text-ink-muted'}`}>{row.status}</span>
                                             <ChevronDown size={16} className={`text-ink-muted shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} />
                                         </button>
+
+                                        {/* ⚠️ A SIBLING of the row button, never a child. A <button> inside a
+                                            <button> is invalid HTML and the inner one stops taking clicks —
+                                            which is why the row had to become a flex pair rather than just
+                                            gaining an icon. Worth the two extra lines: Siapkan Pengiriman was
+                                            one click in the old panel and it stays one click here. */}
+                                        {viewMode === 'req' && po.status === 'PENDING' && (
+                                            <button
+                                                onClick={() => handleStartFulfillment(po)}
+                                                className="shrink-0 px-3.5 bg-orange hover:bg-orange/90 text-orange-ink font-display font-bold uppercase tracking-widest text-[10px] flex items-center gap-1.5 transition-transform active:scale-[0.97]"
+                                            >
+                                                <Truck size={13}/> <span className="hidden sm:inline">Siapkan</span>
+                                            </button>
+                                        )}
+                                      </div>
 
                                         {open && (
                                             <div className="bg-inset px-4 py-4 grid grid-cols-1 lg:grid-cols-[1fr_260px] gap-4 items-start animate-fade-in">

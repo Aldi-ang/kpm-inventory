@@ -4431,6 +4431,7 @@ const handleGitHubMirror = async () => {
                           <RestockVaultView 
                               inventory={inventory} 
                               procurements={procurements}
+                              motorists={motorists}
                               db={db} 
                               storage={storage} 
                               appId={appId} 
@@ -4456,6 +4457,9 @@ const handleGitHubMirror = async () => {
                       isAdmin={isAdmin} 
                       masterUserId={userId} 
                       globalInventory={inventory} 
+                      motorists={motorists}
+                      transactions={transactions}
+                      branchStockMap={branchStock}
                       triggerCapy={triggerCapy} 
                       logAudit={logAudit} 
                       appSettings={appSettings}

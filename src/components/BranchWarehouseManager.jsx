@@ -1,10 +1,15 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Package, ArrowRight, CheckCircle, XCircle, AlertCircle, Clock, Send, Truck, ShieldCheck, Globe, MapPin, Pencil, MinusCircle, PlusCircle, User, FileText, Camera, UploadCloud, ChevronDown, ChevronUp, Check, Eye, Trash2, Save, X } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Package, ArrowRight, CheckCircle, XCircle, AlertCircle, Clock, Send, Truck, ShieldCheck, Globe, MapPin, Pencil, MinusCircle, PlusCircle, User, FileText, Camera, ChevronDown, ChevronUp, Check, Eye, Save, X } from 'lucide-react';
 import { collection, doc, onSnapshot, writeBatch, serverTimestamp, updateDoc, deleteDoc, runTransaction, increment } from 'firebase/firestore';
 import { savePhotoAndGetReference, compressImageToBase64 } from '../utils/helpers';
 /* Reused rather than rewritten: a Firestore Timestamp, an offline `{seconds}` and an unresolved
    serverTimestamp() are three different shapes, and this already handles all three. */
 import { txSeconds } from '../utils/dayStats.js';
+/* The supply maths is NOT rewritten here. `supplyByProduct` is the same function the dashboard
+   readout runs on, so "di gudang / di tangan agen / terjual" on this screen and on the dashboard
+   cannot drift into two different answers — which is the whole reason it lives in utils. His ask
+   was literally *"just like what we have on the dashboard"*. */
+import { supplyByProduct, warehouseList, MASTER } from '../utils/supply.js';
 import { confirmAction } from './ConfirmGate.jsx';
 import { notify } from './Toast.jsx';
 
@@ -253,11 +258,10 @@ export const reorderAdvice = (arrivals, onHand, inTransit, rhythm, nowSeconds) =
     return out;
 };
 
-export default function BranchWarehouseManager({ db, storage, appId, user, userRole, userLocation, isAdmin, masterUserId, globalInventory, triggerCapy, logAudit, appSettings }) {
+export default function BranchWarehouseManager({ db, storage, appId, user, userRole, userLocation, isAdmin, masterUserId, globalInventory, triggerCapy, logAudit, appSettings, motorists = [], transactions = [], branchStockMap = {} }) {
     
     const isAreaAdmin = !isAdmin; // 🚀 THE FIX: Dynamically adapts to any custom Tier rank
     const branchLocation = userLocation || 'UNASSIGNED';
-    const photoInputRef = useRef(null);
 
     const [requests, setRequests] = useState([]);
     const [branchStock, setBranchStock] = useState([]);
@@ -271,13 +275,6 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
         jalan: "", kecamatan: "", kabupaten: "", provinsi: branchLocation !== 'UNASSIGNED' ? branchLocation : "", postalCode: ""
     });
 
-    const [isFulfilling, setIsFulfilling] = useState(null); 
-    const [fulfillmentCart, setFulfillmentCart] = useState([]);
-    const [senderName, setSenderName] = useState(""); 
-    const [courierName, setCourierName] = useState("");
-    const [trackingNo, setTrackingNo] = useState("");
-    const [packagePhotoFile, setPackagePhotoFile] = useState(null);
-    const [packagePhotoPreview, setPackagePhotoPreview] = useState(null);
     const [isProcessing, setIsProcessing] = useState(false);
 
     const [editingOrder, setEditingOrder] = useState(null);
@@ -313,6 +310,61 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
 
     /* ONE card, drawn the same way for the branch admin and for HQ. The age line below is the
        whole reason HQ needed this view, so it must not be a second copy that drifts. */
+    /* ═══════════ GLOBAL LOGISTICS — where every pack is, per warehouse ═══════════
+       His ask: *"show the regional warehouse current stock, on field, sold as well just like what
+       we have on the dashboard, so HQ know how many bks should be send to them again"*.
+
+       Four columns, and the collection behind each one is named on the screen because a number
+       whose source cannot be named is a number nobody can check:
+         di gudang       the branch's own inventory subcollection  (branchStockMap)
+         di jalan        stock_requests not yet settled            (requests, via inTransitQty)
+         di tangan agen  activeCanvas on that branch's vehicles    (motorists)
+         terjual         SALE transactions, agent → roster → location
+
+       ⚠️ TERJUAL IS SEVEN DAYS, NOT ALL TIME. The transactions listener is capped at seven days
+       (useDatabaseSync.js — `where('timestamp', '>=', sevenDaysAgo)`), so an all-time total is not
+       something this screen could compute even if it claimed to. The window is passed explicitly
+       rather than inherited, so the heading stays true if that cap ever moves.
+       ⚠️ MASTER has no "di jalan": stock_requests only ever run HQ → branch, so a figure there
+       would be an empty sum dressed up as a measurement. It prints — instead. */
+    const SEVEN_DAYS = 7;
+    const logistics = useMemo(() => {
+        if (!isAdmin) return [];
+        const since = new Date(Date.now() - SEVEN_DAYS * 86400000);
+        /* narrowed to the warehouses the roster still lists — a branch that was removed keeps its
+           last snapshot in the sync map, and counting it would quietly inflate every total. The
+           dashboard narrows the same way, for the same reason. */
+        const names = warehouseList(motorists);
+        const live = Object.fromEntries(
+            Object.entries(branchStockMap || {}).filter(([n]) => names.includes(n))
+        );
+
+        return names.map(name => {
+            const rows = supplyByProduct({
+                inventory: globalInventory, branchStock: live, motorists, transactions,
+                since, warehouse: name,
+            });
+            const shelf = rows.reduce((s, r) => s + r.shelf, 0);
+            const field = rows.reduce((s, r) => s + r.field, 0);
+            const sold  = rows.reduce((s, r) => s + r.sold, 0);
+
+            /* nothing is ever in transit TO the master vault on a stock_request */
+            const transit = name === MASTER
+                ? null
+                : (globalInventory || []).reduce((s, p) => s + inTransitQty(requests, name, p.id), 0);
+
+            /* The reason he asked for the panel: how long the shelf lasts at the rate it is
+               actually leaving. No sales in the window means NO RATE — which prints as — rather
+               than as a confident infinity. Same rule reorderAdvice already follows above. */
+            const perDay = sold / SEVEN_DAYS;
+            const daysLeft = perDay > 0 ? Math.floor(shelf / perDay) : null;
+
+            return { name, shelf, transit, field, sold, daysLeft, lines: rows.length };
+        });
+    }, [isAdmin, motorists, transactions, branchStockMap, globalInventory, requests]);
+
+    const gTotal = (k) => logistics.reduce((s, r) => s + (Number(r[k]) || 0), 0);
+
     const stockCard = (item) => {
         const arrivals = productArrivals(requests, isAreaAdmin ? branchLocation : viewBranch, item.productId || item.id);
         const { held, unexplained } = arrivalsOnHand(arrivals, item.stock);
@@ -570,141 +622,10 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
         }
     };
 
-    const handleStartFulfillment = (req) => {
-        setIsFulfilling(req);
-        const itemsToFulfill = req.requestedItems || req.items || [];
-        setFulfillmentCart(itemsToFulfill.map(item => ({ ...item })));
-        setSenderName(getAdminName()); 
-        setCourierName("");
-        setTrackingNo("");
-        setPackagePhotoFile(null);
-        setPackagePhotoPreview(null);
-    };
-
-    const cancelFulfillment = () => {
-        setIsFulfilling(null);
-        setFulfillmentCart([]);
-    };
-
-    const handlePhotoChange = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            setPackagePhotoFile(file);
-            const reader = new FileReader();
-            reader.onloadend = () => setPackagePhotoPreview(reader.result);
-            reader.readAsDataURL(file);
-        }
-    };
-
-    const updateFulfillQty = (pid, newQty) => {
-        if (Number(newQty) <= 0) return; 
-        setFulfillmentCart(prev => prev.map(item => item.productId === pid ? { ...item, qty: Number(newQty) } : item));
-    };
-
-    const handleRejectRequest = async () => {
-        if (!isFulfilling) return;
-        if (!await confirmAction(`Reject this request from ${isFulfilling.branch}?`)) return;
-        setIsProcessing(true);
-
-        try {
-            const orderRef = doc(db, `artifacts/${appId}/users/${masterUserId}/stock_requests`, isFulfilling.id);
-            const updatedTimeline = [...(isFulfilling.workflowTimeline || [])];
-            updatedTimeline.push({
-                status: 'REJECTED',
-                time: new Date().toISOString(),
-                msg: `Request rejected by HQ Admin (${getAdminName()}).`
-            });
-
-            await updateDoc(orderRef, {
-                status: 'REJECTED',
-                rejectedAt: serverTimestamp(),
-                rejectedBy: user.email,
-                workflowTimeline: updatedTimeline
-            });
-
-            triggerCapy(`Request Rejected.`);
-            logAudit("STOCK_REJECT", `Rejected ${isFulfilling.id} from ${isFulfilling.branch}`);
-            cancelFulfillment();
-            setIsProcessing(false);
-        } catch (e) { notify("Failed to reject: " + e.message); setIsProcessing(false); }
-    };
-
-    const handleShipItems = async () => {
-        if (!isFulfilling) return;
-        if (!courierName || !trackingNo || !packagePhotoFile || !senderName) {
-            return notify("INSUFFICIENT DATA!\n\nTo fulfill this shipment, you must provide:\n1. Nama Pengirim\n2. Logistic Company / Courier\n3. Nomor Resi (Tracking #)\n4. Proof of Sending Photo");
-        }
-        if (fulfillmentCart.some(item => Number(item.qty) <= 0)) return notify("Qty must be greater than 0.");
-
-        if (!await confirmAction(`Confirm fulfillment & ship items to ${isFulfilling.branch}?\n\nThis will permanently deduct stock from HQ Master Vault.`)) return;
-        setIsProcessing(true);
-
-        try {
-            const batch = writeBatch(db);
-
-            for (const item of fulfillmentCart) {
-                const hqProduct = globalInventory.find(p => p.id === item.productId);
-                if (!hqProduct || (hqProduct.stock || 0) < item.qty) {
-                    setIsProcessing(false);
-                    return notify(`INSUFFICIENT HQ STOCK!\n\nYou cannot ship this. HQ Vault is missing ${item.qty - (hqProduct?.stock || 0)} ${item.unit} of ${item.name}. Please edit the fulfillment qty.`);
-                }
-            }
-
-            triggerCapy("Compressing Photo & Syncing Database... ⏳");
-            const base64Photo = await compressImageToBase64(packagePhotoFile);
-            const photoPath = `artifacts/${appId}/users/${masterUserId}/photos/shipment_${isFulfilling.id}_${Date.now()}.jpg`;
-            const photoUrl = await savePhotoAndGetReference(storage, base64Photo, photoPath, appSettings?.usePhotoStorage);
-
-            /* 🚀 FIX: ship the DIFFERENCE, not a recomputed total. This wrote
-               (the number my screen was showing) - (what I am shipping), and the number the
-               screen was showing was read before the two long waits above — compressing the
-               package photo and uploading it, which on a phone is seconds and sometimes minutes.
-               Anything sold in that gap was silently undone: HQ holds 500, a salesman sells 120
-               while the photo uploads, shipping 100 wrote 400 instead of 280 and the 120 sold
-               packs came back from the dead, permanently. increment() applies the deduction
-               server-side against whatever the stock really is when the write lands.
-
-               ponytail: the over-ship guard above still reads the screen's copy, so it stays
-               best-effort — a sale during the gap can now drive stock slightly negative instead
-               of silently inflating it. That failure is visible and self-correcting; the old one
-               was neither. Make it exact by moving the check into a runTransaction if it ever
-               bites. */
-            for (const item of fulfillmentCart) {
-                const hqRef = doc(db, `artifacts/${appId}/users/${masterUserId}/products`, item.productId);
-                batch.update(hqRef, { stock: increment(-Number(item.qty)) });
-            }
-
-            const orderRef = doc(db, `artifacts/${appId}/users/${masterUserId}/stock_requests`, isFulfilling.id);
-            const updatedTimeline = [...(isFulfilling.workflowTimeline || [])];
-            updatedTimeline.push({
-                status: 'IN_TRANSIT',
-                time: new Date().toISOString(),
-                msg: `Shipped via ${courierName} (Resi: ${trackingNo}) by ${senderName}. Photo proof uploaded.` 
-            });
-
-            batch.update(orderRef, {
-                status: 'IN_TRANSIT',
-                senderName: senderName, 
-                courier: courierName,
-                trackingNo: trackingNo,
-                packagePhotoUrl: photoUrl,
-                fulfilledItems: fulfillmentCart, 
-                fulfilledAt: serverTimestamp(),
-                fulfilledBy: user.email,
-                workflowTimeline: updatedTimeline
-            });
-
-            await batch.commit();
-            triggerCapy(`Shipment confirmed! Status changed to IN_TRANSIT. 🚚`);
-            logAudit("STOCK_SHIP", `Shipped ${isFulfilling.id} to ${isFulfilling.branch}. Resi: ${trackingNo}`);
-            cancelFulfillment();
-            setIsProcessing(false);
-        } catch (e) {
-            console.error(e);
-            notify("Shipment failed: " + e.message);
-            setIsProcessing(false);
-        }
-    };
+    /* The fulfilment path — the queue, the shipping modal and the six handlers behind them —
+       moved to the Restock Vault desk's Request tab on 2026-08-27. It answered a BRANCH request
+       but it lived on the BRANCH screen, three screens away from the desk that owns every other
+       surat jalan. This component is HQ's warehouse readout now, not HQ's outbox. */
 
     const handleStartEditingOrder = (order) => {
         setEditingOrder(order);
@@ -1240,6 +1161,91 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
                 drift apart. It does NOT get the request form or the receive button: a shipment
                 must still be asked for by the branch that needs it and counted by the branch that
                 receives it, or the separation the arrival check exists to create is gone. */}
+
+            {/* ════════ WHERE EVERY PACK IS — one row per warehouse ════════
+                The panel this screen is named after. It used to be a branch picker that showed one
+                warehouse's shelf and nothing else, so the question it exists to answer — "who needs
+                a delivery?" — took as many clicks as there are branches, and could only ever be
+                answered from the shelf figure alone.
+
+                ⚠️ THE BAR SHOWS WHERE PACKS ARE, SO IT LEAVES OUT `terjual`. Sold packs are not
+                anywhere any more; putting them in a "where is it" bar would shrink every other
+                segment in proportion to how well a branch is doing, which reads as the exact
+                opposite of the truth. Sold gets a column, never a segment. */}
+            {isAdmin && logistics.length > 0 && (
+                <div className="bg-panel p-4 sm:p-5 rounded-2xl border border-line-2 shadow-xl mb-6">
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-2 border-b border-line-2 pb-3 mb-4">
+                        <div>
+                            <h3 className="text-base sm:text-lg font-black text-gold uppercase tracking-widest flex items-center gap-2">
+                                <Globe size={18}/> Sebaran Stok
+                            </h3>
+                            <p className="text-[10px] text-ink-muted uppercase tracking-widest mt-1">Semua gudang · dalam Bks</p>
+                        </div>
+                        <p className="text-[10px] text-ink-muted uppercase tracking-widest">Terjual = 7 hari terakhir</p>
+                    </div>
+
+                    <div className="overflow-x-auto -mx-1 px-1">
+                        <table className="w-full text-sm min-w-[640px]">
+                            <thead>
+                                <tr className="text-[10px] text-ink-muted uppercase tracking-widest">
+                                    <th className="text-left font-bold pb-2 pr-3">Gudang</th>
+                                    <th className="text-right font-bold pb-2 px-2">Di gudang</th>
+                                    <th className="text-right font-bold pb-2 px-2">Di jalan</th>
+                                    <th className="text-right font-bold pb-2 px-2">Di tangan agen</th>
+                                    <th className="text-right font-bold pb-2 px-2">Terjual</th>
+                                    <th className="text-right font-bold pb-2 pl-2">Sisa hari</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {logistics.map(r => {
+                                    const here = r.shelf + (r.transit || 0) + r.field;
+                                    const pct = (v) => here > 0 ? `${(v / here) * 100}%` : '0%';
+                                    /* under a week of cover is the point HQ has to act, because a
+                                       delivery does not arrive the same day it is decided */
+                                    const low = r.daysLeft !== null && r.daysLeft < 7;
+                                    return (
+                                        <tr key={r.name} className="border-t border-line-2 align-middle">
+                                            <td className="py-2.5 pr-3">
+                                                <div className="flex items-center gap-2">
+                                                    <MapPin size={13} className={r.name === MASTER ? 'text-gold shrink-0' : 'text-orange shrink-0'}/>
+                                                    <span className="font-black uppercase tracking-wider text-ink text-[13px]">{r.name === MASTER ? 'Master Vault' : r.name}</span>
+                                                </div>
+                                                <div className="flex h-1.5 mt-1.5 rounded-full overflow-hidden bg-raised" title="di gudang · di jalan · di tangan agen">
+                                                    <div className="bg-gold" style={{ width: pct(r.shelf) }}/>
+                                                    <div className="bg-orange" style={{ width: pct(r.transit || 0) }}/>
+                                                    <div className="bg-line-3" style={{ width: pct(r.field) }}/>
+                                                </div>
+                                            </td>
+                                            <td className="text-right px-2 font-mono font-black text-gold tabular-nums">{r.shelf.toLocaleString('id-ID')}</td>
+                                            <td className="text-right px-2 font-mono font-bold text-orange tabular-nums">{r.transit === null ? <span className="text-ink-muted">—</span> : r.transit.toLocaleString('id-ID')}</td>
+                                            <td className="text-right px-2 font-mono font-bold text-ink tabular-nums">{r.field.toLocaleString('id-ID')}</td>
+                                            <td className="text-right px-2 font-mono font-bold text-ink tabular-nums">{r.sold.toLocaleString('id-ID')}</td>
+                                            <td className="text-right pl-2 font-mono font-black tabular-nums">
+                                                {r.daysLeft === null
+                                                    ? <span className="text-ink-muted" title="Tidak ada penjualan 7 hari terakhir — tidak ada laju untuk dihitung">—</span>
+                                                    : <span className={low ? 'text-danger-text' : 'text-ink'}>{r.daysLeft}</span>}
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
+                                <tr className="border-t-2 border-line-3">
+                                    <td className="py-2.5 pr-3 text-[10px] font-bold text-ink-muted uppercase tracking-widest">Total perusahaan</td>
+                                    <td className="text-right px-2 py-2.5 font-mono font-black text-gold tabular-nums">{gTotal('shelf').toLocaleString('id-ID')}</td>
+                                    <td className="text-right px-2 py-2.5 font-mono font-black text-orange tabular-nums">{gTotal('transit').toLocaleString('id-ID')}</td>
+                                    <td className="text-right px-2 py-2.5 font-mono font-black text-ink tabular-nums">{gTotal('field').toLocaleString('id-ID')}</td>
+                                    <td className="text-right px-2 py-2.5 font-mono font-black text-ink tabular-nums">{gTotal('sold').toLocaleString('id-ID')}</td>
+                                    <td className="text-right pl-2 py-2.5 text-ink-muted">—</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <p className="text-[10px] text-ink-muted mt-3 leading-relaxed">
+                        <b className="text-ink">Sisa hari</b> = isi gudang dibagi laju jual 7 hari terakhir. Tanda <b className="text-danger-text">merah</b> berarti kurang dari seminggu — gudang itu yang perlu dikirim lagi duluan. Garis <b className="text-ink-muted">—</b> berarti belum ada penjualan minggu ini, jadi lajunya belum bisa dihitung.
+                    </p>
+                </div>
+            )}
+
             {isAdmin && (
                 <div className="bg-panel p-4 sm:p-6 rounded-2xl border border-line-2 shadow-xl mb-6">
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-line-2 pb-4 mb-4">
@@ -1274,95 +1280,6 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
                 </div>
             )}
 
-            {/* ============ MASTER ADMIN VIEW =========== */}
-            {isAdmin && (
-                <div className="bg-panel p-4 sm:p-6 rounded-2xl border border-line-2 shadow-xl flex-1 flex flex-col relative">
-                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4 border-b border-line-2 pb-4">
-                        <h3 className="text-xl font-black text-white uppercase tracking-widest flex items-center gap-3">
-                            <Clock className="text-orange"/> Active Pipeline
-                        </h3>
-                        <p className="text-[10px] text-ink-muted uppercase tracking-widest">Pending, In-Transit & Disputed</p>
-                    </div>
-
-                    {(() => {
-                        /* DISPUTED belongs in HQ's active list. The branch has already taken the
-                           goods in, so nothing is pending on their side — what is outstanding is
-                           HQ's answer on the difference. Leave it out of this filter and the
-                           report is filed into a list nobody opens, which is the same as not
-                           filing it. Disputes sort to the top for the same reason. */
-                        const rank = { 'DISPUTED': 0, 'PENDING': 1, 'IN_TRANSIT': 2 };
-                        const activeRequests = requests
-                            .filter(r => r.status === 'PENDING' || r.status === 'IN_TRANSIT' || r.status === 'DISPUTED')
-                            .sort((a, b) => (rank[a.status] ?? 9) - (rank[b.status] ?? 9));
-                        
-                        if (isLoading) {
-                            return <div className="text-center p-10 text-ink-muted animate-pulse italic text-xs uppercase tracking-widest">Loading Logistics Logs...</div>;
-                        }
-                        
-                        if (activeRequests.length === 0) {
-                            return (
-                                <div className="flex-1 flex flex-col items-center justify-center p-12 text-center border-2 border-dashed border-line-2 rounded-xl bg-black/20">
-                                    <Globe size={48} className="text-line-3 mb-3 opacity-50"/>
-                                    <p className="text-ink-muted font-bold text-sm">No active requests nationwide.</p>
-                                    <p className="text-ink-muted text-[10px] mt-1 uppercase tracking-widest">Active logistics pipeline is clear!</p>
-                                </div>
-                            );
-                        }
-
-                        return (
-                            <div className="space-y-4">
-                                {activeRequests.map(req => {
-                                    const isExpanded = expandedRequest === req.id;
-                                    const itemsToProcess = req.fulfilledItems || req.requestedItems || req.items || [];
-                                    
-                                    return (
-                                        <div key={req.id} className={`p-4 rounded-2xl border transition-colors ${isExpanded ? 'bg-ground border-line-3 shadow-2xl' : 'bg-black/40 border-line-2 hover:bg-raised'}`}>
-                                            
-                                            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 border-b border-line-2 pb-3 mb-3 relative">
-                                                
-                                                <button data-kpm-del data-label="Delete" onClick={() => handleDeleteRequest(req.id)} className="absolute -top-1 -right-1 text-ink-muted hover:text-danger-text bg-panel p-1.5 rounded-lg border border-line-2 transition-colors shadow-lg z-10" title="Delete Ghost Data Permanently">
-                                                    <Trash2 size={16}/>
-                                                </button>
-
-                                                <div className="w-full sm:w-auto mb-2 sm:mb-0 flex-1">
-                                                    <div className="flex gap-2 items-center">
-                                                        <h4 className="font-black text-white uppercase text-xl flex items-center gap-2">
-                                                            <MapPin size={16} className="text-orange"/> {req.branch}
-                                                        </h4>
-                                                        <span className="text-[10px] text-ink-muted font-mono tracking-widest uppercase">{req.id} • REQ BY: {req.requestedByName || (req.requestedBy || "").split('@')[0]}</span>
-                                                    </div>
-                                                    <p className="text-[11px] text-ink-muted font-mono mt-0.5 mb-1.5">Time: {new Date(req.timestamp?.seconds*1000).toLocaleString()}</p>
-                                                    {/* 🚀 THE FIX: LIST ALL ITEM DETAILS RIGHT ON THE CARD */}
-                                                    <div className="text-[10px] text-ink font-medium">
-                                                        <span className="font-bold text-orange mr-1">📦 {itemsToProcess.reduce((sum,i)=>sum+Number(i.qty),0)} Bks:</span> 
-                                                        <span className="text-ink-muted">{itemsToProcess.map(i => `${i.qty} ${i.name}`).join(', ')}</span>
-                                                    </div>
-                                                </div>
-                                                <div className="flex flex-col sm:flex-row items-end sm:items-center gap-3 w-full sm:w-auto pr-8 mt-2 sm:mt-0">
-                                                    <StatusBadge status={req.status}/>
-                                                    <div className="flex gap-2 w-full sm:w-auto">
-                                                        <button onClick={() => setExpandedRequest(isExpanded ? null : req.id)} className="flex-1 sm:flex-none bg-raised hover:bg-line-2 text-ink-muted hover:text-white p-2 rounded-lg flex items-center justify-center gap-1.5 text-[11px] font-bold uppercase tracking-widest transition-colors shadow-sm">
-                                                            {isExpanded ? <XCircle size={14}/> : <Eye size={14}/>}
-                                                            {isExpanded ? 'Tutup Track' : 'Lacak (OMS)'}
-                                                        </button>
-                                                        {req.status === 'PENDING' && (
-                                                            <button onClick={() => handleStartFulfillment(req)} className="flex-1 sm:flex-none px-4 py-2.5 bg-orange hover:bg-orange/90 text-orange-ink rounded-lg font-black uppercase tracking-widest text-[11px] flex items-center justify-center gap-1 shadow-lg active:scale-95 transition-all animate-pop-in">
-                                                                <Truck size={14}/> Siapkan Pengiriman
-                                                            </button>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            {isExpanded && <OrderTrackingModule order={req} />}
-                                        </div>
-                                    )
-                                })}
-                            </div>
-                        );
-                    })()}
-                </div>
-            )}
             
             {/* ====== MODALS ====== */}
             {isProcessing && (
@@ -1375,110 +1292,6 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
                 </div>
             )}
 
-            {/* FULFILLMENT MODAL (HQ ONLY) */}
-            {isFulfilling && (
-                <div className="fixed inset-0 bg-black/90 flex items-center justify-center p-4 z-[90] backdrop-blur-sm overflow-y-auto">
-                    <div className="bg-panel w-full max-w-4xl rounded-2xl border-2 border-gold shadow-[0_0_50px_rgba(212,175,55,0.2)] flex flex-col max-h-[90vh] overflow-hidden mt-10 sm:mt-0">
-                        
-                        <div className="p-4 sm:p-6 border-b border-line-2 bg-black/40 flex justify-between items-start gap-4 shrink-0">
-                            <div>
-                                <h3 className="text-xl sm:text-2xl font-black text-white uppercase tracking-widest flex items-center gap-2 sm:gap-3 break-words">
-                                    <Pencil className="text-gold shrink-0"/> Siapkan Pengiriman Ke {isFulfilling.branch}
-                                </h3>
-                                <p className="text-[10px] text-ink-muted uppercase tracking-widest mt-1">Order ID: {isFulfilling.id}</p>
-                            </div>
-                            <button onClick={cancelFulfillment} className="text-ink-muted hover:text-white shrink-0"><XCircle size={24}/></button>
-                        </div>
-
-                        <div className="flex-1 overflow-y-auto p-4 sm:p-8 custom-scrollbar space-y-6 sm:space-y-8">
-                            
-                            <div className="bg-raised border border-gold/30 rounded-xl p-4 sm:p-5 shadow-inner">
-                                <h4 className="text-[10px] text-gold font-bold uppercase tracking-widest mb-2 flex items-center gap-2"><MapPin size={14}/> Destination Address</h4>
-                                <p className="text-white text-sm sm:text-base font-black uppercase tracking-wider">{isFulfilling.branch} WAREHOUSE</p>
-                                {isFulfilling.deliveryAddress ? (
-                                    <p className="text-xs sm:text-sm text-ink mt-2 leading-relaxed">
-                                        {isFulfilling.deliveryAddress.jalan}<br/>
-                                        Kec. {isFulfilling.deliveryAddress.kecamatan}, {isFulfilling.deliveryAddress.kabupaten}<br/>
-                                        {isFulfilling.deliveryAddress.provinsi} - {isFulfilling.deliveryAddress.postalCode}
-                                    </p>
-                                ) : (
-                                    <p className="text-xs text-danger-text italic mt-2 border border-danger/30 bg-danger-well p-2 rounded inline-block">No detailed address provided by Branch.</p>
-                                )}
-                            </div>
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 items-start">
-                                <div className="space-y-4">
-                                    <h4 className="text-xs font-bold text-ink-muted uppercase tracking-widest mb-3 flex items-center gap-2"><Truck size={14}/> Wajib Diisi (TMS)</h4>
-                                    <input type="text" placeholder="Nama Pengirim (Sender Name)" value={senderName} onChange={e => setSenderName(e.target.value)} className="w-full bg-black/50 border border-line-3 rounded-xl p-3 sm:p-4 text-sm text-orange font-bold outline-none focus:border-gold transition-colors shadow-inner"/>
-                                    <input type="text" placeholder="Logistic Company / Courier (e.g., J&T, Internal)" value={courierName} onChange={e => setCourierName(e.target.value)} className="w-full bg-black/50 border border-line-3 rounded-xl p-3 sm:p-4 text-sm text-white font-bold outline-none focus:border-gold transition-colors shadow-inner"/>
-                                    <input type="text" placeholder="Nomor Resi / Tracking Number (Required)" value={trackingNo} onChange={e => setTrackingNo(e.target.value)} className="w-full bg-black/50 border border-line-2 rounded-xl p-3 sm:p-4 text-sm text-gold font-mono font-bold outline-none focus:border-gold transition-colors shadow-inner uppercase tracking-wider"/>
-                                    <div className="bg-black p-3 sm:p-4 rounded-xl border border-dashed border-danger/50 text-danger-text text-xs flex gap-3 items-center leading-relaxed">
-                                        <AlertCircle size={32} className="shrink-0"/>
-                                        <p><strong className="uppercase block">Penting:</strong> Data di atas dan Foto Bukti di samping *wajib* diisi lengkap. Ini adalah Shopee/Tokopedia logic: Status Math tidak akan berubah sebelum paper trail pengiriman lengkap.</p>
-                                    </div>
-                                </div>
-
-                                <div className="bg-black/50 p-4 sm:p-6 rounded-xl border border-line-2 flex flex-col items-center shadow-xl">
-                                    <h4 className="text-[10px] font-bold text-ink-muted uppercase tracking-widest mb-3 flex items-center gap-1.5"><Camera size={12}/> Wajib Upload: Foto Paket & Resi</h4>
-                                    
-                                    {packagePhotoPreview ? (
-                                        <div className="w-full relative">
-                                            <img src={packagePhotoPreview} alt="Package Proof" className="w-full h-40 sm:h-56 object-cover rounded-lg border-2 border-gold shadow-inner"/>
-                                            <button onClick={() => { setPackagePhotoFile(null); setPackagePhotoPreview(null); }} className="absolute -top-2 -right-2 bg-danger rounded-full p-1 text-white hover:bg-danger"><XCircle size={16}/></button>
-                                        </div>
-                                    ) : (
-                                        <button onClick={() => photoInputRef.current.click()} className="w-full h-40 sm:h-56 bg-raised rounded-lg border-2 border-dashed border-line-3 flex flex-col items-center justify-center text-ink-muted hover:border-gold hover:text-gold transition-colors gap-3 p-4 sm:p-6 text-center">
-                                            <UploadCloud size={40} className="opacity-50"/>
-                                            <span className="font-bold text-xs uppercase tracking-widest">Pilih Foto Bukti</span>
-                                            <span className="text-[11px] text-ink-muted hidden sm:inline">Ambil foto paket yang sudah ada resinya.</span>
-                                        </button>
-                                    )}
-                                    <input type="file" accept="image/*" ref={photoInputRef} onChange={handlePhotoChange} className="hidden" />
-                                </div>
-                            </div>
-
-                            <div>
-                                <h4 className="text-xs font-bold text-white uppercase tracking-widest mb-4 flex items-center gap-2"><Pencil size={14} className="text-gold"/> Edit Barang Yang Dikirim (HQ can edit Qty)</h4>
-                                <div className="space-y-3 bg-black/30 p-3 sm:p-4 rounded-2xl border border-line-2">
-                                    {fulfillmentCart.map(item => {
-                                        const hqProduct = globalInventory.find(p => p.id === item.productId);
-                                        const hqStock = hqProduct?.stock || 0;
-                                        const hasEnough = hqStock >= item.qty;
-                                        const requestedQty = (isFulfilling.requestedItems || isFulfilling.items || []).find(r => r.productId === item.productId)?.qty || 0;
-
-                                        return (
-                                            <div key={item.productId} className="bg-raised p-3 sm:p-4 rounded-xl border border-line-2 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-                                                <div className="w-full sm:w-auto">
-                                                    <span className="font-bold text-white uppercase text-sm">{item.name}</span>
-                                                    <div className="flex gap-4 text-[10px] mt-1">
-                                                        <span className="text-orange font-bold uppercase tracking-widest">Diminta: {requestedQty} Bks</span>
-                                                        <span className={`font-black ${hasEnough ? 'text-ink-muted' : 'text-danger-text'}`}>Stok HQ: {hqStock} Bks</span>
-                                                    </div>
-                                                </div>
-                                                <div className="flex items-center gap-2 bg-panel p-2 rounded-lg border border-line-2 shadow-inner w-full sm:w-44">
-                                                    <label className="text-[10px] text-gold font-bold uppercase tracking-widest shrink-0">Kirim:</label>
-                                                    <input type="number" value={item.qty} onChange={e => updateFulfillQty(item.productId, e.target.value)} className="flex-1 min-w-0 bg-transparent text-right font-black text-gold text-lg outline-none"/>
-                                                    <span className="text-[10px] text-ink-muted shrink-0">Bks</span>
-                                                </div>
-                                            </div>
-                                        )
-                                    })}
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="no-print p-4 sm:p-6 border-t border-line-2 bg-black/40 flex flex-col md:flex-row gap-3 mt-auto shrink-0 rounded-b-2xl shadow-[0_-10px_30px_rgba(0,0,0,0.3)] relative z-20">
-                            <button onClick={handleShipItems} disabled={isProcessing} className="flex-1 bg-gold hover:bg-gold/90 text-gold-ink py-4 rounded-xl font-black uppercase tracking-widest text-xs sm:text-sm flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-all relative">
-                                {isProcessing ? <Clock className="animate-spin" size={18}/> : <Send size={20}/>}
-                                KONFIRMASI DATA & KIRIM BARANG
-                            </button>
-                            <button onClick={handleRejectRequest} disabled={isProcessing} className="w-full md:w-auto px-6 bg-danger-well hover:bg-danger text-danger-text hover:text-white border border-danger/30 py-4 rounded-xl font-black uppercase tracking-widest text-[11px] flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-all">
-                                <XCircle size={16}/> TOLAK
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
         </div>
     );
 }
