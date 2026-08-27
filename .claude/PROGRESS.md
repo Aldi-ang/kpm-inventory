@@ -1,30 +1,44 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-28 00:55 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · ✅ **HOVER GLOW + RIBBONS SHIPPED** · **666/666** · branch `phase0-solid-ground`, clean at `24673c7`
+**Updated: 2026-08-28 00:47 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · ✅ **HOVER GLOW + RIBBONS SHIPPED, nothing half-done** · **666/666** · branch `phase0-solid-ground`, clean at `341b93f`
 
-## 🟢 2026-08-28 00:55 — THE BOOK LIGHTS UP ON HOVER, AND THE COVER STOPS AT THE BOOK. `1ebbabc`, **666/666**.
+## 🟢 2026-08-28 00:47 — HOVER GLOW AND THE RIBBON/COVER FIX. `1ebbabc`, **666/666**. Tree clean.
 
-Two asks shipped. Diagnosis lives in the commit message; what matters next:
+**NOW: nothing is in progress. One question is the whole next job — which chapter.** Every commit
+builds and audits green. Diagnosis for all of it is in `1ebbabc`; do not re-derive it.
 
-**The hover glow is built, under a palette exemption HE GRANTED** ("sure", 2026-08-28). It is
-**bounded and checked**: opacity 0 at rest, sparks only animate under `group-hover`, gone in Lite
-Mode. Unbound it is just the amber background he has rejected twice by name. Three iterations, each
-because the lab showed the last one wrong: a low ellipse that smudged the chip border, then a cream
-spark on cream pages that was invisible, then three of four sparks painted **behind** the cover —
-`preserve-3d` sorts children by DEPTH, not document order. The fix was `translateZ` **inside the
-keyframe**, because the animation would have erased it on the element. Same fault as the caption,
-second file, same day.
+**The hover glow is built under a palette exemption HE GRANTED** (*"sure"*, 2026-08-28), against the
+video he sent twice. It is **bounded and checked**: opacity 0 at rest, sparks only animate under
+`group-hover`, gone in Lite Mode. Unbound it is just the amber background he has rejected twice by
+name. Three iterations, each because the lab showed the previous one wrong — a low ellipse that
+smudged the chip's border, a cream spark invisible on cream pages, then three of four sparks painted
+**behind** the cover. `preserve-3d` sorts children by DEPTH, not document order; the fix was
+`translateZ` **inside the keyframe**, because the animation erases it on the element. Same fault as
+the caption, second file, same day.
 
-**The cover now starts 116px in**, so the ribbons hang 106px outside it and tuck 12px under —
-*"cut the brown background where the book ends not where the ribbon ends"*. Moving that edge also
-moved the reference for `SLAB_SHUT`: the old constant would have left the shut cover overhanging the
-centre fold **by 163px**. Measured, not guessed, and now an arithmetic check.
+**The cover starts 116px in now**, so the ribbons hang 106px outside and tuck 12px under —
+*"cut the brown background where the book ends not where the ribbon ends"*. Moving that edge moved
+the reference for `SLAB_SHUT` too: the old constant left the shut cover overhanging the centre fold
+**by 163px**. Measured in the lab, and now an arithmetic check so it cannot go wrong quietly.
 
-**The lab grew `?hover`** — a hover cannot be screenshotted otherwise. Headless Chrome has no
-pointer, and the in-app browser pane refuses to composite while it is off screen.
+**❓ WAITING ON ALDI — ONE QUESTION, AND IT IS MINE, NOT HIS.** He has no unanswered request
+outstanding; his last two (*"sure"* on the exemption, and the ribbon note) are both shipped. The open
+one: **which chapter next.** `sections.js` order puts **Sales Terminal (titip vs lunas)** first and it
+is the one he uses daily, so that is the default if he does not care.
 
-❓ **STILL OPEN, and it is the only thing left:** which chapter next. `sections.js` order puts
-**Sales Terminal (titip vs lunas)** first, and that is the default if he does not care.
+**✅ HE SHOULD LOOK AT** — hover the book chip in the top bar, and open it to see the ribbons.
+Also **nobody has ever heard the four book sounds**; the `VOLUMES` levels are still a first guess.
+
+**Where things live — new or changed this session**
+
+| Thing | Path |
+|---|---|
+| `?hover` freezes the chip's hover state — a hover cannot be screenshotted any other way | `tools/ponder-lab.jsx` |
+| The glow, the sparks, `COVER_LEFT`, `SLAB_SHUT` | `src/ponder/PonderBook.jsx` |
+| `bookSpark` keyframes — the `translateZ` lives here, not on the element | `tailwind.config.js` |
+| The 666 checks — group **56** is Ponder | `src/config/integration.audit.mjs` |
+| The two new laws, in the vault | `A-Brain/Wiki/Concepts/A CSS Animation Outranks Your Inline Style.md` · `A Rect Is Painted, Not Laid Out.md` |
+| `/watch` works here — `uv tool install yt-dlp` | `~/.claude/skills/watch` |
 
 ## 🟢 2026-08-28 00:20 — THE HOVER VIDEO HAS BEEN WATCHED. No code changed; **663/663**.
 
@@ -123,83 +137,3 @@ is ~15 lines.
 
 And **nobody has heard the four book sounds play.** They are his own files, trimmed by measurement;
 the levels are a first guess.
-
-## 🟠 2026-08-27 22:22 — THE REPLAY BUG. **657/657.** `c05e740`
-
-> *"animation is reset everytime i press the section fix that, and replace that into book page
-> paper slide instead"*
-
-**🔴 THE CAUSE: `const T = {...}` WAS DECLARED INSIDE THE COMPONENT.** React rebuilt it every
-render, it sat in the open animation's dependency array, so the array changed every render and the
-effect re-ran — **replaying the whole fly-in-and-open on every section click.** Nothing threw,
-every check stayed green, and it looked like a deliberate animation.
-
-Every animation constant is at **module scope** now; the effects depend on `[still, flightFrom]`,
-both stable. Strings compare by value and were never the problem; the object was.
-
-⚠️ **THIS IS THE THIRD BUG IN THIS FILE OF THE SAME FAMILY** — work scheduled or repeated by a
-mechanism nobody was watching, nothing thrown, nothing red. (1) rAF cancelled by its own cleanup,
-(2) the book at opacity 0, (3) this. **A frame cannot catch any of them.**
-
-**Page motion is a SLIDE now**, not a rotateY — a flip is what the cover does. Both halves slide
-out of the fold in opposite directions, 320ms, keyed on section AND page. `ponder-leaf` removed
-from the theme.
-
-⚠️ **NOT VERIFIED AT RUNTIME.** The lab gained a probe that clicks a section and reads the book's
-animation clock, but **headless virtual time does not drive animation clocks honestly** — a
-finished animation reported `currentTime: 0`, which no real browser does. Limits are written into
-the harness. The fix rests on the dependency rule and visibly correct code. **He sees the answer on
-the first click.**
-
-## 🟠 2026-08-27 20:44 — RIBBONS. **657/657.** `<see git log -1>`
-
-> *"can u remove the white scroll, i dont want to see any of the scroll inside this book, and the
-> section also make it like book ribbons u know to make it more natural and make these section into
-> one line with no scrollable so resize the spacing"*
-
-**🔴 THE CREAM STRIPS WERE NEVER SCROLLBARS — they are the PAGE EDGES.** They were pinned to
-the stage rather than to the halves they are the edge OF, so when the cover shut they stayed put:
-two pale strips hanging in the dark beside a closed book. Left half keeps its own edge + half the
-bottom; the right half's live **inside the leaf** and turn with it. Closed, the fore-edge lands
-opposite the spine, which is correct.
-
-**Tabs → ribbons.** A V cut into the free end (the one shape that reads as fabric), active one
-woven in gold rather than outlined. **17 × 26px + 2px gap = 474px**, so they all fit and the scroll
-container is **gone, not hidden** — nothing left to scroll.
-
-**❓ STILL OWED BY HIM — verbatim:**
-> *"i want this animation when book is hovered https://www.youtube.com/watch?v=vhG5usAFL_g with the
-> light effect as well"*
-
-**YouTube cannot be opened here** — he must describe it in one line. Current hover is a stand-in
-(cover lifts, chip rises, specular band crosses the leather). **Sounds are also still unheard.**
-
-## 🟠 2026-08-27 20:27 — THE CHIP IS THE BOOK. **657/657.** `bd22eba`
-
-> *"erase the scroll white indicator looks really bad"* · *"rather than it close and shrink and
-> gone, i rather make the book fly from its original position to the big screen, then when it close
-> it fly back to the original position, the small version of book on its space"* · *"i want the
-> book size to match the real book, this sizing is very different to start with sc1"*
-
-**🔴 THE CHIP WAS LANDSCAPE — 34×26, wider than tall, which no closed book is.** A closed book
-here is half the spread: 520×760 = **0,68**. The chip is **21×30**, same ratio. Big and small are
-now one object at two sizes, which is the whole reason the flight reads as a movement.
-
-**The white sliver** was a flat cream bar reading as a scrollbar → fine alternating page-edge
-lines, same texture as the big book. **Scrollbars inside the book are hidden** — the global brown
-bar is tuned for dark panels and sits on cream paper like a stripe.
-
-**🔴 THE FLIGHT AIMED AT THE WRONG RECTANGLE.** It scaled the whole 1040px container onto the
-chip, but a shut book is only half the spread plus the tab column — so it drifted sideways while
-shrinking. Now it maps the **closed** book's centre, scaled by **height** (a closed book is
-portrait), subtracting where that centre lands after scaling about the container's middle.
-
-**No more dissolve.** Neither flight touches opacity, and the chip's own book is `visibility:
-hidden` for exactly the span the big one is out — never two, never none.
-
-**❓ WAITING ON ALDI — verbatim:**
-> *"i want this animation when book is hovered https://www.youtube.com/watch?v=vhG5usAFL_g with the
-> light effect as well"*
-
-**YouTube cannot be opened here.** Current hover is a stand-in: cover lifts on its spine, chip
-rises 1px, a specular band crosses the leather. **He needs to describe the video in one line.**
