@@ -1,6 +1,37 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-27 13:22 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · ✅ **PONDER SLICE 2 IS LIVE — the real table on the stage, and a BOOK in the top bar** — **651/651** · the footnote is deleted and check 631 moved · branch `phase0-solid-ground`
+**Updated: 2026-08-27 17:37 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · ✅ **THE BOOK IS FIXED — it was rendering inside the glass top bar** — **654/654** · paper in both themes, flies from the chip · branch `phase0-solid-ground`
+
+## 🟠 2026-08-27 17:37 — THE BOOK WAS BROKEN ON HIS SCREEN. Fixed, **654/654**.
+
+His words: *"the book is broken bruh, check it before u give it to me, and the book look so bad
+there, its so black and small and doesnt look like a book"*, then *"when we press the book, it
+should open the book and zoomed in to our screen taking most space then close and shrink and go to
+its perspective place when close"*.
+
+**🔴 THE BREAK, AND IT IS THE LESSON OF THE DAY.** `position: fixed` measures against the
+viewport ONLY while no ancestor makes a containing block — and **`backdrop-filter` makes one**. The
+top bar is glass. Mounted in place, the book resolved `inset-0` against a **90px strip of chrome**
+and shipped as a torn ribbon across the header. Both the book and the scene player render into
+`document.body` through `createPortal` now, and a check pins it.
+
+**🔴 AND THE LAB WAS WRONG TOO, which is why I never saw it.** `tools/ponder-lab.jsx` had no
+glass ancestor, so it rendered the book perfectly every time. Its book harness now sits inside a
+real `backdrop-filter` element. **A harness that does not reproduce the ancestor is testing a
+different page** — the third variant of this trap in two days, after the markup one and the
+viewport-width one.
+
+**The flight.** The book grows out of the chip's MEASURED rect with a cover rotation and shrinks
+back into it. Driven by `element.animate()`, not a state flag in a `requestAnimationFrame` — that
+pattern already rendered this book at `opacity: 0` once with every check green.
+
+**The paper.** Cream pages in BOTH themes, leather cover, a fold that darkens toward the spine,
+tabs cut into the cover's edge, 1240×780. **Theme-exempt on purpose** — the same exemption the
+printed nota carries, and cream is on the palette, so no law is bent. Built from `--panel` it went
+near-black in dark mode, which is what he saw.
+
+**Seen in both themes, through a glass ancestor, at 1440×900.** Commit `c982ded`'s successor — see
+`git log -1`.
 
 ## 🟠 2026-08-27 13:22 — PONDER SLICE 2. **651/651.** `df5c98b` + `7b353a3`.
 
