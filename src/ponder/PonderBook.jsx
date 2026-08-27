@@ -59,6 +59,11 @@ const PAPER_2 = '#E4DAC6';
 const BOOK_INK = '#2A241D';
 const BOOK_DIM = '#6E6455';
 const LEATHER = '#241D16';
+/* THICKNESS. His note: *"book must be 3D with its thickness"*. A stack of sheets seen edge-on is
+   not a flat tan band — it is fine alternating lines, and that is the only cheap thing that reads
+   as "many pages" rather than "one thick card". */
+const EDGES = 'repeating-linear-gradient(180deg, #E9E1CF 0 2px, #CBBFA4 2px 3px)';
+const EDGES_H = 'repeating-linear-gradient(90deg, #E9E1CF 0 2px, #CBBFA4 2px 3px)';
 
 /* ── The closed book, as an object rather than an icon ───────────────────────────────────────── */
 function BookGlyph() {
@@ -135,6 +140,7 @@ function Library({ anchorRef, initialSection, onClose, onPick }) {
     () => (SECTIONS.some(s => s.id === initialSection) ? initialSection : SECTIONS[0].id));
   const [page, setPage] = useState(0);
   const bookRef = useRef(null);
+  const leafRef = useRef(null);   // the right half, hinged at the spine
   const scrimRef = useRef(null);
   const closingRef = useRef(false);
 
@@ -167,38 +173,49 @@ function Library({ anchorRef, initialSection, onClose, onPick }) {
 
   const still = liteOn() || reduced();
 
-  /* 🔴 TWO MOTIONS, NOT ONE, and the reason is the sound. Aldi, 2026-08-27: *"can u make the book
-     closed before comeback to its place when close this way it would fit the audio right"*.
+  /* 🔴 IT HINGES AT THE SPINE. THE WHOLE BOOK DOES NOT TURN.
 
-     A book does not shrink into a shelf while still open — it SHUTS, and then it is put away. His
-     close sound is 1,16s of exactly that, and a single 340ms shrink finished long before the sound
-     did, so the two described different events. Now the spread folds on the spot, then the closed
-     book flies back into the chip; opening is the same two beats reversed, because an open that
-     stayed one motion would have made the pair asymmetric for no reason.
+     Aldi, 2026-08-27: *"why did u flip the book like that ... it should flipped to the middle like
+     how the book works not to the side like that, use book logic"*. He is right, and the previous
+     version was not a small miss: it rotated the ENTIRE spread about its own centre, which is a
+     card being turned over, not a book being closed. Nothing about it obeyed how a book works.
 
-     Both are ONE `animate()` call with three keyframes rather than two chained animations. A chain
-     needs the second to start exactly where the first stopped, and any drift between them shows as
-     a jump at the hand-over. */
-  /* -84deg, not -60: at a shallow angle both pages are still legible and it reads as a book
-     TURNED, not a book SHUT. Near edge-on is the only angle that says closed. */
-  const FOLDED = 'rotateY(-84deg) scale(0.86)';
-  const FLAT = 'perspective(1800px) translate(0px, 0px) scale(1) rotateY(0deg)';
+     A book closes because its right half swings LEFT about the spine and comes to rest on the left
+     half. So the right page is its own hinged leaf with `transform-origin` at the spine, and it
+     travels 0° → -180°. Past 90° its front face turns away and its BACK face — the front cover —
+     is what you see, which is the closed book. The left half never moves, exactly as it does not
+     on a desk.
+
+     TWO ELEMENTS, TWO ANIMATIONS, ONE CLOCK. The leaf swings; the whole book flies. They are
+     started in the same tick with the same duration and complementary offsets, so the book is shut
+     before it leaves and open only after it lands. They are not chained — a chain has to resume
+     exactly where the last one stopped, and drift there shows as a jump. */
+  const SHUT = 'rotateY(-180deg)';
+  const OPEN = 'rotateY(0deg)';
+  const FLAT = 'translate(0px, 0px) scale(1)';
 
   useLayoutEffect(() => {
     if (still) return;
-    const el = bookRef.current;
+    const el = bookRef.current, leaf = leafRef.current;
     const from = flightFrom();
     if (!el || !from || typeof el.animate !== 'function') return;
     el.animate(
-      [{ transform: `perspective(1800px) ${from} ${FOLDED}`, opacity: 0, offset: 0 },
-       /* arrives shut, in place, and only then opens */
-       { transform: `perspective(1800px) translate(0px, 0px) scale(0.97) ${FOLDED}`, opacity: 1, offset: 0.46,
+      [{ transform: from, opacity: 0, offset: 0 },
+       /* lands shut, in place... */
+       { transform: 'translate(0px, 0px) scale(0.97)', opacity: 1, offset: 0.44,
          easing: 'cubic-bezier(0.23, 1, 0.32, 1)' },
        { transform: FLAT, opacity: 1, offset: 1 }],
-      { duration: 780, easing: EASE, fill: 'both' },
+      { duration: 820, easing: EASE, fill: 'both' },
+    );
+    /* ...and only then does the cover swing open. */
+    leaf?.animate(
+      [{ transform: SHUT, offset: 0 },
+       { transform: SHUT, offset: 0.44 },
+       { transform: OPEN, offset: 1 }],
+      { duration: 820, easing: EASE, fill: 'both' },
     );
     scrimRef.current?.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 260, easing: 'ease-out', fill: 'both' });
-  }, [still, flightFrom, FOLDED]);
+  }, [still, flightFrom, SHUT, OPEN, FLAT]);
 
   const shut = useCallback(() => {
     if (closingRef.current) return;
@@ -208,20 +225,25 @@ function Library({ anchorRef, initialSection, onClose, onPick }) {
     const el = bookRef.current;
     const from = flightFrom();
     if (!el || !from || typeof el.animate !== 'function') { onClose(); return; }
-    scrimRef.current?.animate([{ opacity: 1 }, { opacity: 1, offset: 0.42 }, { opacity: 0 }],
-                              { duration: 720, easing: 'ease-in', fill: 'both' });
+    scrimRef.current?.animate([{ opacity: 1 }, { opacity: 1, offset: 0.5 }, { opacity: 0 }],
+                              { duration: 760, easing: 'ease-in', fill: 'both' });
+    /* The cover swings shut where the book stands... */
+    leafRef.current?.animate(
+      [{ transform: OPEN, offset: 0 },
+       { transform: SHUT, offset: 0.5 },
+       { transform: SHUT, offset: 1 }],
+      { duration: 760, easing: 'cubic-bezier(0.4, 0, 0.4, 1)', fill: 'both' },
+    );
+    /* ...and only then is it put back on the shelf. */
     const anim = el.animate(
       [{ transform: FLAT, opacity: 1, offset: 0 },
-       /* shuts where it stands... */
-       { transform: `perspective(1800px) translate(0px, 0px) scale(0.97) ${FOLDED}`, opacity: 1, offset: 0.42,
-         easing: 'cubic-bezier(0.4, 0, 0.6, 1)' },
-       /* ...and only then goes back to the shelf */
-       { transform: `perspective(1800px) ${from} ${FOLDED}`, opacity: 0, offset: 1 }],
-      { duration: 720, easing: EASE, fill: 'both' },
+       { transform: 'translate(0px, 0px) scale(0.97)', opacity: 1, offset: 0.5 },
+       { transform: from, opacity: 0, offset: 1 }],
+      { duration: 760, easing: EASE, fill: 'both' },
     );
     anim.onfinish = onClose;
     anim.oncancel = onClose;
-  }, [onClose, flightFrom, FLAT, FOLDED]);
+  }, [onClose, flightFrom, FLAT, SHUT, OPEN]);
 
   useEffect(() => {
     const onKey = (e) => {
@@ -272,17 +294,26 @@ function Library({ anchorRef, initialSection, onClose, onPick }) {
           ))}
         </div>
 
-        {/* The page block: two cream pages, a fold that darkens toward the spine, and stacked
-            edges on the outside so it reads as many sheets rather than one card. */}
-        <div className="relative flex-1 min-w-0 rounded-[6px] overflow-hidden"
-             style={{ background: PAPER, boxShadow: 'inset 0 0 0 1px rgba(0,0,0,.18)' }}>
+        {/* 🔴 THE PAGE BLOCK IS A REAL 3D STAGE NOW. No `overflow-hidden` on this element: it
+            carries `preserve-3d`, and a clip here collapses the hinge back into a flat rotation in
+            several engines — which is exactly the bug being fixed. Clipping happens on each face
+            instead, where it has no 3D children to flatten. */}
+        <div className="relative flex-1 min-w-0"
+             style={{ transformStyle: 'preserve-3d', perspective: '2600px' }}>
 
-          <div className="absolute inset-0 pointer-events-none"
-               style={{ background:
-                 'linear-gradient(90deg, rgba(0,0,0,.10) 0%, rgba(0,0,0,0) 7%, rgba(0,0,0,0) 43%, rgba(0,0,0,.16) 50%, rgba(0,0,0,0) 57%, rgba(0,0,0,0) 93%, rgba(0,0,0,.10) 100%)' }} />
-          <span className="hidden lg:block absolute inset-y-0 left-1/2 w-[2px] -translate-x-1/2 bg-orange/60 pointer-events-none" />
+          {/* The page edges, standing proud of the cover on three sides. */}
+          <span className="pointer-events-none absolute inset-y-[8px] -left-[5px] w-[6px] rounded-l-[3px]"
+                style={{ background: EDGES }} />
+          <span className="pointer-events-none absolute inset-y-[8px] -right-[5px] w-[6px] rounded-r-[3px]"
+                style={{ background: EDGES }} />
+          <span className="pointer-events-none absolute -bottom-[5px] inset-x-[10px] h-[5px] rounded-b-[3px]"
+                style={{ background: EDGES_H }} />
 
-          <div className="relative h-full flex flex-col lg:grid lg:grid-cols-2">
+          {/* THE LEFT HALF. It never moves — a book does not close by swinging both halves. */}
+          <div className="absolute inset-y-0 left-0 hidden lg:block w-1/2 rounded-l-[6px]"
+               style={{ background: PAPER, boxShadow: 'inset 0 0 0 1px rgba(0,0,0,.15)' }}>
+            <div className="absolute inset-0 pointer-events-none"
+                 style={{ background: 'linear-gradient(90deg, rgba(0,0,0,.12) 0%, rgba(0,0,0,0) 15%, rgba(0,0,0,0) 82%, rgba(0,0,0,.20) 100%)' }} />
 
             {/* LEFT PAGE — the chapter opening itself */}
             {/* 🔴 NO `key` AND NO ENTRY ANIMATION ON A SECTION CHANGE. Both pages used to remount and
@@ -290,7 +321,7 @@ function Library({ anchorRef, initialSection, onClose, onPick }) {
                 inside the book, very visible when the section is scrolled down"*. A remount also
                 throws away the right page's scroll position, so a click low in the tab list blanked
                 and jumped at the same time. Changing text needs no animation to be understood. */}
-            <div className="hidden lg:flex flex-col justify-between p-9">
+            <div className="relative h-full flex flex-col justify-between p-9">
               <div>
                 <span className="h-14 w-14 rounded-xl flex items-center justify-center border"
                       style={{ background: PAPER_2, borderColor: 'rgba(0,0,0,.16)' }}>
@@ -317,10 +348,28 @@ function Library({ anchorRef, initialSection, onClose, onPick }) {
               </p>
             </div>
 
-            {/* RIGHT PAGE — the entries */}
+          </div>
+
+          {/* 🔴 THE RIGHT HALF, HINGED AT THE SPINE. `transform-origin` is the fold, so 0° → -180°
+              lays this leaf exactly onto the left half — which is how a book closes. Past 90° its
+              front face turns away and the cover on its back is what you see. The previous version
+              rotated the WHOLE spread about its own centre, which is a card being turned over.
+              A gold rule marks the fold, and it belongs to the leaf so it travels with it. */}
+          <div ref={leafRef}
+               className="absolute inset-y-0 left-0 w-full lg:left-1/2 lg:w-1/2"
+               style={{ transformOrigin: 'left center', transformStyle: 'preserve-3d' }}>
+
+            {/* FRONT OF THE LEAF — the right page */}
+            <div className="absolute inset-0 rounded-r-[6px] overflow-hidden"
+                 style={{ background: PAPER, backfaceVisibility: 'hidden',
+                          boxShadow: 'inset 0 0 0 1px rgba(0,0,0,.15)' }}>
+              <div className="absolute inset-0 pointer-events-none"
+                   style={{ background: 'linear-gradient(90deg, rgba(0,0,0,.20) 0%, rgba(0,0,0,0) 16%, rgba(0,0,0,0) 86%, rgba(0,0,0,.10) 100%)' }} />
+              <span className="hidden lg:block absolute inset-y-6 left-0 w-[2px] bg-orange pointer-events-none" />
+
             {/* Keyed on the PAGE only. Turning a page is a motion someone performed and should see;
                 switching chapters is a jump, and animating a jump is what flickered. */}
-            <div key={`r-${page}`} className="flex flex-col min-h-0 p-6 sm:p-9 animate-ponder-leaf">
+            <div key={`r-${page}`} className="relative h-full flex flex-col min-h-0 p-6 sm:p-9 animate-ponder-leaf">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <p className="font-mono text-[10px] uppercase tracking-widest" style={{ color: BOOK_DIM }}>Panduan</p>
@@ -384,6 +433,24 @@ function Library({ anchorRef, initialSection, onClose, onPick }) {
                              active:scale-[0.97] transition-transform duration-150 ease-out inline-flex items-center justify-center">
                   <ChevronRight size={16} />
                 </button>
+              </div>
+            </div>
+            </div>
+
+            {/* BACK OF THE LEAF — the front cover, and therefore the closed book. Its gold spine
+                sits on the element's RIGHT edge because a 180° turn puts that edge on the left of
+                the screen, which is where a spine belongs. */}
+            <div className="absolute inset-0 rounded-[6px] border border-accent-edge overflow-hidden"
+                 style={{ background: LEATHER, transform: 'rotateY(180deg)', backfaceVisibility: 'hidden' }}>
+              <span className="absolute inset-y-5 right-[6px] w-[3px] rounded-full bg-orange" />
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-4">
+                <span className="h-16 w-16 rounded-2xl border border-accent-edge flex items-center justify-center"
+                      style={{ background: 'rgba(0,0,0,.28)' }}>
+                  <Icon name={section.icon} size={28} style={{ color: '#C98A2E' }} />
+                </span>
+                <span className="font-display text-[15px] font-black uppercase tracking-[0.34em]"
+                      style={{ color: '#BFB29A' }}>Tutorial</span>
+                <span className="h-[3px] w-10 rounded-full bg-orange" />
               </div>
             </div>
           </div>
