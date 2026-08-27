@@ -1,6 +1,29 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-27 07:40 WIB (🟠 KPM app session)** · ✅ **ALL THREE QUEUED BUILDS DONE** — `76de71a`, **627/627** · 🔴 **NOT yet driven in the browser — vault gate** · branch `phase0-solid-ground`
+**Updated: 2026-08-27 07:55 WIB (🟠 KPM app session)** · ✅ **ALL THREE BUILDS DONE AND DRIVEN LIVE** — `20c4a0a`, **628/628** · one real bug found by driving it · branch `phase0-solid-ground`
+
+## 🟢 2026-08-27 07:55 — DRIVEN LIVE. `20c4a0a`. **628/628.** One bug caught on screen.
+
+He unlocked Chrome so all three were driven against his real data. Everything renders.
+
+**The bug only the screen could find:** Tujuan offered FOUR destinations — Gudang Pusat (HQ),
+BANDUNG, **Headquarters**, MUNTILAN. The first and third are the same place. The roster union
+filtered on its own short list (`!== 'UNASSIGNED'`) while supply.js already owned the real rule
+behind `NON_BRANCH`. Fixed by EXPORTING that constant, not by lengthening the copy. `20c4a0a`.
+
+**Verified on screen, against his data**
+- 4 tabs: `MASUK 0 · KIRIM 0 · REQUEST 0 · BUKU 6`. Request's empty state is correct — all 6
+  requests in the book are DITERIMA, so there is genuinely nothing open.
+- Buku rows + drawer still work after the row became a flex pair for the Siapkan button.
+- Tujuan = Gudang Pusat (HQ) · BANDUNG · MUNTILAN. **BANDUNG is the proof** — every request in
+  the book goes to MUNTILAN, so Bandung could not have appeared before.
+- Sebaran Stok cross-checks EXACTLY: master di gudang 24.921 = the five Masuk shelf figures summed
+  (1.586+1.464+10.900+9.988+983). Sisa hari 348 = 24.921 ÷ (500/7). Totals add.
+- Light mode clean — `text-gold` is a token that flips to near-black, so the palette law holds.
+
+**🔴 STILL UNPROVEN:** the Siapkan button and the shipping modal. There is no PENDING request in
+his data and I will not write fake ones into his live Firestore. **First real branch request that
+arrives is the test.**
 
 ## 🟢 2026-08-27 07:40 — REQUEST TAB + ROSTER TUJUAN + SEBARAN STOK. `76de71a`. **627/627.**
 
