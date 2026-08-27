@@ -1309,8 +1309,8 @@ const RestockVaultView = ({ inventory = [], procurements = [], motorists = [], d
                                                 <div className="min-w-0">
                                                     <div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-2.5 mb-3">
                                                         {[
-                                                            ['No. SJ', row.id],
-                                                            ['No. SJ pabrik', po.supplierSjNo || '—'],
+                                                            ['Delivery note', row.id],
+                                                            ['Delivery note (factory)', po.supplierSjNo || '—'],
                                                             ['Tanggal', row.day],
                                                             ['Asal', row.from],
                                                             ['Tujuan', row.to],
@@ -1488,13 +1488,13 @@ const RestockVaultView = ({ inventory = [], procurements = [], motorists = [], d
 
                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                                 <div>
-                                    <label className="text-[10px] font-bold text-ink-muted uppercase tracking-widest mb-1 block">No. SJ (app)</label>
+                                    <label className="text-[10px] font-bold text-ink-muted uppercase tracking-widest mb-1 block">Delivery note (app)</label>
                                     <input type="text" value={poData.poNumber} onChange={e => setPoData({...poData, poNumber: e.target.value})} className="w-full bg-inset border border-line-2 rounded-lg p-2.5 text-sm text-ink font-mono outline-none focus:border-orange transition-colors" />
                                 </div>
                                 <div>
-                                    <label className="text-[10px] font-bold text-ink-muted uppercase tracking-widest mb-1 block">{isOut ? 'No. SJ manual' : 'No. SJ pabrik'}</label>
+                                    <label className="text-[10px] font-bold text-ink-muted uppercase tracking-widest mb-1 block">{isOut ? 'Delivery note (paper)' : 'Delivery note (factory)'}</label>
                                     {/* the number printed on the paper in your hand. Without it, paper and app can never be matched. */}
-                                    <input type="text" value={poData.supplierSjNo} onChange={e => setPoData({...poData, supplierSjNo: e.target.value})} placeholder="dari kertas" className="w-full bg-inset border border-line-2 rounded-lg p-2.5 text-sm text-ink font-mono outline-none focus:border-orange transition-colors" />
+                                    <input type="text" value={poData.supplierSjNo} onChange={e => setPoData({...poData, supplierSjNo: e.target.value})} placeholder="copy from the paper" className="w-full bg-inset border border-line-2 rounded-lg p-2.5 text-sm text-ink font-mono outline-none focus:border-orange transition-colors" />
                                 </div>
                                 <div>
                                     <label className="text-[10px] font-bold text-ink-muted uppercase tracking-widest mb-1 block">Tanggal</label>

@@ -1,6 +1,21 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-27 08:40 WIB (🟠 KPM app session)** · ✅ **SEBARAN STOK NOW SHOWS ITS OWN WORKING** — **631/631** · plain-English columns, per-item rate + depletion · branch `phase0-solid-ground`
+**Updated: 2026-08-27 08:45 WIB (🟠 KPM app session)** · ✅ **SEBARAN STOK NOW SHOWS ITS OWN WORKING** — **631/631** · plain-English columns, per-item rate + depletion · branch `phase0-solid-ground`
+
+## 🟢 2026-08-27 08:45 — "SJ" SPELLED OUT ON THE DESK. **631/631.**
+
+His words: *"change nomor SJ because i dont know what is that"*. **SJ = surat jalan**, and the
+ABBREVIATION was the whole problem — he owns the company and could not read his own form.
+
+  `No. SJ (app)`    → **Delivery note (app)**
+  `No. SJ pabrik`   → **Delivery note (factory)**
+  `No. SJ manual`   → **Delivery note (paper)**      (the Kirim side — HQ's own slip, no factory)
+  `No. SJ` (Buku)   → **Delivery note**
+  placeholder `dari kertas` → **copy from the paper**
+
+**⚠️ The `SJ-631381` VALUE was left alone on purpose.** That prefix is written into `poNumber` on
+every existing record and is how the 6 documents in Buku identify themselves. Renaming the LABEL
+costs nothing; renaming the stored PREFIX would split history into before-and-after for no gain.
 
 ## 🟢 2026-08-27 08:40 — VAGUE LABELS GONE; THE ESTIMATE SHOWS ITS WORKING. **631/631.**
 
