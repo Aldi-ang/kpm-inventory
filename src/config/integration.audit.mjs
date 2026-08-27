@@ -3916,8 +3916,8 @@ const dashCode = fs.readFileSync('src/components/DashboardView.jsx', 'utf8');
 check(G55, 'the terjual window and the transactions listener still agree',
   /where\('timestamp', '>=', sevenDaysAgo\)/.test(syncCode) &&
   /const SEVEN_DAYS = 7;/.test(bwmCode) &&
-  /7 hari terakhir/.test(bwmCode),
-  'the panel prints a "7 hari terakhir" claim and divides by SEVEN_DAYS to get the rate. That ' +
+  /last 7 days/.test(bwmCode),
+  'the panel prints a "last 7 days" claim and divides by SEVEN_DAYS to get the rate. That ' +
   'is only true while the transactions listener is capped at sevenDaysAgo — move the cap and ' +
   'both the label and every "sisa hari" become wrong without a single visible symptom');
 
@@ -3959,6 +3959,17 @@ check(G55, 'a product in transit to an empty warehouse still appears in its draw
   'in-transit products must be UNIONED into the detail, not looked up inside supplyByProduct’s ' +
   'rows. A brand-new branch holds nothing and has sold nothing, so every one of its incoming ' +
   'products would be filtered out — the exact branch the drawer matters most for');
+
+/* His words, 2026-08-27: *"i want where u got that calculation for every item"*. A quotient
+   printed without its divisor asks him to trust a number he cannot check, so "Avg / month" sits
+   beside "Est. days left" and the footnote writes both divisions out longhand. */
+check(G55, 'the estimate shows the rate it was divided by, and says so in words',
+  /Avg \/ month/.test(bwmCode) && /Est\. days left/.test(bwmCode) &&
+  /= Sold \(7d\) ÷ 7 × 30/.test(bwmCode) &&
+  /= In stock ÷ \(Sold \(7d\) ÷ 7\)/.test(bwmCode),
+  'both columns and the footnote spelling out the two divisions must stay. "Est. days left" alone ' +
+  'is a number with no shown working, and the ≈ on the monthly figure is what stops a one-week ' +
+  'extrapolation reading as a measured monthly average');
 
 /* Sold packs are not anywhere any more. Putting them in a "where is it" bar shrinks every other
    segment in proportion to how WELL a branch is doing, which reads as the opposite of the truth. */

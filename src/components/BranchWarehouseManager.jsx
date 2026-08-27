@@ -384,9 +384,19 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
                        as unexplained — and every master row printed "10.900 TANPA ASAL" in danger
                        red. Perfectly working code, asked a question it has no data for, answering
                        in the loudest colour on the screen. Master gets no age line at all. */
-                    if (name === MASTER) return { ...p, days: null, drops: 0, unexplained: 0 };
+                    /* PER ITEM, the same two figures the warehouse row shows — because "which
+                       warehouse needs stock" is only half an answer. WHICH PRODUCT is the other
+                       half, and a warehouse total hides a product that is about to run dry behind
+                       four that are not. Both come off `sold`, which is a 7-day count, so the
+                       monthly figure is an EXTRAPOLATION and is labelled ≈ on screen. */
+                    const rate = p.sold / SEVEN_DAYS;
+                    const money = {
+                        perMonth: Math.round(rate * 30),
+                        daysLeft: rate > 0 ? Math.floor(p.shelf / rate) : null,
+                    };
+                    if (name === MASTER) return { ...p, ...money, days: null, drops: 0, unexplained: 0 };
                     const { held, unexplained } = arrivalsOnHand(productArrivals(requests, name, p.id), p.shelf);
-                    return { ...p, days: oldestStockDays(held, nowSec), drops: held.length, unexplained };
+                    return { ...p, ...money, days: oldestStockDays(held, nowSec), drops: held.length, unexplained };
                 })
                 .sort((a, b) => (b.shelf + b.transit + b.field + b.sold) - (a.shelf + a.transit + a.field + a.sold));
 
@@ -401,8 +411,9 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
                than as a confident infinity. Same rule reorderAdvice already follows above. */
             const perDay = sold / SEVEN_DAYS;
             const daysLeft = perDay > 0 ? Math.floor(shelf / perDay) : null;
+            const perMonth = Math.round(perDay * 30);
 
-            return { name, shelf, transit, field, sold, daysLeft, detail };
+            return { name, shelf, transit, field, sold, perMonth, daysLeft, detail };
         });
     }, [isAdmin, motorists, transactions, branchStockMap, globalInventory, requests]);
 
@@ -1242,7 +1253,10 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
                 pixel height, so it stays smooth whatever the drawer contains. */}
             {isAdmin && logistics.length > 0 && (() => {
                 /* one definition of the columns, shared by every row in the panel */
-                const COLS = 'grid grid-cols-[minmax(0,1fr)_104px_104px_128px_104px_92px] gap-x-4 items-center';
+                /* SEVEN columns since 2026-08-27. "Avg / month" is not decoration: "Est. days left"
+                   is a division, and printing a quotient without its divisor asks him to trust a
+                   number he cannot check. His words: *"i want where u got that calculation"*. */
+                const COLS = 'grid grid-cols-[minmax(0,1fr)_100px_104px_124px_96px_108px_104px] gap-x-4 items-center';
                 return (
                 <section className="mb-6 rounded-2xl border border-line-2 bg-panel overflow-hidden shadow-[0_1px_1px_rgba(0,0,0,0.20),0_18px_40px_-28px_rgba(0,0,0,0.85)]">
 
@@ -1254,22 +1268,30 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
                             <div className="min-w-0">
                                 <h3 className="font-display text-xl sm:text-2xl font-black text-ink uppercase tracking-[0.14em] leading-none">Sebaran Stok</h3>
                                 <div className="h-[3px] w-10 bg-orange rounded-full mt-2"/>
-                                <p className="font-mono text-[10px] text-ink-muted tracking-widest mt-2">semua gudang · dalam Bks</p>
+                                <p className="font-mono text-[10px] text-ink-muted tracking-widest mt-2">every warehouse · in Bks</p>
                             </div>
                         </div>
-                        <p className="font-mono text-[10px] text-ink-muted tracking-widest shrink-0">terjual · 7 hari terakhir</p>
+                        <p className="font-mono text-[10px] text-ink-muted tracking-widest shrink-0">sales figures cover the last 7 days</p>
                     </div>
 
                     <div className="overflow-x-auto">
-                        <div className="min-w-[760px]">
+                        <div className="min-w-[900px]">
 
                             <div className={`${COLS} px-5 pb-2.5 border-b border-line-2 text-[10px] font-bold text-ink-muted uppercase tracking-widest`}>
-                                <span>Gudang</span>
-                                <span className="text-right">Di gudang</span>
-                                <span className="text-right">Di jalan</span>
-                                <span className="text-right">Di tangan agen</span>
-                                <span className="text-right">Terjual</span>
-                                <span className="text-right">Sisa hari</span>
+                                {/* Renamed 2026-08-27 on his instruction: *"dont make vague terms"*, and
+                                    *"use english terms if its shorter and direct"*.
+                                      Di jalan       → Shipping        (his: "shipping in progress")
+                                      Di tangan agen → Agent inventory (his words exactly)
+                                      Sisa hari      → Est. days left  — "Est." is load-bearing. It is a
+                                        projection off one week of sales, and a bare "Days left" reads
+                                        as a fact the system measured. */}
+                                <span>Warehouse</span>
+                                <span className="text-right">In stock</span>
+                                <span className="text-right">Shipping</span>
+                                <span className="text-right">Agent inventory</span>
+                                <span className="text-right">Sold (7d)</span>
+                                <span className="text-right">Avg / month</span>
+                                <span className="text-right">Est. days left</span>
                             </div>
 
                             {logistics.map(r => {
@@ -1295,7 +1317,7 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
                                                     </span>
                                                     <ChevronDown size={13} className={`text-ink-muted shrink-0 transition-transform duration-300 ${open ? 'rotate-180' : ''}`}/>
                                                 </button>
-                                                <div className="flex h-1.5 mt-2 rounded-full overflow-hidden bg-inset max-w-[280px]" title="di gudang · di jalan · di tangan agen">
+                                                <div className="flex h-1.5 mt-2 rounded-full overflow-hidden bg-inset max-w-[280px]" title="in stock · shipping · agent inventory">
                                                     <div className="bg-gold transition-[width] duration-500 ease-out" style={{ width: pct(r.shelf) }}/>
                                                     <div className="bg-orange transition-[width] duration-500 ease-out" style={{ width: pct(r.transit || 0) }}/>
                                                     <div className="bg-line-3 transition-[width] duration-500 ease-out" style={{ width: pct(r.field) }}/>
@@ -1305,6 +1327,7 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
                                             <span className="text-right font-mono font-bold tabular-nums">{r.transit === null ? <span className="text-ink-muted">—</span> : <span className="text-orange">{r.transit.toLocaleString('id-ID')}</span>}</span>
                                             <span className="text-right font-mono font-bold text-ink tabular-nums">{r.field.toLocaleString('id-ID')}</span>
                                             <span className="text-right font-mono font-bold text-ink tabular-nums">{r.sold.toLocaleString('id-ID')}</span>
+                                            <span className="text-right font-mono font-bold text-ink-muted tabular-nums">{r.perMonth > 0 ? `≈${r.perMonth.toLocaleString('id-ID')}` : '—'}</span>
                                             <span className="text-right font-mono font-black tabular-nums">
                                                 {r.daysLeft === null
                                                     ? <span className="text-ink-muted" title="Tidak ada penjualan 7 hari terakhir — tidak ada laju untuk dihitung">—</span>
@@ -1322,7 +1345,7 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
                                                 <div className="bg-inset border-t border-line-2">
                                                     {r.detail.length === 0 ? (
                                                         <p className="px-5 py-5 text-[11px] text-ink-muted uppercase tracking-widest text-center">
-                                                            Belum ada barang tercatat di {r.name === MASTER ? 'Master Vault' : r.name}
+                                                            No stock recorded at {r.name === MASTER ? 'Master Vault' : r.name}
                                                         </p>
                                                     ) : r.detail.map((p, i) => (
                                                         <div key={p.id} className={`${COLS} px-5 py-2.5 ${i > 0 ? 'border-t border-line-2/60' : ''}`}>
@@ -1330,8 +1353,8 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
                                                                 <span className="text-ink font-bold text-[13px] block leading-tight truncate">{p.name}</span>
                                                                 {(p.days !== null || p.unexplained > 0) && (
                                                                     <span className="text-[10px] text-ink-muted uppercase tracking-widest">
-                                                                        {p.days !== null && <>paling lama di sini <b className="text-ink">{p.days} hari</b>{p.drops > 1 && ` · ${p.drops} kiriman`}</>}
-                                                                        {p.unexplained > 0 && <span className="text-danger-text">{p.days !== null ? ' · ' : ''}{p.unexplained.toLocaleString('id-ID')} tanpa asal</span>}
+                                                                        {p.days !== null && <>oldest here <b className="text-ink">{p.days} days</b>{p.drops > 1 && ` · ${p.drops} deliveries`}</>}
+                                                                        {p.unexplained > 0 && <span className="text-danger-text">{p.days !== null ? ' · ' : ''}{p.unexplained.toLocaleString('id-ID')} unknown origin</span>}
                                                                     </span>
                                                                 )}
                                                             </div>
@@ -1339,7 +1362,12 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
                                                             <span className="text-right font-mono tabular-nums text-[13px]">{r.transit === null ? <span className="text-ink-muted">—</span> : <span className="text-orange">{p.transit.toLocaleString('id-ID')}</span>}</span>
                                                             <span className="text-right font-mono text-ink tabular-nums text-[13px]">{p.field.toLocaleString('id-ID')}</span>
                                                             <span className="text-right font-mono text-ink tabular-nums text-[13px]">{p.sold.toLocaleString('id-ID')}</span>
-                                                            <span/>
+                                                            <span className="text-right font-mono text-ink-muted tabular-nums text-[13px]">{p.perMonth > 0 ? `≈${p.perMonth.toLocaleString('id-ID')}` : '—'}</span>
+                                                            <span className="text-right font-mono font-bold tabular-nums text-[13px]">
+                                                                {p.daysLeft === null
+                                                                    ? <span className="text-ink-muted" title="Nothing sold in the last 7 days — no rate to divide by">—</span>
+                                                                    : <span className={p.daysLeft < 7 ? 'text-danger-text' : 'text-ink'}>{p.daysLeft.toLocaleString('id-ID')}</span>}
+                                                            </span>
                                                         </div>
                                                     ))}
                                                 </div>
@@ -1350,18 +1378,25 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
                             })}
 
                             <div className={`${COLS} px-5 py-3.5 border-t-2 border-line-3 bg-raised/40`}>
-                                <span className="text-[10px] font-bold text-ink-muted uppercase tracking-widest">Total perusahaan</span>
+                                <span className="text-[10px] font-bold text-ink-muted uppercase tracking-widest">Company total</span>
                                 <span className="text-right font-mono font-black text-gold tabular-nums">{gTotal('shelf').toLocaleString('id-ID')}</span>
                                 <span className="text-right font-mono font-black text-orange tabular-nums">{gTotal('transit').toLocaleString('id-ID')}</span>
                                 <span className="text-right font-mono font-black text-ink tabular-nums">{gTotal('field').toLocaleString('id-ID')}</span>
                                 <span className="text-right font-mono font-black text-ink tabular-nums">{gTotal('sold').toLocaleString('id-ID')}</span>
+                                <span className="text-right font-mono font-black text-ink-muted tabular-nums">≈{gTotal('perMonth').toLocaleString('id-ID')}</span>
+                                {/* no company-wide "days left": stock in the wrong warehouse does not
+                                    cover a shortage in another one, so averaging them would invent a
+                                    number that is comfortable and false. */}
                                 <span className="text-right text-ink-muted">—</span>
                             </div>
                         </div>
                     </div>
 
                     <p className="px-5 py-4 text-[10px] text-ink-muted leading-relaxed border-t border-line-2">
-                        <b className="text-ink">Sisa hari</b> = isi gudang dibagi laju jual 7 hari terakhir. Tanda <b className="text-danger-text">merah</b> berarti kurang dari seminggu — gudang itu yang perlu dikirim lagi duluan. Garis <b className="text-ink-muted">—</b> berarti belum ada penjualan minggu ini, jadi lajunya belum bisa dihitung.
+<b className="text-ink">Where these come from.</b> Every sales figure counts SALE transactions from the <b className="text-ink">last 7 days</b> — that is the whole window the app keeps loaded, so no figure here can mean more than a week.
+                        <br/><b className="text-ink">Avg / month</b> = Sold (7d) ÷ 7 × 30. It is an estimate from one week, which is why it is written <b className="text-ink">≈</b> — a strong or dead week moves it a lot.
+                        <br/><b className="text-ink">Est. days left</b> = In stock ÷ (Sold (7d) ÷ 7). <b className="text-danger-text">Red</b> means under 7 days: send stock there first, because a delivery does not arrive the same day you decide to send it. <b className="text-ink-muted">—</b> means nothing sold in the last 7 days, so there is no rate to divide by — not that the stock lasts forever.
+                        <br/>Both figures ignore <b className="text-ink">Shipping</b> and <b className="text-ink">Agent inventory</b> on purpose: they answer "how long does the shelf last", and stock already on a truck or a motorbike is not on that shelf.
                     </p>
                 </section>
                 );

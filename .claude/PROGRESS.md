@@ -1,6 +1,42 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-27 08:14 WIB (🟠 KPM app session)** · ✅ **RESTOCK VAULT DESK + SEBARAN STOK DONE, DRIVEN LIVE** — `d042520`, **630/630** · branch `phase0-solid-ground`
+**Updated: 2026-08-27 08:40 WIB (🟠 KPM app session)** · ✅ **SEBARAN STOK NOW SHOWS ITS OWN WORKING** — **631/631** · plain-English columns, per-item rate + depletion · branch `phase0-solid-ground`
+
+## 🟢 2026-08-27 08:40 — VAGUE LABELS GONE; THE ESTIMATE SHOWS ITS WORKING. **631/631.**
+
+**NOW:** nothing blocked. He read the panel, could not tell what two columns meant, and asked for
+the calculation to be visible. All four asks done and driven live.
+
+**The renames — his rule: *"use english terms if its shorter and direct"*, *"dont make vague terms"***
+
+| was | now | why |
+|---|---|---|
+| Gudang | **Warehouse** | |
+| Di gudang | **In stock** | |
+| **Di jalan** | **Shipping** | his: *"shipping in progress or somewords that is easier to understand"* |
+| **Di tangan agen** | **Agent inventory** | his words exactly |
+| Terjual | **Sold (7d)** | the window is IN the header now, not a footnote |
+| — | **Avg / month** | NEW |
+| **Sisa hari** | **Est. days left** | *"potential time left before depletion"*. `Est.` is load-bearing — a bare "Days left" reads as measured fact |
+
+**Per ITEM now, not just per warehouse** — the drawer carries Avg/month and Est. days left for
+every product. **This immediately paid for itself on his own data:** Master Vault's row says
+**348 days left**, but open it and **Cello Chocolate has 20** (1.464 ÷ (500÷7)). The warehouse
+total was hiding the only product that is actually moving behind four that are not. That is the
+thing he was reaching for when he said *"not just all product as a whole"*.
+
+**The footnote is now the formula, written out**: where the numbers come from, both divisions
+longhand, what `≈` means, what `—` means (no rate — NOT "lasts forever"), and why the estimate
+ignores Shipping and Agent inventory (they answer "how long does the shelf last", and stock on a
+truck is not on the shelf).
+
+**⚠️ Left alone deliberately:** `BranchWarehouseManager.jsx:1121` still says "Di jalan" — that is
+the BRANCH user's reorder-advice panel, all-Indonesian for a branch reader. Not the same screen,
+not his complaint. Rename it only if he asks.
+
+**Audit note:** the terjual check FIRED again on the rename (it anchors the label to the listener
+window) and was re-anchored to the new "last 7 days" wording. New check 631: the two divisions must
+stay printed beside the numbers they produced.
 
 ## 🟢 2026-08-27 08:14 — TIMESTAMP ONLY. No code changed since `d042520`.
 
