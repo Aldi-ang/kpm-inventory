@@ -14,6 +14,9 @@ import MusicPlayer from '../MusicPlayer';
 // 🚀 IMPORT THE BRAIN
 import { hasClearance } from '../config/permissions'; 
 import { confirmAction } from './ConfirmGate.jsx';
+/* The tutorial book. It lives in the top bar because that bar is on EVERY screen, which is what
+   he asked for: *"i want the tutorial book on the very top of the screen for every components"*. */
+import PonderBookButton from '../ponder/PonderBook.jsx';
 
 /* ── THE SLIDING CLOCK ───────────────────────────────────────────────────────
    His ask, 2026-08-16: the 21st.dev / motion-primitives `SlidingNumber` look.
@@ -980,6 +983,11 @@ export default function BiohazardTheme({
                         {/* All three controls wear .kpm-chip now — one plate, one size, one hover,
                             one press. They were three different shapes in three different palettes
                             (a green pill, a white-outlined square, a bare icon) sitting 12px apart. */}
+                        {/* First in the row on purpose. The other three report STATE — synced,
+                            theme, notifications. This one is the only one that opens content, and
+                            a thing you read does not belong wedged between two indicators. */}
+                        <PonderBookButton />
+
                         {syncIndicator}
 
                         {/* A SWITCH, not a chip. His note: "make sure that it background change

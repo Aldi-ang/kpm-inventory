@@ -70,12 +70,42 @@ export default {
       },
       animation: {
         'fade-in': 'fadeIn 0.5s ease-out',
+        /* The Ponder tutorial. Every one of these is transform+opacity only, and every one is
+           allowed to arrive already finished: Lite Mode sets animation-duration to .001s, so the
+           END state has to be the readable one. His call for Lite Mode, 2026-08-27: *"then snap
+           the book and close it right back thats fine"*. */
+        'ponder-in':    'ponderIn 260ms cubic-bezier(0.23,1,0.32,1) both',
+        'ponder-ring':  'ponderRing 420ms cubic-bezier(0.23,1,0.32,1) both',
+        'ponder-open':  'ponderOpen 460ms cubic-bezier(0.23,1,0.32,1) both',
+        'ponder-leaf':  'ponderLeaf 520ms cubic-bezier(0.32,0.72,0,1) both',
       },
       keyframes: {
         fadeIn: {
           '0%': { opacity: '0' },
           '100%': { opacity: '1' },
-        }
+        },
+        /* a caption arriving beside the thing it points at */
+        ponderIn: {
+          '0%':   { opacity: '0', transform: 'translateY(6px) scale(0.985)' },
+          '100%': { opacity: '1', transform: 'none' },
+        },
+        /* the highlight landing on a column: settles onto it rather than blinking on.
+           Never from scale(0) — nothing in the world appears out of nothing. */
+        ponderRing: {
+          '0%':   { opacity: '0', transform: 'scale(1.05)' },
+          '55%':  { opacity: '1', transform: 'scale(0.995)' },
+          '100%': { opacity: '1', transform: 'none' },
+        },
+        /* the whole book arriving from the chip that opened it */
+        ponderOpen: {
+          '0%':   { opacity: '0', transform: 'translateY(10px) scale(0.94)' },
+          '100%': { opacity: '1', transform: 'none' },
+        },
+        /* a page turning: the leaf lifts off the spine and lays back down */
+        ponderLeaf: {
+          '0%':   { opacity: '0', transform: 'perspective(1400px) rotateY(-22deg)' },
+          '100%': { opacity: '1', transform: 'perspective(1400px) rotateY(0deg)' },
+        },
       }
     },
   },

@@ -3830,6 +3830,17 @@ const G54 = '54. The Request tab, and the roster behind Tujuan';
 /* `appSrc` is the raw App.jsx already read for group 6 — re-reading it would just be a second
    name for the same string. */
 const bwmCode = fs.readFileSync('src/components/BranchWarehouseManager.jsx', 'utf8');
+/* 🔴 THE TABLE'S MARKUP LEFT THIS FILE ON 2026-08-27. `BranchWarehouseManager` kept the maths and
+   now renders `ponder/stages/StockByWarehouseTable.jsx`, so the tutorial can play the SAME
+   component against a fixed demo world. Every check below that asserts a COLUMN, a CELL or a ROW
+   reads the table; every check that asserts a SUM still reads the manager. Splitting a component
+   splits its checks — the alternative is a check that greps the wrong file and passes because it
+   found its needle in a comment somewhere else. */
+const stockTableSrc = fs.readFileSync('src/ponder/stages/StockByWarehouseTable.jsx', 'utf8');
+/* And the footnote's five paragraphs left the SCREEN entirely, on his call — *"we can delete this
+   ... i mean the instruction below company total"*. They are tutorial beats now, in Indonesian.
+   Check 631 MOVED onto this file rather than being deleted with the paragraph it used to pin. */
+const stockSceneSrc = fs.readFileSync('src/ponder/scenes/stock-by-warehouse.js', 'utf8');
 
 /* His ask: "make sure that every team registered on the fleet and roster have their own storage
    option". Built from stockRequests alone, a team that had never been shipped to had no entry —
@@ -3948,7 +3959,7 @@ check(G55, 'App.jsx hands the readout all three collections it counts',
 check(G55, 'a warehouse row and its open drawer are summed from one list',
   /const detail = \[\.\.\.byId\.values\(\)\]/.test(bwmCode) &&
   /: detail\.reduce\(\(s, p\) => s \+ p\.transit, 0\)/.test(bwmCode) &&
-  /r\.detail\.map\(/.test(bwmCode),
+  /r\.detail\.map\(/.test(stockTableSrc),
   'the di-jalan total must be summed from `detail`, the same array the drawer renders. Summing ' +
   'the row over globalInventory while the drawer renders a filtered list is how the two drift');
 
@@ -3964,12 +3975,14 @@ check(G55, 'a product in transit to an empty warehouse still appears in its draw
    printed without its divisor asks him to trust a number he cannot check, so "Avg / month" sits
    beside "Est. days left" and the footnote writes both divisions out longhand. */
 check(G55, 'the estimate shows the rate it was divided by, and says so in words',
-  /Avg \/ month/.test(bwmCode) && /Est\. days left/.test(bwmCode) &&
-  /= Sold \(7d\) ÷ 7 × 30/.test(bwmCode) &&
-  /= In stock ÷ \(Sold \(7d\) ÷ 7\)/.test(bwmCode),
-  'both columns and the footnote spelling out the two divisions must stay. "Est. days left" alone ' +
-  'is a number with no shown working, and the ≈ on the monthly figure is what stops a one-week ' +
-  'extrapolation reading as a measured monthly average');
+  /Avg \/ month/.test(stockTableSrc) && /Est\. days left/.test(stockTableSrc) &&
+  /= Sold \(7d\) ÷ 7 × 30/.test(stockSceneSrc) &&
+  /= In stock ÷ \(Sold \(7d\) ÷ 7\)/.test(stockSceneSrc),
+  'both columns must stay on the table, and both divisions must stay written out longhand — in ' +
+  'the SCENE now, not the footnote. "Est. days left" alone is a number with no shown working, ' +
+  'and the ≈ on the monthly figure is what stops a one-week extrapolation reading as a measured ' +
+  'monthly average. THIS IS THE CHECK THAT MOVED when the footnote was deleted; deleting it with ' +
+  'the paragraph would have been how the unexplained quotient came back');
 
 /* 🔴 A RATIO OF SUMS IS NOT AN AVERAGE. This shipped and Aldi caught it on screen, 2026-08-27:
    *"u cant just divide total with the average goods like that, these are different goods should
@@ -3981,16 +3994,18 @@ check(G55, 'the estimate shows the rate it was divided by, and says so in words'
 check(G55, 'no warehouse-level days-left, because that division is not a number',
   !/const daysLeft = perDay/.test(bwmCode) &&
   /return \{ name, shelf, transit, field, sold, perMonth, detail \}/.test(bwmCode) &&
-  /There is no days-left for a whole warehouse/.test(bwmCode),
-  'the warehouse row must NOT carry a computed daysLeft, and the footnote must say why. Total ' +
+  /348/.test(stockSceneSrc) && /gudang penuh/.test(stockSceneSrc),
+  'the warehouse row must NOT carry a computed daysLeft, and the tutorial must still say why. ' +
+  'Anchored on the 348 that actually shipped rather than on a sentence, because a check tied to ' +
+  'display copy fires on every wording change and this panel already did that twice. Total ' +
   'stock ÷ total rate silently assumes one product can satisfy demand for another — and it errs ' +
   'COMFORTABLE, which is the worst direction for a restocking figure');
 
 /* Sold packs are not anywhere any more. Putting them in a "where is it" bar shrinks every other
    segment in proportion to how WELL a branch is doing, which reads as the opposite of the truth. */
 check(G55, 'the where-is-it bar leaves sold out of its segments',
-  /const here = r\.shelf \+ \(r\.transit \|\| 0\) \+ r\.field;/.test(bwmCode) &&
-  !/const here = [^;]*r\.sold/.test(bwmCode),
+  /const here = r\.shelf \+ \(r\.transit \|\| 0\) \+ r\.field;/.test(stockTableSrc) &&
+  !/const here = [^;]*r\.sold/.test(stockTableSrc),
   'the stacked bar may only contain shelf, transit and field. A sold segment makes a branch that ' +
   'is selling well look like a branch that is holding less');
 
@@ -3998,7 +4013,7 @@ check(G55, 'the where-is-it bar leaves sold out of its segments',
    dressed up as a measurement. It must print as unknown, not as zero. */
 check(G55, 'the master vault prints no in-transit figure it cannot have',
   /name === MASTER/.test(bwmCode) && /\? null/.test(bwmCode) &&
-  /r\.transit === null \? <span className="text-ink-muted">—<\/span>/.test(bwmCode),
+  /r\.transit === null \? <span className="text-ink-muted">—<\/span>/.test(stockTableSrc),
   'nothing is ever in transit TO the master vault on a stock_request. A 0 there is a claim that ' +
   'was measured; — is the truth, which is that this column does not apply');
 
@@ -4025,15 +4040,26 @@ const pRead = (f) => pStrip(fs.readFileSync('src/ponder/' + f, 'utf8'));
 const overlaySrc = pRead('PonderOverlay.jsx');
 const playerSrc = pRead('useScenePlayer.js');
 const chipSrc = pRead('PonderButton.jsx');
+const bookSrc = pRead('PonderBook.jsx');
+const sfxSrc = pRead('sfx.js');
+/* shellSrc is already read at group 15 - the shell is one file and re-reading it under a second
+   name is how two checks end up asserting against two different strings. */
 const registrySrc = pRead('registry.js');
 const sceneFiles = fs.readdirSync('src/ponder/scenes').filter(f => f.endsWith('.js'));
 const stageSrc = fs.readdirSync('src/ponder/stages')
   .map(f => pStrip(fs.readFileSync('src/ponder/stages/' + f, 'utf8'))).join('\n');
+/* The demo world is scanned too. A stage builds `item:<id>` from the data rather than writing the
+   attribute out, so those ids are only ever literals HERE — and a scene focusing an item its world
+   no longer contains is exactly the rot this group exists to catch. */
+const demoSrc = fs.readdirSync('src/ponder/demo')
+  .map(f => pStrip(fs.readFileSync('src/ponder/demo/' + f, 'utf8'))).join(' ');
 const bwmStripped = pStrip(bwmCode);
 
 /* Scenes are IMPORTED, not grepped. They are plain data modules with no JSX in them, so the
    audit can hold the real objects and read the real steps. A regex over the source would only
    be checking that the file LOOKS right, which is a different and weaker claim. */
+/* sections.js, never registry.js — the registry imports a JSX stage and Node cannot parse it. */
+const { SECTIONS } = await import('../ponder/sections.js');
 const scenes = [];
 for (const f of sceneFiles) {
   const mod = await import('../ponder/scenes/' + f);
@@ -4068,12 +4094,25 @@ check(G56, 'no beat is silent — every step carries text',
    stage carries that key. Rewrite the panel, drop the attribute, and the tutorial keeps playing
    happily while pointing at nothing — a failure that still looks like it works. */
 const focusKeys = [...new Set(scenes.flatMap(s => s.steps.map(st => st.focus).filter(k => k && k !== '*')))];
-const stageAndPanel = stageSrc + '\n' + bwmStripped;
-const missingKeys = focusKeys.filter(k => !stageAndPanel.includes(k));
-check(G56, 'every focus key exists in the stage it points at, and the stage still emits them',
+const stageAndPanel = stageSrc + demoSrc + '\n' + bwmStripped;
+/* A key resolves one of two ways, and BOTH have to be allowed or the check is wrong rather than
+   strict. A column is written out — `data-ponder="col:shelf"`. A row or a product cannot be: the
+   stage builds `data-ponder={`item:${p.id}`}` from data, so the only literal anywhere is the id
+   itself, sitting in the demo world. Demanding the whole key as a literal would fail every
+   data-driven key in the file, which is most of them. */
+const resolvesKey = (k) => {
+  if (stageAndPanel.includes('data-ponder="' + k + '"')) return true;
+  const i = k.indexOf(':');
+  if (i < 0) return false;
+  const prefix = k.slice(0, i), tail = k.slice(i + 1);
+  return stageSrc.includes('data-ponder={`' + prefix + ':${') && stageAndPanel.includes(tail);
+};
+const missingKeys = focusKeys.filter(k => !resolvesKey(k));
+check(G56, 'every focus key resolves to something the stage really wears',
   focusKeys.length > 0 && missingKeys.length === 0 && /data-ponder=/.test(stageSrc),
-  'unresolved focus keys: ' + (missingKeys.join(', ') || 'none') + '. The stage must also still ' +
-  'carry data-ponder — the keys existing in an array proves nothing if no element wears them');
+  'unresolved focus keys: ' + (missingKeys.join(', ') || 'none') + '. Either the attribute is not ' +
+  'written out and the stage does not build that prefix from data, or the value it would be built ' +
+  'from is gone. A scene that focuses a key nothing wears keeps playing while pointing at nothing');
 
 /* His rule, 2026-08-27: *"scene play but itself but also add pause button or timeframe to
    restart the tutorial, just like the ponder system inside create mod"*. Create's pause is a
@@ -4118,8 +4157,13 @@ check(G56, 'the tutorial never opens itself, and remembers nothing about who has
 /* The amber law, 2026-08-21: *"stop using amber background i said, i hate it"*. What survived as
    a legal gold fill is a 3px rule whose LENGTH is the data — at 3px it reads as a line, not a
    slab. The timeline is exactly that shape, and so is the rule under the panel title. */
-const goldSpots = [...overlaySrc.matchAll(/bg-orange/g)]
-  .map(m => overlaySrc.slice(Math.max(0, m.index - 170), m.index + 40));
+/* 🔴 SCOPED PAST THE TONE MAPS. `TONE_RULE = { gold: 'bg-orange' }` NAMES the class without being
+   the element that wears it, so a text window around it finds no height and reports a gold slab
+   that does not exist. Second time this one check has gone red against correct code — the first
+   was the timeline notch's hover state. A guard on an element must be scoped to that element. */
+const overlayGold = overlaySrc.replace(/const TONE_(RULE|EDGE) = \{[^}]*\};/g, '');
+const goldSpots = [...overlayGold.matchAll(/bg-orange/g)]
+  .map(m => overlayGold.slice(Math.max(0, m.index - 170), m.index + 40));
 check(G56, 'the timeline is a 3px rule whose length is the data, never a gold slab',
   /h-\[3px\] bg-inset/.test(overlaySrc) && /bg-orange rounded-full/.test(overlaySrc) &&
   !/bg-gold/.test(overlaySrc) &&
@@ -4151,6 +4195,68 @@ check(G56, 'the stock panel is titled in English and carries its tutorial chip',
    two formulas and check 631 still pins it there. The scene now carries them as well, so when
    the footnote is deleted in the next slice the coverage already exists and 631 MOVES rather
    than being deleted. A check removed to let a change pass is how the bug it caught comes back. */
+/* His ask, 2026-08-27: *"i want the tutorial book on the very top of the screen for every
+   components, since we have a lot of space there"*. The top bar is the one surface every screen
+   shares, so mounting it anywhere else would be a per-screen decision to forget on the next
+   screen. */
+check(G56, 'the book lives in the shared top bar, so every screen has it',
+  /<PonderBookButton \/>/.test(shellSrc) && /from '\.\.\/ponder\/PonderBook\.jsx'/.test(shellSrc),
+  'PonderBookButton must be mounted in BiohazardTheme, the shell every screen renders inside. ' +
+  'Mounted per-view it becomes a thing to remember on every new view, and it will be forgotten');
+
+/* *"inside the book i want every section of this app tutorials to be put there"*. Listing only
+   what is written implies the rest of the app has nothing to explain. Every section is listed;
+   an entry with no scene has to SAY so rather than be quietly absent. */
+check(G56, 'the book lists every section, and an unwritten entry admits it',
+  SECTIONS.length >= 7 &&
+  SECTIONS.every(sec => Array.isArray(sec.entries) && sec.entries.length > 0 &&
+    sec.entries.every(e => (e.soon === true) || sceneIds.includes(e.sceneId))),
+  'every entry must either resolve to a real scene or carry soon:true. An entry that is neither ' +
+  'renders a card that does nothing when pressed, which is the same dead control the sceneId ' +
+  'check exists to prevent');
+
+/* *"more variative textbox and animation not just static textbox on the bottom just like what
+   create mod have"*. Ponder alternates a caption pinned beside its subject with one that spans
+   the scene; a caption that never moves stops being read. So BOTH placements have to be in use,
+   and the player has to know how to draw a pointer in all four directions — a caption standing
+   beside a full-height column points sideways, not down. */
+check(G56, 'captions move: both placements are used, and the pointer aims four ways',
+  scenes.some(s => s.steps.some(st => st.at === 'near')) &&
+  scenes.some(s => s.steps.some(st => (st.at || 'bottom') === 'bottom')) &&
+  /up:/.test(overlaySrc) && /down:/.test(overlaySrc) && /left:/.test(overlaySrc) && /right:/.test(overlaySrc) &&
+  /spot\.h > H \* 0\.42/.test(overlaySrc),
+  'a scene must use both `at: near` and `at: bottom`, and the tall-subject branch must survive — ' +
+  'without it a column highlight leaves no room above or below and the caption lands on top of ' +
+  'the very numbers it is describing');
+
+/* The highlight is drawn, not merely implied by dimming everything else. An EDGE, never a fill:
+   amber is an edge and an ink in this app, and it is not a fill. */
+check(G56, 'the subject is outlined, and the outline is an edge rather than a fill',
+  /animate-ponder-ring/.test(overlaySrc) && /border-2 \$\{TONE_EDGE/.test(overlaySrc) &&
+  /const hits = key === '\*' \? \[\] : all\.filter/.test(overlaySrc),
+  'the ring must be a border on a box sized to the UNION of the direct hits. Including ancestors ' +
+  'would union the whole table and outline nothing in particular');
+
+/* *"book SFX also needed here"*. Routed through useSound rather than raw Audio, because that hook
+   already pools elements, waits for the browser unlock gesture, and — the part that matters here —
+   is silent in Lite Mode. */
+check(G56, 'the book has sounds, and they go through the hook that respects Lite Mode',
+  /from '\.\.\/hooks\/useSound\.js'/.test(sfxSrc) && /playSound\(/.test(sfxSrc) &&
+  !/new Audio/.test(sfxSrc + bookSrc) &&
+  /bookOpen\(\)/.test(bookSrc) && /bookPage\(\)/.test(bookSrc) &&
+  /bookPick\(\)/.test(bookSrc) && /bookClose\(\)/.test(bookSrc),
+  'open, page-turn, pick and close must all fire, and all through playSound. A raw Audio element ' +
+  'would keep making noise in Lite Mode, which is the performance switch');
+
+/* *"for lite mode then snap the book and close it right back thats fine"*. Lite Mode already
+   flattens the transition; what it must NOT do is still wait 260ms for an animation that is not
+   playing, because that is just a slow app. */
+check(G56, 'Lite Mode snaps the book shut instead of waiting for an animation',
+  /if \(liteOn\(\) \|\| reduced\(\)\) \{ onClose\(\); return; \}/.test(bookSrc) &&
+  /closing \|\| still \? '' : 'animate-ponder-open'/.test(bookSrc),
+  'the close must return immediately under Lite Mode or reduced motion, and the open keyframe ' +
+  'must not be applied there at all');
+
 check(G56, 'the scene carries both stock formulas, ready for check 631 to move onto it',
   scenes.some(s => s.steps.some(st => st.text.includes('Sold (7d) ÷ 7 × 30'))) &&
   scenes.some(s => s.steps.some(st => st.text.includes('In stock ÷ (Sold (7d) ÷ 7)'))),

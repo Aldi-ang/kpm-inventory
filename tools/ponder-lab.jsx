@@ -19,6 +19,7 @@ import React from 'react';
 import { createRoot } from 'react-dom/client';
 import '../src/index.css';
 import PonderOverlay from '../src/ponder/PonderOverlay.jsx';
+import PonderBookButton from '../src/ponder/PonderBook.jsx';
 import { SCENES } from '../src/ponder/registry.js';
 
 const q = new URLSearchParams(window.location.search);
@@ -47,7 +48,23 @@ function Lab() {
   return <PonderOverlay sceneId={id} open={open} onClose={() => setOpen(false)} />;
 }
 
-createRoot(document.getElementById('root')).render(<Lab />);
+/* ?book mounts the top-bar book instead of the player, and clicks it open so a screenshot lands on
+   the spread rather than on a 34px closed book. ?shut leaves it closed, for looking at the glyph
+   and its hover state. */
+function BookLab() {
+  React.useEffect(() => {
+    if (q.has('shut')) return;
+    const t = setTimeout(() => document.querySelector('[aria-label="Tutorial book"]')?.click(), 60);
+    return () => clearTimeout(t);
+  }, []);
+  return (
+    <div className="p-6 flex justify-end">
+      <PonderBookButton />
+    </div>
+  );
+}
+
+createRoot(document.getElementById('root')).render(q.has('book') ? <BookLab /> : <Lab />);
 
 /* ?probe writes the measured layout into the DOM, where `chrome --headless --dump-dom` can read
    it. Needed because a headless SCREENSHOT is not trustworthy for width on this machine: the

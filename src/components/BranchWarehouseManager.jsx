@@ -13,6 +13,9 @@ import { supplyByProduct, warehouseList, MASTER } from '../utils/supply.js';
 import { confirmAction } from './ConfirmGate.jsx';
 import { notify } from './Toast.jsx';
 import PonderButton from '../ponder/PonderButton.jsx';
+/* The table below is rendered by the Ponder tutorial too, fed a fixed demo world. Same
+   component in both places, so the tutorial cannot drift from the screen it teaches. */
+import StockByWarehouseTable from '../ponder/stages/StockByWarehouseTable.jsx';
 
 /* ===========================================================================
    THE ARRIVAL CHECK — a count at the door, PARTIAL BLIND.
@@ -1266,11 +1269,10 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
                 the first version simply appeared. This costs one wrapper and needs no measured
                 pixel height, so it stays smooth whatever the drawer contains. */}
             {isAdmin && logistics.length > 0 && (() => {
-                /* one definition of the columns, shared by every row in the panel */
-                /* SEVEN columns since 2026-08-27. "Avg / month" is not decoration: "Est. days left"
-                   is a division, and printing a quotient without its divisor asks him to trust a
-                   number he cannot check. His words: *"i want where u got that calculation"*. */
-                const COLS = 'grid grid-cols-[minmax(0,1fr)_100px_104px_124px_96px_108px_104px] gap-x-4 items-center';
+                /* The columns, the rows, the drawer and the total now live in
+                   `ponder/stages/StockByWarehouseTable.jsx`. Only the maths stayed here. The
+                   tutorial renders that same component against a fixed demo world, which is the
+                   one arrangement where a tutorial cannot fall out of date with its screen. */
                 return (
                 <section className="mb-6 rounded-2xl border border-line-2 bg-panel overflow-hidden shadow-[0_1px_1px_rgba(0,0,0,0.20),0_18px_40px_-28px_rgba(0,0,0,0.85)]">
 
@@ -1291,140 +1293,24 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
                         </div>
                     </div>
 
-                    <div className="overflow-x-auto">
-                        <div className="min-w-[900px]">
+                    <StockByWarehouseTable
+                        rows={logistics}
+                        totals={{ shelf: gTotal('shelf'), transit: gTotal('transit'), field: gTotal('field'),
+                                  sold: gTotal('sold'), perMonth: gTotal('perMonth') }}
+                        openGudang={openGudang}
+                        onToggle={setOpenGudang}
+                    />
 
-                            <div className={`${COLS} px-5 pb-2.5 border-b border-line-2 text-[10px] font-bold text-ink-muted uppercase tracking-widest`}>
-                                {/* Renamed 2026-08-27 on his instruction: *"dont make vague terms"*, and
-                                    *"use english terms if its shorter and direct"*.
-                                      Di jalan       → Shipping        (his: "shipping in progress")
-                                      Di tangan agen → Agent inventory (his words exactly)
-                                      Sisa hari      → Est. days left  — "Est." is load-bearing. It is a
-                                        projection off one week of sales, and a bare "Days left" reads
-                                        as a fact the system measured. */}
-                                <span>Warehouse</span>
-                                <span className="text-right">In stock</span>
-                                <span className="text-right">Shipping</span>
-                                <span className="text-right">Agent inventory</span>
-                                <span className="text-right">Sold (7d)</span>
-                                <span className="text-right">Avg / month</span>
-                                <span className="text-right">Est. days left</span>
-                            </div>
-
-                            {logistics.map(r => {
-                                const here = r.shelf + (r.transit || 0) + r.field;
-                                const pct = (v) => here > 0 ? `${(v / here) * 100}%` : '0%';
-                                /* under a week of cover is the point HQ has to act, because a
-                                   delivery does not arrive the same day it is decided */
-                                const open = openGudang === r.name;
-                                return (
-                                    <div key={r.name} className="border-b border-line-2 last:border-b-0">
-
-                                        <div className={`${COLS} px-5 transition-colors duration-200 ${open ? 'bg-raised py-3 pb-4' : 'py-3 hover:bg-raised/50'}`}>
-                                            <div className="min-w-0">
-                                                <button
-                                                    onClick={() => setOpenGudang(open ? null : r.name)}
-                                                    aria-expanded={open}
-                                                    className="flex items-center gap-2 group text-left w-full"
-                                                >
-                                                    <MapPin size={13} className={`shrink-0 ${r.name === MASTER ? 'text-gold' : 'text-orange'}`}/>
-                                                    <span className="font-black uppercase tracking-wider text-ink text-[13px] truncate group-hover:text-accent-ink transition-colors">
-                                                        {r.name === MASTER ? 'Master Vault' : r.name}
-                                                    </span>
-                                                    <ChevronDown size={13} className={`text-ink-muted shrink-0 transition-transform duration-300 ${open ? 'rotate-180' : ''}`}/>
-                                                </button>
-                                                <div className="flex h-1.5 mt-2 rounded-full overflow-hidden bg-inset max-w-[280px]" title="in stock · shipping · agent inventory">
-                                                    <div className="bg-gold transition-[width] duration-500 ease-out" style={{ width: pct(r.shelf) }}/>
-                                                    <div className="bg-orange transition-[width] duration-500 ease-out" style={{ width: pct(r.transit || 0) }}/>
-                                                    <div className="bg-line-3 transition-[width] duration-500 ease-out" style={{ width: pct(r.field) }}/>
-                                                </div>
-                                            </div>
-                                            <span className="text-right font-mono font-black text-gold tabular-nums">{r.shelf.toLocaleString('id-ID')}</span>
-                                            <span className="text-right font-mono font-bold tabular-nums">{r.transit === null ? <span className="text-ink-muted">—</span> : <span className="text-orange">{r.transit.toLocaleString('id-ID')}</span>}</span>
-                                            <span className="text-right font-mono font-bold text-ink tabular-nums">{r.field.toLocaleString('id-ID')}</span>
-                                            <span className="text-right font-mono font-bold text-ink tabular-nums">{r.sold.toLocaleString('id-ID')}</span>
-                                            <span className="text-right font-mono font-bold text-ink-muted tabular-nums">{r.perMonth > 0 ? `≈${r.perMonth.toLocaleString('id-ID')}` : '—'}</span>
-                                            {/* NOT a dash. `—` already means "no sales, so no rate" on the
-                                                item rows, and reusing it here would say the warehouse has
-                                                no rate when the truth is that the question has no
-                                                warehouse-level answer. It names where the number lives. */}
-                                            <span className="text-right font-mono text-[11px] text-ink-muted" title="Each product runs out at its own speed — open this warehouse to see them">
-                                                {open ? 'below ↓' : 'per item'}
-                                            </span>
-                                        </div>
-
-                                        {/* 0fr → 1fr is the whole animation. `height: auto` cannot be
-                                            transitioned; a grid track can, and it measures itself. */}
-                                        <div
-                                            className="grid transition-[grid-template-rows] duration-300 ease-out"
-                                            style={{ gridTemplateRows: open ? '1fr' : '0fr' }}
-                                        >
-                                            <div className="overflow-hidden">
-                                                {/* SPACE, not another rule, is what separates a warehouse
-                                                    from its products. His note: *"there should be personal
-                                                    space between the location line and the product lines
-                                                    ... psychology of the expensive wears store shelf"*.
-                                                    A hairline here stacked the two levels into one wall of
-                                                    rows; the border is gone and the padding does the work.
-                                                    The tone change (bg-inset) already says "nested" — a
-                                                    line on top of that was saying it twice. */}
-                                                <div className="bg-inset py-5">
-                                                    {r.detail.length === 0 ? (
-                                                        <p className="px-5 py-2 text-[11px] text-ink-muted uppercase tracking-widest text-center">
-                                                            No stock recorded at {r.name === MASTER ? 'Master Vault' : r.name}
-                                                        </p>
-                                                    ) : r.detail.map((p, i) => (
-                                                        <div key={p.id} className={`${COLS} px-5 py-3.5 ${i > 0 ? 'border-t border-line-2/30' : ''}`}>
-                                                            <div className="min-w-0 pl-6">
-                                                                <span className="text-ink font-bold text-[13px] block leading-tight truncate">{p.name}</span>
-                                                                {(p.days !== null || p.unexplained > 0) && (
-                                                                    <span className="text-[10px] text-ink-muted uppercase tracking-widest">
-                                                                        {p.days !== null && <>oldest here <b className="text-ink">{p.days} days</b>{p.drops > 1 && ` · ${p.drops} deliveries`}</>}
-                                                                        {p.unexplained > 0 && <span className="text-danger-text">{p.days !== null ? ' · ' : ''}{p.unexplained.toLocaleString('id-ID')} unknown origin</span>}
-                                                                    </span>
-                                                                )}
-                                                            </div>
-                                                            <span className="text-right font-mono text-gold tabular-nums text-[13px]">{p.shelf.toLocaleString('id-ID')}</span>
-                                                            <span className="text-right font-mono tabular-nums text-[13px]">{r.transit === null ? <span className="text-ink-muted">—</span> : <span className="text-orange">{p.transit.toLocaleString('id-ID')}</span>}</span>
-                                                            <span className="text-right font-mono text-ink tabular-nums text-[13px]">{p.field.toLocaleString('id-ID')}</span>
-                                                            <span className="text-right font-mono text-ink tabular-nums text-[13px]">{p.sold.toLocaleString('id-ID')}</span>
-                                                            <span className="text-right font-mono text-ink-muted tabular-nums text-[13px]">{p.perMonth > 0 ? `≈${p.perMonth.toLocaleString('id-ID')}` : '—'}</span>
-                                                            <span className="text-right font-mono font-bold tabular-nums text-[13px]">
-                                                                {p.daysLeft === null
-                                                                    ? <span className="text-ink-muted" title="Nothing sold in the last 7 days — no rate to divide by">—</span>
-                                                                    : <span className={p.daysLeft < 7 ? 'text-danger-text' : 'text-ink'}>{p.daysLeft.toLocaleString('id-ID')}</span>}
-                                                            </span>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                );
-                            })}
-
-                            <div className={`${COLS} px-5 py-3.5 border-t-2 border-line-3 bg-raised/40`}>
-                                <span className="text-[10px] font-bold text-ink-muted uppercase tracking-widest">Company total</span>
-                                <span className="text-right font-mono font-black text-gold tabular-nums">{gTotal('shelf').toLocaleString('id-ID')}</span>
-                                <span className="text-right font-mono font-black text-orange tabular-nums">{gTotal('transit').toLocaleString('id-ID')}</span>
-                                <span className="text-right font-mono font-black text-ink tabular-nums">{gTotal('field').toLocaleString('id-ID')}</span>
-                                <span className="text-right font-mono font-black text-ink tabular-nums">{gTotal('sold').toLocaleString('id-ID')}</span>
-                                <span className="text-right font-mono font-black text-ink-muted tabular-nums">≈{gTotal('perMonth').toLocaleString('id-ID')}</span>
-                                {/* no company-wide "days left": stock in the wrong warehouse does not
-                                    cover a shortage in another one, so averaging them would invent a
-                                    number that is comfortable and false. */}
-                                <span className="text-right text-ink-muted">—</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <p className="px-5 py-4 text-[10px] text-ink-muted leading-relaxed border-t border-line-2">
-<b className="text-ink">Where these come from.</b> Every sales figure counts SALE transactions from the <b className="text-ink">last 7 days</b> — that is the whole window the app keeps loaded, so no figure here can mean more than a week.
-                        <br/><b className="text-ink">Avg / month</b> = Sold (7d) ÷ 7 × 30. It is an estimate from one week, which is why it is written <b className="text-ink">≈</b> — a strong or dead week moves it a lot.
-                        <br/><b className="text-ink">Est. days left</b> = In stock ÷ (Sold (7d) ÷ 7), <b className="text-ink">per product</b> — open a warehouse to see them. <b className="text-danger-text">Red</b> means under 7 days: send that item first, because a delivery does not arrive the same day you decide to send it. <b className="text-ink-muted">—</b> means nothing sold in the last 7 days, so there is no rate to divide by — not that the stock lasts forever.
-                        <br/><b className="text-ink">There is no days-left for a whole warehouse</b>, on purpose. Dividing total stock by total sales would treat every product as interchangeable: Master Vault once read 348 days because that entire rate was one product, while the item people actually buy had 20. Each product runs out at its own speed.
-                        <br/>Both figures ignore <b className="text-ink">Shipping</b> and <b className="text-ink">Agent inventory</b> on purpose: they answer "how long does the shelf last", and stock already on a truck or a motorbike is not on that shelf.
-                    </p>
+                    {/* 🔴 THE FOOTNOTE IS GONE, AND IT DID NOT EVAPORATE. His call, 2026-08-27:
+                        *"we can delete this ... i mean the instruction below company total"*.
+                        Five paragraphs of small print under a table is where an explanation goes
+                        to be skipped. Every sentence of it now lives in the TUTORIAL, in
+                        Indonesian, beat by beat, next to the column it is about —
+                        `src/ponder/scenes/stock-by-warehouse.js`, opened by the chip in this
+                        panel's header or by the book in the top bar.
+                        ⚠️ Audit check 631 MOVED onto the scene file rather than being deleted.
+                        A check removed to let a change pass is how the thing it protected comes
+                        back, and what it protects here is the two divisions being shown at all. */}
                 </section>
                 );
             })()}
