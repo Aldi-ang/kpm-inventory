@@ -167,18 +167,38 @@ function Library({ anchorRef, initialSection, onClose, onPick }) {
 
   const still = liteOn() || reduced();
 
+  /* 🔴 TWO MOTIONS, NOT ONE, and the reason is the sound. Aldi, 2026-08-27: *"can u make the book
+     closed before comeback to its place when close this way it would fit the audio right"*.
+
+     A book does not shrink into a shelf while still open — it SHUTS, and then it is put away. His
+     close sound is 1,16s of exactly that, and a single 340ms shrink finished long before the sound
+     did, so the two described different events. Now the spread folds on the spot, then the closed
+     book flies back into the chip; opening is the same two beats reversed, because an open that
+     stayed one motion would have made the pair asymmetric for no reason.
+
+     Both are ONE `animate()` call with three keyframes rather than two chained animations. A chain
+     needs the second to start exactly where the first stopped, and any drift between them shows as
+     a jump at the hand-over. */
+  /* -84deg, not -60: at a shallow angle both pages are still legible and it reads as a book
+     TURNED, not a book SHUT. Near edge-on is the only angle that says closed. */
+  const FOLDED = 'rotateY(-84deg) scale(0.86)';
+  const FLAT = 'perspective(1800px) translate(0px, 0px) scale(1) rotateY(0deg)';
+
   useLayoutEffect(() => {
     if (still) return;
     const el = bookRef.current;
     const from = flightFrom();
     if (!el || !from || typeof el.animate !== 'function') return;
     el.animate(
-      [{ transform: `perspective(1800px) ${from} rotateY(-26deg)`, opacity: 0 },
-       { transform: 'perspective(1800px) translate(0px, 0px) scale(1) rotateY(0deg)', opacity: 1 }],
-      { duration: 460, easing: EASE, fill: 'both' },
+      [{ transform: `perspective(1800px) ${from} ${FOLDED}`, opacity: 0, offset: 0 },
+       /* arrives shut, in place, and only then opens */
+       { transform: `perspective(1800px) translate(0px, 0px) scale(0.97) ${FOLDED}`, opacity: 1, offset: 0.46,
+         easing: 'cubic-bezier(0.23, 1, 0.32, 1)' },
+       { transform: FLAT, opacity: 1, offset: 1 }],
+      { duration: 780, easing: EASE, fill: 'both' },
     );
     scrimRef.current?.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 260, easing: 'ease-out', fill: 'both' });
-  }, [still, flightFrom]);
+  }, [still, flightFrom, FOLDED]);
 
   const shut = useCallback(() => {
     if (closingRef.current) return;
@@ -188,15 +208,20 @@ function Library({ anchorRef, initialSection, onClose, onPick }) {
     const el = bookRef.current;
     const from = flightFrom();
     if (!el || !from || typeof el.animate !== 'function') { onClose(); return; }
-    scrimRef.current?.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 300, easing: 'ease-in', fill: 'both' });
+    scrimRef.current?.animate([{ opacity: 1 }, { opacity: 1, offset: 0.42 }, { opacity: 0 }],
+                              { duration: 720, easing: 'ease-in', fill: 'both' });
     const anim = el.animate(
-      [{ transform: 'perspective(1800px) translate(0px, 0px) scale(1) rotateY(0deg)', opacity: 1 },
-       { transform: `perspective(1800px) ${from} rotateY(-22deg)`, opacity: 0 }],
-      { duration: 340, easing: EASE, fill: 'both' },
+      [{ transform: FLAT, opacity: 1, offset: 0 },
+       /* shuts where it stands... */
+       { transform: `perspective(1800px) translate(0px, 0px) scale(0.97) ${FOLDED}`, opacity: 1, offset: 0.42,
+         easing: 'cubic-bezier(0.4, 0, 0.6, 1)' },
+       /* ...and only then goes back to the shelf */
+       { transform: `perspective(1800px) ${from} ${FOLDED}`, opacity: 0, offset: 1 }],
+      { duration: 720, easing: EASE, fill: 'both' },
     );
     anim.onfinish = onClose;
     anim.oncancel = onClose;
-  }, [onClose, flightFrom]);
+  }, [onClose, flightFrom, FLAT, FOLDED]);
 
   useEffect(() => {
     const onKey = (e) => {
