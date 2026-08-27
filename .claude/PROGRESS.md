@@ -1,8 +1,8 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-27 12:18 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · ✅ **PONDER SLICE 1 IS LIVE — the tutorial plays, pauses, restarts and scrubs** — **645/645** · panel renamed **Stock by Warehouse** · branch `phase0-solid-ground`
+**Updated: 2026-08-27 12:23 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · ✅ **PONDER SLICE 1 IS LIVE — the tutorial plays, pauses, restarts and scrubs** — **645/645** · panel renamed **Stock by Warehouse** · branch `phase0-solid-ground`
 
-## 🟠 2026-08-27 12:18 — PONDER SLICE 1 SHIPPED. **645/645.** The tutorial is real and was looked at.
+## 🟠 2026-08-27 12:23 — PONDER SLICE 1 SHIPPED. **645/645.** The tutorial is real and was looked at.
 
 He answered the three open questions and added a fourth:
 
@@ -46,6 +46,35 @@ vault gate), so this builds the REAL overlay against the REAL stylesheet on plai
 **🔴 STILL DO NOT DELETE THE STOCK-BY-WAREHOUSE FOOTNOTE.** Check 631 still pins the two formulas
 to the screen. The scene now carries them too and group 56 asserts it, so 631 can MOVE in slice 2
 rather than be deleted.
+
+**🔴 WAITING ON ALDI — verbatim, one open question**
+
+> *"dont use sebaran stock, use proper elegant english terms for that"*
+
+He delegated the naming, so the panel now reads **Stock by Warehouse** — **my call, not his, and he
+has not seen it yet.** If he vetoes it, the title is one string at
+`BranchWarehouseManager.jsx:1283` plus the scene's `title`, and audit group 56 pins both.
+
+Also unanswered, because it was never asked: **whether the tutorial looks right at true phone
+width.** Chrome on Windows will not open a window narrower than ~518 CSS px, so no frame under that
+exists. Measured 375px wide with zero overflow in a real browser — a mechanism, not an appearance.
+
+**Where things live — new this session**
+
+| What | Where |
+|---|---|
+| The tutorial engine | `src/ponder/useScenePlayer.js` — the clock, autoplay/pause/seek |
+| The player | `src/ponder/PonderOverlay.jsx` — stage, caption, timeline, controls |
+| The `?` chip | `src/ponder/PonderButton.jsx` — sits in a panel header, opens on click only |
+| Scene → component wiring | `src/ponder/registry.js` — `SCENES` and `STAGES`, one import site |
+| The first scene (data, no React) | `src/ponder/scenes/stock-by-warehouse.js` |
+| Disposable stand-in stage | `src/ponder/stages/PlaceholderStage.jsx` — deleted in slice 2 |
+| Checks for all of it | `src/config/integration.audit.mjs` group **56**, 14 checks |
+| Viewing harness (no vault password) | `tools/ponder-lab.{html,jsx,config.mjs}` → `dist-ponderlab/` |
+
+**LOG not trimmed on purpose.** More than one session writes this file and the 🟢/🟠 markers do not
+cleanly separate them here, so a chronological tidy-up risks deleting another session's entry.
+`git log -- .claude/PROGRESS.md` keeps everything either way.
 
 ## 🟢 2026-08-27 09:10 — RESUME BRIEF WRITTEN. Session ready to clear.
 
