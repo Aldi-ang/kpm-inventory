@@ -1,6 +1,27 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-27 23:50 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · ✅ **HIS FOUR GOODS RECEIVED FAULTS ARE FIXED — nothing half-done** · **663/663** · branch `phase0-solid-ground`, clean at `24673c7`
+**Updated: 2026-08-28 00:20 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · ✅ **HIS FOUR GOODS RECEIVED FAULTS ARE FIXED — nothing half-done** · **663/663** · branch `phase0-solid-ground`, clean at `24673c7`
+
+## 🟢 2026-08-28 00:20 — THE HOVER VIDEO HAS BEEN WATCHED. No code changed; **663/663**.
+
+**Three briefs in a row said "YouTube cannot be opened from here." That was never true.** `/watch`
+runs on this machine — `uv tool install yt-dlp` (ffmpeg was already there; `pip install --user`
+fails because `python` here is 3.14 while pip targets 3.12). One of his asks sat blocked for three
+sessions behind a claim nobody tested. **Before recording something as impossible, try it once.**
+
+**What the video is:** 14s, *"Bible, book, fairytales, fantasy, magical"*. An open book on a dark
+ground. Warm gold light escapes **from the gutter between the pages** and builds over ~8s until the
+paper itself blows out; a soft cone of light stands above it; gold sparks drift **upward** out of
+the pages with two or three glowing butterflies among them; then the camera pushes INTO the book and
+everything whites out.
+
+**🔴 THE ONE DECISION LEFT, AND ONLY HE CAN MAKE IT:** that effect is a large warm gold
+**fill**, and the palette law says amber is an edge and an ink, never a fill — the only legal gold
+fill being a 3px rule whose length is data. The book's cream pages already carry a written
+exemption. **The glow needs the same exemption or it cannot be built.**
+
+Note the video's ending — white-out plus camera push — is the OPEN animation, which already exists
+(the book flies from the chip). Only the **glow and the rising sparks** belong on hover.
 
 ## 🟢 2026-08-27 23:50 — THE FOUR CAPTION FAULTS ARE FIXED. `8109559`, **663/663**. Tree clean.
 

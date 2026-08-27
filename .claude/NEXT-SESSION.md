@@ -1,8 +1,8 @@
 # NEXT SESSION — read this, then `.claude/PROGRESS.md`. Read no code to orient.
 
-**Written 2026-08-27 23:46 WIB. 663/663. Branch `phase0-solid-ground`, clean at `8109559`.**
-His four Goods Received faults are fixed and verified. The next job is a decision he owes, then
-the next chapter.
+**Written 2026-08-28 00:20 WIB. 663/663. Branch `phase0-solid-ground`, clean.**
+His four Goods Received faults are fixed and verified. **The hover video has now been watched** —
+the only thing left on it is a palette-law exemption he must grant. Then the next chapter.
 
 ## First command
 
@@ -25,9 +25,26 @@ had already redirected.
 > *"i want this animation when book is hovered https://www.youtube.com/watch?v=vhG5usAFL_g with the
 > light effect as well"*
 
-**YouTube cannot be opened from here.** He must describe it in one line — what moves, and where the
-light comes from. Current hover is a stand-in: cover lifts on its spine, chip rises 1px, a specular
-band crosses the leather.
+**✅ THE VIDEO HAS BEEN WATCHED — 2026-08-28. It is no longer blocked on him describing it.**
+`/watch` works on this machine now (`uv tool install yt-dlp`; ffmpeg was already there). **Never
+again write "YouTube cannot be opened from here" — that claim sat in three briefs and was false.**
+
+What it actually is: 14s, *"Bible, book, fairytales, fantasy, magical"*. An open book on a dark
+ground. Warm gold light escapes **from the gutter between the pages**, brightening over ~8s until
+the paper itself is blown out; a soft cone of light rises above it; gold sparks drift **upward** out
+of the pages, with two or three glowing butterflies among them; then the camera pushes INTO the book
+and everything whites out.
+
+**The one real conflict, and it is his to settle:** that effect is a large warm gold **fill**, and
+the palette law says amber is an edge and an ink, never a fill — the only legal gold fill being a
+3px rule whose length is data. The book's cream pages already hold a written exemption. **A glow
+needs the same exemption or it cannot be built.** Ask for it in one line before building.
+
+Also note the video's ending (white-out + camera push) is the OPEN animation, which already exists —
+the book flies from the chip. Only the *glow and the rising sparks* belong on hover.
+
+Current hover is a stand-in: cover lifts on its spine, chip rises 1px, a specular band crosses the
+leather.
 
 ### ❓ 2. Which chapter is next
 
@@ -79,6 +96,11 @@ later, which is why it survived every check and screenshot.
   through the Browser pane against `tools/ponder-lab.html`. The sweep that proves a scene is sound:
   for every beat, assert the caption rect does not intersect the ring rect, the ring sits exactly
   `PAD` outside the union of the lit fields, and `scrollHeight === clientHeight`.
+- **🔴 `/watch` WORKS HERE — videos are not a dead end.** `uv tool install yt-dlp` (ffmpeg was
+  already installed); `pip install --user` does NOT work, because `python` on this machine is 3.14
+  while pip targets 3.12. Three consecutive briefs told the next session "YouTube cannot be opened
+  from here" and it was simply untrue, which left one of his asks blocked for three sessions.
+  **Before recording something as impossible, try it once.**
 - **🔴 A headless screenshot narrower than ~518px on Windows is a CROP, not a layout**, and
   **headless virtual time does not drive animation clocks honestly** — the first "after" shots
   showed rings mid-transition and read as a bug that was not there. Use `?probe` and read
