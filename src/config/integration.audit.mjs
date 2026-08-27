@@ -3971,6 +3971,21 @@ check(G55, 'the estimate shows the rate it was divided by, and says so in words'
   'is a number with no shown working, and the ≈ on the monthly figure is what stops a one-week ' +
   'extrapolation reading as a measured monthly average');
 
+/* 🔴 A RATIO OF SUMS IS NOT AN AVERAGE. This shipped and Aldi caught it on screen, 2026-08-27:
+   *"u cant just divide total with the average goods like that, these are different goods should
+   have their own depleted number"*. The warehouse row divided TOTAL shelf by TOTAL sales rate and
+   printed 348 days for the master vault — a rate supplied entirely by ONE product, while the
+   product people actually buy had 20 days left. The division needs its numerator and denominator
+   to describe the SAME fungible good; Bks add across products, but demand does not transfer.
+   Sums stay (shelf, sold, perMonth are real pack counts). The division is per product only. */
+check(G55, 'no warehouse-level days-left, because that division is not a number',
+  !/const daysLeft = perDay/.test(bwmCode) &&
+  /return \{ name, shelf, transit, field, sold, perMonth, detail \}/.test(bwmCode) &&
+  /There is no days-left for a whole warehouse/.test(bwmCode),
+  'the warehouse row must NOT carry a computed daysLeft, and the footnote must say why. Total ' +
+  'stock ÷ total rate silently assumes one product can satisfy demand for another — and it errs ' +
+  'COMFORTABLE, which is the worst direction for a restocking figure');
+
 /* Sold packs are not anywhere any more. Putting them in a "where is it" bar shrinks every other
    segment in proportion to how WELL a branch is doing, which reads as the opposite of the truth. */
 check(G55, 'the where-is-it bar leaves sold out of its segments',

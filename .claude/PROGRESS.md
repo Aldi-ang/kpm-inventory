@@ -1,6 +1,27 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-27 08:55 WIB (🟠 KPM app session)** · ✅ **SEBARAN STOK NOW SHOWS ITS OWN WORKING** — **631/631** · plain-English columns, per-item rate + depletion · branch `phase0-solid-ground`
+**Updated: 2026-08-27 09:00 WIB (🟠 KPM app session)** · ✅ **SEBARAN STOK NOW SHOWS ITS OWN WORKING** — **631/631** · plain-English columns, per-item rate + depletion · branch `phase0-solid-ground`
+
+## 🔴 2026-08-27 09:00 — A WRONG NUMBER SHIPPED AND HE CAUGHT IT. **632/632.**
+
+**Sebaran Stok printed a warehouse-level "Est. days left" that was not a number.** It divided TOTAL
+shelf by TOTAL sales rate. Master Vault read **348 days** — that whole rate was ONE product (Cello
+Chocolate, 500/wk); the other four sold nothing, and Chocolate itself had **20 days**. The headline
+was 17× more comfortable than the truth, on the panel built to answer "which warehouse first".
+
+**His words:** *"u cant just divide total with the average goods like that, these are different
+goods should have their own depleted number"*. He is right — ratio of sums. Removed.
+
+- Warehouse rows now read **per item** (or **below ↓** when open), company total reads **—**.
+- Per-product days-left in the drawer is unchanged and was always correct.
+- `shelf` / `sold` / `perMonth` totals STAY: Bks add across products, so a total pack count is real.
+  Only the DIVISION was invalid.
+- **New check 632** pins it: no `const daysLeft = perDay` at warehouse level, and the footnote must
+  keep saying why.
+
+**⚠️ The lesson, recorded in `alucard/lessons.md`:** every check passed, the build was green, and I
+verified the arithmetic on screen TWICE. The arithmetic was right; the statistic was meaningless.
+**Verifying that a number computes is not verifying that it means anything.**
 
 ## 🟢 2026-08-27 08:55 — PONDER TUTORIAL SYSTEM: PLAN WRITTEN, NOTHING BUILT.
 

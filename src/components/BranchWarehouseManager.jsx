@@ -406,14 +406,27 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
                 ? null
                 : detail.reduce((s, p) => s + p.transit, 0);
 
-            /* The reason he asked for the panel: how long the shelf lasts at the rate it is
-               actually leaving. No sales in the window means NO RATE — which prints as — rather
-               than as a confident infinity. Same rule reorderAdvice already follows above. */
+            /* 🔴 THERE IS DELIBERATELY NO WAREHOUSE-LEVEL "days left", and there was one until
+               2026-08-27. It divided TOTAL shelf by TOTAL sales rate, and Aldi caught it on
+               screen: *"u cant just divide total with the average goods like that, these are
+               different goods should have their own depleted number"*. He is right, and it is the
+               classic ratio-of-sums error.
+
+               The master vault read 348 days. That rate — 500 a week — was ENTIRELY Cello
+               Chocolate; the other four products sold nothing at all. So 348 silently answered
+               "how long until everything is gone, if any product could satisfy demand for any
+               other". Nobody sells Cello Mmrapi to a customer who wants Chocolate. The real
+               answer, one row down in the drawer, was 20 days — and the aggregate was seventeen
+               times more comfortable than the truth, which is the worst direction for a restocking
+               figure to be wrong in.
+
+               Bks ADD across products, so `shelf`, `sold` and `perMonth` stay: a total pack count
+               is a real quantity. Only the DIVISION is invalid, because it needs the numerator and
+               denominator to describe the same fungible good. Days-left lives per product now. */
             const perDay = sold / SEVEN_DAYS;
-            const daysLeft = perDay > 0 ? Math.floor(shelf / perDay) : null;
             const perMonth = Math.round(perDay * 30);
 
-            return { name, shelf, transit, field, sold, perMonth, daysLeft, detail };
+            return { name, shelf, transit, field, sold, perMonth, detail };
         });
     }, [isAdmin, motorists, transactions, branchStockMap, globalInventory, requests]);
 
@@ -1299,7 +1312,6 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
                                 const pct = (v) => here > 0 ? `${(v / here) * 100}%` : '0%';
                                 /* under a week of cover is the point HQ has to act, because a
                                    delivery does not arrive the same day it is decided */
-                                const low = r.daysLeft !== null && r.daysLeft < 7;
                                 const open = openGudang === r.name;
                                 return (
                                     <div key={r.name} className="border-b border-line-2 last:border-b-0">
@@ -1328,10 +1340,12 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
                                             <span className="text-right font-mono font-bold text-ink tabular-nums">{r.field.toLocaleString('id-ID')}</span>
                                             <span className="text-right font-mono font-bold text-ink tabular-nums">{r.sold.toLocaleString('id-ID')}</span>
                                             <span className="text-right font-mono font-bold text-ink-muted tabular-nums">{r.perMonth > 0 ? `≈${r.perMonth.toLocaleString('id-ID')}` : '—'}</span>
-                                            <span className="text-right font-mono font-black tabular-nums">
-                                                {r.daysLeft === null
-                                                    ? <span className="text-ink-muted" title="Tidak ada penjualan 7 hari terakhir — tidak ada laju untuk dihitung">—</span>
-                                                    : <span className={low ? 'text-danger-text' : 'text-ink'}>{r.daysLeft}</span>}
+                                            {/* NOT a dash. `—` already means "no sales, so no rate" on the
+                                                item rows, and reusing it here would say the warehouse has
+                                                no rate when the truth is that the question has no
+                                                warehouse-level answer. It names where the number lives. */}
+                                            <span className="text-right font-mono text-[11px] text-ink-muted" title="Each product runs out at its own speed — open this warehouse to see them">
+                                                {open ? 'below ↓' : 'per item'}
                                             </span>
                                         </div>
 
@@ -1395,7 +1409,8 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
                     <p className="px-5 py-4 text-[10px] text-ink-muted leading-relaxed border-t border-line-2">
 <b className="text-ink">Where these come from.</b> Every sales figure counts SALE transactions from the <b className="text-ink">last 7 days</b> — that is the whole window the app keeps loaded, so no figure here can mean more than a week.
                         <br/><b className="text-ink">Avg / month</b> = Sold (7d) ÷ 7 × 30. It is an estimate from one week, which is why it is written <b className="text-ink">≈</b> — a strong or dead week moves it a lot.
-                        <br/><b className="text-ink">Est. days left</b> = In stock ÷ (Sold (7d) ÷ 7). <b className="text-danger-text">Red</b> means under 7 days: send stock there first, because a delivery does not arrive the same day you decide to send it. <b className="text-ink-muted">—</b> means nothing sold in the last 7 days, so there is no rate to divide by — not that the stock lasts forever.
+                        <br/><b className="text-ink">Est. days left</b> = In stock ÷ (Sold (7d) ÷ 7), <b className="text-ink">per product</b> — open a warehouse to see them. <b className="text-danger-text">Red</b> means under 7 days: send that item first, because a delivery does not arrive the same day you decide to send it. <b className="text-ink-muted">—</b> means nothing sold in the last 7 days, so there is no rate to divide by — not that the stock lasts forever.
+                        <br/><b className="text-ink">There is no days-left for a whole warehouse</b>, on purpose. Dividing total stock by total sales would treat every product as interchangeable: Master Vault once read 348 days because that entire rate was one product, while the item people actually buy had 20. Each product runs out at its own speed.
                         <br/>Both figures ignore <b className="text-ink">Shipping</b> and <b className="text-ink">Agent inventory</b> on purpose: they answer "how long does the shelf last", and stock already on a truck or a motorbike is not on that shelf.
                     </p>
                 </section>
