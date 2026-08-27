@@ -1,6 +1,48 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-27 12:23 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · ✅ **PONDER SLICE 1 IS LIVE — the tutorial plays, pauses, restarts and scrubs** — **645/645** · panel renamed **Stock by Warehouse** · branch `phase0-solid-ground`
+**Updated: 2026-08-27 13:18 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · ✅ **PONDER SLICE 2 IS LIVE — the real table on the stage, and a BOOK in the top bar** — **651/651** · the footnote is deleted and check 631 moved · branch `phase0-solid-ground`
+
+## 🟠 2026-08-27 13:18 — PONDER SLICE 2. **651/651.** `df5c98b` + `7b353a3`.
+
+Six asks in one message, all six shipped, all six now checks in group 56:
+
+> *"we can delete this"* → *"i mean the instruction below company total"* · *"make the explanation
+> more easier to understand and more descriptive with easy indonesian language"* · *"more variative
+> textbox and animation not just static textbox on the bottom just like what create mod have"* ·
+> *"improve the higlights animation on each timeframe as well"* · *"i want the tutorial book on the
+> very top of the screen for every components"* · *"book SFX also needed here"*
+
+**🔴 THE FOOTNOTE IS DELETED AND CHECK 631 MOVED — it was not deleted with it.** Its five
+paragraphs are 16 tutorial beats now, in Indonesian, each standing beside the column it explains.
+The check that pinned the two divisions to the footnote pins them to the scene text instead.
+
+**The table moved to `ponder/stages/StockByWarehouseTable.jsx`;** only the maths stayed in
+`BranchWarehouseManager`. The tutorial renders the same component against `demo/warehouses.js`, so
+it cannot drift. **Five group-55 checks were repointed at the file the markup now lives in** —
+splitting a component splits its checks.
+
+**Captions move.** `at: 'near'` pins one beside its subject with a pointer; `at: 'bottom'` uses the
+wide bar. The pointer aims **four** ways, because a caption beside a full-height column points
+sideways — the two-way version put the box on top of the table header.
+
+**The highlight is drawn**, a 2px edge around the union of what the beat names, and it re-measures
+while the drawer animates so it travels with the row instead of landing where the row used to be.
+
+**The book is in the shared top bar** (`BiohazardTheme`), so every screen has it. Cover hinged on
+the spine, lifts on hover, opens into a two-page spread: tabs down the left edge, chapter opener
+left, entry cards right. All seven sections listed; unwritten ones say **belum ditulis**.
+SFX are the app's own re-pointed (`commit`/`sign`/`tap`/`click`) through `useSound`, so Lite Mode
+is silent and snaps the book shut with no wait.
+
+**🔴 THE BUG THAT COST THE MOST, TWICE, AND NEVER ERRORED:** a `requestAnimationFrame`
+scheduled inside an effect and cancelled by that same effect's cleanup before it could fire. Once
+the spotlight never dimmed anything and no highlight ever appeared; once the whole book rendered at
+`opacity: 0`. **Every check stayed green both times** — only looking found it. The measure is
+synchronous now; the book opens on a keyframe (which cannot lose that race) and closes on a
+transition (which can be reversed).
+
+**Looking at it:** `npx vite build --config tools/ponder-lab.config.mjs` →
+`python -m http.server 4187 -d dist-ponderlab` → `/tools/ponder-lab.html?book&light&step=N&probe`.
 
 ## 🟠 2026-08-27 12:23 — PONDER SLICE 1 SHIPPED. **645/645.** The tutorial is real and was looked at.
 
@@ -47,12 +89,12 @@ vault gate), so this builds the REAL overlay against the REAL stylesheet on plai
 to the screen. The scene now carries them too and group 56 asserts it, so 631 can MOVE in slice 2
 rather than be deleted.
 
-**🔴 WAITING ON ALDI — verbatim, one open question**
+**🔴 WAITING ON ALDI — verbatim, one open question** *(still open at 13:18)*
 
 > *"dont use sebaran stock, use proper elegant english terms for that"*
 
 He delegated the naming, so the panel now reads **Stock by Warehouse** — **my call, not his, and he
-has not seen it yet.** If he vetoes it, the title is one string at
+has not vetoed it.** If he vetoes it, the title is one string at
 `BranchWarehouseManager.jsx:1283` plus the scene's `title`, and audit group 56 pins both.
 
 Also unanswered, because it was never asked: **whether the tutorial looks right at true phone

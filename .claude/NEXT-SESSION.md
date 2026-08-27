@@ -1,7 +1,8 @@
-# NEXT SESSION — read this, then `.claude/PONDER-PLAN.md` §4. Read no code to orient.
+# NEXT SESSION — read this, then `.claude/PONDER-PLAN.md`. Read no code to orient.
 
-**Written 2026-08-27 12:18 WIB. 645/645. Branch `phase0-solid-ground`.**
-`PROGRESS.md` is the state. This file is the one job. Slice 1 of Ponder is live and was looked at.
+**Written 2026-08-27 13:18 WIB. 651/651. Branch `phase0-solid-ground`, clean at `7b353a3`.**
+`PROGRESS.md` is the state. This file is the one job. The tutorial engine, the book and the first
+scene are all shipped and were looked at.
 
 ## First command
 
@@ -13,80 +14,70 @@ He is on **PowerShell**: `;` not `&&`.
 
 ---
 
-## 🔴 THE ONE JOB — PONDER SLICE 2: put the REAL table on the stage
+## 🔴 THE ONE JOB — write the Sales Terminal tutorial: **Titip vs Lunas**
 
-Right now the tutorial plays against `src/ponder/stages/PlaceholderStage.jsx`, a three-row
-schematic that exists only to prove a `focus` key can light a cell. It is marked disposable in its
-own header. **Slice 2 deletes it and renders the actual Stock by Warehouse table instead**, fed a
-fixed demo dataset — so the tutorial and the screen it teaches can never drift apart.
+The book already lists it (`Kasir` tab, first card, marked *belum ditulis*). It is first in the
+build order because it is where a mistake costs the most money: a consignment booked as a paid sale
+is money the app thinks it has already collected.
 
-### What the code does today
+### What has to exist
 
-`src/components/BranchWarehouseManager.jsx`:
+1. **`src/ponder/scenes/kasir-titip-vs-lunas.js`** — a data file, no React. Copy the shape of
+   `scenes/stock-by-warehouse.js`: `{ id, title, section, blurb, stage, steps[] }`, each step
+   `{ text, focus, at, tone, act, hold }`. **Indonesian sentences, English feature names in `**`.**
+2. **A stage.** Two honest options, and the first one that works wins:
+   - **Extract the wares list / nota strip** the way `StockByWarehouseTable` was extracted, and
+     feed it demo data. Best, because the tutorial then cannot drift from the screen.
+   - **A schematic stage** if the terminal resists extraction. `MerchantSalesView` is the most
+     check-covered file in the repo and it is the money path — **if pulling the visual half out
+     starts touching anything that computes a total, stop and build a schematic instead.** Ponder's
+     own world is a schematic, not your base, so this is not a downgrade. Say which was chosen.
+3. **`data-ponder` keys on whatever the stage renders**, and the scene's `focus` keys must match.
+   Group 56 fails otherwise — it resolves a key either as a literal `data-ponder="k"` or as a
+   prefix the stage builds from data (`data-ponder={\`item:${...}\`}`) plus that value existing.
+4. **Register it**: `SCENES` in `registry.js`, `STAGES` if a new stage, and flip the `Kasir` entry
+   in `src/ponder/sections.js` from `soon: true` to `sceneId: 'kasir-titip-vs-lunas'`.
 
-| Line | What is there |
-|---|---|
-| `332` | `const [openGudang, setOpenGudang] = useState(null)` — which warehouse drawer is open |
-| `333` | `const logistics = useMemo(...)` — reads `motorists / transactions / branchStockMap / requests` and returns the rows |
-| `1273` | `const COLS = 'grid grid-cols-[...]'` — the column template |
-| `1275`–`1428` | the `<section>`: header, the chip, the column head, the rows, the drawers, the footnote |
+### What the scene has to teach
 
-The maths and the markup are welded together in one component, which is why the tutorial cannot
-render it.
+The one thing a person gets wrong, and it is not a UI question: **titip** leaves the building but is
+still your stock and not yet your money; **lunas** is money in. Then what a printed nota commits.
+Grep the terminal for the real field names before writing a word — a scene that teaches a label the
+screen does not have is worse than no scene.
 
-### The smallest change that works
+### Traps, each of which has already cost time here
 
-Extract **only the visual half** into `src/ponder/stages/StockByWarehouseTable.jsx`:
-
-```
-StockByWarehouseTable({ rows, openGudang, onToggle })
-```
-
-Presentational only — **no Firestore, no `useMemo`, no supply maths**. `BranchWarehouseManager`
-passes `logistics` and its real `openGudang`; the Ponder stage passes `DEMO_WAREHOUSES` from a new
-`src/ponder/demo/warehouses.js` and its own local open state. Register it in `registry.js` as
-`STAGES['stock-table']` and change the scene's `stage: 'placeholder'` to `stage: 'stock-table'`.
-
-Then, and only then:
-
-1. delete `PlaceholderStage.jsx`
-2. delete the footnote at line ~1425
-3. **MOVE audit check 631** onto the scene file — do not delete it. Group 56 already asserts the
-   scene text carries `Sold (7d) ÷ 7 × 30` and `In stock ÷ (Sold (7d) ÷ 7)`, so the coverage
-   exists before the footnote goes.
-4. add the `data-ponder` attributes to the extracted table: `col:shelf`, `col:transit`,
-   `col:field`, `col:permonth`, `col:daysleft`, and `row:<name>` per row. The scene's focus keys
-   are already written against exactly these names, and group 56 fails if one goes missing.
-
-### The traps, each of which has already cost time
-
-- **🔴 A HEADLESS SCREENSHOT NARROWER THAN ~518px ON WINDOWS IS A CROP, NOT A LAYOUT.** Chrome
-  refuses to open a window narrower than that, so `--window-size=375` lays out at 518 and saves the
-  left 375px. Three phone shots "proved" an overflow bug that did not exist. Open the lab with
-  `?probe` and read `innerWidth` out of the DOM before believing any narrow frame.
-- **The demo data must carry the last beat.** Beat 7 says a warehouse total can look safe while one
-  product inside it is nearly out. If `DEMO_WAREHOUSES` has no such product, the scene teaches
-  nothing at its most important moment.
-- **`supplyByProduct` drops any product whose shelf+field+sold is 0.** Demo rows have to survive
-  that, or a warehouse waiting on its first delivery renders empty — check 55 exists for this.
-- **A check anchored on display copy fires on every wording change.** Anchor on the CLAIM.
+- **🔴 A `requestAnimationFrame` scheduled inside an effect can be cancelled by that effect's own
+  cleanup before it ever fires.** It happened twice in one session: once the spotlight silently
+  dimmed nothing, once the book rendered at `opacity: 0`. **Nothing errored and every check stayed
+  green both times.** Measure synchronously in a layout effect; use a keyframe when something must
+  animate on mount, and a transition only when it must reverse.
+- **🔴 A headless screenshot narrower than ~518px on Windows is a CROP, not a layout.** Chrome will
+  not open a window under that width, so `--window-size=375` lays out at 518 and saves the left
+  375px. Open the lab with `?probe` and read `innerWidth` out of the DOM before believing a narrow
+  frame.
+- **A beat with an `act` changes the layout after it is measured.** The overlay watches the stage
+  with a `ResizeObserver` for exactly this; a new stage that animates needs nothing extra, but a
+  stage that renders in a portal would escape it.
+- **Splitting a component splits its checks.** Five group-55 checks had to be repointed when the
+  stock table moved files. Grep the audit for the old filename before assuming a check still reads
+  what it used to.
 - **A JSX block comment that starts `{/* X */` closes itself.** It broke the build once.
-- **The vault gate re-locks and you cannot type the password.** Do not spend ten tool calls proving
-  it — use the lab below, or ask him to open Chrome.
+- **The vault gate re-locks and you cannot type the password.** Use the lab; do not spend ten tool
+  calls proving the notes were right.
 
-### How to actually see it
+### How to see it
 
 ```
 npx vite build --config tools/ponder-lab.config.mjs
 python -m http.server 4187 -d dist-ponderlab
 ```
 
-Then `http://localhost:4187/tools/ponder-lab.html` with any of `?light`, `?lite`, `?step=N`,
-`?scene=<id>`, `?probe`. It mounts the REAL overlay against the REAL stylesheet, no login. Frames
-come from headless Chrome:
+`http://localhost:4187/tools/ponder-lab.html` with `?scene=<id>`, `?step=N`, `?book`, `?light`,
+`?lite`, `?probe`. It mounts the REAL components against the REAL stylesheet, no login. Frames:
 
 ```
-"/c/Program Files/Google/Chrome/Application/chrome.exe" --headless=new --disable-gpu --hide-scrollbars --virtual-time-budget=3500 --screenshot=out.png --window-size=1200,860 "http://localhost:4187/tools/ponder-lab.html?step=5"
+"/c/Program Files/Google/Chrome/Application/chrome.exe" --headless=new --disable-gpu --hide-scrollbars --virtual-time-budget=5000 --screenshot=out.png --window-size=1280,900 "http://localhost:4187/tools/ponder-lab.html?step=5"
 ```
 
 ---
@@ -97,25 +88,36 @@ come from headless Chrome:
 |---|---|
 | Session state | `.claude/PROGRESS.md` |
 | Ponder design | `.claude/PONDER-PLAN.md` |
-| The engine | `src/ponder/useScenePlayer.js` · `PonderOverlay.jsx` · `PonderButton.jsx` · `registry.js` |
-| The first scene | `src/ponder/scenes/stock-by-warehouse.js` |
-| Stock by Warehouse panel | `src/components/BranchWarehouseManager.jsx` |
-| Supply maths, shared with the dashboard | `src/utils/supply.js` |
-| The 645 checks | `src/config/integration.audit.mjs` (group 56 is Ponder) |
+| The clock | `src/ponder/useScenePlayer.js` |
+| The player (captions, highlight, controls) | `src/ponder/PonderOverlay.jsx` |
+| The book | `src/ponder/PonderBook.jsx` · contents in `src/ponder/sections.js` |
+| The `?` chip | `src/ponder/PonderButton.jsx` |
+| Scene ↔ stage wiring | `src/ponder/registry.js` |
+| Scenes | `src/ponder/scenes/` |
+| Stages + the extracted stock table | `src/ponder/stages/` |
+| Demo world | `src/ponder/demo/warehouses.js` |
+| Book sounds | `src/ponder/sfx.js` (app's own audio, re-pointed) |
+| Stock maths | `src/components/BranchWarehouseManager.jsx` · `src/utils/supply.js` |
+| The 651 checks | `src/config/integration.audit.mjs` (group **56** is Ponder) |
 | Viewing harness | `tools/ponder-lab.*` |
 | Lessons | `~/.claude/skills/alucard/lessons.md` |
 
 <details>
 <summary>Queued behind this — do not start these</summary>
 
-- **Slice 3+, one component per slice**, ranked by where a mistake costs money: Sales Terminal
-  (titip vs paid) → EOD Setoran → Stock Opname (why the count is hidden) → Restock Vault Request
-  (Siapkan deducts HQ stock immediately) → Receivables → Fleet & Canvas (loading a van *moves*
-  stock) → Dashboard/Map/Reports last.
-- **Identify-on-hover**, Ponder's real pause behaviour: while frozen, hovering a column names it.
-  It needs a stage with real named parts, so it can only follow slice 2.
+- **Identify-on-hover.** Ponder's pause is really *Identify*: it freezes the scene so you can hover
+  a part and have it named. The stage now has named parts, so this is finally possible — hovering a
+  frozen `data-ponder` element shows its one-line definition. Small engine change, improves every
+  scene ever written.
+- **The rest of the sections**, in the order `sections.js` already lists them: Setoran → Stock
+  Opname → Restock Vault (Siapkan deducts HQ stock immediately) → Piutang → Armada → Laporan.
+- **Real book audio.** Drop `book-open.mp3` / `page-turn.mp3` / `book-close.mp3` into
+  `public/sounds/`, add them to `SOURCES` in `src/hooks/useSound.js`, change four names in
+  `src/ponder/sfx.js`. The wiring is done; only the files are missing.
 - **Untested by anyone: the Siapkan Pengiriman button and the shipping modal.** He has zero open
   branch requests and no fake ones were written into live Firestore. The first real one is the test.
+- **Open, and his to answer:** the panel name `Stock by Warehouse` was my call, not his. If he
+  vetoes it, it is one string at `BranchWarehouseManager.jsx` plus the scene's `title`.
 
 </details>
 
