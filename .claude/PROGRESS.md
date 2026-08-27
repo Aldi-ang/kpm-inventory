@@ -1,6 +1,24 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-27 09:05 WIB (🟠 KPM app session)** · ✅ **SEBARAN STOK NOW SHOWS ITS OWN WORKING** — **631/631** · plain-English columns, per-item rate + depletion · branch `phase0-solid-ground`
+**Updated: 2026-08-27 09:10 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · ready to `/clear` · ✅ **SEBARAN STOK NOW SHOWS ITS OWN WORKING** — **631/631** · plain-English columns, per-item rate + depletion · branch `phase0-solid-ground`
+
+## 🟢 2026-08-27 09:10 — RESUME BRIEF WRITTEN. Session ready to clear.
+
+**No app code changed since `76f1ef3`.** This entry exists so a cleared session knows the notes are
+current and where to start.
+
+**👉 START HERE NEXT SESSION: `.claude/NEXT-SESSION.md`** — it carries the three unanswered Ponder
+questions, the decisions already locked (scripted scenes, demo data), the build order, the traps
+that cost time today, and the file map. `.claude/PONDER-PLAN.md` is the full design behind it.
+This file is the state; those two are the plan. Read all three, read no code to orient.
+
+**The prompt he was given to paste after `/clear`:**
+> Read .claude/NEXT-SESSION.md first, then run:
+> npm run build; node src/config/integration.audit.mjs
+>
+> Ask me the three Ponder questions before building anything.
+
+**Tree is clean apart from `.claude/settings.json`,** which was already modified before today.
 
 ## 🟢 2026-08-27 09:05 — DRAWER SPACING. **632/632.** Session ending on quota.
 

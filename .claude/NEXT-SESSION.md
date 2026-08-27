@@ -1,66 +1,92 @@
-# NEXT SESSION — the Restock Vault desk, after the 2026-08-27 run
+# NEXT SESSION — read this, then `.claude/PONDER-PLAN.md`. Read no code to orient.
 
-**Branch:** `phase0-solid-ground` · **Last commit:** `d042520` · **630 checks, 0 failures**
+**Written 2026-08-27 09:10 WIB. Tree clean at `76f1ef3`. 632/632. Branch `phase0-solid-ground`.**
+`PROGRESS.md` is the state. This file is the plan. Both are current — nothing is half-done.
 
-## First command, before anything else
+## First command
 
-```powershell
+```
 npm run build; node src/config/integration.audit.mjs
 ```
 
-Then read `.claude/PROGRESS.md`. **Do not re-read the codebase to orient** — that habit has cost a
-quarter of a session before.
+632 checks over the BUILT output. He is on **PowerShell**: `;` not `&&`.
 
 ---
 
-## Where things stand
+## 🔴 ANSWER THESE THREE BEFORE BUILDING ANYTHING
 
-**The whole 2026-08-27 queue is DONE and driven live.** The Request tab, Tujuan from the roster and
-the Global Logistics readout all shipped, and the readout was then redesigned twice on his notes.
-Nothing is blocked. Nothing is half-built.
+They are the open questions from `.claude/PONDER-PLAN.md` §9. He has not answered them. Do not
+assume — ask him in the first reply, all three together, then build.
 
-`git show 76de71a 20c4a0a 4cc71af b667e78 d042520` carries every decision. Read the messages, not
-the diffs.
-
----
-
-## The only open item
-
-**✅ The Siapkan Pengiriman button and the shipping modal are UNTESTED.** He has zero open branch
-requests — all six in the Buku are DELIVERED — and **fake rows must never be written into his live
-Firestore** to manufacture one. When a real branch request arrives: Restock Vault → **Request** tab
-→ the orange **Siapkan** button on a PENDING row → the shipping modal → ship it.
-
-## Queued, not started
-
-- Branch Manager redesign
-- Split Stok Kritis, and a per-warehouse minimum
-- Route the four inline `minStock` fallbacks through the shared rule
-  (`useTransactionEngine.js`, `MerchantSalesView.jsx`, `ResidentEvilInventory.jsx` say **50**;
-  `StockOpnameView.jsx` says **5**)
-- The per-SHIPMENT breakdown, if he ever wants it back: deleting Isi Gudang Cabang gave up
-  `stockCard`'s `<details>`, which named each individual kiriman behind a product's stock. He was
-  told and chose the delete. `stockCard` itself still lives, for the branch-side view.
+> 1. **Language.** Scenes in Indonesian, English, or both? His 2026-08-27 rule was *"use english
+>    terms if its shorter and direct"* — but that was for column labels. A teaching sentence is not
+>    a label, and the branch staff reading these may not read English.
+> 2. **Autoplay or manual.** Ponder auto-runs a stage then waits. Same here, or press → for every beat?
+> 3. **Does a first-time user get pushed into a scene**, or is `?` always opt-in only?
 
 ---
 
-## Traps — each of these cost time, most of them THIS session
+## What is queued
 
-- **Run the build BEFORE writing "build green".** A commit message claiming it had to be amended.
-- **A JSX comment after `&& (` does not parse.** It is a second expression inside the parentheses.
-- **A `*/` inside a JSX comment closes it early.** Broke the build on 2026-08-27 writing a header
-  comment that opened `{/* ====== HEADER ====== */` and then kept writing.
-- **A duplicate `style` prop is legal JSX and the last one silently wins.**
-- **A `<button>` inside a `<button>` renders without a warning and kills the inner click.** The
-  Buku/Request row is a flex PAIR for exactly this reason; check 54 pins it open.
-- **A check that greps source also reads the comment explaining the fix.** Strip comments first —
-  `noCmt` exists in the audit. G53 was written without it and fired on prose about a colour.
-- **Anchor a check on the CLAIM, never the punctuation or a callback signature.** Two checks fired
-  this session on pure copy tweaks and had to be re-anchored.
-- **The vault gate re-locks on every new tab and you cannot type the password.** Do not spend calls
-  proving this. **Ask him to unlock the tab you opened** — that is the whole fix, and it is instant.
-- **`agent_browser_open` can hang for its full 1800s idle timeout.** Not a fallback.
-- **The dev server is HTTPS with a self-signed cert**, so the in-app Browser pane cannot load it.
-  Use the `claude-in-chrome` tools against his real Chrome instead.
-- **Never `SendUserFile` an HTML prototype with `display:"render"`** — the panel runs no scripts.
-- **`graphify` call edges undercount** — confirm "who calls X" with grep.
+**PONDER — an in-app tutorial on every component, modelled on Create mod's Ponder.**
+The whole design is written already: **`.claude/PONDER-PLAN.md`**. Read it, do not re-derive it.
+
+Decided with him, do not re-litigate:
+- **Scripted scenes, NOT recorded video.** Eight labels were renamed on 2026-08-27 alone; clips
+  would have been stale the same day, cannot follow dark mode, and bloat an offline PWA.
+- **Scenes render the real component fed a FIXED DEMO DATASET**, not a spotlight over his live
+  screen. Ponder's world is a schematic, not your base. A live-data tour of Sebaran Stok today
+  would teach using Bandung's all-zero row — a wall of `—`.
+
+Build order: **slice 1** engine on one panel with a placeholder scene → **slice 2** Sebaran Stok for
+real (its scene script is already written out in the plan, ready to paste).
+
+---
+
+## Traps that cost real time this session
+
+- **🔴 A check anchored on display copy fires on every wording change.** The "7 days" check tripped
+  TWICE on pure label edits. Anchor on the CLAIM, never the punctuation or the language.
+- **🔴 A total ÷ a total is only a rate if the things are interchangeable.** A warehouse-level
+  "days left" shipped and was WRONG by 17× — he caught it, not the audit. Every check passed and
+  the arithmetic was correct; the statistic was meaningless. **Verifying a number computes is not
+  verifying it means anything.**
+- **Do NOT delete the Sebaran Stok footnote before the first Ponder scene exists.** It is the only
+  written record of the two formulas and check 631 pins them to the screen. The check **moves** into
+  the scene file. A check deleted to make a change pass is how the bug it caught comes back.
+- **A JSX block comment that starts `{/* X */` closes itself.** Broke the build once.
+- **The vault gate re-locks on a new tab and you cannot type the password.** Ask him to unlock;
+  do not spend ten tool calls proving it. One `agent_browser_open` hung for its full 1800s timeout.
+- **Screenshots catch the drawer mid-animation.** Wait ~3s after toggling, or re-shoot.
+
+---
+
+## Untested by anyone
+
+**The Siapkan Pengiriman button and the shipping modal** on the Restock Vault Request tab. He has
+**zero** open branch requests and no fake ones were written into his live Firestore. **The first
+real branch request that arrives is the test.** Everything else this session was driven live in his
+Chrome against real data.
+
+---
+
+## Where things live
+
+| Thing | Path |
+|---|---|
+| Session state | `.claude/PROGRESS.md` |
+| Ponder design | `.claude/PONDER-PLAN.md` |
+| The desk (Masuk · Kirim · Request · Buku) | `src/RestockVaultView.jsx` |
+| Sebaran Stok + branch warehouse screen | `src/components/BranchWarehouseManager.jsx` |
+| Supply maths, shared with the dashboard | `src/utils/supply.js` |
+| The 632 checks | `src/config/integration.audit.mjs` |
+| Lessons | `~/.claude/skills/alucard/lessons.md` |
+
+---
+
+## The prompt he pastes after `/clear`
+
+> Read .claude/NEXT-SESSION.md first, then run:
+> npm run build; node src/config/integration.audit.mjs
+>
+> Ask me the three Ponder questions before building anything.
