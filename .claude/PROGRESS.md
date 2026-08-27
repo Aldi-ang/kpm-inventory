@@ -1,6 +1,36 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-27 17:37 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · ✅ **THE BOOK IS FIXED — it was rendering inside the glass top bar** — **654/654** · paper in both themes, flies from the chip · branch `phase0-solid-ground`
+**Updated: 2026-08-27 18:05 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · ✅ **THE BOOK MIRRORS THE SIDEBAR AND OPENS WHERE YOU ARE** — **656/656** · new scene: **Goods Received** · branch `phase0-solid-ground`
+
+## 🟠 2026-08-27 18:05 — THE BOOK FOLLOWS THE SIDEBAR. **656/656.**
+
+Four corrections, all his, all now checks:
+
+> *"u re crazy using sales SFX for the book, use paper or book SFX la bro"* · *"all the section in
+> the book should follow the sidebar and everything on the sidebar should be on the book"* · *"i
+> want the book when press is auto redirect to the features that we use right now"* · *"we need
+> panel name for every section, we dont have this panel name for sc1, so name it"*
+
+**SOUNDS ARE SYNTHESISED PAPER.** The first version re-pointed the till and the stepper at a page
+turn — those sounds already MEAN something in this app. Now bandpassed noise with a falling filter
+for a rustle, a low sine for the cover. No files, still silent in Lite Mode.
+
+**🔴 THE CHAPTERS ARE THE SIDEBAR, both directions checked.** All **17** nav items, in nav
+order, with the nav's own icons. Section `id` **is** the `activeTab` value — that is what makes the
+book open on the screen you are standing in. The invented "Gudang / Kasir / Setoran" categories are
+gone; none of them was clickable in this app.
+
+**🔴 THE INTAKE PANEL IS NAMED: `Goods Received`** (`RestockVaultView`), outgoing side
+`Shipment Out`. New scene `goods-received` is **entry 1** of Restock Vault because it is the top
+panel; Stock by Warehouse is **entry 2**. Its stage is a **schematic**, not the extracted form —
+that form writes stock and computes money, which is the case the handoff rule already covered.
+Every number in it is the app's real arithmetic (`RestockVaultView` L273-276).
+
+**The book is 1040×760**, not 1240×780 — *"doesnt look like a regular book"* at 1,59:1.
+
+⚠️ **Not verified: the `sum:perbks` beat's scroll-into-view.** In the headless frame the totals
+row sat below the fold and the ring was off-screen; the same mechanism works on the stock table,
+so this is probably a virtual-time artifact rather than a bug. Worth one look in the real app.
 
 ## 🟠 2026-08-27 17:37 — THE BOOK WAS BROKEN ON HIS SCREEN. Fixed, **654/654**.
 
