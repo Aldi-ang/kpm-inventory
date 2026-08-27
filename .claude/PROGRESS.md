@@ -1,6 +1,33 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-27 20:44 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · ✅ **RIBBONS, AND NO STRAY PAPER** — **657/657** · ❓ **hover video + sounds still owed by him** · branch `phase0-solid-ground`
+**Updated: 2026-08-27 22:22 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · ✅ **THE BOOK NO LONGER REPLAYS ON EVERY RENDER** — **657/657** · ❓ **hover video + sounds still owed by him** · branch `phase0-solid-ground`
+
+## 🟠 2026-08-27 22:22 — THE REPLAY BUG. **657/657.** `c05e740`
+
+> *"animation is reset everytime i press the section fix that, and replace that into book page
+> paper slide instead"*
+
+**🔴 THE CAUSE: `const T = {...}` WAS DECLARED INSIDE THE COMPONENT.** React rebuilt it every
+render, it sat in the open animation's dependency array, so the array changed every render and the
+effect re-ran — **replaying the whole fly-in-and-open on every section click.** Nothing threw,
+every check stayed green, and it looked like a deliberate animation.
+
+Every animation constant is at **module scope** now; the effects depend on `[still, flightFrom]`,
+both stable. Strings compare by value and were never the problem; the object was.
+
+⚠️ **THIS IS THE THIRD BUG IN THIS FILE OF THE SAME FAMILY** — work scheduled or repeated by a
+mechanism nobody was watching, nothing thrown, nothing red. (1) rAF cancelled by its own cleanup,
+(2) the book at opacity 0, (3) this. **A frame cannot catch any of them.**
+
+**Page motion is a SLIDE now**, not a rotateY — a flip is what the cover does. Both halves slide
+out of the fold in opposite directions, 320ms, keyed on section AND page. `ponder-leaf` removed
+from the theme.
+
+⚠️ **NOT VERIFIED AT RUNTIME.** The lab gained a probe that clicks a section and reads the book's
+animation clock, but **headless virtual time does not drive animation clocks honestly** — a
+finished animation reported `currentTime: 0`, which no real browser does. Limits are written into
+the harness. The fix rests on the dependency rule and visibly correct code. **He sees the answer on
+the first click.**
 
 ## 🟠 2026-08-27 20:44 — RIBBONS. **657/657.** `<see git log -1>`
 
