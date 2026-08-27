@@ -300,13 +300,11 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
 
     /* Which branch HQ is looking at. Empty until it picks — an owner who lands on a
        branch he did not choose reads the numbers as company-wide. */
-    const [viewBranch, setViewBranch] = useState('');
 
     /* Every branch that has ever asked HQ for stock, which is every branch that has any.
        Derived from the requests already on screen rather than read separately: there is no
        branch registry in this app, and inventing one to power a dropdown would be a second
        list to keep true. */
-    const branchesSeen = [...new Set((requests || []).map(r => r && r.branch).filter(Boolean))].sort();
 
     /* ONE card, drawn the same way for the branch admin and for HQ. The age line below is the
        whole reason HQ needed this view, so it must not be a second copy that drifts. */
@@ -411,7 +409,7 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
     const gTotal = (k) => logistics.reduce((s, r) => s + (Number(r[k]) || 0), 0);
 
     const stockCard = (item) => {
-        const arrivals = productArrivals(requests, isAreaAdmin ? branchLocation : viewBranch, item.productId || item.id);
+        const arrivals = productArrivals(requests, branchLocation, item.productId || item.id);
         const { held, unexplained } = arrivalsOnHand(arrivals, item.stock);
         const days = oldestStockDays(held, Math.floor(Date.now() / 1000));
         return (
@@ -483,7 +481,9 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
            *"i think tier 1 also need to see regional warehouse components that only regional
            admin could see because me as tier 1 cant see that"*. He owns the company and could
            not see his own branches' shelves. */
-        const watching = isAreaAdmin ? branchLocation : viewBranch;
+        /* branch-side only since the HQ picker was deleted — HQ reads every warehouse at once
+           from `branchStockMap`, so it no longer needs a listener on one branch at a time. */
+        const watching = isAreaAdmin ? branchLocation : '';
         let unsubStock = () => {};
         if (watching && watching !== 'UNASSIGNED') {
             const stockRef = collection(db, `artifacts/${appId}/users/${masterUserId}/branches/${watching}/inventory`);
@@ -497,7 +497,7 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
         }
 
         return () => { unsubReq(); unsubStock(); };
-    }, [db, appId, masterUserId, isAreaAdmin, branchLocation, viewBranch]);
+    }, [db, appId, masterUserId, isAreaAdmin, branchLocation]);
 
     const handleAddToCart = () => {
         if (!selectedProduct || !requestQty || Number(requestQty) <= 0) return notify("Select a product and valid quantity.");
@@ -1354,41 +1354,14 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
                 </div>
             )}
 
-            {isAdmin && (
-                <div className="bg-panel p-4 sm:p-6 rounded-2xl border border-line-2 shadow-xl mb-6">
-                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-line-2 pb-4 mb-4">
-                        <h3 className="text-base sm:text-lg font-black text-gold uppercase tracking-widest flex items-center gap-2">
-                            <MapPin size={18}/> Isi Gudang Cabang
-                        </h3>
-                        <div className="flex items-center gap-2 w-full sm:w-auto">
-                            <span className="text-[10px] text-ink-muted uppercase tracking-widest shrink-0">Lihat cabang</span>
-                            <select
-                                value={viewBranch}
-                                onChange={e => setViewBranch(e.target.value)}
-                                className="flex-1 sm:flex-none bg-black/50 border border-line-3 rounded-lg p-2 text-xs text-ink outline-none focus:border-gold uppercase tracking-widest font-bold"
-                            >
-                                <option value="">— pilih —</option>
-                                {branchesSeen.map(b => <option key={b} value={b}>{b}</option>)}
-                            </select>
-                        </div>
-                    </div>
-                    {!viewBranch ? (
-                        <div className="text-center p-8 bg-black/20 rounded-xl border border-dashed border-line-2 text-ink-muted text-xs uppercase tracking-widest">
-                            Pilih cabang untuk melihat isi gudangnya
-                        </div>
-                    ) : branchStock.length === 0 ? (
-                        <div className="text-center p-8 bg-black/20 rounded-xl border border-dashed border-line-2 text-ink-muted text-xs uppercase tracking-widest">
-                            Gudang {viewBranch} kosong
-                        </div>
-                    ) : (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
-                            {branchStock.map(stockCard)}
-                        </div>
-                    )}
-                </div>
-            )}
+            {/* "Isi Gudang Cabang" stood here — a picker that showed ONE branch's shelf and
+                nothing else. Deleted 2026-08-27 on his call after the Sebaran Stok drawer replaced
+                it: that shows every warehouse at once, and per product it adds di jalan, di tangan
+                agen and terjual, which this never had. What went with it is the per-SHIPMENT
+                breakdown — `stockCard`'s <details>, naming each individual kiriman. He was told
+                that and chose the delete. `stockCard` itself stays: the branch-side view still
+                renders it for a user's own warehouse. */}
 
-            
             {/* ====== MODALS ====== */}
             {isProcessing && (
                 <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[100] backdrop-blur-sm">
