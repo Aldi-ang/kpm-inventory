@@ -1,8 +1,8 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-30 09:40 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **666/666 audit · 878/878 selfcheck** · branch `phase0-solid-ground`, tree clean
+**Updated: 2026-08-30 09:52 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **666/666 audit · 878/878 selfcheck** · branch `phase0-solid-ground`, tree clean
 
-## 🟠 2026-08-30 09:40 — THE WHOLE RESTOCK QUEUE, CLEARED. `20a4622` → `650035c`, **666/666 + 878/878**. Tree clean.
+## 🟠 2026-08-30 09:52 — THE WHOLE RESTOCK QUEUE, CLEARED. `20a4622` → `e45d263`, **666/666 + 878/878**. Tree clean.
 
 *One entry for one continuous session — six commits on one feature line, not six pieces of work.*
 
@@ -16,6 +16,7 @@ next. Ponder stays parked for new CHAPTERS, but new features get their scene —
 | 3 | **Shipment Plan** — new panel, one row per product, `Short by` names what HQ cannot cover | `7716a78` |
 | 4 | Plain English across the HQ desk + the age line reworded | `77aff79` |
 | 5 | Ponder: 7 new beats on stock-by-warehouse, and a whole new `shipment-plan` scene | `650035c` |
+| 6 | graphify rebuilt over the new files | `e45d263` |
 
 **🔴 HIS NEW STANDING RULE, and it now governs every feature:** *"new panel and features means
 different ponder, but inside the same section of the book"*. It splits cleanly — a new **column**
