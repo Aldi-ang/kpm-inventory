@@ -14,14 +14,18 @@ import React from 'react';
 import { MapPin, ChevronDown } from 'lucide-react';
 import { MASTER } from '../../utils/supply.js';
 
-const COLS = 'grid grid-cols-[minmax(0,1fr)_100px_104px_124px_96px_108px_104px] gap-x-4 items-center';
+/* One more track added 2026-08-30 for `Minimal kirim`. The Ponder tutorial renders this same
+   component against a fixed demo world that carries no `minimum`, which is why every cell below
+   falls back to an em-dash rather than assuming the field exists — a tutorial that crashes on a
+   new column would be a worse bug than the column is a feature. */
+const COLS = 'grid grid-cols-[minmax(0,1fr)_100px_104px_124px_96px_108px_104px_112px] gap-x-4 items-center';
 
 const n = (v) => Number(v || 0).toLocaleString('id-ID');
 
 export default function StockByWarehouseTable({ rows = [], openGudang, onToggle, totals = {} }) {
   return (
     <div className="overflow-x-auto">
-      <div className="min-w-[900px]">
+      <div className="min-w-[1010px]">
 
         <div className={`${COLS} px-5 pb-2.5 border-b border-line-2 text-[10px] font-bold text-ink-muted uppercase tracking-widest`}>
           {/* Renamed 2026-08-27 on his instruction: *"dont make vague terms"*, and
@@ -38,6 +42,9 @@ export default function StockByWarehouseTable({ rows = [], openGudang, onToggle,
           <span data-ponder="col:sold" className="text-right">Sold (7d)</span>
           <span data-ponder="col:permonth" className="text-right">Avg / month</span>
           <span data-ponder="col:daysleft" className="text-right">Est. days left</span>
+          {/* HIS WORD, and it is a floor not advice: when production is short this is the line
+              under which a cabang stops selling. `Saran` would invite sending less. */}
+          <span data-ponder="col:minimum" className="text-right">Minimal kirim</span>
         </div>
 
         {rows.map(r => {
@@ -85,6 +92,11 @@ export default function StockByWarehouseTable({ rows = [], openGudang, onToggle,
                 <span data-ponder="col:daysleft" className="text-right font-mono text-[11px] text-ink-muted" title="Each product runs out at its own speed — open this warehouse to see them">
                   {open ? 'below ↓' : 'per item'}
                 </span>
+                <span data-ponder="col:minimum" className="text-right font-mono font-black tabular-nums" title="The least this warehouse can be sent without running dry before the next delivery">
+                  {r.minimum == null
+                    ? <span className="text-ink-muted" title="No measurable history here yet — two deliveries of a product are needed before it can be worked out">—</span>
+                    : <span className={r.minimum > 0 ? 'text-orange' : 'text-ink-muted'}>{n(r.minimum)}</span>}
+                </span>
               </div>
 
               {/* 0fr → 1fr is the whole animation. `height: auto` cannot be
@@ -128,6 +140,11 @@ export default function StockByWarehouseTable({ rows = [], openGudang, onToggle,
                             ? <span className="text-ink-muted" title="Nothing sold in the last 7 days — no rate to divide by">—</span>
                             : <span className={p.daysLeft < 7 ? 'text-danger-text' : 'text-ink'}>{n(p.daysLeft)}</span>}
                         </span>
+                        <span data-ponder="col:minimum" className="text-right font-mono font-bold tabular-nums text-[13px]">
+                          {p.minimum == null
+                            ? <span className="text-ink-muted">—</span>
+                            : <span className={p.minimum > 0 ? 'text-orange' : 'text-ink-muted'}>{n(p.minimum)}</span>}
+                        </span>
                       </div>
                     ))}
                   </div>
@@ -148,6 +165,9 @@ export default function StockByWarehouseTable({ rows = [], openGudang, onToggle,
               cover a shortage in another one, so averaging them would invent a
               number that is comfortable and false. */}
           <span data-ponder="col:daysleft" className="text-right text-ink-muted">—</span>
+          {/* This one DOES total, and the contrast with the dash beside it is the point: packs add
+              up across warehouses, rates do not. It is what a short production run has to cover. */}
+          <span data-ponder="col:minimum" className="text-right font-mono font-black text-orange tabular-nums">{totals.minimum == null ? '—' : n(totals.minimum)}</span>
         </div>
       </div>
     </div>

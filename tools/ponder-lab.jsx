@@ -21,6 +21,7 @@ import '../src/index.css';
 import PonderOverlay from '../src/ponder/PonderOverlay.jsx';
 import PonderBookButton from '../src/ponder/PonderBook.jsx';
 import TierPovSwitch from '../src/components/TierPovSwitch.jsx';
+import StockByWarehouseTable from '../src/ponder/stages/StockByWarehouseTable.jsx';
 import { SCENES } from '../src/ponder/registry.js';
 
 const q = new URLSearchParams(window.location.search);
@@ -121,7 +122,51 @@ function PovLab() {
   );
 }
 
+/* 🔴 ?minkirim MOUNTS SEBARAN STOK WITH THE NEW COLUMN. The real screen sits behind a Google
+   sign-in, the vault gate AND a company with real delivery history, so the `Minimal kirim` column
+   could otherwise only be read off a diff. The table is presentational by design — it renders the
+   rows it is handed — so handing it rows is measuring the component, not the harness.
+   `?minkirim=blank` hands rows with NO `minimum` at all, which is exactly what the Ponder tutorial
+   does: it must fall back to em-dashes rather than crash or print 0. */
+const MK_ROWS = [
+  { name: 'MASTER', shelf: 24921, transit: null, field: 0, sold: 500, perMonth: 2143, minimum: null,
+    detail: [
+      { id: 'p1', name: 'Cello Chocolate', shelf: 12000, transit: 0, field: 0, sold: 500, perMonth: 2143, daysLeft: 20, days: null, drops: 0, unexplained: 0, minimum: null },
+      { id: 'p2', name: 'Cello Mmrapi',    shelf: 12921, transit: 0, field: 0, sold: 0,   perMonth: 0,    daysLeft: null, days: null, drops: 0, unexplained: 0, minimum: null },
+    ] },
+  { name: 'BANDUNG', shelf: 400, transit: 0, field: 120, sold: 280, perMonth: 1200, minimum: 440,
+    detail: [
+      { id: 'p1', name: 'Cello Chocolate', shelf: 400, transit: 0, field: 120, sold: 280, perMonth: 1200, daysLeft: 10, days: 12, drops: 3, unexplained: 0, minimum: 440 },
+      { id: 'p2', name: 'Cello Mmrapi',    shelf: 0,   transit: 250, field: 0, sold: 0,   perMonth: 0,    daysLeft: null, days: null, drops: 0, unexplained: 0, minimum: null },
+    ] },
+  { name: 'MUNTILAN', shelf: 90, transit: 0, field: 30, sold: 210, perMonth: 900, minimum: 0,
+    detail: [
+      { id: 'p1', name: 'Cello Chocolate', shelf: 90, transit: 0, field: 30, sold: 210, perMonth: 900, daysLeft: 3, days: 40, drops: 1, unexplained: 25, minimum: 0 },
+    ] },
+];
+
+function MinKirimLab() {
+  const blank = q.get('minkirim') === 'blank';
+  const strip = (r) => ({ ...r, minimum: undefined, detail: r.detail.map(d => ({ ...d, minimum: undefined })) });
+  const rows = blank ? MK_ROWS.map(strip) : MK_ROWS;
+  const [open, setOpen] = React.useState('BANDUNG');
+  const sum = (k) => rows.reduce((s, r) => s + (Number(r[k]) || 0), 0);
+  return (
+    <div className="p-6 bg-panel">
+      <StockByWarehouseTable
+        rows={rows}
+        totals={{ shelf: sum('shelf'), transit: sum('transit'), field: sum('field'),
+                  sold: sum('sold'), perMonth: sum('perMonth'),
+                  minimum: blank ? null : rows.some(r => r.minimum != null) ? sum('minimum') : null }}
+        openGudang={open}
+        onToggle={setOpen}
+      />
+    </div>
+  );
+}
+
 createRoot(document.getElementById('root')).render(
+  q.has('minkirim') ? <MinKirimLab /> :
   q.has('pov') ? <PovLab /> : q.has('book') ? <BookLab /> : <Lab />);
 
 /* ?probe writes the measured layout into the DOM, where `chrome --headless --dump-dom` can read

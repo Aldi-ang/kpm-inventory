@@ -352,6 +352,11 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
         const live = Object.fromEntries(
             Object.entries(branchStockMap || {}).filter(([n]) => names.includes(n))
         );
+        /* One rhythm per cabang, not one per product row. `shipmentRhythm` walks that cabang's whole
+           request history, and it is the SAME answer for every product in it — computing it inside
+           the per-product map would re-walk the list once per product for no different result. */
+        const rhythms = new Map(names.map(nm => [nm, shipmentRhythm(requests, nm)]));
+        const rhythmOf = (nm) => rhythms.get(nm);
 
         return names.map(name => {
             const rows = supplyByProduct({
@@ -407,9 +412,19 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
                         perMonth: Math.round(rate * 30),
                         daysLeft: rate > 0 ? Math.floor(p.shelf / rate) : null,
                     };
-                    if (name === MASTER) return { ...p, ...money, days: null, drops: 0, unexplained: 0 };
-                    const { held, unexplained } = arrivalsOnHand(productArrivals(requests, name, p.id), p.shelf);
-                    return { ...p, ...money, days: oldestStockDays(held, nowSec), drops: held.length, unexplained };
+                    if (name === MASTER) return { ...p, ...money, days: null, drops: 0, unexplained: 0, minimum: null };
+                    const arrivals = productArrivals(requests, name, p.id);
+                    const { held, unexplained } = arrivalsOnHand(arrivals, p.shelf);
+                    /* ── MINIMAL KIRIM, the same floor the shipment form prints ──
+                       His ask, 2026-08-30: a panel that shows the recommendation for every cabang
+                       side by side, so a short production run can be split. Same function the Kirim
+                       form calls, same per-cabang cushion — three screens, one answer.
+                       ⚠️ MASTER gets null, not 0. The master vault is where shipments come FROM;
+                       "how much should be sent to the source" is a question with no meaning, and a
+                       0 there would read as "it needs nothing", which is a different claim. */
+                    const minimum = reorderAdvice(arrivals, p.shelf, p.transit, rhythmOf(name), nowSec,
+                                                  bufferDays(appSettings, name)).suggest;
+                    return { ...p, ...money, days: oldestStockDays(held, nowSec), drops: held.length, unexplained, minimum };
                 })
                 .sort((a, b) => (b.shelf + b.transit + b.field + b.sold) - (a.shelf + a.transit + a.field + a.sold));
 
@@ -439,9 +454,23 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
             const perDay = sold / SEVEN_DAYS;
             const perMonth = Math.round(perDay * 30);
 
-            return { name, shelf, transit, field, sold, perMonth, detail };
+            /* 🔴 THE WAREHOUSE-LEVEL MINIMUM *IS* A LEGITIMATE SUM, unlike days-left above, and the
+               difference is worth stating because the two columns sit next to each other. Bks ADD:
+               "send this cabang 440 packs in total" is a real quantity, and splitting it across
+               products is what the drawer is for. Days-left is a DIVISION and needs its numerator
+               and denominator to describe the same fungible good, which is why it has no
+               warehouse-level answer. Summing quantities is fine; averaging rates is the error.
+
+               null when nothing under it could be measured — a 0 would claim the cabang needs
+               nothing, when the truth is that nobody knows yet. */
+            const measured = detail.filter(p => p.minimum !== null && p.minimum !== undefined);
+            const minimum = name === MASTER || measured.length === 0
+                ? null
+                : measured.reduce((s, p) => s + p.minimum, 0);
+
+            return { name, shelf, transit, field, sold, perMonth, minimum, detail };
         });
-    }, [isAdmin, motorists, transactions, branchStockMap, globalInventory, requests]);
+    }, [isAdmin, motorists, transactions, branchStockMap, globalInventory, requests, appSettings]);
 
     const gTotal = (k) => logistics.reduce((s, r) => s + (Number(r[k]) || 0), 0);
 
@@ -1309,7 +1338,11 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
                     <StockByWarehouseTable
                         rows={logistics}
                         totals={{ shelf: gTotal('shelf'), transit: gTotal('transit'), field: gTotal('field'),
-                                  sold: gTotal('sold'), perMonth: gTotal('perMonth') }}
+                                  sold: gTotal('sold'), perMonth: gTotal('perMonth'),
+                                  /* null, not 0, when NO cabang could be measured — `gTotal` coerces
+                                     null to 0 and a 0 here would claim the company needs to ship
+                                     nothing anywhere, which is the opposite of "not known yet". */
+                                  minimum: logistics.some(r => r.minimum != null) ? gTotal('minimum') : null }}
                         openGudang={openGudang}
                         onToggle={setOpenGudang}
                     />

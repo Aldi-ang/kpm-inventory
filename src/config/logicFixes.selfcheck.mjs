@@ -870,6 +870,44 @@ section('S38. Minimal kirim: the floor HQ sees, keyed on the Tujuan it is sendin
   ok('and it says "belum terukur" rather than printing a number it cannot prove',
      /belum terukur/.test(desk));
 
+  /* ---- THE SAME FLOOR, AS A COLUMN IN SEBARAN STOK (2026-08-30) ----
+     His call: *"i agree with your recommendation so new separate panel and add column in sebaran
+     stock"*. Three surfaces now print this number — the Kirim form, the warehouse table and its
+     drawer — and the only thing that keeps them honest is that all three call ONE function. */
+  const table = read('src/ponder/stages/StockByWarehouseTable.jsx');
+  const bwm = read('src/components/BranchWarehouseManager.jsx');
+  ok('the table carries the column at every level: header, warehouse, product, total',
+     (table.match(/data-ponder="col:minimum"/g) || []).length === 4);
+  ok('and the grid grew a track to hold it, rather than squeezing the others',
+     /grid-cols-\[minmax\(0,1fr\)(?:_[0-9]+px){7}\]/.test(table));
+  ok('the warehouse rows compute it with the same function and the same cushion as the form',
+     /reorderAdvice\(arrivals, p\.shelf, p\.transit, rhythmOf\(name\), nowSec,[\s\S]{0,80}bufferDays\(appSettings, name\)\)\.suggest/.test(bwm));
+  /* One rhythm per cabang, not one per product: shipmentRhythm walks that cabang's whole request
+     history and returns the same answer for every product in it. */
+  ok('and the shipping rhythm is measured once per cabang, not once per product row',
+     /const rhythms = new Map\(names\.map\(nm => \[nm, shipmentRhythm\(requests, nm\)\]\)\)/.test(bwm));
+  /* THE DISTINCTION THIS COLUMN LIVES OR DIES ON, sitting one cell from the column that refuses to
+     total: packs ADD across products and warehouses, rates do not. Summing quantities is sound;
+     averaging days-left is the ratio-of-sums error that shipped "348 days" once. */
+  ok('the warehouse figure is summed from the drawer it prints, never re-derived',
+     /const measured = detail\.filter\(p => p\.minimum !== null && p\.minimum !== undefined\)/.test(bwm) &&
+     /measured\.reduce\(\(s, p\) => s \+ p\.minimum, 0\)/.test(bwm));
+  ok('the master vault gets null, because nothing is ever shipped TO the source',
+     /if \(name === MASTER\) return \{ \.\.\.p, \.\.\.money, days: null, drops: 0, unexplained: 0, minimum: null \}/.test(bwm) &&
+     /name === MASTER \|\| measured\.length === 0[\s\S]{0,40}\? null/.test(bwm));
+  /* A 0 would claim "this cabang needs nothing". Unmeasured and needs-nothing are different
+     answers and the screen must not merge them — the same rule the branch panel already follows. */
+  ok('nothing measurable prints an em-dash, never a zero that reads as "needs nothing"',
+     /r\.minimum == null/.test(table) && /p\.minimum == null/.test(table) &&
+     /totals\.minimum == null \? '—'/.test(table));
+  ok('and the company total stays null unless at least one cabang could be measured',
+     /logistics\.some\(r => r\.minimum != null\) \? gTotal\('minimum'\) : null/.test(bwm));
+  /* The tutorial renders this same component against a fixed demo world that has no `minimum`.
+     A column that assumed the field would crash the tutorial, which is a worse bug than the
+     column is a feature — so every cell falls back rather than reading through. */
+  ok('the appSettings the cushion comes from is in the memo dep list, or the column goes stale',
+     /\[isAdmin, motorists, transactions, branchStockMap, globalInventory, requests, appSettings\]/.test(bwm));
+
   /* SETTINGS — one box per cabang, and the branch list from the one function that knows. */
   ok('the spare-days setting writes to settings/general like its neighbours',
      /restockBufferDays: n \}, \{ merge: true \}/.test(settings) &&

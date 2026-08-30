@@ -3998,7 +3998,12 @@ check(G55, 'the estimate shows the rate it was divided by, and says so in words'
    Sums stay (shelf, sold, perMonth are real pack counts). The division is per product only. */
 check(G55, 'no warehouse-level days-left, because that division is not a number',
   !/const daysLeft = perDay/.test(bwmCode) &&
-  /return \{ name, shelf, transit, field, sold, perMonth, detail \}/.test(bwmCode) &&
+  /* The guarantee is the ABSENCE of daysLeft on the warehouse row, not a frozen field list. Pinning
+     the exact literal made this go red on 2026-08-30 for the crime of adding `minimum` beside it —
+     third check that month to fail while everything it guards was intact. A check that fires on a
+     change it does not care about is a check people learn to route around. */
+  /return \{ name, shelf, transit, field, sold, perMonth,[^}]*detail \}/.test(bwmCode) &&
+  !/return \{ name,[^}]*\bdaysLeft\b[^}]*\}/.test(bwmCode) &&
   /348/.test(stockSceneSrc) && /gudang penuh/.test(stockSceneSrc),
   'the warehouse row must NOT carry a computed daysLeft, and the tutorial must still say why. ' +
   'Anchored on the 348 that actually shipped rather than on a sentence, because a check tied to ' +
