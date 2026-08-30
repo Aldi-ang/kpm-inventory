@@ -1,8 +1,8 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-30 09:05 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **666/666 audit · 855/855 selfcheck** · branch `phase0-solid-ground`, tree clean
+**Updated: 2026-08-30 09:02 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **666/666 audit · 855/855 selfcheck** · branch `phase0-solid-ground`, tree clean
 
-## 🟠 2026-08-30 09:05 — MINIMAL KIRIM: HQ SEES THE FLOOR. `4d6d4a2`, **666/666 + 855/855**. Tree clean.
+## 🟠 2026-08-30 09:02 — MINIMAL KIRIM: HQ SEES THE FLOOR. `20a4622`, **666/666 + 855/855**. Tree clean.
 
 **NOW: Ponder parked at his word. The Restock Vault is the front. Feature A is DONE — the
 outstanding question is whether the cross-branch column gets built.**
@@ -31,17 +31,31 @@ deliveries** of that product, and the lab has no data, so a harness frame would 
 Open **Restock Vault › Kirim ke cabang**, pick a Tujuan with real history, add a product: `minimal N`
 should sit under the quantity box and **change when you change Tujuan**.
 
-**❓ WAITING ON ALDI — his question, unedited, still open:**
+**✅ ANSWERED AND QUEUED — he chose BOTH, 2026-08-30:** *"i agree with your recommendation so new
+separate panel and add column in sebaran stock, on the new panel"*. So the next two jobs are **(1) a
+new standalone panel showing the shipping-quantity recommendation for every cabang side by side**, so
+a short production run can be split, and **(2) the same minimum as a column in Sebaran Stok**.
+⚠️ `StockByWarehouseTable` is **shared with the Ponder tutorial** — a new column touches the demo
+world, the `COLS` constant and group-56 checks. Read `stock-by-warehouse.js` before moving `COLS`.
 
-> *"i think we should made one more panel for product shipping quantity recommendation but make sure
-> that when we fill the shipment out forms, it shows the recommended quantity sent for each product,
-> what do u think of that?"*
+**❓ WAITING ON ALDI — his new ask, unedited, and it BLOCKS the third job:**
 
-The form half is built. The **panel** half is not: recommended is `col` — one more column in **Sebaran
-Stok**, so all branches' minimums sit side by side and he can split a short production run. He was
-offered `col` / `panel` / `inline-only` and has not answered. ⚠️ `StockByWarehouseTable` is **shared
-with the Ponder tutorial**, so a new column touches the tutorial's demo world and its checks — that
-is the reason it was not just done.
+> *"btw we dont have one more data to view actually, the total performance per day per week/ month or
+> year for products right, like how many product is actually sold per timeframe specific for each of
+> the product? well basically the performance for each product in overall through all region"*
+
+**Investigated, and the answer is half-good.** The data IS reachable —
+`fetchHistoricalTransactions(start, end)` at `useDatabaseSync.js:188` already bypasses the 7-day
+listener cap and `HistoryReportView` already uses it with Daily/Weekly/Monthly. What does NOT exist:
+any grouping **by product** over a period, and **yearly** as a range. Sebaran Stok's `Sold (7d)` is
+the only per-product sales figure in the app and is pinned to 7 days by the listener.
+
+**The decision he owes is COST, and it is his because it is his Firestore bill.** A live range query
+pays document reads on every open; a year is thousands. Offered: `live` (always right, pays every
+visit) · `stored` (a running per-product-per-month total written on each sale — nearly free to open,
+one extra tiny write per sale, and months before it starts running stay empty until backfilled) ·
+`mixed` (**recommended** — live for day/week/month, stored for year, since the year is both the
+expensive one and the slowest-changing).
 
 **Where things live — new or changed this session**
 
@@ -52,6 +66,8 @@ is the reason it was not just done.
 | `reorderAdvice(..., spareDays = 0)` — the 6th argument | `src/components/BranchWarehouseManager.jsx:238` |
 | Spare days, per cabang — Settings › Company · 06 | `src/components/SettingsView.jsx` |
 | `?pov` / `?pov=solo` — the only way to look at the POV rack | `tools/ponder-lab.jsx` |
+| The Time Machine — any date range, past the 7-day cap. Already wired, already used | `src/hooks/useDatabaseSync.js:188` → `src/components/HistoryReportView.jsx:230` |
+| The table shared with the Ponder tutorial — where the new column goes | `src/ponder/stages/StockByWarehouseTable.jsx` |
 
 ## 🟠 2026-08-30 08:25 — THE POV COSTUME CAN BE POSTED ANYWHERE. `b1cdcaa`, **666/666 + 831/831**. Tree clean.
 

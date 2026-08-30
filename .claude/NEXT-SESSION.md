@@ -1,6 +1,6 @@
 # NEXT SESSION — read this, then `.claude/PROGRESS.md`. Read no code to orient.
 
-**Written 2026-08-30 09:05 WIB. 666/666 audit · 855/855 selfcheck. Branch `phase0-solid-ground`,
+**Written 2026-08-30 09:02 WIB. 666/666 audit · 855/855 selfcheck. Branch `phase0-solid-ground`,
 tree clean.**
 
 🟠 **PONDER IS PARKED.** His words: *"dont worry about the ponder book for now we focus on
@@ -20,31 +20,49 @@ hid. Both numbers, every time.
 
 ---
 
-## 🔴 THE ONE JOB — the cross-branch column in Sebaran Stok
+## 🔴 THE ONE JOB — the cross-branch recommendation, panel AND column
 
-**Feature A shipped (`4d6d4a2`).** HQ's Kirim form now prints `minimal N` under every cart line,
-keyed on the Tujuan chosen. What is NOT built is the half he asked for in the same breath:
+**Feature A shipped (`20a4622`).** HQ's Kirim form prints `minimal N` under every cart line, keyed on
+the Tujuan chosen. He then confirmed BOTH halves of the rest, 2026-08-30:
 
-> *"i think we should made one more panel for product shipping quantity recommendation"*
+> *"i agree with your recommendation so new separate panel and add column in sebaran stock, on the
+> new panel"*
 
-**Build it as a COLUMN in Sebaran Stok, not a new panel** — recommended to him, not yet confirmed;
-`col` / `panel` / `inline-only` was the question and he moved on. A separate panel showing one
-cabang's minimums would be a second copy of what the shipment form already prints. The value is the
-CROSS-BRANCH view: production is short, three cabang want Cello, who gets it first. Sebaran Stok is
-already one row per warehouse, so the answer is one more column there.
+**(1) A new standalone panel** — every cabang's minimum for every product, side by side. The question
+it answers that the shipment form cannot: production is short, three cabang want Cello, who gets it
+first. His own scenario: *"especially with company that have limited production capabilities"*.
 
-**⚠️ THE REASON THIS WAS NOT JUST DONE.** `src/ponder/stages/StockByWarehouseTable.jsx` is
-**shared with the Ponder tutorial** — same component, real screen and demo world both. A new column
-means the tutorial's fixed world needs the field too, its `COLS` constant moves, and group-56 checks
-plus `stock-by-warehouse.js` beats may assert against the old shape. Read the scene file and grep
-group 56 BEFORE touching `COLS`. He parked Ponder, but the component does not know that.
+**(2) The same minimum as a column in Sebaran Stok**, the row-per-warehouse table.
 
-**The maths is already there and must not be re-derived.** `reorderAdvice`, `productArrivals`,
-`shipmentRhythm`, `inTransitQty` are exported from `BranchWarehouseManager.jsx` and already imported
-by the desk. `bufferDays(appSettings, branch)` from `utils/supply.js` resolves his per-cabang
-cushion. The row already knows its warehouse name, so every argument is in hand.
+**⚠️ THE TRAP ON (2).** `src/ponder/stages/StockByWarehouseTable.jsx` is **shared with the
+Ponder tutorial** — same component, real screen and demo world both. A new column means the
+tutorial's fixed world needs the field, its `COLS` constant moves, and group-56 checks plus
+`src/ponder/scenes/stock-by-warehouse.js` beats may assert the old shape. Read the scene file and
+grep group 56 BEFORE touching `COLS`. Ponder is parked; the component does not know that.
 
-**Verify:** build, both suites, and a check that the column calls the SAME function the form does.
+**Nothing here re-derives the maths.** `reorderAdvice`, `productArrivals`, `shipmentRhythm`,
+`inTransitQty` are exported from `BranchWarehouseManager.jsx` and already imported by the desk;
+`bufferDays(appSettings, branch)` in `utils/supply.js` resolves his per-cabang cushion. Each Sebaran
+Stok row already knows its warehouse name, so every argument is in hand. The word on screen is
+**`minimal`**, never `saran` — his framing: when production is tight it is a floor, not advice.
+
+**Verify:** build, both suites, and a check that panel, column and form all call the SAME function.
+
+---
+
+## ❓ BLOCKED ON ALDI — the third job, and it is a cost decision
+
+> *"the total performance per day per week/ month or year for products right, like how many product
+> is actually sold per timeframe specific for each of the product? well basically the performance for
+> each product in overall through all region"*
+
+Investigated. `fetchHistoricalTransactions(start, end)` (`useDatabaseSync.js:188`) already bypasses
+the 7-day listener cap and `HistoryReportView` already drives it with Daily/Weekly/Monthly. Missing:
+any grouping **by product** over a period, and **yearly** as a range.
+
+He owes one answer — `live` / `stored` / `mixed` — because it is his Firestore bill: a live range
+query pays document reads every time the panel opens, and a year is thousands. `mixed` was
+recommended (live for day/week/month, stored for year). **Do not build this before he answers.**
 
 ## What just shipped, and the two laws it left
 
@@ -98,7 +116,7 @@ i can assign the test agent into different places with no problems"*.
 | Where every pack is — the one warehouse-list function | `src/utils/supply.js` |
 | POV rack + costume posting | `src/components/TierPovSwitch.jsx` · `src/App.jsx` |
 | The 666 checks | `src/config/integration.audit.mjs` |
-| The 831 checks | `src/config/logicFixes.selfcheck.mjs` |
+| The 855 checks | `src/config/logicFixes.selfcheck.mjs` |
 | Viewing harness | `tools/ponder-lab.*` |
 | The warehouse roadmap | `A-Brain/Wiki/Concepts/The Eight Warehouse Gaps.md` |
 
