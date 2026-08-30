@@ -70,7 +70,11 @@ ok('the van gets a NEW canvas line when he was not carrying it',
    /isReturnedToStock\)\.forEach[\s\S]{0,400}updated\.push\(/.test(engine));
 ok('the packing maths is reused, not re-inlined a fifth time',
    /convertToBks\(1, row\.unit, m\.prodData\)/.test(engine));
-ok('convertToBks is actually imported', /convertToBks/.test(engine.split('\n')[1]));
+/* Was pinned to line 2 of the file and broke on 2026-08-30 the moment an import was added
+   above it. A line INDEX is the most brittle form of the pin-the-literal fault: it does not
+   survive an edit anywhere near it. What it guards is that the name is imported at all. */
+ok('convertToBks is actually imported',
+   /import \{[^}]*convertToBks[^}]*\} from/.test(engine));
 
 /* ── #14 · a buyback booked the full refund as profit ──────────────────────────────────── */
 section('#14. A buyback is a loss, not a profit');
@@ -814,6 +818,179 @@ ok('the synced store keeps the status its payload carried',
    /customers`\)\);[\s\S]{0,600}data: \{ \.\.\.payload, syncedAt: serverTimestamp\(\) \}[\s\S]{0,120}processedNoo\.push/.test(app));
 ok('and the offline payload still sets that status at save time',
    /status: newStoreData\.isNooRegistration \? 'NOO_ACTIVE' : 'WALK_IN'/.test(engine));
+
+/* ── S39 · how much of each product sold, per day, without paying to ask ────────────── */
+section('S39. Sales rollup: a cache that can always be rebuilt from the transactions');
+{
+  const R = await import('../utils/salesRollup.js');
+
+  /* Two products with different pack sizes, because mixing units before the end is how a figure
+     comes out twenty times too big - the exact fault this app has paid for elsewhere. */
+  const PRODUCTS = {
+    p1: { id: 'p1', name: 'Cello Chocolate', packsPerSlop: 10, slopsPerBal: 20, balsPerCarton: 4 },
+    p2: { id: 'p2', name: 'Cello Mint', packsPerSlop: 12, slopsPerBal: 10, balsPerCarton: 5 },
+  };
+  const sale = (date, items, type = 'SALE') => ({ date, type, items });
+
+  /* ---- ONE SALE, CONVERTED ---- 2 Slop of p1 is 20 Bks; the money is qty x price and must NOT
+     be multiplied by the pack size, or revenue inflates by exactly the conversion factor. */
+  const d1 = R.salesDelta(sale('2026-08-30', [{ productId: 'p1', qty: 2, unit: 'Slop', calculatedPrice: 15000 }]), PRODUCTS);
+  ok('a sale in Slop is counted in Bks', d1.byProduct.p1.qty === 20);
+  ok('and its money is quantity x price, never multiplied by the pack size',
+     d1.byProduct.p1.revenue === 30000);
+  ok('the delta knows which day and which month it belongs to',
+     d1.day === '2026-08-30' && d1.month === '2026-08');
+
+  /* Every unit, against the pack sizes above. A Karton of p2 is 5 x 10 x 12 = 600. */
+  const bksOf = (qty, unit, id) => R.salesDelta(sale('2026-08-01',
+      [{ productId: id, qty, unit, calculatedPrice: 1 }]), PRODUCTS).byProduct[id].qty;
+  ok('Bks, Slop, Bal and Karton all convert through the shared function',
+     bksOf(3, 'Bks', 'p1') === 3 && bksOf(3, 'Slop', 'p1') === 30 &&
+     bksOf(3, 'Bal', 'p1') === 600 && bksOf(1, 'Karton', 'p2') === 600);
+
+  /* ---- THE SIGN IS THE WHOLE DESIGN ---- an edit is a -1 of the old plus a +1 of the new, so
+     there is one arithmetic rather than an add path and a remove path that can disagree. */
+  const minus = R.salesDelta(sale('2026-08-30', [{ productId: 'p1', qty: 2, unit: 'Slop', calculatedPrice: 15000 }]), PRODUCTS, -1);
+  ok('the same sale with sign -1 is the exact negative of itself',
+     minus.byProduct.p1.qty === -d1.byProduct.p1.qty &&
+     minus.byProduct.p1.revenue === -d1.byProduct.p1.revenue);
+
+  /* ---- WHAT IS NOT A SALE ---- sampling is stock leaving the shelf, not revenue. A record with
+     no date cannot be filed and must be skipped rather than guessed into today. */
+  ok('a sampling record is not counted as a sale',
+     R.salesDelta(sale('2026-08-30', [{ productId: 'p1', qty: 1, unit: 'Bks', calculatedPrice: 1 }], 'SAMPLING'), PRODUCTS) === null);
+  ok('a transaction nobody can date is skipped, never filed under today',
+     R.salesDelta({ type: 'SALE', items: [{ productId: 'p1', qty: 1, unit: 'Bks', calculatedPrice: 1 }] }, PRODUCTS) === null);
+  ok('and an empty basket writes nothing at all',
+     R.salesDelta(sale('2026-08-30', []), PRODUCTS) === null);
+  /* A record written before `date` existed still has a timestamp, and losing those to a rebuild
+     would silently shorten history. */
+  ok('an older record falls back to its timestamp for the day',
+     R.dayOf({ timestamp: { seconds: Math.floor(new Date(2026, 7, 30, 12).getTime() / 1000) } }) === '2026-08-30');
+
+  /* ---- REBUILD FROM THE TRUTH ---- the property that makes a cache safe to ship. */
+  const HISTORY = [
+    sale('2026-07-30', [{ productId: 'p1', qty: 10, unit: 'Bks', calculatedPrice: 1000 }]),
+    sale('2026-08-01', [{ productId: 'p1', qty: 1, unit: 'Slop', calculatedPrice: 12000 },
+                        { productId: 'p2', qty: 5, unit: 'Bks', calculatedPrice: 900 }]),
+    sale('2026-08-01', [{ productId: 'p1', qty: 4, unit: 'Bks', calculatedPrice: 1100 }]),
+    sale('2026-08-15', [{ productId: 'p2', qty: 1, unit: 'Bal', calculatedPrice: 100000 }]),
+  ];
+  const built = R.rebuildMonths(HISTORY, PRODUCTS);
+  ok('a rebuild produces one document per month, oldest first',
+     built.length === 2 && built[0].month === '2026-07' && built[1].month === '2026-08');
+  const aug = built[1];
+  ok('two sales on the same day are merged into one day entry',
+     Object.keys(aug.byDay['2026-08-01'] || {}).length === 2 &&
+     aug.byDay['2026-08-01'].p1.qty === 10 + 4);
+  /* THE INVARIANT WORTH MOST: the month total and the days under it are two views of one number.
+     If they can disagree, every screen that reads the short-circuit is quietly wrong. */
+  const dayTotal = (m, id) => Object.values(m.byDay).reduce((t, d) => t + ((d[id] || {}).qty || 0), 0);
+  ok('the month total always equals the sum of its own days',
+     aug.byProduct.p1.qty === dayTotal(aug, 'p1') &&
+     aug.byProduct.p2.qty === dayTotal(aug, 'p2'));
+
+  /* ---- READING A RANGE BACK ---- */
+  ok('a range names every month it spans, oldest first',
+     JSON.stringify(R.monthsInRange('2026-11-14', '2027-02-03')) ===
+     JSON.stringify(['2026-11', '2026-12', '2027-01', '2027-02']));
+  ok('and a backwards range names none rather than looping',
+     R.monthsInRange('2026-05-01', '2026-04-01').length === 0);
+
+  const oneDay = R.sumRange(built, '2026-08-01', '2026-08-01');
+  ok('a single day sums only that day', oneDay.rows.find(r => r.id === 'p1').qty === 14);
+  ok('and the busiest product sorts first', oneDay.rows[0].id === 'p1');
+  const wholeAug = R.sumRange(built, '2026-08-01', '2026-08-31');
+  ok('a whole month agrees with the month total it short-circuits onto',
+     wholeAug.rows.find(r => r.id === 'p1').qty === aug.byProduct.p1.qty);
+
+  /* A MISSING MONTH IS NOT A ZERO MONTH. Reporting it is what lets the screen say the figure is
+     incomplete instead of printing a total that is quietly short - the silent-failure shape this
+     repo keeps paying for. */
+  const gap = R.sumRange([built[1]], '2026-07-01', '2026-08-31');
+  ok('a month with no document is reported missing, not treated as zero',
+     gap.missing === 1 && gap.months === 2);
+  ok('and a complete range reports none missing',
+     R.sumRange(built, '2026-07-01', '2026-08-31').missing === 0);
+
+  /* ---- HIS FOUR RANGES ---- day, week, month, year. Sunday is the hard case: a week that runs
+     Monday to Sunday must not roll forward on the Sunday itself. */
+  const FRI = new Date(2026, 7, 28);   // Friday 2026-08-28
+  const SUN = new Date(2026, 7, 30);   // Sunday 2026-08-30
+  ok('the four ranges he asked for all exist',
+     JSON.stringify(R.RANGES) === JSON.stringify(['day', 'week', 'month', 'year']));
+  ok('a week runs Monday to Sunday',
+     JSON.stringify(R.rangeDays('week', FRI)) === JSON.stringify({ from: '2026-08-24', to: '2026-08-30' }));
+  ok('and Sunday belongs to the week that just ended, not the one starting',
+     R.rangeDays('week', SUN).from === '2026-08-24');
+  ok('a month runs to its real last day, whatever the month length',
+     R.rangeDays('month', SUN).to === '2026-08-31' &&
+     R.rangeDays('month', new Date(2026, 1, 10)).to === '2026-02-28');
+  ok('and a year is the whole calendar year',
+     JSON.stringify(R.rangeDays('year', SUN)) === JSON.stringify({ from: '2026-01-01', to: '2026-12-31' }));
+
+  /* ---- THE DAILY LINE ---- */
+  const series = R.dailySeries(built, 'p1', '2026-07-01', '2026-08-31');
+  ok('the per-day line for one product comes back oldest first',
+     series.length === 2 && series[0].day === '2026-07-30' && series[1].day === '2026-08-01');
+
+  /* ---- EVERY PATH THAT TOUCHES A SALE TOUCHES THE TALLY ----
+     This block is the reason the rollup can be trusted, and it is the half that source-scanning
+     is genuinely good at: the arithmetic above is proven on real numbers, but nothing except a
+     scan can prove that all four call sites still exist. Lose one and the totals drift with
+     every check still green - the silent-failure shape this repo keeps paying for.
+
+       +1  the online sale, inside the batch that writes the receipt
+       +1  the offline drain, in the same operations list as the queued receipt
+       -1  the three delete paths, through one shared helper
+       -1 and +1  the history edit, in one commit with the updated receipt          */
+  const engine = read('src/hooks/useTransactionEngine.js');
+  const history = read('src/components/HistoryReportView.jsx');
+  const rollupWrite = read('src/utils/salesRollupWrite.js');
+
+  ok('the online sale tallies inside the SAME batch that writes the receipt',
+     /batch\.set\(transRef[\s\S]{0,2200}tallySale\(batch, db, appId, userId/.test(engine));
+  ok('and it converts with the pack sizes it already read, not a second lookup',
+     /const productsById = Object\.fromEntries\(\s*transactionItems\.filter\(i => i\.productId\)\.map\(i => \[i\.productId, i\.prodData\]\)\)/.test(engine));
+  ok('a sale made without signal is tallied when it drains, in the same commit',
+     /const tallyOp = tallySaleOp\(db, appId, userId, payload, productsById, 1\)/.test(app) &&
+     /if \(tallyOp\) operations\.push\(tallyOp\)/.test(app));
+  /* All three deletes route through ONE negative. Three hand-written ones is three chances to
+     get a sign backwards, and a sign error here is invisible until someone reads a total. */
+  ok('the three delete paths share one un-tally instead of writing their own',
+     /const untallyOps = \(txs\) =>/.test(app) &&
+     /tallySaleOp\([\s\S]{0,120}-1\)/.test(app) &&
+     (app.match(/untallyOps\(/g) || []).length === 3);
+  ok('the single delete removes the receipt and its tally in one commit',
+     /type: 'delete', ref: doc\(db, `artifacts\/\$\{appId\}\/users\/\$\{user\.uid\}\/transactions`, transaction\.id\) \},\s*\.\.\.untallyOps\(\[transaction\]\)/.test(app));
+  /* An edit is the least obvious of the three - a delete looks destructive, changing a quantity
+     looks like tidying - and it needs BOTH halves or it double-counts. */
+  ok('an edit applies the negative of what stood before AND the positive of what was saved',
+     /tallySaleOp\(db, appId, user\.uid, editingTrans\.__before, productsById, -1\)/.test(history) &&
+     /tallySaleOp\(db, appId, user\.uid, after, productsById, 1\)/.test(history));
+  ok('and it snapshots the record when the editor opens, not when it saves',
+     /setEditingTrans\(\{ \.\.\.t, __before: t \}\)/.test(history));
+  ok('the edit commits the receipt and both halves together',
+     /await commitInChunks\(db, writeBatch, \[[\s\S]{0,700}tallySaleOp[\s\S]{0,300}tallySaleOp/.test(history));
+
+  /* A nested literal under merge, never a dotted path: a product id containing a dot would be
+     read as a path segment and write to the wrong place without ever erroring. */
+  ok('the write uses nested keys under merge, so a dot in a product id is safe',
+     /\{ merge: true \}/.test(rollupWrite) &&
+     !/byProduct\./.test(stripComments(rollupWrite).replace(/byProduct\)/g, '')));
+  ok('and only this one module ever writes sales_stats',
+     /sales_stats/.test(rollupWrite) &&
+     ['src/App.jsx', 'src/hooks/useTransactionEngine.js', 'src/components/HistoryReportView.jsx']
+       .every(f => !/sales_stats/.test(read(f))));
+
+  /* ---- IT IS A CACHE, AND THE CODE MUST SAY SO ---- nothing may read a figure out of here and
+     write it back into stock, money or a nota. The rebuild is what makes that safe. */
+  const src = read('src/utils/salesRollup.js');
+  ok('the module states plainly that it is never the source of truth',
+     /IT IS NEVER THE TRUTH/.test(src) && /rebuilt from it/.test(src));
+  ok('and it owns no clock of its own - the day comes from the transaction',
+     !/Date\.now\(\)/.test(stripComments(src)));
+}
 
 /* ── S38 · the minimum shipment, on the HQ side, with his spare days ───────────────────── */
 section('S38. Minimal kirim: the floor HQ sees, keyed on the Tujuan it is sending to');

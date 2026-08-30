@@ -1,4 +1,8 @@
 import { doc, collection, serverTimestamp, writeBatch, getDoc, addDoc, updateDoc } from 'firebase/firestore';
+/* The running per-product tally. It rides in the SAME batch as the sale, because a counter
+   updated separately from the thing it counts drifts the first time a phone loses signal
+   between the two writes, and offline is the normal case out here. */
+import { tallySale } from '../utils/salesRollupWrite.js';
 import { getCurrentDate, stripCartItemForStorage, convertToBks, storeKey } from '../utils/helpers';
 import useOfflineEngine from './useOfflineEngine';
 
@@ -356,6 +360,20 @@ export default function useTransactionEngine({
                     capturedAt: proofPayload.timestamp
                 } : null
             });
+
+            /* THE TALLY, in the same batch as the sale above.
+
+               `prodData` is already in hand from PHASE 1, so the pack sizes cost no extra read.
+               The tally converts each line to Bks through the shared helper, which is the only
+               reason a Slop cannot land in the totals as a single pack.
+
+               A sale that cannot be counted (no date, empty basket, not a SALE) writes nothing
+               and returns false. That is not an error and must not be treated as one. */
+            const productsById = Object.fromEntries(
+                transactionItems.filter(i => i.productId).map(i => [i.productId, i.prodData]));
+            tallySale(batch, db, appId, userId, {
+                date: getCurrentDate(), type: proofPayload?.type || 'SALE', items: finalTransItems,
+            }, productsById, 1);
 
             if (newStoreData) {
                 const custRef = doc(collection(db, `artifacts/${appId}/users/${userId}/customers`));

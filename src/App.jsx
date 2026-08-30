@@ -21,6 +21,8 @@ import MusicPlayer from './MusicPlayer';
 import { injectDynamicPermissions, isFieldLevelTier, hasClearance } from './config/permissions';
 import { POV_OWNER_EMAIL, previewIdentity, testAccountDoc, testAccountName, canUsePovSwitch } from './config/povPreview';
 import { warehouseList } from './utils/supply';
+import { tallySaleOp } from './utils/salesRollupWrite';
+import { rebuildMonths, statsPath as salesStatsPath } from './utils/salesRollup';
 import TierPovSwitch, { PovBanner } from './components/TierPovSwitch';
 
 // --- REUSABLE UI COMPONENTS (Keep these static for fast initial load) ---
@@ -312,6 +314,9 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
                   const operations = [];
                   const processedNoo = [];
                   const processedTx = [];
+                  /* Pack sizes for the tally below. `inventory` is already loaded, so a queued
+                     sale in Slop converts to Bks without a single extra read. */
+                  const productsById = Object.fromEntries((inventory || []).map(p => [p.id, p]));
 
                   // 1. Flush Blind-Drop NOO Profiles
                   for (const noo of offlineNoo) {
@@ -341,6 +346,17 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
 
                       const ref = doc(collection(db, `artifacts/${appId}/users/${userId}/transactions`));
                       operations.push({ type: 'set', ref, data: { ...payload, syncedAt: serverTimestamp() } });
+
+                      /* THE TALLY FOR A SALE MADE WITHOUT SIGNAL, in the same operations list and
+                         therefore the same chunked commit as the receipt itself.
+
+                         ⚠️ IT IS FILED ON THE DAY THE SALE WAS MADE. `payload.timestamp` was just
+                         overwritten with serverTimestamp() so the receipt sorts correctly, but
+                         `payload.date` still carries the original day and the tally reads that
+                         first. A week of offline sales landing the moment signal returns must not
+                         all pile onto that Monday. */
+                      const tallyOp = tallySaleOp(db, appId, userId, payload, productsById, 1);
+                      if (tallyOp) operations.push(tallyOp);
 
                       processedTx.push(localId);
                   }
@@ -2759,10 +2775,35 @@ const handleGitHubMirror = async () => {
       triggerCapy("Dialogue updated!");
   };
   // --- NEW: DELETE SINGLE TRANSACTION ---
+  /* ═══════════ TAKING A SALE BACK OUT OF THE RUNNING TOTALS ═══════════
+     The counter is the easy half of a stored rollup. THE DRIFT IS THE JOB: every path that
+     removes or rewrites a sale has to apply the exact negative of what the sale applied, or the
+     per-product totals rot with nothing on screen to say so. There are three such paths and they
+     all route through this one function, because three hand-written negatives is three chances to
+     get a sign backwards.
+
+     A deletion that cannot be tallied (not a SALE, no date, no lines) returns null and is simply
+     skipped — the same rule the positive side follows, so the two can never disagree about which
+     transactions count.
+
+     ⚠️ AND IF THIS EVER DOES DRIFT, IT IS REPAIRABLE. `transactions` remains the only record of
+     what happened; Settings carries a rebuild that recomputes every month from scratch. That is
+     what makes a cache safe to keep. */
+  const untallyOps = (txs) => (txs || [])
+      .map(t => tallySaleOp(db, appId, user.uid,
+          t, Object.fromEntries((inventory || []).map(p => [p.id, p])), -1))
+      .filter(Boolean);
+
   const handleDeleteSingleTransaction = async (transaction) => {
       if(!await confirmAction("Delete this specific transaction record? Stock will NOT be restored automatically (manual adjustment required if needed).")) return;
       try {
-          await deleteDoc(doc(db, `artifacts/${appId}/users/${user.uid}/transactions`, transaction.id));
+          /* The receipt and its tally go together. `commitInChunks` rather than a bare
+             deleteDoc so both land in one commit — a delete that succeeded while its tally failed
+             would leave the totals counting a sale nobody can see any more. */
+          await commitInChunks(db, writeBatch, [
+              { type: 'delete', ref: doc(db, `artifacts/${appId}/users/${user.uid}/transactions`, transaction.id) },
+              ...untallyOps([transaction]),
+          ]);
           logAudit("TRANS_DELETE", `Deleted transaction ${transaction.id} for ${transaction.customerName}`);
           triggerCapy("Transaction record removed.");
       } catch(err) {
@@ -2777,6 +2818,7 @@ const handleGitHubMirror = async () => {
           // 🚀 FIX: Chunked/paced commitInChunks instead of one deleteDoc await per
           // record — same pattern as its sibling handleDeleteHistory right above.
           const operations = targets.map(t => ({ type: 'delete', ref: doc(db, `artifacts/${appId}/users/${user.uid}/transactions`, t.id) }));
+          operations.push(...untallyOps(targets));
           await commitInChunks(db, writeBatch, operations);
           logAudit("CONSIGN_DELETE", `Cleared data for ${customerName}`);
       } catch(err) { console.error(err); }
@@ -2796,6 +2838,7 @@ const handleGitHubMirror = async () => {
           // same pattern used elsewhere for large writes, here bounded by a single customer's
           // history rather than company-wide, but still worth it as that history grows.
           const operations = targets.map(t => ({ type: 'delete', ref: doc(db, `artifacts/${appId}/users/${user.uid}/transactions`, t.id) }));
+          operations.push(...untallyOps(targets));
           await commitInChunks(db, writeBatch, operations);
           await logAudit("HISTORY_DELETE", `Deleted history folder for ${customerName} (${agentName})`);
           triggerCapy(`Deleted ${targets.length} records`); 

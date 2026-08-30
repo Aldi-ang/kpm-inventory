@@ -1,6 +1,10 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Search, X, ArrowRight, Printer, Calendar, User, Folder, Store, Wallet, Package, Pencil, Trash2, Camera, FileText, MessageSquare, Database, ChevronRight, RotateCw, MapPin, Globe, ChevronDown, ChevronUp, Clock, AlertTriangle } from 'lucide-react';
-import { updateDoc, doc, serverTimestamp } from 'firebase/firestore';
+import { updateDoc, doc, serverTimestamp, writeBatch } from 'firebase/firestore';
+import { commitInChunks } from '../utils/helpers';
+/* An edit is the third path that can rot the sales rollup, and the least obvious of the
+   three: a delete at least looks destructive, while changing a quantity looks like tidying. */
+import { tallySaleOp } from '../utils/salesRollupWrite';
 import { formatRupiah, convertToBks, getCurrentDate } from '../utils/helpers';
 import { hasClearance } from '../config/permissions';
 import { notify } from './Toast.jsx';
@@ -352,9 +356,29 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
             }
             const cleanItems = (editingTrans.items || []).map(i => ({ productId: i.productId || '', name: i.name || 'Unknown', qty: Number(i.qty) || 1, unit: i.unit || 'Bks', calculatedPrice: Number(i.calculatedPrice) || 0 }));
 
-            await updateDoc(doc(db, `artifacts/${appId}/users/${user.uid}/transactions`, editingTrans.id), {
-                date: rawDate, customerName: editingTrans.customerName, total: Number(editingTrans.total) || 0, amountPaid: Number(editingTrans.total) || 0, priceTier: editingTrans.priceTier || 'Retail', items: cleanItems, timestamp: fakeTimestamp, updatedAt: serverTimestamp() 
-            });
+            /* THE EDIT, AND ITS TWO HALVES OF THE ROLLUP.
+
+               An edited sale is not "a sale that changed". To a running total it is one sale
+               removed and a different one added. Applying only the +1 double-counts the packs
+               that were already counted; applying neither leaves the totals describing a
+               receipt that no longer exists.
+
+               `__before` is the record exactly as it stood when the editor opened, stashed at
+               that moment rather than looked up now: `transactions` holds seven days, so a
+               historical record pulled through the Time Machine would not be found here.
+
+               All three writes go in ONE commit. An edit whose +1 landed while its -1 failed
+               is the worst of the outcomes, and it is what a bare updateDoc followed by two
+               separate writes produces on a bad connection. */
+            const productsById = Object.fromEntries((inventory || []).map(pr => [pr.id, pr]));
+            const after = { date: rawDate, type: editingTrans.type || 'SALE', items: cleanItems };
+            await commitInChunks(db, writeBatch, [
+                { type: 'update',
+                  ref: doc(db, `artifacts/${appId}/users/${user.uid}/transactions`, editingTrans.id),
+                  data: { date: rawDate, customerName: editingTrans.customerName, total: Number(editingTrans.total) || 0, amountPaid: Number(editingTrans.total) || 0, priceTier: editingTrans.priceTier || 'Retail', items: cleanItems, timestamp: fakeTimestamp, updatedAt: serverTimestamp() } },
+                tallySaleOp(db, appId, user.uid, editingTrans.__before, productsById, -1),
+                tallySaleOp(db, appId, user.uid, after, productsById, 1),
+            ].filter(Boolean));
             notify("✅ Audit Successful!");
             setEditingTrans(null);
         } catch(err) { notify(err.message); }
@@ -829,7 +853,7 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                                                             <div className="flex justify-center gap-2">
                                                                 {t.deliveryProof && <button onClick={() => setViewingPhoto(t.deliveryProof)} className="p-2 bg-[var(--verified-fill)] dark:bg-[var(--verified-fill)] text-[var(--verified)] dark:text-[var(--verified)] hover:bg-[var(--verified-fill)] rounded-lg transition-colors"><Camera size={14}/></button>}
                                                                 <button onClick={() => setViewingReceipt(t)} className="p-2 bg-[var(--raised)] dark:bg-[var(--raised)] text-[var(--ink-muted)] dark:text-[var(--ink-muted)] hover:text-[var(--accent-ink)] rounded-lg transition-colors"><FileText size={14}/></button>
-                                                                {isAdmin && <button onClick={() => setEditingTrans(t)} className="p-2 bg-[var(--raised)] dark:bg-[var(--raised)] text-[var(--ink-muted)] dark:text-[var(--ink-muted)] hover:text-[var(--ink)] rounded-lg transition-colors"><Pencil size={14}/></button>}
+                                                                {isAdmin && <button onClick={() => setEditingTrans({ ...t, __before: t })} className="p-2 bg-[var(--raised)] dark:bg-[var(--raised)] text-[var(--ink-muted)] dark:text-[var(--ink-muted)] hover:text-[var(--ink)] rounded-lg transition-colors"><Pencil size={14}/></button>}
                                                                 {isAdmin && <button data-kpm-del data-label="Delete" onClick={() => onDeleteTransaction(t)} className="p-2 bg-[var(--raised)] dark:bg-[var(--raised)] text-[var(--ink-muted)] dark:text-[var(--ink-muted)] hover:text-[var(--danger-text)] rounded-lg transition-colors"><Trash2 size={14}/></button>}
                                                             </div>
                                                         </td>
