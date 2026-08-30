@@ -1,8 +1,43 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-30 09:16 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **666/666 audit · 864/864 selfcheck** · branch `phase0-solid-ground`, tree clean
+**Updated: 2026-08-30 09:40 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **666/666 audit · 878/878 selfcheck** · branch `phase0-solid-ground`, tree clean
 
-## 🟠 2026-08-30 09:16 — MINIMAL KIRIM: THE FORM, THEN THE COLUMN. `20a4622` + `4146c36`, **666/666 + 864/864**. Tree clean.
+## 🟠 2026-08-30 09:40 — THE WHOLE RESTOCK QUEUE, CLEARED. `20a4622` → `650035c`, **666/666 + 878/878**. Tree clean.
+
+*One entry for one continuous session — six commits on one feature line, not six pieces of work.*
+
+**NOW: everything he queued is shipped except the sales-performance rollup, which is unblocked and
+next. Ponder stays parked for new CHAPTERS, but new features get their scene — his rule, below.**
+
+| # | Shipped | Commit |
+|---|---|---|
+| 1 | `send at least N` under every line of the Kirim form, keyed on Tujuan | `20a4622` |
+| 2 | `Send at least` column in Sebaran Stok | `4146c36` |
+| 3 | **Shipment Plan** — new panel, one row per product, `Short by` names what HQ cannot cover | `7716a78` |
+| 4 | Plain English across the HQ desk + the age line reworded | `77aff79` |
+| 5 | Ponder: 7 new beats on stock-by-warehouse, and a whole new `shipment-plan` scene | `650035c` |
+
+**🔴 HIS NEW STANDING RULE, and it now governs every feature:** *"new panel and features means
+different ponder, but inside the same section of the book"*. It splits cleanly — a new **column**
+gets extra beats on its panel's existing scene; a new **panel** gets a scene, a stage and a demo
+world of its own; both land in the sidebar section they are printed in. **A feature is not done
+until its beats exist.**
+
+**⚠️ `ShipmentPlanTable` MOVED to `src/ponder/stages/`** beside `StockByWarehouseTable`, because
+the audit scans that folder for `data-ponder` keys and a scene focusing a key nothing wears keeps
+playing while pointing at nothing. Every reference repointed in the same commit.
+
+**🔴 HE CAUGHT MY DRIFT ON WORDING:** *"can u use better english words from now on and change
+that, its so fague"*. `Kurang` means "less" and never says less THAN WHAT. He had already settled
+this on 2026-08-27 — *"use english terms if its shorter and direct"* — and I put an Indonesian panel
+directly under an English one. **Now enforced by two checks that scan the HQ desk files for
+Indonesian labels**, both mutation-tested. Branch-side screens stay Indonesian by design.
+His other question, *"what is this mean the oldest sentence"*, was fair: `oldest here 116 days`
+never said 116 days of WHAT. It reads `oldest pack 116 days old, from 2 deliveries` now, and
+`20 unknown origin` became `20 with no delivery record`.
+
+**✅ HE SHOULD LOOK AT** — Restock Vault, all three panels, and open the book: Restock Vault now has
+**three** entries, Shipment Plan is the third.
 
 *One entry for one continuous session — two commits fourteen minutes apart on the same feature line,
 not two pieces of work.*
@@ -93,7 +128,10 @@ and the repair tool if drift ever happens.
 | Spare days, per cabang — Settings › Company · 06 | `src/components/SettingsView.jsx` |
 | `?pov` / `?pov=solo` — the only way to look at the POV rack | `tools/ponder-lab.jsx` |
 | `?minkirim` / `?minkirim=blank` — Sebaran Stok with the new column, and the tutorial fallback | `tools/ponder-lab.jsx` |
-| The `Minimal kirim` column itself | `src/ponder/stages/StockByWarehouseTable.jsx` |
+| The `Send at least` column | `src/ponder/stages/StockByWarehouseTable.jsx` |
+| The Shipment Plan panel (moved into ponder/stages for the key scan) | `src/ponder/stages/ShipmentPlanTable.jsx` |
+| Its tutorial — scene, stage, demo world | `src/ponder/scenes/shipment-plan.js` · `stages/ShipmentPlanStage.jsx` · `demo/shipmentPlan.js` |
+| `?plan` / `?plan=empty` — the panel in the lab | `tools/ponder-lab.jsx` |
 | The Time Machine — any date range, past the 7-day cap. Already wired, already used | `src/hooks/useDatabaseSync.js:188` → `src/components/HistoryReportView.jsx:230` |
 | The table shared with the Ponder tutorial — where the new column goes | `src/ponder/stages/StockByWarehouseTable.jsx` |
 

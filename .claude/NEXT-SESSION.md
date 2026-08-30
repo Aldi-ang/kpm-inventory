@@ -1,6 +1,6 @@
 # NEXT SESSION — read this, then `.claude/PROGRESS.md`. Read no code to orient.
 
-**Written 2026-08-30 09:02 WIB. 666/666 audit · 855/855 selfcheck. Branch `phase0-solid-ground`,
+**Written 2026-08-30 09:40 WIB. 666/666 audit · 878/878 selfcheck. Branch `phase0-solid-ground`,
 tree clean.**
 
 🟠 **PONDER IS PARKED.** His words: *"dont worry about the ponder book for now we focus on
@@ -20,66 +20,48 @@ hid. Both numbers, every time.
 
 ---
 
-## 🔴 THE ONE JOB — the cross-branch recommendation, panel AND column
+## 🔴 THE ONE JOB — sales performance per product, over time
 
-**Feature A shipped (`20a4622`).** HQ's Kirim form prints `minimal N` under every cart line, keyed on
-the Tujuan chosen. He then confirmed BOTH halves of the rest, 2026-08-30:
-
-> *"i agree with your recommendation so new separate panel and add column in sebaran stock, on the
-> new panel"*
-
-**(1) A new standalone panel** — every cabang's minimum for every product, side by side. The question
-it answers that the shipment form cannot: production is short, three cabang want Cello, who gets it
-first. His own scenario: *"especially with company that have limited production capabilities"*.
-
-**(2) The same minimum as a column in Sebaran Stok**, the row-per-warehouse table.
-
-**⚠️ THE TRAP ON (2).** `src/ponder/stages/StockByWarehouseTable.jsx` is **shared with the
-Ponder tutorial** — same component, real screen and demo world both. A new column means the
-tutorial's fixed world needs the field, its `COLS` constant moves, and group-56 checks plus
-`src/ponder/scenes/stock-by-warehouse.js` beats may assert the old shape. Read the scene file and
-grep group 56 BEFORE touching `COLS`. Ponder is parked; the component does not know that.
-
-**Nothing here re-derives the maths.** `reorderAdvice`, `productArrivals`, `shipmentRhythm`,
-`inTransitQty` are exported from `BranchWarehouseManager.jsx` and already imported by the desk;
-`bufferDays(appSettings, branch)` in `utils/supply.js` resolves his per-cabang cushion. Each Sebaran
-Stok row already knows its warehouse name, so every argument is in hand. The word on screen is
-**`minimal`**, never `saran` — his framing: when production is tight it is a floor, not advice.
-
-**Verify:** build, both suites, and a check that panel, column and form all call the SAME function.
-
----
-
-## ❓ BLOCKED ON ALDI — the third job, and it is a cost decision
+His ask, unedited:
 
 > *"the total performance per day per week/ month or year for products right, like how many product
-> is actually sold per timeframe specific for each of the product? well basically the performance for
-> each product in overall through all region"*
+> is actually sold per timeframe specific for each of the product? well basically the performance
+> for each product in overall through all region"*
 
-Investigated. `fetchHistoricalTransactions(start, end)` (`useDatabaseSync.js:188`) already bypasses
-the 7-day listener cap and `HistoryReportView` already drives it with Daily/Weekly/Monthly. Missing:
-any grouping **by product** over a period, and **yearly** as a range.
+**He has already chosen the method and told you to stop asking:** *"we should use older data to
+avoid high cost right, we just need to see the data thats auto update for every sales so we can see
+the latest sales and have all the number isnt? btw right just do whatever to save cost, u know the
+method better"*. That is a stored rollup, and he is right — a running total is always current AND
+nearly free to read. **Do not re-open the cost question.**
 
-He owes one answer — `live` / `stored` / `mixed` — because it is his Firestore bill: a live range
-query pays document reads every time the panel opens, and a year is thousands. `mixed` was
-recommended (live for day/week/month, stored for year). **Do not build this before he answers.**
+**THE SHAPE.** One document per month, `product_stats/{YYYY-MM}`, holding `byProduct` and `byDay`,
+incremented **inside the same batch as the sale** so it cannot be lost or double-counted. Use
+`FieldPath` for the nested paths rather than dotted strings — a productId with a dot in it would
+silently write to the wrong place. Reads: 1 doc for a day, 1–2 for a week, 1 for a month, 12 for a
+year, against hundreds or thousands of transaction docs for a live query.
 
-## What just shipped, and the two laws it left
+**⚠️ THE COUNTER IS THE EASY HALF. THE DRIFT IS THE JOB.** Three paths already change sales after
+the fact and every one must adjust the rollup in the same breath, or the numbers rot with nothing
+on screen saying so — this repo's most expensive failure shape:
+  1. transaction **edit** in `HistoryReportView`
+  2. transaction **delete** and delete-folder, same file
+  3. consignment **return / payment** in `useTransactionEngine`
+Write ONE helper applied with a `+1` / `−1` sign and route all of them through it. An edit is a
+remove of the old plus an add of the new.
 
-`b1cdcaa` — the POV costume can be posted anywhere. His ask: *"i want the option for tier 1 so that
-i can assign the test agent into different places with no problems"*.
+**⚠️ A REBUILD BUTTON IS NOT OPTIONAL.** It is the backfill for every month before this ships AND
+the repair tool if drift ever happens. It is also the property that makes the whole design safe:
+**the rollup is a CACHE, never the truth.** Transactions stay the source, so a bug costs a rebuild
+and never data. `fetchHistoricalTransactions(start, end)` (`useDatabaseSync.js:188`) already reads
+any range and `HistoryReportView` already drives it with Daily/Weekly/Monthly — **yearly does not
+exist yet** and has to be added.
 
-- He first asked to **disable the roster form's email requirement**. **Refused, correctly:** that
-  email is the document ID of the `employee_directory` row, the record that lets a human sign in,
-  and `povPreview.js` deliberately never writes one for a test agent. Relaxing it mints a login for
-  a fake person. The real blocker was `testAccountDoc`'s `defaults.location` — a parameter nobody
-  ever passed, so every costume was born at `Headquarters`.
-- **Headquarters IS the master vault, not a cabang** (`supply.js`, `NON_BRANCH`). Nothing posted
-  there can ever see branch stock. Full page: `A-Brain/Wiki/Concepts/Headquarters Is Not a Cabang.md`.
-- **A check points at a file, not at a behaviour.** Second instance of the split-component trap.
-  Full page: `A-Brain/Wiki/Concepts/A Check Points at a File, Not at a Behaviour.md`.
+**🔴 AND IT IS NOT DONE UNTIL THE BOOK KNOWS.** His rule, 2026-08-30: *"new panel and features
+means different ponder, but inside the same section of the book"*. A new panel means a new scene, a
+new stage and a new demo world, registered in `registry.js` and added to `sections.js` in the
+section it is printed in, at its top-to-bottom position on the screen. Follow `shipment-plan.js`.
 
----
+**Verify:** build, both suites, and render the panel in the lab before claiming it works.
 
 ## Traps — every one of these has already cost time
 
@@ -87,6 +69,20 @@ i can assign the test agent into different places with no problems"*.
   `grep -n "components/Foo.jsx" src/config/*.mjs`. Two guards read a file the code had left and
   nobody noticed for four days. Prefer `read(a) + read(b)` over re-pointing when a behaviour's home
   is genuinely ambiguous.
+- **🔴 A NEW PANEL IS NOT DONE UNTIL THE BOOK HAS ITS SCENE.** His rule, 2026-08-30. New column
+  → beats on the existing scene. New panel → scene + stage + demo world, same book section.
+- **🔴 A COMPONENT THE TUTORIAL RENDERS LIVES IN `src/ponder/stages/`.** The audit scans that
+  folder for `data-ponder` keys; a table anywhere else fails the focus-key check even though it is
+  correct. `ShipmentPlanTable` was moved for exactly this.
+- **🔴 CHECKS THAT PIN AN EXACT LITERAL BREAK ON HARMLESS EDITS.** Three did this in one session
+  — an import list, a return-object literal, a display string — and each was red while the thing it
+  guarded was intact. Assert the GUARANTEE, not the spelling.
+- **🔴 PLAIN ENGLISH ON THE HQ DESK, always.** *"use english terms if its shorter and direct"*,
+  and *"can u use better english words from now on"*. Two checks enforce it. Branch-side screens
+  stay Indonesian by design — different reader.
+- **🔴 A CAPTION ON A SHORT PANEL COVERS THE ROWS IT IS COMPARING.** `at: 'near'` needs room
+  below the subject. On a four-row table, anchor header and first-row beats at `'bottom'`. Found on
+  a frame, not in review.
 - **🔴 ONE PLACE LIST, EVER.** `warehouseList` / `NON_BRANCH` in `utils/supply.js` is the only
   source of "which warehouses exist". A private copy is not a copy, it is a second answer —
   `20c4a0a` paid for this once when the Tujuan dropdown offered Headquarters twice.
@@ -116,7 +112,7 @@ i can assign the test agent into different places with no problems"*.
 | Where every pack is — the one warehouse-list function | `src/utils/supply.js` |
 | POV rack + costume posting | `src/components/TierPovSwitch.jsx` · `src/App.jsx` |
 | The 666 checks | `src/config/integration.audit.mjs` |
-| The 855 checks | `src/config/logicFixes.selfcheck.mjs` |
+| The 878 checks | `src/config/logicFixes.selfcheck.mjs` |
 | Viewing harness | `tools/ponder-lab.*` |
 | The warehouse roadmap | `A-Brain/Wiki/Concepts/The Eight Warehouse Gaps.md` |
 
