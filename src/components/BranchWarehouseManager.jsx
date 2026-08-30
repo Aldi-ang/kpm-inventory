@@ -16,7 +16,7 @@ import PonderButton from '../ponder/PonderButton.jsx';
 /* The table below is rendered by the Ponder tutorial too, fed a fixed demo world. Same
    component in both places, so the tutorial cannot drift from the screen it teaches. */
 import StockByWarehouseTable from '../ponder/stages/StockByWarehouseTable.jsx';
-import ShipmentPlanTable from './ShipmentPlanTable.jsx';
+import ShipmentPlanTable from '../ponder/stages/ShipmentPlanTable.jsx';
 
 /* ===========================================================================
    THE ARRIVAL CHECK — a count at the door, PARTIAL BLIND.

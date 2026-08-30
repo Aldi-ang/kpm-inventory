@@ -27,6 +27,11 @@
    is what the master vault CANNOT cover, and it is the only number on either screen that says
    "somebody is going to go without". It is the reason the panel exists.
 
+   🔴 `data-ponder` IS AN API, NOT DECORATION. A tutorial beat names one of these keys in its
+   `focus` and the overlay lights every element wearing it. Rename or drop one and the tutorial
+   keeps playing while pointing at nothing — a failure that still looks like it works. Audit group
+   56 fails if a scene names a key this file no longer emits.
+
    Presentational ONLY — no Firestore, no maths, no useMemo. `BranchWarehouseManager` transposes
    its already-computed `logistics` into these rows; nothing here re-derives a minimum, because
    three surfaces printing three different floors is exactly the failure this feature was built to
@@ -62,8 +67,8 @@ export default function ShipmentPlanTable({ rows = [], branches = [] }) {
        cannot drift apart the way three hand-written templates would. */
     const cols = `minmax(0,1.4fr) 108px ${branches.map(() => '104px').join(' ')} 108px 112px`;
 
-    const Cell = ({ children, className = '' }) => (
-        <span className={`text-right font-mono tabular-nums ${className}`}>{children}</span>
+    const Cell = ({ children, className = '', k }) => (
+        <span data-ponder={k} className={`text-right font-mono tabular-nums ${className}`}>{children}</span>
     );
 
     return (
@@ -72,17 +77,17 @@ export default function ShipmentPlanTable({ rows = [], branches = [] }) {
 
                 <div className="grid gap-x-4 items-end px-5 pb-2.5 border-b border-line-2 text-[10px] font-bold text-ink-muted uppercase tracking-widest"
                      style={{ gridTemplateColumns: cols }}>
-                    <span>Product</span>
-                    <span className="text-right">Master vault has</span>
-                    {branches.map(b => <span key={b} className="text-right truncate" title={b}>{b}</span>)}
-                    <span className="text-right">All branches need</span>
-                    <span className="text-right">Short by</span>
+                    <span data-ponder="col:product">Product</span>
+                    <span data-ponder="col:hq" className="text-right">Master vault has</span>
+                    {branches.map(b => <span key={b} data-ponder="col:branch" className="text-right truncate" title={b}>{b}</span>)}
+                    <span data-ponder="col:needed" className="text-right">All branches need</span>
+                    <span data-ponder="col:short" className="text-right">Short by</span>
                 </div>
 
                 {live.map(r => {
                     const short = r.short > 0;
                     return (
-                        <div key={r.id}
+                        <div key={r.id} data-ponder={`row:${r.id}`}
                              className={`grid gap-x-4 items-center px-5 py-3 border-b border-line-2 last:border-b-0 ${short ? 'bg-danger-well' : ''}`}
                              style={{ gridTemplateColumns: cols }}>
                             <div className="min-w-0 flex items-center gap-2">
@@ -91,24 +96,24 @@ export default function ShipmentPlanTable({ rows = [], branches = [] }) {
                                     : <Package size={13} className="text-ink-muted shrink-0"/>}
                                 <span className="font-bold text-ink text-[13px] truncate">{r.name}</span>
                             </div>
-                            <Cell className={`font-black ${r.hq > 0 ? 'text-gold' : 'text-ink-muted'}`}>{n(r.hq)}</Cell>
+                            <Cell k="col:hq" className={`font-black ${r.hq > 0 ? 'text-gold' : 'text-ink-muted'}`}>{n(r.hq)}</Cell>
                             {branches.map(b => {
                                 const v = r.byBranch[b];
                                 return (
-                                    <Cell key={b} className="text-[13px]">
+                                    <Cell key={b} k="col:branch" className="text-[13px]">
                                         {v == null
                                             ? <span className="text-ink-muted" title="Not enough history — this product needs two recorded deliveries to that branch first">—</span>
                                             : <span className={v > 0 ? 'text-orange' : 'text-ink-muted'}>{n(v)}</span>}
                                     </Cell>
                                 );
                             })}
-                            <Cell className="font-black text-ink">
+                            <Cell k="col:needed" className="font-black text-ink">
                                 {r.needed == null ? <span className="text-ink-muted">—</span> : n(r.needed)}
                             </Cell>
                             {/* The only cell that is ever a warning. It is the master vault's stock
                                 measured against what the cabang need, so it says what no other
                                 screen says: this cannot all be sent. */}
-                            <Cell className="font-black">
+                            <Cell k="col:short" className="font-black">
                                 {r.short == null
                                     ? <span className="text-ink-muted">—</span>
                                     : short
@@ -119,7 +124,7 @@ export default function ShipmentPlanTable({ rows = [], branches = [] }) {
                     );
                 })}
 
-                <div className="grid gap-x-4 items-center px-5 py-3.5 border-t-2 border-line-3 bg-raised/40"
+                <div data-ponder="row:total" className="grid gap-x-4 items-center px-5 py-3.5 border-t-2 border-line-3 bg-raised/40"
                      style={{ gridTemplateColumns: cols }}>
                     <span className="text-[10px] font-bold text-ink-muted uppercase tracking-widest">Every product</span>
                     <Cell className="font-black text-gold">{n(live.reduce((s, r) => s + r.hq, 0))}</Cell>

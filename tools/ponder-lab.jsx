@@ -22,7 +22,7 @@ import PonderOverlay from '../src/ponder/PonderOverlay.jsx';
 import PonderBookButton from '../src/ponder/PonderBook.jsx';
 import TierPovSwitch from '../src/components/TierPovSwitch.jsx';
 import StockByWarehouseTable from '../src/ponder/stages/StockByWarehouseTable.jsx';
-import ShipmentPlanTable from '../src/components/ShipmentPlanTable.jsx';
+import ShipmentPlanTable from '../src/ponder/stages/ShipmentPlanTable.jsx';
 import { SCENES } from '../src/ponder/registry.js';
 
 const q = new URLSearchParams(window.location.search);

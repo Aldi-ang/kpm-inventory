@@ -78,7 +78,28 @@ export const stockByWarehouse = {
     { text: 'Dua angka perkiraan itu sengaja tidak menghitung **Shipping** dan **Agent inventory**. Pertanyaannya "rak ini tahan berapa lama", dan barang di truk atau di motor belum ada di rak.',
       focus: 'col:shelf', at: 'bottom', act: 'close', hold: 6600 },
 
+    { text: 'Kolom terakhir **Send at least**: paling sedikit berapa Bks yang harus dikirim ke gudang itu supaya raknya tidak kosong sebelum kiriman berikutnya sampai.',
+      focus: 'col:minimum', at: 'near', tone: 'gold', hold: 6200 },
+
+    { text: 'Angkanya dihitung dari riwayat gudang itu sendiri: seberapa cepat barangnya habis, berapa lama kiriman biasanya datang, dan berapa sering kamu memesan. Tidak ada yang perlu kamu ketik.',
+      focus: 'col:minimum', at: 'bottom', tone: 'gold', hold: 7000 },
+
+    { text: '**SOLO** perlu **77 Bks**. Itu bukan saran yang bisa ditawar — di bawah angka itu, SOLO berhenti jualan sebelum kiriman berikutnya tiba.',
+      focus: 'row:solo', at: 'near', tone: 'danger', act: 'open:SOLO', hold: 6600 },
+
+    { text: 'Tanda **—** di sini artinya belum bisa dihitung, **bukan** tidak butuh apa-apa. Satu produk butuh dua kiriman tercatat dulu baru kecepatannya bisa diukur.',
+      focus: 'item:bandung-choco', at: 'near', act: 'close', hold: 6400 },
+
+    { text: 'Gudang Pusat selalu **—** di kolom ini. Barang dikirim DARI sana, bukan ke sana, jadi pertanyaannya memang tidak berlaku.',
+      focus: 'row:master', at: 'near', hold: 5600 },
+
+    { text: 'Angka **0** beda lagi: itu sudah dihitung, dan hasilnya gudang itu memang belum perlu kiriman. Nol dan **—** tidak pernah sama artinya.',
+      focus: 'item:solo-mint', at: 'near', act: 'open:SOLO', hold: 6200 },
+
     { text: 'Baris paling bawah total seluruh perusahaan. Di sini pun tidak ada sisa hari, dengan alasan yang sama: stok di gudang yang salah tidak menolong gudang yang kehabisan.',
       focus: 'row:total', at: 'near', hold: 6400 },
+
+    { text: 'Kamu bisa menambah hari cadangan di **Settings**, per cabang. Angka di kolom ini akan naik sebanyak hari yang kamu tambahkan — gunanya kalau jalan ke cabang itu sering telat.',
+      focus: 'col:minimum', at: 'bottom', tone: 'gold', act: 'close', hold: 7000 },
   ],
 };

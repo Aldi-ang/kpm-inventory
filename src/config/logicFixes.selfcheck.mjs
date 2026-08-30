@@ -882,7 +882,7 @@ section('S38. Minimal kirim: the floor HQ sees, keyed on the Tujuan it is sendin
      reader, settled separately — so this must never widen to BranchWarehouseManager's own screens. */
   const HQ_INDONESIAN = /\b(kurang|cukup|barang|belum|tidak|jumlah|gudang|cabang|kirim\w*|terukur|saran)\b/i;
   ok('the shipment plan panel carries no Indonesian label',
-     !HQ_INDONESIAN.test(stripComments(read('src/components/ShipmentPlanTable.jsx'))));
+     !HQ_INDONESIAN.test(stripComments(read('src/ponder/stages/ShipmentPlanTable.jsx'))));
   ok('and neither does the warehouse table beside it',
      !HQ_INDONESIAN.test(stripComments(read('src/ponder/stages/StockByWarehouseTable.jsx'))));
   /* The age line said "oldest here 116 days", and he asked what it meant — a number with no noun
@@ -935,7 +935,7 @@ section('S38. Minimal kirim: the floor HQ sees, keyed on the Tujuan it is sendin
      *"I have 900 Cello and my three cabang need 1.400 — who gets what"*, which only exists when
      production is short. His scenario, his words, and the reason `short` is the panel's whole
      point: nothing else in the app ever says "this cannot all be sent". */
-  const plan = read('src/components/ShipmentPlanTable.jsx');
+  const plan = read('src/ponder/stages/ShipmentPlanTable.jsx');
   ok('the plan is a TRANSPOSE of logistics, and computes no minimum of its own',
      /const shipmentPlan = useMemo/.test(bwm) &&
      /byBranch\[b\] = item \? item\.minimum : null/.test(bwm) &&

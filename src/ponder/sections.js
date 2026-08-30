@@ -36,6 +36,10 @@ export const SECTIONS = [
     entries: [
       { sceneId: 'goods-received', title: 'Goods Received', desc: 'Panel paling atas: mencatat barang yang baru datang, dan biaya yang menempel padanya.', icon: 'PackagePlus' },
       { sceneId: 'stock-by-warehouse', title: 'Stock by Warehouse', desc: 'Baca tabel gudang, dan kenapa tidak ada sisa hari untuk satu gudang penuh.', icon: 'Package' },
+      /* His rule, 2026-08-30: *"new panel and features means different ponder, but inside the same
+         section of the book"*. Shipment Plan is the third panel down on this screen, so it is the
+         third entry here — entries inside a section are TOP-TO-BOTTOM ORDER ON THE SCREEN. */
+      { sceneId: 'shipment-plan', title: 'Shipment Plan', desc: 'Kalau barangnya tidak cukup untuk semua cabang, siapa yang dikirim duluan.', icon: 'Truck' },
     ],
   },
   {

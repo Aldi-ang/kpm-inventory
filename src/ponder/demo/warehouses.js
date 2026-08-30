@@ -12,7 +12,11 @@
    - BANDUNG has 400 packs in transit and nothing on the shelf. It exists so the beat about
      Shipping has something to point at, and so the drawer proves a product in transit to an empty
      branch still appears.
-   - SOLO has one product under a week. It is the red number the last beat is about.
+   - SOLO has one product under a week. It is the red number the last beat is about, and it is
+     also the only warehouse with a `Send at least` figure: 77 packs. The other two are `—` on
+     purpose — GUDANG PUSAT because nothing is ever shipped TO the master vault, BANDUNG because
+     two recorded deliveries are needed before a rate can be measured and it has had one. Those
+     three cases are the whole beat about that column.
 
    🔴 PRODUCT IDS ARE UNIQUE ACROSS WAREHOUSES, not 'd1' in each. A scene focuses an item with
    `item:<id>`, and the overlay lights EVERY element wearing that key — three warehouses sharing
@@ -23,25 +27,25 @@
 export const DEMO_WAREHOUSES = [
   {
     name: 'GUDANG PUSAT',
-    shelf: 1240, transit: null, field: 180, sold: 56, perMonth: 240,
+    shelf: 1240, transit: null, field: 180, sold: 56, perMonth: 240, minimum: null,
     detail: [
-      { id: 'pusat-choco', name: 'Cello Chocolate', shelf: 160, transit: 0, field: 40, sold: 56, perMonth: 240, daysLeft: 20, days: 12, drops: 2, unexplained: 0 },
-      { id: 'pusat-mint', name: 'Cello Mint',      shelf: 1080, transit: 0, field: 140, sold: 0, perMonth: 0, daysLeft: null, days: 61, drops: 1, unexplained: 0 },
+      { id: 'pusat-choco', name: 'Cello Chocolate', shelf: 160, transit: 0, field: 40, sold: 56, perMonth: 240, daysLeft: 20, days: 12, drops: 2, unexplained: 0, minimum: null },
+      { id: 'pusat-mint', name: 'Cello Mint',      shelf: 1080, transit: 0, field: 140, sold: 0, perMonth: 0, daysLeft: null, days: 61, drops: 1, unexplained: 0, minimum: null },
     ],
   },
   {
     name: 'BANDUNG',
-    shelf: 0, transit: 400, field: 0, sold: 0, perMonth: 0,
+    shelf: 0, transit: 400, field: 0, sold: 0, perMonth: 0, minimum: null,
     detail: [
-      { id: 'bandung-choco', name: 'Cello Chocolate', shelf: 0, transit: 400, field: 0, sold: 0, perMonth: 0, daysLeft: null, days: null, drops: 0, unexplained: 0 },
+      { id: 'bandung-choco', name: 'Cello Chocolate', shelf: 0, transit: 400, field: 0, sold: 0, perMonth: 0, daysLeft: null, days: null, drops: 0, unexplained: 0, minimum: null },
     ],
   },
   {
     name: 'SOLO',
-    shelf: 96, transit: 0, field: 40, sold: 49, perMonth: 210,
+    shelf: 96, transit: 0, field: 40, sold: 49, perMonth: 210, minimum: 77,
     detail: [
-      { id: 'solo-choco', name: 'Cello Chocolate', shelf: 28, transit: 0, field: 40, sold: 49, perMonth: 210, daysLeft: 4, days: 3, drops: 1, unexplained: 0 },
-      { id: 'solo-mint', name: 'Cello Mint',      shelf: 68, transit: 0, field: 0, sold: 0, perMonth: 0, daysLeft: null, days: 40, drops: 1, unexplained: 0 },
+      { id: 'solo-choco', name: 'Cello Chocolate', shelf: 28, transit: 0, field: 40, sold: 49, perMonth: 210, daysLeft: 4, days: 3, drops: 1, unexplained: 0, minimum: 77 },
+      { id: 'solo-mint', name: 'Cello Mint',      shelf: 68, transit: 0, field: 0, sold: 0, perMonth: 0, daysLeft: null, days: 40, drops: 1, unexplained: 0, minimum: 0 },
     ],
   },
 ];
@@ -49,7 +53,7 @@ export const DEMO_WAREHOUSES = [
 /* The company row is summed here rather than inside the table, for the same reason the real screen
    sums it outside: a total computed by the thing that displays it can disagree with the rows above
    it and nothing would ever say so. */
-export const DEMO_TOTALS = ['shelf', 'transit', 'field', 'sold', 'perMonth'].reduce((acc, k) => {
+export const DEMO_TOTALS = ['shelf', 'transit', 'field', 'sold', 'perMonth', 'minimum'].reduce((acc, k) => {
   acc[k] = DEMO_WAREHOUSES.reduce((s, r) => s + (r[k] || 0), 0);
   return acc;
 }, {});
