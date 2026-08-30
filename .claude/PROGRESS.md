@@ -1,6 +1,48 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-28 01:05 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · 🛑 **STOPPED ON THE WEEKLY QUOTA — notes written, nothing half-done** · **666/666** · branch `phase0-solid-ground`, tree clean
+**Updated: 2026-08-30 08:25 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **666/666 audit · 831/831 selfcheck** · branch `phase0-solid-ground`, tree clean
+
+## 🟠 2026-08-30 08:25 — THE POV COSTUME CAN BE POSTED ANYWHERE. `b1cdcaa`, **666/666 + 831/831**. Tree clean.
+
+**NOW: Ponder is parked at his word — *"dont worry about the ponder book for now we focus on system
+functionality"*. The live front is the Restock Vault.**
+
+**What he asked and what it really was.** *"i want the option for tier 1 so that i can assign the
+test agent into different places with no problems"*. He had reached for the roster form and been
+stopped by its email requirement, and asked for that rule to be disabled. **It was the wrong fix
+and it was refused, with the reason:** that email is the DOCUMENT ID of the `employee_directory`
+row — the record that lets a human sign in — which is exactly why `povPreview.js` has never written
+one for a test agent. The real blocker was one unused parameter: `testAccountDoc` took a
+`defaults.location` nobody passed, so every costume was born at `Headquarters`, and **Headquarters
+IS the master vault, not a cabang** — `branches/Headquarters/inventory` does not exist and no
+`stock_request` can name it. Wearing tier 4 therefore always landed where the branch warehouse can
+never fill. The rack now carries a **Tempat tugas** picker fed by `warehouseList`.
+
+**🔴 AND TWO CHECKS HAD BEEN RED FOR FOUR DAYS.** `logicFixes.selfcheck` was **823/825**, not green.
+Neither failure was a real defect: `76de71a` moved the fulfilment half out of
+`BranchWarehouseManager` (−332 lines) and both checks kept reading the file the code had left. The
+`increment()` deduction is alive at `RestockVaultView.jsx:696`, the DISPUTED-first rank at `:128`.
+**It survived because every session report quotes `integration.audit`'s number and never this one.
+Quote BOTH from now on.**
+
+**✅ HE SHOULD TEST** — open the POV rack, pick **BANDUNG** under *Tempat tugas*, wear **T4 REGIONAL
+ADMIN**. The branch warehouse panel should now show real stock and real reorder history instead of
+"Warehouse is empty".
+
+**❓ WAITING ON ALDI — one question, his call, nothing blocked behind it.** Feature **A** (the
+reorder-advice panel — outflow rate, days left, *Saran N Bks* — shown on the HQ side too, since
+today only the tier that ASKS sees the maths and the tier that SHIPS does not). He was offered
+`request` / `push` / `both` and answered neither, then pivoted to the location option. **`both` is
+the default if he does not care.**
+
+**Where things live — new or changed this session**
+
+| Thing | Path |
+|---|---|
+| The place picker + the costume-posting rule | `src/components/TierPovSwitch.jsx` · `src/App.jsx` (`povPlaces`, `handlePickPov`) |
+| `?pov` and `?pov=solo` — the ONLY way to look at the rack (hidden door + owner email + vault gate) | `tools/ponder-lab.jsx` |
+| The 831 checks — S14 and the arrival-check group were repointed | `src/config/logicFixes.selfcheck.mjs` |
+| The two new laws, in the vault (`079491e`) | `A-Brain/Wiki/Concepts/Headquarters Is Not a Cabang.md` · `A Check Points at a File, Not at a Behaviour.md` |
 
 ## 🟢 2026-08-28 00:47 — HOVER GLOW AND THE RIBBON/COVER FIX. `1ebbabc`, **666/666**. Tree clean.
 
