@@ -54,7 +54,13 @@ a short production run can be split, and **(2) the same minimum as a column in S
 ⚠️ `StockByWarehouseTable` is **shared with the Ponder tutorial** — a new column touches the demo
 world, the `COLS` constant and group-56 checks. Read `stock-by-warehouse.js` before moving `COLS`.
 
-**❓ WAITING ON ALDI — his new ask, unedited, and it BLOCKS the third job:**
+**✅ ANSWERED — the cost question is settled. His words:** *"we should use older data to avoid high
+cost right, we just need to see the data thats auto update for every sales so we can see the latest
+sales and have all the number isnt? btw right just do whatever to save cost, u know the method
+better"*. That is **`stored`**, and he is right: a running total updated on each sale is always
+current AND nearly free to read. **The safety property to build on: the rollup is a CACHE, never the
+truth — transactions stay the source, so it is rebuildable at any time and a bug costs a rebuild,
+not data.** The third job is UNBLOCKED. His ask, unedited, for the record:
 
 > *"btw we dont have one more data to view actually, the total performance per day per week/ month or
 > year for products right, like how many product is actually sold per timeframe specific for each of
@@ -66,12 +72,16 @@ listener cap and `HistoryReportView` already uses it with Daily/Weekly/Monthly. 
 any grouping **by product** over a period, and **yearly** as a range. Sebaran Stok's `Sold (7d)` is
 the only per-product sales figure in the app and is pinned to 7 days by the listener.
 
-**The decision he owes is COST, and it is his because it is his Firestore bill.** A live range query
-pays document reads on every open; a year is thousands. Offered: `live` (always right, pays every
-visit) · `stored` (a running per-product-per-month total written on each sale — nearly free to open,
-one extra tiny write per sale, and months before it starts running stay empty until backfilled) ·
-`mixed` (**recommended** — live for day/week/month, stored for year, since the year is both the
-expensive one and the slowest-changing).
+**THE SHAPE TO BUILD, decided on his instruction to pick the cheap method:** one rollup document per
+month, `byProduct` and `byDay` inside it, incremented **in the same batch as the sale** so it cannot
+be lost or double-counted. Reads then cost 1 doc for a day, 1–2 for a week, 1 for a month, 12 for a
+year — against hundreds or thousands of transaction docs for a live query.
+⚠️ **THE DRIFT RISK IS THE WHOLE JOB, not the counter.** Three existing paths change sales after the
+fact — transaction edit and delete in `HistoryReportView`, and consignment return/payment. Every one
+must adjust the rollup in the same breath or the numbers rot silently, which is this repo's most
+expensive failure shape. One helper applied with a +1/−1 sign, used by all of them.
+⚠️ **And a REBUILD button is not optional** — it is both the backfill for months before this ships
+and the repair tool if drift ever happens.
 
 **Where things live — new or changed this session**
 
