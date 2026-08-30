@@ -1,6 +1,6 @@
 # NEXT SESSION — read this, then `.claude/PROGRESS.md`. Read no code to orient.
 
-**Written 2026-08-30 09:40 WIB. 666/666 audit · 878/878 selfcheck. Branch `phase0-solid-ground`,
+**Written 2026-08-30 10:07 WIB. 667/667 audit · 878/878 selfcheck. Branch `phase0-solid-ground`,
 tree clean.**
 
 🟠 **PONDER IS PARKED.** His words: *"dont worry about the ponder book for now we focus on
@@ -69,6 +69,12 @@ section it is printed in, at its top-to-bottom position on the screen. Follow `s
   `grep -n "components/Foo.jsx" src/config/*.mjs`. Two guards read a file the code had left and
   nobody noticed for four days. Prefer `read(a) + read(b)` over re-pointing when a behaviour's home
   is genuinely ambiguous.
+- **🔴 EVERY WORD WRITTEN FOR HIM GOES THROUGH `anthropic-skills:humanizer`.** His standing
+  instruction, 2026-08-30: replies, notes, commit messages and shipped copy alike, *"so that its
+  easier for me to understand as well"*.
+- **🔴 KPM COPY HAS NO SECOND PERSON.** The subject is the warehouse, the branch, the shipment
+  or a role. Never *kamu*/*aku*. Audit check 667 scans every Ponder beat and names the offender.
+  Keep `—` where it is the CHARACTER the panel prints; five beats teach that symbol.
 - **🔴 A NEW PANEL IS NOT DONE UNTIL THE BOOK HAS ITS SCENE.** His rule, 2026-08-30. New column
   → beats on the existing scene. New panel → scene + stage + demo world, same book section.
 - **🔴 A COMPONENT THE TUTORIAL RENDERS LIVES IN `src/ponder/stages/`.** The audit scans that
@@ -111,7 +117,7 @@ section it is printed in, at its top-to-bottom position on the screen. Follow `s
 | HQ's surat jalan desk — Request tab, push form, `REQ_RANK` | `src/RestockVaultView.jsx` |
 | Where every pack is — the one warehouse-list function | `src/utils/supply.js` |
 | POV rack + costume posting | `src/components/TierPovSwitch.jsx` · `src/App.jsx` |
-| The 666 checks | `src/config/integration.audit.mjs` |
+| The 667 checks | `src/config/integration.audit.mjs` |
 | The 878 checks | `src/config/logicFixes.selfcheck.mjs` |
 | Viewing harness | `tools/ponder-lab.*` |
 | The warehouse roadmap | `A-Brain/Wiki/Concepts/The Eight Warehouse Gaps.md` |

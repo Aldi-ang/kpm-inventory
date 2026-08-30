@@ -1,8 +1,8 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-30 09:52 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **666/666 audit · 878/878 selfcheck** · branch `phase0-solid-ground`, tree clean
+**Updated: 2026-08-30 10:07 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **667/667 audit · 878/878 selfcheck** · branch `phase0-solid-ground`, tree clean
 
-## 🟠 2026-08-30 09:52 — THE WHOLE RESTOCK QUEUE, CLEARED. `20a4622` → `e45d263`, **666/666 + 878/878**. Tree clean.
+## 🟠 2026-08-30 10:07 — THE RESTOCK QUEUE CLEARED, THEN THE BOOK REWRITTEN. `20a4622` → `3a87de4`, **667/667 + 878/878**. Tree clean.
 
 *One entry for one continuous session — six commits on one feature line, not six pieces of work.*
 
@@ -17,6 +17,7 @@ next. Ponder stays parked for new CHAPTERS, but new features get their scene —
 | 4 | Plain English across the HQ desk + the age line reworded | `77aff79` |
 | 5 | Ponder: 7 new beats on stock-by-warehouse, and a whole new `shipment-plan` scene | `650035c` |
 | 6 | graphify rebuilt over the new files | `e45d263` |
+| 7 | **Ponder rewritten through the humanizer skill** — 35 beats, no second person | `3a87de4` |
 
 **🔴 HIS NEW STANDING RULE, and it now governs every feature:** *"new panel and features means
 different ponder, but inside the same section of the book"*. It splits cleanly — a new **column**
@@ -37,8 +38,18 @@ His other question, *"what is this mean the oldest sentence"*, was fair: `oldest
 never said 116 days of WHAT. It reads `oldest pack 116 days old, from 2 deliveries` now, and
 `20 unknown origin` became `20 with no delivery record`.
 
+**🔴 HIS SECOND STANDING RULE OF THE DAY, and it is wider than Ponder:** *"use /humanizer skill to
+do this. and i want alucard to use humanizer for all the work that he do so that its easier for me
+to understand as well"*. So the skill now runs over replies, notes, commit messages and shipped copy
+alike — not only the tutorial. And KPM's own copy has **no second person**: the subject of a
+sentence is the warehouse, the branch, the shipment or a role, never *kamu* or *aku*. His words:
+*"we are talking about the factory, subject is factory, employees, manager and all of these subject
+no u and me"*. **Audit check 667 enforces it and names the offending beat.**
+⚠️ One em-dash was punctuation and went; the other eight stay, because `—` is the CHARACTER the
+panel prints in a cell it cannot fill and five beats exist to explain it. Banning it bans the lesson.
+
 **✅ HE SHOULD LOOK AT** — Restock Vault, all three panels, and open the book: Restock Vault now has
-**three** entries, Shipment Plan is the third.
+**three** entries, Shipment Plan is the third, and every sentence has been rewritten.
 
 *One entry for one continuous session — two commits fourteen minutes apart on the same feature line,
 not two pieces of work.*
