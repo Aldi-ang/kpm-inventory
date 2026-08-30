@@ -9,7 +9,7 @@ import { txSeconds } from '../utils/dayStats.js';
    readout runs on, so "di gudang / di tangan agen / terjual" on this screen and on the dashboard
    cannot drift into two different answers — which is the whole reason it lives in utils. His ask
    was literally *"just like what we have on the dashboard"*. */
-import { supplyByProduct, warehouseList, MASTER } from '../utils/supply.js';
+import { supplyByProduct, warehouseList, MASTER, bufferDays } from '../utils/supply.js';
 import { confirmAction } from './ConfirmGate.jsx';
 import { notify } from './Toast.jsx';
 import PonderButton from '../ponder/PonderButton.jsx';
@@ -230,16 +230,23 @@ export const inTransitQty = (orders, branch, productId) => (orders || [])
      daysLeft  what is on the shelf, at that rate.
      coverDays how long the delivery has to last: the wait for it PLUS the gap
                until he next places an order. Both measured. Neither invented.
+               PLUS `spareDays`, which is the only term here he sets by hand.
      suggest   what to ask for so the shelf is not empty when the next one lands,
                minus what is here and what is already coming.
 
    Any missing input makes `suggest` null rather than a guess. A confident wrong
-   number is worse than an empty box, because the empty box makes him think. */
-export const reorderAdvice = (arrivals, onHand, inTransit, rhythm, nowSeconds) => {
+   number is worse than an empty box, because the empty box makes him think.
+
+   ⚠️ `spareDays` DEFAULTS TO 0, and that is deliberate: every caller that existed
+   before 2026-08-30 keeps the exact number it printed yesterday, so adding the
+   cushion could not silently change the branch panel's advice at the same time as
+   it added HQ's. Resolve it with `bufferDays(appSettings, branch)` from
+   utils/supply.js — the ONE place that knows his per-cabang overrides. */
+export const reorderAdvice = (arrivals, onHand, inTransit, rhythm, nowSeconds, spareDays = 0) => {
     const list = arrivals || [];
     const shelf = Math.max(0, Number(onHand) || 0);
     const coming = Math.max(0, Number(inTransit) || 0);
-    const out = { ratePerDay: null, daysLeft: null, coverDays: null, suggest: null, shelf, coming };
+    const out = { ratePerDay: null, daysLeft: null, coverDays: null, suggest: null, spareDays: 0, shelf, coming };
 
     if (list.length < 2) return out;
     const oldest = list[list.length - 1].at;
@@ -257,7 +264,9 @@ export const reorderAdvice = (arrivals, onHand, inTransit, rhythm, nowSeconds) =
     const lead = rhythm?.leadDays, cadence = rhythm?.cadenceDays;
     if (lead == null || cadence == null || out.ratePerDay <= 0) return out;
 
-    out.coverDays = lead + cadence;
+    const spare = Math.max(0, Number(spareDays) || 0);
+    out.coverDays = lead + cadence + spare;
+    out.spareDays = spare;
     out.suggest = Math.max(0, Math.ceil(out.ratePerDay * out.coverDays) - shelf - coming);
     return out;
 };
@@ -1136,8 +1145,12 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
                                     const shelfRow = branchStock.find(s => (s.productId || s.id) === selectedProduct);
                                     const arrivals = productArrivals(requests, branchLocation, selectedProduct);
                                     const rhythm = shipmentRhythm(requests, branchLocation);
+                                    /* The cushion is his, per cabang, and the branch asking for stock
+                                       gets the same one HQ sees — two different answers to "how many"
+                                       on the two ends of one shipment is how an argument starts. */
                                     const advice = reorderAdvice(arrivals, shelfRow?.stock || 0,
-                                        inTransitQty(requests, branchLocation, selectedProduct), rhythm, now);
+                                        inTransitQty(requests, branchLocation, selectedProduct), rhythm, now,
+                                        bufferDays(appSettings, branchLocation));
                                     /* The one sentence worth the whole panel: at this speed the shelf
                                        runs dry BEFORE a shipment ordered today could land. */
                                     const tooLate = advice.daysLeft != null && rhythm.leadDays != null

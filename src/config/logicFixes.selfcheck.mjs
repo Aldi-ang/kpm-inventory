@@ -815,6 +815,74 @@ ok('the synced store keeps the status its payload carried',
 ok('and the offline payload still sets that status at save time',
    /status: newStoreData\.isNooRegistration \? 'NOO_ACTIVE' : 'WALK_IN'/.test(engine));
 
+/* ── S38 · the minimum shipment, on the HQ side, with his spare days ───────────────────── */
+section('S38. Minimal kirim: the floor HQ sees, keyed on the Tujuan it is sending to');
+{
+  /* The maths itself is exercised in the G3 section further down, where the pure functions are
+     already lifted out of the .jsx by `new Function` — node cannot import a .jsx, and a second
+     copy of the formula inside a check is the very thing these checks exist to forbid. What is
+     tested HERE is the setting that feeds it, and the wiring that carries it to HQ's screen. */
+  const { bufferDays: spare, DEFAULT_BUFFER_DAYS } = await import('../utils/supply.js');
+  const desk = read('src/RestockVaultView.jsx');
+  const settings = read('src/components/SettingsView.jsx');
+
+  /* HIS SETTING — per cabang, and absence means the default, never zero. Same trap
+     canSeeExpectedCount documents: a key missing from saved settings must not read as a
+     deliberate "no cushion". A 0 he typed on purpose still wins. */
+  ok('a cabang he never touched gets the company number',
+     spare({ restockBufferDays: 5 }, 'BANDUNG') === 5);
+  ok('and with nothing saved at all it gets three days',
+     spare({}, 'BANDUNG') === DEFAULT_BUFFER_DAYS && DEFAULT_BUFFER_DAYS === 3);
+  ok('a cabang he set overrides the company number',
+     spare({ restockBufferDays: 5, restockBufferPerBranch: { BANDUNG: 9 } }, 'BANDUNG') === 9);
+  ok('and only that cabang — its neighbour keeps the default',
+     spare({ restockBufferDays: 5, restockBufferPerBranch: { BANDUNG: 9 } }, 'MUNTILAN') === 5);
+  ok('a deliberate zero is honoured, because absence is null and not zero',
+     spare({ restockBufferDays: 5, restockBufferPerBranch: { BANDUNG: 0 } }, 'BANDUNG') === 0);
+  ok('rubbish in the setting falls back rather than poisoning the maths',
+     spare({ restockBufferDays: 'abc' }, 'BANDUNG') === DEFAULT_BUFFER_DAYS &&
+     spare({ restockBufferDays: -4 }, 'BANDUNG') === DEFAULT_BUFFER_DAYS);
+
+  /* WIRING — the number is only true if it is computed against the Tujuan on screen. */
+  ok('the desk keys the minimum on the destination it is shipping to',
+     /const sendAdvice = useMemo/.test(desk) &&
+     /const to = \(poData\.destination \|\| ''\)\.trim\(\)/.test(desk) &&
+     /\[isOut, poData\.destination,/.test(desk));
+  ok('it refuses to answer for the master vault, which is not a cabang',
+     /if \(!to \|\| NON_BRANCH\.includes\(to\)\) return \{\}/.test(desk));
+  ok('and never on the intake form, where the goods come from the factory',
+     /if \(!isOut\) return \{\}/.test(desk));
+  ok('the branch shelf comes from branchStockMap, not from HQ own stock',
+     /branchStockMap\[to\] \|\| \[\]/.test(desk) &&
+     /branchStockMap=\{branchStock\}[\s\S]{0,400}<BranchWarehouseManager|RestockVaultView[\s\S]{0,900}branchStockMap=\{branchStock\}/.test(app));
+  /* One implementation of "how fast does this leave", imported by both screens. A second copy is
+     the fault `A Ratio of Sums Is Not a Rate` was written about. */
+  ok('the desk imports the branch panel maths instead of re-deriving it',
+     /import \{ productArrivals, shipmentRhythm, inTransitQty, reorderAdvice \} from '\.\/components\/BranchWarehouseManager\.jsx'/.test(desk) &&
+     !/const reorderAdvice|function reorderAdvice/.test(stripComments(desk)));
+  ok('both ends of one shipment read the same cushion',
+     /bufferDays\(appSettings, to\)/.test(desk) &&
+     /bufferDays\(appSettings, branchLocation\)/.test(read('src/components/BranchWarehouseManager.jsx')));
+  /* HIS WORD, and it is load-bearing: the number is a FLOOR when production is tight, not a
+     suggestion to weigh up. `saran` on this screen would invite him to send less. */
+  ok('the desk calls it a minimum, never a suggestion',
+     /minimal <b/.test(desk) && !/[Ss]aran/.test(stripComments(desk)));
+  ok('and it says "belum terukur" rather than printing a number it cannot prove',
+     /belum terukur/.test(desk));
+
+  /* SETTINGS — one box per cabang, and the branch list from the one function that knows. */
+  ok('the spare-days setting writes to settings/general like its neighbours',
+     /restockBufferDays: n \}, \{ merge: true \}/.test(settings) &&
+     /restockBufferPerBranch: next \}, \{ merge: true \}/.test(settings));
+  ok('a blank box DELETES the override rather than storing a zero',
+     /if \(raw === ''\) delete next\[name\]/.test(settings));
+  ok('and the cabang list comes from warehouseList, not a hand-written one',
+     /warehouseList\(motorists\)/.test(settings) &&
+     !/BANDUNG|MUNTILAN/.test(stripComments(settings)));
+  ok('Settings is actually handed the roster it needs',
+     /motorists=\{motorists\}/.test(app));
+}
+
 /* ── S14 · shipping to a branch undid every sale made while the photo uploaded ─────────── */
 section('S14. HQ stock is deducted, not recomputed from a cached screen');
 const branch = read('src/components/BranchWarehouseManager.jsx');
@@ -3069,6 +3137,28 @@ section('V · The reorder suggestion is measured from his own history, or it is 
   ok('a shelf bigger than the whole recorded history stays silent rather than guessing',
      reorderAdvice(arr, 5000, 0, r, NOW).ratePerDay === 0 &&
      reorderAdvice(arr, 5000, 0, r, NOW).suggest === null);
+
+  /* ---- HIS SPARE DAYS (2026-08-30) ---- the cushion on top of "zero on arrival day".
+     ⚠️ THE ZERO DEFAULT IS THE REGRESSION GUARD, not a detail: this parameter was added at the
+     same moment HQ got its own copy of the panel, and a cushion applied by default would have
+     silently changed the BRANCH's advice in the same commit. Every assertion above this line
+     calls the five-argument form and must keep its exact number. */
+  ok('with no spare days named, the cover and the suggestion do not move',
+     reorderAdvice(arr, 100, 0, r, NOW, 0).coverDays === a.coverDays &&
+     reorderAdvice(arr, 100, 0, r, NOW, 0).suggest === a.suggest &&
+     a.spareDays === 0);
+  ok('three spare days buy exactly three more days of cover',
+     reorderAdvice(arr, 100, 0, r, NOW, 3).coverDays === a.coverDays + 3);
+  ok('and the minimum grows by what those days actually cost, nothing rounder',
+     reorderAdvice(arr, 100, 0, r, NOW, 3).suggest === Math.ceil((300 / 35) * 18) - 100);
+  ok('the spare days are reported back, so the screen can name what it added',
+     reorderAdvice(arr, 100, 0, r, NOW, 3).spareDays === 3);
+  ok('rubbish spare days are treated as none rather than poisoning the minimum',
+     reorderAdvice(arr, 100, 0, r, NOW, -5).coverDays === a.coverDays &&
+     reorderAdvice(arr, 100, 0, r, NOW, 'x').coverDays === a.coverDays);
+  /* A cushion cannot conjure a number out of a history that had none. */
+  ok('and they cannot rescue a product with no measurable history',
+     reorderAdvice(arr.slice(0, 1), 100, 0, r, NOW, 30).suggest === null);
 
   /* ---- SILENCE IS AN ANSWER ---- every one of these must be null, not a guess. */
   ok('one arrival is not a history - no rate, no suggestion',

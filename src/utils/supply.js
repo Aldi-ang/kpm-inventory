@@ -1,4 +1,6 @@
-import { convertToBks } from './helpers';
+/* The `.js` is not decoration: the self-checks import this module in plain node, and node will not
+   resolve an extensionless path. Vite is happy either way, so the extension is free. */
+import { convertToBks } from './helpers.js';
 
 /* WHERE EVERY PACK ACTUALLY IS — sold, on a van, or still on a shelf.
    ────────────────────────────────────────────────────────────────────────────
@@ -113,6 +115,36 @@ export const supplyByProduct = ({
         .map(r => ({ ...r, total: r.sold + r.field + r.shelf }))
         .filter(r => r.total > 0)
         .sort((a, b) => b.total - a.total);
+};
+
+/* ═══════════ THE SPARE DAYS ON TOP OF A REORDER — one number, per cabang ═══════════
+   Aldi, 2026-08-30, after the maths was explained to him: *"regarding the buffer i want option to
+   change this buffer"*, and *"we should made this difference per branch"*.
+
+   WHAT IT IS. `reorderAdvice` targets the shelf hitting exactly ZERO on the day the next delivery
+   lands: cover = how long you wait for a truck + how long until you next order. Exact is fragile —
+   one good selling week or one late truck and that cabang stops selling. These are the spare days
+   added on top.
+
+   ⚠️ THIS IS NOT "how fast the product moves". That is measured per product AND per cabang already,
+   from that cabang's own delivery history, and needs no setting at all — the point had to be made
+   to him because he asked for per-branch on those grounds. What varies per cabang is RISK: a long
+   or unreliable road deserves a bigger cushion than one an hour away. So the override is per
+   cabang, not per product: a number per product per cabang is a number nobody can keep true.
+
+   ABSENCE MEANS THE DEFAULT, and the default means the company number, and THAT means 3. Read in
+   that order so a cabang he has never touched is never treated as "zero spare" — the same trap
+   `canSeeExpectedCount` documents, where a brand-new key missing from a saved matrix reads as a
+   deliberate no. `0` typed on purpose still wins, because `??` only falls through on null.        */
+export const DEFAULT_BUFFER_DAYS = 3;
+
+export const bufferDays = (appSettings, branch) => {
+    const per = appSettings?.restockBufferPerBranch;
+    const own = per && typeof per === 'object' ? per[branch] : undefined;
+    const fallback = appSettings?.restockBufferDays;
+    const pick = own ?? fallback ?? DEFAULT_BUFFER_DAYS;
+    const n = Number(pick);
+    return Number.isFinite(n) && n >= 0 ? n : DEFAULT_BUFFER_DAYS;
 };
 
 /* DORMANT — what is sitting still. His words: *"the total dormant product that we have"*.

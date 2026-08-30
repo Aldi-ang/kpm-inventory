@@ -4463,10 +4463,16 @@ const handleGitHubMirror = async () => {
                   {/* 🚀 HQ ONLY: FACTORY PROCUREMENT ENGINE (RESI, PHOTOS, DLL) */}
                   {isAdmin && (
                       <div className="mb-12 pb-12 border-b-4 border-[var(--duke-edge-1)] border-dashed">
-                          <RestockVaultView 
-                              inventory={inventory} 
+                          <RestockVaultView
+                              inventory={inventory}
                               procurements={procurements}
                               motorists={motorists}
+                              /* 🔴 THE BRANCH'S OWN SHELF, and the desk cannot compute a minimum
+                                 without it. HQ's `inventory` is HQ's stock; "how many should I send
+                                 to BANDUNG" is arithmetic about BANDUNG's shelf, which only this map
+                                 holds. BranchWarehouseManager has received it since the Sebaran Stok
+                                 build; the desk had no reason to until the recommendation moved here. */
+                              branchStockMap={branchStock}
                               db={db} 
                               storage={storage} 
                               appId={appId} 
@@ -4711,6 +4717,9 @@ const handleGitHubMirror = async () => {
                           handleRemovePasskey={handleRemovePasskey}
                   tierSettings={tierSettings} setTierSettings={setTierSettings} handleSaveTiers={handleSaveTiers} handleExportTiers={handleExportTiers} handleImportTiers={handleImportTiers} handleTierIconSelect={handleTierIconSelect}
                   appSettings={appSettings} setAppSettings={setAppSettings}
+                  /* the roster is the only registry of cabang there is — Settings needs it to offer
+                     one spare-days box per warehouse, same source as the Tujuan picker */
+                  motorists={motorists}
                   editCompanyProfile={editCompanyProfile} setEditCompanyProfile={setEditCompanyProfile} handleSaveCompanyProfile={handleSaveCompanyProfile}
                   handleMascotSelect={handleMascotSelect} newMascotMessage={newMascotMessage} setNewMascotMessage={setNewMascotMessage} handleAddMascotMessage={handleAddMascotMessage}
                   activeMessages={activeMessages} editingMsgIndex={editingMsgIndex} setEditingMsgIndex={setEditingMsgIndex} editMsgText={editMsgText} setEditMsgText={setEditMsgText} handleSaveEditedMessage={handleSaveEditedMessage} handleDeleteMascotMessage={handleDeleteMascotMessage}

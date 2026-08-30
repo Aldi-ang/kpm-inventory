@@ -3858,7 +3858,10 @@ check(G54, 'Tujuan is built from the roster, not only from what has already ship
    "Headquarters is not a branch — Headquarters IS the master vault". The fix was to export
    NON_BRANCH and use it, not to lengthen a second copy of the list. */
 check(G54, 'Tujuan asks supply.js what counts as a branch instead of deciding for itself',
-  /import \{ NON_BRANCH \} from '\.\/utils\/supply\.js'/.test(restockCode) &&
+  /* The name must come FROM supply.js; the rest of the import list is free to grow. Pinning the
+     exact list made this go red on 2026-08-30 for the crime of importing `bufferDays` beside it —
+     a check that fails when nothing it guards has changed is a check people learn to ignore. */
+  /import \{[^}]*\bNON_BRANCH\b[^}]*\} from '\.\/utils\/supply\.js'/.test(restockCode) &&
   /!NON_BRANCH\.includes\(n\)/.test(restockCode) &&
   /export const NON_BRANCH/.test(fs.readFileSync('src/utils/supply.js', 'utf8')),
   'branchesSeen must filter through the NON_BRANCH exported by supply.js. A local list here drifts ' +
@@ -3935,7 +3938,9 @@ check(G55, 'the terjual window and the transactions listener still agree',
 /* The maths is the dashboard's, not a second copy. Two implementations of "where is every pack"
    WILL drift, and the screen nobody edited is the one that keeps being believed. */
 check(G55, 'the readout runs the dashboard’s supply maths, not its own copy',
-  /import \{ supplyByProduct, warehouseList, MASTER \} from '\.\.\/utils\/supply\.js'/.test(bwmCode) &&
+  /* Same loosening as G54, same day, same reason: the guarantee is that these three names come
+     from supply.js, not that the import list is frozen at exactly three. */
+  /import \{[^}]*\bsupplyByProduct\b[^}]*\bwarehouseList\b[^}]*\bMASTER\b[^}]*\} from '\.\.\/utils\/supply\.js'/.test(bwmCode) &&
   /supplyByProduct\(\{/.test(bwmCode) && /supplyByProduct\(\{/.test(dashCode),
   'BranchWarehouseManager must call supplyByProduct from utils/supply.js — the same function the ' +
   'dashboard calls. Re-deriving shelf/field/sold here is how the two screens start disagreeing ' +

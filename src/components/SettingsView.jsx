@@ -1,5 +1,9 @@
 import React, { useState } from 'react';
 import { PRICE_TIERS } from '../utils/helpers';
+/* The roster is the only registry of cabang there is, and `warehouseList` is the one function that
+   reads it — the same one the Tujuan picker and the POV rack use. A private list here would be a
+   third answer to "which warehouses exist", which is the fault 20c4a0a already paid for. */
+import { warehouseList, DEFAULT_BUFFER_DAYS } from '../utils/supply';
 
 /* the mascot-peek notice's timer. Module scope, not a useRef, on purpose: every hook in this
    file below line ~95 sits AFTER `if (!isAdmin) return (...)`, so each one added there is one
@@ -34,7 +38,7 @@ export default function SettingsView({
     currentUserEmail, handleChangePin, handleAdminLogout,
     handleRegisterPasskey, registeredPasskeys, handleRemovePasskey,
     tierSettings, setTierSettings, handleSaveTiers, handleExportTiers, handleImportTiers, handleTierIconSelect,
-    appSettings, setAppSettings,
+    appSettings, setAppSettings, motorists = [],
     editCompanyProfile, setEditCompanyProfile, handleSaveCompanyProfile,
     handleMascotSelect, newMascotMessage, setNewMascotMessage, handleAddMascotMessage,
     activeMessages, editingMsgIndex, setEditingMsgIndex, editMsgText, setEditMsgText, handleSaveEditedMessage, handleDeleteMascotMessage,
@@ -501,6 +505,77 @@ export default function SettingsView({
                                           </select>
                                       </label>
                                   </div>
+
+                              </div>
+                          )}
+
+                          {/* ═══════════ SPARE DAYS ON A RESTOCK ═══════════
+                              Aldi, 2026-08-30: *"regarding the buffer i want option to change this
+                              buffer"* and *"we should made this difference per branch"*.
+
+                              ⚠️ THIS IS NOT HOW FAST A PRODUCT SELLS. That is already measured per
+                              product AND per cabang from that cabang's own delivery history, with no
+                              setting at all. What this sets is RISK: how much spare to carry so one
+                              good week or one late truck does not empty the shelf. That is why the
+                              override is per cabang and not per product — a number per product per
+                              cabang is a number nobody can keep true.
+
+                              A BLANK BOX IS NOT ZERO. Blank means "use the company number", which is
+                              why the field DELETES the key rather than writing 0 — a cabang he never
+                              touched must not silently become the one with no cushion. */}
+                          {isSystemOwner && (
+                              <div className="kpm-mod live">
+                                  <div className="kpm-head">
+                                      <span className="slot">Company · 06</span>
+                                      <div className="line">
+                                          <h3>Spare days on a restock</h3>
+                                          <span className="kpm-read on">Per warehouse</span>
+                                      </div>
+                                      <p className="kpm-desc">
+                                          When the app works out the smallest shipment a warehouse needs, it
+                                          aims for the shelf reaching zero on the day the next delivery lands.
+                                          That is exact, and exact is fragile — one good selling week or one
+                                          late truck and they stop selling. These are the extra days of stock
+                                          added on top. Leave a warehouse blank to use the company number.
+                                      </p>
+                                  </div>
+                                  <div className="kpm-shelf split">
+                                          <label className="kpm-field">
+                                              <span>Company default (days)</span>
+                                              <input type="number" min="0" max="90" inputMode="numeric"
+                                                  value={appSettings?.restockBufferDays ?? DEFAULT_BUFFER_DAYS}
+                                                  onChange={(e) => {
+                                                      const n = Math.max(0, Math.min(90, Math.floor(Number(e.target.value) || 0)));
+                                                      setAppSettings(prev => ({ ...prev, restockBufferDays: n }));
+                                                      if (user) setDoc(doc(db, `artifacts/${appId}/users/${user.uid}/settings/general`), { restockBufferDays: n }, { merge: true });
+                                                  }} />
+                                          </label>
+                                      </div>
+                                      {warehouseList(motorists).slice(1).length === 0 ? (
+                                          <p className="kpm-desc">
+                                              No branch warehouses on the roster yet, so there is nothing to set
+                                              per warehouse. Register a team in Fleet &amp; Roster first.
+                                          </p>
+                                      ) : (
+                                          <div className="kpm-shelf split">
+                                              {warehouseList(motorists).slice(1).map(name => (
+                                                  <label className="kpm-field" key={name}>
+                                                      <span>{name} (days)</span>
+                                                      <input type="number" min="0" max="90" inputMode="numeric"
+                                                          placeholder={String(appSettings?.restockBufferDays ?? DEFAULT_BUFFER_DAYS)}
+                                                          value={appSettings?.restockBufferPerBranch?.[name] ?? ''}
+                                                          onChange={(e) => {
+                                                              const raw = e.target.value;
+                                                              const next = { ...(appSettings?.restockBufferPerBranch || {}) };
+                                                              if (raw === '') delete next[name];
+                                                              else next[name] = Math.max(0, Math.min(90, Math.floor(Number(raw) || 0)));
+                                                              setAppSettings(prev => ({ ...prev, restockBufferPerBranch: next }));
+                                                              if (user) setDoc(doc(db, `artifacts/${appId}/users/${user.uid}/settings/general`), { restockBufferPerBranch: next }, { merge: true });
+                                                          }} />
+                                                  </label>
+                                              ))}
+                                          </div>
+                                      )}
                               </div>
                           )}
 

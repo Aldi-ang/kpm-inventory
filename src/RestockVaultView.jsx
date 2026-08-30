@@ -6,7 +6,15 @@ import { confirmAction } from './components/ConfirmGate.jsx';
 import { notify } from './components/Toast.jsx';
 import { canPickFromGallery } from './config/permissions';
 /* one definition of "what is a branch", shared with the dashboard's supply maths */
-import { NON_BRANCH } from './utils/supply.js';
+import { NON_BRANCH, bufferDays } from './utils/supply.js';
+/* THE SAME FOUR FUNCTIONS THE BRANCH PANEL RUNS ON, imported rather than re-derived. His ask,
+   2026-08-30: *"when we fill the shipment out forms, it shows the recommended quantity sent for
+   each product"* — and the branch already had this maths. A second copy of "how fast does this
+   leave" is exactly the fault `A Ratio of Sums Is Not a Rate` was written about: the screen nobody
+   edits is the one that keeps being believed. They live in BranchWarehouseManager because that is
+   where they were built and where their checks read them; moving them would split those checks
+   from their code, which this repo has now paid for twice. */
+import { productArrivals, shipmentRhythm, inTransitQty, reorderAdvice } from './components/BranchWarehouseManager.jsx';
 import PonderButton from './ponder/PonderButton.jsx';
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -127,7 +135,7 @@ const Proses = ({ steps }) => (
    below IN_TRANSIT and the one state nobody goes looking for is the one buried at the bottom. */
 const REQ_RANK = { DISPUTED: 0, PENDING: 1, IN_TRANSIT: 2 };
 
-const RestockVaultView = ({ inventory = [], procurements = [], motorists = [], db, storage, appId, user, isAdmin, userRole, logAudit, triggerCapy, appSettings, masterUserId }) => {
+const RestockVaultView = ({ inventory = [], procurements = [], motorists = [], branchStockMap = {}, db, storage, appId, user, isAdmin, userRole, logAudit, triggerCapy, appSettings, masterUserId }) => {
     /* camera only, unless he is senior enough to re-file a photo that came in some other way */
     const galleryOk = canPickFromGallery(userRole);
     /* 'in' = surat jalan masuk · 'out' = surat jalan keluar (HQ push) · 'book' = buku besar */
@@ -271,6 +279,45 @@ const RestockVaultView = ({ inventory = [], procurements = [], motorists = [], d
 
     const totalBasePrice = cart.reduce((sum, item) => sum + (Number(item.qtyReceived || 0) * Number(item.basePrice || 0)), 0);
     const totalItemsReceived = cart.reduce((sum, item) => sum + Number(item.qtyReceived || 0), 0);
+
+    /* ═══════════ MINIMAL KIRIM — the least this cabang can be sent without running dry ═══════════
+       Aldi, 2026-08-30: *"this recommended value should be different according to the 'tujuan' that
+       i choose"*. So it is keyed on `poData.destination` and re-derives the moment he changes it —
+       same product, different cabang, different number, because each cabang has its own delivery
+       history and its own selling speed.
+
+       IT IS A FLOOR, NOT A TARGET, and that is his framing not mine: *"normally factory does sent
+       more than enough goods to the regional warehouse but if there is not enough/ minimal goods
+       are being sent then this features actually come in handy, especially with company that have
+       limited production capabilities"*. When production is tight this stops being advice and
+       becomes the line under which a cabang stops selling. The screen says `minimal`, never
+       `saran`, for exactly that reason.
+
+       ⚠️ OUTBOUND ONLY. On the Masuk form the goods come from the factory and there IS no cabang —
+       `poData.destination` is HQ itself. A number there would be arithmetic about the master vault
+       dressed up as branch advice, so the whole memo returns {} unless `isOut`. `NON_BRANCH` is the
+       same guard the Tujuan list already uses: Headquarters is the master vault, not a cabang.
+
+       ⚠️ THE CART LINE BEING TYPED IS NOT COUNTED AS "already coming". `inTransitQty` reads saved
+       `stock_requests`, and this document is not saved yet — so the minimum does not shrink as he
+       types into it, which would make the number chase its own tail. */
+    const sendAdvice = useMemo(() => {
+        if (!isOut) return {};
+        const to = (poData.destination || '').trim();
+        if (!to || NON_BRANCH.includes(to)) return {};
+        const now = Math.floor(Date.now() / 1000);
+        const rhythm = shipmentRhythm(stockRequests, to);
+        const spare = bufferDays(appSettings, to);
+        const shelfOf = (id) =>
+            Number((branchStockMap[to] || []).find(s => (s.productId || s.id) === id)?.stock) || 0;
+        const out = {};
+        cart.forEach(c => {
+            out[c.id] = reorderAdvice(
+                productArrivals(stockRequests, to, c.id), shelfOf(c.id),
+                inTransitQty(stockRequests, to, c.id), rhythm, now, spare);
+        });
+        return out;
+    }, [isOut, poData.destination, cart, stockRequests, branchStockMap, appSettings]);
     /* cukai and upah bongkar are an INTAKE cost. A branch does not pay them a second time. */
     const extraCosts = (Number(poData.shippingCost)||0) + (isOut ? 0 : (Number(poData.laborCost)||0) + (Number(poData.exciseTax)||0));
     const trueLandedTotal = totalBasePrice + extraCosts;
@@ -1549,8 +1596,29 @@ const RestockVaultView = ({ inventory = [], procurements = [], motorists = [], d
                                                     <td className="px-3 py-2">
                                                         <input type="text" value={item.batchNo || ''} onChange={e => updateCartItem(item.cartId, 'batchNo', e.target.value.toUpperCase())} placeholder="08-B" className="w-full bg-inset border border-line-2 rounded p-1.5 text-xs text-ink font-mono uppercase outline-none focus:border-orange transition-colors"/>
                                                     </td>
+                                                    {/* THE MINIMUM SITS UNDER THE BOX IT IS ABOUT — same
+                                                        placement argument as the price drift under @ Landed.
+                                                        A number in a neighbouring column is a number he has
+                                                        to pair up himself.
+                                                        It goes RED only when what he typed is genuinely below
+                                                        the floor, because a warning that is always on is a
+                                                        warning nobody reads. Blank box = no warning yet: he
+                                                        has not answered, so there is nothing to be wrong. */}
                                                     <td className="px-3 py-2">
                                                         <input type="number" min="0" value={item.qtyReceived} onChange={e => updateCartItem(item.cartId, 'qtyReceived', e.target.value)} placeholder="0" className="w-full bg-inset border border-line-2 rounded p-1.5 text-xs text-ink font-mono text-right outline-none focus:border-orange transition-colors"/>
+                                                        {(() => {
+                                                            const adv = sendAdvice[item.id];
+                                                            if (!adv) return null;
+                                                            const typed = Number(item.qtyReceived);
+                                                            const short = adv.suggest != null && Number.isFinite(typed) && item.qtyReceived !== '' && typed < adv.suggest;
+                                                            return (
+                                                                <span className={`block font-mono text-[10.5px] mt-1 text-right leading-snug ${short ? 'text-danger-text' : 'text-ink-muted'}`}>
+                                                                    {adv.suggest != null
+                                                                        ? <>minimal <b className={short ? 'text-danger-text' : 'text-ink'}>{num(adv.suggest)}</b>{adv.spareDays > 0 && <span className="opacity-70"> · +{adv.spareDays}h</span>}</>
+                                                                        : <span className="opacity-70">belum terukur</span>}
+                                                                </span>
+                                                            );
+                                                        })()}
                                                     </td>
                                                     {/* the drift sits UNDER the landed figure, because that is the figure it compares */}
                                                     <td className="px-3 py-2 text-right font-mono whitespace-nowrap">
