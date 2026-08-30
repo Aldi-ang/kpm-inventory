@@ -16,6 +16,7 @@ import PonderButton from '../ponder/PonderButton.jsx';
 /* The table below is rendered by the Ponder tutorial too, fed a fixed demo world. Same
    component in both places, so the tutorial cannot drift from the screen it teaches. */
 import StockByWarehouseTable from '../ponder/stages/StockByWarehouseTable.jsx';
+import ShipmentPlanTable from './ShipmentPlanTable.jsx';
 
 /* ===========================================================================
    THE ARRIVAL CHECK — a count at the door, PARTIAL BLIND.
@@ -473,6 +474,44 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
     }, [isAdmin, motorists, transactions, branchStockMap, globalInventory, requests, appSettings]);
 
     const gTotal = (k) => logistics.reduce((s, r) => s + (Number(r[k]) || 0), 0);
+
+    /* ═══════════ RENCANA KIRIM — the same floors, turned on their side ═══════════
+       A TRANSPOSE, NOT A CALCULATION. Every number here already exists inside `logistics`; this
+       flips it from one-row-per-warehouse to one-row-per-product so a short production run can be
+       split across cabang. Re-deriving any of it would put a third implementation of "how many"
+       on the screen, and three implementations is how three answers happen.
+
+       `short` is the only genuinely new figure, and it is the reason the panel exists: what the
+       master vault holds, measured against what every cabang needs. Nothing else in the app says
+       "this cannot all be sent". */
+    const shipmentPlan = useMemo(() => {
+        const branches = logistics.filter(r => r.name !== MASTER).map(r => r.name);
+        const master = logistics.find(r => r.name === MASTER);
+        const hqOf = (id) => Number((master?.detail || []).find(p => p.id === id)?.shelf) || 0;
+
+        /* Every product ANY cabang has an opinion about, master included so a product held only at
+           HQ still shows its stock rather than vanishing from the plan. */
+        const names = new Map();
+        logistics.forEach(r => (r.detail || []).forEach(p => names.set(p.id, p.name)));
+
+        return [...names.entries()].map(([id, name]) => {
+            const byBranch = {};
+            branches.forEach(b => {
+                const row = logistics.find(r => r.name === b);
+                const item = (row?.detail || []).find(p => p.id === id);
+                byBranch[b] = item ? item.minimum : null;   // null = not measurable here yet
+            });
+            const measured = Object.values(byBranch).filter(v => v != null);
+            /* null, never 0, when no cabang could be measured — "nobody knows" and "nobody needs
+               any" are different answers and the screen must not merge them. */
+            const needed = measured.length === 0 ? null : measured.reduce((s, v) => s + v, 0);
+            const hq = hqOf(id);
+            return { id, name, hq, byBranch, needed, short: needed == null ? null : Math.max(0, needed - hq) };
+        }).sort((a, b) => (b.short || 0) - (a.short || 0) || (b.needed || 0) - (a.needed || 0));
+    }, [logistics]);
+
+    const planBranches = useMemo(
+        () => logistics.filter(r => r.name !== MASTER).map(r => r.name), [logistics]);
 
     const stockCard = (item) => {
         const arrivals = productArrivals(requests, branchLocation, item.productId || item.id);
@@ -1360,6 +1399,35 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
                 </section>
                 );
             })()}
+
+            {/* ════════ RENCANA KIRIM — one row per product, one column per cabang ════════
+                His ask, 2026-08-30: *"i think we should made one more panel for product shipping
+                quantity recommendation"*, alongside the column above rather than instead of it.
+
+                ⚠️ IT SITS BELOW SEBARAN STOK ON PURPOSE. Sebaran Stok answers "does this cabang need
+                a delivery"; this answers "I do not have enough for everyone, who gets it". The second
+                question only exists once the first has been asked, and only when stock is short —
+                which is exactly the case he described the factory not covering. */}
+            {isAdmin && logistics.length > 0 && (
+                <section className="mb-6 rounded-2xl border border-line-2 bg-panel overflow-hidden shadow-[0_1px_1px_rgba(0,0,0,0.20),0_18px_40px_-28px_rgba(0,0,0,0.85)]">
+                    <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 px-5 pt-5 pb-4">
+                        <div className="flex items-center gap-3 min-w-0">
+                            <span className="h-10 w-10 rounded-xl bg-raised border border-line-2 flex items-center justify-center shrink-0">
+                                <Truck size={18} className="text-accent-ink"/>
+                            </span>
+                            <div className="min-w-0">
+                                <h3 className="font-display text-xl sm:text-2xl font-black text-ink uppercase tracking-[0.14em] leading-none">Rencana Kirim</h3>
+                                <div className="h-[3px] w-10 bg-orange rounded-full mt-2"/>
+                                <p className="font-mono text-[10px] text-ink-muted tracking-widest mt-2">minimal per barang, per cabang · in Bks</p>
+                            </div>
+                        </div>
+                        <p className="font-mono text-[10px] text-ink-muted tracking-widest shrink-0">
+                            Kurang = stok gudang pusat tidak cukup untuk semua cabang
+                        </p>
+                    </div>
+                    <ShipmentPlanTable rows={shipmentPlan} branches={planBranches} />
+                </section>
+            )}
 
             {/* "Isi Gudang Cabang" stood here — a picker that showed ONE branch's shelf and
                 nothing else. Deleted 2026-08-27 on his call after the Sebaran Stok drawer replaced

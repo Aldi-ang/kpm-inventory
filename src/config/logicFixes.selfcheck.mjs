@@ -908,6 +908,43 @@ section('S38. Minimal kirim: the floor HQ sees, keyed on the Tujuan it is sendin
   ok('the appSettings the cushion comes from is in the memo dep list, or the column goes stale',
      /\[isAdmin, motorists, transactions, branchStockMap, globalInventory, requests, appSettings\]/.test(bwm));
 
+  /* ---- RENCANA KIRIM — the same floors, turned on their side (2026-08-30) ----
+     One row per product, one column per cabang. It answers the question Sebaran Stok cannot:
+     *"I have 900 Cello and my three cabang need 1.400 — who gets what"*, which only exists when
+     production is short. His scenario, his words, and the reason `short` is the panel's whole
+     point: nothing else in the app ever says "this cannot all be sent". */
+  const plan = read('src/components/ShipmentPlanTable.jsx');
+  ok('the plan is a TRANSPOSE of logistics, and computes no minimum of its own',
+     /const shipmentPlan = useMemo/.test(bwm) &&
+     /byBranch\[b\] = item \? item\.minimum : null/.test(bwm) &&
+     !/reorderAdvice|shipmentRhythm|productArrivals/.test(stripComments(plan)));
+  ok('the shortfall is the master vault measured against what every cabang needs',
+     /short: needed == null \? null : Math\.max\(0, needed - hq\)/.test(bwm));
+  ok('and HQ stock is read from the MASTER row rather than a second lookup',
+     /const hqOf = \(id\) => Number\(\(master\?\.detail \|\| \[\]\)\.find\(p => p\.id === id\)\?\.shelf\) \|\| 0/.test(bwm));
+  /* Unmeasured must not become zero anywhere along the chain, or a cabang nobody can measure reads
+     as a cabang that needs nothing — the same distinction the column keeps one screen up. */
+  ok('a product no cabang can measure totals to null, never to zero',
+     /const measured = Object\.values\(byBranch\)\.filter\(v => v != null\)/.test(bwm) &&
+     /measured\.length === 0 \? null : measured\.reduce/.test(bwm));
+  ok('the table prints an em-dash for those, and never a bare 0',
+     /v == null[\s\S]{0,120}—/.test(plan) && /r\.needed == null \?[\s\S]{0,60}—/.test(plan));
+  /* A screen about splitting scarcity must not be padded with products nobody wants. A real zero
+     is dropped; an unmeasured null is KEPT, because "we cannot see this one" is worth showing. */
+  ok('products nobody needs are dropped, but unmeasured ones stay',
+     /rows\.filter\(r => r\.needed === null \|\| r\.needed > 0\)/.test(plan));
+  ok('the worst shortfall sorts to the top, which is the row he has to act on',
+     /\.sort\(\(a, b\) => \(b\.short \|\| 0\) - \(a\.short \|\| 0\)/.test(bwm));
+  /* One grid template drives header, rows and total. Three hand-written ones drift the moment a
+     cabang is added — and the column count here is data, not a constant. */
+  ok('one grid template is built from the cabang list and reused by every row',
+     /const cols = `minmax\(0,1\.4fr\) 108px \$\{branches\.map\(\(\) => '104px'\)\.join\(' '\)\} 108px 112px`/.test(plan) &&
+     (plan.match(/gridTemplateColumns: cols/g) || []).length === 3);
+  ok('a company with no cabang says so instead of drawing a table with no columns',
+     /branches\.length === 0/.test(plan) && /Belum ada cabang di roster/.test(plan));
+  ok('and the panel is mounted for HQ, below the warehouse table',
+     /<ShipmentPlanTable rows=\{shipmentPlan\} branches=\{planBranches\} \/>/.test(bwm));
+
   /* SETTINGS — one box per cabang, and the branch list from the one function that knows. */
   ok('the spare-days setting writes to settings/general like its neighbours',
      /restockBufferDays: n \}, \{ merge: true \}/.test(settings) &&

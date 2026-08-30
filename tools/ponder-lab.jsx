@@ -22,6 +22,7 @@ import PonderOverlay from '../src/ponder/PonderOverlay.jsx';
 import PonderBookButton from '../src/ponder/PonderBook.jsx';
 import TierPovSwitch from '../src/components/TierPovSwitch.jsx';
 import StockByWarehouseTable from '../src/ponder/stages/StockByWarehouseTable.jsx';
+import ShipmentPlanTable from '../src/components/ShipmentPlanTable.jsx';
 import { SCENES } from '../src/ponder/registry.js';
 
 const q = new URLSearchParams(window.location.search);
@@ -165,7 +166,35 @@ function MinKirimLab() {
   );
 }
 
+
+/* 🔴 ?plan MOUNTS RENCANA KIRIM. Same argument as ?minkirim: the real panel needs a signed-in
+   owner, the vault gate and a company with real delivery history, so without this the product-first
+   table could only be read off a diff. The rows are the shape `BranchWarehouseManager` transposes
+   out of `logistics`.
+   `?plan=empty` is the fresh-company case — no cabang on the roster at all, which must explain
+   itself rather than render a table with no columns. */
+const PLAN_ROWS = [
+  { id: 'p1', name: 'Cello Chocolate', hq: 900,
+    byBranch: { BANDUNG: 440, MUNTILAN: 610, SEMARANG: 350 }, needed: 1400, short: 500 },
+  { id: 'p2', name: 'Cello Mmrapi', hq: 12921,
+    byBranch: { BANDUNG: 120, MUNTILAN: 0, SEMARANG: null }, needed: 120, short: 0 },
+  { id: 'p3', name: 'Cello Kopi', hq: 0,
+    byBranch: { BANDUNG: null, MUNTILAN: null, SEMARANG: null }, needed: null, short: null },
+  { id: 'p4', name: 'Cello Menthol', hq: 4000,
+    byBranch: { BANDUNG: 0, MUNTILAN: 0, SEMARANG: 0 }, needed: 0, short: 0 },
+];
+
+function PlanLab() {
+  const empty = q.get('plan') === 'empty';
+  return (
+    <div className="p-6 bg-panel">
+      <ShipmentPlanTable rows={empty ? [] : PLAN_ROWS} branches={empty ? [] : ['BANDUNG', 'MUNTILAN', 'SEMARANG']} />
+    </div>
+  );
+}
+
 createRoot(document.getElementById('root')).render(
+  q.has('plan') ? <PlanLab /> :
   q.has('minkirim') ? <MinKirimLab /> :
   q.has('pov') ? <PovLab /> : q.has('book') ? <BookLab /> : <Lab />);
 

@@ -1,0 +1,129 @@
+/* RENCANA KIRIM — one row per PRODUCT, one column per cabang.
+
+   Aldi, 2026-08-30: *"i think we should made one more panel for product shipping quantity
+   recommendation"*, and the scenario that makes it worth building, in his own words:
+   *"normally factory does sent more than enough goods to the regional warehouse but if there is not
+   enough/ minimal goods are being sent then this features actually come in handy, especially with
+   company that have limited production capabilities"*.
+
+   🔴 WHY THIS IS NOT A SECOND COPY OF SEBARAN STOK, which is the objection it had to survive.
+   Sebaran Stok is warehouse-first and answers *"does BANDUNG need a delivery?"*. This is
+   product-first and answers the question that only appears when stock is SHORT: *"I have 900 Cello
+   Chocolate in the vault and my three cabang need 1.400 between them — who gets what?"* You cannot
+   read that off a warehouse-first table without holding three rows in your head at once, and the
+   one moment you need it is the moment you are under pressure.
+
+   🔴 THE SHORTFALL COLUMN IS THE WHOLE POINT. Everything else here is already knowable. `short`
+   is what the master vault CANNOT cover, and it is the only number on either screen that says
+   "somebody is going to go without". It is the reason the panel exists.
+
+   Presentational ONLY — no Firestore, no maths, no useMemo. `BranchWarehouseManager` transposes
+   its already-computed `logistics` into these rows; nothing here re-derives a minimum, because
+   three surfaces printing three different floors is exactly the failure this feature was built to
+   avoid. */
+import React from 'react';
+import { Package, AlertTriangle } from 'lucide-react';
+
+const n = (v) => Number(v || 0).toLocaleString('id-ID');
+
+export default function ShipmentPlanTable({ rows = [], branches = [] }) {
+    if (branches.length === 0) {
+        return (
+            <p className="px-5 py-8 text-[11px] text-ink-muted uppercase tracking-widest text-center">
+                Belum ada cabang di roster — tidak ada tujuan untuk direncanakan.
+            </p>
+        );
+    }
+    /* A product nobody needs is noise on a screen about splitting scarcity. `needed === null` means
+       no cabang could be measured at all, which is different from "measured, needs nothing" — the
+       same distinction the Minimal kirim column keeps, and it is kept here by dropping only the
+       rows where the answer is a real zero. */
+    const live = rows.filter(r => r.needed === null || r.needed > 0);
+
+    if (live.length === 0) {
+        return (
+            <p className="px-5 py-8 text-[11px] text-ink-muted uppercase tracking-widest text-center">
+                Tidak ada cabang yang perlu kiriman sekarang.
+            </p>
+        );
+    }
+
+    /* One grid template for header, rows and total, built from the branch count so the columns
+       cannot drift apart the way three hand-written templates would. */
+    const cols = `minmax(0,1.4fr) 108px ${branches.map(() => '104px').join(' ')} 108px 112px`;
+
+    const Cell = ({ children, className = '' }) => (
+        <span className={`text-right font-mono tabular-nums ${className}`}>{children}</span>
+    );
+
+    return (
+        <div className="overflow-x-auto">
+            <div style={{ minWidth: `${520 + branches.length * 104}px` }}>
+
+                <div className="grid gap-x-4 items-end px-5 pb-2.5 border-b border-line-2 text-[10px] font-bold text-ink-muted uppercase tracking-widest"
+                     style={{ gridTemplateColumns: cols }}>
+                    <span>Barang</span>
+                    <span className="text-right">Di gudang pusat</span>
+                    {branches.map(b => <span key={b} className="text-right truncate" title={b}>{b}</span>)}
+                    <span className="text-right">Total minimal</span>
+                    <span className="text-right">Kurang</span>
+                </div>
+
+                {live.map(r => {
+                    const short = r.short > 0;
+                    return (
+                        <div key={r.id}
+                             className={`grid gap-x-4 items-center px-5 py-3 border-b border-line-2 last:border-b-0 ${short ? 'bg-danger-well' : ''}`}
+                             style={{ gridTemplateColumns: cols }}>
+                            <div className="min-w-0 flex items-center gap-2">
+                                {short
+                                    ? <AlertTriangle size={13} className="text-danger-text shrink-0"/>
+                                    : <Package size={13} className="text-ink-muted shrink-0"/>}
+                                <span className="font-bold text-ink text-[13px] truncate">{r.name}</span>
+                            </div>
+                            <Cell className={`font-black ${r.hq > 0 ? 'text-gold' : 'text-ink-muted'}`}>{n(r.hq)}</Cell>
+                            {branches.map(b => {
+                                const v = r.byBranch[b];
+                                return (
+                                    <Cell key={b} className="text-[13px]">
+                                        {v == null
+                                            ? <span className="text-ink-muted" title="Belum bisa diukur — butuh minimal dua pengiriman produk ini ke cabang tersebut">—</span>
+                                            : <span className={v > 0 ? 'text-orange' : 'text-ink-muted'}>{n(v)}</span>}
+                                    </Cell>
+                                );
+                            })}
+                            <Cell className="font-black text-ink">
+                                {r.needed == null ? <span className="text-ink-muted">—</span> : n(r.needed)}
+                            </Cell>
+                            {/* The only cell that is ever a warning. It is the master vault's stock
+                                measured against what the cabang need, so it says what no other
+                                screen says: this cannot all be sent. */}
+                            <Cell className="font-black">
+                                {r.short == null
+                                    ? <span className="text-ink-muted">—</span>
+                                    : short
+                                        ? <span className="text-danger-text">−{n(r.short)}</span>
+                                        : <span className="text-ink-muted">cukup</span>}
+                            </Cell>
+                        </div>
+                    );
+                })}
+
+                <div className="grid gap-x-4 items-center px-5 py-3.5 border-t-2 border-line-3 bg-raised/40"
+                     style={{ gridTemplateColumns: cols }}>
+                    <span className="text-[10px] font-bold text-ink-muted uppercase tracking-widest">Total</span>
+                    <Cell className="font-black text-gold">{n(live.reduce((s, r) => s + r.hq, 0))}</Cell>
+                    {branches.map(b => (
+                        <Cell key={b} className="font-black text-orange">
+                            {n(live.reduce((s, r) => s + (r.byBranch[b] || 0), 0))}
+                        </Cell>
+                    ))}
+                    <Cell className="font-black text-ink">{n(live.reduce((s, r) => s + (r.needed || 0), 0))}</Cell>
+                    <Cell className="font-black text-danger-text">
+                        {live.some(r => r.short > 0) ? `−${n(live.reduce((s, r) => s + (r.short || 0), 0))}` : <span className="text-ink-muted">cukup</span>}
+                    </Cell>
+                </div>
+            </div>
+        </div>
+    );
+}
