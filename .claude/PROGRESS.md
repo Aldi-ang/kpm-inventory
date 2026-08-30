@@ -1,11 +1,23 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-30 09:02 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **666/666 audit · 855/855 selfcheck** · branch `phase0-solid-ground`, tree clean
+**Updated: 2026-08-30 09:16 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **666/666 audit · 864/864 selfcheck** · branch `phase0-solid-ground`, tree clean
 
-## 🟠 2026-08-30 09:02 — MINIMAL KIRIM: HQ SEES THE FLOOR. `20a4622`, **666/666 + 855/855**. Tree clean.
+## 🟠 2026-08-30 09:16 — MINIMAL KIRIM: THE FORM, THEN THE COLUMN. `20a4622` + `4146c36`, **666/666 + 864/864**. Tree clean.
 
-**NOW: Ponder parked at his word. The Restock Vault is the front. Feature A is DONE — the
-outstanding question is whether the cross-branch column gets built.**
+*One entry for one continuous session — two commits fourteen minutes apart on the same feature line,
+not two pieces of work.*
+
+**NOW: Ponder parked at his word. The Restock Vault is the front. Two of the three queued jobs are
+done; the standalone panel and the sales-performance rollup are next, and neither is blocked.**
+
+**THE COLUMN SHIPPED TOO (`4146c36`).** Sebaran Stok carries **Minimal kirim** at header, warehouse
+row, drawer item and company total — the same function, the same per-cabang cushion as the Kirim
+form. **Rendered in both themes** via the new `?minkirim` lab slice, and `?minkirim=blank` proves the
+Ponder tutorial's demo world (which has no `minimum`) still falls back to em-dashes instead of
+crashing. ⚠️ **A dash and a 0 are different claims and never merge:** `0` = measured, needs nothing;
+`—` = nobody knows yet. Master Vault is always `—` because nothing ships TO the source.
+The warehouse figure is a **SUM**, sitting one cell from **Est. days left**, which still refuses to
+total — packs add across products, rates do not. That contrast is the `348 days` lesson made visible.
 
 **What shipped.** The reorder maths existed and only the BRANCH could see it: the tier that asks got
 rate, days-left and a suggested quantity; the tier that ships typed from memory. HQ's Kirim form now
@@ -31,7 +43,11 @@ deliveries** of that product, and the lab has no data, so a harness frame would 
 Open **Restock Vault › Kirim ke cabang**, pick a Tujuan with real history, add a product: `minimal N`
 should sit under the quantity box and **change when you change Tujuan**.
 
-**✅ ANSWERED AND QUEUED — he chose BOTH, 2026-08-30:** *"i agree with your recommendation so new
+**✅ HE CLEARED THE WHOLE QUEUE, 2026-08-30:** *"after u done u may continue with the panel, new
+column and all the updated queued"* — so nothing below waits on him. Build order: **standalone panel
+→ sales-performance rollup.** The column is already done.
+
+**✅ HIS EARLIER ANSWER, which the two shipped commits came from:** *"i agree with your recommendation so new
 separate panel and add column in sebaran stock, on the new panel"*. So the next two jobs are **(1) a
 new standalone panel showing the shipping-quantity recommendation for every cabang side by side**, so
 a short production run can be split, and **(2) the same minimum as a column in Sebaran Stok**.
@@ -66,6 +82,8 @@ expensive one and the slowest-changing).
 | `reorderAdvice(..., spareDays = 0)` — the 6th argument | `src/components/BranchWarehouseManager.jsx:238` |
 | Spare days, per cabang — Settings › Company · 06 | `src/components/SettingsView.jsx` |
 | `?pov` / `?pov=solo` — the only way to look at the POV rack | `tools/ponder-lab.jsx` |
+| `?minkirim` / `?minkirim=blank` — Sebaran Stok with the new column, and the tutorial fallback | `tools/ponder-lab.jsx` |
+| The `Minimal kirim` column itself | `src/ponder/stages/StockByWarehouseTable.jsx` |
 | The Time Machine — any date range, past the 7-day cap. Already wired, already used | `src/hooks/useDatabaseSync.js:188` → `src/components/HistoryReportView.jsx:230` |
 | The table shared with the Ponder tutorial — where the new column goes | `src/ponder/stages/StockByWarehouseTable.jsx` |
 
@@ -219,31 +237,3 @@ was mine, not his**.
 
 No new source files: all four fixes landed in `PonderOverlay.jsx`, `goods-received.js` and
 `GoodsReceivedStage.jsx`.
-
-## ⬜ 2026-08-27 22:30 — SUPERSEDED BY THE ENTRY ABOVE (his four asks are done). Stopped on the weekly limit. Tree clean at `d8d8904`, **657/657**.
-
-**Nothing is half-finished.** Every commit builds and audits green. `.claude/NEXT-SESSION.md` holds
-the whole next job.
-
-**⬜ ANSWERED AND SHIPPED in `8109559` — kept only as the record of what he asked:**
-
-> *"this tiga biaya need fix, the textbox block the view for the 3 biaya and there is no highlights
-> for that 3 biaya as well sc1. this landing cost also collapse with the text box, landed value as
-> well, if there is not much space u can put the text box above it and arrow pointing bottom, and
-> dont make the ponder panel slideable so that the text box is fixed, and then another thing is
-> that i want to be able to press the each of the components inside the ponder panel and when
-> pressed it will snap back to the timeframe where that components is explained"*
-
-Four faults, and the brief carries the diagnosis for each: (1) the caption overlaps its own subject
-— `EST_H = 150` in `PonderOverlay.jsx` is a guess and these captions are 3-4 lines, so the room
-test approves space the box does not fit; (2) `focus` is single-valued, so only one of the three
-cost fields lights; (3) the stage scrolls, so the caption drifts off its subject; (4) click-to-jump
-is unbuilt — every element already has `data-ponder` and every step already names a `focus`, so it
-is ~15 lines.
-
-**Also still owed by him, and blocking nothing:**
-> *"i want this animation when book is hovered https://www.youtube.com/watch?v=vhG5usAFL_g with the
-> light effect as well"* — **YouTube cannot be opened from here; he must describe it in one line.**
-
-And **nobody has heard the four book sounds play.** They are his own files, trimmed by measurement;
-the levels are a first guess.
