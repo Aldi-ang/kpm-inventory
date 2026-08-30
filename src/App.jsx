@@ -20,6 +20,7 @@ import useOfflineEngine, { canReachInternet } from './hooks/useOfflineEngine';
 import MusicPlayer from './MusicPlayer';
 import { injectDynamicPermissions, isFieldLevelTier, hasClearance } from './config/permissions';
 import { POV_OWNER_EMAIL, previewIdentity, testAccountDoc, testAccountName, canUsePovSwitch } from './config/povPreview';
+import { warehouseList } from './utils/supply';
 import TierPovSwitch, { PovBanner } from './components/TierPovSwitch';
 
 // --- REUSABLE UI COMPONENTS (Keep these static for fast initial load) ---
@@ -3142,22 +3143,55 @@ const handleGitHubMirror = async () => {
 
      EVERY ACTION REPORTS. Creating the account, wearing it, and failing to do
      either all say so out loud. */
-  const handlePickPov = async (account) => {
+  /* 🔴 WHERE A COSTUME IS POSTED, and why it is a list and not a text box.
+
+     Aldi, 2026-08-30: *"i want the option for tier 1 so that i can assign the test agent
+     into different places"*. The costume used to be born at `Headquarters` by hardcode
+     (povPreview.js `defaults.location || 'Headquarters'`) and there was no way to move it —
+     so wearing tier 4 always landed on the ONE location that can never hold branch stock.
+     `supply.js` owns that rule: Headquarters IS the master vault, not a cabang, so
+     `branches/Headquarters/inventory` is empty and no `stock_request` can ever name it.
+     The branch panel therefore read "Warehouse is empty" forever and looked broken.
+
+     ⚠️ THE LIST COMES FROM `warehouseList`, NOT FROM A SECOND HAND-WRITTEN ARRAY. That is the
+     exact bug 20c4a0a already paid for once: the Tujuan picker kept its own shorter list and
+     offered 'Headquarters' beside the real HQ entry — two destinations for one place, on a form
+     that writes stock movements. One function, one answer, or they drift.
+
+     ⚠️ AND HE WAS NOT SENT TO THE ROSTER FORM TO DO THIS, which is what he first asked for.
+     That form REQUIRES an email (FleetCanvasManager.jsx:162) because the email is the document
+     ID of the `employee_directory` row — the record that lets a human sign in. Relaxing it for
+     a test agent would either break the write or mint a real login for a fake person, which is
+     the one thing this whole feature exists to prevent. Moving the costume is a `location`
+     merge on a `motorists` document and touches no directory row at all. */
+  const povPlaces = React.useMemo(
+      () => ['Headquarters', ...warehouseList(motorists).slice(1)], [motorists]);
+
+  const handlePickPov = async (account, place) => {
       if (!canUsePovSwitch(trueUser?.email)) return notify("POV switch is restricted to the owner account.");
       const worn = testAccountName(account);
+      const home = place || 'Headquarters';
       try {
           const ref = doc(db, `artifacts/${appId}/users/${userId}/motorists`, account.id);
           const snap = await getDocOfflineSafe(ref);
           if (!snap.exists()) {
-              await setDoc(ref, { ...testAccountDoc(account), createdAt: serverTimestamp() });
-              notify(`AKUN UJI DIBUAT: ${worn}. Hapus lewat Fleet kapan saja.`);
-          } else if (snap.data()?.name !== worn) {
-              /* He renamed the tier in Settings after this costume was already made. Only the NAME
-                 moves — a full re-write would wipe the canvas and the stock the test agent is
-                 holding. This is what keeps the nota, the roster and the banner all saying the
-                 same thing after a rename. */
-              await setDoc(ref, { name: worn }, { merge: true });
-              notify(`AKUN UJI DIGANTI NAMA: ${worn}.`);
+              await setDoc(ref, { ...testAccountDoc(account, { location: home }), createdAt: serverTimestamp() });
+              notify(`AKUN UJI DIBUAT: ${worn} di ${home}. Hapus lewat Fleet kapan saja.`);
+          } else {
+              /* He renamed the tier in Settings, or moved the costume to another cabang, after it
+                 was already made. Only those two FIELDS move — a full re-write would wipe the
+                 canvas and the stock the test agent is holding. This is what keeps the nota, the
+                 roster and the banner all saying the same thing after a rename. */
+              const was = snap.data() || {};
+              const patch = {};
+              if (was.name !== worn) patch.name = worn;
+              if (was.location !== home) patch.location = home;
+              if (Object.keys(patch).length > 0) {
+                  await setDoc(ref, patch, { merge: true });
+                  notify(patch.location
+                      ? `${worn} DIPINDAH KE ${home}.`
+                      : `AKUN UJI DIGANTI NAMA: ${worn}.`);
+              }
           }
           setPov({ tier: account.tier });
           setShowPovSwitch(false);
@@ -4112,6 +4146,7 @@ const handleGitHubMirror = async () => {
             <TierPovSwitch
                 open={showPovSwitch}
                 current={previewing}
+                places={povPlaces}
                 onPick={handlePickPov}
                 onExit={handleExitPov}
                 onClose={() => setShowPovSwitch(false)}

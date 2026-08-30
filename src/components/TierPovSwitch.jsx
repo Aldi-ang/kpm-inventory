@@ -1,5 +1,5 @@
 import React from 'react';
-import { Eye, X, ShieldOff, CornerUpLeft, Lock } from 'lucide-react';
+import { Eye, X, ShieldOff, CornerUpLeft, Lock, MapPin } from 'lucide-react';
 import { TEST_ACCOUNTS, tierLabel } from '../config/povPreview.js';
 
 /* ============================================================================
@@ -71,8 +71,18 @@ export function PovBanner({ account, onExit }) {
     );
 }
 
-export default function TierPovSwitch({ open, current, onPick, onExit, onClose }) {
+export default function TierPovSwitch({ open, current, places = [], onPick, onExit, onClose }) {
+    /* Declared ABOVE the early return, because a hook after one is a hook that stops being
+       called the moment the rack closes. */
+    const [place, setPlace] = React.useState('');
     if (!open) return null;
+
+    /* `places` is Headquarters plus every cabang on the roster, computed by App.jsx from
+       `warehouseList` — the same function the Tujuan picker uses, so the rack can never offer
+       a destination the shipping form does not know. The fallback is not decoration: an empty
+       array would render a select with nothing in it and no way to say why. */
+    const options = places.length > 0 ? places : ['Headquarters'];
+    const chosen = options.includes(place) ? place : options[0];
 
     return (
         <div className="hide-on-print fixed inset-0 z-[9998] bg-[var(--duke-scrim-hi)] flex items-center justify-center p-4 font-mono animate-fade-in">
@@ -122,13 +132,44 @@ export default function TierPovSwitch({ open, current, onPick, onExit, onClose }
                     </button>
                 </div>
 
+                {/* WHERE THE COSTUME IS POSTED. One control for the whole rack rather than one
+                    per plate: he wears a tier at a place, and two selects saying the same thing
+                    is how they end up disagreeing.
+                    ⚠️ HEADQUARTERS IS THE MASTER VAULT, NOT A CABANG — a costume left there sees
+                    an empty branch warehouse forever, because `branches/Headquarters/inventory`
+                    does not exist and no stock_request can name it. That is exactly what made
+                    this feature look broken, so the reason is printed under the control instead
+                    of being something he has to rediscover. */}
+                <div className="px-3 pt-3">
+                    <label className="block">
+                        <span className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.14em] text-[var(--duke-ink-3)] mb-1.5">
+                            <MapPin size={12} className="shrink-0" />
+                            Tempat tugas
+                        </span>
+                        <select
+                            value={chosen}
+                            onChange={(e) => setPlace(e.target.value)}
+                            className="w-full px-3 py-2.5 rounded-xl border-2 border-[var(--duke-edge-2)] bg-[var(--duke-well-solid)]
+                                       text-[12px] font-black uppercase tracking-[0.1em] text-[var(--duke-ink-hi)]
+                                       outline-none focus:border-[var(--duke-amber-edge)] transition-colors"
+                        >
+                            {options.map((o) => <option key={o} value={o}>{o}</option>)}
+                        </select>
+                    </label>
+                    <p className="mt-1.5 text-[9.5px] font-bold uppercase tracking-[0.08em] text-[var(--duke-ink-3)] leading-relaxed">
+                        {options.length > 1
+                            ? 'Headquarters = gudang pusat, bukan cabang. Pilih cabang kalau mau lihat layar gudang cabang.'
+                            : 'Belum ada cabang di roster — hanya Headquarters. Daftarkan tim di Fleet & Roster dulu.'}
+                    </p>
+                </div>
+
                 <div className="overflow-y-auto p-3 flex flex-col gap-2">
                     {TEST_ACCOUNTS.map((account) => {
                         const isOn = current?.id === account.id;
                         return (
                             <button
                                 key={account.id}
-                                onClick={() => onPick(account)}
+                                onClick={() => onPick(account, chosen)}
                                 className={`kpm-pov-plate w-full text-left flex items-center gap-3 px-4 py-3 rounded-xl border-2 transition-colors
                                             ${isOn ? 'border-[var(--duke-amber-edge)]' : 'border-[var(--duke-edge-2)]'}`}
                             >

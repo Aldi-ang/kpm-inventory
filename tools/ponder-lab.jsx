@@ -20,6 +20,7 @@ import { createRoot } from 'react-dom/client';
 import '../src/index.css';
 import PonderOverlay from '../src/ponder/PonderOverlay.jsx';
 import PonderBookButton from '../src/ponder/PonderBook.jsx';
+import TierPovSwitch from '../src/components/TierPovSwitch.jsx';
 import { SCENES } from '../src/ponder/registry.js';
 
 const q = new URLSearchParams(window.location.search);
@@ -99,7 +100,29 @@ function BookLab() {
   );
 }
 
-createRoot(document.getElementById('root')).render(q.has('book') ? <BookLab /> : <Lab />);
+/* 🔴 ?pov MOUNTS THE COSTUME RACK, which is otherwise unlookable-at from here: it opens only
+   from a hidden door in the sidebar, only for the owner's real signed-in email, and only behind
+   the vault gate — three things this harness has no way to satisfy. The place picker added
+   2026-08-30 would otherwise have shipped on a diff read and nothing more.
+   `places` is the shape App.jsx computes: Headquarters plus the roster's cabang. `?pov=solo`
+   passes an empty list instead, which is the fresh-company case the control has to explain
+   rather than render as an empty select. */
+function PovLab() {
+  const solo = q.get('pov') === 'solo';
+  return (
+    <TierPovSwitch
+      open
+      current={null}
+      places={solo ? [] : ['Headquarters', 'BANDUNG', 'MUNTILAN']}
+      onPick={() => {}}
+      onExit={() => {}}
+      onClose={() => {}}
+    />
+  );
+}
+
+createRoot(document.getElementById('root')).render(
+  q.has('pov') ? <PovLab /> : q.has('book') ? <BookLab /> : <Lab />);
 
 /* ?probe writes the measured layout into the DOM, where `chrome --headless --dump-dom` can read
    it. Needed because a headless SCREENSHOT is not trustworthy for width on this machine: the

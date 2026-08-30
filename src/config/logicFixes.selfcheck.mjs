@@ -818,9 +818,17 @@ ok('and the offline payload still sets that status at save time',
 /* ── S14 · shipping to a branch undid every sale made while the photo uploaded ─────────── */
 section('S14. HQ stock is deducted, not recomputed from a cached screen');
 const branch = read('src/components/BranchWarehouseManager.jsx');
+/* 🔴 REPOINTED 2026-08-30, and the reason is the trap this repo has now paid for twice:
+   SPLITTING A COMPONENT SPLITS ITS CHECKS. `76de71a` moved the fulfilment half of this screen
+   into `RestockVaultView` — BranchWarehouseManager lost 332 lines — so this check and the
+   DISPUTED-sort check below went on reading a file the code had left. Both were RED for four
+   days and nobody saw it, because every session report quotes integration.audit's 666/666 and
+   never this suite. The guarded behaviour was fine the whole time; only the address was wrong.
+   Read BOTH files: the deduction is HQ's, wherever HQ's outbox happens to live this month. */
+const shipDesk = branch + read('src/RestockVaultView.jsx');
 
 ok('the shipment deducts with increment()',
-   /batch\.update\(hqRef, \{ stock: increment\(-Number\(item\.qty\)\) \}\)/.test(branch));
+   /stock: increment\(-Number\(item\.qty\)\) \}/.test(shipDesk));
 ok('the recomputed-total write is gone',
    !/stock: \(hqProduct\.stock \|\| 0\) - item\.qty/.test(stripComments(branch)));
 ok('increment is imported', imports(branch, 'increment'));
@@ -2301,7 +2309,11 @@ section('S37. Quarantine and HQ Audits: gold is ink and edges, never a slab');
   /* ---- HQ ACTUALLY SEES IT ---- a report filed into a list nobody opens is
      the same as no report. */
   ok('a disputed shipment stays in HQ active list', /r\.status === 'DISPUTED'/.test(branch));
-  ok('and sorts above everything else there', /'DISPUTED': 0/.test(branch));
+  /* Repointed with S14 above — the queue moved to the surat jalan desk in 76de71a, and the rank
+     map went with it. `REQ_RANK` is the named constant that replaced the inline literal. */
+  ok('and sorts above everything else there',
+     /REQ_RANK = \{ DISPUTED: 0/.test(read('src/RestockVaultView.jsx')) &&
+     /sort\(\(a, b\) => REQ_RANK\[a\.raw\.status\] - REQ_RANK\[b\.raw\.status\]\)/.test(read('src/RestockVaultView.jsx')));
   ok('the branch is told in words, not only by a colour',
      /SELISIH DILAPORKAN KE HQ/.test(branch));
   ok('and the variance is written to the audit log under its own action',
@@ -2585,6 +2597,38 @@ section('S · The tier POV switch takes authority away and never hands it out');
      doc5.email === '');
   ok('and the switch never writes an employee_directory row',
      !/employee_directory[\s\S]{0,400}TEST_TIER|handlePickPov[\s\S]{0,900}employee_directory/.test(app));
+
+  /* ---- WHERE THE COSTUME IS POSTED (2026-08-30) ----
+     Aldi: *"i want the option for tier 1 so that i can assign the test agent into different
+     places"*. The costume was born at `Headquarters` by hardcode and could not be moved, and
+     Headquarters is the ONE place that can never hold branch stock — `supply.js` owns that rule,
+     `NON_BRANCH` excludes it, so `branches/Headquarters/inventory` does not exist and no
+     `stock_request` can name it. Wearing tier 4 therefore always showed "Warehouse is empty" and
+     read as a broken screen.
+
+     THE REGRESSION GUARD is the pair below: the document must still DEFAULT to Headquarters (so
+     tiers 2 and 3, who really do sit at HQ, are unchanged) while ACCEPTING a place, and the rack
+     must actually hand one over. Either half alone brings the dead end back. */
+  ok('a costume defaults to Headquarters when no place is named',
+     testAccountDoc(testAccountFor(CORPORATE_TIERS.TIER_4)).location === 'Headquarters');
+  ok('and it is posted where the rack says instead, when one is named',
+     testAccountDoc(testAccountFor(CORPORATE_TIERS.TIER_4), { location: 'BANDUNG' }).location === 'BANDUNG');
+  ok('the handler takes a place and merges it onto the existing costume',
+     /const handlePickPov = async \(account, place\)/.test(app) &&
+     /patch\.location = home/.test(app));
+  ok('and creating a costume for the first time posts it there too',
+     /testAccountDoc\(account, \{ location: home \}\)/.test(app));
+  ok('the rack is handed the list and hands a place back',
+     /places=\{povPlaces\}/.test(app) &&
+     /onPick\(account, chosen\)/.test(read('src/components/TierPovSwitch.jsx')));
+  /* The bug 20c4a0a already paid for: a second hand-written list of places drifting away from
+     the one the shipping form uses. The rack must RECEIVE the list, never build one.
+     ⚠️ COMMENTS STRIPPED FIRST, and it is load-bearing for the same reason the localStorage scan
+     further down strips them: the note in TierPovSwitch that EXPLAINS where the list comes from
+     names the function, and a scan that reads prose reports the opposite of the truth. */
+  ok('the places come from the one warehouse-list function, and the rack builds no list of its own',
+     /warehouseList\(motorists\)/.test(app) &&
+     !/warehouseList|BANDUNG|MUNTILAN/.test(stripComments(read('src/components/TierPovSwitch.jsx'))));
 
   /* ---- THE PREVIEW ITSELF ---- */
   const REAL_USER = { uid: 'aldi-real-uid', email: POV_OWNER_EMAIL, displayName: 'Aldi' };
