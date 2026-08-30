@@ -33,73 +33,73 @@ export const stockByWarehouse = {
   stage: 'stock-table',
   related: [],
   steps: [
-    { text: 'Tabel ini menunjukkan semua gudang kamu dalam satu layar. Semua angka satuannya **Bks**.',
+    { text: 'Tabel ini memuat seluruh gudang perusahaan dalam satu layar. Semua angka satuannya **Bks**.',
       focus: '*', at: 'bottom', hold: 3800 },
 
-    { text: 'Kolom pertama nama gudangnya. Klik namanya untuk membuka isi gudang itu.',
+    { text: 'Kolom pertama nama gudang. Isi gudang terbuka saat namanya ditekan.',
       focus: 'col:warehouse', at: 'near', hold: 3800 },
 
-    { text: '**In stock** adalah barang yang ada di rak gudang itu sekarang juga. Cuma ini yang benar-benar ada di tempat.',
+    { text: '**In stock** adalah barang yang ada di rak gudang tersebut saat ini. Hanya angka ini yang benar-benar ada di tempat.',
       focus: 'col:shelf', at: 'near', hold: 4600 },
 
-    { text: '**Shipping** adalah barang yang sudah dikirim tapi belum sampai. Belum bisa dijual siapa pun. Tanda **—** artinya pertanyaan ini tidak berlaku di gudang itu.',
+    { text: '**Shipping** adalah barang yang sudah berangkat tetapi belum sampai. Belum bisa dijual siapa pun. Tanda **—** berarti pertanyaan ini tidak berlaku di gudang tersebut.',
       focus: 'col:transit', at: 'near', hold: 5600 },
 
-    { text: '**Agent inventory** sudah sampai dan sedang dibawa salesman. Yang ini sudah bisa dijual.',
+    { text: '**Agent inventory** sudah sampai dan sedang dibawa salesman. Barang ini sudah bisa dijual.',
       focus: 'col:field', at: 'near', hold: 4200 },
 
-    { text: 'Garis kecil di bawah nama gudang membagi tiga tadi: di rak, dikirim, di tangan agen. Barang yang sudah terjual tidak ikut, karena barangnya sudah tidak ada di mana pun.',
+    { text: 'Garis di bawah nama gudang membagi ketiganya: di rak, dalam pengiriman, dan di tangan agen. Barang yang sudah terjual tidak dihitung, karena barangnya sudah tidak ada di mana pun.',
       focus: 'bar', at: 'near', tone: 'gold', hold: 6000 },
 
-    { text: '**Sold (7d)** menghitung penjualan **7 hari terakhir**. Aplikasi cuma menyimpan satu minggu, jadi tidak ada angka di layar ini yang artinya lebih dari seminggu.',
+    { text: '**Sold (7d)** menghitung penjualan **7 hari terakhir**. Aplikasi hanya menyimpan satu minggu, jadi tidak ada angka di layar ini yang mewakili lebih dari seminggu.',
       focus: 'col:sold', at: 'near', hold: 5800 },
 
-    { text: '**Avg / month** = Sold (7d) ÷ 7 × 30. Ini perkiraan dari satu minggu saja, makanya ditulis pakai **≈**. Satu minggu yang ramai atau sepi bisa menggeser angka ini jauh.',
+    { text: '**Avg / month** = Sold (7d) ÷ 7 × 30. Perkiraan ini berasal dari satu minggu saja, karena itu ditulis dengan **≈**. Satu minggu yang ramai atau sepi menggeser angka ini jauh.',
       focus: 'col:permonth', at: 'near', tone: 'gold', hold: 6400 },
 
-    { text: '**Est. days left** = In stock ÷ (Sold (7d) ÷ 7). Bahasa gampangnya: stok di rak dibagi penjualan per hari.',
+    { text: '**Est. days left** = In stock ÷ (Sold (7d) ÷ 7). Artinya stok di rak dibagi penjualan per hari.',
       focus: 'col:daysleft', at: 'near', tone: 'gold', hold: 5200 },
 
-    { text: 'Tapi angka itu per produk, bukan per gudang. Ayo buka satu gudang.',
+    { text: 'Angka itu berlaku per produk, bukan per gudang. Isi satu gudang dibuka di bawah ini.',
       focus: 'row:master', at: 'near', act: 'open:GUDANG PUSAT', hold: 3800 },
 
-    { text: 'Lihat: **Cello Chocolate** cuma tahan **20 hari**, padahal gudangnya penuh. Yang penuh itu Cello Mint, dan Cello Mint tidak laku.',
+    { text: '**Cello Chocolate** hanya tahan **20 hari** meskipun gudangnya penuh. Yang memenuhi gudang itu Cello Mint, dan Cello Mint tidak laku.',
       focus: 'item:pusat-choco', at: 'near', tone: 'danger', hold: 6000 },
 
-    { text: 'Itu sebabnya tidak ada "sisa hari" untuk satu gudang penuh. Kalau total stok dibagi total penjualan, semua produk dianggap bisa saling gantikan. Gudang Pusat pernah tertulis **348 hari** padahal barang yang paling laku cuma tahan 20.',
+    { text: 'Itu sebabnya tidak ada "sisa hari" untuk satu gudang penuh. Kalau total stok dibagi total penjualan, semua produk dianggap bisa saling gantikan. Gudang Pusat pernah tertulis **348 hari** padahal barang yang paling laku hanya tahan 20.',
       focus: 'col:daysleft', at: 'bottom', tone: 'danger', hold: 7600 },
 
-    { text: 'Angka **merah** berarti kurang dari 7 hari. Kirim barang itu duluan, karena pengiriman tidak sampai di hari yang sama waktu kamu memutuskan.',
+    { text: 'Angka **merah** berarti kurang dari 7 hari. Barang itu dikirim lebih dulu, karena pengiriman tidak sampai pada hari yang sama saat keputusan dibuat.',
       focus: 'item:solo-choco', at: 'near', tone: 'danger', act: 'open:SOLO', hold: 6200 },
 
     { text: 'Tanda **—** artinya tidak ada penjualan dalam 7 hari terakhir, jadi tidak ada angka untuk dibagi. Itu **bukan** berarti stoknya awet selamanya.',
       focus: 'item:solo-mint', at: 'near', hold: 5800 },
 
-    { text: 'Dua angka perkiraan itu sengaja tidak menghitung **Shipping** dan **Agent inventory**. Pertanyaannya "rak ini tahan berapa lama", dan barang di truk atau di motor belum ada di rak.',
+    { text: 'Dua angka perkiraan itu sengaja tidak menghitung **Shipping** dan **Agent inventory**. Pertanyaannya berapa lama rak ini bertahan, dan barang di truk atau di motor belum ada di rak.',
       focus: 'col:shelf', at: 'bottom', act: 'close', hold: 6600 },
 
-    { text: 'Kolom terakhir **Send at least**: paling sedikit berapa Bks yang harus dikirim ke gudang itu supaya raknya tidak kosong sebelum kiriman berikutnya sampai.',
+    { text: 'Kolom terakhir **Send at least**: jumlah paling sedikit yang harus dikirim ke gudang tersebut supaya raknya tidak kosong sebelum kiriman berikutnya sampai.',
       focus: 'col:minimum', at: 'near', tone: 'gold', hold: 6200 },
 
-    { text: 'Angkanya dihitung dari riwayat gudang itu sendiri: seberapa cepat barangnya habis, berapa lama kiriman biasanya datang, dan berapa sering kamu memesan. Tidak ada yang perlu kamu ketik.',
+    { text: 'Angkanya dihitung dari riwayat gudang itu sendiri: seberapa cepat barangnya habis, berapa lama kiriman biasanya datang, dan berapa sering cabang itu memesan. Tidak ada yang perlu diketik.',
       focus: 'col:minimum', at: 'bottom', tone: 'gold', hold: 7000 },
 
-    { text: '**SOLO** perlu **77 Bks**. Itu bukan saran yang bisa ditawar — di bawah angka itu, SOLO berhenti jualan sebelum kiriman berikutnya tiba.',
+    { text: '**SOLO** perlu **77 Bks**. Angka itu bukan saran yang bisa ditawar. Di bawah angka itu SOLO berhenti berjualan sebelum kiriman berikutnya tiba.',
       focus: 'row:solo', at: 'near', tone: 'danger', act: 'open:SOLO', hold: 6600 },
 
-    { text: 'Tanda **—** di sini artinya belum bisa dihitung, **bukan** tidak butuh apa-apa. Satu produk butuh dua kiriman tercatat dulu baru kecepatannya bisa diukur.',
+    { text: 'Tanda **—** di sini artinya belum bisa dihitung, **bukan** tidak butuh apa-apa. Satu produk memerlukan dua kiriman tercatat sebelum kecepatannya bisa diukur.',
       focus: 'item:bandung-choco', at: 'near', act: 'close', hold: 6400 },
 
-    { text: 'Gudang Pusat selalu **—** di kolom ini. Barang dikirim DARI sana, bukan ke sana, jadi pertanyaannya memang tidak berlaku.',
+    { text: 'Gudang Pusat selalu **—** di kolom ini. Barang dikirim dari sana, bukan ke sana, jadi pertanyaannya tidak berlaku.',
       focus: 'row:master', at: 'near', hold: 5600 },
 
-    { text: 'Angka **0** beda lagi: itu sudah dihitung, dan hasilnya gudang itu memang belum perlu kiriman. Nol dan **—** tidak pernah sama artinya.',
+    { text: 'Angka **0** berbeda: perhitungannya sudah selesai, dan hasilnya gudang itu belum perlu kiriman. Nol dan **—** tidak pernah sama artinya.',
       focus: 'item:solo-mint', at: 'near', act: 'open:SOLO', hold: 6200 },
 
     { text: 'Baris paling bawah total seluruh perusahaan. Di sini pun tidak ada sisa hari, dengan alasan yang sama: stok di gudang yang salah tidak menolong gudang yang kehabisan.',
       focus: 'row:total', at: 'near', hold: 6400 },
 
-    { text: 'Kamu bisa menambah hari cadangan di **Settings**, per cabang. Angka di kolom ini akan naik sebanyak hari yang kamu tambahkan — gunanya kalau jalan ke cabang itu sering telat.',
+    { text: 'Hari cadangan diatur di **Settings**, per cabang. Angka di kolom ini naik sebanyak hari yang ditambahkan. Berguna untuk cabang yang jalannya sering telat.',
       focus: 'col:minimum', at: 'bottom', tone: 'gold', act: 'close', hold: 7000 },
   ],
 };

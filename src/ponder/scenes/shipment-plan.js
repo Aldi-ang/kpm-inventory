@@ -35,43 +35,43 @@ export const shipmentPlan = {
   stage: 'shipment-plan',
   related: ['stock-by-warehouse'],
   steps: [
-    { text: 'Panel ini menjawab satu pertanyaan yang tidak bisa dijawab tabel di atasnya: **barangnya kurang, siapa yang dikirim duluan.**',
+    { text: 'Panel ini menjawab pertanyaan yang tidak bisa dijawab tabel di atasnya: **barangnya kurang, cabang mana yang dikirim lebih dulu.**',
       focus: '*', at: 'bottom', hold: 5200 },
 
-    { text: 'Bedanya begini. **Stock by Warehouse** satu baris satu gudang. Di sini satu baris **satu barang**, dan kolomnya cabang.',
+    { text: 'Bedanya dengan tabel di atas: **Stock by Warehouse** satu baris satu gudang. Di panel ini satu baris **satu barang**, dan kolomnya cabang.',
       focus: 'col:product', at: 'bottom', hold: 5600 },
 
-    { text: '**Master vault has** = stok barang itu di gudang pusat sekarang. Ini yang kamu punya untuk dibagi.',
+    { text: '**Master vault has** = stok barang itu di gudang pusat saat ini. Sebanyak itu yang tersedia untuk dibagi.',
       focus: 'col:hq', at: 'bottom', tone: 'gold', hold: 5000 },
 
-    { text: 'Kolom tengah satu per cabang. Isinya angka yang sama dengan **Send at least** di tabel atas — paling sedikit berapa yang harus dikirim ke cabang itu.',
+    { text: 'Kolom tengah satu per cabang. Isinya angka yang sama dengan **Send at least** di tabel atas: jumlah paling sedikit yang harus dikirim ke cabang tersebut.',
       focus: 'col:branch', at: 'bottom', hold: 6000 },
 
     { text: '**All branches need** menjumlahkan cabang-cabang tadi. Bks boleh dijumlah antar cabang, karena satuannya sama dan barangnya sama.',
       focus: 'col:needed', at: 'bottom', hold: 5800 },
 
-    { text: 'Sekarang kolom yang jadi alasan panel ini dibuat: **Short by**.',
+    { text: 'Kolom **Short by** adalah alasan panel ini dibuat.',
       focus: 'col:short', at: 'bottom', tone: 'danger', hold: 4200 },
 
     { text: '**Cello Chocolate**: gudang pusat punya **900**, tiga cabang butuh **1.400**. Kurangnya **500**, dan tidak ada tempat lain untuk mengambilnya.',
       focus: 'row:plan-choco', at: 'bottom', tone: 'danger', hold: 7000 },
 
-    { text: 'Baris merah selalu naik ke atas. Itu baris yang harus kamu putuskan hari ini — bukan aplikasi yang memutuskan cabang mana yang mengalah.',
+    { text: 'Baris merah selalu naik ke atas. Baris itu yang harus diputuskan hari ini. Aplikasi tidak memutuskan cabang mana yang mengalah.',
       focus: 'row:plan-choco', at: 'bottom', tone: 'danger', hold: 6400 },
 
-    { text: '**Cello Mint** tulisannya **covered**: stok pusat cukup untuk semua cabang, jadi tidak ada yang perlu dipikirkan.',
+    { text: '**Cello Mint** tulisannya **covered**: stok pusat cukup untuk semua cabang, jadi tidak ada yang perlu diputuskan.',
       focus: 'row:plan-mint', at: 'near', hold: 5400 },
 
-    { text: 'Tanda **—** artinya belum bisa dihitung. **Cello Kopi** belum punya riwayat kiriman yang cukup, jadi aplikasi diam daripada menebak.',
+    { text: 'Tanda **—** artinya belum bisa dihitung. **Cello Kopi** belum punya riwayat kiriman yang cukup, jadi aplikasi memilih diam daripada menebak.',
       focus: 'row:plan-kopi', at: 'near', hold: 6000 },
 
-    { text: 'Ini penting: **—** dan **0** tidak sama. Nol berarti sudah dihitung dan hasilnya tidak perlu kiriman. **—** berarti belum tahu.',
+    { text: '**—** dan **0** tidak sama. Nol berarti perhitungannya selesai dan hasilnya tidak perlu kiriman. **—** berarti belum bisa dihitung.',
       focus: 'col:branch', at: 'bottom', tone: 'gold', hold: 6400 },
 
-    { text: 'Barang yang semua cabangnya nol tidak ditampilkan sama sekali. Panel ini soal barang yang kurang, jadi barang yang aman tidak perlu memenuhi layar.',
+    { text: 'Barang yang semua cabangnya nol tidak ditampilkan sama sekali. Panel ini tentang barang yang kurang, jadi barang yang aman tidak ikut memenuhi layar.',
       focus: '*', at: 'bottom', hold: 6000 },
 
-    { text: 'Baris bawah totalnya. **Short by** di situ jumlah semua kekurangan — kira-kira segitu barang yang perlu diproduksi supaya semua cabang aman.',
+    { text: 'Baris bawah totalnya. **Short by** di baris itu menjumlahkan semua kekurangan. Kira-kira sebanyak itu barang yang perlu diproduksi supaya semua cabang aman.',
       focus: 'row:total', at: 'near', tone: 'gold', hold: 6600 },
   ],
 };

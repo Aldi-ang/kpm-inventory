@@ -23,7 +23,7 @@ export const goodsReceived = {
     { text: 'Panel ini untuk mencatat barang yang **baru datang** dari pabrik. Isi dari atas ke bawah.',
       focus: '*', at: 'bottom', hold: 3800 },
 
-    { text: '**Target produksi** cuma catatan bulanan. Dia tidak membatasi apa pun — kamu tetap bisa mencatat lebih atau kurang dari target.',
+    { text: '**Target produksi** cuma catatan bulanan. Catatan itu tidak membatasi apa pun. Jumlah yang dicatat tetap boleh lebih atau kurang dari target.',
       focus: 'f:target', at: 'near', hold: 5200 },
 
     { text: '**Asal** itu dari mana barangnya, **Tujuan** gudang mana yang menerimanya. Stok gudang tujuan yang akan bertambah.',
@@ -32,7 +32,7 @@ export const goodsReceived = {
     { text: '**Delivery note (app)** dibuat sendiri oleh aplikasi. Nomor ini punya kita.',
       focus: 'f:sj-app', at: 'near', hold: 4400 },
 
-    { text: '**Delivery note (factory)** disalin dari kertas yang dibawa sopir. Dua nomor ini sengaja dipisah: kalau berbeda, kamu masih bisa melacak dokumen mana yang salah.',
+    { text: '**Delivery note (factory)** disalin dari kertas yang dibawa sopir. Dua nomor ini sengaja dipisah: kalau berbeda, dokumen mana yang salah masih bisa dilacak.',
       focus: 'f:sj-factory', at: 'near', tone: 'gold', hold: 6600 },
 
     { text: 'Cari barang di daftar kiri lalu klik. **Batch** diisi kalau kertasnya menyebut nomor batch, dan **Jumlah** dalam Bks.',
@@ -42,7 +42,7 @@ export const goodsReceived = {
        field under a caption that said "these three" — *"there is no highlights for that 3 biaya as
        well"*. The player unions their rects, so the ring becomes one band across the whole row,
        which is the shape that says "these, together". */
-    { text: 'Tiga biaya ini yang bikin harga barang naik: **Ongkos kirim**, **Pita cukai**, **Upah bongkar**. Semuanya biaya masuk — cabang tidak membayarnya lagi.',
+    { text: 'Tiga biaya ini yang bikin harga barang naik: **Ongkos kirim**, **Pita cukai**, **Upah bongkar**. Semuanya biaya masuk, dan cabang tidak membayarnya lagi.',
       focus: ['c:ongkir', 'c:cukai', 'c:bongkar'], at: 'near', tone: 'gold', hold: 6800 },
 
     { text: '**Total landed value** = harga barang + tiga biaya tadi. 900 × Rp 8.500 = Rp 7.650.000, ditambah 250.000 + 180.000 + 90.000, jadi **Rp 8.170.000**.',

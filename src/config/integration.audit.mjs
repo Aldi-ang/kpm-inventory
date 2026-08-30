@@ -4128,6 +4128,27 @@ const resolvesKey = (k) => {
   return /data-ponder=\{/.test(stageSrc) &&
          (stageSrc.includes(`"${k}"`) || stageSrc.includes(`'${k}'`));
 };
+/* ---- HOW THE BOOK TALKS (2026-08-30) ----
+   Aldi, after watching the tutorial play for the first time: *"i think that we need to remake the
+   sentences and wording because it sound so ai ... make sure that u dont use kamu or aku, or any
+   of the informal language, we are talking about the factory, subject is factory, employees,
+   manager and all of these subject no u and me"*.
+
+   The subject of every beat is the WAREHOUSE, the BRANCH, the SHIPMENT or the APP - never the
+   reader. "Isi gudang terbuka saat namanya ditekan", not "klik namanya". It reads as a factory
+   manual rather than a chatbot, which is what it is.
+
+   ⚠️ `—` IS DELIBERATELY NOT BANNED. It is a CHARACTER THE PANEL PRINTS in an empty cell, and
+   five beats exist to explain what it means. Banning it would ban the lesson. What is banned is
+   the second person, which has no legitimate use here at all. */
+const sceneText = scenes.flatMap(s => s.steps.map(st => String(st.text || ''))).join('\n');
+const informal = sceneText.split('\n').filter(t => /\b(kamu|Kamu|aku|Aku|Ayo|ayo|kalian|gue|lo)\b/.test(t));
+check(G56, 'the book never addresses the reader, because its subject is the warehouse',
+  informal.length === 0,
+  'a Ponder beat used second person: ' + (informal[0] || '') + ' \u2014 the subject of a beat is the ' +
+  'warehouse, the branch, the shipment or the app. His instruction, 2026-08-30: "we are talking ' +
+  'about the factory, subject is factory, employees, manager and all of these subject no u and me"');
+
 const missingKeys = focusKeys.filter(k => !resolvesKey(k));
 check(G56, 'every focus key resolves to something the stage really wears',
   focusKeys.length > 0 && missingKeys.length === 0 && /data-ponder=/.test(stageSrc),
