@@ -1,10 +1,10 @@
 # NEXT SESSION — read this, then `.claude/PROGRESS.md`. Read no code to orient.
 
-**Written 2026-08-30 08:25 WIB. 666/666 audit · 831/831 selfcheck. Branch `phase0-solid-ground`,
-tree clean at `b1cdcaa`.**
+**Written 2026-08-30 09:05 WIB. 666/666 audit · 855/855 selfcheck. Branch `phase0-solid-ground`,
+tree clean.**
 
-🟠 **PONDER IS PARKED.** His words, 2026-08-30: *"dont worry about the ponder book for now we focus
-on system functionality"*. Do not start a tutorial chapter. The live front is the **Restock Vault**.
+🟠 **PONDER IS PARKED.** His words: *"dont worry about the ponder book for now we focus on
+system functionality"*. Do not start a tutorial chapter. The front is the **Restock Vault**.
 
 ## First command
 
@@ -20,51 +20,31 @@ hid. Both numbers, every time.
 
 ---
 
-## 🔴 THE ONE JOB — feature "A": the reorder advice on the HQ side
+## 🔴 THE ONE JOB — the cross-branch column in Sebaran Stok
 
-**What it is.** `BranchWarehouseManager.jsx:1128` holds the *how many should I ask for* panel (G3,
-built `33700ec`). Pick a product in the branch's Reorder Stock box and it prints, all measured from
-real shipping history:
+**Feature A shipped (`4d6d4a2`).** HQ's Kirim form now prints `minimal N` under every cart line,
+keyed on the Tujuan chosen. What is NOT built is the half he asked for in the same breath:
 
-| Line | Meaning |
-|---|---|
-| Di gudang **N** | packs on that branch's shelf now |
-| Di jalan **N** | shipped, not arrived |
-| Keluar **± N/hari** | measured outflow, from `productArrivals` |
-| Habis dalam **± N hari** | when the shelf hits zero |
-| red: *kiriman butuh ± N hari, **pesan sekarang*** | runs dry BEFORE a shipment ordered today lands |
-| Saran **N Bks** + `PAKAI` | suggested order size, one press to fill the box |
+> *"i think we should made one more panel for product shipping quantity recommendation"*
 
-**The defect.** That panel lives inside `{isAreaAdmin && ...}` — `isAreaAdmin = !isAdmin` at
-`BranchWarehouseManager.jsx:267`. So **the tier that ASKS gets the arithmetic and the tier that
-SHIPS gets nothing.** HQ's push form and the Request tab both let you type a quantity from memory.
+**Build it as a COLUMN in Sebaran Stok, not a new panel** — recommended to him, not yet confirmed;
+`col` / `panel` / `inline-only` was the question and he moved on. A separate panel showing one
+cabang's minimums would be a second copy of what the shipment form already prints. The value is the
+CROSS-BRANCH view: production is short, three cabang want Cello, who gets it first. Sebaran Stok is
+already one row per warehouse, so the answer is one more column there.
 
-**The job.** Mount the same panel on the HQ side. He was asked `request` / `push` / `both` and never
-answered — **`both` unless he says otherwise**, since it is one component and one extra mount.
+**⚠️ THE REASON THIS WAS NOT JUST DONE.** `src/ponder/stages/StockByWarehouseTable.jsx` is
+**shared with the Ponder tutorial** — same component, real screen and demo world both. A new column
+means the tutorial's fixed world needs the field too, its `COLS` constant moves, and group-56 checks
+plus `stock-by-warehouse.js` beats may assert against the old shape. Read the scene file and grep
+group 56 BEFORE touching `COLS`. He parked Ponder, but the component does not know that.
 
-**Where it goes:** the Request tab and the push/Kirim form, both now on the surat jalan desk in
-`src/RestockVaultView.jsx` (moved there by `76de71a`).
+**The maths is already there and must not be re-derived.** `reorderAdvice`, `productArrivals`,
+`shipmentRhythm`, `inTransitQty` are exported from `BranchWarehouseManager.jsx` and already imported
+by the desk. `bufferDays(appSettings, branch)` from `utils/supply.js` resolves his per-cabang
+cushion. The row already knows its warehouse name, so every argument is in hand.
 
-**The trap that would make a lazy port wrong.** Everything the panel computes is keyed on
-`branchLocation` — one branch, the viewer's own. HQ has no `branchLocation`; it has a **chosen**
-branch per row. `productArrivals(requests, branch, productId)`, `shipmentRhythm(requests, branch)`
-and `inTransitQty(requests, branch, productId)` all already take the branch as an argument, so the
-maths ports unchanged — **but they are not exported.** Export them from
-`BranchWarehouseManager.jsx` (they sit beside `receiptLines`, which is already exported and already
-imported elsewhere), or lift them into `utils/supply.js` beside `supplyByProduct`. **Do not
-re-derive the arithmetic in the desk file** — a second copy of "how fast does this leave" is the
-exact fault [[A Ratio of Sums Is Not a Rate]] and `20c4a0a` were both about.
-
-**Second trap:** `reorderAdvice` needs the branch's shelf figure. Branch-side it reads
-`branchStock`; HQ-side the equivalent is `branchStockMap[branch]`, which `BranchWarehouseManager`
-already receives as a prop from `App.jsx:4450`. `RestockVaultView` does **not** get it today —
-check the prop list before writing the component, not after.
-
-**Verify:** build, both suites, and one check that the HQ panel and the branch panel call the SAME
-function (the guarantee, not the markup). Then look at it — `tools/ponder-lab.jsx` mounts real
-components; see `?pov` for the pattern of adding a slice.
-
----
+**Verify:** build, both suites, and a check that the column calls the SAME function the form does.
 
 ## What just shipped, and the two laws it left
 

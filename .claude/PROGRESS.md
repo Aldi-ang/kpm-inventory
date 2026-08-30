@@ -1,6 +1,57 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-30 08:25 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **666/666 audit · 831/831 selfcheck** · branch `phase0-solid-ground`, tree clean
+**Updated: 2026-08-30 09:05 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **666/666 audit · 855/855 selfcheck** · branch `phase0-solid-ground`, tree clean
+
+## 🟠 2026-08-30 09:05 — MINIMAL KIRIM: HQ SEES THE FLOOR. `4d6d4a2`, **666/666 + 855/855**. Tree clean.
+
+**NOW: Ponder parked at his word. The Restock Vault is the front. Feature A is DONE — the
+outstanding question is whether the cross-branch column gets built.**
+
+**What shipped.** The reorder maths existed and only the BRANCH could see it: the tier that asks got
+rate, days-left and a suggested quantity; the tier that ships typed from memory. HQ's Kirim form now
+prints **`minimal N`** under the Jumlah box of every cart line, keyed on `poData.destination` and
+re-derived the moment he changes Tujuan. Red only when what he typed is genuinely under the floor.
+Never on the Masuk form, never for the master vault. The four functions are **imported** from
+`BranchWarehouseManager`, never re-derived.
+
+**His framing changed the label, and it was the right call:** *"normally factory does sent more than
+enough goods to the regional warehouse but if there is not enough/ minimal goods are being sent then
+this features actually come in handy, especially with company that have limited production
+capabilities"*. So the word is **`minimal`**, not `saran` — when production is tight it is a floor,
+not advice to weigh up.
+
+**Spare days: per cabang, default 3, Settings › Company · 06.** He asked for per-branch because
+*"each product performance for each regional area is different"* — that part was already true and
+needs no setting (the rate is measured per product AND per cabang). What varies per cabang is RISK,
+so that is what the override sets. **A blank box deletes the override rather than storing 0.**
+`reorderAdvice`'s `spareDays` defaults to **0** so no pre-existing caller moved.
+
+**✅ HE MUST LOOK AT THIS ONE — I could not.** The line only renders once a cabang has **two recorded
+deliveries** of that product, and the lab has no data, so a harness frame would have proved nothing.
+Open **Restock Vault › Kirim ke cabang**, pick a Tujuan with real history, add a product: `minimal N`
+should sit under the quantity box and **change when you change Tujuan**.
+
+**❓ WAITING ON ALDI — his question, unedited, still open:**
+
+> *"i think we should made one more panel for product shipping quantity recommendation but make sure
+> that when we fill the shipment out forms, it shows the recommended quantity sent for each product,
+> what do u think of that?"*
+
+The form half is built. The **panel** half is not: recommended is `col` — one more column in **Sebaran
+Stok**, so all branches' minimums sit side by side and he can split a short production run. He was
+offered `col` / `panel` / `inline-only` and has not answered. ⚠️ `StockByWarehouseTable` is **shared
+with the Ponder tutorial**, so a new column touches the tutorial's demo world and its checks — that
+is the reason it was not just done.
+
+**Where things live — new or changed this session**
+
+| Thing | Path |
+|---|---|
+| `minimal N` under the Jumlah box · `sendAdvice` memo | `src/RestockVaultView.jsx` |
+| `bufferDays()` · `DEFAULT_BUFFER_DAYS` — the one place that knows his overrides | `src/utils/supply.js` |
+| `reorderAdvice(..., spareDays = 0)` — the 6th argument | `src/components/BranchWarehouseManager.jsx:238` |
+| Spare days, per cabang — Settings › Company · 06 | `src/components/SettingsView.jsx` |
+| `?pov` / `?pov=solo` — the only way to look at the POV rack | `tools/ponder-lab.jsx` |
 
 ## 🟠 2026-08-30 08:25 — THE POV COSTUME CAN BE POSTED ANYWHERE. `b1cdcaa`, **666/666 + 831/831**. Tree clean.
 
