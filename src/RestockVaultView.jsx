@@ -290,8 +290,8 @@ const RestockVaultView = ({ inventory = [], procurements = [], motorists = [], b
        more than enough goods to the regional warehouse but if there is not enough/ minimal goods
        are being sent then this features actually come in handy, especially with company that have
        limited production capabilities"*. When production is tight this stops being advice and
-       becomes the line under which a cabang stops selling. The screen says `minimal`, never
-       `saran`, for exactly that reason.
+       becomes the line under which a cabang stops selling. The screen says "send at least",
+       never "suggested", for exactly that reason.
 
        ⚠️ OUTBOUND ONLY. On the Masuk form the goods come from the factory and there IS no cabang —
        `poData.destination` is HQ itself. A number there would be arithmetic about the master vault
@@ -1614,8 +1614,8 @@ const RestockVaultView = ({ inventory = [], procurements = [], motorists = [], b
                                                             return (
                                                                 <span className={`block font-mono text-[10.5px] mt-1 text-right leading-snug ${short ? 'text-danger-text' : 'text-ink-muted'}`}>
                                                                     {adv.suggest != null
-                                                                        ? <>minimal <b className={short ? 'text-danger-text' : 'text-ink'}>{num(adv.suggest)}</b>{adv.spareDays > 0 && <span className="opacity-70"> · +{adv.spareDays}h</span>}</>
-                                                                        : <span className="opacity-70">belum terukur</span>}
+                                                                        ? <>send at least <b className={short ? 'text-danger-text' : 'text-ink'}>{num(adv.suggest)}</b>{adv.spareDays > 0 && <span className="opacity-70"> · +{adv.spareDays}d spare</span>}</>
+                                                                        : <span className="opacity-70">not enough history</span>}
                                                                 </span>
                                                             );
                                                         })()}

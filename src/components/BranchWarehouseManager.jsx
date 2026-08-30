@@ -475,7 +475,7 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
 
     const gTotal = (k) => logistics.reduce((s, r) => s + (Number(r[k]) || 0), 0);
 
-    /* ═══════════ RENCANA KIRIM — the same floors, turned on their side ═══════════
+    /* ═══════════ SHIPMENT PLAN — the same floors, turned on their side ═══════════
        A TRANSPOSE, NOT A CALCULATION. Every number here already exists inside `logistics`; this
        flips it from one-row-per-warehouse to one-row-per-product so a short production run can be
        split across cabang. Re-deriving any of it would put a third implementation of "how many"
@@ -1400,7 +1400,7 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
                 );
             })()}
 
-            {/* ════════ RENCANA KIRIM — one row per product, one column per cabang ════════
+            {/* ════════ SHIPMENT PLAN — one row per product, one column per branch ════════
                 His ask, 2026-08-30: *"i think we should made one more panel for product shipping
                 quantity recommendation"*, alongside the column above rather than instead of it.
 
@@ -1416,13 +1416,13 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
                                 <Truck size={18} className="text-accent-ink"/>
                             </span>
                             <div className="min-w-0">
-                                <h3 className="font-display text-xl sm:text-2xl font-black text-ink uppercase tracking-[0.14em] leading-none">Rencana Kirim</h3>
+                                <h3 className="font-display text-xl sm:text-2xl font-black text-ink uppercase tracking-[0.14em] leading-none">Shipment Plan</h3>
                                 <div className="h-[3px] w-10 bg-orange rounded-full mt-2"/>
-                                <p className="font-mono text-[10px] text-ink-muted tracking-widest mt-2">minimal per barang, per cabang · in Bks</p>
+                                <p className="font-mono text-[10px] text-ink-muted tracking-widest mt-2">the least to send · per product, per branch · in Bks</p>
                             </div>
                         </div>
                         <p className="font-mono text-[10px] text-ink-muted tracking-widest shrink-0">
-                            Kurang = stok gudang pusat tidak cukup untuk semua cabang
+                            Short by = the master vault cannot cover every branch
                         </p>
                     </div>
                     <ShipmentPlanTable rows={shipmentPlan} branches={planBranches} />

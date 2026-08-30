@@ -1,4 +1,14 @@
-/* RENCANA KIRIM — one row per PRODUCT, one column per cabang.
+/* SHIPMENT PLAN — one row per PRODUCT, one column per branch.
+
+   🔴 EVERY LABEL ON THIS PANEL IS PLAIN ENGLISH, and that is his standing rule rather than a
+   preference of mine. Aldi, 2026-08-27: *"dont make vague terms"* and *"use english terms if its
+   shorter and direct"*; again on 2026-08-30, after this shipped with Indonesian headers: *"can u
+   use better english words from now on and change that, its so fague"*. `Kurang` was the word that
+   broke it - it means "less", which never says less THAN WHAT. `Short by` names the gap.
+   The neighbouring Sebaran Stok table has been English since 2026-08-27; a panel directly beneath
+   it in another language was the drift, not the fix.
+   ⚠️ THE BRANCH-SIDE screens stay Indonesian on purpose - different reader, settled
+   separately. This rule is for the HQ desk.
 
    Aldi, 2026-08-30: *"i think we should made one more panel for product shipping quantity
    recommendation"*, and the scenario that makes it worth building, in his own words:
@@ -30,7 +40,7 @@ export default function ShipmentPlanTable({ rows = [], branches = [] }) {
     if (branches.length === 0) {
         return (
             <p className="px-5 py-8 text-[11px] text-ink-muted uppercase tracking-widest text-center">
-                Belum ada cabang di roster — tidak ada tujuan untuk direncanakan.
+                No branches on the roster yet — nowhere to plan a shipment to.
             </p>
         );
     }
@@ -43,7 +53,7 @@ export default function ShipmentPlanTable({ rows = [], branches = [] }) {
     if (live.length === 0) {
         return (
             <p className="px-5 py-8 text-[11px] text-ink-muted uppercase tracking-widest text-center">
-                Tidak ada cabang yang perlu kiriman sekarang.
+                No branch needs a shipment right now.
             </p>
         );
     }
@@ -62,11 +72,11 @@ export default function ShipmentPlanTable({ rows = [], branches = [] }) {
 
                 <div className="grid gap-x-4 items-end px-5 pb-2.5 border-b border-line-2 text-[10px] font-bold text-ink-muted uppercase tracking-widest"
                      style={{ gridTemplateColumns: cols }}>
-                    <span>Barang</span>
-                    <span className="text-right">Di gudang pusat</span>
+                    <span>Product</span>
+                    <span className="text-right">Master vault has</span>
                     {branches.map(b => <span key={b} className="text-right truncate" title={b}>{b}</span>)}
-                    <span className="text-right">Total minimal</span>
-                    <span className="text-right">Kurang</span>
+                    <span className="text-right">All branches need</span>
+                    <span className="text-right">Short by</span>
                 </div>
 
                 {live.map(r => {
@@ -87,7 +97,7 @@ export default function ShipmentPlanTable({ rows = [], branches = [] }) {
                                 return (
                                     <Cell key={b} className="text-[13px]">
                                         {v == null
-                                            ? <span className="text-ink-muted" title="Belum bisa diukur — butuh minimal dua pengiriman produk ini ke cabang tersebut">—</span>
+                                            ? <span className="text-ink-muted" title="Not enough history — this product needs two recorded deliveries to that branch first">—</span>
                                             : <span className={v > 0 ? 'text-orange' : 'text-ink-muted'}>{n(v)}</span>}
                                     </Cell>
                                 );
@@ -103,7 +113,7 @@ export default function ShipmentPlanTable({ rows = [], branches = [] }) {
                                     ? <span className="text-ink-muted">—</span>
                                     : short
                                         ? <span className="text-danger-text">−{n(r.short)}</span>
-                                        : <span className="text-ink-muted">cukup</span>}
+                                        : <span className="text-ink-muted">covered</span>}
                             </Cell>
                         </div>
                     );
@@ -111,7 +121,7 @@ export default function ShipmentPlanTable({ rows = [], branches = [] }) {
 
                 <div className="grid gap-x-4 items-center px-5 py-3.5 border-t-2 border-line-3 bg-raised/40"
                      style={{ gridTemplateColumns: cols }}>
-                    <span className="text-[10px] font-bold text-ink-muted uppercase tracking-widest">Total</span>
+                    <span className="text-[10px] font-bold text-ink-muted uppercase tracking-widest">Every product</span>
                     <Cell className="font-black text-gold">{n(live.reduce((s, r) => s + r.hq, 0))}</Cell>
                     {branches.map(b => (
                         <Cell key={b} className="font-black text-orange">
@@ -120,7 +130,7 @@ export default function ShipmentPlanTable({ rows = [], branches = [] }) {
                     ))}
                     <Cell className="font-black text-ink">{n(live.reduce((s, r) => s + (r.needed || 0), 0))}</Cell>
                     <Cell className="font-black text-danger-text">
-                        {live.some(r => r.short > 0) ? `−${n(live.reduce((s, r) => s + (r.short || 0), 0))}` : <span className="text-ink-muted">cukup</span>}
+                        {live.some(r => r.short > 0) ? `−${n(live.reduce((s, r) => s + (r.short || 0), 0))}` : <span className="text-ink-muted">covered</span>}
                     </Cell>
                 </div>
             </div>

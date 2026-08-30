@@ -44,7 +44,7 @@ export default function StockByWarehouseTable({ rows = [], openGudang, onToggle,
           <span data-ponder="col:daysleft" className="text-right">Est. days left</span>
           {/* HIS WORD, and it is a floor not advice: when production is short this is the line
               under which a cabang stops selling. `Saran` would invite sending less. */}
-          <span data-ponder="col:minimum" className="text-right">Minimal kirim</span>
+          <span data-ponder="col:minimum" className="text-right">Send at least</span>
         </div>
 
         {rows.map(r => {
@@ -92,9 +92,9 @@ export default function StockByWarehouseTable({ rows = [], openGudang, onToggle,
                 <span data-ponder="col:daysleft" className="text-right font-mono text-[11px] text-ink-muted" title="Each product runs out at its own speed — open this warehouse to see them">
                   {open ? 'below ↓' : 'per item'}
                 </span>
-                <span data-ponder="col:minimum" className="text-right font-mono font-black tabular-nums" title="The least this warehouse can be sent without running dry before the next delivery">
+                <span data-ponder="col:minimum" className="text-right font-mono font-black tabular-nums" title="Send at least this many packs, or this warehouse runs out before the next delivery arrives">
                   {r.minimum == null
-                    ? <span className="text-ink-muted" title="No measurable history here yet — two deliveries of a product are needed before it can be worked out">—</span>
+                    ? <span className="text-ink-muted" title="Not enough history yet — a product needs two recorded deliveries here before this can be worked out">—</span>
                     : <span className={r.minimum > 0 ? 'text-orange' : 'text-ink-muted'}>{n(r.minimum)}</span>}
                 </span>
               </div>
@@ -125,8 +125,8 @@ export default function StockByWarehouseTable({ rows = [], openGudang, onToggle,
                           <span className="text-ink font-bold text-[13px] block leading-tight truncate">{p.name}</span>
                           {(p.days !== null || p.unexplained > 0) && (
                             <span className="text-[10px] text-ink-muted uppercase tracking-widest">
-                              {p.days !== null && <>oldest here <b className="text-ink">{p.days} days</b>{p.drops > 1 && ` · ${p.drops} deliveries`}</>}
-                              {p.unexplained > 0 && <span className="text-danger-text">{p.days !== null ? ' · ' : ''}{n(p.unexplained)} unknown origin</span>}
+                              {p.days !== null && <>oldest pack <b className="text-ink">{p.days} days old</b>{p.drops > 1 && ` · from ${p.drops} deliveries`}</>}
+                              {p.unexplained > 0 && <span className="text-danger-text">{p.days !== null ? ' · ' : ''}{n(p.unexplained)} with no delivery record</span>}
                             </span>
                           )}
                         </div>

@@ -864,11 +864,33 @@ section('S38. Minimal kirim: the floor HQ sees, keyed on the Tujuan it is sendin
      /bufferDays\(appSettings, to\)/.test(desk) &&
      /bufferDays\(appSettings, branchLocation\)/.test(read('src/components/BranchWarehouseManager.jsx')));
   /* HIS WORD, and it is load-bearing: the number is a FLOOR when production is tight, not a
-     suggestion to weigh up. `saran` on this screen would invite him to send less. */
-  ok('the desk calls it a minimum, never a suggestion',
-     /minimal <b/.test(desk) && !/[Ss]aran/.test(stripComments(desk)));
-  ok('and it says "belum terukur" rather than printing a number it cannot prove',
-     /belum terukur/.test(desk));
+     suggestion to weigh up. "Suggested" on this screen would invite him to send less.
+     Reworded 2026-08-30 on his instruction — *"can u use better english words from now on and
+     change that, its so fague"* — but the GUARANTEE did not move: the phrasing must state a
+     minimum, and must never soften into advice. */
+  ok('the desk tells him to send AT LEAST this many, never merely suggests',
+     /send at least <b/.test(desk) &&
+     !/[Ss]aran|[Ss]uggest(ed|ion)/.test(stripComments(desk)));
+  ok('and it says so in words when it cannot prove a number, rather than printing one',
+     /not enough history/.test(desk));
+  /* ---- PLAIN ENGLISH ON THE HQ DESK (2026-08-30) ----
+     His rule twice over: *"dont make vague terms"*, *"use english terms if its shorter and
+     direct"* (2026-08-27) and then, when this panel shipped with Indonesian headers, *"can u use
+     better english words from now on and change that, its so fague"*. A prose reminder would rot;
+     this is the same instruction as something that cannot.
+     ⚠️ SCOPED TO THE HQ DESK ONLY. The branch-side panels are all-Indonesian by design — different
+     reader, settled separately — so this must never widen to BranchWarehouseManager's own screens. */
+  const HQ_INDONESIAN = /\b(kurang|cukup|barang|belum|tidak|jumlah|gudang|cabang|kirim\w*|terukur|saran)\b/i;
+  ok('the shipment plan panel carries no Indonesian label',
+     !HQ_INDONESIAN.test(stripComments(read('src/components/ShipmentPlanTable.jsx'))));
+  ok('and neither does the warehouse table beside it',
+     !HQ_INDONESIAN.test(stripComments(read('src/ponder/stages/StockByWarehouseTable.jsx'))));
+  /* The age line said "oldest here 116 days", and he asked what it meant — a number with no noun
+     attached. It names what is 116 days old now, and what the unexplained figure actually counts. */
+  ok('the age line names what the number is a number OF',
+     /oldest pack <b[^>]*>\{p\.days\} days old/.test(read('src/ponder/stages/StockByWarehouseTable.jsx')));
+  ok('and unexplained stock says why it is unexplained',
+     /with no delivery record/.test(read('src/ponder/stages/StockByWarehouseTable.jsx')));
 
   /* ---- THE SAME FLOOR, AS A COLUMN IN SEBARAN STOK (2026-08-30) ----
      His call: *"i agree with your recommendation so new separate panel and add column in sebaran
@@ -940,8 +962,8 @@ section('S38. Minimal kirim: the floor HQ sees, keyed on the Tujuan it is sendin
   ok('one grid template is built from the cabang list and reused by every row',
      /const cols = `minmax\(0,1\.4fr\) 108px \$\{branches\.map\(\(\) => '104px'\)\.join\(' '\)\} 108px 112px`/.test(plan) &&
      (plan.match(/gridTemplateColumns: cols/g) || []).length === 3);
-  ok('a company with no cabang says so instead of drawing a table with no columns',
-     /branches\.length === 0/.test(plan) && /Belum ada cabang di roster/.test(plan));
+  ok('a company with no branches says so instead of drawing a table with no columns',
+     /branches\.length === 0/.test(plan) && /No branches on the roster yet/.test(plan));
   ok('and the panel is mounted for HQ, below the warehouse table',
      /<ShipmentPlanTable rows=\{shipmentPlan\} branches=\{planBranches\} \/>/.test(bwm));
 
