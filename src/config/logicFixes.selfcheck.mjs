@@ -978,10 +978,16 @@ section('S39. Sales rollup: a cache that can always be rebuilt from the transact
   ok('the write uses nested keys under merge, so a dot in a product id is safe',
      /\{ merge: true \}/.test(rollupWrite) &&
      !/byProduct\./.test(stripComments(rollupWrite).replace(/byProduct\)/g, '')));
-  ok('and only this one module ever writes sales_stats',
+  /* One module OWNS the collection path. The rebuild in App.jsx is a legitimate second writer -
+     it replaces months wholesale rather than incrementing them - but it must reach the collection
+     through `statsPath` rather than spelling the path again. Two spellings of one collection is
+     how a repair quietly fixes a document nothing else reads. */
+  ok('the collection path is written in exactly one place',
      /sales_stats/.test(rollupWrite) &&
-     ['src/App.jsx', 'src/hooks/useTransactionEngine.js', 'src/components/HistoryReportView.jsx']
-       .every(f => !/sales_stats/.test(read(f))));
+     ['src/hooks/useTransactionEngine.js', 'src/components/HistoryReportView.jsx']
+       .every(f => !/sales_stats/.test(read(f))) &&
+     !/sales_stats/.test(stripComments(app)) &&
+     /statsPath\(appId, userId, m\.month\)/.test(app));
 
   /* ---- IT IS A CACHE, AND THE CODE MUST SAY SO ---- nothing may read a figure out of here and
      write it back into stock, money or a nota. The rebuild is what makes that safe. */

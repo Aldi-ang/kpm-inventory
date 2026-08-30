@@ -39,6 +39,7 @@ export default function SettingsView({
     handleRegisterPasskey, registeredPasskeys, handleRemovePasskey,
     tierSettings, setTierSettings, handleSaveTiers, handleExportTiers, handleImportTiers, handleTierIconSelect,
     appSettings, setAppSettings, motorists = [],
+    handleRebuildSalesStats, isRebuildingStats,
     editCompanyProfile, setEditCompanyProfile, handleSaveCompanyProfile,
     handleMascotSelect, newMascotMessage, setNewMascotMessage, handleAddMascotMessage,
     activeMessages, editingMsgIndex, setEditingMsgIndex, editMsgText, setEditMsgText, handleSaveEditedMessage, handleDeleteMascotMessage,
@@ -576,6 +577,41 @@ export default function SettingsView({
                                               ))}
                                           </div>
                                       )}
+                              </div>
+                          )}
+
+                          {/* ═══════════ REBUILDING THE SALES TOTALS ═══════════
+                              The Product Performance panel on Reports reads a running tally that
+                              only counts sales made after it shipped. This fills in everything
+                              before that, and repairs the totals if they ever drift.
+
+                              It sits next to the other company numbers rather than under a
+                              "danger" heading on purpose: it deletes nothing. The receipts are the
+                              truth and stay untouched; only the summary is recalculated. */}
+                          {isSystemOwner && handleRebuildSalesStats && (
+                              <div className="kpm-mod live">
+                                  <div className="kpm-head">
+                                      <span className="slot">Company · 07</span>
+                                      <div className="line">
+                                          <h3>Rebuild the sales totals</h3>
+                                          <span className="kpm-read on">Reads everything once</span>
+                                      </div>
+                                      <p className="kpm-desc">
+                                          Product Performance counts each sale as it happens, which makes
+                                          it almost free to read but means it only knows about sales made
+                                          since it was switched on. This recalculates every month from the
+                                          receipts themselves. Run it once now to fill in the past, and
+                                          again only if a figure ever looks wrong. It reads the whole
+                                          transaction history, so it is not free — everything else on that
+                                          panel is.
+                                      </p>
+                                  </div>
+                                  <div className="kpm-acts">
+                                      <button type="button" className="kpm-btn key" disabled={isRebuildingStats}
+                                          onClick={handleRebuildSalesStats}>
+                                          {isRebuildingStats ? 'Rebuilding…' : 'Rebuild sales totals'}
+                                      </button>
+                                  </div>
                               </div>
                           )}
 

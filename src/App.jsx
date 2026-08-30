@@ -21,9 +21,10 @@ import MusicPlayer from './MusicPlayer';
 import { injectDynamicPermissions, isFieldLevelTier, hasClearance } from './config/permissions';
 import { POV_OWNER_EMAIL, previewIdentity, testAccountDoc, testAccountName, canUsePovSwitch } from './config/povPreview';
 import { warehouseList } from './utils/supply';
-import { tallySaleOp } from './utils/salesRollupWrite';
-import { rebuildMonths, statsPath as salesStatsPath } from './utils/salesRollup';
+import { tallySaleOp, statsPath } from './utils/salesRollupWrite';
+import { rebuildMonths } from './utils/salesRollup';
 import TierPovSwitch, { PovBanner } from './components/TierPovSwitch';
+import ProductPerformancePanel from './components/ProductPerformancePanel';
 
 // --- REUSABLE UI COMPONENTS (Keep these static for fast initial load) ---
 import NotificationBell from './components/NotificationBell';
@@ -2794,6 +2795,54 @@ const handleGitHubMirror = async () => {
           t, Object.fromEntries((inventory || []).map(p => [p.id, p])), -1))
       .filter(Boolean);
 
+  /* ═══════════ REBUILDING THE SALES TOTALS FROM THE TRANSACTIONS ═══════════
+     Two jobs in one button, and the second is why it is not optional.
+
+     1. BACKFILL. The running tally only counts sales made after it shipped, so every month before
+        that is empty. This walks the real transactions and writes the months they imply.
+     2. REPAIR. If a counter ever drifts - a sign the wrong way round, a path that forgets to
+        un-tally - this makes the drift a nuisance rather than a loss. It is the property that
+        lets `sales_stats` be treated as a cache: `transactions` is the truth, and the truth can
+        always be replayed.
+
+     ⚠️ IT REPLACES, IT DOES NOT INCREMENT. Every month it touches is written whole with `set` and
+     no merge, because a rebuild that added to what was already there would double every figure it
+     was called on to fix - which is the exact opposite of a repair.
+
+     ⚠️ AND IT READS THE WHOLE HISTORY ONCE, which is the expensive query this feature exists to
+     avoid on every screen open. That is the right trade: pay it deliberately, on a button, rather
+     than accidentally, on every visit. He is told how many documents it read. */
+  const [isRebuildingStats, setIsRebuildingStats] = useState(false);
+  const handleRebuildSalesStats = async () => {
+      if (!user || !isAdmin) return notify("Owner access is required to rebuild the sales totals.");
+      if (!await confirmAction(
+          "Rebuild every monthly sales total from the transaction history?\n\n" +
+          "This reads the whole transaction history once, which costs a large number of Firestore " +
+          "reads. Nothing is deleted: the totals are recalculated from the receipts, which stay " +
+          "exactly as they are.")) return;
+      setIsRebuildingStats(true);
+      try {
+          const far = new Date(2000, 0, 1);
+          const all = await fetchHistoricalTransactions(far, new Date());
+          const productsById = Object.fromEntries((inventory || []).map(p => [p.id, p]));
+          const months = rebuildMonths(all, productsById);
+          const ops = months.map(m => ({
+              type: 'set',
+              /* through the shared path helper, never a hand-written string: two spellings of one
+                 collection is how a rebuild quietly repairs a document nothing else reads. */
+              ref: doc(db, statsPath(appId, userId, m.month)),
+              data: { month: m.month, byProduct: m.byProduct, byDay: m.byDay, rebuiltAt: serverTimestamp() },
+          }));
+          await commitInChunks(db, writeBatch, ops);
+          logAudit("SALES_STATS_REBUILD", `Rebuilt ${months.length} month(s) from ${all.length} transactions`);
+          triggerCapy(`Sales totals rebuilt: ${months.length} month(s) from ${all.length} transactions.`);
+      } catch (err) {
+          notify(`Rebuild failed: ${err.message}`);
+      } finally {
+          setIsRebuildingStats(false);
+      }
+  };
+
   const handleDeleteSingleTransaction = async (transaction) => {
       if(!await confirmAction("Delete this specific transaction record? Stock will NOT be restored automatically (manual adjustment required if needed).")) return;
       try {
@@ -4270,6 +4319,7 @@ const handleGitHubMirror = async () => {
                     handleSaveDashboardTargets={handleSaveDashboardTargets}
                     customers={displayCustomers}
                     motorists={motorists}
+                  handleRebuildSalesStats={handleRebuildSalesStats} isRebuildingStats={isRebuildingStats}
                     branchStock={branchStock}
                 />
             )
@@ -4735,6 +4785,15 @@ const handleGitHubMirror = async () => {
           )}
           
           {/* --- PINPOINT: Main App Render Block (Line 2618) --- */}
+          {activeTab === 'transactions' && (
+            <div className="max-w-6xl mx-auto">
+              {/* WHAT SOLD, over a day, a week, a month or a year. It sits on Reports because that
+                  is the screen he already opens to look at past sales, and directly above the
+                  receipt list because the summary is what he came for and the receipts are the
+                  detail underneath it. */}
+              <ProductPerformancePanel db={db} appId={appId} userId={userId} inventory={inventory} />
+            </div>
+          )}
           {activeTab === 'transactions' && <HistoryReportView transactions={transactions} inventory={inventory} onDeleteFolder={handleDeleteHistory} onDeleteTransaction={handleDeleteSingleTransaction} isAdmin={isAdmin} user={user} appId={appId} db={db} appSettings={appSettings} userRole={userRole} agentProfileId={agentProfileId} fetchHistoricalTransactions={fetchHistoricalTransactions} motorists={motorists} customers={displayCustomers} />}
           
          {activeTab === 'audit' && (

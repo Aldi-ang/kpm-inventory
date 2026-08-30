@@ -100,7 +100,12 @@ export const SECTIONS = [
   {
     id: 'transactions', label: 'Reports', short: 'Reports', icon: 'BarChart3',
     blurb: 'Riwayat transaksi dan laporan. Cuma dibaca.',
-    entries: [{ title: 'Membaca laporan', desc: 'Rentang tanggal, dan apa yang tidak masuk hitungan.', icon: 'BarChart3', soon: true }],
+    entries: [
+      /* Product Performance is the top panel on this screen, so it is entry 1 - entries inside a
+         section are top-to-bottom order on the screen. */
+      { sceneId: 'product-performance', title: 'Product Performance', desc: 'Barang mana yang benar-benar laku, dalam sehari, seminggu, sebulan atau setahun.', icon: 'BarChart3' },
+      { title: 'Membaca laporan', desc: 'Rentang tanggal, dan apa yang tidak masuk hitungan.', icon: 'BarChart3', soon: true },
+    ],
   },
   {
     id: 'agent_profile', label: 'Agent Profile', short: 'Profile', icon: 'User',

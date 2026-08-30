@@ -7,14 +7,17 @@
 import { stockByWarehouse } from './scenes/stock-by-warehouse.js';
 import { goodsReceived } from './scenes/goods-received.js';
 import { shipmentPlan } from './scenes/shipment-plan.js';
+import { productPerformance } from './scenes/product-performance.js';
 import StockStage from './stages/StockStage.jsx';
 import GoodsReceivedStage from './stages/GoodsReceivedStage.jsx';
 import ShipmentPlanStage from './stages/ShipmentPlanStage.jsx';
+import ProductPerformanceStage from './stages/ProductPerformanceStage.jsx';
 
 export const SCENES = {
   'goods-received': goodsReceived,
   'stock-by-warehouse': stockByWarehouse,
   'shipment-plan': shipmentPlan,
+  'product-performance': productPerformance,
 };
 
 /* A stage is the little fixed world a scene plays inside. Scenes name one by string so that a
@@ -24,6 +27,7 @@ export const STAGES = {
   'stock-table': StockStage,
   'goods-received': GoodsReceivedStage,
   'shipment-plan': ShipmentPlanStage,
+  'product-performance': ProductPerformanceStage,
 };
 
 /* The book's table of contents is data, so it lives in its own file — see sections.js for why
