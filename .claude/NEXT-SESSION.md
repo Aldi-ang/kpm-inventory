@@ -1,10 +1,10 @@
 # NEXT SESSION — read this, then `.claude/PROGRESS.md`. Read no code to orient.
 
-**Written 2026-08-30 10:07 WIB. 667/667 audit · 878/878 selfcheck. Branch `phase0-solid-ground`,
-tree clean.**
+**Written 2026-08-30 10:35 WIB. 667/667 audit · 915/915 selfcheck. Branch `phase0-solid-ground`,
+tree clean at `18062df`.**
 
-🟠 **PONDER IS PARKED.** His words: *"dont worry about the ponder book for now we focus on
-system functionality"*. Do not start a tutorial chapter. The front is the **Restock Vault**.
+🛑 **STOPPED ON THE QUOTA. Nothing is half-finished** — every commit builds and both suites are
+green. The sales rollup shipped end to end: it counts, it reads back, it rebuilds, it has a chapter.
 
 ## First command
 
@@ -12,128 +12,112 @@ system functionality"*. Do not start a tutorial chapter. The front is the **Rest
 npm run build; node src/config/integration.audit.mjs; node src/config/logicFixes.selfcheck.mjs
 ```
 
-He is on **PowerShell**: `;` not `&&`.
-
-🔴 **RUN AND QUOTE BOTH SUITES.** `logicFixes.selfcheck` sat at **823/825** for four days and every
-report said green, because reports only ever quote the first number. That is how two stale checks
-hid. Both numbers, every time.
+PowerShell: `;` not `&&`. **Quote BOTH numbers in every report.** One suite sat red for four days
+because reports only ever named the first.
 
 ---
 
-## 🔴 THE ONE JOB — sales performance per product, over time
+## 🔴 THE ONE JOB — look at Product Performance on a real screen, then fix what the frame shows
 
-His ask, unedited:
+Everything under it is built and checked. What has **never been rendered** is the panel itself:
+`src/components/ProductPerformancePanel.jsx`. Its table was driven in the lab through the tutorial,
+so the rows, the share bar and the incomplete-range banner are confirmed. Nobody has looked at the
+**range buttons**, the **loading line**, or the **failed-read box**.
 
-> *"the total performance per day per week/ month or year for products right, like how many product
-> is actually sold per timeframe specific for each of the product? well basically the performance
-> for each product in overall through all region"*
+**Do this before writing any new code:**
 
-**He has already chosen the method and told you to stop asking:** *"we should use older data to
-avoid high cost right, we just need to see the data thats auto update for every sales so we can see
-the latest sales and have all the number isnt? btw right just do whatever to save cost, u know the
-method better"*. That is a stored rollup, and he is right — a running total is always current AND
-nearly free to read. **Do not re-open the cost question.**
+1. Add a `?perf` slice to `tools/ponder-lab.jsx` mounting `ProductPerformanceTable` directly, the
+   way `?plan` and `?minkirim` already do. The panel needs Firestore; the table does not.
+2. Shoot it in both themes at a narrow width. The grid is
+   `grid-cols-[minmax(0,1fr)_120px_150px_88px]` with `min-w-[640px]`, and **`Rp 186.000.000` is the
+   longest string on any row** — if anything clips, it is revenue on a phone.
+3. Then ask him to open **Reports** in the real app and press **Rebuild sales totals** in Settings
+   once. Until that runs, every month before today is empty and the banner will correctly say so.
 
-**THE SHAPE.** One document per month, `product_stats/{YYYY-MM}`, holding `byProduct` and `byDay`,
-incremented **inside the same batch as the sale** so it cannot be lost or double-counted. Use
-`FieldPath` for the nested paths rather than dotted strings — a productId with a dot in it would
-silently write to the wrong place. Reads: 1 doc for a day, 1–2 for a week, 1 for a month, 12 for a
-year, against hundreds or thousands of transaction docs for a live query.
+**The one thing genuinely left undone:** the caption fix for beats 5 and 6 of
+`product-performance.js` was applied but **never re-rendered** — the command was interrupted. Both
+use `at: 'bottom'` now. Confirm on a frame that the top rows are no longer covered:
 
-**⚠️ THE COUNTER IS THE EASY HALF. THE DRIFT IS THE JOB.** Three paths already change sales after
-the fact and every one must adjust the rollup in the same breath, or the numbers rot with nothing
-on screen saying so — this repo's most expensive failure shape:
-  1. transaction **edit** in `HistoryReportView`
-  2. transaction **delete** and delete-folder, same file
-  3. consignment **return / payment** in `useTransactionEngine`
-Write ONE helper applied with a `+1` / `−1` sign and route all of them through it. An edit is a
-remove of the old plus an add of the new.
+```
+npx vite build --config tools/ponder-lab.config.mjs
+python -m http.server 4187 -d dist-ponderlab
+```
 
-**⚠️ A REBUILD BUTTON IS NOT OPTIONAL.** It is the backfill for every month before this ships AND
-the repair tool if drift ever happens. It is also the property that makes the whole design safe:
-**the rollup is a CACHE, never the truth.** Transactions stay the source, so a bug costs a rebuild
-and never data. `fetchHistoricalTransactions(start, end)` (`useDatabaseSync.js:188`) already reads
-any range and `HistoryReportView` already drives it with Daily/Weekly/Monthly — **yearly does not
-exist yet** and has to be added.
+then screenshot `?scene=product-performance&step=5`. **Write screenshots to the scratchpad, never
+the repo root — Chrome gets `Access is denied` there.**
 
-**🔴 AND IT IS NOT DONE UNTIL THE BOOK KNOWS.** His rule, 2026-08-30: *"new panel and features
-means different ponder, but inside the same section of the book"*. A new panel means a new scene, a
-new stage and a new demo world, registered in `registry.js` and added to `sections.js` in the
-section it is printed in, at its top-to-bottom position on the screen. Follow `shipment-plan.js`.
+---
 
-**Verify:** build, both suites, and render the panel in the lab before claiming it works.
+## What the sales rollup is, in four lines
 
-## Traps — every one of these has already cost time
+- `src/utils/salesRollup.js` — the arithmetic. Imports nothing from Firebase, so the checks run it
+  in plain node against real numbers. 27 of them.
+- `src/utils/salesRollupWrite.js` — the only module that owns the `sales_stats` path.
+- One document per month: `byProduct` for the month, `byDay` inside it. A day costs 1 read, a week
+  1–2, a month 1, a year 12.
+- **It is a CACHE, never the truth.** `transactions` is the record; Settings › Company · 07 rebuilds
+  every month from it. A bug costs a rebuild, never data.
 
-- **🔴 WHEN YOU MOVE CODE OUT OF A FILE, GREP THE CHECK SUITES FOR THAT PATH.**
-  `grep -n "components/Foo.jsx" src/config/*.mjs`. Two guards read a file the code had left and
-  nobody noticed for four days. Prefer `read(a) + read(b)` over re-pointing when a behaviour's home
-  is genuinely ambiguous.
-- **🔴 EVERY WORD WRITTEN FOR HIM GOES THROUGH `anthropic-skills:humanizer`.** His standing
-  instruction, 2026-08-30: replies, notes, commit messages and shipped copy alike, *"so that its
-  easier for me to understand as well"*.
-- **🔴 KPM COPY HAS NO SECOND PERSON.** The subject is the warehouse, the branch, the shipment
-  or a role. Never *kamu*/*aku*. Audit check 667 scans every Ponder beat and names the offender.
-  Keep `—` where it is the CHARACTER the panel prints; five beats teach that symbol.
-- **🔴 A NEW PANEL IS NOT DONE UNTIL THE BOOK HAS ITS SCENE.** His rule, 2026-08-30. New column
-  → beats on the existing scene. New panel → scene + stage + demo world, same book section.
-- **🔴 A COMPONENT THE TUTORIAL RENDERS LIVES IN `src/ponder/stages/`.** The audit scans that
-  folder for `data-ponder` keys; a table anywhere else fails the focus-key check even though it is
-  correct. `ShipmentPlanTable` was moved for exactly this.
-- **🔴 CHECKS THAT PIN AN EXACT LITERAL BREAK ON HARMLESS EDITS.** Three did this in one session
-  — an import list, a return-object literal, a display string — and each was red while the thing it
-  guarded was intact. Assert the GUARANTEE, not the spelling.
-- **🔴 PLAIN ENGLISH ON THE HQ DESK, always.** *"use english terms if its shorter and direct"*,
-  and *"can u use better english words from now on"*. Two checks enforce it. Branch-side screens
-  stay Indonesian by design — different reader.
-- **🔴 A CAPTION ON A SHORT PANEL COVERS THE ROWS IT IS COMPARING.** `at: 'near'` needs room
-  below the subject. On a four-row table, anchor header and first-row beats at `'bottom'`. Found on
-  a frame, not in review.
-- **🔴 ONE PLACE LIST, EVER.** `warehouseList` / `NON_BRANCH` in `utils/supply.js` is the only
-  source of "which warehouses exist". A private copy is not a copy, it is a second answer —
-  `20c4a0a` paid for this once when the Tujuan dropdown offered Headquarters twice.
-- **🔴 VERIFY IN A REAL BROWSER, NOT FROM THE DIFF.** `npx vite build --config
-  tools/ponder-lab.config.mjs` then `python -m http.server 4187 -d dist-ponderlab`.
-  **Screenshots must be written to the scratchpad, not the repo root — Chrome gets `Access is
-  denied` there.** `--dump-dom | grep -o '<option[^>]*>[^<]*</option>'` proves a select's contents;
-  a screenshot only shows it closed.
-- **🔴 `?pov` MOUNTS THE COSTUME RACK.** It cannot be reached any other way — hidden sidebar door,
-  gated on the owner's true email, behind the vault gate. `?pov=solo` is the fresh-company case.
-- **🔴 A HOVER CANNOT BE SCREENSHOTTED — use `?hover`.** Headless Chrome has no pointer.
-- **🔴 `preserve-3d` sorts children by DEPTH, not document order**, and if the element is animated
-  the `translateZ` goes in the KEYFRAME, never on the element.
-- **The palette law holds, with two written exemptions:** the book's cream pages, and the book's
-  hover glow. No blue, no green anywhere else. Amber is an edge and an ink, never a fill.
-- **Aldi is 14 and skims.** One bold line first saying what he must do. Define every term. Mark
-  asks 🔴 DECIDE / ❓ ANSWER / ✅ TEST.
+**Four paths touch a sale and all four touch the tally, in the same commit as the thing they
+count:** the online sale (inside the receipt's own batch), the offline drain, the three deletes
+(through one shared `untallyOps`), and the history edit (−1 of what stood before, +1 of what was
+saved). Ten checks scan that wiring, because nothing but a scan can prove a call site still exists.
+
+---
+
+## Traps — every one has already cost time
+
+- **🔴 NEVER `git checkout --` A FILE TO UNDO A MUTATION TEST BEFORE THE WORK IS COMMITTED.** It
+  reverts to HEAD, not to the edited state. This wiped two files of finished wiring today and cost
+  a full rebuild of them. **Commit first, then mutation-test.**
+- **🔴 EVERY WORD WRITTEN FOR HIM GOES THROUGH `anthropic-skills:humanizer`** — replies, notes,
+  commit messages and shipped copy alike. His standing instruction, 2026-08-30.
+- **🔴 KPM COPY HAS NO SECOND PERSON.** The subject is the warehouse, the branch, the shipment or a
+  role. Never *kamu*/*aku*. Audit check 667 scans every Ponder beat and names the offender. Keep
+  `—` where it is the CHARACTER the panel prints; several beats teach that symbol.
+- **🔴 A NEW PANEL IS NOT DONE UNTIL THE BOOK HAS ITS SCENE.** New column → beats on the existing
+  scene. New panel → scene + stage + demo world, same book section, at its position on the screen.
+- **🔴 A COMPONENT THE TUTORIAL RENDERS LIVES IN `src/ponder/stages/`.** The audit scans that folder
+  for `data-ponder` keys; a table anywhere else fails the focus-key check even though it is correct.
+- **🔴 A `near` CAPTION ON A SHORT PANEL COVERS THE ROWS IT IS COMPARING.** Four-row tables anchor
+  their header and top-row beats at `'bottom'`. Found on a frame twice, never in review.
+- **🔴 CHECKS THAT PIN AN EXACT LITERAL BREAK ON HARMLESS EDITS.** Five did today — an import list, a
+  return-object literal, a display string, a **line index**, and a collection name. Every one was red
+  while the thing it guarded was intact. Assert the GUARANTEE, not the spelling.
+- **🔴 A MANGLED REGEX PASSES AGAINST EVERYTHING.** A heredoc wrote raw control characters into one
+  and it reported success while testing nothing. **Write patch scripts to a file and run the file** —
+  `bash -c` with backticks and `${}` inside will corrupt them. Mutation-test every new check.
+- **🔴 ONE PLACE LIST, EVER.** `warehouseList` / `NON_BRANCH` in `utils/supply.js` is the only source
+  of "which warehouses exist".
+- **Aldi is 14 and skims.** One bold line first saying what he must do. Define every term. Mark asks
+  🔴 DECIDE / ❓ ANSWER / ✅ TEST.
 
 ## Where things live
 
 | Thing | Path |
 |---|---|
 | Session state | `.claude/PROGRESS.md` |
-| The reorder advice (the thing to port) | `src/components/BranchWarehouseManager.jsx:1128` |
-| `reorderAdvice` · `shipmentRhythm` · `productArrivals` · `inTransitQty` | same file, `:122`–`:264` |
-| HQ's surat jalan desk — Request tab, push form, `REQ_RANK` | `src/RestockVaultView.jsx` |
-| Where every pack is — the one warehouse-list function | `src/utils/supply.js` |
-| POV rack + costume posting | `src/components/TierPovSwitch.jsx` · `src/App.jsx` |
-| The 667 checks | `src/config/integration.audit.mjs` |
-| The 878 checks | `src/config/logicFixes.selfcheck.mjs` |
-| Viewing harness | `tools/ponder-lab.*` |
-| The warehouse roadmap | `A-Brain/Wiki/Concepts/The Eight Warehouse Gaps.md` |
+| Sales rollup — arithmetic · Firestore · panel · table | `src/utils/salesRollup.js` · `salesRollupWrite.js` · `src/components/ProductPerformancePanel.jsx` · `src/ponder/stages/ProductPerformanceTable.jsx` |
+| Rebuild button | `src/App.jsx` `handleRebuildSalesStats` → Settings › Company · 07 |
+| The four tally call sites | `useTransactionEngine.js` · `App.jsx` (drain + `untallyOps`) · `HistoryReportView.jsx` |
+| Send at least · Shipment Plan | `src/ponder/stages/StockByWarehouseTable.jsx` · `ShipmentPlanTable.jsx` |
+| Spare days per branch | `src/utils/supply.js` `bufferDays` → Settings › Company · 06 |
+| Scenes | `src/ponder/scenes/` — four of them, registered in `registry.js` + `sections.js` |
+| Viewing harness | `tools/ponder-lab.jsx` — `?plan` `?minkirim` `?pov` `?book` `?scene=` |
+| The 667 / 915 checks | `src/config/integration.audit.mjs` · `logicFixes.selfcheck.mjs` |
 
 <details>
 <summary>Queued behind this — do not start these</summary>
 
-- **G1 + G2, one job, his doc calls it the money item.** Batch identity dies at the HQ door
+- **G1 + G2, one job, his own doc calls it the money item.** Batch identity dies at the HQ door
   (`batchNo` is captured at intake, never copied onto `branches/{loc}/inventory`), and nothing
-  enforces oldest-ships-first — age is *displayed* only.
-- **G5** — inventory accuracy and shrinkage are never calculated, though the raw numbers now exist.
+  enforces oldest-ships-first — age is displayed only.
+- **G5** — inventory accuracy and shrinkage are never calculated, though the raw numbers exist.
 - **G4** — records joined by name, not id. A spelling fix silently splits one product into two.
-  Biggest and riskiest; touches everything.
-- **Redesign `BranchWarehouseManager` into Duke's Ledger.** It carries 0 `duke-` tokens. Palette is
-  clean (semantic tokens only), so this is a look job, not a correctness one.
-- **Ponder's remaining 15 chapters**, in `sections.js` order — parked at his word.
+- **Redesign `BranchWarehouseManager` into Duke's Ledger.** 0 `duke-` tokens; a look job, not a
+  correctness one.
+- **Ponder's remaining chapters**, parked at his word: *"dont worry about the ponder book for now"*.
+  ⚠️ That parks new CHAPTERS only — a new feature still gets its scene.
 - **Untested by anyone: Siapkan Pengiriman and the shipping modal.**
 
 </details>

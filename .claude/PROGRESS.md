@@ -1,8 +1,68 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-30 10:07 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **667/667 audit · 878/878 selfcheck** · branch `phase0-solid-ground`, tree clean
+**Updated: 2026-08-30 10:35 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **667/667 audit · 915/915 selfcheck** · branch `phase0-solid-ground`, tree clean
 
-## 🟠 2026-08-30 10:07 — THE RESTOCK QUEUE CLEARED, THEN THE BOOK REWRITTEN. `20a4622` → `3a87de4`, **667/667 + 878/878**. Tree clean.
+## 🟠 2026-08-30 10:35 — THE RESTOCK QUEUE, THE BOOK, AND THE SALES ROLLUP. `20a4622` → `18062df`, **667/667 + 915/915**. Tree clean.
+
+*One entry for one long session. Ten commits on one line of work, not ten pieces of work.*
+
+**🛑 STOPPED ON THE QUOTA. Nothing is half-finished.** Every commit builds and both suites are
+green. `.claude/NEXT-SESSION.md` holds the whole next job.
+
+| # | Shipped | Commit |
+|---|---|---|
+| 1 | POV test agent can be posted to any branch | `b1cdcaa` |
+| 2 | `send at least N` on the Kirim form, keyed on Tujuan | `20a4622` |
+| 3 | `Send at least` column in Sebaran Stok | `4146c36` |
+| 4 | **Shipment Plan** panel — `Short by` names what HQ cannot cover | `7716a78` |
+| 5 | Plain English on the HQ desk, and the age line reworded | `77aff79` |
+| 6 | Ponder: new `shipment-plan` scene + 7 beats on stock-by-warehouse | `650035c` |
+| 7 | **Ponder rewritten through the humanizer** — 35 beats, no second person | `3a87de4` |
+| 8 | **Sales rollup, write path** — four call sites, one arithmetic | `c0a510f` |
+| 9 | **Product Performance** — panel, rebuild button, chapter | `18062df` |
+
+**THE SALES ROLLUP, which is the big one.** His ask: *"the total performance per day per week/ month
+or year for products ... for each of the product? well basically the performance for each product in
+overall through all region"*. Answering that live reads every receipt in the range — thousands for a
+year, on his bill, every time the screen opens. He chose the alternative himself: *"we just need to
+see the data thats auto update for every sales ... just do whatever to save cost, u know the method
+better"*.
+
+One document per month holds per-product and per-day totals. A day costs **1 read**, a week 1–2, a
+month 1, a year 12. **The rollup is a CACHE, never the truth** — `transactions` stays the record and
+Settings › Company · 07 rebuilds every month from it, so a bug costs a rebuild and never data.
+
+**The counter was the easy half. The drift was the job.** Four paths touch a sale and all four now
+touch the tally, in the same commit as the thing they count: the online sale, the offline drain
+(filed on the day it was MADE, not the day signal returned), the three deletes through one shared
+negative, and the history edit as −1 of what stood before plus +1 of what was saved.
+
+**✅ HE MUST DO THIS ONCE, and nothing works properly until he does:** open **Settings › Rebuild
+sales totals**. The tally only counts sales made since it shipped; that button fills in every month
+before today from the receipts. The panel will say how many months are missing until it runs.
+
+**✅ THEN LOOK AT** — **Reports**, top panel: Product Performance, with Today / This week / This
+month / This year. And the book now has **four** chapters: three under Restock Vault, one under
+Reports.
+
+**🔴 MY MISTAKE, WORTH RECORDING.** A `git checkout --` used to undo a mutation test reverted
+two files to HEAD rather than to their edited state, wiping finished wiring that had not been
+committed yet. It was rebuilt from the patch scripts and lost no work in the end, but it cost real
+time. **Commit first, then mutation-test.** Now the first trap in the brief.
+
+**❓ WAITING ON ALDI — nothing. The queue he set is empty.** The next job is mine: the Product
+Performance panel has never been rendered as a frame, only its table has.
+
+**Where things live — new this session**
+
+| Thing | Path |
+|---|---|
+| Sales rollup arithmetic (node-testable, 27 checks) | `src/utils/salesRollup.js` |
+| The only module that owns the `sales_stats` path | `src/utils/salesRollupWrite.js` |
+| The panel and its table | `src/components/ProductPerformancePanel.jsx` · `src/ponder/stages/ProductPerformanceTable.jsx` |
+| Rebuild button | `src/App.jsx` `handleRebuildSalesStats` → Settings › Company · 07 |
+| Its chapter | `src/ponder/scenes/product-performance.js` + stage + demo world |
+| Spare days per branch | `src/utils/supply.js` `bufferDays` → Settings › Company · 06 |
 
 *One entry for one continuous session — six commits on one feature line, not six pieces of work.*
 
