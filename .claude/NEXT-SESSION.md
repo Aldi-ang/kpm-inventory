@@ -1,7 +1,7 @@
 # NEXT SESSION — read this, then `.claude/PROGRESS.md`. Read no code to orient.
 
-**Written 2026-08-31 09:28 WIB. 672/672 audit · 915/915 selfcheck. Branch `phase0-solid-ground`,
-tree clean at `a84024a`.**
+**Written 2026-08-31 09:57 WIB. 673/673 audit · 915/915 selfcheck. Branch `phase0-solid-ground`,
+tree clean at `150a5c9`.**
 
 🔴 **THE CAPTION RULE, SO IT IS NOT RE-LITIGATED.** On a PC a beat that focuses a real element
 shows the MOVING caption; on a phone every beat uses the static bottom bar. Both are his call, both
@@ -25,11 +25,11 @@ PowerShell: `;` not `&&`. **Quote BOTH numbers.** The audit refuses to run again
 
 ---
 
-## 🔴 THE ONE JOB — read the sales-total path and the Restock Vault, then REPORT, do not fix
+## 🔴 THE ONE JOB — the Restock Vault, and REPORT before fixing
 
 His words, 2026-08-31: *"now focus on the sales total and also improvement on the restock vault if
-needed"*. **"If needed" is the operative half** — this is a diagnosis job first. His standing rule
-is to report findings and let him rank them before any code is written.
+needed"*. The sales-total half is DONE (below). **"If needed" is the operative half of what is
+left** — diagnose first, report, and let him rank before writing anything.
 
 **Do not start by reading the whole Restock Vault.** It is a large file. Start where a fault would
 cost money.
@@ -61,39 +61,23 @@ underneath this screen. Look for a real fault before proposing polish.
 
 **Deliver a ranked list with a cost per item, not a patch.**
 
-### 🔴 ONE FINDING IS ALREADY COMPLETE — the delete/edit tenant split
+### ✅ THE SALES-TOTAL HALF IS DONE — fixed in `150a5c9`, do not re-investigate
 
-Sales are SAVED to `artifacts/{appId}/users/{userId}/transactions` where
-`userId = bossUid || user.uid` ([App.jsx:412](src/App.jsx:412)). Sales are DELETED and EDITED at
-`users/{user.uid}/` — the raw login id, not the tenant key:
+The deletes and the history edit addressed `users/{user.uid}/transactions` while every write and
+read uses `users/{userId}/` (`userId = bossUid || user.uid`). Same for the owner, wrong for any
+delegated account: Firestore treats deleting a missing document as SUCCESS, so the app reported a
+delete that never happened and the un-tally landed in a `sales_stats` nothing reads. Six call sites
+now pass `userId`. Check 673 asserts the old spelling cannot return on this path, and two
+selfchecks that had been pinning `user.uid` were corrected rather than loosened.
 
-| what | where | uid used |
-|---|---|---|
-| write a sale | `useTransactionEngine.js` | `userId` ✅ |
-| rebuild totals | `App.jsx` `handleRebuildSalesStats` | `userId` ✅ |
-| delete one / delete folder ×2 | `App.jsx` ~2846–2890 | **`user.uid`** ❌ |
-| `untallyOps` beside them | `App.jsx:2794` | **`user.uid`** ❌ |
-| edit a sale + its ±1 tally | `HistoryReportView.jsx:377–380` | **`user.uid`** ❌ |
+Never reachable in practice — those buttons gate on `isAdmin`, which is `vaultUnlocked` (the Master
+Vault password, not a tier), and Aldi confirmed only he holds it. Fixed as a landmine.
 
-**Owner is safe:** he claims his own id as `bossUid` ([App.jsx:998](src/App.jsx:998)), so the two are
-equal and every path agrees. **Anyone with a `bossUid` pointing elsewhere is not.**
+**Scope was held deliberately.** `App.jsx` uses `user.uid` legitimately for settings, tiers, audit
+logs, map borders and mascot messages, and one branch tests `userId !== user.uid` on purpose. Those
+were not touched and are not known to be wrong.
 
-**Severity depends on one thing, and it is not a tier.** `isAdmin` is `vaultUnlocked`
-([App.jsx:255](src/App.jsx:255)) — the Master Vault password, not a role. The delete and edit
-buttons are gated on it ([HistoryReportView.jsx:794, 856, 857](src/components/HistoryReportView.jsx:856)).
-So it needs a delegated account whose holder can unlock the vault. Not reachable by an ordinary
-subordinate today; live the moment the password is shared or the gate becomes a tier check.
 
-**What goes wrong when it is reached:** `deleteDoc` on a missing document SUCCEEDS in Firestore, so
-the UI reports a delete that did not happen, the receipt stays, and `untallyOps` writes a negative
-into `users/{their own uid}/sales_stats/` — a document nothing reads. Product Performance keeps
-counting the sale. The rollup is a cache and a rebuild repairs the totals; **the un-deleted receipt
-is not repaired by anything.**
-
-**This is older than the rollup** — the rollup copied `user.uid` from the delete code beside it.
-The fix is mechanical (pass `userId`), but every one of these is a money path: change them together,
-add a check that no `users/${user.uid}` string survives in App.jsx or HistoryReportView, and
-mutation-test it. **Aldi was told and has not yet said fix or leave.**
 
 ---
 

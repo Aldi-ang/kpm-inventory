@@ -1,6 +1,24 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-31 09:28 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **672/672 audit · 915/915 selfcheck** · branch `phase0-solid-ground`, tree clean
+**Updated: 2026-08-31 09:57 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **673/673 audit · 915/915 selfcheck** · branch `phase0-solid-ground`, tree clean
+
+## 🟠 2026-08-31 09:57 — THE RECEIPT IS DELETED UNDER ITS OWNER. `150a5c9`, **673/673 + 915/915**. Tree clean.
+
+He answered the gating question — *"only me know my master password for my own account"* — so this
+was a landmine, not a fire, and he said fix it anyway.
+
+Six call sites moved from `user.uid` to `userId` (`= bossUid || user.uid`): three deletes, the
+`untallyOps` beside them, and the history edit with both halves of its tally. Every write and read
+of `transactions` already used `userId`; only these did not.
+
+**Scope held.** `App.jsx` uses `user.uid` legitimately for settings, tiers, audit logs, map borders
+and mascot messages, and one branch tests `userId !== user.uid` on purpose. Untouched.
+
+**⚠️ TWO SELFCHECKS WENT RED, AND BOTH WERE PINNING THE BUG'S SPELLING.** They were written to
+guard that a delete travels with its un-tally and that an edit applies both halves — and they
+faithfully guarded the wrong address while doing it. Corrected, not loosened; the uid is part of the
+guarantee now. New audit check 673 asserts the old spelling cannot return on this path.
+Mutation-tested: restoring `user.uid` on one delete turns BOTH suites red.
 
 ## 🟠 2026-08-31 09:28 — SHIPMENT PLAN MOVES AGAIN ON PC. `a84024a`, **672/672 + 915/915**. Tree clean.
 
