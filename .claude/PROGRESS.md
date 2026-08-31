@@ -1,6 +1,40 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-31 18:30 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **673/673 audit · 931/931 selfcheck** · branch `phase0-solid-ground`
+**Updated: 2026-08-31 19:00 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **673/673 audit · 943/943 selfcheck** · branch `phase0-solid-ground`
+
+## 🟠 2026-08-31 19:00 — PLACES ARE REGISTERED NOW, AND THE ROUTE BOXES CAN NO LONGER INVENT ONE.
+
+**The job shrank once the code was read.** Warehouses were already registered — `warehouseList()`
+builds Master Vault plus every branch on the fleet roster. Factories never were: the Asal list was
+"every name anyone had ever typed into a past delivery". And both fields were handed the SAME list,
+so a delivery could run factory → factory or arrive at a supplier. So the new registry is factories
+plus an ADDRESS for both kinds, not a second copy of the warehouse list.
+
+**`places` collection**, one doc per place, id = a slug of the name so registering the same name
+twice edits it instead of forking it. `kind: 'pabrik'` carries existence and address; `kind:
+'gudang'` carries only the address, because the roster already decides which warehouses exist. A
+warehouse with no address is still shippable — paperwork must not block a delivery.
+
+**The picker stopped being a create box.** Typed text is a QUERY now, held apart from the value;
+the value changes only when a real option is picked, and leaving the box throws an unmatched query
+away. Proven live in the lab: typing "Pabrik Palsu" shows while typing and reverts to empty on
+click-away. The old empty state said *"Nama baru tetap bisa dipakai"* out loud — that is what put
+four spellings of one warehouse into the book.
+
+**Tempat tab**, fifth in the nav, count = what is MISSING rather than what exists. It lists factory
+names found in old deliveries as one-click registrations, so the Asal box is not empty on day one
+without asking him to retype anything. Old records keep their typed strings, as he decided.
+
+**Addresses print on the surat jalan**, copied onto the delivery record at save time — a place that
+moves later must not rewrite the paper for goods that already travelled.
+
+**The swap button now flips DIRECTION** instead of exchanging the two strings, which after the
+split would have put a factory in Tujuan.
+
+**No rules change needed.** `places` falls through the `users/{bossUid}/{document=**}` catch-all to
+owner and distributor-admin, the same gate the screen already sits behind. Nothing to deploy.
+
+**❓ WAITING ON ALDI — nothing.** Next is the regional warehouse redesign, brief has it.
 
 ## 🟠 2026-08-31 18:30 — THE SURAT JALAN WAS BEING REPAINTED BY THE APP SHELL. FIXED AND REDESIGNED.
 

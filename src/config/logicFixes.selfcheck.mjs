@@ -3821,5 +3821,61 @@ ok('the nota is a component the lab can mount, not markup buried in a view',
 ok('money and codes are tabular so a column of figures lines up',
    (nota.match(/tabular-nums/g) || []).length >= 4);
 
+/* ── D15 · places are registered, and the route boxes only ever SEARCH them ─────────────── */
+section('D15. The place registry, and two boxes that cannot invent a place');
+
+/* His instruction, 2026-08-31: "we need to make option to register factory and gudang therefore
+   the adress for both is fixed and there is no way to input new name inside the textbox. textbox
+   is used only to search gudang name not register a new one unlike sales terminal" — and
+   "asal inside the masuk panel should be the factory location and tujuan should be the warehouse
+   location, can be sent to master vault or regional warehouse directly". */
+const restock = stripComments(read('src/RestockVaultView.jsx'));
+
+/* Scoped to RouteCombo's own body. `onChange(` appears all over this file on ordinary inputs, and
+   a file-wide search would report the opposite of the truth. */
+const comboStart = restock.indexOf('const RouteCombo =');
+const comboEnd = restock.indexOf('const Lamp =');
+ok('the RouteCombo block can be found before anything is asserted about it',
+   comboStart > -1 && comboEnd > comboStart);
+const combo = comboStart > -1 && comboEnd > comboStart ? restock.slice(comboStart, comboEnd) : '';
+
+ok('typing into the route box changes a QUERY, never the chosen value',
+   /onChange=\{e => \{ setQuery\(e\.target\.value\)/.test(combo) &&
+   !/onChange=\{e => \{ onChange\(e\.target\.value\)/.test(combo),
+   'the old box committed whatever was typed and tagged it `baru` — four spellings of one warehouse');
+ok('the value is committed only by picking a real option',
+   /const pick = \(name\) => \{ onChange\(name\)/.test(combo));
+ok('leaving the box throws the unmatched text away',
+   /setOpen\(false\); setQuery\(null\);/.test(combo),
+   'otherwise the field shows a place the delivery is not going to');
+ok('the empty state sends him to the registry instead of offering to invent a name',
+   /Tempat baru didaftarkan di tab/.test(combo) && !/Nama baru tetap bisa dipakai/.test(combo));
+
+ok('Asal draws from factories, Tujuan from warehouses — never one shared list',
+   /options=\{isOut \? warehouseOptions : factoryOptions\}/.test(restock) &&
+   /label="Tujuan"[\s\S]{0,220}options=\{warehouseOptions\}/.test(restock) &&
+   !/options=\{placeOptions\}/.test(restock),
+   'one list for both fields allowed factory → factory, and deliveries arriving at a supplier');
+ok('the edit panel uses the same two pickers, not free text',
+   /label="Asal \(Source Factory\)"[\s\S]{0,400}options=\{factoryOptions\}/.test(restock),
+   'a rule that holds on intake and leaks on the edit form is not a rule');
+ok('swapping the route flips DIRECTION rather than exchanging the two strings',
+   /const swapRoute = \(\) => setDirection/.test(restock),
+   'a straight swap would put a factory in Tujuan — the nonsense route the split lists prevent');
+
+ok('a place cannot be registered without the address that is the point of registering it',
+   /if \(!address\) return notify/.test(restock));
+ok('the registry is keyed by a slug of the name, so registering one name twice edits it',
+   /const placeSlug = \(name\) =>/.test(restock) &&
+   /\/places`, slug\)/.test(restock),
+   'an auto-id would let "Pabrik Kudus" exist twice with two different addresses');
+ok('the delivery record COPIES both addresses at save time',
+   /originAddress: addrFor\(poData\.supplierName\)/.test(restock) &&
+   /destinationAddress: addrFor\(poData\.destination\)/.test(restock),
+   'looking them up at print time would rewrite the paper for goods that already travelled');
+ok('and the nota prints them under Asal and Tujuan',
+   /sub=\{acceptance\.originAddress\}/.test(stripComments(read('src/components/AcceptanceReceipt.jsx'))) &&
+   /sub=\{acceptance\.destinationAddress\}/.test(stripComments(read('src/components/AcceptanceReceipt.jsx'))));
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

@@ -40,33 +40,51 @@ const num = (n) => new Intl.NumberFormat('id-ID').format(Number(n) || 0);
 /* Defined at module scope on purpose. A component declared inside the parent is a
    NEW type on every render, so React unmounts and remounts it — the input would
    lose focus after every keystroke. */
-const RouteCombo = ({ label, value, onChange, options, placeholder, flag }) => {
+/* THE ROUTE PICKER — a search box, never a create box.
+
+   It used to accept anything typed and tag it `baru`, and its empty state said so out loud:
+   "Nama baru tetap bisa dipakai". That is what put four spellings of one warehouse into the
+   book. His instruction, 2026-08-31: *"textbox is used only to search gudang name not register a
+   new one unlike sales terminal"*.
+
+   So the typed text is now a QUERY, held separately from the value. The value only ever changes
+   when a real option is chosen, and leaving the box with an unmatched query snaps the text back
+   to whatever was actually selected. Registration lives in the Tempat tab, where an address can
+   be asked for — a name without an address is the thing being fixed. */
+const RouteCombo = ({ label, value, onChange, options, placeholder, hint }) => {
     const [open, setOpen] = useState(false);
     const [hi, setHi] = useState(-1);
+    const [query, setQuery] = useState(null);   // null = showing the chosen value
     const boxRef = useRef(null);
 
-    const q = (value || '').trim().toLowerCase();
-    const hits = options.filter(o => o.name.toLowerCase().includes(q));
-    const known = options.some(o => o.name.toLowerCase() === q);
+    const text = query === null ? (value || '') : query;
+    const q = text.trim().toLowerCase();
+    /* an empty query lists everything — opening the box should show what IS available, not
+       nothing. Only a typed query narrows it. */
+    const hits = query === null ? options : options.filter(o => o.name.toLowerCase().includes(q));
+    const chosen = options.find(o => o.name === value);
 
     useEffect(() => {
-        const away = (e) => { if (boxRef.current && !boxRef.current.contains(e.target)) setOpen(false); };
+        /* Leaving the box throws the query away. It never becomes a value — that is the whole
+           point — so the text has to go back to what is really selected, or the field would show
+           a place the delivery is not going to. */
+        const away = (e) => {
+            if (boxRef.current && !boxRef.current.contains(e.target)) { setOpen(false); setQuery(null); }
+        };
         document.addEventListener('mousedown', away);
         return () => document.removeEventListener('mousedown', away);
     }, []);
 
-    const pick = (name) => { onChange(name); setOpen(false); setHi(-1); };
+    const pick = (name) => { onChange(name); setQuery(null); setOpen(false); setHi(-1); };
 
     return (
         <div className="relative min-w-0" ref={boxRef}>
             <label className="text-[10px] font-bold text-ink-muted uppercase tracking-widest mb-1 block">
                 {label}
-                {/* an unknown name is allowed — it is just never allowed to look the same as a known one */}
-                {flag && value.trim() && !known && <span className="ml-1.5 text-accent-ink">baru</span>}
             </label>
             <input
-                value={value}
-                onChange={e => { onChange(e.target.value); setOpen(true); setHi(-1); }}
+                value={text}
+                onChange={e => { setQuery(e.target.value); setOpen(true); setHi(-1); }}
                 onFocus={() => setOpen(true)}
                 onKeyDown={e => {
                     if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
@@ -75,8 +93,12 @@ const RouteCombo = ({ label, value, onChange, options, placeholder, flag }) => {
                         setHi(h => e.key === 'ArrowDown' ? Math.min(hits.length - 1, h + 1) : Math.max(0, h - 1));
                     } else if (e.key === 'Enter') {
                         e.preventDefault();
-                        if (hi > -1 && hits[hi]) pick(hits[hi].name); else setOpen(false);
-                    } else if (e.key === 'Escape') setOpen(false);
+                        /* Enter on a single remaining match picks it. Enter on a query that
+                           matches nothing does NOT create it — it just closes. */
+                        if (hi > -1 && hits[hi]) pick(hits[hi].name);
+                        else if (hits.length === 1) pick(hits[0].name);
+                        else { setOpen(false); setQuery(null); }
+                    } else if (e.key === 'Escape') { setOpen(false); setQuery(null); }
                 }}
                 placeholder={placeholder}
                 autoComplete="off"
@@ -85,18 +107,38 @@ const RouteCombo = ({ label, value, onChange, options, placeholder, flag }) => {
             {open && (
                 <div className="absolute z-30 left-0 right-0 top-full mt-1 bg-raised border border-line-2 rounded-lg max-h-52 overflow-y-auto custom-scrollbar shadow-xl">
                     {hits.length === 0 ? (
-                        <div className="px-3 py-2 text-xs text-ink-muted">Tidak ada. Nama baru tetap bisa dipakai.</div>
+                        <div className="px-3 py-2.5 text-xs text-ink-muted leading-relaxed">
+                            Tidak ada yang cocok. Tempat baru didaftarkan di tab <b className="text-ink">Tempat</b>, bukan di sini.
+                        </div>
                     ) : hits.map((o, i) => (
                         <button
                             key={o.name} type="button"
                             onMouseDown={e => { e.preventDefault(); pick(o.name); }}
-                            className={`w-full flex items-center gap-2 text-left px-3 py-2 text-sm border-b border-line-2 last:border-b-0 border-l-2 transition-colors ${i === hi ? 'border-l-orange bg-panel' : 'border-l-transparent hover:border-l-orange hover:bg-panel'}`}
+                            className={`w-full text-left px-3 py-2 border-b border-line-2 last:border-b-0 border-l-2 transition-colors ${i === hi ? 'border-l-orange bg-panel' : 'border-l-transparent hover:border-l-orange hover:bg-panel'}`}
                         >
-                            <span className="flex-1 truncate text-ink">{o.name}</span>
-                            <span className="text-[10px] font-mono text-ink-muted uppercase tracking-widest">{o.kind}</span>
+                            <span className="flex items-center gap-2">
+                                <span className="flex-1 truncate text-ink text-sm">{o.name}</span>
+                                <span className="text-[10px] font-mono text-ink-muted uppercase tracking-widest">{o.kind}</span>
+                            </span>
+                            {/* the address is why the place is registered at all — showing it here is
+                                how two warehouses with similar names stop being a coin toss */}
+                            <span className={`block text-[10px] truncate mt-0.5 ${o.address ? 'text-ink-muted' : 'text-accent-ink'}`}>
+                                {o.address || 'alamat belum diisi'}
+                            </span>
                         </button>
                     ))}
                 </div>
+            )}
+            {/* the chosen place's fixed address, under the field it belongs to. This is what
+                "the adress for both is fixed" buys: you can see where it is going without
+                opening anything. */}
+            {/* absolute, so a field WITH an address and a field without still line up. The route
+                row is `items-end`; a line of text under one box lifted it above its neighbour. */}
+            {!open && chosen?.address && (
+                <p className="absolute left-0 right-0 top-full mt-1 text-[10px] text-ink-muted truncate" title={chosen.address}>{chosen.address}</p>
+            )}
+            {!open && !options.length && hint && (
+                <p className="absolute left-0 right-0 top-full mt-1 text-[10px] text-accent-ink truncate" title={hint}>{hint}</p>
             )}
         </div>
     );
@@ -148,6 +190,21 @@ const RestockVaultView = ({ inventory = [], procurements = [], motorists = [], b
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const [stockRequests, setStockRequests] = useState([]);
+
+    /* THE PLACE REGISTRY. His instruction, 2026-08-31: *"we need to make option to register
+       factory and gudang therefore the adress for both is fixed and there is no way to input new
+       name inside the textbox. textbox is used only to search gudang name not register a new
+       one"*. One collection holds both kinds, keyed by a slug of the name so registering the same
+       place twice edits it instead of forking it.
+
+       ⚠️ It is NOT the source of truth for which warehouses exist — `warehouseList()` is, built
+       from the fleet roster, and a warehouse that is on the roster is shippable whether or not
+       anyone has typed its address yet. For a gudang this registry supplies only the ADDRESS. For
+       a pabrik it supplies existence AND address, because factories have never been records at
+       all: the old list was "every name anyone ever typed into a delivery". */
+    const [places, setPlaces] = useState([]);
+    const [placeForm, setPlaceForm] = useState(null);   // { name, address, kind, editing }
+    const [savingPlace, setSavingPlace] = useState(false);
 
     const [targets, setTargets] = useState([]);
     const [showTargetModal, setShowTargetModal] = useState(false);
@@ -215,7 +272,12 @@ const RestockVaultView = ({ inventory = [], procurements = [], motorists = [], b
             setTargets(snap.docs.map(d => ({ id: d.id, ...d.data() })));
         }, (err) => console.warn("Production targets listener:", err.code));
 
-        return () => { unsubReq(); unsubTgt(); };
+        const placeRef = collection(db, `artifacts/${appId}/users/${activeUserId}/places`);
+        const unsubPlace = onSnapshot(placeRef, (snap) => {
+            setPlaces(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+        }, (err) => console.warn("Places listener:", err.code));
+
+        return () => { unsubReq(); unsubTgt(); unsubPlace(); };
     }, [db, appId, user, isAdmin, activeUserId]);
 
     /* ── the route's own options. Both lists are DERIVED from records that already
@@ -238,11 +300,35 @@ const RestockVaultView = ({ inventory = [], procurements = [], motorists = [], b
         () => [...new Set(procurements.map(p => p?.supplierName).filter(Boolean))].sort(),
         [procurements]
     );
-    const placeOptions = useMemo(() => ([
-        ...suppliersSeen.map(n => ({ name: n, kind: 'pabrik' })),
-        { name: HQ_NAME, kind: 'gudang' },
-        ...branchesSeen.map(n => ({ name: n, kind: 'cabang' })),
-    ]), [suppliersSeen, branchesSeen]);
+    /* TWO lists now, not one. Handing the same list to both fields let a delivery run
+       factory → factory, or arrive at a supplier. His correction, 2026-08-31: *"asal inside the
+       masuk panel should be the factory location and tujuan should be the warehouse location, can
+       be sent to master vault or regional warehouse directly"*. */
+    const addressOf = useMemo(() => {
+        const out = {};
+        for (const p of places) if (p?.name) out[p.name.trim().toLowerCase()] = p.address || '';
+        return out;
+    }, [places]);
+    const addrFor = (name) => addressOf[(name || '').trim().toLowerCase()] || '';
+
+    const factoryOptions = useMemo(() => places
+        .filter(p => p?.kind === 'pabrik' && p?.name)
+        .map(p => ({ name: p.name, kind: 'pabrik', address: p.address || '' }))
+        .sort((a, b) => a.name.localeCompare(b.name)),
+        [places]);
+
+    const warehouseOptions = useMemo(() => ([
+        { name: HQ_NAME, kind: 'gudang', address: addrFor(HQ_NAME) },
+        ...branchesSeen.map(n => ({ name: n, kind: 'cabang', address: addrFor(n) })),
+    ]), [branchesSeen, addressOf]);
+
+    /* Factory names sitting in old deliveries that were never registered. Not an error — he chose
+       to leave old records alone — but without this the Asal box is empty on the first day and
+       every factory has to be re-typed from memory. The Tempat tab offers them for one click. */
+    const unregisteredFactories = useMemo(() => {
+        const known = new Set(factoryOptions.map(f => f.name.trim().toLowerCase()));
+        return suppliersSeen.filter(n => n && n !== HQ_NAME && !known.has(n.trim().toLowerCase()));
+    }, [suppliersSeen, factoryOptions]);
 
     /* the last landed cost per product, so a new line can say whether it got dearer.
        Pure lookup over records already loaded — no new field, no new read. */
@@ -352,7 +438,11 @@ const RestockVaultView = ({ inventory = [], procurements = [], motorists = [], b
         setPackageFile(null);
     };
 
-    const swapRoute = () => setPoData(p => ({ ...p, supplierName: p.destination, destination: p.supplierName }));
+    /* Swapping the two STRINGS is no longer a legal move: Asal draws from factories and Tujuan
+       from warehouses, so a straight swap would leave a factory in Tujuan — the exact nonsense
+       route the split lists exist to prevent. What the button always meant is "this delivery goes
+       the other way", and that is a direction change, which already fixes both ends itself. */
+    const swapRoute = () => setDirection(isOut ? 'in' : 'out');
 
     /* switching direction only changes the route's defaults — the form itself is the same */
     const setDirection = (dir) => {
@@ -362,6 +452,57 @@ const RestockVaultView = ({ inventory = [], procurements = [], motorists = [], b
             supplierName: dir === 'out' ? HQ_NAME : (p.supplierName === HQ_NAME ? '' : p.supplierName),
             destination: dir === 'out' ? (p.destination === HQ_NAME ? (branchesSeen[0] || '') : p.destination) : HQ_NAME,
         }));
+    };
+
+    /* ═══ TEMPAT — registering a factory or giving a warehouse its address ═══
+       The doc id is a slug of the name, so saving "Pabrik Kudus" twice edits one record rather
+       than making two places that print the same words. */
+    const placeSlug = (name) => (name || '').trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+
+    const savePlace = async () => {
+        if (!placeForm) return;
+        const name = (placeForm.name || '').trim();
+        const address = (placeForm.address || '').trim();
+        if (!name) return notify("Nama tempat belum diisi.");
+        if (!address) return notify("Alamat belum diisi. Alamat itu justru gunanya tempat didaftarkan.");
+        if (!user || !db || !activeUserId) return notify("System disconnected. Cannot save.");
+
+        const slug = placeSlug(name);
+        if (!slug) return notify("Nama itu tidak bisa dipakai — pakai huruf atau angka.");
+        /* renaming is not editing: the old record would keep printing on nothing, and every past
+           delivery still carries the old string. Register the new name instead. */
+        const clash = places.find(p => p.id === slug && placeForm.editing && p.id !== placeForm.editing);
+        if (clash) return notify(`"${name}" sudah terdaftar.`);
+
+        setSavingPlace(true);
+        try {
+            await setDoc(
+                doc(db, `artifacts/${appId}/users/${activeUserId}/places`, slug),
+                { name, address, kind: placeForm.kind, updatedAt: serverTimestamp() },
+                { merge: true }
+            );
+            if (logAudit) await logAudit("PLACE_REGISTERED", `${placeForm.kind} "${name}" registered at ${address}`);
+            notify(`${placeForm.kind === 'pabrik' ? 'Pabrik' : 'Gudang'} "${name}" tersimpan.`);
+            setPlaceForm(null);
+        } catch (e) {
+            console.error(e);
+            notify("Gagal menyimpan tempat: " + e.message);
+        } finally {
+            setSavingPlace(false);
+        }
+    };
+
+    const removePlace = async (place) => {
+        if (!user || !db || !activeUserId) return notify("System disconnected. Cannot delete.");
+        if (!await confirmAction(`Hapus "${place.name}" dari daftar tempat?\n\nSurat jalan lama tetap menyimpan nama dan alamatnya. Yang hilang hanya pilihan untuk pengiriman baru.`)) return;
+        try {
+            await deleteDoc(doc(db, `artifacts/${appId}/users/${activeUserId}/places`, place.id));
+            if (logAudit) await logAudit("PLACE_REMOVED", `${place.kind} "${place.name}" removed from the registry`);
+            notify(`"${place.name}" dihapus dari daftar.`);
+        } catch (e) {
+            console.error(e);
+            notify("Gagal menghapus: " + e.message);
+        }
     };
 
     /* ═══ MASUK — factory production lands in the Master Vault ═══ */
@@ -410,6 +551,12 @@ const RestockVaultView = ({ inventory = [], procurements = [], motorists = [], b
                 receiptUrl: base64Receipt || null,
                 packagePhotoUrl: base64Package || null,
                 recordedBy: getAdminName(),
+                /* The addresses are COPIED onto the record, not looked up when the nota is
+                   printed. A surat jalan is evidence of where goods actually went that day;
+                   editing a place's address later must not rewrite the paper for a delivery that
+                   already happened. */
+                originAddress: addrFor(poData.supplierName),
+                destinationAddress: addrFor(poData.destination),
                 /* stated at save time, so a later read never has to guess what was missing */
                 incomplete: missing.length > 0 ? missing : null,
             };
@@ -932,6 +1079,9 @@ const RestockVaultView = ({ inventory = [], procurements = [], motorists = [], b
         { id: 'out',  label: 'Kirim',   count: viewMode === 'out' ? cart.length : bookRows.filter(r => r.dir === 'out' && r.live).length },
         { id: 'req',  label: 'Request', count: requestRows.length },
         { id: 'book', label: 'Buku',    count: bookRows.length },
+        /* the count is what is MISSING, not what exists — a registry you have finished filling in
+           should stop asking for attention */
+        { id: 'place', label: 'Tempat', count: unregisteredFactories.length + warehouseOptions.filter(w => !w.address).length },
     ];
 
     return (
@@ -1027,8 +1177,22 @@ const RestockVaultView = ({ inventory = [], procurements = [], motorists = [], b
                                 <div className="space-y-4">
                                     <h3 className="text-[10px] text-accent-ink font-bold uppercase tracking-widest">Metadata</h3>
                                     <div><label className="text-xs text-ink-muted">Surat Jalan / Delivery No</label><input value={editingPO.poNumber} onChange={e=>setEditingPO({...editingPO, poNumber: e.target.value})} className="w-full p-2 bg-inset border border-line-2 rounded text-ink" required/></div>
-                                    <div><label className="text-xs text-ink-muted">Asal (Source Factory)</label><input value={editingPO.supplierName || ''} onChange={e=>setEditingPO({...editingPO, supplierName: e.target.value})} className="w-full p-2 bg-inset border border-line-2 rounded text-ink"/></div>
-                                    <div><label className="text-xs text-ink-muted">Tujuan</label><input value={editingPO.destination || HQ_NAME} onChange={e=>setEditingPO({...editingPO, destination: e.target.value})} className="w-full p-2 bg-inset border border-line-2 rounded text-ink"/></div>
+                                    {/* Pickers here too, or the rule would hold on the intake form and
+                                        leak on the edit form — one typo in this panel and the book has a
+                                        place nobody registered. An old record whose place is not in the
+                                        registry still SHOWS its stored name; it just cannot be replaced
+                                        by a new invented one. */}
+                                    <RouteCombo
+                                        label="Asal (Source Factory)" value={editingPO.supplierName || ''}
+                                        onChange={v => setEditingPO({ ...editingPO, supplierName: v, originAddress: addrFor(v) })}
+                                        options={factoryOptions} placeholder="cari pabrik..."
+                                        hint="Belum ada pabrik terdaftar. Daftarkan di tab Tempat."
+                                    />
+                                    <RouteCombo
+                                        label="Tujuan" value={editingPO.destination || HQ_NAME}
+                                        onChange={v => setEditingPO({ ...editingPO, destination: v, destinationAddress: addrFor(v) })}
+                                        options={warehouseOptions} placeholder="cari gudang..."
+                                    />
                                     <div><label className="text-xs text-ink-muted">Date</label><input type="date" value={editingPO.date} onChange={e=>setEditingPO({...editingPO, date: e.target.value})} className="w-full p-2 bg-inset border border-line-2 rounded text-ink"/></div>
                                 </div>
                                 <div className="space-y-4">
@@ -1202,10 +1366,10 @@ const RestockVaultView = ({ inventory = [], procurements = [], motorists = [], b
                         <Lamp tone="on" />
                         <div className="min-w-0">
                             <div className="font-display font-bold uppercase tracking-[0.15em] text-[13px] text-ink truncate">
-                                {viewMode === 'req' ? 'Permintaan cabang' : viewMode === 'book' ? 'Buku Besar' : isOut ? 'Kirim ke cabang' : 'Master Vault'}
+                                {viewMode === 'place' ? 'Tempat' : viewMode === 'req' ? 'Permintaan cabang' : viewMode === 'book' ? 'Buku Besar' : isOut ? 'Kirim ke cabang' : 'Master Vault'}
                             </div>
                             <div className="font-mono text-[10px] text-ink-muted truncate">
-                                {viewMode === 'req' ? 'menunggu · di jalan · selisih' : viewMode === 'book' ? 'masuk & keluar' : isOut ? 'surat jalan keluar' : 'HQ · gudang pusat'}
+                                {viewMode === 'place' ? 'pabrik & gudang · alamat tetap' : viewMode === 'req' ? 'menunggu · di jalan · selisih' : viewMode === 'book' ? 'masuk & keluar' : isOut ? 'surat jalan keluar' : 'HQ · gudang pusat'}
                             </div>
                         </div>
                     </div>
@@ -1213,7 +1377,7 @@ const RestockVaultView = ({ inventory = [], procurements = [], motorists = [], b
                         {tabs.map(t => (
                             <button
                                 key={t.id}
-                                onClick={() => (t.id === 'book' || t.id === 'req') ? setViewMode(t.id) : setDirection(t.id)}
+                                onClick={() => (t.id === 'book' || t.id === 'req' || t.id === 'place') ? setViewMode(t.id) : setDirection(t.id)}
                                 aria-selected={viewMode === t.id}
                                 className={`text-[11px] font-display font-bold uppercase tracking-[0.16em] px-4 py-3 border-l border-line-2 border-b-2 transition-colors ${
                                     viewMode === t.id ? 'text-ink border-b-orange bg-raised' : 'text-ink-muted border-b-transparent hover:text-ink'
@@ -1231,7 +1395,128 @@ const RestockVaultView = ({ inventory = [], procurements = [], motorists = [], b
                     opens the same drawer, prints the same timeline and carries the same "Edit
                     resi" and "Hapus" it does in the book. The ONLY thing Request adds is the
                     Siapkan button and the shipping modal behind it. */}
-                {viewMode === 'book' || viewMode === 'req' ? (
+                {viewMode === 'place' ? (
+                    /* ═══════════ TEMPAT — the registry the two route boxes read from ═══════════
+                       Warehouses are listed even before anyone types an address, because the fleet
+                       roster already says they exist and a shipment must not wait on paperwork.
+                       Factories are the opposite: unregistered means unusable, so the names found
+                       in old deliveries are offered here rather than left as a memory test. */
+                    <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-6">
+                        <div className="flex items-start justify-between gap-4 flex-wrap">
+                            <div>
+                                <h3 className="font-display font-bold uppercase tracking-[0.15em] text-sm text-ink">Tempat terdaftar</h3>
+                                <p className="text-[11px] text-ink-muted mt-1 max-w-prose">
+                                    Alamat di sini yang tercetak di surat jalan. Kotak Asal dan Tujuan hanya <b className="text-ink">mencari</b> dari daftar ini — mengetik nama baru di sana tidak mendaftarkan apa pun.
+                                </p>
+                            </div>
+                            <button type="button"
+                                onClick={() => setPlaceForm({ name: '', address: '', kind: 'pabrik', editing: null })}
+                                className="bg-orange text-orange-ink px-4 py-2.5 rounded-lg font-black uppercase tracking-widest text-[11px] flex items-center gap-2 active:scale-[0.98] transition-transform">
+                                <PlusCircle size={15}/> Daftarkan pabrik
+                            </button>
+                        </div>
+
+                        {placeForm && (
+                            <div className="bg-panel border border-orange/40 rounded-xl p-4 space-y-3">
+                                <div className="flex items-center gap-2">
+                                    <MapPin size={14} className="text-accent-ink"/>
+                                    <h4 className="text-[11px] font-bold uppercase tracking-widest text-ink">
+                                        {placeForm.editing ? 'Ubah alamat' : 'Tempat baru'}
+                                    </h4>
+                                </div>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    <div>
+                                        <label className="text-[10px] font-bold text-ink-muted uppercase tracking-widest mb-1 block">Nama</label>
+                                        <input value={placeForm.name} disabled={!!placeForm.editing}
+                                            onChange={e => setPlaceForm({ ...placeForm, name: e.target.value })}
+                                            placeholder="Pabrik Kudus"
+                                            className="w-full bg-inset border border-line-2 rounded-lg p-2.5 text-sm text-ink font-mono outline-none focus:border-orange disabled:opacity-60 transition-colors"/>
+                                    </div>
+                                    <div>
+                                        <label className="text-[10px] font-bold text-ink-muted uppercase tracking-widest mb-1 block">Jenis</label>
+                                        <div className="flex gap-2">
+                                            {[['pabrik', 'Pabrik'], ['gudang', 'Gudang']].map(([k, label]) => (
+                                                <button key={k} type="button" disabled={!!placeForm.editing}
+                                                    onClick={() => setPlaceForm({ ...placeForm, kind: k })}
+                                                    className={`flex-1 py-2.5 rounded-lg text-[11px] font-bold uppercase tracking-widest border transition-colors disabled:opacity-60 ${
+                                                        placeForm.kind === k ? 'border-orange text-ink bg-raised' : 'border-line-2 text-ink-muted hover:text-ink'
+                                                    }`}>{label}</button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="text-[10px] font-bold text-ink-muted uppercase tracking-widest mb-1 block">Alamat</label>
+                                    <textarea value={placeForm.address} rows={2}
+                                        onChange={e => setPlaceForm({ ...placeForm, address: e.target.value })}
+                                        placeholder="Jl. Raya Kudus No. 12, Kudus, Jawa Tengah"
+                                        className="w-full bg-inset border border-line-2 rounded-lg p-2.5 text-sm text-ink outline-none focus:border-orange transition-colors resize-none"/>
+                                </div>
+                                <div className="flex gap-2">
+                                    <button type="button" onClick={savePlace} disabled={savingPlace}
+                                        className="flex-1 bg-orange text-orange-ink py-2.5 rounded-lg font-black uppercase tracking-widest text-[11px] flex items-center justify-center gap-2 active:scale-[0.98] transition-transform">
+                                        {savingPlace ? <RefreshCcw className="animate-spin" size={14}/> : <Save size={14}/>} Simpan
+                                    </button>
+                                    <button type="button" onClick={() => setPlaceForm(null)}
+                                        className="px-4 border border-line-2 rounded-lg text-[11px] font-bold uppercase tracking-widest text-ink-muted hover:text-ink transition-colors">
+                                        Batal
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
+                        {unregisteredFactories.length > 0 && (
+                            <div>
+                                <h4 className="text-[10px] font-bold text-accent-ink uppercase tracking-widest mb-2">
+                                    Ada di surat jalan lama, belum terdaftar
+                                </h4>
+                                <p className="text-[11px] text-ink-muted mb-3">Selama belum didaftarkan, nama-nama ini tidak bisa dipilih di kotak Asal.</p>
+                                <div className="flex flex-wrap gap-2">
+                                    {unregisteredFactories.map(n => (
+                                        <button key={n} type="button"
+                                            onClick={() => setPlaceForm({ name: n, address: '', kind: 'pabrik', editing: null })}
+                                            className="border border-line-2 hover:border-orange rounded-lg px-3 py-2 text-xs text-ink font-mono flex items-center gap-2 transition-colors">
+                                            <PlusCircle size={13} className="text-accent-ink"/> {n}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {[['pabrik', 'Pabrik', factoryOptions], ['gudang', 'Gudang', warehouseOptions]].map(([kind, label, list]) => (
+                            <div key={kind}>
+                                <h4 className="text-[10px] font-bold text-ink-muted uppercase tracking-widest mb-2">{label}</h4>
+                                {list.length === 0 ? (
+                                    <p className="text-[11px] text-ink-muted">Belum ada.</p>
+                                ) : (
+                                    <div className="border border-line-2 rounded-xl overflow-hidden">
+                                        {list.map(o => {
+                                            const record = places.find(p => p.name === o.name);
+                                            return (
+                                                <div key={o.name} className="flex items-center gap-3 px-3 py-2.5 border-b border-line-2 last:border-b-0 bg-panel">
+                                                    <div className="min-w-0 flex-1">
+                                                        <p className="text-sm text-ink truncate">{o.name}</p>
+                                                        <p className={`text-[11px] truncate ${o.address ? 'text-ink-muted' : 'text-accent-ink'}`}>
+                                                            {o.address || 'alamat belum diisi — tidak akan tercetak di surat jalan'}
+                                                        </p>
+                                                    </div>
+                                                    <button type="button" title={`Ubah alamat ${o.name}`}
+                                                        onClick={() => setPlaceForm({ name: o.name, address: o.address || '', kind, editing: record?.id || null })}
+                                                        className="text-ink-muted hover:text-ink transition-colors p-1.5"><Pencil size={14}/></button>
+                                                    {record && (
+                                                        <button type="button" title={`Hapus ${o.name} dari daftar`}
+                                                            onClick={() => removePlace(record)}
+                                                            className="text-ink-muted hover:text-danger-text transition-colors p-1.5"><Trash2 size={14}/></button>
+                                                    )}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                )}
+                            </div>
+                        ))}
+                    </div>
+                ) : viewMode === 'book' || viewMode === 'req' ? (
                     <div className="flex-1 flex flex-col min-h-0">
                         <div className="flex gap-2 flex-wrap items-center px-4 py-3 border-b border-line-2 bg-panel shrink-0">
                             {viewMode === 'req' ? (
@@ -1490,19 +1775,28 @@ const RestockVaultView = ({ inventory = [], procurements = [], motorists = [], b
 
                             {/* THE ROUTE — the field that makes one form do both jobs */}
                             <div className="grid grid-cols-1 sm:grid-cols-[1fr_44px_1fr] gap-2 items-end">
+                                {/* MASUK: goods come FROM a factory. KELUAR: they leave the master
+                                    vault. Either way Asal is never a free list of everything —
+                                    that is how a delivery could once run factory → factory. */}
                                 <RouteCombo
-                                    label="Asal" flag value={poData.supplierName}
+                                    label="Asal" value={poData.supplierName}
                                     onChange={v => setPoData({ ...poData, supplierName: v })}
-                                    options={placeOptions} placeholder="cari atau ketik..."
+                                    options={isOut ? warehouseOptions : factoryOptions}
+                                    placeholder="cari..."
+                                    hint="Belum ada pabrik terdaftar. Daftarkan di tab Tempat."
                                 />
                                 <button type="button" onClick={swapRoute} title="Tukar asal dan tujuan" aria-label="Tukar asal dan tujuan"
                                     className="h-[42px] w-full border border-line-2 bg-raised rounded-lg text-ink flex items-center justify-center hover:border-orange transition-all active:scale-95">
                                     <ArrowLeftRight size={16}/>
                                 </button>
+                                {/* Tujuan is always a warehouse — the master vault or a regional
+                                    one. His words: "can be sent to master vault or regional
+                                    warehouse directly". */}
                                 <RouteCombo
-                                    label="Tujuan" flag value={poData.destination}
+                                    label="Tujuan" value={poData.destination}
                                     onChange={v => setPoData({ ...poData, destination: v })}
-                                    options={placeOptions} placeholder="cari atau ketik..."
+                                    options={warehouseOptions}
+                                    placeholder="cari gudang..."
                                 />
                             </div>
 

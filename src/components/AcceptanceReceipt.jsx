@@ -27,10 +27,14 @@ import { MASTER } from '../utils/supply.js';
 
 /* One label/value pair. `nowrap` on the value is load-bearing: the old totals block let
    "TOTAL LANDED VALUE" and its own number break onto separate lines mid-figure. */
-const Field = ({ label, value, mono = false, align = 'left' }) => (
+const Field = ({ label, value, sub, mono = false, align = 'left' }) => (
   <div className={align === 'right' ? 'text-right' : ''}>
     <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-gray-500">{label}</p>
     <p className={`mt-0.5 font-bold text-gray-900 ${mono ? 'font-mono tabular-nums' : ''}`}>{value}</p>
+    {/* The registered address, printed so a driver can read where he is going off the paper.
+        Copied onto the delivery record at save time, never looked up now — a place that moves
+        must not rewrite a nota for goods that already travelled. */}
+    {sub && <p className="mt-0.5 text-[10px] leading-snug text-gray-600">{sub}</p>}
   </div>
 );
 
@@ -96,8 +100,8 @@ export default function AcceptanceReceipt({ acceptance, onClose, receivedBy, com
           {/* Four facts, one row, no boxes. The two grey panels were the same four fields wearing
               furniture, and on a phone they stacked into eight lines. */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-6 gap-y-4 py-5 border-b border-gray-300">
-            <Field label="Asal" value={origin} />
-            <Field label="Tujuan" value={acceptance.destination || MASTER} />
+            <Field label="Asal" value={origin} sub={acceptance.originAddress} />
+            <Field label="Tujuan" value={acceptance.destination || MASTER} sub={acceptance.destinationAddress} />
             <Field label="Tanggal" value={acceptance.date} mono />
             <Field label="Jumlah Item" value={`${totalQty} baris`} mono align="right" />
           </div>

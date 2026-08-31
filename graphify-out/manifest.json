@@ -95,8 +95,8 @@
     "semantic_hash": ""
   },
   "src/RestockVaultView.jsx": {
-    "mtime": 1788175257.133152,
-    "ast_hash": "4914d352509ab9854c9c86a0910e3e77",
+    "mtime": 1788177263.178173,
+    "ast_hash": "6169b7a8411eaf5b4260d873c6ac4feb",
     "semantic_hash": ""
   },
   "src/StockOpnameView.jsx": {
@@ -570,8 +570,8 @@
     "semantic_hash": ""
   },
   ".claude/PROGRESS.md": {
-    "mtime": 1788174281.8433988,
-    "ast_hash": "e9151450a3da9c99777829baf60616cf",
+    "mtime": 1788175573.8884313,
+    "ast_hash": "b8a3f36a3e8c3b47588b26cc3c3e75f5",
     "semantic_hash": ""
   },
   ".claude/pre-compact-context.md": {
@@ -755,13 +755,13 @@
     "semantic_hash": ""
   },
   "src/config/logicFixes.selfcheck.mjs": {
-    "mtime": 1788175421.4416423,
-    "ast_hash": "66efda6da1dc7f10c4fdd04b26da914d",
+    "mtime": 1788177454.666027,
+    "ast_hash": "aa4d36717fbceaee738181c98a37225b",
     "semantic_hash": ""
   },
   ".claude/NEXT-SESSION.md": {
-    "mtime": 1788174252.3987768,
-    "ast_hash": "64b4295bbf4e79a791fc3ad9a19e3db9",
+    "mtime": 1788175553.2008762,
+    "ast_hash": "e61dfc96c51bceac7271f9985d0659fc",
     "semantic_hash": ""
   },
   ".claude/SWEEP-2026-08-19.md": {
@@ -835,8 +835,8 @@
     "semantic_hash": ""
   },
   "tools/ponder-lab.jsx": {
-    "mtime": 1788175400.2723072,
-    "ast_hash": "b556e39b2a98e74a88c55f2250046cc1",
+    "mtime": 1788177219.0179594,
+    "ast_hash": "938eb765dfc1d2123767b2c6e2b52b61",
     "semantic_hash": ""
   },
   ".claude/PONDER-PLAN.md": {
@@ -965,8 +965,8 @@
     "semantic_hash": ""
   },
   "src/components/AcceptanceReceipt.jsx": {
-    "mtime": 1788175395.680123,
-    "ast_hash": "386329c6b52c3dd32097b817c07a59dd",
+    "mtime": 1788177131.3041468,
+    "ast_hash": "022482eb062297da6cc752894659a43c",
     "semantic_hash": ""
   }
 }

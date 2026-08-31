@@ -25,6 +25,7 @@ import StockByWarehouseTable from '../src/ponder/stages/StockByWarehouseTable.js
 import ShipmentPlanTable from '../src/ponder/stages/ShipmentPlanTable.jsx';
 import ProductPerformancePanel from '../src/components/ProductPerformancePanel.jsx';
 import AcceptanceReceipt from '../src/components/AcceptanceReceipt.jsx';
+import RestockVaultView from '../src/RestockVaultView.jsx';
 import { SCENES } from '../src/ponder/registry.js';
 
 const q = new URLSearchParams(window.location.search);
@@ -224,7 +225,9 @@ const NOTA = {
   poNumber: 'SJ-185108',
   date: '27/08/2026',
   supplierName: 'Pabrik Kudus',
+  originAddress: 'Jl. Raya Kudus No. 12, Kudus, Jawa Tengah',
   destination: 'Gudang Pusat (Master Vault)',
+  destinationAddress: 'Jl. Industri Raya No. 88, Semarang, Jawa Tengah',
   totalBasePrice: 184500000,
   shippingCost: 2750000,
   laborCost: 900000,
@@ -263,7 +266,35 @@ function NotaLab() {
   );
 }
 
+/* 🔴 ?places MOUNTS THE REAL RESTOCK VAULT, on the Tempat tab. It takes `db` as a prop and its
+   only subscription bails out when there is no signed-in user, so with `user` null it renders the
+   whole desk against fixtures and never touches Firestore. That is the only way to look at the
+   registry: the real screen is behind a Google sign-in and then the Master Vault password. */
+const LAB_MOTORISTS = [
+  { id: 'm1', name: 'Adi', location: 'BANDUNG' },
+  { id: 'm2', name: 'Budi', location: 'MUNTILAN' },
+  { id: 'm3', name: 'Cahyo', location: 'SEMARANG' },
+];
+const LAB_PROCUREMENTS = [
+  { id: 'p1', poNumber: 'SJ-185108', date: '2026-08-27', supplierName: 'Pabrik Kudus', destination: 'Gudang Pusat (Master Vault)', items: [] },
+  { id: 'p2', poNumber: 'SJ-185077', date: '2026-08-21', supplierName: 'Pabrik Malang', destination: 'Gudang Pusat (Master Vault)', items: [] },
+];
+
+function PlacesLab() {
+  return (
+    <div className="biohazard-content h-screen p-4 bg-panel">
+      <style>{SHELL_RULE}</style>
+      <RestockVaultView
+        inventory={[]} procurements={LAB_PROCUREMENTS} motorists={LAB_MOTORISTS} branchStockMap={{}}
+        db={null} storage={null} appId="lab" user={null} isAdmin userRole="DEVELOPER"
+        appSettings={{ companyName: 'KPM INVENTORY' }} masterUserId="lab"
+      />
+    </div>
+  );
+}
+
 createRoot(document.getElementById('root')).render(
+  q.has('places') ? <PlacesLab /> :
   q.has('nota') ? <NotaLab /> :
   q.has('perf') ? <PerfLab /> :
   q.has('plan') ? <PlanLab /> :
