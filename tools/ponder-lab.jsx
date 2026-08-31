@@ -24,6 +24,7 @@ import TierPovSwitch from '../src/components/TierPovSwitch.jsx';
 import StockByWarehouseTable from '../src/ponder/stages/StockByWarehouseTable.jsx';
 import ShipmentPlanTable from '../src/ponder/stages/ShipmentPlanTable.jsx';
 import ProductPerformancePanel from '../src/components/ProductPerformancePanel.jsx';
+import AcceptanceReceipt from '../src/components/AcceptanceReceipt.jsx';
 import { SCENES } from '../src/ponder/registry.js';
 
 const q = new URLSearchParams(window.location.search);
@@ -212,7 +213,58 @@ function PerfLab() {
   );
 }
 
+/* 🔴 ?nota MOUNTS THE SURAT JALAN. It is the only screen in the app nobody could look at: it needs
+   a Google sign-in, then the Master Vault gate, then a delivery record that has been accepted.
+   "it renders transparent" therefore survived as a report with no reproduction. The record below
+   is fixed on purpose — a receipt whose numbers move cannot be compared between two frames.
+
+   Something is rendered BEHIND it deliberately. A transparent card is invisible over a blank page;
+   it is only visible when there is text underneath to show through. */
+const NOTA = {
+  poNumber: 'SJ-185108',
+  date: '27/08/2026',
+  supplierName: 'Pabrik Kudus',
+  destination: 'Gudang Pusat (Master Vault)',
+  totalBasePrice: 184500000,
+  shippingCost: 2750000,
+  laborCost: 900000,
+  exciseTax: 21300000,
+  trueLandedTotal: 209450000,
+  items: [
+    { name: 'Djarum Super 12', batchNo: 'PK-2608-A', qtyReceived: '480 Bks' },
+    { name: 'Djarum Super 16', batchNo: 'PK-2608-B', qtyReceived: '320 Bks' },
+    { name: 'Gudang Garam Surya 12', batchNo: 'PK-2608-C', qtyReceived: '240 Bks' },
+    { name: 'Sampoerna Mild 16', batchNo: 'N/A', qtyReceived: '160 Bks' },
+  ],
+};
+
+/* 🔴 COPIED VERBATIM from `BiohazardTheme.jsx` — the app shell's own `<style>` block, which the lab
+   does not mount. Without it the harness renders a page the app never shows: the receipt looked
+   perfectly white here while it was dark and see-through in his browser. `logicFixes.selfcheck.mjs`
+   pins this string against the source so the copy cannot drift in silence. */
+const SHELL_RULE = `.biohazard-content .bg-white:not(.print-receipt):not(.print-receipt *) { background-color: rgba(20, 20, 20, 0.85) !important; border: 1px solid rgba(255,255,255,0.15) !important; color: #e5e5e5 !important; }`;
+
+function NotaLab() {
+  return (
+    /* ⚠️ `biohazard-content` IS THE POINT, not decoration. The app shell carries that class and a
+       rule under it repaints every `.bg-white` inside. A harness that mounts the receipt without
+       its ancestor tests a different page — which is why "it renders transparent" reproduced
+       nowhere for a whole session. */
+    <div className="biohazard-content p-6 bg-panel min-h-screen">
+      <style>{SHELL_RULE}</style>
+      <h3 className="text-ink text-xl font-display font-bold uppercase tracking-widest mb-4">Page content behind the receipt</h3>
+      {Array.from({ length: 14 }, (_, i) => (
+        <p key={i} className="text-ink text-sm mb-2">
+          Baris {i + 1} — teks halaman di belakang nota. Kalau kartu nota tembus pandang, kalimat ini terbaca menembusnya.
+        </p>
+      ))}
+      <AcceptanceReceipt acceptance={NOTA} onClose={() => {}} receivedBy="Aldi" />
+    </div>
+  );
+}
+
 createRoot(document.getElementById('root')).render(
+  q.has('nota') ? <NotaLab /> :
   q.has('perf') ? <PerfLab /> :
   q.has('plan') ? <PlanLab /> :
   q.has('minkirim') ? <MinKirimLab /> :
@@ -248,6 +300,24 @@ if (q.has('book') && q.has('probe')) {
       document.body.appendChild(el);
     }, 120);
   }, 1600);
+} else if (q.has('nota') && q.has('probe')) {
+  /* ?nota&probe answers the ONE question a screenshot cannot answer honestly: is the paper opaque?
+     A frame can catch a fade mid-flight and look identical to a real transparency bug — that is
+     exactly what happened on 2026-08-31. A computed background is not a matter of timing. */
+  setTimeout(() => {
+    const card = document.querySelector('.print-receipt');
+    const cs = getComputedStyle(card);
+    const el = document.createElement('pre');
+    el.id = 'probe';
+    el.textContent = JSON.stringify({
+      background: cs.backgroundColor,
+      opacity: cs.opacity,
+      ink: cs.color,
+      opaque: cs.backgroundColor === 'rgb(255, 255, 255)' && cs.opacity === '1',
+      animations: card.getAnimations().map(a => a.animationName),
+    });
+    document.body.appendChild(el);
+  }, 400);
 } else if (q.has('probe')) {
   setTimeout(() => {
     const panel = document.querySelector('[role=dialog] > div');

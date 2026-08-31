@@ -3782,5 +3782,44 @@ ok('Stock Opname shows the shared label but keeps MASTER as its routing value',
    /<option value="MASTER"[^>]*>\{HQ_LABEL\}<\/option>/.test(stripComments(read('src/StockOpnameView.jsx'))),
    'the value picks the Firestore path; only the words on screen were wrong');
 
+/* ── D14 · the surat jalan is paper, and nothing is allowed to make it see-through ──────── */
+section('D14. The nota stays opaque');
+
+/* 2026-08-31, his words: "we need to redesign the receipt for this because it looks awful and i
+   dont know why is it transparant". Two separate causes, both fixed here.
+   ONE: the app shell repaints every plain `.bg-white` under `.biohazard-content` to
+   rgba(20,20,20,.85) — fifteen per cent see-through — and the nota's card was a plain `.bg-white`.
+   Measured in the lab at rgba(20, 20, 20, 0.85) before the scope, rgb(255, 255, 255) after.
+   TWO: `animate-fade-in` is opacity-only, so the paper spent half a second semi-transparent —
+   which looks identical to cause ONE and is what made the report so hard to pin down. */
+const shellSrc = stripComments(read('src/components/BiohazardTheme.jsx'));
+const shellRuleLine = shellSrc.split('\n').find(l => l.includes('.biohazard-content .bg-white')) || '';
+
+ok('the shell repaint is scoped away from printed receipts',
+   /\.biohazard-content \.bg-white:not\(\.print-receipt\):not\(\.print-receipt \*\)/.test(shellRuleLine),
+   'unscoped it paints the nota rgba(20,20,20,.85) with #e5e5e5 ink — his "transparant"');
+ok('the guard would fail on the unscoped rule it replaced',
+   !/:not\(\.print-receipt\)/.test('.biohazard-content .bg-white { background-color: rgba(20, 20, 20, 0.85) !important; }'));
+
+/* The lab copies that rule verbatim because it does not mount the shell. A harness missing the
+   ancestor renders a page the app never shows — the receipt looked perfectly white there while it
+   was dark and see-through in his browser. Pinned so the copy cannot drift in silence. */
+const labSrc = read('tools/ponder-lab.jsx');
+const labRule = (labSrc.match(/const SHELL_RULE = `([^`]*)`/) || [])[1];
+ok('the ponder lab holds the SAME shell rule, character for character',
+   !!labRule && shellRuleLine.includes(labRule),
+   'a harness without the ancestor is testing a different page');
+
+const nota = stripComments(read('src/components/AcceptanceReceipt.jsx'));
+ok('the receipt card owns its own visibility — no opacity-only entrance on it',
+   !/animate-fade-in/.test(nota),
+   'his locked rule: an animation may carry movement, never whether a thing is on screen');
+ok('the nota is a component the lab can mount, not markup buried in a view',
+   /export default function AcceptanceReceipt/.test(nota) &&
+   /<AcceptanceReceipt/.test(stripComments(read('src/RestockVaultView.jsx'))),
+   'it sits behind a sign-in, a vault gate and an accepted delivery — unmountable is unlookable');
+ok('money and codes are tabular so a column of figures lines up',
+   (nota.match(/tabular-nums/g) || []).length >= 4);
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

@@ -1042,7 +1042,17 @@ export default function BiohazardTheme({
             </div>
             
             <style>{`
-                .biohazard-content .bg-white { background-color: rgba(20, 20, 20, 0.85) !important; border: 1px solid rgba(255,255,255,0.15) !important; color: #e5e5e5 !important; }
+                /* 🔴 THE :not() IS THE FIX FOR "why is it transparant" (Aldi, 2026-08-31). This rule
+                   darkens app surfaces, and the surat jalan is not one — it is a printed commercial
+                   document, exempt from the theme by his fourth law. It was matching the nota's
+                   plain .bg-white and painting the paper rgba(20,20,20,.85): fifteen per cent
+                   see-through, with #e5e5e5 text, so the page behind read straight through the
+                   receipt. Measured in the lab before and after.
+                   The SALES nota escaped this for years by accident — its classes are written with
+                   a leading "!", which changes the class NAME, so this selector never matched it.
+                   Luck, not design. Scoping the rule fixes every receipt at once instead.
+                   (No backticks in this block: it lives inside a template literal.) */
+                .biohazard-content .bg-white:not(.print-receipt):not(.print-receipt *) { background-color: rgba(20, 20, 20, 0.85) !important; border: 1px solid rgba(255,255,255,0.15) !important; color: #e5e5e5 !important; }
                 .text-shadow-glow { text-shadow: 0 0 10px rgba(255,255,255,0.5); }
                 .leaflet-container .leaflet-popup-content-wrapper { background: transparent !important; box-shadow: none !important; border: none !important; padding: 0 !important; }
                 .leaflet-container .leaflet-popup-tip-container { display: none !important; }

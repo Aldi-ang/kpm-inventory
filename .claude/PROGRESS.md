@@ -1,6 +1,40 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-31 18:05 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **673/673 audit · 925/925 selfcheck** · branch `phase0-solid-ground`
+**Updated: 2026-08-31 18:30 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **673/673 audit · 931/931 selfcheck** · branch `phase0-solid-ground`
+
+## 🟠 2026-08-31 18:30 — THE SURAT JALAN WAS BEING REPAINTED BY THE APP SHELL. FIXED AND REDESIGNED.
+
+**Root cause, measured, not guessed.** `BiohazardTheme.jsx` carries a rule outside `@media print`:
+`.biohazard-content .bg-white { background-color: rgba(20,20,20,0.85) !important; color: #e5e5e5 }`.
+The receipt modal is a DOM descendant of `.biohazard-content` and its card was a plain `.bg-white`,
+so the shell painted the paper dark and **fifteen per cent see-through** with light grey ink. That
+is his *"why is it transparant"*, exactly. Read live in the lab: `rgba(20, 20, 20, 0.85)` before the
+fix, `rgb(255, 255, 255)` after. The rule is now scoped `:not(.print-receipt):not(.print-receipt *)`,
+which fixes every receipt at once rather than one card.
+
+**The SALES nota escaped this by luck, not design** — its classes are written with a leading `!`,
+which changes the class NAME, so the selector never matched it.
+
+**A second, independent cause of the same appearance.** `animate-fade-in` is opacity-only, so for
+half a second the paper is semi-transparent and the page reads through it — indistinguishable from
+the bug above in a screenshot. It is also a direct violation of his locked rule that an animation
+must never own an element's visibility. Removed from the card.
+
+**Two harness lessons paid for in this session.** Mounting the receipt alone reproduced nothing:
+without `.biohazard-content` the lab was rendering a page the app never shows. And the preview pane
+freezes its clock — `document.hidden` is `true`, a fade sits at `currentTime: 0`, and a frame of a
+mid-fade element is identical to a real transparency bug. **A computed value settled both; frames
+argued for the wrong answer twice.**
+
+**The redesign.** The nota is a component now (`src/components/AcceptanceReceipt.jsx`), mountable in
+the lab at `?nota` — it had been unlookable behind a sign-in, a vault gate and an accepted delivery.
+KPM leads the header instead of the supplier's factory name; monospace is now only for codes,
+quantities and money, not for the whole document; the two grey label boxes became one four-field
+row; the totals block no longer breaks "TOTAL LANDED VALUE" and its own number across lines;
+figures are tabular so a column lines up; the signature area stopped spending a screen on whitespace.
+Verified in dark, light, Lite Mode and at 375px.
+
+**❓ WAITING ON ALDI — nothing.** Next job is the factory/warehouse registry, brief has it.
 
 ## 🟠 2026-08-31 18:05 — THE METER SPEAKS, AND THE MAIN WAREHOUSE HAS ONE NAME.
 

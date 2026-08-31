@@ -3,6 +3,7 @@ import { UploadCloud, FileText, Search, Save, X, RefreshCcw, History, ChevronDow
 import { doc, collection, setDoc, updateDoc, deleteDoc, serverTimestamp, writeBatch, onSnapshot, increment } from 'firebase/firestore';
 import { savePhotoAndGetReference, deletePhotoFromStorage, compressImageToBase64, getLocalDayKey} from './utils/helpers';
 import { confirmAction } from './components/ConfirmGate.jsx';
+import AcceptanceReceipt from './components/AcceptanceReceipt.jsx';
 import { notify } from './components/Toast.jsx';
 import { canPickFromGallery } from './config/permissions';
 /* one definition of "what is a branch", shared with the dashboard's supply maths */
@@ -1008,62 +1009,12 @@ const RestockVaultView = ({ inventory = [], procurements = [], motorists = [], b
                 </div>
             )}
 
-            {viewingAcceptance && (
-                 <div className="fixed inset-0 z-[200] bg-sunk/80 flex items-center justify-center p-4">
-                     <style>{`
-                         @media print {
-                             body * { visibility: hidden; }
-                             .print-receipt, .print-receipt * { visibility: visible; }
-                             .print-receipt { position: absolute; left: 0; top: 0; width: 100%; margin: 0; padding: 0; box-shadow: none; background: white; }
-                             .no-print { display: none !important; }
-                         }
-                     `}</style>
-                     {/* PALETTE EXCEPTION: this card is a printed document, so it is white
-                         paper in both themes. The theme tokens deliberately do NOT apply here —
-                         --ink-muted is a light warm grey and would print at 2,3:1 on white. */}
-                     <div className="print-receipt bg-white text-black w-full max-w-lg shadow-2xl relative flex flex-col font-mono text-sm border-t-8 border-orange animate-fade-in max-h-[90vh] overflow-y-auto">
-                         <button onClick={() => setViewingAcceptance(null)} className="no-print absolute top-4 right-4 text-gray-600 hover:text-gray-900"><X size={24}/></button>
-                         <div className="p-8">
-                             <div className="text-center mb-8 border-b-2 border-dashed border-gray-400 pb-6">
-                                 <h2 className="text-2xl font-black uppercase tracking-widest">{viewingAcceptance.supplierName || 'FACTORY PRODUCTION'}</h2>
-                                 <p className="text-xs text-gray-600 font-bold mt-1">SURAT JALAN / GOODS RECEIVED NOTE</p>
-                                 <div className="mt-4 flex justify-between text-xs text-left bg-gray-100 p-3 rounded">
-                                     <div><p className="font-bold text-gray-600">SURAT JALAN:</p><p className="font-bold text-lg">{viewingAcceptance.poNumber}</p></div>
-                                     <div className="text-right"><p className="font-bold text-gray-600">DATE:</p><p className="font-bold">{viewingAcceptance.date}</p></div>
-                                 </div>
-                                 <div className="mt-2 flex justify-between text-xs text-left bg-gray-100 p-3 rounded">
-                                     <div><p className="font-bold text-gray-600">ASAL:</p><p className="font-bold">{viewingAcceptance.supplierName || 'Pabrik Internal'}</p></div>
-                                     <div className="text-right"><p className="font-bold text-gray-600">TUJUAN:</p><p className="font-bold">{viewingAcceptance.destination || HQ_NAME}</p></div>
-                                 </div>
-                             </div>
-
-                             <table className="w-full text-xs text-left border-collapse mb-6">
-                                 <thead><tr className="border-b-2 border-black"><th className="pb-2">ITEM DESCRIPTION</th><th className="pb-2 text-right">BATCH</th><th className="pb-2 text-right">QTY RECEIVED</th></tr></thead>
-                                 <tbody className="divide-y border-b-2 border-black">
-                                     {viewingAcceptance.items?.map((i, idx) => (
-                                         <tr key={idx}><td className="py-3 font-bold">{i.name}</td><td className="py-3 text-right text-gray-600">{i.batchNo || 'N/A'}</td><td className="py-3 text-right font-bold">{i.qtyReceived}</td></tr>
-                                     ))}
-                                 </tbody>
-                             </table>
-
-                             <div className="flex justify-end mb-8">
-                                 <div className="w-1/2 space-y-2 text-xs border-t border-black pt-2">
-                                     <div className="flex justify-between"><span className="text-gray-600">Total Wares Base:</span><span>Rp {num(viewingAcceptance.totalBasePrice)}</span></div>
-                                     <div className="flex justify-between"><span className="text-gray-600">Shipping/Labor:</span><span>Rp {num((Number(viewingAcceptance.shippingCost)||0) + (Number(viewingAcceptance.laborCost)||0))}</span></div>
-                                     <div className="flex justify-between border-b border-dashed border-gray-400 pb-2"><span className="text-gray-600">Tax/Cukai:</span><span>Rp {num(viewingAcceptance.exciseTax || 0)}</span></div>
-                                     <div className="flex justify-between font-black text-sm pt-1"><span>TOTAL LANDED VALUE:</span><span>Rp {num(viewingAcceptance.trueLandedTotal)}</span></div>
-                                 </div>
-                             </div>
-
-                             <div className="grid grid-cols-2 text-center text-xs mt-12 pt-8 gap-8">
-                                 <div><p className="mb-12 text-gray-600">Delivered By</p><p className="border-t border-black pt-1 font-bold">Factory Logistics</p></div>
-                                 <div><p className="mb-12 text-gray-600">Received & Verified By</p><p className="border-t border-black pt-1 font-bold">{getAdminName()}</p></div>
-                             </div>
-                         </div>
-                         <div className="no-print bg-gray-100 p-4 border-t border-gray-300"><button onClick={() => window.print()} className="w-full bg-black text-white py-4 rounded font-bold uppercase tracking-widest flex justify-center items-center gap-2 hover:bg-gray-800"><Printer size={16}/> Print Document</button></div>
-                     </div>
-                 </div>
-            )}
+            <AcceptanceReceipt
+                acceptance={viewingAcceptance}
+                onClose={() => setViewingAcceptance(null)}
+                receivedBy={getAdminName()}
+                companyName={appSettings?.companyName}
+            />
 
             {editingPO && (
                 <div className="fixed inset-0 z-[100] bg-sunk/90 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in">
