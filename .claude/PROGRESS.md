@@ -1,6 +1,32 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-31 10:07 WIB (🟠 KPM app session)**
+**Updated: 2026-08-31 10:42 WIB (🟠 KPM app session)**
+
+## 🟠 2026-08-31 10:42 — THE QUOTA METER IS ONE GUESS AWAY, AND THREE NEW REQUIREMENTS LANDED. No code changed since `ee5dbfd`.
+
+**The meter: two of my own claims were wrong and are corrected here.** I said it had never run —
+git says otherwise (`3ac2d07` built it 08-08, and a commit on 08-09 is titled *"Meter is live"*). I
+then said the endpoint was gone in his build, having tested `/api/usage` with no id and got 404. His
+Network tab shows `GET /api/usage/{uuid}` returning **200**. The route is fine; it needs the uuid.
+
+He re-created the id file, so the hook now RUNS instead of exiting silently — real progress. It
+still prints 404, so the uuid written in is the wrong one of four. The other three are listed in
+the brief, and the hook self-reports one per message, so testing them costs nothing.
+
+**A key was pasted into chat and has been deleted by him.** It was never used or written anywhere.
+It would not have helped: a key authenticates against an API, it cannot create a missing route.
+
+**9router dies at login.** Its own startup script uses `start /min`, which throws away the window
+and the error inside it. A 30-second delay plus a redirect into `startup.log` was drafted and shown
+to him — **not applied, he has not said yes**, and it edits a file that runs at every login.
+
+**❓ THREE NEW REQUIREMENTS from his surat jalan screenshot, none started, all in the brief:** one
+name for the main warehouse (it is spelled three ways) · Asal/Tujuan are wrong on the Masuk panel
+and factories/warehouses must become REGISTERED places that the textbox searches rather than creates
+· the receipt looks bad and renders transparent, which is confirmed from his frame.
+
+**Open questions he has not answered:** which warehouse name wins · what happens to deliveries
+already saved with free-text names · whether the moving caption should come back on phones.
 
 ## 🟠 2026-08-31 10:07 — RESTOCK VAULT REVIEWED, NOTHING URGENT. No code changed; **673/673 + 915/915**.
 
