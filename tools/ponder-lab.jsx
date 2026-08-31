@@ -23,6 +23,7 @@ import PonderBookButton from '../src/ponder/PonderBook.jsx';
 import TierPovSwitch from '../src/components/TierPovSwitch.jsx';
 import StockByWarehouseTable from '../src/ponder/stages/StockByWarehouseTable.jsx';
 import ShipmentPlanTable from '../src/ponder/stages/ShipmentPlanTable.jsx';
+import ProductPerformancePanel from '../src/components/ProductPerformancePanel.jsx';
 import { SCENES } from '../src/ponder/registry.js';
 
 const q = new URLSearchParams(window.location.search);
@@ -193,7 +194,26 @@ function PlanLab() {
   );
 }
 
+/* 🔴 ?perf MOUNTS THE PRODUCT PERFORMANCE PANEL, not its table. The table was already driven
+   through the tutorial, so its rows, its share bar and its incomplete-range banner have been on a
+   screen. What never had been is the panel's own chrome: the four range buttons, the loading line
+   and the failed-read box. All of it renders without Firestore.
+   `?perf` leaves `db` null, so the effect returns before it reads anything and the panel stays in
+   its LOADING state — which is also the only way to look at the header and the range buttons.
+   `?perf=failed` hands it a `db` that is not a Firestore. `doc()` rejects, the catch fires, and the
+   red box is what a broken read really looks like rather than what it was meant to look like.
+   The third state, `ok`, IS `ProductPerformanceTable` — `?scene=product-performance` renders it. */
+function PerfLab() {
+  const failed = q.get('perf') === 'failed';
+  return (
+    <div className="p-6 bg-inset">
+      <ProductPerformancePanel db={failed ? {} : null} appId="lab" userId={failed ? 'lab' : null} inventory={[]} />
+    </div>
+  );
+}
+
 createRoot(document.getElementById('root')).render(
+  q.has('perf') ? <PerfLab /> :
   q.has('plan') ? <PlanLab /> :
   q.has('minkirim') ? <MinKirimLab /> :
   q.has('pov') ? <PovLab /> : q.has('book') ? <BookLab /> : <Lab />);
