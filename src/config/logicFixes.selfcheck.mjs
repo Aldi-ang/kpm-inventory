@@ -3877,5 +3877,56 @@ ok('and the nota prints them under Asal and Tujuan',
    /sub=\{acceptance\.originAddress\}/.test(stripComments(read('src/components/AcceptanceReceipt.jsx'))) &&
    /sub=\{acceptance\.destinationAddress\}/.test(stripComments(read('src/components/AcceptanceReceipt.jsx'))));
 
+/* ── D16 · who may be named as sending or receiving a package ──────────────────────────── */
+section('D16. The delivery clearance, and the tier it must not forget');
+
+/* His rule, 2026-08-31: "tier 4/ regional admin and above is automatically registered to have
+   power to send or receive package, while lower tier cant do that, and if there is other
+   employees outside of the sales team who will send that package then just add register button".
+
+   ⚠️ T4's id in permissions.js is the string FLEET_CAPTAIN, and forgetting exactly that role is
+   the most repeated bug in this codebase. So this is a BEHAVIOUR check on the real function, not
+   a grep: it runs the boundary from both sides. */
+const { canHandleDelivery, CORPORATE_TIERS: TIERS } = await import('./permissions.js');
+
+ok('tier 4 — his "regional admin", FLEET_CAPTAIN in the code — may handle a delivery',
+   canHandleDelivery(TIERS.TIER_4) === true,
+   'isAreaAdmin() checks only AREA_ADMIN and would drop the exact tier he named');
+ok('and so may every tier above it',
+   [TIERS.TIER_1, TIERS.TIER_2, TIERS.TIER_3].every(t => canHandleDelivery(t) === true));
+ok('tier 5 and tier 6 may not',
+   canHandleDelivery(TIERS.TIER_5) === false && canHandleDelivery(TIERS.TIER_6) === false,
+   'the boundary is only proved by checking the side that must be refused');
+ok('an unknown or missing role is refused rather than waved through',
+   canHandleDelivery(undefined) === false && canHandleDelivery('SOMETHING_ELSE') === false);
+
+const restockPeople = stripComments(read('src/RestockVaultView.jsx'));
+ok('the staff list is filtered by that clearance, not by a hand-written tier list',
+   /canHandleDelivery\(m\.userRole \|\| m\.role\)/.test(restockPeople),
+   'a second copy of the tier rule is a second place to forget FLEET_CAPTAIN');
+ok('people registered by hand are a separate kind in the same registry',
+   /p\?\.kind === 'orang'/.test(restockPeople) &&
+   /kind: 'orang', editing: null/.test(restockPeople),
+   'his "add register button" for someone outside the sales team');
+ok('a name in both lists appears once',
+   /if \(seen\.has\(k\)\) return false;/.test(restockPeople),
+   'two identical rows in a dropdown on a document that says who handled the goods');
+ok('both names are picked from that list, never typed',
+   /label="Pengirim"[\s\S]{0,200}options=\{peopleOptions\}/.test(restockPeople) &&
+   /label="Penerima"[\s\S]{0,200}options=\{peopleOptions\}/.test(restockPeople));
+ok('and both are carried on the delivery record',
+   /deliveredBy: '',\n\s*receivedBy: '',/.test(restockPeople) ||
+   /deliveredBy: ''/.test(restockPeople) && /receivedBy: ''/.test(restockPeople));
+
+const notaSrc = stripComments(read('src/components/AcceptanceReceipt.jsx'));
+ok('the nota reads both signatures from the RECORD, not from whoever is logged in',
+   /acceptance\.deliveredBy/.test(notaSrc) &&
+   /acceptance\.receivedBy \|\| acceptance\.recordedBy/.test(notaSrc) &&
+   !/receivedBy,/.test(notaSrc),
+   'it used to name whoever opened the paper, so an old delivery printed the wrong person');
+ok('and "Factory Logistics" is gone from it',
+   !/Factory Logistics/.test(notaSrc),
+   'a fixed phrase pretending to be a record of who delivered the goods');
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

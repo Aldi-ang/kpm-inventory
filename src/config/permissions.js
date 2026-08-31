@@ -179,6 +179,35 @@ export const canSeeExpectedCount = (userRole) => {
     return role === CORPORATE_TIERS.TIER_2 || role === CORPORATE_TIERS.TIER_3;
 };
 
+/* DELIVERIES: whose name may appear as the person who sent or received a package?
+
+   Aldi, 2026-08-31: *"the only person who are be able to send and receive the package is company
+   employees right ... tier 4/ regional admin and above is automatically registered to have power
+   to send or receive package, while lower tier cant do that"*.
+
+   ⚠️ READ THE TIER NUMBERS, NOT THE ROLE NAMES. In his vocabulary T4 is REGIONAL ADMIN; in this
+   file T4's id is the string `FLEET_CAPTAIN`. So "tier 4 and above" is T1, T2, T3 and
+   FLEET_CAPTAIN — and `isAreaAdmin()`, which sounds like it covers exactly this, checks only
+   `AREA_ADMIN` and would silently drop the one tier he actually named. That omission is the most
+   repeated bug in this codebase (see the Fleet Captain Permission Gap note in A-Brain), and this
+   is precisely where it would land again. The check below names FLEET_CAPTAIN explicitly.
+
+   ABSENCE MEANS "USE THE TIER DEFAULT", exactly like view_expected_count above: a brand-new key
+   is simply not in the matrix he has already saved to Firebase, and reading that absence as "no"
+   would make the feature look broken for every tier while the code was right. The moment the key
+   appears anywhere in his saved matrix, his switch wins in both directions. */
+const DELIVERY_PERSON_KEY = 'handle_delivery';
+export const canHandleDelivery = (userRole) => {
+    const role = translateLegacyRole(userRole);
+    if (role === CORPORATE_TIERS.TIER_1) return true;
+    const matrixKnowsKey = Object.values(ROLE_PERMISSIONS)
+        .some(list => Array.isArray(list) && list.includes(DELIVERY_PERSON_KEY));
+    if (matrixKnowsKey) return hasClearance(userRole, DELIVERY_PERSON_KEY);
+    return role === CORPORATE_TIERS.TIER_2
+        || role === CORPORATE_TIERS.TIER_3
+        || role === CORPORATE_TIERS.TIER_4;   // FLEET_CAPTAIN — "T4: REGIONAL ADMIN" on his screen
+};
+
 /* FLEET & CANVAS: may this tier only LOOK, or also change things?
 
    Aldi found this himself with the POV switch on its first run, 2026-08-23: *"i just checked

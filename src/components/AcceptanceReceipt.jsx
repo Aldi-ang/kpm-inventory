@@ -49,7 +49,7 @@ const Money = ({ label, value, strong = false }) => (
   </div>
 );
 
-export default function AcceptanceReceipt({ acceptance, onClose, receivedBy, companyName }) {
+export default function AcceptanceReceipt({ acceptance, onClose, companyName }) {
   if (!acceptance) return null;
 
   const origin = acceptance.supplierName || 'Pabrik Internal';
@@ -137,14 +137,23 @@ export default function AcceptanceReceipt({ acceptance, onClose, receivedBy, com
           {/* A signature line needs room to sign in, not a whole screen of it. The old block spent
               `mb-12` above each name and `mt-12 pt-8` above the pair, which pushed both names off
               the first view on a laptop. */}
+          {/* BOTH NAMES COME FROM THE RECORD, and an unknown one prints a blank line to sign on.
+              Before 2026-08-31 this said the fixed words "Factory Logistics" on every nota ever
+              printed, and named whoever was logged in AT THE MOMENT THE PAPER WAS OPENED — so a
+              second admin opening an old delivery printed their own name over someone else's
+              work. `recordedBy` is the fallback for deliveries saved before the two fields
+              existed: it is who entered it, which is the closest true thing on file.
+              A blank line is obviously unsigned. A guessed name looks authorised. */}
           <div className="grid grid-cols-2 gap-10 mt-12 text-center text-[11px]">
             <div>
               <p className="text-gray-600">Dikirim oleh</p>
-              <p className="mt-10 border-t border-black pt-1.5 font-bold">Factory Logistics</p>
+              <p className="mt-10 border-t border-black pt-1.5 font-bold min-h-[1.4em]">{acceptance.deliveredBy || ''}</p>
             </div>
             <div>
               <p className="text-gray-600">Diterima &amp; diperiksa oleh</p>
-              <p className="mt-10 border-t border-black pt-1.5 font-bold">{receivedBy}</p>
+              <p className="mt-10 border-t border-black pt-1.5 font-bold min-h-[1.4em]">
+                {acceptance.receivedBy || acceptance.recordedBy || ''}
+              </p>
             </div>
           </div>
         </div>

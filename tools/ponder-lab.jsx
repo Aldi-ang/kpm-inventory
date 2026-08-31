@@ -233,6 +233,8 @@ const NOTA = {
   laborCost: 900000,
   exciseTax: 21300000,
   trueLandedTotal: 209450000,
+  deliveredBy: 'Slamet Riyadi',
+  receivedBy: 'Aldi Kurniawan',
   items: [
     { name: 'Djarum Super 12', batchNo: 'PK-2608-A', qtyReceived: '480 Bks' },
     { name: 'Djarum Super 16', batchNo: 'PK-2608-B', qtyReceived: '320 Bks' },
@@ -261,7 +263,7 @@ function NotaLab() {
           Baris {i + 1} — teks halaman di belakang nota. Kalau kartu nota tembus pandang, kalimat ini terbaca menembusnya.
         </p>
       ))}
-      <AcceptanceReceipt acceptance={NOTA} onClose={() => {}} receivedBy="Aldi" />
+      <AcceptanceReceipt acceptance={NOTA} onClose={() => {}} companyName="KPM INVENTORY" />
     </div>
   );
 }
@@ -270,10 +272,14 @@ function NotaLab() {
    only subscription bails out when there is no signed-in user, so with `user` null it renders the
    whole desk against fixtures and never touches Firestore. That is the only way to look at the
    registry: the real screen is behind a Google sign-in and then the Master Vault password. */
+/* Tiers on purpose: the delivery rule is "tier 4 and above", so the fixture has to contain someone
+   ABOVE the line and someone below it, or the Orang list would look right while the check was
+   wrong in either direction. Adi (T4) and Rina (T3) must appear; Budi and Cahyo must not. */
 const LAB_MOTORISTS = [
-  { id: 'm1', name: 'Adi', location: 'BANDUNG' },
-  { id: 'm2', name: 'Budi', location: 'MUNTILAN' },
-  { id: 'm3', name: 'Cahyo', location: 'SEMARANG' },
+  { id: 'm1', name: 'Adi Nugroho', location: 'BANDUNG', userRole: 'FLEET_CAPTAIN' },
+  { id: 'm2', name: 'Budi Santoso', location: 'MUNTILAN', userRole: 'FIELD_OPERATIVE' },
+  { id: 'm3', name: 'Cahyo Putra', location: 'SEMARANG', userRole: 'ROOKIE' },
+  { id: 'm4', name: 'Rina Wijaya', location: 'SEMARANG', userRole: 'AREA_ADMIN' },
 ];
 const LAB_PROCUREMENTS = [
   { id: 'p1', poNumber: 'SJ-185108', date: '2026-08-27', supplierName: 'Pabrik Kudus', destination: 'Gudang Pusat (Master Vault)', items: [] },

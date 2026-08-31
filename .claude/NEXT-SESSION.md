@@ -1,6 +1,6 @@
 # NEXT SESSION — read this, then `.claude/PROGRESS.md`. Read no code to orient.
 
-**Written 2026-08-31 19:00 WIB. 673/673 audit · 943/943 selfcheck. Branch `phase0-solid-ground`.**
+**Written 2026-08-31 19:25 WIB. 673/673 audit · 954/954 selfcheck. Branch `phase0-solid-ground`.**
 
 ## First command
 
@@ -18,6 +18,9 @@ npx vite build --config tools/ponder-lab.config.mjs; python -m http.server 4187 
 
 `?places` mounts the **whole Restock Vault** against fixtures (`db=null`, so its one listener bails
 out and nothing touches Firestore) · `?nota` mounts the surat jalan · `&light`, `&lite`, `&probe`.
+
+The `?places` motorist fixtures carry TIERS on purpose — one above the delivery line and two below —
+so the Orang list proves the clearance from both sides instead of just looking populated.
 
 ⚠️ **The pane lies twice over.** A screenshot can be a stale frame — the tab underline appeared on
 the wrong tab while `getComputedStyle` showed it correctly on the right one. And `document.hidden`

@@ -1,6 +1,39 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-31 19:00 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **673/673 audit · 943/943 selfcheck** · branch `phase0-solid-ground`
+**Updated: 2026-08-31 19:25 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **673/673 audit · 954/954 selfcheck** · branch `phase0-solid-ground`
+
+## 🟠 2026-08-31 19:25 — THE NOTA STOPPED INVENTING WHO HANDLED THE GOODS.
+
+**He found it by reading his own receipt:** *"why is that aldi kurniawan tho ... how do u get the
+input for the recipient and sender?"* Two faults under one question. **Dikirim oleh** was the fixed
+words `Factory Logistics`, hardcoded, on every nota ever printed. **Diterima oleh** was
+`getAdminName()` evaluated AT PRINT TIME — his Settings "Signed by" box is empty, so it fell
+through to his Google account name, and a second admin opening an old delivery would have printed
+their own name over someone else's work.
+
+**His design, and it beat all three of mine:** *"the only person who are be able to send and receive
+the package is company employees right, so make sure that there is new textbox to fill the
+recipient/penerima and sender/pengirim and then i want it to work like the factory and warehouse
+textbox, tier 4/ regional admin and above is automatically registered to have power to send or
+receive package, while lower tier cant do that, and if there is other employees outside of the
+sales team who will send that package then just add register button"*.
+
+**Built exactly that.** Two more search-only pickers, Pengirim and Penerima, over a people list with
+two sources: staff whose TIER already grants it (nobody registers them, and a demotion removes them
+from tomorrow's deliveries by itself), plus anyone registered by hand as `kind: 'orang'` in the same
+registry as the places. Tab renamed **Daftar** and now holds pabrik · gudang · orang.
+
+**⚠️ THE FLEET CAPTAIN TRAP, ONE LINE FROM HAPPENING AGAIN.** His "tier 4 / regional admin" is
+`FLEET_CAPTAIN` in the code — and `isAreaAdmin()` checks only `AREA_ADMIN`, so the obvious helper
+would have silently dropped the exact tier he named. The clearance is a permission key,
+`handle_delivery`, defaulting to T1–T4 with FLEET_CAPTAIN named explicitly, and absence-means-tier-
+default so his saved Firebase matrix does not read as "no". D16 runs the real function on BOTH
+sides of the boundary: T1–T4 true, T5/T6 false, unknown role false.
+
+**Both names now come from the record**, and an unknown one prints a BLANK line to sign on rather
+than a guessed name — a blank line is obviously unsigned, a wrong name looks authorised.
+
+**❓ WAITING ON ALDI — nothing.** Regional warehouse redesign is still the next job.
 
 ## 🟠 2026-08-31 19:00 — PLACES ARE REGISTERED NOW, AND THE ROUTE BOXES CAN NO LONGER INVENT ONE.
 

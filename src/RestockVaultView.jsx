@@ -5,7 +5,7 @@ import { savePhotoAndGetReference, deletePhotoFromStorage, compressImageToBase64
 import { confirmAction } from './components/ConfirmGate.jsx';
 import AcceptanceReceipt from './components/AcceptanceReceipt.jsx';
 import { notify } from './components/Toast.jsx';
-import { canPickFromGallery } from './config/permissions';
+import { canPickFromGallery, canHandleDelivery, tierWord } from './config/permissions';
 /* one definition of "what is a branch", shared with the dashboard's supply maths */
 import { NON_BRANCH, bufferDays, MASTER } from './utils/supply.js';
 /* THE SAME FOUR FUNCTIONS THE BRANCH PANEL RUNS ON, imported rather than re-derived. His ask,
@@ -108,7 +108,7 @@ const RouteCombo = ({ label, value, onChange, options, placeholder, hint }) => {
                 <div className="absolute z-30 left-0 right-0 top-full mt-1 bg-raised border border-line-2 rounded-lg max-h-52 overflow-y-auto custom-scrollbar shadow-xl">
                     {hits.length === 0 ? (
                         <div className="px-3 py-2.5 text-xs text-ink-muted leading-relaxed">
-                            Tidak ada yang cocok. Tempat baru didaftarkan di tab <b className="text-ink">Tempat</b>, bukan di sini.
+                            Tidak ada yang cocok. Tempat baru didaftarkan di tab <b className="text-ink">Daftar</b>, bukan di sini.
                         </div>
                     ) : hits.map((o, i) => (
                         <button
@@ -241,6 +241,10 @@ const RestockVaultView = ({ inventory = [], procurements = [], motorists = [], b
     const [cart, setCart] = useState([]);
     const [poData, setPoData] = useState({
         supplierName: '',
+        /* who physically handed the goods over, and who counted them in — both picked from the
+           people registry, both frozen onto the record when it saves */
+        deliveredBy: '',
+        receivedBy: '',
         destination: HQ_NAME,
         poNumber: `SJ-${Date.now().toString().slice(-6)}`,
         supplierSjNo: '',
@@ -321,6 +325,44 @@ const RestockVaultView = ({ inventory = [], procurements = [], motorists = [], b
         { name: HQ_NAME, kind: 'gudang', address: addrFor(HQ_NAME) },
         ...branchesSeen.map(n => ({ name: n, kind: 'cabang', address: addrFor(n) })),
     ]), [branchesSeen, addressOf]);
+
+    /* THE PEOPLE LIST — who may be named as sending or receiving a package.
+
+       His rule, 2026-08-31: *"the only person who are be able to send and receive the package is
+       company employees ... tier 4/ regional admin and above is automatically registered to have
+       power to send or receive package, while lower tier cant do that, and if there is other
+       employees outside of the sales team who will send that package then just add register
+       button"*.
+
+       So there are two sources and NEITHER is a textbox. Staff who already carry the clearance are
+       in the list because of their tier — nobody registers them by hand, and demoting someone
+       removes them from tomorrow's deliveries without anyone remembering to. Everyone else is a
+       deliberate record with `kind: 'orang'`, sitting in the same registry as the places. */
+    const staffPeople = useMemo(() => motorists
+        .filter(m => m?.name && canHandleDelivery(m.userRole || m.role))
+        /* the tier word is only the little tag in the dropdown, so a legacy role id that
+           `tierWord` does not recognise degrades to "staff" rather than to a blank. The
+           CLEARANCE question above is where the translation actually has to be right, and
+           `canHandleDelivery` does it internally. */
+        .map(m => ({ name: m.name, kind: tierWord(m.userRole || m.role) || 'staff', address: m.location || '' })),
+        [motorists]);
+
+    const registeredPeople = useMemo(() => places
+        .filter(p => p?.kind === 'orang' && p?.name)
+        .map(p => ({ name: p.name, kind: 'luar', address: p.address || '' })),
+        [places]);
+
+    /* One list, staff first, and a name that exists in both appears once. A duplicate here is two
+       identical-looking rows in a dropdown on a document that says who handled the goods. */
+    const peopleOptions = useMemo(() => {
+        const seen = new Set();
+        return [...staffPeople, ...registeredPeople].filter(p => {
+            const k = p.name.trim().toLowerCase();
+            if (seen.has(k)) return false;
+            seen.add(k);
+            return true;
+        });
+    }, [staffPeople, registeredPeople]);
 
     /* Factory names sitting in old deliveries that were never registered. Not an error — he chose
        to leave old records alone — but without this the Asal box is empty on the first day and
@@ -429,7 +471,7 @@ const RestockVaultView = ({ inventory = [], procurements = [], motorists = [], b
     const resetForm = () => {
         setCart([]);
         setPoData({
-            supplierName: '', destination: HQ_NAME,
+            supplierName: '', destination: HQ_NAME, deliveredBy: '', receivedBy: '',
             poNumber: `SJ-${Date.now().toString().slice(-6)}`, supplierSjNo: '',
             poDate: getLocalDayKey(), shippingCost: 0, exciseTax: 0, laborCost: 0,
             expiryDate: '', courier: '', trackingNo: '',
@@ -1081,7 +1123,7 @@ const RestockVaultView = ({ inventory = [], procurements = [], motorists = [], b
         { id: 'book', label: 'Buku',    count: bookRows.length },
         /* the count is what is MISSING, not what exists — a registry you have finished filling in
            should stop asking for attention */
-        { id: 'place', label: 'Tempat', count: unregisteredFactories.length + warehouseOptions.filter(w => !w.address).length },
+        { id: 'place', label: 'Daftar', count: unregisteredFactories.length + warehouseOptions.filter(w => !w.address).length },
     ];
 
     return (
@@ -1162,7 +1204,6 @@ const RestockVaultView = ({ inventory = [], procurements = [], motorists = [], b
             <AcceptanceReceipt
                 acceptance={viewingAcceptance}
                 onClose={() => setViewingAcceptance(null)}
-                receivedBy={getAdminName()}
                 companyName={appSettings?.companyName}
             />
 
@@ -1186,7 +1227,7 @@ const RestockVaultView = ({ inventory = [], procurements = [], motorists = [], b
                                         label="Asal (Source Factory)" value={editingPO.supplierName || ''}
                                         onChange={v => setEditingPO({ ...editingPO, supplierName: v, originAddress: addrFor(v) })}
                                         options={factoryOptions} placeholder="cari pabrik..."
-                                        hint="Belum ada pabrik terdaftar. Daftarkan di tab Tempat."
+                                        hint="Belum ada pabrik terdaftar. Daftarkan di tab Daftar."
                                     />
                                     <RouteCombo
                                         label="Tujuan" value={editingPO.destination || HQ_NAME}
@@ -1366,10 +1407,10 @@ const RestockVaultView = ({ inventory = [], procurements = [], motorists = [], b
                         <Lamp tone="on" />
                         <div className="min-w-0">
                             <div className="font-display font-bold uppercase tracking-[0.15em] text-[13px] text-ink truncate">
-                                {viewMode === 'place' ? 'Tempat' : viewMode === 'req' ? 'Permintaan cabang' : viewMode === 'book' ? 'Buku Besar' : isOut ? 'Kirim ke cabang' : 'Master Vault'}
+                                {viewMode === 'place' ? 'Daftar' : viewMode === 'req' ? 'Permintaan cabang' : viewMode === 'book' ? 'Buku Besar' : isOut ? 'Kirim ke cabang' : 'Master Vault'}
                             </div>
                             <div className="font-mono text-[10px] text-ink-muted truncate">
-                                {viewMode === 'place' ? 'pabrik & gudang · alamat tetap' : viewMode === 'req' ? 'menunggu · di jalan · selisih' : viewMode === 'book' ? 'masuk & keluar' : isOut ? 'surat jalan keluar' : 'HQ · gudang pusat'}
+                                {viewMode === 'place' ? 'pabrik · gudang · orang' : viewMode === 'req' ? 'menunggu · di jalan · selisih' : viewMode === 'book' ? 'masuk & keluar' : isOut ? 'surat jalan keluar' : 'HQ · gudang pusat'}
                             </div>
                         </div>
                     </div>
@@ -1404,16 +1445,24 @@ const RestockVaultView = ({ inventory = [], procurements = [], motorists = [], b
                     <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-6">
                         <div className="flex items-start justify-between gap-4 flex-wrap">
                             <div>
-                                <h3 className="font-display font-bold uppercase tracking-[0.15em] text-sm text-ink">Tempat terdaftar</h3>
+                                <h3 className="font-display font-bold uppercase tracking-[0.15em] text-sm text-ink">Tempat &amp; orang terdaftar</h3>
                                 <p className="text-[11px] text-ink-muted mt-1 max-w-prose">
-                                    Alamat di sini yang tercetak di surat jalan. Kotak Asal dan Tujuan hanya <b className="text-ink">mencari</b> dari daftar ini — mengetik nama baru di sana tidak mendaftarkan apa pun.
+                                    Yang ada di sini yang tercetak di surat jalan. Keempat kotak — Asal, Tujuan, Pengirim, Penerima — hanya <b className="text-ink">mencari</b> dari daftar ini; mengetik nama baru di sana tidak mendaftarkan apa pun.
+                                    Staf tier 4 ke atas sudah otomatis boleh kirim &amp; terima, jadi tidak perlu didaftarkan satu per satu.
                                 </p>
                             </div>
-                            <button type="button"
-                                onClick={() => setPlaceForm({ name: '', address: '', kind: 'pabrik', editing: null })}
-                                className="bg-orange text-orange-ink px-4 py-2.5 rounded-lg font-black uppercase tracking-widest text-[11px] flex items-center gap-2 active:scale-[0.98] transition-transform">
-                                <PlusCircle size={15}/> Daftarkan pabrik
-                            </button>
+                            <div className="flex gap-2 flex-wrap">
+                                <button type="button"
+                                    onClick={() => setPlaceForm({ name: '', address: '', kind: 'pabrik', editing: null })}
+                                    className="bg-orange text-orange-ink px-4 py-2.5 rounded-lg font-black uppercase tracking-widest text-[11px] flex items-center gap-2 active:scale-[0.98] transition-transform">
+                                    <PlusCircle size={15}/> Daftarkan pabrik
+                                </button>
+                                <button type="button"
+                                    onClick={() => setPlaceForm({ name: '', address: '', kind: 'orang', editing: null })}
+                                    className="border border-line-2 hover:border-orange text-ink px-4 py-2.5 rounded-lg font-black uppercase tracking-widest text-[11px] flex items-center gap-2 active:scale-[0.98] transition-all">
+                                    <PlusCircle size={15}/> Daftarkan orang
+                                </button>
+                            </div>
                         </div>
 
                         {placeForm && (
@@ -1435,7 +1484,7 @@ const RestockVaultView = ({ inventory = [], procurements = [], motorists = [], b
                                     <div>
                                         <label className="text-[10px] font-bold text-ink-muted uppercase tracking-widest mb-1 block">Jenis</label>
                                         <div className="flex gap-2">
-                                            {[['pabrik', 'Pabrik'], ['gudang', 'Gudang']].map(([k, label]) => (
+                                            {[['pabrik', 'Pabrik'], ['gudang', 'Gudang'], ['orang', 'Orang']].map(([k, label]) => (
                                                 <button key={k} type="button" disabled={!!placeForm.editing}
                                                     onClick={() => setPlaceForm({ ...placeForm, kind: k })}
                                                     className={`flex-1 py-2.5 rounded-lg text-[11px] font-bold uppercase tracking-widest border transition-colors disabled:opacity-60 ${
@@ -1446,10 +1495,14 @@ const RestockVaultView = ({ inventory = [], procurements = [], motorists = [], b
                                     </div>
                                 </div>
                                 <div>
-                                    <label className="text-[10px] font-bold text-ink-muted uppercase tracking-widest mb-1 block">Alamat</label>
+                                    <label className="text-[10px] font-bold text-ink-muted uppercase tracking-widest mb-1 block">
+                                        {placeForm.kind === 'orang' ? 'Jabatan / dari mana' : 'Alamat'}
+                                    </label>
                                     <textarea value={placeForm.address} rows={2}
                                         onChange={e => setPlaceForm({ ...placeForm, address: e.target.value })}
-                                        placeholder="Jl. Raya Kudus No. 12, Kudus, Jawa Tengah"
+                                        placeholder={placeForm.kind === 'orang'
+                                            ? 'Supir Pabrik Kudus'
+                                            : 'Jl. Raya Kudus No. 12, Kudus, Jawa Tengah'}
                                         className="w-full bg-inset border border-line-2 rounded-lg p-2.5 text-sm text-ink outline-none focus:border-orange transition-colors resize-none"/>
                                 </div>
                                 <div className="flex gap-2">
@@ -1483,7 +1536,7 @@ const RestockVaultView = ({ inventory = [], procurements = [], motorists = [], b
                             </div>
                         )}
 
-                        {[['pabrik', 'Pabrik', factoryOptions], ['gudang', 'Gudang', warehouseOptions]].map(([kind, label, list]) => (
+                        {[['pabrik', 'Pabrik', factoryOptions], ['gudang', 'Gudang', warehouseOptions], ['orang', 'Orang · boleh kirim & terima', peopleOptions]].map(([kind, label, list]) => (
                             <div key={kind}>
                                 <h4 className="text-[10px] font-bold text-ink-muted uppercase tracking-widest mb-2">{label}</h4>
                                 {list.length === 0 ? (
@@ -1500,9 +1553,18 @@ const RestockVaultView = ({ inventory = [], procurements = [], motorists = [], b
                                                             {o.address || 'alamat belum diisi — tidak akan tercetak di surat jalan'}
                                                         </p>
                                                     </div>
-                                                    <button type="button" title={`Ubah alamat ${o.name}`}
+                                                    {/* Staff are here because of their TIER, not because anyone
+                                                        registered them. Offering an edit pencil would quietly
+                                                        create a second, hand-made record shadowing the same
+                                                        person — and then demoting them would remove one copy
+                                                        and leave the other. */}
+                                                    {kind === 'orang' && !record ? (
+                                                        <span className="text-[10px] font-mono text-ink-muted uppercase tracking-widest px-1.5">otomatis</span>
+                                                    ) : (
+                                                    <button type="button" title={`Ubah ${o.name}`}
                                                         onClick={() => setPlaceForm({ name: o.name, address: o.address || '', kind, editing: record?.id || null })}
                                                         className="text-ink-muted hover:text-ink transition-colors p-1.5"><Pencil size={14}/></button>
+                                                    )}
                                                     {record && (
                                                         <button type="button" title={`Hapus ${o.name} dari daftar`}
                                                             onClick={() => removePlace(record)}
@@ -1783,7 +1845,7 @@ const RestockVaultView = ({ inventory = [], procurements = [], motorists = [], b
                                     onChange={v => setPoData({ ...poData, supplierName: v })}
                                     options={isOut ? warehouseOptions : factoryOptions}
                                     placeholder="cari..."
-                                    hint="Belum ada pabrik terdaftar. Daftarkan di tab Tempat."
+                                    hint="Belum ada pabrik terdaftar. Daftarkan di tab Daftar."
                                 />
                                 <button type="button" onClick={swapRoute} title="Tukar asal dan tujuan" aria-label="Tukar asal dan tujuan"
                                     className="h-[42px] w-full border border-line-2 bg-raised rounded-lg text-ink flex items-center justify-center hover:border-orange transition-all active:scale-95">
@@ -1797,6 +1859,25 @@ const RestockVaultView = ({ inventory = [], procurements = [], motorists = [], b
                                     onChange={v => setPoData({ ...poData, destination: v })}
                                     options={warehouseOptions}
                                     placeholder="cari gudang..."
+                                />
+                            </div>
+
+                            {/* WHO HANDLED IT. Two names, same rule as the route: searched, never
+                                invented. They are facts about THIS delivery — the old nota printed
+                                the fixed words "Factory Logistics" and whoever happened to be
+                                logged in when the paper was opened. */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 items-end">
+                                <RouteCombo
+                                    label="Pengirim" value={poData.deliveredBy}
+                                    onChange={v => setPoData({ ...poData, deliveredBy: v })}
+                                    options={peopleOptions} placeholder="cari nama..."
+                                    hint="Belum ada orang berwenang. Daftarkan di tab Daftar."
+                                />
+                                <RouteCombo
+                                    label="Penerima" value={poData.receivedBy}
+                                    onChange={v => setPoData({ ...poData, receivedBy: v })}
+                                    options={peopleOptions} placeholder="cari nama..."
+                                    hint="Belum ada orang berwenang. Daftarkan di tab Daftar."
                                 />
                             </div>
 

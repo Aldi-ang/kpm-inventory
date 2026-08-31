@@ -95,8 +95,8 @@
     "semantic_hash": ""
   },
   "src/RestockVaultView.jsx": {
-    "mtime": 1788177263.178173,
-    "ast_hash": "6169b7a8411eaf5b4260d873c6ac4feb",
+    "mtime": 1788178732.4504988,
+    "ast_hash": "c5515f88674ff249ebfd70493f6cee8f",
     "semantic_hash": ""
   },
   "src/StockOpnameView.jsx": {
@@ -195,8 +195,8 @@
     "semantic_hash": ""
   },
   "src/config/permissions.js": {
-    "mtime": 1787751554.57165,
-    "ast_hash": "9405afb8ceda93f8a6ddb7c38396fbf5",
+    "mtime": 1788178595.7300282,
+    "ast_hash": "8f30feb47c1ab462764d582560c4ca09",
     "semantic_hash": ""
   },
   "src/hooks/useDatabaseSync.js": {
@@ -570,8 +570,8 @@
     "semantic_hash": ""
   },
   ".claude/PROGRESS.md": {
-    "mtime": 1788175573.8884313,
-    "ast_hash": "b8a3f36a3e8c3b47588b26cc3c3e75f5",
+    "mtime": 1788177557.4728322,
+    "ast_hash": "114173438094c709c6ef3438f2155d8f",
     "semantic_hash": ""
   },
   ".claude/pre-compact-context.md": {
@@ -755,13 +755,13 @@
     "semantic_hash": ""
   },
   "src/config/logicFixes.selfcheck.mjs": {
-    "mtime": 1788177454.666027,
-    "ast_hash": "aa4d36717fbceaee738181c98a37225b",
+    "mtime": 1788178852.4445746,
+    "ast_hash": "5f4a0f02ab63a0c43c6cf6e59dc01143",
     "semantic_hash": ""
   },
   ".claude/NEXT-SESSION.md": {
-    "mtime": 1788175553.2008762,
-    "ast_hash": "e61dfc96c51bceac7271f9985d0659fc",
+    "mtime": 1788177538.0479724,
+    "ast_hash": "139cac1ea320419d90cad56055f87d13",
     "semantic_hash": ""
   },
   ".claude/SWEEP-2026-08-19.md": {
@@ -835,8 +835,8 @@
     "semantic_hash": ""
   },
   "tools/ponder-lab.jsx": {
-    "mtime": 1788177219.0179594,
-    "ast_hash": "938eb765dfc1d2123767b2c6e2b52b61",
+    "mtime": 1788178774.8255196,
+    "ast_hash": "c96cde4e70e373600e7b244a7b0f9999",
     "semantic_hash": ""
   },
   ".claude/PONDER-PLAN.md": {
@@ -965,8 +965,8 @@
     "semantic_hash": ""
   },
   "src/components/AcceptanceReceipt.jsx": {
-    "mtime": 1788177131.3041468,
-    "ast_hash": "022482eb062297da6cc752894659a43c",
+    "mtime": 1788178663.8622203,
+    "ast_hash": "13a8fca03787368b456f552162c0c52f",
     "semantic_hash": ""
   }
 }
