@@ -1,6 +1,18 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-31 19:25 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **673/673 audit · 954/954 selfcheck** · branch `phase0-solid-ground`
+**Updated: 2026-08-31 19:40 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **673/673 audit · 957/957 selfcheck** · branch `phase0-solid-ground`
+
+## 🟠 2026-08-31 19:40 — HE NAMED THE TAB: **DATA INDUK**.
+
+*"i want u to change tempat into better wording than that, it is so fague"* — right twice, because
+my own replacement, `Daftar`, only means "list". He picked **Data Induk** out of four options.
+Offering rather than choosing is his own locked law: only Aldi names the categories in his own trade.
+
+The tab, its header, all four picker hints and the empty state inside the picker now say it. Measured
+at 375px and at desktop: five tabs, one row, no overflow either way. **Nothing pins the WORDING** — a
+guard anchored on display copy fires on every rename, and that is already a lesson on file. What is
+pinned is CONSISTENCY: whatever the tab is called, every "daftarkan di tab X" message must name that
+same label, so a future rename cannot leave an instruction pointing at a tab that no longer exists.
 
 ## 🟠 2026-08-31 19:25 — THE NOTA STOPPED INVENTING WHO HANDLED THE GOODS.
 

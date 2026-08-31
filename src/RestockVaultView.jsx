@@ -49,7 +49,7 @@ const num = (n) => new Intl.NumberFormat('id-ID').format(Number(n) || 0);
 
    So the typed text is now a QUERY, held separately from the value. The value only ever changes
    when a real option is chosen, and leaving the box with an unmatched query snaps the text back
-   to whatever was actually selected. Registration lives in the Tempat tab, where an address can
+   to whatever was actually selected. Registration lives in the Data Induk tab, where an address can
    be asked for — a name without an address is the thing being fixed. */
 const RouteCombo = ({ label, value, onChange, options, placeholder, hint }) => {
     const [open, setOpen] = useState(false);
@@ -108,7 +108,7 @@ const RouteCombo = ({ label, value, onChange, options, placeholder, hint }) => {
                 <div className="absolute z-30 left-0 right-0 top-full mt-1 bg-raised border border-line-2 rounded-lg max-h-52 overflow-y-auto custom-scrollbar shadow-xl">
                     {hits.length === 0 ? (
                         <div className="px-3 py-2.5 text-xs text-ink-muted leading-relaxed">
-                            Tidak ada yang cocok. Tempat baru didaftarkan di tab <b className="text-ink">Daftar</b>, bukan di sini.
+                            Tidak ada yang cocok. Tempat baru didaftarkan di tab <b className="text-ink">Data Induk</b>, bukan di sini.
                         </div>
                     ) : hits.map((o, i) => (
                         <button
@@ -366,7 +366,7 @@ const RestockVaultView = ({ inventory = [], procurements = [], motorists = [], b
 
     /* Factory names sitting in old deliveries that were never registered. Not an error — he chose
        to leave old records alone — but without this the Asal box is empty on the first day and
-       every factory has to be re-typed from memory. The Tempat tab offers them for one click. */
+       every factory has to be re-typed from memory. The Data Induk tab offers them for one click. */
     const unregisteredFactories = useMemo(() => {
         const known = new Set(factoryOptions.map(f => f.name.trim().toLowerCase()));
         return suppliersSeen.filter(n => n && n !== HQ_NAME && !known.has(n.trim().toLowerCase()));
@@ -1123,7 +1123,7 @@ const RestockVaultView = ({ inventory = [], procurements = [], motorists = [], b
         { id: 'book', label: 'Buku',    count: bookRows.length },
         /* the count is what is MISSING, not what exists — a registry you have finished filling in
            should stop asking for attention */
-        { id: 'place', label: 'Daftar', count: unregisteredFactories.length + warehouseOptions.filter(w => !w.address).length },
+        { id: 'place', label: 'Data Induk', count: unregisteredFactories.length + warehouseOptions.filter(w => !w.address).length },
     ];
 
     return (
@@ -1227,7 +1227,7 @@ const RestockVaultView = ({ inventory = [], procurements = [], motorists = [], b
                                         label="Asal (Source Factory)" value={editingPO.supplierName || ''}
                                         onChange={v => setEditingPO({ ...editingPO, supplierName: v, originAddress: addrFor(v) })}
                                         options={factoryOptions} placeholder="cari pabrik..."
-                                        hint="Belum ada pabrik terdaftar. Daftarkan di tab Daftar."
+                                        hint="Belum ada pabrik terdaftar. Daftarkan di tab Data Induk."
                                     />
                                     <RouteCombo
                                         label="Tujuan" value={editingPO.destination || HQ_NAME}
@@ -1407,7 +1407,7 @@ const RestockVaultView = ({ inventory = [], procurements = [], motorists = [], b
                         <Lamp tone="on" />
                         <div className="min-w-0">
                             <div className="font-display font-bold uppercase tracking-[0.15em] text-[13px] text-ink truncate">
-                                {viewMode === 'place' ? 'Daftar' : viewMode === 'req' ? 'Permintaan cabang' : viewMode === 'book' ? 'Buku Besar' : isOut ? 'Kirim ke cabang' : 'Master Vault'}
+                                {viewMode === 'place' ? 'Data Induk' : viewMode === 'req' ? 'Permintaan cabang' : viewMode === 'book' ? 'Buku Besar' : isOut ? 'Kirim ke cabang' : 'Master Vault'}
                             </div>
                             <div className="font-mono text-[10px] text-ink-muted truncate">
                                 {viewMode === 'place' ? 'pabrik · gudang · orang' : viewMode === 'req' ? 'menunggu · di jalan · selisih' : viewMode === 'book' ? 'masuk & keluar' : isOut ? 'surat jalan keluar' : 'HQ · gudang pusat'}
@@ -1445,7 +1445,7 @@ const RestockVaultView = ({ inventory = [], procurements = [], motorists = [], b
                     <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-6">
                         <div className="flex items-start justify-between gap-4 flex-wrap">
                             <div>
-                                <h3 className="font-display font-bold uppercase tracking-[0.15em] text-sm text-ink">Tempat &amp; orang terdaftar</h3>
+                                <h3 className="font-display font-bold uppercase tracking-[0.15em] text-sm text-ink">Yang sudah terdaftar</h3>
                                 <p className="text-[11px] text-ink-muted mt-1 max-w-prose">
                                     Yang ada di sini yang tercetak di surat jalan. Keempat kotak — Asal, Tujuan, Pengirim, Penerima — hanya <b className="text-ink">mencari</b> dari daftar ini; mengetik nama baru di sana tidak mendaftarkan apa pun.
                                     Staf tier 4 ke atas sudah otomatis boleh kirim &amp; terima, jadi tidak perlu didaftarkan satu per satu.
@@ -1470,7 +1470,9 @@ const RestockVaultView = ({ inventory = [], procurements = [], motorists = [], b
                                 <div className="flex items-center gap-2">
                                     <MapPin size={14} className="text-accent-ink"/>
                                     <h4 className="text-[11px] font-bold uppercase tracking-widest text-ink">
-                                        {placeForm.editing ? 'Ubah alamat' : 'Tempat baru'}
+                                        {placeForm.editing
+                                            ? (placeForm.kind === 'orang' ? 'Ubah orang' : 'Ubah alamat')
+                                            : (placeForm.kind === 'orang' ? 'Orang baru' : 'Tempat baru')}
                                     </h4>
                                 </div>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -1845,7 +1847,7 @@ const RestockVaultView = ({ inventory = [], procurements = [], motorists = [], b
                                     onChange={v => setPoData({ ...poData, supplierName: v })}
                                     options={isOut ? warehouseOptions : factoryOptions}
                                     placeholder="cari..."
-                                    hint="Belum ada pabrik terdaftar. Daftarkan di tab Daftar."
+                                    hint="Belum ada pabrik terdaftar. Daftarkan di tab Data Induk."
                                 />
                                 <button type="button" onClick={swapRoute} title="Tukar asal dan tujuan" aria-label="Tukar asal dan tujuan"
                                     className="h-[42px] w-full border border-line-2 bg-raised rounded-lg text-ink flex items-center justify-center hover:border-orange transition-all active:scale-95">
@@ -1871,13 +1873,13 @@ const RestockVaultView = ({ inventory = [], procurements = [], motorists = [], b
                                     label="Pengirim" value={poData.deliveredBy}
                                     onChange={v => setPoData({ ...poData, deliveredBy: v })}
                                     options={peopleOptions} placeholder="cari nama..."
-                                    hint="Belum ada orang berwenang. Daftarkan di tab Daftar."
+                                    hint="Belum ada orang berwenang. Daftarkan di tab Data Induk."
                                 />
                                 <RouteCombo
                                     label="Penerima" value={poData.receivedBy}
                                     onChange={v => setPoData({ ...poData, receivedBy: v })}
                                     options={peopleOptions} placeholder="cari nama..."
-                                    hint="Belum ada orang berwenang. Daftarkan di tab Daftar."
+                                    hint="Belum ada orang berwenang. Daftarkan di tab Data Induk."
                                 />
                             </div>
 

@@ -175,8 +175,8 @@
       "source_location": "L87",
       "_origin": "ast",
       "id": "claude_context_watch_k",
-      "community": 54,
-      "community_name": "eslint-plugin-react-refresh",
+      "community": 11,
+      "community_name": "AgentProfileView.jsx",
       "norm_label": "k()"
     },
     {
@@ -976,8 +976,8 @@
       "source_location": "L37",
       "_origin": "ast",
       "id": "package_devdependencies_eslint_plugin_react_hooks",
-      "community": 60,
-      "community_name": "StockOpnameView.jsx",
+      "community": 4,
+      "community_name": "devDependencies",
       "norm_label": "eslint-plugin-react-hooks"
     },
     {
@@ -987,8 +987,8 @@
       "source_location": "L37",
       "_origin": "ast",
       "id": "eslint_plugin_react_hooks",
-      "community": 60,
-      "community_name": "StockOpnameView.jsx",
+      "community": 4,
+      "community_name": "devDependencies",
       "norm_label": "eslint-plugin-react-hooks"
     },
     {
@@ -1042,8 +1042,8 @@
       "source_location": "L40",
       "_origin": "ast",
       "id": "package_devdependencies_postcss",
-      "community": 4,
-      "community_name": "devDependencies",
+      "community": 65,
+      "community_name": "useSound.selfcheck.mjs",
       "norm_label": "postcss"
     },
     {
@@ -1053,8 +1053,8 @@
       "source_location": "L40",
       "_origin": "ast",
       "id": "postcss",
-      "community": 4,
-      "community_name": "devDependencies",
+      "community": 65,
+      "community_name": "useSound.selfcheck.mjs",
       "norm_label": "postcss"
     },
     {
@@ -1273,8 +1273,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_agentinventoryview",
-      "community": 48,
-      "community_name": "toastSeverity.selfcheck.mjs",
+      "community": 63,
+      "community_name": "notify",
       "norm_label": "agentinventoryview.jsx"
     },
     {
@@ -1284,8 +1284,8 @@
       "source_location": "L16",
       "_origin": "ast",
       "id": "src_agentinventoryview_money",
-      "community": 48,
-      "community_name": "toastSeverity.selfcheck.mjs",
+      "community": 63,
+      "community_name": "notify",
       "norm_label": "money()"
     },
     {
@@ -1295,8 +1295,8 @@
       "source_location": "L24",
       "_origin": "ast",
       "id": "src_agentinventoryview_agentinventoryview",
-      "community": 48,
-      "community_name": "toastSeverity.selfcheck.mjs",
+      "community": 63,
+      "community_name": "notify",
       "norm_label": "agentinventoryview()"
     },
     {
@@ -1306,8 +1306,8 @@
       "source_location": "L452",
       "_origin": "ast",
       "id": "src_agentinventoryview_quarantineledgerboard",
-      "community": 48,
-      "community_name": "toastSeverity.selfcheck.mjs",
+      "community": 63,
+      "community_name": "notify",
       "norm_label": "quarantineledgerboard()"
     },
     {
@@ -1669,8 +1669,8 @@
       "source_location": "L189",
       "_origin": "ast",
       "id": "src_app_getdocofflinesafe",
-      "community": 49,
-      "community_name": "package.json",
+      "community": 26,
+      "community_name": "LOG \u2014 newest first, older entries live in `git log` for this file",
       "norm_label": "getdocofflinesafe()"
     },
     {
@@ -1680,8 +1680,8 @@
       "source_location": "L228",
       "_origin": "ast",
       "id": "src_app_kpminventoryapp",
-      "community": 49,
-      "community_name": "package.json",
+      "community": 26,
+      "community_name": "LOG \u2014 newest first, older entries live in `git log` for this file",
       "norm_label": "kpminventoryapp()"
     },
     {
@@ -1691,8 +1691,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_consignmentfinanceview",
-      "community": 54,
-      "community_name": "eslint-plugin-react-refresh",
+      "community": 31,
+      "community_name": "txSize.selfcheck.mjs",
       "norm_label": "consignmentfinanceview.jsx"
     },
     {
@@ -1702,8 +1702,8 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "src_consignmentfinanceview_consignmentfinanceview",
-      "community": 54,
-      "community_name": "eslint-plugin-react-refresh",
+      "community": 31,
+      "community_name": "txSize.selfcheck.mjs",
       "norm_label": "consignmentfinanceview()"
     },
     {
@@ -1713,8 +1713,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_eodreconciliationview",
-      "community": 48,
-      "community_name": "toastSeverity.selfcheck.mjs",
+      "community": 31,
+      "community_name": "txSize.selfcheck.mjs",
       "norm_label": "eodreconciliationview.jsx"
     },
     {
@@ -1724,8 +1724,8 @@
       "source_location": "L12",
       "_origin": "ast",
       "id": "src_eodreconciliationview_moneyline",
-      "community": 48,
-      "community_name": "toastSeverity.selfcheck.mjs",
+      "community": 31,
+      "community_name": "txSize.selfcheck.mjs",
       "norm_label": "moneyline()"
     },
     {
@@ -1735,8 +1735,8 @@
       "source_location": "L44",
       "_origin": "ast",
       "id": "src_eodreconciliationview_eodreconciliationview",
-      "community": 48,
-      "community_name": "toastSeverity.selfcheck.mjs",
+      "community": 31,
+      "community_name": "txSize.selfcheck.mjs",
       "norm_label": "eodreconciliationview()"
     },
     {
@@ -1746,8 +1746,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_fleetcanvasmanager",
-      "community": 54,
-      "community_name": "eslint-plugin-react-refresh",
+      "community": 30,
+      "community_name": "BiohazardTheme.jsx",
       "norm_label": "fleetcanvasmanager.jsx"
     },
     {
@@ -1757,8 +1757,8 @@
       "source_location": "L13",
       "_origin": "ast",
       "id": "src_fleetcanvasmanager_fleetcanvasmanager",
-      "community": 54,
-      "community_name": "eslint-plugin-react-refresh",
+      "community": 30,
+      "community_name": "BiohazardTheme.jsx",
       "norm_label": "fleetcanvasmanager()"
     },
     {
@@ -2109,8 +2109,8 @@
       "source_location": "L461",
       "_origin": "ast",
       "id": "src_mapmissioncontrol_borderimporter",
-      "community": 54,
-      "community_name": "eslint-plugin-react-refresh",
+      "community": 66,
+      "community_name": "context-watch.mjs",
       "norm_label": "borderimporter()"
     },
     {
@@ -2142,8 +2142,8 @@
       "source_location": "L1058",
       "_origin": "ast",
       "id": "src_mapmissioncontrol_storebottomsheet",
-      "community": 54,
-      "community_name": "eslint-plugin-react-refresh",
+      "community": 63,
+      "community_name": "notify",
       "norm_label": "storebottomsheet()"
     },
     {
@@ -2153,8 +2153,8 @@
       "source_location": "L1542",
       "_origin": "ast",
       "id": "src_mapmissioncontrol_tierautomationengine",
-      "community": 54,
-      "community_name": "eslint-plugin-react-refresh",
+      "community": 49,
+      "community_name": "package.json",
       "norm_label": "tierautomationengine()"
     },
     {
@@ -2472,8 +2472,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_acceptancereceipt",
-      "community": 31,
-      "community_name": "txSize.selfcheck.mjs",
+      "community": 54,
+      "community_name": "eslint-plugin-react-refresh",
       "norm_label": "acceptancereceipt.jsx"
     },
     {
@@ -2483,8 +2483,8 @@
       "source_location": "L30",
       "_origin": "ast",
       "id": "src_components_acceptancereceipt_field",
-      "community": 31,
-      "community_name": "txSize.selfcheck.mjs",
+      "community": 54,
+      "community_name": "eslint-plugin-react-refresh",
       "norm_label": "field()"
     },
     {
@@ -2494,8 +2494,8 @@
       "source_location": "L41",
       "_origin": "ast",
       "id": "src_components_acceptancereceipt_money",
-      "community": 31,
-      "community_name": "txSize.selfcheck.mjs",
+      "community": 54,
+      "community_name": "eslint-plugin-react-refresh",
       "norm_label": "money()"
     },
     {
@@ -2505,8 +2505,8 @@
       "source_location": "L52",
       "_origin": "ast",
       "id": "src_components_acceptancereceipt_acceptancereceipt",
-      "community": 31,
-      "community_name": "txSize.selfcheck.mjs",
+      "community": 54,
+      "community_name": "eslint-plugin-react-refresh",
       "norm_label": "acceptancereceipt()"
     },
     {
@@ -2593,8 +2593,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_auditvaultview",
-      "community": 54,
-      "community_name": "eslint-plugin-react-refresh",
+      "community": 49,
+      "community_name": "package.json",
       "norm_label": "auditvaultview.jsx"
     },
     {
@@ -2604,8 +2604,8 @@
       "source_location": "L9",
       "_origin": "ast",
       "id": "src_components_auditvaultview_auditvaultview",
-      "community": 54,
-      "community_name": "eslint-plugin-react-refresh",
+      "community": 49,
+      "community_name": "package.json",
       "norm_label": "auditvaultview()"
     },
     {
@@ -2615,8 +2615,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_authorityselect",
-      "community": 54,
-      "community_name": "eslint-plugin-react-refresh",
+      "community": 11,
+      "community_name": "AgentProfileView.jsx",
       "norm_label": "authorityselect.jsx"
     },
     {
@@ -2626,8 +2626,8 @@
       "source_location": "L39",
       "_origin": "ast",
       "id": "src_components_authorityselect_authorityselect",
-      "community": 54,
-      "community_name": "eslint-plugin-react-refresh",
+      "community": 11,
+      "community_name": "AgentProfileView.jsx",
       "norm_label": "authorityselect()"
     },
     {
@@ -2934,8 +2934,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_confirmgate",
-      "community": 54,
-      "community_name": "eslint-plugin-react-refresh",
+      "community": 6,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": "confirmgate.jsx"
     },
     {
@@ -2945,8 +2945,8 @@
       "source_location": "L32",
       "_origin": "ast",
       "id": "src_components_confirmgate_confirmaction",
-      "community": 54,
-      "community_name": "eslint-plugin-react-refresh",
+      "community": 49,
+      "community_name": "package.json",
       "norm_label": "confirmaction()"
     },
     {
@@ -2956,8 +2956,8 @@
       "source_location": "L50",
       "_origin": "ast",
       "id": "src_components_confirmgate_promptaction",
-      "community": 66,
-      "community_name": "context-watch.mjs",
+      "community": 48,
+      "community_name": "toastSeverity.selfcheck.mjs",
       "norm_label": "promptaction()"
     },
     {
@@ -2967,8 +2967,8 @@
       "source_location": "L70",
       "_origin": "ast",
       "id": "src_components_confirmgate_confirmhost",
-      "community": 54,
-      "community_name": "eslint-plugin-react-refresh",
+      "community": 6,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": "confirmhost()"
     },
     {
@@ -2978,8 +2978,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_crowntransferprotocol",
-      "community": 54,
-      "community_name": "eslint-plugin-react-refresh",
+      "community": 49,
+      "community_name": "package.json",
       "norm_label": "crowntransferprotocol.jsx"
     },
     {
@@ -2989,8 +2989,8 @@
       "source_location": "L8",
       "_origin": "ast",
       "id": "src_components_crowntransferprotocol_crowntransferprotocol",
-      "community": 54,
-      "community_name": "eslint-plugin-react-refresh",
+      "community": 49,
+      "community_name": "package.json",
       "norm_label": "crowntransferprotocol()"
     },
     {
@@ -3000,8 +3000,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_customermanager",
-      "community": 66,
-      "community_name": "context-watch.mjs",
+      "community": 55,
+      "community_name": "postcss",
       "norm_label": "customermanager.jsx"
     },
     {
@@ -3011,8 +3011,8 @@
       "source_location": "L9",
       "_origin": "ast",
       "id": "src_components_customermanager_ispointinpolygon",
-      "community": 66,
-      "community_name": "context-watch.mjs",
+      "community": 55,
+      "community_name": "postcss",
       "norm_label": "ispointinpolygon()"
     },
     {
@@ -3022,8 +3022,8 @@
       "source_location": "L19",
       "_origin": "ast",
       "id": "src_components_customermanager_checkpointingeojson",
-      "community": 66,
-      "community_name": "context-watch.mjs",
+      "community": 55,
+      "community_name": "postcss",
       "norm_label": "checkpointingeojson()"
     },
     {
@@ -3033,8 +3033,8 @@
       "source_location": "L38",
       "_origin": "ast",
       "id": "src_components_customermanager_customerdetailview",
-      "community": 66,
-      "community_name": "context-watch.mjs",
+      "community": 49,
+      "community_name": "package.json",
       "norm_label": "customerdetailview()"
     },
     {
@@ -3044,8 +3044,8 @@
       "source_location": "L203",
       "_origin": "ast",
       "id": "src_components_customermanager_customermanagement",
-      "community": 66,
-      "community_name": "context-watch.mjs",
+      "community": 55,
+      "community_name": "postcss",
       "norm_label": "customermanagement()"
     },
     {
@@ -3363,8 +3363,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_historyreportview",
-      "community": 54,
-      "community_name": "eslint-plugin-react-refresh",
+      "community": 56,
+      "community_name": "tailwindcss",
       "norm_label": "historyreportview.jsx"
     },
     {
@@ -3374,8 +3374,8 @@
       "source_location": "L18",
       "_origin": "ast",
       "id": "src_components_historyreportview_historyreportview",
-      "community": 54,
-      "community_name": "eslint-plugin-react-refresh",
+      "community": 49,
+      "community_name": "package.json",
       "norm_label": "historyreportview()"
     },
     {
@@ -3385,8 +3385,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_holdbutton",
-      "community": 54,
-      "community_name": "eslint-plugin-react-refresh",
+      "community": 11,
+      "community_name": "AgentProfileView.jsx",
       "norm_label": "holdbutton.jsx"
     },
     {
@@ -3396,8 +3396,8 @@
       "source_location": "L27",
       "_origin": "ast",
       "id": "src_components_holdbutton_holdbutton",
-      "community": 54,
-      "community_name": "eslint-plugin-react-refresh",
+      "community": 11,
+      "community_name": "AgentProfileView.jsx",
       "norm_label": "holdbutton()"
     },
     {
@@ -3429,8 +3429,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_landlorddashboard",
-      "community": 54,
-      "community_name": "eslint-plugin-react-refresh",
+      "community": 49,
+      "community_name": "package.json",
       "norm_label": "landlorddashboard.jsx"
     },
     {
@@ -3440,8 +3440,8 @@
       "source_location": "L8",
       "_origin": "ast",
       "id": "src_components_landlorddashboard_landlorddashboard",
-      "community": 54,
-      "community_name": "eslint-plugin-react-refresh",
+      "community": 49,
+      "community_name": "package.json",
       "norm_label": "landlorddashboard()"
     },
     {
@@ -3539,8 +3539,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_receiptpreview",
-      "community": 54,
-      "community_name": "eslint-plugin-react-refresh",
+      "community": 56,
+      "community_name": "tailwindcss",
       "norm_label": "receiptpreview.jsx"
     },
     {
@@ -3550,8 +3550,8 @@
       "source_location": "L40",
       "_origin": "ast",
       "id": "src_components_receiptpreview_clampzoom",
-      "community": 54,
-      "community_name": "eslint-plugin-react-refresh",
+      "community": 56,
+      "community_name": "tailwindcss",
       "norm_label": "clampzoom()"
     },
     {
@@ -3561,8 +3561,8 @@
       "source_location": "L42",
       "_origin": "ast",
       "id": "src_components_receiptpreview_sample_rows",
-      "community": 54,
-      "community_name": "eslint-plugin-react-refresh",
+      "community": 56,
+      "community_name": "tailwindcss",
       "norm_label": "sample_rows"
     },
     {
@@ -3572,8 +3572,8 @@
       "source_location": "L47",
       "_origin": "ast",
       "id": "src_components_receiptpreview_receiptpreview",
-      "community": 54,
-      "community_name": "eslint-plugin-react-refresh",
+      "community": 56,
+      "community_name": "tailwindcss",
       "norm_label": "receiptpreview()"
     },
     {
@@ -3583,8 +3583,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_residentevilinventory",
-      "community": 48,
-      "community_name": "toastSeverity.selfcheck.mjs",
+      "community": 63,
+      "community_name": "notify",
       "norm_label": "residentevilinventory.jsx"
     },
     {
@@ -3594,8 +3594,8 @@
       "source_location": "L6",
       "_origin": "ast",
       "id": "src_components_residentevilinventory_formatadvancedstock",
-      "community": 48,
-      "community_name": "toastSeverity.selfcheck.mjs",
+      "community": 63,
+      "community_name": "notify",
       "norm_label": "formatadvancedstock()"
     },
     {
@@ -3605,8 +3605,8 @@
       "source_location": "L27",
       "_origin": "ast",
       "id": "src_components_residentevilinventory_dimensioncontrol",
-      "community": 48,
-      "community_name": "toastSeverity.selfcheck.mjs",
+      "community": 63,
+      "community_name": "notify",
       "norm_label": "dimensioncontrol()"
     },
     {
@@ -3616,8 +3616,8 @@
       "source_location": "L51",
       "_origin": "ast",
       "id": "src_components_residentevilinventory_iteminspector",
-      "community": 48,
-      "community_name": "toastSeverity.selfcheck.mjs",
+      "community": 63,
+      "community_name": "notify",
       "norm_label": "iteminspector()"
     },
     {
@@ -3627,8 +3627,8 @@
       "source_location": "L194",
       "_origin": "ast",
       "id": "src_components_residentevilinventory_residentevilinventory",
-      "community": 48,
-      "community_name": "toastSeverity.selfcheck.mjs",
+      "community": 63,
+      "community_name": "notify",
       "norm_label": "residentevilinventory()"
     },
     {
@@ -3671,8 +3671,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_samplingmanager",
-      "community": 48,
-      "community_name": "toastSeverity.selfcheck.mjs",
+      "community": 31,
+      "community_name": "txSize.selfcheck.mjs",
       "norm_label": "samplingmanager.jsx"
     },
     {
@@ -3682,8 +3682,8 @@
       "source_location": "L8",
       "_origin": "ast",
       "id": "src_components_samplingmanager_formatsampleqty",
-      "community": 48,
-      "community_name": "toastSeverity.selfcheck.mjs",
+      "community": 31,
+      "community_name": "txSize.selfcheck.mjs",
       "norm_label": "formatsampleqty()"
     },
     {
@@ -3693,8 +3693,8 @@
       "source_location": "L20",
       "_origin": "ast",
       "id": "src_components_samplingmanager_samplinganalyticsview",
-      "community": 48,
-      "community_name": "toastSeverity.selfcheck.mjs",
+      "community": 31,
+      "community_name": "txSize.selfcheck.mjs",
       "norm_label": "samplinganalyticsview()"
     },
     {
@@ -3704,8 +3704,8 @@
       "source_location": "L192",
       "_origin": "ast",
       "id": "src_components_samplingmanager_samplingcartview",
-      "community": 48,
-      "community_name": "toastSeverity.selfcheck.mjs",
+      "community": 31,
+      "community_name": "txSize.selfcheck.mjs",
       "norm_label": "samplingcartview()"
     },
     {
@@ -3715,8 +3715,8 @@
       "source_location": "L330",
       "_origin": "ast",
       "id": "src_components_samplingmanager_samplingfolderview",
-      "community": 48,
-      "community_name": "toastSeverity.selfcheck.mjs",
+      "community": 31,
+      "community_name": "txSize.selfcheck.mjs",
       "norm_label": "samplingfolderview()"
     },
     {
@@ -3726,8 +3726,8 @@
       "source_location": "L512",
       "_origin": "ast",
       "id": "src_components_samplingmanager_sampleentrymodal",
-      "community": 48,
-      "community_name": "toastSeverity.selfcheck.mjs",
+      "community": 31,
+      "community_name": "txSize.selfcheck.mjs",
       "norm_label": "sampleentrymodal()"
     },
     {
@@ -3737,8 +3737,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_settingsview",
-      "community": 54,
-      "community_name": "eslint-plugin-react-refresh",
+      "community": 11,
+      "community_name": "AgentProfileView.jsx",
       "norm_label": "settingsview.jsx"
     },
     {
@@ -3748,8 +3748,8 @@
       "source_location": "L32",
       "_origin": "ast",
       "id": "src_components_settingsview_settingsview",
-      "community": 54,
-      "community_name": "eslint-plugin-react-refresh",
+      "community": 11,
+      "community_name": "AgentProfileView.jsx",
       "norm_label": "settingsview()"
     },
     {
@@ -3759,8 +3759,8 @@
       "source_location": "L1476",
       "_origin": "ast",
       "id": "src_components_settingsview_writephotostorage",
-      "community": 54,
-      "community_name": "eslint-plugin-react-refresh",
+      "community": 11,
+      "community_name": "AgentProfileView.jsx",
       "norm_label": "writephotostorage()"
     },
     {
@@ -3770,8 +3770,8 @@
       "source_location": "L1487",
       "_origin": "ast",
       "id": "src_components_settingsview_writelitemode",
-      "community": 54,
-      "community_name": "eslint-plugin-react-refresh",
+      "community": 11,
+      "community_name": "AgentProfileView.jsx",
       "norm_label": "writelitemode()"
     },
     {
@@ -3781,8 +3781,8 @@
       "source_location": "L1497",
       "_origin": "ast",
       "id": "src_components_settingsview_writecareerledger",
-      "community": 54,
-      "community_name": "eslint-plugin-react-refresh",
+      "community": 11,
+      "community_name": "AgentProfileView.jsx",
       "norm_label": "writecareerledger()"
     },
     {
@@ -3792,8 +3792,8 @@
       "source_location": "L1506",
       "_origin": "ast",
       "id": "src_components_settingsview_permissionmatrixeditor",
-      "community": 54,
-      "community_name": "eslint-plugin-react-refresh",
+      "community": 11,
+      "community_name": "AgentProfileView.jsx",
       "norm_label": "permissionmatrixeditor()"
     },
     {
@@ -3836,8 +3836,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_toast",
-      "community": 54,
-      "community_name": "eslint-plugin-react-refresh",
+      "community": 53,
+      "community_name": "cross-env",
       "norm_label": "toast.jsx"
     },
     {
@@ -3847,8 +3847,8 @@
       "source_location": "L47",
       "_origin": "ast",
       "id": "src_components_toast_notify",
-      "community": 54,
-      "community_name": "eslint-plugin-react-refresh",
+      "community": 49,
+      "community_name": "package.json",
       "norm_label": "notify()"
     },
     {
@@ -3858,8 +3858,8 @@
       "source_location": "L57",
       "_origin": "ast",
       "id": "src_components_toast_toasthost",
-      "community": 54,
-      "community_name": "eslint-plugin-react-refresh",
+      "community": 49,
+      "community_name": "package.json",
       "norm_label": "toasthost()"
     },
     {
@@ -3869,8 +3869,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_vaultgate",
-      "community": 35,
-      "community_name": "useTransactionEngine.js",
+      "community": 70,
+      "community_name": "VaultGate.jsx",
       "norm_label": "vaultgate.jsx"
     },
     {
@@ -3891,8 +3891,8 @@
       "source_location": "L69",
       "_origin": "ast",
       "id": "src_components_vaultgate_gateisrich",
-      "community": 35,
-      "community_name": "useTransactionEngine.js",
+      "community": 70,
+      "community_name": "VaultGate.jsx",
       "norm_label": "gateisrich()"
     },
     {
@@ -3902,8 +3902,8 @@
       "source_location": "L73",
       "_origin": "ast",
       "id": "src_components_vaultgate_gateholdms",
-      "community": 35,
-      "community_name": "useTransactionEngine.js",
+      "community": 70,
+      "community_name": "VaultGate.jsx",
       "norm_label": "gateholdms()"
     },
     {
@@ -3913,8 +3913,8 @@
       "source_location": "L79",
       "_origin": "ast",
       "id": "src_components_vaultgate_easeout",
-      "community": 35,
-      "community_name": "useTransactionEngine.js",
+      "community": 70,
+      "community_name": "VaultGate.jsx",
       "norm_label": "easeout()"
     },
     {
@@ -3924,8 +3924,8 @@
       "source_location": "L80",
       "_origin": "ast",
       "id": "src_components_vaultgate_easeinout",
-      "community": 35,
-      "community_name": "useTransactionEngine.js",
+      "community": 70,
+      "community_name": "VaultGate.jsx",
       "norm_label": "easeinout()"
     },
     {
@@ -3935,8 +3935,8 @@
       "source_location": "L81",
       "_origin": "ast",
       "id": "src_components_vaultgate_rndword",
-      "community": 35,
-      "community_name": "useTransactionEngine.js",
+      "community": 70,
+      "community_name": "VaultGate.jsx",
       "norm_label": "rndword()"
     },
     {
@@ -3946,8 +3946,8 @@
       "source_location": "L83",
       "_origin": "ast",
       "id": "src_components_vaultgate_vaultgate",
-      "community": 35,
-      "community_name": "useTransactionEngine.js",
+      "community": 70,
+      "community_name": "VaultGate.jsx",
       "norm_label": "vaultgate()"
     },
     {
@@ -4034,8 +4034,8 @@
       "source_location": "L93",
       "_origin": "ast",
       "id": "src_config_career_computedayxp",
-      "community": 49,
-      "community_name": "package.json",
+      "community": 26,
+      "community_name": "LOG \u2014 newest first, older entries live in `git log` for this file",
       "norm_label": "computedayxp()"
     },
     {
@@ -4606,8 +4606,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_config_findduplicates_selfcheck",
-      "community": 66,
-      "community_name": "context-watch.mjs",
+      "community": 55,
+      "community_name": "postcss",
       "norm_label": "findduplicates.selfcheck.mjs"
     },
     {
@@ -4617,8 +4617,8 @@
       "source_location": "L11",
       "_origin": "ast",
       "id": "src_config_findduplicates_selfcheck_t",
-      "community": 54,
-      "community_name": "eslint-plugin-react-refresh",
+      "community": 49,
+      "community_name": "package.json",
       "norm_label": "t()"
     },
     {
@@ -4628,8 +4628,8 @@
       "source_location": "L15",
       "_origin": "ast",
       "id": "src_config_findduplicates_selfcheck_near",
-      "community": 66,
-      "community_name": "context-watch.mjs",
+      "community": 55,
+      "community_name": "postcss",
       "norm_label": "near()"
     },
     {
@@ -7642,8 +7642,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_config_permissions",
-      "community": 54,
-      "community_name": "eslint-plugin-react-refresh",
+      "community": 30,
+      "community_name": "BiohazardTheme.jsx",
       "norm_label": "permissions.js"
     },
     {
@@ -7653,8 +7653,8 @@
       "source_location": "L2",
       "_origin": "ast",
       "id": "src_config_permissions_corporate_tiers",
-      "community": 26,
-      "community_name": "LOG \u2014 newest first, older entries live in `git log` for this file",
+      "community": 11,
+      "community_name": "AgentProfileView.jsx",
       "norm_label": "corporate_tiers"
     },
     {
@@ -7664,8 +7664,8 @@
       "source_location": "L21",
       "_origin": "ast",
       "id": "src_config_permissions_tier_one_alias_ids",
-      "community": 54,
-      "community_name": "eslint-plugin-react-refresh",
+      "community": 30,
+      "community_name": "BiohazardTheme.jsx",
       "norm_label": "tier_one_alias_ids"
     },
     {
@@ -7675,8 +7675,8 @@
       "source_location": "L23",
       "_origin": "ast",
       "id": "src_config_permissions_resolvetieroneid",
-      "community": 54,
-      "community_name": "eslint-plugin-react-refresh",
+      "community": 30,
+      "community_name": "BiohazardTheme.jsx",
       "norm_label": "resolvetieroneid()"
     },
     {
@@ -7686,8 +7686,8 @@
       "source_location": "L44",
       "_origin": "ast",
       "id": "src_config_permissions_dynamic_tiers",
-      "community": 54,
-      "community_name": "eslint-plugin-react-refresh",
+      "community": 30,
+      "community_name": "BiohazardTheme.jsx",
       "norm_label": "dynamic_tiers"
     },
     {
@@ -7697,8 +7697,8 @@
       "source_location": "L56",
       "_origin": "ast",
       "id": "src_config_permissions_tierword",
-      "community": 54,
-      "community_name": "eslint-plugin-react-refresh",
+      "community": 30,
+      "community_name": "BiohazardTheme.jsx",
       "norm_label": "tierword()"
     },
     {
@@ -7708,8 +7708,8 @@
       "source_location": "L65",
       "_origin": "ast",
       "id": "src_config_permissions_translatelegacyrole",
-      "community": 54,
-      "community_name": "eslint-plugin-react-refresh",
+      "community": 30,
+      "community_name": "BiohazardTheme.jsx",
       "norm_label": "translatelegacyrole()"
     },
     {
@@ -7719,8 +7719,8 @@
       "source_location": "L80",
       "_origin": "ast",
       "id": "src_config_permissions_isfieldleveltier",
-      "community": 54,
-      "community_name": "eslint-plugin-react-refresh",
+      "community": 30,
+      "community_name": "BiohazardTheme.jsx",
       "norm_label": "isfieldleveltier()"
     },
     {
@@ -7730,8 +7730,8 @@
       "source_location": "L90",
       "_origin": "ast",
       "id": "src_config_permissions_isfleetmanagementtier",
-      "community": 54,
-      "community_name": "eslint-plugin-react-refresh",
+      "community": 66,
+      "community_name": "context-watch.mjs",
       "norm_label": "isfleetmanagementtier()"
     },
     {
@@ -7752,8 +7752,8 @@
       "source_location": "L109",
       "_origin": "ast",
       "id": "src_config_permissions_role_permissions",
-      "community": 54,
-      "community_name": "eslint-plugin-react-refresh",
+      "community": 11,
+      "community_name": "AgentProfileView.jsx",
       "norm_label": "role_permissions"
     },
     {
@@ -7763,8 +7763,8 @@
       "source_location": "L134",
       "_origin": "ast",
       "id": "src_config_permissions_injectdynamicpermissions",
-      "community": 54,
-      "community_name": "eslint-plugin-react-refresh",
+      "community": 11,
+      "community_name": "AgentProfileView.jsx",
       "norm_label": "injectdynamicpermissions()"
     },
     {
@@ -7774,8 +7774,8 @@
       "source_location": "L144",
       "_origin": "ast",
       "id": "src_config_permissions_hasclearance",
-      "community": 54,
-      "community_name": "eslint-plugin-react-refresh",
+      "community": 30,
+      "community_name": "BiohazardTheme.jsx",
       "norm_label": "hasclearance()"
     },
     {
@@ -7785,8 +7785,8 @@
       "source_location": "L173",
       "_origin": "ast",
       "id": "src_config_permissions_canseeexpectedcount",
-      "community": 54,
-      "community_name": "eslint-plugin-react-refresh",
+      "community": 30,
+      "community_name": "BiohazardTheme.jsx",
       "norm_label": "canseeexpectedcount()"
     },
     {
@@ -7796,8 +7796,8 @@
       "source_location": "L200",
       "_origin": "ast",
       "id": "src_config_permissions_canhandledelivery",
-      "community": 54,
-      "community_name": "eslint-plugin-react-refresh",
+      "community": 30,
+      "community_name": "BiohazardTheme.jsx",
       "norm_label": "canhandledelivery()"
     },
     {
@@ -7807,8 +7807,8 @@
       "source_location": "L235",
       "_origin": "ast",
       "id": "src_config_permissions_fleet_edit_perms",
-      "community": 54,
-      "community_name": "eslint-plugin-react-refresh",
+      "community": 30,
+      "community_name": "BiohazardTheme.jsx",
       "norm_label": "fleet_edit_perms"
     },
     {
@@ -7818,8 +7818,8 @@
       "source_location": "L248",
       "_origin": "ast",
       "id": "src_config_permissions_defaultfleetaccess",
-      "community": 54,
-      "community_name": "eslint-plugin-react-refresh",
+      "community": 30,
+      "community_name": "BiohazardTheme.jsx",
       "norm_label": "defaultfleetaccess()"
     },
     {
@@ -7829,8 +7829,8 @@
       "source_location": "L252",
       "_origin": "ast",
       "id": "src_config_permissions_caneditfleetroster",
-      "community": 54,
-      "community_name": "eslint-plugin-react-refresh",
+      "community": 30,
+      "community_name": "BiohazardTheme.jsx",
       "norm_label": "caneditfleetroster()"
     },
     {
@@ -7840,8 +7840,8 @@
       "source_location": "L262",
       "_origin": "ast",
       "id": "src_config_permissions_customer_edit_perms",
-      "community": 54,
-      "community_name": "eslint-plugin-react-refresh",
+      "community": 11,
+      "community_name": "AgentProfileView.jsx",
       "norm_label": "customer_edit_perms"
     },
     {
@@ -7851,8 +7851,8 @@
       "source_location": "L269",
       "_origin": "ast",
       "id": "src_config_permissions_getcustomeraccesslevel",
-      "community": 54,
-      "community_name": "eslint-plugin-react-refresh",
+      "community": 30,
+      "community_name": "BiohazardTheme.jsx",
       "norm_label": "getcustomeraccesslevel()"
     },
     {
@@ -7873,8 +7873,8 @@
       "source_location": "L28",
       "_origin": "ast",
       "id": "src_config_povpreview_canusepovswitch",
-      "community": 49,
-      "community_name": "package.json",
+      "community": 26,
+      "community_name": "LOG \u2014 newest first, older entries live in `git log` for this file",
       "norm_label": "canusepovswitch()"
     },
     {
@@ -8016,8 +8016,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_config_receiptwatermark",
-      "community": 54,
-      "community_name": "eslint-plugin-react-refresh",
+      "community": 56,
+      "community_name": "tailwindcss",
       "norm_label": "receiptwatermark.js"
     },
     {
@@ -8027,8 +8027,8 @@
       "source_location": "L23",
       "_origin": "ast",
       "id": "src_config_receiptwatermark_watermark_style",
-      "community": 54,
-      "community_name": "eslint-plugin-react-refresh",
+      "community": 56,
+      "community_name": "tailwindcss",
       "norm_label": "watermark_style"
     },
     {
@@ -8038,8 +8038,8 @@
       "source_location": "L39",
       "_origin": "ast",
       "id": "src_config_receiptwatermark_watermarkfrom",
-      "community": 54,
-      "community_name": "eslint-plugin-react-refresh",
+      "community": 56,
+      "community_name": "tailwindcss",
       "norm_label": "watermarkfrom()"
     },
     {
@@ -8379,8 +8379,8 @@
       "source_location": "L94",
       "_origin": "ast",
       "id": "src_config_toastseverity_selfcheck_report",
-      "community": 53,
-      "community_name": "cross-env",
+      "community": 31,
+      "community_name": "txSize.selfcheck.mjs",
       "norm_label": "report()"
     },
     {
@@ -8907,8 +8907,8 @@
       "source_location": "L10",
       "_origin": "ast",
       "id": "src_hooks_usesound_selfcheck_stubaudio",
-      "community": 65,
-      "community_name": "useSound.selfcheck.mjs",
+      "community": 6,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": "stubaudio"
     },
     {
@@ -8918,8 +8918,8 @@
       "source_location": "L11",
       "_origin": "ast",
       "id": "src_hooks_usesound_selfcheck_stubaudio_constructor",
-      "community": 65,
-      "community_name": "useSound.selfcheck.mjs",
+      "community": 6,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": ".constructor()"
     },
     {
@@ -8929,8 +8929,8 @@
       "source_location": "L12",
       "_origin": "ast",
       "id": "src_hooks_usesound_selfcheck_stubaudio_play",
-      "community": 65,
-      "community_name": "useSound.selfcheck.mjs",
+      "community": 6,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": ".play()"
     },
     {
@@ -8940,8 +8940,8 @@
       "source_location": "L13",
       "_origin": "ast",
       "id": "src_hooks_usesound_selfcheck_stubaudio_pause",
-      "community": 65,
-      "community_name": "useSound.selfcheck.mjs",
+      "community": 6,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": ".pause()"
     },
     {
@@ -9006,8 +9006,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_main",
-      "community": 54,
-      "community_name": "eslint-plugin-react-refresh",
+      "community": 6,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": "main.jsx"
     },
     {
@@ -9017,8 +9017,8 @@
       "source_location": "L23",
       "_origin": "ast",
       "id": "src_main_sound_gestures",
-      "community": 54,
-      "community_name": "eslint-plugin-react-refresh",
+      "community": 6,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": "sound_gestures"
     },
     {
@@ -9028,8 +9028,8 @@
       "source_location": "L24",
       "_origin": "ast",
       "id": "src_main_ongestureunlock",
-      "community": 54,
-      "community_name": "eslint-plugin-react-refresh",
+      "community": 6,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": "ongestureunlock()"
     },
     {
@@ -9039,8 +9039,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_ponder_ponderbook",
-      "community": 11,
-      "community_name": "AgentProfileView.jsx",
+      "community": 6,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": "ponderbook.jsx"
     },
     {
@@ -9050,8 +9050,8 @@
       "source_location": "L36",
       "_origin": "ast",
       "id": "src_ponder_ponderbook_icons",
-      "community": 11,
-      "community_name": "AgentProfileView.jsx",
+      "community": 6,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": "icons"
     },
     {
@@ -9061,8 +9061,8 @@
       "source_location": "L38",
       "_origin": "ast",
       "id": "src_ponder_ponderbook_icon",
-      "community": 11,
-      "community_name": "AgentProfileView.jsx",
+      "community": 6,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": "icon()"
     },
     {
@@ -9072,8 +9072,8 @@
       "source_location": "L43",
       "_origin": "ast",
       "id": "src_ponder_ponderbook_liteon",
-      "community": 11,
-      "community_name": "AgentProfileView.jsx",
+      "community": 6,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": "liteon()"
     },
     {
@@ -9083,8 +9083,8 @@
       "source_location": "L45",
       "_origin": "ast",
       "id": "src_ponder_ponderbook_reduced",
-      "community": 11,
-      "community_name": "AgentProfileView.jsx",
+      "community": 6,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": "reduced()"
     },
     {
@@ -9094,8 +9094,8 @@
       "source_location": "L85",
       "_origin": "ast",
       "id": "src_ponder_ponderbook_t",
-      "community": 11,
-      "community_name": "AgentProfileView.jsx",
+      "community": 6,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": "t"
     },
     {
@@ -9105,8 +9105,8 @@
       "source_location": "L94",
       "_origin": "ast",
       "id": "src_ponder_ponderbook_shade",
-      "community": 11,
-      "community_name": "AgentProfileView.jsx",
+      "community": 6,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": "shade()"
     },
     {
@@ -9116,8 +9116,8 @@
       "source_location": "L142",
       "_origin": "ast",
       "id": "src_ponder_ponderbook_sparks",
-      "community": 11,
-      "community_name": "AgentProfileView.jsx",
+      "community": 6,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": "sparks"
     },
     {
@@ -9127,8 +9127,8 @@
       "source_location": "L162",
       "_origin": "ast",
       "id": "src_ponder_ponderbook_bookglyph",
-      "community": 11,
-      "community_name": "AgentProfileView.jsx",
+      "community": 6,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": "bookglyph()"
     },
     {
@@ -9138,8 +9138,8 @@
       "source_location": "L234",
       "_origin": "ast",
       "id": "src_ponder_ponderbook_ponderbookbutton",
-      "community": 11,
-      "community_name": "AgentProfileView.jsx",
+      "community": 6,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": "ponderbookbutton()"
     },
     {
@@ -9149,8 +9149,8 @@
       "source_location": "L312",
       "_origin": "ast",
       "id": "src_ponder_ponderbook_library",
-      "community": 11,
-      "community_name": "AgentProfileView.jsx",
+      "community": 6,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": "library()"
     },
     {
@@ -9160,8 +9160,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_ponder_ponderoverlay",
-      "community": 30,
-      "community_name": "BiohazardTheme.jsx",
+      "community": 6,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": "ponderoverlay.jsx"
     },
     {
@@ -9171,8 +9171,8 @@
       "source_location": "L31",
       "_origin": "ast",
       "id": "src_ponder_ponderoverlay_reduced",
-      "community": 30,
-      "community_name": "BiohazardTheme.jsx",
+      "community": 6,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": "reduced()"
     },
     {
@@ -9182,8 +9182,8 @@
       "source_location": "L34",
       "_origin": "ast",
       "id": "src_ponder_ponderoverlay_liteon",
-      "community": 30,
-      "community_name": "BiohazardTheme.jsx",
+      "community": 6,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": "liteon()"
     },
     {
@@ -9193,8 +9193,8 @@
       "source_location": "L53",
       "_origin": "ast",
       "id": "src_ponder_ponderoverlay_focusof",
-      "community": 30,
-      "community_name": "BiohazardTheme.jsx",
+      "community": 6,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": "focusof()"
     },
     {
@@ -9204,8 +9204,8 @@
       "source_location": "L62",
       "_origin": "ast",
       "id": "src_ponder_ponderoverlay_caption",
-      "community": 30,
-      "community_name": "BiohazardTheme.jsx",
+      "community": 6,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": "caption()"
     },
     {
@@ -9215,8 +9215,8 @@
       "source_location": "L69",
       "_origin": "ast",
       "id": "src_ponder_ponderoverlay_tone_edge",
-      "community": 30,
-      "community_name": "BiohazardTheme.jsx",
+      "community": 6,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": "tone_edge"
     },
     {
@@ -9226,8 +9226,8 @@
       "source_location": "L70",
       "_origin": "ast",
       "id": "src_ponder_ponderoverlay_tone_rule",
-      "community": 30,
-      "community_name": "BiohazardTheme.jsx",
+      "community": 6,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": "tone_rule"
     },
     {
@@ -9237,8 +9237,8 @@
       "source_location": "L78",
       "_origin": "ast",
       "id": "src_ponder_ponderoverlay_point",
-      "community": 30,
-      "community_name": "BiohazardTheme.jsx",
+      "community": 6,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": "point"
     },
     {
@@ -9248,8 +9248,8 @@
       "source_location": "L85",
       "_origin": "ast",
       "id": "src_ponder_ponderoverlay_speechbox",
-      "community": 30,
-      "community_name": "BiohazardTheme.jsx",
+      "community": 6,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": "speechbox()"
     },
     {
@@ -9259,8 +9259,8 @@
       "source_location": "L111",
       "_origin": "ast",
       "id": "src_ponder_ponderoverlay_ctl",
-      "community": 30,
-      "community_name": "BiohazardTheme.jsx",
+      "community": 6,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": "ctl()"
     },
     {
@@ -9270,8 +9270,8 @@
       "source_location": "L125",
       "_origin": "ast",
       "id": "src_ponder_ponderoverlay_ponderoverlay",
-      "community": 30,
-      "community_name": "BiohazardTheme.jsx",
+      "community": 6,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": "ponderoverlay()"
     },
     {
@@ -9281,8 +9281,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_ponder_demo_productperformance",
-      "community": 61,
-      "community_name": "firebase.js",
+      "community": 37,
+      "community_name": "BranchWarehouseManager.jsx",
       "norm_label": "productperformance.js"
     },
     {
@@ -9292,8 +9292,8 @@
       "source_location": "L18",
       "_origin": "ast",
       "id": "src_ponder_demo_productperformance_demo_performance_rows",
-      "community": 61,
-      "community_name": "firebase.js",
+      "community": 37,
+      "community_name": "BranchWarehouseManager.jsx",
       "norm_label": "demo_performance_rows"
     },
     {
@@ -9303,8 +9303,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_ponder_demo_shipmentplan",
-      "community": 56,
-      "community_name": "tailwindcss",
+      "community": 37,
+      "community_name": "BranchWarehouseManager.jsx",
       "norm_label": "shipmentplan.js"
     },
     {
@@ -9314,8 +9314,8 @@
       "source_location": "L24",
       "_origin": "ast",
       "id": "src_ponder_demo_shipmentplan_demo_plan_branches",
-      "community": 56,
-      "community_name": "tailwindcss",
+      "community": 37,
+      "community_name": "BranchWarehouseManager.jsx",
       "norm_label": "demo_plan_branches"
     },
     {
@@ -9325,8 +9325,8 @@
       "source_location": "L26",
       "_origin": "ast",
       "id": "src_ponder_demo_shipmentplan_demo_plan_rows",
-      "community": 56,
-      "community_name": "tailwindcss",
+      "community": 37,
+      "community_name": "BranchWarehouseManager.jsx",
       "norm_label": "demo_plan_rows"
     },
     {
@@ -9336,8 +9336,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_ponder_demo_warehouses",
-      "community": 55,
-      "community_name": "postcss",
+      "community": 37,
+      "community_name": "BranchWarehouseManager.jsx",
       "norm_label": "warehouses.js"
     },
     {
@@ -9347,8 +9347,8 @@
       "source_location": "L27",
       "_origin": "ast",
       "id": "src_ponder_demo_warehouses_demo_warehouses",
-      "community": 55,
-      "community_name": "postcss",
+      "community": 37,
+      "community_name": "BranchWarehouseManager.jsx",
       "norm_label": "demo_warehouses"
     },
     {
@@ -9358,8 +9358,8 @@
       "source_location": "L56",
       "_origin": "ast",
       "id": "src_ponder_demo_warehouses_demo_totals",
-      "community": 55,
-      "community_name": "postcss",
+      "community": 37,
+      "community_name": "BranchWarehouseManager.jsx",
       "norm_label": "demo_totals"
     },
     {
@@ -9402,8 +9402,8 @@
       "source_location": "L38",
       "_origin": "ast",
       "id": "src_ponder_registry_getscene",
-      "community": 11,
-      "community_name": "AgentProfileView.jsx",
+      "community": 6,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": "getscene()"
     },
     {
@@ -9413,8 +9413,8 @@
       "source_location": "L39",
       "_origin": "ast",
       "id": "src_ponder_registry_getstage",
-      "community": 30,
-      "community_name": "BiohazardTheme.jsx",
+      "community": 6,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": "getstage()"
     },
     {
@@ -9534,8 +9534,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_ponder_sfx",
-      "community": 11,
-      "community_name": "AgentProfileView.jsx",
+      "community": 6,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": "sfx.js"
     },
     {
@@ -9545,8 +9545,8 @@
       "source_location": "L33",
       "_origin": "ast",
       "id": "src_ponder_sfx_bookpick",
-      "community": 11,
-      "community_name": "AgentProfileView.jsx",
+      "community": 6,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": "bookpick()"
     },
     {
@@ -9556,8 +9556,8 @@
       "source_location": "L35",
       "_origin": "ast",
       "id": "src_ponder_sfx_bookopen",
-      "community": 11,
-      "community_name": "AgentProfileView.jsx",
+      "community": 6,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": "bookopen()"
     },
     {
@@ -9567,8 +9567,8 @@
       "source_location": "L36",
       "_origin": "ast",
       "id": "src_ponder_sfx_bookpage",
-      "community": 11,
-      "community_name": "AgentProfileView.jsx",
+      "community": 6,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": "bookpage()"
     },
     {
@@ -9578,8 +9578,8 @@
       "source_location": "L37",
       "_origin": "ast",
       "id": "src_ponder_sfx_bookclose",
-      "community": 11,
-      "community_name": "AgentProfileView.jsx",
+      "community": 6,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": "bookclose()"
     },
     {
@@ -9633,8 +9633,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_ponder_stages_productperformancestage",
-      "community": 61,
-      "community_name": "firebase.js",
+      "community": 37,
+      "community_name": "BranchWarehouseManager.jsx",
       "norm_label": "productperformancestage.jsx"
     },
     {
@@ -9644,8 +9644,8 @@
       "source_location": "L10",
       "_origin": "ast",
       "id": "src_ponder_stages_productperformancestage_productperformancestage",
-      "community": 61,
-      "community_name": "firebase.js",
+      "community": 37,
+      "community_name": "BranchWarehouseManager.jsx",
       "norm_label": "productperformancestage()"
     },
     {
@@ -9655,8 +9655,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_ponder_stages_productperformancetable",
-      "community": 61,
-      "community_name": "firebase.js",
+      "community": 37,
+      "community_name": "BranchWarehouseManager.jsx",
       "norm_label": "productperformancetable.jsx"
     },
     {
@@ -9666,8 +9666,8 @@
       "source_location": "L27",
       "_origin": "ast",
       "id": "src_ponder_stages_productperformancetable_n",
-      "community": 61,
-      "community_name": "firebase.js",
+      "community": 37,
+      "community_name": "BranchWarehouseManager.jsx",
       "norm_label": "n()"
     },
     {
@@ -9677,8 +9677,8 @@
       "source_location": "L28",
       "_origin": "ast",
       "id": "src_ponder_stages_productperformancetable_rp",
-      "community": 61,
-      "community_name": "firebase.js",
+      "community": 37,
+      "community_name": "BranchWarehouseManager.jsx",
       "norm_label": "rp()"
     },
     {
@@ -9688,8 +9688,8 @@
       "source_location": "L30",
       "_origin": "ast",
       "id": "src_ponder_stages_productperformancetable_productperformancetable",
-      "community": 61,
-      "community_name": "firebase.js",
+      "community": 37,
+      "community_name": "BranchWarehouseManager.jsx",
       "norm_label": "productperformancetable()"
     },
     {
@@ -9699,8 +9699,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_ponder_stages_shipmentplanstage",
-      "community": 56,
-      "community_name": "tailwindcss",
+      "community": 37,
+      "community_name": "BranchWarehouseManager.jsx",
       "norm_label": "shipmentplanstage.jsx"
     },
     {
@@ -9710,8 +9710,8 @@
       "source_location": "L11",
       "_origin": "ast",
       "id": "src_ponder_stages_shipmentplanstage_shipmentplanstage",
-      "community": 56,
-      "community_name": "tailwindcss",
+      "community": 37,
+      "community_name": "BranchWarehouseManager.jsx",
       "norm_label": "shipmentplanstage()"
     },
     {
@@ -9721,8 +9721,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_ponder_stages_shipmentplantable",
-      "community": 56,
-      "community_name": "tailwindcss",
+      "community": 54,
+      "community_name": "eslint-plugin-react-refresh",
       "norm_label": "shipmentplantable.jsx"
     },
     {
@@ -9732,8 +9732,8 @@
       "source_location": "L42",
       "_origin": "ast",
       "id": "src_ponder_stages_shipmentplantable_n",
-      "community": 56,
-      "community_name": "tailwindcss",
+      "community": 54,
+      "community_name": "eslint-plugin-react-refresh",
       "norm_label": "n()"
     },
     {
@@ -9743,8 +9743,8 @@
       "source_location": "L44",
       "_origin": "ast",
       "id": "src_ponder_stages_shipmentplantable_shipmentplantable",
-      "community": 56,
-      "community_name": "tailwindcss",
+      "community": 54,
+      "community_name": "eslint-plugin-react-refresh",
       "norm_label": "shipmentplantable()"
     },
     {
@@ -9754,8 +9754,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_ponder_stages_stockbywarehousetable",
-      "community": 55,
-      "community_name": "postcss",
+      "community": 54,
+      "community_name": "eslint-plugin-react-refresh",
       "norm_label": "stockbywarehousetable.jsx"
     },
     {
@@ -9765,8 +9765,8 @@
       "source_location": "L23",
       "_origin": "ast",
       "id": "src_ponder_stages_stockbywarehousetable_n",
-      "community": 55,
-      "community_name": "postcss",
+      "community": 54,
+      "community_name": "eslint-plugin-react-refresh",
       "norm_label": "n()"
     },
     {
@@ -9776,8 +9776,8 @@
       "source_location": "L25",
       "_origin": "ast",
       "id": "src_ponder_stages_stockbywarehousetable_stockbywarehousetable",
-      "community": 55,
-      "community_name": "postcss",
+      "community": 54,
+      "community_name": "eslint-plugin-react-refresh",
       "norm_label": "stockbywarehousetable()"
     },
     {
@@ -9787,8 +9787,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_ponder_stages_stockstage",
-      "community": 55,
-      "community_name": "postcss",
+      "community": 37,
+      "community_name": "BranchWarehouseManager.jsx",
       "norm_label": "stockstage.jsx"
     },
     {
@@ -9798,8 +9798,8 @@
       "source_location": "L15",
       "_origin": "ast",
       "id": "src_ponder_stages_stockstage_scriptedopen",
-      "community": 55,
-      "community_name": "postcss",
+      "community": 37,
+      "community_name": "BranchWarehouseManager.jsx",
       "norm_label": "scriptedopen()"
     },
     {
@@ -9809,8 +9809,8 @@
       "source_location": "L25",
       "_origin": "ast",
       "id": "src_ponder_stages_stockstage_stockstage",
-      "community": 55,
-      "community_name": "postcss",
+      "community": 37,
+      "community_name": "BranchWarehouseManager.jsx",
       "norm_label": "stockstage()"
     },
     {
@@ -9820,8 +9820,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_ponder_usesceneplayer",
-      "community": 30,
-      "community_name": "BiohazardTheme.jsx",
+      "community": 6,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": "usesceneplayer.js"
     },
     {
@@ -9831,8 +9831,8 @@
       "source_location": "L19",
       "_origin": "ast",
       "id": "src_ponder_usesceneplayer_usesceneplayer",
-      "community": 30,
-      "community_name": "BiohazardTheme.jsx",
+      "community": 6,
+      "community_name": "savePhotoAndGetReference",
       "norm_label": "usesceneplayer()"
     },
     {
@@ -9897,8 +9897,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_utils_customerbrief",
-      "community": 62,
-      "community_name": "MerchantSalesView.jsx",
+      "community": 58,
+      "community_name": "customerBrief.selfcheck.mjs",
       "norm_label": "customerbrief.js"
     },
     {
@@ -9908,8 +9908,8 @@
       "source_location": "L12",
       "_origin": "ast",
       "id": "src_utils_customerbrief_briefseconds",
-      "community": 62,
-      "community_name": "MerchantSalesView.jsx",
+      "community": 58,
+      "community_name": "customerBrief.selfcheck.mjs",
       "norm_label": "briefseconds()"
     },
     {
@@ -9919,8 +9919,8 @@
       "source_location": "L35",
       "_origin": "ast",
       "id": "src_utils_customerbrief_customerbrief",
-      "community": 62,
-      "community_name": "MerchantSalesView.jsx",
+      "community": 58,
+      "community_name": "customerBrief.selfcheck.mjs",
       "norm_label": "customerbrief()"
     },
     {
@@ -10315,8 +10315,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_utils_findduplicates",
-      "community": 66,
-      "community_name": "context-watch.mjs",
+      "community": 55,
+      "community_name": "postcss",
       "norm_label": "findduplicates.js"
     },
     {
@@ -10326,8 +10326,8 @@
       "source_location": "L19",
       "_origin": "ast",
       "id": "src_utils_findduplicates_normalisename",
-      "community": 66,
-      "community_name": "context-watch.mjs",
+      "community": 55,
+      "community_name": "postcss",
       "norm_label": "normalisename()"
     },
     {
@@ -10337,8 +10337,8 @@
       "source_location": "L26",
       "_origin": "ast",
       "id": "src_utils_findduplicates_metresbetween",
-      "community": 66,
-      "community_name": "context-watch.mjs",
+      "community": 55,
+      "community_name": "postcss",
       "norm_label": "metresbetween()"
     },
     {
@@ -10348,8 +10348,8 @@
       "source_location": "L36",
       "_origin": "ast",
       "id": "src_utils_findduplicates_hascoords",
-      "community": 66,
-      "community_name": "context-watch.mjs",
+      "community": 55,
+      "community_name": "postcss",
       "norm_label": "hascoords()"
     },
     {
@@ -10359,8 +10359,8 @@
       "source_location": "L46",
       "_origin": "ast",
       "id": "src_utils_findduplicates_groupkey",
-      "community": 66,
-      "community_name": "context-watch.mjs",
+      "community": 55,
+      "community_name": "postcss",
       "norm_label": "groupkey()"
     },
     {
@@ -10370,8 +10370,8 @@
       "source_location": "L57",
       "_origin": "ast",
       "id": "src_utils_findduplicates_createdmillis",
-      "community": 66,
-      "community_name": "context-watch.mjs",
+      "community": 55,
+      "community_name": "postcss",
       "norm_label": "createdmillis()"
     },
     {
@@ -10381,8 +10381,8 @@
       "source_location": "L73",
       "_origin": "ast",
       "id": "src_utils_findduplicates_findduplicates",
-      "community": 66,
-      "community_name": "context-watch.mjs",
+      "community": 55,
+      "community_name": "postcss",
       "norm_label": "findduplicates()"
     },
     {
@@ -10392,8 +10392,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_utils_helpers",
-      "community": 62,
-      "community_name": "MerchantSalesView.jsx",
+      "community": 31,
+      "community_name": "txSize.selfcheck.mjs",
       "norm_label": "helpers.js"
     },
     {
@@ -10414,8 +10414,8 @@
       "source_location": "L18",
       "_origin": "ast",
       "id": "src_utils_helpers_formatrupiah",
-      "community": 48,
-      "community_name": "toastSeverity.selfcheck.mjs",
+      "community": 63,
+      "community_name": "notify",
       "norm_label": "formatrupiah()"
     },
     {
@@ -10447,8 +10447,8 @@
       "source_location": "L47",
       "_origin": "ast",
       "id": "src_utils_helpers_storekey",
-      "community": 62,
-      "community_name": "MerchantSalesView.jsx",
+      "community": 31,
+      "community_name": "txSize.selfcheck.mjs",
       "norm_label": "storekey()"
     },
     {
@@ -10469,8 +10469,8 @@
       "source_location": "L90",
       "_origin": "ast",
       "id": "src_utils_helpers_getlocaldaykey",
-      "community": 48,
-      "community_name": "toastSeverity.selfcheck.mjs",
+      "community": 31,
+      "community_name": "txSize.selfcheck.mjs",
       "norm_label": "getlocaldaykey()"
     },
     {
@@ -10480,8 +10480,8 @@
       "source_location": "L100",
       "_origin": "ast",
       "id": "src_utils_helpers_getcurrentdate",
-      "community": 48,
-      "community_name": "toastSeverity.selfcheck.mjs",
+      "community": 31,
+      "community_name": "txSize.selfcheck.mjs",
       "norm_label": "getcurrentdate()"
     },
     {
@@ -10491,8 +10491,8 @@
       "source_location": "L119",
       "_origin": "ast",
       "id": "src_utils_helpers_issafedocidemail",
-      "community": 54,
-      "community_name": "eslint-plugin-react-refresh",
+      "community": 49,
+      "community_name": "package.json",
       "norm_label": "issafedocidemail()"
     },
     {
@@ -10557,8 +10557,8 @@
       "source_location": "L218",
       "_origin": "ast",
       "id": "src_utils_helpers_commitinchunks",
-      "community": 54,
-      "community_name": "eslint-plugin-react-refresh",
+      "community": 49,
+      "community_name": "package.json",
       "norm_label": "commitinchunks()"
     },
     {
@@ -10568,8 +10568,8 @@
       "source_location": "L267",
       "_origin": "ast",
       "id": "src_utils_helpers_savephotoandgetreference",
-      "community": 62,
-      "community_name": "MerchantSalesView.jsx",
+      "community": 54,
+      "community_name": "eslint-plugin-react-refresh",
       "norm_label": "savephotoandgetreference()"
     },
     {
@@ -10579,8 +10579,8 @@
       "source_location": "L280",
       "_origin": "ast",
       "id": "src_utils_helpers_deletephotofromstorage",
-      "community": 48,
-      "community_name": "toastSeverity.selfcheck.mjs",
+      "community": 31,
+      "community_name": "txSize.selfcheck.mjs",
       "norm_label": "deletephotofromstorage()"
     },
     {
@@ -10612,8 +10612,8 @@
       "source_location": "L327",
       "_origin": "ast",
       "id": "src_utils_helpers_shortstockrows",
-      "community": 48,
-      "community_name": "toastSeverity.selfcheck.mjs",
+      "community": 31,
+      "community_name": "txSize.selfcheck.mjs",
       "norm_label": "shortstockrows()"
     },
     {
@@ -10623,8 +10623,8 @@
       "source_location": "L379",
       "_origin": "ast",
       "id": "src_utils_helpers_price_tiers",
-      "community": 54,
-      "community_name": "eslint-plugin-react-refresh",
+      "community": 11,
+      "community_name": "AgentProfileView.jsx",
       "norm_label": "price_tiers"
     },
     {
@@ -10645,8 +10645,8 @@
       "source_location": "L386",
       "_origin": "ast",
       "id": "src_utils_helpers_eodbountylines",
-      "community": 48,
-      "community_name": "toastSeverity.selfcheck.mjs",
+      "community": 31,
+      "community_name": "txSize.selfcheck.mjs",
       "norm_label": "eodbountylines()"
     },
     {
@@ -10656,8 +10656,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_utils_nextstop",
-      "community": 5,
-      "community_name": "mixedUnits.selfcheck.mjs",
+      "community": 60,
+      "community_name": "StockOpnameView.jsx",
       "norm_label": "nextstop.js"
     },
     {
@@ -10667,8 +10667,8 @@
       "source_location": "L12",
       "_origin": "ast",
       "id": "src_utils_nextstop_km",
-      "community": 5,
-      "community_name": "mixedUnits.selfcheck.mjs",
+      "community": 60,
+      "community_name": "StockOpnameView.jsx",
       "norm_label": "km()"
     },
     {
@@ -10678,8 +10678,8 @@
       "source_location": "L21",
       "_origin": "ast",
       "id": "src_utils_nextstop_mine",
-      "community": 5,
-      "community_name": "mixedUnits.selfcheck.mjs",
+      "community": 60,
+      "community_name": "StockOpnameView.jsx",
       "norm_label": "mine()"
     },
     {
@@ -10689,8 +10689,8 @@
       "source_location": "L37",
       "_origin": "ast",
       "id": "src_utils_nextstop_visitedwithincycle",
-      "community": 5,
-      "community_name": "mixedUnits.selfcheck.mjs",
+      "community": 60,
+      "community_name": "StockOpnameView.jsx",
       "norm_label": "visitedwithincycle()"
     },
     {
@@ -10700,8 +10700,8 @@
       "source_location": "L45",
       "_origin": "ast",
       "id": "src_utils_nextstop_nextstop",
-      "community": 5,
-      "community_name": "mixedUnits.selfcheck.mjs",
+      "community": 60,
+      "community_name": "StockOpnameView.jsx",
       "norm_label": "nextstop()"
     },
     {
@@ -10722,8 +10722,8 @@
       "source_location": "L84",
       "_origin": "ast",
       "id": "src_utils_nextstop_metreslabel",
-      "community": 5,
-      "community_name": "mixedUnits.selfcheck.mjs",
+      "community": 62,
+      "community_name": "MerchantSalesView.jsx",
       "norm_label": "metreslabel()"
     },
     {
@@ -10975,8 +10975,8 @@
       "source_location": "L50",
       "_origin": "ast",
       "id": "src_utils_salesrollupwrite_tallysale",
-      "community": 61,
-      "community_name": "firebase.js",
+      "community": 51,
+      "community_name": "VaultGate.jsx",
       "norm_label": "tallysale()"
     },
     {
@@ -11052,8 +11052,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_utils_supply",
-      "community": 63,
-      "community_name": "notify",
+      "community": 54,
+      "community_name": "eslint-plugin-react-refresh",
       "norm_label": "supply.js"
     },
     {
@@ -11063,8 +11063,8 @@
       "source_location": "L43",
       "_origin": "ast",
       "id": "src_utils_supply_hq_locations",
-      "community": 63,
-      "community_name": "notify",
+      "community": 54,
+      "community_name": "eslint-plugin-react-refresh",
       "norm_label": "hq_locations"
     },
     {
@@ -11074,8 +11074,8 @@
       "source_location": "L47",
       "_origin": "ast",
       "id": "src_utils_supply_non_branch",
-      "community": 63,
-      "community_name": "notify",
+      "community": 54,
+      "community_name": "eslint-plugin-react-refresh",
       "norm_label": "non_branch"
     },
     {
@@ -11085,8 +11085,8 @@
       "source_location": "L50",
       "_origin": "ast",
       "id": "src_utils_supply_warehouselist",
-      "community": 63,
-      "community_name": "notify",
+      "community": 54,
+      "community_name": "eslint-plugin-react-refresh",
       "norm_label": "warehouselist()"
     },
     {
@@ -11096,8 +11096,8 @@
       "source_location": "L57",
       "_origin": "ast",
       "id": "src_utils_supply_locationof",
-      "community": 63,
-      "community_name": "notify",
+      "community": 54,
+      "community_name": "eslint-plugin-react-refresh",
       "norm_label": "locationof()"
     },
     {
@@ -11107,8 +11107,8 @@
       "source_location": "L64",
       "_origin": "ast",
       "id": "src_utils_supply_supplybyproduct",
-      "community": 63,
-      "community_name": "notify",
+      "community": 54,
+      "community_name": "eslint-plugin-react-refresh",
       "norm_label": "supplybyproduct()"
     },
     {
@@ -11173,8 +11173,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_utils_vaultgrace",
-      "community": 49,
-      "community_name": "package.json",
+      "community": 26,
+      "community_name": "LOG \u2014 newest first, older entries live in `git log` for this file",
       "norm_label": "vaultgrace.js"
     },
     {
@@ -11184,8 +11184,8 @@
       "source_location": "L31",
       "_origin": "ast",
       "id": "src_utils_vaultgrace_graceisvalid",
-      "community": 49,
-      "community_name": "package.json",
+      "community": 26,
+      "community_name": "LOG \u2014 newest first, older entries live in `git log` for this file",
       "norm_label": "graceisvalid()"
     },
     {
@@ -11195,8 +11195,8 @@
       "source_location": "L38",
       "_origin": "ast",
       "id": "src_utils_vaultgrace_readgrace",
-      "community": 49,
-      "community_name": "package.json",
+      "community": 26,
+      "community_name": "LOG \u2014 newest first, older entries live in `git log` for this file",
       "norm_label": "readgrace()"
     },
     {
@@ -11206,8 +11206,8 @@
       "source_location": "L46",
       "_origin": "ast",
       "id": "src_utils_vaultgrace_touchgrace",
-      "community": 49,
-      "community_name": "package.json",
+      "community": 26,
+      "community_name": "LOG \u2014 newest first, older entries live in `git log` for this file",
       "norm_label": "touchgrace()"
     },
     {
@@ -11217,8 +11217,8 @@
       "source_location": "L51",
       "_origin": "ast",
       "id": "src_utils_vaultgrace_cleargrace",
-      "community": 49,
-      "community_name": "package.json",
+      "community": 26,
+      "community_name": "LOG \u2014 newest first, older entries live in `git log` for this file",
       "norm_label": "cleargrace()"
     },
     {
@@ -11349,8 +11349,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "tools_ponder_lab",
-      "community": 3,
-      "community_name": "CustomerManager.jsx",
+      "community": 54,
+      "community_name": "eslint-plugin-react-refresh",
       "norm_label": "ponder-lab.jsx"
     },
     {
@@ -11360,8 +11360,8 @@
       "source_location": "L31",
       "_origin": "ast",
       "id": "tools_ponder_lab_q",
-      "community": 3,
-      "community_name": "CustomerManager.jsx",
+      "community": 54,
+      "community_name": "eslint-plugin-react-refresh",
       "norm_label": "q"
     },
     {
@@ -11371,8 +11371,8 @@
       "source_location": "L40",
       "_origin": "ast",
       "id": "tools_ponder_lab_step",
-      "community": 3,
-      "community_name": "CustomerManager.jsx",
+      "community": 54,
+      "community_name": "eslint-plugin-react-refresh",
       "norm_label": "step"
     },
     {
@@ -11415,8 +11415,8 @@
       "source_location": "L115",
       "_origin": "ast",
       "id": "tools_ponder_lab_povlab",
-      "community": 3,
-      "community_name": "CustomerManager.jsx",
+      "community": 54,
+      "community_name": "eslint-plugin-react-refresh",
       "norm_label": "povlab()"
     },
     {
@@ -11426,8 +11426,8 @@
       "source_location": "L135",
       "_origin": "ast",
       "id": "tools_ponder_lab_mk_rows",
-      "community": 3,
-      "community_name": "CustomerManager.jsx",
+      "community": 54,
+      "community_name": "eslint-plugin-react-refresh",
       "norm_label": "mk_rows"
     },
     {
@@ -11448,8 +11448,8 @@
       "source_location": "L179",
       "_origin": "ast",
       "id": "tools_ponder_lab_plan_rows",
-      "community": 3,
-      "community_name": "CustomerManager.jsx",
+      "community": 54,
+      "community_name": "eslint-plugin-react-refresh",
       "norm_label": "plan_rows"
     },
     {
@@ -11459,8 +11459,8 @@
       "source_location": "L190",
       "_origin": "ast",
       "id": "tools_ponder_lab_planlab",
-      "community": 3,
-      "community_name": "CustomerManager.jsx",
+      "community": 54,
+      "community_name": "eslint-plugin-react-refresh",
       "norm_label": "planlab()"
     },
     {
@@ -11470,8 +11470,8 @@
       "source_location": "L208",
       "_origin": "ast",
       "id": "tools_ponder_lab_perflab",
-      "community": 3,
-      "community_name": "CustomerManager.jsx",
+      "community": 54,
+      "community_name": "eslint-plugin-react-refresh",
       "norm_label": "perflab()"
     },
     {
@@ -11481,8 +11481,8 @@
       "source_location": "L224",
       "_origin": "ast",
       "id": "tools_ponder_lab_nota",
-      "community": 3,
-      "community_name": "CustomerManager.jsx",
+      "community": 54,
+      "community_name": "eslint-plugin-react-refresh",
       "norm_label": "nota"
     },
     {
@@ -11492,8 +11492,8 @@
       "source_location": "L252",
       "_origin": "ast",
       "id": "tools_ponder_lab_notalab",
-      "community": 3,
-      "community_name": "CustomerManager.jsx",
+      "community": 54,
+      "community_name": "eslint-plugin-react-refresh",
       "norm_label": "notalab()"
     },
     {
@@ -11503,8 +11503,8 @@
       "source_location": "L278",
       "_origin": "ast",
       "id": "tools_ponder_lab_lab_motorists",
-      "community": 3,
-      "community_name": "CustomerManager.jsx",
+      "community": 54,
+      "community_name": "eslint-plugin-react-refresh",
       "norm_label": "lab_motorists"
     },
     {
@@ -11514,8 +11514,8 @@
       "source_location": "L284",
       "_origin": "ast",
       "id": "tools_ponder_lab_lab_procurements",
-      "community": 3,
-      "community_name": "CustomerManager.jsx",
+      "community": 54,
+      "community_name": "eslint-plugin-react-refresh",
       "norm_label": "lab_procurements"
     },
     {
@@ -11525,8 +11525,8 @@
       "source_location": "L289",
       "_origin": "ast",
       "id": "tools_ponder_lab_placeslab",
-      "community": 3,
-      "community_name": "CustomerManager.jsx",
+      "community": 54,
+      "community_name": "eslint-plugin-react-refresh",
       "norm_label": "placeslab()"
     },
     {
@@ -11654,7 +11654,7 @@
       "label": "THE ONE JOB \u2014 redesign `BranchWarehouseManager` into Duke's Ledger",
       "file_type": "document",
       "source_file": ".claude/NEXT-SESSION.md",
-      "source_location": "L29",
+      "source_location": "L32",
       "_origin": "ast",
       "id": "claude_next_session_the_one_job_redesign_branchwarehousemanager_into_duke_s_ledger",
       "community": 47,
@@ -11805,10 +11805,21 @@
       "norm_label": "progress \u2014 read this, search for nothing"
     },
     {
-      "label": "\ud83d\udfe0 2026-08-31 19:00 \u2014 PLACES ARE REGISTERED NOW, AND THE ROUTE BOXES CAN NO LONGER INVENT ONE.",
+      "label": "\ud83d\udfe0 2026-08-31 19:25 \u2014 THE NOTA STOPPED INVENTING WHO HANDLED THE GOODS.",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
       "source_location": "L5",
+      "_origin": "ast",
+      "id": "claude_progress_2026_08_31_19_25_the_nota_stopped_inventing_who_handled_the_goods",
+      "community": 41,
+      "community_name": "\u2705 THE LIGHT DUKE'S LEDGER IS BUILT \u2014 524/524, contrast self-check passes",
+      "norm_label": "\ud83d\udfe0 2026-08-31 19:25 \u2014 the nota stopped inventing who handled the goods."
+    },
+    {
+      "label": "\ud83d\udfe0 2026-08-31 19:00 \u2014 PLACES ARE REGISTERED NOW, AND THE ROUTE BOXES CAN NO LONGER INVENT ONE.",
+      "file_type": "document",
+      "source_file": ".claude/PROGRESS.md",
+      "source_location": "L38",
       "_origin": "ast",
       "id": "claude_progress_2026_08_31_19_00_places_are_registered_now_and_the_route_boxes_can_no_longer_invent_one",
       "community": 41,
@@ -11819,7 +11830,7 @@
       "label": "\ud83d\udfe0 2026-08-31 18:30 \u2014 THE SURAT JALAN WAS BEING REPAINTED BY THE APP SHELL. FIXED AND REDESIGNED.",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L39",
+      "source_location": "L72",
       "_origin": "ast",
       "id": "claude_progress_2026_08_31_18_30_the_surat_jalan_was_being_repainted_by_the_app_shell_fixed_and_redesigned",
       "community": 41,
@@ -11830,7 +11841,7 @@
       "label": "\ud83d\udfe0 2026-08-31 18:05 \u2014 THE METER SPEAKS, AND THE MAIN WAREHOUSE HAS ONE NAME.",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L73",
+      "source_location": "L106",
       "_origin": "ast",
       "id": "claude_progress_2026_08_31_18_05_the_meter_speaks_and_the_main_warehouse_has_one_name",
       "community": 41,
@@ -11841,7 +11852,7 @@
       "label": "\ud83d\udfe0 2026-08-31 10:42 \u2014 THE QUOTA METER IS ONE GUESS AWAY, AND THREE NEW REQUIREMENTS LANDED. No code changed since `ee5dbfd`.",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L106",
+      "source_location": "L139",
       "_origin": "ast",
       "id": "claude_progress_2026_08_31_10_42_the_quota_meter_is_one_guess_away_and_three_new_requirements_landed_no_code_changed_since_ee5dbfd",
       "community": 41,
@@ -11852,7 +11863,7 @@
       "label": "\ud83d\udfe0 2026-08-31 10:07 \u2014 RESTOCK VAULT REVIEWED, NOTHING URGENT. No code changed; **673/673 + 915/915**.",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L132",
+      "source_location": "L165",
       "_origin": "ast",
       "id": "claude_progress_2026_08_31_10_07_restock_vault_reviewed_nothing_urgent_no_code_changed_673_673_915_915",
       "community": 41,
@@ -11863,7 +11874,7 @@
       "label": "\ud83d\udfe0 2026-08-31 09:57 \u2014 THE RECEIPT IS DELETED UNDER ITS OWNER. `150a5c9`, **673/673 + 915/915**. Tree clean.",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L148",
+      "source_location": "L181",
       "_origin": "ast",
       "id": "claude_progress_2026_08_31_09_57_the_receipt_is_deleted_under_its_owner_150a5c9_673_673_915_915_tree_clean",
       "community": 41,
@@ -11874,7 +11885,7 @@
       "label": "\ud83d\udfe0 2026-08-31 09:28 \u2014 SHIPMENT PLAN MOVES AGAIN ON PC. `a84024a`, **672/672 + 915/915**. Tree clean.",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L166",
+      "source_location": "L199",
       "_origin": "ast",
       "id": "claude_progress_2026_08_31_09_28_shipment_plan_moves_again_on_pc_a84024a_672_672_915_915_tree_clean",
       "community": 41,
@@ -11885,7 +11896,7 @@
       "label": "\ud83d\udfe0 2026-08-31 09:19 \u2014 THE TUTORIAL HAS ONE DOOR NOW. `5340734`, **672/672 + 915/915**. Tree clean.",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L202",
+      "source_location": "L235",
       "_origin": "ast",
       "id": "claude_progress_2026_08_31_09_19_the_tutorial_has_one_door_now_5340734_672_672_915_915_tree_clean",
       "community": 41,
@@ -11896,7 +11907,7 @@
       "label": "\ud83d\udfe0 2026-08-31 09:11 \u2014 THE BOOK COMES BACK TO SHUT ITSELF. `1efeb11`, **671/671 + 915/915**. Tree clean.",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L232",
+      "source_location": "L265",
       "_origin": "ast",
       "id": "claude_progress_2026_08_31_09_11_the_book_comes_back_to_shut_itself_1efeb11_671_671_915_915_tree_clean",
       "community": 41,
@@ -11907,7 +11918,7 @@
       "label": "\ud83d\udfe0 2026-08-31 09:25 \u2014 THE CLOSING SOUND NOW HAS SOMETHING TO PLAY OVER. `c4f2f1b`, **670/670 + 915/915**. Tree clean.",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L260",
+      "source_location": "L293",
       "_origin": "ast",
       "id": "claude_progress_2026_08_31_09_25_the_closing_sound_now_has_something_to_play_over_c4f2f1b_670_670_915_915_tree_clean",
       "community": 41,
@@ -11918,7 +11929,7 @@
       "label": "\ud83d\udfe0 2026-08-31 09:05 \u2014 THE TUTORIAL CAMERA NEVER MOVED ON A PHONE. `aef7f03` + `8f3f438`, **669/669 + 915/915**. Tree clean.",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L285",
+      "source_location": "L318",
       "_origin": "ast",
       "id": "claude_progress_2026_08_31_09_05_the_tutorial_camera_never_moved_on_a_phone_aef7f03_8f3f438_669_669_915_915_tree_clean",
       "community": 41,
@@ -11929,7 +11940,7 @@
       "label": "\ud83d\udfe0 2026-08-31 08:30 \u2014 THE PANEL WAS LOOKED AT, AND THE TUTORIAL IS BROKEN ON A PHONE. `e5d7e76`, **667/667 + 915/915**. Tree clean.",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L320",
+      "source_location": "L353",
       "_origin": "ast",
       "id": "claude_progress_2026_08_31_08_30_the_panel_was_looked_at_and_the_tutorial_is_broken_on_a_phone_e5d7e76_667_667_915_915_tree_clean",
       "community": 41,
@@ -11940,7 +11951,7 @@
       "label": "\ud83d\udfe0 2026-08-30 10:35 \u2014 THE RESTOCK QUEUE, THE BOOK, AND THE SALES ROLLUP. `20a4622` \u2192 `18062df`, **667/667 + 915/915**. Tree clean.",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L355",
+      "source_location": "L388",
       "_origin": "ast",
       "id": "claude_progress_2026_08_30_10_35_the_restock_queue_the_book_and_the_sales_rollup_20a4622_18062df_667_667_915_915_tree_clean",
       "community": 41,
@@ -11951,7 +11962,7 @@
       "label": "\ud83d\udfe0 2026-08-30 08:25 \u2014 THE POV COSTUME CAN BE POSTED ANYWHERE. `b1cdcaa`, **666/666 + 831/831**. Tree clean.",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L560",
+      "source_location": "L593",
       "_origin": "ast",
       "id": "claude_progress_2026_08_30_08_25_the_pov_costume_can_be_posted_anywhere_b1cdcaa_666_666_831_831_tree_clean",
       "community": 41,
@@ -11962,7 +11973,7 @@
       "label": "\ud83d\udfe2 2026-08-28 00:47 \u2014 HOVER GLOW AND THE RIBBON/COVER FIX. `1ebbabc`, **666/666**. Tree clean.",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L602",
+      "source_location": "L635",
       "_origin": "ast",
       "id": "claude_progress_2026_08_28_00_47_hover_glow_and_the_ribbon_cover_fix_1ebbabc_666_666_tree_clean",
       "community": 41,
@@ -11973,7 +11984,7 @@
       "label": "\ud83d\udfe2 2026-08-28 00:20 \u2014 THE HOVER VIDEO HAS BEEN WATCHED. No code changed; **663/663**.",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L641",
+      "source_location": "L674",
       "_origin": "ast",
       "id": "claude_progress_2026_08_28_00_20_the_hover_video_has_been_watched_no_code_changed_663_663",
       "community": 41,
@@ -11984,7 +11995,7 @@
       "label": "\ud83d\udfe2 2026-08-27 23:50 \u2014 THE FOUR CAPTION FAULTS ARE FIXED. `8109559`, **663/663**. Tree clean.",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L662",
+      "source_location": "L695",
       "_origin": "ast",
       "id": "claude_progress_2026_08_27_23_50_the_four_caption_faults_are_fixed_8109559_663_663_tree_clean",
       "community": 41,
@@ -20587,7 +20598,7 @@
       "confidence": "INFERRED",
       "confidence_score": 0.8,
       "source_file": "src/RestockVaultView.jsx",
-      "source_location": "L1821",
+      "source_location": "L1823",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_restockvaultview_restockvaultview",
@@ -37424,7 +37435,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/NEXT-SESSION.md",
-      "source_location": "L29",
+      "source_location": "L32",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_next_session_next_session_read_this_then_claude_progress_md_read_no_code_to_orient",
@@ -37567,7 +37578,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L662",
+      "source_location": "L695",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -37578,7 +37589,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L641",
+      "source_location": "L674",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -37589,7 +37600,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L602",
+      "source_location": "L635",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -37600,7 +37611,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L560",
+      "source_location": "L593",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -37611,7 +37622,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L355",
+      "source_location": "L388",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -37622,7 +37633,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L320",
+      "source_location": "L353",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -37633,7 +37644,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L285",
+      "source_location": "L318",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -37644,7 +37655,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L232",
+      "source_location": "L265",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -37655,7 +37666,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L202",
+      "source_location": "L235",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -37666,7 +37677,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L260",
+      "source_location": "L293",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -37677,7 +37688,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L166",
+      "source_location": "L199",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -37688,7 +37699,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L148",
+      "source_location": "L181",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -37699,7 +37710,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L132",
+      "source_location": "L165",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -37710,7 +37721,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L106",
+      "source_location": "L139",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -37721,7 +37732,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L73",
+      "source_location": "L106",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -37732,7 +37743,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L39",
+      "source_location": "L72",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -37743,11 +37754,22 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L5",
+      "source_location": "L38",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
       "target": "claude_progress_2026_08_31_19_00_places_are_registered_now_and_the_route_boxes_can_no_longer_invent_one",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": ".claude/PROGRESS.md",
+      "source_location": "L5",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "claude_progress_progress_read_this_search_for_nothing",
+      "target": "claude_progress_2026_08_31_19_25_the_nota_stopped_inventing_who_handled_the_goods",
       "confidence_score": 1.0
     },
     {
@@ -38929,5 +38951,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "bdbd5cf0d75d15cba5dd2408351f235d91d458f4"
+  "built_at_commit": "83f48a04dd10fc2f22b8ded2eab9d7c512b32d9e"
 }

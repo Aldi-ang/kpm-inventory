@@ -3924,6 +3924,21 @@ ok('the nota reads both signatures from the RECORD, not from whoever is logged i
    /acceptance\.receivedBy \|\| acceptance\.recordedBy/.test(notaSrc) &&
    !/receivedBy,/.test(notaSrc),
    'it used to name whoever opened the paper, so an old delivery printed the wrong person');
+/* NOT a check on the wording — he renames things and a guard anchored on display copy fires on
+   every rename (that mistake is already in the lessons file). This checks CONSISTENCY: whatever
+   the tab is called, every message that sends him there must name the same tab. "Daftarkan di tab
+   Tempat" pointing at a tab now called Data Induk is an instruction to a place that does not
+   exist. */
+const tabLabel = (restockPeople.match(/\{ id: 'place', label: '([^']+)'/) || [])[1];
+ok('the registry tab has a findable label',
+   !!tabLabel);
+const pointers = restockPeople.match(/Daftarkan di tab ([^."]+)\./g) || [];
+ok(`every "register it over there" message names the tab as it is actually labelled — "${tabLabel}"`,
+   pointers.length >= 3 && pointers.every(p => p.includes(tabLabel)),
+   'a rename that misses one leaves an instruction pointing at a tab that no longer exists');
+ok('and so does the empty state inside the picker itself',
+   new RegExp(`didaftarkan di tab <b className="text-ink">${tabLabel}</b>`).test(restockPeople));
+
 ok('and "Factory Logistics" is gone from it',
    !/Factory Logistics/.test(notaSrc),
    'a fixed phrase pretending to be a record of who delivered the goods');
