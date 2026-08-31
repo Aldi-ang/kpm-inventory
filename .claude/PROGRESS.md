@@ -1,6 +1,35 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-30 10:35 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **667/667 audit · 915/915 selfcheck** · branch `phase0-solid-ground`, tree clean
+**Updated: 2026-08-31 08:30 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **667/667 audit · 915/915 selfcheck** · branch `phase0-solid-ground`, tree clean
+
+## 🟠 2026-08-31 08:30 — THE PANEL WAS LOOKED AT, AND THE TUTORIAL IS BROKEN ON A PHONE. `e5d7e76`, **667/667 + 915/915**. Tree clean.
+
+**Shipped:** `?perf` in `tools/ponder-lab.jsx` mounts the real Product Performance panel with no
+Firestore — `db` null holds it in its loading state, `?perf=failed` hands it a db that is not a
+Firestore so `doc()` rejects and the red box renders. Range buttons, loading line and failed-read
+box all confirmed on frames, dark and light, desktop and phone. That was the whole assigned job.
+
+**🔴 FOUND, NOT FIXED — the Ponder caption lands on top of what it explains, at 375px.** Six frames
+prove it across two scenes; desktop is clean at every width tried. 36 `near` beats are candidates.
+Suspect is one line, `src/ponder/PonderOverlay.jsx:328`, which returns `top` unclamped while the
+beside-branch above it clamps. **Measure `wrap.scrollTop` before patching** — the stage scrolls, so
+a naive `clampY` may clamp into content space. Full evidence table in `.claude/NEXT-SESSION.md`.
+
+**🔴 THE BRIEF WAS WRONG ABOUT ITS OWN FIX.** It said beats 5 and 6 of `product-performance.js`
+"both use `at: 'bottom'` now". They are still `at: 'near'` — the interrupted command never landed,
+and the brief recorded the intention as the state. A handoff must quote the file, not the plan.
+
+**🔴 THE 5-HOUR QUOTA METER HAS NEVER WORKED.** `.claude/plan-quota.mjs` warns at 70/85/95 and its
+95% branch prints the exact STOP-and-write-notes order Aldi asked for — but
+`C:/Users/ASUS/9router-claude-id.txt` and `9router-cookie.txt` are both MISSING [certain, checked:
+`fs.existsSync` on both], and the hook exits silently without the id. So no warning fired at any
+percentage on 2026-08-30, and he had to interrupt at 95% himself. `[context-watch]` is a different
+meter (context window, which `/clear` fixes); it was never the one that was needed.
+
+**❓ WAITING ON ALDI — two things, both his:**
+1. *"which do you want — A) fix the engine, one line in PonderOverlay, all 36 beats, or B) fix this
+   scene only, five beats near→bottom?"* Nothing is being written until he answers.
+2. The two 9router files. Only he can read the connection id and cookie out of the Quota Tracker.
 
 ## 🟠 2026-08-30 10:35 — THE RESTOCK QUEUE, THE BOOK, AND THE SALES ROLLUP. `20a4622` → `18062df`, **667/667 + 915/915**. Tree clean.
 
