@@ -87,6 +87,40 @@ guarded against a zero-quantity delivery (`if (!qty) continue`).
 **Still untested by anyone:** Siapkan Pengiriman and the shipping modal. Nothing structurally wrong
 was found by reading, but nobody has ever clicked them.
 
+### 🔴 THREE NEW REQUIREMENTS FROM HIS SCREENSHOT, 2026-08-31 — none started
+
+He sent a frame of the SURAT JALAN modal (`viewingAcceptance`, `RestockVaultView.jsx` ~1026).
+
+**1. One name for the main warehouse.** The modal says `Gudang Pusat (HQ)` — `HQ_NAME` at
+`RestockVaultView.jsx:33` — while the supply layer calls it `MASTER` (`utils/supply.js:34`) and the
+UI elsewhere says Master Vault. His words: *"our name for the main warehouse is master vault isnt?"*
+Pick ONE and make the others read from it. `GoodsReceivedStage.jsx:42` hardcodes the same string a
+third time.
+
+**2. Asal / Tujuan are wrong for the Masuk panel, and places must be REGISTERED.** His words:
+*"asal inside the masuk panel should be the factory location and tujuan should be the warehouse
+location, can be sent to master vault or regional warehouse directly"*, and *"to avoid double
+input/duplicated different tujuan and asal name, i think we need to make option to register factory
+and gudang therefore the adress for both is fixed and there is no way to input new name inside the
+textbox. textbox is used only to search gudang name not register a new one unlike sales terminal"*.
+
+So: a registry of factories and of warehouses; the Asal/Tujuan fields become a SEARCH over it, never
+a create. This is a data-model job, not a form tweak — decide where the registry lives and what
+happens to records already carrying free-text names.
+
+**3. The receipt looks bad and renders TRANSPARENT.** Confirmed from his frame: page content shows
+through the card, doubled behind the receipt text.
+
+**What is already ruled out** — do not re-check these: the print CSS is correctly scoped inside
+`@media print`; `.bg-white`, `.text-black` and `.bg-gray-100` all EXIST in the built CSS with correct
+declarations; `colors` is inside `extend` so the defaults are intact; the lite-mode `!important`
+scrim only targets `[class*="backdrop-blur"]`, which this overlay is not.
+
+**The unanswered question is whether he was in Lite Mode and which theme.** Ask, or reproduce with
+a lab slice that mounts the modal against a fixed `viewingAcceptance` object — the component needs
+no Firestore to render, only that prop, so a `?nota` slice in `tools/ponder-lab.jsx` would settle it
+in one frame. **Do that before editing any CSS.**
+
 ## 🔴 UNANSWERED — he asked, I answered, he has not replied
 
 > *"wait where is the small box inside the ponder system that move with the higlights panel?"*
