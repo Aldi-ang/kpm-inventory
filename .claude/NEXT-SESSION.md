@@ -1,6 +1,6 @@
 # NEXT SESSION — read this, then `.claude/PROGRESS.md`. Read no code to orient.
 
-**Written 2026-08-31 09:57 WIB. 673/673 audit · 915/915 selfcheck. Branch `phase0-solid-ground`,
+**Written 2026-08-31 10:07 WIB. 673/673 audit · 915/915 selfcheck. Branch `phase0-solid-ground`,
 tree clean at `150a5c9`.**
 
 🔴 **THE CAPTION RULE, SO IT IS NOT RE-LITIGATED.** On a PC a beat that focuses a real element
@@ -25,41 +25,22 @@ PowerShell: `;` not `&&`. **Quote BOTH numbers.** The audit refuses to run again
 
 ---
 
-## 🔴 THE ONE JOB — the Restock Vault, and REPORT before fixing
+## 🔴 THE ONE JOB — redesign the regional warehouse into Duke's Ledger
 
-His words, 2026-08-31: *"now focus on the sales total and also improvement on the restock vault if
-needed"*. The sales-total half is DONE (below). **"If needed" is the operative half of what is
-left** — diagnose first, report, and let him rank before writing anything.
+`src/components/BranchWarehouseManager.jsx`. He named it himself, 2026-08-31: *"we havent redesign
+the regional warehouse i think i put that on the to do list"*. It is the last screen still in the
+old visual language, which is what makes the app look half-finished.
 
-**Do not start by reading the whole Restock Vault.** It is a large file. Start where a fault would
-cost money.
+**This is a LOOK job with no correctness risk, and it is interactive** — he has an opinion on every
+screen. Do not batch a large redesign and present it whole.
 
-**The sales total — the four call sites are the risk, not the arithmetic.** `src/utils/salesRollup.js`
-is pure and already has 27 checks running against real numbers in plain node. What no check can
-prove is that a call site still exists, so read these four and confirm each one still adds and
-subtracts the same sale:
+**Load the design stack FIRST, it is his standing rule** (`SKILL.md` §1a): `Aldi's Design Taste.md`
+and `Design Inspiration Sources.md` from A-Brain, then `impeccable`, `emil-design-eng`,
+`ui-ux-pro-max`, plus `redesign-skill` and `taste-skill` because this is a redesign of something
+that already ships. **The palette law is locked** — no blue, no green, slate + gold, amber is an
+edge and an ink and never a fill. A style pack must never be pointed at KPM.
 
-| path | file |
-|---|---|
-| the online sale, inside the receipt's own batch | `src/hooks/useTransactionEngine.js` |
-| the offline drain, filed on the day the sale was MADE | `src/App.jsx` |
-| the three deletes, through one shared `untallyOps` | `src/App.jsx` |
-| the history edit, −1 of what stood before, +1 of what was saved | `src/HistoryReportView.jsx` |
-
-`src/utils/salesRollupWrite.js` is the only module that owns the `sales_stats` path. **The rollup is
-a CACHE, never the truth** — `transactions` is the record, and Settings › Company · 07 rebuilds
-every month from it, so a bug there costs a rebuild and never data.
-
-**Worth checking specifically, because it has never been exercised:** `handleRebuildSalesStats` in
-`src/App.jsx`. Aldi has still not pressed it, so the whole rebuild path is unrun code. Read it for
-the obvious failure shapes — a partial write that leaves some months rebuilt and others not, no
-progress reported while it runs, and what happens if it is pressed twice.
-
-**Restock Vault:** `src/RestockVaultView.jsx`. Two things are already known and unexamined —
-**Siapkan Pengiriman and the shipping modal have never been tested by anyone**, and G1/G2 below sit
-underneath this screen. Look for a real fault before proposing polish.
-
-**Deliver a ranked list with a cost per item, not a patch.**
+**The Restock Vault review it follows is DONE — see below. Do not redo it.**
 
 ### ✅ THE SALES-TOTAL HALF IS DONE — fixed in `150a5c9`, do not re-investigate
 
@@ -80,6 +61,31 @@ were not touched and are not known to be wrong.
 
 
 ---
+
+### ✅ THE RESTOCK VAULT REVIEW IS DONE — 2026-08-31, nothing urgent found
+
+Read for the failure shapes this codebase actually has, not line by line.
+
+**Clean:** every `catch` reports through `notify` (no silent failures) · every write is awaited ·
+**22 of 22** Firestore paths use `activeUserId = masterUserId || user?.uid`, so the tenant split
+that bit the receipts is NOT present here · `handleDeletePO` reverses the stock it added, atomically
+with `increment(-qty)`, warns in the confirm, and writes an audit line · the landed-cost divide is
+guarded against a zero-quantity delivery (`if (!qty) continue`).
+
+**Two things worth his attention, neither urgent:**
+
+1. **Nothing destructive is gated by ROLE.** Edit delivery, Hapus delivery, Hapus request and Hapus
+   target render unconditionally (lines ~1426, 1427, 1432, 1526). What actually protects them is the
+   whole screen mounting behind `isAdmin` in `App.jsx:4557` — and `isAdmin` is `vaultUnlocked`, the
+   Master Vault password. Only Aldi holds it, so this is latent. It becomes real the day he delegates
+   or the day that gate becomes a tier check. Same shape as the receipt bug fixed in `150a5c9`.
+2. **Landed cost splits extra costs per UNIT, not per value** (`extra / qty`, line ~255): shipping,
+   labour and excise are spread equally over every pack in a delivery, so a cheap product absorbs
+   the same rupiah as an expensive one. It may well be what he wants — but it drives the "did this
+   get dearer?" comparison, so it is a decision rather than an accident. **Ask before changing.**
+
+**Still untested by anyone:** Siapkan Pengiriman and the shipping modal. Nothing structurally wrong
+was found by reading, but nobody has ever clicked them.
 
 ## 🔴 UNANSWERED — he asked, I answered, he has not replied
 

@@ -1,6 +1,22 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-31 09:57 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **673/673 audit · 915/915 selfcheck** · branch `phase0-solid-ground`, tree clean
+**Updated: 2026-08-31 10:07 WIB (🟠 KPM app session)**
+
+## 🟠 2026-08-31 10:07 — RESTOCK VAULT REVIEWED, NOTHING URGENT. No code changed; **673/673 + 915/915**.
+
+Read for failure shapes, not line by line. **Clean:** every catch reports · every write awaited ·
+22 of 22 paths use `activeUserId`, so the tenant split that bit the receipts is not here ·
+`handleDeletePO` reverses stock atomically with an audit line and an explicit warning · the
+landed-cost divide guards against a zero-quantity delivery.
+
+**Two for him, neither urgent:** nothing destructive is gated by ROLE — what protects it is the
+screen mounting behind `isAdmin`, which is the Master Vault password he alone holds, so it is the
+same latent shape as the receipt bug. And landed cost spreads shipping/labour/excise equally per
+UNIT, so a cheap product absorbs the same rupiah as an expensive one — a decision, not an accident,
+and it drives the "did this get dearer" comparison.
+
+**Next job is his own:** *"we havent redesign the regional warehouse i think i put that on the to do
+list"* — `BranchWarehouseManager` into Duke's Ledger. Load the design stack first, his §1a rule. · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **673/673 audit · 915/915 selfcheck** · branch `phase0-solid-ground`, tree clean
 
 ## 🟠 2026-08-31 09:57 — THE RECEIPT IS DELETED UNDER ITS OWNER. `150a5c9`, **673/673 + 915/915**. Tree clean.
 
