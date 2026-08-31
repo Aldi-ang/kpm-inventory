@@ -961,13 +961,17 @@ section('S39. Sales rollup: a cache that can always be rebuilt from the transact
      /const untallyOps = \(txs\) =>/.test(app) &&
      /tallySaleOp\([\s\S]{0,120}-1\)/.test(app) &&
      (app.match(/untallyOps\(/g) || []).length === 3);
+  /* `userId`, corrected 2026-08-31. This check used to pin `user.uid` — it was written to guard
+     that the delete and the un-tally travel together, and it faithfully guarded the wrong address
+     while doing it. `userId = bossUid || user.uid`: the same for the owner, and the tenant that
+     actually owns the receipt for a delegated account. The uid is part of the guarantee now. */
   ok('the single delete removes the receipt and its tally in one commit',
-     /type: 'delete', ref: doc\(db, `artifacts\/\$\{appId\}\/users\/\$\{user\.uid\}\/transactions`, transaction\.id\) \},\s*\.\.\.untallyOps\(\[transaction\]\)/.test(app));
+     /type: 'delete', ref: doc\(db, `artifacts\/\$\{appId\}\/users\/\$\{userId\}\/transactions`, transaction\.id\) \},\s*\.\.\.untallyOps\(\[transaction\]\)/.test(app));
   /* An edit is the least obvious of the three - a delete looks destructive, changing a quantity
      looks like tidying - and it needs BOTH halves or it double-counts. */
   ok('an edit applies the negative of what stood before AND the positive of what was saved',
-     /tallySaleOp\(db, appId, user\.uid, editingTrans\.__before, productsById, -1\)/.test(history) &&
-     /tallySaleOp\(db, appId, user\.uid, after, productsById, 1\)/.test(history));
+     /tallySaleOp\(db, appId, userId, editingTrans\.__before, productsById, -1\)/.test(history) &&
+     /tallySaleOp\(db, appId, userId, after, productsById, 1\)/.test(history));
   ok('and it snapshots the record when the editor opens, not when it saves',
      /setEditingTrans\(\{ \.\.\.t, __before: t \}\)/.test(history));
   ok('the edit commits the receipt and both halves together',

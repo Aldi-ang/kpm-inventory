@@ -2791,7 +2791,7 @@ const handleGitHubMirror = async () => {
      what happened; Settings carries a rebuild that recomputes every month from scratch. That is
      what makes a cache safe to keep. */
   const untallyOps = (txs) => (txs || [])
-      .map(t => tallySaleOp(db, appId, user.uid,
+      .map(t => tallySaleOp(db, appId, userId,
           t, Object.fromEntries((inventory || []).map(p => [p.id, p])), -1))
       .filter(Boolean);
 
@@ -2850,7 +2850,7 @@ const handleGitHubMirror = async () => {
              deleteDoc so both land in one commit — a delete that succeeded while its tally failed
              would leave the totals counting a sale nobody can see any more. */
           await commitInChunks(db, writeBatch, [
-              { type: 'delete', ref: doc(db, `artifacts/${appId}/users/${user.uid}/transactions`, transaction.id) },
+              { type: 'delete', ref: doc(db, `artifacts/${appId}/users/${userId}/transactions`, transaction.id) },
               ...untallyOps([transaction]),
           ]);
           logAudit("TRANS_DELETE", `Deleted transaction ${transaction.id} for ${transaction.customerName}`);
@@ -2866,7 +2866,7 @@ const handleGitHubMirror = async () => {
           const targets = transactions.filter(t => (t.customerName||'').trim() === customerName && (t.type.includes('CONSIGNMENT') || (t.type === 'SALE' && t.paymentType === 'Titip') || t.type === 'RETURN'));
           // 🚀 FIX: Chunked/paced commitInChunks instead of one deleteDoc await per
           // record — same pattern as its sibling handleDeleteHistory right above.
-          const operations = targets.map(t => ({ type: 'delete', ref: doc(db, `artifacts/${appId}/users/${user.uid}/transactions`, t.id) }));
+          const operations = targets.map(t => ({ type: 'delete', ref: doc(db, `artifacts/${appId}/users/${userId}/transactions`, t.id) }));
           operations.push(...untallyOps(targets));
           await commitInChunks(db, writeBatch, operations);
           logAudit("CONSIGN_DELETE", `Cleared data for ${customerName}`);
@@ -2886,7 +2886,7 @@ const handleGitHubMirror = async () => {
           // 🚀 FIX: Chunked/paced commitInChunks instead of one deleteDoc await per record —
           // same pattern used elsewhere for large writes, here bounded by a single customer's
           // history rather than company-wide, but still worth it as that history grows.
-          const operations = targets.map(t => ({ type: 'delete', ref: doc(db, `artifacts/${appId}/users/${user.uid}/transactions`, t.id) }));
+          const operations = targets.map(t => ({ type: 'delete', ref: doc(db, `artifacts/${appId}/users/${userId}/transactions`, t.id) }));
           operations.push(...untallyOps(targets));
           await commitInChunks(db, writeBatch, operations);
           await logAudit("HISTORY_DELETE", `Deleted history folder for ${customerName} (${agentName})`);
@@ -4794,7 +4794,7 @@ const handleGitHubMirror = async () => {
               <ProductPerformancePanel db={db} appId={appId} userId={userId} inventory={inventory} />
             </div>
           )}
-          {activeTab === 'transactions' && <HistoryReportView transactions={transactions} inventory={inventory} onDeleteFolder={handleDeleteHistory} onDeleteTransaction={handleDeleteSingleTransaction} isAdmin={isAdmin} user={user} appId={appId} db={db} appSettings={appSettings} userRole={userRole} agentProfileId={agentProfileId} fetchHistoricalTransactions={fetchHistoricalTransactions} motorists={motorists} customers={displayCustomers} />}
+          {activeTab === 'transactions' && <HistoryReportView transactions={transactions} inventory={inventory} onDeleteFolder={handleDeleteHistory} onDeleteTransaction={handleDeleteSingleTransaction} isAdmin={isAdmin} user={user} userId={userId} appId={appId} db={db} appSettings={appSettings} userRole={userRole} agentProfileId={agentProfileId} fetchHistoricalTransactions={fetchHistoricalTransactions} motorists={motorists} customers={displayCustomers} />}
           
          {activeTab === 'audit' && (
              <AuditVaultView db={db} storage={storage} appId={appId} user={user} userId={userId} isAdmin={isAdmin} logAudit={logAudit} setBackupToast={setBackupToast} auditLogs={auditLogs} />

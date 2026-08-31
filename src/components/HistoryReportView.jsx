@@ -10,7 +10,12 @@ import { hasClearance } from '../config/permissions';
 import { notify } from './Toast.jsx';
 import { WATERMARK_STYLE, WATERMARK_POSITION, watermarkFrom } from '../config/receiptWatermark';
 
-export default function HistoryReportView({ transactions, inventory, onDeleteFolder, onDeleteTransaction, isAdmin, user, appId, db, appSettings, userRole, agentProfileId, fetchHistoricalTransactions, motorists, customers }) {
+/* 🔴 `userId`, NOT `user.uid`. They are the same for the owner and different for every delegated
+   account: `userId = bossUid || user.uid`, and the receipts live under the BOSS. Editing one here
+   used to address the editor's own vault, where the document does not exist — and Firestore treats
+   a write to a missing path as a fine thing to do, so the app reported a save that never happened
+   and the tally moved in a document nothing reads. */
+export default function HistoryReportView({ transactions, inventory, onDeleteFolder, onDeleteTransaction, isAdmin, user, userId, appId, db, appSettings, userRole, agentProfileId, fetchHistoricalTransactions, motorists, customers }) {
     const [searchTerm, setSearchTerm] = useState('');
     const [reportView, setReportView] = useState(false);
     /* the mark printed in the corner of the A4 nota. Undefined when he has never set one, which
@@ -374,10 +379,10 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
             const after = { date: rawDate, type: editingTrans.type || 'SALE', items: cleanItems };
             await commitInChunks(db, writeBatch, [
                 { type: 'update',
-                  ref: doc(db, `artifacts/${appId}/users/${user.uid}/transactions`, editingTrans.id),
+                  ref: doc(db, `artifacts/${appId}/users/${userId}/transactions`, editingTrans.id),
                   data: { date: rawDate, customerName: editingTrans.customerName, total: Number(editingTrans.total) || 0, amountPaid: Number(editingTrans.total) || 0, priceTier: editingTrans.priceTier || 'Retail', items: cleanItems, timestamp: fakeTimestamp, updatedAt: serverTimestamp() } },
-                tallySaleOp(db, appId, user.uid, editingTrans.__before, productsById, -1),
-                tallySaleOp(db, appId, user.uid, after, productsById, 1),
+                tallySaleOp(db, appId, userId, editingTrans.__before, productsById, -1),
+                tallySaleOp(db, appId, userId, after, productsById, 1),
             ].filter(Boolean));
             notify("✅ Audit Successful!");
             setEditingTrans(null);

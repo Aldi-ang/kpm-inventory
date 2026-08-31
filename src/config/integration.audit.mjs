@@ -4362,6 +4362,28 @@ check(G56, 'the panel unmounts exactly when its closing animation ends, not befo
   'panel must carry animate-ponder-shut while closing, and Lite Mode and reduced motion must ' +
   'still close on the spot rather than waiting for an animation that is not playing');
 
+/* 🔴 A RECEIPT IS ADDRESSED BY THE TENANT THAT OWNS IT, NEVER BY WHOEVER IS LOGGED IN.
+   `userId = bossUid || user.uid`. Every write and read of `transactions` uses it — six of them —
+   and until 2026-08-31 the three deletes and the history edit did not, addressing
+   `users/${user.uid}/transactions` instead. Identical for the owner, who claims his own id as his
+   bossUid, and wrong for every delegated account.
+
+   The failure is silent in both directions and that is why it survived: Firestore treats deleting a
+   document that is not there as SUCCESS, so the app reported a delete that never happened and the
+   receipt stayed; and `untallyOps` beside it wrote the correcting figure into
+   `users/{the editor's own uid}/sales_stats`, a document nothing reads, so Product Performance kept
+   counting the sale. A rebuild repairs the totals. Nothing repairs the receipt.
+
+   Asserted as an absence, because the bug is a spelling that must not come back on THIS path —
+   other collections in App.jsx legitimately use `user.uid` and are not in scope here. */
+const txUidSrc = fs.readFileSync('src/App.jsx', 'utf8') + fs.readFileSync('src/components/HistoryReportView.jsx', 'utf8');
+check(G56, 'a receipt is deleted and edited under the tenant that owns it, not the logged-in id',
+  !/users\/\$\{user\.uid\}\/transactions/.test(txUidSrc) &&
+  !/tallySaleOp\(db, appId, user\.uid/.test(txUidSrc) &&
+  /users\/\$\{userId\}\/transactions/.test(txUidSrc),
+  'the deletes, the history edit and the tallies beside them must address users/${userId}. With ' +
+  'user.uid a delegated account deletes nothing, is told it worked, and leaves the sale counted');
+
 /* 🔴 CLOSING A SCENE PUTS THE BOOK BACK ON SCREEN TO SHUT ITSELF. Aldi, 2026-08-31: *"i want the
    book shuts and fly to also happen when user close the ponder panel"*. Picking a scene used to
    unmount the Library on the spot, so the shut-and-fly it already owned only ever played if you
