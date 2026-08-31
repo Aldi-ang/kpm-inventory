@@ -12,7 +12,6 @@ import { txSeconds } from '../utils/dayStats.js';
 import { supplyByProduct, warehouseList, MASTER, bufferDays } from '../utils/supply.js';
 import { confirmAction } from './ConfirmGate.jsx';
 import { notify } from './Toast.jsx';
-import PonderButton from '../ponder/PonderButton.jsx';
 /* The table below is rendered by the Ponder tutorial too, fed a fixed demo world. Same
    component in both places, so the tutorial cannot drift from the screen it teaches. */
 import StockByWarehouseTable from '../ponder/stages/StockByWarehouseTable.jsx';
@@ -1370,7 +1369,6 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
                         </div>
                         <div className="flex items-center gap-2.5 shrink-0">
                             <p className="font-mono text-[10px] text-ink-muted tracking-widest">sales figures cover the last 7 days</p>
-                            <PonderButton sceneId="stock-by-warehouse" />
                         </div>
                     </div>
 

@@ -15,7 +15,6 @@ import { NON_BRANCH, bufferDays } from './utils/supply.js';
    where they were built and where their checks read them; moving them would split those checks
    from their code, which this repo has now paid for twice. */
 import { productArrivals, shipmentRhythm, inTransitQty, reorderAdvice } from './components/BranchWarehouseManager.jsx';
-import PonderButton from './ponder/PonderButton.jsx';
 
 /* ═══════════════════════════════════════════════════════════════════════════
    SURAT JALAN — one document, two directions.
@@ -1505,7 +1504,6 @@ const RestockVaultView = ({ inventory = [], procurements = [], motorists = [], b
                                         {isOut ? 'keluar ke cabang · in Bks' : 'masuk dari pabrik · in Bks'}
                                     </p>
                                 </div>
-                                {!isOut && <PonderButton sceneId="goods-received" />}
                             </div>
 
                             {/* Target: kept as data, demoted from a whole tab to one strip. */}

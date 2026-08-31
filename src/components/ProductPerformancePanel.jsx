@@ -19,7 +19,6 @@ import { BarChart3, RefreshCcw } from 'lucide-react';
 import { monthsInRange, sumRange, rangeDays, RANGES } from '../utils/salesRollup.js';
 import { statsPath } from '../utils/salesRollupWrite.js';
 import ProductPerformanceTable from '../ponder/stages/ProductPerformanceTable.jsx';
-import PonderButton from '../ponder/PonderButton.jsx';
 
 const LABEL = { day: 'Today', week: 'This week', month: 'This month', year: 'This year' };
 
@@ -90,7 +89,6 @@ export default function ProductPerformancePanel({ db, appId, userId, inventory =
                             {LABEL[r]}
                         </button>
                     ))}
-                    <PonderButton sceneId="product-performance" />
                 </div>
             </div>
 

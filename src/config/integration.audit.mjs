@@ -4049,7 +4049,6 @@ const pStrip = (s) => s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*
 const pRead = (f) => pStrip(fs.readFileSync('src/ponder/' + f, 'utf8'));
 const overlaySrc = pRead('PonderOverlay.jsx');
 const playerSrc = pRead('useScenePlayer.js');
-const chipSrc = pRead('PonderButton.jsx');
 const bookSrc = pRead('PonderBook.jsx');
 const sfxSrc = pRead('sfx.js');
 /* shellSrc is already read at group 15 - the shell is one file and re-reading it under a second
@@ -4089,11 +4088,26 @@ check(G56, 'every scene file is reachable through the registry',
   'a scene that never reaches SCENES cannot be opened by anything, and nothing else in the app ' +
   'would report it missing — the file just sits there looking finished');
 
-const buttonIds = [...bwmStripped.matchAll(/<PonderButton[^>]*sceneId="([^"]+)"/g)].map(m => m[1]);
-check(G56, 'every ? chip names a scene that actually exists',
-  buttonIds.length > 0 && buttonIds.every(id => sceneIds.includes(id)),
-  'a typo in a sceneId has to fail HERE. Unchecked it renders a ? button that opens nothing, ' +
-  'which is the worst kind of broken: it looks like a feature until someone presses it');
+/* 🔴 THE BOOK IS THE ONLY DOOR NOW. Aldi, 2026-08-31: *"book is good we dont need any of the
+   tutorial chip, all should be inside the tutorial book on top"*. The per-panel `?` chips are gone
+   and `PonderButton.jsx` with them, so a scene that is not listed in `sections.js` is not merely
+   awkward to find — it is UNREACHABLE, by anyone, forever, while still looking finished on disk.
+   This check replaces the old "every chip names a real scene": the same rot, the opposite
+   direction, and the direction that can now actually happen. */
+/* `.filter(Boolean)` is load-bearing, not tidying. Sixteen entries carry a title and NO sceneId on
+   purpose — the "no scene written yet" cards, one per section, and sections.js says so at the top:
+   an entry only becomes pressable once it resolves to a real scene. Without the filter this check
+   reads all sixteen as broken cards, which is how a green suite gets taught to cry wolf. */
+const sectionSceneIds = SECTIONS.flatMap(s => (s.entries || []).map(e => e.sceneId)).filter(Boolean);
+check(G56, 'every scene is reachable from the book, which is the only way in',
+  sceneIds.length > 0 && sceneIds.every(id => sectionSceneIds.includes(id)),
+  'a scene missing from sections.js can no longer be opened at all — the chips that used to be ' +
+  'its second door were removed on 2026-08-31. It would sit in the registry looking shipped');
+
+check(G56, 'the book never offers a card that opens nothing',
+  sectionSceneIds.length > 0 && sectionSceneIds.every(id => sceneIds.includes(id)),
+  'a typo in a sceneId has to fail HERE. Unchecked it renders a card in the book that opens ' +
+  'nothing, which is the worst kind of broken: it looks like a feature until someone presses it');
 
 check(G56, 'no beat is silent — every step carries text',
   scenes.length > 0 && scenes.every(s => Array.isArray(s.steps) && s.steps.length > 0 &&
@@ -4183,7 +4197,7 @@ check(G56, 'the spotlight survives Lite Mode, which strips every transition',
   'easing while keeping the same end state — the tutorial still has to teach with motion off');
 
 check(G56, 'the tutorial opens no native dialog',
-  !/window\.(confirm|prompt|alert)\s*\(/.test(overlaySrc + playerSrc + chipSrc + stageSrc),
+  !/window\.(confirm|prompt|alert)\s*\(/.test(overlaySrc + playerSrc + bookSrc + stageSrc),
   'the dialog gate replaced all 69 of these. A blocked native dialog does nothing and explains ' +
   'nothing, which is exactly the failure a tutorial cannot afford');
 
@@ -4191,9 +4205,9 @@ check(G56, 'the tutorial opens no native dialog',
    pressing the tutorial button"*. Opt-in means there is nothing to remember about a person, so
    there must be no seen-flag anywhere near this. */
 check(G56, 'the tutorial never opens itself, and remembers nothing about who has watched',
-  /onClick=\{\(\) => setOpen\(true\)\}/.test(chipSrc) &&
-  !/localStorage|sessionStorage|hasSeen|firstRun|autoOpen/.test(chipSrc + overlaySrc),
-  'the chip may only open on a click. A "has this person seen it" flag is what turns an opt-in ' +
+  /onClick=\{openLib\}/.test(bookSrc) &&
+  !/localStorage|sessionStorage|hasSeen|firstRun|autoOpen/.test(bookSrc + overlaySrc),
+  'the book may only open on a click. A "has this person seen it" flag is what turns an opt-in ' +
   'tutorial into one that fires at people, and a stale flag means it fires forever or never');
 
 /* The amber law, 2026-08-21: *"stop using amber background i said, i hate it"*. What survived as
@@ -4226,12 +4240,16 @@ check(G56, 'teaching sentences keep their English feature names marked as terms'
   'name reads as a foreign word dropped into an Indonesian sentence instead of as the label the ' +
   'reader will go looking for on the real screen');
 
-check(G56, 'the stock panel is titled in English and carries its tutorial chip',
+/* The chip half of this check retired 2026-08-31 — *"book is good we dont need any of the tutorial
+   chip, all should be inside the tutorial book on top"*. The panel header no longer carries a door
+   into the tutorial; the book on the top bar is the only one. The English title survives on its own
+   merits and is still his instruction. */
+check(G56, 'the stock panel is titled in English, and carries no tutorial chip of its own',
   />Stock by Warehouse<\/h3>/.test(bwmStripped) &&
-  /<PonderButton sceneId="stock-by-warehouse" \/>/.test(bwmStripped),
+  !/PonderButton/.test(bwmStripped),
   'his instruction was *"dont use sebaran stock, use proper elegant english terms for that"*. ' +
-  'The chip lives in the panel header because the entry point to a tutorial is the thing you ' +
-  'are already confused by, never a manual in a menu');
+  'The second clause is the 2026-08-31 removal: a chip reappearing in a panel header would be a ' +
+  'second door into a tutorial he asked to reach only through the book');
 
 /* 🔴 PRE-STAGING THE CHECK 631 MIGRATION. The panel footnote is still the live record of these
    two formulas and check 631 still pins it there. The scene now carries them as well, so when
