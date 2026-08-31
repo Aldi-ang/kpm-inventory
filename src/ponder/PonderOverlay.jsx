@@ -208,7 +208,21 @@ export default function PonderOverlay({ sceneId, open, onClose, onBack }) {
 
   /* Ponder moves its camera to the subject. The web equivalent is scrolling it into view — and
      it has to happen before the measurement, which is why the measure runs on the scroller's own
-     scroll event as well as here. A smooth scroll finishes after this effect does. */
+     scroll event as well as here.
+
+     🔴 THE SCROLL IS INSTANT, NOT SMOOTH, AND THAT IS THE WHOLE FIX FOR PHONES. Measured in the
+     lab at 375px on 2026-08-31: `behavior:'smooth'` moved this scroller by ZERO, twice, 800ms
+     apart, while `behavior:'auto'` on the same element in the same frame moved it 0 → 211. The
+     stage is 219px tall on a phone against 450px of content, so a subject that never scrolls sits
+     at y=353 — below the fold — and `spot` is then measured off-stage. Every downstream piece
+     inherits that: the highlight ring is drawn under the floor, the room test in `near` below is
+     handed impossible numbers, and the caption lands on the header or past the bottom edge. Six
+     beats across two scenes looked like a caption-placement bug and were this one line.
+
+     An instant scroll is also the only kind this effect can use. `measure()` runs synchronously
+     three lines down, so an animated scroll is measured before it has moved — the scroll listener
+     was the safety net for that, and a smooth scroll that never starts never fires it either.
+     Desktop is unaffected: the stage is sized so nothing scrolls there in practice. */
   useLayoutEffect(() => {
     if (!open || !step) return;
     const root = scrollRef.current;
@@ -216,7 +230,7 @@ export default function PonderOverlay({ sceneId, open, onClose, onBack }) {
     const first = keys.includes('*') ? null
       : keys.map(k => root.querySelector(`[data-ponder="${k}"]`)).find(Boolean);
     if (first && typeof first.scrollIntoView === 'function') {
-      first.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: reduced() ? 'auto' : 'smooth' });
+      first.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'auto' });
     }
     /* Measured SYNCHRONOUSLY, not inside a requestAnimationFrame. A layout effect already runs
        after the DOM is written and before paint, so the rects are valid here — and the rAF
@@ -293,6 +307,15 @@ export default function PonderOverlay({ sceneId, open, onClose, onBack }) {
     const W = wrap.clientWidth, H = wrap.clientHeight;
     const boxW = Math.min(CAPTION_W, W - 24);
     const boxH = Math.min(capH, H - 24);
+    /* 🔴 A PHONE HAS NO ROOM FOR A CAPTION BESIDE ANYTHING, SO IT DOES NOT GET ONE.
+       `boxW` is `min(380, W - 24)`, which on a 375px screen is 349 of 373 — 94% of the stage. A box
+       that wide has no free column to sit in and no honest "above" or "below" on a 219px stage
+       either, so every placement it can choose lands on the subject. Measured at 375px on
+       2026-08-31: beats 5, 6, 8, 9 of Product Performance and 18, 19 of Stock by Warehouse each
+       covered the ring they were pointing at. Handing those beats back to the wide bottom bar is
+       not a downgrade — the bar IS the phone layout, and beats 1, 7, 10 and 12 already read fine
+       through it. Desktop is untouched: 380 of ~1000 never trips this. */
+    if (boxW > W * 0.7) return null;
     const clampX = (v) => Math.max(12, Math.min(v, Math.max(12, W - boxW - 12)));
     const clampY = (v) => Math.max(12, Math.min(v, Math.max(12, H - boxH - 12)));
     const cx = spot.x + spot.w / 2, cy = spot.y + spot.h / 2;
