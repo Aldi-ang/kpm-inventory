@@ -1,7 +1,13 @@
 # NEXT SESSION — read this, then `.claude/PROGRESS.md`. Read no code to orient.
 
-**Written 2026-08-31 09:25 WIB. 670/670 audit · 915/915 selfcheck. Branch `phase0-solid-ground`,
-tree clean at `c4f2f1b`.**
+**Written 2026-08-31 09:11 WIB. 671/671 audit · 915/915 selfcheck. Branch `phase0-solid-ground`,
+tree clean at `1efeb11`.**
+
+⚠️ **THE PREVIEW PANE FREEZES ITS OWN CLOCK WHILE IT IS HIDDEN** — `requestAnimationFrame` never
+fires and every `setTimeout` stretches (a 40ms wait measured 810ms), so anything that unmounts on a
+timer appears to hang forever and any animation looks stuck at its first frame. **Front the tab with
+`tabs_select` before testing motion**; afterwards a 100ms timer measured 115ms and rAF fired in 0ms.
+Two separate "bugs" were chased before this was understood.
 
 ## First command
 
@@ -101,12 +107,12 @@ Scenes: `product-performance` (12 beats) · `stock-by-warehouse` (23) · `goods-
 - **G4** — records joined by name, not id. A spelling fix silently splits one product into two.
 - **Redesign `BranchWarehouseManager` into Duke's Ledger.** A look job, not a correctness one.
 - **Untested by anyone: Siapkan Pengiriman and the shipping modal.**
-- **The book never shuts when you pick a scene from it.** Found 2026-08-31 while fixing the panel's
-  own exit. `PonderBookButton`'s `onPick` does `setLibOpen(false)` and unmounts the Library on the
-  spot, so the shut-and-fly-back it already owns (`leafShut 520 → flyOut 480`, guarded by
-  `closingRef`) only ever plays if you close the BOOK. Open a scene from it and the book simply
-  vanishes. Aldi has not asked for this — mention it before building it, because the honest fix
-  hands the close over to the Library and that is surgery on a delicate animation.
+- **The per-panel Tutorial chip has no book at all.** `PonderButton` renders `PonderOverlay`
+  directly, so closing a scene opened from a panel header plays the panel's own 240ms shrink and
+  nothing else — there is no book to shut, because none ever flew in. Aldi asked for the book close
+  on 2026-08-31 and got it on the `PonderBookButton` path, which is the one where a book was
+  actually opened. If he wants the chip path to grow a book too, that is a different job: the book
+  would have to fly OUT of a chip it never flew into.
 
 </details>
 

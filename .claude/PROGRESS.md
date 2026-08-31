@@ -1,6 +1,34 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-31 09:25 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **670/670 audit · 915/915 selfcheck** · branch `phase0-solid-ground`, tree clean
+**Updated: 2026-08-31 09:11 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **671/671 audit · 915/915 selfcheck** · branch `phase0-solid-ground`, tree clean
+
+## 🟠 2026-08-31 09:11 — THE BOOK COMES BACK TO SHUT ITSELF. `1efeb11`, **671/671 + 915/915**. Tree clean.
+
+His ask: *"i want the book shuts and fly to also happen when user close the ponder panel"*. **The
+animation already existed and already worked** — leaf swings shut at the spine over 520ms, then the
+whole book flies into the chip over 480ms. It simply never ran on this path, because `onPick`
+unmounted the Library the moment a scene was chosen.
+
+The Library is re-mounted in close-only mode when the panel finishes its exit. No new animation was
+written: `shut()` names BOTH ends of everything it starts under `fill: 'both'`, so it never needed
+the opening sequence to have run to know where to begin.
+
+Two traps handled: the opening flight is skipped (or the book flies in only to fly back out), and
+`bookClose()` is not replayed (the panel fired it 240ms earlier; two is the same book closing
+twice). Picks are ignored while shutting. Check 671 pins all three, mutation-tested both ways.
+
+**⚠️ THE PANE FREEZES ITS CLOCK WHILE HIDDEN.** `requestAnimationFrame` never fires and a 40ms
+timeout measured 810ms, so a timer-driven unmount looks like a hang and an animation looks stuck on
+frame one. `tabs_select` to front it first — afterwards 100ms measured 115ms and rAF fired in 0ms.
+This cost two rounds of chasing non-bugs and is now the first warning in the brief.
+
+**Verified with the clock running:** chip → book (7 animations, glyph hidden) → pick a scene (panel
+up, glyph back) → close → at +300ms the book is on screen again, 7 animations, glyph hidden → clean
+at +1600ms with nothing mounted. Plus a frame caught mid-flight showing the leaf rotated on its spine.
+
+**Not done, and it is a different job:** the per-panel Tutorial chip (`PonderButton`) has no book at
+all — it renders the overlay directly, so closing there is the panel's own 240ms shrink and nothing
+more. Making a book fly out of a chip it never flew into is a separate build.
 
 ## 🟠 2026-08-31 09:25 — THE CLOSING SOUND NOW HAS SOMETHING TO PLAY OVER. `c4f2f1b`, **670/670 + 915/915**. Tree clean.
 
