@@ -1,6 +1,39 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-31 09:19 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **672/672 audit · 915/915 selfcheck** · branch `phase0-solid-ground`, tree clean
+**Updated: 2026-08-31 09:28 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **672/672 audit · 915/915 selfcheck** · branch `phase0-solid-ground`, tree clean
+
+## 🟠 2026-08-31 09:28 — SHIPMENT PLAN MOVES AGAIN ON PC. `a84024a`, **672/672 + 915/915**. Tree clean.
+
+*"why the tutorial description is static again on PC i just checked for the shipment plan only"* and
+*"for phone just let it static, just make sure that it looks good on phones"*.
+
+**Not a regression — measured before answering.** The width bail does not fire on PC (stage 1023px,
+threshold 716). Ten of the scene's thirteen beats were authored `at: 'bottom'` from the day it was
+written, with a frame-checked comment explaining why: a near caption on a four-row panel covered the
+rows it was comparing.
+
+**That reason had expired.** What made it true was the placement bug fixed earlier today — the stage
+never scrolled, so captions were positioned against a spot measured off-stage and the no-room
+fallback sat on the subject. With 1023px of stage against a 380px caption, a column beat now stands
+BESIDE its column. Re-measured, not re-argued: **11 of 13 beats move, zero overlapping their own
+highlight, zero outside the stage.** Beats 1 and 12 stay static because they focus `'*'` — nothing
+to point at. The old comment was replaced with why it expired, not deleted.
+
+**The phone half was a real look bug.** The product column held ~112px of an 832px table, so *Cello
+Chocolate* rendered as *Cell…* while the caption below it used the full name. Its minimum width now
+reserves 100px more; all three names read in full on a frame at 375px. Desktop untouched.
+
+**Flagged, not fixed:** `StockByWarehouseTable` truncates warehouse names the same way, but it is a
+Tailwind arbitrary-value grid with audit checks pinning the class string — different edit, different
+risk, and he was looking at Shipment Plan.
+
+**⚠️ STILL OPEN AND UNANSWERED — the money finding, paused mid-check:** deleting or editing a sale
+writes to `users/{the logged-in uid}/transactions`, but sales are SAVED under `users/{bossUid}/`.
+Identical for the owner, different for everyone below him, and there is no permission gate on the
+three delete handlers. A subordinate's delete would hit a document that is not there, report
+success, and leave the sale counted. **Older than the sales rollup — the rollup copied the uid from
+the delete code beside it.** The unfinished step is whether a subordinate can open the Reports tab
+at all, which decides the severity. He was asked whether to finish the check or fix it now.
 
 ## 🟠 2026-08-31 09:19 — THE TUTORIAL HAS ONE DOOR NOW. `5340734`, **672/672 + 915/915**. Tree clean.
 

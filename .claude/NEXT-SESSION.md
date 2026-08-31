@@ -1,7 +1,14 @@
 # NEXT SESSION — read this, then `.claude/PROGRESS.md`. Read no code to orient.
 
-**Written 2026-08-31 09:19 WIB. 672/672 audit · 915/915 selfcheck. Branch `phase0-solid-ground`,
-tree clean at `5340734`.**
+**Written 2026-08-31 09:28 WIB. 672/672 audit · 915/915 selfcheck. Branch `phase0-solid-ground`,
+tree clean at `a84024a`.**
+
+🔴 **THE CAPTION RULE, SO IT IS NOT RE-LITIGATED.** On a PC a beat that focuses a real element
+shows the MOVING caption; on a phone every beat uses the static bottom bar. Both are his call, both
+2026-08-31: *"why the tutorial description is static again on PC"* and *"for phone just let it
+static, just make sure that it looks good on phones"*. The switch is one line in `PonderOverlay.jsx`
+— `if (boxW > W * 0.7) return null;` — which fires only when the caption would take most of the
+stage width. A beat focusing `'*'` stays static everywhere: there is nothing to point at.
 
 ⚠️ **THE PREVIEW PANE FREEZES ITS OWN CLOCK WHILE IT IS HIDDEN** — `requestAnimationFrame` never
 fires and every `setTimeout` stretches (a 40ms wait measured 810ms), so anything that unmounts on a
@@ -100,6 +107,14 @@ rows), or shrink the box on phones so it fits. **He has not chosen. Do not chang
 - **G5** — inventory accuracy and shrinkage never calculated, though the raw numbers exist.
 - **G4** — records joined by name, not id. A spelling fix silently splits one product into two.
 - **Redesign `BranchWarehouseManager` into Duke's Ledger.** A look job, not a correctness one.
+- **`StockByWarehouseTable` truncates warehouse names on a phone** — "GUDAN…". Same squeeze that
+  was fixed in `ShipmentPlanTable` by reserving 100px more of its minimum width, but a different
+  edit: this one is a Tailwind arbitrary-value grid (`grid-cols-[minmax(0,1fr)_100px_…]`) with
+  audit checks pinning the class string, so changing it will move those checks too.
+- **The other scenes were never re-checked after the caption fix.** `shipment-plan` went from 3
+  moving beats to 11 once the `at:` values were revisited; `product-performance` is still 5 of 12
+  and `stock-by-warehouse` 16 of 23. Some of those `bottom` beats may be carrying the same expired
+  reason. Measure with the 2-D test before changing any of them.
 
 </details>
 
