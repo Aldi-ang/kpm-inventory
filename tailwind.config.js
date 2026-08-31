@@ -77,6 +77,9 @@ export default {
         'ponder-in':    'ponderIn 260ms cubic-bezier(0.23,1,0.32,1) both',
         'ponder-ring':  'ponderRing 420ms cubic-bezier(0.23,1,0.32,1) both',
         'ponder-open':  'ponderOpen 460ms cubic-bezier(0.23,1,0.32,1) both',
+        /* Shorter than the arrival and eased the other way. An entrance decelerates into place;
+           an exit accelerates away, and waiting the full 460ms to leave reads as a hang. */
+        'ponder-shut':  'ponderShut 240ms cubic-bezier(0.4,0,1,1) both',
         /* A new sheet arriving. NOT a flip — a flip is what the cover does; a page you turn TO
            slides into place. The two halves come out of the fold in opposite directions. */
         /* a spark leaving the pages on hover. Infinite, but only ever applied under group-hover —
@@ -122,6 +125,14 @@ export default {
         ponderOpen: {
           '0%':   { opacity: '0', transform: 'translateY(10px) scale(0.94)' },
           '100%': { opacity: '1', transform: 'none' },
+        },
+        /* The way back out, and it is ponderOpen reversed on purpose rather than a new gesture:
+           the panel returns to the size and place it grew from. Aldi, 2026-08-31: *"when i close
+           the ponder panel it should return to the closed book animation, right now the panel is
+           just gone but the book close SFX is there"*. The sound was already playing over nothing. */
+        ponderShut: {
+          '0%':   { opacity: '1', transform: 'none' },
+          '100%': { opacity: '0', transform: 'translateY(10px) scale(0.94)' },
         },
         /* a sheet settling into place, out of the fold */
         ponderSlide: {

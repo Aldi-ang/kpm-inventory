@@ -4321,6 +4321,29 @@ check(G56, 'the tutorial camera moves instantly, because a smooth one never move
   'the scene must scroll its subject into view with behavior:\'auto\'. A smooth scroll does not ' +
   'run in this stage at all, and the beat is then measured against a subject still below the fold');
 
+/* 🔴 THE PANEL MUST STILL BE ON SCREEN WHILE ITS CLOSING SOUND PLAYS. Aldi, 2026-08-31: *"when i
+   close the ponder panel it should return to the closed book animation, right now the panel is just
+   gone but the book close SFX is there"*. `leave` called `onClose()` in the same tick as
+   `bookClose()`, the parent dropped the scene, and the panel returned null on the next render —
+   `bookCloseS` played over an empty screen.
+
+   TWO FILES HAVE TO AGREE FOR THIS TO WORK, which is exactly the kind of pair that rots in silence.
+   `SHUT_MS` decides when the panel unmounts and the `ponder-shut` utility decides how long the exit
+   takes. Smaller and the animation is cut off mid-flight; larger and a finished, invisible panel
+   sits there swallowing clicks. Neither shows up as an error, so the numbers are compared here. */
+const shutMs = Number((overlaySrc.match(/const SHUT_MS = (\d+)/) || [])[1]);
+/* Read here rather than reusing `twSrc`: that one is declared further down the file, and reaching
+   it from up here is a temporal-dead-zone ReferenceError, not a value. */
+const twShutSrc = fs.readFileSync('tailwind.config.js', 'utf8');
+const shutAnim = Number((twShutSrc.match(/'ponder-shut':\s*'ponderShut (\d+)ms/) || [])[1]);
+check(G56, 'the panel unmounts exactly when its closing animation ends, not before or after',
+  Number.isFinite(shutMs) && Number.isFinite(shutAnim) && shutMs === shutAnim &&
+  /animate-ponder-shut/.test(overlaySrc) && /setTimeout\(onClose, SHUT_MS\)/.test(overlaySrc) &&
+  /liteOn\(\) \|\| reduced\(\)/.test(overlaySrc),
+  'SHUT_MS in PonderOverlay.jsx must equal the ponder-shut duration in tailwind.config.js, the ' +
+  'panel must carry animate-ponder-shut while closing, and Lite Mode and reduced motion must ' +
+  'still close on the spot rather than waiting for an animation that is not playing');
+
 /* A phone has no room for a caption BESIDE anything: boxW is min(380, W - 24), which is 349 of 373
    on a 375px screen. Every placement such a box can choose lands on its own subject, so the beat
    falls through to the wide bottom bar instead — the layout the other beats in the same scenes

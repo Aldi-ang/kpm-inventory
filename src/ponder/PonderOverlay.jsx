@@ -31,6 +31,13 @@ import { bookClose } from './sfx.js';
 const reduced = () => typeof window !== 'undefined' && typeof window.matchMedia === 'function'
   && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+const liteOn = () => typeof document !== 'undefined'
+  && document.documentElement.classList.contains('lite-mode');
+
+/* Must match `ponder-shut` in tailwind.config.js. The panel unmounts when the timer fires, so a
+   number smaller than the animation cuts the exit off and a larger one leaves a frozen panel. */
+const SHUT_MS = 240;
+
 const CAPTION_W = 380;   // px, clamped to the stage on narrow screens
 const PAD = 6;           // how far the highlight sits outside what it points at
 const GAP = 12;          // clear air between the highlight's edge and the caption's pointer
@@ -277,7 +284,38 @@ export default function PonderOverlay({ sceneId, open, onClose, onBack }) {
     return () => { document.body.style.overflow = prev; };
   }, [open]);
 
-  const leave = useCallback(() => { bookClose(); onClose(); }, [onClose]);
+  /* 🔴 THE PANEL HAS TO STILL BE THERE WHILE THE CLOSING SOUND PLAYS. Aldi, 2026-08-31: *"when i
+     close the ponder panel it should return to the closed book animation, right now the panel is
+     just gone but the book close SFX is there"*. `leave` used to call `onClose()` in the same tick,
+     the parent set its scene to null, and the render below returned null on the next frame — so
+     `bookCloseS` played over an empty screen. The exit is the arrival reversed, which is the same
+     shape the little book already uses: it returns to the size and place it grew from.
+
+     Lite Mode and reduced motion skip it entirely and close on the spot, the same rule the book
+     follows — his call there: *"for lite mode then snap the book and close it right back thats
+     fine"*. No animation is constructed, not a fast one, none.
+
+     `closingRef` is what stops a second press during the 240ms from queueing a second `onClose`,
+     and the timer is cleared on unmount so a scene closed by its parent cannot set state after. */
+  const [closing, setClosing] = useState(false);
+  const closingRef = useRef(false);
+  const shutTimer = useRef(null);
+
+  const leave = useCallback(() => {
+    if (closingRef.current) return;
+    closingRef.current = true;
+    bookClose();
+    if (liteOn() || reduced()) { onClose(); return; }
+    setClosing(true);
+    shutTimer.current = setTimeout(onClose, SHUT_MS);
+  }, [onClose]);
+
+  /* Reset when the parent opens a scene again — including the case where it swapped scenes while
+     this one was still shutting, which would otherwise open the next one already mid-exit. */
+  useEffect(() => {
+    if (open) { closingRef.current = false; setClosing(false); }
+    return () => { if (shutTimer.current) clearTimeout(shutTimer.current); };
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;
@@ -387,14 +425,15 @@ export default function PonderOverlay({ sceneId, open, onClose, onBack }) {
   return createPortal(
     <div role="dialog" aria-modal="true" aria-label={scene.title}
          onMouseDown={leave}
-         className="fixed inset-0 z-[9000] flex items-end lg:items-center justify-center
-                    bg-[var(--duke-scrim-hi)] backdrop-blur-sm lg:p-6">
+         className={`fixed inset-0 z-[9000] flex items-end lg:items-center justify-center
+                    bg-[var(--duke-scrim-hi)] backdrop-blur-sm lg:p-6
+                    ${closing ? 'opacity-0 transition-opacity duration-200 ease-in' : ''}`}>
 
       <div onMouseDown={(e) => e.stopPropagation()}
-           className="relative w-full min-w-0 lg:max-w-5xl max-h-[92vh] lg:max-h-[88vh] lg:min-h-[700px]
-                      flex flex-col overflow-hidden bg-panel animate-ponder-open
+           className={`relative w-full min-w-0 lg:max-w-5xl max-h-[92vh] lg:max-h-[88vh] lg:min-h-[700px]
+                      flex flex-col overflow-hidden bg-panel ${closing ? 'animate-ponder-shut' : 'animate-ponder-open'}
                       border border-line-2 rounded-t-2xl lg:rounded-2xl
-                      shadow-[0_1px_1px_rgba(0,0,0,0.20),0_18px_40px_-28px_rgba(0,0,0,0.85)]">
+                      shadow-[0_1px_1px_rgba(0,0,0,0.20),0_18px_40px_-28px_rgba(0,0,0,0.85)]`}>
 
         <div className="flex items-start gap-3 px-5 pt-5 pb-4 border-b border-line-2">
           <span className="h-10 w-10 rounded-xl bg-raised border border-line-2 flex items-center justify-center shrink-0">
