@@ -27,13 +27,16 @@ reserves 100px more; all three names read in full on a frame at 375px. Desktop u
 Tailwind arbitrary-value grid with audit checks pinning the class string — different edit, different
 risk, and he was looking at Shipment Plan.
 
-**⚠️ STILL OPEN AND UNANSWERED — the money finding, paused mid-check:** deleting or editing a sale
-writes to `users/{the logged-in uid}/transactions`, but sales are SAVED under `users/{bossUid}/`.
-Identical for the owner, different for everyone below him, and there is no permission gate on the
-three delete handlers. A subordinate's delete would hit a document that is not there, report
-success, and leave the sale counted. **Older than the sales rollup — the rollup copied the uid from
-the delete code beside it.** The unfinished step is whether a subordinate can open the Reports tab
-at all, which decides the severity. He was asked whether to finish the check or fix it now.
+**🔴 THE MONEY FINDING IS NOW COMPLETE — full table in `.claude/NEXT-SESSION.md`.** Sales are saved
+under `users/{bossUid || user.uid}/` but deleted and edited under `users/{user.uid}/`. Owner is safe
+because he claims his own id as `bossUid`; a delegated account is not. Reports is reachable by every
+tier (`view_reports_*` down to TIER_6), but the delete and edit buttons are gated on `isAdmin`,
+which is **`vaultUnlocked` — the Master Vault password, not a role**. So it needs a delegated holder
+who can unlock the vault: not reachable by an ordinary subordinate today, live the moment that
+password is shared or the gate becomes a tier check. When reached, `deleteDoc` on a missing document
+SUCCEEDS, so the UI reports a delete that did not happen and the receipt survives. A rebuild repairs
+the totals; **nothing repairs the un-deleted receipt.** Older than the rollup — the rollup copied
+`user.uid` from the delete code beside it. **He has been told and has not said fix or leave.**
 
 ## 🟠 2026-08-31 09:19 — THE TUTORIAL HAS ONE DOOR NOW. `5340734`, **672/672 + 915/915**. Tree clean.
 
