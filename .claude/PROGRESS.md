@@ -1,6 +1,36 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-31 09:11 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **671/671 audit · 915/915 selfcheck** · branch `phase0-solid-ground`, tree clean
+**Updated: 2026-08-31 09:19 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **672/672 audit · 915/915 selfcheck** · branch `phase0-solid-ground`, tree clean
+
+## 🟠 2026-08-31 09:19 — THE TUTORIAL HAS ONE DOOR NOW. `5340734`, **672/672 + 915/915**. Tree clean.
+
+His call: *"book is good we dont need any of the tutorial chip, all should be inside the tutorial
+book on top"*. All three per-panel `?` chips are gone — Goods Received, Stock by Warehouse, Product
+Performance — and `PonderButton.jsx` with them, since nothing else used it. **Checked before
+removing, not after:** all four scenes were already listed in `sections.js`, so nothing was orphaned.
+
+**The audit followed the change instead of being deleted around it.** "Every chip names a real
+scene" guarded a door that no longer exists, so it became the same rot in the direction that can now
+happen: **every scene must be reachable from the book**, because a scene missing from `sections.js`
+is now unreachable by anyone. The reverse check stays. The stock panel's check keeps its
+English-title clause and now also asserts no chip has crept back.
+
+**That new check fired on its first run and the CHECK was the wrong one.** Sixteen book entries
+carry a title and no `sceneId` on purpose — the "no scene written yet" cards, documented at the top
+of `sections.js`. Filtering them is load-bearing: without it a green suite learns to cry wolf.
+
+**❓ WAITING ON ALDI — his question, verbatim, still unanswered:**
+
+> *"wait where is the small box inside the ponder system that move with the higlights panel?"*
+
+Answered: it is the `near` caption, alive on desktop (goods-received 29 of 30 beats,
+product-performance 5 of 12), and turned off on phones by `if (boxW > W * 0.7) return null;` because
+at 375px it is 349 wide on a 373 stage and covered the row it explained. He was given three options
+— keep, force back on phone anyway, or shrink it for phones — and has not picked. **Nothing changes
+there until he does.**
+
+**NEXT, his instruction mid-turn:** *"now focus on the sales total and also improvement on the
+restock vault if needed"*. That is a diagnosis job — the brief says report and let him rank.
 
 ## 🟠 2026-08-31 09:11 — THE BOOK COMES BACK TO SHUT ITSELF. `1efeb11`, **671/671 + 915/915**. Tree clean.
 
