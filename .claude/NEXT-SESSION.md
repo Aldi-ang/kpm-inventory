@@ -46,10 +46,17 @@ from `src/utils/supply.js`. `MASTER` gets `days: null`, not `0`, on purpose — 
 where shipments come FROM, so "days of cover" is not a question that applies to it. Do not let a
 redesign turn that null into a dash that looks like missing data.
 
-**Two things landed today that this screen touches.** The main warehouse is named once now,
-`Gudang Pusat (Master Vault)` — longer than the old `MASTER`, so **re-measure anything that
-truncates**, `StockByWarehouseTable` on a phone especially. And warehouses now carry a registered
-address (`places` collection, `kind: 'gudang'`); showing it here would cost almost nothing.
+**Three things landed on 2026-08-31 that this screen touches.**
+
+1. The main warehouse is named once now, `Gudang Pusat (Master Vault)` — longer than the old
+   `MASTER`, so **re-measure anything that truncates**, `StockByWarehouseTable` on a phone
+   especially.
+2. Warehouses carry a registered **address** (`places` collection, `kind: 'gudang'`, read through
+   `addrFor()` in `RestockVaultView.jsx`). Showing it on a warehouse card would cost almost nothing.
+3. The Restock Vault gained a fifth tab, **Data Induk** — pabrik · gudang · orang — and a clearance
+   `canHandleDelivery()` in `permissions.js` (T1–T4, `FLEET_CAPTAIN` named explicitly). If the
+   regional-warehouse redesign wants to show "who may receive here", that function is the answer;
+   do not write a second tier list.
 
 ---
 
