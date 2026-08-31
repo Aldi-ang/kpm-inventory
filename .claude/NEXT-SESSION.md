@@ -1,7 +1,7 @@
 # NEXT SESSION — read this, then `.claude/PROGRESS.md`. Read no code to orient.
 
-**Written 2026-08-31 09:05 WIB. 669/669 audit · 915/915 selfcheck. Branch `phase0-solid-ground`,
-tree clean at `8f3f438`.**
+**Written 2026-08-31 09:25 WIB. 670/670 audit · 915/915 selfcheck. Branch `phase0-solid-ground`,
+tree clean at `c4f2f1b`.**
 
 ## First command
 
@@ -17,7 +17,7 @@ stale `dist/`, so build first or it tells you to.
 ## 🔴 THE ONE JOB — three caption/ring overlaps in Stock by Warehouse, on DESKTOP
 
 The phone half is finished and checked. These three are what is left, they were found by the same
-sweep, and they are **not** caused by yesterday's fix — both changed lines are provably inert at
+sweep, and they are **not** caused by the scroll fix in `aef7f03` — both changed lines are provably inert at
 desktop width (the stage does not scroll there, `scrollHeight === clientHeight` at 1440, and
 `boxW` 380 never exceeds the 715px bail threshold).
 
@@ -37,23 +37,23 @@ subject is a tall narrow block instead, so it is likely a different case; check 
 **Do this first, before any edit:** reproduce each on a FRESH load, not by clicking through.
 `?scene=stock-by-warehouse&step=6` / `&step=15` / `&step=21` (step is 0-based; the on-screen counter
 is 1-based). A click-through walk and a fresh load gave different stage heights and different
-geometry yesterday — **439 walking, 525 fresh** — and two "failures" evaporated on a fresh load.
+geometry when this was measured — **439 walking, 525 fresh** — and two "failures" evaporated on a fresh load.
 
 **And use a 2-D overlap test.** A 1-D vertical test flags every *beside* caption, which is correct
-behaviour, and it cost a full round trip yesterday:
+behaviour, and it cost a full round trip when this was measured:
 
 ```js
 const hit = !(B.b<=R.t || B.t>=R.b) && !(B.r<=R.l || B.l>=R.r);
 ```
 
 **The trap that will bite:** do not "fix" this by clamping. The same instinct produced a whole
-handoff brief yesterday aimed at an unclamped `top` in `PonderOverlay.jsx` that was real, visible in
+handoff brief aimed at an unclamped `top` in `PonderOverlay.jsx` that was real, visible in
 the source, explained every symptom, and was **not the bug**. Measure what the browser is actually
 doing before editing anything. `A-Brain/Wiki/Concepts/A Smooth Scroll That Never Runs.md` has the
 whole story.
 
 **Where it lives:** the `near` `useMemo` in `src/ponder/PonderOverlay.jsx` (~line 300). Whatever
-lands there needs a check beside checks 668 and 669, and it must be mutation-tested red before green.
+lands there needs a check beside checks 668, 669 and 670, and it must be mutation-tested red before green.
 
 ---
 
@@ -101,6 +101,12 @@ Scenes: `product-performance` (12 beats) · `stock-by-warehouse` (23) · `goods-
 - **G4** — records joined by name, not id. A spelling fix silently splits one product into two.
 - **Redesign `BranchWarehouseManager` into Duke's Ledger.** A look job, not a correctness one.
 - **Untested by anyone: Siapkan Pengiriman and the shipping modal.**
+- **The book never shuts when you pick a scene from it.** Found 2026-08-31 while fixing the panel's
+  own exit. `PonderBookButton`'s `onPick` does `setLibOpen(false)` and unmounts the Library on the
+  spot, so the shut-and-fly-back it already owns (`leafShut 520 → flyOut 480`, guarded by
+  `closingRef`) only ever plays if you close the BOOK. Open a scene from it and the book simply
+  vanishes. Aldi has not asked for this — mention it before building it, because the honest fix
+  hands the close over to the Library and that is surgery on a delicate animation.
 
 </details>
 

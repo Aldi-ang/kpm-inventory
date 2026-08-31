@@ -1,6 +1,31 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-31 09:05 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **669/669 audit · 915/915 selfcheck** · branch `phase0-solid-ground`, tree clean
+**Updated: 2026-08-31 09:25 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **670/670 audit · 915/915 selfcheck** · branch `phase0-solid-ground`, tree clean
+
+## 🟠 2026-08-31 09:25 — THE CLOSING SOUND NOW HAS SOMETHING TO PLAY OVER. `c4f2f1b`, **670/670 + 915/915**. Tree clean.
+
+His report: *"when i close the ponder panel it should return to the closed book animation, right now
+the panel is just gone but the book close SFX is there"*. `leave` called `onClose()` in the same
+tick as `bookClose()`, the parent dropped the scene id, and the panel returned null on the next
+render — so `bookCloseS` played over an empty screen.
+
+The exit is `ponderOpen` reversed rather than a new gesture, so the panel returns to the size and
+place it grew from, the same shape the little book already uses. 240ms against the 460ms arrival and
+eased the other way: an entrance decelerates into place, an exit accelerates away. Lite Mode and
+reduced motion still close on the spot, matching the book's rule.
+
+**Check 670 compares `SHUT_MS` against the `ponder-shut` duration in `tailwind.config.js`** — two
+numbers in two files that must agree, where too small cuts the animation off and too large leaves an
+invisible panel swallowing clicks, and nothing else would ever notice. Mutation-tested both ways.
+
+**Verified by driving the animation's own clock, not a wall timer** — the preview pane is hidden, so
+`requestAnimationFrame` is paused and every `setTimeout` measurement is throttled beyond use. Paused
+the animation and stepped `currentTime`: opacity 1 → 0.007, scale 1 → 0.940, +10px over the 240ms.
+
+**🔴 FOUND WHILE IN THERE, NOT FIXED, HE HAS NOT ASKED:** picking a scene from the book unmounts the
+Library on the spot (`onPick` → `setLibOpen(false)`), so the book's own shut-and-fly-back — which is
+already built and works — only ever plays if you close the BOOK. Open a scene from it and the book
+just vanishes. In the brief's queue.
 
 ## 🟠 2026-08-31 09:05 — THE TUTORIAL CAMERA NEVER MOVED ON A PHONE. `aef7f03` + `8f3f438`, **669/669 + 915/915**. Tree clean.
 
