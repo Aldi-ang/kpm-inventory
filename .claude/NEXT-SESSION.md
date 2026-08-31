@@ -146,11 +146,29 @@ rows), or shrink the box on phones so it fits. **He has not chosen. Do not chang
 
 ## 🔴 TWO THINGS ONLY ALDI CAN DO
 
-1. **The quota meter is blind.** `.claude/plan-quota.mjs` warns at 70/85/95 and has never run:
-   `C:/Users/ASUS/9router-claude-id.txt` and `9router-cookie.txt` do not exist, and the hook exits
-   silently without the id. The cookie is a credential — he writes both files himself, never into
-   the repo or into chat. Until then there is no 5-hour meter at all, so write `NEXT-SESSION.md`
-   then `PROGRESS.md` right after the first commit. The Stop hook blocks on either being stale.
+1. **The quota meter is a VERSION MISMATCH, not missing config — investigated to a dead end
+   2026-08-31, do not repeat these steps.** `.claude/plan-quota.mjs` calls
+   `GET http://localhost:20128/api/usage/{connId}` and needs `C:/Users/ASUS/9router-claude-id.txt`.
+
+   **Eliminated, with evidence:**
+   - The cookie jar for `localhost:20128` holds ONE cookie, `auth_token`. There is no
+     `odysseus_session`, and the hook mints `auth_token` itself from
+     `AppData/Roaming/9router/jwt-secret`, so the cookie file was never the blocker.
+   - The whole client API surface is `version`, `status` ×2, `settings` ×3, `keys`. **There is no
+     `usage` call and no connection id anywhere in it.** Both `status` payloads were read: one is
+     tunnel/tailscale/download, the other is auth/SSO. Neither carries an id.
+   - `http://localhost:20128/api/usage` with no id returns **404**.
+   - The `/dashboard/usage` page fetches through Next.js RSC (`?_rsc=`), i.e. server-rendered — so
+     the numbers never travel over an endpoint a hook can call.
+   - Probing the API by minting a token from the jwt-secret was REFUSED by the permission
+     classifier, correctly. Do not try to route around that.
+
+   **The next thing to try is local, not HTTP:** 9router keeps state in
+   `C:/Users/ASUS/AppData/Roaming/9router/db`. A hook that reads that store directly needs no
+   endpoint, no token and no cookie, which is the right shape for something that must run on every
+   message. Confirm the file format first, and ask before reading anything that looks like a
+   credential store. **Until it works there is no 5-hour meter** — write `NEXT-SESSION.md` then
+   `PROGRESS.md` right after the first commit, and let the Stop hook enforce it.
 2. **Rebuild sales totals**, Settings › Company · 07, pressed once.
 
 <details>
