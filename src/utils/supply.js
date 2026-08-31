@@ -31,7 +31,15 @@ import { convertToBks } from './helpers.js';
    back into karton/bal/slop at the last moment. Mixing units before the end is how a figure ends
    up twenty times too big.                                                                      */
 
-export const MASTER = 'MASTER';
+/* The ONE name for the main warehouse, on screen and on paper. His call, 2026-08-31: *"gudang
+   pusat is okay but add (master vault) because the components name is master vault"*. It was
+   spelled three different ways — 'MASTER' here, 'Gudang Pusat (HQ)' in the Restock Vault, and a
+   third hardcoded copy in the Goods Received stage — so the same place read as three places.
+
+   Safe to change because this value is a COMPUTED bucket label, never a stored one: warehouseList
+   builds it fresh each render and HQ_LOCATIONS below maps whatever Firestore actually holds
+   ('Headquarters', or empty) onto it. Rename the label, and no saved document moves. */
+export const MASTER = 'Gudang Pusat (Master Vault)';
 const HQ_LOCATIONS = ['Headquarters', '', null, undefined];
 /* exported because the Restock Vault's Tujuan list needs the SAME answer. It filtered on its
    own shorter list once and 'Headquarters' came back as a shippable cabang beside the real HQ

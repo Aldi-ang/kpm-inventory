@@ -11,6 +11,10 @@ import { savePhotoAndGetReference, deletePhotoFromStorage, commitInChunks, forma
 import { confirmAction, promptAction } from './components/ConfirmGate.jsx';
 import { notify } from './components/Toast.jsx';
 import { canSeeExpectedCount } from './config/permissions';
+/* Imported under a different name on purpose. The string 'MASTER' in this file is a SELECT VALUE
+   that routes Firestore paths (branches/{facility}/inventory) — changing it would move documents.
+   HQ_LABEL is only what the reader sees, and that is the part that had four spellings. */
+import { MASTER as HQ_LABEL } from './utils/supply.js';
 
 /* THE KINDS OF DAMAGE — Aldi, 2026-08-21: "our sales terminal give solid few options then we
    should able to add another one in the stock opname".
@@ -955,7 +959,7 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                         {viewMode === 'monitor' && <><BarChart size={24} className="text-[var(--ink-dim)] animate-pulse"/> Supply Telemetry</>}
                     </h2>
                     <p className="text-[10px] text-[var(--ink-dim)] font-mono mt-1 flex items-center gap-2">
-                        {viewMode === 'count' && `AUDITING: ${isAreaAdmin ? user.location : 'MASTER VAULT'}`}
+                        {viewMode === 'count' && `AUDITING: ${isAreaAdmin ? user.location : HQ_LABEL}`}
                         {viewMode === 'review' && 'VERIFY REGIONAL STOCK OVERWRITES'}
                         {viewMode === 'quarantine' && 'DAMAGED GOODS LIQUIDATION & HISTORY'}
                         {viewMode === 'monitor' && 'REAL-TIME FACILITY OVERWATCH'}
@@ -990,7 +994,7 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                     <div className="flex items-center gap-2 bg-[var(--sunk)] border border-[var(--line)] rounded-lg p-2 px-3 mb-6 w-full md:w-64 z-10 relative">
                         <MapPin size={16} className="text-[var(--ink-dim)]"/>
                         <select value={monitorFacility} onChange={(e) => setMonitorFacility(e.target.value)} className="bg-transparent text-sm text-[var(--ink)] font-black uppercase tracking-widest outline-none w-full">
-                            <option value="MASTER" className="bg-[var(--sunk)] text-[var(--ink)]">Master Vault (HQ)</option>
+                            <option value="MASTER" className="bg-[var(--sunk)] text-[var(--ink)]">{HQ_LABEL}</option>
                             {uniqueBranches.map(branch => <option key={branch} value={branch} className="bg-[var(--sunk)] text-[var(--ink)]">{branch}</option>)}
                         </select>
                     </div>
@@ -1105,7 +1109,7 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                             {quarSubTab === 'active' ? (
                                 <select value={quarantineFacility} onChange={(e) => setQuarantineFacility(e.target.value)} className="w-full md:w-48 bg-[var(--sunk)] border border-[var(--accent-edge)] rounded-lg p-2.5 text-xs text-[var(--ink)] font-bold uppercase tracking-widest outline-none focus:border-[var(--accent-edge)]">
                                     <option value="ALL" className="bg-[var(--sunk)] text-[var(--ink)]">All Facilities</option>
-                                    <option value="MASTER" className="bg-[var(--sunk)] text-[var(--ink)]">Master Vault (HQ)</option>
+                                    <option value="MASTER" className="bg-[var(--sunk)] text-[var(--ink)]">{HQ_LABEL}</option>
                                     {uniqueBranches.map(branch => <option key={branch} value={branch} className="bg-[var(--sunk)] text-[var(--ink)]">{branch}</option>)}
                                 </select>
                             ) : (
@@ -1113,7 +1117,7 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                                     <Filter size={14} className="text-[var(--ink-dim)]"/>
                                     <select value={regionFilter} onChange={(e) => setRegionFilter(e.target.value)} className="bg-transparent text-xs text-[var(--ink)] font-bold uppercase tracking-widest outline-none">
                                         <option value="ALL" className="bg-[var(--sunk)] text-[var(--ink)]">All Facilities</option>
-                                        <option value="MASTER" className="bg-[var(--sunk)] text-[var(--ink)]">Master Vault (HQ)</option>
+                                        <option value="MASTER" className="bg-[var(--sunk)] text-[var(--ink)]">{HQ_LABEL}</option>
                                         {uniqueBranches.map(branch => <option key={branch} value={branch} className="bg-[var(--sunk)] text-[var(--ink)]">{branch}</option>)}
                                     </select>
                                 </div>
@@ -1233,7 +1237,7 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                             <Filter size={14} className="text-[var(--ink-dim)]"/>
                             <select value={regionFilter} onChange={(e) => setRegionFilter(e.target.value)} className="bg-transparent text-xs text-[var(--ink)] font-bold uppercase tracking-widest outline-none w-full">
                                 <option value="ALL" className="bg-[var(--sunk)] text-[var(--ink)]">All Regions</option>
-                                <option value="MASTER" className="bg-[var(--sunk)] text-[var(--ink)]">Master Vault (HQ)</option>
+                                <option value="MASTER" className="bg-[var(--sunk)] text-[var(--ink)]">{HQ_LABEL}</option>
                                 {uniqueBranches.map(branch => <option key={branch} value={branch} className="bg-[var(--sunk)] text-[var(--ink)]">{branch}</option>)}
                             </select>
                         </div>

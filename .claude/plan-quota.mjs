@@ -118,19 +118,41 @@ try { data = await res.json(); } catch {
 }
 
 /* Keyed by a human label with a space in it. Match loosely so a rename upstream degrades to
-   "unknown" rather than to a confidently wrong number. */
+   "unknown" rather than to a confidently wrong number.
+
+   TWO buckets can each lock him out, both observed live on 2026-08-31:
+     "session (5h)" 7/100 · "weekly (7d)" 20/100
+   Watching only the session is how a weekly lockout arrives with no warning, so the thresholds
+   below fire on whichever bucket is WORSE. */
 const quotas = data?.quotas ?? {};
-const key = Object.keys(quotas).find(k => /session/i.test(k)) ?? Object.keys(quotas)[0];
-const q = key ? quotas[key] : null;
+const pick = (re) => { const k = Object.keys(quotas).find(x => re.test(x)); return k ? quotas[k] : null; };
+const sessionQ = pick(/session/i) ?? quotas[Object.keys(quotas)[0]] ?? null;
+const weekly = pick(/week/i);
 
-if (!q || q.unlimited) process.exit(0);
+/* remainingPercentage FIRST, because `used` is a COUNT and not always a percent. An On-demand
+   connection answers used:1 total:1 — completely spent — and reading that as "1% used" is exactly
+   the silent under-report this file exists to prevent. Seen on 2026-08-31. */
+const pct = (x) => !x || x.unlimited ? null
+  : Number.isFinite(x.remainingPercentage) ? 100 - x.remainingPercentage
+  : Number.isFinite(x.used) && Number.isFinite(x.total) && x.total > 0 ? Math.round((x.used / x.total) * 100)
+  : Number.isFinite(x.used) ? x.used
+  : null;
 
-const used = Number.isFinite(q.used) ? q.used
-           : Number.isFinite(q.remainingPercentage) ? 100 - q.remainingPercentage
-           : null;
-if (used === null) {
-  say('[plan-quota] 9router responded but had no usable usage figure — plan quota UNKNOWN.');
+const sUsed = pct(sessionQ), wUsed = pct(weekly);
+if (sUsed === null && wUsed === null) {
+  /* Nothing readable. Unlimited (or absent) is silence; a bucket that exists but cannot be read
+     is a warning, because that is indistinguishable from "fine" and must not be. */
+  if ((sessionQ && !sessionQ.unlimited) || (weekly && !weekly.unlimited)) {
+    say('[plan-quota] 9router responded but had no usable usage figure — plan quota UNKNOWN.');
+  }
+  process.exit(0);
 }
+
+const worstIsWeekly = (wUsed ?? -1) > (sUsed ?? -1);
+const q = worstIsWeekly ? weekly : sessionQ;
+const used = worstIsWeekly ? wUsed : sUsed;
+const label = worstIsWeekly ? 'weekly (7d)' : 'session (5h)';
+const both = sUsed !== null && wUsed !== null ? ` · session 5h ${sUsed}% · weekly 7d ${wUsed}%` : '';
 
 let resetIn = '';
 if (q.resetAt) {
@@ -141,7 +163,7 @@ if (q.resetAt) {
   }
 }
 
-const head = `[plan-quota] 5-hour plan quota: ${used}% used, ${100 - used}% left${resetIn}. ` +
+const head = `[plan-quota] ${label} plan quota: ${used}% used, ${100 - used}% left${resetIn}${both}. ` +
              `(This is the PLAN limit — /clear does not help it.)`;
 
 /* Thresholds. Aldi asked to be stopped at 95-98%; this fires earlier at each tier because a

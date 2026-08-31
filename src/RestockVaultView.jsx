@@ -6,7 +6,7 @@ import { confirmAction } from './components/ConfirmGate.jsx';
 import { notify } from './components/Toast.jsx';
 import { canPickFromGallery } from './config/permissions';
 /* one definition of "what is a branch", shared with the dashboard's supply maths */
-import { NON_BRANCH, bufferDays } from './utils/supply.js';
+import { NON_BRANCH, bufferDays, MASTER } from './utils/supply.js';
 /* THE SAME FOUR FUNCTIONS THE BRANCH PANEL RUNS ON, imported rather than re-derived. His ask,
    2026-08-30: *"when we fill the shipment out forms, it shows the recommended quantity sent for
    each product"* — and the branch already had this maths. A second copy of "how fast does this
@@ -30,7 +30,9 @@ import { productArrivals, shipmentRhythm, inTransitQty, reorderAdvice } from './
    them in this file, and a comment quoting one would fail its own check.)
    ═══════════════════════════════════════════════════════════════════════════ */
 
-const HQ_NAME = 'Gudang Pusat (HQ)';
+/* Not a second copy of the name — the same one supply.js already uses for the warehouse table,
+   so a rename lands on the surat jalan and the stock rows together. */
+const HQ_NAME = MASTER;
 const rp = (n) => 'Rp ' + new Intl.NumberFormat('id-ID').format(Math.round(Number(n) || 0));
 const num = (n) => new Intl.NumberFormat('id-ID').format(Number(n) || 0);
 

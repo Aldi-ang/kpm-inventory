@@ -15,6 +15,7 @@
    packs received — the same two lines `RestockVaultView` runs. A tutorial that rounds its own
    example into nonsense teaches someone to distrust the screen. */
 import React from 'react';
+import { MASTER } from '../../utils/supply.js';
 
 const rp = (n) => 'Rp ' + Number(n).toLocaleString('id-ID');
 
@@ -39,7 +40,7 @@ export default function GoodsReceivedStage() {
       <div className="grid grid-cols-[1fr_auto_1fr] gap-3 items-end">
         <Field k="f:asal" label="Asal" value="Pabrik Kudus" />
         <span className="pb-2 text-ink-muted">⇄</span>
-        <Field k="f:tujuan" label="Tujuan" value="Gudang Pusat (HQ)" />
+        <Field k="f:tujuan" label="Tujuan" value={MASTER} />
       </div>
 
       <div className="grid grid-cols-3 gap-3">

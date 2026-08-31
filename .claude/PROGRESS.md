@@ -1,6 +1,39 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-31 10:42 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **673/673 audit · 915/915 selfcheck** · branch `phase0-solid-ground`, tree clean
+**Updated: 2026-08-31 18:05 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **673/673 audit · 925/925 selfcheck** · branch `phase0-solid-ground`
+
+## 🟠 2026-08-31 18:05 — THE METER SPEAKS, AND THE MAIN WAREHOUSE HAS ONE NAME.
+
+**The meter was never a guessing game — the brief was reading the wrong file.** `plan-quota.mjs`
+loads `C:/Users/ASUS/.claude/9router-claude-id.txt`. The file Aldi re-created yesterday sits at
+`C:/Users/ASUS/9router-claude-id.txt`, one folder up, and nothing reads it. Every uuid he was asked
+to try was being written into a decoy. Working id: `76c7cf4f-4c24-4984-aada-3aa91f53a148`.
+
+**Two bugs found once it could answer.** The route returns TWO buckets, `session (5h)` and
+`weekly (7d)`; only the session was read, so a weekly lockout would have arrived in silence. And
+`used` was treated as a percentage when it is a count — an On-demand connection answers
+`used:1 total:1`, fully spent, and the meter called that **1% used** and said nothing. Both fixed:
+`remainingPercentage` is read first, a raw count is divided by its own total, and the WORSE of the
+two buckets drives the warning. Proved by pointing the hook at that connection and watching the
+same input print **100%** instead of 1%. Live now: session 7%, weekly 20%.
+
+**One name for the main warehouse: `Gudang Pusat (Master Vault)`.** His call: *"gudang pusat is
+okay but add (master vault) because the components name is master vault"*. It was spelled FOUR
+ways, not three — the fourth (`Master Vault (HQ)`, ×4 in Stock Opname) was found by the new check,
+not by reading. Declared once in `supply.js`; the Restock Vault, the Goods Received stage and Stock
+Opname all read it now.
+
+**The trap, and why nothing moved in Firestore:** `'MASTER'` is also a `<select>` value that routes
+`branches/{facility}/inventory`, and `MASTER` in `supply.js` is a computed bucket label that is
+never stored. Only the label changed; the routing value is untouched, so no saved document moved.
+That is why Stock Opname imports it as `HQ_LABEL` — same string, different job.
+
+**Three of his answers are now closed and written into the brief:** old records are left alone
+(*"all the record is still on trials and error anyway"*) so the registry job needs no migration ·
+the ponder caption becomes static on phones and keeps moving on PC, built with `/emil design` ·
+the warehouse name above.
+
+**❓ WAITING ON ALDI — nothing.** The receipt redesign is next and needs no answer from him.
 
 ## 🟠 2026-08-31 10:42 — THE QUOTA METER IS ONE GUESS AWAY, AND THREE NEW REQUIREMENTS LANDED. No code changed since `ee5dbfd`.
 

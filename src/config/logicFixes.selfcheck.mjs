@@ -3727,5 +3727,60 @@ ok('the detail line sits under its own bar, not out to the right',
    /\.kpm-srow \.figs \{ flex: 1 1 100%/.test(themeCss),
    'reading a bar on the left and its figures on the right is two saccades for one fact');
 
+/* ── D12 · the quota meter must never report a spent bucket as nearly empty ─────────────── */
+section('D12. The plan-quota hook reads a PERCENT, and watches both buckets');
+
+/* 2026-08-31: the hook read `used` as if it were already a percentage. An On-demand connection
+   answers used:1 total:1 — completely spent — and it reported "1% used", which is under 70 and
+   therefore says nothing at all. Silence from a meter reads as "everything is fine". */
+const quotaHook = stripComments(read('.claude/plan-quota.mjs'));
+
+const iRemaining = quotaHook.indexOf('100 - x.remainingPercentage');
+const iRawCount = quotaHook.indexOf('Number.isFinite(x.used) ? x.used');
+ok('remainingPercentage is read BEFORE the raw used count, not after',
+   iRemaining > -1 && iRawCount > -1 && iRemaining < iRawCount,
+   'used:1 of total:1 is 100% spent, and reporting it as 1% is the silent under-report');
+ok('a used count is divided by its own total before it becomes a percent',
+   /\(x\.used \/ x\.total\) \* 100/.test(quotaHook),
+   'only a total of 100 makes a raw count and a percentage the same number');
+ok('the 7-day weekly bucket is read as well as the 5-hour session',
+   /pick\(\/week\/i\)/.test(quotaHook),
+   'both exist live; watching only the session lets a weekly lockout arrive with no warning');
+ok('and the WORSE of the two drives the warning',
+   /worstIsWeekly/.test(quotaHook) && /worstIsWeekly \? wUsed : sUsed/.test(quotaHook));
+
+/* ── D13 · the main warehouse has ONE name ──────────────────────────────────────────────── */
+section('D13. One name for the main warehouse, declared once');
+
+/* It was spelled three ways at once — 'MASTER' in the supply maths, 'Gudang Pusat (HQ)' on the
+   surat jalan, and a third hardcoded copy in the Goods Received stage — so one place read as
+   three. His call, 2026-08-31: Gudang Pusat (Master Vault). */
+ok('the name is declared once, in supply.js',
+   /export const MASTER = 'Gudang Pusat \(Master Vault\)';/.test(stripComments(read('src/utils/supply.js'))));
+ok('the Restock Vault reads that constant instead of keeping its own copy',
+   /const HQ_NAME = MASTER;/.test(stripComments(read('src/RestockVaultView.jsx'))));
+ok('the Goods Received stage reads it too',
+   /value=\{MASTER\}/.test(stripComments(read('src/ponder/stages/GoodsReceivedStage.jsx'))));
+
+/* Scoped to the DISPLAYED name. The bare string 'MASTER' stays legal on purpose: in
+   StockOpnameView it is a <select> value that routes a Firestore path, and renaming it would
+   move documents rather than relabel a screen. */
+const OLD_NAMES = /'Gudang Pusat \(HQ\)'|"Gudang Pusat \(HQ\)"|>Master Vault \(HQ\)<|'MASTER VAULT'/;
+const oldSpellings = appFiles
+  .filter(f => f !== 'src/utils/supply.js')
+  .flatMap(f => stripComments(read(f)).split('\n')
+    .map((text, i) => ({ f, line: i + 1, text }))
+    .filter(l => OLD_NAMES.test(l.text)))
+  .map(v => `${v.f}:${v.line}`);
+ok(`no file spells the main warehouse its own way${oldSpellings.length ? ' — ' + oldSpellings.join(', ') : ''}`,
+   oldSpellings.length === 0,
+   'a fourth copy is how the third one got there — Stock Opname held four more');
+ok('the guard still fires on a hardcoded name',
+   OLD_NAMES.test(`<option value="MASTER">Master Vault (HQ)</option>`) &&
+   !OLD_NAMES.test(`<option value="MASTER">{HQ_LABEL}</option>`));
+ok('Stock Opname shows the shared label but keeps MASTER as its routing value',
+   /<option value="MASTER"[^>]*>\{HQ_LABEL\}<\/option>/.test(stripComments(read('src/StockOpnameView.jsx'))),
+   'the value picks the Firestore path; only the words on screen were wrong');
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);
