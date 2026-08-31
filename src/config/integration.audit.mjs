@@ -4306,6 +4306,30 @@ check(G56, 'the room test measures the caption instead of assuming a height for 
   'wrong in both directions: too large and the box is pushed away from space it fits in, too ' +
   'small and it overhangs the stage edge it was just approved for');
 
+/* 🔴 THE CAMERA MOVE IS INSTANT, AND THAT IS LOAD-BEARING RATHER THAN A STYLE CHOICE.
+   Measured at 375px on 2026-08-31: `scrollIntoView` with `behavior:'smooth'` moved the stage by
+   ZERO, twice, 800ms apart, while `'auto'` on the same element in the same frame moved it 0 → 211.
+   The stage is 219px tall on a phone against 450px of content, so a subject that never scrolls
+   sits below the floor and every downstream number is measured off-stage: the ring is drawn under
+   the stage and the caption is placed against a spot nobody can see. Six beats across two scenes
+   looked like a placement bug and were this. `measure()` also runs synchronously three lines after
+   the call, so an animated scroll would be measured before it had moved even where it does run.
+   Scoped to the call itself: the word "smooth" appears in the surrounding comment on purpose. */
+const scrollCall = (overlaySrc.match(/scrollIntoView\(\{[^}]*\}\)/) || [''])[0];
+check(G56, 'the tutorial camera moves instantly, because a smooth one never moved at all',
+  scrollCall.length > 0 && /behavior:\s*'auto'/.test(scrollCall) && !/smooth/.test(scrollCall),
+  'the scene must scroll its subject into view with behavior:\'auto\'. A smooth scroll does not ' +
+  'run in this stage at all, and the beat is then measured against a subject still below the fold');
+
+/* A phone has no room for a caption BESIDE anything: boxW is min(380, W - 24), which is 349 of 373
+   on a 375px screen. Every placement such a box can choose lands on its own subject, so the beat
+   falls through to the wide bottom bar instead — the layout the other beats in the same scenes
+   already use on a phone. Desktop never trips it: 380 against a 1022px stage is nowhere near. */
+check(G56, 'a stage too narrow to stand a caption beside anything hands the beat to the wide bar',
+  /if \(boxW > W \* 0\.\d+\) return null;/.test(overlaySrc),
+  'the near-caption must bail to the bottom bar when it would occupy most of the stage width. ' +
+  'Without it, beats 5, 6, 8 and 9 of Product Performance sit on the row they are explaining');
+
 /* 🔴 THE AMBER LAW'S SECOND EXEMPTION, AND A CHECK THAT KEEPS IT AN EXEMPTION RATHER THAN A LEAK.
 
    The law, 2026-08-21: *"stop using amber background i said, i hate it"*. The book's hover glow is a
