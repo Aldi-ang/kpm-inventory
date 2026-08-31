@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-31 10:42 WIB (🟠 KPM app session)**
+**Updated: 2026-08-31 10:42 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **673/673 audit · 915/915 selfcheck** · branch `phase0-solid-ground`, tree clean
 
 ## 🟠 2026-08-31 10:42 — THE QUOTA METER IS ONE GUESS AWAY, AND THREE NEW REQUIREMENTS LANDED. No code changed since `ee5dbfd`.
 
@@ -42,7 +42,7 @@ UNIT, so a cheap product absorbs the same rupiah as an expensive one — a decis
 and it drives the "did this get dearer" comparison.
 
 **Next job is his own:** *"we havent redesign the regional warehouse i think i put that on the to do
-list"* — `BranchWarehouseManager` into Duke's Ledger. Load the design stack first, his §1a rule. · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **673/673 audit · 915/915 selfcheck** · branch `phase0-solid-ground`, tree clean
+list"* — `BranchWarehouseManager` into Duke's Ledger. Load the design stack first, his §1a rule.
 
 ## 🟠 2026-08-31 09:57 — THE RECEIPT IS DELETED UNDER ITS OWNER. `150a5c9`, **673/673 + 915/915**. Tree clean.
 
