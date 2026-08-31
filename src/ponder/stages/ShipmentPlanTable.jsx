@@ -73,7 +73,14 @@ export default function ShipmentPlanTable({ rows = [], branches = [] }) {
 
     return (
         <div className="overflow-x-auto">
-            <div style={{ minWidth: `${520 + branches.length * 104}px` }}>
+            {/* 🔴 620, NOT 520, AND THE 100px IS THE PRODUCT NAME'S. The fixed columns take
+                108 + 104·branches + 108 + 112, and five 16px gaps take 80 more, so at the old
+                minimum the product column — the one column that says WHICH product a row is
+                about — was left with about 112px and truncated "Cello Chocolate" to "Cell…" on a
+                phone. Aldi, 2026-08-31: *"just make sure that it looks good on phones"*. It now
+                gets about 212px, which clears the longest real name. Desktop is unaffected: the
+                container is wider than this minimum there, so `1.4fr` already had the slack. */}
+            <div style={{ minWidth: `${620 + branches.length * 104}px` }}>
 
                 <div className="grid gap-x-4 items-end px-5 pb-2.5 border-b border-line-2 text-[10px] font-bold text-ink-muted uppercase tracking-widest"
                      style={{ gridTemplateColumns: cols }}>
