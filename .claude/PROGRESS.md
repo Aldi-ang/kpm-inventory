@@ -26,6 +26,12 @@ and the brief recorded the intention as the state. A handoff must quote the file
 percentage on 2026-08-30, and he had to interrupt at 95% himself. `[context-watch]` is a different
 meter (context window, which `/clear` fixes); it was never the one that was needed.
 
+**✅ CLOSED THE HALF THAT DOES NOT NEED HIM.** `.claude/check-progress.mjs` gated only on
+PROGRESS.md, so a brief three sessions old passed it. It now gates on the OLDER of PROGRESS.md and
+NEXT-SESSION.md, blocks when either is missing, and names which one is stale — `8df0d2a`,
+mutation-tested in both directions (saw it block on `src/App.jsx`, pass with both notes current).
+Vault: two Concept pages at `1750e45`, linked from Concepts/index, Wiki/Index and MOC.
+
 **❓ WAITING ON ALDI — two things, both his:**
 1. *"which do you want — A) fix the engine, one line in PonderOverlay, all 36 beats, or B) fix this
    scene only, five beats near→bottom?"* Nothing is being written until he answers.
