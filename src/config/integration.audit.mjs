@@ -4344,6 +4344,26 @@ check(G56, 'the panel unmounts exactly when its closing animation ends, not befo
   'panel must carry animate-ponder-shut while closing, and Lite Mode and reduced motion must ' +
   'still close on the spot rather than waiting for an animation that is not playing');
 
+/* 🔴 CLOSING A SCENE PUTS THE BOOK BACK ON SCREEN TO SHUT ITSELF. Aldi, 2026-08-31: *"i want the
+   book shuts and fly to also happen when user close the ponder panel"*. Picking a scene used to
+   unmount the Library on the spot, so the shut-and-fly it already owned only ever played if you
+   closed the BOOK — never if you actually read something in it.
+
+   Three things have to hold together and each fails silently on its own: the Library must still be
+   RENDERED while shutting (or there is nothing to animate), it must SKIP its opening flight (or the
+   book flies in just to fly back out), and it must not replay `bookClose()` (or the sound fires
+   twice, once from the panel's own exit and once here, 240ms apart). */
+check(G56, 'closing a scene brings the book back to shut itself, once, without re-opening first',
+  /closeOnMount = false/.test(bookSrc) &&
+  /if \(still \|\| closeOnMount\) return;/.test(bookSrc) &&
+  /if \(!closeOnMount\) bookClose\(\);/.test(bookSrc) &&
+  /if \(closeOnMount\) shut\(\);/.test(bookSrc) &&
+  /\{\(libOpen \|\| bookShutting\) && \(/.test(bookSrc) &&
+  /closeOnMount=\{bookShutting\}/.test(bookSrc) &&
+  /setSceneId\(null\); setBookShutting\(true\);/.test(bookSrc),
+  'the scene\'s onClose must raise bookShutting, the Library must render while it is true, and ' +
+  'that mount must skip both the opening flight and the closing sound the panel already played');
+
 /* A phone has no room for a caption BESIDE anything: boxW is min(380, W - 24), which is 349 of 373
    on a 375px screen. Every placement such a box can choose lands on its own subject, so the beat
    falls through to the wide bottom bar instead — the layout the other beats in the same scenes

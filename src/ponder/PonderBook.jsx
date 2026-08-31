@@ -234,6 +234,14 @@ function BookGlyph() {
 export default function PonderBookButton({ activeTab }) {
   const [libOpen, setLibOpen] = useState(false);
   const [sceneId, setSceneId] = useState(null);
+  /* 🔴 THE BOOK COMES BACK TO SHUT ITSELF. Aldi, 2026-08-31: *"i want the book shuts and fly to
+     also happen when user close the ponder panel"*. Closing a scene used to leave nothing on
+     screen — the Library had already been unmounted the moment the scene was picked, so the
+     shut-and-fly it owns never ran on that path. It is re-mounted now, in close-only mode, the
+     instant the panel finishes its own exit. Every scene reachable from here was opened from the
+     book (`setSceneId` is only ever called by `onPick`), so no flag is needed to tell where the
+     reader came from. `onBack` is untouched: that one is going back INTO the book, not out of it. */
+  const [bookShutting, setBookShutting] = useState(false);
   const chipRef = useRef(null);
 
   const openLib = useCallback(() => { bookOpen(); setLibOpen(true); }, []);
@@ -257,25 +265,30 @@ export default function PonderBookButton({ activeTab }) {
             Two objects that cross-fade are two objects; one object that moves is a book being
             picked up. So while the big one is out, the small one is not here — and it reappears at
             the exact moment the flight lands. */}
-        <span style={{ visibility: libOpen ? 'hidden' : 'visible' }}>
+        <span style={{ visibility: libOpen || bookShutting ? 'hidden' : 'visible' }}>
           <BookGlyph />
         </span>
         <span className="hidden xl:inline font-mono text-[10px] uppercase tracking-widest">Tutorial</span>
       </button>
 
-      {libOpen && (
+      {(libOpen || bookShutting) && (
         <Library
           anchorRef={chipRef}
           initialSection={activeTab}
-          onClose={() => setLibOpen(false)}
-          onPick={(id) => { bookPick(); setLibOpen(false); setSceneId(id); }}
+          closeOnMount={bookShutting}
+          onClose={() => { setLibOpen(false); setBookShutting(false); }}
+          /* A spread that exists only to shut itself must not accept a pick: the scrim is already
+             fading and the book is on its way to the chip, so a click landing on a page would open
+             a scene out of something the reader can no longer see. */
+          onPick={bookShutting ? () => {}
+                               : (id) => { bookPick(); setLibOpen(false); setSceneId(id); }}
         />
       )}
 
       <PonderOverlay
         sceneId={sceneId}
         open={!!sceneId}
-        onClose={() => setSceneId(null)}
+        onClose={() => { setSceneId(null); setBookShutting(true); }}
         onBack={() => { setSceneId(null); bookOpen(); setLibOpen(true); }}
       />
     </>
@@ -287,7 +300,16 @@ export default function PonderBookButton({ activeTab }) {
    auto redirect to the features that we use right now for example im on the restock vault then it
    should redirect directly to the restock vault section of the book"*. This is the whole reason
    every section id in sections.js is an `activeTab` value and not a category someone invented. */
-function Library({ anchorRef, initialSection, onClose, onPick }) {
+/* 🔴 `closeOnMount` IS HOW THE BOOK SHUTS AFTER A SCENE, and it works because `shut` below names
+   BOTH ends of every animation it starts. The leaf goes OPEN → SHUT, the book FLAT → the chip, the
+   slab SLAB_OPEN → SLAB_SHUT, all under `fill: 'both'` — so none of them need the opening sequence
+   to have run first to know where they begin. Mounting straight into the close is therefore not a
+   trick; it is the same close, entered from a book that was already open somewhere else.
+
+   Aldi, 2026-08-31: *"i want the book shuts and fly to also happen when user close the ponder
+   panel"*. Before this, picking a scene unmounted the Library on the spot, so the shut-and-fly it
+   already owned only ever played if you closed the BOOK and never if you read something in it. */
+function Library({ anchorRef, initialSection, onClose, onPick, closeOnMount = false }) {
   const [secId, setSecId] = useState(
     () => (SECTIONS.some(s => s.id === initialSection) ? initialSection : SECTIONS[0].id));
   const [page, setPage] = useState(0);
@@ -356,7 +378,7 @@ function Library({ anchorRef, initialSection, onClose, onPick }) {
      before it leaves and open only after it lands. They are not chained — a chain has to resume
      exactly where the last one stopped, and drift there shows as a jump. */
   useLayoutEffect(() => {
-    if (still) return;
+    if (still || closeOnMount) return;      // mounted to close: there is no arrival to play
     const el = bookRef.current, leaf = leafRef.current;
     const from = flightFrom();
     if (!el || !from || typeof el.animate !== 'function') return;
@@ -387,7 +409,9 @@ function Library({ anchorRef, initialSection, onClose, onPick }) {
   const shut = useCallback(() => {
     if (closingRef.current) return;
     closingRef.current = true;
-    bookClose();
+    /* On the closeOnMount path the panel that just left already played this, 240ms ago, as its own
+       exit began. Playing it again here is the same book closing twice. */
+    if (!closeOnMount) bookClose();
     if (liteOn() || reduced()) { onClose(); return; }
     const el = bookRef.current;
     const from = flightFrom();
@@ -410,7 +434,12 @@ function Library({ anchorRef, initialSection, onClose, onPick }) {
     );
     anim.onfinish = onClose;
     anim.oncancel = onClose;
-  }, [onClose, flightFrom]);
+  }, [onClose, flightFrom, closeOnMount]);
+
+  /* Mounted purely to close. A layout effect rather than a plain one, so the shut starts in the
+     same frame the spread is painted — a plain effect gives one frame of a book sitting open and
+     doing nothing, which reads as a flicker rather than as a book being shut. */
+  useLayoutEffect(() => { if (closeOnMount) shut(); }, [closeOnMount, shut]);
 
   useEffect(() => {
     const onKey = (e) => {
