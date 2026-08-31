@@ -1,6 +1,41 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-31 08:30 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **667/667 audit · 915/915 selfcheck** · branch `phase0-solid-ground`, tree clean
+**Updated: 2026-08-31 09:05 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **669/669 audit · 915/915 selfcheck** · branch `phase0-solid-ground`, tree clean
+
+## 🟠 2026-08-31 09:05 — THE TUTORIAL CAMERA NEVER MOVED ON A PHONE. `aef7f03` + `8f3f438`, **669/669 + 915/915**. Tree clean.
+
+**He chose "fix A and B". A made B unnecessary**, and B would have deleted the behaviour he asked
+for (*"the caption moves to what it is talking about"*), so the engine was fixed and every beat
+re-checked. No beat needed B afterwards.
+
+**It was never the clamp.** The unclamped `top` named in yesterday's brief is real, sits one branch
+away from the fault, and explains every symptom — and is not the bug. `scrollIntoView` with
+`behavior:'smooth'` moved the stage by **zero**, twice, 800ms apart, while `'auto'` on the same
+element in the same frame moved it **0 → 211**. A 219px stage against 450px of content means a
+subject that never scrolls sits at y=353, below the floor, and `spot` is then measured off-stage —
+so the ring is drawn under the stage and the caption is placed against a position nobody can see.
+
+**Second half:** a phone has no *beside*. `boxW` is 349 of 373 — 94% of the stage — so every
+placement it can choose lands on the subject. Those beats now fall through to the wide bottom bar,
+which is what the other beats in the same scenes already used. Two functional lines total.
+
+**Verified:** 78 beat renders walked across all four scenes at 375px — zero captions outside the
+stage, zero overlapping their own highlight. Desktop provably untouched: the stage does not scroll
+at 1440 and `boxW` never reaches the bail threshold. Checks 668 + 669 added, both mutation-tested
+red before green.
+
+**🔴 LEFT UNDONE, ON PURPOSE — three caption/ring overlaps in Stock by Warehouse on DESKTOP**
+(beats 7, 16, 22). Pre-existing, found by the same sweep, not caused by this fix. Full evidence
+table in `.claude/NEXT-SESSION.md`; that is the next job.
+
+**⚠️ A METHOD NOTE THAT COST TWO ROUND TRIPS.** A click-through walk and a fresh load give different
+stage heights (439 vs 525) and different geometry, and a 1-D vertical overlap test flags every
+*beside* caption as a failure when standing to the side is the correct behaviour. Reproduce on a
+fresh load, test in 2-D.
+
+**Vault:** `A Smooth Scroll That Never Runs` (renamed from the wrong-hypothesis title, kept as one
+page so the wrong turn stays visible) + `A Meter That Exits Silently Is Not a Meter`.
+
 
 ## 🟠 2026-08-31 08:30 — THE PANEL WAS LOOKED AT, AND THE TUTORIAL IS BROKEN ON A PHONE. `e5d7e76`, **667/667 + 915/915**. Tree clean.
 

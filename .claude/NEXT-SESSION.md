@@ -1,7 +1,7 @@
 # NEXT SESSION — read this, then `.claude/PROGRESS.md`. Read no code to orient.
 
-**Written 2026-08-31 08:30 WIB. 667/667 audit · 915/915 selfcheck. Branch `phase0-solid-ground`,
-tree clean at `e5d7e76`.**
+**Written 2026-08-31 09:05 WIB. 669/669 audit · 915/915 selfcheck. Branch `phase0-solid-ground`,
+tree clean at `8f3f438`.**
 
 ## First command
 
@@ -9,57 +9,51 @@ tree clean at `e5d7e76`.**
 npm run build; node src/config/integration.audit.mjs; node src/config/logicFixes.selfcheck.mjs
 ```
 
-PowerShell: `;` not `&&`. **Quote BOTH numbers in every report.**
+PowerShell: `;` not `&&`. **Quote BOTH numbers in every report.** The audit refuses to run against a
+stale `dist/`, so build first or it tells you to.
 
 ---
 
-## 🔴 THE ONE JOB — the tutorial caption lands on top of what it explains, on a phone
+## 🔴 THE ONE JOB — three caption/ring overlaps in Stock by Warehouse, on DESKTOP
 
-**Not a guess. Six frames at 375px prove it**, shot through `tools/ponder-lab.jsx` on 2026-08-31.
-Desktop is fine at every width tried, including 1440. The phone is where it breaks.
+The phone half is finished and checked. These three are what is left, they were found by the same
+sweep, and they are **not** caused by yesterday's fix — both changed lines are provably inert at
+desktop width (the stage does not scroll there, `scrollHeight === clientHeight` at 1440, and
+`boxW` 380 never exceeds the 715px bail threshold).
 
-| Scene · beat | What the frame shows at 375px |
-|---|---|
-| product-performance 5 · Revenue | caption covers the column header and half the warning banner |
-| product-performance 6 · Share | covers the header; the Share column is off-screen entirely |
-| product-performance 8 · Cello Kopi | caption ~90% below the visible edge, unreadable |
-| product-performance 9 · Total | caption fully off-screen, nothing visible |
-| product-performance 11 · missing months | covers the exact banner it is describing |
-| stock-by-warehouse 7 · Sold (7d) | covers the first warehouse row it is pointing at |
+Measured at 1440 walking the beats in order, stage `W=1022 H=439`:
 
-**Scope: 36 `near` beats across four scenes** — `stock-by-warehouse` 18 · `goods-received` 10 ·
-`product-performance` 5 · `shipment-plan` 3. Every one is a candidate.
+| beat | caption box (t/b, l/r) | ring (t/b, l/r) | why it is wrong |
+|---|---|---|---|
+| 7 | 136–260, 129–480 | 13–202, 13–139 | box starts inside the ring's column |
+| 16 | 83–208, 463–815 | 96–216, **−6–966** | ring is full-width; there is no beside |
+| 22 | 286–411, 304–656 | 206–305, **−6–966** | same, and the box overlaps below |
 
-**The suspect line, and it is one line.** `src/ponder/PonderOverlay.jsx:328`:
+**The shape:** beats 16 and 22 highlight a **full-width row** (`l=-6, r=966` on a 1022px stage).
+A caption cannot stand beside a subject that spans the whole stage, so `near` must place it above or
+below — and the room test currently lets it choose a position that still intersects. Beat 7's
+subject is a tall narrow block instead, so it is likely a different case; check it separately.
+
+**Do this first, before any edit:** reproduce each on a FRESH load, not by clicking through.
+`?scene=stock-by-warehouse&step=6` / `&step=15` / `&step=21` (step is 0-based; the on-screen counter
+is 1-based). A click-through walk and a fresh load gave different stage heights and different
+geometry yesterday — **439 walking, 525 fresh** — and two "failures" evaporated on a fresh load.
+
+**And use a 2-D overlap test.** A 1-D vertical test flags every *beside* caption, which is correct
+behaviour, and it cost a full round trip yesterday:
 
 ```js
-top: below ? spot.y + spot.h + PAD + GAP : spot.y - PAD - GAP - boxH,
+const hit = !(B.b<=R.t || B.t>=R.b) && !(B.r<=R.l || B.l>=R.r);
 ```
 
-That `top` is returned RAW. The beside-branch eight lines above it does
-`const top = clampY(cy - boxH / 2)` — same function, same `useMemo`, clamped. The comment at line
-287 says the box "gets clamped inside the stage", which is true of one branch and not the other.
+**The trap that will bite:** do not "fix" this by clamping. The same instinct produced a whole
+handoff brief yesterday aimed at an unclamped `top` in `PonderOverlay.jsx` that was real, visible in
+the source, explained every symptom, and was **not the bug**. Measure what the browser is actually
+doing before editing anything. `A-Brain/Wiki/Concepts/A Smooth Scroll That Never Runs.md` has the
+whole story.
 
-**Do not patch it blind. The measurement first:** the stage (`wrapRef`) has `overflow-auto`, and
-line 219 calls `scrollIntoView` on the target, so `spot.y` may be in SCROLLED content coordinates
-while `H = wrap.clientHeight` is the visible height. If the wrap really scrolls on a phone, a plain
-`clampY(top)` clamps into content space and moves the caption to the wrong place instead of the
-right one. **Read `wrap.scrollTop` and `wrap.scrollHeight` in the running lab before editing** —
-`javascript_tool` on the pane, one line, settles which fix is correct.
-
-**Aldi was asked to choose and had not answered when this was written:**
-
-> **A) Fix the engine** — one line in `PonderOverlay.jsx`, fixes all 36 beats in every scene.
-> Re-shoot every scene on both sizes afterwards, because it moves desktop captions too.
-> **B) Fix this scene only** — five beats from `near` to `bottom` in `product-performance.js`.
-> Ten minutes, but leaves Stock by Warehouse's 18 beats broken on the phone.
-
-If he has answered, do that. If he has not, **ask before writing code** — it is his call, and A
-touches every tutorial in the app.
-
-**The check this needs, whichever way it goes:** a beat's caption box must never overlap its own
-highlighted spot, and must sit fully inside the stage. That is an assertion about geometry, so it
-belongs in the lab as a `?probe`-style measurement, not as a string match in the audit.
+**Where it lives:** the `near` `useMemo` in `src/ponder/PonderOverlay.jsx` (~line 300). Whatever
+lands there needs a check beside checks 668 and 669, and it must be mutation-tested red before green.
 
 ---
 
@@ -71,33 +65,31 @@ python -m http.server 4187 -d dist-ponderlab
 ```
 
 Then `preview_start` on `http://localhost:4187/tools/ponder-lab.html`, and `resize_window` to
-`mobile` for the 375px case. **Reset to `desktop` when finished** — the emulation is sticky.
+`mobile` for 375px. **Reset to `desktop` when finished** — the emulation is sticky per tab.
 
 | Slice | URL |
 |---|---|
-| Any beat, frozen | `?scene=<id>&step=N` — **`step` is 0-based, the counter on screen is 1-based** |
-| Product Performance panel, loading | `?perf` |
-| ” , failed read | `?perf=failed` |
+| Any beat, frozen | `?scene=<id>&step=N` — **0-based** |
+| Product Performance panel: loading · failed read | `?perf` · `?perf=failed` |
 | Sebaran Stok · Rencana Kirim | `?minkirim` · `?plan` |
 | Light · Lite Mode | add `&light` · `&lite` |
 
-**Write screenshots to the scratchpad, never the repo root — Chrome gets `Access is denied` there.**
+Scenes: `product-performance` (12 beats) · `stock-by-warehouse` (23) · `goods-received` (30) ·
+`shipment-plan` (13). **Screenshots go to the scratchpad, never the repo root — Chrome gets
+`Access is denied` there.**
 
 ---
 
-## 🔴 THE QUOTA METER IS BLIND, AND ONLY ALDI CAN FIX IT
+## 🔴 TWO THINGS ONLY ALDI CAN DO, both still open
 
-`.claude/plan-quota.mjs` is wired as a UserPromptSubmit hook and it is correct: it warns at 70%,
-tells the session to finish up at 85%, and at 95% it prints a full STOP with the note-writing order
-Aldi asked for. **It has never once run past its second line.** `9router-claude-id.txt` and
-`9router-cookie.txt` in `C:/Users/ASUS/` are both MISSING, and the hook exits silently when the id
-is absent. That is why the 2026-08-30 session ran to 95% with nobody saying anything.
-
-Until he creates those two files, **there is no 5-hour quota meter at all** — `[context-watch]`
-measures the context window, which is a different thing entirely and `/clear` only helps that one.
-
-**So the notes cannot wait for a warning that will not come.** Write `NEXT-SESSION.md` and then
-`PROGRESS.md` right after the FIRST commit of the session, and update them as work lands.
+1. **The quota meter is blind.** `.claude/plan-quota.mjs` warns at 70/85/95 and has never run:
+   `C:/Users/ASUS/9router-claude-id.txt` and `9router-cookie.txt` do not exist, and the hook exits
+   silently without the id. He creates both by hand from the Quota Tracker; the cookie is a
+   credential and never goes in the repo or in chat. Until then **there is no 5-hour meter at all**,
+   so write `NEXT-SESSION.md` then `PROGRESS.md` right after the first commit, not at the end.
+   The Stop hook now blocks on either being stale, so this is enforced rather than remembered.
+2. **Rebuild sales totals**, Settings › Company · 07, pressed once. Until then every month before
+   2026-08-30 is empty and Product Performance correctly says so.
 
 <details>
 <summary>Queued behind this — do not start these</summary>
@@ -109,8 +101,6 @@ measures the context window, which is a different thing entirely and `/clear` on
 - **G4** — records joined by name, not id. A spelling fix silently splits one product into two.
 - **Redesign `BranchWarehouseManager` into Duke's Ledger.** A look job, not a correctness one.
 - **Untested by anyone: Siapkan Pengiriman and the shipping modal.**
-- **He must still press Rebuild sales totals once** — Settings › Company · 07. Until he does,
-  every month before 2026-08-30 is empty and Product Performance correctly says so.
 
 </details>
 
