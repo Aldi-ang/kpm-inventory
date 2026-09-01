@@ -1,6 +1,50 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-09-01 12:45 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **691/691 audit · 970/970 selfcheck** · branch `phase0-solid-ground`
+**Updated: 2026-09-01 14:06 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **692/692 audit · 970/970 selfcheck** · branch `phase0-solid-ground`
+
+## 🟠 2026-09-01 14:06 — HIS PHONE IS ON THE APP AGAIN. Shell fix committed, **692/692 + 970/970**.
+
+**NOW:** he is testing on the iPhone over the LAN, and has just asked for a new feature (units in
+the Restock Vault, below). One reported bug is fixed, one is still open and waiting on him.
+
+**The phone could not reach the app at all**, and neither half was the code. The PC's address had
+moved off the `.109` he had written down — it is now **192.168.1.143** (cable) and **192.168.1.144**
+(Wi-Fi) — and `npm run dev` serves **https only**, so a bare IP on port 80 was never going to load.
+He reserved both addresses on the router by MAC and registered both in Firebase. That class of
+problem is now closed: the addresses cannot move again.
+
+**FIXED — the sidebar was drawn over the Access Denied screen.** Same stacking-context trap the vault
+gate hit twice: the lockout is a child of `<BiohazardTheme>`, so its `z-[9999]` is resolved inside a
+`relative z-10` context and stamped at 10, while the rail sits at 90 and the ribbon at 100. Raising
+the number does nothing. Both guards became one named flag, `shellHidden`, which now also covers
+`UNAUTHORIZED` and `OFFLINE_UNVERIFIED`. Three existing checks pointed at the old guard text and all
+three went red first; a fourth check pins the part that is new.
+
+**NOT FIXED, and deliberately not guessed at — the 15 seconds on Access Denied.** Nothing in `src`
+has a timer near that length, and `getDocOfflineSafe` (`App.jsx:189`) throws rather than returning a
+fake "not found", so the lockout was reached either by the lookups genuinely resolving to nothing or
+by a non-offline error. The brief has both branches and the trap that makes a lazy patch wrong.
+
+**Answered for him:** the iPhone cannot read the barcode by camera at all. `BarcodeDetector` is
+Chrome-on-Android only and iOS forces every browser onto WebKit, so the typed shipment number is the
+iPhone path. A decoder library would be ~200KB and has not been costed.
+
+🔴 **WAITING ON ALDI — four things, his words and my questions verbatim.**
+
+1. *"After the Access Denied screen went away, which screen appeared?"* — the Google sign-in screen
+   (session dropped) or the "Open the vault" master-password screen (recognised, just slowly).
+2. *"And which email did you sign in with?"* The Access Denied screen prints it in red brackets.
+3. The label test, still owed. His words: *"i havent do the test btw"*. It cannot be done on the
+   iPhone.
+4. The G1+G2 staleness threshold in days — a number only he can set.
+
+🆕 **HIS NEW REQUEST, verbatim, 2026-09-01 14:06 — not started yet:**
+
+> *"i found another things to improve, i want u to add bks/slop/bal/karton option into the restock
+> vault so that when insert the data it is more convenience to choose that ite. this logic should
+> work the same way like what we have on the sales terminal. remember that all the products each
+> have different bks per slop/bal/karton so make sure that there is no data intersection here. like
+> i said before. we should have 1 data to be used many times on the other components"*
 
 ## 🟠 2026-09-01 12:45 — THE GATE IS IN. `03955c4`, **691/691 + 970/970**.
 
