@@ -1,6 +1,42 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-09-01 15:40 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **697/697 audit · 970/970 selfcheck** · branch `phase0-solid-ground`
+**Updated: 2026-09-01 16:20 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **702/702 audit · 970/970 selfcheck** · branch `phase0-solid-ground`
+
+## 🟠 2026-09-01 16:20 — FIVE PHONE FAULTS, MEASURED AND FIXED. **702/702 + 970/970**.
+
+**NOW:** he tested on the iPhone and reported the app looked bad there. Four of the five things he
+named were real and are fixed; each was measured at 375x812 before and after, and the desk was
+re-measured at 1440 to prove nothing moved.
+
+| what he said | measured before | after |
+|---|---|---|
+| restock vault "too much going on vertically" | line table 780px inside a 291px window | 293 in 293, no sideways scroll |
+| the pinned bottom bar | 160px of an 812px screen | 125px, explanation on one line |
+| "the ponder panel is cutted in half" | sheet 522px tall, 283px of empty scrim; demo window 206px holding 248px | 65px scrim, 413px stage, nothing cropped |
+| "even the book cutted in half" | 4 cards in one column ran 30px past the bottom | 2 cards a page, book turns instead |
+| "i cant see the left book with all the section ribbons" | ribbons `hidden lg:flex` | all 17 on the phone, 84px column |
+
+**The ribbons were not cosmetic.** The page control only turns pages WITHIN a section, so with them
+hidden a phone could not reach another section at all.
+
+**One markup, two layouts** for the intake lines — the cells become blocks below 640px and each row
+becomes a card, with the column heading printed from `data-label`. A phone-only row component would
+have been a second place for the batch column to drift out of step with the quantity column.
+
+⚠️ **NOT FIXED, and deliberately not guessed at.** The fifteen seconds of ACCESS DENIED: his own
+message says the screen after it was the master-password gate, so he WAS recognised and an earlier
+pass failed. Whether that pass failed by resolving to nothing or by a caught error being treated as
+a refusal cannot be settled from this repo. **That is the next job, and the brief carries the fix,
+the trap, and how to get the error code off his phone.** The book's closing animation is also
+untouched: the flight maths uses the desk geometry, which is a plausible mechanism, but a still
+frame cannot prove an animation.
+
+🔴 **WAITING ON ALDI — three things.**
+
+1. The label test, still owed. His words: *"i havent do the test btw"*. Not possible on the iPhone.
+2. The G1+G2 staleness threshold in days — a number only he can set.
+3. Whether the ten copies of the unit conversion get cleaned up now; two of them are miscounting
+   today.
 
 ## 🟠 2026-09-01 15:40 — KARTON, BAL AND SLOP AT THE INTAKE DESK. **697/697 + 970/970**.
 
