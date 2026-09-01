@@ -172,6 +172,23 @@ export default function BiohazardTheme({
         return () => root.classList.remove('kpm-nav-open');
     }, [isMobileMenuOpen]);
     
+    /* 🔑 AND NOT OVER THE LOCKOUT SCREENS — his report from the phone, 2026-09-01:
+       *"i was on access denied for around 15 second then back to the normal login screen, and
+       looks like the sidebar work in that screen"*.
+
+       Same stacking-context trap the vault gate hit, and the note further down explains it in
+       full: `children` land in a `relative z-10` div, so Access Denied's own `z-[9999]` is
+       resolved INSIDE that context and then the whole context is stamped at 10. This panel and
+       its ribbon are siblings at 90 and 100, so they paint over a full-screen lockout however
+       high its number goes. Raising it does nothing. The shell steps aside instead, exactly as
+       it already does for the gate.
+
+       Both lockout roles, not just the loud one: `OFFLINE_UNVERIFIED` is the same full-screen
+       modal with a different message, and it would have been the same bug on the first phone
+       that opened the app somewhere with no signal. */
+    const shellHidden = !user || showAdminLogin
+        || userRole === 'UNAUTHORIZED' || userRole === 'OFFLINE_UNVERIFIED';
+
     const handleLogout = async () => {
         if(await confirmAction("Terminate Session?")) {
             signOut(auth);
@@ -460,7 +477,7 @@ export default function BiohazardTheme({
             {/* `user &&` — the ribbon opens the navigation, and while signed out there is no
                 navigation to open. His call, 2026-08-14: "remove the left sidebar then its old
                 stuff already". A grip on the edge that opens an empty drawer is exactly that. */}
-            {user && !showAdminLogin && (
+            {!shellHidden && (
                 <button
                     onPointerDown={startRailPull}
                     aria-label={isMobileMenuOpen ? 'Close navigation' : 'Open navigation'}
@@ -478,7 +495,7 @@ export default function BiohazardTheme({
 
             {/* The scrim is the way OUT, and it is phone-only: on a desk the panel is in the
                 flow and nothing is covered, so there is nothing to dismiss. */}
-            {isMobileMenuOpen && (
+            {isMobileMenuOpen && !shellHidden && (
                 <div
                     onClick={() => setIsMobileMenuOpen(false)}
                     className="hide-on-print lg:hidden fixed inset-0 z-[85] bg-[var(--duke-scrim)] backdrop-blur-[2px] animate-fade-in"
@@ -488,7 +505,7 @@ export default function BiohazardTheme({
             {/* What the mark under the finger is called. Fixed, not inside the rail — the rail
                 clips its own overflow, so a plate parented to a mark would be cut off at 76px.
                 It rides the finger's y, which is what makes it read as a label and not a menu. */}
-            {peek && (
+            {peek && !shellHidden && (
                 <div
                     className="hide-on-print lg:hidden fixed z-[95] pointer-events-none kpm-rail-say"
                     style={{ right: RAIL_W + 10, top: Math.max(8, peek.y - 18) }}
@@ -586,7 +603,7 @@ export default function BiohazardTheme({
                 button already do a few lines up. Nothing in here is reachable behind a modal
                 anyway. Cost, stated plainly: the music player unmounts with it, so opening the
                 gate stops the music — worth it against a menu drawn over the lock screen. */}
-            {user && !showAdminLogin && (
+            {!shellHidden && (
             <div
                 /* HIS REPORT: "sometimes there is a bug and the sidepanel show a while until i
                    refresh on the phone then its gone".

@@ -633,8 +633,8 @@ const railGuardIdx = code(themeSrc).indexOf('data-kpm-rail');
    now carry the same pair of conditions. */
 check(G15, 'the drawer and its ribbon exist only when signed in AND not behind the gate',
   railGuardIdx > 0 &&
-  /\{user && !showAdminLogin && \(/.test(code(themeSrc).slice(Math.max(0, railGuardIdx - 900), railGuardIdx)) &&
-  (code(themeSrc).match(/\{user && !showAdminLogin && \(/g) || []).length >= 2 &&
+  /\{!shellHidden && \(/.test(code(themeSrc).slice(Math.max(0, railGuardIdx - 900), railGuardIdx)) &&
+  (code(themeSrc).match(/\{!shellHidden && \(/g) || []).length >= 2 &&
   !/System login/.test(themeSrc),
   'a signed-out screen with a drawer on it is the old UI he asked to have removed — and the ' +
   'drawer login is dead code the moment the drawer cannot render');
@@ -773,11 +773,22 @@ check(G16, 'the second line names the app, not the vault screen',
    out, because there is no navigation to open then. Optional in the needle so this check keeps
    testing its own thing (the GATE hides it) rather than doubling as a test of that. */
 check(G16, 'the nav button is not rendered at all while the gate is up',
-  /\{(?:user && )?!showAdminLogin && \(/.test(strip(themeSrc)),
+  /\{!shellHidden && \(/.test(strip(themeSrc)),
   'it sits in its own stacking context, so raising the gate z-index does NOT cover it, and a '
   + 'class-based hide is only as reliable as the stylesheet that happens to be loaded');
 check(G16, 'App hands the theme the flag that hides it', /showAdminLogin=\{showAdminLogin\}/.test(appCode),
   'hiding it in the theme does nothing if the prop never arrives');
+/* 🔴 AND THE SAME TRAP CAUGHT THE LOCKOUT SCREENS. Aldi, from the phone on 2026-09-01:
+   *"i was on access denied ... and looks like the sidebar work in that screen"*. Access Denied and
+   Can't-Verify-You-Yet are children of <BiohazardTheme> exactly like the gate, so their z-[9999]
+   is trapped in the same `relative z-10` context and the rail painted over both. One flag now
+   answers for all three states, which is why the guard is a named boolean rather than three
+   inline conditions that can drift apart. */
+check(G16, 'the shell also steps aside for both lockout screens, not only the gate',
+  /const shellHidden = !user \|\| showAdminLogin\s*\|\| userRole === 'UNAUTHORIZED' \|\| userRole === 'OFFLINE_UNVERIFIED';/.test(code(themeSrc)) &&
+  /userRole=\{userRole\}/.test(appCode),
+  'a navigation rail floating over Access Denied offers tabs to an account the server just ' +
+  'refused, and OFFLINE_UNVERIFIED is the same modal with a kinder message — both or neither');
 /* ⚠️ THE GATE CAN NEVER COVER THE NAVIGATION PANEL BY Z-INDEX, and raising its number is exactly
    the fix that will be reached for. The gate is rendered as a CHILD of <BiohazardTheme>, so it
    lands inside the content div — and that div is `relative z-10`, a STACKING CONTEXT. Every
@@ -787,7 +798,7 @@ check(G16, 'App hands the theme the flag that hides it', /showAdminLogin=\{showA
    The panel steps aside instead. If the content div ever stops being a stacking context, come
    back and re-read this check — do not delete it. */
 check(G16, 'the navigation steps aside for the gate, because it can never be covered by it',
-  (strip(themeSrc).match(/!showAdminLogin && \(/g) || []).length >= 2 &&
+  (strip(themeSrc).match(/!shellHidden && \(/g) || []).length >= 2 &&
   /print-reset relative z-10 flex-1/.test(strip(themeSrc)),
   'the edge ribbon and the panel itself both need the guard — one without the other still leaves ' +
   'a control drawn over the lock screen');
