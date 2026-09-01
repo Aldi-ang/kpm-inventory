@@ -4021,5 +4021,51 @@ ok('Incoming counts only what is still moving, so the number can go down',
 ok('Data Induk counts what is MISSING, like the Master Vault desk tab it mirrors',
    /id: 'data',[\s\S]{0,60}count: gudangAddress \? 0 : 1/.test(bwm17));
 
+section('A cache-only "no" is not a refusal (the 20-second ACCESS DENIED)');
+
+/* Aldi, twice on 2026-09-01, signing in on his phone: *"access denied screen muncul for around 20
+   seconds and then gone, i can login now"*. Nothing was wrong with the account either time.
+
+   Firestore's getDoc() with local persistence can RESOLVE out of the cache while the client is
+   still connecting, and a document that has never been cached comes back as an ordinary "does not
+   exist". The auth handler read that as "not an employee" and showed the red lockout until the
+   connection came up and the listener fired again with the real answer.
+
+   helpers.js cannot be imported here (it pulls in firebase/storage), so the function is lifted out
+   of the source and run. That is the behaviour half; the regression guard is underneath. */
+/* `;` alone, not `;\n` — helpers.js is checked out with CRLF endings, so the newline form of
+   this regex matched nothing and the lift silently returned undefined. */
+const absentSrc = (helpers.match(/export const absentForSure = ([\s\S]*?);/) || [])[1];
+const absentForSure = absentSrc ? eval(`(${absentSrc})`) : null;
+const snapOf = (exists, fromCache) => ({ exists: () => exists, metadata: { fromCache } });
+
+ok('the helper was found in helpers.js, so the four checks below are not testing nothing',
+   typeof absentForSure === 'function');
+
+ok('a NO from the server is trusted, so a genuine stranger is still locked out',
+   absentForSure(snapOf(false, false)) === true,
+   'this is the case the red ACCESS DENIED screen exists for and it must keep working');
+
+ok('a NO that came from the local cache is NOT trusted',
+   absentForSure(snapOf(false, true)) === false,
+   'this is his twenty seconds: the phone answered out of its own cache before the connection was '
+   + 'ready, and the app called him a stranger');
+
+ok('a YES from the cache is still a yes, so a known account opens offline',
+   absentForSure(snapOf(true, true)) === false && absentForSure(snapOf(true, false)) === false,
+   'only the NEGATIVE is in doubt; an account that was there last time is still there');
+
+ok('a missing snapshot is never read as a refusal',
+   absentForSure(null) === false && absentForSure(undefined) === false);
+
+ok('the auth handler routes a cache-only negative to the retry screen, not to the lockout',
+   /\} else if \(!absentForSure\(uidSnap\) \|\| !absentForSure\(emailSnap\)\) \{/.test(read('src/App.jsx'))
+   && /setUserRole\('OFFLINE_UNVERIFIED'\);[\s\S]{0,200}\} else \{[\s\S]{0,200}setUserRole\('UNAUTHORIZED'\)/.test(read('src/App.jsx')),
+   'the hard lockout has to stay BELOW the cache test, or a real stranger reaches the retry screen');
+
+ok('the retry screen no longer claims the internet is down, because it might not be',
+   /the connection wasn't ready, so the answer came from this device instead of from the server/.test(read('src/App.jsx')),
+   'he was online both times; a message that blames his signal sends him to fix the wrong thing');
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

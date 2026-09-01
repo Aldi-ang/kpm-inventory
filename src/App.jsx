@@ -144,7 +144,7 @@ import {
 
 // --- CONFIG & UTILITIES IMPORTS ---
 import { auth, db, storage, googleProvider, appId } from './config/firebase';
-import { formatRupiah, getCurrentDate, getLocalDayKey, convertToBks, commitInChunks, savePhotoAndGetReference, storeKey, storeLabel, eodBountyLines } from './utils/helpers';
+import { formatRupiah, getCurrentDate, getLocalDayKey, convertToBks, commitInChunks, savePhotoAndGetReference, storeKey, storeLabel, eodBountyLines, absentForSure } from './utils/helpers';
 import { isLowStock } from './utils/stockThreshold';
 import { computeDayXP, DEFAULT_XP, checkBadges, DEFAULT_BADGES } from './config/career';
 import { confirmAction, promptAction } from './components/ConfirmGate.jsx';
@@ -2460,13 +2460,28 @@ const handleGitHubMirror = async () => {
                             setActiveTab('journey'); 
                         }
                     }
+                } else if (!absentForSure(uidSnap) || !absentForSure(emailSnap)) {
+                    /* 🔴 BOTH LOOKUPS CAME BACK EMPTY, BUT AT LEAST ONE OF THEM CAME OUT OF THE LOCAL
+                       CACHE — so the server never actually said no. See `absentForSure` in helpers.js
+                       for the whole argument. This is the twenty seconds of ACCESS DENIED Aldi hit on
+                       his phone twice on 2026-09-01, on an account that was fine both times.
+
+                       It lands on the same honest screen the offline case already had: it says we
+                       could not check, and it offers Retry. The hard lockout below is untouched and
+                       still fires the moment the server itself returns nothing. */
+                    setIsSystemOwner(false);
+                    setBossUid(null);
+                    setUserRole('OFFLINE_UNVERIFIED');
+                    setAgentProfileId(null);
+                    setUser(currentUser);
+                    setIsAdmin(false);
                 } else {
                     // 🚨 UNKNOWN LOGINS ARE LOCKED OUT 🚨
                     setBossUid(null);
-                    setUserRole('UNAUTHORIZED'); 
+                    setUserRole('UNAUTHORIZED');
                     setAgentProfileId(null);
                     setUser(currentUser);
-                    setIsAdmin(false); 
+                    setIsAdmin(false);
                 }
 
 
@@ -4264,7 +4279,7 @@ const handleGitHubMirror = async () => {
                 <CloudOff size={64} className="text-amber-500 mb-6 animate-pulse" />
                 <h2 className="text-3xl font-black text-[var(--duke-ink-hi)] uppercase tracking-[0.25em] mb-2">Can't Verify You Yet</h2>
                 <p className="text-[var(--duke-ink-3)] text-xs font-bold uppercase tracking-widest max-w-md leading-relaxed mb-8">
-                    We can't reach the internet right now, and this device hasn't confirmed the account <span className="text-amber-500">[{user.email}]</span> online before. Connect to the internet at least once to unlock offline access, then try again.
+                    We couldn't check the account <span className="text-amber-500">[{user.email}]</span> just now — the connection wasn't ready, so the answer came from this device instead of from the server. Nothing is wrong with your account. Press Retry, or wait a moment.
                 </p>
                 <button onClick={() => window.location.reload()} className="px-10 py-4 border-2 border-amber-500/50 text-amber-400 font-black uppercase text-xs hover:bg-amber-900/30 transition-all shadow-[0_0_15px_rgba(245,158,11,0.2)] mb-4">
                     Retry

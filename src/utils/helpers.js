@@ -192,6 +192,27 @@ export const stripCartItemForStorage = (item) => {
     return copy;
 };
 
+/* 🔴 "THE SERVER SAID NO" AND "I NEVER REACHED THE SERVER" ARE NOT THE SAME ANSWER, and only
+   one of them may lock a man out of his own app.
+
+   Aldi, 2026-09-01, signing in on his phone: *"access denied screen muncul for around 20 seconds
+   and then gone, i can login now"*. Twice in one day, and the second time he was let in afterwards
+   — so nothing was ever wrong with his account.
+
+   Firestore's getDoc() with local persistence can RESOLVE rather than throw while the client is
+   still connecting: it answers out of the local cache, and a document that has never been cached
+   comes back as a perfectly ordinary "does not exist". The auth handler read that as "this email
+   is not an employee" and showed the red lockout. Twenty seconds later the connection came up, the
+   listener fired again, the real answer arrived, and he was in.
+
+   `snap.metadata.fromCache` is what tells the two apart. A negative that came from the cache is
+   not evidence of anything; only a negative from the server is. A POSITIVE from the cache is still
+   fine and is untouched — an account that was there last time is still there.
+
+   Pure on purpose, so the selfcheck can hand it fake snapshots. */
+export const absentForSure = (snap) =>
+    !!snap && typeof snap.exists === 'function' && !snap.exists() && snap.metadata?.fromCache !== true;
+
 export const convertToBks = (qty, unit, product) => {
     if (!product) return qty;
     const packsPerSlop = product.packsPerSlop || 10;
