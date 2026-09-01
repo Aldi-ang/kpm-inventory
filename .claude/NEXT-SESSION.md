@@ -1,6 +1,6 @@
 # NEXT SESSION — read this, then `.claude/PROGRESS.md`. Read no code to orient.
 
-**Written 2026-09-01 19:20 WIB. 705/705 audit · 977/977 selfcheck. Branch `phase0-solid-ground`.**
+**Written 2026-09-01 20:05 WIB. 707/707 audit · 986/986 selfcheck. Branch `phase0-solid-ground`.**
 
 ## First command
 
@@ -15,63 +15,68 @@ PowerShell: `;` not `&&`. **Quote BOTH numbers.** The audit refuses to run again
 ⚠️ **THE PC IS ON TWO DIFFERENT NETWORKS, and only one of them is the one that was set up.**
 Ethernet: **192.168.1.143**, gateway 192.168.1.1 — reserved by MAC and registered in Firebase.
 Wi-Fi: **192.168.100.155**, gateway **192.168.100.1** — a DIFFERENT router, no reservation, not in
-Firebase. `192.168.1.144` no longer exists; it was the Wi-Fi address before the adapter joined the
-other network, and a phone pointed at it gets a white screen. **Read `ipconfig` before quoting an
-address; the reservation covers one router only.** `npm run dev` is **https only** —
-`https://192.168.1.143:5173`, tap through the self-signed warning. **A change needs two reloads on the phone.** His test phone is an
-**iPhone**, so camera barcode scanning is impossible there — the typed shipment number is that path.
+Firebase. `192.168.1.144` no longer exists; a phone pointed at it gets a white screen. **Read
+`ipconfig` before quoting an address; the reservation covers one router only.** `npm run dev` is
+**https only** — `https://192.168.1.143:5173`, tap through the self-signed warning. **A change needs
+two reloads on the phone.** His test phone is an **iPhone**, so camera barcode scanning is
+impossible there — the typed shipment number is that path.
 
-Ponder lab: `npx vite build --config tools/ponder-lab.config.mjs; python -m http.server 4187 -d dist-ponderlab`,
-then **`/tools/ponder-lab.html?places`** · `?gudang&tier=AREA_ADMIN` · `?book` · `?scene=…&step=N`.
+Ponder lab (serve on **localhost only**, a 0.0.0.0 bind is refused):
+`npx vite build --config tools/ponder-lab.config.mjs; python -m http.server 4187 --bind 127.0.0.1 -d dist-ponderlab`,
+then **`/tools/ponder-lab.html?book`** · `?book&lite` · `?places` · `?gudang&tier=AREA_ADMIN` ·
+`?scene=…&step=N`.
 
 ⚠️ **`resize_window` before reading any rect** — the pane opens at a zero viewport and still returns
-plausible numbers. `innerText` comes back UPPERCASED by the CSS on these desks.
+plausible numbers. ⚠️ **The pane's animation clock only advances when it PAINTS**: an animation sits
+at `currentTime: 0` forever between calls, so take repeated screenshots to pump frames, or the turn
+looks broken when it is fine.
 
 ---
 
-## THE ONE JOB — rebuild the tutorial book on the Framer interactive-book model
+## ⚠️ ONE THING OUTRANKS THE JOB BELOW
 
-Aldi, 2026-09-01, after three failed passes at the phone close: *"the only way to do this is the
-follow this one https://framer.com/m/InteractiveBook-xGXc.js@uLOYl8huI2w4XDdONaRK and i want u to
-change the pc version with this one also, i want this 3D style and also i want the page to be drag
-able to change the page left and right with smooth motion"*.
+**The tutorial book was rebuilt on 2026-09-01 (`9a9cb62`) and Aldi has NOT judged the motion yet.**
+If his first message says the book is wrong — the drag, the 3D, the phone, anything — **that is the
+job, and the one below waits.** Read `A-Brain/Wiki/Concepts/The Book as a Stack of Sheets.md` first;
+it holds the technique, the arithmetic and the two width-specific faults already found and fixed.
+`framer-motion@^13.1.1` is installed and still unused — a spring is the upgrade if he says the
+settle feels stiff.
 
-**This replaces the close-animation patching, which is closed.** Three attempts failed and they
-shared one assumption: that a single-page phone layout could close with a page turn. It cannot —
-there is no second half to close onto and no cover. Do not tune the old motion again.
+If he says nothing about the book, do the job below.
 
-**What he is asking for, in his order:** the Framer component's look and behaviour · the SAME thing
-on the PC, not a phone-only variant · real 3D pages · **drag** to turn pages left and right, with
-motion that does not stutter.
+---
 
-**READ THE COMPONENT FIRST.** It is a Framer code module at that URL. Fetch it and study how it does
-the turn — the geometry, the hinge, how it maps drag distance to rotation, how it decides to settle
-forward or snap back. Two things to settle before writing anything:
+## THE ONE JOB — the Ponder caption stops moving on phones, and keeps moving on PC
 
-- ⚠️ **LICENCE.** It is someone else's component on Framer's marketplace. Follow the TECHNIQUE, do
-  not paste the file into this repo, and do not import it from framer.com at runtime — this app is
-  an offline PWA and cannot depend on a third-party host loading.
-- ✅ **`framer-motion` IS APPROVED AND ALREADY INSTALLED** — his answer, 2026-09-01: *"yes u can add
-  framer motion"*. It is `^13.1.1` in `package.json`, and the build plus both check suites were run
-  after installing it, so the tree is clean before a single line of book code is written. **Nothing
-  imports it yet.**
-  ⚠️ **Lite Mode still has to win.** `liteOn()` and `reduced()` already skip the book's animation
-  entirely, and that must stay true — he keeps Lite Mode for cheap Android phones, and a drag
-  handler that ignores it puts the cost straight back. Wire the new motion behind the same two
-  switches the old one used.
+**He decided this on 2026-08-31 and it was never built.** Recorded in his own terms: *the ponder
+caption becomes static on phones and keeps moving on PC, built with `/emil design`*.
 
-**What survives from the current book and must not be lost:** the ribbon column (17 sections, the
-only way to change section on a phone) · two cards a page on a phone so nothing runs off the bottom
-· opening on the section you are standing in · the fly-in and fly-back to the chip, which is the one
-part of the close he has never complained about and described himself as *"close and shrink and go
-to its perspective place"* · Lite Mode and reduced-motion still skipping the animation entirely.
+**What the caption is:** the teaching sentence that appears during a tutorial scene in
+`src/ponder/PonderOverlay.jsx`. It has two placements. Beside its subject — a small box that moves
+to sit next to whatever the beat is highlighting, with a pointer that aims four ways. Or the **wide
+bottom bar**, a fixed strip across the bottom of the stage.
 
-⚠️ **A STILL FRAME CANNOT PROVE A MOTION, and this whole job is motion.** Three of today's passes
-were reported wrong by him after passing every check here. Build it, then ask him to watch it before
-claiming anything.
+**What already happens, and what you must measure before changing anything.** The near-caption
+already refuses a stage too narrow to stand beside anything: `if (boxW > W * 0.x) return null;` in
+`PonderOverlay.jsx`, which is why on a 375px phone most beats already fall through to the bottom
+bar. **So the phone may already be most of the way there.** Measure first, at 375x812, across a
+whole scene: which beats still place a moving caption, and does the bar itself re-animate on every
+beat. Do not rewrite a placement that is already correct — the job is what MOVES on a phone, not
+where the box sits.
 
-**Group 56 pins the book. Expect several of its checks to go red — they name the current geometry by
-its exact expressions. Update them to the new mechanism; do not loosen them to fit.**
+**Why he wants it:** a caption that jumps position on every beat, on a screen that small, makes the
+reader hunt for the sentence instead of reading it. On a desk there is room for the box to point at
+its subject, and there the movement is the whole value.
+
+**The traps.**
+- ⚠️ **The caption is placed in `top`, never in a transform** — audit group 56 asserts this, because
+  an animation on the element overwrites a transform on its first frame and the caption disappears.
+  Whatever "static" turns into, it must not become a transform.
+- ⚠️ **A still frame cannot prove a motion.** Build it, then get eyes on a whole scene at 375px in
+  the lab, pumping frames as described above.
+- ⚠️ Group 56 checks the placement logic by name. Several will need updating rather than loosening.
+- A fix is not finished until it leaves a line in `src/config/logicFixes.selfcheck.mjs`: one
+  regression guard and one behaviour check.
 
 <details>
 <summary>Queued — do not start these</summary>
@@ -83,7 +88,6 @@ its exact expressions. Update them to the new mechanism; do not loosen them to f
 - **An arrived box that is never counted has no alert.**
 - **The two colour faults, app-wide.** 90 uncoloured `placeholder=` in 18 files, ~107 bare
   `text-orange` used as ink in 15. **`border-orange` and `bg-orange` stay — those are edges.**
-- **Ponder caption static on phones, moving on PC.** DECIDED 2026-08-31, not built.
 - **G5** shrinkage · **G4** records joined by name not id · **Siapkan Pengiriman, untested.**
 - **The quota meter is FIXED, do not re-investigate.** Id `76c7cf4f-4c24-4984-aada-3aa91f53a148` in
   `C:/Users/ASUS/.claude/9router-claude-id.txt` — note the `.claude/`.
@@ -91,10 +95,3 @@ its exact expressions. Update them to the new mechanism; do not loosen them to f
 </details>
 
 **Before you finish: rewrite this file with the next single job.**
-
----
-
-**Checked 2026-09-01 18:07 WIB — brief unchanged, still the job above.** The modified
-`src/ponder/stages/StockByWarehouseTable.jsx` in the working tree belongs to the KPM session
-running in parallel, not to this note. A 7DTD modding session was also open on this repo and
-touched no project files.

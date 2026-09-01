@@ -1,6 +1,29 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-09-01 19:20 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **705/705 audit · 977/977 selfcheck** · branch `phase0-solid-ground`
+**Updated: 2026-09-01 20:05 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **707/707 audit · 986/986 selfcheck** · branch `phase0-solid-ground`
+
+## 🟠 2026-09-01 20:05 — THE BOOK IS A STACK OF SHEETS AND THE PAGES DRAG. `9a9cb62`, **707/707 + 986/986**. Tree clean.
+
+**The job in `NEXT-SESSION.md` is done.** Full story in the commit message; this is the pointer.
+
+Built on the Framer component's TECHNIQUE (fetched and read, never copied, never imported at run
+time). **The leaves had to become the chapters** — all seventeen sections hold four entries or
+fewer, so a section-scoped page list gave the drag nothing to drag to on every screen but one.
+`framer-motion` is still unused: the drag is one axis mapped to one rotation, and `element.animate()`
+plus direct style writes is what the file already does. **Flips if the settle feels stiff to him** —
+the dependency is installed and a spring is the upgrade.
+
+**Verified by rendering, at four states:** desk spread · a real drag (`rotateY(-63.86deg)` at 160px
+of a 453px page, Z flipping as it crossed 90°) · phone (ribbons back, 2 cards, `2 / 18`) · Lite Mode
+(page turns, `anims: 0`, colour intact). The close was left alone and still returns the chip.
+
+⚠️ **`new Map()` in `PonderBook.jsx` resolves to the lucide Map ICON**, imported at the top for the
+Map War Room ribbon. It threw and the book rendered as a black screen — build green, every check
+green. Only the render caught it.
+
+✅ **HIS TURN: watch it.** A still frame cannot prove a motion, and three of yesterday's passes
+passed every check here and were still wrong. `npm run dev` → `https://192.168.1.143:5173`, press
+the book in the top bar, then drag a page left and right.
 
 ## ⚪ 2026-09-01 18:07 — SIDE SESSION (7 Days to Die modding). No KPM file touched.
 
