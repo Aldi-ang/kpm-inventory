@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-09-01 19:05 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **702/702 audit · 977/977 selfcheck** · branch `phase0-solid-ground`
+**Updated: 2026-09-01 18:11 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **702/702 audit · 977/977 selfcheck** · branch `phase0-solid-ground`
 
 ## ⚪ 2026-09-01 18:07 — SIDE SESSION (7 Days to Die modding). No KPM file touched.
 
@@ -9,7 +9,7 @@ Not a KPM entry. Logged only so the Stop hook's mtime check has an honest answer
 and this session neither made it nor knows its state. Nothing above or below was rewritten.
 Vault: `A-Brain/Wiki/Concepts/7 Days to Die Mod Load Order.md`.
 
-## 🟠 2026-09-01 19:05 — THE NAMES GET THEIR ROOM, THE RING GOES ORANGE. **702/702 + 977/977**.
+## 🟠 2026-09-01 18:11 — THE NAMES GET THEIR ROOM, THE RING GOES ORANGE. **702/702 + 977/977**.
 
 *"take more space its okay"* — the Stock by Warehouse name column was `minmax(0,1fr)` with `truncate`
 on both names, so a narrow desk cut the part that tells two products apart. It is

@@ -1,6 +1,6 @@
 # NEXT SESSION — read this, then `.claude/PROGRESS.md`. Read no code to orient.
 
-**Written 2026-09-01 16:20 WIB. 702/702 audit · 970/970 selfcheck. Branch `phase0-solid-ground`.**
+**Written 2026-09-01 18:11 WIB. 702/702 audit · 977/977 selfcheck. Branch `phase0-solid-ground`.**
 
 ## First command
 
@@ -64,6 +64,17 @@ a karton as one bks. Every call must pass `product || {}` so the fallback applie
 <details>
 <summary>Queued — do not start these</summary>
 
+- 🔴 **IF HE HAS SAID YES TO THE FOLLOW-CAMERA, THAT JUMPS AHEAD OF THE JOB ABOVE.** Asked whether
+  Ponder should get a separate phone build or a camera that scrolls the stage to the highlighted box,
+  the recommendation given was the camera, and the reasons are the ones to hold to: a second tutorial
+  is a second thing to keep in step with every screen change, the desk needs it too, and the
+  highlight's rect is ALREADY measured every beat in `PonderOverlay.jsx` (`spot`, and `measure()`
+  above it), so following it is a `scrollIntoView`-shaped change on `scrollRef`, not a new component.
+  ⚠️ **The trap:** `scrollRef` is the `absolute inset-0 overflow-auto` div that holds the stage, and
+  the highlight is a SIBLING of it at `z-20` positioned in stage coordinates. Scroll the container and
+  the ring must be re-measured, or it will sit where the subject used to be — the same 6%-out bug the
+  comments at `measure()` already record. Scroll first, measure after, never the other way round.
+
 - **The book's closing animation on a phone.** `flightFrom` in `PonderBook.jsx` measures the closed
   book as `b.width / 2 + 62` — the desk geometry. A phone renders no left half, so it aims at a
   rectangle that is not on screen. Plausible mechanism for his *"closed animation also broken in the
@@ -88,3 +99,10 @@ a karton as one bks. Every call must pass `product || {}` so the fallback applie
 </details>
 
 **Before you finish: rewrite this file with the next single job.**
+
+---
+
+**Checked 2026-09-01 18:07 WIB — brief unchanged, still the job above.** The modified
+`src/ponder/stages/StockByWarehouseTable.jsx` in the working tree belongs to the KPM session
+running in parallel, not to this note. A 7DTD modding session was also open on this repo and
+touched no project files.
