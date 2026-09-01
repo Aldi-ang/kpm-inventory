@@ -1,6 +1,42 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-09-01 14:06 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **692/692 audit · 970/970 selfcheck** · branch `phase0-solid-ground`
+**Updated: 2026-09-01 15:40 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **697/697 audit · 970/970 selfcheck** · branch `phase0-solid-ground`
+
+## 🟠 2026-09-01 15:40 — KARTON, BAL AND SLOP AT THE INTAKE DESK. **697/697 + 970/970**.
+
+**NOW:** the Restock Vault's Jumlah column is the sales terminal's own row, ported — four boxes, the
+running total in Bks, and the rates line under it. He asked for it after seeing the sales terminal
+and sent a screenshot of that row.
+
+**The rates come from `convertToBks` and nowhere else**, which is the whole of his instruction:
+*"we should have 1 data to be used many times on the other components"*. Packing is per product, so
+the numbers differ by product — the lab shows Cello Green 16 reading 1 KARTON = 400 next to Djarum
+Coklat 12 reading 600, same function, same screen.
+
+**The boxes are a calculator, not a second unit on the line.** They total to Bks and write that one
+number into `qtyReceived`; the typed breakdown lives in a display-only `mix` field. This is what
+stops the intersection he was warning about — `totalItemsReceived`, the landed cost per unit, the HQ
+stock increment and the shipment line all read `qtyReceived` raw, so a line saying qty 2 unit Karton
+would have taken 2 packs out of HQ stock instead of 800.
+
+**Verified by rendering at 1280px**, not from source: four boxes measured on ONE row, the rates line
+on one line, and 2 karton + 1 bal + 3 slop + 5 bks totalled **935 Bks** against an expected 935. The
+Jumlah column went 110px → 330px to fit it. The distributor-price default he asked for was already
+there; group 59 now pins it so it cannot quietly become retail.
+
+⚠️ **FOUND WHILE DOING IT, NOT FIXED — the same maths is copy-pasted about ten times**, and two of
+those copies are already producing wrong numbers: `AgentInventoryView.jsx:81` hardcodes
+`mult = 10` with no product lookup, and `MerchantSalesView.jsx:1238`/`:1256` hardcode `*= 800` for a
+karton. Any product that is not 10/20/4 is miscounted on those screens today. **That is the next
+job and the brief carries it.**
+
+🔴 **WAITING ON ALDI — four things, his words and my questions verbatim.**
+
+1. *"After the Access Denied screen went away, which screen appeared?"* — the Google sign-in screen
+   (session dropped) or the "Open the vault" master-password screen (recognised, just slowly).
+2. *"And which email did you sign in with?"* The Access Denied screen prints it in red brackets.
+3. The label test, still owed. His words: *"i havent do the test btw"*. Not possible on the iPhone.
+4. The G1+G2 staleness threshold in days — a number only he can set.
 
 ## 🟠 2026-09-01 14:06 — HIS PHONE IS ON THE APP AGAIN. Shell fix committed, **692/692 + 970/970**.
 
