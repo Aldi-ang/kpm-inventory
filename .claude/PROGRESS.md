@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-09-01 18:11 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **702/702 audit · 977/977 selfcheck** · branch `phase0-solid-ground`
+**Updated: 2026-09-01 18:40 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **705/705 audit · 977/977 selfcheck** · branch `phase0-solid-ground`
 
 ## ⚪ 2026-09-01 18:07 — SIDE SESSION (7 Days to Die modding). No KPM file touched.
 
@@ -8,6 +8,38 @@ Not a KPM entry. Logged only so the Stop hook's mtime check has an honest answer
 `src/ponder/stages/StockByWarehouseTable.jsx` is the parallel 🟠 KPM session's in-flight edit,
 and this session neither made it nor knows its state. Nothing above or below was rewritten.
 Vault: `A-Brain/Wiki/Concepts/7 Days to Die Mod Load Order.md`.
+
+## 🟠 2026-09-01 18:40 — THE CAMERA FOLLOWS THE HIGHLIGHT. **705/705 + 977/977**.
+
+*"do follow camera then"* — he chose it over a separate phone Ponder. **One tutorial, both widths.**
+
+**A camera already existed and was aimed wrong twice.** It called `scrollIntoView({block:'nearest'})`
+on the FIRST element matching the beat, and `nearest` is satisfied the moment one cell of a tall
+column touches the edge. Worse, it moved the STAGE — but Stock by Warehouse has its own
+`overflow-x-auto` around a 1080px grid, so sideways movement belongs to that div. Measured at 375px
+before the fix: the ring was fully in view vertically on every beat and **0% in view horizontally on
+five of them**.
+
+**Now it centres the UNION in every scroller between the subject and the stage, innermost first**,
+recomputing rects per scroller because moving an inner one moves everything outside it. It stops AT
+the stage — walking past would scroll the app underneath the tutorial. A scroller with nothing to
+scroll returns at once, which is why the desk is untouched.
+
+**Verified beat by beat, not by eye.** At 375px: stock-by-warehouse 14 beats, regional-warehouse 16
+beats, and on every one the ring is 90%+ visible or fills 85%+ of the window (the second case is a
+subject wider than a phone — centring its middle is the best the window can do). At 1440 the same 14
+beats pass and the stage's own scrollTop/scrollLeft stay at 0.
+
+⚠️ **CRLF bit twice today.** A needle with a literal `
+` matches nothing in these files. It made a
+selfcheck pass while testing nothing this morning, and an audit check fail this evening. Anchor the
+lift, or use `\s*`.
+
+🔴 **WAITING ON ALDI — three.** Whether both Wi-Fi networks stay in use (the 192.168.100.1 router
+has no reservation and no Firebase entry) · the label print-and-scan test, still owed · the G1+G2
+staleness threshold in days. He also asked *"is there another components i need to check on my
+phones right now?"* — named in chat: the sales terminal cart, the wide Stock by Warehouse table, the
+surat jalan and the printed label. A full phone sweep was offered and not yet asked for.
 
 ## 🟠 2026-09-01 18:11 — THE NAMES GET THEIR ROOM, THE RING GOES ORANGE. **702/702 + 977/977**.
 

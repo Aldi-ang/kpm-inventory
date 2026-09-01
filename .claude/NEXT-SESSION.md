@@ -1,6 +1,6 @@
 # NEXT SESSION — read this, then `.claude/PROGRESS.md`. Read no code to orient.
 
-**Written 2026-09-01 18:11 WIB. 702/702 audit · 977/977 selfcheck. Branch `phase0-solid-ground`.**
+**Written 2026-09-01 18:40 WIB. 705/705 audit · 977/977 selfcheck. Branch `phase0-solid-ground`.**
 
 ## First command
 
@@ -64,26 +64,6 @@ a karton as one bks. Every call must pass `product || {}` so the fallback applie
 <details>
 <summary>Queued — do not start these</summary>
 
-- 🔴 **IF HE HAS SAID YES TO THE FOLLOW-CAMERA, THAT JUMPS AHEAD OF THE JOB ABOVE.** Asked whether
-  Ponder should get a separate phone build or a camera that scrolls the stage to the highlighted box,
-  the recommendation given was the camera, and the reasons are the ones to hold to: a second tutorial
-  is a second thing to keep in step with every screen change, the desk needs it too, and the
-  highlight's rect is ALREADY measured every beat in `PonderOverlay.jsx` (`spot`, and `measure()`
-  above it), so following it is a `scrollIntoView`-shaped change on `scrollRef`, not a new component.
-  ⚠️ **The trap:** `scrollRef` is the `absolute inset-0 overflow-auto` div that holds the stage, and
-  the highlight is a SIBLING of it at `z-20` positioned in stage coordinates. Scroll the container and
-  the ring must be re-measured, or it will sit where the subject used to be — the same 6%-out bug the
-  comments at `measure()` already record. Scroll first, measure after, never the other way round.
-
-- **The book's closing animation on a phone.** `flightFrom` in `PonderBook.jsx` measures the closed
-  book as `b.width / 2 + 62` — the desk geometry. A phone renders no left half, so it aims at a
-  rectangle that is not on screen. Plausible mechanism for his *"closed animation also broken in the
-  phone"*, not yet proven; a still frame cannot prove an animation, so plan how to capture it first.
-- **Ten copies of the unit conversion**, and two are wrong today: `AgentInventoryView.jsx:81`
-  hardcodes `mult = 10` with no product lookup, `MerchantSalesView.jsx:1238`/`:1256` hardcode
-  `*= 800`. The one converter is `helpers.js:195`. ⚠️ The inline copies are not identical — one
-  feeds a price the retur path deliberately zeroes, two compute old-vs-new multipliers either side
-  of an edit. Read each site's function before touching it.
 - **G1 + G2, the money item.** `batchNo` at `RestockVaultView.jsx:1944`, meter at `:455`, written at
   `:656`, dies at the HQ door because `branches/{loc}/inventory/{productId}` holds one `stock`
   number. 🔴 **Ask him the staleness threshold in days first.**
