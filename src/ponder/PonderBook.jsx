@@ -80,6 +80,13 @@ const SLAB_OPEN = 'inset(0 0 0 0 round 14px)';
    Was `50% - 62px` when the slab spanned the whole container; half of 116 is 58, so the same screen
    position is `50% + 58 - 62`. Verified in the lab rather than trusted: `?book`. */
 const SLAB_SHUT = 'inset(0 calc(50% - 4px) 0 0 round 14px)';
+/* A PHONE CLOSES TO A SPINE, NOT TO A HALF. Aldi, 2026-09-01: *"just made the animation of close
+   book like a closing of long vertical book ... the background of the book is making it look
+   broke"*. The desk's shut state clips the cover to the LEFT HALF, because on a desk that half is
+   a page you can see. A phone renders no left page at all, so clipping to 50% left a brown slab
+   standing over a gap where nothing had ever been drawn. That gap is the broken background. What a
+   tall book leaves behind when it shuts is its spine, so that is what the phone clips to. */
+const SLAB_SHUT_SPINE = 'inset(0 calc(100% - 30px) 0 0 round 14px)';
 /* Sequenced by DELAY, not by offsets inside a shared clock — that is what makes one beat finish
    before the next begins. The totals sit just under his sound files, 1,30s and 1,16s. */
 const T = {
@@ -352,6 +359,29 @@ function Library({ anchorRef, initialSection, onClose, onPick, closeOnMount = fa
      The keyframes are computed from the chip's REAL rectangle, so the book grows out of the little
      book that was pressed and shrinks back into it. A fixed origin would have been three fewer
      lines and would have thrown the book at a corner that means nothing. */
+  /* MOVED ABOVE `flightFrom` ON PURPOSE. These are read inside its dependency array, and a
+     dependency array is evaluated where the useCallback is written, not where it is called —
+     declared after it, the whole component threw *Cannot access before initialization* and the
+     book rendered as a blank screen with nothing else on the page. */
+  /* The leather starts six pixels into the ribbon column, so it has to follow the column's width
+     when the phone narrows it — otherwise the cover sits 34px out and the ribbons stop reading as
+     tabs cut into its edge. One number, two widths. */
+  const narrow = typeof matchMedia === 'function' && !matchMedia('(min-width: 1024px)').matches;
+  const coverLeft = narrow ? 82 : COVER_LEFT;
+
+  /* THE CLOSE, AT THE WIDTH IT IS ACTUALLY HAPPENING AT.
+
+     On a desk the leaf is the right half and it travels 0 to -180 degrees about the centre fold, so
+     it lands face down on the left half. That is a book closing, and it is correct there.
+
+     On a phone the leaf is the WHOLE page and its hinge is already the left edge. Sending it to
+     -180 degrees swings it out past the spine onto nothing, which is the close he called broken.
+     -90 degrees is the same hinge stopped at the point where the page is edge-on: it turns away and
+     disappears into the spine, which is what a tall book does when you shut it while holding it.
+     The cover clip closes to the spine on the same clock, so the two arrive together. */
+  const leafShutTo = narrow ? 'rotateY(-90deg)' : SHUT;
+  const slabShutTo = narrow ? SLAB_SHUT_SPINE : SLAB_SHUT;
+
   /* 🔴 IT IS THE CLOSED BOOK THAT FLIES, NOT THE CONTAINER. When the cover is shut the visible
      book is only the left half plus the tab column — `SLAB_SHUT` below is the same measurement —
      so scaling the whole 1040px container onto the chip aimed the wrong rectangle and the book
@@ -362,19 +392,13 @@ function Library({ anchorRef, initialSection, onClose, onPick, closeOnMount = fa
     if (!el || !chip) return null;
     const b = el.getBoundingClientRect(), a = chip.getBoundingClientRect();
     if (!b.width || !a.width) return null;
-    const closedW = b.width / 2 + 62;                 // must match SLAB_SHUT
+    const closedW = narrow ? coverLeft + 30 : b.width / 2 + 62;   // must match the shut clip above
     const s = Math.max(a.height / b.height, 0.03);    // height, because a closed book is portrait
     const dx = (closedW / 2) - (b.width / 2);         // closed centre, relative to container centre
     const tx = (a.left + a.width / 2) - (b.left + b.width / 2) - dx * s;
     const ty = (a.top + a.height / 2) - (b.top + b.height / 2);
     return `translate(${Math.round(tx)}px, ${Math.round(ty)}px) scale(${s.toFixed(3)})`;
-  }, [anchorRef]);
-
-  /* The leather starts six pixels into the ribbon column, so it has to follow the column's width
-     when the phone narrows it — otherwise the cover sits 34px out and the ribbons stop reading as
-     tabs cut into its edge. One number, two widths. */
-  const narrow = typeof matchMedia === 'function' && !matchMedia('(min-width: 1024px)').matches;
-  const coverLeft = narrow ? 82 : COVER_LEFT;
+  }, [anchorRef, narrow, coverLeft]);
 
   const still = liteOn() || reduced();
 
@@ -410,7 +434,7 @@ function Library({ anchorRef, initialSection, onClose, onPick, closeOnMount = fa
     /* Only then does the cover swing open — and it travels a little past flat before settling,
        which is what a cover dropped open actually does. */
     leaf?.animate(
-      [{ transform: SHUT, offset: 0 },
+      [{ transform: leafShutTo, offset: 0 },
        { transform: 'rotateY(3deg)', offset: 0.88 },
        { transform: OPEN, offset: 1 }],
       { duration: T.leafOpen, delay: T.leafOpenDelay, easing: HINGE, fill: 'both' },
@@ -419,10 +443,10 @@ function Library({ anchorRef, initialSection, onClose, onPick, closeOnMount = fa
           T.leafOpen, T.leafOpenDelay);
     shade(shadeBackRef.current, [{ opacity: 0 }, { opacity: 0.55, offset: 0.55 }, { opacity: 0.75 }],
           T.leafOpen, T.leafOpenDelay);
-    slabRef.current?.animate([{ clipPath: SLAB_SHUT }, { clipPath: SLAB_OPEN }],
+    slabRef.current?.animate([{ clipPath: slabShutTo }, { clipPath: SLAB_OPEN }],
       { duration: T.leafOpen, delay: T.leafOpenDelay, easing: HINGE, fill: 'both' });
     scrimRef.current?.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 300, easing: 'ease-out', fill: 'both' });
-  }, [still, flightFrom]);
+  }, [still, flightFrom, leafShutTo, slabShutTo]);
 
   const shut = useCallback(() => {
     if (closingRef.current) return;
@@ -438,12 +462,12 @@ function Library({ anchorRef, initialSection, onClose, onPick, closeOnMount = fa
                               { duration: T.flyOut, delay: T.flyOutDelay, easing: 'ease-in', fill: 'both' });
     /* The cover swings shut where the book stands, and NOTHING else moves while it does. */
     leafRef.current?.animate(
-      [{ transform: OPEN }, { transform: SHUT }],
+      [{ transform: OPEN }, { transform: leafShutTo }],
       { duration: T.leafShut, easing: HINGE, fill: 'both' },
     );
     shade(shadeFrontRef.current, [{ opacity: 0 }, { opacity: 0.62 }], T.leafShut, 0);
     shade(shadeBackRef.current, [{ opacity: 0.75 }, { opacity: 0 }], T.leafShut, 0);
-    slabRef.current?.animate([{ clipPath: SLAB_OPEN }, { clipPath: SLAB_SHUT }],
+    slabRef.current?.animate([{ clipPath: SLAB_OPEN }, { clipPath: slabShutTo }],
       { duration: T.leafShut, easing: HINGE, fill: 'both' });
     /* ...and only once it is shut does it go back to the shelf. */
     const anim = el.animate(
@@ -452,7 +476,7 @@ function Library({ anchorRef, initialSection, onClose, onPick, closeOnMount = fa
     );
     anim.onfinish = onClose;
     anim.oncancel = onClose;
-  }, [onClose, flightFrom, closeOnMount]);
+  }, [onClose, flightFrom, closeOnMount, leafShutTo, slabShutTo]);
 
   /* Mounted purely to close. A layout effect rather than a plain one, so the shut starts in the
      same frame the spread is painted — a plain effect gives one frame of a book sitting open and

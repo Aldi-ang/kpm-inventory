@@ -4651,7 +4651,12 @@ check(G56, 'both overlays escape their mount point through a portal',
 check(G56, 'the book flies from the chip that opened it, and back into it',
   /getBoundingClientRect\(\)/.test(bookSrc) && /el\.animate\(/.test(bookSrc) &&
   /anim\.onfinish = onClose/.test(bookSrc) && /Math\.max\(a\.height \/ b\.height/.test(bookSrc) &&
-  /const closedW = b\.width \/ 2 \+ 62;/.test(bookSrc) && /\[\{ transform: from \}, \{ transform: FLAT \}\]/.test(bookSrc) &&
+  /* The closed book is a different shape at each width since 2026-09-01: half the spread plus the
+     tab column on a desk, the spine strip on a phone, because a phone renders no left page for a
+     half-width cover to stand on. Both ends are asserted so neither can drift from its clip. */
+  /const closedW = narrow \? coverLeft \+ 30 : b\.width \/ 2 \+ 62;/.test(bookSrc) &&
+  /const SLAB_SHUT_SPINE = 'inset\(0 calc\(100% - 30px\) 0 0 round 14px\)';/.test(bookSrc) &&
+  /\[\{ transform: from \}, \{ transform: FLAT \}\]/.test(bookSrc) &&
   /\[\{ transform: FLAT \}, \{ transform: from \}\]/.test(bookSrc),
   'the flight must map the CLOSED book — half the spread plus the tab column — onto the chip, ' +
   'scaled by HEIGHT because a closed book is portrait, and it must not fade: a book that ' +
