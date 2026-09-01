@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-09-01 19:20 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **705/705 audit · 977/977 selfcheck** · branch `phase0-solid-ground`
+**Updated: 2026-09-01 20:05 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **705/705 audit · 977/977 selfcheck** · branch `phase0-solid-ground`
 
 ## ⚪ 2026-09-01 18:07 — SIDE SESSION (7 Days to Die modding). No KPM file touched.
 
@@ -8,6 +8,26 @@ Not a KPM entry. Logged only so the Stop hook's mtime check has an honest answer
 `src/ponder/stages/StockByWarehouseTable.jsx` is the parallel 🟠 KPM session's in-flight edit,
 and this session neither made it nor knows its state. Nothing above or below was rewritten.
 Vault: `A-Brain/Wiki/Concepts/7 Days to Die Mod Load Order.md`.
+
+## 🟠 2026-09-01 20:05 — THE BOOK CLOSES TO ITS SPINE ON A PHONE. **705/705 + 977/977**.
+
+*"the background of the book is making it look broke"* — **it was not a background, it was the cover
+ending in the wrong place.** On a desk the leaf swings -180° onto the left page and the cover clips
+to half the width. A phone renders no left page, so that close swung the whole page out past the
+spine onto nothing and left a brown slab standing over a gap. Now the leaf stops **edge-on at -90°**
+about the left edge it already hinges on, and the cover clips to a **30px spine strip**. A tall book
+shut in the hand does not fold in half; it becomes its spine.
+
+**A TDZ crash was introduced and caught on the way.** The new constants sat after `flightFrom`,
+whose dependency array reads them — and a dependency array runs where the `useCallback` is written,
+not where it is called. The component threw and the book was a blank screen. Hoisted, with the
+reason written next to it.
+
+**Measured after a real close at 375px:** computed `clip-path` is `inset(0px calc(100% - 30px) ...)`
+and the book's transform is scaled to 0.049 at the chip, so the flight lands where it should.
+
+⚠️ **NOT verified: whether it FEELS smooth.** A still frame proves a shape, never a motion. He has
+to watch it. The brief names the suspects if it still stutters.
 
 ## 🟠 2026-09-01 19:20 — THE TUTORIAL STOPS SAYING "MEJA". **705/705 + 977/977**.
 

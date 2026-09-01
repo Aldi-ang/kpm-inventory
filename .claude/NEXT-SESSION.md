@@ -1,6 +1,6 @@
 # NEXT SESSION — read this, then `.claude/PROGRESS.md`. Read no code to orient.
 
-**Written 2026-09-01 19:20 WIB. 705/705 audit · 977/977 selfcheck. Branch `phase0-solid-ground`.**
+**Written 2026-09-01 20:05 WIB. 705/705 audit · 977/977 selfcheck. Branch `phase0-solid-ground`.**
 
 ## First command
 
@@ -73,6 +73,15 @@ who need it, and that failure is silent. Pass `userRole` down from `BiohazardThe
 give the ponder lab a role too or `?book` stops rendering.
 
 **Pin both in group 56.**
+
+- 🔴 **IF HE SAYS THE BOOK'S CLOSE STILL STUTTERS ON THE PHONE, that is the first thing to look
+  at, and it is a different fault from the geometry.** The shape is fixed and measured: the leaf
+  stops edge-on at -90° about its own left-edge spine and the cover clips to a 30px strip
+  (`SLAB_SHUT_SPINE`), verified from the computed `clip-path` after a real close. What is NOT
+  verified is the feel. The suspects, in order: the leaf carries `preserve-3d` under a 1500px
+  `perspective` and both shade planes animate `opacity` on top of it, which is three composited
+  layers on a phone GPU for one gesture. Try dropping the shades on narrow widths before touching
+  the timing. ⚠️ **A still frame cannot prove a motion — ask him to watch it, do not claim it.**
 
 <details>
 <summary>Queued — do not start these</summary>
