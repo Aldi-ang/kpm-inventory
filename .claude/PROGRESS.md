@@ -1,6 +1,30 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-09-01 10:40 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **688/688 audit · 970/970 selfcheck** · branch `phase0-solid-ground`
+**Updated: 2026-09-01 12:45 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **691/691 audit · 970/970 selfcheck** · branch `phase0-solid-ground`
+
+## 🟠 2026-09-01 12:45 — THE GATE IS IN. `03955c4`, **691/691 + 970/970**.
+
+His sequence, built exactly as he described it: *"this barcode is just as a gate to confirm and
+make sure that all the package is arrived and opening a blind count panel to be fill"*.
+
+**Three changes in `BranchWarehouseManager.jsx`.** `HITUNG & TERIMA BARANG` now also requires
+`order.arrivedAt`. A shipment still waiting on its scan shows a line where the button used to be,
+naming **Scan barang sampai** — never a hidden button. And a successful scan calls
+`setReceivingOrder(match)`, so the count panel OPENS instead of merely becoming available.
+
+**Proven in a rendered frame at 1280px, not from the source.** `REQ-185204` (unscanned) shows the
+pointer line and no gold button; `REQ-185211` (a new scanned twin in the ponder lab) shows the
+button and no pointer line; typing `REQ-185204` into the scanner's fallback box closed the scanner
+and opened the blind count panel on that shipment. Three checks added to group 58, which now runs
+in both directions — the scan cannot credit stock, and the count cannot open without an arrival.
+
+⚠️ **The typed box in `ArrivalScanner` is now load-bearing.** With a hard gate, anything that stops
+a scan stops goods being received at all. It is offered ALWAYS, not after a camera failure. Do not
+tidy that into a post-failure fallback.
+
+🔴 **WAITING ON ALDI — two things.** The physical test (print a label, scan it on the Android
+phone; nothing here can settle whether a printed symbol reads). And the G1+G2 staleness threshold
+in days, which the next job needs and which only he can set.
 
 ## 🟠 2026-09-01 10:40 — HE DESIGNED THE SEQUENCE: THE BARCODE IS A GATE. No code changed.
 
