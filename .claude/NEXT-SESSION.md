@@ -1,6 +1,6 @@
 # NEXT SESSION — read this, then `.claude/PROGRESS.md`. Read no code to orient.
 
-**Written 2026-09-01 07:50 WIB. 680/680 audit · 957/957 selfcheck. Branch `phase0-solid-ground`.**
+**Written 2026-09-01 08:55 WIB. 680/680 audit · 970/970 selfcheck. Branch `phase0-solid-ground`.**
 
 ## First command
 
@@ -16,81 +16,76 @@ PowerShell: `;` not `&&`. **Quote BOTH numbers.** The audit refuses to run again
 npx vite build --config tools/ponder-lab.config.mjs; python -m http.server 4187 -d dist-ponderlab
 ```
 
-`?gudang` mounts the **branch warehouse screen** · `?places` the Restock Vault · `?nota` the surat
-jalan. Add `&light`, `&lite`, `&probe`.
+`?gudang` the regional warehouse desk (`&tier=AREA_ADMIN` for the HQ case) · `?places` the Master
+Vault desk · `?nota` the surat jalan · `?scene=regional-warehouse&step=N` the new tutorial.
+Add `&light`, `&lite`, `&probe`.
 
-**`?gudang` is new and it is the reusable part.** `tools/lab-firestore-stub.js` is aliased over
-`firebase/firestore` for the lab build only, so a screen that needs live data now renders against
-fixtures through its own real listener. Adding a screen means adding a `FIXTURES['<path tail>']`
-entry and a mount — no component changes.
-
-⚠️ **The pane lies.** A screenshot can be a stale frame or a mid-fade, and `document.hidden` is
-`true` unless you `tabs_select` first. **Drive it with `element.click()` and read computed values.**
+⚠️ **The frame lies, and it lied again today.** A tutorial highlight looked like it spanned the
+whole tab row; measured, it was 1107→1237 against a tab at 1113→1231 — the wide box was the stage
+container. **Drive it with `element.click()` and read `getBoundingClientRect()`.**
 
 ---
 
-## THE ONE JOB — the two faults found on 2026-09-01 are app-wide, and nothing pins them
+## THE ONE JOB — the Master Vault desk is mixed-language, and he has now ruled that it cannot be
 
-Both were found by LOOKING at the branch warehouse screen *after every check on it was already
-green*, and both are palette-law breaches in light mode. Counted across `src/**/*.jsx`:
+His rule, 2026-09-01: *"if the restock vault is in english then this regional warehouse should be
+in english as well if indo then indo"*. The regional warehouse desk directly below it **is English
+now, on his instruction**. The Master Vault desk is neither — measured across
+`src/RestockVaultView.jsx`:
 
-| Fault | Sites | Why it is a bug |
-|---|---|---|
-| **Uncoloured `placeholder=`** | **90, in 18 files** | no colour set → the browser's own `rgb(156,163,175)`, which is **slate, the hue the law bans by name**. Measured **1,36:1** on the light well |
-| **Bare `text-orange` as ink** | **~107, in 15 files** | `--orange` is `#FF8C1A` in BOTH themes because it is the EDGE half of the amber law. As reading ink on the light well it measured **1,08:1** |
+| | Words |
+|---|---|
+| **English** | Batch No · Date · Extra Costs · Qty Received · Select Product · Metadata · Shipping (Rp) · Labor (Rp) · Tax (Rp) · Target Month · Adjust Batches · Update Document Proof |
+| **Indonesian** | Barang · Jenis · Jumlah · Nama · Nota · Kirim · Hapus · Proses · Tanggal · Ongkos kirim · Pita cukai · Nilai barang · Siapkan · Kelengkapan |
+| **Both at once** | "Nama Pengirim (Sender Name)" · "Nomor Resi / Tracking No" · "Surat Jalan / Delivery No" |
 
-Worst offenders: `RestockVaultView.jsx` (19 placeholders), `CustomerManager.jsx` (13),
-`JourneyView.jsx` (21 orange), `MapMissionControl.jsx` (18 orange).
+Two desks on one page, one in English and one in a mixture, is exactly what his rule exists to stop.
 
-**The fix is already written and shipped once** — copy it out of `BranchWarehouseManager.jsx`:
+🔴 **BRING HIM THE NAMES, DO NOT RENAME ANYTHING.** Only Aldi names the categories in his own
+trade — that law is why *Tempat* became **Data Induk** and why *Stock on Hand* became **Stock**.
+Produce a table of every visible label with a proposed English name beside it, in one message, and
+let him strike through what he does not like.
 
-- placeholders → `placeholder:text-ink-dim placeholder:opacity-100 placeholder:italic`. All three
-  parts are load-bearing. `opacity-100` because **Firefox dims placeholders by .54 on top of any
-  colour set**; `italic` because in light mode a darkened placeholder is otherwise
-  indistinguishable from a typed value (`theme.css:3231` settled this, and says so).
-- `text-orange` → `text-accent-ink`. **`border-orange` and `bg-orange` stay** — those are edges,
-  and a 3px rule is the legal form of amber.
+⚠️ **Three things are NOT up for renaming.** **Data Induk** — he chose it from four options on
+2026-08-31. The **printed surat jalan** — it is a document for Indonesian drivers and warehouse
+staff, and the palette law already stops at the print block for the same reason. And the
+**branch-facing body copy** ("Hitung dulu, jangan lihat surat jalan") — his 2026-08-27 rule is
+*"teaching just use indonesia, for terms for the features and components just use english"*, so
+labels go English and instructions stay Indonesian.
 
-⚠️ **THE TRAP THAT MAKES A LAZY SWEEP WRONG.** Not every `text-orange` is a breach: one sitting on
-a scrim or a dark-only surface is correct, because a scrim is dark in both themes by law. A blind
-regex over 15 files will repaint those too and nobody will notice. **Measure each ground before
-swapping** — mount the screen at `?<lab>&light` and sweep leaf text nodes against the first
-ancestor that paints an opaque background. That sweep is written; lift it from the `?gudang&probe`
-block in `tools/ponder-lab.jsx`.
-
-⚠️ **Do not add `.kpm-inline` to reach the placeholder rule.** It carries its own height, padding
-and border, and will fight classes the inputs already have. That is why the fix is per-input.
-
-**Pin it in `integration.audit.mjs` group 57's shape** — that group went red on all four of its
-first checks before the edit, which is the only reason its green is worth anything.
+**Pin it the way group 57 is pinned** — that group went red on all four of its first checks before
+the edit, which is the only reason its green means anything.
 
 ---
 
 <details>
 <summary>Queued — do not start these</summary>
 
+- **The two colour faults, still app-wide.** **90 uncoloured `placeholder=` in 18 files** (falling
+  back to the browser's `rgb(156,163,175)`, which is slate — 1,36:1 on the light well) and **~107
+  bare `text-orange` used as ink in 15** (1,08:1). Fix shipped once in
+  `BranchWarehouseManager.jsx`: `placeholder:text-ink-dim placeholder:opacity-100
+  placeholder:italic`, and `text-orange` → `text-accent-ink`. **`border-orange` and `bg-orange`
+  stay — those are edges.** ⚠️ A blind regex is wrong: a `text-orange` on a scrim is correct.
 - **G1 + G2, the money item.** `batchNo` captured at intake, never copied onto
-  `branches/{loc}/inventory`; nothing enforces oldest-ships-first. **If he wants money before
-  paint, this jumps the queue** — his own standing call on the warehouse-gaps list.
-- **Ponder caption static on phones, moving on PC.** DECIDED 2026-08-31, not built. *"to save space
-  then let it stay static for phones but move for PC"*. Today `PonderOverlay.jsx` HIDES it:
-  `if (boxW > W * 0.7) return null;`. The job is a third state — visible, fixed, phone only.
-- **"My Current Branch Inventory" takes 3 lines at 375px.** Measured, not broken: 16px, the title
-  column is 218px, and the chevron eats width the other panels do not spend. A shorter name would
-  fix it and **naming is his** — ask before renaming.
-- **Landed cost spreads shipping/labour/excise equally per UNIT**, so a cheap product absorbs the
-  same rupiah as an expensive one. **A decision he has not been asked to confirm**, not a bug.
-- **Restock Vault: nothing destructive is gated by ROLE** — what protects it is the screen mounting
-  behind `isAdmin`, the Master Vault password.
-- **Three caption/ring overlaps in Stock by Warehouse on DESKTOP**, beats 7, 16, 22.
+  `branches/{loc}/inventory`; nothing enforces oldest-ships-first. **His standing call: this jumps
+  the queue whenever he wants money before paint.**
+- **Ponder caption static on phones, moving on PC.** DECIDED 2026-08-31, not built. Today
+  `PonderOverlay.jsx` HIDES it: `if (boxW > W * 0.7) return null;`. The job is a third state.
+- **The request card's status badge and button stack oddly at 375px** — pre-existing, `ml-auto`
+  pushes the button to its own line. Not touched today.
+- **Landed cost spreads shipping/labour/excise equally per UNIT** — a decision he has not been
+  asked to confirm, not a bug.
 - **G5** shrinkage · **G4** records joined by name not id · **Siapkan Pengiriman and the shipping
   modal, still untested by anyone.**
-- **9router dies at login.** Its startup script uses `start /min`, which throws the error away. A
-  30-second delay plus a redirect into `startup.log` is drafted and **not applied** — it edits a
-  file that runs at every login, and he has not said yes.
+- **9router dies at login.** `start /min` throws the error away. A fix is drafted and **not
+  applied** — it edits a file that runs at every login and he has not said yes.
 - **The quota meter is FIXED, do not re-investigate.** Id `76c7cf4f-4c24-4984-aada-3aa91f53a148` in
   `C:/Users/ASUS/.claude/9router-claude-id.txt` — note the `.claude/`.
 
 </details>
+
+**No Firestore rules change is needed.** `places` falls through the `users/{bossUid}/{document=**}`
+catch-all, and the new tier gate is app-side only. Nothing to deploy.
 
 **Before you finish: rewrite this file with the next single job.**

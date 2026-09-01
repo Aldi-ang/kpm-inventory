@@ -1,6 +1,38 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-09-01 07:50 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **680/680 audit · 957/957 selfcheck** · branch `phase0-solid-ground`
+**Updated: 2026-09-01 08:55 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **680/680 audit · 970/970 selfcheck** · branch `phase0-solid-ground`
+
+## 🟠 2026-09-01 08:55 — THE REGIONAL WAREHOUSE IS A DESK. `dc05d61`, **680/680 + 970/970**.
+
+*"redesign the whole panel, similar to the main restock vault i said not just recolor but redesign
+... all the logic remains, there should be fixed location for the gudang as well and tier 4 and
+below cannot access the editing and registering of employees, gudang warehouse and factory"*.
+
+**Five tabs — Incoming · Request · Stock · Book · Data Induk.** English, because he settled the
+language the same morning, then shortened one himself: *"stock only is enough"*. Data Induk keeps
+its Indonesian name; he chose that one on 2026-08-31. Both desks share one shell now
+(`WarehouseDeskNav` + `components/Lamp.jsx`) so one page does not read as two products. Every line
+of logic came across unchanged.
+
+**The address is registered, not typed.** Five inputs and a per-device localStorage copy are gone;
+the reorder form reads the gudang's address from `places` and cannot edit it. Old requests carry
+the object-of-parts shape and still print — the fulfilment modal reads both.
+
+**`canManageRegistry` is T1–T3 and stops ABOVE T4 on purpose.** T4 is his REGIONAL ADMIN, the tier
+that lives on this screen, and it still sends and receives — `canHandleDelivery` is untouched. What
+it may no longer do is edit the places and people deliveries are addressed to. The HQ desk is gated
+at the HANDLERS too: `isAdmin` in App.jsx is literally `vaultUnlocked`, a password and not a rank.
+
+**Its own Ponder**, `regional-warehouse`, 11 beats, mounting the real nav strip.
+
+⚠️ **TWO CHECKS EARNED THEIR KEEP.** The RouteCombo anchor was `const Lamp =`, which this commit
+moved out of that file — `indexOf` returned -1 and would have handed six assertions the whole file
+to pass against; the one guard on the anchor is why that was red instead of silently green. And
+widening the second-person ban to `Anda`/`saya`/`kita` immediately caught an older breach in
+`goods-received`. His rule was *"no u and me"*; the list only held the informal forms.
+
+**❓ WAITING ON ALDI — nothing blocking.** Next job is relabelling the Master Vault desk to match,
+and the brief says bring him the names rather than renaming anything.
 
 ## 🟠 2026-09-01 07:50 — THE REGIONAL WAREHOUSE IS THE LEDGER NOW. `a4bc1ca`, **680/680 + 957/957**.
 
