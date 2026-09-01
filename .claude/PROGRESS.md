@@ -1,6 +1,44 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-09-01 16:20 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **702/702 audit · 970/970 selfcheck** · branch `phase0-solid-ground`
+**Updated: 2026-09-01 18:10 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **702/702 audit · 977/977 selfcheck** · branch `phase0-solid-ground`
+
+## 🟠 2026-09-01 18:10 — THE ACCESS DENIED FLASH IS DIAGNOSED AND FIXED. **702/702 + 977/977**.
+
+**NOW:** he is signed in on the phone. The white screen was not the app and the lockout was not his
+account; both are settled.
+
+⚠️ **THE WHITE SCREEN WAS A DEAD ADDRESS, and the reservation does not cover it.** The PC's Wi-Fi
+adapter has joined a DIFFERENT router: it is now **192.168.100.155** behind gateway
+**192.168.100.1**. The cable is still **192.168.1.143** behind **192.168.1.1**, which is the router
+where the DHCP reservation and the Firebase entries were made. **`192.168.1.144` no longer exists**,
+and a phone pointed at it gets a white page. The claim in the earlier note that the address could
+not move again was wrong: one reservation covers one router. Read `ipconfig` before quoting an
+address.
+
+**ACCESS DENIED for 15-20 seconds — cause found, and the first hypothesis was wrong.** No error was
+ever thrown, so nothing in the `catch` was involved. `getDoc()` with local persistence answers out
+of the LOCAL CACHE while the client is still connecting, and a document never cached on that device
+returns an ordinary *does not exist*. Two of those in a row took the `else` branch, which is the
+hard lockout. When the connection came up the listener fired again with the real answer and he was
+let in.
+
+**The fix is one distinction: a negative from the cache is not evidence, a positive still is.**
+`absentForSure()` in `helpers.js` reads `snap.metadata.fromCache`. Both lookups empty and either
+from cache -> the existing can't-verify screen with its Retry button. **The hard lockout sits BELOW
+that test and is untouched**, so a real stranger still reaches ACCESS DENIED. The retry screen also
+stopped claiming the internet was down; he was online both times.
+
+**Seven checks, five of them behaviour** — the function is lifted out of `helpers.js` by regex and
+run on fake snapshots, because `helpers.js` imports `firebase/storage` and cannot be imported by a
+checker. ⚠️ They went green testing NOTHING at first: the regex ended in `;\n` and the file is
+CRLF, so the lift returned `undefined`. An anchor check for the lift itself is what caught it.
+
+🔴 **WAITING ON ALDI — three things.**
+
+1. Whether both networks stay in use. If the phone and PC will sometimes sit on the
+   **192.168.100.1** router, that address needs its own reservation and its own Firebase entry.
+2. The label test, still owed: *"i havent do the test btw"*. Not possible on the iPhone.
+3. The G1+G2 staleness threshold in days.
 
 ## 🟠 2026-09-01 16:20 — FIVE PHONE FAULTS, MEASURED AND FIXED. **702/702 + 970/970**.
 

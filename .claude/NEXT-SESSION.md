@@ -29,41 +29,37 @@ plausible numbers. `innerText` comes back UPPERCASED by the CSS on these desks.
 
 ---
 
-## THE ONE JOB — ACCESS DENIED flashes at the boss for fifteen seconds
+## THE ONE JOB — ten copies of the unit conversion, and two of them are wrong
 
-His report, signing in as Tier 1 on the iPhone: *"i was on access denied for around 15 second then
-back to the normal login screen"*, and later, decisively: *"since i login earlier then its login
-directly to the normal login menu bypassed the google automatically"*. **That second sentence is the
-answer to the old question** — the screen after the lockout was the master-password vault gate, so
-he WAS recognised. An earlier pass failed, a later one succeeded, and in between the app showed him
-a red ACCESS DENIED.
+His rule, stated twice: *"we should have 1 data to be used many times on the other components"*.
+The intake desk obeys it now. Almost nothing else does.
 
-**Where it happens.** `App.jsx` — the auth handler starts near `:2286`. Two routes reach the
-lockout:
+`convertToBks(qty, unit, product)` at **`src/utils/helpers.js`** is the one function. It reads
+`packsPerSlop`, `slopsPerBal` and `balsPerCarton` off the product, 10/20/4 as fallbacks. These
+re-implement it inline: `App.jsx` `1947` `3198` `3342` `3411` `3746` `3761` ·
+`MerchantSalesView.jsx` `114` `626` `752` · `AgentProfileView.jsx` `488` `565` ·
+`EODReconciliationView.jsx` `222`.
 
-- `:2466` / `:2512` — the `else` branch, reached only when the directory lookups actually resolved
-  and found nothing. **This one is correct and must not be softened.**
-- `:2478` onwards — the `catch`. It handles the offline case honestly (`OFFLINE_UNVERIFIED`, its own
-  screen with a Retry button), then falls through to `setUserRole('UNAUTHORIZED')` for **every other
-  error**. A `permission-denied` on `system_admins/{uid}`, or a Firestore timeout on a slow phone,
-  lands there and is rendered as *"is not registered in the KPM Employee Directory"*.
+**Two are producing wrong numbers today, and those are the job:**
 
-**The smallest fix** is to stop the catch treating an error as a refusal: an error means *I could
-not check*, which the code already argues in its own comment three lines above for the offline case.
-Route it to the same can't-verify screen (`App.jsx:4260`) and widen that screen's wording so it is
-honest for both causes, not only for being offline.
+- **`AgentInventoryView.jsx:81` — `if (unit === 'Slop') mult = 10;`** No product lookup at all.
+  Every product that is not ten packs to a slop is counted wrong there, silently.
+- **`MerchantSalesView.jsx:1238` and `:1256` — `qtyInBks *= 800`** for a karton, hardcoded. 800 is
+  the 4 × 20 × 10 default; the two lab products are 400 and 600.
 
-⚠️ **THE TRAP.** `UNAUTHORIZED` is the app's hard stop for an email that genuinely is not an
-employee. It must still appear, unchanged, when the lookups resolve to nothing — the `else` branch.
-Do not turn a security gate into a timing race, and do not add a blanket "checking…" state that
-delays it: `trueRole` starts at `'ADMIN'` (`App.jsx:244`), so anything gating on "not resolved yet"
-changes what tier 2 sees on first paint.
+Do those two first — they are wrong, the rest are merely repetitive.
 
-⚠️ **PROVE THE CAUSE BEFORE PICKING THE FIX.** He is on Safari, where you cannot read a console
-easily. `getDocOfflineSafe` (`App.jsx:189`) throws rather than returning a fake "does not exist", so
-the two routes are genuinely distinguishable — but only from the error code. Consider logging the
-caught `error.code` into the existing Flight Recorder so he can read it out in one message, which is
-what that recorder was built for.
+⚠️ **THE TRAP.** The inline copies are not identical and a blind replace changes working
+behaviour. `MerchantSalesView.jsx:752` sits inside `updateCartItem`, where the multiplier feeds
+`calculatedPrice` and the retur/exchange path deliberately forces that to 0. `App.jsx:3342` and
+`:3411` compute a multiplier against the OLD product data and the NEW one either side of an edit;
+collapsing them into one call destroys a deliberate before/after pair. Read each site's function
+before touching it.
+
+⚠️ **`convertToBks` returns `qty` untouched when the product is missing**, which silently prices
+a karton as one bks. Every call must pass `product || {}` so the fallback applies.
+
+**Pin it in group 59**, which already asserts the intake desk reads its rates from the one converter.
 
 <details>
 <summary>Queued — do not start these</summary>
