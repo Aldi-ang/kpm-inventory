@@ -14,6 +14,7 @@ import { canManageRegistry } from '../config/permissions';
 /* the SAME status dot the Master Vault desk wears, not a lookalike */
 /* the nav strip is its own component so the Ponder scene mounts the REAL one */
 import WarehouseDeskNav from './WarehouseDeskNav.jsx';
+import ArrivalScanner from './ArrivalScanner.jsx';
 import { confirmAction } from './ConfirmGate.jsx';
 import { notify } from './Toast.jsx';
 /* The table below is rendered by the Ponder tutorial too, fed a fixed demo world. Same
@@ -293,6 +294,7 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
        `incoming` first because the question a branch admin opens this screen to answer is "has my
        stock arrived", not "what do I have". */
     const [deskTab, setDeskTab] = useState('incoming');
+    const [scanning, setScanning] = useState(false);
 
     /* The registry. Read-only here whatever the tier — this screen never writes to `places`; only
        the HQ desk does, and only above T4. */
@@ -655,6 +657,53 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
     };
 
     const removeFromCart = (pid) => setRequestCart(prev => prev.filter(item => item.productId !== pid));
+
+    /* 🔴 SCANNING SAYS "THE BOX IS HERE", AND STOPS THERE. Aldi, 2026-09-01, choosing between the
+       two meanings himself: *"the scan said that the shipment is arrived but the blind counting on
+       the shipment should still be exist"*.
+
+       So the status does NOT move. It stays IN_TRANSIT, the shipment stays in Incoming, and the
+       count is still the only thing that credits stock. What the scan buys is a timestamp, a name,
+       and an end to the late-shipment flag firing on a box that is already standing in the
+       warehouse. Making this write DELIVERED would turn every arrival into a rubber stamp signed
+       against HQ's own figures, which is the exact failure the partially blind count exists to
+       prevent — and it would do it silently, because the numbers would all still add up. */
+    const handleScannedArrival = async (code) => {
+        const clean = String(code || '').trim();
+        const match = requests.find(r => r.id === clean);
+        if (!match) {
+            return notify(`Nomor "${clean}" tidak ada di daftar kiriman ${branchLocation}.\n\nPastikan label yang di-scan memang untuk gudang ini.`);
+        }
+        if (match.status !== 'IN_TRANSIT') {
+            return notify(`Kiriman ${clean} statusnya "${match.status}", bukan sedang dikirim. Tidak ada yang perlu ditandai.`);
+        }
+        if (match.arrivedAt) {
+            return notify(`Kiriman ${clean} sudah ditandai sampai sebelumnya. Lanjutkan ke hitung barang.`);
+        }
+        setScanning(false);
+        setIsProcessing(true);
+        try {
+            const who = user?.displayName || (user?.email || '').split('@')[0] || 'Gudang';
+            /* An ISO string, not serverTimestamp(): a sentinel cannot be written INSIDE an array,
+               and the whole timeline is one array field. `arrivedAt` at the top level is the
+               server's clock and is what anything ordering by arrival should read. */
+            await updateDoc(doc(db, `artifacts/${appId}/users/${masterUserId}/stock_requests`, match.id), {
+                arrivedAt: serverTimestamp(),
+                arrivedBy: who,
+                workflowTimeline: [...(match.workflowTimeline || []), {
+                    status: 'ARRIVED',
+                    time: new Date().toISOString(),
+                    msg: `Barang sampai di gudang ${branchLocation}, di-scan oleh ${who}. Belum dihitung.`,
+                }],
+            });
+            if (logAudit) logAudit('SHIPMENT_ARRIVED', `${match.id} scanned in at ${branchLocation} by ${who}`);
+            triggerCapy(`Kiriman ${match.id} ditandai sampai. Sekarang hitung barangnya. 📦`);
+        } catch (e) {
+            notify('Gagal menandai sampai: ' + e.message);
+        } finally {
+            setIsProcessing(false);
+        }
+    };
 
     const handleSubmitRequest = async () => {
         if (requestCart.length === 0) return;
@@ -1157,6 +1206,15 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
                                                     </div>
                                                     <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto mt-2 sm:mt-0">
                                                         <StatusBadge status={req.status}/>
+                                                        {/* Sits BESIDE the status rather than replacing it: the
+                                                            shipment is still IN_TRANSIT as far as stock is
+                                                            concerned, and saying otherwise here is what would make
+                                                            someone think the counting had already been done. */}
+                                                        {req.arrivedAt && req.status === 'IN_TRANSIT' && (
+                                                            <span className="text-[11px] font-black uppercase tracking-widest px-2 py-1 rounded-full flex items-center gap-1.5 bg-raised text-accent-ink border border-orange/50 whitespace-nowrap">
+                                                                <Check size={12}/> Sampai — belum dihitung
+                                                            </span>
+                                                        )}
                                                         <button onClick={() => setExpandedRequest(isExpanded ? null : req.id)} className="bg-raised hover:bg-line-2 text-ink-muted hover:text-ink p-2.5 rounded-lg flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest transition-colors shadow-sm ml-auto sm:ml-0">
                                                             {isExpanded ? <XCircle size={14}/> : <Eye size={14}/>}
                                                             {isExpanded ? 'Tutup' : 'Lihat Status'}
@@ -1410,6 +1468,13 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
                                drawer, same timeline — a second renderer is a second thing to keep
                                correct. */
                             <div className="space-y-4">
+                                {deskTab === 'incoming' && !receivingOrder && (
+                                    <button onClick={() => setScanning(true)} disabled={isProcessing}
+                                        className="w-full py-3.5 rounded-xl border border-orange bg-raised text-ink font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 active:scale-[0.98] transition-transform">
+                                        <Camera size={16} className="text-accent-ink"/> Scan barang sampai
+                                    </button>
+                                )}
+
                                 {deskTab === 'incoming' && receivingOrder && renderArrivalCheck()}
 
                                 {deskRequests.length === 0 ? (
@@ -1553,6 +1618,13 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
                 renders it for a user's own warehouse. */}
 
             {/* ====== MODALS ====== */}
+            <ArrivalScanner
+                open={scanning}
+                onClose={() => setScanning(false)}
+                onCode={handleScannedArrival}
+                expecting={requests.filter(r => r.status === 'IN_TRANSIT' && !r.arrivedAt).map(r => r.id)}
+            />
+
             {isProcessing && (
                 <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[100] backdrop-blur-sm">
                     <div className="text-center p-6">

@@ -4744,6 +4744,94 @@ check(G57, 'a product name wraps, it never truncates',
   'wrong count, and it is silent');
 
 
+/* ════════ 58. THE SHIPMENT LABEL, AND WHAT A SCAN IS ALLOWED TO MEAN ════════
+   Aldi, 2026-09-01: *"i want u to add barcode to scan and print for restock vault so that when it
+   scanned it can auto confirm that the shipment is arrived"*. Asked which of the two meanings of
+   "arrived" he wanted, he answered the harder one himself:
+
+     *"the scan said that the shipment is arrived but the blind counting on the shipment should
+      still be exist"*
+
+   🔴 EVERY CHECK IN THIS GROUP DEFENDS THAT SENTENCE. The cheap version of this feature — scan,
+   mark DELIVERED, credit the stock HQ says it sent — is four fewer lines and destroys the OS&D
+   record, silently, while every figure in the app still adds up. */
+const G58 = '58. The shipment label, and what a scan may mean';
+const restockSrc58 = fs.readFileSync('src/RestockVaultView.jsx', 'utf8');
+const labelSrc = pStrip(fs.readFileSync('src/components/ShipmentLabel.jsx', 'utf8'));
+const scanSrc = pStrip(fs.readFileSync('src/components/ArrivalScanner.jsx', 'utf8'));
+
+/* THE LABEL TRAVELS IN THE COUNTER'S HANDS. A quantity printed on it is the anchor the partially
+   blind count exists to remove — the product NAMES are on it deliberately, because a name is what
+   makes a missing product countable as 0 instead of invisible. */
+check(G58, 'the printed label names the products and never prints a quantity',
+  /\{i\.name\}/.test(labelSrc) &&
+  !/\{i\.qty\}|\.qty\b|totalQty|reduce\(/.test(labelSrc),
+  'a shipment label carrying quantities turns the arrival check into a copying exercise. It may ' +
+  'carry the route, the date, the number of KINDS and the product names — nothing countable');
+
+check(G58, 'the label carries a real barcode of the delivery id, not a picture of one',
+  /import JsBarcode from 'jsbarcode'/.test(labelSrc) &&
+  /format: 'CODE128'/.test(labelSrc) &&
+  /JsBarcode\(svgRef\.current, String\(shipment\.id\)/.test(labelSrc),
+  'the payload must be the delivery id itself, which is already unique. Encoded by a library on ' +
+  'purpose: a Code 128 table is 107 patterns and one wrong digit prints a symbol that looks ' +
+  'correct and refuses to scan at the warehouse door');
+
+/* 🔴 THE ONE THAT MATTERS. A scan records that the BOX is here. It must not touch stock, must not
+   move the status to DELIVERED, and must not write a receipt. */
+const scanFn = bwmCode.slice(
+  bwmCode.indexOf('const handleScannedArrival'),
+  bwmCode.indexOf('const handleSubmitRequest'));
+check(G58, 'the scan anchor was found, so the three bans below have something to read',
+  bwmCode.indexOf('const handleScannedArrival') > -1 && scanFn.length > 400 && scanFn.length < 4000,
+  'handleScannedArrival must sit above handleSubmitRequest; a missed anchor makes the slice empty ' +
+  'and every ban below passes by reading nothing. Slice length: ' + scanFn.length);
+
+/* ⚠️ SCOPED TO THE DOCUMENT PAYLOAD, NOT THE WHOLE FUNCTION. The timeline entry legitimately
+   carries `status: 'ARRIVED'` — that is a LOG LINE describing what happened, not the shipment's
+   state. A file-wide ban on `status:` went red against correct code on the first run, which is the
+   over-broad-guard trap this project has now paid for four times. The payload is everything from
+   the updateDoc brace up to `workflowTimeline:`, and THAT is where a status write would live. */
+const scanPayload = scanFn.slice(scanFn.indexOf('await updateDoc('), scanFn.indexOf('workflowTimeline:'));
+check(G58, 'a scan never credits stock and never marks a delivery received',
+  scanFn.length > 400 && scanPayload.length > 60 &&
+  !/increment\(/.test(scanFn) && !/DELIVERED/.test(scanFn) && !/receivedItems/.test(scanFn) &&
+  !/status:/.test(scanPayload) && /arrivedAt: serverTimestamp\(\)/.test(scanPayload),
+  'his rule, in his own words: the scan says the shipment ARRIVED and the blind count still has ' +
+  'to happen. It may write arrivedAt, arrivedBy and a timeline line. The moment it writes a ' +
+  'status or an increment, every delivery becomes a rubber stamp signed against HQ figures');
+
+check(G58, 'the shipment stays in Incoming after a scan, because it is not counted yet',
+  /const openRequests = requests\.filter\(r => r\.status === 'PENDING' \|\| r\.status === 'IN_TRANSIT'\)/.test(bwmBody),
+  'Incoming is filtered on STATUS, not on arrival. A scanned box whose count is still owed has to ' +
+  'stay on the screen that owes it');
+
+/* A red flag that fires on a box already standing in the warehouse is a flag people learn to
+   ignore, and it is the only alert on that screen. */
+check(G58, 'the late-shipment flag stops firing once a box is scanned in',
+  /const stale = req\.status === 'IN_TRANSIT' && !req\.arrivedAt && days >= 3;/.test(code(restockSrc58)) &&
+  /req\.arrivedAt \? 'Sampai — belum dihitung'/.test(code(restockSrc58)),
+  'once the branch has scanned the label, "Belum diambil N hari" is factually wrong. HQ needs the ' +
+  'third state — arrived, not yet counted — which the status alone never distinguished');
+
+/* `BarcodeDetector` is an Android Chrome API. Shipping the camera alone would hand a dead button
+   to everyone on a desktop or an iPhone — measured false in this environment on 2026-09-01. */
+check(G58, 'the scanner always offers a typed fallback and says why the camera is unavailable',
+  /'BarcodeDetector' in window/.test(scanSrc) &&
+  /setState\('unsupported'\)/.test(scanSrc) &&
+  /window\.isSecureContext/.test(scanSrc) &&
+  /Atau ketik nomor kiriman/.test(scanSrc),
+  'the typed box is offered ALWAYS, not only after a failure: a cracked lens, a rained-on label ' +
+  'or an already-opened box must not leave a warehouse worker unable to record an arrival. And a ' +
+  'control that cannot say why it will not work is the silent failure this app bans');
+
+check(G58, 'a scanned code is matched against this branch only, and says so when it does not match',
+  /requests\.find\(r => r\.id === clean\)/.test(scanFn) &&
+  /tidak ada di daftar kiriman/.test(scanFn),
+  'requests are already filtered to this branch by the listener, so a label for another warehouse ' +
+  'finds nothing — and the message has to say that rather than failing quietly');
+
+
 let last = '';
 for (const r of results) {
   if (r.group !== last) { console.log('\n' + r.group); last = r.group; }

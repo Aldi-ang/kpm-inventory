@@ -4,6 +4,7 @@ import { doc, collection, setDoc, updateDoc, deleteDoc, serverTimestamp, writeBa
 import { savePhotoAndGetReference, deletePhotoFromStorage, compressImageToBase64, getLocalDayKey} from './utils/helpers';
 import { confirmAction } from './components/ConfirmGate.jsx';
 import AcceptanceReceipt from './components/AcceptanceReceipt.jsx';
+import ShipmentLabel from './components/ShipmentLabel.jsx';
 import { notify } from './components/Toast.jsx';
 import { canPickFromGallery, canHandleDelivery, canManageRegistry, tierWord } from './config/permissions';
 import Lamp from './components/Lamp.jsx';
@@ -227,6 +228,7 @@ const RestockVaultView = ({ inventory = [], procurements = [], motorists = [], b
     const [isShipping, setIsShipping] = useState(false);
 
     const [viewingAcceptance, setViewingAcceptance] = useState(null);
+    const [labelFor, setLabelFor] = useState(null);
     const [editingPO, setEditingPO] = useState(null);
     const [editReceiptFile, setEditReceiptFile] = useState(null);
     const [viewingImage, setViewingImage] = useState(null);
@@ -1025,11 +1027,18 @@ const RestockVaultView = ({ inventory = [], procurements = [], motorists = [], b
             /* age is what turns a forgotten shipment into a visible one */
             const shippedMs = req.fulfilledAt?.seconds ? req.fulfilledAt.seconds * 1000 : null;
             const days = shippedMs ? Math.floor((Date.now() - shippedMs) / 86400000) : 0;
-            const stale = req.status === 'IN_TRANSIT' && days >= 3;
+            const stale = req.status === 'IN_TRANSIT' && !req.arrivedAt && days >= 3;
 
             let status = req.status, tone = 'on';
             if (req.status === 'DELIVERED') { status = 'Diterima'; tone = 'off'; }
-            else if (req.status === 'IN_TRANSIT') { status = stale ? `Belum diambil ${days} hari` : 'Di jalan'; tone = stale ? 'bad' : 'on'; }
+            else if (req.status === 'IN_TRANSIT') {
+                /* Three states inside one status, and the middle one is new: the goods are in the
+                   warehouse but the count that credits them has not been filed. Naming it is the
+                   whole point — HQ can now tell "still on the road" apart from "sitting unopened
+                   at the branch", which the status alone never distinguished. */
+                status = req.arrivedAt ? 'Sampai — belum dihitung' : (stale ? `Belum diambil ${days} hari` : 'Di jalan');
+                tone = stale ? 'bad' : 'on';
+            }
             else if (req.status === 'DISPUTED') { status = 'Ada selisih'; tone = 'bad'; }
             else if (req.status === 'REJECTED') { status = 'Ditolak'; tone = 'bad'; }
             else if (req.status === 'PENDING') { status = 'Diminta cabang'; tone = 'on'; }
@@ -1202,6 +1211,12 @@ const RestockVaultView = ({ inventory = [], procurements = [], motorists = [], b
                     </div>
                 </div>
             )}
+
+            <ShipmentLabel
+                shipment={labelFor}
+                onClose={() => setLabelFor(null)}
+                companyName={appSettings?.companyName}
+            />
 
             <AcceptanceReceipt
                 acceptance={viewingAcceptance}
@@ -1749,6 +1764,10 @@ const RestockVaultView = ({ inventory = [], procurements = [], motorists = [], b
                                                             </>
                                                         ) : (
                                                             <>
+                                                                {/* Aldi, 2026-09-01: *"add barcode to scan and print for restock vault"*. An
+                                                                    outbound shipment had NO printable paper before this — only the inbound
+                                                                    factory nota did — so there was nothing for a branch to scan on arrival. */}
+                                                                <button onClick={() => setLabelFor(po)} className="text-[10px] font-display font-bold uppercase tracking-widest border border-line-2 text-ink rounded px-2.5 py-1.5 bg-raised hover:border-line-3 transition-transform active:scale-[0.97] flex items-center gap-1.5"><Printer size={12}/> Cetak label</button>
                                                                 <button onClick={() => handleStartEditingOrder(po)} className="text-[10px] font-display font-bold uppercase tracking-widest border border-line-2 text-ink rounded px-2.5 py-1.5 bg-raised hover:border-line-3 transition-transform active:scale-[0.97] flex items-center gap-1.5"><Pencil size={12}/> Edit resi</button>
                                                                 <button onClick={() => handleDeleteRequest(po.id)} className="text-[10px] font-display font-bold uppercase tracking-widest border border-danger-rail text-danger-text rounded px-2.5 py-1.5 bg-danger-well transition-transform active:scale-[0.97] flex items-center gap-1.5"><Trash2 size={12}/> Hapus</button>
                                                             </>

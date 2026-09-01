@@ -27,6 +27,8 @@ import ProductPerformancePanel from '../src/components/ProductPerformancePanel.j
 import AcceptanceReceipt from '../src/components/AcceptanceReceipt.jsx';
 import RestockVaultView from '../src/RestockVaultView.jsx';
 import BranchWarehouseManager from '../src/components/BranchWarehouseManager.jsx';
+import ShipmentLabel from '../src/components/ShipmentLabel.jsx';
+import ArrivalScanner from '../src/components/ArrivalScanner.jsx';
 /* Same module the alias in ponder-lab.config.mjs points `firebase/firestore` at, so writing a
    fixture here is what the component's own listener reads back. */
 import { FIXTURES } from './lab-firestore-stub.js';
@@ -369,7 +371,24 @@ function GudangLab() {
   );
 }
 
+/* 🔴 ?label MOUNTS THE PRINTED SHIPMENT LABEL, and ?scan the arrival scanner. Neither can be
+   reached in the app without a real outbound shipment and a branch login, and the label carries the
+   one thing on this project that cannot be checked by reading it: a barcode either scans or it does
+   not. `?label&probe` measures the symbol's module structure — see the probe block below. */
+const LAB_SHIPMENT = {
+  id: 'REQ_1756700000000',
+  branch: 'BANDUNG',
+  status: 'IN_TRANSIT',
+  timestamp: { seconds: 1756700000 },
+  fulfilledItems: [
+    { productId: 'p-cg16', name: 'Cello Green 16', qty: 200 },
+    { productId: 'p-cm12', name: 'Cello Merah 12', qty: 120 },
+  ],
+};
+
 createRoot(document.getElementById('root')).render(
+  q.has('label') ? <ShipmentLabel shipment={LAB_SHIPMENT} onClose={() => {}} companyName="KPM INVENTORY" /> :
+  q.has('scan') ? <ArrivalScanner open onClose={() => {}} onCode={(c) => { window.__scanned = c; }} expecting={['REQ_1756700000000']} /> :
   q.has('gudang') ? <GudangLab /> :
   q.has('places') ? <PlacesLab /> :
   q.has('nota') ? <NotaLab /> :
@@ -437,6 +456,55 @@ if (q.has('gudang') && q.has('probe')) {
     }, null, 1);
     document.body.appendChild(el);
   }, 400);
+} else if (q.has('label') && q.has('probe')) {
+  /* 🔴 THE ONE THING ON THIS PROJECT THAT CANNOT BE CHECKED BY READING IT. A barcode either scans
+     or it does not, and `BarcodeDetector` — the API that would decode it — is an Android Chrome
+     feature, measured absent from the desktop browser available here on 2026-09-01. So instead of
+     decoding, this asserts the STRUCTURE every valid Code 128 symbol must have, which is true
+     independently of any pattern table:
+
+       total modules = 11 * S + 2      (every symbol is 11 modules; the stop carries 2 extra)
+       black bars    = 3 * S + 1       (every symbol is 3 bars; the stop has a 4th)
+
+     Both must agree on the same S, and S must be plausible for the payload. A wrong table still
+     produces the right module count, so this is proof of SHAPE and not of scannability — the only
+     proof of that is a phone pointed at printed paper, which is Aldi's to run.
+
+     ⚠️ The first version of this probe expected `11 * (len + 3) + 2`, assuming pure Code128-B. It
+     read 167 against an expected 222 and looked like a failure. JsBarcode encodes CODE128 in the
+     optimal MIXED mode, dropping into Code C for the digit run — 15 symbols for this payload, not
+     20. The check was wrong, not the barcode. Do not "fix" it back. */
+  setTimeout(() => {
+    const bc = [...document.querySelectorAll('svg')].find(s => s.querySelectorAll('rect').length > 5);
+    const rects = [...bc.querySelectorAll('rect')];
+    const black = rects.filter(r => {
+      const f = (r.getAttribute('fill') || getComputedStyle(r).fill || '').toLowerCase();
+      return f.includes('#000') || f === 'rgb(0, 0, 0)' || f === 'black';
+    });
+    const ws = black.map(r => Number(r.getAttribute('width')));
+    const unit = Math.min(...ws);
+    const totalW = parseFloat(bc.getAttribute('width'));
+    const margin = 12;
+    const modules = Math.round((totalW - 2 * margin) / unit);
+    const S = (modules - 2) / 11;
+    const payload = 'REQ_1756700000000';
+    const text = [...bc.querySelectorAll('text')].map(t => t.textContent.trim());
+    const el = document.createElement('pre');
+    el.id = 'probe';
+    el.textContent = JSON.stringify({
+      payload,
+      modules, symbols: S,
+      moduleRuleHolds: Number.isInteger(S) && S > 0,
+      blackBars: black.length,
+      barRuleHolds: black.length === 3 * S + 1,
+      symbolsPlausible: S > 0 && S < payload.length + 4,
+      unitPx: unit, quietZonePx: margin,
+      textUnderBars: text, textMatches: text.includes(payload),
+      verdict: (Number.isInteger(S) && black.length === 3 * S + 1 && text.includes(payload))
+        ? 'valid Code 128 structure' : 'STRUCTURE WRONG',
+    }, null, 1);
+    document.body.appendChild(el);
+  }, 300);
 } else if (q.has('book') && q.has('probe')) {
   setTimeout(() => {
     const dlg = document.querySelector('[role=dialog]');
