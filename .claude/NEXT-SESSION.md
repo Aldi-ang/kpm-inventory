@@ -1,6 +1,6 @@
 # NEXT SESSION — read this, then `.claude/PROGRESS.md`. Read no code to orient.
 
-**Written 2026-09-01 10:15 WIB. 688/688 audit · 970/970 selfcheck. Branch `phase0-solid-ground`.**
+**Written 2026-09-01 10:40 WIB. 688/688 audit · 970/970 selfcheck. Branch `phase0-solid-ground`.**
 
 ## First command
 
@@ -30,45 +30,51 @@ container. **Drive it with `element.click()` and read `getBoundingClientRect()`.
 
 ---
 
-## THE ONE JOB — G1 + G2: the batch number dies at the HQ door
+## THE ONE JOB — make the scan a GATE in front of the blind count
 
-**The relabelling job that stood here is CLOSED, not done.** Aldi, 2026-09-01: *"leave it for now,
-i can just strike words that i dont like"*. Do not start it, and do not bring him a label list — he
-will name the words he objects to when he meets them. The Restock Vault stays mixed-language on his
-say-so.
+His design, 2026-09-01, after seeing the barcode ship: *"after confirming with barcodes there will
+be blind count panel that will appear to fill. so this barcode is just as a gate to confirm and
+make sure that all the package is arrived and opening a blind count panel to be fill to make sure
+that there is no missing item when shipment"*.
 
-**This is the money item, and his own standing rule is that money jumps the queue.**
+**What is built today is one step short of that.** The scan writes `arrivedAt` and the count panel
+opens from its own separate button — so the two are independent, and a shipment can be counted
+without anyone ever confirming the box is in the building. He wants them in sequence.
 
-`batchNo` is captured at factory intake and then thrown away. Confirmed today, `file:line`:
+**The change, in `BranchWarehouseManager.jsx`:**
 
-- `RestockVaultView.jsx:1944` — the input, one per line, on every intake row
-- `RestockVaultView.jsx:455` — the completeness meter already requires it: *"batch tiap baris"*
-- `RestockVaultView.jsx:656` — written onto the procurement, defaulting to `'UNASSIGNED'`
-- `RestockVaultView.jsx:379` — carried into the landed-cost map
+- `HITUNG & TERIMA BARANG` — inside `OrderTrackingModule`, gated today on
+  `isFulfillableByTier3 = isAreaAdmin && order.status === 'IN_TRANSIT'`. It must also require
+  `order.arrivedAt`.
+- Before the scan, that button is replaced by a line saying the box has to be scanned in first, and
+  pointing at **Scan barang sampai**. Never a dead or hidden button — silence is a bug here.
+- After a successful scan the count panel should OPEN, not merely become available. The handler
+  already has the matched record in hand; `setReceivingOrder(match)` is the whole step, and it makes
+  the sequence he described feel like one action rather than two.
 
-**And it stops there.** `branches/{loc}/inventory/{productId}` holds a single `stock` number, so the
-moment goods leave the master vault the batch is gone. Two consequences, and they are his G1 and G2:
+⚠️ **THE TYPED BOX IS WHAT MAKES A HARD GATE SAFE, AND IT IS NOT OPTIONAL.** With the gate in
+place, anything that stops a scan stops goods being received at all — a cracked lens, a rained-on
+label, a box already opened, an iPhone, a desktop. `ArrivalScanner` already offers the typed number
+always rather than after a failure, and it lists the shipment numbers it is waiting for. **If the
+gate lands, that fallback becomes load-bearing: do not "tidy" it into a fallback that only appears
+after the camera fails.**
 
-- **G1** — nothing downstream can say which batch a pack came from.
-- **G2** — nothing knows which stock is OLD, so nothing can enforce **oldest ships first**, and
-  nothing can warn that a batch has been sitting too long. **The threshold is a number only Aldi can
-  set** — only he knows when a kretek starts tasting old. Ask before inventing one.
+⚠️ **The scan confirms THE SHIPMENT, not every carton.** One label per delivery, so a delivery
+arriving as three boxes with one missing still scans as arrived. That is correct and it is the
+division of labour he described: the scan says the delivery showed up, **the blind count is what
+catches what is missing inside it**. Do not try to make the barcode count boxes.
 
-⚠️ **DO NOT PROMISE A SPECIFIC EDIT IN THIS BRIEF OR TO HIM UNTIL IT HAS BEEN TRIED.** A previous
-handoff promised a "two-line token swap" that turned out to be 217 edits. Read how
-`BranchWarehouseManager` and the fulfilment path actually write branch stock FIRST, then say what
-the change is. The half that already exists is the capture; the work is the CARRYING.
-
-⚠️ **`'UNASSIGNED'` is a real value, not a bug.** Old procurements have it. Whatever holds batches
-downstream has to render it as "not recorded" rather than as a batch named UNASSIGNED.
-
-**Pin it the way group 57 and D17 are pinned** — both went red before their fix, which is the only
-reason their green means anything.
-
----
+**Pin it in group 58**, which already bans the scan from crediting stock. The new assertion is the
+other direction: the count cannot open without an arrival.
 
 <details>
 <summary>Queued — do not start these</summary>
+
+- **G1 + G2, the money item.** `batchNo` captured at intake — `RestockVaultView.jsx:1944`, required
+  by the completeness meter at `:455`, written at `:656` — and dies at the HQ door, because
+  `branches/{loc}/inventory/{productId}` holds one `stock` number. So nothing knows which stock is
+  old and nothing enforces oldest-ships-first. **The staleness threshold in days is a number only
+  Aldi can set — ask, do not invent one.** Do not promise a specific edit before trying it.
 
 - 🔴 **ALDI MUST PRINT ONE LABEL AND SCAN IT WITH HIS ANDROID PHONE.** Nothing in this repo can
   prove a barcode scans — `BarcodeDetector` is absent from every browser available here. Until he

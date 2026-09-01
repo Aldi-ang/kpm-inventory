@@ -1,6 +1,33 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-09-01 10:15 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **688/688 audit · 970/970 selfcheck** · branch `phase0-solid-ground`
+**Updated: 2026-09-01 10:40 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **688/688 audit · 970/970 selfcheck** · branch `phase0-solid-ground`
+
+## 🟠 2026-09-01 10:40 — HE DESIGNED THE SEQUENCE: THE BARCODE IS A GATE. No code changed.
+
+*"after confirming with barcodes there will be blind count panel that will appear to fill. so this
+barcode is just as a gate to confirm and make sure that all the package is arrived and opening a
+blind count panel to be fill to make sure that there is no missing item when shipment"*, and
+*"yea put typing box if camera not working"*.
+
+**What shipped this morning is one step short of it.** The scan writes `arrivedAt`; the count panel
+opens from its own separate button. They are independent, so a shipment can be counted without
+anyone confirming the box is in the building. He wants them in sequence — scan, then the panel
+appears. The brief has the exact change.
+
+**His split is cleaner than mine and worth keeping straight:** the scan answers *"did the delivery
+show up"*, the count answers *"is anything missing inside it"*. One label per delivery, so a
+delivery arriving as three cartons with one missing still scans as arrived — and the blind count is
+what catches that. The barcode is not being asked to count boxes.
+
+⚠️ **A hard gate makes the typed fallback load-bearing.** With the gate in, anything that stops a
+scan stops goods being received at all. `ArrivalScanner` already offers the typed number ALWAYS
+rather than after a camera failure — after the gate lands, that is a safety property, not a nicety.
+
+**Also confirmed to him:** the print button he asked for already shipped as **Cetak label** on every
+outbound row.
+
+🔴 **WAITING ON ALDI — still the one physical test.** Print a label, scan it on the Android phone.
+Nothing in this repo can settle whether a printed symbol reads.
 
 ## 🟠 2026-09-01 10:15 — THE SHIPMENT HAS A BARCODE. `007bb60` + `78772e3`, **688/688 + 970/970**.
 
