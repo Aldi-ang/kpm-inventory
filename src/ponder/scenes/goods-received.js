@@ -29,7 +29,7 @@ export const goodsReceived = {
     { text: '**Asal** itu dari mana barangnya, **Tujuan** gudang mana yang menerimanya. Stok gudang tujuan yang akan bertambah.',
       focus: 'f:tujuan', at: 'near', hold: 5400 },
 
-    { text: '**Delivery note (app)** dibuat sendiri oleh aplikasi. Nomor ini punya kita.',
+    { text: '**Delivery note (app)** dibuat sendiri oleh aplikasi. Nomor ini milik aplikasi, bukan dari pabrik.',
       focus: 'f:sj-app', at: 'near', hold: 4400 },
 
     { text: '**Delivery note (factory)** disalin dari kertas yang dibawa sopir. Dua nomor ini sengaja dipisah: kalau berbeda, dokumen mana yang salah masih bisa dilacak.',

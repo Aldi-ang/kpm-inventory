@@ -4055,8 +4055,16 @@ const sfxSrc = pRead('sfx.js');
    name is how two checks end up asserting against two different strings. */
 const registrySrc = pRead('registry.js');
 const sceneFiles = fs.readdirSync('src/ponder/scenes').filter(f => f.endsWith('.js'));
+/* ⚠️ A STAGE MAY MOUNT A COMPONENT FROM OUTSIDE THIS FOLDER, and one now does.
+   `RegionalWarehouseStage` renders `components/WarehouseDeskNav`, which is the entire point of
+   that stage: the tutorial mounts the REAL nav strip the branch desk renders, so the two cannot
+   drift apart. The `data-ponder` keys therefore live in `src/components/`, and reading only this
+   folder reports the scene as pointing at nothing while it points at exactly the right element.
+   Anything else a stage mounts from outside gets added here for the same reason. */
+const MOUNTED_OUTSIDE = ['src/components/WarehouseDeskNav.jsx'];
 const stageSrc = fs.readdirSync('src/ponder/stages')
-  .map(f => pStrip(fs.readFileSync('src/ponder/stages/' + f, 'utf8'))).join('\n');
+  .map(f => pStrip(fs.readFileSync('src/ponder/stages/' + f, 'utf8')))
+  .concat(MOUNTED_OUTSIDE.map(f => pStrip(fs.readFileSync(f, 'utf8')))).join('\n');
 /* The demo world is scanned too. A stage builds `item:<id>` from the data rather than writing the
    attribute out, so those ids are only ever literals HERE — and a scene focusing an item its world
    no longer contains is exactly the rot this group exists to catch. */
@@ -4156,7 +4164,15 @@ const resolvesKey = (k) => {
    five beats exist to explain what it means. Banning it would ban the lesson. What is banned is
    the second person, which has no legitimate use here at all. */
 const sceneText = scenes.flatMap(s => s.steps.map(st => String(st.text || ''))).join('\n');
-const informal = sceneText.split('\n').filter(t => /\b(kamu|Kamu|aku|Aku|Ayo|ayo|kalian|gue|lo)\b/.test(t));
+/* ⚠️ `Anda` JOINED THIS LIST 2026-09-01, and it is the reason this check needed a second look.
+   His instruction was about the SUBJECT — "we are talking about the factory, subject is factory,
+   employees, manager and all of these subject no u and me" — but the list only held the INFORMAL
+   second person, so the polite form was legal to a check that was supposed to be enforcing "no
+   second person at all". The regional-warehouse scene was written with five of them and passed.
+   All four earlier scenes contain zero, so the rule was being followed by hand and the check was
+   only pretending to hold it.
+   `saya`/`kita` are here for the same reason: first person is the other half of "no u and me". */
+const informal = sceneText.split('\n').filter(t => /\b(kamu|Kamu|aku|Aku|Anda|anda|saya|Saya|kita|Kita|Ayo|ayo|kalian|gue|lo)\b/.test(t));
 check(G56, 'the book never addresses the reader, because its subject is the warehouse',
   informal.length === 0,
   'a Ponder beat used second person: ' + (informal[0] || '') + ' \u2014 the subject of a beat is the ' +
@@ -4672,12 +4688,26 @@ check(G57, 'no hard-black wells outside the scrim — a literal does not follow 
   'left: ' + ((bwmBody.match(/bg-black\/\d+/g) || []).join(', ') || 'none') + '. A black well keeps ' +
   'its colour when the page turns cream, which is the patchwork Lite Mode already paid for once');
 
-check(G57, 'the branch panels wear the same header as Stock by Warehouse',
-  (bwmBody.match(/font-display/g) || []).length >= 4 &&
-  (bwmBody.match(/h-\[3px\] w-10 bg-orange rounded-full/g) || []).length >= 3,
-  'the solved HQ half set the vocabulary: a font-display title in text-ink, an icon chip on ' +
-  'bg-raised, and a 3px orange rule beneath. Amber is an edge and an ink, never a fill, and a ' +
-  '3px rule is the legal form of it');
+/* 🔴 SUPERSEDED IN PLACE, 2026-09-01, NOT DELETED. This check used to assert four separate panel
+   headers — an icon chip, a font-display title, a 3px orange rule under each. Aldi then asked for
+   the whole screen to become a desk: *"redesign the whole panel, similar to the main restock
+   vault"*. So the four headers are genuinely gone and the vocabulary they were copying moved with
+   them: the desk's identity is ONE nav strip with a lamp, a title, and tabs whose active one is
+   marked by an orange underline. Same law underneath — amber marks an edge, never fills a box. */
+/* The nav strip became its own component so the tutorial could mount the real one, so this check
+   follows it: the screen must COMPOSE it, and the component must still be the Master Vault desk's
+   shell rather than a lookalike rebuilt inside it. */
+const navSrc = fs.readFileSync('src/components/WarehouseDeskNav.jsx', 'utf8');
+check(G57, 'the branch half is a desk with the same nav strip the Master Vault desk has',
+  /import WarehouseDeskNav from '\.\/WarehouseDeskNav\.jsx'/.test(bwmCode) &&
+  /<WarehouseDeskNav title=\{deskHead\.title\}/.test(bwmBody) &&
+  /import Lamp from '\.\/Lamp\.jsx'/.test(navSrc) &&
+  /<Lamp tone="on" \/>/.test(navSrc) &&
+  /font-display font-bold uppercase tracking-\[0\.15em\] text-\[13px\] text-ink truncate/.test(navSrc) &&
+  /active === t\.id \? 'text-ink border-b-orange bg-raised'/.test(navSrc),
+  'the desk must reuse the shell the Master Vault desk already has — the shared Lamp component, a ' +
+  'font-display title at 13px, and an active tab marked by an orange BOTTOM BORDER. A second ' +
+  'status dot or a filled amber tab is a second visual language on one page');
 
 /* 🔴 FOUND BY LOOKING, AFTER EVERY CHECK ABOVE WAS ALREADY GREEN — which is the whole argument
    for getting eyes on it. `--orange` is #FF8C1A in BOTH themes because it is the EDGE half of the

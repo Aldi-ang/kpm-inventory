@@ -10,6 +10,10 @@ import { txSeconds } from '../utils/dayStats.js';
    cannot drift into two different answers — which is the whole reason it lives in utils. His ask
    was literally *"just like what we have on the dashboard"*. */
 import { supplyByProduct, warehouseList, MASTER, bufferDays } from '../utils/supply.js';
+import { canManageRegistry } from '../config/permissions';
+/* the SAME status dot the Master Vault desk wears, not a lookalike */
+/* the nav strip is its own component so the Ponder scene mounts the REAL one */
+import WarehouseDeskNav from './WarehouseDeskNav.jsx';
 import { confirmAction } from './ConfirmGate.jsx';
 import { notify } from './Toast.jsx';
 /* The table below is rendered by the Ponder tutorial too, fed a fixed demo world. Same
@@ -284,9 +288,15 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
     const [selectedProduct, setSelectedProduct] = useState("");
     const [requestQty, setRequestQty] = useState("");
     
-    const [shippingAddress, setShippingAddress] = useState({
-        jalan: "", kecamatan: "", kabupaten: "", provinsi: branchLocation !== 'UNASSIGNED' ? branchLocation : "", postalCode: ""
-    });
+    /* THE DESK. Five tabs, the same shape as the Master Vault desk directly above this one on the
+       page — Aldi, 2026-09-01: *"redesign the whole panel, similar to the main restock vault"*.
+       `incoming` first because the question a branch admin opens this screen to answer is "has my
+       stock arrived", not "what do I have". */
+    const [deskTab, setDeskTab] = useState('incoming');
+
+    /* The registry. Read-only here whatever the tier — this screen never writes to `places`; only
+       the HQ desk does, and only above T4. */
+    const [places, setPlaces] = useState([]);
 
     const [isProcessing, setIsProcessing] = useState(false);
 
@@ -512,6 +522,27 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
     const planBranches = useMemo(
         () => logistics.filter(r => r.name !== MASTER).map(r => r.name), [logistics]);
 
+    /* Matched on the NAME, the same key the surat jalan's route boxes use, so a warehouse has one
+       address on both ends of a delivery rather than two that can drift apart. */
+    const addrFor = (name) => {
+        const key = (name || '').trim().toLowerCase();
+        return (places.find(p => (p.name || '').trim().toLowerCase() === key)?.address || '').trim();
+    };
+    const gudangAddress = addrFor(branchLocation);
+
+    /* Aldi, 2026-09-01: *"tier 4 and below cannot access the editing and registering of employees,
+       gudang warehouse and factory as well"*. T4 is the tier that LIVES on this screen, so Data
+       Induk is look-only for its everyday user by design. Sending and receiving is a different
+       clearance one tier lower — see canHandleDelivery. */
+    const mayEditRegistry = canManageRegistry(userRole);
+
+    const registeredFactories = useMemo(() => places
+        .filter(p => p.kind === 'pabrik')
+        .sort((a, b) => (a.name || '').localeCompare(b.name || '')), [places]);
+    const registeredPeople = useMemo(() => places
+        .filter(p => p.kind === 'orang')
+        .sort((a, b) => (a.name || '').localeCompare(b.name || '')), [places]);
+
     const stockCard = (item) => {
         const arrivals = productArrivals(requests, branchLocation, item.productId || item.id);
         const { held, unexplained } = arrivalsOnHand(arrivals, item.stock);
@@ -559,14 +590,18 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
 
     const getAdminName = () => appSettings?.adminDisplayName || user?.displayName || (user?.email || "").split('@')[0] || "HQ Admin";
 
+    /* 🔴 THE ADDRESS IS NOT TYPED ANY MORE. It used to be five inputs on the reorder form, saved
+       per branch into localStorage — which meant the delivery address for a shipment lived in one
+       browser on one device, and a branch admin could put anything in it. Aldi, 2026-09-01:
+       *"there should be fixed location for the gudang as well"*. It comes from the registry now,
+       the same `places` collection the surat jalan's route boxes read, and this screen cannot
+       change it. The localStorage copy is gone with the inputs that fed it. */
     useEffect(() => {
-        if (isAreaAdmin) {
-            const savedAddress = localStorage.getItem(`kpm_address_${branchLocation}`);
-            if (savedAddress) {
-                try { setShippingAddress(JSON.parse(savedAddress)); } catch(e) {}
-            }
-        }
-    }, [isAreaAdmin, branchLocation]);
+        if (!masterUserId || !appId) return;
+        const ref = collection(db, `artifacts/${appId}/users/${masterUserId}/places`);
+        return onSnapshot(ref, (snap) => setPlaces(snap.docs.map(d => ({ id: d.id, ...d.data() }))),
+            (err) => console.warn("Places listener:", err.code));
+    }, [db, appId, masterUserId]);
 
     useEffect(() => {
         if (!masterUserId || !appId) return;
@@ -624,16 +659,17 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
     const handleSubmitRequest = async () => {
         if (requestCart.length === 0) return;
         
-        if (!shippingAddress.jalan || !shippingAddress.kecamatan || !shippingAddress.kabupaten || !shippingAddress.provinsi) {
-            return notify("ALAMAT TIDAK LENGKAP!\n\nMohon lengkapi data alamat pengiriman (Jalan, Kecamatan, Kabupaten, Provinsi) agar HQ dapat memproses pengiriman.");
+        /* Blocks on a MISSING REGISTRATION, which is HQ's job to fix, not the branch's — so the
+           message points at who can act rather than asking this user to type something they are no
+           longer allowed to type. */
+        if (!gudangAddress) {
+            return notify(`Gudang ${branchLocation} has no registered address yet.\n\nHQ registers it in the Master Vault desk, under Data Induk. Until then HQ has nowhere to ship to.`);
         }
 
         if (!await confirmAction(`Submit stock request to HQ for ${branchLocation}?`)) return;
         setIsProcessing(true);
 
         try {
-            localStorage.setItem(`kpm_address_${branchLocation}`, JSON.stringify(shippingAddress));
-
             const batch = writeBatch(db);
             const reqId = `REQ_${Date.now()}`;
             const reqRef = doc(db, `artifacts/${appId}/users/${masterUserId}/stock_requests`, reqId);
@@ -644,7 +680,11 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
                 requestedBy: user.email,
                 requestedByName: user.displayName || (user.email || "").split('@')[0], 
                 requestedItems: requestCart, 
-                deliveryAddress: shippingAddress,
+                /* A STRING now, and a NEW FIELD rather than the old name. Requests already in
+                   flight carry `deliveryAddress` as an object of parts and must keep printing —
+                   the fulfilment modal reads both shapes. Copied at submit time on purpose: a
+                   gudang that moves later must not rewrite the address of goods already sent. */
+                deliveryAddressText: gudangAddress,
                 status: 'PENDING',
                 workflowTimeline: [{
                     status: 'PENDING',
@@ -993,95 +1033,16 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
         );
     };
 
-    return (
-        <div className="animate-fade-in space-y-6 relative">
-            
-            {/* ====== HEADER ======
-                HQ does not get one. His call, 2026-08-27: *"erase the global logistic command,
-                not cool and elegant"*. "GLOBAL LOGISTICS COMMAND / ALL BRANCHES NATIONWIDE" was a
-                banner that named the screen you had just clicked into and then said nothing — two
-                lines of chrome above the only thing on the page worth reading. Sebaran Stok is the
-                title now, and it carries real numbers.
-                A BRANCH user keeps theirs, because for them it is not decoration: it names WHICH
-                hub they are looking at and who the admin is, and neither is obvious from the rest
-                of the screen. */}
-            {!isAdmin && (
-            <section className="mb-6 rounded-2xl border border-line-2 bg-panel overflow-hidden shadow-[0_1px_1px_rgba(0,0,0,0.20),0_18px_40px_-28px_rgba(0,0,0,0.85)]">
-                <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 px-5 py-5">
-                    <div className="flex items-center gap-3 min-w-0">
-                        <span className="h-10 w-10 rounded-xl bg-raised border border-line-2 flex items-center justify-center shrink-0">
-                            <Globe size={18} className="text-accent-ink"/>
-                        </span>
-                        <div className="min-w-0">
-                            <h2 className="font-display text-base sm:text-2xl font-black text-ink uppercase tracking-[0.14em] leading-none break-words">{branchLocation} Hub Logistics</h2>
-                            <div className="h-[3px] w-10 bg-orange rounded-full mt-2"/>
-                            <p className="font-mono text-[10px] text-ink-muted tracking-widest mt-2">gudang cabang</p>
-                        </div>
-                    </div>
-                    <p className="font-mono text-[10px] text-ink-muted tracking-widest flex items-center gap-1.5 min-w-0 break-words">
-                        <User size={10} className="shrink-0"/> admin: {appSettings?.adminDisplayName || user?.displayName || user?.email?.split('@')[0]}
-                    </p>
-                </div>
-            </section>
-            )}
+    /* ── THE THREE PIECES THE DESK DEALS OUT ──────────────────────────────────────────────
+       Lifted out of the old two-column layout unchanged. Every line of logic inside them is the
+       logic that was already there — the blind count, the reorder arithmetic, the timeline — and
+       Aldi's instruction was explicit that it stays: *"all the logic remains"*. What changed is
+       only which tab they are dealt to.
 
-            {/* ====== AREA ADMIN VIEW ====== */}
-            {isAreaAdmin && (
-                <div className="grid grid-cols-1 xl:grid-cols-[1fr,380px] gap-6">
-                    
-                    {/* LEFT COLUMN: INVENTORY & HISTORY */}
-                    <div className="space-y-6 flex flex-col">
-                        <details className="group rounded-2xl border border-line-2 bg-panel overflow-hidden shadow-[0_1px_1px_rgba(0,0,0,0.20),0_18px_40px_-28px_rgba(0,0,0,0.85)]" open>
-                            <summary className="px-5 py-5 cursor-pointer list-none [&::-webkit-details-marker]:hidden flex justify-between items-center gap-3">
-                                <div className="flex items-center gap-3 min-w-0">
-                                    <span className="h-10 w-10 rounded-xl bg-raised border border-line-2 flex items-center justify-center shrink-0">
-                                        <MapPin size={18} className="text-accent-ink"/>
-                                    </span>
-                                    <div className="min-w-0">
-                                        <h3 className="font-display text-base sm:text-2xl font-black text-ink uppercase tracking-[0.14em] leading-none">My Current Branch Inventory</h3>
-                                        <div className="h-[3px] w-10 bg-orange rounded-full mt-2"/>
-                                        <p className="font-mono text-[10px] text-ink-muted tracking-widest mt-2 tabular-nums">{branchStock.length} produk · in Bks</p>
-                                    </div>
-                                </div>
-                                <ChevronDown size={20} className="text-ink-muted group-open:rotate-180 transition-transform shrink-0"/>
-                            </summary>
-                            <div className="px-5 pb-5 grid grid-cols-1 sm:grid-cols-2 gap-3 animate-slide-down">
-                                {branchStock.length === 0 ? (
-                                    <div className="col-span-full text-center p-8 bg-sunk rounded-xl border border-dashed border-line-2 text-ink-muted text-xs uppercase tracking-widest">
-                                        Warehouse is empty. Request stock from HQ using the form below.
-                                    </div>
-                                ) : branchStock.map(stockCard)}
-                            </div>
-                        </details>
-
-                        <div className="rounded-2xl border border-line-2 bg-panel flex-1 flex flex-col shadow-[0_1px_1px_rgba(0,0,0,0.20),0_18px_40px_-28px_rgba(0,0,0,0.85)]">
-                            <div className="flex items-center gap-3 min-w-0 px-5 pt-5 pb-4">
-                                <span className="h-10 w-10 rounded-xl bg-raised border border-line-2 flex items-center justify-center shrink-0">
-                                    <Truck size={18} className="text-accent-ink"/>
-                                </span>
-                                <div className="min-w-0">
-                                    <h3 className="font-display text-base sm:text-2xl font-black text-ink uppercase tracking-[0.14em] leading-none">Status Pengiriman & Reorder</h3>
-                                    <div className="h-[3px] w-10 bg-orange rounded-full mt-2"/>
-                                    <p className="font-mono text-[10px] text-ink-muted tracking-widest mt-2 tabular-nums">{requests.length} permintaan tercatat</p>
-                                </div>
-                            </div>
-                            <div className="px-5 pb-5 flex-1 flex flex-col">
-                            
-                            {isLoading ? (
-                                <div className="text-center p-10 text-ink-muted animate-pulse italic text-xs uppercase tracking-widest">Loading Logistics Logs...</div>
-                            ) : requests.length === 0 ? (
-                                <div className="flex-1 flex flex-col items-center justify-center p-10 text-center border-2 border-dashed border-line-2 rounded-xl bg-sunk">
-                                    <Package size={48} className="text-line-3 mb-3 opacity-50"/>
-                                    <p className="text-ink-muted font-bold text-sm">No reorder history found for {branchLocation}.</p>
-                                    <p className="text-ink-muted text-[10px] mt-1 uppercase tracking-widest">Submit a new request using the form.</p>
-                                </div>
-                            ) : (
-                                <div className="space-y-4">
-                                    {/* ===== THE ARRIVAL CHECK =====
-                                        Lives out here, not inside OrderTrackingModule, because that
-                                        component is redeclared every render and its children remount —
-                                        an input in there would lose focus on every keystroke. */}
-                                    {receivingOrder && (() => {
+       The arrival check is a FUNCTION rather than inline JSX for the reason the old comment gave:
+       `OrderTrackingModule` is redeclared every render, so an input living inside it loses focus
+       on every keystroke. Keeping the count panel out here is what stops that. */
+    const renderArrivalCheck = () => {
                                         const items = receivingOrder.fulfilledItems || receivingOrder.requestedItems || receivingOrder.items || [];
                                         const lines = receiptLines(items, receiptCounts);
                                         const blocked = receiptBlocked(lines);
@@ -1159,9 +1120,9 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
                                                 </div>
                                             </div>
                                         );
-                                    })()}
+    };
 
-                                    {requests.map(req => {
+    const renderRequestCard = (req) => {
                                         const isExpanded = expandedRequest === req.id;
                                         const itemsToProcess = req.fulfilledItems || req.requestedItems || req.items || [];
                                         
@@ -1206,28 +1167,78 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
                                                 {isExpanded && <OrderTrackingModule order={req} />}
                                             </div>
                                         )
-                                    })}
-                                </div>
-                            )}
-                            </div>
-                        </div>
-                    </div>
+    };
 
-                    {/* RIGHT COLUMN: REORDER FORM */}
-                    <div className="rounded-2xl border border-line-2 bg-panel relative flex flex-col w-full h-fit shadow-[0_1px_1px_rgba(0,0,0,0.20),0_18px_40px_-28px_rgba(0,0,0,0.85)]">
-                        <div className="flex items-center gap-3 min-w-0 px-5 pt-5 pb-4 relative z-10">
-                            <span className="h-10 w-10 rounded-xl bg-raised border border-line-2 flex items-center justify-center shrink-0">
-                                <Send size={18} className="text-accent-ink"/>
-                            </span>
-                            <div className="min-w-0">
-                                <h3 className="font-display text-base sm:text-2xl font-black text-ink uppercase tracking-[0.14em] leading-none">Reorder Stock</h3>
-                                <div className="h-[3px] w-10 bg-orange rounded-full mt-2"/>
-                                <p className="font-mono text-[10px] text-ink-muted tracking-widest mt-2">minta stok dari Master Vault</p>
-                            </div>
-                        </div>
-                        <div className="px-5 pb-5 relative z-10 flex flex-col flex-1">
-                        
-                        <div className="flex flex-col gap-4 mb-6 relative z-10">
+    /* WHAT EACH TAB COUNTS. Incoming counts what is still moving, because a number that includes
+       settled deliveries would never go down and would stop meaning anything. Data Induk counts
+       what is MISSING rather than what exists — a registry you have finished filling in should
+       stop asking for attention, which is the rule the Master Vault desk's own Data Induk tab
+       already follows. */
+    const openRequests = requests.filter(r => r.status === 'PENDING' || r.status === 'IN_TRANSIT');
+    const deskRequests = deskTab === 'incoming' ? openRequests : requests;
+    const deskTabs = [
+        { id: 'incoming', label: 'Incoming',   count: openRequests.length },
+        { id: 'request',  label: 'Request',    count: requestCart.length },
+        { id: 'stock',    label: 'Stock',      count: branchStock.length },
+        { id: 'book',     label: 'Book',       count: requests.length },
+        { id: 'data',     label: 'Data Induk', count: gudangAddress ? 0 : 1 },
+    ];
+    const deskHead = {
+        incoming: { title: `Gudang ${branchLocation}`, sub: 'on the way · count on arrival' },
+        request:  { title: 'Request from HQ',          sub: 'how many · ship to' },
+        stock:    { title: 'On the shelf',             sub: 'per product · in Bks' },
+        book:     { title: 'Buku Besar',               sub: 'every request, settled and open' },
+        data:     { title: 'Data Induk',               sub: 'gudang · pabrik · orang' },
+    }[deskTab];
+
+    return (
+        <div className="animate-fade-in space-y-6 relative">
+            
+            {/* ====== HEADER ======
+                HQ does not get one. His call, 2026-08-27: *"erase the global logistic command,
+                not cool and elegant"*. "GLOBAL LOGISTICS COMMAND / ALL BRANCHES NATIONWIDE" was a
+                banner that named the screen you had just clicked into and then said nothing — two
+                lines of chrome above the only thing on the page worth reading. Sebaran Stok is the
+                title now, and it carries real numbers.
+                A BRANCH user keeps theirs, because for them it is not decoration: it names WHICH
+                hub they are looking at and who the admin is, and neither is obvious from the rest
+                of the screen. */}
+            {/* ═══════════════════ THE REGIONAL WAREHOUSE DESK ═══════════════════
+                Aldi, 2026-09-01: *"redesign the whole panel, similar to the main restock vault
+                ... all the logic remains"*. The Master Vault desk renders directly above this one
+                on the same page, so the two now share a shell: one nav strip, a lamp and a title
+                on the left, tabs on the right, one body below.
+
+                ENGLISH, because he settled the language the same day — *"if the restock vault is
+                in english then this regional warehouse should be in english as well"* — and then
+                chose the short form himself: *"stock only is enough"*. **Data Induk keeps its
+                Indonesian name because he picked that name himself on 2026-08-31.**
+
+                Tab order is the order the questions get asked: has my stock arrived, do I need
+                more, what is on the shelf, what happened before, who and where are we shipping
+                between. */}
+            {isAreaAdmin && (
+                <section className="mb-6 flex flex-col bg-ground border border-line-2 rounded-2xl overflow-hidden shadow-[0_1px_1px_rgba(0,0,0,0.20),0_18px_40px_-28px_rgba(0,0,0,0.85)]">
+
+                    <WarehouseDeskNav title={deskHead.title} sub={deskHead.sub}
+                        tabs={deskTabs} active={deskTab} onPick={setDeskTab} />
+
+                    <div className="p-4 sm:p-5">
+
+                        {isLoading ? (
+                            <div className="text-center p-10 text-ink-muted animate-pulse italic text-xs uppercase tracking-widest">Loading Logistics Logs...</div>
+                        ) : deskTab === 'stock' ? (
+                            branchStock.length === 0 ? (
+                                <div className="text-center p-8 bg-sunk rounded-xl border border-dashed border-line-2 text-ink-muted text-xs uppercase tracking-widest">
+                                    Warehouse is empty. Ask HQ for stock on the Request tab.
+                                </div>
+                            ) : (
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">{branchStock.map(stockCard)}</div>
+                            )
+
+                        ) : deskTab === 'request' ? (
+                            <div className="grid grid-cols-1 xl:grid-cols-[1fr,360px] gap-5 items-start">
+                                <div className="flex flex-col gap-4">
                             {/* ITEM SELECTOR */}
                             <div className="bg-sunk p-3 sm:p-4 rounded-xl border border-line-2">
                                 <label className="text-[11px] font-bold text-ink-muted uppercase tracking-widest mb-1.5 block">1. Select Items to Request</label>
@@ -1307,23 +1318,23 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
                                 </div>
                             </div>
 
-                            {/* ADDRESS INPUTS */}
-                            <div className="bg-sunk p-3 sm:p-4 rounded-xl border border-line-2">
-                                <label className="text-[11px] font-bold text-ink-muted uppercase tracking-widest mb-2 flex items-center gap-1"><MapPin size={12}/> 2. Detail Alamat Pengiriman</label>
-                                <div className="space-y-3">
-                                    <input placeholder="Jalan / Gedung / Patokan" className="placeholder:text-ink-dim placeholder:opacity-100 placeholder:italic w-full bg-inset border border-line-3 rounded-lg p-3 text-sm text-ink outline-none focus:border-gold" value={shippingAddress.jalan} onChange={e=>setShippingAddress({...shippingAddress, jalan: e.target.value})}/>
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                        <input placeholder="Kecamatan" className="placeholder:text-ink-dim placeholder:opacity-100 placeholder:italic w-full bg-inset border border-line-3 rounded-lg p-3 text-sm text-ink outline-none focus:border-gold" value={shippingAddress.kecamatan} onChange={e=>setShippingAddress({...shippingAddress, kecamatan: e.target.value})}/>
-                                        <input placeholder="Kabupaten" className="placeholder:text-ink-dim placeholder:opacity-100 placeholder:italic w-full bg-inset border border-line-3 rounded-lg p-3 text-sm text-ink outline-none focus:border-gold" value={shippingAddress.kabupaten} onChange={e=>setShippingAddress({...shippingAddress, kabupaten: e.target.value})}/>
-                                    </div>
-                                    <div className="grid grid-cols-[1fr,auto] gap-3">
-                                        <input placeholder="Provinsi" className="placeholder:text-ink-dim placeholder:opacity-100 placeholder:italic w-full bg-inset border border-line-3 rounded-lg p-3 text-sm text-ink outline-none focus:border-gold" value={shippingAddress.provinsi} onChange={e=>setShippingAddress({...shippingAddress, provinsi: e.target.value})}/>
-                                        <input placeholder="Kode Pos" type="number" className="placeholder:text-ink-dim placeholder:opacity-100 placeholder:italic w-24 bg-inset border border-line-3 rounded-lg p-3 text-sm text-ink outline-none focus:border-gold text-center" value={shippingAddress.postalCode} onChange={e=>setShippingAddress({...shippingAddress, postalCode: e.target.value})}/>
-                                    </div>
                                 </div>
-                            </div>
-                        </div>
-
+                                <div className="flex flex-col gap-4">
+                                    {/* 🔴 THE ADDRESS IS READ, NOT TYPED. Five inputs stood here and a branch
+                                        admin filled them in from memory on every order, into localStorage on
+                                        one device. It is the gudang's registered address now — the same record
+                                        the surat jalan prints from — and this screen cannot edit it. */}
+                                    <div className="bg-sunk p-4 rounded-xl border border-line-2">
+                                        <label className="text-[11px] font-bold text-ink-muted uppercase tracking-widest mb-2 flex items-center gap-1.5"><MapPin size={12}/> Ship to</label>
+                                        <p className="font-display font-bold uppercase tracking-wider text-ink text-sm">Gudang {branchLocation}</p>
+                                        {gudangAddress ? (
+                                            <p className="text-[11px] text-ink-muted mt-1.5 leading-relaxed whitespace-pre-line break-words">{gudangAddress}</p>
+                                        ) : (
+                                            <p className="text-[11px] text-danger-text mt-2 border border-danger-rail bg-danger-well px-2.5 py-1.5 rounded leading-relaxed">
+                                                No registered address yet. HQ registers it in the Master Vault desk under Data Induk. Until then HQ has nowhere to ship to.
+                                            </p>
+                                        )}
+                                    </div>
                         {requestCart.length > 0 && (
                             <div className="bg-sunk rounded-2xl p-4 sm:p-5 border border-line-2 mt-auto flex flex-col relative z-10 shadow-inner">
                                 <h4 className="text-[10px] font-bold text-ink-muted uppercase tracking-widest mb-4 border-b border-line-2 pb-2 flex items-center gap-2"><Package size={14}/> Request Draft Cart ({requestCart.length})</h4>
@@ -1343,9 +1354,80 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
                                 </button>
                             </div>
                         )}
-                        </div>
+                                </div>
+                            </div>
+
+                        ) : deskTab === 'data' ? (
+                            /* ═══ DATA INDUK — read-only here, and that is the design ═══
+                               Aldi, 2026-09-01: *"tier 4 and below cannot access the editing and
+                               registering of employees, gudang warehouse and factory as well"*. T4 is
+                               the tier that lives on this screen, so its everyday user reads this tab
+                               and never writes to it. `canManageRegistry` is the same function the HQ
+                               desk asks; there is no second tier list. */
+                            <div className="space-y-5">
+                                <p className="text-[11px] text-ink-muted max-w-prose border border-line-2 rounded-lg px-3 py-2 leading-relaxed">
+                                    {mayEditRegistry
+                                        ? 'Read-only here. Register and edit master data on the Master Vault desk above.'
+                                        : 'Read-only. Only HQ can register or edit factories, warehouses and employees — ask HQ if something here is wrong.'}
+                                </p>
+
+                                <div>
+                                    <h4 className="text-[10px] font-bold text-ink-muted uppercase tracking-widest mb-2">This warehouse</h4>
+                                    <div className="border border-line-2 rounded-xl overflow-hidden bg-panel px-3 py-2.5">
+                                        <p className="text-sm text-ink font-display font-bold uppercase tracking-wider break-words">Gudang {branchLocation}</p>
+                                        <p className={`text-[11px] mt-1 leading-relaxed break-words ${gudangAddress ? 'text-ink-muted' : 'text-accent-ink'}`}>
+                                            {gudangAddress || 'No address registered — HQ has nowhere to ship to, and nothing prints on the surat jalan.'}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                {[['Factories', registeredFactories, 'No factory registered yet.'],
+                                  ['People who may send & receive', registeredPeople, 'Nobody registered by hand. Staff at tier 4 and above are already allowed without being listed.']].map(([label, list, empty]) => (
+                                    <div key={label}>
+                                        <h4 className="text-[10px] font-bold text-ink-muted uppercase tracking-widest mb-2">{label}</h4>
+                                        {list.length === 0 ? (
+                                            <p className="text-[11px] text-ink-muted">{empty}</p>
+                                        ) : (
+                                            <div className="border border-line-2 rounded-xl overflow-hidden">
+                                                {list.map(o => (
+                                                    <div key={o.id} className="px-3 py-2.5 border-b border-line-2 last:border-b-0 bg-panel">
+                                                        <p className="text-sm text-ink break-words">{o.name}</p>
+                                                        <p className={`text-[11px] leading-relaxed break-words ${o.address ? 'text-ink-muted' : 'text-accent-ink'}`}>
+                                                            {o.address || 'no address on file'}
+                                                        </p>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+
+                        ) : (
+                            /* INCOMING and BOOK are one list twice, narrowed differently. Incoming is
+                               what is still moving and therefore still actionable; Book is everything,
+                               including what has already been counted and closed. Same card, same
+                               drawer, same timeline — a second renderer is a second thing to keep
+                               correct. */
+                            <div className="space-y-4">
+                                {deskTab === 'incoming' && receivingOrder && renderArrivalCheck()}
+
+                                {deskRequests.length === 0 ? (
+                                    <div className="flex flex-col items-center justify-center p-10 text-center border-2 border-dashed border-line-2 rounded-xl bg-sunk">
+                                        <Package size={48} className="text-line-3 mb-3 opacity-50"/>
+                                        <p className="text-ink-muted font-bold text-sm">
+                                            {deskTab === 'incoming' ? `Nothing on the way to ${branchLocation}.` : `No reorder history for ${branchLocation}.`}
+                                        </p>
+                                        <p className="text-ink-muted text-[10px] mt-1 uppercase tracking-widest">
+                                            {deskTab === 'incoming' ? 'Ask HQ for stock on the Request tab.' : 'Submit a request and it will be recorded here.'}
+                                        </p>
+                                    </div>
+                                ) : deskRequests.map(renderRequestCard)}
+                            </div>
+                        )}
+
                     </div>
-                </div>
+                </section>
             )}
 
             {/* ============ WHAT IS ON A BRANCH'S SHELF — HQ SIDE ============

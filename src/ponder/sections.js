@@ -40,6 +40,11 @@ export const SECTIONS = [
          section of the book"*. Shipment Plan is the third panel down on this screen, so it is the
          third entry here — entries inside a section are TOP-TO-BOTTOM ORDER ON THE SCREEN. */
       { sceneId: 'shipment-plan', title: 'Shipment Plan', desc: 'Kalau barangnya tidak cukup untuk semua cabang, siapa yang dikirim duluan.', icon: 'Truck' },
+      /* LAST, and the top-to-bottom rule above does not settle it — this desk is the only thing a
+         BRANCH admin sees on this screen, and it does not render for HQ at all. So there is no one
+         order that is true for both readers. It sits last because the three above are HQ's, and HQ
+         is who opens this book most. */
+      { sceneId: 'regional-warehouse', title: 'Regional Warehouse', desc: 'Meja gudang cabang: lima tab, alamat yang terkunci, dan data induk yang cuma bisa dibaca.', icon: 'Warehouse' },
     ],
   },
   {

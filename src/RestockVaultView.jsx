@@ -5,7 +5,8 @@ import { savePhotoAndGetReference, deletePhotoFromStorage, compressImageToBase64
 import { confirmAction } from './components/ConfirmGate.jsx';
 import AcceptanceReceipt from './components/AcceptanceReceipt.jsx';
 import { notify } from './components/Toast.jsx';
-import { canPickFromGallery, canHandleDelivery, tierWord } from './config/permissions';
+import { canPickFromGallery, canHandleDelivery, canManageRegistry, tierWord } from './config/permissions';
+import Lamp from './components/Lamp.jsx';
 /* one definition of "what is a branch", shared with the dashboard's supply maths */
 import { NON_BRANCH, bufferDays, MASTER } from './utils/supply.js';
 /* THE SAME FOUR FUNCTIONS THE BRANCH PANEL RUNS ON, imported rather than re-derived. His ask,
@@ -143,14 +144,6 @@ const RouteCombo = ({ label, value, onChange, options, placeholder, hint }) => {
         </div>
     );
 };
-
-const Lamp = ({ tone = 'off', live = false }) => (
-    <span className={`inline-block w-2 h-2 rounded-full shrink-0 border ${
-        tone === 'on'  ? 'bg-orange border-orange' :
-        tone === 'bad' ? 'bg-danger border-danger' :
-                         'bg-transparent border-line-3'
-    } ${live ? 'animate-pulse' : ''}`} />
-);
 
 /* what has actually happened to this shipment, and what has not yet */
 const Proses = ({ steps }) => (
@@ -501,8 +494,16 @@ const RestockVaultView = ({ inventory = [], procurements = [], motorists = [], b
        than making two places that print the same words. */
     const placeSlug = (name) => (name || '').trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 
+    /* Aldi, 2026-09-01: *"tier 4 and below cannot access the editing and registering of employees,
+       gudang warehouse and factory as well"*. This screen already sits behind the Master Vault
+       password, but that password is not a TIER — `isAdmin` in App.jsx is literally
+       `vaultUnlocked`. So anyone who knows the password reached this registry regardless of rank,
+       and the rank is what he just legislated about. */
+    const mayEditRegistry = canManageRegistry(userRole);
+
     const savePlace = async () => {
         if (!placeForm) return;
+        if (!mayEditRegistry) return notify("Only HQ can register or edit master data.");
         const name = (placeForm.name || '').trim();
         const address = (placeForm.address || '').trim();
         if (!name) return notify("Nama tempat belum diisi.");
@@ -535,6 +536,7 @@ const RestockVaultView = ({ inventory = [], procurements = [], motorists = [], b
     };
 
     const removePlace = async (place) => {
+        if (!mayEditRegistry) return notify("Only HQ can remove master data.");
         if (!user || !db || !activeUserId) return notify("System disconnected. Cannot delete.");
         if (!await confirmAction(`Hapus "${place.name}" dari daftar tempat?\n\nSurat jalan lama tetap menyimpan nama dan alamatnya. Yang hilang hanya pilihan untuk pengiriman baru.`)) return;
         try {
@@ -1315,14 +1317,22 @@ const RestockVaultView = ({ inventory = [], procurements = [], motorists = [], b
                             <div className="bg-inset border border-line-2 rounded-xl p-4">
                                 <h4 className="text-[10px] text-ink-muted font-bold uppercase tracking-widest mb-2 flex items-center gap-2"><MapPin size={13}/> Alamat tujuan</h4>
                                 <p className="text-ink text-sm font-display font-bold uppercase tracking-wider">Gudang {isFulfilling.branch}</p>
-                                {isFulfilling.deliveryAddress ? (
+                                {/* 🔴 TWO SHAPES, AND BOTH STILL PRINT. Until 2026-09-01 the branch
+                                    TYPED its address into the request form, so old records carry an
+                                    object of parts. New ones carry `deliveryAddressText`, copied
+                                    from the gudang's registered address at submit time — the branch
+                                    cannot type it any more. Old requests must keep rendering: a
+                                    shipment in flight when this changed is still a shipment. */}
+                                {isFulfilling.deliveryAddressText ? (
+                                    <p className="text-xs text-ink-muted mt-1.5 leading-relaxed whitespace-pre-line">{isFulfilling.deliveryAddressText}</p>
+                                ) : isFulfilling.deliveryAddress ? (
                                     <p className="text-xs text-ink-muted mt-1.5 leading-relaxed">
                                         {isFulfilling.deliveryAddress.jalan}<br/>
                                         Kec. {isFulfilling.deliveryAddress.kecamatan}, {isFulfilling.deliveryAddress.kabupaten}<br/>
                                         {isFulfilling.deliveryAddress.provinsi} - {isFulfilling.deliveryAddress.postalCode}
                                     </p>
                                 ) : (
-                                    <p className="text-xs text-danger-text mt-2 border border-danger-rail bg-danger-well px-2.5 py-1.5 rounded inline-block">Cabang belum mengisi alamat lengkap.</p>
+                                    <p className="text-xs text-danger-text mt-2 border border-danger-rail bg-danger-well px-2.5 py-1.5 rounded inline-block">Gudang ini belum punya alamat terdaftar — daftarkan di tab Data Induk.</p>
                                 )}
                             </div>
 
@@ -1451,6 +1461,7 @@ const RestockVaultView = ({ inventory = [], procurements = [], motorists = [], b
                                     Staf tier 4 ke atas sudah otomatis boleh kirim &amp; terima, jadi tidak perlu didaftarkan satu per satu.
                                 </p>
                             </div>
+                            {mayEditRegistry ? (
                             <div className="flex gap-2 flex-wrap">
                                 <button type="button"
                                     onClick={() => setPlaceForm({ name: '', address: '', kind: 'pabrik', editing: null })}
@@ -1463,9 +1474,17 @@ const RestockVaultView = ({ inventory = [], procurements = [], motorists = [], b
                                     <PlusCircle size={15}/> Daftarkan orang
                                 </button>
                             </div>
+                            ) : (
+                                /* Say WHY it is not here. A tab that silently loses its buttons
+                                   reads as broken, and a branch admin who thinks the screen is
+                                   broken goes looking for another way to do it. */
+                                <p className="text-[11px] text-ink-muted max-w-prose border border-line-2 rounded-lg px-3 py-2">
+                                    Hanya HQ yang bisa mendaftarkan atau mengubah data induk. Daftar di bawah bisa dibaca, tidak bisa diubah.
+                                </p>
+                            )}
                         </div>
 
-                        {placeForm && (
+                        {mayEditRegistry && placeForm && (
                             <div className="bg-panel border border-orange/40 rounded-xl p-4 space-y-3">
                                 <div className="flex items-center gap-2">
                                     <MapPin size={14} className="text-accent-ink"/>
@@ -1520,7 +1539,7 @@ const RestockVaultView = ({ inventory = [], procurements = [], motorists = [], b
                             </div>
                         )}
 
-                        {unregisteredFactories.length > 0 && (
+                        {mayEditRegistry && unregisteredFactories.length > 0 && (
                             <div>
                                 <h4 className="text-[10px] font-bold text-accent-ink uppercase tracking-widest mb-2">
                                     Ada di surat jalan lama, belum terdaftar
@@ -1562,12 +1581,12 @@ const RestockVaultView = ({ inventory = [], procurements = [], motorists = [], b
                                                         and leave the other. */}
                                                     {kind === 'orang' && !record ? (
                                                         <span className="text-[10px] font-mono text-ink-muted uppercase tracking-widest px-1.5">otomatis</span>
-                                                    ) : (
+                                                    ) : mayEditRegistry && (
                                                     <button type="button" title={`Ubah ${o.name}`}
                                                         onClick={() => setPlaceForm({ name: o.name, address: o.address || '', kind, editing: record?.id || null })}
                                                         className="text-ink-muted hover:text-ink transition-colors p-1.5"><Pencil size={14}/></button>
                                                     )}
-                                                    {record && (
+                                                    {mayEditRegistry && record && (
                                                         <button type="button" title={`Hapus ${o.name} dari daftar`}
                                                             onClick={() => removePlace(record)}
                                                             className="text-ink-muted hover:text-danger-text transition-colors p-1.5"><Trash2 size={14}/></button>

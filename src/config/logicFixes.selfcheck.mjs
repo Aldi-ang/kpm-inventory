@@ -2676,9 +2676,16 @@ section('S37. Quarantine and HQ Audits: gold is ink and edges, never a slab');
      lose focus after each keystroke. ⚠️ THIS IS A PLACEMENT CHECK, NOT PROOF IT
      DOES NOT REMOUNT — there is no static check for "the field kept focus".
      Only typing into it in a browser proves that. */
-  ok('the count panel is rendered in the list block, not inside OrderTrackingModule',
-     branch.indexOf('receivingOrder && (() =>') > -1
-     && branch.indexOf('receivingOrder && (() =>') < branch.indexOf('{requests.map(req => {'));
+/* ⚠️ REWRITTEN 2026-09-01, SAME INTENT, NEW SHAPE. The screen became a five-tab desk and the
+     count panel is now `renderArrivalCheck()`, called from the Incoming tab, instead of an inline
+     IIFE sitting above the request list. The old assertion was positional — "appears earlier in
+     the file than the map" — and positional is not what keeps the focus: what keeps it is being
+     OUTSIDE OrderTrackingModule, which is redeclared every render. So assert that directly. */
+  const otmAt = branch.indexOf('const OrderTrackingModule = ({ order }) => {');
+  const arrAt = branch.indexOf('const renderArrivalCheck = () => {');
+  ok('the count panel is a sibling of OrderTrackingModule, never nested inside it',
+     otmAt > -1 && arrAt > otmAt
+     && !branch.slice(otmAt, arrAt).includes('setReceiptCount('));
   ok('and nothing else in the file writes a receipt count - only the two boxes',
      (branch.match(/setReceiptCount\(/g) || []).length === 2);
 }
@@ -3834,7 +3841,12 @@ const restock = stripComments(read('src/RestockVaultView.jsx'));
 /* Scoped to RouteCombo's own body. `onChange(` appears all over this file on ordinary inputs, and
    a file-wide search would report the opposite of the truth. */
 const comboStart = restock.indexOf('const RouteCombo =');
-const comboEnd = restock.indexOf('const Lamp =');
+/* ⚠️ ANCHORED ON `const Proses`, NOT ON `const Lamp`. Lamp moved to its own file on 2026-09-01 so
+   the regional warehouse desk could wear the same status dot, and this anchor went to -1 — which
+   `restock.slice(comboStart, -1)` reads as "one before the end of the file", handing the six
+   checks below the whole file to pass against. The ok() on the next line is what caught it, and
+   it is the only reason this was a red check rather than six silently green ones. */
+const comboEnd = restock.indexOf('const Proses =');
 ok('the RouteCombo block can be found before anything is asserted about it',
    comboStart > -1 && comboEnd > comboStart);
 const combo = comboStart > -1 && comboEnd > comboStart ? restock.slice(comboStart, comboEnd) : '';
@@ -3887,7 +3899,7 @@ section('D16. The delivery clearance, and the tier it must not forget');
    ⚠️ T4's id in permissions.js is the string FLEET_CAPTAIN, and forgetting exactly that role is
    the most repeated bug in this codebase. So this is a BEHAVIOUR check on the real function, not
    a grep: it runs the boundary from both sides. */
-const { canHandleDelivery, CORPORATE_TIERS: TIERS } = await import('./permissions.js');
+const { canHandleDelivery, canManageRegistry, CORPORATE_TIERS: TIERS } = await import('./permissions.js');
 
 ok('tier 4 — his "regional admin", FLEET_CAPTAIN in the code — may handle a delivery',
    canHandleDelivery(TIERS.TIER_4) === true,
@@ -3942,6 +3954,72 @@ ok('and so does the empty state inside the picker itself',
 ok('and "Factory Logistics" is gone from it',
    !/Factory Logistics/.test(notaSrc),
    'a fixed phrase pretending to be a record of who delivered the goods');
+
+
+/* -- D17 . who may change the master data, and it is NOT the tier that uses it every day ------ */
+section('D17. The registry clearance, one tier above the delivery one');
+
+/* Aldi, 2026-09-01: "tier 4 and below cannot access the editing and registering of employees,
+   gudang warehouse and factory as well".
+
+   The two clearances sit ONE TIER APART and that gap is the whole point, so both sides of BOTH
+   boundaries run here. T4 may receive a delivery and may not rename the factory it came from.
+   Getting these the same way round is the Fleet Captain gap in reverse: it would hand every branch
+   admin the power to edit where a shipment says it went. */
+ok('T4 may handle a delivery but may NOT edit the registry - the one line he legislated',
+   canHandleDelivery(TIERS.TIER_4) === true && canManageRegistry(TIERS.TIER_4) === false);
+ok('T1, T2 and T3 may edit the registry',
+   [TIERS.TIER_1, TIERS.TIER_2, TIERS.TIER_3].every(t => canManageRegistry(t) === true));
+ok('T5 and T6 may not, and neither may an unknown role',
+   canManageRegistry(TIERS.TIER_5) === false && canManageRegistry(TIERS.TIER_6) === false
+   && canManageRegistry(undefined) === false && canManageRegistry('SOMETHING_ELSE') === false);
+
+/* A hidden button is a tidy screen, not a permission. The fleet-edit bug he found on 2026-08-24
+   was exactly a control that was hidden while its handler still ran. */
+const rv17 = stripComments(read('src/RestockVaultView.jsx'));
+ok('the HQ registry HANDLERS refuse, not only the buttons that call them',
+   /const savePlace = async \(\) => \{\s*if \(!placeForm\) return;\s*if \(!mayEditRegistry\)/.test(rv17)
+   && /const removePlace = async \(place\) => \{\s*if \(!mayEditRegistry\)/.test(rv17));
+ok('and the clearance is the shared function, never a second tier list written out here',
+   /const mayEditRegistry = canManageRegistry\(userRole\)/.test(rv17) && !/TIER_4/.test(rv17));
+
+/* The branch desk READS the registry and has no way to write to it at any tier. No gated form to
+   slip past is the strongest form this rule can take. */
+const bwm17 = stripComments(read('src/components/BranchWarehouseManager.jsx'));
+ok('the branch desk cannot write to the registry at all, at any tier',
+   /const mayEditRegistry = canManageRegistry\(userRole\)/.test(bwm17) && !/placeForm/.test(bwm17));
+
+/* THE ADDRESS IS NOT TYPED ANY MORE. Five inputs and a per-device localStorage copy stood here.
+   It is the gudang's registered address now, copied onto the request at submit time so a gudang
+   that moves later cannot rewrite the paperwork of goods that already travelled. */
+ok('the branch cannot type a delivery address anywhere on the screen',
+   !/shippingAddress/.test(bwm17) && !/kpm_address_/.test(bwm17));
+ok('the request carries the registered address, copied at submit time',
+   /deliveryAddressText: gudangAddress/.test(bwm17)
+   && /const gudangAddress = addrFor\(branchLocation\)/.test(bwm17));
+ok('submitting is blocked when the gudang has no registered address, and it names who can fix it',
+   /if \(!gudangAddress\)/.test(bwm17) && /HQ registers it/.test(bwm17));
+
+/* Requests already in flight carry the OLD object shape and must keep printing - a shipment that
+   was moving when this changed is still a shipment. */
+ok('the fulfilment modal still renders the old address shape for requests already in flight',
+   /isFulfilling\.deliveryAddressText \?/.test(rv17) && /isFulfilling\.deliveryAddress\.jalan/.test(rv17));
+
+/* THE DESK. Five tabs, in the order the questions get asked, and Data Induk keeps the name he
+   chose himself on 2026-08-31 even though the rest of this screen is English. */
+const deskIds = (bwm17.match(/\{ id: '(\w+)',\s*label: '([^']+)'/g) || []);
+ok('the desk has exactly the five tabs he approved, Data Induk among them',
+   deskIds.length === 5
+   && /id: 'incoming',\s*label: 'Incoming'/.test(bwm17)
+   && /id: 'request',\s*label: 'Request'/.test(bwm17)
+   && /id: 'stock',\s*label: 'Stock'/.test(bwm17)
+   && /id: 'book',\s*label: 'Book'/.test(bwm17)
+   && /id: 'data',\s*label: 'Data Induk'/.test(bwm17),
+   'he chose English on 2026-09-01 and then shortened it himself - "stock only is enough"');
+ok('Incoming counts only what is still moving, so the number can go down',
+   /const openRequests = requests\.filter\(r => r\.status === 'PENDING' \|\| r\.status === 'IN_TRANSIT'\)/.test(bwm17));
+ok('Data Induk counts what is MISSING, like the Master Vault desk tab it mirrors',
+   /id: 'data',[\s\S]{0,60}count: gudangAddress \? 0 : 1/.test(bwm17));
 
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

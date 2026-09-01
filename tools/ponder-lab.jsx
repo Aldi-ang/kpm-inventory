@@ -320,6 +320,14 @@ FIXTURES['branches/BANDUNG/inventory'] = [
   { id: 'p-sig',  name: 'Sigaret Kretek Tangan Premium', stock: 54 },
   { id: 'p-djar', name: 'Djarum Coklat 12', stock: 0 },
 ];
+/* The registry the desk now READS. `gudang` carries this branch's fixed address — the reorder form
+   cannot type one any more — and `pabrik`/`orang` fill the read-only Data Induk tab. */
+FIXTURES['places'] = [
+  { id: 'bandung', name: 'BANDUNG', kind: 'gudang', address: 'Jl. Soekarno Hatta No. 412, Kec. Batununggal, Kota Bandung, Jawa Barat 40266' },
+  { id: 'pabrik-kudus', name: 'Pabrik Kudus', kind: 'pabrik', address: 'Jl. Raya Kudus-Pati KM 8, Kudus, Jawa Tengah' },
+  { id: 'pabrik-malang', name: 'Pabrik Malang', kind: 'pabrik', address: '' },
+  { id: 'adi-nugroho', name: 'Adi Nugroho', kind: 'orang', address: '' },
+];
 FIXTURES['stock_requests'] = [
   { id: 'REQ-185204', branch: 'BANDUNG', status: 'IN_TRANSIT', timestamp: { seconds: NOW - 86400 * 2 },
     requestedByName: 'Rina Wijaya', courier: 'JNE Trucking', trackingNo: 'JT-8841-2290',
@@ -352,7 +360,7 @@ function GudangLab() {
       <style>{SHELL_RULE}</style>
       <BranchWarehouseManager
         db={{}} storage={null} appId="lab" user={{ displayName: 'Rina Wijaya', email: 'rina@kpm.id' }}
-        userRole="AREA_ADMIN" userLocation="BANDUNG" isAdmin={false} masterUserId="lab"
+        userRole={q.get('tier') || 'FLEET_CAPTAIN'} userLocation="BANDUNG" isAdmin={false} masterUserId="lab"
         globalInventory={FIXTURES['branches/BANDUNG/inventory']}
         triggerCapy={() => {}} logAudit={() => {}}
         appSettings={{ companyName: 'KPM INVENTORY', adminDisplayName: 'Rina Wijaya' }}

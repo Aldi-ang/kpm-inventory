@@ -208,6 +208,34 @@ export const canHandleDelivery = (userRole) => {
         || role === CORPORATE_TIERS.TIER_4;   // FLEET_CAPTAIN — "T4: REGIONAL ADMIN" on his screen
 };
 
+/* WHO MAY CHANGE THE MASTER DATA — the registry of factories, warehouses and employees.
+
+   Aldi, 2026-09-01: *"tier 4 and below cannot access the editing and registering of employees,
+   gudang warehouse and factory as well"*.
+
+   ⚠️ THIS IS THE OPPOSITE BOUNDARY TO `canHandleDelivery` ABOVE, ONE TIER APART, AND THEY MUST NOT
+   BE MERGED. T4 (his REGIONAL ADMIN) may send and receive packages — that is the whole point of
+   the regional warehouse screen, and T4 is the person who lives on it. What T4 may NOT do is edit
+   the list of places and people those deliveries are addressed to. A branch admin who can rename
+   the factory their own goods came from can rewrite where a shipment says it went.
+
+   So the regional warehouse's Data Induk tab is READ-ONLY for the tier that uses it every day, and
+   that is deliberate, not an oversight to be "fixed" later.
+
+   Same absence-means-tier-default shape as the two keys above: a key that is not yet in his saved
+   Firebase matrix must read as "use the tier default", never as "no" — a new key read as "no"
+   makes a working feature look broken for every tier at once. */
+const REGISTRY_KEY = 'manage_registry';
+export const canManageRegistry = (userRole) => {
+    const role = translateLegacyRole(userRole);
+    if (role === CORPORATE_TIERS.TIER_1) return true;
+    const matrixKnowsKey = Object.values(ROLE_PERMISSIONS)
+        .some(list => Array.isArray(list) && list.includes(REGISTRY_KEY));
+    if (matrixKnowsKey) return hasClearance(userRole, REGISTRY_KEY);
+    return role === CORPORATE_TIERS.TIER_2
+        || role === CORPORATE_TIERS.TIER_3;   // stops ABOVE FLEET_CAPTAIN, on purpose
+};
+
 /* FLEET & CANVAS: may this tier only LOOK, or also change things?
 
    Aldi found this himself with the POV switch on its first run, 2026-08-23: *"i just checked
