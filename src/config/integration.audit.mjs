@@ -4360,9 +4360,13 @@ check(G56, 'the room test measures the caption instead of assuming a height for 
    looked like a placement bug and were this. `measure()` also runs synchronously three lines after
    the call, so an animated scroll would be measured before it had moved even where it does run.
    Scoped to the call itself: the word "smooth" appears in the surrounding comment on purpose. */
-const scrollCall = (overlaySrc.match(/scrollIntoView\(\{[^}]*\}\)/) || [''])[0];
+/* REWRITTEN 2026-09-01. The camera no longer calls scrollIntoView at all — it assigns scrollTop and
+   scrollLeft on each scroller between the subject and the stage, which is instant by definition and
+   has no `behavior` to get wrong. The property this check exists to defend is unchanged and is now
+   asserted directly: nothing in this file may ask for a smooth or animated scroll. */
 check(G56, 'the tutorial camera moves instantly, because a smooth one never moved at all',
-  scrollCall.length > 0 && /behavior:\s*'auto'/.test(scrollCall) && !/smooth/.test(scrollCall),
+  /el\.scrollTop = clamp\(/.test(overlaySrc) && /el\.scrollLeft = clamp\(/.test(overlaySrc) &&
+  !/behavior:\s*'smooth'/.test(overlaySrc) && !/scrollBy|scrollTo\(/.test(overlaySrc),
   'the scene must scroll its subject into view with behavior:\'auto\'. A smooth scroll does not ' +
   'run in this stage at all, and the beat is then measured against a subject still below the fold');
 
@@ -4548,6 +4552,32 @@ check(G56, 'pressing a part of the stage jumps to the beat that explains it',
 
 /* The highlight is drawn, not merely implied by dimming everything else. An EDGE, never a fill:
    amber is an edge and an ink in this app, and it is not a fill. */
+/* THE CAMERA. Aldi, 2026-09-01, choosing this over a second phone-only Ponder: *"make the screen
+   move along with the highlighted textbox and components, this way the user doesnt have to slide
+   updown left right just to see the highlighted box"*.
+
+   Three properties, and each one was a measured failure before it was a check. */
+check(G56, 'the camera centres the whole subject in every scroller between it and the stage',
+  /const centreIn = \(el\) => \{/.test(overlaySrc) &&
+  /for \(let node = hits\[0\]; node && node !== root\.parentElement; node = node\.parentElement\)/.test(overlaySrc) &&
+  !/scrollIntoView/.test(overlaySrc),
+  'the stage is not the only thing that scrolls \u2014 Stock by Warehouse has its own overflow-x-auto ' +
+  'around a 1080px grid, and moving only the stage left the ring 0% in view sideways on five beats. ' +
+  'scrollIntoView with block:nearest is what it replaced: nearest stops the moment one cell of a ' +
+  'tall column touches the edge');
+
+check(G56, 'the camera stops AT the stage, so the page behind the overlay never moves',
+  /node !== root\.parentElement/.test(overlaySrc),
+  'walking past the stage would scroll the app underneath the tutorial, which is the one surface it ' +
+  'must never move');
+
+check(G56, 'the camera divides out the transform, and it scrolls before it measures',
+  /const kx = el\.offsetWidth > 0 && er\.width > 0 \? er\.width \/ el\.offsetWidth : 1;/.test(overlaySrc) &&
+  overlaySrc.indexOf('const centreIn = (el) =>') < overlaySrc.search(/measure\(\);\s*\}, \[open, step, keys, p\.index, measure\]\);/),
+  'the overlay opens on scale(0.94), so a rect read during that animation is 6% small while ' +
+  'scrollTop is not scaled at all; and a camera move AFTER the measure leaves the ring drawn where ' +
+  'the subject used to be');
+
 check(G56, 'the subject is outlined, and the outline is an edge rather than a fill',
   /* TONE_RING, not TONE_EDGE, since 2026-09-01: *i want the highlight to be clearer to see*.
      The captions keep the quiet divider grey; the ring is orange. Both maps are still EDGES, and

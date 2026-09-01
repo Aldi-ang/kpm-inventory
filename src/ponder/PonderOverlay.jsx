@@ -239,10 +239,71 @@ export default function PonderOverlay({ sceneId, open, onClose, onBack }) {
     if (!open || !step) return;
     const root = scrollRef.current;
     if (!root) return;
-    const first = keys.includes('*') ? null
-      : keys.map(k => root.querySelector(`[data-ponder="${k}"]`)).find(Boolean);
-    if (first && typeof first.scrollIntoView === 'function') {
-      first.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'auto' });
+    /* 🔴 THE CAMERA CENTRES THE WHOLE SUBJECT, NOT THE FIRST CELL OF IT. Aldi, 2026-09-01,
+       choosing this over a second phone-only Ponder: *"make the screen move along with the
+       highlighted textbox and components, this way the user doesnt have to slide updown left right
+       just to see the highlighted box"*.
+
+       What was here before was `scrollIntoView({ block: 'nearest', inline: 'nearest' })` on the
+       FIRST matching element, and both halves of that are why he was still sliding:
+
+         - `nearest` scrolls the MINIMUM to make the element merely touch the viewport. A column
+           highlight is a tall band; one cell of it peeking over the edge satisfies `nearest` and
+           the rest stays below the fold.
+         - the first cell is not the subject. `measure()` unions every hit, and on a column key that
+           union runs from the header to the total. Aiming at one end of it aims at neither.
+
+       So the union is computed here in the scroller's own coordinates and CENTRED. When the union
+       is taller than the window — a full column on a phone — centring shows its middle, which is
+       the best a window that size can do, and it is stable rather than dependent on which cell the
+       DOM happened to return first.
+
+       ⚠️ THE SCALE DIVISION IS NOT OPTIONAL, for the same reason `measure()` carries it: the
+       overlay opens on `scale(0.94)`, so every rect read during that animation is 6% small while
+       `scrollTop` is not scaled at all. Mixing the two puts the camera 6% off on the first beat of
+       every scene. `offsetWidth` is the layout width, the rect's is the painted one, and their
+       ratio is whatever transform is in play.
+
+       ⚠️ AND IT SCROLLS BEFORE IT MEASURES. `measure()` runs three lines below and reads rects
+       relative to the stage; a camera move after it would leave the ring drawn where the subject
+       used to be. Scroll first, measure after — never the other way round. */
+    const hits = keys.includes('*') ? []
+      : Array.from(root.querySelectorAll('[data-ponder]')).filter(el => keys.includes(el.dataset.ponder));
+    if (hits.length) {
+      const clamp = (v, max) => Math.max(0, Math.min(v, Math.max(0, max)));
+      /* ⚠️ EVERY SCROLLER BETWEEN THE SUBJECT AND THE STAGE, INNERMOST FIRST — not just the stage.
+         Measured at 375px before this loop existed: the ring was fully in view VERTICALLY on every
+         beat and 0% in view HORIZONTALLY on five of them. The stage is not the only thing that
+         scrolls. Stock by Warehouse renders its own `overflow-x-auto` around a 1080px grid, so
+         sideways movement belongs to THAT div, and setting the stage's scrollLeft did nothing.
+
+         Recomputed per scroller, because scrolling an inner one moves everything outside it: the
+         rects an outer scroller needs are only true once the inner one has settled. */
+      const centreIn = (el) => {
+        const canY = el.scrollHeight > el.clientHeight + 1;
+        const canX = el.scrollWidth > el.clientWidth + 1;
+        if (!canY && !canX) return;
+        const er = el.getBoundingClientRect();
+        const kx = el.offsetWidth > 0 && er.width > 0 ? er.width / el.offsetWidth : 1;
+        const ky = el.offsetHeight > 0 && er.height > 0 ? er.height / el.offsetHeight : 1;
+        const rs = hits.map(h => h.getBoundingClientRect());
+        if (canY) {
+          const top    = (Math.min(...rs.map(r => r.top))    - er.top) / ky + el.scrollTop;
+          const bottom = (Math.max(...rs.map(r => r.bottom)) - er.top) / ky + el.scrollTop;
+          el.scrollTop = clamp((top + bottom) / 2 - el.clientHeight / 2, el.scrollHeight - el.clientHeight);
+        }
+        if (canX) {
+          const left  = (Math.min(...rs.map(r => r.left))  - er.left) / kx + el.scrollLeft;
+          const right = (Math.max(...rs.map(r => r.right)) - er.left) / kx + el.scrollLeft;
+          el.scrollLeft = clamp((left + right) / 2 - el.clientWidth / 2, el.scrollWidth - el.clientWidth);
+        }
+      };
+      /* Stops AT the stage. Walking past it would scroll the page behind the overlay, which is the
+         one surface a tutorial must never move. A scroller with nothing to scroll returns at once,
+         so the desk — where the stage is sized to fit — is untouched. */
+      for (let node = hits[0]; node && node !== root.parentElement; node = node.parentElement) {
+        centreIn(node);
+      }
     }
     /* Measured SYNCHRONOUSLY, not inside a requestAnimationFrame. A layout effect already runs
        after the DOM is written and before paint, so the rects are valid here — and the rAF
