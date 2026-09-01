@@ -697,6 +697,12 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
                 }],
             });
             if (logAudit) logAudit('SHIPMENT_ARRIVED', `${match.id} scanned in at ${branchLocation} by ${who}`);
+            /* The count panel OPENS here rather than merely becoming available: he described one
+               action, not two. `match` predates the write and that is fine — this panel reads the
+               id and the item list only, and the `arrivedAt` gate is evaluated against the live
+               snapshot, not against this copy. */
+            setReceivingOrder(match);
+            setReceiptCounts({});
             triggerCapy(`Kiriman ${match.id} ditandai sampai. Sekarang hitung barangnya. 📦`);
         } catch (e) {
             notify('Gagal menandai sampai: ' + e.message);
@@ -960,7 +966,15 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
            receipt — so the receive button must not come back and offer a second
            credit. */
         const isDelivered = order.status === 'DELIVERED' || order.status === 'DISPUTED';
-        const isFulfillableByTier3 = isAreaAdmin && order.status === 'IN_TRANSIT';
+        /* 🔴 THE SCAN IS A GATE IN FRONT OF THE COUNT. Aldi, 2026-09-01: *"this barcode is just
+           as a gate to confirm and make sure that all the package is arrived and opening a blind
+           count panel to be fill"*. Counting a box nobody confirmed had landed credits a shipment
+           off the paperwork instead of off the goods, so the count cannot open until `arrivedAt`
+           exists. The escape hatch is the typed shipment number in `ArrivalScanner`, offered ALWAYS
+           and not only after a camera failure — with this gate in place that fallback is the only
+           thing standing between a cracked lens and receiving nothing at all. */
+        const isAwaitingScan = isAreaAdmin && order.status === 'IN_TRANSIT' && !order.arrivedAt;
+        const isFulfillableByTier3 = isAreaAdmin && order.status === 'IN_TRANSIT' && !!order.arrivedAt;
 
         return (
             <div className="bg-sunk rounded-2xl border border-line-2 p-4 sm:p-6 animate-fade-in mt-2 mb-4">
@@ -1008,6 +1022,12 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
                                 <Package size={18}/>
                                 HITUNG & TERIMA BARANG
                             </button>
+                        )}
+                        {isAwaitingScan && (
+                            <div className="w-full mt-5 py-3 px-3 rounded-lg border border-orange bg-raised text-[11px] text-ink leading-relaxed flex items-start gap-2 relative z-10">
+                                <Camera size={14} className="text-accent-ink shrink-0 mt-0.5"/>
+                                <span>Barang ini belum ditandai sampai. Tekan <b className="text-accent-ink">Scan barang sampai</b> di atas daftar — kalau kamera mati, nomor kiriman bisa diketik. Panel hitung terbuka sendiri setelah itu.</span>
+                            </div>
                         )}
                         {isDelivered && (
                             <div className={`mt-5 py-3 rounded-lg text-center text-xs font-bold flex items-center justify-center gap-2 relative z-10 border ${order.receiptVariance ? 'bg-danger-well border-danger/50 text-danger-text' : 'bg-verified-fill border-verified/50 text-verified'}`}>

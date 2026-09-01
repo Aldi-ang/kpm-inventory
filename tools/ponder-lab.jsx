@@ -340,6 +340,18 @@ FIXTURES['stock_requests'] = [
       { status: 'PENDING', msg: 'Permintaan dikirim ke HQ.', time: (NOW - 86400 * 3) * 1000 },
       { status: 'IN_TRANSIT', msg: 'Barang keluar dari Gudang Pusat (Master Vault).', time: (NOW - 86400 * 2) * 1000 },
     ] },
+  /* The scanned twin of REQ-185204: same status, but `arrivedAt` is set. The gate is only
+     visible with both on screen — one asks to be scanned, one offers the count. */
+  { id: 'REQ-185211', branch: 'BANDUNG', status: 'IN_TRANSIT', timestamp: { seconds: NOW - 86400 * 1 },
+    requestedByName: 'Rina Wijaya', courier: 'Armada Sendiri', trackingNo: 'INT-0114',
+    senderName: 'Adi Nugroho',
+    arrivedAt: { seconds: NOW - 3600 * 2 }, arrivedBy: 'Gudang Bandung',
+    requestedItems: [{ productId: 'p-djar', name: 'Djarum Coklat 12', qty: 80 }],
+    workflowTimeline: [
+      { status: 'PENDING', msg: 'Permintaan dikirim ke HQ.', time: (NOW - 86400 * 2) * 1000 },
+      { status: 'IN_TRANSIT', msg: 'Barang keluar dari Gudang Pusat (Master Vault).', time: (NOW - 86400 * 1) * 1000 },
+      { status: 'ARRIVED', msg: 'Barang sampai di gudang BANDUNG, di-scan oleh Gudang Bandung. Belum dihitung.', time: (NOW - 3600 * 2) * 1000 },
+    ] },
   { id: 'REQ-185160', branch: 'BANDUNG', status: 'DELIVERED', timestamp: { seconds: NOW - 86400 * 9 },
     requestedByName: 'Rina Wijaya', courier: 'Armada Sendiri', trackingNo: 'INT-0091',
     senderName: 'Adi Nugroho', receiptVariance: true,

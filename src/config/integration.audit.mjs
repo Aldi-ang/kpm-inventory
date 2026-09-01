@@ -4832,6 +4832,28 @@ check(G58, 'a scanned code is matched against this branch only, and says so when
   'finds nothing — and the message has to say that rather than failing quietly');
 
 
+/* 🔴 HIS SEQUENCE: SCAN, THEN COUNT. Group 58 already bans the scan from crediting stock.
+   This is the other direction — the count must not open without an arrival. Aldi, 2026-09-01:
+   *"this barcode is just as a gate to confirm and make sure that all the package is arrived and
+   opening a blind count panel to be fill"*. */
+check(G58, 'the count panel cannot open until the box has been scanned in',
+  /const isFulfillableByTier3 = isAreaAdmin && order\.status === 'IN_TRANSIT' && !!order\.arrivedAt;/.test(bwmCode) &&
+  /const isAwaitingScan = isAreaAdmin && order\.status === 'IN_TRANSIT' && !order\.arrivedAt;/.test(bwmCode),
+  'HITUNG & TERIMA BARANG is the only control that credits stock. Gating it on arrivedAt is what ' +
+  'makes the barcode a gate rather than a decoration on the label');
+
+check(G58, 'a shipment still waiting on its scan says so, instead of showing an empty card',
+  /\{isAwaitingScan && \(/.test(bwmCode) &&
+  /Scan barang sampai<\/b> di atas daftar/.test(bwmCode),
+  'a hidden button is a silent failure: the counter sees a card with nothing on it and goes ' +
+  'looking for the surat jalan, which is the one paper this screen exists to keep out of their ' +
+  'hands. The card has to name the control that unblocks it');
+
+check(G58, 'a successful scan opens the count panel itself, so the two are one action',
+  /setReceivingOrder\(match\);/.test(scanFn) && /setReceiptCounts\(\{\}\);/.test(scanFn),
+  'his words: the barcode is a gate that OPENS the blind count panel. Leaving the count behind a ' +
+  'second button is exactly the step that was missing this morning');
+
 let last = '';
 for (const r of results) {
   if (r.group !== last) { console.log('\n' + r.group); last = r.group; }
