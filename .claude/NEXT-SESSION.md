@@ -51,11 +51,14 @@ forward or snap back. Two things to settle before writing anything:
 - ⚠️ **LICENCE.** It is someone else's component on Framer's marketplace. Follow the TECHNIQUE, do
   not paste the file into this repo, and do not import it from framer.com at runtime — this app is
   an offline PWA and cannot depend on a third-party host loading.
-- ⚠️ **`framer-motion` IS A DEPENDENCY DECISION AND IT IS HIS.** Framer components are built on it.
-  It is roughly 50KB gzipped on a phone that he already watches for weight, and Lite Mode exists in
-  this app precisely because he cares about cheap Android. **Ask him before adding it.** A drag-driven
-  page turn is doable with pointer events and the Web Animations API, which is what the book already
-  uses and what costs nothing.
+- ✅ **`framer-motion` IS APPROVED AND ALREADY INSTALLED** — his answer, 2026-09-01: *"yes u can add
+  framer motion"*. It is `^13.1.1` in `package.json`, and the build plus both check suites were run
+  after installing it, so the tree is clean before a single line of book code is written. **Nothing
+  imports it yet.**
+  ⚠️ **Lite Mode still has to win.** `liteOn()` and `reduced()` already skip the book's animation
+  entirely, and that must stay true — he keeps Lite Mode for cheap Android phones, and a drag
+  handler that ignores it puts the cost straight back. Wire the new motion behind the same two
+  switches the old one used.
 
 **What survives from the current book and must not be lost:** the ribbon column (17 sections, the
 only way to change section on a phone) · two cards a page on a phone so nothing runs off the bottom
