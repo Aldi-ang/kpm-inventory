@@ -12,9 +12,13 @@ PowerShell: `;` not `&&`. **Quote BOTH numbers.** The audit refuses to run again
 
 ## Reaching the app from his phone — settled, do not re-derive
 
-PC holds **192.168.1.143** (cable) and **192.168.1.144** (Wi-Fi), reserved on the router by MAC and
-registered in Firebase. `npm run dev` is **https only**: `https://192.168.1.144:5173`, tap through
-the self-signed warning. **A change needs two reloads on the phone.** His test phone is an
+⚠️ **THE PC IS ON TWO DIFFERENT NETWORKS, and only one of them is the one that was set up.**
+Ethernet: **192.168.1.143**, gateway 192.168.1.1 — reserved by MAC and registered in Firebase.
+Wi-Fi: **192.168.100.155**, gateway **192.168.100.1** — a DIFFERENT router, no reservation, not in
+Firebase. `192.168.1.144` no longer exists; it was the Wi-Fi address before the adapter joined the
+other network, and a phone pointed at it gets a white screen. **Read `ipconfig` before quoting an
+address; the reservation covers one router only.** `npm run dev` is **https only** —
+`https://192.168.1.143:5173`, tap through the self-signed warning. **A change needs two reloads on the phone.** His test phone is an
 **iPhone**, so camera barcode scanning is impossible there — the typed shipment number is that path.
 
 Ponder lab: `npx vite build --config tools/ponder-lab.config.mjs; python -m http.server 4187 -d dist-ponderlab`,
