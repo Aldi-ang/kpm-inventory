@@ -38,6 +38,15 @@ export const regionalWarehouse = {
     { text: '**Incoming** — barang yang sedang jalan ke gudang cabang. Angka di sebelahnya hanya menghitung yang belum selesai, jadi angkanya turun setelah barang dihitung.',
       focus: 'tab:incoming', at: 'near', tone: 'gold', hold: 6000 },
 
+    { text: 'Begitu kardus sampai di pintu gudang, **Scan barang sampai** membaca barcode di label kiriman. Satu scan, dan HQ langsung tahu barangnya sudah mendarat.',
+      focus: 'tab:incoming', at: 'near', tone: 'gold', hold: 6400 },
+
+    { text: '🔴 Scan hanya berarti **kardusnya sudah ada di gudang** — bukan berarti isinya sudah benar. Stok belum bertambah sampai barangnya dihitung.',
+      focus: 'tab:incoming', at: 'near', tone: 'gold', hold: 6600 },
+
+    { text: 'Kalau kamera tidak jalan atau labelnya rusak, nomor kiriman bisa diketik. Barang yang sudah sampai harus tetap bisa dicatat sampai, apa pun keadaan HP-nya.',
+      focus: 'tab:incoming', at: 'near', hold: 6000 },
+
     { text: 'Di tab itu juga **barang datang dihitung**. Jumlah kiriman HQ sengaja disembunyikan sampai hitungan gudang selesai — supaya angka HQ tidak menuntun hitungan itu.',
       focus: 'tab:incoming', at: 'near', hold: 6200 },
 

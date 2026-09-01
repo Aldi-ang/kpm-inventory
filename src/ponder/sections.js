@@ -44,7 +44,7 @@ export const SECTIONS = [
          BRANCH admin sees on this screen, and it does not render for HQ at all. So there is no one
          order that is true for both readers. It sits last because the three above are HQ's, and HQ
          is who opens this book most. */
-      { sceneId: 'regional-warehouse', title: 'Regional Warehouse', desc: 'Meja gudang cabang: lima tab, alamat yang terkunci, dan data induk yang cuma bisa dibaca.', icon: 'Warehouse' },
+      { sceneId: 'regional-warehouse', title: 'Regional Warehouse', desc: 'Meja gudang cabang: lima tab, scan barang sampai, alamat yang terkunci, dan data induk yang cuma bisa dibaca.', icon: 'Warehouse' },
     ],
   },
   {
