@@ -1,6 +1,6 @@
 # NEXT SESSION — read this, then `.claude/PROGRESS.md`. Read no code to orient.
 
-**Written 2026-09-01 09:20 WIB. 680/680 audit · 970/970 selfcheck. Branch `phase0-solid-ground`.**
+**Written 2026-09-01 10:15 WIB. 688/688 audit · 970/970 selfcheck. Branch `phase0-solid-ground`.**
 
 ## First command
 
@@ -17,8 +17,12 @@ npx vite build --config tools/ponder-lab.config.mjs; python -m http.server 4187 
 ```
 
 `?gudang` the regional warehouse desk (`&tier=AREA_ADMIN` for the HQ case) · `?places` the Master
-Vault desk · `?nota` the surat jalan · `?scene=regional-warehouse&step=N` the new tutorial.
-Add `&light`, `&lite`, `&probe`.
+Vault desk · `?nota` the surat jalan · `?label` the printed shipment label · `?scan` the arrival
+scanner · `?scene=regional-warehouse&step=N` the tutorial. Add `&light`, `&lite`, `&probe`.
+
+**`?label&probe` is the barcode's only offline proof.** It asserts `modules = 11·S + 2` and
+`bars = 3·S + 1` on the same S — true of every valid Code 128 regardless of pattern table. It is
+proof of SHAPE, not of scannability; only a phone pointed at printed paper settles that.
 
 ⚠️ **The frame lies, and it lied again today.** A tutorial highlight looked like it spanned the
 whole tab row; measured, it was 1107→1237 against a tab at 1113→1231 — the wide box was the stage
@@ -65,6 +69,15 @@ reason their green means anything.
 
 <details>
 <summary>Queued — do not start these</summary>
+
+- 🔴 **ALDI MUST PRINT ONE LABEL AND SCAN IT WITH HIS ANDROID PHONE.** Nothing in this repo can
+  prove a barcode scans — `BarcodeDetector` is absent from every browser available here. Until he
+  does that, the feature is verified in shape only. If it fails, the first thing to check is the
+  printed size: the symbol needs its 12px quiet zone intact and must not be scaled down by the
+  printer's "fit to page".
+- **An arrived box that is never counted has no alert.** The 3-day flag now correctly ignores
+  scanned-in boxes, but nothing yet warns that a box has sat ARRIVED and uncounted for days. That
+  is a different alert from the one that existed, and it was deliberately not invented today.
 
 - **The two colour faults, still app-wide.** **90 uncoloured `placeholder=` in 18 files** (falling
   back to the browser's `rgb(156,163,175)`, which is slate — 1,36:1 on the light well) and **~107

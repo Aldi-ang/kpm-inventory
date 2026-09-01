@@ -1,6 +1,37 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-09-01 09:20 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **680/680 audit · 970/970 selfcheck** · branch `phase0-solid-ground`
+**Updated: 2026-09-01 10:15 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **688/688 audit · 970/970 selfcheck** · branch `phase0-solid-ground`
+
+## 🟠 2026-09-01 10:15 — THE SHIPMENT HAS A BARCODE. `007bb60` + `78772e3`, **688/688 + 970/970**.
+
+*"i want u to add barcode to scan and print for restock vault so that when it scanned it can auto
+confirm that the shipment is arrived"* — then, choosing between the two meanings of "arrived"
+himself: *"the scan said that the shipment is arrived but the blind counting on the shipment should
+still be exist"*.
+
+**The research answered first, and two notes only LOOKED contradictory.** The Eight Warehouse Gaps
+rejects *"barcode scanning (no barcodes on the products, settled)"*; Logistics and Stock Movement
+approves *"Scanner: barcode only… Rp 0"*. Different things: the rejected idea was scanning codes
+already on kretek packs. This one the app prints itself.
+
+**Outbound shipments had no printable paper at all** — only the inbound factory nota did — so there
+was nothing to scan. `ShipmentLabel` prints route, date, KINDS, product names and a Code 128 of the
+delivery id. **No quantities, ever**: a total on the slip in the counter's hand turns the blind
+count into copying.
+
+**The scan writes `arrivedAt`, `arrivedBy` and one timeline line. Nothing else.** Status stays
+IN_TRANSIT, the box stays in Incoming, stock moves only on the count. Group 58 bans `increment(`,
+`DELIVERED`, `receivedItems` and any status write in the payload. Two things fall out: HQ can now
+read *"Sampai — belum dihitung"* apart from *"Di jalan"*, and the 3-day late flag stops crying wolf
+on a box already in the warehouse.
+
+⚠️ **THE ENCODER IS A LIBRARY ON PURPOSE, AND THE PROOF IS PARTIAL.** `BarcodeDetector` is an
+Android Chrome API, measured absent here, so the barcode cannot be decoded in this environment.
+`?label&probe` asserts the structure instead — `modules = 11·S + 2`, `bars = 3·S + 1`, same S —
+which measured 167 / 15 / 46 and holds. **That is proof of shape, not of scannability.**
+
+🔴 **WAITING ON ALDI — one physical test.** Print one label, scan it with the Android phone.
+Nothing in this repo can settle that.
 
 ## 🟠 2026-09-01 09:20 — HE CLOSED THE RELABELLING JOB WITHOUT DOING IT. No code changed.
 
