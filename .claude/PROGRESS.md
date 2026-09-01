@@ -1,6 +1,38 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-09-01 18:10 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **702/702 audit · 977/977 selfcheck** · branch `phase0-solid-ground`
+**Updated: 2026-09-01 19:05 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **702/702 audit · 977/977 selfcheck** · branch `phase0-solid-ground`
+
+## ⚪ 2026-09-01 18:07 — SIDE SESSION (7 Days to Die modding). No KPM file touched.
+
+Not a KPM entry. Logged only so the Stop hook's mtime check has an honest answer: the modified
+`src/ponder/stages/StockByWarehouseTable.jsx` is the parallel 🟠 KPM session's in-flight edit,
+and this session neither made it nor knows its state. Nothing above or below was rewritten.
+Vault: `A-Brain/Wiki/Concepts/7 Days to Die Mod Load Order.md`.
+
+## 🟠 2026-09-01 19:05 — THE NAMES GET THEIR ROOM, THE RING GOES ORANGE. **702/702 + 977/977**.
+
+*"take more space its okay"* — the Stock by Warehouse name column was `minmax(0,1fr)` with `truncate`
+on both names, so a narrow desk cut the part that tells two products apart. It is
+`minmax(260px,max-content)` now and the table's own side slider pays for it. `min-w-0` came off with
+the truncate; leaving it in re-enables the squeeze. Measured at 1440 with a drawer open: nothing
+clipped, 1196px of content in a 1022px window.
+
+*"i want the highlight to be clearer to see"* — the Ponder ring was `border-line-3`, the grey used
+for table rules. It has its own map now, `TONE_RING`, and reads orange at 2px. A spotlight shadow was
+tried first, did not take, and was deleted rather than left in as a dead class.
+
+**Two existing guards went red first and both were right.** The audit pinned the ring to `TONE_EDGE`
+by name; it now pins `TONE_RING` and also asserts neither map carries a `bg-`, which is the real
+rule. The selfcheck pinned the grid's first track; it now pins the widened one.
+
+🔴 **HIS OPEN QUESTION, answered in chat, not yet built:** phone Ponder vs a camera that follows
+the highlight. **The recommendation is the follow-camera, one Ponder for both widths** — a second
+phone tutorial is a second thing to keep in step with every UI change, and the highlight's rect is
+already measured, so following it is a few lines. **He has not said yes yet.**
+
+🔴 **WAITING ON ALDI — four.** The follow-camera go-ahead · whether both Wi-Fi networks stay in
+use (the 192.168.100.1 router has no reservation and no Firebase entry) · the label print-and-scan
+test, still owed · the G1+G2 staleness threshold in days.
 
 ## 🟠 2026-09-01 18:10 — THE ACCESS DENIED FLASH IS DIAGNOSED AND FIXED. **702/702 + 977/977**.
 
