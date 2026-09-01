@@ -1,6 +1,6 @@
 # NEXT SESSION — read this, then `.claude/PROGRESS.md`. Read no code to orient.
 
-**Written 2026-09-01 20:05 WIB. 705/705 audit · 977/977 selfcheck. Branch `phase0-solid-ground`.**
+**Written 2026-09-01 20:35 WIB. 705/705 audit · 977/977 selfcheck. Branch `phase0-solid-ground`.**
 
 ## First command
 
@@ -74,25 +74,14 @@ give the ponder lab a role too or `?book` stops rendering.
 
 **Pin both in group 56.**
 
-- 🔴 **THE BOOK'S CLOSE ON A PHONE IS STILL WRONG, and he has described the fault precisely:**
-  *"there is no cover in the book bruv, there is animation from the right side going left but there
-  is left side going right and they found in the middle, the book doesnt look natural at all"*.
-
-  **He is right, and the diagnosis follows from the code without needing to watch it.** TWO things
-  move during a phone close and they travel toward each other:
-    1. the leaf (`leafRef`) is the WHOLE page on a phone, hinged at its LEFT edge, turning to
-       `rotateY(-90deg)` — it swings away from the left, so its free right edge sweeps LEFTWARD;
-    2. the cover (`slabRef`) clips from `SLAB_OPEN` to `SLAB_SHUT_SPINE`, a 30px strip on the LEFT
-       — so its right edge sweeps leftward too, but from the far right, at a different rate.
-  Two edges closing in on the middle from opposite sides is exactly what he saw. And his first
-  clause is the real point: **there is no cover drawn on a phone at all**, so animating one is
-  animating a thing that is not there.
-
-  **The fix is to make ONE thing move.** On a phone drop the slab animation entirely (leave the
-  cover at `SLAB_OPEN`, or do not render it below `lg`) and let the page alone turn edge-on into the
-  spine. Check what the leather actually paints on a phone first — `coverLeft` is 82 there, so it may
-  be showing as a frame around the page rather than as a cover, which would be its own fault.
-  ⚠️ Verify by WATCHING it, not from a still. He is the device.
+- **The phone book close: the second moving edge is gone; the page turn itself is unjudged.** He
+  reported *"there is no cover in the book bruv ... they found in the middle"*, and he was right on
+  both counts — the cover clip was closing in from the right while the page turned away from the
+  left, and a phone draws no cover to begin with (the leather there is the board behind the single
+  page). The clip no longer animates below `lg`; measured holding at `inset(0px round 14px)` across
+  a whole close. **What nobody has measured is how the page's own turn reads.** If he says it is
+  still wrong, the remaining suspects are the `-90deg` end angle and the two shade planes fading on
+  top of a `preserve-3d` layer. ⚠️ Ask him to watch it; a still frame cannot prove a motion.
 
 <details>
 <summary>Queued — do not start these</summary>

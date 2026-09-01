@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-09-01 20:05 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **705/705 audit · 977/977 selfcheck** · branch `phase0-solid-ground`
+**Updated: 2026-09-01 20:35 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **705/705 audit · 977/977 selfcheck** · branch `phase0-solid-ground`
 
 ## ⚪ 2026-09-01 18:07 — SIDE SESSION (7 Days to Die modding). No KPM file touched.
 
@@ -8,6 +8,25 @@ Not a KPM entry. Logged only so the Stop hook's mtime check has an honest answer
 `src/ponder/stages/StockByWarehouseTable.jsx` is the parallel 🟠 KPM session's in-flight edit,
 and this session neither made it nor knows its state. Nothing above or below was rewritten.
 Vault: `A-Brain/Wiki/Concepts/7 Days to Die Mod Load Order.md`.
+
+## 🟠 2026-09-01 20:35 — ONE THING MOVES ON A PHONE NOW. **705/705 + 977/977**.
+
+*"there is no cover in the book bruv, there is animation from the right side going left but there is
+left side going right and they found in the middle"*. **Both halves of that were right.** Two edges
+were converging — the page turning about its left hinge and the cover clip closing in from the far
+right — and a phone draws no cover in the first place. The leather there is the board BEHIND the
+single page, so animating its clip animated something he was not looking at.
+
+The clip no longer animates below `lg`. **Measured across a whole close: it holds at
+`inset(0px round 14px)`, every sample.** The desk keeps its cover swing, where the leather really
+is a flap over a left page.
+
+⚠️ **The page's own turn is still unjudged.** The harness could not fire the close from outside the
+component, and a still frame cannot prove a motion anyway. He is the one watching it.
+
+🔴 **HE WANTS THE REGIONAL WAREHOUSE PONDER NEXT, "ASAP"** — the brief's one job: a stage that
+renders the controls the scene names, and per-entry tier gating. It is a build and it wants a fresh
+window.
 
 ## 🟠 2026-09-01 20:05 — THE BOOK CLOSES TO ITS SPINE ON A PHONE. **705/705 + 977/977**.
 
