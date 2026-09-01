@@ -74,14 +74,25 @@ give the ponder lab a role too or `?book` stops rendering.
 
 **Pin both in group 56.**
 
-- 🔴 **IF HE SAYS THE BOOK'S CLOSE STILL STUTTERS ON THE PHONE, that is the first thing to look
-  at, and it is a different fault from the geometry.** The shape is fixed and measured: the leaf
-  stops edge-on at -90° about its own left-edge spine and the cover clips to a 30px strip
-  (`SLAB_SHUT_SPINE`), verified from the computed `clip-path` after a real close. What is NOT
-  verified is the feel. The suspects, in order: the leaf carries `preserve-3d` under a 1500px
-  `perspective` and both shade planes animate `opacity` on top of it, which is three composited
-  layers on a phone GPU for one gesture. Try dropping the shades on narrow widths before touching
-  the timing. ⚠️ **A still frame cannot prove a motion — ask him to watch it, do not claim it.**
+- 🔴 **THE BOOK'S CLOSE ON A PHONE IS STILL WRONG, and he has described the fault precisely:**
+  *"there is no cover in the book bruv, there is animation from the right side going left but there
+  is left side going right and they found in the middle, the book doesnt look natural at all"*.
+
+  **He is right, and the diagnosis follows from the code without needing to watch it.** TWO things
+  move during a phone close and they travel toward each other:
+    1. the leaf (`leafRef`) is the WHOLE page on a phone, hinged at its LEFT edge, turning to
+       `rotateY(-90deg)` — it swings away from the left, so its free right edge sweeps LEFTWARD;
+    2. the cover (`slabRef`) clips from `SLAB_OPEN` to `SLAB_SHUT_SPINE`, a 30px strip on the LEFT
+       — so its right edge sweeps leftward too, but from the far right, at a different rate.
+  Two edges closing in on the middle from opposite sides is exactly what he saw. And his first
+  clause is the real point: **there is no cover drawn on a phone at all**, so animating one is
+  animating a thing that is not there.
+
+  **The fix is to make ONE thing move.** On a phone drop the slab animation entirely (leave the
+  cover at `SLAB_OPEN`, or do not render it below `lg`) and let the page alone turn edge-on into the
+  spine. Check what the leather actually paints on a phone first — `coverLeft` is 82 there, so it may
+  be showing as a frame around the page rather than as a cover, which would be its own fault.
+  ⚠️ Verify by WATCHING it, not from a still. He is the device.
 
 <details>
 <summary>Queued — do not start these</summary>
