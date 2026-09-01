@@ -443,10 +443,26 @@ function Library({ anchorRef, initialSection, onClose, onPick, closeOnMount = fa
           T.leafOpen, T.leafOpenDelay);
     shade(shadeBackRef.current, [{ opacity: 0 }, { opacity: 0.55, offset: 0.55 }, { opacity: 0.75 }],
           T.leafOpen, T.leafOpenDelay);
-    slabRef.current?.animate([{ clipPath: slabShutTo }, { clipPath: SLAB_OPEN }],
-      { duration: T.leafOpen, delay: T.leafOpenDelay, easing: HINGE, fill: 'both' });
+    /* 🔴 ONE THING MOVES ON A PHONE, AND IT IS THE PAGE. Aldi, 2026-09-01, watching the close:
+       *"there is no cover in the book bruv, there is animation from the right side going left but
+       there is left side going right and they found in the middle, the book doesnt look natural at
+       all"*.
+
+       He described it exactly. Two edges were travelling: the page turning about its left hinge,
+       its free edge sweeping leftward, and the cover clip closing in from the far right on a
+       different clock. Two edges converging on the middle is not a book, it is a shutter.
+
+       And his first clause is the real point. A phone draws no cover to animate — the leather is
+       the board BEHIND the single page there, not a flap over it — so animating its clip was
+       animating something that is not the thing he is looking at. The board stays put now and the
+       page alone turns edge-on into the spine. The desk keeps its cover and its clip: there the
+       leather really is a cover, and it really does swing. */
+    if (!narrow) {
+      slabRef.current?.animate([{ clipPath: slabShutTo }, { clipPath: SLAB_OPEN }],
+        { duration: T.leafOpen, delay: T.leafOpenDelay, easing: HINGE, fill: 'both' });
+    }
     scrimRef.current?.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 300, easing: 'ease-out', fill: 'both' });
-  }, [still, flightFrom, leafShutTo, slabShutTo]);
+  }, [still, flightFrom, leafShutTo, slabShutTo, narrow]);
 
   const shut = useCallback(() => {
     if (closingRef.current) return;
@@ -467,8 +483,10 @@ function Library({ anchorRef, initialSection, onClose, onPick, closeOnMount = fa
     );
     shade(shadeFrontRef.current, [{ opacity: 0 }, { opacity: 0.62 }], T.leafShut, 0);
     shade(shadeBackRef.current, [{ opacity: 0.75 }, { opacity: 0 }], T.leafShut, 0);
-    slabRef.current?.animate([{ clipPath: SLAB_OPEN }, { clipPath: slabShutTo }],
-      { duration: T.leafShut, easing: HINGE, fill: 'both' });
+    if (!narrow) {
+      slabRef.current?.animate([{ clipPath: SLAB_OPEN }, { clipPath: slabShutTo }],
+        { duration: T.leafShut, easing: HINGE, fill: 'both' });
+    }
     /* ...and only once it is shut does it go back to the shelf. */
     const anim = el.animate(
       [{ transform: FLAT }, { transform: from }],
@@ -476,7 +494,7 @@ function Library({ anchorRef, initialSection, onClose, onPick, closeOnMount = fa
     );
     anim.onfinish = onClose;
     anim.oncancel = onClose;
-  }, [onClose, flightFrom, closeOnMount, leafShutTo, slabShutTo]);
+  }, [onClose, flightFrom, closeOnMount, leafShutTo, slabShutTo, narrow]);
 
   /* Mounted purely to close. A layout effect rather than a plain one, so the shut starts in the
      same frame the spread is painted — a plain effect gives one frame of a book sitting open and
