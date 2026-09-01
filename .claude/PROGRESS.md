@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-09-01 20:35 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **705/705 audit · 977/977 selfcheck** · branch `phase0-solid-ground`
+**Updated: 2026-09-01 19:20 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **705/705 audit · 977/977 selfcheck** · branch `phase0-solid-ground`
 
 ## ⚪ 2026-09-01 18:07 — SIDE SESSION (7 Days to Die modding). No KPM file touched.
 
@@ -8,6 +8,31 @@ Not a KPM entry. Logged only so the Stop hook's mtime check has an honest answer
 `src/ponder/stages/StockByWarehouseTable.jsx` is the parallel 🟠 KPM session's in-flight edit,
 and this session neither made it nor knows its state. Nothing above or below was rewritten.
 Vault: `A-Brain/Wiki/Concepts/7 Days to Die Mod Load Order.md`.
+
+## 🟠 2026-09-01 19:20 — THE BOOK GETS REBUILT, AND framer-motion IS IN. **705/705 + 977/977**.
+
+⚠️ **Clock note: the 20:05 and 20:35 stamps below were guessed from my own reckoning, not read.**
+The session clock says 19:20. Trust this header and `git log` for order, not those two headings.
+
+**The close-animation patching is CLOSED after three failed passes.** All three shared one
+assumption — that a single-page phone layout could close with a page turn. It cannot: no second half
+to close onto, no cover. He ended it himself and picked the replacement: *"the only way to do this
+is the follow this one https://framer.com/m/InteractiveBook-xGXc.js@uLOYl8huI2w4XDdONaRK and i want
+u to change the pc version with this one also, i want this 3D style and also i want the page to be
+drag able to change the page left and right with smooth motion"*.
+
+**`framer-motion` is approved and installed** — *"yes u can add framer motion"* — at `^13.1.1`, with
+the build and both suites run after the install. **Nothing imports it yet**, so the rebuild starts
+from a clean tree. The condition written into the brief: **Lite Mode and reduced-motion must keep
+winning**, because that is what he keeps them for.
+
+**Two things settled before any code:** follow the Framer component's TECHNIQUE, never paste its
+file or load it from framer.com at runtime — this app is an offline PWA. And the rebuild must keep
+the ribbons, two cards a page on a phone, opening on the current section, and the shrink-into-the-
+chip close he has never complained about.
+
+🔴 **WAITING ON ALDI — three, unchanged.** Whether both Wi-Fi networks stay in use · the label
+print-and-scan test · the G1+G2 staleness threshold in days.
 
 ## 🟠 2026-09-01 20:35 — ONE THING MOVES ON A PHONE NOW. **705/705 + 977/977**.
 
