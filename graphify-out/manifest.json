@@ -20,8 +20,8 @@
     "semantic_hash": ""
   },
   "package.json": {
-    "mtime": 1787706314.8181863,
-    "ast_hash": "d2a0a0703dc340e73dcdfa3166aed1c1",
+    "mtime": 1788265191.6205487,
+    "ast_hash": "a862be038887aea703bec35b88454b0a",
     "semantic_hash": ""
   },
   "postcss.config.js": {
@@ -50,8 +50,8 @@
     "semantic_hash": ""
   },
   "src/App.jsx": {
-    "mtime": 1788145047.4143376,
-    "ast_hash": "2a548f1fa248966fbaf84186bd66c7c9",
+    "mtime": 1788260406.9444985,
+    "ast_hash": "957fe378b5c8bc9b1ade4b92faff879d",
     "semantic_hash": ""
   },
   "src/ConsignmentFinanceView.jsx": {
@@ -95,8 +95,8 @@
     "semantic_hash": ""
   },
   "src/RestockVaultView.jsx": {
-    "mtime": 1788179205.2980044,
-    "ast_hash": "b06acfe94d82b2f7da5d3dae808fbfdb",
+    "mtime": 1788250712.5188084,
+    "ast_hash": "d12440f55c06f911348c490f9ca3c014",
     "semantic_hash": ""
   },
   "src/StockOpnameView.jsx": {
@@ -110,13 +110,13 @@
     "semantic_hash": ""
   },
   "src/components/BiohazardTheme.jsx": {
-    "mtime": 1788175460.1021304,
-    "ast_hash": "2edf94f584afbf68b64f007dbde210b5",
+    "mtime": 1788246240.0667105,
+    "ast_hash": "368f3a4447dc919657d3fcb34b16a784",
     "semantic_hash": ""
   },
   "src/components/BranchWarehouseManager.jsx": {
-    "mtime": 1788142568.6960926,
-    "ast_hash": "601da5c982f2e5d2f27badba266b978b",
+    "mtime": 1788240935.0211565,
+    "ast_hash": "6a105fb1087260cc39bf6ff458cfcb31",
     "semantic_hash": ""
   },
   "src/components/CapybaraMascot.jsx": {
@@ -195,8 +195,8 @@
     "semantic_hash": ""
   },
   "src/config/permissions.js": {
-    "mtime": 1788178595.7300282,
-    "ast_hash": "8f30feb47c1ab462764d582560c4ca09",
+    "mtime": 1788225243.331644,
+    "ast_hash": "e558baff45504248bf9c7884d82a1812",
     "semantic_hash": ""
   },
   "src/hooks/useDatabaseSync.js": {
@@ -225,8 +225,8 @@
     "semantic_hash": ""
   },
   "src/utils/helpers.js": {
-    "mtime": 1787712077.8082068,
-    "ast_hash": "11027acc7560a4c6f484d26c3e58073b",
+    "mtime": 1788260406.9404967,
+    "ast_hash": "a8358a93c300a28eecb609ff557e4790",
     "semantic_hash": ""
   },
   "tailwind.config.js": {
@@ -540,8 +540,8 @@
     "semantic_hash": ""
   },
   "src/config/integration.audit.mjs": {
-    "mtime": 1788144939.6624331,
-    "ast_hash": "009ed05b6c3c0dc803c8cbcf5e00672c",
+    "mtime": 1788267474.5450408,
+    "ast_hash": "76eb92ebd1d70a3281419ced25d5a0b0",
     "semantic_hash": ""
   },
   "src/config/nextStop.selfcheck.mjs": {
@@ -570,8 +570,8 @@
     "semantic_hash": ""
   },
   ".claude/PROGRESS.md": {
-    "mtime": 1788178917.0705295,
-    "ast_hash": "990498deb244c8e085e4ceea34092a6b",
+    "mtime": 1788265271.0246296,
+    "ast_hash": "9ab4618f65b189fdfd69dba7685f4758",
     "semantic_hash": ""
   },
   ".claude/pre-compact-context.md": {
@@ -755,13 +755,13 @@
     "semantic_hash": ""
   },
   "src/config/logicFixes.selfcheck.mjs": {
-    "mtime": 1788179255.1168056,
-    "ast_hash": "228bdb5a824f40931b37c6b62639ab5a",
+    "mtime": 1788266996.5742948,
+    "ast_hash": "92d722ec8df6a48af0dbcc7f72be59c7",
     "semantic_hash": ""
   },
   ".claude/NEXT-SESSION.md": {
-    "mtime": 1788178928.2559211,
-    "ast_hash": "28eb4eb5ea5e70859a31757772b54255",
+    "mtime": 1788265270.8508027,
+    "ast_hash": "8e928c83e33654b01dd79581e3d45b7b",
     "semantic_hash": ""
   },
   ".claude/SWEEP-2026-08-19.md": {
@@ -810,13 +810,13 @@
     "semantic_hash": ""
   },
   "src/ponder/PonderOverlay.jsx": {
-    "mtime": 1788141557.2140293,
-    "ast_hash": "a7f4fe086b088428b95936b82d6b5711",
+    "mtime": 1788261351.193524,
+    "ast_hash": "b4a9a56c46744334eeee88c1716499fc",
     "semantic_hash": ""
   },
   "src/ponder/registry.js": {
-    "mtime": 1788060620.9257827,
-    "ast_hash": "34a4e43d1f736d243fe3647be67d36fb",
+    "mtime": 1788226002.2141497,
+    "ast_hash": "4c090537f8e3d207335d3e2959635a8d",
     "semantic_hash": ""
   },
   "src/ponder/scenes/stock-by-warehouse.js": {
@@ -830,13 +830,13 @@
     "semantic_hash": ""
   },
   "tools/ponder-lab.config.mjs": {
-    "mtime": 1787807402.7298808,
-    "ast_hash": "2e9621fc970a851be860a1fa9e318e3f",
+    "mtime": 1788222937.4921632,
+    "ast_hash": "1a2143dfbc840b21c4236df428f1bb70",
     "semantic_hash": ""
   },
   "tools/ponder-lab.jsx": {
-    "mtime": 1788178774.8255196,
-    "ast_hash": "c96cde4e70e373600e7b244a7b0f9999",
+    "mtime": 1788248468.2063508,
+    "ast_hash": "ad33bc2435b6b20515e5a676a33eb899",
     "semantic_hash": ""
   },
   ".claude/PONDER-PLAN.md": {
@@ -850,8 +850,8 @@
     "semantic_hash": ""
   },
   "src/ponder/PonderBook.jsx": {
-    "mtime": 1788142292.8270988,
-    "ast_hash": "96cd48154bec44e3df098f6d2ca8ad38",
+    "mtime": 1788267591.7145915,
+    "ast_hash": "b3d7a247de48d44705ffc412ddfc11ba",
     "semantic_hash": ""
   },
   "src/ponder/demo/warehouses.js": {
@@ -860,8 +860,8 @@
     "semantic_hash": ""
   },
   "src/ponder/sections.js": {
-    "mtime": 1788060620.9257827,
-    "ast_hash": "09336cee13a68c003bb99ec20087683e",
+    "mtime": 1788263580.9368453,
+    "ast_hash": "fdf93b1994ced15d3f7992753e8beb64",
     "semantic_hash": ""
   },
   "src/ponder/sfx.js": {
@@ -870,8 +870,8 @@
     "semantic_hash": ""
   },
   "src/ponder/stages/StockByWarehouseTable.jsx": {
-    "mtime": 1788057728.677008,
-    "ast_hash": "419ee232ed023575a9fbac4cfc024d4a",
+    "mtime": 1788260756.0166316,
+    "ast_hash": "1f2fdcace9b509bc9cada2ecfce69650",
     "semantic_hash": ""
   },
   "src/ponder/stages/StockStage.jsx": {
@@ -880,8 +880,8 @@
     "semantic_hash": ""
   },
   "src/ponder/scenes/goods-received.js": {
-    "mtime": 1788059127.4300468,
-    "ast_hash": "d6a61d5dd33f27bedc2ed73a3f2d3e4b",
+    "mtime": 1788226244.3396485,
+    "ast_hash": "2f1e0c505507c19966dcf4fcf1c44a2d",
     "semantic_hash": ""
   },
   "src/ponder/stages/GoodsReceivedStage.jsx": {
@@ -967,6 +967,46 @@
   "src/components/AcceptanceReceipt.jsx": {
     "mtime": 1788178663.8622203,
     "ast_hash": "13a8fca03787368b456f552162c0c52f",
+    "semantic_hash": ""
+  },
+  "src/components/ArrivalScanner.jsx": {
+    "mtime": 1788227964.053228,
+    "ast_hash": "b4436b381fb5fe077f05b96a2bc3502a",
+    "semantic_hash": ""
+  },
+  "src/components/Lamp.jsx": {
+    "mtime": 1788225252.0488641,
+    "ast_hash": "80a2c91cc08118e99ff5f12b6c9c5640",
+    "semantic_hash": ""
+  },
+  "src/components/ShipmentLabel.jsx": {
+    "mtime": 1788227934.3255403,
+    "ast_hash": "8c79b46c25a2a2ef3ccf3ef6b4aa9d15",
+    "semantic_hash": ""
+  },
+  "src/components/WarehouseDeskNav.jsx": {
+    "mtime": 1788225921.0374923,
+    "ast_hash": "5e09a54d9c0697b3227e36d818182097",
+    "semantic_hash": ""
+  },
+  "src/ponder/pageModel.js": {
+    "mtime": 1788266726.7613716,
+    "ast_hash": "c51cd407fd0653a71174a934da29875b",
+    "semantic_hash": ""
+  },
+  "src/ponder/scenes/regional-warehouse.js": {
+    "mtime": 1788263580.9368453,
+    "ast_hash": "026471ac283e6c98e0632ca609be611a",
+    "semantic_hash": ""
+  },
+  "src/ponder/stages/RegionalWarehouseStage.jsx": {
+    "mtime": 1788225987.0164168,
+    "ast_hash": "665ae625232b371b8111a80996ed4077",
+    "semantic_hash": ""
+  },
+  "tools/lab-firestore-stub.js": {
+    "mtime": 1788222930.153272,
+    "ast_hash": "c766d00591e563da0ef4c50dd931b2fb",
     "semantic_hash": ""
   }
 }

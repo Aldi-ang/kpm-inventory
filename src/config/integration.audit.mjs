@@ -4664,6 +4664,58 @@ check(G56, 'the book flies from the chip that opened it, and back into it',
   'Animations API, which starts when called. A state flag flipped inside a requestAnimationFrame ' +
   'already rendered this book at opacity 0 once, with nothing thrown and every check green');
 
+/* 🔴 THE PAGE TURN IS A REAL SHEET, AND THESE FOUR LINES ARE WHAT MAKE IT ONE. His instruction,
+   2026-09-01, naming the component he wanted followed: *"i want this 3D style and also i want the
+   page to be drag able to change the page left and right with smooth motion"*.
+
+   Every one of these is invisible when it breaks — the turn still plays, it just stops being paper:
+   drop `backface-visibility` and the reader sees the next page mirrored through the sheet; drop the
+   0.01px on the back face and the two faces z-fight into a flicker on a sheet lying flat; drop
+   `preserve-3d` on the PARENT and the whole rotation flattens into a horizontal squash, which is
+   the exact fault he rejected on 2026-08-27 as *"not book logic"*; drop the z-index lift and the
+   moving sheet cuts through the block underneath it. A screenshot of any of them looks fine. */
+check(G56, 'a page is a two-faced sheet hinged at the spine, not a rectangle being squashed',
+  /transform: 'rotateY\(180deg\) translateZ\(0\.01px\)'/.test(bookSrc) &&
+  /* BOTH faces of the sheet, and the cover's own face, which is wrapped onto a second line and so
+     needs the whitespace-tolerant match rather than a third hit on the one above. */
+  (bookSrc.match(/backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden'/g) || []).length >= 2 &&
+  /background: LEATHER, transform: 'rotateY\(180deg\)', backfaceVisibility: 'hidden',\s*\n\s*WebkitBackfaceVisibility: 'hidden'/.test(bookSrc) &&
+  /transformOrigin: 'left center', transformStyle: 'preserve-3d'/.test(bookSrc) &&
+  /transform: `translateZ\(\$\{zOf\(k, flipped\)\}px\) rotateY\(\$\{flipped \? FLIP : 0\}deg\)`/.test(bookSrc) &&
+  /* 🔴 AND FLIP IS THE ONE NUMBER THAT DIFFERS BETWEEN THE WIDTHS. A phone spine is the stage's
+     LEFT edge, so a sheet sent to -180 lies a whole page OUTSIDE the book — it rendered as a cream
+     slab standing over the ribbon column and the scrim, measured at 375x812 the first time the
+     stack was looked at there. -90 stops it edge-on, in the spine, which is the geometry the cover
+     already uses on a phone and the one he accepted. */
+  /const FLIP = spread \? -180 : -90;/.test(bookSrc) &&
+  /zIndex: flipped \? k : leaves\.length - k/.test(bookSrc),
+  'each sheet needs both faces backface-hidden, the back one pre-rotated and pushed 0.01px off its ' +
+  'twin, the hinge at the spine, a Z offset per sheet for the stack thickness, and the moving ' +
+  'sheet lifted in z-index so it cannot clip through the ones below');
+
+/* 🔴 AND THE DRAG NEVER GOES THROUGH REACT STATE. A pointermove that calls setState re-renders four
+   sheets and every card on them on each frame of the gesture; on the cheap Android this app is for,
+   that is the difference between a page turning and a page stuttering. The same rule the scene
+   player's progress bar already follows, for the same reason.
+
+   The Lite guard is asserted with it because the two fail together: a drag handler that ignores
+   `still` puts every frame of cost straight back into the mode he keeps for exactly that phone. */
+/* Scoped to onMove's OWN body, and the anchors are asserted before the slice is trusted. A
+   file-wide `setTurned` search would find the settle's legitimate one, and `indexOf` returning -1
+   into `slice` reads as "to one before the end of the file" — which is how twelve checks once
+   passed against 267KB they were never meant to see. */
+const mvA = bookSrc.indexOf('const onMove = (e) => {');
+const mvB = bookSrc.indexOf('const onUp = () => {');
+const onMoveBody = mvA > -1 && mvB > mvA ? bookSrc.slice(mvA, mvB) : '';
+check(G56, 'the drag writes the transform onto the element, and Lite Mode is still allowed to win',
+  onMoveBody.length > 400 && onMoveBody.length < 2000 &&
+  !/setTurned/.test(onMoveBody) &&
+  /el\.style\.transform = `translateZ\(\$\{z\}px\) rotateY\(\$\{deg\}deg\)`/.test(bookSrc) &&
+  /const onDown = \(e\) => \{\s*if \(still \|\| e\.button > 0\) return;/.test(bookSrc) &&
+  /if \(still\) \{ bookPage\(\); setTurned\(to\); return; \}/.test(bookSrc),
+  'onMove must write style.transform directly and must never call setTurned; the gesture may not ' +
+  'start at all under Lite Mode or reduced motion, and the ‹ › must still turn the page there');
+
 /* *"the book look so bad there, its so black and small and doesnt look like a book"*. A book is
    paper, and paper does not go black in a dark room. Theme-exempt on purpose, the same exemption
    the printed nota already carries — and cream is on the palette, so no law is bent. */
@@ -4986,13 +5038,19 @@ check(G60, 'the ponder sheet takes the height of the phone, so its stage stops c
   'a half-height sheet wastes a third of the screen and crops the demo it exists to show');
 
 /* Four cards in one column ran 30px past the bottom of the screen, and scrolling inside the book
-   is banned by his own words. A book that runs out of room turns the page. */
+   is banned by his own words. A book that runs out of room turns the page.
+
+   The names moved on 2026-09-01 when the book became a stack of sheets: the reader position is a
+   SHEET count now, not a page index inside one section, because sixteen of the seventeen sections
+   are a single page and a section-scoped page index gave the drag nothing to drag to. The two
+   things this has always asserted are unchanged - two cards to a phone page, and a position that
+   cannot point past the end of the book. */
 check(G60, 'the book turns the page on a phone rather than running off the bottom',
   /const perPage = \(typeof matchMedia === 'function' && !matchMedia\('\(min-width: 640px\)'\)\.matches\) \? 2 : PER_PAGE;/.test(code(bookSrc60)) &&
-  /const safePage = Math\.min\(page, pages - 1\);/.test(code(bookSrc60)) &&
-  /\{safePage \+ 1\} \/ \{pages\}/.test(code(bookSrc60)),
+  /const safeTurn = Math\.min\(Math\.max\(turned, 1\), maxTurn\);/.test(code(bookSrc60)) &&
+  /\{safeTurn\} \/ \{maxTurn\}/.test(code(bookSrc60)),
   'PER_PAGE is 4 and the grid is one column below sm, so the fourth card lands below the fold ' +
-  'on every phone; and a stale page index would render an empty spread');
+  'on every phone; and an unclamped sheet count would render an empty spread');
 
 /* Not cosmetic: the page control only turns pages WITHIN a section, so with the ribbons hidden a
    phone could not reach another section at all. */

@@ -10,6 +10,8 @@
    A fix without a line in this file is not finished.
    Run: node src/config/logicFixes.selfcheck.mjs                                                */
 import fs from 'node:fs';
+import { SECTIONS } from '../ponder/sections.js';
+import { buildPages, maxTurnOf, turnFor, facingPage } from '../ponder/pageModel.js';
 
 let pass = 0, fail = 0;
 const read = (f) => fs.readFileSync(f, 'utf8');
@@ -4069,6 +4071,79 @@ ok('the auth handler routes a cache-only negative to the retry screen, not to th
 ok('the retry screen no longer claims the internet is down, because it might not be',
    /the connection wasn't ready, so the answer came from this device instead of from the server/.test(read('src/App.jsx')),
    'he was online both times; a message that blames his signal sends him to fix the wrong thing');
+
+section('THE TUTORIAL BOOK — where every chapter actually lands (2026-09-01)');
+
+/* His instruction, naming the component to follow: *"i want this 3D style and also i want the page
+   to be drag able to change the page left and right with smooth motion"*.
+
+   Rebuilding the book on that model moved the reader's position from "page N inside this section"
+   to "sheet N of the whole book", and that arithmetic is the one part of the rebuild a screenshot
+   cannot judge. A chapter that lands on the wrong sheet looks exactly like a chapter that lands on
+   the right one — until you press its ribbon and arrive somewhere else. Silent, and wrong for the
+   reader only.
+
+   These run the REAL section list through the REAL functions, at both widths. */
+
+/* REGRESSION GUARD — the shape that made the drag pointless must not come back.
+
+   Counted on the day: all seventeen sections hold four entries or fewer, so under the old
+   section-scoped model every chapter was exactly one page and `pages` was 1. A drag gesture over a
+   one-page section has nowhere to go, which is why the leaves became the chapters. If anyone ever
+   scopes the page list back to a section, the book stops having more than one sheet and this fails. */
+ok('the book is one run of pages, not one run per section, or the drag has nothing to drag to',
+   maxTurnOf(buildPages(SECTIONS, 4, true), true) >= SECTIONS.length &&
+   maxTurnOf(buildPages(SECTIONS, 2, false), false) >= SECTIONS.length,
+   'seventeen chapters must mean at least seventeen turnable sheets at both widths; a section-'
+   + 'scoped page list gives one, and a one-sheet book cannot be dragged anywhere');
+
+/* BEHAVIOUR CHECK — the maths, re-run on the real seventeen.
+
+   His rule since 2026-08-27: *"i want the book when press is auto redirect to the features that we
+   use right now"*. Pressing a ribbon, and opening on the screen you are standing on, are the same
+   call. So for every chapter, at both widths, the page FACING the reader after that jump has to be
+   that chapter's own cards — not the one before it, not its opening, not the endpaper. */
+for (const wide of [true, false]) {
+  const perPage = wide ? 4 : 2;
+  const pages = buildPages(SECTIONS, perPage, wide);
+  const maxTurn = maxTurnOf(pages, wide);
+  const landed = SECTIONS.map(s => facingPage(pages, wide, turnFor(pages, wide, maxTurn, s.id)));
+  const wrong = SECTIONS.filter((s, i) => !landed[i] || landed[i].k !== 'cards' || landed[i].s.id !== s.id);
+  ok(`every chapter opens on its own cards page (${wide ? 'desk' : 'phone'})`,
+     wrong.length === 0,
+     'landed somewhere else: ' + wrong.map(s => s.id).join(', '));
+
+  /* And on a desk the LEFT page of that spread is the chapter's own opening, because the spread is
+     two faces of two different sheets — the back of the one you turned, and the front of the one
+     you did not. Getting the halving wrong by one puts the reader a whole chapter out, with both
+     pages still looking perfectly like a book. */
+  if (wide) {
+    const off = SECTIONS.filter(s => {
+      const t = turnFor(pages, wide, maxTurn, s.id);
+      const left = pages[t * 2 - 1];
+      return !left || left.k !== 'chapter' || left.s.id !== s.id;
+    });
+    ok('the left page of that spread is the same chapter’s opening (desk)',
+       off.length === 0, 'out by one on: ' + off.map(s => s.id).join(', '));
+  }
+
+  /* Nobody can stand past the back cover. The endpaper is the last page, so the last turnable sheet
+     must still face a real page — a reader on `maxTurn` looking at `undefined` is a blank spread. */
+  ok(`the last turnable sheet still faces a page (${wide ? 'desk' : 'phone'})`,
+     !!facingPage(pages, wide, maxTurn) && facingPage(pages, wide, maxTurn).k !== 'cover',
+     'maxTurn points past the endpaper, which renders an empty spread');
+
+  /* Two chapters sharing a sheet would mean one of them is unreachable by ribbon. */
+  const seats = SECTIONS.map(s => turnFor(pages, wide, maxTurn, s.id));
+  ok(`no two chapters share a sheet, so every ribbon reaches its own (${wide ? 'desk' : 'phone'})`,
+     new Set(seats).size === SECTIONS.length,
+     'duplicate sheet numbers: ' + seats.join(', '));
+}
+
+/* A section id the book has never heard of — a nav tab added before its chapter is written — must
+   land on page one rather than on `undefined`, which is what `findIndex` returns to. */
+ok('an unknown section falls back to the first sheet instead of a blank spread',
+   turnFor(buildPages(SECTIONS, 4, true), true, 99, 'no_such_section') === 1);
 
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

@@ -28,6 +28,7 @@ import { X, ChevronLeft, ChevronRight, Lock,
          LayoutGrid, Map, Route, Truck, Package, Boxes, PackagePlus, Store, Receipt,
          Wallet, ClipboardList, Users, Gift, BarChart3, ScrollText, Settings, User } from 'lucide-react';
 import { SECTIONS, getScene } from './registry.js';
+import { buildPages, asLeaves, maxTurnOf, turnFor, facingPage } from './pageModel.js';
 import PonderOverlay from './PonderOverlay.jsx';
 import { bookOpen, bookPage, bookPick, bookClose } from './sfx.js';
 
@@ -303,12 +304,51 @@ export default function PonderBookButton({ activeTab }) {
 }
 
 /* ── The spread ───────────────────────────────────────────────────────────────────────────────── */
+
+/* 🔴 THE BOOK IS A STACK OF LEAVES, AND THE LEAVES ARE THE CHAPTERS.
+
+   Aldi, 2026-09-01, after three failed passes at the old close: *"the only way to do this is the
+   follow this one https://framer.com/m/InteractiveBook-xGXc.js@uLOYl8huI2w4XDdONaRK and i want u to
+   change the pc version with this one also, i want this 3D style and also i want the page to be drag
+   able to change the page left and right with smooth motion"*.
+
+   The component was fetched and read, not copied — it is someone else's asset on Framer's
+   marketplace and this app is an offline PWA that cannot load a third-party host at runtime. What
+   was taken is the TECHNIQUE, and it is four things:
+
+     1. every sheet is ONE element with TWO faces, `backface-visibility: hidden`, the back one
+        pre-rotated `rotateY(180deg) translateZ(0.01px)` — the 0.01px is what stops the two faces
+        z-fighting on a sheet lying face-on;
+     2. `transform-origin: left center` on the sheet and `preserve-3d` on it AND its parent, so the
+        hinge is the spine and the rotation has real depth rather than a squashed scaleX;
+     3. the sheets are offset in Z by a fraction of a pixel each, so the stack has THICKNESS, and
+        the sheet currently moving is lifted in `z-index` so it cannot clip through the ones below;
+     4. one rotation, `rotateY: 0 → -180deg`, is the whole page turn.
+
+   🔴 AND THE LEAVES HAD TO BECOME THE CHAPTERS, WHICH THE DATA FORCED. Counted before a line of this
+   was written: of the seventeen sections, SEVENTEEN hold four entries or fewer, so every one of them
+   is a single page on a desk and sixteen of them are a single page on a phone. Leaving pages scoped
+   to a section would have shipped a drag gesture with nothing to drag to — dead on every screen but
+   one. So the book is one continuous run of pages: cover, then each chapter's opening and its cards,
+   then the endpaper. The ribbons become what they look like — a bookmark that jumps to a chapter —
+   and the drag walks the whole book.
+
+   The spread is two faces of two different sheets, exactly as on a desk: the LEFT page is the back
+   of the sheet you already turned, the RIGHT page is the front of the one you have not. There is no
+   separate "left half" element any more, because there is nothing left for one to do. */
+/* The arithmetic itself lives in pageModel.js so the self-check can RUN it. */
+
+/* How far a sheet has to travel before letting go turns it rather than putting it back. A third of
+   the way is forgiving in the direction that matters: a brush snaps back, a pull goes over. */
+const TURN_AT = 0.34;
+const TURN_MS = 520;
+
 /* OPENS ON THE SECTION YOU ARE STANDING IN. His ask, 2026-08-27: *"i want the book when press is
    auto redirect to the features that we use right now for example im on the restock vault then it
    should redirect directly to the restock vault section of the book"*. This is the whole reason
    every section id in sections.js is an `activeTab` value and not a category someone invented. */
 /* 🔴 `closeOnMount` IS HOW THE BOOK SHUTS AFTER A SCENE, and it works because `shut` below names
-   BOTH ends of every animation it starts. The leaf goes OPEN → SHUT, the book FLAT → the chip, the
+   BOTH ends of every animation it starts. The cover goes OPEN → SHUT, the book FLAT → the chip, the
    slab SLAB_OPEN → SLAB_SHUT, all under `fill: 'both'` — so none of them need the opening sequence
    to have run first to know where they begin. Mounting straight into the close is therefore not a
    trick; it is the same close, entered from a book that was already open somewhere else.
@@ -317,76 +357,89 @@ export default function PonderBookButton({ activeTab }) {
    panel"*. Before this, picking a scene unmounted the Library on the spot, so the shut-and-fly it
    already owned only ever played if you closed the BOOK and never if you read something in it. */
 function Library({ anchorRef, initialSection, onClose, onPick, closeOnMount = false }) {
-  const [secId, setSecId] = useState(
-    () => (SECTIONS.some(s => s.id === initialSection) ? initialSection : SECTIONS[0].id));
-  const [page, setPage] = useState(0);
-  const bookRef = useRef(null);
-  const leafRef = useRef(null);   // the right half, hinged at the spine
-  /* The two shading planes. A page turning away from the light DARKENS, and its far side brightens
-     as it comes round — that one cue is most of the difference between a sheet of paper and a
-     rotating rectangle, and its absence is what read as cheap. Refs rather than CSS, because they
-     have to run on the leaf's clock. */
-  const shadeFrontRef = useRef(null);
-  const shadeBackRef = useRef(null);
-  /* The cover slab. See the note where it is rendered — it is why a shut book looks shut. */
-  const slabRef = useRef(null);
-  const scrimRef = useRef(null);
-  const closingRef = useRef(false);
-
-  const section = useMemo(() => SECTIONS.find(s => s.id === secId) || SECTIONS[0], [secId]);
-  /* 🔴 A PHONE GETS TWO CARDS TO A PAGE, NOT FOUR, AND IT TURNS THE PAGE INSTEAD OF SCROLLING.
-     Aldi, 2026-09-01, from his iPhone: *"even the book cutted in half"*. Measured at 375x812: the
-     card grid is one column below sm, so four cards ran to 680px and the page's content ended 30px
-     BELOW the bottom of the screen — and on a real phone the browser bar takes more than that again.
-
-     Scrolling inside the book is not the fix and never was: *"i dont want to see any of the scroll
-     inside this book"*. A book that has run out of room turns the page, so the page count is what
-     bends. Everything else — the ‹ 1/2 › control, the leaf, the shut — already works off `pages`. */
-  const perPage = (typeof matchMedia === 'function' && !matchMedia('(min-width: 640px)').matches) ? 2 : PER_PAGE;
-  const pages = Math.max(1, Math.ceil(section.entries.length / perPage));
-  /* Clamped, because `page` is state and the section can change under it — a stale page 3 on a
-     two-page section would render an empty spread rather than the last page. */
-  const safePage = Math.min(page, pages - 1);
-  const shownEntries = section.entries.slice(safePage * perPage, safePage * perPage + perPage);
-
-  /* THE ZOOM IS DRIVEN BY THE WEB ANIMATIONS API, and that choice is the whole reason it works.
-
-     The first version flipped a state flag inside a requestAnimationFrame and let CSS transition
-     from it. That frame got cancelled by its own effect cleanup and the book rendered at opacity 0
-     — a completely invisible spread, with nothing thrown and every check green. `element.animate()`
-     starts the moment it is called: there is no later frame to lose.
-
-     The keyframes are computed from the chip's REAL rectangle, so the book grows out of the little
-     book that was pressed and shrinks back into it. A fixed origin would have been three fewer
-     lines and would have thrown the book at a corner that means nothing. */
-  /* MOVED ABOVE `flightFrom` ON PURPOSE. These are read inside its dependency array, and a
-     dependency array is evaluated where the useCallback is written, not where it is called —
-     declared after it, the whole component threw *Cannot access before initialization* and the
-     book rendered as a blank screen with nothing else on the page. */
   /* The leather starts six pixels into the ribbon column, so it has to follow the column's width
      when the phone narrows it — otherwise the cover sits 34px out and the ribbons stop reading as
      tabs cut into its edge. One number, two widths. */
   const narrow = typeof matchMedia === 'function' && !matchMedia('(min-width: 1024px)').matches;
   const coverLeft = narrow ? 82 : COVER_LEFT;
+  /* 🔴 A PHONE GETS TWO CARDS TO A PAGE, NOT FOUR. Aldi, 2026-09-01, from his iPhone: *"even the
+     book cutted in half"*. Measured at 375x812: the card grid is one column below sm, so four cards
+     ran to 680px and the page's content ended 30px BELOW the bottom of the screen. Scrolling inside
+     the book is not the fix and never was — *"i dont want to see any of the scroll inside this
+     book"*. A book that has run out of room turns the page, so the page count is what bends. */
+  const perPage = (typeof matchMedia === 'function' && !matchMedia('(min-width: 640px)').matches) ? 2 : PER_PAGE;
+  const spread = !narrow;
+
+  const pages = useMemo(() => buildPages(SECTIONS, perPage, spread), [perPage, spread]);
+  const leaves = useMemo(() => asLeaves(pages, spread), [pages, spread]);
+  /* The last sheet you may turn. Turning the one after it would put the endpaper on the left and
+     nothing at all on the right, which is a reader standing past the back cover. */
+  const maxTurn = maxTurnOf(pages, spread);
+
+  /* Where a chapter lives, counted in sheets. On a desk the chapter opening is the LEFT page of its
+     spread, which is the back of sheet n-1, so the sheet number is half its page index rounded up;
+     on a phone the cards page IS the spread, so the page index is the sheet number. */
+  const chapterTurn = useCallback((id) => turnFor(pages, spread, maxTurn, id), [pages, spread, maxTurn]);
+
+  const startId = SECTIONS.some(s => s.id === initialSection) ? initialSection : SECTIONS[0].id;
+  const [turned, setTurned] = useState(() => chapterTurn(startId));
+  /* Clamped, because the sheet count is state and `pages` changes under it when the phone turns
+     sideways — a stale sheet 12 in a shorter book renders an empty spread rather than the last page. */
+  const safeTurn = Math.min(Math.max(turned, 1), maxTurn);
+
+  const bookRef = useRef(null);
+  const leafRef = useRef(null);   // the COVER, hinged at the spine — it is not a page
+  const stackRef = useRef(null);  // the sheets, hinged on the same spine
+  /* 🔴 A PLAIN OBJECT, AND `new Map()` IS A TRAP IN THIS FILE. `Map` here is the lucide ICON
+     imported at the top for the Map War Room's ribbon, not the global constructor — so `new Map()`
+     threw *TypeError: p1 is not a constructor* and the whole book rendered as a black screen, with
+     the build green and every check passing. A shadowed global fails at run time only. */
+  const leafEls = useRef({});
+  /* The two shading planes. A page turning away from the light DARKENS, and its far side brightens
+     as it comes round — that one cue is most of the difference between a sheet of paper and a
+     rotating rectangle, and its absence is what read as cheap. Refs rather than CSS, because they
+     have to run on the cover's clock. */
+  const shadeFrontRef = useRef(null);
+  const shadeBackRef = useRef(null);
+  /* The cover board. See the note where it is rendered — it is why a shut book looks shut. */
+  const slabRef = useRef(null);
+  const scrimRef = useRef(null);
+  const closingRef = useRef(false);
+
+  /* The right-hand page is where the reader is standing, so the ribbon lights from it rather than
+     from a second piece of state that could disagree with the page on screen. */
+  const facing = facingPage(pages, spread, safeTurn);
+  const section = facing.s || SECTIONS[0];
+  const secId = section.id;
 
   /* THE CLOSE, AT THE WIDTH IT IS ACTUALLY HAPPENING AT.
 
-     On a desk the leaf is the right half and it travels 0 to -180 degrees about the centre fold, so
+     On a desk the cover is the right half and it travels 0 to -180 degrees about the centre fold, so
      it lands face down on the left half. That is a book closing, and it is correct there.
 
-     On a phone the leaf is the WHOLE page and its hinge is already the left edge. Sending it to
+     On a phone the cover is the WHOLE page and its hinge is already the left edge. Sending it to
      -180 degrees swings it out past the spine onto nothing, which is the close he called broken.
-     -90 degrees is the same hinge stopped at the point where the page is edge-on: it turns away and
-     disappears into the spine, which is what a tall book does when you shut it while holding it.
-     The cover clip closes to the spine on the same clock, so the two arrive together. */
+     -90 degrees is the same hinge stopped where the page is edge-on: it turns away and disappears
+     into the spine, which is what a tall book does when you shut it while holding it. */
+  /* 🔴 A TURNED SHEET GOES EDGE-ON ON A PHONE, NOT FACE-DOWN. Measured at 375x812 the moment the
+     stack first rendered there: a phone spine is the stage LEFT edge, so a sheet at -180 lies one
+     whole page OUTSIDE the book, and it came out as a cream slab standing over the ribbon column
+     and the scrim. Exactly the fault he named on the close - *"the background of the book is
+     making it look broke"* - arriving a second time through a different element.
+
+     -90 is the same hinge stopped where the page is edge-on: it turns away into the spine and is
+     gone, which is what a tall book does, and it is the geometry he already accepted for the cover.
+     One constant, both widths; every other line of the turn is shared. */
+  const FLIP = spread ? -180 : -90;
+
   const leafShutTo = narrow ? 'rotateY(-90deg)' : SHUT;
   const slabShutTo = narrow ? SLAB_SHUT_SPINE : SLAB_SHUT;
 
   /* 🔴 IT IS THE CLOSED BOOK THAT FLIES, NOT THE CONTAINER. When the cover is shut the visible
-     book is only the left half plus the tab column — `SLAB_SHUT` below is the same measurement —
-     so scaling the whole 1040px container onto the chip aimed the wrong rectangle and the book
-     drifted sideways as it shrank. The maths maps the CLOSED book's centre onto the chip's centre,
-     and it has to subtract where that centre lands after scaling about the container's middle. */
+     book is only the left half plus the tab column — `SLAB_SHUT` is the same measurement — so
+     scaling the whole 1040px container onto the chip aimed the wrong rectangle and the book drifted
+     sideways as it shrank. The maths maps the CLOSED book's centre onto the chip's centre, and it
+     has to subtract where that centre lands after scaling about the container's middle. */
   const flightFrom = useCallback(() => {
     const el = bookRef.current, chip = anchorRef?.current;
     if (!el || !chip) return null;
@@ -405,17 +458,11 @@ function Library({ anchorRef, initialSection, onClose, onPick, closeOnMount = fa
   /* 🔴 IT HINGES AT THE SPINE. THE WHOLE BOOK DOES NOT TURN.
 
      Aldi, 2026-08-27: *"why did u flip the book like that ... it should flipped to the middle like
-     how the book works not to the side like that, use book logic"*. He is right, and the previous
-     version was not a small miss: it rotated the ENTIRE spread about its own centre, which is a
-     card being turned over, not a book being closed. Nothing about it obeyed how a book works.
+     how the book works not to the side like that, use book logic"*. A book closes because its right
+     half swings LEFT about the spine and comes to rest on the left half. Past 90° the cover's face
+     is what you see, which is the closed book. The left half never moves.
 
-     A book closes because its right half swings LEFT about the spine and comes to rest on the left
-     half. So the right page is its own hinged leaf with `transform-origin` at the spine, and it
-     travels 0° → -180°. Past 90° its front face turns away and its BACK face — the front cover —
-     is what you see, which is the closed book. The left half never moves, exactly as it does not
-     on a desk.
-
-     TWO ELEMENTS, TWO ANIMATIONS, ONE CLOCK. The leaf swings; the whole book flies. They are
+     TWO ELEMENTS, TWO ANIMATIONS, ONE CLOCK. The cover swings; the whole book flies. They are
      started in the same tick with the same duration and complementary offsets, so the book is shut
      before it leaves and open only after it lands. They are not chained — a chain has to resume
      exactly where the last one stopped, and drift there shows as a jump. */
@@ -446,17 +493,9 @@ function Library({ anchorRef, initialSection, onClose, onPick, closeOnMount = fa
     /* 🔴 ONE THING MOVES ON A PHONE, AND IT IS THE PAGE. Aldi, 2026-09-01, watching the close:
        *"there is no cover in the book bruv, there is animation from the right side going left but
        there is left side going right and they found in the middle, the book doesnt look natural at
-       all"*.
-
-       He described it exactly. Two edges were travelling: the page turning about its left hinge,
-       its free edge sweeping leftward, and the cover clip closing in from the far right on a
-       different clock. Two edges converging on the middle is not a book, it is a shutter.
-
-       And his first clause is the real point. A phone draws no cover to animate — the leather is
-       the board BEHIND the single page there, not a flap over it — so animating its clip was
-       animating something that is not the thing he is looking at. The board stays put now and the
-       page alone turns edge-on into the spine. The desk keeps its cover and its clip: there the
-       leather really is a cover, and it really does swing. */
+       all"*. A phone draws no cover to animate — the leather is the board BEHIND the single page
+       there, not a flap over it — so animating its clip was animating something that is not the
+       thing he is looking at. The board stays put; the page alone turns edge-on into the spine. */
     if (!narrow) {
       slabRef.current?.animate([{ clipPath: slabShutTo }, { clipPath: SLAB_OPEN }],
         { duration: T.leafOpen, delay: T.leafOpenDelay, easing: HINGE, fill: 'both' });
@@ -481,6 +520,15 @@ function Library({ anchorRef, initialSection, onClose, onPick, closeOnMount = fa
       [{ transform: OPEN }, { transform: leafShutTo }],
       { duration: T.leafShut, easing: HINGE, fill: 'both' },
     );
+    /* 🔴 AND THE SHEETS GO UNDER IT. The old right-hand page was drawn on the cover's own front
+       face, so it left when the cover left. The sheets are their own stack now and they stay put —
+       which would leave a lit spread standing beside a closed book, the same half-open fault the
+       clipped board was added to fix. They go dark and out on the cover's clock instead. Their
+       resting opacity is 1 in CSS and never in a keyframe: Lite Mode returns above without
+       animating anything, and an animation that OWNS visibility is how the wax seal once vanished
+       entirely under `animation: none`. */
+    stackRef.current?.animate([{ opacity: 1 }, { opacity: 0, offset: 0.55 }, { opacity: 0 }],
+      { duration: T.leafShut, easing: 'ease-in', fill: 'both' });
     shade(shadeFrontRef.current, [{ opacity: 0 }, { opacity: 0.62 }], T.leafShut, 0);
     shade(shadeBackRef.current, [{ opacity: 0.75 }, { opacity: 0 }], T.leafShut, 0);
     if (!narrow) {
@@ -501,19 +549,131 @@ function Library({ anchorRef, initialSection, onClose, onPick, closeOnMount = fa
      doing nothing, which reads as a flicker rather than as a book being shut. */
   useLayoutEffect(() => { if (closeOnMount) shut(); }, [closeOnMount, shut]);
 
+  /* ── THE TURN ─────────────────────────────────────────────────────────────────────────────────
+     🔴 THE DRAG WRITES THE TRANSFORM STRAIGHT ONTO THE ELEMENT, NEVER THROUGH STATE. His ask:
+     *"i want the page to be drag able to change the page left and right with smooth motion"*, and
+     "smooth" is the load-bearing word. A pointermove that calls setState re-renders four sheets and
+     every card on them on each frame of the gesture, which is exactly how a drag stutters on the
+     cheap Android this app is built for. State changes ONCE, when the sheet has settled — the same
+     rule the scene player's progress bar already follows.
+
+     One rotation carries the whole gesture: the sheet you pull travels 0 → FLIP as your finger
+     crosses one page's width, and a sheet you pull BACK comes FLIP → 0 along the same arc. Letting
+     go past a third of the way finishes the turn; short of it the sheet falls back where it was.
+     FLIP is -180 on a desk and -90 on a phone — see the note above it; everything else here is the
+     same code at both widths, which is what he asked for. */
+  const dragRef = useRef(null);
+  const movedRef = useRef(false);
+  const at = (k) => leafEls.current[k] || null;
+  const zOf = (k, flipped) => (flipped ? k : leaves.length - k) * 0.4;
+  const past = (deg) => deg < FLIP / 2;   // half way round is where the sheet changes sides
+  /* 🔴 AND ON A PHONE A TURNED SHEET IS GONE, NOT EDGE-ON. Measured at 375x812 as soon as the stack
+     was looked at there: a sheet held at -90 still projects a 24px cream wedge, because perspective
+     gives an edge-on plane a receding far edge rather than a line — and that wedge stood over the
+     ribbon column for the whole time the book was open. It has turned INTO the spine; it is not
+     there any more. Owned by the sheet's own style so Lite Mode, which never animates, still
+     resolves it — the wax-seal rule: the state carries the visibility, the animation only moves. */
+  const dim = (deg) => (!spread && deg <= FLIP ? 0 : 1);
+  const put = (el, deg, z) => {
+    if (!el) return;
+    el.style.transform = `translateZ(${z}px) rotateY(${deg}deg)`;
+    el.style.opacity = '1';        // a sheet under the finger is always on screen
+  };
+
+  const settle = useCallback((k, from, to, next) => {
+    const el = at(k);
+    const rest = () => {
+      if (!el) return;
+      el.style.transform = `translateZ(${zOf(k, past(to))}px) rotateY(${to}deg)`;
+      el.style.opacity = String(dim(to));
+    };
+    if (!el || still || typeof el.animate !== 'function') {
+      if (next !== null) { bookPage(); setTurned(next); }
+      rest();
+      return;
+    }
+    if (next !== null) bookPage();
+    const anim = el.animate(
+      [{ transform: `translateZ(${zOf(k, past(from))}px) rotateY(${from}deg)` },
+       { transform: `translateZ(${zOf(k, past(to))}px) rotateY(${to}deg)` }],
+      { duration: TURN_MS, easing: HINGE, fill: 'both' },
+    );
+    /* The phone's sheet leaves at the very end of its own arc, never across it — a page that fades
+       while it turns is a page dissolving, which is the note the fly-in already carries. */
+    const fade = dim(from) === dim(to) ? null : el.animate(
+      [{ opacity: dim(from) }, { opacity: dim(to) }],
+      { duration: TURN_MS * 0.22, delay: TURN_MS * 0.78, easing: 'linear', fill: 'both' },
+    );
+    anim.onfinish = () => {
+      /* State first, THEN cancel, and land the element on its resting values by NAME rather than by
+         clearing them — React writes the identical pair on the render that `setTurned` causes, so
+         nothing moves, and a snap-back that changes no state still ends somewhere defined. */
+      if (next !== null) setTurned(next);
+      requestAnimationFrame(() => { anim.cancel(); fade?.cancel(); rest(); });
+    };
+  }, [leaves.length, still, FLIP, spread]);
+
+  const turn = useCallback((dir) => {
+    const to = safeTurn + dir;
+    if (to < 1 || to > maxTurn) return;
+    if (still) { bookPage(); setTurned(to); return; }
+    if (dir > 0) settle(safeTurn, 0, FLIP, to);
+    else settle(safeTurn - 1, FLIP, 0, to);
+  }, [safeTurn, maxTurn, still, settle, FLIP]);
+
+  const onDown = (e) => {
+    if (still || e.button > 0) return;
+    dragRef.current = { x: e.clientX, k: null, dir: 0, p: 0 };
+    movedRef.current = false;
+  };
+  const onMove = (e) => {
+    const d = dragRef.current;
+    if (!d) return;
+    const dx = e.clientX - d.x;
+    if (!d.dir) {
+      if (Math.abs(dx) < 10) return;                 // a tap is not a drag
+      const fwd = dx < 0;
+      if (fwd ? safeTurn + 1 > maxTurn : safeTurn - 1 < 1) { dragRef.current = null; return; }
+      d.dir = fwd ? 1 : -1;
+      d.k = fwd ? safeTurn : safeTurn - 1;
+      movedRef.current = true;
+      e.currentTarget.setPointerCapture?.(e.pointerId);
+    }
+    /* Forward: 0 → FLIP as the finger crosses one page. Backward: the sheet already turned comes
+       back up the same arc. Clamped at both ends, because a long swipe that wound a sheet past
+       FLIP would read as the paper tearing off its hinge. */
+    const w = Math.max(1, stackRef.current ? stackRef.current.getBoundingClientRect().width : 1);
+    const p = Math.min(1, Math.max(0, (d.dir > 0 ? -dx : dx) / w));
+    const deg = d.dir > 0 ? FLIP * p : FLIP * (1 - p);
+    d.p = p;
+    put(at(d.k), deg, zOf(d.k, past(deg)));
+  };
+  const onUp = () => {
+    const d = dragRef.current;
+    dragRef.current = null;
+    if (!d || !d.dir) return;
+    const done = d.p >= TURN_AT;
+    const deg = d.dir > 0 ? FLIP * d.p : FLIP * (1 - d.p);
+    if (d.dir > 0) settle(d.k, deg, done ? FLIP : 0, done ? safeTurn + 1 : null);
+    else settle(d.k, deg, done ? 0 : FLIP, done ? safeTurn - 1 : null);
+    /* Cleared a tick later, which is after the click this gesture would otherwise have fired. */
+    setTimeout(() => { movedRef.current = false; }, 0);
+  };
+
   useEffect(() => {
     const onKey = (e) => {
       if (e.key === 'Escape') shut();
-      if (e.key === 'ArrowRight' && page < pages - 1) { bookPage(); setPage(p => p + 1); }
-      if (e.key === 'ArrowLeft' && page > 0) { bookPage(); setPage(p => p - 1); }
+      if (e.key === 'ArrowRight') turn(1);
+      if (e.key === 'ArrowLeft') turn(-1);
     };
     window.addEventListener('keydown', onKey);
     const prev = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     return () => { window.removeEventListener('keydown', onKey); document.body.style.overflow = prev; };
-  }, [shut, page, pages]);
+  }, [shut, turn]);
 
-  const pickSection = (id) => { if (id === secId) return; bookPage(); setSecId(id); setPage(0); };
+  /* A ribbon is a bookmark: it jumps to that chapter. It does not scroll a list. */
+  const pickSection = (id) => { if (id === secId) return; bookPage(); setTurned(chapterTurn(id)); };
 
   if (typeof document === 'undefined') return null;
 
@@ -521,6 +681,135 @@ function Library({ anchorRef, initialSection, onClose, onPick, closeOnMount = fa
     ? { background: 'linear-gradient(90deg, #FF8C1A 0%, #D98A2E 55%, #B9772A 100%)',
         color: '#241D16', transform: 'translateX(8px)' }
     : { background: 'linear-gradient(90deg, #4A3A2A 0%, #3A2E22 60%, #2E251B 100%)', color: '#C4B69C' };
+
+  /* ── THE FACES ────────────────────────────────────────────────────────────────────────────────
+     One page of the book, whichever face of whichever sheet it lands on. Written once because a page
+     is a page: the same chapter opening is a left page on a desk and is not rendered at all on a
+     phone, and neither of those is a reason for a second copy of the markup. */
+  const face = (pg) => {
+    if (!pg) return null;
+    if (pg.k === 'cover') return null;               // the leather is the cover element, not a page
+    if (pg.k === 'end') {
+      return (
+        <div className="relative h-full flex flex-col items-center justify-center gap-3 p-9">
+          <span className="font-mono text-[10px] uppercase tracking-[0.3em]" style={{ color: BOOK_DIM }}>Tamat</span>
+          <span className="h-[3px] w-10 rounded-full bg-orange" />
+          <p className="text-[13px] text-center max-w-[28ch]" style={{ color: BOOK_DIM }}>
+            Tarik halaman ke kanan untuk kembali, atau pilih pita di sebelah kiri.
+          </p>
+        </div>
+      );
+    }
+    if (pg.k === 'chapter') {
+      const s = pg.s;
+      return (
+        <div className="relative h-full flex flex-col justify-between p-9">
+          <div>
+            <span className="h-14 w-14 rounded-xl flex items-center justify-center border"
+                  style={{ background: PAPER_2, borderColor: 'rgba(0,0,0,.16)' }}>
+              <Icon name={s.icon} size={26} style={{ color: '#8A5A12' }} />
+            </span>
+            <h2 className="font-display text-4xl font-black uppercase tracking-[0.1em] leading-none mt-5"
+                style={{ color: BOOK_INK }}>{s.label}</h2>
+            <div className="h-[3px] w-14 bg-orange rounded-full mt-4" />
+            <p className="text-[14px] leading-relaxed mt-5 max-w-[36ch]" style={{ color: BOOK_DIM }}>{s.blurb}</p>
+
+            <ul className="mt-9 space-y-3">
+              {s.entries.map((e, i) => (
+                <li key={i} className="flex items-baseline gap-2 text-[13px]">
+                  <span className="font-mono tabular-nums" style={{ color: BOOK_DIM }}>{String(i + 1).padStart(2, '0')}</span>
+                  <span className="truncate" style={{ color: e.soon ? BOOK_DIM : BOOK_INK }}>{e.title}</span>
+                  <span className="flex-1 border-b border-dotted translate-y-[-3px]" style={{ borderColor: 'rgba(0,0,0,.25)' }} />
+                  <span className="font-mono text-[10px] uppercase tracking-widest" style={{ color: BOOK_DIM }}>{e.soon ? 'segera' : 'siap'}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+          <p className="font-mono text-[10px] uppercase tracking-widest" style={{ color: BOOK_DIM }}>
+            Bab {SECTIONS.indexOf(s) + 1} / {SECTIONS.length}
+          </p>
+        </div>
+      );
+    }
+    const s = pg.s;
+    const shownEntries = s.entries.slice(pg.p * perPage, pg.p * perPage + perPage);
+    return (
+      <div className="relative h-full flex flex-col min-h-0 p-6 sm:p-9">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="font-mono text-[10px] uppercase tracking-widest" style={{ color: BOOK_DIM }}>Panduan</p>
+            <h3 className="font-display text-2xl font-black uppercase tracking-[0.1em] leading-none mt-1 lg:hidden"
+                style={{ color: BOOK_INK }}>{s.label}</h3>
+          </div>
+          <button type="button" onClick={shut} aria-label="Close" title="Close"
+            style={{ background: PAPER_2, color: BOOK_INK, borderColor: 'rgba(0,0,0,.2)' }}
+            className="shrink-0 h-9 w-9 rounded-lg border active:scale-[0.97]
+                       transition-transform duration-150 ease-out inline-flex items-center justify-center">
+            <X size={16} />
+          </button>
+        </div>
+
+        <div className="flex-1 min-h-0 mt-5 -mx-1 px-1">
+          <div className="grid sm:grid-cols-2 gap-4">
+            {shownEntries.map((e, i) => {
+              const ready = !e.soon && !!getScene(e.sceneId);
+              return (
+                <button key={i} type="button" disabled={!ready}
+                  /* A drag that began on a card is a page turn, not a pick. `movedRef` clears a tick
+                     after the pointer goes up, which is after the click this suppresses. */
+                  onClick={() => { if (movedRef.current) return; if (ready) onPick(e.sceneId); }}
+                  style={{ background: ready ? PAPER_2 : 'rgba(0,0,0,.04)',
+                           borderColor: ready ? 'rgba(0,0,0,.22)' : 'rgba(0,0,0,.12)' }}
+                  className={`text-left p-4 rounded-xl border transition-transform duration-200 ease-out
+                              ${ready ? 'hover:-translate-y-[3px] active:scale-[0.985] cursor-pointer' : 'cursor-not-allowed'}`}>
+                  <span className="h-10 w-10 rounded-lg border flex items-center justify-center"
+                        style={{ background: PAPER, borderColor: 'rgba(0,0,0,.18)' }}>
+                    {ready ? <Icon name={e.icon} size={17} style={{ color: '#8A5A12' }} />
+                           : <Lock size={15} style={{ color: BOOK_DIM }} />}
+                  </span>
+                  <span className="block font-display text-[16px] font-black uppercase tracking-wider mt-3"
+                        style={{ color: ready ? BOOK_INK : BOOK_DIM }}>{e.title}</span>
+                  <span className="block text-[12.5px] leading-snug mt-1.5" style={{ color: BOOK_DIM }}>{e.desc}</span>
+                  {!ready && (
+                    <span className="inline-block mt-3 font-mono text-[9px] uppercase tracking-widest border rounded px-1.5 py-0.5"
+                          style={{ color: BOOK_DIM, borderColor: 'rgba(0,0,0,.2)' }}>belum ditulis</span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* The ‹ › run the same turn the drag does — for a mouse, and for anyone who cannot drag. */}
+        <div className="flex items-center justify-between pt-4 mt-4 border-t" style={{ borderColor: 'rgba(0,0,0,.16)' }}>
+          <button type="button" disabled={safeTurn <= 1} onClick={() => turn(-1)}
+            aria-label="Previous page"
+            style={{ background: PAPER_2, color: BOOK_INK, borderColor: 'rgba(0,0,0,.2)' }}
+            className="h-9 w-9 rounded-lg border disabled:opacity-35 disabled:cursor-not-allowed
+                       active:scale-[0.97] transition-transform duration-150 ease-out inline-flex items-center justify-center">
+            <ChevronLeft size={16} />
+          </button>
+          <span className="font-mono text-[10px] uppercase tracking-widest tabular-nums" style={{ color: BOOK_DIM }}>
+            {safeTurn} / {maxTurn}
+          </span>
+          <button type="button" disabled={safeTurn >= maxTurn} onClick={() => turn(1)}
+            aria-label="Next page"
+            style={{ background: PAPER_2, color: BOOK_INK, borderColor: 'rgba(0,0,0,.2)' }}
+            className="h-9 w-9 rounded-lg border disabled:opacity-35 disabled:cursor-not-allowed
+                       active:scale-[0.97] transition-transform duration-150 ease-out inline-flex items-center justify-center">
+            <ChevronRight size={16} />
+          </button>
+        </div>
+      </div>
+    );
+  };
+
+  /* Only the sheets around the reader are built. Eighteen live card grids would be eighteen times
+     the DOM for a book that shows two pages, and this app is built for cheap Android phones. The
+     window is four: the one under the left page, the left page, the right page, and the one beneath
+     it that a forward drag reveals. The stack's THICKNESS is the paper block below, not real sheets. */
+  const near = [];
+  for (let k = safeTurn - 2; k <= safeTurn + 1; k++) if (k >= 0 && k < leaves.length) near.push(k);
 
   return createPortal(
     <div role="dialog" aria-modal="true" aria-label="Tutorial book"
@@ -535,33 +824,25 @@ function Library({ anchorRef, initialSection, onClose, onPick, closeOnMount = fa
            style={{ transformOrigin: 'center center' }}
            className="relative w-[min(1040px,95vw)] h-[min(760px,90vh)] flex rounded-[14px] p-[10px]">
 
-        {/* 🔴 THE COVER IS ITS OWN ELEMENT SO IT CAN BE CLIPPED, and that is the difference between
-            a book that looks shut and one that looks half-open. When the leaf swings closed it lands
-            on the left half and VACATES the right half — but the cover used to be the container's
-            own background, so the vacated half stayed on screen as a dark slab beside the closed
-            book. Nothing about that read as a closed book.
-
-            As a sibling it can be clipped to the left half in step with the leaf. Clipping a
-            SIBLING is safe; clipping the container would have flattened `preserve-3d` and undone
-            the hinge, which is the trap noted on the stage below. */}
+        {/* 🔴 THE BOARD IS ITS OWN ELEMENT SO IT CAN BE CLIPPED, and that is the difference between
+            a book that looks shut and one that looks half-open. When the cover swings closed it
+            lands on the left half and VACATES the right half — but the board used to be the
+            container's own background, so the vacated half stayed on screen as a dark slab beside
+            the closed book. Clipping a SIBLING is safe; clipping the container would have flattened
+            `preserve-3d` and undone every hinge in here. */}
         <span ref={slabRef} aria-hidden="true"
               style={{ background: LEATHER, clipPath: 'inset(0 0 0 0 round 14px)', left: coverLeft }}
               className="absolute inset-y-0 right-0 rounded-[14px] border border-accent-edge pointer-events-none
                          shadow-[0_2px_2px_rgba(0,0,0,0.35),0_40px_90px_-30px_rgba(0,0,0,0.95)]" />
 
-        {/* Tabs, cut into the cover's left edge like the reference book */}
         {/* 🔴 RIBBONS, AND NO SCROLLING. His ask: *"the section also make it like book ribbons u
             know to make it more natural and make these section into one line with no scrollable so
-            resize the spacing"*. A scrolling list of tabs is a sidebar wearing a book costume; a
-            book has ribbons, and you can see all of them at once or they are not much use as
-            bookmarks. Seventeen at 26px plus 2px of gap is 474px, which fits the shortest book this
-            can be, so `overflow` is gone rather than hidden — there is nothing left to scroll. */}
+            resize the spacing"*. Seventeen at 26px plus 2px of gap is 474px, which fits the shortest
+            book this can be, so `overflow` is gone rather than hidden. */}
         {/* 🔴 THE PHONE KEEPS THE RIBBONS. His report, 2026-09-01: *"i cant see the left book with
             all the section ribbons"*. They were `hidden lg:flex`, and on a phone that is not a
-            cosmetic loss — the ‹ › control only turns pages WITHIN a section, so with the ribbons
-            gone there was no way to reach another section at all. The left page stays hidden (two
-            520px pages do not go into 375), so the ribbons take the place the left page would have
-            had: 84px on a phone, the full 118 on a desk. */}
+            cosmetic loss — the drag walks the book ONE page at a time, so without the ribbons
+            reaching chapter fourteen would be thirteen swipes. */}
         <div className="relative z-10 flex flex-col justify-center gap-[2px] w-[84px] lg:w-[118px] shrink-0 py-4 pr-[6px]">
           {SECTIONS.map(s => (
             <button key={s.id} type="button" onClick={() => pickSection(s.id)}
@@ -575,180 +856,103 @@ function Library({ anchorRef, initialSection, onClose, onPick, closeOnMount = fa
           ))}
         </div>
 
-        {/* 🔴 THE PAGE BLOCK IS A REAL 3D STAGE NOW. No `overflow-hidden` on this element: it
-            carries `preserve-3d`, and a clip here collapses the hinge back into a flat rotation in
-            several engines — which is exactly the bug being fixed. Clipping happens on each face
-            instead, where it has no 3D children to flatten. */}
-        <div className="relative z-10 flex-1 min-w-0"
-             style={{ transformStyle: 'preserve-3d', perspective: '1500px' }}>
+        {/* 🔴 THE PAGE BLOCK IS A REAL 3D STAGE. No `overflow-hidden` on this element: it carries
+            `preserve-3d`, and a clip here collapses every hinge back into a flat rotation in several
+            engines. Clipping happens on each face instead, where it has no 3D children to flatten.
+            `touch-pan-y` so a vertical scroll of the page behind still belongs to the browser while
+            a horizontal drag belongs to the book. */}
+        <div className="relative z-10 flex-1 min-w-0 select-none touch-pan-y"
+             style={{ transformStyle: 'preserve-3d', perspective: '1500px' }}
+             onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp}>
 
-          {/* 🔴 THE PAGE EDGES BELONG TO THE HALF THEY ARE THE EDGE OF. They used to be three spans
-              pinned to the stage, so when the cover shut they stayed put — two cream strips hanging
-              in the dark beside a closed book, which is what he saw: *"i dont want to see any of
-              the scroll inside this book"*. They were never scrollbars; they were paper that forgot
-              to move. The LEFT half keeps its own, and the right half's live inside the leaf below
-              so they turn with it. Closed, the fore-edge ends up opposite the spine, which is where
-              a fore-edge goes. */}
+          {/* 🔴 THE PAPER BLOCK — the stack's thickness, drawn rather than built. Eighteen real
+              sheets at 0.4px of Z each is seven pixels of edge nobody can read; two gradients are
+              the same seven pixels at none of the cost. They also belong to the half they are the
+              edge OF: the left set to the half that never moves, the right set inside the stack so
+              it travels with the sheets. */}
           <span className="pointer-events-none absolute inset-y-[8px] -left-[5px] w-[6px] rounded-l-[3px]"
                 style={{ background: EDGES }} />
           <span className="pointer-events-none absolute -bottom-[5px] left-[10px] right-1/2 h-[5px]"
                 style={{ background: EDGES_H }} />
 
-          {/* THE LEFT HALF. It never moves — a book does not close by swinging both halves. */}
-          <div className="absolute inset-y-0 left-0 hidden lg:block w-1/2 rounded-l-[6px]"
-               style={{ background: PAPER, boxShadow: 'inset 0 0 0 1px rgba(0,0,0,.15)' }}>
-            <div className="absolute inset-0 pointer-events-none"
-                 style={{ background: 'linear-gradient(90deg, rgba(0,0,0,.12) 0%, rgba(0,0,0,0) 15%, rgba(0,0,0,0) 82%, rgba(0,0,0,.20) 100%)' }} />
-
-            {/* LEFT PAGE — the chapter opening itself.
-                🔴 KEYED ON THE SECTION AGAIN, but the motion is a SHEET SLIDING, not a 3D flip.
-                His ask: *"replace that into book page paper slide instead"*. A flip is what the
-                COVER does; a page you turn TO arrives by sliding into place. The two halves slide
-                out of the fold in opposite directions, which is how paper settles when a spread
-                opens.
-                And the flicker this used to cause was never the keyframe — it was the whole book
-                replaying on every render, fixed at module scope above. */}
-            <div key={`l-${section.id}`} className="relative h-full flex flex-col justify-between p-9 animate-ponder-slide-l">
-              <div>
-                <span className="h-14 w-14 rounded-xl flex items-center justify-center border"
-                      style={{ background: PAPER_2, borderColor: 'rgba(0,0,0,.16)' }}>
-                  <Icon name={section.icon} size={26} style={{ color: '#8A5A12' }} />
-                </span>
-                <h2 className="font-display text-4xl font-black uppercase tracking-[0.1em] leading-none mt-5"
-                    style={{ color: BOOK_INK }}>{section.label}</h2>
-                <div className="h-[3px] w-14 bg-orange rounded-full mt-4" />
-                <p className="text-[14px] leading-relaxed mt-5 max-w-[36ch]" style={{ color: BOOK_DIM }}>{section.blurb}</p>
-
-                <ul className="mt-9 space-y-3">
-                  {section.entries.map((e, i) => (
-                    <li key={i} className="flex items-baseline gap-2 text-[13px]">
-                      <span className="font-mono tabular-nums" style={{ color: BOOK_DIM }}>{String(i + 1).padStart(2, '0')}</span>
-                      <span className="truncate" style={{ color: e.soon ? BOOK_DIM : BOOK_INK }}>{e.title}</span>
-                      <span className="flex-1 border-b border-dotted translate-y-[-3px]" style={{ borderColor: 'rgba(0,0,0,.25)' }} />
-                      <span className="font-mono text-[10px] uppercase tracking-widest" style={{ color: BOOK_DIM }}>{e.soon ? 'segera' : 'siap'}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <p className="font-mono text-[10px] uppercase tracking-widest" style={{ color: BOOK_DIM }}>
-                Bab {SECTIONS.indexOf(section) + 1} / {SECTIONS.length}
-              </p>
-            </div>
-
-          </div>
-
-          {/* 🔴 THE RIGHT HALF, HINGED AT THE SPINE. `transform-origin` is the fold, so 0° → -180°
-              lays this leaf exactly onto the left half — which is how a book closes. Past 90° its
-              front face turns away and the cover on its back is what you see. The previous version
-              rotated the WHOLE spread about its own centre, which is a card being turned over.
-              A gold rule marks the fold, and it belongs to the leaf so it travels with it. */}
-          <div ref={leafRef}
+          {/* THE SHEETS. Hinged at the spine — the centre fold on a desk, the left edge on a phone.
+              One element, one origin, both widths. */}
+          <div ref={stackRef}
                className="absolute inset-y-0 left-0 w-full lg:left-1/2 lg:w-1/2"
-               style={{ transformOrigin: 'left center', transformStyle: 'preserve-3d', willChange: 'transform' }}>
-
-            {/* this half's own paper, turning with it */}
+               style={{ transformStyle: 'preserve-3d' }}>
             <span className="pointer-events-none absolute inset-y-[8px] -right-[5px] w-[6px] rounded-r-[3px]"
                   style={{ background: EDGES }} />
             <span className="pointer-events-none absolute -bottom-[5px] left-0 right-[10px] h-[5px]"
                   style={{ background: EDGES_H }} />
 
-            {/* FRONT OF THE LEAF — the right page */}
-            <div className="absolute inset-0 rounded-r-[6px] overflow-hidden"
-                 style={{ background: PAPER, backfaceVisibility: 'hidden',
-                          boxShadow: 'inset 0 0 0 1px rgba(0,0,0,.15)' }}>
-              <div className="absolute inset-0 pointer-events-none"
-                   style={{ background: 'linear-gradient(90deg, rgba(0,0,0,.20) 0%, rgba(0,0,0,0) 16%, rgba(0,0,0,0) 86%, rgba(0,0,0,.10) 100%)' }} />
-              <span className="hidden lg:block absolute inset-y-6 left-0 w-[2px] bg-orange pointer-events-none" />
-              {/* the light leaving this face as it turns away */}
-              <span ref={shadeFrontRef} className="absolute inset-0 pointer-events-none z-20"
-                    style={{ background: 'linear-gradient(90deg, #000 0%, rgba(0,0,0,.55) 60%, rgba(0,0,0,.35) 100%)', opacity: 0 }} />
-
-            {/* Keyed on the section AND the page — both are a new sheet arriving. */}
-            <div key={`r-${section.id}-${page}`} className="relative h-full flex flex-col min-h-0 p-6 sm:p-9 animate-ponder-slide">
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="font-mono text-[10px] uppercase tracking-widest" style={{ color: BOOK_DIM }}>Panduan</p>
-                  <h3 className="font-display text-2xl font-black uppercase tracking-[0.1em] leading-none mt-1 lg:hidden"
-                      style={{ color: BOOK_INK }}>{section.label}</h3>
+            {near.map(k => {
+              const flipped = k < safeTurn;
+              const front = leaves[k][0];
+              const back = leaves[k][1];
+              return (
+                <div key={k}
+                     ref={(el) => { if (el) leafEls.current[k] = el; else delete leafEls.current[k]; }}
+                     className="absolute inset-0"
+                     style={{ transformOrigin: 'left center', transformStyle: 'preserve-3d',
+                              /* A turning sheet is lifted so it cannot clip through the block below
+                                 it — the one line of the reference that is not obvious on sight. */
+                              zIndex: flipped ? k : leaves.length - k,
+                              transform: `translateZ(${zOf(k, flipped)}px) rotateY(${flipped ? FLIP : 0}deg)`,
+                              opacity: dim(flipped ? FLIP : 0),
+                              willChange: 'transform' }}>
+                  {/* FRONT — the right-hand page */}
+                  <div className="absolute inset-0 rounded-r-[6px] overflow-hidden"
+                       style={{ background: PAPER, backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden',
+                                boxShadow: 'inset 0 0 0 1px rgba(0,0,0,.15)' }}>
+                    <div className="absolute inset-0 pointer-events-none z-10"
+                         style={{ background: 'linear-gradient(90deg, rgba(0,0,0,.20) 0%, rgba(0,0,0,0) 16%, rgba(0,0,0,0) 86%, rgba(0,0,0,.10) 100%)' }} />
+                    <span className="hidden lg:block absolute inset-y-6 left-0 w-[2px] bg-orange pointer-events-none z-10" />
+                    {face(front)}
+                  </div>
+                  {/* BACK — the left-hand page of the next spread. Pre-rotated, and pushed a
+                      hundredth of a pixel off its twin so the two faces cannot z-fight face-on. */}
+                  <div className="absolute inset-0 rounded-l-[6px] overflow-hidden"
+                       style={{ background: PAPER, backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden',
+                                transform: 'rotateY(180deg) translateZ(0.01px)',
+                                boxShadow: 'inset 0 0 0 1px rgba(0,0,0,.15)' }}>
+                    <div className="absolute inset-0 pointer-events-none z-10"
+                         style={{ background: 'linear-gradient(90deg, rgba(0,0,0,.12) 0%, rgba(0,0,0,0) 15%, rgba(0,0,0,0) 82%, rgba(0,0,0,.20) 100%)' }} />
+                    {face(back)}
+                  </div>
                 </div>
-                <button type="button" onClick={shut} aria-label="Close" title="Close"
-                  style={{ background: PAPER_2, color: BOOK_INK, borderColor: 'rgba(0,0,0,.2)' }}
-                  className="shrink-0 h-9 w-9 rounded-lg border active:scale-[0.97]
-                             transition-transform duration-150 ease-out inline-flex items-center justify-center">
-                  <X size={16} />
-                </button>
-              </div>
+              );
+            })}
 
-              <div className="flex-1 min-h-0 overflow-y-auto mt-5 -mx-1 px-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                <div className="grid sm:grid-cols-2 gap-4">
-                  {shownEntries.map((e, i) => {
-                    const ready = !e.soon && !!getScene(e.sceneId);
-                    return (
-                      <button key={i} type="button" disabled={!ready}
-                        onClick={() => ready && onPick(e.sceneId)}
-                        style={{ background: ready ? PAPER_2 : 'rgba(0,0,0,.04)',
-                                 borderColor: ready ? 'rgba(0,0,0,.22)' : 'rgba(0,0,0,.12)' }}
-                        className={`text-left p-4 rounded-xl border transition-transform duration-200 ease-out
-                                    ${ready ? 'hover:-translate-y-[3px] active:scale-[0.985] cursor-pointer' : 'cursor-not-allowed'}`}>
-                        <span className="h-10 w-10 rounded-lg border flex items-center justify-center"
-                              style={{ background: PAPER, borderColor: 'rgba(0,0,0,.18)' }}>
-                          {ready ? <Icon name={e.icon} size={17} style={{ color: '#8A5A12' }} />
-                                 : <Lock size={15} style={{ color: BOOK_DIM }} />}
-                        </span>
-                        <span className="block font-display text-[16px] font-black uppercase tracking-wider mt-3"
-                              style={{ color: ready ? BOOK_INK : BOOK_DIM }}>{e.title}</span>
-                        <span className="block text-[12.5px] leading-snug mt-1.5" style={{ color: BOOK_DIM }}>{e.desc}</span>
-                        {!ready && (
-                          <span className="inline-block mt-3 font-mono text-[9px] uppercase tracking-widest border rounded px-1.5 py-0.5"
-                                style={{ color: BOOK_DIM, borderColor: 'rgba(0,0,0,.2)' }}>belum ditulis</span>
-                        )}
-                      </button>
-                    );
-                  })}
+            {/* the light the closing cover takes off the pages underneath it */}
+            <span ref={shadeFrontRef} className="absolute inset-0 pointer-events-none z-[60]"
+                  style={{ background: 'linear-gradient(90deg, #000 0%, rgba(0,0,0,.55) 60%, rgba(0,0,0,.35) 100%)', opacity: 0 }} />
+          </div>
+
+          {/* 🔴 THE COVER, AND IT IS NOT A PAGE. It hinges on the same spine and carries only its own
+              face: at 0° nothing faces you, so the spread underneath shows through; past 90° the
+              leather is what you see, which is the closed book. Lifted 20px in Z so it paints over
+              the sheets it is swinging onto, and it never takes a pointer — the drag belongs to the
+              paper. Its gold spine sits on the element's RIGHT edge because a 180° turn puts that
+              edge on the left of the screen, which is where a spine belongs. */}
+          <div className="absolute inset-y-0 left-0 w-full lg:left-1/2 lg:w-1/2 pointer-events-none"
+               style={{ transform: 'translateZ(20px)', transformStyle: 'preserve-3d' }}>
+            <div ref={leafRef} className="absolute inset-0"
+                 style={{ transformOrigin: 'left center', transformStyle: 'preserve-3d', willChange: 'transform' }}>
+              <div className="absolute inset-0 rounded-[6px] border border-accent-edge overflow-hidden"
+                   style={{ background: LEATHER, transform: 'rotateY(180deg)', backfaceVisibility: 'hidden',
+                            WebkitBackfaceVisibility: 'hidden' }}>
+                <span className="absolute inset-y-5 right-[6px] w-[3px] rounded-full bg-orange" />
+                <span ref={shadeBackRef} className="absolute inset-0 pointer-events-none z-20"
+                      style={{ background: 'linear-gradient(270deg, rgba(0,0,0,.75) 0%, rgba(0,0,0,.25) 70%, rgba(0,0,0,0) 100%)', opacity: 0 }} />
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-4">
+                  <span className="h-16 w-16 rounded-2xl border border-accent-edge flex items-center justify-center"
+                        style={{ background: 'rgba(0,0,0,.28)' }}>
+                    <Icon name={section.icon} size={28} style={{ color: '#C98A2E' }} />
+                  </span>
+                  <span className="font-display text-[15px] font-black uppercase tracking-[0.34em]"
+                        style={{ color: '#BFB29A' }}>Tutorial</span>
+                  <span className="h-[3px] w-10 rounded-full bg-orange" />
                 </div>
-              </div>
-
-              <div className="flex items-center justify-between pt-4 mt-4 border-t" style={{ borderColor: 'rgba(0,0,0,.16)' }}>
-                <button type="button" disabled={page === 0}
-                  onClick={() => { bookPage(); setPage(p => Math.max(0, p - 1)); }}
-                  aria-label="Previous page"
-                  style={{ background: PAPER_2, color: BOOK_INK, borderColor: 'rgba(0,0,0,.2)' }}
-                  className="h-9 w-9 rounded-lg border disabled:opacity-35 disabled:cursor-not-allowed
-                             active:scale-[0.97] transition-transform duration-150 ease-out inline-flex items-center justify-center">
-                  <ChevronLeft size={16} />
-                </button>
-                <span className="font-mono text-[10px] uppercase tracking-widest tabular-nums" style={{ color: BOOK_DIM }}>
-                  {safePage + 1} / {pages}
-                </span>
-                <button type="button" disabled={page >= pages - 1}
-                  onClick={() => { bookPage(); setPage(p => Math.min(pages - 1, p + 1)); }}
-                  aria-label="Next page"
-                  style={{ background: PAPER_2, color: BOOK_INK, borderColor: 'rgba(0,0,0,.2)' }}
-                  className="h-9 w-9 rounded-lg border disabled:opacity-35 disabled:cursor-not-allowed
-                             active:scale-[0.97] transition-transform duration-150 ease-out inline-flex items-center justify-center">
-                  <ChevronRight size={16} />
-                </button>
-              </div>
-            </div>
-            </div>
-
-            {/* BACK OF THE LEAF — the front cover, and therefore the closed book. Its gold spine
-                sits on the element's RIGHT edge because a 180° turn puts that edge on the left of
-                the screen, which is where a spine belongs. */}
-            <div className="absolute inset-0 rounded-[6px] border border-accent-edge overflow-hidden"
-                 style={{ background: LEATHER, transform: 'rotateY(180deg)', backfaceVisibility: 'hidden' }}>
-              <span className="absolute inset-y-5 right-[6px] w-[3px] rounded-full bg-orange" />
-              {/* and arriving on this one as it comes round */}
-              <span ref={shadeBackRef} className="absolute inset-0 pointer-events-none z-20"
-                    style={{ background: 'linear-gradient(270deg, rgba(0,0,0,.75) 0%, rgba(0,0,0,.25) 70%, rgba(0,0,0,0) 100%)', opacity: 0 }} />
-              <div className="absolute inset-0 flex flex-col items-center justify-center gap-4">
-                <span className="h-16 w-16 rounded-2xl border border-accent-edge flex items-center justify-center"
-                      style={{ background: 'rgba(0,0,0,.28)' }}>
-                  <Icon name={section.icon} size={28} style={{ color: '#C98A2E' }} />
-                </span>
-                <span className="font-display text-[15px] font-black uppercase tracking-[0.34em]"
-                      style={{ color: '#BFB29A' }}>Tutorial</span>
-                <span className="h-[3px] w-10 rounded-full bg-orange" />
               </div>
             </div>
           </div>
