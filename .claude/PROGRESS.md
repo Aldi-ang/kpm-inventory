@@ -1,6 +1,41 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-08-31 19:40 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **673/673 audit · 957/957 selfcheck** · branch `phase0-solid-ground`
+**Updated: 2026-09-01 07:50 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **680/680 audit · 957/957 selfcheck** · branch `phase0-solid-ground`
+
+## 🟠 2026-09-01 07:50 — THE REGIONAL WAREHOUSE IS THE LEDGER NOW. `a4bc1ca`, **680/680 + 957/957**.
+
+**He rejected my split and he was right.** I offered the job as two — repaint the colours, then
+redesign the layout — and he closed it: *"well redesign and repaint should go together isnt"*. A
+redesign rewrites the same classNames the repaint would touch, so splitting them means editing
+every line twice and reviewing one screen in two passes. One pass, one group of checks.
+
+**The branch half was not merely unfashionable, it was unreadable.** The HQ half of this screen was
+rebuilt on 2026-08-27; the BRANCH half never was. Measured against the light tokens: `#FFFFFF` on
+`--panel` is **1,39:1** and on `--raised` **1,23:1**, against `--ink`'s **13,42:1**. Sixteen white-ink
+sites, three of them panel headings, plus 24 hardcoded `bg-black/*` wells that keep their colour
+when the page turns cream. **Nothing asserted any of it** — group 8's palette scan reads
+`MerchantSalesView` and nothing else.
+
+**Two more faults, and neither was findable in a diff.** Both came off a rendered frame *after*
+every check was already green. `--orange` is `#FF8C1A` in BOTH themes because it is the EDGE half of
+the amber law — as reading ink on the light well it measured **1,08:1**, worse than the white ink
+this pass was written to fix. And six inputs had no placeholder colour at all, so they fell back to
+the browser's `rgb(156,163,175)` — **slate, the one hue the law bans by name**, on every address
+field in the reorder form, at 1,36:1.
+
+**The screen had never been lookable** — it needs a Google sign-in, a branch role and live
+Firestore. `tools/lab-firestore-stub.js` is now aliased over `firebase/firestore` for the lab build
+only and feeds fixtures through the component's own real listener, so **`?gudang` mounts the real
+branch view**. Measured there: 43 leaf text nodes in dark and in light with nothing under 4,5:1, 66
+with the arrival check open, worst placeholder 5,95:1, no horizontal overflow at 375px.
+
+⚠️ **BOTH FAULTS ARE APP-WIDE AND NOTHING PINS THEM: 90 uncoloured placeholders in 18 files, ~107
+bare `text-orange` in 15.** That is the next job and the brief has it, with the trap — a
+`text-orange` sitting on a scrim is CORRECT, so a blind regex over 15 files repaints things that
+were never wrong.
+
+**❓ WAITING ON ALDI — one naming question.** "My Current Branch Inventory" takes three lines at
+375px. A shorter name fixes it and only he names things.
 
 ## 🟠 2026-08-31 19:40 — HE NAMED THE TAB: **DATA INDUK**.
 

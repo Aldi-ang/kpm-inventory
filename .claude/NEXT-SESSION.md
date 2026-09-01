@@ -1,6 +1,6 @@
 # NEXT SESSION — read this, then `.claude/PROGRESS.md`. Read no code to orient.
 
-**Written 2026-08-31 19:40 WIB. 673/673 audit · 957/957 selfcheck. Branch `phase0-solid-ground`.**
+**Written 2026-09-01 07:50 WIB. 680/680 audit · 957/957 selfcheck. Branch `phase0-solid-ground`.**
 
 ## First command
 
@@ -10,70 +10,78 @@ npm run build; node src/config/integration.audit.mjs; node src/config/logicFixes
 
 PowerShell: `;` not `&&`. **Quote BOTH numbers.** The audit refuses to run against a stale `dist/`.
 
-## To LOOK at the Restock Vault without signing in
+## To LOOK at a screen without signing in
 
 ```
 npx vite build --config tools/ponder-lab.config.mjs; python -m http.server 4187 -d dist-ponderlab
 ```
 
-`?places` mounts the **whole Restock Vault** against fixtures (`db=null`, so its one listener bails
-out and nothing touches Firestore) · `?nota` mounts the surat jalan · `&light`, `&lite`, `&probe`.
+`?gudang` mounts the **branch warehouse screen** · `?places` the Restock Vault · `?nota` the surat
+jalan. Add `&light`, `&lite`, `&probe`.
 
-The `?places` motorist fixtures carry TIERS on purpose — one above the delivery line and two below —
-so the Orang list proves the clearance from both sides instead of just looking populated.
+**`?gudang` is new and it is the reusable part.** `tools/lab-firestore-stub.js` is aliased over
+`firebase/firestore` for the lab build only, so a screen that needs live data now renders against
+fixtures through its own real listener. Adding a screen means adding a `FIXTURES['<path tail>']`
+entry and a mount — no component changes.
 
-⚠️ **The pane lies twice over.** A screenshot can be a stale frame — the tab underline appeared on
-the wrong tab while `getComputedStyle` showed it correctly on the right one. And `document.hidden`
-is `true` unless you `tabs_select` first, which stalls React state updates so clicks look ignored.
-**Drive it with `element.click()` and read computed values.** A frame is the last word on nothing.
+⚠️ **The pane lies.** A screenshot can be a stale frame or a mid-fade, and `document.hidden` is
+`true` unless you `tabs_select` first. **Drive it with `element.click()` and read computed values.**
 
 ---
 
-## THE ONE JOB — redesign `BranchWarehouseManager` into Duke's Ledger
+## THE ONE JOB — the two faults found on 2026-09-01 are app-wide, and nothing pins them
 
-His own to-do: *"we havent redesign the regional warehouse i think i put that on the to do list"*.
-It is the last screen still in the old visual language.
+Both were found by LOOKING at the branch warehouse screen *after every check on it was already
+green*, and both are palette-law breaches in light mode. Counted across `src/**/*.jsx`:
 
-**Load the design stack first — SKILL.md §1a, non-negotiable:** `Aldi's Design Taste.md`, then
-`Design Inspiration Sources.md`, then `Skill(impeccable)` with the verb that matches, then
-`Skill(emil-design-eng)`, plus `Skill(redesign-skill)` and `Skill(taste-skill)` because this
-replaces an existing look. The palette law is locked: no blue, no green, slate + rust + gold, and
-the exemption for printed notas does not apply here — this is app UI.
+| Fault | Sites | Why it is a bug |
+|---|---|---|
+| **Uncoloured `placeholder=`** | **90, in 18 files** | no colour set → the browser's own `rgb(156,163,175)`, which is **slate, the hue the law bans by name**. Measured **1,36:1** on the light well |
+| **Bare `text-orange` as ink** | **~107, in 15 files** | `--orange` is `#FF8C1A` in BOTH themes because it is the EDGE half of the amber law. As reading ink on the light well it measured **1,08:1** |
 
-**What the screen already knows**, so the redesign preserves it rather than rediscovering it:
-`BranchWarehouseManager.jsx` imports `supplyByProduct`, `warehouseList`, `MASTER` and `bufferDays`
-from `src/utils/supply.js`. `MASTER` gets `days: null`, not `0`, on purpose — the master vault is
-where shipments come FROM, so "days of cover" is not a question that applies to it. Do not let a
-redesign turn that null into a dash that looks like missing data.
+Worst offenders: `RestockVaultView.jsx` (19 placeholders), `CustomerManager.jsx` (13),
+`JourneyView.jsx` (21 orange), `MapMissionControl.jsx` (18 orange).
 
-**Three things landed on 2026-08-31 that this screen touches.**
+**The fix is already written and shipped once** — copy it out of `BranchWarehouseManager.jsx`:
 
-1. The main warehouse is named once now, `Gudang Pusat (Master Vault)` — longer than the old
-   `MASTER`, so **re-measure anything that truncates**, `StockByWarehouseTable` on a phone
-   especially.
-2. Warehouses carry a registered **address** (`places` collection, `kind: 'gudang'`, read through
-   `addrFor()` in `RestockVaultView.jsx`). Showing it on a warehouse card would cost almost nothing.
-3. The Restock Vault gained a fifth tab, **Data Induk** — pabrik · gudang · orang — and a clearance
-   `canHandleDelivery()` in `permissions.js` (T1–T4, `FLEET_CAPTAIN` named explicitly). If the
-   regional-warehouse redesign wants to show "who may receive here", that function is the answer;
-   do not write a second tier list.
+- placeholders → `placeholder:text-ink-dim placeholder:opacity-100 placeholder:italic`. All three
+  parts are load-bearing. `opacity-100` because **Firefox dims placeholders by .54 on top of any
+  colour set**; `italic` because in light mode a darkened placeholder is otherwise
+  indistinguishable from a typed value (`theme.css:3231` settled this, and says so).
+- `text-orange` → `text-accent-ink`. **`border-orange` and `bg-orange` stay** — those are edges,
+  and a 3px rule is the legal form of amber.
+
+⚠️ **THE TRAP THAT MAKES A LAZY SWEEP WRONG.** Not every `text-orange` is a breach: one sitting on
+a scrim or a dark-only surface is correct, because a scrim is dark in both themes by law. A blind
+regex over 15 files will repaint those too and nobody will notice. **Measure each ground before
+swapping** — mount the screen at `?<lab>&light` and sweep leaf text nodes against the first
+ancestor that paints an opaque background. That sweep is written; lift it from the `?gudang&probe`
+block in `tools/ponder-lab.jsx`.
+
+⚠️ **Do not add `.kpm-inline` to reach the placeholder rule.** It carries its own height, padding
+and border, and will fight classes the inputs already have. That is why the fix is per-input.
+
+**Pin it in `integration.audit.mjs` group 57's shape** — that group went red on all four of its
+first checks before the edit, which is the only reason its green is worth anything.
 
 ---
 
 <details>
 <summary>Queued — do not start these</summary>
 
-- **Ponder caption static on phones, moving on PC.** DECIDED 2026-08-31, not built. His words: *"to
-  save space then let it stay static for phones but move for PC"* and *"u can use /emil design to
-  help u do this job"*. Today the phone case is `if (boxW > W * 0.7) return null;` in
-  `PonderOverlay.jsx` — it HIDES the caption instead of pinning it. The job is a third state:
-  visible, fixed position, phone only.
-- **G1 + G2, the money item.** `batchNo` captured at intake and never copied onto
-  `branches/{loc}/inventory`; nothing enforces oldest-ships-first.
-- **Restock Vault, two notes from the 2026-08-31 review.** Nothing destructive is gated by ROLE —
-  what protects it is the screen mounting behind `isAdmin`, the Master Vault password. And landed
-  cost spreads shipping/labour/excise equally per UNIT, so a cheap product absorbs the same rupiah
-  as an expensive one — **a decision he has not been asked to confirm**, not a bug.
+- **G1 + G2, the money item.** `batchNo` captured at intake, never copied onto
+  `branches/{loc}/inventory`; nothing enforces oldest-ships-first. **If he wants money before
+  paint, this jumps the queue** — his own standing call on the warehouse-gaps list.
+- **Ponder caption static on phones, moving on PC.** DECIDED 2026-08-31, not built. *"to save space
+  then let it stay static for phones but move for PC"*. Today `PonderOverlay.jsx` HIDES it:
+  `if (boxW > W * 0.7) return null;`. The job is a third state — visible, fixed, phone only.
+- **"My Current Branch Inventory" takes 3 lines at 375px.** Measured, not broken: 16px, the title
+  column is 218px, and the chevron eats width the other panels do not spend. A shorter name would
+  fix it and **naming is his** — ask before renaming.
+- **Landed cost spreads shipping/labour/excise equally per UNIT**, so a cheap product absorbs the
+  same rupiah as an expensive one. **A decision he has not been asked to confirm**, not a bug.
+- **Restock Vault: nothing destructive is gated by ROLE** — what protects it is the screen mounting
+  behind `isAdmin`, the Master Vault password.
 - **Three caption/ring overlaps in Stock by Warehouse on DESKTOP**, beats 7, 16, 22.
 - **G5** shrinkage · **G4** records joined by name not id · **Siapkan Pengiriman and the shipping
   modal, still untested by anyone.**
@@ -84,9 +92,5 @@ redesign turn that null into a dash that looks like missing data.
   `C:/Users/ASUS/.claude/9router-claude-id.txt` — note the `.claude/`.
 
 </details>
-
-**No Firestore rules change is needed for the new `places` collection** — it falls through the
-`users/{bossUid}/{document=**}` catch-all to owner and distributor-admin only, which is exactly the
-gate the Restock Vault already sits behind. Nothing to deploy.
 
 **Before you finish: rewrite this file with the next single job.**
