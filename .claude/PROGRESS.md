@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-09-01 18:40 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **705/705 audit · 977/977 selfcheck** · branch `phase0-solid-ground`
+**Updated: 2026-09-01 19:20 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **705/705 audit · 977/977 selfcheck** · branch `phase0-solid-ground`
 
 ## ⚪ 2026-09-01 18:07 — SIDE SESSION (7 Days to Die modding). No KPM file touched.
 
@@ -8,6 +8,33 @@ Not a KPM entry. Logged only so the Stop hook's mtime check has an honest answer
 `src/ponder/stages/StockByWarehouseTable.jsx` is the parallel 🟠 KPM session's in-flight edit,
 and this session neither made it nor knows its state. Nothing above or below was rewritten.
 Vault: `A-Brain/Wiki/Concepts/7 Days to Die Mod Load Order.md`.
+
+## 🟠 2026-09-01 19:20 — THE TUTORIAL STOPS SAYING "MEJA". **705/705 + 977/977**.
+
+*"what do you mean by meja gudang cabang tho ... dont translate secara harafiah"*. It was a literal
+rendering of the English word desk and nothing on screen is called that. It is **panel** now, in the
+scene and in the book's own description — the only two places it appeared.
+
+**Fourteen beats became ten.** Six of the fourteen pointed at the same tab button in a row, which is
+what he meant by *"too much telling and showing"*: the caption named the scan, the typed fallback,
+the blind count and the hidden HQ figure while the ring sat on the word *Incoming* the whole time.
+`related` is gone too — it linked to HQ tutorials a branch admin cannot open.
+
+🔴 **TWO HALVES OF HIS REQUEST ARE NOT DONE, AND NEITHER IS A WORDING PROBLEM.** They are the
+brief's one job now:
+
+1. **The stage has nothing inside the tabs to point at.** `RegionalWarehouseStage.jsx` renders the
+   real nav strip plus a one-line placeholder per tab. Showing features means extracting them so the
+   tutorial and `BranchWarehouseManager` render the same markup — the `StockByWarehouseTable`
+   pattern. A build, not an edit.
+2. **Every tier still sees every tutorial.** The mechanism exists (`hasClearance` + the sidebar's
+   feature strings) but **section-level gating is the wrong shape**: the Regional Warehouse entry
+   sits inside the Restock Vault section, so hiding sections would hide it from the people it is
+   for. Needs per-entry gating, and the permission strings must be READ, not guessed — a wrongly
+   hidden tutorial fails silently.
+
+🔴 **WAITING ON ALDI — three.** Whether both Wi-Fi networks stay in use · the label print-and-scan
+test · the G1+G2 staleness threshold in days.
 
 ## 🟠 2026-09-01 18:40 — THE CAMERA FOLLOWS THE HIGHLIGHT. **705/705 + 977/977**.
 

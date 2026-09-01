@@ -1,6 +1,6 @@
 # NEXT SESSION — read this, then `.claude/PROGRESS.md`. Read no code to orient.
 
-**Written 2026-09-01 18:40 WIB. 705/705 audit · 977/977 selfcheck. Branch `phase0-solid-ground`.**
+**Written 2026-09-01 19:20 WIB. 705/705 audit · 977/977 selfcheck. Branch `phase0-solid-ground`.**
 
 ## First command
 
@@ -29,37 +29,50 @@ plausible numbers. `innerText` comes back UPPERCASED by the CSS on these desks.
 
 ---
 
-## THE ONE JOB — ten copies of the unit conversion, and two of them are wrong
+## THE ONE JOB — the tutorial only shows the tab, and everyone sees every tutorial
 
-His rule, stated twice: *"we should have 1 data to be used many times on the other components"*.
-The intake desk obeys it now. Almost nothing else does.
+Two halves of one request, 2026-09-01. Do them together; they touch the same three files.
 
-`convertToBks(qty, unit, product)` at **`src/utils/helpers.js`** is the one function. It reads
-`packsPerSlop`, `slopsPerBal` and `balsPerCarton` off the product, 10/20/4 as fallbacks. These
-re-implement it inline: `App.jsx` `1947` `3198` `3342` `3411` `3746` `3761` ·
-`MerchantSalesView.jsx` `114` `626` `752` · `AgentProfileView.jsx` `488` `565` ·
-`EODReconciliationView.jsx` `222`.
+### Half one — the stage has nothing inside the tabs to point at
 
-**Two are producing wrong numbers today, and those are the job:**
+His words, from the phone: *"why the ponder for regional warehouse is too much telling and showing,
+like that i see on the phone all the timeframe is only showing the highlights of the tab only and
+not the features inside"*.
 
-- **`AgentInventoryView.jsx:81` — `if (unit === 'Slop') mult = 10;`** No product lookup at all.
-  Every product that is not ten packs to a slop is counted wrong there, silently.
-- **`MerchantSalesView.jsx:1238` and `:1256` — `qtyInBks *= 800`** for a karton, hardcoded. 800 is
-  the 4 × 20 × 10 default; the two lab products are 400 and 600.
+`src/ponder/stages/RegionalWarehouseStage.jsx` mounts the real nav strip and then a **one-line
+string per tab** as the body. So a beat can name the scan button, the typed fallback or the blind
+count, but the ring has nothing to land on except the word *Incoming*. The wording pass already
+folded four of those beats into one; the rest needs the stage to actually render the controls.
 
-Do those two first — they are wrong, the rest are merely repetitive.
+**The pattern to follow is already in this repo:** `StockByWarehouseTable.jsx` is one component used
+by BOTH the real screen and the tutorial, which is why that scene can point at a real column. Do the
+same for the branch desk — extract the small pieces the scene names (the scan button, the typed
+number box, the count panel, the locked address line, a stock card, a ledger row, the read-only
+marker on Data Induk) so the tutorial and `BranchWarehouseManager.jsx` render the same markup.
 
-⚠️ **THE TRAP.** The inline copies are not identical and a blind replace changes working
-behaviour. `MerchantSalesView.jsx:752` sits inside `updateCartItem`, where the multiplier feeds
-`calculatedPrice` and the retur/exchange path deliberately forces that to 0. `App.jsx:3342` and
-`:3411` compute a multiplier against the OLD product data and the NEW one either side of an edit;
-collapsing them into one call destroys a deliberate before/after pair. Read each site's function
-before touching it.
+⚠️ **Do NOT hand-build a replica in the stage.** The comment at the top of that file explains why,
+and it is right: a second copy of the screen is a second thing to keep correct. Extract, don't copy.
 
-⚠️ **`convertToBks` returns `qty` untouched when the product is missing**, which silently prices
-a karton as one bks. Every call must pass `product || {}` so the fallback applies.
+### Half two — every tier sees every tutorial
 
-**Pin it in group 59**, which already asserts the intake desk reads its rates from the one converter.
+His words: *"i think each tier only can access the ponder for the components that they can access
+only, so regional admin only can see ponder for regional warehouse and not the whole restock vault
+ponder"*.
+
+`PonderBook.jsx:234` takes only `activeTab` and renders all of `SECTIONS`. The mechanism is already
+here: every `id` in `sections.js` is an `activeTab` value, and the sidebar filters those same ids
+with `hasClearance(userRole, feature)` (`BiohazardTheme.jsx`, the nav list around `:380`).
+
+⚠️ **SECTION-LEVEL GATING IS THE WRONG SHAPE AND WILL LOOK RIGHT.** The Regional Warehouse entry
+lives INSIDE the Restock Vault section, so hiding whole sections hides it from the exact people it
+was written for. It needs a `feature` on the ENTRY as well, and the entries filtered too.
+
+⚠️ **Read `ROLE_PERMISSIONS` in `src/config/permissions.js` before choosing the feature strings.**
+Guessing which permission separates HQ from a branch admin risks hiding a tutorial from the people
+who need it, and that failure is silent. Pass `userRole` down from `BiohazardTheme.jsx:1006`, and
+give the ponder lab a role too or `?book` stops rendering.
+
+**Pin both in group 56.**
 
 <details>
 <summary>Queued — do not start these</summary>
