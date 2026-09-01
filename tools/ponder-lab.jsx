@@ -297,7 +297,7 @@ function PlacesLab() {
     <div className="biohazard-content h-screen p-4 bg-panel">
       <style>{SHELL_RULE}</style>
       <RestockVaultView
-        inventory={[]} procurements={LAB_PROCUREMENTS} motorists={LAB_MOTORISTS} branchStockMap={{}}
+        inventory={LAB_PRODUCTS} procurements={LAB_PROCUREMENTS} motorists={LAB_MOTORISTS} branchStockMap={{}}
         db={null} storage={null} appId="lab" user={null} isAdmin userRole="DEVELOPER"
         appSettings={{ companyName: 'KPM INVENTORY' }} masterUserId="lab"
       />
@@ -324,6 +324,16 @@ FIXTURES['branches/BANDUNG/inventory'] = [
 ];
 /* The registry the desk now READS. `gudang` carries this branch's fixed address — the reorder form
    cannot type one any more — and `pabrik`/`orang` fill the read-only Data Induk tab. */
+/* TWO PRODUCTS WITH DELIBERATELY DIFFERENT PACKING. One karton is 400 Bks for the first and 600
+   for the second, so the intake desk's rates line can be seen reading each product's own numbers
+   rather than a constant. A lab with one product could not tell those two cases apart. */
+const LAB_PRODUCTS = [
+  { id: 'p-cg16', name: 'Cello Green 16', sku: 'CG16', stock: 4200, priceDistributor: 8900,
+    packsPerSlop: 10, slopsPerBal: 10, balsPerCarton: 4 },
+  { id: 'p-djar', name: 'Djarum Coklat 12', sku: 'DJ12', stock: 1800, priceDistributor: 12500,
+    packsPerSlop: 12, slopsPerBal: 5,  balsPerCarton: 10 },
+];
+
 FIXTURES['places'] = [
   { id: 'bandung', name: 'BANDUNG', kind: 'gudang', address: 'Jl. Soekarno Hatta No. 412, Kec. Batununggal, Kota Bandung, Jawa Barat 40266' },
   { id: 'pabrik-kudus', name: 'Pabrik Kudus', kind: 'pabrik', address: 'Jl. Raya Kudus-Pati KM 8, Kudus, Jawa Tengah' },

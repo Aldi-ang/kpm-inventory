@@ -4865,6 +4865,52 @@ check(G58, 'a successful scan opens the count panel itself, so the two are one a
   'his words: the barcode is a gate that OPENS the blind count panel. Leaving the count behind a ' +
   'second button is exactly the step that was missing this morning');
 
+const G59 = '59. Karton, bal and slop at the intake desk';
+const salesSrc59 = fs.readFileSync('src/MerchantSalesView.jsx', 'utf8');
+
+/* 🔴 HIS RULE, 2026-09-01: *"we should have 1 data to be used many times on the other
+   components"*. Packing is per product and lives in the master vault, so the ONLY acceptable
+   source for a rate is helpers.convertToBks. A local `packsPerSlop || 10` in this file would be
+   another copy of the maths, and a copy is how two screens end up disagreeing about how many
+   packs are in a karton. */
+check(G59, 'the intake desk reads its rates from the one shared converter, not its own copy',
+  /import \{[^}]*convertToBks[^}]*\} from '\.\/utils\/helpers'/.test(code(restockSrc58)) &&
+  /Karton: convertToBks\(1, 'Karton', prod \|\| \{\}\)/.test(code(restockSrc58)) &&
+  !/packsPerSlop|slopsPerBal|balsPerCarton/.test(code(restockSrc58)),
+  'the moment this file carries its own 10/20/4 it is an eleventh copy of the conversion, and ' +
+  'the one that is wrong will be the one nobody is looking at');
+
+/* The boxes are a CALCULATOR. They must leave the line holding ONE number in ONE unit, because
+   `totalItemsReceived`, the landed cost per unit, the HQ stock increment and the shipment line
+   all read `qtyReceived` raw. A line that said qty 2 unit Karton would deduct 2 from HQ stock. */
+check(G59, 'the four boxes total to Bks and leave the line holding one number in one unit',
+  /qtyReceived: anyTyped \? totalBks : ''/.test(code(restockSrc58)) &&
+  /unit: 'Bks', qtyReceived:/.test(code(restockSrc58)) &&
+  /const totalBks = Object\.keys\(per\)\.reduce/.test(code(restockSrc58)),
+  'storing the typed unit instead of the total is the data intersection he asked to avoid: ' +
+  'increment(-2) for two karton silently removes two packs from HQ');
+
+/* One arrangement to learn, not two. Same four units, same order, in both desks. */
+check(G59, 'the intake desk offers the same four units, in the same order, as the sales terminal',
+  /\['Karton', 'Bal', 'Slop', 'Bks'\]\.map/.test(code(restockSrc58)) &&
+  /\['Karton', 'Bal', 'Slop', 'Bks'\]\.map/.test(code(salesSrc59)),
+  'a second order of the same four boxes is a second thing to learn and a second place to ' +
+  'mistype under time pressure');
+
+/* His words, same message: *"of course the default price is distributor price on the restock
+   vault"*. It already was; this check is what stops a later edit from quietly making it retail. */
+check(G59, 'a line added at the intake desk starts at the distributor price',
+  /basePrice: product\.priceDistributor \|\| 0/.test(code(restockSrc58)),
+  'the intake desk buys, it does not sell — a retail default here would overstate every ' +
+  'landed cost in the ledger');
+
+/* The rates are PRINTED, not merely used. When the packing saved in the master vault is wrong,
+   the only symptom is a total that looks plausible; the line is what makes it visible. */
+check(G59, 'the line prints the rates it is using',
+  /1 KARTON = \{per\.Karton\} &middot; 1 BAL = \{per\.Bal\} &middot; 1 SLOP = \{per\.Slop\} BKS/.test(code(restockSrc58)) &&
+  /1 KARTON = \{per\.Karton\} &middot; 1 BAL = \{per\.Bal\} &middot; 1 SLOP = \{per\.Slop\} BKS/.test(code(salesSrc59)),
+  'a wrong rate produces a plausible total, which is the one kind of error nobody catches');
+
 let last = '';
 for (const r of results) {
   if (r.group !== last) { console.log('\n' + r.group); last = r.group; }

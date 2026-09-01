@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { UploadCloud, FileText, Search, Save, X, RefreshCcw, History, ChevronDown, Printer, Pencil, Trash2, Image as ImageIcon, Target, PlusCircle, ArrowLeftRight, Send, Camera, Truck, AlertCircle, MapPin, Clock } from 'lucide-react';
 import { doc, collection, setDoc, updateDoc, deleteDoc, serverTimestamp, writeBatch, onSnapshot, increment } from 'firebase/firestore';
-import { savePhotoAndGetReference, deletePhotoFromStorage, compressImageToBase64, getLocalDayKey} from './utils/helpers';
+import { savePhotoAndGetReference, deletePhotoFromStorage, compressImageToBase64, getLocalDayKey, convertToBks } from './utils/helpers';
 import { confirmAction } from './components/ConfirmGate.jsx';
 import AcceptanceReceipt from './components/AcceptanceReceipt.jsx';
 import ShipmentLabel from './components/ShipmentLabel.jsx';
@@ -395,6 +395,42 @@ const RestockVaultView = ({ inventory = [], procurements = [], motorists = [], b
             basePrice: product.priceDistributor || 0,
             unit: product.unit || 'Bks',
         }]);
+    };
+
+    /* 🔴 THE FOUR BOXES ARE A CALCULATOR, NOT A SECOND UNIT ON THE LINE. Aldi, 2026-09-01:
+       *"add bks/slop/bal/karton option into the restock vault ... this logic should work the same
+       way like what we have on the sales terminal ... we should have 1 data to be used many times
+       on the other components"*.
+
+       So it is the sales terminal's own arrangement, ported: the boxes total to BKS and write that
+       one number into `qtyReceived`, and the typed breakdown is kept in a display-only `mix` field
+       that no calculation ever reads. Nothing downstream changes — `totalItemsReceived`, the landed
+       cost per unit, the HQ stock increment and the shipment line all still read one number in one
+       unit, which is the only reason there is nothing here for two screens to disagree about.
+
+       The rates come from `convertToBks` and from nowhere else. Packing is per product and lives in
+       the master vault, so a local 10/20/4 written here would be an eleventh copy of the maths and
+       the exact "data intersection" he asked to avoid. `inventory.find` rather than the cart line,
+       because the cart line deliberately carries only what the delivery note needs. */
+    const bksPerUnit = (prod) => ({
+        Karton: convertToBks(1, 'Karton', prod || {}),
+        Bal:    convertToBks(1, 'Bal',    prod || {}),
+        Slop:   convertToBks(1, 'Slop',   prod || {}),
+        Bks:    1,
+    });
+
+    const applyMix = (item, key, raw) => {
+        const digits = String(raw).replace(/\D/g, '');
+        const mix = { ...(item.mix || {}), [key]: digits };
+        const per = bksPerUnit(inventory.find(pr => pr.id === item.id));
+        const totalBks = Object.keys(per).reduce((a, u) => a + (Number(mix[u]) || 0) * per[u], 0);
+        /* Empty boxes leave the field BLANK rather than 0. The row's own hint treats a blank as
+           "he has not answered yet" and stays quiet; a 0 would make it shout that the delivery is
+           short before anything has been typed. */
+        const anyTyped = Object.values(mix).some(v => v !== '' && v != null);
+        setCart(prev => prev.map(i => i.cartId === item.cartId
+            ? { ...i, mix, unit: 'Bks', qtyReceived: anyTyped ? totalBks : '' }
+            : i));
     };
 
     const removeFromCart = (cartId) => setCart(cart.filter(item => item.cartId !== cartId));
@@ -1939,12 +1975,12 @@ const RestockVaultView = ({ inventory = [], procurements = [], motorists = [], b
 
                             {/* THE LINES — batch is a column, not a box in a corner */}
                             <div className="overflow-x-auto border border-line-2 rounded-lg bg-panel">
-                                <table className="w-full text-sm min-w-[520px]">
+                                <table className="w-full text-sm min-w-[780px]">
                                     <thead>
                                         <tr className="bg-raised">
                                             <th className="text-left text-[10px] font-bold text-ink-muted uppercase tracking-widest px-3 py-2 border-b border-line-2">Barang</th>
                                             <th className="text-left text-[10px] font-bold text-ink-muted uppercase tracking-widest px-3 py-2 border-b border-line-2 w-[130px]">Batch</th>
-                                            <th className="text-right text-[10px] font-bold text-ink-muted uppercase tracking-widest px-3 py-2 border-b border-line-2 w-[110px]">Jumlah</th>
+                                            <th className="text-right text-[10px] font-bold text-ink-muted uppercase tracking-widest px-3 py-2 border-b border-line-2 w-[330px]">Jumlah</th>
                                             <th className="text-right text-[10px] font-bold text-ink-muted uppercase tracking-widest px-3 py-2 border-b border-line-2">@ Landed</th>
                                             <th className="px-3 py-2 border-b border-line-2 w-[44px]"></th>
                                         </tr>
@@ -1971,6 +2007,41 @@ const RestockVaultView = ({ inventory = [], procurements = [], motorists = [], b
                                                         warning nobody reads. Blank box = no warning yet: he
                                                         has not answered, so there is nothing to be wrong. */}
                                                     <td className="px-3 py-2">
+                                                        {/* TYPE IT THE WAY THE PAPER SAYS IT. The factory note counts in
+                                                            karton and bal; retyping that as bks by hand is where a zero
+                                                            goes missing. Same four boxes, same order and same rates line
+                                                            as the sales terminal — one arrangement to learn, not two. */}
+                                                        <div className="flex items-center gap-1 flex-wrap mb-1.5">
+                                                            {['Karton', 'Bal', 'Slop', 'Bks'].map(u => (
+                                                                <span key={u} className="flex items-center gap-1 border border-line-2 bg-raised px-1.5 py-1 rounded">
+                                                                    <input
+                                                                        type="text"
+                                                                        inputMode="numeric"
+                                                                        value={(item.mix && item.mix[u]) || ''}
+                                                                        onChange={e => applyMix(item, u, e.target.value)}
+                                                                        placeholder="–"
+                                                                        aria-label={`${item.name} ${u}`}
+                                                                        className="w-7 bg-transparent text-center text-ink font-black text-xs outline-none placeholder:text-ink-dim placeholder:opacity-100"
+                                                                    />
+                                                                    <em className="not-italic text-[8px] font-black uppercase tracking-widest text-ink-muted">{u}</em>
+                                                                </span>
+                                                            ))}
+                                                            <span className="w-full text-[10px] font-black font-mono text-accent-ink mt-0.5">
+                                                                = {num(Number(item.qtyReceived) || 0)} Bks
+                                                            </span>
+                                                            {/* The rates this line is actually using. When the packing saved
+                                                                in the master vault is wrong, the only symptom is a total
+                                                                that looks plausible — printing them turns that into
+                                                                something he can see without opening anything. */}
+                                                            {(() => {
+                                                                const per = bksPerUnit(inventory.find(pr => pr.id === item.id));
+                                                                return (
+                                                                    <span className="w-full text-[10.5px] font-mono font-bold text-ink-muted tracking-wide mt-0.5">
+                                                                        1 KARTON = {per.Karton} &middot; 1 BAL = {per.Bal} &middot; 1 SLOP = {per.Slop} BKS
+                                                                    </span>
+                                                                );
+                                                            })()}
+                                                        </div>
                                                         <input type="number" min="0" value={item.qtyReceived} onChange={e => updateCartItem(item.cartId, 'qtyReceived', e.target.value)} placeholder="0" className="w-full bg-inset border border-line-2 rounded p-1.5 text-xs text-ink font-mono text-right outline-none focus:border-orange transition-colors"/>
                                                         {(() => {
                                                             const adv = sendAdvice[item.id];
