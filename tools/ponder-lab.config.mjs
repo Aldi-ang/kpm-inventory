@@ -6,9 +6,19 @@
    Nothing here touches dist/ — it writes dist-ponderlab/, which is gitignored. */
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import { fileURLToPath } from 'node:url';
 
 export default defineConfig({
   plugins: [react()],
+  /* LAB ONLY. `?gudang` mounts the real branch warehouse screen, whose listener returns early
+     without a masterUserId — so with no database it can only ever render its loading state. The
+     stub serves fixtures through the real listener instead. dist/ is built by vite.config.js and
+     never sees this. */
+  resolve: {
+    alias: {
+      'firebase/firestore': fileURLToPath(new URL('./lab-firestore-stub.js', import.meta.url)),
+    },
+  },
   build: {
     outDir: 'dist-ponderlab',
     emptyOutDir: true,

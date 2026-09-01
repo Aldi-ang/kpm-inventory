@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Package, ArrowRight, CheckCircle, XCircle, AlertCircle, Clock, Send, Truck, ShieldCheck, Globe, MapPin, Pencil, MinusCircle, PlusCircle, User, FileText, Camera, ChevronDown, ChevronUp, Check, Eye, Save, X } from 'lucide-react';
+import { Package, ArrowRight, CheckCircle, XCircle, AlertCircle, Clock, Send, Truck, Globe, MapPin, Pencil, MinusCircle, PlusCircle, User, FileText, Camera, ChevronDown, ChevronUp, Check, Eye, Save, X } from 'lucide-react';
 import { collection, doc, onSnapshot, writeBatch, serverTimestamp, updateDoc, deleteDoc, runTransaction, increment } from 'firebase/firestore';
 import { savePhotoAndGetReference, compressImageToBase64 } from '../utils/helpers';
 /* Reused rather than rewritten: a Firestore Timestamp, an offline `{seconds}` and an unresolved
@@ -517,10 +517,10 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
         const { held, unexplained } = arrivalsOnHand(arrivals, item.stock);
         const days = oldestStockDays(held, Math.floor(Date.now() / 1000));
         return (
-            <div key={item.id} className="bg-black/40 p-3 sm:p-4 rounded-xl border border-line-2 shadow-inner">
+            <div key={item.id} className="bg-sunk p-3 sm:p-4 rounded-xl border border-line-2 shadow-inner">
                 <div className="flex justify-between items-center gap-2">
-                    <span className="font-bold text-white uppercase text-sm truncate">{item.name}</span>
-                    <span className="text-lg font-black text-gold shrink-0">{item.stock} <span className="text-[10px] text-ink-muted font-bold">Bks</span></span>
+                    <span className="font-bold text-ink uppercase text-sm break-words">{item.name}</span>
+                    <span className="text-lg font-black text-accent-ink shrink-0">{item.stock} <span className="text-[10px] text-ink-muted font-bold">Bks</span></span>
                 </div>
                 {(days !== null || unexplained > 0) && (
                     <details className="group/age mt-2 pt-2 border-t border-line-2">
@@ -832,9 +832,9 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
 
     const StatusBadge = ({ status }) => {
         const styles = {
-            'PENDING': 'bg-raised text-orange border border-orange/50',
+            'PENDING': 'bg-raised text-accent-ink border border-orange/50',
             'REJECTED': 'bg-danger-well text-danger-text border border-danger/50',
-            'IN_TRANSIT': 'bg-raised text-gold border border-gold/50 animate-pulse',
+            'IN_TRANSIT': 'bg-raised text-accent-ink border border-gold/50 animate-pulse',
             'DELIVERED': 'bg-verified-fill text-verified border border-verified/50',
             /* DISPUTED is a real outcome, not a failure — the goods ARE in the
                warehouse and the count IS filed. Red because HQ still owes an
@@ -874,15 +874,15 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
         const isFulfillableByTier3 = isAreaAdmin && order.status === 'IN_TRANSIT';
 
         return (
-            <div className="bg-black/50 rounded-2xl border border-line-2 p-4 sm:p-6 animate-fade-in mt-2 mb-4">
+            <div className="bg-sunk rounded-2xl border border-line-2 p-4 sm:p-6 animate-fade-in mt-2 mb-4">
                 <div className="flex flex-col lg:flex-row gap-6 mb-8 border-b border-line-2 pb-6">
                     <div className="flex-1 bg-panel p-4 sm:p-5 rounded-xl border border-line-2 shadow-xl relative overflow-hidden">
-                        <div className="absolute top-0 right-0 p-4 opacity-10 pointer-events-none"><Truck size={80} className="text-gold"/></div>
+                        <div className="absolute top-0 right-0 p-4 opacity-10 pointer-events-none"><Truck size={80} className="text-accent-ink"/></div>
                         
                         <div className="flex justify-between items-center mb-4">
                             <h4 className="text-[10px] font-bold text-ink-muted uppercase tracking-widest">Informasi Pengiriman (TMS)</h4>
                             {isAdmin && (order.status === 'IN_TRANSIT' || order.status === 'DELIVERED') && (
-                                <button onClick={(e) => { e.stopPropagation(); handleStartEditingOrder(order); }} className="text-[11px] bg-raised hover:bg-line-2 text-gold px-2 py-1 rounded border border-line-3 font-bold uppercase flex items-center gap-1 transition-colors relative z-10 shadow-lg">
+                                <button onClick={(e) => { e.stopPropagation(); handleStartEditingOrder(order); }} className="text-[11px] bg-raised hover:bg-line-2 text-accent-ink px-2 py-1 rounded border border-line-3 font-bold uppercase flex items-center gap-1 transition-colors relative z-10 shadow-lg">
                                     <Pencil size={10}/> Edit Data
                                 </button>
                             )}
@@ -896,15 +896,15 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
                             <div className="space-y-2.5 relative z-10">
                                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center text-sm gap-1 sm:gap-0">
                                     <span className="text-ink-muted flex items-center gap-2"><User size={14}/> Dikirim Oleh (Sender)</span>
-                                    <span className="font-bold text-orange uppercase">{order.senderName || order.fulfilledBy?.split('@')[0] || 'HQ Admin'}</span>
+                                    <span className="font-bold text-accent-ink uppercase">{order.senderName || order.fulfilledBy?.split('@')[0] || 'HQ Admin'}</span>
                                 </div>
                                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center text-sm gap-1 sm:gap-0">
                                     <span className="text-ink-muted flex items-center gap-2"><Truck size={14}/> Logistic Company</span>
-                                    <span className="font-bold text-white uppercase">{order.courier || 'N/A'}</span>
+                                    <span className="font-bold text-ink uppercase">{order.courier || 'N/A'}</span>
                                 </div>
                                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center text-sm gap-1 sm:gap-0">
                                     <span className="text-ink-muted flex items-center gap-2"><FileText size={14}/> No. Resi</span>
-                                    <span className="font-bold text-gold uppercase font-mono tracking-wider bg-black/50 px-2 py-0.5 rounded border border-line-2 self-start sm:self-auto">{order.trackingNo || 'N/A'}</span>
+                                    <span className="font-bold text-accent-ink uppercase font-mono tracking-wider bg-inset px-2 py-0.5 rounded border border-line-2 self-start sm:self-auto">{order.trackingNo || 'N/A'}</span>
                                 </div>
                             </div>
                         )}
@@ -931,12 +931,12 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
                             the evidence the branch argues a claim from, so it stays on the card
                             forever rather than living only in the timeline text. */}
                         {isDelivered && Array.isArray(order.receivedItems) && order.receivedItems.length > 0 && (
-                            <div className="mt-3 bg-black/40 rounded-lg border border-line-2 p-3 relative z-10">
+                            <div className="mt-3 bg-sunk rounded-lg border border-line-2 p-3 relative z-10">
                                 <h5 className="text-[10px] font-bold text-ink-muted uppercase tracking-widest mb-2">Hasil Hitung di Gudang</h5>
                                 <div className="space-y-1.5">
                                     {order.receivedItems.map(r => (
                                         <div key={r.productId} className="flex justify-between items-center gap-3 text-[11px]">
-                                            <span className="text-ink font-bold uppercase truncate">{r.name}</span>
+                                            <span className="text-ink font-bold uppercase break-words">{r.name}</span>
                                             <span className="font-mono shrink-0 tabular-nums">
                                                 <span className="text-ink-muted">{r.shipped}</span>
                                                 <span className="text-ink-muted mx-1">→</span>
@@ -956,10 +956,10 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
                         {order.packagePhotoUrl ? (
                             <a href={order.packagePhotoUrl} target="_blank" rel="noreferrer" className="block group w-full">
                                 <img src={order.packagePhotoUrl} alt="Shipment Proof" className="w-full h-40 object-cover rounded-lg border-2 border-line-2 group-hover:border-gold transition-colors shadow-inner" />
-                                <span className="text-[11px] text-ink-muted mt-1 block text-center uppercase tracking-widest group-hover:text-gold">Click to Enlarge <Eye size={10} className="inline ml-1"/></span>
+                                <span className="text-[11px] text-ink-muted mt-1 block text-center uppercase tracking-widest group-hover:text-accent-ink">Click to Enlarge <Eye size={10} className="inline ml-1"/></span>
                             </a>
                         ) : (
-                            <div className="w-full h-40 bg-black/30 rounded-lg border border-dashed border-line-2 flex flex-col items-center justify-center text-ink-muted text-[10px] text-center p-4">
+                            <div className="w-full h-40 bg-sunk rounded-lg border border-dashed border-line-2 flex flex-col items-center justify-center text-ink-muted text-[10px] text-center p-4">
                                 <Camera size={24} className="mb-2 opacity-30"/>
                                 Awaiting HQ Photo Proof
                             </div>
@@ -979,8 +979,8 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
                             <div key={idx} className="flex gap-4 relative">
                                 <div className={`w-3 h-3 rounded-full mt-1 shrink-0 ${circleColor} relative z-10 border-2 border-line`}></div>
                                 <div>
-                                    <p className={`font-bold text-xs uppercase tracking-wider ${isLatest ? 'text-gold' : 'text-ink'} ${ev.status === 'SYSTEM_EDIT' ? 'text-ink-muted' : ''}`}>{ev.status}</p>
-                                    <p className={`text-sm font-medium ${isLatest ? 'text-white' : 'text-ink-muted'} mt-0.5 whitespace-pre-line`}>{ev.msg}</p>
+                                    <p className={`font-bold text-xs uppercase tracking-wider ${isLatest ? 'text-accent-ink' : 'text-ink'} ${ev.status === 'SYSTEM_EDIT' ? 'text-ink-muted' : ''}`}>{ev.status}</p>
+                                    <p className={`text-sm font-medium ${isLatest ? 'text-ink' : 'text-ink-muted'} mt-0.5 whitespace-pre-line`}>{ev.msg}</p>
                                     <p className="text-[10px] text-ink-muted font-mono mt-1">
                                         {ev.time ? new Date(ev.time).toLocaleString('id-ID') : 'Time data missing'}
                                     </p>
@@ -1006,18 +1006,23 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
                 hub they are looking at and who the admin is, and neither is obvious from the rest
                 of the screen. */}
             {!isAdmin && (
-            <div className="flex flex-col justify-between items-start border-b border-white/10 pb-6 mb-6">
-                <div className="w-full">
-                    {/* Responsive Text Size for Mobile */}
-                    <h2 className="text-2xl sm:text-3xl font-black text-white uppercase tracking-widest flex items-center gap-3 break-words w-full">
-                        {isAdmin ? <ShieldCheck className="text-orange shrink-0" size={32}/> : <Globe className="text-gold shrink-0" size={32}/>}
-                        <span className="leading-tight">{isAdmin ? 'Global Logistics Command' : `${branchLocation} Hub Logistics`}</span>
-                    </h2>
-                    <p className="text-[10px] text-ink-muted uppercase tracking-widest mt-2 flex items-center gap-2 flex-wrap">
-                        {isAdmin ? <><MapPin size={10}/> All Branches nationwide.</> : <><User size={10}/> Admin: {appSettings?.adminDisplayName || user?.displayName || user?.email?.split('@')[0]} • Assigned Area: {branchLocation}</>}
+            <section className="mb-6 rounded-2xl border border-line-2 bg-panel overflow-hidden shadow-[0_1px_1px_rgba(0,0,0,0.20),0_18px_40px_-28px_rgba(0,0,0,0.85)]">
+                <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 px-5 py-5">
+                    <div className="flex items-center gap-3 min-w-0">
+                        <span className="h-10 w-10 rounded-xl bg-raised border border-line-2 flex items-center justify-center shrink-0">
+                            <Globe size={18} className="text-accent-ink"/>
+                        </span>
+                        <div className="min-w-0">
+                            <h2 className="font-display text-base sm:text-2xl font-black text-ink uppercase tracking-[0.14em] leading-none break-words">{branchLocation} Hub Logistics</h2>
+                            <div className="h-[3px] w-10 bg-orange rounded-full mt-2"/>
+                            <p className="font-mono text-[10px] text-ink-muted tracking-widest mt-2">gudang cabang</p>
+                        </div>
+                    </div>
+                    <p className="font-mono text-[10px] text-ink-muted tracking-widest flex items-center gap-1.5 min-w-0 break-words">
+                        <User size={10} className="shrink-0"/> admin: {appSettings?.adminDisplayName || user?.displayName || user?.email?.split('@')[0]}
                     </p>
                 </div>
-            </div>
+            </section>
             )}
 
             {/* ====== AREA ADMIN VIEW ====== */}
@@ -1026,27 +1031,46 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
                     
                     {/* LEFT COLUMN: INVENTORY & HISTORY */}
                     <div className="space-y-6 flex flex-col">
-                        <details className="group" open>
-                            <summary className="bg-raised/50 p-4 sm:p-5 rounded-2xl border border-line-2 cursor-pointer list-none [&::-webkit-details-marker]:hidden hover:bg-raised transition-colors flex justify-between items-center shadow-lg">
-                                <h3 className="text-base sm:text-lg font-black text-gold uppercase tracking-widest flex items-center gap-2"><MapPin size={20}/> My Current Branch Inventory</h3>
+                        <details className="group rounded-2xl border border-line-2 bg-panel overflow-hidden shadow-[0_1px_1px_rgba(0,0,0,0.20),0_18px_40px_-28px_rgba(0,0,0,0.85)]" open>
+                            <summary className="px-5 py-5 cursor-pointer list-none [&::-webkit-details-marker]:hidden flex justify-between items-center gap-3">
+                                <div className="flex items-center gap-3 min-w-0">
+                                    <span className="h-10 w-10 rounded-xl bg-raised border border-line-2 flex items-center justify-center shrink-0">
+                                        <MapPin size={18} className="text-accent-ink"/>
+                                    </span>
+                                    <div className="min-w-0">
+                                        <h3 className="font-display text-base sm:text-2xl font-black text-ink uppercase tracking-[0.14em] leading-none">My Current Branch Inventory</h3>
+                                        <div className="h-[3px] w-10 bg-orange rounded-full mt-2"/>
+                                        <p className="font-mono text-[10px] text-ink-muted tracking-widest mt-2 tabular-nums">{branchStock.length} produk · in Bks</p>
+                                    </div>
+                                </div>
                                 <ChevronDown size={20} className="text-ink-muted group-open:rotate-180 transition-transform shrink-0"/>
                             </summary>
-                            <div className="p-3 sm:p-4 bg-black/30 rounded-xl mt-3 border border-line-2 grid grid-cols-1 sm:grid-cols-2 gap-3 animate-slide-down">
+                            <div className="px-5 pb-5 grid grid-cols-1 sm:grid-cols-2 gap-3 animate-slide-down">
                                 {branchStock.length === 0 ? (
-                                    <div className="col-span-full text-center p-8 bg-black/20 rounded-xl border border-dashed border-line-2 text-ink-muted text-xs uppercase tracking-widest">
+                                    <div className="col-span-full text-center p-8 bg-sunk rounded-xl border border-dashed border-line-2 text-ink-muted text-xs uppercase tracking-widest">
                                         Warehouse is empty. Request stock from HQ using the form below.
                                     </div>
                                 ) : branchStock.map(stockCard)}
                             </div>
                         </details>
 
-                        <div className="bg-raised/50 p-4 sm:p-6 rounded-2xl border border-line-2 flex-1 flex flex-col shadow-lg">
-                            <h3 className="text-base sm:text-lg font-black text-white uppercase tracking-widest mb-6 flex items-center gap-2"><Truck size={20}/> Status Pengiriman & Reorder</h3>
+                        <div className="rounded-2xl border border-line-2 bg-panel flex-1 flex flex-col shadow-[0_1px_1px_rgba(0,0,0,0.20),0_18px_40px_-28px_rgba(0,0,0,0.85)]">
+                            <div className="flex items-center gap-3 min-w-0 px-5 pt-5 pb-4">
+                                <span className="h-10 w-10 rounded-xl bg-raised border border-line-2 flex items-center justify-center shrink-0">
+                                    <Truck size={18} className="text-accent-ink"/>
+                                </span>
+                                <div className="min-w-0">
+                                    <h3 className="font-display text-base sm:text-2xl font-black text-ink uppercase tracking-[0.14em] leading-none">Status Pengiriman & Reorder</h3>
+                                    <div className="h-[3px] w-10 bg-orange rounded-full mt-2"/>
+                                    <p className="font-mono text-[10px] text-ink-muted tracking-widest mt-2 tabular-nums">{requests.length} permintaan tercatat</p>
+                                </div>
+                            </div>
+                            <div className="px-5 pb-5 flex-1 flex flex-col">
                             
                             {isLoading ? (
                                 <div className="text-center p-10 text-ink-muted animate-pulse italic text-xs uppercase tracking-widest">Loading Logistics Logs...</div>
                             ) : requests.length === 0 ? (
-                                <div className="flex-1 flex flex-col items-center justify-center p-10 text-center border-2 border-dashed border-line-2 rounded-xl bg-black/20">
+                                <div className="flex-1 flex flex-col items-center justify-center p-10 text-center border-2 border-dashed border-line-2 rounded-xl bg-sunk">
                                     <Package size={48} className="text-line-3 mb-3 opacity-50"/>
                                     <p className="text-ink-muted font-bold text-sm">No reorder history found for {branchLocation}.</p>
                                     <p className="text-ink-muted text-[10px] mt-1 uppercase tracking-widest">Submit a new request using the form.</p>
@@ -1068,10 +1092,10 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
                                             <div className="bg-panel rounded-2xl border border-gold/60 p-4 sm:p-5 shadow-2xl">
                                                 <div className="flex justify-between items-start gap-3 border-b border-line-2 pb-3 mb-4">
                                                     <div className="min-w-0">
-                                                        <h4 className="text-xs font-black text-gold uppercase tracking-widest flex items-center gap-2"><Package size={14}/> Hitung Barang Datang</h4>
+                                                        <h4 className="text-xs font-black text-accent-ink uppercase tracking-widest flex items-center gap-2"><Package size={14}/> Hitung Barang Datang</h4>
                                                         <p className="text-[10px] text-ink-muted font-mono tracking-widest uppercase mt-1 truncate">{receivingOrder.id}</p>
                                                     </div>
-                                                    <button onClick={() => { setReceivingOrder(null); setReceiptCounts({}); }} className="text-ink-muted hover:text-white shrink-0 p-1"><X size={18}/></button>
+                                                    <button onClick={() => { setReceivingOrder(null); setReceiptCounts({}); }} className="text-ink-muted hover:text-ink shrink-0 p-1"><X size={18}/></button>
                                                 </div>
 
                                                 {/* Says WHY the number is missing. Without this line the screen
@@ -1088,7 +1112,7 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
                                                         const entry = receiptCounts[line.productId] || {};
                                                         const bad = line.counted !== null && line.damaged > line.counted;
                                                         return (
-                                                            <div key={line.productId} className={`rounded-xl border p-3 ${bad ? 'border-danger/60 bg-danger-well' : 'border-line-2 bg-black/40'}`}>
+                                                            <div key={line.productId} className={`rounded-xl border p-3 ${bad ? 'border-danger/60 bg-danger-well' : 'border-line-2 bg-sunk'}`}>
                                                                 <p className="text-[11px] font-black text-ink uppercase tracking-wide mb-2.5 break-words">{line.name}</p>
                                                                 <div className="grid grid-cols-2 gap-2.5">
                                                                     <label className="block">
@@ -1097,7 +1121,7 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
                                                                             type="number" inputMode="numeric" min="0" placeholder="—"
                                                                             value={entry.counted ?? ''}
                                                                             onChange={e => setReceiptCount(line.productId, 'counted', e.target.value)}
-                                                                            className="w-full bg-black/50 border border-line-3 rounded-lg p-2.5 text-center font-black text-lg text-gold outline-none focus:border-gold tabular-nums"
+                                                                            className="w-full bg-inset border border-line-3 rounded-lg p-2.5 text-center font-black text-lg text-accent-ink outline-none focus:border-gold tabular-nums placeholder:text-ink-dim placeholder:opacity-100 placeholder:italic"
                                                                         />
                                                                     </label>
                                                                     <label className="block">
@@ -1106,7 +1130,7 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
                                                                             type="number" inputMode="numeric" min="0" placeholder="0"
                                                                             value={entry.damaged ?? ''}
                                                                             onChange={e => setReceiptCount(line.productId, 'damaged', e.target.value)}
-                                                                            className="w-full bg-black/50 border border-line-3 rounded-lg p-2.5 text-center font-black text-lg text-danger-text outline-none focus:border-danger tabular-nums"
+                                                                            className="w-full bg-inset border border-line-3 rounded-lg p-2.5 text-center font-black text-lg text-danger-text outline-none focus:border-danger tabular-nums placeholder:text-ink-dim placeholder:opacity-100 placeholder:italic"
                                                                         />
                                                                     </label>
                                                                 </div>
@@ -1142,7 +1166,7 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
                                         const itemsToProcess = req.fulfilledItems || req.requestedItems || req.items || [];
                                         
                                         return (
-                                            <div key={req.id} className={`p-3 sm:p-4 rounded-2xl border transition-colors ${isExpanded ? 'bg-panel border-line-3 shadow-2xl' : 'bg-black/40 border-line-2 hover:bg-raised'}`}>
+                                            <div key={req.id} className={`p-3 sm:p-4 rounded-2xl border transition-colors ${isExpanded ? 'bg-panel border-line-3 shadow-2xl' : 'bg-sunk border-line-2 hover:bg-raised'}`}>
                                                 
                                                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-line-2 pb-3 mb-3">
                                                     <div className="w-full sm:w-auto mb-2 sm:mb-0">
@@ -1159,12 +1183,12 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
                                                         <div className="text-[10px] text-ink font-medium">
                                                             {req.status === 'IN_TRANSIT' ? (
                                                                 <>
-                                                                    <span className="font-bold text-orange mr-1">📦 {itemsToProcess.length} JENIS BARANG:</span>
+                                                                    <span className="font-bold text-accent-ink mr-1">📦 {itemsToProcess.length} JENIS BARANG:</span>
                                                                     <span className="text-ink-muted">{itemsToProcess.map(i => i.name).join(', ')}</span>
                                                                 </>
                                                             ) : (
                                                                 <>
-                                                                    <span className="font-bold text-orange mr-1">📦 {itemsToProcess.reduce((sum,i)=>sum+Number(i.qty),0)} Bks:</span>
+                                                                    <span className="font-bold text-accent-ink mr-1">📦 {itemsToProcess.reduce((sum,i)=>sum+Number(i.qty),0)} Bks:</span>
                                                                     <span className="text-ink-muted">{itemsToProcess.map(i => `${i.qty} ${i.name}`).join(', ')}</span>
                                                                 </>
                                                             )}
@@ -1172,7 +1196,7 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
                                                     </div>
                                                     <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto mt-2 sm:mt-0">
                                                         <StatusBadge status={req.status}/>
-                                                        <button onClick={() => setExpandedRequest(isExpanded ? null : req.id)} className="bg-raised hover:bg-line-2 text-ink-muted hover:text-white p-2.5 rounded-lg flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest transition-colors shadow-sm ml-auto sm:ml-0">
+                                                        <button onClick={() => setExpandedRequest(isExpanded ? null : req.id)} className="bg-raised hover:bg-line-2 text-ink-muted hover:text-ink p-2.5 rounded-lg flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest transition-colors shadow-sm ml-auto sm:ml-0">
                                                             {isExpanded ? <XCircle size={14}/> : <Eye size={14}/>}
                                                             {isExpanded ? 'Tutup' : 'Lihat Status'}
                                                         </button>
@@ -1185,19 +1209,29 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
                                     })}
                                 </div>
                             )}
+                            </div>
                         </div>
                     </div>
 
                     {/* RIGHT COLUMN: REORDER FORM */}
-                    <div className="bg-panel p-4 sm:p-6 rounded-2xl border border-gold/30 shadow-xl relative flex flex-col w-full h-fit">
-                        <h3 className="text-xl font-black text-white uppercase tracking-widest mb-1 relative z-10">Reorder Stock</h3>
-                        <p className="text-[10px] text-gold uppercase tracking-widest mb-6 relative z-10">Request stock from HQ Master Vault.</p>
+                    <div className="rounded-2xl border border-line-2 bg-panel relative flex flex-col w-full h-fit shadow-[0_1px_1px_rgba(0,0,0,0.20),0_18px_40px_-28px_rgba(0,0,0,0.85)]">
+                        <div className="flex items-center gap-3 min-w-0 px-5 pt-5 pb-4 relative z-10">
+                            <span className="h-10 w-10 rounded-xl bg-raised border border-line-2 flex items-center justify-center shrink-0">
+                                <Send size={18} className="text-accent-ink"/>
+                            </span>
+                            <div className="min-w-0">
+                                <h3 className="font-display text-base sm:text-2xl font-black text-ink uppercase tracking-[0.14em] leading-none">Reorder Stock</h3>
+                                <div className="h-[3px] w-10 bg-orange rounded-full mt-2"/>
+                                <p className="font-mono text-[10px] text-ink-muted tracking-widest mt-2">minta stok dari Master Vault</p>
+                            </div>
+                        </div>
+                        <div className="px-5 pb-5 relative z-10 flex flex-col flex-1">
                         
                         <div className="flex flex-col gap-4 mb-6 relative z-10">
                             {/* ITEM SELECTOR */}
-                            <div className="bg-black/30 p-3 sm:p-4 rounded-xl border border-line-2">
+                            <div className="bg-sunk p-3 sm:p-4 rounded-xl border border-line-2">
                                 <label className="text-[11px] font-bold text-ink-muted uppercase tracking-widest mb-1.5 block">1. Select Items to Request</label>
-                                <select value={selectedProduct} onChange={e => setSelectedProduct(e.target.value)} className="w-full bg-black/50 border border-line-3 rounded-lg p-3 text-sm text-white font-bold outline-none focus:border-gold transition-colors mb-3">
+                                <select value={selectedProduct} onChange={e => setSelectedProduct(e.target.value)} className="w-full bg-inset border border-line-3 rounded-lg p-3 text-sm text-ink font-bold outline-none focus:border-gold transition-colors mb-3">
                                     <option value="">-- Choose Product --</option>
                                     {globalInventory.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                                 </select>
@@ -1223,10 +1257,10 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
                                     const tooLate = advice.daysLeft != null && rhythm.leadDays != null
                                         && advice.daysLeft < rhythm.leadDays;
                                     return (
-                                        <div className="mb-3 rounded-xl border border-line-2 bg-black/40 p-3 text-[11px] font-bold tabular-nums">
+                                        <div className="mb-3 rounded-xl border border-line-2 bg-sunk p-3 text-[11px] font-bold tabular-nums">
                                             <div className="flex flex-wrap gap-x-4 gap-y-1 text-ink-muted uppercase tracking-widest">
                                                 <span>Di gudang <b className="text-ink font-black">{advice.shelf}</b></span>
-                                                <span>Di jalan <b className={`font-black ${advice.coming > 0 ? 'text-gold' : 'text-ink'}`}>{advice.coming}</b></span>
+                                                <span>Di jalan <b className={`font-black ${advice.coming > 0 ? 'text-accent-ink' : 'text-ink'}`}>{advice.coming}</b></span>
                                                 <span>Keluar {advice.ratePerDay != null
                                                     ? <b className="text-ink font-black">± {advice.ratePerDay.toFixed(1)}/hari</b>
                                                     : <b className="text-ink font-black">belum terukur</b>}</span>
@@ -1243,13 +1277,13 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
                                             {advice.suggest != null ? (
                                                 <div className="mt-2 pt-2 border-t border-line-2 flex items-center justify-between gap-3">
                                                     <span className="text-ink-muted uppercase tracking-widest">
-                                                        Saran <b className="text-gold font-black text-sm">{advice.suggest}</b> Bks
+                                                        Saran <b className="text-accent-ink font-black text-sm">{advice.suggest}</b> Bks
                                                         <span className="block mt-0.5 normal-case tracking-normal text-[10px] font-normal">
                                                             cukup ± {advice.coverDays} hari — kirim ± {rhythm.leadDays}, pesan tiap ± {rhythm.cadenceDays}
                                                         </span>
                                                     </span>
                                                     <button type="button" onClick={() => setRequestQty(String(advice.suggest))}
-                                                        className="shrink-0 px-3 py-2 rounded-lg border border-gold/60 text-gold uppercase tracking-widest text-[10px] font-black hover:bg-gold hover:text-gold-ink transition-colors">
+                                                        className="shrink-0 px-3 py-2 rounded-lg border border-gold/60 text-accent-ink uppercase tracking-widest text-[10px] font-black hover:bg-gold hover:text-gold-ink transition-colors">
                                                         Pakai
                                                     </button>
                                                 </div>
@@ -1266,7 +1300,7 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
                                 })()}
 
                                 <div className="grid grid-cols-[1fr,auto] gap-2 w-full">
-                                    <input type="number" min="1" placeholder="Qty (Bks)" value={requestQty} onChange={e => setRequestQty(e.target.value)} className="w-full bg-black/50 border border-line-3 rounded-lg p-3 text-sm text-white font-bold outline-none focus:border-gold text-center transition-colors"/>
+                                    <input type="number" min="1" placeholder="Qty (Bks)" value={requestQty} onChange={e => setRequestQty(e.target.value)} className="placeholder:text-ink-dim placeholder:opacity-100 placeholder:italic w-full bg-inset border border-line-3 rounded-lg p-3 text-sm text-ink font-bold outline-none focus:border-gold text-center transition-colors"/>
                                     <button onClick={handleAddToCart} className="bg-gold hover:bg-gold/90 text-gold-ink px-4 font-bold uppercase tracking-widest rounded-lg shadow-lg shrink-0 whitespace-nowrap text-xs transition-colors flex items-center justify-center gap-1.5">
                                         <PlusCircle size={14}/> Add
                                     </button>
@@ -1274,31 +1308,31 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
                             </div>
 
                             {/* ADDRESS INPUTS */}
-                            <div className="bg-black/30 p-3 sm:p-4 rounded-xl border border-line-2">
+                            <div className="bg-sunk p-3 sm:p-4 rounded-xl border border-line-2">
                                 <label className="text-[11px] font-bold text-ink-muted uppercase tracking-widest mb-2 flex items-center gap-1"><MapPin size={12}/> 2. Detail Alamat Pengiriman</label>
                                 <div className="space-y-3">
-                                    <input placeholder="Jalan / Gedung / Patokan" className="w-full bg-black/50 border border-line-3 rounded-lg p-3 text-sm text-white outline-none focus:border-gold" value={shippingAddress.jalan} onChange={e=>setShippingAddress({...shippingAddress, jalan: e.target.value})}/>
+                                    <input placeholder="Jalan / Gedung / Patokan" className="placeholder:text-ink-dim placeholder:opacity-100 placeholder:italic w-full bg-inset border border-line-3 rounded-lg p-3 text-sm text-ink outline-none focus:border-gold" value={shippingAddress.jalan} onChange={e=>setShippingAddress({...shippingAddress, jalan: e.target.value})}/>
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                        <input placeholder="Kecamatan" className="w-full bg-black/50 border border-line-3 rounded-lg p-3 text-sm text-white outline-none focus:border-gold" value={shippingAddress.kecamatan} onChange={e=>setShippingAddress({...shippingAddress, kecamatan: e.target.value})}/>
-                                        <input placeholder="Kabupaten" className="w-full bg-black/50 border border-line-3 rounded-lg p-3 text-sm text-white outline-none focus:border-gold" value={shippingAddress.kabupaten} onChange={e=>setShippingAddress({...shippingAddress, kabupaten: e.target.value})}/>
+                                        <input placeholder="Kecamatan" className="placeholder:text-ink-dim placeholder:opacity-100 placeholder:italic w-full bg-inset border border-line-3 rounded-lg p-3 text-sm text-ink outline-none focus:border-gold" value={shippingAddress.kecamatan} onChange={e=>setShippingAddress({...shippingAddress, kecamatan: e.target.value})}/>
+                                        <input placeholder="Kabupaten" className="placeholder:text-ink-dim placeholder:opacity-100 placeholder:italic w-full bg-inset border border-line-3 rounded-lg p-3 text-sm text-ink outline-none focus:border-gold" value={shippingAddress.kabupaten} onChange={e=>setShippingAddress({...shippingAddress, kabupaten: e.target.value})}/>
                                     </div>
                                     <div className="grid grid-cols-[1fr,auto] gap-3">
-                                        <input placeholder="Provinsi" className="w-full bg-black/50 border border-line-3 rounded-lg p-3 text-sm text-white outline-none focus:border-gold" value={shippingAddress.provinsi} onChange={e=>setShippingAddress({...shippingAddress, provinsi: e.target.value})}/>
-                                        <input placeholder="Kode Pos" type="number" className="w-24 bg-black/50 border border-line-3 rounded-lg p-3 text-sm text-white outline-none focus:border-gold text-center" value={shippingAddress.postalCode} onChange={e=>setShippingAddress({...shippingAddress, postalCode: e.target.value})}/>
+                                        <input placeholder="Provinsi" className="placeholder:text-ink-dim placeholder:opacity-100 placeholder:italic w-full bg-inset border border-line-3 rounded-lg p-3 text-sm text-ink outline-none focus:border-gold" value={shippingAddress.provinsi} onChange={e=>setShippingAddress({...shippingAddress, provinsi: e.target.value})}/>
+                                        <input placeholder="Kode Pos" type="number" className="placeholder:text-ink-dim placeholder:opacity-100 placeholder:italic w-24 bg-inset border border-line-3 rounded-lg p-3 text-sm text-ink outline-none focus:border-gold text-center" value={shippingAddress.postalCode} onChange={e=>setShippingAddress({...shippingAddress, postalCode: e.target.value})}/>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
                         {requestCart.length > 0 && (
-                            <div className="bg-black/40 rounded-2xl p-4 sm:p-5 border border-line-2 mt-auto flex flex-col relative z-10 shadow-inner">
+                            <div className="bg-sunk rounded-2xl p-4 sm:p-5 border border-line-2 mt-auto flex flex-col relative z-10 shadow-inner">
                                 <h4 className="text-[10px] font-bold text-ink-muted uppercase tracking-widest mb-4 border-b border-line-2 pb-2 flex items-center gap-2"><Package size={14}/> Request Draft Cart ({requestCart.length})</h4>
                                 <div className="max-h-48 overflow-y-auto custom-scrollbar space-y-2.5 mb-5 pr-2">
                                     {requestCart.map(item => (
                                         <div key={item.productId} className="flex justify-between items-center text-sm bg-raised p-3 rounded-lg border border-line-2">
-                                            <span className="text-ink font-bold uppercase truncate pr-3">{item.name}</span>
+                                            <span className="text-ink font-bold uppercase break-words pr-3">{item.name}</span>
                                             <div className="flex items-center gap-3">
-                                                <span className="text-gold font-black shrink-0">{item.qty} Bks</span>
+                                                <span className="text-accent-ink font-black shrink-0">{item.qty} Bks</span>
                                                 <button onClick={() => removeFromCart(item.productId)} className="text-ink-muted hover:text-danger-text shrink-0"><MinusCircle size={16}/></button>
                                             </div>
                                         </div>
@@ -1309,6 +1343,7 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
                                 </button>
                             </div>
                         )}
+                        </div>
                     </div>
                 </div>
             )}

@@ -26,6 +26,10 @@ import ShipmentPlanTable from '../src/ponder/stages/ShipmentPlanTable.jsx';
 import ProductPerformancePanel from '../src/components/ProductPerformancePanel.jsx';
 import AcceptanceReceipt from '../src/components/AcceptanceReceipt.jsx';
 import RestockVaultView from '../src/RestockVaultView.jsx';
+import BranchWarehouseManager from '../src/components/BranchWarehouseManager.jsx';
+/* Same module the alias in ponder-lab.config.mjs points `firebase/firestore` at, so writing a
+   fixture here is what the component's own listener reads back. */
+import { FIXTURES } from './lab-firestore-stub.js';
 import { SCENES } from '../src/ponder/registry.js';
 
 const q = new URLSearchParams(window.location.search);
@@ -299,7 +303,66 @@ function PlacesLab() {
   );
 }
 
+/* 🔴 ?gudang MOUNTS THE REAL BRANCH WAREHOUSE SCREEN — the half of `BranchWarehouseManager` a
+   BRANCH admin sees, which is the half that was still in the old visual language. `isAdmin={false}`
+   is the whole switch: the component reads `isAreaAdmin = !isAdmin`.
+
+   Its listener returns early without a masterUserId, so a null database would pin it on "Loading
+   Logistics Logs..." forever. tools/lab-firestore-stub.js is aliased over firebase/firestore for
+   this build and feeds the fixtures below through the real onSnapshot. */
+/* Two of these share a four-character prefix on purpose. `Cello Green 16` and `Cello Merah 12` are
+   his own products, and an ellipsis at four characters deletes the only part that tells them
+   apart — the exact fault he reported on 2026-08-17. If the wrap regressed, this is where it shows. */
+const NOW = Math.floor(Date.now() / 1000);
+FIXTURES['branches/BANDUNG/inventory'] = [
+  { id: 'p-cg16', name: 'Cello Green 16', stock: 420 },
+  { id: 'p-cm12', name: 'Cello Merah 12', stock: 168 },
+  { id: 'p-sig',  name: 'Sigaret Kretek Tangan Premium', stock: 54 },
+  { id: 'p-djar', name: 'Djarum Coklat 12', stock: 0 },
+];
+FIXTURES['stock_requests'] = [
+  { id: 'REQ-185204', branch: 'BANDUNG', status: 'IN_TRANSIT', timestamp: { seconds: NOW - 86400 * 2 },
+    requestedByName: 'Rina Wijaya', courier: 'JNE Trucking', trackingNo: 'JT-8841-2290',
+    senderName: 'Adi Nugroho',
+    requestedItems: [{ productId: 'p-cg16', name: 'Cello Green 16', qty: 200 },
+                     { productId: 'p-cm12', name: 'Cello Merah 12', qty: 120 }],
+    workflowTimeline: [
+      { status: 'PENDING', msg: 'Permintaan dikirim ke HQ.', time: (NOW - 86400 * 3) * 1000 },
+      { status: 'IN_TRANSIT', msg: 'Barang keluar dari Gudang Pusat (Master Vault).', time: (NOW - 86400 * 2) * 1000 },
+    ] },
+  { id: 'REQ-185160', branch: 'BANDUNG', status: 'DELIVERED', timestamp: { seconds: NOW - 86400 * 9 },
+    requestedByName: 'Rina Wijaya', courier: 'Armada Sendiri', trackingNo: 'INT-0091',
+    senderName: 'Adi Nugroho', receiptVariance: true,
+    fulfilledItems: [{ productId: 'p-sig', name: 'Sigaret Kretek Tangan Premium', qty: 60 }],
+    receivedItems: [{ productId: 'p-sig', name: 'Sigaret Kretek Tangan Premium', shipped: 60, counted: 54, diff: -6, damaged: 2 }],
+    workflowTimeline: [
+      { status: 'PENDING', msg: 'Permintaan dikirim ke HQ.', time: (NOW - 86400 * 11) * 1000 },
+      { status: 'IN_TRANSIT', msg: 'Barang keluar dari Gudang Pusat (Master Vault).', time: (NOW - 86400 * 9) * 1000 },
+      { status: 'DISPUTED', msg: 'Hitungan gudang 54 dari 60 dikirim. Selisih dilaporkan ke HQ.', time: (NOW - 86400 * 8) * 1000 },
+    ] },
+  { id: 'REQ-185233', branch: 'BANDUNG', status: 'PENDING', timestamp: { seconds: NOW - 3600 * 5 },
+    requestedByName: 'Rina Wijaya',
+    requestedItems: [{ productId: 'p-djar', name: 'Djarum Coklat 12', qty: 300 }],
+    workflowTimeline: [{ status: 'PENDING', msg: 'Permintaan dikirim ke HQ.', time: (NOW - 3600 * 5) * 1000 }] },
+];
+
+function GudangLab() {
+  return (
+    <div className="biohazard-content min-h-screen p-4 bg-ground">
+      <style>{SHELL_RULE}</style>
+      <BranchWarehouseManager
+        db={{}} storage={null} appId="lab" user={{ displayName: 'Rina Wijaya', email: 'rina@kpm.id' }}
+        userRole="AREA_ADMIN" userLocation="BANDUNG" isAdmin={false} masterUserId="lab"
+        globalInventory={FIXTURES['branches/BANDUNG/inventory']}
+        triggerCapy={() => {}} logAudit={() => {}}
+        appSettings={{ companyName: 'KPM INVENTORY', adminDisplayName: 'Rina Wijaya' }}
+      />
+    </div>
+  );
+}
+
 createRoot(document.getElementById('root')).render(
+  q.has('gudang') ? <GudangLab /> :
   q.has('places') ? <PlacesLab /> :
   q.has('nota') ? <NotaLab /> :
   q.has('perf') ? <PerfLab /> :
@@ -321,7 +384,52 @@ createRoot(document.getElementById('root')).render(
    ⚠️ HEADLESS VIRTUAL TIME DOES NOT DRIVE ANIMATION CLOCKS RELIABLY - a finished animation read
    back currentTime 0 here, which is not what a real browser reports. Run this one in a real
    browser; the headless answer cannot be trusted for timing. */
-if (q.has('book') && q.has('probe')) {
+/* ?gudang&probe answers the question this whole pass turned on, and the one a screenshot answers
+   least honestly: what is the CONTRAST of each title against the surface it actually sits on. A
+   frame taken in the wrong theme, or mid-fade, looks identical to a real failure — that trap has
+   been paid for twice on this project. A computed ratio is not a matter of timing.
+
+   It walks up from each title to the first ancestor that paints an opaque background, because a
+   heading's own background is `rgba(0, 0, 0, 0)` and comparing ink against transparency is how a
+   contrast check reports a number nobody can see. */
+if (q.has('gudang') && q.has('probe')) {
+  setTimeout(() => {
+    const lum = (c) => {
+      const [r, g, b] = c.match(/\d+(\.\d+)?/g).slice(0, 3).map((v) => {
+        const n = v / 255;
+        return n <= 0.03928 ? n / 12.92 : Math.pow((n + 0.055) / 1.055, 2.4);
+      });
+      return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+    };
+    const opaqueBg = (el) => {
+      for (let n = el; n; n = n.parentElement) {
+        const bg = getComputedStyle(n).backgroundColor;
+        if (bg && !/rgba\(0, 0, 0, 0\)|transparent/.test(bg)) return bg;
+      }
+      return 'rgb(255, 255, 255)';
+    };
+    const titles = [...document.querySelectorAll('h2, h3, h4')].map((h) => {
+      const ink = getComputedStyle(h).color;
+      const bg = opaqueBg(h);
+      const a = lum(ink), b = lum(bg);
+      return {
+        text: h.textContent.trim().slice(0, 34),
+        ink, bg,
+        ratio: +(((Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05)).toFixed(2)),
+      };
+    });
+    const el = document.createElement('pre');
+    el.id = 'probe';
+    el.textContent = JSON.stringify({
+      theme: document.documentElement.className || 'dark',
+      worst: titles.reduce((w, t) => (t.ratio < w.ratio ? t : w), titles[0] || { ratio: null }),
+      allPass: titles.every((t) => t.ratio >= 4.5),
+      failing: titles.filter((t) => t.ratio < 4.5),
+      titles,
+    }, null, 1);
+    document.body.appendChild(el);
+  }, 400);
+} else if (q.has('book') && q.has('probe')) {
   setTimeout(() => {
     const dlg = document.querySelector('[role=dialog]');
     const book = dlg && dlg.children[1];

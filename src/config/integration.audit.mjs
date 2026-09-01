@@ -4638,6 +4638,82 @@ check(G56, 'the scene carries both stock formulas, ready for check 631 to move o
   'where u got that calculation"*, and the footnote that currently holds them is scheduled to go');
 
 
+/* ════════ 57. THE BRANCH HALF OF THE REGIONAL WAREHOUSE ════════
+   The HQ half of this screen — Stock by Warehouse, Shipment Plan — was rebuilt on 2026-08-27 and
+   wears the ledger's vocabulary. The BRANCH half never was, and it was not only unfashionable: it
+   was unreadable. Sixteen `text-white` and twenty-four `bg-black/*` sat on a page whose light
+   ground is cream, so three headings measured 1,23-1,42:1 against a 4,5:1 floor. Aldi read a
+   1,19:1 ring off a screenshot once and said *"just make it visible"*; nothing here was ever
+   asserted, because group 8's palette scan reads MerchantSalesView and nothing else.
+
+   Aldi, 2026-09-01, closing the question of whether the repaint and the redesign were two jobs:
+   *"well redesign and repaint should go together isnt"*. They are one pass, so they get one group. */
+const G57 = '57. The branch half of the regional warehouse';
+const bwm = code(bwmCode);
+/* The processing scrim is dark in BOTH themes by law, so white ON it is correct and is the one
+   `text-white` allowed to live. Everything below sweeps the file UP TO that block — and the anchor
+   is asserted before it is trusted, because `indexOf` returns -1 and a -1 slice hands the sweep an
+   empty string that passes every test by reading nothing. */
+const scrimAt = bwm.indexOf('{isProcessing && (');
+const bwmBody = scrimAt > -1 ? bwm.slice(0, scrimAt) : '';
+check(G57, 'the scrim anchor was found, so the sweeps below have something to sweep',
+  scrimAt > -1 && bwm.slice(scrimAt).includes('PROSES DATA') && bwmBody.includes('isAreaAdmin &&'),
+  'the isProcessing block opens the modal and must sit AFTER the branch view. A missed anchor ' +
+  'makes bwmBody empty and every check in this group passes on nothing');
+
+check(G57, 'no white ink outside the scrim — white on the cream ground measures 1,23:1',
+  !/text-white/.test(bwmBody),
+  'left: ' + (bwmBody.match(/text-white/g) || []).length + '. In light mode --panel is #E1DAC8 and ' +
+  '--raised is #EDE7D8, so #FFFFFF headings measure 1,39:1 and 1,23:1 — under the 4,5:1 floor, and ' +
+  'worse than the 1,19:1 ring he caught by eye. --ink measures 13,42:1 on the same panel');
+
+check(G57, 'no hard-black wells outside the scrim — a literal does not follow the theme',
+  !/bg-black\//.test(bwmBody),
+  'left: ' + ((bwmBody.match(/bg-black\/\d+/g) || []).join(', ') || 'none') + '. A black well keeps ' +
+  'its colour when the page turns cream, which is the patchwork Lite Mode already paid for once');
+
+check(G57, 'the branch panels wear the same header as Stock by Warehouse',
+  (bwmBody.match(/font-display/g) || []).length >= 4 &&
+  (bwmBody.match(/h-\[3px\] w-10 bg-orange rounded-full/g) || []).length >= 3,
+  'the solved HQ half set the vocabulary: a font-display title in text-ink, an icon chip on ' +
+  'bg-raised, and a 3px orange rule beneath. Amber is an edge and an ink, never a fill, and a ' +
+  '3px rule is the legal form of it');
+
+/* 🔴 FOUND BY LOOKING, AFTER EVERY CHECK ABOVE WAS ALREADY GREEN — which is the whole argument
+   for getting eyes on it. `--orange` is #FF8C1A in BOTH themes because it is the EDGE half of the
+   amber law; as reading ink on the light well it measured 1,08:1 in the lab, worse than the white
+   ink this group was written to catch. The tailwind config already names the stand-in: *"--gold
+   measures 1,19:1 on the light ground, so it may fill a plate but must never label one"*. */
+check(G57, 'amber labels nothing — text-orange is an edge token, not an ink',
+  !/text-orange(?!-ink)/.test(bwmBody),
+  'left: ' + (bwmBody.match(/text-orange(?!-ink)\b/g) || []).length + '. border-orange and the 3px ' +
+  'bg-orange rules are fine and stay — those are edges. Only the ink form is banned, and ' +
+  'text-accent-ink is the readable stand-in in both themes');
+
+/* 🔴 ALSO FOUND BY LOOKING. Six inputs had no placeholder colour at all, so they rendered in the
+   browser's own rgb(156,163,175) — which is SLATE, the one hue the palette law bans by name, on
+   every address field in the reorder form. Measured 1,36:1 on the light well.
+   theme.css:3231 settled this once: --ink-dim, `opacity: 1` because Firefox dims placeholders by
+   .54 on top of whatever colour is set, and italic because a darkened placeholder is otherwise
+   indistinguishable from a typed value in light mode. Same three, applied per input. */
+const phInputs = (bwmBody.match(/placeholder="/g) || []).length;
+const phColoured = (bwmBody.match(/placeholder:text-ink-dim placeholder:opacity-100 placeholder:italic/g) || []).length;
+check(G57, 'every placeholder has a colour of its own, so none falls back to the browser slate',
+  phInputs > 0 && phColoured >= phInputs,
+  phColoured + ' coloured of ' + phInputs + ' placeholders. All three parts are load-bearing: the ' +
+  'token, the opacity Firefox needs, and the italic that keeps an EMPTY field from reading as a ' +
+  'filled one in light mode');
+
+/* *"i want to see the product in full name to avoid mistake in the future"*. Two of his own
+   products share a four-character prefix, so an ellipsis deletes the only part that tells them
+   apart — on a screen where the number typed beside the name becomes money owed. */
+const nameTrunc = bwmBody.split('\n').filter(l => /\{(item|r)\.name\}/.test(l) && /truncate/.test(l));
+check(G57, 'a product name wraps, it never truncates',
+  nameTrunc.length === 0,
+  'truncated on ' + nameTrunc.length + ' line(s). Wrapping costs height; truncation costs the ' +
+  'wrong count, and it is silent');
+
+
 let last = '';
 for (const r of results) {
   if (r.group !== last) { console.log('\n' + r.group); last = r.group; }
