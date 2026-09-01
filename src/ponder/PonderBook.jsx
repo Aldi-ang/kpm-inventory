@@ -327,8 +327,20 @@ function Library({ anchorRef, initialSection, onClose, onPick, closeOnMount = fa
   const closingRef = useRef(false);
 
   const section = useMemo(() => SECTIONS.find(s => s.id === secId) || SECTIONS[0], [secId]);
-  const pages = Math.max(1, Math.ceil(section.entries.length / PER_PAGE));
-  const shownEntries = section.entries.slice(page * PER_PAGE, page * PER_PAGE + PER_PAGE);
+  /* 🔴 A PHONE GETS TWO CARDS TO A PAGE, NOT FOUR, AND IT TURNS THE PAGE INSTEAD OF SCROLLING.
+     Aldi, 2026-09-01, from his iPhone: *"even the book cutted in half"*. Measured at 375x812: the
+     card grid is one column below sm, so four cards ran to 680px and the page's content ended 30px
+     BELOW the bottom of the screen — and on a real phone the browser bar takes more than that again.
+
+     Scrolling inside the book is not the fix and never was: *"i dont want to see any of the scroll
+     inside this book"*. A book that has run out of room turns the page, so the page count is what
+     bends. Everything else — the ‹ 1/2 › control, the leaf, the shut — already works off `pages`. */
+  const perPage = (typeof matchMedia === 'function' && !matchMedia('(min-width: 640px)').matches) ? 2 : PER_PAGE;
+  const pages = Math.max(1, Math.ceil(section.entries.length / perPage));
+  /* Clamped, because `page` is state and the section can change under it — a stale page 3 on a
+     two-page section would render an empty spread rather than the last page. */
+  const safePage = Math.min(page, pages - 1);
+  const shownEntries = section.entries.slice(safePage * perPage, safePage * perPage + perPage);
 
   /* THE ZOOM IS DRIVEN BY THE WEB ANIMATIONS API, and that choice is the whole reason it works.
 
@@ -357,6 +369,12 @@ function Library({ anchorRef, initialSection, onClose, onPick, closeOnMount = fa
     const ty = (a.top + a.height / 2) - (b.top + b.height / 2);
     return `translate(${Math.round(tx)}px, ${Math.round(ty)}px) scale(${s.toFixed(3)})`;
   }, [anchorRef]);
+
+  /* The leather starts six pixels into the ribbon column, so it has to follow the column's width
+     when the phone narrows it — otherwise the cover sits 34px out and the ribbons stop reading as
+     tabs cut into its edge. One number, two widths. */
+  const narrow = typeof matchMedia === 'function' && !matchMedia('(min-width: 1024px)').matches;
+  const coverLeft = narrow ? 82 : COVER_LEFT;
 
   const still = liteOn() || reduced();
 
@@ -485,7 +503,7 @@ function Library({ anchorRef, initialSection, onClose, onPick, closeOnMount = fa
             SIBLING is safe; clipping the container would have flattened `preserve-3d` and undone
             the hinge, which is the trap noted on the stage below. */}
         <span ref={slabRef} aria-hidden="true"
-              style={{ background: LEATHER, clipPath: 'inset(0 0 0 0 round 14px)', left: COVER_LEFT }}
+              style={{ background: LEATHER, clipPath: 'inset(0 0 0 0 round 14px)', left: coverLeft }}
               className="absolute inset-y-0 right-0 rounded-[14px] border border-accent-edge pointer-events-none
                          shadow-[0_2px_2px_rgba(0,0,0,0.35),0_40px_90px_-30px_rgba(0,0,0,0.95)]" />
 
@@ -496,7 +514,13 @@ function Library({ anchorRef, initialSection, onClose, onPick, closeOnMount = fa
             book has ribbons, and you can see all of them at once or they are not much use as
             bookmarks. Seventeen at 26px plus 2px of gap is 474px, which fits the shortest book this
             can be, so `overflow` is gone rather than hidden — there is nothing left to scroll. */}
-        <div className="relative z-10 hidden lg:flex flex-col justify-center gap-[2px] w-[118px] shrink-0 py-4 pr-[6px]">
+        {/* 🔴 THE PHONE KEEPS THE RIBBONS. His report, 2026-09-01: *"i cant see the left book with
+            all the section ribbons"*. They were `hidden lg:flex`, and on a phone that is not a
+            cosmetic loss — the ‹ › control only turns pages WITHIN a section, so with the ribbons
+            gone there was no way to reach another section at all. The left page stays hidden (two
+            520px pages do not go into 375), so the ribbons take the place the left page would have
+            had: 84px on a phone, the full 118 on a desk. */}
+        <div className="relative z-10 flex flex-col justify-center gap-[2px] w-[84px] lg:w-[118px] shrink-0 py-4 pr-[6px]">
           {SECTIONS.map(s => (
             <button key={s.id} type="button" onClick={() => pickSection(s.id)}
               style={{ ...tab(s), clipPath: RIBBON }}
@@ -652,7 +676,7 @@ function Library({ anchorRef, initialSection, onClose, onPick, closeOnMount = fa
                   <ChevronLeft size={16} />
                 </button>
                 <span className="font-mono text-[10px] uppercase tracking-widest tabular-nums" style={{ color: BOOK_DIM }}>
-                  {page + 1} / {pages}
+                  {safePage + 1} / {pages}
                 </span>
                 <button type="button" disabled={page >= pages - 1}
                   onClick={() => { bookPage(); setPage(p => Math.min(pages - 1, p + 1)); }}

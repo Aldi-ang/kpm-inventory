@@ -4297,3 +4297,60 @@ html.lite-mode .kpm-pace-fill { opacity: 1; animation: none; }
   .kpm-srow { min-height: 56px; }
   .kpm-srow .nm { flex: 0 0 180px; }
 }
+
+/* ═══════════ A TABLE IS THE WRONG SHAPE FOR A PHONE ═══════════
+   Aldi, 2026-09-01, on the restock vault from his iPhone: *"it look really bad on phone, i mean
+   the restock vault feels like there is too much going on vertically in that small space"*.
+
+   Measured before the fix: the line table was 780px wide inside a 291px window, so the whole
+   Jumlah column — the karton/bal/slop boxes he had just asked for — sat off screen until the
+   table was dragged sideways. "Cutted", in his word for it.
+
+   ONE MARKUP, TWO LAYOUTS. The rows are not duplicated into a second phone component: below the
+   sm breakpoint the cells become blocks and each row becomes a card, with the column heading
+   printed from `data-label` where the <thead> used to be. Two copies of a row is two places for
+   the batch column to drift out of step with the quantity column, which is the failure this
+   project has already paid for elsewhere.
+
+   `td:empty` is skipped so a card never shows a heading with nothing under it. */
+@media (max-width: 639px) {
+  .kpm-stack-rows,
+  .kpm-stack-rows tbody,
+  .kpm-stack-rows tr,
+  .kpm-stack-rows td { display: block; width: auto; }
+
+  .kpm-stack-rows thead { display: none; }
+
+  .kpm-stack-rows tr {
+    border: 1px solid var(--line-2);
+    border-radius: 10px;
+    padding: 10px 12px 12px;
+    margin-bottom: 10px;
+    position: relative;
+  }
+  .kpm-stack-rows tr:last-child { margin-bottom: 0; }
+
+  .kpm-stack-rows td { padding: 0; margin-top: 10px; text-align: left; }
+  .kpm-stack-rows td:first-child { margin-top: 0; }
+
+  /* the heading the <thead> used to carry, now above the field it belongs to */
+  .kpm-stack-rows td[data-label]:not([data-label=""])::before {
+    content: attr(data-label);
+    display: block;
+    margin-bottom: 4px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+  }
+
+  /* the X sits in the card's own corner rather than taking a row of its own */
+  .kpm-stack-rows td.kpm-stack-remove {
+    position: absolute;
+    top: 8px;
+    right: 10px;
+    margin-top: 0;
+  }
+  .kpm-stack-rows td:first-child { padding-right: 34px; }
+}

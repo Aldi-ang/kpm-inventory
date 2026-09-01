@@ -430,7 +430,14 @@ export default function PonderOverlay({ sceneId, open, onClose, onBack }) {
                     ${closing ? 'opacity-0 transition-opacity duration-200 ease-in' : ''}`}>
 
       <div onMouseDown={(e) => e.stopPropagation()}
-           className={`relative w-full min-w-0 lg:max-w-5xl max-h-[92vh] lg:max-h-[88vh] lg:min-h-[700px]
+           /* 🔴 THE SHEET TAKES THE HEIGHT IT IS GIVEN. Aldi, 2026-09-01, from his iPhone:
+              *"ponder looks really bad on the phone ... the ponder panel is cutted in half"*.
+              Measured at 375x812: the panel was content-height, 522px, pinned to the bottom — so
+              283px of the screen above it was empty scrim, and the demo window below was 206px
+              tall holding 248px of picture, which is the half he could not see. `h-[92vh]` on the
+              phone lets the column hand the leftover height to the stage, which is `flex-1`.
+              The desk is untouched: `lg:h-auto` puts it straight back on its own rules. */
+           className={`relative w-full min-w-0 lg:max-w-5xl h-[92vh] lg:h-auto max-h-[92vh] lg:max-h-[88vh] lg:min-h-[700px]
                       flex flex-col overflow-hidden bg-panel ${closing ? 'animate-ponder-shut' : 'animate-ponder-open'}
                       border border-line-2 rounded-t-2xl lg:rounded-2xl
                       shadow-[0_1px_1px_rgba(0,0,0,0.20),0_18px_40px_-28px_rgba(0,0,0,0.85)]`}>

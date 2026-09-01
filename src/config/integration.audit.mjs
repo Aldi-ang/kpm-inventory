@@ -4911,6 +4911,59 @@ check(G59, 'the line prints the rates it is using',
   /1 KARTON = \{per\.Karton\} &middot; 1 BAL = \{per\.Bal\} &middot; 1 SLOP = \{per\.Slop\} BKS/.test(code(salesSrc59)),
   'a wrong rate produces a plausible total, which is the one kind of error nobody catches');
 
+const G60 = '60. The phone gets the same screens, not a cropped desk';
+const overlaySrc60 = fs.readFileSync('src/ponder/PonderOverlay.jsx', 'utf8');
+const bookSrc60 = fs.readFileSync('src/ponder/PonderBook.jsx', 'utf8');
+const themeCss60 = fs.readFileSync('src/styles/theme.css', 'utf8');
+
+/* \U0001F534 EVERY ONE OF THESE WAS MEASURED ON A 375x812 PHONE BEFORE IT WAS TOUCHED, and the word
+   he uses for all of them is the same one: "cutted". */
+
+/* The line table was 780px wide inside a 291px window, so the karton/bal/slop boxes he had just
+   asked for sat off screen until it was dragged sideways. ONE markup, two layouts — a second
+   phone-only row component would be a second place for the columns to drift. */
+check(G60, 'the intake lines stack into cards on a phone instead of scrolling sideways',
+  /kpm-stack-rows/.test(code(restockSrc58)) &&
+  /sm:min-w-\[780px\]/.test(code(restockSrc58)) &&
+  /data-label="Jumlah"/.test(code(restockSrc58)) &&
+  /\.kpm-stack-rows thead \{ display: none; \}/.test(themeCss60) &&
+  /max-width: 639px/.test(themeCss60),
+  'a table that has to be dragged sideways hides the column the user is being asked to fill, and ' +
+  'the one column hidden here was the quantity');
+
+/* His own condition for accepting anything pinned at the bottom of a phone: it collapses to one
+   line. The footer stood 160px tall against 812px of screen. */
+check(G60, 'the completeness bar collapses on a phone rather than eating the form',
+  /hidden sm:inline text-\[10px\] font-bold text-ink-muted uppercase tracking-widest shrink-0">Kelengkapan/.test(code(restockSrc58)) &&
+  /truncate sm:whitespace-normal/.test(code(restockSrc58)),
+  'a pinned bar that grows to three lines is the category he rejected outright; one line is the ' +
+  'version he accepted');
+
+/* The sheet was content-height and pinned to the bottom: 283px of empty scrim above it, and a
+   206px window holding a 248px picture below. The stage is flex-1, so height is all it needed. */
+check(G60, 'the ponder sheet takes the height of the phone, so its stage stops cropping',
+  /h-\[92vh\] lg:h-auto max-h-\[92vh\]/.test(code(overlaySrc60)) &&
+  /min-h-\[220px\] lg:min-h-\[300px\]/.test(code(overlaySrc60)),
+  'a half-height sheet wastes a third of the screen and crops the demo it exists to show');
+
+/* Four cards in one column ran 30px past the bottom of the screen, and scrolling inside the book
+   is banned by his own words. A book that runs out of room turns the page. */
+check(G60, 'the book turns the page on a phone rather than running off the bottom',
+  /const perPage = \(typeof matchMedia === 'function' && !matchMedia\('\(min-width: 640px\)'\)\.matches\) \? 2 : PER_PAGE;/.test(code(bookSrc60)) &&
+  /const safePage = Math\.min\(page, pages - 1\);/.test(code(bookSrc60)) &&
+  /\{safePage \+ 1\} \/ \{pages\}/.test(code(bookSrc60)),
+  'PER_PAGE is 4 and the grid is one column below sm, so the fourth card lands below the fold ' +
+  'on every phone; and a stale page index would render an empty spread');
+
+/* Not cosmetic: the page control only turns pages WITHIN a section, so with the ribbons hidden a
+   phone could not reach another section at all. */
+check(G60, 'the section ribbons are on the phone, because they are the only way to change section',
+  /className="relative z-10 flex flex-col justify-center gap-\[2px\] w-\[84px\] lg:w-\[118px\]/.test(code(bookSrc60)) &&
+  /const coverLeft = narrow \? 82 : COVER_LEFT;/.test(code(bookSrc60)) &&
+  /left: coverLeft/.test(code(bookSrc60)),
+  'the leather has to follow the ribbon column\'s width or the ribbons stop reading as tabs cut ' +
+  'into its edge');
+
 let last = '';
 for (const r of results) {
   if (r.group !== last) { console.log('\n' + r.group); last = r.group; }

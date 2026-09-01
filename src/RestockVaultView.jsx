@@ -1975,7 +1975,7 @@ const RestockVaultView = ({ inventory = [], procurements = [], motorists = [], b
 
                             {/* THE LINES — batch is a column, not a box in a corner */}
                             <div className="overflow-x-auto border border-line-2 rounded-lg bg-panel">
-                                <table className="w-full text-sm min-w-[780px]">
+                                <table className="w-full text-sm sm:min-w-[780px] kpm-stack-rows">
                                     <thead>
                                         <tr className="bg-raised">
                                             <th className="text-left text-[10px] font-bold text-ink-muted uppercase tracking-widest px-3 py-2 border-b border-line-2">Barang</th>
@@ -1987,15 +1987,15 @@ const RestockVaultView = ({ inventory = [], procurements = [], motorists = [], b
                                     </thead>
                                     <tbody>
                                         {cart.length === 0 ? (
-                                            <tr><td colSpan={5} className="px-3 py-8 text-ink-muted text-sm">Belum ada barang. Cari dan klik salah satu di kiri.</td></tr>
+                                            <tr><td colSpan={5} data-label="" className="px-3 py-8 text-ink-muted text-sm">Belum ada barang. Cari dan klik salah satu di kiri.</td></tr>
                                         ) : cart.map(item => {
                                             const per = totalItemsReceived > 0 ? (Number(item.basePrice)||0) + extraCosts / totalItemsReceived : 0;
                                             const prev = lastLanded[item.id];
                                             const drift = prev && prev.unit > 0 && per > 0 ? (per - prev.unit) / prev.unit * 100 : null;
                                             return (
                                                 <tr key={item.cartId} className="border-b border-line-2 last:border-b-0 animate-fade-in">
-                                                    <td className="px-3 py-2 text-ink font-bold">{item.name}</td>
-                                                    <td className="px-3 py-2">
+                                                    <td data-label="Barang" className="px-3 py-2 text-ink font-bold">{item.name}</td>
+                                                    <td data-label="Batch" className="px-3 py-2">
                                                         <input type="text" value={item.batchNo || ''} onChange={e => updateCartItem(item.cartId, 'batchNo', e.target.value.toUpperCase())} placeholder="08-B" className="w-full bg-inset border border-line-2 rounded p-1.5 text-xs text-ink font-mono uppercase outline-none focus:border-orange transition-colors"/>
                                                     </td>
                                                     {/* THE MINIMUM SITS UNDER THE BOX IT IS ABOUT — same
@@ -2006,7 +2006,7 @@ const RestockVaultView = ({ inventory = [], procurements = [], motorists = [], b
                                                         the floor, because a warning that is always on is a
                                                         warning nobody reads. Blank box = no warning yet: he
                                                         has not answered, so there is nothing to be wrong. */}
-                                                    <td className="px-3 py-2">
+                                                    <td data-label="Jumlah" className="px-3 py-2">
                                                         {/* TYPE IT THE WAY THE PAPER SAYS IT. The factory note counts in
                                                             karton and bal; retyping that as bks by hand is where a zero
                                                             goes missing. Same four boxes, same order and same rates line
@@ -2058,7 +2058,7 @@ const RestockVaultView = ({ inventory = [], procurements = [], motorists = [], b
                                                         })()}
                                                     </td>
                                                     {/* the drift sits UNDER the landed figure, because that is the figure it compares */}
-                                                    <td className="px-3 py-2 text-right font-mono whitespace-nowrap">
+                                                    <td data-label="@ Landed" className="px-3 py-2 text-right font-mono whitespace-nowrap sm:whitespace-nowrap">
                                                         <span className="block text-ink">{per > 0 ? rp(per) : '—'}</span>
                                                         {drift !== null && (
                                                             <span className={`block text-[10.5px] mt-0.5 ${Math.abs(drift) < 0.05 ? 'text-ink-muted' : drift > 0 ? 'text-danger-text' : 'text-accent-ink'}`}>
@@ -2066,7 +2066,7 @@ const RestockVaultView = ({ inventory = [], procurements = [], motorists = [], b
                                                             </span>
                                                         )}
                                                     </td>
-                                                    <td className="px-3 py-2 text-right">
+                                                    <td data-label="" className="px-3 py-2 text-right kpm-stack-remove">
                                                         <button onClick={() => removeFromCart(item.cartId)} aria-label={`Keluarkan ${item.name}`} className="text-ink-muted hover:text-danger-text transition-transform active:scale-90"><X size={15}/></button>
                                                     </td>
                                                 </tr>
@@ -2161,7 +2161,12 @@ const RestockVaultView = ({ inventory = [], procurements = [], motorists = [], b
                         {/* THE DOCUMENT COMPLETING ITSELF — it informs, it never blocks */}
                         <div className="shrink-0 border-t border-line-2 bg-panel px-4 py-3">
                             <div className="flex items-center gap-3 flex-wrap">
-                                <span className="text-[10px] font-bold text-ink-muted uppercase tracking-widest shrink-0">Kelengkapan</span>
+                                {/* THE PINNED BAR COLLAPSES TO ONE LINE ON A PHONE — his own condition for buying fixed
+                                    height at the bottom of a screen. At 375px the label pushed the meter, the
+                                    percentage and the save button onto a second row, and the whole footer stood
+                                    160px tall against 812px of phone. The percentage says the same thing the
+                                    word does. */}
+                                <span className="hidden sm:inline text-[10px] font-bold text-ink-muted uppercase tracking-widest shrink-0">Kelengkapan</span>
                                 <div className="flex-1 min-w-[120px] h-[3px] bg-inset rounded overflow-hidden">
                                     <div className="h-full bg-orange transition-[width] duration-500" style={{ width: `${donePct}%` }} />
                                 </div>
@@ -2179,7 +2184,7 @@ const RestockVaultView = ({ inventory = [], procurements = [], motorists = [], b
                                     {isSubmitting ? 'Menyimpan...' : isOut ? 'Kirim sekarang' : 'Simpan surat jalan'}
                                 </button>
                             </div>
-                            <p className={`font-mono text-[11.5px] mt-2 ${missing.length ? 'text-ink-muted' : 'text-ink'}`}>
+                            <p className={`font-mono text-[11.5px] mt-2 truncate sm:whitespace-normal ${missing.length ? 'text-ink-muted' : 'text-ink'}`}>
                                 {cart.length === 0
                                     ? '→ Siap. Cari barang di kiri, atau isi rutenya dulu.'
                                     : missing.length
