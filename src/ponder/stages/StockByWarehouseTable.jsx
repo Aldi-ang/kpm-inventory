@@ -18,14 +18,27 @@ import { MASTER } from '../../utils/supply.js';
    component against a fixed demo world that carries no `minimum`, which is why every cell below
    falls back to an em-dash rather than assuming the field exists — a tutorial that crashes on a
    new column would be a worse bug than the column is a feature. */
-const COLS = 'grid grid-cols-[minmax(0,1fr)_100px_104px_124px_96px_108px_104px_112px] gap-x-4 items-center';
+/* 🔴 THE NAME COLUMN NO LONGER GIVES WAY. Aldi, 2026-09-01: *"i suggest u to now shorten the
+   product name and warehouse name here, because we have side slider right so take more space its
+   okay"*.
+
+   It was `minmax(0,1fr)`, which means "take the leftover and shrink to nothing if there is none",
+   and the names carried `truncate` to survive that. On a narrow desk the leftover was small, so a
+   product read as `Sigaret Kretek Tangan Prem…` — the part that tells two products apart is the
+   part that got cut. `max-content` lets the column be as wide as the longest name instead, and the
+   table is already inside `overflow-x-auto`: the slider he is pointing at is what pays for it.
+   The 260px floor keeps the header honest when every name is short.
+
+   `gap-x-6` because the numbers are right-aligned against a left-aligned name; four is enough for
+   two numeric columns and too little between a word and a figure. */
+const COLS = 'grid grid-cols-[minmax(260px,max-content)_100px_104px_124px_96px_108px_104px_112px] gap-x-6 items-center';
 
 const n = (v) => Number(v || 0).toLocaleString('id-ID');
 
 export default function StockByWarehouseTable({ rows = [], openGudang, onToggle, totals = {} }) {
   return (
     <div className="overflow-x-auto">
-      <div className="min-w-[1010px]">
+      <div className="min-w-[1080px]">
 
         <div className={`${COLS} px-5 pb-2.5 border-b border-line-2 text-[10px] font-bold text-ink-muted uppercase tracking-widest`}>
           {/* Renamed 2026-08-27 on his instruction: *"dont make vague terms"*, and
@@ -62,14 +75,14 @@ export default function StockByWarehouseTable({ rows = [], openGudang, onToggle,
             <div key={r.name} data-ponder={`row:${r.name === MASTER ? 'master' : r.name.toLowerCase()}`} className="border-b border-line-2 last:border-b-0">
 
               <div className={`${COLS} px-5 transition-colors duration-200 ${open ? 'bg-raised py-3 pb-4' : 'py-3 hover:bg-raised/50'}`}>
-                <div className="min-w-0" data-ponder="col:warehouse">
+                <div data-ponder="col:warehouse">
                   <button
                     onClick={() => onToggle(open ? null : r.name)}
                     aria-expanded={open}
                     className="flex items-center gap-2 group text-left w-full"
                   >
                     <MapPin size={13} className={`shrink-0 ${r.name === MASTER ? 'text-gold' : 'text-orange'}`}/>
-                    <span className="font-black uppercase tracking-wider text-ink text-[13px] truncate group-hover:text-accent-ink transition-colors">
+                    <span className="font-black uppercase tracking-wider text-ink text-[13px] whitespace-nowrap group-hover:text-accent-ink transition-colors">
                       {r.name === MASTER ? 'Master Vault' : r.name}
                     </span>
                     <ChevronDown size={13} className={`text-ink-muted shrink-0 transition-transform duration-300 ${open ? 'rotate-180' : ''}`}/>
@@ -121,8 +134,8 @@ export default function StockByWarehouseTable({ rows = [], openGudang, onToggle,
                       </p>
                     ) : r.detail.map((p, i) => (
                       <div key={p.id} data-ponder={`item:${p.id}`} className={`${COLS} px-5 py-3.5 ${i > 0 ? 'border-t border-line-2/30' : ''}`}>
-                        <div className="min-w-0 pl-6">
-                          <span className="text-ink font-bold text-[13px] block leading-tight truncate">{p.name}</span>
+                        <div className="pl-6">
+                          <span className="text-ink font-bold text-[13px] block leading-tight whitespace-nowrap">{p.name}</span>
                           {(p.days !== null || p.unexplained > 0) && (
                             <span className="text-[10px] text-ink-muted uppercase tracking-widest">
                               {p.days !== null && <>oldest pack <b className="text-ink">{p.days} days old</b>{p.drops > 1 && ` · from ${p.drops} deliveries`}</>}

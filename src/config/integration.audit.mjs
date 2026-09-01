@@ -4549,7 +4549,11 @@ check(G56, 'pressing a part of the stage jumps to the beat that explains it',
 /* The highlight is drawn, not merely implied by dimming everything else. An EDGE, never a fill:
    amber is an edge and an ink in this app, and it is not a fill. */
 check(G56, 'the subject is outlined, and the outline is an edge rather than a fill',
-  /animate-ponder-ring/.test(overlaySrc) && /border-2 \$\{TONE_EDGE/.test(overlaySrc) &&
+  /* TONE_RING, not TONE_EDGE, since 2026-09-01: *i want the highlight to be clearer to see*.
+     The captions keep the quiet divider grey; the ring is orange. Both maps are still EDGES, and
+     `border-2` in the needle is what keeps it one — a fill would be a `bg-`. */
+  /animate-ponder-ring/.test(overlaySrc) && /border-2 \$\{TONE_RING/.test(overlaySrc) &&
+  /const TONE_RING = \{ ink: 'border-orange'/.test(overlaySrc) &&
   /const hits = wide \? \[\] : all\.filter\(el => keys\.includes\(el\.dataset\.ponder\)\)/.test(overlaySrc),
   'the ring must be a border on a box sized to the UNION of the direct hits. Including ancestors ' +
   'would union the whole table and outline nothing in particular');

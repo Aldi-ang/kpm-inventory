@@ -66,7 +66,12 @@ function Caption({ text }) {
     : <span key={i}>{p}</span>));
 }
 
+/* 🔴 THE RING IS THE POINT OF THE WHOLE SCREEN, so it stopped being a divider colour.
+   Aldi, 2026-09-01: *"i want the highlight to be clearer to see"*. `border-line-3` is the grey
+   this app draws table rules with — right for a caption's edge, invisible as a spotlight. The
+   captions keep the quiet edge; only the ring is loud. */
 const TONE_EDGE = { ink: 'border-line-3', gold: 'border-accent-edge', danger: 'border-danger-ink' };
+const TONE_RING = { ink: 'border-orange', gold: 'border-gold', danger: 'border-danger-ink' };
 const TONE_RULE = { ink: 'bg-line-3', gold: 'bg-orange', danger: 'bg-danger' };
 
 /* Ponder's text windows have a divot aimed at the block they are about. Four directions here
@@ -497,7 +502,7 @@ export default function PonderOverlay({ sceneId, open, onClose, onBack }) {
               {/* keyed on the beat so it re-mounts and replays its arrival. A 1px edge, never a
                   fill: amber is an edge and an ink in this app, and it is not a fill. */}
               <span key={p.index}
-                    className={`absolute inset-0 rounded-md border-2 ${TONE_EDGE[tone] || TONE_EDGE.ink} animate-ponder-ring`} />
+                    className={`absolute inset-0 rounded-md border-2 ${TONE_RING[tone] || TONE_RING.ink} animate-ponder-ring`} />
             </div>
           )}
 

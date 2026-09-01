@@ -1088,7 +1088,10 @@ section('S38. Minimal kirim: the floor HQ sees, keyed on the Tujuan it is sendin
   ok('the table carries the column at every level: header, warehouse, product, total',
      (table.match(/data-ponder="col:minimum"/g) || []).length === 4);
   ok('and the grid grew a track to hold it, rather than squeezing the others',
-     /grid-cols-\[minmax\(0,1fr\)(?:_[0-9]+px){7}\]/.test(table));
+     /* The first track was minmax(0,1fr) until 2026-09-01, when the name column stopped being
+        the one that gives way — he asked for it: the table already scrolls sideways. What this
+        check is really about is the SEVEN fixed tracks after it, none of them squeezed. */
+     /grid-cols-\[minmax\(260px,max-content\)(?:_[0-9]+px){7}\]/.test(table));
   ok('the warehouse rows compute it with the same function and the same cushion as the form',
      /reorderAdvice\(arrivals, p\.shelf, p\.transit, rhythmOf\(name\), nowSec,[\s\S]{0,80}bufferDays\(appSettings, name\)\)\.suggest/.test(bwm));
   /* One rhythm per cabang, not one per product: shipmentRhythm walks that cabang's whole request
