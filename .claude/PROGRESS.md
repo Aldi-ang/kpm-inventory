@@ -1,6 +1,25 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-09-01 08:55 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **680/680 audit · 970/970 selfcheck** · branch `phase0-solid-ground`
+**Updated: 2026-09-01 09:20 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **680/680 audit · 970/970 selfcheck** · branch `phase0-solid-ground`
+
+## 🟠 2026-09-01 09:20 — HE CLOSED THE RELABELLING JOB WITHOUT DOING IT. No code changed.
+
+Offered a full label list for the Master Vault desk so its English/Indonesian mixture would match
+the regional warehouse below it, he declined the whole workflow:
+
+> *"leave it for now, i can just strike words that i dont like"*
+
+**He does not want a naming SESSION, he wants to correct names as he meets them.** The measured
+mixture is on file in the vault note; the brief now says do not raise it unprompted. Worth reading
+against his own language rule from the same morning — the rule stands, the tidy-up pass does not.
+
+**Brief repointed at G1 + G2**, the money item, which his standing call already says jumps the
+queue. `batchNo` is captured at intake — `RestockVaultView.jsx:1944`, required by the completeness
+meter at `:455`, written at `:656` — and dies at the HQ door, because
+`branches/{loc}/inventory/{productId}` holds one `stock` number. The brief deliberately does NOT
+promise a specific edit; the last handoff that did was wrong by two orders of magnitude.
+
+**❓ WAITING ON ALDI — nothing.**
 
 ## 🟠 2026-09-01 08:55 — THE REGIONAL WAREHOUSE IS A DESK. `dc05d61`, **680/680 + 970/970**.
 

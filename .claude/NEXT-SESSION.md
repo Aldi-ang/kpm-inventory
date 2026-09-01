@@ -1,6 +1,6 @@
 # NEXT SESSION — read this, then `.claude/PROGRESS.md`. Read no code to orient.
 
-**Written 2026-09-01 08:55 WIB. 680/680 audit · 970/970 selfcheck. Branch `phase0-solid-ground`.**
+**Written 2026-09-01 09:20 WIB. 680/680 audit · 970/970 selfcheck. Branch `phase0-solid-ground`.**
 
 ## First command
 
@@ -26,35 +26,40 @@ container. **Drive it with `element.click()` and read `getBoundingClientRect()`.
 
 ---
 
-## THE ONE JOB — the Master Vault desk is mixed-language, and he has now ruled that it cannot be
+## THE ONE JOB — G1 + G2: the batch number dies at the HQ door
 
-His rule, 2026-09-01: *"if the restock vault is in english then this regional warehouse should be
-in english as well if indo then indo"*. The regional warehouse desk directly below it **is English
-now, on his instruction**. The Master Vault desk is neither — measured across
-`src/RestockVaultView.jsx`:
+**The relabelling job that stood here is CLOSED, not done.** Aldi, 2026-09-01: *"leave it for now,
+i can just strike words that i dont like"*. Do not start it, and do not bring him a label list — he
+will name the words he objects to when he meets them. The Restock Vault stays mixed-language on his
+say-so.
 
-| | Words |
-|---|---|
-| **English** | Batch No · Date · Extra Costs · Qty Received · Select Product · Metadata · Shipping (Rp) · Labor (Rp) · Tax (Rp) · Target Month · Adjust Batches · Update Document Proof |
-| **Indonesian** | Barang · Jenis · Jumlah · Nama · Nota · Kirim · Hapus · Proses · Tanggal · Ongkos kirim · Pita cukai · Nilai barang · Siapkan · Kelengkapan |
-| **Both at once** | "Nama Pengirim (Sender Name)" · "Nomor Resi / Tracking No" · "Surat Jalan / Delivery No" |
+**This is the money item, and his own standing rule is that money jumps the queue.**
 
-Two desks on one page, one in English and one in a mixture, is exactly what his rule exists to stop.
+`batchNo` is captured at factory intake and then thrown away. Confirmed today, `file:line`:
 
-🔴 **BRING HIM THE NAMES, DO NOT RENAME ANYTHING.** Only Aldi names the categories in his own
-trade — that law is why *Tempat* became **Data Induk** and why *Stock on Hand* became **Stock**.
-Produce a table of every visible label with a proposed English name beside it, in one message, and
-let him strike through what he does not like.
+- `RestockVaultView.jsx:1944` — the input, one per line, on every intake row
+- `RestockVaultView.jsx:455` — the completeness meter already requires it: *"batch tiap baris"*
+- `RestockVaultView.jsx:656` — written onto the procurement, defaulting to `'UNASSIGNED'`
+- `RestockVaultView.jsx:379` — carried into the landed-cost map
 
-⚠️ **Three things are NOT up for renaming.** **Data Induk** — he chose it from four options on
-2026-08-31. The **printed surat jalan** — it is a document for Indonesian drivers and warehouse
-staff, and the palette law already stops at the print block for the same reason. And the
-**branch-facing body copy** ("Hitung dulu, jangan lihat surat jalan") — his 2026-08-27 rule is
-*"teaching just use indonesia, for terms for the features and components just use english"*, so
-labels go English and instructions stay Indonesian.
+**And it stops there.** `branches/{loc}/inventory/{productId}` holds a single `stock` number, so the
+moment goods leave the master vault the batch is gone. Two consequences, and they are his G1 and G2:
 
-**Pin it the way group 57 is pinned** — that group went red on all four of its first checks before
-the edit, which is the only reason its green means anything.
+- **G1** — nothing downstream can say which batch a pack came from.
+- **G2** — nothing knows which stock is OLD, so nothing can enforce **oldest ships first**, and
+  nothing can warn that a batch has been sitting too long. **The threshold is a number only Aldi can
+  set** — only he knows when a kretek starts tasting old. Ask before inventing one.
+
+⚠️ **DO NOT PROMISE A SPECIFIC EDIT IN THIS BRIEF OR TO HIM UNTIL IT HAS BEEN TRIED.** A previous
+handoff promised a "two-line token swap" that turned out to be 217 edits. Read how
+`BranchWarehouseManager` and the fulfilment path actually write branch stock FIRST, then say what
+the change is. The half that already exists is the capture; the work is the CARRYING.
+
+⚠️ **`'UNASSIGNED'` is a real value, not a bug.** Old procurements have it. Whatever holds batches
+downstream has to render it as "not recorded" rather than as a batch named UNASSIGNED.
+
+**Pin it the way group 57 and D17 are pinned** — both went red before their fix, which is the only
+reason their green means anything.
 
 ---
 
@@ -67,9 +72,9 @@ the edit, which is the only reason its green means anything.
   `BranchWarehouseManager.jsx`: `placeholder:text-ink-dim placeholder:opacity-100
   placeholder:italic`, and `text-orange` → `text-accent-ink`. **`border-orange` and `bg-orange`
   stay — those are edges.** ⚠️ A blind regex is wrong: a `text-orange` on a scrim is correct.
-- **G1 + G2, the money item.** `batchNo` captured at intake, never copied onto
-  `branches/{loc}/inventory`; nothing enforces oldest-ships-first. **His standing call: this jumps
-  the queue whenever he wants money before paint.**
+- **Relabelling the Master Vault desk to English.** CLOSED 2026-09-01 on his call — *"leave it for
+  now, i can just strike words that i dont like"*. The measured mixture is in the vault note if it
+  ever reopens; do not raise it unprompted.
 - **Ponder caption static on phones, moving on PC.** DECIDED 2026-08-31, not built. Today
   `PonderOverlay.jsx` HIDES it: `if (boxW > W * 0.7) return null;`. The job is a third state.
 - **The request card's status badge and button stack oddly at 375px** — pre-existing, `ml-auto`
