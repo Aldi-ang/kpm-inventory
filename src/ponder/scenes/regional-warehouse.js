@@ -25,50 +25,42 @@ export const regionalWarehouse = {
   id: 'regional-warehouse',
   title: 'Regional Warehouse',
   section: 'gudang',
-  blurb: 'Meja gudang cabang: lima tab, dan dua hal yang sekarang tidak bisa diketik sendiri',
+  blurb: 'Panel gudang cabang: lima tab, dan dua hal yang sekarang diatur oleh HQ',
   stage: 'regional-warehouse',
-  related: ['goods-received', 'stock-by-warehouse'],
+  /* NO `related`, ON PURPOSE. Aldi, 2026-09-01: *"i want u to minimize too much reference from
+     other tutorial, make sure that each ponder explain everything even when they have this info on
+     other ponder tutorial double learning is okay, this way the user doesn't have to refer back and
+     forth just to know whats going on"*. A branch admin cannot open the HQ tutorials at all, so a
+     link to them is a dead end wearing a helpful face. Anything this reader needs is said here. */
   steps: [
-    { text: 'Ini meja gudang cabang. Bentuknya sama dengan meja Master Vault di atasnya, supaya satu halaman terbaca sebagai satu tempat kerja.',
-      focus: 'desk:nav', at: 'bottom', hold: 5200 },
+    { text: 'Ini panel gudang cabang. Bentuknya mengikuti panel Master Vault di atasnya, supaya satu halaman terbaca sebagai satu tempat kerja.',
+      focus: 'desk:nav', at: 'bottom', hold: 5000 },
 
-    { text: 'Kiri atas selalu menyebut **gudang mana yang sedang dibuka** dan tab mana yang sedang aktif. Lampunya menyala selama meja ini hidup.',
-      focus: 'desk:where', at: 'near', hold: 5000 },
+    { text: 'Bagian kiri atas menyebut **gudang mana yang sedang dibuka** dan tab mana yang sedang aktif. Lampunya menyala selama panel ini terbuka.',
+      focus: 'desk:where', at: 'near', hold: 4800 },
 
-    { text: '**Incoming** — barang yang sedang jalan ke gudang cabang. Angka di sebelahnya hanya menghitung yang belum selesai, jadi angkanya turun setelah barang dihitung.',
-      focus: 'tab:incoming', at: 'near', tone: 'gold', hold: 6000 },
+    { text: '**Incoming** berisi kiriman yang sedang berjalan menuju gudang ini. Angka di sebelahnya hanya menghitung yang belum selesai, jadi angka itu turun setelah barang dihitung.',
+      focus: 'tab:incoming', at: 'near', tone: 'gold', hold: 5600 },
 
-    { text: 'Begitu kardus sampai di pintu gudang, **Scan barang sampai** membaca barcode di label kiriman. Satu scan, dan HQ langsung tahu barangnya sudah mendarat.',
+    { text: 'Waktu kardus sampai di pintu, tekan **Scan barang sampai** dan arahkan kamera ke barcode pada label kiriman. Kalau kamera tidak jalan atau labelnya rusak, nomor kiriman bisa diketik.',
       focus: 'tab:incoming', at: 'near', tone: 'gold', hold: 6400 },
 
-    { text: '🔴 Scan hanya berarti **kardusnya sudah ada di gudang** — bukan berarti isinya sudah benar. Stok belum bertambah sampai barangnya dihitung.',
-      focus: 'tab:incoming', at: 'near', tone: 'gold', hold: 6600 },
+    { text: 'Scan hanya menyatakan **kardusnya sudah ada di gudang**, bukan isinya sudah benar. Setelah scan, panel hitung terbuka sendiri, dan stok baru bertambah setelah hitungan itu selesai. Jumlah kiriman dari HQ sengaja disembunyikan supaya tidak menuntun hitungan.',
+      focus: 'tab:incoming', at: 'near', tone: 'gold', hold: 7200 },
 
-    { text: 'Kalau kamera tidak jalan atau labelnya rusak, nomor kiriman bisa diketik. Barang yang sudah sampai harus tetap bisa dicatat sampai, apa pun keadaan HP-nya.',
-      focus: 'tab:incoming', at: 'near', hold: 6000 },
-
-    { text: 'Di tab itu juga **barang datang dihitung**. Jumlah kiriman HQ sengaja disembunyikan sampai hitungan gudang selesai — supaya angka HQ tidak menuntun hitungan itu.',
-      focus: 'tab:incoming', at: 'near', hold: 6200 },
-
-    { text: '**Request** — minta stok ke HQ. Pilih barang, isi jumlah, masukkan ke daftar, lalu kirim.',
-      focus: 'tab:request', at: 'near', hold: 5200 },
-
-    { text: '🔴 Alamat kirim **tidak lagi diketik di sini.** Yang tampil adalah alamat gudang cabang yang sudah terdaftar. Kalau belum terdaftar, permintaan tidak bisa dikirim — dan yang bisa mendaftarkan hanya HQ.',
+    { text: '**Request** dipakai untuk meminta stok ke HQ: pilih barang, isi jumlah, masukkan ke daftar, lalu kirim. Alamat tujuan tidak diketik lagi. Yang tampil adalah alamat gudang cabang yang sudah terdaftar, dan hanya HQ yang bisa mendaftarkannya.',
       focus: 'tab:request', at: 'near', tone: 'gold', hold: 7000 },
 
-    { text: '**Stock** — isi rak gudang cabang sekarang, satu kartu satu barang, lengkap dengan **umur** kiriman paling lama.',
-      focus: 'tab:stock', at: 'near', hold: 5400 },
+    { text: '**Stock** menunjukkan isi rak gudang ini sekarang, satu kartu untuk satu barang, lengkap dengan umur kiriman paling lama.',
+      focus: 'tab:stock', at: 'near', hold: 5000 },
 
-    { text: '**Book** — semua permintaan, yang sudah selesai maupun yang belum, beserta hasil hitungnya. Kalau ada selisih dengan HQ, buktinya ada di sini.',
-      focus: 'tab:book', at: 'near', hold: 5800 },
+    { text: '**Book** menyimpan semua permintaan, yang sudah selesai maupun yang belum, beserta hasil hitungnya. Kalau ada selisih dengan HQ, buktinya ada di sini.',
+      focus: 'tab:book', at: 'near', hold: 5200 },
 
-    { text: 'Data Induk — daftar pabrik, gudang dan orang yang boleh kirim & terima. Di meja ini **hanya bisa dibaca.**',
-      focus: 'tab:data', at: 'near', hold: 5400 },
-
-    { text: 'Yang bisa mendaftarkan atau mengubahnya hanya HQ, tier 3 ke atas. Kalau ada yang salah di daftar itu, laporkan ke HQ — jangan cari jalan lain.',
+    { text: 'Data Induk memuat daftar pabrik, gudang, dan orang yang boleh mengirim atau menerima. Di panel ini isinya **hanya bisa dibaca**; yang mengubah hanya HQ. Kalau ada yang keliru, laporkan ke HQ.',
       focus: 'tab:data', at: 'near', tone: 'gold', hold: 6400 },
 
-    { text: 'Urutan tabnya mengikuti urutan pertanyaan yang muncul di gudang: barangnya sudah datang belum, perlu tambah tidak, sekarang ada apa, dulu bagaimana, dan kirim-terima lewat siapa.',
-      focus: 'desk:nav', at: 'bottom', hold: 6000 },
+    { text: 'Urutan tabnya mengikuti urutan pertanyaan yang muncul di gudang: barangnya sudah datang atau belum, perlu tambah atau tidak, sekarang ada apa, dulu bagaimana, dan kirim terima lewat siapa.',
+      focus: 'desk:nav', at: 'bottom', hold: 5600 },
   ],
 };
