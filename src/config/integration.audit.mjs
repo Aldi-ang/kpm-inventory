@@ -4789,23 +4789,58 @@ check(G56, 'a ribbon turns every page between here and there, one sheet per fram
 const bkShutA = bookSrc.indexOf('const shut = useCallback(');
 const bkShutB = bookSrc.indexOf('useLayoutEffect(() => { if (closeOnMount) shut(); }', bkShutA);
 const bkShutBody = bkShutA > -1 && bkShutB > bkShutA ? bookSrc.slice(bkShutA, bkShutB) : '';
+const foldKf = /\[\{ transform: `translateZ\(\$\{z\}px\) rotateY\(0deg\)` \},[\s\S]{0,60}?\{ transform: `translateZ\(\$\{z\}px\) \$\{foldTo\}` \}\]/;
+const openKf = /\[\{ transform: `translateZ\(\$\{z\}px\) \$\{foldTo\}` \},[\s\S]{0,60}?\{ transform: `translateZ\(\$\{z\}px\) rotateY\(0deg\)` \}\]/;
 check(G56, 'the book closes by folding its right half over, and nothing in it fades',
-  bkShutBody.length > 800 && bkShutBody.length < 4000 &&
-  /const block = Object\.keys\(leafEls\.current\)\.map\(Number\)\s*\n\s*\.filter\(k => k >= posRef\.current\)\.sort\(\(a, b\) => b - a\);/.test(bkShutBody) &&
-  /\{ transform: `translateZ\(\$\{zOf\(k, false\)\}px\) \$\{foldTo\}` \}\]/.test(bkShutBody) &&
+  bkShutBody.length > 800 && bkShutBody.length < 4500 &&
+  /foldables\(\)\.forEach\(\(\{ el: part, z, k \}, i\) => \{/.test(bkShutBody) &&
+  foldKf.test(bkShutBody) &&
   /delay: i \* 14/.test(bkShutBody) &&
-  /* No sheet and no stack fades. The scrim still fades — it is not paper — and the leather keeps
+  /* No sheet and no stack fades. The scrim still fades - it is not paper - and the leather keeps
      its own shading as it comes round into the light, which is a face catching light rather than a
-     page evaporating. Asserted by NAME so the difference cannot blur: the stack must not be
-     animated at all any more, and the block's keyframes carry transform and nothing else. */
+     page evaporating. Asserted by NAME so the difference cannot blur. */
   !/stackRef\.current\?\.animate/.test(bkShutBody) &&
-  !/opacity/.test((bkShutBody.match(/block\.forEach\([\s\S]*?\}\);/) || [''])[0]) &&
+  !/opacity/.test((bkShutBody.match(/foldables\(\)\.forEach\([\s\S]*?\}\);/) || [''])[0]) &&
   /const COVER_Z = 'translateZ\(24px\) ';/.test(bookSrc) &&
   /const leafShutTo = COVER_Z \+ foldTo;/.test(bookSrc) &&
   !/transform: 'translateZ\(-?\d+px\)', transformStyle: 'preserve-3d'/.test(bookSrc),
-  'the close must animate every mounted unturned sheet along the cover\'s own arc, with no opacity ' +
-  'keyframe left in it besides the scrim, and the cover must sit below the stack in Z or it lands ' +
-  'underneath its own pages');
+  'the close must fold every part of the right-hand block along the cover\'s own arc, with no ' +
+  'opacity keyframe left in it besides the scrim, and the cover must carry its own depth or it ' +
+  'lands underneath its own pages');
+
+/* 🔴 AND THE BLOCK IS THE PAGE EDGES TOO, OR THEY HANG IN THE AIR. Aldi, 2026-09-02: *"when closed,
+   the white outline and book background is still there not close with the book"*. The cream strips
+   that ARE the stack's thickness lived inside the stack and were never animated, so the pages
+   folded away and left their own fore-edge and tail behind on the right half. They are part of the
+   block; `foldables` gathers them by `data-fold` and they lead the fold, being its outside. */
+check(G56, 'the paper block folds with its own edges, leaving no outline behind',
+  /const foldables = \(\) => \{/.test(bookSrc) &&
+  /querySelectorAll\('\[data-fold\]'\)/.test(bookSrc) &&
+  (bookSrc.match(/<span data-fold /g) || []).length === 2 &&
+  (bookSrc.match(/transformOrigin: 'left center' \}\} \/>/g) || []).length >= 2 &&
+  /\.filter\(k => k >= posRef\.current\)\.sort\(\(a, b\) => b - a\)/.test(bookSrc),
+  'the fore-edge and the tail must carry data-fold and hinge at the spine, and foldables must ' +
+  'return them alongside the unturned sheets — otherwise the book shuts and its edges stay put');
+
+/* 🔴 THE BOOK ARRIVES CLOSED. *"i want the starting book to be closed before its fly towards the
+   screen and open ... right now book already open on screen when pressed and there is intersection
+   between model and animation, model static but animation working"*.
+
+   The cover used to swing open over sheets that sat at their resting spread the whole flight, so
+   what flew in was an OPEN book with a cover moving across it — a static model disagreeing with the
+   animation drawn on top of it, which is the intersection he saw. The same block that folds on the
+   way out unfolds on the way in, held folded through the flight by `fill: 'both'` under a delay. */
+const bkOpenA = bookSrc.indexOf('if (still || closeOnMount) return;');
+const bkOpenB = bookSrc.indexOf('const shut = useCallback(', bkOpenA);
+const bkOpenBody = bkOpenA > -1 && bkOpenB > bkOpenA ? bookSrc.slice(bkOpenA, bkOpenB) : '';
+check(G56, 'the book flies in closed and only then opens',
+  bkOpenBody.length > 600 && bkOpenBody.length < 4500 &&
+  /const parts = foldables\(\);/.test(bkOpenBody) &&
+  openKf.test(bkOpenBody) &&
+  /delay: T\.leafOpenDelay \+ \(parts\.length - 1 - i\) \* 14,/.test(bkOpenBody) &&
+  /fill: 'both'/.test(bkOpenBody),
+  'the arrival must unfold the same block the departure folds, delayed behind the flight and ' +
+  'filling backwards, or the spread is already open while the cover is still swinging over it')
 
 /* An exit is faster than an entrance — the arrival is the book being carried to you and may take
    its time, the departure is the system answering and must not keep you waiting. Computed from the

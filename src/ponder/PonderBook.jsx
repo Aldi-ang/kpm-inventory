@@ -512,6 +512,31 @@ function Library({ anchorRef, initialSection, onClose, onPick, closeOnMount = fa
        { transform: leafOpenTo, offset: 1 }],
       { duration: T.leafOpen, delay: T.leafOpenDelay, easing: HINGE, fill: 'both' },
     );
+    /* 🔴 THE BOOK ARRIVES CLOSED, AND ONLY THEN OPENS.
+
+       Aldi, 2026-09-02: *"i want the starting book to be closed before its fly towards the screen
+       and open ... right now book already open on screen when pressed and there is intersection
+       between model and animation, model static but animation working"*.
+
+       He read it exactly right. The cover animated from shut to open while the SHEETS sat at their
+       resting spread the whole time — so the thing that flew in was an open book with a cover
+       swinging over it, and the static model disagreed with the animation on top of it. That
+       disagreement IS the intersection he saw.
+
+       The block starts folded and unfolds with the cover, which makes the arrival a closed book.
+       `fill: 'both'` under a delay is what holds them folded for the whole flight — the sheets are
+       pinned at their FROM keyframe until their turn comes, so nothing has to be rendered folded
+       and nothing flickers when the animation takes over. Reverse stagger: the deepest sheet leads
+       going out, the top sheet leads coming back, which is how a stack opens. */
+    const parts = foldables();
+    parts.forEach(({ el: part, z }, i) => {
+      part?.animate(
+        [{ transform: `translateZ(${z}px) ${foldTo}` },
+         { transform: `translateZ(${z}px) rotateY(0deg)` }],
+        { duration: T.leafOpen, delay: T.leafOpenDelay + (parts.length - 1 - i) * 14,
+          easing: HINGE, fill: 'both' },
+      );
+    });
     shade(shadeFrontRef.current, [{ opacity: 0.62 }, { opacity: 0.62, offset: 0.35 }, { opacity: 0 }],
           T.leafOpen, T.leafOpenDelay);
     shade(shadeBackRef.current, [{ opacity: 0 }, { opacity: 0.55, offset: 0.55 }, { opacity: 0.75 }],
@@ -527,7 +552,7 @@ function Library({ anchorRef, initialSection, onClose, onPick, closeOnMount = fa
         { duration: T.leafOpen, delay: T.leafOpenDelay, easing: HINGE, fill: 'both' });
     }
     scrimRef.current?.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 300, easing: 'ease-out', fill: 'both' });
-  }, [still, flightFrom, leafShutTo, slabShutTo, narrow]);
+  }, [still, flightFrom, leafShutTo, slabShutTo, narrow, foldTo]);
 
   const shut = useCallback(() => {
     if (closingRef.current) return;
@@ -537,6 +562,24 @@ function Library({ anchorRef, initialSection, onClose, onPick, closeOnMount = fa
     if (!closeOnMount) bookClose();
     if (liteOn() || reduced()) { onClose(); return; }
     const el = bookRef.current;
+    /* 🔴 THIS IS WHY THE X BUTTON WAS DEAD, AND IT KILLED IT PERMANENTLY.
+
+       Aldi, 2026-09-02: *"x button is still not working"*. Reproduced at 375x812 by pressing close
+       while the book was still flying in: `getBoundingClientRect()` reports PAINTED geometry, so a
+       book mid-flight measured 17x36 instead of 351x731 — its own `scale(0.049)` read back as if it
+       were the book's real size. `flightFrom()` then computed a departure of
+       `translate(-53px) scale(1.005)`: the book shuffled sideways and stayed exactly where it was.
+
+       And `closingRef` was already true by then, so EVERY later press was a no-op. One mistimed tap
+       and the button is dead for the life of the panel. That is the whole bug he reported twice.
+
+       Finishing the book's own animations first puts it at its resting geometry before anything is
+       measured. It is the same fault the spotlight already carries a check for in PonderOverlay —
+       a painted rect is not a layout rect, and this is the second file to pay for it. */
+    el?.getAnimations().forEach(a => { try { a.finish(); } catch (err) { /* not finishable */ } });
+    leafRef.current?.getAnimations().forEach(a => { try { a.finish(); } catch (err) { /* idem */ } });
+    stackRef.current?.getAnimations({ subtree: true })
+      .forEach(a => { try { a.finish(); } catch (err) { /* idem */ } });
     const from = flightFrom();
     if (!el || !from || typeof el.animate !== 'function') { onClose(); return; }
     scrimRef.current?.animate([{ opacity: 1 }, { opacity: 0 }],
@@ -561,15 +604,11 @@ function Library({ anchorRef, initialSection, onClose, onPick, closeOnMount = fa
        The stagger is the one liberty taken, and it is what makes it read as paper rather than as
        a board: 14ms per sheet from the OUTSIDE in, so the cover leads and the page you were
        reading settles last, the way a stack of paper actually falls. */
-    const block = Object.keys(leafEls.current).map(Number)
-      .filter(k => k >= posRef.current).sort((a, b) => b - a);
-    block.forEach((k, i) => {
-      const sheet = leafEls.current[k];
-      animsRef.current[k]?.cancel();
-      delete animsRef.current[k];
-      sheet?.animate(
-        [{ transform: `translateZ(${zOf(k, false)}px) rotateY(0deg)` },
-         { transform: `translateZ(${zOf(k, false)}px) ${foldTo}` }],
+    foldables().forEach(({ el: part, z, k }, i) => {
+      if (k !== undefined) { animsRef.current[k]?.cancel(); delete animsRef.current[k]; }
+      part?.animate(
+        [{ transform: `translateZ(${z}px) rotateY(0deg)` },
+         { transform: `translateZ(${z}px) ${foldTo}` }],
         { duration: T.leafShut, delay: i * 14, easing: HINGE, fill: 'both' },
       );
     });
@@ -641,6 +680,23 @@ function Library({ anchorRef, initialSection, onClose, onPick, closeOnMount = fa
      there any more. Owned by the sheet's own style so Lite Mode, which never animates, still
      resolves it — the wax-seal rule: the state carries the visibility, the animation only moves. */
   const dim = (deg) => (!spread && deg <= FLIP ? 0 : 1);
+  /* 🔴 EVERYTHING THAT IS THE RIGHT-HAND BLOCK, IN THE ORDER IT FOLDS.
+
+     Aldi, 2026-09-02: *"when closed, the white outline and book background is still there not close
+     with the book"*. The white outline was the paper block's own fore-edge and tail — the cream
+     strips that ARE the stack's thickness. They lived inside the stack but were never animated, so
+     the pages folded away and left their own edges hanging in the air on the right half.
+
+     They are part of the block, so they fold with it. Outermost first: the edges lead, then the
+     sheets from the deepest up, so the page being read settles last. */
+  const foldables = () => {
+    const edges = [...(stackRef.current?.querySelectorAll('[data-fold]') || [])]
+      .map(el => ({ el, z: 0 }));
+    const sheets = Object.keys(leafEls.current).map(Number)
+      .filter(k => k >= posRef.current).sort((a, b) => b - a)
+      .map(k => ({ el: leafEls.current[k], z: zOf(k, false), k }));
+    return [...edges, ...sheets];
+  };
   const put = (el, deg, z) => {
     if (!el) return;
     el.style.transform = `translateZ(${z}px) rotateY(${deg}deg)`;
@@ -1017,10 +1073,12 @@ function Library({ anchorRef, initialSection, onClose, onPick, closeOnMount = fa
           <div ref={stackRef}
                className="absolute inset-y-0 left-0 w-full lg:left-1/2 lg:w-1/2"
                style={{ transformStyle: 'preserve-3d' }}>
-            <span className="pointer-events-none absolute inset-y-[8px] -right-[5px] w-[6px] rounded-r-[3px]"
-                  style={{ background: EDGES }} />
-            <span className="pointer-events-none absolute -bottom-[5px] left-0 right-[10px] h-[5px]"
-                  style={{ background: EDGES_H }} />
+            {/* `data-fold` marks them as part of the block — see `foldables`. Hinged at the spine
+                like the sheets they are the edge of, or they would fold about their own middle. */}
+            <span data-fold className="pointer-events-none absolute inset-y-[8px] -right-[5px] w-[6px] rounded-r-[3px]"
+                  style={{ background: EDGES, transformOrigin: 'left center' }} />
+            <span data-fold className="pointer-events-none absolute -bottom-[5px] left-0 right-[10px] h-[5px]"
+                  style={{ background: EDGES_H, transformOrigin: 'left center' }} />
 
             {near.map(k => {
               const flipped = k < safeTurn;
