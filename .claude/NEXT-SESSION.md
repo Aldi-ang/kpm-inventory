@@ -1,6 +1,6 @@
 # NEXT SESSION — read this, then `.claude/PROGRESS.md`. Read no code to orient.
 
-**Written 2026-09-01 20:05 WIB. 707/707 audit · 986/986 selfcheck. Branch `phase0-solid-ground`.**
+**Written 2026-09-02 12:14 WIB. 709/709 audit · 997/997 selfcheck. Branch `phase0-solid-ground`.**
 
 ## First command
 
@@ -35,12 +35,19 @@ looks broken when it is fine.
 
 ## ⚠️ ONE THING OUTRANKS THE JOB BELOW
 
-**The tutorial book was rebuilt on 2026-09-01 (`9a9cb62`) and Aldi has NOT judged the motion yet.**
-If his first message says the book is wrong — the drag, the 3D, the phone, anything — **that is the
-job, and the one below waits.** Read `A-Brain/Wiki/Concepts/The Book as a Stack of Sheets.md` first;
-it holds the technique, the arithmetic and the two width-specific faults already found and fixed.
-`framer-motion@^13.1.1` is installed and still unused — a spring is the upgrade if he says the
-settle feels stiff.
+**The tutorial book has had two passes and Aldi has judged the first one.** He watched it, named two
+faults — a fast swipe snapping, and a ribbon teleporting instead of turning — and both are fixed in
+`c0ce49f`. **He has NOT judged that second pass yet.** If his first message names anything about the
+book, that is the job and the one below waits.
+
+Read `A-Brain/Wiki/Concepts/The Book as a Stack of Sheets.md` before touching it. It holds the
+technique, the arithmetic, both width-specific faults, and the commit-on-gesture rule that stopped
+the snap — re-deriving any of that costs a session. `framer-motion@^13.1.1` is installed and still
+unused; a spring is the upgrade if he says the settle feels stiff.
+
+⚠️ **Two traps that already cost time here.** `new Map()` in `PonderBook.jsx` resolves to the lucide
+Map ICON, not the constructor. And the Browser pane's animation clock only advances when it PAINTS,
+so pump frames with repeated screenshots or a working turn reads as frozen.
 
 If he says nothing about the book, do the job below.
 
@@ -95,3 +102,7 @@ its subject, and there the movement is the whole value.
 </details>
 
 **Before you finish: rewrite this file with the next single job.**
+
+**Re-checked 2026-09-02 12:05 WIB — brief unchanged.** The modified `src/ponder/PonderBook.jsx`
+and `src/ponder/pageModel.js` are the parallel KPM session's in-flight work, not this note's. A
+7DTD modding session also ran on this repo and touched no project file.

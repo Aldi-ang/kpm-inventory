@@ -1,6 +1,38 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-09-01 20:05 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **707/707 audit · 986/986 selfcheck** · branch `phase0-solid-ground`
+**Updated: 2026-09-02 12:14 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **709/709 audit · 997/997 selfcheck** · branch `phase0-solid-ground`
+
+## 🟠 2026-09-02 12:14 — HE WATCHED THE BOOK AND NAMED TWO FAULTS. BOTH FIXED. `c0ce49f`, **709/709 + 997/997**.
+
+His words: *"when i slide it too quickly, animation broke and the book snapped itself into next page
+instead"*, and *"i want to put full realism of this book, for example if i change the ribbon section
+by 4 ribbons far then the book will turn 4 times to reach that page ... this way it will make it
+realistic"*. Full story in the commit message; this is the pointer.
+
+**The snap was one cause with three faces** — committing the position only from `anim.onfinish` left
+the book believing it was on the old sheet for the whole 520ms of a settle. The position commits
+when the GESTURE decides now, and a short flick counts on release SPEED as well as distance.
+
+**A ribbon riffles** — `riffle()` in `pageModel.js` plans it: four apart is four turns, and every
+distance up to eight is turned page for page. One step per RENDER, never a loop.
+
+**Measured in the lab, four states.** Two short fast flicks (22% of a page each) land on 4/17 with
+the second following the finger · a 4-ribbon press steps `4→5→6→7→8` onto Receivables · Settings
+from 8 jumps to 9 then riffles to 17 · a phone steps `2→7` (five turns — Restock Vault really has
+two pages there) · Lite Mode arrives instantly, `anims: 0`, arrows still work.
+
+⚠️ **The lab pane's animation clock only advances when it PAINTS.** An animation sits at
+`currentTime: 0` between tool calls, so pump frames with repeated screenshots or a working turn
+reads as broken.
+
+✅ **HIS TURN AGAIN: watch it.** `npm run dev` → `https://192.168.1.143:5173`. Swipe fast twice in a
+row, then press a ribbon four rows away.
+
+## ⚪ 2026-09-02 12:05 — SIDE SESSION (7 Days to Die modding). No KPM file touched.
+
+Not a KPM entry. `src/ponder/PonderBook.jsx` and `src/ponder/pageModel.js` are the parallel
+🟠 KPM session's uncommitted work; this session neither made nor understands them. Nothing
+else in this file was altered. Vault: `A-Brain/Wiki/Concepts/7 Days to Die Mod Load Order.md`.
 
 ## 🟠 2026-09-01 20:05 — THE BOOK IS A STACK OF SHEETS AND THE PAGES DRAG. `9a9cb62`, **707/707 + 986/986**. Tree clean.
 
