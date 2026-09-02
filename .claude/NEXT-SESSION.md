@@ -1,6 +1,6 @@
 # NEXT SESSION — read this, then `.claude/PROGRESS.md`. Read no code to orient.
 
-**Written 2026-09-02 16:23 WIB. 714/714 audit · 1000/1000 selfcheck. Branch `phase0-solid-ground`.**
+**Written 2026-09-02 16:45 WIB. 714/714 audit · 1000/1000 selfcheck. Branch `phase0-solid-ground`.**
 
 ## First command
 
@@ -33,82 +33,54 @@ looks broken when it is fine.
 
 ---
 
-## ⚠️ THE BOOK IS THE LIVE FRONT — and one named fault is still open
+## 🔴 THE ONE JOB — build the phone shell he picked, and take the riffle out of the PC
 
-Four passes: `9a9cb62` (rebuilt as a stack of sheets), `c0ce49f` (fast swipe, riffling ribbons),
-`bedf40b` (the close as a real fold), `0bab85f` (the X button's second cause, and a closed arrival).
-**He has not judged the fourth.**
+**Do not start until his message names a phone shell.** He is reviewing four drafts and asked for
+exactly this: *"make me some draft first so that i can choose rather that build and keep changing
+it"*. Building before he answers is the fifth rebuild-then-revise cycle he is paying to avoid.
 
-🔴 **STILL OPEN, and it is the next job unless he says otherwise: the PHONE's closed pose.**
-On a phone the cover shuts to `-90` — edge-on, therefore invisible — so a closed book there shows
-the bare leather board instead of the cover's face with its icon and TUTORIAL. The DESK arrival is
-correct and verified (leather, gold spine, ribbons, no spread). Not a one-line change: the cover
-hinges at the spine, and on a phone the spine is the stage's LEFT edge, so any rotation toward -180
-swings it a whole page-width off the book — which was the original phone-close fault. Hinging that
-one element at its RIGHT edge is the likely shape, because -180 about that edge maps it back onto
-itself. `A-Brain/Wiki/Concepts/The Book as a Stack of Sheets.md` has the full reasoning.
+**Artifact he is judging:** <https://claude.ai/code/artifact/2a41b123-dac8-4c56-89d0-8f4bcd846026>
+**Full options, costs and rejected paths:** `A-Brain/Brainstorm/2026-09-02_phone-tutorial-shell.md`
+— read that first, it holds the reasoning and saves re-deriving all of it.
 
-Read that vault page BEFORE touching the book. It holds the technique, the arithmetic, and every
-fault already found and fixed. Re-deriving any of it costs a session. `framer-motion@^13.1.1` is
-installed and still unused.
+**His four:** **A** card deck (swipe + dots) · **B** scroll list (no gesture) · **C** flat book, his
+own suggestion (same book, 120ms slide, no 3D) · **D** shelf then card (tap a spine).
+
+🔴 **ALREADY DECIDED, ships in the same pass whichever he picks: the PC keeps the book and the
+riffle comes out.** A ribbon jumps straight to its chapter instead of turning N pages. Remove
+`riffle()`, `RIFFLE_*` and the plan from `src/ponder/pageModel.js`; in `PonderBook.jsx` `seek()` stops
+setting a rate and the step effect goes. **The page turn, the 3D fold and the drag are untouched.**
+Group 56's uncapped-riffle check and the nine riffle assertions in `logicFixes.selfcheck.mjs` come
+out with it — delete them, do not loosen them.
+
+**Why the phone book is being replaced at all, so nobody tries to fix it again:** a book IS a
+two-page spread with a hinge, and a phone can only ever show one half. Every phone fault of the last
+two days was that missing half surfacing somewhere new. It is not patchable.
 
 ⚠️ **Six traps this file has already charged for.**
 1. `new Map()` here resolves to the lucide Map ICON, not the constructor.
 2. A parent's `translateZ` is applied AFTER the child's rotation — put a folding element's depth on
    the element that rotates.
-3. `getBoundingClientRect()` returns PAINTED geometry. Measuring a book that is mid-flight read
-   17×36 instead of 351×731 and produced a departure that went nowhere. Finish an element's own
-   animations before measuring it.
+3. `getBoundingClientRect()` returns PAINTED geometry. A book measured mid-flight read 17×36 instead
+   of 351×731 and produced a departure that went nowhere. Finish an element's own animations first.
 4. A "still broken" report after a fix is not evidence the fix was wrong — reproduce from scratch.
-   Two causes with one symptom happened here, and reverting the first fix would have lost both.
+   Two causes with one symptom happened here; reverting the first fix would have lost both.
 5. The Browser pane does not paint between tool calls: `requestAnimationFrame` never fires (45s
-   timeout) and animations sit at `currentTime: 0`. To inspect a motion, freeze it — `setTimeout(30)`
-   then `getAnimations().forEach(a => { a.pause(); a.currentTime = N })`.
+   timeout) and animations sit at `currentTime: 0`. Freeze a motion instead — `setTimeout(30)` then
+   `getAnimations().forEach(a => { a.pause(); a.currentTime = N })`.
 6. A literal duplicating a named constant is a silent override — a hardcoded 90ms floor beat the
    named 60 and every check still passed, because the checks read the name.
 
 ⚠️ **He tests on a PWA.** A change needs a hard reload twice on the phone or the service worker
-serves the old bundle — worth saying to him before he reports something unfixed.
-
-If he says nothing about the book, do the job below.
-
----
-
-## THE ONE JOB — the Ponder caption stops moving on phones, and keeps moving on PC
-
-**He decided this on 2026-08-31 and it was never built.** Recorded in his own terms: *the ponder
-caption becomes static on phones and keeps moving on PC, built with `/emil design`*.
-
-**What the caption is:** the teaching sentence that appears during a tutorial scene in
-`src/ponder/PonderOverlay.jsx`. It has two placements. Beside its subject — a small box that moves
-to sit next to whatever the beat is highlighting, with a pointer that aims four ways. Or the **wide
-bottom bar**, a fixed strip across the bottom of the stage.
-
-**What already happens, and what you must measure before changing anything.** The near-caption
-already refuses a stage too narrow to stand beside anything: `if (boxW > W * 0.x) return null;` in
-`PonderOverlay.jsx`, which is why on a 375px phone most beats already fall through to the bottom
-bar. **So the phone may already be most of the way there.** Measure first, at 375x812, across a
-whole scene: which beats still place a moving caption, and does the bar itself re-animate on every
-beat. Do not rewrite a placement that is already correct — the job is what MOVES on a phone, not
-where the box sits.
-
-**Why he wants it:** a caption that jumps position on every beat, on a screen that small, makes the
-reader hunt for the sentence instead of reading it. On a desk there is room for the box to point at
-its subject, and there the movement is the whole value.
-
-**The traps.**
-- ⚠️ **The caption is placed in `top`, never in a transform** — audit group 56 asserts this, because
-  an animation on the element overwrites a transform on its first frame and the caption disappears.
-  Whatever "static" turns into, it must not become a transform.
-- ⚠️ **A still frame cannot prove a motion.** Build it, then get eyes on a whole scene at 375px in
-  the lab, pumping frames as described above.
-- ⚠️ Group 56 checks the placement logic by name. Several will need updating rather than loosening.
-- A fix is not finished until it leaves a line in `src/config/logicFixes.selfcheck.mjs`: one
-  regression guard and one behaviour check.
+serves the old bundle — say so before he reports something unfixed.
 
 <details>
 <summary>Queued — do not start these</summary>
 
+- **The Ponder caption static on phones, moving on PC.** Decided 2026-08-31, never built. Measure at
+  375x812 first: the near-caption already bails to the bottom bar (`if (boxW > W * 0.x) return null;`
+  in `PonderOverlay.jsx`), so the phone may be most of the way there. The caption is placed in `top`,
+  never a transform — group 56 asserts it.
 - **G1 + G2, the money item.** `batchNo` at `RestockVaultView.jsx:1944`, meter at `:455`, written at
   `:656`, dies at the HQ door because `branches/{loc}/inventory/{productId}` holds one `stock`
   number. 🔴 **Ask him the staleness threshold in days first.**
@@ -123,18 +95,3 @@ its subject, and there the movement is the whole value.
 </details>
 
 **Before you finish: rewrite this file with the next single job.**
-
-**Re-checked 2026-09-02 12:05 WIB — brief unchanged.** The modified `src/ponder/PonderBook.jsx`
-and `src/ponder/pageModel.js` are the parallel KPM session's in-flight work, not this note's. A
-7DTD modding session also ran on this repo and touched no project file.
-
-**Re-checked 2026-09-02 15:48 WIB — brief unchanged.** The modified files in the working tree
-belong to the parallel KPM session. The 7DTD modding session keeps its own notes at
-`C:\Users\ASUS\AppData\RoamingDaysToDie\MODS-NOTES.md` and touches no project file.
-
-**Re-checked 2026-09-02 15:48 WIB — brief unchanged.** The modified files in the working tree
-belong to the parallel KPM session. The 7DTD modding session keeps its own notes at
-`%APPDATA%\7DaysToDie\MODS-NOTES.md` and touches no project file.
-
-**Re-checked 2026-09-02 15:54 WIB — brief unchanged.** Working-tree edits belong to the parallel
-KPM session. The 7DTD session logs to `%APPDATA%\7DaysToDie\MODS-NOTES.md`.

@@ -1,6 +1,34 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-09-02 16:23 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **714/714 audit · 1000/1000 selfcheck** · branch `phase0-solid-ground`
+**Updated: 2026-09-02 16:45 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **714/714 audit · 1000/1000 selfcheck** · branch `phase0-solid-ground`
+
+## 🟠 2026-09-02 16:45 — THE PHONE BOOK IS BEING REPLACED. DRAFTS SHIPPED, **NO KPM CODE CHANGED**.
+
+His call: *"on the phone it cant look good ... it looks so clunky on the phone ... what if we change
+the book into other model can u think of this and make me some draft first so that i can choose
+rather that build and keep changing it?"*
+
+**Artifact (four live phone shells, operate them on the iPhone):**
+<https://claude.ai/code/artifact/2a41b123-dac8-4c56-89d0-8f4bcd846026>
+
+**The diagnosis, and it is worth not re-deriving:** a book IS a two-page spread with a hinge, and a
+phone can only show one half — so the phone book is a book with its best feature amputated. All four
+phone faults of the last two days were that one missing half surfacing somewhere new. Four patches
+to one cause is when you stop patching.
+
+🔴 **DECIDED — PC keeps the book, and the riffle comes out.** His pick. Page turns and the 3D fold
+stay; a ribbon jumps straight there instead of turning N pages. Removes `riffle()` from
+`pageModel.js` and the run effect from `PonderBook.jsx`. **NOT BUILT YET** — it waits so it lands in
+one pass with whichever phone shell he names.
+
+❓ **WAITING ON ALDI, verbatim:** *"u want to see these example as a draft firs i cant decide if i
+dont review it first, just make an artifact for this"* — he is reviewing. The four are **A** card
+deck · **B** scroll list · **C** flat book (his own suggestion) · **D** shelf then card. The artifact
+prints the exact line to send back.
+
+⚠️ **BUILD NOTHING UNTIL HE NAMES ONE.** Avoiding a fifth rebuild-then-revise cycle is the entire
+point of the drafts. Full options, costs and rejected paths:
+`A-Brain/Brainstorm/2026-09-02_phone-tutorial-shell.md`.
 
 ## 🟠 2026-09-02 16:23 — THE X BUTTON IS FIXED FOR THE RIGHT REASON. `0bab85f`, **714/714 + 1000/1000**.
 
