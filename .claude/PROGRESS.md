@@ -1,6 +1,39 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-09-02 17:28 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **714/714 audit · 1000/1000 selfcheck** · branch `phase0-solid-ground`
+**Updated: 2026-09-02 17:40 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **714/714 audit · 1000/1000 selfcheck** · branch `phase0-solid-ground`
+
+## 🟠 2026-09-02 17:40 — DIRECTION TURNED: TECH PAD, NOT A BOOK. **NO KPM CODE CHANGED ALL SESSION.**
+
+His verdict on the foreman's manual: *"tbh that ribbon going longer and shorter is weird so erase,
+but maybe this small book model with little section on the right will work well. basically change
+the size and model of the section will work, maybe it look better when it is a tech pad instead of
+book, like futuristic style way to read what do you think?"*
+
+🔴 **DECIDED — the hanging ribbon is removed.** He is right: the page block already IS the progress
+meter, so the ribbon was a **second meter reporting the same fact in a worse way**, and the one that
+looked physical was the one that lied.
+
+🔴 **DECIDED — the fore-edge thumb index STAYS.** Three rounds in, it is the only navigation idea he
+has praised unprompted. On a pad it stops being a compromise and becomes correct.
+
+🔴 **DIRECTION — a tech pad, not a book.** The real argument, not "futuristic looks cool": **a book
+is a physical metaphor and metaphors carry obligations** — a cover, a spine, two halves, a closing
+motion — and every one of those has cost a phone bug, because 375px cannot afford them. A pad owes
+none of them, and a field terminal fits a warehouse app better than a leather manual.
+
+⚠️ **THE CONSTRAINT HE HAS NOT ANSWERED YET:** "futuristic" normally arrives as glow, scanlines and
+**cyan — which is blue, and the palette law forbids it.** So the pad must be futuristic in **form**
+(depth, precision, mechanism) and never in colour: slate, gold, amber. Field instrument, not sci-fi
+prop. **He was asked directly and has not replied.** Confirm before building.
+
+**Round-3 artifact NOT built** — session ended on plan quota (86%). Rounds 1 and 2 are live:
+manual <https://claude.ai/code/artifact/2cc96364-ff22-4221-b93c-05a7c1cb2bb3> ·
+four shells <https://claude.ai/code/artifact/2a41b123-dac8-4c56-89d0-8f4bcd846026>
+
+Full reasoning, all three rounds, carried-forward and rejected:
+`A-Brain/Brainstorm/2026-09-02_phone-tutorial-shell.md` (`9faa782`).
+
+🔴 **Still queued, unchanged: PC keeps the book, riffle comes out.** Ships with the phone shell.
 
 ## 🟠 2026-09-02 17:28 — ROUND 2 OF THE PHONE DRAFT. **STILL NO KPM CODE CHANGED.**
 

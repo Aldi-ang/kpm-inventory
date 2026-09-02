@@ -1,6 +1,6 @@
 # NEXT SESSION — read this, then `.claude/PROGRESS.md`. Read no code to orient.
 
-**Written 2026-09-02 17:28 WIB. 714/714 audit · 1000/1000 selfcheck. Branch `phase0-solid-ground`.**
+**Written 2026-09-02 17:40 WIB. 714/714 audit · 1000/1000 selfcheck. Branch `phase0-solid-ground`.**
 
 ## First command
 
@@ -33,39 +33,52 @@ looks broken when it is fine.
 
 ---
 
-## 🔴 THE ONE JOB — build the phone shell he picked, and take the riffle out of the PC
+## 🔴 THE ONE JOB — draft the TECH PAD, then build it with the PC riffle removal
 
-**Do not start until his message names a phone shell.** He is reviewing four drafts and asked for
-exactly this: *"make me some draft first so that i can choose rather that build and keep changing
-it"*. Building before he answers is the fifth rebuild-then-revise cycle he is paying to avoid.
+**First: ask him the one question he has not answered** (it is in the note below, and it decides the
+whole look). Then make the round-3 artifact. **Still no KPM code until he approves a draft** —
+*"make me some draft first so that i can choose rather that build and keep changing it"*.
 
-**Artifact he is judging — THE FOREMAN'S MANUAL:**
-<https://claude.ai/code/artifact/2cc96364-ff22-4221-b93c-05a7c1cb2bb3>
-**Full reasoning, both rounds, and what was rejected:**
-`A-Brain/Brainstorm/2026-09-02_phone-tutorial-shell.md` — read it first, it saves re-deriving all
-of this.
+**Read first, it saves re-deriving three rounds:**
+`A-Brain/Brainstorm/2026-09-02_phone-tutorial-shell.md`.
+Live drafts: manual <https://claude.ai/code/artifact/2cc96364-ff22-4221-b93c-05a7c1cb2bb3> ·
+four shells <https://claude.ai/code/artifact/2a41b123-dac8-4c56-89d0-8f4bcd846026>
 
-🔴 **He already rejected a whole round of four options** (card deck, scroll list, flat book, shelf)
-with *"everything is too simple i need better animation and UI for this, i want something more
-gamified and cool i still want the 3D tho"*. **The lesson from that round: all four RETREATED from
-3D, and his complaint was never that it was 3D — it was that it was clunky.** Do not offer him a
-simpler phone book; that menu has been refused.
+### Where the design actually stands
 
-**Round 2 is one direction, not a menu:** the phone stops imitating the desk book and becomes an
-object in the hand — tilt-reactive light, a page that bends, a thumb index cut into the fore-edge,
-one ribbon at the spine, and a page block whose thickness is the progress meter. Gamification is
-physical + progress with **no reward ceremony**, deliberately: a tutorial is opened mid-task.
+🔴 **DECIDED — the hanging ribbon is GONE.** The page block already is the progress meter; the
+ribbon was a second meter for the same fact, and it was the one that lied.
 
-🔴 **ALREADY DECIDED, ships in the same pass whichever he picks: the PC keeps the book and the
-riffle comes out.** A ribbon jumps straight to its chapter instead of turning N pages. Remove
-`riffle()`, `RIFFLE_*` and the plan from `src/ponder/pageModel.js`; in `PonderBook.jsx` `seek()` stops
-setting a rate and the step effect goes. **The page turn, the 3D fold and the drag are untouched.**
-Group 56's uncapped-riffle check and the nine riffle assertions in `logicFixes.selfcheck.mjs` come
-out with it — delete them, do not loosen them.
+🔴 **DECIDED — the fore-edge thumb index STAYS.** *"this small book model with little section on
+the right will work well ... basically change the size and model of the section will work"*. Three
+rounds in, the only navigation idea he has praised on sight. On a pad it becomes correct rather than
+a compromise: a channel of section keys down the right edge, inside thumb reach.
 
-**Why the phone book is being replaced at all, so nobody tries to fix it again:** a book IS a
-two-page spread with a hinge, and a phone can only ever show one half. Every phone fault of the last
-two days was that missing half surfacing somewhere new. It is not patchable.
+🔴 **DIRECTION — a tech pad, not a book.** Not because futuristic looks cool: **a book is a
+physical metaphor and metaphors carry obligations** — cover, spine, two halves, a closing motion —
+and every one of those has cost a phone bug because 375px cannot afford them. A pad owes none of it,
+and a field terminal suits a warehouse app better than a leather manual.
+
+**Carry forward from the manual:** tilt-reactive light (the one thing a desk monitor cannot do) ·
+the fore-edge index · progress as an edge meter, not a widget · a real 3D transition — a pad can
+slide panels in depth without owing anyone a hinge.
+**Drop:** the ribbon · the cover · the spine · the fold.
+
+### ⚠️ ASK HIM THIS BEFORE DRAWING ANYTHING
+
+**"Futuristic" normally arrives as glow, scanlines and CYAN — and cyan is blue, which the palette law
+forbids.** The pad has to be futuristic in **form** (depth, precision, mechanism, exact alignment)
+and never in **colour**: slate, gold, amber. Field instrument, not sci-fi prop. **He was asked
+directly at 17:40 and had not answered when the session ended.** Do not guess it — the answer
+changes the entire look, and this is round three.
+
+### 🔴 Ships in the SAME pass, already decided: take the riffle out of the PC
+
+A ribbon jumps straight to its chapter instead of turning N pages. Remove `riffle()`, `RIFFLE_*` and
+the plan from `src/ponder/pageModel.js`; in `PonderBook.jsx`, `seek()` stops setting a rate and the
+step effect goes. **The page turn, the 3D fold and the drag are untouched.** Group 56's
+uncapped-riffle check and the nine riffle assertions in `logicFixes.selfcheck.mjs` come out with it —
+delete them, do not loosen them.
 
 ⚠️ **Six traps this file has already charged for.**
 1. `new Map()` here resolves to the lucide Map ICON, not the constructor.
