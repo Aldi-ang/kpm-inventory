@@ -1,6 +1,6 @@
 # NEXT SESSION — read this, then `.claude/PROGRESS.md`. Read no code to orient.
 
-**Written 2026-09-02 16:45 WIB. 714/714 audit · 1000/1000 selfcheck. Branch `phase0-solid-ground`.**
+**Written 2026-09-02 17:28 WIB. 714/714 audit · 1000/1000 selfcheck. Branch `phase0-solid-ground`.**
 
 ## First command
 
@@ -39,12 +39,22 @@ looks broken when it is fine.
 exactly this: *"make me some draft first so that i can choose rather that build and keep changing
 it"*. Building before he answers is the fifth rebuild-then-revise cycle he is paying to avoid.
 
-**Artifact he is judging:** <https://claude.ai/code/artifact/2a41b123-dac8-4c56-89d0-8f4bcd846026>
-**Full options, costs and rejected paths:** `A-Brain/Brainstorm/2026-09-02_phone-tutorial-shell.md`
-— read that first, it holds the reasoning and saves re-deriving all of it.
+**Artifact he is judging — THE FOREMAN'S MANUAL:**
+<https://claude.ai/code/artifact/2cc96364-ff22-4221-b93c-05a7c1cb2bb3>
+**Full reasoning, both rounds, and what was rejected:**
+`A-Brain/Brainstorm/2026-09-02_phone-tutorial-shell.md` — read it first, it saves re-deriving all
+of this.
 
-**His four:** **A** card deck (swipe + dots) · **B** scroll list (no gesture) · **C** flat book, his
-own suggestion (same book, 120ms slide, no 3D) · **D** shelf then card (tap a spine).
+🔴 **He already rejected a whole round of four options** (card deck, scroll list, flat book, shelf)
+with *"everything is too simple i need better animation and UI for this, i want something more
+gamified and cool i still want the 3D tho"*. **The lesson from that round: all four RETREATED from
+3D, and his complaint was never that it was 3D — it was that it was clunky.** Do not offer him a
+simpler phone book; that menu has been refused.
+
+**Round 2 is one direction, not a menu:** the phone stops imitating the desk book and becomes an
+object in the hand — tilt-reactive light, a page that bends, a thumb index cut into the fore-edge,
+one ribbon at the spine, and a page block whose thickness is the progress meter. Gamification is
+physical + progress with **no reward ceremony**, deliberately: a tutorial is opened mid-task.
 
 🔴 **ALREADY DECIDED, ships in the same pass whichever he picks: the PC keeps the book and the
 riffle comes out.** A ribbon jumps straight to its chapter instead of turning N pages. Remove

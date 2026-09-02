@@ -1,6 +1,36 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-09-02 16:45 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **714/714 audit · 1000/1000 selfcheck** · branch `phase0-solid-ground`
+**Updated: 2026-09-02 17:28 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **714/714 audit · 1000/1000 selfcheck** · branch `phase0-solid-ground`
+
+## 🟠 2026-09-02 17:28 — ROUND 2 OF THE PHONE DRAFT. **STILL NO KPM CODE CHANGED.**
+
+He rejected all four round-1 shells: *"everything is too simple i need better animation and UI for
+this, i want something more gamified and cool i still want the 3D tho"*, then handed me the theme
+and the gamification level: *"i'll let u be creative"* · *"i give u freedom for that"*.
+
+**THE FOREMAN'S MANUAL — open it on the iPhone:**
+<https://claude.ai/code/artifact/2cc96364-ff22-4221-b93c-05a7c1cb2bb3>
+
+🔴 **My round-1 mistake, recorded so it is not repeated: all four options were ways to RETREAT from
+3D, and his complaint was never that it was 3D — it was that it was CLUNKY.** The diagnosis ("a
+phone cannot show a spread") was right; the conclusion was wrong. A phone cannot be a *desk* book,
+which is not the same as not being a book. **What a phone can do that a desk cannot is be held and
+tilted** — so the phone book became an object in the hand.
+
+**What is in it:** tilt-reactive light across leather, gold foil and paper (`deviceorientation`,
+falling back to pointer) · the turning page BENDS rather than flat-rotating · a thumb index cut into
+the fore-edge, which kills the 84px ribbon column that ate a quarter of a 375px screen · one ribbon
+sewn at the spine · **the page block's thickness IS the progress meter** · read chapters stamped in
+foil · a Lite Mode toggle so the still state can be judged, not promised.
+
+**Gamification: physical + progress, no reward layer** — a tutorial is opened mid-task in a hurry
+and ceremony gets in the way of an answer. Say so if he pushes for more.
+
+❓ **WAITING ON ALDI.** He reviews and reacts; *"if there is something i dont like i can just tell u
+after u made it"*. Full reasoning, both rounds, and what was rejected:
+`A-Brain/Brainstorm/2026-09-02_phone-tutorial-shell.md`.
+
+🔴 **Still queued and unchanged: PC keeps the book, riffle comes out.** Ships in the same pass.
 
 ## 🟠 2026-09-02 16:45 — THE PHONE BOOK IS BEING REPLACED. DRAFTS SHIPPED, **NO KPM CODE CHANGED**.
 
