@@ -1,6 +1,26 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-09-02 17:40 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **714/714 audit · 1000/1000 selfcheck** · branch `phase0-solid-ground`
+**Updated: 2026-09-02 17:43 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **714/714 audit · 1000/1000 selfcheck** · branch `phase0-solid-ground`
+
+## 🟠 2026-09-02 17:43 — TECH-PAD SPEC LOCKED. **BUILD IT NEXT. NO KPM CODE TOUCHED ALL SESSION.**
+
+✅ **He approved the direction and handed over execution:** *"well be creative just as long as we use
+futuristic theme for this u made and i can adjust later"*. **The colour question is closed** —
+futuristic in FORM, never in colour. No cyan, teal, electric blue or green, including for glow.
+
+**Quota ran out before the artifact could be built, so the design was written down instead** — the
+full spec is in `A-Brain/Brainstorm/2026-09-02_phone-tutorial-shell.md` (`7ff8cf4`): the object, the
+five moves in priority order, the exact palette, the five rules a draft must obey, and what was
+rejected. **Read it and build; do not explore a fourth time.**
+
+**The one-line version:** a hardened field terminal a gudang worker would carry — milled slate
+housing, inset display, gold anodised edges. **No paper, leather, cover, spine or fold**, because
+those obligations are exactly what kept breaking on a phone. The section rail is the hero (the
+fore-edge index reborn as thumb-reachable key-caps down the right). Panels move in real depth rather
+than rotating, so the 3D survives without a hinge. Tilt-reactive. **One** progress meter on the left
+edge — the lesson that killed the ribbon.
+
+🔴 **Still queued, unchanged: PC keeps the book, riffle comes out.** Ships with the phone shell.
 
 ## 🟠 2026-09-02 17:40 — DIRECTION TURNED: TECH PAD, NOT A BOOK. **NO KPM CODE CHANGED ALL SESSION.**
 

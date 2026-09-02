@@ -1,6 +1,6 @@
 # NEXT SESSION — read this, then `.claude/PROGRESS.md`. Read no code to orient.
 
-**Written 2026-09-02 17:40 WIB. 714/714 audit · 1000/1000 selfcheck. Branch `phase0-solid-ground`.**
+**Written 2026-09-02 17:43 WIB. 714/714 audit · 1000/1000 selfcheck. Branch `phase0-solid-ground`.**
 
 ## First command
 
@@ -33,44 +33,39 @@ looks broken when it is fine.
 
 ---
 
-## 🔴 THE ONE JOB — draft the TECH PAD, then build it with the PC riffle removal
+## 🔴 THE ONE JOB — build the TECH PAD draft, then ship it with the PC riffle removal
 
-**First: ask him the one question he has not answered** (it is in the note below, and it decides the
-whole look). Then make the round-3 artifact. **Still no KPM code until he approves a draft** —
-*"make me some draft first so that i can choose rather that build and keep changing it"*.
+**The design is LOCKED. Do not explore a fourth time — build it.**
+Spec: `A-Brain/Brainstorm/2026-09-02_phone-tutorial-shell.md`, the section headed **THE SPEC**.
+It holds the object, the five moves in priority order, the exact palette, the five rules a draft
+must obey, and everything rejected. Read that, then build the artifact.
 
-**Read first, it saves re-deriving three rounds:**
-`A-Brain/Brainstorm/2026-09-02_phone-tutorial-shell.md`.
-Live drafts: manual <https://claude.ai/code/artifact/2cc96364-ff22-4221-b93c-05a7c1cb2bb3> ·
-four shells <https://claude.ai/code/artifact/2a41b123-dac8-4c56-89d0-8f4bcd846026>
+✅ **His approval, and the colour question is CLOSED:** *"well be creative just as long as we use
+futuristic theme for this u made and i can adjust later"*. Futuristic in **form** — depth, precision,
+mechanism — and **never in colour**. 🔴 **No cyan, teal, electric blue or green, including for glow.**
+Slate housing, warm near-black display, bone ink, KPM gold/amber accent.
 
-### Where the design actually stands
+### The one-line brief
 
-🔴 **DECIDED — the hanging ribbon is GONE.** The page block already is the progress meter; the
-ribbon was a second meter for the same fact, and it was the one that lied.
+A hardened **field terminal** a gudang worker would carry: milled slate housing, inset display, gold
+anodised edges. **No paper, leather, cover, spine or fold** — those obligations are exactly what kept
+breaking on a phone.
 
-🔴 **DECIDED — the fore-edge thumb index STAYS.** *"this small book model with little section on
-the right will work well ... basically change the size and model of the section will work"*. Three
-rounds in, the only navigation idea he has praised on sight. On a pad it becomes correct rather than
-a compromise: a channel of section keys down the right edge, inside thumb reach.
+1. **The section rail is the hero** — the fore-edge index reborn as milled key-caps down the RIGHT
+   edge, thumb-reachable, each with its code and a state light. Three rounds running, this is the
+   only navigation idea he has praised on sight.
+2. **Panels move in real depth** — slide forward on Z and settle, never rotate. The 3D he refuses to
+   give up, with no hinge to owe.
+3. **Tilt-reactive** — carried straight over from the manual; the one thing a desk cannot do.
+4. **ONE progress meter**, an illuminated track down the left housing edge. The lesson that killed
+   the ribbon: one meter, one fact.
+5. **Readout chrome** — mono labels, tabular numbers, hairline rules. Precision, not glow.
 
-🔴 **DIRECTION — a tech pad, not a book.** Not because futuristic looks cool: **a book is a
-physical metaphor and metaphors carry obligations** — cover, spine, two halves, a closing motion —
-and every one of those has cost a phone bug because 375px cannot afford them. A pad owes none of it,
-and a field terminal suits a warehouse app better than a leather manual.
+**Must obey:** a Lite Mode toggle in the artifact (judged, not promised) · no glow-as-crutch · the
+real 17 sections from `src/ponder/sections.js` · every control in thumb reach on the right · it has
+to survive a still frame, because he judges on a paused phone.
 
-**Carry forward from the manual:** tilt-reactive light (the one thing a desk monitor cannot do) ·
-the fore-edge index · progress as an edge meter, not a widget · a real 3D transition — a pad can
-slide panels in depth without owing anyone a hinge.
-**Drop:** the ribbon · the cover · the spine · the fold.
-
-### ⚠️ ASK HIM THIS BEFORE DRAWING ANYTHING
-
-**"Futuristic" normally arrives as glow, scanlines and CYAN — and cyan is blue, which the palette law
-forbids.** The pad has to be futuristic in **form** (depth, precision, mechanism, exact alignment)
-and never in **colour**: slate, gold, amber. Field instrument, not sci-fi prop. **He was asked
-directly at 17:40 and had not answered when the session ended.** Do not guess it — the answer
-changes the entire look, and this is round three.
+**Then he reacts** — *"i can adjust later"*. Build the app change only once he approves the draft.
 
 ### 🔴 Ships in the SAME pass, already decided: take the riffle out of the PC
 
@@ -82,7 +77,7 @@ delete them, do not loosen them.
 
 ⚠️ **Six traps this file has already charged for.**
 1. `new Map()` here resolves to the lucide Map ICON, not the constructor.
-2. A parent's `translateZ` is applied AFTER the child's rotation — put a folding element's depth on
+2. A parent's `translateZ` is applied AFTER the child's rotation — put a moving element's depth on
    the element that rotates.
 3. `getBoundingClientRect()` returns PAINTED geometry. A book measured mid-flight read 17×36 instead
    of 351×731 and produced a departure that went nowhere. Finish an element's own animations first.
