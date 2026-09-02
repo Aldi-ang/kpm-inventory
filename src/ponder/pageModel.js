@@ -56,37 +56,42 @@ export const turnFor = (pages, spread, maxTurn, id) => {
 export const facingPage = (pages, spread, turn) =>
   pages[spread ? turn * 2 : turn] || pages[1];
 
-/* ── HOW A BOOKMARK JUMP IS PLAYED ────────────────────────────────────────────────────────────────
+/* ── HOW A BOOKMARK JUMP IS PLAYED ────────────────────────────────────────────────────
 
    Aldi, 2026-09-02: *"i want to put full realism of this book, for example if i change the ribbon
    section by 4 ribbons far then the book will turn 4 times to reach that page so instead of page 1
    to page 5 in one swipe i want the animation to be 4 quick page swipe, this way it will make it
    realistic"*.
 
-   So a ribbon does not teleport. It turns one sheet at a time, quickly, as many times as there are
-   sheets between here and there.
+   So a ribbon does not teleport. It turns one sheet at a time, as many times as there are sheets
+   between here and there.
 
-   THE CAP IS NOT A ROUNDING-DOWN OF HIS ASK. Four ribbons apart really is four turns, and so is
-   every distance up to eight. Past that the run would outlast anyone's patience — chapter one to
-   chapter seventeen is sixteen sheets — so the book opens most of the way at once and riffles the
-   last eight, which is what a thumb on a bookmark actually does. `steps` and `jumpTo` say exactly
-   which, and the self-check pins both.
+   🔴 AND THERE IS NO CAP. The first version rode a jump for anything past eight sheets, on the
+   grounds that sixteen turns is longer than anyone waits. Told about it he closed the question:
+   *"yes, full realism needed"*. So every page between the two is turned, and the run keeps its
+   length under a second by getting FASTER instead of by skipping — which is what riffling a thumb
+   through a book actually does.
 
    The per-step duration is chosen ONCE for the whole run, from the full distance, so the riffle
    keeps one rhythm instead of slowing down as it arrives. A single turn is not a riffle and keeps
    the deliberate duration. */
-export const TURN_FULL_MS = 520;
-export const RIFFLE_CAP = 8;
-export const RIFFLE_BUDGET_MS = 900;
+/* *"make the swipe faster please"*, same message. Every one of these came down: a single turn from
+   520 to 340, the riffle's whole budget from 900ms to 700, and its floor from 90 to 60 so the
+   longest run in the book — sixteen sheets, chapter one to chapter seventeen — still lands inside
+   a second. */
+export const TURN_FULL_MS = 340;
+export const RIFFLE_BUDGET_MS = 700;
+export const RIFFLE_MIN_MS = 60;
+export const RIFFLE_MAX_MS = 170;
 
-export const riffle = (from, to, cap = RIFFLE_CAP) => {
+export const riffle = (from, to) => {
   const far = Math.abs(to - from);
-  if (far === 0) return { jumpTo: from, steps: 0, ms: 0, dir: 0 };
-  const dir = to > from ? 1 : -1;
-  const steps = Math.min(far, cap);
-  const jumpTo = far > cap ? to - dir * cap : from;
-  const ms = far > 1
-    ? Math.min(240, Math.max(90, Math.round(RIFFLE_BUDGET_MS / steps)))
-    : TURN_FULL_MS;
-  return { jumpTo, steps, ms, dir };
+  if (far === 0) return { steps: 0, ms: 0, dir: 0 };
+  return {
+    steps: far,
+    dir: to > from ? 1 : -1,
+    ms: far > 1
+      ? Math.min(RIFFLE_MAX_MS, Math.max(RIFFLE_MIN_MS, Math.round(RIFFLE_BUDGET_MS / far)))
+      : TURN_FULL_MS,
+  };
 };

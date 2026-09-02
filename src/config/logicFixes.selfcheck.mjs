@@ -12,7 +12,7 @@
 import fs from 'node:fs';
 import { SECTIONS } from '../ponder/sections.js';
 import { buildPages, maxTurnOf, turnFor, facingPage,
-         riffle, RIFFLE_CAP, TURN_FULL_MS } from '../ponder/pageModel.js';
+         riffle, TURN_FULL_MS, RIFFLE_MIN_MS } from '../ponder/pageModel.js';
 
 let pass = 0, fail = 0;
 const read = (f) => fs.readFileSync(f, 'utf8');
@@ -4160,9 +4160,16 @@ section('THE TUTORIAL BOOK — a ribbon turns the pages, it does not teleport (2
 /* HIS EXAMPLE, VERBATIM, IN BOTH DIRECTIONS. Four apart is four turns and no jump — if this ever
    reports jumpTo !== from, the book skipped pages he asked to see turn. */
 ok('four ribbons apart is four page turns, forwards and backwards',
-   riffle(2, 6).steps === 4 && riffle(2, 6).jumpTo === 2 &&
-   riffle(6, 2).steps === 4 && riffle(6, 2).jumpTo === 6,
+   riffle(2, 6).steps === 4 && riffle(2, 6).dir === 1 &&
+   riffle(6, 2).steps === 4 && riffle(6, 2).dir === -1,
    'his stated case: page 1 to page 5 must be four quick swipes, not one');
+
+/* *"yes, full realism needed"* — his answer when told the first version rode a jump past eight
+   sheets. The longest run in the book is chapter one to chapter seventeen; it must be sixteen real
+   turns, and the only thing allowed to shrink is the time each one takes. */
+ok('the longest run in the book turns all sixteen sheets, and none of them is skipped',
+   riffle(1, 17).steps === 16 && riffle(17, 1).steps === 16,
+   'a cap here is the teleport he asked to be rid of, wearing a smaller hat');
 
 ok('one sheet apart is one deliberate turn, not a riffle',
    riffle(3, 4).steps === 1 && riffle(3, 4).ms === TURN_FULL_MS,
@@ -4188,24 +4195,32 @@ for (const wide of [true, false]) {
      teleports.length === 0,
      teleports.length + ' of ' + pairs.length + ' pairs arrive with zero turns');
 
-  const shortChanged = pairs.filter(([a, b]) =>
-    Math.abs(b - a) <= RIFFLE_CAP && (riffle(a, b).steps !== Math.abs(b - a) || riffle(a, b).jumpTo !== a));
-  ok(`inside the cap every page between the two is turned (${wide ? 'desk' : 'phone'})`,
-     shortChanged.length === 0,
-     shortChanged.length + ' pairs skipped pages they should have turned');
+  const skipped = pairs.filter(([a, b]) => riffle(a, b).steps !== Math.abs(b - a));
+  ok(`every page between the two is turned, at any distance (${wide ? 'desk' : 'phone'})`,
+     skipped.length === 0,
+     skipped.length + ' pairs skipped pages they should have turned');
 
   /* And the long ones still land: the jump has to leave exactly `steps` sheets to travel, on the
      right side of the target. An off-by-one here overshoots the chapter he asked for. */
   const misland = pairs.filter(([a, b]) => {
     const r = riffle(a, b);
-    return r.jumpTo + r.dir * r.steps !== b;
+    return a + r.dir * r.steps !== b;
   });
   ok(`every run lands on the chapter that was pressed (${wide ? 'desk' : 'phone'})`,
      misland.length === 0,
      misland.length + ' runs stop short of, or past, their target');
 
-  /* A riffle nobody waits for is a riffle nobody sees the end of. */
+  /* A riffle nobody waits for is a riffle nobody sees the end of. With the cap gone this is the
+     only thing keeping a sixteen-sheet run watchable, so it is the load-bearing bound now: the
+     run gets FASTER with distance instead of shorter. */
   const slow = pairs.filter(([a, b]) => { const r = riffle(a, b); return r.steps * r.ms > 1100; });
+  /* And the number this measures has to be the number the screen uses. `play()` floors every step
+     at RIFFLE_MIN_MS, and when that floor was a second literal it silently overrode the plan - the
+     longest run took 1260ms while every check here read 840 and passed. One constant, both sides. */
+  const belowFloor = pairs.filter(([a, b]) => riffle(a, b).ms < RIFFLE_MIN_MS);
+  ok(`no planned step is faster than the floor the book will actually use (${wide ? 'desk' : 'phone'})`,
+     belowFloor.length === 0,
+     belowFloor.length + ' pairs plan a step shorter than RIFFLE_MIN_MS, so the run is slower than this file believes');
   ok(`no run outlasts 1,1 seconds (${wide ? 'desk' : 'phone'})`,
      slow.length === 0,
      slow.length + ' runs take longer than anyone waits');

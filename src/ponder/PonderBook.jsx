@@ -29,7 +29,7 @@ import { X, ChevronLeft, ChevronRight, Lock,
          Wallet, ClipboardList, Users, Gift, BarChart3, ScrollText, Settings, User } from 'lucide-react';
 import { SECTIONS, getScene } from './registry.js';
 import { buildPages, asLeaves, maxTurnOf, turnFor, facingPage,
-         riffle, TURN_FULL_MS } from './pageModel.js';
+         riffle, TURN_FULL_MS, RIFFLE_MIN_MS } from './pageModel.js';
 import PonderOverlay from './PonderOverlay.jsx';
 import { bookOpen, bookPage, bookPick, bookClose } from './sfx.js';
 
@@ -60,6 +60,18 @@ const EASE = 'cubic-bezier(0.23, 1, 0.32, 1)';
    Nothing here depends on props or state, so nothing here belongs inside the component. Strings
    compare by value and were harmless; the object was not. Anything that ends up in a dependency
    array has to be stable, and the cheapest way to be stable is to not be recreated. */
+/* 🔴 THE COVER'S DEPTH RIDES ON THE COVER, NOT ON ITS WRAPPER, AND THE DIFFERENCE IS VISIBLE.
+
+   A parent's `translateZ` is applied AFTER the child's rotation, so it is never negated by it: a
+   cover put at -24 on its wrapper folded over and stayed at -24, which is BEHIND the pages. The
+   frame showed a page lying face-up where the leather should be. Put on the rotating element
+   itself, `translateZ(24px) rotateY(...)` rotates first and offsets second, so the cover sits 24px
+   above a stack that spans about 7 — in front of the pages while it swings open, in front of them
+   again once it has folded shut, which is where the outside of a book goes.
+
+   SHUT and OPEN stay rotation-only because the SHEETS use them too, and a sheet that borrowed the
+   cover's offset would fold up in front of the cover. */
+const COVER_Z = 'translateZ(24px) ';
 const SHUT = 'rotateY(-180deg)';
 const OPEN = 'rotateY(0deg)';
 const FLAT = 'translate(0px, 0px) scale(1)';
@@ -91,9 +103,13 @@ const SLAB_SHUT = 'inset(0 calc(50% - 4px) 0 0 round 14px)';
 const SLAB_SHUT_SPINE = 'inset(0 calc(100% - 30px) 0 0 round 14px)';
 /* Sequenced by DELAY, not by offsets inside a shared clock — that is what makes one beat finish
    before the next begins. The totals sit just under his sound files, 1,30s and 1,16s. */
+/* 🔴 THE EXIT IS FASTER THAN THE ENTRANCE, which is the one asymmetry every good close has: the
+   arrival is the book being carried to you and can take its time; the departure is the system
+   responding and must not keep you waiting. 980ms of close became 820. Both totals still sit under
+   his sound files, 1,30s and 1,16s. */
 const T = {
   flyIn: 460, leafOpen: 620, leafOpenDelay: 380,      // 1000ms — lands shut, THEN opens
-  leafShut: 520, flyOut: 480, flyOutDelay: 500,       //  980ms — shuts, THEN leaves
+  leafShut: 380, flyOut: 420, flyOutDelay: 400,       //  820ms — folds, THEN leaves
 };
 /* Paper has mass: a hinge eases in AND out, where something flying to a stop only eases out. */
 const HINGE = 'cubic-bezier(0.62, 0.02, 0.28, 1)';
@@ -347,6 +363,9 @@ const TURN_AT = 0.34;
    page is unmistakably a page turn, and a distance-only rule sent it back. 0.45 px/ms is roughly
    a page's width in half a second — brisk, not violent. */
 const FLICK_V = 0.45;
+/* How far a finger must travel before it is a drag rather than a tap. Ten pixels sat inside a
+   finger's own wobble, which is what let a press on the close button arm a page turn instead. */
+const DRAG_AT = 14;
 
 /* OPENS ON THE SECTION YOU ARE STANDING IN. His ask, 2026-08-27: *"i want the book when press is
    auto redirect to the features that we use right now for example im on the restock vault then it
@@ -437,7 +456,9 @@ function Library({ anchorRef, initialSection, onClose, onPick, closeOnMount = fa
      One constant, both widths; every other line of the turn is shared. */
   const FLIP = spread ? -180 : -90;
 
-  const leafShutTo = narrow ? 'rotateY(-90deg)' : SHUT;
+  const foldTo = narrow ? 'rotateY(-90deg)' : SHUT;   // the sheets: rotation only
+  const leafShutTo = COVER_Z + foldTo;                 // the cover: rotation plus its own depth
+  const leafOpenTo = COVER_Z + OPEN;
   const slabShutTo = narrow ? SLAB_SHUT_SPINE : SLAB_SHUT;
 
   /* 🔴 IT IS THE CLOSED BOOK THAT FLIES, NOT THE CONTAINER. When the cover is shut the visible
@@ -487,8 +508,8 @@ function Library({ anchorRef, initialSection, onClose, onPick, closeOnMount = fa
        which is what a cover dropped open actually does. */
     leaf?.animate(
       [{ transform: leafShutTo, offset: 0 },
-       { transform: 'rotateY(3deg)', offset: 0.88 },
-       { transform: OPEN, offset: 1 }],
+       { transform: COVER_Z + 'rotateY(3deg)', offset: 0.88 },
+       { transform: leafOpenTo, offset: 1 }],
       { duration: T.leafOpen, delay: T.leafOpenDelay, easing: HINGE, fill: 'both' },
     );
     shade(shadeFrontRef.current, [{ opacity: 0.62 }, { opacity: 0.62, offset: 0.35 }, { opacity: 0 }],
@@ -522,19 +543,36 @@ function Library({ anchorRef, initialSection, onClose, onPick, closeOnMount = fa
                               { duration: T.flyOut, delay: T.flyOutDelay, easing: 'ease-in', fill: 'both' });
     /* The cover swings shut where the book stands, and NOTHING else moves while it does. */
     leafRef.current?.animate(
-      [{ transform: OPEN }, { transform: leafShutTo }],
+      [{ transform: leafOpenTo }, { transform: leafShutTo }],
       { duration: T.leafShut, easing: HINGE, fill: 'both' },
     );
-    /* 🔴 AND THE SHEETS GO UNDER IT. The old right-hand page was drawn on the cover's own front
-       face, so it left when the cover left. The sheets are their own stack now and they stay put —
-       which would leave a lit spread standing beside a closed book, the same half-open fault the
-       clipped board was added to fix. They go dark and out on the cover's clock instead. Their
-       resting opacity is 1 in CSS and never in a keyframe: Lite Mode returns above without
-       animating anything, and an animation that OWNS visibility is how the wax seal once vanished
-       entirely under `animation: none`. */
-    stackRef.current?.animate([{ opacity: 1 }, { opacity: 0, offset: 0.55 }, { opacity: 0 }],
-      { duration: T.leafShut, easing: 'ease-in', fill: 'both' });
-    shade(shadeFrontRef.current, [{ opacity: 0 }, { opacity: 0.62 }], T.leafShut, 0);
+    /* 🔴 THE RIGHT HALF FOLDS OVER, AND EVERY SHEET IN IT TRAVELS.
+
+       Aldi, 2026-09-02: *"make sure book close the right way, imagine its 3D"*. The previous close
+       faded the sheets to nothing while a cover swung across on its own — so the pages evaporated
+       and a cover arrived from somewhere. Nothing in the real world disappears and reappears, and
+       a book that closes that way is a slab pretending to be paper.
+
+       Closing a book open at page N is ONE motion: the whole right-hand block — every sheet you
+       have not turned yet, and the cover under them — folds about the spine onto the left half.
+       The sheets already lying on the left never move, because on a desk they do not. So the block
+       is animated as a block: same arc, same clock, no opacity anywhere in it.
+
+       The stagger is the one liberty taken, and it is what makes it read as paper rather than as
+       a board: 14ms per sheet from the OUTSIDE in, so the cover leads and the page you were
+       reading settles last, the way a stack of paper actually falls. */
+    const block = Object.keys(leafEls.current).map(Number)
+      .filter(k => k >= posRef.current).sort((a, b) => b - a);
+    block.forEach((k, i) => {
+      const sheet = leafEls.current[k];
+      animsRef.current[k]?.cancel();
+      delete animsRef.current[k];
+      sheet?.animate(
+        [{ transform: `translateZ(${zOf(k, false)}px) rotateY(0deg)` },
+         { transform: `translateZ(${zOf(k, false)}px) ${foldTo}` }],
+        { duration: T.leafShut, delay: i * 14, easing: HINGE, fill: 'both' },
+      );
+    });
     shade(shadeBackRef.current, [{ opacity: 0.75 }, { opacity: 0 }], T.leafShut, 0);
     if (!narrow) {
       slabRef.current?.animate([{ clipPath: SLAB_OPEN }, { clipPath: slabShutTo }],
@@ -620,7 +658,11 @@ function Library({ anchorRef, initialSection, onClose, onPick, closeOnMount = fa
      its next render, so nothing moves, and an arc that commits nothing still ends somewhere defined. */
   const play = useCallback((k, from, to, ms, done) => {
     const el = at(k);
-    const dur = Math.max(90, ms);
+    /* 🔴 THE FLOOR IS RIFFLE_MIN_MS AND IT LIVES IN ONE PLACE. A second floor written here as
+       a literal 90 silently overrode the 60 the riffle had planned, so the longest run took 1260ms
+       instead of 840 - the arithmetic said one thing and the screen did another, and every check
+       agreed with the arithmetic because that is the number they read. Measured in the lab. */
+    const dur = Math.max(RIFFLE_MIN_MS, ms);
     const rest = () => {
       if (!el) return;
       el.style.transform = `translateZ(${zOf(k, past(to))}px) rotateY(${to}deg)`;
@@ -662,9 +704,7 @@ function Library({ anchorRef, initialSection, onClose, onPick, closeOnMount = fa
     const t = Math.min(Math.max(n, 1), maxTurn);
     if (t === posRef.current) return;
     if (still) { bookPage(); commit(t); return; }
-    const plan = riffle(posRef.current, t);
-    rateRef.current = plan.ms;
-    if (plan.jumpTo !== posRef.current) commit(plan.jumpTo);
+    rateRef.current = riffle(posRef.current, t).ms;
     setGoal(t);
   }, [maxTurn, still, commit]);
 
@@ -689,16 +729,30 @@ function Library({ anchorRef, initialSection, onClose, onPick, closeOnMount = fa
 
   const onDown = (e) => {
     if (still || e.button > 0) return;
+    /* 🔴 A TAP ON A CONTROL IS NEVER A PAGE DRAG, AND THIS IS WHY THE BOOK WOULD NOT CLOSE.
+
+       Aldi, 2026-09-02: *"make sure that i can close the book right now i cant"*. Measured at
+       375x812: a tap on the close button that drifts twelve pixels — which is every tap a finger
+       ever makes — cleared the drag threshold, the stage called `setPointerCapture`, and the
+       pointer stopped belonging to the button. On a touch device that suppresses the click
+       outright, so the X did nothing and the tap turned the page instead. The book had no other
+       reliable way out on a phone, so it could not be closed at all.
+
+       Geometry could not fix this: the button is a correct 44x44 and the finger was on it. The
+       gesture has to decide by WHAT was touched, not by how far it moved. */
+    if (e.target?.closest?.('button')) return;
     stopRun();                       // a hand on the page outranks a bookmark run
-    dragRef.current = { x: e.clientX, lx: e.clientX, lt: e.timeStamp, v: 0, k: null, dir: 0, p: 0 };
+    dragRef.current = { x: e.clientX, y: e.clientY, lx: e.clientX, lt: e.timeStamp, v: 0, k: null, dir: 0, p: 0 };
     movedRef.current = false;
   };
   const onMove = (e) => {
     const d = dragRef.current;
     if (!d) return;
-    const dx = e.clientX - d.x;
+    const dx = e.clientX - d.x, dy = e.clientY - d.y;
     if (!d.dir) {
-      if (Math.abs(dx) < 10) return;                 // a tap is not a drag
+      /* Far enough to be meant, and more sideways than up-and-down. Ten pixels was inside a
+         finger's own wobble on a tap; a vertical swipe belongs to the page behind, not to this. */
+      if (Math.abs(dx) < DRAG_AT || Math.abs(dx) <= Math.abs(dy)) return;
       const fwd = dx < 0;
       const pos = posRef.current;
       if (fwd ? pos + 1 > maxTurn : pos - 1 < 1) { dragRef.current = null; return; }
@@ -891,16 +945,19 @@ function Library({ anchorRef, initialSection, onClose, onPick, closeOnMount = fa
   const near = [];
   for (let k = safeTurn - 2; k <= safeTurn + 1; k++) if (k >= 0 && k < leaves.length) near.push(k);
 
+  /* Both handlers, because a phone gets `pointerdown` for certain and `mousedown` only as a
+     synthesized courtesy that a gesture can cancel — and the scrim is the second way out of the
+     book, the one that has to work when the first is being repaired. */
   return createPortal(
     <div role="dialog" aria-modal="true" aria-label="Tutorial book"
-         onMouseDown={shut}
+         onPointerDown={shut} onMouseDown={shut}
          className="fixed inset-0 z-[9000] flex items-center justify-center p-3 sm:p-6">
 
       <div ref={scrimRef} className="absolute inset-0 bg-[var(--duke-scrim-hi)] backdrop-blur-sm" />
 
       {/* THE BOOK ITSELF. Big on purpose — his words were *"so black and small"*, and a spread that
           does not take the screen is a dialog wearing a book costume. */}
-      <div ref={bookRef} onMouseDown={(e) => e.stopPropagation()}
+      <div ref={bookRef} onPointerDown={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()}
            style={{ transformOrigin: 'center center' }}
            className="relative w-[min(1040px,95vw)] h-[min(760px,90vh)] flex rounded-[14px] p-[10px]">
 
@@ -1015,9 +1072,12 @@ function Library({ anchorRef, initialSection, onClose, onPick, closeOnMount = fa
               paper. Its gold spine sits on the element's RIGHT edge because a 180° turn puts that
               edge on the left of the screen, which is where a spine belongs. */}
           <div className="absolute inset-y-0 left-0 w-full lg:left-1/2 lg:w-1/2 pointer-events-none"
-               style={{ transform: 'translateZ(20px)', transformStyle: 'preserve-3d' }}>
+               style={{ transformStyle: 'preserve-3d' }}>
+            {/* The depth is part of the cover's OWN transform — see COVER_Z. Its resting value is
+                the open one so the first painted frame is not a cover sitting at zero depth. */}
             <div ref={leafRef} className="absolute inset-0"
-                 style={{ transformOrigin: 'left center', transformStyle: 'preserve-3d', willChange: 'transform' }}>
+                 style={{ transformOrigin: 'left center', transformStyle: 'preserve-3d',
+                          transform: leafOpenTo, willChange: 'transform' }}>
               <div className="absolute inset-0 rounded-[6px] border border-accent-edge overflow-hidden"
                    style={{ background: LEATHER, transform: 'rotateY(180deg)', backfaceVisibility: 'hidden',
                             WebkitBackfaceVisibility: 'hidden' }}>

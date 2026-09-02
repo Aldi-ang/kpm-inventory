@@ -4752,21 +4752,96 @@ check(G56, 'a fast swipe commits where the gesture decided, and never snaps to s
 /* 🔴 A RIBBON TURNS THE PAGES, IT DOES NOT TELEPORT. His ask, 2026-09-02: *"if i change the ribbon
    section by 4 ribbons far then the book will turn 4 times to reach that page so instead of page 1
    to page 5 in one swipe i want the animation to be 4 quick page swipe, this way it will make it
-   realistic"*.
+   realistic"*, and then, when told the first version rode a jump past eight sheets: *"yes, full
+   realism needed"*.
 
-   The arithmetic is in pageModel.js so `logicFixes.selfcheck.mjs` can RUN it — this check only
-   asserts the book uses it, and that the run is one step per RENDER. A loop would start all four
-   turns in the same tick and they would land as one, which is the teleport he asked to be rid of;
-   reading the goal back through state is what puts each sheet on its own frame. */
-check(G56, 'a ribbon turns every page between here and there, one sheet per frame',
+   So there is no cap and no jump left in this path at all — `jumpTo` is asserted ABSENT, because a
+   half-removed cap is the shape that would quietly come back. The arithmetic lives in pageModel.js
+   so `logicFixes.selfcheck.mjs` can RUN it on every pair of chapters; this check asserts only that
+   the book uses it, and that the run is one step per RENDER. A loop would start all sixteen turns
+   in the same tick and they would land as one, which is the teleport being removed; reading the
+   goal back through state is what puts each sheet on its own frame. */
+check(G56, 'a ribbon turns every page between here and there, one sheet per frame, uncapped',
   /const pickSection = \(id\) => \{ if \(id === secId\) return; seek\(chapterTurn\(id\)\); \};/.test(bookSrc) &&
-  /const plan = riffle\(posRef\.current, t\);/.test(bookSrc) &&
-  /if \(plan\.jumpTo !== posRef\.current\) commit\(plan\.jumpTo\);/.test(bookSrc) &&
+  /rateRef\.current = riffle\(posRef\.current, t\)\.ms;/.test(bookSrc) &&
+  !/jumpTo/.test(bookSrc) &&
   /if \(stepping\.current\) return;/.test(bookSrc) &&
   /\}, \[goal, safeTurn, play, commit, FLIP\]\);/.test(bookSrc) &&
   /\(\) => \{ stepping\.current = false; commit\(safeTurn \+ dir\); \}\);/.test(bookSrc),
-  'pickSection must seek rather than set a position, the run must take its plan from riffle(), and ' +
-  'each step must commit and wait for the re-render before the next one starts');
+  'pickSection must seek rather than set a position, the run must take its rate from riffle(), no ' +
+  'jump may survive anywhere in the file, and each step must commit and wait for the re-render ' +
+  'before the next one starts');
+
+/* 🔴 THE BOOK CLOSES BY FOLDING, NOT BY FADING. Aldi, 2026-09-02: *"make sure book close the right
+   way, imagine its 3D"*.
+
+   The close before this faded every sheet to `opacity: 0` while a cover swung across on its own, so
+   the pages evaporated and a cover arrived from nowhere — and nothing in the real world disappears
+   and reappears. Closing a book open at page N is ONE motion: the whole right-hand block, every
+   unturned sheet plus the cover beneath them, folds about the spine onto the left half.
+
+   Three things carry it and each is silent when it breaks:
+     · the block is gathered from the sheets that are actually mounted and actually unturned;
+     · NO opacity animation survives in the close — a page that fades is a page that evaporates;
+     · the cover sits BELOW the whole stack in Z, because a fold about the spine sends +z to -z, so
+       the deepest thing before the fold is the nearest after it, and the outside of a closed book
+       is its cover. Get that number wrong and the book closes with its pages on top of its cover. */
+const bkShutA = bookSrc.indexOf('const shut = useCallback(');
+const bkShutB = bookSrc.indexOf('useLayoutEffect(() => { if (closeOnMount) shut(); }', bkShutA);
+const bkShutBody = bkShutA > -1 && bkShutB > bkShutA ? bookSrc.slice(bkShutA, bkShutB) : '';
+check(G56, 'the book closes by folding its right half over, and nothing in it fades',
+  bkShutBody.length > 800 && bkShutBody.length < 4000 &&
+  /const block = Object\.keys\(leafEls\.current\)\.map\(Number\)\s*\n\s*\.filter\(k => k >= posRef\.current\)\.sort\(\(a, b\) => b - a\);/.test(bkShutBody) &&
+  /\{ transform: `translateZ\(\$\{zOf\(k, false\)\}px\) \$\{foldTo\}` \}\]/.test(bkShutBody) &&
+  /delay: i \* 14/.test(bkShutBody) &&
+  /* No sheet and no stack fades. The scrim still fades — it is not paper — and the leather keeps
+     its own shading as it comes round into the light, which is a face catching light rather than a
+     page evaporating. Asserted by NAME so the difference cannot blur: the stack must not be
+     animated at all any more, and the block's keyframes carry transform and nothing else. */
+  !/stackRef\.current\?\.animate/.test(bkShutBody) &&
+  !/opacity/.test((bkShutBody.match(/block\.forEach\([\s\S]*?\}\);/) || [''])[0]) &&
+  /const COVER_Z = 'translateZ\(24px\) ';/.test(bookSrc) &&
+  /const leafShutTo = COVER_Z \+ foldTo;/.test(bookSrc) &&
+  !/transform: 'translateZ\(-?\d+px\)', transformStyle: 'preserve-3d'/.test(bookSrc),
+  'the close must animate every mounted unturned sheet along the cover\'s own arc, with no opacity ' +
+  'keyframe left in it besides the scrim, and the cover must sit below the stack in Z or it lands ' +
+  'underneath its own pages');
+
+/* An exit is faster than an entrance — the arrival is the book being carried to you and may take
+   its time, the departure is the system answering and must not keep you waiting. Computed from the
+   timings rather than frozen as numbers, so retuning either one cannot quietly invert it. */
+const bkT = (k) => Number((bookSrc.match(new RegExp(k + ': (\\d+)')) || [])[1]);
+const bkOpenMs = bkT('flyIn') + Math.max(bkT('leafOpen') + bkT('leafOpenDelay'), 0);
+const bkShutMs = Math.max(bkT('leafShut'), bkT('flyOut') + bkT('flyOutDelay'));
+check(G56, 'the book leaves faster than it arrives, and still fits inside its own sound',
+  Number.isFinite(bkOpenMs) && Number.isFinite(bkShutMs) && bkShutMs < bkOpenMs && bkShutMs <= 1160,
+  'close ' + bkShutMs + 'ms must be shorter than open ' + bkOpenMs + 'ms and must fit the 1,16s close ' +
+  'sound; a departure that outlasts its arrival reads as the interface hesitating');
+
+/* 🔴 AND THE BOOK HAS TO BE CLOSEABLE, WHICH IT WAS NOT.
+
+   Aldi, 2026-09-02: *"make sure that i can close the book right now i cant"*. Measured at 375x812:
+   a tap on the close button that drifts twelve pixels — which is every tap a finger ever makes —
+   cleared the ten-pixel drag threshold, the stage called `setPointerCapture`, and the pointer
+   stopped belonging to the button. On a touch device that suppresses the click outright, so the X
+   did nothing and the tap turned the page instead. The button itself was a correct 44x44 and the
+   finger was on it, so nothing about the geometry could have shown this.
+
+   Four things hold it shut, and each fails silently on its own:
+     · a press that lands on a control never arms a drag at all, whatever it does afterwards;
+     · a drag needs real intent — far enough to be meant, and more sideways than up-and-down;
+     · the scrim closes on `pointerdown`, not only on the `mousedown` a phone merely synthesizes;
+     · and the book stops that pointer itself, or every press inside it would close it. */
+check(G56, 'a tap on a control is never a page drag, so the book can always be closed',
+  /if \(e\.target\?\.closest\?\.\('button'\)\) return;/.test(bookSrc) &&
+  /if \(Math\.abs\(dx\) < DRAG_AT \|\| Math\.abs\(dx\) <= Math\.abs\(dy\)\) return;/.test(bookSrc) &&
+  /const DRAG_AT = 14;/.test(bookSrc) &&
+  /onPointerDown=\{shut\} onMouseDown=\{shut\}/.test(bookSrc) &&
+  /<div ref=\{bookRef\} onPointerDown=\{\(e\) => e\.stopPropagation\(\)\} onMouseDown=\{\(e\) => e\.stopPropagation\(\)\}/.test(bookSrc) &&
+  /onClick=\{shut\} aria-label="Close"/.test(bookSrc),
+  'onDown must ignore a press that landed on a button, a drag must need distance AND a sideways ' +
+  'direction, and the scrim must close on pointerdown as well as mousedown — a phone gets the ' +
+  'first for certain and the second only as a courtesy a gesture can cancel');
 
 /* *"the book look so bad there, its so black and small and doesnt look like a book"*. A book is
    paper, and paper does not go black in a dark room. Theme-exempt on purpose, the same exemption
