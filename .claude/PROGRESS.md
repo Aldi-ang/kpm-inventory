@@ -1,6 +1,36 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-09-02 16:00 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **712/712 audit · 1000/1000 selfcheck** · branch `phase0-solid-ground`
+**Updated: 2026-09-02 16:23 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **714/714 audit · 1000/1000 selfcheck** · branch `phase0-solid-ground`
+
+## 🟠 2026-09-02 16:23 — THE X BUTTON IS FIXED FOR THE RIGHT REASON. `0bab85f`, **714/714 + 1000/1000**.
+
+His report: *"x button is still not working, and i want the starting book to be closed before its fly
+towards the screen and open ... right now book already open on screen when pressed and there is
+intersection between model and animation, model static but animation working, and when closed, the
+white outline and book background is still there not close with the book"*. Commit message has it all.
+
+🔴 **THE PREVIOUS X FIX WAS CORRECT AND ABOUT A DIFFERENT CAUSE.** The real one: press close while
+the book is still flying in, and `getBoundingClientRect()` returns PAINTED geometry — the book
+measured **17×36 instead of 351×731**, its own `scale(0.049)` read back as its real size.
+`flightFrom()` then produced `translate(-53px) scale(1.005)`: the book shuffled sideways and stayed.
+`closingRef` was already true, so **every later press was a no-op** — one mistimed tap killed the
+button for the life of the panel. Now the book's own animations are finished before it is measured.
+Same fault the spotlight already has a check for in `PonderOverlay` — **second file to pay for it**.
+
+**Arrives closed.** The sheets used to sit at their resting spread while only the cover animated —
+that disagreement IS the "intersection between model and animation" he named. The block now unfolds
+on the way in, held folded through the flight by `fill:'both'` under a delay.
+
+**The white outline** was the paper block's own fore-edge and tail: inside the stack, never animated.
+They carry `data-fold` now and fold with the block.
+
+🔴 **STILL OPEN — the phone's closed pose.** On a phone the cover shuts to -90 (edge-on, invisible),
+so the closed book shows the bare leather board instead of the cover face. The DESK arrival is right
+(verified: leather, gold spine, ribbons, no spread). The phone's cover needs its own anchor —
+hinging at the right edge instead of the spine is the likely shape. **This is the next job.**
+
+✅ **HIS TURN: watch it, and hard-reload the phone twice** — this is a PWA and the service worker
+serves the old bundle otherwise.
 
 ## 🟠 2026-09-02 16:00 — THE BOOK CLOSES, AND IT CLOSES BY FOLDING. `bedf40b`, **712/712 + 1000/1000**.
 

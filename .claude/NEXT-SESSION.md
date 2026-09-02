@@ -1,6 +1,6 @@
 # NEXT SESSION — read this, then `.claude/PROGRESS.md`. Read no code to orient.
 
-**Written 2026-09-02 16:00 WIB. 712/712 audit · 1000/1000 selfcheck. Branch `phase0-solid-ground`.**
+**Written 2026-09-02 16:23 WIB. 714/714 audit · 1000/1000 selfcheck. Branch `phase0-solid-ground`.**
 
 ## First command
 
@@ -33,27 +33,42 @@ looks broken when it is fine.
 
 ---
 
-## ⚠️ ONE THING OUTRANKS THE JOB BELOW
+## ⚠️ THE BOOK IS THE LIVE FRONT — and one named fault is still open
 
-**The tutorial book has had three passes: `9a9cb62` (rebuilt as a stack of sheets), `c0ce49f` (fast
-swipe, riffling ribbons), `bedf40b` (closeable, and the close as a real fold). He has NOT judged the
-third.** If his first message names anything about the book, that is the job and the one below
-waits.
+Four passes: `9a9cb62` (rebuilt as a stack of sheets), `c0ce49f` (fast swipe, riffling ribbons),
+`bedf40b` (the close as a real fold), `0bab85f` (the X button's second cause, and a closed arrival).
+**He has not judged the fourth.**
 
-Read `A-Brain/Wiki/Concepts/The Book as a Stack of Sheets.md` FIRST — it holds the technique, the
-arithmetic, every fault already found, and the two Z/pointer traps. Re-deriving any of it costs a
-session. `framer-motion@^13.1.1` is installed and still unused; a spring is the upgrade if he says
-the settle feels stiff.
+🔴 **STILL OPEN, and it is the next job unless he says otherwise: the PHONE's closed pose.**
+On a phone the cover shuts to `-90` — edge-on, therefore invisible — so a closed book there shows
+the bare leather board instead of the cover's face with its icon and TUTORIAL. The DESK arrival is
+correct and verified (leather, gold spine, ribbons, no spread). Not a one-line change: the cover
+hinges at the spine, and on a phone the spine is the stage's LEFT edge, so any rotation toward -180
+swings it a whole page-width off the book — which was the original phone-close fault. Hinging that
+one element at its RIGHT edge is the likely shape, because -180 about that edge maps it back onto
+itself. `A-Brain/Wiki/Concepts/The Book as a Stack of Sheets.md` has the full reasoning.
 
-⚠️ **Four traps that have each already cost time in this file.**
-1. `new Map()` in `PonderBook.jsx` resolves to the lucide Map ICON, not the constructor.
-2. A parent's `translateZ` is applied AFTER the child's rotation, so it is never negated by it —
-   put a folding element's depth on the element that rotates.
-3. The Browser pane does not paint between tool calls: `requestAnimationFrame` never fires (45s
-   timeout), and an animation sits at `currentTime: 0`. Pump frames with screenshots, or freeze a
-   motion with `setTimeout(30)` then `getAnimations().forEach(a => { a.pause(); a.currentTime = N })`.
-4. A literal duplicating a named constant is a silent override, not a duplicate — a hardcoded 90ms
-   floor beat the named 60 and every check still passed, because the checks read the name.
+Read that vault page BEFORE touching the book. It holds the technique, the arithmetic, and every
+fault already found and fixed. Re-deriving any of it costs a session. `framer-motion@^13.1.1` is
+installed and still unused.
+
+⚠️ **Six traps this file has already charged for.**
+1. `new Map()` here resolves to the lucide Map ICON, not the constructor.
+2. A parent's `translateZ` is applied AFTER the child's rotation — put a folding element's depth on
+   the element that rotates.
+3. `getBoundingClientRect()` returns PAINTED geometry. Measuring a book that is mid-flight read
+   17×36 instead of 351×731 and produced a departure that went nowhere. Finish an element's own
+   animations before measuring it.
+4. A "still broken" report after a fix is not evidence the fix was wrong — reproduce from scratch.
+   Two causes with one symptom happened here, and reverting the first fix would have lost both.
+5. The Browser pane does not paint between tool calls: `requestAnimationFrame` never fires (45s
+   timeout) and animations sit at `currentTime: 0`. To inspect a motion, freeze it — `setTimeout(30)`
+   then `getAnimations().forEach(a => { a.pause(); a.currentTime = N })`.
+6. A literal duplicating a named constant is a silent override — a hardcoded 90ms floor beat the
+   named 60 and every check still passed, because the checks read the name.
+
+⚠️ **He tests on a PWA.** A change needs a hard reload twice on the phone or the service worker
+serves the old bundle — worth saying to him before he reports something unfixed.
 
 If he says nothing about the book, do the job below.
 
