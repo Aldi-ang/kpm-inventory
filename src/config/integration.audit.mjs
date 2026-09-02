@@ -4701,20 +4701,72 @@ check(G56, 'a page is a two-faced sheet hinged at the spine, not a rectangle bei
    The Lite guard is asserted with it because the two fail together: a drag handler that ignores
    `still` puts every frame of cost straight back into the mode he keeps for exactly that phone. */
 /* Scoped to onMove's OWN body, and the anchors are asserted before the slice is trusted. A
-   file-wide `setTurned` search would find the settle's legitimate one, and `indexOf` returning -1
-   into `slice` reads as "to one before the end of the file" — which is how twelve checks once
-   passed against 267KB they were never meant to see. */
+   file-wide `setTurned` search would find the legitimate ones, and `indexOf` returning -1 into
+   `slice` reads as "to one before the end of the file" — which is how twelve checks once passed
+   against 267KB they were never meant to see. */
 const mvA = bookSrc.indexOf('const onMove = (e) => {');
 const mvB = bookSrc.indexOf('const onUp = () => {');
 const onMoveBody = mvA > -1 && mvB > mvA ? bookSrc.slice(mvA, mvB) : '';
 check(G56, 'the drag writes the transform onto the element, and Lite Mode is still allowed to win',
-  onMoveBody.length > 400 && onMoveBody.length < 2000 &&
-  !/setTurned/.test(onMoveBody) &&
+  onMoveBody.length > 400 && onMoveBody.length < 2600 &&
+  !/setTurned|commit\(/.test(onMoveBody) &&
   /el\.style\.transform = `translateZ\(\$\{z\}px\) rotateY\(\$\{deg\}deg\)`/.test(bookSrc) &&
   /const onDown = \(e\) => \{\s*if \(still \|\| e\.button > 0\) return;/.test(bookSrc) &&
-  /if \(still\) \{ bookPage\(\); setTurned\(to\); return; \}/.test(bookSrc),
-  'onMove must write style.transform directly and must never call setTurned; the gesture may not ' +
-  'start at all under Lite Mode or reduced motion, and the ‹ › must still turn the page there');
+  /if \(still\) \{ bookPage\(\); commit\(t\); return; \}/.test(bookSrc),
+  'onMove must write style.transform directly and must never commit a position; the gesture may ' +
+  'not start at all under Lite Mode or reduced motion, and the ‹ › must still turn the page there');
+
+/* 🔴 THE POSITION COMMITS WHEN THE GESTURE DECIDES, NOT WHEN THE ANIMATION ENDS.
+
+   Aldi, 2026-09-02: *"when i slide it too quickly, animation broke and the book snapped itself into
+   next page instead"*. Committing only from `anim.onfinish` left the book believing it was on the
+   old sheet for the whole 520ms of a settle, and three faults came out of that one cause: the next
+   swipe grabbed the sheet already flying away; a `fill: 'both'` animation outranks an inline style
+   so that sheet ignored the finger completely; and the old animation then finished and moved the
+   book itself. The third one is the snap.
+
+   All three are pinned here because each of them alone reads as "the drag is janky" and none of
+   them shows up in a still frame:
+     · onUp commits BEFORE it plays anything (the character offset is the assertion);
+     · a drag cancels whatever animation owns that sheet before it touches it;
+     · a finished animation only cleans up if it still owns the sheet — a faster gesture may have
+       taken it over, and cancelling that one would drop the page mid-turn;
+     · and speed at release decides a turn as well as distance, or a hard short flick snaps back. */
+const upA = bookSrc.indexOf('const onUp = () => {');
+const upB = bookSrc.indexOf('useEffect(() => {', upA);
+const onUpBody = upA > -1 && upB > upA ? bookSrc.slice(upA, upB) : '';
+const commitAt = onUpBody.indexOf('if (done) commit(posRef.current + d.dir);');
+const playAt = onUpBody.indexOf('play(d.k, deg, to, ms,');
+check(G56, 'a fast swipe commits where the gesture decided, and never snaps to somewhere else',
+  onUpBody.length > 300 && onUpBody.length < 1600 &&
+  commitAt > -1 && playAt > commitAt &&
+  /animsRef\.current\[d\.k\]\?\.cancel\(\);/.test(bookSrc) &&
+  /if \(animsRef\.current\[k\] !== anim\) return;/.test(bookSrc) &&
+  /const flick = \(d\.dir > 0 \? -d\.v : d\.v\) >= FLICK_V;/.test(bookSrc) &&
+  /const done = d\.p >= TURN_AT \|\| flick;/.test(bookSrc) &&
+  /const FLICK_V = 0\.45;/.test(bookSrc),
+  'the commit must come before the animation that decorates it, the drag must take the sheet off ' +
+  'its own animation first, a finished animation must not clean up a sheet another gesture now ' +
+  'owns, and release SPEED must count as well as distance');
+
+/* 🔴 A RIBBON TURNS THE PAGES, IT DOES NOT TELEPORT. His ask, 2026-09-02: *"if i change the ribbon
+   section by 4 ribbons far then the book will turn 4 times to reach that page so instead of page 1
+   to page 5 in one swipe i want the animation to be 4 quick page swipe, this way it will make it
+   realistic"*.
+
+   The arithmetic is in pageModel.js so `logicFixes.selfcheck.mjs` can RUN it — this check only
+   asserts the book uses it, and that the run is one step per RENDER. A loop would start all four
+   turns in the same tick and they would land as one, which is the teleport he asked to be rid of;
+   reading the goal back through state is what puts each sheet on its own frame. */
+check(G56, 'a ribbon turns every page between here and there, one sheet per frame',
+  /const pickSection = \(id\) => \{ if \(id === secId\) return; seek\(chapterTurn\(id\)\); \};/.test(bookSrc) &&
+  /const plan = riffle\(posRef\.current, t\);/.test(bookSrc) &&
+  /if \(plan\.jumpTo !== posRef\.current\) commit\(plan\.jumpTo\);/.test(bookSrc) &&
+  /if \(stepping\.current\) return;/.test(bookSrc) &&
+  /\}, \[goal, safeTurn, play, commit, FLIP\]\);/.test(bookSrc) &&
+  /\(\) => \{ stepping\.current = false; commit\(safeTurn \+ dir\); \}\);/.test(bookSrc),
+  'pickSection must seek rather than set a position, the run must take its plan from riffle(), and ' +
+  'each step must commit and wait for the re-render before the next one starts');
 
 /* *"the book look so bad there, its so black and small and doesnt look like a book"*. A book is
    paper, and paper does not go black in a dark room. Theme-exempt on purpose, the same exemption

@@ -11,7 +11,8 @@
    Run: node src/config/logicFixes.selfcheck.mjs                                                */
 import fs from 'node:fs';
 import { SECTIONS } from '../ponder/sections.js';
-import { buildPages, maxTurnOf, turnFor, facingPage } from '../ponder/pageModel.js';
+import { buildPages, maxTurnOf, turnFor, facingPage,
+         riffle, RIFFLE_CAP, TURN_FULL_MS } from '../ponder/pageModel.js';
 
 let pass = 0, fail = 0;
 const read = (f) => fs.readFileSync(f, 'utf8');
@@ -4144,6 +4145,71 @@ for (const wide of [true, false]) {
    land on page one rather than on `undefined`, which is what `findIndex` returns to. */
 ok('an unknown section falls back to the first sheet instead of a blank spread',
    turnFor(buildPages(SECTIONS, 4, true), true, 99, 'no_such_section') === 1);
+
+section('THE TUTORIAL BOOK — a ribbon turns the pages, it does not teleport (2026-09-02)');
+
+/* Aldi, 2026-09-02: *"i want to put full realism of this book, for example if i change the ribbon
+   section by 4 ribbons far then the book will turn 4 times to reach that page so instead of page 1
+   to page 5 in one swipe i want the animation to be 4 quick page swipe, this way it will make it
+   realistic"*.
+
+   `riffle()` decides how many turns and how fast. Read back, it looks obviously right; run on the
+   real seventeen chapters it is the only thing standing between a bookmark and a teleport, and a
+   teleport is exactly what the previous version did with no error and no failing check. */
+
+/* HIS EXAMPLE, VERBATIM, IN BOTH DIRECTIONS. Four apart is four turns and no jump — if this ever
+   reports jumpTo !== from, the book skipped pages he asked to see turn. */
+ok('four ribbons apart is four page turns, forwards and backwards',
+   riffle(2, 6).steps === 4 && riffle(2, 6).jumpTo === 2 &&
+   riffle(6, 2).steps === 4 && riffle(6, 2).jumpTo === 6,
+   'his stated case: page 1 to page 5 must be four quick swipes, not one');
+
+ok('one sheet apart is one deliberate turn, not a riffle',
+   riffle(3, 4).steps === 1 && riffle(3, 4).ms === TURN_FULL_MS,
+   'a single page turn keeps the full duration; only a RUN of them speeds up');
+
+ok('a ribbon you are already standing on turns nothing',
+   riffle(3, 3).steps === 0 && riffle(3, 3).dir === 0);
+
+/* REGRESSION GUARD — the teleport must not come back.
+
+   Every ordered pair of chapters in the real book, at both widths. Two things must hold for all of
+   them: a different chapter is never reached in zero turns, and any distance the cap can cover is
+   turned page for page rather than rounded down. */
+for (const wide of [true, false]) {
+  const pages = buildPages(SECTIONS, wide ? 4 : 2, wide);
+  const maxTurn = maxTurnOf(pages, wide);
+  const seats = SECTIONS.map(s => turnFor(pages, wide, maxTurn, s.id));
+  const pairs = [];
+  for (const a of seats) for (const b of seats) if (a !== b) pairs.push([a, b]);
+
+  const teleports = pairs.filter(([a, b]) => riffle(a, b).steps < 1);
+  ok(`no ribbon reaches another chapter without turning a page (${wide ? 'desk' : 'phone'})`,
+     teleports.length === 0,
+     teleports.length + ' of ' + pairs.length + ' pairs arrive with zero turns');
+
+  const shortChanged = pairs.filter(([a, b]) =>
+    Math.abs(b - a) <= RIFFLE_CAP && (riffle(a, b).steps !== Math.abs(b - a) || riffle(a, b).jumpTo !== a));
+  ok(`inside the cap every page between the two is turned (${wide ? 'desk' : 'phone'})`,
+     shortChanged.length === 0,
+     shortChanged.length + ' pairs skipped pages they should have turned');
+
+  /* And the long ones still land: the jump has to leave exactly `steps` sheets to travel, on the
+     right side of the target. An off-by-one here overshoots the chapter he asked for. */
+  const misland = pairs.filter(([a, b]) => {
+    const r = riffle(a, b);
+    return r.jumpTo + r.dir * r.steps !== b;
+  });
+  ok(`every run lands on the chapter that was pressed (${wide ? 'desk' : 'phone'})`,
+     misland.length === 0,
+     misland.length + ' runs stop short of, or past, their target');
+
+  /* A riffle nobody waits for is a riffle nobody sees the end of. */
+  const slow = pairs.filter(([a, b]) => { const r = riffle(a, b); return r.steps * r.ms > 1100; });
+  ok(`no run outlasts 1,1 seconds (${wide ? 'desk' : 'phone'})`,
+     slow.length === 0,
+     slow.length + ' runs take longer than anyone waits');
+}
 
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

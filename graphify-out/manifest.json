@@ -540,8 +540,8 @@
     "semantic_hash": ""
   },
   "src/config/integration.audit.mjs": {
-    "mtime": 1788267474.5450408,
-    "ast_hash": "76eb92ebd1d70a3281419ced25d5a0b0",
+    "mtime": 1788325607.007753,
+    "ast_hash": "1e8fb5ce78c13ed15c838f1c15002c87",
     "semantic_hash": ""
   },
   "src/config/nextStop.selfcheck.mjs": {
@@ -570,8 +570,8 @@
     "semantic_hash": ""
   },
   ".claude/PROGRESS.md": {
-    "mtime": 1788265271.0246296,
-    "ast_hash": "9ab4618f65b189fdfd69dba7685f4758",
+    "mtime": 1788325579.4009547,
+    "ast_hash": "eff45503581bd7124fc743fe9aa5775f",
     "semantic_hash": ""
   },
   ".claude/pre-compact-context.md": {
@@ -755,13 +755,13 @@
     "semantic_hash": ""
   },
   "src/config/logicFixes.selfcheck.mjs": {
-    "mtime": 1788266996.5742948,
-    "ast_hash": "92d722ec8df6a48af0dbcc7f72be59c7",
+    "mtime": 1788325657.5855114,
+    "ast_hash": "9e6c07fd44853245d1a0f14362355711",
     "semantic_hash": ""
   },
   ".claude/NEXT-SESSION.md": {
-    "mtime": 1788265270.8508027,
-    "ast_hash": "8e928c83e33654b01dd79581e3d45b7b",
+    "mtime": 1788325566.3599946,
+    "ast_hash": "cf857f1e7c5982460de03bb231f70652",
     "semantic_hash": ""
   },
   ".claude/SWEEP-2026-08-19.md": {
@@ -850,8 +850,8 @@
     "semantic_hash": ""
   },
   "src/ponder/PonderBook.jsx": {
-    "mtime": 1788267591.7145915,
-    "ast_hash": "b3d7a247de48d44705ffc412ddfc11ba",
+    "mtime": 1788325509.6330874,
+    "ast_hash": "d309d28829936db920f88c3a35e39d77",
     "semantic_hash": ""
   },
   "src/ponder/demo/warehouses.js": {
@@ -990,8 +990,8 @@
     "semantic_hash": ""
   },
   "src/ponder/pageModel.js": {
-    "mtime": 1788266726.7613716,
-    "ast_hash": "c51cd407fd0653a71174a934da29875b",
+    "mtime": 1788325437.4313,
+    "ast_hash": "8e587725eadbcd02b2ec3915899ba01d",
     "semantic_hash": ""
   },
   "src/ponder/scenes/regional-warehouse.js": {

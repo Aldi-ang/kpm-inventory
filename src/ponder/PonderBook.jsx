@@ -28,7 +28,8 @@ import { X, ChevronLeft, ChevronRight, Lock,
          LayoutGrid, Map, Route, Truck, Package, Boxes, PackagePlus, Store, Receipt,
          Wallet, ClipboardList, Users, Gift, BarChart3, ScrollText, Settings, User } from 'lucide-react';
 import { SECTIONS, getScene } from './registry.js';
-import { buildPages, asLeaves, maxTurnOf, turnFor, facingPage } from './pageModel.js';
+import { buildPages, asLeaves, maxTurnOf, turnFor, facingPage,
+         riffle, TURN_FULL_MS } from './pageModel.js';
 import PonderOverlay from './PonderOverlay.jsx';
 import { bookOpen, bookPage, bookPick, bookClose } from './sfx.js';
 
@@ -341,7 +342,11 @@ export default function PonderBookButton({ activeTab }) {
 /* How far a sheet has to travel before letting go turns it rather than putting it back. A third of
    the way is forgiving in the direction that matters: a brush snaps back, a pull goes over. */
 const TURN_AT = 0.34;
-const TURN_MS = 520;
+/* And how fast it has to be MOVING when it is let go, in pixels per millisecond. Distance alone
+   cannot tell a hard flick from a hesitant pull: a decisive swipe that covers only a fifth of the
+   page is unmistakably a page turn, and a distance-only rule sent it back. 0.45 px/ms is roughly
+   a page's width in half a second — brisk, not violent. */
+const FLICK_V = 0.45;
 
 /* OPENS ON THE SECTION YOU ARE STANDING IN. His ask, 2026-08-27: *"i want the book when press is
    auto redirect to the features that we use right now for example im on the restock vault then it
@@ -554,16 +559,40 @@ function Library({ anchorRef, initialSection, onClose, onPick, closeOnMount = fa
      *"i want the page to be drag able to change the page left and right with smooth motion"*, and
      "smooth" is the load-bearing word. A pointermove that calls setState re-renders four sheets and
      every card on them on each frame of the gesture, which is exactly how a drag stutters on the
-     cheap Android this app is built for. State changes ONCE, when the sheet has settled — the same
-     rule the scene player's progress bar already follows.
+     cheap Android this app is built for. The same rule the scene player's progress bar follows.
 
-     One rotation carries the whole gesture: the sheet you pull travels 0 → FLIP as your finger
-     crosses one page's width, and a sheet you pull BACK comes FLIP → 0 along the same arc. Letting
-     go past a third of the way finishes the turn; short of it the sheet falls back where it was.
-     FLIP is -180 on a desk and -90 on a phone — see the note above it; everything else here is the
-     same code at both widths, which is what he asked for. */
+     🔴 AND THE POSITION COMMITS WHEN THE GESTURE DECIDES, NOT WHEN THE ANIMATION ENDS.
+
+     Aldi, 2026-09-02: *"when i slide it too quickly, animation broke and the book snapped itself
+     into next page instead"*. Three faults, all one cause — the first version only called
+     `setTurned` from `anim.onfinish`, so for the ~520ms a settle was playing the book still
+     believed it was on the old sheet:
+
+       1. the second swipe grabbed the SAME sheet that was already flying away;
+       2. a WAAPI animation under `fill: 'both'` outranks an inline style, so the sheet ignored the
+          finger entirely until its animation ended — the page simply did not follow;
+       3. and then the old animation finished, `setTurned` fired with ITS target, and the book
+          jumped. That jump is the snap he saw.
+
+     Committing at the moment the gesture decides fixes all three: React re-renders the sheet at its
+     resting flipped transform while the animation is still holding the same value, so nothing moves
+     on screen, and the very next gesture already reads the new position. `posRef` carries it
+     synchronously because two flicks can land inside one React batch.
+
+     🔴 AND A FLICK COUNTS EVEN WHEN IT IS SHORT. Distance alone cannot tell a fast, deliberate
+     swipe from a hesitant one — a hard flick that travels 20% of the page is unmistakably a page
+     turn, and under a distance-only rule it snapped back, which is the other half of "animation
+     broke". Speed at the moment of release decides it too. */
   const dragRef = useRef(null);
   const movedRef = useRef(false);
+  const animsRef = useRef({});      // k -> the animation currently owning that sheet
+  const posRef = useRef(safeTurn);  // the committed position, readable inside one React batch
+  const rateRef = useRef(TURN_FULL_MS);
+  const stepping = useRef(false);
+  const [goal, setGoal] = useState(null);
+
+  useLayoutEffect(() => { posRef.current = safeTurn; }, [safeTurn]);
+
   const at = (k) => leafEls.current[k] || null;
   const zOf = (k, flipped) => (flipped ? k : leaves.length - k) * 0.4;
   const past = (deg) => deg < FLIP / 2;   // half way round is where the sheet changes sides
@@ -580,50 +609,88 @@ function Library({ anchorRef, initialSection, onClose, onPick, closeOnMount = fa
     el.style.opacity = '1';        // a sheet under the finger is always on screen
   };
 
-  const settle = useCallback((k, from, to, next) => {
+  const commit = useCallback((n) => {
+    const t = Math.min(Math.max(n, 1), maxTurn);
+    posRef.current = t;
+    setTurned(t);
+  }, [maxTurn]);
+
+  /* One sheet, one arc. `done` is called the moment the arc lands, and the element is left standing
+     on the values it landed on rather than having them cleared — React writes the identical pair on
+     its next render, so nothing moves, and an arc that commits nothing still ends somewhere defined. */
+  const play = useCallback((k, from, to, ms, done) => {
     const el = at(k);
+    const dur = Math.max(90, ms);
     const rest = () => {
       if (!el) return;
       el.style.transform = `translateZ(${zOf(k, past(to))}px) rotateY(${to}deg)`;
       el.style.opacity = String(dim(to));
     };
-    if (!el || still || typeof el.animate !== 'function') {
-      if (next !== null) { bookPage(); setTurned(next); }
-      rest();
-      return;
-    }
-    if (next !== null) bookPage();
+    animsRef.current[k]?.cancel();
+    delete animsRef.current[k];
+    if (!el || still || typeof el.animate !== 'function') { rest(); done(); return; }
     const anim = el.animate(
       [{ transform: `translateZ(${zOf(k, past(from))}px) rotateY(${from}deg)` },
        { transform: `translateZ(${zOf(k, past(to))}px) rotateY(${to}deg)` }],
-      { duration: TURN_MS, easing: HINGE, fill: 'both' },
+      { duration: dur, easing: HINGE, fill: 'both' },
     );
     /* The phone's sheet leaves at the very end of its own arc, never across it — a page that fades
        while it turns is a page dissolving, which is the note the fly-in already carries. */
     const fade = dim(from) === dim(to) ? null : el.animate(
       [{ opacity: dim(from) }, { opacity: dim(to) }],
-      { duration: TURN_MS * 0.22, delay: TURN_MS * 0.78, easing: 'linear', fill: 'both' },
+      { duration: dur * 0.22, delay: dur * 0.78, easing: 'linear', fill: 'both' },
     );
+    animsRef.current[k] = anim;
     anim.onfinish = () => {
-      /* State first, THEN cancel, and land the element on its resting values by NAME rather than by
-         clearing them — React writes the identical pair on the render that `setTurned` causes, so
-         nothing moves, and a snap-back that changes no state still ends somewhere defined. */
-      if (next !== null) setTurned(next);
-      requestAnimationFrame(() => { anim.cancel(); fade?.cancel(); rest(); });
+      done();
+      requestAnimationFrame(() => {
+        /* Only clean up if this animation still owns the sheet. A faster gesture may have taken it
+           over already, and cancelling THAT one would drop the page mid-turn. */
+        if (animsRef.current[k] !== anim) return;
+        anim.cancel(); fade?.cancel(); delete animsRef.current[k]; rest();
+      });
     };
   }, [leaves.length, still, FLIP, spread]);
 
-  const turn = useCallback((dir) => {
-    const to = safeTurn + dir;
-    if (to < 1 || to > maxTurn) return;
-    if (still) { bookPage(); setTurned(to); return; }
-    if (dir > 0) settle(safeTurn, 0, FLIP, to);
-    else settle(safeTurn - 1, FLIP, 0, to);
-  }, [safeTurn, maxTurn, still, settle, FLIP]);
+  const stopRun = useCallback(() => { stepping.current = false; setGoal(null); }, []);
+
+  /* 🔴 A RIBBON TURNS THE PAGES, IT DOES NOT TELEPORT. His ask, 2026-09-02: *"if i change the ribbon
+     section by 4 ribbons far then the book will turn 4 times to reach that page ... this way it
+     will make it realistic"*. `riffle()` in pageModel.js decides how many turns and how fast, and
+     the self-check runs it on real distances. Lite Mode has no motion to spend, so it arrives. */
+  const seek = useCallback((n) => {
+    const t = Math.min(Math.max(n, 1), maxTurn);
+    if (t === posRef.current) return;
+    if (still) { bookPage(); commit(t); return; }
+    const plan = riffle(posRef.current, t);
+    rateRef.current = plan.ms;
+    if (plan.jumpTo !== posRef.current) commit(plan.jumpTo);
+    setGoal(t);
+  }, [maxTurn, still, commit]);
+
+  /* One step per render: play a sheet, commit, and let the re-render bring this effect back for the
+     next one. Reading the goal through state rather than a loop is what keeps each turn on its own
+     frame — a loop would start all four in the same tick and they would land as one. */
+  useEffect(() => {
+    if (goal === null) return;
+    if (goal === safeTurn) { setGoal(null); return; }
+    if (stepping.current) return;
+    const dir = goal > safeTurn ? 1 : -1;
+    stepping.current = true;
+    bookPage();
+    const k = dir > 0 ? safeTurn : safeTurn - 1;
+    play(k, dir > 0 ? 0 : FLIP, dir > 0 ? FLIP : 0, rateRef.current,
+         () => { stepping.current = false; commit(safeTurn + dir); });
+  }, [goal, safeTurn, play, commit, FLIP]);
+
+  /* The ‹ › and the arrow keys aim at where the run is HEADING, not at where the book is standing,
+     so pressing next four times quickly asks for four sheets rather than re-asking for one. */
+  const turn = useCallback((dir) => seek((goal ?? posRef.current) + dir), [seek, goal]);
 
   const onDown = (e) => {
     if (still || e.button > 0) return;
-    dragRef.current = { x: e.clientX, k: null, dir: 0, p: 0 };
+    stopRun();                       // a hand on the page outranks a bookmark run
+    dragRef.current = { x: e.clientX, lx: e.clientX, lt: e.timeStamp, v: 0, k: null, dir: 0, p: 0 };
     movedRef.current = false;
   };
   const onMove = (e) => {
@@ -633,29 +700,42 @@ function Library({ anchorRef, initialSection, onClose, onPick, closeOnMount = fa
     if (!d.dir) {
       if (Math.abs(dx) < 10) return;                 // a tap is not a drag
       const fwd = dx < 0;
-      if (fwd ? safeTurn + 1 > maxTurn : safeTurn - 1 < 1) { dragRef.current = null; return; }
+      const pos = posRef.current;
+      if (fwd ? pos + 1 > maxTurn : pos - 1 < 1) { dragRef.current = null; return; }
       d.dir = fwd ? 1 : -1;
-      d.k = fwd ? safeTurn : safeTurn - 1;
+      d.k = fwd ? pos : pos - 1;
       movedRef.current = true;
+      /* Take the sheet off its own animation before touching it: a filling animation outranks an
+         inline style, so a sheet still flying would ignore the finger for the rest of its arc. */
+      animsRef.current[d.k]?.cancel();
+      delete animsRef.current[d.k];
       e.currentTarget.setPointerCapture?.(e.pointerId);
     }
+    const dt = Math.max(1, e.timeStamp - d.lt);
+    d.v = (e.clientX - d.lx) / dt;                   // px per ms, signed, latest sample only
+    d.lx = e.clientX; d.lt = e.timeStamp;
     /* Forward: 0 → FLIP as the finger crosses one page. Backward: the sheet already turned comes
        back up the same arc. Clamped at both ends, because a long swipe that wound a sheet past
        FLIP would read as the paper tearing off its hinge. */
     const w = Math.max(1, stackRef.current ? stackRef.current.getBoundingClientRect().width : 1);
     const p = Math.min(1, Math.max(0, (d.dir > 0 ? -dx : dx) / w));
-    const deg = d.dir > 0 ? FLIP * p : FLIP * (1 - p);
     d.p = p;
+    const deg = d.dir > 0 ? FLIP * p : FLIP * (1 - p);
     put(at(d.k), deg, zOf(d.k, past(deg)));
   };
   const onUp = () => {
     const d = dragRef.current;
     dragRef.current = null;
     if (!d || !d.dir) return;
-    const done = d.p >= TURN_AT;
+    const flick = (d.dir > 0 ? -d.v : d.v) >= FLICK_V;
+    const done = d.p >= TURN_AT || flick;
     const deg = d.dir > 0 ? FLIP * d.p : FLIP * (1 - d.p);
-    if (d.dir > 0) settle(d.k, deg, done ? FLIP : 0, done ? safeTurn + 1 : null);
-    else settle(d.k, deg, done ? 0 : FLIP, done ? safeTurn - 1 : null);
+    const to = d.dir > 0 ? (done ? FLIP : 0) : (done ? 0 : FLIP);
+    /* Only the arc that is LEFT gets played, so a page released at 90% finishes in a blink instead
+       of restarting a full-length turn from where it already is. */
+    const ms = Math.round(TURN_FULL_MS * (done ? 1 - d.p : d.p));
+    if (done) commit(posRef.current + d.dir);
+    play(d.k, deg, to, ms, () => {});
     /* Cleared a tick later, which is after the click this gesture would otherwise have fired. */
     setTimeout(() => { movedRef.current = false; }, 0);
   };
@@ -672,8 +752,8 @@ function Library({ anchorRef, initialSection, onClose, onPick, closeOnMount = fa
     return () => { window.removeEventListener('keydown', onKey); document.body.style.overflow = prev; };
   }, [shut, turn]);
 
-  /* A ribbon is a bookmark: it jumps to that chapter. It does not scroll a list. */
-  const pickSection = (id) => { if (id === secId) return; bookPage(); setTurned(chapterTurn(id)); };
+  /* A ribbon is a bookmark: it turns the pages between here and there. It does not jump. */
+  const pickSection = (id) => { if (id === secId) return; seek(chapterTurn(id)); };
 
   if (typeof document === 'undefined') return null;
 
