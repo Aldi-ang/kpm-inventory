@@ -1,6 +1,6 @@
 # NEXT SESSION — read this, then `.claude/PROGRESS.md`. Read no code to orient.
 
-**Written 2026-09-02 12:14 WIB. 709/709 audit · 997/997 selfcheck. Branch `phase0-solid-ground`.**
+**Written 2026-09-02 16:00 WIB. 712/712 audit · 1000/1000 selfcheck. Branch `phase0-solid-ground`.**
 
 ## First command
 
@@ -35,19 +35,25 @@ looks broken when it is fine.
 
 ## ⚠️ ONE THING OUTRANKS THE JOB BELOW
 
-**The tutorial book has had two passes and Aldi has judged the first one.** He watched it, named two
-faults — a fast swipe snapping, and a ribbon teleporting instead of turning — and both are fixed in
-`c0ce49f`. **He has NOT judged that second pass yet.** If his first message names anything about the
-book, that is the job and the one below waits.
+**The tutorial book has had three passes: `9a9cb62` (rebuilt as a stack of sheets), `c0ce49f` (fast
+swipe, riffling ribbons), `bedf40b` (closeable, and the close as a real fold). He has NOT judged the
+third.** If his first message names anything about the book, that is the job and the one below
+waits.
 
-Read `A-Brain/Wiki/Concepts/The Book as a Stack of Sheets.md` before touching it. It holds the
-technique, the arithmetic, both width-specific faults, and the commit-on-gesture rule that stopped
-the snap — re-deriving any of that costs a session. `framer-motion@^13.1.1` is installed and still
-unused; a spring is the upgrade if he says the settle feels stiff.
+Read `A-Brain/Wiki/Concepts/The Book as a Stack of Sheets.md` FIRST — it holds the technique, the
+arithmetic, every fault already found, and the two Z/pointer traps. Re-deriving any of it costs a
+session. `framer-motion@^13.1.1` is installed and still unused; a spring is the upgrade if he says
+the settle feels stiff.
 
-⚠️ **Two traps that already cost time here.** `new Map()` in `PonderBook.jsx` resolves to the lucide
-Map ICON, not the constructor. And the Browser pane's animation clock only advances when it PAINTS,
-so pump frames with repeated screenshots or a working turn reads as frozen.
+⚠️ **Four traps that have each already cost time in this file.**
+1. `new Map()` in `PonderBook.jsx` resolves to the lucide Map ICON, not the constructor.
+2. A parent's `translateZ` is applied AFTER the child's rotation, so it is never negated by it —
+   put a folding element's depth on the element that rotates.
+3. The Browser pane does not paint between tool calls: `requestAnimationFrame` never fires (45s
+   timeout), and an animation sits at `currentTime: 0`. Pump frames with screenshots, or freeze a
+   motion with `setTimeout(30)` then `getAnimations().forEach(a => { a.pause(); a.currentTime = N })`.
+4. A literal duplicating a named constant is a silent override, not a duplicate — a hardcoded 90ms
+   floor beat the named 60 and every check still passed, because the checks read the name.
 
 If he says nothing about the book, do the job below.
 
@@ -106,3 +112,14 @@ its subject, and there the movement is the whole value.
 **Re-checked 2026-09-02 12:05 WIB — brief unchanged.** The modified `src/ponder/PonderBook.jsx`
 and `src/ponder/pageModel.js` are the parallel KPM session's in-flight work, not this note's. A
 7DTD modding session also ran on this repo and touched no project file.
+
+**Re-checked 2026-09-02 15:48 WIB — brief unchanged.** The modified files in the working tree
+belong to the parallel KPM session. The 7DTD modding session keeps its own notes at
+`C:\Users\ASUS\AppData\RoamingDaysToDie\MODS-NOTES.md` and touches no project file.
+
+**Re-checked 2026-09-02 15:48 WIB — brief unchanged.** The modified files in the working tree
+belong to the parallel KPM session. The 7DTD modding session keeps its own notes at
+`%APPDATA%\7DaysToDie\MODS-NOTES.md` and touches no project file.
+
+**Re-checked 2026-09-02 15:54 WIB — brief unchanged.** Working-tree edits belong to the parallel
+KPM session. The 7DTD session logs to `%APPDATA%\7DaysToDie\MODS-NOTES.md`.

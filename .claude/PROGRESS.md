@@ -1,6 +1,52 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-09-02 12:14 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **709/709 audit · 997/997 selfcheck** · branch `phase0-solid-ground`
+**Updated: 2026-09-02 16:00 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **712/712 audit · 1000/1000 selfcheck** · branch `phase0-solid-ground`
+
+## 🟠 2026-09-02 16:00 — THE BOOK CLOSES, AND IT CLOSES BY FOLDING. `bedf40b`, **712/712 + 1000/1000**.
+
+His asks: *"yes, full realism needed and make the swipe faster please and make sure that i can close
+the book right now i cant"*, then *"make sure book close the right way, imagine its 3D use all the
+design skill to do this"*. Full story in the commit message; this is the pointer.
+
+🔴 **WHY HE COULD NOT CLOSE IT — measured, not guessed.** A tap on the X that drifts 12px (every
+finger tap) cleared the 10px drag threshold, the stage took `setPointerCapture`, and on a touch
+device that suppresses the click outright. The X did nothing and the tap turned the page instead.
+**The button was a correct 44x44 the whole time** — no amount of looking at geometry would have
+found it. A press that lands on a control now never arms a drag.
+
+**The close folds.** The right-hand block — every unturned sheet plus the cover under them — folds
+about the spine onto the left half. No opacity anywhere in it; pages do not evaporate. The cover's
+depth had to move onto the cover itself: a parent's `translateZ` is applied AFTER the child's
+rotation, so at -24 on its wrapper the cover folded over and stayed *behind* its own pages.
+
+**No cap, and faster.** 1→17 is sixteen real turns. Single turn 520→340ms, riffle budget 900→700,
+close 980→820 (an exit should beat its entrance).
+
+⚠️ **Found by running it:** `play()` floored every step at a literal 90ms and silently beat the 60
+the riffle planned — the longest run took 1260ms while every check read 840 and passed. One
+constant now, plus a check that the plan never sits below the floor the book actually uses.
+
+⚠️ **Do not call `requestAnimationFrame` in a lab probe.** The pane does not paint between tool
+calls, so rAF never fires and the call times out at 45s. Use `setTimeout`. To inspect a motion,
+freeze it: start it, `setTimeout(30)`, then `getAnimations().forEach(a => { a.pause(); a.currentTime = N })`.
+
+✅ **HIS TURN: watch it.** `npm run dev` → `https://192.168.1.143:5173`. Tap the X on the phone,
+press a ribbon at the far end, and watch the close.
+
+## ⚪ 2026-09-02 15:54 — SIDE SESSION (7 Days to Die). Nothing here changed.
+
+Notes live at `%APPDATA%\7DaysToDie\MODS-NOTES.md`. Working-tree edits are the parallel
+🟠 KPM session's. Entry exists only to answer the Stop hook's mtime check honestly.
+
+## ⚪ 2026-09-02 15:48 — SIDE SESSION (7 Days to Die). Notes moved OUT of this repo.
+
+Aldi's call: *"make your own notes, this is outside of the kpm app"*. The 7DTD work now
+logs to `%APPDATA%DaysToDie\MODS-NOTES.md` (94 lines: load order, 11 disabled mods and
+why, the two log greps, open questions). This entry exists only so the Stop hook's mtime
+check has an honest answer.
+
+The four modified files in the working tree are the parallel 🟠 KPM session's, not this
+one's. Nothing else in this file was altered.
 
 ## 🟠 2026-09-02 12:14 — HE WATCHED THE BOOK AND NAMED TWO FAULTS. BOTH FIXED. `c0ce49f`, **709/709 + 997/997**.
 
