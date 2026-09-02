@@ -2,6 +2,27 @@
 
 **Written 2026-09-02 17:43 WIB. 714/714 audit · 1000/1000 selfcheck. Branch `phase0-solid-ground`.**
 
+## 📋 COPY THIS — the whole prompt, nothing else on this page needs pasting
+
+```
+/alucard
+
+Build the tech-pad draft for the KPM Ponder tutorial on phones. The design is LOCKED - read
+A-Brain/Brainstorm/2026-09-02_phone-tutorial-shell.md, the section headed "THE SPEC", and build
+it. Do not explore a fourth time and do not offer me a menu; I approved this direction already.
+
+It is a field terminal, not a book: milled slate housing, inset display, gold anodised edges,
+no paper/leather/cover/spine/fold. The section rail down the RIGHT edge is the hero. Panels
+slide forward in real depth, never rotate. Tilt-reactive. ONE progress meter on the left edge.
+Futuristic in FORM only - no cyan, teal, electric blue or green anywhere, including for glow.
+
+Use the real 17 sections from src/ponder/sections.js, put a Lite Mode toggle in it, and publish
+it as an artifact for me to open on my iPhone. Change no KPM app code until I approve it.
+
+Once I approve, the same pass also removes the riffle from the PC book - a ribbon jumps straight
+to its chapter instead of turning N pages. Details are in this file below the paste block.
+```
+
 ## First command
 
 ```
