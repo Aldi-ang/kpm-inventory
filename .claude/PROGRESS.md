@@ -1,6 +1,23 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-09-03 09:35 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **714/714 audit · 1000/1000 selfcheck** · branch `phase0-solid-ground`
+**Updated: 2026-09-03 12:20 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **714/714 audit · 1000/1000 selfcheck** · branch `phase0-solid-ground`
+
+## 🟠 2026-09-03 12:20 — THE PANEL ZOOM IS OUT. ROUND 10 SHIPPED, SAME ARTIFACT URL.
+
+`ad98ec70` republished. **No KPM app code touched** — the pad lives in A-Brain only, so the audit
+and self-check numbers above are carried forward unchanged, not re-run.
+
+The panel now crossfades and nothing else: both keyframe sets are opacity-only, .17s out / .14s
+in, and `OUT_MS`/`IN_MS` were moved to 170/140 to match. `will-change` dropped to `opacity`. The
+text write-on carries the intro alone, which is what he said he liked.
+
+Measured on the served page with the keyframes pinned (negative `animationDelay` +
+`animationPlayState:'paused'`, because the pane's clock stalls): computed `transform` and `filter`
+both read `none` at every offset of panelIn and panelOut. Lite Mode still shows all four text
+blocks unclipped, and the text sweep still runs 100% → 50% → 0.
+
+📋 **`.claude/NEXT-SESSION.md` rewritten: remove the riffle from the Ponder book.** The light-mode
+question for the pad is the only thing left in the queue.
 
 ## 🟠 2026-09-03 09:35 — ROUND 10 ASK RECORDED. **NOTHING BUILT — HIS CALL, QUOTA AT 80%.**
 
