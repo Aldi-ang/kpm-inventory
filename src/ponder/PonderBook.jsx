@@ -29,7 +29,7 @@ import { X, ChevronLeft, ChevronRight, Lock,
          Wallet, ClipboardList, Users, Gift, BarChart3, ScrollText, Settings, User } from 'lucide-react';
 import { SECTIONS, getScene } from './registry.js';
 import { buildPages, asLeaves, maxTurnOf, turnFor, facingPage,
-         riffle, TURN_FULL_MS, RIFFLE_MIN_MS } from './pageModel.js';
+         TURN_FULL_MS, RIFFLE_MIN_MS } from './pageModel.js';
 import PonderOverlay from './PonderOverlay.jsx';
 import PonderPad, { PACE } from './PonderPad.jsx';
 import { bookOpen, bookPage, bookPick, bookClose } from './sfx.js';
@@ -803,10 +803,9 @@ function Library({ anchorRef, initialSection, onClose, onPick, closeOnMount = fa
      its next render, so nothing moves, and an arc that commits nothing still ends somewhere defined. */
   const play = useCallback((k, from, to, ms, done) => {
     const el = at(k);
-    /* 🔴 THE FLOOR IS RIFFLE_MIN_MS AND IT LIVES IN ONE PLACE. A second floor written here as
-       a literal 90 silently overrode the 60 the riffle had planned, so the longest run took 1260ms
-       instead of 840 - the arithmetic said one thing and the screen did another, and every check
-       agreed with the arithmetic because that is the number they read. Measured in the lab. */
+    /* 🔴 THE FLOOR IS RIFFLE_MIN_MS AND IT LIVES IN ONE PLACE. A second floor written here as a
+       literal once silently overrode it, so a very short step — a drag released a frame from
+       landing — rendered slower than the constant said it would. One constant, both sides. */
     const dur = Math.max(RIFFLE_MIN_MS, ms);
     const rest = () => {
       if (!el) return;
@@ -841,15 +840,14 @@ function Library({ anchorRef, initialSection, onClose, onPick, closeOnMount = fa
 
   const stopRun = useCallback(() => { stepping.current = false; setGoal(null); }, []);
 
-  /* 🔴 A RIBBON TURNS THE PAGES, IT DOES NOT TELEPORT. His ask, 2026-09-02: *"if i change the ribbon
-     section by 4 ribbons far then the book will turn 4 times to reach that page ... this way it
-     will make it realistic"*. `riffle()` in pageModel.js decides how many turns and how fast, and
-     the self-check runs it on real distances. Lite Mode has no motion to spend, so it arrives. */
+  /* A neighbour turn — next/prev, arrow keys, a drag release. Always one sheet, since pickSection
+     no longer routes through here (see below). One step per frame, at the full deliberate duration;
+     Lite Mode has no motion to spend, so it arrives. */
   const seek = useCallback((n) => {
     const t = Math.min(Math.max(n, 1), maxTurn);
     if (t === posRef.current) return;
     if (still) { bookPage(); commit(t); return; }
-    rateRef.current = riffle(posRef.current, t).ms;
+    rateRef.current = TURN_FULL_MS;
     setGoal(t);
   }, [maxTurn, still, commit]);
 
@@ -951,8 +949,12 @@ function Library({ anchorRef, initialSection, onClose, onPick, closeOnMount = fa
     return () => { window.removeEventListener('keydown', onKey); document.body.style.overflow = prev; };
   }, [shut, turn]);
 
-  /* A ribbon is a bookmark: it turns the pages between here and there. It does not jump. */
-  const pickSection = (id) => { if (id === secId) return; seek(chapterTurn(id)); };
+  /* 🔴 A RIBBON JUMPS STRAIGHT TO ITS CHAPTER. Aldi, 2026-09-03, reversing the 2026-09-02 "full
+     realism" call: a chapter seventeen sheets away cost nearly a second of flipping before he saw
+     the page he pressed for. It lands in one step now — the same commit() the `still` (Lite Mode)
+     path in seek() always used, so this is proven arithmetic, not a new path. `stopRun` cancels any
+     neighbour-turn animation already in flight so the two paths never fight over one sheet. */
+  const pickSection = (id) => { if (id === secId) return; stopRun(); bookPage(); commit(chapterTurn(id)); };
 
   if (typeof document === 'undefined') return null;
 

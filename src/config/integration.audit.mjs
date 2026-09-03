@@ -4804,28 +4804,25 @@ check(G56, 'a fast swipe commits where the gesture decided, and never snaps to s
   'its own animation first, a finished animation must not clean up a sheet another gesture now ' +
   'owns, and release SPEED must count as well as distance');
 
-/* 🔴 A RIBBON TURNS THE PAGES, IT DOES NOT TELEPORT. His ask, 2026-09-02: *"if i change the ribbon
-   section by 4 ribbons far then the book will turn 4 times to reach that page so instead of page 1
-   to page 5 in one swipe i want the animation to be 4 quick page swipe, this way it will make it
-   realistic"*, and then, when told the first version rode a jump past eight sheets: *"yes, full
-   realism needed"*.
-
-   So there is no cap and no jump left in this path at all — `jumpTo` is asserted ABSENT, because a
-   half-removed cap is the shape that would quietly come back. The arithmetic lives in pageModel.js
-   so `logicFixes.selfcheck.mjs` can RUN it on every pair of chapters; this check asserts only that
-   the book uses it, and that the run is one step per RENDER. A loop would start all sixteen turns
-   in the same tick and they would land as one, which is the teleport being removed; reading the
-   goal back through state is what puts each sheet on its own frame. */
-check(G56, 'a ribbon turns every page between here and there, one sheet per frame, uncapped',
-  /const pickSection = \(id\) => \{ if \(id === secId\) return; seek\(chapterTurn\(id\)\); \};/.test(bookSrc) &&
-  /rateRef\.current = riffle\(posRef\.current, t\)\.ms;/.test(bookSrc) &&
-  !/jumpTo/.test(bookSrc) &&
+/* 🔴 A RIBBON JUMPS STRAIGHT TO ITS CHAPTER, IT DOES NOT TURN EVERY PAGE BETWEEN. Aldi, 2026-09-03,
+   reversing the 2026-09-02 "full realism" call: the riffle turned every sheet between here and
+   there, and a chapter seventeen sheets away cost nearly a second of flipping before he saw the
+   page he pressed for. pickSection now commits the target directly — the same landing math the
+   `still` (Lite Mode) path in seek() always used. `riffle` is asserted ABSENT everywhere, because a
+   half-removed riffle is the shape that would quietly come back. Neighbour turns (next/prev, arrow
+   keys, drag) are untouched: they still run through seek(), one sheet per RENDER at TURN_FULL_MS —
+   a loop would start several turns in the same tick and they would land as one, which is the
+   teleport that check used to guard against and still must not return for THIS path either. */
+check(G56, 'a ribbon lands on its chapter directly, riffle is gone, a neighbour turn is unchanged',
+  /const pickSection = \(id\) => \{ if \(id === secId\) return; stopRun\(\); bookPage\(\); commit\(chapterTurn\(id\)\); \};/.test(bookSrc) &&
+  !/riffle/.test(bookSrc) &&
+  /rateRef\.current = TURN_FULL_MS;/.test(bookSrc) &&
   /if \(stepping\.current\) return;/.test(bookSrc) &&
   /\}, \[goal, safeTurn, play, commit, FLIP\]\);/.test(bookSrc) &&
   /\(\) => \{ stepping\.current = false; commit\(safeTurn \+ dir\); \}\);/.test(bookSrc),
-  'pickSection must seek rather than set a position, the run must take its rate from riffle(), no ' +
-  'jump may survive anywhere in the file, and each step must commit and wait for the re-render ' +
-  'before the next one starts');
+  'pickSection must commit the target directly instead of seeking to it, no riffle reference may ' +
+  'survive anywhere in the file, and a neighbour turn must still run one sheet per frame at ' +
+  'TURN_FULL_MS');
 
 /* 🔴 THE BOOK CLOSES BY FOLDING, NOT BY FADING. Aldi, 2026-09-02: *"make sure book close the right
    way, imagine its 3D"*.

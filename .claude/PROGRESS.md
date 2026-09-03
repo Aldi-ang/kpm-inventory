@@ -1,6 +1,66 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-09-03 18:25 WIB (🟠 KPM app session — DAY CLOSED)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **718/718 audit · 1000/1000 selfcheck** · branch `phase0-solid-ground`
+**Updated: 2026-09-03 (KPM session — riffle removal COMMITTED, screen check still owed)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **718/718 audit · 988/988 selfcheck** · branch `phase0-solid-ground`
+
+## 🟢 2026-09-03 — riffle removal COMMITTED. The open risk from the last entry is closed.
+
+Picked up the uncommitted riffle work below and closed its one open question first: diffed
+`logicFixes.selfcheck.mjs` block by block. The five landing-correctness checks (chapter opens on
+its own cards page, left page of the spread, last sheet faces a page, no two chapters share a
+sheet, unknown section falls back) are untouched, still in the file, still green — only the
+riffle-arithmetic block (14 checks calling `riffle()`) was replaced, with two new checks: riffle is
+actually gone (`typeof riffle === 'undefined'`), and a neighbour turn still holds `TURN_FULL_MS`.
+That is why the total is 988, not 1000 — 14 removed, 2 added.
+
+`pickSection` now does `stopRun(); bookPage(); commit(chapterTurn(id))` — lands in one step, same
+math the Lite Mode path always used. Next/prev, arrow keys, and drag still run through `seek()`
+unchanged. Build clean, audit 718/718, selfcheck 988/988, undef check clean.
+
+**NOT DONE: nobody has watched it jump on screen.** This session could not start the dev server —
+flagged as unattended, no one to approve it. `.claude/NEXT-SESSION.md` now asks for exactly that,
+before anything else.
+
+## 🔧 2026-09-03 23:33 — riffle removal is DONE, GREEN and **UNCOMMITTED**. Brief rewritten.
+
+Written from a 7DTD session; no KPM code was touched here. A Stop hook flagged that
+`src/ponder/PonderBook.jsx` had moved while `NEXT-SESSION.md` had not, so the state was checked
+rather than assumed.
+
+**Five files dirty, none committed:** `PonderBook.jsx`, `pageModel.js`,
+`integration.audit.mjs`, `logicFixes.selfcheck.mjs`, this file. `riffle()` is gone from source;
+`pickSection` now does `stopRun(); bookPage(); commit(chapterTurn(id))` instead of `seek(...)`.
+
+**Measured, not assumed:** `npm run build` OK · audit **718/718** · selfcheck **988/988**
+(down from 1000 — `logicFixes.selfcheck.mjs` lost 99 lines).
+
+**The one open risk:** the previous brief warned that riffle's checks must not simply be deleted
+to make the suite pass. A 99-line deletion is *consistent* with retiring checks for code that no
+longer exists, but that is not proof. `NEXT-SESSION.md` now holds exactly one job: read
+`git diff src/config/logicFixes.selfcheck.mjs`, decide per deleted block whether it guarded
+riffle's arithmetic (dead) or the ribbon landing on the right page (must survive), restore any
+behavioural guard, trial it red, then commit all five files.
+
+**WAITING ON ALDI — nothing.** No KPM question is owed to him.
+
+## 🔧 2026-09-03 19:05 — 7DTD track. **QUOTA HIT 100%.** Two items open, both written up.
+
+Not KPM work — the 7 Days to Die mod set. The full record is in
+`C:\Users\ASUS\AppData\Roaming\7DaysToDie\MODS-NOTES.md`, and the one prompt for next time is
+that folder's own `NEXT-JOB.md`. **This repo's `.claude/NEXT-SESSION.md` was deliberately NOT
+touched** — it still holds the KPM riffle job, which is correct.
+
+**Landed and verified:** workstation queue fix (drill, ammo press and workbench now open on one
+press — `AddRecipeToCraftAtIndex` = 0 in the log); VanillaPlus's 8 dead workstations restored;
+land claim 81 across all four worlds + serverconfig; ModPanel Tune tab + `modtune.py`;
+ZombieBossVanilla updated to the 2026-09-03 build; spawn coverage extended into the city groups.
+Five check scripts, all green.
+
+**Open and UNVERIFIED:** Aldi reported the forest-stutter signature AGAIN after the Dying Light
+pack was disabled. **The log for that run was never read — do not assume the fix held.**
+
+**Open, not started — his words:** *"i want u to edit the vanilla plus weapon so that they can use
+different ammo type from other mods"* · *"like for example my knowdown arrow cant be use with
+vanilla plus compound bow"*
 
 ## 🟠 2026-09-03 18:25 — ✅ **HE SIGNED IT OFF. DAY CLOSED, NOTHING IN FLIGHT.**
 

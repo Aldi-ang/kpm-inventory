@@ -56,42 +56,21 @@ export const turnFor = (pages, spread, maxTurn, id) => {
 export const facingPage = (pages, spread, turn) =>
   pages[spread ? turn * 2 : turn] || pages[1];
 
-/* ── HOW A BOOKMARK JUMP IS PLAYED ────────────────────────────────────────────────────
+/* ── HOW A PAGE TURN IS TIMED ────────────────────────────────────────────────────────
 
-   Aldi, 2026-09-02: *"i want to put full realism of this book, for example if i change the ribbon
-   section by 4 ribbons far then the book will turn 4 times to reach that page so instead of page 1
-   to page 5 in one swipe i want the animation to be 4 quick page swipe, this way it will make it
-   realistic"*.
+   Aldi, 2026-09-02: *"i want to put full realism of this book ... i want the animation to be 4
+   quick page swipe, this way it will make it realistic"* — a ribbon used to turn every sheet
+   between here and there, uncapped, getting faster with distance so the longest run in the book
+   still landed inside a second. `riffle()` did that arithmetic.
 
-   So a ribbon does not teleport. It turns one sheet at a time, as many times as there are sheets
-   between here and there.
-
-   🔴 AND THERE IS NO CAP. The first version rode a jump for anything past eight sheets, on the
-   grounds that sixteen turns is longer than anyone waits. Told about it he closed the question:
-   *"yes, full realism needed"*. So every page between the two is turned, and the run keeps its
-   length under a second by getting FASTER instead of by skipping — which is what riffling a thumb
-   through a book actually does.
-
-   The per-step duration is chosen ONCE for the whole run, from the full distance, so the riffle
-   keeps one rhythm instead of slowing down as it arrives. A single turn is not a riffle and keeps
-   the deliberate duration. */
-/* *"make the swipe faster please"*, same message. Every one of these came down: a single turn from
-   520 to 340, the riffle's whole budget from 900ms to 700, and its floor from 90 to 60 so the
-   longest run in the book — sixteen sheets, chapter one to chapter seventeen — still lands inside
-   a second. */
+   Aldi, 2026-09-03: reversed. A ribbon jumps STRAIGHT to its chapter now instead of flipping
+   through every page in between — `riffle()` is gone, and PonderBook.jsx commits the target turn
+   directly. TURN_FULL_MS is the one piece of that arithmetic still alive: a NEIGHBOUR turn
+   (next/prev, arrow keys, a drag release) still runs one sheet at a time through seek(), and still
+   takes the full deliberate duration below. */
 export const TURN_FULL_MS = 340;
-export const RIFFLE_BUDGET_MS = 700;
+/* The floor under any single sheet's animation duration. play() clamps to it so a drag released a
+   frame from landing — or any other very-short step — never renders faster than the eye can
+   register. A second literal floor written elsewhere once silently overrode this one; there must
+   be exactly one. */
 export const RIFFLE_MIN_MS = 60;
-export const RIFFLE_MAX_MS = 170;
-
-export const riffle = (from, to) => {
-  const far = Math.abs(to - from);
-  if (far === 0) return { steps: 0, ms: 0, dir: 0 };
-  return {
-    steps: far,
-    dir: to > from ? 1 : -1,
-    ms: far > 1
-      ? Math.min(RIFFLE_MAX_MS, Math.max(RIFFLE_MIN_MS, Math.round(RIFFLE_BUDGET_MS / far)))
-      : TURN_FULL_MS,
-  };
-};
