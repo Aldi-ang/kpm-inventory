@@ -1,6 +1,34 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-09-03 07:35 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **714/714 audit · 1000/1000 selfcheck** · branch `phase0-solid-ground`
+**Updated: 2026-09-03 08:05 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **714/714 audit · 1000/1000 selfcheck** · branch `phase0-solid-ground`
+
+## 🟠 2026-09-03 08:05 — TECH PAD ROUND 7 SHIPPED. **STILL NO KPM APP CODE TOUCHED.**
+
+Same artifact URL (`ad98ec70`). Vault commit `d5f1903`.
+
+**His ask, verbatim:** *"this light should be off by default and only turn on when the section in
+their line is accessed, and also should be off in default until choose for the dot ligjht sc2 then
+, make the animation and buttons more 3D and smoother if possible make it cooler more gamelike
+features"*
+
+**Off is now off.** Unlit meter cell and unlit key lamp were pale grey (`rgba(232,227,218,.10)`
+and `.13`) and read as already-lit on all seventeen rows. Both are dark wells now. Three states
+are legible in one frame: dark = never opened, amber = read, gold cap + bright ring = current.
+
+**The rail is a keypad.** Own `perspective:620px`; the active cap is measurably nearer the viewer
+(220.7x107.0 against an inactive 210.2x88.4), and a press physically depresses to
+`translateZ(-13px)` before riding out with overshoot. Lamp blooms, meter cell flashes, panel
+swings on a `rotateX` axis. No new colours.
+
+⚠️ **Trap that will recur, written up in the vault:** the preview pane's document timeline stalls,
+and every animation then reports `playState: running` with `currentTime: 0` while
+`visibilityState` says `visible`. That is indistinguishable from a broken animation. Pin the
+frame with a negative `animationDelay` plus `animationPlayState:'paused'` and screenshot that.
+
+Audit and self-check counts still carried forward unchanged (714/714, 1000/1000) — nothing under
+`src/` was touched.
+
+📋 **Next job unchanged in `.claude/NEXT-SESSION.md`: remove the riffle from the PC book.**
 
 ## 🟠 2026-09-03 07:35 — TECH PAD ROUND 6 SHIPPED. **STILL NO KPM APP CODE TOUCHED.**
 
