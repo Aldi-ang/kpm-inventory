@@ -5,62 +5,71 @@ Rewrite this file before you finish. One job only, never a menu.
 ---
 
 ```
-Put the display icon into the app, swap the panel to the app's amber, and size the pad for the
-phone. Aldi picked the icon on 2026-09-03 ("display look the cleanest so choose that") and
-approved its intro and outro in the same conversation. Nothing here is still a design question —
-it is all lifting finished CSS into React and sizing.
+Build the phone tutorial: the panel arrival Aldi picks, the display icon, the app's amber, and the
+pad sized for a phone. Every design question below is answered or is one question to him — none of
+it needs new design work, it is lifting finished CSS into React.
 
-WHERE THE FINISHED CSS IS
-  A-Brain/Brainstorm/assets/ponder-icon-handoff.html — the icon, its CRT outro, its boot intro,
-  the rest state, Lite Mode and reduced-motion, all written and all verified on screen.
-  Live: https://claude.ai/code/artifact/d39f91fd-c2b2-4677-acda-3cdaebc2c34b
-  Write-up with the timings table: A-Brain/Brainstorm/2026-09-03_tutorial-icon-candidates.md
-  Copy the rules, do not redesign them.
+FIRST — ASK WHICH ARRIVAL, AND DO NOT GUESS
+  Three studies: https://claude.ai/code/artifact/1df504b7-f3d9-412c-ae16-5924ec1cb80c
+    01 Deploy (recommended) — the pad unfolds out of the icon: point, bar, slab. 710ms in / 380 out
+    02 Power on — already there, wakes in place, no travel.                       720 / 270
+    03 Slide and lock — up off the bottom edge, rim lights as it rises.           560 / 260
+  Source with all three fully written: A-Brain/Brainstorm/assets/ponder-panel-arrival.html
+  Write-up: A-Brain/Brainstorm/2026-09-03_panel-arrival-animation.md
+  Copy the winning keyframes. Do not redesign them.
 
-  1. THE AMBER, on the panel. A-Brain/Brainstorm/assets/ponder-field-terminal.html declares
+WHAT IS ALREADY DECIDED
+  - The icon is the DISPLAY ("display look the cleanest so choose that"). Its CRT outro and boot
+    intro are written in A-Brain/Brainstorm/assets/ponder-icon-handoff.html —
+    https://claude.ai/code/artifact/d39f91fd-c2b2-4677-acda-3cdaebc2c34b
+  - The lit colour is the app's amber #F59E0B, not the pad's pale #FFCE8F.
+  - The pad gets an X on its own status strip. It had no close control before.
+  - Phone only. The PC keeps the book, riffle and all.
+
+THE WORK, IN ORDER
+
+  1. THE AMBER, on the panel prototype. A-Brain/Brainstorm/assets/ponder-field-terminal.html:
        --lit:#FFCE8F; --lit-dim:rgba(255,206,143,.40); --lit-hot:#FFE7C4;
-     Swap to the app's own amber (src/styles/theme.css, --amber):
+     becomes
        --lit:#F59E0B; --lit-dim:rgba(245,158,11,.38); --lit-hot:#FFC24D;
-     ⚠️ The tokens alone will NOT do it. Grep the pad for raw rgba(255,206,143,...) and
-     rgba(255,231,196,...) — the lamp bloom (@keyframes lampOn), the segment energise
-     (@keyframes segOn) and the .key.on glow all hardcode those. Ink on the latched face stays
-     #2A1A08; it measures 7,82:1 on #F59E0B.
+     ⚠️ The tokens alone will NOT do it. Grep for raw rgba(255,206,143,...) and
+     rgba(255,231,196,...) — @keyframes lampOn, @keyframes segOn and .key.on all hardcode those.
+     Ink on the latched face stays #2A1A08; it measures 7,82:1 on #F59E0B.
      Republish to the SAME artifact: https://claude.ai/code/artifact/ad98ec70-ede4-4866-95f6-aa553c9f0ef0
 
   2. THE ICON, into src/ponder/PonderBook.jsx. Replace BookGlyph (starts ~line 186) with the
      display glyph. PonderBookButton at :259 keeps its chip, its label and its Library wiring.
-     The book's `visibility: hidden` trick while `libOpen || bookShutting` becomes the CRT outro
-     instead: the bezel STAYS in the bar and only the picture collapses, so nothing in the top bar
-     shifts. Boot it back when the panel closes — that is what `bookShutting` already tracks.
-     Timings: outro 190ms, panel in 140ms, panel out 170ms, intro 240ms open + 335ms write.
-     ⚠️ integration.audit.mjs:4290 asserts PonderBookButton is mounted in BiohazardTheme. Leave
-     that mount alone. ADD a check that pins the icon's rest state (four lines written, clip-path
-     reset) and the fact that the bezel does not transform, so a future session cannot put a book
-     back or reintroduce a bar-shifting icon.
+     The book's `visibility: hidden` while `libOpen || bookShutting` becomes the CRT outro: the
+     bezel STAYS in the bar, only the picture collapses, so nothing in the top bar shifts. Boot it
+     back when the panel closes — `bookShutting` already tracks that moment.
 
-  3. THE PAD, for the phone. It is width:min(424px,100%), height:min(880px,...) with
-     min-height:540px — sized for a desk. Decide what it does under ~380px before writing
-     anything, and check the pad's Lite Mode and reduced-motion blocks still cover it.
+  3. THE PANEL ARRIVAL, on the phone path only. This is the real job. The chosen keyframes drive
+     the pad's housing, rim, meter, rail lamps, picture and text as one staged sequence, each part
+     firing once and holding. Nothing loops while the panel is open.
 
-THE TRAPS — both of these already bit once, in the file you are copying from
-  - A collapse beam drawn INSIDE the element that scales gets scaled with it. The tube squeezes
-    to scaleY(.045), so a 1px beam inside it becomes 0.045px and never renders. The beam is a
-    SIBLING of the tube. Keep it that way.
-  - Rest must be exactly where the boot lands. The first version rested on one lit line while the
-    boot wrote four, so three lines vanished the instant the animation ended. The write cools to
-    the dim burn level and rest shows all four. Do not "tidy" that back to one line.
-  - Nothing animates at rest. The icon sits in the top bar on every screen; motion belongs to
-    hover, the press, and the handoff only.
-  - Lite Mode must reset BOTH transform and clip-path on the glyph, or the icon renders as an
-    invisible slit with no lines in it.
+  4. THE PAD, sized for a phone. It is width:min(424px,100%), height:min(880px,...) with
+     min-height:540px — a desk size. Decide what it does under ~380px before writing anything.
+
+THE TRAPS — all four already bit once in the files you are copying from
+  - Do not name the pad's display `.tube`. The icon already has a `.tube`, and a bare `.tube{}`
+    rule reaches straight inside it. The arrival file calls the pad's `.crt` for this reason.
+  - A beam or line drawn INSIDE an element that scales gets scaled with it. The CRT squeeze is
+    scaleY(.04), so a 1px beam inside it becomes 0.04px and never renders. Keep it a sibling.
+  - Rest must be exactly where the animation lands. Resting on one lit line while the boot writes
+    four made three lines vanish the instant it finished.
+  - Lite Mode and reduced-motion must reset BOTH transform and clip-path, or the panel opens to an
+    invisible slit with no words in it.
 
 VERIFYING MOTION HERE
-  The preview pane's animation clock stalls: every animation reports playState "running" with
+  The preview pane's animation clock stalls: everything reports playState "running" with
   currentTime 0, and a correctly applied rule reads as an identity matrix. Pin a keyframe with a
   negative animationDelay plus animationPlayState:'paused' and read getComputedStyle. For a
   transition, set style.transition='none', force `void el.offsetWidth`, then read.
+  Screenshots taken after scrolling the pane come back BLACK — the pane captures a stale frame.
+  Emulate a taller viewport with resize_window instead of scrolling, then screenshot at scrollY 0.
 
-  Step 2 is the only one that touches src/. Run both suites and report the new numbers:
+  Steps 2-4 touch src/. Add a check that pins the icon's rest state and the arrival's staging so
+  neither can be silently undone, then run both suites and report the new numbers:
       npm run build; node src/config/integration.audit.mjs
       node src/config/logicFixes.selfcheck.mjs
   Baseline today is 714/714 and 1000/1000.

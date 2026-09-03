@@ -1,6 +1,30 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-09-03 13:50 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **714/714 audit · 1000/1000 selfcheck** · branch `phase0-solid-ground`
+**Updated: 2026-09-03 14:40 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **714/714 audit · 1000/1000 selfcheck** · branch `phase0-solid-ground`
+
+## 🟠 2026-09-03 14:40 — THREE PANEL ARRIVALS ON A PHONE. **WAITING ON HIS PICK.**
+
+New artifact `1df504b7`. **Still no KPM app code touched** — counts above carried forward.
+
+⚠️ **The 13:50 entry answered the wrong question.** He asked for the intro and outro, meaning the
+PANEL's — press the icon, the Ponder panel arrives; press the X, it leaves. I built the ICON's.
+His correction: *"not the intro and outro of the icon bruh"*. Both readings were live and the ask
+did not separate them; presenting both instead of picking one silently would have saved the round.
+The icon work still stands, it just answered a smaller question.
+
+He specified it by analogy: the PC book flies out of its slot, opens, then shuts and flies back.
+He wants the phone's equivalent — *"different kind"*, high-tech, phone only.
+
+Three studies, same terminal, same six parts (housing, gold rim, edge meter, rail lamps, picture,
+text), so only the choreography differs. **01 Deploy** — the pad unfolds out of the icon: a point,
+a bar, then the slab drops open from the chip's corner (710ms in / 380 out). **02 Power on** —
+already there, wakes in place (720 / 270). **03 Slide and lock** — up off the bottom edge, rim
+lighting as it rises (560 / 260). Recommended: Deploy, the only one that keeps the book's contract
+of one object travelling from where you pressed.
+
+Also settled: **the pad had no close control.** An X now sits on its own status strip.
+
+📋 **`.claude/NEXT-SESSION.md` rewritten: his arrival pick, then the whole phone tutorial lift.**
 
 ## 🟠 2026-09-03 13:50 — HE PICKED THE DISPLAY. ITS INTRO AND OUTRO ARE BUILT.
 
