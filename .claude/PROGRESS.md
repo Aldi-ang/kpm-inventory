@@ -1,6 +1,30 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-09-03 09:20 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **714/714 audit · 1000/1000 selfcheck** · branch `phase0-solid-ground`
+**Updated: 2026-09-03 09:35 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **714/714 audit · 1000/1000 selfcheck** · branch `phase0-solid-ground`
+
+## 🟠 2026-09-03 09:35 — ROUND 10 ASK RECORDED. **NOTHING BUILT — HIS CALL, QUOTA AT 80%.**
+
+His instruction: *"make notes first and do later if quota not enough"*. No file changed except
+these notes. The artifact is still round 9.
+
+**His ask, verbatim:** *"i like the design but remove the zoom out and zoom in for intro and outro
+of that text too much animation make it norak and not elegant"*. Norak = tacky / overdone.
+
+**Already diagnosed — do not re-diagnose it tomorrow.** Round 9 left TWO entrance animations on
+the same moment: the panel flies in from depth while the text writes itself on. He likes the
+write-on and said so in the same sentence, so the panel's flight is the part that goes. The exact
+edit (both keyframe sets to opacity only, .17s out / .14s in, `OUT_MS`/`IN_MS` to match, and the
+stale comment above `panelOut` rewritten) is in the prompt and in the vault.
+
+**The process note worth keeping:** four rounds running were additive — each added a mechanism that
+was right on its own and removed nothing, so the motion budget crept until he named it. On any
+round that adds motion, ask what should come OUT.
+
+Audit and self-check counts carried forward unchanged (714/714, 1000/1000) — nothing under `src/`
+has been touched all day.
+
+📋 **`.claude/NEXT-SESSION.md` rewritten: remove the panel zoom. The riffle removal moved into
+the queue underneath it.**
 
 ## 🟠 2026-09-03 09:20 — TECH PAD ROUND 9 SHIPPED. **STILL NO KPM APP CODE TOUCHED.**
 
