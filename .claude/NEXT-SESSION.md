@@ -9,12 +9,16 @@ Build the phone tutorial: the panel arrival Aldi picks, the display icon, the ap
 pad sized for a phone. Every design question below is answered or is one question to him — none of
 it needs new design work, it is lifting finished CSS into React.
 
-FIRST — ASK WHICH ARRIVAL, AND DO NOT GUESS
-  Three studies: https://claude.ai/code/artifact/1df504b7-f3d9-412c-ae16-5924ec1cb80c
-    01 Deploy (recommended) — the pad unfolds out of the icon: point, bar, slab. 710ms in / 380 out
-    02 Power on — already there, wakes in place, no travel.                       720 / 270
-    03 Slide and lock — up off the bottom edge, rim lights as it rises.           560 / 260
-  Source with all three fully written: A-Brain/Brainstorm/assets/ponder-panel-arrival.html
+FIRST — ASK WHICH ENTRANCE, AND DO NOT GUESS
+  The EXIT is already locked: Deploy's. "deploy looks the best for the closing". The picture
+  squeezes to a scanline, the slab folds to a bar, the bar snaps back to the chip. 380 ms.
+  The ENTRANCE is the open question. Four of them, all using that same exit:
+    https://claude.ai/code/artifact/1df504b7-f3d9-412c-ae16-5924ec1cb80c
+      01 Unfold (the baseline he has seen) — point, bar, slab.        slab 280 / done 990
+      02 Surge (recommended) — slab lands dark, then light floods it. slab 130 / done 840
+      03 Assemble — rail from the right, meter from the left, lock.   slab 370 / done 990
+      04 Scan in — a bar crosses the screen and leaves the pad.       slab 300 / done 940
+  Source with all four fully written: A-Brain/Brainstorm/assets/ponder-panel-arrival.html
   Write-up: A-Brain/Brainstorm/2026-09-03_panel-arrival-animation.md
   Copy the winning keyframes. Do not redesign them.
 
@@ -24,6 +28,7 @@ WHAT IS ALREADY DECIDED
     https://claude.ai/code/artifact/d39f91fd-c2b2-4677-acda-3cdaebc2c34b
   - The lit colour is the app's amber #F59E0B, not the pad's pale #FFCE8F.
   - The pad gets an X on its own status strip. It had no close control before.
+  - The panel's EXIT is Deploy's, 380ms, and it does not change with the entrance pick.
   - Phone only. The PC keeps the book, riffle and all.
 
 THE WORK, IN ORDER

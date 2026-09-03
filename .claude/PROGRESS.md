@@ -1,6 +1,33 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-09-03 14:40 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **714/714 audit · 1000/1000 selfcheck** · branch `phase0-solid-ground`
+**Updated: 2026-09-03 15:25 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **714/714 audit · 1000/1000 selfcheck** · branch `phase0-solid-ground`
+
+## 🟠 2026-09-03 15:25 — THE EXIT IS LOCKED. FOUR ENTRANCES NOW. **WAITING ON HIS PICK.**
+
+Same artifact `1df504b7`, rewritten. **Still no KPM app code touched.**
+
+*"deploy looks the best for the closing but what about the intro?"* — he split the package. The
+exit is Deploy's and settled: picture squeezes to a scanline, slab folds to a bar, bar snaps back
+to the chip, 380ms. Every study now uses it, so only the way IN is being compared.
+
+**Why Deploy's own intro was the weak half:** it is the exit played backwards — point, bar, slab.
+That reads as undoing a close rather than as arriving, and it spends 280ms on geometry before a
+single part lights.
+
+Four entrances, two honest numbers each (slab on screen / last word written): **01 Unfold** the
+baseline, 280/990. **02 Surge** — the slab lands dark in 130ms and then one wave of light runs
+through it from the chip's corner, 130/840. **03 Assemble** — rail in from the right, meter from
+the left, rim flashes as it locks, 370/990. **04 Scan in** — a bright bar crosses and leaves the
+terminal behind it, 300/940.
+
+Recommended: **Surge.** Nothing moves after the first 130ms; the geometry settles and the lighting
+is the animation. Fastest to something readable, and no travel to get tired of.
+
+Three bugs fixed before publishing, all caught by rendering: the settle timer was shorter than the
+text write-on it waits for, so the last entries snapped on; the rail slid 25px instead of clearing
+its own width; and the timing labels claimed figures the keyframes did not produce.
+
+📋 **`.claude/NEXT-SESSION.md` updated: the entrance pick, then the whole phone tutorial lift.**
 
 ## 🟠 2026-09-03 14:40 — THREE PANEL ARRIVALS ON A PHONE. **WAITING ON HIS PICK.**
 
