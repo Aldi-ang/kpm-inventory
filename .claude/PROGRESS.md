@@ -1,6 +1,32 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-09-03 13:05 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **714/714 audit · 1000/1000 selfcheck** · branch `phase0-solid-ground`
+**Updated: 2026-09-03 13:50 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **714/714 audit · 1000/1000 selfcheck** · branch `phase0-solid-ground`
+
+## 🟠 2026-09-03 13:50 — HE PICKED THE DISPLAY. ITS INTRO AND OUTRO ARE BUILT.
+
+New artifact `d39f91fd`. **Still no KPM app code touched** — counts above carried forward.
+
+His words: *"display look the cleanest so choose that"* — he took the quietest of the four, not
+the recommended one, and named quietness as the reason. Then: *"now what about the intro and outro
+make sure our technological high tech theme stays intact"*.
+
+The icon is a screen, so its entrance and exit are a screen's. **Outro:** the picture squeezes to
+one bright scanline (90ms), the scanline snaps to a point and blinks out (100ms) — a CRT
+power-off, handing the screen to the panel. **Intro:** point opens to a scanline, scanline opens
+to the screen (240ms), *then* the four lines write in (335ms). Three beats in a row, never two at
+once. The bezel never moves, so nothing in the top bar shifts and the chip stays pressable.
+
+Nothing new was invented for it — the CRT collapse and the raster write-on are the two ideas the
+terminal already had, put in an order. The page shows the whole loop against a stand-in panel, so
+the handoff is judged as one system.
+
+Two defects were found by rendering it, both invisible in the source: the collapse beam was inside
+the element that scales, so it squashed to 0.045px and never rendered; and rest showed one lit
+line while the boot wrote four, so three lines popped out at the end. Both fixed and re-verified
+by pinning the keyframes.
+
+📋 **`.claude/NEXT-SESSION.md` rewritten: lift the finished CSS into the app — amber swap, icon
+into `PonderBookButton`, phone sizing. No design questions left in it.**
 
 ## 🟠 2026-09-03 13:05 — FOUR TUTORIAL ICONS ON A BENCH. **WAITING ON HIS PICK.**
 

@@ -5,56 +5,60 @@ Rewrite this file before you finish. One job only, never a menu.
 ---
 
 ```
-Ship the tutorial icon Aldi picked, in the app's amber, and size the tech pad for the phone.
-His ask, 2026-09-03: "change the light amber to normal glowy amber that we use on our theme then
-integrate it now to the app for phone sizing, but before that i want to see the animation icon for
-this panel replacing the book first, make sure its animation looks gamified and cool and of course
-looks like this panel".
+Put the display icon into the app, swap the panel to the app's amber, and size the pad for the
+phone. Aldi picked the icon on 2026-09-03 ("display look the cleanest so choose that") and
+approved its intro and outro in the same conversation. Nothing here is still a design question —
+it is all lifting finished CSS into React and sizing.
 
-FIRST — ASK HIM WHICH ICON, AND DO NOT GUESS
-  Four candidates are on the bench: https://claude.ai/code/artifact/a60961be-28e2-4887-9129-cf723689d529
-  01 The cap (recommended) · 02 The display · 03 The meter · 04 The micropad
-  Source: A-Brain/Brainstorm/assets/ponder-icon-bench.html — every candidate's exact CSS is in
-  there, already written and already verified on screen, so building the winner is a lift, not a
-  design job. Full write-up with costs: A-Brain/Brainstorm/2026-09-03_tutorial-icon-candidates.md
-  If he picks 03 (the meter), it shows read-progress at rest, so it has to be WIRED to sections
-  actually read or the icon lies. That is a real extra job — say so before starting.
+WHERE THE FINISHED CSS IS
+  A-Brain/Brainstorm/assets/ponder-icon-handoff.html — the icon, its CRT outro, its boot intro,
+  the rest state, Lite Mode and reduced-motion, all written and all verified on screen.
+  Live: https://claude.ai/code/artifact/d39f91fd-c2b2-4677-acda-3cdaebc2c34b
+  Write-up with the timings table: A-Brain/Brainstorm/2026-09-03_tutorial-icon-candidates.md
+  Copy the rules, do not redesign them.
 
-THEN, IN HIS ORDER
-
-  1. THE AMBER. A-Brain/Brainstorm/assets/ponder-field-terminal.html currently declares
+  1. THE AMBER, on the panel. A-Brain/Brainstorm/assets/ponder-field-terminal.html declares
        --lit:#FFCE8F; --lit-dim:rgba(255,206,143,.40); --lit-hot:#FFE7C4;
-     Swap to the app's own amber, src/styles/theme.css --amber:#F59E0B:
+     Swap to the app's own amber (src/styles/theme.css, --amber):
        --lit:#F59E0B; --lit-dim:rgba(245,158,11,.38); --lit-hot:#FFC24D;
-     Grep the pad for raw rgba(255,206,143,...) and rgba(255,231,196,...) too — the lamp bloom,
-     the segment energise and the key glow all hardcode those, so the tokens alone will not do it.
-     Ink on the latched face stays #2A1A08 — measured 7,82:1 on #F59E0B, it holds.
+     ⚠️ The tokens alone will NOT do it. Grep the pad for raw rgba(255,206,143,...) and
+     rgba(255,231,196,...) — the lamp bloom (@keyframes lampOn), the segment energise
+     (@keyframes segOn) and the .key.on glow all hardcode those. Ink on the latched face stays
+     #2A1A08; it measures 7,82:1 on #F59E0B.
      Republish to the SAME artifact: https://claude.ai/code/artifact/ad98ec70-ede4-4866-95f6-aa553c9f0ef0
 
-  2. THE ICON, into the app. Replace BookGlyph in src/ponder/PonderBook.jsx (it starts around
-     line 186; PonderBookButton at :259 renders it inside a kpm-chip). The chip, its label and its
-     flight-to-the-Library behaviour all STAY — only the glyph changes.
+  2. THE ICON, into src/ponder/PonderBook.jsx. Replace BookGlyph (starts ~line 186) with the
+     display glyph. PonderBookButton at :259 keeps its chip, its label and its Library wiring.
+     The book's `visibility: hidden` trick while `libOpen || bookShutting` becomes the CRT outro
+     instead: the bezel STAYS in the bar and only the picture collapses, so nothing in the top bar
+     shifts. Boot it back when the panel closes — that is what `bookShutting` already tracks.
+     Timings: outro 190ms, panel in 140ms, panel out 170ms, intro 240ms open + 335ms write.
      ⚠️ integration.audit.mjs:4290 asserts PonderBookButton is mounted in BiohazardTheme. Leave
-     that mount alone. Add a check that pins the new glyph's idle state and its press, so a future
-     session cannot silently put a book back.
+     that mount alone. ADD a check that pins the icon's rest state (four lines written, clip-path
+     reset) and the fact that the bezel does not transform, so a future session cannot put a book
+     back or reintroduce a bar-shifting icon.
 
-  3. THE PAD, for the phone. It is 424px wide and 880px tall with min-height 540px, sized for a
-     desk. Decide what it does under ~380px before writing anything, and check the pad's own Lite
-     Mode and reduced-motion blocks still cover whatever you add.
+  3. THE PAD, for the phone. It is width:min(424px,100%), height:min(880px,...) with
+     min-height:540px — sized for a desk. Decide what it does under ~380px before writing
+     anything, and check the pad's Lite Mode and reduced-motion blocks still cover it.
 
-THE TRAPS
-  - Idle does not animate. Whatever he picked sits in the top bar on every screen; motion belongs
-    on hover and on the press only. He called a resting animation "norak" on 2026-09-03.
-  - The bench escapes every non-ASCII character on purpose (— in JS, &mdash; in markup). The
-    local theme-lab server sends no charset, so raw em-dashes render as mojibake there while
-    looking fine in the artifact. Keep the escapes.
-  - The preview pane's animation clock stalls: every animation reports playState "running" with
-    currentTime 0 and a correctly applied rule reads as an identity matrix. To verify a keyframe,
-    pin it with a negative animationDelay plus animationPlayState:'paused' and screenshot that.
-    To verify a transition, set style.transition='none', force `void el.offsetWidth`, then read
-    getComputedStyle.
-  - Serving it to look at: copy into the gitignored dist/ of kpm-inventory, preview_start the
-    "theme-lab" server, open http://localhost:4180/<file>.html, delete the copy when done.
+THE TRAPS — both of these already bit once, in the file you are copying from
+  - A collapse beam drawn INSIDE the element that scales gets scaled with it. The tube squeezes
+    to scaleY(.045), so a 1px beam inside it becomes 0.045px and never renders. The beam is a
+    SIBLING of the tube. Keep it that way.
+  - Rest must be exactly where the boot lands. The first version rested on one lit line while the
+    boot wrote four, so three lines vanished the instant the animation ended. The write cools to
+    the dim burn level and rest shows all four. Do not "tidy" that back to one line.
+  - Nothing animates at rest. The icon sits in the top bar on every screen; motion belongs to
+    hover, the press, and the handoff only.
+  - Lite Mode must reset BOTH transform and clip-path on the glyph, or the icon renders as an
+    invisible slit with no lines in it.
+
+VERIFYING MOTION HERE
+  The preview pane's animation clock stalls: every animation reports playState "running" with
+  currentTime 0, and a correctly applied rule reads as an identity matrix. Pin a keyframe with a
+  negative animationDelay plus animationPlayState:'paused' and read getComputedStyle. For a
+  transition, set style.transition='none', force `void el.offsetWidth`, then read.
 
   Step 2 is the only one that touches src/. Run both suites and report the new numbers:
       npm run build; node src/config/integration.audit.mjs
