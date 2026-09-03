@@ -1,136 +1,62 @@
-# NEXT SESSION — read this, then `.claude/PROGRESS.md`. Read no code to orient.
+# Next session — copy the block below, paste it, go
 
-**Written 2026-09-02 17:43 WIB. 714/714 audit · 1000/1000 selfcheck. Branch `phase0-solid-ground`.**
-
-## 📋 COPY THIS — the whole prompt, nothing else on this page needs pasting
-
-```
-/alucard
-
-Build the tech-pad draft for the KPM Ponder tutorial on phones. The design is LOCKED - read
-A-Brain/Brainstorm/2026-09-02_phone-tutorial-shell.md, the section headed "THE SPEC", and build
-it. Do not explore a fourth time and do not offer me a menu; I approved this direction already.
-
-It is a field terminal, not a book: milled slate housing, inset display, gold anodised edges,
-no paper/leather/cover/spine/fold. The section rail down the RIGHT edge is the hero. Panels
-slide forward in real depth, never rotate. Tilt-reactive. ONE progress meter on the left edge.
-Futuristic in FORM only - no cyan, teal, electric blue or green anywhere, including for glow.
-
-Use the real 17 sections from src/ponder/sections.js, put a Lite Mode toggle in it, and publish
-it as an artifact for me to open on my iPhone. Change no KPM app code until I approve it.
-
-Once I approve, the same pass also removes the riffle from the PC book - a ribbon jumps straight
-to its chapter instead of turning N pages. Details are in this file below the paste block.
-```
-
-## First command
-
-```
-npm run build; node src/config/integration.audit.mjs; node src/config/logicFixes.selfcheck.mjs
-```
-
-PowerShell: `;` not `&&`. **Quote BOTH numbers.** The audit refuses to run against a stale `dist/`.
-
-## Reaching the app from his phone — settled, do not re-derive
-
-⚠️ **THE PC IS ON TWO DIFFERENT NETWORKS, and only one of them is the one that was set up.**
-Ethernet: **192.168.1.143**, gateway 192.168.1.1 — reserved by MAC and registered in Firebase.
-Wi-Fi: **192.168.100.155**, gateway **192.168.100.1** — a DIFFERENT router, no reservation, not in
-Firebase. `192.168.1.144` no longer exists; a phone pointed at it gets a white screen. **Read
-`ipconfig` before quoting an address; the reservation covers one router only.** `npm run dev` is
-**https only** — `https://192.168.1.143:5173`, tap through the self-signed warning. **A change needs
-two reloads on the phone.** His test phone is an **iPhone**, so camera barcode scanning is
-impossible there — the typed shipment number is that path.
-
-Ponder lab (serve on **localhost only**, a 0.0.0.0 bind is refused):
-`npx vite build --config tools/ponder-lab.config.mjs; python -m http.server 4187 --bind 127.0.0.1 -d dist-ponderlab`,
-then **`/tools/ponder-lab.html?book`** · `?book&lite` · `?places` · `?gudang&tier=AREA_ADMIN` ·
-`?scene=…&step=N`.
-
-⚠️ **`resize_window` before reading any rect** — the pane opens at a zero viewport and still returns
-plausible numbers. ⚠️ **The pane's animation clock only advances when it PAINTS**: an animation sits
-at `currentTime: 0` forever between calls, so take repeated screenshots to pump frames, or the turn
-looks broken when it is fine.
+Rewrite this file before you finish. One job only, never a menu.
 
 ---
 
-## 🔴 THE ONE JOB — build the TECH PAD draft, then ship it with the PC riffle removal
+```
+Remove the riffle from the PC book. Pressing a ribbon must land on that chapter immediately
+instead of turning N pages on the way there. This is Aldi's decision from 2026-09-02, not a
+proposal — do not re-argue it. The page turn itself STAYS: moving between two neighbouring
+sheets keeps its 3D fold and its TURN_FULL_MS duration. Only the multi-page run dies.
 
-**The design is LOCKED. Do not explore a fourth time — build it.**
-Spec: `A-Brain/Brainstorm/2026-09-02_phone-tutorial-shell.md`, the section headed **THE SPEC**.
-It holds the object, the five moves in priority order, the exact palette, the five rules a draft
-must obey, and everything rejected. Read that, then build the artifact.
+WHERE IT IS
+  src/ponder/PonderBook.jsx:763 — `rateRef.current = riffle(posRef.current, t).ms`
+  This line is inside `pickSection`, which today does not set a position at all: it starts a
+  run and lets the animation loop walk there. Jumping from section 1 to section 17 turns
+  sixteen sheets, roughly 700ms before the answer is on screen.
+  src/ponder/pageModel.js:87 — `riffle()` itself, which plans how many sheets to turn and how
+  fast each one goes.
 
-✅ **His approval, and the colour question is CLOSED:** *"well be creative just as long as we use
-futuristic theme for this u made and i can adjust later"*. Futuristic in **form** — depth, precision,
-mechanism — and **never in colour**. 🔴 **No cyan, teal, electric blue or green, including for glow.**
-Slate housing, warm near-black display, bone ink, KPM gold/amber accent.
+WHAT THE FIX IS
+  `pickSection` should seek: set the position to the target sheet directly, no run. A
+  single-sheet move (next / prev) must still go through the normal turn and still take
+  TURN_FULL_MS. Remove only what your change orphans.
 
-### The one-line brief
+THE TRAP — read this before you delete anything
+  `riffle()` is pinned by checks that go red the instant it disappears, and deleting those
+  checks to make the suite pass is the wrong fix.
+    src/config/integration.audit.mjs:4766 asserts that literal line exists; its reason is at 4771.
+    src/config/logicFixes.selfcheck.mjs:15 imports `riffle, TURN_FULL_MS, RIFFLE_MIN_MS`, and
+    roughly lines 4156-4220 are a block of riffle arithmetic checks.
+  Every one of those must be REPLACED by a check that pins the NEW behaviour — pickSection
+  seeks directly, no run is started, a single-sheet move still takes TURN_FULL_MS — never
+  simply removed. A check that no longer exists cannot tell you the riffle came back.
 
-A hardened **field terminal** a gudang worker would carry: milled slate housing, inset display, gold
-anodised edges. **No paper, leather, cover, spine or fold** — those obligations are exactly what kept
-breaking on a phone.
+WHEN YOU ARE DONE
+  Both totals change once checks are swapped. Run them and report the new numbers before you
+  commit; do not carry the old 714/1000 forward.
+    npm run build; node src/config/integration.audit.mjs
 
-1. **The section rail is the hero** — the fore-edge index reborn as milled key-caps down the RIGHT
-   edge, thumb-reachable, each with its code and a state light. Three rounds running, this is the
-   only navigation idea he has praised on sight.
-2. **Panels move in real depth** — slide forward on Z and settle, never rotate. The 3D he refuses to
-   give up, with no hinge to owe.
-3. **Tilt-reactive** — carried straight over from the manual; the one thing a desk cannot do.
-4. **ONE progress meter**, an illuminated track down the left housing edge. The lesson that killed
-   the ribbon: one meter, one fact.
-5. **Readout chrome** — mono labels, tabular numbers, hairline rules. Precision, not glow.
+Then rewrite .claude/NEXT-SESSION.md with the next single job.
+```
 
-**Must obey:** a Lite Mode toggle in the artifact (judged, not promised) · no glow-as-crutch · the
-real 17 sections from `src/ponder/sections.js` · every control in thumb reach on the right · it has
-to survive a still frame, because he judges on a paused phone.
-
-**Then he reacts** — *"i can adjust later"*. Build the app change only once he approves the draft.
-
-### 🔴 Ships in the SAME pass, already decided: take the riffle out of the PC
-
-A ribbon jumps straight to its chapter instead of turning N pages. Remove `riffle()`, `RIFFLE_*` and
-the plan from `src/ponder/pageModel.js`; in `PonderBook.jsx`, `seek()` stops setting a rate and the
-step effect goes. **The page turn, the 3D fold and the drag are untouched.** Group 56's
-uncapped-riffle check and the nine riffle assertions in `logicFixes.selfcheck.mjs` come out with it —
-delete them, do not loosen them.
-
-⚠️ **Six traps this file has already charged for.**
-1. `new Map()` here resolves to the lucide Map ICON, not the constructor.
-2. A parent's `translateZ` is applied AFTER the child's rotation — put a moving element's depth on
-   the element that rotates.
-3. `getBoundingClientRect()` returns PAINTED geometry. A book measured mid-flight read 17×36 instead
-   of 351×731 and produced a departure that went nowhere. Finish an element's own animations first.
-4. A "still broken" report after a fix is not evidence the fix was wrong — reproduce from scratch.
-   Two causes with one symptom happened here; reverting the first fix would have lost both.
-5. The Browser pane does not paint between tool calls: `requestAnimationFrame` never fires (45s
-   timeout) and animations sit at `currentTime: 0`. Freeze a motion instead — `setTimeout(30)` then
-   `getAnimations().forEach(a => { a.pause(); a.currentTime = N })`.
-6. A literal duplicating a named constant is a silent override — a hardcoded 90ms floor beat the
-   named 60 and every check still passed, because the checks read the name.
-
-⚠️ **He tests on a PWA.** A change needs a hard reload twice on the phone or the service worker
-serves the old bundle — say so before he reports something unfixed.
+---
 
 <details>
-<summary>Queued — do not start these</summary>
+<summary>Queue — do NOT paste these; promote one only when the job above is finished</summary>
 
-- **The Ponder caption static on phones, moving on PC.** Decided 2026-08-31, never built. Measure at
-  375x812 first: the near-caption already bails to the bottom bar (`if (boxW > W * 0.x) return null;`
-  in `PonderOverlay.jsx`), so the phone may be most of the way there. The caption is placed in `top`,
-  never a transform — group 56 asserts it.
-- **G1 + G2, the money item.** `batchNo` at `RestockVaultView.jsx:1944`, meter at `:455`, written at
-  `:656`, dies at the HQ door because `branches/{loc}/inventory/{productId}` holds one `stock`
-  number. 🔴 **Ask him the staleness threshold in days first.**
-- 🔴 **The label print-and-scan test is still not done.** Not possible on the iPhone.
-- **An arrived box that is never counted has no alert.**
-- **The two colour faults, app-wide.** 90 uncoloured `placeholder=` in 18 files, ~107 bare
-  `text-orange` used as ink in 15. **`border-orange` and `bg-orange` stay — those are edges.**
-- **G5** shrinkage · **G4** records joined by name not id · **Siapkan Pengiriman, untested.**
-- **The quota meter is FIXED, do not re-investigate.** Id `76c7cf4f-4c24-4984-aada-3aa91f53a148` in
-  `C:/Users/ASUS/.claude/9router-claude-id.txt` — note the `.claude/`.
+### Queued 1 — does the pad follow the app's light mode?
+
+The Ponder tech pad is dark only, and the locked palette has no light values for it. Asked twice,
+still not answered. Ask him before building anything: does the pad get a light material of its own
+(the anodised-faceplate route the sidebar took), or does it stay dark in both themes on purpose?
+
+### Queued 2 — the tech pad's active key-cap dot, if he wants it brighter
+
+Shipped as a dense rust core (`#6B2800`) inside a bright cream socket ring, which reads as a lit
+lamp against the gold cap. It follows his rule that a lamp on a pale plate goes darker and denser,
+not brighter. If he says it still reads dead, the alternative is a cream-white core with a dark
+bezel — brighter, but it breaks that rule, so it needs his word first.
 
 </details>
-
-**Before you finish: rewrite this file with the next single job.**

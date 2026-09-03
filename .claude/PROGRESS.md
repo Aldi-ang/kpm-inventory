@@ -1,6 +1,101 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-09-02 17:43 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **714/714 audit · 1000/1000 selfcheck** · branch `phase0-solid-ground`
+**Updated: 2026-09-03 07:35 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **714/714 audit · 1000/1000 selfcheck** · branch `phase0-solid-ground`
+
+## 🟠 2026-09-03 07:35 — TECH PAD ROUND 6 SHIPPED. **STILL NO KPM APP CODE TOUCHED.**
+
+All four asks are live at the same artifact URL (`ad98ec70`), draft source
+`A-Brain/Brainstorm/assets/ponder-field-terminal.html`, vault commit `672344d`.
+
+**His language ruling, verbatim:** *"only english the label, all the explanation should be in
+indonesia"*. Chrome is now SECTION / CONTENT / READY / SOON / MODULES READY; every title, blurb
+and description stays Indonesian. Recorded in `Wiki/Concepts/Aldi's Design Taste.md`.
+
+**The one thing worth knowing:** ask 4 had a SECOND cause that the known one hid. Holding opacity
+across the transform was necessary and not sufficient — the old ease-out curve spent 99% of the
+panel's travel before it was lit, so it finished moving before it finished lighting. Both the
+keyframes and the curves were replaced. Measured on the live page after the fix: full opacity now
+lands at scale .961 with 60% of the flight still to run.
+
+Audit and self-check counts are carried forward unchanged (714/714, 1000/1000) — not re-run,
+because no file under `src/` was touched this session.
+
+📋 **Next job is in `.claude/NEXT-SESSION.md`: remove the riffle from the PC book.**
+
+## 🟠 2026-09-02 22:05 — ROUND 5 ASKS RECORDED, HELD FOR TOMORROW. **NOTHING BUILT TONIGHT.**
+
+His instruction: *"i want u to do this tomorrow for now just make notes first ... save this for
+tomorrow prepare notes and prompt i want to sleep"*. No file was changed except these notes.
+
+**His four asks, verbatim:** *"i want the light on the left and dot light on the right to go along
+together, if press that section then both left and right lights will turn on then change seksi into
+section and i dont think we need dibaca here so just delete it. and i want to see the animation
+when u press this panel because there should be futuristic animation for intro and outro when we
+press the ponder panel right?"*
+
+**Two of the four already have a located cause — do not re-diagnose them tomorrow:**
+- The lights disagree because `.key.on .lamp` repaints the active cap's dot near-black to stay
+  legible on gold, so the right dot goes OUT as the left segment comes ON.
+- The panel animation is present and correct and invisible: `opacity .16s` finishes in about half
+  the time `transform .30s` takes, so the depth flight has no lit frame to be seen in.
+
+**One question he has to answer first:** renaming SEKSI to SECTION leaves ISI, SIAP, SEGERA and
+MODUL SIAP in the same strip — bilingual chrome. A recommendation is written down for him.
+
+📋 **Prompt ready in `.claude/NEXT-SESSION.md`** — one block, copy and go. The riffle removal and
+the light-mode question moved into the queue below it. Draft source is now durable at
+`A-Brain/Brainstorm/assets/ponder-field-terminal.html` (`bd94663`); the scratchpad copy dies with
+this session. Notes: `24167d7`.
+
+## 🟠 2026-09-02 21:40 — TECH PAD ROUND 5. **HIS THREE NOTES APPLIED. STILL NO KPM CODE TOUCHED.**
+
+Same URL, republished: <https://claude.ai/code/artifact/ad98ec70-ede4-4866-95f6-aa553c9f0ef0>
+
+His verdict, verbatim: *"the backlight is too much i think, i dont think its convenience to look
+at in the long term maybe just remove the backlight. and i want the section button to be 1 full
+word instead so its easier to read right, the lowkey 3D looks kinda cool tbh"*
+
+- **Backlight deleted, not dimmed.** The sweeping light band is gone. The milled grain moved to
+  Z 0 and first in the DOM so it stays on the housing and never crosses the words. Tilt still
+  reads through the housing rotation, the rail/display parallax and the rim gradient.
+- **Rail prints whole words** — `short` from `sections.js` verbatim (Command, Restock, Setoran,
+  Piutang). The invented three-letter codes are gone, and with them the round-4 icon question.
+  Rail 58px → 80px.
+- **Lowkey 3D kept**, and it is now the only motion left. First unprompted praise for motion in
+  this project; recorded in `Wiki/Concepts/Aldi's Design Taste.md` (`dd0674f`).
+- Two unasked, both small: the readout's scrollbar is themed instead of the OS grey bar, and the
+  panel's duplicate `SEKSI n / 17` eyebrow is gone — the status strip already prints it.
+
+🔴 **WAITING ON ALDI — does the pad ship, and does the single dark theme stay?** Riffle removal
+is still queued behind it. Brief in `.claude/NEXT-SESSION.md`.
+
+## 🟠 2026-09-02 21:15 — TECH PAD BUILT AND PUBLISHED. **AWAITING HIS VERDICT. NO KPM CODE TOUCHED.**
+
+**The draft:** <https://claude.ai/code/artifact/ad98ec70-ede4-4866-95f6-aa553c9f0ef0> — "Ponder
+Field Terminal". Built from THE SPEC in `A-Brain/Brainstorm/2026-09-02_phone-tutorial-shell.md`,
+no fourth exploration. Milled slate housing, gold anodised rim, inset display; 17 real sections
+from `src/ponder/sections.js` as key-caps down the RIGHT edge; panels slide forward on Z and
+settle, nothing rotates; tilt via `deviceorientation` behind a TILT cap (iOS needs a tap);
+ONE 17-segment progress track down the LEFT edge; Lite Mode toggle beside it.
+
+**Rendered, not claimed.** Normal and Lite states were both screenshotted at phone width, and
+section 02 was opened by pressing its rail cap. A bug was caught that only a frame could catch —
+`.display` at `translateZ(-9px)` inside the `preserve-3d` housing painted *behind* its own
+parent's background, so the readout was invisible while the rail and meter drew correctly.
+Fixed by putting the display at Z 0 and lifting the light glaze to `+2px`.
+
+**Two deliberate deviations he should judge:** a milled code plate (`RST`) instead of the lucide
+icons `sections.js` carries — an instrument reads in codes, and it drops a CDN that fails
+silently; and a single dark theme, because the spec's palette has no light values. Both reversible.
+
+🔴 **WAITING ON ALDI — his verdict on the artifact.** The riffle removal from the PC book is
+queued behind it and ships in the same pass. Full brief in `.claude/NEXT-SESSION.md`.
+
+## ⚪ 2026-09-02 20:55 — SIDE SESSION (7 Days to Die). No KPM file touched.
+
+Timestamp only. The lone working-tree change is `.claude/settings.local.json`, a permission
+auto-grant from a modding session outside this repo. Nothing above or below was rewritten.
+Game notes live at `%APPDATA%DaysToDie\MODS-NOTES.md`, not here.
 
 ## 🟠 2026-09-02 17:43 — TECH-PAD SPEC LOCKED. **BUILD IT NEXT. NO KPM CODE TOUCHED ALL SESSION.**
 
