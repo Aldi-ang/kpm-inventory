@@ -1,6 +1,30 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-09-03 12:20 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **714/714 audit · 1000/1000 selfcheck** · branch `phase0-solid-ground`
+**Updated: 2026-09-03 13:05 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **714/714 audit · 1000/1000 selfcheck** · branch `phase0-solid-ground`
+
+## 🟠 2026-09-03 13:05 — FOUR TUTORIAL ICONS ON A BENCH. **WAITING ON HIS PICK.**
+
+New artifact `a60961be` (the pad stays at `ad98ec70`). **No KPM app code touched** — counts above
+carried forward, not re-run.
+
+He asked for three things and set the order himself: *"change the light amber to normal glowy
+amber ... then integrate it now to the app for phone sizing, but before that i want to see the
+animation icon for this panel replacing the book first"*. The icon gates the other two, so only
+the icon was built.
+
+Four candidates, all 22px, all built out of the pad's own parts — boxes and inset shadows, no SVG
+— shown at true size in a top-bar mock and at 4x, with PLAY buttons so every state is reachable on
+a phone where there is no hover. Slow-motion 3x/6x and a Lite toggle are on the bench too.
+Recommended: **the cap**, because its press is the latch he approved yesterday.
+
+The amber swap he asked for is already applied on the bench: `--lit` is the app's `#F59E0B`, not
+the pad's pale `#FFCE8F`, with a side-by-side and the measured 7,82:1 ink contrast. So his pick
+judges the icon and the amber in one look.
+
+Skipped the workflow fan-out — his standing rule, 2026-08-20, outranks the ultracode default.
+
+📋 **`.claude/NEXT-SESSION.md` rewritten: ship the picked icon + the amber + phone sizing, in his
+order.** Riffle removal moved back into the queue underneath it.
 
 ## 🟠 2026-09-03 12:20 — THE PANEL ZOOM IS OUT. ROUND 10 SHIPPED, SAME ARTIFACT URL.
 
