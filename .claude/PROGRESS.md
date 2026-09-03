@@ -1,6 +1,38 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-09-03 08:05 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **714/714 audit · 1000/1000 selfcheck** · branch `phase0-solid-ground`
+**Updated: 2026-09-03 08:40 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **714/714 audit · 1000/1000 selfcheck** · branch `phase0-solid-ground`
+
+## 🟠 2026-09-03 08:40 — TECH PAD ROUND 8 SHIPPED. **STILL NO KPM APP CODE TOUCHED.**
+
+Same artifact URL (`ad98ec70`). Vault commit `bb2b332`.
+
+**His words:** *"dont make the button floating like that ... just make the button that pressed and
+stays down until other button is press. and when not turning on all the light should stays black
+on default and lights up light amber when section pressed"*
+
+**Round 7 pushed the depth the wrong way.** A raised cap reads as *available*; a latched one reads
+as *chosen*. The active cap is now sunk (`translateZ(-7px) scale(.984)`, inset top shadow, no drop
+shadow) and measures 78.3x27.6 against a neighbour's 80.9x28.5 — smaller, so genuinely further
+away. In round 7 the same pair was 220.7x107.0 against 210.2x88.4.
+
+**One lit colour.** `--lit:#FFCE8F` now covers the meter cells, the key lamps, the latched cap's
+face and the strip's live dot; unlit is `#000`, not dark grey. This also dissolved the lamp
+legibility problem that three rounds failed to fix — the lamp was never the issue, the gold cap
+under it was.
+
+⚠️ **The stalled-timeline trap fired a second time and produced a WRONG conclusion**, so read this
+before debugging any CSS state here: the latch measured as an identity matrix on a clean load with
+the active cap's rect identical to its neighbours', which looks exactly like a rule that is not
+applying. It was applying — `.key` has `transition:transform`, the class flips after the element
+is styled, and a stalled clock parks that transition at its start value permanently. **The check
+that ignores the clock:** `style.transition='none'`, then `void el.offsetWidth`, then
+`getComputedStyle`. For keyframes, pin with a negative `animationDelay` plus
+`animationPlayState:'paused'`.
+
+Audit and self-check counts carried forward unchanged (714/714, 1000/1000) — nothing under `src/`
+was touched.
+
+📋 **Next job unchanged in `.claude/NEXT-SESSION.md`: remove the riffle from the PC book.**
 
 ## 🟠 2026-09-03 08:05 — TECH PAD ROUND 7 SHIPPED. **STILL NO KPM APP CODE TOUCHED.**
 
