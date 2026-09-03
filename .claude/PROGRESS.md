@@ -1,6 +1,31 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-09-03 15:25 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **714/714 audit · 1000/1000 selfcheck** · branch `phase0-solid-ground`
+**Updated: 2026-09-03 16:10 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **714/714 audit · 1000/1000 selfcheck** · branch `phase0-solid-ground`
+
+## 🟠 2026-09-03 16:10 — ✅ **THE DESIGN PHASE IS CLOSED. SCAN IN, SLOWED.** NEXT IS THE BUILD.
+
+Same artifact `1df504b7`, rewritten to the one chosen animation plus a pace dial. **Still no KPM
+app code touched all day** — 714/714 and 1000/1000 carried forward, not re-run.
+
+His words: *"scan in looks cool tbh but make both intro and outro of the animation slow, not too
+fast so that user eyes can enjoy the animation then now we can move on"*.
+
+**Everything is now decided:** display icon · CRT collapse out, boot in · panel arrives with Scan
+in, leaves with Deploy's shut · both halves slowed · `#F59E0B` · an X on the pad's status strip ·
+phone only. All of it is written and verified in the three prototype files.
+
+**Pace is one multiplier**, `--t`, so a base value times that variable scales the whole sequence
+and its internal rhythm together — slowing it never turns a cascade into separate blinks. The page
+ships a slider plus four presets and opens at **1,90×**: bar crosses in 570ms, last word written
+at 1771ms, exit 722ms. ⚠️ Flagged once, not argued: 1,8s to the last word is long for a UI. He
+asked for it and a tutorial opens rarely, so it ships; the pace is one dial if it ever grates.
+
+**He took the option I argued against, twice in one day** — the display icon over the key cap, and
+Scan in over Surge. The rule is now in the taste file: he optimises for *watchability*, not
+time-to-useful. Stop pricing rare transitions in milliseconds-to-readable.
+
+📋 **`.claude/NEXT-SESSION.md` rewritten: build the phone tutorial. No design questions left in
+it — amber, icon, panel arrival, phone sizing.**
 
 ## 🟠 2026-09-03 15:25 — THE EXIT IS LOCKED. FOUR ENTRANCES NOW. **WAITING ON HIS PICK.**
 
