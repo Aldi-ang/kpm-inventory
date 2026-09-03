@@ -1,6 +1,34 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-09-03 17:57 WIB (🔧 7 Days to Die session — no KPM code touched)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **714/714 audit · 1000/1000 selfcheck** · branch `phase0-solid-ground`
+**Updated: 2026-09-03 18:10 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **718/718 audit · 1000/1000 selfcheck** · branch `phase0-solid-ground`
+
+## 🟠 2026-09-03 18:10 — ✅ **THE PHONE TUTORIAL IS BUILT AND SHIPPED.** `37cbfd5` · **718/718 + 1000/1000**
+
+*"cinematic look the best and now u can integrate it"* — done, and the tree is clean. The dirty
+files the 🔧 7DTD entry below flagged at 17:57 were this job in flight; they are committed now.
+
+**A phone (≤767px) opens the field terminal.** `src/ponder/PonderPad.jsx` + `src/ponder/pad.css`,
+both new. Anything wider keeps the book untouched, riffle and all — his scope was *"its for phone
+only"*, and a tablet is not a phone.
+
+Scan in on open, Deploy's shut on close, pace **2,5** held in one variable (`--pp-t` in the CSS,
+`PACE` in the JS, pinned equal by a check). The app's amber `#F59E0B` throughout — the tokens
+alone did not do it, `lampOn`/`segOn`/`.key.on` hardcoded the old pale values. An X on the pad's
+status strip. The read-meter is in-session only, never stored.
+
+**The icon follows what it opens** — display glyph on a phone, leather book on a desk. That call
+was mine, not his; it is the cheapest self-consistent reading and one line to reverse.
+
+**Two bugs only rendering could find.** The panel's own write-on was unscoped, so it also matched
+during the arrival and RESTARTED from its `backwards` 0% frame when the arrive class came off —
+the pad settled with the title on screen and every other line clipped to zero for ~600ms. And the
+ponder lab had no launch entry, so the harness built to view Ponder without the vault gate could
+not be started; it is `ponder-lab` on 4190 now.
+
+Four checks added to group 56, none removed. The book's shut-and-fly check was UPDATED to carry
+the `!phone` guard rather than deleted. Verified in the lab at 375px and 1100px, not from source.
+
+📋 **`.claude/NEXT-SESSION.md` rewritten: remove the riffle from the PC book.**
 
 ## 🔧 2026-09-03 17:57 — 7DTD SESSION. **ZERO KPM FILES CHANGED BY ME.** Read this before blaming it for the dirty tree.
 
