@@ -1,6 +1,22 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-09-03 16:10 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **714/714 audit · 1000/1000 selfcheck** · branch `phase0-solid-ground`
+**Updated: 2026-09-03 17:57 WIB (🔧 7 Days to Die session — no KPM code touched)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **714/714 audit · 1000/1000 selfcheck** · branch `phase0-solid-ground`
+
+## 🔧 2026-09-03 17:57 — 7DTD SESSION. **ZERO KPM FILES CHANGED BY ME.** Read this before blaming it for the dirty tree.
+
+`git status` shows `src/config/integration.audit.mjs` and `src/ponder/PonderBook.jsx` modified and
+`src/ponder/PonderPad.jsx` + `src/ponder/pad.css` new. **None of that is mine** — a parallel 🟠 KPM
+session was mid-build on the phone tutorial at 17:56. I did not touch, stage, revert or describe
+any of it, and I did not rewrite `NEXT-SESSION.md`'s job; I only added a warning above it so a
+fresh session does not start the same build twice.
+
+A Stop hook flagged the audit file as newer than the brief and asked for this note. The edit that
+tripped it was the other session's, so the audit and self-check numbers are carried forward
+unchanged (714/714, 1000/1000) — **not re-run by me, and not a claim about that session's work.**
+
+All of my work today is game modding, logged in
+`C:\Users\ASUS\AppData\Roaming\7DaysToDie\MODS-NOTES.md` with its own `NEXT-JOB.md`. Nothing in
+this repo depends on it.
 
 ## 🟠 2026-09-03 16:10 — ✅ **THE DESIGN PHASE IS CLOSED. SCAN IN, SLOWED.** NEXT IS THE BUILD.
 

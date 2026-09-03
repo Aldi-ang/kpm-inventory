@@ -24,6 +24,20 @@
       "url": "http://localhost:4180"
     },
     {
+      "name": "ponder-lab",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "vite",
+        "--config",
+        "tools/ponder-lab.config.mjs",
+        "--port",
+        "4190",
+        "--strictPort"
+      ],
+      "port": 4190,
+      "url": "http://localhost:4190"
+    },
+    {
       "name": "kpm-preview",
       "runtimeExecutable": "npm",
       "runtimeArgs": [

@@ -1,5 +1,14 @@
 # Next session — copy the block below, paste it, go
 
+> ⚠️ **2026-09-03 17:57 — SOMEONE MAY ALREADY BE ON THIS JOB. Check before you paste it.**
+> At 17:56 another session had `src/config/integration.audit.mjs` and `src/ponder/PonderBook.jsx`
+> modified and `src/ponder/PonderPad.jsx` + `src/ponder/pad.css` newly created — that is steps 2-4
+> below, in progress. Run `git status` first. If those files are still dirty, the job is being
+> built right now and pasting this starts it a second time.
+>
+> This note was added by the 7 Days to Die session, which changed **nothing** under `src/`. It did
+> not rewrite the job below, because that job is live and not its to replace.
+
 Rewrite this file before you finish. One job only, never a menu.
 
 ---

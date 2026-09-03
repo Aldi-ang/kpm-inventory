@@ -31,7 +31,37 @@ import { SECTIONS, getScene } from './registry.js';
 import { buildPages, asLeaves, maxTurnOf, turnFor, facingPage,
          riffle, TURN_FULL_MS, RIFFLE_MIN_MS } from './pageModel.js';
 import PonderOverlay from './PonderOverlay.jsx';
+import PonderPad, { PACE } from './PonderPad.jsx';
 import { bookOpen, bookPage, bookPick, bookClose } from './sfx.js';
+import './pad.css';
+
+/* 🔴 PHONE GETS THE FIELD TERMINAL, EVERYTHING ELSE KEEPS THE BOOK.
+
+   A phone cannot show a spread — two facing pages on a 380px screen is four columns of nothing —
+   and ten rounds with Aldi settled on an instrument panel instead. His scope, 2026-09-03: *"its
+   for phone only"*. 767px and below is a phone; a tablet is not one, so it keeps the book.
+
+   THE ICON FOLLOWS WHAT IT OPENS. On a phone the chip shows the display glyph, because pressing it
+   produces a display. On anything wider it stays the little leather book, because pressing it
+   produces a book. A display icon that opens a book would be a sign pointing at the wrong thing. */
+const PHONE_Q = '(max-width: 767px)';
+
+function usePhone() {
+  const [phone, setPhone] = useState(
+    () => typeof matchMedia === 'function' && matchMedia(PHONE_Q).matches);
+  useEffect(() => {
+    if (typeof matchMedia !== 'function') return undefined;
+    const mq = matchMedia(PHONE_Q);
+    const on = (e) => setPhone(e.matches);
+    mq.addEventListener('change', on);
+    return () => mq.removeEventListener('change', on);
+  }, []);
+  return phone;
+}
+
+/* The boot's last write-on finishes at 240 + 3*45 + 200 = 575 ms at pace 1, so this is when the
+   glyph is back at rest. Derived from PACE rather than typed, so the pace stays one number. */
+const BOOT_MS = 575 * PACE;
 
 /* The SIDEBAR's own icons, so a chapter looks like the thing you click to reach it. Any name the
    nav uses can be added here; a name that is not here falls back rather than crashing. */
@@ -253,11 +283,40 @@ function BookGlyph() {
   );
 }
 
+/* ── The display on the shelf ──────────────────────────────────────────────────────────────────
+   The phone's tutorial glyph, picked out of four candidates on 2026-09-03: *"display look the
+   cleanest so choose that"*. He took the quietest of the four and named quietness as the reason.
+
+   IT DOES NOT MOVE AT REST — the chip sits in the top bar of every screen, and an icon that
+   animates while nothing is happening is what he called *norak*. All of its motion is the handoff:
+   `away` collapses the picture into a scanline and a point while the panel takes the screen, and
+   `booting` opens it back and writes the lines in again. The BEZEL never moves, so the chip never
+   changes size and nothing in the top bar shifts. See pad.css for the keyframes. */
+function DisplayGlyph({ away, booting }) {
+  return (
+    <span className={'pp-g' + (away ? ' pp-away' : '') + (booting ? ' pp-boot' : '')}
+          aria-hidden="true">
+      <span className="pp-g-bez" />
+      <span className="pp-g-pic">
+        {[0, 1, 2, 3].map((i) => (
+          <span key={i} className={'pp-g-ln pp-g-l' + (i + 1)} style={{ '--pp-i': i }} />
+        ))}
+      </span>
+    </span>
+  );
+}
+
 /* ── The top-bar entry ────────────────────────────────────────────────────────────────────────
    Never opens itself. His rule, 2026-08-27: *"nope dont push newcomer towards the scene let them
    figure out by pressing the tutorial button"*. Nothing here remembers who has watched what. */
 export default function PonderBookButton({ activeTab }) {
+  const phone = usePhone();
   const [libOpen, setLibOpen] = useState(false);
+  const [padOpen, setPadOpen] = useState(false);
+  /* the glyph's boot back into the top bar, after the pad has actually gone */
+  const [booting, setBooting] = useState(false);
+  const bootTimer = useRef(null);
+  useEffect(() => () => clearTimeout(bootTimer.current), []);
   const [sceneId, setSceneId] = useState(null);
   /* 🔴 THE BOOK COMES BACK TO SHUT ITSELF. Aldi, 2026-08-31: *"i want the book shuts and fly to
      also happen when user close the ponder panel"*. Closing a scene used to leave nothing on
@@ -269,7 +328,10 @@ export default function PonderBookButton({ activeTab }) {
   const [bookShutting, setBookShutting] = useState(false);
   const chipRef = useRef(null);
 
-  const openLib = useCallback(() => { bookOpen(); setLibOpen(true); }, []);
+  const openLib = useCallback(() => {
+    if (phone) { setPadOpen(true); return; }
+    bookOpen(); setLibOpen(true);
+  }, [phone]);
 
   return (
     <>
@@ -290,13 +352,34 @@ export default function PonderBookButton({ activeTab }) {
             Two objects that cross-fade are two objects; one object that moves is a book being
             picked up. So while the big one is out, the small one is not here — and it reappears at
             the exact moment the flight lands. */}
-        <span style={{ visibility: libOpen || bookShutting ? 'hidden' : 'visible' }}>
-          <BookGlyph />
-        </span>
+        {phone
+          ? <DisplayGlyph away={padOpen} booting={booting} />
+          : (
+            <span style={{ visibility: libOpen || bookShutting ? 'hidden' : 'visible' }}>
+              <BookGlyph />
+            </span>
+          )}
         <span className="hidden xl:inline font-mono text-[10px] uppercase tracking-widest">Tutorial</span>
       </button>
 
-      {(libOpen || bookShutting) && (
+      {phone && padOpen && (
+        <PonderPad
+          initialSection={activeTab}
+          /* the pad reports itself gone only after its exit has finished playing, so the glyph's
+             boot starts exactly where the panel stopped rather than over the top of it */
+          onClose={() => {
+            setPadOpen(false);
+            setBooting(true);
+            clearTimeout(bootTimer.current);
+            bootTimer.current = setTimeout(() => setBooting(false), BOOT_MS);
+          }}
+          /* picking a scene is not a close: the pad hands straight over to the player, and the
+             glyph returns on its own transition rather than booting */
+          onPick={(id) => { setPadOpen(false); setSceneId(id); }}
+        />
+      )}
+
+      {!phone && (libOpen || bookShutting) && (
         <Library
           anchorRef={chipRef}
           initialSection={activeTab}
@@ -313,8 +396,14 @@ export default function PonderBookButton({ activeTab }) {
       <PonderOverlay
         sceneId={sceneId}
         open={!!sceneId}
-        onClose={() => { setSceneId(null); setBookShutting(true); }}
-        onBack={() => { setSceneId(null); bookOpen(); setLibOpen(true); }}
+        /* the book flies home when a scene closes; the pad does not, because its glyph is already
+           back in the bar — the pick never played an exit, it handed straight over */
+        onClose={() => { setSceneId(null); if (!phone) setBookShutting(true); }}
+        onBack={() => {
+          setSceneId(null);
+          if (phone) { setPadOpen(true); return; }
+          bookOpen(); setLibOpen(true);
+        }}
       />
     </>
   );

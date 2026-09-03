@@ -4429,11 +4429,66 @@ check(G56, 'closing a scene brings the book back to shut itself, once, without r
   /if \(still \|\| closeOnMount\) return;/.test(bookSrc) &&
   /if \(!closeOnMount\) bookClose\(\);/.test(bookSrc) &&
   /if \(closeOnMount\) shut\(\);/.test(bookSrc) &&
-  /\{\(libOpen \|\| bookShutting\) && \(/.test(bookSrc) &&
+  /\{!phone && \(libOpen \|\| bookShutting\) && \(/.test(bookSrc) &&
   /closeOnMount=\{bookShutting\}/.test(bookSrc) &&
-  /setSceneId\(null\); setBookShutting\(true\);/.test(bookSrc),
+  /setSceneId\(null\); if \(!phone\) setBookShutting\(true\);/.test(bookSrc),
   'the scene\'s onClose must raise bookShutting, the Library must render while it is true, and ' +
-  'that mount must skip both the opening flight and the closing sound the panel already played');
+  'that mount must skip both the opening flight and the closing sound the panel already played. ' +
+  'Both are guarded by !phone since 2026-09-03 — the phone has no book to fly home');
+
+/* ── THE PHONE'S FIELD TERMINAL ────────────────────────────────────────────────────────────────
+   A phone cannot show a book spread, so it gets an instrument panel instead. Aldi settled every
+   part of it across ten rounds on 2026-09-02/03, and the four checks below pin the decisions that
+   are invisible in a screenshot and silent when they break. */
+const padSrc = pRead('PonderPad.jsx');
+const padCss = pStrip(fs.readFileSync('src/ponder/pad.css', 'utf8'));
+
+/* His scope was explicit — *"its for phone only"* — and the split has to hold in three places at
+   once or the app points at the wrong thing: which panel opens, which component is mounted, and
+   which glyph the chip shows. A display icon that opens a book is a sign for something else. */
+check(G56, 'a phone opens the field terminal, anything wider opens the book, and the glyph matches',
+  /const PHONE_Q = '\(max-width: 767px\)';/.test(bookSrc) &&
+  /if \(phone\) \{ setPadOpen\(true\); return; \}/.test(bookSrc) &&
+  /\{phone && padOpen && \(/.test(bookSrc) &&
+  /\? <DisplayGlyph away=\{padOpen\} booting=\{booting\} \/>/.test(bookSrc) &&
+  /<BookGlyph \/>/.test(bookSrc),
+  'the phone must get PonderPad and the display glyph while every wider screen keeps Library and ' +
+  'BookGlyph. Losing any one of the three leaves a control whose icon promises the other panel');
+
+/* 🔴 THE PACE IS ONE NUMBER AND TWO FILES HOLD IT. The CSS animates, the JS decides when a phase
+   ENDS. If they disagree the code strips a class part-way through the animation it started, and
+   the sequence reads as broken rather than as slow — which is exactly what the prototype did
+   before its settle timer was recomputed. Compared as numbers, so 2.50 and 2.5 are the same. */
+const padCssPace = Number((padCss.match(/--pp-t:\s*([\d.]+)/) || [])[1]);
+const padJsPace = Number((padSrc.match(/export const PACE = ([\d.]+);/) || [])[1]);
+check(G56, 'the pad has one pace, and the stylesheet and the timers agree on it',
+  Number.isFinite(padCssPace) && Number.isFinite(padJsPace) && padCssPace === padJsPace
+  && padCssPace === 2.5,
+  'pad.css --pp-t and PonderPad PACE must both read 2.5, the "cinematic" pace Aldi chose on ' +
+  '2026-09-03. Read: css=' + padCssPace + ' js=' + padJsPace);
+
+/* The arrival he chose, and the exit he chose one message earlier. The settle timer is the part
+   that cannot be eyeballed: 932 is the LAST write-on's delay plus its duration (6*42 + 490 + 190),
+   not the headline figure, and a smaller number snaps the final rows on while they are still
+   being written. */
+check(G56, 'the pad arrives by scan-in, leaves by the deploy shut, and waits for its own last beat',
+  /ppScanReveal/.test(padCss) && /ppScanBar/.test(padCss) && /ppPodShut/.test(padCss) &&
+  /const ARRIVE_BASE = 932;/.test(padSrc) && /const LEAVE_BASE  = 380;/.test(padSrc) &&
+  /setPhase\('settled'\), ARRIVE_BASE \* PACE/.test(padSrc) &&
+  /later\(onClose, LEAVE_BASE \* PACE\)/.test(padSrc),
+  'the entrance is Scan in and the exit is Deploy\'s shut, both scaled by PACE, and each phase ' +
+  'must end on its own last beat rather than on a rounded figure');
+
+/* LITE MODE GIVES UP MOTION, NEVER A WORD. The write-on and the picture both fill `both`, so
+   `animation: none` alone leaves the panel clipped to zero width with nothing readable in it —
+   the reset has to restore clip-path AND transform. Same trap the prototypes hit twice. */
+check(G56, 'lite mode opens the pad instantly and still shows every word',
+  /html\.lite-mode \.pp-pad \.pp-crt\{transform:none !important\}/.test(padCss) &&
+  /html\.lite-mode \.pp-title\{clip-path:none !important/.test(padCss.replace(/,\s*\n/g, ',')) &&
+  /const instant = \(\) => liteOn\(\) \|\| reduced\(\);/.test(padSrc) &&
+  /if \(instant\(\)\) \{ onClose\(\); return; \}/.test(padSrc),
+  'lite mode and reduced motion must reset clip-path as well as animation, and the pad must ' +
+  'close immediately instead of waiting for a flight that is not playing');
 
 /* A phone has no room for a caption BESIDE anything: boxW is min(380, W - 24), which is 349 of 373
    on a 375px screen. Every placement such a box can choose lands on its own subject, so the beat

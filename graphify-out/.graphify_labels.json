@@ -69,9 +69,16 @@
   "67": "MerchantSalesView.jsx",
   "68": "supply.js",
   "69": "getLocalDayKey",
+  "70": "AcceptanceReceipt.jsx",
   "71": "JourneyView.jsx",
   "72": "dayStats.selfcheck.mjs",
   "73": "KPMInventoryApp",
+  "74": "eslint",
   "75": "ShipmentPlanStage.jsx",
-  "78": "StockStage.jsx"
+  "76": "framer-motion",
+  "77": "react-leaflet-cluster",
+  "78": "StockStage.jsx",
+  "79": "@types/react",
+  "80": "@types/react-dom",
+  "81": "@vitejs/plugin-basic-ssl"
 }

@@ -1,0 +1,476 @@
+/* THE FIELD TERMINAL — the phone's tutorial shell, and the book's replacement there.
+
+   A phone cannot show a book spread; two pages side by side on a 380px screen is four columns of
+   nothing. Ten rounds of drafting settled on an instrument panel instead — a milled slate housing
+   with a display, a section rail down the right edge, and a read-meter down the left. The PC keeps
+   the book; this is phone only, Aldi's instruction, 2026-09-03.
+
+   🔴 EVERY CLASS HERE IS PREFIXED `pp-`. This file is loaded globally by a component import, and
+   the names it wants — .pad, .rim, .display, .status, .key, .crt — are exactly the names an app
+   this size already uses somewhere. The prototypes lost an afternoon to `.tube` meaning two
+   different things in one document; a prefix is the cheap structural fix for that whole class of
+   bug, not tidiness.
+
+   PACE. Every duration and every stagger is written as a base value multiplied by `--pp-t`.
+   Aldi picked 2,5 ("cinematic") on 2026-09-03, after asking for both halves slower: *"make both
+   intro and outro of the animation slow, not too fast so that user eyes can enjoy the animation"*.
+   One variable scales the whole sequence AND its internal rhythm, so re-tuning is one number and
+   slowing it never turns a cascade into a set of separate blinks. */
+
+/* Tokens live on :root and not on .pp-root, because the top-bar GLYPH uses them too and it is
+   not inside the pad's portal. Everything is `--pp-` prefixed, so nothing here can collide with
+   the app's own variables. */
+:root{
+  /* 🔴 THE PACE DIAL, and the one Aldi set. `PACE` in PonderPad.jsx must equal this number - the
+     JS drives the timers, the CSS drives the animations, and the integration audit pins the two
+     together so they cannot drift apart. */
+  --pp-t: 2.5;
+
+  --pp-housing-top:#252A2E; --pp-housing-hi:#1C1F22; --pp-housing-lo:#0E1012;
+  --pp-display:#121014;
+  --pp-ink:#E8E3DA; --pp-dim:#8E8779; --pp-dimmer:#6E685C;
+  --pp-foil:#FFD9A0;
+
+  /* the app's own amber — src/styles/theme.css --amber. Not the pale one the prototype shipped
+     with; Aldi, 2026-09-03: "change the light amber to normal glowy amber that we use on our
+     theme". Dark ink #2A1A08 on this measures 7,82:1, so a latched key stays readable. */
+  --pp-lit:#F59E0B; --pp-lit-hot:#FFC24D; --pp-lit-dim:rgba(245,158,11,.38); --pp-lit-ink:#2A1A08;
+
+  --pp-hair:rgba(232,227,218,.09);
+  --pp-hair-2:rgba(232,227,218,.16);
+  --pp-mono:"IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  --pp-ease:cubic-bezier(.23, 1, .32, 1);
+}
+
+.pp-root{
+  position:fixed; inset:0; z-index:9000;
+  padding:10px 9px calc(10px + env(safe-area-inset-bottom, 0px));
+  background:rgba(6,7,8,.82);
+  -webkit-backdrop-filter:blur(3px); backdrop-filter:blur(3px);
+  overflow:hidden;
+}
+
+/* THE SCAN BAR LIVES HERE, NOT IN THE PAD. The pad arrives under a travelling clip edge, and a
+   light drawn inside a clipped element is clipped away by the very reveal it is leading. This
+   cost two prototypes before it was written down. */
+.pp-scanbar{
+  position:absolute; left:0; right:0; top:0; height:2px; opacity:0; pointer-events:none; z-index:2;
+  background:linear-gradient(90deg, rgba(245,158,11,0), var(--pp-lit-hot) 18%,
+             var(--pp-lit-hot) 82%, rgba(245,158,11,0));
+  box-shadow:0 0 12px rgba(255,194,77,.85);
+}
+
+/* ── HOUSING ────────────────────────────────────────────────────────────────────────────────── */
+.pp-pad{
+  position:absolute; inset:10px 9px calc(10px + env(safe-area-inset-bottom, 0px));
+  padding:8px 7px;
+  display:grid; grid-template-columns:12px minmax(0,1fr) 66px; column-gap:7px;
+  border-radius:18px; opacity:0;
+  background:linear-gradient(158deg, var(--pp-housing-top) 0%, var(--pp-housing-hi) 32%,
+             #15181B 68%, var(--pp-housing-lo) 100%);
+  box-shadow:inset 0 1px 0 rgba(255,217,160,.13), inset 0 -1px 0 rgba(0,0,0,.7),
+             0 30px 60px -28px #000;
+  transform-origin:88% 0%;   /* the chip's corner — the exit goes home to where you pressed */
+}
+.pp-pad.pp-live{opacity:1}
+
+.pp-sheen{
+  position:absolute; inset:0; border-radius:inherit; pointer-events:none; overflow:hidden;
+  background:repeating-linear-gradient(90deg, rgba(255,255,255,.016) 0 1px, transparent 1px 3px);
+}
+/* the rim is its own element and not a ::before, so its light can be TRACED around the edge */
+.pp-rim{
+  position:absolute; inset:0; border-radius:inherit; padding:1px; pointer-events:none; opacity:0;
+  background:linear-gradient(148deg, rgba(255,217,160,.62) 0%, rgba(245,158,11,.32) 26%,
+             rgba(255,217,160,.06) 52%, rgba(245,158,11,.24) 74%, rgba(255,217,160,.5) 100%);
+  -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite:xor;
+  mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite:exclude;
+}
+.pp-bolt{
+  position:absolute; width:4px; height:4px; border-radius:50%;
+  background:radial-gradient(circle at 35% 30%, #33383C, #0B0D0E 70%);
+  box-shadow:inset 0 .5px 0 rgba(255,217,160,.22);
+}
+.pp-bolt.tl{top:5px;left:4px} .pp-bolt.tr{top:5px;right:4px}
+.pp-bolt.bl{bottom:5px;left:4px} .pp-bolt.br{bottom:5px;right:4px}
+
+/* ── LEFT EDGE: the one read-meter, one cell per section ────────────────────────────────────── */
+.pp-meter{display:flex; flex-direction:column; gap:2px; padding:10px 2px}
+/* BLACK UNTIL LIT. An unlit cell is a black well, never a dim version of the lit one. */
+.pp-seg{
+  flex:1 1 0; border-radius:2px; background:#000;
+  box-shadow:inset 0 0 0 .5px rgba(0,0,0,.9), inset 0 1px 1px rgba(0,0,0,.7);
+  transition:background .25s linear, box-shadow .25s linear;
+}
+.pp-seg.pp-read{background:var(--pp-lit-dim); box-shadow:inset 0 0 0 .5px rgba(0,0,0,.5)}
+.pp-seg.pp-cur{
+  background:var(--pp-lit);
+  box-shadow:0 0 4px rgba(245,158,11,.4), inset 0 0 0 .5px rgba(0,0,0,.4);
+}
+
+/* ── DISPLAY ────────────────────────────────────────────────────────────────────────────────── */
+.pp-display{
+  position:relative; border-radius:11px; background:var(--pp-display);
+  overflow:hidden;
+  box-shadow:inset 0 2px 7px rgba(0,0,0,.95), inset 0 0 0 1px rgba(0,0,0,.85),
+             0 0 0 1px rgba(232,227,218,.055);
+}
+/* the picture. Named .pp-crt and never .pp-tube: the top-bar icon owns a `.tube`. */
+.pp-crt{
+  position:absolute; inset:0; display:flex; flex-direction:column; overflow:hidden;
+  transform-origin:center center; border-radius:inherit;
+}
+.pp-crt::after{
+  content:""; position:absolute; inset:0; pointer-events:none;
+  background:repeating-linear-gradient(180deg, rgba(232,227,218,.016) 0 1px, transparent 1px 22px);
+}
+.pp-status{
+  flex:0 0 auto; display:flex; align-items:center; gap:7px;
+  padding:7px 9px; border-bottom:1px solid var(--pp-hair);
+  font-family:var(--pp-mono); font-size:8.5px; font-weight:500; letter-spacing:.14em;
+  color:var(--pp-dim); text-transform:uppercase; font-variant-numeric:tabular-nums;
+  background:linear-gradient(180deg, rgba(232,227,218,.035), transparent);
+}
+.pp-status .pp-live-dot{width:5px; height:5px; border-radius:50%; background:var(--pp-lit); flex:0 0 auto}
+.pp-status .pp-sp{flex:1 1 auto}
+.pp-status b, .pp-foot b{color:var(--pp-ink); font-weight:600}
+/* THE CLOSE. The pad had no close control; a phone panel needs one and it belongs on the
+   machine's own status strip rather than floating over the display. */
+.pp-x{
+  flex:0 0 auto; width:22px; height:22px; border:0; border-radius:5px; cursor:pointer;
+  display:grid; place-items:center; color:var(--pp-dim);
+  background:linear-gradient(180deg,#22262A,#141719);
+  box-shadow:inset 0 .5px 0 rgba(255,217,160,.1), inset 0 0 0 .5px rgba(0,0,0,.6);
+  transition:color .16s linear, transform .16s var(--pp-ease);
+}
+.pp-x:active{transform:scale(.94)}
+.pp-x:focus-visible{outline:2px solid var(--pp-foil); outline-offset:2px}
+
+.pp-stage{flex:1 1 auto; position:relative; overflow:hidden}
+.pp-panel{
+  position:absolute; inset:0; overflow-y:auto; -webkit-overflow-scrolling:touch;
+  padding:15px 13px 18px; will-change:opacity;
+}
+.pp-panel::-webkit-scrollbar{width:3px}
+.pp-panel::-webkit-scrollbar-thumb{background:rgba(232,227,218,.18); border-radius:2px}
+
+/* SECTION SWAP. A plain crossfade and nothing else — .17s out, .14s in, opacity only, and NOT
+   scaled by the pace dial. Aldi settled these exact numbers on 2026-09-03 after the panel used to
+   fly in from depth while the text wrote itself on: *"remove the zoom out and zoom in for intro
+   and outro of that text too much animation make it norak and not elegant"*. The write-on below
+   is the intro; this only hands the stage over. */
+@keyframes ppPanelOut{ from{opacity:1} to{opacity:0} }
+@keyframes ppPanelIn { from{opacity:0} to{opacity:1} }
+.pp-panel.pp-out{animation:ppPanelOut .17s var(--pp-ease) forwards}
+.pp-panel.pp-in {animation:ppPanelIn  .14s var(--pp-ease) forwards}
+
+/* THE TEXT IS WRITTEN, NOT FADED IN. A clip edge crosses each block left to right — a raster
+   sweep, the way a terminal puts characters on a screen. LINEAR on purpose: a print head travels
+   at a constant rate, and a strong ease-out measured 96,6% across at half its duration, which
+   left nothing to watch. The machine's own labels glow as they are written and cool behind the
+   sweep; the prose does not, because text-shadow repaints every frame and the blurb and entry
+   rows carry the most glyphs on the panel. */
+@keyframes ppLineIn{ from{clip-path:inset(0 100% 0 0)} to{clip-path:inset(0 0 0 0)} }
+@keyframes ppLineInLit{
+  0%  {clip-path:inset(0 100% 0 0); text-shadow:0 0 7px rgba(245,158,11,.95)}
+  100%{clip-path:inset(0 0 0 0);    text-shadow:0 0 0 rgba(245,158,11,0)}
+}
+/* 🔴 SCOPED TO `.pp-in`, WHICH IS THE SECTION SWAP AND NOTHING ELSE.
+
+   Unscoped, these matched during the ARRIVAL too, where the arrival's own write-on already
+   applies — and the two are different animation names, so dropping the `pp-arrive` class swapped
+   the name and RESTARTED the whole write from its `backwards` 0% frame. Measured on the phone
+   lab: the pad settled with the title on screen and every other line still clipped to zero width,
+   for another ~600 ms, which reads as a panel that failed to load.
+
+   One moment gets one animation. The arrival writes the first section; this writes every section
+   after it. */
+.pp-panel.pp-in .pp-eyebrow, .pp-panel.pp-in .pp-rule-lab{
+  animation:ppLineInLit .3s linear backwards;
+  animation-delay:calc(var(--pp-i, 0) * 40ms + 80ms);
+}
+.pp-panel.pp-in .pp-blurb, .pp-panel.pp-in .pp-entry{
+  animation:ppLineIn .3s linear backwards;
+  animation-delay:calc(var(--pp-i, 0) * 40ms + 80ms);
+}
+@keyframes ppTitleIn{
+  0%  {text-shadow:0 0 9px rgba(245,158,11,.95)}
+  100%{text-shadow:0 0 0 rgba(245,158,11,0)}
+}
+.pp-title.pp-writing{animation:ppTitleIn .42s var(--pp-ease)}
+
+.pp-eyebrow{
+  display:flex; align-items:center; gap:7px; margin-bottom:11px;
+  font-family:var(--pp-mono); font-size:8.5px; letter-spacing:.16em; color:var(--pp-dim);
+  text-transform:uppercase;
+}
+.pp-plate{
+  flex:0 0 auto; height:22px; padding:0 9px; border-radius:6px; display:grid; place-items:center;
+  font-family:var(--pp-mono); font-size:10.5px; font-weight:600; letter-spacing:.01em;
+  text-transform:none; color:var(--pp-foil);
+  background:linear-gradient(180deg,#22262A,#141719);
+  box-shadow:inset 0 1px 0 rgba(255,217,160,.16), inset 0 0 0 1px rgba(0,0,0,.6);
+}
+.pp-eyebrow .pp-line, .pp-rule-lab .pp-line{flex:1 1 auto; height:1px; background:var(--pp-hair)}
+.pp-title{
+  margin:0 0 6px; font-weight:600; font-size:21px; line-height:1.14;
+  letter-spacing:-.014em; color:var(--pp-ink); text-wrap:balance;
+}
+.pp-blurb{margin:0 0 14px; font-size:12.5px; line-height:1.55; color:#B8B2A6}
+.pp-rule-lab{
+  display:flex; align-items:baseline; gap:7px; margin:0 0 8px;
+  font-family:var(--pp-mono); font-size:8.5px; letter-spacing:.16em; color:var(--pp-dim);
+  text-transform:uppercase; font-variant-numeric:tabular-nums;
+}
+
+/* AN ENTRY IS A BUTTON WHEN IT HAS A SCENE, AND A ROW WHEN IT DOES NOT. Same rule the book
+   already uses — `ready = !e.soon && !!getScene(e.sceneId)` — so a control never opens nothing. */
+.pp-entry{
+  display:grid; grid-template-columns:20px minmax(0,1fr) auto; gap:0 9px;
+  width:100%; text-align:left; padding:10px 0; border:0; background:transparent;
+  border-bottom:1px solid var(--pp-hair);
+  font:inherit; color:inherit;
+}
+.pp-entry:last-child{border-bottom:0}
+.pp-entry.pp-ready{cursor:pointer}
+.pp-entry.pp-ready:active{background:rgba(245,158,11,.07)}
+.pp-entry:focus-visible{outline:2px solid var(--pp-foil); outline-offset:-2px; border-radius:4px}
+.pp-idx{
+  font-family:var(--pp-mono); font-size:9.5px; color:var(--pp-dim); padding-top:2px;
+  font-variant-numeric:tabular-nums; letter-spacing:.04em;
+}
+.pp-etitle{font-size:13.5px; font-weight:600; line-height:1.3; color:var(--pp-ink)}
+.pp-edesc{grid-column:2/4; margin-top:3px; font-size:12px; line-height:1.5; color:#9A948A}
+.pp-chip{
+  align-self:start; font-family:var(--pp-mono); font-size:8px; letter-spacing:.12em;
+  padding:3px 6px; border-radius:3px; text-transform:uppercase; white-space:nowrap;
+}
+.pp-chip.pp-ready-chip{color:var(--pp-lit-ink); background:var(--pp-foil); font-weight:600}
+.pp-chip.pp-soon{color:var(--pp-dim); box-shadow:inset 0 0 0 1px var(--pp-hair-2)}
+
+.pp-foot{
+  flex:0 0 auto; display:flex; align-items:center; gap:7px;
+  padding:6px 9px; border-top:1px solid var(--pp-hair);
+  font-family:var(--pp-mono); font-size:8px; letter-spacing:.14em; color:var(--pp-dimmer);
+  text-transform:uppercase; font-variant-numeric:tabular-nums;
+}
+.pp-ticks{flex:1 1 auto; height:5px;
+  background:repeating-linear-gradient(90deg, var(--pp-hair-2) 0 1px, transparent 1px 6px)}
+
+/* ── RIGHT EDGE: the section rail ───────────────────────────────────────────────────────────── */
+.pp-rail{display:flex; flex-direction:column; gap:2px; padding:2px 0}
+.pp-key{
+  flex:1 1 0; min-height:18px;
+  display:flex; align-items:center; justify-content:space-between; gap:4px;
+  padding:0 6px; border:0; border-radius:6px; cursor:pointer;
+  font-family:var(--pp-mono); font-size:9px; font-weight:500; letter-spacing:.01em;
+  color:var(--pp-dim); text-align:left; white-space:nowrap; overflow:hidden;
+  background:linear-gradient(180deg,#23272B,#15181B);
+  box-shadow:inset 0 1px 0 rgba(255,217,160,.10), inset 0 -1px 0 rgba(0,0,0,.75),
+             inset 0 0 0 1px rgba(0,0,0,.55);
+  transition:color .16s linear, background .16s linear, box-shadow .18s ease;
+}
+.pp-key:focus-visible{outline:2px solid var(--pp-foil); outline-offset:2px}
+/* A LAMP IS BLACK UNTIL IT IS LIT. No grey pip, no dim preview of the lit state — the old one
+   was a visible grey dot on every cap, so the rail read as seventeen lights already on. */
+.pp-lamp{
+  flex:0 0 auto; width:4px; height:4px; border-radius:50%; background:#000;
+  box-shadow:inset 0 0 0 .5px rgba(0,0,0,.9), 0 0 0 .5px rgba(232,227,218,.055);
+  transition:background .2s linear, box-shadow .2s linear;
+}
+.pp-key.pp-read{color:#A9A296}
+.pp-key.pp-read .pp-lamp{background:var(--pp-lit-dim); box-shadow:0 0 3px rgba(245,158,11,.28)}
+/* THE LATCH. A pressed cap stays down until another is pressed; it never floats above the rail.
+   Aldi, 2026-09-03: "more 3D" meant LATCHED, not floating. */
+.pp-key.pp-on{
+  color:var(--pp-lit-ink); font-weight:600;
+  background:linear-gradient(180deg, var(--pp-lit) 0%, #D4870A 100%);
+  box-shadow:inset 0 2px 5px rgba(74,38,2,.5), inset 0 -1px 0 rgba(255,194,77,.45),
+             inset 0 0 0 1px rgba(0,0,0,.55), 0 0 7px rgba(245,158,11,.22);
+}
+.pp-key.pp-on .pp-lamp{
+  background:#FFF4DE;
+  box-shadow:0 0 0 1.4px rgba(58,30,2,.75), 0 0 4px rgba(255,194,77,.6);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════════
+   THE ARRIVAL — Scan in, and Deploy's exit. Both scaled by --pp-t.
+   ══════════════════════════════════════════════════════════════════════════════════════════ */
+
+/* IN: a bright bar crosses the screen and leaves the terminal behind it. The rim, the meter, the
+   lamps and the picture all light WHILE the bar is still travelling, so the pad is written into
+   existence one band at a time rather than switched on once it is already there. */
+@keyframes ppScanReveal{ 0%{opacity:1; clip-path:inset(0 0 100% 0)} 100%{opacity:1; clip-path:inset(0 0 0 0)} }
+@keyframes ppScanBar{
+  0%  {opacity:0; transform:translateY(0)}
+  8%  {opacity:1}
+  90% {opacity:1}
+  100%{opacity:0; transform:translateY(100vh)}
+}
+@keyframes ppRimTrace{
+  0%  {opacity:0; clip-path:inset(0 100% 100% 0)}
+  45% {opacity:1; clip-path:inset(0 0 100% 0)}
+  100%{opacity:1; clip-path:inset(0 0 0 0)}
+}
+@keyframes ppSegRun{
+  0%  {background:#000; box-shadow:inset 0 0 0 .5px rgba(0,0,0,.9)}
+  35% {background:var(--pp-lit-hot); box-shadow:0 0 6px rgba(255,194,77,.8), inset 0 0 0 .5px rgba(0,0,0,.4)}
+  100%{background:#000; box-shadow:inset 0 0 0 .5px rgba(0,0,0,.9)}
+}
+@keyframes ppLampRun{
+  0%  {background:#000;              box-shadow:inset 0 0 0 .5px rgba(0,0,0,.9)}
+  40% {background:var(--pp-lit-hot); box-shadow:0 0 5px rgba(255,194,77,.85)}
+  100%{background:#000;              box-shadow:inset 0 0 0 .5px rgba(0,0,0,.9)}
+}
+@keyframes ppCrtOn{
+  0%  {transform:scaleY(.04) scaleX(.08)}
+  40% {transform:scaleY(.04) scaleX(1)}
+  100%{transform:scaleY(1)   scaleX(1)}
+}
+@keyframes ppWrite{ 0%{clip-path:inset(0 100% 0 0)} 100%{clip-path:inset(0 0 0 0)} }
+
+.pp-pad.pp-arrive              {animation:ppScanReveal calc(300ms * var(--pp-t)) linear both}
+.pp-pad.pp-arrive .pp-rim      {animation:ppRimTrace calc(240ms * var(--pp-t)) var(--pp-ease) calc(230ms * var(--pp-t)) both}
+.pp-pad.pp-arrive .pp-crt      {animation:ppCrtOn    calc(210ms * var(--pp-t)) var(--pp-ease) calc(290ms * var(--pp-t)) both}
+.pp-pad.pp-arrive .pp-seg      {animation:ppSegRun   calc(250ms * var(--pp-t)) linear calc(var(--pp-i) * 16ms * var(--pp-t) + 60ms * var(--pp-t)) both}
+.pp-pad.pp-arrive .pp-lamp     {animation:ppLampRun  calc(250ms * var(--pp-t)) linear calc(var(--pp-i) * 15ms * var(--pp-t) + 80ms * var(--pp-t)) both}
+/* while the pad is arriving the panel's own write-on is REPLACED by the arrival's, so the two
+   never run at once — one moment, one animation */
+.pp-pad.pp-arrive .pp-eyebrow,
+.pp-pad.pp-arrive .pp-blurb,
+.pp-pad.pp-arrive .pp-rule-lab,
+.pp-pad.pp-arrive .pp-entry    {animation:ppWrite calc(190ms * var(--pp-t)) linear calc(var(--pp-i) * 42ms * var(--pp-t) + 490ms * var(--pp-t)) both; text-shadow:none}
+.pp-scanbar.pp-run             {animation:ppScanBar calc(300ms * var(--pp-t)) linear both}
+
+/* OUT: the picture squeezes to a scanline, the slab folds to a bar, the bar snaps back to the
+   chip. Proportionally faster than the entrance at every pace — by then the reader has decided
+   to go. Aldi took this one on sight: "deploy looks the best for the closing". */
+@keyframes ppCrtOff{
+  0%  {transform:scaleY(1)   scaleX(1)}
+  52% {transform:scaleY(.04) scaleX(1)}
+  100%{transform:scaleY(.04) scaleX(.08)}
+}
+@keyframes ppPodShut{
+  0%  {opacity:1; transform:scaleX(1)   scaleY(1)}
+  55% {opacity:1; transform:scaleX(1)   scaleY(.02)}
+  100%{opacity:0; transform:scaleX(.06) scaleY(.02)}
+}
+@keyframes ppRimOut{ from{opacity:1} to{opacity:0} }
+.pp-pad.pp-leave          {animation:ppPodShut calc(300ms * var(--pp-t)) var(--pp-ease) calc(80ms * var(--pp-t)) both}
+.pp-pad.pp-leave .pp-crt  {animation:ppCrtOff  calc(160ms * var(--pp-t)) var(--pp-ease) both}
+.pp-pad.pp-leave .pp-rim  {animation:ppRimOut  calc(120ms * var(--pp-t)) linear both}
+.pp-root.pp-leaving{background:rgba(6,7,8,0); -webkit-backdrop-filter:none; backdrop-filter:none;
+  transition:background calc(300ms * var(--pp-t)) linear}
+
+/* where the arrival lands. Without this the pad drops back to opacity 0 the moment the class
+   comes off, because `.pp-pad` is invisible by default. */
+.pp-pad.pp-settled .pp-rim{opacity:1}
+.pp-pad.pp-settled .pp-crt{transform:none}
+
+/* ══ LITE MODE — the panel still opens, it just opens instantly ══════════════════════════════
+   `html.lite-mode *` already strips transitions and animations app-wide, but the write-on and the
+   picture both fill `both`, so their FINAL state has to be restored explicitly or the panel opens
+   as an invisible slit with no words in it. Aldi's rule: Lite Mode gives up motion, never colour,
+   and never a word. */
+html.lite-mode .pp-pad,
+html.lite-mode .pp-pad *,
+html.lite-mode .pp-scanbar{animation:none !important; transition:none !important}
+html.lite-mode .pp-pad{opacity:0; transform:none !important; clip-path:none !important}
+html.lite-mode .pp-pad.pp-live{opacity:1}
+html.lite-mode .pp-pad .pp-rim{opacity:1}
+html.lite-mode .pp-pad .pp-crt{transform:none !important}
+html.lite-mode .pp-eyebrow,
+html.lite-mode .pp-blurb,
+html.lite-mode .pp-rule-lab,
+html.lite-mode .pp-entry,
+html.lite-mode .pp-title{clip-path:none !important; text-shadow:none !important; opacity:1 !important}
+html.lite-mode .pp-scanbar{opacity:0 !important}
+html.lite-mode .pp-root.pp-leaving{transition:none}
+
+@media (prefers-reduced-motion: reduce){
+  .pp-pad, .pp-pad *, .pp-scanbar{animation:none !important; transition:none !important}
+  .pp-pad{transform:none !important; clip-path:none !important}
+  .pp-pad .pp-rim{opacity:1}
+  .pp-pad .pp-crt{transform:none !important}
+  .pp-eyebrow, .pp-blurb, .pp-rule-lab, .pp-entry, .pp-title{
+    clip-path:none !important; text-shadow:none !important; opacity:1 !important}
+  .pp-scanbar{opacity:0 !important}
+}
+
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════════
+   THE TOP-BAR GLYPH — the display, which is what the phone's tutorial button is now.
+
+   Aldi picked it out of four candidates on 2026-09-03: *"display look the cleanest so choose
+   that"*. He took the quietest of the four and named quietness as the reason.
+
+   IT DOES NOT MOVE AT REST. The button sits in the top bar of every screen in the app; an icon
+   that animates while nothing is happening is exactly what he called *norak*. The motion is spent
+   on the handoff: the picture collapses when the panel takes over, and boots back when it leaves.
+
+   THE BEZEL NEVER MOVES. Only the picture travels, so nothing in the top bar shifts and the chip
+   stays the same size and stays pressable throughout — the contract the book already had.
+   ══════════════════════════════════════════════════════════════════════════════════════════ */
+.pp-g{position:relative; display:block; width:22px; height:22px; flex:0 0 auto}
+.pp-g-bez{
+  position:absolute; inset:0; border-radius:4.5px;
+  background:linear-gradient(158deg,#262A2E,#101315);
+  box-shadow:inset 0 .5px 0 rgba(255,217,160,.15), inset 0 0 0 .5px rgba(0,0,0,.7);
+}
+.pp-g-pic{
+  position:absolute; inset:2.5px; border-radius:2px; overflow:hidden;
+  background:#0A090B; box-shadow:inset 0 .5px 2px rgba(0,0,0,.95);
+  transform-origin:center center;
+  transition:transform calc(190ms * var(--pp-t)) var(--pp-ease);
+}
+.pp-g-pic::after{
+  content:""; position:absolute; inset:0;
+  background:repeating-linear-gradient(180deg, rgba(232,227,218,.05) 0 .5px, transparent .5px 2px);
+}
+.pp-g-ln{
+  position:absolute; left:1.5px; height:1.5px; border-radius:.75px;
+  background:var(--pp-lit-dim); clip-path:inset(0 0 0 0);
+}
+.pp-g-l1{top:2px;  right:3px}
+.pp-g-l2{top:6px;  right:6px}
+.pp-g-l3{top:10px; right:2px}
+.pp-g-l4{top:14px; right:8px}
+
+/* HANDOFF OUT — a transition, not a keyframe, so a fast second press retargets it instead of
+   restarting from zero. The picture squeezes to a scanline and snaps to a point; it never goes to
+   scale 0, because nothing in the real world disappears from a real size to nothing. */
+.pp-g.pp-away .pp-g-pic{transform:scaleY(.045) scaleX(.07)}
+.pp-g.pp-away .pp-g-ln{opacity:0; transition:opacity calc(90ms * var(--pp-t)) linear}
+
+/* BOOT — three beats in a row and never two at once: the point opens sideways into a scanline,
+   the scanline opens into the screen, and THEN the four lines write themselves in. The write
+   cools to the dim burn level, which is exactly where rest sits, so nothing pops when it ends. */
+@keyframes ppGGrow{
+  0%  {transform:scaleY(.045) scaleX(.07)}
+  42% {transform:scaleY(.045) scaleX(1)}
+  100%{transform:scaleY(1)    scaleX(1)}
+}
+@keyframes ppGWrite{
+  0%  {clip-path:inset(0 100% 0 0); background:var(--pp-lit-hot)}
+  55% {                             background:var(--pp-lit)}
+  100%{clip-path:inset(0 0 0 0);    background:var(--pp-lit-dim)}
+}
+.pp-g.pp-boot .pp-g-pic{
+  transition:none;
+  animation:ppGGrow calc(240ms * var(--pp-t)) var(--pp-ease) both;
+}
+.pp-g.pp-boot .pp-g-ln{
+  animation:ppGWrite calc(200ms * var(--pp-t)) linear
+            calc(var(--pp-i) * 45ms * var(--pp-t) + 240ms * var(--pp-t)) both;
+}
+
+html.lite-mode .pp-g, html.lite-mode .pp-g *{animation:none !important; transition:none !important}
+html.lite-mode .pp-g .pp-g-pic{transform:none !important}
+html.lite-mode .pp-g .pp-g-ln{clip-path:inset(0 0 0 0) !important; opacity:1 !important}
+@media (prefers-reduced-motion: reduce){
+  .pp-g, .pp-g *{animation:none !important; transition:none !important}
+  .pp-g .pp-g-pic{transform:none !important}
+  .pp-g .pp-g-ln{clip-path:inset(0 0 0 0) !important; opacity:1 !important}
+}
