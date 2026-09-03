@@ -1,6 +1,33 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-09-03 08:40 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **714/714 audit · 1000/1000 selfcheck** · branch `phase0-solid-ground`
+**Updated: 2026-09-03 09:20 WIB (🟠 KPM app session)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **714/714 audit · 1000/1000 selfcheck** · branch `phase0-solid-ground`
+
+## 🟠 2026-09-03 09:20 — TECH PAD ROUND 9 SHIPPED. **STILL NO KPM APP CODE TOUCHED.**
+
+Same artifact URL (`ad98ec70`). Vault commit `bca07c8` (round 8 was `bb2b332`).
+
+**His ask:** *"can u make the animation when text appearing to be more technological rather than
+just that simple animation"* + *"use all the design skills to make those"*.
+
+The text is now **written**, not faded: a left-to-right `clip-path` raster sweep per block, and the
+title resolving out of scrambled glyphs (`decode()`). Machine labels glow in `--lit` as they are
+written and cool behind the sweep; prose does not, because `text-shadow` repaints every frame and
+the prose has the most glyphs.
+
+**Loading the design skills changed the result, twice over.** The draft written before them broke
+four of their rules (invented curve, 440/620ms durations, glow everywhere, 46ms stagger). Then
+their own default — ease-out for entrances — measured WRONG for this motion: pinned at half
+duration the sweep was already 96.6% across. A raster sweep is constant motion, so it takes
+`linear`. Re-measured at four offsets: exactly proportional.
+
+⚠️ **Trap this animation introduces:** the reveal fills `backwards`, so a Lite Mode that killed
+only `animation` would leave every block clipped to zero width and **the text would vanish**. Lite
+resets `clip-path` too; reduced-motion gets a plain opacity fade. Verified on all five blocks.
+
+Audit and self-check counts carried forward unchanged (714/714, 1000/1000) — nothing under `src/`
+was touched.
+
+📋 **Next job unchanged in `.claude/NEXT-SESSION.md`: remove the riffle from the PC book.**
 
 ## 🟠 2026-09-03 08:40 — TECH PAD ROUND 8 SHIPPED. **STILL NO KPM APP CODE TOUCHED.**
 
