@@ -1,6 +1,37 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-09-04 (KPM session — riffle confirmed on screen, pad locked to one palette)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **719/719 audit · 988/988 selfcheck** · branch `phase0-solid-ground`
+**Updated: 2026-09-04 (KPM session — pad locked to one palette; tech SFX asked for, WAITING ON FILES)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **719/719 audit · 988/988 selfcheck** · branch `phase0-solid-ground`
+
+## 🔴 2026-09-04 — WAITING ON ALDI: the terminal's tech SFX needs sound FILES before any code
+
+He asked for it in his own words: *"there is one thing that needed to be added is actually a tech
+SFX when interacting with the tech ponder panel"*. **No code was written, deliberately.**
+
+`src/ponder/sfx.js` is a scar with two rounds recorded in it, and both failure modes are exactly
+what this request invites. Round 1 reused the app's own sounds → *"u re crazy using sales SFX for
+the book, use paper or book SFX la bro"*. Round 2 synthesised the sound from filtered noise →
+*"SFX sound really bad as well"*, with the conclusion written in the file: **synthesis was the
+clever answer to the wrong question; ask which file.** So the ask went back to him instead.
+
+Checked, and this is why nothing could be reused: every one of the 15 files in `public/sounds/`
+already carries a meaning — `click` = a toast (Toast.jsx:67), `tap` = examining an item
+(MerchantSalesView.jsx:2383), `commit` = a transaction (MerchantSalesView.jsx:1537), `vaultb` = the
+vault gate (VaultGate.jsx:319), `book-*` = paper, `ponder-open` = pressing a tutorial entry. There
+is no tech sound in the project, and `RE UI/SFX` (the originals folder named in sfx.js) is not on
+this machine.
+
+**Four silent moments identified**, spec'd in `NEXT-SESSION.md`: the rail key (17 keys, the
+most-pressed control — the sound belongs inside `go()` so a swipe matches a tap), the scan-in
+arrival, the deploy exit, and the close X. Files must be SHORT — the rail key repeats, and the
+book's clips had to be trimmed from ~5s of mostly silence for exactly that reason.
+
+## 🟢 2026-09-04 — the two-glyph split is now HIS decision, not mine. `0eef44b` (A-Brain)
+
+*"icon should be different because they have different theme and color"* — the display glyph on a
+phone and the book glyph on anything wider stays. His reason is visual, and sharper than the
+functional one it was built on: the two panels share no palette or material, so a single glyph
+would misreport which one is about to open. Recorded in the taste note; the audit check that holds
+panel, component and glyph together is unchanged.
 
 ## 🟢 2026-09-04 — the field terminal is LOCKED to one palette in both themes. `f748410`
 
