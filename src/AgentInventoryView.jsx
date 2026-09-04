@@ -114,7 +114,10 @@ const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [],
     let calcTotal = 0;
     let globalCredit = cukaiDebts['global_credit'] || 0;
     for (let [pid, val] of Object.entries(cukaiDebts)) {
-        if (pid !== 'global_credit' && val > 0) calcTotal += Math.ceil(val);
+        /* PENALTY_ keys share this map but hold RUPIAH, not stamps - EODReconciliationView.jsx
+           and the payment engine in App.jsx both skip them; this third copy did not, so a
+           Rp 200.000 bounty read as 200.000 stamps owed on the agent's own dashboard. */
+        if (pid !== 'global_credit' && !pid.startsWith('PENALTY_') && val > 0) calcTotal += Math.ceil(val);
     }
     const totalCukaiOwed = Math.max(0, calcTotal + globalCredit + Math.ceil(legacyDebt));
 

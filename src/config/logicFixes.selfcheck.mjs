@@ -4170,5 +4170,56 @@ ok('a neighbour turn (next/prev, arrow keys, drag) still takes the full delibera
    uses that exact same number PonderBook.jsx's `commit()` always trusted; there is nothing new to
    compute, only somewhere new (directly) it gets used. */
 
+
+section('THE BOUNTY UNIT — a rupiah penalty must never be summed as a stamp count (2026-09-05)');
+
+/* Three copies of one formula add up `cukaiDebts`. PENALTY_ keys live in that same map but hold
+   RUPIAH, not stamps — `helpers.js` mints PENALTY_EOD_* for a night's shortfall and
+   StockOpnameView mints PENALTY_<epoch> for damaged goods, so the keys exist in the wild today.
+   Two copies carried the guard; the agent's own dashboard did not, and read a Rp 200.000 bounty
+   as 200.000 stamps owed. Scope each check to the summing loop, not the whole file — App.jsx
+   names PENALTY_ in three comments that would satisfy a file-wide match on their own. */
+const stampSums = [
+  ['the agent dashboard', code(read('src/AgentInventoryView.jsx')), 'const cukaiDebts', 'totalCukaiOwed'],
+  ['the EOD screen',      code(read('src/EODReconciliationView.jsx')), 'let calcTotal', 'const total'],
+  ['the payment engine',  code(app), 'let remainingPayment', 'if (remainingPayment > 0)'],
+];
+for (const [where, src, from, to] of stampSums) {
+  const a = src.indexOf(from), b = src.indexOf(to, a + 1);
+  ok(`${where}'s stamp-sum loop was found (anchors ${from} .. ${to})`, a > -1 && b > a,
+     'anchor missed — the slice below would read the whole file and pass on a lookalike');
+  if (a > -1 && b > a) {
+    ok(`${where} skips PENALTY_ keys when summing stamp debt`,
+       /!pid\.startsWith\('PENALTY_'\)/.test(src.slice(a, b)),
+       'a rupiah bounty is being added into a count of stamps');
+  }
+}
+
+/* The guard tests a prefix. If a minter ever writes a key under another name, the guard goes
+   quiet without failing — so pin the two minters to the prefix the guard actually looks for. */
+ok('every penalty key the EOD minter writes starts with PENALTY_',
+   [...helpers.matchAll(/key:\s*`([^`]+)`/g)].filter(m => /PENALTY/.test(m[1])).every(m => m[1].startsWith('PENALTY_')),
+   'a minted key outside the prefix would be summed as stamps again');
+ok('the quarantine minter writes the same prefix',
+   /`PENALTY_\$\{Date\.now\(\)\}`/.test(read('src/StockOpnameView.jsx')),
+   'StockOpnameView mints damage charges into the same map');
+
+/* The maths itself, on the numbers from the write-up: 40 stamps owed, one Rp 200.000 bounty. */
+const stampsOwed = (debts) => {
+  let calc = 0;
+  const credit = debts['global_credit'] || 0;
+  for (const [pid, val] of Object.entries(debts)) {
+    if (pid !== 'global_credit' && !pid.startsWith('PENALTY_') && val > 0) calc += Math.ceil(val);
+  }
+  return Math.max(0, calc + credit);
+};
+ok('40 stamps plus a Rp 200.000 bounty still reads as 40 stamps, not 200.040',
+   stampsOwed({ 'prod-teh': 40, 'PENALTY_1756000000000': 200000 }) === 40,
+   'the dashboard is adding rupiah into the stamp count again');
+ok('an agent whose only debt is a bounty owes zero stamps',
+   stampsOwed({ 'PENALTY_EOD_r1_CASH': 50000 }) === 0,
+   'a cash fine is not a stamp debt and must not appear as one');
+
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);
