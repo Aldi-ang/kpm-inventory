@@ -2,63 +2,66 @@
 
 Rewrite this file before you finish. One job only, never a menu.
 
-**Shipped 2026-09-05:** the bounty-unit fix (`9e2e5a3`). **Blocked:** the store transfer, until Aldi
-answers whose dashboard keeps the old sales. **This file now carries the next unblocked one.**
+**Shipped 2026-09-05:** the bounty-unit fix (`9e2e5a3`). **Aldi answered the transfer question the
+same night**, so the store hand-off is unblocked and is the job below.
 
 ---
 
 ```
-Job: a store that hands back damaged goods during a consignment payment is still billed for them.
-Aldi's standing instruction on this batch: "do all whatever the order as long as there is no
-problem when i sell the app and they customer use it." This one overcharges a real customer in
-rupiah, so it is the one that matters most for a sold app.
+Job: a store hand-off must stop rewriting sales history. Build the shape Aldi chose.
+
+HIS DECISION, verbatim, 2026-09-05:
+  "then andi and budi but andi should be view only and budi can edit the value and of course add
+   history on the receipt the hands off thats tell Andi -> Budi"
+
+Read as three requirements:
+  1. BOTH agents see the store's old sales. Neither dashboard loses them.
+  2. The agent who RECEIVES the store sees them VIEW-ONLY. The agent who MADE the sales keeps the
+     right to edit their values.
+  3. The hand-off is recorded and visible on the receipt / history, naming both sides.
 
 WHAT THE CODE DOES NOW - verified 2026-09-05, line numbers current:
 
-  · An agent audits a consignment store. The stock splits three ways in
-    `src/ConsignmentFinanceView.jsx:281-298`: sold (paid for), damaged (handed back, valued into
-    `returnTotal`), and still on the shelf.
-  · `returnTotal` is passed into the engine at `:313` and written onto the transaction at
-    `src/hooks/useTransactionEngine.js:492`, `:569` and `:590`.
-  · Nothing that calculates money ever reads it. `grep -rn "returnTotal" src/` returns seven hits:
-    three writes in the engine, three in ConsignmentFinanceView on the way IN, and the parameter
-    itself. Zero reads in a balance calculation.
-  · `src/ConsignmentFinanceView.jsx:204` does `customers[name].balance -= (t.amountPaid || 0)` -
-    payment only. The loop right below it DOES subtract the returned packs from the shelf list, so
-    the goods leave the store's stock while their value stays on the store's bill.
+  - src/App.jsx:1746-1749 - on approval, every past transaction of that store is updated with
+    { agentId: request.toAgentId, agentName: request.toAgentName }. The old value is overwritten,
+    not kept. That is what requirement 2 makes impossible: you cannot say "the seller may edit and
+    the receiver may not" once the record says the receiver was the seller.
+  - src/ConsignmentFinanceView.jsx:59 - const matchId = agentProfileId && t.agentId === agentProfileId.
+    Receivables are scoped by the agent stamped on each transaction. THIS is why the rewrite exists:
+    it is the only thing that currently hands the store's outstanding debt to the new agent. Delete
+    the rewrite without replacing this path and the new owner cannot see or collect that debt - a
+    worse bug than the one being fixed, in an app Aldi is preparing to sell.
+  - The transfer request already pins customerId when the sender's own ownership can single one shop
+    out, and the rewrite is filtered by heldBySender, so same-named twins no longer move. Keep both.
 
-So: you take the damaged goods back, and you keep charging for them.
+THE SHAPE TO BUILD:
 
-WHAT TO DECIDE FIRST - do not start with an edit:
+  a. Stop the rewrite. Past sales keep the agent who made them.
+  b. Give the receivables view a SECOND way to find a store's rows: by the store's CURRENT OWNER,
+     not only by the agent stamped on each row. Rows reached that way are read-only for the
+     receiver; rows he made himself stay editable.
+  c. Write the hand-off onto the store record (from, to, date) and render it as a line in the
+     receipt / history.
 
-The Backlog write-up says the fix is "subtract `amountPaid + returnTotal`", and says to do it AFTER
-merging the two duplicate debt calculators, or the same fix has to land in three places and one
-gets missed. That instruction has NOT been trialled against a check, so treat it as a hypothesis.
-Find every place that computes a consignment balance before changing any of them. The write-up
-names `ConsignmentFinanceView.jsx:105` and `MerchantSalesView.jsx:114` and `:159` as the others -
-those three line numbers are from 2026-08-17 and have NOT been re-verified, so locate them by what
-the code does, not by the number.
+TRAPS THAT MAKE A LAZY BUILD WRONG:
 
-Then bring Aldi the count: "N places compute this balance; the fix lands in N, or in one after they
-are merged." Merging duplicated money maths is a bigger change than the subtraction itself, and it
-is his call whether to pay for it now.
+  - VIEW-ONLY MUST BE REFUSED AT THE WRITE, not hidden in the UI. Hiding an edit control leaves the
+    write path open - the "UI Says Yes, Server Says No" pattern already in the vault
+    (A-Brain/Wiki/Concepts/UI-Says-Yes-Server-Says-No Pattern.md). The handler must refuse it too.
+    firestore.rules is a DRAFT: propose the rule, never run firebase deploy.
+  - mappedBy is NOT a spare field. App.jsx uses c.mappedBy === fromAgentName at request time to tell
+    two same-named shops apart, and it records who first registered the store. Do not repurpose it
+    as "current owner" without checking that caller.
+  - The arrow in his sentence reads "Andi -> Budi" while the example he answered had Budi handing the
+    store TO Andi. Build it as a rule about ROLES - receiver view-only, seller keeps edit - and let
+    the receipt render whichever two names apply. Ask him which way the arrow reads when the line is
+    actually drawn.
+  - More than 3 files touched means stop and name each one before continuing.
 
-THE TRAP THAT MAKES A LAZY PATCH WRONG:
-
-A transaction type called `RETURN` already exists and is handled correctly everywhere - it is saved
-with a negative total, so it subtracts itself. If you add `returnTotal` to the balance maths
-without checking which transaction type you are inside, a plain RETURN could be subtracted twice.
-The broken case is only the return that happens INSIDE a `CONSIGNMENT_PAYMENT`.
-
-Leave the fix in `src/config/logicFixes.selfcheck.mjs` the way `9e2e5a3` did: slice each balance
-loop to its own anchors, assert the anchors were found, and re-run the arithmetic on real numbers
-(a store owing 1.000.000 that pays 400.000 and hands back 100.000 of damage owes 500.000, not
-600.000). Trial it red before green.
-
-STANDING CONTEXT:
-  · Firestore rules are a DRAFT until Aldi deploys them by hand. Never run `firebase deploy`.
-  · The Browser pane does not composite - screenshots and read_page work, real clicks do not.
-    See `A-Brain/Wiki/Concepts/Looking at the App.md`.
+Leave the fix in src/config/logicFixes.selfcheck.mjs the way 9e2e5a3 did: slice each assertion to its
+own anchors, assert the anchors were FOUND before slicing, re-run the arithmetic on real numbers, and
+trial it RED before green. At minimum: approving a transfer must leave every past transaction's
+agentId unchanged, and the receiving agent must still reach the store's debt.
 
 Then rewrite .claude/NEXT-SESSION.md with the next single job.
 ```
@@ -68,22 +71,23 @@ Then rewrite .claude/NEXT-SESSION.md with the next single job.
 <details>
 <summary>Queue — do NOT paste these; promote one only when the job above is finished</summary>
 
-### B — the store transfer. BLOCKED on Aldi, do not build it
+### C — damaged goods handed back are still billed
 
-`App.jsx:1746-1749` rewrites the agent on every past sale when a hand-off is approved. **The
-Backlog's "just delete it" fix is wrong** — `ConsignmentFinanceView.jsx:59` scopes receivables by
-`t.agentId`, so that rewrite is also what hands the debt to the new agent. Deleting it hides the
-store's debt from the agent who now owns it. Correction is written into
-`A-Brain/Backlog/Handing a store to another agent rewrites sales history.md` (`514ad69`).
-The question Aldi owes: after Budi hands his store to Andi, whose dashboard shows Budi's old sales
-for that store — Budi's, Andi's, or both?
+`returnTotal` is written at `useTransactionEngine.js:492`, `:569`, `:590` and read by no money
+calculation — seven hits in `src/`, zero reads in a balance. `ConsignmentFinanceView.jsx:204`
+subtracts `amountPaid` alone, while the loop below it DOES remove the returned packs from the shelf.
+The goods leave and the bill stays. Real rupiah, hits the customer's customer. The Backlog says merge
+the two duplicate debt calculators first or the fix lands in three places — untrialled, so count the
+call sites before believing it. Trap: a `RETURN` transaction is already saved with a negative total
+and subtracts itself; only the return inside a `CONSIGNMENT_PAYMENT` is broken, so a blind fix
+double-counts.
 
 ### A — Journey Plan reassigns stores by itself
 
-`JourneyView.jsx:561-583`. On screen open, any store whose agent is no longer on staff gets
-fuzzy-matched to whoever's name partly contains it ("Andika" → "Andi"), written with
-`updateDoc(...).catch(() => {})`, no message. Real, but it only fires once an agent name goes
-stale — a rename or a removal. Fix is a review list, not a one-liner.
+`JourneyView.jsx:561-583`. On screen open, any store whose agent is no longer on staff is
+fuzzy-matched to whoever's name partly contains it ("Andika" matches "Andi"), written with
+`updateDoc(...).catch(() => {})`, no message. Only fires once an agent name goes stale. Fix is a
+review list, not a one-liner.
 
 ### Ponder sweep — DONE, do not redo
 

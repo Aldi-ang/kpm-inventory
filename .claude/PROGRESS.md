@@ -1,6 +1,25 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-09-05 (KPM session — bounty-unit fix shipped `9e2e5a3`, three Backlog items still open)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **722/722 audit · 998/998 selfcheck** · branch `phase0-solid-ground`
+**Updated: 2026-09-05 (KPM session — bounty fix `9e2e5a3`; transfer question ANSWERED, build queued)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **722/722 audit · 998/998 selfcheck** · branch `phase0-solid-ground`
+
+## 🟠 2026-09-05 — Aldi answered the transfer question. Spec written, NOT built.
+
+His words: *"then andi and budi but andi should be view only and budi can edit the value and of
+course add history on the receipt the hands off thats tell Andi -> Budi"*.
+
+Both agents see the store's old sales · the RECEIVER is view-only · the SELLER keeps edit rights ·
+the hand-off becomes a visible line on the receipt. That settles it: the rewrite at
+`App.jsx:1746-1749` goes, and the debt reaches the new agent through the store's current owner
+instead. Recorded in the Backlog file (A-Brain `7d5f42d`) and spelled out as the one job in
+`NEXT-SESSION.md`.
+
+**Not started, on purpose.** 14% of the weekly plan left at the time. This is a permission change
+plus a new read path plus a receipt line — half of it shipped into an app he is preparing to sell is
+worse than none of it. No app code was touched this turn.
+
+**WAITING ON ALDI:** nothing blocking. One thing to confirm when the receipt line is drawn — his
+sentence reads "Andi -> Budi" while the example he answered had Budi handing the store TO Andi, so
+the arrow's direction is a rendering question, not a logic one.
 
 ## 🟠 2026-09-05 — Bounty counted as stamps: FIXED `9e2e5a3` · 722/722 · 998/998
 
