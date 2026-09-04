@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-09-04 (KPM session — synthesis rejected, rail key is his recording; 2 picks owed)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **719/719 audit · 988/988 selfcheck** · branch `phase0-solid-ground`
+**Updated: 2026-09-04 (KPM session — rail key SHIPPED with his own recording)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **720/720 audit · 988/988 selfcheck** · branch `phase0-solid-ground`
 
 ## 🔧 2026-09-04 10:57 — 7DTD track. No KPM work; nothing here changed where KPM stands.
 
@@ -22,7 +22,31 @@ live in `C:\Users\ASUS\AppData\Roaming\7DaysToDie\MODS-NOTES.md` and `NEXT-JOB.m
 **Open there, not here:** five new DLLs are unverified against game build 3.2.0 — only launching
 once shows that.
 
-## 🔴 2026-09-04 — SYNTHESIS REJECTED. The rail key is HIS recording now. Waiting on two picks.
+## 🟢 2026-09-04 — the rail key SHIPPED, playing his own recording. `7380a92` · 720/720 · 988/988
+
+*"forget the panel open for now just apply the panel section press instead, most of the time phone
+user wont be using their volume on this app anyway"*. So the opening is parked and only the rail
+key is wired: `public/sounds/pad-key.mp3` → `padKey` in useSound.js at volume 0.9 → exported from
+`ponder/sfx.js` → called from `go()` in PonderPad.jsx. He never picked between the 181 ms and 91 ms
+cuts, so the 181 ms one shipped — it is the sound he actually sent, and `key-short` was my
+invention for a complaint he never made. One-line swap if the second tick annoys him.
+
+**WHERE it fires is the part that rots silently**, and it now has a check trialled red. Three
+things change section — a rail tap, a swipe, and the arrow keys — and all three go through `go()`.
+On the button's onClick it would look right and pass a smoke test while a swipe changed section in
+silence. Inside `go()` two placements are load-bearing: **after** the `i === cur` guard (or a key
+that changes nothing still clicks) and **before** the `instant()` branch (or Lite Mode loses the
+sound as well as the motion — Lite Mode gives up motion only). Moving it past `instant()` failed
+that check and nothing else, 719/1, with slice length 463 proving both anchors resolved.
+
+⚠️ **NOT verified, and it should not be claimed:** that anything is audible. `playSound` returns
+early until `unlockSounds()` has run; `main.jsx` arms that on the first real gesture and the lab's
+own entry point never does, while the Browser pane cannot deliver a trusted click at all. What IS
+verified: `/sounds/pad-key.mp3` returns 200 `audio/mpeg`, decodes to 182 ms at peak 0,644 (−3,8 dB,
+matching `book-page`), and section switching still works after the change (rail 4 → 7, section 08),
+so `padKey()` neither throws nor blocks `go()`. **The listening test is his phone.**
+
+## ⬛ 2026-09-04 (superseded above) — synthesis rejected, the rail key became his recording
 
 *"all bad nvm, use this for the section button click on the side"* — all seven synthesised takes
 are dead. He sent a Snipping Tool recording of the sound he actually wants.
@@ -135,7 +159,7 @@ that goes red on any `.light`/`.dark` selector or `prefers-color-scheme` query i
 matched on a boundary so `html.lite-mode` (performance, motion only) and `--pp-lit` stay legal.
 
 **Trialled red before it was trusted:** injecting `html.light{--pp-display:#FFFFFF}` failed exactly
-that check and nothing else (718 passed, 1 failed). Restored → **719/719 audit, 988/988 selfcheck**.
+that check and nothing else (718 passed, 1 failed). Restored → **720/720 audit, 988/988 selfcheck**.
 Seen at 390x820: forcing `html.light` with the terminal open moved the app ground from
 `rgb(11,10,9)` to `rgb(210,201,180)` while every `--pp-` token and the housing gradient stayed
 byte-identical. Taste note committed to A-Brain as `d46e0d9`, including why this does NOT contradict
