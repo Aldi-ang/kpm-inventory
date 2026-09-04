@@ -1,8 +1,33 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-09-04 17:35 WIB (KPM session — rail key SHIPPED, thread written to the vault)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **720/720 audit · 988/988 selfcheck** · branch `phase0-solid-ground`
+**Updated: 2026-09-04 18:40 WIB (KPM session — Regional Warehouse ponder rebuilt, 4 scenes queued)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **720/720 audit · 988/988 selfcheck** · branch `phase0-solid-ground`
 
-## 🔴 2026-09-04 18:05 — NEXT JOB: the Regional Warehouse ponder shows too little. Blocked on one call.
+## 🟢 2026-09-04 18:40 — Regional Warehouse ponder REBUILT: it shows what it explains. `78eee2a`
+
+His correction closed the question I had asked: *"show the fake content but real panel like u do on
+other tutorial of course, uve done this before bruh why dont u look at other tutorial that u made"*.
+The A/B choice was a false one — the pattern already existed in every other stage.
+
+**Before:** 10 paragraphs, 7 keys, and a stage body that was ONE line of grey text. Five beats in a
+row focused `tab:incoming`. **After:** 28 beats, 26 distinct keys, avg 83 chars — now the tightest
+scene in the book. `RegionalWarehouseStage.jsx` went from 1 anchor to a demo panel per tab carrying
+the screen's own words ("Scan barang sampai", "Qty (Bks)", "Buku Besar", "Data Induk").
+
+⚠️ **The bug a green audit could not have caught.** Only the open tab renders, so a beat naming a
+`rq:` key while Incoming showed would have highlighted nothing — and `resolvesKey` in the audit
+reads SOURCE TEXT, where every key is present, and cannot see conditional rendering. The stage now
+derives its tab from the `step` prop the overlay already passes (`PonderOverlay.jsx:547`).
+**Verified at runtime, not by regex:** all 28 beats stepped through in the lab, every focus key
+resolved to a mounted element, 26 distinct, zero missing. 720/720 audit.
+
+**He asked for this across the whole book** — *"also apply this logic to other tutorial as well"* —
+so the remaining four are ranked by measurement in `NEXT-SESSION.md`. Worst first:
+`stock-by-warehouse` (23 beats, avg 142 chars, **11 beats over 150**, only 17 keys) — and its stage
+already carries **36** anchors, so most of that job is splitting beats onto markup that exists.
+
+**WAITING ON ALDI — nothing.** The sound thread is closed by his own call.
+
+## ⬛ 2026-09-04 18:05 (answered above) — the Regional Warehouse ponder shows too little
 
 Sound thread CLOSED by him: *"its still not silent on the phone but not a big deal actually skip it
 and move on"*. No further sound work; the paper `book-close` on the phone stays as-is.
