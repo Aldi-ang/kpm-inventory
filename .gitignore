@@ -42,3 +42,7 @@ dev-dist
 
 # tools/ponder-lab.config.mjs writes here — a viewing harness build, never shipped
 dist-ponderlab
+
+# Draft SFX renders — regenerate with `node tools/sfx-draft.mjs`. The generator is the source
+# of truth; the audio is output, and it does not belong in history until a sound is chosen.
+tools/sfx-draft/
