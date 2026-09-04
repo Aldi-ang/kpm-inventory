@@ -1,6 +1,35 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-09-04 18:40 WIB (KPM session — Regional Warehouse ponder rebuilt, 4 scenes queued)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **720/720 audit · 988/988 selfcheck** · branch `phase0-solid-ground`
+**Updated: 2026-09-04 19:30 WIB (KPM session — ponder sweep 2 of 5 done)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **722/722 audit · 988/988 selfcheck** · branch `phase0-solid-ground`
+
+## 🟢 2026-09-04 19:30 — Stock by Warehouse split, and it was hiding a live bug. `f21b3d3` · 722/722
+
+Second scene of the sweep. It was the worst measured: 23 beats averaging **142** chars, eleven over
+150, only 17 keys — three-sentence paragraphs sitting on one highlight through seven-second holds.
+Now **51 beats averaging 64 chars**, one sentence each. Almost no markup was needed:
+`StockByWarehouseTable` already had 36 anchors and the scene used 17.
+
+🔴 **A live bug came out of it.** The "belum bisa dihitung" beat carried `act: 'close'` while
+focusing `item:bandung-choco` — an item inside BANDUNG's drawer. The drawer collapses with a `0fr`
+grid track instead of unmounting, so the element **exists**: `querySelector` finds it, the audit's
+`resolvesKey` finds its key in the source, and the highlight drew a ring with no height around
+something nobody could see. **Presence is not visibility.**
+
+Two new checks close that class off — one replays each scene's own `act` script (the same walk
+`StockStage.scriptedOpen` does) and demands any `item:`/`drawer:` key be inside whatever is open at
+that beat; the other pins every `item:` key to a product that exists in the demo world. Trialled red
+by restoring the shipped bug: failed alone, naming beats 41 and 42, 721/1.
+
+⚠️ **A browser walk was tried first and abandoned** — clicking through 51 steps stalls past the 45s
+tool limit because the pane does not composite. The replay check is better anyway: exact rather than
+sampled, and it cannot go stale. Worth remembering as a pattern — when the UI cannot be driven,
+check the state machine instead of the pixels.
+
+**Sweep progress: 2 of 5.** Left, in rank order: `product-performance` (12 beats, avg 137, 3 over
+150), `goods-received` (11, 131, 2), `shipment-plan` (13, 128, 2). One per session,
+`NEXT-SESSION.md` carries the next.
+
+**WAITING ON ALDI — nothing.**
 
 ## 🟢 2026-09-04 18:40 — Regional Warehouse ponder REBUILT: it shows what it explains. `78eee2a`
 
