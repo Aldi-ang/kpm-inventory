@@ -11,9 +11,29 @@
    company total"*. Small print under a table is where an explanation goes to be skipped. Every
    sentence of it is now a beat, in Indonesian, standing next to the column it is about.
 
+   🔴 SPLIT 2026-09-04: ONE IDEA PER BEAT. Aldi, about the tutorials generally — *"there is too much
+   words but too little showing"*, *"make sure that for almost every sentence there is some textbox
+   to highlights and explain not just sentence reading"*, and then *"also apply this logic to other
+   tutorial as well"*. Measured before the split, this was the worst scene in the book: 23 beats,
+   142 characters each on average, ELEVEN of them over 150, and only 17 distinct keys — so several
+   three-sentence paragraphs sat on a single highlight while the reader waited out a seven-second
+   hold. It is 51 beats now, each one sentence long, each pointing at the thing it names.
+
+   The stage was already able to carry this: `StockByWarehouseTable` has 36 `data-ponder` anchors,
+   the most in the app, and the old scene named 17. Almost nothing needed adding — the sentences
+   simply had somewhere to go.
+
+   ⚠️ A BEAT THAT POINTS INSIDE A CLOSED DRAWER POINTS AT NOTHING, and this scene shipped with one:
+   the "belum bisa dihitung" beat carried `act: 'close'` while focusing `item:bandung-choco`, which
+   lives in BANDUNG's drawer. The element still EXISTS — the drawer collapses with a 0fr grid track
+   rather than unmounting — so it resolves in the DOM and in the audit, and draws a ring with no
+   height. Fixed here to `act: 'open:BANDUNG'`. Every `item:` beat below now names the drawer that
+   holds it.
+
    ⚠️ AUDIT CHECK 631 MOVED HERE. It used to pin the two divisions to the panel footnote; it now
    pins them to these steps. It was never deleted, because a check removed to let a change pass is
-   how the thing it protected comes back.
+   how the thing it protected comes back. **Both formula strings below are load-bearing — do not
+   reword `Avg / month = Sold (7d) ÷ 7 × 30` or `Est. days left = In stock ÷ (Sold (7d) ÷ 7)`.**
 
    Step fields:
      text   what is said. `**term**` renders in accent ink.
@@ -23,8 +43,9 @@
             is the point: a caption that never moves stops being read.
      tone   'ink' | 'gold' | 'danger'. Ponder's PonderPalette, cut down to what the palette law
             allows — there is no green here and there never will be.
-     act    a state change the stage performs. 'open:<warehouse>' | 'close'.
-     hold   ms before autoplay moves on. Long sentences get longer holds. */
+     act    a state change the stage performs. 'open:<warehouse>' | 'close'. Replayed from beat 0,
+            so seeking backwards costs nothing.
+     hold   ms before autoplay moves on. One sentence needs about three seconds, not seven. */
 export const stockByWarehouse = {
   id: 'stock-by-warehouse',
   title: 'Stock by Warehouse',
@@ -33,73 +54,165 @@ export const stockByWarehouse = {
   stage: 'stock-table',
   related: [],
   steps: [
-    { text: 'Tabel ini memuat seluruh gudang perusahaan dalam satu layar. Semua angka satuannya **Bks**.',
-      focus: '*', at: 'bottom', hold: 3800 },
+    /* ── what the table is ───────────────────────────────────────────────────────────────────── */
+    { text: 'Tabel ini memuat seluruh gudang perusahaan dalam satu layar.',
+      focus: '*', at: 'bottom', hold: 2800 },
 
-    { text: 'Kolom pertama nama gudang. Isi gudang terbuka saat namanya ditekan.',
-      focus: 'col:warehouse', at: 'near', hold: 3800 },
+    { text: 'Semua angka satuannya **Bks**.',
+      focus: '*', at: 'bottom', hold: 2200 },
 
-    { text: '**In stock** adalah barang yang ada di rak gudang tersebut saat ini. Hanya angka ini yang benar-benar ada di tempat.',
-      focus: 'col:shelf', at: 'near', hold: 4600 },
+    { text: 'Kolom pertama nama gudang.',
+      focus: 'col:warehouse', at: 'near', hold: 2400 },
 
-    { text: '**Shipping** adalah barang yang sudah berangkat tetapi belum sampai. Belum bisa dijual siapa pun. Tanda **—** berarti pertanyaan ini tidak berlaku di gudang tersebut.',
-      focus: 'col:transit', at: 'near', hold: 5600 },
+    { text: 'Isi gudang terbuka saat namanya ditekan.',
+      focus: 'col:warehouse', at: 'near', hold: 2600 },
 
-    { text: '**Agent inventory** sudah sampai dan sedang dibawa salesman. Barang ini sudah bisa dijual.',
-      focus: 'col:field', at: 'near', hold: 4200 },
+    /* ── the three places stock can be ───────────────────────────────────────────────────────── */
+    { text: '**In stock** adalah barang yang ada di rak gudang tersebut saat ini.',
+      focus: 'col:shelf', at: 'near', hold: 3200 },
 
-    { text: 'Garis di bawah nama gudang membagi ketiganya: di rak, dalam pengiriman, dan di tangan agen. Barang yang sudah terjual tidak dihitung, karena barangnya sudah tidak ada di mana pun.',
-      focus: 'bar', at: 'near', tone: 'gold', hold: 6000 },
+    { text: 'Hanya angka ini yang benar-benar ada di tempat.',
+      focus: 'col:shelf', at: 'near', hold: 2600 },
 
-    { text: '**Sold (7d)** menghitung penjualan **7 hari terakhir**. Aplikasi hanya menyimpan satu minggu, jadi tidak ada angka di layar ini yang mewakili lebih dari seminggu.',
-      focus: 'col:sold', at: 'near', hold: 5800 },
+    { text: '**Shipping** adalah barang yang sudah berangkat tetapi belum sampai.',
+      focus: 'col:transit', at: 'near', hold: 3200 },
 
-    { text: '**Avg / month** = Sold (7d) ÷ 7 × 30. Perkiraan ini berasal dari satu minggu saja, karena itu ditulis dengan **≈**. Satu minggu yang ramai atau sepi menggeser angka ini jauh.',
-      focus: 'col:permonth', at: 'near', tone: 'gold', hold: 6400 },
+    { text: 'Barang ini belum bisa dijual siapa pun.',
+      focus: 'col:transit', at: 'near', hold: 2400 },
 
-    { text: '**Est. days left** = In stock ÷ (Sold (7d) ÷ 7). Artinya stok di rak dibagi penjualan per hari.',
-      focus: 'col:daysleft', at: 'near', tone: 'gold', hold: 5200 },
+    { text: 'Tanda **—** berarti pertanyaan ini tidak berlaku di gudang tersebut.',
+      focus: 'col:transit', at: 'near', hold: 3000 },
 
-    { text: 'Angka itu berlaku per produk, bukan per gudang. Isi satu gudang dibuka di bawah ini.',
-      focus: 'row:master', at: 'near', act: 'open:GUDANG PUSAT', hold: 3800 },
+    { text: '**Agent inventory** sudah sampai dan sedang dibawa salesman.',
+      focus: 'col:field', at: 'near', hold: 3000 },
 
-    { text: '**Cello Chocolate** hanya tahan **20 hari** meskipun gudangnya penuh. Yang memenuhi gudang itu Cello Mint, dan Cello Mint tidak laku.',
-      focus: 'item:pusat-choco', at: 'near', tone: 'danger', hold: 6000 },
+    { text: 'Barang ini sudah bisa dijual.',
+      focus: 'col:field', at: 'near', hold: 2200 },
 
-    { text: 'Itu sebabnya tidak ada "sisa hari" untuk satu gudang penuh. Kalau total stok dibagi total penjualan, semua produk dianggap bisa saling gantikan. Gudang Pusat pernah tertulis **348 hari** padahal barang yang paling laku hanya tahan 20.',
-      focus: 'col:daysleft', at: 'bottom', tone: 'danger', hold: 7600 },
+    { text: 'Garis di bawah nama gudang membagi ketiganya: di rak, dalam pengiriman, dan di tangan agen.',
+      focus: 'bar', at: 'near', tone: 'gold', hold: 3800 },
 
-    { text: 'Angka **merah** berarti kurang dari 7 hari. Barang itu dikirim lebih dulu, karena pengiriman tidak sampai pada hari yang sama saat keputusan dibuat.',
-      focus: 'item:solo-choco', at: 'near', tone: 'danger', act: 'open:SOLO', hold: 6200 },
+    { text: 'Barang yang sudah terjual tidak dihitung, karena barangnya sudah tidak ada di mana pun.',
+      focus: 'bar', at: 'near', tone: 'gold', hold: 3600 },
 
-    { text: 'Tanda **—** artinya tidak ada penjualan dalam 7 hari terakhir, jadi tidak ada angka untuk dibagi. Itu **bukan** berarti stoknya awet selamanya.',
-      focus: 'item:solo-mint', at: 'near', hold: 5800 },
+    /* ── the three worked-out columns ────────────────────────────────────────────────────────── */
+    { text: '**Sold (7d)** menghitung penjualan **7 hari terakhir**.',
+      focus: 'col:sold', at: 'near', hold: 2800 },
 
-    { text: 'Dua angka perkiraan itu sengaja tidak menghitung **Shipping** dan **Agent inventory**. Pertanyaannya berapa lama rak ini bertahan, dan barang di truk atau di motor belum ada di rak.',
-      focus: 'col:shelf', at: 'bottom', act: 'close', hold: 6600 },
+    { text: 'Aplikasi hanya menyimpan satu minggu, jadi tidak ada angka di layar ini yang mewakili lebih dari seminggu.',
+      focus: 'col:sold', at: 'near', hold: 4000 },
 
-    { text: 'Kolom terakhir **Send at least**: jumlah paling sedikit yang harus dikirim ke gudang tersebut supaya raknya tidak kosong sebelum kiriman berikutnya sampai.',
-      focus: 'col:minimum', at: 'near', tone: 'gold', hold: 6200 },
+    { text: '**Avg / month** = Sold (7d) ÷ 7 × 30.',
+      focus: 'col:permonth', at: 'near', tone: 'gold', hold: 3000 },
 
-    { text: 'Angkanya dihitung dari riwayat gudang itu sendiri: seberapa cepat barangnya habis, berapa lama kiriman biasanya datang, dan berapa sering cabang itu memesan. Tidak ada yang perlu diketik.',
-      focus: 'col:minimum', at: 'bottom', tone: 'gold', hold: 7000 },
+    { text: 'Perkiraan ini berasal dari satu minggu saja, karena itu ditulis dengan **≈**.',
+      focus: 'col:permonth', at: 'near', tone: 'gold', hold: 3400 },
 
-    { text: '**SOLO** perlu **77 Bks**. Angka itu bukan saran yang bisa ditawar. Di bawah angka itu SOLO berhenti berjualan sebelum kiriman berikutnya tiba.',
-      focus: 'row:solo', at: 'near', tone: 'danger', act: 'open:SOLO', hold: 6600 },
+    { text: 'Satu minggu yang ramai atau sepi menggeser angka ini jauh.',
+      focus: 'col:permonth', at: 'near', hold: 2800 },
 
-    { text: 'Tanda **—** di sini artinya belum bisa dihitung, **bukan** tidak butuh apa-apa. Satu produk memerlukan dua kiriman tercatat sebelum kecepatannya bisa diukur.',
-      focus: 'item:bandung-choco', at: 'near', act: 'close', hold: 6400 },
+    { text: '**Est. days left** = In stock ÷ (Sold (7d) ÷ 7).',
+      focus: 'col:daysleft', at: 'near', tone: 'gold', hold: 3000 },
 
-    { text: 'Gudang Pusat selalu **—** di kolom ini. Barang dikirim dari sana, bukan ke sana, jadi pertanyaannya tidak berlaku.',
-      focus: 'row:master', at: 'near', hold: 5600 },
+    { text: 'Artinya stok di rak dibagi penjualan per hari.',
+      focus: 'col:daysleft', at: 'near', tone: 'gold', hold: 2600 },
 
-    { text: 'Angka **0** berbeda: perhitungannya sudah selesai, dan hasilnya gudang itu belum perlu kiriman. Nol dan **—** tidak pernah sama artinya.',
-      focus: 'item:solo-mint', at: 'near', act: 'open:SOLO', hold: 6200 },
+    /* ── why it is per product, not per warehouse ────────────────────────────────────────────── */
+    { text: 'Angka itu berlaku per produk, bukan per gudang.',
+      focus: 'col:daysleft', at: 'near', hold: 2600 },
 
-    { text: 'Baris paling bawah total seluruh perusahaan. Di sini pun tidak ada sisa hari, dengan alasan yang sama: stok di gudang yang salah tidak menolong gudang yang kehabisan.',
-      focus: 'row:total', at: 'near', hold: 6400 },
+    { text: 'Isi satu gudang dibuka di bawah ini.',
+      focus: 'row:master', at: 'near', act: 'open:GUDANG PUSAT', hold: 2600 },
 
-    { text: 'Hari cadangan diatur di **Settings**, per cabang. Angka di kolom ini naik sebanyak hari yang ditambahkan. Berguna untuk cabang yang jalannya sering telat.',
-      focus: 'col:minimum', at: 'bottom', tone: 'gold', act: 'close', hold: 7000 },
+    { text: '**Cello Chocolate** hanya tahan **20 hari** meskipun gudangnya penuh.',
+      focus: 'item:pusat-choco', at: 'near', tone: 'danger', hold: 3400 },
+
+    { text: 'Yang memenuhi gudang itu Cello Mint, dan Cello Mint tidak laku.',
+      focus: 'item:pusat-mint', at: 'near', tone: 'danger', hold: 3200 },
+
+    { text: 'Itu sebabnya tidak ada sisa hari untuk satu gudang penuh.',
+      focus: 'col:daysleft', at: 'bottom', tone: 'danger', hold: 3000 },
+
+    { text: 'Kalau total stok dibagi total penjualan, semua produk dianggap bisa saling gantikan.',
+      focus: 'col:daysleft', at: 'bottom', tone: 'danger', hold: 3600 },
+
+    { text: 'Gudang Pusat pernah tertulis **348 hari** padahal barang yang paling laku hanya tahan 20.',
+      focus: 'row:master', at: 'bottom', tone: 'danger', hold: 4000 },
+
+    /* ── reading the colours and the dashes ──────────────────────────────────────────────────── */
+    { text: 'Angka **merah** berarti kurang dari 7 hari.',
+      focus: 'item:solo-choco', at: 'near', tone: 'danger', act: 'open:SOLO', hold: 2800 },
+
+    { text: 'Barang itu dikirim lebih dulu, karena pengiriman tidak sampai pada hari yang sama saat keputusan dibuat.',
+      focus: 'item:solo-choco', at: 'near', tone: 'danger', hold: 4200 },
+
+    { text: 'Tanda **—** artinya tidak ada penjualan dalam 7 hari terakhir, jadi tidak ada angka untuk dibagi.',
+      focus: 'item:solo-mint', at: 'near', hold: 3800 },
+
+    { text: 'Itu **bukan** berarti stoknya awet selamanya.',
+      focus: 'item:solo-mint', at: 'near', hold: 2600 },
+
+    { text: 'Dua angka perkiraan itu sengaja tidak menghitung **Shipping** dan **Agent inventory**.',
+      focus: 'col:shelf', at: 'bottom', act: 'close', hold: 3600 },
+
+    { text: 'Pertanyaannya berapa lama rak ini bertahan, dan barang di truk atau di motor belum ada di rak.',
+      focus: 'col:shelf', at: 'bottom', hold: 3800 },
+
+    /* ── send at least ───────────────────────────────────────────────────────────────────────── */
+    { text: 'Kolom terakhir **Send at least**: jumlah paling sedikit yang harus dikirim ke gudang tersebut.',
+      focus: 'col:minimum', at: 'near', tone: 'gold', hold: 3800 },
+
+    { text: 'Tujuannya supaya raknya tidak kosong sebelum kiriman berikutnya sampai.',
+      focus: 'col:minimum', at: 'near', tone: 'gold', hold: 3200 },
+
+    { text: 'Angkanya dihitung dari riwayat gudang itu sendiri: seberapa cepat barangnya habis, berapa lama kiriman biasanya datang, dan berapa sering cabang itu memesan.',
+      focus: 'col:minimum', at: 'bottom', tone: 'gold', hold: 5000 },
+
+    { text: 'Tidak ada yang perlu diketik.',
+      focus: 'col:minimum', at: 'bottom', tone: 'gold', hold: 2200 },
+
+    { text: '**SOLO** perlu **77 Bks**.',
+      focus: 'row:solo', at: 'near', tone: 'danger', act: 'open:SOLO', hold: 2600 },
+
+    { text: 'Angka itu bukan saran yang bisa ditawar.',
+      focus: 'row:solo', at: 'near', tone: 'danger', hold: 2600 },
+
+    { text: 'Di bawah angka itu SOLO berhenti berjualan sebelum kiriman berikutnya tiba.',
+      focus: 'row:solo', at: 'near', tone: 'danger', hold: 3400 },
+
+    /* ── the dash, the zero, and the warehouse the question does not apply to ────────────────── */
+    { text: 'Tanda **—** di sini artinya belum bisa dihitung, **bukan** tidak butuh apa-apa.',
+      focus: 'item:bandung-choco', at: 'near', act: 'open:BANDUNG', hold: 3800 },
+
+    { text: 'Satu produk memerlukan dua kiriman tercatat sebelum kecepatannya bisa diukur.',
+      focus: 'item:bandung-choco', at: 'near', hold: 3600 },
+
+    { text: 'Gudang Pusat selalu **—** di kolom ini.',
+      focus: 'row:master', at: 'near', act: 'close', hold: 2600 },
+
+    { text: 'Barang dikirim dari sana, bukan ke sana, jadi pertanyaannya tidak berlaku.',
+      focus: 'row:master', at: 'near', hold: 3200 },
+
+    { text: 'Angka **0** berbeda: perhitungannya sudah selesai, dan hasilnya gudang itu belum perlu kiriman.',
+      focus: 'item:solo-mint', at: 'near', act: 'open:SOLO', hold: 4000 },
+
+    { text: 'Nol dan **—** tidak pernah sama artinya.',
+      focus: 'item:solo-mint', at: 'near', hold: 2400 },
+
+    /* ── the company line, and the one setting ───────────────────────────────────────────────── */
+    { text: 'Baris paling bawah total seluruh perusahaan.',
+      focus: 'row:total', at: 'near', act: 'close', hold: 2600 },
+
+    { text: 'Di sini pun tidak ada sisa hari, karena stok di gudang yang salah tidak menolong gudang yang kehabisan.',
+      focus: 'row:total', at: 'near', hold: 4000 },
+
+    { text: 'Hari cadangan diatur di **Settings**, per cabang.',
+      focus: 'col:minimum', at: 'bottom', tone: 'gold', hold: 2800 },
+
+    { text: 'Angka di kolom ini naik sebanyak hari yang ditambahkan.',
+      focus: 'col:minimum', at: 'bottom', tone: 'gold', hold: 3000 },
+
+    { text: 'Berguna untuk cabang yang jalannya sering telat.',
+      focus: 'col:minimum', at: 'bottom', tone: 'gold', hold: 2800 },
   ],
 };

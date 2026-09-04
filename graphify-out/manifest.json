@@ -360,8 +360,8 @@
     "semantic_hash": ""
   },
   ".claude/settings.local.json": {
-    "mtime": 1788494163.305481,
-    "ast_hash": "3230021ad13eb07289d5ee3c279e8c01",
+    "mtime": 1788518067.7136924,
+    "ast_hash": "2233bd34fec8264b2bf0c52d9f8620f7",
     "semantic_hash": ""
   },
   ".mcp.json": {
@@ -540,8 +540,8 @@
     "semantic_hash": ""
   },
   "src/config/integration.audit.mjs": {
-    "mtime": 1788496033.1729114,
-    "ast_hash": "54e8adb3ba49c40eb81fe138d38748a5",
+    "mtime": 1788520175.2420895,
+    "ast_hash": "f572a980c02114707faad45ce9353e76",
     "semantic_hash": ""
   },
   "src/config/nextStop.selfcheck.mjs": {
@@ -570,8 +570,8 @@
     "semantic_hash": ""
   },
   ".claude/PROGRESS.md": {
-    "mtime": 1788495592.5369484,
-    "ast_hash": "08b65a30ca6e9a5b969aeadd398d69a3",
+    "mtime": 1788520240.728906,
+    "ast_hash": "1c16ad16075ed2ae17d4c70ea2e4e943",
     "semantic_hash": ""
   },
   ".claude/pre-compact-context.md": {
@@ -760,8 +760,8 @@
     "semantic_hash": ""
   },
   ".claude/NEXT-SESSION.md": {
-    "mtime": 1788495561.4585643,
-    "ast_hash": "2300fb98cb4e14d00f936292d4734588",
+    "mtime": 1788519582.4193094,
+    "ast_hash": "2e1f145efae55f68b429b90b142ab445",
     "semantic_hash": ""
   },
   ".claude/SWEEP-2026-08-19.md": {
@@ -820,8 +820,8 @@
     "semantic_hash": ""
   },
   "src/ponder/scenes/stock-by-warehouse.js": {
-    "mtime": 1788059192.0275252,
-    "ast_hash": "4871d019ab79c4bcc736707948b81813",
+    "mtime": 1788520211.5834105,
+    "ast_hash": "a87883dffd1a701fc5cdf3e105af297a",
     "semantic_hash": ""
   },
   "src/ponder/useScenePlayer.js": {
@@ -995,13 +995,13 @@
     "semantic_hash": ""
   },
   "src/ponder/scenes/regional-warehouse.js": {
-    "mtime": 1788263580.9368453,
-    "ast_hash": "026471ac283e6c98e0632ca609be611a",
+    "mtime": 1788519368.134319,
+    "ast_hash": "cb6a8cb5f6a531b740a6bf72c5096419",
     "semantic_hash": ""
   },
   "src/ponder/stages/RegionalWarehouseStage.jsx": {
-    "mtime": 1788225987.0164168,
-    "ast_hash": "665ae625232b371b8111a80996ed4077",
+    "mtime": 1788519308.4842632,
+    "ast_hash": "5103e795140f63ecdde2c6c7685bdee9",
     "semantic_hash": ""
   },
   "tools/lab-firestore-stub.js": {

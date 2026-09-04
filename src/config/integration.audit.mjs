@@ -4161,6 +4161,62 @@ const resolvesKey = (k) => {
   return /data-ponder=\{/.test(stageSrc) &&
          (stageSrc.includes(`"${k}"`) || stageSrc.includes(`'${k}'`));
 };
+/* 🔴 A BEAT MAY NOT POINT INSIDE A DRAWER IT HAS NOT OPENED, and this check exists because the
+   scene shipped with exactly that. The "belum bisa dihitung" beat of `stock-by-warehouse` carried
+   `act: 'close'` while focusing `item:bandung-choco`, which lives in BANDUNG's drawer.
+
+   ⚠️ IT PASSED EVERY CHECK ABOVE, AND IT WOULD PASS A RUNTIME DOM QUERY TOO. The drawer collapses
+   with a `0fr` grid track instead of unmounting (`StockByWarehouseTable.jsx:119`), so the element
+   is present, `querySelector` finds it, `resolvesKey` finds its key in the source — and the
+   highlight draws a ring with no height around something nobody can see. Presence is not
+   visibility, and only replaying the scene's own `act` script can tell the difference.
+
+   The replay is the same one `StockStage.scriptedOpen` performs: walk every step from 0, track the
+   open warehouse, and demand that any `item:` or `drawer:` key belongs to whatever is open at that
+   beat. Pure arithmetic over the scene, so it is exact rather than a heuristic. */
+const { DEMO_WAREHOUSES } = await import('../ponder/demo/warehouses.js');
+const { MASTER } = await import('../utils/supply.js');
+/* The stage's own spelling, copied deliberately: `row:`/`drawer:` keys are built as
+   `r.name === MASTER ? 'master' : r.name.toLowerCase()`. If that ever changes, this check must
+   change with it — which is the point of writing it out rather than guessing a slug. */
+const drawerSlug = (name) => (name === MASTER ? 'master' : String(name).toLowerCase());
+const itemHome = new Map();
+for (const w of DEMO_WAREHOUSES) for (const p of (w.detail || [])) itemHome.set(p.id, drawerSlug(w.name));
+
+const strandedBeats = [];
+for (const s of scenes) {
+  let open = null;                                   // the warehouse this beat has open, replayed
+  (s.steps || []).forEach((st, i) => {
+    const a = st.act;
+    if (typeof a === 'string' && a.startsWith('open:')) open = drawerSlug(a.slice(5));
+    else if (a === 'close') open = null;
+    for (const k of focusOfStep(st)) {
+      if (typeof k !== 'string') continue;
+      let want = null;
+      if (k.startsWith('item:')) want = itemHome.get(k.slice(5)) ?? null;
+      else if (k.startsWith('drawer:')) want = k.slice(7);
+      if (want === null) continue;                   // not a drawer-bound key, or an unknown item
+      if (open !== want) {
+        strandedBeats.push(`${s.id} beat ${i + 1}: ${k} needs "${want}" open, but ${open === null ? 'every drawer is shut' : '"' + open + '" is open'}`);
+      }
+    }
+  });
+}
+check(G56, 'no beat points inside a drawer it has not opened',
+  strandedBeats.length === 0,
+  'a collapsed drawer still contains its element, so this cannot be caught by looking for the ' +
+  'key — the ring is simply drawn with no height. Stranded: ' + (strandedBeats.join(' · ') || 'none'));
+
+/* And the other half of the same idea: an `item:` key naming a product the demo world does not
+   contain resolves to nothing at all. `resolvesKey` allows it, because the id is a literal
+   somewhere in the demo file — this pins it to a product that actually exists in a warehouse. */
+const unknownItems = [...new Set(scenes.flatMap(s => s.steps.flatMap(focusOfStep))
+  .filter(k => typeof k === 'string' && k.startsWith('item:'))
+  .filter(k => !itemHome.has(k.slice(5))))];
+check(G56, 'every item a beat points at exists in the demo world',
+  unknownItems.length === 0,
+  'unknown product ids: ' + (unknownItems.join(', ') || 'none'));
+
 /* ---- HOW THE BOOK TALKS (2026-08-30) ----
    Aldi, after watching the tutorial play for the first time: *"i think that we need to remake the
    sentences and wording because it sound so ai ... make sure that u dont use kamu or aku, or any

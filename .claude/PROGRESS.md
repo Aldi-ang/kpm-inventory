@@ -68,6 +68,31 @@ also"* — he has been asked whether that should fall **silent on a phone**, or 
 derived from his click**. Either answer closes the sound thread. He also noted, unprompted, *"most
 of the time phone user wont be using their volume on this app anyway"*, so this is low stakes.
 
+## 🔧 2026-09-04 18:07 — 7DTD track. Hook fired on a KPM file again; nothing here is mine.
+
+`git status`: one dirty file, **`src/ponder/scenes/stock-by-warehouse.js`** — 🟢 KPM work in
+flight. This track has touched nothing outside `C:\Users\ASUS\AppData\Roaming\7DaysToDie\` all
+session. **Header and `NEXT-SESSION.md` left alone** — they belong to whoever is editing that scene.
+
+**7DTD: the input lock is SOLVED.** `480_Overengineered` was holding it — the only one of the nine
+new mods whose XUi patches the backpack/crafting panel. Disabled alone, nothing else changed, and
+he confirmed: *"i can move now"*. 70 mods on, 26 off. Crafting rows back to **12** at his request.
+
+**One correction worth carrying:** my block-ID alarm was wrong. The save has `blockmappings.nim`
+(193 KB, 8,608 names) — blocks are stored by NAME, so reordering mods is safe. Only *removing* a
+mod breaks placed blocks, which is what the Auto-Drill incident actually was.
+
+**18:09 — done since:** `840_RecipeSearchOptimizer` installed alone (keeps search inside the
+current category instead of walking 3288 recipes; `@` for global). 71 mods on, seven checks green.
+
+**Why Overengineered froze him, since he asked:** all **17** of its window groups use
+`open_backpack_on_open="false"` where every vanilla workstation uses `true`. Opening the backpack
+is what puts the game in cursor mode and closing it is what returns control — its windows take
+input and never open the thing that gives it back. The flag counts are fact; the input-mode
+reading is the best explanation and fits both symptoms, not proven against game code.
+
+Nothing owed to KPM. Full detail in the 7DTD folder's `MODS-NOTES.md` / `NEXT-JOB.md`.
+
 ## 🔧 2026-09-04 17:55 — 7DTD track. The Stop hook fired on a file this track never touched.
 
 `git status` shows exactly one dirty file: **`src/ponder/stages/RegionalWarehouseStage.jsx`** —

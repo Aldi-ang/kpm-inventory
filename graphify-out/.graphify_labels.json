@@ -71,6 +71,7 @@
   "69": "L",
   "70": "firebase.js",
   "71": "JourneyView.jsx",
+  "72": "dayStats.selfcheck.mjs",
   "73": "KPMInventoryApp",
   "74": "eslint",
   "75": "ShipmentPlanStage.jsx",
@@ -79,5 +80,10 @@
   "78": "StockStage.jsx",
   "79": "@types/react",
   "80": "@types/react-dom",
-  "81": "@vitejs/plugin-basic-ssl"
+  "81": "@vitejs/plugin-basic-ssl",
+  "82": "useSound.selfcheck.mjs",
+  "83": "HistoryReportView.jsx",
+  "84": "supply.js",
+  "85": "txSize.selfcheck.mjs",
+  "86": "nextStop.js"
 }
