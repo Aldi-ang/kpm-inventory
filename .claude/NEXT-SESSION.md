@@ -9,8 +9,13 @@ Wire the field terminal's tech SFX — but ONLY the takes Aldi approved, and onl
 which. The draft exists and he has heard it; this job is his verdict turned into code.
 
 🔴 FIRST: ASK WHICH TAKE, OR READ HIS ANSWER. Do not guess and do not wire all three keys.
+  He reviews it as an Artifact, which carries the audio inside the page as base64 and needs no
+  server: https://claude.ai/code/artifact/b91d3b94-74cf-4487-ae3e-118d9a5f1b7a
+  To change a sound: edit the `SOUNDS` block in tools/sfx-draft.mjs, re-render, then read that
+  artifact back (`action: "read"` with the url), swap the `AUDIO` object at the top of its script
+  for the new base64, and republish to the SAME url. Do not build a second review page.
     node tools/sfx-draft.mjs        # regenerates tools/sfx-draft/ (gitignored, ~1s)
-    preview_start "ponder-lab", then http://localhost:4190/tools/sfx-draft.html
+    preview_start "ponder-lab", then http://localhost:4190/tools/sfx-draft.html   # local twin
   Seven drafts, committed as a generator at `tools/sfx-draft.mjs` (6dd879a):
     key-a  90ms  rail key, dry tick, the safe one
     key-b 110ms  rail key, with a small pitched blip

@@ -43,6 +43,20 @@ phone also"*. Traced: `src/ponder/PonderOverlay.jsx:373` calls `bookClose()` whe
 and it is not phone-aware, so the tech panel's flow ends on a paper sound. `back` is the
 replacement; it must stay paper on the desk. Spec'd in `NEXT-SESSION.md`.
 
+**He asked for one review surface** — *"make them in one artifact so that i can review better"* —
+so the seven takes are published as an Artifact with the audio embedded as base64 (no server, works
+on his phone): **https://claude.ai/code/artifact/b91d3b94-74cf-4487-ae3e-118d9a5f1b7a**
+It draws each take's waveform on the same time scale, so "too long" and "too sharp" are shapes he
+can see rather than words he has to find, and the three key takes carry the ×8 burst test.
+⚠️ Decoding is deliberately split from playback: a suspended AudioContext still decodes, so the
+waveforms are on screen at rest and only sound waits for a press. Every non-ASCII character is
+escaped (`&#…;` in markup, `\uXXXX` in script) after the local serve showed mojibake — the page no
+longer depends on a charset header.
+
+**To revise a take:** edit the `SOUNDS` block in `tools/sfx-draft.mjs`, re-render, then read the
+artifact back and swap the `AUDIO` object in its script, republishing to the same URL. There is no
+second page to keep in sync.
+
 **WAITING ON ALDI, verbatim:** which of key-a / key-b / key-c, and whether `boot`, `down`, `open`,
 `back` are keepers or need changes.
 
