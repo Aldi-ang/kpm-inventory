@@ -360,8 +360,8 @@
     "semantic_hash": ""
   },
   ".claude/settings.local.json": {
-    "mtime": 1788357306.7499728,
-    "ast_hash": "548b05d637c99d68a9c2e5366f5cd24e",
+    "mtime": 1788453311.6494453,
+    "ast_hash": "e52af93b248d70ff4322637e510e33a8",
     "semantic_hash": ""
   },
   ".mcp.json": {
@@ -370,8 +370,8 @@
     "semantic_hash": ""
   },
   "src/.claude/settings.local.json": {
-    "mtime": 1786686832.6264615,
-    "ast_hash": "d6dc1386a135f164a01ea229b48631ac",
+    "mtime": 1788453389.9113214,
+    "ast_hash": "636e8c89adac4a4d3f4b24677c9ff6ea",
     "semantic_hash": ""
   },
   "src/config/career.js": {
@@ -540,8 +540,8 @@
     "semantic_hash": ""
   },
   "src/config/integration.audit.mjs": {
-    "mtime": 1788432997.41633,
-    "ast_hash": "de6d2eb5d38a38f68eb96bceea4c4951",
+    "mtime": 1788492884.7336328,
+    "ast_hash": "6153d3850fee8c88d943906cc998fc44",
     "semantic_hash": ""
   },
   "src/config/nextStop.selfcheck.mjs": {
@@ -570,8 +570,8 @@
     "semantic_hash": ""
   },
   ".claude/PROGRESS.md": {
-    "mtime": 1788433124.292983,
-    "ast_hash": "80fea0fb8f6ed58e955325cde0417ff2",
+    "mtime": 1788492420.1432872,
+    "ast_hash": "c162db69adce1d20cfbd08a49a4139a9",
     "semantic_hash": ""
   },
   ".claude/pre-compact-context.md": {
@@ -755,13 +755,13 @@
     "semantic_hash": ""
   },
   "src/config/logicFixes.selfcheck.mjs": {
-    "mtime": 1788338917.0465288,
-    "ast_hash": "053c70a30b3d99282c87c5527edc685e",
+    "mtime": 1788452902.8134437,
+    "ast_hash": "00ebe5ce220f76caa8054afc829572c5",
     "semantic_hash": ""
   },
   ".claude/NEXT-SESSION.md": {
-    "mtime": 1788433111.4347892,
-    "ast_hash": "fc879f8258ff7779945aafd72490296d",
+    "mtime": 1788492358.3227303,
+    "ast_hash": "fbf88bd62fb4b9ce3d71c6c7bcef2c25",
     "semantic_hash": ""
   },
   ".claude/SWEEP-2026-08-19.md": {
@@ -850,8 +850,8 @@
     "semantic_hash": ""
   },
   "src/ponder/PonderBook.jsx": {
-    "mtime": 1788432855.6573007,
-    "ast_hash": "e8247867195c1db58df74cea46b13200",
+    "mtime": 1788452924.6293085,
+    "ast_hash": "9ecad1ab98a2e4f6340244cdde52d928",
     "semantic_hash": ""
   },
   "src/ponder/demo/warehouses.js": {
@@ -990,8 +990,8 @@
     "semantic_hash": ""
   },
   "src/ponder/pageModel.js": {
-    "mtime": 1788338559.97957,
-    "ast_hash": "a0d59c039093a08fc960d08ec8af88d5",
+    "mtime": 1788452851.2114744,
+    "ast_hash": "6b4c3c254d2d8288d4b4628bd1ebdaf4",
     "semantic_hash": ""
   },
   "src/ponder/scenes/regional-warehouse.js": {

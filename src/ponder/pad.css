@@ -20,6 +20,27 @@
 /* Tokens live on :root and not on .pp-root, because the top-bar GLYPH uses them too and it is
    not inside the pad's portal. Everything is `--pp-` prefixed, so nothing here can collide with
    the app's own variables. */
+
+/* 🔴 ONE PALETTE, BOTH THEMES — AND THAT IS A DECISION, NOT AN OMISSION.
+
+   Aldi, 2026-09-04, asked twice before and answering it here: *"keep it dark, ponder panel should
+   not change with the dark or light mode"*.
+
+   So there is deliberately no `html.light` branch below, and there must never be one. The panel is
+   an instrument, and an instrument reads as an instrument by being DARKER than the room it is in —
+   a car dashboard does not turn white at noon. The sidebar took the opposite route (the anodised
+   faceplate at `html.light .kpm-rail-pod`) because a sidebar is part of the room; this is not.
+
+   The second reason is contrast, and it is the one that would have bitten. `--pp-lit` (#F59E0B) is
+   a LAMP colour. On the dark housing its partner ink `--pp-lit-ink` (#2A1A08) measures 7,82:1, but
+   amber as INK on a pale faceplate fails the palette law outright — gold is never text on light.
+   A light branch would have had to invent a second amber, and then the pad would have two
+   identities instead of one.
+
+   `html.lite-mode` below is UNRELATED to any of this: it is the performance switch, it strips
+   motion only, and it never changes a colour. Do not hang a theme off it.
+
+   Pinned by 'the field terminal keeps one palette in both themes' in integration.audit.mjs. */
 :root{
   /* 🔴 THE PACE DIAL, and the one Aldi set. `PACE` in PonderPad.jsx must equal this number - the
      JS drives the timers, the CSS drives the animations, and the integration audit pins the two
@@ -474,3 +495,4 @@ html.lite-mode .pp-g .pp-g-ln{clip-path:inset(0 0 0 0) !important; opacity:1 !im
   .pp-g .pp-g-pic{transform:none !important}
   .pp-g .pp-g-ln{clip-path:inset(0 0 0 0) !important; opacity:1 !important}
 }
+

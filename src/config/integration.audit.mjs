@@ -4490,6 +4490,25 @@ check(G56, 'lite mode opens the pad instantly and still shows every word',
   'lite mode and reduced motion must reset clip-path as well as animation, and the pad must ' +
   'close immediately instead of waiting for a flight that is not playing');
 
+/* 🔴 THE TERMINAL DOES NOT FOLLOW THE THEME, BY INSTRUCTION. Aldi, 2026-09-04, closing a question
+   he had been asked twice: *"keep it dark, ponder panel should not change with the dark or light
+   mode"*. An instrument reads as an instrument by staying darker than the room, and the amber is a
+   LAMP colour — as ink on a pale faceplate it breaks the palette law, so a light branch could not
+   have reused it anyway.
+
+   This is the check that stops a future session from "finishing" the theme support that was never
+   missing. `padCss` is comment-stripped, so the note in pad.css cannot satisfy this by accident;
+   only a real selector trips it. `html.lite-mode` is the performance switch and must stay legal,
+   which is why `.light` and `.dark` are matched on a selector boundary rather than as substrings —
+   `.lite-mode` and `--pp-lit` must not read as a theme. */
+const padThemeBranch = /(^|[\s,{}>+~])(?:html|:root)?\.(?:light|dark)\b/.test(padCss)
+  || /prefers-color-scheme/.test(padCss);
+check(G56, 'the field terminal keeps one palette in both themes',
+  !padThemeBranch && /--pp-housing-top:/.test(padCss) && /--pp-lit:/.test(padCss),
+  'pad.css must define its tokens once and carry no .light/.dark selector and no ' +
+  'prefers-color-scheme query. The panel is dark in both themes on purpose — see the locked note ' +
+  'above :root in pad.css');
+
 /* A phone has no room for a caption BESIDE anything: boxW is min(380, W - 24), which is 349 of 373
    on a 375px screen. Every placement such a box can choose lands on its own subject, so the beat
    falls through to the wide bottom bar instead — the layout the other beats in the same scenes
