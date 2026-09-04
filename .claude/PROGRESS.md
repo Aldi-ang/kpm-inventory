@@ -1,6 +1,49 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-09-04 (KPM session — PONDER SWEEP COMPLETE, all 5 scenes)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **722/722 audit · 988/988 selfcheck** · branch `phase0-solid-ground`
+**Updated: 2026-09-05 (KPM session — bounty-unit fix shipped `9e2e5a3`, three Backlog items still open)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **722/722 audit · 998/998 selfcheck** · branch `phase0-solid-ground`
+
+## 🟠 2026-09-05 — Bounty counted as stamps: FIXED `9e2e5a3` · 722/722 · 998/998
+
+Aldi: *"do all whatever the order as long as there is no problem when i sell the app and they customer use it"*.
+One shipped, one turned out to be bigger than its write-up, two untouched — quota ran down.
+
+**Shipped:** `AgentInventoryView.jsx:117` now carries the `PENALTY_` guard its two siblings already
+had. Cash bounties share the stamp map but hold rupiah, so 40 stamps + a Rp 200.000 fine displayed
+as 200.040. Not a future bug: `helpers.js:414-423` and `StockOpnameView.jsx:740` already mint those
+keys today. Ten checks added to `logicFixes.selfcheck.mjs`, trialled red before green.
+
+**Blocked and re-scoped — B, the store transfer.** `ConsignmentFinanceView.jsx:59` scopes receivables
+by `t.agentId`, so the history rewrite at `App.jsx:1746-1749` is ALSO what hands the debt to the new
+agent. The Backlog’s "just delete it" fix would hide a store’s debt from the agent who now owns it —
+worse for a paying customer than the wrong attribution. Correction written into the Backlog file
+(A-Brain `514ad69`). Needs Aldi’s answer before any code moves.
+
+**Still open, verified real:** A — Journey Plan silently reassigns stores on screen open when an
+agent name goes stale (`JourneyView.jsx:561-583`). C — damaged goods handed back during a
+consignment payment never reduce the bill (`returnTotal` written 3x, read by no money calc;
+`ConsignmentFinanceView.jsx:204`).
+
+**WAITING ON ALDI:** after Budi hands his store to Andi, whose dashboard shows Budi’s old sales for
+that store — Budi’s, Andi’s, or both? B cannot be built without it.
+
+## 🟠 2026-09-04 — Backlog ranked, four candidates re-verified. No code changed.
+
+Tutorial work closed with nothing behind it, so this session read `A-Brain/Backlog/` and checked the
+candidates against the CURRENT source — every line number in those files had drifted since 2026-08-17.
+
+| # | What breaks | Verified today at |
+|---|---|---|
+| A | Journey Plan fuzzy-matches stores to a wrong agent on screen open, writes it silently | `JourneyView.jsx:561-583` |
+| B | Approving a store hand-off rewrites the agent on every past sale of that store | `App.jsx:1746-1749` |
+| C | Damaged goods handed back during a payment never reduce the debt | `returnTotal` written at `useTransactionEngine.js:492,569,590`, read by nothing; `ConsignmentFinanceView.jsx:204` |
+| D | A cash bounty shows as a stamp count on the agent dashboard | `AgentInventoryView.jsx:117`, missing the guard `EODReconciliationView.jsx:162` and `App.jsx:2054` both carry |
+
+Two items came back partly fixed: the transfer’s same-name twin problem is now pinned by `customerId`,
+and the shipment double-confirm downgraded itself to LOW inside its own file.
+
+Full note with costs and what was rejected on purpose: `A-Brain/Brainstorm/2026-09-04_next-job-four-candidates.md` (`ed080f9`).
+
+**WAITING ON ALDI:** which of A/B/C/D to build. Recommended A, with D alongside because it is one line.
 
 ## 🟢 2026-09-04 — PONDER SWEEP COMPLETE, all five scenes. `50fb09f` · 722/722 · 988/988
 

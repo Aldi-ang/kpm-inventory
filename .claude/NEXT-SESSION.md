@@ -2,51 +2,65 @@
 
 Rewrite this file before you finish. One job only, never a menu.
 
-**The ponder sweep is COMPLETE** (2026-09-04). All five scenes split, 722/722 · 988/988. The next
-job comes from the Backlog, and the block below is a decision, not a build.
+**Shipped 2026-09-05:** the bounty-unit fix (`9e2e5a3`). **Blocked:** the store transfer, until Aldi
+answers whose dashboard keeps the old sales. **This file now carries the next unblocked one.**
 
 ---
 
 ```
-Pick the next real job with Aldi, from A-Brain/Backlog/ — do not invent one from a code smell.
+Job: a store that hands back damaged goods during a consignment payment is still billed for them.
+Aldi's standing instruction on this batch: "do all whatever the order as long as there is no
+problem when i sell the app and they customer use it." This one overcharges a real customer in
+rupiah, so it is the one that matters most for a sold app.
 
-The tutorial work is finished: all five ponder scenes were split to one idea per beat, and there is
-nothing queued behind it. `A-Brain/Backlog/` is the actual to-do list and it is long, so this
-session starts by READING and RANKING, then asking him to choose. Do not start coding first.
+WHAT THE CODE DOES NOW - verified 2026-09-05, line numbers current:
 
-START HERE: `A-Brain/Backlog/SWEEP 2026-08-18 - START HERE.md`. It ranks 75 confirmed problems from
-a review sweep, with detail files hanging off it. Several are HIGH and were independently verified
-by a second agent. Read that file, then list the open items and their status:
+  · An agent audits a consignment store. The stock splits three ways in
+    `src/ConsignmentFinanceView.jsx:281-298`: sold (paid for), damaged (handed back, valued into
+    `returnTotal`), and still on the shelf.
+  · `returnTotal` is passed into the engine at `:313` and written onto the transaction at
+    `src/hooks/useTransactionEngine.js:492`, `:569` and `:590`.
+  · Nothing that calculates money ever reads it. `grep -rn "returnTotal" src/` returns seven hits:
+    three writes in the engine, three in ConsignmentFinanceView on the way IN, and the parameter
+    itself. Zero reads in a balance calculation.
+  · `src/ConsignmentFinanceView.jsx:204` does `customers[name].balance -= (t.amountPaid || 0)` -
+    payment only. The loop right below it DOES subtract the returned packs from the shelf list, so
+    the goods leave the store's stock while their value stays on the store's bill.
 
-  node -e "const fs=require('fs');const d=process.argv[1];for(const f of fs.readdirSync(d).filter(x=>x.endsWith('.md'))){const s=fs.readFileSync(d+'/'+f,'utf8');const g=(k)=>((s.match(new RegExp('^'+k+': *(.*)$','m'))||[])[1]||'').trim();const st=g('status');if(/^(Done|Ready to Deploy|Parked)/.test(st))continue;console.log((g('priority')||'-').padEnd(8),(st||'-').slice(0,28).padEnd(30),f)}" "D:/APP DEVELOPMENT/kpm inventory main FILES/A-Brain/Backlog"
+So: you take the damaged goods back, and you keep charging for them.
 
-⚠️ CHECK THE STATUS FIELD BEFORE PROPOSING ANYTHING. The index table inside `Backlog/index.md` is
-older than the files and lists items as To Do that are already Done — "Shipping stock to a branch
-can erase sales made while the photo uploads" reads HIGHEST in the index and is `Done - 655e7f1` in
-its own file. The per-file `status:` is the truth; the index is a summary that drifted.
+WHAT TO DECIDE FIRST - do not start with an edit:
 
-⚠️ AND READ THE WHOLE FILE, NOT THE TITLE. Several of these items were re-checked after they were
-written and the correction is at the BOTTOM. The same shipping item downgrades itself from HIGHEST
-to MEDIUM three sections in, and then says the one-line fix it recommends is not enough because the
-same absolute-write pattern exists in at least four other files. A title is a first draft of a
-finding.
+The Backlog write-up says the fix is "subtract `amountPaid + returnTotal`", and says to do it AFTER
+merging the two duplicate debt calculators, or the same fix has to land in three places and one
+gets missed. That instruction has NOT been trialled against a check, so treat it as a hypothesis.
+Find every place that computes a consignment balance before changing any of them. The write-up
+names `ConsignmentFinanceView.jsx:105` and `MerchantSalesView.jsx:114` and `:159` as the others -
+those three line numbers are from 2026-08-17 and have NOT been re-verified, so locate them by what
+the code does, not by the number.
 
-WHAT TO BRING HIM: three or four candidates, each in one line - what breaks, who notices, and how
-big the fix looks. He picks. Then rewrite this file with the one he chose, spelled out the way the
-ponder briefs were: exact file and line, what the code does now, the smallest fix, and the trap
-that would make a lazy patch wrong.
+Then bring Aldi the count: "N places compute this balance; the fix lands in N, or in one after they
+are merged." Merging duplicated money maths is a bigger change than the subtraction itself, and it
+is his call whether to pay for it now.
 
-STANDING CONTEXT WORTH KNOWING BEFORE READING CODE:
+THE TRAP THAT MAKES A LAZY PATCH WRONG:
+
+A transaction type called `RETURN` already exists and is handled correctly everywhere - it is saved
+with a negative total, so it subtracts itself. If you add `returnTotal` to the balance maths
+without checking which transaction type you are inside, a plain RETURN could be subtracted twice.
+The broken case is only the return that happens INSIDE a `CONSIGNMENT_PAYMENT`.
+
+Leave the fix in `src/config/logicFixes.selfcheck.mjs` the way `9e2e5a3` did: slice each balance
+loop to its own anchors, assert the anchors were found, and re-run the arithmetic on real numbers
+(a store owing 1.000.000 that pays 400.000 and hands back 100.000 of damage owes 500.000, not
+600.000). Trial it red before green.
+
+STANDING CONTEXT:
   · Firestore rules are a DRAFT until Aldi deploys them by hand. Never run `firebase deploy`.
-  · `increment()` is used for stock in exactly ONE file (RestockVaultView.jsx); absolute
-    read-modify-write is the dominant pattern app-wide. Several backlog items are instances of
-    that one shape, so fixing them one file at a time may be the wrong unit of work.
-  · The Browser pane does not composite - rAF fires zero times, real `computer` clicks time out,
-    and `agent-browser` hangs the full 1800s. Screenshots, `read_page`, `getComputedStyle`,
-    `document.getAnimations()` and DOM queries all work. See
-    `A-Brain/Wiki/Concepts/Looking at the App.md`.
+  · The Browser pane does not composite - screenshots and read_page work, real clicks do not.
+    See `A-Brain/Wiki/Concepts/Looking at the App.md`.
 
-Then rewrite .claude/NEXT-SESSION.md with the single job he picked.
+Then rewrite .claude/NEXT-SESSION.md with the next single job.
 ```
 
 ---
@@ -54,25 +68,30 @@ Then rewrite .claude/NEXT-SESSION.md with the single job he picked.
 <details>
 <summary>Queue — do NOT paste these; promote one only when the job above is finished</summary>
 
+### B — the store transfer. BLOCKED on Aldi, do not build it
+
+`App.jsx:1746-1749` rewrites the agent on every past sale when a hand-off is approved. **The
+Backlog's "just delete it" fix is wrong** — `ConsignmentFinanceView.jsx:59` scopes receivables by
+`t.agentId`, so that rewrite is also what hands the debt to the new agent. Deleting it hides the
+store's debt from the agent who now owns it. Correction is written into
+`A-Brain/Backlog/Handing a store to another agent rewrites sales history.md` (`514ad69`).
+The question Aldi owes: after Budi hands his store to Andi, whose dashboard shows Budi's old sales
+for that store — Budi's, Andi's, or both?
+
+### A — Journey Plan reassigns stores by itself
+
+`JourneyView.jsx:561-583`. On screen open, any store whose agent is no longer on staff gets
+fuzzy-matched to whoever's name partly contains it ("Andika" → "Andi"), written with
+`updateDoc(...).catch(() => {})`, no message. Real, but it only fires once an agent name goes
+stale — a rename or a removal. Fix is a review list, not a one-liner.
+
 ### Ponder sweep — DONE, do not redo
 
-All five scenes split to one idea per beat on 2026-09-04: `regional-warehouse` (78eee2a),
-`stock-by-warehouse` (f21b3d3), then `product-performance` / `goods-received` / `shipment-plan`
-(50fb09f). 69 beats across the book before, 168 after; average 136 characters down to 68; beats over
-150 characters 19 down to 3; 80 distinct focus keys.
-
-Two audit checks now guard the class of bug this uncovered — search `strandedBeats` in
+All five scenes split 2026-09-04. Two audit checks guard it — search `strandedBeats` in
 `integration.audit.mjs`. Do not weaken them.
 
-### Sound thread — CLOSED, do not reopen
+### 7 Days to Die track — separate repo
 
-*"its still not silent on the phone but not a big deal actually skip it and move on"*. Background in
-`A-Brain/Wiki/Concepts/Sounds Come From Aldi.md`. `tools/sfx-draft.mjs` and `tools/sfx-draft.html`
-are dead and can be deleted whenever.
-
-### 7 Days to Die track — separate, not this repo
-
-Its notes and its own one-job prompt are at `C:\Users\ASUS\AppData\Roaming\7DaysToDie\MODS-NOTES.md`
-and `NEXT-JOB.md`. Nothing there is owed to this repo.
+`C:\Users\ASUS\AppData\Roaming\7DaysToDie\MODS-NOTES.md` and `NEXT-JOB.md`.
 
 </details>
