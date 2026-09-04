@@ -1,6 +1,58 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-09-05 (KPM session — bounty fix `9e2e5a3`; transfer question ANSWERED, build queued)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **722/722 audit · 998/998 selfcheck** · branch `phase0-solid-ground`
+**Updated: 2026-09-05 06:52 WIB (🟠 KPM session — store hand-off rebuilt, `39cd90d`)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **722/722 audit · 1016/1016 selfcheck** · branch `phase0-solid-ground`
+
+**Updated: 2026-09-05 06:28 WIB (7DTD-mods session — no KPM code touched; KPM state unchanged from the entry below)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **722/722 audit · 998/998 selfcheck** · branch `phase0-solid-ground`
+
+## 🟠 2026-09-05 06:52 — The store hand-off no longer rewrites sales history. SHIPPED `39cd90d`
+
+Aldi's rule, 2026-09-05: *"then andi and budi but andi should be view only and budi can edit the
+value and of course add history on the receipt the hands off thats tell Andi -> Budi"*. Built as a
+rule about ROLES — receiver view-only, seller keeps edit — so the receipt renders whichever two
+names apply.
+
+Approving a transfer no longer overwrites `agentId`/`agentName` on the store's past transactions.
+Ownership moved to the customer document (`ownerAgentId`, `ownerAgentName`, and a `handoffs` array
+naming both sides and the date); the receivables screen reaches the inherited debt through that
+owner plus the hand-off chain, so the new holder can still see and collect it. `handleDeleteConsignmentData`
+refuses rows the caller did not make, before the confirm and before any batch — a hidden button
+would have left the handler callable. The nota carries the line: `SERAH` on the thermal slip,
+`Alih Kelola` on the A4.
+
+`mappedBy` was NOT repurposed — `handleRequestTransfer` still reads it to tell same-named shops
+apart. Three files: `App.jsx`, `ConsignmentFinanceView.jsx`, `logicFixes.selfcheck.mjs`.
+722/722 audit · 1016/1016 selfcheck (trialled red at 8 first) · build clean.
+Vault: `Ownership Moves, History Does Not` (A-Brain `c059684`).
+
+**WAITING ON ALDI:** nothing blocking. ❓ One question, and only when he next prints a real nota —
+the hand-off line renders `from → to`, the literal record. His sentence read "Andi -> Budi" while
+the example he answered had Budi handing the store **to** Andi. Confirm the arrow points the way
+he expects.
+
+**PROPOSED, NOT DEPLOYED — Firestore rule.** The view-only refusal is enforced in the handler
+today. The server half is a draft for him to read and deploy himself:
+
+```
+match /artifacts/{appId}/users/{uid}/transactions/{txId} {
+  allow update, delete: if isAdmin()
+    || resource.data.agentId == request.auth.token.agentProfileId;
+}
+```
+
+## 🔵 2026-09-05 06:28 — 7DTD mods track. **Nothing in this repo changed.**
+
+That track writes only to `%APPDATA%/7DaysToDie/MODS-NOTES.md` and `NEXT-JOB.md`. This entry exists
+because the Stop hook fired on `src/config/logicFixes.selfcheck.mjs`, and the reason is worth
+recording rather than repeating:
+
+**that file has a new modification time (06:27) and a ZERO-BYTE diff.** `git status` is clean and
+`git diff --quiet` returns identical-to-HEAD. Something re-saved it without changing it — an audit
+run or an editor write. No session edited it. `NEXT-SESSION.md` was touched for its timestamp only;
+its queued job is still the store hand-off and is correct as written. **Do not go looking for a
+change here — there isn't one.**
+
+🟠 **KPM work stands exactly where the entry below left it.** WAITING ON ALDI on the KPM side is
+unchanged: nothing blocking, with the receipt-line arrow direction to confirm when it is drawn.
 
 ## 🟠 2026-09-05 — Aldi answered the transfer question. Spec written, NOT built.
 
