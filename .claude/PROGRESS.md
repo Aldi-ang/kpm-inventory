@@ -1,6 +1,25 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-09-03 (KPM session — riffle removal COMMITTED, screen check still owed)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **718/718 audit · 988/988 selfcheck** · branch `phase0-solid-ground`
+**Updated: 2026-09-04 (KPM session — riffle removal CONFIRMED ON SCREEN, job closed)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **718/718 audit · 988/988 selfcheck** · branch `phase0-solid-ground`
+
+## 🟢 2026-09-04 — the riffle removal is CONFIRMED ON SCREEN. Nothing owed on it.
+
+Watched on the live lab at 1280x860, Lite Mode off (so this is the full-motion path, not the
+`still` shortcut). **Ribbon jump:** section 17 → 1, sixteen sheets, counter moved in one click and
+**zero** page-turn animations were created — the animation set was byte-identical before and after
+(three 200 ms card transitions, nothing else). **Neighbour turn:** ArrowRight produced exactly one
+animation, `dur 340` = `TURN_FULL_MS` unchanged, easing `cubic-bezier(0.62, 0.02, 0.28, 1)` =
+`HINGE`. Held mid-arc and photographed: `rotateY ≈ 84,6°`, sheet standing on edge at the spine.
+
+⚠️ **THE VIEWING TRAP, now recorded in the vault.** The in-app Browser pane does not composite:
+`requestAnimationFrame` fired **0 times in 500 ms** while `visibilityState` said `"visible"`, and
+fronting the tab did not help. `agent-browser` hung the full 1800 s — the **second** time, and the
+vault had already warned. The way through was to read `document.getAnimations()` (durations and
+easings are readable at rest) and to pause an animation and write its `currentTime` to take the
+still. Written up in `A-Brain/Wiki/Concepts/Looking at the App.md`, commit `038bd95`.
+
+No source file was touched. `NEXT-SESSION.md` now carries the pad light-mode job, which is
+**blocked on Aldi's answer** — the question is in the block, ask it before building.
 
 ## 🟢 2026-09-03 — riffle removal COMMITTED. The open risk from the last entry is closed.
 
