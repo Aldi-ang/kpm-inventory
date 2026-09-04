@@ -1,6 +1,29 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-09-04 (KPM session — riffle removal CONFIRMED ON SCREEN, job closed)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **718/718 audit · 988/988 selfcheck** · branch `phase0-solid-ground`
+**Updated: 2026-09-04 (KPM session — riffle confirmed on screen, pad locked to one palette)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **719/719 audit · 988/988 selfcheck** · branch `phase0-solid-ground`
+
+## 🟢 2026-09-04 — the field terminal is LOCKED to one palette in both themes. `f748410`
+
+Aldi answered the question that had been open twice: *"keep it dark, ponder panel should not change
+with the dark or light mode"*. The pad already had no light branch, but by default rather than by
+decision — which reads as unfinished work, and the next session into `pad.css` would have found
+fourteen `--pp-` tokens with no theme support and "finished" the job.
+
+Now deliberate and enforced: a locked note above `:root` in `src/ponder/pad.css` carrying his words
+and the reasoning, plus one audit check — *the field terminal keeps one palette in both themes* —
+that goes red on any `.light`/`.dark` selector or `prefers-color-scheme` query in that file.
+`padCss` is comment-stripped so the note cannot satisfy the check by accident, and the selectors are
+matched on a boundary so `html.lite-mode` (performance, motion only) and `--pp-lit` stay legal.
+
+**Trialled red before it was trusted:** injecting `html.light{--pp-display:#FFFFFF}` failed exactly
+that check and nothing else (718 passed, 1 failed). Restored → **719/719 audit, 988/988 selfcheck**.
+Seen at 390x820: forcing `html.light` with the terminal open moved the app ground from
+`rgb(11,10,9)` to `rgb(210,201,180)` while every `--pp-` token and the housing gradient stayed
+byte-identical. Taste note committed to A-Brain as `d46e0d9`, including why this does NOT contradict
+the sidebar growing a pale faceplate — a sidebar is part of the room, an instrument is an object in it.
+
+**Only one Ponder question left:** does the display glyph replace the book glyph on the desk too?
+`NEXT-SESSION.md` carries it, and it is a decision, not a build.
 
 ## 🟢 2026-09-04 — the riffle removal is CONFIRMED ON SCREEN. Nothing owed on it.
 
