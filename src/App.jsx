@@ -1733,20 +1733,14 @@ const handleGitHubMirror = async () => {
           operations.push({ type: 'update', ref: reqRef, data: { status: isApproved ? 'APPROVED' : 'REJECTED', finalizedAt: serverTimestamp() } });
 
           if (isApproved) {
-              // 🚀 STORE-ID PIN: only the SENDER's rows move. Two shops can share a name, so a
-              // name-only match handed one agent's receivable to another. No transaction carries a
-              // customerId, so the name still selects the shop and fromAgentId scopes it to the rows
-              // he actually holds. Legacy rows with no agentId belong to ADMIN, the same rule the HQ
-              // filter in ConsignmentFinanceView already uses.
+              // 🤝 THE HAND-OFF NO LONGER REWRITES HISTORY. Approving used to stamp the receiving
+              // agent onto every past transaction of the store. Aldi, 2026-09-05: "andi should be
+              // view only and budi can edit the value" — a rule that cannot even be stated once the
+              // record says the receiver was the seller. So the rows keep the agent who made them,
+              // and OWNERSHIP moves on the store document instead. ConsignmentFinanceView reaches
+              // the outstanding debt through that owner plus the hand-off chain, which is what
+              // stops the new holder inheriting a debt he cannot see.
               const sameName = (v) => storeKey(v) === storeKey(request.storeName);
-              const heldBySender = (t) => request.fromAgentId === 'ADMIN'
-                  ? (!t.agentId || t.agentId === 'ADMIN')
-                  : t.agentId === request.fromAgentId;
-              const storeTx = transactions.filter(t => sameName(t.customerName) && heldBySender(t));
-              storeTx.forEach(t => {
-                  const tRef = doc(db, `artifacts/${appId}/users/${userId}/transactions`, t.id);
-                  operations.push({ type: 'update', ref: tRef, data: { agentId: request.toAgentId, agentName: request.toAgentName } });
-              });
 
               // The pinned id wins. Without one, only an unambiguous name may be written - stamping
               // mappedBy onto the wrong twin relabels a shop that was never handed over.
@@ -1756,7 +1750,25 @@ const handleGitHubMirror = async () => {
                   : (nameMatches.length === 1 ? nameMatches[0] : null);
               if (targetCustomer) {
                   const custRef = doc(db, `artifacts/${appId}/users/${userId}/customers`, targetCustomer.id);
-                  operations.push({ type: 'update', ref: custRef, data: { mappedBy: request.toAgentName } });
+                  // mappedBy stays what it was for: handleRequestTransfer reads it to tell two
+                  // same-named shops apart. ownerAgentId is the new, separate "who holds it now".
+                  operations.push({ type: 'update', ref: custRef, data: {
+                      mappedBy: request.toAgentName,
+                      ownerAgentId: request.toAgentId,
+                      ownerAgentName: request.toAgentName,
+                      // serverTimestamp() is illegal inside arrayUnion, so the date is a plain
+                      // string - getCurrentDate(), never an inline toISOString(), which is UTC and
+                      // would date a 06:00 WIB hand-off to the day before.
+                      handoffs: arrayUnion({
+                          fromId: request.fromAgentId || 'ADMIN',
+                          fromName: request.fromAgentName || 'Admin',
+                          toId: request.toAgentId,
+                          toName: request.toAgentName,
+                          date: getCurrentDate()
+                      })
+                  }});
+              } else {
+                  notify(`Approved, but "${request.storeName}" matches ${nameMatches.length} shops. Ask ${request.fromAgentName} to re-send it from the shop card, or the debt will not follow.`);
               }
 
               if (request.fromAgentId && request.fromAgentId !== 'ADMIN') {
@@ -2876,9 +2888,19 @@ const handleGitHubMirror = async () => {
   };
 
   const handleDeleteConsignmentData = async (customerName) => {
+      const targets = transactions.filter(t => (t.customerName||'').trim() === customerName && (t.type.includes('CONSIGNMENT') || (t.type === 'SALE' && t.paymentType === 'Titip') || t.type === 'RETURN'));
+      // 🤝 VIEW-ONLY ON INHERITED HISTORY. A store that was handed over keeps the sales the
+      // previous agent made: the new holder may see them and collect on them, but may not erase
+      // them - and neither may the seller erase what the new holder has added since. Refused HERE,
+      // before the confirm and before any batch, because hiding the button would leave this handler
+      // callable (the "UI Says Yes, Server Says No" shape in the vault). The matching Firestore
+      // rule is drafted in firestore.rules; the check has to hold on its own until that deploys.
+      if (!isAdmin) {
+          const notMine = targets.filter(t => (t.agentId || 'ADMIN') !== agentProfileId);
+          if (notMine.length) return notify(`${notMine.length} of these ${targets.length} records were made by another agent. You can still collect on them, but only the agent who made them can change them.`);
+      }
       if(!await confirmAction(`Delete ALL history for ${customerName}?`)) return;
       try {
-          const targets = transactions.filter(t => (t.customerName||'').trim() === customerName && (t.type.includes('CONSIGNMENT') || (t.type === 'SALE' && t.paymentType === 'Titip') || t.type === 'RETURN'));
           // 🚀 FIX: Chunked/paced commitInChunks instead of one deleteDoc await per
           // record — same pattern as its sibling handleDeleteHistory right above.
           const operations = targets.map(t => ({ type: 'delete', ref: doc(db, `artifacts/${appId}/users/${userId}/transactions`, t.id) }));
@@ -4673,9 +4695,10 @@ const handleGitHubMirror = async () => {
           )}
 
         {activeTab === 'receivables' && (
-              <ConsignmentFinanceView 
-                  transactions={transactions} 
-                  inventory={inventory} 
+              <ConsignmentFinanceView
+                  transactions={transactions}
+                  customers={customers}
+                  inventory={inventory}
                   onPayment={handleConsignmentPayment} 
                   onReturn={handleConsignmentReturn} 
                   onAddGoods={handleAddGoodsToCustomer}

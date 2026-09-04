@@ -4,7 +4,7 @@ import { convertToBks, formatRupiah, storeKey, storeLabel } from './utils/helper
 import { confirmAction } from './components/ConfirmGate.jsx';
 import { notify } from './components/Toast.jsx';
 
-export default function ConsignmentFinanceView({ transactions = [], inventory = [], onAddGoods, onPayment, onReturn, onDeleteConsignment, isAdmin, user, agentProfileId, motorists = [], transferRequests = [], onRequestTransfer, onAgentAcceptTransfer, onAdminApproveTransfer, appSettings, triggerCapy }) {
+export default function ConsignmentFinanceView({ transactions = [], customers = [], inventory = [], onAddGoods, onPayment, onReturn, onDeleteConsignment, isAdmin, user, agentProfileId, motorists = [], transferRequests = [], onRequestTransfer, onAgentAcceptTransfer, onAdminApproveTransfer, appSettings, triggerCapy }) {
     const [activeTab, setActiveTab] = useState('financials');
     
     // SCALABLE MULTI-FILTER STATE
@@ -51,6 +51,31 @@ export default function ConsignmentFinanceView({ transactions = [], inventory = 
         return list;
     }, [motorists, activeRegion, agentSearch]);
 
+    // 🤝 THE HAND-OFF READ PATH. Approving a transfer no longer restamps the store's past sales
+    // with the receiving agent, so those rows no longer answer to "t.agentId === me" - and the
+    // debt they carry would go uncollectable if that were the only way in. Second way in: the
+    // store record now says who owns it and who handed it over, so an agent reaches the rows the
+    // PREVIOUS owners made. They come back marked inherited, which is what makes "the receiver
+    // sees them, the seller still owns them" a thing the screen can say.
+    const inheritedFromIds = useMemo(() => {
+        const map = new Map();
+        if (isAdmin || !agentProfileId) return map;
+        (customers || []).forEach(c => {
+            if (c.ownerAgentId !== agentProfileId) return;
+            const key = storeKey(c.name);
+            const set = map.get(key) || new Set();
+            // The whole chain, not just the last hop: A -> B -> C leaves C holding A's rows too.
+            (c.handoffs || []).forEach(h => set.add(h.fromId || 'ADMIN'));
+            map.set(key, set);
+        });
+        return map;
+    }, [customers, isAdmin, agentProfileId]);
+
+    const isInherited = useMemo(() => (t) => {
+        const ids = inheritedFromIds.get(storeKey(t.customerName));
+        return !!ids && ids.has(t.agentId || 'ADMIN') && t.agentId !== agentProfileId;
+    }, [inheritedFromIds, agentProfileId]);
+
     // SCALABLE REGION & SEARCH FILTERING LOGIC
     const myTransactions = useMemo(() => {
         const safeTx = Array.isArray(transactions) ? transactions : [];
@@ -58,7 +83,7 @@ export default function ConsignmentFinanceView({ transactions = [], inventory = 
             return safeTx.filter(t => {
                 const matchId = agentProfileId && t.agentId === agentProfileId;
                 const matchName = user && t.agentName && (t.agentName === user.displayName || t.agentName === user.name || t.agentName === user.email?.split('@')[0]);
-                return matchId || matchName;
+                return matchId || matchName || isInherited(t);
             });
         }
         
@@ -79,7 +104,16 @@ export default function ConsignmentFinanceView({ transactions = [], inventory = 
         }
 
         return filtered;
-    }, [transactions, isAdmin, agentProfileId, user, activeRegion, agentSearch, motorists]);
+    }, [transactions, isAdmin, agentProfileId, user, activeRegion, agentSearch, motorists, isInherited]);
+
+    // The hand-off drawn on the nota: "Budi → Andi", the two sides of the last transfer of this
+    // shop. Aldi, 2026-09-05: "of course add history on the receipt the hands off".
+    const handoffLine = useMemo(() => {
+        if (!viewingReceipt) return null;
+        const c = (customers || []).find(x => storeKey(x.name) === storeKey(viewingReceipt.customerName));
+        const last = (c?.handoffs || []).slice(-1)[0];
+        return last ? `${last.fromName || 'Admin'} → ${last.toName || 'Admin'}` : null;
+    }, [viewingReceipt, customers]);
 
     // 1. DYNAMIC FIFO DEBT ENGINE 
     const debtData = useMemo(() => {
@@ -384,6 +418,7 @@ export default function ConsignmentFinanceView({ transactions = [], inventory = 
                                         <div className="flex"><span className="w-12 font-bold">JAM</span><span>: {receiptTimeStr}</span></div>
                                         <div className="flex"><span className="w-12 font-bold">CUST</span><span className="uppercase break-words flex-1">: {viewingReceipt.customerName}</span></div>
                                         {viewingReceipt.agentName && viewingReceipt.agentName !== 'Admin' && <div className="flex"><span className="w-12 font-bold">SALES</span><span className="uppercase break-words flex-1">: {viewingReceipt.agentName}</span></div>}
+                                        {handoffLine && <div className="flex"><span className="w-12 font-bold">SERAH</span><span className="uppercase break-words flex-1">: {handoffLine}</span></div>}
                                         <div className="flex"><span className="w-12 font-bold">BAYAR</span><span className="uppercase">: {viewingReceipt.paymentType || 'Cash'}</span></div>
                                     </div>
 
@@ -463,6 +498,7 @@ export default function ConsignmentFinanceView({ transactions = [], inventory = 
                                                     {receiptTimeStr && <tr><td className="font-bold py-1 w-24 !text-slate-400 uppercase align-top">Waktu</td><td className="font-bold py-1 !text-slate-900">: {receiptTimeStr}</td></tr>}
                                                     <tr><td className="font-bold py-1 !text-slate-400 uppercase align-top">Sales / Agent</td><td className="font-bold py-1 !text-slate-900 uppercase">: {viewingReceipt.agentName === 'Admin' ? (appSettings?.adminDisplayName || 'Admin') : (viewingReceipt.agentName || 'Sales')}</td></tr>
                                                     <tr><td className="font-bold py-1 !text-slate-400 uppercase align-top">Metode Bayar</td><td className="font-bold py-1 !text-slate-900 uppercase">: {viewingReceipt.paymentType || 'Cash'}</td></tr>
+                                                    {handoffLine && <tr><td className="font-bold py-1 !text-slate-400 uppercase align-top">Alih Kelola</td><td className="font-bold py-1 !text-slate-900 uppercase">: {handoffLine}</td></tr>}
                                                 </tbody>
                                             </table>
                                             <div className="w-1/3 border-2 !border-slate-800 p-3 rounded-lg bg-slate-50 shadow-sm flex flex-col justify-center">

@@ -211,12 +211,13 @@ ok('the request pins the customer document id',
    /customerId: mine\.length === 1 \? mine\[0\]\.id : null,/.test(app));
 ok('an ambiguous name is split by the sender own ownership before pinning',
    /sameName\.length > 1 \? sameName\.filter\(c => c\.mappedBy === fromAgentName\) : sameName/.test(app));
-ok('the transaction sweep is scoped to the sending agent',
-   /const storeTx = transactions\.filter\(t => sameName\(t\.customerName\) && heldBySender\(t\)\);/.test(app));
 ok('the unscoped name-only sweep is gone',
    !/transactions\.filter\(t => \(t\.customerName \|\| ''\)\.trim\(\)\.toLowerCase\(\) === request\.storeName/.test(app));
-ok('ADMIN hand-offs still pick up legacy rows that carry no agentId',
-   /\(!t\.agentId \|\| t\.agentId === 'ADMIN'\)/.test(app));
+/* The two checks that used to sit here pinned `heldBySender` and the ADMIN legacy-row branch -
+   the scoping of a transaction sweep that no longer exists. Aldi's 2026-09-05 rule removed the
+   sweep itself: past sales keep the agent who made them. Their successors are in THE STORE
+   HAND-OFF section at the end of this file, which asserts the sweep is absent and that the debt
+   still reaches the new holder through the store's owner instead. */
 ok('the customer doc is resolved by the pinned id first',
    /request\.customerId[\s\S]{0,90}customers\.find\(c => c\.id === request\.customerId\)/.test(app));
 ok('an ambiguous name writes mappedBy to NOBODY rather than to the first twin',
@@ -4220,6 +4221,148 @@ ok('an agent whose only debt is a bounty owes zero stamps',
    stampsOwed({ 'PENALTY_EOD_r1_CASH': 50000 }) === 0,
    'a cash fine is not a stamp debt and must not appear as one');
 
+
+section('THE STORE HAND-OFF — history keeps its author, ownership moves on the store (2026-09-05)');
+
+/* Aldi, 2026-09-05: *"then andi and budi but andi should be view only and budi can edit the value
+   and of course add history on the receipt the hands off thats tell Andi -> Budi"*.
+
+   Approving a transfer used to stamp the receiving agent onto every past transaction of that
+   store. That is what made his rule impossible to state at all: once the record says the receiver
+   was the seller, there is no "he may edit, you may not" left to enforce. The rows now keep the
+   agent who made them. Ownership moves on the STORE record, and the receivables screen reaches
+   the inherited debt through that owner plus the hand-off chain — because deleting the rewrite
+   without replacing that read path would leave the new holder unable to collect a debt he owns,
+   which is worse than the bug being fixed.
+
+   Slice every assertion to its own anchors. App.jsx names agentId over a hundred times, and the
+   approval handler's own notifications legitimately carry `agentId: request.toAgentId`, so a
+   file-wide match — or even a slice-wide one — proves nothing about the transaction rewrite. */
+
+const appc = code(app);
+const cfv  = code(read('src/ConsignmentFinanceView.jsx'));
+
+const aA = appc.indexOf('const handleAdminApproveTransfer');
+const aB = appc.indexOf('await commitInChunks(db, writeBatch, operations);', aA + 1);
+ok('the approval handler was found (anchors const handleAdminApproveTransfer .. commitInChunks)',
+   aA > -1 && aB > aA,
+   'anchor missed — the slice below would read the whole file and pass on a lookalike');
+if (aA > -1 && aB > aA) {
+  const approval = appc.slice(aA, aB);
+
+  /* THE REGRESSION GUARD. `data: { agentId:` is the batched-update shape and appears nowhere in
+     the notification writes, which use a bare `agentId:` inside addDoc. */
+  ok('approving a transfer no longer overwrites any past transaction’s agent',
+     !/data:\s*\{\s*agentId:\s*request\.toAgentId/.test(approval),
+     'the rewrite is back — past sales are being restamped with the receiver');
+  ok('the approval handler no longer selects the store’s transactions at all',
+     !/const storeTx/.test(approval),
+     'a selector over transactions inside approval is the rewrite growing back');
+
+  /* And the replacement must actually be there, or the debt reaches nobody. */
+  ok('approval moves ownership onto the store record instead',
+     /ownerAgentId:\s*request\.toAgentId/.test(approval),
+     'without an owner on the customer doc the new holder cannot see the debt');
+  ok('approval appends the hand-off to the store’s history',
+     /handoffs:\s*arrayUnion/.test(approval),
+     'the receipt line has nothing to render');
+  ok('the store-id pin and the twin fallback survived the rewrite removal',
+     /request\.customerId/.test(approval) && /nameMatches\.length === 1/.test(approval),
+     'same-named shops would move together again');
+}
+
+const dA = appc.indexOf('const handleDeleteConsignmentData');
+const dB = appc.indexOf('const handleDeleteHistory', dA + 1);
+ok('the consignment delete handler was found (anchors handleDeleteConsignmentData .. handleDeleteHistory)',
+   dA > -1 && dB > dA, 'anchor missed — the slice below would read the whole file');
+if (dA > -1 && dB > dA) {
+  const del = appc.slice(dA, dB);
+  /* Refused at the WRITE, not hidden in the UI — the "UI Says Yes, Server Says No" shape in the
+     vault. Hiding a button leaves the handler callable. */
+  ok('erasing a store’s history is refused for rows the caller did not make',
+     /notMine/.test(del) && /!isAdmin/.test(del),
+     'the receiver can still wipe the previous agent’s sales');
+  ok('the refusal happens before the confirm dialog and before any batch is built',
+     del.indexOf('notMine') > -1 && del.indexOf('notMine') < del.indexOf('commitInChunks'),
+     'a guard after the write is not a guard');
+}
+
+const mA = cfv.indexOf('const myTransactions');
+const mB = cfv.indexOf('const debtData', mA + 1);
+ok('the receivables scope was found (anchors const myTransactions .. const debtData)',
+   mA > -1 && mB > mA, 'anchor missed — the slice below would read the whole file');
+if (mA > -1 && mB > mA) {
+  ok('an agent also reaches rows belonging to a store he now owns',
+     /isInherited\(t\)/.test(cfv.slice(mA, mB)),
+     'the handed-over debt is invisible to the agent who now owns it');
+}
+ok('the inherited set is built from the store’s owner and its hand-off chain',
+   /c\.ownerAgentId !== agentProfileId/.test(cfv) && /c\.handoffs/.test(cfv),
+   'mappedBy is not the current owner — it also records who first registered the shop');
+ok('the hand-off is drawn on both receipt formats, not only the thermal slip',
+   (cfv.match(/handoffLine/g) || []).length >= 3,
+   'the memo plus one line per format is the minimum; his ask was for it on the receipt');
+
+/* ── the maths, re-run on real rows ───────────────────────────────────────────────────────
+   Budi sold to Toko Maju three times on consignment and collected once, then handed the store to
+   Andi. Andi has since made one sale there himself. Toko Lama is Budi's and must not move. */
+const storeK = (v) => String(v || '').trim().toUpperCase();
+const HANDED = { id: 'c1', name: 'Toko Maju', ownerAgentId: 'andi', ownerAgentName: 'Andi',
+                 handoffs: [{ fromId: 'budi', fromName: 'Budi', toId: 'andi', toName: 'Andi', date: '2026-09-05' }] };
+const TX = [
+  { id: 't1', customerName: 'Toko Maju', agentId: 'budi', type: 'SALE', paymentType: 'Titip', total: 450000 },
+  { id: 't2', customerName: 'Toko Maju', agentId: 'budi', type: 'SALE', paymentType: 'Titip', total: 300000 },
+  { id: 't3', customerName: 'Toko Maju', agentId: 'budi', type: 'CONSIGNMENT_PAYMENT', amountPaid: 250000 },
+  { id: 't4', customerName: 'Toko Maju', agentId: 'andi', type: 'SALE', paymentType: 'Titip', total: 120000 },
+  { id: 't5', customerName: 'Toko Lama', agentId: 'budi', type: 'SALE', paymentType: 'Titip', total: 999000 },
+];
+
+const ownerMap = (custs, me) => {
+  const m = new Map();
+  custs.forEach(c => {
+    if (c.ownerAgentId !== me) return;
+    const k = storeK(c.name), set = m.get(k) || new Set();
+    (c.handoffs || []).forEach(h => set.add(h.fromId || 'ADMIN'));
+    m.set(k, set);
+  });
+  return m;
+};
+const inheritedBy = (me) => {
+  const m = ownerMap([HANDED], me);
+  return (t) => {
+    const ids = m.get(storeK(t.customerName));
+    return !!ids && ids.has(t.agentId || 'ADMIN') && t.agentId !== me;
+  };
+};
+const visibleTo = (me) => { const inh = inheritedBy(me); return TX.filter(t => t.agentId === me || inh(t)); };
+const outstanding = (rows) => rows.reduce((s, t) =>
+  t.type === 'SALE' && t.paymentType === 'Titip' ? s + t.total
+  : t.type === 'CONSIGNMENT_PAYMENT' ? s - t.amountPaid : s, 0);
+
+ok('the receiving agent reaches every row of the store he was handed, and nothing else',
+   visibleTo('andi').map(t => t.id).join(',') === 't1,t2,t3,t4',
+   'got: ' + visibleTo('andi').map(t => t.id).join(','));
+ok('the selling agent does NOT lose the sales he made there',
+   visibleTo('budi').map(t => t.id).join(',') === 't1,t2,t3,t5',
+   'got: ' + visibleTo('budi').map(t => t.id).join(','));
+ok('the debt that follows the store is the real number: 450.000 + 300.000 − 250.000 + 120.000',
+   outstanding(visibleTo('andi')) === 620000,
+   'got Rp ' + outstanding(visibleTo('andi')));
+ok('another agent’s store is not dragged along by the hand-off',
+   !visibleTo('andi').some(t => t.customerName === 'Toko Lama'));
+
+/* The write refusal, on the same rows. Nobody bulk-erases history they did not write. */
+const refusedRows = (me, isAdm) => {
+  const targets = TX.filter(t => storeK(t.customerName) === storeK('Toko Maju') &&
+    (t.type.includes('CONSIGNMENT') || (t.type === 'SALE' && t.paymentType === 'Titip') || t.type === 'RETURN'));
+  return isAdm ? 0 : targets.filter(t => (t.agentId || 'ADMIN') !== me).length;
+};
+ok('the receiver is refused when he tries to erase the three sales Budi made',
+   refusedRows('andi', false) === 3, 'got ' + refusedRows('andi', false));
+ok('the seller is refused too, for the one row Andi added after the hand-off',
+   refusedRows('budi', false) === 1, 'got ' + refusedRows('budi', false));
+ok('an admin still clears the whole store',
+   refusedRows('andi', true) === 0);
 
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);
