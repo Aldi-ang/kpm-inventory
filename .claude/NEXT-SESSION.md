@@ -2,65 +2,51 @@
 
 Rewrite this file before you finish. One job only, never a menu.
 
-**Current as of 2026-09-04 19:30 WIB.** Two of five scenes done (`regional-warehouse` 78eee2a,
-`stock-by-warehouse` f21b3d3). Three left. One scene per session.
+**The ponder sweep is COMPLETE** (2026-09-04). All five scenes split, 722/722 · 988/988. The next
+job comes from the Backlog, and the block below is a decision, not a build.
 
 ---
 
 ```
-Split `product-performance` into one idea per beat. Third scene of the sweep Aldi asked for:
-*"there is too much words but too little showing"*, *"make sure that for almost every sentence there
-is some textbox to highlights and explain not just sentence reading"*, *"also apply this logic to
-other tutorial as well"*.
+Pick the next real job with Aldi, from A-Brain/Backlog/ — do not invent one from a code smell.
 
-THE MEASUREMENTS THAT RANK WHAT IS LEFT (re-run the one-liner at the bottom):
-    scene                    beats  avg chars  >150ch  keys
-    regional-warehouse  ✅       28         83       1    26
-    stock-by-warehouse  ✅       51         64       1    18
-    product-performance ← THIS   12        137       3    10
-    goods-received               11        131       2     9
-    shipment-plan                13        128       2    10
-Target the shape the two finished ones now have: avg well under 100 characters, one sentence per
-beat, close to one distinct key per beat, and holds around 2400–4000ms instead of 6000+.
+The tutorial work is finished: all five ponder scenes were split to one idea per beat, and there is
+nothing queued behind it. `A-Brain/Backlog/` is the actual to-do list and it is long, so this
+session starts by READING and RANKING, then asking him to choose. Do not start coding first.
 
-START BY READING THE STAGE, NOT THE SCENE. `ProductPerformanceTable.jsx` carries 14 anchors and the
-scene names 10, so some sentences already have somewhere to go. List the unused anchors first and
-split onto those; add markup only where a sentence genuinely has nothing to point at. That is how
-`stock-by-warehouse` needed almost no new markup at all.
+START HERE: `A-Brain/Backlog/SWEEP 2026-08-18 - START HERE.md`. It ranks 75 confirmed problems from
+a review sweep, with detail files hanging off it. Several are HIGH and were independently verified
+by a second agent. Read that file, then list the open items and their status:
 
-🔴 THE TRAP, AND IT IS NOT THEORETICAL — `stock-by-warehouse` shipped with it. A beat may not point
-inside something that is closed. That scene had `act: 'close'` on a beat focusing
-`item:bandung-choco`, an item in BANDUNG's drawer. The drawer collapses with a `0fr` grid track
-instead of unmounting, so the element EXISTS: `querySelector` finds it, the audit's `resolvesKey`
-finds its key in the source, and the highlight draws a ring with no height around something nobody
-can see. **Presence is not visibility.**
-  Two checks now catch that class (`integration.audit.mjs`, search `strandedBeats`): one replays
-  each scene's `act` script and demands any `item:`/`drawer:` key be inside whatever is open at that
-  beat; the other pins every `item:` key to a product that exists in the demo world. If
-  `product-performance` has any hidden or toggled region, extend the FIRST check to cover it rather
-  than trusting a DOM query.
+  node -e "const fs=require('fs');const d=process.argv[1];for(const f of fs.readdirSync(d).filter(x=>x.endsWith('.md'))){const s=fs.readFileSync(d+'/'+f,'utf8');const g=(k)=>((s.match(new RegExp('^'+k+': *(.*)$','m'))||[])[1]||'').trim();const st=g('status');if(/^(Done|Ready to Deploy|Parked)/.test(st))continue;console.log((g('priority')||'-').padEnd(8),(st||'-').slice(0,28).padEnd(30),f)}" "D:/APP DEVELOPMENT/kpm inventory main FILES/A-Brain/Backlog"
 
-⚠️ DO NOT TRY TO VERIFY BY WALKING THE SCENE IN THE BROWSER. It was tried and abandoned: clicking
-through the step buttons stalls past the 45-second tool limit because the pane does not composite
-(rAF fires zero times, real `computer` clicks time out). A screenshot at `?step=N` still works, and
-is worth one look. The replay check above is the real verification — exact rather than sampled, and
-it cannot go stale. See `A-Brain/Wiki/Concepts/Looking at the App.md`.
-    preview_start "ponder-lab", then
-        http://localhost:4190/tools/ponder-lab.html?scene=product-performance&step=6
+⚠️ CHECK THE STATUS FIELD BEFORE PROPOSING ANYTHING. The index table inside `Backlog/index.md` is
+older than the files and lists items as To Do that are already Done — "Shipping stock to a branch
+can erase sales made while the photo uploads" reads HIGHEST in the index and is `Done - 655e7f1` in
+its own file. The per-file `status:` is the truth; the index is a summary that drifted.
 
-LANGUAGE RULES ARE ENFORCED BY THE AUDIT AND ARE NOT OPTIONAL: everyday Indonesian; feature and
-column names left in the English they are printed in, wrapped in `**`; and NO second or first person
-anywhere — not `kamu`, not the polite `Anda`, not `saya`/`kita`. The subject is the warehouse, the
-shipment, the product or the app. Check whether any string in this scene is load-bearing for another
-check before rewording it — `stock-by-warehouse` has two formula strings pinned by check 631.
+⚠️ AND READ THE WHOLE FILE, NOT THE TITLE. Several of these items were re-checked after they were
+written and the correction is at the BOTTOM. The same shipping item downgrades itself from HIGHEST
+to MEDIUM three sections in, and then says the one-line fix it recommends is not enough because the
+same absolute-write pattern exists in at least four other files. A title is a first draft of a
+finding.
 
-DONE WHEN: avg beat under ~100 chars, no beat over 150 unless it is genuinely one idea, close to one
-key per beat, and 722/722 audit + 988/988 selfcheck.
+WHAT TO BRING HIM: three or four candidates, each in one line - what breaks, who notices, and how
+big the fix looks. He picks. Then rewrite this file with the one he chose, spelled out the way the
+ponder briefs were: exact file and line, what the code does now, the smallest fix, and the trap
+that would make a lazy patch wrong.
 
-Re-measure with:
-  node -e "const fs=require('fs');const d='src/ponder/scenes';for(const f of fs.readdirSync(d).filter(x=>x.endsWith('.js'))){const s=fs.readFileSync(d+'/'+f,'utf8');const t=[...s.matchAll(/text: '([^']*)'/g)].map(m=>m[1]);if(!t.length)continue;console.log(f,t.length,Math.round(t.reduce((a,x)=>a+x.length,0)/t.length),t.filter(x=>x.length>150).length,new Set([...s.matchAll(/focus: '([^']+)'/g)].map(m=>m[1])).size)}"
+STANDING CONTEXT WORTH KNOWING BEFORE READING CODE:
+  · Firestore rules are a DRAFT until Aldi deploys them by hand. Never run `firebase deploy`.
+  · `increment()` is used for stock in exactly ONE file (RestockVaultView.jsx); absolute
+    read-modify-write is the dominant pattern app-wide. Several backlog items are instances of
+    that one shape, so fixing them one file at a time may be the wrong unit of work.
+  · The Browser pane does not composite - rAF fires zero times, real `computer` clicks time out,
+    and `agent-browser` hangs the full 1800s. Screenshots, `read_page`, `getComputedStyle`,
+    `document.getAnimations()` and DOM queries all work. See
+    `A-Brain/Wiki/Concepts/Looking at the App.md`.
 
-Then rewrite .claude/NEXT-SESSION.md with the next single job — pull from the queue below.
+Then rewrite .claude/NEXT-SESSION.md with the single job he picked.
 ```
 
 ---
@@ -68,15 +54,15 @@ Then rewrite .claude/NEXT-SESSION.md with the next single job — pull from the 
 <details>
 <summary>Queue — do NOT paste these; promote one only when the job above is finished</summary>
 
-### The last two scenes, in rank order
+### Ponder sweep — DONE, do not redo
 
-`goods-received` (11 beats, avg 131, 2 over 150, 9 keys), then `shipment-plan` (13, 128, 2, 10).
-Same treatment, one per session. When all five are done the sweep Aldi asked for is complete.
+All five scenes split to one idea per beat on 2026-09-04: `regional-warehouse` (78eee2a),
+`stock-by-warehouse` (f21b3d3), then `product-performance` / `goods-received` / `shipment-plan`
+(50fb09f). 69 beats across the book before, 168 after; average 136 characters down to 68; beats over
+150 characters 19 down to 3; 80 distinct focus keys.
 
-### Then the Backlog — do not invent a job
-
-`A-Brain/Backlog/` is the real to-do list. Open `SWEEP 2026-08-18 — START HERE.md` first; it ranks
-75 confirmed problems, several HIGH and independently verified. Aldi picks, not you.
+Two audit checks now guard the class of bug this uncovered — search `strandedBeats` in
+`integration.audit.mjs`. Do not weaken them.
 
 ### Sound thread — CLOSED, do not reopen
 

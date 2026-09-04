@@ -1,6 +1,33 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-09-04 19:30 WIB (KPM session — ponder sweep 2 of 5 done)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **722/722 audit · 988/988 selfcheck** · branch `phase0-solid-ground`
+**Updated: 2026-09-04 (KPM session — PONDER SWEEP COMPLETE, all 5 scenes)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **722/722 audit · 988/988 selfcheck** · branch `phase0-solid-ground`
+
+## 🟢 2026-09-04 — PONDER SWEEP COMPLETE, all five scenes. `50fb09f` · 722/722 · 988/988
+
+Last three done in one pass: `product-performance`, `goods-received`, `shipment-plan`. None needed
+stage markup — the anchors already existed and the sentences just needed splitting onto them.
+
+| scene | before | after |
+|---|---|---|
+| product-performance | 12 beats, avg 137 ch, 3 over 150 | 30 beats, avg 56, none over 150 |
+| goods-received | 11 beats, avg 131 ch, 2 over 150 | 29 beats, avg 52, none over 150 |
+| shipment-plan | 13 beats, avg 128 ch, 2 over 150 | 30 beats, avg 55, none over 150 |
+
+**Book-wide: 69 beats → 168, average 136 characters → 68, beats over 150 chars 19 → 3, 80 distinct
+focus keys.** The three remaining long beats are single ideas that genuinely run long.
+
+Found while splitting: four unused anchors in `goods-received` (`f:asal`, `f:tanggal`, `t:barang`,
+`t:batch`) and one in `product-performance` (`row:perf-teh`) — every one of them a clause in the old
+text that had nowhere to point. The landed-cost sums are now formula → numbers → meaning, because
+the meaning was the tail of a sentence that had already spent six seconds on arithmetic. Every
+figure still matches `RestockVaultView.jsx:273-276`.
+
+⚠️ **The first commit of this batch carried estimated counts and was amended with measured ones.**
+Estimating a number that a one-line script can measure is how a commit message stops being evidence.
+
+**WAITING ON ALDI:** which job next. The tutorial work is finished and nothing is queued behind it,
+so `NEXT-SESSION.md` now sends the next session to `A-Brain/Backlog/` to rank and ask — with the
+warning that `Backlog/index.md` has drifted and the per-file `status:` is the truth.
 
 ## 🟢 2026-09-04 19:30 — Stock by Warehouse split, and it was hiding a live bug. `f21b3d3` · 722/722
 

@@ -570,8 +570,8 @@
     "semantic_hash": ""
   },
   ".claude/PROGRESS.md": {
-    "mtime": 1788520240.728906,
-    "ast_hash": "1c16ad16075ed2ae17d4c70ea2e4e943",
+    "mtime": 1788536126.3123112,
+    "ast_hash": "7c27e34faffa9cd97019c19c2d8ddc39",
     "semantic_hash": ""
   },
   ".claude/pre-compact-context.md": {
@@ -760,8 +760,8 @@
     "semantic_hash": ""
   },
   ".claude/NEXT-SESSION.md": {
-    "mtime": 1788519582.4193094,
-    "ast_hash": "2e1f145efae55f68b429b90b142ab445",
+    "mtime": 1788536102.294811,
+    "ast_hash": "c3b1d1c55fa0b2be7473480a4be6f929",
     "semantic_hash": ""
   },
   ".claude/SWEEP-2026-08-19.md": {
@@ -880,8 +880,8 @@
     "semantic_hash": ""
   },
   "src/ponder/scenes/goods-received.js": {
-    "mtime": 1788226244.3396485,
-    "ast_hash": "2f1e0c505507c19966dcf4fcf1c44a2d",
+    "mtime": 1788535967.657246,
+    "ast_hash": "d7409b878215c192285ab09ebfc73bf3",
     "semantic_hash": ""
   },
   "src/ponder/stages/GoodsReceivedStage.jsx": {
@@ -915,8 +915,8 @@
     "semantic_hash": ""
   },
   "src/ponder/scenes/shipment-plan.js": {
-    "mtime": 1788143258.2302866,
-    "ast_hash": "080204b392efae7736cb5134bf2f60e9",
+    "mtime": 1788536003.9313896,
+    "ast_hash": "cf8cc6239bdcfe50f8bdb76b315e6be5",
     "semantic_hash": ""
   },
   "src/ponder/stages/ShipmentPlanStage.jsx": {
@@ -940,8 +940,8 @@
     "semantic_hash": ""
   },
   "src/ponder/scenes/product-performance.js": {
-    "mtime": 1788060601.580429,
-    "ast_hash": "af3e12bec5605abac1ba148006dce722",
+    "mtime": 1788524321.5899887,
+    "ast_hash": "756cf19d75ead442056811376d46d4aa",
     "semantic_hash": ""
   },
   "src/ponder/stages/ProductPerformanceStage.jsx": {

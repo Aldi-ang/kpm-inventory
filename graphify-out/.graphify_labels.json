@@ -52,12 +52,9 @@
   "50": "MerchantSalesView.jsx",
   "51": "VaultGate.jsx",
   "52": "CapybaraMascot.jsx",
-  "53": "cross-env",
-  "54": "eslint-plugin-react-refresh",
   "55": "postcss",
   "56": "PonderOverlay.jsx",
   "57": "CustomerManager.jsx",
-  "58": "JourneyView.jsx",
   "59": "undef.check.mjs",
   "60": "StockOpnameView.jsx",
   "61": "firebase.js",
@@ -81,9 +78,6 @@
   "79": "@types/react",
   "80": "@types/react-dom",
   "81": "@vitejs/plugin-basic-ssl",
-  "82": "useSound.selfcheck.mjs",
-  "83": "HistoryReportView.jsx",
   "84": "supply.js",
-  "85": "txSize.selfcheck.mjs",
-  "86": "nextStop.js"
+  "85": "txSize.selfcheck.mjs"
 }
