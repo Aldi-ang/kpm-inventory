@@ -46,6 +46,13 @@ verified: `/sounds/pad-key.mp3` returns 200 `audio/mpeg`, decodes to 182 ms at p
 matching `book-page`), and section switching still works after the change (rail 4 → 7, section 08),
 so `padKey()` neither throws nor blocks `go()`. **The listening test is his phone.**
 
+📓 **Written to the vault, so it outlives this repo's log:** `A-Brain/Wiki/Concepts/Sounds Come
+From Aldi.md` (`bc9bfec`) — the rule, all three rejected rounds with his words, the ffmpeg cut
+method (silencedetect → envelope dump → fades → level match), and why audibility can never be
+proven here. Linked from Index, MOC and the Concepts index. His two judgements from this session
+are in `Aldi's Design Taste.md`: the four-word rejection, and *"most of the time phone user wont be
+using their volume on this app anyway"* — read as a stop signal on scope, not on craft.
+
 ## ⬛ 2026-09-04 (superseded above) — synthesis rejected, the rail key became his recording
 
 *"all bad nvm, use this for the section button click on the side"* — all seven synthesised takes

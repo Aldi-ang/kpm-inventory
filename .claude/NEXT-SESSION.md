@@ -44,6 +44,10 @@ sounds (*"u re crazy using sales SFX for the book"*), round 2 synthesised paper 
 bad as well"*), round 5 synthesised seven tech takes (*"all bad nvm"*). The audit check 'every
 tutorial sound is one of his own files, and none of them is a sales sound' enforces it; do not
 weaken it to make something pass.
+📓 READ FIRST, it is one page and it is the whole thread:
+`A-Brain/Wiki/Concepts/Sounds Come From Aldi.md` — the rule, the three rounds, the ffmpeg cut
+method (silencedetect → 5ms envelope dump → fades → match the family's level), why a derived sound
+is still his sound, and the REJECTED ON PURPOSE list so nothing here gets re-proposed.
 
 ⚠️ WHAT CANNOT BE VERIFIED HERE, so do not claim it. `playSound` returns early until
 `unlockSounds()` has run, `main.jsx` arms that on the first real user gesture, and the ponder lab
