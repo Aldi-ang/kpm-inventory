@@ -53,11 +53,10 @@ review list, not a one-liner. Note: this is the same family as the hand-off bug 
 — code deciding on its own who owns a store — so read
 `A-Brain/Wiki/Concepts/Ownership Moves, History Does Not.md` before designing the fix.
 
-### Ask Aldi when a real nota is next printed
+### Arrow direction — ANSWERED 2026-09-05, do not ask again
 
-The hand-off line on the receipt renders `from → to`, the literal record. His sentence read
-"Andi -> Budi" while the example he answered had Budi handing the store TO Andi. One confirmation
-that the arrow reads the way he expects. Not blocking anything.
+*"if budi to andi then Budi -> Andi"*. Sender on the left, receiver on the right. That is what
+`39cd90d` already renders. Nothing to change.
 
 ### Ponder sweep — DONE, do not redo
 

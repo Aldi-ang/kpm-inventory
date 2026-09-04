@@ -1,6 +1,30 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-09-05 06:52 WIB (🟠 KPM session — store hand-off rebuilt, `39cd90d`)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **722/722 audit · 1016/1016 selfcheck** · branch `phase0-solid-ground`
+**Updated: 2026-09-05 07:05 WIB (🟠 KPM session — store hand-off rebuilt `39cd90d`; arrow answered, no code change)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **722/722 audit · 1016/1016 selfcheck** · branch `phase0-solid-ground`
+
+## 🟠 2026-09-05 07:05 — Arrow answered. Rule deploy is now on HIS list. Damaged goods NOT started.
+
+Aldi: *"if budi to andi then Budi -> Andi"*. Sender left, receiver right — which is what `39cd90d`
+already renders (`fromName → toName`). No code change. The question is closed in the vault note and
+struck from the NEXT-SESSION queue so nobody asks it a third time.
+
+**On his job list now:** `A-Brain/Backlog/Deploy the store hand-off write rule.md` (status To Do).
+The handler refuses a receiver editing inherited sales; Firestore still allows it. The rule is
+quoted there, deliberately NOT written into `firestore.rules` — no `allow` line changes without him
+reading it first. It also flags the thing to check before deploying: whether `agentProfileId` is
+really on the auth token in this project, because if it is not, the rule has to read the profile doc
+instead and is a different rule. Backlog item *Handing a store to another agent rewrites sales
+history* closed Done (A-Brain `43c738f`).
+
+**He said "continue your job list". I stopped instead, and this is why.** Next job is damaged goods
+being billed after they are handed back — a money path, and its whole trap is that fixing the
+obvious call site double-counts every standalone retur. 12% of the weekly plan left, 12h to reset.
+Half of that fix, shipped, moves real rupiah the wrong way in an app he is preparing to sell. Same
+call the 2026-09-05 06:00 session made at 14%. Nothing was started, so nothing is half-done.
+`.claude/NEXT-SESSION.md` holds the full brief, ready to paste on a fresh quota.
+
+**WAITING ON ALDI:** nothing blocking. Two things when he wants them — the ✅ test pass on a real
+hand-off, and the rules deploy above.
 
 **Updated: 2026-09-05 06:28 WIB (7DTD-mods session — no KPM code touched; KPM state unchanged from the entry below)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **722/722 audit · 998/998 selfcheck** · branch `phase0-solid-ground`
 
