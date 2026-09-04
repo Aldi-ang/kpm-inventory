@@ -43,6 +43,25 @@ also"* — he has been asked whether that should fall **silent on a phone**, or 
 derived from his click**. Either answer closes the sound thread. He also noted, unprompted, *"most
 of the time phone user wont be using their volume on this app anyway"*, so this is low stakes.
 
+## 🔧 2026-09-04 17:55 — 7DTD track. The Stop hook fired on a file this track never touched.
+
+`git status` shows exactly one dirty file: **`src/ponder/stages/RegionalWarehouseStage.jsx`** —
+🟢 KPM work in flight, not mine. Every edit this session was under
+`C:\Users\ASUS\AppData\Roaming\7DaysToDie\`. **`NEXT-SESSION.md` and the header were left alone**;
+whoever is editing that stage owns them.
+
+**7DTD state: Aldi cannot move in-game and is waiting on a fix.** After respawn a window opens
+and closes and the character locks up. His screenshot shows a half-drawn window titled *"Improved
+armor crafting kit"* with no background sprite — the XUi-conflict signature, not a crash. The
+launch was clean: zero exceptions, zero DLL failures, 37–61 FPS.
+
+Prime suspect `480_Overengineered` (only new mod touching the backpack/crafting panel). The full
+prompt, the three fallback suspects, and a load-order mistake of mine he must check are in the
+7DTD folder's `NEXT-JOB.md`. Both fixes are blocked on him closing the game.
+
+**Also his, still owed:** *"and bring back the normal crafting panel that u decrease"* — recipe
+rows 8 → 12, blocked twice by the game holding the files.
+
 ## 🔧 2026-09-04 17:35 — 7DTD track. No KPM work. Nothing here changed where KPM stands.
 
 The Stop hook fired on `.claude/settings.local.json` again — a **permissions side-effect** of
