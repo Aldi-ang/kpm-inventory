@@ -2,6 +2,30 @@
 
 **Updated: 2026-09-04 17:35 WIB (KPM session — rail key SHIPPED, thread written to the vault)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **720/720 audit · 988/988 selfcheck** · branch `phase0-solid-ground`
 
+## 🔴 2026-09-04 18:05 — NEXT JOB: the Regional Warehouse ponder shows too little. Blocked on one call.
+
+Sound thread CLOSED by him: *"its still not silent on the phone but not a big deal actually skip it
+and move on"*. No further sound work; the paper `book-close` on the phone stays as-is.
+
+He named the next job himself: *"i think last time we are about to fix the ponder tutorial for the
+regional warehouse, i said there is too much words but too little showing"* and *"make sure that for
+almost every sentence there is some textbox to highlights and explain not just sentence reading"*.
+
+**Diagnosed, and it is not the wording.** `src/ponder/scenes/regional-warehouse.js` has 10 beats of
+long paragraphs, but the whole scene has only **7 things it can point at** — `desk:nav`,
+`desk:where` and `tab:{incoming,request,stock,book,data}`, every one of them on the nav strip
+(`WarehouseDeskNav.jsx:18,19,31`). Five consecutive beats all focus `tab:incoming` while paragraphs
+are read. Worse, `RegionalWarehouseStage.jsx` renders the real nav plus a **one-line grey text
+placeholder** as the body — so there is literally nothing else on the stage to highlight.
+
+⚠️ **The blocker is a prior decision, not a missing feature.** That stage's own comment refuses to
+build the tab bodies: *"a hand-built copy of the other three would be a second version of the screen
+to keep correct — which is exactly the drift this stage exists to avoid."* Giving almost every
+sentence its own highlight requires exactly that copy.
+
+**WAITING ON ALDI:** build mock tab bodies inside the tutorial stage (lots to point at, but a second
+copy of screen content that can drift), or mount the real panels (no drift, much heavier)?
+
 ## 🟢 2026-09-04 17:35 — day closed on the sound thread. Knowledge is in the vault, one question open.
 
 **NOW:** nothing in flight. Working tree clean, 720/720 audit, 988/988 selfcheck.
