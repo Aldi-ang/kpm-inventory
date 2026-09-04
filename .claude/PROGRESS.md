@@ -1,6 +1,40 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-09-05 07:05 WIB (🟠 KPM session — store hand-off rebuilt `39cd90d`; arrow answered, no code change)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **722/722 audit · 1016/1016 selfcheck** · branch `phase0-solid-ground`
+**Updated: 2026-09-05 07:20 WIB (🟠 KPM session — hand-off shipped `39cd90d`; Aldi's live test FAILED at the bell, diagnosed not fixed)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **722/722 audit · 1016/1016 selfcheck** · branch `phase0-solid-ground`
+
+## 🟠 2026-09-05 07:20 — Aldi's live test: the receiving account never sees the hand-off. DIAGNOSED, NOT FIXED.
+
+His steps: Tier 1 account → consignment sale, 7-day tempo → sent the store to the test "sales canvas"
+account → swapped to that account → pressed the notification bell → nothing.
+
+**NOT a regression from `39cd90d`** [certain] (checked: `git show 39cd90d -- src/App.jsx` — the only
+`toAgentId` lines in that commit are inside the admin-approval block; `handleRequestTransfer`,
+`systemNotifs`, `combinedNotifications` and `handleAgentAcceptTransfer` are untouched). The failing
+step is the REQUEST → bell → accept path, which is older code and was never exercised end to end.
+
+**Prime suspect: `agentProfileId` is `null` on the receiving account.** `App.jsx:2406-2409` — if the
+login record's stored `agentId` is `'ADMIN'` or `'ADMIN_VEHICLE'`, the guard strips it to `null`
+**and writes that null back to the database**. "Sales canvas" is exactly the admin-vehicle shape, so
+a test account set up that way is nulled on every login. Everything downstream then compares against
+null and silently matches nothing:
+
+- `App.jsx:536` bell filter — `n.agentId === agentProfileId` → no notification ever shows.
+- `ConsignmentFinanceView.jsx:269` — `r.toAgentId === agentProfileId` → the **Accept Responsibility**
+  card never appears either.
+
+Both go quiet with no error, which is what he saw. Fingerprint to confirm: the console line
+`Corruption blocked: Stripping Admin Vehicle from Tier 4 account.` on that account's login.
+
+**Second suspect, same family:** the dropdown sends the motorist **document id** (`m.id`), while
+`agentProfileId` is the `agentId` **field** on the login record (`App.jsx:2401`). If those two
+disagree for that agent, the same silent mismatch happens with no null involved.
+
+**WAITING ON ALDI — ❓ two answers before any code is written:**
+1. On the test account, is the **Accept Responsibility** card missing from Receivables too, or is it
+   there and only the bell is dead? Card missing as well ⇒ the id, confirmed.
+2. The console line quoted above — present on that account's login, yes or no?
+
+Nothing was changed this turn. No fix is being guessed at until those two come back.
 
 ## 🟠 2026-09-05 07:05 — Arrow answered. Rule deploy is now on HIS list. Damaged goods NOT started.
 
