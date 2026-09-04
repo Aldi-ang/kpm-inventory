@@ -159,7 +159,7 @@ that goes red on any `.light`/`.dark` selector or `prefers-color-scheme` query i
 matched on a boundary so `html.lite-mode` (performance, motion only) and `--pp-lit` stay legal.
 
 **Trialled red before it was trusted:** injecting `html.light{--pp-display:#FFFFFF}` failed exactly
-that check and nothing else (718 passed, 1 failed). Restored → **720/720 audit, 988/988 selfcheck**.
+that check and nothing else (718 passed, 1 failed). Restored → **719/719 audit, 988/988 selfcheck**.
 Seen at 390x820: forcing `html.light` with the terminal open moved the app ground from
 `rgb(11,10,9)` to `rgb(210,201,180)` while every `--pp-` token and the housing gradient stayed
 byte-identical. Taste note committed to A-Brain as `d46e0d9`, including why this does NOT contradict
