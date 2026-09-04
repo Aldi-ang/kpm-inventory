@@ -5,68 +5,65 @@ Rewrite this file before you finish. One job only, never a menu.
 ---
 
 ```
-Give the field terminal its own tech SFX. Aldi asked for it on 2026-09-04: "there is one thing
-that needed to be added is actually a tech SFX when interacting with the tech ponder panel".
+Wire the field terminal's tech SFX — but ONLY the takes Aldi approved, and only after he has said
+which. The draft exists and he has heard it; this job is his verdict turned into code.
 
-🔴 CHECK FIRST WHETHER THE FILES ARRIVED. This job is blocked on Aldi dropping mp3s into
-`public/sounds/`. Run `ls public/sounds` and compare against the list below. If the new files are
-not there, do NOT start — ask him for them and stop. Everything else about this job is already
-decided; the files are the only missing input.
+🔴 FIRST: ASK WHICH TAKE, OR READ HIS ANSWER. Do not guess and do not wire all three keys.
+    node tools/sfx-draft.mjs        # regenerates tools/sfx-draft/ (gitignored, ~1s)
+    preview_start "ponder-lab", then http://localhost:4190/tools/sfx-draft.html
+  Seven drafts, committed as a generator at `tools/sfx-draft.mjs` (6dd879a):
+    key-a  90ms  rail key, dry tick, the safe one
+    key-b 110ms  rail key, with a small pitched blip
+    key-c  95ms  rail key, softer, more switch than beep     <- pick exactly ONE of these three
+    boot  760ms  the panel powering on (scan-in)
+    down  480ms  the panel leaving (deploy shut)
+    open  260ms  pressing Buka, to replace the paper ponder-open.mp3
+    back  300ms  closing a lesson, to replace the paper book-close
+  If he wants changes rather than a pick, edit the `SOUNDS` block in tools/sfx-draft.mjs and
+  re-render — the synthesis kit above it (tone/noise/env/finish) is documented for exactly that.
+  Do NOT hand-tune by ear you do not have; change the number he named and let him listen again.
 
-🔴 TWO THINGS ARE BANNED, AND BOTH ARE BANNED BECAUSE HE ALREADY REJECTED THEM ONCE. Read the
-header comment of `src/ponder/sfx.js` before touching anything — it is a scar, not documentation.
-  1. DO NOT SYNTHESISE A SOUND. Round 2 of the book's audio built paper out of filtered noise. It
-     needed no files and it was correctly silent in Lite Mode, and he still killed it: "SFX sound
-     really bad as well". The note's own conclusion: synthesis was the clever answer to the wrong
-     question. No oscillators, no WebAudio noise, no "placeholder beep".
-  2. DO NOT REUSE AN EXISTING SOUND. Round 1 re-pointed the app's own SFX and got "u re crazy
-     using sales SFX for the book, use paper or book SFX la bro". Every file in public/sounds
-     already carries a meaning: click = a toast appearing (Toast.jsx:67), tap = examining an item
-     (MerchantSalesView.jsx:2383), commit = a transaction (MerchantSalesView.jsx:1537), vaultb =
-     the vault gate (VaultGate.jsx:319), error = a failure, sign = signing, book-page/open/close =
-     paper, ponder-open = pressing a tutorial entry. An ear taught that a rail key is a
-     transaction is an ear taught wrong.
+WHERE EACH ONE GOES — five call sites, four files:
+  1. RAIL KEY -> inside `go()` in `src/ponder/PonderPad.jsx` (~line 139), NOT on the button's
+     onClick. The swipe on `.pp-stage` (onTouchStart/onTouchEnd) also routes through `go()`, and a
+     swipe that changes section in silence is the same action behaving two ways.
+     ⚠️ `go()` returns early on `i === cur` and on out-of-range. Put the sound AFTER those guards
+     or pressing the key you are already on makes a noise for nothing.
+  2. SCAN-IN -> the arrival in PonderPad. ARRIVE_BASE 932 * PACE 2.5 = 2330ms; `boot` is 760ms and
+     deliberately leads the animation rather than filling it.
+  3. DEPLOY SHUT -> `leave()` in PonderPad (~line 131). ⚠️ It has an `instant()` branch for Lite
+     Mode and reduced motion that calls `onClose()` immediately. Lite Mode drops MOTION, not sound,
+     and `playSound` already handles its own silencing — so the sound goes before the branch, not
+     inside the animated half only.
+  4. CLOSE X -> `onClick={leave}` (~line 217) already routes through `leave()`, so 3 covers it.
+     Verify rather than adding a second call.
+  5. THE BUG HE REPORTED BY EAR -> `src/ponder/PonderOverlay.jsx:373` calls `bookClose()` when a
+     lesson exits. That fires on the phone too, so the tech panel's own flow ends on a paper
+     sound: *"the ponder panel close, it sound like book close on the phone also"*. It must become
+     the tech sound ON THE PHONE and stay `bookClose()` on the desk, where a book really is
+     closing. PonderBook already computes `phone` from `PHONE_Q = '(max-width: 767px)'` — reuse
+     that test, do not invent a second breakpoint.
 
-THE FOUR SILENT MOMENTS, in the order they matter — all in `src/ponder/PonderPad.jsx`:
-  1. RAIL KEY (line ~279, `onClick={() => go(i)}`) — the seventeen keys down the right edge, and
-     the most-pressed control on the panel. Also reached by the swipe on `.pp-stage`
-     (`onTouchStart`/`onTouchEnd`), so hang the sound inside `go()`, NOT on the button's onClick,
-     or a swipe changes section in silence and the same action has two different behaviours.
-  2. ARRIVAL — the scan-in. `ARRIVE_BASE = 932` scaled by `PACE`; the panel powers on with a
-     travelling scan bar and nothing to hear.
-  3. EXIT — the deploy shut, `LEAVE_BASE = 380` scaled by `PACE`.
-  4. CLOSE BUTTON (line ~217, `onClick={leave}`) — the X in the status bar. May share the exit
-     sound; it triggers the same departure.
-  Already has a sound and is NOT part of this job: the Buka entry buttons call `bookPick()`.
-  Flag to Aldi whether a paper-ish `ponder-open.mp3` still belongs on a tech panel — his call,
-  not a fix to make quietly.
+HOW TO WIRE, and do not build a second sound system:
+  Copy the chosen mp3s into `public/sounds/`, add them to `SOURCES` in `src/hooks/useSound.js`
+  (name -> '/sounds/x.mp3') plus the per-name volume map below it, then export one arrow per sound
+  from `src/ponder/sfx.js` in the same shape as `bookPick`/`bookOpen`/`bookPage`/`bookClose`.
+  `playSound` already solves pooling, the browser unlock gesture and Lite Mode silence.
+  Name them for the PANEL, not the book — e.g. padKey, padBoot, padDown, padOpen, padBack — or the
+  next reader will assume they are paper.
 
-WHAT THE FILES MUST BE, and tell him this rather than guessing: SHORT. The rail key is pressed
-seventeen times in a row while reading, so anything over ~250ms stacks on itself and turns into a
-smear. The book's clips were trimmed on the way in for exactly this reason — the originals ran
-4,7s, 6,5s and 5,9s of mostly silence, and an untrimmed page turn started over a second after the
-click that caused it, which reads as an unresponsive app. Trim each new file to its burst with a
-~70ms fade before shipping it, and keep the untrimmed original.
+DONE WHEN: five call sites fire; a swipe and a rail tap sound identical; closing a lesson on a
+phone is tech and on a desk is still paper; 719/719 audit and 988/988 selfcheck, plus one new
+check in the pad block of integration.audit.mjs pinning that the pad's sounds are its OWN names —
+that the panel never plays click/tap/commit/vaultb/book-* is the whole regression this prevents.
 
-HOW TO WIRE IT — the plumbing already exists, do not build a second one:
-  `src/hooks/useSound.js` holds the `SOURCES` map (name -> '/sounds/x.mp3') and a per-name volume
-  map below it. `playSound(name)` handles pooling, the browser's unlock gesture, and silence in
-  Lite Mode. `src/ponder/sfx.js` is the thin layer that names them for the tutorial
-  (`bookPick`, `bookOpen`, `bookPage`, `bookClose`). Add the pad's names there in the same shape —
-  one exported arrow per sound — and import them in PonderPad.jsx. That is the whole change.
-
-DONE WHEN: each of the four moments plays its own file; a swipe and a rail tap sound identical;
-719/719 audit and 988/988 selfcheck, plus one new audit check in the pad block of
-`integration.audit.mjs` asserting the pad's sounds are its OWN names and not any of the reused
-ones above (that is the regression this job exists to prevent).
-
-VERIFY: sound cannot be screenshotted, so verify what CAN be — that the call fires on the right
-event and the file resolves. `read_network_requests` with urlPattern "/sounds/" shows the mp3
-actually being fetched when you click. The pane does NOT composite (rAF is dead in it) and
-`agent-browser` hangs 1800s — see `A-Brain/Wiki/Concepts/Looking at the App.md`. Then hand the
-listening test to Aldi; an ear is his, not yours.
-    preview_start "ponder-lab", then http://localhost:4190/tools/ponder-lab.html?book
-    Below 767px is the phone, and the pad is phone-only.
+VERIFY: sound cannot be screenshotted, so verify what CAN be. `read_network_requests` with
+urlPattern "/sounds/" proves the right mp3 is fetched on the right event, and decoding it in the
+page (fetch -> AudioContext.decodeAudioData -> duration/peak) proves the file is neither silent nor
+clipping. That is proof of SHAPE; the listening test is Aldi's and only his.
+⚠️ The Browser pane does NOT composite — rAF fires zero times in it — and `agent-browser` hangs the
+full 1800s. Both are written up in `A-Brain/Wiki/Concepts/Looking at the App.md`. Screenshots,
+read_page, getComputedStyle and document.getAnimations() all work.
 
 Then rewrite .claude/NEXT-SESSION.md with the next single job — pull from the queue below.
 ```
@@ -78,13 +75,13 @@ Then rewrite .claude/NEXT-SESSION.md with the next single job — pull from the 
 
 ### The queue is empty after the job above.
 
-Every Ponder question opened in the 2026-09-02/03 rounds is now closed: the riffle removal was
-confirmed on screen (2026-09-04), the terminal was locked to one palette in both themes
-(`f748410`), and the two-glyph split was confirmed as Aldi's own decision (`0eef44b` in A-Brain) —
-*"icon should be different because they have different theme and color"*.
+Every Ponder question from the 2026-09-02/03 rounds is closed: the riffle removal was confirmed on
+screen, the terminal was locked to one palette in both themes (`f748410`), and the two-glyph split
+was confirmed as Aldi's own call (`0eef44b` in A-Brain) — *"icon should be different because they
+have different theme and color"*.
 
-After the SFX job, the next one has to come from `A-Brain/Backlog/` — the real to-do list — or from
-Aldi directly. Do not invent one from a code smell.
+After the SFX job, the next one comes from `A-Brain/Backlog/` — the real to-do list — or from Aldi
+directly. Do not invent one from a code smell.
 
 ### 7 Days to Die track — separate, not this repo
 

@@ -1,8 +1,52 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-09-04 (KPM session — pad locked to one palette; tech SFX asked for, WAITING ON FILES)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **719/719 audit · 988/988 selfcheck** · branch `phase0-solid-ground`
+**Updated: 2026-09-04 (KPM session — SFX draft delivered, WAITING ON ALDI to pick a take)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **719/719 audit · 988/988 selfcheck** · branch `phase0-solid-ground`
 
-## 🔴 2026-09-04 — WAITING ON ALDI: the terminal's tech SFX needs sound FILES before any code
+## 🔧 2026-09-04 10:57 — 7DTD track. No KPM work; nothing here changed where KPM stands.
+
+A Stop hook fired because `.claude/settings.local.json` moved. That was a **permissions
+side-effect** of running shell commands in a 7 Days to Die session — no file under `src/` was
+touched, no KPM decision was made, and `NEXT-SESSION.md` still holds the riffle job (re-confirmed
+in place, not rewritten).
+
+**The header line above was deliberately NOT touched.** It belongs to the 🟠 KPM track and carries
+its live `WAITING ON FILES` state; the two-track rule says add, never rewrite. It is already
+dated today.
+
+**7DTD, this session:** six new mods installed and verified collision-free
+(`345_GPS`, `355_MoveYourStuff`, `470_BetterModsExtended`, `670_HonkOpensYourDoors`,
+`810_ReadBookMarker`, `820_ContinueGame`); a desktop shortcut + hand-built icon for the mod panel;
+a new `collision-check.py`. Seven check scripts green. Full record and the one next-job prompt
+live in `C:\Users\ASUS\AppData\Roaming\7DaysToDie\MODS-NOTES.md` and `NEXT-JOB.md`.
+
+**Open there, not here:** five new DLLs are unverified against game build 3.2.0 — only launching
+once shows that.
+
+## 🔴 2026-09-04 — SFX DRAFT DELIVERED, waiting on his pick. `6dd879a` · superseded the entry below
+
+He answered the blocker himself: *"can u make tech sound and give me the draft so i can review
+before u integrate"*. That reverses the no-synthesis rule below, and it is his call to reverse —
+with the review gate that round 2 never had, which is the part that made round 2 fail.
+
+**Seven sounds, generated, not wired.** `tools/sfx-draft.mjs` (pure Node, no dependency, writes wav
+then mp3 via ffmpeg) and `tools/sfx-draft.html` to play them. Renders are gitignored; the generator
+rebuilds them in a second. Three takes of the rail key (90/110/95ms) so he picks a character rather
+than approving one guess, plus `boot` 760ms, `down` 480ms, `open` 260ms, `back` 300ms.
+
+**No `src/` file was touched and nothing landed in `public/sounds/`.** Verified by decoding every
+mp3 in the page: right durations, peak 0,49–0,64, rms 0,07–0,20 — none silent, none clipping. Key
+takes sit under the 130ms burst interval so they cannot smear at thumb speed. That is proof of
+shape; the ear is his.
+
+**He also reported a real bug by ear** — *"the ponder panel close, it sound like book close on the
+phone also"*. Traced: `src/ponder/PonderOverlay.jsx:373` calls `bookClose()` when a lesson exits,
+and it is not phone-aware, so the tech panel's flow ends on a paper sound. `back` is the
+replacement; it must stay paper on the desk. Spec'd in `NEXT-SESSION.md`.
+
+**WAITING ON ALDI, verbatim:** which of key-a / key-b / key-c, and whether `boot`, `down`, `open`,
+`back` are keepers or need changes.
+
+## ⬛ 2026-09-04 (superseded above) — the terminal's tech SFX needed sound FILES before any code
 
 He asked for it in his own words: *"there is one thing that needed to be added is actually a tech
 SFX when interacting with the tech ponder panel"*. **No code was written, deliberately.**
