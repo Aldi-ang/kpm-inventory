@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-09-04 (KPM session — SFX draft delivered, WAITING ON ALDI to pick a take)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **719/719 audit · 988/988 selfcheck** · branch `phase0-solid-ground`
+**Updated: 2026-09-04 (KPM session — synthesis rejected, rail key is his recording; 2 picks owed)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **719/719 audit · 988/988 selfcheck** · branch `phase0-solid-ground`
 
 ## 🔧 2026-09-04 10:57 — 7DTD track. No KPM work; nothing here changed where KPM stands.
 
@@ -22,7 +22,37 @@ live in `C:\Users\ASUS\AppData\Roaming\7DaysToDie\MODS-NOTES.md` and `NEXT-JOB.m
 **Open there, not here:** five new DLLs are unverified against game build 3.2.0 — only launching
 once shows that.
 
-## 🔴 2026-09-04 — SFX DRAFT DELIVERED, waiting on his pick. `6dd879a` · superseded the entry below
+## 🔴 2026-09-04 — SYNTHESIS REJECTED. The rail key is HIS recording now. Waiting on two picks.
+
+*"all bad nvm, use this for the section button click on the side"* — all seven synthesised takes
+are dead. He sent a Snipping Tool recording of the sound he actually wants.
+
+**That is round 3 of the same lesson, and it is now written into the generator's header** so no
+future session ships its output: `src/ponder/sfx.js` already recorded synthesis losing once and
+sound-reuse losing once. This makes three. Every sound from here is cut from his material.
+
+**The cut, measured rather than eyeballed.** The burst sits at **1.455s** in a 4.95s capture. It is
+TWO hits — the press at −13 dB and its release at −30 dB, 115 ms later — separated by a dip that a
+−45 dB gate reads as silence. Outside them the floor is digital silence (−99 dB), so both are system
+audio and no microphone was involved: the release belongs to the sound and was kept. Levelled to
+−3 dB peak, where `book-page.mp3` already sits.
+⚠️ An early trim on a non-zero sample produced a **−0.7 dB transient at the seam** — louder than the
+sound itself. Every cut now fades in 4 ms and out 18–22 ms.
+
+**The opening is derived, not invented:** his click dropped an octave (which doubles its length),
+low-passed at 2.6 kHz, short tail. It stays in the key's family because it *is* the key. 421 ms
+against a 2330 ms arrival, so it leads the animation instead of filling it.
+
+**Source archived** at `RE UI/SFX/2026-09-04_ponder-rail-key_source.mp4` — the TempState original
+gets cleared by Windows. Exact ffmpeg recipes are in `NEXT-SESSION.md`, so every cut is reproducible.
+
+**WAITING ON ALDI:** (1) `key` 181 ms with the release, or `key-short` 91 ms press-only;
+(2) `boot-a` plain, or `boot-b` with a soft latch tick. Same artifact URL, republished.
+
+Three moments are still silent and deliberately NOT guessed at — the panel leaving, the Buka press,
+and the phone's paper `book-close` bug. Each can be derived from the same click when he says so.
+
+## ⬛ 2026-09-04 (superseded above) — SFX draft delivered, synthesised. `6dd879a`
 
 He answered the blocker himself: *"can u make tech sound and give me the draft so i can review
 before u integrate"*. That reverses the no-synthesis rule below, and it is his call to reverse —

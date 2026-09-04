@@ -1,4 +1,15 @@
-/* THE FIELD TERMINAL'S SOUNDS — DRAFT GENERATOR, FOR REVIEW ONLY.
+/* 🔴 SUPERSEDED 2026-09-04, THE SAME DAY IT WAS WRITTEN. Aldi heard all seven takes below and
+   answered: *"all bad nvm"*. He then sent a screen recording of the sound he actually wanted and
+   said to use that instead. **Do not ship anything this file produces, and do not "improve" the
+   synthesis** — that is round 3 of the same mistake sfx.js already records twice.
+
+   The live draft is now cut from his recording with ffmpeg. Source archived at
+   `RE UI/SFX/2026-09-04_ponder-rail-key_source.mp4`; the exact trim commands are in
+   `.claude/NEXT-SESSION.md`. This file is kept only until the sounds are settled, then deleted.
+
+   ── the original header follows ────────────────────────────────────────────────────────────────
+
+   THE FIELD TERMINAL'S SOUNDS — DRAFT GENERATOR, FOR REVIEW ONLY.
 
    Aldi asked for tech SFX on the phone's tutorial panel and then asked to hear a draft before
    anything is wired: *"can u make tech sound and give me the draft so i can review before u
