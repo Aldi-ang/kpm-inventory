@@ -2,6 +2,10 @@
 
 Rewrite this file before you finish. One job only, never a menu.
 
+**Current as of 2026-09-04 17:35 WIB.** The rail key shipped (`7380a92`) and the thread's knowledge
+is in the vault (`bc9bfec`). The job below is the last piece, and it opens with a question Aldi has
+not answered yet — ask it before writing code.
+
 ---
 
 ```

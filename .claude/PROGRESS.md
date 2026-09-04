@@ -1,6 +1,48 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-09-04 (KPM session — rail key SHIPPED with his own recording)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **720/720 audit · 988/988 selfcheck** · branch `phase0-solid-ground`
+**Updated: 2026-09-04 17:35 WIB (KPM session — rail key SHIPPED, thread written to the vault)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **720/720 audit · 988/988 selfcheck** · branch `phase0-solid-ground`
+
+## 🟢 2026-09-04 17:35 — day closed on the sound thread. Knowledge is in the vault, one question open.
+
+**NOW:** nothing in flight. Working tree clean, 720/720 audit, 988/988 selfcheck.
+
+Shipped today: riffle removal confirmed on screen · terminal locked to one palette in both themes
+(`f748410`) · two-glyph split confirmed as his call (`0eef44b`) · rail key playing his own recording
+(`7380a92`). Knowledge written to A-Brain as `bc9bfec` — a new Concept page **Sounds Come From
+Aldi**, linked from Index, MOC and the Concepts index, plus two judgements in the taste note.
+
+Three of my own ⬛ superseded entries from today were removed from this file — same thread, three
+times over. `git log -p` keeps them. **No other track's entry was touched.**
+
+**WAITING ON ALDI, verbatim:** *"the ponder panel close, it sound like book close on the phone
+also"* — he has been asked whether that should fall **silent on a phone**, or take a **tech sound
+derived from his click**. Either answer closes the sound thread. He also noted, unprompted, *"most
+of the time phone user wont be using their volume on this app anyway"*, so this is low stakes.
+
+## 🔧 2026-09-04 17:35 — 7DTD track. No KPM work. Nothing here changed where KPM stands.
+
+The Stop hook fired on `.claude/settings.local.json` again — a **permissions side-effect** of
+running shell commands in a 7 Days to Die session. No file under `src/` was touched and no KPM
+decision was made.
+
+**The header line and `NEXT-SESSION.md` were deliberately NOT touched.** They carry the 🟢 KPM
+track's live state and its current job; the two-track rule is add-never-rewrite, and his
+instruction stands: *"use other notes dont collide with my work app notes"*.
+
+**7DTD, this session:** search lag traced to 3288 recipes and reduced (recipe rows 12 → 8,
+`996_CraftListRows`); Watchpets found to be undocumented rather than broken, and given the
+descriptions it never shipped (`988_WatchpetsDescriptions`); `820_ContinueGame` removed on his
+call. 62 mods on, 25 off, seven checks green.
+
+**WAITING ON ALDI — his question, verbatim:** *"aec x project z i think support both of the mod
+together right? so if there is no colission then still add it"*
+
+Measured after he pushed back: it is a **13-mod pack** shipping its own `TFP_Harmony` and
+`ProjectZ 3.1.2` — older than the 3.2 he runs — so it cannot be added alongside, only swapped in.
+Three options are written up in the 7DTD notes. Nine other new mods are queued behind that answer.
+**Nothing was installed.**
+
+Full record and the one next-job prompt live in the 7DTD folder's `MODS-NOTES.md` and `NEXT-JOB.md`.
 
 ## 🔧 2026-09-04 10:57 — 7DTD track. No KPM work; nothing here changed where KPM stands.
 
@@ -52,97 +94,6 @@ method (silencedetect → envelope dump → fades → level match), and why audi
 proven here. Linked from Index, MOC and the Concepts index. His two judgements from this session
 are in `Aldi's Design Taste.md`: the four-word rejection, and *"most of the time phone user wont be
 using their volume on this app anyway"* — read as a stop signal on scope, not on craft.
-
-## ⬛ 2026-09-04 (superseded above) — synthesis rejected, the rail key became his recording
-
-*"all bad nvm, use this for the section button click on the side"* — all seven synthesised takes
-are dead. He sent a Snipping Tool recording of the sound he actually wants.
-
-**That is round 3 of the same lesson, and it is now written into the generator's header** so no
-future session ships its output: `src/ponder/sfx.js` already recorded synthesis losing once and
-sound-reuse losing once. This makes three. Every sound from here is cut from his material.
-
-**The cut, measured rather than eyeballed.** The burst sits at **1.455s** in a 4.95s capture. It is
-TWO hits — the press at −13 dB and its release at −30 dB, 115 ms later — separated by a dip that a
-−45 dB gate reads as silence. Outside them the floor is digital silence (−99 dB), so both are system
-audio and no microphone was involved: the release belongs to the sound and was kept. Levelled to
-−3 dB peak, where `book-page.mp3` already sits.
-⚠️ An early trim on a non-zero sample produced a **−0.7 dB transient at the seam** — louder than the
-sound itself. Every cut now fades in 4 ms and out 18–22 ms.
-
-**The opening is derived, not invented:** his click dropped an octave (which doubles its length),
-low-passed at 2.6 kHz, short tail. It stays in the key's family because it *is* the key. 421 ms
-against a 2330 ms arrival, so it leads the animation instead of filling it.
-
-**Source archived** at `RE UI/SFX/2026-09-04_ponder-rail-key_source.mp4` — the TempState original
-gets cleared by Windows. Exact ffmpeg recipes are in `NEXT-SESSION.md`, so every cut is reproducible.
-
-**WAITING ON ALDI:** (1) `key` 181 ms with the release, or `key-short` 91 ms press-only;
-(2) `boot-a` plain, or `boot-b` with a soft latch tick. Same artifact URL, republished.
-
-Three moments are still silent and deliberately NOT guessed at — the panel leaving, the Buka press,
-and the phone's paper `book-close` bug. Each can be derived from the same click when he says so.
-
-## ⬛ 2026-09-04 (superseded above) — SFX draft delivered, synthesised. `6dd879a`
-
-He answered the blocker himself: *"can u make tech sound and give me the draft so i can review
-before u integrate"*. That reverses the no-synthesis rule below, and it is his call to reverse —
-with the review gate that round 2 never had, which is the part that made round 2 fail.
-
-**Seven sounds, generated, not wired.** `tools/sfx-draft.mjs` (pure Node, no dependency, writes wav
-then mp3 via ffmpeg) and `tools/sfx-draft.html` to play them. Renders are gitignored; the generator
-rebuilds them in a second. Three takes of the rail key (90/110/95ms) so he picks a character rather
-than approving one guess, plus `boot` 760ms, `down` 480ms, `open` 260ms, `back` 300ms.
-
-**No `src/` file was touched and nothing landed in `public/sounds/`.** Verified by decoding every
-mp3 in the page: right durations, peak 0,49–0,64, rms 0,07–0,20 — none silent, none clipping. Key
-takes sit under the 130ms burst interval so they cannot smear at thumb speed. That is proof of
-shape; the ear is his.
-
-**He also reported a real bug by ear** — *"the ponder panel close, it sound like book close on the
-phone also"*. Traced: `src/ponder/PonderOverlay.jsx:373` calls `bookClose()` when a lesson exits,
-and it is not phone-aware, so the tech panel's flow ends on a paper sound. `back` is the
-replacement; it must stay paper on the desk. Spec'd in `NEXT-SESSION.md`.
-
-**He asked for one review surface** — *"make them in one artifact so that i can review better"* —
-so the seven takes are published as an Artifact with the audio embedded as base64 (no server, works
-on his phone): **https://claude.ai/code/artifact/b91d3b94-74cf-4487-ae3e-118d9a5f1b7a**
-It draws each take's waveform on the same time scale, so "too long" and "too sharp" are shapes he
-can see rather than words he has to find, and the three key takes carry the ×8 burst test.
-⚠️ Decoding is deliberately split from playback: a suspended AudioContext still decodes, so the
-waveforms are on screen at rest and only sound waits for a press. Every non-ASCII character is
-escaped (`&#…;` in markup, `\uXXXX` in script) after the local serve showed mojibake — the page no
-longer depends on a charset header.
-
-**To revise a take:** edit the `SOUNDS` block in `tools/sfx-draft.mjs`, re-render, then read the
-artifact back and swap the `AUDIO` object in its script, republishing to the same URL. There is no
-second page to keep in sync.
-
-**WAITING ON ALDI, verbatim:** which of key-a / key-b / key-c, and whether `boot`, `down`, `open`,
-`back` are keepers or need changes.
-
-## ⬛ 2026-09-04 (superseded above) — the terminal's tech SFX needed sound FILES before any code
-
-He asked for it in his own words: *"there is one thing that needed to be added is actually a tech
-SFX when interacting with the tech ponder panel"*. **No code was written, deliberately.**
-
-`src/ponder/sfx.js` is a scar with two rounds recorded in it, and both failure modes are exactly
-what this request invites. Round 1 reused the app's own sounds → *"u re crazy using sales SFX for
-the book, use paper or book SFX la bro"*. Round 2 synthesised the sound from filtered noise →
-*"SFX sound really bad as well"*, with the conclusion written in the file: **synthesis was the
-clever answer to the wrong question; ask which file.** So the ask went back to him instead.
-
-Checked, and this is why nothing could be reused: every one of the 15 files in `public/sounds/`
-already carries a meaning — `click` = a toast (Toast.jsx:67), `tap` = examining an item
-(MerchantSalesView.jsx:2383), `commit` = a transaction (MerchantSalesView.jsx:1537), `vaultb` = the
-vault gate (VaultGate.jsx:319), `book-*` = paper, `ponder-open` = pressing a tutorial entry. There
-is no tech sound in the project, and `RE UI/SFX` (the originals folder named in sfx.js) is not on
-this machine.
-
-**Four silent moments identified**, spec'd in `NEXT-SESSION.md`: the rail key (17 keys, the
-most-pressed control — the sound belongs inside `go()` so a swipe matches a tap), the scan-in
-arrival, the deploy exit, and the close X. Files must be SHORT — the rail key repeats, and the
-book's clips had to be trimmed from ~5s of mostly silence for exactly that reason.
 
 ## 🟢 2026-09-04 — the two-glyph split is now HIS decision, not mine. `0eef44b` (A-Brain)
 
