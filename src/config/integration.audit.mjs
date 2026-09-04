@@ -4677,24 +4677,50 @@ const soundSrc = fs.readFileSync('src/hooks/useSound.js', 'utf8');
    a page turn is a transaction is an ear taught wrong. His words: *"u re crazy using sales SFX for
    the book"*. Round 2's synthesis is banned for a different reason — *"SFX sound really bad"* — so
    nothing here may build its own audio either. Every sound must be a registered file he chose. */
-check(G56, 'every book sound is one of his own files, and none of them is a sales sound',
+/* ROUND 5 ADDED `padKey`, and it makes the synthesis clause above load-bearing rather than
+   historical. Seven synthesised takes were built for the field terminal on 2026-09-04 and Aldi
+   rejected the lot — *"all bad nvm, use this for the section button click on the side"* — then
+   sent a recording. Same answer as round 2, five rounds later, which is why the ban stays. */
+check(G56, 'every tutorial sound is one of his own files, and none of them is a sales sound',
   /from '\.\.\/hooks\/useSound\.js'/.test(sfxSrc) &&
-  ['ponderOpen', 'bookOpenS', 'bookPage', 'bookCloseS']
+  ['ponderOpen', 'bookOpenS', 'bookPage', 'bookCloseS', 'padKey']
     .every(n => sfxSrc.includes(`playSound('${n}')`) && soundSrc.includes(n + ':')) &&
   !/playSound\('(click|commit|tap|sign|error|vaultb)'\)/.test(sfxSrc) &&
   !/new Audio|createBiquadFilter|createOscillator/.test(sfxSrc) &&
-  ['ponder-open', 'book-open', 'book-page', 'book-close']
+  ['ponder-open', 'book-open', 'book-page', 'book-close', 'pad-key']
     .every(f => fs.existsSync('public/sounds/' + f + '.mp3')),
-  'all four sounds must be registered files under public/sounds, played through playSound, and ' +
+  'all five sounds must be registered files under public/sounds, played through playSound, and ' +
   'none may be one of the transaction sounds or synthesised on the spot');
+
+/* 🔴 WHERE THE RAIL KEY FIRES IS THE PART THAT ROTS SILENTLY. Three things change section — a tap
+   on the rail, a swipe across the display, and the arrow keys — and all three go through `go()`.
+   Moved onto the rail button's onClick it would still LOOK right and still pass a smoke test,
+   while a swipe changed section in silence.
+
+   Two placements inside `go()` are equally load-bearing: after the `i === cur` guard, or a key
+   that changes nothing still clicks; and before the `instant()` branch, or Lite Mode loses the
+   sound as well as the motion — Lite Mode gives up motion only, and playSound does its own
+   silencing. The slice is anchored on both ends and both anchors are asserted found, because an
+   indexOf that misses returns -1 and would silently hand the test the whole file. */
+const goStart = padSrc.indexOf('const go = useCallback');
+const goEnd = padSrc.indexOf('}, [cur, clearAll, later]);', goStart + 1);
+const goBody = goStart > -1 && goEnd > goStart ? padSrc.slice(goStart, goEnd) : '';
+check(G56, 'the rail key sounds from go(), so a swipe and a tap and an arrow key all agree',
+  goBody.length > 0 && goBody.length < 1200 &&
+  /import \{ bookPick, padKey \} from '\.\/sfx\.js';/.test(padSrc) &&
+  goBody.indexOf('padKey();') > goBody.indexOf('i === cur') &&
+  goBody.indexOf('padKey();') < goBody.indexOf('instant()') &&
+  !/onClick=\{\(\) => \{[^}]*padKey\(\)/.test(padSrc),
+  'padKey() must sit inside go(), after the same-section guard and before the instant() branch, ' +
+  'and never on a button onClick. Slice length ' + goBody.length + ' (0 means an anchor moved)');
 
 /* ⚠️ AND THEY MUST BE SHORT. The clips he saved ran 4,7s, 6,5s and 5,9s — whole video captures,
    mostly silence, with the page turn's actual burst sitting 1,7 seconds in. Played raw, the sound
    would start over a second after the click that caused it and stack on itself on the second
    click; that reads as an unresponsive app, not as a slow sound. Trimmed on the way in. */
-const TOO_LONG = ['ponder-open', 'book-open', 'book-page', 'book-close']
+const TOO_LONG = ['ponder-open', 'book-open', 'book-page', 'book-close', 'pad-key']
   .filter(f => fs.statSync('public/sounds/' + f + '.mp3').size > 40_000);
-check(G56, 'the book sounds are trimmed, not whole video captures',
+check(G56, 'the tutorial sounds are trimmed, not whole video captures',
   TOO_LONG.length === 0,
   'oversized: ' + (TOO_LONG.join(', ') || 'none') + '. An MP3 over ~40KB at this bitrate is ' +
   'seconds long, which for a UI sound means it starts late and overlaps itself');

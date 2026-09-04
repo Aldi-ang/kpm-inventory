@@ -39,6 +39,14 @@ const SOURCES = {
   bookPage:  '/sounds/book-page.mp3',
   bookOpenS: '/sounds/book-open.mp3',
   bookCloseS: '/sounds/book-close.mp3',
+  /* The phone's field terminal. Aldi's own recording again, and named for the PANEL rather than
+     the book — the terminal is slate and amber where the book is paper, and a reader who finds
+     `bookPage` here would wire the wrong thing. Cut from a 4,95s screen capture at 1,455s: two
+     hits, a press at -13dB and its release 115ms later at -30dB, with digital silence either side,
+     so both are system audio and the release is part of the sound. Levelled to -3dB, where
+     bookPage already sits. Seven synthesised takes were built first and he rejected all of them:
+     *"all bad nvm, use this for the section button click on the side"*. */
+  padKey: '/sounds/pad-key.mp3',
   mumble1: '/sounds/mumble1.mp3',
   mumble2: '/sounds/mumble2.mp3',
   mumble3: '/sounds/mumble3.mp3',
@@ -59,6 +67,9 @@ const VOLUMES = {
   vaultb: 0.9,
   ponderOpen: 0.95,
   bookPage: 0.85, bookOpenS: 0.9, bookCloseS: 0.9,
+  /* The rail key is the most-pressed control on the terminal — seventeen of them, tapped in a row
+     while reading — so it sits just under the tutorial's own open sound rather than at full. */
+  padKey: 0.9,
 };
 const DEFAULT_VOLUME = 0.85;
 

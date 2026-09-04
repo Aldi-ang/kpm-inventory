@@ -35,3 +35,13 @@ export const bookPick = () => playSound('ponderOpen');
 export const bookOpen = () => playSound('bookOpenS');
 export const bookPage = () => playSound('bookPage');
 export const bookClose = () => playSound('bookCloseS');
+
+/* ROUND 5, AND THE PHONE'S PANEL RATHER THAN THE BOOK. Pressing a section on the field terminal's
+   rail. Aldi's own recording once more, and the round that got here is worth one line: seven
+   synthesised takes were offered first and he answered *"all bad nvm, use this for the section
+   button click on the side"*. That is the third time on this project that inventing a sound lost
+   to asking for one — see rounds 1 and 2 above. There is no fourth attempt to make.
+
+   ⚠️ It is `padKey`, not a book name. The terminal is slate and amber; the book is paper. A sound
+   named for the wrong one gets wired to the wrong one. */
+export const padKey = () => playSound('padKey');

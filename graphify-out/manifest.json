@@ -360,8 +360,8 @@
     "semantic_hash": ""
   },
   ".claude/settings.local.json": {
-    "mtime": 1788453311.6494453,
-    "ast_hash": "e52af93b248d70ff4322637e510e33a8",
+    "mtime": 1788494163.305481,
+    "ast_hash": "3230021ad13eb07289d5ee3c279e8c01",
     "semantic_hash": ""
   },
   ".mcp.json": {
@@ -425,8 +425,8 @@
     "semantic_hash": ""
   },
   "src/hooks/useSound.js": {
-    "mtime": 1787831424.5222328,
-    "ast_hash": "8de098fa425ea68f15c7bb328b1d90f5",
+    "mtime": 1788495967.2117674,
+    "ast_hash": "e124efa6e262cc70281af22d54a17864",
     "semantic_hash": ""
   },
   "src/hooks/useSound.selfcheck.mjs": {
@@ -540,8 +540,8 @@
     "semantic_hash": ""
   },
   "src/config/integration.audit.mjs": {
-    "mtime": 1788492884.7336328,
-    "ast_hash": "6153d3850fee8c88d943906cc998fc44",
+    "mtime": 1788496033.1729114,
+    "ast_hash": "54e8adb3ba49c40eb81fe138d38748a5",
     "semantic_hash": ""
   },
   "src/config/nextStop.selfcheck.mjs": {
@@ -570,8 +570,8 @@
     "semantic_hash": ""
   },
   ".claude/PROGRESS.md": {
-    "mtime": 1788492420.1432872,
-    "ast_hash": "c162db69adce1d20cfbd08a49a4139a9",
+    "mtime": 1788495592.5369484,
+    "ast_hash": "08b65a30ca6e9a5b969aeadd398d69a3",
     "semantic_hash": ""
   },
   ".claude/pre-compact-context.md": {
@@ -760,8 +760,8 @@
     "semantic_hash": ""
   },
   ".claude/NEXT-SESSION.md": {
-    "mtime": 1788492358.3227303,
-    "ast_hash": "fbf88bd62fb4b9ce3d71c6c7bcef2c25",
+    "mtime": 1788495561.4585643,
+    "ast_hash": "2300fb98cb4e14d00f936292d4734588",
     "semantic_hash": ""
   },
   ".claude/SWEEP-2026-08-19.md": {
@@ -865,8 +865,8 @@
     "semantic_hash": ""
   },
   "src/ponder/sfx.js": {
-    "mtime": 1787831424.716547,
-    "ast_hash": "322a205871199d1452c74dd8ce1f6095",
+    "mtime": 1788495973.6993694,
+    "ast_hash": "d8d09cdfcd5036913bba51db513dfa6c",
     "semantic_hash": ""
   },
   "src/ponder/stages/StockByWarehouseTable.jsx": {
@@ -1010,8 +1010,23 @@
     "semantic_hash": ""
   },
   "src/ponder/PonderPad.jsx": {
-    "mtime": 1788433210.49143,
-    "ast_hash": "fe30ae6da3a4e8e8df5a3c3afaf36ca5",
+    "mtime": 1788496111.170551,
+    "ast_hash": "9598fdc32ee3a516a7fdf24e573e667e",
+    "semantic_hash": ""
+  },
+  "tools/sfx-draft.mjs": {
+    "mtime": 1788495516.8524182,
+    "ast_hash": "9718becf6c584f519d41c164b05450ea",
+    "semantic_hash": ""
+  },
+  "tools/sfx-draft.html": {
+    "mtime": 1788494262.591061,
+    "ast_hash": "f60961bfd0f97382fa85a457ea2e41db",
+    "semantic_hash": ""
+  },
+  "public/sounds/pad-key.mp3": {
+    "mtime": 1788495954.9098659,
+    "ast_hash": "70f245103ebaa17bfe6a69397ca7a07b",
     "semantic_hash": ""
   }
 }

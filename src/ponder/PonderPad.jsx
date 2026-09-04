@@ -21,7 +21,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { SECTIONS, getScene } from './registry.js';
-import { bookPick } from './sfx.js';
+import { bookPick, padKey } from './sfx.js';
 import './pad.css';
 
 /* 🔴 THE ONE PACE DIAL. Aldi picked "cinematic" on 2026-09-03.
@@ -138,6 +138,16 @@ export default function PonderPad({ initialSection, onClose, onPick }) {
 
   const go = useCallback((i) => {
     if (i === cur || i < 0 || i >= SECTIONS.length) return;
+    /* 🔴 THE SOUND BELONGS HERE, NOT ON THE RAIL BUTTON'S onClick. Three things change section —
+       a tap on the rail, a swipe across the display, and the arrow keys — and all three arrive
+       through `go()`. Hung on the button instead, a swipe would change section in silence, which
+       is one action behaving two ways.
+
+       AFTER the guard above, deliberately: pressing the section you are already on returns early,
+       and a key that clicks while nothing moves is a control lying about what it did. BEFORE the
+       `instant()` branch, equally deliberately: Lite Mode gives up MOTION, never a word and never
+       a sound, and `playSound` already handles its own silencing. */
+    padKey();
     clearAll();
     if (instant()) { setCur(i); setRead((r) => ({ ...r, [SECTIONS[i].id]: true })); return; }
     setSwap('out');
