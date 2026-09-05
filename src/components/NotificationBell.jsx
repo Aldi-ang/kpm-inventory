@@ -1,9 +1,23 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Bell, CircleAlert } from 'lucide-react';
 
 const NotificationBell = ({ notifications = [], onNotificationClick }) => {
     const [isOpen, setIsOpen] = useState(false);
     const dropdownRef = useRef(null);
+    /* THE PANEL LEAVES THE HEADER. It used to be an absolutely-positioned child of the bell, which
+       put it inside `BiohazardTheme.jsx:941` — a wrapper carrying `overflow-hidden` (which crops
+       anything reaching past its box) and `relative z-10` (which caps how far above its siblings
+       any descendant can be lifted, so the panel's own z-[9999] could never win). The badge counted
+       correctly the whole time, so the mail was arriving and nobody could open it.
+
+       A portal renders it as a child of <body> instead, where no ancestor can crop or cap it, and
+       `position: fixed` off the button's own rectangle keeps it under the bell. This is the fix that
+       holds no matter which ancestor grows an overflow rule next — the class of bug already fought
+       once on this same bell (see the comment at BiohazardTheme.jsx:1032). */
+    const panelRef = useRef(null);
+    const btnRef = useRef(null);
+    const [pos, setPos] = useState(null);
     
     // 🚀 THE FIX: Handle null timestamps (pending Firebase server sync) so fresh alerts go to the TOP
     const sortedNotifs = [...notifications].sort((a, b) => {
@@ -33,9 +47,12 @@ const NotificationBell = ({ notifications = [], onNotificationClick }) => {
     // Close dropdown when clicking anywhere outside of it
     useEffect(() => {
         const handleClickOutside = (event) => {
-            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-                setIsOpen(false);
-            }
+            // The panel is no longer inside dropdownRef - it lives on <body> - so it has to be
+            // asked separately, or the first click inside it closes the panel before the row's
+            // own onClick can run.
+            const inBell = dropdownRef.current && dropdownRef.current.contains(event.target);
+            const inPanel = panelRef.current && panelRef.current.contains(event.target);
+            if (!inBell && !inPanel) setIsOpen(false);
         };
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
@@ -44,8 +61,16 @@ const NotificationBell = ({ notifications = [], onNotificationClick }) => {
     return (
         <div className="relative" ref={dropdownRef}>
             {/* 🚀 THE BELL BUTTON */}
-            <button 
-                onClick={() => setIsOpen(!isOpen)}
+            <button
+                ref={btnRef}
+                onClick={() => {
+                    if (isOpen) return setIsOpen(false);
+                    // Measured at open time, not on mount: the header moves with the layout, and a
+                    // rectangle read once would pin the panel to where the bell used to be.
+                    const r = btnRef.current?.getBoundingClientRect();
+                    if (r) setPos({ top: r.bottom + 12, right: Math.max(8, window.innerWidth - r.right) });
+                    setIsOpen(true);
+                }}
                 /* was `text-slate-400` and a bare 24px icon — slate IS the blue, and it was the
                    only control in the header wearing no plate at all. .kpm-chip is the shared
                    one; `.on` is what the unread state lights up. */
@@ -65,8 +90,8 @@ const NotificationBell = ({ notifications = [], onNotificationClick }) => {
             </button>
 
             {/* 🚀 THE DROPDOWN NOTIFICATION CENTER */}
-            {isOpen && (
-                <div className="absolute right-0 mt-3 w-80 bg-[#0f0e0d] border border-orange-500/30 rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.8)] z-[9999] overflow-hidden flex flex-col max-h-[80vh] font-mono">
+            {isOpen && createPortal((
+                <div ref={panelRef} style={{ position: 'fixed', top: pos?.top ?? 64, right: pos?.right ?? 8 }} className="w-80 max-w-[calc(100vw-1rem)] bg-[#0f0e0d] border border-orange-500/30 rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.8)] z-[9999] overflow-hidden flex flex-col max-h-[80vh] font-mono">
                     
                     {/* Header */}
                     <div className="p-3 bg-black/80 border-b border-orange-500/20 flex justify-between items-center">
@@ -116,7 +141,7 @@ const NotificationBell = ({ notifications = [], onNotificationClick }) => {
                         )}
                     </div>
                 </div>
-            )}
+            ), document.body)}
         </div>
     );
 };

@@ -4364,5 +4364,107 @@ ok('the seller is refused too, for the one row Andi added after the hand-off',
 ok('an admin still clears the whole store',
    refusedRows('andi', true) === 0);
 
+section('THE FIRST LIVE HAND-OFF — four faults Aldi found by running it (2026-09-05)');
+
+/* He ran the flow end to end and ranked what broke: 1 the bell panel, 2 the agent cannot collect,
+   3 the receiver goes blind after accepting, 4 notifications land on a tab instead of on the thing
+   that needs input. All four are in the screen around the hand-off, none in its logic. */
+
+const bell = code(read('src/components/NotificationBell.jsx'));
+const cfv2 = code(read('src/ConsignmentFinanceView.jsx'));
+const app2 = code(app);
+
+/* ── 1 · the panel had to leave the header ─────────────────────────────────────────────────
+   The badge counted correctly the whole time, so the data path was never the fault. The panel was
+   an absolute child of a wrapper carrying `overflow-hidden` and `relative z-10`, which crops it and
+   caps its z-index no matter how high the panel asks. A portal to <body> is the only fix that does
+   not depend on which ancestor grows an overflow rule next. */
+ok('the notification panel renders through a portal, not inside the header',
+   /createPortal\(/.test(bell) && /document\.body\)/.test(bell),
+   'an absolutely-positioned panel inherits every ancestor clip and stacking context');
+ok('the panel is positioned off the button’s own rectangle at open time',
+   /getBoundingClientRect\(\)/.test(bell) && /position: 'fixed'/.test(bell),
+   'a rectangle read once on mount pins the panel where the bell used to be');
+ok('the outside-click handler asks the portalled panel too',
+   /panelRef\.current && panelRef\.current\.contains/.test(bell),
+   'the panel is no longer inside dropdownRef — the first click inside it would close it on mousedown');
+/* The regression that would silently undo all of the above. */
+ok('the panel is no longer an absolute child of the bell',
+   !/absolute right-0 mt-3 w-80/.test(bell),
+   'the old in-header positioning is back and the clip returns with it');
+
+/* ── 2 · the agent can collect ─────────────────────────────────────────────────────────────
+   Slice to the action row. `isAdmin` appears a dozen times in this file for unrelated reasons. */
+const ADD_GATE   = 'isAdmin && <button onClick={() => onAddGoods';
+const AUDIT_GATE = 'isAdmin && <button onClick={() => setAuditMode(true)}';
+/* Anchor on the gates themselves. Slicing between the two LABELS would have started the window
+   after the `isAdmin &&` it was meant to test — which is exactly how this check first passed on
+   code that had not been changed yet. */
+ok('the Add Goods gate was found, so the absence checks below are testing something real',
+   cfv2.includes(ADD_GATE),
+   'anchor missed — a renamed button would make every gate assertion here vacuously true');
+ok('Store Audit is no longer admin-only, so an agent can collect and count the shelf',
+   cfv2.includes('setAuditMode(true)') && !cfv2.includes(AUDIT_GATE),
+   'collecting money and writing the shelf both run through Store Audit — gating it locks the agent out of both');
+ok('Add Goods stays admin-only — only the audit was opened up',
+   cfv2.includes(ADD_GATE),
+   'ungating the wrong button is a different permission change than the one Aldi asked for');
+ok('the action row still fits its grid for an agent',
+   /\$\{!isAdmin \? 'col-span-2' : ''\}/.test(cfv2),
+   'the Hand-off button kept col-span-4 from when it was the agent’s only control; with Store Audit beside it the row overflows');
+/* The scope is not new code — it is the receivables filter that already exists. Aldi, 2026-09-05:
+   "the consignment that they made or receive from other handsoff, that is the only store that they
+   see". So the guard that matters is that the screen's own scope still holds. */
+ok('the audit can only reach stores already on the agent’s screen',
+   /matchId \|\| matchName \|\| isInherited\(t\)/.test(cfv2),
+   'if myTransactions ever widens, the audit button widens with it — they share one scope on purpose');
+
+/* ── 3 · the receiver keeps sight of what he accepted ──────────────────────────────────────
+   Accepting moves PENDING_AGENT -> PENDING_ADMIN. Listing only the first made the card vanish the
+   instant it was pressed, with nothing anywhere else showing it: `outgoing` matches only the
+   SENDER, and the admin list draws only for admins. */
+ok('the receiver still sees the hand-off after he accepts it',
+   /r\.status === 'PENDING_AGENT' \|\| r\.status === 'PENDING_ADMIN'/.test(cfv2),
+   'the card disappears on press and reads as the button deleting itself');
+ok('but the accept/decline buttons only draw while it is still his move',
+   /r\.status === 'PENDING_AGENT' \? \(/.test(cfv2),
+   'a second Accept on an already-accepted request would re-fire the handler');
+
+/* ── 4 · straight to the thing that needs input ────────────────────────────────────────────*/
+ok('the two notifications that ASK for something carry the shop’s name',
+   (app2.match(/linkToStore/g) || []).length >= 4,
+   'two writes plus the handler plus the prop — fewer means one end is not wired');
+ok('the click handler forwards that shop to the screen',
+   /if \(notification\.linkToStore\) setFocusStore/.test(app2),
+   'without this the alert still only lands on the tab');
+ok('the screen opens the shop and then disarms it',
+   /const match = customerData\.find\(c => storeKey\(c\.name\) === storeKey\(focusStore\)\)/.test(cfv2)
+   && /onFocusStoreHandled\(\)/.test(cfv2),
+   'a name left armed re-opens that shop on the next unrelated render');
+
+/* ── the maths: the four faults, re-run as the predicates they actually are ────────────────
+   One request, one receiver, one admin, walked through its whole life. */
+const REQ = { id: 'r1', storeName: 'Toko Maju', fromAgentId: 'ADMIN', toAgentId: 'andi', status: 'PENDING_AGENT' };
+const incomingFor = (r, me) => r.toAgentId === me && (r.status === 'PENDING_AGENT' || r.status === 'PENDING_ADMIN');
+const outgoingFor = (r, me, isAdm) => (me && r.fromAgentId === me) || (isAdm && (r.fromAgentId === 'ADMIN' || !r.fromAgentId));
+const adminFor = (r) => r.status === 'PENDING_ADMIN';
+const buttonsFor = (r) => r.status === 'PENDING_AGENT';
+
+ok('before he answers: the receiver sees it with buttons',
+   incomingFor(REQ, 'andi') && buttonsFor(REQ));
+const ACCEPTED = { ...REQ, status: 'PENDING_ADMIN' };
+ok('after he accepts: he STILL sees it, and the buttons are gone',
+   incomingFor(ACCEPTED, 'andi') && !buttonsFor(ACCEPTED),
+   'this exact pair is the bug he reported — it vanished entirely');
+ok('and the admin sees it waiting for authorisation at the same moment',
+   adminFor(ACCEPTED) && outgoingFor(ACCEPTED, null, true),
+   'the admin must reach it without the bell, since the bell is the other fault');
+ok('a stranger agent sees it in neither list',
+   !incomingFor(ACCEPTED, 'budi') && !outgoingFor(ACCEPTED, 'budi', false));
+const DONE = { ...REQ, status: 'APPROVED' };
+ok('once approved it leaves the receiver’s action list rather than sitting there forever',
+   !incomingFor(DONE, 'andi'),
+   'an approved hand-off is history, not an outstanding request');
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

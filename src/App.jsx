@@ -243,6 +243,9 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
      has to come before the first reader, and `user` is read within twenty lines. */
   const [trueRole, setUserRole] = useState('ADMIN');
   const [trueAgentProfileId, setAgentProfileId] = useState(null);
+  // The shop a notification asked us to open. Cleared by the screen once it has honoured it, so
+  // pressing the same alert twice works and a stale name cannot re-open a shop later.
+  const [focusStore, setFocusStore] = useState(null);
 
   /* THE COSTUME. Plain state, and it must stay plain state: it is never written to
      localStorage, so a refresh always puts him back in his own chair. His rule. */
@@ -1619,6 +1622,9 @@ const handleGitHubMirror = async () => {
       if (notification.linkToTab) {
           setActiveTab(notification.linkToTab);
       }
+      // 3. And, when the alert names one, straight to the shop it is about. Set BEFORE the screen
+      //    mounts so it opens already focused rather than opening and then jumping.
+      if (notification.linkToStore) setFocusStore(notification.linkToStore);
   };
 
   // 🚀 ACCOUNT TRANSFER HANDLERS (3-KEY PROTOCOL) 🚀
@@ -1659,7 +1665,13 @@ const handleGitHubMirror = async () => {
               isRead: false,        
               timestamp: serverTimestamp(),
               agentId: toAgentId,   // Recipient is the receiving agent
-              linkToTab: 'receivables'
+              linkToTab: 'receivables',
+              // 🔗 Straight to the shop, not merely to the tab. Aldi, 2026-09-05: "notification
+              // inside bells also should be able to redirect the user straight to the UI that need
+              // our input". Carried only on the two notifications that ASK for something - this one
+              // and the admin's authorisation - because a link that opens a screen you have no
+              // action on is noise wearing the same clothes as a request.
+              linkToStore: storeName
           });
 
           triggerCapy(`Transfer request for ${storeName} sent to ${toAgentName}!`);
@@ -1702,7 +1714,8 @@ const handleGitHubMirror = async () => {
                   isRead: false,
                   timestamp: serverTimestamp(),
                   agentId: 'ADMIN',
-                  linkToTab: 'receivables'
+                  linkToTab: 'receivables',
+                  linkToStore: request.storeName
               });
           } else {
               // REJECTED - NOTIFY ORIGINAL REQUESTER (Admin or Tier 4)
@@ -4698,6 +4711,8 @@ const handleGitHubMirror = async () => {
               <ConsignmentFinanceView
                   transactions={transactions}
                   customers={customers}
+                  focusStore={focusStore}
+                  onFocusStoreHandled={() => setFocusStore(null)}
                   inventory={inventory}
                   onPayment={handleConsignmentPayment} 
                   onReturn={handleConsignmentReturn} 

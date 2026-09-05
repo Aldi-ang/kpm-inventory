@@ -1,10 +1,10 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { FileSpreadsheet, ShieldCheck, AlertCircle, XCircle, MessageSquare, Box, Package, ArrowRight, DollarSign, Store, Truck, Plus, Wallet, RotateCcw, Lock, Trash2, ArrowLeftRight, Check, X, ClipboardList, ScanSearch, Calculator, Printer, User, MapPin, Search } from 'lucide-react';
 import { convertToBks, formatRupiah, storeKey, storeLabel } from './utils/helpers';
 import { confirmAction } from './components/ConfirmGate.jsx';
 import { notify } from './components/Toast.jsx';
 
-export default function ConsignmentFinanceView({ transactions = [], customers = [], inventory = [], onAddGoods, onPayment, onReturn, onDeleteConsignment, isAdmin, user, agentProfileId, motorists = [], transferRequests = [], onRequestTransfer, onAgentAcceptTransfer, onAdminApproveTransfer, appSettings, triggerCapy }) {
+export default function ConsignmentFinanceView({ transactions = [], customers = [], focusStore = null, onFocusStoreHandled, inventory = [], onAddGoods, onPayment, onReturn, onDeleteConsignment, isAdmin, user, agentProfileId, motorists = [], transferRequests = [], onRequestTransfer, onAgentAcceptTransfer, onAdminApproveTransfer, appSettings, triggerCapy }) {
     const [activeTab, setActiveTab] = useState('financials');
     
     // SCALABLE MULTI-FILTER STATE
@@ -262,11 +262,25 @@ export default function ConsignmentFinanceView({ transactions = [], customers = 
     }, [myTransactions, inventory]);
 
     const activeCustomer = selectedCustomer ? customerData.find(c => storeKey(c.name) === storeKey(selectedCustomer.name)) || selectedCustomer : null;
+
+    // 🔗 A notification named a shop - open it. The alert is cleared either way: a store with no
+    // rows on this screen (already handed on, or fully paid off) must not leave a name armed to
+    // hijack the next render.
+    useEffect(() => {
+        if (!focusStore) return;
+        const match = customerData.find(c => storeKey(c.name) === storeKey(focusStore));
+        if (match) setSelectedCustomer(match);
+        if (onFocusStoreHandled) onFocusStoreHandled();
+    }, [focusStore, customerData, onFocusStoreHandled]);
     
     // 3. TRANSFER ROUTING ENGINE
     const { incomingRequests, outgoingRequests, pendingAdminRequests } = useMemo(() => {
         const safeReqs = Array.isArray(transferRequests) ? transferRequests : [];
-        const incoming = safeReqs.filter(r => r.toAgentId === agentProfileId && r.status === 'PENDING_AGENT');
+        // PENDING_ADMIN belongs here too. Accepting moves the request off PENDING_AGENT, and with
+        // only that status listed the card vanished the instant it was pressed - the receiver is
+        // not in `outgoing` (he did not send it) and the admin list draws only for admins, so he
+        // saw no trace of a hand-off he had just agreed to. It reads as the button deleting itself.
+        const incoming = safeReqs.filter(r => r.toAgentId === agentProfileId && (r.status === 'PENDING_AGENT' || r.status === 'PENDING_ADMIN'));
         const outgoing = safeReqs.filter(r => (agentProfileId && r.fromAgentId === agentProfileId) || (isAdmin && (r.fromAgentId === 'ADMIN' || !r.fromAgentId)));
         const adminPend = safeReqs.filter(r => r.status === 'PENDING_ADMIN');
         return { incomingRequests: incoming, outgoingRequests: outgoing, pendingAdminRequests: adminPend };
@@ -958,9 +972,17 @@ export default function ConsignmentFinanceView({ transactions = [], customers = 
                                     {(!auditMode && !transferMode) ? (
                                         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                                             {isAdmin && <button onClick={() => onAddGoods && onAddGoods(activeCustomer?.name)} className="p-3 bg-white dark:bg-slate-800 border dark:border-slate-600 rounded-xl hover:border-orange-500 transition-all flex flex-col items-center shadow-sm"><Plus size={20} className="text-orange-500 mb-1"/><span className="text-[10px] font-bold dark:text-slate-300">Add Goods</span></button>}
-                                            {isAdmin && <button onClick={() => setAuditMode(true)} className="col-span-2 p-3 bg-gradient-to-r from-emerald-600 to-emerald-500 rounded-xl hover:shadow-[0_0_20px_rgba(16,185,129,0.4)] transition-all flex flex-col items-center shadow-lg active:scale-95"><ScanSearch size={24} className="text-white mb-1"/><span className="text-[11px] uppercase tracking-widest font-black text-white">Store Audit</span></button>}
+                                            {/* 🤝 THE AGENT CAN COLLECT NOW. This was `isAdmin &&`, and collecting money and
+                                                writing the shelf count both run through Store Audit - so a field agent could
+                                                never do either, on any consignment store, including one handed to him.
+                                                Aldi, 2026-09-05: "i should be able to update the shelf and collect money".
+                                                No new filter is needed: `myTransactions` above is already exactly the scope he
+                                                named - "the consignment that they made or receive from other handsoff, that is
+                                                the only store that they see". The button cannot reach a store the screen does
+                                                not show, and erasing history stays refused in App.jsx. */}
+                                            <button onClick={() => setAuditMode(true)} className="col-span-2 p-3 bg-gradient-to-r from-emerald-600 to-emerald-500 rounded-xl hover:shadow-[0_0_20px_rgba(16,185,129,0.4)] transition-all flex flex-col items-center shadow-lg active:scale-95"><ScanSearch size={24} className="text-white mb-1"/><span className="text-[11px] uppercase tracking-widest font-black text-white">Store Audit</span></button>
                                             
-                                            <button onClick={() => setTransferMode(true)} className={`p-3 bg-white dark:bg-slate-800 border dark:border-slate-600 rounded-xl hover:border-indigo-500 transition-all flex flex-col items-center shadow-sm ${!isAdmin ? 'col-span-4' : ''}`}>
+                                            <button onClick={() => setTransferMode(true)} className={`p-3 bg-white dark:bg-slate-800 border dark:border-slate-600 rounded-xl hover:border-indigo-500 transition-all flex flex-col items-center shadow-sm ${!isAdmin ? 'col-span-2' : ''}`}>
                                                 <ArrowLeftRight size={20} className="text-indigo-500 mb-1"/>
                                                 <span className="text-[10px] font-bold dark:text-slate-300">Hand-off</span>
                                             </button>
@@ -1002,10 +1024,14 @@ export default function ConsignmentFinanceView({ transactions = [], customers = 
                                         <div><p className="text-xs text-slate-400">Incoming from {r.fromAgentName}</p><h4 className="font-bold text-white text-lg">{r.storeName}</h4></div>
                                     </div>
                                     <p className="text-xs text-slate-400 italic mb-4">"{r.note}"</p>
-                                    <div className="flex gap-2">
-                                        <button onClick={() => onAgentAcceptTransfer(r.id, false)} className="flex-1 py-2 bg-red-900/50 hover:bg-red-500 text-white rounded text-xs font-bold transition-colors">Decline</button>
-                                        <button onClick={() => onAgentAcceptTransfer(r.id, true)} className="flex-1 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded text-xs font-bold transition-colors">Accept Responsibility</button>
-                                    </div>
+                                    {r.status === 'PENDING_AGENT' ? (
+                                        <div className="flex gap-2">
+                                            <button onClick={() => onAgentAcceptTransfer(r.id, false)} className="flex-1 py-2 bg-red-900/50 hover:bg-red-500 text-white rounded text-xs font-bold transition-colors">Decline</button>
+                                            <button onClick={() => onAgentAcceptTransfer(r.id, true)} className="flex-1 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded text-xs font-bold transition-colors">Accept Responsibility</button>
+                                        </div>
+                                    ) : (
+                                        <p className="text-center text-[11px] font-black uppercase tracking-widest py-2 rounded bg-indigo-500/20 text-indigo-400">You accepted &middot; waiting for admin</p>
+                                    )}
                                 </div>
                             ))}
                             {(isAdmin ? pendingAdminRequests.length === 0 : incomingRequests.length === 0) && <p className="text-center text-xs text-slate-400 py-8">No pending action required.</p>}

@@ -174,17 +174,23 @@ match /artifacts/{appId}/users/{uid}/transactions/{txId} {
 }
 ```
 
-## 🔵 2026-09-05 06:28 — 7DTD mods track. **Nothing in this repo changed.**
+## 🔵 2026-09-05 08:41 — 7DTD mods track. **This track changed nothing in this repo. Another session did.**
 
 That track writes only to `%APPDATA%/7DaysToDie/MODS-NOTES.md` and `NEXT-JOB.md`. This entry exists
-because the Stop hook fired on `src/config/logicFixes.selfcheck.mjs`, and the reason is worth
-recording rather than repeating:
+because the Stop hook fired twice on KPM source files, and what it means CHANGED between the two:
 
-**that file has a new modification time (06:27) and a ZERO-BYTE diff.** `git status` is clean and
-`git diff --quiet` returns identical-to-HEAD. Something re-saved it without changing it — an audit
-run or an editor write. No session edited it. `NEXT-SESSION.md` was touched for its timestamp only;
-its queued job is still the store hand-off and is correct as written. **Do not go looking for a
-change here — there isn't one.**
+**06:28 — a false alarm.** `src/config/logicFixes.selfcheck.mjs` had a fresh mtime and a zero-byte
+diff; `git status` was clean. Something re-saved it without changing it.
+
+**08:41 — real, and NOT this track's.** ⚠️ **A parallel KPM session is mid-job right now with 182
+insertions uncommitted across four files:** `App.jsx` (+19), `ConsignmentFinanceView.jsx` (+35),
+`components/NotificationBell.jsx` (+38), `config/logicFixes.selfcheck.mjs` (+97). **That work is
+live and unfinished — do not stash it, do not revert it, and do not assume the tree is clean.**
+Whoever owns it writes its own entry; my earlier "there isn't a change here" line was true at 06:28
+and is wrong now, so it is replaced rather than left to mislead.
+
+`NEXT-SESSION.md` was touched for its timestamp only, both times — its queued job is still the
+store hand-off and belongs to the session doing the work above.
 
 🟠 **KPM work stands exactly where the entry below left it.** WAITING ON ALDI on the KPM side is
 unchanged: nothing blocking, with the receipt-line arrow direction to confirm when it is drawn.
