@@ -1,6 +1,26 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-09-05 10:05 WIB (🟠 KPM session — 4 fixes CONFIRMED live; approval data shape DECIDED; 3 bugs open, no code)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **722/722 audit · 1035/1035 selfcheck** · branch `phase0-solid-ground`
+**Updated: 2026-09-05 10:20 WIB (🟠 KPM session — 4 fixes CONFIRMED live; approval shape LOCKED; 3 bugs open, no code)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **722/722 audit · 1035/1035 selfcheck** · branch `phase0-solid-ground`
+
+## 🟠 2026-09-05 10:20 — Reporting correction from Aldi. No code, no state change.
+
+> *"dont focus at the weekly reset, focus on the 5 hours reset first before the weekly reset because
+> it will hit the wall of the 5 hours quota before the weekly quota"*
+
+He is right and the numbers back him: across this session the 5h window went 0% → 66% while the
+weekly moved 86% → 93% — roughly nine times the burn rate. The 5h bucket is what cuts him off
+mid-job; the weekly is the slower limit. Saved as `feedback_quota_report_5h_first.md` in the
+project memory. **Lead every quota mention with the 5h figure from now on.**
+
+The `[plan-quota]` hook's own mandated opening line is weekly-worded and lives in
+`.claude/plan-quota.mjs`. Not edited — that is his config and his call.
+
+**WAITING ON ALDI — ❓ one optional question:** want the hook's opening line changed to lead with the
+5-hour window instead of the weekly? One edit to `.claude/plan-quota.mjs`, say the word.
+
+**Still open, unchanged:** bug 2 (Product Performance counts unpaid consignment as revenue), bug 3
+(book close button dead, white line unlocated). Neither is blocked. Approval-matrix design is
+complete and buildable from cold.
 
 ## 🟠 2026-09-05 10:05 — Data shape settled: every region in the matrix, any subset per tier.
 
