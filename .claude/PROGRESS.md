@@ -1,6 +1,48 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-09-05 07:40 WIB (🟠 KPM session — hand-off shipped `39cd90d`; live test found 3 screen faults, DIAGNOSED not fixed)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **722/722 audit · 1016/1016 selfcheck** · branch `phase0-solid-ground`
+**Updated: 2026-09-05 08:00 WIB (🟠 KPM session — hand-off shipped `39cd90d`; 4 open faults DIAGNOSED not fixed, audit scope LOCKED)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **722/722 audit · 1016/1016 selfcheck** · branch `phase0-solid-ground`
+
+## 🟠 2026-09-05 08:00 — The bell is a first-class fault, not a footnote. Scope locked. Still no code.
+
+**Aldi overruled my ranking, correctly.** I put the broken bell last because the transfer could
+still be approved from the Receivables card. His words: *"u cant just ignore the notification bell
+like that ... notification bells have so many usage and not just for the consignment"*. The badge
+counts correctly, so the data path is healthy and EVERY feature that notifies — stock requests, EOD,
+approvals, transfers — is delivering mail nobody can open. Judging a shared surface inside one
+feature's story measured the wrong thing.
+
+**🔴 AUDIT SCOPE — LOCKED, do not re-ask.** *"of course the consignment that they made or receive
+from other handsoff, that is the only store that they see"*. That is exactly the existing
+receivables scope, so ungating `ConsignmentFinanceView.jsx:961` needs NO new filter — `myTransactions`
+is already that list. What still needs a decision is the audit's write half: it records shelf counts
+and retur alongside the payment, and inherited rows are meant to be view-only on their values.
+
+**🔴 NEW REQUIREMENT, 2026-09-05:** *"notification inside bells also should be able to redirect the
+user straight to the UI that need our input"*. What exists today [certain] (`App.jsx:1615-1622`):
+`handleNotificationClick` marks the notification read, then `setActiveTab(notification.linkToTab)`.
+So it lands on the right TAB and stops there — it does not open the specific store, request or card
+that needs the input, and a notification carrying no `linkToTab` does nothing at all when pressed.
+Deep-linking is unbuilt, not broken.
+
+### The four open faults, unranked by me — his call
+
+| # | Fault | Evidence | Risk to change |
+|---|---|---|---|
+| 1 | Bell panel never appears; badge counts fine | `NotificationBell.jsx:15` counts from the same array `:86` renders. Candidate: `BiohazardTheme.jsx:941` `relative z-10 ... overflow-hidden` wrapping the header — clips an absolute dropdown and traps its `z-[9999]` in a `z-10` context. **[likely], nothing rendered** | low, but must be seen to be believed |
+| 2 | Agent cannot collect money or update shelf | `ConsignmentFinanceView.jsx:961` `isAdmin &&` on Store Audit; `:963` `col-span-4` proves it was deliberate | permission change on a money path |
+| 3 | Receiver goes blind after pressing Accept | `:269` `PENDING_AGENT` only; `:987` admin-only; `:270` sender-only | display only, safe |
+| 4 | Notifications land on a tab, not on the item | `App.jsx:1615-1622` | additive |
+
+**WAITING ON ALDI:** which of the four goes first, and the write-half decision on (2).
+
+⚠️ **Fault 1 needs a rendered frame before any claim** — the candidate is a read, not a diagnosis,
+and this repo's own rule is that a measurement proves a ratio while only a frame proves an
+appearance. A 10-second check he can run instead: open the app, press the bell, then in DevTools
+(F12) → Elements, search for `Inbox Alerts`. Present in the DOM ⇒ it is rendering and being hidden
+or clipped, which confirms the `:941` candidate. Absent ⇒ `isOpen` never flips and the cause is the
+click handler, not the CSS.
+
+Vault: scope + bell correction in `Ownership Moves, History Does Not` (A-Brain `d5c9bab`).
 
 ## 🟠 2026-09-05 07:40 — Live test round 2. Three faults, all in the SCREEN, none in the hand-off logic. Nothing changed.
 
