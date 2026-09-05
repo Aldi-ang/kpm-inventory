@@ -4,55 +4,59 @@ Copy the block below. It is the only thing on this page you should paste.
 
 ---
 
-Job: the notification bell was fixed WITHOUT ever being looked at. Prove it renders, or fix it for
-real. This is the only unverified thing in the repo right now.
+Job: a consignment hand-off can be offered to the wrong person. Build the eligibility rule Aldi
+gave, and refuse it at the write as well as in the dropdown.
 
-WHAT SHIPPED, unproven — `4bb9ad7`, `src/components/NotificationBell.jsx`:
+ALDI'S RULE, verbatim, 2026-09-05:
 
-  The badge counts correctly and always did; the panel never appeared. Diagnosis was that the panel
-  was an absolutely-positioned child of the header, and the header sits inside
-  `src/components/BiohazardTheme.jsx:941` — `relative z-10 flex-1 flex flex-col overflow-hidden`.
-  `overflow-hidden` crops any child reaching past that box, and `relative z-10` caps how high any
-  descendant can be lifted, so the panel's own `z-[9999]` could never win.
+  "consignment should only be transferred between regional team member only, and only tier 1,2,3 is
+   the one who can transfer consignment between regional area personnel"
 
-  The fix renders the panel through `createPortal` into `document.body`, `position: 'fixed'`, using
-  the bell button's `getBoundingClientRect()` read at open time. `panelRef` was added to the
-  outside-click handler because the panel is no longer inside `dropdownRef`, and without it the
-  first click inside the panel closes it on `mousedown` before the row's `onClick` can run.
+  Read as two rules. CONFIRM THE SECOND WITH HIM BEFORE BUILDING IT — the sentence carries a real
+  ambiguity and guessing wrong is a permission bug in an app he is selling:
+    a. A hand-off normally stays inside ONE region. Same `location` on both agents.
+    b. Tier 1, 2 and 3 may hand a store ACROSS regions. Unclear whether that means those tiers may
+       SEND across regions, or may only APPROVE such a move. Ask; do not assume.
 
-FIRST STEP, before touching any code:
+WHAT THE CODE DOES NOW — verified 2026-09-05, lines current:
 
-  Render it. `preview_start`, log in, press the bell. A self-check can only pin structure — that the
-  portal is used, that the positioning is fixed, that the old absolute classes are gone. Structure
-  is not appearance. There are 11 assertions on this in `logicFixes.selfcheck.mjs` under "THE FIRST
-  LIVE HAND-OFF" and every one of them passes on a panel that renders three metres off-screen.
+  - `src/ConsignmentFinanceView.jsx:36-52` `dropdownAgents` is the target list. It filters
+    `m.userRole !== 'ADMIN'`, then by `activeRegion` ONLY when the admin region control is set, then
+    by the typed search. So for a field agent it is effectively EVERY non-admin agent in the company,
+    in any region.
+  - Nothing excludes the agent who already owns the store. That is the bug Aldi hit first: he could
+    offer the hand-off to the person already holding it.
+  - "mobil pak boss" could not be picked because it is an ADMIN-role profile and `m.userRole !==
+    'ADMIN'` removes it. That part is working as written — but Tier 1 having two profiles means the
+    dropdown silently hides one of them with no explanation, which is why it read as broken.
+  - `src/App.jsx` `handleRequestTransfer` writes the request with NO eligibility check of any kind.
+    That is the write path and it must refuse too.
 
-  If it opens correctly: this job is DONE, say so, and promote the damaged-goods job from the queue
-  below. Do not go looking for a second bug in a working bell.
+THE SMALLEST FIX:
 
-IF IT STILL DOES NOT APPEAR, the second cause is already narrowed:
+  One predicate — call it `canReceiveHandoff(fromAgent, toAgent, tier)` — used in BOTH places:
+  `dropdownAgents` to hide ineligible targets, and `handleRequestTransfer` to refuse them. Do not
+  put it only in the dropdown; hiding a control leaves the handler open, which is the "UI Says Yes,
+  Server Says No" pattern already in the vault and already the reason the delete guard exists.
 
-  In DevTools → Elements, search `Inbox Alerts`.
-    - PRESENT in the DOM  -> it renders and something still hides it. With a body portal the
-      remaining suspects are a transform/filter on `<body>` or a wrapper, or another fixed overlay
-      painting above it. Check computed `z-index` and the element at those coordinates
-      (`document.elementFromPoint`), do not guess.
-    - ABSENT from the DOM -> `isOpen` never flips, so it was never a CSS problem and the portal was
-      the wrong fix. Look at the click path, and be honest in the commit that the first diagnosis
-      was wrong rather than stacking a second fix on top of it.
+  Exclude the current owner using the ownership the hand-off work already added: the customer
+  document's `ownerAgentId`, falling back to the agent stamped on the store's rows when a store has
+  never been handed over. Do NOT use `mappedBy` — it records who first registered the store and
+  `handleRequestTransfer` still reads it to tell two same-named shops apart.
 
 TRAPS:
 
-  - Do NOT revert the portal just because the panel is still invisible. It removed a real clip
-    (`BiohazardTheme.jsx:941`); putting it back re-adds a second bug behind the first.
-  - The bell is shared. It carries stock requests, EOD, approvals and transfers, not just the
-    hand-off. Never judge it fixed by one feature's flow — Aldi's own correction, 2026-09-05.
+  - Region lives on the motorist as `location`, upper-cased and trimmed at
+    `ConsignmentFinanceView.jsx:29-32`. `UNASSIGNED` is a real value, not an absence — decide
+    whether an UNASSIGNED agent can receive anything at all, and say which you chose.
+  - An ADMIN sender has `agentProfileId === null` and `fromAgentId === 'ADMIN'`. Any region
+    comparison against an admin will compare against undefined unless handled first.
   - More than 3 files touched means stop and name each one before continuing.
 
 Leave the fix in `src/config/logicFixes.selfcheck.mjs` the way `4bb9ad7` did: slice each assertion
-to its own anchors, assert the anchors were FOUND before slicing, and trial it RED before green —
-stashing ONLY the source files, never the check file itself, or the trial cannot fail and proves
-nothing.
+to its own anchors, assert the anchors were FOUND before slicing, re-run the predicate on real
+agents, and trial it RED before green — stashing ONLY the source files, never the check file
+itself, or the trial cannot fail and proves nothing.
 
 Then rewrite `.claude/NEXT-SESSION.md` with the next single job.
 
@@ -61,29 +65,45 @@ Then rewrite `.claude/NEXT-SESSION.md` with the next single job.
 <details>
 <summary>Queue — do NOT paste these; promote one only when the job above is finished</summary>
 
+### Bug 2 — Product Performance counts consignment as finished sales
+
+`src/components/ProductPerformancePanel.jsx`. Aldi, 2026-09-05: *"this shouldnt be categorize as
+sales yet, because it is account receivable and customer can also return the good right so there
+should be another parts of the panel saying that there are account receivable pending in some
+stores but also finished sales as well"*. A `SALE` with `paymentType === 'Titip'` is goods placed
+on a shelf, not money earned — the customer can still return them. The panel must split into
+**receivable still outstanding** and **finished sales**, not merge them into one revenue figure.
+The screenshot shows Rp 1.229.000 presented as revenue when it is mostly unpaid consignment.
+Not yet traced: which query feeds the panel's rows. Start there, do not assume.
+
+### Bug 3 — the tutorial book: white line, and the close button does nothing
+
+- **Close button exists** at `src/ponder/PonderBook.jsx:1025`, calls `shut`. It does not respond;
+  Aldi closes the book by clicking outside instead. Prime suspect is the scrim at `:1103`
+  (`absolute inset-0 ... backdrop-blur-sm`) painting over the button and swallowing the click —
+  the same class of stacking fault as the notification bell in `4bb9ad7`. Verify by rendering and
+  using `document.elementFromPoint` on the button's centre; do not guess.
+- **A white vertical line** on the book background, visible in his screenshot 2. NOT located yet —
+  no `bg-white` or `border-white` in `PonderBook.jsx`. Look at the page/spine edges and the
+  stage CSS before editing anything.
+- ⚠️ Two audit checks guard the Ponder scene splits — search `strandedBeats` in
+  `integration.audit.mjs`. Do not weaken them.
+
 ### C — damaged goods handed back are still billed
 
-`returnTotal` is written at `useTransactionEngine.js:492`, `:569`, `:590` and read by no money
-calculation. `ConsignmentFinanceView.jsx` subtracts `amountPaid` alone while the loop below it DOES
-remove the returned packs from the shelf. The goods leave and the bill stays. Trap: a standalone
-`RETURN` transaction is already saved with a negative total and subtracts itself; only the return
-inside a `CONSIGNMENT_PAYMENT` is broken, so a blind fix double-counts. The Backlog says merge the
-two duplicate debt calculators first — untrialled, count the call sites before believing it.
-
-**Now more urgent than when it was written:** `4bb9ad7` gave field agents the Store Audit button, so
-agents — not just admins — can now trigger this path.
+`returnTotal` written at `useTransactionEngine.js:492`, `:569`, `:590`, read by no money
+calculation. Trap: a standalone `RETURN` already carries a negative total and subtracts itself;
+only the return inside a `CONSIGNMENT_PAYMENT` is broken, so a blind fix double-counts. **More
+urgent since `4bb9ad7`** — field agents now have the Store Audit button, so they reach this path too.
 
 ### A — Journey Plan reassigns stores by itself
 
-`JourneyView.jsx:561-583`. Any store whose agent is no longer on staff is fuzzy-matched to whoever's
-name partly contains it ("Andika" matches "Andi"), written with `updateDoc(...).catch(() => {})`, no
-message. Same family as the hand-off bug — code deciding on its own who owns a store. Read
-`A-Brain/Wiki/Concepts/Ownership Moves, History Does Not.md` first.
+`JourneyView.jsx:561-583`. Fuzzy name match writes a new owner with `.catch(() => {})` and no
+message. Read `A-Brain/Wiki/Concepts/Ownership Moves, History Does Not.md` first.
 
 ### Aldi's own list
 
-`A-Brain/Backlog/Deploy the store hand-off write rule.md` — the view-only refusal exists in the
-handler; Firestore still allows it. His deploy, not yours.
+`A-Brain/Backlog/Deploy the store hand-off write rule.md` — his deploy, not yours.
 
 ### 7 Days to Die track — separate repo
 

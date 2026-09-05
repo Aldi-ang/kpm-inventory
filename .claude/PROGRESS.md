@@ -1,6 +1,50 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-09-05 08:44 WIB (🟠 KPM session — all four live-test faults SHIPPED `4bb9ad7`; fault 1 needs Aldi's eyes)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **722/722 audit · 1035/1035 selfcheck** · branch `phase0-solid-ground`
+**Updated: 2026-09-05 09:20 WIB (🟠 KPM session — all four faults CONFIRMED WORKING by Aldi; 3 new bugs found, none started)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **722/722 audit · 1035/1035 selfcheck** · branch `phase0-solid-ground`
+
+## 🟠 2026-09-05 09:20 — He tested. All four work. Three new bugs logged, ZERO code written.
+
+**✅ CONFIRMED BY ALDI on the real app:** *"bell panel working, agen collection working, receiver
+keep the card working, deep link work"*. That closes the one unverified claim from `4bb9ad7` — the
+bell fix is now proven by his eyes, not just by structure.
+
+**Three new bugs, in his order. None started — 8% of the weekly plan left, ~10h to reset.**
+
+**1. A hand-off can be offered to the person who already owns the store.** [certain]
+`ConsignmentFinanceView.jsx:36-52` — `dropdownAgents` filters out ADMIN profiles, then region ONLY
+when the admin region control is set, then the search box. For a field agent that is every non-admin
+agent in the company, in any region, including the current owner. `handleRequestTransfer` in
+`App.jsx` has no eligibility check at all. "mobil pak boss" was unpickable because it is an
+ADMIN-role profile and the `m.userRole !== 'ADMIN'` filter drops it — working as written, but Tier 1
+having two profiles means one vanishes with no explanation.
+
+**🔴 HIS NEW RULE, verbatim — needs one clarification before it is built:**
+> *"consignment should only be transferred between regional team member only, and only tier 1,2,3 is
+> the one who can transfer consignment between regional area personnel"*
+
+Read as (a) hand-offs stay inside one region, (b) tiers 1–3 may move a store across regions. **(b) is
+ambiguous** — may those tiers SEND across regions, or only APPROVE such a move? Not guessed.
+
+**2. Product Performance counts consignment as finished sales.** `ProductPerformancePanel.jsx`.
+His words: *"this shouldnt be categorize as sales yet, because it is account receivable and customer
+can also return the good right so there should be another parts of the panel saying that there are
+account receivable pending in some stores but also finished sales as well"*. His screenshot shows
+Rp 1.229.000 as revenue when most of it is unpaid `Titip`. Needs splitting into outstanding
+receivable vs finished sales. The panel's data source is NOT yet traced.
+
+**3. The tutorial book.** Close button exists at `PonderBook.jsx:1025` calling `shut` and does
+nothing — he closes by clicking outside. Prime suspect: the scrim at `:1103` (`absolute inset-0`,
+`backdrop-blur-sm`) painting over it and swallowing the click, the same stacking family as the bell.
+Also a white vertical line on the book background (his screenshot 2) — **not located**, no
+`bg-white` or `border-white` in that file.
+
+**WAITING ON ALDI — ❓ one question, and it blocks bug 1 only:**
+When you say only tier 1, 2 and 3 can transfer consignment between regional areas — do you mean
+those tiers can SEND a store to an agent in a different region, or that a cross-region hand-off has
+to be APPROVED by one of them while anyone may request it? The two build differently, and getting
+it wrong is a permission hole rather than a cosmetic bug.
+
+Bugs 2 and 3 are not blocked and need no answer.
 
 ## 🟠 2026-09-05 08:44 — All four faults built, in his order. SHIPPED `4bb9ad7`. One is unverified.
 
