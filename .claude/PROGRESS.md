@@ -1,6 +1,40 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-09-05 09:20 WIB (🟠 KPM session — all four faults CONFIRMED WORKING by Aldi; 3 new bugs found, none started)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **722/722 audit · 1035/1035 selfcheck** · branch `phase0-solid-ground`
+**Updated: 2026-09-05 09:45 WIB (🟠 KPM session — 4 fixes CONFIRMED live; 3 bugs open, approval design ANSWERED)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **722/722 audit · 1035/1035 selfcheck** · branch `phase0-solid-ground`
+
+## 🟠 2026-09-05 09:45 — Approval authority: he answered with a third design. Still zero code.
+
+I offered him two readings of his tier rule. He rejected both and gave a better one, verbatim:
+
+> *"regarding the approval for the consignment there should be option in the matrix for what tier
+> that can receive and approve the consignment and also which is the region selected to receive from
+> this way it would increase flexibility for who can have the power of the approval for specific area
+> or areas, but on default their own regional admin is the only one who can do that, if we put this
+> power towards the upper tier for all region then there will be massive loads of approval
+> notification bells coming to the upper tier, thats why i think regional selecting is important in
+> this matter"*
+
+**Approval authority is configurable per tier and scoped to chosen regions. Default: the agent's own
+regional admin, nobody else.** His reason is notification load, not policy — granting an upper tier
+every region buries them in approval bells. That is a real cost and it is his call to make.
+
+**Smaller than it looked** [certain]: the matrix is already runtime-editable. `permissions.js:109` is
+`export let ROLE_PERMISSIONS` (a mutable binding) and `App.jsx:467` downloads custom permissions from
+Firebase at startup and overwrites it. So this is new keys plus a region scope, not a new config system.
+
+**🔴 Bigger than it looked, and it needs deciding before code:** every tier in `ROLE_PERMISSIONS`
+maps to a flat array of strings and every reader assumes that shape. "Which regions may this tier
+approve for" is a list per tier, not a string. Encoding it as flags
+(`approve_consignment_own_region` / `_all_regions`) fits the existing shape and changes no reader —
+but cannot express *"specific area or areas"*, which is what he actually asked for. A per-tier region
+map expresses it exactly and means the matrix is no longer one uniform shape. **Do not silently ship
+the easy one.**
+
+**WAITING ON ALDI — nothing blocking.** His design is clear enough to build; the data-shape choice
+above gets proposed to him at build time with both costs named, not decided behind him.
+
+**Still open, unchanged:** bug 2 (Product Performance counts unpaid consignment as revenue) and
+bug 3 (book close button dead, white line unlocated). Neither is blocked.
 
 ## 🟠 2026-09-05 09:20 — He tested. All four work. Three new bugs logged, ZERO code written.
 

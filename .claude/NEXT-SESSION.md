@@ -12,11 +12,41 @@ ALDI'S RULE, verbatim, 2026-09-05:
   "consignment should only be transferred between regional team member only, and only tier 1,2,3 is
    the one who can transfer consignment between regional area personnel"
 
-  Read as two rules. CONFIRM THE SECOND WITH HIM BEFORE BUILDING IT — the sentence carries a real
-  ambiguity and guessing wrong is a permission bug in an app he is selling:
-    a. A hand-off normally stays inside ONE region. Same `location` on both agents.
-    b. Tier 1, 2 and 3 may hand a store ACROSS regions. Unclear whether that means those tiers may
-       SEND across regions, or may only APPROVE such a move. Ask; do not assume.
+  Asked whether tiers 1-3 SEND across regions or only APPROVE such a move, he answered with a third
+  design and it is the one to build:
+
+  "regarding the approval for the consignment there should be option in the matrix for what tier
+   that can receive and approve the consignment and also which is the region selected to receive
+   from this way it would increase flexibility for who can have the power of the approval for
+   specific area or areas, but on default their own regional admin is the only one who can do that,
+   if we put this power towards the upper tier for all region then there will be massive loads of
+   approval notification bells coming to the upper tier, thats why i think regional selecting is
+   important in this matter"
+
+  So: approval authority is CONFIGURABLE per tier, and scoped to chosen REGIONS. Default is the
+  agent's own regional admin and nobody else. His reason is load, not policy - granting an upper
+  tier every region buries them in approval bells.
+
+THE PART THAT IS SMALLER THAN IT LOOKS:
+
+  The permission matrix is ALREADY runtime-editable. `src/config/permissions.js:109` is
+  `export let ROLE_PERMISSIONS` - a mutable binding - and `src/App.jsx:467` downloads custom
+  permissions from Firebase at startup and overwrites it. So this is two new permission keys plus a
+  region scope, NOT a new configuration system.
+
+THE PART THAT IS BIGGER THAN IT LOOKS - decide this before writing anything:
+
+  Every tier in `ROLE_PERMISSIONS` maps to a flat ARRAY OF STRINGS, and every screen that reads it
+  assumes that shape. "Which regions may this tier approve for" is not a string; it is a list per
+  tier. Two honest options, and they are not equivalent:
+    a. Encode as string flags - `approve_consignment_own_region` / `approve_consignment_all_regions`.
+       Fits the existing shape perfectly, needs no reader changed. But it CANNOT express "regions X
+       and Y specifically", and he asked for "specific area or areas" in those words.
+    b. Add a separate per-tier region map alongside the string array. Expresses exactly what he
+       asked for; means the matrix is no longer one uniform shape, and the Firebase document, the
+       settings screen and every reader have to agree on the new field.
+  (b) is what he described. Do not silently ship (a) because it is easier - if you propose (a),
+  say so and let him choose.
 
 WHAT THE CODE DOES NOW — verified 2026-09-05, lines current:
 
