@@ -24,9 +24,14 @@ Firebase config is hardcoded at `src/config/firebase.js:8` and committed. That i
 Firebase web key — it is not a secret, the Firestore rules are the actual boundary — but it means
 the rules gap above is the whole of the protection.
 
-**WAITING ON ALDI — he opens Vercel himself:** project → Deployments → the `phase0-solid-ground`
-build → Visit. If no build appears, the Vercel project is not watching this branch and he needs to
-either merge to the default branch or add it in the project's Git settings.
+**✅ LIVE: `kpm-ang.vercel.app`** — Vercel domain, Preview environment, aliased to the
+`phase0-solid-ground` branch. Build Ready in 46s. `kpm-demo` was taken by another team;
+`kpm-ang` was free.
+
+**Production is deliberately untouched.** `kpm-inventory.vercel.app` still serves the default
+branch, which does NOT have today's four fixes. Do not "Promote to Production" to shorten a link —
+that would ship this branch to real agents as a side effect. Merging to main is a separate decision
+with its own before-and-after checks, and Aldi has not asked for it.
 
 **Still open, unchanged:** bug 1 (hand-off eligibility, design locked, ready to build), bug 2
 (rollup split, five files, scoped), bug 3 (book close button, white line unlocated).
