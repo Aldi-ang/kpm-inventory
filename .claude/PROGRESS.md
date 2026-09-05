@@ -1,6 +1,32 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-09-05 09:45 WIB (🟠 KPM session — 4 fixes CONFIRMED live; 3 bugs open, approval design ANSWERED)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **722/722 audit · 1035/1035 selfcheck** · branch `phase0-solid-ground`
+**Updated: 2026-09-05 10:05 WIB (🟠 KPM session — 4 fixes CONFIRMED live; approval data shape DECIDED; 3 bugs open, no code)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **722/722 audit · 1035/1035 selfcheck** · branch `phase0-solid-ground`
+
+## 🟠 2026-09-05 10:05 — Data shape settled: every region in the matrix, any subset per tier.
+
+I offered him string flags (own-region / all-regions) as the cheap option that fits the existing
+shape. He refused it, and named the flaw better than I had:
+
+> *"no i want all the region the be registered on the matrix, because if there is only 2 option all
+> or own regional approval means that there are only 2 option to choose floods or drip of water, the
+> system that i want to make is to have power to choose 1,2,3,4 or whatever regional number that i
+> want to receive notification and approval from"*
+
+**🔒 LOCKED, do not re-litigate.** Every region is registered in the matrix; a tier holds an
+arbitrary SUBSET. Flags are refused — own-vs-all is exactly the binary he is trying to escape. The
+cost is accepted: `ROLE_PERMISSIONS` is a flat string array today, so the Firebase document, the
+settings screen and every reader must agree on a new per-tier field.
+
+**⚠️ Trap recorded for the build:** the region list is DATA, not a constant.
+`ConsignmentFinanceView.jsx:29-32` derives `uniqueLocations` from the motorists' `location` field,
+upper-cased and trimmed, with `UNASSIGNED` a real value. The matrix must enumerate regions that
+actually exist, pick up a new one as soon as an agent is given that location, and survive a tier
+whose saved list names a region nobody is in any more. A hardcoded list will rot quietly.
+
+**WAITING ON ALDI — nothing. The design is complete enough to build from cold.**
+
+**Still open, unchanged:** bug 2 (Product Performance counts unpaid consignment as revenue), bug 3
+(book close button dead, white line unlocated). Neither is blocked.
 
 ## 🟠 2026-09-05 09:45 — Approval authority: he answered with a third design. Still zero code.
 

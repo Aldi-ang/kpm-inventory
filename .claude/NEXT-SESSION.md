@@ -34,19 +34,28 @@ THE PART THAT IS SMALLER THAN IT LOOKS:
   permissions from Firebase at startup and overwrites it. So this is two new permission keys plus a
   region scope, NOT a new configuration system.
 
-THE PART THAT IS BIGGER THAN IT LOOKS - decide this before writing anything:
+THE DATA SHAPE - DECIDED BY ALDI, 2026-09-05. Do not re-propose the cheap version:
 
-  Every tier in `ROLE_PERMISSIONS` maps to a flat ARRAY OF STRINGS, and every screen that reads it
-  assumes that shape. "Which regions may this tier approve for" is not a string; it is a list per
-  tier. Two honest options, and they are not equivalent:
-    a. Encode as string flags - `approve_consignment_own_region` / `approve_consignment_all_regions`.
-       Fits the existing shape perfectly, needs no reader changed. But it CANNOT express "regions X
-       and Y specifically", and he asked for "specific area or areas" in those words.
-    b. Add a separate per-tier region map alongside the string array. Expresses exactly what he
-       asked for; means the matrix is no longer one uniform shape, and the Firebase document, the
-       settings screen and every reader have to agree on the new field.
-  (b) is what he described. Do not silently ship (a) because it is easier - if you propose (a),
-  say so and let him choose.
+  "no i want all the region the be registered on the matrix, because if there is only 2 option all
+   or own regional approval means that there are only 2 option to choose floods or drip of water,
+   the system that i want to make is to have power to choose 1,2,3,4 or whatever regional number
+   that i want to receive notification and approval from"
+
+  So: EVERY region is listed in the matrix, and a tier gets an arbitrary SUBSET of them. Not a flag,
+  not own-vs-all. String flags like `approve_consignment_own_region` are REFUSED - he named the
+  reason himself, they offer only "flood or drip" with nothing in between.
+
+  That means a per-tier region list living beside the existing string array. `ROLE_PERMISSIONS` maps
+  each tier to a flat array of strings today and every reader assumes that shape, so the Firebase
+  document, the settings screen and every reader have to agree on the new field. That cost is
+  accepted; it is the price of what he asked for.
+
+  TRAP - the region list is DATA, not a constant. `ConsignmentFinanceView.jsx:29-32` derives
+  `uniqueLocations` from the motorists' `location` field, upper-cased and trimmed, with `UNASSIGNED`
+  as a real value. So the matrix has to enumerate the regions that actually exist, pick up a new one
+  the moment an agent is given a new location, and cope with a tier whose saved list names a region
+  that no longer has anyone in it. A hardcoded region list will look right on the day it is written
+  and rot silently.
 
 WHAT THE CODE DOES NOW — verified 2026-09-05, lines current:
 
