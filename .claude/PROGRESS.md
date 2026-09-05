@@ -1,8 +1,8 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-09-05 08:55 WIB (🟠 KPM session — all four live-test faults SHIPPED `4bb9ad7`; fault 1 needs Aldi's eyes)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **722/722 audit · 1035/1035 selfcheck** · branch `phase0-solid-ground`
+**Updated: 2026-09-05 08:44 WIB (🟠 KPM session — all four live-test faults SHIPPED `4bb9ad7`; fault 1 needs Aldi's eyes)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **722/722 audit · 1035/1035 selfcheck** · branch `phase0-solid-ground`
 
-## 🟠 2026-09-05 08:55 — All four faults built, in his order. SHIPPED `4bb9ad7`. One is unverified.
+## 🟠 2026-09-05 08:44 — All four faults built, in his order. SHIPPED `4bb9ad7`. One is unverified.
 
 He said *"lets do it 1,2,3,4"*. Four files, named before starting per the rule: `App.jsx`,
 `ConsignmentFinanceView.jsx`, `components/NotificationBell.jsx`, `config/logicFixes.selfcheck.mjs`.
@@ -36,7 +36,17 @@ code; it anchors on the gate string itself now.
 in by `git add -A`. Their content, their words, nothing lost — noted so the authorship is not
 confusing later.
 
-**WAITING ON ALDI — ✅ TEST, in this order:**
+**NOW:** nothing in flight. All four faults are committed; the bell is the one unproven claim, and
+`.claude/NEXT-SESSION.md` now holds proving it as the single next job (it was still pointing at the
+damaged-goods job, which is wrong while something unverified is sitting in the tree).
+
+**WAITING ON ALDI — his words, verbatim, still open:**
+- *"lets do it 1,2,3,4"* — done, all four, `4bb9ad7`. Nothing outstanding from this instruction.
+- *"u cant just ignore the notification bell like that ... notification bells have so many usage and
+  not just for the consignment"* — answered by the fix, NOT yet answered by a rendered frame.
+- Nothing else is blocking. The Firestore rule remains his to deploy.
+
+**✅ TEST, in this order:**
 1. Press the bell. Panel appears? That is fault 1 settled either way.
 2. As the test agent, open a consignment store → **Store Audit** should now be there.
 3. Accept a hand-off → the card should stay, reading *waiting for admin*.
