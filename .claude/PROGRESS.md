@@ -1,6 +1,35 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-09-05 10:35 WIB (🟠 KPM session — bug 2 TRACED and scoped, not started; 4 fixes live; approval shape locked)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **722/722 audit · 1035/1035 selfcheck** · branch `phase0-solid-ground`
+**Updated: 2026-09-05 10:55 WIB (🟠 KPM session — branch PUSHED for a Vercel demo; bug 2 scoped; 4 fixes live)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **722/722 audit · 1035/1035 selfcheck** · branch `phase0-solid-ground`
+
+## 🟠 2026-09-05 10:55 — `phase0-solid-ground` pushed to GitHub for a Vercel demo.
+
+He asked to put the app online to show friends, then go back to offline work. **The branch had never
+been pushed** — it is now `origin/phase0-solid-ground` and tracking. Vercel builds a preview per
+branch when the project is git-connected, so the URL comes from his Vercel dashboard; **I cannot log
+into Vercel and did not try** — that is entering credentials.
+
+**Security check before pushing, and it came back clean** [certain]:
+`grep -rn "createUserWithEmailAndPassword" src/` returns **nothing** — there is no self-signup
+anywhere in the app. A stranger with the URL reaches the login screen and stops; accounts are
+created by an admin only, and the Ghost Killer at `App.jsx:2400-2409` blocks a login with no
+profile. So a public demo URL does not expose the data to whoever finds it.
+
+**⚠️ The gap that does exist, unchanged:** the store hand-off write rule is drafted, NOT deployed
+(`A-Brain/Backlog/Deploy the store hand-off write rule.md`). An account holder can still edit or
+delete transactions he did not make at the database level. Friends cannot get an account, so this
+does not affect the demo — but it is live for real agents right now.
+
+Firebase config is hardcoded at `src/config/firebase.js:8` and committed. That is normal for a
+Firebase web key — it is not a secret, the Firestore rules are the actual boundary — but it means
+the rules gap above is the whole of the protection.
+
+**WAITING ON ALDI — he opens Vercel himself:** project → Deployments → the `phase0-solid-ground`
+build → Visit. If no build appears, the Vercel project is not watching this branch and he needs to
+either merge to the default branch or add it in the project's Git settings.
+
+**Still open, unchanged:** bug 1 (hand-off eligibility, design locked, ready to build), bug 2
+(rollup split, five files, scoped), bug 3 (book close button, white line unlocated).
 
 ## 🟠 2026-09-05 10:35 — Bug 2 traced. It is a rollup change, not a panel change. NOT started.
 
