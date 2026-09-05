@@ -1,6 +1,37 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-09-05 10:20 WIB (🟠 KPM session — 4 fixes CONFIRMED live; approval shape LOCKED; 3 bugs open, no code)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **722/722 audit · 1035/1035 selfcheck** · branch `phase0-solid-ground`
+**Updated: 2026-09-05 10:35 WIB (🟠 KPM session — bug 2 TRACED and scoped, not started; 4 fixes live; approval shape locked)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **722/722 audit · 1035/1035 selfcheck** · branch `phase0-solid-ground`
+
+## 🟠 2026-09-05 10:35 — Bug 2 traced. It is a rollup change, not a panel change. NOT started.
+
+Told to continue, I took bug 2 and traced it before editing. **It is five files, not one.**
+
+`ProductPerformancePanel.jsx:44` never reads a transaction — it reads a pre-aggregated monthly
+rollup document, on purpose, because a year read live off `transactions` is thousands of document
+reads Aldi pays for. The consignment/paid merge happens upstream: `salesRollup.js:88-90` accumulates
+`{ qty, revenue }` per product with **no paymentType dimension at all**, and
+`salesRollupWrite.js:37-38` writes exactly those two fields.
+
+So splitting receivable from finished sales means changing the delta, the writer, `sumRange`, the
+panel and `ProductPerformanceTable.jsx`. Over the 3-file rule → stopped and named them rather than
+starting. [certain] (checked: both files read at those lines.)
+
+**⚠️ The trap, recorded in the brief:** every rollup month already written holds only
+`{ qty, revenue }`. Adding fields makes past months report zero receivable and 100% finished sales —
+a confident wrong number, worse than today's honest merge. Backfill or label; do not let old
+documents answer a question they were never asked.
+
+**🔴 One thing to settle FIRST, possibly larger than bug 2:** does a later `CONSIGNMENT_PAYMENT`
+also enter the rollup? If a Titip sale books revenue at placement and its payment books it again,
+the panel is double-counting today. `SALE_TYPES` at `salesRollup.js:42-46` is where that is decided.
+**Not checked — ran out of session budget, do not assume either way.**
+
+**Quota note:** his ratio, 2026-09-05 — *"10 % in 5 hours is equal to 1% in weekly"*. My measurement
+was 9.4:1, so 10:1 is right. Session ~72% → ~28% of this window left, and that is the binding limit
+(7% weekly ≈ 70% of a window). Stopping rather than opening a five-file money change.
+
+**WAITING ON ALDI — nothing blocking.** Optional: switch the `[plan-quota]` hook's opening line to
+lead with the 5h window? One edit to `.claude/plan-quota.mjs`.
 
 ## 🟠 2026-09-05 10:20 — Reporting correction from Aldi. No code, no state change.
 

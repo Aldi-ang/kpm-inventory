@@ -104,16 +104,38 @@ Then rewrite `.claude/NEXT-SESSION.md` with the next single job.
 <details>
 <summary>Queue — do NOT paste these; promote one only when the job above is finished</summary>
 
-### Bug 2 — Product Performance counts consignment as finished sales
+### Bug 2 — Product Performance counts consignment as finished sales (TRACED 2026-09-05)
 
-`src/components/ProductPerformancePanel.jsx`. Aldi, 2026-09-05: *"this shouldnt be categorize as
-sales yet, because it is account receivable and customer can also return the good right so there
-should be another parts of the panel saying that there are account receivable pending in some
-stores but also finished sales as well"*. A `SALE` with `paymentType === 'Titip'` is goods placed
-on a shelf, not money earned — the customer can still return them. The panel must split into
-**receivable still outstanding** and **finished sales**, not merge them into one revenue figure.
-The screenshot shows Rp 1.229.000 presented as revenue when it is mostly unpaid consignment.
-Not yet traced: which query feeds the panel's rows. Start there, do not assume.
+Aldi, 2026-09-05: *"this shouldnt be categorize as sales yet, because it is account receivable and
+customer can also return the good right so there should be another parts of the panel saying that
+there are account receivable pending in some stores but also finished sales as well"*. His
+screenshot shows Rp 1.229.000 presented as revenue when most of it is unpaid `Titip`.
+
+**It is NOT a panel fix. The panel never sees a transaction.** `ProductPerformancePanel.jsx:44`
+reads a pre-aggregated monthly rollup document via `statsPath(...)`, deliberately — a year read
+live off `transactions` is thousands of document reads and Aldi is paying for them. The merge
+happens long before the panel:
+
+  - `src/utils/salesRollup.js:88-90` — `salesDelta` accumulates `{ qty, revenue }` per product and
+    NOTHING ELSE. There is no paymentType dimension anywhere in the rollup.
+  - `src/utils/salesRollupWrite.js:37-38` — writes exactly those two fields into `byProduct` and
+    `byDay`.
+
+So the split has to be created at write time and carried through: `salesRollup.js` (split the
+delta), `salesRollupWrite.js` (increment the new fields), `sumRange` (carry them), the panel and
+`ponder/stages/ProductPerformanceTable.jsx` (render two figures instead of one). **That is five
+files — over the 3-file rule, so stop and name them to Aldi before starting.**
+
+**THE TRAP THAT MAKES A LAZY BUILD WRONG - historical rollups have no split.** Every month already
+written carries only `{ qty, revenue }`. Add the fields and past months silently report zero
+receivable and 100% finished sales - a confident wrong number, worse than today's honest merge.
+Decide explicitly: backfill from `transactions`, or label pre-change months as "not separated" in
+the UI. Do not let old documents answer a question they were never asked.
+
+**CHECK BEFORE DESIGNING:** does a later `CONSIGNMENT_PAYMENT` also enter the rollup? Look at
+`SALE_TYPES` in `salesRollup.js:42-46`. If a Titip sale books revenue at placement AND its payment
+books revenue again, the panel is already double-counting and that is a separate, larger money bug
+that must be settled first.
 
 ### Bug 3 — the tutorial book: white line, and the close button does nothing
 
