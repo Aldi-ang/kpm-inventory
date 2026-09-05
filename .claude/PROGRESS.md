@@ -1,6 +1,41 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-09-05 07:20 WIB (🟠 KPM session — hand-off shipped `39cd90d`; Aldi's live test FAILED at the bell, diagnosed not fixed)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **722/722 audit · 1016/1016 selfcheck** · branch `phase0-solid-ground`
+**Updated: 2026-09-05 07:40 WIB (🟠 KPM session — hand-off shipped `39cd90d`; live test found 3 screen faults, DIAGNOSED not fixed)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **722/722 audit · 1016/1016 selfcheck** · branch `phase0-solid-ground`
+
+## 🟠 2026-09-05 07:40 — Live test round 2. Three faults, all in the SCREEN, none in the hand-off logic. Nothing changed.
+
+My earlier null-`agentProfileId` guess was wrong — the Accept card appeared, so the ids match fine.
+Superseded; ignore the 07:20 entry's suspects.
+
+**1. The receiver goes blind after accepting** [certain] (`ConsignmentFinanceView.jsx:269`, `:270`,
+`:987`). Incoming list filters `status === 'PENDING_AGENT'`; accepting moves it to `PENDING_ADMIN`,
+so the card correctly vanishes and NOTHING replaces it. `pendingAdminRequests` renders only when
+`isAdmin`; `outgoingRequests` matches only requests the viewer **sent**. The receiver is neither.
+
+**2. The admin is NOT blocked by the dead bell** [certain] (`:271`, `:987`). Receivables shows an
+**Admin Auth Required** card with *Authorize Transfer*, filtered on status alone, no agent scoping.
+Aldi can finish the test today. The bell itself is a separate bug — not located, the bell component
+was never opened this session.
+
+**3. THE REAL ONE — Store Audit is admin-only** [certain] (`ConsignmentFinanceView.jsx:961`).
+`{isAdmin && <button onClick={() => setAuditMode(true)}` — and collecting money and updating the
+shelf both run through Store Audit (`:313` calls `onPayment` from the audit confirm). Line `:963`
+gives the Transfer button `col-span-4` when `!isAdmin`, so the layout was written on purpose for
+"an agent sees only the hand-off button". **A field agent has never been able to collect on a
+consignment store.** His words: *"i should be able to update the shelf and collect money"*.
+
+`39cd90d` made the inherited debt VISIBLE to the agent who now owns it. This gate means he still
+cannot ACT on it — read path and write path are gated by different code, so proving the read path
+looked finished while the feature was dead.
+
+**WAITING ON ALDI — 🔴 rank these, no code written until he does:**
+- (3) is a permission change on a money path. Ungating it naively lets any agent audit any store
+  they can see; the audit also writes shelf and retur, not just payment. Needs a decision on
+  scope — his own rows only, or any store he currently owns — before a line is changed.
+- (1) is a display gap, cheap and safe, no permission implications.
+- (2) needs the bell component read first; not opened yet.
+
+Vault: the three findings are in `Ownership Moves, History Does Not` (A-Brain `c89c1ca`).
 
 ## 🟠 2026-09-05 07:20 — Aldi's live test: the receiving account never sees the hand-off. DIAGNOSED, NOT FIXED.
 
