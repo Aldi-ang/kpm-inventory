@@ -1,6 +1,46 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-09-05 08:00 WIB (🟠 KPM session — hand-off shipped `39cd90d`; 4 open faults DIAGNOSED not fixed, audit scope LOCKED)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **722/722 audit · 1016/1016 selfcheck** · branch `phase0-solid-ground`
+**Updated: 2026-09-05 08:55 WIB (🟠 KPM session — all four live-test faults SHIPPED `4bb9ad7`; fault 1 needs Aldi's eyes)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **722/722 audit · 1035/1035 selfcheck** · branch `phase0-solid-ground`
+
+## 🟠 2026-09-05 08:55 — All four faults built, in his order. SHIPPED `4bb9ad7`. One is unverified.
+
+He said *"lets do it 1,2,3,4"*. Four files, named before starting per the rule: `App.jsx`,
+`ConsignmentFinanceView.jsx`, `components/NotificationBell.jsx`, `config/logicFixes.selfcheck.mjs`.
+
+1. **Bell panel** — renders through `createPortal` to `<body>`, `position: fixed` off the button's
+   own rectangle read at open time. The old absolute child was cropped by `BiohazardTheme.jsx:941`
+   (`overflow-hidden`) and capped by its `relative z-10`. The outside-click handler now asks
+   `panelRef` as well, or the first click inside the portalled panel closes it on `mousedown` before
+   the row's `onClick` runs.
+2. **Store Audit ungated** — `isAdmin &&` removed. No new filter: `myTransactions` is already the
+   scope he locked. Add Goods stays admin-only. Hand-off button `col-span-4` → `col-span-2` or the
+   agent's row overflows now that a second button shares it.
+3. **Receiver keeps the card** — incoming list accepts `PENDING_ADMIN` too; buttons draw only while
+   `PENDING_AGENT`, replaced by "You accepted · waiting for admin".
+4. **Deep-link** — `linkToStore` on the two notifications that ask for something (hand-off request,
+   admin authorisation). `handleNotificationClick` sets `focusStore`; the screen opens that shop and
+   disarms it. Informational alerts deliberately carry none.
+
+**🔴 NOT VISUALLY VERIFIED — fault 1 only.** It is a rendering fix and nothing was rendered. The
+self-check pins the portal, the fixed positioning, the outside-click fix and the absence of the old
+absolute classes — that is structure, not appearance. **It is not "fixed" until Aldi presses the
+bell and the panel appears.** Faults 2–4 are logic and are covered by assertions.
+
+**Self-check honesty note.** The first red trial stashed the check file along with the source, so
+it could not have failed — a check that cannot fail proves nothing. Redone stashing only the three
+source files: **11 assertions red on the old code, 0 on the new.** One anchor was also sliced from a
+button LABEL, which begins *after* the `isAdmin &&` it was meant to test, and passed on unchanged
+code; it anchors on the gate string itself now.
+
+**Housekeeping:** `4bb9ad7` also carries the 🔵 7DTD track's own 08:41 rewrite of its entry, swept
+in by `git add -A`. Their content, their words, nothing lost — noted so the authorship is not
+confusing later.
+
+**WAITING ON ALDI — ✅ TEST, in this order:**
+1. Press the bell. Panel appears? That is fault 1 settled either way.
+2. As the test agent, open a consignment store → **Store Audit** should now be there.
+3. Accept a hand-off → the card should stay, reading *waiting for admin*.
+4. Press a hand-off notification → it should open that shop, not just the tab.
 
 ## 🟠 2026-09-05 08:00 — The bell is a first-class fault, not a footnote. Scope locked. Still no code.
 
