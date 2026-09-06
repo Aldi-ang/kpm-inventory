@@ -82,5 +82,13 @@
   "80": "@types/react-dom",
   "81": "@vitejs/plugin-basic-ssl",
   "82": "🟠 2026-09-06 07:30 — hand-off eligibility shipped (`dace958`). Approval matrix waits on one answer.",
-  "83": "framer-motion"
+  "83": "framer-motion",
+  "84": "MerchantSalesView.jsx",
+  "85": "StockOpnameView.jsx",
+  "86": "supply.js",
+  "87": "KPMInventoryApp",
+  "88": "dayStats.selfcheck.mjs",
+  "89": "WarehouseDeskNav.jsx",
+  "90": "handoffEligibility",
+  "91": "🟠 2026-09-06 08:15 — picker hides instead of greying; and the demo link was never reaching his friends."
 }
