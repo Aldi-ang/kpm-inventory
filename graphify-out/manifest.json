@@ -50,13 +50,13 @@
     "semantic_hash": ""
   },
   "src/App.jsx": {
-    "mtime": 1788564432.471642,
-    "ast_hash": "1e5dee7d2934ef9c589d368da2d2a985",
+    "mtime": 1788654193.4632742,
+    "ast_hash": "e2c17ef886cb76bc11abfbee5b91ee47",
     "semantic_hash": ""
   },
   "src/ConsignmentFinanceView.jsx": {
-    "mtime": 1788564389.9355118,
-    "ast_hash": "ec041bc5e7b686a75fe15b57bd1731f0",
+    "mtime": 1788654193.4642754,
+    "ast_hash": "a6bf0977f76b4df3058f405466147504",
     "semantic_hash": ""
   },
   "src/EODReconciliationView.jsx": {
@@ -165,8 +165,8 @@
     "semantic_hash": ""
   },
   "src/components/NotificationBell.jsx": {
-    "mtime": 1786867262.8577366,
-    "ast_hash": "8284f22862508381562e94f811515d80",
+    "mtime": 1788572549.8904424,
+    "ast_hash": "4b1552b8d24ff43c5e5d6db90408fb85",
     "semantic_hash": ""
   },
   "src/components/ResidentEvilInventory.jsx": {
@@ -195,8 +195,8 @@
     "semantic_hash": ""
   },
   "src/config/permissions.js": {
-    "mtime": 1788225243.331644,
-    "ast_hash": "e558baff45504248bf9c7884d82a1812",
+    "mtime": 1788654193.469056,
+    "ast_hash": "947221ebd81275ea3afee87215121f19",
     "semantic_hash": ""
   },
   "src/hooks/useDatabaseSync.js": {
@@ -570,8 +570,8 @@
     "semantic_hash": ""
   },
   ".claude/PROGRESS.md": {
-    "mtime": 1788543011.9575267,
-    "ast_hash": "ad531f3f92de003bd6f5523e403b9257",
+    "mtime": 1788654334.9999282,
+    "ast_hash": "e1b32bef6dc9973b6e3d088e5c88bcf9",
     "semantic_hash": ""
   },
   ".claude/pre-compact-context.md": {
@@ -755,13 +755,13 @@
     "semantic_hash": ""
   },
   "src/config/logicFixes.selfcheck.mjs": {
-    "mtime": 1788564439.124312,
-    "ast_hash": "2e80b99409b0f498832f362a77e3cf82",
+    "mtime": 1788654193.468039,
+    "ast_hash": "86a7be810ba3738cd16b0be747688124",
     "semantic_hash": ""
   },
   ".claude/NEXT-SESSION.md": {
-    "mtime": 1788542995.5093906,
-    "ast_hash": "aed8c8be5695545cf7407dee0ffe81c6",
+    "mtime": 1788654378.5308619,
+    "ast_hash": "2f5ed6e42e9471a5d231646ef96b5754",
     "semantic_hash": ""
   },
   ".claude/SWEEP-2026-08-19.md": {
