@@ -13,7 +13,7 @@ import fs from 'node:fs';
 import { SECTIONS } from '../ponder/sections.js';
 import { buildPages, maxTurnOf, turnFor, facingPage,
          TURN_FULL_MS, RIFFLE_MIN_MS } from '../ponder/pageModel.js';
-import { handoffEligibility, injectDynamicPermissions, normalizeRegion, canApproveHandoffFrom, handoffApprovers, HANDOFF_REGION_PREFIX, CORPORATE_TIERS } from './permissions.js';
+import { handoffEligibility, injectDynamicPermissions, normalizeRegion, canApproveHandoffFrom, handoffApprovers, CORPORATE_TIERS } from './permissions.js';
 
 let pass = 0, fail = 0;
 const read = (f) => fs.readFileSync(f, 'utf8');
@@ -4657,141 +4657,148 @@ ok('nobody with no branch is ever shown, toggle or not',
    !pickerShows(ROSTER, { senderRole: 'ADMIN', senderIsCompanyWide: true, meId: null, showAll: true }).includes('dedi'));
 
 
-/* ══ OPTION B — who approves a hand-off, and for which branches ════════════════════════════
-   Aldi, 2026-09-06: "both still get the bells of course". The configured tier is ADDED beside the
-   owner, never replacing him. His design, 2026-09-05: "there should be option in the matrix for
-   what tier that can receive and approve the consignment and also which is the region selected to
-   receive from ... but on default their own regional admin is the only one who can do that". */
-section('I. Hand-off approval: the owner AND the branch, never one instead of the other');
+/* ══ APPROVAL IS A PROPERTY OF THE PERSON, NOT OF THE TIER ═════════════════════════════════
+   Aldi killed the tier version on sight, 2026-09-06: "there is so flaw in the matrix system if u
+   build it that way ... if u put it on each tier like this then, all the regional admin if tick,
+   will see every single approval for every regional location as well, where i only want this 1
+   account to have the power for approval in bandung only". He was right: a branch ticked against
+   T4 reached every T4 in the company, so the control meant to stop the approval flood caused it. */
+section('I. Hand-off approval: named on the person, in Fleet & Canvas');
 
-const app4 = read('src/App.jsx');
-const cfv4 = read('src/ConsignmentFinanceView.jsx');
-const settings4 = read('src/components/SettingsView.jsx');
+const app4   = read('src/App.jsx');
+const cfv4   = read('src/ConsignmentFinanceView.jsx');
+const fleet4 = read('src/FleetCanvasManager.jsx');
+const set4   = read('src/components/SettingsView.jsx');
 
 ok('the approval predicate is imported where the write happens',
    imports(app4, 'canApproveHandoffFrom') && imports(app4, 'handoffApprovers'),
    'a call with no import throws into a catch and disables the guard silently');
 ok('and where the approval queue is drawn',
-   imports(cfv4, 'canApproveHandoffFrom'),
-   'the queue and the write must not decide separately');
+   imports(cfv4, 'canApproveHandoffFrom'));
 
-/* Scope to handleAgentAcceptTransfer — the bell fan-out lives there, and `handoffApprovers` in a
-   9000-line file would pass a file-wide grep from anywhere. */
-const AC_START = 'const handleAgentAcceptTransfer';
-const AC_END   = 'const handleAdminApproveTransfer';
-const acFrom = app4.indexOf(AC_START), acTo = app4.indexOf(AC_END);
+/* THE REGRESSION THAT MATTERS MOST: the tier-based version must not come back. */
+ok('the permission matrix carries no per-branch approval rows any more',
+   !/HANDOFF_REGION_PREFIX/.test(set4) && !/APPROVAL_REGIONS/.test(set4),
+   'HIS REPORT — a branch ticked against a RANK reaches every person holding that rank');
+ok('and nothing anywhere still reads approval regions off the permission matrix',
+   !/handoff_region:/.test(read('src/config/permissions.js')),
+   'a stale handoff_region: entry left in his saved Firebase matrix must not grant anything');
+
+/* Scope to handleAgentAcceptTransfer for the bell, and to handleAdminApproveTransfer for the write.
+   Both names appear elsewhere in a 9000-line file; a file-wide grep would pass from anywhere. */
+const acFrom = app4.indexOf('const handleAgentAcceptTransfer');
+const acTo   = app4.indexOf('const handleAdminApproveTransfer');
 ok('handleAgentAcceptTransfer was located',
    acFrom > -1 && acTo > acFrom,
    'anchor missed — the bell assertions would pass vacuously');
 const acceptBody = app4.slice(acFrom, acTo);
 ok('the owner still gets the approval bell',
    /agentId: 'ADMIN',/.test(acceptBody),
-   'OPTION B IS ADD, NOT REPLACE — losing this is Option A, which he did not choose');
-ok('and the branch approvers get one too, in the same handler',
+   'OPTION B IS ADD, NOT REPLACE — "both still get the bells of course"');
+ok('and the named approvers get one too, in the same handler',
    /handoffApprovers\(motorists, receivingRegion, \[request\.toAgentId, request\.fromAgentId\]\)/.test(acceptBody),
-   'without the fan-out the matrix setting saves and does nothing');
-ok('the branch is the RECEIVING agent’s, which is the one guaranteed to exist',
+   'without the fan-out the Fleet setting saves and does nothing');
+ok('the branch is the RECEIVING agent’s, the one guaranteed to exist',
    /const receivingRegion = \(motorists \|\| \[\]\)\.find\(m => m\.id === request\.toAgentId\)\?\.location;/.test(acceptBody),
-   'the sender may be an admin with no branch at all; handoffEligibility guarantees the receiver has one');
+   'the sender may be an admin with no branch at all');
 
-/* And the write end. */
-const AP_START = 'const handleAdminApproveTransfer';
-const AP_END   = 'const handleDeleteConsignment';
-const apFrom = app4.indexOf(AP_START);
-let apTo = app4.indexOf(AP_END);
-if (apTo < apFrom) apTo = apFrom + 6000;
+const apFrom = app4.indexOf('const handleAdminApproveTransfer');
+const apTo   = apFrom > -1 ? apFrom + 6000 : -1;
 ok('handleAdminApproveTransfer was located',
-   apFrom > -1 && apTo > apFrom,
+   apFrom > -1,
    'anchor missed — the approval-guard assertions would pass vacuously');
 const approveBody = app4.slice(apFrom, apTo);
-ok('a person who cannot approve that branch is refused at the write',
-   /if \(!canApproveHandoffFrom\(userRole,/.test(approveBody),
-   'hiding the Authorize button is not a boundary — the same rule that put a guard in handleRequestTransfer');
+ok('the write is handed a PROFILE and the roster, not a bare tier id',
+   /canApproveHandoffFrom\(myApprovalProfile, receivingRegion, motorists\)/.test(approveBody),
+   'the tier signature is the flaw he reported — it cannot tell two people of the same rank apart');
 ok('nobody authorises a hand-off they asked for or are receiving',
    /request\.toAgentId === agentProfileId \|\| request\.fromAgentId === agentProfileId/.test(approveBody),
    'self-approval collapses the three-key protocol into one key');
 ok('the request is RE-READ before the write, not trusted from the render',
    /freshSnap\.data\(\)\.status !== 'PENDING_ADMIN'/.test(approveBody),
-   'THE COST OF OPTION B: two people hold this button now, and the local copy was rendered before the other one pressed theirs');
+   'THE COST OF OPTION B: two people hold this button, and the local copy predates the other press');
 ok('and that re-read happens before anything is written',
    approveBody.indexOf('freshSnap') < approveBody.indexOf('operations.push'),
    'a guard after the write has already approved the thing it was meant to stop');
-ok('the double-press is reported, not swallowed',
-   /Already handled/.test(approveBody),
-   'silence is a bug here — his design law');
 
 ok('the approval queue only lists what the viewer may actually authorise',
-   /canApproveHandoffFrom\(senderRole, myProfile\?\.location, receiver\?\.location\)/.test(cfv4),
-   'listing every PENDING_ADMIN to everybody is what it did before Option B');
+   /canApproveHandoffFrom\(isAdmin \? \{ userRole: 'ADMIN' \} : myProfile, receiver\?\.location, motorists\)/.test(cfv4),
+   'listing every PENDING_ADMIN to everybody is what it did before');
 
-ok('the matrix enumerates the branches that really exist, from the roster',
-   /const APPROVAL_REGIONS = React\.useMemo/.test(settings4)
-   && /\(motorists \|\| \[\]\)[\s\S]{0,200}?normalizeRegion\(m\.location\)/.test(settings4),
-   'a hardcoded branch list looks right on the day it is written and rots silently');
-ok('and keeps a branch he already granted even after its last agent moves away',
-   /\.\.\.new Set\(\[\.\.\.live, \.\.\.saved\]\)/.test(settings4),
-   'otherwise the permission stays live in Firebase with no way on screen to take it back');
-ok('the region rows ride in as ordinary permissions, so the grid and the save path need no changes',
-   /APPROVAL_REGIONS\.map\(region => \(\{ id: HANDOFF_REGION_PREFIX \+ region/.test(settings4),
-   'a parallel storage shape would need the document, the screen and every reader taught a second format');
+/* Fleet & Canvas — where he asked for the control to live. */
+ok('the branch checkboxes are on the person’s own record',
+   /const toggleApprovalRegion = \(region\) => \{/.test(fleet4) && /Hand-off approval branches/.test(fleet4),
+   'HIS INSTRUCTION: "i want the approval power to be given on specific person inside the fleet and canvas manager"');
+ok('the branch list comes from the roster, unioned with what is already granted',
+   /\.\.\.new Set\(\[\.\.\.live, \.\.\.granted\]\)/.test(fleet4),
+   'without the union a granted branch vanishes from the control when its last agent moves away, and the grant is stranded live in the database');
+ok('saving writes null rather than an empty array',
+   (fleet4.match(/\(newAgent\.approvalRegions \|\| \[\]\)\.length \? newAgent\.approvalRegions\.map\(normalizeRegion\) : null/g) || []).length === 2,
+   'BOTH the create and the edit path — [] reads as "named for no branch", which would strip a Regional Admin’s default the first time somebody edits their phone number');
+ok('and the form says what an unticked control is doing',
+   /Nothing ticked: this person follows the default/.test(fleet4),
+   'silence is a bug here — his design law');
 
-/* ── the maths: approval re-run on real tiers ─────────────────────────────────────────────
-   Runs while no handoff_region: entry exists anywhere, so this is the DEFAULT branch. */
-ok('by default the store’s own regional admin approves it',
-   canApproveHandoffFrom(CORPORATE_TIERS.TIER_4, 'JAKARTA', 'Jakarta'),
-   'his words: "on default their own regional admin is the only one who can do that"');
-ok('but only for their own branch',
-   !canApproveHandoffFrom(CORPORATE_TIERS.TIER_4, 'JAKARTA', 'BANDUNG'),
-   'granting one T4 every branch is the notification flood he described');
-ok('a tier he has not named approves nothing by default',
-   !canApproveHandoffFrom(CORPORATE_TIERS.TIER_3, 'JAKARTA', 'JAKARTA')
-   && !canApproveHandoffFrom(CORPORATE_TIERS.TIER_5, 'JAKARTA', 'JAKARTA'));
+/* ── the maths: approval re-run on real people ────────────────────────────────────────────
+   RINA and SARI are the same RANK in different branches. That pair is the whole bug he found. */
+const RINA = { id: 'rina', name: 'Rina', userRole: CORPORATE_TIERS.TIER_4, location: 'JAKARTA' };
+const SARI = { id: 'sari', name: 'Sari', userRole: CORPORATE_TIERS.TIER_4, location: 'BANDUNG' };
+const HANA = { id: 'hana', name: 'Hana', userRole: CORPORATE_TIERS.TIER_5, location: 'SURABAYA' };
+const PLAIN = [ANDI, BUDI, CITRA, NOWHERE, BOSS, RINA, SARI, HANA];
+
+ok('with nobody named, a branch falls to its own regional admin',
+   canApproveHandoffFrom(RINA, 'JAKARTA', PLAIN) && canApproveHandoffFrom(SARI, 'BANDUNG', PLAIN),
+   'his stated default: "on default their own regional admin is the only one who can do that"');
+ok('and never to the regional admin of a different branch',
+   !canApproveHandoffFrom(RINA, 'BANDUNG', PLAIN) && !canApproveHandoffFrom(SARI, 'JAKARTA', PLAIN),
+   'THE BUG HE REPORTED, in its default clothes');
+ok('a rank he has not named approves nothing',
+   !canApproveHandoffFrom(HANA, 'SURABAYA', PLAIN) && !canApproveHandoffFrom(ANDI, 'JAKARTA', PLAIN));
 ok('the owner approves everything, always',
-   canApproveHandoffFrom(CORPORATE_TIERS.TIER_1, null, 'BANDUNG') && canApproveHandoffFrom('ADMIN', null, 'SURABAYA'),
-   'OPTION B — he never loses an approval he has today');
-ok('a hand-off into no branch at all reaches nobody but the owner',
-   !canApproveHandoffFrom(CORPORATE_TIERS.TIER_4, 'UNASSIGNED', 'UNASSIGNED')
-   && canApproveHandoffFrom(CORPORATE_TIERS.TIER_1, null, 'UNASSIGNED'),
-   'UNASSIGNED is a missing field, not a branch — routing it to "that branch’s admin" means everybody unplaced');
+   canApproveHandoffFrom(BOSS, 'BANDUNG', PLAIN) && canApproveHandoffFrom({ userRole: 'ADMIN' }, 'SURABAYA', PLAIN),
+   'OPTION B — no configuration can lock him out of his own company');
+ok('a hand-off into no branch reaches nobody but the owner',
+   !canApproveHandoffFrom(RINA, 'UNASSIGNED', PLAIN) && canApproveHandoffFrom(BOSS, 'UNASSIGNED', PLAIN),
+   'UNASSIGNED is a missing field, not a branch');
 
-/* The bell list, on a real roster. BOSS is TIER_1 and must be absent: the agentId:'ADMIN'
-   notification already reaches him, and he matches every region rule there is. */
-const T4_JKT  = { id: 't4jkt',  name: 'Rina',  userRole: CORPORATE_TIERS.TIER_4, location: 'JAKARTA' };
-const T4_BDG  = { id: 't4bdg',  name: 'Sari',  userRole: CORPORATE_TIERS.TIER_4, location: 'BANDUNG' };
-const BELL_ROSTER = [ANDI, BUDI, CITRA, NOWHERE, BOSS, T4_JKT, T4_BDG];
+/* Now name ONE person for BANDUNG — his sentence, exactly. */
+const HANA_BDG = { ...HANA, approvalRegions: ['Bandung'] };
+const NAMED = [ANDI, BUDI, CITRA, NOWHERE, BOSS, RINA, SARI, HANA_BDG];
 
-ok('the branch admin is told, and nobody else is',
-   JSON.stringify(handoffApprovers(BELL_ROSTER, 'JAKARTA', [])) === '["t4jkt"]',
-   'the Bandung admin, the field agents and the unplaced agent all have no business in this queue');
+ok('the named account approves that branch, wherever that person personally sits',
+   canApproveHandoffFrom(HANA_BDG, 'BANDUNG', NAMED),
+   'Hana stands in Surabaya and answers for Bandung — the branch comes from the grant, not from her location');
+ok('and only that branch, even though she is now named',
+   !canApproveHandoffFrom(HANA_BDG, 'SURABAYA', NAMED),
+   '"i only want this 1 account to have the power for approval in bandung ONLY"');
+ok('naming her takes Bandung off its regional admin',
+   !canApproveHandoffFrom(SARI, 'BANDUNG', NAMED),
+   'the other half of his "only" — otherwise two people hold Bandung and nothing was actually delegated');
+ok('but Jakarta is untouched and still falls to Rina',
+   canApproveHandoffFrom(RINA, 'JAKARTA', NAMED),
+   'THE FLAW HE FOUND, INVERTED: a grant must not reach past the branch it names');
+ok('the owner still approves Bandung alongside her',
+   canApproveHandoffFrom(BOSS, 'BANDUNG', NAMED),
+   'Option B again — he never loses an approval by delegating one');
+
+/* The bell list on the same two rosters. */
+ok('before anybody is named, only the branch’s own admin is rung',
+   JSON.stringify(handoffApprovers(PLAIN, 'BANDUNG', [])) === '["sari"]');
+ok('after Hana is named, she is rung and the branch admin is not',
+   JSON.stringify(handoffApprovers(NAMED, 'BANDUNG', [])) === '["hana"]',
+   'this single assertion is the difference between what he rejected and what he asked for');
 ok('the owner is never in that list, because his own bell already went out',
-   !handoffApprovers(BELL_ROSTER, 'JAKARTA', []).includes('master_owner'),
-   'THE DOUBLED-BELL FAULT: he is Tier 1 and matches every region, so he would be told twice for every hand-off');
+   !handoffApprovers(NAMED, 'BANDUNG', []).includes('master_owner'),
+   'he is Tier 1 and matches every rule, so he would be told twice for every hand-off');
 ok('the receiver and the sender are left out even when they would otherwise qualify',
-   handoffApprovers(BELL_ROSTER, 'JAKARTA', ['t4jkt']).length === 0,
+   handoffApprovers(NAMED, 'BANDUNG', ['hana']).length === 0,
    'a receiver who can approve their own incoming hand-off is a one-key protocol wearing three keys');
 
-/* Now his switch. Injecting ANY handoff_region: entry means he has configured this deliberately,
-   and from that moment the matrix wins in both directions. Runs LAST — it mutates module state. */
-injectDynamicPermissions({
-    [CORPORATE_TIERS.TIER_3]: [HANDOFF_REGION_PREFIX + 'JAKARTA', HANDOFF_REGION_PREFIX + 'BANDUNG'],
-}, null);
-ok('a configured tier approves exactly the branches he ticked',
-   canApproveHandoffFrom(CORPORATE_TIERS.TIER_3, 'SURABAYA', 'JAKARTA')
-   && canApproveHandoffFrom(CORPORATE_TIERS.TIER_3, 'SURABAYA', 'BANDUNG'),
-   'the branch comes from the CONFIG, not from where the approver personally sits — "power to choose 1,2,3,4 or whatever regional number"');
-ok('and no others',
-   !canApproveHandoffFrom(CORPORATE_TIERS.TIER_3, 'SURABAYA', 'SURABAYA'),
-   'an arbitrary subset that quietly includes the approver’s own branch is not the subset he ticked');
-ok('his switch takes the default away from T4 as well as giving it to T3',
-   !canApproveHandoffFrom(CORPORATE_TIERS.TIER_4, 'JAKARTA', 'JAKARTA'),
-   'a switch that only ever adds is not a switch — same rule as the other five keys in that file');
-ok('the owner still approves everything after he configures anything at all',
-   canApproveHandoffFrom(CORPORATE_TIERS.TIER_1, null, 'SURABAYA'),
-   'OPTION B again — no configuration can lock him out of his own company');
-ok('and the bell now follows the config instead of the tier default',
-   JSON.stringify(handoffApprovers(BELL_ROSTER, 'BANDUNG', [])) === '[]'
-   && handoffApprovers([...BELL_ROSTER, { id: 't3', name: 'Hana', userRole: CORPORATE_TIERS.TIER_3, location: 'SURABAYA' }], 'BANDUNG', []).includes('t3'),
-   'the Bandung T4 lost the default and the Surabaya T3 gained Bandung by configuration');
+/* An empty array is a real answer and must not read as "not named". */
+const MUTED = { ...SARI, approvalRegions: [] };
+ok('an explicitly empty grant means no branches, not the default',
+   !canApproveHandoffFrom(MUTED, 'BANDUNG', [ANDI, BOSS, RINA, MUTED]),
+   'this is why Fleet writes null and never [] — the two must stay tellable apart');
 
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

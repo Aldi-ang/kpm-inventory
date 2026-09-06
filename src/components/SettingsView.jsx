@@ -25,7 +25,7 @@ import ReceiptPreview from './ReceiptPreview';
 import AuthoritySelect from './AuthoritySelect';
 
 // 🚀 IMPORT THE MATRIX BRAIN
-import { CORPORATE_TIERS, ROLE_PERMISSIONS, DYNAMIC_TIERS, injectDynamicPermissions, CUSTOMER_EDIT_PERMS, FLEET_EDIT_PERMS, defaultFleetAccess, HANDOFF_REGION_PREFIX, normalizeRegion } from '../config/permissions';
+import { CORPORATE_TIERS, ROLE_PERMISSIONS, DYNAMIC_TIERS, injectDynamicPermissions, CUSTOMER_EDIT_PERMS, FLEET_EDIT_PERMS, defaultFleetAccess } from '../config/permissions';
 import { confirmAction, promptAction } from './ConfirmGate.jsx';
 import { notify } from './Toast.jsx';
 
@@ -850,7 +850,7 @@ export default function SettingsView({
                               instead of following one fixed default. The Tier 1/Developer row itself is
                               still protected and never appears in the editable list, regardless of who's
                               using this screen. */}
-                          <PermissionMatrixEditor db={db} appId={appId} userRole={userRole || 'DEVELOPER'} userId={userId} motorists={motorists} />
+                          <PermissionMatrixEditor db={db} appId={appId} userRole={userRole || 'DEVELOPER'} userId={userId} />
 
                           {/* 🚀 FLEET PAINTBRUSH MASTER SWITCH (TIER 1/2 ONLY) — company-wide kill
                               switch for Journey Plan's fleet-color/boundary paintbrush. Defaults to
@@ -1503,7 +1503,7 @@ const writeCareerLedger = (newVal, { db, appId, user, setAppSettings, triggerCap
 };
 
 // 🚀 PLUG & PLAY: THE RESPONSIVE MATRIX EDITOR
-const PermissionMatrixEditor = ({ db, appId, userRole, userId, motorists = [] }) => {
+const PermissionMatrixEditor = ({ db, appId, userRole, userId }) => {
     if (userRole !== 'DEVELOPER' && userRole !== 'ADMIN' && userRole !== 'COMPANY_OWNER') return null;
 
     const [matrix, setMatrix] = React.useState(ROLE_PERMISSIONS);
@@ -1536,29 +1536,6 @@ const PermissionMatrixEditor = ({ db, appId, userRole, userId, motorists = [] })
     const [draggedIdx, setDraggedIdx] = React.useState(null);
     const [dragOverIdx, setDragOverIdx] = React.useState(null);
 
-    /* 🤝 EVERY BRANCH, REGISTERED IN THE MATRIX. Aldi, 2026-09-05: *"i want all the region the
-       be registered on the matrix ... the system that i want to make is to have power to choose
-       1,2,3,4 or whatever regional number that i want to receive notification and approval from"*.
-
-       They ride in as ordinary permission rows, which is why this needs no new controls: the grid,
-       the phone panel, the toggle handler and the save path all already work on this array.
-
-       ⚠️ THE BRANCH LIST IS DATA, NOT A CONSTANT. It comes from where his agents actually stand,
-       so a new branch appears here the moment somebody is posted to it. The saved half of the union
-       is what stops a branch he has already granted from disappearing when its last agent moves
-       away - the permission would stay live in Firebase with no way on screen to take it back. */
-    const APPROVAL_REGIONS = React.useMemo(() => {
-        const live = (motorists || [])
-            .filter(m => m.userRole !== 'ADMIN')
-            .map(m => normalizeRegion(m.location))
-            .filter(r => r !== 'UNASSIGNED');
-        const saved = Object.values(matrix)
-            .flatMap(list => Array.isArray(list) ? list : [])
-            .filter(perm => typeof perm === 'string' && perm.startsWith(HANDOFF_REGION_PREFIX))
-            .map(perm => normalizeRegion(perm.slice(HANDOFF_REGION_PREFIX.length)));
-        return [...new Set([...live, ...saved])].sort();
-    }, [motorists, matrix]);
-
     // 🚀 NEW: 'can_view_team_history' injected into the Matrix array
     const ALL_FEATURES = [
         { id: 'view_dashboard', label: 'Command Center' },
@@ -1580,8 +1557,7 @@ const PermissionMatrixEditor = ({ db, appId, userRole, userId, motorists = [] })
         { id: 'can_unrestricted_sample', label: 'Bypass GPS for Sampling' }, 
         { id: 'view_expected_count', label: 'Stock Count: see expected number while counting' },
         { id: 'edit_agent_roles', label: '[GOD] Promote Agents' },
-        { id: 'edit_rank_config', label: '[GOD] Edit Ranks' },
-        ...APPROVAL_REGIONS.map(region => ({ id: HANDOFF_REGION_PREFIX + region, label: `Approve hand-offs into ${region}` }))
+        { id: 'edit_rank_config', label: '[GOD] Edit Ranks' }
     ];
 
     // 🚀 THE 3 REPORT VISIBILITY MODES

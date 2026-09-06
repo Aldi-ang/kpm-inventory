@@ -371,7 +371,7 @@ export default function ConsignmentFinanceView({ transactions = [], customers = 
             if (r.status !== 'PENDING_ADMIN') return false;
             if (agentProfileId && (r.toAgentId === agentProfileId || r.fromAgentId === agentProfileId)) return false;
             const receiver = (motorists || []).find(m => m.id === r.toAgentId);
-            return canApproveHandoffFrom(senderRole, myProfile?.location, receiver?.location);
+            return canApproveHandoffFrom(isAdmin ? { userRole: 'ADMIN' } : myProfile, receiver?.location, motorists);
         });
         return { incomingRequests: incoming, outgoingRequests: outgoing, pendingAdminRequests: adminPend };
     }, [transferRequests, agentProfileId, isAdmin]);

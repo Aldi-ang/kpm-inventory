@@ -7,6 +7,7 @@ import {
 import { collection, doc, setDoc, deleteDoc, updateDoc, writeBatch, runTransaction, onSnapshot, serverTimestamp } from 'firebase/firestore';
 import { DYNAMIC_TIERS, isFieldLevelTier, canEditFleetRoster, tierWord } from './config/permissions';
 import { convertToBks, isSafeDocIdEmail, getLocalDayKey} from './utils/helpers';
+import { normalizeRegion } from './config/permissions';
 import { confirmAction } from './components/ConfirmGate.jsx';
 import { notify } from './components/Toast.jsx';
 
@@ -104,6 +105,7 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
         location: isAreaAdmin ? branchPathLocation : 'Headquarters',
         province: myProfile?.province || 'Central Java',
         allowRetur: false,
+        approvalRegions: [],
         allowCashRefund: false,
         joinDate: ''
     };
@@ -147,6 +149,39 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
         setNewAgent(prev => ({
             ...prev, allowedPayments: prev.allowedPayments.includes(method) ? prev.allowedPayments.filter(m => m !== method) : [...prev.allowedPayments, method]
         }));
+    };
+
+    /* 🤝 WHICH BRANCHES THIS ONE PERSON MAY AUTHORISE HAND-OFFS INTO.
+
+       Aldi, 2026-09-06: *"i want the approval power to be given on specific person inside the fleet
+       and canvas manager ... i only want this 1 account to have the power for approval in bandung
+       only"*. It was briefly a permission-matrix row per tier, and he killed that on sight: a branch
+       ticked against T4 reached EVERY T4 in the company, so the control meant to stop the approval
+       flood caused it.
+
+       The branch list is DATA. It comes from where the roster actually stands, unioned with every
+       branch already granted to somebody. Without the union a branch vanishes from this control the
+       day its last agent moves away, while the grant stays live in the database with no way on
+       screen to take it back. */
+    const approvalBranches = useMemo(() => {
+        const live = (activeMotorists || [])
+            .filter(m => m.userRole !== 'ADMIN')
+            .map(m => normalizeRegion(m.location))
+            .filter(r => r !== 'UNASSIGNED');
+        const granted = (activeMotorists || [])
+            .flatMap(m => Array.isArray(m.approvalRegions) ? m.approvalRegions : [])
+            .map(normalizeRegion);
+        return [...new Set([...live, ...granted])].sort();
+    }, [activeMotorists]);
+
+    const toggleApprovalRegion = (region) => {
+        if (isReadOnlyMode) return;
+        setNewAgent(prev => {
+            const current = Array.isArray(prev.approvalRegions) ? prev.approvalRegions : [];
+            return { ...prev, approvalRegions: current.includes(region)
+                ? current.filter(r => r !== region)
+                : [...current, region] };
+        });
     };
 
     const toggleTier = (tier) => {
@@ -196,7 +231,11 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                     userRole: newAgent.userRole || 'AGENT', location: newAgent.location || 'Headquarters', province: newAgent.province || 'Central Java',
                     allowRetur: newAgent.allowRetur || false,
                     allowCashRefund: newAgent.allowCashRefund || false,
-                    joinDate: newAgent.joinDate || ''
+                    joinDate: newAgent.joinDate || '',
+                    /* null, never [] - an empty array reads as "named for no branches at all" and
+                       would silently strip a Regional Admin's default the first time somebody edits
+                       their phone number. See personApprovalRegions in config/permissions.js. */
+                    approvalRegions: (newAgent.approvalRegions || []).length ? newAgent.approvalRegions.map(normalizeRegion) : null
                 });
 
                 if (oldEmailKey && oldEmailKey !== emailKey) batch.delete(doc(db, `artifacts/${appId}/employee_directory`, oldEmailKey));
@@ -209,7 +248,8 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
             } else {
                 const newId = `AGT_${Date.now()}`;
                 const agentData = {
-                    id: newId, ...newAgent, email: emailKey, status: 'Active', activeCanvas: [], createdAt: serverTimestamp()
+                    id: newId, ...newAgent, email: emailKey, status: 'Active', activeCanvas: [], createdAt: serverTimestamp(),
+                    approvalRegions: (newAgent.approvalRegions || []).length ? newAgent.approvalRegions.map(normalizeRegion) : null
                 };
                 batch.set(doc(db, collPath, newId), agentData);
                 batch.set(doc(db, `artifacts/${appId}/employee_directory`, emailKey), {
@@ -241,6 +281,7 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
             allowedPayments: agent.allowedPayments || ['Cash'], allowedTiers: agent.allowedTiers || ['Retail', 'Ecer'],
             userRole: agent.userRole || 'AGENT', location: agent.location || 'Headquarters', province: agent.province || 'Central Java',
             allowRetur: agent.allowRetur || false,
+            approvalRegions: Array.isArray(agent.approvalRegions) ? agent.approvalRegions.map(normalizeRegion) : [],
             allowCashRefund: agent.allowCashRefund || false
         });
         setEditingAgentId(agent.id);
@@ -255,6 +296,7 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
             allowedPayments: agent.allowedPayments || ['Cash'], allowedTiers: agent.allowedTiers || ['Retail', 'Ecer'],
             userRole: agent.userRole || 'AGENT', location: agent.location || 'Headquarters', province: agent.province || 'Central Java',
             allowRetur: agent.allowRetur || false,
+            approvalRegions: Array.isArray(agent.approvalRegions) ? agent.approvalRegions.map(normalizeRegion) : [],
             allowCashRefund: agent.allowCashRefund || false
         });
         setEditingAgentId(agent.id);
@@ -804,6 +846,26 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                                             </label>
                                         ))}
                                     </div>
+                                </div>
+                                <div className="mt-3">
+                                    <label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest block mb-2">Hand-off approval branches</label>
+                                    <div className="flex flex-wrap gap-2">
+                                        {approvalBranches.map(region => (
+                                            <label key={region} className={`flex items-center gap-1.5 text-xs font-bold px-2 py-1 rounded border transition-colors ${isReadOnlyMode ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'} ${(newAgent.approvalRegions || []).includes(region) ? 'bg-amber-900/30 border-amber-500 text-amber-400' : 'bg-slate-800 border-slate-700 text-slate-400'}`}>
+                                                <input type="checkbox" className="hidden" disabled={isReadOnlyMode} checked={(newAgent.approvalRegions || []).includes(region)} onChange={() => toggleApprovalRegion(region)} />
+                                                {region}
+                                            </label>
+                                        ))}
+                                        {approvalBranches.length === 0 && (
+                                            <span className="text-[10px] text-slate-500">No branches yet — give your personnel a branch first.</span>
+                                        )}
+                                    </div>
+                                    {/* A control that quietly does something while unticked still has to say so. */}
+                                    <p className="text-[10px] text-slate-500 mt-2 leading-relaxed">
+                                        {(newAgent.approvalRegions || []).length === 0
+                                            ? 'Nothing ticked: this person follows the default \u2014 a Regional Admin authorises hand-offs into their own branch, and nobody else does.'
+                                            : `Only this person authorises hand-offs into ${(newAgent.approvalRegions || []).join(', ')}. That branch stops falling to its Regional Admin by default.`}
+                                    </p>
                                 </div>
                             </div>
                             

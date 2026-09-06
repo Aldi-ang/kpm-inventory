@@ -380,75 +380,77 @@ export const handoffEligibility = ({ toAgent, senderRole, senderRegion = null, s
 };
 
 
-/* ═══ WHO APPROVES A HAND-OFF, AND FOR WHICH BRANCHES ══════════════════════════════
+/* ═══ 🤝 APPROVAL IS A PROPERTY OF THE PERSON, NOT OF THE TIER.
 
-   Aldi, 2026-09-05: *"there should be option in the matrix for what tier that can receive and
-   approve the consignment and also which is the region selected to receive from ... but on default
-   their own regional admin is the only one who can do that, if we put this power towards the upper
-   tier for all region then there will be massive loads of approval notification bells coming to the
-   upper tier"*.
+   Aldi killed the tier version on sight, 2026-09-06: *"there is so flaw in the matrix system if u
+   build it that way, i want the approval power to be given on specific person inside the fleet and
+   canvas manager, because if u put it on each tier like this then, all the regional admin if tick,
+   will see every single approval for every regional location as well, where i only want this 1
+   account to have the power for approval in bandung only"*.
 
-   And on the shape, refusing the cheap version outright: *"no i want all the region the be
-   registered on the matrix, because if there is only 2 option all or own regional approval means
-   that there are only 2 option to choose floods or drip of water"*.
+   He was right and the flaw was exactly where he said. A region ticked against T4 in the permission
+   matrix reached EVERY T4 in the company, so the one control meant to stop the approval flood
+   caused it. The permission matrix answers "what may this RANK do"; "which branches does THIS
+   PERSON answer for" is not a rank question at all, and it belongs on the person's own record in
+   Fleet & Canvas beside their branch, their payment methods and their price tiers.
 
-   So the carrier is ONE ENTRY PER REGION inside the tier's existing permission array —
-   `handoff_region:JAKARTA`, `handoff_region:BANDUNG`. That is not the two-value flag he refused; it
-   is the arbitrary subset he asked for, and he can pick one branch, four, or all of them. It also
-   costs no new plumbing: injectDynamicPermissions already merges this array, the Settings screen
-   already writes it, and every reader already assumes it is a flat list of strings.
+   THE FIELD: `approvalRegions` on the employee record. Absent or null means "not named" and the
+   tier default applies. An array means exactly those branches and no others.
 
-   ✅ OPTION B, his answer 2026-09-06: *"both still get the bells of course"*. A configured tier is
-   ADDED beside the owner, never replacing him. He keeps every approval he has today. */
-export const HANDOFF_REGION_PREFIX = 'handoff_region:';
+   ⚠️ NAMING SOMEBODY FOR A BRANCH TAKES THAT BRANCH OFF THE DEFAULT. His sentence was
+   *"i only want this 1 account to have the power for approval in bandung only"* - "only" on both
+   ends. So the moment ANY person is named for BANDUNG, Bandung's regional admin stops getting it by
+   default; every other branch is untouched and keeps its own default. That is the whole revocation
+   story: he grants, and the grant displaces. There is no separate "remove approval" switch because
+   this makes one unnecessary.
 
-export const handoffApprovalRegions = (userRole) => {
-    const list = ROLE_PERMISSIONS[translateLegacyRole(userRole)];
-    if (!Array.isArray(list)) return [];
-    return list.filter(perm => typeof perm === 'string' && perm.startsWith(HANDOFF_REGION_PREFIX))
-               .map(perm => normalizeRegion(perm.slice(HANDOFF_REGION_PREFIX.length)));
+   ✅ OPTION B SURVIVES UNCHANGED, his words 2026-09-06: *"both still get the bells of
+   course"*. Tier 1 approves everything, always, whatever anybody is named for. No configuration can
+   lock him out of his own company. */
+
+/* What this person was explicitly named for. `null` - never an empty array - is the signal for
+   "not named", so that saving an unrelated edit on somebody's phone number cannot silently strip
+   the default from a regional admin. Fleet & Canvas writes null rather than [] for that reason. */
+export const personApprovalRegions = (profile) => {
+    const list = profile && profile.approvalRegions;
+    if (!Array.isArray(list)) return null;
+    return list.map(normalizeRegion);
 };
 
-const matrixKnowsApprovalRegions = () => Object.values(ROLE_PERMISSIONS)
-    .some(list => Array.isArray(list) && list.some(perm => typeof perm === 'string' && perm.startsWith(HANDOFF_REGION_PREFIX)));
+const branchIsDelegated = (roster, region) => (roster || []).some(m => {
+    const named = personApprovalRegions(m);
+    return named !== null && named.includes(region);
+});
 
-/* MAY THIS PERSON AUTHORISE A HAND-OFF INTO `storeRegion`?
-
-   `approverRegion` is only consulted for the DEFAULT. Once he has configured regions, the branch
-   comes from the CONFIG and not from where the approver personally sits — that is the whole point
-   of "power to choose 1,2,3,4 or whatever regional number that i want to ... approval from".
-
-   Same ABSENCE-MEANS-TIER-DEFAULT shape as the five keys above, and the default is his sentence:
-   the store's own regional admin, which is T4 REGIONAL ADMIN standing in that branch. The moment
-   ANY tier carries a region entry he has configured this deliberately, and from then on his matrix
-   wins in both directions — including taking the default away from T4. */
-export const canApproveHandoffFrom = (userRole, approverRegion, storeRegion) => {
-    const role = translateLegacyRole(userRole);
+export const canApproveHandoffFrom = (profile, storeRegion, roster = []) => {
+    const role = translateLegacyRole(profile && profile.userRole);
     if (role === CORPORATE_TIERS.TIER_1) return true;
 
     const region = normalizeRegion(storeRegion);
-    /* A hand-off into no branch at all cannot be routed to a branch approver. It cannot happen
-       through handoffEligibility, which refuses a receiver with no branch — but a request written
-       before that guard shipped can still be sitting in the queue, and it must land on the owner
-       rather than on everybody. */
+    /* A hand-off into no branch at all cannot be routed to a branch approver. handoffEligibility
+       refuses a receiver with no branch, but a request written before that guard shipped can still
+       be sitting in the queue, and it must land on the owner rather than on everybody. */
     if (region === 'UNASSIGNED') return false;
 
-    if (matrixKnowsApprovalRegions()) return handoffApprovalRegions(role).includes(region);
-    return role === CORPORATE_TIERS.TIER_4 && normalizeRegion(approverRegion) === region;
+    const named = personApprovalRegions(profile);
+    if (named !== null) return named.includes(region);
+
+    if (branchIsDelegated(roster, region)) return false;
+    return role === CORPORATE_TIERS.TIER_4 && normalizeRegion(profile && profile.location) === region;
 };
 
-/* THE BELL LIST. Returns the agent ids that must be told a hand-off is waiting, BESIDE the owner.
+/* THE BELL LIST. Who else must be told a hand-off is waiting, BESIDE the owner.
 
    ⚠️ THREE PEOPLE ARE LEFT OUT ON PURPOSE:
-     • anyone on TIER_1 — the `agentId: 'ADMIN'` notification already reaches them, and Aldi matches
-       every region rule there is. This is what stops him getting the same bell twice.
-     • the RECEIVER — they have just accepted; approving their own incoming hand-off would collapse
+     - anyone on TIER_1 - the `agentId: 'ADMIN'` notification already reaches them, and Aldi matches
+       every rule there is. This is what stops him being told twice for every hand-off.
+     - the RECEIVER - they have just accepted; approving their own incoming hand-off would collapse
        the three-key protocol into one key.
-     • the SENDER — they asked for it. Same reason. */
+     - the SENDER - they asked for it. Same reason. */
 export const handoffApprovers = (roster, storeRegion, excludeIds = []) =>
     (roster || [])
         .filter(m => m && m.id
             && !excludeIds.includes(m.id)
             && translateLegacyRole(m.userRole) !== CORPORATE_TIERS.TIER_1
-            && canApproveHandoffFrom(m.userRole, m.location, storeRegion))
+            && canApproveHandoffFrom(m, storeRegion, roster))
         .map(m => m.id);

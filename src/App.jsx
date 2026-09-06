@@ -1794,7 +1794,8 @@ const handleGitHubMirror = async () => {
       if (request.toAgentId === agentProfileId || request.fromAgentId === agentProfileId) {
           return notify("You asked for this hand-off or you are receiving it. Somebody else has to authorise it.");
       }
-      if (!canApproveHandoffFrom(userRole, (motorists || []).find(m => m.id === agentProfileId)?.location, receivingRegion)) {
+      const myApprovalProfile = (motorists || []).find(m => m.id === agentProfileId) || { userRole };
+      if (!canApproveHandoffFrom(myApprovalProfile, receivingRegion, motorists)) {
           return notify(`You cannot authorise hand-offs into ${String(receivingRegion || 'that branch').toUpperCase()}. Ask the owner or that branch's admin.`);
       }
 
