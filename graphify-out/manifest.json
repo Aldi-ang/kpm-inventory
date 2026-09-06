@@ -190,8 +190,8 @@
     "semantic_hash": ""
   },
   "src/config/firebase.js": {
-    "mtime": 1785305023.1206942,
-    "ast_hash": "ec28df6eb206e88c4cefe4637656c5cd",
+    "mtime": 1788682728.6092737,
+    "ast_hash": "0bbad228a9b60c652742d52cdb17deb8",
     "semantic_hash": ""
   },
   "src/config/permissions.js": {
@@ -570,8 +570,8 @@
     "semantic_hash": ""
   },
   ".claude/PROGRESS.md": {
-    "mtime": 1788681344.6452053,
-    "ast_hash": "2889aa1c56429dfe11ad0528b998994f",
+    "mtime": 1788682840.9445531,
+    "ast_hash": "2f9eb1f9ec06c7b0d828729be95f7fb3",
     "semantic_hash": ""
   },
   ".claude/pre-compact-context.md": {
@@ -755,13 +755,13 @@
     "semantic_hash": ""
   },
   "src/config/logicFixes.selfcheck.mjs": {
-    "mtime": 1788681144.4618964,
-    "ast_hash": "fbf6e2bc5a0089fbadf51caffcd7090f",
+    "mtime": 1788682678.0800345,
+    "ast_hash": "7034fd649c2e7fdb2b48f732e23b90e6",
     "semantic_hash": ""
   },
   ".claude/NEXT-SESSION.md": {
-    "mtime": 1788681344.6482072,
-    "ast_hash": "8c2ea21a6e0649fe632524c68335419e",
+    "mtime": 1788682865.3250222,
+    "ast_hash": "6f84fb6fc503205fe2212ed28738e172",
     "semantic_hash": ""
   },
   ".claude/SWEEP-2026-08-19.md": {
@@ -1027,6 +1027,11 @@
   "public/sounds/pad-key.mp3": {
     "mtime": 1788495954.9098659,
     "ast_hash": "70f245103ebaa17bfe6a69397ca7a07b",
+    "semantic_hash": ""
+  },
+  "vercel.json": {
+    "mtime": 1788682699.3542278,
+    "ast_hash": "0aba2cdf6d1095ea370f6fd975188b13",
     "semantic_hash": ""
   }
 }
