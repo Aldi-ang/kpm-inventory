@@ -4800,5 +4800,64 @@ ok('an explicitly empty grant means no branches, not the default',
    !canApproveHandoffFrom(MUTED, 'BANDUNG', [ANDI, BOSS, RINA, MUTED]),
    'this is why Fleet writes null and never [] — the two must stay tellable apart');
 
+/* ══ THE LOGIN DOMAIN — one site, not two ═════════════════════════════════════════════════
+   Aldi, 2026-09-06, on Brave: sign-in worked on localhost and failed on every deployed address.
+   Shields down on the deployed site and it worked at once. The app sat on kpm-ang.vercel.app while
+   the Google handshake happened on cello-inventory-manager.firebaseapp.com, so finishing a login
+   meant one site reading a cookie another site set — which Brave blocks by default, Safari blocks,
+   and Chrome is phasing in. Localhost is the one place Brave does not apply it. */
+section('J. Login domain: the handshake happens on the app’s own address');
+
+const fb = read('src/config/firebase.js');
+let vercelCfg = null;
+try { vercelCfg = JSON.parse(read('vercel.json')); } catch (e) { vercelCfg = null; }
+
+ok('vercel.json exists and parses',
+   vercelCfg !== null,
+   'a malformed vercel.json is ignored silently by Vercel — the proxy would simply not exist');
+const rw = (vercelCfg && vercelCfg.rewrites || []).find(r => String(r.source).startsWith('/__/auth/'));
+ok('it passes /__/auth/* through to Firebase',
+   !!rw && rw.destination === 'https://cello-inventory-manager.firebaseapp.com/__/auth/:path*',
+   'without the pass-through the app asks its own domain for a handler that is not there, and every login 404s');
+ok('the pass-through keeps the wildcard on both ends',
+   !!rw && rw.source === '/__/auth/:path*' && rw.destination.endsWith('/:path*'),
+   'the handler is several paths (handler, iframe, experiments.json) — a single fixed path breaks the rest');
+ok('the rewrite is scoped to /__/auth/ and nothing else',
+   (vercelCfg.rewrites || []).every(r => String(r.source).startsWith('/__/auth/')),
+   'a catch-all rewrite here would put every asset request through a proxy to Firebase');
+
+ok('the login domain is resolved at runtime, not hardcoded',
+   /authDomain: resolvedAuthDomain/.test(fb),
+   'a constant cannot be right for localhost and for the deployed site at the same time');
+ok('only hosts on the explicit list use their own address',
+   /const PROXIED_AUTH_HOSTS = \['kpm-ang\.vercel\.app'\];/.test(fb),
+   'THE TRAP: a host here needs https://<host>/__/auth/handler registered on the OAuth client first, or its sign-in dies with redirect_uri_mismatch');
+ok('everything else keeps the Firebase handler, which is already registered',
+   /: FIREBASE_AUTH_DOMAIN;/.test(fb),
+   'localhost, the LAN IPs Aldi tests phones on, and every Vercel preview URL must keep working untouched');
+ok('and the resolver cannot throw where there is no window',
+   /typeof window !== 'undefined' && PROXIED_AUTH_HOSTS\.includes/.test(fb),
+   'this module is imported by tooling that runs in Node; a bare window reference would crash the import');
+
+/* The maths: the resolver re-run on the hosts that actually exist. */
+const PROXIED = ['kpm-ang.vercel.app'];
+const resolveAuthDomain = (host) =>
+  PROXIED.includes(String(host).split(':')[0]) ? host : 'cello-inventory-manager.firebaseapp.com';
+
+ok('the shared demo link signs in on its own address',
+   resolveAuthDomain('kpm-ang.vercel.app') === 'kpm-ang.vercel.app',
+   'this is the whole fix — no cross-site cookie, so no shields to lower');
+ok('localhost is untouched, and it is what proved the diagnosis',
+   resolveAuthDomain('localhost:5173') === 'cello-inventory-manager.firebaseapp.com',
+   'there is no proxy in the dev server; pointing localhost at itself would break the one place that works');
+ok('the LAN IPs he tests phones on are untouched',
+   resolveAuthDomain('192.168.1.109:5173') === 'cello-inventory-manager.firebaseapp.com');
+ok('an unregistered Vercel preview URL is untouched',
+   resolveAuthDomain('kpm-inventory-abc123.vercel.app') === 'cello-inventory-manager.firebaseapp.com',
+   'preview URLs are generated per deploy and can never be registered in advance — they must keep using the Firebase handler');
+ok('the port is ignored when matching but kept when used',
+   resolveAuthDomain('kpm-ang.vercel.app:443') === 'kpm-ang.vercel.app:443',
+   'hostname decides membership, host is what Firebase is handed — mixing the two drops the port on a non-standard one');
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);
