@@ -2,20 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { FileSpreadsheet, ShieldCheck, AlertCircle, XCircle, MessageSquare, Box, Package, ArrowRight, DollarSign, Store, Truck, Plus, Wallet, RotateCcw, Lock, Trash2, ArrowLeftRight, Check, X, ClipboardList, ScanSearch, Calculator, Printer, User, MapPin, Search } from 'lucide-react';
 import { convertToBks, formatRupiah, storeKey, storeLabel } from './utils/helpers';
 import { confirmAction } from './components/ConfirmGate.jsx';
-import { handoffEligibility } from './config/permissions';
-
-/* 🤝 A NAME THAT SILENTLY VANISHES FROM A LIST READS AS A BROKEN LIST. Aldi hit exactly that:
-   one of his two Tier 1 profiles was filtered out of the hand-off picker with no explanation and
-   the whole screen read as faulty. So an agent who cannot receive is still DRAWN, greyed out,
-   carrying the reason. These are the short forms; handoffEligibility owns the full sentences. */
-const HANDOFF_BLOCK_SHORT = {
-    GONE:             'not on the roster',
-    OWNER_ACCOUNT:    'owner account, not a field agent',
-    ALREADY_HOLDS:    'already holds this store',
-    NO_BRANCH:        'no branch set',
-    SENDER_NO_BRANCH: 'set your own branch first',
-    OTHER_BRANCH:     'another branch'
-};
+import { handoffEligibility, canHandOffAcrossRegions, normalizeRegion } from './config/permissions';
 import { notify } from './components/Toast.jsx';
 
 export default function ConsignmentFinanceView({ transactions = [], customers = [], focusStore = null, onFocusStoreHandled, inventory = [], onAddGoods, onPayment, onReturn, onDeleteConsignment, isAdmin, user, agentProfileId, motorists = [], transferRequests = [], onRequestTransfer, onAgentAcceptTransfer, onAdminApproveTransfer, appSettings, triggerCapy }) {
@@ -38,6 +25,7 @@ export default function ConsignmentFinanceView({ transactions = [], customers = 
     const [printFormat, setPrintFormat] = useState('thermal');
     
     const [targetAgent, setTargetAgent] = useState('');
+    const [showAllBranches, setShowAllBranches] = useState(false);
     const [transferNote, setTransferNote] = useState('');
 
     const uniqueLocations = useMemo(() => {
@@ -303,6 +291,58 @@ export default function ConsignmentFinanceView({ transactions = [], customers = 
         });
         return newest?.agentId || null;
     }, [activeCustomer, customers, transactions]);
+
+    /* 🤝 WHO THE PICKER ACTUALLY DRAWS. Aldi, 2026-09-06: *"i dont want the list to be greyed
+       out, but just hide personnel that is not on regional team on default, so that there will be
+       less personel list when the dropdown is opened"*. This REPLACES the greyed-out row shipped in
+       dace958 - his call, and the reason is list length.
+
+       Two filters, and they are not the same filter:
+         1. eligibility - handoffEligibility says no, so the name cannot be picked at all;
+         2. the REGIONAL TEAM - the branch this hand-off belongs to.
+
+       The second is what actually shortens HIS list. He is Tier 1, so every agent in the company is
+       eligible for him; hiding only the ineligible would have hidden nothing and left the dropdown
+       exactly as long as he complained about. The regional default is the fix.
+
+       The regional team is the sender's own branch when they have one, and otherwise the branch of
+       the agent who holds this store today - which is the branch an admin means when they say "this
+       store's team".
+
+       ⚠️ THE TOGGLE IS NOT A NICETY. Tiers 1-3 are allowed to hand a store to another branch
+       (`handoff_cross_region`). Hide other branches with no way back and that right becomes
+       unreachable through the screen while the write still permits it - a permission that exists
+       and cannot be used. Off by default, which is what he asked for. */
+    const canCrossBranches = canHandOffAcrossRegions(senderRole);
+
+    const handoffTargets = useMemo(() => {
+        const ownerRegion = () => {
+            const owner = (motorists || []).find(m => m.id === activeOwnerId);
+            return owner ? normalizeRegion(owner.location) : null;
+        };
+        let homeRegion = myProfile?.location ? normalizeRegion(myProfile.location) : ownerRegion();
+        if (homeRegion === 'UNASSIGNED') homeRegion = null;
+
+        const byRegion = new Map();
+        (motorists || []).forEach(m => {
+            if (m.id === agentProfileId) return;
+            const verdict = handoffEligibility({
+                toAgent: m,
+                senderRole,
+                senderRegion: myProfile?.location,
+                senderIsCompanyWide,
+                currentOwnerId: activeOwnerId
+            });
+            if (!verdict.ok) return;
+            const region = normalizeRegion(m.location);
+            if (homeRegion && !showAllBranches && region !== homeRegion) return;
+            const list = byRegion.get(region) || [];
+            list.push(m);
+            byRegion.set(region, list);
+        });
+        const groups = [...byRegion.entries()].sort((a, b) => a[0].localeCompare(b[0]));
+        return { homeRegion, groups, count: groups.reduce((n, [, list]) => n + list.length, 0) };
+    }, [motorists, agentProfileId, senderRole, myProfile, senderIsCompanyWide, activeOwnerId, showAllBranches]);
 
     // 🔗 A notification named a shop - open it. The alert is cleared either way: a store with no
     // rows on this screen (already handed on, or fully paid off) must not leave a name armed to
@@ -919,32 +959,40 @@ export default function ConsignmentFinanceView({ transactions = [], customers = 
                                             
                                             <select className="w-full p-3 rounded-lg bg-black/40 border border-white/10 text-white mb-4 outline-none focus:border-indigo-500" value={targetAgent} onChange={e => setTargetAgent(e.target.value)}>
                                                 <option value="">-- Select Receiving Personnel --</option>
-                                                {uniqueLocations.map(loc => {
-                                                    const locAgents = (motorists || []).filter(m => m.id !== agentProfileId && String(m.location || 'UNASSIGNED').trim().toUpperCase() === loc);
-                                                    if(locAgents.length === 0) return null;
-                                                    return (
-                                                        <optgroup key={loc} label={`📍 BRANCH: ${loc}`} className="bg-slate-800 text-slate-400 font-black">
-                                                            {locAgents.map(m => {
-                                                                const verdict = handoffEligibility({
-                                                                    toAgent: m,
-                                                                    senderRole,
-                                                                    senderRegion: myProfile?.location,
-                                                                    senderIsCompanyWide,
-                                                                    currentOwnerId: activeOwnerId
-                                                                });
-                                                                return (
-                                                                    <option key={m.id} value={m.id} disabled={!verdict.ok}
-                                                                        className={verdict.ok ? "bg-slate-900 text-white font-bold" : "bg-slate-900 text-slate-500"}>
-                                                                        {m.name} {m.userRole === 'AREA_ADMIN' ? '(Tier 3 Branch)' : '(Tier 4 Field)'}
-                                                                        {!verdict.ok && ` — ${HANDOFF_BLOCK_SHORT[verdict.code] || 'not eligible'}`}
-                                                                    </option>
-                                                                );
-                                                            })}
-                                                        </optgroup>
-                                                    );
-                                                })}
+                                                {handoffTargets.groups.map(([loc, locAgents]) => (
+                                                    <optgroup key={loc} label={`📍 BRANCH: ${loc}`} className="bg-slate-800 text-slate-400 font-black">
+                                                        {locAgents.map(m => (
+                                                            <option key={m.id} value={m.id} className="bg-slate-900 text-white font-bold">
+                                                                {m.name} {m.userRole === 'AREA_ADMIN' ? '(Tier 3 Branch)' : '(Tier 4 Field)'}
+                                                            </option>
+                                                        ))}
+                                                    </optgroup>
+                                                ))}
                                             </select>
                                             
+                                            {/* An empty list must SAY it is empty. Hiding a name with no explanation is what made
+                                                this screen read as broken in the first place; the shorter list keeps that risk, so
+                                                the one case where it bites - nobody left to show - has to speak. */}
+                                            {handoffTargets.count === 0 && (
+                                                <p className="text-[11px] text-orange-400 font-bold uppercase tracking-widest mb-3">
+                                                    {handoffTargets.homeRegion
+                                                        ? `Nobody in ${handoffTargets.homeRegion} can receive this store.`
+                                                        : 'No personnel can receive this store yet. Give your agents a branch in Fleet first.'}
+                                                </p>
+                                            )}
+
+                                            {canCrossBranches && handoffTargets.homeRegion && (
+                                                <label className="flex items-center gap-2 mb-4 text-[11px] text-slate-400 uppercase tracking-widest font-bold cursor-pointer select-none">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={showAllBranches}
+                                                        onChange={e => { setShowAllBranches(e.target.checked); setTargetAgent(''); }}
+                                                        className="accent-indigo-500 w-3.5 h-3.5"
+                                                    />
+                                                    Show other branches
+                                                </label>
+                                            )}
+
                                             <textarea className="w-full p-3 rounded-lg bg-black/40 border border-white/10 text-white text-sm outline-none focus:border-indigo-500" placeholder="Reason for transfer..." value={transferNote} onChange={e => setTransferNote(e.target.value)} rows="3"></textarea>
                                         </div>
                                     ) : (

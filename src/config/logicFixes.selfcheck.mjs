@@ -13,7 +13,7 @@ import fs from 'node:fs';
 import { SECTIONS } from '../ponder/sections.js';
 import { buildPages, maxTurnOf, turnFor, facingPage,
          TURN_FULL_MS, RIFFLE_MIN_MS } from '../ponder/pageModel.js';
-import { handoffEligibility, injectDynamicPermissions, CORPORATE_TIERS } from './permissions.js';
+import { handoffEligibility, injectDynamicPermissions, normalizeRegion, CORPORATE_TIERS } from './permissions.js';
 
 let pass = 0, fail = 0;
 const read = (f) => fs.readFileSync(f, 'utf8');
@@ -4516,12 +4516,42 @@ ok('the hand-off picker was located',
    selFrom > -1 && selTo > selFrom,
    'anchor missed — the picker assertions would pass vacuously');
 const picker = cfv3.slice(selFrom, selTo);
-ok('every listed agent is judged by the same predicate',
-   /handoffEligibility\(\{/.test(picker),
-   'the picker and the write must not decide separately, or the screen promises what the app refuses');
-ok('an ineligible agent is greyed out rather than deleted from the list',
-   /disabled=\{!verdict\.ok\}/.test(picker) && /HANDOFF_BLOCK_SHORT\[verdict\.code\]/.test(picker),
-   'a name that vanishes with no reason is the exact thing that made this screen read as broken');
+ok('the picker draws only from the vetted list, never from motorists directly',
+   /handoffTargets\.groups\.map/.test(picker) && !/motorists \|\| \[\]/.test(picker),
+   'reading the roster straight into the select is how the unfiltered list came back the first time');
+
+/* The filtering moved OUT of the JSX and into a memo when Aldi replaced the greyed-out row with
+   hiding (2026-09-06). Scope to that memo's own body - `handoffEligibility` appears three times in
+   this file and a file-wide grep would pass on any of them. */
+const TG_START = 'const handoffTargets = useMemo(';
+const TG_END   = 'showAllBranches]);';
+const tgFrom = cfv3.indexOf(TG_START), tgTo = cfv3.indexOf(TG_END);
+ok('the target-list memo was located',
+   tgFrom > -1 && tgTo > tgFrom,
+   'anchor missed - the assertions below would pass vacuously');
+const targets = cfv3.slice(tgFrom, tgTo);
+ok('an ineligible agent is dropped before the list is ever built',
+   /if \(!verdict\.ok\) return;/.test(targets) && /handoffEligibility\(\{/.test(targets),
+   'HIS CALL 2026-09-06: "i dont want the list to be greyed out, but just hide personnel that is not on regional team"');
+ok('and so is anybody outside the regional team, unless the toggle is on',
+   /if \(homeRegion && !showAllBranches && region !== homeRegion\) return;/.test(targets),
+   'this is the filter that actually shortens the list - he is Tier 1, so eligibility alone hides nobody from him');
+ok('the regional team falls back to the branch that holds the store when the sender has none',
+   /myProfile\?\.location \? normalizeRegion\(myProfile\.location\) : ownerRegion\(\)/.test(targets),
+   'an admin carries no branch; without this their list is every agent in the company again');
+ok('UNASSIGNED is never treated as a regional team to filter down to',
+   /if \(homeRegion === 'UNASSIGNED'\) homeRegion = null;/.test(targets),
+   'filtering to UNASSIGNED would show only the agents with no branch - the ones who cannot receive at all');
+
+ok('an empty list says it is empty rather than looking broken',
+   /handoffTargets\.count === 0 && \(/.test(picker) && /can receive this store/.test(picker),
+   'hiding names is what made this screen read as faulty before; the one case where it still bites has to speak');
+ok('tiers allowed to cross branches keep a way to reach them',
+   /canCrossBranches && handoffTargets\.homeRegion && \(/.test(picker) && /setShowAllBranches\(e\.target\.checked\)/.test(picker),
+   'hide other branches with no way back and handoff_cross_region becomes a permission that exists and cannot be used');
+ok('flipping that toggle clears the selection',
+   /setShowAllBranches\(e\.target\.checked\); setTargetAgent\(''\);/.test(picker),
+   'a target chosen in another branch and then hidden again would still be sitting in state when Confirm is pressed');
 
 /* ── the maths: the predicate re-run on real agents ──────────────────────────────────────── */
 const ANDI    = { id: 'andi',  name: 'Andi',  userRole: CORPORATE_TIERS.TIER_5, location: 'Jakarta' };
@@ -4584,6 +4614,47 @@ ok('once the key is in his saved matrix, his switch wins — tier 4 gains it',
 ok('and wins in the other direction too — tier 3 loses it',
    !judge(CITRA, { senderRole: CORPORATE_TIERS.TIER_3, senderRegion: 'JAKARTA' }).ok,
    'a switch that only ever adds is not a switch');
+
+
+/* The visibility rule re-run on real agents. Mirrors the memo above the way incomingFor/outgoingFor
+   mirror the request lists further up this file; the source greps beside it pin the real code's
+   shape so the two cannot drift apart unnoticed. */
+const pickerShows = (roster, { senderRole: role, senderRegion: reg, senderIsCompanyWide: wide, currentOwnerId: owner, showAll, meId }) => {
+  let home = reg ? normalizeRegion(reg) : (() => {
+    const o = roster.find(m => m.id === owner);
+    return o ? normalizeRegion(o.location) : null;
+  })();
+  if (home === 'UNASSIGNED') home = null;
+  return roster.filter(m => {
+    if (m.id === meId) return false;
+    if (!handoffEligibility({ toAgent: m, senderRole: role, senderRegion: reg, senderIsCompanyWide: wide, currentOwnerId: owner }).ok) return false;
+    if (home && !showAll && normalizeRegion(m.location) !== home) return false;
+    return true;
+  }).map(m => m.id);
+};
+
+const ROSTER = [ANDI, BUDI, CITRA, NOWHERE, BOSS];
+
+ok('a field agent sees only their own branch, and not themselves',
+   JSON.stringify(pickerShows(ROSTER, { senderRole: CORPORATE_TIERS.TIER_5, senderRegion: 'Jakarta', meId: 'andi' })) === '["budi"]',
+   'Citra is another branch, Dedi has no branch, Pak Boss is an owner account - three names off a five-name list');
+ok('the owner of the store drops out of that list too',
+   !pickerShows(ROSTER, { senderRole: CORPORATE_TIERS.TIER_5, senderRegion: 'Jakarta', meId: 'andi', currentOwnerId: 'budi' }).includes('budi'));
+
+/* The point of the change: HIS list. He is Tier 1, so everyone is eligible for him - eligibility
+   alone would hide nobody and the dropdown would stay exactly as long as he complained about. */
+const bossSees = pickerShows(ROSTER, { senderRole: 'ADMIN', senderIsCompanyWide: true, currentOwnerId: 'andi', meId: null });
+ok('an admin gets the store\u2019s own branch, not the whole company',
+   JSON.stringify(bossSees) === '["budi"]',
+   'THE WHOLE POINT of 2026-09-06 - eligibility alone leaves a Tier 1 seeing every agent there is');
+ok('and the toggle gives him the rest back',
+   pickerShows(ROSTER, { senderRole: 'ADMIN', senderIsCompanyWide: true, currentOwnerId: 'andi', meId: null, showAll: true }).includes('citra'),
+   'without this an admin cannot hand a store to another branch at all, though the write permits it');
+ok('the toggle never resurrects somebody who is simply not allowed',
+   !pickerShows(ROSTER, { senderRole: CORPORATE_TIERS.TIER_5, senderRegion: 'Jakarta', meId: 'andi', showAll: true }).includes('citra'),
+   'showing other branches must widen the VIEW, never the permission - a T5 still cannot cross');
+ok('nobody with no branch is ever shown, toggle or not',
+   !pickerShows(ROSTER, { senderRole: 'ADMIN', senderIsCompanyWide: true, meId: null, showAll: true }).includes('dedi'));
 
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);
