@@ -13,6 +13,7 @@ import fs from 'node:fs';
 import { SECTIONS } from '../ponder/sections.js';
 import { buildPages, maxTurnOf, turnFor, facingPage,
          TURN_FULL_MS, RIFFLE_MIN_MS } from '../ponder/pageModel.js';
+import { handoffEligibility, injectDynamicPermissions, CORPORATE_TIERS } from './permissions.js';
 
 let pass = 0, fail = 0;
 const read = (f) => fs.readFileSync(f, 'utf8');
@@ -4465,6 +4466,124 @@ const DONE = { ...REQ, status: 'APPROVED' };
 ok('once approved it leaves the receiver’s action list rather than sitting there forever',
    !incomingFor(DONE, 'andi'),
    'an approved hand-off is history, not an outstanding request');
+
+
+/* ══ HAND-OFF ELIGIBILITY — a store could be offered to the wrong person ═══════════════════
+   Aldi, 2026-09-05: "consignment should only be transferred between regional team member only,
+   and only tier 1,2,3 is the one who can transfer consignment between regional area personnel".
+   Two faults, not one: the picker offered the agent who ALREADY held the store, and nothing
+   anywhere compared branches — the write took whatever id it was handed. */
+section('H. Hand-off eligibility: the right person, at BOTH ends');
+
+const cfv3 = read('src/ConsignmentFinanceView.jsx');
+const app3 = read('src/App.jsx');
+
+ok('the predicate is imported where the picker is drawn',
+   imports(cfv3, 'handoffEligibility'),
+   'a CALL with no import throws into a catch and disables the guard silently — bug #24 all over again');
+ok('and where the request document is written',
+   imports(app3, 'handoffEligibility'),
+   'the write is the boundary; the picker is only a suggestion');
+
+/* Slice App.jsx to handleRequestTransfer's own body. `handoffEligibility` could sit anywhere in a
+   9000-line file and a file-wide grep would call that a pass. Assert both anchors FIRST: indexOf
+   returns -1 and slice(from, -1) silently means "the whole rest of the file". */
+const RQ_START = 'const handleRequestTransfer = async (storeName';
+const RQ_END   = 'const handleAgentAcceptTransfer';
+const rqFrom = app3.indexOf(RQ_START), rqTo = app3.indexOf(RQ_END);
+ok('handleRequestTransfer was located, so the assertions below test something real',
+   rqFrom > -1 && rqTo > rqFrom,
+   'anchor missed — every assertion scoped to this slice would pass vacuously');
+const requestBody = app3.slice(rqFrom, rqTo);
+ok('the slice is the handler, not the rest of the file',
+   requestBody.length > 500 && requestBody.length < 6000,
+   `slice was ${requestBody.length} chars — an anchor moved and the window swallowed neighbours`);
+ok('the write refuses an ineligible target BEFORE it creates the document',
+   /if \(!verdict\.ok\) return notify\(verdict\.reason\);/.test(requestBody)
+   && requestBody.indexOf('if (!verdict.ok)') < requestBody.indexOf('addDoc'),
+   'a check that runs AFTER addDoc has already written the request it was meant to stop');
+ok('the write resolves the owner from ownerAgentId, not from mappedBy',
+   /ownerDoc\?\.ownerAgentId/.test(requestBody),
+   'mappedBy says who REGISTERED the shop; reusing it as ownership would block the wrong person');
+
+/* Same treatment for the picker: scope to the hand-off select, not to the admin's search filter.
+   `dropdownAgents` at the top of that file is the ADMIN VIEW filter and is NOT this control —
+   editing that one would have left the real picker wide open. */
+const SEL_START = '-- Select Receiving Personnel --';
+const SEL_END   = 'Reason for transfer...';
+const selFrom = cfv3.indexOf(SEL_START), selTo = cfv3.indexOf(SEL_END);
+ok('the hand-off picker was located',
+   selFrom > -1 && selTo > selFrom,
+   'anchor missed — the picker assertions would pass vacuously');
+const picker = cfv3.slice(selFrom, selTo);
+ok('every listed agent is judged by the same predicate',
+   /handoffEligibility\(\{/.test(picker),
+   'the picker and the write must not decide separately, or the screen promises what the app refuses');
+ok('an ineligible agent is greyed out rather than deleted from the list',
+   /disabled=\{!verdict\.ok\}/.test(picker) && /HANDOFF_BLOCK_SHORT\[verdict\.code\]/.test(picker),
+   'a name that vanishes with no reason is the exact thing that made this screen read as broken');
+
+/* ── the maths: the predicate re-run on real agents ──────────────────────────────────────── */
+const ANDI    = { id: 'andi',  name: 'Andi',  userRole: CORPORATE_TIERS.TIER_5, location: 'Jakarta' };
+const BUDI    = { id: 'budi',  name: 'Budi',  userRole: CORPORATE_TIERS.TIER_5, location: ' jakarta ' };
+const CITRA   = { id: 'citra', name: 'Citra', userRole: CORPORATE_TIERS.TIER_5, location: 'BANDUNG' };
+const NOWHERE = { id: 'dedi',  name: 'Dedi',  userRole: CORPORATE_TIERS.TIER_5, location: '' };
+const BOSS    = { id: 'master_owner', name: 'Pak Boss', userRole: 'ADMIN', location: 'JAKARTA' };
+
+const judge  = (to, opts) => handoffEligibility({ toAgent: to, ...opts });
+const asAndi = { senderRole: CORPORATE_TIERS.TIER_5, senderRegion: 'Jakarta' };
+
+ok('same branch, different spelling, still the same branch',
+   judge(BUDI, asAndi).ok,
+   'the region compare must normalise like ConsignmentFinanceView does, or " jakarta " reads as another branch');
+ok('a field agent cannot hand a store to another branch',
+   judge(CITRA, asAndi).code === 'OTHER_BRANCH',
+   'this is the rule Aldi asked for — regional team members only');
+ok('tier 3 can, because he named tiers 1-3',
+   judge(CITRA, { senderRole: CORPORATE_TIERS.TIER_3, senderRegion: 'JAKARTA' }).ok);
+ok('tier 4 cannot — his line stops above REGIONAL ADMIN',
+   !judge(CITRA, { senderRole: CORPORATE_TIERS.TIER_4, senderRegion: 'JAKARTA' }).ok,
+   'T4 is his REGIONAL ADMIN; letting it move stores between branches is the approval-load problem he described');
+ok('an admin acting for the company reaches any branch',
+   judge(CITRA, { senderRole: 'ADMIN', senderIsCompanyWide: true }).ok);
+
+ok('nobody can be offered the store they already hold',
+   judge(BUDI, { ...asAndi, currentOwnerId: 'budi' }).code === 'ALREADY_HOLDS',
+   'the first fault Aldi hit — the picker offered the current owner and the write accepted it');
+ok('not even an admin, whose reach is otherwise total',
+   !judge(BUDI, { senderRole: 'ADMIN', senderIsCompanyWide: true, currentOwnerId: 'budi' }).ok,
+   'company-wide reach is about BRANCHES; handing a store to its own holder moves nothing either way');
+ok('an agent with no branch on file cannot receive anything',
+   judge(NOWHERE, asAndi).code === 'NO_BRANCH',
+   'UNASSIGNED is a missing field, not a place — two unplaced agents are not "the same branch"');
+ok('and a sender with no branch on file cannot send',
+   judge(BUDI, { senderRole: CORPORATE_TIERS.TIER_5, senderRegion: '' }).code === 'SENDER_NO_BRANCH',
+   'THE HOLE THIS CHECK EXISTS FOR: read "no region" as company-wide and the emptiest record gets the widest reach');
+ok('an owner account is not a hand-off target',
+   judge(BOSS, asAndi).code === 'OWNER_ACCOUNT',
+   'a store has to be held by somebody who visits it');
+ok('a target that is no longer on the roster is refused, not crashed on',
+   judge(undefined, asAndi).code === 'GONE',
+   'motorists.find returns undefined for a terminated agent and the write path passes that straight in');
+ok('every refusal carries a sentence the agent can act on',
+   [judge(CITRA, asAndi), judge(NOWHERE, asAndi), judge(BOSS, asAndi), judge(undefined, asAndi)]
+     .every(v => !v.ok && typeof v.reason === 'string' && v.reason.length > 20),
+   'silence is a bug here, not missing polish — his design law');
+ok('ANDI is only here to prove the fixtures are agents, not strings',
+   ANDI.id === 'andi' && judge(ANDI, { senderRole: CORPORATE_TIERS.TIER_5, senderRegion: 'JAKARTA' }).ok);
+
+/* The matrix key. Runs LAST: injectDynamicPermissions mutates module state, so anything asserted
+   after it is judging a different app than everything above. */
+ok('before he configures anything, the tier defaults answer',
+   judge(CITRA, { senderRole: CORPORATE_TIERS.TIER_3, senderRegion: 'JAKARTA' }).ok
+   && !judge(CITRA, { senderRole: CORPORATE_TIERS.TIER_4, senderRegion: 'JAKARTA' }).ok,
+   'absence of a brand-new key must mean "use the tier default", never "no" — a new key read as no makes a working feature look broken');
+injectDynamicPermissions({ [CORPORATE_TIERS.TIER_4]: ['handoff_cross_region'] }, null);
+ok('once the key is in his saved matrix, his switch wins — tier 4 gains it',
+   judge(CITRA, { senderRole: CORPORATE_TIERS.TIER_4, senderRegion: 'JAKARTA' }).ok);
+ok('and wins in the other direction too — tier 3 loses it',
+   !judge(CITRA, { senderRole: CORPORATE_TIERS.TIER_3, senderRegion: 'JAKARTA' }).ok,
+   'a switch that only ever adds is not a switch');
 
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

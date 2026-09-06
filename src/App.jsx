@@ -18,7 +18,7 @@ import useTransactionEngine from './hooks/useTransactionEngine';
 import useDatabaseSync from './hooks/useDatabaseSync'; 
 import useOfflineEngine, { canReachInternet } from './hooks/useOfflineEngine';
 import MusicPlayer from './MusicPlayer';
-import { injectDynamicPermissions, isFieldLevelTier, hasClearance } from './config/permissions';
+import { injectDynamicPermissions, isFieldLevelTier, hasClearance, handoffEligibility } from './config/permissions';
 import { POV_OWNER_EMAIL, previewIdentity, testAccountDoc, testAccountName, canUsePovSwitch } from './config/povPreview';
 import { warehouseList } from './utils/supply';
 import { tallySaleOp, statsPath } from './utils/salesRollupWrite';
@@ -1642,6 +1642,34 @@ const handleGitHubMirror = async () => {
       const fromAgentName = user.displayName || user.email.split('@')[0];
       const sameName = customers.filter(c => storeKey(c.name) === storeKey(storeName));
       const mine = sameName.length > 1 ? sameName.filter(c => c.mappedBy === fromAgentName) : sameName;
+
+      /* 🤝 THE WRITE REFUSES TOO. ConsignmentFinanceView greys an ineligible name out and blocks
+         Confirm, but a greyed control is a suggestion, not a boundary - "UI Says Yes, Server Says
+         No" is already a named pattern in this project. This is the same predicate, run where the
+         document is actually created.
+
+         The current owner is the customer document's `ownerAgentId` when the store has changed
+         hands before, and otherwise the agent stamped on its newest row. `mappedBy` above is NOT
+         that - it says who first registered the shop, and it stays what it is for. */
+      const ownerDoc = (mine.length === 1 ? mine : sameName).find(c => c.ownerAgentId);
+      let currentOwnerId = ownerDoc?.ownerAgentId || null;
+      if (!currentOwnerId) {
+          let newest = null;
+          (transactions || []).forEach(t => {
+              if (!t.customerName || !t.agentId) return;
+              if (storeKey(t.customerName) !== storeKey(storeName)) return;
+              if (!newest || (t.timestamp?.seconds || 0) >= (newest.timestamp?.seconds || 0)) newest = t;
+          });
+          currentOwnerId = newest?.agentId || null;
+      }
+      const verdict = handoffEligibility({
+          toAgent: (motorists || []).find(m => m.id === toAgentId),
+          senderRole: userRole,
+          senderRegion: (motorists || []).find(m => m.id === agentProfileId)?.location,
+          senderIsCompanyWide: userRole === 'ADMIN' || !agentProfileId,
+          currentOwnerId
+      });
+      if (!verdict.ok) return notify(verdict.reason);
 
       try {
           await addDoc(collection(db, `artifacts/${appId}/users/${userId}/account_transfers`), {

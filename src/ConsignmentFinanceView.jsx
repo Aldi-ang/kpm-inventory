@@ -2,6 +2,20 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { FileSpreadsheet, ShieldCheck, AlertCircle, XCircle, MessageSquare, Box, Package, ArrowRight, DollarSign, Store, Truck, Plus, Wallet, RotateCcw, Lock, Trash2, ArrowLeftRight, Check, X, ClipboardList, ScanSearch, Calculator, Printer, User, MapPin, Search } from 'lucide-react';
 import { convertToBks, formatRupiah, storeKey, storeLabel } from './utils/helpers';
 import { confirmAction } from './components/ConfirmGate.jsx';
+import { handoffEligibility } from './config/permissions';
+
+/* 🤝 A NAME THAT SILENTLY VANISHES FROM A LIST READS AS A BROKEN LIST. Aldi hit exactly that:
+   one of his two Tier 1 profiles was filtered out of the hand-off picker with no explanation and
+   the whole screen read as faulty. So an agent who cannot receive is still DRAWN, greyed out,
+   carrying the reason. These are the short forms; handoffEligibility owns the full sentences. */
+const HANDOFF_BLOCK_SHORT = {
+    GONE:             'not on the roster',
+    OWNER_ACCOUNT:    'owner account, not a field agent',
+    ALREADY_HOLDS:    'already holds this store',
+    NO_BRANCH:        'no branch set',
+    SENDER_NO_BRANCH: 'set your own branch first',
+    OTHER_BRANCH:     'another branch'
+};
 import { notify } from './components/Toast.jsx';
 
 export default function ConsignmentFinanceView({ transactions = [], customers = [], focusStore = null, onFocusStoreHandled, inventory = [], onAddGoods, onPayment, onReturn, onDeleteConsignment, isAdmin, user, agentProfileId, motorists = [], transferRequests = [], onRequestTransfer, onAgentAcceptTransfer, onAdminApproveTransfer, appSettings, triggerCapy }) {
@@ -263,6 +277,33 @@ export default function ConsignmentFinanceView({ transactions = [], customers = 
 
     const activeCustomer = selectedCustomer ? customerData.find(c => storeKey(c.name) === storeKey(selectedCustomer.name)) || selectedCustomer : null;
 
+    /* 🤝 WHO IS DOING THE HANDING OVER. An admin acts for the company and carries no branch of
+       their own; a field agent carries whatever branch is on their roster record. Those two are
+       NOT the same "no region" — see handoffEligibility in config/permissions.js. */
+    const myProfile = useMemo(() => (motorists || []).find(m => m.id === agentProfileId) || null, [motorists, agentProfileId]);
+    const senderIsCompanyWide = isAdmin || !agentProfileId;
+    const senderRole = isAdmin ? 'ADMIN' : (myProfile?.userRole || null);
+
+    /* 🤝 WHO HOLDS THIS STORE RIGHT NOW — the one name the picker must never offer.
+       The customer DOCUMENT answers first: `ownerAgentId` is what an approved hand-off writes, so
+       it is the only field that knows about a store that has changed hands. A store that has never
+       been handed over has no such field, and then the agent stamped on its newest row is the
+       owner. NOT `mappedBy` — that records who first registered the shop, and handleRequestTransfer
+       still reads it to tell two same-named shops apart. */
+    const activeOwnerId = useMemo(() => {
+        if (!activeCustomer) return null;
+        const key = storeKey(activeCustomer.name);
+        const doc = (customers || []).find(c => storeKey(c.name) === key);
+        if (doc?.ownerAgentId) return doc.ownerAgentId;
+        let newest = null;
+        (transactions || []).forEach(t => {
+            if (!t.customerName || !t.agentId) return;
+            if (storeKey(t.customerName) !== key) return;
+            if (!newest || (t.timestamp?.seconds || 0) >= (newest.timestamp?.seconds || 0)) newest = t;
+        });
+        return newest?.agentId || null;
+    }, [activeCustomer, customers, transactions]);
+
     // 🔗 A notification named a shop - open it. The alert is cleared either way: a store with no
     // rows on this screen (already handed on, or fully paid off) must not leave a name armed to
     // hijack the next render.
@@ -311,7 +352,18 @@ export default function ConsignmentFinanceView({ transactions = [], customers = 
             if (!targetAgent) return notify("Select an agent to transfer to!");
             const agentInfo = (motorists || []).find(m => m.id === targetAgent);
             if (!agentInfo) return notify("Agent not found!");
-            
+
+            /* The same predicate the picker draws with. The picker only greys a name out; this is
+               what actually refuses it, and App.jsx refuses it a third time at the write. */
+            const verdict = handoffEligibility({
+                toAgent: agentInfo,
+                senderRole,
+                senderRegion: myProfile?.location,
+                senderIsCompanyWide,
+                currentOwnerId: activeOwnerId
+            });
+            if (!verdict.ok) return notify(verdict.reason);
+
             // Call the core function
             onRequestTransfer(activeCustomer.name, targetAgent, agentInfo.name, transferNote);
             
@@ -872,11 +924,22 @@ export default function ConsignmentFinanceView({ transactions = [], customers = 
                                                     if(locAgents.length === 0) return null;
                                                     return (
                                                         <optgroup key={loc} label={`📍 BRANCH: ${loc}`} className="bg-slate-800 text-slate-400 font-black">
-                                                            {locAgents.map(m => (
-                                                                <option key={m.id} value={m.id} className="bg-slate-900 text-white font-bold">
-                                                                    {m.name} {m.userRole === 'AREA_ADMIN' ? '(Tier 3 Branch)' : '(Tier 4 Field)'}
-                                                                </option>
-                                                            ))}
+                                                            {locAgents.map(m => {
+                                                                const verdict = handoffEligibility({
+                                                                    toAgent: m,
+                                                                    senderRole,
+                                                                    senderRegion: myProfile?.location,
+                                                                    senderIsCompanyWide,
+                                                                    currentOwnerId: activeOwnerId
+                                                                });
+                                                                return (
+                                                                    <option key={m.id} value={m.id} disabled={!verdict.ok}
+                                                                        className={verdict.ok ? "bg-slate-900 text-white font-bold" : "bg-slate-900 text-slate-500"}>
+                                                                        {m.name} {m.userRole === 'AREA_ADMIN' ? '(Tier 3 Branch)' : '(Tier 4 Field)'}
+                                                                        {!verdict.ok && ` — ${HANDOFF_BLOCK_SHORT[verdict.code] || 'not eligible'}`}
+                                                                    </option>
+                                                                );
+                                                            })}
                                                         </optgroup>
                                                     );
                                                 })}

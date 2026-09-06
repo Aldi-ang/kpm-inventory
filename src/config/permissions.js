@@ -300,3 +300,81 @@ export const getCustomerAccessLevel = (userRole) => {
     if (hasClearance(userRole, 'customers_view_only')) return 'view_only';
     return 'global';
 };
+/* ═══ WHO MAY RECEIVE A CONSIGNMENT HAND-OFF ═══════════════════════════════════════════════
+
+   Aldi, 2026-09-05: *"consignment should only be transferred between regional team member only,
+   and only tier 1,2,3 is the one who can transfer consignment between regional area personnel"*.
+
+   Two separate faults this closes, and they are NOT the same fault:
+     1. the picker offered the person who ALREADY holds the store, so a hand-off could be sent to
+        its own owner — the one Aldi hit first;
+     2. nothing anywhere compared regions, so a field agent could hand a store to somebody on the
+        other side of the company, and `handleRequestTransfer` wrote it without a single check.
+
+   ⚠️ THE PICKER IS NOT THE GUARD. Hiding a name in a dropdown leaves the write open — the
+   "UI Says Yes, Server Says No" pattern already in the vault, and already the reason the delete
+   guard exists. One predicate, called in BOTH places. */
+
+/* ONE normalizer, because ConsignmentFinanceView already derives its branch list this way and two
+   copies of an upper-case-and-trim is exactly how a region check comes to disagree with the region
+   list it was drawn from. */
+export const normalizeRegion = (location) => String(location || 'UNASSIGNED').trim().toUpperCase();
+
+/* MAY THIS TIER HAND A STORE TO ANOTHER BRANCH? His answer names tiers 1, 2 and 3.
+
+   Same ABSENCE-MEANS-TIER-DEFAULT shape as view_expected_count, handle_delivery and
+   manage_registry above, for the same reason: injectDynamicPermissions REPLACES a saved tier's
+   list wholesale, so a brand-new key is simply missing from the matrix he has already deployed.
+   Read as a plain missing permission it would mean "no", and every cross-branch hand-off would
+   stop working the moment this shipped — the feature would look broken while the code was right.
+   The moment the key appears anywhere in his matrix he has chosen deliberately, and from then on
+   his switch wins in BOTH directions. */
+const HANDOFF_CROSS_REGION_KEY = 'handoff_cross_region';
+export const canHandOffAcrossRegions = (userRole) => {
+    const role = translateLegacyRole(userRole);
+    if (role === CORPORATE_TIERS.TIER_1) return true;
+    const matrixKnowsKey = Object.values(ROLE_PERMISSIONS)
+        .some(list => Array.isArray(list) && list.includes(HANDOFF_CROSS_REGION_KEY));
+    if (matrixKnowsKey) return hasClearance(userRole, HANDOFF_CROSS_REGION_KEY);
+    return role === CORPORATE_TIERS.TIER_2
+        || role === CORPORATE_TIERS.TIER_3;   // stops ABOVE T4 REGIONAL ADMIN, which is his line
+};
+
+/* THE PREDICATE. Returns a reason, never a bare false — "every action must report" is a design
+   law here, and a name that silently vanishes from a list is the thing that made the picker read
+   as broken in the first place.
+
+   ⚠️ `senderIsCompanyWide` IS A SEPARATE FLAG ON PURPOSE, NOT AN ABSENT senderRegion. An owner
+   acting for the company has no branch, and so does a field agent whose location was never filled
+   in — and those two must not resolve the same way. Overloading "no region" to mean "reaches
+   everywhere" would hand the widest possible reach to the emptiest possible record, which is the
+   precise hole this predicate exists to close. Only the explicit flag opens the company up.
+
+   UNASSIGNED IS NOT A REGION, on either end. Two agents both missing a location are not "in the
+   same branch", they are both unplaced. Each refusal names what to fix, so it is a next step
+   rather than a dead end. */
+export const handoffEligibility = ({ toAgent, senderRole, senderRegion = null, senderIsCompanyWide = false, currentOwnerId = null }) => {
+    if (!toAgent || !toAgent.id) return { ok: false, code: 'GONE', reason: 'That agent is not on the roster any more.' };
+
+    const name = toAgent.name || 'That agent';
+
+    if (translateLegacyRole(toAgent.userRole) === CORPORATE_TIERS.TIER_1)
+        return { ok: false, code: 'OWNER_ACCOUNT', reason: `${name} is an owner account, not a field agent. A store has to be held by somebody who visits it.` };
+
+    if (currentOwnerId && toAgent.id === currentOwnerId)
+        return { ok: false, code: 'ALREADY_HOLDS', reason: `${name} already holds this store — nothing would move.` };
+
+    const toRegion = normalizeRegion(toAgent.location);
+    if (toRegion === 'UNASSIGNED')
+        return { ok: false, code: 'NO_BRANCH', reason: `${name} has no branch set. Give them a branch in Fleet first, then hand the store over.` };
+
+    if (senderIsCompanyWide) return { ok: true, code: 'OK', reason: '' };
+
+    const fromRegion = normalizeRegion(senderRegion);
+    if (fromRegion === 'UNASSIGNED')
+        return { ok: false, code: 'SENDER_NO_BRANCH', reason: 'Your own profile has no branch set, so the app cannot tell who your regional team is. Ask an admin to set your branch first.' };
+    if (fromRegion === toRegion) return { ok: true, code: 'OK', reason: '' };
+    if (canHandOffAcrossRegions(senderRole)) return { ok: true, code: 'OK', reason: '' };
+
+    return { ok: false, code: 'OTHER_BRANCH', reason: `${name} works in ${toRegion} and you cover ${fromRegion}. Only Tier 1-3 can hand a store to another branch.` };
+};
