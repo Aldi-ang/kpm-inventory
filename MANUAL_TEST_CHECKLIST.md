@@ -361,6 +361,59 @@ so the merchant appearing on a real sale, the sound, and the desktop grid are al
 Also removed along the way, worth knowing: **five verbatim Resident Evil 4 merchant lines** were
 shipping inside your app's JavaScript. They're gone, replaced with original English lines.
 
+### Round 7 — the store hand-off, both halves (SHIPPED 2026-09-06, NOBODY HAS LOOKED AT IT)
+
+⚠️ This is live on `kpm-ang.vercel.app` already. Every line below was proven by an automated check
+and by nothing else — no human and no browser has seen any of it. That is exactly the gap that once
+put three "fixed" claims in front of you with nothing rendered.
+
+Set up first: you need **two agents in the same branch** (say JAKARTA) and **one in a different
+branch** (say BANDUNG). Fleet & Canvas → each person → set their branch.
+
+**A. The hand-off picker** — Receivables & Consignment → open a store → Hand-off
+
+- [ ] The receiving-personnel list shows **only people in that store's branch**. Not everybody.
+- [ ] The person who **already holds that store** is not in the list at all.
+- [ ] An agent with **no branch set** is not in the list.
+- [ ] A **"Show other branches"** tickbox appears under the list (you are Tier 1, so you get it).
+      Tick it → everyone comes back. Untick → short again, and the name you had chosen is cleared.
+- [ ] Log in as a **Tier 4/5/6** account: the tickbox must **not** appear at all.
+- [ ] Pick a store whose branch has nobody eligible → the box says
+      **"Nobody in JAKARTA can receive this store."** It must not just look empty.
+
+**B. Who may approve** — Fleet & Canvas → edit a person
+
+- [ ] A **"Hand-off approval branches"** chip row appears under Allowed Price Tiers.
+- [ ] With nothing ticked, the line underneath reads *"this person follows the default"*.
+- [ ] Tick **BANDUNG** on one account → the line changes to name that branch. Save.
+- [ ] Reopen that person → **BANDUNG is still ticked.** (If it is not, the save is dropping the field.)
+- [ ] Edit somebody **else's phone number** and save → reopen → their approval chips are unchanged.
+      ⚠️ This is the `null`-not-`[]` trap. If editing a phone number silently strips a regional
+      admin's approval power, this is where it shows.
+
+**C. The approval bell** — needs two accounts
+
+- [ ] Send a hand-off into BANDUNG, accept it as the receiving agent.
+- [ ] **You** get the "Transfer Needs Approval" bell. You always do — that is Option B.
+- [ ] The account you ticked BANDUNG for **also** gets it.
+- [ ] **Bandung's regional admin does NOT get it**, because naming somebody displaces the default.
+      ⚠️ If they still get it, the displacement rule is not firing and the whole point is lost.
+- [ ] The **receiving agent** does not get an approval bell for their own incoming store.
+
+**D. Two people, one button**
+
+- [ ] Approve the hand-off from one account.
+- [ ] Press **Authorize** from the other account on the same request → it must say
+      **"Already handled ... Somebody else got there first."**
+      ⚠️ If it goes through twice, the store gets a second hand-off record and a second round of
+      notifications. Stop and report it.
+
+**E. The login fix** (already confirmed once, worth one re-check after any deploy)
+
+- [ ] `https://kpm-ang.vercel.app` in Brave with **shields UP** → Google sign-in works.
+- [ ] `npm run dev` on localhost → Google sign-in still works.
+      ⚠️ Both must pass. They use different login addresses and either can break alone.
+
 ## ⚪ Skip entirely
 
 - Pure UI styling/color changes (unless they hide a real state, like a badge that should show a warning).

@@ -4,7 +4,25 @@ Copy the block below. It is the only thing on this page you should paste.
 
 ---
 
-Job: Product Performance reports unpaid consignment as finished revenue. Split it, and decide what
+FIRST, BEFORE ANY CODE: Aldi owes a test pass, and he asked to be reminded of it. Walk him through
+**Round 7 of `MANUAL_TEST_CHECKLIST.md`** at the repo root, one section at a time, waiting for his
+answer on each. Do not start the coding job below until he says it is done, or tells you to skip it.
+
+  WHY IT IS NOT OPTIONAL: the whole store hand-off feature shipped 2026-09-06, is LIVE on
+  kpm-ang.vercel.app, and not one line of it has been seen on screen by a human. It is proven by
+  1119 automated checks and by nothing else. Two failures are worth catching by hand:
+
+    - Editing somebody PHONE NUMBER must not silently strip their hand-off approval power. That is
+      the null-not-empty-array trap in Fleet & Canvas. A check asserts both save paths; only a real
+      save proves it.
+    - Naming ONE account for BANDUNG must take Bandung OFF Bandung own regional admin. If that admin
+      still gets the approval bell, the displacement rule is not firing and the feature does the
+      opposite of what he asked for.
+
+  He needs two agents in one branch and one in another to test properly. Tell him that up front so
+  he can set it up before you start asking questions.
+
+THEN THE CODING JOB: Product Performance reports unpaid consignment as finished revenue. Split it, and decide what
 the months already written are allowed to say.
 
 ALDI'S REPORT, verbatim 2026-09-05: *"this shouldnt be categorize as sales yet, because it is
@@ -73,6 +91,10 @@ anything odd about the picker, the Fleet approval chips or the approval queue, r
 `A-Brain/Wiki/Concepts/Handoff Eligibility.md` FIRST - it records that approval was briefly built on
 the permission matrix per TIER, which he rejected, and why the per-person version replaced it. Do not
 re-propose the tier version on the strength of his older words about "the matrix".
+
+STANDING RULE set 2026-09-06, his words: "well now we will start working on localhost again dont
+need to push the update everytime". Commit locally and stop. Do not offer a push. He asks for one by
+name when he wants to show somebody the live link.
 
 Then rewrite `.claude/NEXT-SESSION.md` with the next single job.
 

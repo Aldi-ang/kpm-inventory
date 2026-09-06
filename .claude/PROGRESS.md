@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-09-06 15:50 WIB (🟠 KPM session — login FIXED, DEPLOYED and CONFIRMED with Brave shields UP; back to localhost work)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **722/722 audit · 1119/1119 selfcheck** · branch `phase0-solid-ground`
+**Updated: 2026-09-06 15:45 WIB (🟠 KPM session CLOSED — hand-off feature shipped + login fixed; ALDI OWES A TEST PASS, Round 7 in MANUAL_TEST_CHECKLIST.md)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **722/722 audit · 1119/1119 selfcheck** · branch `phase0-solid-ground`
 
 ## 🔵 2026-09-06 07:21 — 7DTD mod track only. NO KPM CODE TOUCHED THIS SESSION.
 
@@ -21,6 +21,42 @@ lever is magazine size. Recommendation to cap at 4 is with him; nothing changed 
 
 
 
+
+
+## 🟠 2026-09-06 15:45 — session closed. Everything shipped; nothing seen on screen.
+
+**Six things landed today**, all on `phase0-solid-ground`, all pushed (`0b947f8..04e1705`):
+
+| | |
+|---|---|
+| `dace958` | hand-off eligibility — refuses the wrong receiver in the picker AND at the write |
+| `43cd4f3` | picker HIDES non-regional personnel instead of greying them out (his reversal) |
+| `8731c2b` | approval matrix per tier — **superseded the same day** |
+| `f305833` | approval moved to the PERSON in Fleet & Canvas, after he found the tier flaw |
+| `f9dd90a` | login: the Google handshake now runs on the app's own address |
+| — | 1035 → 1119 self-checks, 722/722 audit, build green throughout |
+
+**✅ The login fix is the only thing actually confirmed by a human.** He signed in on the live link
+with Brave shields UP. Everything else is proven by check and by nothing else.
+
+**⚠️ THE WHOLE HAND-OFF FEATURE IS UNTESTED ON SCREEN AND IT IS LIVE.** Round 7 of
+`MANUAL_TEST_CHECKLIST.md` is written for exactly this and is the first thing to do tomorrow. The two
+traps most worth catching by hand: editing somebody's phone number must not strip their approval
+power (`null`-not-`[]`), and naming one account for BANDUNG must take Bandung off its regional admin.
+
+**Two things he decided today that are now locked:**
+- Hide non-regional personnel; do not grey them out. *"less personel list"*.
+- Approval belongs to a PERSON, not a tier. *"i only want this 1 account to have the power for
+  approval in bandung only"*.
+
+**🛑 STANDING RULE, his words:** *"well now we'll start working on localhost again dont need to
+push the update everytime"*. Commit locally and stop. A push is asked for by name.
+
+### TOMORROW, IN ORDER
+
+1. **His test pass** — Round 7, `MANUAL_TEST_CHECKLIST.md`. Walk him through it, do not assume.
+2. **Then** the job in `.claude/NEXT-SESSION.md`: Product Performance counting unpaid consignment
+   as finished revenue.
 
 ## 🟠 2026-09-06 15:35 — the deployed login was blocked by the browser, not by a setting.
 
