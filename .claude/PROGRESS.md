@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-09-06 15:05 WIB (🟠 KPM session — approval rebuilt PER-PERSON after he found the tier flaw; demo link is LIVE)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **722/722 audit · 1106/1106 selfcheck** · branch `phase0-solid-ground`
+**Updated: 2026-09-06 15:35 WIB (🟠 KPM session — login cross-site block FIXED in code; Aldi owes ONE Google Cloud step BEFORE pushing)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **722/722 audit · 1119/1119 selfcheck** · branch `phase0-solid-ground`
 
 ## 🔵 2026-09-06 07:21 — 7DTD mod track only. NO KPM CODE TOUCHED THIS SESSION.
 
@@ -20,6 +20,40 @@ lever is magazine size. Recommendation to cap at 4 is with him; nothing changed 
 
 
 
+
+
+## 🟠 2026-09-06 15:35 — the deployed login was blocked by the browser, not by a setting.
+
+**CONFIRMED BY TEST, not reasoned.** Brave Shields down on the deployed site → sign-in worked at
+once. The app sits on `kpm-ang.vercel.app` while the Google handshake happens on
+`cello-inventory-manager.firebaseapp.com`, so finishing a login needs one site to read a cookie
+another site set. Brave blocks that by default, Safari blocks it, Chrome is phasing it in. Localhost
+is the one place Brave does not — which is why localhost was the one place that worked, and why two
+earlier theories died.
+
+Same root explains the phone's *"The requested action is invalid"* yesterday and the desktop's
+`auth/invalid-credential` + userinfo 401 today. Different flows, different messages, one break.
+
+**FIXED IN CODE:** `vercel.json` passes `/__/auth/*` through to Firebase; `firebase.js` resolves
+`authDomain` at runtime from `PROXIED_AUTH_HOSTS = ['kpm-ang.vercel.app']`. Everything else keeps
+the Firebase handler, so localhost, the LAN IPs and every Vercel preview URL are untouched.
+
+Checks 1106 → 1119, trialled red in two halves (3 without `vercel.json`, 4 with `firebase.js`
+reverted). Build green, audit 722/722.
+
+**⚠️ UNVERIFIABLE FROM HERE.** The pass-through only exists once Vercel serves it. The checks pin
+the configuration, not the round trip.
+
+**A wasted test I sent him on:** `cello-inventory-manager.web.app` serves an ANCIENT unrelated build,
+so its result meant nothing. `curl` the URL before pointing him at one.
+
+### WAITING ON ALDI — ORDER MATTERS
+
+1. **FIRST**, Google Cloud Console → APIs & Services → Credentials → the Web client → **Authorized
+   redirect URIs** → add `https://kpm-ang.vercel.app/__/auth/handler`.
+2. **THEN** push the branch so Vercel rebuilds.
+
+Pushing first breaks sign-in on that link for everyone, him included.
 
 ## 🟠 2026-09-06 15:05 — he found a real flaw in the approval matrix. Rebuilt per-person.
 
