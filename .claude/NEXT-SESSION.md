@@ -4,76 +4,71 @@ Copy the block below. It is the only thing on this page you should paste.
 
 ---
 
-Job: build the hand-off APPROVAL matrix — which tier approves a consignment hand-off, and for
-which regions. The SENDING half already shipped (`dace958`); this is the other end.
+Job: build the hand-off APPROVAL matrix. Aldi has ANSWERED the question that blocked it, so this is
+now a build, not a question. The SENDING half already shipped (`dace958` and the commit after it).
 
-⚠️ ONE ANSWER IS OWED BEFORE ANY CODE. If Aldi has not answered it in this session, ask it first
-and build nothing until he does — the two answers produce different notification targets and
-different button gating, so guessing wrong means building it twice.
+HIS ANSWER, verbatim 2026-09-06: *"both still get the bells of course"* - OPTION B. When he gives a
+tier approval power over a region, that tier is ADDED beside him. He keeps every bell he has today
+and the regional approver gets one too; either can authorise. Do NOT re-argue that this fails to
+reduce his bell load. He was told, and chose it anyway.
 
-  THE QUESTION: today the approval bell is written with `agentId: 'ADMIN'` and Aldi is the only
-  person in the company who can authorise a hand-off. When he gives a tier approval power over a
-  region, does that tier REPLACE him as the approver for those hand-offs, or get ADDED beside him?
+READ FIRST - it holds the full design and the paths already rejected:
+`A-Brain/Brainstorm/2026-09-06_handoff-approval-region-matrix.md`.
 
-  Replace matches his stated reason — he asked for this because granting an upper tier every region
-  means "massive loads of approval notification bells". But replace also means he stops seeing
-  hand-offs in any region he delegates, and a delegated region whose approver never logs in leaves
-  requests stuck with nobody told. A third option is priced: replace, with him as a fallback after
-  a delay.
-
-  The three options with their costs are in
-  `A-Brain/Brainstorm/2026-09-06_handoff-approval-region-matrix.md`. Read that note, not this
-  paragraph — it also carries his verbatim words and the paths already rejected.
-
-ALREADY DECIDED IN THAT NOTE. Do not re-propose these:
+ALREADY DECIDED. Do not re-propose:
 
   - THE CARRIER: one array entry per region inside the existing `ROLE_PERMISSIONS[tier]` string
-    array, prefixed — `handoff_region:JAKARTA`, `handoff_region:BANDUNG`. He refused a two-value
-    all-vs-own-region setting in his own words ("floods or drip of water"); one entry per region IS
-    the arbitrary subset he asked for. A new top-level field beside the array would mean teaching
-    the Firebase document, the settings screen and every reader a second shape for no gain.
-  - THE DEFAULT when he has configured nothing: a PER-PERSON region match, not a tier-wide grant.
-    A T4 REGIONAL ADMIN approves hand-offs whose store sits in their own `location`, and no other
-    region. Tier 1 always approves everything, so his own live flow is untouched until he
-    configures a region.
+    array, prefixed - `handoff_region:JAKARTA`, `handoff_region:BANDUNG`. He refused a two-value
+    all-vs-own setting in his own words ("floods or drip of water"); one entry per region IS the
+    arbitrary subset he asked for. A new top-level field would mean teaching the Firebase document,
+    the settings screen and every reader a second shape for no gain.
+  - THE DEFAULT when nothing is configured: a PER-PERSON region match, not a tier-wide grant. A T4
+    REGIONAL ADMIN approves hand-offs whose store sits in their own `location`, and no other region.
+    Tier 1 always approves everything, so his live flow is untouched until he configures something.
 
-WHAT THE CODE DOES NOW — verified 2026-09-06, lines current:
+TWO THINGS OPTION B OWES THAT OPTION A WOULD NOT:
+
+  1. A DOUBLE-AUTHORISE GUARD. Two people can now reach the same `PENDING_ADMIN` request. The second
+     Authorize must find it already approved and say so, not run the approval a second time.
+  2. NO DOUBLED BELL FOR HIM. He is Tier 1 and matches every region rule; the notification write
+     must send him exactly one.
+
+WHAT THE CODE DOES NOW - verified 2026-09-06, lines current:
 
   - `src/App.jsx handleAgentAcceptTransfer` writes the approval bell with `agentId: 'ADMIN'`. One
     recipient, always, whatever the store's region.
   - `src/App.jsx:1768` `handleAdminApproveTransfer` is the write. It has no approver check at all.
-  - `src/ConsignmentFinanceView.jsx:326` `adminPend` lists every `PENDING_ADMIN` request with no
-    filter on who is looking; Authorize/Reject sit at `:1080-1081`.
+  - `src/ConsignmentFinanceView.jsx:326` `adminPend` lists every `PENDING_ADMIN` with no filter on
+    who is looking; Authorize/Reject sit at `:1080-1081`.
   - `src/components/SettingsView.jsx:1506` `PermissionMatrixEditor` receives only
-    `{db, appId, userRole, userId}` — the live region list has to be passed down to it.
+    `{db, appId, userRole, userId}` - the live region list has to be passed down to it.
 
-FOLLOW THE SHAPE THAT ALREADY WORKS. `handoff_cross_region` in `src/config/permissions.js` was
-added yesterday for the sending half and is the template: ABSENCE OF THE KEY MEANS "use the tier
-default", never "no". `injectDynamicPermissions` replaces a saved tier's list wholesale, so a
-brand-new key is simply missing from the matrix Aldi has already deployed to Firebase — read as a
-plain missing permission it means "no", and the feature looks broken for every tier while the code
-is right. Four keys in that file already do this; copy one.
+FOLLOW THE SHAPE THAT ALREADY WORKS. `handoff_cross_region` in `src/config/permissions.js` is the
+template: ABSENCE OF THE KEY MEANS "use the tier default", never "no". `injectDynamicPermissions`
+replaces a saved tier's list wholesale, so a brand-new key is simply missing from the matrix already
+deployed to Firebase; read as a plain missing permission it means "no", and the feature looks broken
+for every tier while the code is right. Five keys in that file do this now - copy one.
 
 TRAPS:
 
-  - THE REGION LIST IS DATA, NOT A CONSTANT. `ConsignmentFinanceView.jsx:29-32` derives regions
-    from the motorists' `location`, upper-cased and trimmed, with `UNASSIGNED` as a real value. The
-    matrix must enumerate the regions that actually exist, pick up a new one the moment an agent is
-    given a new location, and cope with a saved list naming a region nobody works in any more. A
-    hardcoded list looks right on the day it is written and rots silently.
-  - GATING ONLY THE AUTHORIZE BUTTON IS NOT THE FIX. `handleAdminApproveTransfer` must refuse too —
-    hiding a control leaves the handler open, which is the pattern already named in the vault and
-    already the reason the delete guard exists. `handoffEligibility` was built that way yesterday;
-    match it.
-  - MORE THAN 3 FILES TOUCHED means stop and name each one before continuing. This job plausibly
-    reaches four (permissions.js, App.jsx, ConsignmentFinanceView.jsx, SettingsView.jsx) plus the
-    self-check — say so before starting, do not discover it halfway.
+  - THE REGION LIST IS DATA, NOT A CONSTANT. `ConsignmentFinanceView.jsx:29-32` derives regions from
+    the motorists' `location`, upper-cased and trimmed, with `UNASSIGNED` as a real value. Enumerate
+    what actually exists, pick up a new branch the moment an agent is given one, and cope with a
+    saved list naming a region nobody works in any more. A hardcoded list rots silently.
+  - GATING ONLY THE AUTHORIZE BUTTON IS NOT THE FIX. `handleAdminApproveTransfer` must refuse too.
+    `handoffEligibility` was built that way; match it.
+  - MORE THAN 3 FILES means stop and name each one to Aldi before continuing. This plausibly reaches
+    four (permissions.js, App.jsx, ConsignmentFinanceView.jsx, SettingsView.jsx) plus the
+    self-check. Say so before starting; do not discover it halfway.
 
-Leave the fix in `src/config/logicFixes.selfcheck.mjs` the way `dace958` did: slice each assertion
-to its own anchors, assert the anchors were FOUND before slicing, re-run the predicate on real
-agents, and trial it RED before green. Copy the modified source files aside and `git checkout --`
-them rather than stashing — a stash can take the check file with it, and then the trial cannot fail
-and proves nothing.
+Leave the fix in `src/config/logicFixes.selfcheck.mjs`: slice each assertion to its own anchors,
+assert the anchors were FOUND before slicing, re-run the predicate on real agents, and trial it RED
+before green. Copy the modified source files aside and `git checkout --` them rather than stashing -
+a stash can take the check file with it, and then the trial cannot fail and proves nothing.
+
+ALSO OPEN, and not part of this job: two settings only Aldi can flip before anybody else can open
+the demo link - Vercel Deployment Protection OFF, and `kpm-ang.vercel.app` added to Firebase
+Authorized domains. See `.claude/PROGRESS.md`.
 
 Then rewrite `.claude/NEXT-SESSION.md` with the next single job.
 

@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-09-06 07:30 WIB (🟠 KPM session — hand-off SENDING half shipped; APPROVING half blocked on one question)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **722/722 audit · 1060/1060 selfcheck** · branch `phase0-solid-ground`
+**Updated: 2026-09-06 08:15 WIB (🟠 KPM session — picker now HIDES non-regional; Option B chosen; demo link blocked by TWO settings only Aldi can change)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **722/722 audit · 1073/1073 selfcheck** · branch `phase0-solid-ground`
 
 ## 🔵 2026-09-06 07:21 — 7DTD mod track only. NO KPM CODE TOUCHED THIS SESSION.
 
@@ -17,6 +17,45 @@ prevent. Its content is whatever the KPM session last wrote.
 only"* — answered: the stack is the round count, a 16-round magazine draws 16 bolts, and the only
 lever is magazine size. Recommendation to cap at 4 is with him; nothing changed without his word.
 
+
+
+## 🟠 2026-09-06 08:15 — picker hides instead of greying; and the demo link was never reaching his friends.
+
+**THE DEMO LINK — measured, not guessed [certain].** `curl -sI https://kpm-ang.vercel.app` answers
+`302 -> https://vercel.com/sso-api?...` and lands on `vercel.com/login`. **Vercel Deployment
+Protection is ON**, so anybody not signed into his Vercel team is bounced before they ever see KPM.
+He got through only because his phone holds a Vercel session. TWO settings, both his hands, neither
+is code:
+  1. Vercel → project → Settings → Deployment Protection → Vercel Authentication **OFF** for Preview.
+  2. Firebase Console → Authentication → Settings → Authorized domains → add `kpm-ang.vercel.app`.
+     [likely] — this is what his screenshot is: mobile blocks the login popup, `App.jsx:2725` falls
+     back to `signInWithRedirect`, and `cello-inventory-manager.firebaseapp.com` refuses an unlisted
+     domain with "The requested action is invalid."
+
+**Friends CAN use it for real — no demo account, no new code** [certain]. `FleetCanvasManager.jsx:162`
+already requires a **"Google Account Email (Login)"** when adding personnel; it writes
+`employee_directory/<email>`, and `App.jsx:2402` reads that doc on login and grants the profile. He
+rejected demo-account / login-screen-only / screen-recording, and he was right to — the real path
+already exists. ⚠️ It gives a friend REAL access to REAL company data, and the store hand-off write
+rule is still drafted, not deployed.
+
+**SHIPPED (2 commits).** The picker now HIDES personnel outside the regional team instead of greying
+them out — his call, reversing yesterday's display decision. Eligibility alone would have hidden
+nobody from him (he is Tier 1, so everyone is eligible), so the filter is the REGIONAL TEAM: his own
+branch, else the branch of whoever holds the store. A **"Show other branches"** checkbox appears for
+tiers 1-3 only, off by default — without it `handoff_cross_region` would be live at the write and
+unreachable on screen. An empty list now says "Nobody in JAKARTA can receive this store".
+
+Checks 1060 → 1073, all green, trialled RED first (9 FAILs with the picker reverted). Build green,
+audit 722/722. A pre-existing `visibleTo` collided with the new helper; renamed `pickerShows`.
+
+**✅ OPTION B CHOSEN** — his words: *"both still get the bells of course"*. The configured tier is
+ADDED beside him; either can authorise. **Not built yet — that is the next job.**
+
+### WAITING ON ALDI
+
+Nothing blocking. Two settings for him to flip (above), and a ✅ TEST of the picker — it is NOT
+verified visually, being behind Firebase auth inside a selected consignment store.
 
 ## 🟠 2026-09-06 07:30 — hand-off eligibility shipped (`dace958`). Approval matrix waits on one answer.
 
