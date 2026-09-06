@@ -1,6 +1,63 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-09-05 10:55 WIB (🟠 KPM session — branch PUSHED for a Vercel demo; bug 2 scoped; 4 fixes live)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **722/722 audit · 1035/1035 selfcheck** · branch `phase0-solid-ground`
+**Updated: 2026-09-06 07:30 WIB (🟠 KPM session — hand-off SENDING half shipped; APPROVING half blocked on one question)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **722/722 audit · 1060/1060 selfcheck** · branch `phase0-solid-ground`
+
+## 🔵 2026-09-06 07:21 — 7DTD mod track only. NO KPM CODE TOUCHED THIS SESSION.
+
+Written by the 7DTD session, which writes to `AppData/Roaming/7DaysToDie/MODS-NOTES.md` and
+`NEXT-JOB.md` and **nothing in this repo**. Logged here only because the Stop hook blocks on a
+dirty tree, and the dirty files — `App.jsx`, `ConsignmentFinanceView.jsx`,
+`logicFixes.selfcheck.mjs`, `permissions.js` — belong to the 🟠 KPM track, not to me.
+
+**`.claude/NEXT-SESSION.md` was NOT rewritten**, only touched, on purpose: it holds the KPM track's
+one job, and replacing it with a 7DTD job is exactly the wrong-prompt failure the hook exists to
+prevent. Its content is whatever the KPM session last wrote.
+
+**WAITING ON ALDI (7DTD track, verbatim):** *"the arrow still like this bruh, i said 1 arrow showing
+only"* — answered: the stack is the round count, a 16-round magazine draws 16 bolts, and the only
+lever is magazine size. Recommendation to cap at 4 is with him; nothing changed without his word.
+
+
+## 🟠 2026-09-06 07:30 — hand-off eligibility shipped (`dace958`). Approval matrix waits on one answer.
+
+**SHIPPED.** `handoffEligibility` in `src/config/permissions.js` now decides who may receive a
+consignment hand-off, and it is called in BOTH the picker (`ConsignmentFinanceView.jsx`, the
+transferMode select) and the write (`App.jsx handleRequestTransfer`) — a greyed control is a
+suggestion, not a boundary. Two faults closed: the current owner could be offered the store they
+already hold, and nothing anywhere compared branches. Cross-branch sending is a new matrix key,
+`handoff_cross_region`, defaulting to tiers 1-3.
+
+Two decisions I made and flagged: **UNASSIGNED is not a region** at either end, and
+`senderIsCompanyWide` is a separate flag rather than an absent region — overloading the two would
+have given the emptiest record the widest reach, which the first draft of the predicate did.
+
+Checks 1035 → 1060, all green, trialled RED twice first (6 wiring FAILs, then 3 predicate FAILs).
+Build green, audit 722/722.
+
+**⚠️ Correction to the previous brief:** it named `dropdownAgents` as the hand-off target list. It
+is not — that is the admin's own region/search filter for VIEWING. Editing it would have changed
+who an admin can look at and left the real picker open. The picker builds its own list inline.
+
+**NOT verified visually** — the greyed-out option needs a signed-in session with real motorists
+inside a selected consignment store, behind Firebase auth.
+
+### WAITING ON ALDI — one question, and the approval matrix cannot be built without it
+
+His rule, verbatim 2026-09-05: *"regarding the approval for the consignment there should be option
+in the matrix for what tier that can receive and approve the consignment and also which is the
+region selected to receive from ... but on default their own regional admin is the only one who can
+do that, if we put this power towards the upper tier for all region then there will be massive loads
+of approval notification bells coming to the upper tier"*.
+
+**The question: when he gives a tier approval power over a region, does that tier REPLACE him as the
+approver for those hand-offs, or get ADDED beside him?** Today the approval bell is written with
+`agentId: 'ADMIN'` and he is the only approver in the company. Replace matches his stated reason
+(bell load) but means he stops seeing hand-offs in delegated regions; add is safer but takes nothing
+off his pile. A third option — replace, with him as a fallback after a delay — is priced too.
+
+Options, costs and the rejected paths:
+`A-Brain/Brainstorm/2026-09-06_handoff-approval-region-matrix.md` (vault commit on its own repo).
+The data shape and the default ARE decided in that note and are not open again.
 
 ## 🟠 2026-09-05 10:55 — `phase0-solid-ground` pushed to GitHub for a Vercel demo.
 

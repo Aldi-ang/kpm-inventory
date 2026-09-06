@@ -4,98 +4,76 @@ Copy the block below. It is the only thing on this page you should paste.
 
 ---
 
-Job: a consignment hand-off can be offered to the wrong person. Build the eligibility rule Aldi
-gave, and refuse it at the write as well as in the dropdown.
+Job: build the hand-off APPROVAL matrix — which tier approves a consignment hand-off, and for
+which regions. The SENDING half already shipped (`dace958`); this is the other end.
 
-ALDI'S RULE, verbatim, 2026-09-05:
+⚠️ ONE ANSWER IS OWED BEFORE ANY CODE. If Aldi has not answered it in this session, ask it first
+and build nothing until he does — the two answers produce different notification targets and
+different button gating, so guessing wrong means building it twice.
 
-  "consignment should only be transferred between regional team member only, and only tier 1,2,3 is
-   the one who can transfer consignment between regional area personnel"
+  THE QUESTION: today the approval bell is written with `agentId: 'ADMIN'` and Aldi is the only
+  person in the company who can authorise a hand-off. When he gives a tier approval power over a
+  region, does that tier REPLACE him as the approver for those hand-offs, or get ADDED beside him?
 
-  Asked whether tiers 1-3 SEND across regions or only APPROVE such a move, he answered with a third
-  design and it is the one to build:
+  Replace matches his stated reason — he asked for this because granting an upper tier every region
+  means "massive loads of approval notification bells". But replace also means he stops seeing
+  hand-offs in any region he delegates, and a delegated region whose approver never logs in leaves
+  requests stuck with nobody told. A third option is priced: replace, with him as a fallback after
+  a delay.
 
-  "regarding the approval for the consignment there should be option in the matrix for what tier
-   that can receive and approve the consignment and also which is the region selected to receive
-   from this way it would increase flexibility for who can have the power of the approval for
-   specific area or areas, but on default their own regional admin is the only one who can do that,
-   if we put this power towards the upper tier for all region then there will be massive loads of
-   approval notification bells coming to the upper tier, thats why i think regional selecting is
-   important in this matter"
+  The three options with their costs are in
+  `A-Brain/Brainstorm/2026-09-06_handoff-approval-region-matrix.md`. Read that note, not this
+  paragraph — it also carries his verbatim words and the paths already rejected.
 
-  So: approval authority is CONFIGURABLE per tier, and scoped to chosen REGIONS. Default is the
-  agent's own regional admin and nobody else. His reason is load, not policy - granting an upper
-  tier every region buries them in approval bells.
+ALREADY DECIDED IN THAT NOTE. Do not re-propose these:
 
-THE PART THAT IS SMALLER THAN IT LOOKS:
+  - THE CARRIER: one array entry per region inside the existing `ROLE_PERMISSIONS[tier]` string
+    array, prefixed — `handoff_region:JAKARTA`, `handoff_region:BANDUNG`. He refused a two-value
+    all-vs-own-region setting in his own words ("floods or drip of water"); one entry per region IS
+    the arbitrary subset he asked for. A new top-level field beside the array would mean teaching
+    the Firebase document, the settings screen and every reader a second shape for no gain.
+  - THE DEFAULT when he has configured nothing: a PER-PERSON region match, not a tier-wide grant.
+    A T4 REGIONAL ADMIN approves hand-offs whose store sits in their own `location`, and no other
+    region. Tier 1 always approves everything, so his own live flow is untouched until he
+    configures a region.
 
-  The permission matrix is ALREADY runtime-editable. `src/config/permissions.js:109` is
-  `export let ROLE_PERMISSIONS` - a mutable binding - and `src/App.jsx:467` downloads custom
-  permissions from Firebase at startup and overwrites it. So this is two new permission keys plus a
-  region scope, NOT a new configuration system.
+WHAT THE CODE DOES NOW — verified 2026-09-06, lines current:
 
-THE DATA SHAPE - DECIDED BY ALDI, 2026-09-05. Do not re-propose the cheap version:
+  - `src/App.jsx handleAgentAcceptTransfer` writes the approval bell with `agentId: 'ADMIN'`. One
+    recipient, always, whatever the store's region.
+  - `src/App.jsx:1768` `handleAdminApproveTransfer` is the write. It has no approver check at all.
+  - `src/ConsignmentFinanceView.jsx:326` `adminPend` lists every `PENDING_ADMIN` request with no
+    filter on who is looking; Authorize/Reject sit at `:1080-1081`.
+  - `src/components/SettingsView.jsx:1506` `PermissionMatrixEditor` receives only
+    `{db, appId, userRole, userId}` — the live region list has to be passed down to it.
 
-  "no i want all the region the be registered on the matrix, because if there is only 2 option all
-   or own regional approval means that there are only 2 option to choose floods or drip of water,
-   the system that i want to make is to have power to choose 1,2,3,4 or whatever regional number
-   that i want to receive notification and approval from"
-
-  So: EVERY region is listed in the matrix, and a tier gets an arbitrary SUBSET of them. Not a flag,
-  not own-vs-all. String flags like `approve_consignment_own_region` are REFUSED - he named the
-  reason himself, they offer only "flood or drip" with nothing in between.
-
-  That means a per-tier region list living beside the existing string array. `ROLE_PERMISSIONS` maps
-  each tier to a flat array of strings today and every reader assumes that shape, so the Firebase
-  document, the settings screen and every reader have to agree on the new field. That cost is
-  accepted; it is the price of what he asked for.
-
-  TRAP - the region list is DATA, not a constant. `ConsignmentFinanceView.jsx:29-32` derives
-  `uniqueLocations` from the motorists' `location` field, upper-cased and trimmed, with `UNASSIGNED`
-  as a real value. So the matrix has to enumerate the regions that actually exist, pick up a new one
-  the moment an agent is given a new location, and cope with a tier whose saved list names a region
-  that no longer has anyone in it. A hardcoded region list will look right on the day it is written
-  and rot silently.
-
-WHAT THE CODE DOES NOW — verified 2026-09-05, lines current:
-
-  - `src/ConsignmentFinanceView.jsx:36-52` `dropdownAgents` is the target list. It filters
-    `m.userRole !== 'ADMIN'`, then by `activeRegion` ONLY when the admin region control is set, then
-    by the typed search. So for a field agent it is effectively EVERY non-admin agent in the company,
-    in any region.
-  - Nothing excludes the agent who already owns the store. That is the bug Aldi hit first: he could
-    offer the hand-off to the person already holding it.
-  - "mobil pak boss" could not be picked because it is an ADMIN-role profile and `m.userRole !==
-    'ADMIN'` removes it. That part is working as written — but Tier 1 having two profiles means the
-    dropdown silently hides one of them with no explanation, which is why it read as broken.
-  - `src/App.jsx` `handleRequestTransfer` writes the request with NO eligibility check of any kind.
-    That is the write path and it must refuse too.
-
-THE SMALLEST FIX:
-
-  One predicate — call it `canReceiveHandoff(fromAgent, toAgent, tier)` — used in BOTH places:
-  `dropdownAgents` to hide ineligible targets, and `handleRequestTransfer` to refuse them. Do not
-  put it only in the dropdown; hiding a control leaves the handler open, which is the "UI Says Yes,
-  Server Says No" pattern already in the vault and already the reason the delete guard exists.
-
-  Exclude the current owner using the ownership the hand-off work already added: the customer
-  document's `ownerAgentId`, falling back to the agent stamped on the store's rows when a store has
-  never been handed over. Do NOT use `mappedBy` — it records who first registered the store and
-  `handleRequestTransfer` still reads it to tell two same-named shops apart.
+FOLLOW THE SHAPE THAT ALREADY WORKS. `handoff_cross_region` in `src/config/permissions.js` was
+added yesterday for the sending half and is the template: ABSENCE OF THE KEY MEANS "use the tier
+default", never "no". `injectDynamicPermissions` replaces a saved tier's list wholesale, so a
+brand-new key is simply missing from the matrix Aldi has already deployed to Firebase — read as a
+plain missing permission it means "no", and the feature looks broken for every tier while the code
+is right. Four keys in that file already do this; copy one.
 
 TRAPS:
 
-  - Region lives on the motorist as `location`, upper-cased and trimmed at
-    `ConsignmentFinanceView.jsx:29-32`. `UNASSIGNED` is a real value, not an absence — decide
-    whether an UNASSIGNED agent can receive anything at all, and say which you chose.
-  - An ADMIN sender has `agentProfileId === null` and `fromAgentId === 'ADMIN'`. Any region
-    comparison against an admin will compare against undefined unless handled first.
-  - More than 3 files touched means stop and name each one before continuing.
+  - THE REGION LIST IS DATA, NOT A CONSTANT. `ConsignmentFinanceView.jsx:29-32` derives regions
+    from the motorists' `location`, upper-cased and trimmed, with `UNASSIGNED` as a real value. The
+    matrix must enumerate the regions that actually exist, pick up a new one the moment an agent is
+    given a new location, and cope with a saved list naming a region nobody works in any more. A
+    hardcoded list looks right on the day it is written and rots silently.
+  - GATING ONLY THE AUTHORIZE BUTTON IS NOT THE FIX. `handleAdminApproveTransfer` must refuse too —
+    hiding a control leaves the handler open, which is the pattern already named in the vault and
+    already the reason the delete guard exists. `handoffEligibility` was built that way yesterday;
+    match it.
+  - MORE THAN 3 FILES TOUCHED means stop and name each one before continuing. This job plausibly
+    reaches four (permissions.js, App.jsx, ConsignmentFinanceView.jsx, SettingsView.jsx) plus the
+    self-check — say so before starting, do not discover it halfway.
 
-Leave the fix in `src/config/logicFixes.selfcheck.mjs` the way `4bb9ad7` did: slice each assertion
+Leave the fix in `src/config/logicFixes.selfcheck.mjs` the way `dace958` did: slice each assertion
 to its own anchors, assert the anchors were FOUND before slicing, re-run the predicate on real
-agents, and trial it RED before green — stashing ONLY the source files, never the check file
-itself, or the trial cannot fail and proves nothing.
+agents, and trial it RED before green. Copy the modified source files aside and `git checkout --`
+them rather than stashing — a stash can take the check file with it, and then the trial cannot fail
+and proves nothing.
 
 Then rewrite `.claude/NEXT-SESSION.md` with the next single job.
 
