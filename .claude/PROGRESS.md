@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-09-06 15:35 WIB (🟠 KPM session — login cross-site block FIXED in code; Aldi owes ONE Google Cloud step BEFORE pushing)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **722/722 audit · 1119/1119 selfcheck** · branch `phase0-solid-ground`
+**Updated: 2026-09-06 15:50 WIB (🟠 KPM session — login FIXED, DEPLOYED and CONFIRMED with Brave shields UP; back to localhost work)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **722/722 audit · 1119/1119 selfcheck** · branch `phase0-solid-ground`
 
 ## 🔵 2026-09-06 07:21 — 7DTD mod track only. NO KPM CODE TOUCHED THIS SESSION.
 
@@ -41,19 +41,27 @@ the Firebase handler, so localhost, the LAN IPs and every Vercel preview URL are
 Checks 1106 → 1119, trialled red in two halves (3 without `vercel.json`, 4 with `firebase.js`
 reverted). Build green, audit 722/722.
 
-**⚠️ UNVERIFIABLE FROM HERE.** The pass-through only exists once Vercel serves it. The checks pin
-the configuration, not the round trip.
+**✅ DEPLOYED AND CONFIRMED, 15:50.** Pushed 17 commits (`0b947f8..04e1705`, verified on GitHub).
+`https://kpm-ang.vercel.app/__/auth/handler` returns **200** and its body is **byte-identical** to
+Firebase's own handler (same md5, `0196514a...`) — so the pass-through really is passing the real
+handler through, not a fallback page. **Aldi then signed in on the live link with Brave shields UP.**
+That is the end-to-end proof the checks could not give.
+
+⚠️ `PROXIED_AUTH_HOSTS` still holds exactly one host. Adding another needs its
+`https://<host>/__/auth/handler` registered on the OAuth client FIRST, or that host dies with
+`redirect_uri_mismatch`.
 
 **A wasted test I sent him on:** `cello-inventory-manager.web.app` serves an ANCIENT unrelated build,
 so its result meant nothing. `curl` the URL before pointing him at one.
 
-### WAITING ON ALDI — ORDER MATTERS
+### DONE — nothing owed
 
-1. **FIRST**, Google Cloud Console → APIs & Services → Credentials → the Web client → **Authorized
-   redirect URIs** → add `https://kpm-ang.vercel.app/__/auth/handler`.
-2. **THEN** push the branch so Vercel rebuilds.
+Both console steps done by him, the redirect URI is registered, the branch is pushed, and the live
+link works with shields up. localhost still signs in, so the old redirect URI survived.
 
-Pushing first breaks sign-in on that link for everyone, him included.
+🛑 **NEW STANDING RULE, his words 15:50:** *"well now we'll start working on localhost again
+dont need to push the update everytime"*. Commit locally and stop there. A push is something he asks
+for by name.
 
 ## 🟠 2026-09-06 15:05 — he found a real flaw in the approval matrix. Rebuilt per-person.
 

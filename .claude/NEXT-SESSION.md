@@ -52,13 +52,16 @@ a stash can take the check file with it, and then the trial cannot fail and prov
 BEFORE ANYTHING ELSE, CHECK THIS IS DONE. The deployed login was blocked by the browser, not by a
 setting: the app sat on kpm-ang.vercel.app while the Google handshake happened on
 cello-inventory-manager.firebaseapp.com, and Brave/Safari block one site reading the other s cookie.
-Fixed in code (vercel.json + firebase.js), but it needs TWO steps in this order, and Aldi may not
-have done them yet:
+FIXED, DEPLOYED AND CONFIRMED 2026-09-06 15:50 - he signed in on the live link with Brave shields
+UP. Nothing is owed. The two steps below are recorded only so a NEW host is set up the same way:
   1. Google Cloud Console -> APIs & Services -> Credentials -> the Web client -> Authorized redirect
      URIs -> add https://kpm-ang.vercel.app/__/auth/handler
   2. THEN push the branch so Vercel rebuilds.
-Pushing first breaks sign-in on that link for everyone. Ask him which step he is on before
-diagnosing any login report. Full write-up: A-Brain/Wiki/Concepts/The Cross-Site Login Block.md
+Registering second breaks that host with redirect_uri_mismatch, so the console step always comes
+first. PROXIED_AUTH_HOSTS in firebase.js currently holds ONE host.
+
+STANDING RULE, his words 2026-09-06: "well now we will start working on localhost again dont need to
+push the update everytime". Commit locally and stop. A push is something he asks for by name. Full write-up: A-Brain/Wiki/Concepts/The Cross-Site Login Block.md
 
 NOT PART OF THIS JOB, but know it: the demo link is LIVE. Aldi turned off Vercel Deployment
 Protection and added the domain in the Firebase console himself on 2026-09-06, and `curl` confirms
