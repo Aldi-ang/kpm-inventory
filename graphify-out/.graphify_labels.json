@@ -88,5 +88,8 @@
   "86": "supply.js",
   "87": "KPMInventoryApp",
   "88": "dayStats.selfcheck.mjs",
-  "91": "🟠 2026-09-06 08:15 — picker hides instead of greying; and the demo link was never reaching his friends."
+  "89": "supply.js",
+  "90": "dayStats.selfcheck.mjs",
+  "91": "🟠 2026-09-06 08:15 — picker hides instead of greying; and the demo link was never reaching his friends.",
+  "92": "🟠 2026-09-06 15:05 — he found a real flaw in the approval matrix. Rebuilt per-person."
 }

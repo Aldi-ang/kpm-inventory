@@ -50,13 +50,13 @@
     "semantic_hash": ""
   },
   "src/App.jsx": {
-    "mtime": 1788657101.3483403,
-    "ast_hash": "e944e6d342a165b1b5143d861ee0f19f",
+    "mtime": 1788681166.7841718,
+    "ast_hash": "240de85cdecadf3306b57e65356de0dc",
     "semantic_hash": ""
   },
   "src/ConsignmentFinanceView.jsx": {
-    "mtime": 1788657101.3893387,
-    "ast_hash": "fac01a5531bec9211245c8937cde562f",
+    "mtime": 1788681166.826691,
+    "ast_hash": "294dedbfe9870105859e021c51d433c4",
     "semantic_hash": ""
   },
   "src/EODReconciliationView.jsx": {
@@ -65,8 +65,8 @@
     "semantic_hash": ""
   },
   "src/FleetCanvasManager.jsx": {
-    "mtime": 1787537973.7608466,
-    "ast_hash": "484b2c465ae3d1fa2bf992d217fc61f3",
+    "mtime": 1788681166.868233,
+    "ast_hash": "fe90c956efb8ede5aa71882bd34b86fb",
     "semantic_hash": ""
   },
   "src/HallOfFameView.jsx": {
@@ -185,8 +185,8 @@
     "semantic_hash": ""
   },
   "src/components/SettingsView.jsx": {
-    "mtime": 1788657101.4320734,
-    "ast_hash": "23a18e841aceb0dca6536a10f1219dcf",
+    "mtime": 1788681166.9067316,
+    "ast_hash": "97d540f28af7bd5ec9469e0c41769c64",
     "semantic_hash": ""
   },
   "src/config/firebase.js": {
@@ -195,8 +195,8 @@
     "semantic_hash": ""
   },
   "src/config/permissions.js": {
-    "mtime": 1788657119.1665204,
-    "ast_hash": "d4d502a4bc0bb12d4b5e5f68a378a001",
+    "mtime": 1788681183.8545797,
+    "ast_hash": "4ff868d38339f2505e9d11f84f30979f",
     "semantic_hash": ""
   },
   "src/hooks/useDatabaseSync.js": {
@@ -570,8 +570,8 @@
     "semantic_hash": ""
   },
   ".claude/PROGRESS.md": {
-    "mtime": 1788657274.3116379,
-    "ast_hash": "74d7a98292286ba8bd869a6d30897729",
+    "mtime": 1788681344.6452053,
+    "ast_hash": "2889aa1c56429dfe11ad0528b998994f",
     "semantic_hash": ""
   },
   ".claude/pre-compact-context.md": {
@@ -755,13 +755,13 @@
     "semantic_hash": ""
   },
   "src/config/logicFixes.selfcheck.mjs": {
-    "mtime": 1788657073.4647741,
-    "ast_hash": "8d8c5294b5e311b3427290d43708551a",
+    "mtime": 1788681144.4618964,
+    "ast_hash": "fbf6e2bc5a0089fbadf51caffcd7090f",
     "semantic_hash": ""
   },
   ".claude/NEXT-SESSION.md": {
-    "mtime": 1788657274.3123577,
-    "ast_hash": "42d12d3286d0611aec0acfecff810f35",
+    "mtime": 1788681344.6482072,
+    "ast_hash": "8c2ea21a6e0649fe632524c68335419e",
     "semantic_hash": ""
   },
   ".claude/SWEEP-2026-08-19.md": {
