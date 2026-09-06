@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { FileSpreadsheet, ShieldCheck, AlertCircle, XCircle, MessageSquare, Box, Package, ArrowRight, DollarSign, Store, Truck, Plus, Wallet, RotateCcw, Lock, Trash2, ArrowLeftRight, Check, X, ClipboardList, ScanSearch, Calculator, Printer, User, MapPin, Search } from 'lucide-react';
 import { convertToBks, formatRupiah, storeKey, storeLabel } from './utils/helpers';
 import { confirmAction } from './components/ConfirmGate.jsx';
-import { handoffEligibility, canHandOffAcrossRegions, normalizeRegion } from './config/permissions';
+import { handoffEligibility, canHandOffAcrossRegions, normalizeRegion, canApproveHandoffFrom } from './config/permissions';
 import { notify } from './components/Toast.jsx';
 
 export default function ConsignmentFinanceView({ transactions = [], customers = [], focusStore = null, onFocusStoreHandled, inventory = [], onAddGoods, onPayment, onReturn, onDeleteConsignment, isAdmin, user, agentProfileId, motorists = [], transferRequests = [], onRequestTransfer, onAgentAcceptTransfer, onAdminApproveTransfer, appSettings, triggerCapy }) {
@@ -363,7 +363,16 @@ export default function ConsignmentFinanceView({ transactions = [], customers = 
         // saw no trace of a hand-off he had just agreed to. It reads as the button deleting itself.
         const incoming = safeReqs.filter(r => r.toAgentId === agentProfileId && (r.status === 'PENDING_AGENT' || r.status === 'PENDING_ADMIN'));
         const outgoing = safeReqs.filter(r => (agentProfileId && r.fromAgentId === agentProfileId) || (isAdmin && (r.fromAgentId === 'ADMIN' || !r.fromAgentId)));
-        const adminPend = safeReqs.filter(r => r.status === 'PENDING_ADMIN');
+        /* 🤝 THE APPROVAL QUEUE IS NO LONGER "every pending request, for anybody looking".
+           Option B put a second set of hands on this button - the branch's own approver - so the
+           list has to answer WHO is looking. Same predicate as the write in App.jsx, and the same
+           two exclusions: you cannot authorise a hand-off you asked for or one you are receiving. */
+        const adminPend = safeReqs.filter(r => {
+            if (r.status !== 'PENDING_ADMIN') return false;
+            if (agentProfileId && (r.toAgentId === agentProfileId || r.fromAgentId === agentProfileId)) return false;
+            const receiver = (motorists || []).find(m => m.id === r.toAgentId);
+            return canApproveHandoffFrom(senderRole, myProfile?.location, receiver?.location);
+        });
         return { incomingRequests: incoming, outgoingRequests: outgoing, pendingAdminRequests: adminPend };
     }, [transferRequests, agentProfileId, isAdmin]);
 

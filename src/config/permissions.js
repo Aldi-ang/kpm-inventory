@@ -378,3 +378,77 @@ export const handoffEligibility = ({ toAgent, senderRole, senderRegion = null, s
 
     return { ok: false, code: 'OTHER_BRANCH', reason: `${name} works in ${toRegion} and you cover ${fromRegion}. Only Tier 1-3 can hand a store to another branch.` };
 };
+
+
+/* ═══ WHO APPROVES A HAND-OFF, AND FOR WHICH BRANCHES ══════════════════════════════
+
+   Aldi, 2026-09-05: *"there should be option in the matrix for what tier that can receive and
+   approve the consignment and also which is the region selected to receive from ... but on default
+   their own regional admin is the only one who can do that, if we put this power towards the upper
+   tier for all region then there will be massive loads of approval notification bells coming to the
+   upper tier"*.
+
+   And on the shape, refusing the cheap version outright: *"no i want all the region the be
+   registered on the matrix, because if there is only 2 option all or own regional approval means
+   that there are only 2 option to choose floods or drip of water"*.
+
+   So the carrier is ONE ENTRY PER REGION inside the tier's existing permission array —
+   `handoff_region:JAKARTA`, `handoff_region:BANDUNG`. That is not the two-value flag he refused; it
+   is the arbitrary subset he asked for, and he can pick one branch, four, or all of them. It also
+   costs no new plumbing: injectDynamicPermissions already merges this array, the Settings screen
+   already writes it, and every reader already assumes it is a flat list of strings.
+
+   ✅ OPTION B, his answer 2026-09-06: *"both still get the bells of course"*. A configured tier is
+   ADDED beside the owner, never replacing him. He keeps every approval he has today. */
+export const HANDOFF_REGION_PREFIX = 'handoff_region:';
+
+export const handoffApprovalRegions = (userRole) => {
+    const list = ROLE_PERMISSIONS[translateLegacyRole(userRole)];
+    if (!Array.isArray(list)) return [];
+    return list.filter(perm => typeof perm === 'string' && perm.startsWith(HANDOFF_REGION_PREFIX))
+               .map(perm => normalizeRegion(perm.slice(HANDOFF_REGION_PREFIX.length)));
+};
+
+const matrixKnowsApprovalRegions = () => Object.values(ROLE_PERMISSIONS)
+    .some(list => Array.isArray(list) && list.some(perm => typeof perm === 'string' && perm.startsWith(HANDOFF_REGION_PREFIX)));
+
+/* MAY THIS PERSON AUTHORISE A HAND-OFF INTO `storeRegion`?
+
+   `approverRegion` is only consulted for the DEFAULT. Once he has configured regions, the branch
+   comes from the CONFIG and not from where the approver personally sits — that is the whole point
+   of "power to choose 1,2,3,4 or whatever regional number that i want to ... approval from".
+
+   Same ABSENCE-MEANS-TIER-DEFAULT shape as the five keys above, and the default is his sentence:
+   the store's own regional admin, which is T4 REGIONAL ADMIN standing in that branch. The moment
+   ANY tier carries a region entry he has configured this deliberately, and from then on his matrix
+   wins in both directions — including taking the default away from T4. */
+export const canApproveHandoffFrom = (userRole, approverRegion, storeRegion) => {
+    const role = translateLegacyRole(userRole);
+    if (role === CORPORATE_TIERS.TIER_1) return true;
+
+    const region = normalizeRegion(storeRegion);
+    /* A hand-off into no branch at all cannot be routed to a branch approver. It cannot happen
+       through handoffEligibility, which refuses a receiver with no branch — but a request written
+       before that guard shipped can still be sitting in the queue, and it must land on the owner
+       rather than on everybody. */
+    if (region === 'UNASSIGNED') return false;
+
+    if (matrixKnowsApprovalRegions()) return handoffApprovalRegions(role).includes(region);
+    return role === CORPORATE_TIERS.TIER_4 && normalizeRegion(approverRegion) === region;
+};
+
+/* THE BELL LIST. Returns the agent ids that must be told a hand-off is waiting, BESIDE the owner.
+
+   ⚠️ THREE PEOPLE ARE LEFT OUT ON PURPOSE:
+     • anyone on TIER_1 — the `agentId: 'ADMIN'` notification already reaches them, and Aldi matches
+       every region rule there is. This is what stops him getting the same bell twice.
+     • the RECEIVER — they have just accepted; approving their own incoming hand-off would collapse
+       the three-key protocol into one key.
+     • the SENDER — they asked for it. Same reason. */
+export const handoffApprovers = (roster, storeRegion, excludeIds = []) =>
+    (roster || [])
+        .filter(m => m && m.id
+            && !excludeIds.includes(m.id)
+            && translateLegacyRole(m.userRole) !== CORPORATE_TIERS.TIER_1
+            && canApproveHandoffFrom(m.userRole, m.location, storeRegion))
+        .map(m => m.id);

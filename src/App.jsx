@@ -18,7 +18,7 @@ import useTransactionEngine from './hooks/useTransactionEngine';
 import useDatabaseSync from './hooks/useDatabaseSync'; 
 import useOfflineEngine, { canReachInternet } from './hooks/useOfflineEngine';
 import MusicPlayer from './MusicPlayer';
-import { injectDynamicPermissions, isFieldLevelTier, hasClearance, handoffEligibility } from './config/permissions';
+import { injectDynamicPermissions, isFieldLevelTier, hasClearance, handoffEligibility, canApproveHandoffFrom, handoffApprovers } from './config/permissions';
 import { POV_OWNER_EMAIL, previewIdentity, testAccountDoc, testAccountName, canUsePovSwitch } from './config/povPreview';
 import { warehouseList } from './utils/supply';
 import { tallySaleOp, statsPath } from './utils/salesRollupWrite';
@@ -1745,6 +1745,27 @@ const handleGitHubMirror = async () => {
                   linkToTab: 'receivables',
                   linkToStore: request.storeName
               });
+
+              /* 3c. 🔔 AND THE BRANCH'S OWN APPROVERS. Aldi, 2026-09-06: "both still get the
+                 bells of course" - Option B, so this is IN ADDITION to the owner's bell above, never
+                 instead of it. The branch that matters is the RECEIVING agent's: handoffEligibility
+                 guarantees a receiver has a real branch, while the sender may be an admin with none,
+                 and the question being approved is whether that branch may take this store. */
+              const receivingRegion = (motorists || []).find(m => m.id === request.toAgentId)?.location;
+              const alsoTell = handoffApprovers(motorists, receivingRegion, [request.toAgentId, request.fromAgentId]);
+              for (const approverId of alsoTell) {
+                  await addDoc(collection(db, `artifacts/${appId}/users/${userId}/notifications`), {
+                      title: "🛡️ Transfer Needs Approval",
+                      message: `${request.toAgentName} accepted the hand-off for ${request.storeName}. Awaiting your authorization.`,
+                      type: "TRANSFER_APPROVAL",
+                      read: false,
+                      isRead: false,
+                      timestamp: serverTimestamp(),
+                      agentId: approverId,
+                      linkToTab: 'receivables',
+                      linkToStore: request.storeName
+                  });
+              }
           } else {
               // REJECTED - NOTIFY ORIGINAL REQUESTER (Admin or Tier 4)
               if (request.fromAgentId && request.fromAgentId !== agentProfileId) {
@@ -1766,7 +1787,35 @@ const handleGitHubMirror = async () => {
   };
 
   const handleAdminApproveTransfer = async (request, isApproved) => {
+      /* 🤝 WHO MAY AUTHORISE THIS. Hiding the button is not a boundary - the same
+         "UI Says Yes, Server Says No" rule that put a guard in handleRequestTransfer. The branch is
+         the RECEIVING agent's, matching the bell that summoned this person here. */
+      const receivingRegion = (motorists || []).find(m => m.id === request.toAgentId)?.location;
+      if (request.toAgentId === agentProfileId || request.fromAgentId === agentProfileId) {
+          return notify("You asked for this hand-off or you are receiving it. Somebody else has to authorise it.");
+      }
+      if (!canApproveHandoffFrom(userRole, (motorists || []).find(m => m.id === agentProfileId)?.location, receivingRegion)) {
+          return notify(`You cannot authorise hand-offs into ${String(receivingRegion || 'that branch').toUpperCase()}. Ask the owner or that branch's admin.`);
+      }
+
       if (!await confirmAction(`${isApproved ? 'Approve' : 'Reject'} the transfer of ${request.storeName} to ${request.toAgentName}?`)) return;
+
+      /* ⚠️ TWO PEOPLE CAN REACH THIS NOW. Option B means the owner AND the branch approver both
+         hold the button, so the request has to be re-read at the moment of the write - the local
+         copy was rendered before the other person pressed theirs. Without this the second press
+         re-runs the whole approval: a second handoffs entry on the customer, a second round of
+         notifications, and an APPROVED request flipped to REJECTED after the fact. */
+      try {
+          const freshSnap = await getDoc(doc(db, `artifacts/${appId}/users/${userId}/account_transfers`, request.id));
+          if (!freshSnap.exists()) return notify("That hand-off request no longer exists.");
+          if (freshSnap.data().status !== 'PENDING_ADMIN') {
+              return notify(`Already handled - ${request.storeName} is ${String(freshSnap.data().status).replace('_', ' ').toLowerCase()}. Somebody else got there first.`);
+          }
+      } catch (e) {
+          console.error(e);
+          return notify("Could not confirm the request is still waiting: " + e.message);
+      }
+
       try {
           const operations = [];
 
