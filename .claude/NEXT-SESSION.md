@@ -49,6 +49,17 @@ assert the anchors were FOUND before slicing, re-run the arithmetic on real numb
 before green. Copy the modified source files aside and `git checkout --` them rather than stashing -
 a stash can take the check file with it, and then the trial cannot fail and proves nothing.
 
+BEFORE ANYTHING ELSE, CHECK THIS IS DONE. The deployed login was blocked by the browser, not by a
+setting: the app sat on kpm-ang.vercel.app while the Google handshake happened on
+cello-inventory-manager.firebaseapp.com, and Brave/Safari block one site reading the other s cookie.
+Fixed in code (vercel.json + firebase.js), but it needs TWO steps in this order, and Aldi may not
+have done them yet:
+  1. Google Cloud Console -> APIs & Services -> Credentials -> the Web client -> Authorized redirect
+     URIs -> add https://kpm-ang.vercel.app/__/auth/handler
+  2. THEN push the branch so Vercel rebuilds.
+Pushing first breaks sign-in on that link for everyone. Ask him which step he is on before
+diagnosing any login report. Full write-up: A-Brain/Wiki/Concepts/The Cross-Site Login Block.md
+
 NOT PART OF THIS JOB, but know it: the demo link is LIVE. Aldi turned off Vercel Deployment
 Protection and added the domain in the Firebase console himself on 2026-09-06, and `curl` confirms
 `kpm-ang.vercel.app` answers 200 with no redirect. Real accounts work through Fleet & Canvas using a
