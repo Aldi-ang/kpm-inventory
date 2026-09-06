@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-09-06 08:40 WIB (🟠 KPM session — hand-off feature COMPLETE, both halves; next job is the consignment-counted-as-sales money bug)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **722/722 audit · 1102/1102 selfcheck** · branch `phase0-solid-ground`
+**Updated: 2026-09-06 15:05 WIB (🟠 KPM session — approval rebuilt PER-PERSON after he found the tier flaw; demo link is LIVE)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **722/722 audit · 1106/1106 selfcheck** · branch `phase0-solid-ground`
 
 ## 🔵 2026-09-06 07:21 — 7DTD mod track only. NO KPM CODE TOUCHED THIS SESSION.
 
@@ -19,6 +19,50 @@ lever is magazine size. Recommendation to cap at 4 is with him; nothing changed 
 
 
 
+
+
+## 🟠 2026-09-06 15:05 — he found a real flaw in the approval matrix. Rebuilt per-person.
+
+**HIS REPORT, and he was right:** *"there is so flaw in the matrix system if u build it that way, i
+want the approval power to be given on specific person inside the fleet and canvas manager, because
+if u put it on each tier like this then, all the regional admin if tick, will see every single
+approval for every regional location as well, where i only want this 1 account to have the power for
+approval in bandung only"*.
+
+`canApproveHandoffFrom` read the branch list off `ROLE_PERMISSIONS[tier]`, so ticking BANDUNG against
+T4 handed Bandung to **every T4 in the company**. The control built to stop the approval flood caused
+it. The permission matrix answers *what may this RANK do*; *which branches does THIS PERSON answer
+for* was never a rank question.
+
+**REBUILT.** `approvalRegions` now lives on the employee record, edited in **Fleet & Canvas →
+add/edit personnel → "Hand-off approval branches"**, beside allowed payments and price tiers. The
+per-branch rows added to the permission matrix an hour earlier are removed, and `HANDOFF_REGION_PREFIX`
+is gone from `permissions.js` so a stale entry in his saved Firebase matrix grants nothing.
+
+**A GRANT DISPLACES THE DEFAULT FOR THAT BRANCH ONLY** — his "only" on both ends. Naming anybody for
+BANDUNG takes Bandung off Bandung's regional admin; Jakarta is untouched. That is also the whole
+revocation story, which is why there is no separate "remove approval" switch.
+
+**`null`, never `[]`.** An empty array means "named for no branches"; if the form wrote `[]` on every
+save, editing somebody's phone number would silently strip a regional admin's default.
+
+Checks 1102 → 1106. The tier assertions were REPLACED, not deleted, and one of the new ones asserts
+the matrix must never carry per-branch rows again. Trialled RED twice: 7 FAILs reverting the four
+wiring files, 4 FAILs regressing the displacement rule. Build green, audit 722/722.
+
+**✅ THE DEMO LINK IS LIVE.** He did both settings. `curl` on `kpm-ang.vercel.app` now answers **200
+with no redirect** [certain, measured]. Friends can reach it, and he can give them real accounts via
+Fleet & Canvas using their Google address.
+
+**A fault I made and caught, second time today:** an em dash written as an escape landed in JSX TEXT
+rather than in a JS string. JSX text is not a string literal, so it would have rendered the escape
+verbatim on screen. Found by the grep the morning's lesson prescribes.
+
+### WAITING ON ALDI
+
+**✅ TEST** — Fleet & Canvas → edit a person → the new "Hand-off approval branches" chips. Tick
+BANDUNG for one account and check that account, and not Bandung's regional admin, gets the approval
+bell. NOT verified visually; it is behind Firebase auth.
 
 ## 🟠 2026-09-06 08:40 — the hand-off approval matrix is built. Feature complete, both halves.
 

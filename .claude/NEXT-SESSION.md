@@ -49,11 +49,16 @@ assert the anchors were FOUND before slicing, re-run the arithmetic on real numb
 before green. Copy the modified source files aside and `git checkout --` them rather than stashing -
 a stash can take the check file with it, and then the trial cannot fail and proves nothing.
 
-ALSO OPEN, and not part of this job: two settings only Aldi can flip before anybody else can open
-the demo link - Vercel Deployment Protection OFF, and `kpm-ang.vercel.app` added to Firebase
-Authorized domains. And the hand-off feature that just shipped is NOT verified visually; if he
-reports anything odd about the picker, the permission matrix rows or the approval queue, read
-`A-Brain/Wiki/Concepts/Handoff Eligibility.md` before touching the code.
+NOT PART OF THIS JOB, but know it: the demo link is LIVE. Aldi turned off Vercel Deployment
+Protection and added the domain in the Firebase console himself on 2026-09-06, and `curl` confirms
+`kpm-ang.vercel.app` answers 200 with no redirect. Real accounts work through Fleet & Canvas using a
+person's Google address - there is no self-signup and none is needed.
+
+The hand-off feature shipped across four commits that day and is NOT verified visually. If he reports
+anything odd about the picker, the Fleet approval chips or the approval queue, read
+`A-Brain/Wiki/Concepts/Handoff Eligibility.md` FIRST - it records that approval was briefly built on
+the permission matrix per TIER, which he rejected, and why the per-person version replaced it. Do not
+re-propose the tier version on the strength of his older words about "the matrix".
 
 Then rewrite `.claude/NEXT-SESSION.md` with the next single job.
 
