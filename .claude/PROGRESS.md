@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-09-06 08:15 WIB (🟠 KPM session — picker now HIDES non-regional; Option B chosen; demo link blocked by TWO settings only Aldi can change)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **722/722 audit · 1073/1073 selfcheck** · branch `phase0-solid-ground`
+**Updated: 2026-09-06 08:40 WIB (🟠 KPM session — hand-off feature COMPLETE, both halves; next job is the consignment-counted-as-sales money bug)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **722/722 audit · 1102/1102 selfcheck** · branch `phase0-solid-ground`
 
 ## 🔵 2026-09-06 07:21 — 7DTD mod track only. NO KPM CODE TOUCHED THIS SESSION.
 
@@ -18,6 +18,45 @@ only"* — answered: the stack is the round count, a 16-round magazine draws 16 
 lever is magazine size. Recommendation to cap at 4 is with him; nothing changed without his word.
 
 
+
+
+## 🟠 2026-09-06 08:40 — the hand-off approval matrix is built. Feature complete, both halves.
+
+He tested and approved the hidden-list picker, then said continue. Option B shipped.
+
+**WHAT LANDED.** Every branch is now a row in the permission matrix, and a tier gets an arbitrary
+subset of them — his "power to choose 1,2,3,4 or whatever regional number". Carrier is one array
+entry per region inside the tier's existing permission list (`handoff_region:JAKARTA`), so the grid,
+the phone panel, the toggle handler and the save path all work unchanged. The branch list is derived
+from where agents actually stand, **unioned with what is already saved**, so a granted branch cannot
+vanish from the screen when its last agent moves away and strand a live permission in Firebase.
+
+**OPTION B, his words: *"both still get the bells of course"*.** The configured tier is ADDED beside
+him. Two costs, both paid: the request is re-read from Firestore at the moment of the write (two
+people hold the button now, and a second press would otherwise re-run the whole approval), and
+`handoffApprovers` excludes every Tier 1 so he is never told twice. The receiver and the sender are
+excluded too — self-approval would collapse the three-key protocol into one key.
+
+**⚠️ LIVE BEHAVIOUR CHANGE ON FIRST DEPLOY, and he has been told:** with nothing configured, T4
+REGIONAL ADMINs start receiving approval bells and can authorise. That is his stated default, not a
+side effect.
+
+Checks 1073 → 1102, all green. Trialled RED twice: 12 FAILs with the three wiring files reverted, 5
+FAILs with the predicate regressed to the two real faults. Build green, audit 722/722.
+
+**A fault I made and caught:** two emoji written as `\U0001f6e1` reached App.jsx as literal text.
+JavaScript has no capital-U escape, so one notification title would have read "U0001f6e1 Transfer
+Needs Approval". Found by grep before the build; the diff was audited line by line to prove the
+repair touched nothing pre-existing.
+
+Durable write-up: `A-Brain/Wiki/Concepts/Handoff Eligibility.md`. The brainstorm note is now history.
+
+### WAITING ON ALDI
+
+- **✅ TEST** the matrix rows (Settings → permission matrix → the "Approve hand-offs into X" rows)
+  and the approval queue. NOT verified visually — both are behind Firebase auth.
+- **Two settings still unflipped as far as I know**, and they block every friend from the demo link:
+  Vercel Deployment Protection OFF, and `kpm-ang.vercel.app` added to Firebase Authorized domains.
 
 ## 🟠 2026-09-06 08:15 — picker hides instead of greying; and the demo link was never reaching his friends.
 
