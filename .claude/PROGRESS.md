@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-09-07 12:25 WIB (🟠 KPM — Round 7 test pass IN PROGRESS with Aldi; Section A passed, FOUR fixes shipped. Sections B–E still owed. · 🔵 7DTD — fan-out gate built, no app code touched.)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **LOG TRIMMED · 722/722 audit · 1157/1157 selfcheck · build clean** · branch `phase0-solid-ground`
+**Updated: 2026-09-07 17:33 WIB (🟠 KPM — Round 7 IN PROGRESS; Section A passed, FIVE fixes shipped, all committed. Sections B–E still owed. · 🔵 7DTD — fan-out gate built, no app code touched.)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **LOG TRIMMED · 1170/1170 selfcheck · 722/722 audit · build clean** · branch `phase0-solid-ground`
 
 ## 🟠 2026-09-07 12:25 — Round 7 Section A: passed, minus two bugs. Both fixed.
 
@@ -52,6 +52,26 @@ for everybody in `4bd0f52` is **back for everybody except a self-proxy**. Name s
 The two earlier check sections were replaced by one covering all three instructions together: 26
 checks, trialled red (5 failed reverted).
 
+**🔴 2026-09-07 17:33 — THE FIFTH CHANGE IS WRITTEN BUT NOT COMMITTED AND NOT BUILT.** He gave a
+Tier 4 and a Tier 5 the same authority over Headquarters consignment and both saw a list naming
+nobody: *"make sure that the consignment have the name of who responsible for this transaction ...
+i want the default setting for this UI to be like this even when the user own their own transaction
+but make sure that every consignment have information of who responsible for this, and if
+transferred then there should be agent A -> agent B, basically the same info that we wrote on the
+receipt"*. The line already existed — it was wrapped in `isAdmin &&`, so responsibility was treated
+as an admin detail when it is the holder of the debt who most needs it. Now unconditional at both
+render sites in `src/ConsignmentFinanceView.jsx`, with a new `handoffChainByStore` memo drawing
+"A → B → C" beneath it (the nota prints the last hop only; the screen prints the whole chain,
+because the middle name is the one that explains debts the current holder did not create).
+
+**Committed `0cb7efa`. 1170 selfcheck · 722 audit · build clean · trialled red.** The classifier
+outage that blocked the checks mid-turn cleared, and everything ran.
+
+**✅ AND THIS IS THE ONE FIX OF THE DAY HE ACTUALLY SAW.** His screenshot shows "MANAGED BY: [TEST]
+SALES CANVAS" over "[TEST] OWNER → [TEST] SALES CANVAS" on both stores — *"i verify that the info is
+there already"*. It also proves the JSX compiles in his own dev server. The other four fixes are
+still unrendered.
+
 **✅ CLOSED, not a real leftover — and the earlier claim in this entry was wrong.** I told him one
 such save "would have been allowed" and left a stale `employee_directory/<his email>`. It would
 not: the OLD duplicate-email guard tested the **motorist roster**, and his own owner record already
@@ -87,6 +107,10 @@ its newest few. Full history at `a96117c`.
 
 **STILL OPEN:** Round 7 Sections **B, C, D, E**. He has the Section B questions and has not answered
 them yet. He also said he will reuse the existing test personnel rather than create new ones.
+
+**ANSWERED 17:45 — he ran it, and confirmed the screen: run `npm run build; node
+src/config/integration.audit.mjs` and say whether it is clean, so the fifth change can be committed.
+He was told plainly that it is unproven until then.
 
 ## 🔵 2026-09-07 12:05 — 7DTD mod track only. NO KPM CODE TOUCHED THIS SESSION.
 

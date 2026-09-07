@@ -38,7 +38,13 @@ each. Do not start the coding job below until he says it is done, or tells you t
   overwritten his `role: 'COMPANY_OWNER'` record and demoted him at the next sign-in
   (`App.jsx:2452-2468` merges the email doc over the uid doc, then routes on `activeData.role`).
 
-  ⚠️ NEITHER FIX HAS BEEN SEEN ON SCREEN. Both are proven by checks and by nothing else. The
+    - `0cb7efa` every consignment names its responsible agent at EVERY tier — the `isAdmin &&`
+      wrapper is gone from both the list card and the detail panel — with the hand-off chain
+      "A → B → C" beneath it from the new `handoffChainByStore` memo. **The only fix of the day
+      Aldi CONFIRMED ON SCREEN**, by screenshot: *"i verify that the info is there already"*, showing
+      "MANAGED BY: [TEST] SALES CANVAS" over "[TEST] OWNER → [TEST] SALES CANVAS" on both stores.
+
+  ⚠️ THE OTHER FOUR FIXES HAVE NOT BEEN SEEN ON SCREEN. Both are proven by checks and by nothing else. The
   preview pane refuses the dev server's self-signed certificate, so ask Aldi to look, or fix the
   viewing path first (`A-Brain/Wiki/Concepts/Looking at the App.md`).
 
