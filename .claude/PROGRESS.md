@@ -1,6 +1,38 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-09-07 20:07 WIB (🟠 KPM — Round 7 IN PROGRESS; Section A passed, THIRTEEN changes shipped, all committed — one of them a SECURITY fix. He is re-running Section C as Tier 4 after `5973fc2`. B, D, E still owed. · 🔵 7DTD — fan-out gate built, no app code touched.)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **LOG TRIMMED · 1261/1261 selfcheck · 722/722 audit · build clean** · branch `phase0-solid-ground`
+**Updated: 2026-09-07 21:10 WIB (🟠 KPM SESSION CLOSED — Round 7 half done: A passed, C is 2 of 4, B and D never run. THIRTEEN changes shipped, all committed locally, NONE pushed — one is a SECURITY fix. · 🔵 7DTD — fan-out gate built, no app code touched.)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **LOG TRIMMED · 1261/1261 selfcheck · 722/722 audit · build clean** · branch `phase0-solid-ground`
+
+## 🟠 2026-09-07 21:10 — session closed. Thirteen changes, four seen on screen.
+
+**Tomorrow starts with Aldi testing, not with code** — `.claude/NEXT-SESSION.md` holds the one job:
+finish Round 7 sections B, C (the two "who must NOT" items) and D, then the consignment/AR split.
+
+**The three that matter most, in order:**
+
+| | |
+|---|---|
+| `994d3d6` | 🔴 **SECURITY.** The vault's 5-minute grace was keyed on the hijacked boss uid, so any agent signing in on a browser Aldi had unlocked became a **global admin**. He found it reported as a hand-off leak. ✅ seen fixed |
+| `5973fc2` | branch approvers got the bell and a panel saying "No pending action required" — three render sites asked `isAdmin`, which is really `vaultUnlocked`. ✅ seen fixed |
+| `4641b5f` | the hand-off card asked for a signature on debt the receiver could not see; the sender now freezes a `stockSnapshot` onto the request |
+
+**Four were confirmed on screen by Aldi:** `0cb7efa`, `5973fc2`, `2f77cb2`, `994d3d6`. The other
+nine are proven by checks and by nothing else — the preview pane still cannot reach the dev server
+(self-signed certificate), which is queued as housekeeping.
+
+**One decision of his, recorded so nobody "fixes" it back:** `ad4f18b` lets a branch approver
+authorise a store handed to them. He was told it was the second key of a three-key protocol and
+decided anyway — *"yeah they should be able to confirm their own request"*. `MANUAL_TEST_CHECKLIST.md`
+Section C item 4 was rewritten to match.
+
+**One thing to watch:** `dda8ec6` makes a map pin compulsory on an outlet, and `handleSubmit` serves
+edits too — a legacy shop with no pin cannot be edited until it gets one. He believes there are none.
+If that blocks him, narrow the guard to the create branch; do not delete it.
+
+**WAITING ON ALDI (🟠 KPM track, verbatim):** nothing outstanding as a question — he answered every
+one today. What he owes is TESTING: Round 7 sections B and D in full, the two "who must NOT" items
+in C, and one confirmation that his own Tier 1 session still skips the PIN within five minutes of
+unlocking (the vault fix was written not to touch that, and a check pins it, but nobody has watched
+it).
 
 **✅ SECTION C, FIRST HALF CONFIRMED ON SCREEN.** He re-ran it as the Tier 4 regional admin after
 `5973fc2`: *"yes the button is there"* — screenshot shows ADMIN AUTH REQUIRED with Reject /

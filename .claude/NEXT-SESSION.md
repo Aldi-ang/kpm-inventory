@@ -4,124 +4,44 @@ Copy the block below. It is the only thing on this page you should paste.
 
 ---
 
-FIRST, BEFORE ANY CODE: Aldi is PART WAY THROUGH Round 7 of `MANUAL_TEST_CHECKLIST.md`. He is
-**re-running Section C as the Tier 4 regional admin** after `5973fc2`; the Authorize button should
-now be there and the tab strip should sit still. Wait for that result, then take him through the
-rest of C, then D and E, one section at a time. Section A is done. Do not start the coding job below
-until he says the round is finished, or tells you to skip it.
+FINISH ROUND 7 OF `MANUAL_TEST_CHECKLIST.md` WITH ALDI, BEFORE ANY CODE. Walk him through the
+sections below one at a time, waiting for his answer on each. Do not start the coding job further
+down until he says the round is done or tells you to skip it.
 
-  SECTION A IS DONE, 2026-09-07 — the hand-off picker passed on every point. His words: *"i check
-  already and my tier 5 test account are limited to seeing team member only ... great job, no
-  tickbox nothing, tickbox only showing on upper tier"*. Do not re-ask A.
+  **Section A — DONE 2026-09-07.** The picker passed on every point. Do not re-ask it.
 
-  TWO BUGS CAME OUT OF SECTION A AND ARE ALREADY FIXED. Do not re-find them:
-    - `2e5a8ac` the consignment list labelled stores with the Google account name, and named the
-      seller of the newest row rather than the current holder. Now: `ownerAgentId` first, roster
-      name second (`ConsignmentFinanceView.jsx`, `rosterNameById` + `handedOwnerByStore`).
-    - `4bd0f52` a phone number is no longer required to save a person, and the refusal names the
-      empty field. Email and Name stay required — the email IS the document id of
-      `employee_directory/<email>`, and a blank name undoes `2e5a8ac`.
-    - `9388ba2` supersedes `7d9b5ba`'s trigger: a **BLANK** address saved by a global admin now
-      resolves to that admin's own, because his existing test personnel have no address at all and
-      the matching-only rule never reached them. Phone is **required again for everybody except a
-      self-proxy** — his correction: *"make sure that email and phone number is still required for
-      tier below 1"*. Name is unconditional.
-    - `7d9b5ba` personnel saved under the signed-in admin's OWN email are that admin in another form:
-      roster record, no `employee_directory` entry, and the duplicate-email refusal stands down for
-      that case only. This also closed a live foot-gun — the directory maps one email to one agentId,
-      so a test person on his address repointed his own login at it and would demote him out of
-      Tier 1 on next sign-in.
+  **Section B — NEVER RUN.** Fleet & Canvas -> edit a person:
+    1. a "Hand-off approval branches" chip row appears under Allowed Price Tiers;
+    2. nothing ticked -> the line reads "this person follows the default";
+    3. tick BANDUNG on one account -> the line names that branch; Save;
+    4. reopen -> BANDUNG is still ticked (if not, the save is dropping the field);
+    5. edit somebody ELSE'S phone number, save, reopen -> their chips are unchanged.
+       ⚠️ Item 5 is the `null`-not-`[]` trap. If editing a phone number strips a regional admin's
+       approval power, this is the only place it shows.
 
-  ✅ NO LEFTOVER TO CLEAN — checked and dismissed 2026-09-07. A stale
-  `employee_directory/<his email>` was suspected, but the OLD duplicate-email guard tested the
-  motorist roster, and his own owner record already holds that address, so every attempt to save a
-  test person on it was refused before any write. Confirmed by the fact that he is signing in as
-  Tier 1 right now: the create branch used a bare `set` with no merge, so one such save would have
-  overwritten his `role: 'COMPANY_OWNER'` record and demoted him at the next sign-in
-  (`App.jsx:2452-2468` merges the email doc over the uid doc, then routes on `activeData.role`).
+  **Section C — 2 of 4 DONE.** Confirmed on screen: Aldi (Tier 1) gets the approval bell, and a
+  named branch approver gets it with a working Authorize button. STILL OWED, and this is the half
+  that catches the feature doing the opposite of what he asked:
+    - **displacement.** Tick ONE person for BANDUNG, send a hand-off into a BANDUNG store, accept
+      it. **Bandung's own regional admin must go silent.** His runs so far used the HEADQUARTERS
+      regional admin, who is either the named approver or the default holder — both are supposed to
+      see it, so those runs cannot tell a working displacement rule from a broken one.
+    - **the plain agent.** A Tier 5/6 who accepts a store must still get NO Authorize button.
+      ⚠️ A regional admin who accepts one SHOULD now get it — `ad4f18b`, his decision. Section C
+      item 4 in the checklist was rewritten to say so. Do not report that as a bug.
 
-    - `0cb7efa` every consignment names its responsible agent at EVERY tier — the `isAdmin &&`
-      wrapper is gone from both the list card and the detail panel — with the hand-off chain
-      "A → B → C" beneath it from the new `handoffChainByStore` memo. **The only fix of the day
-      Aldi CONFIRMED ON SCREEN**, by screenshot: *"i verify that the info is there already"*, showing
-      "MANAGED BY: [TEST] SALES CANVAS" over "[TEST] OWNER → [TEST] SALES CANVAS" on both stores.
+  **Section D — NEVER RUN.** Approve a hand-off from one account, then press Authorize from another
+  account on the same request. It must say "Already handled … Somebody else got there first."
+  ⚠️ If it goes through twice the store gets a second hand-off record and a second round of
+  notifications, and the A -> B -> C chain on the store card grows a hop that never happened. Stop
+  and report it.
 
-    - `4641b5f` the Incoming Hand-offs card now shows the debt, the total packs and one line per
-      product, from a `stockSnapshot` frozen onto the request document by the sender. The receiver
-      could not look it up — until approval the store is not theirs and `myTransactions` filters
-      every row out. Pre-change requests say so instead of rendering zeroes; the empty note no
-      longer draws a bare `""`.
+  **Section E — SKIP** unless something was pushed. Nothing has been; everything is local.
 
-    - `5a59eaf` a **"See it on the journey map"** button on the hand-off card opens the Journey tab
-      flown to that shop (`StoreFocus` inside `JourneyView`'s MapContainer, its own `journeyFocus`
-      state in `App.jsx` kept separate from the Receivables `focusStore`). A shop with no pin, or
-      0,0, says so instead of drifting to the default view.
-
-    - `dda8ec6` a map pin is **compulsory** on an outlet now — his call, *"damn make it compulsory
-      then"*, after being told his belief that it already was did not match the code. Parses rather
-      than testing truthiness, so a genuine equatorial pin survives and `"abc"` does not; 0,0 is
-      refused as the Atlantic.
-      ⚠️ **It applies to EDITS too**, because `handleSubmit` serves both. Any legacy shop with no
-      pin must be given one before its other fields can be changed. He believes there are none. If
-      that turns out to be wrong and it blocks him, narrow the guard to the create branch — do not
-      delete it.
-
-    - `5973fc2` **a branch approver can finally see their own approval queue.** Signed in as a real
-      Tier 4 regional admin with approval power granted, he got the bell and an empty panel. Two
-      faults: three render sites asked `isAdmin` (which is really `vaultUnlocked`, and POV forces it
-      false) while `pendingAdminRequests` was already correct; and that memo's deps omitted
-      `motorists`/`myProfile`, so the queue was computed once against a roster that had not loaded.
-    - `a8fea37` the Hand-offs tab's alert dot was **shaking the tab strip**, not blinking. At
-      `-top-1 -right-1` inside an `overflow-x-auto` strip, `animate-ping`'s 2x transform extended the
-      scrollable overflow by 10px twice a second. Now inset 8px at 8px wide (4px of clearance), with
-      the ring pinging behind a solid dot.
-      ⚠️ `AgentProfileView.jsx:1333` has the SAME `-top-2 -right-2 animate-ping` shape. Untouched —
-      check whether its parent scrolls before deciding.
-
-    - `2f77cb2` the approver's card shows the same debt / stock / product-line summary the receiver
-      gets, from a shared `HandoffOffer` component. **`5973fc2` is CONFIRMED ON SCREEN** — his
-      screenshot shows Authorize Transfer on the Tier 4 regional admin account: *"yes the button is
-      there"*.
-
-  ✅ `2f77cb2` IS ALSO CONFIRMED ON SCREEN — *"i use headquarters regional admin btw, and its already
-  there"*, with the offer drawn in full (Rp 130.500, 15 Bks, "Cello Coffee & Caramel kretek (Grosir)")
-  on the ADMIN AUTH REQUIRED card. That screenshot was taken **while wearing the POV costume**, which
-  independently proves the `isAdmin`-is-really-`vaultUnlocked` half of `5973fc2`: POV forces that flag
-  false, so before the fix the panel could not have drawn at all.
-
-    - `ad4f18b` **RULE CHANGE, his call, not a bug fix.** A receiver may now authorise a store handed
-      to them. He was told it was the second key of a three-key protocol and answered *"yeah they
-      should be able to confirm their own request"*. Only the receiver exclusion was dropped —
-      `canApproveHandoffFrom` still runs, so an ordinary agent who accepts a store is refused as
-      before, and the SENDER is still refused outright. The bell fan-out moved with it
-      (`handoffApprovers` now excludes only the sender). **Do not "restore" this as if it were a
-      regression** — Round 7 Section C item 4 in `MANUAL_TEST_CHECKLIST.md` still says the receiver
-      gets no approval bell, and that line is now OUT OF DATE. Fix the checklist before re-testing.
-
-    - `994d3d6` 🔴 **SECURITY — the vault grace belonged to a browser, not a person.** He reported it
-      as a hand-off leak (a Tier 4 in MUNTILAN seeing HEADQUARTERS hand-offs); the tell in his
-      screenshot was the header reading **GLOBAL RECEIVABLES**, which only `isAdmin` draws. `user.uid`
-      is hijacked to `trueBossUid` at sign-in, so the grace record Aldi wrote when HE unlocked the
-      vault was found again by the next person to sign in on that browser and made them a global
-      admin. Now keyed on `realUid`, and a hijacked agent session never restores the vault at all.
-      **⚠️ ASK HIM TO RE-TEST IT**: sign in as ALEX on a browser where he unlocked the vault minutes
-      earlier and confirm the header says MY RECEIVABLES, not GLOBAL. That is the whole fix, and it
-      has not been seen.
-
-  ⚠️ NO OTHER FIX SINCE `0cb7efa` HAS BEEN SEEN ON SCREEN. The shake fix in particular is measured, not
-  rendered: the recording proves the scrollbar moved and the arithmetic proves the old badge
-  overflowed, but nobody has watched the fixed version. Both are proven by checks and by nothing else. The
-  preview pane refuses the dev server's self-signed certificate, so ask Aldi to look, or fix the
-  viewing path first (`A-Brain/Wiki/Concepts/Looking at the App.md`).
-
-  Sections C and D need TWO accounts signed in at once, and Section C needs a person with a branch
-  ticked in "Hand-off approval branches". Tell him that before you start asking.
-
-🔴 HE ALSO OWES ONE DECISION, ASK EARLY: may you trim `.claude/PROGRESS.md`? It is 205,634 bytes /
-3,051 lines, the SessionStart hook prints the whole thing (measured: a 200,816-byte dump), and it
-re-prints on startup, resume, `/clear` AND compact. At 33 sessions in one day that is roughly 1.6M
-tokens of pure startup. The file's own rule says trim LOG to ~5 entries. Trim per-track — keep the
-newest few 🟠 KPM entries and the newest few 🔵 7DTD entries separately, never re-sort across them.
+  ✅ ONE MORE HE OWES, and it is the most important thing shipped yesterday. `994d3d6` closed a
+  privilege escalation. He confirmed the header now reads MY RECEIVABLES for a Tier 4 — ask him to
+  also confirm his OWN Tier 1 session still skips the PIN within five minutes of unlocking. The fix
+  was written so his convenience is untouched, and a check pins it, but nobody has watched it.
 
 THEN THE CODING JOB: Product Performance reports unpaid consignment as finished revenue. Split it,
 and decide what the months already written are allowed to say.
@@ -132,46 +52,44 @@ the panel saying that there are account receivable pending in some stores but al
 well"*. His screenshot shows Rp 1.229.000 presented as revenue when most of it is unpaid `Titip`.
 
 IT IS NOT A PANEL FIX. THE PANEL NEVER SEES A TRANSACTION. `ProductPerformancePanel.jsx:44` reads a
-pre-aggregated monthly rollup document through `statsPath(...)`, deliberately - reading a year live
+pre-aggregated monthly rollup document through `statsPath(...)`, deliberately — reading a year live
 off `transactions` is thousands of document reads and Aldi pays for every one. The merge happens
 long before the panel:
 
-  - `src/utils/salesRollup.js:88-90` - `salesDelta` accumulates `{ qty, revenue }` per product and
+  - `src/utils/salesRollup.js:88-90` — `salesDelta` accumulates `{ qty, revenue }` per product and
     nothing else. There is no paymentType dimension anywhere in the rollup.
-  - `src/utils/salesRollupWrite.js:37-38` - writes exactly those two fields into `byProduct` and
+  - `src/utils/salesRollupWrite.js:37-38` — writes exactly those two fields into `byProduct` and
     `byDay`.
 
 So the split is created at WRITE time and carried through: `salesRollup.js` splits the delta,
 `salesRollupWrite.js` increments the new fields, `sumRange` carries them, and the panel plus
 `ponder/stages/ProductPerformanceTable.jsx` render two figures instead of one. THAT IS FIVE FILES,
-over the 3-file rule - name them to Aldi before starting, do not discover it halfway.
+over the 3-file rule — name them to Aldi before starting, do not discover it halfway.
 
 CHECK THIS BEFORE DESIGNING ANYTHING. Does a later `CONSIGNMENT_PAYMENT` also enter the rollup? Look
 at `SALE_TYPES` in `salesRollup.js:42-46`. If a Titip sale books revenue at placement AND its
 payment books revenue again, the panel is already double-counting, and that is a separate and larger
 money bug that must be settled first. Settle this question before writing a line.
 
-THE TRAP THAT MAKES A LAZY BUILD WRONG - HISTORICAL ROLLUPS HAVE NO SPLIT. Every month already
+THE TRAP THAT MAKES A LAZY BUILD WRONG — HISTORICAL ROLLUPS HAVE NO SPLIT. Every month already
 written carries only `{ qty, revenue }`. Add the new fields and past months silently report zero
 receivable and 100% finished sales: a confident wrong number, which is worse than today's honest
-merge. Decide explicitly and tell Aldi which you chose - backfill from `transactions`, or label
+merge. Decide explicitly and tell Aldi which you chose — backfill from `transactions`, or label
 pre-change months as "not separated" in the UI. Do not let old documents answer a question they were
 never asked.
 
 RETURNS ARE PART OF HIS SENTENCE. He said "customer can also return the good right". There is a
-related open bug in the queue below - `returnTotal` is written at `useTransactionEngine.js:492`,
+related open bug in the queue below — `returnTotal` is written at `useTransactionEngine.js:492`,
 `:569` and `:590` and read by no money calculation. Check whether the rollup fix needs it before
 treating them as separate jobs.
 
 Leave the fix in `src/config/logicFixes.selfcheck.mjs`: slice each assertion to its own anchors,
 assert the anchors were FOUND before slicing, re-run the arithmetic on real numbers, and trial it RED
-before green. Copy the modified source files aside and `git checkout --` them rather than stashing -
+before green. Copy the modified source files aside and `git checkout --` them rather than stashing —
 a stash can take the check file with it, and then the trial cannot fail and proves nothing.
 
 STANDING RULE, his words 2026-09-06: "well now we will start working on localhost again dont need to
-push the update everytime". Commit locally and stop. A push is something he asks for by name. The
-login fix is deployed and confirmed; nothing is owed there. Full write-up:
-`A-Brain/Wiki/Concepts/The Cross-Site Login Block.md`
+push the update everytime". Commit locally and stop. A push is something he asks for by name.
 
 Then rewrite `.claude/NEXT-SESSION.md` with the next single job.
 
@@ -180,7 +98,17 @@ Then rewrite `.claude/NEXT-SESSION.md` with the next single job.
 <details>
 <summary>Queue — do NOT paste these; promote one only when the job above is finished</summary>
 
-### Bug 2 — PROMOTED, it is the job above.
+### What shipped 2026-09-07 (13 commits, all local, none pushed)
+
+`2e5a8ac` store cards name the current holder from the roster · `4bd0f52` + `9388ba2` test personnel
+save with no email/phone, real staff still need both · `7d9b5ba` self-proxy personnel get no login
+mapping · `0cb7efa` responsibility line + hand-off chain at every tier ✅seen · `d439853` PROGRESS.md
+208KB->34KB · `4641b5f` the hand-off request carries a stock snapshot · `5a59eaf` journey-map button ·
+`dda8ec6` a map pin is compulsory on an outlet (**applies to EDITS too** — narrow to the create
+branch if that blocks him, do not delete the guard) · `5973fc2` branch approvers can see their queue
+✅seen · `a8fea37` the alert dot was shaking the tab strip · `2f77cb2` the approver sees the offer
+✅seen · `ad4f18b` a branch approver may authorise a store handed to them (**his decision**) ·
+`994d3d6` 🔴 vault-grace privilege escalation ✅seen.
 
 ### Bug 3 — the tutorial book: white line, and the close button does nothing
 
@@ -195,9 +123,15 @@ Then rewrite `.claude/NEXT-SESSION.md` with the next single job.
 - ⚠️ Two audit checks guard the Ponder scene splits — search `strandedBeats` in
   `integration.audit.mjs`. Do not weaken them.
 
+### Housekeeping — same `animate-ping` shape, unchecked
+
+`AgentProfileView.jsx:1333` uses `-top-2 -right-2 animate-ping`, the exact geometry that was
+shaking the Hand-offs tab strip. Untouched on purpose: check whether its parent scrolls before
+deciding. If it does, the fix is `a8fea37`'s — inset it far enough that the 2x ring clears the edge.
+
 ### Housekeeping — the preview pane cannot see the dev server
 
 `vite --host` serves HTTPS with a self-signed certificate and the in-app browser refuses both
 `https://localhost:5173` and `http://localhost:5173`. Every visual claim this session had to be
-handed back unverified because of it. Worth one session to fix properly.
+handed back to Aldi to check by eye. Worth one session to fix properly.
 </details>
