@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-09-07 17:33 WIB (🟠 KPM — Round 7 IN PROGRESS; Section A passed, SEVEN fixes shipped, all committed. Sections B–E still owed. · 🔵 7DTD — fan-out gate built, no app code touched.)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **LOG TRIMMED · 1205/1205 selfcheck · 722/722 audit · build clean** · branch `phase0-solid-ground`
+**Updated: 2026-09-07 17:33 WIB (🟠 KPM — Round 7 IN PROGRESS; Section A passed, EIGHT fixes shipped, all committed. Sections B–E still owed. · 🔵 7DTD — fan-out gate built, no app code touched.)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **LOG TRIMMED · 1221/1221 selfcheck · 722/722 audit · build clean** · branch `phase0-solid-ground`
 
 ## 🟠 2026-09-07 12:25 — Round 7 Section A: passed, minus two bugs. Both fixed.
 
@@ -90,7 +90,17 @@ MapContainer flies to the shop at street zoom and clears the target so it works 
 from the Receivables `focusStore` — sharing one would let a notification hijack the map. 19 checks,
 trialled red (2 failed).
 
-**🔴 TELL HIM — he believes GPS is compulsory and it is NOT.** Asked what should happen for a pinless
+**The eighth fix — `dda8ec6`, his call once told.** *"damn make it compulsory then because i think
+GPS can work even without internet right"*. He is right about the hardware: a GNSS fix needs no data
+connection; the address SEARCH (a Nominatim call) and the map TILES are what need it. So the guard
+checks the FIELD, not the method — GPS button, address search and a pasted pair all fill it, which
+keeps a desktop able to register an outlet. Parses rather than testing truthiness (`!latitude` would
+reject a real equatorial pin and accept `"abc"`); 0,0 refused as the Atlantic. 16 checks, trialled
+red (4 failed). ⚠️ **Applies to EDITS too** — `handleSubmit` serves both, so a legacy pinless shop
+must be pinned before its other fields can change. He believes there are none; if it blocks him,
+narrow to the create branch rather than deleting the guard.
+
+**Superseded note — this is what prompted it:** Asked what should happen for a pinless
 shop he answered *"well all the stores have GPS, and should have GPS, on the NOO GPS is compulsary
 where adress do not actually"*. The intent is right; the code does not enforce it. `handleSubmit` in
 `src/components/CustomerManager.jsx` has no required-field refusal on `latitude`/`longitude`, and

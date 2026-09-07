@@ -55,12 +55,14 @@ each. Do not start the coding job below until he says it is done, or tells you t
       state in `App.jsx` kept separate from the Receivables `focusStore`). A shop with no pin, or
       0,0, says so instead of drifting to the default view.
 
-  🔴 TELL ALDI, HE BELIEVES OTHERWISE: he said *"on the NOO GPS is compulsary where adress do not
-  actually"*. **It is not enforced.** `handleSubmit` in `src/components/CustomerManager.jsx` has no
-  required-field refusal on `latitude`/`longitude` — the form captures GPS and every display path
-  gates on `customer.latitude && customer.longitude` with an address fallback, which is precisely
-  what a non-compulsory field looks like. Either make it compulsory in the save (one guard, same
-  shape as the roster's `missing` list) or accept that pinless shops exist. His call, not started.
+    - `dda8ec6` a map pin is **compulsory** on an outlet now — his call, *"damn make it compulsory
+      then"*, after being told his belief that it already was did not match the code. Parses rather
+      than testing truthiness, so a genuine equatorial pin survives and `"abc"` does not; 0,0 is
+      refused as the Atlantic.
+      ⚠️ **It applies to EDITS too**, because `handleSubmit` serves both. Any legacy shop with no
+      pin must be given one before its other fields can be changed. He believes there are none. If
+      that turns out to be wrong and it blocks him, narrow the guard to the create branch — do not
+      delete it.
 
   ⚠️ NO FIX SINCE `0cb7efa` HAS BEEN SEEN ON SCREEN. Both are proven by checks and by nothing else. The
   preview pane refuses the dev server's self-signed certificate, so ask Aldi to look, or fix the
