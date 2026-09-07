@@ -4942,5 +4942,75 @@ ok('and the reported symptom is gone — no row reads back the Google name',
    NM_ROWS.filter(r => nmLabel(r) === 'Aldi Kurniawan').length === 0,
    'got ' + NM_ROWS.filter(r => nmLabel(r) === 'Aldi Kurniawan').length + ' rows still showing it');
 
+section('A PHONE NUMBER IS NOT REQUIRED TO SAVE A PERSON (Aldi, 2026-09-07)');
+
+/* Blocked mid-test by "Name, Phone, and Google Account Email are absolutely required!", he asked
+   for it off: *"i want this disabled for the test account only since its all mine so that i can
+   try ticking the location adn start testing"*. Only the phone came off, and the other two are
+   load-bearing rather than cautious:
+     - the email IS the document id of artifacts/<appId>/employee_directory/<email>, so blank
+       throws the raw "Invalid document reference" that isSafeDocIdEmail exists to catch;
+     - a blank name puts the Google account name back on the consignment store cards, undoing
+       2e5a8ac from the same morning.
+   The trap the removal opens is the DUPLICATE check: two people both left blank are not two people
+   sharing a phone number, and an ungated check reads them as one. */
+
+const phSrc = code(read('src/FleetCanvasManager.jsx'));
+const phA = phSrc.indexOf('const handleSaveAgent');
+const phB = phSrc.indexOf('const isDupPlate');
+ok('the save-guard scope was found (anchors const handleSaveAgent .. const isDupPlate)',
+   phA > -1 && phB > phA, 'anchor missed — the slice below would read the whole file');
+if (phA > -1 && phB > phA) {
+  const phSlice = phSrc.slice(phA, phB);
+  ok('the save guard is the handler head, not the rest of the file',
+     phSlice.length > 300 && phSlice.length < 4000, 'got ' + phSlice.length + ' chars');
+  ok('the guard no longer refuses a person for having no phone number',
+     !/!newAgent\.phone/.test(phSlice),
+     'this is the line that blocked him from ticking a branch and testing at all');
+  ok('name and email are still refused when empty',
+     /!newAgent\.name && 'Name'/.test(phSlice) && /!newAgent\.email && 'Google Account Email'/.test(phSlice),
+     'email is a Firestore document id and name is what the store cards resolve to — neither is optional');
+  ok('and the refusal names the field that is actually empty',
+     /missing\.join\(' and '\)/.test(phSlice),
+     'listing all three fields when one is missing is the guessing game the message existed to end');
+  ok('a blank phone cannot collide with another blank phone',
+     /newAgent\.phone\?\.trim\(\) && activeMotorists\.some/.test(phSlice),
+     'ungated, the SECOND person saved without a phone is refused as a duplicate of the first');
+}
+
+/* ── the guard, re-run on real people ─────────────────────────────────────────────────── */
+const PH_ROSTER = [
+  { id: 'a1', name: '[TEST] REGIONAL ADMIN', email: 'ra@test.com', phone: '' },
+  { id: 'a2', name: '[TEST] SALES MOTORIST', email: 'sm@test.com', phone: '0812111' },
+];
+const phRefusal = (p) => {
+  const missing = [!p.name && 'Name', !p.email && 'Google Account Email'].filter(Boolean);
+  return missing.length ? `${missing.join(' and ')} ${missing.length > 1 ? 'are' : 'is'} still empty. A phone number is optional.` : null;
+};
+const phDup = (p, editingId) =>
+  !!(p.phone?.trim() && PH_ROSTER.some(a => a.phone?.trim() === p.phone.trim() && a.id !== editingId));
+
+ok('a person with a name and an email saves with no phone at all',
+   phRefusal({ name: '[TEST] OWNER', email: 'owner@test.com', phone: '' }) === null,
+   'got: ' + phRefusal({ name: '[TEST] OWNER', email: 'owner@test.com', phone: '' }));
+ok('a missing email is still refused, and the message says which field',
+   phRefusal({ name: 'Budi', email: '', phone: '0812' }) === 'Google Account Email is still empty. A phone number is optional.',
+   'got: ' + phRefusal({ name: 'Budi', email: '', phone: '0812' }));
+ok('a missing name is still refused, and the message says which field',
+   phRefusal({ name: '', email: 'b@test.com', phone: '0812' }) === 'Name is still empty. A phone number is optional.',
+   'got: ' + phRefusal({ name: '', email: 'b@test.com', phone: '0812' }));
+ok('both missing names both fields, in one message',
+   phRefusal({ name: '', email: '', phone: '' }) === 'Name and Google Account Email are still empty. A phone number is optional.',
+   'got: ' + phRefusal({ name: '', email: '', phone: '' }));
+ok('THE TRAP: a second blank phone is not a duplicate of the first blank phone',
+   phDup({ name: 'X', email: 'x@test.com', phone: '' }, null) === false,
+   'a1 is already saved with a blank phone — an ungated check refuses everybody after them');
+ok('but a phone that really is taken is still refused',
+   phDup({ name: 'Y', email: 'y@test.com', phone: '0812111' }, null) === true,
+   'the duplicate guard must survive the change, not be traded away with it');
+ok('and editing that same person is not a collision with themselves',
+   phDup({ name: 'Y', email: 'y@test.com', phone: '0812111' }, 'a2') === false,
+   'saving somebody without changing their phone number must not report their own number as taken');
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

@@ -194,7 +194,19 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
     const handleSaveAgent = async () => {
         if (isReadOnlyMode) return setIsAddingAgent(false); 
         
-        if (!newAgent.name || !newAgent.phone || !newAgent.email) return notify("Name, Phone, and Google Account Email are absolutely required!");
+        /* 🚀 PHONE IS NOT REQUIRED, AND THE MESSAGE NAMES WHAT IS MISSING. Aldi, 2026-09-07, blocked
+           mid-test: *"i want this disabled for the test account only since its all mine so that i
+           can try ticking the location adn start testing"*.
+
+           NAME and EMAIL stay required, and not out of caution:
+             - the email IS the document id of artifacts/<appId>/employee_directory/<email>, so a
+               blank one throws the raw "Invalid document reference" the isSafeDocIdEmail guard
+               below already exists to catch;
+             - a blank name puts the Google account name back on the consignment store cards, which
+               is the bug fixed in 2e5a8ac an hour earlier.
+           A phone number is neither a key nor a login. It was only ever data. */
+        const missing = [!newAgent.name && 'Name', !newAgent.email && 'Google Account Email'].filter(Boolean);
+        if (missing.length) return notify(`${missing.join(' and ')} ${missing.length > 1 ? 'are' : 'is'} still empty. A phone number is optional.`);
         if (newAgent.allowedPayments.length === 0) return notify("You must allow at least one Payment Method (e.g., Cash)!");
         if (newAgent.allowedTiers.length === 0) return notify("You must allow at least one Price Tier!");
 
@@ -208,7 +220,9 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
         if (!isSafeDocIdEmail(emailKey)) return notify(`"${emailKey}" doesn't look like a valid email address. Check for a stray "/" or space — it should look like name@domain.com.`);
 
         const isDupEmail = activeMotorists.some(a => a.email?.toLowerCase().trim() === emailKey && a.id !== editingAgentId);
-        const isDupPhone = activeMotorists.some(a => a.phone?.trim() === newAgent.phone.trim() && a.id !== editingAgentId);
+        // Only a phone that was actually typed can collide — same shape as isDupPlate below.
+        // Without this, the second person left blank reads as a duplicate of the first.
+        const isDupPhone = newAgent.phone?.trim() && activeMotorists.some(a => a.phone?.trim() === newAgent.phone.trim() && a.id !== editingAgentId);
         const isDupName = activeMotorists.some(a => a.name?.toLowerCase().trim() === newAgent.name.toLowerCase().trim() && a.id !== editingAgentId);
         const isDupPlate = newAgent.vehicle?.trim() && activeMotorists.some(a => a.vehicle?.toLowerCase().trim() === newAgent.vehicle.toLowerCase().trim() && a.id !== editingAgentId);
 
