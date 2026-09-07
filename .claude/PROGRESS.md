@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-09-07 17:33 WIB (🟠 KPM — Round 7 IN PROGRESS; Section A passed, FIVE fixes shipped, all committed. Sections B–E still owed. · 🔵 7DTD — fan-out gate built, no app code touched.)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **LOG TRIMMED · 1170/1170 selfcheck · 722/722 audit · build clean** · branch `phase0-solid-ground`
+**Updated: 2026-09-07 17:33 WIB (🟠 KPM — Round 7 IN PROGRESS; Section A passed, SIX fixes shipped, all committed. Sections B–E still owed. · 🔵 7DTD — fan-out gate built, no app code touched.)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **LOG TRIMMED · 1186/1186 selfcheck · 722/722 audit · build clean** · branch `phase0-solid-ground`
 
 ## 🟠 2026-09-07 12:25 — Round 7 Section A: passed, minus two bugs. Both fixed.
 
@@ -71,6 +71,24 @@ outage that blocked the checks mid-turn cleared, and everything ran.
 SALES CANVAS" over "[TEST] OWNER → [TEST] SALES CANVAS" on both stores — *"i verify that the info is
 there already"*. It also proves the JSX compiles in his own dev server. The other four fixes are
 still unrendered.
+
+**The sixth fix — `4641b5f`, a real bug he found in Section C.** *"there is some bug, so there is no
+information of the product that is being consign when handsoff request is sent"*. The Incoming
+Hand-offs card named a shop, drew a bare `""` where the note goes, and asked for "Accept
+Responsibility". **The receiver could not look it up either** — until approval the store is not
+theirs, so `myTransactions` filters out every row, which makes it a snapshot problem, not a
+rendering one. `handleRequestTransfer` now takes a fifth argument and writes `stockSnapshot`
+(balance, total Bks, one line per product with its tier, zero-quantity lines dropped). Pre-change
+requests say so rather than showing zeroes; a shop with debt and no stock says "debt only". 16
+checks, trialled red. **Never a money source — the real balance is still recomputed after approval.**
+
+**🔴 OPEN — the other half of that message, question put to him, unanswered:** *"i want u to add
+redirect location on the journey map just to make sure that this area is not too far from the agent
+journey if they want to check, just for further convenience"*. Not started: it is FOUR files (over
+the 3-file rule — `App.jsx`, `JourneyView.jsx`, `ConsignmentFinanceView.jsx`, the self-check) and
+**not every shop has GPS** (`CustomerManager.jsx:70` gates on `latitude && longitude` and falls back
+to the address). A button that flies to the map centre for a shop with no coordinates shows the
+receiver somewhere that is not the shop. Waiting on his call.
 
 **✅ CLOSED, not a real leftover — and the earlier claim in this entry was wrong.** I told him one
 such save "would have been allowed" and left a stale `employee_directory/<his email>`. It would

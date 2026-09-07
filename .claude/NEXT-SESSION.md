@@ -44,7 +44,30 @@ each. Do not start the coding job below until he says it is done, or tells you t
       Aldi CONFIRMED ON SCREEN**, by screenshot: *"i verify that the info is there already"*, showing
       "MANAGED BY: [TEST] SALES CANVAS" over "[TEST] OWNER → [TEST] SALES CANVAS" on both stores.
 
-  ⚠️ THE OTHER FOUR FIXES HAVE NOT BEEN SEEN ON SCREEN. Both are proven by checks and by nothing else. The
+    - `4641b5f` the Incoming Hand-offs card now shows the debt, the total packs and one line per
+      product, from a `stockSnapshot` frozen onto the request document by the sender. The receiver
+      could not look it up — until approval the store is not theirs and `myTransactions` filters
+      every row out. Pre-change requests say so instead of rendering zeroes; the empty note no
+      longer draws a bare `""`.
+
+  🔴 OPEN, ASKED AND UNANSWERED — the second half of that same message: *"i want u to add redirect
+  location on the journey map just to make sure that this area is not too far from the agent journey
+  if they want to check, just for further convenience"*. A button on the hand-off card that opens the
+  **Journey tab** focused on that shop. Not started, because it is FOUR files (over the 3-file rule)
+  and one behaviour is genuinely undecided:
+    - `src/App.jsx` — a focus-store state for the journey tab, like the existing `setFocusStore`
+      that already serves `receivables` notifications (`handleNotificationClick`);
+    - `src/JourneyView.jsx` — consume it and `flyTo`; it is the `'journey'` tab and already receives
+      `customers` and `setActiveTab`;
+    - `src/ConsignmentFinanceView.jsx` — the button on the incoming card;
+    - `src/config/logicFixes.selfcheck.mjs`.
+  ⚠️ THE TRAP: **not every shop has GPS.** `CustomerManager.jsx:70` gates on
+  `customer.latitude && customer.longitude` and falls back to the address string. A button that
+  silently flies to the map centre when a shop has no coordinates is worse than no button — it
+  shows the receiver a location that is not the shop. Ask Aldi what it should do in that case
+  before building; the question was put to him and he has not answered.
+
+  ⚠️ NO FIX SINCE `0cb7efa` HAS BEEN SEEN ON SCREEN. Both are proven by checks and by nothing else. The
   preview pane refuses the dev server's self-signed certificate, so ask Aldi to look, or fix the
   viewing path first (`A-Brain/Wiki/Concepts/Looking at the App.md`).
 
