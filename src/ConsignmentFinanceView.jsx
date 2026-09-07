@@ -219,6 +219,25 @@ export default function ConsignmentFinanceView({ transactions = [], customers = 
         return map;
     }, [customers]);
 
+    /* 🤝 "Budi → Andi" per store — the same sentence the nota already carries at `handoffLine`.
+       Aldi, 2026-09-07: *"if transferred then there should be agent A -> agent B, basically the
+       same info that we wrote on the receipt"*. The nota prints only the LAST hop because a slip
+       is one transaction; the screen prints the WHOLE chain, because A → B → C means C is holding
+       debts that two different people created and the middle name is the one that explains it.
+       Names resolved through the roster for the reason 2e5a8ac exists: `fromName`/`toName` froze
+       whatever the account was called on the day of the transfer. */
+    const handoffChainByStore = useMemo(() => {
+        const map = new Map();
+        const nameOf = (id, stored) => rosterNameById.get(id || 'ADMIN') || stored || 'Admin';
+        (customers || []).forEach(c => {
+            const hops = c.handoffs || [];
+            if (!hops.length) return;
+            const names = [nameOf(hops[0].fromId, hops[0].fromName), ...hops.map(h => nameOf(h.toId, h.toName))];
+            map.set(storeKey(c.name), names.join(' → '));
+        });
+        return map;
+    }, [customers, rosterNameById]);
+
     // 2. PHYSICAL STOCK ENGINE
     const customerData = useMemo(() => {
         const customers = {};
@@ -285,12 +304,13 @@ export default function ConsignmentFinanceView({ transactions = [], customers = 
             // Who holds it now beats who sold it last; the roster name beats the stored one.
             const ownerId = handedOwnerByStore.get(key) || c.ownerId;
             c.ownerName = rosterNameById.get(ownerId) || c.ownerName;
+            c.handoffChain = handoffChainByStore.get(key) || null;
         });
 
         function getProduct(pid) { return (inventory || []).find(p => p.id === pid); }
 
         return Object.values(customers).filter(c => c.balance > 0 || Object.values(c.items).some(i => i.qty > 0));
-    }, [myTransactions, inventory, handedOwnerByStore, rosterNameById]);
+    }, [myTransactions, inventory, handedOwnerByStore, rosterNameById, handoffChainByStore]);
 
     const activeCustomer = selectedCustomer ? customerData.find(c => storeKey(c.name) === storeKey(selectedCustomer.name)) || selectedCustomer : null;
 
@@ -959,9 +979,18 @@ export default function ConsignmentFinanceView({ transactions = [], customers = 
                                     <div className="flex justify-between items-start">
                                         <div>
                                             <h3 className="font-bold dark:text-white">{c.name}</h3>
-                                            {isAdmin && (
-                                                <div className="mt-1.5 inline-flex items-center gap-1.5 px-2 py-0.5 bg-orange-900/30 border border-orange-500/30 rounded text-[11px] text-orange-400 uppercase font-bold tracking-widest shadow-sm">
-                                                    <User size={10} className="text-orange-500"/> Managed by: {c.ownerName}
+                                            {/* Aldi, 2026-09-07: *"i want the default setting for this UI to be like this
+                                                even when the user own their own transaction but make sure that every
+                                                consignment have information of who responsible for this"*. It used to be
+                                                admin-only, so a Tier 4 and a Tier 5 sharing one branch saw two identical
+                                                lists with nobody named on either. Responsibility is not an admin detail. */}
+                                            <div className="mt-1.5 inline-flex items-center gap-1.5 px-2 py-0.5 bg-orange-900/30 border border-orange-500/30 rounded text-[11px] text-orange-400 uppercase font-bold tracking-widest shadow-sm">
+                                                <User size={10} className="text-orange-500"/> Managed by: {c.ownerName}
+                                            </div>
+                                            {c.handoffChain && (
+                                                <div className="mt-1 flex items-center gap-1.5 text-[10px] text-slate-400 font-bold uppercase tracking-widest">
+                                                    <ArrowLeftRight size={10} className="text-slate-500 shrink-0"/>
+                                                    <span className="break-words">{c.handoffChain}</span>
                                                 </div>
                                             )}
                                         </div>
@@ -984,7 +1013,9 @@ export default function ConsignmentFinanceView({ transactions = [], customers = 
                                 <div className="p-6 border-b dark:border-slate-700 flex justify-between items-center bg-slate-50 dark:bg-slate-900 rounded-t-2xl">
                                     <div>
                                         <h2 className="text-2xl font-bold dark:text-white">{activeCustomer?.name}</h2>
-                                        {isAdmin && <p className="text-[10px] text-orange-500 font-bold uppercase tracking-widest mt-1"><User size={10} className="inline mr-1"/> Managed By {activeCustomer?.ownerName}</p>}
+                                        {/* Every tier, not only an admin — see the list card above. */}
+                                        <p className="text-[10px] text-orange-500 font-bold uppercase tracking-widest mt-1"><User size={10} className="inline mr-1"/> Managed By {activeCustomer?.ownerName}</p>
+                                        {activeCustomer?.handoffChain && <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5"><ArrowLeftRight size={10} className="inline mr-1 text-slate-500"/> {activeCustomer.handoffChain}</p>}
                                     </div>
                                     <div className="text-right"><p className="text-xs text-slate-400 uppercase">Outstanding Balance</p><p className="text-2xl font-black text-orange-500">{formatRupiah(activeCustomer?.balance || 0)}</p></div>
                                 </div>

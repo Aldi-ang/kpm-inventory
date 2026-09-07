@@ -4895,7 +4895,7 @@ ok('the roster map answers for ADMIN rows too',
    /map\.set\('ADMIN', adminName\)/.test(nmSrc),
    "an admin sale stores agentId 'ADMIN', which matches no motorist id — without this the Google name survives");
 ok('and the memo re-runs when the roster or a hand-off changes',
-   /\[myTransactions, inventory, handedOwnerByStore, rosterNameById\]/.test(nmSrc),
+   /\[myTransactions, inventory, handedOwnerByStore, rosterNameById, handoffChainByStore\]/.test(nmSrc),
    'a stale dep list keeps the old label on screen until something else forces a re-render');
 
 /* ── the resolution, re-run on real rows ──────────────────────────────────────────────────
@@ -5075,6 +5075,90 @@ ok('or a phone number',
 ok('and editing Budi without changing anything is not a collision with himself',
    tpSave({ name: 'Budi', email: 'budi@kpm.com', phone: '0812111' }, { editingId: 'a2' }).refused === undefined,
    'got: ' + JSON.stringify(tpSave({ name: 'Budi', email: 'budi@kpm.com', phone: '0812111' }, { editingId: 'a2' })));
+
+
+section('EVERY CONSIGNMENT NAMES WHO IS RESPONSIBLE, AT EVERY TIER (Aldi, 2026-09-07)');
+
+/* He gave a Tier 4 and a Tier 5 the same authority over Headquarters consignment, and both saw a
+   list with nobody named on it: *"make sure that the consignment have the name of who responsible
+   for this transaction ... i want the default setting for this UI to be like this even when the
+   user own their own transaction but make sure that every consignment have information of who
+   responsible for this, and if transferred then there should be agent A -> agent B, basically the
+   same info that we wrote on the receipt"*.
+
+   The line existed; it was wrapped in `isAdmin &&`, so responsibility was treated as an admin
+   detail. It is the opposite: the agent holding the debt is the person who most needs to know
+   whose debt it is. Now unconditional at both render sites, with the hand-off chain under it. */
+
+const rsSrc = code(read('src/ConsignmentFinanceView.jsx'));
+const rsRaw = read('src/ConsignmentFinanceView.jsx');
+
+ok('the list card names the manager, and no longer only for an admin',
+   /Managed by: \{c\.ownerName\}/.test(rsRaw) &&
+   !/\{isAdmin && \(\s*<div className="mt-1\.5 inline-flex/.test(rsRaw),
+   'wrapped in isAdmin, a Tier 4 and a Tier 5 sharing a branch see two identical unattributed lists');
+ok('and the opened store names it too, unconditionally',
+   /Managed By \{activeCustomer\?\.ownerName\}/.test(rsRaw) &&
+   !/\{isAdmin && <p className="text-\[10px\] text-orange-500 font-bold uppercase tracking-widest mt-1">/.test(rsRaw),
+   'the detail panel was gated by the same flag');
+ok('both places draw the hand-off chain when there is one',
+   (rsRaw.match(/handoffChain/g) || []).length >= 4,
+   'the map, the row it is attached to, and one render per view — fewer means a view is missing it');
+
+const rsA = rsSrc.indexOf('const handoffChainByStore');
+const rsB = rsSrc.indexOf('const activeCustomer');
+ok('the chain scope was found (anchors const handoffChainByStore .. const activeCustomer)',
+   rsA > -1 && rsB > rsA, 'anchor missed — the slice below would read the whole file');
+if (rsA > -1 && rsB > rsA) {
+  const rs = rsSrc.slice(rsA, rsB);
+  ok('the chain slice is the aggregation block, not the rest of the file',
+     rs.length > 600 && rs.length < 6000, 'got ' + rs.length + ' chars');
+  ok('the chain resolves each hop through the roster, with the stored name as fallback',
+     /rosterNameById\.get\(id \|\| 'ADMIN'\) \|\| stored \|\| 'Admin'/.test(rs),
+     "fromName/toName froze whatever the account was called that day — the same fault 2e5a8ac fixed");
+  ok('it starts at the FIRST hand-off\'s sender, then follows every receiver',
+     /nameOf\(hops\[0\]\.fromId, hops\[0\]\.fromName\), \.\.\.hops\.map/.test(rs),
+     'starting from the last hop alone loses the agent who created the oldest debts on the store');
+  ok('and the chain is attached to the row both views render',
+     /c\.handoffChain = handoffChainByStore\.get\(key\) \|\| null/.test(rs),
+     'looking it up separately in each view is how the two drift apart');
+}
+
+/* ── the chain, re-run on real stores ─────────────────────────────────────────────────── */
+const RS_ROSTER = new Map([
+  ['budi', '[TEST] SALES MOTORIST'],
+  ['andi', '[TEST] REGIONAL ADMIN'],
+  ['ADMIN', 'MOBIL PAK BOS'],
+]);
+const RS_STORES = [
+  { name: 'Toko Sekali', handoffs: [{ fromId: 'budi', fromName: 'Aldi Kurniawan', toId: 'andi', toName: 'Aldi Kurniawan' }] },
+  { name: 'Toko Dua Kali', handoffs: [
+      { fromId: 'ADMIN', fromName: 'Aldi Kurniawan', toId: 'budi', toName: 'Aldi Kurniawan' },
+      { fromId: 'budi', fromName: 'Aldi Kurniawan', toId: 'andi', toName: 'Aldi Kurniawan' }] },
+  { name: 'Toko Diam', handoffs: [] },
+  { name: 'Toko Hantu', handoffs: [{ fromId: 'ghost', fromName: 'Mantan Agen', toId: 'budi', toName: 'Aldi Kurniawan' }] },
+];
+const rsNameOf = (id, stored) => RS_ROSTER.get(id || 'ADMIN') || stored || 'Admin';
+const rsChain = (store) => {
+  const hops = store.handoffs || [];
+  if (!hops.length) return null;
+  return [rsNameOf(hops[0].fromId, hops[0].fromName), ...hops.map(h => rsNameOf(h.toId, h.toName))].join(' → ');
+};
+const rsOf = (n) => rsChain(RS_STORES.find(s => s.name === n));
+
+ok('one hand-off reads exactly like the nota: A → B',
+   rsOf('Toko Sekali') === '[TEST] SALES MOTORIST → [TEST] REGIONAL ADMIN',
+   'got: ' + rsOf('Toko Sekali'));
+ok('two hand-offs keep the middle agent, who created debts the current holder did not',
+   rsOf('Toko Dua Kali') === 'MOBIL PAK BOS → [TEST] SALES MOTORIST → [TEST] REGIONAL ADMIN',
+   'got: ' + rsOf('Toko Dua Kali'));
+ok('a store that never moved shows no chain at all',
+   rsOf('Toko Diam') === null, 'got: ' + rsOf('Toko Diam'));
+ok('an agent since deleted from the roster keeps their stored name rather than vanishing',
+   rsOf('Toko Hantu') === 'Mantan Agen → [TEST] SALES MOTORIST', 'got: ' + rsOf('Toko Hantu'));
+ok('and no hop reads back the Google account name',
+   !RS_STORES.map(rsChain).filter(Boolean).some(c => c.includes('Aldi Kurniawan')),
+   'every stored fromName/toName in this fixture is the Google name — the roster has to win');
 
 
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
