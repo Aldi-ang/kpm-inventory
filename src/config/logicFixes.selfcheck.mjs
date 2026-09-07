@@ -4859,5 +4859,88 @@ ok('the port is ignored when matching but kept when used',
    resolveAuthDomain('kpm-ang.vercel.app:443') === 'kpm-ang.vercel.app:443',
    'hostname decides membership, host is what Firebase is handed — mixing the two drops the port on a non-standard one');
 
+section('THE STORE LABEL NAMES THE ROSTER, NOT THE GOOGLE ACCOUNT (Aldi, 2026-09-07)');
+
+/* Running Round 7 he found the consignment list saying "MANAGED BY: ALDI KURNIAWAN" on a store
+   held by a test Tier 5 account: *"it should not be aldi kurniwan, it should be the test tier 5 so
+   fix the name so that it shows the nickname and not the google name, nickname here is registered
+   name inside fleet and roster"*. Two faults sat on the same line, and a fix for either alone
+   leaves a wrong name on screen:
+     1. it rendered `t.agentName` — the string a transaction froze on the day it was written, which
+        is the signed-in Google account's displayName whenever the seller was an admin or a test
+        account sharing one Google login;
+     2. it read the NEWEST ROW's seller, and an approved hand-off deliberately does not restamp
+        past rows — so from the moment a store changes hands the list names the previous agent. */
+
+const nmSrc = code(read('src/ConsignmentFinanceView.jsx'));
+const nmA = nmSrc.indexOf('const rosterNameById');
+const nmB = nmSrc.indexOf('const activeCustomer');
+ok('the label scope was found (anchors const rosterNameById .. const activeCustomer)',
+   nmA > -1 && nmB > nmA, 'anchor missed — the slice below would read the whole file');
+if (nmA > -1 && nmB > nmA) {
+  const nmSlice = nmSrc.slice(nmA, nmB);
+  ok('the label slice is the aggregation block, not the rest of the file',
+     nmSlice.length > 800 && nmSlice.length < 8000, 'got ' + nmSlice.length + ' chars');
+  ok('the owner id comes from the customer document first, the newest row only second',
+     /handedOwnerByStore\.get\(key\) \|\| c\.ownerId/.test(nmSlice),
+     'reading the newest row alone names the PREVIOUS agent on every store that changed hands');
+  ok('the displayed name comes from the roster, with the stored string only as fallback',
+     /rosterNameById\.get\(ownerId\) \|\| c\.ownerName/.test(nmSlice),
+     't.agentName is a Google displayName frozen at write time — it is not the name Aldi gave the person');
+  ok('the aggregated row keeps its agent id, or there is nothing to resolve against',
+     /ownerId: t\.agentId \|\| 'ADMIN'/.test(nmSlice),
+     'the id is the only link from a transaction back to the Fleet & Roster record');
+}
+ok('the roster map answers for ADMIN rows too',
+   /map\.set\('ADMIN', adminName\)/.test(nmSrc),
+   "an admin sale stores agentId 'ADMIN', which matches no motorist id — without this the Google name survives");
+ok('and the memo re-runs when the roster or a hand-off changes',
+   /\[myTransactions, inventory, handedOwnerByStore, rosterNameById\]/.test(nmSrc),
+   'a stale dep list keeps the old label on screen until something else forces a re-render');
+
+/* ── the resolution, re-run on real rows ──────────────────────────────────────────────────
+   Toko Maju was handed to andi, but its newest consignment row is still Budi's. Toko Lama never
+   moved and was sold by a test account signed in on Aldi's own Google login, so the row froze
+   "Aldi Kurniawan". Toko HQ was sold by the admin, so it carries agentId 'ADMIN'. Toko Hantu
+   belongs to somebody who has since been deleted from the roster. */
+const NM_ROSTER = [
+  { id: 'budi', name: '[TEST] SALES MOTORIST', userRole: 'AGENT' },
+  { id: 'andi', name: '[TEST] REGIONAL ADMIN', userRole: 'AREA_ADMIN' },
+  { id: 'master_owner', name: 'MOBIL PAK BOS', userRole: 'COMPANY_OWNER' },
+];
+const NM_DOCS = [{ name: 'Toko Maju', ownerAgentId: 'andi' }];
+const NM_ROWS = [
+  { customerName: 'Toko Maju', agentId: 'budi', agentName: 'Aldi Kurniawan' },
+  { customerName: 'Toko Lama', agentId: 'budi', agentName: 'Aldi Kurniawan' },
+  { customerName: 'Toko HQ', agentId: 'ADMIN', agentName: 'Aldi Kurniawan' },
+  { customerName: 'Toko Hantu', agentId: 'ghost', agentName: 'Mantan Agen' },
+];
+const nmKey = (v) => String(v || '').trim().toUpperCase();
+const nmById = (() => {
+  const m = new Map();
+  NM_ROSTER.forEach(r => { if (r.id && r.name) m.set(r.id, r.name); });
+  const boss = NM_ROSTER.find(r => r.id === 'master_owner' || r.userRole === 'COMPANY_OWNER' || r.userRole === 'ADMIN');
+  if (boss?.name) { m.set('ADMIN', boss.name); m.set('ADMIN_VEHICLE', boss.name); }
+  return m;
+})();
+const nmHanded = new Map(NM_DOCS.filter(d => d.ownerAgentId).map(d => [nmKey(d.name), d.ownerAgentId]));
+const nmLabel = (row) => {
+  const ownerId = nmHanded.get(nmKey(row.customerName)) || row.agentId || 'ADMIN';
+  return nmById.get(ownerId) || row.agentName || 'Admin';
+};
+
+ok('a store that changed hands names its NEW owner, from the roster',
+   nmLabel(NM_ROWS[0]) === '[TEST] REGIONAL ADMIN', 'got: ' + nmLabel(NM_ROWS[0]));
+ok('a store that never moved names its seller by the roster name, not the Google name',
+   nmLabel(NM_ROWS[1]) === '[TEST] SALES MOTORIST',
+   'got: ' + nmLabel(NM_ROWS[1]) + ' — this is the exact string Aldi reported on screen');
+ok('an admin-sold store names the owner record, not the Google account behind it',
+   nmLabel(NM_ROWS[2]) === 'MOBIL PAK BOS', 'got: ' + nmLabel(NM_ROWS[2]));
+ok('an id no longer on the roster keeps the stored name instead of going blank',
+   nmLabel(NM_ROWS[3]) === 'Mantan Agen', 'got: ' + nmLabel(NM_ROWS[3]));
+ok('and the reported symptom is gone — no row reads back the Google name',
+   NM_ROWS.filter(r => nmLabel(r) === 'Aldi Kurniawan').length === 0,
+   'got ' + NM_ROWS.filter(r => nmLabel(r) === 'Aldi Kurniawan').length + ' rows still showing it');
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

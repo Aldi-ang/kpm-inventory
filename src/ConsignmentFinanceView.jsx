@@ -194,6 +194,31 @@ export default function ConsignmentFinanceView({ transactions = [], customers = 
         return results;
     }, [myTransactions]);
 
+    /* 🏷️ THE NAME OF RECORD IS THE ROSTER, NOT THE GOOGLE ACCOUNT. A transaction stores whatever
+       the signed-in account was called on the day it was written, so a row sold by an admin - or by
+       a test account sharing one Google login - reads back as that person's Google name. Fleet &
+       Roster is where Aldi actually names people, so the AGENT ID on the row is what gets resolved
+       and the stored string is only the fallback for an id no longer on the roster. */
+    const rosterNameById = useMemo(() => {
+        const map = new Map();
+        (motorists || []).forEach(m => { if (m.id && m.name) map.set(m.id, m.name); });
+        const boss = (motorists || []).find(m => m.id === 'master_owner' || m.userRole === 'COMPANY_OWNER' || m.userRole === 'ADMIN');
+        const adminName = boss?.name || appSettings?.adminDisplayName;
+        if (adminName) { map.set('ADMIN', adminName); map.set('ADMIN_VEHICLE', adminName); }
+        return map;
+    }, [motorists, appSettings]);
+
+    /* 🤝 ...and after a hand-off the holder is not the seller. Approving a transfer deliberately
+       leaves past rows stamped with whoever sold them, so the newest row names the PREVIOUS agent
+       from the moment a store changes hands. `ownerAgentId` on the customer document is the only
+       field that knows, and it wins wherever it exists - the same rule activeOwnerId uses below for
+       the one open store, applied here to every row in the list. */
+    const handedOwnerByStore = useMemo(() => {
+        const map = new Map();
+        (customers || []).forEach(c => { if (c.ownerAgentId) map.set(storeKey(c.name), c.ownerAgentId); });
+        return map;
+    }, [customers]);
+
     // 2. PHYSICAL STOCK ENGINE
     const customerData = useMemo(() => {
         const customers = {};
@@ -208,11 +233,12 @@ export default function ConsignmentFinanceView({ transactions = [], customers = 
                name was written first — only the grouping is normalised. */
             const name = storeKey(t.customerName);
 
-            if (!customers[name]) customers[name] = { name: storeLabel(t.customerName), items: {}, balance: 0, lastActivity: t.date, ownerName: t.agentName || 'Admin' };
+            if (!customers[name]) customers[name] = { name: storeLabel(t.customerName), items: {}, balance: 0, lastActivity: t.date, ownerName: t.agentName || 'Admin', ownerId: t.agentId || 'ADMIN' };
             
             if (t.type === 'SALE' && t.paymentType === 'Titip') { 
                 customers[name].balance += (t.total || 0); 
-                customers[name].ownerName = t.agentName || 'Admin'; 
+                customers[name].ownerName = t.agentName || 'Admin';
+                customers[name].ownerId = t.agentId || 'ADMIN';
                 
                 (t.items || []).forEach(item => { 
                     const product = getProduct(item.productId); 
@@ -253,15 +279,18 @@ export default function ConsignmentFinanceView({ transactions = [], customers = 
             }
         });
         
-        Object.values(customers).forEach(c => { 
-            c.balance = Math.max(0, c.balance); 
-            Object.keys(c.items).forEach(k => { c.items[k].qty = Math.max(0, c.items[k].qty); }); 
+        Object.entries(customers).forEach(([key, c]) => {
+            c.balance = Math.max(0, c.balance);
+            Object.keys(c.items).forEach(k => { c.items[k].qty = Math.max(0, c.items[k].qty); });
+            // Who holds it now beats who sold it last; the roster name beats the stored one.
+            const ownerId = handedOwnerByStore.get(key) || c.ownerId;
+            c.ownerName = rosterNameById.get(ownerId) || c.ownerName;
         });
-        
+
         function getProduct(pid) { return (inventory || []).find(p => p.id === pid); }
-        
+
         return Object.values(customers).filter(c => c.balance > 0 || Object.values(c.items).some(i => i.qty > 0));
-    }, [myTransactions, inventory]);
+    }, [myTransactions, inventory, handedOwnerByStore, rosterNameById]);
 
     const activeCustomer = selectedCustomer ? customerData.find(c => storeKey(c.name) === storeKey(selectedCustomer.name)) || selectedCustomer : null;
 
