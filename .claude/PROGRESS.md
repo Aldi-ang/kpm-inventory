@@ -52,7 +52,7 @@ for everybody in `4bd0f52` is **back for everybody except a self-proxy**. Name s
 The two earlier check sections were replaced by one covering all three instructions together: 26
 checks, trialled red (5 failed reverted).
 
-**🔴 2026-09-07 17:33 — THE FIFTH CHANGE IS WRITTEN BUT NOT COMMITTED AND NOT BUILT.** He gave a
+**The fifth fix — `0cb7efa`, and the only one seen on screen.** He gave a
 Tier 4 and a Tier 5 the same authority over Headquarters consignment and both saw a list naming
 nobody: *"make sure that the consignment have the name of who responsible for this transaction ...
 i want the default setting for this UI to be like this even when the user own their own transaction
