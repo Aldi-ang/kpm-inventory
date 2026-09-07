@@ -5,7 +5,7 @@ import { confirmAction } from './components/ConfirmGate.jsx';
 import { handoffEligibility, canHandOffAcrossRegions, normalizeRegion, canApproveHandoffFrom } from './config/permissions';
 import { notify } from './components/Toast.jsx';
 
-export default function ConsignmentFinanceView({ transactions = [], customers = [], focusStore = null, onFocusStoreHandled, inventory = [], onAddGoods, onPayment, onReturn, onDeleteConsignment, isAdmin, user, agentProfileId, motorists = [], transferRequests = [], onRequestTransfer, onAgentAcceptTransfer, onAdminApproveTransfer, appSettings, triggerCapy }) {
+export default function ConsignmentFinanceView({ transactions = [], customers = [], focusStore = null, onFocusStoreHandled, inventory = [], onAddGoods, onPayment, onReturn, onDeleteConsignment, isAdmin, user, agentProfileId, motorists = [], transferRequests = [], onRequestTransfer, onAgentAcceptTransfer, onAdminApproveTransfer, onShowStoreOnJourney, appSettings, triggerCapy }) {
     const [activeTab, setActiveTab] = useState('financials');
     
     // SCALABLE MULTI-FILTER STATE
@@ -1255,7 +1255,16 @@ export default function ConsignmentFinanceView({ transactions = [], customers = 
                                     )}
 
                                     {/* An empty note used to render as a bare pair of quote marks. */}
-                                    {r.note?.trim() && <p className="text-xs text-slate-400 italic mb-4">"{r.note}"</p>}
+                                    {r.note?.trim() && <p className="text-xs text-slate-400 italic mb-3">"{r.note}"</p>}
+
+                                    {/* 🎯 "is this shop even near my route?" — the question an agent actually asks
+                                        before accepting. Opens the Journey tab already flown to the shop. */}
+                                    {onShowStoreOnJourney && (
+                                        <button onClick={() => onShowStoreOnJourney(r.storeName)}
+                                                className="w-full mb-4 py-2 flex items-center justify-center gap-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-300 rounded text-[11px] font-bold uppercase tracking-widest transition-colors">
+                                            <MapPin size={12} className="text-orange-500"/> See it on the journey map
+                                        </button>
+                                    )}
                                     {r.status === 'PENDING_AGENT' ? (
                                         <div className="flex gap-2">
                                             <button onClick={() => onAgentAcceptTransfer(r.id, false)} className="flex-1 py-2 bg-red-900/50 hover:bg-red-500 text-white rounded text-xs font-bold transition-colors">Decline</button>

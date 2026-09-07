@@ -246,6 +246,12 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
   // The shop a notification asked us to open. Cleared by the screen once it has honoured it, so
   // pressing the same alert twice works and a stale name cannot re-open a shop later.
   const [focusStore, setFocusStore] = useState(null);
+  /* 🎯 The Journey tab's own focus target, separate from `focusStore` above — that one opens a shop
+     inside Receivables, this one flies the map to it. Aldi, 2026-09-07, on the hand-off card:
+     *"add redirect location on the journey map just to make sure that this area is not too far from
+     the agent journey if they want to check"*. */
+  const [journeyFocus, setJourneyFocus] = useState(null);
+  const showStoreOnJourney = (storeName) => { setJourneyFocus(storeName); setActiveTab('journey'); };
 
   /* THE COSTUME. Plain state, and it must stay plain state: it is never written to
      localStorage, so a refresh always puts him back in his own chair. His rule. */
@@ -4463,7 +4469,7 @@ const handleGitHubMirror = async () => {
           {activeTab === 'map_war_room' && <MapMissionControl customers={userRole === 'ADMIN' ? displayCustomers : displayPermitted} transactions={transactions} inventory={inventory} db={db} appId={appId} user={user} logAudit={logAudit} triggerCapy={triggerCapy} isAdmin={isAdmin} savedHome={appSettings?.mapHome} onSetHome={handleSetMapHome} tierSettings={tierSettings} motorists={motorists} onNavigateToDirectory={() => setActiveTab('customers')} />}
           
          {/* JOURNEY PLAN: Strictly locked down to ONLY show Admin's authorized Pricing Tiers */}
-         {activeTab === 'journey' && <JourneyView transactions={transactions} customers={displayPermitted} db={db} appId={appId} user={user} userRole={userRole} logAudit={logAudit} triggerCapy={triggerCapy} setActiveTab={setActiveTab} tierSettings={tierSettings} isAdmin={isAdmin} isLiteMode={isLiteMode} appSettings={appSettings} />}
+         {activeTab === 'journey' && <JourneyView transactions={transactions} customers={displayPermitted} db={db} appId={appId} user={user} userRole={userRole} logAudit={logAudit} triggerCapy={triggerCapy} setActiveTab={setActiveTab} tierSettings={tierSettings} isAdmin={isAdmin} isLiteMode={isLiteMode} appSettings={appSettings} focusStore={journeyFocus} onFocusStoreHandled={() => setJourneyFocus(null)} />}
           {/* 🚀 UPGRADED FLEET ROUTER: Now fully controlled by the Matrix */}
           {activeTab === 'fleet' && (
             <FleetCanvasManager 
@@ -4806,6 +4812,7 @@ const handleGitHubMirror = async () => {
                   agentProfileId={agentProfileId}
                   motorists={motorists}
                   transferRequests={transferRequests}
+                  onShowStoreOnJourney={showStoreOnJourney}
                   onRequestTransfer={handleRequestTransfer}
                   onAgentAcceptTransfer={handleAgentAcceptTransfer}
                   onAdminApproveTransfer={handleAdminApproveTransfer}

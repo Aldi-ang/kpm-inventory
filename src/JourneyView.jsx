@@ -104,6 +104,34 @@ const MapRecenter = ({ trigger, saveTrigger, savedHome, onSaveHome, defaultCente
     return null;
 };
 
+/* 🎯 FLY TO ONE SHOP, asked for from another screen. Aldi, 2026-09-07: *"i want u to add redirect
+   location on the journey map just to make sure that this area is not too far from the agent
+   journey if they want to check, just for further convenience"* — an agent being handed a store
+   wants to see where it actually is before taking responsibility for its debt.
+
+   ⚠️ A SHOP WITH NO PIN SAYS SO RATHER THAN FLYING SOMEWHERE. He is right that every shop should
+   carry GPS — the outlet form captures it — but nothing in the save path enforces it, and Leaflet
+   given a NaN pair does not error: it drifts to the map's default view. For a question that is
+   specifically about DISTANCE, silently showing the wrong place is the worst possible answer. */
+const StoreFocus = ({ focusStore, customers, onHandled }) => {
+    const map = useMap();
+    useEffect(() => {
+        if (!focusStore) return;
+        const shop = (customers || []).find(c => storeKey(c.name) === storeKey(focusStore));
+        const lat = Number(shop?.latitude);
+        const lng = Number(shop?.longitude);
+        if (shop && Number.isFinite(lat) && Number.isFinite(lng) && (lat !== 0 || lng !== 0)) {
+            map.flyTo([lat, lng], 16, { duration: 1.2 });
+        } else if (shop) {
+            notify(`${shop.name} has no GPS pin saved yet, so the map cannot show where it is.`);
+        } else {
+            notify(`${focusStore} is not on this map.`);
+        }
+        onHandled?.();
+    }, [focusStore]);
+    return null;
+};
+
 const LocationController = ({ userLocation, setUserLocation, isEditing, isLiteMode }) => {
     const map = useMap();
     const watchId = useRef(null);
@@ -231,7 +259,7 @@ const getHashColor = (name) => {
     return AGENT_COLORS[index];
 };
 
-const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = [], db, appId, user, userRole, logAudit, triggerCapy, isAdmin, setActiveTab, tierSettings, isLiteMode, appSettings }) => {
+const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = [], db, appId, user, userRole, logAudit, triggerCapy, isAdmin, setActiveTab, tierSettings, isLiteMode, appSettings, focusStore = null, onFocusStoreHandled }) => {
     
     // 🛡️ THE MASTER DATA SANITIZER V2
     // Added 'phone', 'address', 'storeImage' and 'lastVisitNote' to guarantee 100% string compliance.
@@ -1027,6 +1055,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
 
                 <MapContainer center={mapCenter} zoom={12} style={{ height: '100%', width: '100%' }}>
                     <MapRecenter trigger={recenterTrigger} saveTrigger={saveHomeTrigger} savedHome={savedHome} onSaveHome={handleSaveHome} defaultCenter={mapCenter} />
+                    <StoreFocus focusStore={focusStore} customers={customers} onHandled={onFocusStoreHandled} />
                     <TileLayer url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" />
                     
                     <LocationController userLocation={userLocation} setUserLocation={setUserLocation} isEditing={!!editingStoreId} isLiteMode={isLiteMode} />

@@ -5213,7 +5213,7 @@ ok('a shop with debt but no stock left says that in words',
    /No stock left at this shop — debt only\./.test(snRaw),
    'an empty list under a real balance looks like the list failed to load');
 ok('and an empty note no longer renders as a bare pair of quote marks',
-   /\{r\.note\?\.trim\(\) && <p className="text-xs text-slate-400 italic mb-4">/.test(snRaw),
+   /\{r\.note\?\.trim\(\) && <p /.test(snRaw),
    'his screenshot shows exactly that — a lone \'""\' where a sentence should be');
 
 /* ── the snapshot, re-run on a real shop ──────────────────────────────────────────────── */
@@ -5249,6 +5249,108 @@ ok('a shop cleared of stock still reports its debt honestly',
    snBuild({ balance: 250000, items: { 'p1': { name: 'Surya 16', qty: 0 } } }).totalBks === 0 &&
    snBuild({ balance: 250000, items: { 'p1': { name: 'Surya 16', qty: 0 } } }).balance === 250000,
    'stock and debt are separate: paying nothing off while selling everything is the normal case');
+
+
+section('THE HAND-OFF CARD CAN SHOW THE SHOP ON THE JOURNEY MAP (Aldi, 2026-09-07)');
+
+/* *"i want u to add redirect location on the journey map just to make sure that this area is not
+   too far from the agent journey if they want to check, just for further convenience"*. He picked
+   the Journey tab over Map Mission Control when asked.
+
+   ⚠️ THE TRAP, and it is why this needed a question first. Asked what should happen for a shop with
+   no GPS he answered *"well all the stores have GPS, and should have GPS, on the NOO GPS is
+   compulsary where adress do not actually"* — the intent is right, but NOTHING IN THE SAVE PATH
+   ENFORCES IT (`CustomerManager.jsx` gates display on `latitude && longitude` and falls back to the
+   address; there is no required-field refusal). And Leaflet handed a NaN pair does not throw: it
+   drifts to the default view. For a question that is specifically about DISTANCE, quietly showing
+   the wrong place is the worst available answer, so a shop with no pin says so instead. */
+
+const mpJourney = code(read('src/JourneyView.jsx'));
+const mpApp = code(read('src/App.jsx'));
+const mpCfv = read('src/ConsignmentFinanceView.jsx');
+
+const mpA = mpJourney.indexOf('const StoreFocus');
+const mpB = mpJourney.indexOf('const LocationController');
+ok('the focus controller was found (anchors const StoreFocus .. const LocationController)',
+   mpA > -1 && mpB > mpA, 'anchor missed — the slice below would read the whole file');
+if (mpA > -1 && mpB > mpA) {
+  const mp = mpJourney.slice(mpA, mpB);
+  ok('the focus controller is the slice, not the rest of the file',
+     mp.length > 300 && mp.length < 2500, 'got ' + mp.length + ' chars');
+  ok('it matches the shop the same way every other screen does',
+     /storeKey\(c\.name\) === storeKey\(focusStore\)/.test(mp),
+     'three of his shops share a name — matching on the raw string reaches the wrong one');
+  ok('it only flies when BOTH coordinates are real numbers',
+     /Number\.isFinite\(lat\) && Number\.isFinite\(lng\)/.test(mp),
+     'Leaflet given NaN does not throw — it drifts to the default view and looks like an answer');
+  ok('and 0,0 is treated as no pin, not as a location',
+     /\(lat !== 0 \|\| lng !== 0\)/.test(mp),
+     'a zeroed record would fly the agent to the Atlantic and call it the shop');
+  ok('a shop with no pin is told to the user instead of being flown to',
+     /has no GPS pin saved yet/.test(mp),
+     'silence here is the exact failure the guard exists to prevent');
+  ok('and a store that is not on this map says that too',
+     /is not on this map/.test(mp),
+     'a receiver whose tier cannot see the shop must not get a silent no-op');
+  ok('the focus is cleared after it fires, so it can fire again',
+     /onHandled\?\.\(\)/.test(mp),
+     'a sticky focus value means the second press of the button does nothing');
+}
+ok('JourneyView takes the focus props and renders the controller inside the map',
+   /focusStore = null, onFocusStoreHandled/.test(mpJourney) &&
+   /<StoreFocus focusStore=\{focusStore\} customers=\{customers\} onHandled=\{onFocusStoreHandled\} \/>/.test(mpJourney),
+   'a controller outside MapContainer has no useMap to call');
+
+ok('App keeps the journey focus SEPARATE from the receivables focus',
+   /const \[journeyFocus, setJourneyFocus\] = useState\(null\)/.test(mpApp) &&
+   /const \[focusStore, setFocusStore\] = useState\(null\)/.test(mpApp),
+   'reusing focusStore would make a notification that opens Receivables also hijack the map');
+ok('and the redirect switches to the journey tab as well as setting the target',
+   /setJourneyFocus\(storeName\); setActiveTab\('journey'\)/.test(mpApp),
+   'setting the target without changing tab leaves the agent on the card wondering what happened');
+ok('the wiring reaches both screens',
+   /focusStore=\{journeyFocus\} onFocusStoreHandled=\{\(\) => setJourneyFocus\(null\)\}/.test(mpApp) &&
+   /onShowStoreOnJourney=\{showStoreOnJourney\}/.test(mpApp),
+   'built and not wired is the failure that looks complete in the diff');
+ok('and the button is on the incoming hand-off card',
+   /onShowStoreOnJourney\(r\.storeName\)/.test(mpCfv) && /See it on the journey map/.test(mpCfv),
+   'this is the one screen where the question "how far is this?" is actually being asked');
+
+/* ── the focus decision, re-run on real shops ─────────────────────────────────────────── */
+const MP_SHOPS = [
+  { name: 'HQ (Retail) 1', latitude: -6.9175, longitude: 107.6191 },
+  { name: 'Toko Tanpa Pin', latitude: null, longitude: null },
+  { name: 'Toko Nol', latitude: 0, longitude: 0 },
+  { name: 'Toko Rusak', latitude: 'abc', longitude: '107.6' },
+];
+const mpKey = (v) => String(v || '').trim().toUpperCase();
+const mpFocus = (storeName) => {
+  const shop = MP_SHOPS.find(c => mpKey(c.name) === mpKey(storeName));
+  const lat = Number(shop?.latitude);
+  const lng = Number(shop?.longitude);
+  if (shop && Number.isFinite(lat) && Number.isFinite(lng) && (lat !== 0 || lng !== 0)) return { flyTo: [lat, lng] };
+  if (shop) return { message: `${shop.name} has no GPS pin saved yet, so the map cannot show where it is.` };
+  return { message: `${storeName} is not on this map.` };
+};
+
+ok('a shop with a real pin is flown to at street zoom',
+   JSON.stringify(mpFocus('HQ (Retail) 1').flyTo) === JSON.stringify([-6.9175, 107.6191]),
+   'got: ' + JSON.stringify(mpFocus('HQ (Retail) 1')));
+ok('a shop with no coordinates is explained, not flown to',
+   mpFocus('Toko Tanpa Pin').flyTo === undefined && /no GPS pin saved yet/.test(mpFocus('Toko Tanpa Pin').message),
+   'got: ' + JSON.stringify(mpFocus('Toko Tanpa Pin')));
+ok('0,0 counts as no pin — the agent is not sent to the Atlantic',
+   mpFocus('Toko Nol').flyTo === undefined,
+   'got: ' + JSON.stringify(mpFocus('Toko Nol')));
+ok('a half-broken coordinate pair is refused rather than half-used',
+   mpFocus('Toko Rusak').flyTo === undefined,
+   'got: ' + JSON.stringify(mpFocus('Toko Rusak')));
+ok('a store the viewer cannot see says so by name',
+   mpFocus('Toko Rahasia').message === 'Toko Rahasia is not on this map.',
+   'got: ' + JSON.stringify(mpFocus('Toko Rahasia')));
+ok('and the match is case- and spacing-insensitive, like every other store lookup',
+   JSON.stringify(mpFocus('  hq (retail) 1 ').flyTo) === JSON.stringify([-6.9175, 107.6191]),
+   'the request stores the name as typed; the map stores it as registered');
 
 
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
