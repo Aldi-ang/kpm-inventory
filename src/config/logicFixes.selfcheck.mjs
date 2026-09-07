@@ -5427,5 +5427,96 @@ ok('and a genuine pin on the prime meridian saves',
    gpSave(-6.9175, 0) === 'saved', 'got ' + gpSave(-6.9175, 0));
 
 
+section('A BRANCH APPROVER CAN SEE THEIR OWN APPROVAL QUEUE (Aldi, 2026-09-07)');
+
+/* Signed in as a REAL Tier 4 regional admin he had granted approval power in Fleet & Canvas:
+   *"regional admin does get the notification bell for the approval, but when i open consignment
+   menu there is none of that bell notification inside it"* — the bell said "awaiting your
+   authorization" over a panel that said "No pending action required".
+
+   TWO faults, and either one alone still produces an empty panel:
+
+   1. THE RENDER ASKED `isAdmin`. `pendingAdminRequests` was already correct — it calls
+      `canApproveHandoffFrom`, the same predicate the write in App.jsx uses, so a branch approver
+      is in that list. Three render sites then threw the list away unless `isAdmin`. And `isAdmin`
+      here is not "is an admin": it is `vaultUnlocked`, which POV also forces to false. The list is
+      the permission now; `isAdmin` decides nothing about who may see it.
+
+   2. THE MEMO'S DEPS WERE INCOMPLETE. `adminPend` reads `motorists` and `myProfile`; neither was
+      listed. The roster arrives from Firestore after the first paint, so the queue was computed
+      once against an empty roster and never re-ran — empty for the whole session even once the
+      render gate was fixed. A permission bug and a staleness bug wearing the same symptom. */
+
+const apRaw = read('src/ConsignmentFinanceView.jsx');
+const apSrc = code(apRaw);
+
+ok('the tab badge counts an approval queue for everybody, not only an admin',
+   /\{\(incomingRequests\.length > 0 \|\| pendingAdminRequests\.length > 0\) && \(/.test(apRaw),
+   'the red dot was the only hint the queue existed, and it was gated too');
+ok('the approval list draws whenever there is something in it',
+   /\{pendingAdminRequests\.map\(r => \(/.test(apRaw) && !/isAdmin \? pendingAdminRequests/.test(apRaw),
+   'this is the line that hid a granted permission behind the vault-unlock flag');
+ok('the incoming list draws alongside it rather than instead of it',
+   /\)\)\}\s*\{incomingRequests\.map\(r => \(/.test(apRaw),
+   'a ternary hides one of two disjoint lists — a person can approve one hand-off while receiving another');
+ok('"No pending action required" needs BOTH lists to be empty',
+   /\{pendingAdminRequests\.length === 0 && incomingRequests\.length === 0 &&/.test(apRaw),
+   'the old form printed it whenever the branch it did not render happened to be empty');
+ok('and no render decision is left asking isAdmin about approvals',
+   !/isAdmin \? 'Admin Auth Required'/.test(apRaw) && !/isAdmin && pendingAdminRequests/.test(apRaw),
+   'one surviving gate reproduces the whole bug');
+
+ok('the routing memo re-runs when the roster or the approver profile arrives',
+   /\[transferRequests, agentProfileId, isAdmin, motorists, myProfile\]/.test(apSrc),
+   'canApproveHandoffFrom reads both; without them the queue is computed once against an empty roster');
+ok('the queue still asks the same predicate the write asks',
+   /canApproveHandoffFrom\(isAdmin \? \{ userRole: 'ADMIN' \} : myProfile, receiver\?\.location, motorists\)/.test(apSrc),
+   'a screen that decides permission differently from the write is the UI-says-yes pattern');
+ok('and it still refuses to let you authorise your own hand-off',
+   /if \(agentProfileId && \(r\.toAgentId === agentProfileId \|\| r\.fromAgentId === agentProfileId\)\) return false/.test(apSrc),
+   'opening the panel to more people must not open it to the two who may never approve');
+
+/* ── the queue, re-run on real people ─────────────────────────────────────────────────── */
+const AP_REQ = { id: 'r1', status: 'PENDING_ADMIN', fromAgentId: 'canvas', toAgentId: 'motorist' };
+const AP_ROSTER = [
+  { id: 'canvas', name: '[TEST] SALES CANVAS', userRole: 'AGENT', location: 'HEADQUARTERS' },
+  { id: 'motorist', name: '[TEST] SALES MOTORIST', userRole: 'AGENT', location: 'HEADQUARTERS' },
+  { id: 'regional', name: '[TEST] REGIONAL ADMIN', userRole: 'AREA_ADMIN', location: 'HEADQUARTERS', approvalRegions: ['HEADQUARTERS'] },
+];
+// The queue predicate, standing in for canApproveHandoffFrom: an admin always, otherwise a person
+// named for the receiving agent's branch. Sender and receiver are excluded first, as in the source.
+const apQueue = (viewerId, viewerIsAdmin) => {
+  if (viewerId && (AP_REQ.toAgentId === viewerId || AP_REQ.fromAgentId === viewerId)) return [];
+  const receiver = AP_ROSTER.find(m => m.id === AP_REQ.toAgentId);
+  if (viewerIsAdmin) return [AP_REQ];
+  const me = AP_ROSTER.find(m => m.id === viewerId);
+  const named = (me?.approvalRegions || []).includes(String(receiver?.location || '').toUpperCase());
+  return named ? [AP_REQ] : [];
+};
+// What the panel decides to draw, now that isAdmin no longer decides it.
+const apPanel = (viewerId, viewerIsAdmin) => {
+  const queue = apQueue(viewerId, viewerIsAdmin);
+  const incoming = AP_REQ.toAgentId === viewerId ? [AP_REQ] : [];
+  if (!queue.length && !incoming.length) return 'No pending action required.';
+  return `${queue.length} to authorise, ${incoming.length} incoming`;
+};
+
+ok('HIS CASE: the Tier 4 regional admin named for that branch sees the request to authorise',
+   apPanel('regional', false) === '1 to authorise, 0 incoming',
+   'got: ' + apPanel('regional', false));
+ok('the Tier 1 owner still sees it too — that is Option B, and it never changed',
+   apPanel(null, true) === '1 to authorise, 0 incoming',
+   'got: ' + apPanel(null, true));
+ok('the RECEIVER sees it as incoming, and gets no authorise button for their own store',
+   apPanel('motorist', false) === '0 to authorise, 1 incoming',
+   'got: ' + apPanel('motorist', false));
+ok('the SENDER gets neither — they cannot approve what they asked for',
+   apPanel('canvas', false) === 'No pending action required.',
+   'got: ' + apPanel('canvas', false));
+ok('and an agent with no approval power over that branch still sees nothing',
+   apPanel('outsider', false) === 'No pending action required.',
+   'got: ' + apPanel('outsider', false));
+
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

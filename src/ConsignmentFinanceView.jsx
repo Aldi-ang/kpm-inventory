@@ -423,7 +423,12 @@ export default function ConsignmentFinanceView({ transactions = [], customers = 
             return canApproveHandoffFrom(isAdmin ? { userRole: 'ADMIN' } : myProfile, receiver?.location, motorists);
         });
         return { incomingRequests: incoming, outgoingRequests: outgoing, pendingAdminRequests: adminPend };
-    }, [transferRequests, agentProfileId, isAdmin]);
+        /* `motorists` and `myProfile` were MISSING here while `adminPend` reads both. The roster
+           arrives from Firestore after the first paint, so the queue was computed once against an
+           empty roster — canApproveHandoffFrom got no receiver and no approver record, returned
+           nothing, and never re-ran. A branch approver's queue stayed empty for the whole session
+           even once the render gate let them see it. */
+    }, [transferRequests, agentProfileId, isAdmin, motorists, myProfile]);
 
     const handleAuditInput = (key, field, val) => {
         const numVal = parseInt(val) || 0;
@@ -956,7 +961,7 @@ export default function ConsignmentFinanceView({ transactions = [], customers = 
                     <button onClick={() => setActiveTab('stock')} className={`flex items-center gap-2 px-4 md:px-6 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-all whitespace-nowrap ${activeTab === 'stock' ? 'bg-blue-500 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}><Box size={16}/> Physical Stock</button>
                     <button onClick={() => setActiveTab('transfers')} className={`flex items-center gap-2 px-4 md:px-6 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-all whitespace-nowrap relative ${activeTab === 'transfers' ? 'bg-indigo-500 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}>
                         <ArrowLeftRight size={16}/> Hand-offs
-                        {(incomingRequests.length > 0 || (isAdmin && pendingAdminRequests.length > 0)) && (
+                        {(incomingRequests.length > 0 || pendingAdminRequests.length > 0) && (
                             <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-ping"></span>
                         )}
                     </button>
@@ -1202,9 +1207,27 @@ export default function ConsignmentFinanceView({ transactions = [], customers = 
             {activeTab === 'transfers' && (
                 <div className="animate-fade-in-up grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="bg-black/20 border border-white/10 rounded-2xl p-6">
-                        <h3 className="font-black text-white uppercase tracking-widest mb-4 flex items-center gap-2"><ArrowLeftRight className="text-indigo-500"/> {isAdmin ? 'Admin Auth Required' : 'Incoming Hand-offs'}</h3>
+                        {/* 🔴 `isAdmin` DECIDED THIS AND IT SHOULD NEVER HAVE. Aldi, 2026-09-07, signed in as a
+                            real Tier 4 regional admin he had granted approval power in Fleet & Canvas:
+                            *"regional admin does get the notification bell for the approval, but when i open
+                            consignment menu there is none of that bell notification inside it"*.
+
+                            `pendingAdminRequests` was already right — it asks `canApproveHandoffFrom`, which
+                            is the same predicate the write uses, so a branch approver is in that list. Only
+                            the RENDER disagreed, and `isAdmin` here is not even "is an admin": it is the
+                            vault-unlock flag, which POV forces to false. So the bell said "awaiting your
+                            authorization" over a panel that said "No pending action required."
+
+                            The list itself is the permission now. Both lists draw, because they are disjoint
+                            by construction — the queue excludes anything you sent or are receiving — and a
+                            person can genuinely be approving one hand-off while receiving another. */}
+                        <h3 className="font-black text-white uppercase tracking-widest mb-4 flex items-center gap-2"><ArrowLeftRight className="text-indigo-500"/> {
+                            pendingAdminRequests.length > 0 && incomingRequests.length > 0 ? 'Hand-offs Needing You'
+                            : pendingAdminRequests.length > 0 ? 'Admin Auth Required'
+                            : 'Incoming Hand-offs'
+                        }</h3>
                         <div className="space-y-4">
-                            {isAdmin ? pendingAdminRequests.map(r => (
+                            {pendingAdminRequests.map(r => (
                                 <div key={r.id} className="bg-indigo-950/20 border border-indigo-500/30 p-4 rounded-xl">
                                     <div className="flex justify-between items-start mb-3">
                                         <div><p className="text-xs text-slate-400">Store Transfer</p><h4 className="font-bold text-white text-lg">{r.storeName}</h4></div>
@@ -1216,7 +1239,8 @@ export default function ConsignmentFinanceView({ transactions = [], customers = 
                                         <button onClick={() => onAdminApproveTransfer(r, true)} className="flex-1 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-xs font-bold transition-colors">Authorize Transfer</button>
                                     </div>
                                 </div>
-                            )) : incomingRequests.map(r => (
+                            ))}
+                            {incomingRequests.map(r => (
                                 <div key={r.id} className="bg-indigo-950/20 border border-indigo-500/30 p-4 rounded-xl">
                                     <div className="flex justify-between items-start mb-3">
                                         <div><p className="text-xs text-slate-400">Incoming from {r.fromAgentName}</p><h4 className="font-bold text-white text-lg">{r.storeName}</h4></div>
@@ -1275,7 +1299,7 @@ export default function ConsignmentFinanceView({ transactions = [], customers = 
                                     )}
                                 </div>
                             ))}
-                            {(isAdmin ? pendingAdminRequests.length === 0 : incomingRequests.length === 0) && <p className="text-center text-xs text-slate-400 py-8">No pending action required.</p>}
+                            {pendingAdminRequests.length === 0 && incomingRequests.length === 0 && <p className="text-center text-xs text-slate-400 py-8">No pending action required.</p>}
                         </div>
                     </div>
 
