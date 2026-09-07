@@ -4,26 +4,50 @@ Copy the block below. It is the only thing on this page you should paste.
 
 ---
 
-FIRST, BEFORE ANY CODE: Aldi owes a test pass, and he asked to be reminded of it. Walk him through
-**Round 7 of `MANUAL_TEST_CHECKLIST.md`** at the repo root, one section at a time, waiting for his
-answer on each. Do not start the coding job below until he says it is done, or tells you to skip it.
+FIRST, BEFORE ANY CODE: Aldi is PART WAY THROUGH Round 7 of `MANUAL_TEST_CHECKLIST.md`. Pick it up
+at **Section B** and walk him through B, C, D and E one section at a time, waiting for his answer on
+each. Do not start the coding job below until he says it is done, or tells you to skip it.
 
-  WHY IT IS NOT OPTIONAL: the whole store hand-off feature shipped 2026-09-06, is LIVE on
-  kpm-ang.vercel.app, and not one line of it has been seen on screen by a human. It is proven by
-  1119 automated checks and by nothing else. Two failures are worth catching by hand:
+  SECTION A IS DONE, 2026-09-07 — the hand-off picker passed on every point. His words: *"i check
+  already and my tier 5 test account are limited to seeing team member only ... great job, no
+  tickbox nothing, tickbox only showing on upper tier"*. Do not re-ask A.
 
-    - Editing somebody PHONE NUMBER must not silently strip their hand-off approval power. That is
-      the null-not-empty-array trap in Fleet & Canvas. A check asserts both save paths; only a real
-      save proves it.
-    - Naming ONE account for BANDUNG must take Bandung OFF Bandung own regional admin. If that admin
-      still gets the approval bell, the displacement rule is not firing and the feature does the
-      opposite of what he asked for.
+  TWO BUGS CAME OUT OF SECTION A AND ARE ALREADY FIXED. Do not re-find them:
+    - `2e5a8ac` the consignment list labelled stores with the Google account name, and named the
+      seller of the newest row rather than the current holder. Now: `ownerAgentId` first, roster
+      name second (`ConsignmentFinanceView.jsx`, `rosterNameById` + `handedOwnerByStore`).
+    - `4bd0f52` a phone number is no longer required to save a person, and the refusal names the
+      empty field. Email and Name stay required — the email IS the document id of
+      `employee_directory/<email>`, and a blank name undoes `2e5a8ac`.
+    - `7d9b5ba` personnel saved under the signed-in admin's OWN email are that admin in another form:
+      roster record, no `employee_directory` entry, and the duplicate-email refusal stands down for
+      that case only. This also closed a live foot-gun — the directory maps one email to one agentId,
+      so a test person on his address repointed his own login at it and would demote him out of
+      Tier 1 on next sign-in.
 
-  He needs two agents in one branch and one in another to test properly. Tell him that up front so
-  he can set it up before you start asking questions.
+  ✅ NO LEFTOVER TO CLEAN — checked and dismissed 2026-09-07. A stale
+  `employee_directory/<his email>` was suspected, but the OLD duplicate-email guard tested the
+  motorist roster, and his own owner record already holds that address, so every attempt to save a
+  test person on it was refused before any write. Confirmed by the fact that he is signing in as
+  Tier 1 right now: the create branch used a bare `set` with no merge, so one such save would have
+  overwritten his `role: 'COMPANY_OWNER'` record and demoted him at the next sign-in
+  (`App.jsx:2452-2468` merges the email doc over the uid doc, then routes on `activeData.role`).
 
-THEN THE CODING JOB: Product Performance reports unpaid consignment as finished revenue. Split it, and decide what
-the months already written are allowed to say.
+  ⚠️ NEITHER FIX HAS BEEN SEEN ON SCREEN. Both are proven by checks and by nothing else. The
+  preview pane refuses the dev server's self-signed certificate, so ask Aldi to look, or fix the
+  viewing path first (`A-Brain/Wiki/Concepts/Looking at the App.md`).
+
+  Sections C and D need TWO accounts signed in at once, and Section C needs a person with a branch
+  ticked in "Hand-off approval branches". Tell him that before you start asking.
+
+🔴 HE ALSO OWES ONE DECISION, ASK EARLY: may you trim `.claude/PROGRESS.md`? It is 205,634 bytes /
+3,051 lines, the SessionStart hook prints the whole thing (measured: a 200,816-byte dump), and it
+re-prints on startup, resume, `/clear` AND compact. At 33 sessions in one day that is roughly 1.6M
+tokens of pure startup. The file's own rule says trim LOG to ~5 entries. Trim per-track — keep the
+newest few 🟠 KPM entries and the newest few 🔵 7DTD entries separately, never re-sort across them.
+
+THEN THE CODING JOB: Product Performance reports unpaid consignment as finished revenue. Split it,
+and decide what the months already written are allowed to say.
 
 ALDI'S REPORT, verbatim 2026-09-05: *"this shouldnt be categorize as sales yet, because it is
 account receivable and customer can also return the good right so there should be another parts of
@@ -67,34 +91,10 @@ assert the anchors were FOUND before slicing, re-run the arithmetic on real numb
 before green. Copy the modified source files aside and `git checkout --` them rather than stashing -
 a stash can take the check file with it, and then the trial cannot fail and proves nothing.
 
-BEFORE ANYTHING ELSE, CHECK THIS IS DONE. The deployed login was blocked by the browser, not by a
-setting: the app sat on kpm-ang.vercel.app while the Google handshake happened on
-cello-inventory-manager.firebaseapp.com, and Brave/Safari block one site reading the other s cookie.
-FIXED, DEPLOYED AND CONFIRMED 2026-09-06 15:50 - he signed in on the live link with Brave shields
-UP. Nothing is owed. The two steps below are recorded only so a NEW host is set up the same way:
-  1. Google Cloud Console -> APIs & Services -> Credentials -> the Web client -> Authorized redirect
-     URIs -> add https://kpm-ang.vercel.app/__/auth/handler
-  2. THEN push the branch so Vercel rebuilds.
-Registering second breaks that host with redirect_uri_mismatch, so the console step always comes
-first. PROXIED_AUTH_HOSTS in firebase.js currently holds ONE host.
-
 STANDING RULE, his words 2026-09-06: "well now we will start working on localhost again dont need to
-push the update everytime". Commit locally and stop. A push is something he asks for by name. Full write-up: A-Brain/Wiki/Concepts/The Cross-Site Login Block.md
-
-NOT PART OF THIS JOB, but know it: the demo link is LIVE. Aldi turned off Vercel Deployment
-Protection and added the domain in the Firebase console himself on 2026-09-06, and `curl` confirms
-`kpm-ang.vercel.app` answers 200 with no redirect. Real accounts work through Fleet & Canvas using a
-person's Google address - there is no self-signup and none is needed.
-
-The hand-off feature shipped across four commits that day and is NOT verified visually. If he reports
-anything odd about the picker, the Fleet approval chips or the approval queue, read
-`A-Brain/Wiki/Concepts/Handoff Eligibility.md` FIRST - it records that approval was briefly built on
-the permission matrix per TIER, which he rejected, and why the per-person version replaced it. Do not
-re-propose the tier version on the strength of his older words about "the matrix".
-
-STANDING RULE set 2026-09-06, his words: "well now we will start working on localhost again dont
-need to push the update everytime". Commit locally and stop. Do not offer a push. He asks for one by
-name when he wants to show somebody the live link.
+push the update everytime". Commit locally and stop. A push is something he asks for by name. The
+login fix is deployed and confirmed; nothing is owed there. Full write-up:
+`A-Brain/Wiki/Concepts/The Cross-Site Login Block.md`
 
 Then rewrite `.claude/NEXT-SESSION.md` with the next single job.
 
@@ -118,24 +118,9 @@ Then rewrite `.claude/NEXT-SESSION.md` with the next single job.
 - ⚠️ Two audit checks guard the Ponder scene splits — search `strandedBeats` in
   `integration.audit.mjs`. Do not weaken them.
 
-### C — damaged goods handed back are still billed
+### Housekeeping — the preview pane cannot see the dev server
 
-`returnTotal` written at `useTransactionEngine.js:492`, `:569`, `:590`, read by no money
-calculation. Trap: a standalone `RETURN` already carries a negative total and subtracts itself;
-only the return inside a `CONSIGNMENT_PAYMENT` is broken, so a blind fix double-counts. **More
-urgent since `4bb9ad7`** — field agents now have the Store Audit button, so they reach this path too.
-
-### A — Journey Plan reassigns stores by itself
-
-`JourneyView.jsx:561-583`. Fuzzy name match writes a new owner with `.catch(() => {})` and no
-message. Read `A-Brain/Wiki/Concepts/Ownership Moves, History Does Not.md` first.
-
-### Aldi's own list
-
-`A-Brain/Backlog/Deploy the store hand-off write rule.md` — his deploy, not yours.
-
-### 7 Days to Die track — separate repo
-
-`C:\Users\ASUS\AppData\Roaming\7DaysToDie\MODS-NOTES.md` and `NEXT-JOB.md`.
-
+`vite --host` serves HTTPS with a self-signed certificate and the in-app browser refuses both
+`https://localhost:5173` and `http://localhost:5173`. Every visual claim this session had to be
+handed back unverified because of it. Worth one session to fix properly.
 </details>
