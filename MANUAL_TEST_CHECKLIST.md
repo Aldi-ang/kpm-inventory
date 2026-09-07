@@ -398,7 +398,11 @@ branch** (say BANDUNG). Fleet & Canvas → each person → set their branch.
 - [ ] The account you ticked BANDUNG for **also** gets it.
 - [ ] **Bandung's regional admin does NOT get it**, because naming somebody displaces the default.
       ⚠️ If they still get it, the displacement rule is not firing and the whole point is lost.
-- [ ] The **receiving agent** does not get an approval bell for their own incoming store.
+- [ ] The **receiving agent** does not get an approval bell for their own incoming store —
+      **UNLESS they already hold that branch's approval power.** Changed 2026-09-07 (`ad4f18b`) on
+      Aldi's instruction: *"yeah they should be able to confirm their own request"*. So a plain
+      Tier 5/6 agent who accepts a store must still get NO Authorize button; a regional admin who
+      accepts one SHOULD get it. Test both, and do not report the second as a bug.
 
 **D. Two people, one button**
 

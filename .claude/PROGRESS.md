@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-09-07 20:07 WIB (🟠 KPM — Round 7 IN PROGRESS; Section A passed, ELEVEN fixes shipped, all committed. He is re-running Section C as Tier 4 after `5973fc2`. B, D, E still owed. · 🔵 7DTD — fan-out gate built, no app code touched.)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **LOG TRIMMED · 1247/1247 selfcheck · 722/722 audit · build clean** · branch `phase0-solid-ground`
+**Updated: 2026-09-07 20:07 WIB (🟠 KPM — Round 7 IN PROGRESS; Section A passed, TWELVE changes shipped, all committed. He is re-running Section C as Tier 4 after `5973fc2`. B, D, E still owed. · 🔵 7DTD — fan-out gate built, no app code touched.)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **LOG TRIMMED · 1250/1250 selfcheck · 722/722 audit · build clean** · branch `phase0-solid-ground`
 
 **✅ SECTION C, FIRST HALF CONFIRMED ON SCREEN.** He re-ran it as the Tier 4 regional admin after
 `5973fc2`: *"yes the button is there"* — screenshot shows ADMIN AUTH REQUIRED with Reject /
@@ -19,6 +19,19 @@ already there"*, offer drawn in full (Rp 130.500 · 15 Bks · Cello Coffee & Car
 above Reject / Authorize. The shot was taken **inside the POV costume**, which independently proves
 the `isAdmin`-is-really-`vaultUnlocked` half of `5973fc2`: POV forces that flag false, so before the
 fix that panel could not have drawn at all.
+
+**The twelfth change — `ad4f18b`, and it is a RULE CHANGE he made, not a bug fix.** He handed a store
+to the Tier 4 regional admin, who could accept but not authorise: *"cant approve it themself can u
+fix this"*. Told that was the second key of a three-key protocol and that Tier 1 could already
+approve it, he decided anyway: *"yeah they should be able to confirm their own request"*. Concern
+raised once, his call taken. **Implemented narrowly:** only the receiver exclusion was dropped, so
+`canApproveHandoffFrom` still runs and an ordinary agent who accepts a store is refused exactly as
+before; the SENDER is still refused outright. The bell fan-out moved with the button
+(`handoffApprovers` excludes only the sender now) — a button with no notification behind it is the
+same fault as `5973fc2`'s notification with no button. Two existing checks failed on the change,
+which is what they were for, and were updated rather than deleted. **`MANUAL_TEST_CHECKLIST.md`
+Round 7 Section C item 4 was rewritten to match** — it said the receiver gets no bell, which is now
+only true for a plain agent.
 
 **⚠️ STILL OWED IN SECTION C, and it is the half that matters.** Both confirmations so far are
 "the right person CAN see it". Neither tests **who must NOT**:

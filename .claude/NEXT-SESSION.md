@@ -89,6 +89,15 @@ until he says the round is finished, or tells you to skip it.
   independently proves the `isAdmin`-is-really-`vaultUnlocked` half of `5973fc2`: POV forces that flag
   false, so before the fix the panel could not have drawn at all.
 
+    - `ad4f18b` **RULE CHANGE, his call, not a bug fix.** A receiver may now authorise a store handed
+      to them. He was told it was the second key of a three-key protocol and answered *"yeah they
+      should be able to confirm their own request"*. Only the receiver exclusion was dropped —
+      `canApproveHandoffFrom` still runs, so an ordinary agent who accepts a store is refused as
+      before, and the SENDER is still refused outright. The bell fan-out moved with it
+      (`handoffApprovers` now excludes only the sender). **Do not "restore" this as if it were a
+      regression** — Round 7 Section C item 4 in `MANUAL_TEST_CHECKLIST.md` still says the receiver
+      gets no approval bell, and that line is now OUT OF DATE. Fix the checklist before re-testing.
+
   ⚠️ NO OTHER FIX SINCE `0cb7efa` HAS BEEN SEEN ON SCREEN. The shake fix in particular is measured, not
   rendered: the recording proves the scrollbar moved and the arithmetic proves the old badge
   overflowed, but nobody has watched the fixed version. Both are proven by checks and by nothing else. The
