@@ -98,6 +98,16 @@ until he says the round is finished, or tells you to skip it.
       regression** — Round 7 Section C item 4 in `MANUAL_TEST_CHECKLIST.md` still says the receiver
       gets no approval bell, and that line is now OUT OF DATE. Fix the checklist before re-testing.
 
+    - `994d3d6` 🔴 **SECURITY — the vault grace belonged to a browser, not a person.** He reported it
+      as a hand-off leak (a Tier 4 in MUNTILAN seeing HEADQUARTERS hand-offs); the tell in his
+      screenshot was the header reading **GLOBAL RECEIVABLES**, which only `isAdmin` draws. `user.uid`
+      is hijacked to `trueBossUid` at sign-in, so the grace record Aldi wrote when HE unlocked the
+      vault was found again by the next person to sign in on that browser and made them a global
+      admin. Now keyed on `realUid`, and a hijacked agent session never restores the vault at all.
+      **⚠️ ASK HIM TO RE-TEST IT**: sign in as ALEX on a browser where he unlocked the vault minutes
+      earlier and confirm the header says MY RECEIVABLES, not GLOBAL. That is the whole fix, and it
+      has not been seen.
+
   ⚠️ NO OTHER FIX SINCE `0cb7efa` HAS BEEN SEEN ON SCREEN. The shake fix in particular is measured, not
   rendered: the recording proves the scrollbar moved and the arithmetic proves the old badge
   overflowed, but nobody has watched the fixed version. Both are proven by checks and by nothing else. The

@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-09-07 20:07 WIB (🟠 KPM — Round 7 IN PROGRESS; Section A passed, TWELVE changes shipped, all committed. He is re-running Section C as Tier 4 after `5973fc2`. B, D, E still owed. · 🔵 7DTD — fan-out gate built, no app code touched.)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **LOG TRIMMED · 1250/1250 selfcheck · 722/722 audit · build clean** · branch `phase0-solid-ground`
+**Updated: 2026-09-07 20:07 WIB (🟠 KPM — Round 7 IN PROGRESS; Section A passed, THIRTEEN changes shipped, all committed — one of them a SECURITY fix. He is re-running Section C as Tier 4 after `5973fc2`. B, D, E still owed. · 🔵 7DTD — fan-out gate built, no app code touched.)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **LOG TRIMMED · 1261/1261 selfcheck · 722/722 audit · build clean** · branch `phase0-solid-ground`
 
 **✅ SECTION C, FIRST HALF CONFIRMED ON SCREEN.** He re-ran it as the Tier 4 regional admin after
 `5973fc2`: *"yes the button is there"* — screenshot shows ADMIN AUTH REQUIRED with Reject /
@@ -32,6 +32,27 @@ same fault as `5973fc2`'s notification with no button. Two existing checks faile
 which is what they were for, and were updated rather than deleted. **`MANUAL_TEST_CHECKLIST.md`
 Round 7 Section C item 4 was rewritten to match** — it said the receiver gets no bell, which is now
 only true for a plain agent.
+
+**🔴 THE THIRTEENTH — `994d3d6`, AND IT IS A SECURITY FIX, NOT A HAND-OFF ONE.** He reported *"the
+other T4 account located in different area also receive the approval request that is not on their
+regional area"* — ALEX, T4 REGIONAL ADMIN in MUNTILAN, seeing a HEADQUARTERS hand-off. **The tell was
+in his screenshot, not in his sentence:** that account's header read **GLOBAL RECEIVABLES** with an
+ALL REGIONS filter, and only `isAdmin` draws that heading. So it was never about branches.
+
+`user.uid` is **hijacked** at sign-in to `trueBossUid` so every read lands in the owner's tenancy,
+with the person's own id kept beside it as `realUid`. The vault-grace effect read `user.uid`, so the
+record Aldi wrote when HE unlocked the vault was found again by **the next person to sign in on that
+browser** — `setIsAdmin(true)` ran for them. A Tier 4 became a global admin with every store, every
+region and every branch's approval queue. Any agent on any device he had unlocked within five
+minutes got the same.
+
+Fixed with two guards: keyed on `realUid`, and a hijacked agent session never restores the vault at
+all. **His own five minutes are untouched** (the owner is not hijacked, so the key is unchanged) and
+a check pins that, plus expiry. 11 checks, trialled red on both guards. One audit check pinned the
+old identifier and was updated, not weakened.
+
+**✅ TEST HE STILL OWES ON IT:** sign in as ALEX on a browser where he unlocked the vault minutes
+before, and confirm the header says **MY RECEIVABLES**, not GLOBAL.
 
 **⚠️ STILL OWED IN SECTION C, and it is the half that matters.** Both confirmations so far are
 "the right person CAN see it". Neither tests **who must NOT**:
