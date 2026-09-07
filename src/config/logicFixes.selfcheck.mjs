@@ -5518,5 +5518,49 @@ ok('and an agent with no approval power over that branch still sees nothing',
    'got: ' + apPanel('outsider', false));
 
 
+section('THE ALERT DOT NO LONGER SHAKES THE TAB STRIP (Aldi, 2026-09-07)');
+
+/* He sent a screen recording: *"there is snapping animation when the red link blinking on this
+   page"*, and said the whole panel did it on a Tier 6 account too. Frame by frame, the SCROLLBAR
+   under the tabs moves on every pulse — so it was never an animation problem.
+
+   The dot sat at `-top-1 -right-1`, OUTSIDE its button, inside a strip that is `overflow-x-auto`.
+   `animate-ping` scales 2x, and a CSS transform still extends an element's SCROLLABLE OVERFLOW even
+   though it does not affect layout. Every pulse grew and shrank the strip's scrollWidth, the
+   scrollbar resized twice a second, and the tabs jumped with it.
+
+   The geometry is both the fix and the check: the badge has to sit far enough inside that the ring
+   at full scale never reaches the button's edge. */
+
+const dtRaw = read('src/ConsignmentFinanceView.jsx');
+
+ok('the alert badge sits INSIDE the button, not hanging off its corner',
+   /<span className="absolute top-2 right-2 flex h-2 w-2">/.test(dtRaw) &&
+   !/absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-ping/.test(dtRaw),
+   'a negative inset plus a 2x transform is what pushed the scroll width of an overflow-x-auto strip');
+ok('the ring pings behind a solid dot instead of the dot pinging itself',
+   /rounded-full bg-red-500 opacity-75 animate-ping/.test(dtRaw) &&
+   /<span className="relative inline-flex h-2 w-2 rounded-full bg-red-500">/.test(dtRaw),
+   'animate-ping fades to zero at its peak, so the alert vanished half the time — the "blinking" half of his report');
+ok('the strip it lives in really is a horizontal scroller, which is why this mattered at all',
+   /overflow-x-auto max-w-full shrink-0/.test(dtRaw),
+   'if that strip ever stops scrolling this bug cannot recur, and this section should be retired with it');
+
+/* The geometry, re-run. Tailwind: top-2 / right-2 = 8px inset, h-2 / w-2 = 8px box, and ping scales
+   to 2x about the centre, so the ring grows by half its own width on each side. */
+const RING_PX = 8, INSET_PX = 8, PING_SCALE = 2;
+const overhang = (ring, inset, scale) => (ring * scale - ring) / 2 - inset;
+
+ok('at full scale the ring stops 4px short of the edge, so scrollWidth cannot change',
+   overhang(RING_PX, INSET_PX, PING_SCALE) === -4,
+   'got ' + overhang(RING_PX, INSET_PX, PING_SCALE) + 'px overhang; anything >= 0 reaches the edge');
+ok('and the OLD geometry really did overflow — so this check could have failed',
+   overhang(12, -4, PING_SCALE) === 10,
+   'the previous badge was 12px at a -4px inset: 10px past the edge, twice a second');
+ok('a bigger dot at the same inset would bring it straight back',
+   overhang(24, INSET_PX, PING_SCALE) > 0,
+   'this is the edit that would silently reintroduce the shake');
+
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

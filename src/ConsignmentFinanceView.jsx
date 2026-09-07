@@ -962,7 +962,25 @@ export default function ConsignmentFinanceView({ transactions = [], customers = 
                     <button onClick={() => setActiveTab('transfers')} className={`flex items-center gap-2 px-4 md:px-6 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-all whitespace-nowrap relative ${activeTab === 'transfers' ? 'bg-indigo-500 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}>
                         <ArrowLeftRight size={16}/> Hand-offs
                         {(incomingRequests.length > 0 || pendingAdminRequests.length > 0) && (
-                            <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-ping"></span>
+                            /* 🔴 THE SHAKE. Aldi, 2026-09-07, with a video: *"there is snapping animation
+                               when the red link blinking on this page"*, and the whole row twitched in time
+                               with the pulse.
+
+                               It was never an animation problem. The dot sat at `-top-1 -right-1`, OUTSIDE
+                               the button, inside a strip that is `overflow-x-auto`. `animate-ping` scales 2x,
+                               and a CSS transform still extends an element's SCROLLABLE OVERFLOW even though
+                               it does not affect layout — so every pulse grew and shrank the strip's
+                               scrollWidth, the scrollbar resized twice a second, and the tabs jumped with it.
+                               The recording shows the scrollbar under the tabs moving on each beat.
+
+                               Two fixes in one: the badge is now INSIDE the button, far enough in that the
+                               2x ring never reaches the edge; and the ring pings behind a solid dot instead
+                               of the dot pinging itself, so the alert no longer fades to nothing at the peak
+                               — which is the half he read as "blinking". */
+                            <span className="absolute top-2 right-2 flex h-2 w-2">
+                                <span className="absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-75 animate-ping"></span>
+                                <span className="relative inline-flex h-2 w-2 rounded-full bg-red-500"></span>
+                            </span>
                         )}
                     </button>
                 </div>
