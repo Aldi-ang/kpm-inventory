@@ -5,6 +5,45 @@ import { confirmAction } from './components/ConfirmGate.jsx';
 import { handoffEligibility, canHandOffAcrossRegions, normalizeRegion, canApproveHandoffFrom } from './config/permissions';
 import { notify } from './components/Toast.jsx';
 
+/* 📦 THE OFFER, drawn identically wherever a hand-off is being decided. Aldi, 2026-09-07, the moment
+   the approver's button finally appeared: *"please also put the store and product information so
+   that the approval person can see it too"*. The receiver could see what they were taking on and
+   the person actually authorising the move could not.
+
+   ONE component, two cards, on purpose: the receiver's copy and the approver's copy answer the same
+   question — what is at this shop and what is owed — and two hand-written copies of that drift the
+   first time either is edited. */
+function HandoffOffer({ r }) {
+    if (!r.stockSnapshot) return (
+        <p className="text-[11px] text-amber-400/80 bg-black/40 border border-amber-500/20 rounded-lg p-2 mb-3">
+            This request was made before the stock summary existed. Ask {r.fromAgentName} what is at this shop before deciding.
+        </p>
+    );
+    return (
+        <div className="bg-black/40 border border-indigo-500/20 rounded-lg p-3 mb-3">
+            <div className="flex justify-between items-center mb-2">
+                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Outstanding debt</span>
+                <span className="font-mono font-bold text-emerald-400 text-sm">{formatRupiah(r.stockSnapshot.balance || 0)}</span>
+            </div>
+            <div className="flex justify-between items-center mb-2 pb-2 border-b border-slate-700/50">
+                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Physical stock</span>
+                <span className="font-mono font-bold text-white text-sm">{r.stockSnapshot.totalBks || 0} Bks</span>
+            </div>
+            <ul className="space-y-1">
+                {(r.stockSnapshot.items || []).map((it, i) => (
+                    <li key={i} className="flex justify-between text-[11px] text-slate-300">
+                        <span className="truncate pr-2">{it.name}{it.tier ? ` (${it.tier})` : ''}</span>
+                        <span className="font-mono text-slate-400 shrink-0">{it.qty} Bks</span>
+                    </li>
+                ))}
+                {(r.stockSnapshot.items || []).length === 0 && (
+                    <li className="text-[11px] text-slate-500 italic">No stock left at this shop — debt only.</li>
+                )}
+            </ul>
+        </div>
+    );
+}
+
 export default function ConsignmentFinanceView({ transactions = [], customers = [], focusStore = null, onFocusStoreHandled, inventory = [], onAddGoods, onPayment, onReturn, onDeleteConsignment, isAdmin, user, agentProfileId, motorists = [], transferRequests = [], onRequestTransfer, onAgentAcceptTransfer, onAdminApproveTransfer, onShowStoreOnJourney, appSettings, triggerCapy }) {
     const [activeTab, setActiveTab] = useState('financials');
     
@@ -1251,7 +1290,13 @@ export default function ConsignmentFinanceView({ transactions = [], customers = 
                                         <div><p className="text-xs text-slate-400">Store Transfer</p><h4 className="font-bold text-white text-lg">{r.storeName}</h4></div>
                                         <span className="bg-indigo-500 text-white text-[11px] px-2 py-1 rounded uppercase font-black">Admin Pending</span>
                                     </div>
-                                    <p className="text-xs text-slate-300 bg-black/40 p-2 rounded mb-4 text-center"><strong>{r.fromAgentName}</strong> <ArrowRight size={12} className="inline mx-1"/> <strong>{r.toAgentName}</strong></p>
+                                    <p className="text-xs text-slate-300 bg-black/40 p-2 rounded mb-3 text-center"><strong>{r.fromAgentName}</strong> <ArrowRight size={12} className="inline mx-1"/> <strong>{r.toAgentName}</strong></p>
+
+                                    {/* The approver is signing off a debt moving between two people. He asked
+                                        for this the moment the button appeared: they were being asked to
+                                        authorise a transfer whose size they could not see. */}
+                                    <HandoffOffer r={r} />
+
                                     <div className="flex gap-2">
                                         <button onClick={() => onAdminApproveTransfer(r, false)} className="flex-1 py-2 bg-red-900/50 hover:bg-red-500 text-white rounded text-xs font-bold transition-colors">Reject</button>
                                         <button onClick={() => onAdminApproveTransfer(r, true)} className="flex-1 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-xs font-bold transition-colors">Authorize Transfer</button>
@@ -1264,37 +1309,8 @@ export default function ConsignmentFinanceView({ transactions = [], customers = 
                                         <div><p className="text-xs text-slate-400">Incoming from {r.fromAgentName}</p><h4 className="font-bold text-white text-lg">{r.storeName}</h4></div>
                                     </div>
 
-                                    {/* 📦 WHAT IS ACTUALLY BEING HANDED OVER. Without this the card named a shop
-                                        and asked for a signature. `stockSnapshot` is null on requests made before
-                                        2026-09-07, and those say so rather than rendering "Rp 0" over "0 Bks",
-                                        which would read as an empty store instead of an unknown one. */}
-                                    {r.stockSnapshot ? (
-                                        <div className="bg-black/40 border border-indigo-500/20 rounded-lg p-3 mb-3">
-                                            <div className="flex justify-between items-center mb-2">
-                                                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Outstanding debt</span>
-                                                <span className="font-mono font-bold text-emerald-400 text-sm">{formatRupiah(r.stockSnapshot.balance || 0)}</span>
-                                            </div>
-                                            <div className="flex justify-between items-center mb-2 pb-2 border-b border-slate-700/50">
-                                                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Physical stock</span>
-                                                <span className="font-mono font-bold text-white text-sm">{r.stockSnapshot.totalBks || 0} Bks</span>
-                                            </div>
-                                            <ul className="space-y-1">
-                                                {(r.stockSnapshot.items || []).map((it, i) => (
-                                                    <li key={i} className="flex justify-between text-[11px] text-slate-300">
-                                                        <span className="truncate pr-2">{it.name}{it.tier ? ` (${it.tier})` : ''}</span>
-                                                        <span className="font-mono text-slate-400 shrink-0">{it.qty} Bks</span>
-                                                    </li>
-                                                ))}
-                                                {(r.stockSnapshot.items || []).length === 0 && (
-                                                    <li className="text-[11px] text-slate-500 italic">No stock left at this shop — debt only.</li>
-                                                )}
-                                            </ul>
-                                        </div>
-                                    ) : (
-                                        <p className="text-[11px] text-amber-400/80 bg-black/40 border border-amber-500/20 rounded-lg p-2 mb-3">
-                                            This request was made before the stock summary existed. Ask {r.fromAgentName} what is at this shop before accepting.
-                                        </p>
-                                    )}
+                                    {/* Same component the approver's card uses — see HandoffOffer. */}
+                                    <HandoffOffer r={r} />
 
                                     {/* An empty note used to render as a bare pair of quote marks. */}
                                     {r.note?.trim() && <p className="text-xs text-slate-400 italic mb-3">"{r.note}"</p>}

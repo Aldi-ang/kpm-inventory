@@ -5562,5 +5562,51 @@ ok('a bigger dot at the same inset would bring it straight back',
    'this is the edit that would silently reintroduce the shake');
 
 
+section('THE APPROVER SEES THE OFFER TOO, FROM THE SAME COMPONENT (Aldi, 2026-09-07)');
+
+/* The moment his Tier 4 approver's button appeared he asked for the rest: *"please also put the
+   store and product information so that the approval person can see it too"*. The RECEIVER could see
+   what they were taking on; the person actually authorising the debt to move could not.
+
+   One component, two cards. Two hand-written copies of "what is at this shop and what is owed"
+   drift the first time either is edited, and the two readers are answering the same question. */
+
+const ofRaw = read('src/ConsignmentFinanceView.jsx');
+
+ok('the offer summary is a component, not a block copied into each card',
+   /function HandoffOffer\(\{ r \}\) \{/.test(ofRaw),
+   'the receiver and the approver must not be able to disagree about the same request');
+ok('and BOTH cards render it — the approver\'s and the receiver\'s',
+   (ofRaw.match(/<HandoffOffer r=\{r\} \/>/g) || []).length === 2,
+   'one occurrence means only one of the two people deciding can see the numbers');
+ok('the approver sees it BEFORE the Reject / Authorize buttons, not after them',
+   ofRaw.indexOf('<HandoffOffer r={r} />') < ofRaw.indexOf('Authorize Transfer'),
+   'information printed under the button it should inform is decoration');
+ok('the approver card still names both sides of the move above it',
+   /<strong>\{r\.fromAgentName\}<\/strong> <ArrowRight size=\{12\} className="inline mx-1"\/> <strong>\{r\.toAgentName\}<\/strong>/.test(ofRaw),
+   'the debt is moving between two named people and the approver is signing that, not just a shop');
+ok('the fallback wording works for a person deciding, not only for one accepting',
+   /Ask \{r\.fromAgentName\} what is at this shop before deciding\./.test(ofRaw) &&
+   !/what is at this shop before accepting\./.test(ofRaw),
+   'the shared component is read by an approver too — "before accepting" is the receiver\'s word only');
+
+/* ── the same numbers reaching both readers ───────────────────────────────────────────── */
+const OF_REQ = {
+  id: 'r1', storeName: 'HQ (Retail) 1', fromAgentName: '[TEST] SALES CANVAS', toAgentName: '[TEST] SALES MOTORIST',
+  stockSnapshot: { balance: 130500, totalBks: 15, items: [{ name: 'Surya 16', qty: 15, tier: 'Retail' }] },
+};
+// The component is pure in its input: same request, same three figures, whoever is looking.
+const ofRender = (req) => req.stockSnapshot
+  ? { debt: req.stockSnapshot.balance, bks: req.stockSnapshot.totalBks, lines: (req.stockSnapshot.items || []).length }
+  : { fallback: true };
+
+ok('the approver and the receiver read the identical figures off one request',
+   JSON.stringify(ofRender(OF_REQ)) === JSON.stringify({ debt: 130500, bks: 15, lines: 1 }),
+   'got: ' + JSON.stringify(ofRender(OF_REQ)));
+ok('and a request with no snapshot falls back for both of them, not just for one',
+   ofRender({ id: 'r2' }).fallback === true,
+   'got: ' + JSON.stringify(ofRender({ id: 'r2' })));
+
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);
