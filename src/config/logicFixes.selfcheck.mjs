@@ -5012,5 +5012,75 @@ ok('and editing that same person is not a collision with themselves',
    phDup({ name: 'Y', email: 'y@test.com', phone: '0812111' }, 'a2') === false,
    'saving somebody without changing their phone number must not report their own number as taken');
 
+section('TEST PERSONNEL SHARE THE TIER 1 EMAIL AND GET NO LOGIN (Aldi, 2026-09-07)');
+
+/* His instruction: *"all of that test account should be locked into my tier 1 email only, should be
+   the same with that one, because only tier 1 who can access that account"*, and *"let the
+   compolsury data from previous update work for other than tier 1 account"*.
+
+   ⚠️ THIS WAS ALSO A LIVE FOOT-GUN, not only a convenience. `employee_directory/<email>` maps ONE
+   email to ONE agentId, and handleSaveAgent wrote it on every save. Registering a test person under
+   his own address therefore repointed HIS OWN login at that test record, and the next sign-in
+   resolved him to it and demoted him out of Tier 1. A person saved under the signed-in admin's own
+   email is that admin in another form: roster record yes, login mapping no. */
+
+const spSrc = code(read('src/FleetCanvasManager.jsx'));
+const spA = spSrc.indexOf('const emailKey');
+const spB = spSrc.indexOf('await batch.commit');
+ok('the save-path scope was found (anchors const emailKey .. await batch.commit)',
+   spA > -1 && spB > spA, 'anchor missed — the slice below would read the whole file');
+if (spA > -1 && spB > spA) {
+  const spSlice = spSrc.slice(spA, spB);
+  ok('the save path is the slice, not the rest of the file',
+     spSlice.length > 800 && spSlice.length < 9000, 'got ' + spSlice.length + ' chars');
+  ok('a self-proxy is decided by the SIGNED-IN admin\'s own email, not by a name convention',
+     /const isSelfProxy = !!user\?\.email && emailKey === user\.email\.toLowerCase\(\)\.trim\(\)/.test(spSlice),
+     'a "[TEST]" prefix is a label anybody can type — the address is the thing that actually collides');
+  ok('the duplicate-email refusal stands down for a self-proxy, and only for one',
+     /const isDupEmail = !isSelfProxy &&/.test(spSlice),
+     'the uniqueness it protects is the login mapping, and a self-proxy does not get one');
+  ok('BOTH directory writes are gated — the edit branch and the create branch',
+     (spSlice.match(/if \(!isSelfProxy\) batch\.set\(doc\(db, `artifacts\/\$\{appId\}\/employee_directory`/g) || []).length === 2,
+     'gating one branch and not the other leaves the demotion reachable through the other door');
+  ok('but the OLD address is still deleted when somebody moves onto the shared email',
+     /if \(oldEmailKey && oldEmailKey !== emailKey\) batch\.delete/.test(spSlice) &&
+     !/if \(!isSelfProxy.{0,40}batch\.delete/.test(spSlice),
+     'a real person turned into a test one must LOSE their login, not keep a stale one pointing at them');
+}
+ok('the compulsory fields are untouched for everybody else — the guard runs BEFORE isSelfProxy exists',
+   spSrc.indexOf("!newAgent.email && 'Google Account Email'") > -1 &&
+   spSrc.indexOf("!newAgent.email && 'Google Account Email'") < spSrc.indexOf('const isSelfProxy'),
+   'his words: "let the compolsury data from previous update work for other than tier 1 account" — a guard placed after the proxy test could be made conditional on it');
+ok('and the form says so on screen rather than saving differently in silence',
+   /TEST PERSONNEL — this is your own account in another form/.test(read('src/FleetCanvasManager.jsx')),
+   'a save that quietly skips a write looks identical to a normal save; every action must report');
+
+/* ── the save decision, re-run on real people ─────────────────────────────────────────── */
+const SP_ME = 'aldi@kpm.com';
+const SP_ROSTER = [
+  { id: 'a1', name: '[TEST] REGIONAL ADMIN', email: SP_ME },
+  { id: 'a2', name: 'Budi', email: 'budi@kpm.com' },
+];
+const spProxy = (email) => email.toLowerCase().trim() === SP_ME;
+const spDupEmail = (email, editingId) =>
+  !spProxy(email) && SP_ROSTER.some(a => a.email?.toLowerCase().trim() === email.toLowerCase().trim() && a.id !== editingId);
+const spWritesDirectory = (email) => !spProxy(email);
+
+ok('a SECOND test account on the same Tier 1 email is not refused as a duplicate',
+   spDupEmail(SP_ME, null) === false,
+   'a1 already holds that address — refusing here is what stopped him making more than one test tier');
+ok('and no login mapping is written for it',
+   spWritesDirectory(SP_ME) === false,
+   'writing it repoints his own sign-in at the test record and demotes him out of Tier 1');
+ok('a real second person on somebody else\'s address is still refused',
+   spDupEmail('budi@kpm.com', null) === true,
+   'two real people cannot share a login — that guard has to survive this change');
+ok('a real person still gets their login mapping',
+   spWritesDirectory('siti@kpm.com') === true,
+   'the whole directory is how a field agent signs in at all');
+ok('and editing Budi without changing his address is not a collision with himself',
+   spDupEmail('budi@kpm.com', 'a2') === false,
+   'saving somebody must not report their own email as taken');
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

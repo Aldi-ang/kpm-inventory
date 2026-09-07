@@ -212,6 +212,19 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
 
         const emailKey = newAgent.email.toLowerCase().trim();
 
+        /* 🧪 A PERSON REGISTERED UNDER YOUR OWN EMAIL IS YOU IN ANOTHER FORM. Aldi, 2026-09-07:
+           *"all of that test account should be locked into my tier 1 email only ... because only
+           tier 1 who can access that account"*. Those personnel exist to be switched into from the
+           Tier 1 account, never to sign in on their own.
+
+           ⚠️ AND WITHOUT THIS THEY WERE DANGEROUS. `employee_directory/<email>` maps ONE email to
+           ONE agentId, and both branches below write it. Saving a test person under his own address
+           repointed his own login at that test record, so the next sign-in resolved him to it and
+           demoted him out of Tier 1. Skipping the directory write is what makes sharing the address
+           safe, and it is why the duplicate-email refusal has to stand down for these too - the
+           uniqueness it protects is the login mapping, and these do not have one. */
+        const isSelfProxy = !!user?.email && emailKey === user.email.toLowerCase().trim();
+
         // 🚀 FIX: This is the exact class of input that crashed "Authorize & Register"
         // with a raw Firestore SDK error ("Invalid document reference... must have an
         // even number of segments") — a '/' where a '.' should be turns one document ID
@@ -219,7 +232,7 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
         // the user what to fix, instead of the save silently blowing up below.
         if (!isSafeDocIdEmail(emailKey)) return notify(`"${emailKey}" doesn't look like a valid email address. Check for a stray "/" or space — it should look like name@domain.com.`);
 
-        const isDupEmail = activeMotorists.some(a => a.email?.toLowerCase().trim() === emailKey && a.id !== editingAgentId);
+        const isDupEmail = !isSelfProxy && activeMotorists.some(a => a.email?.toLowerCase().trim() === emailKey && a.id !== editingAgentId);
         // Only a phone that was actually typed can collide — same shape as isDupPlate below.
         // Without this, the second person left blank reads as a duplicate of the first.
         const isDupPhone = newAgent.phone?.trim() && activeMotorists.some(a => a.phone?.trim() === newAgent.phone.trim() && a.id !== editingAgentId);
@@ -253,8 +266,9 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                 });
 
                 if (oldEmailKey && oldEmailKey !== emailKey) batch.delete(doc(db, `artifacts/${appId}/employee_directory`, oldEmailKey));
-                
-                batch.set(doc(db, `artifacts/${appId}/employee_directory`, emailKey), {
+
+                // No login mapping for a self-proxy — see isSelfProxy above.
+                if (!isSelfProxy) batch.set(doc(db, `artifacts/${appId}/employee_directory`, emailKey), {
                     bossUid: userId, agentId: editingAgentId, role: newAgent.role, userRole: newAgent.userRole || 'AGENT', status: 'Active',
                     location: newAgent.location || 'Headquarters',
                 }, { merge: true });
@@ -266,7 +280,8 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                     approvalRegions: (newAgent.approvalRegions || []).length ? newAgent.approvalRegions.map(normalizeRegion) : null
                 };
                 batch.set(doc(db, collPath, newId), agentData);
-                batch.set(doc(db, `artifacts/${appId}/employee_directory`, emailKey), {
+                // No login mapping for a self-proxy — see isSelfProxy above.
+                if (!isSelfProxy) batch.set(doc(db, `artifacts/${appId}/employee_directory`, emailKey), {
                     bossUid: userId, agentId: newId, role: newAgent.role, userRole: newAgent.userRole || 'AGENT', status: 'Active',
                     location: newAgent.location || 'Headquarters',
                 });
@@ -774,6 +789,16 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                                 )}
                             </div>
                             
+                            {/* Silence would make this look like a normal save that happens to be
+                                allowed. It is a different save: no login mapping is written. */}
+                            {!!user?.email && newAgent.email.trim().toLowerCase() === user.email.toLowerCase().trim() && (
+                                <p className="text-[10px] text-amber-400 font-bold mb-2 leading-relaxed">
+                                    🧪 TEST PERSONNEL — this is your own account in another form. No separate login is
+                                    created, so nobody signs in as them and your own sign-in stays Tier 1. Reach them by
+                                    switching from your Tier 1 account.
+                                </p>
+                            )}
+
                             <div className="flex gap-2 mb-2">
                                 {isNewProv || existingProvinces.length === 0 ? (
                                     <div className="flex-1 flex gap-2">
