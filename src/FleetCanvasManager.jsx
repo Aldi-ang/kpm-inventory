@@ -205,25 +205,41 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
              - a blank name puts the Google account name back on the consignment store cards, which
                is the bug fixed in 2e5a8ac an hour earlier.
            A phone number is neither a key nor a login. It was only ever data. */
-        const missing = [!newAgent.name && 'Name', !newAgent.email && 'Google Account Email'].filter(Boolean);
-        if (missing.length) return notify(`${missing.join(' and ')} ${missing.length > 1 ? 'are' : 'is'} still empty. A phone number is optional.`);
+
+        /* 🧪 …AND AN EMPTY ADDRESS, SAVED BY A GLOBAL ADMIN, IS THAT ADMIN IN ANOTHER FORM. Aldi,
+           2026-09-07: *"just lock the email and phone number and all of the data the same with my
+           tier 1 account"*, then *"yo why is it still like this on the test account, i said i want
+           u to lift the requirement for tier 1 account"* — his existing test personnel carry NO
+           address at all, so a rule that only recognised a MATCHING address never reached them.
+           Blank now resolves to the signed-in admin's own address, which is what he asked for:
+           the test tiers are his own account wearing a different tier.
+
+           The requirement itself is untouched for everybody else. A non-admin, or an admin typing
+           somebody else's address, still has to supply a real one — see isSelfProxy below for why
+           these two cases cannot share a login mapping. */
+        const typedEmail = (newAgent.email || '').toLowerCase().trim();
+        const ownEmail = (user?.email || '').toLowerCase().trim();
+        const isSelfProxy = !!ownEmail && isGlobalAdmin && (typedEmail === '' || typedEmail === ownEmail);
+        const emailKey = isSelfProxy ? ownEmail : typedEmail;
+
+        /* PHONE IS REQUIRED AGAIN FOR REAL PERSONNEL. His correction, 2026-09-07: *"make sure that
+           email and phone number is still required for tier below 1"*. It comes off only for a
+           self-proxy, where there is nobody to phone.
+
+           ⚠️ WHY A SELF-PROXY GETS NO LOGIN MAPPING. `employee_directory/<email>` maps ONE email to
+           ONE agentId, and both branches below write it. Saving a test person under the admin's own
+           address repointed that admin's own login at the test record, so the next sign-in resolved
+           them to it and demoted them out of Tier 1. Skipping the directory write is what makes
+           sharing the address safe, and it is why the duplicate-email refusal stands down for these
+           too — the uniqueness it protects is the login mapping, and these do not have one. */
+        const missing = [
+            !newAgent.name && 'Name',
+            !emailKey && 'Google Account Email',
+            !isSelfProxy && !(newAgent.phone || '').trim() && 'Phone',
+        ].filter(Boolean);
+        if (missing.length) return notify(`${missing.join(' and ')} ${missing.length > 1 ? 'are' : 'is'} still empty.`);
         if (newAgent.allowedPayments.length === 0) return notify("You must allow at least one Payment Method (e.g., Cash)!");
         if (newAgent.allowedTiers.length === 0) return notify("You must allow at least one Price Tier!");
-
-        const emailKey = newAgent.email.toLowerCase().trim();
-
-        /* 🧪 A PERSON REGISTERED UNDER YOUR OWN EMAIL IS YOU IN ANOTHER FORM. Aldi, 2026-09-07:
-           *"all of that test account should be locked into my tier 1 email only ... because only
-           tier 1 who can access that account"*. Those personnel exist to be switched into from the
-           Tier 1 account, never to sign in on their own.
-
-           ⚠️ AND WITHOUT THIS THEY WERE DANGEROUS. `employee_directory/<email>` maps ONE email to
-           ONE agentId, and both branches below write it. Saving a test person under his own address
-           repointed his own login at that test record, so the next sign-in resolved him to it and
-           demoted him out of Tier 1. Skipping the directory write is what makes sharing the address
-           safe, and it is why the duplicate-email refusal has to stand down for these too - the
-           uniqueness it protects is the login mapping, and these do not have one. */
-        const isSelfProxy = !!user?.email && emailKey === user.email.toLowerCase().trim();
 
         // 🚀 FIX: This is the exact class of input that crashed "Authorize & Register"
         // with a raw Firestore SDK error ("Invalid document reference... must have an
@@ -791,11 +807,12 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                             
                             {/* Silence would make this look like a normal save that happens to be
                                 allowed. It is a different save: no login mapping is written. */}
-                            {!!user?.email && newAgent.email.trim().toLowerCase() === user.email.toLowerCase().trim() && (
+                            {!!user?.email && isGlobalAdmin && ['', user.email.toLowerCase().trim()].includes(newAgent.email.trim().toLowerCase()) && (
                                 <p className="text-[10px] text-amber-400 font-bold mb-2 leading-relaxed">
-                                    🧪 TEST PERSONNEL — this is your own account in another form. No separate login is
-                                    created, so nobody signs in as them and your own sign-in stays Tier 1. Reach them by
-                                    switching from your Tier 1 account.
+                                    🧪 TEST PERSONNEL — left empty, this saves as <span className="font-mono">{user.email}</span>,
+                                    which is your own account in another form. No separate login is created, nobody signs in
+                                    as them, and your own sign-in stays Tier 1. Phone is not required for these. Give them a
+                                    real address instead and they become normal personnel, with email and phone required.
                                 </p>
                             )}
 

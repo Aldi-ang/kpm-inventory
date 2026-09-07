@@ -4942,145 +4942,140 @@ ok('and the reported symptom is gone — no row reads back the Google name',
    NM_ROWS.filter(r => nmLabel(r) === 'Aldi Kurniawan').length === 0,
    'got ' + NM_ROWS.filter(r => nmLabel(r) === 'Aldi Kurniawan').length + ' rows still showing it');
 
-section('A PHONE NUMBER IS NOT REQUIRED TO SAVE A PERSON (Aldi, 2026-09-07)');
+section('WHO MUST SUPPLY AN EMAIL AND A PHONE, AND WHO IS THE ADMIN IN ANOTHER FORM (2026-09-07)');
 
-/* Blocked mid-test by "Name, Phone, and Google Account Email are absolutely required!", he asked
-   for it off: *"i want this disabled for the test account only since its all mine so that i can
-   try ticking the location adn start testing"*. Only the phone came off, and the other two are
-   load-bearing rather than cautious:
-     - the email IS the document id of artifacts/<appId>/employee_directory/<email>, so blank
-       throws the raw "Invalid document reference" that isSafeDocIdEmail exists to catch;
-     - a blank name puts the Google account name back on the consignment store cards, undoing
-       2e5a8ac from the same morning.
-   The trap the removal opens is the DUPLICATE check: two people both left blank are not two people
-   sharing a phone number, and an ungated check reads them as one. */
+/* Three of Aldi's instructions in one morning, and the final shape has to satisfy all three:
+     1. *"i want this disabled for the test account only since its all mine so that i can try
+        ticking the location adn start testing"*
+     2. *"all of that test account should be locked into my tier 1 email only, should be the same
+        with that one, because only tier 1 who can access that account"*
+     3. *"make sure that email and phone number is still required for tier below 1"*
 
-const phSrc = code(read('src/FleetCanvasManager.jsx'));
-const phA = phSrc.indexOf('const handleSaveAgent');
-const phB = phSrc.indexOf('const isDupPlate');
-ok('the save-guard scope was found (anchors const handleSaveAgent .. const isDupPlate)',
-   phA > -1 && phB > phA, 'anchor missed — the slice below would read the whole file');
-if (phA > -1 && phB > phA) {
-  const phSlice = phSrc.slice(phA, phB);
-  ok('the save guard is the handler head, not the rest of the file',
-     phSlice.length > 300 && phSlice.length < 4000, 'got ' + phSlice.length + ' chars');
-  ok('the guard no longer refuses a person for having no phone number',
-     !/!newAgent\.phone/.test(phSlice),
-     'this is the line that blocked him from ticking a branch and testing at all');
-  ok('name and email are still refused when empty',
-     /!newAgent\.name && 'Name'/.test(phSlice) && /!newAgent\.email && 'Google Account Email'/.test(phSlice),
-     'email is a Firestore document id and name is what the store cards resolve to — neither is optional');
-  ok('and the refusal names the field that is actually empty',
-     /missing\.join\(' and '\)/.test(phSlice),
-     'listing all three fields when one is missing is the guessing game the message existed to end');
-  ok('a blank phone cannot collide with another blank phone',
-     /newAgent\.phone\?\.trim\(\) && activeMotorists\.some/.test(phSlice),
-     'ungated, the SECOND person saved without a phone is refused as a duplicate of the first');
-}
+   His existing test personnel carry NO address at all, so a rule that only recognised a MATCHING
+   address never reached them — he hit "Google Account Email is still empty" and said *"yo why is
+   it still like this on the test account, i said i want u to lift the requirement for tier 1
+   account"*. A BLANK address saved by a global admin now resolves to that admin's own, which is
+   what (2) actually asks for. Everybody else supplies both fields, which is (3).
 
-/* ── the guard, re-run on real people ─────────────────────────────────────────────────── */
-const PH_ROSTER = [
-  { id: 'a1', name: '[TEST] REGIONAL ADMIN', email: 'ra@test.com', phone: '' },
-  { id: 'a2', name: '[TEST] SALES MOTORIST', email: 'sm@test.com', phone: '0812111' },
-];
-const phRefusal = (p) => {
-  const missing = [!p.name && 'Name', !p.email && 'Google Account Email'].filter(Boolean);
-  return missing.length ? `${missing.join(' and ')} ${missing.length > 1 ? 'are' : 'is'} still empty. A phone number is optional.` : null;
-};
-const phDup = (p, editingId) =>
-  !!(p.phone?.trim() && PH_ROSTER.some(a => a.phone?.trim() === p.phone.trim() && a.id !== editingId));
+   ⚠️ THE SAFETY REASON, not just convenience. `employee_directory/<email>` maps ONE email to ONE
+   agentId, and handleSaveAgent wrote it on every save in both branches. A test person on the
+   admin's own address repointed that admin's OWN login at the test record, and the next sign-in
+   resolved them to it and demoted them out of Tier 1 (`App.jsx` merges the email doc over the uid
+   doc, then routes on `activeData.role`). A self-proxy gets a roster record and no mapping. */
 
-ok('a person with a name and an email saves with no phone at all',
-   phRefusal({ name: '[TEST] OWNER', email: 'owner@test.com', phone: '' }) === null,
-   'got: ' + phRefusal({ name: '[TEST] OWNER', email: 'owner@test.com', phone: '' }));
-ok('a missing email is still refused, and the message says which field',
-   phRefusal({ name: 'Budi', email: '', phone: '0812' }) === 'Google Account Email is still empty. A phone number is optional.',
-   'got: ' + phRefusal({ name: 'Budi', email: '', phone: '0812' }));
-ok('a missing name is still refused, and the message says which field',
-   phRefusal({ name: '', email: 'b@test.com', phone: '0812' }) === 'Name is still empty. A phone number is optional.',
-   'got: ' + phRefusal({ name: '', email: 'b@test.com', phone: '0812' }));
-ok('both missing names both fields, in one message',
-   phRefusal({ name: '', email: '', phone: '' }) === 'Name and Google Account Email are still empty. A phone number is optional.',
-   'got: ' + phRefusal({ name: '', email: '', phone: '' }));
-ok('THE TRAP: a second blank phone is not a duplicate of the first blank phone',
-   phDup({ name: 'X', email: 'x@test.com', phone: '' }, null) === false,
-   'a1 is already saved with a blank phone — an ungated check refuses everybody after them');
-ok('but a phone that really is taken is still refused',
-   phDup({ name: 'Y', email: 'y@test.com', phone: '0812111' }, null) === true,
-   'the duplicate guard must survive the change, not be traded away with it');
-ok('and editing that same person is not a collision with themselves',
-   phDup({ name: 'Y', email: 'y@test.com', phone: '0812111' }, 'a2') === false,
-   'saving somebody without changing their phone number must not report their own number as taken');
-
-section('TEST PERSONNEL SHARE THE TIER 1 EMAIL AND GET NO LOGIN (Aldi, 2026-09-07)');
-
-/* His instruction: *"all of that test account should be locked into my tier 1 email only, should be
-   the same with that one, because only tier 1 who can access that account"*, and *"let the
-   compolsury data from previous update work for other than tier 1 account"*.
-
-   ⚠️ THIS WAS ALSO A LIVE FOOT-GUN, not only a convenience. `employee_directory/<email>` maps ONE
-   email to ONE agentId, and handleSaveAgent wrote it on every save. Registering a test person under
-   his own address therefore repointed HIS OWN login at that test record, and the next sign-in
-   resolved him to it and demoted him out of Tier 1. A person saved under the signed-in admin's own
-   email is that admin in another form: roster record yes, login mapping no. */
-
-const spSrc = code(read('src/FleetCanvasManager.jsx'));
-const spA = spSrc.indexOf('const emailKey');
-const spB = spSrc.indexOf('await batch.commit');
-ok('the save-path scope was found (anchors const emailKey .. await batch.commit)',
-   spA > -1 && spB > spA, 'anchor missed — the slice below would read the whole file');
-if (spA > -1 && spB > spA) {
-  const spSlice = spSrc.slice(spA, spB);
+const tpSrc = code(read('src/FleetCanvasManager.jsx'));
+const tpA = tpSrc.indexOf('const handleSaveAgent');
+const tpB = tpSrc.indexOf('await batch.commit');
+ok('the save-path scope was found (anchors const handleSaveAgent .. await batch.commit)',
+   tpA > -1 && tpB > tpA, 'anchor missed — the slice below would read the whole file');
+if (tpA > -1 && tpB > tpA) {
+  const tp = tpSrc.slice(tpA, tpB);
   ok('the save path is the slice, not the rest of the file',
-     spSlice.length > 800 && spSlice.length < 9000, 'got ' + spSlice.length + ' chars');
-  ok('a self-proxy is decided by the SIGNED-IN admin\'s own email, not by a name convention',
-     /const isSelfProxy = !!user\?\.email && emailKey === user\.email\.toLowerCase\(\)\.trim\(\)/.test(spSlice),
-     'a "[TEST]" prefix is a label anybody can type — the address is the thing that actually collides');
-  ok('the duplicate-email refusal stands down for a self-proxy, and only for one',
-     /const isDupEmail = !isSelfProxy &&/.test(spSlice),
+     tp.length > 1200 && tp.length < 9000, 'got ' + tp.length + ' chars');
+
+  ok('a self-proxy is a BLANK address or the admin\'s own, and only for a global admin',
+     /const isSelfProxy = !!ownEmail && isGlobalAdmin && \(typedEmail === '' \|\| typedEmail === ownEmail\)/.test(tp),
+     "blank is the case his existing test personnel are actually in — matching-only never reached them");
+  ok('and a blank one is saved AS the admin\'s own address, not as an empty string',
+     /const emailKey = isSelfProxy \? ownEmail : typedEmail/.test(tp),
+     'his ask was to lock them to the Tier 1 email; an empty string is also an illegal document id');
+  ok('the email requirement tests the RESOLVED address, so a proxy passes and nobody else does',
+     /!emailKey && 'Google Account Email'/.test(tp),
+     "testing newAgent.email instead would refuse the blank test personnel this exists to allow");
+  ok('the phone is required again, and stands down ONLY for a self-proxy',
+     /!isSelfProxy && !\(newAgent\.phone \|\| ''\)\.trim\(\) && 'Phone'/.test(tp),
+     'his words: "make sure that email and phone number is still required for tier below 1"');
+  ok('the name is required unconditionally — no proxy escape',
+     /!newAgent\.name && 'Name'/.test(tp) && !/isSelfProxy.{0,30}'Name'/.test(tp),
+     'a blank name puts the Google account name back on the consignment store cards (2e5a8ac)');
+  ok('and the refusal names the fields that are actually empty',
+     /missing\.join\(' and '\)/.test(tp),
+     'listing every field when one is missing is the guessing game this replaced');
+
+  ok('the duplicate-EMAIL refusal stands down for a self-proxy, and only for one',
+     /const isDupEmail = !isSelfProxy &&/.test(tp),
      'the uniqueness it protects is the login mapping, and a self-proxy does not get one');
+  ok('a blank PHONE cannot collide with another blank phone',
+     /newAgent\.phone\?\.trim\(\) && activeMotorists\.some/.test(tp),
+     'ungated, the second self-proxy saved without a phone reads as a duplicate of the first');
   ok('BOTH directory writes are gated — the edit branch and the create branch',
-     (spSlice.match(/if \(!isSelfProxy\) batch\.set\(doc\(db, `artifacts\/\$\{appId\}\/employee_directory`/g) || []).length === 2,
+     (tp.match(/if \(!isSelfProxy\) batch\.set\(doc\(db, `artifacts\/\$\{appId\}\/employee_directory`/g) || []).length === 2,
      'gating one branch and not the other leaves the demotion reachable through the other door');
   ok('but the OLD address is still deleted when somebody moves onto the shared email',
-     /if \(oldEmailKey && oldEmailKey !== emailKey\) batch\.delete/.test(spSlice) &&
-     !/if \(!isSelfProxy.{0,40}batch\.delete/.test(spSlice),
-     'a real person turned into a test one must LOSE their login, not keep a stale one pointing at them');
+     /if \(oldEmailKey && oldEmailKey !== emailKey\) batch\.delete/.test(tp) &&
+     !/if \(!isSelfProxy.{0,40}batch\.delete/.test(tp),
+     'a real person turned into a test one must LOSE their login, not keep a stale mapping');
 }
-ok('the compulsory fields are untouched for everybody else — the guard runs BEFORE isSelfProxy exists',
-   spSrc.indexOf("!newAgent.email && 'Google Account Email'") > -1 &&
-   spSrc.indexOf("!newAgent.email && 'Google Account Email'") < spSrc.indexOf('const isSelfProxy'),
-   'his words: "let the compolsury data from previous update work for other than tier 1 account" — a guard placed after the proxy test could be made conditional on it');
 ok('and the form says so on screen rather than saving differently in silence',
-   /TEST PERSONNEL — this is your own account in another form/.test(read('src/FleetCanvasManager.jsx')),
-   'a save that quietly skips a write looks identical to a normal save; every action must report');
+   /TEST PERSONNEL — left empty, this saves as/.test(read('src/FleetCanvasManager.jsx')),
+   'a save that quietly skips the login write looks identical to one that does not');
 
 /* ── the save decision, re-run on real people ─────────────────────────────────────────── */
-const SP_ME = 'aldi@kpm.com';
-const SP_ROSTER = [
-  { id: 'a1', name: '[TEST] REGIONAL ADMIN', email: SP_ME },
-  { id: 'a2', name: 'Budi', email: 'budi@kpm.com' },
+const TP_ME = 'aldi@kpm.com';
+const TP_ROSTER = [
+  { id: 'a1', name: '[TEST] REGIONAL ADMIN', email: TP_ME, phone: '' },
+  { id: 'a2', name: 'Budi', email: 'budi@kpm.com', phone: '0812111' },
 ];
-const spProxy = (email) => email.toLowerCase().trim() === SP_ME;
-const spDupEmail = (email, editingId) =>
-  !spProxy(email) && SP_ROSTER.some(a => a.email?.toLowerCase().trim() === email.toLowerCase().trim() && a.id !== editingId);
-const spWritesDirectory = (email) => !spProxy(email);
+// The guard, exactly as handleSaveAgent orders it.
+const tpSave = (p, { admin = true, editingId = null } = {}) => {
+  const typed = (p.email || '').toLowerCase().trim();
+  const own = TP_ME;
+  const proxy = !!own && admin && (typed === '' || typed === own);
+  const key = proxy ? own : typed;
+  const missing = [
+    !p.name && 'Name',
+    !key && 'Google Account Email',
+    !proxy && !(p.phone || '').trim() && 'Phone',
+  ].filter(Boolean);
+  if (missing.length) return { refused: `${missing.join(' and ')} ${missing.length > 1 ? 'are' : 'is'} still empty.` };
+  if (!proxy && TP_ROSTER.some(a => a.email?.toLowerCase().trim() === key && a.id !== editingId))
+    return { refused: 'duplicate email' };
+  if (p.phone?.trim() && TP_ROSTER.some(a => a.phone?.trim() === p.phone.trim() && a.id !== editingId))
+    return { refused: 'duplicate phone' };
+  return { savedAs: key, writesLogin: !proxy };
+};
 
-ok('a SECOND test account on the same Tier 1 email is not refused as a duplicate',
-   spDupEmail(SP_ME, null) === false,
-   'a1 already holds that address — refusing here is what stopped him making more than one test tier');
-ok('and no login mapping is written for it',
-   spWritesDirectory(SP_ME) === false,
+const tpBlank = tpSave({ name: '[TEST] SALES MOTORIST' });
+ok('HIS CASE: a test person with no email and no phone now saves',
+   tpBlank.refused === undefined,
+   'got refusal: ' + tpBlank.refused + ' — this is the exact message he screenshotted');
+ok('and it is stored under his Tier 1 address, which is what he asked to lock them to',
+   tpBlank.savedAs === TP_ME, 'got: ' + tpBlank.savedAs);
+ok('with no login mapping written for it',
+   tpBlank.writesLogin === false,
    'writing it repoints his own sign-in at the test record and demotes him out of Tier 1');
-ok('a real second person on somebody else\'s address is still refused',
-   spDupEmail('budi@kpm.com', null) === true,
-   'two real people cannot share a login — that guard has to survive this change');
-ok('a real person still gets their login mapping',
-   spWritesDirectory('siti@kpm.com') === true,
-   'the whole directory is how a field agent signs in at all');
-ok('and editing Budi without changing his address is not a collision with himself',
-   spDupEmail('budi@kpm.com', 'a2') === false,
-   'saving somebody must not report their own email as taken');
+ok('a SECOND blank test person is not refused as a duplicate of the first',
+   tpSave({ name: '[TEST] OWNER' }).refused === undefined,
+   'a1 already holds that address and a blank phone — both guards have to stand down together');
+ok('typing his own address explicitly behaves identically',
+   tpSave({ name: '[TEST] HQ SALES MANAGER', email: 'ALDI@kpm.com  ' }).savedAs === TP_ME,
+   'case and stray spaces must not decide whether somebody gets a login');
+
+ok('TIER BELOW 1: a real person with no phone is still refused',
+   tpSave({ name: 'Siti', email: 'siti@kpm.com', phone: '' }).refused === 'Phone is still empty.',
+   'got: ' + JSON.stringify(tpSave({ name: 'Siti', email: 'siti@kpm.com', phone: '' })));
+ok('a real person with no email is still refused',
+   tpSave({ name: 'Siti', email: '', phone: '0899' }, { admin: false }).refused === 'Google Account Email is still empty.',
+   'got: ' + JSON.stringify(tpSave({ name: 'Siti', email: '', phone: '0899' }, { admin: false })));
+ok('a non-admin gets NO proxy escape — both fields are named at once',
+   tpSave({ name: 'Siti', email: '', phone: '' }, { admin: false }).refused === 'Google Account Email and Phone are still empty.',
+   'got: ' + JSON.stringify(tpSave({ name: 'Siti', email: '', phone: '' }, { admin: false })));
+ok('a nameless save is refused even for the admin',
+   tpSave({ name: '', email: '' }).refused === 'Name is still empty.',
+   'got: ' + JSON.stringify(tpSave({ name: '', email: '' })));
+ok('a complete real person saves AND gets their login mapping',
+   tpSave({ name: 'Siti', email: 'siti@kpm.com', phone: '0899' }).writesLogin === true,
+   'the directory is how a field agent signs in at all');
+ok('two real people still cannot share an address',
+   tpSave({ name: 'Palsu', email: 'budi@kpm.com', phone: '0877' }).refused === 'duplicate email',
+   'got: ' + JSON.stringify(tpSave({ name: 'Palsu', email: 'budi@kpm.com', phone: '0877' })));
+ok('or a phone number',
+   tpSave({ name: 'Palsu', email: 'palsu@kpm.com', phone: '0812111' }).refused === 'duplicate phone',
+   'got: ' + JSON.stringify(tpSave({ name: 'Palsu', email: 'palsu@kpm.com', phone: '0812111' })));
+ok('and editing Budi without changing anything is not a collision with himself',
+   tpSave({ name: 'Budi', email: 'budi@kpm.com', phone: '0812111' }, { editingId: 'a2' }).refused === undefined,
+   'got: ' + JSON.stringify(tpSave({ name: 'Budi', email: 'budi@kpm.com', phone: '0812111' }, { editingId: 'a2' })));
+
 
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);
