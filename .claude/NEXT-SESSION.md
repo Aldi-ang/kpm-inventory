@@ -78,7 +78,12 @@ until he says the round is finished, or tells you to skip it.
       ⚠️ `AgentProfileView.jsx:1333` has the SAME `-top-2 -right-2 animate-ping` shape. Untouched —
       check whether its parent scrolls before deciding.
 
-  ⚠️ NO FIX SINCE `0cb7efa` HAS BEEN SEEN ON SCREEN. The shake fix in particular is measured, not
+    - `2f77cb2` the approver's card shows the same debt / stock / product-line summary the receiver
+      gets, from a shared `HandoffOffer` component. **`5973fc2` is CONFIRMED ON SCREEN** — his
+      screenshot shows Authorize Transfer on the Tier 4 regional admin account: *"yes the button is
+      there"*.
+
+  ⚠️ NO OTHER FIX SINCE `0cb7efa` HAS BEEN SEEN ON SCREEN. The shake fix in particular is measured, not
   rendered: the recording proves the scrollbar moved and the arithmetic proves the old badge
   overflowed, but nobody has watched the fixed version. Both are proven by checks and by nothing else. The
   preview pane refuses the dev server's self-signed certificate, so ask Aldi to look, or fix the

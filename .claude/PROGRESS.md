@@ -1,10 +1,22 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-09-07 20:07 WIB (🟠 KPM — Round 7 IN PROGRESS; Section A passed, TEN fixes shipped, all committed. He is re-running Section C as Tier 4 after `5973fc2`. B, D, E still owed. · 🔵 7DTD — fan-out gate built, no app code touched.)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **LOG TRIMMED · 1240/1240 selfcheck · 722/722 audit · build clean** · branch `phase0-solid-ground`
+**Updated: 2026-09-07 20:07 WIB (🟠 KPM — Round 7 IN PROGRESS; Section A passed, ELEVEN fixes shipped, all committed. He is re-running Section C as Tier 4 after `5973fc2`. B, D, E still owed. · 🔵 7DTD — fan-out gate built, no app code touched.)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **LOG TRIMMED · 1247/1247 selfcheck · 722/722 audit · build clean** · branch `phase0-solid-ground`
 
-**20:07 — no code change since `c1fe63e`.** The Stop hook fired on `.claude/settings.local.json`,
-which this session did not write (a permission grant, not app code). Where work stands is unchanged:
-waiting on his Section C re-run.
+**✅ SECTION C, FIRST HALF CONFIRMED ON SCREEN.** He re-ran it as the Tier 4 regional admin after
+`5973fc2`: *"yes the button is there"* — screenshot shows ADMIN AUTH REQUIRED with Reject /
+Authorize Transfer on that account. That is the second fix of the day he has actually seen.
+
+**The eleventh fix — `2f77cb2`, asked for in the same breath.** *"please also put the store and
+product information so that the approval person can see it too"*. The receiver saw the debt, the
+total packs and every product line; the person authorising that debt to move saw a store name and
+two agent names. Now a shared `HandoffOffer` component renders on both cards — two hand-written
+copies of the same question drift the first time either is edited. Fallback wording moved from
+"before accepting" to "before deciding", since an approver accepts nothing. 7 checks, trialled red
+(2 failed). **Not added, not asked for:** the journey-map button is still only on the receiver's card.
+
+**STILL OWED IN SECTION C:** who does NOT get the bell. He has not yet confirmed that Bandung's
+regional admin is displaced when a specific person is named, nor that the receiving agent gets no
+approval bell for their own incoming store. Then D and E.
 
 ## 🟠 2026-09-07 12:25 — Round 7 Section A: passed, minus two bugs. Both fixed.
 
