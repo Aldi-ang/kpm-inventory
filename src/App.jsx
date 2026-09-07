@@ -1763,7 +1763,12 @@ const handleGitHubMirror = async () => {
                  guarantees a receiver has a real branch, while the sender may be an admin with none,
                  and the question being approved is whether that branch may take this store. */
               const receivingRegion = (motorists || []).find(m => m.id === request.toAgentId)?.location;
-              const alsoTell = handoffApprovers(motorists, receivingRegion, [request.toAgentId, request.fromAgentId]);
+              /* The receiver is no longer excluded — Aldi's call, *"yeah they should be able to
+                 confirm their own request"*. handoffApprovers still asks canApproveHandoffFrom, so
+                 an ordinary agent receiving a store is not told to approve it; only somebody who
+                 already holds that branch's approval power is. A button on a screen with no bell
+                 behind it is the same fault as a bell with no button, which is what 5973fc2 fixed. */
+              const alsoTell = handoffApprovers(motorists, receivingRegion, [request.fromAgentId]);
               for (const approverId of alsoTell) {
                   await addDoc(collection(db, `artifacts/${appId}/users/${userId}/notifications`), {
                       title: "🛡️ Transfer Needs Approval",

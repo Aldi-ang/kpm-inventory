@@ -457,7 +457,19 @@ export default function ConsignmentFinanceView({ transactions = [], customers = 
            two exclusions: you cannot authorise a hand-off you asked for or one you are receiving. */
         const adminPend = safeReqs.filter(r => {
             if (r.status !== 'PENDING_ADMIN') return false;
-            if (agentProfileId && (r.toAgentId === agentProfileId || r.fromAgentId === agentProfileId)) return false;
+            /* 🔑 THE RECEIVER MAY NOW AUTHORISE THEIR OWN INCOMING STORE. Aldi's call, 2026-09-07,
+               after being told this was the second key of a three-key protocol: *"yeah they should
+               be able to confirm their own request"*.
+
+               ⚠️ NARROWER THAN IT SOUNDS, ON PURPOSE. He was talking about a Tier 4 regional admin
+               who already holds approval power. Dropping the receiver check does NOT hand the button
+               to everybody: canApproveHandoffFrom still runs below, so an ordinary agent receiving a
+               store is refused exactly as before. Only somebody who could already have approved this
+               branch's hand-offs for anyone else can now also approve one addressed to themselves.
+
+               THE SENDER IS STILL REFUSED. Asking for a store and granting it yourself is one person
+               doing the whole thing; receiving one you were offered is not. */
+            if (agentProfileId && r.fromAgentId === agentProfileId) return false;
             const receiver = (motorists || []).find(m => m.id === r.toAgentId);
             return canApproveHandoffFrom(isAdmin ? { userRole: 'ADMIN' } : myProfile, receiver?.location, motorists);
         });

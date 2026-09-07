@@ -441,12 +441,18 @@ export const canApproveHandoffFrom = (profile, storeRegion, roster = []) => {
 
 /* THE BELL LIST. Who else must be told a hand-off is waiting, BESIDE the owner.
 
-   ⚠️ THREE PEOPLE ARE LEFT OUT ON PURPOSE:
+   ⚠️ TWO PEOPLE ARE LEFT OUT ON PURPOSE:
      - anyone on TIER_1 - the `agentId: 'ADMIN'` notification already reaches them, and Aldi matches
        every rule there is. This is what stops him being told twice for every hand-off.
-     - the RECEIVER - they have just accepted; approving their own incoming hand-off would collapse
-       the three-key protocol into one key.
-     - the SENDER - they asked for it. Same reason. */
+     - the SENDER - they asked for it. Granting yourself a store you requested is one person doing
+       the whole thing.
+
+   🔑 THE RECEIVER USED TO BE THE THIRD, AND IS NOT ANY MORE. Aldi's call, 2026-09-07, having been
+   told it was the second key of a three-key protocol: *"yeah they should be able to confirm their
+   own request"*. It is narrower than it reads: this function still runs canApproveHandoffFrom on
+   every candidate, so an ordinary agent receiving a store is refused as before. Only somebody who
+   already holds that branch's approval power can now also approve one addressed to themselves.
+   The caller in App.jsx passes only the sender in excludeIds. */
 export const handoffApprovers = (roster, storeRegion, excludeIds = []) =>
     (roster || [])
         .filter(m => m && m.id

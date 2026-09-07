@@ -4695,9 +4695,9 @@ const acceptBody = app4.slice(acFrom, acTo);
 ok('the owner still gets the approval bell',
    /agentId: 'ADMIN',/.test(acceptBody),
    'OPTION B IS ADD, NOT REPLACE — "both still get the bells of course"');
-ok('and the named approvers get one too, in the same handler',
-   /handoffApprovers\(motorists, receivingRegion, \[request\.toAgentId, request\.fromAgentId\]\)/.test(acceptBody),
-   'without the fan-out the Fleet setting saves and does nothing');
+ok('and the named approvers get one too, in the same handler — only the SENDER is excluded now',
+   /handoffApprovers\(motorists, receivingRegion, \[request\.fromAgentId\]\)/.test(acceptBody),
+   'without the fan-out the Fleet setting saves and does nothing; and since 2026-09-07 the receiver is told too, because they may now approve — Aldi: "yeah they should be able to confirm their own request"');
 ok('the branch is the RECEIVING agent’s, the one guaranteed to exist',
    /const receivingRegion = \(motorists \|\| \[\]\)\.find\(m => m\.id === request\.toAgentId\)\?\.location;/.test(acceptBody),
    'the sender may be an admin with no branch at all');
@@ -5472,9 +5472,13 @@ ok('the routing memo re-runs when the roster or the approver profile arrives',
 ok('the queue still asks the same predicate the write asks',
    /canApproveHandoffFrom\(isAdmin \? \{ userRole: 'ADMIN' \} : myProfile, receiver\?\.location, motorists\)/.test(apSrc),
    'a screen that decides permission differently from the write is the UI-says-yes pattern');
-ok('and it still refuses to let you authorise your own hand-off',
-   /if \(agentProfileId && \(r\.toAgentId === agentProfileId \|\| r\.fromAgentId === agentProfileId\)\) return false/.test(apSrc),
-   'opening the panel to more people must not open it to the two who may never approve');
+ok('the SENDER still cannot authorise the hand-off they asked for',
+   /if \(agentProfileId && r\.fromAgentId === agentProfileId\) return false/.test(apSrc) &&
+   !/r\.toAgentId === agentProfileId \|\| r\.fromAgentId === agentProfileId/.test(apSrc),
+   'requesting a store and granting it yourself is one person doing the whole thing; receiving one you were offered is not');
+ok('and the RECEIVER is no longer excluded — Aldi\'s call, and it is canApproveHandoffFrom that keeps it narrow',
+   /canApproveHandoffFrom\(isAdmin \? \{ userRole: 'ADMIN' \} : myProfile, receiver\?\.location, motorists\)/.test(apSrc),
+   'dropping the receiver check WITHOUT this predicate would hand the Authorize button to every agent who accepts a store');
 
 /* ── the queue, re-run on real people ─────────────────────────────────────────────────── */
 const AP_REQ = { id: 'r1', status: 'PENDING_ADMIN', fromAgentId: 'canvas', toAgentId: 'motorist' };
@@ -5485,21 +5489,25 @@ const AP_ROSTER = [
 ];
 // The queue predicate, standing in for canApproveHandoffFrom: an admin always, otherwise a person
 // named for the receiving agent's branch. Sender and receiver are excluded first, as in the source.
-const apQueue = (viewerId, viewerIsAdmin) => {
-  if (viewerId && (AP_REQ.toAgentId === viewerId || AP_REQ.fromAgentId === viewerId)) return [];
-  const receiver = AP_ROSTER.find(m => m.id === AP_REQ.toAgentId);
-  if (viewerIsAdmin) return [AP_REQ];
+const apQueue = (viewerId, viewerIsAdmin, req = AP_REQ) => {
+  // Only the SENDER is excluded outright since 2026-09-07; the receiver is filtered by the
+  // approval predicate below exactly like anybody else.
+  if (viewerId && req.fromAgentId === viewerId) return [];
+  const receiver = AP_ROSTER.find(m => m.id === req.toAgentId);
+  if (viewerIsAdmin) return [req];
   const me = AP_ROSTER.find(m => m.id === viewerId);
   const named = (me?.approvalRegions || []).includes(String(receiver?.location || '').toUpperCase());
-  return named ? [AP_REQ] : [];
+  return named ? [req] : [];
 };
 // What the panel decides to draw, now that isAdmin no longer decides it.
-const apPanel = (viewerId, viewerIsAdmin) => {
-  const queue = apQueue(viewerId, viewerIsAdmin);
-  const incoming = AP_REQ.toAgentId === viewerId ? [AP_REQ] : [];
+const apPanel = (viewerId, viewerIsAdmin, req = AP_REQ) => {
+  const queue = apQueue(viewerId, viewerIsAdmin, req);
+  const incoming = req.toAgentId === viewerId ? [req] : [];
   if (!queue.length && !incoming.length) return 'No pending action required.';
   return `${queue.length} to authorise, ${incoming.length} incoming`;
 };
+// The same request, but handed TO the branch approver instead of to a field agent.
+const AP_TO_APPROVER = { id: 'r2', status: 'PENDING_ADMIN', fromAgentId: 'canvas', toAgentId: 'regional' };
 
 ok('HIS CASE: the Tier 4 regional admin named for that branch sees the request to authorise',
    apPanel('regional', false) === '1 to authorise, 0 incoming',
@@ -5507,9 +5515,15 @@ ok('HIS CASE: the Tier 4 regional admin named for that branch sees the request t
 ok('the Tier 1 owner still sees it too — that is Option B, and it never changed',
    apPanel(null, true) === '1 to authorise, 0 incoming',
    'got: ' + apPanel(null, true));
-ok('the RECEIVER sees it as incoming, and gets no authorise button for their own store',
+ok('an ORDINARY agent receiving a store still gets no authorise button for it',
    apPanel('motorist', false) === '0 to authorise, 1 incoming',
-   'got: ' + apPanel('motorist', false));
+   'got: ' + apPanel('motorist', false) + ' — dropping the receiver check must not hand the button to everybody');
+ok('but a BRANCH APPROVER handed a store may now authorise it themselves',
+   apPanel('regional', false, AP_TO_APPROVER) === '1 to authorise, 1 incoming',
+   'got: ' + apPanel('regional', false, AP_TO_APPROVER) + ' — Aldi: "yeah they should be able to confirm their own request"');
+ok('and the SENDER is still refused even when they hold that branch\'s approval power',
+   apPanel('canvas', false, { ...AP_TO_APPROVER, fromAgentId: 'canvas' }) === 'No pending action required.',
+   'got: ' + apPanel('canvas', false, { ...AP_TO_APPROVER, fromAgentId: 'canvas' }));
 ok('the SENDER gets neither — they cannot approve what they asked for',
    apPanel('canvas', false) === 'No pending action required.',
    'got: ' + apPanel('canvas', false));
