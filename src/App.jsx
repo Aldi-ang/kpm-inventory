@@ -2680,18 +2680,37 @@ const handleGitHubMirror = async () => {
      apart from the auth handler re-asserting `setIsAdmin(false)`, which it does on every load and
      may do twice, and on that second assert the old code ran `clearGrace()` and destroyed a valid
      record. Clearing on the deliberate lock is the only place that knows what it means. */
+  /* 🔴 THE GRACE RECORD WAS KEYED ON THE BOSS'S UID, SO IT UNLOCKED THE VAULT FOR EVERYBODY.
+     Aldi found it, 2026-09-07: a Tier 4 regional admin in MUNTILAN was seeing hand-offs for
+     HEADQUARTERS — *"the other T4 account located in different area also receive the approval
+     request that is not on their regional area"*. His screenshot says the rest: that account's
+     header read GLOBAL RECEIVABLES with an ALL REGIONS filter, and only `isAdmin` draws that.
+
+     `user.uid` is HIJACKED. Sign-in rewrites it to `trueBossUid` on purpose, so every Firestore
+     read lands in the owner's tenancy; the person's own id is kept beside it as `realUid`. This
+     effect read `user.uid`, so the grace record Aldi wrote when HE unlocked the vault was found
+     again by the next person to sign in on the same browser — and restored `isAdmin` to them.
+     Not a hand-off bug at all: a T4 became a global admin, with every store and every approval.
+
+     Two guards, because either alone leaves a hole. The key is now the REAL uid, so one person's
+     unlock cannot answer for another's session. And a hijacked agent session never restores the
+     vault at all, however the record got there — an agent has no business holding the owner's
+     unlock, and the PIN is the only door in. Aldi's own session is untouched: the owner is not
+     hijacked, so `realUid` is undefined and the key is the same value it always was. */
   useEffect(() => {
-    const uid = user?.uid;
-    if (!uid) return;
-    if (isAdmin) { touchGrace(uid); return; }
-    if (readGrace(uid)) { setIsAdmin(true); setShowAdminLogin(false); }
+    const realUid = user?.realUid || user?.uid;
+    if (!realUid) return;
+    if (user?.realUid && user.realUid !== user.uid) return;
+    if (isAdmin) { touchGrace(realUid); return; }
+    if (readGrace(realUid)) { setIsAdmin(true); setShowAdminLogin(false); }
   }, [isAdmin, user, showAdminLogin]);
 
   /* "should reset when i interact with the app" — the window measures from his last touch, not
      from the unlock. Throttled to one write per 20s: localStorage.setItem is synchronous, and
      writing it on every tap would sit on the main thread during a scroll. */
   useEffect(() => {
-    const uid = user?.uid;
+    // Same key as the restore above — the person's own id, never the hijacked boss uid.
+    const uid = user?.realUid || user?.uid;
     if (!isAdmin || !uid) return;
     let lastWrite = 0;
     const bump = () => {

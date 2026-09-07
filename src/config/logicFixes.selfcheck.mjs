@@ -5622,5 +5622,80 @@ ok('and a request with no snapshot falls back for both of them, not just for one
    'got: ' + JSON.stringify(ofRender({ id: 'r2' })));
 
 
+section('THE VAULT GRACE BELONGS TO A PERSON, NOT TO A BROWSER (Aldi, 2026-09-07)');
+
+/* He reported it as a hand-off bug: *"the other T4 account located in different area also receive
+   the approval request that is not on their regional area"* — VG_ALEX, T4 REGIONAL ADMIN in MUNTILAN,
+   seeing a HEADQUARTERS hand-off. It was not a hand-off bug. His screenshot said so: that account's
+   header read **GLOBAL RECEIVABLES** with an ALL REGIONS filter, and only `isAdmin` draws that
+   (`ConsignmentFinanceView.jsx`: isAdmin ? 'Global Receivables' : 'My Receivables').
+
+   ⚠️ PRIVILEGE ESCALATION, and the mechanism is the uid hijack meeting the grace record.
+   Sign-in deliberately rewrites `user.uid` to `trueBossUid` so every Firestore read lands in the
+   owner's tenancy, and keeps the person's own id beside it as `realUid`. The grace effect read
+   `user.uid`. So the record Aldi wrote when HE unlocked the vault was found again by the next
+   person to sign in on the same browser, and `setIsAdmin(true)` ran for them: a Tier 4 became a
+   global admin with every store and every approval queue.
+
+   Two guards, because either alone leaves a hole: key on the REAL uid, and never restore the vault
+   into a hijacked agent session however the record got there. */
+
+const vgApp = code(read('src/App.jsx'));
+const vgA = vgApp.indexOf('const realUid = user?.realUid || user?.uid;');
+const vgB = vgApp.indexOf('}, [isAdmin, user, showAdminLogin]);');
+ok('the grace-restore scope was found (anchors const realUid .. its own dep list)',
+   vgA > -1 && vgB > vgA, 'anchor missed — the slice below would read the whole file');
+if (vgA > -1 && vgB > vgA) {
+  const vg = vgApp.slice(vgA, vgB);
+  ok('the grace restore slice is the effect body, not the rest of the file',
+     vg.length > 100 && vg.length < 1200, 'got ' + vg.length + ' chars');
+  ok('the grace record is keyed on the person, not on the hijacked boss uid',
+     /readGrace\(realUid\)/.test(vg) && !/readGrace\(uid\)/.test(vg),
+     "user.uid is trueBossUid for every agent — keyed on it, one unlock answers for everybody on the browser");
+  ok('and a hijacked agent session never restores the vault at all',
+     /if \(user\?\.realUid && user\.realUid !== user\.uid\) return;/.test(vg),
+     'the key alone is not enough: an agent has no business holding the owner unlock, whatever is in localStorage');
+  ok('the restore still happens BEFORE anything is written, so a locked vault stays locked',
+     vg.indexOf('return;') < vg.indexOf('touchGrace'),
+     'a touch before the guard would re-stamp the record for the very session being refused');
+}
+ok('the touch effect uses the same key as the restore',
+   /const uid = user\?\.realUid \|\| user\?\.uid;\s*if \(!isAdmin && false/.test(vgApp) === false &&
+   (vgApp.match(/user\?\.realUid \|\| user\?\.uid/g) || []).length === 2,
+   'two effects keyed differently would write one record and read another, and the grace would never expire correctly');
+
+/* ── the decision, re-run on real sessions ────────────────────────────────────────────── */
+const VG_BOSS = 'uid-aldi';
+const VG_STORE = { uid: VG_BOSS, at: 1000 };                       // Aldi unlocked the vault
+const vgValid = (rec, now, uid) => !!rec && typeof rec.at === 'number' && !!uid && rec.uid === uid
+  && rec.at <= now && (now - rec.at) < 5 * 60 * 1000;
+// The effect, as written now.
+const vgRestore = (user, now) => {
+  const realUid = user.realUid || user.uid;
+  if (!realUid) return false;
+  if (user.realUid && user.realUid !== user.uid) return false;
+  return vgValid(VG_STORE, now, realUid);
+};
+
+const VG_OWNER = { uid: VG_BOSS };                                    // not hijacked — no realUid
+const VG_ALEX  = { uid: VG_BOSS, realUid: 'uid-alex' };               // T4, hijacked onto the boss tenancy
+const VG_OTHER = { uid: VG_BOSS, realUid: 'uid-motorist' };
+
+ok('HIS CASE: a Tier 4 signing in on the same browser no longer inherits the unlock',
+   vgRestore(VG_ALEX, 2000) === false,
+   'this is what made VG_ALEX a global admin and handed him every branch\'s approval queue');
+ok('and neither does any other agent, on any device Aldi has used',
+   vgRestore(VG_OTHER, 2000) === false, 'got ' + vgRestore(VG_OTHER, 2000));
+ok('Aldi himself keeps his 5-minute grace — his session is not hijacked, so nothing changed for him',
+   vgRestore(VG_OWNER, 2000) === true,
+   'breaking his own convenience to fix somebody else\'s access would be a bad trade he did not ask for');
+ok('and his grace still expires on time rather than lasting forever',
+   vgRestore(VG_OWNER, 1000 + 5 * 60 * 1000) === false,
+   'the window is the whole point: "it is annoying when i have to always enter my pin", not "never ask again"');
+ok('a record belonging to somebody else is refused even for an un-hijacked session',
+   vgValid({ uid: 'uid-someone-else', at: 1000 }, 2000, VG_BOSS) === false,
+   'the uid comparison inside graceIsValid is the last line of defence and must stay');
+
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

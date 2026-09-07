@@ -582,7 +582,7 @@ check(G14, 'no blue in ANY gate mode, not just the unlock', !/\bblue-\d/.test(ga
    renders under `!showAdminLogin`, so he got the PIN screen anyway. A green self-check on the pure
    half of a feature says nothing about the half that touches the screen. */
 check(G14, 'restoring the grace period opens the gate as well as unlocking the vault',
-  /if \(readGrace\(uid\)\) \{ setIsAdmin\(true\); setShowAdminLogin\(false\); \}/.test(appSrc) &&
+  /if \(readGrace\(realUid\)\) \{ setIsAdmin\(true\); setShowAdminLogin\(false\); \}/.test(appSrc) &&
   /setShowAdminLogin\(true\);/.test(appSrc),
   'the auth handler opens the master gate on every cold load and only handleAdminAuthSuccess ever ' +
   'closed it, so a restored session sat behind a modal he still had to type his PIN into — ' +
