@@ -4,9 +4,11 @@ Copy the block below. It is the only thing on this page you should paste.
 
 ---
 
-FIRST, BEFORE ANY CODE: Aldi is PART WAY THROUGH Round 7 of `MANUAL_TEST_CHECKLIST.md`. Pick it up
-at **Section B** and walk him through B, C, D and E one section at a time, waiting for his answer on
-each. Do not start the coding job below until he says it is done, or tells you to skip it.
+FIRST, BEFORE ANY CODE: Aldi is PART WAY THROUGH Round 7 of `MANUAL_TEST_CHECKLIST.md`. He is
+**re-running Section C as the Tier 4 regional admin** after `5973fc2`; the Authorize button should
+now be there and the tab strip should sit still. Wait for that result, then take him through the
+rest of C, then D and E, one section at a time. Section A is done. Do not start the coding job below
+until he says the round is finished, or tells you to skip it.
 
   SECTION A IS DONE, 2026-09-07 — the hand-off picker passed on every point. His words: *"i check
   already and my tier 5 test account are limited to seeing team member only ... great job, no
