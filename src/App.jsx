@@ -1628,7 +1628,7 @@ const handleGitHubMirror = async () => {
   };
 
   // 🚀 ACCOUNT TRANSFER HANDLERS (3-KEY PROTOCOL) 🚀
-  const handleRequestTransfer = async (storeName, toAgentId, toAgentName, note) => {
+  const handleRequestTransfer = async (storeName, toAgentId, toAgentName, note, snapshot) => {
       const isAlreadyPending = transferRequests.some(r => 
           storeKey(r.storeName) === storeKey(storeName) &&
           (r.status === 'PENDING_AGENT' || r.status === 'PENDING_ADMIN')
@@ -1680,6 +1680,11 @@ const handleGitHubMirror = async () => {
               toAgentId,
               toAgentName,
               note,
+              /* 📦 The offer, frozen at request time — see the comment beside the caller in
+                 ConsignmentFinanceView. Until approval the receiver cannot read these rows at all,
+                 so without this the card asks them to accept a debt they cannot see. Never a money
+                 source: the real balance is recomputed from the rows after approval. */
+              stockSnapshot: snapshot || null,
               status: 'PENDING_AGENT',
               timestamp: serverTimestamp()
           });

@@ -5161,5 +5161,95 @@ ok('and no hop reads back the Google account name',
    'every stored fromName/toName in this fixture is the Google name — the roster has to win');
 
 
+section('A HAND-OFF REQUEST SAYS WHAT IS BEING HANDED OVER (Aldi, 2026-09-07)');
+
+/* His report, looking at the Incoming Hand-offs card: *"there is no information of the product that
+   is being consign when handsoff request is sent"*. The card named a shop, printed an empty pair of
+   quote marks where the note would be, and asked for "Accept Responsibility".
+
+   ⚠️ THE RECEIVER COULD NOT LOOK IT UP EITHER. Until the hand-off is approved the store is not
+   theirs, so `myTransactions` filters out every row belonging to it — the screen genuinely had
+   nothing to show. That makes this a snapshot problem, not a rendering one: the figures have to be
+   frozen INTO the request document by the sender, who can still see them.
+
+   It is the description of an offer, never a money source. The real balance is still recomputed
+   from the rows after approval, exactly as before. */
+
+const snSrc = code(read('src/ConsignmentFinanceView.jsx'));
+const snRaw = read('src/ConsignmentFinanceView.jsx');
+const snApp = code(read('src/App.jsx'));
+
+const snA = snSrc.indexOf('const snapshot = {');
+const snB = snSrc.indexOf('onRequestTransfer(activeCustomer.name');
+ok('the snapshot scope was found (anchors const snapshot = { .. onRequestTransfer(...))',
+   snA > -1 && snB > snA, 'anchor missed — the slice below would read the whole file');
+if (snA > -1 && snB > snA) {
+  const sn = snSrc.slice(snA, snB);
+  ok('the snapshot slice is the builder, not the rest of the file',
+     sn.length > 150 && sn.length < 1200, 'got ' + sn.length + ' chars');
+  ok('it carries the debt, the total stock and the line items',
+     /balance: activeCustomer\.balance/.test(sn) && /totalBks:/.test(sn) && /items: Object\.values/.test(sn),
+     'a total with no lines cannot be checked against the shop, and lines with no total cannot be checked at a glance');
+  ok('and it drops products that are no longer there',
+     /\.filter\(i => \(i\.qty \|\| 0\) > 0\)/.test(sn),
+     'a zero-quantity line reads as stock the receiver will be held responsible for');
+}
+ok('the snapshot is actually passed to the handler',
+   /onRequestTransfer\(activeCustomer\.name, targetAgent, agentInfo\.name, transferNote, snapshot\)/.test(snSrc),
+   'built and not passed is the failure mode that looks fixed in the diff and changes nothing');
+ok('the handler accepts it and writes it onto the request document',
+   /handleRequestTransfer = async \(storeName, toAgentId, toAgentName, note, snapshot\)/.test(snApp) &&
+   /stockSnapshot: snapshot \|\| null/.test(snApp),
+   'the receiving agent reads this document and nothing else before deciding');
+
+ok('the card draws the debt, the total and every line',
+   /r\.stockSnapshot\.balance/.test(snRaw) && /r\.stockSnapshot\.totalBks/.test(snRaw) &&
+   /\(r\.stockSnapshot\.items \|\| \[\]\)\.map/.test(snRaw),
+   'the whole point is that the receiver sees the offer before signing for it');
+ok('a request made BEFORE this change says so instead of showing zeroes',
+   /This request was made before the stock summary existed/.test(snRaw),
+   'rendering Rp 0 over 0 Bks reads as an empty shop, which is a confident wrong answer');
+ok('a shop with debt but no stock left says that in words',
+   /No stock left at this shop — debt only\./.test(snRaw),
+   'an empty list under a real balance looks like the list failed to load');
+ok('and an empty note no longer renders as a bare pair of quote marks',
+   /\{r\.note\?\.trim\(\) && <p className="text-xs text-slate-400 italic mb-4">/.test(snRaw),
+   'his screenshot shows exactly that — a lone \'""\' where a sentence should be');
+
+/* ── the snapshot, re-run on a real shop ──────────────────────────────────────────────── */
+const SN_STORE = {
+  balance: 1055000,
+  items: {
+    'p1-Retail': { name: 'Surya 16', qty: 60, priceTier: 'Retail' },
+    'p2-Grosir': { name: 'Gudang Garam Merah', qty: 40, priceTier: 'Grosir' },
+    'p3-Retail': { name: 'Djarum Super', qty: 0, priceTier: 'Retail' },
+  },
+};
+const snBuild = (c) => ({
+  balance: c.balance || 0,
+  totalBks: Object.values(c.items).reduce((sum, i) => sum + (i.qty || 0), 0),
+  items: Object.values(c.items).filter(i => (i.qty || 0) > 0).map(i => ({ name: i.name || 'Item', qty: i.qty, tier: i.priceTier || null })),
+});
+const SN = snBuild(SN_STORE);
+
+ok('the debt on the offer is the shop\'s real outstanding balance',
+   SN.balance === 1055000, 'got ' + SN.balance);
+ok('the total is every pack still at the shop: 60 + 40, and the sold-out line adds nothing',
+   SN.totalBks === 100, 'got ' + SN.totalBks);
+ok('the sold-out product is not listed as something to be responsible for',
+   SN.items.length === 2 && !SN.items.some(i => i.name === 'Djarum Super'),
+   'got: ' + SN.items.map(i => i.name).join(', '));
+ok('each line keeps its price tier, because the same product at two tiers is two debts',
+   SN.items.map(i => `${i.name}/${i.tier}/${i.qty}`).join(' · ') === 'Surya 16/Retail/60 · Gudang Garam Merah/Grosir/40',
+   'got: ' + SN.items.map(i => `${i.name}/${i.tier}/${i.qty}`).join(' · '));
+ok('the lines add up to the total shown above them',
+   SN.items.reduce((s, i) => s + i.qty, 0) === SN.totalBks,
+   'a total that disagrees with its own lines is worse than no total');
+ok('a shop cleared of stock still reports its debt honestly',
+   snBuild({ balance: 250000, items: { 'p1': { name: 'Surya 16', qty: 0 } } }).totalBks === 0 &&
+   snBuild({ balance: 250000, items: { 'p1': { name: 'Surya 16', qty: 0 } } }).balance === 250000,
+   'stock and debt are separate: paying nothing off while selling everything is the normal case');
+
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

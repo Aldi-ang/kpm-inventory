@@ -462,8 +462,26 @@ export default function ConsignmentFinanceView({ transactions = [], customers = 
             });
             if (!verdict.ok) return notify(verdict.reason);
 
+            /* 📦 WHAT THEY ARE ACTUALLY ACCEPTING, frozen here. Aldi, 2026-09-07: *"there is no
+               information of the product that is being consign when handsoff request is sent"*.
+               The receiver could not simply look it up — until the hand-off is approved these rows
+               are not theirs, so `myTransactions` filters every one of them out and the card had
+               nothing but a store name over an "Accept Responsibility" button.
+
+               A SNAPSHOT, not a live read: it records the stock and the debt as they stood when the
+               request was made, which is the offer the receiver is answering. The real figures are
+               recomputed from the rows after approval, exactly as before — this never becomes the
+               source of truth for money, only the description of the offer. */
+            const snapshot = {
+                balance: activeCustomer.balance || 0,
+                totalBks: Object.values(activeCustomer.items).reduce((sum, i) => sum + (i.qty || 0), 0),
+                items: Object.values(activeCustomer.items)
+                    .filter(i => (i.qty || 0) > 0)
+                    .map(i => ({ name: i.name || 'Item', qty: i.qty, tier: i.priceTier || null })),
+            };
+
             // Call the core function
-            onRequestTransfer(activeCustomer.name, targetAgent, agentInfo.name, transferNote);
+            onRequestTransfer(activeCustomer.name, targetAgent, agentInfo.name, transferNote, snapshot);
             
             // 🚀 THE FIX: TRIGGER CAPYBARA INSTEAD OF ALERT
             if(triggerCapy) triggerCapy(`Transfer request sent to ${agentInfo.name}!`);
@@ -1203,7 +1221,41 @@ export default function ConsignmentFinanceView({ transactions = [], customers = 
                                     <div className="flex justify-between items-start mb-3">
                                         <div><p className="text-xs text-slate-400">Incoming from {r.fromAgentName}</p><h4 className="font-bold text-white text-lg">{r.storeName}</h4></div>
                                     </div>
-                                    <p className="text-xs text-slate-400 italic mb-4">"{r.note}"</p>
+
+                                    {/* 📦 WHAT IS ACTUALLY BEING HANDED OVER. Without this the card named a shop
+                                        and asked for a signature. `stockSnapshot` is null on requests made before
+                                        2026-09-07, and those say so rather than rendering "Rp 0" over "0 Bks",
+                                        which would read as an empty store instead of an unknown one. */}
+                                    {r.stockSnapshot ? (
+                                        <div className="bg-black/40 border border-indigo-500/20 rounded-lg p-3 mb-3">
+                                            <div className="flex justify-between items-center mb-2">
+                                                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Outstanding debt</span>
+                                                <span className="font-mono font-bold text-emerald-400 text-sm">{formatRupiah(r.stockSnapshot.balance || 0)}</span>
+                                            </div>
+                                            <div className="flex justify-between items-center mb-2 pb-2 border-b border-slate-700/50">
+                                                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Physical stock</span>
+                                                <span className="font-mono font-bold text-white text-sm">{r.stockSnapshot.totalBks || 0} Bks</span>
+                                            </div>
+                                            <ul className="space-y-1">
+                                                {(r.stockSnapshot.items || []).map((it, i) => (
+                                                    <li key={i} className="flex justify-between text-[11px] text-slate-300">
+                                                        <span className="truncate pr-2">{it.name}{it.tier ? ` (${it.tier})` : ''}</span>
+                                                        <span className="font-mono text-slate-400 shrink-0">{it.qty} Bks</span>
+                                                    </li>
+                                                ))}
+                                                {(r.stockSnapshot.items || []).length === 0 && (
+                                                    <li className="text-[11px] text-slate-500 italic">No stock left at this shop — debt only.</li>
+                                                )}
+                                            </ul>
+                                        </div>
+                                    ) : (
+                                        <p className="text-[11px] text-amber-400/80 bg-black/40 border border-amber-500/20 rounded-lg p-2 mb-3">
+                                            This request was made before the stock summary existed. Ask {r.fromAgentName} what is at this shop before accepting.
+                                        </p>
+                                    )}
+
+                                    {/* An empty note used to render as a bare pair of quote marks. */}
+                                    {r.note?.trim() && <p className="text-xs text-slate-400 italic mb-4">"{r.note}"</p>}
                                     {r.status === 'PENDING_AGENT' ? (
                                         <div className="flex gap-2">
                                             <button onClick={() => onAgentAcceptTransfer(r.id, false)} className="flex-1 py-2 bg-red-900/50 hover:bg-red-500 text-white rounded text-xs font-bold transition-colors">Decline</button>
