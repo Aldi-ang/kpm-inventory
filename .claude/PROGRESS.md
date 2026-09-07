@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-09-07 17:33 WIB (🟠 KPM — Round 7 IN PROGRESS; Section A passed, SIX fixes shipped, all committed. Sections B–E still owed. · 🔵 7DTD — fan-out gate built, no app code touched.)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **LOG TRIMMED · 1186/1186 selfcheck · 722/722 audit · build clean** · branch `phase0-solid-ground`
+**Updated: 2026-09-07 17:33 WIB (🟠 KPM — Round 7 IN PROGRESS; Section A passed, SEVEN fixes shipped, all committed. Sections B–E still owed. · 🔵 7DTD — fan-out gate built, no app code touched.)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **LOG TRIMMED · 1205/1205 selfcheck · 722/722 audit · build clean** · branch `phase0-solid-ground`
 
 ## 🟠 2026-09-07 12:25 — Round 7 Section A: passed, minus two bugs. Both fixed.
 
@@ -82,13 +82,22 @@ rendering one. `handleRequestTransfer` now takes a fifth argument and writes `st
 requests say so rather than showing zeroes; a shop with debt and no stock says "debt only". 16
 checks, trialled red. **Never a money source — the real balance is still recomputed after approval.**
 
-**🔴 OPEN — the other half of that message, question put to him, unanswered:** *"i want u to add
-redirect location on the journey map just to make sure that this area is not too far from the agent
-journey if they want to check, just for further convenience"*. Not started: it is FOUR files (over
-the 3-file rule — `App.jsx`, `JourneyView.jsx`, `ConsignmentFinanceView.jsx`, the self-check) and
-**not every shop has GPS** (`CustomerManager.jsx:70` gates on `latitude && longitude` and falls back
-to the address). A button that flies to the map centre for a shop with no coordinates shows the
-receiver somewhere that is not the shop. Waiting on his call.
+**The seventh fix — `5a59eaf`, the other half of that message.** *"i want u to add redirect location
+on the journey map just to make sure that this area is not too far from the agent journey if they
+want to check"*. Asked which map, he chose **the Journey tab**. A "See it on the journey map" button
+on the hand-off card sets `journeyFocus` and switches tabs; `StoreFocus` inside JourneyView's
+MapContainer flies to the shop at street zoom and clears the target so it works twice. Kept separate
+from the Receivables `focusStore` — sharing one would let a notification hijack the map. 19 checks,
+trialled red (2 failed).
+
+**🔴 TELL HIM — he believes GPS is compulsory and it is NOT.** Asked what should happen for a pinless
+shop he answered *"well all the stores have GPS, and should have GPS, on the NOO GPS is compulsary
+where adress do not actually"*. The intent is right; the code does not enforce it. `handleSubmit` in
+`src/components/CustomerManager.jsx` has no required-field refusal on `latitude`/`longitude`, and
+every display path gates on `latitude && longitude` with an address fallback — which is what a
+non-compulsory field looks like. So the map button refuses a pinless shop in words rather than
+drifting to the default view (Leaflet given NaN does not throw). **His call whether to make it
+compulsory at the save; not started.**
 
 **✅ CLOSED, not a real leftover — and the earlier claim in this entry was wrong.** I told him one
 such save "would have been allowed" and left a stale `employee_directory/<his email>`. It would

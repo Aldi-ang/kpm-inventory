@@ -50,22 +50,17 @@ each. Do not start the coding job below until he says it is done, or tells you t
       every row out. Pre-change requests say so instead of rendering zeroes; the empty note no
       longer draws a bare `""`.
 
-  🔴 OPEN, ASKED AND UNANSWERED — the second half of that same message: *"i want u to add redirect
-  location on the journey map just to make sure that this area is not too far from the agent journey
-  if they want to check, just for further convenience"*. A button on the hand-off card that opens the
-  **Journey tab** focused on that shop. Not started, because it is FOUR files (over the 3-file rule)
-  and one behaviour is genuinely undecided:
-    - `src/App.jsx` — a focus-store state for the journey tab, like the existing `setFocusStore`
-      that already serves `receivables` notifications (`handleNotificationClick`);
-    - `src/JourneyView.jsx` — consume it and `flyTo`; it is the `'journey'` tab and already receives
-      `customers` and `setActiveTab`;
-    - `src/ConsignmentFinanceView.jsx` — the button on the incoming card;
-    - `src/config/logicFixes.selfcheck.mjs`.
-  ⚠️ THE TRAP: **not every shop has GPS.** `CustomerManager.jsx:70` gates on
-  `customer.latitude && customer.longitude` and falls back to the address string. A button that
-  silently flies to the map centre when a shop has no coordinates is worse than no button — it
-  shows the receiver a location that is not the shop. Ask Aldi what it should do in that case
-  before building; the question was put to him and he has not answered.
+    - `5a59eaf` a **"See it on the journey map"** button on the hand-off card opens the Journey tab
+      flown to that shop (`StoreFocus` inside `JourneyView`'s MapContainer, its own `journeyFocus`
+      state in `App.jsx` kept separate from the Receivables `focusStore`). A shop with no pin, or
+      0,0, says so instead of drifting to the default view.
+
+  🔴 TELL ALDI, HE BELIEVES OTHERWISE: he said *"on the NOO GPS is compulsary where adress do not
+  actually"*. **It is not enforced.** `handleSubmit` in `src/components/CustomerManager.jsx` has no
+  required-field refusal on `latitude`/`longitude` — the form captures GPS and every display path
+  gates on `customer.latitude && customer.longitude` with an address fallback, which is precisely
+  what a non-compulsory field looks like. Either make it compulsory in the save (one guard, same
+  shape as the roster's `missing` list) or accept that pinless shops exist. His call, not started.
 
   ⚠️ NO FIX SINCE `0cb7efa` HAS BEEN SEEN ON SCREEN. Both are proven by checks and by nothing else. The
   preview pane refuses the dev server's self-signed certificate, so ask Aldi to look, or fix the
