@@ -14,9 +14,20 @@ copies of the same question drift the first time either is edited. Fallback word
 "before accepting" to "before deciding", since an approver accepts nothing. 7 checks, trialled red
 (2 failed). **Not added, not asked for:** the journey-map button is still only on the receiver's card.
 
-**STILL OWED IN SECTION C:** who does NOT get the bell. He has not yet confirmed that Bandung's
-regional admin is displaced when a specific person is named, nor that the receiving agent gets no
-approval bell for their own incoming store. Then D and E.
+**✅ AND `2f77cb2` IS CONFIRMED ON SCREEN TOO** — *"i use headquarters regional admin btw, and its
+already there"*, offer drawn in full (Rp 130.500 · 15 Bks · Cello Coffee & Caramel kretek (Grosir))
+above Reject / Authorize. The shot was taken **inside the POV costume**, which independently proves
+the `isAdmin`-is-really-`vaultUnlocked` half of `5973fc2`: POV forces that flag false, so before the
+fix that panel could not have drawn at all.
+
+**⚠️ STILL OWED IN SECTION C, and it is the half that matters.** Both confirmations so far are
+"the right person CAN see it". Neither tests **who must NOT**:
+  - **displacement** — name ONE person for a branch in Fleet & Canvas, then send a hand-off into
+    that branch. The branch's own regional admin must go silent. He tested with the HEADQUARTERS
+    regional admin, who is either the named approver or the default holder — both of which are
+    supposed to see it, so that run cannot distinguish a working displacement rule from a broken one.
+  - **the receiving agent** must get no approval bell for their own incoming store.
+Then D (two people, one button) and E (login, skippable — nothing pushed today).
 
 ## 🟠 2026-09-07 12:25 — Round 7 Section A: passed, minus two bugs. Both fixed.
 

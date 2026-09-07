@@ -83,6 +83,12 @@ until he says the round is finished, or tells you to skip it.
       screenshot shows Authorize Transfer on the Tier 4 regional admin account: *"yes the button is
       there"*.
 
+  ✅ `2f77cb2` IS ALSO CONFIRMED ON SCREEN — *"i use headquarters regional admin btw, and its already
+  there"*, with the offer drawn in full (Rp 130.500, 15 Bks, "Cello Coffee & Caramel kretek (Grosir)")
+  on the ADMIN AUTH REQUIRED card. That screenshot was taken **while wearing the POV costume**, which
+  independently proves the `isAdmin`-is-really-`vaultUnlocked` half of `5973fc2`: POV forces that flag
+  false, so before the fix the panel could not have drawn at all.
+
   ⚠️ NO OTHER FIX SINCE `0cb7efa` HAS BEEN SEEN ON SCREEN. The shake fix in particular is measured, not
   rendered: the recording proves the scrollbar moved and the arithmetic proves the old badge
   overflowed, but nobody has watched the fixed version. Both are proven by checks and by nothing else. The
