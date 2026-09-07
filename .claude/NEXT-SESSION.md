@@ -64,7 +64,21 @@ each. Do not start the coding job below until he says it is done, or tells you t
       that turns out to be wrong and it blocks him, narrow the guard to the create branch — do not
       delete it.
 
-  ⚠️ NO FIX SINCE `0cb7efa` HAS BEEN SEEN ON SCREEN. Both are proven by checks and by nothing else. The
+    - `5973fc2` **a branch approver can finally see their own approval queue.** Signed in as a real
+      Tier 4 regional admin with approval power granted, he got the bell and an empty panel. Two
+      faults: three render sites asked `isAdmin` (which is really `vaultUnlocked`, and POV forces it
+      false) while `pendingAdminRequests` was already correct; and that memo's deps omitted
+      `motorists`/`myProfile`, so the queue was computed once against a roster that had not loaded.
+    - `a8fea37` the Hand-offs tab's alert dot was **shaking the tab strip**, not blinking. At
+      `-top-1 -right-1` inside an `overflow-x-auto` strip, `animate-ping`'s 2x transform extended the
+      scrollable overflow by 10px twice a second. Now inset 8px at 8px wide (4px of clearance), with
+      the ring pinging behind a solid dot.
+      ⚠️ `AgentProfileView.jsx:1333` has the SAME `-top-2 -right-2 animate-ping` shape. Untouched —
+      check whether its parent scrolls before deciding.
+
+  ⚠️ NO FIX SINCE `0cb7efa` HAS BEEN SEEN ON SCREEN. The shake fix in particular is measured, not
+  rendered: the recording proves the scrollbar moved and the arithmetic proves the old badge
+  overflowed, but nobody has watched the fixed version. Both are proven by checks and by nothing else. The
   preview pane refuses the dev server's self-signed certificate, so ask Aldi to look, or fix the
   viewing path first (`A-Brain/Wiki/Concepts/Looking at the App.md`).
 

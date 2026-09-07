@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-09-07 17:33 WIB (🟠 KPM — Round 7 IN PROGRESS; Section A passed, EIGHT fixes shipped, all committed. Sections B–E still owed. · 🔵 7DTD — fan-out gate built, no app code touched.)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **LOG TRIMMED · 1221/1221 selfcheck · 722/722 audit · build clean** · branch `phase0-solid-ground`
+**Updated: 2026-09-07 17:33 WIB (🟠 KPM — Round 7 IN PROGRESS; Section A passed, TEN fixes shipped, all committed. Sections B–E still owed. · 🔵 7DTD — fan-out gate built, no app code touched.)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **LOG TRIMMED · 1240/1240 selfcheck · 722/722 audit · build clean** · branch `phase0-solid-ground`
 
 ## 🟠 2026-09-07 12:25 — Round 7 Section A: passed, minus two bugs. Both fixed.
 
@@ -99,6 +99,26 @@ reject a real equatorial pin and accept `"abc"`); 0,0 refused as the Atlantic. 1
 red (4 failed). ⚠️ **Applies to EDITS too** — `handleSubmit` serves both, so a legacy pinless shop
 must be pinned before its other fields can change. He believes there are none; if it blocks him,
 narrow to the create branch rather than deleting the guard.
+
+**The ninth fix — `5973fc2`, a REAL permission bug found in Section C.** Signed in as a genuine Tier
+4 regional admin he had granted approval power: *"regional admin does get the notification bell for
+the approval, but when i open consignment menu there is none of that bell notification inside it"*.
+**Two faults, either one enough on its own.** Three render sites asked `isAdmin` — which is not "is
+an admin", it is `vaultUnlocked`, and POV forces it false — while `pendingAdminRequests` was already
+correct (it calls `canApproveHandoffFrom`, the same predicate the write uses). AND that memo's deps
+omitted `motorists`/`myProfile`, so the queue was computed once against a roster that had not
+arrived and never re-ran. The list is the permission now; both lists render, since they are disjoint
+by construction. 13 checks, trialled red.
+
+**The tenth fix — `a8fea37`, and it was not the bug he thought.** *"there is snapping animation when
+the red link blinking on this page"*, with a screen recording. **It was a LAYOUT bug.** The alert dot
+sat at `-top-1 -right-1`, outside its button, inside an `overflow-x-auto` strip; `animate-ping`
+scales 2x, and a CSS transform still extends SCROLLABLE OVERFLOW even though it does not affect
+layout. 12px badge at a -4px inset = 10px past the edge, twice a second, so the scrollbar resized
+and the tabs jumped. Watching the recording frame by frame is what showed it — the scrollbar under
+the tabs moves on every pulse. Now 8px at an 8px inset (4px clearance), ring pinging behind a solid
+dot. 6 checks including the geometry re-run, with the OLD numbers asserted to overflow so the check
+could fail. ⚠️ `AgentProfileView.jsx:1333` has the same shape and was NOT touched.
 
 **Superseded note — this is what prompted it:** Asked what should happen for a pinless
 shop he answered *"well all the stores have GPS, and should have GPS, on the NOO GPS is compulsary
