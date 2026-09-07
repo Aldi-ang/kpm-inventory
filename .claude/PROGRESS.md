@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-09-07 12:25 WIB (🟠 KPM — Round 7 test pass IN PROGRESS with Aldi; Section A passed, THREE bugs found and fixed. Sections B–E still owed. · 🔵 7DTD — fan-out gate built, no app code touched.)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **LOG TRIMMED · 722/722 audit · 1157/1157 selfcheck · build clean** · branch `phase0-solid-ground`
+**Updated: 2026-09-07 12:25 WIB (🟠 KPM — Round 7 test pass IN PROGRESS with Aldi; Section A passed, FOUR fixes shipped. Sections B–E still owed. · 🔵 7DTD — fan-out gate built, no app code touched.)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **LOG TRIMMED · 722/722 audit · 1157/1157 selfcheck · build clean** · branch `phase0-solid-ground`
 
 ## 🟠 2026-09-07 12:25 — Round 7 Section A: passed, minus two bugs. Both fixed.
 
@@ -41,6 +41,16 @@ Now a person saved under the signed-in admin's own email gets a roster record an
 entry**, and the duplicate-email refusal stands down for that case only. The required-field guard
 sits above the proxy test so it cannot be made conditional on it, and a check pins that ordering.
 13 checks, trialled red (5 failed reverted).
+
+**The fourth fix — `9388ba2`, because the third one did not reach him.** `7d9b5ba` only recognised a
+test person whose address MATCHED his. His existing test personnel have **no address at all**, so he
+hit the same wall: *"yo why is it still like this on the test account, i said i want u to lift the
+requirement for tier 1 account"*. A **blank** address saved by a global admin now resolves to that
+admin's own and is stored under it. In the same breath he corrected the phone rule — *"make sure
+that email and phone number is still required for tier below 1"* — so the phone requirement removed
+for everybody in `4bd0f52` is **back for everybody except a self-proxy**. Name stays unconditional.
+The two earlier check sections were replaced by one covering all three instructions together: 26
+checks, trialled red (5 failed reverted).
 
 **✅ CLOSED, not a real leftover — and the earlier claim in this entry was wrong.** I told him one
 such save "would have been allowed" and left a stale `employee_directory/<his email>`. It would

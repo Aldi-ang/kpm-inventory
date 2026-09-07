@@ -19,6 +19,11 @@ each. Do not start the coding job below until he says it is done, or tells you t
     - `4bd0f52` a phone number is no longer required to save a person, and the refusal names the
       empty field. Email and Name stay required — the email IS the document id of
       `employee_directory/<email>`, and a blank name undoes `2e5a8ac`.
+    - `9388ba2` supersedes `7d9b5ba`'s trigger: a **BLANK** address saved by a global admin now
+      resolves to that admin's own, because his existing test personnel have no address at all and
+      the matching-only rule never reached them. Phone is **required again for everybody except a
+      self-proxy** — his correction: *"make sure that email and phone number is still required for
+      tier below 1"*. Name is unconditional.
     - `7d9b5ba` personnel saved under the signed-in admin's OWN email are that admin in another form:
       roster record, no `employee_directory` entry, and the duplicate-email refusal stands down for
       that case only. This also closed a live foot-gun — the directory maps one email to one agentId,
