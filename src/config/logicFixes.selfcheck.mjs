@@ -5353,5 +5353,79 @@ ok('and the match is case- and spacing-insensitive, like every other store looku
    'the request stores the name as typed; the map stores it as registered');
 
 
+section('AN OUTLET CANNOT BE SAVED WITHOUT A MAP PIN (Aldi, 2026-09-07)');
+
+/* He believed this was already true — *"on the NOO GPS is compulsary where adress do not
+   actually"* — and it was not: the form captured coordinates and never required them, which is why
+   every display path carries an address fallback. Told that, he said *"damn make it compulsory then
+   because i think GPS can work even without internet right"*.
+
+   He is right about the hardware. A GNSS fix needs no data connection; what needs the internet is
+   the address SEARCH (a Nominatim call) and the map TILES. So the guard checks the field, not the
+   method — the GPS button, the address search and a pasted coordinate pair all fill the same two
+   values, which is what keeps this compulsory without making it impossible from a desktop.
+
+   ⚠️ It guards a SAVE, so it tests the number, not the truthiness. `!formData.latitude` would
+   reject a real equatorial pin at latitude 0 and accept the string "abc". 0,0 is refused on
+   purpose: it is the Atlantic, and it is what a zeroed or half-written record looks like — the one
+   wrong answer that renders as a confident pin. */
+
+const gpSrc = code(read('src/components/CustomerManager.jsx'));
+const gpA = gpSrc.indexOf('const handleSubmit');
+const gpB = gpSrc.indexOf('const cleanData');
+ok('the submit scope was found (anchors const handleSubmit .. const cleanData)',
+   gpA > -1 && gpB > gpA, 'anchor missed — the slice below would read the whole file');
+if (gpA > -1 && gpB > gpA) {
+  const gp = gpSrc.slice(gpA, gpB);
+  ok('the submit slice is the validation block, not the rest of the file',
+     gp.length > 400 && gp.length < 4000, 'got ' + gp.length + ' chars');
+  ok('a pin is required before an outlet can be saved',
+     /!Number\.isFinite\(lat\) \|\| !Number\.isFinite\(lng\)/.test(gp),
+     'this is the guard he asked for: "damn make it compulsory then"');
+  ok('it parses the value rather than testing whether the field is truthy',
+     /const lat = parseFloat\(formData\.latitude\)/.test(gp) && !/!formData\.latitude/.test(gp),
+     'truthiness rejects a real pin at latitude 0 and accepts the string "abc"');
+  ok('and 0,0 is refused as the null island it is',
+     /\(lat === 0 && lng === 0\)/.test(gp),
+     'a zeroed record renders as a confident pin in the Atlantic');
+  ok('the refusal names all three ways to fill it, not just the GPS button',
+     /Press GPS to lock your position, search the address, or paste the coordinates/.test(gp),
+     'a desktop with no GPS chip must still be able to register an outlet');
+}
+ok('the guard runs BEFORE the write, not after it',
+   gpSrc.indexOf('!Number.isFinite(lat)') > -1 &&
+   gpSrc.indexOf('!Number.isFinite(lat)') < gpSrc.indexOf('await addDoc(collection(db, \'artifacts\', appId'),
+   'a check after the document is created is not a check');
+ok('and it guards the SSOT block\'s own path, after the region check rather than instead of it',
+   gpSrc.indexOf('SSOT Violation') < gpSrc.indexOf('!Number.isFinite(lat)'),
+   'replacing the region guard would trade one missing field for another');
+
+/* ── the guard, re-run on real pins ───────────────────────────────────────────────────── */
+const gpSave = (latitude, longitude) => {
+  const lat = parseFloat(latitude);
+  const lng = parseFloat(longitude);
+  if (!Number.isFinite(lat) || !Number.isFinite(lng) || (lat === 0 && lng === 0)) return 'refused';
+  return 'saved';
+};
+
+ok('a real Bandung pin saves',
+   gpSave(-6.9175, 107.6191) === 'saved', 'got ' + gpSave(-6.9175, 107.6191));
+ok('a pin pasted as text saves too — the field is what matters, not how it was filled',
+   gpSave('-6.9175', '107.6191') === 'saved', 'got ' + gpSave('-6.9175', '107.6191'));
+ok('an outlet with no pin at all is refused',
+   gpSave('', '') === 'refused', 'got ' + gpSave('', ''));
+ok('a half-filled pair is refused rather than half-saved',
+   gpSave(-6.9175, '') === 'refused' && gpSave('', 107.6191) === 'refused',
+   'got ' + gpSave(-6.9175, '') + ' / ' + gpSave('', 107.6191));
+ok('rubbish in the coordinate box is refused',
+   gpSave('abc', '107.6') === 'refused', 'got ' + gpSave('abc', '107.6'));
+ok('0,0 is refused — that is the Atlantic, not a shop',
+   gpSave(0, 0) === 'refused', 'got ' + gpSave(0, 0));
+ok('BUT a genuine pin ON the equator still saves, which truthiness would have broken',
+   gpSave(0, 107.6191) === 'saved', 'got ' + gpSave(0, 107.6191));
+ok('and a genuine pin on the prime meridian saves',
+   gpSave(-6.9175, 0) === 'saved', 'got ' + gpSave(-6.9175, 0));
+
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

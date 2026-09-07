@@ -935,7 +935,28 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
             notify("⚠️ SSOT Violation: You must specify the complete Matrix Location (Provinsi, Kabupaten, and Kecamatan) before logging this target.");
             return;
         }
-        
+
+        /* 📍 A PIN IS COMPULSORY NOW. Aldi, 2026-09-07: *"damn make it compulsory then"*, after
+           being told that his belief — *"on the NOO GPS is compulsary where adress do not
+           actually"* — was not true of the code. It was captured and never required, so pinless
+           shops could exist, and every screen that draws a location has carried an address
+           fallback for them ever since.
+
+           ⚠️ THIS BLOCKS A SAVE, so it checks the NUMBER, not the truthiness. `!formData.latitude`
+           would reject a real equatorial pin at latitude 0 and accept the string "abc". And 0,0 is
+           refused on purpose: it is the Atlantic, and it is what a zeroed or half-written record
+           looks like — the one wrong answer that renders as a confident pin.
+
+           It does NOT insist the GPS button was used. The address search and a pasted coordinate
+           pair both fill the same field, which is what keeps this compulsory without making it
+           impossible from a desktop or in a building with no signal. */
+        const lat = parseFloat(formData.latitude);
+        const lng = parseFloat(formData.longitude);
+        if (!Number.isFinite(lat) || !Number.isFinite(lng) || (lat === 0 && lng === 0)) {
+            notify("⚠️ This outlet has no map pin. Press GPS to lock your position, search the address, or paste the coordinates — the shop cannot be routed or handed over without one.");
+            return;
+        }
+
         const cleanData = {
             ...formData,
             name: safeName,
