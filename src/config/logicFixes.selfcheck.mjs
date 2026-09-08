@@ -5760,5 +5760,59 @@ ok('and a pinned id still wins over the twins',
    'the id is pinned at send time precisely so the twins do not have to be guessed at approval');
 
 
+/* ECER IS AN INDIVIDUAL, NOT A STORE ========================================================
+   Aldi, 2026-09-08: *"all sales bought in ecer means that it is an individual and not a store,
+   well i design the app like that ... ecer price should be bought by individual and they can only
+   pay in cash qris or transfer, consignment is only for registered stores"*. An Ecer line sold on
+   Titip is a receivable against somebody who was never registered - the origin of the HQ 3
+   hand-off that approved itself over a shop with no customer document. */
+const ecStart = engine.indexOf('const processTransaction = async');
+const ecEnd   = engine.indexOf('await saveOfflineTransaction', ecStart + 40);
+ok('processTransaction and its first write are both findable',
+   ecStart > -1 && ecEnd > ecStart, `processTransaction ${ecStart}, first write ${ecEnd}`);
+const ecHead = engine.slice(ecStart, ecEnd);
+ok('and the slice stops at the first write rather than running the whole file',
+   ecHead.length > 400 && ecHead.length < 9000, `slice is ${ecHead.length} chars`);
+
+ok('the Ecer/Titip refusal stands BEFORE anything is written',
+   /paymentType === 'Titip' && \(activeCart \|\| \[\]\)\.some\(i => i\.priceTier === 'Ecer'\)/.test(ecHead),
+   'a guard placed after saveOfflineTransaction would refuse a sale that had already been booked');
+ok('and it refuses rather than silently repricing the line',
+   /cannot be a consignment/.test(ecHead),
+   'his law is that every action reports - a sale that changes itself without saying so is worse than a refusal');
+
+ok('the terminal drops Consignment from the menu when a line is Ecer',
+   /allowedPayments\.filter\(method => !\(method === 'Titip' && cart\.some\(i => i\.priceTier === 'Ecer'\)\)\)/.test(merchant),
+   'leaving it selectable would send the salesman to a refusal he could have been spared');
+ok('and the menu says why the option is missing',
+   merchant.includes('Ecer is an individual sale, so Consignment is not offered'),
+   'a control that vanishes without a word is the silent-change bug he has ruled against twice');
+ok('a tier changed AFTER the method was chosen still resets the method',
+   /if \(paymentMethod === 'Titip' && cart\.some\(i => i\.priceTier === 'Ecer'\)\)/.test(merchant),
+   'the tier select sits below the payment select - picking Titip first and Ecer second is the ordinary order');
+
+/* the decision, re-run on his real cart */
+const ecAllowed = (cart, method) => !(method === 'Titip' && cart.some(i => i.priceTier === 'Ecer'));
+// His HQ 3 sale: 100 Bks of Cello Coffee & Caramel kretek at the Ecer price, Rp 1.000.000.
+const EC_HQ3 = [{ name: 'Cello Coffee & Caramel kretek', qty: 100, priceTier: 'Ecer', calculatedPrice: 10000 }];
+const EC_STORE = [{ name: 'Cello Coffee & Caramel kretek', qty: 15, priceTier: 'Grosir', calculatedPrice: 8700 }];
+
+ok('HIS CASE: the HQ 3 cart can no longer be booked as a consignment',
+   ecAllowed(EC_HQ3, 'Titip') === false,
+   'this is the Rp 1.000.000 receivable that had no registered shop to owe it');
+ok('the same cart is fine on Cash, QRIS and Transfer',
+   ['Cash', 'QRIS', 'Transfer'].every(m => ecAllowed(EC_HQ3, m)) === true,
+   'his words: "they can only pay in cash qris or transfer" - all three must stay open');
+ok('a Grosir cart is still allowed on consignment',
+   ecAllowed(EC_STORE, 'Titip') === true,
+   'blocking store consignment would stop the business the feature exists for');
+ok('a Retail cart is still allowed on consignment',
+   ecAllowed([{ priceTier: 'Retail', qty: 1 }], 'Titip') === true,
+   'only Ecer means an individual - Retail and Grosir are both store tiers');
+ok('one Ecer line poisons a mixed cart',
+   ecAllowed([...EC_STORE, ...EC_HQ3], 'Titip') === false,
+   'a receivable is written per transaction, so a single individual line drags the whole sale onto a debt nobody can be held to');
+
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

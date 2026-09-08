@@ -76,6 +76,22 @@ export default function useTransactionEngine({
         
         if(!customerName) { notify("Customer Name is required!"); return; }
 
+        /* 🧾 ECER IS A PERSON, NOT A SHOP. Aldi, 2026-09-08: *"all sales bought in ecer means that
+           it is an individual and not a store, well i design the app like that ... ecer price
+           should be bought by individual and they can only pay in cash qris or transfer,
+           consignment is only for registered stores"*.
+
+           An Ecer line sold on Titip books a receivable against somebody who was never registered
+           and never can be. That is how "HQ 3" reached the hand-off queue owning Rp 1.000.000 with
+           no customer document behind it: the approval marked itself APPROVED and then found
+           nothing to hand over (cdaabc7). The terminal drops the option from the menu; this is the
+           same rule standing where the row is actually written, because a hidden control is a
+           suggestion and not a boundary. */
+        if (paymentType === 'Titip' && (activeCart || []).some(i => i.priceTier === 'Ecer')) {
+            notify("Ecer is an individual sale, not a store - it cannot be a consignment. Take Cash, QRIS or Transfer, or move those lines to Retail or Grosir.");
+            return;
+        }
+
         let currentAgentProfileId = agentProfileId;
         if (userRole === 'ADMIN' && adminSalesMode === 'VEHICLE') currentAgentProfileId = 'ADMIN_VEHICLE';
         else if (userRole === 'ADMIN') currentAgentProfileId = null;

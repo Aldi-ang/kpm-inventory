@@ -396,6 +396,14 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
     }, []);
 
     useEffect(() => { if (!allowedPayments.includes(paymentMethod)) setPaymentMethod(allowedPayments[0] || 'Cash'); }, [allowedPayments]);
+    /* Ecer is an individual sale and cannot be a consignment - see the guard in
+       useTransactionEngine. The tier is per cart line and can be changed AFTER the payment method
+       was chosen, so this watches the cart rather than only the permission list. */
+    useEffect(() => {
+        if (paymentMethod === 'Titip' && cart.some(i => i.priceTier === 'Ecer')) {
+            setPaymentMethod(allowedPayments.find(m => m !== 'Titip') || 'Cash');
+        }
+    }, [cart, paymentMethod, allowedPayments]);
 
     const suggestedCustomers = customers.filter(c => {
         if (!c.name.toLowerCase().includes(customerName.toLowerCase())) return false;
@@ -1866,8 +1874,12 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                 <div>
                     <label className="text-[10px] font-bold uppercase text-[var(--duke-ink-7)] block mb-1">Payment Method</label>
                     <select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)} disabled={isReturMode} className={`w-full bg-[var(--duke-paper)] border border-[var(--duke-edge-on-paper)] text-[var(--duke-ink-7)] p-2 text-xs md:text-sm font-bold uppercase outline-none rounded ${isReturMode ? 'opacity-50 cursor-not-allowed' : ''}`}>
-                        {allowedPayments.map(method => ( <option key={method} value={method}>{method === 'Titip' ? 'Consignment' : method}</option> ))}
+                        {allowedPayments.filter(method => !(method === 'Titip' && cart.some(i => i.priceTier === 'Ecer'))).map(method => ( <option key={method} value={method}>{method === 'Titip' ? 'Consignment' : method}</option> ))}
                     </select>
+                    {/* A control that disappears has to say why it disappeared. */}
+                    {cart.some(i => i.priceTier === 'Ecer') && allowedPayments.includes('Titip') && !isReturMode && (
+                        <p className="text-[10px] text-[var(--duke-ink-7)] opacity-70 mt-1 leading-snug">Ecer is an individual sale, so Consignment is not offered. Consignment is for registered stores.</p>
+                    )}
                 </div>
 
                 {paymentMethod === 'Titip' && !isReturMode && (
