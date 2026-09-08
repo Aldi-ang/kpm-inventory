@@ -818,9 +818,15 @@ section('S13. An offline store syncs with the status the online path writes');
 ok('the status nothing reads is gone', !/PENDING_OFFLINE_SYNC/.test(stripComments(app)));
 /* Scoped to the NOO flush. The transaction flush twenty lines below is character-identical, so
    an unscoped test passes on the unfixed code by matching the wrong one — the second vacuous
-   guard caught today. Anchored on `customers` + processedNoo, which only the NOO block has. */
+   guard caught today.
+
+   RE-ANCHORED 2026-09-08. It used to end on `processedNoo.push`, and that array was deleted when
+   the drain started acknowledging each chunk as it lands - so the guard went red against correct
+   code. The new anchor is the ack tag itself, which names the IndexedDB store and therefore cannot
+   match the transaction block however similar the two look. An anchor that describes what the code
+   IS outlives one that happens to sit nearby. */
 ok('the synced store keeps the status its payload carried',
-   /customers`\)\);[\s\S]{0,600}data: \{ \.\.\.payload, syncedAt: serverTimestamp\(\) \}[\s\S]{0,120}processedNoo\.push/.test(app));
+   /customers`, noo\.cloudId\)[\s\S]{0,1200}data: \{ \.\.\.payload, syncedAt: serverTimestamp\(\) \}[\s\S]{0,200}ack: \{ store: 'noo_profiles'/.test(app));
 ok('and the offline payload still sets that status at save time',
    /status: newStoreData\.isNooRegistration \? 'NOO_ACTIVE' : 'WALK_IN'/.test(engine));
 
@@ -4874,6 +4880,79 @@ ok('the grant screen says the tick ignores rank, because now it does',
    paid, and Product Performance kept reporting it as sold.
 
    salesRollupWrite's own comment already named four paths that must pass -1; three were written. */
+/* == A HALF-FINISHED SYNC MUST NOT SEND THE SAME SALE TWICE ==============================
+   Aldi, 2026-09-08: *"better fix the offline one its important, make sure offline also works well
+   tho"*. commitInChunks is several commits, not one transaction - Firestore caps a batch at 500
+   writes. It threw on a failed chunk with the earlier chunks already committed, and the drain then
+   cleared nothing, so the retry re-sent the sales that HAD landed under fresh random ids.
+   Duplicate receipts, and the money counted twice because the tally rides the same list. */
+section('Offline: a retried sync overwrites, it never duplicates');
+
+const offEng = code(read('src/hooks/useOfflineEngine.js'));
+const helpersSrc = code(read('src/utils/helpers.js'));
+
+ok('the cloud id is decided when the sale is QUEUED, not when it is uploaded',
+   /await db\.add\('transactions', \{ \.\.\.txData, cloudId: newCloudId\(\)/.test(offEng),
+   'minting it at upload time is what made a retry create a second document');
+ok('and a blind-drop store gets one too',
+   /await db\.add\('noo_profiles', \{ \.\.\.nooData, cloudId: newCloudId\(\)/.test(offEng),
+   'a duplicated shop is the same fault wearing a different collection');
+ok('that id is RANDOM, never derived from the autoIncrement localId',
+   /randomUUID/.test(offEng) && !/cloudId: .{0,40}localId/.test(offEng),
+   'THE TRAP: localId is IndexedDB autoIncrement, so it is 1, 2, 3 PER DEVICE - two salesmen\u2019s first offline sale would collide and one would silently OVERWRITE the other. Losing a sale is worse than duplicating one');
+ok('and it survives a device with no crypto.randomUUID rather than throwing',
+   /Date\.now\(\)\.toString\(36\)/.test(offEng),
+   'randomUUID needs a secure context; a throw inside the path that exists for when things are already wrong is the worst place for one');
+
+ok('the drain addresses the document by that id when it has one',
+   /noo\.cloudId\s*\n?\s*\? doc\(db, `artifacts\/\$\{appId\}\/users\/\$\{userId\}\/customers`, noo\.cloudId\)/.test(code(app)) &&
+   /tx\.cloudId\s*\n?\s*\? doc\(db, `artifacts\/\$\{appId\}\/users\/\$\{userId\}\/transactions`, tx\.cloudId\)/.test(code(app)),
+   'this is what makes the write idempotent - a retry lands on the same document');
+ok('and still works for anything queued BEFORE this shipped',
+   /: doc\(collection\(db, `artifacts\/\$\{appId\}\/users\/\$\{userId\}\/transactions`\)\)/.test(code(app)),
+   'a sale already sitting in a phone\u2019s ghost ledger has no cloudId and must still sync');
+ok('the id is not also left in the document as a field',
+   /delete payload\.cloudId/.test(code(app)),
+   'the id IS the document name; carrying it inside as well is a second copy that can disagree');
+
+ok('commitInChunks reports each chunk as it lands',
+   /export const commitInChunks = async \(db, writeBatch, operations, onChunkCommitted\)/.test(helpersSrc),
+   'without this the caller cannot know which work is already safe, which is the whole bug');
+ok('and a throw inside that callback cannot undo a commit that already succeeded',
+   /try \{ await onChunkCommitted\(landed\); \} catch/.test(helpersSrc),
+   'the caller\u2019s bookkeeping failing must not be reported as the write failing');
+ok('the drain acknowledges per chunk instead of all at the end',
+   /await commitInChunks\(db, writeBatch, operations, async \(landed\) => \{[\s\S]{0,400}clearProcessedItem\(op\.ack\.store, op\.ack\.localId\)/.test(code(app)),
+   'clearing only at the end is what left committed sales in the queue for the retry to send again');
+ok('and never before the write, which is the older rule and still holds',
+   code(app).indexOf('clearProcessedItem(op.ack.store') > code(app).indexOf('await commitInChunks'),
+   'clearing first once lost sales outright; the fix was granularity, not order');
+ok('the tally carries no ack, so it is not mistaken for a queue item',
+   /if \(tallyOp\) operations\.push\(tallyOp\)/.test(code(app)) && !/tallyOp[\s\S]{0,80}ack:/.test(code(app)),
+   'the counter rides beside the receipts; acknowledging it would try to delete an IndexedDB row that does not exist');
+ok('a part-finished sync SAYS how much is safe',
+   /are safe in the vault[\s\S]{0,60}still waiting/.test(app) && /Do NOT re-enter them/.test(app),
+   'HIS LAW - every action reports. "Sync Failed" alone reads as "nothing went through", and a salesman who believes that re-enters sales already in the vault');
+
+/* The arithmetic of a partial failure, re-run. */
+const ackSim = (total, chunkSize, failAtChunk) => {
+  const ops = Array.from({ length: total }, (_, i) => ({ ack: { localId: i } }));
+  let cleared = [];
+  for (let c = 0; c * chunkSize < ops.length; c++) {
+    if (c === failAtChunk) break;                      // this chunk threw
+    cleared.push(...ops.slice(c * chunkSize, (c + 1) * chunkSize).map(o => o.ack.localId));
+  }
+  const retried = ops.filter(o => !cleared.includes(o.ack.localId)).map(o => o.ack.localId);
+  return { cleared: cleared.length, retried };
+};
+const partial = ackSim(1000, 450, 2);
+ok('after a failure in the third chunk, the first two are acknowledged and never resent',
+   partial.cleared === 900 && partial.retried.length === 100 && partial.retried[0] === 900,
+   'got ' + JSON.stringify({ cleared: partial.cleared, retried: partial.retried.length }) + ' - before the fix all 1000 were resent and 900 sales existed twice');
+ok('and nothing is acknowledged when the very first chunk fails',
+   ackSim(1000, 450, 0).cleared === 0,
+   'a sale must never leave the phone until it is confirmed in the vault');
+
 section('Money: goods that come back stop counting as sold');
 
 const { salesDelta: sd, rebuildMonths: rebuild } = await import('../utils/salesRollup.js');

@@ -315,6 +315,9 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
               triggerCapy(`📡 SIGNAL ACQUIRED! Pushing ${totalItems} offline records to HQ...`);
               logSyncEvent(`Initiating Auto-Sync for ${totalItems} items...`, 'INFO');
 
+              /* Declared OUTSIDE the try because the catch reports it. A count that only exists on
+                 the happy path cannot tell him how much is safe when the sync stops halfway. */
+              let secured = 0;
               try {
                   // 🚀 FIX: Replaced hand-rolled batching (fixed-count only, all chunks
                   // fired concurrently via Promise.all) with commitInChunks — same pattern
@@ -322,8 +325,6 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
                   // cap matters here, and committing sequentially/paced avoids flooding
                   // Firestore's write stream the moment signal comes back.
                   const operations = [];
-                  const processedNoo = [];
-                  const processedTx = [];
                   /* Pack sizes for the tally below. `inventory` is already loaded, so a queued
                      sale in Slop converts to Bks without a single extra read. */
                   const productsById = Object.fromEntries((inventory || []).map(p => [p.id, p]));
@@ -333,16 +334,23 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
                       const localId = noo.localId;
                       const payload = { ...noo };
                       delete payload.localId; // Strip the local ID before sending to cloud
+                      delete payload.cloudId; // ...and the id itself, which IS the document name
 
-                      const ref = doc(collection(db, `artifacts/${appId}/users/${userId}/customers`));
+                      /* The id was decided when this was queued, not now - see useOfflineEngine's
+                         newCloudId. A retry therefore overwrites the same document instead of
+                         creating a second one. `cloudId` is missing on anything queued before this
+                         shipped, and those fall back to a fresh id exactly as before. */
+                      const ref = noo.cloudId
+                          ? doc(db, `artifacts/${appId}/users/${userId}/customers`, noo.cloudId)
+                          : doc(collection(db, `artifacts/${appId}/users/${userId}/customers`));
                       /* 🚀 FIX: the payload already carries the status the online path writes —
                          NOO_ACTIVE for a real registration, WALK_IN otherwise — set when the
                          store was saved to the Ghost Ledger. This line used to overwrite it with
                          a value nothing in src/ reads and nothing ever changes back, so a store
                          registered without signal ended up in a state no screen understood. */
-                      operations.push({ type: 'set', ref, data: { ...payload, syncedAt: serverTimestamp() } });
+                      operations.push({ type: 'set', ref, data: { ...payload, syncedAt: serverTimestamp() },
+                                        ack: { store: 'noo_profiles', localId } });
 
-                      processedNoo.push(localId);
                   }
 
                   // 2. Flush Offline Sales Receipts
@@ -354,8 +362,12 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
                       // 🚀 THE FIX: Stamp the receipt with a True Server Time so it appears in Reports!
                       payload.timestamp = serverTimestamp();
 
-                      const ref = doc(collection(db, `artifacts/${appId}/users/${userId}/transactions`));
-                      operations.push({ type: 'set', ref, data: { ...payload, syncedAt: serverTimestamp() } });
+                      delete payload.cloudId; // the id itself is the document name, not a field
+                      const ref = tx.cloudId
+                          ? doc(db, `artifacts/${appId}/users/${userId}/transactions`, tx.cloudId)
+                          : doc(collection(db, `artifacts/${appId}/users/${userId}/transactions`));
+                      operations.push({ type: 'set', ref, data: { ...payload, syncedAt: serverTimestamp() },
+                                        ack: { store: 'transactions', localId } });
 
                       /* THE TALLY FOR A SALE MADE WITHOUT SIGNAL, in the same operations list and
                          therefore the same chunked commit as the receipt itself.
@@ -368,22 +380,42 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
                       const tallyOp = tallySaleOp(db, appId, userId, payload, productsById, 1);
                       if (tallyOp) operations.push(tallyOp);
 
-                      processedTx.push(localId);
                   }
 
-                  await commitInChunks(db, writeBatch, operations);
+                  /* 🔑 EACH CHUNK IS ACKNOWLEDGED THE MOMENT IT LANDS, not all of them at the end.
 
-                  // 🚨 FIX: only clear the local queue AFTER the cloud write is confirmed — clearing
-                  // first meant a failed commit lost these sales for good, with nothing left to retry.
-                  for (const localId of processedNoo) await clearProcessedItem('noo_profiles', localId);
-                  for (const localId of processedTx) await clearProcessedItem('transactions', localId);
+                     Still never before the write - clearing first is what once lost sales outright,
+                     and that rule has not changed. What changed is the granularity. commitInChunks
+                     is several commits, not one transaction, so a failure partway used to leave
+                     everything in the local queue including the sales that HAD committed; the retry
+                     then sent those again. Together with the stable `cloudId` this closes both
+                     halves: the retry no longer re-sends acknowledged work, and if it ever does, it
+                     overwrites the same document instead of making a second one.
+
+                     The tally operations carry no `ack` and are skipped here on purpose - they are
+                     not queue items, they are the counter riding along beside them. */
+                  await commitInChunks(db, writeBatch, operations, async (landed) => {
+                      for (const op of landed) {
+                          if (!op.ack) continue;
+                          await clearProcessedItem(op.ack.store, op.ack.localId);
+                          secured++;
+                      }
+                  });
 
                   logSyncEvent(`✅ Auto-Sync Complete. ${totalItems} items secured in Master Vault.`, 'SUCCESS');
                   triggerCapy(`✅ Sync Complete! ${totalItems} items secured in Master Vault.`);
               } catch (err) {
                   console.error("Auto-Sync Failed:", err);
-                  logSyncEvent(`❌ Auto-Sync Failed: ${err.message}`, 'ERROR');
-                  triggerCapy(`❌ Sync Failed! Retrying later.`);
+                  /* 🔴 SAY HOW MUCH IS SAFE. His law: every action reports. A part-finished sync
+                     used to say only "Sync Failed", which reads as "nothing went through" - and a
+                     salesman who believes that re-enters sales that are already in the vault. The
+                     count is what stops that, and it is honest either way. */
+                  const done = secured;
+                  const stillWaiting = Math.max(0, totalItems - done);
+                  logSyncEvent(`❌ Auto-Sync stopped after ${done}/${totalItems}: ${err.message}`, 'ERROR');
+                  triggerCapy(done > 0
+                      ? `⚠️ Sync stopped. ${done} of ${totalItems} are safe in the vault, ${stillWaiting} still waiting. Do NOT re-enter them.`
+                      : `❌ Sync Failed! Nothing sent yet. Retrying later.`);
               }
           }
       };

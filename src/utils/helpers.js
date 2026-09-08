@@ -236,7 +236,16 @@ export const convertToBks = (qty, unit, product) => {
 //     { type: 'update', ref: otherDocRef, data: {...} },
 //     { type: 'delete', ref: anotherDocRef },
 //   ]);
-export const commitInChunks = async (db, writeBatch, operations) => {
+/* ⚠️ A FAILED CHUNK LEAVES THE EARLIER ONES COMMITTED. This function is not a transaction and
+   cannot be - Firestore caps a batch at 500 writes, so a big upload is genuinely several commits.
+   The caller therefore has to know WHICH work is already safe, or a retry re-sends it: that is how
+   the offline drain used to duplicate sales.
+
+   `onChunkCommitted` is called with the operations of each chunk immediately after that chunk
+   lands. Use it to acknowledge work item by item rather than all-or-nothing at the end. It is
+   optional, and a throw inside it must not undo a commit that already succeeded, so it is caught
+   and ignored here - the caller's own bookkeeping is its problem, not this function's. */
+export const commitInChunks = async (db, writeBatch, operations, onChunkCommitted) => {
     const CHUNK_SIZE = 450;
     // 🚀 FIX: Firestore ALSO hard-caps each request at 10MiB. Map borders carry huge
     // geometryString payloads, so chunking by count alone can still overflow a request
@@ -261,8 +270,12 @@ export const commitInChunks = async (db, writeBatch, operations) => {
         });
         await batch.commit();
         committedAny = true;
+        const landed = chunk;
         chunk = [];
         chunkBytes = 0;
+        if (onChunkCommitted) {
+            try { await onChunkCommitted(landed); } catch (e) { console.error('onChunkCommitted failed:', e); }
+        }
     };
 
     for (const op of operations) {

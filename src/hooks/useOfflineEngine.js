@@ -128,10 +128,33 @@ export default function useOfflineEngine() {
         } catch (err) {}
     };
 
+    /* 🔑 THE CLOUD ID IS DECIDED HERE, WHILE THE SALE IS STILL ON THE PHONE.
+
+       The drain used to mint a fresh random document id at upload time. That is fine until an
+       upload is retried: `commitInChunks` splits the queue into batches of 450 and throws on a
+       failed chunk with the earlier chunks ALREADY committed, so the retry wrote those sales a
+       second time under new ids. Duplicate receipts, and the money counted twice.
+
+       Deciding it here makes the upload idempotent - a retry overwrites the same document with the
+       same data instead of creating a second one - and it survives anything, because the id is
+       stored beside the sale in IndexedDB and travels with it.
+
+       ⚠️ IT IS NOT DERIVED FROM `localId`, WHICH IS THE OBVIOUS AND WRONG CHOICE. `localId` is
+       IndexedDB autoIncrement (see createObjectStore above), so it is 1, 2, 3 PER DEVICE: two
+       salesmen's first offline sale would both be id 1 and one would silently OVERWRITE the other.
+       Losing a sale is worse than duplicating one. A random uuid has no such collision. */
+    const newCloudId = () => {
+        try { if (globalThis.crypto?.randomUUID) return 'off_' + globalThis.crypto.randomUUID(); } catch (e) {}
+        // randomUUID needs a secure context. The app has one everywhere it really runs (https, or
+        // localhost), but a fallback beats throwing inside the one code path that exists for when
+        // things are already going wrong.
+        return 'off_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 12);
+    };
+
     // 4. THE QUARANTINE ZONE (Saving data while offline)
     const saveOfflineTransaction = async (txData) => {
         const db = await initDB();
-        await db.add('transactions', { ...txData, offlineTimestamp: new Date().toISOString() });
+        await db.add('transactions', { ...txData, cloudId: newCloudId(), offlineTimestamp: new Date().toISOString() });
         await logSyncEvent(`🖨️ OFFLINE LOG: Saved receipt for ${txData.customerName}`, 'OFFLINE');
         updatePendingCount();
         broadcastUpdate(); // 🚀 RADIO SIGNAL 2
@@ -139,7 +162,7 @@ export default function useOfflineEngine() {
 
     const saveOfflineNOO = async (nooData) => {
         const db = await initDB();
-        await db.add('noo_profiles', { ...nooData, offlineTimestamp: new Date().toISOString() });
+        await db.add('noo_profiles', { ...nooData, cloudId: newCloudId(), offlineTimestamp: new Date().toISOString() });
         await logSyncEvent(`📍 BLIND DROP: Saved NOO for ${nooData.name}`, 'OFFLINE');
         updatePendingCount();
         broadcastUpdate(); // 🚀 RADIO SIGNAL 3
