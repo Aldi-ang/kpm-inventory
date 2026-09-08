@@ -49,6 +49,22 @@
       "port": 4173,
       "url": "https://localhost:4173",
       "autoPort": true
+    },
+    {
+      "name": "kpm-dev-http",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "dev",
+        "--",
+        "--mode",
+        "httpdev",
+        "--port",
+        "5174",
+        "--strictPort"
+      ],
+      "port": 5174,
+      "url": "http://localhost:5174"
     }
   ]
 }

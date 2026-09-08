@@ -14,7 +14,24 @@ const BUILD_ID = (() => {
     catch { return 'nogit'; }   // a build outside a checkout must still build
 })();
 
-export default defineConfig({
+/* 🔎 `--mode httpdev` SERVES PLAIN HTTP, AND IT IS FOR THE AGENT'S BROWSER ONLY.
+
+   The https below is what lets Aldi test on a real phone, and it stays the default. But its
+   certificate is self-signed, and the in-app browser will not click through a certificate warning
+   the way a phone can - so every visual claim about this app had to be handed back to him to check
+   by eye, which is the opposite of his standing rule: "if the browser is broken then fix it until u
+   can see it".
+
+   `http://localhost` is a SECURE CONTEXT by specification, exactly like https. So crypto.subtle
+   still exists, the master password still hashes, and login still works - the whole reason https
+   was turned on in the first place applies to the PHONE, which arrives on a LAN address, and not to
+   localhost. Nothing about the app changes; only the transport to this one machine does.
+
+   Start it with the `kpm-dev-http` entry in .claude/launch.json, on its own port so it can run
+   beside the https server rather than fighting it for 5173. */
+export default defineConfig(({ mode }) => {
+const httpDev = mode === 'httpdev';
+return {
   define: { __BUILD_ID__: JSON.stringify(BUILD_ID) },
   /* DEV ONLY — this never reaches a build. `npm run dev` now serves https://, because
      `crypto.subtle` (which hashes the master password) exists only in a SECURE CONTEXT:
@@ -31,9 +48,9 @@ export default defineConfig({
      in August 2026; it changed to .109 on 2026-08-19 and cost a test session. `host: true` makes
      vite print the real one as "Network:" every time `npm run dev` starts — read that line, or
      run `ipconfig`. */
-  server: { https: true, host: true },
+  server: { https: !httpDev, host: true },
   plugins: [
-    basicSsl(),
+    ...(httpDev ? [] : [basicSsl()]),
     react(),
     VitePWA({
       registerType: 'autoUpdate',
@@ -80,4 +97,5 @@ export default defineConfig({
       }
     })
   ]
-})
+};
+});
