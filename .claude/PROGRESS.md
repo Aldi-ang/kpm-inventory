@@ -1,6 +1,42 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-09-08 19:30 WIB (🟠 KPM — NEW GOAL: ship to a customer before end of September. Money bugs first. One found today and NOT yet fixed: a consignment return never reverses the sales report. The agent's browser can finally see the app (`8abcf04`). Seven fixes local, none pushed.)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **1321/1321 selfcheck · 722/722 audit · build clean** · branch `phase0-solid-ground`
+**Updated: 2026-09-08 19:47 WIB (🟠 KPM — the agent can now walk the app past the login: local Firebase emulator with a fake company, `37f34ee`. Ship-by-30-September plan agreed. Next job is the consignment-return money bug, diagnosed not fixed. Nine fixes local, none pushed.)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **1326/1326 selfcheck · 722/722 audit · build clean** · branch `phase0-solid-ground`
+
+## 🟠 2026-09-08 19:47 — the emulator is built. Screens behind the login are verifiable. `37f34ee`
+
+**NOW:** the one job is unchanged and unstarted — the consignment-return money bug in
+`.claude/NEXT-SESSION.md`, which now also carries the recipe for starting the emulator so no session
+has to rediscover it.
+
+He said *"okay sure make the emulator for better efficiency for both of us i guess"*. Done, and
+proven end to end: sign-in completes, the Dashboard renders the seeded company, and the layout was
+checked at desktop and at 375x812 with no console errors after sign-in.
+
+What it took: `httpdev` mode sets `VITE_USE_EMULATOR` (so `npm run dev` still hits the LIVE project
+and his phone testing is untouched); a small auth handle on `window` inside the existing DEV+opt-in
+gate, because the single-tab browser pane cannot complete a sign-in popup; and
+`tools/seed-emulator.mjs`, which writes a fake company over REST to 127.0.0.1:8080.
+
+**No real credential was touched.** The account is a fake local one, and the vault was seeded as
+DATA — App.jsx hashes the master password with SHA-256 over the lowercased trimmed string, and node
+produces the identical digest, so the app cannot tell it from a real setup. Unlocking used the
+`vaultGrace` localStorage record, which that file's own comment says grants nothing at the server.
+
+**Guarded, because a dev door onto `window` is how a convenience reaches production.** Five
+assertions, two RED-trialled by replacing the gate with `true`: the handle appears only after the
+gate, the gate needs BOTH flags rather than either, only `httpdev` sets the opt-in, and the seeder
+names no host but the emulator. Confirmed by grep that neither the flag nor the handle appears in
+`dist/` after a build.
+
+**Noticed, not yet explained:** the dashboard showed **Rp 0** omzet against three seeded
+transactions dated this month. Most likely just that `sales_stats` was not seeded and the panel
+reads the rollup rather than raw transactions — but "the report disagrees with the transactions" is
+the exact bug class of the next job, so it is written into the brief to be confirmed rather than
+assumed.
+
+**WAITING ON ALDI — nothing blocking. One test still owed by eye:**
+
+✅ `cdaabc7`, `967e447`, `83f5041` — the Ecer/consignment sale rules have never been looked at.
 
 ## 🟠 2026-09-08 19:30 — the goal changed: ship this app before the end of September
 

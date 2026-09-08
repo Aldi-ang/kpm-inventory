@@ -69,6 +69,43 @@ the signs have to compose. Work through each one rather than assuming.
 ⚠️ **Do not change when Titip revenue is booked.** That is Aldi's judgement call and he has not made
 it. This job only makes returns reverse what placement booked.
 
+## You can see the app now — use it
+
+`37f34ee` set up a local Firebase emulator with a fake company, so screens behind the login are
+verifiable from here for the first time. Start it, do not rebuild it:
+
+```
+npx firebase emulators:start --only auth,firestore     # a background Bash task
+node tools/seed-emulator.mjs                           # directory row, keyed by email
+```
+
+Then `preview_start` the **`kpm-dev-http`** launch entry (port 5174 — plain http, and it is the
+only mode that points the app at the emulator). Sign in from the page console, because the
+single-tab browser pane cannot complete a popup:
+
+```js
+const h = window.__kpmEmulatorAuth;
+const cred = h.credential(JSON.stringify({ sub: 'x', email: 'adikaryasukses99@gmail.com', email_verified: true }));
+const res = await h.signIn(h.auth, cred);   // res.user.uid — the emulator picks it, not you
+```
+
+Re-run `node tools/seed-emulator.mjs --uid <that uid>` to fill the company under it, then unlock the
+vault by writing the grace record and reloading:
+
+```js
+localStorage.setItem('kpm-vault-grace', JSON.stringify({ uid: '<that uid>', at: Date.now() }));
+```
+
+Seeded: 4 products, 2 agents (one Tier 5 at HEADQUARTERS with stock in the van, one Tier 4 at
+BANDUNG named for approvals), 3 shops, 2 Titip placements and 1 cash sale — deliberately the shape
+this job needs. Vault password `Emulator-1!`, recovery word `emulator`, both meaningless outside
+the fake database.
+
+⚠️ The dashboard showed **Rp 0** omzet against those seeded transactions. Probably just that
+`sales_stats` was not seeded and the panel reads the rollup rather than raw transactions — but
+confirm it before assuming, because "the report disagrees with the transactions" is exactly the bug
+class this job is about, and if it is real it is a second instance.
+
 ## Verify
 
 Leave it in `src/config/logicFixes.selfcheck.mjs`: assert the anchors were found before slicing, pin
@@ -101,16 +138,16 @@ written down and ranked. Fix order, by what a bug there costs the customer:
 
 Full reasoning, options and what was ruled out: `A-Brain/Brainstorm/2026-09-08_shipping-readiness.md`.
 
-### STILL UNANSWERED — ask him again if it comes up
+### ANSWERED 2026-09-08 — the emulator is BUILT, see the recipe above the fold
 
-> "can I set up the Firebase emulator?"
+*"okay sure make the emulator for better efficiency for both of us i guess"* — done in `37f34ee`,
+proven end to end: sign-in completes, the Dashboard renders the seeded company, and the layout was
+checked at desktop and 375x812. Nothing to decide here any more; just use it.
 
-He said *"okay then fix those first"* without answering it. The agent's browser can now reach the
-app (`8abcf04`, `kpm-dev-http` on port 5174) and can check layout at PC and phone width — but it
-**cannot sign in**, because entering credentials and completing a sign-in flow are things it must
-not do. So every screen behind the login is still unverifiable from here. `firebase.js:56` already
-reads `VITE_USE_EMULATOR`; seeding a local emulator would let the whole app be walked at both
-widths without his eyes. One session up front, saves every session after.
+⚠️ The dev door onto `window` is guarded by five assertions, two of them RED-trialled. Do not
+loosen the gate to make something convenient work — it needs BOTH `import.meta.env.DEV` and
+`VITE_USE_EMULATOR`, and only vite's `httpdev` mode sets the second. `npm run dev` must keep talking
+to the live project, because that is what Aldi's phone testing measures.
 
 ### Bug 3 — the geofence bypass goes to the owner, globally
 
