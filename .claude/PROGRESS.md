@@ -1,6 +1,47 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-09-08 19:47 WIB (🟠 KPM — the agent can now walk the app past the login: local Firebase emulator with a fake company, `37f34ee`. Ship-by-30-September plan agreed. Next job is the consignment-return money bug, diagnosed not fixed. Nine fixes local, none pushed.)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **1326/1326 selfcheck · 722/722 audit · build clean** · branch `phase0-solid-ground`
+**Updated: 2026-09-08 20:09 WIB (🟠 KPM — the consignment-return money bug is FIXED (`f46bc4a`) and the second POV branch trap with it (`7a59fb8`). ONE new finding needs his answer: a partial offline sync duplicates sales. Eleven fixes local, none pushed.)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **1345/1345 selfcheck · 722/722 audit · build clean** · branch `phase0-solid-ground`
+
+## 🟠 2026-09-08 20:09 — money bug fixed, POV trap closed, one new question. `f46bc4a` `7a59fb8`
+
+He asked to keep going without stopping to report, so two jobs ran back to back.
+
+**`f46bc4a` — goods that come back stop counting as sold.** A Titip placement books full revenue at
+the drop; the audit wrote the damaged goods as `itemsReturned` on a `CONSIGNMENT_PAYMENT`, which
+`isSale` refused, so nothing reversed. Fixed in `salesDelta` rather than at the call site ON PURPOSE
+— `rebuildMonths` runs the same function, so his existing Settings rebuild repairs every month
+already written, with no migration. `handleConsignmentPayment` now also tallies the reversal in the
+same batch, so it is right live and not only after a rebuild. Goods still unsold on the SHELF are
+untouched: whether Titip revenue belongs at placement is his open judgement call.
+
+**`7a59fb8` — Fleet & Canvas reported the wrong branch under the tier preview**, the second instance
+of the email-identity trap. It gated testing anything region-scoped, which is what bug 3 is.
+
+**🔴 NEW, NOT FIXED, NEEDS HIS ANSWER — a partial offline sync duplicates sales.**
+`commitInChunks` throws on a failed chunk with earlier chunks already committed; the drain then
+clears nothing and retries, rewriting the committed sales with fresh ids. Over ~225 offline sales in
+one drain. The obvious fix is a trap: `localId` is IndexedDB autoIncrement and collides across
+devices, so a deterministic id from it would silently OVERWRITE another salesman's sale rather than
+duplicate one. And `sales_stats` uses `increment()`, so the tally cannot be deduplicated that way at
+all. Full write-up in the brief.
+
+**Closed a thread rather than chasing it:** `txDate` dates a sale by `timestamp` first and `dayOf`
+by `date` first — opposite precedence — but `getLocalDayKey` has no rollover, so records written
+since that fix agree. The divergence is legacy-only and `helpers.js` already records that repairing
+it is Aldi's decision, not a side effect.
+
+**NOW:** the brief's one job is the day-one customer walk in the emulator — first sign-in, first
+product, first person, first sale, first EOD, first audit — at desktop and phone width, collecting
+breaks without fixing them. It needs nothing from him.
+
+**WAITING ON ALDI — three, none blocking the next job:**
+
+🔴 The offline duplicate risk above: pay for a per-device id, or accept it and know the threshold?
+
+🔴 Bug 3's routing question: does a geofence bypass use `canApproveHandoffFrom`, or a plain
+Tier-4-of-that-region rule? Those differ the moment anybody is named in Fleet & Canvas.
+
+✅ `cdaabc7`, `967e447`, `83f5041` — the Ecer/consignment sale rules, never looked at by eye.
 
 ## 🟠 2026-09-08 19:47 — the emulator is built. Screens behind the login are verifiable. `37f34ee`
 

@@ -1,87 +1,23 @@
 # The one job
 
-**When a shop hands back unsold consignment goods, the sales report never takes the money back
-out. The stock returns to the shelf, the customer never pays, and Product Performance still counts
-it as sold.**
+**Walk the paths a new customer hits on day one, in the emulator, and write down everything that
+breaks. Do not fix as you go — collect first, then rank.**
 
-Aldi is selling this app to a customer before the end of September 2026. A report that overstates
-revenue is the one class of bug that cannot ship: the customer finds it by doing their job, and it
-poisons trust in every other number on the screen. His words, 2026-09-08: *"okay then fix those
-first i want to finish this app before this month"*.
+Aldi is selling this app before 30 September 2026. The three classes above this in the agreed order
+(money lies, data loss, branch leaks) are either fixed or blocked on his answer — see the queue. Day
+one is what is left, and it is the class that ends a sale before any of the others matter: if
+onboarding breaks, nothing else gets looked at.
 
-## What the code does — anchors verified 2026-09-08 19:30, re-grep anyway
-
-A Titip (consignment) placement is written as an ordinary sale — no `type` field, so
-`isSale` reads it as `'SALE'` — and `tallySale(..., +1)` books its full value into the monthly
-rollup at `src/hooks/useTransactionEngine.js:417`. That is revenue counted at placement, before
-anybody has paid. Whether that timing is right is a separate question Aldi has not answered; leave
-it alone.
-
-The goods coming back is what is broken. The live path is the **store audit**:
-
-* `src/ConsignmentFinanceView.jsx:585` — the audit calls
-  `onPayment(name, paymentItems, paymentTotal, returnItems, returnTotal, remainingItems)`.
-* `src/hooks/useTransactionEngine.js:504` — `handleConsignmentPayment` receives them and writes one
-  transaction carrying `itemsReturned` and `returnTotal` (`:532`, `:535`, and again at `:609`/`:612`
-  and `:630`/`:633`) with `type: 'CONSIGNMENT_PAYMENT'`.
-* `src/utils/salesRollup.js:44` — `SALE_TYPES = ['SALE']`, so `isSale` refuses that transaction and
-  `salesDelta` returns null. **Nothing is written to the rollup, in either direction.**
-
-So the original placement's revenue stays in the month, forever, for goods that came back.
-
-`src/utils/salesRollupWrite.js` names this exact path in its own comment: *"every path that removes
-or changes a sale must pass -1. Those paths are: the history screen's edit and delete, the folder
-delete, and a consignment return."* The first two do it (`HistoryReportView.jsx:384`,
-`App.jsx:2980`). The third does not. The comment describes four paths and the code implements three.
-
-## The smallest fix, and where it has to go
-
-**In `salesDelta` (`src/utils/salesRollup.js:69`), not at the call site.** That single choice is
-what decides whether the months already written can be repaired:
-
-`rebuildMonths` (`salesRollup.js:193`) recomputes every month from the `transactions` collection and
-it calls the same `salesDelta`. Teach `salesDelta` to emit a negative delta for a transaction's
-`itemsReturned`, and the existing Settings rebuild button repairs the entire history by itself —
-no migration, no backfill script, no touching his live data by hand. Patch it at the call site
-instead and only future returns are correct while every past month stays wrong and the rebuild
-keeps reproducing the wrong number.
-
-## Traps
-
-⚠️ **`handleConsignmentReturn` (`useTransactionEngine.js:645`) is NOT the path. It looks exactly
-like it.** It writes a real `type: 'RETURN'` transaction, and `onReturn` is passed into
-ConsignmentFinanceView at `:47` and **never called anywhere** — grep it. Fixing that function would
-pass review, add a green check, and change nothing the customer sees. Confirm it is dead before
-deciding what to do with it, and do not delete it in the same commit as the fix.
-
-⚠️ **Settle which money comes back out, before writing anything.** The rollup booked
-`qty × calculatedPrice` at placement. The audit carries its own `returnTotal`. These can differ, and
-reversing the wrong one leaves the report wrong in a subtler way that no check will catch. Read what
-`returnItems` actually carries in `ConsignmentFinanceView`'s audit builder first — if the lines do
-not carry the price they were placed at, a naive `-1` reverses the QUANTITY and not the MONEY, which
-is a half-fix that reads green.
-
-⚠️ **Check every caller before changing shared maths.** `salesDelta` is called by `tallySale`,
-`tallySaleOp` (offline drain, `App.jsx:368`), `untallyOps` (`App.jsx:2980`, sign -1),
-HistoryReportView's edit pair, and `rebuildMonths`. Deleting a return must ADD the money back, so
-the signs have to compose. Work through each one rather than assuming.
-
-⚠️ **Do not change when Titip revenue is booked.** That is Aldi's judgement call and he has not made
-it. This job only makes returns reverse what placement booked.
-
-## You can see the app now — use it
-
-`37f34ee` set up a local Firebase emulator with a fake company, so screens behind the login are
-verifiable from here for the first time. Start it, do not rebuild it:
+**You can do this without him.** `37f34ee` set up a local Firebase emulator with a fake company, so
+every screen behind the login is reachable from here. Recipe:
 
 ```
-npx firebase emulators:start --only auth,firestore     # a background Bash task
+npx firebase emulators:start --only auth,firestore     # background Bash task
 node tools/seed-emulator.mjs                           # directory row, keyed by email
 ```
 
-Then `preview_start` the **`kpm-dev-http`** launch entry (port 5174 — plain http, and it is the
-only mode that points the app at the emulator). Sign in from the page console, because the
-single-tab browser pane cannot complete a popup:
+`preview_start` the **`kpm-dev-http`** launch entry (port 5174 — plain http, the only mode wired to
+the emulator). Then from the page console, because a popup cannot complete in a single-tab pane:
 
 ```js
 const h = window.__kpmEmulatorAuth;
@@ -89,39 +25,75 @@ const cred = h.credential(JSON.stringify({ sub: 'x', email: 'adikaryasukses99@gm
 const res = await h.signIn(h.auth, cred);   // res.user.uid — the emulator picks it, not you
 ```
 
-Re-run `node tools/seed-emulator.mjs --uid <that uid>` to fill the company under it, then unlock the
-vault by writing the grace record and reloading:
+Re-run `node tools/seed-emulator.mjs --uid <that uid>`, then open the vault and reload:
 
 ```js
 localStorage.setItem('kpm-vault-grace', JSON.stringify({ uid: '<that uid>', at: Date.now() }));
 ```
 
-Seeded: 4 products, 2 agents (one Tier 5 at HEADQUARTERS with stock in the van, one Tier 4 at
-BANDUNG named for approvals), 3 shops, 2 Titip placements and 1 cash sale — deliberately the shape
-this job needs. Vault password `Emulator-1!`, recovery word `emulator`, both meaningless outside
-the fake database.
+## The paths, in the order a real customer meets them
 
-⚠️ The dashboard showed **Rp 0** omzet against those seeded transactions. Probably just that
-`sales_stats` was not seeded and the panel reads the rollup rather than raw transactions — but
-confirm it before assuming, because "the report disagrees with the transactions" is exactly the bug
-class this job is about, and if it is real it is a second instance.
+Check each at **desktop AND at 375x812** — he asked for both: *"make sure both phone and PC looks
+good and work well"*. Working matters more than pretty; he deferred appearance, not usability.
 
-## Verify
+1. **First sign-in** on an empty tenant — before any product or person exists. Does the app explain
+   what to do next, or present an empty screen with no way forward?
+2. **Add the first product.** Master Vault. Including the units — Slop, Bal, Karton — because every
+   quantity in the app converts through them.
+3. **Add the first person.** Fleet & Canvas. Give them a branch and a tier.
+4. **Load their van**, then **make the first sale** — Cash, then Titip to a registered shop.
+5. **The first EOD** — submit, then verify it.
+6. **The first consignment audit** — some sold, some left on the shelf, some damaged. This is the
+   path `f46bc4a` just fixed, so confirm the report moves the way it should.
+7. **Product Performance and the Dashboard** after all of the above. Do the two agree with each
+   other and with what was actually sold?
 
-Leave it in `src/config/logicFixes.selfcheck.mjs`: assert the anchors were found before slicing, pin
-the slice length, and re-run the maths on real numbers — a placement of 10 books revenue, a return
-of 4 takes 40% of it back out, a full return zeroes the month, and `rebuildMonths` over the same
-transaction list reaches the identical figure the live tally does. That last one is the assertion
-that proves history is repairable. Trial it RED first by copying the edited file aside and
-`git checkout --`ing it, never by stashing.
+## What to write down for each break
 
-⚠️ `AgentInventoryView.jsx` is CRLF while `App.jsx` is LF — this repo is mixed. Match the file's own
-endings or the anchor silently misses.
+File and line if you find it, what the customer would see, and which class it falls in — money,
+data loss, branch leak, day one, or appearance. **Do not fix more than one thing before reporting**,
+because the ranking is his and a session that fixes eagerly spends the deadline on his behalf.
+
+⚠️ Step 7 has an open thread already: the dashboard showed **Rp 0** against three seeded
+transactions. `txDate` (`src/utils/period.js:90`) dates a sale by `timestamp` first and falls back
+to `date`; `dayOf` (`salesRollup.js:57`) does the opposite. For records written since the
+`getLocalDayKey` fix the two agree, so this is probably only that the seed carries no `timestamp`
+and no `sales_stats` — but confirm it rather than assume, because "the report disagrees with the
+transactions" is the bug class that just cost a fix.
+
+⚠️ Mixed line endings in this repo: `AgentInventoryView.jsx` and `FleetCanvasManager.jsx` are CRLF,
+`App.jsx` is LF. Match the file or the edit anchor silently misses.
 
 Then rewrite this file with the next single job.
 
 <details>
 <summary>Queue — do NOT paste these; promote one only when the job above is finished</summary>
+
+### 🔴 NEEDS HIS ANSWER — a partial offline sync duplicates sales
+
+Found 2026-09-08, NOT fixed, because the obvious fix is wrong and makes it worse.
+
+`commitInChunks` (`src/utils/helpers.js:239`) splits the offline drain into batches of 450
+operations and **throws on a failed chunk while earlier chunks are already committed**. The drain
+(`App.jsx:~349`) clears the local queue only after the whole commit succeeds - which is correct for
+data loss and is what creates this: on retry, the sales in the chunks that DID commit are written
+again, with fresh random document ids. Duplicate receipts, and the rollup double-counts them because
+`tallySaleOp` rides the same list.
+
+Threshold: more than ~225 offline sales in one drain, since each sale is two operations. A salesman
+with no signal for days.
+
+⚠️ **The obvious fix is a trap.** Making the document id deterministic from `localId` looks
+right and is worse: `localId` is IndexedDB `autoIncrement` (`useOfflineEngine.js:75`), so it is
+1, 2, 3 PER DEVICE. Two salesmen's first offline sale would both be id 1 and one would silently
+overwrite the other - losing a sale instead of duplicating one. A deterministic id needs a
+per-device value that does not exist yet.
+
+⚠️ **And the tally cannot be made idempotent that way at all.** `sales_stats` is written with
+`increment()`, so a retried chunk double-counts the money even if the receipt is deduplicated. The
+honest options are (a) a per-device id for receipts plus accepting counter drift, repaired by the
+Settings rebuild, or (b) leaving it and telling him the threshold. Ask him. Do not decide it -
+option (a) is real work and the frequency is low, and that trade is his to make before a deadline.
 
 ### The plan Aldi agreed to, 2026-09-08 — ship before end of September
 
@@ -167,17 +139,6 @@ does a bypass use `canApproveHandoffFrom` (which honours the Fleet & Canvas per-
 plain "Tier 4 of that region" rule? His sentence says *regional admin*, not *named approver*, and
 those stop being the same set the moment anybody is named. The region must be resolved at WRITE time
 and stored on the document, never looked up at read time from a roster that may have moved them.
-
-### The second POV email trap — small, and it gates testing bug 3
-
-`src/FleetCanvasManager.jsx:38` resolves `myProfile` by email, then `:40` feeds `rawLocation` from
-it — the branch the whole screen operates as. Under the tier preview it reports Aldi's own branch.
-Bug 3 is about routing by region and would be tested by previewing as a Tier 4, so this makes that
-test measure the wrong branch. Same one-line shape already fixed at `AgentInventoryView.jsx:53`
-(`previewing ? null : ...`); `previewing` is already threaded from App.jsx. Tier 6 has no
-`view_fleet`, so reproduce as Tier 3 or 4. Background:
-`A-Brain/Wiki/Concepts/POV Changes the Id, Never the Email.md`. Do NOT fix it by making
-`previewIdentity` rewrite the email.
 
 ### Owed him from fixes already shipped
 
