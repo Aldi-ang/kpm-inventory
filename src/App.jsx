@@ -1807,8 +1807,24 @@ const handleGitHubMirror = async () => {
          "UI Says Yes, Server Says No" rule that put a guard in handleRequestTransfer. The branch is
          the RECEIVING agent's, matching the bell that summoned this person here. */
       const receivingRegion = (motorists || []).find(m => m.id === request.toAgentId)?.location;
-      if (request.toAgentId === agentProfileId || request.fromAgentId === agentProfileId) {
-          return notify("You asked for this hand-off or you are receiving it. Somebody else has to authorise it.");
+      /* 🔑 THE RECEIVER IS NOT REFUSED HERE ANY MORE, AND MUST NOT BE PUT BACK. Aldi's call,
+         2026-09-07: *"yeah they should be able to confirm their own request"*. That call changed the
+         QUEUE in ConsignmentFinanceView and not this write, so a branch approver receiving a store
+         was shown the Authorize button and then refused by this line - the UI-says-yes-server-says-no
+         shape, reported by him on 2026-09-08 signed in as KALDI, who was Bandung's named approver
+         AND the receiver.
+
+         RESTORING THE `request.toAgentId === agentProfileId ||` CLAUSE SILENTLY REVERSES HIS CALL.
+         Hiding the button again is the smaller-looking fix and it is the wrong half: the queue was
+         right, this guard was the stale one. What keeps an ordinary receiver out is
+         canApproveHandoffFrom two lines below, exactly as it does in the queue - only somebody who
+         already holds that branch's approval power for other people can now also authorise one
+         addressed to themselves.
+
+         THE SENDER STAYS REFUSED. Asking for a store and granting it to yourself is one person doing
+         the whole protocol; being handed one you were offered is not. */
+      if (request.fromAgentId === agentProfileId) {
+          return notify("You asked for this hand-off. Somebody else has to authorise it.");
       }
       const myApprovalProfile = (motorists || []).find(m => m.id === agentProfileId) || { userRole };
       if (!canApproveHandoffFrom(myApprovalProfile, receivingRegion, motorists)) {

@@ -4703,17 +4703,31 @@ ok('the branch is the RECEIVING agent’s, the one guaranteed to exist',
    'the sender may be an admin with no branch at all');
 
 const apFrom = app4.indexOf('const handleAdminApproveTransfer');
-const apTo   = apFrom > -1 ? apFrom + 6000 : -1;
-ok('handleAdminApproveTransfer was located',
-   apFrom > -1,
-   'anchor missed — the approval-guard assertions would pass vacuously');
+const apTo   = app4.indexOf('const handleSubmitEOD');
+ok('handleAdminApproveTransfer was located, and so was the handler after it',
+   apFrom > -1 && apTo > apFrom,
+   'anchor missed — indexOf returns -1 and slice(from, -1) hands back the rest of the file, so every assertion below would pass by finding its string somewhere else in a 9000-line component');
 const approveBody = app4.slice(apFrom, apTo);
+/* Comments stripped for the assertions below. The comment that now sits over the guard QUOTES the
+   clause it is warning the next reader not to restore, and a raw grep cannot tell a warning about a
+   line from the line. Scope to the element, never to a string that appears near it. */
+const approveCode = code(approveBody);
+ok('and the slice is the handler, not a neighbourhood',
+   approveBody.length > 3000 && approveBody.length < 12000,
+   'got ' + approveBody.length + ' chars — a slice that drifts stops scoping anything');
 ok('the write is handed a PROFILE and the roster, not a bare tier id',
    /canApproveHandoffFrom\(myApprovalProfile, receivingRegion, motorists\)/.test(approveBody),
    'the tier signature is the flaw he reported — it cannot tell two people of the same rank apart');
-ok('nobody authorises a hand-off they asked for or are receiving',
-   /request\.toAgentId === agentProfileId \|\| request\.fromAgentId === agentProfileId/.test(approveBody),
-   'self-approval collapses the three-key protocol into one key');
+ok('nobody authorises a hand-off they ASKED FOR',
+   /if \(request\.fromAgentId === agentProfileId\) \{/.test(approveCode),
+   'requesting a store and granting it to yourself is one person doing the whole protocol');
+ok('and the receiver clause is gone from the write, because Aldi took it out of the queue',
+   !/request\.toAgentId === agentProfileId/.test(approveCode),
+   'HIS BUG, 2026-09-08, signed in as KALDI — Bandung’s named approver receiving a Bandung store: the queue drew the Authorize button and this line refused the press. ad4f18b changed the LIST and not the WRITE. Putting the clause back is the smaller-looking fix and it silently reverses his call: *"yeah they should be able to confirm their own request"*');
+ok('the refusal message no longer claims receiving is the reason',
+   /notify\("You asked for this hand-off\. Somebody else has to authorise it\."\)/.test(approveCode) &&
+   !/or you are receiving it/.test(approveCode),
+   'a toast that names a rule the code no longer enforces sends him hunting for a bug that is not there');
 ok('the request is RE-READ before the write, not trusted from the render',
    /freshSnap\.data\(\)\.status !== 'PENDING_ADMIN'/.test(approveBody),
    'THE COST OF OPTION B: two people hold this button, and the local copy predates the other press');
@@ -4799,6 +4813,61 @@ const MUTED = { ...SARI, approvalRegions: [] };
 ok('an explicitly empty grant means no branches, not the default',
    !canApproveHandoffFrom(MUTED, 'BANDUNG', [ANDI, BOSS, RINA, MUTED]),
    'this is why Fleet writes null and never [] — the two must stay tellable apart');
+
+/* == THE WRITE ITSELF, RE-RUN ON REAL ACCOUNTS ==========================================
+   Everything above tests who MAY approve. This tests the guard that stood between that
+   answer and the database, which on 2026-09-08 disagreed with it.
+
+   Aldi's account, reproduced: BANDUNG has exactly one person, kaldi0470@gmail.com. He is the
+   branch's named approver AND he was the receiver, so both bells rang for him, the queue drew
+   the Authorize button, and the write refused the press. The predicate below is
+   handleAdminApproveTransfer's own order of business - sender first, then power. */
+const KALDI = { id: 'kaldi', name: 'Kaldi', userRole: CORPORATE_TIERS.TIER_4, location: 'BANDUNG', approvalRegions: ['Bandung'] };
+const BDG_ROSTER = [KALDI, CITRA, SARI, RINA, BOSS];
+
+// handleAdminApproveTransfer, in the order it runs: the viewer's profile comes off the roster,
+// the branch comes off the RECEIVER, the sender is refused outright, then power decides.
+const writeApproval = (viewerId, req, roster = BDG_ROSTER) => {
+  const receivingRegion = (roster.find(m => m.id === req.toAgentId) || {}).location;
+  if (req.fromAgentId === viewerId) return 'REFUSED_SENDER';
+  const me = roster.find(m => m.id === viewerId) || { userRole: viewerId === null ? 'ADMIN' : undefined };
+  if (!canApproveHandoffFrom(me, receivingRegion, roster)) return 'REFUSED_NO_POWER';
+  return 'APPROVES';
+};
+
+const TO_KALDI  = { id: 'h1', status: 'PENDING_ADMIN', fromAgentId: 'citra', toAgentId: 'kaldi' };
+const TO_CITRA  = { id: 'h2', status: 'PENDING_ADMIN', fromAgentId: 'rina',  toAgentId: 'citra' };
+const TO_SARI   = { id: 'h3', status: 'PENDING_ADMIN', fromAgentId: 'citra', toAgentId: 'sari'  };
+
+ok('HIS CASE: the receiver who is that branch\u2019s named approver may now authorise it',
+   writeApproval('kaldi', TO_KALDI) === 'APPROVES',
+   'got ' + writeApproval('kaldi', TO_KALDI) + ' \u2014 this is the press that failed on 2026-09-08, and the queue had already drawn the button for it');
+ok('an ordinary receiver with no approval power is still refused by the write',
+   writeApproval('citra', TO_CITRA) === 'REFUSED_NO_POWER',
+   'got ' + writeApproval('citra', TO_CITRA) + ' \u2014 dropping the receiver clause must not hand the button to every agent who is offered a store');
+ok('and the queue refuses that same person, so no button is drawn to be refused',
+   !canApproveHandoffFrom(CITRA, 'BANDUNG', BDG_ROSTER),
+   'the list and the write have to answer alike \u2014 disagreeing is the whole bug');
+ok('a displaced regional admin is refused by the write too, receiver or not',
+   writeApproval('sari', TO_SARI) === 'REFUSED_NO_POWER' && writeApproval('sari', TO_KALDI) === 'REFUSED_NO_POWER',
+   'naming Kaldi took Bandung off Sari; C4 cannot be run by hand until Bandung has a second account, so this is the only place it is checked');
+ok('the owner still authorises it alongside the branch',
+   writeApproval(null, TO_KALDI) === 'APPROVES',
+   'Option B \u2014 no delegation locks him out of his own company');
+
+/* The sender clause is the half that did NOT move, and it must hold at every rank - including
+   Tier 1, where canApproveHandoffFrom returns true and the sender check is the only thing left. */
+const SENDER_TIERS = [CORPORATE_TIERS.TIER_1, CORPORATE_TIERS.TIER_2, CORPORATE_TIERS.TIER_3,
+                      CORPORATE_TIERS.TIER_4, CORPORATE_TIERS.TIER_5, CORPORATE_TIERS.TIER_6, 'ADMIN'];
+const senderVerdicts = SENDER_TIERS.map(tier => {
+  const asker = { id: 'asker', name: 'Asker', userRole: tier, location: 'BANDUNG', approvalRegions: ['Bandung'] };
+  const roster = [asker, KALDI, CITRA, SARI, BOSS];
+  const req = { id: 'h9', status: 'PENDING_ADMIN', fromAgentId: 'asker', toAgentId: 'kaldi' };
+  return writeApproval('asker', req, roster);
+});
+ok('the SENDER is refused at every tier, even the ones that could approve anyone else\u2019s',
+   senderVerdicts.every(v => v === 'REFUSED_SENDER'),
+   'got ' + JSON.stringify(senderVerdicts) + ' \u2014 asking for a store and granting it to yourself is one person doing the whole protocol, and at Tier 1 this clause is the only thing that says no');
 
 /* ══ THE LOGIN DOMAIN — one site, not two ═════════════════════════════════════════════════
    Aldi, 2026-09-06, on Brave: sign-in worked on localhost and failed on every deployed address.
