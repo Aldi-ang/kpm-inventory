@@ -4165,6 +4165,7 @@ const handleGitHubMirror = async () => {
                samplings={samplings}   // 🚀 INJECTED: Pass the global sampling ledger
                user={user}             // 🚀 FIX: Pass the user profile to prevent 'blank' names
                motorists={motorists}   // 🚀 FIX: Pass motorists list
+               previewing={previewing} // 🎭 POV keeps his real email, so the screen's email lookup must stand down
            />
       )}
 

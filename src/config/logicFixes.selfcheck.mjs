@@ -4853,6 +4853,83 @@ ok('the grant screen says the tick ignores rank, because now it does',
    /whatever their rank/.test(read('src/FleetCanvasManager.jsx')) && /including stores handed to them/.test(read('src/FleetCanvasManager.jsx')),
    'a Tier 4 handing real approval power to a Tier 6 has to be able to see that is what the tick does - his law: every action reports');
 
+/* == POV MUST REACH THE AGENT INVENTORY SCREEN, NOT JUST THE BANNER ======================
+   Aldi, 2026-09-08, wearing Tier 6: *"i login as t6 tes account and the agent inventory is still
+   showing the t1 inventory but i cant do sales with that inventory tho"*.
+
+   previewIdentity moves displayName/agentId/userRole and deliberately NOT email - the UID is his
+   real sign-in. AgentInventoryView then resolved the van by EMAIL first, found his own record, and
+   subscribed to the owner's van while the banner said Tier 6. MerchantSalesView reads
+   agentProfileId and correctly found the test van empty. Visible and unsellable at once. */
+section('POV: one identity, and every screen has to read the same one');
+
+const aivRaw = read('src/AgentInventoryView.jsx');
+const aiv = code(aivRaw);
+
+ok('the screen accepts the previewing flag',
+   /previewing = null \}\) =>/.test(aiv),
+   'without the prop the screen cannot know it is wearing somebody else\u2019s tier');
+ok('and App.jsx actually passes it',
+   /previewing=\{previewing\}/.test(read('src/App.jsx')),
+   'a prop with a default is silently fine when nobody passes it - the default would just restore the bug');
+ok('the email sweep stands down while previewing',
+   /const matchedByEmail = previewing \? null : motorists\.find/.test(aiv),
+   'HIS BUG - the sweep runs BEFORE the agent id and wins, and under POV the email is still his own');
+ok('the sweep is still there for real logins',
+   /String\(m\.email\)\.trim\(\)\.toLowerCase\(\) === activeEmail/.test(aiv),
+   'it exists to stop a stale agentProfileId stranding somebody on the wrong van - do not delete it, only stand it down');
+ok('and giving up on a subscription clears the cargo instead of leaving it rendered',
+   /!trueAgentId\) \{[\s\S]{0,400}?setCanvasItems\(\[\]\);/.test(aiv),
+   'the same wrong-van symptom by a different door: stop subscribing, keep drawing the last agent\u2019s stock');
+
+/* The router, re-run. `previewIdentity` is imported from the real module - if POV ever starts
+   rewriting the email, these flip and the guard can be reconsidered rather than guessed at. */
+const { previewIdentity: povIdentity, testAccountFor } = await import('./povPreview.js');
+
+const OWNER_EMAIL = 'adikaryasukses99@gmail.com';
+const AIV_ROSTER = [
+  { id: 'owner_agent', name: 'Aldi', email: OWNER_EMAIL, activeCanvas: [{ productId: 'p1' }] },
+  { id: 'TEST_TIER_6', name: '[TEST] SALES MOTORIST', activeCanvas: [] },
+  { id: 'real_t6', name: 'Kaldi', email: 'kaldi0470@gmail.com', activeCanvas: [] },
+];
+// AgentInventoryView's router, in its own order.
+const vanFor = (identity, roster = AIV_ROSTER) => {
+  const activeEmail = String(identity.user?.email || '').trim().toLowerCase();
+  const matchedByEmail = identity.previewing ? null
+    : roster.find(m => m.email && String(m.email).trim().toLowerCase() === activeEmail);
+  const safe = matchedByEmail || roster.find(m => m.id === identity.agentProfileId);
+  return safe?.id || identity.agentProfileId || null;
+};
+// MerchantSalesView's source, which never consulted the email.
+const saleVanFor = (identity) => identity.agentProfileId || identity.user?.agentId || 'VAULT';
+
+const REAL_OWNER = { user: { email: OWNER_EMAIL }, userRole: CORPORATE_TIERS.TIER_1, agentProfileId: 'owner_agent', isAdmin: true, isSystemOwner: true };
+const AS_T6 = povIdentity({ tier: CORPORATE_TIERS.TIER_6 }, REAL_OWNER);
+
+ok('POV really does hand the screen a Tier 6 identity',
+   AS_T6.previewing && AS_T6.agentProfileId === 'TEST_TIER_6' && AS_T6.userRole === CORPORATE_TIERS.TIER_6,
+   'if this fails the rest of the section is testing nothing');
+ok('and it still carries his own email, which is the trap',
+   AS_T6.user.email === OWNER_EMAIL,
+   'deliberate - the UID never changes. The screen has to stop asking, because POV will not lie about identity');
+ok('HIS BUG: wearing Tier 6, the inventory screen no longer lands on the owner\u2019s van',
+   vanFor(AS_T6) === 'TEST_TIER_6',
+   'got ' + vanFor(AS_T6) + ' - before the fix the email sweep returned owner_agent and the screen drew the owner\u2019s cargo');
+ok('and it now agrees with the sale, which is what "visible but unsellable" meant',
+   vanFor(AS_T6) === saleVanFor(AS_T6),
+   'two screens answering "who am I" differently is the whole defect');
+ok('a REAL login is untouched and still resolves by email',
+   vanFor(REAL_OWNER) === 'owner_agent' &&
+   vanFor({ user: { email: 'kaldi0470@gmail.com' }, agentProfileId: null }) === 'real_t6',
+   'the sweep exists so a stale or missing agentProfileId cannot strand somebody on the wrong van - that must keep working');
+ok('and a real login with a WRONG agentProfileId is still rescued by the email',
+   vanFor({ user: { email: OWNER_EMAIL }, agentProfileId: 'TEST_TIER_6' }) === 'owner_agent',
+   'this is the ghosting case the sweep was built for; the fix must not cost it');
+ok('every tier previews onto its own test van, not onto his',
+   [CORPORATE_TIERS.TIER_2, CORPORATE_TIERS.TIER_3, CORPORATE_TIERS.TIER_4, CORPORATE_TIERS.TIER_5, CORPORATE_TIERS.TIER_6]
+     .every(t => vanFor(povIdentity({ tier: t }, REAL_OWNER)) === testAccountFor(t).id),
+   'he wore Tier 6; the same email trap sat under all five');
+
 /* == THE WRITE ITSELF, RE-RUN ON REAL ACCOUNTS ==========================================
    Everything above tests who MAY approve. This tests the guard that stood between that
    answer and the database, which on 2026-09-08 disagreed with it.

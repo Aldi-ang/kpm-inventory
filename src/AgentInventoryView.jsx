@@ -21,7 +21,7 @@ const Money = ({ value, className = '' }) => {
     return <span className={`${fit} font-black tabular-nums whitespace-nowrap ${className}`}>{s}</span>;
 };
 
-const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [], transactions = [], samplings = [], user, motorists = [] }) => {
+const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [], transactions = [], samplings = [], user, motorists = [], previewing = null }) => {
     const [canvasItems, setCanvasItems] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [liveProfileData, setLiveProfileData] = useState(null);
@@ -33,8 +33,24 @@ const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [],
     // 1. Sanitize the active Google login email to prevent space/case mismatch
     const activeEmail = String(user?.email || "").trim().toLowerCase();
     
-    // 2. Aggressively sweep Fleet Roster for exact email match FIRST
-    const matchedByEmail = motorists.find(m => 
+    /* 🎭 THE EMAIL SWEEP IS OFF WHILE PREVIEWING, AND THAT IS THE WHOLE FIX.
+       Aldi, 2026-09-08, wearing Tier 6: *"i login as t6 tes account and the agent inventory is
+       still showing the t1 inventory but i cant do sales with that inventory tho"*.
+
+       `previewIdentity` moves displayName, agentId and userRole onto the test account and
+       deliberately leaves EMAIL alone - the UID is his real sign-in and pretending otherwise is the
+       one lie that feature must not tell (src/config/povPreview.js). So while previewing, the email
+       above is still HIS, this sweep found HIS OWN motorist record, and it ran BEFORE the agent id,
+       so it won. The screen subscribed to the owner's van and showed the owner's cargo while the
+       banner said Tier 6. The sale, one screen over, reads agentProfileId instead and correctly
+       found the test van empty - which is why the stock was visible and unsellable at the same
+       time. Two screens, two answers to "who am I".
+
+       The sweep still runs for every REAL login, which is what it was built for: an agentProfileId
+       that is stale or missing must not strand somebody on the wrong van. A preview is the one case
+       where the id is the truth and the email is the stale half. */
+    // 2. Aggressively sweep Fleet Roster for exact email match FIRST - real logins only
+    const matchedByEmail = previewing ? null : motorists.find(m => 
         m.email && String(m.email).trim().toLowerCase() === activeEmail
     );
     
@@ -49,6 +65,12 @@ const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [],
 
     useEffect(() => {
         if (!db || !appId || !userId || !trueAgentId) {
+            /* CLEARED, NOT LEFT STANDING. This branch stops subscribing and used to return without
+               touching state, so the previous agent's cargo stayed rendered under the new identity -
+               the same wrong-van symptom reached by a different door. The docSnap-missing branch
+               below already clears; this one was the gap. */
+            setCanvasItems([]);
+            setLiveProfileData(null);
             setIsLoading(false);
             return;
         }
