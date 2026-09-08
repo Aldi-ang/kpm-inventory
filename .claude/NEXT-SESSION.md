@@ -56,7 +56,8 @@ the same three files.
 `967e447` stops new ones. It does not touch the Rp 1.000.000 sitting against HQ 3, or the
 Rp 1.055.000 against HQ TEST which is probably the same shape. He was told explicitly that money
 already in his live book will not be touched without him naming it. **Do not clean these on your
-own initiative.** And do NOT register HQ 3 as a shop — an earlier session told him to, which was
+own initiative.** The HQ 3 hand-off request also still reads APPROVED with the shop never moved -
+`cdaabc7` stops new ones lying, it does not repair that record. And do NOT register HQ 3 as a shop — an earlier session told him to, which was
 wrong by his own design: an Ecer sale is a person, not a store.
 
 ### Round 7 is still unfinished, and one part is now untestable
@@ -93,13 +94,6 @@ them. Aldi saw it, removed the chip, and the button went away. `canApproveHandof
 `src/config/permissions.js:425` returns `named.includes(region)` for anybody named, at any tier,
 while `ad4f18b`'s own comment says it was meant for "a Tier 4 regional admin". Ask whether Fleet &
 Canvas should refuse to tick approval branches below Tier 4. Do not decide it for him.
-
-### HQ 3 is still half-transferred
-
-`cdaabc7` stops NEW approvals from lying; it does not repair the record already written. The HQ 3
-request says APPROVED, the shop is still with the Tier 5, and there is no customer document for
-"HQ 3" at all. He was told to register the shop and re-send. If he asks for the stale record to be
-cleaned, that is data surgery on his live book — confirm the exact document before touching it.
 
 ### Product Performance reports unpaid consignment as finished revenue
 
