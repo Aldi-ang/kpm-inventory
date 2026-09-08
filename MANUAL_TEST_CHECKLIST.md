@@ -383,40 +383,99 @@ branch** (say BANDUNG). Fleet & Canvas → each person → set their branch.
 
 **B. Who may approve** — Fleet & Canvas → edit a person
 
-- [ ] A **"Hand-off approval branches"** chip row appears under Allowed Price Tiers.
-- [ ] With nothing ticked, the line underneath reads *"this person follows the default"*.
-- [ ] Tick **BANDUNG** on one account → the line changes to name that branch. Save.
-- [ ] Reopen that person → **BANDUNG is still ticked.** (If it is not, the save is dropping the field.)
-- [ ] Edit somebody **else's phone number** and save → reopen → their approval chips are unchanged.
-      ⚠️ This is the `null`-not-`[]` trap. If editing a phone number silently strips a regional
-      admin's approval power, this is where it shows.
+Set-up: at least one person must already have a branch, or the chip row is empty and reads
+*"No branches yet — give your personnel a branch first."*
 
-**C. The approval bell** — needs two accounts
+1. Fleet & Canvas → click a person → their profile form opens.
+2. Scroll to **Allowed Price Tiers**. Directly underneath is a row headed **HAND-OFF APPROVAL
+   BRANCHES**, one chip per branch.
+   - [ ] The row is there and the chips are branch names.
+3. On a person with **nothing ticked**, read the small grey sentence under the chips.
+   - [ ] It reads: *"Nothing ticked: this person follows the default — a Regional Admin authorises
+     hand-offs into their own branch, and nobody else does."*
+4. Tick **BANDUNG**. Do not save yet.
+   - [ ] The sentence becomes: *"Only this person authorises hand-offs into BANDUNG. That branch
+     stops falling to its Regional Admin by default."*
+   - [ ] The chip turns gold (amber border + amber text). Untick → grey again.
+5. Tick BANDUNG again → press **Save Profile & Permissions**.
+6. Close the form, reopen the **same** person.
+   - [ ] BANDUNG is still ticked and still gold.
+     ⚠️ Grey means the save is dropping the field. Stop here — C and D prove nothing on top of it.
+7. Open a **different** person who already has chips ticked. Change **only their phone number**,
+   save, reopen them.
+   - [ ] Their chips are exactly as they were.
+     ⚠️ The `null`-not-`[]` trap. In the code an empty list means "named for no branches" and a
+     missing field means "never named" — opposite meanings, identical on screen. If a phone edit
+     writes the wrong one, a regional admin loses approval power with no error and no warning.
 
-- [ ] Send a hand-off into BANDUNG, accept it as the receiving agent.
-- [ ] **You** get the "Transfer Needs Approval" bell. You always do — that is Option B.
-- [ ] The account you ticked BANDUNG for **also** gets it.
-- [ ] **Bandung's regional admin does NOT get it**, because naming somebody displaces the default.
-      ⚠️ If they still get it, the displacement rule is not firing and the whole point is lost.
-- [ ] The **receiving agent** does not get an approval bell for their own incoming store —
-      **UNLESS they already hold that branch's approval power.** Changed 2026-09-07 (`ad4f18b`) on
-      Aldi's instruction: *"yeah they should be able to confirm their own request"*. So a plain
-      Tier 5/6 agent who accepts a store must still get NO Authorize button; a regional admin who
-      accepts one SHOULD get it. Test both, and do not report the second as a bug.
+**C. Who gets the bell** — three accounts, one at a time is fine
+
+⚠️ **The branch that decides everything is the RECEIVING PERSON'S branch, not the store's.**
+`ConsignmentFinanceView.jsx:474` calls `canApproveHandoffFrom(..., receiver?.location, ...)`. So the
+store may sit anywhere; hand it to somebody whose **branch is BANDUNG**.
+
+Set-up: B is done, so one person carries the BANDUNG chip. That person must **not** be Bandung's own
+regional admin, or step 4 cannot tell the two outcomes apart.
+
+1. As Tier 1: Receivables & Consignment → open a store → **Hand-off** → pick a receiving agent whose
+   branch is **BANDUNG** → send.
+2. Log in as that receiving agent → Consignment → **Transfers** tab.
+   - [ ] A card for the store with **Decline** / **Accept Responsibility**. Press **Accept Responsibility**.
+   - [ ] The card stays and reads **"You accepted · waiting for admin"**.
+3. Log in as **the person ticked for BANDUNG**.
+   - [ ] The approval bell appears.
+   - [ ] Consignment → Transfers: the card carries the badge **ADMIN PENDING** and the buttons
+     **Reject** / **Authorize Transfer**.
+4. 🔴 **THE ONE THAT MATTERS — displacement.** Log in as **Bandung's own regional admin**: the Tier 4
+   who ran Bandung before anybody was named, whose chip row is empty.
+   - [ ] No approval bell.
+   - [ ] Consignment → Transfers reads **"No pending action required."**
+   ⚠️ Do **not** use the HEADQUARTERS regional admin for this. That account is either the named
+   approver or the default holder, so it is supposed to see the request either way — it cannot tell
+   a working displacement rule from a broken one. Every earlier run used it, which is why C was
+   still owed.
+   ⚠️ If Bandung's admin still sees it, naming somebody **added** an approver instead of **replacing**
+   one — the opposite of what was asked for.
+5. **The plain agent.** Have a store handed to a plain Tier 5/6 agent; accept it as them.
+   - [ ] They see their own card and **"You accepted · waiting for admin"**.
+   - [ ] **No Authorize Transfer button** anywhere for them.
+   ⚠️ A **regional admin** who accepts a store handed to them **should** get the Authorize button —
+   Aldi's call in `ad4f18b`: *"yeah they should be able to confirm their own request"*. Correct
+   behaviour, not a bug. Only the plain agent must be refused.
+   ⚠️ The **sender** is refused at every tier, including Tier 1. Asking for a store and granting it
+   to yourself is one person doing the whole protocol.
 
 **D. Two people, one button**
 
-- [ ] Approve the hand-off from one account.
-- [ ] Press **Authorize** from the other account on the same request → it must say
-      **"Already handled ... Somebody else got there first."**
-      ⚠️ If it goes through twice, the store gets a second hand-off record and a second round of
-      notifications. Stop and report it.
+1. Get a hand-off to ADMIN PENDING with two accounts that can both authorise it — you (Tier 1) and
+   the named BANDUNG approver.
+2. Open Consignment → **Transfers** on both, each showing **Authorize Transfer**.
+3. Press **Authorize Transfer** on the first account. It goes through.
+4. **Without refreshing the second account**, press its **Authorize Transfer**.
+   - [ ] It refuses with **"Already handled - <store name> is ... Somebody else got there first."**
+   - [ ] The store gains no second hand-off record, and the A → B → C chain on the store card gains
+     no hop that never happened.
+   ⚠️ If it goes through twice, stop and report it. Two records means two rounds of notifications and
+   a responsibility chain that lies about who held the store.
 
 **E. The login fix** (already confirmed once, worth one re-check after any deploy)
 
 - [ ] `https://kpm-ang.vercel.app` in Brave with **shields UP** → Google sign-in works.
 - [ ] `npm run dev` on localhost → Google sign-in still works.
       ⚠️ Both must pass. They use different login addresses and either can break alone.
+
+**F. The vault grace** — security, `994d3d6`
+
+The 5-minute PIN grace used to be keyed on the boss's uid, so any agent signing in on a browser Aldi
+had already unlocked was treated as a global admin. It is now keyed to the browser session instead.
+
+1. Log in as a **Tier 4** → Receivables & Consignment.
+   - [x] The header reads **MY RECEIVABLES**, not the company-wide one. ✅ confirmed 2026-09-07
+2. On **your own Tier 1 session**: unlock the vault, leave the screen, come back within five minutes.
+   - [ ] You are **not** asked for the PIN again.
+     ⚠️ The fix was written so your convenience is untouched and a check pins it, but nobody has
+     watched it happen on screen.
+
 
 ## ⚪ Skip entirely
 
