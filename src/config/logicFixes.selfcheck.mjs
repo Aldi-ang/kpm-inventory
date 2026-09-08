@@ -5697,5 +5697,68 @@ ok('a record belonging to somebody else is refused even for an un-hijacked sessi
    'the uid comparison inside graceIsValid is the last line of defence and must stay');
 
 
+/* AN APPROVED HAND-OFF THAT MOVED NOTHING ==================================================
+   Aldi, 2026-09-08: *"sc6 is the prove that transfer complete but not transferred in reality"*.
+   A Tier 4 approved HQ 3, the request went APPROVED, the shop stayed with the Tier 5, and the
+   approver had no history entry to show for it. The status write was unconditional; the owner
+   change and the handoffs entry both sat inside `if (targetCustomer)`. Active Consignments is
+   built from transactions, so a shop can be visible there with no customer document to own. */
+const haStart = app.indexOf('const handleAdminApproveTransfer');
+const haEnd   = app.indexOf('\n  const ', haStart + 40);
+ok('the hand-off approval handler is still findable',
+   haStart > -1 && haEnd > haStart, `handleAdminApproveTransfer ${haStart}, next const ${haEnd}`);
+const haBody = app.slice(haStart, haEnd);
+ok('and the slice is the handler rather than half the file',
+   haBody.length > 800 && haBody.length < 12000, `slice is ${haBody.length} chars`);
+
+const haRefuse = haBody.indexOf('Cannot approve:');
+const haStatus = haBody.indexOf("status: isApproved ? 'APPROVED'");
+ok('the approval refuses BEFORE the status is written, not after',
+   haRefuse > -1 && haStatus > -1 && haRefuse < haStatus,
+   `refusal at ${haRefuse}, status write at ${haStatus} - a refusal after the write cannot un-write it`);
+ok('the old "Approved, but ... matches N shops" toast is gone',
+   haBody.includes('Approved, but') === false,
+   'that message let an APPROVED request stand over a transfer that never happened');
+ok('rejection is not gated on finding the shop',
+   /if \(isApproved && !targetCustomer\)/.test(haBody),
+   'gating on !targetCustomer alone would strand an unregistered shop as PENDING_ADMIN forever');
+
+/* the decision, re-run on his real rows */
+const haKey = (n) => String(n ?? '').trim().replace(/\s*\((?:Retail|Individual|Wholesale)\)$/i, '').trim().toLowerCase();
+const haResolve = (req, custs) => {
+  const matches = custs.filter(c => haKey(c.name) === haKey(req.storeName));
+  return req.customerId ? custs.find(c => c.id === req.customerId) : (matches.length === 1 ? matches[0] : null);
+};
+// The handler, as written now: nothing is written at all when an approval cannot move the shop.
+const haApprove = (req, custs, isApproved) => {
+  const target = haResolve(req, custs);
+  if (isApproved && !target) return { wrote: false, status: null, movedTo: null };
+  return { wrote: true, status: isApproved ? 'APPROVED' : 'REJECTED', movedTo: target ? target.id : null };
+};
+
+// His registry on 2026-09-08. HQ 3 sells and shows in Active Consignments, but has no document.
+const HA_BOOK = [{ id: 'c1', name: 'HQ (RETAIL) 1' }, { id: 'c2', name: 'HQ TEST' }];
+const HA_HQ3  = { storeName: 'HQ 3', customerId: null, fromAgentName: '[TEST] SALES CANVAS' };
+
+ok('HIS CASE: approving HQ 3 writes nothing at all',
+   haApprove(HA_HQ3, HA_BOOK, true).wrote === false,
+   'this is the bug - the request said APPROVED while the shop stayed with the Tier 5');
+ok('and no APPROVED status survives that refusal',
+   haApprove(HA_HQ3, HA_BOOK, true).status === null,
+   'an APPROVED record over a transfer that did not happen is the lie he reported');
+ok('rejecting HQ 3 still works, so the request is not stranded',
+   haApprove(HA_HQ3, HA_BOOK, false).status === 'REJECTED',
+   'refusing both directions would leave an unregistered shop pending forever');
+ok('once HQ 3 is registered the same approval moves it',
+   haApprove(HA_HQ3, [...HA_BOOK, { id: 'c3', name: 'HQ 3' }], true).movedTo === 'c3',
+   'the fix must not block a hand-off that CAN complete');
+ok('twin shops with no pinned id are still refused',
+   haApprove(HA_HQ3, [...HA_BOOK, { id: 'c3', name: 'HQ 3' }, { id: 'c4', name: 'HQ 3' }], true).wrote === false,
+   'his book holds three shops sharing one name 14.5 km apart - guessing between them relabels the wrong one');
+ok('and a pinned id still wins over the twins',
+   haApprove({ ...HA_HQ3, customerId: 'c4' }, [...HA_BOOK, { id: 'c3', name: 'HQ 3' }, { id: 'c4', name: 'HQ 3' }], true).movedTo === 'c4',
+   'the id is pinned at send time precisely so the twins do not have to be guessed at approval');
+
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

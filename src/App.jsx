@@ -1833,6 +1833,31 @@ const handleGitHubMirror = async () => {
           return notify("Could not confirm the request is still waiting: " + e.message);
       }
 
+      /* 🔴 AN APPROVAL THAT CANNOT MOVE THE SHOP MUST NOT BE WRITTEN AT ALL. Aldi, 2026-09-08,
+         after a Tier 4 approved HQ 3 and nothing moved: *"sc6 is the prove that transfer complete
+         but not transferred in reality"*. The status update below is unconditional, while the
+         ownership move sat inside `if (targetCustomer)` - so a store with no registered customer
+         document got an APPROVED request, no owner change, and no handoffs entry, which is also
+         why the approver had no history to show for it. The toast said so and changed nothing.
+
+         Active Consignments is built from TRANSACTIONS (ConsignmentFinanceView's customerData),
+         not from the registry, so a shop can be visible and sellable there while no customer
+         document exists for it to own. Resolve the target BEFORE anything is written, and refuse
+         the whole approval when there is none: the request stays PENDING_ADMIN and can be
+         approved for real once the shop is registered or re-sent with its id pinned. */
+      const sameName = (v) => storeKey(v) === storeKey(request.storeName);
+      const nameMatches = customers.filter(c => sameName(c.name));
+      // The pinned id wins. Without one, only an unambiguous name may be used - stamping mappedBy
+      // onto the wrong twin relabels a shop that was never handed over.
+      const targetCustomer = request.customerId
+          ? customers.find(c => c.id === request.customerId)
+          : (nameMatches.length === 1 ? nameMatches[0] : null);
+      if (isApproved && !targetCustomer) {
+          return notify(nameMatches.length === 0
+              ? `Cannot approve: there is no registered shop called "${request.storeName}". Register it first, then re-send the hand-off - approving now would mark it done without moving anything.`
+              : `Cannot approve: "${request.storeName}" matches ${nameMatches.length} shops. Ask ${request.fromAgentName} to re-send it from the shop card so the right one is pinned.`);
+      }
+
       try {
           const operations = [];
 
@@ -1847,14 +1872,8 @@ const handleGitHubMirror = async () => {
               // and OWNERSHIP moves on the store document instead. ConsignmentFinanceView reaches
               // the outstanding debt through that owner plus the hand-off chain, which is what
               // stops the new holder inheriting a debt he cannot see.
-              const sameName = (v) => storeKey(v) === storeKey(request.storeName);
-
-              // The pinned id wins. Without one, only an unambiguous name may be written - stamping
-              // mappedBy onto the wrong twin relabels a shop that was never handed over.
-              const nameMatches = customers.filter(c => sameName(c.name));
-              const targetCustomer = request.customerId
-                  ? customers.find(c => c.id === request.customerId)
-                  : (nameMatches.length === 1 ? nameMatches[0] : null);
+              // Resolved and refused above, before a single write - targetCustomer cannot be
+              // null here when isApproved. The guard stays as a belt on the write itself.
               if (targetCustomer) {
                   const custRef = doc(db, `artifacts/${appId}/users/${userId}/customers`, targetCustomer.id);
                   // mappedBy stays what it was for: handleRequestTransfer reads it to tell two
@@ -1874,8 +1893,6 @@ const handleGitHubMirror = async () => {
                           date: getCurrentDate()
                       })
                   }});
-              } else {
-                  notify(`Approved, but "${request.storeName}" matches ${nameMatches.length} shops. Ask ${request.fromAgentName} to re-send it from the shop card, or the debt will not follow.`);
               }
 
               if (request.fromAgentId && request.fromAgentId !== 'ADMIN') {
