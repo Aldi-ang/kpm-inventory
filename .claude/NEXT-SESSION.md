@@ -61,6 +61,10 @@ to `date`; `dayOf` (`salesRollup.js:57`) does the opposite. For records written 
 and no `sales_stats` — but confirm it rather than assume, because "the report disagrees with the
 transactions" is the bug class that just cost a fix.
 
+⚠️ The offline drain changed on 2026-09-08 (`e9b04e5`): the cloud document id is now decided when a
+sale is QUEUED, and each chunk is acknowledged as it lands. If step 4 or 5 touches offline
+behaviour, that is the shape it now has.
+
 ⚠️ Mixed line endings in this repo: `AgentInventoryView.jsx` and `FleetCanvasManager.jsx` are CRLF,
 `App.jsx` is LF. Match the file or the edit anchor silently misses.
 
@@ -68,32 +72,6 @@ Then rewrite this file with the next single job.
 
 <details>
 <summary>Queue — do NOT paste these; promote one only when the job above is finished</summary>
-
-### 🔴 NEEDS HIS ANSWER — a partial offline sync duplicates sales
-
-Found 2026-09-08, NOT fixed, because the obvious fix is wrong and makes it worse.
-
-`commitInChunks` (`src/utils/helpers.js:239`) splits the offline drain into batches of 450
-operations and **throws on a failed chunk while earlier chunks are already committed**. The drain
-(`App.jsx:~349`) clears the local queue only after the whole commit succeeds - which is correct for
-data loss and is what creates this: on retry, the sales in the chunks that DID commit are written
-again, with fresh random document ids. Duplicate receipts, and the rollup double-counts them because
-`tallySaleOp` rides the same list.
-
-Threshold: more than ~225 offline sales in one drain, since each sale is two operations. A salesman
-with no signal for days.
-
-⚠️ **The obvious fix is a trap.** Making the document id deterministic from `localId` looks
-right and is worse: `localId` is IndexedDB `autoIncrement` (`useOfflineEngine.js:75`), so it is
-1, 2, 3 PER DEVICE. Two salesmen's first offline sale would both be id 1 and one would silently
-overwrite the other - losing a sale instead of duplicating one. A deterministic id needs a
-per-device value that does not exist yet.
-
-⚠️ **And the tally cannot be made idempotent that way at all.** `sales_stats` is written with
-`increment()`, so a retried chunk double-counts the money even if the receipt is deduplicated. The
-honest options are (a) a per-device id for receipts plus accepting counter drift, repaired by the
-Settings rebuild, or (b) leaving it and telling him the threshold. Ask him. Do not decide it -
-option (a) is real work and the frequency is low, and that trade is his to make before a deadline.
 
 ### The plan Aldi agreed to, 2026-09-08 — ship before end of September
 

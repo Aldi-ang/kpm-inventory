@@ -1,6 +1,42 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-09-08 20:09 WIB (🟠 KPM — the consignment-return money bug is FIXED (`f46bc4a`) and the second POV branch trap with it (`7a59fb8`). ONE new finding needs his answer: a partial offline sync duplicates sales. Eleven fixes local, none pushed.)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **1345/1345 selfcheck · 722/722 audit · build clean** · branch `phase0-solid-ground`
+**Updated: 2026-09-08 20:29 WIB (🟠 KPM — the offline duplicate is FIXED (`e9b04e5`), his call. Three money/data fixes shipped this session. Bug 3 still needs his routing answer. Thirteen fixes local, none pushed.)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **1360/1360 selfcheck · 722/722 audit · build clean** · branch `phase0-solid-ground`
+
+## 🟠 2026-09-08 20:29 — offline sync can no longer duplicate a sale. `e9b04e5`
+
+His call: *"better fix the offline one its important, make sure offline also works well tho"*.
+
+Fixed at both ends because either alone leaves a hole. The cloud document id is decided when the
+sale is QUEUED and travels with it in IndexedDB, so a retry overwrites the same document instead of
+creating a second one; and `commitInChunks` now reports each chunk as it lands, so the drain
+acknowledges work item by item rather than all-or-nothing at the end. Clearing still never happens
+before the write — that rule cost sales once and did not change; what changed is granularity.
+
+A part-finished sync now says how much is safe rather than only "Sync Failed", because the old
+message reads as *nothing went through* and a salesman who believes it re-enters sales already in
+the vault.
+
+**The trap, recorded because it nearly shipped:** deriving the id from `localId` is the obvious move
+and is worse than the bug — IndexedDB autoIncrement counts per DEVICE, so two salesmen's first
+offline sale would collide and one would silently overwrite the other. Losing a sale is worse than
+duplicating one.
+
+Still not exactly-once on purpose: `sales_stats` uses `increment()`, so the counter can drift if an
+acknowledgement fails after a commit. The Settings rebuild is the repair, and the rollup is already
+documented as a cache the transactions can rebuild.
+
+**NOW:** the brief's one job is the day-one customer walk in the emulator, unchanged and unstarted.
+It needs nothing from him.
+
+**WAITING ON ALDI — two, neither blocking:**
+
+🔴 Bug 3's routing question, verbatim from the queue: does a geofence bypass use
+`canApproveHandoffFrom` (which honours the Fleet & Canvas per-person chips), or a plain
+Tier-4-of-that-region rule? Those stop being the same set the moment anybody is named.
+
+✅ `cdaabc7`, `967e447`, `83f5041` — the Ecer/consignment sale rules, never looked at by eye. And a
+real offline sale on a phone with real signal loss is still his test to run; the emulator proved the
+app switches state and back without losing the screen, not that a week of queued sales drains.
 
 ## 🟠 2026-09-08 20:09 — money bug fixed, POV trap closed, one new question. `f46bc4a` `7a59fb8`
 
