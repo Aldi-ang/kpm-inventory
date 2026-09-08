@@ -1,137 +1,112 @@
-# Next session — one job
+# The one job
 
-Copy the block below. It is the only thing on this page you should paste.
+**The Authorize button appears for the receiving agent and then the write refuses them.**
 
----
+Aldi, 2026-09-08, signed in as KALDI, the named BANDUNG approver who was also the receiver:
+*"kaldi receive both bells for handsoff request and its approval, but cant approve it and it says
+the notification box above"*. The box says **"You asked for this hand-off or you are receiving it.
+Somebody else has to authorise it."**
 
-FINISH ROUND 7 OF `MANUAL_TEST_CHECKLIST.md` WITH ALDI, BEFORE ANY CODE. Walk him through the
-sections below one at a time, waiting for his answer on each. Do not start the coding job further
-down until he says the round is done or tells you to skip it.
+`ad4f18b` was his decision that a branch approver may authorise a store handed to them —
+*"yeah they should be able to confirm their own request"*. It changed the LIST and not the WRITE.
 
-  **Section A — DONE 2026-09-07.** The picker passed on every point. Do not re-ask it.
+* `src/ConsignmentFinanceView.jsx:472` — the queue drops the SENDER only:
+  `if (agentProfileId && r.fromAgentId === agentProfileId) return false;`, then defers to
+  `canApproveHandoffFrom`. So the receiver keeps the card and the button.
+* `src/App.jsx:1810-1812` — the write still refuses BOTH:
+  `if (request.toAgentId === agentProfileId || request.fromAgentId === agentProfileId)`.
 
-  **Section B — NEVER RUN.** Fleet & Canvas -> edit a person:
-    1. a "Hand-off approval branches" chip row appears under Allowed Price Tiers;
-    2. nothing ticked -> the line reads "this person follows the default";
-    3. tick BANDUNG on one account -> the line names that branch; Save;
-    4. reopen -> BANDUNG is still ticked (if not, the save is dropping the field);
-    5. edit somebody ELSE'S phone number, save, reopen -> their chips are unchanged.
-       ⚠️ Item 5 is the `null`-not-`[]` trap. If editing a phone number strips a regional admin's
-       approval power, this is the only place it shows.
+**The smallest fix is to delete `request.toAgentId === agentProfileId ||` from that guard**, so the
+write matches the list it is reached from. Nothing else has to move: the sender stays refused on the
+next line, and `canApproveHandoffFrom` immediately below still refuses anybody without approval
+power over the receiver's branch — that is what keeps a plain Tier 5/6 out.
 
-  **Section C — 2 of 4 DONE.** Confirmed on screen: Aldi (Tier 1) gets the approval bell, and a
-  named branch approver gets it with a working Authorize button. STILL OWED, and this is the half
-  that catches the feature doing the opposite of what he asked:
-    - **displacement.** Tick ONE person for BANDUNG, send a hand-off into a BANDUNG store, accept
-      it. **Bandung's own regional admin must go silent.** His runs so far used the HEADQUARTERS
-      regional admin, who is either the named approver or the default holder — both are supposed to
-      see it, so those runs cannot tell a working displacement rule from a broken one.
-    - **the plain agent.** A Tier 5/6 who accepts a store must still get NO Authorize button.
-      ⚠️ A regional admin who accepts one SHOULD now get it — `ad4f18b`, his decision. Section C
-      item 4 in the checklist was rewritten to say so. Do not report that as a bug.
+⚠️ **THE TRAP: do not "fix" this by making the LIST match the WRITE.** Hiding the button again is
+the smaller-looking diff and it silently reverses `ad4f18b`, which is Aldi's own call, recorded in
+`MANUAL_TEST_CHECKLIST.md` Section C. The list is right. The write is the stale half.
 
-  **Section D — NEVER RUN.** Approve a hand-off from one account, then press Authorize from another
-  account on the same request. It must say "Already handled … Somebody else got there first."
-  ⚠️ If it goes through twice the store gets a second hand-off record and a second round of
-  notifications, and the A -> B -> C chain on the store card grows a hop that never happened. Stop
-  and report it.
+⚠️ **Do not drop the sender check with it.** Asking for a store and granting it to yourself is one
+person doing the whole protocol. Only the receiver clause goes.
 
-  **Section E — SKIP** unless something was pushed. Nothing has been; everything is local.
+⚠️ **Line numbers moved on 2026-09-08 (`cdaabc7`).** Re-grep
+`You asked for this hand-off` before editing rather than trusting `1811` above.
 
-  ✅ ONE MORE HE OWES, and it is the most important thing shipped yesterday. `994d3d6` closed a
-  privilege escalation. He confirmed the header now reads MY RECEIVABLES for a Tier 4 — ask him to
-  also confirm his OWN Tier 1 session still skips the PIN within five minutes of unlocking. The fix
-  was written so his convenience is untouched, and a check pins it, but nobody has watched it.
+Leave the fix in `src/config/logicFixes.selfcheck.mjs`: assert the anchors were found before
+slicing, pin the slice length, and re-run the predicate on real accounts — receiver-with-power
+approves, receiver-without-power refused, sender refused at every tier. Trial it RED first by
+copying the edited file aside and `git checkout --`ing it, never by stashing.
 
-THEN THE CODING JOB: Product Performance reports unpaid consignment as finished revenue. Split it,
-and decide what the months already written are allowed to say.
-
-ALDI'S REPORT, verbatim 2026-09-05: *"this shouldnt be categorize as sales yet, because it is
-account receivable and customer can also return the good right so there should be another parts of
-the panel saying that there are account receivable pending in some stores but also finished sales as
-well"*. His screenshot shows Rp 1.229.000 presented as revenue when most of it is unpaid `Titip`.
-
-IT IS NOT A PANEL FIX. THE PANEL NEVER SEES A TRANSACTION. `ProductPerformancePanel.jsx:44` reads a
-pre-aggregated monthly rollup document through `statsPath(...)`, deliberately — reading a year live
-off `transactions` is thousands of document reads and Aldi pays for every one. The merge happens
-long before the panel:
-
-  - `src/utils/salesRollup.js:88-90` — `salesDelta` accumulates `{ qty, revenue }` per product and
-    nothing else. There is no paymentType dimension anywhere in the rollup.
-  - `src/utils/salesRollupWrite.js:37-38` — writes exactly those two fields into `byProduct` and
-    `byDay`.
-
-So the split is created at WRITE time and carried through: `salesRollup.js` splits the delta,
-`salesRollupWrite.js` increments the new fields, `sumRange` carries them, and the panel plus
-`ponder/stages/ProductPerformanceTable.jsx` render two figures instead of one. THAT IS FIVE FILES,
-over the 3-file rule — name them to Aldi before starting, do not discover it halfway.
-
-CHECK THIS BEFORE DESIGNING ANYTHING. Does a later `CONSIGNMENT_PAYMENT` also enter the rollup? Look
-at `SALE_TYPES` in `salesRollup.js:42-46`. If a Titip sale books revenue at placement AND its
-payment books revenue again, the panel is already double-counting, and that is a separate and larger
-money bug that must be settled first. Settle this question before writing a line.
-
-THE TRAP THAT MAKES A LAZY BUILD WRONG — HISTORICAL ROLLUPS HAVE NO SPLIT. Every month already
-written carries only `{ qty, revenue }`. Add the new fields and past months silently report zero
-receivable and 100% finished sales: a confident wrong number, which is worse than today's honest
-merge. Decide explicitly and tell Aldi which you chose — backfill from `transactions`, or label
-pre-change months as "not separated" in the UI. Do not let old documents answer a question they were
-never asked.
-
-RETURNS ARE PART OF HIS SENTENCE. He said "customer can also return the good right". There is a
-related open bug in the queue below — `returnTotal` is written at `useTransactionEngine.js:492`,
-`:569` and `:590` and read by no money calculation. Check whether the rollup fix needs it before
-treating them as separate jobs.
-
-Leave the fix in `src/config/logicFixes.selfcheck.mjs`: slice each assertion to its own anchors,
-assert the anchors were FOUND before slicing, re-run the arithmetic on real numbers, and trial it RED
-before green. Copy the modified source files aside and `git checkout --` them rather than stashing —
-a stash can take the check file with it, and then the trial cannot fail and proves nothing.
-
-STANDING RULE, his words 2026-09-06: "well now we will start working on localhost again dont need to
-push the update everytime". Commit locally and stop. A push is something he asks for by name.
-
-Then rewrite `.claude/NEXT-SESSION.md` with the next single job.
-
----
+**Then rewrite this file with the next single job.**
 
 <details>
 <summary>Queue — do NOT paste these; promote one only when the job above is finished</summary>
 
-### What shipped 2026-09-07 (13 commits, all local, none pushed)
+### Round 7 is still unfinished, and one part is now untestable
 
-`2e5a8ac` store cards name the current holder from the roster · `4bd0f52` + `9388ba2` test personnel
-save with no email/phone, real staff still need both · `7d9b5ba` self-proxy personnel get no login
-mapping · `0cb7efa` responsibility line + hand-off chain at every tier ✅seen · `d439853` PROGRESS.md
-208KB->34KB · `4641b5f` the hand-off request carries a stock snapshot · `5a59eaf` journey-map button ·
-`dda8ec6` a map pin is compulsory on an outlet (**applies to EDITS too** — narrow to the create
-branch if that blocks him, do not delete the guard) · `5973fc2` branch approvers can see their queue
-✅seen · `a8fea37` the alert dot was shaking the tab strip · `2f77cb2` the approver sees the offer
-✅seen · `ad4f18b` a branch approver may authorise a store handed to them (**his decision**) ·
-`994d3d6` 🔴 vault-grace privilege escalation ✅seen.
+Sections B and D of `MANUAL_TEST_CHECKLIST.md` (rewritten 2026-09-08 as click-level steps) have
+never been run. **C4, the displacement test, cannot be run at all**: BANDUNG has exactly one
+account, `kaldi0470@gmail.com`, and Aldi used it as receiver AND named approver. Displacement needs
+two different Bandung people — the named approver, and the branch's own regional admin who must go
+silent. Ask him to create the second account before C4 is attempted again. Headquarters not seeing
+the request (his sc3) is correct but proves nothing either way.
 
-### Bug 3 — the tutorial book: white line, and the close button does nothing
+Also owed: **F**, the Tier 1 half of the `994d3d6` vault-grace fix — unlock the vault, come back
+inside five minutes, confirm no PIN prompt.
 
-- **Close button exists** at `src/ponder/PonderBook.jsx:1025`, calls `shut`. It does not respond;
-  Aldi closes the book by clicking outside instead. Prime suspect is the scrim at `:1103`
-  (`absolute inset-0 ... backdrop-blur-sm`) painting over the button and swallowing the click —
-  the same class of stacking fault as the notification bell in `4bb9ad7`. Verify by rendering and
-  using `document.elementFromPoint` on the button's centre; do not guess.
-- **A white vertical line** on the book background, visible in his screenshot 2. NOT located yet —
-  no `bg-white` or `border-white` in `PonderBook.jsx`. Look at the page/spine edges and the
-  stage CSS before editing anything.
-- ⚠️ Two audit checks guard the Ponder scene splits — search `strandedBeats` in
-  `integration.audit.mjs`. Do not weaken them.
+### Bug 3 — geofence bypass goes to the owner, globally
 
-### Housekeeping — same `animate-ping` shape, unchecked
+Aldi's rule, 2026-09-08: *"every geofencing bypass approval is the responsibility for each regional
+admin and each regional admin only have responsibility to approve or reject the bypass for their own
+team inside their regional area only other tier shouldnt be receiving this"*, plus *"make sure that
+there is only 1 request each time, salesperson should not be able to spam the request"*.
 
-`AgentProfileView.jsx:1333` uses `-top-2 -right-2 animate-ping`, the exact geometry that was
-shaking the Hand-offs tab strip. Untouched on purpose: check whether its parent scrolls before
-deciding. If it does, the fix is `a8fea37`'s — inset it far enough that the 2x ring clears the edge.
+* `src/MerchantSalesView.jsx:817` writes the bell with `agentId: "ADMIN"`, `linkToTab: "fleet"` —
+  one owner-addressed notification, no region on it.
+* `src/FleetCanvasManager.jsx:132-136` subscribes to the WHOLE `gps_bypasses` collection with no
+  region filter, and the panel at `:1037` lives inside the owner-only Fleet & Canvas screen.
+* `src/MerchantSalesView.jsx:815` calls `addDoc` with no check for an existing PENDING request.
 
-### Housekeeping — the preview pane cannot see the dev server
+Four files at least. Name them to him before starting.
 
-`vite --host` serves HTTPS with a self-signed certificate and the in-app browser refuses both
-`https://localhost:5173` and `http://localhost:5173`. Every visual claim this session had to be
-handed back to Aldi to check by eye. Worth one session to fix properly.
+### Bug 4 — the chip row has no tier floor (HIS DECISION, still unanswered)
+
+Naming a Tier 6 in Fleet & Canvas gives them real approval power, including over a store handed to
+them. Aldi saw it, removed the chip, and the button went away. `canApproveHandoffFrom` in
+`src/config/permissions.js:425` returns `named.includes(region)` for anybody named, at any tier,
+while `ad4f18b`'s own comment says it was meant for "a Tier 4 regional admin". Ask whether Fleet &
+Canvas should refuse to tick approval branches below Tier 4. Do not decide it for him.
+
+### HQ 3 is still half-transferred
+
+`cdaabc7` stops NEW approvals from lying; it does not repair the record already written. The HQ 3
+request says APPROVED, the shop is still with the Tier 5, and there is no customer document for
+"HQ 3" at all. He was told to register the shop and re-send. If he asks for the stale record to be
+cleaned, that is data surgery on his live book — confirm the exact document before touching it.
+
+### Product Performance reports unpaid consignment as finished revenue
+
+Untouched. `ProductPerformancePanel.jsx:44` reads a monthly rollup through `statsPath(...)`;
+`salesRollup.js:88-90` accumulates `{ qty, revenue }` with no paymentType dimension;
+`salesRollupWrite.js:37-38` writes those two fields. The split has to be made at WRITE time and
+carried through — five files, over the 3-file rule, name them first. **Settle before designing:
+does a later `CONSIGNMENT_PAYMENT` also enter the rollup (`SALE_TYPES`, `salesRollup.js:42-46`)? If
+a Titip sale books revenue at placement and its payment books it again, the panel is already
+double-counting and that is the larger bug.** And every month already written carries no split, so
+decide explicitly: backfill from `transactions`, or label pre-change months "not separated". Returns
+are part of his sentence — `returnTotal` is written at `useTransactionEngine.js:492`, `:569`, `:590`
+and read by no money calculation.
+
+### Housekeeping
+
+* `AgentProfileView.jsx:1333` uses the same `-top-2 -right-2 animate-ping` geometry that shook the
+  Hand-offs tab strip. Check whether its parent scrolls before deciding; if it does, `a8fea37`'s
+  inset is the fix.
+* The tutorial book: the close button at `PonderBook.jsx:1025` does nothing (prime suspect is the
+  scrim at `:1103` swallowing the click — verify with `document.elementFromPoint`, do not guess),
+  and there is an unlocated white vertical line on the book background. Two audit checks guard the
+  Ponder scene splits — search `strandedBeats` in `integration.audit.mjs`, do not weaken them.
+* The in-app browser still cannot reach `vite --host` (self-signed certificate on both
+  `https://localhost:5173` and `http://localhost:5173`), so every visual claim goes back to Aldi by
+  eye. Worth one session.
+
 </details>

@@ -1,6 +1,48 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-09-07 21:10 WIB (🟠 KPM SESSION CLOSED — Round 7 half done: A passed, C is 2 of 4, B and D never run. THIRTEEN changes shipped, all committed locally, NONE pushed — one is a SECURITY fix. · 🔵 7DTD — fan-out gate built, no app code touched.)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **LOG TRIMMED · 1261/1261 selfcheck · 722/722 audit · build clean** · branch `phase0-solid-ground`
+**Updated: 2026-09-08 08:58 WIB (🟠 KPM — Round 7 restarted with click-level steps. Section B PASSED. Aldi's testing turned up SIX defects; #1 is fixed and committed `cdaabc7`. C4 is BLOCKED on a second BANDUNG account. Nothing pushed.)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **1272/1272 selfcheck · 722/722 audit · build clean** · branch `phase0-solid-ground`
+
+## 🟠 2026-09-08 08:58 — Aldi tested. Six defects, one fixed. `cdaabc7`
+
+**NOW:** bug 2 of six — the Authorize button shows for the receiver and the write refuses them.
+`.claude/NEXT-SESSION.md` holds it in full. He said *"lets fix this one by one so that i dont
+confused"*, so they go one at a time, each explained in simple English before the next starts.
+
+**Shipped this session, both local:**
+
+| | |
+|---|---|
+| `f61f3f7` | `MANUAL_TEST_CHECKLIST.md` Round 7 B–F rewritten as click-level steps with the exact on-screen strings. He could not act on the old wording: *"2 i dont understand this instruction"*. Section F is new — the Tier 1 half of the `994d3d6` vault grace |
+| `cdaabc7` | 🔴 **a hand-off could be marked APPROVED while the shop never moved.** `handleAdminApproveTransfer` wrote the status unconditionally and only then looked for the customer document; the owner change AND the handoffs entry both sat inside `if (targetCustomer)`. The target is now resolved first and the approval refused when there is none. 11 checks, 3 trialled red |
+
+**The finding that explains it, and is worth not re-deriving:** Active Consignments is built from
+TRANSACTIONS (`ConsignmentFinanceView.jsx:281`, `customerData`), not from the `customers`
+collection. A shop can be sold to, carry a balance and appear in that list with no customer document
+anywhere. "HQ 3" is exactly that, which is why both the send path (`App.jsx:1650`) and the approve
+path found zero matches.
+
+**Round 7 status:** A passed 2026-09-07. **B passed today** (all 5, item 2 confirmed by reading the
+grey sentence). C is still 2 of 4 and **C4 cannot be run**: BANDUNG has one account,
+`kaldi0470@gmail.com`, used as receiver and named approver at once. D and F never run.
+
+**Still open, none of them started:** the geofence bypass routing + spam guard; the chip row's
+missing tier floor (his decision); the HQ 3 record already written APPROVED; Product Performance
+counting unpaid Titip as revenue.
+
+### WAITING ON ALDI
+
+1. **Does he want a second BANDUNG account?** Without one, C4 displacement is untestable — the
+   named approver and the branch's own regional admin have to be different people.
+2. **The tier floor, unanswered since this morning:** should Fleet & Canvas refuse to tick approval
+   branches below Tier 4? He reported the Tier 6 self-approval as broken, but it is `ad4f18b`
+   working as written once he grants the chip.
+3. **His geofence rule, verbatim, to be built against:** *"every geofencing bypass approval is the
+   responsibility for each regional admin and each regional admin only have responsibility to
+   approve or reject the bypass for their own team inside their regional area only other tier
+   shouldnt be receiving this, because there will be flood of request and also make sure that there
+   is only 1 request each time, salesperson should not be able to spam the request"*.
+4. **HQ 3:** he was told to register the shop and re-send. If he wants the stale APPROVED record
+   cleaned instead, that is data surgery on his live book and needs the document named first.
 
 ## 🟠 2026-09-07 21:10 — session closed. Thirteen changes, four seen on screen.
 
