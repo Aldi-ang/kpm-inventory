@@ -92,6 +92,33 @@ export default function useTransactionEngine({
             return;
         }
 
+        /* 🏪 AND THE OTHER HALF OF THE SAME SENTENCE: *"consignment is only for registered
+           stores"*. Aldi chose STRICT, 2026-09-08.
+
+           ⚠️ STRICT IS NOT `status === 'NOO_ACTIVE'`, however literally that reads. Four statuses
+           are written in this app and only two come from here: the registry screen saves
+           'APPROVED' when an admin adds a shop and 'PENDING' when a field agent does
+           (CustomerManager.jsx:987, :1071), this file writes 'NOO_ACTIVE' for an in-sale
+           registration and 'WALK_IN' for the quick form (:176, :404, :417), and shops written
+           before the field existed carry no status at all. Demanding NOO_ACTIVE would refuse
+           consignment to almost every real shop in his book, which is a far worse failure than
+           the one being fixed. So the rule is stated as the refusal it actually is: a walk-in is
+           not a shop, and a name with no document behind it is not a shop either.
+
+           The in-sale NOO registration is exempt because it CREATES the registered shop in this
+           same write - refusing it would make a legitimate first consignment impossible. */
+        if (paymentType === 'Titip' && !(newStoreData && newStoreData.isNooRegistration)) {
+            const shop = (customers || []).find(c => storeKey(c.name) === storeKey(customerName));
+            if (!shop) {
+                notify(`Consignment needs a registered shop. "${customerName}" is not in your shop list - register it first, or take Cash, QRIS or Transfer.`);
+                return;
+            }
+            if (shop.status === 'WALK_IN') {
+                notify(`"${customerName}" is saved as a walk-in, not a registered shop. Consignment is for registered shops - register it properly first, or take Cash, QRIS or Transfer.`);
+                return;
+            }
+        }
+
         let currentAgentProfileId = agentProfileId;
         if (userRole === 'ADMIN' && adminSalesMode === 'VEHICLE') currentAgentProfileId = 'ADMIN_VEHICLE';
         else if (userRole === 'ADMIN') currentAgentProfileId = null;

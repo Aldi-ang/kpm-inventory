@@ -5809,6 +5809,56 @@ ok('a Grosir cart is still allowed on consignment',
 ok('a Retail cart is still allowed on consignment',
    ecAllowed([{ priceTier: 'Retail', qty: 1 }], 'Titip') === true,
    'only Ecer means an individual - Retail and Grosir are both store tiers');
+/* and the other half of the sentence: consignment needs a registered shop (STRICT, his call) */
+ok('the registered-shop refusal also stands before the first write',
+   /paymentType === 'Titip' && !\(newStoreData && newStoreData\.isNooRegistration\)/.test(ecHead),
+   'placed after the write it would refuse a consignment that had already been booked');
+ok('an in-sale NOO registration is exempt, so a first consignment is still possible',
+   ecHead.includes('newStoreData.isNooRegistration'),
+   'the NOO path CREATES the registered shop in the same write - refusing it would be a dead end');
+/* stripComments first: the comment above the guard NAMES the statuses it deliberately does not
+   whitelist, so a raw grep matches the explanation instead of the code. Same trap as G48/G53. */
+const ecCode = stripComments(ecHead);
+ok('the refusal is on WALK_IN, never on a whitelist of good statuses',
+   /shop\.status === 'WALK_IN'/.test(ecCode) && /=== 'NOO_ACTIVE'/.test(ecCode) === false,
+   'four statuses exist and legacy shops carry none - a whitelist would refuse most of his real book');
+
+const ecShopOk = (name, shops, method, noo) => {
+  if (method !== 'Titip' || (noo && noo.isNooRegistration)) return true;
+  const shop = shops.find(c => c.name.trim().toLowerCase() === String(name).trim().toLowerCase());
+  if (!shop) return false;
+  return shop.status !== 'WALK_IN';
+};
+// Every status this app actually writes, plus the legacy shops that carry none.
+const EC_SHOPS = [
+  { name: 'HQ (RETAIL) 1', status: 'APPROVED' },      // registry screen, added by an admin
+  { name: 'HQ TEST', status: 'PENDING' },             // registry screen, added by a field agent
+  { name: 'Toko Lama', status: undefined },           // written before the status field existed
+  { name: 'Warung NOO', status: 'NOO_ACTIVE' },       // registered during a sale
+  { name: 'Bu Sari', status: 'WALK_IN' },             // the quick in-sale form
+];
+
+ok('HIS CASE: a name with no shop record cannot take consignment',
+   ecShopOk('HQ 3', EC_SHOPS, 'Titip', null) === false,
+   'this is the shop that reached the hand-off queue owning Rp 1.000.000 with nothing behind it');
+ok('a walk-in cannot take consignment either',
+   ecShopOk('Bu Sari', EC_SHOPS, 'Titip', null) === false,
+   'his rule: consignment is only for registered stores, and the quick form does not register one');
+ok('an admin-registered shop can',
+   ecShopOk('HQ (RETAIL) 1', EC_SHOPS, 'Titip', null) === true, 'APPROVED is what the registry screen writes');
+ok('a field-agent-registered shop can, even before an admin approves it',
+   ecShopOk('HQ TEST', EC_SHOPS, 'Titip', null) === true,
+   'the shop is registered; PENDING is about admin sign-off, not about whether it exists');
+ok('a legacy shop with no status field at all can',
+   ecShopOk('Toko Lama', EC_SHOPS, 'Titip', null) === true,
+   'STRICT read as a NOO_ACTIVE whitelist would have refused most of his real book - the worse failure');
+ok('and registering the shop during the sale is allowed',
+   ecShopOk('Warung Baru', EC_SHOPS, 'Titip', { isNooRegistration: true }) === true,
+   'the NOO path creates the registered shop in the same write');
+ok('a walk-in is still fine on Cash',
+   ecShopOk('Bu Sari', EC_SHOPS, 'Cash', null) === true,
+   'the rule is about consignment only - nothing here may block an ordinary paid sale');
+
 ok('one Ecer line poisons a mixed cart',
    ecAllowed([...EC_STORE, ...EC_HQ3], 'Titip') === false,
    'a receivable is written per transaction, so a single individual line drags the whole sale onto a debt nobody can be held to');
