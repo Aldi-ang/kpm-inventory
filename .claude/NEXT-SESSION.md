@@ -1,5 +1,59 @@
 # The one job
 
+**Fleet & Canvas decides which BRANCH it is showing by email, so under the tier preview it shows
+Aldi his own branch instead of the previewed one.**
+
+`src/FleetCanvasManager.jsx:38` — verified 2026-09-08 14:35, re-grep anyway:
+
+```js
+const myProfile = activeMotorists.find(m => m.email?.toLowerCase() === user?.email?.toLowerCase())
+               || activeMotorists.find(m => m.id === agentProfileId);
+```
+
+Line 40 feeds `rawLocation` from it, which is the branch the whole screen operates as.
+
+This is the SECOND instance of a trap fixed once already today in `9a35e8e`. `previewIdentity`
+(`src/config/povPreview.js:115`) moves `displayName`, `agentId` and `userRole` onto the test account
+and **deliberately leaves `email` alone**, because the UID is his real sign-in. So any screen that
+resolves identity by email is invisible to POV: it keeps answering "Aldi" under somebody else's
+banner. `AgentInventoryView.jsx:53` is the same line, already fixed — copy that shape:
+
+```js
+const matchedByEmail = previewing ? null : motorists.find(...)
+```
+
+`previewing` comes from `App.jsx`'s `previewIdentity` memo and is already passed to
+AgentInventoryView at the mount site; Fleet & Canvas needs the same prop.
+
+**Do this BEFORE bug 3, and that ordering is the point.** Bug 3 is entirely about routing a geofence
+bypass to the right REGION, and it will be tested by previewing as a Tier 4. While this line
+stands, previewing as a Tier 4 reports Aldi's own branch, so the test would measure the wrong branch
+and pass or fail for the wrong reason. One line first, then the real job.
+
+⚠️ **Do NOT fix this by making `previewIdentity` rewrite the email.** It repairs every screen at
+once and it is the wrong repair — email is identity, other code makes real decisions on it, and
+`povPreview.js` refuses to touch it on purpose. Stand the lookup down at the screen.
+
+⚠️ Tier 6 has no `view_fleet`, so his own Tier 6 test never reached this screen. Reproduce by
+previewing as **Tier 3 or Tier 4**, which do have it.
+
+Leave the fix in `src/config/logicFixes.selfcheck.mjs` — there is already a
+`POV: one identity, and every screen has to read the same one` section to extend, and it imports the
+real `previewIdentity` rather than restating it. Assert the anchors were found before slicing, pin
+the slice length, and re-run the resolver on real accounts: previewing as Tier 3 and Tier 4 lands on
+that test account's branch, a real login still resolves by email, and a real login with a wrong
+`agentProfileId` is still rescued by it. Trial it RED first by copying the edited file aside and
+`git checkout --`ing it, never by stashing.
+
+Background: `A-Brain/Wiki/Concepts/POV Changes the Id, Never the Email.md`.
+
+Then rewrite this file with the next single job — which is bug 3 below, unchanged.
+
+<details>
+<summary>Queue — do NOT paste these; promote one only when the job above is finished</summary>
+
+### Bug 3 — the geofence bypass goes to the owner, globally (NEXT after the line above)
+
 **A salesperson asks to bypass the geofence, and the request goes to Aldi. Every time, from every
 branch, and they can ask again as often as they like.**
 
@@ -46,11 +100,6 @@ slicing, pin the slice length, and re-run the routing predicate on real accounts
 salesperson's bypass reaches Bandung's approver and not Jakarta's, the owner still sees it, and a
 second request from the same person while one is PENDING is refused. Trial it RED first by copying
 the edited file aside and `git checkout --`ing it, never by stashing.
-
-Then rewrite this file with the next single job.
-
-<details>
-<summary>Queue — do NOT paste these; promote one only when the job above is finished</summary>
 
 ### Owed him from the fixes that just shipped (`d84bc4c`, `adf9560`)
 

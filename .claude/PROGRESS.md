@@ -1,6 +1,36 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-09-08 14:21 WIB (🟠 KPM — bug 2 FIXED (`d84bc4c`) and the tier-floor question ANSWERED and locked (`adf9560`): no floor, his call. FIVE fixes local, none pushed. Only the KALDI test is owed back.)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **1309/1309 selfcheck · 722/722 audit · build clean** · branch `phase0-solid-ground`
+**Updated: 2026-09-08 14:35 WIB (🟠 KPM — POV bug FIXED, `9a35e8e`. Agent Inventory obeyed the email instead of the previewed tier. A SECOND instance of the same trap is open at `FleetCanvasManager.jsx:38` and it blocks reliable POV testing of the region work. SIX fixes local, none pushed.)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **1321/1321 selfcheck · 722/722 audit · build clean** · branch `phase0-solid-ground`
+
+## 🟠 2026-09-08 14:35 — POV was lying on the one screen he was using it to check. `9a35e8e`
+
+**NOW:** the next job is the SECOND instance of the same trap, `FleetCanvasManager.jsx:38`, and it
+is deliberately ahead of bug 3 in `.claude/NEXT-SESSION.md` — that screen resolves its BRANCH by
+email, so testing any region-scoped work through POV would measure the wrong branch. One line, same
+shape as the fix just shipped.
+
+His report, wearing Tier 6: *"i login as t6 tes account and the agent inventory is still showing the
+t1 inventory but i cant do sales with that inventory tho"*. Two screens disagreed about who he was.
+`previewIdentity` moves agentId and deliberately leaves EMAIL alone (the UID is his real sign-in);
+Agent Inventory resolved the van by email FIRST, matched his own record, and drew the owner's cargo
+under a Tier 6 banner. The sale reads agentProfileId, found the test van empty, and refused — which
+is why the stock was visible and unsellable at once. The email sweep now stands down while
+previewing and is untouched for real logins.
+
+Not a permission hole: POV keeps his real UID, the stock was his own, and a real Tier 6 signing in
+normally always matched their own record.
+
+**WAITING ON ALDI — two tests, no decisions:**
+
+✅ TEST the POV fix: wear Tier 6, open Agent Inventory. It must say **Nothing Loaded**, not your
+stock. Then wear Tier 5 and Tier 4 and check the same screen.
+
+✅ TEST still owed from `d84bc4c`: as KALDI, a store handed to you shows Authorize, the press works,
+the shop moves. Then as the SENDER of a request, Authorize must still refuse you.
+
+Vault: `A-Brain` `ed4beb5` — new Concept `POV Changes the Id, Never the Email`, linked from the
+Concepts index, Index and MOC, carrying the signature to recognise it by and the repair that must
+NOT be made.
 
 ## 🟠 2026-09-08 14:21 — no tier floor on a named approver. His call, locked. `adf9560`
 
