@@ -67,28 +67,58 @@ export const dayOf = (tx) => {
    Returns null when the transaction cannot be counted at all, so a caller can skip it rather than
    write a document full of zeroes: not a sale, no date, or no lines. */
 export const salesDelta = (tx, productsById = {}, sign = 1) => {
-    if (!isSale(tx)) return null;
     const day = dayOf(tx);
     if (!day) return null;
     const month = monthOf(day);
-    const lines = Array.isArray(tx.items) ? tx.items : [];
-    if (lines.length === 0) return null;
+
+    /* TWO LISTS, OPPOSITE DIRECTIONS.
+
+       `items` on a SALE is goods going out, and a Titip placement is written as an ordinary sale,
+       so its full value is booked the moment the goods are dropped at the shop.
+
+       `itemsReturned` is those same goods coming back, and it is why this function had a hole. The
+       store audit writes them onto a `CONSIGNMENT_PAYMENT` (useTransactionEngine's
+       handleConsignmentPayment), which `isSale` refuses - so the goods went back on the shelf, the
+       shop never paid for them, and the revenue booked at placement stayed in the month forever.
+       salesRollupWrite's own comment already named "a consignment return" as a path that must pass
+       -1; the other three paths did it and this one was never written.
+
+       IT IS FIXED HERE AND NOT AT THE CALL SITE ON PURPOSE. `rebuildMonths` below runs the same
+       function over the whole `transactions` collection, so putting the rule in the maths means the
+       existing Settings rebuild repairs every month already written - no migration, nothing touched
+       by hand in a live book. A patch at the write site would only correct returns made from now
+       on, and the rebuild would keep reproducing the old wrong number.
+
+       The returned lines carry the same `calculatedPrice` the placement booked
+       (ConsignmentFinanceView builds them from `item.calculatedPrice`), so this reverses exactly
+       what was added rather than something merely similar.
+
+       NOT TOUCHED: goods still sitting unsold on the shelf. Those are `itemsRemaining`, they stay
+       booked, and whether revenue should be recognised at placement at all is Aldi's judgement
+       call, not this function's. */
+    const sold     = isSale(tx) && Array.isArray(tx.items) ? tx.items : [];
+    const returned = Array.isArray(tx?.itemsReturned) ? tx.itemsReturned : [];
+    if (sold.length === 0 && returned.length === 0) return null;
 
     const byProduct = {};
-    for (const line of lines) {
+    const accumulate = (line, direction) => {
         const id = line?.productId;
-        if (!id) continue;
+        if (!id) return;
         const bks = convertToBks(Number(line.qty) || 0, line.unit, productsById[id]);
         /* `calculatedPrice` is per unit sold, not per pack, so the money is qty x price and must
            NOT be multiplied by the pack conversion. Getting this backwards inflates revenue by the
            pack size, which is the same class of error as mixing units on the quantity. */
         const money = (Number(line.qty) || 0) * (Number(line.calculatedPrice) || 0);
-        if (!Number.isFinite(bks) || !Number.isFinite(money)) continue;
-        if (bks === 0 && money === 0) continue;
+        if (!Number.isFinite(bks) || !Number.isFinite(money)) return;
+        if (bks === 0 && money === 0) return;
         const row = byProduct[id] || (byProduct[id] = { qty: 0, revenue: 0 });
-        row.qty += bks * sign;
-        row.revenue += money * sign;
-    }
+        row.qty += bks * sign * direction;
+        row.revenue += money * sign * direction;
+    };
+
+    for (const line of sold) accumulate(line, 1);
+    for (const line of returned) accumulate(line, -1);
+
     if (Object.keys(byProduct).length === 0) return null;
     return { month, day, byProduct };
 };

@@ -616,6 +616,30 @@ export default function useTransactionEngine({
                 timestamp: serverTimestamp() 
             }); 
 
+            /* THE RETURNED GOODS COME BACK OUT OF THE MONTH'S REVENUE, IN THIS SAME BATCH.
+
+               A Titip placement books its full value as a sale the moment the goods are dropped.
+               When the audit finds some of them damaged and takes them back, that money never
+               arrives - and until now nothing reversed it, so Product Performance reported goods
+               that are sitting in the warehouse as sold. salesDelta reads `itemsReturned` and emits
+               the negative; passing the transaction here is what makes it happen live rather than
+               only on a rebuild.
+
+               SAME BATCH, NOT AFTER IT - the rule the whole rollup is built on. A counter updated
+               separately from the thing it counts drifts the first time a phone loses signal
+               between the two calls, and offline is the normal case for these salesmen.
+
+               Sign +1, and that is not a typo: the direction lives in salesDelta, which subtracts
+               `itemsReturned` on its own. Passing -1 here would ADD the money back.
+
+               No product map is needed and passing one would be misleading: ConsignmentFinanceView
+               builds every returned line as `unit: 'Bks'`, and convertToBks returns the quantity
+               untouched for Bks whether or not it is given the product. A self-check pins that unit
+               so this stays true. */
+            tallySale(batch, db, appId, userId, {
+                date: getCurrentDate(), type: 'CONSIGNMENT_PAYMENT', itemsReturned,
+            }, {}, 1);
+
             await batch.commit();
 
             triggerCapy("Store Audit successfully recorded!"); 

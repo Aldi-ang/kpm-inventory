@@ -210,8 +210,8 @@
     "semantic_hash": ""
   },
   "src/hooks/useTransactionEngine.js": {
-    "mtime": 1788835536.5304904,
-    "ast_hash": "4dbbfb9cc41a947699c428a79c1a3a17",
+    "mtime": 1788872574.314839,
+    "ast_hash": "47650a3b314fc8d0e984517faa259957",
     "semantic_hash": ""
   },
   "src/main.jsx": {
@@ -570,8 +570,8 @@
     "semantic_hash": ""
   },
   ".claude/PROGRESS.md": {
-    "mtime": 1788870769.5517728,
-    "ast_hash": "f862ca5bc0f20cf35d381e789771b009",
+    "mtime": 1788871600.9971747,
+    "ast_hash": "47b49cb5632ce0b5920fad9a81a48937",
     "semantic_hash": ""
   },
   ".claude/pre-compact-context.md": {
@@ -755,13 +755,13 @@
     "semantic_hash": ""
   },
   "src/config/logicFixes.selfcheck.mjs": {
-    "mtime": 1788871502.7142725,
-    "ast_hash": "b7ff6c60a2ca02e7684f6ab24b8170c1",
+    "mtime": 1788872572.0834327,
+    "ast_hash": "86379505cc6a1c9c999891b9141ce1c7",
     "semantic_hash": ""
   },
   ".claude/NEXT-SESSION.md": {
-    "mtime": 1788870742.364402,
-    "ast_hash": "404ad4bd84af698933c4644126db5eab",
+    "mtime": 1788871580.749553,
+    "ast_hash": "673829104dd2f22d6cd9d350b2e3e914",
     "semantic_hash": ""
   },
   ".claude/SWEEP-2026-08-19.md": {
@@ -955,8 +955,8 @@
     "semantic_hash": ""
   },
   "src/utils/salesRollup.js": {
-    "mtime": 1788059845.0919988,
-    "ast_hash": "f6f100df5622bc96a0562fa1eabf3906",
+    "mtime": 1788872574.247085,
+    "ast_hash": "ba53e26aa1530fcd651eb91184e084d2",
     "semantic_hash": ""
   },
   "src/utils/salesRollupWrite.js": {

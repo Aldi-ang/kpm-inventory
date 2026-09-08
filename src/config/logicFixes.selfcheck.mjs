@@ -4866,6 +4866,88 @@ ok('the grant screen says the tick ignores rank, because now it does',
    of us"* - so the agent can walk the app past the login without ever touching real credentials.
    It works by exposing an auth handle on `window`, and a handle like that reaching a real build
    is the one way this convenience could become a liability. So it is asserted, not trusted. */
+/* == A RETURN TAKES THE MONEY BACK OUT ==================================================
+   Found 2026-09-08 while ranking what may not ship to a paying customer. A Titip placement is an
+   ordinary sale, so tallySale books its full value the moment the goods reach the shop. The store
+   audit then writes the damaged goods coming back as `itemsReturned` on a CONSIGNMENT_PAYMENT -
+   which isSale refuses - so nothing reversed. Stock returned to the warehouse, the shop never
+   paid, and Product Performance kept reporting it as sold.
+
+   salesRollupWrite's own comment already named four paths that must pass -1; three were written. */
+section('Money: goods that come back stop counting as sold');
+
+const { salesDelta: sd, rebuildMonths: rebuild } = await import('../utils/salesRollup.js');
+
+// One Titip placement: 20 Bks at 27.500 = 550.000 booked on the day of the drop.
+const PLACEMENT = { date: '2026-09-02', customerName: 'TOKO MAKMUR JAYA',
+    items: [{ productId: 'p1', name: 'SURYA 12', qty: 20, unit: 'Bks', calculatedPrice: 27500 }] };
+// The audit: 14 sold and paid, 4 still on the shelf, 2 damaged and taken back.
+const AUDIT = { date: '2026-09-20', customerName: 'TOKO MAKMUR JAYA', type: 'CONSIGNMENT_PAYMENT',
+    itemsPaid:      [{ productId: 'p1', qty: 14, unit: 'Bks', calculatedPrice: 27500 }],
+    itemsRemaining: [{ productId: 'p1', qty:  4, unit: 'Bks', calculatedPrice: 27500 }],
+    itemsReturned:  [{ productId: 'p1', qty:  2, unit: 'Bks', calculatedPrice: 27500 }],
+    amountPaid: 385000, returnTotal: 55000 };
+
+const placed = sd(PLACEMENT, {}, 1);
+const audit  = sd(AUDIT, {}, 1);
+
+ok('the placement still books the whole drop as revenue',
+   placed?.byProduct?.p1?.revenue === 550000 && placed?.byProduct?.p1?.qty === 20,
+   'got ' + JSON.stringify(placed?.byProduct?.p1) + ' - this half was never broken and must not change');
+ok('HIS BUG: the audit now reverses the goods that came back',
+   audit?.byProduct?.p1?.revenue === -55000 && audit?.byProduct?.p1?.qty === -2,
+   'got ' + JSON.stringify(audit?.byProduct?.p1) + ' - before the fix salesDelta returned null here and 2 Bks sat in the warehouse still counted as sold');
+ok('and the month lands on 495.000, the 18 Bks the shop actually kept',
+   (placed?.byProduct?.p1?.revenue ?? 0) + (audit?.byProduct?.p1?.revenue ?? NaN) === 495000,
+   'got ' + ((placed?.byProduct?.p1?.revenue ?? 0) + (audit?.byProduct?.p1?.revenue ?? NaN)));
+ok('goods still on the SHELF are left booked, because that is his open question and not this fix',
+   audit?.byProduct?.p1?.revenue === -55000,
+   'itemsRemaining must not be touched - whether Titip revenue belongs at placement at all is his judgement call');
+ok('a full return zeroes the month rather than going negative',
+   (() => { const all = sd({ ...AUDIT, itemsReturned: [{ productId: 'p1', qty: 20, unit: 'Bks', calculatedPrice: 27500 }] }, {}, 1);
+            return (placed?.byProduct?.p1?.revenue ?? 0) + (all?.byProduct?.p1?.revenue ?? NaN) === 0; })(),
+   'twenty out, twenty back, nothing sold');
+ok('the payment on its own adds no revenue - the placement already booked it',
+   sd({ ...AUDIT, itemsReturned: [] }, {}, 1) === null,
+   'counting the payment too would double every consignment sale in the book');
+
+/* The sign has to COMPOSE, because three callers pass -1 to undo a transaction. */
+ok('undoing a return ADDS the money back, it does not subtract twice',
+   sd(AUDIT, {}, -1)?.byProduct?.p1?.revenue === 55000,
+   'untallyOps and the history edit both pass -1; getting this backwards makes a deleted audit erase revenue twice');
+ok('and undoing a placement still removes it',
+   sd(PLACEMENT, {}, -1)?.byProduct?.p1?.revenue === -550000);
+
+/* THE ONE THAT PROVES HISTORY IS REPAIRABLE. rebuildMonths runs the same salesDelta over the whole
+   transactions collection, so a month already written wrong is fixed by the Settings rebuild
+   button - no migration, nothing edited by hand in his live book. */
+const rebuilt = rebuild([PLACEMENT, AUDIT], {});
+const sept = rebuilt.find(m => m.month === '2026-09');
+ok('a REBUILD reaches the same 495.000 the live tally does',
+   sept?.byProduct?.p1?.revenue === 495000 && sept?.byProduct?.p1?.qty === 18,
+   'got ' + JSON.stringify(sept?.byProduct?.p1) + ' - this is why the fix went in salesDelta and not at the call site: every month already written repairs itself');
+
+/* And the live write, not only the maths. */
+const uteSrc = read('src/hooks/useTransactionEngine.js');
+const payFrom = uteSrc.indexOf('const handleConsignmentPayment');
+const payTo   = uteSrc.indexOf('const handleConsignmentReturn');
+ok('handleConsignmentPayment was located',
+   payFrom > -1 && payTo > payFrom,
+   'anchor missed - the assertions below would pass vacuously');
+const payBody = uteSrc.slice(payFrom, payTo);
+ok('and the slice is that handler, not a neighbourhood',
+   payBody.length > 2000 && payBody.length < 9000,
+   'got ' + payBody.length + ' chars');
+ok('the audit tallies the reversal, so it happens live and not only on a rebuild',
+   /tallySale\(batch, db, appId, userId, \{[\s\S]{0,200}?itemsReturned,[\s\S]{0,80}?\}, \{\}, 1\)/.test(code(payBody)),
+   'without this the report is only correct after somebody presses rebuild');
+ok('and it rides the SAME batch as the transaction it counts',
+   code(payBody).indexOf('tallySale(') < code(payBody).indexOf('await batch.commit()'),
+   'a counter committed separately from the thing it counts drifts the first time a phone loses signal between the two');
+ok('the returned lines are still built in Bks, which is what lets the tally skip the product map',
+   /returnItems\.push\(\{ productId: item\.productId, name: item\.name, qty: damaged, priceTier: item\.priceTier, calculatedPrice: item\.calculatedPrice, unit: 'Bks' \}\)/.test(read('src/ConsignmentFinanceView.jsx')),
+   'if a returned line ever arrives in Slop or Bal, convertToBks needs the product and the quantity silently under-reverses');
+
 section('Emulator: the dev door exists only behind the dev gate');
 
 const fbSrc = read('src/config/firebase.js');
