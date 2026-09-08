@@ -11,7 +11,7 @@ import { normalizeRegion } from './config/permissions';
 import { confirmAction } from './components/ConfirmGate.jsx';
 import { notify } from './components/Toast.jsx';
 
-export default function FleetCanvasManager({ db, appId, user, userRole, agentProfileId, inventory, transactions = [], appSettings = {}, logAudit, triggerCapy, isAdmin, motorists = [] }) {
+export default function FleetCanvasManager({ db, appId, user, userRole, agentProfileId, inventory, transactions = [], appSettings = {}, logAudit, triggerCapy, isAdmin, motorists = [], previewing = null }) {
     
     const isGlobalAdmin = ['DEVELOPER', 'COMPANY_OWNER', 'ADMIN'].includes(userRole);
     const isAreaAdmin = !isGlobalAdmin; 
@@ -35,7 +35,20 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
 
     const activeMotorists = isAreaAdmin ? localFleet : motorists;
 
-    const myProfile = activeMotorists.find(m => m.email?.toLowerCase() === user?.email?.toLowerCase()) || activeMotorists.find(m => m.id === agentProfileId);
+    /* 🎭 THE EMAIL LOOKUP STANDS DOWN WHILE PREVIEWING - second instance of the trap fixed in
+       AgentInventoryView (9a35e8e). `previewIdentity` moves agentId and userRole onto the test
+       account and deliberately leaves EMAIL alone, because the UID is Aldi's real sign-in. So this
+       line found HIS OWN record whatever tier he was wearing, and `rawLocation` below - the BRANCH
+       this whole screen operates as - reported his branch instead of the previewed one.
+
+       It matters more here than it did there: region scoping is what hand-off approval and the
+       geofence work both turn on, so testing either through the tier preview would have measured
+       the wrong branch and passed or failed for the wrong reason.
+
+       The lookup stays for real logins, which is what it is for. Do NOT instead make
+       previewIdentity rewrite the email - see A-Brain, POV Changes the Id, Never the Email. */
+    const myProfile = (previewing ? null : activeMotorists.find(m => m.email?.toLowerCase() === user?.email?.toLowerCase()))
+        || activeMotorists.find(m => m.id === agentProfileId);
     
     const rawLocation = myProfile?.location || user?.location || 'UNASSIGNED';
     const searchLocation = String(rawLocation).trim().toLowerCase();

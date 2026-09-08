@@ -4535,6 +4535,7 @@ const handleGitHubMirror = async () => {
                 appId={appId} 
                 user={user} 
                 userRole={userRole}     // 🚀 NEW: Tell the manager who is looking
+                previewing={previewing} // 🎭 POV keeps his real email, so the branch lookup must stand down
                 inventory={inventory} 
                 transactions={transactions} 
                 appSettings={appSettings}

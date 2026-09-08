@@ -4990,6 +4990,29 @@ ok('and giving up on a subscription clears the cargo instead of leaving it rende
    /!trueAgentId\) \{[\s\S]{0,400}?setCanvasItems\(\[\]\);/.test(aiv),
    'the same wrong-van symptom by a different door: stop subscribing, keep drawing the last agent\u2019s stock');
 
+/* The SECOND instance, fixed 2026-09-08 after the first. Fleet & Canvas resolves the branch it
+   operates as by email, so the preview reported Aldi's own branch at any tier. It gates testing
+   anything region-scoped, which is what the geofence work is. */
+const fcmRaw = read('src/FleetCanvasManager.jsx');
+const fcm = code(fcmRaw);
+
+ok('Fleet & Canvas accepts the previewing flag',
+   /previewing = null \}\) \{/.test(fcm),
+   'without the prop the screen cannot know it is wearing somebody else\u2019s tier');
+ok('and App.jsx passes it to that screen too, not only to Agent Inventory',
+   (read('src/App.jsx').match(/previewing=\{previewing\}/g) || []).length >= 2,
+   'a prop with a default is silently fine when nobody passes it - the default restores the bug');
+ok('its branch lookup stands down while previewing',
+   /previewing \? null : activeMotorists\.find\(m => m\.email/.test(fcm),
+   'rawLocation is built from myProfile on the very next line, and that is the branch the whole screen operates as');
+ok('and the email lookup survives for real logins here as well',
+   /activeMotorists\.find\(m => m\.email\?\.toLowerCase\(\) === user\?\.email\?\.toLowerCase\(\)\)/.test(fcm),
+   'it exists so a stale agentProfileId cannot strand somebody on the wrong branch');
+ok('no screen resolves identity by email without asking about the preview first',
+   !/^\s*const myProfile = activeMotorists\.find\(m => m\.email/m.test(fcm) &&
+   !/^\s*const matchedByEmail = motorists\.find/m.test(code(read('src/AgentInventoryView.jsx'))),
+   'both known instances are guarded; a third would be a new one and this assertion will not see it - grep user?.email when something is wrong only under POV');
+
 /* The router, re-run. `previewIdentity` is imported from the real module - if POV ever starts
    rewriting the email, these flip and the guard can be reconsidered rather than guessed at. */
 const { previewIdentity: povIdentity, testAccountFor } = await import('./povPreview.js');

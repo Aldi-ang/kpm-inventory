@@ -50,8 +50,8 @@
     "semantic_hash": ""
   },
   "src/App.jsx": {
-    "mtime": 1788852717.7603748,
-    "ast_hash": "66fc08547df28368af91314f11ece0c1",
+    "mtime": 1788872780.5698824,
+    "ast_hash": "f8d7bdd311545e382ddde877830fe225",
     "semantic_hash": ""
   },
   "src/ConsignmentFinanceView.jsx": {
@@ -65,8 +65,8 @@
     "semantic_hash": ""
   },
   "src/FleetCanvasManager.jsx": {
-    "mtime": 1788851930.2081015,
-    "ast_hash": "358592e5f1ad769f033e8e160a9970f8",
+    "mtime": 1788872780.5042021,
+    "ast_hash": "c12abe32895a43c2f46ec11105c1e78e",
     "semantic_hash": ""
   },
   "src/HallOfFameView.jsx": {
@@ -755,8 +755,8 @@
     "semantic_hash": ""
   },
   "src/config/logicFixes.selfcheck.mjs": {
-    "mtime": 1788872572.0834327,
-    "ast_hash": "86379505cc6a1c9c999891b9141ce1c7",
+    "mtime": 1788872766.724379,
+    "ast_hash": "9dff195f036955c31782d43fd12efd82",
     "semantic_hash": ""
   },
   ".claude/NEXT-SESSION.md": {
