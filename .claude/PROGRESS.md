@@ -1,6 +1,43 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-09-08 08:58 WIB (🟠 KPM — Round 7 restarted with click-level steps. Section B PASSED. Aldi's testing turned up SIX defects; #1 is fixed and committed `cdaabc7`. C4 is BLOCKED on a second BANDUNG account. Nothing pushed.)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **1272/1272 selfcheck · 722/722 audit · build clean** · branch `phase0-solid-ground`
+**Updated: 2026-09-08 09:23 WIB (🟠 KPM — TWO fixes shipped, `cdaabc7` + `967e447`, both local. Aldi's Ecer/consignment design rule is now enforced at the sale. ONE question open and it blocks the other half. Round 7: A and B passed, C4 blocked, D and F never run.)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **1284/1284 selfcheck · 722/722 audit · build clean** · branch `phase0-solid-ground`
+
+## 🟠 2026-09-08 09:23 — the hand-off bug was a SALE bug. `967e447`
+
+**NOW:** waiting on one answer (below). Bug 2 of six — the Authorize button that shows for the
+receiver and then refuses them — is ready to start and needs nothing from him.
+
+**Why yesterday's hand-off bug existed at all.** Aldi explained the design: *"all sales bought in
+ecer means that it is an individual and not a store, well i design the app like that, so since ecer
+didnt need registration it doesnt appear as stores and then its confuse the app"*. HQ 3 was an Ecer
+sale booked on Titip. That writes a receivable against a person who is never registered, so the
+name appears in Active Consignments (folded from transactions), carries Rp 1.000.000, and can be
+handed off — with no customer document for the approval to move. `cdaabc7` stopped the approval
+lying about it; `967e447` stops the row being written.
+
+`967e447` refuses Titip on any cart holding an Ecer line, in `processTransaction` before the first
+write, and drops Consignment from the terminal's payment menu with a line saying why. A tier
+switched to Ecer after Titip was chosen resets the method. Retail and Grosir untouched.
+
+**Correction issued to him:** an earlier reply told him to register HQ 3 and re-send the hand-off.
+Wrong by his own design — HQ 3 is a person. The receivable needs settling, not a shop record.
+
+### WAITING ON ALDI
+
+1. **What counts as a registered store, verbatim question asked 09:20:** the app saves shops two
+   ways — `WALK_IN` from the quick in-sale form, `NOO_ACTIVE` from a real outlet registration.
+   *"consignment is only for registered stores"* — strict (NOO_ACTIVE only) or loose (any saved
+   record)? Recommendation given: strict, with the warning that it can block a real field sale.
+2. **HQ 3 (Rp 1.000.000) and HQ TEST (Rp 1.055.000)** are Ecer consignments already written. He was
+   told nothing in his live book gets touched until he names it.
+3. **A second BANDUNG account** — without one, Round 7 C4 displacement cannot be tested at all.
+4. **The tier floor:** should Fleet & Canvas refuse to tick approval branches below Tier 4? Still
+   unanswered from 08:30.
+5. **His geofence rule, verbatim, still unbuilt:** *"every geofencing bypass approval is the
+   responsibility for each regional admin and each regional admin only have responsibility to
+   approve or reject the bypass for their own team inside their regional area only other tier
+   shouldnt be receiving this, because there will be flood of request and also make sure that there
+   is only 1 request each time, salesperson should not be able to spam the request"*.
 
 ## 🟠 2026-09-08 08:58 — Aldi tested. Six defects, one fixed. `cdaabc7`
 
