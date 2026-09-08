@@ -1,6 +1,34 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-09-08 09:49 WIB (🟠 KPM SESSION CLOSED — THREE fixes local, none pushed: `cdaabc7`, `967e447`, `83f5041`. The Ecer/consignment design rule is enforced at the sale, both halves, strict by his call. Next job is bug 2 of six, ready to start.)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **1294/1294 selfcheck · 722/722 audit · build clean** · branch `phase0-solid-ground`
+**Updated: 2026-09-08 13:47 WIB (🟠 KPM — bug 2 of six FIXED, `d84bc4c`, local. The Authorize button and the write now answer alike; the receiver may authorise, the sender still cannot. FOUR fixes local, none pushed: `cdaabc7`, `967e447`, `83f5041`, `d84bc4c`. Needs his eyes as KALDI.)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **1303/1303 selfcheck · 722/722 audit · build clean** · branch `phase0-solid-ground`
+## 🟠 2026-09-08 13:47 — the hand-off write stopped disagreeing with its own queue. `d84bc4c`
+
+**NOW:** nothing is blocked. Bug 3 (geofence bypass reaching the owner instead of the receiving
+branch's regional admin) is next and needs four files named to him first — `.claude/NEXT-SESSION.md`
+holds it.
+
+His bug, signed in as KALDI: both bells rang, the Authorize button drew, the press was refused with
+*"You asked for this hand-off or you are receiving it."* `ad4f18b` was his call that a branch
+approver may authorise a store handed to them, and it changed the QUEUE without changing the WRITE.
+Deleted `request.toAgentId === agentProfileId ||` from `handleAdminApproveTransfer`; the toast no
+longer names receiving. The sender is still refused, and `canApproveHandoffFrom` still refuses
+anybody without power over the receiving branch.
+
+**WAITING ON ALDI — test, and one decision that is now urgent rather than latent:**
+
+✅ TEST, as KALDI: a store handed to you shows Authorize, pressing it works, and the shop actually
+moves. Then as the SENDER of a request: the Authorize button must not work for you.
+
+🔴 DECIDE (this was already Bug 4; the fix promoted it from latent to live): a Tier 6 ticked
+for a branch in Fleet & Canvas could always SEE the Authorize button on a store handed to them, and
+until today the write refused it. Now it does not. `canApproveHandoffFrom`
+(`src/config/permissions.js:425`) returns `named.includes(region)` at any tier, while `ad4f18b`'s
+own comment says it meant a Tier 4 regional admin. Should Fleet & Canvas refuse to tick approval
+branches below Tier 4?
+
+Vault: `A-Brain` `bf1798c` — the UI-says-yes page now carries the inverse shape, where the server
+check was right when it shipped and a later decision landed on only one half.
+
 
 ## 🟠 2026-09-08 09:49 — session closed. No code changed since 09:38.
 
