@@ -920,7 +920,7 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                                     <p className="text-[10px] text-slate-500 mt-2 leading-relaxed">
                                         {(newAgent.approvalRegions || []).length === 0
                                             ? 'Nothing ticked: this person follows the default \u2014 a Regional Admin authorises hand-offs into their own branch, and nobody else does.'
-                                            : `Only this person authorises hand-offs into ${(newAgent.approvalRegions || []).join(', ')}. That branch stops falling to its Regional Admin by default.`}
+                                            : `Only this person authorises hand-offs into ${(newAgent.approvalRegions || []).join(', ')}, whatever their rank — including stores handed to them. That branch stops falling to its Regional Admin by default.`}
                                     </p>
                                 </div>
                             </div>

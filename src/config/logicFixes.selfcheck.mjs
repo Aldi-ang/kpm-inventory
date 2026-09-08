@@ -4814,6 +4814,45 @@ ok('an explicitly empty grant means no branches, not the default',
    !canApproveHandoffFrom(MUTED, 'BANDUNG', [ANDI, BOSS, RINA, MUTED]),
    'this is why Fleet writes null and never [] — the two must stay tellable apart');
 
+/* == NO TIER FLOOR ON A NAMED APPROVER - HIS DECISION, 2026-09-08 =========================
+   Asked whether Fleet & Canvas should refuse to tick approval branches below Tier 4:
+   *"since the one who can edit the fleet and roster is tier 3 and above then we dont need any
+   floor for this, let the company decide and make it most flexible"*.
+
+   These assertions exist to go RED if a later session adds the floor back. It will look like a
+   missing check - ad4f18b's own comment says the feature was meant for "a Tier 4 regional admin"
+   - and adding it would silently overrule him. The gate he is relying on is one screen earlier:
+   naming somebody requires fleet_edit, which defaults to Tier 4 and above. */
+const T6_NAMED = { id: 't6', name: 'Rookie', userRole: CORPORATE_TIERS.TIER_6, location: 'JAKARTA', approvalRegions: ['Bandung'] };
+const T5_NAMED = { id: 't5', name: 'Field',  userRole: CORPORATE_TIERS.TIER_5, location: 'JAKARTA', approvalRegions: ['Bandung'] };
+const FLOORLESS = [ANDI, BOSS, RINA, SARI, T6_NAMED, T5_NAMED];
+
+ok('a named TIER 6 approves the branch they are named for',
+   canApproveHandoffFrom(T6_NAMED, 'BANDUNG', FLOORLESS),
+   'HIS DECISION - "let the company decide and make it most flexible". A rank test on the named branch would silently reverse it');
+ok('and so does a named TIER 5, at the branch named and nowhere else',
+   canApproveHandoffFrom(T5_NAMED, 'BANDUNG', FLOORLESS) && !canApproveHandoffFrom(T5_NAMED, 'JAKARTA', FLOORLESS),
+   'flexible about RANK is not flexible about BRANCH - the grant still reaches exactly one place');
+ok('naming a junior still displaces the branch\u2019s own regional admin, same as naming a senior',
+   !canApproveHandoffFrom(SARI, 'BANDUNG', FLOORLESS),
+   'the "only" in his sentence does not weaken because the person named is junior');
+/* The DEFAULT, not the live matrix. canEditFleetRoster consults ROLE_PERMISSIONS, which earlier
+   sections of this file mutate through injectDynamicPermissions - asserting it here would pass or
+   fail on section order. The matrix override is also his to set on purpose, which is the whole
+   point of the decision; what must not drift is the default underneath it. */
+const { defaultFleetAccess: fleetDefault } = await import('./permissions.js');
+ok('the gate he is relying on is one screen earlier: naming somebody needs fleet_edit',
+   fleetDefault(CORPORATE_TIERS.TIER_4) === 'fleet_edit' &&
+   fleetDefault(CORPORATE_TIERS.TIER_5) === 'fleet_view_only' &&
+   fleetDefault(CORPORATE_TIERS.TIER_6) === 'fleet_view_only',
+   'his 2026-08-24 line - "regional manager can edit the fleet and canvas, tier below that cannot". No floor on WHO may be named is safe only while this holds on WHO may name them; if it ever changes he has to be told the two decisions are linked');
+ok('and the source carries no rank test on the named branch',
+   /const named = personApprovalRegions\(profile\);\s*\n\s*if \(named !== null\) return named\.includes\(region\);/.test(code(read('src/config/permissions.js'))),
+   'the shape is deliberate: named means named, at any tier');
+ok('the grant screen says the tick ignores rank, because now it does',
+   /whatever their rank/.test(read('src/FleetCanvasManager.jsx')) && /including stores handed to them/.test(read('src/FleetCanvasManager.jsx')),
+   'a Tier 4 handing real approval power to a Tier 6 has to be able to see that is what the tick does - his law: every action reports');
+
 /* == THE WRITE ITSELF, RE-RUN ON REAL ACCOUNTS ==========================================
    Everything above tests who MAY approve. This tests the guard that stood between that
    answer and the database, which on 2026-09-08 disagreed with it.

@@ -422,6 +422,23 @@ const branchIsDelegated = (roster, region) => (roster || []).some(m => {
     return named !== null && named.includes(region);
 });
 
+/* 🔐 THERE IS NO TIER FLOOR HERE, AND THAT IS A DECISION, NOT AN OVERSIGHT.
+
+   Aldi, 2026-09-08, asked whether Fleet & Canvas should refuse to tick approval branches below
+   Tier 4: *"since the one who can edit the fleet and roster is tier 3 and above then we dont need
+   any floor for this, let the company decide and make it most flexible"*. So a named Tier 6
+   approves hand-offs into the branch they are named for, exactly like a named Tier 4 does.
+
+   His reasoning, and where the real gate is: the power is not in holding the tick, it is in being
+   able to GRANT one. That is `canEditFleetRoster` below, which defaults to Tier 4 and above
+   (`defaultFleetAccess`) - his own line, 2026-08-24: *"regional manager can edit the fleet and
+   canvas, tier below that cannot"*. Nobody who rides in a van can name an approver.
+
+   ⚠️ DO NOT ADD `role === TIER_4 ||` OR ANY RANK TEST TO THE `named` BRANCH. It reads like a
+   missing check - ad4f18b's own comment even says the feature was meant for "a Tier 4 regional
+   admin" - and adding it silently overrules him. A named person of any rank is named on purpose.
+   The check in logicFixes.selfcheck.mjs asserts a Tier 6 still approves; it goes red if a floor
+   is added back. */
 export const canApproveHandoffFrom = (profile, storeRegion, roster = []) => {
     const role = translateLegacyRole(profile && profile.userRole);
     if (role === CORPORATE_TIERS.TIER_1) return true;
