@@ -1,172 +1,186 @@
 # The one job
 
-**Fleet & Canvas decides which BRANCH it is showing by email, so under the tier preview it shows
-Aldi his own branch instead of the previewed one.**
+**When a shop hands back unsold consignment goods, the sales report never takes the money back
+out. The stock returns to the shelf, the customer never pays, and Product Performance still counts
+it as sold.**
 
-`src/FleetCanvasManager.jsx:38` — verified 2026-09-08 14:35, re-grep anyway:
+Aldi is selling this app to a customer before the end of September 2026. A report that overstates
+revenue is the one class of bug that cannot ship: the customer finds it by doing their job, and it
+poisons trust in every other number on the screen. His words, 2026-09-08: *"okay then fix those
+first i want to finish this app before this month"*.
 
-```js
-const myProfile = activeMotorists.find(m => m.email?.toLowerCase() === user?.email?.toLowerCase())
-               || activeMotorists.find(m => m.id === agentProfileId);
-```
+## What the code does — anchors verified 2026-09-08 19:30, re-grep anyway
 
-Line 40 feeds `rawLocation` from it, which is the branch the whole screen operates as.
+A Titip (consignment) placement is written as an ordinary sale — no `type` field, so
+`isSale` reads it as `'SALE'` — and `tallySale(..., +1)` books its full value into the monthly
+rollup at `src/hooks/useTransactionEngine.js:417`. That is revenue counted at placement, before
+anybody has paid. Whether that timing is right is a separate question Aldi has not answered; leave
+it alone.
 
-This is the SECOND instance of a trap fixed once already today in `9a35e8e`. `previewIdentity`
-(`src/config/povPreview.js:115`) moves `displayName`, `agentId` and `userRole` onto the test account
-and **deliberately leaves `email` alone**, because the UID is his real sign-in. So any screen that
-resolves identity by email is invisible to POV: it keeps answering "Aldi" under somebody else's
-banner. `AgentInventoryView.jsx:53` is the same line, already fixed — copy that shape:
+The goods coming back is what is broken. The live path is the **store audit**:
 
-```js
-const matchedByEmail = previewing ? null : motorists.find(...)
-```
+* `src/ConsignmentFinanceView.jsx:585` — the audit calls
+  `onPayment(name, paymentItems, paymentTotal, returnItems, returnTotal, remainingItems)`.
+* `src/hooks/useTransactionEngine.js:504` — `handleConsignmentPayment` receives them and writes one
+  transaction carrying `itemsReturned` and `returnTotal` (`:532`, `:535`, and again at `:609`/`:612`
+  and `:630`/`:633`) with `type: 'CONSIGNMENT_PAYMENT'`.
+* `src/utils/salesRollup.js:44` — `SALE_TYPES = ['SALE']`, so `isSale` refuses that transaction and
+  `salesDelta` returns null. **Nothing is written to the rollup, in either direction.**
 
-`previewing` comes from `App.jsx`'s `previewIdentity` memo and is already passed to
-AgentInventoryView at the mount site; Fleet & Canvas needs the same prop.
+So the original placement's revenue stays in the month, forever, for goods that came back.
 
-**Do this BEFORE bug 3, and that ordering is the point.** Bug 3 is entirely about routing a geofence
-bypass to the right REGION, and it will be tested by previewing as a Tier 4. While this line
-stands, previewing as a Tier 4 reports Aldi's own branch, so the test would measure the wrong branch
-and pass or fail for the wrong reason. One line first, then the real job.
+`src/utils/salesRollupWrite.js` names this exact path in its own comment: *"every path that removes
+or changes a sale must pass -1. Those paths are: the history screen's edit and delete, the folder
+delete, and a consignment return."* The first two do it (`HistoryReportView.jsx:384`,
+`App.jsx:2980`). The third does not. The comment describes four paths and the code implements three.
 
-⚠️ **Do NOT fix this by making `previewIdentity` rewrite the email.** It repairs every screen at
-once and it is the wrong repair — email is identity, other code makes real decisions on it, and
-`povPreview.js` refuses to touch it on purpose. Stand the lookup down at the screen.
+## The smallest fix, and where it has to go
 
-⚠️ Tier 6 has no `view_fleet`, so his own Tier 6 test never reached this screen. Reproduce by
-previewing as **Tier 3 or Tier 4**, which do have it.
+**In `salesDelta` (`src/utils/salesRollup.js:69`), not at the call site.** That single choice is
+what decides whether the months already written can be repaired:
 
-Leave the fix in `src/config/logicFixes.selfcheck.mjs` — there is already a
-`POV: one identity, and every screen has to read the same one` section to extend, and it imports the
-real `previewIdentity` rather than restating it. Assert the anchors were found before slicing, pin
-the slice length, and re-run the resolver on real accounts: previewing as Tier 3 and Tier 4 lands on
-that test account's branch, a real login still resolves by email, and a real login with a wrong
-`agentProfileId` is still rescued by it. Trial it RED first by copying the edited file aside and
+`rebuildMonths` (`salesRollup.js:193`) recomputes every month from the `transactions` collection and
+it calls the same `salesDelta`. Teach `salesDelta` to emit a negative delta for a transaction's
+`itemsReturned`, and the existing Settings rebuild button repairs the entire history by itself —
+no migration, no backfill script, no touching his live data by hand. Patch it at the call site
+instead and only future returns are correct while every past month stays wrong and the rebuild
+keeps reproducing the wrong number.
+
+## Traps
+
+⚠️ **`handleConsignmentReturn` (`useTransactionEngine.js:645`) is NOT the path. It looks exactly
+like it.** It writes a real `type: 'RETURN'` transaction, and `onReturn` is passed into
+ConsignmentFinanceView at `:47` and **never called anywhere** — grep it. Fixing that function would
+pass review, add a green check, and change nothing the customer sees. Confirm it is dead before
+deciding what to do with it, and do not delete it in the same commit as the fix.
+
+⚠️ **Settle which money comes back out, before writing anything.** The rollup booked
+`qty × calculatedPrice` at placement. The audit carries its own `returnTotal`. These can differ, and
+reversing the wrong one leaves the report wrong in a subtler way that no check will catch. Read what
+`returnItems` actually carries in `ConsignmentFinanceView`'s audit builder first — if the lines do
+not carry the price they were placed at, a naive `-1` reverses the QUANTITY and not the MONEY, which
+is a half-fix that reads green.
+
+⚠️ **Check every caller before changing shared maths.** `salesDelta` is called by `tallySale`,
+`tallySaleOp` (offline drain, `App.jsx:368`), `untallyOps` (`App.jsx:2980`, sign -1),
+HistoryReportView's edit pair, and `rebuildMonths`. Deleting a return must ADD the money back, so
+the signs have to compose. Work through each one rather than assuming.
+
+⚠️ **Do not change when Titip revenue is booked.** That is Aldi's judgement call and he has not made
+it. This job only makes returns reverse what placement booked.
+
+## Verify
+
+Leave it in `src/config/logicFixes.selfcheck.mjs`: assert the anchors were found before slicing, pin
+the slice length, and re-run the maths on real numbers — a placement of 10 books revenue, a return
+of 4 takes 40% of it back out, a full return zeroes the month, and `rebuildMonths` over the same
+transaction list reaches the identical figure the live tally does. That last one is the assertion
+that proves history is repairable. Trial it RED first by copying the edited file aside and
 `git checkout --`ing it, never by stashing.
 
-Background: `A-Brain/Wiki/Concepts/POV Changes the Id, Never the Email.md`.
+⚠️ `AgentInventoryView.jsx` is CRLF while `App.jsx` is LF — this repo is mixed. Match the file's own
+endings or the anchor silently misses.
 
-Then rewrite this file with the next single job — which is bug 3 below, unchanged.
+Then rewrite this file with the next single job.
 
 <details>
 <summary>Queue — do NOT paste these; promote one only when the job above is finished</summary>
 
-### Bug 3 — the geofence bypass goes to the owner, globally (NEXT after the line above)
+### The plan Aldi agreed to, 2026-09-08 — ship before end of September
 
-**A salesperson asks to bypass the geofence, and the request goes to Aldi. Every time, from every
-branch, and they can ask again as often as they like.**
+Goal is NOT "no bugs". It is: no bug on the paths his customer actually walks, everything else
+written down and ranked. Fix order, by what a bug there costs the customer:
+
+1. **Lies about money** — the job above is #1. Then: is Titip revenue booked at placement correct?
+   (his call, unanswered)
+2. **Loses data** — offline drain, half-committed batches. Salesmen on phones in bad signal is the
+   normal case here.
+3. **Leaks across branches** — bug 3 below.
+4. **Blocks day one** — first login, first product, first staff member, first sale, first EOD.
+5. Everything else, appearance included.
+
+Full reasoning, options and what was ruled out: `A-Brain/Brainstorm/2026-09-08_shipping-readiness.md`.
+
+### STILL UNANSWERED — ask him again if it comes up
+
+> "can I set up the Firebase emulator?"
+
+He said *"okay then fix those first"* without answering it. The agent's browser can now reach the
+app (`8abcf04`, `kpm-dev-http` on port 5174) and can check layout at PC and phone width — but it
+**cannot sign in**, because entering credentials and completing a sign-in flow are things it must
+not do. So every screen behind the login is still unverifiable from here. `firebase.js:56` already
+reads `VITE_USE_EMULATOR`; seeding a local emulator would let the whole app be walked at both
+widths without his eyes. One session up front, saves every session after.
+
+### Bug 3 — the geofence bypass goes to the owner, globally
 
 His rule, 2026-09-08: *"every geofencing bypass approval is the responsibility for each regional
 admin and each regional admin only have responsibility to approve or reject the bypass for their own
 team inside their regional area only other tier shouldnt be receiving this"*, plus *"make sure that
 there is only 1 request each time, salesperson should not be able to spam the request"*.
 
-Two separate faults, both live. Line numbers verified 2026-09-08 13:47 — re-grep anyway:
+* `src/MerchantSalesView.jsx:822` writes to `gps_bypasses`; `:829` writes the bell with
+  `agentId: "ADMIN"`, `linkToTab: "fleet"` — one owner-addressed notification with no region on it.
+* `src/FleetCanvasManager.jsx:132` subscribes to the whole collection with no region filter, and the
+  approve/reject buttons at `:1073`/`:1084` sit on the owner-only Fleet & Canvas screen.
+* `src/MerchantSalesView.jsx:822` calls `addDoc` with no check for an existing PENDING request.
 
-* `src/MerchantSalesView.jsx:822` writes to `gps_bypasses`, and `:829` writes the bell with
-  `agentId: "ADMIN"`, `linkToTab: "fleet"`. One owner-addressed notification, carrying no region at
-  all, so nothing downstream *can* route it to a branch.
-* `src/FleetCanvasManager.jsx:132` subscribes to the whole `gps_bypasses` collection with no region
-  filter, and the approve/reject buttons at `:1073` and `:1084` sit inside Fleet & Canvas, which is
-  the owner's screen. Even a correctly addressed bell would land somewhere a regional admin cannot
-  reach.
-* `src/MerchantSalesView.jsx:822` calls `addDoc` with no check for an existing PENDING request from
-  the same person. That is the spam half, and it is the smaller of the two.
+FOUR FILES AT LEAST, over the 3-file rule — name them to him first. And settle before designing:
+does a bypass use `canApproveHandoffFrom` (which honours the Fleet & Canvas per-person chips), or a
+plain "Tier 4 of that region" rule? His sentence says *regional admin*, not *named approver*, and
+those stop being the same set the moment anybody is named. The region must be resolved at WRITE time
+and stored on the document, never looked up at read time from a roster that may have moved them.
 
-**FOUR FILES AT LEAST, WHICH IS OVER THE 3-FILE RULE. Name them to him and get an answer before
-writing anything** — the write site, the subscription, wherever the approve/reject panel ends up
-living for a regional admin, and `src/config/permissions.js` for the predicate.
+### The second POV email trap — small, and it gates testing bug 3
 
-**Settle this with him before designing, because it decides the shape.** Approval power for a
-hand-off already has a predicate that answers "may this person authorise something in that branch":
-`canApproveHandoffFrom` in `src/config/permissions.js:425`, which honours the Fleet & Canvas
-per-person branch chips. Ask whether a geofence bypass uses that same predicate, or a plain "Tier 4
-of that region" rule. His sentence says *regional admin*, not *named approver*, and those stop being
-the same set the moment anybody is named in Fleet & Canvas. Do not decide it for him.
+`src/FleetCanvasManager.jsx:38` resolves `myProfile` by email, then `:40` feeds `rawLocation` from
+it — the branch the whole screen operates as. Under the tier preview it reports Aldi's own branch.
+Bug 3 is about routing by region and would be tested by previewing as a Tier 4, so this makes that
+test measure the wrong branch. Same one-line shape already fixed at `AgentInventoryView.jsx:53`
+(`previewing ? null : ...`); `previewing` is already threaded from App.jsx. Tier 6 has no
+`view_fleet`, so reproduce as Tier 3 or 4. Background:
+`A-Brain/Wiki/Concepts/POV Changes the Id, Never the Email.md`. Do NOT fix it by making
+`previewIdentity` rewrite the email.
 
-⚠️ The bypass request carries no region today. Wherever the region comes from, it must be the
-**requesting agent's** branch, resolved at the moment of the write and stored on the document — not
-looked up at read time from a roster that may have moved them since. A request that has to be
-re-resolved to be routed is a request that reroutes itself when somebody transfers.
+### Owed him from fixes already shipped
 
-⚠️ Do not let "only 1 request each time" become a client-side disabled button. That is the
-UI-says-yes-server-says-no shape this project has now hit at least seven times, most recently in
-`d84bc4c` — see `A-Brain/Wiki/Concepts/UI-Says-Yes-Server-Says-No Pattern.md`. The duplicate check
-belongs at the write.
+Tests 1 and 2 PASSED 2026-09-08 (`d84bc4c` hand-off, `9a35e8e` POV). Still unverified by eye:
+`cdaabc7`, `967e447`, `83f5041` — the Ecer/consignment sale rules. `adf9560` is a decision recorded
+in checks, so there is nothing on screen to look at.
 
-Leave the fix in `src/config/logicFixes.selfcheck.mjs`: assert the anchors were found before
-slicing, pin the slice length, and re-run the routing predicate on real accounts — a Bandung
-salesperson's bypass reaches Bandung's approver and not Jakarta's, the owner still sees it, and a
-second request from the same person while one is PENDING is refused. Trial it RED first by copying
-the edited file aside and `git checkout --`ing it, never by stashing.
-
-### Owed him from the fixes that just shipped (`d84bc4c`, `adf9560`)
-
-✅ TEST as KALDI: a store handed to you shows Authorize, the press works, and the shop actually
-moves. Then as the SENDER of a request: Authorize must still refuse you.
-
-**Bug 4 is ANSWERED and closed — do not reopen it.** He was asked whether Fleet & Canvas should
-refuse to tick approval branches below Tier 4 and said no: *"since the one who can edit the fleet
-and roster is tier 3 and above then we dont need any floor for this, let the company decide and
-make it most flexible"*. A named Tier 6 approves the branch they are named for, on purpose. A rank
-test on the `named` branch of `canApproveHandoffFrom` looks like a missing check and is a reversal
-— six self-check assertions go red if one is added, two of which predate the question because the
-fixture for his original 2026-08-24 request is itself Tier 5. See
-`A-Brain/Wiki/Concepts/Handoff Eligibility.md`.
-
-The one thing that would reopen it: the decision rests on `defaultFleetAccess` cutting at Tier 4,
-so only a Regional Admin or above can name an approver. If that ever changes, tell him the two
-decisions are linked — one person could then both name an approver and be one.
+**Bug 4 is ANSWERED and closed — do not reopen.** No tier floor on a named approver: *"since the one
+who can edit the fleet and roster is tier 3 and above then we dont need any floor for this, let the
+company decide and make it most flexible"*. A rank test on the `named` branch of
+`canApproveHandoffFrom` looks like a missing check and is a reversal — six assertions go red if one
+is added, two of which predate the question. Reopens only if `defaultFleetAccess` stops cutting at
+Tier 4, because that gate is what makes no-floor safe.
 
 ### HQ 3 and HQ TEST are Ecer consignments already written
 
-`967e447` and `83f5041` stop new ones. Neither touches the Rp 1.000.000 sitting against HQ 3, or the
-Rp 1.055.000 against HQ TEST which is probably the same shape. He was told explicitly that money
-already in his live book will not be touched without him naming it. Do not clean these on your own
-initiative. The HQ 3 hand-off request also still reads APPROVED with the shop never moved —
-`cdaabc7` stops new ones lying, it does not repair that record. And do NOT register HQ 3 as a shop:
-an earlier session told him to, which was wrong by his own design — an Ecer sale is a person, not a
-store.
+`967e447` and `83f5041` stop new ones. Neither touches the Rp 1.000.000 against HQ 3 or the
+Rp 1.055.000 against HQ TEST. His money, his call, and he was told it would not be touched without
+him naming it. The HQ 3 hand-off request also still reads APPROVED with the shop never moved —
+`cdaabc7` stops new ones lying, it does not repair that record. Do NOT register HQ 3 as a shop: an
+earlier session said to, which was wrong by his own design — an Ecer sale is a person, not a store.
 
-### Round 7 is still unfinished, and one part is untestable
+### Round 7 is unfinished, and C4 is untestable
 
-Section B PASSED 2026-09-08, all five items. Section D of `MANUAL_TEST_CHECKLIST.md` (rewritten
-2026-09-08 as click-level steps) has never been run. C4, the displacement test, cannot be run at
-all: BANDUNG has exactly one account, `kaldi0470@gmail.com`, and Aldi used it as receiver AND named
-approver. Displacement needs two different Bandung people — the named approver, and the branch's own
-regional admin who must go silent. Ask him to create the second account before C4 is attempted
-again. The displacement rule itself is now asserted in `logicFixes.selfcheck.mjs` as of `d84bc4c`,
-so it is checked in code even while it cannot be clicked. Headquarters not seeing the request (his
-sc3) is correct but proves nothing either way.
-
-Also owed: F, the Tier 1 half of the `994d3d6` vault-grace fix — unlock the vault, come back inside
-five minutes, confirm no PIN prompt.
-
-### Product Performance reports unpaid consignment as finished revenue
-
-Untouched. `ProductPerformancePanel.jsx:44` reads a monthly rollup through `statsPath(...)`;
-`salesRollup.js:88-90` accumulates `{ qty, revenue }` with no paymentType dimension;
-`salesRollupWrite.js:37-38` writes those two fields. The split has to be made at WRITE time and
-carried through — five files, over the 3-file rule, name them first. Settle before designing: does a
-later `CONSIGNMENT_PAYMENT` also enter the rollup (`SALE_TYPES`, `salesRollup.js:42-46`)? If a Titip
-sale books revenue at placement and its payment books it again, the panel is already double-counting
-and that is the larger bug. Every month already written carries no split, so decide explicitly:
-backfill from `transactions`, or label pre-change months "not separated". Returns are part of his
-sentence — `returnTotal` is written at `useTransactionEngine.js:492`, `:569`, `:590` and read by no
-money calculation.
+Section B PASSED. Section D of `MANUAL_TEST_CHECKLIST.md` has never been run. C4 needs two different
+Bandung people; BANDUNG has exactly one account, `kaldi0470@gmail.com`, used as both receiver and
+named approver. Ask him to create the second account. The displacement rule is asserted in
+`logicFixes.selfcheck.mjs` as of `adf9560`, so it is checked in code meanwhile. Also owed: F, the
+Tier 1 half of the `994d3d6` vault-grace fix — unlock the vault, return inside five minutes, confirm
+no PIN prompt.
 
 ### Housekeeping
 
-* `AgentProfileView.jsx:1333` uses the same `-top-2 -right-2 animate-ping` geometry that shook the
-  Hand-offs tab strip. Check whether its parent scrolls before deciding; if it does, `a8fea37`'s
-  inset is the fix.
+* `returnTotal` is written at `useTransactionEngine.js:535`, `:612`, `:633` and read by no money
+  calculation. Related to the job above; check whether it should be.
+* `AgentProfileView.jsx:1333` uses the `-top-2 -right-2 animate-ping` geometry that shook the
+  Hand-offs tab strip. Check whether its parent scrolls; if it does, `a8fea37`'s inset is the fix.
 * The tutorial book: the close button at `PonderBook.jsx:1025` does nothing (prime suspect is the
-  scrim at `:1103` swallowing the click — verify with `document.elementFromPoint`, do not guess),
-  and there is an unlocated white vertical line on the book background. Two audit checks guard the
-  Ponder scene splits — search `strandedBeats` in `integration.audit.mjs`, do not weaken them.
-* The in-app browser still cannot reach `vite --host` (self-signed certificate on both
-  `https://localhost:5173` and `http://localhost:5173`), so every visual claim goes back to Aldi by
-  eye. Worth one session.
+  scrim at `:1103` swallowing the click — verify with `document.elementFromPoint`), plus an
+  unlocated white vertical line. Two audit checks guard the Ponder scene splits — search
+  `strandedBeats` in `integration.audit.mjs`, do not weaken them. Appearance, so it waits.
 
 </details>

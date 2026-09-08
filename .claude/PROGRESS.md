@@ -1,6 +1,66 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-09-08 14:35 WIB (🟠 KPM — POV bug FIXED, `9a35e8e`. Agent Inventory obeyed the email instead of the previewed tier. A SECOND instance of the same trap is open at `FleetCanvasManager.jsx:38` and it blocks reliable POV testing of the region work. SIX fixes local, none pushed.)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **1321/1321 selfcheck · 722/722 audit · build clean** · branch `phase0-solid-ground`
+**Updated: 2026-09-08 19:30 WIB (🟠 KPM — NEW GOAL: ship to a customer before end of September. Money bugs first. One found today and NOT yet fixed: a consignment return never reverses the sales report. The agent's browser can finally see the app (`8abcf04`). Seven fixes local, none pushed.)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **1321/1321 selfcheck · 722/722 audit · build clean** · branch `phase0-solid-ground`
+
+## 🟠 2026-09-08 19:30 — the goal changed: ship this app before the end of September
+
+**NOW:** the one job is the consignment-return money bug, diagnosed but NOT fixed. It is written up
+in `.claude/NEXT-SESSION.md` with the anchors verified at 19:30 and three traps, the sharpest being
+that the function which LOOKS like the return path (`handleConsignmentReturn`,
+`useTransactionEngine.js:645`) is dead — `onReturn` is passed and never called. The live path is the
+store audit through `handleConsignmentPayment`.
+
+*"since we are lack of time and money i think lets do the update and fix regarding the function of
+this app, and make sure that all works well so that i can submit this app to the customer and sell
+it"*, then *"okay then fix those first i want to finish this app before this month"*. Deadline:
+**30 September 2026**, about three weeks.
+
+He was told plainly that "100% working with no bug" is not a reachable state and that chasing it
+spends the time he does not have. The agreed goal is: no bug on the paths his customer actually
+walks, everything else written down and ranked. Fix order: money lies > data loss > branch leaks >
+day-one onboarding > everything else including appearance. Reasoning, options and what was ruled out
+are in `A-Brain/Brainstorm/2026-09-08_shipping-readiness.md`.
+
+**Found today, not fixed:** a consignment return never reverses the sales rollup. A Titip placement
+books full revenue through `tallySale(+1)`; the goods coming back are written as
+`type: 'CONSIGNMENT_PAYMENT'` carrying `itemsReturned`, which `isSale` refuses, so nothing reverses.
+`salesRollupWrite.js`'s own comment names four paths that must pass -1 and the code implements
+three. The fix belongs in `salesDelta`, not at the call site — `rebuildMonths` calls the same
+function, so fixing the maths lets his existing Settings rebuild repair every month already written,
+with no migration.
+
+**`8abcf04` — the browser can see the app for the first time.** The dev server serves https with a
+self-signed certificate, which is what lets him test on a real phone; the in-app browser cannot
+click through that warning. `--mode httpdev` now serves plain http on port 5174 beside it.
+`http://localhost` is a secure context by specification, so crypto.subtle and login are unaffected,
+and his phone workflow is untouched. Verified: sign-in screen renders at desktop AND at 375x812,
+zero console errors.
+
+**WAITING ON ALDI — one question he has not answered, verbatim:**
+
+❓ *"can I set up the Firebase emulator?"* — he replied *"okay then fix those first"* without
+answering. It matters: the browser can now check LAYOUT at PC and phone width, but it **cannot sign
+in** (entering credentials and completing sign-in flows are not permitted), so every screen behind
+the login is still unverifiable from here. `firebase.js:56` already reads `VITE_USE_EMULATOR`.
+Seeding a local emulator would let the whole app be walked at both widths without his eyes — one
+session up front, saves every session after.
+
+✅ Still owed by eye: `cdaabc7`, `967e447`, `83f5041` (the Ecer/consignment sale rules) have never
+been looked at. Tests 1 and 2 PASSED at 19:20 — `d84bc4c` and `9a35e8e` are confirmed.
+
+## 🟠 2026-09-08 19:20 — both tests PASSED by Aldi. `d84bc4c` and `9a35e8e` are confirmed.
+
+*"test 1 and 2 complete and its work well"*. POV as Tier 6/5/4 no longer shows the owner's van, and
+the hand-off Authorize works for the receiving branch approver while still refusing the sender.
+These two are now proven by his eyes, not only by checks — the first fixes this week that are.
+
+**Still unverified by eye:** `cdaabc7`, `967e447`, `83f5041` (the Ecer/consignment rules) and
+`adf9560` (the no-floor lock, which is a decision recorded in checks rather than a behaviour change,
+so there is nothing on screen to look at).
+
+**NOW:** he asked to brainstorm rather than build — *"lets brainstorm and discuss first"*. No code
+in flight, nothing half-done. Whatever the topic settles into goes to `A-Brain/Brainstorm/` before
+this session closes, decision or no decision.
 
 ## 🟠 2026-09-08 14:35 — POV was lying on the one screen he was using it to check. `9a35e8e`
 
