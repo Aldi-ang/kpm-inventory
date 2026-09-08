@@ -4861,6 +4861,32 @@ ok('the grant screen says the tick ignores rank, because now it does',
    real sign-in. AgentInventoryView then resolved the van by EMAIL first, found his own record, and
    subscribed to the owner's van while the banner said Tier 6. MerchantSalesView reads
    agentProfileId and correctly found the test van empty. Visible and unsellable at once. */
+/* == THE EMULATOR DOOR STAYS SHUT IN A BUILD ============================================
+   Set up 2026-09-08 on his word - *"okay sure make the emulator for better efficiency for both
+   of us"* - so the agent can walk the app past the login without ever touching real credentials.
+   It works by exposing an auth handle on `window`, and a handle like that reaching a real build
+   is the one way this convenience could become a liability. So it is asserted, not trusted. */
+section('Emulator: the dev door exists only behind the dev gate');
+
+const fbSrc = read('src/config/firebase.js');
+const gateAt = fbSrc.indexOf("import.meta.env.DEV && import.meta.env.VITE_USE_EMULATOR === 'true'");
+ok('the emulator gate was located',
+   gateAt > -1,
+   'anchor missed - every assertion below would pass vacuously');
+ok('the window handle appears ONLY after that gate, never before it',
+   fbSrc.indexOf('__kpmEmulatorAuth') > gateAt,
+   'a handle outside the gate ships an auth object on window to every customer');
+ok('and the gate needs BOTH the dev flag and the opt-in, not either',
+   /import\.meta\.env\.DEV && import\.meta\.env\.VITE_USE_EMULATOR === 'true'/.test(fbSrc),
+   'DEV alone would arm it for `npm run dev`, which is what Aldi runs against LIVE data on his phone');
+ok('only the httpdev vite mode sets that opt-in',
+   /httpDev \? \{ 'import\.meta\.env\.VITE_USE_EMULATOR': JSON\.stringify\('true'\) \} : \{\}/.test(read('vite.config.js')),
+   'if this ever becomes unconditional, `npm run dev` silently stops talking to the real project and his phone tests measure nothing');
+ok('and the seeder can only reach the emulator host',
+   /const HOST\s*=\s*'http:\/\/127\.0\.0\.1:8080'/.test(read('tools/seed-emulator.mjs')) &&
+   !/firestore\.googleapis\.com/.test(read('tools/seed-emulator.mjs')),
+   'a seeder that can be pointed at production is a script that will one day be pointed at production');
+
 section('POV: one identity, and every screen has to read the same one');
 
 const aivRaw = read('src/AgentInventoryView.jsx');

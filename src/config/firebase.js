@@ -1,7 +1,7 @@
 import { initializeApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider } from 'firebase/auth';
 import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager, connectFirestoreEmulator } from "firebase/firestore";
-import { connectAuthEmulator } from "firebase/auth";
+import { connectAuthEmulator, signInWithCredential } from "firebase/auth";
 import { getStorage } from "firebase/storage";
 
 /* WHY THE LOGIN DOMAIN IS NOT A CONSTANT ANY MORE.
@@ -56,6 +56,25 @@ export const db = initializeFirestore(app, {
 if (import.meta.env.DEV && import.meta.env.VITE_USE_EMULATOR === 'true') {
   connectFirestoreEmulator(db, '127.0.0.1', 8080);
   connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true });
+
+  /* A DOOR INTO THE FAKE DATABASE, AND ONLY THE FAKE ONE.
+
+     Sign-in here is signInWithPopup, and a popup cannot complete inside the agent's single-tab
+     browser pane - the Auth emulator's widget has no opener frame to post back to and dies with
+     "No matching frame". That left every screen behind the login unverifiable, which is the exact
+     problem the emulator was set up to solve.
+
+     So the emulator's own documented trick is exposed here: an UNSIGNED Google id_token, which
+     only the Auth emulator accepts and which a real Firebase project rejects outright. Used as:
+
+       const { auth, credential, signIn } = window.__kpmEmulatorAuth;
+       await signIn(auth, credential(JSON.stringify({ sub: '<uid>', email: '<email>' })));
+
+     This block sits inside a gate that needs BOTH import.meta.env.DEV and VITE_USE_EMULATOR, and
+     only vite's `httpdev` mode sets that flag - so it is absent from every build, absent from
+     `npm run dev`, and absent from Aldi's phone. It is not a way into the live project even when
+     it does exist, because the credential it takes is one live Firebase will not honour. */
+  window.__kpmEmulatorAuth = { auth, credential: GoogleAuthProvider.credential, signIn: signInWithCredential };
 }
 
 export const storage = getStorage(app);

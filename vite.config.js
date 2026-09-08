@@ -32,7 +32,16 @@ const BUILD_ID = (() => {
 export default defineConfig(({ mode }) => {
 const httpDev = mode === 'httpdev';
 return {
-  define: { __BUILD_ID__: JSON.stringify(BUILD_ID) },
+  /* httpdev also points the app at the LOCAL FIREBASE EMULATOR, which is the other half of letting
+     the agent see this app. It can reach the screens now, but it must not sign in with real
+     credentials - so the only honest way past the login is a fake local account in a fake local
+     database. firebase.js already reads VITE_USE_EMULATOR; this sets it for THIS MODE ONLY, so
+     `npm run dev` still talks to the live project exactly as before and Aldi's phone testing is
+     untouched. Requires `firebase emulators:start --only auth,firestore` to be running. */
+  define: {
+    __BUILD_ID__: JSON.stringify(BUILD_ID),
+    ...(httpDev ? { 'import.meta.env.VITE_USE_EMULATOR': JSON.stringify('true') } : {}),
+  },
   /* DEV ONLY — this never reaches a build. `npm run dev` now serves https://, because
      `crypto.subtle` (which hashes the master password) exists only in a SECURE CONTEXT:
      https, or localhost. Aldi's PC is localhost so it always worked; his phone reaches
