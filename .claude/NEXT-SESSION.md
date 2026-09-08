@@ -41,19 +41,9 @@ copying the edited file aside and `git checkout --`ing it, never by stashing.
 <details>
 <summary>Queue — do NOT paste these; promote one only when the job above is finished</summary>
 
-### 🔴 ANSWER FIRST IF HE HAS: what counts as a "registered store" for consignment
-
-Asked 2026-09-08 09:20, unanswered when the session ended. His rule is *"consignment is only for
-registered stores"*, and the app saves shop records TWO ways — `useTransactionEngine.js:147-161`
-writes `status: 'WALK_IN'` for the quick in-sale form and `status: 'NOO_ACTIVE'` for a real outlet
-registration. Strict means only `NOO_ACTIVE` may take Titip; loose means any saved document may.
-He was told the recommendation is strict and that it can block a real field sale, so it is his call.
-**If he has answered, build that instead of the job above** — it is the other half of `967e447` and
-the same three files.
-
 ### HQ 3 and HQ TEST are Ecer consignments already written
 
-`967e447` stops new ones. It does not touch the Rp 1.000.000 sitting against HQ 3, or the
+`967e447` and `83f5041` stop new ones. It does not touch the Rp 1.000.000 sitting against HQ 3, or the
 Rp 1.055.000 against HQ TEST which is probably the same shape. He was told explicitly that money
 already in his live book will not be touched without him naming it. **Do not clean these on your
 own initiative.** The HQ 3 hand-off request also still reads APPROVED with the shop never moved -

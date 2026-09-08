@@ -1,6 +1,39 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-09-08 09:23 WIB (🟠 KPM — TWO fixes shipped, `cdaabc7` + `967e447`, both local. Aldi's Ecer/consignment design rule is now enforced at the sale. ONE question open and it blocks the other half. Round 7: A and B passed, C4 blocked, D and F never run.)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **1284/1284 selfcheck · 722/722 audit · build clean** · branch `phase0-solid-ground`
+**Updated: 2026-09-08 09:38 WIB (🟠 KPM — THREE fixes local: `cdaabc7`, `967e447`, `83f5041`. Aldi's Ecer/consignment design rule is fully enforced at the sale, both halves, strict by his call. Nothing pushed. Round 7: A and B passed, C4 blocked, D and F never run.)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **1294/1294 selfcheck · 722/722 audit · build clean** · branch `phase0-solid-ground`
+
+## 🟠 2026-09-08 09:38 — consignment is now shop-only, strict. `83f5041`
+
+**NOW:** bug 2 of six is next and needs nothing from him — the Authorize button that shows for the
+receiver and then refuses them. `.claude/NEXT-SESSION.md` holds it.
+
+He answered the open question with *"make it strict"*. Titip now requires a customer document that
+is not a `WALK_IN`; registering the shop during the sale stays exempt because that path creates the
+record in the same write.
+
+**The trap that was in the way, worth not re-deriving.** Strict does NOT mean
+`status === 'NOO_ACTIVE'`. Four statuses exist: `APPROVED` and `PENDING` from the registry screen
+(`CustomerManager.jsx:987`, `:1071`), `NOO_ACTIVE` and `WALK_IN` from the sale engine, and shops
+written before the field existed carry none. A NOO_ACTIVE whitelist would have refused consignment
+to almost his whole book — a far worse bug than the one being fixed. The guard is written as a
+refusal (`!shop`, or `WALK_IN`) rather than a whitelist, and a self-check runs every one of those
+statuses including the legacy blank.
+
+Terminal not gated for this half on purpose: the NOO path has no selected customer by design, so
+hiding the option there would block the one case that must stay open.
+
+### WAITING ON ALDI
+
+1. **HQ 3 (Rp 1.000.000) and HQ TEST (Rp 1.055.000)** are Ecer consignments already written. He was
+   told nothing in his live book gets touched until he names it. The HQ 3 hand-off request also
+   still reads APPROVED with the shop never moved.
+2. **A second BANDUNG account** — without one, Round 7 C4 displacement cannot be tested at all.
+3. **The tier floor:** should Fleet & Canvas refuse to tick approval branches below Tier 4?
+4. **His geofence rule, verbatim, still unbuilt:** *"every geofencing bypass approval is the
+   responsibility for each regional admin and each regional admin only have responsibility to
+   approve or reject the bypass for their own team inside their regional area only other tier
+   shouldnt be receiving this, because there will be flood of request and also make sure that there
+   is only 1 request each time, salesperson should not be able to spam the request"*.
 
 ## 🟠 2026-09-08 09:23 — the hand-off bug was a SALE bug. `967e447`
 
