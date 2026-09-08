@@ -31,6 +31,13 @@ Re-run `node tools/seed-emulator.mjs --uid <that uid>`, then open the vault and 
 localStorage.setItem('kpm-vault-grace', JSON.stringify({ uid: '<that uid>', at: Date.now() }));
 ```
 
+## Aldi will be at this one — 2026-09-08, *"lets do the test tomorrow"*
+
+So split it rather than doing it all headless. **The agent walks first, alone, and writes the list.**
+Then hand him only the things that need a human: anything that needs a real Google account, a real
+phone, or his judgement on whether a screen reads right. He should not sit and watch a walk he could
+be told the result of.
+
 ## The paths, in the order a real customer meets them
 
 Check each at **desktop AND at 375x812** — he asked for both: *"make sure both phone and PC looks

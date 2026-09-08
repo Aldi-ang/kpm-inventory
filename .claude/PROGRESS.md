@@ -1,6 +1,47 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-09-08 20:29 WIB (🟠 KPM — the offline duplicate is FIXED (`e9b04e5`), his call. Three money/data fixes shipped this session. Bug 3 still needs his routing answer. Thirteen fixes local, none pushed.)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **1360/1360 selfcheck · 722/722 audit · build clean** · branch `phase0-solid-ground`
+**Updated: 2026-09-08 20:36 WIB (🟠 KPM SESSION CLOSED — three money/data fixes shipped and tested where testable. Tomorrow: the day-one customer walk, WITH him. Thirteen fixes local, none pushed. Bug 3 still needs his routing answer.)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **1360/1360 selfcheck · 722/722 audit · build clean** · branch `phase0-solid-ground`
+
+## 🟠 2026-09-08 20:36 — session closed. *"lets finish tomorrow"*
+
+**Shipped today, all local, nothing pushed:**
+
+| commit | what |
+|---|---|
+| `d84bc4c` | the hand-off write refused the receiver its own queue had cleared — TESTED, passed |
+| `adf9560` | no tier floor on a named approver, his decision, locked with six assertions |
+| `9a35e8e` | POV showed the owner's van in Agent Inventory — TESTED, passed |
+| `8abcf04` | an http dev mode, so the agent's browser can reach the app at all |
+| `37f34ee` | a seeded Firebase emulator — every screen behind the login is now walkable |
+| `f46bc4a` | **money:** goods returned from consignment stopped counting as sold |
+| `7a59fb8` | POV showed the wrong BRANCH in Fleet & Canvas, the second instance |
+| `e9b04e5` | **data:** a part-finished offline sync no longer duplicates sales |
+
+**The goal changed today and it is the frame for everything now:** ship to a paying customer before
+**30 September**. Not "no bugs" — no bug on the paths his customer walks, everything else written
+down and ranked: money lies > data loss > branch leaks > day one > appearance.
+`A-Brain/Brainstorm/2026-09-08_shipping-readiness.md` holds the full plan and what was ruled out.
+
+**Tomorrow, and he will be there:** the day-one customer walk in the emulator — first sign-in, first
+product, first person, first sale, first EOD, first consignment audit — at desktop and phone width,
+collecting what breaks without fixing it. The brief says to walk it alone first and hand him only
+what needs a human, rather than have him watch.
+
+**WAITING ON ALDI — one decision, verbatim, and it blocks bug 3:**
+
+🔴 Does a geofence bypass approval use `canApproveHandoffFrom` — which honours the per-person
+branch chips he ticks in Fleet & Canvas — or a plain "Tier 4 regional admin of that region" rule?
+Those stop being the same set of people the moment anybody is named in Fleet & Canvas.
+
+✅ Never looked at by eye: `cdaabc7`, `967e447`, `83f5041`, the Ecer/consignment sale rules. And a
+real offline sale on a real phone with real signal loss — the emulator proved the app switches
+state and back, not that a week of queued sales drains.
+
+**Knowledge written today:** `Handoff Eligibility` (the stale write, and the no-floor decision),
+`POV Changes the Id, Never the Email`, `Looking Inside the App` (the emulator recipe),
+`A Retry Must Land Where the First Try Landed` (the offline duplicate and the localId trap), plus
+the shipping-readiness brainstorm. Vault commits `2026177`, `ed4beb5`, `c2dd558`, `7f7d889`,
+`e8f274a`, `5b60d27`.
 
 ## 🟠 2026-09-08 20:29 — offline sync can no longer duplicate a sale. `e9b04e5`
 
