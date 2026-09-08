@@ -1,6 +1,17 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-09-08 09:38 WIB (🟠 KPM — THREE fixes local: `cdaabc7`, `967e447`, `83f5041`. Aldi's Ecer/consignment design rule is fully enforced at the sale, both halves, strict by his call. Nothing pushed. Round 7: A and B passed, C4 blocked, D and F never run.)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **1294/1294 selfcheck · 722/722 audit · build clean** · branch `phase0-solid-ground`
+**Updated: 2026-09-08 09:49 WIB (🟠 KPM SESSION CLOSED — THREE fixes local, none pushed: `cdaabc7`, `967e447`, `83f5041`. The Ecer/consignment design rule is enforced at the sale, both halves, strict by his call. Next job is bug 2 of six, ready to start.)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **1294/1294 selfcheck · 722/722 audit · build clean** · branch `phase0-solid-ground`
+
+## 🟠 2026-09-08 09:49 — session closed. No code changed since 09:38.
+
+Knowledge written, which is the only thing that moved: `A-Brain/Wiki/Concepts/Ecer Is a Person,
+Not a Shop.md` (vault `23fb6b9`, linked from Index, MOC and the Concepts index) holds his tier
+design, the three-step chain from an Ecer consignment to a broken hand-off, and the reason "strict"
+could not be written as a `NOO_ACTIVE` whitelist. One lesson appended for the same near-miss.
+
+**He tested nothing this session after Section B** — the three fixes are proven by checks and by
+his own bug reports, not by his eyes on the new behaviour. The test steps are in
+`MANUAL_TEST_CHECKLIST.md` and in the 09:38 reply.
 
 ## 🟠 2026-09-08 09:38 — consignment is now shop-only, strict. `83f5041`
 
