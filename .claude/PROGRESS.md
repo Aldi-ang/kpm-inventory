@@ -1,6 +1,38 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-09-08 13:47 WIB (🟠 KPM — bug 2 of six FIXED, `d84bc4c`, local. The Authorize button and the write now answer alike; the receiver may authorise, the sender still cannot. FOUR fixes local, none pushed: `cdaabc7`, `967e447`, `83f5041`, `d84bc4c`. Needs his eyes as KALDI.)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **1303/1303 selfcheck · 722/722 audit · build clean** · branch `phase0-solid-ground`
+**Updated: 2026-09-08 14:21 WIB (🟠 KPM — bug 2 FIXED (`d84bc4c`) and the tier-floor question ANSWERED and locked (`adf9560`): no floor, his call. FIVE fixes local, none pushed. Only the KALDI test is owed back.)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **1309/1309 selfcheck · 722/722 audit · build clean** · branch `phase0-solid-ground`
+
+## 🟠 2026-09-08 14:21 — no tier floor on a named approver. His call, locked. `adf9560`
+
+**NOW:** nothing is blocked and nothing is owed except one test. Bug 3, the geofence bypass, is
+next — `.claude/NEXT-SESSION.md` holds it.
+
+He answered the floor question: *"since the one who can edit the fleet and roster is tier 3 and
+above then we dont need any floor for this, let the company decide and make it most flexible"*. No
+floor added. His premise verified and tighter than he said — the gate on naming an approver is Tier
+4 and above, not Tier 3 (`defaultFleetAccess`, his own 2026-08-24 line).
+
+The trial did more than permit it. Re-adding the floor turns SIX checks red, two of which predate
+today: `HANA_BDG`, the fixture for his original 2026-08-24 feature request, is Tier 5. A floor
+would have broken the named-approver feature as first specified, so there was never a Tier 4
+assumption to restore. Locked with a comment at `canApproveHandoffFrom` and six assertions, because
+a floor LOOKS like a missing check.
+
+The grant screen now says what the tick does: *"Only this person authorises hand-offs into X,
+whatever their rank — including stores handed to them."*
+
+**WAITING ON ALDI — one test, nothing else:**
+
+✅ TEST as KALDI: a store handed to you shows Authorize, the press works, and the shop actually
+moves. Then as the SENDER of a request: Authorize must still refuse you.
+
+⚠️ One thing to bring back to him if it ever changes: the no-floor decision rests on the Tier 4
+gate for editing the roster. Loosening `fleet_edit` in the Settings matrix puts both keys — naming
+an approver, and being one — within reach of one person. That is his to set; the check pins the
+default underneath it so a drift cannot happen silently.
+
+Vault: `A-Brain` `2026177` — `Wiki/Concepts/Handoff Eligibility.md` carries both the stale-write fix
+and this decision, with the six-red trial as the reason it is settled rather than merely allowed.
 ## 🟠 2026-09-08 13:47 — the hand-off write stopped disagreeing with its own queue. `d84bc4c`
 
 **NOW:** nothing is blocked. Bug 3 (geofence bypass reaching the owner instead of the receiving

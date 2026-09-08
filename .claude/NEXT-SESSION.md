@@ -52,18 +52,23 @@ Then rewrite this file with the next single job.
 <details>
 <summary>Queue — do NOT paste these; promote one only when the job above is finished</summary>
 
-### Owed him from the fix that just shipped (`d84bc4c`)
+### Owed him from the fixes that just shipped (`d84bc4c`, `adf9560`)
 
 ✅ TEST as KALDI: a store handed to you shows Authorize, the press works, and the shop actually
 moves. Then as the SENDER of a request: Authorize must still refuse you.
 
-🔴 DECIDE — **Bug 4 is no longer latent, it is live.** A Tier 6 ticked for a branch in Fleet &
-Canvas could always SEE the Authorize button on a store handed to them; until `d84bc4c` the write
-refused the press, and now it does not. `canApproveHandoffFrom` (`src/config/permissions.js:425`)
-returns `named.includes(region)` for anybody named at any tier, while `ad4f18b`'s own comment says
-it was meant for "a Tier 4 regional admin". Ask whether Fleet & Canvas should refuse to tick
-approval branches below Tier 4. Do not decide it for him — he already saw this once, removed the
-chip, and watched the button disappear.
+**Bug 4 is ANSWERED and closed — do not reopen it.** He was asked whether Fleet & Canvas should
+refuse to tick approval branches below Tier 4 and said no: *"since the one who can edit the fleet
+and roster is tier 3 and above then we dont need any floor for this, let the company decide and
+make it most flexible"*. A named Tier 6 approves the branch they are named for, on purpose. A rank
+test on the `named` branch of `canApproveHandoffFrom` looks like a missing check and is a reversal
+— six self-check assertions go red if one is added, two of which predate the question because the
+fixture for his original 2026-08-24 request is itself Tier 5. See
+`A-Brain/Wiki/Concepts/Handoff Eligibility.md`.
+
+The one thing that would reopen it: the decision rests on `defaultFleetAccess` cutting at Tier 4,
+so only a Regional Admin or above can name an approver. If that ever changes, tell him the two
+decisions are linked — one person could then both name an approver and be one.
 
 ### HQ 3 and HQ TEST are Ecer consignments already written
 
