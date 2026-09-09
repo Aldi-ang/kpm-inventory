@@ -6498,6 +6498,39 @@ ok('an admin with no area set is told that, not shown nobody',
 ok('and a genuinely empty branch names the branch and the company count',
    /Nobody is posted to \{branchPathLocation\}/.test(fleet));
 
+/* REGRESSION GUARD — the POV stand-down needs something to stand down TO.
+   Scoped to the FleetCanvasManager tag, not file-wide: App.jsx passes `agentProfileId` to five
+   other screens, so a file-wide grep would have passed on any of them while this one had none. */
+{ const tag = app.slice(app.indexOf('<FleetCanvasManager'));
+  const props = tag.slice(0, tag.indexOf('/>'));
+  ok('App hands the fleet screen the agent id its POV fallback reads',
+     /agentProfileId=\{agentProfileId\}/.test(props),
+     'without it `myProfile` is find(m => m.id === undefined) under POV — nothing, whatever is in the vault');
+  ok('and the vault id with it',
+     /masterUserId=\{userId\}/.test(props)); }
+
+/* BEHAVIOUR — the identity lookup, on the roster Aldi actually has. */
+{ const ROSTER = [
+    { id: 'master_owner',  email: 'adikaryasukses99@gmail.com', location: 'Headquarters' },
+    { id: 'TEST_TIER_4',   email: '',  userRole: 'FLEET_CAPTAIN',   location: 'Headquarters' },
+    { id: 'TEST_TIER_5',   email: '',  userRole: 'FIELD_OPERATIVE', location: 'Headquarters' },
+    { id: 'TEST_TIER_6',   email: '',  userRole: 'ROOKIE',          location: 'Headquarters' } ];
+  const lookup = (previewing, email, agentProfileId) =>
+    (previewing ? null : ROSTER.find(m => m.email?.toLowerCase() === email?.toLowerCase()))
+    || ROSTER.find(m => m.id === agentProfileId);
+
+  ok('HIS CASE: previewing as T4 finds the T4 costume, not nothing',
+     lookup(true, 'adikaryasukses99@gmail.com', 'TEST_TIER_4')?.id === 'TEST_TIER_4');
+  ok('and the branch it reports is the costume’s, which is what the roster filters on',
+     lookup(true, 'adikaryasukses99@gmail.com', 'TEST_TIER_4')?.location === 'Headquarters');
+  ok('THE BUG: an undefined agent id finds nobody, however full the roster is',
+     lookup(true, 'adikaryasukses99@gmail.com', undefined) === undefined,
+     'this is why the screen said "your own staff record was not found" with 7 people on it');
+  ok('a real login is unaffected — the email answers first, which is why this survived',
+     lookup(null, 'adikaryasukses99@gmail.com', undefined)?.id === 'master_owner');
+  ok('and with the id restored, the T4 costume sees the T5 and T6 team at its own branch',
+     ROSTER.filter(m => m.location.toLowerCase() === 'headquarters').length === 4); }
+
 /* BEHAVIOUR — the vault choice, run on real values. */
 { const vaultId = (masterUserId, user) => masterUserId || user?.uid || user?.id || 'default';
   ok('a salesman signed in under a boss reads the BOSS vault, which is where the staff are',

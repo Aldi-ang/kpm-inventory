@@ -72,6 +72,15 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
        geofence work both turn on, so testing either through the tier preview would have measured
        the wrong branch and passed or failed for the wrong reason.
 
+       ⚠️ AND THE THING IT STANDS DOWN *TO* HAS TO EXIST. `agentProfileId` was destructured in this
+       signature and NEVER PASSED by App.jsx until 2026-09-09, so under POV the whole expression was
+       `null || find(m => m.id === undefined)` — nothing, on every tier, whatever was in the vault.
+       That is what Aldi saw: *"my tier 4 cant even detect its own sales team"*, with [TEST] REGIONAL
+       ADMIN sitting in the roster at Headquarters the entire time. A real login was unaffected,
+       because the email lookup answers first — which is exactly why it survived: the fallback path
+       only runs under the preview, and the preview is the one identity nobody re-tested afterwards.
+       A prop with a default is silently fine when nobody passes it, and the default restores the bug.
+
        The lookup stays for real logins, which is what it is for. Do NOT instead make
        previewIdentity rewrite the email - see A-Brain, POV Changes the Id, Never the Email. */
     const myProfile = (previewing ? null : activeMotorists.find(m => m.email?.toLowerCase() === user?.email?.toLowerCase()))

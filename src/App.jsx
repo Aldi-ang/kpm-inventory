@@ -4591,7 +4591,9 @@ const handleGitHubMirror = async () => {
                 triggerCapy={triggerCapy} 
                 isAdmin={isAdmin}
                 motorists={motorists}
-                masterUserId={userId}   // 🚀 `bossUid || user.uid` — see the note at the FleetCanvasManager signature
+                masterUserId={userId}       // 🚀 `bossUid || user.uid` — see the note at the FleetCanvasManager signature
+                agentProfileId={agentProfileId}  // 🎭 THE FALLBACK THE POV STAND-DOWN LANDS ON. Never passed until 2026-09-09,
+                                                 // so under POV `myProfile` was find(m => m.id === undefined) — always nothing.
             />
           )}
 
