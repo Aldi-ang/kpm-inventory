@@ -85,8 +85,8 @@
     "semantic_hash": ""
   },
   "src/MerchantSalesView.jsx": {
-    "mtime": 1788922949.2584543,
-    "ast_hash": "0a3f241b67121ef898dd62b21a73bcda",
+    "mtime": 1788953532.1731186,
+    "ast_hash": "73a836dbc466a799ff8bbd6cf3cf76d8",
     "semantic_hash": ""
   },
   "src/MusicPlayer.jsx": {
@@ -185,8 +185,8 @@
     "semantic_hash": ""
   },
   "src/components/SettingsView.jsx": {
-    "mtime": 1788681166.9067316,
-    "ast_hash": "97d540f28af7bd5ec9469e0c41769c64",
+    "mtime": 1788953536.318279,
+    "ast_hash": "58faeb06c342f1993323c47ac9d08c14",
     "semantic_hash": ""
   },
   "src/config/firebase.js": {
@@ -195,8 +195,8 @@
     "semantic_hash": ""
   },
   "src/config/permissions.js": {
-    "mtime": 1788851930.169065,
-    "ast_hash": "639da0644cd1fd84d6f9aa37a1486351",
+    "mtime": 1788953434.3975918,
+    "ast_hash": "4099e670f6e1d63de7bfd94297ae76f5",
     "semantic_hash": ""
   },
   "src/hooks/useDatabaseSync.js": {
@@ -570,8 +570,8 @@
     "semantic_hash": ""
   },
   ".claude/PROGRESS.md": {
-    "mtime": 1788918421.5733647,
-    "ast_hash": "2b6ce25eabec34c22142120145351f16",
+    "mtime": 1788924193.835505,
+    "ast_hash": "6ca4e5edb7191f90ff981512d8b578f0",
     "semantic_hash": ""
   },
   ".claude/pre-compact-context.md": {
@@ -755,13 +755,13 @@
     "semantic_hash": ""
   },
   "src/config/logicFixes.selfcheck.mjs": {
-    "mtime": 1788923173.1653285,
-    "ast_hash": "b3dda99902c72909ff999b4186bfd932",
+    "mtime": 1788953587.8927364,
+    "ast_hash": "a5f24cb83dd652f6bfc396a08e420f9d",
     "semantic_hash": ""
   },
   ".claude/NEXT-SESSION.md": {
-    "mtime": 1788918355.9335215,
-    "ast_hash": "83f4de170cf459beb8ce4d7e76c17899",
+    "mtime": 1788923398.098715,
+    "ast_hash": "baf4ac709658e5a7bc30fbda75be7175",
     "semantic_hash": ""
   },
   ".claude/SWEEP-2026-08-19.md": {
@@ -1042,6 +1042,11 @@
   "src/utils/revenueRule.js": {
     "mtime": 1788917693.2718585,
     "ast_hash": "a2337e6229ef2fd8a7b479aa246de8dd",
+    "semantic_hash": ""
+  },
+  "src/components/ProofCamera.jsx": {
+    "mtime": 1788953491.0758712,
+    "ast_hash": "17bc061a12374425a83a32d979e98886",
     "semantic_hash": ""
   }
 }

@@ -92,18 +92,37 @@ export const isFleetManagementTier = (userRole) => {
     return role === CORPORATE_TIERS.TIER_1 || role === CORPORATE_TIERS.TIER_2 || role === CORPORATE_TIERS.TIER_3 || role === CORPORATE_TIERS.TIER_4;
 };
 
-// 🚀 SHARED PHOTO-SOURCE RULE: a photo of goods or of a nota is evidence, and evidence has to be
-// taken NOW, at the warehouse. A picture chosen from the gallery can be any picture from any day —
-// which is the exact thing the photo exists to rule out. So field tiers get the camera only.
-// Tier 3 and above may pick from the gallery, because they are the ones who re-file a photo that
-// arrived by WhatsApp or has to be replaced after the fact.
-// ⚠️ `capture` is a request, not a lock: mobile browsers honour it and open the camera directly,
-// desktop browsers ignore it and open a file picker. The rule is enforceable where the photos are
-// actually taken; on a desktop it is a default, not a wall.
-// Mirrors isFieldLevelTier's translation so the tier checks can never drift apart.
+/* 🚀 SHARED PHOTO-SOURCE RULE: a photo of goods, of a nota, or of a handover is evidence, and
+   evidence has to be taken NOW, in front of the thing. A picture chosen from the gallery can be
+   any picture from any day — the exact thing the photo exists to rule out. So field tiers get the
+   camera only. Tier 3 and above may pick from the gallery, because they are the ones who re-file
+   a photo that arrived by WhatsApp or has to be replaced after the fact.
+
+   Aldi, 2026-09-09: *"for the camera on PC i want it to be work for tier 3 and above on default
+   without the camera, only gallery photo is okay and tier 4 and lower will need to use the real
+   time camera to do this, also add this option on the matrix to toggle on and off"*.
+
+   ⚠️ `capture="environment"` IS NOT AN ENFORCEMENT. Mobile browsers honour it and open the camera;
+   desktop browsers ignore it and open a file picker, which is how a desk sale could attach a
+   screenshot. Where the answer here is `false` and the photo is a sale proof, the screen must open
+   a real `getUserMedia` view (`ProofCamera`) instead of a file input — see MerchantSalesView. The
+   restock inputs still use the `capture` spread, because those are taken on a phone in a warehouse.
+
+   ABSENCE MEANS "USE THE TIER DEFAULT", exactly like view_expected_count and handle_delivery:
+   injectDynamicPermissions REPLACES a saved tier's list wholesale, so a brand-new key is simply
+   missing from his live matrix. Read as a plain missing permission it would mean "no", and every
+   tier would be camera-only the moment this shipped — the feature would look broken while the code
+   was right. The moment the key appears anywhere in his saved matrix, his switch wins BOTH ways.
+   Mirrors isFieldLevelTier's translation so the tier checks can never drift apart. */
+const GALLERY_PHOTO_KEY = 'photo_pick_from_gallery';
 export const canPickFromGallery = (userRole) => {
     const role = translateLegacyRole(userRole);
-    return role === CORPORATE_TIERS.TIER_1 || role === CORPORATE_TIERS.TIER_2 || role === CORPORATE_TIERS.TIER_3;
+    if (role === CORPORATE_TIERS.TIER_1) return true;
+    const matrixKnowsKey = Object.values(ROLE_PERMISSIONS)
+        .some(list => Array.isArray(list) && list.includes(GALLERY_PHOTO_KEY));
+    if (matrixKnowsKey) return hasClearance(userRole, GALLERY_PHOTO_KEY);
+    return role === CORPORATE_TIERS.TIER_2
+        || role === CORPORATE_TIERS.TIER_3;   // stops ABOVE FLEET_CAPTAIN — "tier 4 and lower" is field
 };
 
 export let ROLE_PERMISSIONS = {

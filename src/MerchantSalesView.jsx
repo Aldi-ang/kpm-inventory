@@ -2,7 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Search, Box, Zap, X, DollarSign, List, ChevronDown, Printer, MessageSquare, ArrowRight, ArrowLeft, MapPin, AlertCircle, Camera, Store, Map, Lock, Package, AlertTriangle, Check, Eye } from 'lucide-react';
 import { doc, setDoc, collection, getDoc, getDocs, updateDoc, addDoc, onSnapshot, serverTimestamp, runTransaction } from 'firebase/firestore'; 
-import { hasClearance } from './config/permissions';
+import { hasClearance, canPickFromGallery } from './config/permissions';
+import ProofCamera from './components/ProofCamera.jsx';
 import { savePhotoAndGetReference, convertToBks, splitToUnits, paymentLabel, storeKey, getLocalDayKey} from './utils/helpers';
 import { dayStats, agoLabel } from './utils/dayStats';
 import { customerBrief, reorderFromLast } from './utils/customerBrief';
@@ -240,6 +241,13 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
 
     const scrollContainerRef = useRef(null);
     const [txProofPhoto, setTxProofPhoto] = useState(draft?.txProofPhoto ?? null);
+
+    /* WHERE THE SALE PROOF MAY COME FROM. Not WHETHER there is one — `canSubmitSale` still
+       refuses every sale without `txProofPhoto`, and that must never be weakened here.
+       `false` means a live camera view and no file chooser at all; `true` means either.
+       The matrix owns this, `canPickFromGallery` reads it, and the tier is only the fallback. */
+    const galleryOk = canPickFromGallery(user?.userRole || user?.role);
+    const [showProofCamera, setShowProofCamera] = useState(false);
 
     /* SAVE THE DRAFT. Debounced: localStorage.setItem is synchronous, and without the delay this
        would run on every keystroke carrying a few hundred KB of photo. An empty terminal DELETES
@@ -2159,19 +2167,33 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
 
                     <div className="mb-4">
                         <label className="text-[10px] font-bold text-[var(--duke-ink-4)] uppercase tracking-widest block mb-2">Delivery Proof <span className="text-[var(--duke-danger-ink-2)]">*</span></label>
-                        <input type="file" accept="image/*" capture="environment" id="txProof" className="hidden" onChange={handleTxPhotoCapture} />
-                        
+                        {/* The file input EXISTS only where a file is a legal answer. A camera-only
+                            tier gets no chooser at all in a shipped build — `import.meta.env.DEV` is
+                            what keeps the app testable on a machine with no webcam, and it is
+                            stripped from production. The tier never opens this door, only the
+                            build mode does. */}
+                        {(galleryOk || import.meta.env.DEV) && (
+                            <input type="file" accept="image/*" {...(galleryOk ? {} : { capture: 'environment' })} id="txProof" className="hidden" onChange={handleTxPhotoCapture} />
+                        )}
+
                         {txProofPhoto ? (
                             <div className="relative rounded-lg border-2 border-[var(--duke-amber-edge)] overflow-hidden shadow-[0_0_15px_rgba(255,157,0,0.3)] bg-[var(--duke-stage)]">
                                 <img src={txProofPhoto} alt="Proof" className="w-full h-32 object-contain opacity-90" />
                                 <button onClick={() => setTxProofPhoto(null)} className="absolute top-2 right-2 bg-red-600 hover:bg-red-500 text-[var(--duke-on-fill)] p-1.5 rounded-md shadow-md"><X size={14}/></button>
                             </div>
                         ) : (
-                            <button onClick={() => document.getElementById('txProof').click()} className="kpm-hover w-full py-2 border border-dashed border-[var(--duke-edge-4)] hover:border-[var(--duke-amber-edge-2)] text-[var(--duke-ink-4)] hover:text-[var(--duke-amber-ink-2)] bg-transparent rounded flex items-center justify-center gap-2">
+                            <button onClick={() => galleryOk ? document.getElementById('txProof').click() : setShowProofCamera(true)} className="kpm-hover w-full py-2 border border-dashed border-[var(--duke-edge-4)] hover:border-[var(--duke-amber-edge-2)] text-[var(--duke-ink-4)] hover:text-[var(--duke-amber-ink-2)] bg-transparent rounded flex items-center justify-center gap-2">
                                 <Camera size={14} />
-                                <span className="text-[10px] uppercase tracking-widest font-bold">Capture Handover Photo</span>
+                                <span className="text-[10px] uppercase tracking-widest font-bold">{galleryOk ? 'Capture or choose photo' : 'Open camera for handover photo'}</span>
                             </button>
                         )}
+
+                        <ProofCamera
+                            open={showProofCamera}
+                            onClose={() => setShowProofCamera(false)}
+                            onPhoto={(data) => { setTxProofPhoto(data); setShowProofCamera(false); }}
+                            devFallback={import.meta.env.DEV ? () => { setShowProofCamera(false); document.getElementById('txProof')?.click(); } : null}
+                        />
                     </div>
 
                     <div className="flex justify-between items-end mb-3 md:mb-4 border-b border-[var(--duke-edge-4)] pb-2 md:pb-3 font-mono">

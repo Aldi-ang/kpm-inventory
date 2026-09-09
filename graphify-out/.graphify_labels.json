@@ -99,5 +99,6 @@
   "97": "@vitejs/plugin-basic-ssl",
   "98": "vgRestore",
   "99": "StockByWarehouseTable.jsx",
-  "100": "eslint-plugin-react-refresh"
+  "100": "eslint-plugin-react-refresh",
+  "101": "cross-env"
 }

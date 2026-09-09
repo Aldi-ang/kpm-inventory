@@ -13,7 +13,7 @@ import fs from 'node:fs';
 import { SECTIONS } from '../ponder/sections.js';
 import { buildPages, maxTurnOf, turnFor, facingPage,
          TURN_FULL_MS, RIFFLE_MIN_MS } from '../ponder/pageModel.js';
-import { handoffEligibility, injectDynamicPermissions, normalizeRegion, canApproveHandoffFrom, handoffApprovers, CORPORATE_TIERS } from './permissions.js';
+import { handoffEligibility, injectDynamicPermissions, normalizeRegion, canApproveHandoffFrom, handoffApprovers, canPickFromGallery, CORPORATE_TIERS } from './permissions.js';
 
 let pass = 0, fail = 0;
 const read = (f) => fs.readFileSync(f, 'utf8');
@@ -6416,6 +6416,53 @@ ok('one Ecer line poisons a mixed cart',
    ecAllowed([...EC_STORE, ...EC_HQ3], 'Titip') === false,
    'a receivable is written per transaction, so a single individual line drags the whole sale onto a debt nobody can be held to');
 
+
+/* ── SALE PROOF: where the photo may come from ─────────────────────────────────────────────
+   Aldi, 2026-09-09: "tier 4 and lower will need to use the real time camera to do this, also add
+   this option on the matrix to toggle on and off". `capture="environment"` was never enforcement —
+   a desktop browser ignores it and opens the ordinary file picker, so a desk sale could attach a
+   screenshot. This must stay the LAST block: it injects a matrix, and injectDynamicPermissions
+   replaces module state for whatever runs after it. */
+section('SALE PROOF PHOTO SOURCE');
+
+/* REGRESSION GUARD — a tier without the privilege must never be handed a file input. */
+ok('the file input exists only where a file is a legal answer, or in a dev build',
+   /\(galleryOk \|\| import\.meta\.env\.DEV\) && \(/.test(merchant),
+   'a camera-only tier must not have a file chooser in the DOM of a shipped build');
+ok('a camera-only tier opens the live camera instead of the picker',
+   /galleryOk \? document\.getElementById\('txProof'\)\.click\(\) : setShowProofCamera\(true\)/.test(merchant));
+ok('and the tier answer comes from the shared helper, never a tier number written here',
+   /canPickFromGallery\(user\?\.userRole \|\| user\?\.role\)/.test(merchant)
+   && imports(merchant, 'canPickFromGallery'));
+ok('the camera names why it will not open, rather than leaving a dead button',
+   /not on a secure address/.test(read('src/components/ProofCamera.jsx'))
+   && /NotAllowedError/.test(read('src/components/ProofCamera.jsx'))
+   && /NotFoundError/.test(read('src/components/ProofCamera.jsx')));
+ok('and the photo is still mandatory for everyone — this narrows the SOURCE, never the rule',
+   /canSubmitSale = .*&& txProofPhoto &&/.test(merchant));
+ok('the switch is in the permission matrix he can actually see',
+   /id: 'photo_pick_from_gallery'/.test(read('src/components/SettingsView.jsx')));
+
+/* BEHAVIOUR — the matrix value, not a hardcoded tier number, is what decides. */
+ok('default, with the key absent from his saved matrix: T2 and T3 may pick a file',
+   canPickFromGallery(CORPORATE_TIERS.TIER_2) === true
+   && canPickFromGallery(CORPORATE_TIERS.TIER_3) === true);
+ok('default: T4, T5 and T6 are camera-only',
+   canPickFromGallery(CORPORATE_TIERS.TIER_4) === false
+   && canPickFromGallery(CORPORATE_TIERS.TIER_5) === false
+   && canPickFromGallery(CORPORATE_TIERS.TIER_6) === false,
+   'his "tier 4 and lower" — read the tier NUMBER, not the role name: T4 is FLEET_CAPTAIN here');
+
+injectDynamicPermissions({
+  [CORPORATE_TIERS.TIER_3]: ['view_sales'],                            // key withheld
+  [CORPORATE_TIERS.TIER_5]: ['view_sales', 'photo_pick_from_gallery'], // key granted
+}, null);
+ok('once the key is in his matrix, his switch wins in BOTH directions',
+   canPickFromGallery(CORPORATE_TIERS.TIER_5) === true
+   && canPickFromGallery(CORPORATE_TIERS.TIER_3) === false,
+   'a granted T5 gets the gallery and a withheld T3 loses it — the tier default no longer decides');
+ok('and T1 keeps it whatever the matrix says',
+   canPickFromGallery(CORPORATE_TIERS.TIER_1) === true);
 
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);
