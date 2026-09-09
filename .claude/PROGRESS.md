@@ -1,6 +1,69 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-09-09 21:25 WIB (🟠 KPM — SESSION CLOSED. Four code fixes shipped, then the session turned to BUSINESS: pricing, product inventory, how to sell KPM. Nothing pushed. 1422 selfcheck · 722 audit · build clean. ⚠️ HE STILL MUST PRESS "Rebuild sales totals" ONCE. 🔴 BLOCKER: the Rank Config cross-tenant gap caps him at ONE customer. Next job: the legal research + ONE Indonesian Artifact — but ASK HIM FIRST, the weekly quota is the binding limit and tomorrow does not reset it.)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **1422/1422 selfcheck · 722/722 audit · build clean** · branch `phase0-solid-ground`
+**Updated: 2026-09-10 05:45 WIB (🟠 KPM — legal research DONE and committed to A-Brain `1e1d957`. Two vault notes + one published Artifact, all Indonesian, every number sourced. NO KPM CODE TOUCHED. ⚠️ HE STILL MUST PRESS "Rebuild sales totals" ONCE. 🔴 Rank Config cross-tenant gap still caps him at ONE customer — and the contract draft now promises per-customer separation in Pasal 10, so it is a clause he cannot honestly sign twice. Next job: the day-one red alarm, because that is what the uncle sees in minute one of the demo.)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **1422/1422 selfcheck · 722/722 audit · build clean (unchanged — no code touched)** · branch `phase0-solid-ground`
+
+## 🟠 2026-09-10 05:45 — the legal research is closed, with a source per number
+
+Seven items that the 2026-09-09 explainer had marked *"BELUM DIRISET, jangan dikutip"*. All seven now
+have a government page, a statute text, or a named professional body behind them. Committed to
+**A-Brain `1e1d957`** (not this repo).
+
+| file | what is in it |
+|---|---|
+| `Brainstorm/2026-09-10_riset-hukum-menjual-kpm.md` | PT Perorangan, PPh 23, PP 20/2026, PKP threshold, UU 28/2014, liability caps, escrow — each with its source URL |
+| `Brainstorm/2026-09-10_draft-13-pasal-kontrak-kpm.md` | the 13 clauses written as real *pasal*, for a notaris to mark up |
+
+**Artifact (his private brief, Indonesian, nine sections):**
+<https://claude.ai/code/artifact/4fed138f-1639-4317-b41f-41bbf6613305>
+
+⚠️ **The Artifact was published but never rendered by eye** — the in-app browser is signed out of
+claude.ai, so it could not be opened. The HTML is token-themed for light and dark, but nobody has
+looked at it. If he reports anything broken, fix it and republish once.
+
+### The three findings that change what he does
+
+* **PPh 23 is 2% for jasa and 15% for royalti, and the contract wording decides which one applies.**
+  At Rp 20 juta/month that is Rp 31,2 juta a year of difference for nothing but naming. IKPI's
+  position: royalti arises when the payment buys the right to reproduce or exploit; use for the
+  buyer's own operations is not that. The licence clause now says *hak pakai* for internal
+  operations, no right to reproduce or sublicense, with maintenance priced in its own pasal.
+* **The 0,5% final UMKM rate no longer expires** for an orang pribadi or a Perseroan Perorangan.
+  PP 55/2022 Pasal 59 capped it at 7 and 4 years; **PP 20/2026, in force 22 April 2026**, changed
+  that. For CV, firma and ordinary PT the rules tightened instead — a second reason to pick PT
+  Perorangan (PNBP Rp 50.000, no notary, min age 17).
+* **A liability cap holds in Indonesia** if it is written as a computable amount (KUHPerdata 1249:
+  where a contract fixes a sum, a judge may award neither more nor less) and if the contract records
+  that it was negotiated rather than a klausula baku (UU 8/1999 Pasal 18). **Cap, never exclude** —
+  a total exclusion collides with good faith in 1338(3) and invites the whole clause being voided.
+
+Also: **copyright is already his by default.** UU 28/2014 Pasal 36 gives a commissioned work to the
+person who made it unless otherwise agreed. The job is not to acquire ownership, it is to avoid
+signing it away. Pasal 41 huruf b is the honest limit — the *titip* logic as an idea is not
+protected, only the code is.
+
+### Deliberately not written
+
+**The one-page proposal and the demo script.** The audience changed on 2026-09-09 — those are
+uncle-facing and come after the demo, not before. The earlier spec asked for the proposal in the
+same breath as the clauses; the later correction in the same file overrides it.
+
+### Correction on file
+
+**Aldi is 24, not 14.** He said so on 2026-09-09. It matters here — a PT Perorangan founder must be
+17 and cakap hukum. The global memory file still said 14 and has been fixed.
+
+## WAITING ON ALDI
+
+His words, still unanswered:
+
+1. Which comes first — the day-one bugs, the Rank Config cross-tenant gap, or PBKDF2? (He was told
+   at the top of 2026-09-10 that Rank Config caps him at customer **#2**, not #1, so it does not
+   block this sale; the day-one bugs do, because the uncle sees them in minute one of a live demo.)
+2. Berapa sales Om, dan berapa cabang? — this is what decides whether the monthly number is
+   Rp 2,5 juta or higher.
+3. Setup fee charged, or explicitly traded for a testimonial and two referrals?
+4. Does the step-up date from Rp 1 juta to Rp 2,5 juta go in the contract, or get discussed later?
+
 
 ## 🟠 2026-09-09 21:25 — session closed. He deferred the research to "tomorrow"
 
