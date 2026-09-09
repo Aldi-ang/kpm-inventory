@@ -1,73 +1,57 @@
 # The one job
 
-**Sale proof: force a LIVE camera capture for Tier 4 and below, allow a gallery photo for Tier 3
-and above, and put that switch in the permission matrix so a company can change it.**
+**A brand-new company's first minute ends in a red alarm that will not go away, and the alarm then
+paints over the dialogs the owner needs to use. Fix both halves — they are one story.**
 
-His words, 2026-09-09: *"for the camera on PC i want it to be work for tier 3 and above on default
-without the camera, only gallery photo is okay and tier 4 and lower will need to use the real time
-camera to do this, also add this option on the matrix to toggle on and off"*.
+Found on the 2026-09-09 day-one walk, ranked first of seven. Full walk:
+`A-Brain/Brainstorm/2026-09-09_day-one-walk.md`.
 
-The money half of that same message shipped in `a6192b1`; this is the other half.
+## What happens
 
-## What exists today
+Save the very first product with **MIN. ALERT (BKS)** left blank. The field falls back to the
+company default of **3 Bal = 600 Bks**, so a product that has just been created with a small
+opening stock is instantly "critically low". The owner has done nothing wrong and the app opens
+with a red alarm.
 
-`src/MerchantSalesView.jsx:2166` renders one button over a hidden
-`<input type="file" accept="image/*" capture="environment">`, and `:1570` gates the sale on
-`txProofPhoto` being set. So a photo is already mandatory for everyone — that part is right and
-stays. What is missing is WHERE the photo may come from.
+Then the toast that announces it **never expires**, and it renders at `z-index: 10000`. On the walk
+it covered the "WHO IS BUYING?" search box inside the sale dialog — so the alarm did not just
+mislead, it blocked the next thing he had to do.
 
-`capture="environment"` opens the camera on a phone and is **ignored on desktop**, where it falls
-back to a file picker. So today a desk sale accepts any image on disk, including a screenshot, and
-a field salesman on a phone gets the camera by accident of the platform rather than by rule.
+## The two halves, and why neither alone is the fix
 
-## The rule to build
+**Half 1 — the threshold.** A blank MIN. ALERT means "he has not decided yet", and it is currently
+read as "use 600". Find where the company default is applied and decide what a blank field should
+mean for a product whose stock has never been counted. Do NOT silence the low-stock alarm itself:
+it is correct and he needs it. The bug is the *default*, not the warning.
 
-| tier | what they may attach | default |
-|---|---|---|
-| T1, T2, T3 | a live capture **or** a file from the gallery | gallery allowed |
-| T4, T5, T6 | a live capture only — no file picker at all | gallery blocked |
-
-Tier numbers run the other way to authority here: T1 is the owner, T6 the Sales Motorist. "Tier 3
-and above" is T1–T3, the desk; "Tier 4 and lower" is T4–T6, the field.
-
-**Both halves are defaults, not laws** — he asked for the switch in the matrix, so a company can
-turn gallery access on or off per tier the way every other privilege there works. Read how a
-neighbouring privilege is declared in `src/config/permissions.js` and follow it exactly rather than
-inventing a second shape; `DYNAMIC_TIERS` and `hasClearance` are the entry points, and
-`injectDynamicPermissions` is what merges a company's own matrix over the defaults.
+**Half 2 — the toast lifetime.** Find the toast in `src/components/Toast.jsx` (`notify()`) and see
+which severities auto-dismiss. Do NOT auto-dismiss everything: an error that vanishes before it is
+read is the silence he calls a bug, and a report he asked for should stay. Errors and reports want
+different lifetimes. The `z-index: 10000` over a dialog is the separate, smaller half — a toast
+that outranks a modal is a layering decision nobody made on purpose.
 
 ## Traps
 
-**A camera-only tier must actually be able to sell.** `getUserMedia` needs a secure context. The
-live site is https so it is fine, but `8abcf04`'s plain-http dev mode is NOT a secure context, so
-the file picker has to stay reachable there or the whole app becomes untestable locally. Gate that
-on the dev flag, never on the tier.
+**Do not fix this by lowering the alarm's sensitivity.** Every product will eventually be genuinely
+low and the alarm has to fire then. If the walk's product is not actually low, the threshold is
+wrong; if it is low, the alarm is right and only the toast needs work. Decide which before editing.
 
-**No camera and no permission means no sale, and he knows** — *"if no photo then sales is not
-possible"*. So the failure has to SAY so. A blocked camera that silently leaves the button reading
-"REQUIRE PROOF" is the same bug as a dialog that does nothing. Name the cause: no camera found,
-permission denied, or not a secure page.
+**`notify()` is called from everywhere.** Changing its default lifetime changes every screen at
+once. Grep the call sites before you touch the signature, and change behaviour per severity rather
+than globally.
 
-**Do not weaken `canSubmitSale`.** `:1570` requiring `txProofPhoto` is the law that makes all of
-this worth anything. This job narrows where the photo may come from; it must not open a path that
-lets a sale through without one.
-
-**A synthetic file can be pushed into a file input from the console** — that is how the 2026-09-09
-walk got past this gate to test the rest of the app. Worth knowing that the gallery path is only
-ever a convenience for trusted tiers, never a security boundary.
-
-**Mixed line endings:** `MerchantSalesView.jsx` is LF, `permissions.js` — check before editing.
-Match the file or the edit anchor silently misses.
+**Mixed line endings:** the files here are LF. Check before editing or an edit anchor silently misses.
 
 ## Done when
 
-- A T6 account on a desktop sees a camera view and no file chooser; a T1 account sees both.
-- Turning the matrix switch off for T5 makes a T5 account camera-only; turning it on lets them
-  pick a file. Emulator-testable with the POV switch.
-- Blocking the camera in the browser produces a message naming why, not a dead button.
-- Two lines in `src/config/logicFixes.selfcheck.mjs`: the regression guard (a tier without the
-  privilege must never be handed a file input) and the behaviour check (the matrix value, not a
-  hardcoded tier number, is what decides).
+- A brand-new company can create its first product and reach the sale screen with no red alarm it
+  did not earn.
+- A genuinely low product still raises one — verify by setting a real MIN. ALERT above the stock.
+- No toast can cover a dialog's own controls.
+- An error toast still waits to be read; a routine report clears itself.
+- Two lines in `src/config/logicFixes.selfcheck.mjs`: the regression guard (a blank MIN. ALERT must
+  not resolve to the 600-Bks company default for an uncounted product) and the behaviour check (the
+  low-stock comparison re-run on real numbers, low and not-low).
 
 Then rewrite this file with the next single job.
 
@@ -76,33 +60,26 @@ Then rewrite this file with the next single job.
 
 ### Shipped 2026-09-09
 
-* `a6192b1` — **omzet now waits for the cash.** A Titip placement books nothing; the store audit
-  books what the shop actually sold. Dashboard reads Rp 2.000 with `Piutang titip Rp 24.000`
-  beside it on the walk data that read Rp 26.000 the day before. The rule is one module,
-  `src/utils/revenueRule.js`, because it had been written correctly in `EODReconciliationView` and
-  wrongly in seven other places. Also fixed the rebuild button, which had never rendered: its two
-  props were on `<DashboardView>`, which reads neither.
-* **Buyback turned off** — for everyone, the owner included; Exchange kept. It took two edits,
-  and the second was invisible: `App.jsx` forced the privilege on in the settings branch AND again
-  at the `<MerchantSalesView>` render site, so fixing one left the button on screen with the build
-  and 1388 checks all green. Only opening Retur Mode in a browser found it. Three regressions pin
-  both forms out now.
-* **He must press "Rebuild sales totals" once on the live app** (Settings → General & Brand) or
-  his historical months keep the old inflated figures. Proven in the emulator: the cached month
-  went from 26000/2 Bks to 2000/1 Bks. Tell him again if he has not done it.
+* `284ea64` — **sale proof camera.** `capture="environment"` was never enforcement: phones honour
+  it, desktops ignore it and open the file picker, so a desk sale could attach a screenshot. T4–T6
+  now open a real `getUserMedia` view and have **no file input in the DOM** of a shipped build;
+  T1–T3 keep the picker. `canPickFromGallery` reads the matrix key `photo_pick_from_gallery`,
+  absence = tier default. `canSubmitSale` untouched — the photo is still mandatory for everyone.
+  Vault: `A-Brain/Wiki/Concepts/capture=environment Is a Request, Not a Lock.md`.
+  ⚠️ **Deliberately not touched:** the GPS-bypass proof photo (`MerchantSalesView.jsx:1839`) and the
+  NOO storefront photo (`:2914`) still use plain file inputs. Same class of evidence, arguably the
+  same rule — his call, and a separate job.
+* `a6192b1` — **omzet waits for the cash.** One module, `src/utils/revenueRule.js`. Also fixed the
+  rebuild button, which had never rendered.
+* `2714b12` — **buyback off** for everyone including the owner; Exchange kept.
+* **He must press "Rebuild sales totals" once on the live app** (Settings → General & Brand) or his
+  historical months keep the old inflated figures. Tell him again if he has not done it.
 
 ### Day one — from the 2026-09-09 walk, ranked, unblocked
 
-Full list with file and line: `A-Brain/Brainstorm/2026-09-09_day-one-walk.md`.
-
-1. **The first minute ends in a red alarm that will not go away.** A first product saved with
-   MIN. ALERT left blank falls back to the company default of 3 Bal = 600 Bks, so it is instantly
-   "critically low"; the toast then never expires and paints over dialogs at `z-index: 10000`
-   (it covered the "WHO IS BUYING?" search box). Two halves, one story. Do not silence the alarm
-   itself and do not auto-dismiss every toast — errors and reports need different lifetimes.
-2. **The phantom competitor.** A store created today, sold to the same day, shows an undismissable
-   red banner: `ALREADY SECURED TODAY — Claimed by ANOTHER AGENT`. `CustomerManager.jsx:248` and
-   `:1018` default a new customer's `lastVisit` to today; `MerchantSalesView.jsx:536` then falls
+2. **The phantom competitor.** A store created today and sold to the same day shows an
+   undismissable red `ALREADY SECURED TODAY — Claimed by ANOTHER AGENT`. `CustomerManager.jsx:248`
+   and `:1018` default a new customer's `lastVisit` to today; `MerchantSalesView.jsx:536` then falls
    back to the literal string `'another agent'` when `lastVisitedBy` is empty.
 3. **New personnel default to `T3: HQ SALES MANAGER`** even when the role picker says Sales
    Motorist — every salesman a manager unless the owner notices the dropdown.
@@ -127,17 +104,11 @@ the numbers are equal · the audit receipt printing `BAYAR : CASH` on an audit t
 
 ### Money — ANSWERED and CLOSED 2026-09-09, do not reopen
 
-A cash refund does **not** reduce omzet, and never should. His model: *"when company sell the
-product its done, when they needed return, what can agent do is help the stores to resell their
-unsold product to other customer, well its by using agent own money and not the company"*. A
-completed sale is a closed contract; a retur is the salesman's private arrangement.
-
-**Buyback is now off for everyone including the owner** — Exchange (Tukar) stays, since it moves
-goods for goods at a price of 0. Full reasoning and the two-places trap:
-`A-Brain/Wiki/Concepts/A sale is a closed contract — no cash goes back.md`.
-
-That also closes the walk's `returnTotal` item: it is written in three places and read by no money
-calculation **because it is not company money**. Not a bug. Do not "fix" it.
+A cash refund does **not** reduce omzet, and never should. A completed sale is a closed contract; a
+retur is the salesman's private arrangement. Buyback is off for everyone including the owner;
+Exchange (Tukar) stays. `A-Brain/Wiki/Concepts/A sale is a closed contract — no cash goes back.md`.
+That also closes the walk's `returnTotal` item: written in three places, read by no money
+calculation, **because it is not company money**. Not a bug. Do not "fix" it.
 
 ### Appearance — he deferred this, it is last on purpose
 

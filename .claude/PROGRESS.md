@@ -1,6 +1,31 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-09-09 09:52 WIB (🟠 KPM SESSION CLOSED — two money decisions shipped and verified on screen: omzet waits for the cash `a6192b1`, buyback off `2714b12`. Nothing pushed. 1390 selfcheck · 722 audit · build clean. ⚠️ HE STILL MUST PRESS "Rebuild sales totals" ONCE. Next job: the camera/gallery tier rule.)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **1390/1390 selfcheck · 722/722 audit · build clean** · branch `phase0-solid-ground`
+**Updated: 2026-09-09 18:40 WIB (🟠 KPM — the sale-proof camera rule shipped `284ea64`, vault `7af56d5`. Field tiers get a live camera and no file chooser at all in a shipped build; the switch is in the permission matrix. Nothing pushed. 1400 selfcheck · 722 audit · build clean. ⚠️ HE STILL MUST PRESS "Rebuild sales totals" ONCE. Next job: the first-minute red alarm.)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **1400/1400 selfcheck · 722/722 audit · build clean** · branch `phase0-solid-ground`
+
+## 🟠 2026-09-09 18:40 — sale proof: the field takes the photo now
+
+**Shipped `284ea64`** (local, not pushed). His words: *"for the camera on PC i want it to be work
+for tier 3 and above on default without the camera, only gallery photo is okay and tier 4 and lower
+will need to use the real time camera to do this, also add this option on the matrix to toggle on
+and off"*.
+
+| what | where |
+|---|---|
+| live camera, one frame, same 600px/0.6 compression as an upload | `src/components/ProofCamera.jsx` (new) |
+| T1–T3 keep the file picker · T4–T6 get the camera and **no file input in the DOM** of a shipped build | `src/MerchantSalesView.jsx:2160` |
+| `canPickFromGallery` now reads the matrix key `photo_pick_from_gallery`, absence = tier default | `src/config/permissions.js:95` |
+| the switch he can see, next to the other permissions | `src/components/SettingsView.jsx` matrix |
+| 10 checks — 6 guards, 4 behaviour | `src/config/logicFixes.selfcheck.mjs` (tail) |
+
+`canSubmitSale` is untouched: a photo is still mandatory for everyone. This changed only WHERE it
+may come from. Proven in `dist`, not asserted from source: `(ht||!1)&&e.jsx("input",{type:"file"` —
+the dev escape hatch is gated on the build mode, never on the tier, and Vite compiles it out.
+
+Both themes rendered and looked at through the headless-Chrome harness. On palette, no blue, no green.
+
+**WAITING ON ALDI — unchanged from this morning, and still owed:**
+press **Settings → General & Brand → Rebuild sales totals** once on the live app, or the months
+already recorded keep the old inflated figures.
 
 ## 🟠 2026-09-09 09:52 — session closed. *"make notes and continue later"*
 
