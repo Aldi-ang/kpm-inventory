@@ -1,6 +1,31 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-09-09 09:40 WIB (🟠 KPM — two money decisions shipped today. Omzet waits for the cash (`a6192b1`), and buyback is off for everyone including the owner (this entry). 1390 selfcheck · 722 audit · build clean. ⚠️ HE STILL MUST PRESS "Rebuild sales totals" ONCE on the live app.)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **1390/1390 selfcheck · 722/722 audit · build clean** · branch `phase0-solid-ground`
+**Updated: 2026-09-09 09:52 WIB (🟠 KPM SESSION CLOSED — two money decisions shipped and verified on screen: omzet waits for the cash `a6192b1`, buyback off `2714b12`. Nothing pushed. 1390 selfcheck · 722 audit · build clean. ⚠️ HE STILL MUST PRESS "Rebuild sales totals" ONCE. Next job: the camera/gallery tier rule.)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **1390/1390 selfcheck · 722/722 audit · build clean** · branch `phase0-solid-ground`
+
+## 🟠 2026-09-09 09:52 — session closed. *"make notes and continue later"*
+
+**Shipped today, all local, nothing pushed:**
+
+| commit | what |
+|---|---|
+| `94feb54` | the day-one walk — seven onboarding paths, nothing fixed, everything ranked |
+| `a6192b1` | **money:** omzet waits for the cash; Piutang titip gets its own line; the rebuild button now renders at all |
+| `2714b12` | **money:** buyback off for everyone including the owner, Exchange kept |
+
+Vault: `669752f`, `7655b11` — two Concept pages, each linked from three indexes.
+
+**The one thing he owes, and it is an action not a decision:** press
+**Settings → General & Brand → Rebuild sales totals** once on the live app. Until then the months
+already recorded keep the old inflated figures. September will drop, and that fall is correct.
+
+**Next session has ONE job, already written in `.claude/NEXT-SESSION.md`:** the sale-proof camera
+rule — live capture for Tier 4 and below, gallery photo allowed for Tier 3 and above, and the
+switch in the permission matrix. His words are in the file, along with the traps: getUserMedia
+needs a secure context so the http dev mode must keep the file picker, a blocked camera has to say
+why rather than leave a dead button, and `canSubmitSale`'s photo requirement must not be weakened
+while narrowing where the photo comes from.
+
+Bug 3, the geofence bypass routing, is still unanswered from 2026-09-08 and unchanged.
 
 ## 🟠 2026-09-09 09:40 — buyback is off. A sale is a closed contract.
 
