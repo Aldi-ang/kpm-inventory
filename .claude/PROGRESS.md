@@ -1,6 +1,38 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-09-09 18:40 WIB (🟠 KPM — the sale-proof camera rule shipped `284ea64`, vault `7af56d5`. Field tiers get a live camera and no file chooser at all in a shipped build; the switch is in the permission matrix. Nothing pushed. 1400 selfcheck · 722 audit · build clean. ⚠️ HE STILL MUST PRESS "Rebuild sales totals" ONCE. Next job: the first-minute red alarm.)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **1400/1400 selfcheck · 722/722 audit · build clean** · branch `phase0-solid-ground`
+**Updated: 2026-09-09 19:05 WIB (🟠 KPM — two shipped today: the sale-proof camera rule `284ea64`, and the Fleet & Roster vault fix `da71cbd` (vault `7af56d5`, `ac2bf02`). Nothing pushed. 1414 selfcheck · 722 audit · build clean. ⚠️ HE STILL MUST PRESS "Rebuild sales totals" ONCE. ❓ AND HE OWES ONE LOOK: reopen Fleet & Roster as T4 and read what the empty box now says. Next job: the first-minute red alarm.)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **1414/1414 selfcheck · 722/722 audit · build clean** · branch `phase0-solid-ground`
+
+## 🟠 2026-09-09 19:05 — Fleet & Roster was reading a vault nobody writes to
+
+**Shipped `da71cbd`** (local, not pushed). His report: *"my tier 4 cant even detect its own sales
+team inside the fleet and roster"* — the screen read `UNASSIGNED ROSTER · ACTIVE PERSONNEL: 0 · No
+personnel found`.
+
+`App.jsx:453` routes every database call through `bossUid || user.uid`.
+`FleetCanvasManager.jsx:19` re-derived its own id **without `bossUid`**, and nine collection paths
+hang off it — roster, branch stock, the product/branch writes behind Load Canvas and Reconcile, and
+the GPS-bypass approvals. Same fault as the MerchantSalesView G5 IOU bug, second file; this one
+**writes** stock, not only reads.
+
+Then four silent steps: empty vault → `myProfile` undefined → `rawLocation` = `'UNASSIGNED'` → an
+exact-area filter against a string no staff record carries (the app's blank sentinel is
+`'UNASSIGNED AREA'`). No error at any step.
+
+Second half: the empty roster now names which of its four causes fired, and a refused read prints
+the Firestore code instead of hiding in `console.warn`.
+
+**❓ WAITING ON ALDI — one look, and it is the observation this fix still needs.**
+He found this through the **POV switch**, which keeps his real uid; on the owner's own account
+`bossUid === user.uid`, so old and new code agree there. The vault bug is [certain] for a real
+tier-4 *login*; whether it was the live cause on *his* screen is [likely] and unproven. Reopen
+Fleet & Roster as T4 and read the box:
+- *"The roster could not be read (…)"* → rules problem, send the code
+- *"Your own staff record was not found"* → TEST_TIER_4 is not in the vault being read
+- *"You are not posted to a branch yet"* → the costume has no area
+- *"Nobody is posted to X"* → vault is fine, the team is filed under a different area
+
+⚠️ Even with the right vault, a regional admin sees only staff whose `location` matches theirs
+**exactly**. A costume at `Headquarters` with the team at a branch is an empty roster, correctly.
 
 ## 🟠 2026-09-09 18:40 — sale proof: the field takes the photo now
 
