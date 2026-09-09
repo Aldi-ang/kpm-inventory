@@ -5233,8 +5233,12 @@ ok('and giving up on a subscription clears the cargo instead of leaving it rende
 const fcmRaw = read('src/FleetCanvasManager.jsx');
 const fcm = code(fcmRaw);
 
+/* Anchored on the PROP, not on its position in the signature. This read `previewing = null }) {`
+   until 2026-09-09, when `masterUserId` was appended after it and a check about POV went red for a
+   change about vault routing. A guard scoped to a neighbouring character is a guard that reports
+   the wrong thing. */
 ok('Fleet & Canvas accepts the previewing flag',
-   /previewing = null \}\) \{/.test(fcm),
+   /previewing = null[,\s]*[},]/.test(fcm),
    'without the prop the screen cannot know it is wearing somebody else\u2019s tier');
 ok('and App.jsx passes it to that screen too, not only to Agent Inventory',
    (read('src/App.jsx').match(/previewing=\{previewing\}/g) || []).length >= 2,
@@ -6463,6 +6467,60 @@ ok('once the key is in his matrix, his switch wins in BOTH directions',
    'a granted T5 gets the gallery and a withheld T3 loses it — the tier default no longer decides');
 ok('and T1 keeps it whatever the matrix says',
    canPickFromGallery(CORPORATE_TIERS.TIER_1) === true);
+
+/* ── FLEET & ROSTER: whose vault this screen reads ────────────────────────────────────────
+   Aldi, 2026-09-09: "my tier 4 cant even detect its own sales team inside the fleet and roster".
+   App.jsx redirects every database call to the owner's vault (`bossUid || user.uid`); this screen
+   re-derived its own id WITHOUT bossUid, so on any non-owner account the roster listener
+   subscribed to the signed-in person's empty vault. Same fault as MerchantSalesView G5. */
+section('FLEET ROSTER VAULT + EMPTY-STATE');
+
+/* REGRESSION GUARD — the local re-derivation must not come back. */
+ok('the fleet screen takes the owner vault id from App instead of re-deriving it',
+   /const userId = masterUserId \|\| user\?\.uid \|\| user\?\.id \|\| 'default'/.test(fleet),
+   'a bossUid-less id here points nine collection paths at a vault nobody writes to');
+ok('and App actually hands it over',
+   /masterUserId=\{userId\}/.test(app) && /<FleetCanvasManager/.test(app));
+ok('the component still accepts the prop it is now routed through',
+   /masterUserId = null \}/.test(fleet));
+ok('every vault path on this screen goes through that one id',
+   (fleet.match(/\$\{appId\}\/users\/\$\{userId\}/g) || []).length >= 9
+   && !/users\/\$\{user\?\.uid\}/.test(fleet),
+   'the roster, the branch stock, the products and the GPS bypasses must not disagree about the vault');
+
+/* REGRESSION GUARD — an empty roster must say WHICH of its causes fired. */
+ok('a refused roster read is reported on screen, not only to console.warn',
+   /setFleetError\(err\.code/.test(fleet) && /The roster could not be read/.test(fleet));
+ok('a missing own-record says so, rather than showing an empty branch',
+   /Your own staff record was not found/.test(fleet));
+ok('an admin with no area set is told that, not shown nobody',
+   /You are not posted to a branch yet/.test(fleet));
+ok('and a genuinely empty branch names the branch and the company count',
+   /Nobody is posted to \{branchPathLocation\}/.test(fleet));
+
+/* BEHAVIOUR — the vault choice, run on real values. */
+{ const vaultId = (masterUserId, user) => masterUserId || user?.uid || user?.id || 'default';
+  ok('a salesman signed in under a boss reads the BOSS vault, which is where the staff are',
+     vaultId('boss_uid', { uid: 'salesman_uid' }) === 'boss_uid',
+     'this is the case that produced "UNASSIGNED ROSTER - no personnel found"');
+  ok("the owner's own account is unchanged — bossUid IS his uid, so nothing about his screen moves",
+     vaultId('owner_uid', { uid: 'owner_uid' }) === 'owner_uid');
+  ok('and a caller that forgets the prop degrades to the OLD behaviour, never to "default"',
+     vaultId(null, { uid: 'salesman_uid' }) === 'salesman_uid'); }
+
+/* BEHAVIOUR — the roster filter itself, which is an exact area match and always was. */
+{ const roster = [
+    { id: 'a', location: 'SOLO' }, { id: 'b', location: 'solo ' },
+    { id: 'c', location: 'BANDUNG' }, { id: 'd' } ];
+  const forArea = (area) => roster.filter(m =>
+     String(m.location || '').trim().toLowerCase() === String(area).trim().toLowerCase());
+  ok('an admin posted to SOLO sees both SOLO staff, whitespace and case included',
+     forArea('SOLO').map(m => m.id).join(',') === 'a,b');
+  ok('and never another branch',
+     forArea('SOLO').every(m => m.id !== 'c'));
+  ok("an admin with no area matches NOBODY — which is why that state must be a message, not a list",
+     forArea('UNASSIGNED').length === 0,
+     "no staff record carries the literal string UNASSIGNED; the app's own blank sentinel is 'UNASSIGNED AREA'"); }
 
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

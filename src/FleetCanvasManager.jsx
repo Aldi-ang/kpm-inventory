@@ -11,24 +11,51 @@ import { normalizeRegion } from './config/permissions';
 import { confirmAction } from './components/ConfirmGate.jsx';
 import { notify } from './components/Toast.jsx';
 
-export default function FleetCanvasManager({ db, appId, user, userRole, agentProfileId, inventory, transactions = [], appSettings = {}, logAudit, triggerCapy, isAdmin, motorists = [], previewing = null }) {
-    
+export default function FleetCanvasManager({ db, appId, user, userRole, agentProfileId, inventory, transactions = [], appSettings = {}, logAudit, triggerCapy, isAdmin, motorists = [], previewing = null, masterUserId = null }) {
+
     const isGlobalAdmin = ['DEVELOPER', 'COMPANY_OWNER', 'ADMIN'].includes(userRole);
-    const isAreaAdmin = !isGlobalAdmin; 
-    
-    const userId = user?.uid || user?.id || 'default';
-    const collPath = `artifacts/${appId}/users/${userId}/motorists`; 
+    const isAreaAdmin = !isGlobalAdmin;
+
+    /* 🔴 WHOSE VAULT THIS SCREEN READS AND WRITES — and it must be the same one App used, or a
+       listener subscribes to a collection nobody writes to.
+
+       This line used to be `user?.uid || user?.id`, re-derived here WITHOUT `bossUid`. App.jsx:453
+       redirects every database call in the app to the owner's vault (`bossUid || user.uid`), so on
+       any account that is not the owner's own, the nine paths below pointed at the signed-in
+       person's empty vault: the roster listener returned nothing, `myProfile` was undefined,
+       `rawLocation` fell through to 'UNASSIGNED', and the screen read "UNASSIGNED ROSTER — no
+       personnel found" while the staff sat in the owner's vault the whole time. His report,
+       2026-09-09: *"my tier 4 cant even detect its own sales team inside the fleet and roster"*.
+
+       It is not only a read. `handleLoadCanvas` and the reconcile path WRITE branch stock and
+       product counts through these same paths, and the GPS-bypass approvals at the bottom of this
+       file update documents by this id — so a wrong vault here moves real stock into a collection
+       nobody reads.
+
+       IDENTICAL to the MerchantSalesView G5 fault (a salesman's IOUs written to his own vault while
+       the list was read from the boss's). On the owner's own account `bossUid === user.uid`, so this
+       expression returns exactly what the old one did and nothing about his experience moves.
+       The fallback chain stays so a caller that forgets the prop degrades to the old behaviour
+       rather than to 'default'. */
+    const userId = masterUserId || user?.uid || user?.id || 'default';
+    const collPath = `artifacts/${appId}/users/${userId}/motorists`;
 
     const [localFleet, setLocalFleet] = useState([]);
     const [isFetchingFleet, setIsFetchingFleet] = useState(isAreaAdmin);
+    /* The listener's failure used to go to console.warn and nowhere else, so a refused read and a
+       genuinely empty branch produced the SAME screen: "no personnel found". That is the silence
+       Aldi calls a bug — an empty roster has three different causes and the reader cannot act
+       until the screen says which one. */
+    const [fleetError, setFleetError] = useState(null);
 
     useEffect(() => {
         if (isAreaAdmin) {
             const fleetRef = collection(db, collPath);
             const unsub = onSnapshot(fleetRef, (snap) => {
                 setLocalFleet(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+                setFleetError(null);
                 setIsFetchingFleet(false);
-            }, (err) => { console.warn("Fleet roster listener:", err.code); setIsFetchingFleet(false); });
+            }, (err) => { console.warn("Fleet roster listener:", err.code); setFleetError(err.code || 'unknown'); setIsFetchingFleet(false); });
             return () => unsub();
         }
     }, [db, collPath, isAreaAdmin]);
@@ -951,9 +978,46 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                     )}
 
                     {agents.length === 0 && !isAddingAgent ? (
-                        <div className="text-center py-10">
+                        /* AN EMPTY ROSTER HAS FOUR DIFFERENT CAUSES AND THEY NEED FOUR DIFFERENT
+                           ACTIONS. "No personnel found" was printed for all of them, so the screen
+                           that was meant to show a regional admin their own team said nothing at
+                           all when the read was refused, when the admin's own record was missing,
+                           and when their branch was simply empty. Name the cause. */
+                        <div className="text-center py-10 px-4">
                             <Truck size={48} className="mx-auto text-slate-700 mb-3 opacity-50"/>
-                            <p className="text-slate-400 text-sm">No personnel found.</p>
+                            {isFetchingFleet ? (
+                                <p className="text-slate-400 text-sm">Loading the roster…</p>
+                            ) : fleetError ? (
+                                <>
+                                    <p className="text-red-400 text-sm font-bold">The roster could not be read.</p>
+                                    <p className="text-slate-400 text-xs mt-1.5 leading-relaxed">
+                                        The database refused this request (<span className="font-mono">{fleetError}</span>). Nobody is missing — this screen could not look. Show this code to the owner.
+                                    </p>
+                                </>
+                            ) : isAreaAdmin && !myProfile ? (
+                                <>
+                                    <p className="text-amber-400 text-sm font-bold">Your own staff record was not found.</p>
+                                    <p className="text-slate-400 text-xs mt-1.5 leading-relaxed">
+                                        This screen shows the branch YOU are posted to, and it reads that from your record in Fleet &amp; Roster. Without it there is no branch to show, so the roster is empty rather than wrong. The owner can add you on this screen.
+                                    </p>
+                                </>
+                            ) : isAreaAdmin && searchLocation === 'unassigned' ? (
+                                <>
+                                    <p className="text-amber-400 text-sm font-bold">You are not posted to a branch yet.</p>
+                                    <p className="text-slate-400 text-xs mt-1.5 leading-relaxed">
+                                        Your record has no area set, so there is no team to list. The owner can set your area in Fleet &amp; Roster.
+                                    </p>
+                                </>
+                            ) : isAreaAdmin && activeMotorists.length > 0 ? (
+                                <>
+                                    <p className="text-slate-300 text-sm font-bold">Nobody is posted to {branchPathLocation}.</p>
+                                    <p className="text-slate-400 text-xs mt-1.5 leading-relaxed">
+                                        {activeMotorists.length} people are on the company roster; none of them has this area set. You only see your own branch.
+                                    </p>
+                                </>
+                            ) : (
+                                <p className="text-slate-400 text-sm">No personnel found.</p>
+                            )}
                         </div>
                     ) : (
                         <>

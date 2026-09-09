@@ -4589,8 +4589,9 @@ const handleGitHubMirror = async () => {
                 appSettings={appSettings}
                 logAudit={logAudit} 
                 triggerCapy={triggerCapy} 
-                isAdmin={isAdmin} 
+                isAdmin={isAdmin}
                 motorists={motorists}
+                masterUserId={userId}   // 🚀 `bossUid || user.uid` — see the note at the FleetCanvasManager signature
             />
           )}
 
