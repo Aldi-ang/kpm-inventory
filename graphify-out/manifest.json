@@ -45,13 +45,13 @@
     "semantic_hash": ""
   },
   "src/AgentProfileView.jsx": {
-    "mtime": 1787455388.7556202,
-    "ast_hash": "82915b9b3321385156244014bec53beb",
+    "mtime": 1788917133.8775606,
+    "ast_hash": "5b0acebdc4aac485c4484cf0c24b0781",
     "semantic_hash": ""
   },
   "src/App.jsx": {
-    "mtime": 1788873394.6209219,
-    "ast_hash": "4693492ab4d9fad2f4277c519b775ab1",
+    "mtime": 1788917999.9017391,
+    "ast_hash": "10b088aea55ac2689929c3dc5e428ed4",
     "semantic_hash": ""
   },
   "src/ConsignmentFinanceView.jsx": {
@@ -70,8 +70,8 @@
     "semantic_hash": ""
   },
   "src/HallOfFameView.jsx": {
-    "mtime": 1785326526.429958,
-    "ast_hash": "a9dd1ae787070571c4e2de36b97697e0",
+    "mtime": 1788917102.888987,
+    "ast_hash": "cf7be436f0d618c633aa48c1a1e6c905",
     "semantic_hash": ""
   },
   "src/JourneyView.jsx": {
@@ -80,8 +80,8 @@
     "semantic_hash": ""
   },
   "src/MapMissionControl.jsx": {
-    "mtime": 1787048181.4234226,
-    "ast_hash": "fff228bdd3eae3098fdd9396160e12f2",
+    "mtime": 1788917259.1266422,
+    "ast_hash": "4ef4639750822e9e5aa1e328b9fe2dbf",
     "semantic_hash": ""
   },
   "src/MerchantSalesView.jsx": {
@@ -135,13 +135,13 @@
     "semantic_hash": ""
   },
   "src/components/DashboardBenchmarks.jsx": {
-    "mtime": 1787712077.8112543,
-    "ast_hash": "ab84321a129deb676d0058d4aea9d882",
+    "mtime": 1788917654.1404574,
+    "ast_hash": "2933c90b03742dbe3d8cbea33e5f1a29",
     "semantic_hash": ""
   },
   "src/components/DashboardView.jsx": {
-    "mtime": 1787712273.642953,
-    "ast_hash": "b231b9f6f74cde5c9df835f2b8b4affb",
+    "mtime": 1788917067.5401373,
+    "ast_hash": "64890d6a1ca9a0ff730b0ed72eab2b08",
     "semantic_hash": ""
   },
   "src/components/ExamineModal.jsx": {
@@ -210,8 +210,8 @@
     "semantic_hash": ""
   },
   "src/hooks/useTransactionEngine.js": {
-    "mtime": 1788872574.314839,
-    "ast_hash": "47650a3b314fc8d0e984517faa259957",
+    "mtime": 1788916973.9924302,
+    "ast_hash": "7da74d31bb3c766dedee764d81273800",
     "semantic_hash": ""
   },
   "src/main.jsx": {
@@ -525,8 +525,8 @@
     "semantic_hash": ""
   },
   "src/utils/dayStats.js": {
-    "mtime": 1787042808.141064,
-    "ast_hash": "e30667005632c3ad0448fd899df720fb",
+    "mtime": 1788917236.7968583,
+    "ast_hash": "e79dd6daa137f4eae98c4fc0f564219a",
     "semantic_hash": ""
   },
   "src/config/customerBrief.selfcheck.mjs": {
@@ -570,8 +570,8 @@
     "semantic_hash": ""
   },
   ".claude/PROGRESS.md": {
-    "mtime": 1788872970.4788764,
-    "ast_hash": "95636bc27d5bb436367ef54846362da8",
+    "mtime": 1788915629.1184096,
+    "ast_hash": "82146ae62afe17583bece6d1c676b223",
     "semantic_hash": ""
   },
   ".claude/pre-compact-context.md": {
@@ -755,13 +755,13 @@
     "semantic_hash": ""
   },
   "src/config/logicFixes.selfcheck.mjs": {
-    "mtime": 1788873377.540419,
-    "ast_hash": "aea25e1acb001e383b1121dcedd4507a",
+    "mtime": 1788918143.6118407,
+    "ast_hash": "1bfb58e4fc1edc06555b969a2717e9f6",
     "semantic_hash": ""
   },
   ".claude/NEXT-SESSION.md": {
-    "mtime": 1788872941.497361,
-    "ast_hash": "80d72c4191d1448485c31c5086597196",
+    "mtime": 1788915480.2745397,
+    "ast_hash": "68de15f1e1721a06c6eb3ba04d41a117",
     "semantic_hash": ""
   },
   ".claude/SWEEP-2026-08-19.md": {
@@ -955,8 +955,8 @@
     "semantic_hash": ""
   },
   "src/utils/salesRollup.js": {
-    "mtime": 1788872574.247085,
-    "ast_hash": "ba53e26aa1530fcd651eb91184e084d2",
+    "mtime": 1788917217.6243181,
+    "ast_hash": "06272b4085611eefe5ef1120d34dec5b",
     "semantic_hash": ""
   },
   "src/utils/salesRollupWrite.js": {
@@ -1037,6 +1037,11 @@
   "tools/seed-emulator.mjs": {
     "mtime": 1788871376.8931386,
     "ast_hash": "45da9db8b5ee1f1956766c1b0bf2207f",
+    "semantic_hash": ""
+  },
+  "src/utils/revenueRule.js": {
+    "mtime": 1788917693.2718585,
+    "ast_hash": "a2337e6229ef2fd8a7b479aa246de8dd",
     "semantic_hash": ""
   }
 }

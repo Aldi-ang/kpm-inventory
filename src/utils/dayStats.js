@@ -15,6 +15,7 @@
 /* `.js` on purpose — node runs this file directly in dayStats.selfcheck.mjs, and its ESM
    resolver does not add the extension the way Vite does. */
 import { storeKey } from './helpers.js';
+import { revenueOf } from './revenueRule.js';
 
 /* Firestore hands back a Timestamp, the offline queue writes a plain {seconds}, and a
    serverTimestamp() that has not resolved yet is null. Handle all three rather than
@@ -47,9 +48,13 @@ export function dayStats(transactions = [], now = new Date()) {
   for (const tx of transactions) {
     const s = txSeconds(tx);
     if (s == null) continue;
-    /* Returns carry a negative total, so summing everything nets refunds out of the day's
-       takings — which is what "taken" honestly means for a man counting his cash box. */
-    const total = Number(tx.total) || 0;
+    /* "Taken" is the cash box, so it is money IN minus money OUT and nothing else.
+       Money in comes from `revenueOf`, which refuses a Titip placement — the salesman handed
+       those packets over and was paid nothing for them, and the box he is about to count knows
+       it (Aldi, 2026-09-09). His consignment money arrives later, on the store audit.
+       Money out is a RETURN, which carries a negative `total`; adding it subtracts, which is the
+       refund netting this line has always done and still does. */
+    const total = revenueOf(tx) + (tx.type === 'RETURN' ? (Number(tx.total) || 0) : 0);
 
     if (s >= dayStart) {
       today += total;

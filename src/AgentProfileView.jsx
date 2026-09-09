@@ -16,6 +16,7 @@ import { hasClearance, DYNAMIC_TIERS, TIER_ONE_ID, TIER_ONE_ALIAS_IDS } from './
 import HallOfFameView from './HallOfFameView';
 import { savePhotoAndGetReference, deletePhotoFromStorage, formatNumber, parseGroupedNumber, storeKey, storeLabel, getLocalDayKey} from './utils/helpers';
 import { careerXP, DEFAULT_XP, totals, DEFAULT_BADGES, STAT_LABELS, BADGE_SOURCES, statLabel } from './config/career';
+import { revenueOf } from './utils/salesRollup';
 import { notify } from './components/Toast.jsx';
 
 const DynamicIconMap = { Calendar, PackageOpen, Crown, Target, Zap, Trophy, Medal, Star, Flame, ShieldCheck, Truck, Activity, DollarSign, Award };
@@ -444,7 +445,11 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
 
         (transactions || []).forEach(t => {
             // 🚀 HALL OF FAME: Calculate global yearly omset for MVP race
-            if (t.type === 'SALE') {
+            /* Money collected, not goods dropped — Aldi, 2026-09-09. `revenueOf` skips a Titip
+               placement and pays out at the store audit instead, so the MVP race cannot be won by
+               leaving stock on shelves. Shared rule, see utils/salesRollup. */
+            const raceMoney = revenueOf(t);
+            if (raceMoney) {
                 let txDateStr = t.date;
                 try {
                     if (!txDateStr && t.timestamp && t.timestamp.seconds) {
@@ -455,7 +460,7 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
                 if (txDateStr && txDateStr.startsWith(currentYear.toString())) {
                     const aId = t.agentId || 'UNKNOWN';
                     if (!yearlyAgentOmset[aId]) yearlyAgentOmset[aId] = 0;
-                    yearlyAgentOmset[aId] += (t.total || 0);
+                    yearlyAgentOmset[aId] += raceMoney;
                 }
             }
 
@@ -476,7 +481,12 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
                 } catch(e) { txDateStr = null; }
                 
                 if (t.type === 'SALE') {
-                    lifetimeOmset += (t.total || 0);
+                    /* A Titip placement adds nothing to omset — it is a receivable, and it is
+                       already counted as one by `titipIssued` below. The money lands on the
+                       CONSIGNMENT_PAYMENT branch further down, when the shop actually pays.
+                       The volume maths under this line is NOT gated the same way on purpose:
+                       those packets really did leave the vehicle. */
+                    lifetimeOmset += revenueOf(t);
                     if (t.customerName) uniqueStores.add(t.customerName);
 
                     // 🚀 VOLUME & ECER MATH
@@ -526,6 +536,9 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
                     }
                 }
                 if (t.type === 'CONSIGNMENT_PAYMENT') {
+                    /* The other half of the rule above: this is the moment consignment money is
+                       earned, so it enters omset here and nowhere else. */
+                    lifetimeOmset += revenueOf(t);
                     titipCollected += (t.amountPaid || t.total || 0);
                     /* The payment cancels the debt through the SAME key, so a payment written
                        "warung bu sari" now clears a sale written "Warung Bu Sari (Retail)".

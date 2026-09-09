@@ -4953,58 +4953,157 @@ ok('and nothing is acknowledged when the very first chunk fails',
    ackSim(1000, 450, 0).cleared === 0,
    'a sale must never leave the phone until it is confirmed in the vault');
 
-section('Money: goods that come back stop counting as sold');
+section('Money: omzet waits for the cash, not the drop');
+
+/* 🔴 HIS RULE, 2026-09-09: *"omset come after goods is sold and money is received, receivable
+   doesnt count, should have their own data and panel for receivable outside of the revenue or
+   omzet"*, and for the quantity beside it, *"A for the sold bks mean"*.
+
+   This section REPLACED the `f46bc4a` one that stood here, and the replacement is not a reversal
+   of that fix. `f46bc4a` subtracted a store audit's `itemsReturned` because the placement had
+   already booked the full drop, so damaged goods coming back had to be taken off again. Its own
+   comment named the half it could not reach — goods still sitting unsold on the shelf — and said
+   the call was Aldi's. He made it, and the answer moved the whole rule: a placement books nothing,
+   so there is nothing left to reverse. Ten checks here went red the moment the model changed,
+   which is how a check earns its place; they assert the new rule below and the old FORM is now
+   pinned as a regression. */
 
 const { salesDelta: sd, rebuildMonths: rebuild } = await import('../utils/salesRollup.js');
+const { revenueOf: rev, countsAsRevenue: cAR, soldLinesOf: sLO } = await import('../utils/revenueRule.js');
 
-// One Titip placement: 20 Bks at 27.500 = 550.000 booked on the day of the drop.
-const PLACEMENT = { date: '2026-09-02', customerName: 'TOKO MAKMUR JAYA',
+// One Titip placement: 20 Bks at 27.500. Goods leave the vehicle, no money changes hands.
+const PLACEMENT = { date: '2026-09-02', customerName: 'TOKO MAKMUR JAYA', type: 'SALE',
+    paymentType: 'Titip', total: 550000,
     items: [{ productId: 'p1', name: 'SURYA 12', qty: 20, unit: 'Bks', calculatedPrice: 27500 }] };
+// The same cart sold for cash instead — the control, and it must be untouched by all of this.
+const CASHSALE = { ...PLACEMENT, paymentType: 'Cash' };
 // The audit: 14 sold and paid, 4 still on the shelf, 2 damaged and taken back.
 const AUDIT = { date: '2026-09-20', customerName: 'TOKO MAKMUR JAYA', type: 'CONSIGNMENT_PAYMENT',
     itemsPaid:      [{ productId: 'p1', qty: 14, unit: 'Bks', calculatedPrice: 27500 }],
     itemsRemaining: [{ productId: 'p1', qty:  4, unit: 'Bks', calculatedPrice: 27500 }],
     itemsReturned:  [{ productId: 'p1', qty:  2, unit: 'Bks', calculatedPrice: 27500 }],
-    amountPaid: 385000, returnTotal: 55000 };
+    amountPaid: 385000, returnTotal: 55000, total: 385000 };
 
 const placed = sd(PLACEMENT, {}, 1);
 const audit  = sd(AUDIT, {}, 1);
 
-ok('the placement still books the whole drop as revenue',
-   placed?.byProduct?.p1?.revenue === 550000 && placed?.byProduct?.p1?.qty === 20,
-   'got ' + JSON.stringify(placed?.byProduct?.p1) + ' - this half was never broken and must not change');
-ok('HIS BUG: the audit now reverses the goods that came back',
-   audit?.byProduct?.p1?.revenue === -55000 && audit?.byProduct?.p1?.qty === -2,
-   'got ' + JSON.stringify(audit?.byProduct?.p1) + ' - before the fix salesDelta returned null here and 2 Bks sat in the warehouse still counted as sold');
-ok('and the month lands on 495.000, the 18 Bks the shop actually kept',
-   (placed?.byProduct?.p1?.revenue ?? 0) + (audit?.byProduct?.p1?.revenue ?? NaN) === 495000,
+/* ── the rule itself, on one transaction at a time ── */
+ok('a cash sale is money the moment it happens',
+   rev(CASHSALE) === 550000 && cAR(CASHSALE) === true,
+   'got ' + rev(CASHSALE));
+ok('HIS RULE: a Titip placement is worth nothing until somebody pays',
+   rev(PLACEMENT) === 0 && cAR(PLACEMENT) === false,
+   'got ' + rev(PLACEMENT) + ' - goods left on a shelf on trust are a receivable, not income');
+ok('the store audit is where consignment money enters',
+   rev(AUDIT) === 385000,
+   'got ' + rev(AUDIT));
+ok('an OFFLINE audit still counts, though it carries no `total`',
+   rev({ ...AUDIT, total: undefined }) === 385000,
+   'useTransactionEngine\'s offline branch writes amountPaid only; reading `total` first books nothing for every audit done with no signal, which for these salesmen is most of them');
+ok('an audit that collected nothing is worth nothing, not NaN',
+   rev({ ...AUDIT, amountPaid: 0, total: undefined }) === 0,
+   'a zero must not fall through to the `total` fallback and resurrect a number');
+ok('a refund is not revenue, and is left for the caller to sign',
+   rev({ date: '2026-09-21', type: 'RETURN', total: -55000 }) === 0 && cAR({ type: 'RETURN' }) === false,
+   'dayStats adds a RETURN back with its own negative total; making this predicate mean two things would hide that');
+ok('the per-product lines follow the same rule as the money',
+   sLO(PLACEMENT).length === 0 && sLO(CASHSALE).length === 1 && sLO(AUDIT)[0]?.qty === 14,
+   'his answer A - "sold" counts what the shop bought, not what left the warehouse');
+
+/* ── and rolled up into a month ── */
+ok('HIS BUG: the placement books no revenue and no quantity',
+   placed === null,
+   'got ' + JSON.stringify(placed?.byProduct?.p1) + ' - before this it booked all 550.000 at the shop door and the audit could never take back the part still on the shelf');
+ok('the audit books the 14 the shop actually sold',
+   audit?.byProduct?.p1?.revenue === 385000 && audit?.byProduct?.p1?.qty === 14,
+   'got ' + JSON.stringify(audit?.byProduct?.p1));
+ok('so the month lands on 385.000, and on 14 Bks beside it',
+   (placed?.byProduct?.p1?.revenue ?? 0) + (audit?.byProduct?.p1?.revenue ?? NaN) === 385000,
    'got ' + ((placed?.byProduct?.p1?.revenue ?? 0) + (audit?.byProduct?.p1?.revenue ?? NaN)));
-ok('goods still on the SHELF are left booked, because that is his open question and not this fix',
-   audit?.byProduct?.p1?.revenue === -55000,
-   'itemsRemaining must not be touched - whether Titip revenue belongs at placement at all is his judgement call');
-ok('a full return zeroes the month rather than going negative',
-   (() => { const all = sd({ ...AUDIT, itemsReturned: [{ productId: 'p1', qty: 20, unit: 'Bks', calculatedPrice: 27500 }] }, {}, 1);
-            return (placed?.byProduct?.p1?.revenue ?? 0) + (all?.byProduct?.p1?.revenue ?? NaN) === 0; })(),
-   'twenty out, twenty back, nothing sold');
-ok('the payment on its own adds no revenue - the placement already booked it',
-   sd({ ...AUDIT, itemsReturned: [] }, {}, 1) === null,
-   'counting the payment too would double every consignment sale in the book');
+ok('goods still on the SHELF are worth nothing now, which is the half f46bc4a could not reach',
+   audit?.byProduct?.p1?.qty === 14 && audit?.byProduct?.p1?.qty !== 18,
+   'the 4 unsold Bks are simply never counted, rather than counted and then argued about');
+ok('REGRESSION: a return no longer subtracts, because there is nothing to subtract from',
+   sd({ ...AUDIT, itemsReturned: [{ productId: 'p1', qty: 20, unit: 'Bks', calculatedPrice: 27500 }] }, {}, 1)
+     ?.byProduct?.p1?.revenue === 385000,
+   'the old form reversed itemsReturned against the placement. With no placement booked, subtracting drives the month NEGATIVE by the value of every damaged packet');
+ok('REGRESSION: salesDelta must not read itemsReturned at all any more',
+   !/itemsReturned/.test(code(read('src/utils/salesRollup.js'))),
+   'the moment that field comes back into this function the negative comes with it. `code()` and not the raw file: the comment above salesDelta explains at length why the subtraction was removed, and a grep that reads its own explanation fails on a correct file');
+ok('an audit that sold nothing writes no document rather than a row of zeroes',
+   sd({ ...AUDIT, itemsPaid: [] }, {}, 1) === null,
+   'twenty out, twenty back, nothing sold, nothing written');
+ok('a plain cash sale is completely untouched by all of this',
+   sd(CASHSALE, {}, 1)?.byProduct?.p1?.revenue === 550000 && sd(CASHSALE, {}, 1)?.byProduct?.p1?.qty === 20,
+   'got ' + JSON.stringify(sd(CASHSALE, {}, 1)?.byProduct?.p1) + ' - the rule only ever meant to move consignment');
 
 /* The sign has to COMPOSE, because three callers pass -1 to undo a transaction. */
-ok('undoing a return ADDS the money back, it does not subtract twice',
-   sd(AUDIT, {}, -1)?.byProduct?.p1?.revenue === 55000,
-   'untallyOps and the history edit both pass -1; getting this backwards makes a deleted audit erase revenue twice');
-ok('and undoing a placement still removes it',
-   sd(PLACEMENT, {}, -1)?.byProduct?.p1?.revenue === -550000);
+ok('undoing an audit removes the money it brought in',
+   sd(AUDIT, {}, -1)?.byProduct?.p1?.revenue === -385000,
+   'untallyOps and the history edit both pass -1; getting this backwards makes a deleted audit ADD revenue');
+ok('and undoing a placement is a no-op, because it never added anything',
+   sd(PLACEMENT, {}, -1) === null,
+   'deleting a consignment drop must not invent a negative month');
+
+/* ── THE OTHER HALF: the money is out of omzet, so it has to be visible somewhere else ──
+   *"receivable doesnt count, should have their own data and panel for receivable outside of the
+   revenue or omzet"*. The dashboard prints this beside the omzet box. */
+const { outstandingTitip: owed } = await import('../utils/revenueRule.js');
+
+ok('a placement with no audit is money still owed',
+   owed([PLACEMENT]) === 550000,
+   'got ' + owed([PLACEMENT]) + ' - it left omzet, so it must appear as piutang or it vanished from the app entirely');
+ok('the audit pays down the debt by what was actually collected',
+   owed([PLACEMENT, AUDIT]) === 165000,
+   'got ' + owed([PLACEMENT, AUDIT]) + ' - 550.000 placed, 385.000 paid, 165.000 still on the shelf and still owed');
+ok('a cash sale is never a receivable',
+   owed([CASHSALE]) === 0,
+   'got ' + owed([CASHSALE]));
+ok('a customer return reduces what is owed',
+   owed([PLACEMENT, { type: 'RETURN', customerName: 'TOKO MAKMUR JAYA', total: -550000 }]) === 0,
+   'goods handed back are not a debt; RETURN carries a negative total, so the deduction takes its absolute value');
+ok('HIS MONEY: one shop overpaying cannot cancel another shop DEBT',
+   owed([PLACEMENT,
+         { ...AUDIT, amountPaid: 900000 },
+         { ...PLACEMENT, customerName: 'WARUNG BU SARI', total: 200000 }]) === 200000,
+   'got ' + owed([PLACEMENT, { ...AUDIT, amountPaid: 900000 }, { ...PLACEMENT, customerName: 'WARUNG BU SARI', total: 200000 }]) +
+   ' - the floor is per customer. Summing everything and flooring once would report the company owed nothing while Bu Sari still owed 200.000');
+ok('the same shop written two ways is one debt, not two',
+   owed([PLACEMENT, { ...AUDIT, customerName: '  toko makmur jaya  ' }]) === 165000,
+   'the payment must find its own placement, or a trimmed-and-lowercased name opens a second phantom account');
+ok('and it is a BALANCE, so it ignores the period the dashboard is showing',
+   owed([{ ...PLACEMENT, date: '2019-01-01' }]) === 550000,
+   'a debt does not expire because the month rolled over; the caption on the row says so');
+
+/* 🔴 THE REPAIR PATH HAS TO EXIST, OR THE RULE ONLY APPLIES TO THE FUTURE.
+   `rebuildMonths` is what restates every month already written, and the only way to run it is the
+   Settings button — which SettingsView gates on `isSystemOwner && handleRebuildSalesStats`. Both
+   props were being passed to <DashboardView>, which reads neither, so that gate was permanently
+   false and the button had never rendered for anybody. Found 2026-09-09 while trying to prove this
+   very rule repairs history. Two assertions, because either one alone can go stale. */
+/* `code()` and not the raw file, twice: the fix's own comment at the SettingsView call site
+   contains the words "<DashboardView>" and "handleRebuildSalesStats", so a raw grep matches the
+   explanation and reports the bug it is documenting. Same trap as the salesRollup regression
+   above, and it caught this one too. */
+const appSrc = code(read('src/App.jsx'));
+ok('the rebuild handler reaches SettingsView, which is the only thing that renders the button',
+   /<SettingsView[\s\S]{0,4000}?handleRebuildSalesStats=\{handleRebuildSalesStats\}/.test(appSrc),
+   'without this prop the "Rebuild the sales totals" block silently does not exist, and every month written under the old Titip rule stays wrong forever');
+ok('REGRESSION: and it is NOT passed to DashboardView, which never read it',
+   !/<DashboardView[\s\S]{0,2000}?handleRebuildSalesStats=/.test(appSrc),
+   'that is where it sat while the button was missing; a copy left behind reads as "wired" to the next person who greps for it');
+ok('SettingsView still gates the button on that exact prop, so the check above is testing something',
+   /isSystemOwner && handleRebuildSalesStats &&/.test(read('src/components/SettingsView.jsx')),
+   'if the gate is rewritten this assertion stops meaning anything and must be rewritten with it');
 
 /* THE ONE THAT PROVES HISTORY IS REPAIRABLE. rebuildMonths runs the same salesDelta over the whole
    transactions collection, so a month already written wrong is fixed by the Settings rebuild
    button - no migration, nothing edited by hand in his live book. */
 const rebuilt = rebuild([PLACEMENT, AUDIT], {});
 const sept = rebuilt.find(m => m.month === '2026-09');
-ok('a REBUILD reaches the same 495.000 the live tally does',
-   sept?.byProduct?.p1?.revenue === 495000 && sept?.byProduct?.p1?.qty === 18,
-   'got ' + JSON.stringify(sept?.byProduct?.p1) + ' - this is why the fix went in salesDelta and not at the call site: every month already written repairs itself');
+ok('a REBUILD reaches the same 385.000 the live tally does',
+   sept?.byProduct?.p1?.revenue === 385000 && sept?.byProduct?.p1?.qty === 14,
+   'got ' + JSON.stringify(sept?.byProduct?.p1) + ' - this is why the rule went in salesDelta and not at the call site: every month already written repairs itself from the Settings rebuild, with no migration and nothing edited by hand in his live book');
 
 /* And the live write, not only the maths. */
 const uteSrc = read('src/hooks/useTransactionEngine.js');
@@ -5017,15 +5116,31 @@ const payBody = uteSrc.slice(payFrom, payTo);
 ok('and the slice is that handler, not a neighbourhood',
    payBody.length > 2000 && payBody.length < 9000,
    'got ' + payBody.length + ' chars');
-ok('the audit tallies the reversal, so it happens live and not only on a rebuild',
-   /tallySale\(batch, db, appId, userId, \{[\s\S]{0,200}?itemsReturned,[\s\S]{0,80}?\}, \{\}, 1\)/.test(code(payBody)),
-   'without this the report is only correct after somebody presses rebuild');
+ok('the audit tallies itemsPaid, so consignment income lands live and not only on a rebuild',
+   /tallySale\(batch, db, appId, userId, \{[\s\S]{0,200}?itemsPaid,[\s\S]{0,80}?\}, \{\}, 1\)/.test(code(payBody)),
+   'without this the report only becomes correct after somebody presses rebuild');
+ok('REGRESSION: it must not tally itemsReturned instead',
+   !/tallySale\([\s\S]{0,240}?itemsReturned,/.test(code(payBody)),
+   'that was the f46bc4a form. With no placement booked it subtracts from nothing and drives the month negative');
 ok('and it rides the SAME batch as the transaction it counts',
    code(payBody).indexOf('tallySale(') < code(payBody).indexOf('await batch.commit()'),
    'a counter committed separately from the thing it counts drifts the first time a phone loses signal between the two');
-ok('the returned lines are still built in Bks, which is what lets the tally skip the product map',
-   /returnItems\.push\(\{ productId: item\.productId, name: item\.name, qty: damaged, priceTier: item\.priceTier, calculatedPrice: item\.calculatedPrice, unit: 'Bks' \}\)/.test(read('src/ConsignmentFinanceView.jsx')),
-   'if a returned line ever arrives in Slop or Bal, convertToBks needs the product and the quantity silently under-reverses');
+ok('the paid lines are built in Bks, which is what lets the tally skip the product map',
+   /paymentItems\.push\(\{ productId: item\.productId, name: item\.name, qty: sold, priceTier: item\.priceTier, calculatedPrice: item\.calculatedPrice, unit: 'Bks' \}\)/.test(read('src/ConsignmentFinanceView.jsx')),
+   'if a paid line ever arrives in Slop or Bal, convertToBks needs the product and the quantity silently under-counts');
+
+/* 🔴 THE TRAP THAT MADE ALL OF THIS SILENT. The sale's tally is handed a FRESH object, not the
+   stored document, so a field left out of that object is a field the rule cannot see - and
+   `isTitip` defaults a missing `paymentType` to 'Cash'. Omit it and every consignment placement is
+   booked as income again, with nothing on screen to say so. */
+const saleFrom = uteSrc.indexOf('const productsById = Object.fromEntries(');
+const saleTo   = uteSrc.indexOf('if (newStoreData) {', saleFrom);
+ok('the sale tally block was located',
+   saleFrom > -1 && saleTo > saleFrom && (saleTo - saleFrom) > 200 && (saleTo - saleFrom) < 1500,
+   'anchor missed or ran away - got ' + (saleTo - saleFrom) + ' chars, so the assertion below would pass vacuously');
+ok('the sale hands its paymentType to the tally, or the whole rule is invisible',
+   /tallySale\(batch, db, appId, userId, \{[\s\S]{0,300}?paymentType,/.test(code(uteSrc.slice(saleFrom, saleTo))),
+   'without this field a Titip placement tallies as a cash sale and omzet lies again');
 
 section('Emulator: the dev door exists only behind the dev gate');
 

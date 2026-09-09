@@ -38,12 +38,18 @@
    sale in two different days depending on which screen asked.                                   */
 import { convertToBks } from './helpers.js';
 import { txSeconds } from './dayStats.js';
+import { soldLinesOf } from './revenueRule.js';
 
 /* Only these count as revenue. A SAMPLING record is stock leaving the shelf, not a sale, and a
    RETURN is handled by its own negative delta rather than by being counted here. */
 export const SALE_TYPES = ['SALE'];
 
 export const isSale = (tx) => !!tx && SALE_TYPES.includes(tx.type || 'SALE');
+
+/* The money rule lives in its own file so `dayStats` can read it too without the two modules
+   importing each other — see the header of utils/revenueRule.js. Re-exported here because this is
+   where the screens already look for it. */
+export { isTitip, countsAsRevenue, revenueOf, soldLinesOf } from './revenueRule.js';
 
 /* 'YYYY-MM-DD' → 'YYYY-MM'. Deliberately string arithmetic: parsing the day back into a Date to
    read its month would re-introduce a timezone, which is the thing `date` exists to have settled
@@ -71,37 +77,39 @@ export const salesDelta = (tx, productsById = {}, sign = 1) => {
     if (!day) return null;
     const month = monthOf(day);
 
-    /* TWO LISTS, OPPOSITE DIRECTIONS.
+    /* ONE LIST NOW, AND ONLY ONE DIRECTION.
 
-       `items` on a SALE is goods going out, and a Titip placement is written as an ordinary sale,
-       so its full value is booked the moment the goods are dropped at the shop.
+       `soldLinesOf` above is the whole rule: a cash/QRIS/transfer sale contributes its `items`, a
+       store audit contributes its `itemsPaid`, and a Titip placement contributes nothing at all.
 
-       `itemsReturned` is those same goods coming back, and it is why this function had a hole. The
-       store audit writes them onto a `CONSIGNMENT_PAYMENT` (useTransactionEngine's
-       handleConsignmentPayment), which `isSale` refuses - so the goods went back on the shelf, the
-       shop never paid for them, and the revenue booked at placement stayed in the month forever.
-       salesRollupWrite's own comment already named "a consignment return" as a path that must pass
-       -1; the other three paths did it and this one was never written.
+       🔴 THE SUBTRACTION IS GONE ON PURPOSE, AND IT IS NOT A REVERSAL OF `f46bc4a`.
+       That fix subtracted a store audit's `itemsReturned` because the placement had already booked
+       the full value at the shop door, so damaged goods coming back had to be taken off again. Now
+       the placement books nothing, so there is nothing left to reverse — and subtracting anyway
+       would drive the month NEGATIVE by the value of every returned packet. The bug that fix was
+       aimed at ("goods returned from consignment counted as sold") cannot occur any more, because
+       consignment goods are not counted until the audit says the shop sold them. It is the same
+       fix, moved from the symptom to the cause.
 
-       IT IS FIXED HERE AND NOT AT THE CALL SITE ON PURPOSE. `rebuildMonths` below runs the same
-       function over the whole `transactions` collection, so putting the rule in the maths means the
-       existing Settings rebuild repairs every month already written - no migration, nothing touched
-       by hand in a live book. A patch at the write site would only correct returns made from now
-       on, and the rebuild would keep reproducing the old wrong number.
+       Handled by the same move, and this is the part `f46bc4a` could not reach: goods still sitting
+       unsold on the shelf. Its own comment named them — *"NOT TOUCHED ... whether revenue should be
+       recognised at placement at all is Aldi's judgement call, not this function's"*. He made that
+       call on 2026-09-09 and the answer was no.
 
-       The returned lines carry the same `calculatedPrice` the placement booked
-       (ConsignmentFinanceView builds them from `item.calculatedPrice`), so this reverses exactly
-       what was added rather than something merely similar.
+       STILL FIXED HERE AND NOT AT THE CALL SITE, for the same reason as before: `rebuildMonths`
+       runs this function over the whole `transactions` collection, so the existing Settings rebuild
+       repairs every month already written. No migration, nothing edited by hand in a live book.
 
-       NOT TOUCHED: goods still sitting unsold on the shelf. Those are `itemsRemaining`, they stay
-       booked, and whether revenue should be recognised at placement at all is Aldi's judgement
-       call, not this function's. */
-    const sold     = isSale(tx) && Array.isArray(tx.items) ? tx.items : [];
-    const returned = Array.isArray(tx?.itemsReturned) ? tx.itemsReturned : [];
-    if (sold.length === 0 && returned.length === 0) return null;
+       ⚠️ NOT TOUCHED, AND DELIBERATELY: a `RETURN` transaction (a cash refund on an ordinary sale)
+       still books nothing. It writes its goods under `items` with a negative `total` and a type
+       this rule refuses, exactly as before this change. Making a refund reduce omzet is defensible
+       under "money received" but it is a SECOND rule, it moves history again, and he was asked
+       about consignment. It is written down for him rather than smuggled in here. */
+    const sold = soldLinesOf(tx);
+    if (sold.length === 0) return null;
 
     const byProduct = {};
-    const accumulate = (line, direction) => {
+    const accumulate = (line) => {
         const id = line?.productId;
         if (!id) return;
         const bks = convertToBks(Number(line.qty) || 0, line.unit, productsById[id]);
@@ -112,12 +120,11 @@ export const salesDelta = (tx, productsById = {}, sign = 1) => {
         if (!Number.isFinite(bks) || !Number.isFinite(money)) return;
         if (bks === 0 && money === 0) return;
         const row = byProduct[id] || (byProduct[id] = { qty: 0, revenue: 0 });
-        row.qty += bks * sign * direction;
-        row.revenue += money * sign * direction;
+        row.qty += bks * sign;
+        row.revenue += money * sign;
     };
 
-    for (const line of sold) accumulate(line, 1);
-    for (const line of returned) accumulate(line, -1);
+    for (const line of sold) accumulate(line);
 
     if (Object.keys(byProduct).length === 0) return null;
     return { month, day, byProduct };

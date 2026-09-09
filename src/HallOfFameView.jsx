@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { Trophy, Medal, Star, Flame, Zap, Target, Crown, ShieldCheck, User, Calendar, PackageOpen } from 'lucide-react';
 import { careerXP, DEFAULT_XP, isUnlocked } from './config/career';
+import { revenueOf } from './utils/salesRollup';
 
 const IconMap = { Flame, Zap, Target, Crown, ShieldCheck, Calendar, PackageOpen };
 
@@ -20,10 +21,16 @@ export default function HallOfFameView({ motorists = [], transactions = [], rpgD
         // scan byte-identical to before. Flag ON skips it entirely — career doc's `collected`
         // already IS the sum, no scan needed.
         if (!useCareerLedger) {
+            /* Omset is money collected, not goods handed over — Aldi, 2026-09-09. A salesman who
+               spends the month dropping Titip stock no longer outranks one who came back with cash;
+               his consignment counts when the store audit collects it. `revenueOf` is the shared
+               rule (utils/salesRollup), which is also why `trx.totalAmount` is gone from this line:
+               it was a fallback for a field nothing in this app has ever written. */
             transactions.forEach(trx => {
-                if (trx.type === 'SALE' && statsMap[trx.agentId]) {
+                const money = revenueOf(trx);
+                if (money && statsMap[trx.agentId]) {
                     statsMap[trx.agentId].totalTransactions += 1;
-                    statsMap[trx.agentId].totalOmset += (trx.totalAmount || trx.total || 0);
+                    statsMap[trx.agentId].totalOmset += money;
                 }
             });
         }

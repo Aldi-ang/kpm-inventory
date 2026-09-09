@@ -4,6 +4,8 @@ import { Settings, X, Save } from 'lucide-react';
 import { formatRupiah, compactRp, convertToBks, DISPLAY_UNITS } from '../utils/helpers';
 import { MIN_STOCK_UNITS, DEFAULT_MIN_QTY, DEFAULT_MIN_UNIT } from '../utils/stockThreshold';
 import { PERIODS, periodWindow, txDate } from '../utils/period';
+import { revenueOf } from '../utils/salesRollup';
+import { outstandingTitip } from '../utils/revenueRule';
 import SafetyStatus from './SafetyStatus';
 import PaceChart from './PaceChart';
 
@@ -127,16 +129,33 @@ export default function DashboardBenchmarks({
         let omzet = 0, bal = 0, filterBal = 0, kretekBal = 0;
         let prevOmzet = 0;
 
-        transactions.forEach(t => {
-            if (t.type !== 'SALE') return;
-            const d = txDate(t);
-            if (isNaN(d)) return;
-            const total = t.total || 0;
+        /* 🔴 MONEY AND VOLUME ARE COUNTED SEPARATELY HERE, AND THAT IS THE POINT.
+           Aldi, 2026-09-09: *"omset come after goods is sold and money is received, receivable
+           doesnt count"*. A Titip placement is goods left at a shop on trust — nothing has been
+           paid, so it adds NOTHING to omzet until the store audit says the shop sold it.
 
-            if (d >= start) {
-                omzet += total;
-                const b = bucketOf(d);
-                if (b >= 0 && b < buckets) perBucket[b] += total;
+           But those packets really did leave the warehouse, and VOLUME DISTRIBUSI is named for
+           exactly that: goods distributed. So the Bal figure below still counts a placement while
+           the Rupiah figure above it does not. The two boxes answer two different questions and
+           only look like they should match. `revenueOf` holds the money rule for the whole app
+           (see utils/salesRollup) so this panel cannot drift away from EOD and Product Performance
+           the way seven hand-written copies of `type === 'SALE'` already did. */
+        transactions.forEach(t => {
+            const d = txDate(t);
+            if (isNaN(d) || d < prevStart) return;
+
+            const money = revenueOf(t);
+            if (money) {
+                if (d >= start) {
+                    omzet += money;
+                    const b = bucketOf(d);
+                    if (b >= 0 && b < buckets) perBucket[b] += money;
+                } else {
+                    prevOmzet += money;
+                }
+            }
+
+            if (t.type === 'SALE' && d >= start) {
                 (t.items || []).forEach(item => {
                     const p = prod.get(item.productId) || {};
                     const q = toBal(item, p);
@@ -146,8 +165,6 @@ export default function DashboardBenchmarks({
                     if (name.includes('filter') || type.includes('skm') || name.includes('mild')) filterBal += q;
                     else kretekBal += q;
                 });
-            } else if (d >= prevStart) {
-                prevOmzet += total;
             }
         });
 
@@ -159,6 +176,8 @@ export default function DashboardBenchmarks({
 
         return {
             omzet, bal, series, buckets, done, tickOf,
+            /* a standing balance, not a period figure — see outstandingTitip's own note */
+            piutang: outstandingTitip(transactions),
             omzetDelta: prevOmzet > 0 ? ((omzet - prevOmzet) / prevOmzet) * 100 : null,
             skm: totalMix > 0 ? Math.round((filterBal / totalMix) * 100) : 0,
             revTarget: revTarget(period),
@@ -294,6 +313,21 @@ export default function DashboardBenchmarks({
                             : `${M.omzetDelta >= 0 ? '+' : '−'}${Math.abs(M.omzetDelta).toFixed(1).replace('.', ',')}%`}
                     </span>
                 </div>
+
+                {/* ── PIUTANG. Beside the omzet, never inside it — his instruction, 2026-09-09:
+                    *"receivable doesnt count, should have their own data and panel for receivable
+                    outside of the revenue or omzet"*. Taking Titip out of the big number is only
+                    half the job; this is the other half, because the money IS still owed.
+
+                    It ignores the period buttons on purpose and the caption says so. Omzet answers
+                    "how much this month", this answers "how much is out there right now", and a
+                    debt does not stop existing because the month rolled over. */}
+                {M.piutang > 0 && (
+                    <div className="kpm-ro on" style={{ marginTop: 'var(--s3)' }}>
+                        <span className="k">Piutang titip · belum dibayar</span>
+                        <span className="v">{formatRupiah(M.piutang)}</span>
+                    </div>
+                )}
 
                 {/* ── VOLUME ── */}
                 <div style={{ marginTop: 'var(--s5)', borderTop: '1px solid var(--line)', paddingTop: 'var(--s5)' }}>

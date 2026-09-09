@@ -411,11 +411,19 @@ export default function useTransactionEngine({
                reason a Slop cannot land in the totals as a single pack.
 
                A sale that cannot be counted (no date, empty basket, not a SALE) writes nothing
-               and returns false. That is not an error and must not be treated as one. */
+               and returns false. That is not an error and must not be treated as one.
+
+               🔴 `paymentType` MUST TRAVEL WITH THIS PAYLOAD. The tally is handed a fresh object
+               rather than the stored document, so any field left out is a field the rule cannot
+               see — and `salesRollup.isTitip` defaults a missing one to 'Cash'. Omitting it books
+               every consignment placement as income again, silently, which is the whole bug of
+               2026-09-09. The stored document at `transactionPayload` already carries it; these
+               two must stay in step. */
             const productsById = Object.fromEntries(
                 transactionItems.filter(i => i.productId).map(i => [i.productId, i.prodData]));
             tallySale(batch, db, appId, userId, {
                 date: getCurrentDate(), type: proofPayload?.type || 'SALE', items: finalTransItems,
+                paymentType,
             }, productsById, 1);
 
             if (newStoreData) {
@@ -618,26 +626,26 @@ export default function useTransactionEngine({
 
             /* THE RETURNED GOODS COME BACK OUT OF THE MONTH'S REVENUE, IN THIS SAME BATCH.
 
-               A Titip placement books its full value as a sale the moment the goods are dropped.
-               When the audit finds some of them damaged and takes them back, that money never
-               arrives - and until now nothing reversed it, so Product Performance reported goods
-               that are sitting in the warehouse as sold. salesDelta reads `itemsReturned` and emits
-               the negative; passing the transaction here is what makes it happen live rather than
-               only on a rebuild.
+               🔴 THIS IS WHERE CONSIGNMENT INCOME IS BOOKED NOW — `itemsPaid`, not `itemsReturned`.
+               Aldi, 2026-09-09: *"omset come after goods is sold and money is received"*, and for
+               the quantity beside it, *"A for the sold bks mean"*. The placement at the shop door
+               books nothing at all, so this audit is the FIRST and ONLY moment a consignment packet
+               enters Product Performance, and it enters for the part the shop actually sold.
+
+               The line this replaced passed `itemsReturned` so salesDelta could subtract damaged
+               goods back off the placement. There is no placement to subtract from any more, and
+               passing it would drive the month negative by the value of every returned packet.
 
                SAME BATCH, NOT AFTER IT - the rule the whole rollup is built on. A counter updated
                separately from the thing it counts drifts the first time a phone loses signal
                between the two calls, and offline is the normal case for these salesmen.
 
-               Sign +1, and that is not a typo: the direction lives in salesDelta, which subtracts
-               `itemsReturned` on its own. Passing -1 here would ADD the money back.
-
                No product map is needed and passing one would be misleading: ConsignmentFinanceView
-               builds every returned line as `unit: 'Bks'`, and convertToBks returns the quantity
-               untouched for Bks whether or not it is given the product. A self-check pins that unit
-               so this stays true. */
+               builds every paid line as `unit: 'Bks'` (the same `unit: 'Bks'` it gives the returned
+               and remaining ones), and convertToBks returns the quantity untouched for Bks whether
+               or not it is given the product. A self-check pins that unit so this stays true. */
             tallySale(batch, db, appId, userId, {
-                date: getCurrentDate(), type: 'CONSIGNMENT_PAYMENT', itemsReturned,
+                date: getCurrentDate(), type: 'CONSIGNMENT_PAYMENT', itemsPaid,
             }, {}, 1);
 
             await batch.commit();

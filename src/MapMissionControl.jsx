@@ -14,6 +14,7 @@ import 'leaflet/dist/leaflet.css';
 import { doc, collection, getDocs, setDoc, deleteDoc, updateDoc, writeBatch } from 'firebase/firestore';
 import { commitInChunks, convertToBks, formatRupiah, storeKey } from './utils/helpers';
 import { loadBorderCache, saveBorderCache, clearBorderCache } from './utils/borderCache';
+import { revenueOf } from './utils/revenueRule';
 import { confirmAction, promptAction } from './components/ConfirmGate.jsx';
 import { notify } from './components/Toast.jsx';
 import MarkerClusterGroup from 'react-leaflet-cluster'; // 🚀 INJECTED SUPERCLUSTER ENGINE
@@ -1160,7 +1161,11 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
         const key = storeKey(store.name);
         const storeTrans = safeTrans.filter(t => t && storeKey(t.customerName) === key);
         
-        const totalRev = storeTrans.filter(t => t.type === 'SALE').reduce((sum, t) => sum + (Number(t.total) || 0), 0);
+        /* Money this shop has actually paid, so a store holding a big unpaid consignment no longer
+           looks like the best customer on the map. `revenueOf` skips a Titip placement and counts
+           the store audit that collects it (Aldi, 2026-09-09). The `totalTitip` line below is
+           untouched: that one is measuring the debt on purpose. */
+        const totalRev = storeTrans.reduce((sum, t) => sum + revenueOf(t), 0);
         const totalTitip = storeTrans.filter(t => t.type === 'SALE' && t.paymentType === 'Titip').reduce((sum, t) => sum + (Number(t.total) || 0), 0);
         const totalPaid = storeTrans.filter(t => t.type === 'CONSIGNMENT_PAYMENT').reduce((sum, t) => sum + (Number(t.amountPaid) || 0), 0);
         const currentConsignment = Math.max(0, totalTitip - totalPaid);

@@ -4548,7 +4548,6 @@ const handleGitHubMirror = async () => {
                     handleSaveDashboardTargets={handleSaveDashboardTargets}
                     customers={displayCustomers}
                     motorists={motorists}
-                  handleRebuildSalesStats={handleRebuildSalesStats} isRebuildingStats={isRebuildingStats}
                     branchStock={branchStock}
                 />
             )
@@ -5061,6 +5060,13 @@ const handleGitHubMirror = async () => {
                   activeMessages={activeMessages} editingMsgIndex={editingMsgIndex} setEditingMsgIndex={setEditingMsgIndex} editMsgText={editMsgText} setEditMsgText={setEditMsgText} handleSaveEditedMessage={handleSaveEditedMessage} handleDeleteMascotMessage={handleDeleteMascotMessage}
                   triggerDiscoParty={triggerDiscoParty} isDiscoMode={isDiscoMode}
                   handleRecalculateCareer={handleRecalculateCareer}
+                  /* 🔴 THESE TWO WERE ON <DashboardView>, WHICH READS NEITHER.
+                     SettingsView gates the whole "Rebuild the sales totals" block on
+                     `isSystemOwner && handleRebuildSalesStats`, so an undefined handler meant the
+                     button had never rendered for anybody — the backfill it exists for could not
+                     be run at all. Found 2026-09-09 while proving that the new Titip rule repairs
+                     history: the rule is only half a fix if the button that applies it is missing. */
+                  handleRebuildSalesStats={handleRebuildSalesStats} isRebuildingStats={isRebuildingStats}
               />
           )}
             </Suspense> {/* 🚀 CLOSING SUSPENSE BOUNDARY */}

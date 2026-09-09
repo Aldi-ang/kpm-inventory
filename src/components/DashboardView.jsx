@@ -4,6 +4,7 @@ import { formatRupiah, convertToBks, displayQty } from '../utils/helpers';
 import { isLowStock, minStockBks, daysOfCover } from '../utils/stockThreshold';
 import { periodWindow, periodDays, periodMeta, txDate } from '../utils/period';
 import { MASTER, warehouseList, supplyByProduct, dormant } from '../utils/supply';
+import { revenueOf } from '../utils/salesRollup';
 import DashboardBenchmarks from './DashboardBenchmarks';
 import PaceChart from './PaceChart';
 
@@ -169,14 +170,19 @@ export default function DashboardView({
         const acc = new Map();
         const unknown = { omzet: 0, nota: 0, names: new Set() };
 
+        /* Money only, and `revenueOf` is the app's one rule for what that means: a Titip placement
+           is a receivable and adds nothing until the store audit collects (Aldi, 2026-09-09). The
+           store audit itself lands here too, under the shop it was collected from, which is why
+           the filter is the shared helper and not `type === 'SALE'`. */
         transactions.forEach(t => {
-            if (t.type !== 'SALE') return;
+            const money = revenueOf(t);
+            if (!money) return;
             const d = txDate(t);
             if (isNaN(d) || d < w.start) return;
 
             const region = regionOf.get(key(t.customerName));
             if (!region) {
-                unknown.omzet += (t.total || 0);
+                unknown.omzet += money;
                 unknown.nota += 1;
                 if (t.customerName) unknown.names.add(key(t.customerName));
                 return;
@@ -186,12 +192,12 @@ export default function DashboardView({
                 perBucket: new Array(w.buckets).fill(0),
             });
             const a = acc.get(region);
-            a.omzet += (t.total || 0);
+            a.omzet += money;
             a.laba  += (t.totalProfit || 0);
             a.nota  += 1;
             a.toko.add(key(t.customerName));
             const b = w.bucketOf(d);
-            if (b >= 0 && b < w.buckets) a.perBucket[b] += (t.total || 0);
+            if (b >= 0 && b < w.buckets) a.perBucket[b] += money;
         });
 
         /* ⚠️ THE DASHED LINE ON A REGION MEANS SOMETHING DIFFERENT FROM THE ONE ON THE LIVE
@@ -262,13 +268,16 @@ export default function DashboardView({
     const agents = useMemo(() => {
         const today = new Date().toLocaleDateString();
         const perf = {};
+        /* Money the salesman actually brought in, so a day spent dropping consignment stock no
+           longer tops the board over one spent collecting cash. Shared rule, see utils/salesRollup. */
         transactions.forEach(t => {
-            if (t.type !== 'SALE') return;
+            const money = revenueOf(t);
+            if (!money) return;
             const d = txDate(t);
             if (isNaN(d) || d.toLocaleDateString() !== today) return;
             const agent = t.agentName || 'Admin';
             if (!perf[agent]) perf[agent] = { revenue: 0, profit: 0, count: 0 };
-            perf[agent].revenue += (t.total || 0);
+            perf[agent].revenue += money;
             perf[agent].profit  += (t.totalProfit || 0);
             perf[agent].count   += 1;
         });
