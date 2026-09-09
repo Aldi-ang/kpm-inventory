@@ -2168,12 +2168,22 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                     <div className="mb-4">
                         <label className="text-[10px] font-bold text-[var(--duke-ink-4)] uppercase tracking-widest block mb-2">Delivery Proof <span className="text-[var(--duke-danger-ink-2)]">*</span></label>
                         {/* The file input EXISTS only where a file is a legal answer. A camera-only
-                            tier gets no chooser at all in a shipped build — `import.meta.env.DEV` is
-                            what keeps the app testable on a machine with no webcam, and it is
-                            stripped from production. The tier never opens this door, only the
-                            build mode does. */}
-                        {(galleryOk || import.meta.env.DEV) && (
-                            <input type="file" accept="image/*" {...(galleryOk ? {} : { capture: 'environment' })} id="txProof" className="hidden" onChange={handleTxPhotoCapture} />
+                            tier has no chooser in the DOM at all — not in production, and not in a
+                            dev build either.
+
+                            ⚠️ THERE WAS A `|| import.meta.env.DEV` HERE FOR ONE HOUR, so a machine
+                            with no webcam could still finish a sale. Aldi killed it the moment he
+                            saw it: *"me as tier 6 still can see this option and can use it"*. He is
+                            right and the reasoning behind it was backwards — dev is the ONLY place
+                            he tests, so a dev-only bypass does not preserve testability, it removes
+                            the one thing being tested. A rule you cannot see working is not a rule.
+
+                            The escape hatch already exists and it is the shipped one: turn
+                            `photo_pick_from_gallery` ON for that tier in Settings → Permission
+                            Matrix, test, turn it off. A second, hidden way in duplicates a control
+                            he can already see, which is how two answers to one question start. */}
+                        {galleryOk && (
+                            <input type="file" accept="image/*" id="txProof" className="hidden" onChange={handleTxPhotoCapture} />
                         )}
 
                         {txProofPhoto ? (
@@ -2192,7 +2202,6 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                             open={showProofCamera}
                             onClose={() => setShowProofCamera(false)}
                             onPhoto={(data) => { setTxProofPhoto(data); setShowProofCamera(false); }}
-                            devFallback={import.meta.env.DEV ? () => { setShowProofCamera(false); document.getElementById('txProof')?.click(); } : null}
                         />
                     </div>
 

@@ -19,10 +19,14 @@ import { X, Camera, AlertTriangle } from 'lucide-react';
    cannot say why it will not work is the silence Aldi calls a bug. Every refusal below names its
    cause: not a secure page, no camera on this machine, or permission denied.
 
-   The dev-only escape hatch is gated on `import.meta.env.DEV` and NEVER on the tier. Without it,
-   any machine with no webcam — the agent's browser included — cannot reach the rest of the sale
-   screen at all. It cannot exist in a production build. */
-export default function ProofCamera({ open, onClose, onPhoto, devFallback }) {
+   ⚠️ THERE IS NO ESCAPE HATCH HERE, AND THERE WAS ONE FOR AN HOUR. A "dev only — pick a file
+   instead" button lived below, gated on `import.meta.env.DEV` so a machine with no webcam could
+   still finish a sale. Aldi killed it on sight: *"me as tier 6 still can see this option and can
+   use it"*. Dev is the only place he tests, so a dev-only bypass does not preserve testability —
+   it removes the one thing under test. To let a tier attach a file, turn `photo_pick_from_gallery`
+   ON for that tier in Settings → Permission Matrix. That control is visible, auditable and shipped;
+   a hidden second answer to the same question is how the two start disagreeing. */
+export default function ProofCamera({ open, onClose, onPhoto }) {
     const videoRef = useRef(null);
     const [state, setState] = useState('starting');   // starting · live · blocked
     const [detail, setDetail] = useState('');
@@ -107,15 +111,6 @@ export default function ProofCamera({ open, onClose, onPhoto, devFallback }) {
                         <button onClick={snap}
                             className="kpm-hover w-full py-3 bg-gradient-to-r from-[var(--duke-amber)] to-[var(--duke-amber-2)] border-2 border-[var(--duke-brass-edge-3)] text-black rounded font-black uppercase tracking-[0.2em] text-sm flex items-center justify-center gap-2">
                             <Camera size={18}/> Take photo
-                        </button>
-                    )}
-
-                    {/* DEV ONLY. Stripped from any production build by the import.meta.env.DEV gate
-                        at the call site — never reachable by a real salesman on the live app. */}
-                    {state === 'blocked' && devFallback && (
-                        <button onClick={devFallback}
-                            className="kpm-hover w-full py-2 border border-dashed border-[var(--duke-edge-4)] text-[var(--duke-ink-4)] rounded text-[10px] font-bold uppercase tracking-widest">
-                            Dev only — pick a file instead
                         </button>
                     )}
                 </div>

@@ -6429,10 +6429,21 @@ ok('one Ecer line poisons a mixed cart',
    replaces module state for whatever runs after it. */
 section('SALE PROOF PHOTO SOURCE');
 
-/* REGRESSION GUARD — a tier without the privilege must never be handed a file input. */
-ok('the file input exists only where a file is a legal answer, or in a dev build',
-   /\(galleryOk \|\| import\.meta\.env\.DEV\) && \(/.test(merchant),
-   'a camera-only tier must not have a file chooser in the DOM of a shipped build');
+/* REGRESSION GUARD — a tier without the privilege must never be handed a file input.
+   ⚠️ THIS CHECK USED TO ALLOW `|| import.meta.env.DEV` and it was WRONG to. Aldi, 2026-09-09:
+   *"me as tier 6 still can see this option and can use it"*. Dev is the only place he tests, so a
+   dev-only bypass removes the rule under test rather than preserving testability. The legitimate
+   way to let a tier attach a file is the matrix switch, which is visible and auditable. */
+ok('the file input exists only where a file is a legal answer — no build-mode exception',
+   /\{galleryOk && \(/.test(merchant),
+   'a camera-only tier must not have a file chooser in the DOM, in ANY build');
+/* Through `code()`, not the raw source: the comments left where the bypass used to be NAME the
+   thing they tell you not to restore, and a raw grep cannot tell a warning about a line from the
+   line. Same trap as the handleAdminApproveTransfer guard. */
+ok('and no dev-only bypass exists anywhere on the proof path',
+   !/import\.meta\.env\.DEV/.test(code(merchant)) && !/devFallback/.test(code(merchant))
+   && !/devFallback/.test(code(read('src/components/ProofCamera.jsx'))),
+   'a hidden second answer to "may this tier attach a file" is how the two answers start disagreeing');
 ok('a camera-only tier opens the live camera instead of the picker',
    /galleryOk \? document\.getElementById\('txProof'\)\.click\(\) : setShowProofCamera\(true\)/.test(merchant));
 ok('and the tier answer comes from the shared helper, never a tier number written here',
