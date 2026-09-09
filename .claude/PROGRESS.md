@@ -1,6 +1,42 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-09-09 19:56 WIB (🟠 KPM — four shipped today: sale-proof camera `284ea64`, Fleet & Roster tenant-vault `da71cbd`, the roster bug he actually hit `b945280`, and the dev-bypass removal `1857b97`. Vault `7af56d5`, `ac2bf02`, `ea4e34f`, `16ee963`. Nothing pushed. 1422 selfcheck · 722 audit · build clean. ⚠️ HE STILL MUST PRESS "Rebuild sales totals" ONCE. Next job: the first-minute red alarm.)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **1422/1422 selfcheck · 722/722 audit · build clean** · branch `phase0-solid-ground`
+**Updated: 2026-09-09 21:10 WIB (🟠 KPM — four code fixes shipped, then the session turned to BUSINESS: pricing, product inventory and how to sell KPM. Nothing pushed. 1422 selfcheck · 722 audit · build clean. ⚠️ HE STILL MUST PRESS "Rebuild sales totals" ONCE. 🔴 NEW BLOCKER FOUND: the Rank Config cross-tenant gap means he can sell to ONE customer safely, not two. Next job: the legal research, in Indonesian, with real sources.)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **1422/1422 selfcheck · 722/722 audit · build clean** · branch `phase0-solid-ground`
+
+## 🟠 2026-09-09 21:10 — pricing and selling KPM; the legal half is still owed
+
+He asked how to price KPM for his mother's uncle's tobacco factory, what maintenance costs, how to
+sell to other companies, and what the app has that others don't. Three vault notes now hold it:
+
+| note | what is in it |
+|---|---|
+| `Brainstorm/2026-09-09_pricing-kpm-for-the-first-customer.md` | measured comps (Accurate Rp 333k/1 user + Rp 22,2k marginal seat · Mekari Jurnal Rp 399k–899k · Badger Maps $58–95/user · Repsly and Skynamo quote-only), five options, selling strategy, REJECTED-ON-PURPOSE list |
+| `Wiki/Entities/KPM Product Inventory.md` | 47.805 lines · 14 screens · **2.260 passing checks** · 16 matrix-gated modules · 23 permission helpers · replacement cost Rp 1,4 miliar realistic, Rp 1,5–3 miliar at agency rates |
+| `Brainstorm/2026-09-09_menjual-kpm-penjelasan-indonesia.md` | the Indonesian explainer — three licence types, what maintenance covers, 13 contract clauses, 7-step sales process |
+
+Current numbers: **Rp 15–25 juta/bulan** · perpetual **Rp 600 juta – 1,5 miliar** · exclusive IP
+priced to refuse.
+
+**🔴 BLOCKER, found in the vault, not in the code:** `Wiki/Summaries/Rank Config Cross-Tenant Gap.md`
+— `artifacts/cello-inventory-manager/settings/{achievements,rpg_ranks}` is ONE document shared by
+every company. The rules coverage was fixed; **the shared path was not.** One customer is safe.
+Two is a confidentiality breach between tobacco competitors.
+
+**❓ WAITING ON ALDI — his words, verbatim:**
+> *"can u research deeply more on the legalities and also just explain it in indonesia for all of this"*
+
+The Indonesian explainer is written. **The legal research is NOT done** — PT Perorangan cost, PPh 23
+rate, UMKM final tax, PKP threshold, UU 28/2014 article numbers, whether liability caps are
+enforceable here, and escrow via notaris. I refused to guess any of them; the file says
+`BELUM DIRISET, jangan dikutip` and means it. Full spec in the brief.
+
+And the question he still owes: **how many salesmen does Cello have, and how many cabang?** That
+picks the monthly number.
+
+⚠️ **Competing priority, his call:** his own note sets **30 September** as the ship date with money
+bugs first. Legal research is not on that list. The brief opens by asking him which comes first.
+
+**Also offered and unanswered:** the PBKDF2 fix (the SHA-256 master-password hash is unsalted and
+single-round) and the cross-tenant path fix.
 
 ## 🟠 2026-09-09 19:56 — the dev-only file picker is gone; dev is where he tests
 

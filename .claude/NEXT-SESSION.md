@@ -1,56 +1,88 @@
 # The one job
 
-**The first minute of a brand-new company ends in a red alarm that will not go away, and the alarm
-then paints over the dialogs the owner needs to use. Fix both halves — they are one story.**
+**Do the legal research Aldi asked for, in Indonesian, with real sources — then draft the contract
+clauses and the one-page proposal he can actually hand to his uncle.**
 
-Ranked first of seven on the 2026-09-09 day-one walk. Full walk:
-`A-Brain/Brainstorm/2026-09-09_day-one-walk.md`.
+His words, 2026-09-09: *"can u research deeply more on the legalities and also just explain it in
+indonesia for all of this"*. The Indonesian explanation of the NON-legal parts is already written:
+`A-Brain/Brainstorm/2026-09-09_menjual-kpm-penjelasan-indonesia.md`. **The legal half is a marked
+gap in that file — it says "BELUM DIRISET, jangan dikutip" and it means it.**
 
-## What happens
+## What is already settled — do not redo it
 
-Save the very first product with **MIN. ALERT (BKS)** left blank. The field falls back to the
-company default of **3 Bal = 600 Bks**, so a product just created with a small opening stock is
-instantly "critically low". The owner has done nothing wrong and the app opens with a red alarm.
+Three vault notes hold the finished work. Read them, don't rebuild them:
 
-Then the toast announcing it **never expires**, and it renders at `z-index: 10000`. On the walk it
-covered the "WHO IS BUYING?" search box inside the sale dialog — so the alarm did not only mislead,
-it blocked the next thing he had to do.
+* `Brainstorm/2026-09-09_pricing-kpm-for-the-first-customer.md` — measured market comps (Accurate
+  Rp 333k/1 user + Rp 22.2k marginal seat; Mekari Jurnal Rp 399k–899k; Badger Maps $58–95/user;
+  Repsly and Skynamo quote-only), five pricing options, selling strategy.
+* `Wiki/Entities/KPM Product Inventory.md` — 47.805 lines, 14 screens, 2.260 passing checks, 16
+  matrix-gated modules, 23 permission helpers, and the replacement-cost anchor (Rp 1,4 miliar
+  realistic, Rp 1,5–3 miliar at agency rates).
+* `Brainstorm/2026-09-09_menjual-kpm-penjelasan-indonesia.md` — the Indonesian explainer: three
+  licence types, what maintenance covers, 13 contract clauses, the 7-step sales process.
 
-## The two halves, and why neither alone is the fix
+Current numbers: **Rp 15–25 juta/bulan** subscription · **Rp 600 juta – 1,5 miliar** perpetual ·
+exclusive IP priced to refuse.
 
-**Half 1 — the threshold.** A blank MIN. ALERT means "he has not decided yet", and it is currently
-read as "use 600". Find where the company default is applied and decide what a blank field should
-mean for a product whose stock has never been counted. Do NOT silence the low-stock alarm itself:
-it is correct and he needs it. The bug is the *default*, not the warning.
+## What to research, and why each one matters
 
-**Half 2 — the toast lifetime.** `src/components/Toast.jsx` (`notify()`) — see which severities
-auto-dismiss. Do NOT auto-dismiss everything: an error that vanishes before it is read is the
-silence he calls a bug, and a report he asked for should stay. Errors and reports want different
-lifetimes. The `z-index: 10000` over a dialog is the separate, smaller half — a toast that outranks
-a modal is a layering decision nobody made on purpose.
+Every item below is a number or rule I refused to guess. **Get a real source for each — a
+government page, a law firm explainer, or the statute — and cite it in the note.**
+
+1. **PT Perorangan** — current requirements, actual cost, and what it can and cannot do. `oss.go.id`
+   404'd on the path tried; find the live page. Compare against **CV**: which one a factory's
+   finance department prefers to receive an invoice from.
+2. **PPh 23 withholding on services** — the current rate, and whether software subscription counts
+   as *jasa* for withholding. This is the one that will surprise him: he invoices Rp 20 juta and
+   receives less, plus a *bukti potong*.
+3. **Final UMKM tax** — current rate, the turnover ceiling, and the time limit on eligibility
+   (the rules changed after PP 55/2022; confirm what applies in 2026).
+4. **PPN / PKP threshold** — when registration becomes mandatory.
+5. **UU 28/2014 Hak Cipta** — confirm the default: software written by a person belongs to that
+   person unless assigned. Get the article number. Also what a *perjanjian lisensi* must contain
+   to be valid, and whether it needs recording.
+6. **Limitation-of-liability clauses under Indonesian law** — are they enforceable, and is there a
+   standard cap? This is the clause that protects him personally and it is worthless if
+   unenforceable here.
+7. **Source code escrow in Indonesia** — can a notaris actually hold it, what does that cost, and
+   what is the normal release trigger.
+
+## Then draft two documents, in Indonesian
+
+* **The contract clauses** — all 13 from the explainer, written as real *pasal*, ready for a notaris
+  to review. Not a finished contract; a draft that saves him an hour of a lawyer's time.
+* **The one-page proposal template** — masalah, angka, harga, langkah berikutnya. One page.
 
 ## Traps
 
-**Do not fix this by lowering the alarm's sensitivity.** Every product will eventually be genuinely
-low and the alarm has to fire then. If the walk's product is not actually low, the threshold is
-wrong; if it is low, the alarm is right and only the toast needs work. Decide which before editing.
+**Do not state a tax rate, a fee or an article number without a source in the note.** He is going to
+put these in front of a factory's finance department. A wrong number there costs him credibility he
+cannot buy back — worse than saying "confirm with a konsultan pajak", which is what the current
+files honestly say.
 
-**`notify()` is called from everywhere.** Changing its default lifetime changes every screen at
-once. Grep the call sites before touching the signature, and change behaviour per severity rather
-than globally.
+**WebSearch is routed to a dead model tier** (`cc/claude-haiku-4-5-...`) and **firecrawl needs an
+API key**. The working path is the Browser pane — `preview_start` with a url, then `get_page_text`.
+Batch several pages per `browser_batch` call; each navigate resolves redirects, so check the URL
+that comes back before trusting the text.
 
-**Mixed line endings:** these files are LF. Check before editing or an edit anchor silently misses.
+**This is not legal advice and the note must say so.** The deliverable is a briefed draft that makes
+one hour with a notaris cheap, not a substitute for that hour.
 
-## Done when
+## ⚠️ The competing priority — his call, ask him first
 
-- A brand-new company can create its first product and reach the sale screen with no red alarm it
-  did not earn.
-- A genuinely low product still raises one — verify by setting a real MIN. ALERT above the stock.
-- No toast can cover a dialog's own controls.
-- An error toast still waits to be read; a routine report clears itself.
-- Two lines in `src/config/logicFixes.selfcheck.mjs`: the regression guard (a blank MIN. ALERT must
-  not resolve to the 600-Bks company default for an uncounted product) and the behaviour check (the
-  low-stock comparison re-run on real numbers, low and not-low).
+His own note sets **30 September 2026** as the ship date, with the fix order already agreed: money
+lies → data loss → branch leaks → day one. **Legal research is not on that list**, and there are
+about three weeks left. Also still open and ship-blocking:
+
+* **The Rank Config cross-tenant gap** — `artifacts/cello-inventory-manager/settings/{achievements,
+  rpg_ranks}` is ONE document shared by every company. Rules coverage was fixed; the shared path was
+  not. **He can sell to one customer safely. Not two.** Between tobacco competitors this is a
+  confidentiality breach, not a bug.
+* **PBKDF2** — the SHA-256 master-password hash is unsalted and single-round. `crypto.subtle`
+  already offers PBKDF2; a per-company salt and ~100k iterations turns a claim that invites
+  inspection into one that survives it. He was offered this and has not answered.
+
+**Open by asking which he wants first.** Do not assume the legal research outranks the deadline.
 
 Then rewrite this file with the next single job.
 
@@ -92,6 +124,12 @@ Then rewrite this file with the next single job.
 
 ### Day one — the rest of the walk, ranked, unblocked
 
+1. **The first minute ends in a red alarm that will not go away** (demoted from the top slot
+   2026-09-09 when Aldi asked for the legal research). A first product saved with MIN. ALERT blank
+   falls back to the company default of 3 Bal = 600 Bks, so it is instantly "critically low"; the
+   toast then never expires and paints over dialogs at `z-index: 10000`. Two halves, one story —
+   the threshold default, and the toast lifetime in `src/components/Toast.jsx`. Do not silence the
+   alarm and do not auto-dismiss every toast.
 2. **The phantom competitor.** A store created today and sold to the same day shows an
    undismissable red `ALREADY SECURED TODAY — Claimed by ANOTHER AGENT`. `CustomerManager.jsx:248`
    and `:1018` default a new customer's `lastVisit` to today; `MerchantSalesView.jsx:536` then falls
