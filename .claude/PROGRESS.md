@@ -1,6 +1,38 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-09-09 08:55 WIB (🟠 KPM — he answered both questions and the MONEY half shipped: `a6192b1`. Omzet waits for the cash, Piutang has its own line, and the rebuild button now exists at all. 1382 selfcheck · 722 audit · build clean. ⚠️ HE MUST PRESS "Rebuild sales totals" ONCE on the live app. Camera half is next.)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **1382/1382 selfcheck · 722/722 audit · build clean** · branch `phase0-solid-ground`
+**Updated: 2026-09-09 09:40 WIB (🟠 KPM — two money decisions shipped today. Omzet waits for the cash (`a6192b1`), and buyback is off for everyone including the owner (this entry). 1390 selfcheck · 722 audit · build clean. ⚠️ HE STILL MUST PRESS "Rebuild sales totals" ONCE on the live app.)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **1390/1390 selfcheck · 722/722 audit · build clean** · branch `phase0-solid-ground`
+
+## 🟠 2026-09-09 09:40 — buyback is off. A sale is a closed contract.
+
+> *"when company sell the product its done, when they needed return, what can agent do is help the
+> stores to resell their unsold product to other customer, well its by using agent own money and
+> not the company"* — then: *"lets turn off buyback for now it makes counting profit and revenue
+> more difficult anyway and company doesnt allow that, exchange still possible tho"*.
+
+**Buyback (Refund) is gone for everyone, the owner included. Exchange (Tukar) is untouched** — it
+swaps goods for goods at a forced price of 0, so no money moves.
+
+It was already off by default for every salesman; the only thing keeping it alive was the owner's
+own account forcing it on. "For now" was taken literally: the code is intact and the per-agent
+grant in Fleet & Roster still works, so one named person can be given it back in a minute.
+
+**It took two edits, and the second one was invisible to every check.** `App.jsx` forced the
+privilege on in two separate places — the settings branch and the `<MerchantSalesView>` render
+site. Fixing the first left the Buyback button sitting on the owner's screen with the build green,
+1388 checks green and the undef gate clean. Opening Retur Mode in the browser is the only thing
+that found it. Three regression checks now pin both forms out plus a net one.
+
+**Closed an open item from the walk for free:** `returnTotal` is written in three places and read
+by no money calculation — flagged then as a suspected bug. It is not one. The money in a retur is
+the agent's, so it must never reach a company figure. Same for omzet, Product Performance and
+EOD's expected cash, none of which move on a retur. All correct as they stand.
+
+Verified on screen: Retur Mode still opens, `PULL RETUR` still works, and the word "buyback" no
+longer appears anywhere on the page.
+
+**WAITING ON ALDI — still the one action from earlier, nothing new:**
+
+> Press **Settings → General & Brand → Rebuild sales totals** once on the live app.
 
 ## 🟠 2026-09-09 08:55 — omzet waits for the cash now. `a6192b1`
 

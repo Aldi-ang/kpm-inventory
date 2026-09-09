@@ -82,6 +82,11 @@ Then rewrite this file with the next single job.
   `src/utils/revenueRule.js`, because it had been written correctly in `EODReconciliationView` and
   wrongly in seven other places. Also fixed the rebuild button, which had never rendered: its two
   props were on `<DashboardView>`, which reads neither.
+* **Buyback turned off** — for everyone, the owner included; Exchange kept. It took two edits,
+  and the second was invisible: `App.jsx` forced the privilege on in the settings branch AND again
+  at the `<MerchantSalesView>` render site, so fixing one left the button on screen with the build
+  and 1388 checks all green. Only opening Retur Mode in a browser found it. Three regressions pin
+  both forms out now.
 * **He must press "Rebuild sales totals" once on the live app** (Settings → General & Brand) or
   his historical months keep the old inflated figures. Proven in the emulator: the cached month
   went from 26000/2 Bks to 2000/1 Bks. Tell him again if he has not done it.
@@ -120,12 +125,19 @@ claiming "clears their inventory" on a stamps-only card · the EOD `MATCHES` col
 the numbers are equal · the audit receipt printing `BAYAR : CASH` on an audit that collected Rp 0 ·
 `MIN. ALERT (BKS)` labelled over a `pakai batas perusahaan (3 Bal)` placeholder.
 
-### Money, still open and NOT part of his answer
+### Money — ANSWERED and CLOSED 2026-09-09, do not reopen
 
-A cash **refund** (`type: 'RETURN'`) reduces the day's takings in `dayStats` but reduces nothing in
-omzet, Product Performance or EOD's expected cash. Under "money received" it arguably should. It
-was deliberately left alone on 2026-09-09 because he was asked about consignment, and making
-refunds move omzet is a second rule that restates history again. Ask before building.
+A cash refund does **not** reduce omzet, and never should. His model: *"when company sell the
+product its done, when they needed return, what can agent do is help the stores to resell their
+unsold product to other customer, well its by using agent own money and not the company"*. A
+completed sale is a closed contract; a retur is the salesman's private arrangement.
+
+**Buyback is now off for everyone including the owner** — Exchange (Tukar) stays, since it moves
+goods for goods at a price of 0. Full reasoning and the two-places trap:
+`A-Brain/Wiki/Concepts/A sale is a closed contract — no cash goes back.md`.
+
+That also closes the walk's `returnTotal` item: it is written in three places and read by no money
+calculation **because it is not company money**. Not a bug. Do not "fix" it.
 
 ### Appearance — he deferred this, it is last on purpose
 

@@ -86,7 +86,13 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
 
     // 🚀 DUAL RETUR ENGINE
     const [isReturMode, setIsReturMode] = useState(draft?.isReturMode || false);
-    const [returType, setReturType] = useState(draft?.returType || 'EXCHANGE'); // 'BUYBACK' | 'EXCHANGE'
+    /* 'BUYBACK' | 'EXCHANGE'. A saved draft cannot restore BUYBACK to somebody who is not allowed
+       to refund: the sub-mode toggle is hidden without the privilege, so there would be no control
+       on screen to leave that mode with, and the only feedback would come from the refusal at
+       handleFinalDeal after the basket was already built. Buyback went off for everyone on
+       2026-09-09, which makes this the normal case rather than an edge one. */
+    const [returType, setReturType] = useState(
+        allowCashRefund ? (draft?.returType || 'EXCHANGE') : 'EXCHANGE');
 
     // --- FORM STATE ---
     const [customerName, setCustomerName] = useState(draft?.customerName || "");

@@ -1584,11 +1584,28 @@ const handleGitHubMirror = async () => {
           return () => unsub();
       } else {
           // ADMIN: Full access to all payments, tiers, and retur
-          setAgentSettings({ 
-              allowedPayments: ['Cash', 'QRIS', 'Transfer', 'Titip'], 
+          setAgentSettings({
+              allowedPayments: ['Cash', 'QRIS', 'Transfer', 'Titip'],
               allowedTiers: ['Retail', 'Grosir', 'Ecer'],
               allowRetur: true, // Admin can always Retur
-              allowCashRefund: true // Admin can always refund
+              /* 🔴 BUYBACK IS OFF FOR EVERYONE, THE OWNER INCLUDED. Aldi, 2026-09-09: *"lets turn
+                 off buyback for now it makes counting profit and revenue more difficult anyway and
+                 company doesnt allow that, exchange still possible tho"*, after explaining the
+                 model it follows from: *"when company sell the product its done, when they needed
+                 return, what can agent do is help the stores to resell their unsold product to
+                 other customer, well its by using agent own money and not the company"*.
+
+                 A completed sale is a closed contract, so there is no company money to hand back.
+                 This line used to read `true` with the comment "Admin can always refund", which
+                 made the one rule the company does not permit the one rule its owner could not
+                 switch off. Now it is a granted privilege like any other: nobody has it, and a
+                 named person can still be given it per-agent in Fleet & Roster if a genuine
+                 company-fault case ever turns up.
+
+                 `allowRetur` stays TRUE on purpose — *"exchange still possible tho"*. Exchange
+                 swaps goods for goods at a forced price of 0, so no money moves and none of this
+                 applies to it. */
+              allowCashRefund: false
           });
       }
   }, [userRole, agentProfileId, db, appId, userId]);
@@ -4871,7 +4888,14 @@ const handleGitHubMirror = async () => {
                           allowedPayments={agentSettings.allowedPayments}
                           allowedTiers={agentSettings.allowedTiers}
                           allowRetur={userRole === 'ADMIN' ? true : (agentSettings.allowRetur || false)}
-                          allowCashRefund={userRole === 'ADMIN' ? true : (agentSettings.allowCashRefund || false)}
+                          /* 🔴 NO `userRole === 'ADMIN' ? true` HERE. The privilege is decided once,
+                             where agentSettings is built, and this line only passes it on.
+                             It read `userRole === 'ADMIN' ? true : ...` until 2026-09-09 — a SECOND
+                             copy of the same rule, at the render site, which kept the Buyback button
+                             on screen for the owner after the settings branch had already been set
+                             to false. The build stayed green, 1388 checks stayed green, and the
+                             button was still there; only opening Retur Mode in the browser showed it. */
+                          allowCashRefund={agentSettings.allowCashRefund || false}
                           onProcessSale={handleMerchantSale}
                           onInspect={(item) => setExaminingProduct(item)} 
                           // 🚀 FIXED: Plugged in ALL missing database and RPG engine connections!

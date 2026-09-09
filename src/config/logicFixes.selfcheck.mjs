@@ -166,7 +166,11 @@ ok('Exchange is NOT gated by it — tukar stays a normal power',
    !/returType === 'EXCHANGE' && !allowCashRefund/.test(merchant));
 ok('App reads it securely with === true, so a missing field means denied',
    /allowCashRefund: data\.allowCashRefund === true/.test(app));
-ok('App passes it down to the terminal', /allowCashRefund=\{userRole === 'ADMIN'/.test(app));
+/* Was `/allowCashRefund=\{userRole === 'ADMIN'/` until 2026-09-09. The intent is unchanged — App
+   must still hand the privilege to the terminal — but the expected FORM changed when buyback was
+   turned off: the render site no longer decides anything, it passes on what agentSettings decided.
+   The old pattern is now the regression this file hunts for, further down. */
+ok('App passes it down to the terminal', /allowCashRefund=\{agentSettings\.allowCashRefund/.test(app));
 ok('Fleet & Roster can grant it, and new agents start without it',
    /allowCashRefund: false,/.test(fleet) && /newAgent\.allowCashRefund/.test(fleet));
 
@@ -5095,6 +5099,45 @@ ok('REGRESSION: and it is NOT passed to DashboardView, which never read it',
 ok('SettingsView still gates the button on that exact prop, so the check above is testing something',
    /isSystemOwner && handleRebuildSalesStats &&/.test(read('src/components/SettingsView.jsx')),
    'if the gate is rewritten this assertion stops meaning anything and must be rewritten with it');
+
+section('Money: a completed sale is a closed contract — no cash goes back');
+
+/* 🔴 Aldi, 2026-09-09: *"lets turn off buyback for now it makes counting profit and revenue more
+   difficult anyway and company doesnt allow that, exchange still possible tho"*, following from the
+   model he described a message earlier: *"when company sell the product its done, when they needed
+   return, what can agent do is help the stores to resell their unsold product to other customer,
+   well its by using agent own money and not the company"*.
+
+   That model is why no company total anywhere reduces on a retur, and why `returnTotal` is written
+   but read by no money calculation — which the 2026-09-09 walk had flagged as a suspected bug. It
+   is not one. The money in a retur is the agent's, so it must never reach a company figure. */
+
+const msvSrc = code(read('src/MerchantSalesView.jsx'));
+
+ok('REGRESSION: the admin branch must not hand itself a cash refund',
+   !/allowCashRefund:\s*true/.test(code(appSrc)),
+   'it read `allowCashRefund: true // Admin can always refund` until 2026-09-09, which made the one rule the company does not permit the one rule its owner could not switch off');
+ok('REGRESSION: and the render site must not grant it back either',
+   !/allowCashRefund=\{[^}]*ADMIN[^}]*\}/.test(code(appSrc)),
+   'THE SECOND COPY. Fixing the settings branch alone left `allowCashRefund={userRole === "ADMIN" ? true : ...}` at the MerchantSalesView call site, so the Buyback button was still on the owner\'s screen with the build green and 1388 checks green. Found by opening Retur Mode in a browser, which is the only thing that could have found it');
+ok('no line in App grants it unconditionally, whatever shape the grant takes',
+   !/allowCashRefund[=:]\s*\{?\s*true/.test(code(appSrc)),
+   'the two regressions above name the two forms this took. This one is the net: an agent doc may set it, nothing else may');
+ok('and Exchange survives, because only the money half was turned off',
+   /allowRetur:\s*true/.test(code(appSrc)),
+   'his words: "exchange still possible tho". Exchange swaps goods for goods at a forced price of 0, so no money moves and none of this applies');
+ok('the buyback mode switch is drawn only for somebody who may refund',
+   /isReturMode && allowCashRefund &&/.test(msvSrc),
+   'with the privilege gone the sub-mode toggle disappears and Retur is Exchange-only, which is the whole shape of the change');
+ok('a saved draft cannot restore BUYBACK to somebody without the privilege',
+   /allowCashRefund \? \(draft\?\.returType \|\| 'EXCHANGE'\) : 'EXCHANGE'/.test(msvSrc),
+   'the toggle is hidden without the privilege, so a restored BUYBACK draft would leave no control on screen to leave that mode with, and the only feedback would be the refusal after the basket was built');
+ok('and the submit guard still refuses it even if the state gets there another way',
+   /isReturMode && returType === 'BUYBACK' && !allowCashRefund/.test(msvSrc),
+   'hiding a control is a UI courtesy, never a rule. The refusal at handleFinalDeal is the rule');
+ok('the refusal names what to do instead, rather than only saying no',
+   /Use Exchange \(Tukar\)/.test(read('src/MerchantSalesView.jsx')),
+   'his law - every action reports. "You cannot" with no way forward is how a salesman decides the app is broken');
 
 /* THE ONE THAT PROVES HISTORY IS REPAIRABLE. rebuildMonths runs the same salesDelta over the whole
    transactions collection, so a month already written wrong is fixed by the Settings rebuild
