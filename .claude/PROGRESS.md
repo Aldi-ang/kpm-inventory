@@ -69,6 +69,14 @@ blast radius — it answers all three before a hundred people depend on it.
    rollout contract. Entity timing is now written up in
    `A-Brain/Brainstorm/2026-09-10_riset-hukum-menjual-kpm.md` §1 — do not register early, one NIK
    only founds one PT Perorangan per financial year.
+8. **NEW 06:50 — as an orang pribadi his final PPh is Rp 0 up to Rp 500 juta omzet/year** (UU HPP
+   facility, [likely], not extended to a badan). At Rp 12 juta/month = Rp 144 juta/year that is
+   zero; it starts biting near Rp 41,7 juta/month. A PT Perorangan pays 0,5% from rupiah one =
+   Rp 720 ribu/year at this size. **Too small to decide anything — the entity stays a liability
+   question.** Open for the konsultan pajak: does a Suket PP 55 actually stop PPh 21 withholding
+   for a non-employee individual, or does the factory withhold anyway and he credits it later?
+   That answer decides what lands in his account each month. Detail in
+   `A-Brain/Brainstorm/2026-09-10_riset-hukum-menjual-kpm.md` §3.
 
 
 ## 🟠 2026-09-10 05:45 — the legal research is closed, with a source per number
