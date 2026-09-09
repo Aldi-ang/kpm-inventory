@@ -53,6 +53,65 @@ government page, a law firm explainer, or the statute — and cite it in the not
   to review. Not a finished contract; a draft that saves him an hour of a lawyer's time.
 * **The one-page proposal template** — masalah, angka, harga, langkah berikutnya. One page.
 
+## The deliverable — his words, 2026-09-09
+
+> *"give me a complete information about this app value and all the legalities to prepare to sell
+> it and make it an artifact or document so that i can see it on the google sheet or something"*
+
+**Publish ONE Artifact, in Indonesian, and hand him the URL.** Not a Google Sheet: this is a
+document with tables and long prose, not rows to sort — a spreadsheet is the wrong shape for
+contract clauses, and the Sheets connector needs an auth flow this session cannot run. An Artifact
+opens on his phone, survives `/clear`, and he can send the link to his uncle when he chooses.
+
+**One page, these sections, all in Indonesian:**
+
+1. **Nilai aplikasi** — the measured inventory (47.805 lines, 14 screens, 2.260 passing checks, 16
+   matrix-gated modules, 23 permission helpers) and the replacement-cost anchor.
+2. **Apa yang tidak dimiliki pesaing** — titip as a money rule, Bal/Slop/Bks, the geofence that
+   REFUSES a sale, the owner-editable tier matrix, POV preview, pita-cukai age as a freshness
+   signal. And, honestly, what the competitors have that KPM does not.
+3. **Pembanding pasar** — the measured table (Accurate, Mekari Jurnal, Badger Maps, Repsly/Skynamo).
+4. **Harga** — subscription, perpetual, exclusive; the worked Rp 20 juta example.
+5. **Maintenance** — the four buckets, the response-time table.
+6. **Legalitas** — the researched half: badan usaha, pajak, hak cipta, batas tanggung jawab, escrow.
+   **Every figure cited to a source.**
+7. **13 pasal kontrak** — drafted as real clauses.
+8. **Cara menjual** — the 7 steps and the 4 don'ts.
+9. **Proposal satu halaman** — the template he hands over.
+
+Favicon suggestion: 📊. Title: a short name, not a summary.
+
+**Run `Skill(anthropic-skills:humanizer)` over the finished page before publishing** — he asked for
+it by name on 2026-09-09: *"and also use /humanizer skill to make this tomorrow"*. It is already a
+standing rule here, but this page is the one that will be read by someone who is not him: a factory
+owner, and possibly that factory's lawyer. AI-shaped prose in a document about money and contracts
+reads as unserious, and the reader will not say so — they will just trust it less.
+
+Watch specifically for what that skill catches: rule-of-three lists, em-dash overuse, inflated
+words (*komprehensif*, *solusi menyeluruh*, *mengoptimalkan*), and vague attributions
+(*banyak ahli mengatakan*). And the KPM house rule stands — **never "kamu"**; this document uses
+"Anda" throughout because its reader is a business owner.
+
+⚠️ **He must see it, so publish it — do not leave it as a local file.** And do not publish anything
+that imitates a real law firm's advice or a government document; it is his working brief, and the
+page must say so on it.
+
+## ⚠️ QUOTA — pace on the 5-HOUR window, his instruction
+
+**Aldi, 2026-09-09: *"dont use weekly quota for benchmark, use the 5 hours reset quota for now since
+we have around 150 percent of 5 hours quota left"*. That is his call and it stands.**
+
+So: pace this job against the **5-hour session bucket**, which refills overnight, and do not open a
+reply by quoting the weekly figure at him. He was at 63% of the 5-hour window when he said it.
+
+One line of context, recorded once and not to be repeated at him every turn: the weekly limit still
+exists underneath (85% used on 2026-09-09, resetting ~12 September) and it is a hard stop if it is
+reached. Mention it only if it is actually about to bite — he has been told, he decided, and
+re-raising a settled decision is the thing he has objected to before.
+
+**Practical pacing for this job:** the research is seven items, one browser batch each. The Artifact
+is written once, not iterated. That fits comfortably in a fresh 5-hour window.
+
 ## Traps
 
 **Do not state a tax rate, a fee or an article number without a source in the note.** He is going to

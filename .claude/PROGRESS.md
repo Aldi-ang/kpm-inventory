@@ -1,6 +1,25 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-09-09 21:10 WIB (🟠 KPM — four code fixes shipped, then the session turned to BUSINESS: pricing, product inventory and how to sell KPM. Nothing pushed. 1422 selfcheck · 722 audit · build clean. ⚠️ HE STILL MUST PRESS "Rebuild sales totals" ONCE. 🔴 NEW BLOCKER FOUND: the Rank Config cross-tenant gap means he can sell to ONE customer safely, not two. Next job: the legal research, in Indonesian, with real sources.)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **1422/1422 selfcheck · 722/722 audit · build clean** · branch `phase0-solid-ground`
+**Updated: 2026-09-09 21:25 WIB (🟠 KPM — SESSION CLOSED. Four code fixes shipped, then the session turned to BUSINESS: pricing, product inventory, how to sell KPM. Nothing pushed. 1422 selfcheck · 722 audit · build clean. ⚠️ HE STILL MUST PRESS "Rebuild sales totals" ONCE. 🔴 BLOCKER: the Rank Config cross-tenant gap caps him at ONE customer. Next job: the legal research + ONE Indonesian Artifact — but ASK HIM FIRST, the weekly quota is the binding limit and tomorrow does not reset it.)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **1422/1422 selfcheck · 722/722 audit · build clean** · branch `phase0-solid-ground`
+
+## 🟠 2026-09-09 21:25 — session closed. He deferred the research to "tomorrow"
+
+His words: *"can u do this research fully tomorrow and give me a complete information about this app
+value and all the legalities to prepare to sell it and make it an artifact or document so that i can
+see it on the google sheet or something? maybe this need a lot of quota so lets do this tomorrow
+instead"* and *"and also use /humanizer skill to make this tomorrow"*.
+
+**Deliverable is specced in the brief:** ONE published Artifact, in Indonesian, nine sections —
+value, what competitors lack, market comps, price, maintenance, legalities with sources, 13 contract
+clauses, sales process, proposal template. **Not a Google Sheet** — contract clauses are prose, not
+rows, and the Sheets connector needs an auth flow a non-interactive session cannot run. Humanizer
+over it before publishing, and never "kamu".
+
+✅ **PACING — HIS INSTRUCTION, 2026-09-09:** *"dont use weekly quota for benchmark, use the 5 hours
+reset quota for now since we have around 150 percent of 5 hours quota left"*. **Pace on the 5-hour
+bucket, which refills overnight; do not open replies quoting the weekly number at him.** The weekly
+limit still exists underneath (85% used, resets ~12 Sept) and is a hard stop if reached — raise it
+only if it is actually about to bite. He was told, he decided.
 
 ## 🟠 2026-09-09 21:10 — pricing and selling KPM; the legal half is still owed
 
