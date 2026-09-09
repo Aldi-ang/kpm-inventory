@@ -1,81 +1,105 @@
 # The one job
 
-**A brand-new company's first minute ends in a red alarm that will not go away, and the alarm then
-paints over the dialogs the owner needs to use. Fix both halves — they are one story.**
+**Close the Fleet & Roster question. A fix shipped (`da71cbd`) that is certainly a real bug and may
+not be the one Aldi hit. Ask him what the empty roster box says now, then finish it.**
 
-Found on the 2026-09-09 day-one walk, ranked first of seven. Full walk:
-`A-Brain/Brainstorm/2026-09-09_day-one-walk.md`.
+Start by asking him — one question, nothing else:
 
-## What happens
+> Open Fleet & Roster as your T4 again. The empty box now says one of four things. Which?
 
-Save the very first product with **MIN. ALERT (BKS)** left blank. The field falls back to the
-company default of **3 Bal = 600 Bks**, so a product that has just been created with a small
-opening stock is instantly "critically low". The owner has done nothing wrong and the app opens
-with a red alarm.
+## Why this is not finished
 
-Then the toast that announces it **never expires**, and it renders at `z-index: 10000`. On the walk
-it covered the "WHO IS BUYING?" search box inside the sale dialog — so the alarm did not just
-mislead, it blocked the next thing he had to do.
+His report, 2026-09-09: *"my tier 4 cant even detect its own sales team inside the fleet and
+roster"*. His screen read `UNASSIGNED ROSTER · ACTIVE PERSONNEL: 0 · No personnel found`.
 
-## The two halves, and why neither alone is the fix
+`App.jsx:453` routes every database call in the app through `bossUid || user.uid`.
+`FleetCanvasManager.jsx:19` re-derived its own id and left `bossUid` out, so nine collection paths —
+the roster listener, branch stock, the product/branch-inventory writes behind Load Canvas and
+Reconcile, and the GPS-bypass approvals — pointed at the signed-in person's own empty vault. That is
+fixed: the component now takes `masterUserId` from App.
 
-**Half 1 — the threshold.** A blank MIN. ALERT means "he has not decided yet", and it is currently
-read as "use 600". Find where the company default is applied and decide what a blank field should
-mean for a product whose stock has never been counted. Do NOT silence the low-stock alarm itself:
-it is correct and he needs it. The bug is the *default*, not the warning.
+**But he found it through the POV switch, and POV keeps his real uid.** On the owner's own account
+`bossUid === user.uid`, so old and new code do exactly the same thing there. The vault bug is
+[certain] for a real tier-4 *login*; that it was the live cause on *his* screen is [likely] and
+unproven. Do not open this session by claiming it is fixed.
 
-**Half 2 — the toast lifetime.** Find the toast in `src/components/Toast.jsx` (`notify()`) and see
-which severities auto-dismiss. Do NOT auto-dismiss everything: an error that vanishes before it is
-read is the silence he calls a bug, and a report he asked for should stay. Errors and reports want
-different lifetimes. The `z-index: 10000` over a dialog is the separate, smaller half — a toast
-that outranks a modal is a layering decision nobody made on purpose.
+## The four answers and what each one means
 
-## Traps
+`src/FleetCanvasManager.jsx` (search `AN EMPTY ROSTER HAS FOUR DIFFERENT CAUSES`) now prints one of:
 
-**Do not fix this by lowering the alarm's sensitivity.** Every product will eventually be genuinely
-low and the alarm has to fire then. If the walk's product is not actually low, the threshold is
-wrong; if it is low, the alarm is right and only the toast needs work. Decide which before editing.
+| what he sees | the cause | what to do |
+|---|---|---|
+| *"The roster could not be read (…)"* | Firestore refused the listener | get the code from him; it is a rules question, and **he deploys rules, never you** |
+| *"Your own staff record was not found"* | `TEST_TIER_4` is absent from the vault now being read | `App.jsx:3513` writes it at `artifacts/{appId}/users/{userId}/motorists/{account.id}` on first wear — check that id against the one the listener reads |
+| *"You are not posted to a branch yet"* | the costume has no `location` | `povPreview.js` defaults it to `'Headquarters'`; find who cleared it |
+| *"Nobody is posted to X"* | **the vault is fine** — his team is filed under a different area string | not a code bug; it is the exact-match rule below |
 
-**`notify()` is called from everywhere.** Changing its default lifetime changes every screen at
-once. Grep the call sites before you touch the signature, and change behaviour per severity rather
-than globally.
+## The trap that makes a lazy patch wrong
 
-**Mixed line endings:** the files here are LF. Check before editing or an edit anchor silently misses.
+**Do not "fix" this by loosening the area filter.** `FleetCanvasManager.jsx` line ~90 matches
+`m.location` against the admin's own area **exactly**, lowercased and trimmed. That is the whole
+regional boundary — a regional admin seeing another branch's staff is a permission hole, not a
+convenience. If the answer is *"Nobody is posted to X"*, the fix is data (post the team to that
+area, or move the costume), or a deliberate product decision from Aldi about what a T4 may see. It
+is never a wider filter chosen by you.
+
+**And do not make `previewIdentity` rewrite the email or the uid** to make POV agree with a real
+login. `A-Brain/Wiki/Concepts/POV Changes the Id, Never the Email.md` says why: email is identity
+and other code makes real decisions on it. Stand the lookup down at the screen instead — this file
+already does that at the `myProfile` line.
+
+**Mixed line endings:** these files are LF. Check before editing or an edit anchor silently misses.
 
 ## Done when
 
-- A brand-new company can create its first product and reach the sale screen with no red alarm it
-  did not earn.
-- A genuinely low product still raises one — verify by setting a real MIN. ALERT above the stock.
-- No toast can cover a dialog's own controls.
-- An error toast still waits to be read; a routine report clears itself.
-- Two lines in `src/config/logicFixes.selfcheck.mjs`: the regression guard (a blank MIN. ALERT must
-  not resolve to the 600-Bks company default for an uncounted product) and the behaviour check (the
-  low-stock comparison re-run on real numbers, low and not-low).
+- Aldi's answer is recorded in `A-Brain/Wiki/Entities/Terminal Tenant Path Split.md`, replacing the
+  open "whether it was the live cause is what the next look will say" line with what it actually was.
+- If a code bug remains, it is fixed with a regression guard and a behaviour check in
+  `src/config/logicFixes.selfcheck.mjs`.
+- If it was data or the exact-match rule, **no code changes** — say so plainly and write it down.
+- He can see his T5/T6 team on that screen, which was the point: he wants to add stock to their
+  inventory.
 
-Then rewrite this file with the next single job.
+Then rewrite this file with the next single job — the queue below has it.
 
 <details>
 <summary>Queue — do NOT paste these; promote one only when the job above is finished</summary>
 
+### Promote this next: the first minute ends in a red alarm that will not go away
+
+Ranked first of seven on the 2026-09-09 day-one walk. Full walk:
+`A-Brain/Brainstorm/2026-09-09_day-one-walk.md`.
+
+Save the very first product with **MIN. ALERT (BKS)** blank → it falls back to the company default
+of 3 Bal = 600 Bks → the product is instantly "critically low". The toast then **never expires** and
+renders at `z-index: 10000`; on the walk it covered the "WHO IS BUYING?" search box inside the sale
+dialog.
+
+Two halves. **The threshold:** a blank MIN. ALERT means "not decided yet", not "use 600" — do NOT
+silence the alarm itself, it is correct and he needs it. **The toast lifetime:**
+`src/components/Toast.jsx` (`notify()`) — do NOT auto-dismiss everything; an error that vanishes
+before it is read is the silence he calls a bug. Errors and reports want different lifetimes, and
+`notify()` is called from everywhere, so change behaviour per severity, never the global default.
+
 ### Shipped 2026-09-09
 
-* `284ea64` — **sale proof camera.** `capture="environment"` was never enforcement: phones honour
-  it, desktops ignore it and open the file picker, so a desk sale could attach a screenshot. T4–T6
-  now open a real `getUserMedia` view and have **no file input in the DOM** of a shipped build;
+* `da71cbd` — **Fleet & Roster vault.** Above. Also: an empty roster now names which of its four
+  causes fired, and a refused read prints its Firestore code instead of hiding in `console.warn`.
+  Vault: `Wiki/Entities/Terminal Tenant Path Split.md`, second-file section.
+* `284ea64` — **sale-proof camera.** `capture="environment"` was never enforcement: phones honour
+  it, desktops ignore it and open the file picker. T4–T6 now open a real `getUserMedia` view
+  (`src/components/ProofCamera.jsx`) and have **no file input in the DOM** of a shipped build;
   T1–T3 keep the picker. `canPickFromGallery` reads the matrix key `photo_pick_from_gallery`,
-  absence = tier default. `canSubmitSale` untouched — the photo is still mandatory for everyone.
-  Vault: `A-Brain/Wiki/Concepts/capture=environment Is a Request, Not a Lock.md`.
-  ⚠️ **Deliberately not touched:** the GPS-bypass proof photo (`MerchantSalesView.jsx:1839`) and the
-  NOO storefront photo (`:2914`) still use plain file inputs. Same class of evidence, arguably the
-  same rule — his call, and a separate job.
-* `a6192b1` — **omzet waits for the cash.** One module, `src/utils/revenueRule.js`. Also fixed the
-  rebuild button, which had never rendered.
+  absence = tier default. `canSubmitSale` untouched. Vault:
+  `Wiki/Concepts/capture=environment Is a Request, Not a Lock.md`.
+  ⚠️ Deliberately not touched: the GPS-bypass proof photo (`MerchantSalesView.jsx:1839`) and the NOO
+  storefront photo (`:2914`) still use plain file inputs. His call, separate job.
+* `a6192b1` — **omzet waits for the cash.** One module, `src/utils/revenueRule.js`.
 * `2714b12` — **buyback off** for everyone including the owner; Exchange kept.
 * **He must press "Rebuild sales totals" once on the live app** (Settings → General & Brand) or his
   historical months keep the old inflated figures. Tell him again if he has not done it.
 
-### Day one — from the 2026-09-09 walk, ranked, unblocked
+### Day one — the rest of the walk, ranked, unblocked
 
 2. **The phantom competitor.** A store created today and sold to the same day shows an
    undismissable red `ALREADY SECURED TODAY — Claimed by ANOTHER AGENT`. `CustomerManager.jsx:248`
@@ -119,6 +143,7 @@ calculation, **because it is not company money**. Not a bug. Do not "fix" it.
 
 Round 7 Section D of `MANUAL_TEST_CHECKLIST.md` has never been run. C4 needs a second BANDUNG
 account. `cdaabc7`, `967e447`, `83f5041` unverified by eye. HQ 3 and HQ TEST are his money and his
-call. Bug 3, the geofence bypass routing, is still unanswered.
+call. Bug 3, the geofence bypass routing, is still unanswered — and note that the GPS-bypass
+approvals were among the nine paths `da71cbd` re-routed, so re-check it before treating it as open.
 
 </details>

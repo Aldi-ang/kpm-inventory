@@ -1,6 +1,15 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-09-09 19:05 WIB (🟠 KPM — two shipped today: the sale-proof camera rule `284ea64`, and the Fleet & Roster vault fix `da71cbd` (vault `7af56d5`, `ac2bf02`). Nothing pushed. 1414 selfcheck · 722 audit · build clean. ⚠️ HE STILL MUST PRESS "Rebuild sales totals" ONCE. ❓ AND HE OWES ONE LOOK: reopen Fleet & Roster as T4 and read what the empty box now says. Next job: the first-minute red alarm.)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **1414/1414 selfcheck · 722/722 audit · build clean** · branch `phase0-solid-ground`
+**Updated: 2026-09-09 19:17 WIB (🟠 KPM — two shipped today: the sale-proof camera rule `284ea64`, and the Fleet & Roster vault fix `da71cbd` (vault `7af56d5`, `ac2bf02`). Nothing pushed. 1414 selfcheck · 722 audit · build clean. ⚠️ HE STILL MUST PRESS "Rebuild sales totals" ONCE. ❓ AND HE OWES ONE LOOK, which is now the NEXT JOB: reopen Fleet & Roster as T4 and read what the empty box says.)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **1414/1414 selfcheck · 722/722 audit · build clean** · branch `phase0-solid-ground`
+
+## 🟠 2026-09-09 19:17 — brief rewritten: the fleet question is the next job, not the red alarm
+
+`.claude/NEXT-SESSION.md` now opens with the Fleet & Roster four-way answer, because that thread is
+open and unproven — a shipped fix that may not be the live cause outranks a queued bug. The
+first-minute red alarm moved to the top of the queue underneath, ready to promote.
+
+**New files this session:** `src/components/ProofCamera.jsx` (live sale-proof camera, portalled to
+body, names every reason it cannot open).
 
 ## 🟠 2026-09-09 19:05 — Fleet & Roster was reading a vault nobody writes to
 
