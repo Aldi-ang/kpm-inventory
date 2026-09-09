@@ -1,6 +1,60 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-09-08 20:36 WIB (🟠 KPM SESSION CLOSED — three money/data fixes shipped and tested where testable. Tomorrow: the day-one customer walk, WITH him. Thirteen fixes local, none pushed. Bug 3 still needs his routing answer.)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **1360/1360 selfcheck · 722/722 audit · build clean** · branch `phase0-solid-ground`
+**Updated: 2026-09-09 08:02 WIB (🟠 KPM — the day-one customer walk is DONE, alone, in the emulator. All seven onboarding paths complete. Nothing fixed on purpose: 1 money finding that needs his answer, 8 day-one breaks, 2 phone breaks, 7 wording. Still thirteen fixes local, none pushed.)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **1360/1360 selfcheck · 722/722 audit · build clean** · branch `phase0-solid-ground`
+
+## 🟠 2026-09-09 08:02 — the day-one walk ran. Seven paths, nothing fixed.
+
+Walked alone in the emulator on an **empty tenant** — one directory row, nothing seeded. Every
+product, person, store and sale below was made through the UI, which is the point. Desktop 1440x900
+and phone 375x812. **All seven paths completed**, so nothing on the day-one path is a dead end.
+
+**Nothing was changed in `src/`.** The ranking is his; a session that fixes eagerly spends his
+deadline for him. Full list, with the options and what was ruled out:
+`A-Brain/Brainstorm/2026-09-09_day-one-walk.md` (vault commit `651acf1`).
+
+**The money finding — the only one that outranks the rest, and it needs him.** One Cash sale
+(Rp 2.000) and one Titip placement (Rp 24.000), then a store audit declaring the Titip packet
+still on the shelf:
+
+| screen | after the audit | right? |
+|---|---|---|
+| Sales Terminal `TAKEN` · Dashboard `OMZET` · Product Performance | Rp 26.000 | no |
+| Receivables · store audit receipt · EOD expected cash | Rp 24.000 owed · 0 Laku · Rp 2.000 | yes |
+
+Rp 2.000 was actually collected. The same Rp 24.000 is counted as revenue and as debt at once, and
+the audit that proved it unsold moved nothing. `f46bc4a` **holds** — the audit itself is correct;
+the lie is downstream in the rollups, which read the placement instead of the audit.
+
+**Day one, unblocked, ranked:** first product raises a false `critically low` alarm (blank MIN.
+ALERT falls back to 3 Bal = 600 Bks) and the toast never expires · toasts sit at `z-index:10000`
+over every dialog and covered the `WHO IS BUYING?` search box · a store created today is claimed by
+a phantom `ANOTHER AGENT` on the same-day sale (`CustomerManager.jsx:248`/`:1018` +
+`MerchantSalesView.jsx:536`) · every sale needs a photo unconditionally
+(`MerchantSalesView.jsx:1570`), so desk selling is impossible without a camera · new personnel
+default to `T3: HQ SALES MANAGER` · the GPS placeholder reads as a filled value · `SSOT Violation`
+as customer-facing copy.
+
+**Phone at 375:** the only nav control is a 14x66px sliver at the right edge (`.kpm-edge-ribbon`,
+`h-[132px]`, `top:-66px`), and the notification bell is off-screen entirely (x 398 → 445).
+
+**Confirmed working, so nobody re-checks it:** the dashboard is NOT broken — the old `Rp 0 against
+three seeded transactions` was the seed writing no `timestamp`, so `txDate`/`dayOf` need no work ·
+EOD expected cash correctly excludes the Titip · unit maths correct throughout (100 → 50 → 49 → 48
+Bks) · every confirm was an in-app dialog, no `window.confirm` anywhere · every action reported.
+
+**WAITING ON ALDI — one decision, and it blocks the money fix:**
+
+> Should a Titip placement count towards OMZET before the store audit says it sold?
+
+His own unanswered question from 2026-09-08 was *"is Titip revenue booked at placement correct?"* —
+this is that question with the numbers attached. If the answer is no, the Dashboard and Product
+Performance rollups must read the audit result rather than the placement value, and every
+historical Titip is restated. Nothing was touched until he answers.
+
+Bug 3 (geofence bypass routing) is still unanswered from yesterday and is unchanged by this walk.
+
+`.claude/NEXT-SESSION.md` now holds the first unblocked job: the false first-product alarm and the
+toast that will not go away.
 
 ## 🟠 2026-09-08 20:36 — session closed. *"lets finish tomorrow"*
 
