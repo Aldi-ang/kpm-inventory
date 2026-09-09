@@ -37,6 +37,14 @@ in about two years (part ③ of the maintenance explainer, written before price 
 goes on the table to be refused — and because a recurring Rp 12 juta clears a factory's finance
 department far more easily than a Rp 600 juta capex item.
 
+**The answer-script is written**, in `Brainstorm/2026-09-10_pricing-revisi-50-100-user.md` §"Kalau
+ditanya kenapa segitu": the sentences for why Rp 12 juta and why Rp 600 juta, the three rules that
+govern how to answer at all (never quote your own costs, go quiet after the number, cut scope not
+price), and answers to the two objections that are certain to come — *"kan keluarga"* and *"ini kan
+dibuat pakai AI"*. The close on the monthly figure is **Rp 4.000 per salesman per day**. The close
+on the perpetual figure is that Pasal 9 escrow already gives the uncle what Rp 600 juta would buy,
+free — so lead with it instead of waiting to be asked.
+
 ### What actually got riskier, and it is not the price
 
 ⚠️ **At 50-100 users he is no longer selling software, he is selling himself as an operations
