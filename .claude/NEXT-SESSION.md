@@ -53,48 +53,41 @@ government page, a law firm explainer, or the statute — and cite it in the not
   to review. Not a finished contract; a draft that saves him an hour of a lawyer's time.
 * **The one-page proposal template** — masalah, angka, harga, langkah berikutnya. One page.
 
-## The deliverable — his words, 2026-09-09
+## ⚠️ THE AUDIENCE CHANGED — read this before writing a word of the document
 
-> *"give me a complete information about this app value and all the legalities to prepare to sell
-> it and make it an artifact or document so that i can see it on the google sheet or something"*
+Aldi, 2026-09-09, after the deliverable was first specced: *"i think he would be mad if i give the
+artifact for the price first lol, we need to complete what we need to complete then give review for
+this app to him as video or presentation then give the price at last"*.
 
-**Publish ONE Artifact, in Indonesian, and hand him the URL.** Not a Google Sheet: this is a
-document with tables and long prose, not rows to sort — a spreadsheet is the wrong shape for
-contract clauses, and the Sheets connector needs an auth flow this session cannot run. An Artifact
-opens on his phone, survives `/clear`, and he can send the link to his uncle when he chooses.
+**He is right, and the earlier spec was wrong.** Leading with a price — to family especially — asks
+someone to judge a number before they have any reason to want the thing. The order he named is the
+order the sales section of the Indonesian explainer already argues for.
 
-**One page, these sections, all in Indonesian:**
+**So tomorrow's Artifact is HIS private brief, not a document for the uncle.** Same nine sections,
+completely different tone: notes to himself, not a proposal to a client. Nothing in it is written to
+be handed over. It exists so that when the uncle eventually asks *"berapa?"*, Aldi already knows the
+answer, the reasoning, and the floor he will not go under.
 
-1. **Nilai aplikasi** — the measured inventory (47.805 lines, 14 screens, 2.260 passing checks, 16
-   matrix-gated modules, 23 permission helpers) and the replacement-cost anchor.
-2. **Apa yang tidak dimiliki pesaing** — titip as a money rule, Bal/Slop/Bks, the geofence that
-   REFUSES a sale, the owner-editable tier matrix, POV preview, pita-cukai age as a freshness
-   signal. And, honestly, what the competitors have that KPM does not.
-3. **Pembanding pasar** — the measured table (Accurate, Mekari Jurnal, Badger Maps, Repsly/Skynamo).
-4. **Harga** — subscription, perpetual, exclusive; the worked Rp 20 juta example.
-5. **Maintenance** — the four buckets, the response-time table.
-6. **Legalitas** — the researched half: badan usaha, pajak, hak cipta, batas tanggung jawab, escrow.
-   **Every figure cited to a source.**
-7. **13 pasal kontrak** — drafted as real clauses.
-8. **Cara menjual** — the 7 steps and the 4 don'ts.
-9. **Proposal satu halaman** — the template he hands over.
+**The uncle-facing documents come LATER and are a separate job:** a demo script, and the one-page
+proposal. Do not write those tomorrow.
 
-Favicon suggestion: 📊. Title: a short name, not a summary.
+### The order, and the step he is about to skip
 
-**Run `Skill(anthropic-skills:humanizer)` over the finished page before publishing** — he asked for
-it by name on 2026-09-09: *"and also use /humanizer skill to make this tomorrow"*. It is already a
-standing rule here, but this page is the one that will be read by someone who is not him: a factory
-owner, and possibly that factory's lawyer. AI-shaped prose in a document about money and contracts
-reads as unserious, and the reader will not say so — they will just trust it less.
+1. **Finish the ship-blocking work.** 30 September, money bugs first.
+2. **ASK — one conversation, no laptop open.** *"Berapa titip yang di luar sekarang? Siapa yang
+   hitung? Bulan lalu berapa yang hilang di lapangan?"* ⚠️ **This is the step missing from his
+   three-step plan.** A video tells; it cannot ask. Show a polished presentation first and he will
+   demo the features he is proud of instead of the one thing his uncle actually loses money on.
+3. **SHOW — live, on his uncle's own products and stores**, not test data. Getting that product list
+   in advance is itself discovery, and it costs the uncle a little effort, which is commitment.
+   ⚠️ **Prefer a live demo over a video for the FIRST showing.** A video is for the second customer,
+   when he cannot be in the room. Live lets him steer past rough edges, and he learns what confuses
+   a real user — which a recording cannot tell him. Record the video afterwards, once he knows which
+   three screens land.
+4. **PRICE — last, and only when asked.**
 
-Watch specifically for what that skill catches: rule-of-three lists, em-dash overuse, inflated
-words (*komprehensif*, *solusi menyeluruh*, *mengoptimalkan*), and vague attributions
-(*banyak ahli mengatakan*). And the KPM house rule stands — **never "kamu"**; this document uses
-"Anda" throughout because its reader is a business owner.
-
-⚠️ **He must see it, so publish it — do not leave it as a local file.** And do not publish anything
-that imitates a real law firm's advice or a government document; it is his working brief, and the
-page must say so on it.
+> **Prepare the price. Do not present it.** If the uncle asks mid-demo — and he will — *"I haven't
+> decided"* is a worse answer than any number. That is exactly what tomorrow's brief is for.
 
 ## ⚠️ QUOTA — pace on the 5-HOUR window, his instruction
 

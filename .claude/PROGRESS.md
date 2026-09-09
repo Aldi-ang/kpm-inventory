@@ -9,6 +9,14 @@ value and all the legalities to prepare to sell it and make it an artifact or do
 see it on the google sheet or something? maybe this need a lot of quota so lets do this tomorrow
 instead"* and *"and also use /humanizer skill to make this tomorrow"*.
 
+⚠️ **AUDIENCE CORRECTED, same evening:** *"i think he would be mad if i give the artifact for the
+price first lol, we need to complete what we need to complete then give review for this app to him
+as video or presentation then give the price at last"*. He is right. **Tomorrow's Artifact is HIS
+PRIVATE BRIEF, not a document for the uncle** — same sections, notes-to-self tone, nothing written
+to be handed over. The demo script and one-page proposal are a separate, later job. And the step
+missing from his three-step plan is ASK: a video tells, it cannot ask, and a live demo on the
+uncle's own product data beats a recording for the first showing.
+
 **Deliverable is specced in the brief:** ONE published Artifact, in Indonesian, nine sections —
 value, what competitors lack, market comps, price, maintenance, legalities with sources, 13 contract
 clauses, sales process, proposal template. **Not a Google Sheet** — contract clauses are prose, not
