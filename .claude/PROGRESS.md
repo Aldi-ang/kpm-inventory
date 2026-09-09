@@ -1,6 +1,55 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-09-09 08:02 WIB (🟠 KPM — the day-one customer walk is DONE, alone, in the emulator. All seven onboarding paths complete. Nothing fixed on purpose: 1 money finding that needs his answer, 8 day-one breaks, 2 phone breaks, 7 wording. Still thirteen fixes local, none pushed.)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **1360/1360 selfcheck · 722/722 audit · build clean** · branch `phase0-solid-ground`
+**Updated: 2026-09-09 08:55 WIB (🟠 KPM — he answered both questions and the MONEY half shipped: `a6192b1`. Omzet waits for the cash, Piutang has its own line, and the rebuild button now exists at all. 1382 selfcheck · 722 audit · build clean. ⚠️ HE MUST PRESS "Rebuild sales totals" ONCE on the live app. Camera half is next.)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **1382/1382 selfcheck · 722/722 audit · build clean** · branch `phase0-solid-ground`
+
+## 🟠 2026-09-09 08:55 — omzet waits for the cash now. `a6192b1`
+
+He answered both open questions in one message. **The money half is built, tested on screen, and
+committed.** The camera half is queued in `.claude/NEXT-SESSION.md` and was deliberately not
+started, so it does not get stranded half-done.
+
+> *"omset come after goods is sold and money is received, receivable doesnt count, should have
+> their own data and panel for receivable outside of the revenue or omzet"* — and, on whether the
+> quantity beside it follows the money or the warehouse door, *"A for the sold bks mean"*.
+
+**Proved on the same emulator data that read Rp 26.000 yesterday:**
+
+| screen | before | now |
+|---|---|---|
+| Dashboard OMZET | Rp 26.000 | **Rp 2.000** + `Piutang titip · belum dibayar Rp 24.000` |
+| Leaderboard | Rp 26.000 | **Rp 2.000 · 1 transaksi** |
+| Product Performance | 2 Bks · Rp 26.000 | **1 Bks · Rp 2.000** |
+| cached `sales_stats/2026-09` | 26000 / 2 | **2000 / 1** after the rebuild |
+
+Rp 2.000 is what was actually collected. Store audit, EOD and Receivables were right all along and
+are untouched.
+
+**One rule, one file.** `src/utils/revenueRule.js` — it had been written correctly once, in
+`EODReconciliationView`, and wrongly in seven other screens that each carried their own
+`type === 'SALE'`. Its own module rather than a function in `salesRollup` because `dayStats` needs
+it too and the two would otherwise import each other.
+
+**Not a reversal of `f46bc4a`.** That fix subtracted an audit's `itemsReturned` because the
+placement had already booked the full drop. With nothing booked at the door there is nothing to
+reverse, and subtracting anyway drives the month negative. Its own comment named the half it could
+not reach and said the call was Aldi's. He made it. Three regression checks pin the old form out.
+
+**Found while proving history is repairable, and it mattered:** `handleRebuildSalesStats` and
+`isRebuildingStats` were passed to `<DashboardView>`, which reads neither, so SettingsView's
+`isSystemOwner && handleRebuildSalesStats` gate was permanently false — **the "Rebuild the sales
+totals" button had never rendered for anybody.** Without it the new rule would only ever apply
+going forward. Fixed, pressed, and the cached month dropped from 26000/2 to 2000/1.
+
+**WAITING ON ALDI — one action, not a decision:**
+
+> Press **Settings → General & Brand → Rebuild sales totals** once on the live app.
+
+Nothing is deleted; the receipts stay untouched and only the summary is recalculated. Until he
+does, Product Performance keeps showing the old inflated figures for months already recorded, and
+September will drop by the value of every Titip packet still sitting unaudited on a shelf. That
+fall is the correct number, and he was told to expect it before the work started.
+
+Bug 3, the geofence bypass routing, is still unanswered and unchanged by this.
 
 ## 🟠 2026-09-09 08:02 — the day-one walk ran. Seven paths, nothing fixed.
 
