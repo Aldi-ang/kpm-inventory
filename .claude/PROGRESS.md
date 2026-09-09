@@ -1,12 +1,26 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-09-09 19:17 WIB (🟠 KPM — two shipped today: the sale-proof camera rule `284ea64`, and the Fleet & Roster vault fix `da71cbd` (vault `7af56d5`, `ac2bf02`). Nothing pushed. 1414 selfcheck · 722 audit · build clean. ⚠️ HE STILL MUST PRESS "Rebuild sales totals" ONCE. ❓ AND HE OWES ONE LOOK, which is now the NEXT JOB: reopen Fleet & Roster as T4 and read what the empty box says.)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **1414/1414 selfcheck · 722/722 audit · build clean** · branch `phase0-solid-ground`
+**Updated: 2026-09-09 19:34 WIB (🟠 KPM — three shipped today: sale-proof camera `284ea64`, Fleet & Roster tenant-vault `da71cbd`, and the one Aldi actually hit, `b945280`. Vault `7af56d5`, `ac2bf02`, `ea4e34f`. Nothing pushed. 1421 selfcheck · 722 audit · build clean. ⚠️ HE STILL MUST PRESS "Rebuild sales totals" ONCE. ✅ AND HE SHOULD REOPEN FLEET & ROSTER AS T4 — it should now list the Headquarters team. Next job: the first-minute red alarm.)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **1421/1421 selfcheck · 722/722 audit · build clean** · branch `phase0-solid-ground`
 
-## 🟠 2026-09-09 19:17 — brief rewritten: the fleet question is the next job, not the red alarm
+## 🟠 2026-09-09 19:34 — the fleet roster question is CLOSED, and it was not the vault
 
-`.claude/NEXT-SESSION.md` now opens with the Fleet & Roster four-way answer, because that thread is
-open and unproven — a shipped fix that may not be the live cause outranks a queued bug. The
-first-minute red alarm moved to the top of the queue underneath, ready to promote.
+**Shipped `b945280`.** His answer to the four-way message was *"Your own staff record was not
+found"*, and his screenshot showed **seven people at HEADQUARTERS with [TEST] REGIONAL ADMIN among
+them** — so the read had succeeded and the roster was full the whole time.
+
+`FleetCanvasManager` destructures `agentProfileId`; **App.jsx never passed it.** The POV stand-down
+(added so the email lookup cannot find Aldi's own record while he wears another tier) falls back to
+`find(m => m.id === agentProfileId)` — `find(m => m.id === undefined)`, which is nothing, on every
+tier, however full the roster. A real login never reaches that half because the email lookup answers
+first; **only the preview does, and the preview is what nobody re-tested after the stand-down was
+added.** App.jsx passes that prop to five other screens, so a file-wide grep says yes — the guard
+had to be scoped to the `<FleetCanvasManager` tag to see the gap.
+
+`da71cbd` (the `bossUid`-less tenant id) was a **second, genuine bug on the same screen** and is
+kept: nine paths hang off it including branch-stock writes, and it breaks any non-owner login. It
+was simply not the one he hit, because POV keeps his real uid.
+
+**NOW:** nothing is blocked. Next job is the first-minute red alarm, written in the brief.
 
 **New files this session:** `src/components/ProofCamera.jsx` (live sale-proof camera, portalled to
 body, names every reason it cannot open).
