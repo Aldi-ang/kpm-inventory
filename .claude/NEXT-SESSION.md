@@ -71,12 +71,18 @@ Then rewrite this file with the next single job.
   Canvas. Broken for any non-owner login, invisible on the owner's own account. Also: an empty
   roster now names which of its four causes fired, and a refused read prints its Firestore code
   instead of hiding in `console.warn`. Vault: `Wiki/Entities/Terminal Tenant Path Split.md`.
-* `284ea64` — **sale-proof camera.** `capture="environment"` was never enforcement: phones honour
-  it, desktops ignore it and open the file picker. T4–T6 now open a real `getUserMedia` view
-  (`src/components/ProofCamera.jsx`) and have **no file input in the DOM** of a shipped build;
-  T1–T3 keep the picker. `canPickFromGallery` reads the matrix key `photo_pick_from_gallery`,
-  absence = tier default. `canSubmitSale` untouched. Vault:
+* `284ea64` + `1857b97` — **sale-proof camera.** `capture="environment"` was never enforcement:
+  phones honour it, desktops ignore it and open the file picker. T4–T6 now open a real
+  `getUserMedia` view (`src/components/ProofCamera.jsx`) and have **no file input in the DOM, in
+  ANY build**; T1–T3 keep the picker. `canPickFromGallery` reads the matrix key
+  `photo_pick_from_gallery`, absence = tier default. `canSubmitSale` untouched. Vault:
   `Wiki/Concepts/capture=environment Is a Request, Not a Lock.md`.
+  ⚠️ **`1857b97` removed a dev-only "pick a file instead" bypass** that Aldi caught as tier 6:
+  *"me as tier 6 still can see this option and can use it"*. It was gated on `import.meta.env.DEV`,
+  never on the tier — but dev is the ONLY place he tests, so it removed the rule under test in the
+  one place it could be observed. **Do not reintroduce any build-mode escape hatch here.** To let a
+  tier attach a file, turn `photo_pick_from_gallery` ON in the matrix, test, turn it off. The guard
+  reads through `code()` because the comments naming the removed flag would otherwise match.
   ⚠️ Deliberately not touched: the GPS-bypass proof photo (`MerchantSalesView.jsx:1839`) and the NOO
   storefront photo (`:2914`) still use plain file inputs. His call, separate job.
 * `a6192b1` — **omzet waits for the cash.** One module, `src/utils/revenueRule.js`.

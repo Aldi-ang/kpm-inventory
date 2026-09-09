@@ -1,6 +1,29 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-09-09 19:34 WIB (🟠 KPM — three shipped today: sale-proof camera `284ea64`, Fleet & Roster tenant-vault `da71cbd`, and the one Aldi actually hit, `b945280`. Vault `7af56d5`, `ac2bf02`, `ea4e34f`. Nothing pushed. 1421 selfcheck · 722 audit · build clean. ⚠️ HE STILL MUST PRESS "Rebuild sales totals" ONCE. ✅ AND HE SHOULD REOPEN FLEET & ROSTER AS T4 — it should now list the Headquarters team. Next job: the first-minute red alarm.)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **1421/1421 selfcheck · 722/722 audit · build clean** · branch `phase0-solid-ground`
+**Updated: 2026-09-09 19:56 WIB (🟠 KPM — four shipped today: sale-proof camera `284ea64`, Fleet & Roster tenant-vault `da71cbd`, the roster bug he actually hit `b945280`, and the dev-bypass removal `1857b97`. Vault `7af56d5`, `ac2bf02`, `ea4e34f`, `16ee963`. Nothing pushed. 1422 selfcheck · 722 audit · build clean. ⚠️ HE STILL MUST PRESS "Rebuild sales totals" ONCE. Next job: the first-minute red alarm.)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **1422/1422 selfcheck · 722/722 audit · build clean** · branch `phase0-solid-ground`
+
+## 🟠 2026-09-09 19:56 — the dev-only file picker is gone; dev is where he tests
+
+**Shipped `1857b97`.** He opened the camera modal as tier 6 and found the bypass:
+*"me as tier 6 still can see this option and can use it"*.
+
+It was gated on `import.meta.env.DEV` and never on the tier, so it could not exist in production —
+which is what made it sound safe and is exactly why it was wrong. **`npm run dev` is the only place
+he tests.** A bypass living there does not preserve testability; it removes the rule under test in
+the one environment where the rule could be watched working.
+
+The file input is now gated on `galleryOk` alone, in every build. Verified in `dist`:
+`$t&&e.jsx("input",{type:"file"` — the `||!1` is gone and "Dev only" appears nowhere in the bundle.
+
+**To let a tier attach a file, use the matrix** — turn `photo_pick_from_gallery` ON for that tier in
+Settings → Permission Matrix, test, turn it off. That is the visible, auditable control, and a
+second hidden answer to the same question is how two answers start disagreeing.
+
+⚠️ **Consequence, stated not hidden:** on a machine with no webcam a camera-only tier genuinely
+cannot complete a sale. That is his rule — *"if no photo then sales is not possible"* — and the
+modal already names which of the three causes stopped it.
+
+**NOW:** nothing blocked. Next job is the first-minute red alarm, written in the brief.
 
 ## 🟠 2026-09-09 19:34 — the fleet roster question is CLOSED, and it was not the vault
 
