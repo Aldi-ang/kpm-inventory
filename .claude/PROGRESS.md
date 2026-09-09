@@ -1,6 +1,68 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-09-10 05:45 WIB (🟠 KPM — legal research DONE and committed to A-Brain `1e1d957`. Two vault notes + one published Artifact, all Indonesian, every number sourced. NO KPM CODE TOUCHED. ⚠️ HE STILL MUST PRESS "Rebuild sales totals" ONCE. 🔴 Rank Config cross-tenant gap still caps him at ONE customer — and the contract draft now promises per-customer separation in Pasal 10, so it is a clause he cannot honestly sign twice. Next job: the day-one red alarm, because that is what the uncle sees in minute one of the demo.)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **1422/1422 selfcheck · 722/722 audit · build clean (unchanged — no code touched)** · branch `phase0-solid-ground`
+**Updated: 2026-09-10 06:20 WIB (🟠 KPM — pricing REVISED. Aldi said the real user count is 50-100, not the 10-30 every earlier figure assumed, so Rp 2,5 juta/bulan is dead. New: Rp 4/7/12 juta bands, perpetual Rp 600 juta, and the arithmetic showing perpetual costs the BUYER more. A-Brain `1877cdf`. NO KPM CODE TOUCHED. ⚠️ HE STILL MUST PRESS "Rebuild sales totals" ONCE. 🔴 Rank Config cross-tenant gap gets WORSE at 100 users, and KPM has never run with more than a handful of accounts at once.)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **1422/1422 selfcheck · 722/722 audit · build clean (unchanged — no code touched)** · branch `phase0-solid-ground`
+
+## 🟠 2026-09-10 06:20 — 50-100 users, and every price in the vault was computed for 10-30
+
+His words: *"how much for renting how much for license buying and his employee who will use this app
+is around 50-100 people"*.
+
+**That last clause invalidates the headline recommendation.** Yesterday's note priced Rp 2,5
+juta/bulan and Option D says "up to 20 users" in as many words. New note:
+`Brainstorm/2026-09-10_pricing-revisi-50-100-user.md`. The old note keeps its measured comps and now
+carries a SUPERSEDED banner over the parts that changed.
+
+### The numbers
+
+| | |
+|---|---|
+| s/d 25 pengguna | **Rp 4 juta/bulan** |
+| 26–50 | **Rp 7 juta/bulan** |
+| 51–100 | **Rp 12 juta/bulan** |
+| di atas 100 | Rp 120 ribu/orang |
+| **Untuk Om** | pilot 6 bulan @ **Rp 4 juta**, lalu **Rp 12 juta**; implementasi **Rp 20 juta** (separuh dibebaskan ditukar testimoni + 2 perkenalan) |
+| **Lantai** | **Rp 6 juta/bulan** di rollout penuh |
+| Lisensi permanen | **Rp 600 juta** + Rp 120 juta/tahun maintenance |
+| Jual putus hak cipta | **Rp 5 miliar** — dihargai supaya ditolak |
+
+**Rp 12 juta is bracketed on both sides by measured numbers.** Accurate Online at 100 users is
+Rp 333.000 + 99 × Rp 22.200 = **Rp 2,53 juta**, and it does not run a van, a titip or a setoran.
+Badger Maps at 100 users is $58 × 100 ≈ **Rp 94 juta/bulan**. Rp 12 juta sits under market rate and
+over accounting software, which is the right place for a first customer still finding day-one bugs.
+
+**Perpetual is worse for the buyer, and he should say so out loud.** Five years of subscription at
+Rp 12 juta = **Rp 720 juta**. Perpetual Rp 600 juta + 5 × Rp 120 juta maintenance = **Rp 1,2
+miliar**. It only wins if the buyer drops maintenance, and without maintenance the app breaks itself
+in about two years (part ③ of the maintenance explainer, written before price came up). So perpetual
+goes on the table to be refused — and because a recurring Rp 12 juta clears a factory's finance
+department far more easily than a Rp 600 juta capex item.
+
+### What actually got riskier, and it is not the price
+
+⚠️ **At 50-100 users he is no longer selling software, he is selling himself as an operations
+department.** Three things, none of them about money:
+
+1. **KPM has never been run with that many users at once.** All testing so far has been a handful of
+   accounts. Real-time listener load at 100 users is an unanswered question.
+2. **The Rank Config shared-document gap gets worse**, not better, with more people on one document.
+3. **Pasal 8's response times were written for a much smaller load.** Same-working-day for a dead app
+   means 100 people stop selling.
+
+**This is why the 6-month pilot is not a pricing tactic.** One branch, 25 users, real money, small
+blast radius — it answers all three before a hundred people depend on it.
+
+## WAITING ON ALDI
+
+1. **Berapa dari 50-100 itu sales lapangan, dan berapa kantor?** Field users carry the value; office
+   users who only read reports should cost less or not count.
+2. **Berapa cabang?** Decides whether a one-branch pilot is even meaningful.
+3. **Pilot dulu, atau langsung harga penuh?**
+4. **Berapa jam per bulan yang benar-benar sanggup dia berikan?** This is what decides whether
+   Rp 12 juta is enough.
+5. Still open from 05:45: which job first — day-one bugs, Rank Config, or PBKDF2. (Rank Config just
+   got more urgent: it scales with user count.)
+6. Still open: `alucard/SKILL.md` says "Aldi is 14". Needs his permission to change to 24.
+
 
 ## 🟠 2026-09-10 05:45 — the legal research is closed, with a source per number
 
