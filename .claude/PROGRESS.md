@@ -62,6 +62,13 @@ blast radius — it answers all three before a hundred people depend on it.
 5. Still open from 05:45: which job first — day-one bugs, Rank Config, or PBKDF2. (Rank Config just
    got more urgent: it scales with user count.)
 6. Still open: `alucard/SKILL.md` says "Aldi is 14". Needs his permission to change to 24.
+7. **NEW 06:35 — one free question he can ask Om's finance person, and it settles the entity:**
+   *"Bagian keuangan bisa bayar ke perorangan, atau harus ke badan usaha?"* Many factories have a
+   vendor policy that cannot onboard an individual at all. If so, the PT must exist before the first
+   invoice, full stop. If not, the pilot can run as orang pribadi and the PT waits for the full
+   rollout contract. Entity timing is now written up in
+   `A-Brain/Brainstorm/2026-09-10_riset-hukum-menjual-kpm.md` §1 — do not register early, one NIK
+   only founds one PT Perorangan per financial year.
 
 
 ## 🟠 2026-09-10 05:45 — the legal research is closed, with a source per number
