@@ -1,6 +1,39 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-09-11 (🟠 KPM — RED ALARM DIAGNOSED, no code changed. The real defect is NOT a bad default: `src/utils/stockThreshold.js` was written on 2026-08-25 to settle exactly this and **only ONE of six call sites was ever wired to it**. Four confirmed sites still hardcode `|| 50` or `|| 5`. The toast half is also mis-described — sticky toasts never expiring is deliberate; the real issue is `z-[10000]` painting over dialogs. ⚠️ HE STILL MUST PRESS "Rebuild sales totals" ONCE. 🔴 NEXT: adopt the module at 4 sites — mechanical, self-check already exists.)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **1422/1422 selfcheck · 722/722 audit · build clean (unchanged — no code touched)** · branch `phase0-solid-ground`
+**Updated: 2026-09-11 18:30 WIB (🟠 KPM — FIRST CODE FIX SHIPPED today: `44058b1`, the STOK KRITIS panel no longer prints `0 BAL` for ten real packs. Found by Aldi's own screenshot test. Check 12 in `mixedUnits.selfcheck.mjs` proven RED before the fix and GREEN after. ⚠️ `npm run build` + the 722 audit NOT run — weekly quota at 7%. ⚠️ HE STILL MUST PRESS "Rebuild sales totals" ONCE. 🔴 NEXT: the four `|| 50` / `|| 5` call sites, still unadopted — and the blank-MIN.ALERT case is still unreproduced.)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **mixedUnits 12/12 · full build + audit NOT run this turn** · branch `phase0-solid-ground`
+
+## 🟠 2026-09-11 18:30 — his screenshot found a better bug than the brief did
+
+He set Cello Coffee & Caramel to ~10 Bks and photographed all three screens.
+
+**All three agreed, and all three were right** — 10 ≤ threshold 10 is genuinely low. The alarm
+firing was the app working.
+
+⚠️ **The fallback split was NOT exercised**, because `item.minStock || 50` never reaches the 50 when
+`minStock` is set. Tell-tale: the Dashboard printed `ambang 0 bal`; a blank field would have fallen
+to the 3 Bal company default and printed `ambang 3 bal`. **The blank-MIN.ALERT case is still
+unreproduced** — to see it, create a product with MIN. ALERT empty and stock under 600 Bks, then
+compare Dashboard against Merchant Sales and watch them disagree.
+
+### What shipped — `44058b1`
+
+`STOK KRITIS` showed **`0 BAL`** for ten real packs, threshold **`ambang 0 bal`**. Honest arithmetic,
+a lie to the reader: a Bal is 200 Bks for that product, so `Math.floor(10/200)` is 0.
+
+`helpers.js:141 displayQty` has two paths. The **AUTO ladder** steps down Karton → Bal → Slop → Bks
+until the number is true. The **pinned-unit path** — taken whenever the Dashboard unit selector is
+set — floored and returned whatever came out, including zero. Fix: fall through to the ladder that
+already existed when the pinned unit cannot express the value. A pinned unit is still honoured when
+it fits (3 Bal still prints `3 BAL`), and a zero survives only when stock really is zero.
+
+**Verification:** check 12 in `mixedUnits.selfcheck.mjs` imports `displayQty` directly rather than
+re-implementing it. Stashed the fix → **RED** (`ten packs rendered as 0 BAL`). Restored → **GREEN**,
+12/12.
+
+⚠️ **Not run: `npm run build` and the 722-check integration audit.** Weekly quota at 7%. The change
+is a pure function with its own red/green check and node imported the module cleanly, so a syntax
+break is excluded — but the audit is owed before this is called fully verified.
+
 
 ## 🟠 2026-09-11 — the red alarm is an adoption failure, not a threshold bug
 
