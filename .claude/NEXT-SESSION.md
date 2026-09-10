@@ -7,6 +7,16 @@ This is now the top job because the demo is the next real step with the uncle, a
 sees in minute one of it. Legal research is done (2026-09-10, `1e1d957`). Ship date is still
 30 September.
 
+**It got more urgent on 2026-09-10, and not for a reason about code.** The customer will have 25-30
+users, which means there is no small slice to pilot on — one branch is nearly the whole company. So
+the pilot is bounded by time, everyone is on the app from day one, and **nothing absorbs the first
+mistake**. The first minute has to be clean before the pilot opens, not during it.
+
+**Pricing and legal are DONE and PARKED. Do not reopen them.** Canonical numbers:
+`A-Brain/Wiki/Entities/KPM Price Sheet.md` — read that file for a figure, never the Brainstorm notes,
+which carry superseded ones. Aldi's instruction, 2026-09-10: *"lets take notes for all the price and
+cost and go back on finishing all the app logic to make sure that its all work well"*.
+
 ## What actually happens
 
 A new owner saves their first product. They leave **MIN. ALERT** blank, because the field's

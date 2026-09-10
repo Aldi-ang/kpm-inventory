@@ -1,6 +1,55 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-09-10 07:30 WIB (🟠 KPM — price REVISED AGAIN. User count moved twice today: 10-30 → 50-100 → **25-30**. Applied figure is now **Rp 5 juta/bulan** (pilot Rp 2,5 juta), floor Rp 2 juta, perpetual Rp 250 juta. A-Brain has it. NO KPM CODE TOUCHED ALL DAY. ⚠️ HE STILL MUST PRESS "Rebuild sales totals" ONCE. 🔴 At 25-30 users there is no small slice to pilot on, so the day-one bugs must be fixed BEFORE the pilot starts — that promotes the red-alarm job, it does not delay it.)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **1422/1422 selfcheck · 722/722 audit · build clean (unchanged — no code touched)** · branch `phase0-solid-ground`
+**Updated: 2026-09-10 07:55 WIB (🟠 KPM — BUSINESS TRACK CLOSED, back to code. All prices now in ONE canonical page: `A-Brain/Wiki/Entities/KPM Price Sheet.md`. Rp 5 juta/bulan · pilot Rp 2,5 juta · lantai Rp 2 juta · perpetual Rp 250 juta · PPh final Rp 0. NO KPM CODE TOUCHED ALL DAY — 8 A-Brain commits, 5 repo-notes commits, zero src/ changes. ⚠️ HE STILL MUST PRESS "Rebuild sales totals" ONCE. 🔴 NEXT JOB: the day-one red alarm — and it got MORE urgent, because at 25-30 users there is no small slice to pilot on.)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **1422/1422 selfcheck · 722/722 audit · build clean (unchanged — no code touched)** · branch `phase0-solid-ground`
+
+## 🟠 2026-09-10 07:55 — prices consolidated into one page; business track closed
+
+His instruction: *"okay lets take notes for all the price and cost and go back on finishing all the
+app logic to make sure that its all work well"*.
+
+**The consolidation was overdue and he asked at the right moment.** The figures had spread across
+three Brainstorm notes, one of which still has `50-100` in its filename and superseded 100-user
+tables in its middle. A next session reading it for a number had a real chance of quoting the wrong
+one.
+
+**Canonical page: `A-Brain/Wiki/Entities/KPM Price Sheet.md`.** Settled numbers there, reasoning
+stays in the brainstorms — which is what the two folders are for. The revision note now opens with a
+banner pointing at the sheet and warning its own middle is stale.
+
+| | applies at 25-30 users |
+|---|---|
+| Break-even | Rp 2 juta/bulan |
+| Pilot, 3-6 months, whole team | **Rp 2,5 juta/bulan** |
+| After pilot | **Rp 5 juta/bulan** |
+| Implementation | Rp 7,5 juta, half waived for testimonial + 2 referrals |
+| Perpetual licence | Rp 250 juta + Rp 50 juta/tahun |
+| Copyright sale | Rp 5 miliar — priced to refuse |
+| Final PPh as orang pribadi | **Rp 0** |
+
+⚠️ **Every figure hangs on a count that moved three times today** (10-30 → 50-100 → 25-30). The sheet
+says so in a banner, not a footnote. Confirm before quoting.
+
+### Back to code — and the pricing work made it more urgent, not less
+
+**At 25-30 users there is no small slice to pilot on.** One branch is nearly the whole company, so
+the pilot is bounded by time, everyone is on it from day one, and **nothing absorbs the first
+mistake**. The day-one red alarm and the phantom competitor have to be fixed *before* the pilot
+opens.
+
+`.claude/NEXT-SESSION.md` already named the red alarm; it now carries that reason and a line saying
+**pricing and legal are DONE and PARKED — do not reopen them.**
+
+## WAITING ON ALDI
+
+1. **Confirm the user count, and split it** — berapa sales lapangan, berapa kantor? If it is 12 field
+   rather than 25, the leak yardstick halves and Rp 5 juta needs revisiting.
+2. Pilot 3 months or 6?
+3. Implementation fee charged, or half waived for testimonial + 2 referrals?
+4. Ask Om's finance person: *"bisa bayar ke perorangan, atau harus ke badan usaha?"*
+5. For the konsultan pajak: does a Suket PP 55 stop PPh 21 withholding, or is it credited later?
+6. `alucard/SKILL.md` still says "Aldi is 14". Needs his permission to change to 24.
+7. Which job after the red alarm — Rank Config cross-tenant, or PBKDF2?
+
 
 ## 🟠 2026-09-10 07:30 — 25-30 users, and the number has now moved twice in one day
 
