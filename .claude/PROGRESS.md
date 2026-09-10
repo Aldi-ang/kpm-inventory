@@ -1,6 +1,36 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-09-10 21:10 WIB (🟠 KPM — Rp 5 miliar copyright figure WITHDRAWN. Aldi challenged it and was right; it contained an arithmetic error of mine, a stale rate, and it priced 3,5× above KPM's own rebuild cost. Answer is now "not for sale", fallback ceiling Rp 2-3 miliar. All other prices unchanged: Rp 5 juta/bulan · pilot Rp 2,5 juta · lantai Rp 2 juta · perpetual Rp 250 juta. Canonical: `A-Brain/Wiki/Entities/KPM Price Sheet.md`. STILL NO KPM CODE TOUCHED. ⚠️ HE STILL MUST PRESS "Rebuild sales totals" ONCE. 🔴 NEXT JOB unchanged: the day-one red alarm.)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **1422/1422 selfcheck · 722/722 audit · build clean (unchanged — no code touched)** · branch `phase0-solid-ground`
+**Updated: 2026-09-10 21:35 WIB (🟠 KPM — Aldi leans **Rp 10 juta/bulan**, double the Rp 5 juta recommendation. Two of four yardsticks still support it; the LEAK one breaks — *"the price is below what you are already losing"* stops being true above ~Rp 7 juta. One discovery question settles it. Recorded as INTENT, not decision. Canonical: `A-Brain/Wiki/Entities/KPM Price Sheet.md`. STILL NO KPM CODE TOUCHED. ⚠️ HE STILL MUST PRESS "Rebuild sales totals" ONCE. 🔴 NEXT JOB unchanged: the day-one red alarm.)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **1422/1422 selfcheck · 722/722 audit · build clean (unchanged — no code touched)** · branch `phase0-solid-ground`
+
+## 🟠 2026-09-10 21:35 — he wants Rp 10 juta, and it costs him his best argument
+
+His words: *"btw i think i will give my uncle price of 10 million per month for this app"*.
+
+| yardstick | Rp 5 juta | Rp 10 juta |
+|---|---|---|
+| ① cost (Rp 2 juta running) | 2,5× | **5×** — ordinary software margin, fine |
+| ② market band Rp 4,5-9 juta | inside, near floor | **Rp 333 ribu/user — at or past the ceiling** |
+| ③ leak, 1% of Rp 600-750 juta = Rp 6-7,5 juta | below the leak | **ABOVE it — argument inverts** |
+| ④ admin salary | ≈ 1 admin | ≈ 2,5-3 admin |
+
+**③ is the one that matters.** *"The price is below what you are already losing"* is the strongest
+sentence in the pitch, and nothing replaces it — ② and ④ are comparisons, ③ is the only one about
+the buyer's own money.
+
+**What would make Rp 10 juta honest: ≈ Rp 1 miliar on the road.** That is 33 sales at Rp 30 juta, or
+25 at Rp 40 juta. Both plausible. **Nobody has asked.** So the discovery question settles the price,
+not the other way round: *"Berapa titip yang di luar sekarang, dan rata-rata berapa yang dibawa satu
+sales?"*
+
+**And a real flaw in the earlier advice, recorded:** opening at Rp 5 juta leaves nowhere to go when
+he is pushed. **Open at Rp 10 juta, expect to land near Rp 7 juta** — that beats a flat number, and
+Rp 5 juta was always a first-customer discount rather than a calculation, which he is entitled to
+decline.
+
+Unchanged at Rp 10 juta: final PPh still **Rp 0** (Rp 120 juta/year). Perpetual rescales to
+Rp 500 juta + Rp 100 juta/year, five-year arithmetic still favours subscription. Floor still
+Rp 2 juta. Copyright still not for sale.
+
 
 ## 🟠 2026-09-10 21:10 — the copyright number did not survive being challenged
 
