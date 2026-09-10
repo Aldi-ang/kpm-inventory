@@ -41,12 +41,12 @@ raw product compares the wrong quantity, and the screen would look right while b
 
 ## What is NOT part of this job
 
-**The blank-MIN.ALERT bug is still unreproduced, and this change does not prove it fixed.** Aldi's
-test on 2026-09-10 set an explicit threshold of about 10 Bks, so the `|| 50` fallback never ran — the
-Dashboard printing `ambang 0 bal` rather than `ambang 3 bal` is what gives that away. To actually
-watch the disagreement: create a product with **MIN. ALERT left empty**, stock under 600 Bks, then
-compare Dashboard against Merchant Sales. Dashboard should call it low, Merchant Sales should not.
-**Get that observation before writing it up as fixed.**
+**The blank-MIN.ALERT bug is REPRODUCED — 2026-09-10 19:49.** Product `coba baru`, MIN. ALERT left
+empty, stock 1 Bal. Dashboard's STOK KRITIS calls it low and prints `ambang 3 bal` — the company
+default, so the blank-field fallback genuinely ran this time. Merchant Sales in Boss Car / Master
+Vault mode shows **no low indicator at all**, because `item.minStock || 50` reads 1 Bal as far above
+50 Bks. **Two screens, one product, opposite answers.** The evidence exists now. **After the fix,
+re-test that same product — both screens must agree.**
 
 ## Before you claim it is done
 

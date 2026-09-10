@@ -1,6 +1,26 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-09-10 18:11 WIB (🟠 KPM — FIRST CODE FIX SHIPPED today: `44058b1`, the STOK KRITIS panel no longer prints `0 BAL` for ten real packs. Found by Aldi's own screenshot test. Check 12 in `mixedUnits.selfcheck.mjs` proven RED before the fix and GREEN after. ⚠️ `npm run build` + the 722 audit NOT run — weekly quota at 7%. ✅ "Rebuild sales totals" DONE — he pressed it 2026-09-09 and 2026-09-10. Stop asking. 🔴 NEXT: the four `|| 50` / `|| 5` call sites, still unadopted — and the blank-MIN.ALERT case is still unreproduced.)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **mixedUnits 12/12 · full build + audit NOT run this turn** · branch `phase0-solid-ground`
+**Updated: 2026-09-10 18:11 WIB (🟠 KPM — FIRST CODE FIX SHIPPED today: `44058b1`, the STOK KRITIS panel no longer prints `0 BAL` for ten real packs. Found by Aldi's own screenshot test. Check 12 in `mixedUnits.selfcheck.mjs` proven RED before the fix and GREEN after. ⚠️ `npm run build` + the 722 audit NOT run — weekly quota at 7%. ✅ "Rebuild sales totals" DONE — he pressed it 2026-09-09 and 2026-09-10. Stop asking. 🔴 NEXT: the four `|| 50` / `|| 5` call sites, still unadopted — and blank-MIN.ALERT REPRODUCED 19:49 — Merchant Sales stays silent.)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **mixedUnits 12/12 · full build + audit NOT run this turn** · branch `phase0-solid-ground`
+
+## 🔴 2026-09-10 19:49 — blank MIN. ALERT REPRODUCED. The four call sites are a real bug.
+
+Aldi ran the test. Product **`coba baru`**, MIN. ALERT **left empty**, stock **1 Bal**.
+
+| screen | verdict |
+|---|---|
+| Dashboard → STOK KRITIS | **LOW** — `1 BAL`, `ambang 3 bal` |
+| Merchant Sales, Boss Car / Master Vault mode | **no low indicator at all** |
+
+`ambang 3 bal` is the company default, so the blank-field fallback DID run this time. That is the
+difference from the 18:11 test, which printed `ambang 0 bal` because the field held a number.
+
+**Two screens, one product, opposite answers.** Cause is `item.stock <= (item.minStock || 50)` at
+`MerchantSalesView.jsx:2472` — 1 Bal is far above 50 Bks, so that screen stays silent while the
+Dashboard, which uses the 3 Bal company default, alarms.
+
+**The four-call-site job in `.claude/NEXT-SESSION.md` is now confirmed against a real screen, not
+inferred.** Nothing was fixed this turn — weekly quota 96%. After the fix, re-test THIS product:
+both screens must agree.
 
 ## 🟠 2026-09-10 18:11 — his screenshot found a better bug than the brief did
 
