@@ -1,260 +1,158 @@
 # The one job
 
-**The first minute of KPM ends in a red alarm that will not go away. Fix both halves — the
-threshold that raises it, and the toast that never leaves.**
+**Four screens still hardcode their own idea of "low stock". Point all four at
+`src/utils/stockThreshold.js`, which was written to settle exactly this and never finished being
+adopted.**
 
-This is now the top job because the demo is the next real step with the uncle, and this is what he
-sees in minute one of it. Legal research is done (2026-09-10, `1e1d957`). Ship date is still
-30 September.
+## What the code does today
 
-**It got more urgent on 2026-09-10, and not for a reason about code.** The customer will have 25-30
-users, which means there is no small slice to pilot on — one branch is nearly the whole company. So
-the pilot is bounded by time, everyone is on the app from day one, and **nothing absorbs the first
-mistake**. The first minute has to be clean before the pilot opens, not during it.
-
-**Pricing and legal are DONE and PARKED. Do not reopen them.** Canonical numbers:
-`A-Brain/Wiki/Entities/KPM Price Sheet.md` — read that file for a figure, never the Brainstorm notes,
-which carry superseded ones. Aldi's instruction, 2026-09-10: *"lets take notes for all the price and
-cost and go back on finishing all the app logic to make sure that its all work well"*.
-
-## What actually happens
-
-A new owner saves their first product. They leave **MIN. ALERT** blank, because the field's
-placeholder reads `pakai batas perusahaan (3 Bal)` and looks like it already has a value. The blank
-falls back to the company default of **3 Bal = 600 Bks**. Their first product has less stock than
-that, so it is **instantly "critically low"** — on a brand new, correctly entered product.
-
-Then the alarm toast fires. It **never expires**, and it paints at `z-index: 10000`, which is over
-every dialog. So the first thing a new user sees is a red warning they did not earn, and cannot
-dismiss, sitting on top of the screen they were trying to use.
-
-## Two halves, one story
-
-1. **The threshold default.** A first product saved with a blank minimum should not be born
-   critical. Decide what blank means: inherit the company default only when the product actually has
-   stock history, or treat blank as "no alert set" until the owner sets one. Read how
-   `MIN. ALERT (BKS)` is stored and who reads it before choosing.
-2. **The toast lifetime**, `src/components/Toast.jsx`. Critical toasts currently live forever.
-
-## DIAGNOSED 2026-09-11 — the job is smaller and different from the description above
-
-**Do not re-decide what a blank MIN. ALERT means. Aldi decided it on 2026-08-25 and it is already
-written and shipped** in `src/utils/stockThreshold.js`, a module whose own header says it exists
-because "it used to be seven" places.
-
-**The rule it encodes:** a product is low when stock reaches its own `minStock` if one is set,
-otherwise the COMPANY DEFAULT held as quantity + unit (`defaultMinStockQty` / `defaultMinStockUnit`,
-default 3 Bal), converted per product using that product's own packing. `product.minStock` stays in
-Bks on purpose — reinterpreting it would silently move every threshold a user already set.
-
-**The real defect: the module was written and only ONE caller was wired to it.** Confirmed by grep
-on 2026-09-11.
+`src/utils/stockThreshold.js` exists because the fallback "used to be seven" places — its own header
+says so, and records Aldi's decision from 2026-08-25. **The module shipped. The adoption did not.**
 
 | call site | today | should be |
 |---|---|---|
-| `src/components/DashboardView.jsx:102` | `minStockBks(item, appSettings)` — correct | — |
-| `src/components/ResidentEvilInventory.jsx:236` | `item.stock <= (item.minStock || 50)` | `isLowStock(item, appSettings)` |
-| `src/hooks/useTransactionEngine.js:317` | `newStock <= (prodData.minStock || 50)` | `isLowStock({ ...prodData, stock: newStock }, appSettings)` |
-| `src/MerchantSalesView.jsx:2472` | `item.stock <= (item.minStock || 50)` | `isLowStock(item, appSettings)` |
-| `src/StockOpnameView.jsx:1007` | `stat.vault <= (p.minStock || 5)` | `isLowStock({ ...p, stock: stat.vault }, appSettings)` |
-| `src/App.jsx` lowStockItems | **UNVERIFIED** — the module header says it was 50, grep did not surface it. Check before touching. |
+| `src/components/DashboardView.jsx:102` | `minStockBks(item, appSettings)` — already correct | — |
+| `src/components/ResidentEvilInventory.jsx:236` | `item.stock <= (item.minStock \|\| 50)` | `isLowStock(item, appSettings)` |
+| `src/hooks/useTransactionEngine.js:317` | `newStock <= (prodData.minStock \|\| 50)` | `isLowStock({ ...prodData, stock: newStock }, appSettings)` |
+| `src/MerchantSalesView.jsx:2472` | `item.stock <= (item.minStock \|\| 50)` | `isLowStock(item, appSettings)` |
+| `src/StockOpnameView.jsx:1007` | `stat.vault <= (p.minStock \|\| 5)` | `isLowStock({ ...p, stock: stat.vault }, appSettings)` |
+| `src/App.jsx` lowStockItems | **UNVERIFIED** — the module header says it was 50 and grep did not surface it. Find it before assuming it is clean. |
 
-**Five screens disagree about what low means, by a factor of ten between 50 and 5.** That is the bug
-behind the alarm, and it is also why the alert panel has felt inconsistent.
+**The rule the module already encodes:** a product is low when stock reaches its own `minStock` if
+one is set, otherwise the company default held as quantity plus unit (`defaultMinStockQty` and
+`defaultMinStockUnit`, default 3 Bal), converted per product using that product's own packing.
+`product.minStock` stays in Bks on purpose — reinterpreting it would silently move every threshold a
+user has already set.
 
-⚠️ **So the stated cause at the top of this file is [likely], not confirmed.** "Falls back to 3 Bal =
-600 Bks" holds only on the DashboardView path. If the alarm Aldi saw came from a `|| 50` site, the
-comparison was against 50 Bks, not 600. **Reproduce it once and note WHICH screen raised it before
-changing any threshold.** The fix is the same either way, but do not report a cause nobody observed.
-
-### The toast half is also different from the description
-
-`src/components/Toast.jsx:91` — `if (!item.sticky)` is what sets the auto-dismiss timer. **A sticky
-toast never expiring is deliberate**, and sticky toasts already have a dismiss path (`dismiss(id)` at
-:64). So "critical toasts live forever" is by design, not a defect.
-
-Two narrower things, neither confirmed yet:
-
-1. **Is the low-stock alarm raised with `sticky: true`?** If so, decide whether a stock warning earns
-   the stickiness that money warnings deserve.
-2. **`Toast.jsx:114` puts the host at `z-[10000]`**, above dialogs. The container is
-   `pointer-events-none`, so it does not swallow clicks — it only paints over them. Moving it below
-   the dialog layer is the smaller and safer half.
-
-**Adopting `stockThreshold.js` at the four confirmed sites is the whole first job.** Mechanical, and
-
-## OBSERVED 2026-09-11 — Aldi ran the test, three screenshots. Read this before coding.
-
-He set Cello Coffee & Caramel to about 10 Bks and photographed all three screens.
-
-| screen | showed | verdict |
-|---|---|---|
-| Dashboard (STOK KRITIS) | `0 BAL` · `ambang 0 bal` · 1 PRODUK | flagged low — **and the numbers render as zero** |
-| Merchant Sales | `LOW` badge on that product only | flagged low, correct |
-| Stock Opname | `VAULT/INITIAL 10 / 15` · `LOW STOCK` · DAMAGED 5 | flagged low, correct |
-
-### What the test proved, and what it did NOT
-
-**All three screens agreed, and all three were right.** Stock 10 ≤ threshold 10 is genuinely low, so
-the alarm firing is the app working, not failing.
-
-⚠️ **The fallback disagreement was NOT exercised, because the product had an explicit `minStock`.**
-`item.minStock || 50` never reaches the `50` when `minStock` is set. **The `|| 50` vs `|| 5` split
-only appears when MIN. ALERT is BLANK.**
-
-Evidence it was explicit rather than blank: the Dashboard printed `ambang 0 bal`. A blank field would
-have fallen through to the company default of 3 Bal, which would have printed `ambang 3 bal`. A
-threshold that rounds to `0 bal` is a small Bks number — around 10.
-
-**So the original report is still unreproduced.** To exercise it: create a product, leave MIN. ALERT
-**empty**, give it stock below 600 Bks, then compare Dashboard against Merchant Sales. Dashboard
-should call it low (600 Bks default) while Merchant Sales should not (50 Bks default). That
-disagreement is the bug; the grep proves the code paths differ, nobody has yet watched them differ.
-
-### NEW BUG the test did find — the Dashboard prints 0 for something that is not 0
-
-`STOK KRITIS` showed **`0 BAL`** for a product holding 10 Bks, under a threshold shown as
-**`ambang 0 bal`**.
-
-`DashboardView.jsx:102` — `limit: dominant(minStockBks(item, appSettings), item)`. `dominant()`
-picks a display unit, and for a value smaller than one Bal it appears to return 0 of the larger unit
-instead of stepping down to Slop or Bks. [likely — inferred from the render plus that one line;
-`dominant()` itself has not been read.]
-
-Two separate harms, and the second is worse:
-
-1. **`0 BAL` reads as "completely out of stock"** on the one panel whose job is to be alarming. There
-   are ten packs on the shelf.
-2. **`ambang 0 bal` is meaningless.** A threshold of zero would mean never alert. A customer reading
-   that panel cannot tell what rule fired.
-
-Stock Opname printed the same product as `10 / 15` and was perfectly clear. **So two screens show the
-same product in different units, and neither says which unit it is using.**
-
-**Fix `dominant()` to step down a unit when the value rounds to zero in the larger one.** This is
-probably a smaller and more visible win than the fallback adoption, and it is what he actually saw.
-
-### Tooling he offered
-
-Aldi, 2026-09-11: *"if u need it use the emulator that u made for this"* — the headless harness built
-2026-09-09 for the sale-proof camera. Use it to render the Dashboard panel rather than asking him to
-screenshot again.
-`src/config/stockThreshold.selfcheck.mjs` already guards the module's own behaviour.
+**So four screens disagree about the word "low" by a factor of ten, between 50 and 5.**
 
 ## The trap that makes a lazy patch wrong
 
-**Do not silence the alarm, and do not auto-dismiss every toast.** A stock alarm that a real
-low-stock condition cannot raise is worse than the bug — this app exists to catch missing stock. The
-fix is that the alarm should not fire on a product that was entered correctly, not that alarms
-should be quieter. Same for the toast: a critical money warning that vanishes on a timer while
-nobody is looking is a new bug wearing the old one's clothes. Persist it, but let it be dismissed,
-and keep it under dialogs rather than over them.
+**Do not re-decide what a blank MIN. ALERT means.** It was decided on 2026-08-25 and it is already
+written down. The job is adoption, not design. Anyone who reopens that question produces a fourth
+different answer.
 
-Also fix the placeholder while you are in that form: `MIN. ALERT (BKS)` labelled over a
-`pakai batas perusahaan (3 Bal)` placeholder mixes two units and reads as a filled value. Ask Aldi
-before renaming anything user-facing — match the sibling screen's language.
+**`isLowStock` takes the whole product, not a number.** Two of the four sites compare a value that is
+not `product.stock` — `useTransactionEngine` uses `newStock`, the value *after* the sale, and
+`StockOpname` uses `stat.vault`. Spread the object and override `stock`, as in the table. Passing the
+raw product compares the wrong quantity, and the screen would look right while being wrong.
+
+**Do not touch the unit of `product.minStock`.** It is Bks and it must stay Bks.
+
+## What is NOT part of this job
+
+**The blank-MIN.ALERT bug is still unreproduced, and this change does not prove it fixed.** Aldi's
+test on 2026-09-10 set an explicit threshold of about 10 Bks, so the `|| 50` fallback never ran — the
+Dashboard printing `ambang 0 bal` rather than `ambang 3 bal` is what gives that away. To actually
+watch the disagreement: create a product with **MIN. ALERT left empty**, stock under 600 Bks, then
+compare Dashboard against Merchant Sales. Dashboard should call it low, Merchant Sales should not.
+**Get that observation before writing it up as fixed.**
 
 ## Before you claim it is done
 
-Leave a line in `src/config/logicFixes.selfcheck.mjs`: one regression guard (a first product with a
-blank minimum does not come back critical) and one behaviour check (a genuinely low product still
-raises the alarm). Then rewrite this file with the next single job.
+1. `npm run build; node src/config/integration.audit.mjs` — **owed from 2026-09-10**, skipped there
+   for quota. `44058b1` has not been through it.
+2. `node src/config/mixedUnits.selfcheck.mjs` — should stay 12/12.
+3. Add one guard to `src/config/stockThreshold.selfcheck.mjs`: a product with a blank `minStock` must
+   produce the SAME verdict from every adopted call site. Prove it red before the change.
+4. Rewrite this file with the next single job.
 
 <details>
 <summary>Queue — do NOT paste these; promote one only when the job above is finished</summary>
 
-### Shipped 2026-09-10 — the legal research, closed
+### Shipped 2026-09-10
 
-`1e1d957` in **A-Brain** (not this repo). Two new notes:
-`Brainstorm/2026-09-10_riset-hukum-menjual-kpm.md` — seven items, a source per number.
-`Brainstorm/2026-09-10_draft-13-pasal-kontrak-kpm.md` — the 13 clauses as real pasal.
-Artifact (his private brief, Indonesian, nine sections):
+**`44058b1` — the stock panel stopped printing a zero that was not true.** Aldi photographed
+`STOK KRITIS` showing ten real packs as `0 BAL`, threshold `ambang 0 bal`. A Bal is 200 Bks for that
+product, so `Math.floor(10/200)` is 0. `helpers.js:141 displayQty` has two paths: the AUTO ladder
+steps down Karton, Bal, Slop, Bks until the number is true; the pinned-unit path, used whenever the
+Dashboard unit selector is set, floored and returned zero. It now falls through to the ladder that
+already existed. A pinned unit is still honoured when it fits, so 3 Bal prints `3 BAL`, and a zero
+survives only when stock really is zero. Check 12 in `mixedUnits.selfcheck.mjs` imports the real
+function and was proven RED before the fix went in. **Build and the 722 audit were not run.**
+
+**The business track is CLOSED and PARKED. Do not reopen it.** All prices live in one place:
+`A-Brain/Wiki/Entities/KPM Price Sheet.md`. Read that for a figure, never the Brainstorm notes, which
+carry three generations of superseded numbers. Headline: Rp 5 juta/bulan recommended at 25-30 users,
+**Aldi leans Rp 10 juta** as intent rather than decision, floor Rp 2 juta, perpetual Rp 250 juta,
+copyright **not for sale**, final PPh Rp 0. Legal research with a source per number:
+`Brainstorm/2026-09-10_riset-hukum-menjual-kpm.md`. Contract draft as real pasal:
+`Brainstorm/2026-09-10_draft-13-pasal-kontrak-kpm.md`. His private brief, published Artifact:
 <https://claude.ai/code/artifact/4fed138f-1639-4317-b41f-41bbf6613305>
-
-The three findings worth remembering without opening the files:
-
-* **PPh 23 is 2% for jasa, 15% for royalti, and the contract wording decides which.** Rp 31,2 juta
-  a year of difference at Rp 20 juta/month. The licence clause now says hak pakai for internal
-  operations, no right to reproduce or sublicense, maintenance priced separately.
-* **The 0,5% final UMKM rate no longer expires** for an orang pribadi or a Perseroan Perorangan —
-  PP 20/2026, in force 22 April 2026, changed PP 55/2022 Pasal 59. For CV, firma and ordinary PT
-  the rules tightened instead.
-* **A liability cap holds here** if written as a computable amount (KUHPerdata 1249) and if the
-  contract records that it was negotiated rather than a klausula baku (UU 8/1999 Pasal 18). Cap,
-  never exclude — a total exclusion invites the whole clause being voided.
-
-⚠️ **Not written, on purpose:** the one-page proposal and the demo script. The audience changed on
-2026-09-09 — those are uncle-facing and are a separate job, after the demo, not before.
-
-⚠️ **Aldi is 24, not 14.** He corrected this on 2026-09-09. Earlier notes were wrong.
 
 ### Still ship-blocking, and both are his call
 
 * **Rank Config cross-tenant gap.** `artifacts/cello-inventory-manager/settings/{achievements,
-  rpg_ranks}` is ONE document shared by every company. Rules coverage was fixed; the shared path
-  was not. Safe for one customer. Not two — between tobacco competitors that is a confidentiality
-  breach, not a bug. **And the contract draft now promises per-customer separation in Pasal 10 ayat
-  (3), so this is a clause he cannot honestly sign twice until it is fixed.**
+  rpg_ranks}` is ONE document shared by every company. Rules coverage was fixed; the shared path was
+  not. Safe for one customer, not two — between tobacco competitors that is a confidentiality breach,
+  not a bug. **Pasal 10 ayat (3) of the contract draft now promises per-customer separation, so this
+  is a clause he cannot honestly sign twice until it is fixed.**
 * **PBKDF2.** The SHA-256 master-password hash is unsalted and single-round. `crypto.subtle` already
-  offers PBKDF2; a per-company salt and ~100k iterations turns a claim that invites inspection into
-  one that survives it. Offered, never answered.
+  offers PBKDF2; a per-company salt and about 100k iterations turns a claim that invites inspection
+  into one that survives it. Offered, never answered.
 
 ### He must still press this once
 
-**"Rebuild sales totals"** on the live app (Settings → General & Brand), or his historical months
-keep the old inflated omzet — and that is the number he will show his uncle. Tell him again.
+**"Rebuild sales totals"** on the live app, Settings then General & Brand, or his historical months
+keep the old inflated omzet — and that is the number he will show his uncle. Asked at least four
+times now.
 
 ### Day one — the rest of the walk, ranked
 
-1. **The phantom competitor.** A store created today and sold to the same day shows an undismissable
+1. **The toast half of the alarm story, still open.** `Toast.jsx:91` — `if (!item.sticky)` sets the
+   dismiss timer, so a sticky toast never expiring is **deliberate**, and sticky toasts already have
+   a dismiss path at `:64`. Genuinely open: is the low-stock alarm raised `sticky: true` at all, and
+   `Toast.jsx:114` sits at `z-[10000]` above dialogs. The container is `pointer-events-none`, so it
+   paints over without swallowing clicks. Lowering it below the dialog layer is the safe half.
+2. **The phantom competitor.** A store created today and sold to the same day shows an undismissable
    red `ALREADY SECURED TODAY — Claimed by ANOTHER AGENT`. `CustomerManager.jsx:248` and `:1018`
    default a new customer's `lastVisit` to today; `MerchantSalesView.jsx:536` then falls back to the
    literal string `'another agent'` when `lastVisitedBy` is empty.
-2. **New personnel default to `T3: HQ SALES MANAGER`** even when the role picker says Sales
-   Motorist — every salesman a manager unless the owner notices the dropdown.
-3. **The GPS placeholder reads as a value** (`-7.6043, 110.2055`, empty `value`), then Save fails
-   with "This outlet has no map pin". The same form's first refusal is `SSOT Violation: You must
-   specify the complete Matrix Location...` — jargon in front of a shop owner.
+3. **New personnel default to `T3: HQ SALES MANAGER`** even when the role picker says Sales Motorist.
+4. **The GPS placeholder reads as a value** (`-7.6043, 110.2055`, empty `value`), then Save fails with
+   "This outlet has no map pin". The same form's first refusal is `SSOT Violation: You must specify
+   the complete Matrix Location...` — jargon in front of a shop owner.
 
 ### Phone, at 375x812
 
 * The only way to open the menu is a 14x66px sliver at the right edge (`.kpm-edge-ribbon`,
-  `w-[14px] h-[132px]`, `top:-66px` — half of it above the viewport).
-* The notification bell is off-screen (x 398 → 445 against a 375 viewport). The clock hides itself
-  on purpose (`hidden md:flex`); the bell just overflows.
+  `w-[14px] h-[132px]`, `top:-66px`, half of it above the viewport).
+* The notification bell is off-screen, x 398 to 445 against a 375 viewport.
 
 ### Wording — cheap, each one read by a customer
 
-`49 Bks left in the vehicle` while selling from Master Vault · `Surya 16 (Available: 100 )` with a
-trailing space and no unit · the salesperson printed as `ADIKARYASUKSES99` · the EOD verify confirm
-claiming "clears their inventory" on a stamps-only card · the EOD `MATCHES` column showing `—` when
-the numbers are equal · the audit receipt printing `BAYAR : CASH` on an audit that collected Rp 0.
+`49 Bks left in the vehicle` while selling from Master Vault, `Surya 16 (Available: 100 )` with a
+trailing space and no unit, the salesperson printed as `ADIKARYASUKSES99`, the EOD verify confirm
+claiming "clears their inventory" on a stamps-only card, the EOD `MATCHES` column showing a dash when
+the numbers are equal, the audit receipt printing `BAYAR : CASH` on an audit that collected Rp 0.
 
 ### Closed — do not reopen
 
-**Money.** A cash refund does not reduce omzet, and never should. A completed sale is a closed
-contract; a retur is the salesman's private arrangement. Buyback is off for everyone including the
-owner; Exchange (Tukar) stays. `A-Brain/Wiki/Concepts/A sale is a closed contract — no cash goes
-back.md`. That also closes the walk's `returnTotal` item — written in three places, read by no money
-calculation, because it is not company money. Not a bug.
+**Money.** A cash refund does not reduce omzet. A completed sale is a closed contract; a retur is the
+salesman's private arrangement. Buyback is off for everyone including the owner; Exchange stays.
+`A-Brain/Wiki/Concepts/A sale is a closed contract — no cash goes back.md`. That also closes the
+walk's `returnTotal` item, written in three places and read by no money calculation, because it is
+not company money. Not a bug.
 
-**The sale-proof camera.** `284ea64` + `1857b97`. T4–T6 open a real `getUserMedia` view and have no
-file input in the DOM in ANY build; T1–T3 keep the picker. Do not reintroduce a build-mode escape
-hatch — `1857b97` removed one gated on `import.meta.env.DEV`, and dev is the only place he tests, so
-it removed the rule under test in the one place it could be observed. To let a tier attach a file,
-turn `photo_pick_from_gallery` ON in the matrix, test, turn it off. Deliberately untouched: the
-GPS-bypass proof photo (`MerchantSalesView.jsx:1839`) and the NOO storefront photo (`:2914`).
+**The sale-proof camera.** `284ea64` plus `1857b97`. T4 to T6 open a real `getUserMedia` view and
+have no file input in the DOM in ANY build; T1 to T3 keep the picker. **Do not reintroduce a
+build-mode escape hatch** — `1857b97` removed one gated on `import.meta.env.DEV`, and dev is the only
+place he tests, so it removed the rule under test in the one place it could be observed. To let a
+tier attach a file, turn `photo_pick_from_gallery` ON in the matrix, test, turn it off. Deliberately
+untouched: the GPS-bypass proof photo at `MerchantSalesView.jsx:1839` and the NOO storefront photo at
+`:2914`.
 
 ### Appearance — deferred on purpose, last
 
-~180 blue/green Tailwind classes in app UI: `MapMissionControl.jsx` 58, `FleetCanvasManager.jsx` 50,
-`JourneyView.jsx` 33, `ConsignmentFinanceView.jsx` 33. Receipt and surat-jalan blues are legal.
+About 180 blue and green Tailwind classes in app UI: `MapMissionControl.jsx` 58,
+`FleetCanvasManager.jsx` 50, `JourneyView.jsx` 33, `ConsignmentFinanceView.jsx` 33. Receipt and
+surat-jalan blues are legal.
 
 ### Still owed from earlier sessions
 
-Round 7 Section D of `MANUAL_TEST_CHECKLIST.md` has never been run. C4 needs a second BANDUNG
-account. `cdaabc7`, `967e447`, `83f5041` unverified by eye. HQ 3 and HQ TEST are his money and his
-call. Bug 3, the geofence bypass routing, is still unanswered — and the GPS-bypass approvals were
-among the nine paths `da71cbd` re-routed, so re-check it before treating it as open.
+Round 7 Section D of `MANUAL_TEST_CHECKLIST.md` has never been run. C4 needs a second BANDUNG account.
+`cdaabc7`, `967e447`, `83f5041` are unverified by eye. Bug 3, the geofence bypass routing, is still
+unanswered — and the GPS-bypass approvals were among the nine paths `da71cbd` re-routed, so re-check
+before treating it as open.
 
 </details>

@@ -1,8 +1,12 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-09-11 18:30 WIB (🟠 KPM — FIRST CODE FIX SHIPPED today: `44058b1`, the STOK KRITIS panel no longer prints `0 BAL` for ten real packs. Found by Aldi's own screenshot test. Check 12 in `mixedUnits.selfcheck.mjs` proven RED before the fix and GREEN after. ⚠️ `npm run build` + the 722 audit NOT run — weekly quota at 7%. ⚠️ HE STILL MUST PRESS "Rebuild sales totals" ONCE. 🔴 NEXT: the four `|| 50` / `|| 5` call sites, still unadopted — and the blank-MIN.ALERT case is still unreproduced.)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **mixedUnits 12/12 · full build + audit NOT run this turn** · branch `phase0-solid-ground`
+**Updated: 2026-09-10 18:11 WIB (🟠 KPM — FIRST CODE FIX SHIPPED today: `44058b1`, the STOK KRITIS panel no longer prints `0 BAL` for ten real packs. Found by Aldi's own screenshot test. Check 12 in `mixedUnits.selfcheck.mjs` proven RED before the fix and GREEN after. ⚠️ `npm run build` + the 722 audit NOT run — weekly quota at 7%. ⚠️ HE STILL MUST PRESS "Rebuild sales totals" ONCE. 🔴 NEXT: the four `|| 50` / `|| 5` call sites, still unadopted — and the blank-MIN.ALERT case is still unreproduced.)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **mixedUnits 12/12 · full build + audit NOT run this turn** · branch `phase0-solid-ground`
 
-## 🟠 2026-09-11 18:30 — his screenshot found a better bug than the brief did
+## 🟠 2026-09-10 18:11 — his screenshot found a better bug than the brief did
+
+⚠️ **Date correction:** entries written earlier this session were stamped 2026-09-11. The real date
+is **2026-09-10** — his taskbar reads 10/09/2026 18:02 in the screenshots. All stamps in this file
+have been corrected; `lessons.md` too.
 
 He set Cello Coffee & Caramel to ~10 Bks and photographed all three screens.
 
@@ -35,7 +39,7 @@ is a pure function with its own red/green check and node imported the module cle
 break is excluded — but the audit is owed before this is called fully verified.
 
 
-## 🟠 2026-09-11 — the red alarm is an adoption failure, not a threshold bug
+## 🟠 2026-09-10 — the red alarm is an adoption failure, not a threshold bug
 
 His instruction: *"lets continue the job for this month"*. Diagnosis only — **8% of the weekly plan
 quota left, not enough to fix, build, audit and commit without risking a stop mid-edit.** His own
@@ -72,7 +76,7 @@ swallow clicks).
 
 ### New standing preference
 
-Aldi, 2026-09-11: *"just use english /humanizer so that i can increase my english skill as well"*.
+Aldi, 2026-09-10: *"just use english /humanizer so that i can increase my english skill as well"*.
 **Replies in English from here on**, humanizer over them. Indonesian is still correct for anything
 he will hand to his uncle or a notaris — the contract draft, the price script, shipped app strings.
 
