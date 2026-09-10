@@ -1,6 +1,33 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-09-10 07:55 WIB (🟠 KPM — BUSINESS TRACK CLOSED, back to code. All prices now in ONE canonical page: `A-Brain/Wiki/Entities/KPM Price Sheet.md`. Rp 5 juta/bulan · pilot Rp 2,5 juta · lantai Rp 2 juta · perpetual Rp 250 juta · PPh final Rp 0. NO KPM CODE TOUCHED ALL DAY — 8 A-Brain commits, 5 repo-notes commits, zero src/ changes. ⚠️ HE STILL MUST PRESS "Rebuild sales totals" ONCE. 🔴 NEXT JOB: the day-one red alarm — and it got MORE urgent, because at 25-30 users there is no small slice to pilot on.)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **1422/1422 selfcheck · 722/722 audit · build clean (unchanged — no code touched)** · branch `phase0-solid-ground`
+**Updated: 2026-09-10 21:10 WIB (🟠 KPM — Rp 5 miliar copyright figure WITHDRAWN. Aldi challenged it and was right; it contained an arithmetic error of mine, a stale rate, and it priced 3,5× above KPM's own rebuild cost. Answer is now "not for sale", fallback ceiling Rp 2-3 miliar. All other prices unchanged: Rp 5 juta/bulan · pilot Rp 2,5 juta · lantai Rp 2 juta · perpetual Rp 250 juta. Canonical: `A-Brain/Wiki/Entities/KPM Price Sheet.md`. STILL NO KPM CODE TOUCHED. ⚠️ HE STILL MUST PRESS "Rebuild sales totals" ONCE. 🔴 NEXT JOB unchanged: the day-one red alarm.)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **1422/1422 selfcheck · 722/722 audit · build clean (unchanged — no code touched)** · branch `phase0-solid-ground`
+
+## 🟠 2026-09-10 21:10 — the copyright number did not survive being challenged
+
+His words: *"is 5 milliar reasonable that amount is crazy work"*. It was not reasonable. Three
+faults, and the first is mine:
+
+1. **Arithmetic error.** The note said *"ten factories at Rp 15 juta/month is Rp 900 juta a year
+   forgone"*. Ten × Rp 15 juta × 12 = **Rp 1,8 miliar**, not Rp 900 juta.
+2. **Stale rate.** Rp 15 juta was the 100-user price, superseded the same day. At 25-30 users it is
+   Rp 5 juta, so ten factories is Rp 600 juta a year.
+3. **It priced through its own ceiling — the fault that actually kills it.** KPM's replacement cost
+   is quoted at **Rp 1,4 miliar**. Rp 5 miliar is **3,5× the cost of a clean rebuild**, so it stops
+   being a polite refusal and becomes an instruction to go hire a developer. **Rebuild cost is the
+   ceiling on any IP price.**
+
+**Replacement is a sentence, not a smaller number:** the copyright is not for sale, because selling
+it means never offering this to another factory again — so the buyer is buying the business, not the
+app. A price implies willingness; an absurd price invites haggling and, inside a family, reads as
+contempt.
+
+**Fallback kept, not deleted:** if someone pushes with real money, rebuild cost plus a premium for
+it already working is **Rp 2-3 miliar**. Defensible — and genuinely payable, so only name it if the
+answer would actually be yes.
+
+Everything else on the price sheet stands. `Wiki/Entities/KPM Price Sheet.md` and the brainstorm
+note both carry the correction.
+
 
 ## 🟠 2026-09-10 07:55 — prices consolidated into one page; business track closed
 
