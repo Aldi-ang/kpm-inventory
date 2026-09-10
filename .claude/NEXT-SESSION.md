@@ -82,6 +82,63 @@ Two narrower things, neither confirmed yet:
    the dialog layer is the smaller and safer half.
 
 **Adopting `stockThreshold.js` at the four confirmed sites is the whole first job.** Mechanical, and
+
+## OBSERVED 2026-09-11 — Aldi ran the test, three screenshots. Read this before coding.
+
+He set Cello Coffee & Caramel to about 10 Bks and photographed all three screens.
+
+| screen | showed | verdict |
+|---|---|---|
+| Dashboard (STOK KRITIS) | `0 BAL` · `ambang 0 bal` · 1 PRODUK | flagged low — **and the numbers render as zero** |
+| Merchant Sales | `LOW` badge on that product only | flagged low, correct |
+| Stock Opname | `VAULT/INITIAL 10 / 15` · `LOW STOCK` · DAMAGED 5 | flagged low, correct |
+
+### What the test proved, and what it did NOT
+
+**All three screens agreed, and all three were right.** Stock 10 ≤ threshold 10 is genuinely low, so
+the alarm firing is the app working, not failing.
+
+⚠️ **The fallback disagreement was NOT exercised, because the product had an explicit `minStock`.**
+`item.minStock || 50` never reaches the `50` when `minStock` is set. **The `|| 50` vs `|| 5` split
+only appears when MIN. ALERT is BLANK.**
+
+Evidence it was explicit rather than blank: the Dashboard printed `ambang 0 bal`. A blank field would
+have fallen through to the company default of 3 Bal, which would have printed `ambang 3 bal`. A
+threshold that rounds to `0 bal` is a small Bks number — around 10.
+
+**So the original report is still unreproduced.** To exercise it: create a product, leave MIN. ALERT
+**empty**, give it stock below 600 Bks, then compare Dashboard against Merchant Sales. Dashboard
+should call it low (600 Bks default) while Merchant Sales should not (50 Bks default). That
+disagreement is the bug; the grep proves the code paths differ, nobody has yet watched them differ.
+
+### NEW BUG the test did find — the Dashboard prints 0 for something that is not 0
+
+`STOK KRITIS` showed **`0 BAL`** for a product holding 10 Bks, under a threshold shown as
+**`ambang 0 bal`**.
+
+`DashboardView.jsx:102` — `limit: dominant(minStockBks(item, appSettings), item)`. `dominant()`
+picks a display unit, and for a value smaller than one Bal it appears to return 0 of the larger unit
+instead of stepping down to Slop or Bks. [likely — inferred from the render plus that one line;
+`dominant()` itself has not been read.]
+
+Two separate harms, and the second is worse:
+
+1. **`0 BAL` reads as "completely out of stock"** on the one panel whose job is to be alarming. There
+   are ten packs on the shelf.
+2. **`ambang 0 bal` is meaningless.** A threshold of zero would mean never alert. A customer reading
+   that panel cannot tell what rule fired.
+
+Stock Opname printed the same product as `10 / 15` and was perfectly clear. **So two screens show the
+same product in different units, and neither says which unit it is using.**
+
+**Fix `dominant()` to step down a unit when the value rounds to zero in the larger one.** This is
+probably a smaller and more visible win than the fallback adoption, and it is what he actually saw.
+
+### Tooling he offered
+
+Aldi, 2026-09-11: *"if u need it use the emulator that u made for this"* — the headless harness built
+2026-09-09 for the sale-proof camera. Use it to render the Dashboard panel rather than asking him to
+screenshot again.
 `src/config/stockThreshold.selfcheck.mjs` already guards the module's own behaviour.
 
 ## The trap that makes a lazy patch wrong
