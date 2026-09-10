@@ -91,11 +91,15 @@ copyright **not for sale**, final PPh Rp 0. Legal research with a source per num
   offers PBKDF2; a per-company salt and about 100k iterations turns a claim that invites inspection
   into one that survives it. Offered, never answered.
 
-### He must still press this once
+### Rebuild sales totals — DONE, stop asking
 
-**"Rebuild sales totals"** on the live app, Settings then General & Brand, or his historical months
-keep the old inflated omzet — and that is the number he will show his uncle. Asked at least four
-times now.
+Aldi pressed it on **2026-09-09 and again on 2026-09-10** and said so plainly:
+*"i said 1 is done which is rebuild sales total i already press that yesterday and todaty"*.
+His historical omzet is rebuilt. **Do not put this on a list again.**
+
+⚠️ He had already said so once, at the top of the screenshot message — the word was *"1 done"* — and
+it was read past. **When he answers a numbered list by number, read the number before the
+attachments.**
 
 ### Day one — the rest of the walk, ranked
 

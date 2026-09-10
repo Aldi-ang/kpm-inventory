@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-09-10 18:11 WIB (🟠 KPM — FIRST CODE FIX SHIPPED today: `44058b1`, the STOK KRITIS panel no longer prints `0 BAL` for ten real packs. Found by Aldi's own screenshot test. Check 12 in `mixedUnits.selfcheck.mjs` proven RED before the fix and GREEN after. ⚠️ `npm run build` + the 722 audit NOT run — weekly quota at 7%. ⚠️ HE STILL MUST PRESS "Rebuild sales totals" ONCE. 🔴 NEXT: the four `|| 50` / `|| 5` call sites, still unadopted — and the blank-MIN.ALERT case is still unreproduced.)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **mixedUnits 12/12 · full build + audit NOT run this turn** · branch `phase0-solid-ground`
+**Updated: 2026-09-10 18:11 WIB (🟠 KPM — FIRST CODE FIX SHIPPED today: `44058b1`, the STOK KRITIS panel no longer prints `0 BAL` for ten real packs. Found by Aldi's own screenshot test. Check 12 in `mixedUnits.selfcheck.mjs` proven RED before the fix and GREEN after. ⚠️ `npm run build` + the 722 audit NOT run — weekly quota at 7%. ✅ "Rebuild sales totals" DONE — he pressed it 2026-09-09 and 2026-09-10. Stop asking. 🔴 NEXT: the four `|| 50` / `|| 5` call sites, still unadopted — and the blank-MIN.ALERT case is still unreproduced.)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **mixedUnits 12/12 · full build + audit NOT run this turn** · branch `phase0-solid-ground`
 
 ## 🟠 2026-09-10 18:11 — his screenshot found a better bug than the brief did
 
