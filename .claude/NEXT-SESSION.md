@@ -4,6 +4,34 @@
 `src/utils/stockThreshold.js`, which was written to settle exactly this and never finished being
 adopted.**
 
+---
+
+## Paste this to start the next session
+
+> /alucard
+>
+> Read `.claude/NEXT-SESSION.md` first — it is the whole job, do not re-read source to re-orient.
+>
+> **The bug is reproduced.** 2026-09-10 19:49, product `coba baru`, MIN. ALERT left empty, stock
+> 1 Bal. Dashboard STOK KRITIS says LOW and prints `ambang 3 bal`. Merchant Sales in Boss Car /
+> Master Vault mode shows no low indicator at all. Two screens, one product, opposite answers.
+>
+> **The job:** point all four hardcoded `|| 50` / `|| 5` call sites at `isLowStock` from
+> `src/utils/stockThreshold.js`. The table in the brief has the exact line for each.
+>
+> **Order, no shortcuts:**
+> 1. `npm run build; node src/config/integration.audit.mjs` — owed from 2026-09-10, `44058b1`
+>    has never been through it.
+> 2. Add the blank-`minStock` guard to `src/config/stockThreshold.selfcheck.mjs` and prove it
+>    **RED before** touching any screen.
+> 3. Make the four edits. Green. `node src/config/mixedUnits.selfcheck.mjs` stays 12/12.
+> 4. Commit, then tell me to re-test `coba baru` — both screens must agree.
+>
+> Two traps are written in the brief: `isLowStock` takes the whole product, not a number, and
+> the blank-MIN.ALERT meaning was settled 2026-08-25 — do not re-decide it.
+
+---
+
 ## What the code does today
 
 `src/utils/stockThreshold.js` exists because the fallback "used to be seven" places — its own header
