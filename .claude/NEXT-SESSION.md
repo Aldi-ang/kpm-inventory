@@ -36,6 +36,54 @@ dismiss, sitting on top of the screen they were trying to use.
    `MIN. ALERT (BKS)` is stored and who reads it before choosing.
 2. **The toast lifetime**, `src/components/Toast.jsx`. Critical toasts currently live forever.
 
+## DIAGNOSED 2026-09-11 — the job is smaller and different from the description above
+
+**Do not re-decide what a blank MIN. ALERT means. Aldi decided it on 2026-08-25 and it is already
+written and shipped** in `src/utils/stockThreshold.js`, a module whose own header says it exists
+because "it used to be seven" places.
+
+**The rule it encodes:** a product is low when stock reaches its own `minStock` if one is set,
+otherwise the COMPANY DEFAULT held as quantity + unit (`defaultMinStockQty` / `defaultMinStockUnit`,
+default 3 Bal), converted per product using that product's own packing. `product.minStock` stays in
+Bks on purpose — reinterpreting it would silently move every threshold a user already set.
+
+**The real defect: the module was written and only ONE caller was wired to it.** Confirmed by grep
+on 2026-09-11.
+
+| call site | today | should be |
+|---|---|---|
+| `src/components/DashboardView.jsx:102` | `minStockBks(item, appSettings)` — correct | — |
+| `src/components/ResidentEvilInventory.jsx:236` | `item.stock <= (item.minStock || 50)` | `isLowStock(item, appSettings)` |
+| `src/hooks/useTransactionEngine.js:317` | `newStock <= (prodData.minStock || 50)` | `isLowStock({ ...prodData, stock: newStock }, appSettings)` |
+| `src/MerchantSalesView.jsx:2472` | `item.stock <= (item.minStock || 50)` | `isLowStock(item, appSettings)` |
+| `src/StockOpnameView.jsx:1007` | `stat.vault <= (p.minStock || 5)` | `isLowStock({ ...p, stock: stat.vault }, appSettings)` |
+| `src/App.jsx` lowStockItems | **UNVERIFIED** — the module header says it was 50, grep did not surface it. Check before touching. |
+
+**Five screens disagree about what low means, by a factor of ten between 50 and 5.** That is the bug
+behind the alarm, and it is also why the alert panel has felt inconsistent.
+
+⚠️ **So the stated cause at the top of this file is [likely], not confirmed.** "Falls back to 3 Bal =
+600 Bks" holds only on the DashboardView path. If the alarm Aldi saw came from a `|| 50` site, the
+comparison was against 50 Bks, not 600. **Reproduce it once and note WHICH screen raised it before
+changing any threshold.** The fix is the same either way, but do not report a cause nobody observed.
+
+### The toast half is also different from the description
+
+`src/components/Toast.jsx:91` — `if (!item.sticky)` is what sets the auto-dismiss timer. **A sticky
+toast never expiring is deliberate**, and sticky toasts already have a dismiss path (`dismiss(id)` at
+:64). So "critical toasts live forever" is by design, not a defect.
+
+Two narrower things, neither confirmed yet:
+
+1. **Is the low-stock alarm raised with `sticky: true`?** If so, decide whether a stock warning earns
+   the stickiness that money warnings deserve.
+2. **`Toast.jsx:114` puts the host at `z-[10000]`**, above dialogs. The container is
+   `pointer-events-none`, so it does not swallow clicks — it only paints over them. Moving it below
+   the dialog layer is the smaller and safer half.
+
+**Adopting `stockThreshold.js` at the four confirmed sites is the whole first job.** Mechanical, and
+`src/config/stockThreshold.selfcheck.mjs` already guards the module's own behaviour.
+
 ## The trap that makes a lazy patch wrong
 
 **Do not silence the alarm, and do not auto-dismiss every toast.** A stock alarm that a real

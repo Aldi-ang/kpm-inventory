@@ -1,6 +1,48 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-09-10 21:35 WIB (🟠 KPM — Aldi leans **Rp 10 juta/bulan**, double the Rp 5 juta recommendation. Two of four yardsticks still support it; the LEAK one breaks — *"the price is below what you are already losing"* stops being true above ~Rp 7 juta. One discovery question settles it. Recorded as INTENT, not decision. Canonical: `A-Brain/Wiki/Entities/KPM Price Sheet.md`. STILL NO KPM CODE TOUCHED. ⚠️ HE STILL MUST PRESS "Rebuild sales totals" ONCE. 🔴 NEXT JOB unchanged: the day-one red alarm.)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **1422/1422 selfcheck · 722/722 audit · build clean (unchanged — no code touched)** · branch `phase0-solid-ground`
+**Updated: 2026-09-11 (🟠 KPM — RED ALARM DIAGNOSED, no code changed. The real defect is NOT a bad default: `src/utils/stockThreshold.js` was written on 2026-08-25 to settle exactly this and **only ONE of six call sites was ever wired to it**. Four confirmed sites still hardcode `|| 50` or `|| 5`. The toast half is also mis-described — sticky toasts never expiring is deliberate; the real issue is `z-[10000]` painting over dialogs. ⚠️ HE STILL MUST PRESS "Rebuild sales totals" ONCE. 🔴 NEXT: adopt the module at 4 sites — mechanical, self-check already exists.)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **1422/1422 selfcheck · 722/722 audit · build clean (unchanged — no code touched)** · branch `phase0-solid-ground`
+
+## 🟠 2026-09-11 — the red alarm is an adoption failure, not a threshold bug
+
+His instruction: *"lets continue the job for this month"*. Diagnosis only — **8% of the weekly plan
+quota left, not enough to fix, build, audit and commit without risking a stop mid-edit.** His own
+recorded process says diagnose first anyway.
+
+**The finding changes the job.** `src/utils/stockThreshold.js` exists precisely to settle "what
+counts as low", and its header records Aldi's 2026-08-25 decision and the fact that the fallback
+"used to be seven" places. **The module shipped. The adoption did not.**
+
+| call site | today | should be |
+|---|---|---|
+| `DashboardView.jsx:102` | `minStockBks(item, appSettings)` — correct | — |
+| `ResidentEvilInventory.jsx:236` | `item.minStock \|\| 50` | `isLowStock(...)` |
+| `useTransactionEngine.js:317` | `prodData.minStock \|\| 50` | `isLowStock(...)` |
+| `MerchantSalesView.jsx:2472` | `item.minStock \|\| 50` | `isLowStock(...)` |
+| `StockOpnameView.jsx:1007` | `p.minStock \|\| 5` | `isLowStock(...)` |
+| `App.jsx` lowStockItems | **UNVERIFIED** — check before touching |
+
+**Five screens disagree about "low" by a factor of ten.** That is the alarm, and it is also why the
+alert panel has felt inconsistent for weeks.
+
+⚠️ **The brief's stated cause is now [likely], not confirmed.** "Blank falls back to 3 Bal = 600 Bks"
+is true only on the DashboardView path. If the alarm he saw came from a `|| 50` site, it compared
+against 50 Bks. **Reproduce once and note which screen raised it** before reporting a cause.
+
+**The toast half was also mis-described.** `Toast.jsx:91` — `if (!item.sticky)` sets the timer, so a
+sticky toast never expiring is *deliberate*, and sticky toasts already have a dismiss path at :64.
+What is left: is the low-stock alarm raised `sticky: true` at all, and `Toast.jsx:114` sits at
+`z-[10000]` above dialogs (container is `pointer-events-none`, so it paints over but does not
+swallow clicks).
+
+**Next session's job is mechanical:** adopt `stockThreshold.js` at the four confirmed sites.
+`src/config/stockThreshold.selfcheck.mjs` already guards the module itself.
+
+### New standing preference
+
+Aldi, 2026-09-11: *"just use english /humanizer so that i can increase my english skill as well"*.
+**Replies in English from here on**, humanizer over them. Indonesian is still correct for anything
+he will hand to his uncle or a notaris — the contract draft, the price script, shipped app strings.
+
 
 ## 🟠 2026-09-10 21:35 — he wants Rp 10 juta, and it costs him his best argument
 
