@@ -143,7 +143,16 @@ export const displayQty = (totalBks, product, preferred = 'AUTO') => {
 
   if (preferred && preferred !== 'AUTO' && DISPLAY_UNITS.includes(preferred)) {
     const per = convertToBks(1, preferred, product || {});
-    return { n: per > 0 ? Math.floor(bks / per) : bks, unit: preferred.toUpperCase(), rest: '' };
+    const n = per > 0 ? Math.floor(bks / per) : bks;
+    /* A PINNED UNIT TOO COARSE FOR THE VALUE USED TO PRINT A ZERO THAT WAS NOT TRUE.
+       Aldi, 2026-09-11, screenshot of STOK KRITIS: ten real packs of Cello Coffee & Caramel
+       rendered as `0 BAL`, under a threshold rendered as `ambang 0 bal` — because a Bal is 200
+       Bks here and Math.floor(10/200) is 0. On the one panel whose whole job is to alarm, a zero
+       reads as an empty shelf, and a threshold of zero reads as a rule that never fires.
+       The AUTO ladder below already solves this: it steps down Karton -> Bal -> Slop -> Bks until
+       the number is true. So when the pinned unit cannot express the value, fall through to it
+       rather than returning a lie. A zero survives only when the stock really is zero. */
+    if (n > 0 || bks === 0) return { n, unit: preferred.toUpperCase(), rest: '' };
   }
 
   const u = splitToUnits(bks, product);

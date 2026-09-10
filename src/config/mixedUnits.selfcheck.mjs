@@ -5,7 +5,7 @@
    waits, so it gets a test even though it is only a few lines. The conversion mirrors
    the multipliers already used for pricing at MerchantSalesView :47, :343 and :408. */
 import assert from 'node:assert';
-import { convertToBks, splitToUnits } from '../utils/helpers.js';
+import { convertToBks, splitToUnits, displayQty } from '../utils/helpers.js';
 
 /* Mirrors MerchantSalesView :392 — the multipliers come from helpers.convertToBks so the
    per-product packing saved in the master vault is the single source of truth. */
@@ -111,4 +111,29 @@ for (const junk of [ { packsPerSlop: 0, slopsPerBal: 0, balsPerCarton: 0 },
 assert.deepEqual(splitToUnits(-5, cello), { Karton: 0, Bal: 0, Slop: 0, Bks: 0 });
 assert.deepEqual(splitToUnits('abc', cello), { Karton: 0, Bal: 0, Slop: 0, Bks: 0 });
 
-console.log('mixed-unit self-check: 11/11 pass');
+
+/* 12. A PINNED DISPLAY UNIT MUST NEVER PRINT A ZERO THAT IS NOT TRUE.
+       Aldi's screenshot, 2026-09-11: STOK KRITIS rendered ten real packs of Cello Coffee &
+       Caramel as `0 BAL`, with the threshold beside them as `ambang 0 bal`, because a Bal is
+       200 Bks for this product and Math.floor(10 / 200) is 0. On the one panel whose job is to
+       alarm, a zero reads as an empty shelf and a zero threshold reads as a rule that never
+       fires. displayQty now falls through to the AUTO ladder whenever the pinned unit cannot
+       express the value, so the number it prints is always true. */
+{
+  const perBal = convertToBks(1, 'Bal', cello);
+  assert.ok(perBal > 10, 'this check only means something while a Bal is bigger than 10 Bks');
+
+  /* the regression itself */
+  const small = displayQty(10, cello, 'Bal');
+  assert.ok(small.n > 0, `ten packs rendered as ${small.n} ${small.unit} — the old "0 BAL" bug`);
+  assert.notEqual(small.unit, 'BAL', 'a Bal cannot express 10 Bks, so it must step down');
+
+  /* zero really is zero, and keeps the unit the user pinned */
+  assert.deepEqual(displayQty(0, cello, 'Bal'), { n: 0, unit: 'BAL', rest: '' });
+
+  /* behaviour check: a pinned unit that CAN express the value is still honoured, no unit drift */
+  const big = displayQty(perBal * 3, cello, 'Bal');
+  assert.equal(big.unit, 'BAL', 'pinned unit must be kept when it fits');
+  assert.equal(big.n, 3, 'three Bal must print as 3');
+}
+console.log('mixed-unit self-check: 12/12 pass');
