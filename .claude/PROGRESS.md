@@ -1,6 +1,58 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-09-10 06:20 WIB (🟠 KPM — pricing REVISED. Aldi said the real user count is 50-100, not the 10-30 every earlier figure assumed, so Rp 2,5 juta/bulan is dead. New: Rp 4/7/12 juta bands, perpetual Rp 600 juta, and the arithmetic showing perpetual costs the BUYER more. A-Brain `1877cdf`. NO KPM CODE TOUCHED. ⚠️ HE STILL MUST PRESS "Rebuild sales totals" ONCE. 🔴 Rank Config cross-tenant gap gets WORSE at 100 users, and KPM has never run with more than a handful of accounts at once.)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **1422/1422 selfcheck · 722/722 audit · build clean (unchanged — no code touched)** · branch `phase0-solid-ground`
+**Updated: 2026-09-10 07:30 WIB (🟠 KPM — price REVISED AGAIN. User count moved twice today: 10-30 → 50-100 → **25-30**. Applied figure is now **Rp 5 juta/bulan** (pilot Rp 2,5 juta), floor Rp 2 juta, perpetual Rp 250 juta. A-Brain has it. NO KPM CODE TOUCHED ALL DAY. ⚠️ HE STILL MUST PRESS "Rebuild sales totals" ONCE. 🔴 At 25-30 users there is no small slice to pilot on, so the day-one bugs must be fixed BEFORE the pilot starts — that promotes the red-alarm job, it does not delay it.)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **1422/1422 selfcheck · 722/722 audit · build clean (unchanged — no code touched)** · branch `phase0-solid-ground`
+
+## 🟠 2026-09-10 07:30 — 25-30 users, and the number has now moved twice in one day
+
+His words: *"okay jadi semua sales lapangan dan karyawan kerja yang bakal pake app ini sekita 25 -30
+orang can u revise the cost and give me the reason why this price is fair"*.
+
+⚠️ **Treat the count as unsettled.** 10-30 (yesterday) → 50-100 (this morning) → 25-30 (now). The
+latest is the most specific so it is applied, but **every figure hangs on that one number** and it
+must be confirmed once more before anything is quoted to the uncle.
+
+| | 25-30 pengguna |
+|---|---|
+| Titik impas | **Rp 2 juta/bulan** (turun dari Rp 6 juta — beban dukungan, bukan server) |
+| Pilot, 3-6 bulan, seluruh tim | **Rp 2,5 juta/bulan** |
+| Setelah pilot | **Rp 5 juta/bulan** |
+| Implementasi | Rp 7,5 juta, separuh dibebaskan |
+| Lisensi permanen | **Rp 250 juta** + Rp 50 juta/tahun |
+| PPh final sebagai orang pribadi | **Rp 0** (Rp 60 juta/tahun, jauh di bawah Rp 500 juta) |
+
+**The band table's Rp 7 juta row is overruled.** It was interpolated down from the 100-user case;
+Rp 5 juta is derived directly for 30 users. Derived beats interpolated.
+
+### The structural finding, which matters more than the price
+
+**At 25-30 people there is no small slice left to pilot on.** One branch of 25 users is nearly the
+whole company. So the pilot is bounded by TIME, not headcount — everyone is on it from day one, and
+**nobody absorbs the first mistake**. That means the day-one red alarm and the phantom competitor
+have to be fixed *before* the pilot starts, not during it. It promotes the NEXT-SESSION job rather
+than competing with it.
+
+### The fairness answer he asked for — four independent yardsticks, same place
+
+① cost × 2,5 (Rp 2 juta running) · ② inside the measured market band Rp 4,5-9 juta, near its floor
+(Accurate at 30 users = Rp 976.800 but cannot do titip; Badger at 30 = ~Rp 28 juta) · ③ under 1% of
+the Rp 600-750 juta sitting in the field · ④ roughly one admin's salary, and an admin cannot recount
+stock that is moving on the road.
+
+**One justification can be invented. Four that agree cannot.** That is the argument.
+
+## WAITING ON ALDI
+
+1. **Confirm the count one final time**, and split it: **berapa sales lapangan, berapa kantor?** If
+   it is 12 field rather than 25, yardstick ③ halves and Rp 5 juta needs revisiting.
+2. Pilot 3 bulan or 6 bulan?
+3. Implementasi Rp 7,5 juta ditagih, atau separuh dibebaskan ditukar testimoni + 2 perkenalan?
+4. Still open: which job first — day-one bugs, Rank Config, or PBKDF2. (The pilot structure now
+   argues for day-one bugs.)
+5. Still open: `alucard/SKILL.md` says "Aldi is 14". Needs his permission to change to 24.
+6. Still open: ask Om's finance person — *"bisa bayar ke perorangan, atau harus ke badan usaha?"*
+7. Still open for the konsultan pajak: does a Suket PP 55 stop PPh 21 withholding, or is it credited
+   later? That decides what actually lands in his account.
+
 
 ## 🟠 2026-09-10 06:20 — 50-100 users, and every price in the vault was computed for 10-30
 
