@@ -5,8 +5,8 @@
     "semantic_hash": ""
   },
   ".claude/settings.json": {
-    "mtime": 1788757887.6087782,
-    "ast_hash": "e6302e03fceae1ca962d80a0877be2cd",
+    "mtime": 1789221463.368053,
+    "ast_hash": "76700e7f77eb58645531c1106f82a87a",
     "semantic_hash": ""
   },
   "eslint.config.js": {
@@ -130,8 +130,8 @@
     "semantic_hash": ""
   },
   "src/components/CustomerManager.jsx": {
-    "mtime": 1788780291.801969,
-    "ast_hash": "18b53636c7ad2d7088667cc8f76cc885",
+    "mtime": 1789222781.3347213,
+    "ast_hash": "0d605b1b1aacde81f86b8307a0dce984",
     "semantic_hash": ""
   },
   "src/components/DashboardBenchmarks.jsx": {
@@ -570,8 +570,8 @@
     "semantic_hash": ""
   },
   ".claude/PROGRESS.md": {
-    "mtime": 1789044751.0454447,
-    "ast_hash": "be2f7a75fda3d6815af7495e91e18af6",
+    "mtime": 1789221540.1112545,
+    "ast_hash": "dacbc6721dc7e88d6192c419b05347dd",
     "semantic_hash": ""
   },
   ".claude/pre-compact-context.md": {
@@ -755,13 +755,13 @@
     "semantic_hash": ""
   },
   "src/config/logicFixes.selfcheck.mjs": {
-    "mtime": 1788957316.73146,
-    "ast_hash": "77e3eb8bfa4737fcbc291facc7dcdf77",
+    "mtime": 1789222755.7532387,
+    "ast_hash": "36c98c3033a436cea7a216ed8ef73a79",
     "semantic_hash": ""
   },
   ".claude/NEXT-SESSION.md": {
-    "mtime": 1789046358.756847,
-    "ast_hash": "6513f31546dbbf14c9a2e4478a621172",
+    "mtime": 1789221579.4440162,
+    "ast_hash": "ee414ab2dd4ad498d97e225559065bc4",
     "semantic_hash": ""
   },
   ".claude/SWEEP-2026-08-19.md": {

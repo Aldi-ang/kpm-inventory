@@ -6566,5 +6566,31 @@ ok('and a genuinely empty branch names the branch and the company count',
      forArea('UNASSIGNED').length === 0,
      "no staff record carries the literal string UNASSIGNED; the app's own blank sentinel is 'UNASSIGNED AREA'"); }
 
+section('THE PHANTOM COMPETITOR — creating a store is not visiting it (2026-09-12)');
+/* A store created today and sold to the same day showed the standing red banner
+   ALREADY SECURED TODAY — Claimed by ANOTHER AGENT. Nobody else had been there. The customer
+   form was born with lastVisit = today (three places in CustomerManager.jsx: the initial form,
+   the post-save reset, and the edit path's fallback), while lastVisitedBy stayed empty — and
+   MerchantSalesView reads "lastVisit is today, visitedBy is blank" as a competitor. Every real
+   visit path (a sale, a journey stop) stamps BOTH fields, so the only way to get one without the
+   other was the form. The form now leaves lastVisit blank; every reader already has a branch for
+   blank ("no recorded visit", "NEVER VISITED", "Never Visited (Due Now)"). */
+{ const cm = read('src/components/CustomerManager.jsx');
+  ok('the customer form never stamps lastVisit with today on its own',
+     !/lastVisit:\s*(?:c\.lastVisit\s*\|\|\s*)?getLocalDayKey\(\)/.test(cm),
+     'creation is not a visit — a fresh store must read as never visited');
+  /* the revisit verdict, re-implemented from MerchantSalesView.handleCustomerSelect */
+  const revisit = (cust, today, me) => {
+    const visitedBy = String(cust.lastVisitedBy || cust.lastVisitTag || '').trim();
+    const mine = !!me && !!visitedBy && (visitedBy.toLowerCase().includes(me) || me.includes(visitedBy.toLowerCase()));
+    return cust.lastVisit === today ? (mine ? 'me' : (visitedBy || 'another agent')) : null;
+  };
+  ok('a store created today, with the form no longer stamping a date, raises no banner',
+     revisit({ lastVisit: '' }, '2026-09-12', 'aldi') === null);
+  ok('a store another agent actually sold to today still names that agent',
+     revisit({ lastVisit: '2026-09-12', lastVisitedBy: 'budi' }, '2026-09-12', 'aldi') === 'budi');
+  ok('my own sale today is a revisit by me, not a competitor',
+     revisit({ lastVisit: '2026-09-12', lastVisitedBy: 'aldi' }, '2026-09-12', 'aldi') === 'me'); }
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

@@ -105,5 +105,12 @@
   "103": "🟠 2026-09-10 07:55 — prices consolidated into one page; business track closed",
   "104": "🟠 2026-09-11 — the red alarm is an adoption failure, not a threshold bug",
   "105": "WarehouseDeskNav.jsx",
-  "106": "🟠 2026-09-10 18:11 — his screenshot found a better bug than the brief did"
+  "106": "🟠 2026-09-10 18:11 — his screenshot found a better bug than the brief did",
+  "107": "lab-firestore-stub.js",
+  "108": "PonderOverlay.jsx",
+  "109": "notify",
+  "110": "dayStats.selfcheck.mjs",
+  "111": "useTransactionEngine.js",
+  "112": "StockStage.jsx",
+  "113": "ProductPerformanceStage.jsx"
 }
