@@ -1,6 +1,27 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-09-12 21:00 WIB (🟠 KPM — `9b31bf0` CONFIRMED BY ALDI at 20:50: his two screenshots show `coba baru` LOW on the Dashboard (1 BAL, ambang 3 bal) AND the LOW badge on the sales terminal. Both screens agree. Nothing is owed on this bug. Also today: `heredoc-gate.mjs` hook added at his "yes" — Bash refuses a heredoc with a backslash or over 40 lines, and `node -e` with a template literal. 🔴 NEXT JOB in the brief: the phantom `ANOTHER AGENT` banner on a store created today.)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **build + 722 audit + 36/36 + 12/12 all run this session** · branch `phase0-solid-ground`
+**Updated: 2026-09-12 21:30 WIB (🟠 KPM — three fixes shipped today, one confirmed. `9b31bf0` low-stock rule adopted on all four screens — CONFIRMED by Aldi's screenshots 20:50. `8ed215f` the customer form no longer stamps `lastVisit` at creation, so a store created today no longer shows the phantom `ANOTHER AGENT` banner. `a2b4eae` the alarm toast says `(300 Bks left)`. ✅ TEST OWED BY ALDI on `8ed215f`: create a store, sell to it the same day, no red banner. 🔴 NEXT JOB in the brief: the toast column paints above the confirm dialog — `Toast.jsx:114` z-[10000] vs `ConfirmGate.jsx:124` z-[9999].)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **build + 722 audit run after EACH of the three fixes; logicFixes 1427/1427; stockThreshold 36/36; mixedUnits 12/12** · branch `phase0-solid-ground`
+
+## 🟠 2026-09-12 21:30 — he said "continue the work": two more fixes from the queue. `8ed215f`, `a2b4eae`.
+
+**`8ed215f` — creating a store is not visiting it.** The customer form stamped `lastVisit` with
+today in three places (`CustomerManager.jsx:248`, `:1018`, `:1037`) and never `lastVisitedBy`; a
+sale (`MerchantSalesView.jsx:1314`) and a journey stop (`JourneyView.jsx:776`) stamp both. So the
+form was the only writer that could produce "visited today by nobody", which
+`MerchantSalesView.jsx:552` reads as a competitor. Root cause fixed at the writer, not the reader:
+the form leaves `lastVisit` blank. All eight readers already branch on blank. Full story in
+`git show 8ed215f`. Guard: PHANTOM COMPETITOR section, 1 red → 1426/1426.
+
+**`a2b4eae` — the alarm toast names its unit.** One line, `App.jsx:1365`, same words as the EOD
+alert in the same file. Guard: THE ALARM SAYS 300 OF WHAT, 1 red → 1427/1427.
+
+**WAITING ON ALDI — ✅ TEST:** in the customer directory, create a new store, then sell to it today.
+The red `ALREADY SECURED TODAY — Claimed by ANOTHER AGENT` banner must NOT appear. Expect the new
+store to read NEVER VISITED in the Journey view until its first sale — that is now the truth, not a
+bug. Stores he created EARLIER today still carry the old stamp until midnight.
+
+Looked for and not found, left in the queue with the search recorded: the "new personnel default to
+T3" item — `LandlordDashboard.jsx` defaults to tier 2, `FleetCanvasManager.jsx:150` sets no tier.
 
 ## 🟠 2026-09-12 21:00 — Aldi tested `coba baru`: both screens say LOW. Closed.
 

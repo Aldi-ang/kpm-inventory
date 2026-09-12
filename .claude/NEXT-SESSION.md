@@ -1,11 +1,13 @@
 # The one job
 
-**A store created today and sold to the same day shows an undismissable red
-`ALREADY SECURED TODAY — Claimed by ANOTHER AGENT`. There is no other agent. Three lines invent
-one.**
+**A red alarm strip paints OVER every dialog box. The toast column sits one layer above the
+confirm dialog, and the low-stock alarm never clears itself, so a "critically low" strip can lie
+across the top of a dialog the user is trying to read.**
 
-The low-stock job is CLOSED: Aldi tested `coba baru` at 20:50 on 2026-09-12 and both screens say
-LOW. Do not reopen it.
+⚠️ **Before this job: read Aldi's test results for `8ed215f` and `a2b4eae` (✅ TEST from
+2026-09-12, listed under "Shipped" below).** If he reports the phantom `ANOTHER AGENT` banner
+still shows on a store created today, THAT is the job — start from `git show 8ed215f` and the
+PHANTOM COMPETITOR section of `logicFixes.selfcheck.mjs`. Otherwise do the job below.
 
 ---
 
@@ -15,32 +17,56 @@ LOW. Do not reopen it.
 >
 > Read `.claude/NEXT-SESSION.md` first — it is the whole job, do not re-read source to re-orient.
 >
-> **The bug:** a store created today, then sold to today, shows the standing red banner
-> `ALREADY SECURED TODAY — Claimed by ANOTHER AGENT`. Nobody else visited it. The banner is
-> undismissable by design (it replaced a `window.confirm`), so a false one is a wall.
+> **The symptom:** the low-stock alarm strip (`⚠️ BOSS! <product> is critically low (N Bks left).
+> Restock needed!`) stays on screen until clicked, and it is drawn ABOVE the confirm dialog. So while
+> a dialog is open, a red strip can sit across its top edge. It does not block clicks (the column is
+> `pointer-events-none`), it only paints over.
 >
-> **The three lines, all verified 2026-09-12:**
-> - `src/components/CustomerManager.jsx:248` — a NEW customer is born with `lastVisit: getLocalDayKey()`.
->   Creating the store counts as visiting it.
-> - `src/components/CustomerManager.jsx:1037` — the edit path does the same: `lastVisit: c.lastVisit || getLocalDayKey()`.
-> - `src/MerchantSalesView.jsx:552` — `setRevisitToday(cust.lastVisit === localToday ? (iVisitedIt ? 'me' : (visitedBy || 'another agent')) : null)`.
->   `lastVisitedBy` is empty on a fresh store, so the fallback string names a competitor who does not exist.
+> **The lines, all verified 2026-09-12:**
+> - `src/components/Toast.jsx:114` — the toast column: `fixed inset-x-0 top-0 z-[10000]`.
+> - `src/components/ConfirmGate.jsx:124` — the dialog layer: `z-[9999]`. One below the toasts.
+> - `src/utils/toastSeverity.js:26` — `isSticky(message)`: anything that is not a recognised SUCCESS
+>   word is sticky. The alarm text has no success word, so it IS sticky — that question is answered.
+> - `src/components/Toast.jsx:92` — `if (!item.sticky)` sets the auto-dismiss timer; a sticky toast
+>   has a close button (`:156`) and clears only on click. This is deliberate. Do not change it.
+> - `src/App.jsx:1365` — where the alarm is raised.
 >
-> **The smallest fix:** a store with `lastVisit === today` and NO `lastVisitedBy` was created today,
-> not visited today. Treat empty `visitedBy` as "nobody" — no banner — rather than "another agent".
-> Decide whether the two CustomerManager lines should stop stamping `lastVisit` at creation at all;
-> read who else reads `lastVisit` first (`CustomerManager.jsx:746` prints it as "last visit").
+> **The safe half, and the whole job:** put the toast column UNDER the dialog layer. `z-[9998]` on
+> `Toast.jsx:114`. A dialog then covers the strip while it is open; when the dialog closes, the strip
+> is still there, still waiting to be clicked. Nothing about the strip's lifetime changes.
 >
-> **Order:** guard in `src/config/logicFixes.selfcheck.mjs` first (blank `lastVisitedBy` + today's
-> `lastVisit` → no competitor), prove it RED, then fix, then `npm run build; node src/config/integration.audit.mjs`.
+> **Order:** guard first in `src/config/toastSeverity.selfcheck.mjs` or `logicFixes.selfcheck.mjs`
+> (the toast column's z-index must be LOWER than ConfirmGate's, read both numbers from source), prove
+> it RED, then the one-line edit, then `npm run build; node src/config/integration.audit.mjs`.
+> `integration.audit.mjs` group 13 asserts the toast host calls `isSticky` — leave that alone.
 >
-> **Trap:** the banner deliberately replaced a dialog — do not bring a dialog back, and do not make
-> it dismissable. Fix the DATA that feeds it, not the banner. See the comment block at
-> `MerchantSalesView.jsx:540-550`.
+> **Render it.** This is a visual change. Open a dialog with a sticky toast up and take a frame
+> before and after. A z-index edit that is not seen is not verified. The viewing path is in
+> `A-Brain/Wiki/Concepts/Looking at the App.md`.
+>
+> **Trap:** the toast column is above the dialog on purpose for ONE reason nobody has written down;
+> check `git log -S'z-[10000]' -- src/components/Toast.jsx` first. If a commit message says why, stop
+> and ask Aldi before moving it.
 >
 > Rewrite this file with the next single job before closing.
 
 ---
+
+## Shipped 2026-09-12, later — `8ed215f` and `a2b4eae`
+
+**`8ed215f` — creating a store is not visiting it.** The customer form stamped `lastVisit` with
+today in three places (`CustomerManager.jsx:248`, `:1018`, `:1037`) and never `lastVisitedBy`, so
+`MerchantSalesView.jsx:552` read a fresh store as "claimed by another agent". The form now leaves
+`lastVisit` blank; every reader already has a branch for blank. PHANTOM COMPETITOR section in
+`logicFixes.selfcheck.mjs`: 1 red before, 1426/1426 after. Stores created earlier on 2026-09-12
+keep the stamp until midnight.
+
+**`a2b4eae` — the alarm says `(300 Bks left)`, not `(300 left)`.** `App.jsx:1365`. Guard: THE
+ALARM SAYS 300 OF WHAT in `logicFixes.selfcheck.mjs`, 1427/1427.
+
+**✅ TEST owed by Aldi:** create a new store in the customer directory, then sell to it the same
+day. No red `ANOTHER AGENT` banner. Side effect to expect: that new store shows as NEVER VISITED in
+the Journey view and as due-now on the map until the first real sale — that is the truth now.
 
 ## Shipped 2026-09-12 — `9b31bf0`
 
@@ -86,14 +112,14 @@ Aldi pressed it 2026-09-09 and 2026-09-10. **Do not put this on a list again.**
 
 ### Day one — the rest of the walk, ranked
 
-1. **The toast half of the alarm story.** `Toast.jsx:91` — `if (!item.sticky)` sets the dismiss
-   timer, so a sticky toast never expiring is deliberate, and sticky toasts have a dismiss path at
-   `:64`. Open: is the low-stock alarm raised `sticky: true` at all, and `Toast.jsx:114` sits at
-   `z-[10000]` above dialogs. The container is `pointer-events-none`. Lowering it below the dialog
-   layer is the safe half.
-2. **New personnel default to `T3: HQ SALES MANAGER`** even when the role picker says Sales Motorist.
-3. **The GPS placeholder reads as a value** (`-7.6043, 110.2055`, empty `value`), then Save fails with
-   "This outlet has no map pin". The same form's first refusal is `SSOT Violation: You must specify
+1. **New personnel default to `T3: HQ SALES MANAGER`** even when the role picker says Sales Motorist.
+   Looked for on 2026-09-12 and NOT found in two greps: `LandlordDashboard.jsx:14` defaults to tier
+   2, `FleetCanvasManager.jsx:150` `defaultAgentState` has `role: 'Motorist'` and no tier at all.
+   Next place to look: how a `motorists` record acquires its tier — the sign-in "ghost profile"
+   path in `App.jsx`, and `povPreview.js`. Reproduce it on screen before writing a brief for it.
+2. **The GPS placeholder reads as a value** (`CustomerManager.jsx:1440`, `placeholder="-7.6043,
+   110.2055"`, empty `value`), then Save fails with "This outlet has no map pin"
+   (`CustomerManager.jsx:956`). The same form's first refusal is `SSOT Violation: You must specify
    the complete Matrix Location...` — jargon in front of a shop owner.
 
 ### Phone, at 375x812
@@ -104,9 +130,7 @@ Aldi pressed it 2026-09-09 and 2026-09-10. **Do not put this on a list again.**
 
 ### Wording — cheap, each one read by a customer
 
-The low-stock alarm toast says `coba baru is critically low (300 left)` with no unit while the panel
-under it says `1 BAL` (`App.jsx:1365`, `${priorityItem.stock} left` is Bks); `49 Bks left in the
-vehicle` while selling from Master Vault, `Surya 16 (Available: 100 )` with a
+`49 Bks left in the vehicle` while selling from Master Vault, `Surya 16 (Available: 100 )` with a
 trailing space and no unit, the salesperson printed as `ADIKARYASUKSES99`, the EOD verify confirm
 claiming "clears their inventory" on a stamps-only card, the EOD `MATCHES` column showing a dash when
 the numbers are equal, the audit receipt printing `BAYAR : CASH` on an audit that collected Rp 0.
