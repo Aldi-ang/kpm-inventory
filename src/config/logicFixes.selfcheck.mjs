@@ -6592,5 +6592,15 @@ section('THE PHANTOM COMPETITOR — creating a store is not visiting it (2026-09
   ok('my own sale today is a revisit by me, not a competitor',
      revisit({ lastVisit: '2026-09-12', lastVisitedBy: 'aldi' }, '2026-09-12', 'aldi') === 'me'); }
 
+section('THE ALARM SAYS 300 OF WHAT — the low-stock toast carries its unit (2026-09-12)');
+/* Aldi's screenshot, 2026-09-12 20:50: the toast read "coba baru is critically low (300 left)"
+   while the STOK KRITIS box under it read "1 BAL". Same amount — stock is stored in Bks — but a
+   reader cannot tell. The EOD-return alert in the same file already says "(N Bks left)". */
+{ const app = read('src/App.jsx');
+  const toast = app.match(/critically low \(([^)]*)\)/);
+  ok('the critically-low toast names the unit, the way the EOD alert already does',
+     !!toast && /Bks left/.test(toast[1]),
+     toast ? 'found: (' + toast[1] + ')' : 'toast template not found'); }
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

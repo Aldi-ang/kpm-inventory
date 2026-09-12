@@ -50,8 +50,8 @@
     "semantic_hash": ""
   },
   "src/App.jsx": {
-    "mtime": 1789217334.9039576,
-    "ast_hash": "3610345f991e60a0c77b6e5b62e407ae",
+    "mtime": 1789222954.5770307,
+    "ast_hash": "493ccd4299560b6f9f6dd6a552a07f72",
     "semantic_hash": ""
   },
   "src/ConsignmentFinanceView.jsx": {
@@ -755,8 +755,8 @@
     "semantic_hash": ""
   },
   "src/config/logicFixes.selfcheck.mjs": {
-    "mtime": 1789222755.7532387,
-    "ast_hash": "36c98c3033a436cea7a216ed8ef73a79",
+    "mtime": 1789222953.805917,
+    "ast_hash": "25509d548ff2116ab9753951c8e7bd77",
     "semantic_hash": ""
   },
   ".claude/NEXT-SESSION.md": {

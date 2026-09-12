@@ -1362,7 +1362,7 @@ const handleGitHubMirror = async () => {
           const priorityItem = [...lowStockItems].sort((a, b) => (b.priceRetail || 0) - (a.priceRetail || 0))[0];
           
           setTimeout(() => {
-              triggerCapy(`⚠️ BOSS! ${priorityItem.name} is critically low (${priorityItem.stock} left). Restock needed!`);
+              triggerCapy(`⚠️ BOSS! ${priorityItem.name} is critically low (${priorityItem.stock} Bks left). Restock needed!`);
           }, 3500); // 3.5s delay so it triggers right after the welcome message
           
           hasAlertedLowStock.current = true;
