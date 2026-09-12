@@ -4,11 +4,8 @@
 `ALREADY SECURED TODAY — Claimed by ANOTHER AGENT`. There is no other agent. Three lines invent
 one.**
 
-⚠️ **Before this job: read Aldi's re-test of `coba baru` (✅ TEST from 2026-09-12).** `9b31bf0` made
-all four late screens ask `isLowStock`. If he reports the Dashboard and Merchant Sales STILL
-disagree on that product, THAT is the job instead — start from
-`src/config/stockThreshold.selfcheck.mjs` section 7 and `git show 9b31bf0`, not from scratch.
-If they agree, or he has not tested yet, do the job below.
+The low-stock job is CLOSED: Aldi tested `coba baru` at 20:50 on 2026-09-12 and both screens say
+LOW. Do not reopen it.
 
 ---
 
@@ -54,8 +51,12 @@ The four `|| 50` / `|| 5` call sites are gone. `ResidentEvilInventory.jsx`, `use
 `stockThreshold.selfcheck.mjs` guards all four: 8 red before, 36/36 green after. Build clean,
 `integration.audit.mjs` 722/722 — that also clears the audit owed on `44058b1`.
 
-**What Aldi must do:** re-test `coba baru` (MIN. ALERT blank, 1 Bal). Dashboard STOK KRITIS and
-Merchant Sales (Boss Car / Master Vault mode) must BOTH say LOW.
+**Tested by Aldi 2026-09-12 20:50, both screens LOW.** Closed.
+
+Same session, at his "yes": `A-Brain/automation/heredoc-gate.mjs` is a PreToolUse hook on Bash in
+this repo's `.claude/settings.json`. It refuses a heredoc whose body has a backslash or is over 40
+lines, and `node -e` / `python -c` holding a backtick or `${`. The way out is the Write tool, then
+run the file. Do not work around it.
 
 <details>
 <summary>Queue — do NOT paste these; promote one only when the job above is finished</summary>
@@ -103,7 +104,9 @@ Aldi pressed it 2026-09-09 and 2026-09-10. **Do not put this on a list again.**
 
 ### Wording — cheap, each one read by a customer
 
-`49 Bks left in the vehicle` while selling from Master Vault, `Surya 16 (Available: 100 )` with a
+The low-stock alarm toast says `coba baru is critically low (300 left)` with no unit while the panel
+under it says `1 BAL` (`App.jsx:1365`, `${priorityItem.stock} left` is Bks); `49 Bks left in the
+vehicle` while selling from Master Vault, `Surya 16 (Available: 100 )` with a
 trailing space and no unit, the salesperson printed as `ADIKARYASUKSES99`, the EOD verify confirm
 claiming "clears their inventory" on a stamps-only card, the EOD `MATCHES` column showing a dash when
 the numbers are equal, the audit receipt printing `BAYAR : CASH` on an audit that collected Rp 0.

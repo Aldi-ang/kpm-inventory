@@ -1,6 +1,26 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-09-12 19:55 WIB (🟠 KPM — `9b31bf0` SHIPPED: the four `|| 50` / `|| 5` call sites now call `isLowStock(product, appSettings)`. Section 7 of `stockThreshold.selfcheck.mjs` proven 8 RED before, 36/36 after. Build clean; `integration.audit.mjs` 722/722 — the audit owed on `44058b1` is paid. mixedUnits 12/12. ✅ TEST OWED BY ALDI: re-test `coba baru` — Dashboard STOK KRITIS and Merchant Sales must BOTH say LOW. 🔴 NEXT JOB in the brief: the phantom `ANOTHER AGENT` banner on a store created today.)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **build + 722 audit + 36/36 + 12/12 all run this session** · branch `phase0-solid-ground`
+**Updated: 2026-09-12 21:00 WIB (🟠 KPM — `9b31bf0` CONFIRMED BY ALDI at 20:50: his two screenshots show `coba baru` LOW on the Dashboard (1 BAL, ambang 3 bal) AND the LOW badge on the sales terminal. Both screens agree. Nothing is owed on this bug. Also today: `heredoc-gate.mjs` hook added at his "yes" — Bash refuses a heredoc with a backslash or over 40 lines, and `node -e` with a template literal. 🔴 NEXT JOB in the brief: the phantom `ANOTHER AGENT` banner on a store created today.)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **build + 722 audit + 36/36 + 12/12 all run this session** · branch `phase0-solid-ground`
+
+## 🟠 2026-09-12 21:00 — Aldi tested `coba baru`: both screens say LOW. Closed.
+
+Screenshots at 20:50. Dashboard STOK KRITIS: `1 BAL`, `ambang 3 bal`, one product. Sales terminal:
+the `LOW` badge on the COBA BARU card. The two-answers bug from 2026-09-10 is gone.
+
+One wording item seen in the same screenshot, added to the queue in the brief: the yellow alarm
+says *"coba baru is critically low (300 left)"* with no unit, while the box below says `1 BAL`.
+Same amount (300 packs is one Bal of 200 plus 100), but a reader cannot tell. `App.jsx:1365`.
+
+**Guard added at his "yes add the guard if needs to":** `A-Brain/automation/heredoc-gate.mjs`,
+registered in this repo's `.claude/settings.json` as a PreToolUse hook on Bash. The lesson prose it
+replaces fired four times in eleven days; the hook blocked a probe the same minute it was wired.
+The user-level `~/.claude/settings.json` was NOT changed — the auto-mode classifier refused that
+write, so the gate is project-level, like `fanout-gate.mjs`. That commit also carries the
+`fanout-gate` hook entry that an earlier session left uncommitted in the same file.
+
+He also asked, a third time, for plain English and the humanizer on every reply. Saved in memory
+(`feedback_explain_in_plain_english.md`) — caveman-ultra abbreviations and `[certain]` tags count
+as hard words for him.
 
 ## 🟠 2026-09-12 19:55 — the four call sites are adopted. `9b31bf0`.
 

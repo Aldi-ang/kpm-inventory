@@ -95,6 +95,26 @@
     ],
     "PreToolUse": [
       {
+        "matcher": "Workflow|Agent",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"D:/APP DEVELOPMENT/kpm inventory main FILES/A-Brain/automation/fanout-gate.mjs\"",
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"D:/APP DEVELOPMENT/kpm inventory main FILES/A-Brain/automation/heredoc-gate.mjs\"",
+            "timeout": 10
+          }
+        ]
+      },
+      {
         "matcher": "Bash|Grep",
         "hooks": [
           {
