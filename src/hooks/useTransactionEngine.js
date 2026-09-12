@@ -4,6 +4,7 @@ import { doc, collection, serverTimestamp, writeBatch, getDoc, addDoc, updateDoc
    between the two writes, and offline is the normal case out here. */
 import { tallySale } from '../utils/salesRollupWrite.js';
 import { getCurrentDate, stripCartItemForStorage, convertToBks, storeKey } from '../utils/helpers';
+import { isLowStock } from '../utils/stockThreshold';
 import useOfflineEngine from './useOfflineEngine';
 
 /* 🚀 What a sale does to the van, in ONE place, called by the online path and the offline one.
@@ -46,7 +47,7 @@ import { notify } from '../components/Toast.jsx';
 
 export default function useTransactionEngine({
     db, appId, userId, userRole, agentProfileId, adminSalesMode,
-    logAudit, triggerCapy, setCart, customers, user 
+    logAudit, triggerCapy, setCart, customers, user, appSettings
 }) {
 
     const { isOnline, saveOfflineTransaction, saveOfflineNOO } = useOfflineEngine();
@@ -314,7 +315,7 @@ export default function useTransactionEngine({
                     const newStock = prodData.stock - qtyInBks;
                     updatesToPerform.push({ ref: prodRef, newStock });
                     // 🔔 NEW: Flag if this sale just pushed the product below its minimum
-                    if (newStock <= (prodData.minStock || 50)) {
+                    if (isLowStock({ ...prodData, stock: newStock }, appSettings)) {
                         lowStockAlerts.push(`${prodData.name || item.name} (${newStock} Bks left)`);
                     }
                 }

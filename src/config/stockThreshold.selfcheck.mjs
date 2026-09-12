@@ -109,5 +109,28 @@ ok('DashboardView routes through the shared rule', /isLowStock|minStockBks/.test
 ok('the rule imports the real converter, not a copy of it',
    /import\s*\{[^}]*convertToBks[^}]*\}\s*from\s*'\.\/helpers'/.test(read('src/utils/stockThreshold.js')));
 
+section('7. REGRESSION — the four late adopters route through the shared rule too');
+/* The module shipped on 2026-08-25; four screens kept their own number. Reproduced 2026-09-10
+   19:49 on product `coba baru`: MIN. ALERT blank, 1 Bal (200 Bks) on the shelf. The Dashboard
+   said LOW — `ambang 3 bal`, the company default — and Merchant Sales said nothing, because
+   `item.minStock || 50` reads 200 Bks as comfortably above 50. One product, two answers. */
+const adopters = {
+  ResidentEvilInventory: 'src/components/ResidentEvilInventory.jsx',
+  useTransactionEngine:  'src/hooks/useTransactionEngine.js',
+  MerchantSalesView:     'src/MerchantSalesView.jsx',
+  StockOpnameView:       'src/StockOpnameView.jsx',
+};
+for (const [name, path] of Object.entries(adopters)) {
+  const src = read(path);
+  ok(`${name} no longer inlines a minStock fallback`, !/minStock\s*\|\|\s*\d+/.test(src),
+     'the 50 or the 5 came back');
+  ok(`${name} imports the shared rule`,
+     /import\s+(?:\{[^}]*\bisLowStock\b[^}]*\}|\*\s+as\s+\w+)\s+from\s+'[^']*utils\/stockThreshold'/.test(src));
+}
+ok('coba baru: blank MIN. ALERT, 1 Bal on the shelf, 3 Bal company default → LOW',
+   isLowStock({ ...surya, minStock: '', stock: 200 }, s3bal) === true);
+ok('the old `|| 50` rule said the opposite — that is the disagreement being closed',
+   (200 <= ('' || 50)) === false);
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

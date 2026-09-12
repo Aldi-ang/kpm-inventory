@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { collection, addDoc, getDocs, updateDoc, doc, writeBatch, serverTimestamp, query, where, onSnapshot, increment } from "firebase/firestore";
 import { savePhotoAndGetReference, deletePhotoFromStorage, commitInChunks, formatRupiah, formatNumber, compressImageToBase64, tierPrice, getLocalDayKey} from './utils/helpers';
+import * as threshold from './utils/stockThreshold';
 import { confirmAction, promptAction } from './components/ConfirmGate.jsx';
 import { notify } from './components/Toast.jsx';
 import { canSeeExpectedCount } from './config/permissions';
@@ -1004,7 +1005,7 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                         {monitorStats.map(stat => {
                             const p = stat.product;
                             if (!p || !p.id) return null;
-                            const isLowStock = stat.vault <= (p.minStock || 5);
+                            const isLowStock = threshold.isLowStock({ ...p, stock: stat.vault }, appSettings);
 
                             return (
                                 <div key={p.id} className="bg-[var(--raised)] border border-[var(--line)] rounded-xl overflow-hidden flex flex-col shadow-lg transition-all hover:border-[var(--line)] relative group">

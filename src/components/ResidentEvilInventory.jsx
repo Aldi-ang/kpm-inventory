@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Search, Plus, Package, AlertCircle, ImageIcon, Maximize2 } from 'lucide-react';
 import { formatRupiah, convertToBks, getLocalDayKey} from '../utils/helpers';
+import * as threshold from '../utils/stockThreshold';
 
 // 🚀 NEW: ADVANCED STOCK FORMATTER (Handles Batang, Slops, and Bal)
 export const formatAdvancedStock = (stock, item) => {
@@ -191,7 +192,7 @@ export const ItemInspector = ({ product, isAdmin, onEdit, onDelete, onUpdateProd
 };
 
 // --- MAIN INVENTORY COMPONENT ---
-export default function ResidentEvilInventory({ inventory, motorists = [], transactions = [], isAdmin, onEdit, onDelete, onAddNew, backgroundSrc, onUploadBg, onUpdateProduct }) { 
+export default function ResidentEvilInventory({ inventory, motorists = [], transactions = [], isAdmin, onEdit, onDelete, onAddNew, backgroundSrc, onUploadBg, onUpdateProduct, appSettings }) { 
     const [selectedId, setSelectedId] = useState(null);
     const [search, setSearch] = useState("");
     const [activeSection, setActiveSection] = useState("ALL");
@@ -233,7 +234,7 @@ export default function ResidentEvilInventory({ inventory, motorists = [], trans
 
                 <div className="flex-1 overflow-y-auto p-2 scrollbar-thin scrollbar-thumb-amber-900/40">
                     {currentList.map(item => {
-                        const isLowStock = item.stock <= (item.minStock || 50);
+                        const isLowStock = threshold.isLowStock(item, appSettings);
                         return (
                             <div key={item.id} onClick={() => setSelectedId(item.id)} className={`p-3 md:p-4 cursor-pointer border mb-2 flex items-center gap-4 transition-all relative ${selectedId === item.id ? 'bg-amber-500/10 border-amber-500/40 shadow-[0_0_15px_rgba(217,164,65,0.15)]' : 'border-transparent'}`}>
                                 {isLowStock && isAdmin && (<div className="absolute left-0 top-0 bottom-0 w-1.5 bg-rose-600 shadow-[0_0_12px_rgba(220,38,38,1)] z-10"></div>)}

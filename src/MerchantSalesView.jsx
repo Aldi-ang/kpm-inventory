@@ -5,6 +5,7 @@ import { doc, setDoc, collection, getDoc, getDocs, updateDoc, addDoc, onSnapshot
 import { hasClearance, canPickFromGallery } from './config/permissions';
 import ProofCamera from './components/ProofCamera.jsx';
 import { savePhotoAndGetReference, convertToBks, splitToUnits, paymentLabel, storeKey, getLocalDayKey} from './utils/helpers';
+import { isLowStock } from './utils/stockThreshold';
 import { dayStats, agoLabel } from './utils/dayStats';
 import { customerBrief, reorderFromLast } from './utils/customerBrief';
 import { nextStop, directionsUrl, metresLabel } from './utils/nextStop';
@@ -2469,7 +2470,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                         <div className="flex flex-col gap-0.5 lg:gap-1">
                                             {item.stock <= 0 ? (
                                                 <span className="text-[10px] lg:text-xs font-black px-1.5 py-0.5 lg:px-2 lg:py-1 rounded-md border-2 inline-block bg-red-900/20 text-red-500 border-red-900/50">EMPTY</span>
-                                            ) : item.stock <= (item.minStock || 50) ? (
+                                            ) : isLowStock(item, appSettings) ? (
                                                 <span className="text-[10px] lg:text-xs font-black px-1.5 py-0.5 lg:px-2 lg:py-1 rounded-md border-2 inline-block bg-[var(--duke-brass-4)] text-[var(--duke-amber-ink)] border-[color-mix(in_srgb,var(--duke-amber-edge)_50%,transparent)]">LOW</span>
                                             ) : null}
                                         </div>
