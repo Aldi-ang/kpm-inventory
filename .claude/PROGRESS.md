@@ -1,6 +1,21 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-09-10 18:11 WIB (🟠 KPM — FIRST CODE FIX SHIPPED today: `44058b1`, the STOK KRITIS panel no longer prints `0 BAL` for ten real packs. Found by Aldi's own screenshot test. Check 12 in `mixedUnits.selfcheck.mjs` proven RED before the fix and GREEN after. ⚠️ `npm run build` + the 722 audit NOT run — weekly quota at 7%. ✅ "Rebuild sales totals" DONE — he pressed it 2026-09-09 and 2026-09-10. Stop asking. 🔴 NEXT: the four `|| 50` / `|| 5` call sites, still unadopted — and blank-MIN.ALERT REPRODUCED 19:49 — Merchant Sales stays silent.)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **mixedUnits 12/12 · full build + audit NOT run this turn** · branch `phase0-solid-ground`
+**Updated: 2026-09-12 19:55 WIB (🟠 KPM — `9b31bf0` SHIPPED: the four `|| 50` / `|| 5` call sites now call `isLowStock(product, appSettings)`. Section 7 of `stockThreshold.selfcheck.mjs` proven 8 RED before, 36/36 after. Build clean; `integration.audit.mjs` 722/722 — the audit owed on `44058b1` is paid. mixedUnits 12/12. ✅ TEST OWED BY ALDI: re-test `coba baru` — Dashboard STOK KRITIS and Merchant Sales must BOTH say LOW. 🔴 NEXT JOB in the brief: the phantom `ANOTHER AGENT` banner on a store created today.)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **build + 722 audit + 36/36 + 12/12 all run this session** · branch `phase0-solid-ground`
+
+## 🟠 2026-09-12 19:55 — the four call sites are adopted. `9b31bf0`.
+
+Every screen that says "low" now asks `src/utils/stockThreshold.js`. Six files: the four call sites
+plus `App.jsx` passing `appSettings` into ResidentEvilInventory and useTransactionEngine, plus the
+self-check. Full story in `git show 9b31bf0`; the vault page is
+`A-Brain/Wiki/Entities/What Counts As Low.md`.
+
+**WAITING ON ALDI — ✅ TEST:** *"re-test `coba baru` — both screens must agree"* (his own words in
+the brief). Dashboard STOK KRITIS and Merchant Sales in Boss Car / Master Vault mode must BOTH show
+LOW for that product (MIN. ALERT blank, 1 Bal). If they still disagree, `.claude/NEXT-SESSION.md`
+says where to start.
+
+Not committed on purpose: `.claude/settings.json` — an uncommitted fanout-gate hook from an earlier
+session, not this track's.
 
 ## 🔴 2026-09-10 19:49 — blank MIN. ALERT REPRODUCED. The four call sites are a real bug.
 
