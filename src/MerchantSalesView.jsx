@@ -39,7 +39,7 @@ const readDraft = (uid) => {
     } catch { return null; }
 };
 
-const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, onProcessSale, onInspect, appSettings, customers = [], allowedPayments = ['Cash'], allowedTiers = ['Retail', 'Ecer'], transactions = [], allowRetur = true, allowCashRefund = false, db, appId, agentProfileId, storage, masterUserId, adminSalesMode, onAdminSalesMode, isOnline = navigator.onLine }) => {
+const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, triggerCapy, onProcessSale, onInspect, appSettings, customers = [], allowedPayments = ['Cash'], allowedTiers = ['Retail', 'Ecer'], transactions = [], allowRetur = true, allowCashRefund = false, db, appId, agentProfileId, storage, masterUserId, adminSalesMode, onAdminSalesMode, isOnline = navigator.onLine }) => {
     /* WHOSE VAULT THE CUSTOMER RECORDS LIVE IN — and the answer must be the same one App used to
        fetch them, or a write lands in a document nobody reads.
 
@@ -247,7 +247,11 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
        refuses every sale without `txProofPhoto`, and that must never be weakened here.
        `false` means a live camera view and no file chooser at all; `true` means either.
        The matrix owns this, `canPickFromGallery` reads it, and the tier is only the fallback. */
-    const galleryOk = canPickFromGallery(user?.userRole || user?.role);
+    /* the live role comes from App as a prop; the user object is only a fallback, because the
+       boss's user object is the raw Firebase user and has no role on it at all — read from
+       there alone, tier 1 became tier 5 and got the camera lock (his screenshot, 2026-09-13) */
+    const myRole = userRole || user?.userRole || user?.role;
+    const galleryOk = canPickFromGallery(myRole);
     const [showProofCamera, setShowProofCamera] = useState(false);
 
     /* SAVE THE DRAFT. Debounced: localStorage.setItem is synchronous, and without the delay this
@@ -1869,7 +1873,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                         {gpsStatus === 'error' && <span className="text-red-500 flex items-center gap-1"><AlertCircle size={12}/> GPS Signal Lost</span>}
                                     </div>
                                     
-                                    {(!canOverrideGps && !hasClearance(user?.userRole || user?.role, 'can_unrestricted_sample') && !['verified', 'bypass', 'walk_in'].includes(gpsStatus)) ? (
+                                    {(!canOverrideGps && !hasClearance(myRole, 'can_unrestricted_sample') && !['verified', 'bypass', 'walk_in'].includes(gpsStatus)) ? (
                                         <button disabled className="w-full mt-1 bg-[var(--duke-fill-ground)] border border-[var(--duke-edge-ctl)] text-[var(--duke-ink-3)] text-[10px] font-bold uppercase tracking-widest p-2 rounded shadow-inner flex items-center justify-center gap-2 cursor-not-allowed">
                                             <Lock size={12}/> Sample Locked (Requires GPS)
                                         </button>

@@ -6450,7 +6450,9 @@ ok('and no dev-only bypass exists anywhere on the proof path',
 ok('a camera-only tier opens the live camera instead of the picker',
    /galleryOk \? document\.getElementById\('txProof'\)\.click\(\) : setShowProofCamera\(true\)/.test(merchant));
 ok('and the tier answer comes from the shared helper, never a tier number written here',
-   /canPickFromGallery\(user\?\.userRole \|\| user\?\.role\)/.test(merchant)
+   /* `myRole` since 2026-09-13 — the live role prop first, the user object as fallback; see
+      THE BOSS IS TIER 1 ON THE SALES TERMINAL TOO for why the user object alone was wrong */
+   /canPickFromGallery\(myRole\)/.test(merchant)
    && imports(merchant, 'canPickFromGallery'));
 ok('the camera names why it will not open, rather than leaving a dead button',
    /not on a secure address/.test(read('src/components/ProofCamera.jsx'))
@@ -6735,6 +6737,39 @@ section('THE NOTA PRINTS THE BOSS\'S NAME, NOT HIS EMAIL (2026-09-13)');
   ok('the proof record and the receipt fallback use the helper',
      /salesmanName: String\(myName/.test(ms) && /: \(myName \|\| 'Admin'\)/.test(ms),
      'two of the five copies were left behind'); }
+
+section('THE BOSS IS TIER 1 ON THE SALES TERMINAL TOO (2026-09-13)');
+/* His screenshot, 2026-09-13 19:50: *"bruh im tier 1 and have this camera lock i cant check by
+   making sales when i still have this, tier 1 should be able to bypass everything bro"*.
+   canPickFromGallery('ADMIN') is true — permissions.js has always said tier 1 may. But the boss
+   signs in as the RAW Firebase user (App.jsx: setUserRole('ADMIN'); setUser(currentUser)), and a
+   raw auth user carries no `userRole` and no `role`. MerchantSalesView read the role off the user
+   object alone, so the boss arrived as `undefined` → translated to TIER_5 → camera only. Every
+   other screen gets `userRole={userRole}` as a prop; this one did not. */
+{ const { canPickFromGallery } = await import('./permissions.js');
+  ok('the rule itself lets tier 1 choose from the gallery', canPickFromGallery('ADMIN') === true, 'permissions.js changed');
+  /* read from SOURCE, not by calling it: an earlier section injects a test matrix into the live
+     ROLE_PERMISSIONS, so a call here would grade that matrix rather than the rule */
+  ok('and a MISSING role reads as a field tier — which is why the raw auth user was fatal',
+     /let role = userRole \|\| CORPORATE_TIERS\.TIER_5;/.test(code(read('src/config/permissions.js'))),
+     'if this flips, the fix below is no longer the load-bearing one');
+  const app = code(read('src/App.jsx'));
+  const mA = app.indexOf('<MerchantSalesView');
+  const mB = app.indexOf('/>', mA);
+  ok('the MerchantSalesView mount was found', mA > -1 && mB > mA && mB - mA < 4000, `${mA}..${mB}`);
+  ok('App hands the sales terminal the live role, as it does every other screen',
+     /userRole=\{userRole\}/.test(app.slice(mA, mB)),
+     'the boss is the raw Firebase user and carries no role of his own');
+  /* RAW, not code(): the file carries `accept="image/*"` and the comment stripper reads that
+     `/*` as a comment opening, swallowing everything to the next `*​/` — the sample lock included */
+  const ms = read('src/MerchantSalesView.jsx');
+  ok('the terminal reads the prop first and the user object only as a fallback',
+     /const myRole = userRole \|\| user\?\.userRole \|\| user\?\.role/.test(ms),
+     'a role read off the user object alone is undefined for the boss');
+  ok('both permission reads in the terminal use it — the gallery gate and the sample lock',
+     /canPickFromGallery\(myRole\)/.test(ms) && /hasClearance\(myRole, 'can_unrestricted_sample'\)/.test(ms) &&
+     !/user\?\.userRole \|\| user\?\.role,/.test(ms),
+     'one reader fixed and one left is the boss locked out of a different button'); }
 
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

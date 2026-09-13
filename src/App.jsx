@@ -4874,6 +4874,12 @@ const handleGitHubMirror = async () => {
               <div className="h-full w-full relative bg-[var(--duke-well-solid)]">
                       <MerchantSalesView
                           isOnline={isOnline}
+                          /* the boss signs in as the raw Firebase user, which carries no role of
+                             its own; every other screen gets the live role this way, and this one
+                             read it off `user` alone — so tier 1 arrived as tier 5 and got the
+                             camera lock. His words, 2026-09-13: "tier 1 should be able to bypass
+                             everything bro". */
+                          userRole={userRole}
                           adminSalesMode={adminSalesMode}
                           onAdminSalesMode={userRole === 'ADMIN' ? setAdminSalesMode : undefined}
                           inventory={salesTerminalInventory} 
