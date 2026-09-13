@@ -5,7 +5,7 @@ refusal that form gives a shop owner is `SSOT Violation: You must specify the co
 Location` — jargon nobody outside this repo understands.**
 
 ⚠️ **Before this job: read Aldi's test result for `8ed215f` (✅ TEST from 2026-09-12, under
-"Shipped" below).** If he reports the phantom `ANOTHER AGENT` banner still shows on a store created
+"Shipped" below — still owed; `772ab0a` is already confirmed).** If he reports the phantom `ANOTHER AGENT` banner still shows on a store created
 today, THAT is the job — start from `git show 8ed215f` and the PHANTOM COMPETITOR section of
 `logicFixes.selfcheck.mjs`. Otherwise do the job below.
 
@@ -65,8 +65,9 @@ Access Denied `:4495`, Offline-Unverified `:4509`, Flight Recorder `:5112`) and 
 `notify()` reports while it is up — at 9998 they would have painted behind an opaque screen. Aldi
 chose the lift ("do 1"). Guard: last block of `toastSeverity.selfcheck.mjs`, 1 red → 57/57. Rendered
 through the new `?toast` mount in `tools/ponder-lab.jsx`, BEFORE/AFTER at 820x300, both themes.
-Not seen by Aldi in the real app yet — ✅ TEST: with a low-stock strip showing, delete anything;
-the question box must sit on top of the strip.
+**Tested by Aldi 2026-09-13 18:23, his screenshot:** *"now the question panel is on front of
+everything else and dim all the background"*. Closed. The mascot and its bubble stay bright above
+the box on purpose (it carries 68 mascot-only reports); he was told, said nothing — not a job.
 
 ---
 
