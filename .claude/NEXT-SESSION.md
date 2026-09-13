@@ -1,13 +1,13 @@
 # The one job
 
-**A red alarm strip paints OVER every dialog box. The toast column sits one layer above the
-confirm dialog, and the low-stock alarm never clears itself, so a "critically low" strip can lie
-across the top of a dialog the user is trying to read.**
+**The GPS box on the customer form shows an example that reads as a real value, and the first
+refusal that form gives a shop owner is `SSOT Violation: You must specify the complete Matrix
+Location` — jargon nobody outside this repo understands.**
 
-⚠️ **Before this job: read Aldi's test results for `8ed215f` and `a2b4eae` (✅ TEST from
-2026-09-12, listed under "Shipped" below).** If he reports the phantom `ANOTHER AGENT` banner
-still shows on a store created today, THAT is the job — start from `git show 8ed215f` and the
-PHANTOM COMPETITOR section of `logicFixes.selfcheck.mjs`. Otherwise do the job below.
+⚠️ **Before this job: read Aldi's test result for `8ed215f` (✅ TEST from 2026-09-12, under
+"Shipped" below).** If he reports the phantom `ANOTHER AGENT` banner still shows on a store created
+today, THAT is the job — start from `git show 8ed215f` and the PHANTOM COMPETITOR section of
+`logicFixes.selfcheck.mjs`. Otherwise do the job below.
 
 ---
 
@@ -17,38 +17,56 @@ PHANTOM COMPETITOR section of `logicFixes.selfcheck.mjs`. Otherwise do the job b
 >
 > Read `.claude/NEXT-SESSION.md` first — it is the whole job, do not re-read source to re-orient.
 >
-> **The symptom:** the low-stock alarm strip (`⚠️ BOSS! <product> is critically low (N Bks left).
-> Restock needed!`) stays on screen until clicked, and it is drawn ABOVE the confirm dialog. So while
-> a dialog is open, a red strip can sit across its top edge. It does not block clicks (the column is
-> `pointer-events-none`), it only paints over.
+> **Two lines in `src/components/CustomerManager.jsx`, both verified 2026-09-13:**
 >
-> **The lines, all verified 2026-09-12:**
-> - `src/components/Toast.jsx:114` — the toast column: `fixed inset-x-0 top-0 z-[10000]`.
-> - `src/components/ConfirmGate.jsx:124` — the dialog layer: `z-[9999]`. One below the toasts.
-> - `src/utils/toastSeverity.js:26` — `isSticky(message)`: anything that is not a recognised SUCCESS
->   word is sticky. The alarm text has no success word, so it IS sticky — that question is answered.
-> - `src/components/Toast.jsx:92` — `if (!item.sticky)` sets the auto-dismiss timer; a sticky toast
->   has a close button (`:156`) and clears only on click. This is deliberate. Do not change it.
-> - `src/App.jsx:1365` — where the alarm is raised.
+> 1. **`:1440` — the GPS box.** `<input ref={coordRef} type="text" placeholder="-7.6043, 110.2055"
+>    className="w-full p-2 text-sm border rounded bg-[var(--raised)] font-mono border-[var(--line)]"
+>    value={coordInput} …>`. The example coordinates sit in the same mono face as a typed value, so
+>    an empty box reads as a filled one — and Save then refuses with "This outlet has no map pin"
+>    (`:956`). Smallest fix, and it is the house precedent: add `placeholder:italic` to that
+>    className. Same class already on 4 inputs in `ArrivalScanner.jsx` and `BranchWarehouseManager.jsx`.
+>    Shape, not colour — see `A-Brain/Wiki/Concepts/Looking at the App.md`, "the fix was italic".
+> 2. **`:935` — the location refusal.** `notify("⚠️ SSOT Violation: You must specify the complete
+>    Matrix Location (Provinsi, Kabupaten, and Kecamatan) before logging this target.")` fires when
+>    `!safeProv || !safeKab || !safeKec`. Say it the way the sibling refusal at `:956` says it — what
+>    is missing and what to do: `⚠️ This outlet has no location. Pick the Provinsi, Kabupaten and
+>    Kecamatan before saving — the shop cannot be routed without them.` Match `:956`'s shape exactly;
+>    it is the approved sibling.
 >
-> **The safe half, and the whole job:** put the toast column UNDER the dialog layer. `z-[9998]` on
-> `Toast.jsx:114`. A dialog then covers the strip while it is open; when the dialog closes, the strip
-> is still there, still waiting to be clicked. Nothing about the strip's lifetime changes.
+> **Trap, and it will go red on you:** `src/config/logicFixes.selfcheck.mjs:5957` uses the literal
+> `'SSOT Violation'` as an ORDER anchor (`gpSrc.indexOf('SSOT Violation') < gpSrc.indexOf('!Number.isFinite(lat)')`
+> — the location check must run before the pin check). Rewording the message breaks that anchor and
+> the check fails against correct code. Re-anchor it FIRST on the predicate `!safeProv || !safeKab || !safeKec`,
+> never on display copy, then reword. `CustomerManager.jsx:842` also says "Matrix Location" inside a
+> destructive confirm ("ENTERPRISE DATA SCRUB") — leave it, different job, mention it in the note.
 >
-> **Order:** guard first in `src/config/toastSeverity.selfcheck.mjs` or `logicFixes.selfcheck.mjs`
-> (the toast column's z-index must be LOWER than ConfirmGate's, read both numbers from source), prove
-> it RED, then the one-line edit, then `npm run build; node src/config/integration.audit.mjs`.
-> `integration.audit.mjs` group 13 asserts the toast host calls `isSticky` — leave that alone.
+> **Order:** add two guards to `logicFixes.selfcheck.mjs` — the GPS input carries `placeholder:italic`
+> (slice from `ref={coordRef}` to its closing `>`, assert the anchor was found), and the location
+> refusal does not contain `SSOT` or `Matrix` (through `code()` so the comment above it cannot match)
+> — prove both RED, then the two edits, then `node src/config/logicFixes.selfcheck.mjs` (1427 → 1429),
+> `npm run build; node src/config/integration.audit.mjs` (722). `graphify update .`.
 >
-> **Render it.** This is a visual change. Open a dialog with a sticky toast up and take a frame
-> before and after. A z-index edit that is not seen is not verified. The viewing path is in
-> `A-Brain/Wiki/Concepts/Looking at the App.md`.
->
-> **Trap:** the toast column is above the dialog on purpose for ONE reason nobody has written down;
-> check `git log -S'z-[10000]' -- src/components/Toast.jsx` first. If a commit message says why, stop
-> and ask Aldi before moving it.
+> **Render the first one.** An italic placeholder is a visual claim. `tools/ponder-lab.jsx` mounts
+> real components; the customer form needs `db` and a signed-in user, so the cheap frame is a scratch
+> `file://` page with the exact input line copied out of the JSX and the real `dist/assets/index-*.css`
+> linked by absolute path (the method in `Looking at the App.md`, "file:// works too"). One frame,
+> light theme, empty box next to a filled one. The message change needs no frame.
 >
 > Rewrite this file with the next single job before closing.
+
+---
+
+## Shipped 2026-09-13 — `772ab0a`
+
+**The confirm dialog now paints over the alarm strip.** `ConfirmGate.jsx:124` lifted from `z-[9999]`
+to `z-[10001]`; the toast column stays at `z-[10000]`. The 2026-09-12 plan (push the strip down to
+`z-[9998]`) was NOT done: four other full-screen layers sit at `z-[9999]` (vault gate `App.jsx:4238`,
+Access Denied `:4495`, Offline-Unverified `:4509`, Flight Recorder `:5112`) and the gate raises five
+`notify()` reports while it is up — at 9998 they would have painted behind an opaque screen. Aldi
+chose the lift ("do 1"). Guard: last block of `toastSeverity.selfcheck.mjs`, 1 red → 57/57. Rendered
+through the new `?toast` mount in `tools/ponder-lab.jsx`, BEFORE/AFTER at 820x300, both themes.
+Not seen by Aldi in the real app yet — ✅ TEST: with a low-stock strip showing, delete anything;
+the question box must sit on top of the strip.
 
 ---
 
@@ -117,10 +135,7 @@ Aldi pressed it 2026-09-09 and 2026-09-10. **Do not put this on a list again.**
    2, `FleetCanvasManager.jsx:150` `defaultAgentState` has `role: 'Motorist'` and no tier at all.
    Next place to look: how a `motorists` record acquires its tier — the sign-in "ghost profile"
    path in `App.jsx`, and `povPreview.js`. Reproduce it on screen before writing a brief for it.
-2. **The GPS placeholder reads as a value** (`CustomerManager.jsx:1440`, `placeholder="-7.6043,
-   110.2055"`, empty `value`), then Save fails with "This outlet has no map pin"
-   (`CustomerManager.jsx:956`). The same form's first refusal is `SSOT Violation: You must specify
-   the complete Matrix Location...` — jargon in front of a shop owner.
+2. ~~The GPS placeholder reads as a value~~ — PROMOTED to the job above on 2026-09-13.
 
 ### Phone, at 375x812
 

@@ -1,6 +1,34 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-09-12 21:40 WIB (🟠 KPM — SESSION CLOSED at his "prepare notes and prompt lets continue tomorrow". Everything is committed in both repos; tomorrow starts by pasting the block in `.claude/NEXT-SESSION.md`. Three fixes shipped today, one confirmed. `9b31bf0` low-stock rule adopted on all four screens — CONFIRMED by Aldi's screenshots 20:50. `8ed215f` the customer form no longer stamps `lastVisit` at creation, so a store created today no longer shows the phantom `ANOTHER AGENT` banner. `a2b4eae` the alarm toast says `(300 Bks left)`. ✅ TEST OWED BY ALDI on `8ed215f`: create a store, sell to it the same day, no red banner. 🔴 NEXT JOB in the brief: the toast column paints above the confirm dialog — `Toast.jsx:114` z-[10000] vs `ConfirmGate.jsx:124` z-[9999].)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **build + 722 audit run after EACH of the three fixes; logicFixes 1427/1427; stockThreshold 36/36; mixedUnits 12/12** · branch `phase0-solid-ground`
+**Updated: 2026-09-13 18:22 WIB (🟠 KPM — `772ab0a` SHIPPED: the confirm dialog paints over the alarm strip. Aldi chose "do 1" = lift `ConfirmGate.jsx:124` to `z-[10001]`; the strip stays at `z-[10000]`. Guard 57/57 in `toastSeverity.selfcheck.mjs` (1 red before); build green; audit 722/722; BEFORE/AFTER frames rendered through the new `?toast` lab mount and sent to him. ✅ TEST OWED: on the real app, with a low-stock strip up, open any delete question — the box must sit on top. 🔴 NEXT JOB in the brief: the GPS box placeholder + the `SSOT Violation` jargon, `CustomerManager.jsx:1440` and `:935`.)** · previous stamps: 2026-09-13 18:13 WIB (stopped on the DECIDE) · 2026-09-12 21:40 WIB (🟠 KPM — SESSION CLOSED at his "prepare notes and prompt lets continue tomorrow". Everything is committed in both repos; tomorrow starts by pasting the block in `.claude/NEXT-SESSION.md`. Three fixes shipped today, one confirmed. `9b31bf0` low-stock rule adopted on all four screens — CONFIRMED by Aldi's screenshots 20:50. `8ed215f` the customer form no longer stamps `lastVisit` at creation, so a store created today no longer shows the phantom `ANOTHER AGENT` banner. `a2b4eae` the alarm toast says `(300 Bks left)`. ✅ TEST OWED BY ALDI on `8ed215f`: create a store, sell to it the same day, no red banner. 🔴 NEXT JOB in the brief: the toast column paints above the confirm dialog — `Toast.jsx:114` z-[10000] vs `ConfirmGate.jsx:124` z-[9999].)** · 📋 **RESUME BRIEF: `.claude/NEXT-SESSION.md`** · **build + 722 audit run after EACH of the three fixes; logicFixes 1427/1427; stockThreshold 36/36; mixedUnits 12/12** · branch `phase0-solid-ground`
+
+## 🟠 2026-09-13 18:22 — `772ab0a`: he said "do 1"; the dialog is lifted, the strip is untouched
+
+`ConfirmGate.jsx:124` `z-[9999]` → `z-[10001]`, with the reason in a comment above the line. Guard
+57/57, build green, `integration.audit.mjs` 722/722, AFTER frame read in both themes: the dialog's
+border is drawn over the strip and the strip is dimmed behind the scrim. Full story in
+`git show 772ab0a`. Next job promoted from the queue and verified against the live file:
+`CustomerManager.jsx:1440` (`placeholder:italic`, house precedent in 4 inputs) and `:935` (reword
+the `SSOT Violation` refusal to the shape of `:956`); trap recorded — `logicFixes.selfcheck.mjs:5957`
+anchors on the literal `'SSOT Violation'` and must be re-anchored on the predicate first.
+
+**WAITING ON ALDI — ✅ TEST:** in the real app, with a red low-stock strip showing, press any
+delete. The question box must sit on top of the strip; the strip comes back when the box closes.
+
+## 🟠 2026-09-13 18:13 — toast-over-dialog: guard red, bug rendered, stopped on his choice of layer
+
+The brief's edit (`Toast.jsx:114` down to `z-[9998]`) would also drop the strip under four other
+`z-[9999]` full-screen layers — the vault password gate (`App.jsx:4238`), Access Denied (`:4495`),
+Offline-Unverified (`:4509`), Flight Recorder (`:5112`). `handleSetupSecurity`/`handleResetPin`/
+`handleVerifyOtp` raise five `notify()` reports while the gate is up; at 9998 they paint behind
+an opaque screen. Alternative: `ConfirmGate.jsx:124` up to `z-[10001]`, nothing else moves. Asked
+him; first wording bounced (*"i dont understand your coding words, speak human bro"*), re-asked in
+plain words. Done meanwhile, uncommitted: guard in `toastSeverity.selfcheck.mjs` (56/57, the one
+red is the bug); `?toast` mount in `tools/ponder-lab.jsx`; BEFORE frame at 820x300 shows the strip
+across the dialog's top edge. Trap cleared: `e7f2eab` gives no reason for 10000 over 9999.
+
+**WAITING ON ALDI — 🔴 DECIDE:** *"Which one — 1 or 2?"* 1 = lift the question box (recommended).
+2 = push the red strip down (also hides "wrong password" behind the password screen).
 
 ## 🟠 2026-09-12 21:30 — he said "continue the work": two more fixes from the queue. `8ed215f`, `a2b4eae`.
 
@@ -261,6 +289,8 @@ opens.
 5. For the konsultan pajak: does a Suket PP 55 stop PPh 21 withholding, or is it credited later?
 6. `alucard/SKILL.md` still says "Aldi is 14". Needs his permission to change to 24.
 7. Which job after the red alarm — Rank Config cross-tenant, or PBKDF2?
+8. ~~2026-09-13 🔴 DECIDE, toast over dialog~~ — ANSWERED "do 1" 18:14, shipped `772ab0a`.
+   ✅ TEST owed: with a red low-stock strip up, press any delete — the box must be on top.
 
 
 ## 🟠 2026-09-10 07:30 — 25-30 users, and the number has now moved twice in one day
