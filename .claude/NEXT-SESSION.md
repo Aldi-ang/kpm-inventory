@@ -5,7 +5,8 @@ the vehicle` even when the boss is selling from the Master Vault, and the fleet 
 prints `Surya 16 (Available: 100 )` — a trailing space where the unit should be.**
 
 ⚠️ **Before this job: read Aldi's test result for `8ed215f` (✅ TEST from 2026-09-12, under
-"Shipped" below — still owed; `772ab0a` and `d876904` are done).** If he reports the phantom
+"Shipped" below — still owed; `772ab0a` confirmed, `d876904` tested and fixed up in `2771374`,
+which is itself awaiting his eye).** If he reports the phantom
 `ANOTHER AGENT` banner still shows on a store created today, THAT is the job — start from
 `git show 8ed215f` and the PHANTOM COMPETITOR section of `logicFixes.selfcheck.mjs`.
 
@@ -50,6 +51,20 @@ prints `Surya 16 (Available: 100 )` — a trailing space where the unit should b
 > Rewrite this file with the next single job before closing.
 
 ---
+
+## Shipped 2026-09-13, evening — `2771374`, from his test of `d876904`
+
+**Three from his screenshots.** (1) The dark rail's glass tint `.02/.10` → `.42/.58`
+(`theme.css` `.kpm-rail-pod::before`) — *"less transparant because on some bright space the name
+and logo cant be seen"*; rendered over a bright band before/after; guarded as a BAND (.35–.8, still
+a gradient, blur on). Light mode's opaque plate untouched. (2) `<form noValidate>` on the customer
+form — the browser's "Please fill out this field." bubble ran before `handleSubmit`, so the app's
+own name refusal never spoke. (3) GPS example `placeholder:opacity-50` on top of italic — *"too
+visible that i think it is already filled"*. logicFixes 1442/1442 (3 red before), audit 722/722.
+**✅ TEST owed:** rail over a bright screen region — name and marks readable; customer form with
+nothing filled → the red strip "This outlet has no name…", no browser bubble; GPS example faint.
+If the rail is still too see-through for him, the two numbers are in that one rule — raise both,
+keep them ≤ .8, and the band check tells you if you went solid.
 
 ## Shipped 2026-09-13, later — `d876904`
 
