@@ -1,14 +1,15 @@
 # The one job
 
-**Two stock labels a customer reads say the wrong thing: the sales terminal says `N Bks left in
-the vehicle` even when the boss is selling from the Master Vault, and the fleet loading picker
-prints `Surya 16 (Available: 100 )` — a trailing space where the unit should be.**
+**The receipt prints the salesperson as `ADIKARYASUKSES99` — the front half of an email address,
+in capitals — on a paper a shop owner keeps. The real name is in the roster and the screen
+already has it.**
 
-⚠️ **Before this job: read Aldi's test result for `8ed215f` (✅ TEST from 2026-09-12, under
-"Shipped" below — still owed; `772ab0a` confirmed, `d876904` tested and fixed up in `2771374`,
-which is itself awaiting his eye).** If he reports the phantom
-`ANOTHER AGENT` banner still shows on a store created today, THAT is the job — start from
-`git show 8ed215f` and the PHANTOM COMPETITOR section of `logicFixes.selfcheck.mjs`.
+⚠️ **Before this job: read Aldi's test results.** Owed: `8ed215f` (store created today → no
+`ANOTHER AGENT` banner, from 2026-09-12); `2771374`+`3af7685` (rail readable over bright, no
+browser bubble on the empty form, faint GPS example); `d4bd41a` (Running-low card says Master
+Vault in vault mode; loading picker says `Bks`). If the rail is STILL too see-through, that comes
+first: `theme.css` `.kpm-rail-pod::before`, the two alphas are `.66/.78`, band guard caps at `.8`
+— going above that is his call to make solid, and the Lite Mode rule already shows what solid is.
 
 ---
 
@@ -18,37 +19,50 @@ which is itself awaiting his eye).** If he reports the phantom
 >
 > Read `.claude/NEXT-SESSION.md` first — it is the whole job, do not re-read source to re-orient.
 >
-> **Two lines, both verified 2026-09-13:**
+> **The line, verified 2026-09-13:** `src/MerchantSalesView.jsx:1097`
+> `const agentFallback = typeof trueAgentName === 'string' ? trueAgentName : (user?.displayName || user?.email?.split('@')[0] || 'Admin');`
+> feeds `receiptData.agentName` (`:1110`), which the nota prints in capitals as `SALES : …`
+> (`:3152`, `className="uppercase"`). When `trueAgentName` is not a string and the Google account
+> has no `displayName`, the customer's paper says `ADIKARYASUKSES99`. The same fallback is at
+> `:524`, `:573` and `:831` (`salesmanName`, written INTO the sale record) — four sites, one shape.
 >
-> 1. **`src/MerchantSalesView.jsx:2802`** — the "Running low" card in the pre-sale brief:
->    `{new Intl.NumberFormat('id-ID').format(lowestStock.stock)} Bks left in the vehicle`.
->    `lowestStock` (`:1472`) is the lowest item of `inventory`, and `inventory` is whichever source
->    the boss picked with the two buttons at `:2262-2263` — labelled **Master Vault** and **Boss
->    Car** — through the prop `adminSalesMode` (`'VAULT' | 'VEHICLE'`, `undefined` for everyone but
->    the boss, see the comment at `:15`). So in VAULT mode the card says "in the vehicle" about the
->    vault. Smallest fix: `left in the {adminSalesMode === 'VAULT' ? 'Master Vault' : 'vehicle'}` —
->    use the button's own words, never a third name (his rule: match the sibling screen's language).
-> 2. **`src/FleetCanvasManager.jsx:1260`** — the product picker on the loading form:
->    `{item.name} (Available: {item.stock} {item.unit})`. `item` comes from `displayInventory`
->    (`:141`) = the master `inventory` list; when `unit` is blank the option reads `(Available: 100 )`.
+> **What already knows the name:** the roster. `AgentInventoryView.jsx:64` reads
+> `liveProfileData?.name || safeAgentProfile?.name || user?.displayName || email.split('@')[0]` —
+> profile first, email last. `MerchantSalesView` already has `rosterNameById` (the lesson file names
+> it as an anchor in this same file) — find how it is built and whether the signed-in user's own
+> roster row is reachable from it (by `user.agentId` / `agentProfileId`, see `:967`).
 >
-> **Trap on #2 — do NOT just write `item.unit || 'Bks'`.** Stock is STORED in Bks on every product
-> (`A-Brain/Wiki/Entities/What Counts As Low.md`; the loader at `:430` hard-codes `unitToLoad = 'Bks'`
-> and converts through `convertToBks`). If `item.unit` is a product's SELLING unit (Slop/Bal), the
-> current line already prints the wrong unit whenever it is filled — `(Available: 100 Slop)` for 100
-> Bks. Read what `unit` holds on a master product (grep `unit:` in the product form, `ResidentEvilInventory.jsx`)
-> before choosing between `{item.stock} Bks` and `{item.stock} {item.unit || 'Bks'}`. The
-> `App.jsx:3611` / `EODReconciliationView.jsx:252` precedent is on a `qty` typed by a person, not on
-> stored stock, so it does not settle this.
+> **Smallest fix:** one helper at the top of the view, `const myName = <roster name> || user?.displayName || <email local part>`,
+> used at all four sites — the email stays as the LAST fallback, never removed (an unrostered
+> account must still print something). Then the receipt line `:3152` and the sale record `:831`
+> carry the roster name.
 >
-> **Order:** guards first in `logicFixes.selfcheck.mjs` — (a) slice the Running-low card from
-> `Running low` to its closing `</div>` and assert the label branches on `adminSalesMode`; (b) slice
-> the option from `Available:` to `</option>` and assert no bare `{item.unit}` and no `stock} )` — prove
-> both RED, then the two edits, `node src/config/logicFixes.selfcheck.mjs` (1434 → 1436),
-> `npm run build; node src/config/integration.audit.mjs` (722), `graphify update .`. No frame needed
-> — both are text; quote the two rendered strings in the commit instead.
+> **Trap 1:** `trueAgentName` at `:1097` — trace what sets it before touching the fallback; if it
+> is the roster name already and is simply `undefined` on the boss's own sales, the fix is where
+> it is SET, not a fifth fallback. **Trap 2:** `:831` writes `salesmanName` into the transaction;
+> `ConsignmentFinanceView.jsx:59` scopes receivables by `t.agentId`, not by name, so the name is
+> display-only — confirm with one grep for `salesmanName` before assuming. **Trap 3:** the receipt
+> is company-blue and `uppercase` by law (palette memory: the nota is NOT app UI) — change the
+> value, never the class.
+>
+> **Order:** guard first in `logicFixes.selfcheck.mjs` — slice `:1097`'s statement and assert the
+> roster name is consulted before `email?.split('@')[0]`; prove it RED; then the edit;
+> `node src/config/logicFixes.selfcheck.mjs` (1447 → 1448+), `npm run build; node src/config/integration.audit.mjs`
+> (722), `graphify update .`. No frame — text. ✅ TEST for Aldi: sell as the boss, read the nota's
+> SALES line.
 >
 > Rewrite this file with the next single job before closing.
+
+---
+
+## Shipped 2026-09-13, night — `3af7685`, `d4bd41a`
+
+**`3af7685`** — rail tint `.42/.58` → `.66/.78`, his second round: *"reduce the transparancy more
+still not visible in very bright space"*. Rendered over a near-white band. **`d4bd41a`** — the
+Running-low card says `left in the Master Vault` in VAULT mode (`MerchantSalesView.jsx:2802`,
+branches on `adminSalesMode`, the buttons' own words); the loading picker prints `(Available: 100
+Bks)` (`FleetCanvasManager.jsx:1260` — a master product has no `unit`, stock is Bks, the qty box
+beside it says Bungkus). Section TWO STOCK LABELS SAY WHERE AND WHAT, 3 red → 1447/1447.
 
 ---
 
@@ -166,7 +180,7 @@ Aldi pressed it 2026-09-09 and 2026-09-10. **Do not put this on a list again.**
 ### Wording — cheap, each one read by a customer
 
 ~~`49 Bks left in the vehicle` while selling from Master Vault, `Surya 16 (Available: 100 )`~~
-(PROMOTED to the job above 2026-09-13), the salesperson printed as `ADIKARYASUKSES99`, the EOD verify confirm
+(SHIPPED `d4bd41a`), ~~the salesperson printed as `ADIKARYASUKSES99`~~ (PROMOTED to the job above), the EOD verify confirm
 claiming "clears their inventory" on a stamps-only card, the EOD `MATCHES` column showing a dash when
 the numbers are equal, the audit receipt printing `BAYAR : CASH` on an audit that collected Rp 0.
 
