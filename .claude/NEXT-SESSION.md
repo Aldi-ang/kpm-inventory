@@ -5,6 +5,11 @@ x 398–445 against a 375 viewport" and "the menu ribbon sits half above the vie
 those two is almost certainly a measurement artifact, and the other has never been re-measured.
 This job is a MEASUREMENT first, and the fix only if the number is real.**
 
+**Session closed 2026-09-13 20:23 WIB at his "continue tomrrow make notes and prompt preparing
+now". Both repos committed.** Aldi was asked at 20:20 for a phone screenshot of the top bar (the
+row with the bell and SYNCED) — read his reply first; if it arrived, the measurement below is
+already half done and the frame is the proof.
+
 ⚠️ **Before this job: read Aldi's test results.** Confirmed 2026-09-13 in his words: nota name
 (`d9de090`) and the sales-terminal camera lock (`0ff0732`) — *"yes now the nota name is the same
 with the signature name … no camera lock no more"*; the rail (`7ea096e`); Stock Opname (`9fed51d`,
