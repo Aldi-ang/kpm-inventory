@@ -1,13 +1,13 @@
 # The one job
 
-**The GPS box on the customer form shows an example that reads as a real value, and the first
-refusal that form gives a shop owner is `SSOT Violation: You must specify the complete Matrix
-Location` — jargon nobody outside this repo understands.**
+**Two stock labels a customer reads say the wrong thing: the sales terminal says `N Bks left in
+the vehicle` even when the boss is selling from the Master Vault, and the fleet loading picker
+prints `Surya 16 (Available: 100 )` — a trailing space where the unit should be.**
 
 ⚠️ **Before this job: read Aldi's test result for `8ed215f` (✅ TEST from 2026-09-12, under
-"Shipped" below — still owed; `772ab0a` is already confirmed).** If he reports the phantom `ANOTHER AGENT` banner still shows on a store created
-today, THAT is the job — start from `git show 8ed215f` and the PHANTOM COMPETITOR section of
-`logicFixes.selfcheck.mjs`. Otherwise do the job below.
+"Shipped" below — still owed; `772ab0a` and `d876904` are done).** If he reports the phantom
+`ANOTHER AGENT` banner still shows on a store created today, THAT is the job — start from
+`git show 8ed215f` and the PHANTOM COMPETITOR section of `logicFixes.selfcheck.mjs`.
 
 ---
 
@@ -17,44 +17,48 @@ today, THAT is the job — start from `git show 8ed215f` and the PHANTOM COMPETI
 >
 > Read `.claude/NEXT-SESSION.md` first — it is the whole job, do not re-read source to re-orient.
 >
-> **Two lines in `src/components/CustomerManager.jsx`, both verified 2026-09-13:**
+> **Two lines, both verified 2026-09-13:**
 >
-> 1. **`:1440` — the GPS box.** `<input ref={coordRef} type="text" placeholder="-7.6043, 110.2055"
->    className="w-full p-2 text-sm border rounded bg-[var(--raised)] font-mono border-[var(--line)]"
->    value={coordInput} …>`. The example coordinates sit in the same mono face as a typed value, so
->    an empty box reads as a filled one — and Save then refuses with "This outlet has no map pin"
->    (`:956`). Smallest fix, and it is the house precedent: add `placeholder:italic` to that
->    className. Same class already on 4 inputs in `ArrivalScanner.jsx` and `BranchWarehouseManager.jsx`.
->    Shape, not colour — see `A-Brain/Wiki/Concepts/Looking at the App.md`, "the fix was italic".
-> 2. **`:935` — the location refusal.** `notify("⚠️ SSOT Violation: You must specify the complete
->    Matrix Location (Provinsi, Kabupaten, and Kecamatan) before logging this target.")` fires when
->    `!safeProv || !safeKab || !safeKec`. Say it the way the sibling refusal at `:956` says it — what
->    is missing and what to do: `⚠️ This outlet has no location. Pick the Provinsi, Kabupaten and
->    Kecamatan before saving — the shop cannot be routed without them.` Match `:956`'s shape exactly;
->    it is the approved sibling.
+> 1. **`src/MerchantSalesView.jsx:2802`** — the "Running low" card in the pre-sale brief:
+>    `{new Intl.NumberFormat('id-ID').format(lowestStock.stock)} Bks left in the vehicle`.
+>    `lowestStock` (`:1472`) is the lowest item of `inventory`, and `inventory` is whichever source
+>    the boss picked with the two buttons at `:2262-2263` — labelled **Master Vault** and **Boss
+>    Car** — through the prop `adminSalesMode` (`'VAULT' | 'VEHICLE'`, `undefined` for everyone but
+>    the boss, see the comment at `:15`). So in VAULT mode the card says "in the vehicle" about the
+>    vault. Smallest fix: `left in the {adminSalesMode === 'VAULT' ? 'Master Vault' : 'vehicle'}` —
+>    use the button's own words, never a third name (his rule: match the sibling screen's language).
+> 2. **`src/FleetCanvasManager.jsx:1260`** — the product picker on the loading form:
+>    `{item.name} (Available: {item.stock} {item.unit})`. `item` comes from `displayInventory`
+>    (`:141`) = the master `inventory` list; when `unit` is blank the option reads `(Available: 100 )`.
 >
-> **Trap, and it will go red on you:** `src/config/logicFixes.selfcheck.mjs:5957` uses the literal
-> `'SSOT Violation'` as an ORDER anchor (`gpSrc.indexOf('SSOT Violation') < gpSrc.indexOf('!Number.isFinite(lat)')`
-> — the location check must run before the pin check). Rewording the message breaks that anchor and
-> the check fails against correct code. Re-anchor it FIRST on the predicate `!safeProv || !safeKab || !safeKec`,
-> never on display copy, then reword. `CustomerManager.jsx:842` also says "Matrix Location" inside a
-> destructive confirm ("ENTERPRISE DATA SCRUB") — leave it, different job, mention it in the note.
+> **Trap on #2 — do NOT just write `item.unit || 'Bks'`.** Stock is STORED in Bks on every product
+> (`A-Brain/Wiki/Entities/What Counts As Low.md`; the loader at `:430` hard-codes `unitToLoad = 'Bks'`
+> and converts through `convertToBks`). If `item.unit` is a product's SELLING unit (Slop/Bal), the
+> current line already prints the wrong unit whenever it is filled — `(Available: 100 Slop)` for 100
+> Bks. Read what `unit` holds on a master product (grep `unit:` in the product form, `ResidentEvilInventory.jsx`)
+> before choosing between `{item.stock} Bks` and `{item.stock} {item.unit || 'Bks'}`. The
+> `App.jsx:3611` / `EODReconciliationView.jsx:252` precedent is on a `qty` typed by a person, not on
+> stored stock, so it does not settle this.
 >
-> **Order:** add two guards to `logicFixes.selfcheck.mjs` — the GPS input carries `placeholder:italic`
-> (slice from `ref={coordRef}` to its closing `>`, assert the anchor was found), and the location
-> refusal does not contain `SSOT` or `Matrix` (through `code()` so the comment above it cannot match)
-> — prove both RED, then the two edits, then `node src/config/logicFixes.selfcheck.mjs` (1427 → 1429),
-> `npm run build; node src/config/integration.audit.mjs` (722). `graphify update .`.
->
-> **Render the first one.** An italic placeholder is a visual claim. `tools/ponder-lab.jsx` mounts
-> real components; the customer form needs `db` and a signed-in user, so the cheap frame is a scratch
-> `file://` page with the exact input line copied out of the JSX and the real `dist/assets/index-*.css`
-> linked by absolute path (the method in `Looking at the App.md`, "file:// works too"). One frame,
-> light theme, empty box next to a filled one. The message change needs no frame.
+> **Order:** guards first in `logicFixes.selfcheck.mjs` — (a) slice the Running-low card from
+> `Running low` to its closing `</div>` and assert the label branches on `adminSalesMode`; (b) slice
+> the option from `Available:` to `</option>` and assert no bare `{item.unit}` and no `stock} )` — prove
+> both RED, then the two edits, `node src/config/logicFixes.selfcheck.mjs` (1434 → 1436),
+> `npm run build; node src/config/integration.audit.mjs` (722), `graphify update .`. No frame needed
+> — both are text; quote the two rendered strings in the commit instead.
 >
 > Rewrite this file with the next single job before closing.
 
 ---
+
+## Shipped 2026-09-13, later — `d876904`
+
+**The customer form speaks to a shop owner.** `CustomerManager.jsx:1440` GPS box gets
+`placeholder:italic` (rendered: empty box reads as an example, typed box as a value, both themes);
+`:929` and `:935` refusals reworded to the shape of the pin refusal at `:956` — "This outlet has no
+name / no location. … before saving". `logicFixes.selfcheck.mjs:5957` re-anchored on the predicate
+before the reword; new section THE CUSTOMER FORM SPEAKS TO A SHOP OWNER, 3 red → 1434/1434. Audit
+722/722. Untouched: "Matrix Location" in the admin-only DATA SCRUB confirm at `:842`.
 
 ## Shipped 2026-09-13 — `772ab0a`
 
@@ -146,8 +150,8 @@ Aldi pressed it 2026-09-09 and 2026-09-10. **Do not put this on a list again.**
 
 ### Wording — cheap, each one read by a customer
 
-`49 Bks left in the vehicle` while selling from Master Vault, `Surya 16 (Available: 100 )` with a
-trailing space and no unit, the salesperson printed as `ADIKARYASUKSES99`, the EOD verify confirm
+~~`49 Bks left in the vehicle` while selling from Master Vault, `Surya 16 (Available: 100 )`~~
+(PROMOTED to the job above 2026-09-13), the salesperson printed as `ADIKARYASUKSES99`, the EOD verify confirm
 claiming "clears their inventory" on a stamps-only card, the EOD `MATCHES` column showing a dash when
 the numbers are equal, the audit receipt printing `BAYAR : CASH` on an audit that collected Rp 0.
 
