@@ -7,9 +7,10 @@ already has it.**
 ⚠️ **Before this job: read Aldi's test results.** Owed: `8ed215f` (store created today → no
 `ANOTHER AGENT` banner, from 2026-09-12); `2771374`+`3af7685` (rail readable over bright, no
 browser bubble on the empty form, faint GPS example); `d4bd41a` (Running-low card says Master
-Vault in vault mode; loading picker says `Bks`). If the rail is STILL too see-through, that comes
-first: `theme.css` `.kpm-rail-pod::before`, the two alphas are `.66/.78`, band guard caps at `.8`
-— going above that is his call to make solid, and the Lite Mode rule already shows what solid is.
+Vault in vault mode; loading picker says `Bks`). Rail, third round `7ea096e`: glass `.80/.90` AND the
+resting mark ink `#6b5845` → `#b39c7d` (7,14:1; the contrast `note` that sat since 2026-08-24 is
+closed and enforced). If he STILL wants more, the honest next step is a solid plate for dark too —
+his call, one rule: copy `html.lite-mode .kpm-rail-pod::before` without the lite gate.
 
 ---
 
