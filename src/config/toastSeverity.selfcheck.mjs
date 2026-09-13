@@ -8,6 +8,7 @@
    which is precisely the silent-failure bug the whole toast job replaced. Getting a FADE one
    wrong just costs him a click. So when in doubt, a message belongs in STICKY. */
 
+import { readFileSync } from 'node:fs';
 import { isSticky, isFailure } from '../utils/toastSeverity.js';
 
 /* isFailure decides which of the 68 mascot-only reports in App.jsx also raise a strip. Too
@@ -125,6 +126,27 @@ for (const m of MASCOT_CHATTER) {
 console.log('\nthe test itself is not vacuous');
 report(STICKY.some(m => isSticky(m)) && FADE.some(m => !isSticky(m)),
     'both answers are reachable', 'the classifier is answering one way for everything');
+
+/* A sticky strip never clears itself, and a confirm dialog is modal: whatever was on screen when
+   the question opened has to sit UNDER it, or the low-stock alarm lies across the top of the
+   question he is trying to read. Both numbers are read from the two host lines so the check
+   cannot drift from the code, and each anchor is asserted before its number is trusted. */
+console.log('\nthe dialog paints over the toast column, never under it');
+{
+    const read = (p) => readFileSync(new URL(p, import.meta.url), 'utf8');
+    const toastHost = read('../components/Toast.jsx')
+        .match(/className="pointer-events-none fixed inset-x-0 top-0 z-\[(\d+)\]/);
+    const gate = read('../components/ConfirmGate.jsx')
+        .match(/className="fixed inset-0 z-\[(\d+)\] flex items-center justify-center bg-black\/75/);
+    report(!!toastHost, 'the toast column host line is where the check expects it',
+        'anchor missed, so the number below is read from nothing');
+    report(!!gate, 'the ConfirmGate layer line is where the check expects it',
+        'anchor missed, so the number below is read from nothing');
+    const toastZ = toastHost ? Number(toastHost[1]) : NaN;
+    const gateZ = gate ? Number(gate[1]) : NaN;
+    report(toastZ < gateZ, `toast column z-[${toastZ}] sits below the dialog z-[${gateZ}]`,
+        'a sticky strip paints across the top edge of an open dialog');
+}
 
 console.log('\n' + '='.repeat(58));
 console.log(`${pass} passed, ${fail} failed, ${pass + fail} checks`);

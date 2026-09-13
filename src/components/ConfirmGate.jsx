@@ -121,7 +121,13 @@ export function ConfirmHost() {
 
     return (
         <div
-            className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/75 p-4"
+            /* z-[10001], one above the toast column (Toast.jsx, z-[10000]). A question is modal:
+               whatever was on screen when it opened sits under it, including a sticky alarm strip
+               that never clears itself. The column was NOT pushed down instead — at z-[9998] it
+               would also sit under the vault gate, Access Denied and the Flight Recorder (all
+               z-[9999]), and the gate raises five reports while it is still on screen.
+               toastSeverity.selfcheck.mjs reads both numbers and asserts the order. */
+            className="fixed inset-0 z-[10001] flex items-center justify-center bg-black/75 p-4"
             onMouseDown={(e) => { if (e.target === e.currentTarget) close(false); }}
         >
             <div

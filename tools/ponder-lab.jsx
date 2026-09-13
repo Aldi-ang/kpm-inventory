@@ -29,6 +29,8 @@ import RestockVaultView from '../src/RestockVaultView.jsx';
 import BranchWarehouseManager from '../src/components/BranchWarehouseManager.jsx';
 import ShipmentLabel from '../src/components/ShipmentLabel.jsx';
 import ArrivalScanner from '../src/components/ArrivalScanner.jsx';
+import { ConfirmHost, confirmAction } from '../src/components/ConfirmGate.jsx';
+import { ToastHost, notify } from '../src/components/Toast.jsx';
 /* Same module the alias in ponder-lab.config.mjs points `firebase/firestore` at, so writing a
    fixture here is what the component's own listener reads back. */
 import { FIXTURES } from './lab-firestore-stub.js';
@@ -408,7 +410,29 @@ const LAB_SHIPMENT = {
   ],
 };
 
+/* ?toast MOUNTS THE TWO SINGLETON HOSTS in the order main.jsx mounts them — page, ConfirmHost,
+   ToastHost, as siblings — with a sticky alarm strip up and a confirm dialog open on top of it.
+   The one question it answers is which layer paints over the other, which no check can see. */
+function ToastLab() {
+  React.useEffect(() => {
+    notify('⚠️ BOSS! Sampoerna Mild is critically low (3 Bks left). Restock needed!');
+    const t = setTimeout(() => { confirmAction('Delete Sampoerna Mild from the catalogue? This cannot be undone.'); }, 120);
+    return () => clearTimeout(t);
+  }, []);
+  return (
+    <>
+      <div className="p-6 font-mono text-[var(--ink)]">
+        <h1 className="text-lg font-bold uppercase tracking-widest">Master Vault</h1>
+        <p className="text-sm opacity-70">page content under both layers</p>
+      </div>
+      <ConfirmHost />
+      <ToastHost />
+    </>
+  );
+}
+
 createRoot(document.getElementById('root')).render(
+  q.has('toast') ? <ToastLab /> :
   q.has('label') ? <ShipmentLabel shipment={LAB_SHIPMENT} onClose={() => {}} companyName="KPM INVENTORY" /> :
   q.has('scan') ? <ArrivalScanner open onClose={() => {}} onCode={(c) => { window.__scanned = c; }} expecting={['REQ_1756700000000']} /> :
   q.has('gudang') ? <GudangLab /> :

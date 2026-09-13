@@ -570,8 +570,8 @@
     "semantic_hash": ""
   },
   ".claude/PROGRESS.md": {
-    "mtime": 1789221540.1112545,
-    "ast_hash": "dacbc6721dc7e88d6192c419b05347dd",
+    "mtime": 1789298090.1867905,
+    "ast_hash": "1d92882fc27bef889c9771b06dfc3167",
     "semantic_hash": ""
   },
   ".claude/pre-compact-context.md": {
@@ -580,8 +580,8 @@
     "semantic_hash": ""
   },
   "src/components/ConfirmGate.jsx": {
-    "mtime": 1786101580.0960834,
-    "ast_hash": "95b7d369383072bde27f6e7d3229c63b",
+    "mtime": 1789298139.552731,
+    "ast_hash": "674d9a51fcd626243bc3cc365f87ebdb",
     "semantic_hash": ""
   },
   "src/config/findDuplicates.selfcheck.mjs": {
@@ -610,8 +610,8 @@
     "semantic_hash": ""
   },
   "src/config/toastSeverity.selfcheck.mjs": {
-    "mtime": 1786215052.4379048,
-    "ast_hash": "d0a41ee9ece23bf9b82131eae617bb2e",
+    "mtime": 1789297903.4627147,
+    "ast_hash": "d10f9d86aca2ae54bcdaedd1f06ca927",
     "semantic_hash": ""
   },
   "src/utils/toastSeverity.js": {
@@ -760,8 +760,8 @@
     "semantic_hash": ""
   },
   ".claude/NEXT-SESSION.md": {
-    "mtime": 1789221579.4440162,
-    "ast_hash": "ee414ab2dd4ad498d97e225559065bc4",
+    "mtime": 1789298069.9106188,
+    "ast_hash": "46d8b661d304e922e612756fd7001453",
     "semantic_hash": ""
   },
   ".claude/SWEEP-2026-08-19.md": {
@@ -835,8 +835,8 @@
     "semantic_hash": ""
   },
   "tools/ponder-lab.jsx": {
-    "mtime": 1788248468.2063508,
-    "ast_hash": "ad33bc2435b6b20515e5a676a33eb899",
+    "mtime": 1789297914.4679933,
+    "ast_hash": "5a23bf846d5cfa69f05f4c666020e78a",
     "semantic_hash": ""
   },
   ".claude/PONDER-PLAN.md": {
