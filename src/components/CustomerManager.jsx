@@ -926,13 +926,13 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
         const safeName = String(formData.name || '').trim();
 
         if (!safeName) {
-            notify("⚠️ Mission Control: Store Name is required to establish a target.");
+            notify("⚠️ This outlet has no name. Type the shop's name before saving.");
             return;
         }
 
         // 🛑 Hard Block: Prevent any new UNMAPPED edge cases from entering the database
         if (!safeProv || !safeKab || !safeKec) {
-            notify("⚠️ SSOT Violation: You must specify the complete Matrix Location (Provinsi, Kabupaten, and Kecamatan) before logging this target.");
+            notify("⚠️ This outlet has no location. Pick the Provinsi, Kabupaten and Kecamatan before saving — the shop cannot be routed without them.");
             return;
         }
 
@@ -1437,7 +1437,7 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <label className="text-[10px] font-bold text-[var(--ink-dim)] uppercase">GPS Coordinates</label>
-                                <input ref={coordRef} type="text" placeholder="-7.6043, 110.2055" className="w-full p-2 text-sm border rounded bg-[var(--raised)] font-mono border-[var(--line)]" value={coordInput} onChange={handleCoordInputChange} />
+                                <input ref={coordRef} type="text" placeholder="-7.6043, 110.2055" className="w-full p-2 text-sm border rounded bg-[var(--raised)] font-mono placeholder:italic border-[var(--line)]" value={coordInput} onChange={handleCoordInputChange} />
                             </div>
                             <div>
                                 <label className="text-[10px] font-bold text-[var(--ink-dim)] uppercase">Street View Link (Iframe/URL)</label>

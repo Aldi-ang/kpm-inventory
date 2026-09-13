@@ -5954,7 +5954,10 @@ ok('the guard runs BEFORE the write, not after it',
    gpSrc.indexOf('!Number.isFinite(lat)') < gpSrc.indexOf('await addDoc(collection(db, \'artifacts\', appId'),
    'a check after the document is created is not a check');
 ok('and it guards the SSOT block\'s own path, after the region check rather than instead of it',
-   gpSrc.indexOf('SSOT Violation') < gpSrc.indexOf('!Number.isFinite(lat)'),
+   /* anchored on the region PREDICATE, not on the words of its refusal — those words are copy,
+      and copy changes (2026-09-13: it did) */
+   gpSrc.indexOf('!safeProv || !safeKab || !safeKec') > -1 &&
+   gpSrc.indexOf('!safeProv || !safeKab || !safeKec') < gpSrc.indexOf('!Number.isFinite(lat)'),
    'replacing the region guard would trade one missing field for another');
 
 /* ── the guard, re-run on real pins ───────────────────────────────────────────────────── */
@@ -6601,6 +6604,41 @@ section('THE ALARM SAYS 300 OF WHAT — the low-stock toast carries its unit (20
   ok('the critically-low toast names the unit, the way the EOD alert already does',
      !!toast && /Bks left/.test(toast[1]),
      toast ? 'found: (' + toast[1] + ')' : 'toast template not found'); }
+
+section('THE CUSTOMER FORM SPEAKS TO A SHOP OWNER (2026-09-13)');
+/* Day-one walk, 2026-09-12: the GPS box shows "-7.6043, 110.2055" in the same mono face as a
+   typed value, so an empty box reads as a filled one — and Save then refuses with "no map pin".
+   And the form's first two refusals were "Mission Control: Store Name is required to establish a
+   target" and "SSOT Violation: You must specify the complete Matrix Location" — repo jargon in
+   front of the person typing. The approved sibling is the pin refusal at the same site: what is
+   missing, and what to do about it. The placeholder fix is the house precedent (ArrivalScanner,
+   BranchWarehouseManager): shape, not colour. */
+{ const cm = code(read('src/components/CustomerManager.jsx'));
+  const fA = cm.indexOf('const handleSubmit');
+  const fB = cm.indexOf('const cleanData');
+  ok('the submit scope was found', fA > -1 && fB > fA && fB - fA < 12000, `${fA}..${fB}`);
+  const f = cm.slice(fA, fB);
+  const region = f.slice(f.indexOf('!safeProv || !safeKab || !safeKec'));
+  const regionMsg = region.slice(0, region.indexOf('return;'));
+  ok('the region refusal is in the submit scope', region.length < f.length && regionMsg.length < 600,
+     `${regionMsg.length} chars`);
+  ok('the region refusal has no SSOT / Matrix Location jargon',
+     !/SSOT|Matrix/.test(regionMsg), 'a shop owner does not know what a matrix location is');
+  ok('and it still names the three fields the owner has to pick',
+     /Provinsi/.test(regionMsg) && /Kabupaten/.test(regionMsg) && /Kecamatan/.test(regionMsg),
+     'saying "location" alone sends him hunting for which box');
+  const name = f.slice(f.indexOf('if (!safeName)'));
+  const nameMsg = name.slice(0, name.indexOf('return;'));
+  ok('the store-name refusal has no Mission Control / target jargon',
+     nameMsg.length < 400 && !/Mission Control|establish a target/.test(nameMsg),
+     'the word "target" on a customer form is a joke only the repo gets');
+  const gpsA = cm.indexOf('ref={coordRef}');
+  const gpsB = cm.indexOf('/>', gpsA);
+  ok('the GPS input was found', gpsA > -1 && gpsB > gpsA && gpsB - gpsA < 500, `${gpsA}..${gpsB}`);
+  const gps = cm.slice(gpsA, gpsB);
+  ok('the GPS example coordinates are italic, so an empty box does not read as a filled one',
+     /placeholder="-?\d+\.\d+, -?\d+\.\d+"/.test(gps) && /placeholder:italic/.test(gps),
+     'the example sits in the same mono face as a typed value'); }
 
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);
