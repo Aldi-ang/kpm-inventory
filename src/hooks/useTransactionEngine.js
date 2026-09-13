@@ -124,7 +124,10 @@ export default function useTransactionEngine({
         if (userRole === 'ADMIN' && adminSalesMode === 'VEHICLE') currentAgentProfileId = 'ADMIN_VEHICLE';
         else if (userRole === 'ADMIN') currentAgentProfileId = null;
 
-        let finalAgentName = user?.displayName || user?.email?.split('@')[0] || 'Admin';
+        /* the boss sells with no roster row (VAULT mode nulls agentProfileId), so his name
+           is the one he typed in Settings — the field ReceiptPreview already prints — never
+           the front half of his email. Roster below still wins for a real motorist. */
+        let finalAgentName = (userRole === 'ADMIN' && appSettings?.adminDisplayName) || user?.displayName || user?.email?.split('@')[0] || 'Admin';
 
         /* 🚀 THE OFFLINE INTERCEPTOR
            FIX: asks `isOnline`, the real internet probe, instead of `navigator.onLine`.
@@ -512,7 +515,10 @@ export default function useTransactionEngine({
 
     const handleConsignmentPayment = async (customerName, itemsPaid, amountPaid, itemsReturned = [], returnTotal = 0, itemsRemaining = []) => { 
         try { 
-            let finalAgentName = user?.displayName || user?.email?.split('@')[0] || 'Admin';
+            /* the boss sells with no roster row (VAULT mode nulls agentProfileId), so his name
+           is the one he typed in Settings — the field ReceiptPreview already prints — never
+           the front half of his email. Roster below still wins for a real motorist. */
+        let finalAgentName = (userRole === 'ADMIN' && appSettings?.adminDisplayName) || user?.displayName || user?.email?.split('@')[0] || 'Admin';
             let newDocId = null;
 
             let currentAgentProfileId = agentProfileId;

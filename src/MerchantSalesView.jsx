@@ -519,12 +519,23 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
         window.dispatchEvent(new CustomEvent('CAPY_SUPPRESS', { detail: { on: false } }));
     }, []);
 
+    /* WHO AM I, BY NAME — one answer for the five places that used to spell it themselves
+       (the visit compare, the territory compare, the proof record, the receipt fallback, the
+       route planner). The boss's name is what he typed in Settings, the field ReceiptPreview
+       already prints; a motorist's is the Google display name; the front half of the email is
+       the last resort, never the first. The nota read `ADIKARYASUKSES99` because it was. */
+    const emailName = user?.email?.split('@')[0] || '';
+    const myName = (isAdmin && appSettings?.adminDisplayName) || user?.displayName || emailName || '';
+
     const handleCustomerSelect = (cust, autoLockedDistance = null) => {
         const localToday = new Date().toLocaleDateString('en-CA');
-        const meNow = String(user?.displayName || user?.email?.split('@')[0] || '').trim().toLowerCase();
+        /* every name I have ever been stamped under: stores visited before the Settings name
+           existed carry the email or display name, and must still read as mine */
+        const meNames = [myName, user?.displayName, emailName]
+            .filter(Boolean).map(s => String(s).trim().toLowerCase());
         const visitedBy = String(cust.lastVisitedBy || cust.lastVisitTag || '').trim();
-        const iVisitedIt = !!meNow && !!visitedBy &&
-            (visitedBy.toLowerCase().includes(meNow) || meNow.includes(visitedBy.toLowerCase()));
+        const iVisitedIt = !!visitedBy && meNames.some(me =>
+            visitedBy.toLowerCase().includes(me) || me.includes(visitedBy.toLowerCase()));
 
         /* A REVISIT BY ME IS NOT A FRAUD SIGNAL. It used to raise the same blocking dialog as
            another agent's claim, and declining refused the selection — so after Aldi sold to a
@@ -570,7 +581,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
 
            So: report it here, stamp it on the sale (see proofPayload.territoryOverride), and
            let the sale happen. A wall can be walked around; a record cannot. */
-        const currentAgentName = user?.displayName || user?.email?.split('@')[0] || 'Admin';
+        const currentAgentName = myName || 'Admin';
         const assignedAgent = String(cust.assignedAgent || '').trim();
         const unowned = !assignedAgent || assignedAgent.toLowerCase() === 'unassigned';
         // NB: "".includes("") is true, so the unowned case must short-circuit before the compare.
@@ -828,7 +839,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                         storeId: String(selectedCustomerInfo?.id || 'UNKNOWN'),
                         storeName: String(selectedCustomerInfo?.name || customerName || 'Unknown Store'),
                         salesmanId: String(user?.realUid || user?.uid || user?.id || 'UNKNOWN'),
-                        salesmanName: String(user?.displayName || user?.email?.split('@')[0] || 'Field Agent'),
+                        salesmanName: String(myName || 'Field Agent'),
                         latitude: Number(agentLocation?.latitude || 0), longitude: Number(agentLocation?.longitude || 0),
                         distance: Number(distanceToStore || 0), photoData: String(photoToSave),
                         status: 'PENDING', timestamp: new Date().toISOString(), createdAt: serverTimestamp()
@@ -1094,7 +1105,7 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
 
             const trueAgentName = await onProcessSale(finalCust, dbMethod, finalCart, newStorePayload, proofPayload);
             committed = true;   // everything past this point is POST-commit: the sale already exists
-            const agentFallback = typeof trueAgentName === 'string' ? trueAgentName : (user?.displayName || user?.email?.split('@')[0] || 'Admin');
+            const agentFallback = typeof trueAgentName === 'string' ? trueAgentName : (myName || 'Admin');
 
             /* THE RECEIPT COMES FIRST, and the button is released with it. Everything below this
                point - the IOU ledger, the tier auto-promoter - is optional bookkeeping that talks
@@ -1527,8 +1538,8 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
        No journey-plan props were needed: his GPS fix, the customer list and assignedAgent are
        all already here, the question had simply never been asked. */
     const upNext = React.useMemo(
-        () => nextStop(customers, agentLocation, user?.displayName || user?.email?.split('@')[0] || ''),
-        [customers, agentLocation, user]
+        () => nextStop(customers, agentLocation, myName),
+        [customers, agentLocation, myName]
     );
 
     /* One tap to load their usual order. Everything is re-priced from TODAY's product record

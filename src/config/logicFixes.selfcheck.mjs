@@ -6706,5 +6706,35 @@ section('TWO STOCK LABELS SAY WHERE AND WHAT (2026-09-13)');
      /\{item\.stock\} Bks\)/.test(opt) && !/item\.unit/.test(opt),
      'a master product has no unit field, so `{item.unit}` printed "(Available: 100 )"'); }
 
+section('THE NOTA PRINTS THE BOSS\'S NAME, NOT HIS EMAIL (2026-09-13)');
+/* Day-one walk: the receipt's SALES line read `ADIKARYASUKSES99`. The engine resolves the agent
+   name as roster → displayName → email local part; the boss sells with no roster row (VAULT
+   mode sets agentProfileId null) and his Google account has no displayName, so the email won.
+   Settings already holds `adminDisplayName`, and ReceiptPreview.jsx already prints it — the
+   real nota just never asked. Fixed where the name is SET, in the engine, and the sales
+   terminal's five hand-rolled copies of the same fallback collapse to one helper. */
+{ const eng = code(read('src/hooks/useTransactionEngine.js'));
+  const sets = eng.match(/let finalAgentName = /g) || [];
+  ok('the engine resolves the agent name in the two places it always did', sets.length === 2, `found ${sets.length}`);
+  const bossFirst = eng.match(/let finalAgentName = \(userRole === 'ADMIN' && appSettings\?\.adminDisplayName\) \|\| user\?\.displayName/g) || [];
+  ok('and both consult the boss\'s Settings name before the Google display name',
+     bossFirst.length === 2, `${bossFirst.length} of 2 — the nota prints the email local part for the boss`);
+  const ms = code(read('src/MerchantSalesView.jsx'));
+  const raw = ms.match(/split\('@'\)/g) || [];
+  ok('the sales terminal spells "who am I" once, not five times', raw.length === 1, `found ${raw.length} email-splits`);
+  ok('the one helper consults the boss\'s Settings name first',
+     /const myName = \(isAdmin && appSettings\?\.adminDisplayName\) \|\| user\?\.displayName \|\| emailName/.test(ms),
+     'a receipt, a store stamp and a route planner each invented their own name for him');
+  const selA = ms.indexOf('const handleCustomerSelect');
+  const selB = ms.indexOf('setCustomerName(cust.name)', selA);
+  ok('handleCustomerSelect was found', selA > -1 && selB > selA && selB - selA < 6000, `${selA}..${selB}`);
+  const sel = ms.slice(selA, selB);
+  ok('the "did I visit it" compare matches the old stamps AND the new name',
+     /meNames/.test(sel) && /emailName/.test(sel) && /myName/.test(sel),
+     'stores stamped under the email name would read as ANOTHER AGENT once his stamp changes');
+  ok('the proof record and the receipt fallback use the helper',
+     /salesmanName: String\(myName/.test(ms) && /: \(myName \|\| 'Admin'\)/.test(ms),
+     'two of the five copies were left behind'); }
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);
