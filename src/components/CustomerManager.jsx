@@ -1279,7 +1279,11 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
             )}
             {canAddOrEditAnything && (
             <div className="bg-[var(--raised)] p-6 rounded-2xl shadow-sm border border-[var(--line)]">
-                <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+                {/* noValidate: the browser's own "Please fill out this field." bubble used to
+                    speak first, in the browser's voice, and handleSubmit's refusal never ran.
+                    The strip is the app's one reporting channel; every refusal on this form
+                    lives in handleSubmit, so the form has to reach it. His test, 2026-09-13. */}
+                <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
                     <div className="flex justify-between items-center mb-2"><h3 className="font-bold text-sm text-[var(--ink-dim)] uppercase">{editingId ? 'Edit Customer' : 'Add New Customer'}</h3>{editingId && <button type="button" onClick={() => { setEditingId(null); setFormData({name:'', phone:'', province:'', region:'', city:'', address:'', gmapsUrl:'', embedHtml: '', latitude: '', longitude: '', storeImage:'', tier: 'Silver', priceTier: 'Retail', visitFreq: 7, lastVisit: '', picName: '', description: '', mapFolder: ''}); setCoordInput(""); }} className="text-xs text-[var(--danger-ink)] hover:underline">Cancel Edit</button>}</div>
                     
                     <div className="flex flex-col md:flex-row gap-4">
@@ -1437,7 +1441,7 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <label className="text-[10px] font-bold text-[var(--ink-dim)] uppercase">GPS Coordinates</label>
-                                <input ref={coordRef} type="text" placeholder="-7.6043, 110.2055" className="w-full p-2 text-sm border rounded bg-[var(--raised)] font-mono placeholder:italic border-[var(--line)]" value={coordInput} onChange={handleCoordInputChange} />
+                                <input ref={coordRef} type="text" placeholder="-7.6043, 110.2055" className="w-full p-2 text-sm border rounded bg-[var(--raised)] font-mono placeholder:italic placeholder:opacity-50 border-[var(--line)]" value={coordInput} onChange={handleCoordInputChange} />
                             </div>
                             <div>
                                 <label className="text-[10px] font-bold text-[var(--ink-dim)] uppercase">Street View Link (Iframe/URL)</label>

@@ -1805,11 +1805,15 @@ html.lite-mode .kpm-topbar { transition: none; }
     content: ""; position: absolute; z-index: 0; left: 0; right: 0; top: 12px;
     height: calc(100% - 24px); border-radius: 34px;
     border: 1px solid var(--glass-edge);
-    /* 0.02 and 0.10 — his number. NOT a solid colour: a solid ground would sit in front of the
-       blur and there would be nothing to see through, which is the whole point of the effect.
-       The opaque fallback lives in the Lite Mode rule below instead. */
+    /* 0.42 and 0.58 — his SECOND number, 2026-09-13, after a month at 0.02/0.10: *"i want u to
+       make the side panel to be less transparant because on some bright space the name and logo
+       cant be seen"*. The 0.02 was also his (2026-08-14, on a slider); a bright page region
+       behind the capsule is what changed his mind — the inactive marks are #6b5845, and dark
+       brown on a bright ground under a 2% tint is nothing. Still NOT a solid colour: the blur is
+       the lens and there must be something to see through. The opaque fallback lives in the
+       Lite Mode rule below instead. */
     background-color: transparent;
-    background-image: linear-gradient(180deg, rgba(72, 58, 42, .02), rgba(20, 16, 13, .10));
+    background-image: linear-gradient(180deg, rgba(40, 32, 24, .42), rgba(20, 16, 13, .58));
     -webkit-backdrop-filter: blur(30px) saturate(1.9) brightness(1.06);
             backdrop-filter: blur(30px) saturate(1.9) brightness(1.06);
     box-shadow: inset 0 1px 0 rgba(255, 247, 228, .42),

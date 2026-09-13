@@ -6638,7 +6638,42 @@ section('THE CUSTOMER FORM SPEAKS TO A SHOP OWNER (2026-09-13)');
   const gps = cm.slice(gpsA, gpsB);
   ok('the GPS example coordinates are italic, so an empty box does not read as a filled one',
      /placeholder="-?\d+\.\d+, -?\d+\.\d+"/.test(gps) && /placeholder:italic/.test(gps),
-     'the example sits in the same mono face as a typed value'); }
+     'the example sits in the same mono face as a typed value');
+  /* his test, 2026-09-13: *"gps example number should be more transparant here sc4 it is too
+     visible that i think it is already filled"*. Italic alone did not read as an example. */
+  ok('and the example is faded as well — italic alone still read as a typed value to him',
+     /placeholder:opacity-[1-6]0/.test(gps),
+     'the slant was not enough; at full ink the mono example still looks filled in');
+  /* his test, same day: with nothing filled the browser's own "Please fill out this field."
+     bubble spoke, in the browser's voice, and the form's own refusal never ran. The strip is
+     the app's one reporting channel; the form must reach handleSubmit so it can speak. */
+  const formA = cm.indexOf('<form onSubmit={handleSubmit}');
+  const formB = cm.indexOf('>', formA);
+  ok('the customer form tag was found', formA > -1 && formB > formA && formB - formA < 300, `${formA}..${formB}`);
+  ok('the customer form skips browser validation so its own refusals are the ones he reads',
+     /noValidate/.test(cm.slice(formA, formB)),
+     'a native "Please fill out this field." bubble runs before handleSubmit and the strip stays silent'); }
+
+section('THE DARK RAIL IS GLASS YOU CAN READ THROUGH (2026-09-13)');
+/* His screenshot, 2026-09-13: *"i want u to make the side panel to be less transparant because
+   on some bright space the name and logo cant be seen"*. The 0.02 tint was also his (2026-08-14,
+   on a slider); a bright region behind the capsule is what changed the call. A BAND, not a
+   number: dark enough that #6b5845 marks survive a bright ground behind the lens, light enough
+   that there is still something to see through. Light mode is an opaque plate and is not this. */
+{ const css = read('src/styles/theme.css');
+  const podA = css.indexOf('.kpm-rail-pod::before {');
+  const podB = css.indexOf('}', podA);
+  ok('the dark pod rule was found', podA > -1 && podB > podA && podB - podA < 2500, `${podA}..${podB}`);
+  const pod = css.slice(podA, podB);
+  const tint = pod.match(/linear-gradient\(180deg, rgba\(\d+, \d+, \d+, (\.\d+)\), rgba\(\d+, \d+, \d+, (\.\d+)\)\)/);
+  ok('the tint is a two-stop gradient, not a solid', !!tint && /background-color: transparent/.test(pod),
+     'a solid ground sits in front of the blur and there is nothing to see through');
+  const a = tint ? Number(tint[1]) : NaN, b = tint ? Number(tint[2]) : NaN;
+  ok('both stops are dark enough for the marks to survive a bright ground behind the lens',
+     a >= 0.35 && b >= 0.35, `got ${a} / ${b} — at .02/.10 the marks vanished over a bright band`);
+  ok('and both stops still let the page through', a <= 0.8 && b <= 0.8, `got ${a} / ${b}`);
+  ok('the blur that makes it a lens is still on', /backdrop-filter: blur\(30px\)/.test(pod),
+     'without the blur a 50% tint is fog, not glass'); }
 
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);
