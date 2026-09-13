@@ -7,8 +7,8 @@ This job is a MEASUREMENT first, and the fix only if the number is real.**
 
 ⚠️ **Before this job: read Aldi's test results.** Confirmed 2026-09-13 in his words: nota name
 (`d9de090`) and the sales-terminal camera lock (`0ff0732`) — *"yes now the nota name is the same
-with the signature name … no camera lock no more"*; the rail (`7ea096e`). Still owed: `9fed51d`
-(Stock Opname as the boss — expected count shown, pending audits listed), `2771374` (form: no
+with the signature name … no camera lock no more"*; the rail (`7ea096e`); Stock Opname (`9fed51d`,
+*"yep tes approve"* — expected numbers on screen as tier 1). Still owed: `2771374` (form: no
 browser bubble, faint GPS example), `d4bd41a` (two stock labels), `8ed215f` (from 2026-09-12).
 
 ---
