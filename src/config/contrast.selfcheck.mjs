@@ -282,7 +282,11 @@ const PAIRS = [
    decides. Exactly the reason this hook existed before it was emptied.
    🔴 DO NOT ADD A SECOND STRING HERE without his word. One exemption is a finding; a list is a
    loophole, and the light half of this very pair is enforced at full strength. */
-const softInDark = (what) => what === 'a resting mark on the faceplate';
+/* CLOSED 2026-09-13. He decided: *"the goal is making the logo clearer"*. The resting mark ink
+   is #b39c7d now, 7,2:1 on the plate, and the pair is enforced at full strength in both themes.
+   The exemption is kept as a function returning false so the machinery above it stays honest —
+   a pair that goes red in dark from here on is a regression, not a finding. */
+const softInDark = () => false;
 
 let fail = 0, noted = 0;
 for (const [theme, tokens] of [['DARK ', dark], ['LIGHT', light]]) {

@@ -6671,7 +6671,13 @@ section('THE DARK RAIL IS GLASS YOU CAN READ THROUGH (2026-09-13)');
   const a = tint ? Number(tint[1]) : NaN, b = tint ? Number(tint[2]) : NaN;
   ok('both stops are dark enough for the marks to survive a bright ground behind the lens',
      a >= 0.35 && b >= 0.35, `got ${a} / ${b} — at .02/.10 the marks vanished over a bright band`);
-  ok('and both stops still let the page through', a <= 0.8 && b <= 0.8, `got ${a} / ${b}`);
+  /* .8 → .95 on 2026-09-13, his third round ("the visibility is still not maximal"); a tenth of
+     the page through the lens is still glass, and Lite Mode's solid plate is what 1.0 looks like */
+  ok('and both stops still let the page through', a <= 0.95 && b <= 0.95, `got ${a} / ${b}`);
+  ok('the resting mark ink clears the plate — the check that sat as a note for three weeks',
+     (() => { const ink = css.match(/--plate-ink:\s*(#[0-9a-f]{6})/i); const jsx = read('src/components/BiohazardTheme.jsx');
+              return !!ink && ink[1].toLowerCase() !== '#6b5845' && jsx.includes(`text-[${ink[1]}]`) && !jsx.includes('text-[#6b5845]'); })(),
+     'the JSX hex and the --plate-ink token must be the SAME colour, or contrast.selfcheck grades a colour the rail does not draw');
   ok('the blur that makes it a lens is still on', /backdrop-filter: blur\(30px\)/.test(pod),
      'without the blur a 50% tint is fog, not glass'); }
 

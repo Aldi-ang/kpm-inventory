@@ -780,7 +780,7 @@ export default function BiohazardTheme({
                                        along with it. Sixth cascade tie of this shape; count the
                                        specificity, do not eyeball it. */
                                     className={`kpm-rail-mark ${on ? 'on' : ''} ${peek?.id === item.id ? 'hot' : ''} relative w-full flex items-center justify-center h-full min-h-0 text-xs font-bold uppercase tracking-widest ${
-                                        on ? 'text-[#ff9d00]' : 'text-[#6b5845]'
+                                        on ? 'text-[#ff9d00]' : 'text-[#b39c7d]'
                                     }`}
                                 >
                                     {/* The lift lives on the ICON and the plate on ::before, and the
@@ -831,7 +831,7 @@ export default function BiohazardTheme({
                                    inside the sidebar"*. This was a full-width gold block; the
                                    marks around it are round plates with a label pill. A dock in
                                    which one button is a different species is not a dock. */
-                                className="kpm-rail-mark relative w-full flex items-center justify-center h-11 text-[#6b5845]"
+                                className="kpm-rail-mark relative w-full flex items-center justify-center h-11 text-[#b39c7d]"
                             >
                                 <Lock size={19} className="kpm-rail-icon" />
                                 <span className="kpm-rail-word">Unlock Vault</span>
