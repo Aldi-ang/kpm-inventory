@@ -191,18 +191,21 @@ export const damageBlocked = (entry) => {
     return null;
 };
 
-const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId, user, isAdmin, logAudit, triggerCapy, motorists = [], appSettings }) => {
+const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId, user, userRole: liveRole, isAdmin, logAudit, triggerCapy, motorists = [], appSettings }) => {
     
     const safeInventory = inventory || [];
     const safeTransactions = transactions || [];
     const safeMotorists = motorists || [];
 
-    const userRole = user?.userRole || 'AGENT';
+    /* The live role comes from App as `liveRole` (aliased, so it cannot collide with this
+       local); the user object is only the fallback. The boss signs in as the RAW Firebase user,
+       which carries no userRole — read from there alone he was 'AGENT' here: counting blind, and
+       `isHighCommand` false, so the pending-audit and quarantine listeners never ran for the
+       owner. Same hole as the sales terminal's camera lock (2026-09-13). The older comment that
+       said "App does pass one" was wrong: the mount never had the prop. */
+    const userRole = liveRole || user?.userRole || 'AGENT';
     /* Tier 3 and above count with the expected number beside them; below that they count blind
-       and it only appears once they have typed. One switch per tier in the permission matrix.
-       Deliberately reuses the userRole this screen already derives on the line above rather than
-       taking a prop of the same name - App does pass one, and destructuring it here collided with
-       this declaration and would have been read before it existed. */
+       and it only appears once they have typed. One switch per tier in the permission matrix. */
     const showExpectedWhileCounting = canSeeExpectedCount(userRole);
     // 🚀 FIX: This used to also treat 'COMPANY_OWNER', 'DEVELOPER', and 'HQ' role tags,
     // and the bare `isAdmin` PIN-unlock flag on its own, as "high command" — broader

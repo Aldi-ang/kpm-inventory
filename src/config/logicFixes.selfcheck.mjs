@@ -6771,5 +6771,25 @@ section('THE BOSS IS TIER 1 ON THE SALES TERMINAL TOO (2026-09-13)');
      !/user\?\.userRole \|\| user\?\.role,/.test(ms),
      'one reader fixed and one left is the boss locked out of a different button'); }
 
+section('THE BOSS IS TIER 1 ON STOCK OPNAME TOO (2026-09-13)');
+/* Same hole as the sales terminal, found by the grep that closed that one: StockOpnameView
+   derived `userRole = user?.userRole || 'AGENT'`, and the boss's user object is the raw Firebase
+   user with no userRole — so the owner counted blind and `isHighCommand` (the pending_audits and
+   quarantine listeners) was false for him. The comment beside the line said App passes the prop;
+   the mount never did. RAW read: the file carries `accept="image/*"`, which fools code(). */
+{ const app = read('src/App.jsx');
+  const sA = app.indexOf('<StockOpnameView');
+  const sB = app.indexOf('/>', sA);
+  ok('the StockOpnameView mount was found', sA > -1 && sB > sA && sB - sA < 2000, `${sA}..${sB}`);
+  ok('App hands Stock Opname the live role', /userRole=\{userRole\}/.test(app.slice(sA, sB)),
+     'the boss is the raw Firebase user and carries no role of his own');
+  const so = read('src/StockOpnameView.jsx');
+  ok('the view takes the prop under an alias, so it cannot collide with the local it derives',
+     /const StockOpnameView =\(\{[^}]*userRole: liveRole[^}]*\}\)/.test(so),
+     'a prop and a local of the same name in one scope is the collision the old comment feared');
+  ok('and derives the local from the prop first, the user object second, AGENT last',
+     /const userRole = liveRole \|\| user\?\.userRole \|\| 'AGENT';/.test(so),
+     'read off the user object alone, the owner is a field agent on this screen'); }
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

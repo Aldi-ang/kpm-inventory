@@ -4995,6 +4995,9 @@ const handleGitHubMirror = async () => {
         
           {activeTab === 'stock_opname' && (
               <StockOpnameView
+    /* the boss's user object is the raw Firebase user with no role on it — see the same
+       note on <MerchantSalesView>; without this the owner counts as a field agent here */
+    userRole={userRole}
     inventory={inventory}
     db={db}
     storage={storage}
