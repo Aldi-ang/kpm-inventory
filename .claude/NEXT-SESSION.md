@@ -1,8 +1,9 @@
 # The one job
 
-**The receipt prints the salesperson as `ADIKARYASUKSES99` — the front half of an email address,
-in capitals — on a paper a shop owner keeps. The real name is in the roster and the screen
-already has it.**
+**On a phone, is the notification bell off the right edge of the screen? The queue says "bell at
+x 398–445 against a 375 viewport" and "the menu ribbon sits half above the viewport" — one of
+those two is almost certainly a measurement artifact, and the other has never been re-measured.
+This job is a MEASUREMENT first, and the fix only if the number is real.**
 
 ⚠️ **Before this job: read Aldi's test results.** Owed: `8ed215f` (store created today → no
 `ANOTHER AGENT` banner, from 2026-09-12); `2771374`+`3af7685` (rail readable over bright, no
@@ -20,39 +21,47 @@ his call, one rule: copy `html.lite-mode .kpm-rail-pod::before` without the lite
 >
 > Read `.claude/NEXT-SESSION.md` first — it is the whole job, do not re-read source to re-orient.
 >
-> **The line, verified 2026-09-13:** `src/MerchantSalesView.jsx:1097`
-> `const agentFallback = typeof trueAgentName === 'string' ? trueAgentName : (user?.displayName || user?.email?.split('@')[0] || 'Admin');`
-> feeds `receiptData.agentName` (`:1110`), which the nota prints in capitals as `SALES : …`
-> (`:3152`, `className="uppercase"`). When `trueAgentName` is not a string and the Google account
-> has no `displayName`, the customer's paper says `ADIKARYASUKSES99`. The same fallback is at
-> `:524`, `:573` and `:831` (`salesmanName`, written INTO the sale record) — four sites, one shape.
+> **The two claims, and why one of them is suspect (verified 2026-09-13):**
+> - "The menu ribbon is a 14×66px sliver at the right edge, `top:-66px`, half above the viewport."
+>   `BiohazardTheme.jsx:285-291`: `ribbonY` starts at `Math.round((window.innerHeight - RIBBON_H) / 2)`,
+>   clamped to `innerHeight - RIBBON_H - 8` when a saved value exists. A NEGATIVE top can only
+>   come from `innerHeight` being 0 — which is exactly what the in-app Browser pane reports when
+>   it is hidden (lesson: *a viewport of zero returns rectangles, and they are all lies*). Treat
+>   this claim as an artifact until a real 375×812 viewport says otherwise.
+> - "The notification bell is off-screen, x 398 to 445 against a 375 viewport." The bell is
+>   `<NotificationBell>` at `BiohazardTheme.jsx:1039`, a `.kpm-chip.kpm-bell` inside the header
+>   row. Never re-measured since it was written down. Plausible — a header row that does not wrap
+>   overflows to the right — but a number from the same hidden pane is worth nothing.
 >
-> **What already knows the name:** the roster. `AgentInventoryView.jsx:64` reads
-> `liveProfileData?.name || safeAgentProfile?.name || user?.displayName || email.split('@')[0]` —
-> profile first, email last. `MerchantSalesView` already has `rosterNameById` (the lesson file names
-> it as an anchor in this same file) — find how it is built and whether the signed-in user's own
-> roster row is reachable from it (by `user.agentId` / `agentProfileId`, see `:967`).
+> **Measure, do not build.** Headless Chrome on Windows will not go below ~518px (`Looking at the
+> App.md`), so the only honest instruments are: (a) the in-app Browser pane with `resize_window`
+> to 375×812 and `innerWidth` read in the SAME probe as the rects — if `innerWidth` is 0 the pane
+> is hidden and every number is a lie; or (b) Aldi's phone screenshot, which is what found every
+> real phone bug so far. Ask for (b) in the first reply, do (a) meanwhile. The probe: the bell's
+> `getBoundingClientRect().right` against `innerWidth`, and the ribbon's `top` against 0. The app
+> is behind Google sign-in, so (a) needs the ponder lab — mount `BiohazardTheme`'s header is not
+> cheap; if it costs more than three turns, stop and wait for (b).
 >
-> **Smallest fix:** one helper at the top of the view, `const myName = <roster name> || user?.displayName || <email local part>`,
-> used at all four sites — the email stays as the LAST fallback, never removed (an unrostered
-> account must still print something). Then the receipt line `:3152` and the sale record `:831`
-> carry the roster name.
->
-> **Trap 1:** `trueAgentName` at `:1097` — trace what sets it before touching the fallback; if it
-> is the roster name already and is simply `undefined` on the boss's own sales, the fix is where
-> it is SET, not a fifth fallback. **Trap 2:** `:831` writes `salesmanName` into the transaction;
-> `ConsignmentFinanceView.jsx:59` scopes receivables by `t.agentId`, not by name, so the name is
-> display-only — confirm with one grep for `salesmanName` before assuming. **Trap 3:** the receipt
-> is company-blue and `uppercase` by law (palette memory: the nota is NOT app UI) — change the
-> value, never the class.
->
-> **Order:** guard first in `logicFixes.selfcheck.mjs` — slice `:1097`'s statement and assert the
-> roster name is consulted before `email?.split('@')[0]`; prove it RED; then the edit;
-> `node src/config/logicFixes.selfcheck.mjs` (1447 → 1448+), `npm run build; node src/config/integration.audit.mjs`
-> (722), `graphify update .`. No frame — text. ✅ TEST for Aldi: sell as the boss, read the nota's
-> SALES line.
+> **If the bell IS off-screen:** the fix is in the header row's classes at `BiohazardTheme.jsx`
+> around `:1024-1040` (let the chips wrap, or hide the tutorial chip under `sm:`), and it is a
+> visual change — frame at 518 is still a crop, so Aldi's screenshot is the proof. **If neither
+> claim survives measurement:** delete both lines from the queue below and say so; that is a
+> result.
 >
 > Rewrite this file with the next single job before closing.
+
+---
+
+## Shipped 2026-09-13, night — `d9de090`
+
+**The nota prints the boss's name.** The engine (`useTransactionEngine.js`, both `let
+finalAgentName` sites) now starts with `(userRole === 'ADMIN' && appSettings?.adminDisplayName)`
+— the Settings field `ReceiptPreview.jsx:147` already printed. `MerchantSalesView.jsx`'s five
+copies of the displayName/email fallback collapsed into `emailName` + `myName`; the visit compare
+matches `meNames` (Settings name, display name, email) so old stamps still read as his. Section
+THE NOTA PRINTS THE BOSS'S NAME, 5 red → 1455/1455. **✅ TEST:** sell as the boss, the nota's SALES
+line must show the name typed in Settings → Admin Display Name, not `ADIKARYASUKSES99`. If that
+Settings field is empty, it falls to the Google name, then the email — fill it in first.
 
 ---
 
@@ -174,14 +183,14 @@ Aldi pressed it 2026-09-09 and 2026-09-10. **Do not put this on a list again.**
 
 ### Phone, at 375x812
 
-* The only way to open the menu is a 14x66px sliver at the right edge (`.kpm-edge-ribbon`,
-  `w-[14px] h-[132px]`, `top:-66px`, half of it above the viewport).
-* The notification bell is off-screen, x 398 to 445 against a 375 viewport.
+* ~~The only way to open the menu is a 14x66px sliver … `top:-66px`, half above the viewport~~ —
+  PROMOTED as a measurement job above; the negative top is almost certainly a hidden-pane artifact.
+* ~~The notification bell is off-screen, x 398 to 445 against a 375 viewport~~ — same job.
 
 ### Wording — cheap, each one read by a customer
 
 ~~`49 Bks left in the vehicle` while selling from Master Vault, `Surya 16 (Available: 100 )`~~
-(SHIPPED `d4bd41a`), ~~the salesperson printed as `ADIKARYASUKSES99`~~ (PROMOTED to the job above), the EOD verify confirm
+(SHIPPED `d4bd41a`), ~~the salesperson printed as `ADIKARYASUKSES99`~~ (SHIPPED `d9de090`), the EOD verify confirm
 claiming "clears their inventory" on a stamps-only card, the EOD `MATCHES` column showing a dash when
 the numbers are equal, the audit receipt printing `BAYAR : CASH` on an audit that collected Rp 0.
 
