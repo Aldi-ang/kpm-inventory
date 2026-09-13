@@ -1,9 +1,14 @@
 # The one job
 
-**On a phone, is the notification bell off the right edge of the screen? The queue says "bell at
-x 398–445 against a 375 viewport" and "the menu ribbon sits half above the viewport" — one of
-those two is almost certainly a measurement artifact, and the other has never been re-measured.
-This job is a MEASUREMENT first, and the fix only if the number is real.**
+**The same hole that camera-locked the boss on the sales terminal (`0ff0732`) is open on Stock
+Opname: `StockOpnameView.jsx:200` reads `const userRole = user?.userRole || 'AGENT'`, and the
+boss's user object is the raw Firebase user with no `userRole` on it — so the owner walks into
+Stock Opname as a field agent. Found by the one grep the fix should have ended with; left for a
+separate commit because it is a fourth file.**
+
+⚠️ **Before this job: read Aldi's test results** — `0ff0732` (sell as tier 1: picker, no camera
+lock), `d9de090` (nota SALES line), `2771374`/`3af7685`/`7ea096e` (rail, confirmed), `d4bd41a`
+(two stock labels), `8ed215f` (yesterday). Any of them failing is the job instead.
 
 ⚠️ **Before this job: read Aldi's test results.** Owed: `8ed215f` (store created today → no
 `ANOTHER AGENT` banner, from 2026-09-12); `2771374`+`3af7685` (rail readable over bright, no
@@ -21,6 +26,38 @@ his call, one rule: copy `html.lite-mode .kpm-rail-pod::before` without the lite
 >
 > Read `.claude/NEXT-SESSION.md` first — it is the whole job, do not re-read source to re-orient.
 >
+> **The line, verified 2026-09-13:** `src/StockOpnameView.jsx:200` `const userRole = user?.userRole || 'AGENT';`
+> and `App.jsx:4997` mounts `<StockOpnameView` WITHOUT `userRole={userRole}`. The boss signs in as
+> the raw Firebase user (`App.jsx` ~2525: `setUserRole('ADMIN'); setUser(currentUser)`), which has
+> no `userRole`, so on this screen he is `'AGENT'` → TIER_5. Same shape as `0ff0732`; read that
+> commit and the section THE BOSS IS TIER 1 ON THE SALES TERMINAL TOO in `logicFixes.selfcheck.mjs`
+> — copy its shape, do not invent a new one.
+>
+> **Smallest fix:** App passes `userRole={userRole}` to `<StockOpnameView`; the view destructures
+> `userRole: liveRole` (or similar — `userRole` is already a local const there) and line 200 becomes
+> `const userRole = liveRole || user?.userRole || 'AGENT'`. Then grep what that `userRole` gates
+> in the file (`hasClearance(userRole`, `isFieldLevelTier(userRole`, tier compares) and list them in
+> the commit — that is what the boss was locked out of.
+>
+> **Trap 1:** `'AGENT'` as the default is a legacy role that `translateLegacyRole` maps to TIER_5 —
+> keep it as the LAST fallback, never remove it; a motorist's hijacked user object does carry
+> `userRole` and is unaffected. **Trap 2:** `code()` in logicFixes swallows everything after
+> `accept="image/*"` in a file that has one — check whether StockOpnameView does before scoping a
+> guard through `code()`; read raw if so. **Trap 3:** the audit's "the boss sees every screen"
+> groups may pin how StockOpname is mounted — run `integration.audit.mjs` before writing the guard.
+>
+> **Order:** guard first (App hands the role over; the view reads the prop first), RED, then the
+> two edits, `node src/config/logicFixes.selfcheck.mjs` (1461 → 1463+), `npm run build; node
+> src/config/integration.audit.mjs` (722), `graphify update .`. Then grep the whole of `src` for
+> `user?.userRole` and `user.userRole` ONE more time and say in the commit that it came back empty.
+> No frame. ✅ TEST for Aldi: open Stock Opname as the boss — whatever the file gates on tier must
+> be open to him.
+>
+> Rewrite this file with the next single job before closing.
+
+<details>
+<summary>The job this one displaced — the phone bell measurement — promote it back when this ships</summary>
+
 > **The two claims, and why one of them is suspect (verified 2026-09-13):**
 > - "The menu ribbon is a 14×66px sliver at the right edge, `top:-66px`, half above the viewport."
 >   `BiohazardTheme.jsx:285-291`: `ribbonY` starts at `Math.round((window.innerHeight - RIBBON_H) / 2)`,
@@ -47,10 +84,20 @@ his call, one rule: copy `html.lite-mode .kpm-rail-pod::before` without the lite
 > visual change — frame at 518 is still a crop, so Aldi's screenshot is the proof. **If neither
 > claim survives measurement:** delete both lines from the queue below and say so; that is a
 > result.
->
-> Rewrite this file with the next single job before closing.
+
+</details>
 
 ---
+
+## Shipped 2026-09-13, night — `0ff0732`
+
+**The boss is tier 1 on the sales terminal too.** His screenshot: CAMERA UNAVAILABLE on a sale as
+tier 1. `canPickFromGallery('ADMIN')` was always true; the terminal read the role off the user
+object, and the boss's user object is the raw Firebase user with no role → `undefined` → TIER_5.
+App now passes `userRole={userRole}`; the terminal reads `myRole = userRole || user?.userRole ||
+user?.role` for both the gallery gate and the sample lock. Section THE BOSS IS TIER 1 ON THE SALES
+TERMINAL TOO, 4 red → 1461/1461. **✅ TEST:** sell as tier 1 — "Capture or choose photo", no
+camera lock. Same hole found on Stock Opname → the job above.
 
 ## Shipped 2026-09-13, night — `d9de090`
 
