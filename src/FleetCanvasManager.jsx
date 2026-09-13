@@ -1257,7 +1257,10 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                                             <option value="">-- Choose Product --</option>
                                             {displayInventory && displayInventory.map(item => (
                                                 <option key={item.id} value={item.id}>
-                                                    {item.name} (Available: {item.stock} {item.unit})
+                                                    {/* stock is stored in Bks and the qty box beside this is labelled
+                                                        Bungkus; a master product carries no `unit`, which is why this
+                                                        used to print "(Available: 100 )" */}
+                                                    {item.name} (Available: {item.stock} Bks)
                                                 </option>
                                             ))}
                                         </select>

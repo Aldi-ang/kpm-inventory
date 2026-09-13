@@ -2799,7 +2799,10 @@ const MerchantSalesView = ({ inventory, user, isAdmin, logAudit, triggerCapy, on
                                     <div className="font-mono text-[11px] font-black uppercase tracking-[0.16em] text-[var(--ink-dim)] mb-1.5">Running low</div>
                                     <div className="font-mono text-[15px] font-black uppercase text-[var(--duke-danger-ink)] leading-tight break-words">{lowestStock.name}</div>
                                     <p className="m-0 mt-1 font-mono text-[12px] tabular-nums text-[var(--ink-dim)]">
-                                        {new Intl.NumberFormat('id-ID').format(lowestStock.stock)} Bks left in the vehicle
+                                        {/* the boss can sell from either source (the two buttons above say
+                                            Master Vault / Boss Car); `inventory` is whichever he picked,
+                                            so the card names that place in the buttons' own words */}
+                                        {new Intl.NumberFormat('id-ID').format(lowestStock.stock)} Bks left in the {adminSalesMode === 'VAULT' ? 'Master Vault' : 'vehicle'}
                                     </p>
                                 </div>
                             )}

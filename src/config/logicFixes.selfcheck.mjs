@@ -6675,5 +6675,30 @@ section('THE DARK RAIL IS GLASS YOU CAN READ THROUGH (2026-09-13)');
   ok('the blur that makes it a lens is still on', /backdrop-filter: blur\(30px\)/.test(pod),
      'without the blur a 50% tint is fog, not glass'); }
 
+section('TWO STOCK LABELS SAY WHERE AND WHAT (2026-09-13)');
+/* Day-one walk: the sales terminal's "Running low" card said `N Bks left in the vehicle` while
+   the boss was selling from the Master Vault, and the loading picker printed
+   `Surya 16 (Available: 100 )` — a master product has no `unit` field, stock is stored in Bks,
+   and the qty box beside it is labelled "Qty (Bungkus)". Both labels are read by a customer. */
+{ const ms = code(read('src/MerchantSalesView.jsx'));
+  const lowA = ms.indexOf('Running low');
+  const lowB = ms.indexOf('</div>', ms.indexOf('left in the', lowA));
+  ok('the Running-low card was found', lowA > -1 && lowB > lowA && lowB - lowA < 900, `${lowA}..${lowB}`);
+  const low = ms.slice(lowA, lowB);
+  ok('the Running-low card names the source the boss actually picked, not always the vehicle',
+     /adminSalesMode === 'VAULT'/.test(low) && /Master Vault/.test(low) && /vehicle/.test(low),
+     'selling from the Master Vault, the card still said "in the vehicle"');
+  ok('and it uses the two mode buttons\' own words, not a third name',
+     /'Master Vault'/.test(low) && /'vehicle'/.test(low) && !/warehouse|gudang|stok/i.test(low),
+     'the buttons say Master Vault and Boss Car; a third label sends him looking for a third place');
+  const fc = code(read('src/FleetCanvasManager.jsx'));
+  const optA = fc.indexOf('(Available:');
+  const optB = fc.indexOf('</option>', optA);
+  ok('the loading picker option was found', optA > -1 && optB > optA && optB - optA < 200, `${optA}..${optB}`);
+  const opt = fc.slice(optA, optB);
+  ok('the picker prints the stock in Bks, the unit the qty box beside it is labelled in',
+     /\{item\.stock\} Bks\)/.test(opt) && !/item\.unit/.test(opt),
+     'a master product has no unit field, so `{item.unit}` printed "(Available: 100 )"'); }
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);
