@@ -948,7 +948,14 @@ export default function BiohazardTheme({
                     corner, and on a phone that square is a ribbon on the edge now. Sixty-four
                     pixels of a phone screen back, for nothing. The desk still pays it, in CSS,
                     because the square is still up there — see kpm-topbar in theme.css. */}
-                <div className={`kpm-topbar hide-on-print pt-4 lg:pt-6 px-4 lg:px-8 pb-2 flex justify-between items-end gap-3 border-b border-[#3e3226] shrink-0 relative`}>
+                {/* 📏 flex-wrap, MEASURED 2026-09-14 at a real 375px viewport: the title stack is 232
+                    wide and cannot shrink (its `truncate` child sets the min-content of a parent
+                    with no `min-w-0`), the control cluster is 229 and `shrink-0`, and the column
+                    below is `overflow-hidden` — so 16+232+12+229+16 = 505 put the bell at x 442..489
+                    on a 375 phone: clipped, never drawn. The row wraps instead of clipping; on a
+                    desk the same sum fits in one line, so nothing there moves. His rule on wrap
+                    vs. truncate: *"wrapping shows every character and costs only height"*. */}
+                <div className={`kpm-topbar hide-on-print pt-4 lg:pt-6 px-4 lg:px-8 pb-2 flex flex-wrap justify-between items-end gap-3 border-b border-[#3e3226] shrink-0 relative`}>
                     {/* 👻 THE GHOST IS THE SECTION'S MARK NOW, NOT ITS NAME.
                         His note when I proposed deleting it: *"well it change according to the
                         choosen app section"* — and he is right, that is the good part, so it is
@@ -992,7 +999,10 @@ export default function BiohazardTheme({
                         <span key={activeTab} className="kpm-title-rule"></span>
                     </div>
 
-                    <div className="flex items-center gap-2 lg:gap-3 shrink-0">
+                    {/* `ml-auto`: when this cluster wraps onto its own line, `justify-between` has
+                        one item on that line and parks it at the LEFT. The margin keeps the
+                        controls on the right edge, where they are at every other width. */}
+                    <div className="flex items-center gap-2 lg:gap-3 shrink-0 ml-auto">
                         {/* Sync/offline pill lives in this row on purpose. It used to be a `fixed`
                             element with a hardcoded right offset, which drifted into the theme
                             toggle at tablet widths because the two used different positioning

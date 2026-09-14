@@ -6791,5 +6791,30 @@ section('THE BOSS IS TIER 1 ON STOCK OPNAME TOO (2026-09-13)');
      /const userRole = liveRole \|\| user\?\.userRole \|\| 'AGENT';/.test(so),
      'read off the user object alone, the owner is a field agent on this screen'); }
 
+section('THE BELL IS ON THE PHONE SCREEN (2026-09-14)');
+/* Measured in the ponder lab (`?shell`, real viewport 375x812, innerWidth read in the same probe):
+   left text stack 16..248 (232 wide, the title has `truncate` but its parent has no `min-w-0`, so
+   it never shrinks), right cluster 260..489 (229 wide, `shrink-0`), bell 442..489. The row is
+   `flex` with no wrap inside an `overflow-hidden` column, so on a 375 phone the switch is cut in
+   half and the bell and clock are simply not there. His taste: wrapping "shows every character and
+   costs only height; truncation is silent" — so the row wraps, and the control cluster keeps the
+   right edge on its own line. The ribbon measured top 340 of 812 in the same probe: the queued
+   "top:-66px" was a hidden-pane artifact, not a bug. */
+{ const PAD = 16, GAP = 12, LEFT = 232, RIGHT = 229;                 // measured, 2026-09-14
+  const oneLine = (viewport) => PAD + LEFT + GAP + RIGHT + PAD <= viewport;
+  ok('at 375 the title and the controls cannot share one line', !oneLine(375), `${PAD + LEFT + GAP + RIGHT + PAD} > 375`);
+  ok('on a desk they still can, so the desk header does not change', oneLine(1024) && oneLine(1280));
+  const bt = read('src/components/BiohazardTheme.jsx');
+  const a = bt.indexOf('kpm-topbar hide-on-print');
+  const b = bt.indexOf('<PonderBookButton activeTab={activeTab} />', a);
+  ok('the top bar and its control cluster were found', a > -1 && b > a && b - a < 6000, `${a}..${b}`);
+  const bar = bt.slice(a, b);
+  ok('the top bar row may wrap', /^kpm-topbar hide-on-print [^`]*\bflex-wrap\b/.test(bar),
+     'without it the right cluster overflows the phone and the column clips it');
+  const cluster = bar.slice(bar.lastIndexOf('<div className='));
+  ok('the control cluster keeps the right edge when it wraps to its own line',
+     /shrink-0[^"]*\bml-auto\b|\bml-auto\b[^"]*shrink-0/.test(cluster),
+     'justify-between puts a lone flex line at the LEFT'); }
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

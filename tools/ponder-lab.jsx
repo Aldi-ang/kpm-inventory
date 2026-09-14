@@ -31,6 +31,8 @@ import ShipmentLabel from '../src/components/ShipmentLabel.jsx';
 import ArrivalScanner from '../src/components/ArrivalScanner.jsx';
 import { ConfirmHost, confirmAction } from '../src/components/ConfirmGate.jsx';
 import { ToastHost, notify } from '../src/components/Toast.jsx';
+import BiohazardTheme from '../src/components/BiohazardTheme.jsx';
+import { Cloud } from 'lucide-react';
 /* Same module the alias in ponder-lab.config.mjs points `firebase/firestore` at, so writing a
    fixture here is what the component's own listener reads back. */
 import { FIXTURES } from './lab-firestore-stub.js';
@@ -431,7 +433,36 @@ function ToastLab() {
   );
 }
 
+/* 🔴 ?shell MOUNTS THE REAL APP SHELL — the top bar (book, SYNCED, switch, bell, clock) and the
+   menu ribbon — so it can be laid out at a PHONE width and measured. The one question it answers
+   is whether that row fits in 375px: the right cluster is `shrink-0` and the left one has no
+   `min-w-0`, so nothing but a laid-out page can say where the bell ends up. The sync chip is
+   copied verbatim from the call site in App.jsx (`syncIndicator=`); a harness that invents its
+   markup measures the harness. `../config/firebase` is aliased to lab-firebase-stub.js here. */
+function ShellLab() {
+  const [dark, setDark] = React.useState(!q.has('light'));
+  return (
+    <BiohazardTheme
+      activeTab="command_center" setActiveTab={() => {}}
+      user={{ displayName: 'Lab', email: 'lab@example.com' }}
+      appSettings={{}} isAdmin userRole="ADMIN" agentSettings={{}}
+      notifications={[]} onNotificationClick={() => {}} appVersion="lab"
+      darkMode={dark} setDarkMode={setDark}
+      onOpenPov={null} povActive={false}
+      syncIndicator={(
+        <button onClick={() => {}} className="kpm-chip relative ">
+          <Cloud size={16} />
+          <span className="text-[10px] font-black tracking-widest hidden md:inline">SYNCED</span>
+        </button>
+      )}
+    >
+      <div className="p-6 font-mono text-[var(--ink)]">Page content under the shell.</div>
+    </BiohazardTheme>
+  );
+}
+
 createRoot(document.getElementById('root')).render(
+  q.has('shell') ? <ShellLab /> :
   q.has('toast') ? <ToastLab /> :
   q.has('label') ? <ShipmentLabel shipment={LAB_SHIPMENT} onClose={() => {}} companyName="KPM INVENTORY" /> :
   q.has('scan') ? <ArrivalScanner open onClose={() => {}} onCode={(c) => { window.__scanned = c; }} expecting={['REQ_1756700000000']} /> :
