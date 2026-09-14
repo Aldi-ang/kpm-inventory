@@ -1,20 +1,19 @@
 # The one job
 
-**On a phone, is the notification bell off the right edge of the screen? The queue says "bell at
-x 398–445 against a 375 viewport" and "the menu ribbon sits half above the viewport" — one of
-those two is almost certainly a measurement artifact, and the other has never been re-measured.
-This job is a MEASUREMENT first, and the fix only if the number is real.**
+**The fleet form's tier picker shows `T3: HQ SALES MANAGER` for every new person while the record
+it saves says something else. It is a controlled `<select>` whose value is not one of its options,
+so the browser draws the first option and the state keeps the phantom. Reproduce it on screen
+first, then make the value a real tier id — and the tier a new Sales Motorist gets is his call.**
 
-**Session closed 2026-09-13 20:23 WIB at his "continue tomrrow make notes and prompt preparing
-now". Both repos committed.** Aldi was asked at 20:20 for a phone screenshot of the top bar (the
-row with the bell and SYNCED) — read his reply first; if it arrived, the measurement below is
-already half done and the frame is the proof.
+**Session closed 2026-09-14 ~18:55 WIB.** `2af2dd9` shipped (the top bar wraps on a phone; the
+bell was clipped at x 442..489 on a 375 viewport, measured in the new `?shell` lab mount). Aldi was
+asked for a phone screenshot of the top bar as the proof — read his reply first. Both repos
+committed.
 
-⚠️ **Before this job: read Aldi's test results.** Confirmed 2026-09-13 in his words: nota name
-(`d9de090`) and the sales-terminal camera lock (`0ff0732`) — *"yes now the nota name is the same
-with the signature name … no camera lock no more"*; the rail (`7ea096e`); Stock Opname (`9fed51d`,
-*"yep tes approve"* — expected numbers on screen as tier 1). Still owed: `2771374` (form: no
-browser bubble, faint GPS example), `d4bd41a` (two stock labels), `8ed215f` (from 2026-09-12).
+⚠️ **Before this job: read Aldi's test results.** ✅ TEST owed: `2af2dd9` (phone top bar — four
+controls on their own line under the title, bell visible; PC header unchanged), `2771374` (customer
+form: no browser bubble, faint GPS example), `d4bd41a` (Running-low card in Master Vault mode;
+FLEET picker "(Available: 100 Bks)"), `8ed215f` (store created today, no ANOTHER AGENT banner).
 
 ---
 
@@ -24,150 +23,82 @@ browser bubble, faint GPS example), `d4bd41a` (two stock labels), `8ed215f` (fro
 >
 > Read `.claude/NEXT-SESSION.md` first — it is the whole job, do not re-read source to re-orient.
 >
-> **The two claims, and why one of them is suspect (verified 2026-09-13):**
-> - "The menu ribbon is a 14×66px sliver at the right edge, `top:-66px`, half above the viewport."
->   `BiohazardTheme.jsx:285-291`: `ribbonY` starts at `Math.round((window.innerHeight - RIBBON_H) / 2)`,
->   clamped to `innerHeight - RIBBON_H - 8` when a saved value exists. A NEGATIVE top can only
->   come from `innerHeight` being 0 — which is exactly what the in-app Browser pane reports when
->   it is hidden (lesson: *a viewport of zero returns rectangles, and they are all lies*). Treat
->   this claim as an artifact until a real 375×812 viewport says otherwise.
-> - "The notification bell is off-screen, x 398 to 445 against a 375 viewport." The bell is
->   `<NotificationBell>` at `BiohazardTheme.jsx:1039`, a `.kpm-chip.kpm-bell` inside the header
->   row. Never re-measured since it was written down. Plausible — a header row that does not wrap
->   overflows to the right — but a number from the same hidden pane is worth nothing.
+> **The bug, and the mechanism (read from the live files 2026-09-14):**
+> - `src/FleetCanvasManager.jsx:149-153` — `defaultAgentState` has `userRole: 'AGENT'`.
+> - `src/FleetCanvasManager.jsx:843` — the tier `<select>` is `value={newAgent.userRole || 'AGENT'}`,
+>   and its options at `:848` are `DYNAMIC_TIERS` minus ADMIN / COMPANY_OWNER / DEVELOPER.
+> - `src/config/permissions.js:2-9` — the tier ids are `DEVELOPER, COMPANY_OWNER, AREA_ADMIN,
+>   FLEET_CAPTAIN, FIELD_OPERATIVE, ROOKIE`. **`'AGENT'` is not one of them.** A React controlled
+>   `<select>` whose value matches no `<option>` paints the FIRST option — after the filter that is
+>   `AREA_ADMIN`, label `T3: HQ SALES MANAGER` — while `newAgent.userRole` stays `'AGENT'`.
+> - `src/config/permissions.js:72` — at READ time `'AGENT'` (and `Motorist`, `Canvas`, `Salesman`)
+>   is normalised to `TIER_5` = `FIELD_OPERATIVE` = `T5: SALES CANVAS`.
 >
-> **Measure, do not build.** Headless Chrome on Windows will not go below ~518px (`Looking at the
-> App.md`), so the only honest instruments are: (a) the in-app Browser pane with `resize_window`
-> to 375×812 and `innerWidth` read in the SAME probe as the rects — if `innerWidth` is 0 the pane
-> is hidden and every number is a lie; or (b) Aldi's phone screenshot, which is what found every
-> real phone bug so far. Ask for (b) in the first reply, do (a) meanwhile. The probe: the bell's
-> `getBoundingClientRect().right` against `innerWidth`, and the ribbon's `top` against 0. The app
-> is behind Google sign-in, so (a) needs the ponder lab — mount `BiohazardTheme`'s header is not
-> cheap; if it costs more than three turns, stop and wait for (b).
+> So the form SHOWS T3 and SAVES a person who behaves as T5. That is the UI-says-yes-server-says-no
+> shape (`A-Brain/Wiki/Concepts/UI-Says-Yes-Server-Says-No Pattern.md`) — check it before writing
+> a brief, the vault may already name the fix.
 >
-> **If the bell IS off-screen:** the fix is in the header row's classes at `BiohazardTheme.jsx`
-> around `:1024-1040` (let the chips wrap, or hide the tutorial chip under `sm:`), and it is a
-> visual change — frame at 518 is still a crop, so Aldi's screenshot is the proof. **If neither
-> claim survives measurement:** delete both lines from the queue below and say so; that is a
-> result.
+> **Reproduce first, on screen.** The fleet form is behind sign-in; the ponder lab has no mount for
+> it yet. The cheapest honest reproduction is a `?fleet` mount in `tools/ponder-lab.jsx` the way
+> `?shell` was added on 2026-09-14 (see that block and `tools/lab-firebase-stub.js` for the alias
+> the shell needed — the fleet form imports `../config/firebase` too). Read the select's
+> `selectedIndex` and `value` in the same probe: `value` will be `''` (no match) and the painted
+> option will be T3. If the mount costs more than three turns, ask Aldi for one screenshot of the
+> ADD PERSONNEL form with nothing touched and stop.
+>
+> **The fix is one line, and the value is his.** `defaultAgentState.userRole` must be a real id.
+> The role picker beside it (`:832`) defaults to `Motorist`, so the honest default is
+> `CORPORATE_TIERS.TIER_6` (`ROOKIE`, `T6: SALES MOTORIST`) — but `:72` has been turning `'AGENT'`
+> into T5 for every person saved so far, so a T6 default CHANGES what a new motorist may do
+> (diff `ROLE_PERMISSIONS[FIELD_OPERATIVE]` against `[ROOKIE]` in `permissions.js` before you
+> describe the change to him — not checked on 2026-09-14).
+> ❓ ANSWER for Aldi, in plain words: *"When you add a new Sales Motorist and do not touch the tier
+> box, which tier should they get — T5 Sales Canvas (what they get today, hidden) or T6 Sales
+> Motorist (what the label says)?"* Do not pick for him. The `|| 'AGENT'` fallback at `:843` goes
+> with it, and the edit paths at `:374` and `:389` must be checked for the same phantom.
+>
+> **Traps:** (1) `permissions.js:72` is a read-side normaliser — do NOT delete it, old records
+> carry `'AGENT'` and rely on it. (2) The guard goes in `logicFixes.selfcheck.mjs` BEFORE the
+> canPickFromGallery block if that block is still last (it mutates ROLE_PERMISSIONS). (3) The
+> label list is `DYNAMIC_TIERS`, which Settings can rename — pin the guard to the ID, never to
+> the words `HQ SALES MANAGER`.
 >
 > Rewrite this file with the next single job before closing.
 
 ---
 
-## Shipped 2026-09-13, night — `9fed51d`
+## Shipped 2026-09-14 — `2af2dd9`
 
-**The boss is tier 1 on Stock Opname too.** Same hole as `0ff0732`: `StockOpnameView.jsx:200`
-derived the role off the user object → `'AGENT'` for the owner, so he counted blind and
-`isHighCommand` (pending-audit + quarantine listeners) was false. App passes `userRole={userRole}`;
-the view aliases it `liveRole` and reads it first. Section THE BOSS IS TIER 1 ON STOCK OPNAME TOO,
-3 red → 1465/1465. The sweep `user?.userRole` across `src` now matches only the two fallbacks.
-**✅ TEST:** open Stock Opname as the boss — the expected count sits beside each line while
-counting, and any pending audit from a field agent is listed.
+**The bell is on the phone screen.** Measured in the new `?shell` ponder-lab mount at a real
+375×812 (`innerWidth` read in the same probe): title stack 232 wide and unshrinkable, control
+cluster 229 and `shrink-0`, bell at x 442..489 inside an `overflow-hidden` column — clipped, never
+drawn; the switch cut in half. `flex-wrap` on the top bar row (`BiohazardTheme.jsx:951`) and
+`ml-auto` on the control cluster (`:995`): the four controls take a second line under the title,
+right-aligned; header 134 tall instead of 78 on a phone; desk unchanged (one line, 82 tall, bell
+1016..1064, clock 1076..1249 at 1280). Both themes rendered at 375. Section THE BELL IS ON THE
+PHONE SCREEN, 2 red → 1470/1470; audit 722/722. **The ribbon claim was an artifact:** top 340 of
+812 = (812−132)/2 exactly; the "top:-66px" came from a hidden pane reporting innerHeight 0.
+**✅ TEST:** open the app on the phone — the book, the cloud, the theme switch and the bell sit on
+their own line under the page title, all four visible, bell at the right edge.
 
-## Shipped 2026-09-13, night — `0ff0732`
+## Shipped 2026-09-13, night — `9fed51d`, `0ff0732`, `d9de090` — all CONFIRMED by Aldi
 
-**The boss is tier 1 on the sales terminal too.** His screenshot: CAMERA UNAVAILABLE on a sale as
-tier 1. `canPickFromGallery('ADMIN')` was always true; the terminal read the role off the user
-object, and the boss's user object is the raw Firebase user with no role → `undefined` → TIER_5.
-App now passes `userRole={userRole}`; the terminal reads `myRole = userRole || user?.userRole ||
-user?.role` for both the gallery gate and the sample lock. Section THE BOSS IS TIER 1 ON THE SALES
-TERMINAL TOO, 4 red → 1461/1461. **✅ TEST:** sell as tier 1 — "Capture or choose photo", no
-camera lock. Same hole found on Stock Opname → the job above.
+The boss is tier 1 on Stock Opname and the sales terminal (`userRole={userRole}` passed from App;
+the boss's user object is the raw Firebase user with no role). The nota prints the Settings →
+Admin Display Name. His words: *"yes now the nota name is the same with the signature name … no
+camera lock no more"*, *"yep tes approve"*. Closed.
 
-## Shipped 2026-09-13, night — `d9de090`
+## Shipped 2026-09-13 — `2771374`, `d876904`, `3af7685`, `d4bd41a`, `772ab0a`
 
-**The nota prints the boss's name.** The engine (`useTransactionEngine.js`, both `let
-finalAgentName` sites) now starts with `(userRole === 'ADMIN' && appSettings?.adminDisplayName)`
-— the Settings field `ReceiptPreview.jsx:147` already printed. `MerchantSalesView.jsx`'s five
-copies of the displayName/email fallback collapsed into `emailName` + `myName`; the visit compare
-matches `meNames` (Settings name, display name, email) so old stamps still read as his. Section
-THE NOTA PRINTS THE BOSS'S NAME, 5 red → 1455/1455. **✅ TEST:** sell as the boss, the nota's SALES
-line must show the name typed in Settings → Admin Display Name, not `ADIKARYASUKSES99`. If that
-Settings field is empty, it falls to the Google name, then the email — fill it in first.
+Rail tint `.66/.78` (confirmed); customer form `noValidate` + faint italic GPS example + refusals
+reworded to the shop owner (TEST owed); Running-low card says `Master Vault` in VAULT mode and the
+FLEET picker prints `(Available: 100 Bks)` (TEST owed); confirm dialog lifted to `z-[10001]` over
+the alarm strip (confirmed: *"now the question panel is on front of everything else"*).
 
----
+## Still owed from 2026-09-12 — `8ed215f`
 
-## Shipped 2026-09-13, night — `3af7685`, `d4bd41a`
-
-**`3af7685`** — rail tint `.42/.58` → `.66/.78`, his second round: *"reduce the transparancy more
-still not visible in very bright space"*. Rendered over a near-white band. **`d4bd41a`** — the
-Running-low card says `left in the Master Vault` in VAULT mode (`MerchantSalesView.jsx:2802`,
-branches on `adminSalesMode`, the buttons' own words); the loading picker prints `(Available: 100
-Bks)` (`FleetCanvasManager.jsx:1260` — a master product has no `unit`, stock is Bks, the qty box
-beside it says Bungkus). Section TWO STOCK LABELS SAY WHERE AND WHAT, 3 red → 1447/1447.
-
----
-
-## Shipped 2026-09-13, evening — `2771374`, from his test of `d876904`
-
-**Three from his screenshots.** (1) The dark rail's glass tint `.02/.10` → `.42/.58`
-(`theme.css` `.kpm-rail-pod::before`) — *"less transparant because on some bright space the name
-and logo cant be seen"*; rendered over a bright band before/after; guarded as a BAND (.35–.8, still
-a gradient, blur on). Light mode's opaque plate untouched. (2) `<form noValidate>` on the customer
-form — the browser's "Please fill out this field." bubble ran before `handleSubmit`, so the app's
-own name refusal never spoke. (3) GPS example `placeholder:opacity-50` on top of italic — *"too
-visible that i think it is already filled"*. logicFixes 1442/1442 (3 red before), audit 722/722.
-**✅ TEST owed:** rail over a bright screen region — name and marks readable; customer form with
-nothing filled → the red strip "This outlet has no name…", no browser bubble; GPS example faint.
-If the rail is still too see-through for him, the two numbers are in that one rule — raise both,
-keep them ≤ .8, and the band check tells you if you went solid.
-
-## Shipped 2026-09-13, later — `d876904`
-
-**The customer form speaks to a shop owner.** `CustomerManager.jsx:1440` GPS box gets
-`placeholder:italic` (rendered: empty box reads as an example, typed box as a value, both themes);
-`:929` and `:935` refusals reworded to the shape of the pin refusal at `:956` — "This outlet has no
-name / no location. … before saving". `logicFixes.selfcheck.mjs:5957` re-anchored on the predicate
-before the reword; new section THE CUSTOMER FORM SPEAKS TO A SHOP OWNER, 3 red → 1434/1434. Audit
-722/722. Untouched: "Matrix Location" in the admin-only DATA SCRUB confirm at `:842`.
-
-## Shipped 2026-09-13 — `772ab0a`
-
-**The confirm dialog now paints over the alarm strip.** `ConfirmGate.jsx:124` lifted from `z-[9999]`
-to `z-[10001]`; the toast column stays at `z-[10000]`. The 2026-09-12 plan (push the strip down to
-`z-[9998]`) was NOT done: four other full-screen layers sit at `z-[9999]` (vault gate `App.jsx:4238`,
-Access Denied `:4495`, Offline-Unverified `:4509`, Flight Recorder `:5112`) and the gate raises five
-`notify()` reports while it is up — at 9998 they would have painted behind an opaque screen. Aldi
-chose the lift ("do 1"). Guard: last block of `toastSeverity.selfcheck.mjs`, 1 red → 57/57. Rendered
-through the new `?toast` mount in `tools/ponder-lab.jsx`, BEFORE/AFTER at 820x300, both themes.
-**Tested by Aldi 2026-09-13 18:23, his screenshot:** *"now the question panel is on front of
-everything else and dim all the background"*. Closed. The mascot and its bubble stay bright above
-the box on purpose (it carries 68 mascot-only reports); he was told, said nothing — not a job.
-
----
-
-## Shipped 2026-09-12, later — `8ed215f` and `a2b4eae`
-
-**`8ed215f` — creating a store is not visiting it.** The customer form stamped `lastVisit` with
-today in three places (`CustomerManager.jsx:248`, `:1018`, `:1037`) and never `lastVisitedBy`, so
-`MerchantSalesView.jsx:552` read a fresh store as "claimed by another agent". The form now leaves
-`lastVisit` blank; every reader already has a branch for blank. PHANTOM COMPETITOR section in
-`logicFixes.selfcheck.mjs`: 1 red before, 1426/1426 after. Stores created earlier on 2026-09-12
-keep the stamp until midnight.
-
-**`a2b4eae` — the alarm says `(300 Bks left)`, not `(300 left)`.** `App.jsx:1365`. Guard: THE
-ALARM SAYS 300 OF WHAT in `logicFixes.selfcheck.mjs`, 1427/1427.
-
-**✅ TEST owed by Aldi:** create a new store in the customer directory, then sell to it the same
-day. No red `ANOTHER AGENT` banner. Side effect to expect: that new store shows as NEVER VISITED in
-the Journey view and as due-now on the map until the first real sale — that is the truth now.
-
-## Shipped 2026-09-12 — `9b31bf0`
-
-The four `|| 50` / `|| 5` call sites are gone. `ResidentEvilInventory.jsx`, `useTransactionEngine.js`,
-`MerchantSalesView.jsx`, `StockOpnameView.jsx` all call `isLowStock(product, appSettings)` from
-`src/utils/stockThreshold.js`. `appSettings` is threaded into the two that lacked it (a prop from
-`App.jsx` for ResidentEvilInventory; an option for useTransactionEngine). Section 7 of
-`stockThreshold.selfcheck.mjs` guards all four: 8 red before, 36/36 green after. Build clean,
-`integration.audit.mjs` 722/722 — that also clears the audit owed on `44058b1`.
-
-**Tested by Aldi 2026-09-12 20:50, both screens LOW.** Closed.
-
-Same session, at his "yes": `A-Brain/automation/heredoc-gate.mjs` is a PreToolUse hook on Bash in
-this repo's `.claude/settings.json`. It refuses a heredoc whose body has a backslash or is over 40
-lines, and `node -e` / `python -c` holding a backtick or `${`. The way out is the Write tool, then
-run the file. Do not work around it.
+Creating a store no longer stamps `lastVisit`. **✅ TEST:** create a store, sell to it the same
+day, no red ANOTHER AGENT banner; the new store shows NEVER VISITED until its first sale.
 
 <details>
 <summary>Queue — do NOT paste these; promote one only when the job above is finished</summary>
@@ -195,27 +126,25 @@ Contract draft: `Brainstorm/2026-09-10_draft-13-pasal-kontrak-kpm.md`. His priva
 
 Aldi pressed it 2026-09-09 and 2026-09-10. **Do not put this on a list again.**
 
-### Day one — the rest of the walk, ranked
+### Day one — the rest of the walk
 
-1. **New personnel default to `T3: HQ SALES MANAGER`** even when the role picker says Sales Motorist.
-   Looked for on 2026-09-12 and NOT found in two greps: `LandlordDashboard.jsx:14` defaults to tier
-   2, `FleetCanvasManager.jsx:150` `defaultAgentState` has `role: 'Motorist'` and no tier at all.
-   Next place to look: how a `motorists` record acquires its tier — the sign-in "ghost profile"
-   path in `App.jsx`, and `povPreview.js`. Reproduce it on screen before writing a brief for it.
-2. ~~The GPS placeholder reads as a value~~ — PROMOTED to the job above on 2026-09-13.
+1. ~~New personnel default to `T3: HQ SALES MANAGER`~~ — PROMOTED to the job above on 2026-09-14,
+   mechanism found (`FleetCanvasManager.jsx:843`, a select value that is not an option).
+2. ~~The GPS placeholder reads as a value~~ — SHIPPED `2771374`.
 
 ### Phone, at 375x812
 
-* ~~The only way to open the menu is a 14x66px sliver … `top:-66px`, half above the viewport~~ —
-  PROMOTED as a measurement job above; the negative top is almost certainly a hidden-pane artifact.
-* ~~The notification bell is off-screen, x 398 to 445 against a 375 viewport~~ — same job.
+* ~~The menu ribbon … `top:-66px`, half above the viewport~~ — MEASURED 2026-09-14: top 340 of 812.
+  Artifact of a hidden pane. Not a bug. Deleted.
+* ~~The notification bell is off-screen~~ — MEASURED 2026-09-14: real, x 442..489. SHIPPED `2af2dd9`.
+* The `?shell` lab mount now exists for any future top-bar or ribbon question: `preview_start`
+  ponder-lab → `resize_window` 375×812 → `?shell` (add `&light` for the light theme).
 
 ### Wording — cheap, each one read by a customer
 
-~~`49 Bks left in the vehicle` while selling from Master Vault, `Surya 16 (Available: 100 )`~~
-(SHIPPED `d4bd41a`), ~~the salesperson printed as `ADIKARYASUKSES99`~~ (SHIPPED `d9de090`), the EOD verify confirm
-claiming "clears their inventory" on a stamps-only card, the EOD `MATCHES` column showing a dash when
-the numbers are equal, the audit receipt printing `BAYAR : CASH` on an audit that collected Rp 0.
+The EOD verify confirm claiming "clears their inventory" on a stamps-only card, the EOD `MATCHES`
+column showing a dash when the numbers are equal, the audit receipt printing `BAYAR : CASH` on an
+audit that collected Rp 0.
 
 ### Closed — do not reopen
 
