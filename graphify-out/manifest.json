@@ -50,8 +50,8 @@
     "semantic_hash": ""
   },
   "src/App.jsx": {
-    "mtime": 1789222954.5770307,
-    "ast_hash": "493ccd4299560b6f9f6dd6a552a07f72",
+    "mtime": 1789304528.2839832,
+    "ast_hash": "a9117ca887ecce150109435e517d5ebb",
     "semantic_hash": ""
   },
   "src/ConsignmentFinanceView.jsx": {
@@ -65,8 +65,8 @@
     "semantic_hash": ""
   },
   "src/FleetCanvasManager.jsx": {
-    "mtime": 1788956597.9058776,
-    "ast_hash": "daf34e7d6ff7296d6626ec034a6d4192",
+    "mtime": 1789301630.8471642,
+    "ast_hash": "34752d98347e0aee3a7853c378c850f4",
     "semantic_hash": ""
   },
   "src/HallOfFameView.jsx": {
@@ -85,8 +85,8 @@
     "semantic_hash": ""
   },
   "src/MerchantSalesView.jsx": {
-    "mtime": 1789217334.8988786,
-    "ast_hash": "0892f0c2cb3c20a4c1f867f2fbcd17ce",
+    "mtime": 1789304041.7243693,
+    "ast_hash": "7c12a6c7b060c45cb87ce34833a59ee5",
     "semantic_hash": ""
   },
   "src/MusicPlayer.jsx": {
@@ -100,8 +100,8 @@
     "semantic_hash": ""
   },
   "src/StockOpnameView.jsx": {
-    "mtime": 1789217334.9019527,
-    "ast_hash": "bb36960d105cab06651a706126eac7df",
+    "mtime": 1789304536.710218,
+    "ast_hash": "3e51923ea521d165768dff66fa674107",
     "semantic_hash": ""
   },
   "src/components/AuditVaultView.jsx": {
@@ -110,8 +110,8 @@
     "semantic_hash": ""
   },
   "src/components/BiohazardTheme.jsx": {
-    "mtime": 1788246240.0667105,
-    "ast_hash": "368f3a4447dc919657d3fcb34b16a784",
+    "mtime": 1789386566.564664,
+    "ast_hash": "3b87c87564032f58ccdc4158056350d4",
     "semantic_hash": ""
   },
   "src/components/BranchWarehouseManager.jsx": {
@@ -130,8 +130,8 @@
     "semantic_hash": ""
   },
   "src/components/CustomerManager.jsx": {
-    "mtime": 1789222781.3347213,
-    "ast_hash": "0d605b1b1aacde81f86b8307a0dce984",
+    "mtime": 1789300856.6484306,
+    "ast_hash": "609b950764920dfcf7dbb2de65ed0b7d",
     "semantic_hash": ""
   },
   "src/components/DashboardBenchmarks.jsx": {
@@ -210,8 +210,8 @@
     "semantic_hash": ""
   },
   "src/hooks/useTransactionEngine.js": {
-    "mtime": 1789217334.8958745,
-    "ast_hash": "bf99f910f2f7eb4d836679cbb0ab7446",
+    "mtime": 1789302998.209325,
+    "ast_hash": "164f8126801a615771a4f9c05a211786",
     "semantic_hash": ""
   },
   "src/main.jsx": {
@@ -570,8 +570,8 @@
     "semantic_hash": ""
   },
   ".claude/PROGRESS.md": {
-    "mtime": 1789298090.1867905,
-    "ast_hash": "1d92882fc27bef889c9771b06dfc3167",
+    "mtime": 1789305798.1282463,
+    "ast_hash": "16c85626a2978bd80a12c30e24a7e251",
     "semantic_hash": ""
   },
   ".claude/pre-compact-context.md": {
@@ -675,8 +675,8 @@
     "semantic_hash": ""
   },
   "src/config/contrast.selfcheck.mjs": {
-    "mtime": 1787634507.087708,
-    "ast_hash": "f9ec0f453205ec2092c2301f6363e044",
+    "mtime": 1789302489.0014763,
+    "ast_hash": "c4f1fb84da661985c6fb8eaa69f0763c",
     "semantic_hash": ""
   },
   "src/components/AuthoritySelect.jsx": {
@@ -755,13 +755,13 @@
     "semantic_hash": ""
   },
   "src/config/logicFixes.selfcheck.mjs": {
-    "mtime": 1789222953.805917,
-    "ast_hash": "25509d548ff2116ab9753951c8e7bd77",
+    "mtime": 1789386566.5676622,
+    "ast_hash": "acdc474706963e77113436035d83caa9",
     "semantic_hash": ""
   },
   ".claude/NEXT-SESSION.md": {
-    "mtime": 1789298069.9106188,
-    "ast_hash": "46d8b661d304e922e612756fd7001453",
+    "mtime": 1789305797.0437515,
+    "ast_hash": "13aa436d9fd962b8fce7b2109938e4e4",
     "semantic_hash": ""
   },
   ".claude/SWEEP-2026-08-19.md": {
@@ -830,13 +830,13 @@
     "semantic_hash": ""
   },
   "tools/ponder-lab.config.mjs": {
-    "mtime": 1788222937.4921632,
-    "ast_hash": "1a2143dfbc840b21c4236df428f1bb70",
+    "mtime": 1789386566.5686626,
+    "ast_hash": "79c15a631accf13bbf79854c79072a60",
     "semantic_hash": ""
   },
   "tools/ponder-lab.jsx": {
-    "mtime": 1789297914.4679933,
-    "ast_hash": "5a23bf846d5cfa69f05f4c666020e78a",
+    "mtime": 1789386566.5686626,
+    "ast_hash": "ec5b297f99078accb516ba32e67e2dfb",
     "semantic_hash": ""
   },
   ".claude/PONDER-PLAN.md": {
@@ -1047,6 +1047,11 @@
   "src/components/ProofCamera.jsx": {
     "mtime": 1788957280.7223155,
     "ast_hash": "c7b5abebb85ea80261fe96beab2e8b5f",
+    "semantic_hash": ""
+  },
+  "tools/lab-firebase-stub.js": {
+    "mtime": 1789386263.9549375,
+    "ast_hash": "4529776065190ab54fdf1a5149cd1673",
     "semantic_hash": ""
   }
 }
