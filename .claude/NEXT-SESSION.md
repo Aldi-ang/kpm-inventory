@@ -6,12 +6,12 @@ so the browser draws the first option and the state keeps the phantom. Reproduce
 first, then make the value a real tier id — and the tier a new Sales Motorist gets is his call.**
 
 **Session closed 2026-09-14 ~18:55 WIB.** `2af2dd9` shipped (the top bar wraps on a phone; the
-bell was clipped at x 442..489 on a 375 viewport, measured in the new `?shell` lab mount). Aldi was
-asked for a phone screenshot of the top bar as the proof — read his reply first. Both repos
-committed.
+bell was clipped at x 442..489 on a 375 viewport, measured in the new `?shell` lab mount).
+**CONFIRMED by Aldi 2026-09-14 ~19:00** — two Chrome device-toolbar frames, 420 and 375 wide, on
+Restock Vault: title on line 1, the four controls on line 2 at the right edge, bell visible. Both
+repos committed.
 
-⚠️ **Before this job: read Aldi's test results.** ✅ TEST owed: `2af2dd9` (phone top bar — four
-controls on their own line under the title, bell visible; PC header unchanged), `2771374` (customer
+⚠️ **Before this job: read Aldi's test results.** ✅ TEST owed: `2771374` (customer
 form: no browser bubble, faint GPS example), `d4bd41a` (Running-low card in Master Vault mode;
 FLEET picker "(Available: 100 Bks)"), `8ed215f` (store created today, no ANOTHER AGENT banner).
 
@@ -78,8 +78,11 @@ right-aligned; header 134 tall instead of 78 on a phone; desk unchanged (one lin
 1016..1064, clock 1076..1249 at 1280). Both themes rendered at 375. Section THE BELL IS ON THE
 PHONE SCREEN, 2 red → 1470/1470; audit 722/722. **The ribbon claim was an artifact:** top 340 of
 812 = (812−132)/2 exactly; the "top:-66px" came from a hidden pane reporting innerHeight 0.
-**✅ TEST:** open the app on the phone — the book, the cloud, the theme switch and the bell sit on
-their own line under the page title, all four visible, bell at the right edge.
+**Confirmed by Aldi 2026-09-14** with Chrome device-toolbar frames at 420 and 375 (*"sc1 is 420,
+sc2 is 375"*): four controls on their own line under the title, bell at the right edge. Closed.
+Seen in the same frames, NOT a job unless he says so: at 375 the Restock Vault tab strip shows
+MASUK · KIRIM · REQUEST and the fourth tab (BUKU) is off the right edge with no visible cut to
+hint that the strip scrolls; at 420 the cut lands mid-word and hints.
 
 ## Shipped 2026-09-13, night — `9fed51d`, `0ff0732`, `d9de090` — all CONFIRMED by Aldi
 
