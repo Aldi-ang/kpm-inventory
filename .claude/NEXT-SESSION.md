@@ -1,19 +1,24 @@
 # The one job
 
-**The fleet form's tier picker shows `T3: HQ SALES MANAGER` for every new person while the record
-it saves says something else. It is a controlled `<select>` whose value is not one of its options,
-so the browser draws the first option and the state keeps the phantom. Reproduce it on screen
-first, then make the value a real tier id — and the tier a new Sales Motorist gets is his call.**
+**The phone sweep — every screen must work on a 375 px phone as well as it does on the PC. His
+words: *"we need all the panel whatever the method is, i just want to make sure that all the
+features is available on the phone as good as pc uses"*. It starts with Restock Vault, whose tab
+strip hides two of its five tabs on a phone, and it starts with HIS ANSWER, which is owed: the
+letter A / B / C from `tabs-options.png`, and 1 (one screen at a time) or 2 (all 16 frames now).**
 
-**Session closed 2026-09-14 ~18:55 WIB.** `2af2dd9` shipped (the top bar wraps on a phone; the
-bell was clipped at x 442..489 on a 375 viewport, measured in the new `?shell` lab mount).
-**CONFIRMED by Aldi 2026-09-14 ~19:00** — two Chrome device-toolbar frames, 420 and 375 wide, on
-Restock Vault: title on line 1, the four controls on line 2 at the right edge, bell visible. Both
-repos committed.
+**Session closed 2026-09-14 19:27 WIB at his "okay ask me tomorrow lets continue tomorrow make
+notes and prompt for now".** Both repos committed. Nothing shipped for the sweep yet.
 
-⚠️ **Before this job: read Aldi's test results.** ✅ TEST owed: `2771374` (customer
-form: no browser bubble, faint GPS example), `d4bd41a` (Running-low card in Master Vault mode;
-FLEET picker "(Available: 100 Bks)"), `8ed215f` (store created today, no ANOTHER AGENT banner).
+🔴 **His new work rule, saved in memory and in the vault — obey it before the first proposal:**
+*"if u want me to decide then give me ilustration or image or anything to show me what is the
+recommended changes instead of telling me with your technical AI sentence that i wont understand
+keep this work method in mind when working with me"*. A 🔴 DECIDE on a screen is ONE IMAGE: today
+and each option rendered at 375, side by side, the recommended one marked, one plain sentence
+under each. The reply carries the question only.
+
+⚠️ **Before this job: read Aldi's test results.** ✅ TEST owed: `2771374` (customer form: no
+browser bubble, faint GPS example), `d4bd41a` (Running-low card in Master Vault mode; FLEET picker
+"(Available: 100 Bks)"), `8ed215f` (store created today, no ANOTHER AGENT banner).
 
 ---
 
@@ -23,88 +28,91 @@ FLEET picker "(Available: 100 Bks)"), `8ed215f` (store created today, no ANOTHER
 >
 > Read `.claude/NEXT-SESSION.md` first — it is the whole job, do not re-read source to re-orient.
 >
-> **The bug, and the mechanism (read from the live files 2026-09-14):**
-> - `src/FleetCanvasManager.jsx:149-153` — `defaultAgentState` has `userRole: 'AGENT'`.
-> - `src/FleetCanvasManager.jsx:843` — the tier `<select>` is `value={newAgent.userRole || 'AGENT'}`,
->   and its options at `:848` are `DYNAMIC_TIERS` minus ADMIN / COMPANY_OWNER / DEVELOPER.
-> - `src/config/permissions.js:2-9` — the tier ids are `DEVELOPER, COMPANY_OWNER, AREA_ADMIN,
->   FLEET_CAPTAIN, FIELD_OPERATIVE, ROOKIE`. **`'AGENT'` is not one of them.** A React controlled
->   `<select>` whose value matches no `<option>` paints the FIRST option — after the filter that is
->   `AREA_ADMIN`, label `T3: HQ SALES MANAGER` — while `newAgent.userRole` stays `'AGENT'`.
-> - `src/config/permissions.js:72` — at READ time `'AGENT'` (and `Motorist`, `Canvas`, `Salesman`)
->   is normalised to `TIER_5` = `FIELD_OPERATIVE` = `T5: SALES CANVAS`.
+> **Ask him first, in one line, for the two answers he owes:** the letter for the Restock Vault
+> tab strip (A = the two extra tabs drop to a second row, recommended; B = a bar at the bottom of
+> the screen; C = tabs slide sideways) and the number for the sweep (1 = one screen at a time,
+> starting with the salesmen's screens: Sales Terminal → Customers → Agent Inventory → EOD Setoran
+> → Stock Opname → Journey Plan → Sampling → Agent Profile; 2 = all 16 frames at once). If he
+> already answered above this block, act on it and do not ask again.
 >
-> So the form SHOWS T3 and SAVES a person who behaves as T5. That is the UI-says-yes-server-says-no
-> shape (`A-Brain/Wiki/Concepts/UI-Says-Yes-Server-Says-No Pattern.md`) — check it before writing
-> a brief, the vault may already name the fix.
+> **How to render an option before building it (the method his rule requires):** the ponder lab
+> takes `?css=<rules>` (`tools/ponder-lab.jsx`, top of file) and appends them after the app's own
+> stylesheet. A scratch HTML with one 375×812 `<iframe>` per option — the pattern is
+> `tabs-options.html` in this session's scratchpad, or rebuild it — rendered by headless Chrome
+> at `--window-size=1620,1020` gives one PNG of every option side by side. Headless Chrome crops
+> any window under ~518 px, which is exactly why the iframe is the trick: the iframe lays out at
+> 375 inside a wide window. Send the PNG with SendUserFile, `display: render`.
 >
-> **Reproduce first, on screen.** The fleet form is behind sign-in; the ponder lab has no mount for
-> it yet. The cheapest honest reproduction is a `?fleet` mount in `tools/ponder-lab.jsx` the way
-> `?shell` was added on 2026-09-14 (see that block and `tools/lab-firebase-stub.js` for the alias
-> the shell needed — the fleet form imports `../config/firebase` too). Read the select's
-> `selectedIndex` and `value` in the same probe: `value` will be `''` (no match) and the painted
-> option will be T3. If the mount costs more than three turns, ask Aldi for one screenshot of the
-> ADD PERSONNEL form with nothing touched and stop.
+> **Restock Vault at 375 — measured 2026-09-14 in the lab (`?places`, `innerWidth` 375):**
+> 1. The tab strip clips. `src/RestockVaultView.jsx:1478` is `<div className="flex">` holding the
+>    five tab buttons (434 px together) inside the desk `:1467` (`rounded-2xl overflow-hidden`,
+>    327 px on the phone). BUKU is cut at 351, DATA INDUK sits at 375..458 and is never drawn.
+>    **If he picks A:** `flex-wrap w-full lg:w-auto` on `:1478` and `flex-auto lg:flex-none` on
+>    each button — the `lg:` halves are the desk's protection: on a desk the strip sits BESIDE the
+>    title block on one line, and a bare `w-full` would drop it under the title. Measure the desk
+>    at 1280 before and after; the head row is `flex-wrap` already (`:1470`), so the phone wrap
+>    is free. If he picks B, the bottom bar is a new element, not a class — render it properly
+>    first and show him again before building. If C, `overflow-x-auto` plus a visible edge cut.
+> 2. `:2189` — the footer hint says *"Cari barang di kiri"* (search on the LEFT); on the phone the
+>    list is ABOVE the form. One string, but it is his app's words: propose the wording, do not
+>    pick it.
+> 3. Thirteen form fields on the Data Induk tab measure 41 px tall (`py-2.5` inputs, e.g. `:1519`,
+>    `:1524`, `:1562`); the app's minimum touch target is 44. Show, do not describe.
+> 4. On his own 375 frame the desk is ~254 px of 375 — about a third of the phone is padding
+>    (`p-6` shell + panel + card). Cutting it is a taste call: render a before/after first.
 >
-> **The fix is one line, and the value is his.** `defaultAgentState.userRole` must be a real id.
-> The role picker beside it (`:832`) defaults to `Motorist`, so the honest default is
-> `CORPORATE_TIERS.TIER_6` (`ROOKIE`, `T6: SALES MOTORIST`) — but `:72` has been turning `'AGENT'`
-> into T5 for every person saved so far, so a T6 default CHANGES what a new motorist may do
-> (diff `ROLE_PERMISSIONS[FIELD_OPERATIVE]` against `[ROOKIE]` in `permissions.js` before you
-> describe the change to him — not checked on 2026-09-14).
-> ❓ ANSWER for Aldi, in plain words: *"When you add a new Sales Motorist and do not touch the tier
-> box, which tier should they get — T5 Sales Canvas (what they get today, hidden) or T6 Sales
-> Motorist (what the label says)?"* Do not pick for him. The `|| 'AGENT'` fallback at `:843` goes
-> with it, and the edit paths at `:374` and `:389` must be checked for the same phantom.
+> **Guard for whatever ships:** `logicFixes.selfcheck.mjs`, scoped to the strip element (slice
+> from `const tabs = [` to `tabs.map`), red before the edit, green after. Then `npm run build;
+> node src/config/integration.audit.mjs` (722 now), `graphify update .`.
 >
-> **Traps:** (1) `permissions.js:72` is a read-side normaliser — do NOT delete it, old records
-> carry `'AGENT'` and rely on it. (2) The guard goes in `logicFixes.selfcheck.mjs` BEFORE the
-> canPickFromGallery block if that block is still last (it mutates ROLE_PERMISSIONS). (3) The
-> label list is `DYNAMIC_TIERS`, which Settings can rename — pin the guard to the ID, never to
-> the words `HQ SALES MANAGER`.
+> **For every other screen:** his frame at 375 is the instrument (F12 → Ctrl+Shift+M → 375). No
+> lab mount exists for Sales Terminal, Customers, Map, Fleet, Journey, Consignment, EOD, Stock
+> Opname, Sampling, Reports, Audit Logs, Settings, Agent Profile, Agent Inventory, Master Vault,
+> Command Center. Do not build sixteen mounts; read his frames, measure what can be measured in
+> the lab, and put every finding in front of him as a picture.
 >
 > Rewrite this file with the next single job before closing.
 
 ---
 
-## Shipped 2026-09-14 — `2af2dd9`
+## Not shipped 2026-09-14, evening — the decision is his
+
+Restock Vault tab strip options rendered (`tabs-options.png`, real renders through `?css=`): TODAY
+/ A wrap / B bottom bar / C sideways. He was asked for a letter and a number and closed the
+session instead. The lab's `?css=` switch is committed (`tools/ponder-lab.jsx`). The design stack
+(`impeccable adapt`, `emil-design-eng`, `ui-ux-pro-max`) was loaded per his 2026-08-23 rule;
+`ui-ux-pro-max` says horizontal scroll on mobile is a High-severity anti-pattern, which is why C is
+not recommended. His /findskill on the 1,194-skill library: 0 real matches (all phone forensics).
+
+## Shipped 2026-09-14 — `2af2dd9` — CONFIRMED by Aldi
 
 **The bell is on the phone screen.** Measured in the new `?shell` ponder-lab mount at a real
-375×812 (`innerWidth` read in the same probe): title stack 232 wide and unshrinkable, control
-cluster 229 and `shrink-0`, bell at x 442..489 inside an `overflow-hidden` column — clipped, never
-drawn; the switch cut in half. `flex-wrap` on the top bar row (`BiohazardTheme.jsx:951`) and
-`ml-auto` on the control cluster (`:995`): the four controls take a second line under the title,
-right-aligned; header 134 tall instead of 78 on a phone; desk unchanged (one line, 82 tall, bell
-1016..1064, clock 1076..1249 at 1280). Both themes rendered at 375. Section THE BELL IS ON THE
-PHONE SCREEN, 2 red → 1470/1470; audit 722/722. **The ribbon claim was an artifact:** top 340 of
-812 = (812−132)/2 exactly; the "top:-66px" came from a hidden pane reporting innerHeight 0.
-**Confirmed by Aldi 2026-09-14** with Chrome device-toolbar frames at 420 and 375 (*"sc1 is 420,
-sc2 is 375"*): four controls on their own line under the title, bell at the right edge. Closed.
-Seen in the same frames, NOT a job unless he says so: at 375 the Restock Vault tab strip shows
-MASUK · KIRIM · REQUEST and the fourth tab (BUKU) is off the right edge with no visible cut to
-hint that the strip scrolls; at 420 the cut lands mid-word and hints.
+375×812: title stack 232 wide and unshrinkable, control cluster 229 and `shrink-0`, bell at x
+442..489 inside an `overflow-hidden` column — clipped, never drawn. `flex-wrap` on the top bar row
+(`BiohazardTheme.jsx:951`) and `ml-auto` on the control cluster (`:995`). Desk unchanged (one line,
+82 tall at 1280). Section THE BELL IS ON THE PHONE SCREEN, 2 red → 1470/1470; audit 722/722. **The
+ribbon claim was an artifact:** top 340 of 812. **Confirmed** with his Chrome device-toolbar frames
+at 420 and 375 (*"sc1 is 420, sc2 is 375"*). Closed.
 
-## Shipped 2026-09-13, night — `9fed51d`, `0ff0732`, `d9de090` — all CONFIRMED by Aldi
+## Shipped 2026-09-13 — nine commits, seven confirmed
 
-The boss is tier 1 on Stock Opname and the sales terminal (`userRole={userRole}` passed from App;
-the boss's user object is the raw Firebase user with no role). The nota prints the Settings →
-Admin Display Name. His words: *"yes now the nota name is the same with the signature name … no
-camera lock no more"*, *"yep tes approve"*. Closed.
-
-## Shipped 2026-09-13 — `2771374`, `d876904`, `3af7685`, `d4bd41a`, `772ab0a`
-
-Rail tint `.66/.78` (confirmed); customer form `noValidate` + faint italic GPS example + refusals
-reworded to the shop owner (TEST owed); Running-low card says `Master Vault` in VAULT mode and the
-FLEET picker prints `(Available: 100 Bks)` (TEST owed); confirm dialog lifted to `z-[10001]` over
-the alarm strip (confirmed: *"now the question panel is on front of everything else"*).
-
-## Still owed from 2026-09-12 — `8ed215f`
-
-Creating a store no longer stamps `lastVisit`. **✅ TEST:** create a store, sell to it the same
-day, no red ANOTHER AGENT banner; the new store shows NEVER VISITED until its first sale.
+`9fed51d`, `0ff0732`, `d9de090` (boss is tier 1 on Stock Opname and the sales terminal; nota prints
+the Settings name) — confirmed. `3af7685`, `7ea096e` rail tint — confirmed. `772ab0a` confirm
+dialog over the alarm strip — confirmed. Owed: `2771374`, `d4bd41a`. From 2026-09-12: `8ed215f`.
 
 <details>
 <summary>Queue — do NOT paste these; promote one only when the job above is finished</summary>
+
+### Promoted and parked behind the sweep
+
+* **The fleet form's tier picker paints T3 for a value that is not an option.**
+  `src/FleetCanvasManager.jsx:149-153` `defaultAgentState.userRole: 'AGENT'`; `:843` the tier
+  `<select>` is `value={newAgent.userRole || 'AGENT'}`; `src/config/permissions.js:2-9` has no
+  `'AGENT'` id, so the browser paints the first option (`AREA_ADMIN`, "T3: HQ SALES MANAGER")
+  while the state keeps `'AGENT'`, which `:72` normalises to T5 at read time. Form shows T3, saves
+  a T5. ❓ for Aldi: which tier should a new Sales Motorist get by default — T5 (today, hidden) or
+  T6 (what the label says)? Diff `ROLE_PERMISSIONS[FIELD_OPERATIVE]` vs `[ROOKIE]` before
+  describing the change. Do NOT delete `:72` — old records rely on it. Edit paths `:374`, `:389`.
 
 ### Still ship-blocking, and both are his call
 
@@ -129,19 +137,13 @@ Contract draft: `Brainstorm/2026-09-10_draft-13-pasal-kontrak-kpm.md`. His priva
 
 Aldi pressed it 2026-09-09 and 2026-09-10. **Do not put this on a list again.**
 
-### Day one — the rest of the walk
+### Phone — the lab instruments that exist now
 
-1. ~~New personnel default to `T3: HQ SALES MANAGER`~~ — PROMOTED to the job above on 2026-09-14,
-   mechanism found (`FleetCanvasManager.jsx:843`, a select value that is not an option).
-2. ~~The GPS placeholder reads as a value~~ — SHIPPED `2771374`.
-
-### Phone, at 375x812
-
-* ~~The menu ribbon … `top:-66px`, half above the viewport~~ — MEASURED 2026-09-14: top 340 of 812.
-  Artifact of a hidden pane. Not a bug. Deleted.
-* ~~The notification bell is off-screen~~ — MEASURED 2026-09-14: real, x 442..489. SHIPPED `2af2dd9`.
-* The `?shell` lab mount now exists for any future top-bar or ribbon question: `preview_start`
-  ponder-lab → `resize_window` 375×812 → `?shell` (add `&light` for the light theme).
+* `?shell` — the app shell (top bar, ribbon). `?places` — Restock Vault. `?gudang` — branch
+  warehouse. `?nota`, `?label`, `?scan`, `?perf`, `?plan`, `?minkirim`, `?toast`.
+* `?css=<rules>` on any mount — render a proposed change before writing it.
+* `preview_start` ponder-lab → `resize_window` 375×812 → probe with `innerWidth` in the same call.
+  Headless Chrome crops under ~518; use an iframe wrapper for a 375 PNG.
 
 ### Wording — cheap, each one read by a customer
 
