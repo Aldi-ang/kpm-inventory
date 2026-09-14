@@ -40,6 +40,10 @@ import { SCENES } from '../src/ponder/registry.js';
 
 const q = new URLSearchParams(window.location.search);
 if (q.has('light')) document.documentElement.classList.add('light');
+/* ?css=<rules> injects a stylesheet AFTER the app's own, so a proposed layout change can be
+   rendered and shown to Aldi as a frame BEFORE it is written into a component — his rule,
+   2026-09-14: a decision comes as a picture, not a sentence. Lab only; nothing here ships. */
+if (q.has('css')) { const s = document.createElement('style'); s.textContent = q.get('css'); document.head.appendChild(s); }
 if (q.has('lite')) document.documentElement.classList.add('lite-mode');
 
 /* ?scene=<id>, defaulting to the first one in the registry, so a new scene needs no edit here. */
