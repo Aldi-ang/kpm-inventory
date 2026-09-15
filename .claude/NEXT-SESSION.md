@@ -65,6 +65,11 @@ wider desk, no hint under the form, no intro paragraph on Data Induk). Still owe
 
 ## Shipped 2026-09-15 — Restock Vault on the phone, complete
 
+`39dc277` (09:24): the nota scan is LEVELLED — `helpers.deskewAngle` (row-histogram sharpness
+over -15..15°, quarter-degree refine) then rotate by its negative onto white; the browser's own
+orientation-tag handling makes a sideways phone shot upright before that. `?nota-scan` now runs
+the real `scanNotaToBase64` end to end (630 ms at 640x480). `notaScan.selfcheck.mjs` 10/10.
+
 `3bac5b7` (09:04): message A — the empty intake table is a NOTICE (dashed amber edge, amber
 words, "Perlu diisi", fade-in + breathing edge, `.kpm-notice` in index.css); buttons A —
 DAFTARKAN PABRIK / ORANG on one row at 10 px, 44 tall (his pick, words wrap); nota scan A —
@@ -93,18 +98,18 @@ The bell is on the phone screen: `flex-wrap` on the top bar row (`BiohazardTheme
 
 ### Promoted and parked behind the sweep
 
-* **Lot tracking by production date — Master Vault + Regional Warehouse. SHAPED, not built.**
-  His decision 2026-09-15 08:50: *"yes either FIVO or FEVO should be able to use as option to
-  manage the regional warehouse and master vault"* — the SYSTEM decides which lot leaves; FIFO
-  (oldest production date first) or FEFO (nearest expiry first) is a setting. Brainstorm with
-  the priced options, the recommended shape and the models applied:
-  `A-Brain/Brainstorm/2026-09-15_nota-scan-dan-lacak-tanggal-produksi.md` §2. Recommended shape,
-  ❓ still to approve: a `lots` ledger per product per place beside the untouched `stock` number
-  (two-way door), fed by a required `productionDate` on every intake line (`RestockVaultView.jsx
-  :493` is the required-fields list; `batchNo` stays), decremented FIFO/FEFO on every movement,
-  the chosen lot PRINTED on the surat jalan so the loader takes the box the paper names; reports
-  read the ledger. Facts: stock is one number today (`:625` `increment`, engine `:371`); the
-  batch never travels. Money path — two independent checks before merging.
+* **Lot tracking by production date — Master Vault + Regional Warehouse. MOCKED, not built.**
+  His two answers: *"either FIVO or FEVO should be able to use as option"* (08:50) and *"make sure
+  that the regional admin and the restock sender can choose which product with specific production
+  date/batch to be sent or carried to the agent inventory"* (09:15). So: stock per batch at HQ and
+  at each branch; every KIRIM line and every load-to-agent line carries a batch picker, the setting
+  (FIFO oldest-first / FEFO nearest-expiry-first) pre-selects, the person can pick another; the
+  surat jalan prints the date. Mock: `lot-mock.png` (scratchpad 2026-09-15). ❓ owed: his yes on
+  the mock, and NOW or AFTER the phone sweep. Facts: intake lines have `batchNo` (required,
+  `RestockVaultView.jsx:493`), stock is one number (`:625` increment; engine `:371`). Touches:
+  intake (productionDate required), Master Vault stock, Branch Warehouse stock, KIRIM, load to
+  agent, surat jalan, Agent Inventory, the sale engine (money — two independent checks), Stock
+  Opname, reports; migration = one "unknown batch" per product. Brainstorm §2 has the models.
 * **Parked, his words:** *"i was thinking on redesign the method the regional admin fill the
   agent inventory but we'll decide first if this really needed or not in the app"* — not a job
   until he says so.
