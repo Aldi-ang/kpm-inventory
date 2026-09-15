@@ -22,6 +22,9 @@ export default defineConfig({
       { find: /^(\.\.\/)+config\/firebase(\.js)?$/, replacement: fileURLToPath(new URL('./lab-firebase-stub.js', import.meta.url)) },
     ],
   },
+  /* `npm run build` rewrites dist/ while the lab is up, and vite's watcher dies on the busy file
+     (EBUSY on dist/kpm-final-logo.png, 2026-09-15). The lab never serves dist/. */
+  server: { watch: { ignored: ['**/dist/**', '**/dist-ponderlab/**'] } },
   build: {
     outDir: 'dist-ponderlab',
     emptyOutDir: true,

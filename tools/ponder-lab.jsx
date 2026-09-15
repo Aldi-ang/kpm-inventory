@@ -445,6 +445,25 @@ function ToastLab() {
    markup measures the harness. `../config/firebase` is aliased to lab-firebase-stub.js here. */
 function ShellLab() {
   const [dark, setDark] = React.useState(!q.has('light'));
+  /* ?tab=<label>[,<label>...] presses, in order, each button whose text starts with <label> once
+     the page is up — `?tab=data,daftarkan pabrik` opens the Data Induk tab and then its factory
+     form. A headless screenshot cannot click; without this the phone frame of any second tab or
+     any form behind a button is a description, not a picture. Inside the desk only, so the shell's
+     own menu buttons are never matched. */
+  React.useLayoutEffect(() => {
+    const wants = (q.get('tab') || '').toLowerCase().split(',').map((s) => s.trim()).filter(Boolean);
+    /* One press per microtask, never a timer: a `.click()` inside a commit schedules React's
+       re-render as ITS microtask, so the next `.then` runs after that flush and the button the
+       press revealed already exists. A timer loses the race in headless Chrome, which shoots the
+       moment the page has loaded; a plain loop presses the second button before it is drawn. */
+    const press = (want) => {
+      const desk = document.querySelector('button[aria-selected]')?.closest('.rounded-2xl') || document;
+      const b = [...desk.querySelectorAll('button')]
+        .find((el) => el.textContent.trim().toLowerCase().startsWith(want));
+      if (b) b.click();
+    };
+    wants.reduce((chain, want) => chain.then(() => press(want)), Promise.resolve());
+  }, []);
   return (
     <BiohazardTheme
       activeTab="command_center" setActiveTab={() => {}}
@@ -460,7 +479,25 @@ function ShellLab() {
         </button>
       )}
     >
-      <div className="p-6 font-mono text-[var(--ink)]">Page content under the shell.</div>
+      {q.has('places') ? (
+        /* ?shell&places — the Restock Vault desk INSIDE the real shell, wrapped exactly as App.jsx
+           wraps it (`activeTab === 'restock_vault'`): the shell's `p-6`, then the `border-4 p-4`
+           panel, then the dashed `mb-12 pb-12` band. `?places` alone mounts the desk in a bare
+           `p-4` and measures 325 wide at 375; his phone shows ~254, and the missing 70 px is these
+           two wrappers. Classes copied verbatim — a harness that invents its markup measures the
+           harness. */
+        <div className="h-auto min-h-[800px] lg:min-h-0 lg:h-full w-full max-w-7xl mx-auto border-4 border-[var(--duke-frame)] shadow-[0_0_0_1px_var(--duke-lift)] relative flex flex-col bg-[var(--duke-well-solid)] p-4 overflow-y-auto custom-scrollbar">
+          <div className="mb-12 pb-12 border-b-4 border-[var(--duke-edge-1)] border-dashed">
+            <RestockVaultView
+              inventory={LAB_PRODUCTS} procurements={LAB_PROCUREMENTS} motorists={LAB_MOTORISTS} branchStockMap={{}}
+              db={null} storage={null} appId="lab" user={null} isAdmin userRole="DEVELOPER"
+              appSettings={{ companyName: 'KPM INVENTORY' }} masterUserId="lab"
+            />
+          </div>
+        </div>
+      ) : (
+        <div className="p-6 font-mono text-[var(--ink)]">Page content under the shell.</div>
+      )}
     </BiohazardTheme>
   );
 }
