@@ -105,9 +105,11 @@ The bell is on the phone screen: `flex-wrap` on the top bar row (`BiohazardTheme
   at each branch; every KIRIM line and every load-to-agent line carries a batch picker, the setting
   (FIFO oldest-first / FEFO nearest-expiry-first) pre-selects, the person can pick another; the
   surat jalan prints the date. Mock: `lot-mock.png` (scratchpad 2026-09-15). DECIDED 09:35: *"looks cool tbh u can add that lot
-  tracking later"* — the mock is right, build AFTER the phone sweep. ❓ still owed: do the boxes print an
-  EXPIRY date, or only a production date? (If only production, FEFO = FIFO for one product and the
-  switch is pointless — build FIFO only.) Facts: intake lines have `batchNo` (required,
+  tracking later"* — the mock is right, build AFTER the phone sweep. DECIDED 09:40: *"fivo or fevo doesnt do shit actually lol
+  just add one of those or something and also this is should just work as recommendation and preselect
+  the batch where actually the regional admin can manually choose from the selection tab"* — FIFO
+  ONLY, no setting, no FEFO: the oldest production date is pre-selected as a recommendation and the
+  sender picks any other batch from the list. Drop the Settings switch from the mock. Facts: intake lines have `batchNo` (required,
   `RestockVaultView.jsx:493`), stock is one number (`:625` increment; engine `:371`). Touches:
   intake (productionDate required), Master Vault stock, Branch Warehouse stock, KIRIM, load to
   agent, surat jalan, Agent Inventory, the sale engine (money — two independent checks), Stock
