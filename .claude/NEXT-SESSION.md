@@ -65,6 +65,13 @@ wider desk, no hint under the form, no intro paragraph on Data Induk). Still owe
 
 ## Shipped 2026-09-15 — Restock Vault on the phone, complete
 
+`3bac5b7` (09:04): message A — the empty intake table is a NOTICE (dashed amber edge, amber
+words, "Perlu diisi", fade-in + breathing edge, `.kpm-notice` in index.css); buttons A —
+DAFTARKAN PABRIK / ORANG on one row at 10 px, 44 tall (his pick, words wrap); nota scan A —
+`helpers.scanPixels` + `scanNotaToBase64`, nota only, JPEG 0.5, proof `?nota-scan` in the lab,
+maths `src/config/notaScan.selfcheck.mjs` 5/5. logicFixes 1509/1509, audit 722/722. Alucard
+gained §1c (thinking-partner, automatic on decisions) — his ask, approved in the prompt.
+
 `096ac05` tabs wrap (his A). `289161a`: shell `p-6` → `p-2 lg:p-6` (EVERY screen), the Restock
 Vault panel `border-2 lg:border-4 p-2 lg:p-4`, desk 271 → 323 px, tabs two rows at 44 px; the
 empty-cart hint and the Data Induk intro paragraph deleted (his rule); the completeness report
@@ -86,29 +93,24 @@ The bell is on the phone screen: `flex-wrap` on the top bar row (`BiohazardTheme
 
 ### Promoted and parked behind the sweep
 
-* **Restock Vault, two looks he has been shown (`rv-notice.png`, 2026-09-15 08:40) — build the
-  ones he picks.** (1) The empty-table message (`RestockVaultView.jsx:1986`, the `td colSpan={5}`
-  row inside the `overflow-x-auto border … rounded-lg bg-panel` wrapper) as a NOTICE: amber ink,
-  9 px "PERLU DIISI" label, fade-in `.35s`, plus a slow breathing edge — A dashed amber edge
-  (recommended) or B a 3 px amber left rule. Amber is an edge and an ink, never a fill; both
-  animations must die under Lite Mode (`.lite-mode` strips `animation`); the ⚠ his words:
-  *"different animation and color to shows that this is a warning or notification on not actually
-  belong to the real panel"*. Implement as a class on the wrapper when the cart is empty, not a
-  `:has()` rule. (2) The DAFTARKAN PABRIK / ORANG buttons (`:1519`, `:1524`): on the phone,
-  B = PABRIK stays a button at 10 px, ORANG becomes a small underlined link under it
-  (recommended); A = both on one row at 10 px (the words wrap — shown, not recommended). His
-  words: *"too big for phone fonts i guess and the format and placement is not aesthethic"*.
-* **Nota photo scanned like CamScanner.** Brainstorm with three priced options in
-  `A-Brain/Brainstorm/2026-09-15_nota-scan-dan-lacak-tanggal-produksi.md`. Recommended first
-  step: clean-up only (grayscale + adaptive threshold + whitened paper) as a canvas step in
-  `helpers.js` before `compressImageToBase64` (called at `RestockVaultView.jsx:602`), nota only,
-  never the package photo; the original kept until save, the scan stored. ❓ owed: A now, or wait
-  for the 8 MB OpenCV straightening (B)?
-* **Goods tracked by production date (lot tracking), Master Vault + Regional Warehouse.** Same
-  brainstorm. Fact: intake lines carry `batchNo` (required, `:493`, defaults to the PO number)
-  but stock is one number (`:625` `increment`, engine `:371`) — the batch never travels. ❓ owed,
-  and it shapes everything: does the SYSTEM decide which lot left (FIFO — options A/B) or does the
-  PERSON record the date on the box that actually left (option C, recommended first)?
+* **Lot tracking by production date — Master Vault + Regional Warehouse. SHAPED, not built.**
+  His decision 2026-09-15 08:50: *"yes either FIVO or FEVO should be able to use as option to
+  manage the regional warehouse and master vault"* — the SYSTEM decides which lot leaves; FIFO
+  (oldest production date first) or FEFO (nearest expiry first) is a setting. Brainstorm with
+  the priced options, the recommended shape and the models applied:
+  `A-Brain/Brainstorm/2026-09-15_nota-scan-dan-lacak-tanggal-produksi.md` §2. Recommended shape,
+  ❓ still to approve: a `lots` ledger per product per place beside the untouched `stock` number
+  (two-way door), fed by a required `productionDate` on every intake line (`RestockVaultView.jsx
+  :493` is the required-fields list; `batchNo` stays), decremented FIFO/FEFO on every movement,
+  the chosen lot PRINTED on the surat jalan so the loader takes the box the paper names; reports
+  read the ledger. Facts: stock is one number today (`:625` `increment`, engine `:371`); the
+  batch never travels. Money path — two independent checks before merging.
+* **Parked, his words:** *"i was thinking on redesign the method the regional admin fill the
+  agent inventory but we'll decide first if this really needed or not in the app"* — not a job
+  until he says so.
+* **Nota scan B (straighten the paper) — only if he asks.** A shipped in `3bac5b7`; what stays
+  is the dark band where the table meets the paper's edge. B = corner detection + perspective
+  warp (OpenCV.js ~8 MB or jscanify), needs a drag-the-corners fallback.
 * **The fleet form's tier picker paints T3 for a value that is not an option.**
   `src/FleetCanvasManager.jsx:149-153` `defaultAgentState.userRole: 'AGENT'`; `:843` the tier
   `<select>` is `value={newAgent.userRole || 'AGENT'}`; `src/config/permissions.js:2-9` has no
