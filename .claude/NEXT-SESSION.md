@@ -109,7 +109,10 @@ The bell is on the phone screen: `flex-wrap` on the top bar row (`BiohazardTheme
   just add one of those or something and also this is should just work as recommendation and preselect
   the batch where actually the regional admin can manually choose from the selection tab"* — FIFO
   ONLY, no setting, no FEFO: the oldest production date is pre-selected as a recommendation and the
-  sender picks any other batch from the list. Drop the Settings switch from the mock. Facts: intake lines have `batchNo` (required,
+  sender picks any other batch from the list. Drop the Settings switch from the mock. Then 09:42: *"maybe just put FEVO or Manual selection just for
+  ergonomics"* — so the picker itself carries a two-way control: OTOMATIS (tertua dulu — the app takes
+  the oldest batch, one tap) / PILIH BATCH (the list). Plain words on screen, never the acronym
+  (clear-terms rule); he may rename them. Facts: intake lines have `batchNo` (required,
   `RestockVaultView.jsx:493`), stock is one number (`:625` increment; engine `:371`). Touches:
   intake (productionDate required), Master Vault stock, Branch Warehouse stock, KIRIM, load to
   agent, surat jalan, Agent Inventory, the sale engine (money — two independent checks), Stock
