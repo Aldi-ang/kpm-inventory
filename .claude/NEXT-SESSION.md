@@ -86,6 +86,29 @@ The bell is on the phone screen: `flex-wrap` on the top bar row (`BiohazardTheme
 
 ### Promoted and parked behind the sweep
 
+* **Restock Vault, two looks he has been shown (`rv-notice.png`, 2026-09-15 08:40) — build the
+  ones he picks.** (1) The empty-table message (`RestockVaultView.jsx:1986`, the `td colSpan={5}`
+  row inside the `overflow-x-auto border … rounded-lg bg-panel` wrapper) as a NOTICE: amber ink,
+  9 px "PERLU DIISI" label, fade-in `.35s`, plus a slow breathing edge — A dashed amber edge
+  (recommended) or B a 3 px amber left rule. Amber is an edge and an ink, never a fill; both
+  animations must die under Lite Mode (`.lite-mode` strips `animation`); the ⚠ his words:
+  *"different animation and color to shows that this is a warning or notification on not actually
+  belong to the real panel"*. Implement as a class on the wrapper when the cart is empty, not a
+  `:has()` rule. (2) The DAFTARKAN PABRIK / ORANG buttons (`:1519`, `:1524`): on the phone,
+  B = PABRIK stays a button at 10 px, ORANG becomes a small underlined link under it
+  (recommended); A = both on one row at 10 px (the words wrap — shown, not recommended). His
+  words: *"too big for phone fonts i guess and the format and placement is not aesthethic"*.
+* **Nota photo scanned like CamScanner.** Brainstorm with three priced options in
+  `A-Brain/Brainstorm/2026-09-15_nota-scan-dan-lacak-tanggal-produksi.md`. Recommended first
+  step: clean-up only (grayscale + adaptive threshold + whitened paper) as a canvas step in
+  `helpers.js` before `compressImageToBase64` (called at `RestockVaultView.jsx:602`), nota only,
+  never the package photo; the original kept until save, the scan stored. ❓ owed: A now, or wait
+  for the 8 MB OpenCV straightening (B)?
+* **Goods tracked by production date (lot tracking), Master Vault + Regional Warehouse.** Same
+  brainstorm. Fact: intake lines carry `batchNo` (required, `:493`, defaults to the PO number)
+  but stock is one number (`:625` `increment`, engine `:371`) — the batch never travels. ❓ owed,
+  and it shapes everything: does the SYSTEM decide which lot left (FIFO — options A/B) or does the
+  PERSON record the date on the box that actually left (option C, recommended first)?
 * **The fleet form's tier picker paints T3 for a value that is not an option.**
   `src/FleetCanvasManager.jsx:149-153` `defaultAgentState.userRole: 'AGENT'`; `:843` the tier
   `<select>` is `value={newAgent.userRole || 'AGENT'}`; `src/config/permissions.js:2-9` has no
