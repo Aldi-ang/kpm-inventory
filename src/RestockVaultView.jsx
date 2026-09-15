@@ -1475,13 +1475,13 @@ const RestockVaultView = ({ inventory = [], procurements = [], motorists = [], b
                             </div>
                         </div>
                     </div>
-                    <div className="flex">
+                    <div className="flex flex-wrap w-full lg:w-auto">
                         {tabs.map(t => (
                             <button
                                 key={t.id}
                                 onClick={() => (t.id === 'book' || t.id === 'req' || t.id === 'place') ? setViewMode(t.id) : setDirection(t.id)}
                                 aria-selected={viewMode === t.id}
-                                className={`text-[11px] font-display font-bold uppercase tracking-[0.16em] px-4 py-3 border-l border-line-2 border-b-2 transition-colors ${
+                                className={`flex-auto lg:flex-none text-[11px] font-display font-bold uppercase tracking-[0.16em] px-4 py-3 border-l border-line-2 border-b-2 transition-colors ${
                                     viewMode === t.id ? 'text-ink border-b-orange bg-raised' : 'text-ink-muted border-b-transparent hover:text-ink'
                                 }`}
                             >

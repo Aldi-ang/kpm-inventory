@@ -6816,5 +6816,36 @@ section('THE BELL IS ON THE PHONE SCREEN (2026-09-14)');
      /shrink-0[^"]*\bml-auto\b|\bml-auto\b[^"]*shrink-0/.test(cluster),
      'justify-between puts a lone flex line at the LEFT'); }
 
+section('RESTOCK VAULT TABS WRAP ON THE PHONE (2026-09-15)');
+/* Measured in the ponder lab (`?places`, real viewport 375x812, innerWidth read in the same
+   probe): the head row is 25..350 (325 wide) and the five tab buttons are 25..461 (436 wide) in a
+   bare `flex` — BUKU is cut at 350 and DATA INDUK sits at 377..461, never drawn, never pressable.
+   Aldi chose A from tabs-options.png: the strip takes the full width on the phone and the tabs
+   that do not fit drop to a second row, each stretched so the rows fill the edge. On a desk the
+   strip sits BESIDE the title block on one line (1280: title 25..785, strip 785..1255, 55 tall),
+   which is what the `lg:` halves protect — a bare `w-full` would drop it under the title there too. */
+{ const HEAD_375 = 325, STRIP = 436, HEAD_1280 = 1230, TITLE_MIN = 210, STRIP_1280 = 470;
+  ok('at 375 the five tabs cannot share one line', STRIP > HEAD_375, `${STRIP} > ${HEAD_375}`);
+  ok('at 1280 the title block and the strip still fit one line, so the desk does not change',
+     TITLE_MIN + STRIP_1280 <= HEAD_1280, `${TITLE_MIN + STRIP_1280} <= ${HEAD_1280}`);
+  const rv = read('src/RestockVaultView.jsx');
+  const a = rv.indexOf('ONE nav. Same destinations, same place, in every mode.');
+  const b = rv.indexOf('{tabs.map(t => (', a);
+  const c = rv.indexOf('{t.label}', b);
+  ok('the nav head row, the tab strip and the tab button were found', a > -1 && b > a && c > b && c - a < 3000, `${a}..${b}..${c}`);
+  const head = rv.slice(a, b);
+  const row = head.slice(head.indexOf('<div className="'));
+  const strip = head.slice(head.lastIndexOf('<div className="'));
+  ok('the head row may wrap, so the strip can take a second line on the phone', /^<div className="[^"]*\bflex-wrap\b/.test(row));
+  ok('the strip is full-width on the phone and its own width on a desk',
+     /^<div className="[^"]*\bw-full\b[^"]*\blg:w-auto\b/.test(strip) || /^<div className="[^"]*\blg:w-auto\b[^"]*\bw-full\b/.test(strip),
+     'without w-full it stays a 436 px block inside 325 and clips; without lg:w-auto it drops under the title on a desk');
+  ok('the strip wraps its buttons instead of clipping them', /^<div className="[^"]*\bflex-wrap\b/.test(strip),
+     'w-full alone puts five buttons on one 436 px line inside 325');
+  const btn = rv.slice(b, c);
+  ok('each tab stretches to fill its row on the phone and keeps its own width on a desk',
+     /\bflex-auto\b/.test(btn) && /\blg:flex-none\b/.test(btn),
+     'without flex-auto the second row is two short tabs hugging the left edge'); }
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);
