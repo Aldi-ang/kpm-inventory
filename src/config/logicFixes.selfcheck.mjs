@@ -6951,8 +6951,8 @@ section('THE NOTA IS SCANNED, THE GOODS PHOTO STAYS A PHOTO (2026-09-15)');
    nota goes through the scan, the goods photo does not, and the scan is saved smaller. */
 { const h = read('src/utils/helpers.js');
   ok('helpers exports the pure scan and the canvas wrapper', /export const scanPixels = \(data, width, height/.test(h) && /export const scanNotaToBase64 = \(file\)/.test(h));
-  ok('the wrapper runs the scan on the canvas pixels before saving', /scanPixels\(frame\.data, canvas\.width, canvas\.height\);\s*ctx\.putImageData\(frame, 0, 0\);\s*resolve\(canvas\.toDataURL\('image\/jpeg', 0\.5\)\)/.test(h),
-     'a scan saved at 0.5 is smaller than the photo it replaces — his storage condition');
+  ok('the wrapper runs the scan on the canvas pixels, then levels, then saves at 0.5', /scanPixels\(frame\.data, canvas\.width, canvas\.height\);\s*ctx\.putImageData\(frame, 0, 0\);\s*const deg = deskewAngle/.test(h) && (h.match(/toDataURL\('image\/jpeg', 0\.5\)/g) || []).length === 2,
+     'a scan saved at 0.5 is smaller than the photo it replaces — his storage condition; both exits (levelled and not) must save at 0.5');
   const rv = read('src/RestockVaultView.jsx');
   ok('the desk imports the scan', imports(rv, 'scanNotaToBase64'));
   const r = rv.indexOf('if (receiptFile) {');
@@ -6962,7 +6962,16 @@ section('THE NOTA IS SCANNED, THE GOODS PHOTO STAYS A PHOTO (2026-09-15)');
   const pkg = rv.slice(p, rv.indexOf('base64Package = await', p));
   ok('the GOODS photo stays a photo', p > -1 && /compressImageToBase64\(packageFile\)/.test(pkg) && !/scanNotaToBase64/.test(pkg),
      'a scan of a box of cigarettes is a white rectangle');
-  ok('the lab can show a photo beside its scan (?nota-scan)', /q\.has\('nota-scan'\) \? <NotaScanLab \/>/.test(read('tools/ponder-lab.jsx'))); }
+  const lab = read('tools/ponder-lab.jsx');
+  ok('the lab can show a photo beside its scan (?nota-scan)', /q\.has\('nota-scan'\) \? <NotaScanLab \/>/.test(lab));
+  ok('the lab runs the REAL end-to-end function, not a copy of one step', /scanNotaToBase64\(blob\)/.test(lab) && !/\bscanPixels\(/.test(lab),
+     'a lab that calls scanPixels alone would show a scan the app never levels');
+  /* "make the photo upright so that its easier to read" — the scan is levelled after it is
+     cleaned, by the negative of the tilt deskewAngle reports (notaScan.selfcheck.mjs proves the
+     sign on synthetic pages). */
+  ok('the saved scan is levelled: tilt measured on the scanned pixels, then undone', /const deg = deskewAngle\(frame\.data, canvas\.width, canvas\.height\);/.test(h) && /lc\.rotate\(-deg \* Math\.PI \/ 180\)/.test(h),
+     'rotate(+deg) would double the tilt instead of removing it');
+  ok('the corners the rotation swings in are paper, not black', /lc\.fillStyle = '#fff'; lc\.fillRect\(0, 0, level\.width, level\.height\);/.test(h)); }
 
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

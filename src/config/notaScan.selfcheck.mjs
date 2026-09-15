@@ -3,7 +3,7 @@
    to do: paper → white everywhere, shadow and hot spot included; ink → dark; and the shadow
    edge must not be mistaken for ink. Aldi, 2026-09-15: "scan the nota and make it clear instead
    of just normal photo". Run: node src/config/notaScan.selfcheck.mjs */
-import { scanPixels } from '../utils/helpers.js';
+import { scanPixels, deskewAngle } from '../utils/helpers.js';
 
 let pass = 0, fail = 0;
 const ok = (name, cond, why = '') => { cond ? pass++ : fail++; console.log(`  ${cond ? 'ok  ' : 'FAIL'} ${name}${cond || !why ? '' : ' — ' + why}`); };
@@ -39,6 +39,31 @@ ok('the output is grey — every channel equal, alpha solid', (() => { for (let 
     scanPixels(blank, W, H);
     let white = 0; for (let i = 0; i < blank.length; i += 4) if (blank[i] === 255) white++;
     ok('a blank shaded page scans to a blank white page', white === W * H, `${white}/${W * H}`); }
+
+/* THE TILT FINDER on a scanned page: eight lines of "text" (rows of ink 3 px tall, 30 px apart)
+   rotated by a known angle, canvas-style (x' = x·cos − y·sin, y' = x·sin + y·cos). deskewAngle
+   must hand back that angle, so scanNotaToBase64 can rotate by its negative and level the page.
+   Aldi, 2026-09-15: "make the photo upright so that its easier to read". */
+console.log('\nNOTA SCAN — the tilt is found and has the right sign');
+const page = (deg) => {
+    const PW = 480, PH = 360, d = new Uint8ClampedArray(PW * PH * 4).fill(255);
+    const rad = deg * Math.PI / 180, c = Math.cos(rad), s = Math.sin(rad);
+    for (let line = 0; line < 8; line++) for (let y0 = 0; y0 < 3; y0++) for (let x0 = 0; x0 < 300; x0++) {
+        const x = x0 - 150, y = (line * 30 - 105) + y0;           // centred, then rotated
+        const px = Math.round(x * c - y * s + PW / 2), py = Math.round(x * s + y * c + PH / 2);
+        if (px < 0 || py < 0 || px >= PW || py >= PH) continue;
+        const i = (py * PW + px) * 4; d[i] = d[i + 1] = d[i + 2] = 0;
+    }
+    return { d, PW, PH };
+};
+for (const deg of [0, 4, -7, 11.5]) {
+    const { d, PW, PH } = page(deg);
+    const found = deskewAngle(d, PW, PH);
+    ok(`a page tilted ${deg}° is read as ${deg}° (found ${found}°)`, Math.abs(found - deg) <= 0.5);
+}
+{ const { d, PW, PH } = page(0);
+  for (let i = 0; i < d.length; i += 4) d[i] = d[i + 1] = d[i + 2] = 255;   // wipe the ink
+  ok('a page with no ink is left alone (0°)', deskewAngle(d, PW, PH) === 0); }
 
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

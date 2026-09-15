@@ -374,9 +374,41 @@ export const scanPixels = (data, width, height, radius = 12, bias = 16) => {
     return data;
 };
 
-/* The nota as a scan, sized like every other photo (800 wide) and saved as JPEG 0.5 — a
-   mostly-white page compresses far smaller than the photo it came from, which is the point for
-   Firebase storage. The original never leaves the phone. */
+/* HOW TILTED IS THE TEXT — the angle, in degrees, that makes the scanned page's lines of text
+   sit level. Aldi, 2026-09-15: "i want the scan to automatically make the photo upright so that
+   its easier to read". A page is a stack of horizontal lines of ink; rotate the ink by a trial
+   angle and add it up row by row, and the rows are sharpest — most ink in few rows, none in the
+   gaps — exactly when the trial angle cancels the tilt. Coarse sweep in whole degrees, then a
+   fine one around the winner. ±15° only: a nota photographed roughly straight. A photo taken
+   with the phone turned is already upright before this runs — the browser applies the camera's
+   own orientation tag when it decodes the file. Pure, on the scanned pixels, sampled down to
+   about 240 wide so the sweep costs a few milliseconds. */
+export const deskewAngle = (data, width, height, maxDeg = 15) => {
+    const step = Math.max(1, Math.floor(width / 240));
+    const pts = [];
+    for (let y = 0; y < height; y += step)
+        for (let x = 0; x < width; x += step)
+            if (data[(y * width + x) * 4] < 128) pts.push(x / step, y / step);
+    if (pts.length < 40) return 0;                       // a blank page has no lines to level
+    const h = Math.ceil(height / step), w = Math.ceil(width / step), diag = Math.ceil(Math.hypot(w, h));
+    const score = (deg) => {
+        const rad = deg * Math.PI / 180, s = Math.sin(rad), c = Math.cos(rad);
+        const rows = new Float64Array(2 * diag + 1);
+        for (let i = 0; i < pts.length; i += 2) rows[Math.round(-pts[i] * s + pts[i + 1] * c) + diag]++;
+        let sq = 0; for (let i = 0; i < rows.length; i++) sq += rows[i] * rows[i];
+        return sq;                                        // sum of squares: peaky rows score high
+    };
+    let best = 0, bestScore = -1;
+    for (let d = -maxDeg; d <= maxDeg; d++) { const sc = score(d); if (sc > bestScore) { bestScore = sc; best = d; } }
+    for (let d = best - 0.75; d <= best + 0.75; d += 0.25) { const sc = score(d); if (sc > bestScore) { bestScore = sc; best = d; } }
+    return best;
+};
+
+/* The nota as a scan, sized like every other photo (800 wide), levelled, and saved as JPEG
+   0.5 — a mostly-white page compresses far smaller than the photo it came from, which is the
+   point for Firebase storage. The original never leaves the phone. The <img> decode applies
+   the camera's orientation tag, so a photo taken with the phone held sideways arrives upright;
+   the deskew then takes out the few degrees of tilt a hand-held shot always has. */
 export const scanNotaToBase64 = (file) => {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -395,6 +427,20 @@ export const scanNotaToBase64 = (file) => {
                 const frame = ctx.getImageData(0, 0, canvas.width, canvas.height);
                 scanPixels(frame.data, canvas.width, canvas.height);
                 ctx.putImageData(frame, 0, 0);
+                const deg = deskewAngle(frame.data, canvas.width, canvas.height);
+                if (deg !== 0) {
+                    /* turn the whole page back by the tilt; the corners that swing into view are
+                       paper, so they are white */
+                    const level = document.createElement('canvas');
+                    level.width = canvas.width; level.height = canvas.height;
+                    const lc = level.getContext('2d');
+                    lc.fillStyle = '#fff'; lc.fillRect(0, 0, level.width, level.height);
+                    lc.translate(level.width / 2, level.height / 2);
+                    lc.rotate(-deg * Math.PI / 180);   /* deskewAngle reports the tilt in canvas terms; undo it */
+                    lc.drawImage(canvas, -canvas.width / 2, -canvas.height / 2);
+                    resolve(level.toDataURL('image/jpeg', 0.5));
+                    return;
+                }
                 resolve(canvas.toDataURL('image/jpeg', 0.5));
             };
             img.onerror = (err) => reject(err);

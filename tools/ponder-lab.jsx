@@ -36,7 +36,7 @@ import { Cloud } from 'lucide-react';
 /* Same module the alias in ponder-lab.config.mjs points `firebase/firestore` at, so writing a
    fixture here is what the component's own listener reads back. */
 import { FIXTURES } from './lab-firestore-stub.js';
-import { scanPixels } from '../src/utils/helpers.js';
+import { scanNotaToBase64 } from '../src/utils/helpers.js';
 import { SCENES } from '../src/ponder/registry.js';
 
 const q = new URLSearchParams(window.location.search);
@@ -450,17 +450,20 @@ function NotaScanLab() {
       ctx.putImageData(id, 0, 0);
     };
     const run = (img) => {
-      const b = before.current.getContext('2d'), a = after.current.getContext('2d');
+      const b = before.current.getContext('2d');
       draw(b, img);
-      a.drawImage(before.current, 0, 0);
-      const frame = a.getImageData(0, 0, W, H);
-      const t0 = performance.now();
-      scanPixels(frame.data, W, H);
-      const ms = Math.round(performance.now() - t0);
-      a.putImageData(frame, 0, 0);
-      const photo = before.current.toDataURL('image/jpeg', 0.6).length, scan = after.current.toDataURL('image/jpeg', 0.5).length;
-      setStats(`${W}x${H}, ${ms} ms · JPEG bytes: photo ${photo.toLocaleString()} → scan ${scan.toLocaleString()} (${Math.round(100 - scan / photo * 100)}% smaller)`);
-      window.__notaScan = { ms, photo, scan };
+      /* the REAL intake path: the photo as a Blob → scanNotaToBase64 (scan, then level) → the
+         JPEG the app would store. What the right-hand side shows is what Firebase would hold. */
+      before.current.toBlob((blob) => {
+        const t0 = performance.now();
+        scanNotaToBase64(blob).then((dataUrl) => {
+          const ms = Math.round(performance.now() - t0);
+          after.current.src = dataUrl;
+          const photo = before.current.toDataURL('image/jpeg', 0.6).length, scan = dataUrl.length;
+          setStats(`${W}x${H}, ${ms} ms · JPEG bytes: photo ${photo.toLocaleString()} → scan ${scan.toLocaleString()} (${Math.round(100 - scan / photo * 100)}% smaller)`);
+          window.__notaScan = { ms, photo, scan };
+        });
+      }, 'image/jpeg', 0.9);
     };
     const src = q.get('src');
     if (src) { const img = new Image(); img.crossOrigin = 'anonymous'; img.onload = () => run(img); img.src = src; }
@@ -470,7 +473,7 @@ function NotaScanLab() {
     <div className="p-4 bg-panel min-h-screen text-ink font-mono text-[12px]">
       <div className="flex gap-4 flex-wrap">
         <div><div className="mb-1 uppercase tracking-widest text-ink-muted">foto (sekarang)</div><canvas ref={before} width={640} height={480} /></div>
-        <div><div className="mb-1 uppercase tracking-widest text-ink-muted">scan (helpers.scanPixels)</div><canvas ref={after} width={640} height={480} /></div>
+        <div><div className="mb-1 uppercase tracking-widest text-ink-muted">scan (helpers.scanNotaToBase64 — what gets saved)</div><img ref={after} width={640} height={480} alt="" /></div>
       </div>
       <div className="mt-3 text-ink-muted">{stats}</div>
     </div>
