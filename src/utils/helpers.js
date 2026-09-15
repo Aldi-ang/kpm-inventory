@@ -330,6 +330,79 @@ export const deletePhotoFromStorage = async (storage, url) => {
 // uploaded image to a max width of 800px and re-encodes it as a compressed JPEG
 // data URL, so photo uploads (damaged-goods proof, receiving docs, etc.) stay small
 // enough for the 1MB Firestore document cap.
+/* 🔴 THE NOTA "SCAN" — Aldi, 2026-09-15: "make feature like what camscanner have? so its scan
+   the nota and make it clear instead of just normal photo". Option A of the brainstorm: clean-up
+   only, no straightening, no library. Each pixel is compared with the average of its own
+   neighbourhood (a box of 2*radius+1), so grey paper, shadows and a lamp's hot spot all become
+   white, and only what is darker than its surroundings — the ink — survives, stretched towards
+   black. Pure on purpose: the maths is checked in node on a synthetic nota; the canvas wrapper
+   under it only feeds real pixels in. Applied to the NOTA only — the goods photo is a photo. */
+export const scanPixels = (data, width, height, radius = 12, bias = 16) => {
+    const n = width * height;
+    const gray = new Float32Array(n);
+    for (let i = 0; i < n; i++) gray[i] = 0.299 * data[i * 4] + 0.587 * data[i * 4 + 1] + 0.114 * data[i * 4 + 2];
+    /* summed-area table: any box average in four reads, so the pass is O(pixels), not O(pixels x box) */
+    const W = width + 1;
+    const sat = new Float64Array(W * (height + 1));
+    for (let y = 1; y <= height; y++) {
+        let row = 0;
+        for (let x = 1; x <= width; x++) {
+            row += gray[(y - 1) * width + (x - 1)];
+            sat[y * W + x] = sat[(y - 1) * W + x] + row;
+        }
+    }
+    const box = (x, y, r) => {
+        const x0 = Math.max(0, x - r), x1 = Math.min(width, x + r + 1);
+        const y0 = Math.max(0, y - r), y1 = Math.min(height, y + r + 1);
+        return (sat[y1 * W + x1] - sat[y0 * W + x1] - sat[y1 * W + x0] + sat[y0 * W + x0]) / ((x1 - x0) * (y1 - y0));
+    };
+    for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+            /* two box sizes, the LOWER mean wins: a bright patch (a lamp's hot spot, a white
+               sticker) inflates the small box and paints a dark halo of false ink around itself;
+               the wide box barely notices it. Ink is below both, so it is still ink. */
+            const mean = Math.min(box(x, y, radius), box(x, y, radius * 4));
+            const v = gray[y * width + x];
+            /* paper (as bright as its surroundings, within the bias) → white; ink → the darker
+               than its surroundings, the blacker, 4x stretched so faint pen still reads */
+            const out = v >= mean - bias ? 255 : Math.max(0, Math.round(255 - (mean - v) * 4));
+            const i = (y * width + x) * 4;
+            data[i] = data[i + 1] = data[i + 2] = out;
+            data[i + 3] = 255;
+        }
+    }
+    return data;
+};
+
+/* The nota as a scan, sized like every other photo (800 wide) and saved as JPEG 0.5 — a
+   mostly-white page compresses far smaller than the photo it came from, which is the point for
+   Firebase storage. The original never leaves the phone. */
+export const scanNotaToBase64 = (file) => {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = (event) => {
+            const img = new Image();
+            img.src = event.target.result;
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                const MAX_WIDTH = 800;
+                const scaleSize = MAX_WIDTH / img.width;
+                canvas.width = MAX_WIDTH;
+                canvas.height = Math.round(img.height * scaleSize);
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                const frame = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                scanPixels(frame.data, canvas.width, canvas.height);
+                ctx.putImageData(frame, 0, 0);
+                resolve(canvas.toDataURL('image/jpeg', 0.5));
+            };
+            img.onerror = (err) => reject(err);
+        };
+        reader.onerror = (err) => reject(err);
+    });
+};
+
 export const compressImageToBase64 = (file) => {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();

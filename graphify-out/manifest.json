@@ -95,8 +95,8 @@
     "semantic_hash": ""
   },
   "src/RestockVaultView.jsx": {
-    "mtime": 1789434942.2364728,
-    "ast_hash": "a1413e5b09c60902b8a47c531fd2d197",
+    "mtime": 1789437842.4489088,
+    "ast_hash": "c0e8e7013953eddd16fcaf8923f01dc3",
     "semantic_hash": ""
   },
   "src/StockOpnameView.jsx": {
@@ -225,8 +225,8 @@
     "semantic_hash": ""
   },
   "src/utils/helpers.js": {
-    "mtime": 1789038602.5475662,
-    "ast_hash": "ae8bccca6c6ae9ed8cd762c0603a2a11",
+    "mtime": 1789437842.4519083,
+    "ast_hash": "c85ebd8a378301437649860bc569f8f7",
     "semantic_hash": ""
   },
   "tailwind.config.js": {
@@ -570,8 +570,8 @@
     "semantic_hash": ""
   },
   ".claude/PROGRESS.md": {
-    "mtime": 1789434158.5464578,
-    "ast_hash": "8a576a3b933c807512c7030fe3dbf71a",
+    "mtime": 1789435115.2194228,
+    "ast_hash": "3dda27e43468a6462009a9a6c909e8c6",
     "semantic_hash": ""
   },
   ".claude/pre-compact-context.md": {
@@ -755,13 +755,13 @@
     "semantic_hash": ""
   },
   "src/config/logicFixes.selfcheck.mjs": {
-    "mtime": 1789434953.1593654,
-    "ast_hash": "f1517e9fda7d5b611e6548818be5d28b",
+    "mtime": 1789437840.1933782,
+    "ast_hash": "d3a9de8cdd98eab1f2791e92fd994855",
     "semantic_hash": ""
   },
   ".claude/NEXT-SESSION.md": {
-    "mtime": 1789434112.7320578,
-    "ast_hash": "5972da1183a0f28071b71092c65c049d",
+    "mtime": 1789436463.309203,
+    "ast_hash": "cdf1eaee04e8169faa6498ffded2a272",
     "semantic_hash": ""
   },
   ".claude/SWEEP-2026-08-19.md": {
@@ -835,8 +835,8 @@
     "semantic_hash": ""
   },
   "tools/ponder-lab.jsx": {
-    "mtime": 1789434760.1222093,
-    "ast_hash": "a766ae80332657aa8576d98e76b952d1",
+    "mtime": 1789437842.4529085,
+    "ast_hash": "6c613911a700a7bea560f88dc0e22cc1",
     "semantic_hash": ""
   },
   ".claude/PONDER-PLAN.md": {
@@ -1052,6 +1052,11 @@
   "tools/lab-firebase-stub.js": {
     "mtime": 1789386263.9549375,
     "ast_hash": "4529776065190ab54fdf1a5149cd1673",
+    "semantic_hash": ""
+  },
+  "src/config/notaScan.selfcheck.mjs": {
+    "mtime": 1789437671.6237848,
+    "ast_hash": "c6ebbf91781396d4569075f49198c714",
     "semantic_hash": ""
   }
 }

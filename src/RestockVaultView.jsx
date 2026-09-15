@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { UploadCloud, FileText, Search, Save, X, RefreshCcw, History, ChevronDown, Printer, Pencil, Trash2, Image as ImageIcon, Target, PlusCircle, ArrowLeftRight, Send, Camera, Truck, AlertCircle, MapPin, Clock } from 'lucide-react';
 import { doc, collection, setDoc, updateDoc, deleteDoc, serverTimestamp, writeBatch, onSnapshot, increment } from 'firebase/firestore';
-import { savePhotoAndGetReference, deletePhotoFromStorage, compressImageToBase64, getLocalDayKey, convertToBks } from './utils/helpers';
+import { savePhotoAndGetReference, deletePhotoFromStorage, compressImageToBase64, scanNotaToBase64, getLocalDayKey, convertToBks } from './utils/helpers';
 import { confirmAction } from './components/ConfirmGate.jsx';
 import AcceptanceReceipt from './components/AcceptanceReceipt.jsx';
 import ShipmentLabel from './components/ShipmentLabel.jsx';
@@ -598,8 +598,10 @@ const RestockVaultView = ({ inventory = [], procurements = [], motorists = [], b
         try {
             let base64Receipt = null;
             if (receiptFile) {
-                if(triggerCapy) triggerCapy("Compressing Document to Database... ⏳");
-                const compressed = await compressImageToBase64(receiptFile);
+                if(triggerCapy) triggerCapy("Memindai nota... ⏳");
+                /* the nota is SCANNED (paper white, ink black — helpers.scanPixels), not photographed;
+                   the goods photo below stays a photo */
+                const compressed = await scanNotaToBase64(receiptFile);
                 const receiptPath = `artifacts/${appId}/users/${activeUserId}/photos/receipt_${batchId}_${Date.now()}.jpg`;
                 base64Receipt = await savePhotoAndGetReference(storage, compressed, receiptPath, appSettings?.usePhotoStorage);
             }
@@ -1512,12 +1514,12 @@ const RestockVaultView = ({ inventory = [], procurements = [], motorists = [], b
                             <div className="flex gap-2 flex-wrap">
                                 <button type="button"
                                     onClick={() => setPlaceForm({ name: '', address: '', kind: 'pabrik', editing: null })}
-                                    className="bg-orange text-orange-ink px-4 py-2.5 rounded-lg font-black uppercase tracking-widest text-[11px] flex items-center gap-2 active:scale-[0.98] transition-transform">
+                                    className="bg-orange text-orange-ink flex-1 lg:flex-none justify-center lg:justify-start min-h-[44px] px-1.5 lg:px-4 py-2 lg:py-2.5 rounded-lg font-bold lg:font-black uppercase tracking-[0.08em] lg:tracking-widest text-[10px] lg:text-[11px] flex items-center gap-2 active:scale-[0.98] transition-transform">
                                     <PlusCircle size={15}/> Daftarkan pabrik
                                 </button>
                                 <button type="button"
                                     onClick={() => setPlaceForm({ name: '', address: '', kind: 'orang', editing: null })}
-                                    className="border border-line-2 hover:border-orange text-ink px-4 py-2.5 rounded-lg font-black uppercase tracking-widest text-[11px] flex items-center gap-2 active:scale-[0.98] transition-all">
+                                    className="border border-line-2 hover:border-orange text-ink flex-1 lg:flex-none justify-center lg:justify-start min-h-[44px] px-1.5 lg:px-4 py-2 lg:py-2.5 rounded-lg font-bold lg:font-black uppercase tracking-[0.08em] lg:tracking-widest text-[10px] lg:text-[11px] flex items-center gap-2 active:scale-[0.98] transition-all">
                                     <PlusCircle size={15}/> Daftarkan orang
                                 </button>
                             </div>
@@ -1970,7 +1972,9 @@ const RestockVaultView = ({ inventory = [], procurements = [], motorists = [], b
                             </div>
 
                             {/* THE LINES — batch is a column, not a box in a corner */}
-                            <div className="overflow-x-auto border border-line-2 rounded-lg bg-panel">
+                            {/* Empty = a NOTICE, not a panel: dashed amber edge, amber words, fades in and breathes
+                                (his ask, 2026-09-15). Full = the plain table. */}
+                            <div className={`overflow-x-auto rounded-lg ${cart.length === 0 ? 'border border-dashed border-accent-ink bg-transparent kpm-notice' : 'border border-line-2 bg-panel'}`}>
                                 <table className="w-full text-sm sm:min-w-[780px] kpm-stack-rows">
                                     <thead>
                                         <tr className="bg-raised">
@@ -1983,7 +1987,7 @@ const RestockVaultView = ({ inventory = [], procurements = [], motorists = [], b
                                     </thead>
                                     <tbody>
                                         {cart.length === 0 ? (
-                                            <tr><td colSpan={5} data-label="" className="px-3 py-8 text-ink-muted text-sm">Belum ada barang. Cari dan klik salah satu di daftar barang.</td></tr>
+                                            <tr><td colSpan={5} data-label="" className="px-3 py-3 text-accent-ink font-mono text-[12px]"><span className="block text-[9px] font-black uppercase tracking-[0.18em] opacity-85 mb-1.5">Perlu diisi</span>Belum ada barang. Cari dan klik salah satu di daftar barang.</td></tr>
                                         ) : cart.map(item => {
                                             const per = totalItemsReceived > 0 ? (Number(item.basePrice)||0) + extraCosts / totalItemsReceived : 0;
                                             const prev = lastLanded[item.id];

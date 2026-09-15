@@ -6909,5 +6909,60 @@ section('RESTOCK VAULT ON THE PHONE — the frame, the hints, the touch sizes (2
   const rows = rv.slice(l, rv.indexOf('Staff are here', l));
   ok('registered names and addresses wrap instead of ending in "…"', l > -1 && !/\btruncate\b/.test(rows) && /\bbreak-words\b/.test(rows)); }
 
+section('RESTOCK VAULT — the empty table is a NOTICE, the register buttons share a row on the phone (2026-09-15)');
+/* Aldi, 2026-09-15 08:20, on his own phone screenshot of the empty intake table: "i want this kind
+   of notification to have different animation and color to shows that this is a warning or
+   notification on not actually belong to the real panel just something the user need to do to in
+   some certain situation". Shown rv-notice.png, he chose message A (dashed amber edge, amber ink,
+   a "Perlu diisi" label, fade-in + a slow breathing edge) and buttons A (both register buttons on
+   one row at 10 px, 44 px tall — shown with the words wrapping, chosen anyway). Amber is an edge
+   and an ink, never a fill (taste law 2026-08-21); Lite Mode already completes every animation
+   instantly and stops infinite ones (index.css `html.lite-mode *`), so nothing here needs its own
+   Lite rule. */
+{ const rv = read('src/RestockVaultView.jsx');
+  const w = rv.indexOf('THE LINES — batch is a column, not a box in a corner');
+  const wrap = rv.slice(w, rv.indexOf('<table', w));
+  ok('the intake table wrapper was found', w > -1 && wrap.length < 700);
+  ok('the wrapper turns into a dashed amber notice ONLY while the cart is empty',
+     /cart\.length === 0\s*\?\s*'[^']*border-dashed border-accent-ink[^']*kpm-notice[^']*'\s*:\s*'[^']*border-line-2[^']*'/.test(wrap),
+     'a notice look on a full table would shout at every intake');
+  ok('the notice has no fill', !/cart\.length === 0\s*\?\s*'[^']*bg-orange/.test(wrap), 'amber is an edge and an ink, not a fill');
+  const e = rv.indexOf('Belum ada barang. Cari dan klik salah satu di daftar barang.');
+  const cell = rv.slice(rv.lastIndexOf('<td', e), e);
+  ok('the empty row speaks in amber with a "Perlu diisi" label above the sentence',
+     e > -1 && /text-accent-ink/.test(cell) && /Perlu diisi/.test(rv.slice(e - 400, e)));
+  const css = read('src/index.css');
+  ok('the notice fades in and its edge breathes', /@keyframes kpmNoticeIn/.test(css) && /@keyframes kpmNoticeBreathe/.test(css) && /\.kpm-notice\s*\{[^}]*kpmNoticeIn[^}]*kpmNoticeBreathe/.test(css));
+  ok('Lite Mode still completes every animation instantly and stops the breathing', /html\.lite-mode \* \{[^}]*animation-iteration-count: 1 !important/.test(css));
+  const b1 = rv.search(/Daftarkan pabrik\r?\n/), b2 = rv.search(/Daftarkan orang\r?\n/);   // the desk file mixes CRLF
+  const btn1 = rv.slice(rv.lastIndexOf('<button', b1), b1), btn2 = rv.slice(rv.lastIndexOf('<button', b2), b2);
+  ok('both register buttons were found', b1 > -1 && b2 > -1 && btn1.length < 600 && btn2.length < 600);
+  for (const [name, btn] of [['PABRIK', btn1], ['ORANG', btn2]]) {
+    ok(`DAFTARKAN ${name} fills half the row on the phone and keeps its own width on a desk`, /\bflex-1 lg:flex-none\b/.test(btn) && /\bjustify-center lg:justify-start\b/.test(btn));
+    ok(`DAFTARKAN ${name} is 10 px on the phone, 11 px on a desk, never under 44 px tall`, /text-\[10px\] lg:text-\[11px\]/.test(btn) && /min-h-\[44px\]/.test(btn));
+  } }
+
+section('THE NOTA IS SCANNED, THE GOODS PHOTO STAYS A PHOTO (2026-09-15)');
+/* Aldi, 2026-09-15: "for nota photo is it possible to make feature like what camscanner have? so
+   its scan the nota and make it clear instead of just normal photo" — and, choosing option A of
+   the brainstorm: "nota scan = A keep the storage small to minimize firebase cost". The maths
+   (helpers.scanPixels: local-mean threshold, two box sizes, paper → white, ink → black) is proved
+   on a synthetic nota in src/config/notaScan.selfcheck.mjs; this section pins the WIRING — the
+   nota goes through the scan, the goods photo does not, and the scan is saved smaller. */
+{ const h = read('src/utils/helpers.js');
+  ok('helpers exports the pure scan and the canvas wrapper', /export const scanPixels = \(data, width, height/.test(h) && /export const scanNotaToBase64 = \(file\)/.test(h));
+  ok('the wrapper runs the scan on the canvas pixels before saving', /scanPixels\(frame\.data, canvas\.width, canvas\.height\);\s*ctx\.putImageData\(frame, 0, 0\);\s*resolve\(canvas\.toDataURL\('image\/jpeg', 0\.5\)\)/.test(h),
+     'a scan saved at 0.5 is smaller than the photo it replaces — his storage condition');
+  const rv = read('src/RestockVaultView.jsx');
+  ok('the desk imports the scan', imports(rv, 'scanNotaToBase64'));
+  const r = rv.indexOf('if (receiptFile) {');
+  const nota = rv.slice(r, rv.indexOf('let base64Package', r));
+  ok('the NOTA photo goes through the scan', r > -1 && /await scanNotaToBase64\(receiptFile\)/.test(nota) && !/compressImageToBase64\(receiptFile\)/.test(nota));
+  const p = rv.indexOf('if (packageFile) {');
+  const pkg = rv.slice(p, rv.indexOf('base64Package = await', p));
+  ok('the GOODS photo stays a photo', p > -1 && /compressImageToBase64\(packageFile\)/.test(pkg) && !/scanNotaToBase64/.test(pkg),
+     'a scan of a box of cigarettes is a white rectangle');
+  ok('the lab can show a photo beside its scan (?nota-scan)', /q\.has\('nota-scan'\) \? <NotaScanLab \/>/.test(read('tools/ponder-lab.jsx'))); }
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

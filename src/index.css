@@ -84,6 +84,12 @@ body {
    🚀 CELLO LITE MODE (POTATO ENGINE GOVERNOR)
    ========================================================= */
 
+/* A NOTICE box (an empty table telling the user what to do next): fades in, then its dashed
+   amber edge breathes. Lite Mode below completes the fade at once and stops the breathing. */
+@keyframes kpmNoticeIn { from { opacity: 0; transform: translateY(4px); } }
+@keyframes kpmNoticeBreathe { 50% { border-color: color-mix(in srgb, var(--accent-ink) 35%, transparent); } }
+.kpm-notice { animation: kpmNoticeIn .35s ease-out both, kpmNoticeBreathe 2.4s ease-in-out .35s infinite; }
+
 /* 1. Instantly complete animations so items don't get stuck invisible */
 html.lite-mode * {
     animation-duration: 0.001s !important;

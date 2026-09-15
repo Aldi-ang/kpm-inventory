@@ -36,6 +36,7 @@ import { Cloud } from 'lucide-react';
 /* Same module the alias in ponder-lab.config.mjs points `firebase/firestore` at, so writing a
    fixture here is what the component's own listener reads back. */
 import { FIXTURES } from './lab-firestore-stub.js';
+import { scanPixels } from '../src/utils/helpers.js';
 import { SCENES } from '../src/ponder/registry.js';
 
 const q = new URLSearchParams(window.location.search);
@@ -416,6 +417,66 @@ const LAB_SHIPMENT = {
   ],
 };
 
+/* ?nota-scan SHOWS THE NOTA SCAN on a synthetic photo: a tilted receipt on a grey table, a
+   shadow across it, a lamp's hot spot, printed and handwritten lines, noise. Left the "photo",
+   right the same pixels through the REAL helpers.scanPixels — the function the intake form calls.
+   `&src=<image url>` scans a real photo instead. The one question it answers is whether the
+   scan reads better than the photo, which a node check on synthetic pixels cannot say. */
+function NotaScanLab() {
+  const before = React.useRef(null), after = React.useRef(null);
+  const [stats, setStats] = React.useState('');
+  React.useEffect(() => {
+    const W = 640, H = 480;
+    const draw = (ctx, img) => {
+      if (img) { ctx.drawImage(img, 0, 0, W, H); return; }
+      const g = ctx.createLinearGradient(0, 0, W, H); g.addColorStop(0, '#6b6259'); g.addColorStop(1, '#3e3833');
+      ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+      ctx.save(); ctx.translate(W / 2, H / 2); ctx.rotate(-0.06);
+      const p = ctx.createLinearGradient(-230, 0, 230, 0); p.addColorStop(0, '#8f877a'); p.addColorStop(0.55, '#cfc6b4'); p.addColorStop(1, '#e8e0cc');
+      ctx.fillStyle = p; ctx.fillRect(-230, -200, 460, 400);
+      const hot = ctx.createRadialGradient(120, -120, 0, 120, -120, 140); hot.addColorStop(0, 'rgba(255,255,255,.55)'); hot.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.fillStyle = hot; ctx.fillRect(-230, -200, 460, 400);
+      ctx.fillStyle = '#2a2622'; ctx.font = 'bold 22px monospace'; ctx.fillText('NOTA  PABRIK KUDUS', -200, -150);
+      ctx.font = '15px monospace';
+      ['SJ-403638        15/09/2026', 'Cello Green 16   40 bal   Rp 356.000',
+       'Djarum Coklat 12 12 bal   Rp 150.000', 'Ongkos kirim              Rp  75.000',
+       'TOTAL                     Rp 581.000'].forEach((t, i) => ctx.fillText(t, -200, -100 + i * 34));
+      ctx.strokeStyle = '#1f3a8a'; ctx.lineWidth = 2; ctx.beginPath();
+      ctx.moveTo(-120, 120); ctx.bezierCurveTo(-80, 80, -40, 160, 0, 120); ctx.bezierCurveTo(30, 95, 60, 150, 100, 110); ctx.stroke();
+      ctx.font = '13px sans-serif'; ctx.fillStyle = '#3b3630'; ctx.fillText('ttd penerima', -120, 160);
+      ctx.restore();
+      const id = ctx.getImageData(0, 0, W, H), d = id.data;
+      for (let i = 0; i < d.length; i += 4) { const n = (Math.random() - 0.5) * 18; d[i] += n; d[i + 1] += n; d[i + 2] += n; }
+      ctx.putImageData(id, 0, 0);
+    };
+    const run = (img) => {
+      const b = before.current.getContext('2d'), a = after.current.getContext('2d');
+      draw(b, img);
+      a.drawImage(before.current, 0, 0);
+      const frame = a.getImageData(0, 0, W, H);
+      const t0 = performance.now();
+      scanPixels(frame.data, W, H);
+      const ms = Math.round(performance.now() - t0);
+      a.putImageData(frame, 0, 0);
+      const photo = before.current.toDataURL('image/jpeg', 0.6).length, scan = after.current.toDataURL('image/jpeg', 0.5).length;
+      setStats(`${W}x${H}, ${ms} ms · JPEG bytes: photo ${photo.toLocaleString()} → scan ${scan.toLocaleString()} (${Math.round(100 - scan / photo * 100)}% smaller)`);
+      window.__notaScan = { ms, photo, scan };
+    };
+    const src = q.get('src');
+    if (src) { const img = new Image(); img.crossOrigin = 'anonymous'; img.onload = () => run(img); img.src = src; }
+    else run(null);
+  }, []);
+  return (
+    <div className="p-4 bg-panel min-h-screen text-ink font-mono text-[12px]">
+      <div className="flex gap-4 flex-wrap">
+        <div><div className="mb-1 uppercase tracking-widest text-ink-muted">foto (sekarang)</div><canvas ref={before} width={640} height={480} /></div>
+        <div><div className="mb-1 uppercase tracking-widest text-ink-muted">scan (helpers.scanPixels)</div><canvas ref={after} width={640} height={480} /></div>
+      </div>
+      <div className="mt-3 text-ink-muted">{stats}</div>
+    </div>
+  );
+}
+
 /* ?toast MOUNTS THE TWO SINGLETON HOSTS in the order main.jsx mounts them — page, ConfirmHost,
    ToastHost, as siblings — with a sticky alarm strip up and a confirm dialog open on top of it.
    The one question it answers is which layer paints over the other, which no check can see. */
@@ -506,6 +567,7 @@ createRoot(document.getElementById('root')).render(
   q.has('shell') ? <ShellLab /> :
   q.has('toast') ? <ToastLab /> :
   q.has('label') ? <ShipmentLabel shipment={LAB_SHIPMENT} onClose={() => {}} companyName="KPM INVENTORY" /> :
+  q.has('nota-scan') ? <NotaScanLab /> :
   q.has('scan') ? <ArrivalScanner open onClose={() => {}} onCode={(c) => { window.__scanned = c; }} expecting={['REQ_1756700000000']} /> :
   q.has('gudang') ? <GudangLab /> :
   q.has('places') ? <PlacesLab /> :
