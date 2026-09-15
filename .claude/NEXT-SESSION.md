@@ -65,6 +65,13 @@ wider desk, no hint under the form, no intro paragraph on Data Induk). Still owe
 
 ## Shipped 2026-09-15 — Restock Vault on the phone, complete
 
+`5319aef` (10:06): every picked photo is SHOWN — `components/PhotoField.jsx`, the one photo box
+(preview up to 176 px tall, GANTI/HAPUS, fade+scale in; with `scan` it shows the nota's SCAN
+before Save, "Memindai nota…" with a sweeping line meanwhile, the scan handed back so Save does
+not scan twice; an unreadable file says so). Adopted for both Restock Vault pictures. Audit G53
+re-counted (one spread on the desk + two boxes handed `galleryOk` + one spread in the box). Lab
+`?photo`. logicFixes 1525/1525, audit 722/722.
+
 `39dc277` (09:24): the nota scan is LEVELLED — `helpers.deskewAngle` (row-histogram sharpness
 over -15..15°, quarter-degree refine) then rotate by its negative onto white; the browser's own
 orientation-tag handling makes a sideways phone shot upright before that. `?nota-scan` now runs
@@ -117,6 +124,13 @@ The bell is on the phone screen: `flex-wrap` on the top bar row (`BiohazardTheme
   intake (productionDate required), Master Vault stock, Branch Warehouse stock, KIRIM, load to
   agent, surat jalan, Agent Inventory, the sale engine (money — two independent checks), Stock
   Opname, reports; migration = one "unknown batch" per product. Brainstorm §2 has the models.
+* **PhotoField on the other photo boxes — one per screen AS THE SWEEP REACHES IT**, his
+  "add preview on all photo attachment on this app": customer storefront `CustomerManager.jsx:1337`;
+  sale proof `MerchantSalesView.jsx:2202`, NOO storefront `:2964` (⚠️ T4–T6 camera-only, no file
+  input in the DOM — `284ea64`/`1857b97`, do not reintroduce a picker), `:1863`; product image
+  `ResidentEvilInventory.jsx:297`; logos `SettingsView.jsx:412`, `:1238`; avatar/logo/border
+  `AgentProfileView.jsx:895`, `:904`, `:1066`; face `App.jsx:4750`. Each keeps its own tier rule;
+  `scan` only for documents (nota), never for goods, faces or logos.
 * **Parked, his words:** *"i was thinking on redesign the method the regional admin fill the
   agent inventory but we'll decide first if this really needed or not in the app"* — not a job
   until he says so.
