@@ -1056,7 +1056,7 @@ export default function BiohazardTheme({
                     </div>
                 </div>
 
-                <div className={`print-reset flex-1 overflow-y-auto p-6 scrollbar-thin scrollbar-thumb-white/20`}>
+                <div className={`print-reset flex-1 overflow-y-auto p-2 lg:p-6 scrollbar-thin scrollbar-thumb-white/20`}>
                     <div className="biohazard-content max-w-full mx-auto">
                         {children}
                     </div>

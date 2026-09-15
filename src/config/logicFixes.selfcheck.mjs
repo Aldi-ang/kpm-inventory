@@ -6847,5 +6847,67 @@ section('RESTOCK VAULT TABS WRAP ON THE PHONE (2026-09-15)');
      /\bflex-auto\b/.test(btn) && /\blg:flex-none\b/.test(btn),
      'without flex-auto the second row is two short tabs hugging the left edge'); }
 
+section('RESTOCK VAULT ON THE PHONE — the frame, the hints, the touch sizes (2026-09-15)');
+/* Measured at 375 inside the REAL shell (`?shell&places`): the desk is 271 px wide because the
+   shell's `p-6` (24 a side), the panel's `border-4` and `p-4` (20 a side) eat 88 px of the phone.
+   Aldi, 2026-09-15: "just make the panel bigger so that more words and panel fit inside the phone
+   because there is so little space, since we have the ponder tools we dont need any hints panel i
+   guess". So: phones lose 56 px of frame (desk 271 → 324, tabs back to two rows), the desk keeps
+   every number at lg; the two explanatory hints go (the empty-cart line that said "di kiri" on a
+   phone where the list is above, and the Data Induk intro paragraph) while the REPORTS stay
+   ("Belum lengkap: …" is the form telling him what is missing, not a hint); the field hint under
+   ASAL stops being `absolute` on the phone, where it painted over the ⇄ button; the NAMA input
+   (41 px) and the tab buttons (42 px) reach the 44 px floor; registered names wrap instead of
+   ending in "…". */
+{ const SHELL_PAD = 24, PANEL = 4 + 16, PHONE = 375;
+  const cut = PHONE - 2 * (8 + 2 + 8), today = PHONE - 2 * (SHELL_PAD + PANEL);
+  ok('the frame cut gives the phone desk 52 px more than today (measured 271 → 324; the last 8 a side is the desk band)', cut - today === 52, `${cut} - ${today}`);
+  const bt = read('src/components/BiohazardTheme.jsx');
+  const s = bt.indexOf('print-reset flex-1 overflow-y-auto');
+  ok('the shell page wrapper was found', s > -1);
+  const wrap = bt.slice(s, bt.indexOf('`', s));
+  ok('the shell page wrapper pads 8 on the phone and 24 on a desk', /\bp-2\b/.test(wrap) && /\blg:p-6\b/.test(wrap) && !/(^|\s)p-6(\s|$)/.test(wrap),
+     'a bare p-6 wraps EVERY screen at 24 px a side on a 375 phone');
+  const app = read('src/App.jsx');
+  const a = app.indexOf("activeTab === 'restock_vault' && (");
+  const b = app.indexOf('<RestockVaultView', a);
+  ok('the Restock Vault panel in App.jsx was found', a > -1 && b > a && b - a < 1500, `${a}..${b}`);
+  const panel = app.slice(a, b);
+  ok('the panel border is 2 on the phone and 4 on a desk', /\bborder-2 lg:border-4\b/.test(panel));
+  ok('the panel pads 8 on the phone and 16 on a desk', /\bp-2 lg:p-4\b/.test(panel));
+  /* The lab's `?shell&places` mount carries a COPY of this panel's classes. A copy drifts: the
+     first render after the frame cut still showed 303 px because the lab copy said border-4 p-4. */
+  const panelClass = (panel.match(/className="([^"]*max-w-7xl[^"]*)"/) || [])[1];
+  ok('the ponder lab wraps the desk in the SAME panel classes as App.jsx',
+     !!panelClass && read('tools/ponder-lab.jsx').includes(`className="${panelClass}"`),
+     'a stale copy in the lab measures the lab, not the app');
+  const rv = read('src/RestockVaultView.jsx');
+  ok('the empty-cart hint that pointed LEFT on a phone is gone', !rv.includes('Cari barang di kiri'));
+  /* Block comments stripped first: the one above the footer quotes the old words on purpose. */
+  const rvCode = rv.replace(/\/\*[\s\S]*?\*\//g, '');
+  ok('no line on the desk points LEFT — on a phone the list is above the form', !/\bdi kiri\b/.test(rvCode),
+     '"Belum ada barang … di kiri" in the empty table was the second one');
+  ok('the Data Induk intro paragraph is gone', !rv.includes('mengetik nama baru di sana tidak mendaftarkan apa pun'));
+  const f = rv.indexOf('→ Belum lengkap:');
+  const foot = rv.slice(rv.lastIndexOf('<p', f), f);
+  /* The footer is PINNED on the phone, and his condition for anything pinned is that it collapses
+     to ONE line (audit G60, 2026-09-01: a 160 px footer against 812 px of screen). So the report
+     keeps `truncate sm:whitespace-normal`; the first draft dropped it and G60 caught it. */
+  ok('the completeness report stays, one line on the phone', f > -1 && /truncate sm:whitespace-normal/.test(foot) && rv.includes('→ Lengkap. Siap disimpan.'),
+     'the report is the form saying what is missing — a hint is not, but this is');
+  const h = rv.indexOf('!options.length && hint && (');
+  const hintP = rv.slice(h, rv.indexOf('</p>', h));
+  ok('the field hint flows on the phone and floats only on a desk', /className="static lg:absolute/.test(hintP) && !/[^:]\btruncate\b/.test(hintP),
+     'absolute under a stacked field paints over the next control on a phone');
+  const t = rv.indexOf('{tabs.map(t => (');
+  const btn = rv.slice(t, rv.indexOf('{t.label}', t));
+  ok('the tab buttons reach the 44 px touch floor', /min-h-\[44px\]/.test(btn), 'py-3 + 11px text = 42');
+  const n = rv.indexOf('placeholder="Pabrik Kudus"');
+  const nama = rv.slice(n, rv.indexOf('/>', n));
+  ok('the NAMA input reaches the 44 px touch floor', /min-h-\[44px\]/.test(nama), 'p-2.5 + text-sm = 41');
+  const l = rv.indexOf('{list.map(o => {');
+  const rows = rv.slice(l, rv.indexOf('Staff are here', l));
+  ok('registered names and addresses wrap instead of ending in "…"', l > -1 && !/\btruncate\b/.test(rows) && /\bbreak-words\b/.test(rows)); }
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

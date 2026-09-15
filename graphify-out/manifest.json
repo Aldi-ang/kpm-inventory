@@ -50,8 +50,8 @@
     "semantic_hash": ""
   },
   "src/App.jsx": {
-    "mtime": 1789304528.2839832,
-    "ast_hash": "a9117ca887ecce150109435e517d5ebb",
+    "mtime": 1789434650.771142,
+    "ast_hash": "5e328fa428e63a2d2f4003dd4afa816b",
     "semantic_hash": ""
   },
   "src/ConsignmentFinanceView.jsx": {
@@ -95,8 +95,8 @@
     "semantic_hash": ""
   },
   "src/RestockVaultView.jsx": {
-    "mtime": 1789433331.665352,
-    "ast_hash": "8f4e689d1cc66e2513102a3511059a42",
+    "mtime": 1789434942.2364728,
+    "ast_hash": "a1413e5b09c60902b8a47c531fd2d197",
     "semantic_hash": ""
   },
   "src/StockOpnameView.jsx": {
@@ -110,8 +110,8 @@
     "semantic_hash": ""
   },
   "src/components/BiohazardTheme.jsx": {
-    "mtime": 1789386566.564664,
-    "ast_hash": "3b87c87564032f58ccdc4158056350d4",
+    "mtime": 1789434606.613422,
+    "ast_hash": "cbd95af641ff58582669a78e420da5a4",
     "semantic_hash": ""
   },
   "src/components/BranchWarehouseManager.jsx": {
@@ -570,8 +570,8 @@
     "semantic_hash": ""
   },
   ".claude/PROGRESS.md": {
-    "mtime": 1789388923.560215,
-    "ast_hash": "512f338409d9232b139c373e84001fe0",
+    "mtime": 1789434158.5464578,
+    "ast_hash": "8a576a3b933c807512c7030fe3dbf71a",
     "semantic_hash": ""
   },
   ".claude/pre-compact-context.md": {
@@ -755,13 +755,13 @@
     "semantic_hash": ""
   },
   "src/config/logicFixes.selfcheck.mjs": {
-    "mtime": 1789433322.6881325,
-    "ast_hash": "de7100ebaeaa62099b3082c2dbbd2748",
+    "mtime": 1789434953.1593654,
+    "ast_hash": "f1517e9fda7d5b611e6548818be5d28b",
     "semantic_hash": ""
   },
   ".claude/NEXT-SESSION.md": {
-    "mtime": 1789388910.4968262,
-    "ast_hash": "a2f3b6062df7665010d7ef80aaeb0894",
+    "mtime": 1789434112.7320578,
+    "ast_hash": "5972da1183a0f28071b71092c65c049d",
     "semantic_hash": ""
   },
   ".claude/SWEEP-2026-08-19.md": {
@@ -830,13 +830,13 @@
     "semantic_hash": ""
   },
   "tools/ponder-lab.config.mjs": {
-    "mtime": 1789386566.5686626,
-    "ast_hash": "79c15a631accf13bbf79854c79072a60",
+    "mtime": 1789433626.2569404,
+    "ast_hash": "e0c3582e47cc3026cc5866716537f6e9",
     "semantic_hash": ""
   },
   "tools/ponder-lab.jsx": {
-    "mtime": 1789388074.6237147,
-    "ast_hash": "d634c86987d4b52c41f471234391cf1a",
+    "mtime": 1789434760.1222093,
+    "ast_hash": "a766ae80332657aa8576d98e76b952d1",
     "semantic_hash": ""
   },
   ".claude/PONDER-PLAN.md": {

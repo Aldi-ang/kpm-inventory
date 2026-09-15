@@ -486,7 +486,7 @@ function ShellLab() {
            `p-4` and measures 325 wide at 375; his phone shows ~254, and the missing 70 px is these
            two wrappers. Classes copied verbatim — a harness that invents its markup measures the
            harness. */
-        <div className="h-auto min-h-[800px] lg:min-h-0 lg:h-full w-full max-w-7xl mx-auto border-4 border-[var(--duke-frame)] shadow-[0_0_0_1px_var(--duke-lift)] relative flex flex-col bg-[var(--duke-well-solid)] p-4 overflow-y-auto custom-scrollbar">
+        <div className="h-auto min-h-[800px] lg:min-h-0 lg:h-full w-full max-w-7xl mx-auto border-2 lg:border-4 border-[var(--duke-frame)] shadow-[0_0_0_1px_var(--duke-lift)] relative flex flex-col bg-[var(--duke-well-solid)] p-2 lg:p-4 overflow-y-auto custom-scrollbar">
           <div className="mb-12 pb-12 border-b-4 border-[var(--duke-edge-1)] border-dashed">
             <RestockVaultView
               inventory={LAB_PRODUCTS} procurements={LAB_PROCUREMENTS} motorists={LAB_MOTORISTS} branchStockMap={{}}

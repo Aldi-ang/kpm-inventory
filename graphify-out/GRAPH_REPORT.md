@@ -1,7 +1,7 @@
 # Graph Report - kpm-inventory-main  (2026-09-15)
 
 ## Corpus Check
-- 158 files · ~850,494 words
+- 158 files · ~851,813 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
@@ -10,7 +10,7 @@
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `efd97624`
+- Built from commit: `e077ab6b`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -127,7 +127,7 @@
 - eslint-plugin-react-refresh
 
 ## God Nodes (most connected - your core abstractions)
-1. `PROGRESS — read this, search for nothing` - 71 edges
+1. `PROGRESS — read this, search for nothing` - 72 edges
 2. `KPMInventoryApp()` - 49 edges
 3. `notify()` - 46 edges
 4. `confirmAction()` - 39 edges
@@ -173,11 +173,11 @@ Nodes (5): auth, db, googleProvider, PROXIED_AUTH_HOSTS, storage
 
 ### Community 4 - "devDependencies"
 Cohesion: 0.10
-Nodes (21): autoprefixer, cross-env, @eslint/js, eslint-plugin-react-hooks, globals, devDependencies, autoprefixer, cross-env (+13 more)
+Nodes (21): autoprefixer, eslint, @eslint/js, eslint-plugin-react-hooks, globals, devDependencies, autoprefixer, eslint (+13 more)
 
 ### Community 5 - "mixedUnits.selfcheck.mjs"
-Cohesion: 0.16
-Nodes (20): AuditVaultView(), confirmAction(), CrownTransferProtocol(), HistoryReportView(), LandlordDashboard(), SamplingCartView(), ToastHost(), t() (+12 more)
+Cohesion: 0.24
+Nodes (17): AuditVaultView(), confirmAction(), CrownTransferProtocol(), HistoryReportView(), LandlordDashboard(), SamplingCartView(), notify(), ToastHost() (+9 more)
 
 ### Community 6 - "savePhotoAndGetReference"
 Cohesion: 0.40
@@ -252,8 +252,8 @@ Cohesion: 0.18
 Nodes (8): bgRe, byGround, edgeRe, inkRe, lines, rows, stack, tally
 
 ### Community 30 - "notify"
-Cohesion: 0.19
-Nodes (13): notify(), store(), isFleetManagementTier(), AGENT_COLORS, checkPointInGeoJSON(), getHashColor(), getStoreHierarchy(), isPointInPolygon() (+5 more)
+Cohesion: 0.33
+Nodes (11): judge(), pickerShows(), writeApproval(), branchIsDelegated(), canApproveHandoffFrom(), canHandOffAcrossRegions(), handoffEligibility(), normalizeRegion() (+3 more)
 
 ### Community 31 - "txSize.selfcheck.mjs"
 Cohesion: 0.11
@@ -280,8 +280,8 @@ Cohesion: 0.18
 Nodes (10): 1. What we are copying, and what we are not, 2. 🔴 THE DECISION THAT SHAPES EVERYTHING — demo data, not live data, 3. Scene format, 4. Prerequisite refactor (small, do it first), 5. Files, 6. Traps specific to THIS codebase, 7. Checks to add with the engine, 8. Build order (+2 more)
 
 ### Community 37 - "MapMissionControl.jsx"
-Cohesion: 0.14
-Nodes (20): L, createJourneyClusterIcon(), getStoreIcon(), BorderImporter(), checkPointInGeoJSON(), compressCoords(), createCustomClusterIcon(), DraggableAddMarker() (+12 more)
+Cohesion: 0.09
+Nodes (31): L, store(), isFleetManagementTier(), AGENT_COLORS, checkPointInGeoJSON(), createJourneyClusterIcon(), getHashColor(), getStoreHierarchy() (+23 more)
 
 ### Community 39 - "vaultGrace.selfcheck.mjs"
 Cohesion: 0.33
@@ -293,7 +293,7 @@ Nodes (192): aA, aB, acceptBody, ACCEPTED, acFrom, acTo, aiv, AIV_ROSTER (+184 m
 
 ### Community 41 - "✅ THE LIGHT DUKE'S LEDGER IS BUILT — 524/524, contrast self-check passes"
 Cohesion: 0.03
-Nodes (57): ⚪ 2026-09-02 15:48 — SIDE SESSION (7 Days to Die). Notes moved OUT of this repo., ⚪ 2026-09-02 15:54 — SIDE SESSION (7 Days to Die). Nothing here changed., ⚪ 2026-09-02 20:55 — SIDE SESSION (7 Days to Die). No KPM file touched., 🔧 2026-09-04 17:35 — 7DTD track. No KPM work. Nothing here changed where KPM stands., 🔧 2026-09-04 17:55 — 7DTD track. The Stop hook fired on a file this track never touched., 🔧 2026-09-04 18:07 — 7DTD track. Hook fired on a KPM file again; nothing here is mine., 🟢 2026-09-04 18:40 — Regional Warehouse ponder REBUILT: it shows what it explains. `78eee2a`, 🟢 2026-09-04 19:30 — Stock by Warehouse split, and it was hiding a live bug. `f21b3d3` · 722/722 (+49 more)
+Nodes (58): ⚪ 2026-09-02 15:48 — SIDE SESSION (7 Days to Die). Notes moved OUT of this repo., ⚪ 2026-09-02 15:54 — SIDE SESSION (7 Days to Die). Nothing here changed., ⚪ 2026-09-02 20:55 — SIDE SESSION (7 Days to Die). No KPM file touched., 🔧 2026-09-04 17:35 — 7DTD track. No KPM work. Nothing here changed where KPM stands., 🔧 2026-09-04 17:55 — 7DTD track. The Stop hook fired on a file this track never touched., 🔧 2026-09-04 18:07 — 7DTD track. Hook fired on a KPM file again; nothing here is mine., 🟢 2026-09-04 18:40 — Regional Warehouse ponder REBUILT: it shows what it explains. `78eee2a`, 🟢 2026-09-04 19:30 — Stock by Warehouse split, and it was hiding a live bug. `f21b3d3` · 722/722 (+50 more)
 
 ### Community 42 - "check"
 Cohesion: 0.67
@@ -308,16 +308,16 @@ Cohesion: 0.40
 Nodes (3): PORT, ROOT, TYPES
 
 ### Community 47 - "nextStop.js"
-Cohesion: 0.13
-Nodes (14): Appearance — deferred on purpose, last, Business track — CLOSED and PARKED, do not reopen, Closed — do not reopen, Not shipped 2026-09-14, evening — the decision is his, Paste this to start the next session, Phone — the lab instruments that exist now, Promoted and parked behind the sweep, Rebuild sales totals — DONE, stop asking (+6 more)
+Cohesion: 0.14
+Nodes (13): Appearance — deferred on purpose, last, Business track — CLOSED and PARKED, do not reopen, Closed — do not reopen, Paste this to start the next session, Phone — the lab instruments that exist now, Promoted and parked behind the sweep, Rebuild sales totals — DONE, stop asking, Shipped 2026-09-14 — `2af2dd9` — CONFIRMED by Aldi (+5 more)
 
 ### Community 48 - "toastSeverity.selfcheck.mjs"
 Cohesion: 0.13
 Nodes (22): ConfirmHost(), BOOST, boostElement(), buildGainStage(), initSounds(), __isUnlocked(), liteModeOn(), makePool() (+14 more)
 
 ### Community 49 - "registry.js"
-Cohesion: 0.14
-Nodes (31): HoldButton(), PermissionMatrixEditor(), SettingsView(), writeCareerLedger(), writeLiteMode(), writePhotoStorage(), judge(), pickerShows() (+23 more)
+Cohesion: 0.16
+Nodes (25): HoldButton(), PermissionMatrixEditor(), SettingsView(), writeCareerLedger(), writeLiteMode(), writePhotoStorage(), canEditFleetRoster(), canHandleDelivery() (+17 more)
 
 ### Community 50 - "MerchantSalesView.jsx"
 Cohesion: 0.22

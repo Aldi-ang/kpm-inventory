@@ -137,10 +137,10 @@ const RouteCombo = ({ label, value, onChange, options, placeholder, hint }) => {
             {/* absolute, so a field WITH an address and a field without still line up. The route
                 row is `items-end`; a line of text under one box lifted it above its neighbour. */}
             {!open && chosen?.address && (
-                <p className="absolute left-0 right-0 top-full mt-1 text-[10px] text-ink-muted truncate" title={chosen.address}>{chosen.address}</p>
+                <p className="static lg:absolute lg:left-0 lg:right-0 lg:top-full mt-1 text-[10px] text-ink-muted lg:truncate" title={chosen.address}>{chosen.address}</p>
             )}
             {!open && !options.length && hint && (
-                <p className="absolute left-0 right-0 top-full mt-1 text-[10px] text-accent-ink truncate" title={hint}>{hint}</p>
+                <p className="static lg:absolute lg:left-0 lg:right-0 lg:top-full mt-1 text-[10px] text-accent-ink lg:truncate" title={hint}>{hint}</p>
             )}
         </div>
     );
@@ -1481,7 +1481,7 @@ const RestockVaultView = ({ inventory = [], procurements = [], motorists = [], b
                                 key={t.id}
                                 onClick={() => (t.id === 'book' || t.id === 'req' || t.id === 'place') ? setViewMode(t.id) : setDirection(t.id)}
                                 aria-selected={viewMode === t.id}
-                                className={`flex-auto lg:flex-none text-[11px] font-display font-bold uppercase tracking-[0.16em] px-4 py-3 border-l border-line-2 border-b-2 transition-colors ${
+                                className={`flex-auto lg:flex-none min-h-[44px] text-[11px] font-display font-bold uppercase tracking-[0.16em] px-4 py-3 border-l border-line-2 border-b-2 transition-colors ${
                                     viewMode === t.id ? 'text-ink border-b-orange bg-raised' : 'text-ink-muted border-b-transparent hover:text-ink'
                                 }`}
                             >
@@ -1507,10 +1507,6 @@ const RestockVaultView = ({ inventory = [], procurements = [], motorists = [], b
                         <div className="flex items-start justify-between gap-4 flex-wrap">
                             <div>
                                 <h3 className="font-display font-bold uppercase tracking-[0.15em] text-sm text-ink">Yang sudah terdaftar</h3>
-                                <p className="text-[11px] text-ink-muted mt-1 max-w-prose">
-                                    Yang ada di sini yang tercetak di surat jalan. Keempat kotak — Asal, Tujuan, Pengirim, Penerima — hanya <b className="text-ink">mencari</b> dari daftar ini; mengetik nama baru di sana tidak mendaftarkan apa pun.
-                                    Staf tier 4 ke atas sudah otomatis boleh kirim &amp; terima, jadi tidak perlu didaftarkan satu per satu.
-                                </p>
                             </div>
                             {mayEditRegistry ? (
                             <div className="flex gap-2 flex-wrap">
@@ -1551,7 +1547,7 @@ const RestockVaultView = ({ inventory = [], procurements = [], motorists = [], b
                                         <input value={placeForm.name} disabled={!!placeForm.editing}
                                             onChange={e => setPlaceForm({ ...placeForm, name: e.target.value })}
                                             placeholder="Pabrik Kudus"
-                                            className="w-full bg-inset border border-line-2 rounded-lg p-2.5 text-sm text-ink font-mono outline-none focus:border-orange disabled:opacity-60 transition-colors"/>
+                                            className="w-full bg-inset border border-line-2 rounded-lg p-2.5 min-h-[44px] text-sm text-ink font-mono outline-none focus:border-orange disabled:opacity-60 transition-colors"/>
                                     </div>
                                     <div>
                                         <label className="text-[10px] font-bold text-ink-muted uppercase tracking-widest mb-1 block">Jenis</label>
@@ -1620,8 +1616,8 @@ const RestockVaultView = ({ inventory = [], procurements = [], motorists = [], b
                                             return (
                                                 <div key={o.name} className="flex items-center gap-3 px-3 py-2.5 border-b border-line-2 last:border-b-0 bg-panel">
                                                     <div className="min-w-0 flex-1">
-                                                        <p className="text-sm text-ink truncate">{o.name}</p>
-                                                        <p className={`text-[11px] truncate ${o.address ? 'text-ink-muted' : 'text-accent-ink'}`}>
+                                                        <p className="text-sm text-ink break-words">{o.name}</p>
+                                                        <p className={`text-[11px] break-words ${o.address ? 'text-ink-muted' : 'text-accent-ink'}`}>
                                                             {o.address || 'alamat belum diisi — tidak akan tercetak di surat jalan'}
                                                         </p>
                                                     </div>
@@ -1987,7 +1983,7 @@ const RestockVaultView = ({ inventory = [], procurements = [], motorists = [], b
                                     </thead>
                                     <tbody>
                                         {cart.length === 0 ? (
-                                            <tr><td colSpan={5} data-label="" className="px-3 py-8 text-ink-muted text-sm">Belum ada barang. Cari dan klik salah satu di kiri.</td></tr>
+                                            <tr><td colSpan={5} data-label="" className="px-3 py-8 text-ink-muted text-sm">Belum ada barang. Cari dan klik salah satu di daftar barang.</td></tr>
                                         ) : cart.map(item => {
                                             const per = totalItemsReceived > 0 ? (Number(item.basePrice)||0) + extraCosts / totalItemsReceived : 0;
                                             const prev = lastLanded[item.id];
@@ -2184,13 +2180,16 @@ const RestockVaultView = ({ inventory = [], procurements = [], motorists = [], b
                                     {isSubmitting ? 'Menyimpan...' : isOut ? 'Kirim sekarang' : 'Simpan surat jalan'}
                                 </button>
                             </div>
-                            <p className={`font-mono text-[11.5px] mt-2 truncate sm:whitespace-normal ${missing.length ? 'text-ink-muted' : 'text-ink'}`}>
-                                {cart.length === 0
-                                    ? '→ Siap. Cari barang di kiri, atau isi rutenya dulu.'
-                                    : missing.length
+                            {/* A report, not a hint: the form saying what is still missing. The empty-cart
+                                hint that used to sit here pointed "di kiri" on a phone where the list is above;
+                                the tutorial covers that now (Aldi, 2026-09-15). */}
+                            {cart.length > 0 && (
+                                <p className={`font-mono text-[11.5px] mt-2 truncate sm:whitespace-normal ${missing.length ? 'text-ink-muted' : 'text-ink'}`}>
+                                    {missing.length
                                         ? <>→ Belum lengkap: <b className="text-ink">{missing.join(', ')}</b>. Tetap bisa disimpan — nanti ditandai belum lengkap.</>
                                         : '→ Lengkap. Siap disimpan.'}
-                            </p>
+                                </p>
+                            )}
                         </div>
                     </div>
                 </div>

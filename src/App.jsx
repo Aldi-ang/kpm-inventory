@@ -4801,7 +4801,7 @@ const handleGitHubMirror = async () => {
               ⚠️ And keep this comment OUTSIDE the `&& (` — a JSX comment there is a SECOND
               expression inside the parentheses, which does not parse. That broke the build once. */}
           {activeTab === 'restock_vault' && (
-              <div className="h-auto min-h-[800px] lg:min-h-0 lg:h-full w-full max-w-7xl mx-auto border-4 border-[var(--duke-frame)] shadow-[0_0_0_1px_var(--duke-lift)] relative flex flex-col bg-[var(--duke-well-solid)] p-4 overflow-y-auto custom-scrollbar">
+              <div className="h-auto min-h-[800px] lg:min-h-0 lg:h-full w-full max-w-7xl mx-auto border-2 lg:border-4 border-[var(--duke-frame)] shadow-[0_0_0_1px_var(--duke-lift)] relative flex flex-col bg-[var(--duke-well-solid)] p-2 lg:p-4 overflow-y-auto custom-scrollbar">
                   
                   {/* 🚀 HQ ONLY: FACTORY PROCUREMENT ENGINE (RESI, PHOTOS, DLL) */}
                   {isAdmin && (
