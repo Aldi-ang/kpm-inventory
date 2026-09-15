@@ -37,6 +37,7 @@ import { Cloud } from 'lucide-react';
    fixture here is what the component's own listener reads back. */
 import { FIXTURES } from './lab-firestore-stub.js';
 import { scanNotaToBase64 } from '../src/utils/helpers.js';
+import PhotoField from '../src/components/PhotoField.jsx';
 import { SCENES } from '../src/ponder/registry.js';
 
 const q = new URLSearchParams(window.location.search);
@@ -422,6 +423,44 @@ const LAB_SHIPMENT = {
    right the same pixels through the REAL helpers.scanPixels — the function the intake form calls.
    `&src=<image url>` scans a real photo instead. The one question it answers is whether the
    scan reads better than the photo, which a node check on synthetic pixels cannot say. */
+/* ?photo MOUNTS THE PHOTO BOX (components/PhotoField.jsx) in its states, at a phone width: empty,
+   a goods photo just picked (the preview), and a nota picked with scan={true} (the SCAN preview,
+   after "Memindai nota…"). The file is real — the synthetic nota drawn on a canvas, turned into
+   a Blob — so the box runs the same code the intake form runs. `&busy` freezes the scanning
+   state so the sweeping line can be looked at. */
+function PhotoLab() {
+  const [goods, setGoods] = React.useState(null);
+  const [nota, setNota] = React.useState(null);
+  React.useEffect(() => {
+    const c = document.createElement('canvas'); c.width = 640; c.height = 480;
+    const ctx = c.getContext('2d');
+    ctx.fillStyle = '#5b544c'; ctx.fillRect(0, 0, 640, 480);
+    ctx.save(); ctx.translate(320, 240); ctx.rotate(-0.05);
+    ctx.fillStyle = '#d9d0bc'; ctx.fillRect(-230, -200, 460, 400);
+    ctx.fillStyle = '#2a2622'; ctx.font = 'bold 22px monospace'; ctx.fillText('NOTA  PABRIK KUDUS', -200, -150);
+    ctx.font = '15px monospace';
+    ['SJ-403638        15/09/2026', 'Cello Green 16   40 bal   Rp 356.000', 'Djarum Coklat 12 12 bal   Rp 150.000', 'TOTAL                     Rp 506.000']
+      .forEach((t, i) => ctx.fillText(t, -200, -100 + i * 34));
+    ctx.restore();
+    c.toBlob((blob) => {
+      const f = new File([blob], 'IMG_4021.jpg', { type: 'image/jpeg' });
+      setGoods(f);
+      if (!q.has('busy')) setNota(f);
+    }, 'image/jpeg', 0.9);
+  }, []);
+  /* &busy: a nota "file" whose scan never finishes — scanNotaToBase64 rejects on a non-image */
+  const stuck = React.useMemo(() => (q.has('busy') ? new File([new Blob(['x'])], 'nota.jpg', { type: 'image/jpeg' }) : null), []);
+  return (
+    <div className="biohazard-content p-4 bg-panel min-h-screen text-ink" style={{ maxWidth: 375 }}>
+      <div className="grid grid-cols-1 gap-3">
+        <PhotoField label="Bukti foto barang" file={null} onFile={() => {}} />
+        <PhotoField label="Bukti foto barang" file={goods} onFile={(f) => setGoods(f)} />
+        <PhotoField label="Nota / faktur" file={stuck || nota} scan onFile={(f) => setNota(f)} pickLabel="ambil / pilih nota" />
+      </div>
+    </div>
+  );
+}
+
 function NotaScanLab() {
   const before = React.useRef(null), after = React.useRef(null);
   const [stats, setStats] = React.useState('');
@@ -570,6 +609,7 @@ createRoot(document.getElementById('root')).render(
   q.has('shell') ? <ShellLab /> :
   q.has('toast') ? <ToastLab /> :
   q.has('label') ? <ShipmentLabel shipment={LAB_SHIPMENT} onClose={() => {}} companyName="KPM INVENTORY" /> :
+  q.has('photo') ? <PhotoLab /> :
   q.has('nota-scan') ? <NotaScanLab /> :
   q.has('scan') ? <ArrivalScanner open onClose={() => {}} onCode={(c) => { window.__scanned = c; }} expecting={['REQ_1756700000000']} /> :
   q.has('gudang') ? <GudangLab /> :

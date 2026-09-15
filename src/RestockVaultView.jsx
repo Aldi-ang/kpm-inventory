@@ -8,6 +8,7 @@ import ShipmentLabel from './components/ShipmentLabel.jsx';
 import { notify } from './components/Toast.jsx';
 import { canPickFromGallery, canHandleDelivery, canManageRegistry, tierWord } from './config/permissions';
 import Lamp from './components/Lamp.jsx';
+import PhotoField from './components/PhotoField.jsx';
 /* one definition of "what is a branch", shared with the dashboard's supply maths */
 import { NON_BRANCH, bufferDays, MASTER } from './utils/supply.js';
 /* THE SAME FOUR FUNCTIONS THE BRANCH PANEL RUNS ON, imported rather than re-derived. His ask,
@@ -252,6 +253,9 @@ const RestockVaultView = ({ inventory = [], procurements = [], motorists = [], b
         trackingNo: '',
     });
     const [receiptFile, setReceiptFile] = useState(null);
+    /* the nota's SCAN, made by the photo box the moment the file is picked (so the user sees what
+       will be stored); the save path reuses it instead of scanning twice */
+    const [receiptScan, setReceiptScan] = useState(null);
     const [packageFile, setPackageFile] = useState(null);
 
     const getAdminName = () => appSettings?.adminDisplayName || user?.displayName || (user?.email || "").split('@')[0] || "HQ Admin";
@@ -507,7 +511,7 @@ const RestockVaultView = ({ inventory = [], procurements = [], motorists = [], b
             poDate: getLocalDayKey(), shippingCost: 0, exciseTax: 0, laborCost: 0,
             expiryDate: '', courier: '', trackingNo: '',
         });
-        setReceiptFile(null);
+        setReceiptFile(null); setReceiptScan(null);
         setPackageFile(null);
     };
 
@@ -601,7 +605,7 @@ const RestockVaultView = ({ inventory = [], procurements = [], motorists = [], b
                 if(triggerCapy) triggerCapy("Memindai nota... ⏳");
                 /* the nota is SCANNED (paper white, ink black — helpers.scanPixels), not photographed;
                    the goods photo below stays a photo */
-                const compressed = await scanNotaToBase64(receiptFile);
+                const compressed = receiptScan || await scanNotaToBase64(receiptFile);
                 const receiptPath = `artifacts/${appId}/users/${activeUserId}/photos/receipt_${batchId}_${Date.now()}.jpg`;
                 base64Receipt = await savePhotoAndGetReference(storage, compressed, receiptPath, appSettings?.usePhotoStorage);
             }
@@ -2096,38 +2100,17 @@ const RestockVaultView = ({ inventory = [], procurements = [], motorists = [], b
 
                             {/* EVIDENCE — photo, nota, resi */}
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-                                <div className={`border rounded-lg bg-panel p-2.5 flex flex-col gap-1.5 transition-colors ${packageFile ? 'border-orange' : 'border-line-2'}`}>
-                                    <div className="flex items-center gap-2"><Lamp tone={packageFile ? 'on' : 'off'} /><span className="text-[10px] font-bold text-ink-muted uppercase tracking-widest">Bukti foto barang</span></div>
-                                    {packageFile ? (
-                                        <div className="flex items-center justify-between gap-2 h-11 px-2 border border-orange rounded bg-inset">
-                                            <span className="text-[11px] font-mono text-ink truncate">{packageFile.name}</span>
-                                            <button onClick={() => setPackageFile(null)} className="text-[10px] font-bold uppercase text-danger-text shrink-0">Hapus</button>
-                                        </div>
-                                    ) : (
-                                        <label className="h-11 border border-dashed border-line-3 rounded bg-inset flex items-center justify-center gap-2 cursor-pointer text-[10.5px] font-mono text-ink-muted hover:border-orange hover:text-ink transition-colors">
-                                            <Camera size={13}/> {galleryOk ? 'ambil / pilih foto' : 'ambil foto'}
-                                            <input type="file" accept="image/*" {...(galleryOk ? {} : { capture: 'environment' })} className="hidden" onChange={e => setPackageFile(e.target.files[0])}/>
-                                        </label>
-                                    )}
-                                </div>
+                                {/* the picture is SHOWN once picked — a filename cannot tell you the box was cut off */}
+                                <PhotoField label="Bukti foto barang" file={packageFile} onFile={(f) => setPackageFile(f)} galleryOk={galleryOk} />
 
                                 {/* NOT disabled on Kirim. It used to be, and a dead grey box that never
                                     says why is the silence he calls a bug. An internal transfer usually
                                     has no supplier nota, so here it is simply optional — never blocked. */}
-                                <div className={`border rounded-lg bg-panel p-2.5 flex flex-col gap-1.5 transition-colors ${receiptFile ? 'border-orange' : 'border-line-2'}`}>
-                                    <div className="flex items-center gap-2"><Lamp tone={receiptFile ? 'on' : 'off'} /><span className="text-[10px] font-bold text-ink-muted uppercase tracking-widest">Nota / faktur{isOut && <span className="normal-case tracking-normal"> · opsional</span>}</span></div>
-                                    {receiptFile ? (
-                                        <div className="flex items-center justify-between gap-2 h-11 px-2 border border-orange rounded bg-inset">
-                                            <span className="text-[11px] font-mono text-ink truncate">{receiptFile.name}</span>
-                                            <button onClick={() => setReceiptFile(null)} className="text-[10px] font-bold uppercase text-danger-text shrink-0">Hapus</button>
-                                        </div>
-                                    ) : (
-                                        <label className="h-11 border border-dashed border-line-3 rounded bg-inset flex items-center justify-center gap-2 cursor-pointer text-[10.5px] font-mono text-ink-muted hover:border-orange hover:text-ink transition-colors">
-                                            <FileText size={13}/> {galleryOk ? 'ambil / pilih nota' : 'foto nota'}
-                                            <input type="file" accept="image/*" {...(galleryOk ? {} : { capture: 'environment' })} className="hidden" onChange={e => setReceiptFile(e.target.files[0])}/>
-                                        </label>
-                                    )}
-                                </div>
+                                {/* scan={true}: the box shows the SCAN the app will store, the moment the photo is
+                                    picked, with "Memindai nota…" while it works — a bad nota is caught before Save */}
+                                <PhotoField label={<>Nota / faktur{isOut && <span className="normal-case tracking-normal"> · opsional</span>}</>} file={receiptFile} scan galleryOk={galleryOk} icon={FileText}
+                                    pickLabel={galleryOk ? 'ambil / pilih nota' : 'foto nota'}
+                                    onFile={(f, scanned) => { setReceiptFile(f); setReceiptScan(scanned); }} />
 
                                 <div className={`border rounded-lg bg-panel p-2.5 flex flex-col gap-1.5 transition-colors ${poData.trackingNo.trim() ? 'border-orange' : 'border-line-2'}`}>
                                     <div className="flex items-center gap-2"><Lamp tone={poData.trackingNo.trim() ? 'on' : 'off'} /><span className="text-[10px] font-bold text-ink-muted uppercase tracking-widest">Resi &amp; kurir</span></div>

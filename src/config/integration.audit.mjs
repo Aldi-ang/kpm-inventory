@@ -3795,9 +3795,16 @@ check(G53, 'the completeness meter reports but never blocks a save',
    of evidence and it earns the same rule — a photo of a sealed package with its resi on it is
    worthless if it can be any picture from any day. Deliberately counted, not loosened to ">= 2":
    the count is what catches an input that quietly dropped the spread. */
+/* 2026-09-15: the foto-barang and the nota moved into the shared photo box (components/PhotoField.jsx),
+   which does the spread ONCE and takes the tier answer as a prop. So the desk now holds one spread
+   (the shipping proof) plus two boxes that are handed `galleryOk`, and the box itself spreads it.
+   Still a count, still deliberate: a box that stopped receiving the prop would default to the
+   gallery, and that is the drift this check exists to catch. */
 check(G53, 'all three evidence photos ask for the camera unless the tier rule allows the gallery',
   /canPickFromGallery/.test(restockCode) &&
-  (restockCode.match(/galleryOk \? \{\} : \{ capture: 'environment' \}/g) || []).length === 3 &&
+  (restockCode.match(/galleryOk \? \{\} : \{ capture: 'environment' \}/g) || []).length === 1 &&
+  (restockCode.match(/<PhotoField [\s\S]*?galleryOk=\{galleryOk\}/g) || []).length === 2 &&
+  (fs.readFileSync('src/components/PhotoField.jsx', 'utf8').match(/galleryOk \? \{\} : \{ capture: 'environment' \}/g) || []).length === 1 &&
   /export const canPickFromGallery/.test(fs.readFileSync('src/config/permissions.js', 'utf8')),
   'the foto-barang, the nota AND the shipping-proof inputs must each spread capture:"environment" ' +
   'unless canPickFromGallery says otherwise, and that helper must live in permissions.js beside ' +

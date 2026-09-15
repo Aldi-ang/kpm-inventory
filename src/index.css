@@ -90,6 +90,14 @@ body {
 @keyframes kpmNoticeBreathe { 50% { border-color: color-mix(in srgb, var(--accent-ink) 35%, transparent); } }
 .kpm-notice { animation: kpmNoticeIn .35s ease-out both, kpmNoticeBreathe 2.4s ease-in-out .35s infinite; }
 
+/* A photo preview (components/PhotoField.jsx): the picture enters with a short fade + scale, and
+   while a nota is being scanned a thin amber line sweeps the box. Lite Mode below completes both
+   at once — the words "Memindai nota…" carry the meaning, the line never does. */
+@keyframes kpmPhotoIn { from { opacity: 0; transform: scale(.96); } }
+@keyframes kpmScanline { from { top: 0; } to { top: 100%; } }
+.kpm-photo-in { animation: kpmPhotoIn .2s cubic-bezier(.23, 1, .32, 1) both; }
+.kpm-scanline { animation: kpmScanline 1.2s ease-in-out infinite alternate; box-shadow: 0 0 8px var(--orange); }
+
 /* 1. Instantly complete animations so items don't get stuck invisible */
 html.lite-mode * {
     animation-duration: 0.001s !important;

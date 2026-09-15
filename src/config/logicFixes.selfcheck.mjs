@@ -6973,5 +6973,28 @@ section('THE NOTA IS SCANNED, THE GOODS PHOTO STAYS A PHOTO (2026-09-15)');
      'rotate(+deg) would double the tilt instead of removing it');
   ok('the corners the rotation swings in are paper, not black', /lc\.fillStyle = '#fff'; lc\.fillRect\(0, 0, level\.width, level\.height\);/.test(h)); }
 
+section('A PICKED PHOTO IS SHOWN, AND THE NOTA SHOWS ITS SCAN BEFORE SAVE (2026-09-15)');
+/* Aldi, 2026-09-15 09:55: "add animation and preview window on the scanner before the user attach
+   it just to make sure that the picture is fine, also add preview on all photo attachment on this
+   app especially the foto barang on the restock vault". components/PhotoField.jsx is the one box;
+   the Restock Vault intake form uses it for both pictures. The nota box scans the moment the file
+   is picked and hands the scan back, so the save path reuses it rather than scanning twice. */
+{ const pf = read('src/components/PhotoField.jsx');
+  ok('the photo box shows the picked picture, large enough to judge', /<img src=\{preview\}[^>]*kpm-photo-in[^>]*max-h-44/.test(pf));
+  ok('with scan, the box shows the SCAN and says so while it works', /if \(scan\) \{[\s\S]*?scanNotaToBase64\(file\)/.test(pf) && /Memindai nota…/.test(pf) && /hasil scan — yang akan tersimpan/.test(pf));
+  ok('the scan is handed back to the form once per file', /onFile\(file, dataUrl\)/.test(pf));
+  ok('a file that cannot be read as a picture says so', /Tidak terbaca sebagai foto/.test(pf) && /setFailed\(true\)/.test(pf), 'a bare filename would look attached');
+  ok('GANTI and HAPUS sit under every preview', /Ganti\{input\}/.test(pf) && /onFile\(null, null\)[^>]*>Hapus/.test(pf));
+  ok('the object URL is released when the file changes', /URL\.revokeObjectURL\(url\)/.test(pf));
+  const css = read('src/index.css');
+  ok('the preview enters with a short fade + scale and the scanner line sweeps', /@keyframes kpmPhotoIn/.test(css) && /@keyframes kpmScanline/.test(css) && /\.kpm-photo-in \{ animation: kpmPhotoIn \.2s/.test(css));
+  const rv = read('src/RestockVaultView.jsx');
+  ok('the goods photo box is the shared PhotoField', /<PhotoField label="Bukti foto barang" file=\{packageFile\}/.test(rv));
+  ok('the nota box is the shared PhotoField with scan on, keeping its "opsional" tag on Kirim', /<PhotoField label=\{<>Nota \/ faktur\{isOut && <span[^>]*> · opsional<\/span>\}<\/>\} file=\{receiptFile\} scan /.test(rv));
+  ok('the old inline boxes are gone', !/onChange=\{e => setPackageFile\(e\.target\.files\[0\]\)\}/.test(rv) && !/onChange=\{e => setReceiptFile\(e\.target\.files\[0\]\)\}/.test(rv));
+  ok('the save path reuses the scan the box already made', /const compressed = receiptScan \|\| await scanNotaToBase64\(receiptFile\);/.test(rv));
+  ok('a form reset clears the scan with the file', /setReceiptFile\(null\); setReceiptScan\(null\);/.test(rv));
+  ok('the lab can show the box in its states (?photo)', /q\.has\('photo'\) \? <PhotoLab \/>/.test(read('tools/ponder-lab.jsx'))); }
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

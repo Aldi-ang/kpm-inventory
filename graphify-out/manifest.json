@@ -95,8 +95,8 @@
     "semantic_hash": ""
   },
   "src/RestockVaultView.jsx": {
-    "mtime": 1789437842.4489088,
-    "ast_hash": "c0e8e7013953eddd16fcaf8923f01dc3",
+    "mtime": 1789441348.7815013,
+    "ast_hash": "fdaaf51cae5dd420b120ec5fa8206bf8",
     "semantic_hash": ""
   },
   "src/StockOpnameView.jsx": {
@@ -540,8 +540,8 @@
     "semantic_hash": ""
   },
   "src/config/integration.audit.mjs": {
-    "mtime": 1788798269.491111,
-    "ast_hash": "6b2bd515e10793dfda0799b19af76848",
+    "mtime": 1789441578.761105,
+    "ast_hash": "3da65c73c0fd2722d6a08fb89c17901c",
     "semantic_hash": ""
   },
   "src/config/nextStop.selfcheck.mjs": {
@@ -570,8 +570,8 @@
     "semantic_hash": ""
   },
   ".claude/PROGRESS.md": {
-    "mtime": 1789438263.2150793,
-    "ast_hash": "65b2199df9fe72483f98dd33530a6332",
+    "mtime": 1789440492.6078975,
+    "ast_hash": "11c567a1c3a5af01505e14f6332465c1",
     "semantic_hash": ""
   },
   ".claude/pre-compact-context.md": {
@@ -755,13 +755,13 @@
     "semantic_hash": ""
   },
   "src/config/logicFixes.selfcheck.mjs": {
-    "mtime": 1789439052.1802063,
-    "ast_hash": "7d73345e8867ee779b13435b26b2c326",
+    "mtime": 1789441452.484887,
+    "ast_hash": "29e1f77a297442c8bfb8bf5081ca0b62",
     "semantic_hash": ""
   },
   ".claude/NEXT-SESSION.md": {
-    "mtime": 1789438263.2120733,
-    "ast_hash": "96ea1c96f4df62d654e265011e9e6b07",
+    "mtime": 1789440072.2757418,
+    "ast_hash": "8d1e9841403fd945bbca69fd35c119a5",
     "semantic_hash": ""
   },
   ".claude/SWEEP-2026-08-19.md": {
@@ -835,8 +835,8 @@
     "semantic_hash": ""
   },
   "tools/ponder-lab.jsx": {
-    "mtime": 1789439020.221047,
-    "ast_hash": "28da913ca52ab773df4c001eb5469068",
+    "mtime": 1789441380.7068515,
+    "ast_hash": "7d9adc629f151aed12ed37894dd0d954",
     "semantic_hash": ""
   },
   ".claude/PONDER-PLAN.md": {
@@ -1057,6 +1057,11 @@
   "src/config/notaScan.selfcheck.mjs": {
     "mtime": 1789438984.6354423,
     "ast_hash": "2ca39aefea056a629d8d4c586c1137d4",
+    "semantic_hash": ""
+  },
+  "src/components/PhotoField.jsx": {
+    "mtime": 1789441439.7267113,
+    "ast_hash": "99f17ed442d2669232a42af10b7c8769",
     "semantic_hash": ""
   }
 }
