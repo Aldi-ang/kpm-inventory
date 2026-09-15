@@ -1,24 +1,19 @@
 # The one job
 
-**The phone sweep — every screen must work on a 375 px phone as well as it does on the PC. His
-words: *"we need all the panel whatever the method is, i just want to make sure that all the
-features is available on the phone as good as pc uses"*. It starts with Restock Vault, whose tab
-strip hides two of its five tabs on a phone, and it starts with HIS ANSWER, which is owed: the
-letter A / B / C from `tabs-options.png`, and 1 (one screen at a time) or 2 (all 16 frames now).**
+**Finish Restock Vault on the phone, then move to the Sales Terminal.** He chose **A** (tabs
+wrap) and **1** (one screen at a time, salesmen's screens first) on 2026-09-15 — *"A is good and
+do 1"*. `096ac05` shipped the wrap. Four things remain on this screen; two need his answer, two
+are rules. Then the sweep moves on: Sales Terminal → Customers → Agent Inventory → EOD Setoran →
+Stock Opname → Journey Plan → Sampling → Agent Profile.
 
-**Session closed 2026-09-14 19:27 WIB at his "okay ask me tomorrow lets continue tomorrow make
-notes and prompt for now".** Both repos committed. Nothing shipped for the sweep yet.
+🔴 **His work rule — obey it before the first proposal:** *"give me ilustration or image or
+anything to show me what is the recommended changes instead of telling me with your technical AI
+sentence that i wont understand"*. A 🔴 DECIDE on a screen is ONE IMAGE: today and each option
+rendered at 375, side by side, the recommended one marked, one plain sentence under each.
 
-🔴 **His new work rule, saved in memory and in the vault — obey it before the first proposal:**
-*"if u want me to decide then give me ilustration or image or anything to show me what is the
-recommended changes instead of telling me with your technical AI sentence that i wont understand
-keep this work method in mind when working with me"*. A 🔴 DECIDE on a screen is ONE IMAGE: today
-and each option rendered at 375, side by side, the recommended one marked, one plain sentence
-under each. The reply carries the question only.
-
-⚠️ **Before this job: read Aldi's test results.** ✅ TEST owed: `2771374` (customer form: no
-browser bubble, faint GPS example), `d4bd41a` (Running-low card in Master Vault mode; FLEET picker
-"(Available: 100 Bks)"), `8ed215f` (store created today, no ANOTHER AGENT banner).
+⚠️ **Before this job: read his two answers to `rv-findings.png` (asked 2026-09-15 08:00).**
+🔴 *"cut the frame on the phone?"* (YES/NO, recommended yes) and ❓ the hint wording (A / B / C).
+✅ TEST still owed from earlier: `2771374`, `d4bd41a`, `8ed215f`.
 
 ---
 
@@ -28,77 +23,73 @@ browser bubble, faint GPS example), `d4bd41a` (Running-low card in Master Vault 
 >
 > Read `.claude/NEXT-SESSION.md` first — it is the whole job, do not re-read source to re-orient.
 >
-> **Ask him first, in one line, for the two answers he owes:** the letter for the Restock Vault
-> tab strip (A = the two extra tabs drop to a second row, recommended; B = a bar at the bottom of
-> the screen; C = tabs slide sideways) and the number for the sweep (1 = one screen at a time,
-> starting with the salesmen's screens: Sales Terminal → Customers → Agent Inventory → EOD Setoran
-> → Stock Opname → Journey Plan → Sampling → Agent Profile; 2 = all 16 frames at once). If he
-> already answered above this block, act on it and do not ask again.
+> **If he has not answered `rv-findings.png` above this block, ask once, one line:** YES/NO on
+> cutting the phone frame, and the letter for the hint wording (A = *"→ Siap. Pilih barang dari
+> daftar, atau isi rutenya dulu."* one string, recommended; B = *"di atas"* on the phone and
+> *"di kiri"* on the PC, two strings; C = his own words). If he answered, act on it.
 >
-> **How to render an option before building it (the method his rule requires):** the ponder lab
-> takes `?css=<rules>` (`tools/ponder-lab.jsx`, top of file) and appends them after the app's own
-> stylesheet. A scratch HTML with one 375×812 `<iframe>` per option — the pattern is
-> `tabs-options.html` in this session's scratchpad, or rebuild it — rendered by headless Chrome
-> at `--window-size=1620,1020` gives one PNG of every option side by side. Headless Chrome crops
-> any window under ~518 px, which is exactly why the iframe is the trick: the iframe lays out at
-> 375 inside a wide window. Send the PNG with SendUserFile, `display: render`.
+> **The instrument:** `preview_start` ponder-lab → `http://localhost:4190/tools/ponder-lab.html?shell&places`
+> (NOT the bare root — `/` serves the app's own index.html and dies on the firestore stub).
+> `&tab=data,daftarkan%20pabrik` opens the Data Induk tab and its factory form. `&css=<rules>`
+> renders a proposed change before it is written. `resize_window` 375×812 and read `innerWidth`
+> in the same probe. For a PNG: a scratch HTML with one 375×812 `<iframe>` per option
+> (`rv-findings.cjs` in the 2026-09-15 scratchpad writes it), rendered by headless Chrome
+> `"C:/Program Files/Google/Chrome/Application/chrome.exe" --headless=new --disable-gpu
+> --hide-scrollbars --window-size=1620,1040 --virtual-time-budget=15000 --screenshot=out.png
+> file:///.../page.html`. Send with SendUserFile `display: render`. Never `npm run build` while
+> the lab is up without the watcher ignore (it is in `tools/ponder-lab.config.mjs` now).
 >
-> **Restock Vault at 375 — measured 2026-09-14 in the lab (`?places`, `innerWidth` 375):**
-> 1. The tab strip clips. `src/RestockVaultView.jsx:1478` is `<div className="flex">` holding the
->    five tab buttons (434 px together) inside the desk `:1467` (`rounded-2xl overflow-hidden`,
->    327 px on the phone). BUKU is cut at 351, DATA INDUK sits at 375..458 and is never drawn.
->    **If he picks A:** `flex-wrap w-full lg:w-auto` on `:1478` and `flex-auto lg:flex-none` on
->    each button — the `lg:` halves are the desk's protection: on a desk the strip sits BESIDE the
->    title block on one line, and a bare `w-full` would drop it under the title. Measure the desk
->    at 1280 before and after; the head row is `flex-wrap` already (`:1470`), so the phone wrap
->    is free. If he picks B, the bottom bar is a new element, not a class — render it properly
->    first and show him again before building. If C, `overflow-x-auto` plus a visible edge cut.
-> 2. `:2189` — the footer hint says *"Cari barang di kiri"* (search on the LEFT); on the phone the
->    list is ABOVE the form. One string, but it is his app's words: propose the wording, do not
->    pick it.
-> 3. Thirteen form fields on the Data Induk tab measure 41 px tall (`py-2.5` inputs, e.g. `:1519`,
->    `:1524`, `:1562`); the app's minimum touch target is 44. Show, do not describe.
-> 4. On his own 375 frame the desk is ~254 px of 375 — about a third of the phone is padding
->    (`p-6` shell + panel + card). Cutting it is a taste call: render a before/after first.
+> **Measured 2026-09-15 at 375 inside the real shell (`?shell&places`):** desk 52..323 (271 wide);
+> tabs on THREE rows (Masuk/Kirim · Request/Buku · Data Induk), each 42 px tall; hint `<p>` at
+> `src/RestockVaultView.jsx:2187` is 238 wide holding 364 of text (`truncate sm:whitespace-normal`
+> cuts it on the phone); NAMA input in the new-place form 41 px tall; registered names at `:1623`
+> (`text-sm text-ink truncate`) in 157 px boxes; the orange `hint="Belum ada pabrik terdaftar…"`
+> (`:1283`, `:1924`) paints over the ⇄ swap button under ASAL.
 >
-> **Guard for whatever ships:** `logicFixes.selfcheck.mjs`, scoped to the strip element (slice
-> from `const tabs = [` to `tabs.map`), red before the edit, green after. Then `npm run build;
-> node src/config/integration.audit.mjs` (722 now), `graphify update .`.
+> 1. **If YES to the frame cut:** `src/components/BiohazardTheme.jsx:1059` `p-6` → `p-2 lg:p-6`;
+>    `src/App.jsx:4804` the Restock Vault panel `border-4` → `border-2 lg:border-4` and `p-4` →
+>    `p-2 lg:p-4`. Measured with `?css=`: desk 271 → 324, tabs back to TWO rows. ⚠️ TRAP: `:1059`
+>    is the shell wrapper for EVERY screen — the cut widens all 16 on the phone, not just this one.
+>    That is the point of the sweep, but say it to him in one line and re-measure `?shell` (the
+>    top bar) at 375 after; the desk at 1280 must not move (title 25..787, strip 787..1255).
+> 2. **Hint wording (his letter):** `:2189` string; and drop `truncate` from `:2187` so the line
+>    wraps on the phone instead of ending in "…". One string if A.
+> 3. **Rules, no question:** inputs `py-2.5` → `min-h-[44px]` in the Data Induk forms (`:1519`,
+>    `:1524`, `:1562` are the buttons around them — measure, do not trust the line numbers); the
+>    tab buttons at `:1484` `py-3` → add `min-h-[44px]`; `:1623` `truncate` → `break-words`; the
+>    ASAL hint overlap — find who renders `hint=` (grep `hint &&` in the same file) and give it
+>    `relative`/its own line instead of an absolute position. ⚠️ TRAP: `truncate` on the product
+>    name in the wares list is a DIFFERENT element and was a data-entry hazard he already ruled on
+>    (taste file 2026-08-17: wrap, never cut) — do not touch it here, it is already right.
+> 4. **Guard:** extend section RESTOCK VAULT TABS WRAP ON THE PHONE (2026-09-15) in
+>    `src/config/logicFixes.selfcheck.mjs` (it slices from the "ONE nav" comment to `{t.label}`),
+>    red before each edit, green after. Then `npm run build; node src/config/integration.audit.mjs`
+>    (722 now), `graphify update .`, commit, one proof PNG (phone 375 + PC 1280 side by side, the
+>    pattern is `tabs-shipped.html` in the 2026-09-15 scratchpad).
 >
-> **For every other screen:** his frame at 375 is the instrument (F12 → Ctrl+Shift+M → 375). No
-> lab mount exists for Sales Terminal, Customers, Map, Fleet, Journey, Consignment, EOD, Stock
-> Opname, Sampling, Reports, Audit Logs, Settings, Agent Profile, Agent Inventory, Master Vault,
-> Command Center. Do not build sixteen mounts; read his frames, measure what can be measured in
-> the lab, and put every finding in front of him as a picture.
+> **Then the Sales Terminal.** No lab mount exists for it (`MerchantSalesView.jsx`); his frame at
+> 375 is the instrument (F12 → Ctrl+Shift+M → 375) — ask him for it in one line, and put every
+> finding in front of him as a picture before proposing anything.
 >
 > Rewrite this file with the next single job before closing.
 
 ---
 
-## Not shipped 2026-09-14, evening — the decision is his
+## Shipped 2026-09-15 — `096ac05` (tabs wrap) · `c0ea921` lab (`?shell&places`, `?tab=`)
 
-Restock Vault tab strip options rendered (`tabs-options.png`, real renders through `?css=`): TODAY
-/ A wrap / B bottom bar / C sideways. He was asked for a letter and a number and closed the
-session instead. The lab's `?css=` switch is committed (`tools/ponder-lab.jsx`). The design stack
-(`impeccable adapt`, `emil-design-eng`, `ui-ux-pro-max`) was loaded per his 2026-08-23 rule;
-`ui-ux-pro-max` says horizontal scroll on mobile is a High-severity anti-pattern, which is why C is
-not recommended. His /findskill on the 1,194-skill library: 0 real matches (all phone forensics).
+Restock Vault tab strip: `flex flex-wrap w-full lg:w-auto` on `RestockVaultView.jsx:1478`,
+`flex-auto lg:flex-none` on each button. 375 in the bare lab: 3+2 rows, all five inside the edge.
+1280: one line beside the title, unchanged. Guard 3 red → 1477/1477; audit 722/722. Proof
+`tabs-shipped.png` sent. Then `rv-findings.png` (four frames inside the REAL shell) with the two
+questions above. Lab gained `?shell&places` (the desk inside the real wrappers — 271 px, which is
+why his phone shows three tab rows where the bare lab showed two) and `?tab=` (presses buttons in
+order, one per microtask; timers and plain loops both lose the race in headless Chrome).
 
 ## Shipped 2026-09-14 — `2af2dd9` — CONFIRMED by Aldi
 
-**The bell is on the phone screen.** Measured in the new `?shell` ponder-lab mount at a real
-375×812: title stack 232 wide and unshrinkable, control cluster 229 and `shrink-0`, bell at x
-442..489 inside an `overflow-hidden` column — clipped, never drawn. `flex-wrap` on the top bar row
-(`BiohazardTheme.jsx:951`) and `ml-auto` on the control cluster (`:995`). Desk unchanged (one line,
-82 tall at 1280). Section THE BELL IS ON THE PHONE SCREEN, 2 red → 1470/1470; audit 722/722. **The
-ribbon claim was an artifact:** top 340 of 812. **Confirmed** with his Chrome device-toolbar frames
-at 420 and 375 (*"sc1 is 420, sc2 is 375"*). Closed.
-
-## Shipped 2026-09-13 — nine commits, seven confirmed
-
-`9fed51d`, `0ff0732`, `d9de090` (boss is tier 1 on Stock Opname and the sales terminal; nota prints
-the Settings name) — confirmed. `3af7685`, `7ea096e` rail tint — confirmed. `772ab0a` confirm
-dialog over the alarm strip — confirmed. Owed: `2771374`, `d4bd41a`. From 2026-09-12: `8ed215f`.
+The bell is on the phone screen: `flex-wrap` on the top bar row (`BiohazardTheme.jsx:951`),
+`ml-auto` on the control cluster (`:995`). Confirmed with his Chrome device-toolbar frames at 420
+and 375. Owed from 2026-09-13: `2771374`, `d4bd41a`; from 2026-09-12: `8ed215f`.
 
 <details>
 <summary>Queue — do NOT paste these; promote one only when the job above is finished</summary>
