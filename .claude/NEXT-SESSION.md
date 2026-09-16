@@ -12,33 +12,13 @@ Why it costs him money: a salesman sells from this screen all day on a phone. Ev
 is under 44 px, every label that wraps to three lines, every button off the right edge is a sale
 typed twice. Nothing about it has been measured at 375 since the redesign.
 
-⚠️ Read his reply first. At 20:50 on 2026-09-16 he confirmed tests 1 and 2 (*"test 1 approve,
-nota looks align and good, test 2 looks great as well"*) and named the slow panel: the RED one —
-*"access denied that took too long on recognizing my tier 1 account, it said im not part of the
-employee"*, first open on the new address only, never since. The red panel is `App.jsx:4494`
-(`userRole === 'UNAUTHORIZED'`). For the developer email (`povPreview.js:26`
-`adikaryasukses99@gmail.com`) that role is UNREACHABLE from the sign-in listener — both the try
-(`:2522` `isDeveloper` → ADMIN) and the catch (`:2694` `isDeveloper` → ADMIN) return before it — so
-❓ owed: WHICH email did he sign in with? For any OTHER tier-1 account the likely route is the
-catch's *SECURE FALLBACK ON ERROR* at **`App.jsx:2727–2729`**: a thrown error that is not
-offline/unavailable (e.g. `permission-denied` when the first Firestore request on a brand-new
-origin goes out before the auth token is attached — `firestore.rules:174` needs `request.auth.uid`)
-is painted as *"not registered in the KPM Employee Directory"* — a verdict the server never gave.
-Candidate fix, ~5 lines: route that catch to `OFFLINE_UNVERIFIED` (the amber *Can't Verify You Yet*
-panel, `:4505`, Retry) and print `error.code` in its small text so the next report names the cause.
-Same security — both panels block every tab. Trap: do not touch the `else` at `:2679` (server said
-no → red stays red), and do not make the developer bypass wider. 🔴 he has not yet said yes.
-
-The second owed answer is a one-line job that goes BEFORE the terminal if he says yes:
-**`App.jsx:1103`** `handlePinLogin`
-awaits `updateDoc(adminDocRef, { failedRecoveryAttempts: 0, lockoutStatus: "NONE" })` — a server
-round trip — before `setIsUnlocking(true)` on `:1104`. The password is already verified by then
-(`hashedInput === data.pin`, `:1101`), so the wait buys nothing; drop the `await`, keep a
-`.catch` that reports (silence is a bug), start the animation at once. Trap: do NOT move the write
-after the timeout or into the `setTimeout` — a phone that closes the tab mid-animation must still
-reset the strike counter. The 8.5 s sequence itself (`VaultGate.jsx:51` `GATE_UNLOCK_MS`) is his
-design; change it only if he said so. He has been told the wait is first-open-only and has said
-*"just for your knowledge"* — so neither login fix runs unless he says yes to it by name.
+⚠️ Both first-open fixes SHIPPED 2026-09-16 21:10 as `af4d5e2` (his "if u can fix the loading time
+maybe it would help a lot just for conveniency for the new users"): the sign-in listener says
+"Checking your account" before its first round trip and owns `user` (handleLogin no longer sets
+it, which is what painted the stale red Access Denied); the four directory reads go out in one
+Promise.all; OPEN THE VAULT no longer awaits the strike-reset write. The 8.5 s unlock sequence is
+untouched. ✅ TEST owed: a fresh device or an incognito tab on `https://192.168.1.107:4173` — the
+first open must show the black "Checking your account" panel, never the red one, then the gate.
 
 ---
 
