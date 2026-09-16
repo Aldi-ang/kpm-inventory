@@ -2,7 +2,7 @@
 
 **The Sales Terminal on the phone — the sweep resumes.** The Restock Vault is done on the phone
 (tests 1–4 confirmed 2026-09-15; the nota scanner now finds the paper, squares it and has a
-SESUAIKAN corner editor, shipped 2026-09-16 — ✅ TEST owed from Aldi on a REAL nota). The next
+SESUAIKAN corner editor, shipped 2026-09-16 and CONFIRMED on his phone the same evening). The next
 screen in his sweep is the Sales Terminal (`src/MerchantSalesView.jsx`, mounted by `App.jsx:4856`
 under `activeTab === 'sales'` in a bare `h-full w-full relative bg-[var(--duke-well-solid)]` box —
 NOT the `p-6` / `border-4 p-4` wrappers the Restock Vault sits in). He owes a ❓ 375 frame of it
@@ -17,8 +17,15 @@ maybe it would help a lot just for conveniency for the new users"): the sign-in 
 "Checking your account" before its first round trip and owns `user` (handleLogin no longer sets
 it, which is what painted the stale red Access Denied); the four directory reads go out in one
 Promise.all; OPEN THE VAULT no longer awaits the strike-reset write. The 8.5 s unlock sequence is
-untouched. ✅ TEST owed: a fresh device or an incognito tab on `https://192.168.1.107:4173` — the
-first open must show the black "Checking your account" panel, never the red one, then the gate.
+untouched. SESSION CLOSED 2026-09-16 21:20 at his *"let me test tomorrow prepare notes and prompt
+for tomorrow"*. **Tomorrow opens with his test result, so read the reply before the job:** ✅ an
+incognito tab (or a phone that has never opened the address) on `https://192.168.1.107:4173` — the
+first thing after Google must be the black "Checking your account" panel, never the red one, then
+the vault gate, and OPEN THE VAULT must start its animation right after the password with no pause.
+If he reports the red panel again, the cause is NOT the one fixed — read `App.jsx` for any other
+writer of `setUser(` / `setUserRole('UNAUTHORIZED')` before touching anything (the 2026-09-16 lesson:
+a rendered state is a conjunction with two writers). The packed build on `:4173` was left running;
+if it is down, `preview_start kpm-preview` and read the address off its `Network:` line first.
 
 ---
 
@@ -81,8 +88,10 @@ opens the sheet. notaScan 22/22 (10 → 22), logicFixes 1547/1547 (17 red with t
 audit 722/722. Drag, PUTAR, PAKAI exercised in the pane at a measured 375: output 378×311 →
 321×407 after one turn. Timing on the PC: findPaper 8 ms, warpQuad 19 ms at 1600×1200.
 
-✅ TEST OWED: a real nota on his phone — `https://192.168.1.107:4173` (packed build; the PC's address changes whenever the router hands out a new one — .143 → .131 → .107 in three days; read it from the preview server's `Network:` line (preview_logs kpm-preview) or `ipconfig` before writing it anywhere) — the
-automatic scan, then SESUAIKAN on a photo where the finder missed. Also still owed: the
+✅ CONFIRMED by Aldi 2026-09-16 20:50: *"test 1 approve, nota looks align and good"* (the sample nota,
+full screen on the PC, photographed at an angle). Phone URL `https://192.168.1.107:4173` (packed build;
+the PC's address changes whenever the router hands out a new one — .143 → .131 → .107 in three days;
+read it from the preview server's `Network:` line before writing it anywhere). Still owed: the
 goods-photo preview test, ❓ the "bandung 1 / muntilan 1" tab.
 
 ## Shipped 2026-09-15 — Restock Vault on the phone, complete
