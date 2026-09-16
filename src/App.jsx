@@ -243,6 +243,9 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
      has to come before the first reader, and `user` is read within twenty lines. */
   const [trueRole, setUserRole] = useState('ADMIN');
   const [trueAgentProfileId, setAgentProfileId] = useState(null);
+  /* The account the sign-in listener is looking up right now, or null. Drives the CHECKING panel
+     while `user` is still null — see the listener. */
+  const [checkingEmail, setCheckingEmail] = useState(null);
   // The shop a notification asked us to open. Cleared by the screen once it has honoured it, so
   // pressing the same alert twice works and a stale name cannot re-open a shop later.
   const [focusStore, setFocusStore] = useState(null);
@@ -1109,7 +1112,13 @@ const handleGitHubMirror = async () => {
         
               if (hashedInput === data.pin) {
               // SUCCESS: Reset strikes & Trigger Cinematic Unlock
-              await updateDoc(adminDocRef, { failedRecoveryAttempts: 0, lockoutStatus: "NONE" });
+              /* Not awaited. The password is already verified by the compare above; this write is
+                 bookkeeping, and waiting for the server to confirm it put a whole cold round trip
+                 between the right password and the first frame of the unlock (his 2026-09-16
+                 report: "pressing unlock vault button after entering password … took a long
+                 time"). It still runs before the sequence starts, so a tab closed mid-animation
+                 has already sent it; a failure is reported, never swallowed. */
+              updateDoc(adminDocRef, { failedRecoveryAttempts: 0, lockoutStatus: "NONE" }).catch((e) => { console.error(e); notify("Vault opened, but the attempt counter could not be reset on the server."); });
               setIsUnlocking(true);
               
               // Hold just long enough for the unlock to land (sweep ends at 740ms), then go.
@@ -2496,6 +2505,19 @@ const handleGitHubMirror = async () => {
         if (currentUser && currentUser.email) {
             const email = currentUser.email.toLowerCase().trim();
             setCurrentUserEmail(email);
+            /* 🔴 SAY "CHECKING" FIRST, BEFORE THE FIRST ROUND TRIP. His first open on a new address
+               (2026-09-16, his own tier-1 account): "access denied that took too long on recognizing
+               my tier 1 account, it said im not part of the employee". The red panel wants `user`
+               set and the role UNAUTHORIZED — and both were true at once: the page's first
+               onAuthStateChanged(null) had left the role at UNAUTHORIZED (the sign-out branch
+               below), then the Google popup resolved and handleLogin set the user on the spot, so
+               a verdict from a sign-out sat on screen for as long as a cold connection took to
+               answer the lookups. Now the listener owns `user`, and the first thing it says is
+               that it is looking — the CHECKING panel, which names the account and offers a way
+               out. `user` itself stays null until the role is known, so nothing downstream (data
+               subscriptions keyed on the user) starts under a role that is about to change. The
+               reads below set both when they land; `finally` clears the panel on every exit. */
+            setCheckingEmail(email);
 
             // 🚀 MASTER VIP LIST: the Architect can never be locked out. Defined before the
             // try block so the offline crash handler in the catch below can see it too.
@@ -2507,11 +2529,16 @@ const handleGitHubMirror = async () => {
             try {
                 // 🚀 TIER 1 CHECK: IS THIS THE SYSTEM ARCHITECT? (SECURED) 🚀
                 const sysAdminRef = doc(db, 'system_admins', currentUser.uid);
-                const sysAdminSnap = await getDocOfflineSafe(sysAdminRef);
-
                 // 🚀 CROWN CLAIM CHECK: Did this user just receive the Crown?
                 const inviteRef = doc(db, 'system_admins_invites', email);
-                const inviteSnap = await getDocOfflineSafe(inviteRef);
+                // 🏢 TIER 2-4 CHECK: NORMAL EMPLOYEES & CLIENTS 🏢
+                const uidRef = doc(db, `artifacts/${appId}/employee_directory`, currentUser.uid);
+                const emailRef = doc(db, `artifacts/${appId}/employee_directory`, email);
+                /* Four independent reads, ONE round trip. They used to run one after another —
+                   four cold round trips on a new phone, which is the wait he felt ("the slow login
+                   is only for the first time since the address is new"). Nothing below depends on
+                   one read finishing before another starts. */
+                const [sysAdminSnap, inviteSnap, uidSnap, emailSnap] = await Promise.all([sysAdminRef, inviteRef, uidRef, emailRef].map(getDocOfflineSafe));
 
                 if (inviteSnap.exists() || (isDeveloper && !sysAdminSnap.exists())) {
                     // Claim the Crown: Promote them to System Admin and delete the invite
@@ -2531,13 +2558,6 @@ const handleGitHubMirror = async () => {
                 }
 
                 setIsSystemOwner(false);
-
-                // 🏢 TIER 2-4 CHECK: NORMAL EMPLOYEES & CLIENTS 🏢
-                const uidRef = doc(db, `artifacts/${appId}/employee_directory`, currentUser.uid);
-                const emailRef = doc(db, `artifacts/${appId}/employee_directory`, email);
-
-                const uidSnap = await getDocOfflineSafe(uidRef);
-                const emailSnap = await getDocOfflineSafe(emailRef);
 
                 let activeData = null;
 
@@ -2727,11 +2747,14 @@ const handleGitHubMirror = async () => {
                 // 🚨 SECURE FALLBACK ON ERROR 🚨
                 setUserRole('UNAUTHORIZED');
                 setUser(currentUser);
+            } finally {
+                setCheckingEmail(null);   // every exit above — return, verdict or error — takes the CHECKING panel down
             }
         } else {
             setUser(null);
             setIsSystemOwner(false);
             setUserRole('UNAUTHORIZED'); // 🚨 CLEAR ROLE ON LOGOUT
+            setCheckingEmail(null);
         }
     });
     
@@ -2865,11 +2888,10 @@ const handleGitHubMirror = async () => {
             // We MUST NOT put any 'await' commands before opening the popup.
             // Mobile browsers strictly require popups to open in the EXACT same 
             // split-second microtask as the user's physical tap. 
-            const result = await signInWithPopup(auth, googleProvider);
-            
-            setUser(result.user);
-            if (result.user.email) setCurrentUserEmail(result.user.email);
-            
+            await signInWithPopup(auth, googleProvider);
+            /* No setUser here. The auth listener sets the user AND says CHECKING in the same
+               breath; setting the user from this spot painted it next to the sign-out's stale
+               UNAUTHORIZED role — the red Access Denied he saw on a new phone (2026-09-16). */
         } catch (error) {
             console.error("Login Error:", error);
             
@@ -4469,6 +4491,26 @@ const handleGitHubMirror = async () => {
             )}
           </div>
         </div>
+      )}
+
+      {/* THE LOOK-UP IS RUNNING — `user` is still null, the listener is reading the directory.
+          Same island as the two lockouts, because it is the same moment in the same place, but it
+          is a STATUS, not a verdict: no red, no shield, a turning arrow and the account being
+          checked. It sits in the `!user` moment on purpose: nothing keyed on `user` (data
+          subscriptions, the shell) starts until the role is known. A way out is kept, so a
+          look-up that never lands cannot trap anyone. Solid ground: the sign-in door (z-80) is
+          underneath and must not bleed through. */}
+      {!user && checkingEmail && (
+          <div className="kpm-dark-island fixed inset-0 z-[9999] bg-[var(--duke-well-solid)] flex flex-col items-center justify-center text-center p-6 font-mono">
+              <RefreshCcw size={48} className="text-[var(--duke-amber-ink)] mb-6 animate-spin" />
+              <h2 className="text-xl font-black text-[var(--duke-ink-hi)] uppercase tracking-[0.25em] mb-2">Checking your account</h2>
+              <p className="text-[var(--duke-ink-3)] text-xs font-bold uppercase tracking-widest max-w-md leading-relaxed mb-8">
+                  Looking up <span className="text-[var(--duke-amber-ink)]">[{checkingEmail}]</span> in the KPM Employee Directory. The first open on a new device takes a moment.
+              </p>
+              <button onClick={handleLogout} className="px-10 py-4 border-2 border-[color-mix(in_srgb,var(--duke-edge-2)_50%,transparent)] text-[var(--duke-ink-3)] font-black uppercase text-xs hover:bg-[var(--duke-well)] transition-all">
+                  Disconnect Session
+              </button>
+          </div>
       )}
 
       {/* 3. MAIN TABS (Only render if user exists) */}

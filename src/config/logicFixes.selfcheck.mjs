@@ -6996,6 +6996,49 @@ section('A PICKED PHOTO IS SHOWN, AND THE NOTA SHOWS ITS SCAN BEFORE SAVE (2026-
   ok('a form reset clears the scan with the file', /setReceiptFile\(null\); setReceiptScan\(null\);/.test(rv));
   ok('the lab can show the box in its states (?photo)', /q\.has\('photo'\) \? <PhotoLab \/>/.test(read('tools/ponder-lab.jsx'))); }
 
+section('A NEW PHONE IS TOLD "CHECKING", NEVER "ACCESS DENIED", WHILE THE APP LOOKS UP THE ACCOUNT (2026-09-16)');
+/* Aldi, 2026-09-16, first open on a new address with adikaryasukses99@gmail.com: "access denied that
+   took too long on recognizing my tier 1 account, it said im not part of the employee". The red
+   panel needs `user` set AND role UNAUTHORIZED. Both happened at once: the page's first
+   onAuthStateChanged(null) set the role to UNAUTHORIZED (the logout branch), then the Google popup
+   resolved and handleLogin set the USER on the spot — before the listener's four serial server
+   reads had said anything. A stale verdict painted over a check still running, for as long as a
+   cold connection took. His ask: "fix the loading time … make our presentation for the new user
+   look even faster and smoother". So: the listener owns `user` (handleLogin no longer sets it),
+   it raises a CHECKING panel (`checkingEmail`) the moment it starts and keeps `user` null until
+   the role is known, the four reads go out together, and the vault no longer waits for a
+   bookkeeping write. */
+{ const a = code(read('src/App.jsx'));
+  const L = a.indexOf("const unsubAuth = onAuthStateChanged(auth, async (currentUser) => {"), E = a.indexOf('return () => unsubAuth();', L);
+  const listener = a.slice(L, E);
+  ok('the sign-in listener is where it was', L > -1 && E > L && listener.length > 6000 && listener.length < 20000);
+  const iCheck = listener.indexOf('setCheckingEmail(email)'), iAwait = listener.indexOf('await ');
+  ok('the listener says CHECKING (setCheckingEmail) BEFORE its first await, and leaves `user` null until the role is known', iCheck > -1 && iCheck < iAwait && !/setUser\(currentUser\)/.test(listener.slice(0, iAwait)),
+     'a verdict from a previous sign-out must not be on screen while this account is being looked up; setting `user` early would start every user-keyed subscription under a role about to change');
+  ok('every exit of the look-up takes the panel down (finally + the sign-out branch)', /\} finally \{\s*setCheckingEmail\(null\);/.test(listener) && (listener.match(/setCheckingEmail\(null\)/g) || []).length >= 2);
+  ok('the four directory reads go out together, not one after another', /const \[sysAdminSnap, inviteSnap, uidSnap, emailSnap\] = await Promise\.all\(\[sysAdminRef, inviteRef, uidRef, emailRef\]\.map\(getDocOfflineSafe\)\);/.test(listener),
+     'four serial round trips on a cold connection is the wait he felt');
+  ok('REGRESSION: no serial `await getDocOfflineSafe(` is left BEFORE the joint read (the live-profile read after it depends on the boss uid and stays serial)',
+     !/await getDocOfflineSafe\(/.test(listener.slice(0, listener.indexOf('await Promise.all('))) && (listener.match(/await getDocOfflineSafe\(/g) || []).length === 1);
+  const H = a.indexOf('const handleLogin = async () => {'), handler = a.slice(H, a.indexOf('const handleLogout', H));
+  ok('handleLogin no longer sets the user itself — the listener does, with the role', H > -1 && !/setUser\(result\.user\)/.test(handler) && /signInWithPopup\(auth, googleProvider\)/.test(handler));
+  const C = a.indexOf('{!user && checkingEmail && ('), panel = a.slice(C, a.indexOf('{user && (', C));   // code() strips the JSX comment between them
+  ok('the panel slice is bounded', C > -1 && panel.length > 400 && panel.length < 2500);
+  ok('the CHECKING panel lives in the `!user` moment, names the account, spins, offers a way out, on solid ground', C > -1 && /Checking your account/.test(panel) && /\[\{checkingEmail\}\]/.test(panel) && /animate-spin/.test(panel) && /onClick=\{handleLogout\}/.test(panel) && /bg-\[var\(--duke-well-solid\)\]/.test(panel),
+     'in the `user &&` block it would start every user-keyed effect early; translucent, the sign-in door would bleed through');
+  ok('no red, no shield on the status panel — a status is not a verdict', !/ShieldAlert|text-red/.test(panel));
+  ok('the red panel still exists for a real server "no", and the amber one for "could not check"', /userRole === 'UNAUTHORIZED' \?/.test(a) && /userRole === 'OFFLINE_UNVERIFIED' \?/.test(a));
+  ok('the state is declared once, beside the role', /const \[checkingEmail, setCheckingEmail\] = useState\(null\);/.test(a));
+  /* the vault: the password is verified by the hash compare; the strike-reset write is bookkeeping */
+  const P = a.indexOf('const handlePinLogin = async () => {'), pin = a.slice(P, a.indexOf('} else {', a.indexOf('if (hashedInput === data.pin)', P)));
+  ok('OPEN THE VAULT starts the unlock the moment the hash matches — the strike reset is not awaited', P > -1 && /updateDoc\(adminDocRef, \{ failedRecoveryAttempts: 0, lockoutStatus: "NONE" \}\)\.catch\(/.test(pin) && !/await updateDoc\(adminDocRef, \{ failedRecoveryAttempts: 0/.test(pin) && pin.indexOf('updateDoc(adminDocRef') < pin.indexOf('setIsUnlocking(true)'),
+     'a server round trip between the right password and the first frame of the unlock');
+  /* behaviour: the state machine that painted the red panel, re-run with and without the fix */
+  const paint = (role, user, checking) => (!user ? (checking ? 'checking' : 'login') : role === 'UNAUTHORIZED' ? 'RED' : 'app');
+  const before = (() => { let role = 'ADMIN', user = null; role = 'UNAUTHORIZED'; /* onAuthStateChanged(null) */ user = { email: 'x' }; /* popup resolved: handleLogin setUser */ return paint(role, user, null); })();
+  const after = (() => { let role = 'ADMIN', user = null, checking = null; role = 'UNAUTHORIZED'; /* onAuthStateChanged(null) */ checking = 'x'; /* listener fires: setCheckingEmail, user untouched */ return paint(role, user, checking); })();
+  ok(`behaviour: the old order painted "${before}" during the lookups; the new order paints "${after}"`, before === 'RED' && after === 'checking'); }
+
 section('THE PHONE RIBBON STARTS A QUARTER OF THE WAY DOWN, NOT HALFWAY (2026-09-16)');
 /* Aldi, 2026-09-16: "make the sidebar button on the right side phone to be 25% from upper right
    as default location instead of just 50% between upper and bottom right side". The ribbon is the
