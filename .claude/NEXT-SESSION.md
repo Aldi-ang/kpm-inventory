@@ -1,22 +1,16 @@
 # The one job
 
-**The nota scanner finds the paper, squares it, and lets the user fix the corners.** Aldi,
-2026-09-15 10:15, with a phone screenshot of the first real scan (the sample nota photographed
-off his PC screen, ~40° crooked, in perspective — the scan was black-and-white but still
-crooked, and there was nothing to press on the preview): *"is it possible that u make the scanner
-automatically align and make sure the receipt to be square and 2D like in plain paper … also
-there is no pressable or interaction button on the preview photo or maybe the edit button like
-camscanner have"*. Yes. This is option B of the brainstorm, in pure JS, no OpenCV.
+**The Sales Terminal on the phone — the sweep resumes.** The Restock Vault is done on the phone
+(tests 1–4 confirmed 2026-09-15; the nota scanner now finds the paper, squares it and has a
+SESUAIKAN corner editor, shipped 2026-09-16 — ✅ TEST owed from Aldi on a REAL nota). The next
+screen in his sweep is the Sales Terminal (`src/MerchantSalesView.jsx`, mounted by `App.jsx:4856`
+under `activeTab === 'sales'` in a bare `h-full w-full relative bg-[var(--duke-well-solid)]` box —
+NOT the `p-6` / `border-4 p-4` wrappers the Restock Vault sits in). He owes a ❓ 375 frame of it
+from his phone; do not wait for it — the lab can make the frame.
 
-Why the 10:14 scan stayed crooked: `helpers.deskewAngle` only looks ±15°, and a photo taken at
-40° in perspective is not a rotation at all — it needs the four corners of the paper and a
-perspective warp. Once the paper is warped flat, the dark band around its edge (the table) is
-gone too, because the output is the paper only.
-
-⚠️ Before this job: he still owes ✅ TEST of the goods-photo preview, ❓ which tab shows the tiny
-"bandung 1 / muntilan 1" text, ❓ a 375 frame of the Sales Terminal. The phone sweep (Sales
-Terminal next) resumes after this job. Phone URL: `https://192.168.1.131:4173` (the packed build,
-fast) — `:5173` is the dev server and crawls on the phone.
+Why it costs him money: a salesman sells from this screen all day on a phone. Every control that
+is under 44 px, every label that wraps to three lines, every button off the right edge is a sale
+typed twice. Nothing about it has been measured at 375 since the redesign.
 
 ---
 
@@ -26,59 +20,60 @@ fast) — `:5173` is the dev server and crawls on the phone.
 >
 > Read `.claude/NEXT-SESSION.md` first — it is the whole job, do not re-read source to re-orient.
 >
-> **Build, in `src/utils/helpers.js` beside `scanPixels` / `deskewAngle` / `scanNotaToBase64`
-> (helpers.js:~340–450), pure and node-testable, in this order:**
-> 1. `findPaper(data, w, h)` → the four corners `[tl, tr, br, bl]` or `null`. On the ORIGINAL
->    photo (sampled down to ~320 wide): grayscale, Otsu threshold (paper is the bright class),
->    largest connected bright component (BFS on the small image), its convex hull (monotone
->    chain), hull reduced to ≤ 24 points, then the 4 hull points with the largest quadrilateral
->    area (brute force over ≤ 24C4 = 10,626 combos — cheap), ordered by angle around the centroid,
->    scaled back to full size. Return `null` when the component is under 15% of the frame or the
->    quad is under 60% of the hull's area (a cluttered background — fall back to the old path).
-> 2. `warpQuad(data, w, h, corners)` → `{ data, width, height }` of the paper only. Output size:
->    width = mean of top and bottom edge lengths, height = mean of left and right, capped at 800
->    wide. Homography from the unit rectangle to the quad (the 8-unknown solve, 3×3 matrix), then
->    for every output pixel the inverse-mapped source point with bilinear sampling. ~480k pixels
->    at 800×600, well under a second on a phone.
-> 3. In `scanNotaToBase64`: photo → `findPaper` → (if found) `warpQuad` → `scanPixels` →
->    `deskewAngle` (now only a residual) → JPEG 0.5. If not found: today's path unchanged.
->    ⚠️ TRAP: run `scanPixels` AFTER the warp, never before — the scan paints the table black and
->    the paper white with a dark halo, which is exactly what Otsu must not see.
-> 4. `src/config/notaScan.selfcheck.mjs` (10 checks now): add a synthetic photo with a bright
->    quad drawn at four known corners on a dark ground → `findPaper` returns them within 3 px in
->    the right order; `warpQuad` of a quad whose text lines run diagonal gives an output whose
->    `deskewAngle` is within 1°; a frame with no bright quad returns `null`. Red before, green after.
+> **Build the lab mount first, then look, then propose — never fix from a description.**
+> 1. `tools/ponder-lab.jsx`: add `?shell&terminal` to `ShellLab()` (`:571`; `?shell&places` at
+>    `:607` is the pattern — wrappers copied VERBATIM from App.jsx, for the terminal that is only
+>    `App.jsx:4874` `<div className="h-full w-full relative bg-[var(--duke-well-solid)]">`).
+>    Mount `MerchantSalesView` (`src/MerchantSalesView.jsx:42`, its props list is on that line)
+>    with the lab's fixture inventory, `userRole="FIELD_OPERATIVE"` (T5 — the salesman), a fixture
+>    customer list, `onProcessSale` a no-op that records to `window.__sale`, `db`/`storage` from the
+>    lab stubs. `?tab=` already presses buttons by label (`:578`) — use it to open the cart, the
+>    payment step and the sale-proof camera view.
+> 2. In the in-app Browser pane: `preview_start ponder-lab` → `resize_window` 375×812 → probe
+>    `innerWidth` in the SAME call as every rectangle (a hidden pane reports 0 and still returns
+>    plausible numbers). Both themes. Measure: every button under 44 px tall, every text under
+>    10 px, anything wider than 375, the wares list row height, the cart drawer's reachable area.
+>    Headless PNG for the reply: `--window-size=518,900` is the narrowest uncropped frame on this
+>    machine (375 crops at 518 — the vault's "Looking at the App" page); the pane is the honest
+>    375 instrument.
+> 3. Reply as FRAMES with captions — TODAY beside each proposed fix rendered through `?css=` —
+>    and let him rank them (his rule: show, don't tell). No code before he answers.
 >
-> **Then the editor, in `src/components/PhotoField.jsx`** (the one photo box, shipped `5319aef`):
-> a **SESUAIKAN** button beside GANTI / HAPUS when `scan` is on. It opens a full-screen sheet
-> (the app's dialog language — `ConfirmGate.jsx` is the dialog host, never `window.confirm`) with
-> the ORIGINAL photo, the four found corners as draggable handles (pointer events, `touch-action:
-> none`, 44 px targets), a PUTAR 90° button, and PAKAI / BATAL. PAKAI re-runs warp+scan with the
-> hand-set corners. Also a small "asli / scan" toggle under the preview so he can compare. Render
-> it in the lab: `?photo` mounts the box with a real File drawn on a canvas (`tools/ponder-lab.jsx`
-> `PhotoLab`); add `&edit` to open the sheet, and make the synthetic photo a TILTED, PERSPECTIVE
-> quad (draw the nota on a canvas, then `warpQuad` it the other way onto a dark ground) so the
-> picture proves the round trip. Headless: `--window-size=420,900 --virtual-time-budget=30000`.
-> Send the PNG. Guards: extend section A PICKED PHOTO IS SHOWN… in `logicFixes.selfcheck.mjs`
-> (SESUAIKAN present, sheet uses no native dialog, corners handed to warpQuad); `npm run build;
-> node src/config/integration.audit.mjs` (722), `graphify update .`, commit.
->
-> ⚠️ TRAPS: (a) the photo the box receives is already upright from the camera's orientation tag —
-> do not rotate it again from EXIF. (b) The goods photo (`Bukti foto barang`) is a photo of boxes:
-> `scan` stays off there, no warp. (c) Lite Mode strips animation, never the editor. (d) T4–T6
-> take the nota with a real camera and no file input — the editor must work on a fresh capture
-> too. (e) Keep `receiptScan` handed back through `onFile(file, scan)` so Save does not rescan.
+> **Traps.** (a) T4–T6 sale-proof camera is a real `getUserMedia` view with NO file input in the
+> DOM (`284ea64`/`1857b97`); `MerchantSalesView.jsx:2202` `#txProof` is the T1–T3 picker — never
+> reintroduce a picker for T4–T6. When PhotoField reaches this screen it keeps that rule and
+> `scan` stays OFF (a sale proof is a photo of a shop, not a document). (b) The admin field-mode
+> toggle lives INSIDE the wares column on purpose (`App.jsx:4857` comment) — do not lift it back
+> into the shell. (c) A cash refund never reduces omzet; Buyback is off — nothing in the sweep
+> touches the money engine. (d) Every frame must be at a MEASURED 375; the 2026-09-15 tabs
+> proposal shipped three rows instead of two because the bare mount was 54 px wider than the shell.
 >
 > Rewrite this file with the next single job before closing.
 
 ---
 
+## Shipped 2026-09-16 — the nota scanner finds the paper, squares it, and has a corner editor
+
+`helpers.findPaper` (Otsu → largest bright blob → hull → best quad, null on sticker / L / full
+frame) · `helpers.homography` · `helpers.warpQuad` (bilinear, ≤ 800 wide; one cycle of the corner
+order = a 90° turn) · `helpers.loadNotaPhoto` (one decode at ≤ 1600, shared) ·
+`scanNotaToBase64(file, { corners, turns })`: photo → findPaper → warpQuad → scanPixels →
+deskewAngle → JPEG 0.5, old path when no sheet. `PhotoField`: SESUAIKAN → `CornerSheet` (dialog
+language, 4×44 px pointer handles, ATAS marks the top edge, PUTAR 90°, BATAL, PAKAI → rescan →
+`onFile(file, scan)`), asli / scan switch. Lab `?photo` is a tilted perspective sheet; `&edit`
+opens the sheet. notaScan 22/22 (10 → 22), logicFixes 1547/1547 (17 red with the sources stashed),
+audit 722/722. Drag, PUTAR, PAKAI exercised in the pane at a measured 375: output 378×311 →
+321×407 after one turn. Timing on the PC: findPaper 8 ms, warpQuad 19 ms at 1600×1200.
+
+✅ TEST OWED: a real nota on his phone — `https://192.168.1.131:4173` (packed build) — the
+automatic scan, then SESUAIKAN on a photo where the finder missed. Also still owed: the
+goods-photo preview test, ❓ the "bandung 1 / muntilan 1" tab.
+
 ## Shipped 2026-09-15 — Restock Vault on the phone, complete
 
 `096ac05` tabs wrap · `289161a` bigger panel, hints gone, 44 px · `3bac5b7` notice box, button
 row, nota scan A · `39dc277` scan levelled (±15°) · `5319aef` photo previews (`PhotoField`).
-Tests 1–4 CONFIRMED by Aldi at 09:45; test 5 (scan) produced the screenshot that opened the job
-above. logicFixes 1525/1525, audit 722/722. Lab: `?shell&places`, `?tab=`, `?nota-scan`, `?photo`.
+Tests 1–4 CONFIRMED by Aldi at 09:45. Lab: `?shell&places`, `?tab=`, `?nota-scan`, `?photo`.
 
 ## Shipped 2026-09-14 — `2af2dd9` — CONFIRMED by Aldi
 
@@ -116,6 +111,12 @@ The bell is on the phone screen. Owed from 2026-09-13: `2771374`, `d4bd41a`; fro
   `ResidentEvilInventory.jsx:297`; logos `SettingsView.jsx:412`, `:1238`; avatar/logo/border
   `AgentProfileView.jsx:895`, `:904`, `:1066`; face `App.jsx:4750`. Each keeps its own tier rule;
   `scan` only for documents (nota), never for goods, faces or logos.
+* **Nota scanner, if his real-nota test shows a miss:** findPaper assumes the sheet is the BRIGHT
+  class and the table darker. A white desk merges table and sheet → the quad fills the frame →
+  null → old path (the editor still opens with the frame as the default corners). If that is what
+  his phone shows, the next step is an edge-based finder (Sobel + the same hull/quad), not a
+  threshold tweak. Corner precision is ± one sample step (≈ 5 px at 1600) — inside the sheet, so
+  the warp loses a hair of margin, never a band of table.
 * **Parked, his words:** *"i was thinking on redesign the method the regional admin fill the
   agent inventory but we'll decide first if this really needed or not in the app"* — not a job
   until he says so.
@@ -154,10 +155,12 @@ Aldi pressed it 2026-09-09 and 2026-09-10. **Do not put this on a list again.**
 ### Phone — the lab instruments that exist now
 
 * `?shell` — the app shell (top bar, ribbon). `?places` — Restock Vault. `?gudang` — branch
-  warehouse. `?nota`, `?label`, `?scan`, `?perf`, `?plan`, `?minkirim`, `?toast`.
+  warehouse. `?nota`, `?label`, `?scan`, `?perf`, `?plan`, `?minkirim`, `?toast`, `?nota-scan`,
+  `?photo` (`&busy`, `&edit`).
 * `?css=<rules>` on any mount — render a proposed change before writing it.
 * `preview_start` ponder-lab → `resize_window` 375×812 → probe with `innerWidth` in the same call.
-  Headless Chrome crops under ~518; use an iframe wrapper for a 375 PNG.
+  Headless Chrome crops under ~518; an iframe wrapper does NOT work headless (the frames never
+  finish loading) — shoot at 518 for the file, measure at 375 in the pane.
 
 ### Wording — cheap, each one read by a customer
 
@@ -175,7 +178,7 @@ salesman's private arrangement. Buyback is off for everyone including the owner;
 have no file input in the DOM in ANY build; T1 to T3 keep the picker. **Do not reintroduce a
 build-mode escape hatch.** To let a tier attach a file, turn `photo_pick_from_gallery` ON in the
 matrix, test, turn it off. Untouched on purpose: the GPS-bypass proof photo at
-`MerchantSalesView.jsx:1839` and the NOO storefront photo at `:2914`.
+`MerchantSalesView.jsx:1863` and the NOO storefront photo at `:2964`.
 
 **What "low" means.** Settled 2026-08-25, adopted everywhere 2026-09-12. Own MIN. ALERT (Bks) if
 set, else the company default (qty + unit, default 3 Bal) converted per product. Blank means "use

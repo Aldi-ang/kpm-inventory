@@ -36,7 +36,7 @@ import { Cloud } from 'lucide-react';
 /* Same module the alias in ponder-lab.config.mjs points `firebase/firestore` at, so writing a
    fixture here is what the component's own listener reads back. */
 import { FIXTURES } from './lab-firestore-stub.js';
-import { scanNotaToBase64 } from '../src/utils/helpers.js';
+import { scanNotaToBase64, homography } from '../src/utils/helpers.js';
 import PhotoField from '../src/components/PhotoField.jsx';
 import { SCENES } from '../src/ponder/registry.js';
 
@@ -425,28 +425,50 @@ const LAB_SHIPMENT = {
    scan reads better than the photo, which a node check on synthetic pixels cannot say. */
 /* ?photo MOUNTS THE PHOTO BOX (components/PhotoField.jsx) in its states, at a phone width: empty,
    a goods photo just picked (the preview), and a nota picked with scan={true} (the SCAN preview,
-   after "Memindai nota…"). The file is real — the synthetic nota drawn on a canvas, turned into
-   a Blob — so the box runs the same code the intake form runs. `&busy` freezes the scanning
-   state so the sweeping line can be looked at. */
+   after "Memindai nota…"). The file is real — the synthetic nota drawn flat on a canvas, then
+   pushed through helpers.homography onto a dark table as a TILTED, PERSPECTIVE quad (text lines
+   at ~17°, past deskewAngle's ±15°; the left edge shorter than the right), turned into a Blob — so the box runs the same code the intake form runs,
+   and the scan it shows proves findPaper + warpQuad squared the sheet. `&busy` freezes the
+   scanning state so the sweeping line can be looked at. `&edit` presses SESUAIKAN once the scan
+   is up, so the corner sheet can be looked at over the photo. */
 function PhotoLab() {
   const [goods, setGoods] = React.useState(null);
   const [nota, setNota] = React.useState(null);
   React.useEffect(() => {
+    const flat = document.createElement('canvas'); flat.width = 460; flat.height = 400;
+    const fc = flat.getContext('2d');
+    fc.fillStyle = '#d9d0bc'; fc.fillRect(0, 0, 460, 400);
+    fc.fillStyle = '#2a2622'; fc.font = 'bold 22px monospace'; fc.fillText('NOTA  PABRIK KUDUS', 30, 50);
+    fc.font = '15px monospace';
+    ['SJ-403638        15/09/2026', 'Cello Green 16   40 bal   Rp 356.000', 'Djarum Coklat 12 12 bal   Rp 150.000', 'TOTAL                     Rp 506.000']
+      .forEach((t, i) => fc.fillText(t, 30, 100 + i * 34));
+    const src = fc.getImageData(0, 0, 460, 400).data;
+    /* the sheet lands on the table at these four corners (tl, tr, br, bl) */
+    const H = homography([[210, 40], [560, 150], [430, 450], [70, 300]]);
     const c = document.createElement('canvas'); c.width = 640; c.height = 480;
     const ctx = c.getContext('2d');
     ctx.fillStyle = '#5b544c'; ctx.fillRect(0, 0, 640, 480);
-    ctx.save(); ctx.translate(320, 240); ctx.rotate(-0.05);
-    ctx.fillStyle = '#d9d0bc'; ctx.fillRect(-230, -200, 460, 400);
-    ctx.fillStyle = '#2a2622'; ctx.font = 'bold 22px monospace'; ctx.fillText('NOTA  PABRIK KUDUS', -200, -150);
-    ctx.font = '15px monospace';
-    ['SJ-403638        15/09/2026', 'Cello Green 16   40 bal   Rp 356.000', 'Djarum Coklat 12 12 bal   Rp 150.000', 'TOTAL                     Rp 506.000']
-      .forEach((t, i) => ctx.fillText(t, -200, -100 + i * 34));
-    ctx.restore();
+    const shot = ctx.getImageData(0, 0, 640, 480), d = shot.data;
+    for (let py = 0; py < 400; py++) for (let px = 0; px < 460; px++) {
+      const s = (py * 460 + px) * 4;
+      for (const [su, sv] of [[0.25, 0.25], [0.75, 0.25], [0.25, 0.75], [0.75, 0.75]]) {
+        const u = (px + su) / 460, v = (py + sv) / 400, den = H[6] * u + H[7] * v + 1;
+        const x = Math.round((H[0] * u + H[1] * v + H[2]) / den), y = Math.round((H[3] * u + H[4] * v + H[5]) / den);
+        if (x < 0 || y < 0 || x >= 640 || y >= 480) continue;
+        const i = (y * 640 + x) * 4; d[i] = src[s]; d[i + 1] = src[s + 1]; d[i + 2] = src[s + 2];
+      }
+    }
+    ctx.putImageData(shot, 0, 0);
     c.toBlob((blob) => {
       const f = new File([blob], 'IMG_4021.jpg', { type: 'image/jpeg' });
       setGoods(f);
       if (!q.has('busy')) setNota(f);
     }, 'image/jpeg', 0.9);
+  }, []);
+  React.useEffect(() => {
+    if (!q.has('edit')) return undefined;
+    const t = setInterval(() => { const b = document.querySelector('button[data-edit]'); if (b) { b.click(); clearInterval(t); } }, 50);
+    return () => clearInterval(t);
   }, []);
   /* &busy: a nota "file" whose scan never finishes — scanNotaToBase64 rejects on a non-image */
   const stuck = React.useMemo(() => (q.has('busy') ? new File([new Blob(['x'])], 'nota.jpg', { type: 'image/jpeg' }) : null), []);

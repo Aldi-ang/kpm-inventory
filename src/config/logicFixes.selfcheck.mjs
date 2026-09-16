@@ -6950,7 +6950,7 @@ section('THE NOTA IS SCANNED, THE GOODS PHOTO STAYS A PHOTO (2026-09-15)');
    on a synthetic nota in src/config/notaScan.selfcheck.mjs; this section pins the WIRING — the
    nota goes through the scan, the goods photo does not, and the scan is saved smaller. */
 { const h = read('src/utils/helpers.js');
-  ok('helpers exports the pure scan and the canvas wrapper', /export const scanPixels = \(data, width, height/.test(h) && /export const scanNotaToBase64 = \(file\)/.test(h));
+  ok('helpers exports the pure scan and the canvas wrapper', /export const scanPixels = \(data, width, height/.test(h) && /export const scanNotaToBase64 = \(file, \{ corners = null, turns = 0 \} = \{\}\)/.test(h));
   ok('the wrapper runs the scan on the canvas pixels, then levels, then saves at 0.5', /scanPixels\(frame\.data, canvas\.width, canvas\.height\);\s*ctx\.putImageData\(frame, 0, 0\);\s*const deg = deskewAngle/.test(h) && (h.match(/toDataURL\('image\/jpeg', 0\.5\)/g) || []).length === 2,
      'a scan saved at 0.5 is smaller than the photo it replaces — his storage condition; both exits (levelled and not) must save at 0.5');
   const rv = read('src/RestockVaultView.jsx');
@@ -6980,7 +6980,7 @@ section('A PICKED PHOTO IS SHOWN, AND THE NOTA SHOWS ITS SCAN BEFORE SAVE (2026-
    the Restock Vault intake form uses it for both pictures. The nota box scans the moment the file
    is picked and hands the scan back, so the save path reuses it rather than scanning twice. */
 { const pf = read('src/components/PhotoField.jsx');
-  ok('the photo box shows the picked picture, large enough to judge', /<img src=\{preview\}[^>]*kpm-photo-in[^>]*max-h-44/.test(pf));
+  ok('the photo box shows the picked picture, large enough to judge', /<img src=\{shown\}[^>]*kpm-photo-in[^>]*max-h-44/.test(pf) && /const shown = scan && showOriginal \? original : preview;/.test(pf));
   ok('with scan, the box shows the SCAN and says so while it works', /if \(scan\) \{[\s\S]*?scanNotaToBase64\(file\)/.test(pf) && /Memindai nota…/.test(pf) && /hasil scan — yang akan tersimpan/.test(pf));
   ok('the scan is handed back to the form once per file', /onFile\(file, dataUrl\)/.test(pf));
   ok('a file that cannot be read as a picture says so', /Tidak terbaca sebagai foto/.test(pf) && /setFailed\(true\)/.test(pf), 'a bare filename would look attached');
@@ -6995,6 +6995,47 @@ section('A PICKED PHOTO IS SHOWN, AND THE NOTA SHOWS ITS SCAN BEFORE SAVE (2026-
   ok('the save path reuses the scan the box already made', /const compressed = receiptScan \|\| await scanNotaToBase64\(receiptFile\);/.test(rv));
   ok('a form reset clears the scan with the file', /setReceiptFile\(null\); setReceiptScan\(null\);/.test(rv));
   ok('the lab can show the box in its states (?photo)', /q\.has\('photo'\) \? <PhotoLab \/>/.test(read('tools/ponder-lab.jsx'))); }
+
+section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (2026-09-16)');
+/* Aldi, 2026-09-15, of the first real scan (~40° crooked, in perspective): "make the scanner
+   automatically align and make sure the receipt to be square and 2D like in plain paper … there is
+   no pressable or interaction button on the preview photo or maybe the edit button like camscanner
+   have". helpers.findPaper (corners) → helpers.warpQuad (flat) → scanPixels → deskewAngle; the
+   maths is proven in notaScan.selfcheck.mjs. Here: the pipeline order, and the SESUAIKAN sheet. */
+{ const h = code(read('src/utils/helpers.js'));
+  const s = h.indexOf('export const scanNotaToBase64 = ');
+  const body = h.slice(s, h.indexOf('export const compressImageToBase64', s));
+  ok('scanNotaToBase64 is where it was and has a body', s > -1 && body.length > 800 && body.length < 4000);
+  const iFind = body.indexOf('findPaper('), iWarp = body.indexOf('warpQuad('), iScan = body.indexOf('scanPixels('), iLevel = body.indexOf('deskewAngle(');
+  ok('photo → findPaper → warpQuad → scanPixels → deskewAngle, in that order', iFind > -1 && iWarp > iFind && iScan > iWarp && iLevel > iScan,
+     'scanPixels before the warp paints the table black and the paper white with a halo — exactly what Otsu must not see');
+  ok('no sheet found → the old path: the whole photo at 800 wide', /canvas\.width = 800; canvas\.height = Math\.round\(src\.height \* 800 \/ src\.width\)/.test(body));
+  ok('hand-set corners skip findPaper (corners || findPaper)', /corners \|\| findPaper\(full\.data/.test(body));
+  ok('a 90° turn is one cycle of the corner order, not another canvas', /quad = \[quad\[3\], quad\[0\], quad\[1\], quad\[2\]\]/.test(body));
+  ok('the residual tilt is still undone by rotate(-deg)', /lc\.rotate\(-deg \* Math\.PI \/ 180\)/.test(body));
+  const fp = h.slice(h.indexOf('export const findPaper'), h.indexOf('export const homography'));
+  ok('findPaper gives up on a sticker (<15%), an L (<80% fill), or a frame-filling sheet (>95%)', /bigSize < 0\.15 \* n\) return null/.test(fp) && /bigSize < 0\.8 \* quadArea/.test(fp) && /quadArea > 0\.95 \* n/.test(fp));
+  ok('the photo is decoded ONCE for both the scan and the editor (loadNotaPhoto), never rotated again from EXIF', /export const loadNotaPhoto/.test(h) && !/exif/i.test(h));
+  const pfRaw = read('src/components/PhotoField.jsx'), pf = code(pfRaw);
+  const r = pf.indexOf('<span className="flex items-center gap-3 shrink-0">'), row = pf.slice(r, pf.indexOf('</span>', pf.indexOf('>Hapus', r)));
+  ok('SESUAIKAN sits beside GANTI / HAPUS, only with scan, never while scanning', r > -1 && /\{scan && !busy && !failed && \([\s\S]*?data-edit[\s\S]*?>Sesuaikan<\/button>/.test(row) && /Ganti\{input\}/.test(row) && />Hapus</.test(row));
+  const cs = pf.indexOf('function CornerSheet'), sheet = pf.slice(cs);
+  ok('the corner sheet exists and is the app\'s own dialog — no browser dialog anywhere in the box', cs > -1 && /role="dialog"/.test(sheet) && /fixed inset-0/.test(sheet) && !/window\.(confirm|prompt|alert)\(|\b(confirm|prompt|alert)\(/.test(pf));
+  ok('the sheet shows the ORIGINAL photo with the corners findPaper found', /loadNotaPhoto\(file\)/.test(sheet) && /findPaper\(c\.getContext\('2d'\)\.getImageData\(0, 0, w, h\)\.data, w, h\)/.test(sheet));
+  ok('not found → the whole frame, so there is always something to drag', /q \|\| \[\[0, 0\], \[w, 0\], \[w, h\], \[0, h\]\]/.test(sheet) && /tidak ketemu/.test(sheet));
+  ok('four 44 px handles, pointer events, touch-action none', /corners\.map\(\(p, i\) => \([\s\S]*?onPointerDown=\{drag\(i\)\}[\s\S]*?w-11 h-11[\s\S]*?touchAction: 'none'/.test(sheet) && /setPointerCapture\(e\.pointerId\)/.test(sheet));
+  ok('PUTAR 90°, BATAL, PAKAI', />Putar 90°<\/button>/.test(sheet) && />Batal<\/button>/.test(sheet) && />Pakai<\/button>/.test(sheet) && /setTurns\(\(t\) => \(t \+ 1\) % 4\)/.test(sheet));
+  ok('PAKAI hands the hand-set corners and turns to the scan, and the result goes back to the form', /onApply\(corners, turns\)/.test(sheet) && /scanNotaToBase64\(file, \{ corners, turns \}\)/.test(pf) && /setPreview\(dataUrl\); setBusy\(false\); onFile\(file, dataUrl\);/.test(pf),
+     'a PAKAI that did not call onFile would show one scan and save another');
+  ok('the edge that becomes the top is marked ATAS before PAKAI', /corners\[\(4 - turns\) % 4\], corners\[\(5 - turns\) % 4\]/.test(sheet) && />atas<\/span>/.test(sheet));
+  ok('asli / scan under the preview, and the caption says which one is on screen', /\[\['asli', true\], \['scan', false\]\]/.test(pf) && /foto asli — tidak tersimpan/.test(pf) && /hasil scan — yang akan tersimpan/.test(pf));
+  ok('the sheet closes when the file changes', /setFailed\(false\); setShowOriginal\(false\); setEditing\(false\);/.test(pf));
+  ok('the sheet is not motion: Lite Mode has nothing to strip from it', !/kpm-photo-in|kpm-scanline|animate-/.test(sheet));
+  const rv = read('src/RestockVaultView.jsx');
+  ok('the goods photo box still has no scan — a box of cigarettes is a photo', /<PhotoField label="Bukti foto barang" file=\{packageFile\} onFile=\{\(f\) => setPackageFile\(f\)\} galleryOk=\{galleryOk\} \/>/.test(rv));
+  ok('Save still reuses the scan the box handed back — PAKAI\'s result included', /const compressed = receiptScan \|\| await scanNotaToBase64\(receiptFile\);/.test(rv));
+  const lab = read('tools/ponder-lab.jsx');
+  ok('the lab photo is a tilted, perspective sheet (homography), and &edit opens the sheet', /homography\(\[\[210, 40\], \[560, 150\], \[430, 450\], \[70, 300\]\]\)/.test(lab) && /q\.has\('edit'\)/.test(lab) && /button\[data-edit\]/.test(lab)); }
 
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

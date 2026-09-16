@@ -404,50 +404,206 @@ export const deskewAngle = (data, width, height, maxDeg = 15) => {
     return best;
 };
 
-/* The nota as a scan, sized like every other photo (800 wide), levelled, and saved as JPEG
-   0.5 — a mostly-white page compresses far smaller than the photo it came from, which is the
-   point for Firebase storage. The original never leaves the phone. The <img> decode applies
-   the camera's orientation tag, so a photo taken with the phone held sideways arrives upright;
-   the deskew then takes out the few degrees of tilt a hand-held shot always has. */
-export const scanNotaToBase64 = (file) => {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onload = (event) => {
-            const img = new Image();
-            img.src = event.target.result;
-            img.onload = () => {
-                const canvas = document.createElement('canvas');
-                const MAX_WIDTH = 800;
-                const scaleSize = MAX_WIDTH / img.width;
-                canvas.width = MAX_WIDTH;
-                canvas.height = Math.round(img.height * scaleSize);
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                const frame = ctx.getImageData(0, 0, canvas.width, canvas.height);
-                scanPixels(frame.data, canvas.width, canvas.height);
-                ctx.putImageData(frame, 0, 0);
-                const deg = deskewAngle(frame.data, canvas.width, canvas.height);
-                if (deg !== 0) {
-                    /* turn the whole page back by the tilt; the corners that swing into view are
-                       paper, so they are white */
-                    const level = document.createElement('canvas');
-                    level.width = canvas.width; level.height = canvas.height;
-                    const lc = level.getContext('2d');
-                    lc.fillStyle = '#fff'; lc.fillRect(0, 0, level.width, level.height);
-                    lc.translate(level.width / 2, level.height / 2);
-                    lc.rotate(-deg * Math.PI / 180);   /* deskewAngle reports the tilt in canvas terms; undo it */
-                    lc.drawImage(canvas, -canvas.width / 2, -canvas.height / 2);
-                    resolve(level.toDataURL('image/jpeg', 0.5));
-                    return;
-                }
-                resolve(canvas.toDataURL('image/jpeg', 0.5));
-            };
-            img.onerror = (err) => reject(err);
-        };
-        reader.onerror = (err) => reject(err);
-    });
+/* 🔴 WHERE IS THE PAPER — the four corners of the bright sheet in the photo, [tl, tr, br, bl] in
+   full-size pixels, or null. Aldi, 2026-09-15, with the first real scan (~40° crooked, in
+   perspective): "make the scanner automatically align and make sure the receipt to be square and
+   2D like in plain paper". A photo taken at an angle is not a rotation, so deskewAngle (±15°)
+   cannot fix it; this finds the sheet so warpQuad can pull it flat. Runs on the ORIGINAL photo,
+   sampled to ~320 wide: grey → Otsu's threshold (the sheet is the bright class, the table the
+   dark one) → the largest connected bright blob → its convex hull → the four hull points that
+   span the biggest quadrilateral. null when the blob is under 15% of the frame (a sticker, not
+   a nota), when the best quad covers under 60% of the hull or the blob fills under 80% of the
+   quad (an L, clutter — not a sheet), or when it fills the frame (nothing to square). null → the
+   caller keeps today's path.
+   ⚠️ Feed it the photo, never the scan: scanPixels paints the table black and the paper white
+   with a dark halo, which is exactly the picture Otsu must not see. */
+export const findPaper = (data, width, height) => {
+    const step = Math.max(1, Math.floor(width / 320));
+    const w = Math.ceil(width / step), h = Math.ceil(height / step), n = w * h;
+    const gray = new Uint8Array(n), hist = new Uint32Array(256);
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+        const i = (Math.min(height - 1, y * step) * width + Math.min(width - 1, x * step)) * 4;
+        const v = Math.round(0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2]);
+        gray[y * w + x] = v; hist[v]++;
+    }
+    /* Otsu: the grey level that best splits the histogram in two (largest between-class variance) */
+    let sumAll = 0; for (let t = 0; t < 256; t++) sumAll += t * hist[t];
+    let wB = 0, sumB = 0, best = 0, thr = 127;
+    for (let t = 0; t < 256; t++) {
+        wB += hist[t]; if (!wB) continue;
+        const wF = n - wB; if (!wF) break;
+        sumB += t * hist[t];
+        const mB = sumB / wB, mF = (sumAll - sumB) / wF, between = wB * wF * (mB - mF) * (mB - mF);
+        if (between > best) { best = between; thr = t; }
+    }
+    /* largest connected bright blob — BFS, 4-neighbours, labels in an Int32Array */
+    const label = new Int32Array(n), queue = new Int32Array(n);
+    let blobs = 0, bigSize = 0, bigId = 0;
+    for (let s = 0; s < n; s++) {
+        if (gray[s] <= thr || label[s]) continue;
+        const id = ++blobs; let head = 0, tail = 0, size = 0;
+        label[s] = id; queue[tail++] = s;
+        while (head < tail) {
+            const p = queue[head++]; size++;
+            const x = p % w, y = (p - x) / w;
+            if (x > 0 && !label[p - 1] && gray[p - 1] > thr) { label[p - 1] = id; queue[tail++] = p - 1; }
+            if (x < w - 1 && !label[p + 1] && gray[p + 1] > thr) { label[p + 1] = id; queue[tail++] = p + 1; }
+            if (y > 0 && !label[p - w] && gray[p - w] > thr) { label[p - w] = id; queue[tail++] = p - w; }
+            if (y < h - 1 && !label[p + w] && gray[p + w] > thr) { label[p + w] = id; queue[tail++] = p + w; }
+        }
+        if (size > bigSize) { bigSize = size; bigId = id; }
+    }
+    if (bigSize < 0.15 * n) return null;
+    /* hull of the blob: only each row's outermost pixels can be hull points, so ≤ 2h candidates */
+    const pts = [];
+    for (let y = 0; y < h; y++) {
+        let l = -1, r = -1;
+        for (let x = 0; x < w; x++) if (label[y * w + x] === bigId) { if (l < 0) l = x; r = x; }
+        if (l >= 0) { pts.push([l, y]); if (r !== l) pts.push([r, y]); }
+    }
+    pts.sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+    const cross = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
+    const lower = [], upper = [];                                   // monotone chain
+    for (const p of pts) { while (lower.length >= 2 && cross(lower[lower.length - 2], lower[lower.length - 1], p) <= 0) lower.pop(); lower.push(p); }
+    for (let i = pts.length - 1; i >= 0; i--) { const p = pts[i]; while (upper.length >= 2 && cross(upper[upper.length - 2], upper[upper.length - 1], p) <= 0) upper.pop(); upper.push(p); }
+    const hull = lower.slice(0, -1).concat(upper.slice(0, -1));
+    if (hull.length < 4) return null;
+    const area = (poly) => { let a = 0; for (let i = 0; i < poly.length; i++) { const p = poly[i], q = poly[(i + 1) % poly.length]; a += p[0] * q[1] - q[0] * p[1]; } return Math.abs(a) / 2; };
+    const hullArea = area(hull);
+    /* trim the hull to ≤ 24 points by dropping, one at a time, the vertex whose triangle with its
+       neighbours is smallest — a corner is never the smallest triangle, so the corners survive */
+    while (hull.length > 24) {
+        let least = Infinity, at = 0;
+        for (let i = 0; i < hull.length; i++) {
+            const t = Math.abs(cross(hull[(i + hull.length - 1) % hull.length], hull[i], hull[(i + 1) % hull.length]));
+            if (t < least) { least = t; at = i; }
+        }
+        hull.splice(at, 1);
+    }
+    /* the four hull points spanning the biggest quad — ≤ 24C4 = 10,626 tries, hull order keeps them convex */
+    let quad = null, quadArea = 0;
+    const m = hull.length;
+    for (let a = 0; a < m - 3; a++) for (let b = a + 1; b < m - 2; b++) for (let c = b + 1; c < m - 1; c++) for (let d = c + 1; d < m; d++) {
+        const q = [hull[a], hull[b], hull[c], hull[d]], ar = area(q);
+        if (ar > quadArea) { quadArea = ar; quad = q; }
+    }
+    /* a sheet FILLS its quad; an L or a cluttered table leaves most of it dark (blob under 80%) */
+    if (!quad || quadArea < 0.6 * hullArea || bigSize < 0.8 * quadArea || quadArea > 0.95 * n) return null;
+    /* order tl, tr, br, bl: clockwise (screen y points down) around the centre, starting at the
+       corner nearest the top-left of the frame; back to full-size pixels at the sample's centre */
+    const cx = quad.reduce((s, p) => s + p[0], 0) / 4, cy = quad.reduce((s, p) => s + p[1], 0) / 4;
+    quad.sort((p, q) => Math.atan2(p[1] - cy, p[0] - cx) - Math.atan2(q[1] - cy, q[0] - cx));
+    let start = 0; for (let i = 1; i < 4; i++) if (quad[i][0] + quad[i][1] < quad[start][0] + quad[start][1]) start = i;
+    return [0, 1, 2, 3].map((i) => { const p = quad[(start + i) % 4]; return [(p[0] + 0.5) * step, (p[1] + 0.5) * step]; });
 };
+
+/* The perspective map from the unit square to a quad, as the 8 numbers of its 3x3 matrix
+   (the ninth is 1): (u, v) → ((a·u + b·v + c) / (g·u + h·v + 1), (d·u + e·v + f) / (g·u + h·v + 1)).
+   Closed form of the 8-unknown solve (Heckbert). Shared by warpQuad, the lab and the self-check. */
+export const homography = ([[x0, y0], [x1, y1], [x2, y2], [x3, y3]]) => {
+    const sx = x0 - x1 + x2 - x3, sy = y0 - y1 + y2 - y3;
+    if (Math.abs(sx) < 1e-9 && Math.abs(sy) < 1e-9)              // a parallelogram: plain affine
+        return [x1 - x0, x3 - x0, x0, y1 - y0, y3 - y0, y0, 0, 0];
+    const dx1 = x1 - x2, dx2 = x3 - x2, dy1 = y1 - y2, dy2 = y3 - y2, den = dx1 * dy2 - dx2 * dy1;
+    const g = (sx * dy2 - dx2 * sy) / den, h = (dx1 * sy - sx * dy1) / den;
+    return [x1 - x0 + g * x1, x3 - x0 + h * x3, x0, y1 - y0 + g * y1, y3 - y0 + h * y3, y0, g, h];
+};
+
+/* PULL THE PAPER FLAT — the pixels inside the quad, as an upright rectangle: { data, width,
+   height }. Width is the mean of the top and bottom edges, height of the left and right, capped at
+   800 wide (the app's photo size). Every output pixel is mapped back through the homography to
+   its spot on the photo and read there with bilinear sampling, so text stays smooth. ~480k
+   pixels at 800x600, well under a second on a phone. Cycling the corner order one step
+   ([bl, tl, tr, br]) turns the output 90° — the editor's PUTAR 90° costs nothing more. */
+export const warpQuad = (data, width, height, corners) => {
+    const [tl, tr, br, bl] = corners;
+    const len = (p, q) => Math.hypot(q[0] - p[0], q[1] - p[1]);
+    let ow = Math.round((len(tl, tr) + len(bl, br)) / 2), oh = Math.round((len(tl, bl) + len(tr, br)) / 2);
+    if (ow > 800) { oh = Math.round(oh * 800 / ow); ow = 800; }
+    ow = Math.max(1, ow); oh = Math.max(1, oh);
+    const [a, b, c, d, e, f, g, h] = homography(corners);
+    const out = new Uint8ClampedArray(ow * oh * 4);
+    for (let oy = 0; oy < oh; oy++) {
+        const v = (oy + 0.5) / oh;
+        for (let ox = 0; ox < ow; ox++) {
+            const u = (ox + 0.5) / ow, den = g * u + h * v + 1;
+            const sx = Math.min(width - 1, Math.max(0, (a * u + b * v + c) / den - 0.5));
+            const sy = Math.min(height - 1, Math.max(0, (d * u + e * v + f) / den - 0.5));
+            const x0 = Math.floor(sx), y0 = Math.floor(sy), x1 = Math.min(width - 1, x0 + 1), y1 = Math.min(height - 1, y0 + 1);
+            const fx = sx - x0, fy = sy - y0, w00 = (1 - fx) * (1 - fy), w10 = fx * (1 - fy), w01 = (1 - fx) * fy, w11 = fx * fy;
+            const i00 = (y0 * width + x0) * 4, i10 = (y0 * width + x1) * 4, i01 = (y1 * width + x0) * 4, i11 = (y1 * width + x1) * 4;
+            const o = (oy * ow + ox) * 4;
+            for (let ch = 0; ch < 3; ch++) out[o + ch] = data[i00 + ch] * w00 + data[i10 + ch] * w10 + data[i01 + ch] * w01 + data[i11 + ch] * w11;
+            out[o + 3] = 255;
+        }
+    }
+    return { data: out, width: ow, height: oh };
+};
+
+/* The photo decoded onto a canvas at most 1600 wide — big enough that a sheet filling half the
+   frame still has 800 px across for the warp. The <img> decode applies the camera's orientation
+   tag, so a photo taken with the phone held sideways arrives upright; nothing here rotates it
+   again. Shared by the scan and the corner editor, so both see the same pixels and the same
+   coordinates. Browser only (canvas). */
+export const loadNotaPhoto = (file) => new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = (event) => {
+        const img = new Image();
+        img.src = event.target.result;
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            const k = Math.min(1, 1600 / img.width);
+            canvas.width = Math.round(img.width * k); canvas.height = Math.round(img.height * k);
+            canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+            resolve(canvas);
+        };
+        img.onerror = (err) => reject(err);
+    };
+    reader.onerror = (err) => reject(err);
+});
+
+/* The nota as a scan: photo → findPaper → warpQuad (the sheet, flat, 800 wide at most) →
+   scanPixels → deskewAngle for the residual tilt → JPEG 0.5. A mostly-white page compresses far
+   smaller than the photo it came from, which is the point for Firebase storage; the original
+   never leaves the phone. No sheet found → today's path: the whole photo at 800 wide, scanned
+   and levelled. `corners` (full-size pixels of loadNotaPhoto's canvas) skips findPaper — the
+   corner editor's hand-set quad; `turns` is how many 90° turns PUTAR asked for.
+   ⚠️ scanPixels runs AFTER the warp, never before — see findPaper. */
+export const scanNotaToBase64 = (file, { corners = null, turns = 0 } = {}) => loadNotaPhoto(file).then((src) => {
+    const full = src.getContext('2d').getImageData(0, 0, src.width, src.height);
+    let quad = corners || findPaper(full.data, src.width, src.height);
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    let frame;
+    if (quad) {
+        for (let t = ((turns % 4) + 4) % 4; t > 0; t--) quad = [quad[3], quad[0], quad[1], quad[2]];
+        const flat = warpQuad(full.data, src.width, src.height, quad);
+        canvas.width = flat.width; canvas.height = flat.height;
+        frame = ctx.createImageData(flat.width, flat.height);
+        frame.data.set(flat.data);
+    } else {
+        canvas.width = 800; canvas.height = Math.round(src.height * 800 / src.width);
+        ctx.drawImage(src, 0, 0, canvas.width, canvas.height);
+        frame = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    }
+    scanPixels(frame.data, canvas.width, canvas.height);
+    ctx.putImageData(frame, 0, 0);
+    const deg = deskewAngle(frame.data, canvas.width, canvas.height);
+    if (deg !== 0) {
+        /* turn the whole page back by the tilt; the corners that swing into view are
+           paper, so they are white */
+        const level = document.createElement('canvas');
+        level.width = canvas.width; level.height = canvas.height;
+        const lc = level.getContext('2d');
+        lc.fillStyle = '#fff'; lc.fillRect(0, 0, level.width, level.height);
+        lc.translate(level.width / 2, level.height / 2);
+        lc.rotate(-deg * Math.PI / 180);   /* deskewAngle reports the tilt in canvas terms; undo it */
+        lc.drawImage(canvas, -canvas.width / 2, -canvas.height / 2);
+        return level.toDataURL('image/jpeg', 0.5);
+    }
+    return canvas.toDataURL('image/jpeg', 0.5);
+});
 
 export const compressImageToBase64 = (file) => {
     return new Promise((resolve, reject) => {
