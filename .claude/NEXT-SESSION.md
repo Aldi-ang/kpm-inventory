@@ -65,7 +65,7 @@ opens the sheet. notaScan 22/22 (10 → 22), logicFixes 1547/1547 (17 red with t
 audit 722/722. Drag, PUTAR, PAKAI exercised in the pane at a measured 375: output 378×311 →
 321×407 after one turn. Timing on the PC: findPaper 8 ms, warpQuad 19 ms at 1600×1200.
 
-✅ TEST OWED: a real nota on his phone — `https://192.168.1.131:4173` (packed build) — the
+✅ TEST OWED: a real nota on his phone — `https://192.168.1.107:4173` (packed build; the PC's address changes whenever the router hands out a new one — .143 → .131 → .107 in three days; read it from the preview server's `Network:` line (preview_logs kpm-preview) or `ipconfig` before writing it anywhere) — the
 automatic scan, then SESUAIKAN on a photo where the finder missed. Also still owed: the
 goods-photo preview test, ❓ the "bandung 1 / muntilan 1" tab.
 
