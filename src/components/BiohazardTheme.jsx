@@ -285,9 +285,11 @@ export default function BiohazardTheme({
     const [ribbonY, setRibbonY] = useState(() => {
         if (typeof window === 'undefined') return 0;
         const saved = Number(localStorage.getItem('kpm-ribbon-y'));
+        /* Default a quarter of the way down, not halfway — his call, 2026-09-16: "25% from upper
+           right as default location instead of just 50%". A spot he dragged to still wins. */
         return Number.isFinite(saved) && saved > 0
             ? Math.min(saved, window.innerHeight - RIBBON_H - 8)
-            : Math.round((window.innerHeight - RIBBON_H) / 2);
+            : Math.round(window.innerHeight * 0.25 - RIBBON_H / 2);
     });
 
     /* NO setPointerCapture. It was here and it was a liability: the pointer has to be active

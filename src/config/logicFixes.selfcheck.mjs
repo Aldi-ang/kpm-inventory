@@ -6996,6 +6996,19 @@ section('A PICKED PHOTO IS SHOWN, AND THE NOTA SHOWS ITS SCAN BEFORE SAVE (2026-
   ok('a form reset clears the scan with the file', /setReceiptFile\(null\); setReceiptScan\(null\);/.test(rv));
   ok('the lab can show the box in its states (?photo)', /q\.has\('photo'\) \? <PhotoLab \/>/.test(read('tools/ponder-lab.jsx'))); }
 
+section('THE PHONE RIBBON STARTS A QUARTER OF THE WAY DOWN, NOT HALFWAY (2026-09-16)');
+/* Aldi, 2026-09-16: "make the sidebar button on the right side phone to be 25% from upper right
+   as default location instead of just 50% between upper and bottom right side". The ribbon is the
+   phone's only way into the navigation; its resting spot is his (a vertical drag moves it and
+   `kpm-ribbon-y` remembers), so only the DEFAULT changes — a saved spot still wins. */
+{ const sh = code(read('src/components/BiohazardTheme.jsx'));
+  const s = sh.indexOf('const [ribbonY, setRibbonY] = useState(() => {'), init = sh.slice(s, sh.indexOf('});', s));
+  ok('the ribbon initialiser is where it was', s > -1 && init.length > 100 && init.length < 600);
+  ok('the default puts the ribbon\'s centre at 25% of the screen height', /Math\.round\(window\.innerHeight \* 0\.25 - RIBBON_H \/ 2\)/.test(init));
+  ok('REGRESSION: the halfway default is gone', !/\(window\.innerHeight - RIBBON_H\) \/ 2/.test(init));
+  ok('a spot he dragged to still wins over the default', /localStorage\.getItem\('kpm-ribbon-y'\)/.test(init) && /Math\.min\(saved, window\.innerHeight - RIBBON_H - 8\)/.test(init));
+  ok('behaviour: at 812 tall the ribbon (132 tall) lands at top 137, centre 203 = 25% of 812', (() => { const RIBBON_H = 132, innerHeight = 812; const top = Math.round(innerHeight * 0.25 - RIBBON_H / 2); return top === 137 && top + RIBBON_H / 2 === innerHeight * 0.25; })()); }
+
 section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (2026-09-16)');
 /* Aldi, 2026-09-15, of the first real scan (~40° crooked, in perspective): "make the scanner
    automatically align and make sure the receipt to be square and 2D like in plain paper … there is

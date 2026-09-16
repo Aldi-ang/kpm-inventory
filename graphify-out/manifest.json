@@ -110,8 +110,8 @@
     "semantic_hash": ""
   },
   "src/components/BiohazardTheme.jsx": {
-    "mtime": 1789434606.613422,
-    "ast_hash": "cbd95af641ff58582669a78e420da5a4",
+    "mtime": 1789565204.6136029,
+    "ast_hash": "83272b1046325678bbe58ab8d9112cf7",
     "semantic_hash": ""
   },
   "src/components/BranchWarehouseManager.jsx": {
@@ -570,8 +570,8 @@
     "semantic_hash": ""
   },
   ".claude/PROGRESS.md": {
-    "mtime": 1789442276.1026895,
-    "ast_hash": "9a068cad3049d105b3ff3ccf41fb8cfe",
+    "mtime": 1789564311.4662137,
+    "ast_hash": "21323156c0992a67a4f4b2129bdffa09",
     "semantic_hash": ""
   },
   ".claude/pre-compact-context.md": {
@@ -755,13 +755,13 @@
     "semantic_hash": ""
   },
   "src/config/logicFixes.selfcheck.mjs": {
-    "mtime": 1789557991.993188,
-    "ast_hash": "599f4848f2b9797fe011bd02fbbab656",
+    "mtime": 1789565184.4158351,
+    "ast_hash": "46508314439fa255c33023f267858b61",
     "semantic_hash": ""
   },
   ".claude/NEXT-SESSION.md": {
-    "mtime": 1789442276.099691,
-    "ast_hash": "7ea3942d0bccf8fb8d5fb712b51a0fba",
+    "mtime": 1789564311.4642134,
+    "ast_hash": "b36879cc39346f37b42a7f7e6b142a85",
     "semantic_hash": ""
   },
   ".claude/SWEEP-2026-08-19.md": {
