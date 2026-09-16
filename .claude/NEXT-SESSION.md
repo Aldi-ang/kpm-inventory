@@ -12,6 +12,19 @@ Why it costs him money: a salesman sells from this screen all day on a phone. Ev
 is under 44 px, every label that wraps to three lines, every button off the right edge is a sale
 typed twice. Nothing about it has been measured at 375 since the redesign.
 
+⚠️ Read his reply first — two answers were owed at 20:30 on 2026-09-16, and one of them is a
+one-line job that goes BEFORE the terminal if he said yes: **`App.jsx:1103`** `handlePinLogin`
+awaits `updateDoc(adminDocRef, { failedRecoveryAttempts: 0, lockoutStatus: "NONE" })` — a server
+round trip — before `setIsUnlocking(true)` on `:1104`. The password is already verified by then
+(`hashedInput === data.pin`, `:1101`), so the wait buys nothing; drop the `await`, keep a
+`.catch` that reports (silence is a bug), start the animation at once. Trap: do NOT move the write
+after the timeout or into the `setTimeout` — a phone that closes the tab mid-animation must still
+reset the strike counter. The 8.5 s sequence itself (`VaultGate.jsx:51` `GATE_UNLOCK_MS`) is his
+design; change it only if he said so. The other answer — which lockout panel was slow on the new
+address, red *Access Denied* (`App.jsx:4494`, server said not registered) or amber *Can't Verify
+You Yet* (`:4505`, could not check) — decides whether the sign-in listener's four serial
+server-first reads (`App.jsx:2508–2540`) are the next job or nothing is.
+
 ---
 
 ## Paste this to start the next session
@@ -51,6 +64,14 @@ typed twice. Nothing about it has been measured at 375 since the redesign.
 > Rewrite this file with the next single job before closing.
 
 ---
+
+## Shipped 2026-09-16 20:29 — `c5c7ed3` the phone ribbon rests a quarter of the way down
+
+His ask: *"25% from upper right as default location instead of just 50%"*. `BiohazardTheme.jsx:285`
+default `Math.round(window.innerHeight * 0.25 - RIBBON_H / 2)`; a dragged spot (`kpm-ribbon-y`)
+still wins. Guard 2 red → 1552/1552, audit 722, measured 137/812 in the pane. Packed build
+rebuilt and serving on `https://192.168.1.107:4173`. Sample nota re-sent (`sample-nota.png`,
+cream sheet on a dark ground) for the real-phone scan test.
 
 ## Shipped 2026-09-16 — the nota scanner finds the paper, squares it, and has a corner editor
 
