@@ -27,6 +27,7 @@ import ProductPerformancePanel from '../src/components/ProductPerformancePanel.j
 import AcceptanceReceipt from '../src/components/AcceptanceReceipt.jsx';
 import RestockVaultView from '../src/RestockVaultView.jsx';
 import MerchantSalesView from '../src/MerchantSalesView.jsx';
+import { CustomerManagement } from '../src/components/CustomerManager.jsx';
 import BranchWarehouseManager from '../src/components/BranchWarehouseManager.jsx';
 import ShipmentLabel from '../src/components/ShipmentLabel.jsx';
 import ArrivalScanner from '../src/components/ArrivalScanner.jsx';
@@ -593,8 +594,11 @@ function ShellLab() {
        moment the page has loaded; a plain loop presses the second button before it is drawn. */
     const press = (want) => {
       const desk = document.querySelector('button[aria-selected]')?.closest('.rounded-2xl') || document;
-      const b = [...desk.querySelectorAll('button')]
+      const hit = (sel) => [...desk.querySelectorAll(sel)]
         .find((el) => el.textContent.trim().toLowerCase().startsWith(want));
+      /* buttons first; a card that opens on click (the Customers folders and stores are
+         `cursor-pointer` divs, not buttons) only when no button carries the label */
+      const b = hit('button') || hit('[class*="cursor-pointer"]');
       if (b) b.click();
     };
     wants.reduce((chain, want) => chain.then(() => press(want)), Promise.resolve()).then(() => {
@@ -623,7 +627,29 @@ function ShellLab() {
         </button>
       )}
     >
-      {q.has('terminal') ? (
+      {q.has('customers') ? (
+        /* ?shell&customers — the Customers screen INSIDE the real shell, exactly as App.jsx:5041
+           mounts it: no wrapper at all, a direct child of the shell's biohazard-content. T5 again
+           (the salesman who registers and looks up shops from a phone); the four LAB_CUSTOMERS
+           carry a region so the own-region rule has something to compare; the rank list is the
+           app's DEFAULT_TIERS shape. onRequestCrop records to window.__crop. db is the stub so the
+           borders read resolves empty instead of throwing. */
+        <CustomerManagement
+          customers={LAB_CUSTOMERS.map((c) => ({ ...c, region: 'BANDUNG', city: 'Bandung', tier: 'Bronze', phone: '0812-3456-7890', visitFreq: 7 }))}
+          db={{}} appId="lab"
+          user={{ uid: 'lab-t5', displayName: 'Lab Salesman', email: 'lab@example.com', location: 'BANDUNG' }}
+          logAudit={() => {}} triggerCapy={() => {}}
+          isAdmin={false} userRole="FIELD_OPERATIVE" employeeRegion="BANDUNG"
+          tierSettings={[
+            { id: 'Mythic', label: 'Mythic', color: '#f59e0b', iconType: 'emoji', value: '👑' },
+            { id: 'Bronze', label: 'Bronze', color: '#d97706', iconType: 'emoji', value: '🛡️' },
+            { id: 'Unranked', label: 'Unranked', color: '#6b5a40', iconType: 'emoji', value: '🪵' },
+          ]}
+          onNavigateToMap={() => {}}
+          onRequestCrop={(file) => { window.__crop = file; }}
+          croppedImage={null} onClearCroppedImage={() => {}}
+        />
+      ) : q.has('terminal') ? (
         /* ?shell&terminal — the Sales Terminal INSIDE the real shell, wrapped exactly as App.jsx
            wraps it (activeTab === 'sales', App.jsx:4916): the shell's p-2 lg:p-6, then ONE bare
            box, nothing else — no border-4, no dashed band. The terminal is a T5 salesman
