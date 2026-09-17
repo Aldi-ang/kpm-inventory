@@ -7,6 +7,14 @@ Inventory** → EOD Setoran → Stock Opname → Journey Plan → Sampling → A
 one morning per screen: mount in the lab, measure at 375 in the real shell, propose as frames,
 build what he picks.
 
+⚠️ SESSION CLOSED 2026-09-17 10:22 at his *"create notes and prompt after this i will continue
+later"*. **The next session opens with his test result of Customers (`a9822ff`) — read the reply
+before the job:** ✅ on `https://192.168.1.107:4173`, Customers tab: the form folded behind
+`+ ADD NEW CUSTOMER`, search and shops first, shops A→Z inside a folder, Edit opens the form filled,
+boxes dark in dark mode. If he reports a miss, fix that first; the packed build on `:4173` was left
+running (if it is down, `preview_start kpm-preview` and read the address off its `Network:` line).
+Plan quota at close: 5-hour window 78 % used (resets ~12:00 WIB), weekly 39 %.
+
 Why it costs him money: this is the salesman's own stock on his phone — what is in the van and
 what he can sell. Never measured at 375 inside the shell after the `p-2` cut.
 
