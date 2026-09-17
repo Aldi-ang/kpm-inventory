@@ -940,6 +940,18 @@ const handleGitHubMirror = async () => {
   const [isResetMode, setIsResetMode] = useState(false);
   const [authShake, setAuthShake] = useState(false); // For visual "Wrong Password" feedback
   const [isUnlocking, setIsUnlocking] = useState(false); // 🎬 NEW: Cinematic Unlock State
+  /* The press is waiting on the server (or on the hash). His 2026-09-17 report, after the first-open
+     fix: "the password press still took some time to submit and react … if u cant [make it faster]
+     then add some waiting animation on the button". Both were done: the button says CHECKING while
+     this is true, and the read it used to wait on is started earlier (adminProfileRef). */
+  const [pinChecking, setPinChecking] = useState(false);
+  /* The vault's security profile, fetched the moment the gate is SHOWN rather than the moment he
+     presses. He spends seconds typing the password; on a phone that is the whole round trip the
+     press used to pay before anything moved. A press finds the doc already here and goes straight
+     to hash + compare. Cleared after every attempt so a strike written by the failed path is read
+     back fresh, not from this copy; a rejected prefetch (offline) is dropped and the press does its
+     own read, so the existing offline / insecure-context wording still fires. */
+  const adminProfileRef = useRef(null);
 
   // 📧 NEW: Email OTP Recovery States
   const [isOtpMode, setIsOtpMode] = useState(false);
@@ -1075,7 +1087,13 @@ const handleGitHubMirror = async () => {
   };
 
   // 3. LOGIN: Verify PIN (NOW WITH HASH & 5-STRIKE LOCKOUT)
+  useEffect(() => {
+      if (!showAdminLogin || !db || !userId || userId === 'default') { adminProfileRef.current = null; return; }
+      adminProfileRef.current = getDoc(doc(db, `artifacts/${appId}/users/${userId}/settings`, 'admin')).catch(() => null);
+  }, [showAdminLogin, db, appId, userId]);
+
   const handlePinLogin = async () => {
+      if (pinChecking) return;
       /* A shake alone is not a report. On a phone he may not even see it — and pressing OPEN THE
          VAULT with an empty box is the likeliest thing to happen now that the field no longer
          autofocuses there. His report was exactly this shape: "doesnt let me enter but no
@@ -1086,10 +1104,13 @@ const handleGitHubMirror = async () => {
           return;
       }
 
+      setPinChecking(true);
       try {
-          // Fetch the live security profile
+          // The security profile: the prefetched copy when the gate had time to fetch it, a live read otherwise
           const adminDocRef = doc(db, `artifacts/${appId}/users/${userId}/settings`, 'admin');
-          const adminSnap = await getDoc(adminDocRef);
+          const prefetched = adminProfileRef.current;
+          adminProfileRef.current = null;
+          const adminSnap = (prefetched && await prefetched) || await getDoc(adminDocRef);
           /* Was a bare `return` — the single most invisible failure in the app, on the one screen
              every session starts at. handleResetPin has reported this same condition since it was
              written (see "No security profile found." below); only this path was missed. */
@@ -1140,6 +1161,7 @@ const handleGitHubMirror = async () => {
               setAuthShake(true); setTimeout(() => setAuthShake(false), 500);
               setInputPin("");
               notify(`Incorrect PIN. Strike ${newStrikes}/5.`);
+              adminProfileRef.current = getDoc(adminDocRef).catch(() => null);
           }
       } catch (error) {
           console.error("Login Error:", error);
@@ -1161,6 +1183,8 @@ const handleGitHubMirror = async () => {
               : offline
                   ? "Can't reach the server to check your password. Get back online and try again — nothing was wrong with what you typed."
                   : `Could not check your password: ${msg || 'unknown error'}. Nothing was changed, try again.`);
+      } finally {
+          setPinChecking(false);
       }
   };
 
@@ -4466,9 +4490,15 @@ const handleGitHubMirror = async () => {
                        registers on the first tap rather than after the browser has finished
                        deciding whether a second one is coming. */
                     style={{ touchAction: 'manipulation' }}
+                    /* While the press is being checked the button says so and takes no second
+                       press — a second submit would spend one of his five tries. */
+                    disabled={pinChecking || isUnlocking}
+                    aria-busy={pinChecking}
                     className="w-full mt-[15px] py-3 font-mono text-[9.5px] font-bold uppercase tracking-[0.24em] bg-transparent text-[var(--shell-ink-2)] border border-[color-mix(in_srgb,var(--shell-orange-edge)_30%,transparent)] hover:border-[var(--shell-orange-edge)] hover:text-[#ffb066] hover:bg-[var(--shell-orange)]/[0.09] active:scale-[.975] transition-[transform,background-color,border-color,color] duration-150"
                 >
-                    Open the vault
+                    {pinChecking
+                        ? <span className="inline-flex items-center justify-center gap-2"><RefreshCcw size={12} className="animate-spin" /> Checking…</span>
+                        : 'Open the vault'}
                 </button>
 
                 {/* type="button" on BOTH, or they inherit type=submit inside the form and a tap

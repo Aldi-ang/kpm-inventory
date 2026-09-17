@@ -7140,5 +7140,31 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
      /galleryOk \? document\.getElementById\('txProof'\)\.click\(\) : setShowProofCamera\(true\)/.test(r));
 }
 
+/* ─── 2026-09-17 — THE VAULT PRESS REPORTS, AND THE READ IT WAITED ON STARTS EARLIER ───
+   His report after the first-open fix: "the password press still took some time to submit and
+   react … if u can make it faster then please do and if u cant then add some waiting animation on
+   the button". The press used to pay one server read (the security profile) before anything on
+   screen moved. Now the read starts when the gate is shown, and the button says CHECKING for
+   whatever wait is left. */
+{
+  const a = code(appSrc);
+  ok('the security profile is fetched when the gate is SHOWN, keyed on showAdminLogin, not on the press',
+     /useEffect\(\(\) => \{\s*if \(!showAdminLogin \|\| !db \|\| !userId \|\| userId === 'default'\) \{ adminProfileRef\.current = null; return; \}\s*adminProfileRef\.current = getDoc\(doc\(db, `artifacts\/\$\{appId\}\/users\/\$\{userId\}\/settings`, 'admin'\)\)\.catch\(\(\) => null\);\s*\}, \[showAdminLogin, db, appId, userId\]\);/.test(a),
+     'the round trip a phone pays is the same either way; starting it while he types is what removes it from the press');
+  ok('the press uses the prefetched copy and falls back to a live read — never a bare cached answer',
+     /const prefetched = adminProfileRef\.current;\s*adminProfileRef\.current = null;\s*const adminSnap = \(prefetched && await prefetched\) \|\| await getDoc\(adminDocRef\);/.test(a),
+     'a rejected prefetch (offline) resolves to null, so the live read runs and the existing offline / insecure-context wording still fires');
+  ok('BEHAVIOUR: a wrong password re-arms the prefetch AFTER its own strike write, so the next press reads the new count',
+     /notify\(`Incorrect PIN\. Strike \$\{newStrikes\}\/5\.`\);\s*adminProfileRef\.current = getDoc\(adminDocRef\)\.catch\(\(\) => null\);/.test(a),
+     'a copy fetched before the strike would let a sixth try read as a fifth');
+  ok('REGRESSION: the button says CHECKING with a spinner while the press is in flight, and takes no second press',
+     /disabled=\{pinChecking \|\| isUnlocking\}/.test(a) && /aria-busy=\{pinChecking\}/.test(a) &&
+     /\{pinChecking\s*\? <span className="inline-flex items-center justify-center gap-2"><RefreshCcw size=\{12\} className="animate-spin" \/> Checking…<\/span>\s*: 'Open the vault'\}/.test(a),
+     'silence is a bug (law 2); a second submit would spend one of his five tries');
+  ok('the busy flag is raised before the read and always cleared, whatever path the press takes',
+     /if \(pinChecking\) return;/.test(a) && /setPinChecking\(true\);\s*try \{/.test(a) && /\} finally \{\s*setPinChecking\(false\);\s*\}\s*\};/.test(a),
+     'a flag that stays up after an error is a dead button with a spinner on it');
+}
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);
