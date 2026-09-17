@@ -1,57 +1,49 @@
 # The one job
 
-**The Customers screen on the phone — the sweep moves on.** The Sales Terminal is DONE on the
-phone (his B + YES, `4ba6563`, CONFIRMED on his phone 2026-09-17 09:05). The sweep order he set on
-2026-09-15: Sales Terminal → **Customers** → Agent Inventory → EOD Setoran → Stock Opname → Journey
-Plan → Sampling → Agent Profile. Same method as the terminal, which took one morning:
-build the lab mount, measure at 375 in the real shell, propose as frames, build what he picks.
+**The Agent Inventory screen on the phone — the sweep moves on.** Customers is DONE on the phone
+(`a9822ff`, his three YES + A→Z + theme-coloured boxes, 2026-09-17 10:16; ✅ TEST owed on his
+phone). The sweep order he set on 2026-09-15: Sales Terminal ✓ → Customers ✓ → **Agent
+Inventory** → EOD Setoran → Stock Opname → Journey Plan → Sampling → Agent Profile. Same method,
+one morning per screen: mount in the lab, measure at 375 in the real shell, propose as frames,
+build what he picks.
 
-Why it costs him money: a salesman registers and looks up shops from this screen on the phone;
-the customer form's GPS box, the pin picker and the storefront photo were touched in September
-(`2771374`, `5319aef` queue) but never measured at 375 inside the shell after the `p-2` cut.
+Why it costs him money: this is the salesman's own stock on his phone — what is in the van and
+what he can sell. Never measured at 375 inside the shell after the `p-2` cut.
 
-## The mount (exact, read from the live files 2026-09-17 08:55)
+## The mount (exact, read from the live files 2026-09-17 10:17)
 
-`App.jsx:5040` `{activeTab === 'customers' && (` → `:5041` `<CustomerManagement` with NO wrapper
-div at all — the component is a direct child of the shell's `biohazard-content`. So in
-`tools/ponder-lab.jsx` `ShellLab()` add `q.has('customers')` BEFORE the `terminal` branch (the
-`?shell&terminal` block at the `{q.has('terminal') ? (` line is the pattern; copy nothing but the
-props). Component: `src/components/CustomerManager.jsx:203` `CustomerManagement` — read its props
-list on that line; App passes `customers, db, appId, user, logAudit, triggerCapy, isAdmin, userRole,
-employeeRegion, tierSettings, onNavigateToMap, onRequestCrop, croppedImage, onClearCroppedImage`.
-Mount it as T5 (`FIELD_OPERATIVE`) with `LAB_CUSTOMERS` (four shops, already in the lab), `db={null}`
-unless its listener needs the stub (then add a `FIXTURES['customers']`), `onRequestCrop` a no-op
-that records to `window.__crop`. `?tab=` presses buttons by label — use it to open the register
-form and a shop's detail (`CustomerDetailView` is exported from the same file).
+`App.jsx:4252` `{activeTab === 'agent_inventory' && (` → `:4253` `<AgentInventoryView` with NO
+wrapper — a direct child of the shell's `biohazard-content`, like Customers. Lazy-loaded at
+`App.jsx:49`. Component `src/AgentInventoryView.jsx:24`:
+`({ db, appId, userId, agentProfileId, inventory = [], transactions = [], samplings = [], user, motorists = [], previewing = null })`.
+App passes `db, appId, userId, agentProfileId, inventory, transactions, samplings, user, motorists,
+previewing`. In `tools/ponder-lab.jsx` `ShellLab()` add `q.has('agent')` before the `customers`
+branch (that block is the pattern); mount as T5 with `LAB_PRODUCTS` (they carry the pack sizes),
+`LAB_MOTORISTS` (one of them must be the lab user's motorist — read what the screen keys on:
+`agentProfileId` vs `user.email`), `transactions=[]`, `samplings=[]`, `db={{}}` so listeners
+resolve empty through the stub (add a `FIXTURES[...]` if the shelf needs a loaded-stock document
+to show anything — check what the screen reads before deciding). `?tab=` presses buttons by label
+and, since `6c230a6`, `cursor-pointer` cards when no button carries the label.
 
-## How to measure (the terminal's recipe, unchanged)
+## How to measure and propose — the recipe is settled, do not re-derive it
 
-`preview_start ponder-lab` → `resize_window` 375×812 → `?shell&customers` → the probe reads
-`innerWidth` in the SAME call as every rect (a hidden pane reports 0 and still returns numbers).
-Both themes. List: every button/input/select under 44 tall, every text under 10 px, anything wider
-than 375 (`scrollWidth`), the list row height, the form's reachable area with the keyboard open
-(the phone's keyboard eats ~300 px — a Save button below the fold is a miss). Headless PNG for the
-reply: `--window-size=518,900` with the `#root{width:375px}` pin in `?css=` (Looking at the App,
-2026-09-17) so the frame IS the 375 layout; the pane is the number.
+`preview_start ponder-lab` → `resize_window` 375×812 → `?shell&agent` → the probe reads
+`innerWidth` in the SAME call as every rect; both themes; list every control under 44, every text
+under 10 px, anything wider than 375, the row height. Headless PNG at 518 with the
+`#root{width:375px}` pin. Boards: TODAY beside each fix through `?css=`, a YES/NO or a letter per
+board, recommended one marked; three boards was the right number for Customers. No code before he
+answers. Then classes with `lg:` resets, element-scoped guards red → green, `npm run build; node
+src/config/integration.audit.mjs` (rebuild BEFORE the audit if the audit file changed), re-measure
+at 375 and 1280, frames, commit, ✅ TEST line.
 
-## How to propose
-
-Frames with captions, TODAY beside each fix rendered through `?css=`, letters for the choices,
-recommended one marked — the terminal boards (`st-wares.png`, `st-sheet.png`) are the shape he
-answered in one sentence. No code before he answers. Then: classes on the elements (phone-first,
-`lg:` reset so the desk keeps every number), element-scoped guards in `logicFixes.selfcheck.mjs`
-trialled red then green, `npm run build; node src/config/integration.audit.mjs` (rebuild BEFORE the
-audit if the audit file itself changed — it refuses a stale build), re-measure, frames of the
-result, commit, ✅ TEST line.
-
-**Traps.** (a) `CustomerManager.jsx:1337` is the storefront photo box — when PhotoField reaches it,
-`scan` stays OFF (a shop is not a document) and the tier rule of that box is kept. (b) The form's
-GPS box has `placeholder:italic` and `noValidate` on purpose (`2771374`) — do not "fix" them.
-(c) `code()` in `logicFixes.selfcheck.mjs` strips a block-comment span that can swallow real code
-further down a file (it ate the terminal's payment select and proof block) — when a regex that
-matches the raw file fails on `msvSrc`-style stripped text, test the raw `read(...)` instead.
-(d) The lab restores a localStorage draft on the terminal mount; the customers mount may keep its
-own — a pre-filled form is that, not a bug. (e) Every frame at a MEASURED 375 inside the shell.
+**Traps.** (a) `index.css` `button:has(> svg:only-child)` forces inline-flex + 44 px on any button
+whose only ELEMENT child is an icon — text nodes do not count — it beat `lg:hidden` on the Customers
+button until the label became a `<span>`. (b) Inputs with no `bg-` class are white in dark mode
+(his 10:05 complaint); use `bg-[var(--inset)]` on a raised card, `bg-[var(--raised)]` inside an
+inset block, `text-[var(--ink)]` always. (c) `code()` in the selfcheck strips block-comment spans
+that can swallow real code — test the raw `read(...)` when a regex misses. (d) The lab restores a
+localStorage draft on the terminal — a pre-filled state is that, not a bug. (e) Every frame at a
+MEASURED 375 inside the shell; a 518 frame without the pin re-lays-out and hides the wrap.
 
 ---
 
@@ -61,27 +53,38 @@ own — a pre-filled form is that, not a bug. (e) Every frame at a MEASURED 375 
 >
 > Read `.claude/NEXT-SESSION.md` first — it is the whole job, do not re-read source to re-orient.
 >
-> **The Customers screen on the phone. Build the lab mount first, then look, then propose — never
-> fix from a description.**
-> 1. `tools/ponder-lab.jsx`: add `?shell&customers` to `ShellLab()` next to the `terminal` branch.
->    `App.jsx:5041` mounts `<CustomerManagement` (`src/components/CustomerManager.jsx:203`) with NO
->    wrapper — a direct child of the shell. Mount it as T5 with `LAB_CUSTOMERS`, stubs for the rest;
->    `?tab=` opens the register form and a shop's detail.
+> **The Agent Inventory screen on the phone. Build the lab mount first, then look, then propose —
+> never fix from a description.**
+> 1. `tools/ponder-lab.jsx`: add `?shell&agent` to `ShellLab()` next to the `customers` branch.
+>    `App.jsx:4253` mounts `<AgentInventoryView` (`src/AgentInventoryView.jsx:24`) with NO wrapper.
+>    Mount it as T5 with the lab fixtures; read what the screen keys on (agentProfileId vs email)
+>    before choosing the fixture motorist.
 > 2. Pane: `resize_window` 375×812, `innerWidth` in the same probe as every rect, both themes.
 >    Measure every control under 44, every text under 10 px, anything wider than 375, the row
->    height, and whether Save is reachable with a keyboard open. Headless PNG at 518 with the
->    `#root{width:375px}` pin.
-> 3. Reply as FRAMES with captions — TODAY beside each fix through `?css=` — letters, recommended
->    marked. No code before he answers. When he answers: classes with `lg:` resets, guards red →
->    green, build + audit, re-measure, frames, commit, ✅ TEST.
+>    height. Headless PNG at 518 with the `#root{width:375px}` pin.
+> 3. Reply as FRAMES with captions — TODAY beside each fix through `?css=` — YES/NO per board,
+>    recommended marked. No code before he answers. When he answers: classes with `lg:` resets,
+>    guards red → green, build + audit, re-measure at 375 and 1280, frames, commit, ✅ TEST.
 >
-> **Traps.** Storefront photo box `CustomerManager.jsx:1337`: no scan, tier rule kept. GPS box keeps
-> `placeholder:italic` + `noValidate` (`2771374`). `code()` in the selfcheck can swallow real code —
-> test the raw file when a regex misses. Every frame at a MEASURED 375 in the shell.
+> **Traps.** `button:has(> svg:only-child)` in index.css beats `lg:hidden` — put button text in a
+> span. Bare inputs are white in dark mode — surface tokens on every box. `code()` in the selfcheck
+> can swallow real code — test the raw file when a regex misses. Every frame at a MEASURED 375.
 >
 > Rewrite this file with the next single job before closing.
 
 ---
+
+## Shipped 2026-09-17 10:16 — Customers on the phone (`a9822ff`)
+
+His words: *"yes to all but on the customer directory i want the customer name to be
+alphabetically in order so that its easier to find them, for the question that u ask i think just
+let it be like that do not need to change anything"* and *"i want the textbox background to be
+dark when use darkmode and light when use light mode because right now it is white inside dark mode
+and it is too bright bro"*. Form folded behind `+ ADD NEW CUSTOMER` (48 px) under lg, Edit opens it,
+save folds it; every box 44 with surface tokens; Auto-Find / My GPS a half each; folder rows;
+shop cards 222 → 199; Edit / breadcrumb 44; shops A→Z (`localeCompare 'id'`). Guards 1587 (red 8
+first), audit 722, desk at 1280 unchanged. Lab `?shell&customers` (`6c230a6`).
+✅ TEST owed on his phone (`https://192.168.1.107:4173`, packed build rebuilt).
 
 ## Shipped 2026-09-17 — the Sales Terminal on the phone (`4ba6563`) and the vault press (`dfc2392`)
 
