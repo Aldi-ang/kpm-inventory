@@ -1,31 +1,100 @@
 # The one job
 
-**The Sales Terminal on the phone — the sweep resumes.** The Restock Vault is done on the phone
-(tests 1–4 confirmed 2026-09-15; the nota scanner now finds the paper, squares it and has a
-SESUAIKAN corner editor, shipped 2026-09-16 and CONFIRMED on his phone the same evening). The next
-screen in his sweep is the Sales Terminal (`src/MerchantSalesView.jsx`, mounted by `App.jsx:4856`
-under `activeTab === 'sales'` in a bare `h-full w-full relative bg-[var(--duke-well-solid)]` box —
-NOT the `p-6` / `border-4 p-4` wrappers the Restock Vault sits in). He owes a ❓ 375 frame of it
-from his phone; do not wait for it — the lab can make the frame.
+**The Sales Terminal on the phone — build what he picked.** The measuring is DONE (2026-09-17
+08:10, lab `dbc0787`, vault `dc3c29a`): the terminal was mounted in the real shell at innerWidth
+375 (`?shell&terminal`), every control was measured in both themes, and two boards went to him —
+`st-wares.png` (the wares row: A or B) and `st-sheet.png` (the manifest sheet: YES or NO). **His
+answer is not in this file. Read his reply first; if it is not there, re-send the two boards and
+ask again — do not build without the letter.** The frames were rendered through `?css=`; the exact
+rules that rendered them are below, and they are the trial the audit lesson demands — the build is
+moving them from `?css=` into the JSX classes so a guard can pin them.
 
-Why it costs him money: a salesman sells from this screen all day on a phone. Every control that
-is under 44 px, every label that wraps to three lines, every button off the right edge is a sale
-typed twice. Nothing about it has been measured at 375 since the redesign.
+Why it costs him money: a salesman sells from this screen all day on a phone; the − / + he taps for
+every ware is 32 px, the unit boxes in the cart are 20 px with 8 px labels, the unit and tier
+pickers are 17 px. Every miss is a sale typed twice.
 
-⚠️ Both first-open fixes SHIPPED 2026-09-16 21:10 as `af4d5e2` (his "if u can fix the loading time
-maybe it would help a lot just for conveniency for the new users"): the sign-in listener says
-"Checking your account" before its first round trip and owns `user` (handleLogin no longer sets
-it, which is what painted the stale red Access Denied); the four directory reads go out in one
-Promise.all; OPEN THE VAULT no longer awaits the strike-reset write. The 8.5 s unlock sequence is
-untouched. SESSION CLOSED 2026-09-16 21:20 at his *"let me test tomorrow prepare notes and prompt
-for tomorrow"*. **Tomorrow opens with his test result, so read the reply before the job:** ✅ an
-incognito tab (or a phone that has never opened the address) on `https://192.168.1.107:4173` — the
-first thing after Google must be the black "Checking your account" panel, never the red one, then
-the vault gate, and OPEN THE VAULT must start its animation right after the password with no pause.
-If he reports the red panel again, the cause is NOT the one fixed — read `App.jsx` for any other
-writer of `setUser(` / `setUserRole('UNAUTHORIZED')` before touching anything (the 2026-09-16 lesson:
-a rendered state is a conjunction with two writers). The packed build on `:4173` was left running;
-if it is down, `preview_start kpm-preview` and read the address off its `Network:` line first.
+## What measured (375, dark and light, same numbers — the table is in the brainstorm note)
+
+− / + steppers 32×32 (`MerchantSalesView.jsx:2521` / `:2526`, `w-8 h-8`, the comment above them
+already admits 32 is under 44) · name column 98 px, "CELLO GREEN 16" wraps (`:2474`, `line-clamp-2`)
+· ALL/MISC 34 tall @10 px (`:2286`) · search 35 (`:2290`) · customer-bar button 16 tall in a 52 bar
+(`:1655`, and its "Customer" label 9 px `:1656`) · SALE/RETUR 27 @10 px (`:1741`) · customer box 33
+(`:1808`) · payment select 32 (`:1906`) · unit boxes 32×20 @8 px (`:1967`–`:1977`) · qty input 25,
+unit/tier selects 17 (`:1999`, `:2003`–`:2004`) · camera button 32 (`:2211`) · picker DONE 28
+(`:1690`) · EXAMINE 9 px (`:692`). Fine: grip/bar 52, SIGN MANIFEST 47, camera close 44, picker
+rows 45, scrollWidth 375, no file input in the T4–T6 camera view.
+
+## The rules that rendered the boards (phone only — every one under the terminal's own `lg` line)
+
+**Wares A (recommended — row stays 99, name one line, − + 44, picture 96 kept):**
+```css
+@media (max-width:1023px){
+.product-card > .flex-1.min-w-0{display:grid;grid-template-columns:1fr auto;grid-template-rows:auto auto;align-items:end;column-gap:8px;row-gap:2px}
+.product-card > .flex-1.min-w-0 > .flex-1.min-w-0{display:contents}
+.product-card h4{grid-column:1 / -1;-webkit-line-clamp:1;font-size:13px;align-self:start}
+.product-card h4 + div{grid-column:1;grid-row:2;margin-top:0}
+.product-card .shrink-0.mt-1{grid-column:2;grid-row:2;margin-top:0;gap:10px}
+.product-card .shrink-0.mt-1 > button{width:44px;height:44px;font-size:22px}
+.product-card .shrink-0.mt-1 > span{width:32px;font-size:16px}
+.scrollbar-hide > button{min-height:44px;font-size:11px}
+input[placeholder="SEARCH WARES..."]{min-height:44px;font-size:13px}
+input[placeholder="SEARCH WARES..."] ~ svg{top:14px}
+.product-card span.text-\[9px\]{font-size:11px}
+}
+```
+Measured with it: card 327×99, h4 220×16 one line, − + 44×44 at x 212 / 308, EXAMINE 80×80,
+tabs 61×44 / 69×44, search 335×44.
+
+**Wares B (picture 96 → 64, − + 44 beside the name; row 68–90, long names still wrap):** the same
+tabs/search/EXAMINE lines plus `.product-card > .w-24{width:64px;height:64px}`,
+`.product-card .shrink-0.mt-1{gap:4px}`, the same 44 px button rule, `> span{width:26px;font-size:15px}`.
+
+**Sheet YES (every control 44, labels 11, unit labels 10 so the four boxes stay on one row):**
+```css
+@media (max-width:1023px){
+div[style*="drawer-h"] .text-\[10px\]{font-size:11px}
+div[style*="drawer-h"] .text-\[9px\]{font-size:11px}
+div[style*="drawer-h"] em.text-\[8px\]{font-size:10px;letter-spacing:.04em}
+div[style*="drawer-h"] button.flex-1.py-1\.5{min-height:44px}
+div[style*="drawer-h"] button.w-full.border-dashed{min-height:44px;font-size:13px}
+div[style*="drawer-h"] select.w-full{min-height:44px;font-size:13px}
+div[style*="drawer-h"] select.bg-transparent{min-height:44px;font-size:14px}
+div[style*="drawer-h"] input[type=number]{min-height:44px;font-size:16px}
+div[style*="drawer-h"] span.px-1\.5.py-1.rounded{height:44px;padding:0 4px;gap:2px}
+div[style*="drawer-h"] span.px-1\.5.py-1.rounded > input{width:28px;height:44px;font-size:16px}
+.cursor-grab > button{min-height:44px;display:flex;flex-direction:column;justify-content:center}
+.manifest-dropdown-area button.shrink-0.px-3{min-height:44px;font-size:11px}
+}
+```
+Measured with it: zero controls under 44 in the drawer (the line-delete X is 43, left alone), zero
+text under 10 px, the four unit boxes on one row. `min-height:44px` on the inputs measured 43 in
+the pane (border box) — write the class so the box is 44, and read it back.
+
+## How to build it (his letter decides which blocks)
+
+1. Move each rule into the JSX class on the line named above, phone-first Tailwind with the `lg:`
+   value restored (e.g. `w-11 h-11 lg:w-8 lg:h-8` is WRONG — the steppers are phone-only already,
+   so just `w-11 h-11`; the h4 becomes `line-clamp-1 lg:line-clamp-2`; the text column's
+   `flex flex-row lg:flex-col` becomes `grid grid-cols-[1fr_auto] lg:flex lg:flex-col` with the name
+   block `contents lg:flex lg:flex-col` — check `lg:` on the desk at 1280 in the pane: EVERY number
+   there must stay). Do NOT add a stylesheet; the audit greps classes.
+2. One guard in `src/config/logicFixes.selfcheck.mjs`, scoped to the element (the 2026-08-18
+   lesson): the stepper buttons carry `w-11 h-11`; the unit-box `em` no longer says `text-[8px]`.
+   Trial it red first (stash the source), then green.
+3. `preview_start ponder-lab` → `resize_window` 375×812 → `?shell&terminal` and `&grip` — re-run the
+   probe (innerWidth in the same call), both themes; then `?shell&terminal` at the desktop preset
+   to prove the desk did not move. `npm run build; node src/config/integration.audit.mjs`.
+4. Frames of the shipped result for the reply, then ✅ TEST on his phone at the packed-build address
+   (read it off `preview_logs` `Network:` — it changes).
+
+**Traps.** (a) The T4–T6 camera has no file input in the DOM — `galleryOk` at `:254` decides; never
+add a picker for T4–T6. (b) The admin field-mode toggle stays inside the wares column (`App.jsx:4899`
+comment). (c) Nothing here touches money — a cash refund never reduces omzet, Buyback stays off.
+(d) `?css=` proves the LOOK only; the pane at 375 is the number, headless is 518 wide unless the
+`#root{width:375px}` pin from `Looking at the App` is in the URL. (e) The lab keeps a DRAFT in
+localStorage (a restored cart, a chosen shop) — a frame with "TOKO BERKAH JAYA" already chosen is
+that draft, not a bug. (f) The customer bar and the grip share `.cursor-grab`; the bar's tap is a
+no-op on purpose.
 
 ---
 
@@ -35,37 +104,30 @@ if it is down, `preview_start kpm-preview` and read the address off its `Network
 >
 > Read `.claude/NEXT-SESSION.md` first — it is the whole job, do not re-read source to re-orient.
 >
-> **Build the lab mount first, then look, then propose — never fix from a description.**
-> 1. `tools/ponder-lab.jsx`: add `?shell&terminal` to `ShellLab()` (`:571`; `?shell&places` at
->    `:607` is the pattern — wrappers copied VERBATIM from App.jsx, for the terminal that is only
->    `App.jsx:4874` `<div className="h-full w-full relative bg-[var(--duke-well-solid)]">`).
->    Mount `MerchantSalesView` (`src/MerchantSalesView.jsx:42`, its props list is on that line)
->    with the lab's fixture inventory, `userRole="FIELD_OPERATIVE"` (T5 — the salesman), a fixture
->    customer list, `onProcessSale` a no-op that records to `window.__sale`, `db`/`storage` from the
->    lab stubs. `?tab=` already presses buttons by label (`:578`) — use it to open the cart, the
->    payment step and the sale-proof camera view.
-> 2. In the in-app Browser pane: `preview_start ponder-lab` → `resize_window` 375×812 → probe
->    `innerWidth` in the SAME call as every rectangle (a hidden pane reports 0 and still returns
->    plausible numbers). Both themes. Measure: every button under 44 px tall, every text under
->    10 px, anything wider than 375, the wares list row height, the cart drawer's reachable area.
->    Headless PNG for the reply: `--window-size=518,900` is the narrowest uncropped frame on this
->    machine (375 crops at 518 — the vault's "Looking at the App" page); the pane is the honest
->    375 instrument.
-> 3. Reply as FRAMES with captions — TODAY beside each proposed fix rendered through `?css=` —
->    and let him rank them (his rule: show, don't tell). No code before he answers.
+> **Read my reply for the two answers first: a letter for board 1 (the wares row, A or B) and
+> YES/NO for board 2 (the manifest sheet). If they are not there, re-send `st-wares.png` and
+> `st-sheet.png` (regenerate through `?shell&terminal` + `?css=` with the rules in the file) and
+> ask again. Do not build without them.**
 >
-> **Traps.** (a) T4–T6 sale-proof camera is a real `getUserMedia` view with NO file input in the
-> DOM (`284ea64`/`1857b97`); `MerchantSalesView.jsx:2202` `#txProof` is the T1–T3 picker — never
-> reintroduce a picker for T4–T6. When PhotoField reaches this screen it keeps that rule and
-> `scan` stays OFF (a sale proof is a photo of a shop, not a document). (b) The admin field-mode
-> toggle lives INSIDE the wares column on purpose (`App.jsx:4857` comment) — do not lift it back
-> into the shell. (c) A cash refund never reduces omzet; Buyback is off — nothing in the sweep
-> touches the money engine. (d) Every frame must be at a MEASURED 375; the 2026-09-15 tabs
-> proposal shipped three rows instead of two because the bare mount was 54 px wider than the shell.
+> Then build exactly what was picked, in `src/MerchantSalesView.jsx` at the lines the file names:
+> the `?css=` rules become Tailwind classes on those elements (phone-first, `lg:` restored so the
+> desk keeps every number), one element-scoped guard in `src/config/logicFixes.selfcheck.mjs`
+> trialled red then green, re-measure at 375 in the pane (`innerWidth` in the same probe, both
+> themes, `&grip` for the sheet), the desk at the desktop preset, `npm run build; node
+> src/config/integration.audit.mjs`, frames of the result, commit, then a ✅ TEST line for his phone.
+>
+> **Traps.** T4–T6 camera never gets a file picker (`galleryOk`, `:254`). The field-mode toggle stays
+> in the wares column. Nothing touches the money engine. The pane at 375 is the number; a headless
+> frame is 518 wide unless pinned. The lab restores a localStorage draft — a pre-chosen shop is
+> that, not a bug.
 >
 > Rewrite this file with the next single job before closing.
 
 ---
+
+## Measured 2026-09-17 — the Sales Terminal at 375 (lab `dbc0787`, no product change)
+
+`?shell&terminal` + `?grip` + `?tab=`; the table and both boards are in `A-Brain/Brainstorm/2026-09-17_sales-terminal-di-hp.md`. Owed: his letter and YES/NO.
 
 ## Shipped 2026-09-16 20:29 — `c5c7ed3` the phone ribbon rests a quarter of the way down
 
