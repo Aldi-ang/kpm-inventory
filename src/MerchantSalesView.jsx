@@ -689,7 +689,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
             <div className="kpm-cube">
                 <i className="f">
                     {front ? <img src={front} alt={prod?.name || ''} />
-                           : <span className="grid place-items-center w-full h-full text-[9px] font-black font-mono tracking-widest text-[var(--duke-amber-ink)]">EXAMINE</span>}
+                           : <span className="grid place-items-center w-full h-full text-[11px] lg:text-[9px] font-black font-mono tracking-widest text-[var(--duke-amber-ink)]">EXAMINE</span>}
                 </i>
                 {face('bk', back)}
                 {face('l', img.left)}
@@ -1649,11 +1649,11 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                 <button
                     onClick={() => setShowCustomerDropdown(true)}
                     aria-label="Choose customer"
-                    className="flex-1 min-w-0 text-left"
+                    className="flex-1 min-w-0 text-left min-h-[44px] flex flex-col justify-center"
                 >
                     {customerName ? (
                         <>
-                            <span className="block text-[9px] font-black uppercase tracking-widest text-[var(--duke-ink-6)] leading-none">Customer</span>
+                            <span className="block text-[11px] lg:text-[9px] font-black uppercase tracking-widest text-[var(--duke-ink-6)] leading-none">Customer</span>
                             <span className="block text-sm font-black uppercase tracking-wide text-[var(--duke-paper-ink)] truncate leading-tight mt-1">{customerName}</span>
                         </>
                     ) : (
@@ -1686,7 +1686,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                                 "throw the name away". */}
                             <button
                                 onClick={() => setShowCustomerDropdown(false)}
-                                className="kpm-hover shrink-0 px-3 py-1.5 border border-[var(--duke-edge-5)] rounded text-[10px] font-black uppercase tracking-widest text-[var(--duke-paper-ink)]"
+                                className="kpm-hover shrink-0 px-3 py-1.5 min-h-[44px] lg:min-h-0 border border-[var(--duke-edge-5)] rounded text-[11px] lg:text-[10px] font-black uppercase tracking-widest text-[var(--duke-paper-ink)]"
                             >Done</button>
                         </div>
 
@@ -1738,11 +1738,11 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
 
                 {/* --- 🚀 DUAL MODE TOGGLE (SALE VS RETUR) --- */}
                 <div className="flex bg-[var(--duke-fill-ground)] rounded border border-[var(--duke-edge-2)] p-1 mb-2">
-                    <button onClick={() => { setIsReturMode(false); setReturType('EXCHANGE'); }} className={`kpm-hover flex-1 py-1.5 text-[10px] font-black uppercase tracking-widest rounded ${!isReturMode ? 'bg-[var(--duke-brass-2)] text-[var(--duke-on-plate)]' : 'text-[var(--duke-ink-3)] hover:text-[var(--duke-ink-hi)]'}`}>Sale Mode</button>
+                    <button onClick={() => { setIsReturMode(false); setReturType('EXCHANGE'); }} className={`kpm-hover flex-1 py-1.5 min-h-[44px] lg:min-h-0 text-[11px] lg:text-[10px] font-black uppercase tracking-widest rounded ${!isReturMode ? 'bg-[var(--duke-brass-2)] text-[var(--duke-on-plate)]' : 'text-[var(--duke-ink-3)] hover:text-[var(--duke-ink-hi)]'}`}>Sale Mode</button>
                     <button onClick={() => {
                         if (!allowRetur) return notify("You do not have clearance to process returns.");
                         setIsReturMode(true);
-                    }} className={`kpm-hover flex-1 py-1.5 text-[10px] font-black uppercase tracking-widest rounded ${isReturMode ? 'bg-[var(--danger-plate)] text-[var(--danger-plate-ink)]' : 'text-[var(--duke-ink-3)] hover:text-[var(--duke-ink-hi)]'}`}>Retur Mode</button>
+                    }} className={`kpm-hover flex-1 py-1.5 min-h-[44px] lg:min-h-0 text-[11px] lg:text-[10px] font-black uppercase tracking-widest rounded ${isReturMode ? 'bg-[var(--danger-plate)] text-[var(--danger-plate-ink)]' : 'text-[var(--duke-ink-3)] hover:text-[var(--duke-ink-hi)]'}`}>Retur Mode</button>
                 </div>
 
                 {/* --- 🚀 SUB MODE TOGGLE (BUYBACK VS EXCHANGE) --- */}
@@ -1805,7 +1805,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                         <button
                             onClick={() => setShowCustomerDropdown(true)}
                             aria-label={customerName ? `Customer: ${customerName}. Tap to change` : 'Choose customer'}
-                            className="kpm-hover w-full text-left bg-[var(--duke-paper-5)] border border-dashed border-[var(--duke-edge-on-paper)] text-[var(--duke-ink-7)] p-2 text-xs md:text-sm font-black uppercase rounded truncate"
+                            className="kpm-hover w-full text-left bg-[var(--duke-paper-5)] border border-dashed border-[var(--duke-edge-on-paper)] text-[var(--duke-ink-7)] p-2 min-h-[44px] lg:min-h-0 text-[13px] md:text-sm font-black uppercase rounded truncate"
                         >
                             {customerName || <span className="text-[var(--duke-ink-7)] font-bold normal-case tracking-normal">Tap to choose the customer</span>}
                         </button>
@@ -1903,7 +1903,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
 
                 <div>
                     <label className="text-[10px] font-bold uppercase text-[var(--duke-ink-7)] block mb-1">Payment Method</label>
-                    <select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)} disabled={isReturMode} className={`w-full bg-[var(--duke-paper)] border border-[var(--duke-edge-on-paper)] text-[var(--duke-ink-7)] p-2 text-xs md:text-sm font-bold uppercase outline-none rounded ${isReturMode ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                    <select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)} disabled={isReturMode} className={`w-full bg-[var(--duke-paper)] border border-[var(--duke-edge-on-paper)] text-[var(--duke-ink-7)] p-2 min-h-[44px] lg:min-h-0 text-[13px] md:text-sm font-bold uppercase outline-none rounded ${isReturMode ? 'opacity-50 cursor-not-allowed' : ''}`}>
                         {allowedPayments.filter(method => !(method === 'Titip' && cart.some(i => i.priceTier === 'Ecer'))).map(method => ( <option key={method} value={method}>{method === 'Titip' ? 'Consignment' : method}</option> ))}
                     </select>
                     {/* A control that disappears has to say why it disappeared. */}
@@ -1965,7 +1965,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                             {!item.isIouFulfillment && (
                                 <div className="flex items-center gap-1 flex-wrap mb-2">
                                     {['Karton', 'Bal', 'Slop', 'Bks'].map(u => (
-                                        <span key={u} className="flex items-center gap-1 border border-[var(--duke-edge-on-paper)] bg-[var(--duke-paper-8)] px-1.5 py-1 rounded">
+                                        <span key={u} className="flex items-center gap-0.5 lg:gap-1 border border-[var(--duke-edge-on-paper)] bg-[var(--duke-paper-8)] px-1 lg:px-1.5 py-0 lg:py-1 h-11 lg:h-auto rounded">
                                             <input
                                                 type="text"
                                                 inputMode="numeric"
@@ -1973,9 +1973,9 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                                                 onChange={(e) => applyMix(item, u, e.target.value)}
                                                 placeholder="–"
                                                 aria-label={`${item.name} ${u}`}
-                                                className="w-8 bg-transparent text-center text-[var(--duke-on-plate)] font-black text-sm outline-none"
+                                                className="w-7 lg:w-8 h-11 lg:h-auto bg-transparent text-center text-[var(--duke-on-plate)] font-black text-base lg:text-sm outline-none"
                                             />
-                                            <em className="not-italic text-[8px] font-black uppercase tracking-widest text-[var(--duke-on-paper-dim)]">{u}</em>
+                                            <em className="not-italic text-[10px] lg:text-[8px] font-black uppercase tracking-wide lg:tracking-widest text-[var(--duke-on-paper-dim)]">{u}</em>
                                         </span>
                                     ))}
                                     <span className="text-[10px] font-black font-mono text-[var(--duke-amber-on-paper)] ml-1">
@@ -1996,12 +1996,12 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                                 </div>
                             )}
                             <div className={`flex items-center gap-1 md:gap-2 p-1 rounded border ${isReturMode ? (returType === 'EXCHANGE' ? 'bg-[color-mix(in_srgb,var(--duke-paper-4)_60%,transparent)] border-[var(--duke-brass-edge-2)]' : 'bg-red-200/50 border-red-300') : 'bg-[var(--duke-paper-2)] border-[color-mix(in_srgb,var(--duke-edge-on-paper)_30%,transparent)]'}`}>
-                                <input type="number" value={item.qty} disabled={item.isIouFulfillment} onChange={(e) => updateCartItem(item.productId, 'qty', e.target.value === '' ? '' : parseInt(e.target.value))} onBlur={(e) => { if (!e.target.value || parseInt(e.target.value) < 1) updateCartItem(item.productId, 'qty', 1); }} className={`w-20 md:w-24 bg-white border border-[var(--duke-edge-3)] text-center text-xs md:text-sm font-bold tabular-nums outline-none focus:border-[var(--duke-amber-edge)] rounded p-1 text-[var(--duke-ink-7)] ${item.isIouFulfillment ? 'opacity-50' : ''}`} />
+                                <input type="number" value={item.qty} disabled={item.isIouFulfillment} onChange={(e) => updateCartItem(item.productId, 'qty', e.target.value === '' ? '' : parseInt(e.target.value))} onBlur={(e) => { if (!e.target.value || parseInt(e.target.value) < 1) updateCartItem(item.productId, 'qty', 1); }} className={`w-20 md:w-24 min-h-[44px] lg:min-h-0 bg-white border border-[var(--duke-edge-3)] text-center text-base md:text-sm font-bold tabular-nums outline-none focus:border-[var(--duke-amber-edge)] rounded p-1 text-[var(--duke-ink-7)] ${item.isIouFulfillment ? 'opacity-50' : ''}`} />
                                 {/* 🚀 Phase 8: unit + price-tier directly change how much money is charged —
                                     bumped to text-sm specifically, not just the general 11px pass, since
                                     these two decide the price, not just describe something. */}
-                                <select value={item.unit} disabled={item.isIouFulfillment} onChange={(e) => updateCartItem(item.productId, 'unit', e.target.value)} className={`bg-transparent text-sm font-bold uppercase outline-none text-[var(--duke-ink-7)] border-r border-[color-mix(in_srgb,var(--duke-edge-on-paper)_30%,transparent)] pr-1 md:pr-2 ${item.isIouFulfillment ? 'opacity-50' : ''}`}><option>Bks</option><option>Slop</option><option>Bal</option><option>Karton</option></select>
-                                <select value={item.priceTier} onChange={(e) => updateCartItem(item.productId, 'priceTier', e.target.value)} disabled={!!lockedTier || item.isIouFulfillment} className={`bg-transparent text-sm font-bold uppercase outline-none text-[var(--duke-ink-7)] pl-1 ${lockedTier || item.isIouFulfillment ? 'opacity-50 cursor-not-allowed text-red-700' : ''}`}>
+                                <select value={item.unit} disabled={item.isIouFulfillment} onChange={(e) => updateCartItem(item.productId, 'unit', e.target.value)} className={`bg-transparent min-h-[44px] lg:min-h-0 text-sm font-bold uppercase outline-none text-[var(--duke-ink-7)] border-r border-[color-mix(in_srgb,var(--duke-edge-on-paper)_30%,transparent)] pr-1 md:pr-2 ${item.isIouFulfillment ? 'opacity-50' : ''}`}><option>Bks</option><option>Slop</option><option>Bal</option><option>Karton</option></select>
+                                <select value={item.priceTier} onChange={(e) => updateCartItem(item.productId, 'priceTier', e.target.value)} disabled={!!lockedTier || item.isIouFulfillment} className={`bg-transparent min-h-[44px] lg:min-h-0 text-sm font-bold uppercase outline-none text-[var(--duke-ink-7)] pl-1 ${lockedTier || item.isIouFulfillment ? 'opacity-50 cursor-not-allowed text-red-700' : ''}`}>
                                     {Array.from(mergedTiers).map(tier => ( <option key={tier} value={tier}>{tier}</option> ))}
                                 </select>
                             </div>
@@ -2208,9 +2208,9 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                                 <button onClick={() => setTxProofPhoto(null)} className="absolute top-2 right-2 bg-red-600 hover:bg-red-500 text-[var(--duke-on-fill)] p-1.5 rounded-md shadow-md"><X size={14}/></button>
                             </div>
                         ) : (
-                            <button onClick={() => galleryOk ? document.getElementById('txProof').click() : setShowProofCamera(true)} className="kpm-hover w-full py-2 border border-dashed border-[var(--duke-edge-4)] hover:border-[var(--duke-amber-edge-2)] text-[var(--duke-ink-4)] hover:text-[var(--duke-amber-ink-2)] bg-transparent rounded flex items-center justify-center gap-2">
+                            <button onClick={() => galleryOk ? document.getElementById('txProof').click() : setShowProofCamera(true)} className="kpm-hover w-full py-2 min-h-[44px] lg:min-h-0 border border-dashed border-[var(--duke-edge-4)] hover:border-[var(--duke-amber-edge-2)] text-[var(--duke-ink-4)] hover:text-[var(--duke-amber-ink-2)] bg-transparent rounded flex items-center justify-center gap-2">
                                 <Camera size={14} />
-                                <span className="text-[10px] uppercase tracking-widest font-bold">{galleryOk ? 'Capture or choose photo' : 'Open camera for handover photo'}</span>
+                                <span className="text-[11px] lg:text-[10px] uppercase tracking-widest font-bold">{galleryOk ? 'Capture or choose photo' : 'Open camera for handover photo'}</span>
                             </button>
                         )}
 
@@ -2280,15 +2280,15 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                     </div>
                 )}
                 <div className="flex gap-2 p-2 md:p-3 bg-[var(--duke-bar-solid)] border-b border-[var(--duke-edge-1)] overflow-x-auto scrollbar-hide shrink-0">
-                    {categories.map(cat => ( <button key={cat} onClick={() => setActiveCategory(cat)} className={`kpm-hover px-4 py-2 md:px-5 md:py-2.5 text-[10px] md:text-xs font-black uppercase whitespace-nowrap transition-all rounded-lg border-2 ${activeCategory === cat ? 'bg-[var(--duke-fill-tan)] text-black border-[var(--duke-amber-edge)]' : 'bg-[var(--duke-fill-panel)] text-[var(--duke-ink-5)] border-[var(--duke-edge-ctl)] hover:border-[var(--duke-edge-5)]'}`}>{cat}</button> ))}
+                    {categories.map(cat => ( <button key={cat} onClick={() => setActiveCategory(cat)} className={`kpm-hover px-4 py-2 md:px-5 md:py-2.5 min-h-[44px] lg:min-h-0 text-[11px] md:text-xs font-black uppercase whitespace-nowrap transition-all rounded-lg border-2 ${activeCategory === cat ? 'bg-[var(--duke-fill-tan)] text-black border-[var(--duke-amber-edge)]' : 'bg-[var(--duke-fill-panel)] text-[var(--duke-ink-5)] border-[var(--duke-edge-ctl)] hover:border-[var(--duke-edge-5)]'}`}>{cat}</button> ))}
                 </div>
                 {/* The examine shelf used to sit here as a full-width horizontal strip, which
                     cost the wares 150px of vertical room on every screen. It is the rail now —
                     same content, in space that was empty anyway. */}
                 <div className="p-2 md:p-3 border-b border-[var(--duke-edge-1)] flex gap-3 shrink-0 bg-[var(--duke-fill-well)] items-center relative z-10">
                     <div className="relative flex-1">
-                        <input ref={searchRef} value={searchTerm} onChange={e => setSearchTerm(e.target.value)} placeholder="SEARCH WARES..." className="w-full bg-[var(--duke-well)] border-2 border-[var(--duke-edge-ctl)] p-2 md:p-3 pl-9 md:pl-10 pr-10 text-[var(--duke-amber-ink)] font-mono text-xs md:text-sm font-bold outline-none focus:border-[var(--duke-amber-edge)] rounded-lg shadow-inner transition-colors"/>
-                        <Search size={16} className="absolute left-3 top-2.5 md:top-3.5 text-[var(--duke-ink-3)]"/>
+                        <input ref={searchRef} value={searchTerm} onChange={e => setSearchTerm(e.target.value)} placeholder="SEARCH WARES..." className="w-full bg-[var(--duke-well)] border-2 border-[var(--duke-edge-ctl)] p-2 md:p-3 pl-9 md:pl-10 pr-10 min-h-[44px] lg:min-h-0 text-[var(--duke-amber-ink)] font-mono text-[13px] md:text-sm font-bold outline-none focus:border-[var(--duke-amber-edge)] rounded-lg shadow-inner transition-colors"/>
+                        <Search size={16} className="absolute left-3 top-3.5 text-[var(--duke-ink-3)]"/>
                         <span className="kpm-kbd hidden lg:inline-grid absolute right-3 top-1/2 -translate-y-1/2">/</span>
                     </div>
                     <div className="hidden lg:flex gap-1">
@@ -2435,10 +2435,12 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                            else on the card still adds to the cart, which is the common action
                            and keeps the biggest target. */
                         <div key={item.id} onClick={() => addToCart(item)} onContextMenu={(e) => { e.preventDefault(); onInspect(item); }} className="product-card w-full lg:w-full shrink-0 bg-[var(--duke-fill-well)] border-2 border-[var(--duke-edge-1)] hover:border-[var(--duke-amber-edge)] transition-all flex flex-row flex-wrap lg:flex-col group active:scale-[0.98] shadow-[0_10px_20px_rgba(0,0,0,0.3)] rounded-xl overflow-hidden relative z-10 h-max">
-                            {/* 96px on a phone, not 80. This whole square is the press target for
-                                the stock breakdown, and 80 minus its own padding left barely more
-                                than a fingertip. */}
-                            <div className="w-24 h-24 lg:w-auto lg:h-48 p-2 lg:p-5 flex items-center justify-center relative overflow-hidden bg-[var(--duke-shade)] shrink-0">
+                            {/* 64px on a phone since 2026-09-17 (his pick, B): the square is still the press
+                                target for the stock breakdown — p-1 leaves it 56 px, over the 44 px
+                                finger — and the 32 px it gives back is what lets the − / + beside it
+                                grow to 44 without the name wrapping. It was 96 with p-2 before that
+                                (80 px of target), sized when the steppers were 32. */}
+                            <div className="w-16 h-16 lg:w-auto lg:h-48 p-1 lg:p-5 flex items-center justify-center relative overflow-hidden bg-[var(--duke-shade)] shrink-0">
                                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,var(--duke-fill-plank)_0%,var(--duke-vignette)_80%)] opacity-50"></div>
                                 {/* The ware as a solid object, not a picture of one. Front face is the real
                                     photo, the other faces are tinted panels; it turns only while pointed at.
@@ -2505,10 +2507,12 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                                         /* mt on desktop: the steppers sat directly under the stock
                                            pill with nothing between them, so the two read as one
                                            control and the + was easy to hit while aiming at the
-                                           stock figure. Size is unchanged - 32px is already under
-                                           the 44px touch minimum and shrinking it further would
-                                           trade one complaint for a worse one. */
-                                        <div className="flex items-center gap-2 shrink-0 mt-1 lg:mt-3">
+                                           stock figure. 44 px since 2026-09-17 (his B, measured at 375
+                                           in the lab): the picture beside them gave up 32 px so
+                                           these could reach the finger minimum without the name
+                                           wrapping. They were 32 before, with the same comment
+                                           admitting it. */
+                                        <div className="flex items-center gap-1 lg:gap-2 shrink-0 mt-1 lg:mt-3">
                                             <button
                                                 disabled={!line}
                                                 onClick={(e) => {
@@ -2518,12 +2522,12 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                                                     unlockSounds().then(() => playSound(qty > 1 ? 'click' : 'error'));
                                                     qty > 1 ? updateCartItem(item.id, 'qty', qty - 1) : setCart(c => c.filter(i => i.productId !== item.id));
                                                 }}
-                                                className="kpm-press kpm-hover w-8 h-8 rounded-lg border-2 border-[var(--duke-edge-1)] bg-[var(--duke-fill-panel)] text-[var(--duke-ink-3)] text-lg font-black leading-none disabled:opacity-30 flex items-center justify-center"
+                                                className="kpm-press kpm-hover w-11 h-11 lg:w-8 lg:h-8 rounded-lg border-2 border-[var(--duke-edge-1)] bg-[var(--duke-fill-panel)] text-[var(--duke-ink-3)] text-lg font-black leading-none disabled:opacity-30 flex items-center justify-center"
                                             >−</button>
-                                            <span className={`w-6 text-center text-sm font-black ${qty ? 'text-[var(--duke-amber-ink)]' : 'text-[var(--duke-ink-7)]'}`}>{qty}</span>
+                                            <span className={`w-[26px] lg:w-6 text-center text-[15px] lg:text-sm font-black ${qty ? 'text-[var(--duke-amber-ink)]' : 'text-[var(--duke-ink-7)]'}`}>{qty}</span>
                                             <button
                                                 onClick={(e) => { e.stopPropagation(); unlockSounds().then(() => playSound('click')); addToCart(item); }}
-                                                className="kpm-press kpm-hover w-8 h-8 rounded-lg border-2 border-[var(--duke-amber-edge)] bg-[var(--duke-fill-plank)] text-[var(--duke-amber-ink)] text-lg font-black leading-none flex items-center justify-center"
+                                                className="kpm-press kpm-hover w-11 h-11 lg:w-8 lg:h-8 rounded-lg border-2 border-[var(--duke-amber-edge)] bg-[var(--duke-fill-plank)] text-[var(--duke-amber-ink)] text-lg font-black leading-none flex items-center justify-center"
                                             >+</button>
                                         </div>
                                     );

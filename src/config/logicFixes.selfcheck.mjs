@@ -7093,5 +7093,52 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
   const lab = read('tools/ponder-lab.jsx');
   ok('the lab photo is a tilted, perspective sheet (homography), and &edit opens the sheet', /homography\(\[\[210, 40\], \[560, 150\], \[430, 450\], \[70, 300\]\]\)/.test(lab) && /q\.has\('edit'\)/.test(lab) && /button\[data-edit\]/.test(lab)); }
 
+/* ─── 2026-09-17 — THE SALES TERMINAL ON THE PHONE (his B + YES, measured at 375 in `?shell&terminal`) ───
+   Every control a salesman's thumb hits is 44 px on a phone, every 8–10 px label is 11 (unit labels 10
+   so the four boxes stay on one row); the desk keeps every number through `lg:`. Scoped to the ELEMENT,
+   not to a string that appears on it (the 2026-08-18 lesson). */
+{
+  const m = msvSrc;
+  /* the raw file for four of these: code() strips a block-comment span that swallows the
+     payment select and the proof block, so the stripped text cannot see them */
+  const r = merchant;
+  const steppers = (m.match(/kpm-press kpm-hover w-11 h-11 lg:w-8 lg:h-8 rounded-lg/g) || []).length;
+  ok('REGRESSION: the two row steppers (− / +) are 44 px on the phone (32 on the desk, as before), and no 32 px phone stepper is left',
+     steppers === 2 && !/kpm-press kpm-hover w-8 h-8/.test(m),
+     'they were `w-8 h-8` with a comment admitting 32 is under 44; his pick 2026-09-17 was B — the picture gave up 32 px so these could grow');
+  ok('the ware picture is 64 px with p-1 on the phone (a 56 px press target), 96 → 64 is what paid for the steppers',
+     /w-16 h-16 lg:w-auto lg:h-48 p-1 lg:p-5/.test(m) && !/w-24 h-24 lg:w-auto lg:h-48/.test(m));
+  ok('the − / + cluster closes its gap to 4 px on the phone so a one-line name still fits beside a 64 px picture',
+     /flex items-center gap-1 lg:gap-2 shrink-0 mt-1 lg:mt-3/.test(m));
+  ok('category tabs and the search box are 44 tall on the phone, desk untouched',
+     /px-4 py-2 md:px-5 md:py-2\.5 min-h-\[44px\] lg:min-h-0 text-\[11px\] md:text-xs/.test(m) &&
+     /pl-9 md:pl-10 pr-10 min-h-\[44px\] lg:min-h-0 text-\[var\(--duke-amber-ink\)\] font-mono text-\[13px\] md:text-sm/.test(m) &&
+     /<Search size=\{16\} className="absolute left-3 top-3\.5/.test(m),
+     'the search icon sat at top-2.5 for a 35 px box; at 44 it is centred at 14');
+  ok('REGRESSION: the cart-line unit labels are no longer 8 px, and the four boxes are 44 tall',
+     /<em className="not-italic text-\[10px\] lg:text-\[8px\] font-black uppercase tracking-wide lg:tracking-widest/.test(m) &&
+     !/not-italic text-\[8px\] font-black/.test(m) &&
+     /px-1 lg:px-1\.5 py-0 lg:py-1 h-11 lg:h-auto rounded">/.test(m) &&
+     /className="w-7 lg:w-8 h-11 lg:h-auto bg-transparent text-center/.test(m),
+     '8 px labels on 20 px boxes was the smallest thing on the whole terminal, on the line that decides the quantity');
+  ok('SALE MODE / RETUR MODE, the customer box, the payment select, the qty input, the unit and tier selects, the camera button, the picker DONE — all min-h 44 on the phone',
+     (m.match(/flex-1 py-1\.5 min-h-\[44px\] lg:min-h-0 text-\[11px\] lg:text-\[10px\]/g) || []).length === 2 &&
+     /p-2 min-h-\[44px\] lg:min-h-0 text-\[13px\] md:text-sm font-black uppercase rounded truncate"/.test(m) &&
+     /p-2 min-h-\[44px\] lg:min-h-0 text-\[13px\] md:text-sm font-bold uppercase outline-none rounded \$\{isReturMode/.test(r) &&
+     /w-20 md:w-24 min-h-\[44px\] lg:min-h-0 bg-white/.test(m) &&
+     (m.match(/bg-transparent min-h-\[44px\] lg:min-h-0 text-sm font-bold uppercase outline-none text-\[var\(--duke-ink-7\)\]/g) || []).length === 2 &&
+     /kpm-hover w-full py-2 min-h-\[44px\] lg:min-h-0 border border-dashed border-\[var\(--duke-edge-4\)\]/.test(r) &&
+     /shrink-0 px-3 py-1\.5 min-h-\[44px\] lg:min-h-0 border border-\[var\(--duke-edge-5\)\] rounded text-\[11px\] lg:text-\[10px\]/.test(m));
+  ok('the customer-bar button fills the 52 px bar instead of a 16 px strip inside it — a press anywhere on the name opens the picker',
+     /aria-label="Choose customer"\s+className="flex-1 min-w-0 text-left min-h-\[44px\] flex flex-col justify-center"/.test(m) &&
+     /text-\[11px\] lg:text-\[9px\] font-black uppercase tracking-widest text-\[var\(--duke-ink-6\)\] leading-none">Customer</.test(m),
+     'the bar itself is the drawer grip with a no-op tap; a thumb that missed the 16 px button did nothing');
+  ok('EXAMINE on the picture and the camera-button label read at 11 px on the phone, 9 / 10 on the desk',
+     /text-\[11px\] lg:text-\[9px\] font-black font-mono tracking-widest text-\[var\(--duke-amber-ink\)\]">EXAMINE</.test(m) &&
+     /text-\[11px\] lg:text-\[10px\] uppercase tracking-widest font-bold">\{galleryOk/.test(r));
+  ok('TRAP (a) holds: the T4–T6 proof camera still has no file picker — galleryOk alone decides',
+     /galleryOk \? document\.getElementById\('txProof'\)\.click\(\) : setShowProofCamera\(true\)/.test(r));
+}
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

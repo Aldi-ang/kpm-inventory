@@ -570,8 +570,8 @@
     "semantic_hash": ""
   },
   ".claude/PROGRESS.md": {
-    "mtime": 1789566889.7701418,
-    "ast_hash": "23d628194863d4eefdccc9b34ccc9ff3",
+    "mtime": 1789568441.048498,
+    "ast_hash": "40a2b09b9b765d2f5a73592bc62869e8",
     "semantic_hash": ""
   },
   ".claude/pre-compact-context.md": {
@@ -760,8 +760,8 @@
     "semantic_hash": ""
   },
   ".claude/NEXT-SESSION.md": {
-    "mtime": 1789566860.0721395,
-    "ast_hash": "2f082094eeeaf696a47e9d42776037d0",
+    "mtime": 1789568416.3345275,
+    "ast_hash": "8e9ef0aef7e51021c955807835bcb782",
     "semantic_hash": ""
   },
   ".claude/SWEEP-2026-08-19.md": {
@@ -835,8 +835,8 @@
     "semantic_hash": ""
   },
   "tools/ponder-lab.jsx": {
-    "mtime": 1789557961.0889535,
-    "ast_hash": "4f55b68272f05293ddaeb6a1a989ec1b",
+    "mtime": 1789604127.8820894,
+    "ast_hash": "1915df82c22f54554c70c12552deb35e",
     "semantic_hash": ""
   },
   ".claude/PONDER-PLAN.md": {
@@ -1005,8 +1005,8 @@
     "semantic_hash": ""
   },
   "tools/lab-firestore-stub.js": {
-    "mtime": 1789433260.8001122,
-    "ast_hash": "7cd3e8c071777cbe75888746b444a15b",
+    "mtime": 1789604041.3020957,
+    "ast_hash": "b56278b48d8e9017b4355f9ea80f39fb",
     "semantic_hash": ""
   },
   "src/ponder/PonderPad.jsx": {

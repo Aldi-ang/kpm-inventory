@@ -236,7 +236,9 @@ inJs (G7b, 'examine moved into the panel', 'Examine in 3D');
 check(G7b, 'nothing overlaps the picture', !/absolute bottom-\d+ left-\d+[^"]*z-20/.test(term));
 check(G7b, 'examine reachable in BOTH panels',
   (term.match(/Examine in 3D/g) || []).length >= 2, 'rail panel + phone card panel');
-check(G7b, 'picture target grew to 96px', term.includes('w-24 h-24 lg:w-auto'));
+/* 96 until 2026-09-17; his pick B that morning traded 32 px of picture for 44 px steppers. p-1 keeps
+   the press target at 56 — still over the 44 px finger. */
+check(G7b, 'picture target is 64px with p-1 on the phone (56 px press target), 96 → 64 paid for the 44 px steppers', term.includes('w-16 h-16 lg:w-auto lg:h-48 p-1 lg:p-5'));
 /* The state the phone spends most of its day in: driving, no customer chosen. */
 check(G7b, 'driving state shows the next stop', term.includes('!customerName.trim()') || term.includes('Next stop'));
 check(G7b, 'Go button meets the touch minimum', /h-11 shrink-0 items-center/.test(term));
