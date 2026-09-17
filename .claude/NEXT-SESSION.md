@@ -1,7 +1,7 @@
 # The one job
 
 **The Customers screen on the phone — the sweep moves on.** The Sales Terminal is DONE on the
-phone (his B + YES, `4ba6563`, 2026-09-17; ✅ TEST owed on his phone). The sweep order he set on
+phone (his B + YES, `4ba6563`, CONFIRMED on his phone 2026-09-17 09:05). The sweep order he set on
 2026-09-15: Sales Terminal → **Customers** → Agent Inventory → EOD Setoran → Stock Opname → Journey
 Plan → Sampling → Agent Profile. Same method as the terminal, which took one morning:
 build the lab mount, measure at 375 in the real shell, propose as frames, build what he picks.
@@ -93,8 +93,7 @@ control 44, labels 11 (unit labels 10, one row), the customer-bar button fills i
 field-mode toggle (27 px) and six 8.5 px eyebrow labels in the customer brief.
 Vault press: the security-profile read now starts when the gate is shown; "Checking…" + spinner
 on the button while anything is left; guards 1579. Not seen by eye (behind Google sign-in).
-✅ TEST owed on his phone (`https://192.168.1.107:4173`, packed build rebuilt): the terminal's
-rows and sheet; the password press — a spinner, then the vault. Lab: `?shell&terminal`, `?grip`.
+✅ CONFIRMED by Aldi 09:05: *"t1 approve, t 2 approve, t3 i just tried to close the incognito and open it again after that i manual google login , master vault panel shows up enter password and it instantly let me in after press so i havent be able to see the processing animation tho"* — the wait is gone, so the spinner had nothing to show. Lab: `?shell&terminal`, `?grip`.
 
 ## Shipped 2026-09-16 20:29 — `c5c7ed3` the phone ribbon rests a quarter of the way down
 
