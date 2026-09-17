@@ -7166,5 +7166,49 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
      'a flag that stays up after an error is a dead button with a spinner on it');
 }
 
+/* ─── 2026-09-17 — CUSTOMERS ON THE PHONE (his three YES + A→Z + dark boxes) ───
+   The registration form folds behind one button under lg, every box is 44 tall, the folder cards
+   are rows, the shop cards lose their dead space, shops sort A→Z, and no input is white in dark
+   mode. Read from the raw file: code() strips a block-comment span in this file too. */
+{
+  const c = read('src/components/CustomerManager.jsx');
+  ok('the form is folded on the phone and always open on the desk — one state, seeded from the width',
+     /const \[showForm, setShowForm\] = useState\(\(\) => typeof window !== 'undefined' && window\.innerWidth >= 1024\);/.test(c) &&
+     /className=\{`bg-\[var\(--raised\)\] p-6 rounded-2xl shadow-sm border border-\[var\(--line\)\] \$\{showForm \? '' : 'hidden lg:block'\}`\}/.test(c),
+     'his YES to board 1: 1,100 px of form sat above the search box and the shop list on every lookup');
+  ok('the button that opens it is phone-only, 48 tall, and its icon is not the only element child (index.css button:has(> svg:only-child) would force it visible on the desk)',
+     /className="lg:hidden w-full min-h-\[48px\] rounded-xl bg-\[var\(--gold\)\] text-\[var\(--gold-ink\)\]/.test(c) &&
+     /<span>\{showForm \? 'Hide the form' : 'Add new customer'\}<\/span>/.test(c),
+     'measured: with the icon as the only element child the button was inline-flex at 1280 and 44 tall instead of 48');
+  ok('BEHAVIOUR: Edit opens the folded form; a successful save on the phone folds it again',
+     /setEditingId\(c\.id\);\s*\/\*[^*]*\*\/\s*setShowForm\(true\);/.test(c) &&
+     /setCoordInput\(""\);\s*\/\*[^*]*\*\/\s*if \(window\.innerWidth < 1024\) setShowForm\(false\);/.test(c),
+     'a folded form that Edit cannot open is a dead Edit button');
+  ok('REGRESSION: no white box in dark mode — every form input carries a surface token, the name/phone boxes inset on the raised card, the rest raised in their inset blocks',
+     (c.match(/className="w-full p-2 min-h-\[44px\] lg:min-h-0 border rounded border-\[var\(--line\)\] bg-\[var\(--inset\)\] text-\[var\(--ink\)\]"/g) || []).length === 2 &&
+     (c.match(/h-11 lg:h-10 px-2 text-sm border rounded[^"]*bg-\[var\(--raised\)\]/g) || []).length === 4 &&
+     (c.match(/p-2 min-h-\[44px\] lg:min-h-0 text-\[13px\] lg:text-xs font-bold border rounded outline-none focus:border-\[var\(--accent-edge\)\] transition-colors bg-\[var\(--raised\)\] text-\[var\(--ink\)\]/g) || []).length === 3 &&
+     /placeholder="Address\.\.\."/.test(c) && /min-h-\[44px\] lg:min-h-0 text-\[13px\] lg:text-xs border rounded border-\[var\(--line\)\] bg-\[var\(--raised\)\] text-\[var\(--ink\)\]" placeholder="Address/.test(c) &&
+     !/className="w-full p-2 border rounded border-\[var\(--line\)\]"/.test(c) &&
+     !/className="w-full h-10 px-2 text-sm border rounded font-bold outline-none border-\[var\(--line\)\]"/.test(c),
+     'his words: "it is white inside dark mode and it is too bright bro" — tokens follow the theme, a bare input follows the browser');
+  ok('Auto-Find / My GPS sit on their own row under the title on the phone, 44 tall, one line each',
+     /<div className="flex flex-wrap lg:flex-nowrap items-center justify-between gap-2 mb-2">/.test(c) &&
+     /<div className="grid grid-cols-2 lg:flex gap-2 w-full lg:w-auto">/.test(c) &&
+     /<span className="font-bold text-sm whitespace-nowrap">Location & Street View<\/span>/.test(c));
+  ok('folder cards are rows on the phone (icon · name · count) and cards again at lg',
+     (c.match(/p-3 lg:p-6 rounded-xl border shadow-sm cursor-pointer[^"]*grid grid-cols-\[auto_1fr\] items-center gap-x-3 lg:block/g) || []).length === 3 &&
+     (c.match(/<h3 className="font-bold text-\[15px\] lg:text-lg mb-0 lg:mb-2 truncate self-end">/g) || []).length === 3);
+  ok('shop cards: tighter on the phone, Edit / map / delete 44 tall, breadcrumb links 44, 10 px type 11',
+     /className=\{`bg-\[var\(--raised\)\] p-3 lg:p-5 rounded-xl border shadow-sm flex flex-col justify-between cursor-pointer/.test(c) &&
+     (c.match(/px-3 py-1\.5 min-h-\[44px\] lg:min-h-0 text-xs font-bold bg-\[var\(--inset\)\]/g) || []).length === 4 &&
+     (c.match(/min-h-\[44px\] lg:min-h-0 \$\{!selected(Region|City) \?/g) || []).length === 2 &&
+     (c.match(/<h4 className="text-\[11px\] lg:text-\[10px\] uppercase tracking-widest/g) || []).length === 3);
+  ok('BEHAVIOUR: the shops inside a folder are sorted A→Z by name, case-blind, Indonesian collation — his "easier to find them"',
+     /\[\.\.\.\(activeKec\?\.stores \|\| \[\]\)\]\.sort\(\(a, b\) => String\(a\.name \|\| ''\)\.localeCompare\(String\(b\.name \|\| ''\), 'id', \{ sensitivity: 'base' \}\)\)\.map\(c => \{/.test(c) &&
+     ['Warung Sumber Rejeki', 'Kios Maju Mundur', 'toko Lancar', 'Toko Berkah Jaya'].sort((a, b) => a.localeCompare(b, 'id', { sensitivity: 'base' })).join('|') === 'Kios Maju Mundur|Toko Berkah Jaya|toko Lancar|Warung Sumber Rejeki',
+     'the same expression, run on four real-shaped names: K before T before W, and a lower-case t does not fall to the end');
+}
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

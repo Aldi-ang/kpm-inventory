@@ -203,6 +203,13 @@ export const CustomerDetailView = ({ customer, db, appId, user, onBack, logAudit
 export const CustomerManagement = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmin, userRole, employeeRegion, tierSettings, onRequestCrop, croppedImage, onClearCroppedImage, onNavigateToMap }) => {
     const [viewMode, setViewMode] = useState('list');
     const [selectedCustomer, setSelectedCustomer] = useState(null);
+    /* PHONE: the registration form is folded behind one button until he wants it. His YES
+       2026-09-17 to board 1: the form (~1,100 px at 375) sat above the search box and the shop
+       list, so every lookup scrolled past every field. The desk keeps its order — the card is
+       always shown at lg (the class below), this flag only matters under it. Editing a shop
+       opens it (handleEdit), a successful save on the phone closes it again. */
+    const [showForm, setShowForm] = useState(() => typeof window !== 'undefined' && window.innerWidth >= 1024);
+    const formCardRef = useRef(null);
 
     // 🚀 CUSTOMER DIRECTORY PERMISSION TIER: view_only / own_region / global.
     // isAdmin (PIN-unlocked boss mode) is a SEPARATE, stronger override and always wins —
@@ -1017,6 +1024,8 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
             } 
             setFormData({ name: '', phone: '', province: '', region: '', city: '', address: '', gmapsUrl: '', embedHtml: '', latitude: '', longitude: '', storeImage: '', tier: 'Silver', priceTier: 'Retail', visitFreq: 7, lastVisit: '', picName: '', description: '', mapFolder: '' });
             setCoordInput("");
+            /* saved: the phone folds the form away so the directory he just added to is in view */
+            if (window.innerWidth < 1024) setShowForm(false);
         } catch (err) {
             console.error(err);
             // 🚀 Surface the region-lock instead of failing silently — this is the ONE case
@@ -1039,6 +1048,8 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
         }); 
         setCoordInput(c.latitude && c.longitude ? `${c.latitude}, ${c.longitude}` : "");
         setEditingId(c.id); 
+        /* the phone keeps the form folded until it is needed — an Edit press is exactly that */
+        setShowForm(true);
         window.scrollTo({ top: 0, behavior: 'smooth' }); 
     };
 
@@ -1278,7 +1289,16 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                 </div>
             )}
             {canAddOrEditAnything && (
-            <div className="bg-[var(--raised)] p-6 rounded-2xl shadow-sm border border-[var(--line)]">
+                <button type="button" onClick={() => setShowForm((v) => !v)} aria-expanded={showForm}
+                    className="lg:hidden w-full min-h-[48px] rounded-xl bg-[var(--gold)] text-[var(--gold-ink)] font-bold text-[13px] uppercase tracking-[0.12em] flex items-center justify-center gap-2">
+                    {/* the label is a span so the icon is not the button's only element child —
+                        index.css's `button:has(> svg:only-child)` would otherwise force
+                        inline-flex over `lg:hidden` and pin the height at 44 */}
+                    {showForm ? <X size={16} /> : <Plus size={16} />}<span>{showForm ? 'Hide the form' : 'Add new customer'}</span>
+                </button>
+            )}
+            {canAddOrEditAnything && (
+            <div ref={formCardRef} className={`bg-[var(--raised)] p-6 rounded-2xl shadow-sm border border-[var(--line)] ${showForm ? '' : 'hidden lg:block'}`}>
                 {/* noValidate: the browser's own "Please fill out this field." bubble used to
                     speak first, in the browser's voice, and handleSubmit's refusal never ran.
                     The strip is the app's one reporting channel; every refusal on this form
@@ -1287,21 +1307,21 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                     <div className="flex justify-between items-center mb-2"><h3 className="font-bold text-sm text-[var(--ink-dim)] uppercase">{editingId ? 'Edit Customer' : 'Add New Customer'}</h3>{editingId && <button type="button" onClick={() => { setEditingId(null); setFormData({name:'', phone:'', province:'', region:'', city:'', address:'', gmapsUrl:'', embedHtml: '', latitude: '', longitude: '', storeImage:'', tier: 'Silver', priceTier: 'Retail', visitFreq: 7, lastVisit: '', picName: '', description: '', mapFolder: ''}); setCoordInput(""); }} className="text-xs text-[var(--danger-ink)] hover:underline">Cancel Edit</button>}</div>
                     
                     <div className="flex flex-col md:flex-row gap-4">
-                        <div className="flex-1"><label className="text-xs font-bold text-[var(--ink-dim)] uppercase">Store Name</label><input value={formData.name} onChange={e=>setFormData({...formData, name: e.target.value})} className="w-full p-2 border rounded border-[var(--line)]" required/></div>
-                        <div className="flex-1"><label className="text-xs font-bold text-[var(--ink-dim)] uppercase">Phone</label><input value={formData.phone} onChange={e=>setFormData({...formData, phone: e.target.value})} className="w-full p-2 border rounded border-[var(--line)]" /></div>
+                        <div className="flex-1"><label className="text-xs font-bold text-[var(--ink-dim)] uppercase">Store Name</label><input value={formData.name} onChange={e=>setFormData({...formData, name: e.target.value})} className="w-full p-2 min-h-[44px] lg:min-h-0 border rounded border-[var(--line)] bg-[var(--inset)] text-[var(--ink)]" required/></div>
+                        <div className="flex-1"><label className="text-xs font-bold text-[var(--ink-dim)] uppercase">Phone</label><input value={formData.phone} onChange={e=>setFormData({...formData, phone: e.target.value})} className="w-full p-2 min-h-[44px] lg:min-h-0 border rounded border-[var(--line)] bg-[var(--inset)] text-[var(--ink)]" /></div>
                     </div>
 
                    <div className="grid grid-cols-1 md:grid-cols-5 gap-4 bg-[var(--inset)] p-3 rounded-xl border border-[var(--line)]">
                         <div>
                             <label className="text-[10px] font-bold text-[var(--ink-dim)] uppercase mb-1 block">Map Pin Tier</label>
-                            <select value={formData.tier} onChange={e=>setFormData({...formData, tier: e.target.value})} className="w-full h-10 px-2 text-sm border rounded font-bold outline-none border-[var(--line)]">
+                            <select value={formData.tier} onChange={e=>setFormData({...formData, tier: e.target.value})} className="w-full h-11 lg:h-10 px-2 text-sm border rounded font-bold outline-none border-[var(--line)] bg-[var(--raised)] text-[var(--ink)]">
                                 {tierSettings && tierSettings.map(t => <option key={t.id} value={t.id}>{t.label}</option>)}
                                 {!tierSettings && <option value="Silver">Silver</option>}
                             </select>
                         </div>
                         <div>
                             <label className="text-[10px] font-bold text-[var(--accent-ink)] uppercase mb-1 block">Pricing Type</label>
-                            <select value={formData.priceTier} onChange={e=>setFormData({...formData, priceTier: e.target.value})} className="w-full h-10 px-2 text-sm border rounded font-bold outline-none text-[var(--accent-ink)] border-[var(--line)]">
+                            <select value={formData.priceTier} onChange={e=>setFormData({...formData, priceTier: e.target.value})} className="w-full h-11 lg:h-10 px-2 text-sm border rounded font-bold outline-none text-[var(--accent-ink)] border-[var(--line)] bg-[var(--raised)]">
                                 <option value="Grosir">Grosir (Wholesale)</option>
                                 <option value="Retail">Retail</option>
                                 <option value="Ecer">Ecer (Individual)</option>
@@ -1314,7 +1334,7 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                                 placeholder="Type or select Wholesaler name..."
                                 value={formData.picName} 
                                 onChange={e=>setFormData({...formData, picName: e.target.value})} 
-                                className="w-full h-10 px-2 text-sm border rounded font-bold outline-none text-[var(--ink)] border-[var(--line)]"
+                                className="w-full h-11 lg:h-10 px-2 text-sm border rounded font-bold outline-none text-[var(--ink)] border-[var(--line)] bg-[var(--raised)]"
                             />
                             <datalist id="pic-suggestions">
                                 {/* Dynamically lists unique PICs already existing in your customer list */}
@@ -1325,13 +1345,13 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                         </div>
                         <div>
                             <label className="text-[10px] font-bold text-[var(--ink-dim)] uppercase mb-1 block">Last Visit</label>
-                            <input type="date" value={formData.lastVisit} onChange={e=>setFormData({...formData, lastVisit: e.target.value})} className="w-full h-10 px-2 text-sm border rounded outline-none border-[var(--line)]"/>
+                            <input type="date" value={formData.lastVisit} onChange={e=>setFormData({...formData, lastVisit: e.target.value})} className="w-full h-11 lg:h-10 px-2 text-sm border rounded outline-none border-[var(--line)] bg-[var(--raised)] text-[var(--ink)]"/>
                         </div>
                         
                         <div>
                             <label className="text-[10px] font-bold text-[var(--ink-dim)] uppercase mb-1 block">Store Photo</label>
                             <div className="flex items-center gap-2 h-10">
-                                <label className="flex-1 h-full cursor-pointer bg-[var(--raised)] border hover:border-[var(--line)] rounded p-2 flex items-center justify-center gap-2 transition-colors">
+                                <label className="flex-1 h-full min-h-[44px] lg:min-h-0 cursor-pointer bg-[var(--raised)] border hover:border-[var(--line)] rounded p-2 flex items-center justify-center gap-2 transition-colors">
                                     <Camera size={16} className="text-[var(--ink-dim)]"/>
                                     <span className="text-xs font-bold">Upload</span>
                                     <input type="file" accept="image/*" className="hidden" onChange={handleFileSelect} />
@@ -1369,16 +1389,16 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                     </div>
 
                     <div className="bg-[var(--inset)] p-4 rounded-xl border space-y-3 border-[var(--line)]">
-                        <div className="flex items-center justify-between mb-2">
-                            <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap lg:flex-nowrap items-center justify-between gap-2 mb-2">
+                            <div className="flex items-center gap-2 w-full lg:w-auto">
                                 <MapPin size={16} className="text-[var(--accent-ink)]"/>
-                                <span className="font-bold text-sm">Location & Street View</span>
+                                <span className="font-bold text-sm whitespace-nowrap">Location & Street View</span>
                             </div>
-                            <div className="flex gap-2">
-                                <button type="button" onClick={handleAutoGeocode} disabled={isLocating} className="bg-[var(--gold)] hover:bg-[var(--gold)] text-[var(--gold-ink)] px-3 py-1 rounded text-xs font-bold flex items-center gap-1 shadow-md">
+                            <div className="grid grid-cols-2 lg:flex gap-2 w-full lg:w-auto">
+                                <button type="button" onClick={handleAutoGeocode} disabled={isLocating} className="bg-[var(--gold)] hover:bg-[var(--gold)] text-[var(--gold-ink)] px-3 py-1 min-h-[44px] lg:min-h-0 rounded text-[13px] lg:text-xs font-bold flex items-center justify-center lg:justify-start gap-1 whitespace-nowrap shadow-md">
                                     {isLocating ? <RefreshCcw size={12} className="animate-spin"/> : <Search size={12}/>} Auto-Find
                                 </button>
-                                <button type="button" onClick={handleGetLocation} className="bg-[var(--raised)] border px-3 rounded text-xs font-bold hover:bg-[var(--inset)] flex items-center gap-1 border-[var(--line)]">
+                                <button type="button" onClick={handleGetLocation} className="bg-[var(--raised)] border px-3 min-h-[44px] lg:min-h-0 rounded text-[13px] lg:text-xs font-bold hover:bg-[var(--inset)] flex items-center justify-center lg:justify-start gap-1 whitespace-nowrap border-[var(--line)]">
                                     <MapPin size={12}/> My GPS
                                 </button>
                             </div>
@@ -1391,7 +1411,7 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                                     list="provinsi-list"
                                     value={formData.province} 
                                     onChange={e=>setFormData({...formData, province: e.target.value.toUpperCase()})} 
-                                    className="w-full p-2 text-xs font-bold border rounded outline-none focus:border-[var(--accent-edge)] transition-colors" 
+                                    className="w-full p-2 min-h-[44px] lg:min-h-0 text-[13px] lg:text-xs font-bold border rounded outline-none focus:border-[var(--accent-edge)] transition-colors bg-[var(--raised)] text-[var(--ink)] border-[var(--line)]" 
                                     placeholder="PROVINSI" 
                                 />
                                 <datalist id="provinsi-list">
@@ -1405,7 +1425,7 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                                     list="kabupaten-list"
                                     value={formData.region} 
                                     onChange={e=>setFormData({...formData, region: e.target.value.toUpperCase()})} 
-                                    className="w-full p-2 text-xs font-bold border rounded outline-none focus:border-[var(--accent-edge)] transition-colors" 
+                                    className="w-full p-2 min-h-[44px] lg:min-h-0 text-[13px] lg:text-xs font-bold border rounded outline-none focus:border-[var(--accent-edge)] transition-colors bg-[var(--raised)] text-[var(--ink)] border-[var(--line)]" 
                                     placeholder="KABUPATEN" 
                                 />
                                 <datalist id="kabupaten-list">
@@ -1419,7 +1439,7 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                                     list="kecamatan-list"
                                     value={formData.city} 
                                     onChange={e=>setFormData({...formData, city: e.target.value.toUpperCase()})} 
-                                    className="w-full p-2 text-xs font-bold border rounded outline-none focus:border-[var(--accent-edge)] transition-colors" 
+                                    className="w-full p-2 min-h-[44px] lg:min-h-0 text-[13px] lg:text-xs font-bold border rounded outline-none focus:border-[var(--accent-edge)] transition-colors bg-[var(--raised)] text-[var(--ink)] border-[var(--line)]" 
                                     placeholder="KECAMATAN" 
                                 />
                                 <datalist id="kecamatan-list">
@@ -1428,12 +1448,12 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                             </div>
                         </div>
 
-                        <input value={formData.address} onChange={e=>setFormData({...formData, address: e.target.value})} className="w-full p-2 text-xs border rounded border-[var(--line)]" placeholder="Address..." />
+                        <input value={formData.address} onChange={e=>setFormData({...formData, address: e.target.value})} className="w-full p-2 min-h-[44px] lg:min-h-0 text-[13px] lg:text-xs border rounded border-[var(--line)] bg-[var(--raised)] text-[var(--ink)]" placeholder="Address..." />
                         
                         <textarea 
                             value={formData.description} 
                             onChange={e=>setFormData({...formData, description: e.target.value})} 
-                            className="w-full p-2 text-xs border rounded resize-none border-[var(--line)]" 
+                            className="w-full p-2 text-[13px] lg:text-xs border rounded resize-none border-[var(--line)] bg-[var(--raised)] text-[var(--ink)]" 
                             placeholder="Store Description or Internal Notes (e.g. Imported Map Marker data)..." 
                             rows="2"
                         />
@@ -1441,14 +1461,14 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <label className="text-[10px] font-bold text-[var(--ink-dim)] uppercase">GPS Coordinates</label>
-                                <input ref={coordRef} type="text" placeholder="-7.6043, 110.2055" className="w-full p-2 text-sm border rounded bg-[var(--raised)] font-mono placeholder:italic placeholder:opacity-50 border-[var(--line)]" value={coordInput} onChange={handleCoordInputChange} />
+                                <input ref={coordRef} type="text" placeholder="-7.6043, 110.2055" className="w-full p-2 min-h-[44px] lg:min-h-0 text-sm border rounded bg-[var(--raised)] text-[var(--ink)] font-mono placeholder:italic placeholder:opacity-50 border-[var(--line)]" value={coordInput} onChange={handleCoordInputChange} />
                             </div>
                             <div>
                                 <label className="text-[10px] font-bold text-[var(--ink-dim)] uppercase">Street View Link (Iframe/URL)</label>
                                 <input 
                                     type="text" 
                                     placeholder="Paste Google Maps Link or Embed Code here..." 
-                                    className="w-full p-2 text-sm border rounded bg-[var(--raised)] border-[var(--line)]" 
+                                    className="w-full p-2 min-h-[44px] lg:min-h-0 text-sm border rounded bg-[var(--raised)] text-[var(--ink)] border-[var(--line)]" 
                                     value={formData.embedHtml} 
                                     onChange={e => setFormData({...formData, embedHtml: e.target.value})} 
                                 />
@@ -1480,14 +1500,14 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                 {/* BREADCRUMB NAVIGATION */}
                 {(selectedProvince || selectedRegion || selectedCity) && (
                     <div className="flex flex-wrap items-center gap-2 mb-6 bg-[var(--inset)] p-3 rounded-lg w-fit">
-                        <button onClick={() => { setSelectedProvince(null); setSelectedRegion(null); setSelectedCity(null); }} className="text-[var(--ink-dim)] hover:text-[var(--accent-ink)] font-bold text-sm flex items-center gap-1">
+                        <button onClick={() => { setSelectedProvince(null); setSelectedRegion(null); setSelectedCity(null); }} className="text-[var(--ink-dim)] hover:text-[var(--accent-ink)] font-bold text-sm flex items-center gap-1 min-h-[44px] lg:min-h-0">
                             <Folder size={16}/> Indonesia
                         </button>
                         
                         {selectedProvince && (
                             <>
                                 <ArrowRight size={14} className="text-[var(--ink-dim)]"/>
-                                <button onClick={() => { setSelectedRegion(null); setSelectedCity(null); }} className={`font-bold text-sm ${!selectedRegion ? 'text-orange-500' : 'text-[var(--ink-dim)] hover:text-[var(--accent-ink)]'} `}>
+                                <button onClick={() => { setSelectedRegion(null); setSelectedCity(null); }} className={`font-bold text-sm min-h-[44px] lg:min-h-0 ${!selectedRegion ? 'text-orange-500' : 'text-[var(--ink-dim)] hover:text-[var(--accent-ink)]'} `}>
                                     {selectedProvince}
                                 </button>
                             </>
@@ -1496,7 +1516,7 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                         {selectedRegion && (
                             <>
                                 <ArrowRight size={14} className="text-[var(--ink-dim)]"/>
-                                <button onClick={() => setSelectedCity(null)} className={`font-bold text-sm ${!selectedCity ? 'text-[var(--accent-ink)]' : 'text-[var(--ink-dim)] hover:text-[var(--accent-ink)]'} `}>
+                                <button onClick={() => setSelectedCity(null)} className={`font-bold text-sm min-h-[44px] lg:min-h-0 ${!selectedCity ? 'text-[var(--accent-ink)]' : 'text-[var(--ink-dim)] hover:text-[var(--accent-ink)]'} `}>
                                     {selectedRegion}
                                 </button>
                             </>
@@ -1515,13 +1535,13 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                 {!selectedProvince && (
                     <div className="space-y-4">
                         <div className="flex justify-between items-center bg-[var(--raised)] p-3 rounded-xl border border-[var(--line)]">
-                            <h4 className="text-[10px] uppercase tracking-widest text-[var(--ink-dim)] font-bold">Indonesia (Provinsi Level)</h4>
+                            <h4 className="text-[11px] lg:text-[10px] uppercase tracking-widest text-[var(--ink-dim)] font-bold">Indonesia (Provinsi Level)</h4>
                             <button onClick={() => handleAddFolder('Provinsi', null)} className="text-[10px] px-3 py-1.5 rounded bg-[var(--gold)] text-[var(--gold-ink)] hover:bg-[var(--gold)] hover:text-[var(--gold-ink)] font-bold uppercase transition-colors border border-[var(--line)] flex items-center gap-1 shadow-md"><Plus size={12}/> Folder</button>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                             {Object.entries(folderStructure).map(([prov, data]) => (
-                                <div key={prov} onClick={() => setSelectedProvince(prov)} className="bg-[var(--raised)] p-6 rounded-xl border shadow-sm cursor-pointer hover:shadow-md hover:border-[var(--accent-edge)] transition-all group">
-                                    <div className="flex items-start justify-between mb-4">
+                                <div key={prov} onClick={() => setSelectedProvince(prov)} className="bg-[var(--raised)] p-3 lg:p-6 rounded-xl border shadow-sm cursor-pointer hover:shadow-md hover:border-[var(--accent-edge)] transition-all grid grid-cols-[auto_1fr] items-center gap-x-3 lg:block group">
+                                    <div className="flex items-start justify-between mb-0 lg:mb-4 row-span-2">
                                         <div className="p-3 bg-[var(--danger-well)] rounded-lg text-[var(--danger-ink)] group-hover:bg-[var(--danger)] group-hover:text-[var(--gold-ink)] transition-colors"><MapPin size={24} /></div>
                                         <div className="flex flex-col items-end gap-2">
                                             {data.pending > 0 && <span className="bg-[var(--danger)] text-[var(--gold-ink)] text-[10px] font-bold px-2 py-1 rounded-full animate-pulse">{data.pending} Pending</span>}
@@ -1541,7 +1561,7 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                                             )}
                                         </div>
                                     </div>
-                                    <h3 className="font-bold text-lg mb-2 truncate">{prov}</h3>
+                                    <h3 className="font-bold text-[15px] lg:text-lg mb-0 lg:mb-2 truncate self-end">{prov}</h3>
                                     <p className="text-[10px] text-[var(--ink-dim)] uppercase tracking-widest font-bold">{data.count} Total Stores</p>
                                 </div>
                             ))}
@@ -1554,13 +1574,13 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                 {selectedProvince && !selectedRegion && activeProv && (
                     <div className="space-y-4">
                         <div className="flex justify-between items-center bg-[var(--raised)] p-3 rounded-xl border border-[var(--line)]">
-                            <h4 className="text-[10px] uppercase tracking-widest text-[var(--ink-dim)] font-bold">{selectedProvince} (Kabupaten Level)</h4>
+                            <h4 className="text-[11px] lg:text-[10px] uppercase tracking-widest text-[var(--ink-dim)] font-bold">{selectedProvince} (Kabupaten Level)</h4>
                             <button onClick={() => handleAddFolder('Kabupaten', selectedProvince)} className="text-[10px] px-3 py-1.5 rounded bg-[var(--gold)] text-[var(--gold-ink)] hover:bg-[var(--gold)] hover:text-[var(--gold-ink)] font-bold uppercase transition-colors border border-[var(--line)] flex items-center gap-1 shadow-md"><Plus size={12}/> Folder</button>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                             {Object.entries(activeProv?.regions || {}).map(([kab, data]) => (
-                                <div key={kab} onClick={() => setSelectedRegion(kab)} className="bg-[var(--raised)] p-6 rounded-xl border shadow-sm cursor-pointer hover:shadow-md hover:border-[var(--accent-edge)] transition-all group">
-                                    <div className="flex items-start justify-between mb-4">
+                                <div key={kab} onClick={() => setSelectedRegion(kab)} className="bg-[var(--raised)] p-3 lg:p-6 rounded-xl border shadow-sm cursor-pointer hover:shadow-md hover:border-[var(--accent-edge)] transition-all grid grid-cols-[auto_1fr] items-center gap-x-3 lg:block group">
+                                    <div className="flex items-start justify-between mb-0 lg:mb-4 row-span-2">
                                         <div className="p-3 bg-[var(--inset)] rounded-lg text-[var(--accent-ink)] group-hover:bg-[var(--gold)] group-hover:text-[var(--gold-ink)] transition-colors"><Folder size={24} /></div>
                                         <div className="flex flex-col items-end gap-2">
                                             {data.pending > 0 && <span className="bg-[var(--danger)] text-[var(--gold-ink)] text-[10px] font-bold px-2 py-1 rounded-full animate-pulse">{data.pending} Pending</span>}
@@ -1580,8 +1600,8 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                                             )}
                                         </div>
                                     </div>
-                                    <h3 className="font-bold text-lg mb-2 truncate">{kab}</h3>
-                                    <p className="text-[10px] text-[var(--ink-dim)] uppercase tracking-widest font-bold">{data.count} Registered</p>
+                                    <h3 className="font-bold text-[15px] lg:text-lg mb-0 lg:mb-2 truncate self-end">{kab}</h3>
+                                    <p className="text-[11px] lg:text-[10px] text-[var(--ink-dim)] uppercase tracking-widest font-bold self-start">{data.count} Registered</p>
                                 </div>
                             ))}
                         </div>
@@ -1592,13 +1612,13 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                 {selectedProvince && selectedRegion && !selectedCity && activeKab && (
                     <div className="space-y-4">
                         <div className="flex justify-between items-center bg-[var(--raised)] p-3 rounded-xl border border-[var(--line)]">
-                            <h4 className="text-[10px] uppercase tracking-widest text-[var(--ink-dim)] font-bold">{selectedRegion} (Kecamatan Level)</h4>
+                            <h4 className="text-[11px] lg:text-[10px] uppercase tracking-widest text-[var(--ink-dim)] font-bold">{selectedRegion} (Kecamatan Level)</h4>
                             <button onClick={() => handleAddFolder('Kecamatan', selectedRegion)} className="text-[10px] px-3 py-1.5 rounded bg-[var(--gold)] text-[var(--gold-ink)] hover:bg-[var(--gold)] hover:text-[var(--gold-ink)] font-bold uppercase transition-colors border border-[var(--line)] flex items-center gap-1 shadow-md"><Plus size={12}/> Folder</button>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                             {Object.entries(activeKab?.cities || {}).map(([kec, data]) => (
-                                <div key={kec} onClick={() => setSelectedCity(kec)} className="bg-[var(--raised)] p-6 rounded-xl border shadow-sm cursor-pointer hover:shadow-md hover:border-[var(--line)] transition-all group">
-                                    <div className="flex items-start justify-between mb-4">
+                                <div key={kec} onClick={() => setSelectedCity(kec)} className="bg-[var(--raised)] p-3 lg:p-6 rounded-xl border shadow-sm cursor-pointer hover:shadow-md hover:border-[var(--line)] transition-all group grid grid-cols-[auto_1fr] items-center gap-x-3 lg:block">
+                                    <div className="flex items-start justify-between mb-0 lg:mb-4 row-span-2">
                                         <div className="p-3 bg-[var(--inset)] rounded-lg text-[var(--ink)] group-hover:bg-[var(--gold)] group-hover:text-[var(--gold-ink)] transition-colors"><Folder size={24} /></div>
                                         <div className="flex flex-col items-end gap-2">
                                             {data.pending > 0 && <span className="bg-[var(--danger)] text-[var(--gold-ink)] text-[10px] font-bold px-2 py-1 rounded-full animate-pulse">{data.pending} Pending</span>}
@@ -1614,8 +1634,8 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                                             )}
                                         </div>
                                     </div>
-                                    <h3 className="font-bold text-lg mb-2 truncate">{kec}</h3>
-                                    <p className="text-[10px] text-[var(--ink-dim)] uppercase tracking-widest font-bold">{data.count} Registered</p>
+                                    <h3 className="font-bold text-[15px] lg:text-lg mb-0 lg:mb-2 truncate self-end">{kec}</h3>
+                                    <p className="text-[11px] lg:text-[10px] text-[var(--ink-dim)] uppercase tracking-widest font-bold self-start">{data.count} Registered</p>
                                 </div>
                             ))}
                         </div>
@@ -1625,13 +1645,15 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                 {/* LEVEL 3: STORES */}
                 {selectedProvince && selectedRegion && selectedCity && activeKec && (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {(activeKec?.stores || []).map(c => {
+                        {/* A → Z by name — his ask 2026-09-17: "easier to find them". The folders keep
+                            their own order; only the shops inside one are sorted. */}
+                        {[...(activeKec?.stores || [])].sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'id', { sensitivity: 'base' })).map(c => {
                             const tierDef = tierSettings ? tierSettings.find(t => t.id === c.tier) : null;
                             return (
-                                <div key={c.id} onClick={() => openDetail(c)} className={`bg-[var(--raised)] p-5 rounded-xl border shadow-sm flex flex-col justify-between cursor-pointer hover:shadow-md hover:border-[var(--accent-edge)] transition-all group ${editingId === c.id ? 'border-[var(--lamp-on)]' : ''} `}>
+                                <div key={c.id} onClick={() => openDetail(c)} className={`bg-[var(--raised)] p-3 lg:p-5 rounded-xl border shadow-sm flex flex-col justify-between cursor-pointer hover:shadow-md hover:border-[var(--accent-edge)] transition-all group ${editingId === c.id ? 'border-[var(--lamp-on)]' : ''} `}>
                                     
                                     {/* TOP: Store Header */}
-                                    <div className="flex justify-between items-start mb-4 pb-4 border-b border-[var(--line)]">
+                                    <div className="flex justify-between items-start mb-2 lg:mb-4 pb-2 lg:pb-4 border-b border-[var(--line)]">
                                         <div className="flex items-center gap-3">
                                             {c.storeImage ? (
                                                 <img src={c.storeImage} className="w-14 h-14 rounded-lg object-cover border border-[var(--line)] shrink-0 shadow-sm" alt={c.name} />
@@ -1644,10 +1666,10 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                                                 <h3 className="font-bold text-lg leading-tight group-hover:text-[var(--accent-ink)] transition-colors truncate">{c.name}</h3>
                                                 <div className="flex gap-2 items-center mt-1.5">
                                                     {tierDef ? (
-                                                        <span className="text-[10px] px-2 py-0.5 rounded-md border flex items-center gap-1 font-bold w-fit border-[var(--line)]" style={{ borderColor: tierDef.color, backgroundColor: `${tierDef.color}15`, color: tierDef.color }}>
+                                                        <span className="text-[11px] lg:text-[10px] px-2 py-0.5 rounded-md border flex items-center gap-1 font-bold w-fit border-[var(--line)]" style={{ borderColor: tierDef.color, backgroundColor: `${tierDef.color}15`, color: tierDef.color }}>
                                                             {tierDef.iconType === 'image' ? <img src={tierDef.value} className="w-3 h-3 object-contain"/> : tierDef.value} {tierDef.label}
                                                         </span>
-                                                    ) : ( <span className="text-[10px] px-2 py-0.5 rounded-md border bg-[var(--inset)] text-[var(--ink-dim)] border-[var(--line)]">{c.tier}</span> )}
+                                                    ) : ( <span className="text-[11px] lg:text-[10px] px-2 py-0.5 rounded-md border bg-[var(--inset)] text-[var(--ink-dim)] border-[var(--line)]">{c.tier}</span> )}
                                                     <span className={`text-[11px] px-2 py-0.5 rounded-md border font-bold uppercase tracking-widest border-[var(--line)] ${c.priceTier === 'Grosir' ? 'bg-[var(--inset)] text-[var(--ink)] border-[var(--line)]' : c.priceTier === 'Ecer' ? 'bg-[var(--inset)] text-[var(--accent-ink)] border-[var(--line)]' : 'bg-[var(--inset)] text-[var(--ink)] border-[var(--line)]'} `}>
                                                         {c.priceTier || 'Retail'}
                                                     </span>
@@ -1658,7 +1680,7 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                                     </div>
 
                                     {/* MIDDLE: Accountability Block */}
-                                    <div className="grid grid-cols-2 gap-4 mb-4">
+                                    <div className="grid grid-cols-2 gap-2 lg:gap-4 mb-2 lg:mb-4">
                                         <div>
                                             <p className="text-[11px] text-[var(--ink-dim)] font-bold uppercase tracking-widest mb-0.5">T3/T4 PIC</p>
                                             <p className="text-xs font-bold text-[var(--ink)] truncate">{c.picName || 'Unassigned'}</p>
@@ -1696,10 +1718,10 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                                                 sessionStorage.setItem('targetMapStore', c.id);
                                                 if (onNavigateToMap) onNavigateToMap();
                                                 else window.dispatchEvent(new CustomEvent('switchTab', { detail: 'map' }));
-                                            }} className="px-3 py-1.5 text-xs font-bold bg-[var(--inset)] border border-[var(--line)] rounded-lg hover:bg-[var(--gold)] hover:text-[var(--gold-ink)] text-[var(--accent-ink)] transition-colors flex items-center gap-1 shadow-sm"><Globe size={12}/> Map</button>
+                                            }} className="px-3 py-1.5 min-h-[44px] lg:min-h-0 text-xs font-bold bg-[var(--inset)] border border-[var(--line)] rounded-lg hover:bg-[var(--gold)] hover:text-[var(--gold-ink)] text-[var(--accent-ink)] transition-colors flex items-center gap-1 shadow-sm"><Globe size={12}/> Map</button>
 
-                                            <button onClick={(e) => { e.stopPropagation(); handleEdit(c); }} className="px-3 py-1.5 text-xs font-bold bg-[var(--inset)] border border-[var(--line)] rounded-lg hover:bg-[var(--inset)] text-[var(--ink-dim)] transition-colors">Edit</button>
-                                            <button onClick={(e) => { e.stopPropagation(); handleDelete(c.id, c.name); }} className="px-3 py-1.5 text-xs font-bold bg-[var(--inset)] border border-[var(--line)] rounded-lg hover:bg-[var(--danger-well)] hover:border-[var(--danger)] text-[var(--danger-ink)] transition-colors">Del</button>
+                                            <button onClick={(e) => { e.stopPropagation(); handleEdit(c); }} className="px-3 py-1.5 min-h-[44px] lg:min-h-0 text-xs font-bold bg-[var(--inset)] border border-[var(--line)] rounded-lg hover:bg-[var(--inset)] text-[var(--ink-dim)] transition-colors">Edit</button>
+                                            <button onClick={(e) => { e.stopPropagation(); handleDelete(c.id, c.name); }} className="px-3 py-1.5 min-h-[44px] lg:min-h-0 text-xs font-bold bg-[var(--inset)] border border-[var(--line)] rounded-lg hover:bg-[var(--danger-well)] hover:border-[var(--danger)] text-[var(--danger-ink)] transition-colors">Del</button>
                                         </div>
                                     )}
 
@@ -1709,7 +1731,7 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                                     {!isAdmin && customerAccessLevel !== 'view_only' && (
                                         <div className="flex justify-end items-center mt-auto pt-3 border-t border-[var(--line)]">
                                             {canEditCustomer(c) ? (
-                                                <button onClick={(e) => { e.stopPropagation(); handleEdit(c); }} className="px-3 py-1.5 text-xs font-bold bg-[var(--inset)] border border-[var(--line)] rounded-lg hover:bg-[var(--inset)] text-[var(--ink-dim)] transition-colors">Edit</button>
+                                                <button onClick={(e) => { e.stopPropagation(); handleEdit(c); }} className="px-3 py-1.5 min-h-[44px] lg:min-h-0 text-xs font-bold bg-[var(--inset)] border border-[var(--line)] rounded-lg hover:bg-[var(--inset)] text-[var(--ink-dim)] transition-colors">Edit</button>
                                             ) : (
                                                 <span title="This store is outside your assigned region" className="text-[10px] text-[var(--ink-dim)] italic px-1">Outside your region</span>
                                             )}
