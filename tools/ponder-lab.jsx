@@ -26,6 +26,7 @@ import ShipmentPlanTable from '../src/ponder/stages/ShipmentPlanTable.jsx';
 import ProductPerformancePanel from '../src/components/ProductPerformancePanel.jsx';
 import AcceptanceReceipt from '../src/components/AcceptanceReceipt.jsx';
 import RestockVaultView from '../src/RestockVaultView.jsx';
+import MerchantSalesView from '../src/MerchantSalesView.jsx';
 import BranchWarehouseManager from '../src/components/BranchWarehouseManager.jsx';
 import ShipmentLabel from '../src/components/ShipmentLabel.jsx';
 import ArrivalScanner from '../src/components/ArrivalScanner.jsx';
@@ -407,6 +408,15 @@ function GudangLab() {
    reached in the app without a real outbound shipment and a branch login, and the label carries the
    one thing on this project that cannot be checked by reading it: a barcode either scans or it does
    not. `?label&probe` measures the symbol's module structure — see the probe block below. */
+/* Four shops a T5 salesman would see: two with a pin (the GPS gate has something to measure
+   against), one without, one with an open IOU so the manifest has that banner to show. */
+const LAB_CUSTOMERS = [
+  { id: 'c-berkah', name: 'Toko Berkah Jaya', address: 'Jl. Merdeka No. 12, Bandung', latitude: -6.9175, longitude: 107.6191, priceTier: 'Retail' },
+  { id: 'c-sumber', name: 'Warung Sumber Rejeki', address: 'Jl. Pasar Baru 4, Bandung', latitude: -6.9200, longitude: 107.6100, priceTier: 'Ecer' },
+  { id: 'c-maju', name: 'Kios Maju Mundur', address: '', priceTier: 'Retail' },
+  { id: 'c-lancar', name: 'Toko Lancar', address: 'Jl. Cihampelas 88', latitude: -6.8900, longitude: 107.6050, priceTier: 'Grosir', pendingIOUs: [{ id: 'iou-1', amount: 250000 }] },
+];
+
 const LAB_SHIPMENT = {
   id: 'REQ_1756700000000',
   branch: 'BANDUNG',
@@ -587,7 +597,16 @@ function ShellLab() {
         .find((el) => el.textContent.trim().toLowerCase().startsWith(want));
       if (b) b.click();
     };
-    wants.reduce((chain, want) => chain.then(() => press(want)), Promise.resolve());
+    wants.reduce((chain, want) => chain.then(() => press(want)), Promise.resolve()).then(() => {
+      if (!q.has('grip')) return;
+      /* the LAST one: the customer bar above the grip is also cursor-grab and its tap is a no-op */
+      const grip = [...document.querySelectorAll('.cursor-grab')].pop();
+      if (!grip) return;
+      const r = grip.getBoundingClientRect();
+      const at = { clientX: r.left + r.width / 2, clientY: r.top + r.height / 2, bubbles: true, pointerId: 1, isPrimary: true };
+      grip.dispatchEvent(new PointerEvent('pointerdown', at));
+      window.dispatchEvent(new PointerEvent('pointerup', at));
+    });
   }, []);
   return (
     <BiohazardTheme
@@ -604,7 +623,34 @@ function ShellLab() {
         </button>
       )}
     >
-      {q.has('places') ? (
+      {q.has('terminal') ? (
+        /* ?shell&terminal — the Sales Terminal INSIDE the real shell, wrapped exactly as App.jsx
+           wraps it (activeTab === 'sales', App.jsx:4916): the shell's p-2 lg:p-6, then ONE bare
+           box, nothing else — no border-4, no dashed band. The terminal is a T5 salesman
+           (FIELD_OPERATIVE) on purpose: that is who sells from a phone all day, and the tier
+           decides the proof camera (no picker) and the GPS gate. Products carry the three tier
+           prices the cart engine reads (prod.priceRetail …); the fixture list has only the
+           distributor price. onProcessSale records to window.__sale and does nothing else.
+           ?tab= presses buttons by label as elsewhere; the manifest grip is a POINTER gesture,
+           not a click, so ?grip dispatches one real pointerdown/pointerup tap on it after
+           mount — the same handler the thumb hits, opened to the 55 % snap. */
+        <div className="h-full w-full relative bg-[var(--duke-well-solid)]">
+          <MerchantSalesView
+            inventory={LAB_PRODUCTS.map((p) => ({ ...p, priceRetail: Math.round(p.priceDistributor * 1.15), priceEcer: Math.round(p.priceDistributor * 1.25), priceGrosir: Math.round(p.priceDistributor * 1.08) }))}
+            user={{ uid: 'lab-t5', displayName: 'Lab Salesman', email: 'lab@example.com' }}
+            userRole="FIELD_OPERATIVE" isAdmin={false}
+            logAudit={() => {}} triggerCapy={() => {}}
+            onProcessSale={async (sale) => { window.__sale = sale; return { ok: true }; }}
+            onInspect={() => {}}
+            appSettings={{ companyName: 'KPM INVENTORY' }}
+            customers={LAB_CUSTOMERS}
+            allowedPayments={['Cash', 'Transfer', 'IOU']} allowedTiers={['Retail', 'Ecer', 'Grosir']}
+            transactions={[]} allowRetur allowCashRefund={false}
+            db={null} appId="lab" agentProfileId="lab-t5" storage={null} masterUserId="lab"
+            isOnline
+          />
+        </div>
+      ) : q.has('places') ? (
         /* ?shell&places — the Restock Vault desk INSIDE the real shell, wrapped exactly as App.jsx
            wraps it (`activeTab === 'restock_vault'`): the shell's `p-6`, then the `border-4 p-4`
            panel, then the dashed `mb-12 pb-12` band. `?places` alone mounts the desk in a bare

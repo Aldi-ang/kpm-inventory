@@ -46,3 +46,4 @@ export const query = (r) => r;
 export const where = () => ({});
 export const orderBy = () => ({});
 export const getDocs = async () => snap([]);
+export const addDoc = async (ref) => ({ id: `lab-${Date.now()}`, path: (ref && ref.path) || "" });
