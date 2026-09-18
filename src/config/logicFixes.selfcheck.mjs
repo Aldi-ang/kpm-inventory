@@ -7210,5 +7210,45 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
      'the same expression, run on four real-shaped names: K before T before W, and a lower-case t does not fall to the end');
 }
 
+/* ─── 2026-09-18 — AGENT INVENTORY ON THE PHONE (his board 1 YES + board 2 B) ───
+   Measured at 375 inside the real shell (lab `?shell&agent`, kpm b1c77d8): the screen was a fixed
+   850 px box, so the page scrolled 188 px AND the list scrolled 366 px inside it; the toggle was 36;
+   a long name truncated; eight labels were 10 px. Under lg the box takes its content height, the
+   toggle is 44, names wrap, 10 px type is 11, and the Projected Value box folds behind its own
+   44 px title row. The desk keeps every number. Read from the raw file: code() strips the block
+   comments this file keeps inside its JSX. */
+{
+  const a = read('src/AgentInventoryView.jsx');
+  ok('REGRESSION: the fixed 850 px box is gone under lg — the desk keeps its height, the phone takes its content height',
+     /className="lg:h-\[calc\(100vh-120px\)\] flex flex-col max-w-5xl mx-auto/.test(a) && !/h-\[850px\]/.test(code(a)),
+     'measured 2026-09-18: the page scrolled 188 px and the list scrolled another 366 inside it — two thumbs for one screen');
+  ok('the list scrolls itself only on the desk; on the phone the shell scrolls everything once',
+     /<div className="flex-1 lg:overflow-y-auto p-4 custom-scrollbar relative z-10">/.test(a));
+  ok('Saleable / Quarantine are 44 tall under lg and unchanged on the desk',
+     (a.match(/flex-1 py-2 min-h-\[44px\] lg:min-h-0 text-sm font-medium rounded-none/g) || []).length === 2,
+     'measured 36 (py-2) — under his 44 rule');
+  ok('a product name wraps on the phone and truncates on the desk',
+     /group-hover:text-ink transition-colors lg:truncate">\{item\.name\}<\/h4>/.test(a),
+     '"Gudang Garam Surya 12" was cut at 154 px; a cut name is a data-entry hazard (2026-08-17)');
+  ok('BEHAVIOUR: the Projected Value box folds under lg — one state seeded from the width, closed on a phone, open on a desk',
+     /const \[showProjected, setShowProjected\] = useState\(\(\) => typeof window !== 'undefined' && window\.innerWidth >= 1024\);/.test(a) &&
+     /className=\{`\$\{showProjected \? 'grid pb-3' : 'hidden'\} lg:grid lg:pb-0 grid-cols-1 md:grid-cols-3/.test(a) &&
+     ((w) => w >= 1024)(375) === false && ((w) => w >= 1024)(1280) === true,
+     'his pick 2026-09-18: B, "that shows after board 1 when pressed"');
+  ok('the fold button is 44 tall, inert on the desk, reports its state, and keeps its text in spans (index.css button:has(> svg:only-child))',
+     /<button type="button" onClick=\{\(\) => setShowProjected\(v => !v\)\} aria-expanded=\{showProjected\}/.test(a) &&
+     /min-h-\[44px\] lg:min-h-0 lg:mb-2 lg:border-b border-line-2 lg:pb-2 lg:pointer-events-none lg:cursor-default/.test(a) &&
+     /<span className="lg:hidden text-\[11px\] font-black uppercase tracking-widest text-ink-dim">\{showProjected \? 'Hide ▴' : 'Show ▾'\}<\/span>/.test(a),
+     'a fold whose label does not change is silent (law 2); an icon-only button is forced inline-flex + 44 on the desk');
+  ok('10 px type is 11 on the phone and 10 on the desk — eight labels; the only bare 10 px left is the money auto-fit',
+     (a.match(/text-\[11px\] lg:text-\[10px\]/g) || []).length === 8 &&
+     (a.match(/(?<!lg:)text-\[10px\]/g) || []).length === 1 && /'text-\[10px\] md:text-base'/.test(a),
+     'his 2026-08-19 fix sizes money by string length — that one stays');
+  ok('header: p-3 / gap-3 / no top margin under lg, p-4 / gap-4 / mt-2 on the desk',
+     /bg-panel border-b border-line-2 p-3 lg:p-4 flex flex-col xl:flex-row justify-between items-start gap-3 lg:gap-4/.test(a) &&
+     /flex flex-col gap-2 lg:gap-3 w-full xl:w-\[65%\] lg:mt-2 xl:mt-0/.test(a),
+     'measured header 424 → 401 before the fold');
+}
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

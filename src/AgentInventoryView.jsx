@@ -28,6 +28,11 @@ const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [],
     
     // 🚀 NEW: QUARANTINE TOGGLE STATE
     const [viewMode, setViewMode] = useState('HEALTHY'); // 'HEALTHY' | 'QUARANTINE'
+    /* THE PROJECTED VALUE BOX FOLDS ON THE PHONE. Aldi, 2026-09-18, board 2: "board 2 B that shows
+       'after board 1' when pressed". Closed by default under lg (the three tier figures are read
+       once at load time; Cash is read all day), always open on the desk — the same width-seeded
+       state the Customers form uses. Pressing SHOW opens the three rows; the label flips to HIDE. */
+    const [showProjected, setShowProjected] = useState(() => typeof window !== 'undefined' && window.innerWidth >= 1024);
 
     // 🛡️ ARMOR-PLATED EMAIL ROUTER (Fixes Cache Ghosting & State Bleed)
     // 1. Sanitize the active Google login email to prevent space/case mismatch
@@ -197,10 +202,15 @@ const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [],
     const quarantineCount = quarantinedCargo.reduce((sum, item) => sum + item.qty, 0);
 
     return (
-        <div className="h-[850px] lg:h-[calc(100vh-120px)] flex flex-col max-w-5xl mx-auto animate-fade-in bg-ground font-sans border-x border-line-2 shadow-2xl overflow-hidden relative">
-            
+        /* ONE SCROLL ON THE PHONE. Aldi, 2026-09-18, board 1 YES. This was `h-[850px]` at every
+           width: inside the shell's 678 px scroller the page scrolled 188 px AND the list below
+           scrolled in its own 366 px window — two thumbs for one screen. Under lg the box now
+           takes its content height and the shell scrolls everything once; the desk keeps its
+           pinned header over a scrolling list (`lg:h-…` + `lg:overflow-y-auto` below). */
+        <div className="lg:h-[calc(100vh-120px)] flex flex-col max-w-5xl mx-auto animate-fade-in bg-ground font-sans border-x border-line-2 shadow-2xl overflow-hidden relative">
+
             {/* DYNAMIC FINANCIAL COMMAND BAR */}
-            <div className="bg-panel border-b border-line-2 p-4 flex flex-col xl:flex-row justify-between items-start gap-4 shrink-0 relative z-10 shadow-md">
+            <div className="bg-panel border-b border-line-2 p-3 lg:p-4 flex flex-col xl:flex-row justify-between items-start gap-3 lg:gap-4 shrink-0 relative z-10 shadow-md">
                 
                 {/* LEFT: AGENT IDENTITY */}
                 <div className="flex items-center gap-3 shrink-0 w-full xl:w-auto">
@@ -213,7 +223,7 @@ const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [],
                 </div>
                 
                 {/* RIGHT: THE FINANCIAL METRICS (MOBILE OPTIMIZED BLOCK LAYOUT) */}
-                <div className="flex flex-col gap-3 w-full xl:w-[65%] mt-2 xl:mt-0">
+                <div className="flex flex-col gap-2 lg:gap-3 w-full xl:w-[65%] lg:mt-2 xl:mt-0">
                     
                     {/* TOP ROW: Core Metrics */}
                     <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 md:gap-3">
@@ -246,11 +256,16 @@ const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [],
                     </div>
 
                     {/* BOTTOM ROW: 3-Tier Revenue Box (Wide & Readable) */}
-                    <div className="bg-panel border border-line-2 rounded-none p-3 shadow-inner">
-                        <div className="flex items-center justify-center md:justify-start mb-2 border-b border-line-2 pb-2">
-                            <span className="text-[10px] md:text-xs text-ink-dim font-bold uppercase tracking-widest flex items-center gap-1"><TrendingUp size={14}/> Projected Value</span>
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-1 md:gap-2 divide-y md:divide-y-0 md:divide-x divide-line-2">
+                    <div className="bg-panel border border-line-2 rounded-none px-3 lg:p-3 shadow-inner">
+                        {/* the title row is the fold's button under lg (44 tall, label in a span so
+                            index.css `button:has(> svg:only-child)` never claims it); on the desk it
+                            is inert and the rows are always shown */}
+                        <button type="button" onClick={() => setShowProjected(v => !v)} aria-expanded={showProjected}
+                            className={`w-full flex items-center justify-between md:justify-start min-h-[44px] lg:min-h-0 lg:mb-2 lg:border-b border-line-2 lg:pb-2 lg:pointer-events-none lg:cursor-default ${showProjected ? 'mb-2 border-b pb-2' : ''}`}>
+                            <span className="text-[11px] md:text-xs text-ink-dim font-bold uppercase tracking-widest flex items-center gap-1"><TrendingUp size={14}/> Projected Value</span>
+                            <span className="lg:hidden text-[11px] font-black uppercase tracking-widest text-ink-dim">{showProjected ? 'Hide ▴' : 'Show ▾'}</span>
+                        </button>
+                        <div className={`${showProjected ? 'grid pb-3' : 'hidden'} lg:grid lg:pb-0 grid-cols-1 md:grid-cols-3 gap-1 md:gap-2 divide-y md:divide-y-0 md:divide-x divide-line-2`}>
                             <div className="flex flex-row items-center justify-between py-1.5 md:py-0 md:flex-col md:justify-center text-center min-w-0">
                                 <span className="text-[11px] md:text-xs text-ink-dim font-bold uppercase tracking-wider md:mb-1">Ecer</span>
                                 <Money value={revEcer} className="text-ink" />
@@ -274,7 +289,7 @@ const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [],
                 <div className="flex p-1 bg-panel rounded-none ring-1 ring-line-2">
                     <button
                         onClick={() => setViewMode('HEALTHY')}
-                        className={`flex-1 py-2 text-sm font-medium rounded-none transition-all duration-200 ${
+                        className={`flex-1 py-2 min-h-[44px] lg:min-h-0 text-sm font-medium rounded-none transition-all duration-200 ${
                             viewMode === 'HEALTHY'
                                 ? 'bg-panel text-ink shadow-sm'
                                 : 'text-ink-dim hover:text-ink'
@@ -284,7 +299,7 @@ const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [],
                     </button>
                     <button
                         onClick={() => setViewMode('QUARANTINE')}
-                        className={`flex-1 py-2 text-sm font-medium rounded-none transition-all duration-200 flex items-center justify-center gap-2 ${
+                        className={`flex-1 py-2 min-h-[44px] lg:min-h-0 text-sm font-medium rounded-none transition-all duration-200 flex items-center justify-center gap-2 ${
                             viewMode === 'QUARANTINE'
                                 ? 'bg-danger-well text-danger-text ring-1 ring-danger-rail shadow-sm'
                                 : 'text-ink-dim hover:text-ink'
@@ -299,7 +314,7 @@ const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [],
             </div>
 
             {/* SCROLLABLE CONTENT AREA */}
-            <div className="flex-1 overflow-y-auto p-4 custom-scrollbar relative z-10">
+            <div className="flex-1 lg:overflow-y-auto p-4 custom-scrollbar relative z-10">
                 
                 {viewMode === 'HEALTHY' ? (
                     <>
@@ -338,7 +353,8 @@ const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [],
                                                 </div>
                                                 <div className="min-w-0 flex flex-col">
                                                     <div className="flex items-center gap-2">
-                                                        <h4 className="font-bold text-ink text-sm uppercase tracking-wide group-hover:text-ink transition-colors truncate">{item.name}</h4>
+                                                        {/* the name wraps on the phone — a cut name is a data-entry hazard (2026-08-17) — and truncates on the desk as before */}
+                                                        <h4 className="font-bold text-ink text-sm uppercase tracking-wide group-hover:text-ink transition-colors lg:truncate">{item.name}</h4>
                                                         {/* MISSING COST WARNING BADGE */}
                                                         {isMissingCost && (
                                                             <span className="bg-transparent border border-orange text-orange text-[11px] font-bold px-1.5 py-0.5 rounded tracking-wider uppercase whitespace-nowrap animate-pulse">
@@ -369,7 +385,7 @@ const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [],
                                                         <p className="text-[11px] text-ink-dim font-bold uppercase tracking-widest">Bks</p>
                                                     </div>
                                                 )}
-                                                <div className="bg-ground border border-line-2 px-2 py-0.5 rounded text-[10px] font-bold text-ink-dim uppercase tracking-wider shadow-inner mt-1.5">
+                                                <div className="bg-ground border border-line-2 px-2 py-0.5 rounded text-[11px] lg:text-[10px] font-bold text-ink-dim uppercase tracking-wider shadow-inner mt-1.5">
                                                     [{Number(item.qty).toFixed(2).replace(/\.00$/, '')} {item.unit}]
                                                 </div>
                                             </div>
@@ -388,7 +404,7 @@ const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [],
                         {todayTransactions.length === 0 ? (
                             <div className="flex flex-col items-center justify-center py-8 opacity-50 border border-line-2 border-dashed rounded-none bg-panel/30 mb-6">
                                 <Coins size={32} className="mb-3 text-ink-dim"/>
-                                <p className="text-[10px] font-bold tracking-widest uppercase text-ink-dim">No Sales Today</p>
+                                <p className="text-[11px] lg:text-[10px] font-bold tracking-widest uppercase text-ink-dim">No Sales Today</p>
                             </div>
                         ) : (
                             <div className="space-y-3 mb-6">
@@ -400,7 +416,7 @@ const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [],
                                                 <span className="text-[11px] px-2 py-0.5 rounded bg-ground text-ink-dim font-bold uppercase tracking-wider border border-line-2 shadow-inner">
                                                     {tx.paymentType || 'CASH'}
                                                 </span>
-                                                <span className="text-[10px] text-ink-dim font-mono font-semibold">
+                                                <span className="text-[11px] lg:text-[10px] text-ink-dim font-mono font-semibold">
                                                     {tx.timestamp?.seconds ? new Date(tx.timestamp.seconds * 1000).toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'}) : 'Today'}
                                                 </span>
                                             </div>
@@ -423,7 +439,7 @@ const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [],
                         {todaySamplings.length === 0 ? (
                             <div className="flex flex-col items-center justify-center py-8 opacity-50 border border-line-2 border-dashed rounded-none bg-panel/30 mb-20">
                                 <Package size={32} className="mb-3 text-ink-dim"/>
-                                <p className="text-[10px] font-bold tracking-widest uppercase text-ink-dim">No Samples Today</p>
+                                <p className="text-[11px] lg:text-[10px] font-bold tracking-widest uppercase text-ink-dim">No Samples Today</p>
                             </div>
                         ) : (
                             <div className="space-y-3 pb-20">
@@ -443,7 +459,7 @@ const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [],
                                                     <span className="text-[11px] px-2 py-0.5 rounded bg-ground text-ink font-bold uppercase tracking-wider border border-line-2 shadow-inner">
                                                         {sample.productName}
                                                     </span>
-                                                    <span className="text-[10px] text-ink-dim font-mono font-semibold">
+                                                    <span className="text-[11px] lg:text-[10px] text-ink-dim font-mono font-semibold">
                                                         {sample.timestamp?.seconds ? new Date(sample.timestamp.seconds * 1000).toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'}) : 'Today'}
                                                     </span>
                                                 </div>
@@ -500,7 +516,7 @@ function QuarantineLedgerBoard({ cargo }) {
             <div className="flex justify-between items-start pl-2">
               <div>
                 <h3 className="font-semibold text-ink text-base">{item.itemName}</h3>
-                <div className="flex items-center gap-1 mt-1 text-danger-text text-[10px] font-bold uppercase tracking-wide">
+                <div className="flex items-center gap-1 mt-1 text-danger-text text-[11px] lg:text-[10px] font-bold uppercase tracking-wide">
                   <AlertOctagon className="w-3 h-3" />
                   {item.returnReason}
                 </div>
@@ -516,11 +532,11 @@ function QuarantineLedgerBoard({ cargo }) {
   
             {/* Forensic Audit Details */}
             <div className="mt-4 pt-3 border-t border-line pl-2 space-y-2">
-              <div className="flex items-center gap-2 text-[10px] text-ink-dim uppercase tracking-widest font-bold">
+              <div className="flex items-center gap-2 text-[11px] lg:text-[10px] text-ink-dim uppercase tracking-widest font-bold">
                 <User className="w-3 h-3 text-ink-dim" />
                 <span>Origin: <span className="text-ink-muted">{item.customerOrigin}</span></span>
               </div>
-              <div className="flex items-center gap-2 text-[10px] text-ink-dim uppercase tracking-widest font-bold">
+              <div className="flex items-center gap-2 text-[11px] lg:text-[10px] text-ink-dim uppercase tracking-widest font-bold">
                 <Tag className="w-3 h-3 text-ink-dim" />
                 <span>Tx ID: <span className="font-mono text-ink-dim">{item.id.slice(-8)}</span></span>
               </div>
