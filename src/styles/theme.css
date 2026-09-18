@@ -3914,6 +3914,41 @@ html.lite-mode .kpm-hazard { animation: none; opacity: 1; }
 }
 
 /* ============================================================================
+   THE NIXIE COUNTER - the one moving-number instrument (components/NixieCount.jsx).
+   Aldi, 2026-09-18: "make it like nixie tube a like so its analog but animated", after refusing
+   an LED window on the count card as "one more effect type". One black glass window per digit
+   (.kpm-nixie-tube), a 0-9 reel inside it that TRANSLATES to the digit (--i) over 420 ms with a
+   stagger per place (--d, 45 ms from the left, so the right-hand digits lag like his clip), the
+   lit digit amber on a gradient disc, the unlit "8" filament ghosted behind.
+   ⚠️ NO SHADOW, NO FILTER - audit G30, and Lite Mode strips both; a stopped tube still reads.
+   Black in both themes: an instrument does not follow the room's lights (2026-09-04). */
+.kpm-nixie { display: inline-flex; align-items: center; gap: 3px; padding: 3px 4px; vertical-align: middle;
+  background-color: #000;
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, .07) 0 1px, transparent 1px, transparent 55%, rgba(255, 255, 255, .025));
+  border: 1px solid var(--line-2); border-radius: 4px;
+  font-family: var(--font-mono); font-weight: 800; font-size: var(--nx, 16px); line-height: 1;
+  font-variant-numeric: tabular-nums; letter-spacing: 0; }
+.kpm-nixie-sign { width: .62em; text-align: center; color: var(--amber); }
+.kpm-nixie-tube { position: relative; width: .74em; height: 1.18em; overflow: hidden; border-radius: 2px;
+  background: radial-gradient(70% 80% at 50% 50%, rgba(255, 140, 40, .09), transparent 72%); }
+.kpm-nixie-tube::before { content: "8"; position: absolute; inset: 0; text-align: center; line-height: 1.18em;
+  color: rgba(208, 138, 46, .11); }
+.kpm-nixie-reel { position: absolute; left: 0; right: 0; top: 0; display: grid; text-align: center;
+  translate: 0 calc(var(--i, 0) * -1.18em);
+  transition: translate 420ms cubic-bezier(.23, 1, .32, 1); transition-delay: var(--d, 0ms); will-change: translate; }
+.kpm-nixie-reel > span { height: 1.18em; line-height: 1.18em; color: rgba(208, 138, 46, .22); }
+.kpm-nixie-reel > span.lit { color: var(--amber);
+  background: radial-gradient(55% 62% at 50% 50%, rgba(255, 140, 40, .30), transparent 72%); }
+/* the boss's audit DIFFERENCE is the verdict: bigger than the two figures it comes from on the
+   phone (his "a little bit bigger"); the desk row keeps the three at one size */
+.kpm-nixie-verdict { --nx: 20px !important; }
+@media (max-width: 1023px) { .kpm-nixie-verdict { --nx: 26px !important; } }
+/* the audit item's three figures are plates on the phone (one thing per line, his board 6 = A)
+   and the old inline row on the desk */
+@media (max-width: 1023px) { .kpm-fig3 > span { background-color: var(--sunk); padding: 8px 4px; background-image: linear-gradient(180deg, rgba(255, 255, 255, .3) 0 1px, transparent 1px, transparent calc(100% - 2px), rgba(0, 0, 0, .28) calc(100% - 2px)); } }
+@media (prefers-reduced-motion: reduce) { .kpm-nixie-reel { transition: none; } }
+
+/* ============================================================================
    THE DASHBOARD — rebuilt 2026-08-25.
 
    His brief, in his words: *"the layout is pretty bad i want u to redesign a new one"*, then

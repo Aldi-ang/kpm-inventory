@@ -12,6 +12,7 @@ import * as threshold from './utils/stockThreshold';
 import { confirmAction, promptAction } from './components/ConfirmGate.jsx';
 import { notify } from './components/Toast.jsx';
 import { canSeeExpectedCount } from './config/permissions';
+import NixieCount from './components/NixieCount.jsx';
 /* Imported under a different name on purpose. The string 'MASTER' in this file is a SELECT VALUE
    that routes Firestore paths (branches/{facility}/inventory) — changing it would move documents.
    HQ_LABEL is only what the reader sees, and that is the part that had four spellings. */
@@ -967,7 +968,7 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                         {viewMode === 'review' && 'VERIFY REGIONAL STOCK OVERWRITES'}
                         {viewMode === 'quarantine' && 'DAMAGED GOODS LIQUIDATION & HISTORY'}
                         {viewMode === 'monitor' && 'REAL-TIME FACILITY OVERWATCH'}
-                        {!isHighCommand && viewMode === 'count' && <span className="bg-[var(--danger-well)] text-[var(--danger-ink)] border border-[var(--danger)] px-2 py-0.5 rounded text-[11px] font-black tracking-widest flex items-center gap-1"><EyeOff size={10}/> BLIND COUNT ENFORCED</span>}
+                        {!isHighCommand && viewMode === 'count' && <span className="bg-transparent text-[var(--accent-ink)] border border-[var(--accent-edge)] px-2 py-0.5 rounded text-[11px] font-black tracking-widest flex items-center gap-1"><EyeOff size={10}/> BLIND COUNT ENFORCED</span>}
                     </p>
                 </div>
                 
@@ -1323,15 +1324,15 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
 
                                                 <h4 className="text-[11px] lg:text-[10px] font-bold text-[var(--ink-dim)] uppercase tracking-widest mb-3">Itemized Count Report</h4>
                                                 
-                                                <div className="space-y-2 mb-4 max-h-[40vh] overflow-y-auto custom-scrollbar pr-2">
+                                                <div className="space-y-2 mb-4 lg:max-h-[40vh] lg:overflow-y-auto custom-scrollbar pr-2">
                                                     {audit.items.map((item, idx) => {
                                                         const isMissing = item.variance < 0;
                                                         
                                                         return (
                                                             <div key={idx} className="flex flex-col bg-[var(--raised)] p-3 rounded-lg border border-[var(--line)]">
-                                                                <div className="flex justify-between items-center mb-2 border-b border-[var(--line)] pb-2">
+                                                                <div className="flex flex-col items-stretch gap-2.5 mb-3 lg:flex-row lg:justify-between lg:items-center lg:mb-2 lg:border-b lg:border-[var(--line)] lg:pb-2">
                                                                     <span className="flex items-center gap-2 min-w-0">
-                                                                        <span className="font-bold text-xs text-[var(--ink)] uppercase lg:truncate">{item.name}</span>
+                                                                        <span className="font-bold text-sm lg:text-xs text-[var(--ink)] uppercase lg:truncate">{item.name}</span>
                                                                         {/* LEAK, not miscount. Reads the audits already on file - short in at
                                                                             least two of the last three or more counts. Dark plate, red edge,
                                                                             red ink: it is a warning, not a slab. */}
@@ -1346,7 +1347,7 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                                                                             );
                                                                         })()}
                                                                     </span>
-                                                                    <div className="flex items-center gap-4 text-xs font-mono">
+                                                                    <div className="kpm-fig3 grid grid-cols-3 gap-px bg-[var(--line)] rounded-lg overflow-hidden text-center lg:flex lg:items-center lg:gap-4 lg:bg-transparent lg:rounded-none lg:overflow-visible lg:text-left text-xs font-mono">
                                                                         {/* SAME FAULT AS THE COUNT ROW, ON HQ's SIDE. This printed
                                                                             expectedStock alone - healthy only - next to a totalFound
                                                                             that counts good + damaged, so a perfect count of 100
@@ -1356,18 +1357,20 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                                                                             `|| 0` matters: audits saved before the split have no
                                                                             expectedDamagedStock at all. */}
                                                                         <span className="text-[var(--ink-dim)]">
-                                                                            SYS: {(item.expectedStock || 0) + (item.expectedDamagedStock || 0)}
+                                                                            <span className="lg:hidden block text-[11px] text-[var(--ink-dim)] font-bold uppercase tracking-widest mb-1">Expected</span>
+                                                                            <span className="hidden lg:inline">SYS: </span><NixieCount value={(item.expectedStock || 0) + (item.expectedDamagedStock || 0)} size={20} />
                                                                             {(item.expectedDamagedStock || 0) > 0 && (
-                                                                                <span className="text-[var(--danger-ink)]"> ({item.expectedDamagedStock} dmg)</span>
+                                                                                <span className="block lg:inline text-[11px] lg:text-xs mt-1 lg:mt-0"> ({item.expectedDamagedStock} dmg)</span>
                                                                             )}
                                                                         </span>
-                                                                        <span className="text-[var(--ink-dim)]">→</span>
-                                                                        <span className="text-[var(--ink-dim)] font-bold">FND: {item.totalFound}</span>
+                                                                        <span className="hidden lg:inline text-[var(--ink-dim)]">→</span>
+                                                                        <span className="text-[var(--ink-dim)] font-bold"><span className="lg:hidden block text-[11px] text-[var(--ink-dim)] font-bold uppercase tracking-widest mb-1">Found</span><span className="hidden lg:inline">FND: </span><NixieCount value={item.totalFound} size={20} /></span>
                                                                         {/* the SAME rule the agent's row uses. `item.matched` is not a
                                                                             field on the record - a blanket rename put it here and it would
                                                                             have painted every HQ row red, on a value that never exists. */}
-                                                                        <span className={`w-12 text-right font-black ${withinTolerance(item.variance) ? 'text-[var(--accent-ink)]' : 'text-[var(--danger-ink)]'} `}>
-                                                                            {item.variance > 0 ? '+' : ''}{item.variance}
+                                                                        <span className={`lg:text-right font-black ${withinTolerance(item.variance) ? 'text-[var(--accent-ink)]' : 'text-[var(--danger-ink)]'} `}>
+                                                                            <span className="lg:hidden block text-[11px] font-bold uppercase tracking-widest mb-1">Difference</span>
+                                                                            <NixieCount value={item.variance} signed size={20} className="kpm-nixie-verdict" />
                                                                         </span>
                                                                     </div>
                                                                 </div>
@@ -1494,6 +1497,14 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                                    Only opening the screen in a browser found it. */
                                 const recount = hasTyped ? recountState(entry, target)
                                                          : { needsRecount: false, confirmed: false, disagreement: false, passes: 0 };
+                                /* THE COLOUR IS THE STATE, AND RED WAITS. Aldi, 2026-09-18: "too much red" -
+                                   on the first miscount the edge, the bar, the plate, the recount box and its
+                                   key all went red at once, for a count the screen itself says is probably
+                                   just wrong once. A first-pass difference is a request to count again
+                                   (amber); red is for a difference the second count CONFIRMED. */
+                                const tone = !hasTyped ? 'idle' : (recount.confirmed || recount.disagreement) && !matched ? 'bad' : 'wait';
+                                const edge = { idle: 'border-[var(--line)]', wait: 'border-[var(--accent-edge)]', bad: 'border-[var(--danger)]' }[tone];
+                                const bar = { idle: 'bg-[var(--line)]', wait: 'bg-[var(--accent-edge)]', bad: 'bg-[var(--danger)]' }[tone];
 
                                 /* THE COUNTING CARD, rebuilt 2026-08-20 from his screenshot. The old labels were
                                         positioned ON TOP of the inputs, so "GOOD STOCK" wrapped to two lines and
@@ -1503,9 +1514,9 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                                         gold, a mismatch is red. */
                                 return (
                                     
-                                    <div key={item.id} className={`relative overflow-hidden bg-[var(--raised)] rounded-xl border transition-colors ${hasTyped ? (matched ? 'border-[var(--accent-edge)]' : 'border-[var(--danger)]') : 'border-[var(--line)]'} `}>
+                                    <div key={item.id} className={`relative overflow-hidden bg-[var(--raised)] rounded-xl border transition-colors ${edge} `}>
                                         {/* one glance down the list says which rows are done and which are off */}
-                                        <span className={`absolute left-0 top-0 bottom-0 w-1 ${hasTyped ? (matched ? 'bg-[var(--accent-edge)]' : 'bg-[var(--danger)]') : 'bg-[var(--line)]'} `} aria-hidden="true"></span>
+                                        <span className={`absolute left-0 top-0 bottom-0 w-1 ${bar} `} aria-hidden="true"></span>
                                         <div className="pl-4 pr-3 py-3 md:py-4 flex flex-col md:flex-row md:items-end gap-3 md:gap-6">
                                             <div className="min-w-0 flex-1">
                                                 <div className="font-bold text-[var(--ink)] text-sm uppercase tracking-wide lg:truncate">{item.name}</div>
@@ -1523,6 +1534,10 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                                             </div>
                                         </div>
 
+                                        {/* the verdict block slides open under the boxes on the first typed number -
+                                            the same grid-rows fold as ADMIN TOOLS; Lite Mode makes it a jump */}
+                                        <div className="grid transition-[grid-template-rows] duration-[260ms] ease-out" style={{ gridTemplateRows: isRevealed ? '1fr' : '0fr' }}>
+                                          <div className="overflow-hidden">
                                         {isRevealed && (
                                             <div className="pl-4 pr-3 pb-3 md:pb-4 pt-0 flex flex-col gap-3">
                                               <div className="flex flex-col md:flex-row justify-between items-stretch md:items-center gap-3">
@@ -1535,15 +1550,15 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                                                     ⚠️ THE VERDICT IS AN EDGE, NOT A GOLD SLAB. Aldi, 2026-08-21: "stop
                                                     using amber background i said, i hate it, use it for little things". */}
                                                 <div className="grid grid-cols-2 md:grid-cols-4 gap-px bg-[var(--line)] rounded-lg overflow-hidden text-center w-full md:w-auto md:inline-grid">
-                                                    <div className="bg-[var(--sunk)] px-3 py-2 md:px-4 border border-transparent">
+                                                    <div className="bg-[var(--sunk)] px-3 py-2 md:px-4 border border-transparent kpm-plate">
                                                         <div className="text-[11px] lg:text-[9px] text-[var(--ink-dim)] font-bold uppercase tracking-widest whitespace-nowrap">Expected good</div>
                                                         <div className="text-sm font-black font-mono tabular-nums text-[var(--ink)]">{formatNumber(target.stock)}</div>
                                                     </div>
-                                                    <div className="bg-[var(--sunk)] px-3 py-2 md:px-4 border border-transparent">
-                                                        <div className="text-[11px] lg:text-[9px] text-[var(--danger-ink)] font-bold uppercase tracking-widest whitespace-nowrap">Expected damaged</div>
-                                                        <div className="text-sm font-black font-mono tabular-nums text-[var(--danger-ink)]">{formatNumber(target.damaged)}</div>
+                                                    <div className="bg-[var(--sunk)] px-3 py-2 md:px-4 border border-transparent kpm-plate">
+                                                        <div className="text-[11px] lg:text-[9px] text-[var(--ink-dim)] font-bold uppercase tracking-widest whitespace-nowrap">Expected damaged</div>
+                                                        <div className="text-sm font-black font-mono tabular-nums text-[var(--ink)]">{formatNumber(target.damaged)}</div>
                                                     </div>
-                                                    <div className="bg-[var(--sunk)] px-3 py-2 md:px-4 border border-transparent">
+                                                    <div className="bg-[var(--sunk)] px-3 py-2 md:px-4 border border-transparent kpm-plate">
                                                         <div className="text-[11px] lg:text-[9px] text-[var(--ink-dim)] font-bold uppercase tracking-widest whitespace-nowrap">Total found</div>
                                                         <div className="text-sm font-black font-mono tabular-nums text-[var(--ink)]">{formatNumber(totalFound)}</div>
                                                     </div>
@@ -1551,9 +1566,9 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                                                         strips box-shadow — the verdict would have lost its only edge on a
                                                         cheap phone. Every plate carries a transparent border so the coloured
                                                         one costs no shift. */}
-                                                    <div className={`bg-[var(--sunk)] px-3 py-2 md:px-4 border ${matched ? 'border-[var(--accent-edge)]' : 'border-[var(--danger)]'} `}>
-                                                        <div className={`text-[11px] lg:text-[9px] font-bold uppercase tracking-widest ${matched ? 'text-[var(--accent-ink)]' : 'text-[var(--danger-ink)]'} `}>{matched ? 'Match' : 'Difference'}</div>
-                                                        <div className={`text-sm font-black font-mono tabular-nums ${matched ? 'text-[var(--accent-ink)]' : 'text-[var(--danger-ink)]'} `}>{variance > 0 ? '+' : ''}{formatNumber(variance)}</div>
+                                                    <div className={`bg-[var(--sunk)] px-3 py-2 md:px-4 border kpm-plate ${matched ? 'border-[var(--accent-edge)]' : tone === 'bad' ? 'border-[var(--danger)]' : 'border-[var(--accent-edge)]'} `}>
+                                                        <div className={`text-[11px] lg:text-[9px] font-bold uppercase tracking-widest ${matched ? 'text-[var(--accent-ink)]' : tone === 'bad' ? 'text-[var(--danger-ink)]' : 'text-[var(--accent-ink)]'} `}>{matched ? 'Match' : 'Difference'}</div>
+                                                        <div className="mt-1"><NixieCount value={variance} signed size={20} /></div>
                                                     </div>
                                                 </div>
 
@@ -1562,7 +1577,7 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                                                         {entry.photo ? (
                                                             <div className="flex items-center gap-2 bg-[var(--sunk)] border border-[var(--accent-edge)] px-3 py-1.5 rounded"><ImageIcon size={14} className="text-[var(--accent-ink)]"/><span className="text-[11px] lg:text-[10px] text-[var(--accent-ink)] font-bold uppercase tracking-widest">Damage Proof Attached</span><button onClick={() => handleClearPhoto(item.id)} className="ml-2 text-[var(--danger-ink)] hover:text-[var(--danger-ink)]"><X size={12}/></button></div>
                                                         ) : (
-                                                            <label className="cursor-pointer min-h-11 lg:min-h-0 flex items-center gap-2 bg-[var(--sunk)] hover:bg-[var(--sunk)] border border-dashed border-[var(--accent-edge)] px-4 py-2 rounded text-[11px] lg:text-[10px] font-bold text-[var(--accent-ink)] uppercase tracking-widest transition-colors"><Camera size={14}/> Upload Damaged Proof<input type="file" accept="image/*" className="hidden" onChange={(e) => handlePhotoUpload(item.id, e.target.files[0])} /></label>
+                                                            <label className="cursor-pointer min-h-11 lg:min-h-0 flex items-center gap-2 bg-transparent hover:bg-[var(--inset)] border border-[var(--line-2)] px-4 py-2 rounded text-[11px] lg:text-[10px] font-bold text-[var(--ink-muted)] uppercase tracking-widest transition-colors"><Camera size={14}/> Upload Damaged Proof<input type="file" accept="image/*" className="hidden" onChange={(e) => handlePhotoUpload(item.id, e.target.files[0])} /></label>
                                                         )}
                                                     </div>
                                                 )}
@@ -1573,13 +1588,13 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                                                     tier the answer the screen exists to withhold, and it tells any
                                                     tier exactly what to type to make the warning go away. */}
                                                 {recount.needsRecount && (
-                                                    <div className="flex flex-col sm:flex-row sm:items-center gap-2.5 p-3 rounded-lg bg-[var(--sunk)] border border-[var(--danger)]">
-                                                        <span className="flex-1 min-w-0 text-[11px] font-bold text-[var(--danger-ink)] leading-relaxed">
-                                                            <span className="font-black uppercase tracking-widest">Count this one again.</span>{' '}
+                                                    <div className="flex flex-col sm:flex-row sm:items-center gap-2.5 p-3 rounded-lg bg-[var(--sunk)] border border-[var(--accent-edge)]">
+                                                        <span className="flex-1 min-w-0 text-[11px] font-bold text-[var(--ink)] leading-relaxed">
+                                                            <span className="font-black uppercase tracking-widest text-[var(--accent-ink)]">Count this one again.</span>{' '}
                                                             Most differences are miscounts. It is only reported once the same number comes up twice.
                                                         </span>
                                                         <button type="button" onClick={() => startRecount(item.id)}
-                                                            className="shrink-0 min-h-11 lg:min-h-[40px] px-4 rounded-lg text-[11px] lg:text-[10px] font-black uppercase tracking-widest bg-[var(--raised)] border border-[var(--danger)] text-[var(--danger-ink)] hover:border-[var(--danger-ink)] transition-colors">
+                                                            className="shrink-0 min-h-11 lg:min-h-[40px] px-4 rounded-lg text-[11px] lg:text-[10px] font-black uppercase tracking-widest bg-transparent border border-[var(--accent-edge)] text-[var(--accent-ink)] hover:bg-[var(--inset)] transition-colors">
                                                             Clear and count again
                                                         </button>
                                                     </div>
@@ -1648,7 +1663,7 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                                                         <div>
                                                             <button type="button" onClick={() => toggleDamagePanel(item.id)}
                                                                 aria-expanded={isOpen}
-                                                                className={`w-full min-h-[44px] flex items-center gap-3 px-3.5 py-2.5 rounded-lg bg-[var(--sunk)] border text-left transition-colors ${blocked ? 'border-[var(--danger)] text-[var(--danger-ink)]' : 'border-[var(--accent-edge)] text-[var(--accent-ink)]'} `}>
+                                                                className={`w-full min-h-[44px] flex items-center gap-3 px-3.5 py-2.5 rounded-lg bg-[var(--sunk)] border text-left transition-colors border-[var(--accent-edge)] text-[var(--accent-ink)] `}>
                                                                 <span className="text-[11px] font-black uppercase tracking-widest whitespace-nowrap">{formatNumber(dmgTotal)} Damaged</span>
                                                                 {/* 🔴 THE LINE PRINTS THE REFUSAL, not a tally of its own.
                                                                     It used to say "9 of 5 sorted" — arithmetic that is true and
@@ -1658,7 +1673,7 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                                                                     was throwing the words away and keeping only the red. Now the
                                                                     sentence it computed is the sentence that shows, so the row
                                                                     refuses the moment the count goes over instead of at the end. */}
-                                                                <span className={`flex-1 min-w-0 truncate text-[11px] font-bold font-mono tabular-nums ${blocked ? 'text-[var(--danger-ink)]' : 'text-[var(--ink-dim)]'} `}>
+                                                                <span className={`flex-1 min-w-0 truncate text-[11px] font-bold font-mono tabular-nums ${blocked ? 'text-[var(--accent-ink)]' : 'text-[var(--ink-dim)]'} `}>
                                                                     {blocked ? blocked.toUpperCase() : `${kindCount} kind${kindCount === 1 ? '' : 's'} recorded`}
                                                                 </span>
                                                                 <span className="text-[11px] lg:text-[10px] shrink-0" aria-hidden="true">{isOpen ? '▴' : '▾'}</span>
@@ -1716,6 +1731,8 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                                                 })()}
                                             </div>
                                         )}
+                                          </div>
+                                        </div>
                                     </div>
                                 );
                             })}

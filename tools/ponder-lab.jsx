@@ -31,7 +31,6 @@ import { CustomerManagement } from '../src/components/CustomerManager.jsx';
 import AgentInventoryView from '../src/AgentInventoryView.jsx';
 import EODReconciliationView from '../src/EODReconciliationView.jsx';
 import StockOpnameView from '../src/StockOpnameView.jsx';
-import { NixieDemo, nixify } from './lab-nixie.jsx';
 import BranchWarehouseManager from '../src/components/BranchWarehouseManager.jsx';
 import ShipmentLabel from '../src/components/ShipmentLabel.jsx';
 import ArrivalScanner from '../src/components/ArrivalScanner.jsx';
@@ -715,8 +714,6 @@ function ShellLab() {
          (`:active` cannot be forced from outside) and a headless frame can show it. The pane and
          his phone still feel the real :active; this is only for the still. */
       if (q.has('held')) document.querySelector('.kpm-key')?.classList.add('lab-held');
-      /* `&nixify` — real nixie counters dropped into the Stock Opname figures (tools/lab-nixie.jsx) */
-      if (q.has('nixify')) nixify();
       if (!q.has('grip')) return;
       /* the LAST one: the customer bar above the grip is also cursor-grab and its tap is a no-op */
       const grip = [...document.querySelectorAll('.cursor-grab')].pop();
@@ -742,11 +739,7 @@ function ShellLab() {
         </button>
       )}
     >
-      {q.has('nixie') ? (
-        /* ?shell&nixie — the nixie counter candidate (tools/lab-nixie.jsx), ticking, inside the
-           real shell so his phone sees it in the real chrome at the real sizes */
-        <NixieDemo />
-      ) : q.has('opname') ? (
+      {q.has('opname') ? (
         /* ?shell&opname — Stock Opname INSIDE the real shell exactly as App.jsx:5069 mounts it: no
            wrapper. A T5 counts BLIND (viewMode 'count', StockOpnameView.jsx:222) against his
            BRANCH's inventory (:232, isAreaAdmin = everyone below ADMIN), so the salesman is put in

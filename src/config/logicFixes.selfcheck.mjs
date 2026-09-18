@@ -2222,7 +2222,7 @@ ${opname.slice(bOpen + 1, bEnd)}
   ok('and the tally that read as progress while over is gone',
      !/\$\{sorted\} of \$\{dmgTotal\} sorted/.test(opname));
   ok('the words go red with the border, so the refusal is not carried by colour alone',
-     /blocked \? 'text-\[var\(--danger-ink\)\]'/.test(opname));
+     /blocked \? 'text-\[var\(--accent-ink\)\]'/.test(opname), 'amber with its line since 2026-09-18 (his "too much red"); the refusal sentence is still printed');
   ok('3 pest + 2 water against 5 damaged passes',  damageBlocked({ damaged: 5, kinds: { 'Pest / Rodent Damage': 3, 'Water / Weather Damage': 2 } }) === null);
   ok('no free-text escape hatch is left in the rule',
      !/otherDetail/.test(opname), 'a free-text cause cannot be grouped or counted');
@@ -2254,7 +2254,7 @@ ${opname.slice(bOpen + 1, bEnd)}
      !/formatNumber\(item\.stock \|\| 0\)/.test(opname) && !/formatNumber\(item\.damagedStock \|\| 0\)/.test(opname));
   /* HQ's list had the identical fault: healthy-only expected beside a good+damaged found. */
   ok('HQ\'s review list compares like for like, and legacy audits still render',
-     /SYS: \{\(item\.expectedStock \|\| 0\) \+ \(item\.expectedDamagedStock \|\| 0\)\}/.test(opname));
+     /SYS: <\/span><NixieCount value=\{\(item\.expectedStock \|\| 0\) \+ \(item\.expectedDamagedStock \|\| 0\)\} size=\{20\} \/>/.test(opname));
   ok('and HQ can see what kind of damage it is approving',
      /item\.damageKinds\.map/.test(opname));
 
@@ -7494,7 +7494,7 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
      (so.match(/<select /g) || []).length === 5,
      'the region picker measured 17 px tall, the facility picker 19, the quarantine picker 38');
   ok('names wrap on the phone and truncate on the desk - the audit item and the counting card',
-     /<span className="font-bold text-xs text-\[var\(--ink\)\] uppercase lg:truncate">\{item\.name\}<\/span>/.test(so) &&
+     /<span className="font-bold text-sm lg:text-xs text-\[var\(--ink\)\] uppercase lg:truncate">\{item\.name\}<\/span>/.test(so) &&
      /<div className="font-bold text-\[var\(--ink\)\] text-sm uppercase tracking-wide lg:truncate">\{item\.name\}<\/div>/.test(so) &&
      !/uppercase truncate">\{item\.name\}/.test(code(so)) && !/tracking-wide truncate">\{item\.name\}/.test(code(so)),
      '"CELLO GREE..." at 91 px in the expanded audit');
@@ -7516,13 +7516,87 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
      !/className="flex-1 md:flex-none justify-center px-4 py-3 md:py-2 text-\[var\(--ink-dim\)\]/.test(code(so)),
      'SUBMIT TO HQ measured 173 x 57 in two lines at 375');
   ok('UPLOAD DAMAGED PROOF and CLEAR AND COUNT AGAIN are 44 px keys on the phone',
-     /<label className="cursor-pointer min-h-11 lg:min-h-0 flex items-center gap-2 bg-\[var\(--sunk\)\]/.test(so) &&
+     /<label className="cursor-pointer min-h-11 lg:min-h-0 flex items-center gap-2 bg-transparent/.test(so) &&
      /className="shrink-0 min-h-11 lg:min-h-\[40px\] px-4 rounded-lg text-\[11px\] lg:text-\[10px\] font-black/.test(so) &&
      !/shrink-0 min-h-\[40px\] px-4/.test(code(so)),
      'measured 305 x 32 and 280 x 40');
   ok('the quarantine item\'s info line wraps on the phone instead of clipping its facility',
      /<div className="flex flex-wrap lg:flex-nowrap items-center gap-3 mt-1 text-xs font-mono">/.test(so),
      '"MASTER" cut: 300 wide in a 285 box');
+}
+
+/* 2026-09-18 21:30 - THE NIXIE COUNTER and the two Stock Opname looks he decided (boards 5 = A,
+   6 = A, 7 = "nixie looks fine"). His words: "too much red and not really have any animation",
+   "too compact in a small space", "standardize effect". One number instrument: a black glass
+   tube per digit, a 0-9 reel that translates to the digit with a 45 ms stagger per place, the
+   lit digit amber on a gradient disc. No shadow and no filter in it (G30; Lite Mode strips both).
+   The count card paints AMBER for a first-pass difference and RED only once a second count
+   confirms it; the boss's audit item is one thing per line with three plates on the phone. */
+{
+  const nx = fs.existsSync('src/components/NixieCount.jsx') ? read('src/components/NixieCount.jsx') : '';
+  const th = read('src/styles/theme.css');
+  const so = read('src/StockOpnameView.jsx');
+  const nixieDigits = (await import('../utils/helpers.js')).nixieDigits || (() => null);
+  ok('BEHAVIOUR: nixieDigits splits a figure into a sign and place-valued digits',
+     JSON.stringify(nixieDigits(-17, true)) === JSON.stringify({ sign: '−', digits: [1, 7] }) &&
+     JSON.stringify(nixieDigits(3, true)) === JSON.stringify({ sign: '+', digits: [3] }) &&
+     JSON.stringify(nixieDigits(0, true)) === JSON.stringify({ sign: '', digits: [0] }) &&
+     JSON.stringify(nixieDigits(420, false)) === JSON.stringify({ sign: '', digits: [4, 2, 0] }) &&
+     JSON.stringify(nixieDigits('abc', true)) === JSON.stringify({ sign: '', digits: [0] }) &&
+     JSON.stringify(nixieDigits(104.7, false)) === JSON.stringify({ sign: '', digits: [1, 0, 4] }),
+     'a DIFFERENCE prints its sign, a count prints none, garbage prints 0, a fraction is a whole number');
+  ok('REGRESSION: the nixie counter keys its tubes by PLACE VALUE and drives the reel with --i, so 99 -> 100 keeps rolling instead of remounting',
+     /key=\{digits\.length - i\}/.test(nx) && /'--i': d/.test(nx) && /'--d': `\$\{i \* 45\}ms`/.test(nx) &&
+     /import \{ nixieDigits \} from '\.\.\/utils\/helpers/.test(nx));
+  const nixieCss = th.slice(th.indexOf('.kpm-nixie {'), th.indexOf('.kpm-nixie-reel > span.lit') + 400);
+  ok('the nixie CSS: a reel that TRANSLATES by --dmg-like --i, 420 ms, staggered by --d; the glow is a gradient disc; nothing in it is a shadow or a filter',
+     /\.kpm-nixie-reel \{[^}]*translate: 0 calc\(var\(--i, 0\) \* -1\.18em\);[^}]*transition: translate 420ms cubic-bezier\(\.23, 1, \.32, 1\); transition-delay: var\(--d, 0ms\);/.test(nixieCss) &&
+     /\.kpm-nixie-reel > span\.lit \{ color: var\(--amber\);\s*background: radial-gradient/.test(nixieCss) &&
+     /\.kpm-nixie-tube::before \{ content: "8";/.test(nixieCss) &&
+     !/box-shadow|text-shadow|filter:/.test(nixieCss) &&
+     /@media \(prefers-reduced-motion: reduce\) \{ \.kpm-nixie-reel \{ transition: none; \} \}/.test(th),
+     'audit G30 turned drawn shadows into gradients once already (832ea7c); this one is born without them');
+  ok('his board 5 = A: the count card is AMBER for a first-pass difference and RED only once the second count confirms it or the damage line is refused',
+     /const tone = !hasTyped \? 'idle' : \(recount\.confirmed \|\| recount\.disagreement\) && !matched \? 'bad' : 'wait';/.test(so) &&
+     /const edge = \{ idle: 'border-\[var\(--line\)\]', wait: 'border-\[var\(--accent-edge\)\]', bad: 'border-\[var\(--danger\)\]' \}\[tone\];/.test(so) &&
+     /const bar = \{ idle: 'bg-\[var\(--line\)\]', wait: 'bg-\[var\(--accent-edge\)\]', bad: 'bg-\[var\(--danger\)\]' \}\[tone\];/.test(so) &&
+     !/hasTyped \? \(matched \? 'border-\[var\(--accent-edge\)\]' : 'border-\[var\(--danger\)\]'\)/.test(code(so)) &&
+     !/hasTyped \? \(matched \? 'bg-\[var\(--accent-edge\)\]' : 'bg-\[var\(--danger\)\]'\)/.test(code(so)),
+     'measured 2026-09-18: five red things on the FIRST miscount - his "too much red"');
+  ok('the recount box, its key, the damaged line and the BLIND COUNT badge no longer wear red; "expected damaged" is a plain figure',
+     /rounded-lg bg-\[var\(--sunk\)\] border border-\[var\(--accent-edge\)\]">\s*<span className="flex-1 min-w-0 text-\[11px\] font-bold text-\[var\(--ink\)\] leading-relaxed">/.test(so) &&
+     /min-h-11 lg:min-h-\[40px\] px-4 rounded-lg text-\[11px\] lg:text-\[10px\] font-black uppercase tracking-widest bg-transparent border border-\[var\(--accent-edge\)\] text-\[var\(--accent-ink\)\]/.test(so) &&
+     /border border-\[var\(--accent-edge\)\] px-2 py-0\.5 rounded text-\[11px\] font-black tracking-widest flex items-center gap-1"><EyeOff size=\{10\}\/> BLIND COUNT ENFORCED/.test(so) &&
+     /<div className="text-\[11px\] lg:text-\[9px\] text-\[var\(--ink-dim\)\] font-bold uppercase tracking-widest whitespace-nowrap">Expected damaged<\/div>/.test(so) &&
+     !/bg-\[var\(--danger-well\)\] text-\[var\(--danger-ink\)\] border border-\[var\(--danger\)\] px-2 py-0\.5 rounded/.test(code(so)) &&
+     !/text-\[var\(--danger-ink\)\] font-bold uppercase tracking-widest whitespace-nowrap">Expected damaged/.test(code(so)));
+  ok('the plates carry the control system\'s top light and the DIFFERENCE is a nixie counter with its sign; the verdict block folds open on the first typed number',
+     (so.match(/<div className="bg-\[var\(--sunk\)\] px-3 py-2 md:px-4 border border-transparent kpm-plate">/g) || []).length === 3 &&
+     /<div className=\{`bg-\[var\(--sunk\)\] px-3 py-2 md:px-4 border kpm-plate \$\{matched \? 'border-\[var\(--accent-edge\)\]' : tone === 'bad' \? 'border-\[var\(--danger\)\]' : 'border-\[var\(--accent-edge\)\]'\} `\}>/.test(so) &&
+     /<div className="mt-1"><NixieCount value=\{variance\} signed size=\{20\} \/><\/div>/.test(so) &&
+     /<div className="grid transition-\[grid-template-rows\] duration-\[260ms\] ease-out" style=\{\{ gridTemplateRows: isRevealed \? '1fr' : '0fr' \}\}>\s*<div className="overflow-hidden">\s*\{isRevealed && \(/.test(so) &&
+     /import NixieCount from '\.\/components\/NixieCount\.jsx';/.test(so),
+     'the LED window he refused is gone from here: no .kpm-led on this screen',
+     );
+  ok('no .kpm-led on Stock Opname', !/kpm-led/.test(code(so)));
+  ok('his board 6 = A: the audit item is one thing per line on the phone - name, three plates EXPECTED / FOUND / DIFFERENCE as nixie counters, the desk row unchanged in shape',
+     /<div className="flex flex-col items-stretch gap-2\.5 mb-3 lg:flex-row lg:justify-between lg:items-center lg:mb-2 lg:border-b lg:border-\[var\(--line\)\] lg:pb-2">/.test(so) &&
+     /<span className="font-bold text-sm lg:text-xs text-\[var\(--ink\)\] uppercase lg:truncate">\{item\.name\}<\/span>/.test(so) &&
+     /<div className="kpm-fig3 grid grid-cols-3 gap-px bg-\[var\(--line\)\] rounded-lg overflow-hidden text-center lg:flex lg:items-center lg:gap-4 lg:bg-transparent lg:rounded-none lg:overflow-visible lg:text-left text-xs font-mono">/.test(so) &&
+     (so.match(/<span className="lg:hidden block text-\[11px\] text-\[var\(--ink-dim\)\] font-bold uppercase tracking-widest mb-1">(Expected|Found)<\/span>/g) || []).length === 2 &&
+     /<span className=\{`lg:text-right font-black \$\{withinTolerance\(item\.variance\) \? 'text-\[var\(--accent-ink\)\]' : 'text-\[var\(--danger-ink\)\]'\} `\}>\s*<span className="lg:hidden block text-\[11px\] font-bold uppercase tracking-widest mb-1">Difference<\/span>/.test(so) &&
+     (so.match(/<span className="hidden lg:inline">(SYS: |FND: )<\/span>/g) || []).length === 2 &&
+     /<NixieCount value=\{\(item\.expectedStock \|\| 0\) \+ \(item\.expectedDamagedStock \|\| 0\)\} size=\{20\} \/>/.test(so) &&
+     /<NixieCount value=\{item\.totalFound\} size=\{20\} \/>/.test(so) &&
+     /<NixieCount value=\{item\.variance\} signed size=\{20\} className="kpm-nixie-verdict" \/>/.test(so) &&
+     /@media \(max-width: 1023px\) \{ \.kpm-fig3 > span \{ background-color: var\(--sunk\); padding: 8px 4px; background-image: linear-gradient/.test(th) &&
+     /\.kpm-nixie-verdict \{ --nx: 26px !important; \}/.test(th) &&
+     !/<div className="flex justify-between items-center mb-2 border-b border-\[var\(--line\)\] pb-2">/.test(code(so)),
+     '"too compact in a small space"; the difference "a little bit bigger"');
+  ok('the itemized list is one scroller with the page on the phone',
+     /<div className="space-y-2 mb-4 lg:max-h-\[40vh\] lg:overflow-y-auto custom-scrollbar pr-2">/.test(so) &&
+     !/mb-4 max-h-\[40vh\] overflow-y-auto/.test(code(so)),
+     'found 2026-09-18 21:00: an inner scrollbar inside an opened audit at 375');
 }
 
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);

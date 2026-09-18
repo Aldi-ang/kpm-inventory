@@ -728,3 +728,14 @@ export const eodBountyLines = (report = {}, inventory = [], priceTier = 'Retail'
 
     return lines;
 };
+
+/* THE NIXIE COUNTER'S SPLIT. A figure becomes a sign and its digits, most significant first, so
+   each digit can be its own glass tube (components/NixieCount.jsx). A DIFFERENCE is `signed` and
+   prints − or +; a plain count prints no sign; anything that is not a number is 0; a fraction is
+   its whole part - the tubes only hold 0-9. Aldi, 2026-09-18: "make it like nixie tube". */
+export const nixieDigits = (value, signed = false) => {
+    const n = Math.trunc(Number(value)) || 0;
+    const digits = [...String(Math.abs(n))].map(Number);
+    const sign = signed ? (n < 0 ? '−' : n > 0 ? '+' : '') : '';
+    return { sign, digits };
+};
