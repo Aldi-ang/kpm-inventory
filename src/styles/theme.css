@@ -3874,6 +3874,8 @@ html.lite-mode .kpm-hazard { animation: none; opacity: 1; }
    ⚠️ NOTHING HERE DEPENDS ON A SHADOW, A BLUR OR A FILTER. Lite Mode deletes every transition
    below outright - a stopped animation reads as a bug, so it is removed, never frozen. */
 .kpm-dmg-win { --dmg-row: 46px; height: var(--dmg-row); overflow: hidden; }
+/* on the phone each arrow beside the reel is a 44 px key, so the row is two of them (his board 2 = A, 2026-09-18) */
+@media (max-width: 1023px) { .kpm-dmg-win { --dmg-row: 92px; } }
 .kpm-dmg-reel {
   display: block;
   transform: translateY(calc(var(--i) * var(--dmg-row) * -1));

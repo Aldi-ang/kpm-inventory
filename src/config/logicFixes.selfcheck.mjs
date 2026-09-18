@@ -7467,5 +7467,63 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
      /@media \(hover: hover\) and \(pointer: fine\) \{\s*\.kpm-key:hover \{ background-size: 100% 3px, 100% 100%, 100% 100%; \}\s*\}/.test(th));
 }
 
+/* 2026-09-18 evening - STOCK OPNAME ON THE PHONE, the floor (his boards 2 = A and 3 = A, and the
+   size rules that stopped being decisions on 2026-09-17: 44 px, 11 px, names wrap, one line for
+   the title). Measured at 375 inside the shell as T5 AND as the boss: the title wrapped (header
+   123), twelve 10 px labels and 9 px plates, CLEAR AND COUNT AGAIN 40, UPLOAD PROOF 32, the reel
+   arrows 36x21, SUBMIT TO HQ in two lines, the boss's four-tab strip 331 wide in a 325 box with
+   its labels overlapping, the pickers 17 / 19 / 38 tall, audit names cut at 91 px. Every fix is
+   phone-only with an lg: reset so the desk at 1280 stays byte-identical. */
+{
+  const so = read('src/StockOpnameView.jsx');
+  ok('REGRESSION: no text under 11 px reaches the phone on Stock Opname - every text-[9px]/text-[10px] is the lg: half of a text-[11px] pair',
+     !/(?<!lg:)text-\[(9|10)px\]/.test(code(so)) &&
+     (so.match(/text-\[11px\] lg:text-\[(9|10)px\]/g) || []).length >= 30,
+     'measured 2026-09-18: twelve 10 px labels on the untyped list, 9 px plates after typing, seven 9-10 px labels in an expanded audit');
+  ok('the title is one line on the phone and unchanged on the desk',
+     /<h2 className="text-xl lg:text-2xl font-black text-\[var\(--ink\)\] flex items-center gap-2 tracking-widest uppercase">/.test(so) &&
+     !/<h2 className="text-2xl font-black/.test(code(so)),
+     'WAREHOUSE OPNAME at 24 px wrapped at 375, header 123 -> 87');
+  ok('his board 3 = A: the boss\'s four tabs are two rows of two 44 px keys on the phone and the old sliding strip on the desk',
+     /<div className="grid grid-cols-2 gap-1 lg:flex lg:gap-0 bg-\[var\(--sunk\)\] rounded-lg p-1 border border-\[var\(--line\)\] w-full md:w-auto lg:overflow-x-auto custom-scrollbar">/.test(so) &&
+     (so.match(/className=\{`px-2 lg:px-4 py-2 min-h-11 lg:min-h-0 justify-center lg:justify-start rounded-md text-\[11px\] lg:text-\[10px\] uppercase tracking-widest font-bold transition-all flex items-center gap-2 whitespace-nowrap \$\{viewMode === '(monitor|review|quarantine|count)'/g) || []).length === 4 &&
+     !/w-full md:w-auto overflow-x-auto custom-scrollbar">/.test(code(so)),
+     'strip scrollWidth 331 in 325 at 375; QUARANTINE and NEW COUNT overlapped');
+  ok('every picker on the screen is a 44 px target on the phone - the select itself, not its padded wrapper',
+     (so.match(/<select .*?className="min-h-11 lg:min-h-0 /g) || []).length === 5 &&
+     (so.match(/<select /g) || []).length === 5,
+     'the region picker measured 17 px tall, the facility picker 19, the quarantine picker 38');
+  ok('names wrap on the phone and truncate on the desk - the audit item and the counting card',
+     /<span className="font-bold text-xs text-\[var\(--ink\)\] uppercase lg:truncate">\{item\.name\}<\/span>/.test(so) &&
+     /<div className="font-bold text-\[var\(--ink\)\] text-sm uppercase tracking-wide lg:truncate">\{item\.name\}<\/div>/.test(so) &&
+     !/uppercase truncate">\{item\.name\}/.test(code(so)) && !/tracking-wide truncate">\{item\.name\}/.test(code(so)),
+     '"CELLO GREE..." at 91 px in the expanded audit');
+  ok('his board 2 = A: the reel\'s two arrows are 44 x 44 keys on the phone, the face is a key too, the kind box is 64 x 44',
+     (so.match(/className="w-11 lg:w-9 flex-1 rounded-md border border-\[var\(--line\)\] text-\[var\(--ink-dim\)\] text-sm lg:text-\[10px\]/g) || []).length === 4 &&
+     /className="flex-1 min-w-0 self-stretch text-left truncate text-\[11px\] font-black uppercase tracking-wider text-\[var\(--accent-ink\)\]"/.test(so) &&
+     /className="w-16 h-11 lg:w-\[60px\] lg:h-auto shrink-0 text-center px-1 py-1\.5 rounded bg-\[var\(--raised\)\] text-\[var\(--accent-ink\)\] border border-\[var\(--line\)\] focus:border-\[var\(--accent-edge\)\] outline-none font-mono tabular-nums font-black text-base lg:text-\[15px\]"/.test(so) &&
+     !/className="w-9 flex-1 rounded-md/.test(code(so)),
+     'arrows 36 x 21 at 10 px; a thumb hits the wrong direction');
+  const th = read('src/styles/theme.css');
+  ok('the reel row is 92 px on the phone (two 44 px arrows) and 46 on the desk - one variable, so the reel\'s travel stays right',
+     /\.kpm-dmg-win \{ --dmg-row: 46px; height: var\(--dmg-row\); overflow: hidden; \}/.test(th) &&
+     /@media \(max-width: 1023px\) \{ \.kpm-dmg-win \{ --dmg-row: 92px; \} \}/.test(th) &&
+     /transform: translateY\(calc\(var\(--i\) \* var\(--dmg-row\) \* -1\)\);/.test(th),
+     'the reel moves by --dmg-row per step; a fixed 46 in the transform would break at 92');
+  ok('the footer: Reset stops stretching so SUBMIT TO HQ fits on one line; the desk keeps its padding',
+     /<button onClick=\{\(\) => setCounts\(\{\}\)\} className="flex-none justify-center px-4 py-3 md:py-2/.test(so) &&
+     /disabled:cursor-not-allowed px-4 lg:px-8 py-3 md:py-2 rounded-lg font-black/.test(so) &&
+     !/className="flex-1 md:flex-none justify-center px-4 py-3 md:py-2 text-\[var\(--ink-dim\)\]/.test(code(so)),
+     'SUBMIT TO HQ measured 173 x 57 in two lines at 375');
+  ok('UPLOAD DAMAGED PROOF and CLEAR AND COUNT AGAIN are 44 px keys on the phone',
+     /<label className="cursor-pointer min-h-11 lg:min-h-0 flex items-center gap-2 bg-\[var\(--sunk\)\]/.test(so) &&
+     /className="shrink-0 min-h-11 lg:min-h-\[40px\] px-4 rounded-lg text-\[11px\] lg:text-\[10px\] font-black/.test(so) &&
+     !/shrink-0 min-h-\[40px\] px-4/.test(code(so)),
+     'measured 305 x 32 and 280 x 40');
+  ok('the quarantine item\'s info line wraps on the phone instead of clipping its facility',
+     /<div className="flex flex-wrap lg:flex-nowrap items-center gap-3 mt-1 text-xs font-mono">/.test(so),
+     '"MASTER" cut: 300 wide in a 285 box');
+}
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

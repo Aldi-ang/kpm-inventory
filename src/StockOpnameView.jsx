@@ -907,34 +907,34 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                         </div>
                         <form onSubmit={executeResolution} className="p-6 space-y-5">
                             <div className="bg-[var(--raised)] p-4 rounded-xl border border-[var(--line)]">
-                                <p className="text-[10px] text-[var(--ink-dim)] uppercase tracking-widest mb-1">Target Asset</p>
+                                <p className="text-[11px] lg:text-[10px] text-[var(--ink-dim)] uppercase tracking-widest mb-1">Target Asset</p>
                                 <p className="font-bold text-[var(--ink)] uppercase">{resolutionModal.item.name}</p>
-                                <p className="text-[10px] text-[var(--accent-ink)] font-mono mt-1">Available in Quarantine: {resolutionModal.item.damagedStock} Bks</p>
+                                <p className="text-[11px] lg:text-[10px] text-[var(--accent-ink)] font-mono mt-1">Available in Quarantine: {resolutionModal.item.damagedStock} Bks</p>
                             </div>
                             
                             <div>
-                                <label className="text-[10px] text-[var(--ink-dim)] uppercase tracking-widest mb-2 block">Quantity to Resolve (Bks)</label>
+                                <label className="text-[11px] lg:text-[10px] text-[var(--ink-dim)] uppercase tracking-widest mb-2 block">Quantity to Resolve (Bks)</label>
                                 <input name="qty" type="number" max={resolutionModal.item.damagedStock} min="1" defaultValue={resolutionModal.item.damagedStock} className="w-full bg-[var(--sunk)] border border-[var(--line)] p-3 rounded-lg text-[var(--ink)] font-mono text-lg font-black focus:border-[var(--accent-edge)] outline-none" required/>
                             </div>
 
                             {resolutionModal.method === 'SAMPLING' && (
                                 <div>
-                                    <label className="text-[10px] text-[var(--ink-dim)] uppercase tracking-widest mb-2 block">Marketing Event / Reason</label>
+                                    <label className="text-[11px] lg:text-[10px] text-[var(--ink-dim)] uppercase tracking-widest mb-2 block">Marketing Event / Reason</label>
                                     <input name="reason" type="text" placeholder="e.g., Given to Event Staff" className="w-full bg-[var(--sunk)] border border-[var(--line)] p-3 rounded-lg text-[var(--ink)] focus:border-[var(--line)] outline-none" required/>
                                 </div>
                             )}
 
                             {resolutionModal.method === 'RTV' && (
                                 <div>
-                                    <label className="text-[10px] text-[var(--ink-dim)] uppercase tracking-widest mb-2 block">Surat Jalan Retur (RTV Number)</label>
+                                    <label className="text-[11px] lg:text-[10px] text-[var(--ink-dim)] uppercase tracking-widest mb-2 block">Surat Jalan Retur (RTV Number)</label>
                                     <input name="rtvRef" type="text" placeholder="e.g., SJR-2026-001" className="w-full bg-[var(--sunk)] border border-[var(--line)] p-3 rounded-lg text-[var(--ink)] focus:border-[var(--line)] outline-none font-mono uppercase" required/>
                                 </div>
                             )}
 
                             {resolutionModal.method === 'PENALTY' && (
                                 <div>
-                                    <label className="text-[10px] text-[var(--ink-dim)] uppercase tracking-widest mb-2 block">Target Personnel for Fine</label>
-                                    <select name="agentId" className="w-full bg-[var(--sunk)] border border-[var(--danger)] p-3 rounded-lg text-[var(--ink)] focus:border-[var(--danger)] outline-none uppercase tracking-widest text-xs font-bold" required>
+                                    <label className="text-[11px] lg:text-[10px] text-[var(--ink-dim)] uppercase tracking-widest mb-2 block">Target Personnel for Fine</label>
+                                    <select name="agentId" className="min-h-11 lg:min-h-0 w-full bg-[var(--sunk)] border border-[var(--danger)] p-3 rounded-lg text-[var(--ink)] focus:border-[var(--danger)] outline-none uppercase tracking-widest text-xs font-bold" required>
                                         <option value="" className="bg-[var(--sunk)]">-- SELECT PERSONNEL --</option>
                                         {safeMotorists.filter(m => m && m.id !== 'master_owner').map(m => (
                                             <option key={m.id} value={m.id} className="bg-[var(--sunk)]">{m.name} ({m.role || 'Staff'})</option>
@@ -956,13 +956,13 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
 
             <div className="flex flex-col md:flex-row justify-between items-start md:items-end bg-[var(--sunk)] border border-[var(--line)] p-4 rounded-xl shadow-lg gap-4 shrink-0 z-10 relative">
                 <div>
-                    <h2 className="text-2xl font-black text-[var(--ink)] flex items-center gap-2 tracking-widest uppercase">
+                    <h2 className="text-xl lg:text-2xl font-black text-[var(--ink)] flex items-center gap-2 tracking-widest uppercase">
                         {viewMode === 'count' && <><ClipboardList size={24} className="text-[var(--ink-dim)]"/> Warehouse Opname</>}
                         {viewMode === 'review' && <><ShieldAlert size={24} className="text-[var(--ink-dim)]"/> HQ Recon Board</>}
                         {viewMode === 'quarantine' && <><Biohazard size={24} className="kpm-hazard text-[var(--danger-ink)]"/> Quarantine Vault</>}
                         {viewMode === 'monitor' && <><BarChart size={24} className="text-[var(--ink-dim)] animate-pulse"/> Supply Telemetry</>}
                     </h2>
-                    <p className="text-[10px] text-[var(--ink-dim)] font-mono mt-1 flex items-center gap-2">
+                    <p className="text-[11px] lg:text-[10px] text-[var(--ink-dim)] font-mono mt-1 flex items-center gap-2">
                         {viewMode === 'count' && `AUDITING: ${isAreaAdmin ? user.location : HQ_LABEL}`}
                         {viewMode === 'review' && 'VERIFY REGIONAL STOCK OVERWRITES'}
                         {viewMode === 'quarantine' && 'DAMAGED GOODS LIQUIDATION & HISTORY'}
@@ -972,17 +972,17 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                 </div>
                 
                 {isHighCommand && (
-                    <div className="flex bg-[var(--sunk)] rounded-lg p-1 border border-[var(--line)] w-full md:w-auto overflow-x-auto custom-scrollbar">
-                        <button onClick={() => setViewMode('monitor')} className={`px-4 py-2 rounded-md text-[10px] uppercase tracking-widest font-bold transition-all flex items-center gap-2 whitespace-nowrap ${viewMode === 'monitor' ? 'bg-[var(--gold)] text-[var(--gold-ink)] shadow-md' : 'text-[var(--ink-dim)] hover:text-[var(--ink)]'} `}>
+                    <div className="grid grid-cols-2 gap-1 lg:flex lg:gap-0 bg-[var(--sunk)] rounded-lg p-1 border border-[var(--line)] w-full md:w-auto lg:overflow-x-auto custom-scrollbar">
+                        <button onClick={() => setViewMode('monitor')} className={`px-2 lg:px-4 py-2 min-h-11 lg:min-h-0 justify-center lg:justify-start rounded-md text-[11px] lg:text-[10px] uppercase tracking-widest font-bold transition-all flex items-center gap-2 whitespace-nowrap ${viewMode === 'monitor' ? 'bg-[var(--gold)] text-[var(--gold-ink)] shadow-md' : 'text-[var(--ink-dim)] hover:text-[var(--ink)]'} `}>
                             <BarChart size={14}/> Monitor
                         </button>
-                        <button onClick={() => setViewMode('review')} className={`px-4 py-2 rounded-md text-[10px] uppercase tracking-widest font-bold transition-all flex items-center gap-2 whitespace-nowrap ${viewMode === 'review' ? 'bg-[var(--gold)] text-[var(--gold-ink)] shadow-md' : 'text-[var(--ink-dim)] hover:text-[var(--ink)]'} `}>
+                        <button onClick={() => setViewMode('review')} className={`px-2 lg:px-4 py-2 min-h-11 lg:min-h-0 justify-center lg:justify-start rounded-md text-[11px] lg:text-[10px] uppercase tracking-widest font-bold transition-all flex items-center gap-2 whitespace-nowrap ${viewMode === 'review' ? 'bg-[var(--gold)] text-[var(--gold-ink)] shadow-md' : 'text-[var(--ink-dim)] hover:text-[var(--ink)]'} `}>
                             <ShieldAlert size={14}/> HQ Audits {pendingAudits.length > 0 && <span className="bg-[var(--danger)] text-[var(--gold-ink)] text-[11px] px-1.5 py-0.5 rounded-full">{pendingAudits.length}</span>}
                         </button>
-                        <button onClick={() => setViewMode('quarantine')} className={`px-4 py-2 rounded-md text-[10px] uppercase tracking-widest font-bold transition-all flex items-center gap-2 whitespace-nowrap ${viewMode === 'quarantine' ? 'bg-[var(--gold)] text-[var(--gold-ink)] shadow-md' : 'text-[var(--ink-dim)] hover:text-[var(--ink)]'} `}>
+                        <button onClick={() => setViewMode('quarantine')} className={`px-2 lg:px-4 py-2 min-h-11 lg:min-h-0 justify-center lg:justify-start rounded-md text-[11px] lg:text-[10px] uppercase tracking-widest font-bold transition-all flex items-center gap-2 whitespace-nowrap ${viewMode === 'quarantine' ? 'bg-[var(--gold)] text-[var(--gold-ink)] shadow-md' : 'text-[var(--ink-dim)] hover:text-[var(--ink)]'} `}>
                             <Biohazard size={14}/> Quarantine
                         </button>
-                        <button onClick={() => setViewMode('count')} className={`px-4 py-2 rounded-md text-[10px] uppercase tracking-widest font-bold transition-all flex items-center gap-2 whitespace-nowrap ${viewMode === 'count' ? 'bg-[var(--gold)] text-[var(--gold-ink)] shadow-md' : 'text-[var(--ink-dim)] hover:text-[var(--ink)]'} `}>
+                        <button onClick={() => setViewMode('count')} className={`px-2 lg:px-4 py-2 min-h-11 lg:min-h-0 justify-center lg:justify-start rounded-md text-[11px] lg:text-[10px] uppercase tracking-widest font-bold transition-all flex items-center gap-2 whitespace-nowrap ${viewMode === 'count' ? 'bg-[var(--gold)] text-[var(--gold-ink)] shadow-md' : 'text-[var(--ink-dim)] hover:text-[var(--ink)]'} `}>
                             <ClipboardList size={14}/> New Count
                         </button>
                     </div>
@@ -997,7 +997,7 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                     
                     <div className="flex items-center gap-2 bg-[var(--sunk)] border border-[var(--line)] rounded-lg p-2 px-3 mb-6 w-full md:w-64 z-10 relative">
                         <MapPin size={16} className="text-[var(--ink-dim)]"/>
-                        <select value={monitorFacility} onChange={(e) => setMonitorFacility(e.target.value)} className="bg-transparent text-sm text-[var(--ink)] font-black uppercase tracking-widest outline-none w-full">
+                        <select value={monitorFacility} onChange={(e) => setMonitorFacility(e.target.value)} className="min-h-11 lg:min-h-0 bg-transparent text-sm text-[var(--ink)] font-black uppercase tracking-widest outline-none w-full">
                             <option value="MASTER" className="bg-[var(--sunk)] text-[var(--ink)]">{HQ_LABEL}</option>
                             {uniqueBranches.map(branch => <option key={branch} value={branch} className="bg-[var(--sunk)] text-[var(--ink)]">{branch}</option>)}
                         </select>
@@ -1025,7 +1025,7 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                                         </div>
                                         <div className="ml-3 flex-1 overflow-hidden">
                                             <h3 className="font-black text-[var(--ink)] text-sm uppercase truncate tracking-wider drop-shadow-md">{p.name}</h3>
-                                            <p className="text-[10px] text-[var(--ink-dim)] font-mono mt-0.5">ID: {p.id}</p>
+                                            <p className="text-[11px] lg:text-[10px] text-[var(--ink-dim)] font-mono mt-0.5">ID: {p.id}</p>
                                         </div>
                                     </div>
 
@@ -1102,16 +1102,16 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                     <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 border-b border-[var(--accent-edge)] pb-4">
                         <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto">
                             <div className="flex bg-[var(--sunk)] rounded-lg p-1 border border-[var(--accent-edge)]">
-                                <button onClick={() => setQuarSubTab('active')} className={`px-4 py-2 rounded-md text-[10px] uppercase tracking-widest font-bold transition-all flex items-center gap-2 ${quarSubTab === 'active' ? 'bg-[var(--gold)] text-[var(--gold-ink)]' : 'text-[var(--ink-dim)] hover:text-[var(--accent-ink)]'} `}>
+                                <button onClick={() => setQuarSubTab('active')} className={`px-4 py-2 rounded-md text-[11px] lg:text-[10px] uppercase tracking-widest font-bold transition-all flex items-center gap-2 ${quarSubTab === 'active' ? 'bg-[var(--gold)] text-[var(--gold-ink)]' : 'text-[var(--ink-dim)] hover:text-[var(--accent-ink)]'} `}>
                                     <AlertTriangle size={14}/> Active Quarantine
                                 </button>
-                                <button onClick={() => setQuarSubTab('history')} className={`px-4 py-2 rounded-md text-[10px] uppercase tracking-widest font-bold transition-all flex items-center gap-2 ${quarSubTab === 'history' ? 'bg-[var(--raised)] text-[var(--ink)]' : 'text-[var(--ink-dim)] hover:text-[var(--ink)]'} `}>
+                                <button onClick={() => setQuarSubTab('history')} className={`px-4 py-2 rounded-md text-[11px] lg:text-[10px] uppercase tracking-widest font-bold transition-all flex items-center gap-2 ${quarSubTab === 'history' ? 'bg-[var(--raised)] text-[var(--ink)]' : 'text-[var(--ink-dim)] hover:text-[var(--ink)]'} `}>
                                     <History size={14}/> Liquidation History
                                 </button>
                             </div>
 
                             {quarSubTab === 'active' ? (
-                                <select value={quarantineFacility} onChange={(e) => setQuarantineFacility(e.target.value)} className="w-full md:w-48 bg-[var(--sunk)] border border-[var(--accent-edge)] rounded-lg p-2.5 text-xs text-[var(--ink)] font-bold uppercase tracking-widest outline-none focus:border-[var(--accent-edge)]">
+                                <select value={quarantineFacility} onChange={(e) => setQuarantineFacility(e.target.value)} className="min-h-11 lg:min-h-0 w-full md:w-48 bg-[var(--sunk)] border border-[var(--accent-edge)] rounded-lg p-2.5 text-xs text-[var(--ink)] font-bold uppercase tracking-widest outline-none focus:border-[var(--accent-edge)]">
                                     <option value="ALL" className="bg-[var(--sunk)] text-[var(--ink)]">All Facilities</option>
                                     <option value="MASTER" className="bg-[var(--sunk)] text-[var(--ink)]">{HQ_LABEL}</option>
                                     {uniqueBranches.map(branch => <option key={branch} value={branch} className="bg-[var(--sunk)] text-[var(--ink)]">{branch}</option>)}
@@ -1119,7 +1119,7 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                             ) : (
                                 <div className="flex items-center gap-2 bg-[var(--sunk)] border border-[var(--line)] rounded-lg p-1.5 px-3">
                                     <Filter size={14} className="text-[var(--ink-dim)]"/>
-                                    <select value={regionFilter} onChange={(e) => setRegionFilter(e.target.value)} className="bg-transparent text-xs text-[var(--ink)] font-bold uppercase tracking-widest outline-none">
+                                    <select value={regionFilter} onChange={(e) => setRegionFilter(e.target.value)} className="min-h-11 lg:min-h-0 bg-transparent text-xs text-[var(--ink)] font-bold uppercase tracking-widest outline-none">
                                         <option value="ALL" className="bg-[var(--sunk)] text-[var(--ink)]">All Facilities</option>
                                         <option value="MASTER" className="bg-[var(--sunk)] text-[var(--ink)]">{HQ_LABEL}</option>
                                         {uniqueBranches.map(branch => <option key={branch} value={branch} className="bg-[var(--sunk)] text-[var(--ink)]">{branch}</option>)}
@@ -1154,7 +1154,7 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                                                 <div className="p-3 bg-[var(--sunk)] text-[var(--accent-ink)] rounded-full border border-[var(--accent-edge)] shrink-0"><PackageMinus size={24}/></div>
                                                 <div>
                                                     <h3 className="font-bold text-[var(--ink)] text-base uppercase tracking-wider">{item.name}</h3>
-                                                    <div className="flex items-center gap-3 mt-1 text-xs font-mono">
+                                                    <div className="flex flex-wrap lg:flex-nowrap items-center gap-3 mt-1 text-xs font-mono">
                                                         <span className="text-[var(--accent-ink)] font-bold">{item.damagedStock} Bks Damaged</span>
                                                         <span className="text-[var(--ink-dim)]">|</span>
                                                         <span className="text-[var(--ink-dim)]">Total HPP Loss: {formatRupiah(item.damagedStock * hpp)}</span>
@@ -1198,12 +1198,12 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                                                         {log.method === 'PENALTY' && <BadgeDollarSign size={10}/>}
                                                         {log.method}
                                                     </span>
-                                                    <span className="text-[10px] text-[var(--ink-dim)] font-mono">{timeStr}</span>
+                                                    <span className="text-[11px] lg:text-[10px] text-[var(--ink-dim)] font-mono">{timeStr}</span>
                                                 </div>
                                                 <h4 className="font-bold text-[var(--ink)] uppercase text-sm">{log.qty} Bks • {log.productName}</h4>
-                                                <p className="text-[10px] text-[var(--ink-dim)] font-mono mt-1">Facility: {log.facility} | Executed By: {log.resolvedBy?.toUpperCase()}</p>
+                                                <p className="text-[11px] lg:text-[10px] text-[var(--ink-dim)] font-mono mt-1">Facility: {log.facility} | Executed By: {log.resolvedBy?.toUpperCase()}</p>
                                                 
-                                                <div className="mt-2 text-[10px] text-[var(--ink-dim)] font-mono bg-[var(--sunk)] p-2 rounded border border-[var(--line)]">
+                                                <div className="mt-2 text-[11px] lg:text-[10px] text-[var(--ink-dim)] font-mono bg-[var(--sunk)] p-2 rounded border border-[var(--line)]">
                                                     {log.method === 'SAMPLING' && `Reason: ${log.details?.reason}`}
                                                     {log.method === 'RTV' && `RTV Surat Jalan: ${log.details?.rtvRef}`}
                                                     {log.method === 'PENALTY' && `Bounty Charged To: ${log.details?.agentName} (Rp ${new Intl.NumberFormat('id-ID').format(log.totalValueHpp)})`}
@@ -1230,16 +1230,16 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                     
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
                         <div className="flex bg-[var(--sunk)] rounded-lg p-1 border border-[var(--line)] w-full md:w-auto">
-                            <button onClick={() => setAuditSubTab('pending')} className={`flex-1 md:flex-none px-4 py-2 rounded-md text-[10px] uppercase tracking-widest font-bold transition-all flex items-center justify-center gap-2 ${auditSubTab === 'pending' ? 'bg-[var(--gold)] text-[var(--gold-ink)]' : 'text-[var(--ink-dim)] hover:text-[var(--ink-dim)]'} `}>
+                            <button onClick={() => setAuditSubTab('pending')} className={`flex-1 md:flex-none px-4 py-2 rounded-md text-[11px] lg:text-[10px] uppercase tracking-widest font-bold transition-all flex items-center justify-center gap-2 ${auditSubTab === 'pending' ? 'bg-[var(--gold)] text-[var(--gold-ink)]' : 'text-[var(--ink-dim)] hover:text-[var(--ink-dim)]'} `}>
                                 <Clock size={14}/> Pending HQ Approval
                             </button>
-                            <button onClick={() => setAuditSubTab('history')} className={`flex-1 md:flex-none px-4 py-2 rounded-md text-[10px] uppercase tracking-widest font-bold transition-all flex items-center justify-center gap-2 ${auditSubTab === 'history' ? 'bg-[var(--raised)] text-[var(--ink)]' : 'text-[var(--ink-dim)] hover:text-[var(--ink)]'} `}>
+                            <button onClick={() => setAuditSubTab('history')} className={`flex-1 md:flex-none px-4 py-2 rounded-md text-[11px] lg:text-[10px] uppercase tracking-widest font-bold transition-all flex items-center justify-center gap-2 ${auditSubTab === 'history' ? 'bg-[var(--raised)] text-[var(--ink)]' : 'text-[var(--ink-dim)] hover:text-[var(--ink)]'} `}>
                                 <History size={14}/> Audit History
                             </button>
                         </div>
                         <div className="flex items-center gap-2 bg-[var(--sunk)] border border-[var(--line)] rounded-lg p-1.5 px-3 w-full md:w-auto">
                             <Filter size={14} className="text-[var(--ink-dim)]"/>
-                            <select value={regionFilter} onChange={(e) => setRegionFilter(e.target.value)} className="bg-transparent text-xs text-[var(--ink)] font-bold uppercase tracking-widest outline-none w-full">
+                            <select value={regionFilter} onChange={(e) => setRegionFilter(e.target.value)} className="min-h-11 lg:min-h-0 bg-transparent text-xs text-[var(--ink)] font-bold uppercase tracking-widest outline-none w-full">
                                 <option value="ALL" className="bg-[var(--sunk)] text-[var(--ink)]">All Regions</option>
                                 <option value="MASTER" className="bg-[var(--sunk)] text-[var(--ink)]">{HQ_LABEL}</option>
                                 {uniqueBranches.map(branch => <option key={branch} value={branch} className="bg-[var(--sunk)] text-[var(--ink)]">{branch}</option>)}
@@ -1295,7 +1295,7 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                                                         <User size={12}/> Count By: {audit.agentName.toUpperCase()} • {displayTime}
                                                     </p>
                                                     {isHistory && audit.resolvedBy && (
-                                                        <p className="text-[10px] text-[var(--ink-dim)] font-mono mt-0.5">
+                                                        <p className="text-[11px] lg:text-[10px] text-[var(--ink-dim)] font-mono mt-0.5">
                                                             Resolved By: {audit.resolvedBy.toUpperCase()} • {resolvedTime}
                                                         </p>
                                                     )}
@@ -1303,8 +1303,8 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                                             </div>
                                             <div className="flex items-center gap-6">
                                                 <div className="text-right hidden md:block">
-                                                    {purelyMissing > 0 && <p className="text-[10px] uppercase font-bold text-[var(--danger-ink)]">{purelyMissing} Bks Missing</p>}
-                                                    {totalDamaged > 0 && <p className="text-[10px] uppercase font-bold text-[var(--accent-ink)]">{totalDamaged} Bks Damaged</p>}
+                                                    {purelyMissing > 0 && <p className="text-[11px] lg:text-[10px] uppercase font-bold text-[var(--danger-ink)]">{purelyMissing} Bks Missing</p>}
+                                                    {totalDamaged > 0 && <p className="text-[11px] lg:text-[10px] uppercase font-bold text-[var(--accent-ink)]">{totalDamaged} Bks Damaged</p>}
                                                     {!hasIssues && <p className="text-sm uppercase font-black text-[var(--ink-dim)]">PERFECT MATCH</p>}
                                                 </div>
                                                 {isExpanded ? <ChevronUp size={20} className="text-[var(--ink-dim)]"/> : <ChevronDown size={20} className="text-[var(--ink-dim)]"/>}
@@ -1315,13 +1315,13 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                                             <div className="border-t border-[var(--line)] bg-[var(--sunk)] p-4">
                                                 
                                                 {isHistory && audit.status === 'REJECTED' && audit.rejectReason && (
-                                                    <div className="mb-4 bg-[var(--danger-well)] border border-[var(--danger)] p-3 rounded text-[10px] font-mono text-[var(--danger-ink)]">
+                                                    <div className="mb-4 bg-[var(--danger-well)] border border-[var(--danger)] p-3 rounded text-[11px] lg:text-[10px] font-mono text-[var(--danger-ink)]">
                                                         <span className="font-bold uppercase tracking-widest block mb-1">Rejection Reason:</span>
                                                         {audit.rejectReason}
                                                     </div>
                                                 )}
 
-                                                <h4 className="text-[10px] font-bold text-[var(--ink-dim)] uppercase tracking-widest mb-3">Itemized Count Report</h4>
+                                                <h4 className="text-[11px] lg:text-[10px] font-bold text-[var(--ink-dim)] uppercase tracking-widest mb-3">Itemized Count Report</h4>
                                                 
                                                 <div className="space-y-2 mb-4 max-h-[40vh] overflow-y-auto custom-scrollbar pr-2">
                                                     {audit.items.map((item, idx) => {
@@ -1331,7 +1331,7 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                                                             <div key={idx} className="flex flex-col bg-[var(--raised)] p-3 rounded-lg border border-[var(--line)]">
                                                                 <div className="flex justify-between items-center mb-2 border-b border-[var(--line)] pb-2">
                                                                     <span className="flex items-center gap-2 min-w-0">
-                                                                        <span className="font-bold text-xs text-[var(--ink)] uppercase truncate">{item.name}</span>
+                                                                        <span className="font-bold text-xs text-[var(--ink)] uppercase lg:truncate">{item.name}</span>
                                                                         {/* LEAK, not miscount. Reads the audits already on file - short in at
                                                                             least two of the last three or more counts. Dark plate, red edge,
                                                                             red ink: it is a warning, not a slab. */}
@@ -1340,7 +1340,7 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                                                                             if (!isLeak(streak)) return null;
                                                                             return (
                                                                                 <span title="This product has come up short repeatedly. That is a leak, not a counting mistake."
-                                                                                      className="shrink-0 text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded bg-[var(--sunk)] border border-[var(--danger)] text-[var(--danger-ink)] whitespace-nowrap">
+                                                                                      className="shrink-0 text-[11px] lg:text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded bg-[var(--sunk)] border border-[var(--danger)] text-[var(--danger-ink)] whitespace-nowrap">
                                                                                     Short {streak.short} of last {streak.total}
                                                                                 </span>
                                                                             );
@@ -1380,17 +1380,17 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                                                                 {(item.varianceReason || item.threeWayDisagreement || item.countedTwice) && (
                                                                     <div className="flex flex-wrap gap-1.5 mb-2">
                                                                         {item.varianceReason && (
-                                                                            <span className="text-[9px] font-bold uppercase tracking-widest px-2 py-1 rounded bg-[var(--sunk)] border border-[var(--alt-edge)] text-[var(--alt-ink)]">
+                                                                            <span className="text-[11px] lg:text-[9px] font-bold uppercase tracking-widest px-2 py-1 rounded bg-[var(--sunk)] border border-[var(--alt-edge)] text-[var(--alt-ink)]">
                                                                                 Cause: {item.varianceReason}
                                                                             </span>
                                                                         )}
                                                                         {/* what the agent's number is WORTH as evidence */}
                                                                         {item.threeWayDisagreement ? (
-                                                                            <span className="text-[9px] font-bold uppercase tracking-widest px-2 py-1 rounded bg-[var(--sunk)] border border-[var(--danger)] text-[var(--danger-ink)]">
+                                                                            <span className="text-[11px] lg:text-[9px] font-bold uppercase tracking-widest px-2 py-1 rounded bg-[var(--sunk)] border border-[var(--danger)] text-[var(--danger-ink)]">
                                                                                 Three different counts — you decide
                                                                             </span>
                                                                         ) : item.countedTwice && (
-                                                                            <span className="text-[9px] font-bold uppercase tracking-widest px-2 py-1 rounded bg-[var(--sunk)] border border-[var(--accent-edge)] text-[var(--accent-ink)]">
+                                                                            <span className="text-[11px] lg:text-[9px] font-bold uppercase tracking-widest px-2 py-1 rounded bg-[var(--sunk)] border border-[var(--accent-edge)] text-[var(--accent-ink)]">
                                                                                 Counted twice
                                                                             </span>
                                                                         )}
@@ -1400,7 +1400,7 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                                                                 {Array.isArray(item.damageKinds) && item.damageKinds.length > 0 && (
                                                                     <div className="flex flex-wrap gap-1.5 mb-2">
                                                                         {item.damageKinds.map((k, ki) => (
-                                                                            <span key={ki} className="text-[9px] font-bold uppercase tracking-widest px-2 py-1 rounded bg-[var(--sunk)] border border-[var(--danger)] text-[var(--danger-ink)]">
+                                                                            <span key={ki} className="text-[11px] lg:text-[9px] font-bold uppercase tracking-widest px-2 py-1 rounded bg-[var(--sunk)] border border-[var(--danger)] text-[var(--danger-ink)]">
                                                                                 {k.reason} · {k.qty}
                                                                             </span>
                                                                         ))}
@@ -1408,12 +1408,12 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                                                                 )}
 
                                                                 <div className="flex gap-4 items-center">
-                                                                    <div className="bg-[var(--sunk)] px-3 py-1.5 rounded border border-[var(--line)] flex-1 flex justify-between items-center text-[10px] font-mono">
+                                                                    <div className="bg-[var(--sunk)] px-3 py-1.5 rounded border border-[var(--line)] flex-1 flex justify-between items-center text-[11px] lg:text-[10px] font-mono">
                                                                         <span className="text-[var(--ink-dim)]">Good Condition:</span>
                                                                         <span className="text-[var(--ink-dim)] font-bold">{item.goodCount} Bks</span>
                                                                     </div>
                                                                     {item.damagedCount > 0 && (
-                                                                        <div className="bg-[var(--sunk)] px-3 py-1.5 rounded border border-[var(--accent-edge)] flex-1 flex justify-between items-center text-[10px] font-mono">
+                                                                        <div className="bg-[var(--sunk)] px-3 py-1.5 rounded border border-[var(--accent-edge)] flex-1 flex justify-between items-center text-[11px] lg:text-[10px] font-mono">
                                                                             <span className="text-[var(--accent-ink)]">Damaged Claims:</span>
                                                                             <span className="text-[var(--accent-ink)] font-bold">{item.damagedCount} Bks</span>
                                                                         </div>
@@ -1508,16 +1508,16 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                                         <span className={`absolute left-0 top-0 bottom-0 w-1 ${hasTyped ? (matched ? 'bg-[var(--accent-edge)]' : 'bg-[var(--danger)]') : 'bg-[var(--line)]'} `} aria-hidden="true"></span>
                                         <div className="pl-4 pr-3 py-3 md:py-4 flex flex-col md:flex-row md:items-end gap-3 md:gap-6">
                                             <div className="min-w-0 flex-1">
-                                                <div className="font-bold text-[var(--ink)] text-sm uppercase tracking-wide truncate">{item.name}</div>
-                                                <div className="text-[10px] text-[var(--ink-dim)] font-mono mt-0.5 truncate">ID: {item.id}</div>
+                                                <div className="font-bold text-[var(--ink)] text-sm uppercase tracking-wide lg:truncate">{item.name}</div>
+                                                <div className="text-[11px] lg:text-[10px] text-[var(--ink-dim)] font-mono mt-0.5 truncate">ID: {item.id}</div>
                                             </div>
                                             <div className="grid grid-cols-2 gap-3 w-full md:w-auto md:shrink-0">
                                                 <label className="flex flex-col gap-1 min-w-0">
-                                                    <span className="text-[10px] text-[var(--ink-dim)] font-bold uppercase tracking-widest whitespace-nowrap">Good stock</span>
+                                                    <span className="text-[11px] lg:text-[10px] text-[var(--ink-dim)] font-bold uppercase tracking-widest whitespace-nowrap">Good stock</span>
                                                     <input type="number" inputMode="numeric" min="0" placeholder="0" value={goodVal} onChange={(e) => handleCountChange(item.id, 'good', e.target.value)} className="w-full md:w-28 text-center py-2.5 rounded-lg border border-[var(--line)] bg-[var(--sunk)] text-[var(--ink)] focus:border-[var(--accent-edge)] outline-none font-black text-lg font-mono tabular-nums placeholder:text-[var(--ink-dim)]"/>
                                                 </label>
                                                 <label className="flex flex-col gap-1 min-w-0">
-                                                    <span className="text-[10px] text-[var(--accent-ink)] font-bold uppercase tracking-widest whitespace-nowrap">Damaged</span>
+                                                    <span className="text-[11px] lg:text-[10px] text-[var(--accent-ink)] font-bold uppercase tracking-widest whitespace-nowrap">Damaged</span>
                                                     <input type="number" inputMode="numeric" min="0" placeholder="0" value={damagedVal} onChange={(e) => handleCountChange(item.id, 'damaged', e.target.value)} className="w-full md:w-28 text-center py-2.5 rounded-lg border border-[var(--line)] bg-[var(--sunk)] text-[var(--accent-ink)] focus:border-[var(--accent-edge)] outline-none font-black text-lg font-mono tabular-nums placeholder:text-[var(--ink-dim)]"/>
                                                 </label>
                                             </div>
@@ -1536,15 +1536,15 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                                                     using amber background i said, i hate it, use it for little things". */}
                                                 <div className="grid grid-cols-2 md:grid-cols-4 gap-px bg-[var(--line)] rounded-lg overflow-hidden text-center w-full md:w-auto md:inline-grid">
                                                     <div className="bg-[var(--sunk)] px-3 py-2 md:px-4 border border-transparent">
-                                                        <div className="text-[9px] text-[var(--ink-dim)] font-bold uppercase tracking-widest whitespace-nowrap">Expected good</div>
+                                                        <div className="text-[11px] lg:text-[9px] text-[var(--ink-dim)] font-bold uppercase tracking-widest whitespace-nowrap">Expected good</div>
                                                         <div className="text-sm font-black font-mono tabular-nums text-[var(--ink)]">{formatNumber(target.stock)}</div>
                                                     </div>
                                                     <div className="bg-[var(--sunk)] px-3 py-2 md:px-4 border border-transparent">
-                                                        <div className="text-[9px] text-[var(--danger-ink)] font-bold uppercase tracking-widest whitespace-nowrap">Expected damaged</div>
+                                                        <div className="text-[11px] lg:text-[9px] text-[var(--danger-ink)] font-bold uppercase tracking-widest whitespace-nowrap">Expected damaged</div>
                                                         <div className="text-sm font-black font-mono tabular-nums text-[var(--danger-ink)]">{formatNumber(target.damaged)}</div>
                                                     </div>
                                                     <div className="bg-[var(--sunk)] px-3 py-2 md:px-4 border border-transparent">
-                                                        <div className="text-[9px] text-[var(--ink-dim)] font-bold uppercase tracking-widest whitespace-nowrap">Total found</div>
+                                                        <div className="text-[11px] lg:text-[9px] text-[var(--ink-dim)] font-bold uppercase tracking-widest whitespace-nowrap">Total found</div>
                                                         <div className="text-sm font-black font-mono tabular-nums text-[var(--ink)]">{formatNumber(totalFound)}</div>
                                                     </div>
                                                     {/* A BORDER, NOT A RING. Tailwind's `ring` is a box-shadow, and Lite Mode
@@ -1552,7 +1552,7 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                                                         cheap phone. Every plate carries a transparent border so the coloured
                                                         one costs no shift. */}
                                                     <div className={`bg-[var(--sunk)] px-3 py-2 md:px-4 border ${matched ? 'border-[var(--accent-edge)]' : 'border-[var(--danger)]'} `}>
-                                                        <div className={`text-[9px] font-bold uppercase tracking-widest ${matched ? 'text-[var(--accent-ink)]' : 'text-[var(--danger-ink)]'} `}>{matched ? 'Match' : 'Difference'}</div>
+                                                        <div className={`text-[11px] lg:text-[9px] font-bold uppercase tracking-widest ${matched ? 'text-[var(--accent-ink)]' : 'text-[var(--danger-ink)]'} `}>{matched ? 'Match' : 'Difference'}</div>
                                                         <div className={`text-sm font-black font-mono tabular-nums ${matched ? 'text-[var(--accent-ink)]' : 'text-[var(--danger-ink)]'} `}>{variance > 0 ? '+' : ''}{formatNumber(variance)}</div>
                                                     </div>
                                                 </div>
@@ -1560,9 +1560,9 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                                                 {Number(damagedVal) > 0 && (
                                                     <div className="w-full md:w-auto">
                                                         {entry.photo ? (
-                                                            <div className="flex items-center gap-2 bg-[var(--sunk)] border border-[var(--accent-edge)] px-3 py-1.5 rounded"><ImageIcon size={14} className="text-[var(--accent-ink)]"/><span className="text-[10px] text-[var(--accent-ink)] font-bold uppercase tracking-widest">Damage Proof Attached</span><button onClick={() => handleClearPhoto(item.id)} className="ml-2 text-[var(--danger-ink)] hover:text-[var(--danger-ink)]"><X size={12}/></button></div>
+                                                            <div className="flex items-center gap-2 bg-[var(--sunk)] border border-[var(--accent-edge)] px-3 py-1.5 rounded"><ImageIcon size={14} className="text-[var(--accent-ink)]"/><span className="text-[11px] lg:text-[10px] text-[var(--accent-ink)] font-bold uppercase tracking-widest">Damage Proof Attached</span><button onClick={() => handleClearPhoto(item.id)} className="ml-2 text-[var(--danger-ink)] hover:text-[var(--danger-ink)]"><X size={12}/></button></div>
                                                         ) : (
-                                                            <label className="cursor-pointer flex items-center gap-2 bg-[var(--sunk)] hover:bg-[var(--sunk)] border border-dashed border-[var(--accent-edge)] px-4 py-2 rounded text-[10px] font-bold text-[var(--accent-ink)] uppercase tracking-widest transition-colors"><Camera size={14}/> Upload Damaged Proof<input type="file" accept="image/*" className="hidden" onChange={(e) => handlePhotoUpload(item.id, e.target.files[0])} /></label>
+                                                            <label className="cursor-pointer min-h-11 lg:min-h-0 flex items-center gap-2 bg-[var(--sunk)] hover:bg-[var(--sunk)] border border-dashed border-[var(--accent-edge)] px-4 py-2 rounded text-[11px] lg:text-[10px] font-bold text-[var(--accent-ink)] uppercase tracking-widest transition-colors"><Camera size={14}/> Upload Damaged Proof<input type="file" accept="image/*" className="hidden" onChange={(e) => handlePhotoUpload(item.id, e.target.files[0])} /></label>
                                                         )}
                                                     </div>
                                                 )}
@@ -1579,18 +1579,18 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                                                             Most differences are miscounts. It is only reported once the same number comes up twice.
                                                         </span>
                                                         <button type="button" onClick={() => startRecount(item.id)}
-                                                            className="shrink-0 min-h-[40px] px-4 rounded-lg text-[10px] font-black uppercase tracking-widest bg-[var(--raised)] border border-[var(--danger)] text-[var(--danger-ink)] hover:border-[var(--danger-ink)] transition-colors">
+                                                            className="shrink-0 min-h-11 lg:min-h-[40px] px-4 rounded-lg text-[11px] lg:text-[10px] font-black uppercase tracking-widest bg-[var(--raised)] border border-[var(--danger)] text-[var(--danger-ink)] hover:border-[var(--danger-ink)] transition-colors">
                                                             Clear and count again
                                                         </button>
                                                     </div>
                                                 )}
                                                 {recount.confirmed && (
-                                                    <div className="px-3 py-2 rounded-lg bg-[var(--sunk)] border border-[var(--accent-edge)] text-[10px] font-black uppercase tracking-widest text-[var(--accent-ink)]">
+                                                    <div className="px-3 py-2 rounded-lg bg-[var(--sunk)] border border-[var(--accent-edge)] text-[11px] lg:text-[10px] font-black uppercase tracking-widest text-[var(--accent-ink)]">
                                                         Counted twice — same answer, this goes to HQ
                                                     </div>
                                                 )}
                                                 {recount.disagreement && (
-                                                    <div className="px-3 py-2 rounded-lg bg-[var(--sunk)] border border-[var(--alt-edge)] text-[10px] font-black uppercase tracking-widest text-[var(--alt-ink)]">
+                                                    <div className="px-3 py-2 rounded-lg bg-[var(--sunk)] border border-[var(--alt-edge)] text-[11px] lg:text-[10px] font-black uppercase tracking-widest text-[var(--alt-ink)]">
                                                         Three different counts — all three go to HQ
                                                     </div>
                                                 )}
@@ -1623,9 +1623,9 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                                                             </div>
                                                             <div className="flex flex-col gap-1 shrink-0">
                                                                 <button type="button" aria-label="Previous cause" onClick={() => stepVarianceReason(item.id, -1)}
-                                                                    className="w-9 flex-1 rounded-md border border-[var(--line)] text-[var(--ink-dim)] text-[10px] hover:text-[var(--accent-ink)] hover:border-[var(--accent-edge)] transition-colors">{'▲'}</button>
+                                                                    className="w-11 lg:w-9 flex-1 rounded-md border border-[var(--line)] text-[var(--ink-dim)] text-sm lg:text-[10px] hover:text-[var(--accent-ink)] hover:border-[var(--accent-edge)] transition-colors">{'▲'}</button>
                                                                 <button type="button" aria-label="Next cause" onClick={() => stepVarianceReason(item.id, 1)}
-                                                                    className="w-9 flex-1 rounded-md border border-[var(--line)] text-[var(--ink-dim)] text-[10px] hover:text-[var(--accent-ink)] hover:border-[var(--accent-edge)] transition-colors">{'▼'}</button>
+                                                                    className="w-11 lg:w-9 flex-1 rounded-md border border-[var(--line)] text-[var(--ink-dim)] text-sm lg:text-[10px] hover:text-[var(--accent-ink)] hover:border-[var(--accent-edge)] transition-colors">{'▼'}</button>
                                                             </div>
                                                         </div>
                                                     );
@@ -1661,7 +1661,7 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                                                                 <span className={`flex-1 min-w-0 truncate text-[11px] font-bold font-mono tabular-nums ${blocked ? 'text-[var(--danger-ink)]' : 'text-[var(--ink-dim)]'} `}>
                                                                     {blocked ? blocked.toUpperCase() : `${kindCount} kind${kindCount === 1 ? '' : 's'} recorded`}
                                                                 </span>
-                                                                <span className="text-[10px] shrink-0" aria-hidden="true">{isOpen ? '▴' : '▾'}</span>
+                                                                <span className="text-[11px] lg:text-[10px] shrink-0" aria-hidden="true">{isOpen ? '▴' : '▾'}</span>
                                                             </button>
 
                                                             <div className={`kpm-dmg-panel ${isOpen ? 'is-open' : ''} `}>
@@ -1680,23 +1680,23 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                                                                                 {DAMAGE_REASONS.slice().reverse().map(r => (
                                                                                     <div key={r.value} className="kpm-dmg-face">
                                                                                         <button type="button" onClick={() => stepDamageKind(item.id, 1)}
-                                                                                            className="flex-1 min-w-0 text-left truncate text-[11px] font-black uppercase tracking-wider text-[var(--accent-ink)]">
+                                                                                            className="flex-1 min-w-0 self-stretch text-left truncate text-[11px] font-black uppercase tracking-wider text-[var(--accent-ink)]">
                                                                                             {r.label}
                                                                                         </button>
                                                                                         <input type="number" min="0" inputMode="numeric" placeholder="0"
                                                                                             value={kinds[r.value] ?? ''}
                                                                                             aria-label={`How many ${r.label}`}
                                                                                             onChange={(e) => setDamageKindQty(item.id, r.value, e.target.value)}
-                                                                                            className="w-[60px] shrink-0 text-center px-1 py-1.5 rounded bg-[var(--raised)] text-[var(--accent-ink)] border border-[var(--line)] focus:border-[var(--accent-edge)] outline-none font-mono tabular-nums font-black text-[15px]"/>
+                                                                                            className="w-16 h-11 lg:w-[60px] lg:h-auto shrink-0 text-center px-1 py-1.5 rounded bg-[var(--raised)] text-[var(--accent-ink)] border border-[var(--line)] focus:border-[var(--accent-edge)] outline-none font-mono tabular-nums font-black text-base lg:text-[15px]"/>
                                                                                     </div>
                                                                                 ))}
                                                                             </div>
                                                                         </div>
                                                                         <div className="flex flex-col gap-1 shrink-0">
                                                                             <button type="button" aria-label="Previous kind of damage" onClick={() => stepDamageKind(item.id, -1)}
-                                                                                className="w-9 flex-1 rounded-md border border-[var(--line)] text-[var(--ink-dim)] text-[10px] hover:text-[var(--accent-ink)] hover:border-[var(--accent-edge)] transition-colors">{'▲'}</button>
+                                                                                className="w-11 lg:w-9 flex-1 rounded-md border border-[var(--line)] text-[var(--ink-dim)] text-sm lg:text-[10px] hover:text-[var(--accent-ink)] hover:border-[var(--accent-edge)] transition-colors">{'▲'}</button>
                                                                             <button type="button" aria-label="Next kind of damage" onClick={() => stepDamageKind(item.id, 1)}
-                                                                                className="w-9 flex-1 rounded-md border border-[var(--line)] text-[var(--ink-dim)] text-[10px] hover:text-[var(--accent-ink)] hover:border-[var(--accent-edge)] transition-colors">{'▼'}</button>
+                                                                                className="w-11 lg:w-9 flex-1 rounded-md border border-[var(--line)] text-[var(--ink-dim)] text-sm lg:text-[10px] hover:text-[var(--accent-ink)] hover:border-[var(--accent-edge)] transition-colors">{'▼'}</button>
                                                                         </div>
                                                                     </div>
 
@@ -1706,7 +1706,7 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                                                                                 <span key={r.value} className={`kpm-dot ${Number(kinds[r.value] || 0) > 0 ? 'has' : ''} ${i === pos ? 'now' : ''} `}></span>
                                                                             ))}
                                                                         </div>
-                                                                        <span className="text-[9px] font-black tracking-widest text-[var(--ink-dim)] font-mono tabular-nums">{pos + 1} / {DAMAGE_REASONS.length}</span>
+                                                                        <span className="text-[11px] lg:text-[9px] font-black tracking-widest text-[var(--ink-dim)] font-mono tabular-nums">{pos + 1} / {DAMAGE_REASONS.length}</span>
                                                                     </div>
                                                                 </div>
                                                               </div>
@@ -1725,8 +1725,8 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                     <div className="p-4 bg-[var(--sunk)] border-t border-[var(--line)] flex flex-col md:flex-row justify-between items-center gap-4 z-10 relative">
                         <div className="text-xs text-[var(--ink-dim)] font-bold uppercase w-full md:w-auto text-center md:text-left tracking-widest">{Object.keys(counts).length} Wares Counted</div>
                         <div className="flex w-full md:w-auto gap-3">
-                            <button onClick={() => setCounts({})} className="flex-1 md:flex-none justify-center px-4 py-3 md:py-2 text-[var(--ink-dim)] hover:text-[var(--ink)] font-bold text-xs flex items-center gap-2 transition-colors bg-[var(--raised)] border border-[var(--line)] rounded-lg"><RefreshCcw size={14}/> Reset</button>
-                            <button onClick={handleCommit} disabled={isSubmitting || Object.keys(counts).length === 0} className="flex-1 md:flex-none justify-center bg-[var(--gold)] hover:bg-[var(--gold)] text-[var(--gold-ink)] disabled:bg-[var(--sunk)] disabled:text-[var(--ink-dim)] disabled:border disabled:border-[var(--line)] disabled:shadow-none disabled:cursor-not-allowed px-8 py-3 md:py-2 rounded-lg font-black shadow-lg flex items-center gap-2 transition-all active:scale-95 tracking-widest uppercase text-xs">{isSubmitting ? <RefreshCcw size={16} className="animate-spin"/> : <Send size={16}/>} Submit to HQ</button>
+                            <button onClick={() => setCounts({})} className="flex-none justify-center px-4 py-3 md:py-2 text-[var(--ink-dim)] hover:text-[var(--ink)] font-bold text-xs flex items-center gap-2 transition-colors bg-[var(--raised)] border border-[var(--line)] rounded-lg"><RefreshCcw size={14}/> Reset</button>
+                            <button onClick={handleCommit} disabled={isSubmitting || Object.keys(counts).length === 0} className="flex-1 md:flex-none justify-center bg-[var(--gold)] hover:bg-[var(--gold)] text-[var(--gold-ink)] disabled:bg-[var(--sunk)] disabled:text-[var(--ink-dim)] disabled:border disabled:border-[var(--line)] disabled:shadow-none disabled:cursor-not-allowed px-4 lg:px-8 py-3 md:py-2 rounded-lg font-black shadow-lg flex items-center gap-2 transition-all active:scale-95 tracking-widest uppercase text-xs">{isSubmitting ? <RefreshCcw size={16} className="animate-spin"/> : <Send size={16}/>} Submit to HQ</button>
                         </div>
                     </div>
                 </div>
