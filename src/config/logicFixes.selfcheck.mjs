@@ -7200,7 +7200,7 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
      /<div className="grid grid-cols-2 lg:flex gap-2 w-full lg:w-auto">/.test(c) &&
      /<span className="font-bold text-sm whitespace-nowrap">Location & Street View<\/span>/.test(c));
   ok('folder cards are rows on the phone (icon · name · count) and cards again at lg',
-     (c.match(/kpm-key kpm-hot bg-\[var\(--raised\)\] p-3 lg:p-6 rounded-xl border cursor-pointer[^"]*grid grid-cols-\[auto_1fr\] items-center gap-x-3 lg:block/g) || []).length === 3 &&
+     (c.match(/kpm-key kpm-hot bg-\[var\(--raised\)\] p-3 lg:p-6 rounded-xl border cursor-pointer[^"]*grid grid-cols-\[auto_1fr_auto\] items-center gap-x-3 lg:block/g) || []).length === 3 &&
      (c.match(/<h3 className="font-bold text-\[15px\] lg:text-lg mb-0 lg:mb-2 truncate self-end">/g) || []).length === 3);
   ok('shop cards: tighter on the phone, Edit / map / delete 44 tall, breadcrumb links 44, 10 px type 11',
      /className=\{`kpm-key kpm-hot bg-\[var\(--raised\)\] p-3 lg:p-5 rounded-xl border flex flex-col justify-between cursor-pointer/.test(c) &&
@@ -7264,12 +7264,12 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
   const th = read('src/styles/theme.css');
   const a = read('src/AgentInventoryView.jsx');
   ok('REGRESSION: every folder row and shop card is a pressable key with the RE sweep (kpm-key kpm-hot); the utilities the key replaces are gone',
-     (c.match(/className="kpm-key kpm-hot bg-\[var\(--raised\)\] p-3 lg:p-6 rounded-xl border cursor-pointer hover:border-\[var\(--accent-edge\)\] grid grid-cols-\[auto_1fr\] items-center gap-x-3 lg:block group"/g) || []).length === 3 &&
+     (c.match(/className="kpm-key kpm-hot bg-\[var\(--raised\)\] p-3 lg:p-6 rounded-xl border cursor-pointer hover:border-\[var\(--accent-edge\)\] grid grid-cols-\[auto_1fr_auto\] items-center gap-x-3 lg:block group"/g) || []).length === 3 &&
      /className=\{`kpm-key kpm-hot bg-\[var\(--raised\)\] p-3 lg:p-5 rounded-xl border flex flex-col justify-between cursor-pointer hover:border-\[var\(--accent-edge\)\] group/.test(c) &&
      !/rounded-xl border shadow-sm cursor-pointer hover:shadow-md/.test(c),
      'theme.css is imported BEFORE the utilities, so a leftover shadow-sm / transition-all would beat .kpm-key on a tie');
   ok('the folder icon sits in a bezelled well, never a red box; FOLDER is a routine act (kpm-btn), so ADD is the only gold plate',
-     (c.match(/className="kpm-well p-3 rounded-lg"/g) || []).length === 3 && !/p-3 bg-\[var\(--danger-well\)\] rounded-lg/.test(c) &&
+     (c.match(/className="kpm-well p-3 rounded-lg row-span-2"/g) || []).length === 3 && !/p-3 bg-\[var\(--danger-well\)\] rounded-lg/.test(c) &&
      (c.match(/handleAddFolder\('(Provinsi|Kabupaten|Kecamatan)', [^)]*\)\} className="kpm-btn rounded"/g) || []).length === 3 &&
      !/rounded bg-\[var\(--gold\)\] text-\[var\(--gold-ink\)\] hover:bg-\[var\(--gold\)\] hover:text-\[var\(--gold-ink\)\] font-bold uppercase transition-colors border border-\[var\(--line\)\] flex items-center gap-1 shadow-md/.test(c),
      'the amber rationing law: two gold plates on one screen is one too many; red is hazard, a folder is not');
@@ -7311,11 +7311,10 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
      /@keyframes kpmKeyRise \{ from \{ opacity: 0; translate: 0 10px; \} \}/.test(th) && !/\.kpm-key \{[^}]*opacity: 0/.test(th) &&
      /\.kpm-key:active \{ translate: 0 2px;/.test(th) && /\.kpm-key\.kpm-hot::after \{ background: var\(--amber\); width: 3px; \}/.test(th),
      'an animation must never OWN visibility (2026-08-16)');
-  ok('theme: the lamp is black at rest and amber only under the thumb (hover gated to real pointers); the stamp is mono + tabular',
-     /\.kpm-well::after \{[^}]*background: #000;/.test(th) && /\.kpm-key:active \.kpm-well::after \{ background: var\(--amber\)/.test(th) &&
-     /@media \(hover: hover\) and \(pointer: fine\) \{\s*\.kpm-key:hover \.kpm-well::after/.test(th) &&
+  ok('theme: the lamp is black at rest; the stamp is mono + tabular',
+     /\.kpm-well::after \{[^}]*background: #000;/.test(th) &&
      /\.kpm-stamp \{ font-family: var\(--font-mono\); font-variant-numeric: tabular-nums;/.test(th),
-     '"all the light should stays black on default and lights up light amber when section pressed" (2026-09-03)');
+     'the lamp lit amber under the thumb until 2026-09-18 14:01 — his "repetitive because it have similar animation like the ponder panel"; the hold is the charge line now (guarded below)');
   ok('theme: the LED lamp pulses on opacity only; the leaving digit\'s BASE is hidden and its keyframe starts visible',
      /\.kpm-led::before \{[^}]*animation: kpmLedLamp 1\.6s ease-in-out infinite;/.test(th) && /@keyframes kpmLedLamp \{ 50% \{ opacity: \.3; \} \}/.test(th) &&
      /\.kpm-roll-out \{ opacity: 0; translate: 0 -70%; pointer-events: none;\s*animation: kpmRollOut 260ms/.test(th) &&
@@ -7398,6 +7397,74 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
   const badComment = walk('src').filter((f) => /\(\s*\{\/\*/.test(read(f)));
   ok('no JSX file opens a parenthesised expression with a {/* */} comment — that is a syntax error, not a comment',
      badComment.length === 0, badComment.join(', ') || 'every src/**/*.jsx');
+}
+
+/* ─── 2026-09-18 — CUSTOMERS ON THE PHONE, ROUND TWO (his A / A / A) ───
+   His test of 832ea7c came back: the four header buttons "in a bad shape", the page still moves
+   sideways, hide DEL / EDIT "with some animation", and the hold repeats the ponder pad's lamp.
+   Measured as TIER 1 at 375 inside the real shell (lab `?shell&customers&admin`): the title and the
+   three admin buttons sat in one no-wrap row whose right edge was at 521 — the salesman's mount
+   never shows them, which is why every earlier measurement missed it. Shipped: the admin tools fold
+   behind one ADMIN TOOLS row under the gold bar on the phone (desk row untouched); each folder row
+   and shop card hides DEL / EDIT behind a ⋯ key, one strip open at a time, the strip a
+   grid-template-rows fold (Lite Mode strips the transition and it simply appears); the hold draws an
+   amber charge line along the key's bottom edge (a background layer — both pseudo-elements are the
+   sweep and the ink bar) and the lamp stays black, because the lamp is the pad's signal. */
+{
+  const c = read('src/components/CustomerManager.jsx');
+  ok('REGRESSION: the boss\'s admin tools sit beside the title only on the desk; on the phone they fold behind ADMIN TOOLS under the gold bar',
+     /<div className="hidden lg:flex gap-2">\{adminTools\(false\)\}<\/div>/.test(c) &&
+     /aria-expanded=\{showTools\} onClick=\{\(\) => setShowTools\(v => !v\)\}/.test(c) &&
+     /<div className="overflow-hidden flex flex-col gap-2 pt-2">\{adminTools\(true\)\}<\/div>/.test(c) &&
+     !/<div className="flex gap-2">\s*\{\/\*/.test(code(c)),
+     'measured 2026-09-18 as tier 1: the Import Map label\'s right edge at 521 in a 375 viewport, shell scrollWidth 521');
+  ok('the phone fold sits AFTER the ADD NEW CUSTOMER bar and uses the same grid-template-rows fold as the ponder overlay',
+     /kpm-plate lg:hidden[\s\S]{0,900}?\{isAdmin && \(\s*<div className="lg:hidden" data-acts>/.test(c) &&
+     /style=\{\{ gridTemplateRows: showTools \? '1fr' : '0fr' \}\}/.test(c));
+  ok('the phone labels are short and the desk labels are exactly what they were',
+     /\{phone \? 'Import map' : 'Import Map Marker \(KML\)'\}/.test(c) && /'Find Duplicates'/.test(c) && /Data Scrub\s*<\/button>/.test(c));
+  ok('every folder row is a three-column grid on the phone with the ⋯ key in the third column and the strip across all three',
+     (c.match(/grid grid-cols-\[auto_1fr_auto\] items-center gap-x-3 lg:block group/g) || []).length === 3 &&
+     (c.match(/className="contents lg:flex items-start justify-between mb-0 lg:mb-4 row-span-2"/g) || []).length === 3 &&
+     (c.match(/className="contents lg:flex lg:flex-col lg:items-end lg:gap-2"/g) || []).length === 3 &&
+     (c.match(/className="kpm-well p-3 rounded-lg row-span-2"/g) || []).length === 3 &&
+     (c.match(/<MoreKey id=\{`(prov|kab|kec):\$\{(prov|kab|kec)\}`\}/g) || []).length === 3 &&
+     (c.match(/col-span-3 row-start-4 grid transition-\[grid-template-rows,opacity\] duration-200 ease-out lg:flex lg:gap-1/g) || []).length === 3 &&
+     !/className="flex gap-1" onClick=\{e => e\.stopPropagation\(\)\}/.test(code(c)),
+     'one set of buttons: the desk keeps them inline in the first cell, the phone relocates the same elements into a strip under the row');
+  ok('DEL wears the danger tone on the phone and its desk look on the desk; both strip buttons are 44 and 11 px on the phone',
+     (c.match(/border border-\[var\(--danger\)\] lg:border-\[var\(--line\)\] px-2 py-1 rounded-lg lg:rounded/g) || []).length === 3 &&
+     (c.match(/flex-1 lg:flex-none min-h-\[44px\] lg:min-h-0 justify-center lg:justify-start text-\[11px\] lg:text-\[10px\] font-bold/g) || []).length === 6 &&
+     /handleDelete\(c\.id, c\.name\); \}\} className="flex-1 lg:flex-none justify-center px-3 py-1\.5 min-h-\[44px\] lg:min-h-0 text-xs font-bold bg-\[var\(--inset\)\] border border-\[var\(--danger\)\] lg:border-\[var\(--line\)\]/.test(c));
+  ok('the shop card: a ⋯ key beside the map pin on the phone, the admin row folds, the desk row is what it was',
+     /<MoreKey id=\{`store:\$\{c\.id\}`\}/.test(c) &&
+     /grid transition-\[grid-template-rows,opacity\] duration-200 ease-out mt-auto lg:flex lg:gap-2 lg:justify-end lg:items-center lg:pt-3 lg:border-t lg:border-\[var\(--line\)\] lg:flex-wrap/.test(c) &&
+     !/<div className="flex gap-2 justify-end items-center mt-auto pt-3 border-t border-\[var\(--line\)\] flex-wrap">/.test(code(c)));
+  ok('one strip at a time, and a tap anywhere outside folds it',
+     /const \[actsOpen, setActsOpen\] = useState\(null\);/.test(c) &&
+     /if \(!e\.target\.closest\('\[data-acts\]'\)\) setActsOpen\(null\);/.test(c) &&
+     /document\.addEventListener\('pointerdown', close\)/.test(c) &&
+     /onToggle=\{\(id\) => setActsOpen\(o => \(o === id \? null : id\)\)\}/.test(c));
+  ok('the ⋯ key is a real 44 px button with a label, phone-only, and it never opens the folder under it',
+     /const MoreKey = \(\{ id, label, open, onToggle, className = '' \}\) => \(/.test(c) &&
+     /onClick=\{\(e\) => \{ e\.stopPropagation\(\); onToggle\(id\); \}\}/.test(c) &&
+     /className=\{`lg:hidden w-11 h-11 rounded-lg border bg-\[var\(--inset\)\] text-xl leading-none flex items-center justify-center transition-colors/.test(c) &&
+     /aria-label=\{`More actions for \$\{label\}`\} aria-expanded=\{open\}/.test(c));
+  ok('BEHAVIOUR: the toggle opens one strip, swaps to another, and folds the open one',
+     (() => { const t = (o, id) => (o === id ? null : id); return t(null, 'a') === 'a' && t('a', 'b') === 'b' && t('b', 'b') === null; })(),
+     'the reducer the ⋯ key runs');
+  const th = read('src/styles/theme.css');
+  ok('the hold is the charge line: an amber layer on .kpm-key that grows along the bottom edge on :active, 360 ms, a background layer and not a pseudo-element',
+     /\.kpm-key \{ position: relative; border-color: var\(--line-2\);\s*background-image:\s*linear-gradient\(90deg, var\(--amber\), var\(--amber\)\),/.test(th) &&
+     /background-repeat: no-repeat; background-size: 0 3px, 100% 100%, 100% 100%; background-position: left bottom, 0 0, 0 0;/.test(th) &&
+     /transition: translate 120ms ease-out, border-color 160ms ease-out, border-bottom-width 120ms ease-out, background-size 360ms cubic-bezier\(\.2, \.8, \.2, 1\);/.test(th) &&
+     /\.kpm-key:active \{ translate: 0 2px; background-size: 100% 3px, 100% 100%, 100% 100%; \}/.test(th) &&
+     !/box-shadow|filter:/.test(th.slice(th.indexOf('.kpm-key {'), th.indexOf('.kpm-key {') + 1600)),
+     'his board 3 = A; audit G30: nothing in the control system may depend on a shadow or a filter');
+  ok('the folder lamp stays BLACK under the thumb and under the pointer — that light is the ponder pad\'s signal, his "repetitive"',
+     !/\.kpm-key:active \.kpm-well::after \{ background: var\(--amber\)/.test(th) &&
+     !/\.kpm-key:hover \.kpm-well::after \{ background: var\(--amber\)/.test(th) &&
+     /@media \(hover: hover\) and \(pointer: fine\) \{\s*\.kpm-key:hover \{ background-size: 100% 3px, 100% 100%, 100% 100%; \}\s*\}/.test(th));
 }
 
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);

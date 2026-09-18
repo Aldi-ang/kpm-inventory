@@ -4400,16 +4400,25 @@ html.lite-mode .kpm-pace-fill { opacity: 1; animation: none; }
    .kpm-roll  the odometer: the digit that leaves rides up and out while the new one rides in from
               below (260 ms, transform + opacity only). The leaving digit's BASE is hidden; its
               keyframe starts visible — the same Lite rule as .kpm-key, read the other way round. */
+/* THE CHARGE LINE (2026-09-18, his board 3 = A). While a key is held, a 3 px amber line grows
+   along its bottom edge from the left, 360 ms, and drains back on release — power moving through
+   the key. It is the FIRST background layer, sized 0 → 100 % wide, because both pseudo-elements
+   of the pair are taken (the .kpm-hot sweep and its ink bar) and the control system may not use
+   a shadow or a filter (audit G30). The folder lamp stays BLACK under the thumb: lighting it was
+   the ponder pad's signal, and he read the copy as "repetitive because it have similar animation
+   like the ponder panel". Lite Mode strips the transition and the line simply appears full. */
 .kpm-key { position: relative; border-color: var(--line-2);
   background-image:
+    linear-gradient(90deg, var(--amber), var(--amber)),
     linear-gradient(180deg, color-mix(in srgb, var(--ink) 12%, transparent) 0 1px, transparent 1px),
     linear-gradient(180deg, color-mix(in srgb, var(--raised) 88%, var(--gold) 12%) 0, var(--raised) 56px);
-  transition: translate 120ms ease-out, border-color 160ms ease-out, border-bottom-width 120ms ease-out;
+  background-repeat: no-repeat; background-size: 0 3px, 100% 100%, 100% 100%; background-position: left bottom, 0 0, 0 0;
+  transition: translate 120ms ease-out, border-color 160ms ease-out, border-bottom-width 120ms ease-out, background-size 360ms cubic-bezier(.2, .8, .2, 1);
   animation: kpmKeyRise 280ms cubic-bezier(.23, 1, .32, 1) both; will-change: translate; }
 /* the proud edge rides on the PAIR: theme.css is imported before the utilities, so a lone .kpm-key
    would lose border-bottom-width to the row's own `border` class on a specificity tie */
 .kpm-key.kpm-hot { border-bottom-width: 4px; }
-.kpm-key:active { translate: 0 2px; }
+.kpm-key:active { translate: 0 2px; background-size: 100% 3px, 100% 100%, 100% 100%; }
 .kpm-key.kpm-hot:active { scale: 1; border-bottom-width: 2px; }
 .kpm-key.kpm-hot::after { background: var(--amber); width: 3px; }
 .kpm-key:nth-child(2) { animation-delay: 45ms; }  .kpm-key:nth-child(3) { animation-delay: 90ms; }
@@ -4423,9 +4432,9 @@ html.lite-mode .kpm-pace-fill { opacity: 1; animation: none; }
   background-image: linear-gradient(180deg, rgba(0, 0, 0, .45) 0, transparent 55%, color-mix(in srgb, var(--ink) 8%, transparent) 100%); }
 .kpm-well::after { content: ""; position: absolute; right: 5px; top: 5px; width: 6px; height: 6px; border-radius: 50%;
   background: #000; border: 1px solid var(--line-2); transition: background-color 160ms ease-out, border-color 160ms ease-out; }
-.kpm-key:active .kpm-well::after { background: var(--amber); border-color: var(--amber); }
+/* a real pointer gets the charge line on hover too; the lamp never lights on a .kpm-key */
 @media (hover: hover) and (pointer: fine) {
-  .kpm-key:hover .kpm-well::after { background: var(--amber); border-color: var(--amber); }
+  .kpm-key:hover { background-size: 100% 3px, 100% 100%, 100% 100%; }
 }
 
 .kpm-stamp { font-family: var(--font-mono); font-variant-numeric: tabular-nums; background: var(--inset);

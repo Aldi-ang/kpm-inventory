@@ -30,7 +30,22 @@ const checkPointInGeoJSON = (lng, lat, geometry) => {
     } catch(e) { }
     return false;
 };
-import { ArrowRight, MapPin, Phone, User, ShieldAlert, Trash2, Store, Camera, X, RefreshCcw, Search, Folder, Pencil, Plus, Globe } from 'lucide-react';
+import { ArrowRight, MapPin, Phone, User, ShieldAlert, Trash2, Store, Camera, X, RefreshCcw, Search, Folder, Pencil, Plus, Globe, Wrench } from 'lucide-react';
+
+/* 📱 THE ⋯ KEY (Customers round two, 2026-09-18, his board 2 = A). On the phone every folder row
+   and shop card hides its DEL / EDIT behind this 44 × 44 key; tapping it unfolds a strip under the
+   row, tapping again (or anywhere else) folds it. Phone-only: the desk keeps the buttons inline.
+   It stops the tap, because the row it sits on opens the folder. The glyph is in a span so
+   index.css's `button:has(> svg:only-child)` never treats it as an icon button. */
+const MoreKey = ({ id, label, open, onToggle, className = '' }) => (
+    <button type="button" data-acts aria-label={`More actions for ${label}`} aria-expanded={open}
+        onClick={(e) => { e.stopPropagation(); onToggle(id); }}
+        className={`lg:hidden w-11 h-11 rounded-lg border bg-[var(--inset)] text-xl leading-none flex items-center justify-center transition-colors ${
+            open ? 'border-[var(--accent-edge)] text-[var(--accent-ink)]' : 'border-[var(--line-2)] text-[var(--ink-dim)]'
+        } ${className}`}>
+        <span aria-hidden="true">⋯</span>
+    </button>
+);
 import { confirmAction, promptAction } from './ConfirmGate.jsx';
 import { notify } from './Toast.jsx';
 
@@ -256,6 +271,17 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
         picName: '', description: '', mapFolder: '' 
     });
     const [editingId, setEditingId] = useState(null);
+    /* 📱 Customers round two, 2026-09-18 (his A / A / A): on the phone the boss's admin tools fold
+       behind one ADMIN TOOLS row, and each folder row's or shop card's DEL / EDIT fold behind a ⋯
+       key — one strip open at a time, a tap anywhere outside it folds it. */
+    const [showTools, setShowTools] = useState(false);
+    const [actsOpen, setActsOpen] = useState(null);
+    useEffect(() => {
+        if (actsOpen === null) return;
+        const close = (e) => { if (!e.target.closest('[data-acts]')) setActsOpen(null); };
+        document.addEventListener('pointerdown', close);
+        return () => document.removeEventListener('pointerdown', close);
+    }, [actsOpen]);
     const [isLocating, setIsLocating] = useState(false);
 
     const userId = user?.uid || user?.id || 'default';
@@ -1129,45 +1155,56 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
 
     if (viewMode === 'detail' && selectedCustomer) return <CustomerDetailView customer={selectedCustomer} db={db} appId={appId} user={user} onBack={() => { setViewMode('list'); setSelectedCustomer(null); }} logAudit={logAudit} triggerCapy={triggerCapy} onNavigateToMap={onNavigateToMap} />;
 
+    /* 📱 THE BOSS'S ADMIN TOOLS, once, for two places (2026-09-18, his board 1 = A). On the desk
+       they stay beside the title as the gold buttons they were; on the phone the same four render
+       as full-width 44 px outline rows inside a fold under the gold ADD NEW CUSTOMER bar. Measured
+       as tier 1 at 375: beside the title they ran 146 px past the edge and the whole page could be
+       dragged sideways — the salesman's mount never shows them, so the sweep missed it twice. */
+    const adminTools = (phone) => {
+        const glow = phone ? 'kpm-btn block rounded-xl' : 'bg-[var(--gold)] hover:bg-[var(--gold)] text-[var(--gold-ink)] px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest cursor-pointer shadow-[0_0_15px_rgba(217,119,6,0.4)] transition-all active:scale-95 flex items-center gap-2';
+        const plain = phone ? 'kpm-btn block rounded-xl' : 'bg-[var(--gold)] hover:bg-[var(--gold)] text-[var(--gold-ink)] px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest cursor-pointer shadow-md transition-all active:scale-95 flex items-center gap-2';
+        return (
+            <>
+                {/* Only shown when there is actually something to repair, so it stops
+                    cluttering the header the moment the job is done. The count is read
+                    from the same live customers array the repair itself works from. */}
+                {customers.some(c => !c.priceTier && c.pricingTier) && (
+                    <button
+                        onClick={handleRepairTierField}
+                        className={glow}
+                        title="Some stores saved their price level under the old field name and can be hidden from agents. This copies it across. Nothing is deleted."
+                    >
+                        <ShieldAlert size={14}/> Repair {customers.filter(c => !c.priceTier && c.pricingTier).length} Store Tiers
+                    </button>
+                )}
+                <button
+                    onClick={handleFindDuplicates}
+                    disabled={dupScanning}
+                    className={`${plain} disabled:opacity-60`}
+                    title="Report stores that look like the same shop recorded twice. Changes nothing."
+                >
+                    <Search size={14}/> {dupScanning ? 'Scanning…' : 'Find Duplicates'}
+                </button>
+                <button
+                    onClick={handleEnterpriseDataScrub}
+                    className={glow}
+                    title="Hard-map all UNMAPPED stores into the Database permanently"
+                >
+                    <ShieldAlert size={14}/> Data Scrub
+                </button>
+                <label className={plain}>
+                    <Folder size={14}/> {phone ? 'Import map' : 'Import Map Marker (KML)'}
+                    <input type="file" accept=".kml" onChange={handleImportKML} className="hidden" />
+                </label>
+            </>
+        );
+    };
+
     return (
         <div className="max-w-5xl mx-auto space-y-6 animate-fade-in">
             <div className="flex justify-between items-center">
                 <h2 className="text-2xl font-bold flex items-center gap-2"><Store size={24} className="text-[var(--accent-ink)]"/> Customer Directory</h2>
-                {isAdmin && (
-                    <div className="flex gap-2">
-                        {/* Only shown when there is actually something to repair, so it stops
-                            cluttering the header the moment the job is done. The count is read
-                            from the same live customers array the repair itself works from. */}
-                        {customers.some(c => !c.priceTier && c.pricingTier) && (
-                            <button
-                                onClick={handleRepairTierField}
-                                className="bg-[var(--gold)] hover:bg-[var(--gold)] text-[var(--gold-ink)] px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest cursor-pointer shadow-[0_0_15px_rgba(217,119,6,0.4)] transition-all active:scale-95 flex items-center gap-2"
-                                title="Some stores saved their price level under the old field name and can be hidden from agents. This copies it across. Nothing is deleted."
-                            >
-                                <ShieldAlert size={14}/> Repair {customers.filter(c => !c.priceTier && c.pricingTier).length} Store Tiers
-                            </button>
-                        )}
-                        <button
-                            onClick={handleFindDuplicates}
-                            disabled={dupScanning}
-                            className="bg-[var(--gold)] hover:bg-[var(--gold)] disabled:opacity-60 text-[var(--gold-ink)] px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest cursor-pointer shadow-md transition-all active:scale-95 flex items-center gap-2"
-                            title="Report stores that look like the same shop recorded twice. Changes nothing."
-                        >
-                            <Search size={14}/> {dupScanning ? 'Scanning…' : 'Find Duplicates'}
-                        </button>
-                        <button
-                            onClick={handleEnterpriseDataScrub}
-                            className="bg-[var(--gold)] hover:bg-[var(--gold)] text-[var(--gold-ink)] px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest cursor-pointer shadow-[0_0_15px_rgba(217,119,6,0.4)] transition-all active:scale-95 flex items-center gap-2"
-                            title="Hard-map all UNMAPPED stores into the Database permanently"
-                        >
-                            <ShieldAlert size={14}/> Data Scrub
-                        </button>
-                        <label className="bg-[var(--gold)] hover:bg-[var(--gold)] text-[var(--gold-ink)] px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest cursor-pointer shadow-md transition-all active:scale-95 flex items-center gap-2">
-                            <Folder size={14}/> Import Map Marker (KML)
-                            <input type="file" accept=".kml" onChange={handleImportKML} className="hidden" />
-                        </label>
-                    </div>
-                )}
+                {isAdmin && <div className="hidden lg:flex gap-2">{adminTools(false)}</div>}
             </div>
 
             {/* Duplicate report. Deliberately has no delete or merge control — see the comment on
@@ -1296,6 +1333,20 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                         inline-flex over `lg:hidden` and pin the height at 44 */}
                     {showForm ? <X size={16} /> : <Plus size={16} />}<span>{showForm ? 'Hide the form' : 'Add new customer'}</span>
                 </button>
+            )}
+            {isAdmin && (
+                <div className="lg:hidden" data-acts>
+                    <button type="button" aria-expanded={showTools} onClick={() => setShowTools(v => !v)}
+                        className={`kpm-btn block rounded-xl ${showTools ? 'border-[var(--accent-edge)] text-[var(--ink)]' : ''}`}>
+                        <Wrench size={14} /><span>Admin tools {showTools ? '▴' : '▾'}</span>
+                    </button>
+                    {/* the fold: grid-template-rows 0fr → 1fr, the same mechanism the ponder overlay uses;
+                        Lite Mode strips the transition and the rows simply appear */}
+                    <div className={`grid transition-[grid-template-rows,opacity] duration-200 ease-out ${showTools ? 'opacity-100' : 'opacity-0'}`}
+                        style={{ gridTemplateRows: showTools ? '1fr' : '0fr' }} aria-hidden={!showTools} inert={!showTools}>
+                        <div className="overflow-hidden flex flex-col gap-2 pt-2">{adminTools(true)}</div>
+                    </div>
+                </div>
             )}
             {canAddOrEditAnything && (
             <div ref={formCardRef} className={`bg-[var(--raised)] p-6 rounded-2xl shadow-sm border border-[var(--line)] ${showForm ? '' : 'hidden lg:block'}`}>
@@ -1540,29 +1591,37 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                             {Object.entries(folderStructure).map(([prov, data]) => (
-                                <div key={prov} onClick={() => setSelectedProvince(prov)} className="kpm-key kpm-hot bg-[var(--raised)] p-3 lg:p-6 rounded-xl border cursor-pointer hover:border-[var(--accent-edge)] grid grid-cols-[auto_1fr] items-center gap-x-3 lg:block group">
-                                    <div className="flex items-start justify-between mb-0 lg:mb-4 row-span-2">
-                                        <div className="kpm-well p-3 rounded-lg"><MapPin size={24} /></div>
-                                        <div className="flex flex-col items-end gap-2">
-                                            {data.pending > 0 && <span className="bg-[var(--danger)] text-[var(--gold-ink)] text-[10px] font-bold px-2 py-1 rounded-full animate-pulse">{data.pending} Pending</span>}
+                                <div key={prov} onClick={() => setSelectedProvince(prov)} className="kpm-key kpm-hot bg-[var(--raised)] p-3 lg:p-6 rounded-xl border cursor-pointer hover:border-[var(--accent-edge)] grid grid-cols-[auto_1fr_auto] items-center gap-x-3 lg:block group">
+                                    {/* 📱 on the phone this cell and its right column are `contents`, so the well, the
+                                        badge and the DEL / EDIT group are placed by the row's own grid: well col 1 rows
+                                        1–2, name and count col 2, the ⋯ key col 3, the badge under the count, the strip
+                                        across row 4. The desk gets the flex boxes back with lg: and changes nothing. */}
+                                    <div className="contents lg:flex items-start justify-between mb-0 lg:mb-4 row-span-2">
+                                        <div className="kpm-well p-3 rounded-lg row-span-2"><MapPin size={24} /></div>
+                                        <div className="contents lg:flex lg:flex-col lg:items-end lg:gap-2">
+                                            {data.pending > 0 && <span className="col-start-2 row-start-3 justify-self-start mt-1 lg:mt-0 bg-[var(--danger)] text-[var(--gold-ink)] text-[11px] lg:text-[10px] font-bold px-2 py-1 rounded-full animate-pulse">{data.pending} Pending</span>}
                                             {isAdmin && (
-                                                <div className="flex gap-1" onClick={e => e.stopPropagation()}>
+                                                <div data-acts onClick={e => e.stopPropagation()}
+                                                    className={`col-span-3 row-start-4 grid transition-[grid-template-rows,opacity] duration-200 ease-out lg:flex lg:gap-1 ${actsOpen === `prov:${prov}` ? 'opacity-100' : 'opacity-0 lg:opacity-100'}`}
+                                                    style={{ gridTemplateRows: actsOpen === `prov:${prov}` ? '1fr' : '0fr' }}>
+                                                <div className="overflow-hidden lg:contents"><div className="flex gap-2 pt-2 mt-2 border-t border-[var(--line)] lg:contents">
                                                     <button onClick={(e) => {
                                                         let stores = [];
                                                         Object.values(data.regions).forEach(r => Object.values(r.cities).forEach(c => stores.push(...c.stores)));
                                                         handleDeleteFolder(e, 'Provinsi', prov, stores);
-                                                    }} className="text-[10px] font-bold text-[var(--ink-dim)] hover:text-[var(--danger-ink)] bg-[var(--inset)] border border-[var(--line)] px-2 py-1 rounded transition-colors flex items-center gap-1 hover:border-[var(--danger)]"><Trash2 size={10}/> DEL</button>
+                                                    }} className="flex-1 lg:flex-none min-h-[44px] lg:min-h-0 justify-center lg:justify-start text-[11px] lg:text-[10px] font-bold text-[var(--danger-ink)] lg:text-[var(--ink-dim)] hover:text-[var(--danger-ink)] bg-[var(--inset)] border border-[var(--danger)] lg:border-[var(--line)] px-2 py-1 rounded-lg lg:rounded transition-colors flex items-center gap-1 hover:border-[var(--danger)]"><Trash2 size={10}/> DEL</button>
                                                     <button onClick={(e) => {
                                                         let stores = [];
                                                         Object.values(data.regions).forEach(r => Object.values(r.cities).forEach(c => stores.push(...c.stores)));
                                                         handleBulkRename(e, 'Provinsi', prov, stores);
-                                                    }} className="text-[10px] font-bold text-[var(--ink-dim)] hover:text-[var(--ink-dim)] bg-[var(--inset)] border border-[var(--line)] px-2 py-1 rounded transition-colors flex items-center gap-1 hover:border-[var(--line)]"><Pencil size={10}/> EDIT</button>
-                                                </div>
+                                                    }} className="flex-1 lg:flex-none min-h-[44px] lg:min-h-0 justify-center lg:justify-start text-[11px] lg:text-[10px] font-bold text-[var(--ink-dim)] hover:text-[var(--ink-dim)] bg-[var(--inset)] border border-[var(--line)] px-2 py-1 rounded-lg lg:rounded transition-colors flex items-center gap-1 hover:border-[var(--line)]"><Pencil size={10}/> EDIT</button>
+                                                </div></div></div>
                                             )}
                                         </div>
                                     </div>
                                     <h3 className="font-bold text-[15px] lg:text-lg mb-0 lg:mb-2 truncate self-end">{prov}</h3>
                                     <p className="kpm-stamp text-[11px] lg:text-[10px] text-[var(--ink-dim)] uppercase tracking-widest font-bold self-start">{data.count} Total Stores</p>
+                                    {isAdmin && <MoreKey id={`prov:${prov}`} label={prov} open={actsOpen === `prov:${prov}`} onToggle={(id) => setActsOpen(o => (o === id ? null : id))} className="col-start-3 row-start-1 row-span-2 self-center" />}
                                 </div>
                             ))}
                             {Object.keys(folderStructure).length === 0 && <div className="col-span-full text-center py-12 opacity-50"><Folder size={48} className="mx-auto mb-4"/><p className="font-bold tracking-widest uppercase">No Data Found</p></div>}
@@ -1579,29 +1638,33 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                             {Object.entries(activeProv?.regions || {}).map(([kab, data]) => (
-                                <div key={kab} onClick={() => setSelectedRegion(kab)} className="kpm-key kpm-hot bg-[var(--raised)] p-3 lg:p-6 rounded-xl border cursor-pointer hover:border-[var(--accent-edge)] grid grid-cols-[auto_1fr] items-center gap-x-3 lg:block group">
-                                    <div className="flex items-start justify-between mb-0 lg:mb-4 row-span-2">
-                                        <div className="kpm-well p-3 rounded-lg"><Folder size={24} /></div>
-                                        <div className="flex flex-col items-end gap-2">
-                                            {data.pending > 0 && <span className="bg-[var(--danger)] text-[var(--gold-ink)] text-[10px] font-bold px-2 py-1 rounded-full animate-pulse">{data.pending} Pending</span>}
+                                <div key={kab} onClick={() => setSelectedRegion(kab)} className="kpm-key kpm-hot bg-[var(--raised)] p-3 lg:p-6 rounded-xl border cursor-pointer hover:border-[var(--accent-edge)] grid grid-cols-[auto_1fr_auto] items-center gap-x-3 lg:block group">
+                                    <div className="contents lg:flex items-start justify-between mb-0 lg:mb-4 row-span-2">
+                                        <div className="kpm-well p-3 rounded-lg row-span-2"><Folder size={24} /></div>
+                                        <div className="contents lg:flex lg:flex-col lg:items-end lg:gap-2">
+                                            {data.pending > 0 && <span className="col-start-2 row-start-3 justify-self-start mt-1 lg:mt-0 bg-[var(--danger)] text-[var(--gold-ink)] text-[11px] lg:text-[10px] font-bold px-2 py-1 rounded-full animate-pulse">{data.pending} Pending</span>}
                                             {isAdmin && (
-                                                <div className="flex gap-1" onClick={e => e.stopPropagation()}>
+                                                <div data-acts onClick={e => e.stopPropagation()}
+                                                    className={`col-span-3 row-start-4 grid transition-[grid-template-rows,opacity] duration-200 ease-out lg:flex lg:gap-1 ${actsOpen === `kab:${kab}` ? 'opacity-100' : 'opacity-0 lg:opacity-100'}`}
+                                                    style={{ gridTemplateRows: actsOpen === `kab:${kab}` ? '1fr' : '0fr' }}>
+                                                <div className="overflow-hidden lg:contents"><div className="flex gap-2 pt-2 mt-2 border-t border-[var(--line)] lg:contents">
                                                     <button onClick={(e) => {
                                                         let stores = [];
                                                         Object.values(data.cities).forEach(c => stores.push(...c.stores));
                                                         handleDeleteFolder(e, 'Kabupaten', kab, stores);
-                                                    }} className="text-[10px] font-bold text-[var(--ink-dim)] hover:text-[var(--danger-ink)] bg-[var(--inset)] border border-[var(--line)] px-2 py-1 rounded transition-colors flex items-center gap-1 hover:border-[var(--danger)]"><Trash2 size={10}/> DEL</button>
+                                                    }} className="flex-1 lg:flex-none min-h-[44px] lg:min-h-0 justify-center lg:justify-start text-[11px] lg:text-[10px] font-bold text-[var(--danger-ink)] lg:text-[var(--ink-dim)] hover:text-[var(--danger-ink)] bg-[var(--inset)] border border-[var(--danger)] lg:border-[var(--line)] px-2 py-1 rounded-lg lg:rounded transition-colors flex items-center gap-1 hover:border-[var(--danger)]"><Trash2 size={10}/> DEL</button>
                                                     <button onClick={(e) => {
                                                         let stores = [];
                                                         Object.values(data.cities).forEach(c => stores.push(...c.stores));
                                                         handleBulkRename(e, 'Kabupaten', kab, stores);
-                                                    }} className="text-[10px] font-bold text-[var(--ink-dim)] hover:text-[var(--ink-dim)] bg-[var(--inset)] border border-[var(--line)] px-2 py-1 rounded transition-colors flex items-center gap-1 hover:border-[var(--line)]"><Pencil size={10}/> EDIT</button>
-                                                </div>
+                                                    }} className="flex-1 lg:flex-none min-h-[44px] lg:min-h-0 justify-center lg:justify-start text-[11px] lg:text-[10px] font-bold text-[var(--ink-dim)] hover:text-[var(--ink-dim)] bg-[var(--inset)] border border-[var(--line)] px-2 py-1 rounded-lg lg:rounded transition-colors flex items-center gap-1 hover:border-[var(--line)]"><Pencil size={10}/> EDIT</button>
+                                                </div></div></div>
                                             )}
                                         </div>
                                     </div>
                                     <h3 className="font-bold text-[15px] lg:text-lg mb-0 lg:mb-2 truncate self-end">{kab}</h3>
                                     <p className="kpm-stamp text-[11px] lg:text-[10px] text-[var(--ink-dim)] uppercase tracking-widest font-bold self-start">{data.count} Registered</p>
+                                    {isAdmin && <MoreKey id={`kab:${kab}`} label={kab} open={actsOpen === `kab:${kab}`} onToggle={(id) => setActsOpen(o => (o === id ? null : id))} className="col-start-3 row-start-1 row-span-2 self-center" />}
                                 </div>
                             ))}
                         </div>
@@ -1617,25 +1680,29 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                             {Object.entries(activeKab?.cities || {}).map(([kec, data]) => (
-                                <div key={kec} onClick={() => setSelectedCity(kec)} className="kpm-key kpm-hot bg-[var(--raised)] p-3 lg:p-6 rounded-xl border cursor-pointer hover:border-[var(--accent-edge)] grid grid-cols-[auto_1fr] items-center gap-x-3 lg:block group">
-                                    <div className="flex items-start justify-between mb-0 lg:mb-4 row-span-2">
-                                        <div className="kpm-well p-3 rounded-lg"><Folder size={24} /></div>
-                                        <div className="flex flex-col items-end gap-2">
-                                            {data.pending > 0 && <span className="bg-[var(--danger)] text-[var(--gold-ink)] text-[10px] font-bold px-2 py-1 rounded-full animate-pulse">{data.pending} Pending</span>}
+                                <div key={kec} onClick={() => setSelectedCity(kec)} className="kpm-key kpm-hot bg-[var(--raised)] p-3 lg:p-6 rounded-xl border cursor-pointer hover:border-[var(--accent-edge)] grid grid-cols-[auto_1fr_auto] items-center gap-x-3 lg:block group">
+                                    <div className="contents lg:flex items-start justify-between mb-0 lg:mb-4 row-span-2">
+                                        <div className="kpm-well p-3 rounded-lg row-span-2"><Folder size={24} /></div>
+                                        <div className="contents lg:flex lg:flex-col lg:items-end lg:gap-2">
+                                            {data.pending > 0 && <span className="col-start-2 row-start-3 justify-self-start mt-1 lg:mt-0 bg-[var(--danger)] text-[var(--gold-ink)] text-[11px] lg:text-[10px] font-bold px-2 py-1 rounded-full animate-pulse">{data.pending} Pending</span>}
                                             {isAdmin && (
-                                                <div className="flex gap-1" onClick={e => e.stopPropagation()}>
+                                                <div data-acts onClick={e => e.stopPropagation()}
+                                                    className={`col-span-3 row-start-4 grid transition-[grid-template-rows,opacity] duration-200 ease-out lg:flex lg:gap-1 ${actsOpen === `kec:${kec}` ? 'opacity-100' : 'opacity-0 lg:opacity-100'}`}
+                                                    style={{ gridTemplateRows: actsOpen === `kec:${kec}` ? '1fr' : '0fr' }}>
+                                                <div className="overflow-hidden lg:contents"><div className="flex gap-2 pt-2 mt-2 border-t border-[var(--line)] lg:contents">
                                                     <button onClick={(e) => {
                                                         handleDeleteFolder(e, 'Kecamatan', kec, data.stores);
-                                                    }} className="text-[10px] font-bold text-[var(--ink-dim)] hover:text-[var(--danger-ink)] bg-[var(--inset)] border border-[var(--line)] px-2 py-1 rounded transition-colors flex items-center gap-1 hover:border-[var(--danger)]"><Trash2 size={10}/> DEL</button>
+                                                    }} className="flex-1 lg:flex-none min-h-[44px] lg:min-h-0 justify-center lg:justify-start text-[11px] lg:text-[10px] font-bold text-[var(--danger-ink)] lg:text-[var(--ink-dim)] hover:text-[var(--danger-ink)] bg-[var(--inset)] border border-[var(--danger)] lg:border-[var(--line)] px-2 py-1 rounded-lg lg:rounded transition-colors flex items-center gap-1 hover:border-[var(--danger)]"><Trash2 size={10}/> DEL</button>
                                                     <button onClick={(e) => {
                                                         handleBulkRename(e, 'Kecamatan', kec, data.stores);
-                                                    }} className="text-[10px] font-bold text-[var(--ink-dim)] hover:text-[var(--ink-dim)] bg-[var(--inset)] border border-[var(--line)] px-2 py-1 rounded transition-colors flex items-center gap-1 hover:border-[var(--line)]"><Pencil size={10}/> EDIT</button>
-                                                </div>
+                                                    }} className="flex-1 lg:flex-none min-h-[44px] lg:min-h-0 justify-center lg:justify-start text-[11px] lg:text-[10px] font-bold text-[var(--ink-dim)] hover:text-[var(--ink-dim)] bg-[var(--inset)] border border-[var(--line)] px-2 py-1 rounded-lg lg:rounded transition-colors flex items-center gap-1 hover:border-[var(--line)]"><Pencil size={10}/> EDIT</button>
+                                                </div></div></div>
                                             )}
                                         </div>
                                     </div>
                                     <h3 className="font-bold text-[15px] lg:text-lg mb-0 lg:mb-2 truncate self-end">{kec}</h3>
                                     <p className="kpm-stamp text-[11px] lg:text-[10px] text-[var(--ink-dim)] uppercase tracking-widest font-bold self-start">{data.count} Registered</p>
+                                    {isAdmin && <MoreKey id={`kec:${kec}`} label={kec} open={actsOpen === `kec:${kec}`} onToggle={(id) => setActsOpen(o => (o === id ? null : id))} className="col-start-3 row-start-1 row-span-2 self-center" />}
                                 </div>
                             ))}
                         </div>
@@ -1676,7 +1743,10 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                                                 </div>
                                             </div>
                                         </div>
-                                        {c.latitude ? <MapPin size={20} className="text-[var(--ink-dim)] shrink-0"/> : <MapPin size={20} className="text-[var(--ink-dim)] shrink-0"/>}
+                                        <div className="flex items-center gap-2 shrink-0">
+                                            {c.latitude ? <MapPin size={20} className="text-[var(--ink-dim)] shrink-0"/> : <MapPin size={20} className="text-[var(--ink-dim)] shrink-0"/>}
+                                            {isAdmin && <MoreKey id={`store:${c.id}`} label={c.name} open={actsOpen === `store:${c.id}`} onToggle={(id) => setActsOpen(o => (o === id ? null : id))} />}
+                                        </div>
                                     </div>
 
                                     {/* MIDDLE: Accountability Block */}
@@ -1693,8 +1763,11 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
 
                                    {/* BOTTOM: Admin Actions */}
                                    {isAdmin && (
-                                        <div className="flex gap-2 justify-end items-center mt-auto pt-3 border-t border-[var(--line)] flex-wrap">
-                                            <select 
+                                        <div data-acts onClick={e => e.stopPropagation()}
+                                            className={`grid transition-[grid-template-rows,opacity] duration-200 ease-out mt-auto lg:flex lg:gap-2 lg:justify-end lg:items-center lg:pt-3 lg:border-t lg:border-[var(--line)] lg:flex-wrap ${actsOpen === `store:${c.id}` ? 'opacity-100' : 'opacity-0 lg:opacity-100'}`}
+                                            style={{ gridTemplateRows: actsOpen === `store:${c.id}` ? '1fr' : '0fr' }}>
+                                        <div className="overflow-hidden lg:contents"><div className="flex gap-2 justify-end items-center pt-3 mt-3 border-t border-[var(--line)] flex-wrap lg:contents">
+                                            <select
                                                 value={c.city || 'Unknown Kecamatan'}
                                                 onChange={(e) => handleFastStoreMove(c.id, e.target.value, selectedRegion)}
                                                 className="text-[11px] font-bold uppercase tracking-widest bg-[var(--inset)] text-[var(--ink-dim)] border border-[var(--line)] rounded px-2 py-1.5 max-w-[110px] outline-none cursor-pointer hover:border-[var(--line)] transition-colors shrink-0"
@@ -1720,9 +1793,9 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                                                 else window.dispatchEvent(new CustomEvent('switchTab', { detail: 'map' }));
                                             }} className="px-3 py-1.5 min-h-[44px] lg:min-h-0 text-xs font-bold bg-[var(--inset)] border border-[var(--line)] rounded-lg hover:bg-[var(--gold)] hover:text-[var(--gold-ink)] text-[var(--accent-ink)] transition-colors flex items-center gap-1 shadow-sm"><Globe size={12}/> Map</button>
 
-                                            <button onClick={(e) => { e.stopPropagation(); handleEdit(c); }} className="px-3 py-1.5 min-h-[44px] lg:min-h-0 text-xs font-bold bg-[var(--inset)] border border-[var(--line)] rounded-lg hover:bg-[var(--inset)] text-[var(--ink-dim)] transition-colors">Edit</button>
-                                            <button onClick={(e) => { e.stopPropagation(); handleDelete(c.id, c.name); }} className="px-3 py-1.5 min-h-[44px] lg:min-h-0 text-xs font-bold bg-[var(--inset)] border border-[var(--line)] rounded-lg hover:bg-[var(--danger-well)] hover:border-[var(--danger)] text-[var(--danger-ink)] transition-colors">Del</button>
-                                        </div>
+                                            <button onClick={(e) => { e.stopPropagation(); handleEdit(c); }} className="flex-1 lg:flex-none justify-center px-3 py-1.5 min-h-[44px] lg:min-h-0 text-xs font-bold bg-[var(--inset)] border border-[var(--line)] rounded-lg hover:bg-[var(--inset)] text-[var(--ink-dim)] transition-colors">Edit</button>
+                                            <button onClick={(e) => { e.stopPropagation(); handleDelete(c.id, c.name); }} className="flex-1 lg:flex-none justify-center px-3 py-1.5 min-h-[44px] lg:min-h-0 text-xs font-bold bg-[var(--inset)] border border-[var(--danger)] lg:border-[var(--line)] rounded-lg hover:bg-[var(--danger-well)] hover:border-[var(--danger)] text-[var(--danger-ink)] transition-colors">Del</button>
+                                        </div></div></div>
                                     )}
 
                                     {/* 🚀 CUSTOMER DIRECTORY PERMISSION TIER: real (non-PIN-admin) Edit access,
