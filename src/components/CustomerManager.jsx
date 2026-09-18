@@ -32,20 +32,10 @@ const checkPointInGeoJSON = (lng, lat, geometry) => {
 };
 import { ArrowRight, MapPin, Phone, User, ShieldAlert, Trash2, Store, Camera, X, RefreshCcw, Search, Folder, Pencil, Plus, Globe, Wrench } from 'lucide-react';
 
-/* 📱 THE ⋯ KEY (Customers round two, 2026-09-18, his board 2 = A). On the phone every folder row
-   and shop card hides its DEL / EDIT behind this 44 × 44 key; tapping it unfolds a strip under the
-   row, tapping again (or anywhere else) folds it. Phone-only: the desk keeps the buttons inline.
-   It stops the tap, because the row it sits on opens the folder. The glyph is in a span so
-   index.css's `button:has(> svg:only-child)` never treats it as an icon button. */
-const MoreKey = ({ id, label, open, onToggle, className = '' }) => (
-    <button type="button" data-acts aria-label={`More actions for ${label}`} aria-expanded={open}
-        onClick={(e) => { e.stopPropagation(); onToggle(id); }}
-        className={`lg:hidden w-11 h-11 rounded-lg border bg-[var(--inset)] text-xl leading-none flex items-center justify-center transition-colors ${
-            open ? 'border-[var(--accent-edge)] text-[var(--accent-ink)]' : 'border-[var(--line-2)] text-[var(--ink-dim)]'
-        } ${className}`}>
-        <span aria-hidden="true">⋯</span>
-    </button>
-);
+/* 📱 THE ⋯ KEY (Customers round two, 2026-09-18, his board 2 = A) lives in ./MoreKey.jsx since
+   2026-09-19 - the Journey Plan store card wears the same key. Every folder row and shop card here
+   hides its DEL / EDIT behind it. */
+import MoreKey from './MoreKey.jsx';
 import { confirmAction, promptAction } from './ConfirmGate.jsx';
 import { notify } from './Toast.jsx';
 

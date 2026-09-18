@@ -739,3 +739,11 @@ export const nixieDigits = (value, signed = false) => {
     const sign = signed ? (n < 0 ? '−' : n > 0 ? '+' : '') : '';
     return { sign, digits };
 };
+
+/* JOURNEY PLAN, the folded MISSION FEED row on the phone (2026-09-19, his board 1 = B) prints the
+   narrowest place the pickers have chosen - kecamatan over kabupaten over provinsi - and "All"
+   when nothing is picked, so a salesman reads where the day's list is scoped without unfolding. */
+export const journeyWhere = (prov, kab, kec) => {
+    const set = (v) => v && v !== 'All';
+    return set(kec) ? kec : set(kab) ? kab : set(prov) ? prov : 'All';
+};

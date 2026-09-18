@@ -7442,11 +7442,13 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
      /if \(!e\.target\.closest\('\[data-acts\]'\)\) setActsOpen\(null\);/.test(c) &&
      /document\.addEventListener\('pointerdown', close\)/.test(c) &&
      /onToggle=\{\(id\) => setActsOpen\(o => \(o === id \? null : id\)\)\}/.test(c));
+  /* 2026-09-19: MoreKey moved to its own file so Journey Plan can use the same key - re-pointed */
+  const mkSrc = fs.existsSync('src/components/MoreKey.jsx') ? read('src/components/MoreKey.jsx') : c;
   ok('the ⋯ key is a real 44 px button with a label, phone-only, and it never opens the folder under it',
-     /const MoreKey = \(\{ id, label, open, onToggle, className = '' \}\) => \(/.test(c) &&
-     /onClick=\{\(e\) => \{ e\.stopPropagation\(\); onToggle\(id\); \}\}/.test(c) &&
-     /className=\{`lg:hidden w-11 h-11 rounded-lg border bg-\[var\(--inset\)\] text-xl leading-none flex items-center justify-center transition-colors/.test(c) &&
-     /aria-label=\{`More actions for \$\{label\}`\} aria-expanded=\{open\}/.test(c));
+     /const MoreKey = \(\{ id, label, open, onToggle, className = '' \}\) => \(/.test(mkSrc) &&
+     /onClick=\{\(e\) => \{ e\.stopPropagation\(\); onToggle\(id\); \}\}/.test(mkSrc) &&
+     /className=\{`lg:hidden w-11 h-11 rounded-lg border bg-\[var\(--inset\)\] text-xl leading-none flex items-center justify-center transition-colors/.test(mkSrc) &&
+     /aria-label=\{`More actions for \$\{label\}`\} aria-expanded=\{open\}/.test(mkSrc));
   ok('BEHAVIOUR: the toggle opens one strip, swaps to another, and folds the open one',
      (() => { const t = (o, id) => (o === id ? null : id); return t(null, 'a') === 'a' && t('a', 'b') === 'b' && t('b', 'b') === null; })(),
      'the reducer the ⋯ key runs');
@@ -7595,6 +7597,110 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
      /<div className="space-y-2 mb-4 lg:max-h-\[40vh\] lg:overflow-y-auto custom-scrollbar pr-2">/.test(so) &&
      !/mb-4 max-h-\[40vh\] overflow-y-auto/.test(code(so)),
      'found 2026-09-18 21:00: an inner scrollbar inside an opened audit at 375');
+}
+
+/* 2026-09-19 - JOURNEY PLAN ON THE PHONE (his board 1 = B, board 2 = B, board 3 = YES, and "fix
+   the map because it said api key needed"). Measured at 375 inside the shell as T5 AND as the boss:
+   the page slid sideways 12 px (the path row was w-max 379 wide; the sector reel's -mx-4 was
+   written for the desk's p-4 and the phone shell is p-2), three region <select> 30 px tall at
+   10 px with the third overrunning its column (a select will not shrink below its longest option),
+   the FLEET / DAY <select> 13 px tall inside 27 px boxes, the store card 383 px with 24 px arrows,
+   a 23 px assign box, a 96 px NO INTEL band and a truncated name, every label 10 px. The CARTO
+   tiles print API KEY REQUIRED across every tile now - on his phone too. */
+{
+  section('2026-09-19 - Journey Plan on the phone: the fold, the ⋯ card, the floor, the tiles');
+  const jv = read('src/JourneyView.jsx');
+  const cm = read('src/components/CustomerManager.jsx');
+  const mk = fs.existsSync('src/components/MoreKey.jsx') ? read('src/components/MoreKey.jsx') : '';
+  const mm = read('src/MapMissionControl.jsx');
+  ok('1B: the MISSION FEED title row is a 44 px key on the phone that prints the day and the region and folds the pickers; a plain heading on the desk',
+     /const \[feedOpen, setFeedOpen\] = useState\(\(\) => typeof window !== 'undefined' && window\.innerWidth >= 1024\);/.test(jv) &&
+     /<button type="button" onClick=\{\(\) => setFeedOpen\(v => !v\)\} aria-expanded=\{feedOpen\}/.test(jv) &&
+     /text-left uppercase min-h-11 lg:min-h-0 lg:pointer-events-none lg:cursor-default/.test(jv) &&
+     /\{selectedDay\} · \{journeyWhere\(selectedProvinsi, selectedKabupaten, selectedKecamatan\)\} \{feedOpen \? '▴' : '▾'\}/.test(jv) &&
+     /import \{ storeKey, getLocalDayKey, journeyWhere \} from '\.\/utils\/helpers'/.test(jv),
+     'his "board 1 = B"');
+  ok('1B: the filter panel rides a grid-template-rows fold, 200 ms, and is always open on the desk',
+     /className=\{`grid transition-\[grid-template-rows,opacity\] duration-200 ease-out lg:block \$\{feedOpen \? 'opacity-100' : 'opacity-0 lg:opacity-100'\}`\} style=\{\{ gridTemplateRows: feedOpen \? '1fr' : '0fr' \}\}/.test(jv) &&
+     /<div className="overflow-hidden lg:contents">\s*<div className="bg-slate-900\/60 p-4 rounded-xl border border-slate-700 shadow-inner flex flex-wrap gap-4 mt-4">/.test(jv));
+  const journeyWhere = (await import('../utils/helpers.js')).journeyWhere || (() => null);
+  ok('BEHAVIOUR: journeyWhere names the narrowest place picked, and All when nothing is',
+     journeyWhere('All', 'All', 'All') === 'All' && journeyWhere('JAWA BARAT', 'All', 'All') === 'JAWA BARAT' &&
+     journeyWhere('JAWA BARAT', 'BANDUNG', 'All') === 'BANDUNG' && journeyWhere('JAWA BARAT', 'BANDUNG', 'CIBEUNYING') === 'CIBEUNYING' &&
+     journeyWhere(undefined, undefined, undefined) === 'All',
+     'the word the folded row prints');
+  ok('the floor: the three region pickers are 44 px rows at 11 px, one under the other; the desk column rule is desk-only',
+     /<div className="flex flex-col lg:flex-row gap-2 w-full">/.test(jv) &&
+     /className="flex-1 min-w-\[200px\] flex flex-col gap-2 lg:border-r lg:border-slate-700 lg:pr-4">/.test(jv) &&
+     (jv.match(/font-bold text-\[11px\] lg:text-\[10px\] uppercase p-2 min-h-11 lg:min-h-0 rounded outline-none border border-(slate-700|orange-500\/50 focus:border-orange-500) cursor-pointer/g) || []).length === 3 &&
+     !/border-r border-slate-700 pr-4">/.test(code(jv)) &&
+     !/text-\[10px\] uppercase p-2 rounded outline-none/.test(code(jv)),
+     'measured 2026-09-19: 144/81/81 x 30 at 10 px, the third to x 367 past its column at 330');
+  ok('the floor: the FLEET and DAY <select> are 44 px tall at 11 px - the select is the tap target, its box is not',
+     (jv.match(/font-bold text-\[11px\] lg:text-\[10px\] uppercase w-full outline-none cursor-pointer pl-1 min-h-11 lg:min-h-0/g) || []).length === 2 &&
+     (jv.match(/flex items-center flex-1 bg-black px-1\.5 py-0 lg:py-1\.5 rounded border border-slate-700/g) || []).length === 2 &&
+     !/bg-black p-1\.5 rounded border border-slate-700">/.test(code(jv)),
+     'measured 2026-09-19: 107 x 13 inside a 27 px box');
+  ok('the floor: the legend / paintbrush key and the four map keys are 44 on the phone',
+     /hover:bg-slate-800 transition-colors active:scale-95 select-none min-h-11 lg:min-h-0"/.test(jv) &&
+     /<div className="absolute top-4 right-4 z-\[9999\] flex flex-col gap-3 pointer-events-auto \[&>button\]:min-h-11 \[&>button\]:min-w-11 lg:\[&>button\]:min-h-0 lg:\[&>button\]:min-w-0">/.test(jv),
+     'measured 2026-09-19: 149 x 37 and 43 x 43');
+  ok('board 3: the path row stays inside the page and the sector cards wrap two to a row - no sideways move, no swipe reel',
+     /bg-slate-900\/80 backdrop-blur p-3 rounded-xl border border-slate-700 max-w-full lg:w-max shadow-lg">/.test(jv) &&
+     /<div className="flex flex-wrap lg:flex-nowrap lg:overflow-x-auto hide-scrollbar gap-3 pb-4">/.test(jv) &&
+     /className=\{`shrink-0 basis-\[calc\(50%-6px\)\] lg:basis-auto flex flex-col items-start p-3\.5 rounded-2xl border-2/.test(jv) &&
+     !/-mx-4 px-4 lg:mx-0 lg:px-0/.test(code(jv)) &&
+     !/border border-slate-700 w-max shadow-lg/.test(code(jv)),
+     'measured 2026-09-19: shell scrollWidth 387 on a 375 screen; his "sideways swipe is inconvenience"');
+  ok('board 3: the three path-row keys are 44 px on the phone',
+     (jv.match(/min-h-11 lg:min-h-0 text-xs font-black uppercase tracking-widest/g) || []).length >= 2,
+     'the middle crumb button measured 140 x 16');
+  ok('2B: the ⋯ key is ONE component, shared by Customers and Journey Plan',
+     /const MoreKey = \(\{ id, label, open, onToggle, className = '' \}\) => \(/.test(mk) &&
+     /export default MoreKey;/.test(mk) &&
+     /import MoreKey from '\.\/MoreKey\.jsx';/.test(cm) && !/const MoreKey = /.test(code(cm)) &&
+     /import MoreKey from '\.\/components\/MoreKey\.jsx';/.test(jv),
+     'his "design it well" so the same button can be used in another place');
+  ok('2B: the store card\'s tool bar (arrows + assign) is a fold at the foot of the card on the phone, opened by a ⋯ key beside the name; one set of controls for both widths',
+     /const \[actsOpen, setActsOpen\] = useState\(null\);/.test(jv) &&
+     /if \(!e\.target\.closest\('\[data-acts\]'\)\) setActsOpen\(null\);/.test(jv) &&
+     /document\.addEventListener\('pointerdown', close\)/.test(jv) &&
+     /<div data-acts onClick=\{e => e\.stopPropagation\(\)\} className=\{`order-last lg:order-none grid lg:flex lg:justify-between lg:items-center lg:p-1\.5 bg-black border-t lg:border-t-0 lg:border-b border-slate-800 z-10 transition-\[grid-template-rows,opacity\] duration-200 ease-out \$\{actsOpen === customer\.id \? 'opacity-100' : 'opacity-0 lg:opacity-100'\}`\} style=\{\{ gridTemplateRows: actsOpen === customer\.id \? '1fr' : '0fr' \}\}>/.test(jv) &&
+     /<div className="overflow-hidden lg:contents"><div className="flex justify-between items-center gap-2 p-2 lg:contents">/.test(jv) &&
+     /<MoreKey id=\{customer\.id\} label=\{customer\.name\} open=\{actsOpen === customer\.id\} onToggle=\{\(id\) => setActsOpen\(o => \(o === id \? null : id\)\)\} className="shrink-0 -mt-1 -mr-1" \/>/.test(jv) &&
+     !/<div className="bg-black border-b border-slate-800 p-1\.5 flex justify-between items-center z-10">/.test(code(jv)),
+     'his "board 2 = B"');
+  ok('2B: the arrows and the assign box are 44 on the phone, the name shows whole, the address is 11',
+     (jv.match(/w-11 h-11 lg:w-6 lg:h-6 text-base lg:text-xs bg-slate-900/g) || []).length === 2 &&
+     /px-2 py-1 min-h-11 lg:min-h-0 rounded outline-none border transition-all relative z-20/.test(jv) &&
+     /<h3 className="font-black text-base text-white uppercase tracking-wider mb-2 leading-tight flex items-start gap-2 lg:block lg:truncate">/.test(jv) &&
+     /<p className="text-\[11px\] lg:text-\[10px\] font-bold leading-relaxed line-clamp-2">\{customer\.address\}<\/p>/.test(jv) &&
+     !/leading-tight truncate">/.test(code(jv)) && !/w-6 h-6 text-xs bg-slate-900/.test(code(jv)),
+     'measured 2026-09-19: arrows 24 x 24, assign 128 x 23, the name cut with …, the address 10 px');
+  ok('2B: with no photo the NO INTEL band is a 44 px strip carrying the badges; with a photo it stays the 96 px picture',
+     /className=\{`\$\{customer\.storeImage \? 'h-24' : 'min-h-11 lg:h-24'\} bg-black relative shrink-0 border-b border-slate-800`\}/.test(jv) &&
+     /<div className="hidden lg:flex w-full h-full flex-col items-center justify-center text-slate-700/.test(jv) &&
+     /className=\{`\$\{customer\.storeImage \? 'absolute top-2 left-2 flex flex-col gap-1\.5' : 'static flex flex-row flex-wrap items-center gap-1\.5 px-2 py-1\.5 lg:absolute lg:top-2 lg:left-2 lg:flex-col lg:p-0'\}`\}/.test(jv) &&
+     !/<div className="h-24 bg-black relative shrink-0 border-b border-slate-800">/.test(code(jv)),
+     'measured 2026-09-19: 96 px of hex texture and NO INTEL on every card without a photo');
+  ok('the floor: every label on the phone flows is 11 px (the hover-only key labels and the pin popup are the exceptions)',
+     /flex justify-between text-\[11px\] lg:text-\[10px\] font-black uppercase tracking-widest text-orange-400/.test(jv) &&
+     (jv.match(/<label className="text-\[11px\] lg:text-\[10px\] text-slate-400 font-bold uppercase tracking-widest flex items-center gap-1">/g) || []).length === 2 &&
+     /<span className="text-white text-\[11px\] lg:text-\[10px\] font-black uppercase tracking-widest">\{canManageFleetSettings/.test(jv) &&
+     (jv.match(/<p className="text-\[11px\] lg:text-\[10px\] text-slate-400 font-bold uppercase tracking-wider">\{k(ab|ec)Count\}/g) || []).length === 2 &&
+     /className=\{`text-\[11px\] lg:text-\[10px\] font-bold mt-1 \$\{isCleared/.test(jv) &&
+     (jv.match(/(?<!lg:)text-\[10px\]/g) || []).length <= 10,
+     'measured 2026-09-19: every label 10 px; his 2026-08-16 "make the font little bit bigger"');
+  ok('the store block and the MISSION FEED card give the phone its 16 px back (p-5 -> p-3)',
+     /<div className="bg-black\/40 p-3 lg:p-5 rounded-2xl border border-orange-500\/20/.test(jv) &&
+     /<div className="animate-fade-in bg-black\/20 p-3 lg:p-5 rounded-3xl border border-white\/5 mt-2">/.test(jv),
+     'the store card measured 318 wide in a 359 column');
+  ok('the map: the tiles are Esri Dark Gray (no key needed) on Journey Plan and on the War Room; CARTO is gone - its tiles print API KEY REQUIRED',
+     /<TileLayer url="https:\/\/server\.arcgisonline\.com\/ArcGIS\/rest\/services\/Canvas\/World_Dark_Gray_Base\/MapServer\/tile\/\{z\}\/\{y\}\/\{x\}" maxNativeZoom=\{16\} attribution='© Esri' \/>/.test(jv) &&
+     /Canvas\/World_Dark_Gray_Base\/MapServer\/tile\/\{z\}\/\{y\}\/\{x\}" maxNativeZoom=\{16\} attribution='© Esri'/.test(mm) &&
+     /Canvas\/World_Light_Gray_Base\/MapServer\/tile\/\{z\}\/\{y\}\/\{x\}" maxNativeZoom=\{16\} attribution='© Esri'/.test(mm) &&
+     !/basemaps\.cartocdn\.com/.test(code(jv)) && !/basemaps\.cartocdn\.com/.test(code(mm)),
+     'his "fix the map because it said api key needed"; checked 2026-09-19 02:40: a CARTO tile carries the watermark, the Esri tile does not');
 }
 
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);

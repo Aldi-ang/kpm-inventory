@@ -2419,8 +2419,11 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                 <MapEffectController selectedRegion={selectedRegion} selectedCity={selectedCity} mapPoints={mapPoints} savedHome={savedHome} uploadedFocus={uploadedFocus} selectedZone={selectedZone} />
                 
                 <LayersControl position="bottomright">
-                    <LayersControl.BaseLayer checked name="Dark Matter (Carto)">
-                        <TileLayer className="balanced-dark-tile" url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" attribution='© CARTO' />
+                    {/* CARTO's basemaps print API KEY REQUIRED across every tile since 2026-09 (checked
+                        2026-09-19, his "fix the map"); Esri's canvases need no key. Native tiles stop at
+                        zoom 16 - Leaflet scales those up for the street-level zooms. */}
+                    <LayersControl.BaseLayer checked name="Dark Canvas (Esri)">
+                        <TileLayer className="balanced-dark-tile" url="https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}" maxNativeZoom={16} attribution='© Esri' />
                     </LayersControl.BaseLayer>
                     <LayersControl.BaseLayer name="Google Maps (Streets)">
                         <TileLayer url="https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}" attribution='© Google' />
@@ -2431,8 +2434,8 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                     <LayersControl.BaseLayer name="Detailed Streets (Esri)">
                         <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}" attribution='© Esri' />
                     </LayersControl.BaseLayer>
-                    <LayersControl.BaseLayer name="Light Canvas (Carto)">
-                        <TileLayer url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png" attribution='© CARTO' />
+                    <LayersControl.BaseLayer name="Light Canvas (Esri)">
+                        <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}" maxNativeZoom={16} attribution='© Esri' />
                     </LayersControl.BaseLayer>
                 </LayersControl>
 

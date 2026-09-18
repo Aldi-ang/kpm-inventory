@@ -3,7 +3,8 @@ import { Truck, MapPin, CheckCircle, Calendar, Phone, Store, Navigation, X, Save
 import { doc, updateDoc, serverTimestamp, deleteField, collection, getDocs, getDoc, setDoc } from "firebase/firestore";
 import { MapContainer, TileLayer, Marker, Polyline, GeoJSON, Tooltip as LeafletTooltip, Popup, useMap, useMapEvents } from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-cluster';
-import { storeKey, getLocalDayKey} from './utils/helpers';
+import { storeKey, getLocalDayKey, journeyWhere } from './utils/helpers';
+import MoreKey from './components/MoreKey.jsx';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { loadBorderCache, saveBorderCache } from './utils/borderCache';
@@ -298,7 +299,21 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
 
     const todayDate = getLocalDayKey();
     const [selectedDay, setSelectedDay] = useState(new Date().toLocaleDateString('en-US', { weekday: 'long' }));
-    
+
+    /* 📱 PHONE FOLDS (2026-09-19, his board 1 = B and board 2 = B). `feedOpen`: the MISSION FEED
+       pickers sit behind their title row on the phone and are always open on the desk (seeded from
+       the width, the PROJECTED VALUE pattern in AgentInventoryView). `actsOpen`: one store card's
+       tool bar (↑ ↓ and the assign box) is unfolded at a time by the ⋯ key beside its name; a tap
+       anywhere outside a `[data-acts]` element folds it (the Customers ⋯ pattern). */
+    const [feedOpen, setFeedOpen] = useState(() => typeof window !== 'undefined' && window.innerWidth >= 1024);
+    const [actsOpen, setActsOpen] = useState(null);
+    useEffect(() => {
+        if (actsOpen === null) return;
+        const close = (e) => { if (!e.target.closest('[data-acts]')) setActsOpen(null); };
+        document.addEventListener('pointerdown', close);
+        return () => document.removeEventListener('pointerdown', close);
+    }, [actsOpen]);
+
     const todaysVisits = useMemo(() => {
         const visitData = {};
         const todaysTx = transactions.filter(t => t?.date === todayDate);
@@ -873,15 +888,22 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
         <div className={`space-y-6 font-mono ${isFullScreen ? 'static z-[9999]' : 'animate-fade-in relative'}`}>
             {activeBrush && <style>{`.leaflet-container { cursor: crosshair !important; } .custom-icon { cursor: crosshair !important; }`}</style>}
 
-            <div className="bg-black/40 p-5 rounded-2xl border border-orange-500/20 shadow-[0_0_30px_rgba(0,0,0,0.5)]">
+            <div className="bg-black/40 p-3 lg:p-5 rounded-2xl border border-orange-500/20 shadow-[0_0_30px_rgba(0,0,0,0.5)]">
                 <div className="flex flex-col lg:flex-row justify-between lg:items-center gap-6 mb-4">
                     <div className="w-full lg:w-1/2">
-                        <h2 className="text-2xl font-black text-white flex items-center gap-3 uppercase tracking-widest mb-3">
-                            <Target size={28} className="text-orange-500 animate-pulse"/> 
-                            Mission Feed
+                        {/* 📱 On the phone the title is a 44 px key that folds the pickers under it and prints
+                            the day and the place the list is scoped to; on the desk it is the plain heading
+                            it always was (his board 1 = B, 2026-09-19). */}
+                        <h2 className="text-sm lg:text-2xl font-black text-white uppercase tracking-widest mb-1 lg:mb-3">
+                            <button type="button" onClick={() => setFeedOpen(v => !v)} aria-expanded={feedOpen}
+                                className="w-full flex items-center gap-3 text-left uppercase min-h-11 lg:min-h-0 lg:pointer-events-none lg:cursor-default">
+                                <Target size={28} className="text-orange-500 animate-pulse shrink-0 w-5 h-5 lg:w-7 lg:h-7"/>
+                                Mission Feed
+                                <span className="lg:hidden ml-auto text-[11px] text-slate-400 whitespace-nowrap">{selectedDay} · {journeyWhere(selectedProvinsi, selectedKabupaten, selectedKecamatan)} {feedOpen ? '▴' : '▾'}</span>
+                            </button>
                         </h2>
                         <div className="flex flex-col gap-1.5 w-full">
-                            <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-orange-400">
+                            <div className="flex justify-between text-[11px] lg:text-[10px] font-black uppercase tracking-widest text-orange-400">
                                 <span>Elimination Status</span>
                                 <span className="text-white">{conqueredCount} / {orderedRoute.length} Secured</span>
                             </div>
@@ -892,19 +914,22 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                     </div>
                 </div>
 
+                {/* the pickers ride a grid-rows fold on the phone (0fr → 1fr, 200 ms) and are always open on the desk */}
+                <div className={`grid transition-[grid-template-rows,opacity] duration-200 ease-out lg:block ${feedOpen ? 'opacity-100' : 'opacity-0 lg:opacity-100'}`} style={{ gridTemplateRows: feedOpen ? '1fr' : '0fr' }}>
+                <div className="overflow-hidden lg:contents">
                 <div className="bg-slate-900/60 p-4 rounded-xl border border-slate-700 shadow-inner flex flex-wrap gap-4 mt-4">
-                    <div className="flex-1 min-w-[200px] flex flex-col gap-2 border-r border-slate-700 pr-4">
-                        <label className="text-[10px] text-slate-400 font-bold uppercase tracking-widest flex items-center gap-1"><MapPin size={12}/> Regional Command</label>
-                        <div className="flex gap-2 w-full">
-                            <select value={selectedProvinsi} onChange={(e) => { setSelectedProvinsi(e.target.value); setSelectedKabupaten('All'); setSelectedKecamatan('All'); }} className="flex-1 bg-black text-slate-300 font-bold text-[10px] uppercase p-2 rounded outline-none border border-slate-700 cursor-pointer">
+                    <div className="flex-1 min-w-[200px] flex flex-col gap-2 lg:border-r lg:border-slate-700 lg:pr-4">
+                        <label className="text-[11px] lg:text-[10px] text-slate-400 font-bold uppercase tracking-widest flex items-center gap-1"><MapPin size={12}/> Regional Command</label>
+                        <div className="flex flex-col lg:flex-row gap-2 w-full">
+                            <select value={selectedProvinsi} onChange={(e) => { setSelectedProvinsi(e.target.value); setSelectedKabupaten('All'); setSelectedKecamatan('All'); }} className="flex-1 bg-black text-slate-300 font-bold text-[11px] lg:text-[10px] uppercase p-2 min-h-11 lg:min-h-0 rounded outline-none border border-slate-700 cursor-pointer">
                                 <option value="All">All Prov</option>
                                 {hierarchyData.provs.map(p => <option key={p} value={p}>{p}</option>)}
                             </select>
-                            <select value={selectedKabupaten} onChange={(e) => { setSelectedKabupaten(e.target.value); setSelectedKecamatan('All'); }} className="flex-1 bg-black text-slate-300 font-bold text-[10px] uppercase p-2 rounded outline-none border border-slate-700 cursor-pointer">
+                            <select value={selectedKabupaten} onChange={(e) => { setSelectedKabupaten(e.target.value); setSelectedKecamatan('All'); }} className="flex-1 bg-black text-slate-300 font-bold text-[11px] lg:text-[10px] uppercase p-2 min-h-11 lg:min-h-0 rounded outline-none border border-slate-700 cursor-pointer">
                                 <option value="All">All Kab</option>
                                 {hierarchyData.kabs.map(k => <option key={k} value={k}>{k}</option>)}
                             </select>
-                            <select value={selectedKecamatan} onChange={(e) => setSelectedKecamatan(e.target.value)} className="flex-1 bg-black text-orange-400 font-bold text-[10px] uppercase p-2 rounded outline-none border border-orange-500/50 focus:border-orange-500 cursor-pointer">
+                            <select value={selectedKecamatan} onChange={(e) => setSelectedKecamatan(e.target.value)} className="flex-1 bg-black text-orange-400 font-bold text-[11px] lg:text-[10px] uppercase p-2 min-h-11 lg:min-h-0 rounded outline-none border border-orange-500/50 focus:border-orange-500 cursor-pointer">
                                 <option value="All">All Kec</option>
                                 {hierarchyData.kecs.map(k => <option key={k} value={k}>{k}</option>)}
                             </select>
@@ -912,23 +937,25 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                     </div>
 
                     <div className="flex-1 min-w-[200px] flex flex-col gap-2">
-                        <label className="text-[10px] text-slate-400 font-bold uppercase tracking-widest flex items-center gap-1"><ListFilter size={12}/> Operational Filters</label>
+                        <label className="text-[11px] lg:text-[10px] text-slate-400 font-bold uppercase tracking-widest flex items-center gap-1"><ListFilter size={12}/> Operational Filters</label>
                         <div className="flex gap-2">
-                            <div className="flex items-center flex-1 bg-black p-1.5 rounded border border-slate-700">
+                            <div className="flex items-center flex-1 bg-black px-1.5 py-0 lg:py-1.5 rounded border border-slate-700">
                                 <Truck size={14} className="text-emerald-400 ml-1 shrink-0"/>
-                                <select value={selectedAgent} onChange={(e) => setSelectedAgent(e.target.value)} className="bg-transparent text-emerald-400 font-bold text-[10px] uppercase w-full outline-none cursor-pointer pl-1">
+                                <select value={selectedAgent} onChange={(e) => setSelectedAgent(e.target.value)} className="bg-transparent text-emerald-400 font-bold text-[11px] lg:text-[10px] uppercase w-full outline-none cursor-pointer pl-1 min-h-11 lg:min-h-0">
                                     <option value="All">Global Fleet</option>
                                     {globalAgentList.map(a => <option key={a} value={a}>{a}'s Bounties</option>)}
                                 </select>
                             </div>
-                            <div className="flex items-center flex-1 bg-black p-1.5 rounded border border-slate-700">
+                            <div className="flex items-center flex-1 bg-black px-1.5 py-0 lg:py-1.5 rounded border border-slate-700">
                                 <Calendar size={14} className="text-blue-400 ml-1 shrink-0"/>
-                                <select value={selectedDay} onChange={(e) => setSelectedDay(e.target.value)} className="bg-transparent text-blue-400 font-bold text-[10px] uppercase w-full outline-none cursor-pointer pl-1">
+                                <select value={selectedDay} onChange={(e) => setSelectedDay(e.target.value)} className="bg-transparent text-blue-400 font-bold text-[11px] lg:text-[10px] uppercase w-full outline-none cursor-pointer pl-1 min-h-11 lg:min-h-0">
                                     {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map(d => <option key={d} value={d}>{d}</option>)}
                                 </select>
                             </div>
                         </div>
                     </div>
+                </div>
+                </div>
                 </div>
             </div>
 
@@ -941,10 +968,10 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                         onClick={() => setIsPanelOpen(!isPanelOpen)} 
                         onDoubleClick={() => setDevUnlock(true)}
                         title="Double-Tap to Override Permissions"
-                        className="pointer-events-auto bg-slate-900/95 backdrop-blur border border-slate-700 p-2.5 rounded-xl shadow-xl flex items-center gap-2 hover:bg-slate-800 transition-colors active:scale-95 select-none"
+                        className="pointer-events-auto bg-slate-900/95 backdrop-blur border border-slate-700 p-2.5 rounded-xl shadow-xl flex items-center gap-2 hover:bg-slate-800 transition-colors active:scale-95 select-none min-h-11 lg:min-h-0"
                     >
                         {canManageFleetSettings ? <Paintbrush size={16} className="text-orange-500"/> : <Globe size={16} className="text-blue-500"/>}
-                        <span className="text-white text-[10px] font-black uppercase tracking-widest">{canManageFleetSettings ? 'Paintbrush' : 'Squad Legend'}</span>
+                        <span className="text-white text-[11px] lg:text-[10px] font-black uppercase tracking-widest">{canManageFleetSettings ? 'Paintbrush' : 'Squad Legend'}</span>
                         <ChevronDown size={14} className={`text-slate-400 transition-transform ${isPanelOpen ? 'rotate-180' : ''}`}/>
                     </button>
 
@@ -954,7 +981,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                                 <>
                                     <button
                                         onClick={() => setActiveBrush(null)}
-                                        className={`flex items-center justify-center gap-2 p-2 rounded-xl border transition-all text-[10px] uppercase tracking-widest font-black ${activeBrush === null ? 'bg-orange-600 text-white border-orange-500' : 'bg-slate-800 text-slate-400 border-slate-700 hover:bg-slate-700'}`}
+                                        className={`flex items-center justify-center gap-2 p-2 rounded-xl border transition-all text-[11px] lg:text-[10px] uppercase tracking-widest font-black ${activeBrush === null ? 'bg-orange-600 text-white border-orange-500' : 'bg-slate-800 text-slate-400 border-slate-700 hover:bg-slate-700'}`}
                                     >
                                         <X size={14}/> Disable Brush
                                     </button>
@@ -1002,7 +1029,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                 {editingStoreId && (
                     <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[9999] bg-slate-900/95 backdrop-blur border-2 border-orange-500 p-2.5 rounded-xl shadow-[0_0_30px_rgba(249,115,22,0.5)] flex flex-col items-center gap-2 pointer-events-auto animate-fade-in-up w-max min-w-[220px]">
                         <div className="flex flex-col text-center">
-                            <span className="text-orange-500 text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-1"><MapPin size={12}/> Edit Pin Location</span>
+                            <span className="text-orange-500 text-[11px] lg:text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-1"><MapPin size={12}/> Edit Pin Location</span>
                             <span className="text-slate-300 text-[11px] font-bold mt-0.5 leading-tight">Drag pin or tap map to move.</span>
                         </div>
                         <div className="flex gap-2 w-full">
@@ -1012,7 +1039,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                     </div>
                 )}
 
-                <div className="absolute top-4 right-4 z-[9999] flex flex-col gap-3 pointer-events-auto">
+                <div className="absolute top-4 right-4 z-[9999] flex flex-col gap-3 pointer-events-auto [&>button]:min-h-11 [&>button]:min-w-11 lg:[&>button]:min-h-0 lg:[&>button]:min-w-0">
                     <button 
                         onClick={() => {
                             setIsFullScreen(!isFullScreen);
@@ -1056,7 +1083,10 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                 <MapContainer center={mapCenter} zoom={12} style={{ height: '100%', width: '100%' }}>
                     <MapRecenter trigger={recenterTrigger} saveTrigger={saveHomeTrigger} savedHome={savedHome} onSaveHome={handleSaveHome} defaultCenter={mapCenter} />
                     <StoreFocus focusStore={focusStore} customers={customers} onHandled={onFocusStoreHandled} />
-                    <TileLayer url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" />
+                    {/* Esri's dark canvas needs no key; CARTO's basemaps started printing API KEY REQUIRED across
+                        every tile (checked 2026-09-19). Native tiles stop at zoom 16, so Leaflet scales those up
+                        for the street-level zooms instead of showing grey squares. */}
+                    <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}" maxNativeZoom={16} attribution='© Esri' />
                     
                     <LocationController userLocation={userLocation} setUserLocation={setUserLocation} isEditing={!!editingStoreId} isLiteMode={isLiteMode} />
                     <MapEditController isEditing={!!editingStoreId} onMapClick={(latlng) => setTempPinLocation({ lat: latlng.lat, lng: latlng.lng })} />
@@ -1335,15 +1365,15 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                     return (
                         <>
                             {/* 🚀 TACTICAL BREADCRUMB NAVIGATION */}
-                            <div className="flex flex-wrap items-center gap-2 mb-2 bg-slate-900/80 backdrop-blur p-3 rounded-xl border border-slate-700 w-max shadow-lg">
-                                <button onClick={() => { setSelectedProvinsi('All'); setSelectedKabupaten('All'); setUserSelectedPath(null); }} className={`text-xs font-black uppercase tracking-widest flex items-center gap-2 transition-colors ${selectedProvinsi === 'All' ? 'text-orange-500' : 'text-slate-400 hover:text-white'}`}>
+                            <div className="flex flex-wrap items-center gap-2 mb-2 bg-slate-900/80 backdrop-blur p-3 rounded-xl border border-slate-700 max-w-full lg:w-max shadow-lg">
+                                <button onClick={() => { setSelectedProvinsi('All'); setSelectedKabupaten('All'); setUserSelectedPath(null); }} className={`min-h-11 lg:min-h-0 text-xs font-black uppercase tracking-widest flex items-center gap-2 transition-colors ${selectedProvinsi === 'All' ? 'text-orange-500' : 'text-slate-400 hover:text-white'}`}>
                                     <Layers size={14}/> Radar Hub
                                 </button>
                                 
                                 {selectedProvinsi !== 'All' && (
                                     <>
                                         <ChevronRight size={14} className="text-slate-400"/>
-                                        <button onClick={() => { setSelectedKabupaten('All'); setUserSelectedPath(null); }} className={`text-xs font-black uppercase tracking-widest transition-colors ${selectedKabupaten === 'All' ? 'text-orange-500' : 'text-slate-400 hover:text-white'}`}>
+                                        <button onClick={() => { setSelectedKabupaten('All'); setUserSelectedPath(null); }} className={`min-h-11 lg:min-h-0 text-xs font-black uppercase tracking-widest transition-colors ${selectedKabupaten === 'All' ? 'text-orange-500' : 'text-slate-400 hover:text-white'}`}>
                                             {selectedProvinsi}
                                         </button>
                                     </>
@@ -1372,7 +1402,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                                                 </div>
                                                 <div>
                                                     <h3 className="text-sm font-black text-white uppercase tracking-widest mb-1">{prov}</h3>
-                                                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">{kabCount} Regions • {storeCount} Targets</p>
+                                                    <p className="text-[11px] lg:text-[10px] text-slate-400 font-bold uppercase tracking-wider">{kabCount} Regions • {storeCount} Targets</p>
                                                 </div>
                                             </button>
                                         );
@@ -1395,7 +1425,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                                                 </div>
                                                 <div>
                                                     <h3 className="text-sm font-black text-white uppercase tracking-widest mb-1">{kab}</h3>
-                                                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">{kecCount} Sectors • {storeCount} Targets</p>
+                                                    <p className="text-[11px] lg:text-[10px] text-slate-400 font-bold uppercase tracking-wider">{kecCount} Sectors • {storeCount} Targets</p>
                                                 </div>
                                             </button>
                                         );
@@ -1409,7 +1439,9 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                                 
                                 return (
                                     <div className="animate-fade-in mt-4">
-                                        <div className="flex overflow-x-auto hide-scrollbar gap-3 pb-4 -mx-4 px-4 lg:mx-0 lg:px-0">
+                                        {/* 📱 the sector cards wrap two to a row on the phone (his board 3 = YES: no swipe reel, and the
+                                            old -mx-4 stuck out of the phone shell's p-2); the desk keeps its one-row reel */}
+                                        <div className="flex flex-wrap lg:flex-nowrap lg:overflow-x-auto hide-scrollbar gap-3 pb-4">
                                             {Object.keys(kecs).sort().map(kec => {
                                                 const sectorStores = kecs[kec];
                                                 const completedInSector = sectorStores.filter(c => c.lastVisit === todayDate || !!safeVisits[c.name.trim().toLowerCase()]).length;
@@ -1421,7 +1453,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                                                     <button 
                                                         key={currentPath}
                                                         onClick={() => setUserSelectedPath(currentPath)}
-                                                        className={`shrink-0 flex flex-col items-start p-3.5 rounded-2xl border-2 transition-all duration-300 min-w-[140px] ${isActive ? 'bg-orange-600/10 border-orange-500 shadow-[0_0_20px_rgba(249,115,22,0.2)]' : 'bg-slate-900 border-slate-700 hover:border-slate-500 hover:bg-slate-800'}`}
+                                                        className={`shrink-0 basis-[calc(50%-6px)] lg:basis-auto flex flex-col items-start p-3.5 rounded-2xl border-2 transition-all duration-300 min-w-[140px] ${isActive ? 'bg-orange-600/10 border-orange-500 shadow-[0_0_20px_rgba(249,115,22,0.2)]' : 'bg-slate-900 border-slate-700 hover:border-slate-500 hover:bg-slate-800'}`}
                                                     >
                                                         <div className="flex justify-between items-center w-full mb-2">
                                                             <MapPin size={14} className={isActive ? 'text-orange-500' : 'text-slate-400'} />
@@ -1430,7 +1462,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                                                         <span className={`text-xs font-black uppercase tracking-widest text-left w-full truncate ${isActive ? 'text-white' : 'text-slate-400'}`}>
                                                             {kec}
                                                         </span>
-                                                        <div className={`text-[10px] font-bold mt-1 ${isCleared ? 'text-emerald-400' : (isActive ? 'text-orange-400' : 'text-slate-400')}`}>
+                                                        <div className={`text-[11px] lg:text-[10px] font-bold mt-1 ${isCleared ? 'text-emerald-400' : (isActive ? 'text-orange-400' : 'text-slate-400')}`}>
                                                             {completedInSector} / {sectorStores.length} Secured
                                                         </div>
                                                     </button>
@@ -1446,7 +1478,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                                             if (!activeStores) return null;
 
                                             return (
-                                                <div className="animate-fade-in bg-black/20 p-5 rounded-3xl border border-white/5 mt-2">
+                                                <div className="animate-fade-in bg-black/20 p-3 lg:p-5 rounded-3xl border border-white/5 mt-2">
                                                     <div className="flex items-center justify-between mb-5 border-b border-white/10 pb-4">
                                                         <div>
                                                             <h3 className="text-xl font-black text-white uppercase tracking-widest leading-none flex items-center gap-3">
@@ -1498,13 +1530,18 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                                                             )
                                                         })()}
 
-                                                        <div className="bg-black border-b border-slate-800 p-1.5 flex justify-between items-center z-10">
+                                                        {/* 📱 THE TOOL BAR (↑ ↓ the route order, the assign box). On the desk it is the black bar at the
+                                                            top of the card, as always. On the phone the SAME bar is a fold at the foot of the card
+                                                            (order-last), 0fr until the ⋯ key beside the name opens it - his board 2 = B, 2026-09-19.
+                                                            One set of controls for both widths; nothing is duplicated. */}
+                                                        <div data-acts onClick={e => e.stopPropagation()} className={`order-last lg:order-none grid lg:flex lg:justify-between lg:items-center lg:p-1.5 bg-black border-t lg:border-t-0 lg:border-b border-slate-800 z-10 transition-[grid-template-rows,opacity] duration-200 ease-out ${actsOpen === customer.id ? 'opacity-100' : 'opacity-0 lg:opacity-100'}`} style={{ gridTemplateRows: actsOpen === customer.id ? '1fr' : '0fr' }}>
+                                                        <div className="overflow-hidden lg:contents"><div className="flex justify-between items-center gap-2 p-2 lg:contents">
                                                             <div className="flex gap-1 relative z-20">
-                                                                <button onClick={(e) => { e.stopPropagation(); moveStore(originalIdx, 'up'); }} disabled={originalIdx === 0 || isVisited} className="w-6 h-6 text-xs bg-slate-900 hover:bg-slate-800 border border-slate-700 disabled:opacity-30 rounded text-slate-400 flex items-center justify-center font-bold transition-colors">↑</button>
-                                                                <button onClick={(e) => { e.stopPropagation(); moveStore(originalIdx, 'down'); }} disabled={originalIdx === orderedRoute.length - 1 || isVisited} className="w-6 h-6 text-xs bg-slate-900 hover:bg-slate-800 border border-slate-700 disabled:opacity-30 rounded text-slate-400 flex items-center justify-center font-bold transition-colors">↓</button>
+                                                                <button onClick={(e) => { e.stopPropagation(); moveStore(originalIdx, 'up'); }} disabled={originalIdx === 0 || isVisited} className="w-11 h-11 lg:w-6 lg:h-6 text-base lg:text-xs bg-slate-900 hover:bg-slate-800 border border-slate-700 disabled:opacity-30 rounded text-slate-400 flex items-center justify-center font-bold transition-colors">↑</button>
+                                                                <button onClick={(e) => { e.stopPropagation(); moveStore(originalIdx, 'down'); }} disabled={originalIdx === orderedRoute.length - 1 || isVisited} className="w-11 h-11 lg:w-6 lg:h-6 text-base lg:text-xs bg-slate-900 hover:bg-slate-800 border border-slate-700 disabled:opacity-30 rounded text-slate-400 flex items-center justify-center font-bold transition-colors">↓</button>
                                                             </div>
-                                                            <select 
-                                                                className={`bg-slate-900 text-[11px] font-black uppercase tracking-widest px-2 py-1 rounded outline-none border transition-all relative z-20 ${assignments[customer.id] ? 'border-emerald-500/50 text-emerald-400' : 'border-slate-700 text-slate-400'} ${canAssignAgent && !isVisited ? 'cursor-pointer hover:border-orange-500 hover:text-white' : 'pointer-events-none'}`}
+                                                            <select
+                                                                className={`bg-slate-900 text-[11px] font-black uppercase tracking-widest px-2 py-1 min-h-11 lg:min-h-0 rounded outline-none border transition-all relative z-20 ${assignments[customer.id] ? 'border-emerald-500/50 text-emerald-400' : 'border-slate-700 text-slate-400'} ${canAssignAgent && !isVisited ? 'cursor-pointer hover:border-orange-500 hover:text-white' : 'pointer-events-none'}`}
                                                                 value={assignments[customer.id] || 'Unassigned'}
                                                                 onChange={(e) => handleAssignAgent(customer.id, e.target.value)}
                                                                 style={{ colorScheme: 'dark' }}
@@ -1513,19 +1550,22 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                                                                 <option value="Unassigned">UNASSIGNED</option>
                                                                 {globalAgentList.map(a => <option key={a} value={a}>{a}</option>)}
                                                             </select>
+                                                        </div></div>
                                                         </div>
 
-                                                        <div className="h-24 bg-black relative shrink-0 border-b border-slate-800">
+                                                        {/* the picture band: 96 px when there is a photo; without one the phone gets a 44 px strip
+                                                            that carries the badges instead of a NO INTEL texture */}
+                                                        <div className={`${customer.storeImage ? 'h-24' : 'min-h-11 lg:h-24'} bg-black relative shrink-0 border-b border-slate-800`}>
                                                             {customer.storeImage ? (
                                                                 <img src={customer.storeImage} className="w-full h-full object-cover opacity-60" alt="Store"/>
                                                             ) : (
-                                                                <div className="w-full h-full flex flex-col items-center justify-center text-slate-700 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]">
+                                                                <div className="hidden lg:flex w-full h-full flex-col items-center justify-center text-slate-700 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]">
                                                                     <Store size={24} className="mb-1 opacity-50"/>
                                                                     <span className="text-[11px] font-black tracking-widest uppercase">No Intel</span>
                                                                 </div>
                                                             )}
-                                                            
-                                                            <div className="absolute top-2 left-2 flex flex-col gap-1.5">
+
+                                                            <div className={`${customer.storeImage ? 'absolute top-2 left-2 flex flex-col gap-1.5' : 'static flex flex-row flex-wrap items-center gap-1.5 px-2 py-1.5 lg:absolute lg:top-2 lg:left-2 lg:flex-col lg:p-0'}`}>
                                                                 <div className="bg-black/80 backdrop-blur border border-white/10 text-white text-[11px] font-black px-2 py-1 rounded uppercase tracking-widest shadow-lg flex items-center gap-1.5">
                                                                     <span style={{ color: ringColor }}>●</span>
                                                                     {metric.agentName === 'Unassigned' ? 'UNASSIGNED' : metric.agentName.split(' ')[0]} 
@@ -1545,12 +1585,13 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                                                         </div>
 
                                                         <div className="p-4 flex-1 flex flex-col bg-gradient-to-b from-[#1a1815] to-[#0f0e0d]">
-                                                            <h3 className="font-black text-base text-white uppercase tracking-wider mb-2 leading-tight truncate">
-                                                                {customer.name}
+                                                            <h3 className="font-black text-base text-white uppercase tracking-wider mb-2 leading-tight flex items-start gap-2 lg:block lg:truncate">
+                                                                <span className="flex-1 min-w-0">{customer.name}</span>
+                                                                <MoreKey id={customer.id} label={customer.name} open={actsOpen === customer.id} onToggle={(id) => setActsOpen(o => (o === id ? null : id))} className="shrink-0 -mt-1 -mr-1" />
                                                             </h3>
                                                             
                                                             {isVisited ? (
-                                                                <div className="mb-3 px-3 py-2 rounded-lg border border-emerald-500 bg-emerald-900/40 text-emerald-400 text-[10px] font-black tracking-wider w-full flex flex-col gap-1 text-left shadow-inner relative z-10">
+                                                                <div className="mb-3 px-3 py-2 rounded-lg border border-emerald-500 bg-emerald-900/40 text-emerald-400 text-[11px] lg:text-[10px] font-black tracking-wider w-full flex flex-col gap-1 text-left shadow-inner relative z-10">
                                                                     <span className="flex items-center gap-1.5 uppercase leading-tight"><CheckCircle size={12} className="shrink-0"/> {hasLiveTxToday ? 'SECURED TODAY' : customer.lastVisitTag}</span>
                                                                     {(!hasLiveTxToday && customer.lastVisitNote) && <span className="text-[11px] font-mono text-emerald-200/80 font-normal normal-case leading-snug line-clamp-2 border-t border-emerald-500/30 pt-1.5 mt-0.5">{customer.lastVisitNote}</span>}
                                                                 </div>
@@ -1564,7 +1605,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                                                                 <div className="flex items-start gap-2 text-slate-400 bg-black/40 p-2 rounded border border-white/5">
                                                                     <MapPin size={12} className="shrink-0 text-blue-500 mt-0.5"/>
                                                                     <div>
-                                                                        <p className="text-[10px] font-bold leading-relaxed line-clamp-2">{customer.address}</p>
+                                                                        <p className="text-[11px] lg:text-[10px] font-bold leading-relaxed line-clamp-2">{customer.address}</p>
                                                                     </div>
                                                                 </div>
                                                             </div>
@@ -1574,7 +1615,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                                                                     <>
                                                                         <button 
                                                                             onClick={() => jumpToTerminal(customer.name)}
-                                                                            className="w-full bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 text-white py-3 rounded-lg font-black text-xs uppercase tracking-[0.2em] flex items-center justify-center gap-2 transition-transform active:scale-95 shadow-[0_5px_20px_rgba(249,115,22,0.4)] border border-orange-400"
+                                                                            className="w-full bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 text-white py-3 min-h-11 lg:min-h-0 rounded-lg font-black text-xs uppercase tracking-[0.2em] flex items-center justify-center gap-2 transition-transform active:scale-95 shadow-[0_5px_20px_rgba(249,115,22,0.4)] border border-orange-400"
                                                                         >
                                                                             <Crosshair size={14}/> Engage Target
                                                                         </button>
@@ -1642,20 +1683,20 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                                     <AlertTriangle size={20} className="text-orange-500"/>
                                     Exception Log
                                 </h3>
-                                <p className="text-[10px] text-slate-400 tracking-widest uppercase mt-1">Target: {checkInCustomer.name}</p>
+                                <p className="text-[11px] lg:text-[10px] text-slate-400 tracking-widest uppercase mt-1">Target: {checkInCustomer.name}</p>
                             </div>
                             <button onClick={() => setCheckInCustomer(null)} className="text-slate-400 hover:text-white transition-colors"><X size={24}/></button>
                         </div>
 
                         <div className="p-6 space-y-6">
                             <div>
-                                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3 block">Exception Reason</label>
+                                <label className="text-[11px] lg:text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3 block">Exception Reason</label>
                                 <div className="flex flex-wrap gap-2">
                                     {QUICK_TAGS.map(tag => (
                                         <button 
                                             key={tag}
                                             onClick={() => setVisitTag(tag)}
-                                            className={`px-3 py-2.5 rounded-lg text-[10px] font-black uppercase tracking-wider border transition-all ${
+                                            className={`px-3 py-2.5 min-h-11 lg:min-h-0 rounded-lg text-[11px] lg:text-[10px] font-black uppercase tracking-wider border transition-all ${
                                                 visitTag === tag 
                                                 ? 'bg-orange-600 text-white border-orange-400 shadow-[0_0_15px_rgba(249,115,22,0.4)]' 
                                                 : 'bg-slate-800 text-slate-400 border-slate-700 hover:border-slate-500'
@@ -1668,7 +1709,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                             </div>
 
                             <div>
-                                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 block flex items-center gap-2">
+                                <label className="text-[11px] lg:text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 block flex items-center gap-2">
                                     <MessageSquare size={14}/> Field Intel (Notes)
                                 </label>
                                 <textarea 
@@ -1684,7 +1725,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                         <div className="p-5 bg-black/60 border-t border-slate-800 flex gap-3">
                             <button 
                                 onClick={() => setCheckInCustomer(null)}
-                                className="flex-1 py-4 rounded-xl bg-slate-800 border border-slate-700 font-bold text-slate-400 hover:text-white hover:bg-slate-700 uppercase tracking-widest text-[10px] transition-colors"
+                                className="flex-1 py-4 rounded-xl bg-slate-800 border border-slate-700 font-bold text-slate-400 hover:text-white hover:bg-slate-700 uppercase tracking-widest text-[11px] lg:text-[10px] transition-colors"
                             >
                                 Abort
                             </button>
