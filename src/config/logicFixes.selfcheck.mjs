@@ -7334,5 +7334,71 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
      'the reducer the component runs, on the lab\'s 10 → 15 → 10');
 }
 
+/* ─── 2026-09-18 — EOD SETORAN ON THE PHONE (his board 1 YES + board 2 B) ───
+   Measured at 375 inside the real shell (lab `?shell&eod`): the card deck was a fixed 344 px box
+   and the taller cards behind poked out under the shorter card in front as a strip of another
+   card's product row; the count rows truncated names at 110 px, clipped KARTON in a 32 px span,
+   scrolled inside the card (4 lines in 152 px), and their boxes were 37 tall; Landed / Less /
+   Not yet were 30; four labels were 10 px. Under lg the deck is as tall as the card on top and
+   the cards behind are clipped blank card backs, the name takes its own line, the box is 96×44
+   on the right, the lists do not scroll, the buttons are 44, the labels 11. The desk keeps every
+   number. His words: "board 1 yes, board 2 B because it have more space for long product name". */
+{
+  const d = read('src/components/EODCardDeck.jsx');
+  ok('REGRESSION: the deck is a fixed 344 px box only on the desk; on the phone it is as tall as the card on top',
+     /<div className="relative mb-\[33px\] lg:mb-0 lg:h-\[344px\]" style=\{\{ perspective: '1200px' \}\}>/.test(d) &&
+     !/className="relative h-\[344px\]"/.test(code(d)),
+     'measured 2026-09-18: a strip of card 3 ("Gudang Garam… KARTON") showed under the Cash card');
+  ok('the card on top sits in the flow on the phone; the cards behind are clipped to its height with their content hidden; the flying card is free',
+     /offset === 0 \? 'relative lg:absolute inset-x-0 top-0'/.test(d) &&
+     /: gone \? 'absolute inset-x-0 top-0'/.test(d) &&
+     /: 'absolute inset-x-0 top-0 bottom-0 lg:bottom-auto overflow-hidden lg:overflow-visible \[&>\*\]:invisible lg:\[&>\*\]:visible'/.test(d),
+     'the confirmed card still flies UPWARD into the letter: no overflow-hidden on any ancestor of the flying card, only on the cards behind');
+  ok('the count rows stack on the phone: name on its own line, a 96×44 box on the right, the unit whole; one line on the desk',
+     /className="flex flex-wrap lg:flex-nowrap items-center gap-2 rounded-md px-2 py-1\.5 hover:bg-\[var\(--raised\)\]"/.test(d) &&
+     /<span className="flex-1 min-w-0 basis-full lg:basis-auto">/.test(d) &&
+     /className=\{`w-24 lg:w-\[74px\] h-11 lg:h-auto ml-auto lg:ml-0 shrink-0 rounded-lg border-2 px-2 py-1\.5 text-right text-\[15px\]/.test(d) &&
+     /<span className="w-12 lg:w-8 shrink-0 text-\[11px\] font-bold uppercase tracking-wider text-\[var\(--ink-dim\)\]">/.test(d),
+     'measured: the name column was 110 px ("Gudang Gara…"), KARTON needs 48 in a 32 px span, the box was 37 tall');
+  ok('names wrap on the phone and truncate only on the desk — the product row and the receipt row',
+     /<span className="block text-\[13px\] font-bold text-\[var\(--ink\)\] lg:truncate leading-tight">\{l\.name\}<\/span>/.test(d) &&
+     /<span className="text-\[13px\] font-bold text-\[var\(--ink\)\] lg:truncate">\{r\.customer\}<\/span>/.test(d) &&
+     !/text-\[13px\] font-bold text-\[var\(--ink\)\] truncate/.test(code(d)));
+  ok('the two lists scroll inside the card only on the desk; on the phone the shell scrolls everything once',
+     /<div className="lg:max-h-\[152px\] overflow-y-auto rounded-lg border bg-\[var\(--inset\)\] border-\[var\(--line\)\] p-1\.5">/.test(d) &&
+     /<div className="lg:max-h-\[150px\] overflow-y-auto rounded-lg border bg-\[var\(--inset\)\] border-\[var\(--line\)\] p-1\.5">/.test(d) &&
+     !/className="max-h-\[15[02]px\]/.test(code(d)),
+     'measured: 4 lines need 212 px, the box gave 152 — the 4th product was behind a second scroll');
+  ok('Landed / Less / Not yet and the "Actually got" box are 44 tall on the phone, unchanged on the desk',
+     /className=\{`flex-1 rounded-md border py-1\.5 min-h-11 lg:min-h-0 text-\[11px\] font-bold uppercase tracking-wider transition-colors/.test(d) &&
+     /className="flex-1 rounded-lg border-2 px-2 py-1\.5 h-11 lg:h-auto text-right font-mono tabular-nums text-\[14px\]/.test(d),
+     'measured 30 (py-1.5) — under his 44 rule');
+  const f = read('src/components/EODAgentFlow.jsx');
+  const e = read('src/EODReconciliationView.jsx');
+  ok('the 10 px labels are 11 on the phone: Step 1/2/3, the line under the title, the two waiting/closed lines',
+     /className=\{`block font-mono text-\[11px\] lg:text-\[10px\] font-bold uppercase tracking-\[\.16em\]/.test(f) &&
+     /<p className="text-\[11px\] lg:text-\[10px\] text-\[var\(--ink-dim\)\] uppercase tracking-widest mt-2">End of Day Reconciliation & Vault Return<\/p>/.test(e) &&
+     (e.match(/<p className="text-\[11px\] lg:text-\[10px\] text-\[var\(--ink-dim\)\] uppercase tracking-widest text-center">/g) || []).length === 2,
+     'the Customers precedent: text-[11px] lg:text-[10px] keeps the desk pixel-identical');
+  ok('BEHAVIOUR: the deck class for a card follows its offset — on top, gone, or behind — never a fourth state',
+     (() => {
+       const cls = (offset) => offset === 0 ? 'relative lg:absolute inset-x-0 top-0'
+         : offset < 0 ? 'absolute inset-x-0 top-0'
+         : 'absolute inset-x-0 top-0 bottom-0 lg:bottom-auto overflow-hidden lg:overflow-visible [&>*]:invisible lg:[&>*]:visible';
+       return cls(0).startsWith('relative') && !/overflow-hidden/.test(cls(-1)) && /overflow-hidden/.test(cls(2)) &&
+         /lg:absolute/.test(cls(0)) && /lg:overflow-visible/.test(cls(1));
+     })(),
+     'the same expression the component runs, on the three offsets step 1 produces (-1, 0, 1)');
+  /* A `{/* JSX comment *\/}` written as the first thing inside `return (` or `cond ? (` is an
+     empty object followed by an element — two expressions, a parse error. It has now cost two
+     sessions a dead dev server (2026-09-18: the lab answered 500 until the console was read),
+     and a trap written in a brief did not stop it; this sweep does. Use a plain block comment. */
+  const walk = (dir) => fs.readdirSync(dir, { withFileTypes: true }).flatMap((e) =>
+    e.isDirectory() ? walk(`${dir}/${e.name}`) : e.name.endsWith('.jsx') ? [`${dir}/${e.name}`] : []);
+  const badComment = walk('src').filter((f) => /\(\s*\{\/\*/.test(read(f)));
+  ok('no JSX file opens a parenthesised expression with a {/* */} comment — that is a syntax error, not a comment',
+     badComment.length === 0, badComment.join(', ') || 'every src/**/*.jsx');
+}
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

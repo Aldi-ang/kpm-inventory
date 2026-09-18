@@ -344,7 +344,7 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                     <h2 className="text-3xl font-black text-[var(--ink)] uppercase tracking-widest flex items-center gap-3">
                         <ShieldCheck className="text-[var(--ink-dim)]" size={32}/> EOD Setoran
                     </h2>
-                    <p className="text-[10px] text-[var(--ink-dim)] uppercase tracking-widest mt-2">End of Day Reconciliation & Vault Return</p>
+                    <p className="text-[11px] lg:text-[10px] text-[var(--ink-dim)] uppercase tracking-widest mt-2">End of Day Reconciliation & Vault Return</p>
                 </div>
                 
                 {isAdmin && (
@@ -489,13 +489,13 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                         <div className="flex flex-col items-center justify-center h-full py-10 opacity-70">
                                             <Clock className="text-[var(--ink-dim)] mb-4 animate-pulse" size={40}/>
                                             <h3 className="text-lg font-black text-[var(--ink-dim)] uppercase tracking-widest mb-1">Awaiting Verification</h3>
-                                            <p className="text-[10px] text-[var(--ink-dim)] uppercase tracking-widest text-center">Hand envelope to Admin.</p>
+                                            <p className="text-[11px] lg:text-[10px] text-[var(--ink-dim)] uppercase tracking-widest text-center">Hand envelope to Admin.</p>
                                         </div>
                                     ) : agentData.cashStatus === 'VERIFIED' ? (
                                         <div className="flex flex-col items-center justify-center h-full py-10 opacity-70">
                                             <CheckCircle className="text-[var(--ink-dim)] mb-4" size={40}/>
                                             <h3 className="text-lg font-black text-[var(--ink-dim)] uppercase tracking-widest mb-1">Shift Closed</h3>
-                                            <p className="text-[10px] text-[var(--ink-dim)] uppercase tracking-widest text-center">Cash & Stock successfully verified.</p>
+                                            <p className="text-[11px] lg:text-[10px] text-[var(--ink-dim)] uppercase tracking-widest text-center">Cash & Stock successfully verified.</p>
                                         </div>
                                     ) : null}
                                 </div>

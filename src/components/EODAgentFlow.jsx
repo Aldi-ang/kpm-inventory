@@ -96,7 +96,7 @@ export default function EODAgentFlow({
               live ? 'border-[var(--accent-edge)] bg-[var(--inset)]' : 'border-[var(--line)] bg-[var(--raised)]'
             }`}
           >
-            <span className={`block font-mono text-[10px] font-bold uppercase tracking-[.16em] ${
+            <span className={`block font-mono text-[11px] lg:text-[10px] font-bold uppercase tracking-[.16em] ${
               live ? 'text-[var(--accent-ink)]' : 'text-[var(--ink-disabled)]'
             }`}>Step {i + 1}</span>
             <span className={`block text-[11px] font-bold leading-tight ${

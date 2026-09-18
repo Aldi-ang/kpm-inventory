@@ -40,8 +40,8 @@
     "semantic_hash": ""
   },
   "src/AgentInventoryView.jsx": {
-    "mtime": 1789698927.6510272,
-    "ast_hash": "f73130e4a3e88423cf1a5beb49212613",
+    "mtime": 1789704185.7344568,
+    "ast_hash": "dfcb7ae9cb87577a50a064eedd2e0344",
     "semantic_hash": ""
   },
   "src/AgentProfileView.jsx": {
@@ -60,8 +60,8 @@
     "semantic_hash": ""
   },
   "src/EODReconciliationView.jsx": {
-    "mtime": 1787632775.8826404,
-    "ast_hash": "0fd095f22795ecceb52dc6a7a801186c",
+    "mtime": 1789714225.5297382,
+    "ast_hash": "24c0197481b1283d144502b283649273",
     "semantic_hash": ""
   },
   "src/FleetCanvasManager.jsx": {
@@ -130,8 +130,8 @@
     "semantic_hash": ""
   },
   "src/components/CustomerManager.jsx": {
-    "mtime": 1789614793.6502733,
-    "ast_hash": "8969740daf44747f2071d0c6ab0450e3",
+    "mtime": 1789704185.7354572,
+    "ast_hash": "f58993072d5482ef71dc5424e2b43f31",
     "semantic_hash": ""
   },
   "src/components/DashboardBenchmarks.jsx": {
@@ -570,8 +570,8 @@
     "semantic_hash": ""
   },
   ".claude/PROGRESS.md": {
-    "mtime": 1789694532.497133,
-    "ast_hash": "2cac3d7d3d8638faa98c109506fcd21c",
+    "mtime": 1789708579.7780583,
+    "ast_hash": "ac04f2dd0bb546807a678dd454c22adb",
     "semantic_hash": ""
   },
   ".claude/pre-compact-context.md": {
@@ -730,13 +730,13 @@
     "semantic_hash": ""
   },
   "src/components/EODAgentFlow.jsx": {
-    "mtime": 1786931930.7794578,
-    "ast_hash": "fbe26dc7a912ae5b611d6159194fc6c5",
+    "mtime": 1789714219.4748037,
+    "ast_hash": "0f971c8559ece3707d19d9a3fa93afbf",
     "semantic_hash": ""
   },
   "src/components/EODCardDeck.jsx": {
-    "mtime": 1787634507.144932,
-    "ast_hash": "3b00675f26ba41c8407fb6294de2273b",
+    "mtime": 1789714329.9067588,
+    "ast_hash": "0f398ed7ee4254ab89576070be57b8c9",
     "semantic_hash": ""
   },
   "src/components/EODLetter.jsx": {
@@ -755,13 +755,13 @@
     "semantic_hash": ""
   },
   "src/config/logicFixes.selfcheck.mjs": {
-    "mtime": 1789698855.9766543,
-    "ast_hash": "76ca2b9f51e0b2b4110d5b1f1952e9cd",
+    "mtime": 1789714173.0779004,
+    "ast_hash": "6941fff568b1bde33a2f7e89e0dd2c58",
     "semantic_hash": ""
   },
   ".claude/NEXT-SESSION.md": {
-    "mtime": 1789615219.3974764,
-    "ast_hash": "433083b0927ac1d765ddd5a8bbd23d60",
+    "mtime": 1789704952.2735834,
+    "ast_hash": "3ea922805d91acd1f6f34494712dde31",
     "semantic_hash": ""
   },
   ".claude/SWEEP-2026-08-19.md": {
@@ -835,8 +835,8 @@
     "semantic_hash": ""
   },
   "tools/ponder-lab.jsx": {
-    "mtime": 1789693940.628816,
-    "ast_hash": "a2bc0f31df08ac643a820bfe40441989",
+    "mtime": 1789713553.0425997,
+    "ast_hash": "61b3a45ed89b96f6a9554219156f38c8",
     "semantic_hash": ""
   },
   ".claude/PONDER-PLAN.md": {
@@ -1062,6 +1062,11 @@
   "src/components/PhotoField.jsx": {
     "mtime": 1789557961.0869522,
     "ast_hash": "4a2bf496daf359e81f96f5f01b54f9f3",
+    "semantic_hash": ""
+  },
+  "tools/lab-looks.js": {
+    "mtime": 1789714243.4670613,
+    "ast_hash": "89f3185757f25bd71a6b0a1ae1783581",
     "semantic_hash": ""
   }
 }

@@ -206,7 +206,13 @@ export default function EODCardDeck({
     <div className="w-full">
       {/* ⚠️ NO `overflow-hidden` ANYWHERE ON THIS PATH. The confirmed card leaves the deck upwards,
           into the letter; a clipping ancestor deletes the only animation on the screen. */}
-      <div className="relative h-[344px]" style={{ perspective: '1200px' }}>
+      {/* 📱 ON THE PHONE THE DECK IS AS TALL AS THE CARD ON TOP. The fixed 344 px box stays on the
+          desk only (lg:). Measured at 375 (2026-09-18): the goods card is taller than the cash card,
+          so its product rows showed through under the front card as a strip. The card on top sits
+          in the flow, the cards behind are clipped to its height with their content hidden (blank
+          card backs, 11 px each), and the 33 px margin is the room those backs need. Aldi, board 1:
+          "yes". The flying card is NOT clipped — see the class per offset below. */}
+      <div className="relative mb-[33px] lg:mb-0 lg:h-[344px]" style={{ perspective: '1200px' }}>
         {CARD_IDS.map((id, i) => {
           const Icon = ICONS[id];
           const offset = i - step;               // 0 = on top, >0 = still behind, <0 = gone
@@ -236,7 +242,11 @@ export default function EODCardDeck({
               key={id}
               ref={offset === 0 ? activeRef : null}
               aria-hidden={offset !== 0}
-              className="absolute inset-x-0 top-0 rounded-2xl border p-5 bg-[var(--raised)] border-[var(--line-3)] shadow-lg"
+              className={`rounded-2xl border p-5 bg-[var(--raised)] border-[var(--line-3)] shadow-lg ${
+                offset === 0 ? 'relative lg:absolute inset-x-0 top-0'
+                  : gone ? 'absolute inset-x-0 top-0'
+                  : 'absolute inset-x-0 top-0 bottom-0 lg:bottom-auto overflow-hidden lg:overflow-visible [&>*]:invisible lg:[&>*]:visible'
+              }`}
               style={style}
             >
               <div className="flex items-center gap-3 mb-3">
@@ -261,13 +271,13 @@ export default function EODCardDeck({
                       No transfers recorded today
                     </p>
                   ) : (
-                    <div className="max-h-[150px] overflow-y-auto rounded-lg border bg-[var(--inset)] border-[var(--line)] p-1.5">
+                    <div className="lg:max-h-[150px] overflow-y-auto rounded-lg border bg-[var(--inset)] border-[var(--line)] p-1.5">
                       {receipts[id].map(r => {
                         const t = ticks[r.key] || {};
                         return (
                           <div key={r.key} className="rounded-md px-2 py-1.5">
                             <div className="flex items-baseline justify-between gap-2">
-                              <span className="text-[13px] font-bold text-[var(--ink)] truncate">{r.customer}</span>
+                              <span className="text-[13px] font-bold text-[var(--ink)] lg:truncate">{r.customer}</span>
                               <span className="shrink-0 font-mono tabular-nums text-[12px] text-[var(--ink-dim)]">
                                 {formatRupiah(r.amount)}
                               </span>
@@ -283,7 +293,7 @@ export default function EODCardDeck({
                                     onClick={() => setTicks(p => ({ ...p, [r.key]: { v: v.key, amt: v.key === 'less' ? (p[r.key]?.amt ?? '') : '' } }))}
                                     /* colour marks what needs attention: a landed payment is the
                                        normal case and stays plain, the two problem verdicts light up */
-                                    className={`flex-1 rounded-md border py-1.5 text-[11px] font-bold uppercase tracking-wider transition-colors ${
+                                    className={`flex-1 rounded-md border py-1.5 min-h-11 lg:min-h-0 text-[11px] font-bold uppercase tracking-wider transition-colors ${
                                       !on ? 'border-[var(--line)] bg-[var(--raised)] text-[var(--ink-dim)]'
                                         : v.tone === 'ok' ? 'border-[var(--accent-edge)] bg-[var(--raised)] text-[var(--ink)]'
                                         : 'border-[var(--danger)] bg-[var(--danger)] text-[var(--gold-ink)]'
@@ -306,7 +316,7 @@ export default function EODCardDeck({
                                   placeholder="0"
                                   disabled={offset !== 0 || disabled}
                                   aria-label={`Amount actually received from ${r.customer}`}
-                                  className="flex-1 rounded-lg border-2 px-2 py-1.5 text-right font-mono tabular-nums text-[14px] font-black bg-[var(--raised)] border-[var(--danger)] text-[var(--ink)] outline-none"
+                                  className="flex-1 rounded-lg border-2 px-2 py-1.5 h-11 lg:h-auto text-right font-mono tabular-nums text-[14px] font-black bg-[var(--raised)] border-[var(--danger)] text-[var(--ink)] outline-none"
                                 />
                               </label>
                             )}
@@ -347,17 +357,23 @@ export default function EODCardDeck({
                       Nothing to count
                     </p>
                   ) : (
-                    <div className="max-h-[152px] overflow-y-auto rounded-lg border bg-[var(--inset)] border-[var(--line)] p-1.5">
+                    /* 📱 Board 2 = B (2026-09-18, "more space for long product name"): on the phone the
+                       name takes its own line and a 96×44 box sits under it on the right with the
+                       unit; the list does not scroll inside the card. The desk keeps one line per
+                       product, a 74 px box, and its 152 px scroller. (A plain comment: this sits
+                       before the root element of a parenthesised branch, where a {} comment would
+                       be a second expression.) */
+                    <div className="lg:max-h-[152px] overflow-y-auto rounded-lg border bg-[var(--inset)] border-[var(--line)] p-1.5">
                       {cardLines.map((l, n) => {
                         const val = rows[l.key] ?? '';
                         const atCap = typeof l.max === 'number' && val !== '' && toNum(val) >= l.max;
                         return (
                           <label
                             key={l.key}
-                            className="flex items-center gap-2 rounded-md px-2 py-1.5 hover:bg-[var(--raised)]"
+                            className="flex flex-wrap lg:flex-nowrap items-center gap-2 rounded-md px-2 py-1.5 hover:bg-[var(--raised)]"
                           >
-                            <span className="flex-1 min-w-0">
-                              <span className="block text-[13px] font-bold text-[var(--ink)] truncate leading-tight">{l.name}</span>
+                            <span className="flex-1 min-w-0 basis-full lg:basis-auto">
+                              <span className="block text-[13px] font-bold text-[var(--ink)] lg:truncate leading-tight">{l.name}</span>
                               {atCap ? (
                                 <span className="block text-[11px] font-bold text-[var(--accent-ink)] leading-tight">
                                   That is everything this line carried.
@@ -385,11 +401,11 @@ export default function EODCardDeck({
                               placeholder="–"
                               disabled={offset !== 0 || disabled}
                               aria-label={`${l.name}, counted`}
-                              className={`w-[74px] shrink-0 rounded-lg border-2 px-2 py-1.5 text-right text-[15px] font-black font-mono tabular-nums bg-[var(--raised)] text-[var(--ink)] outline-none focus:border-[var(--accent-edge)] ${
+                              className={`w-24 lg:w-[74px] h-11 lg:h-auto ml-auto lg:ml-0 shrink-0 rounded-lg border-2 px-2 py-1.5 text-right text-[15px] font-black font-mono tabular-nums bg-[var(--raised)] text-[var(--ink)] outline-none focus:border-[var(--accent-edge)] ${
                                 val === '' ? 'border-[var(--line)]' : 'border-[var(--accent-edge)]'
                               }`}
                             />
-                            <span className="w-8 shrink-0 text-[11px] font-bold uppercase tracking-wider text-[var(--ink-dim)]">
+                            <span className="w-12 lg:w-8 shrink-0 text-[11px] font-bold uppercase tracking-wider text-[var(--ink-dim)]">
                               {l.unit || ''}
                             </span>
                           </label>

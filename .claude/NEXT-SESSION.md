@@ -1,117 +1,39 @@
 # The one job
 
-**The EOD Setoran screen on the phone — the sweep moves on.** Agent Inventory is DONE on the
-phone (`8b9b3f9`, his board 1 YES + board 2 B, 2026-09-18 09:38; ✅ TEST owed on his phone). The
-sweep order he set on 2026-09-15: Sales Terminal ✓ → Customers ✓ → Agent Inventory ✓ → **EOD
-Setoran** → Stock Opname → Journey Plan → Sampling → Agent Profile. Same method, one morning per
-screen: mount in the lab, measure at 375 in the real shell, propose as frames, build what he picks.
+**The Stock Opname screen on the phone — the sweep moves on.** EOD Setoran is DONE on the phone (commit below, his "board 1 yes, board 2 B because it have more space for long product name", 2026-09-18 13:47; ✅ TEST owed on his phone). The sweep order he set on 2026-09-15: Sales Terminal ✓ → Customers ✓ → Agent Inventory ✓ → EOD Setoran ✓ → **Stock Opname** → Journey Plan → Sampling → Agent Profile. Same method, one morning per screen: mount in the lab, measure at 375 in the real shell, propose as frames, build what he picks.
 
-⚠️ SESSION CLOSED 2026-09-18 11:18 at his *"after this make notes and prompt for later because 5 hours quota almost reaching its limit"*; plan quota at close: 5-hour window 76 % (resets ~13:00 WIB), weekly 48 %. **Open the session by reading his test reply first.** Customers (`a9822ff`) and Agent
-Inventory (`8b9b3f9`) are CONFIRMED (his *"T1 approve, t2 approve"*, 2026-09-18 10:40). ONE ✅ TEST
-is owed on `https://192.168.1.132:4173` (the PC's address moved .107 → .132 on 2026-09-18 — read it
-off the preview server's `Network:` line before writing it anywhere): `832ea7c` — Customers rows
-and cards as key caps (lit top, thick bottom edge, sink on press, sweep + amber bar, rows slide in
-one after another, folder lamp lights amber while held, FOLDER an outline button), the shop page's
-Competitor Intelligence no longer slides sideways, the Quarantine count is a black LED tile with red
-digits and a pulsing lamp. If he reports a miss, fix that first. ❓ still open: was the shop page the
-place he swiped, or somewhere else? The packed build on `:4173` was left running (if it is down,
-`preview_start kpm-preview`).
+Open the session by reading his test replies first. TWO ✅ TESTs are owed on `https://192.168.1.132:4173` (read the address off the kpm-preview server's `Network:` line before writing it anywhere — it moved .107 → .132 on 2026-09-18): `832ea7c` (Customers key caps, the stacked competitor table, the LED Quarantine count — asked 2026-09-18 13:47, no reply yet) and the EOD commit below. If he reports a miss, fix that first. ❓ still open: was the shop page the place he swiped sideways, or somewhere else?
 
-**Two facts from `832ea7c` the EOD job must carry.** (a) Audit G30: nothing in the control system
-(theme.css from `.kpm-mod {` to the end) may use `box-shadow` / `text-shadow` / `filter` — depth is
-drawn with borders and gradient layers (`.kpm-key`, `.kpm-well`, `.kpm-plate`, `.kpm-led` are the
-patterns). A board drawn with shadows must be re-drawn before shipping, and he is told. (b) THE
-SIDEWAYS RATCHET (logicFixes): no `<table>` under lg may carry a bare `min-w-[Npx]`; only
-`HistoryReportView.jsx:500` / `:808` may, until the Reports day. EOD has tables — stack them under
-lg like the competitor table (`block lg:table`, `hidden lg:table-header-group`, rows as
-`grid grid-cols-[1fr_auto] lg:table-row`).
+**Why it costs him money:** Stock Opname is where the count is taken against the book — a salesman (T5) counting blind, the boss / area admin monitoring pending audits and quarantine. A miscount that cannot be entered on a phone becomes a paper count re-typed later. Never measured at 375 inside the shell after the `p-2` cut.
 
-Why it costs him money: EOD Setoran is where the salesman hands in the day's cash and stock and the
-boss verifies it — a money screen, used once a day by every salesman, on a phone in the evening.
-Never measured at 375 inside the shell after the `p-2` cut.
+## The mount (exact, read from the live files 2026-09-18 14:00)
 
-## The mount (exact, read from the live files 2026-09-18 09:38)
-
-`App.jsx:5021` `{activeTab === 'eod' && (` → `:5022` `<EODReconciliationView` with NO wrapper — a
-direct child of the shell's `biohazard-content`, like Customers and Agent Inventory. Lazy-loaded at
-`App.jsx:52`. Component `src/EODReconciliationView.jsx:44`:
-`({ samplings = [], transactions = [], inventory = [], agentCanvas = [], agentProfileId, motorists = [], eodReports = [], user, appSettings, onSubmitEOD, onVerifyEOD, onResetEOD, isAdmin })`.
-It keys on `agentProfileId` DIRECTLY (`:75` `effectiveId = isAdmin ? adminSetoranId : agentProfileId`,
-`:94` `motorists.find(m => m.id === effectiveId)`) — no email sweep, so `agentProfileId="m2"` is
-enough. `:47` `viewMode = isAdmin ? 'review' : 'submit'` — TWO screens in one file: the salesman's
-SUBMIT flow (`isAdmin={false}`, uses `src/components/EODAgentFlow.jsx:22`) and the boss's REVIEW
-table. Sweep the T5 submit flow first (that is the phone user); mount the review as a second flag
-(`&admin`) only if there is time. `agentCanvas` is the van — reuse `FIXTURES['motorists/m2'].activeCanvas`
-from the `?shell&agent` branch; `transactions={LAB_AGENT_TXNS}` gives it today's sales;
-`eodReports=[]`; `onSubmitEOD` records to `window.__eod` and returns. It calls `confirmAction` from
-ConfirmGate — the lab already mounts `ConfirmHost`. In `tools/ponder-lab.jsx` `ShellLab()` add
-`q.has('eod')` before the `agent` branch (that block is the pattern). `?tab=` presses buttons by
-label, then `cursor-pointer` cards when no button carries the label.
+`App.jsx:5068` `{activeTab === 'stock_opname' && (` → `:5069` `<StockOpnameView` with NO wrapper — a direct child of the shell's `biohazard-content`, like EOD. Lazy-loaded at `App.jsx:46`. Component `src/StockOpnameView.jsx:194`: `({ inventory = [], transactions = [], db, storage, appId, user, userRole: liveRole, isAdmin, logAudit, triggerCapy, motorists = [], appSettings })` — 1737 lines. `:206` `userRole = liveRole || user?.userRole || 'AGENT'` (App passes `userRole={userRole}` AND `user={{ ...user, userRole }}`); `:209` `canSeeExpectedCount(userRole)` — T3 and above see the expected number beside each line, a T5 counts blind. `:222` `viewMode = isHighCommand ? 'monitor' : 'count'` — TWO screens in one file again: the counter's COUNT flow and the boss's MONITOR (pending audits `:269`, quarantine logs `:276`, branch inventory per facility `:289`). Sweep the T5 COUNT flow first (`userRole="FIELD_OPERATIVE"`, `isAdmin={false}`, `user={{ uid: 'lab-t5', displayName: 'Lab Salesman', email: 'lab@example.com', location: 'MUNTILAN', userRole: 'FIELD_OPERATIVE' }}`); mount the monitor as `&admin` only if there is time. The branch-inventory listener at `:231` runs only for `isAreaAdmin` and reads `artifacts/lab/users/<masterId>/branches/MUNTILAN/inventory` — a COLLECTION, so the stub wants an ARRAY fixture keyed by the path tail: `FIXTURES['branches/MUNTILAN/inventory'] = [...]` (`tools/lab-firestore-stub.js:35` matches `path.endsWith(key)`). `inventory={[...LAB_PRODUCTS, ...LAB_VAN_EXTRA]}`, `transactions={LAB_AGENT_TXNS}`, `motorists={LAB_MOTORISTS}`, `db={{}} appId="lab"`, `logAudit={() => {}}`, `triggerCapy={() => {}}`, `appSettings={{}}`, `storage={{}}`. It writes through `addDoc` (`:582`, `:585`) — the stub already has `addDoc`; record nothing, the lab is for looking. In `tools/ponder-lab.jsx` `ShellLab()` add `q.has('opname')` before the `eod` branch (that block is the pattern). Already seen from the file, unmeasured: `:1582` a 40 px button at 10 px type.
 
 ## How to measure and propose — the recipe is settled, do not re-derive it
 
-`preview_start ponder-lab` → the lab page is **`http://localhost:4190/tools/ponder-lab.html`**
-(the root `/` serves the real app and dies on the stub — a blank page with a
-`connectFirestoreEmulator` error means the wrong URL, not a broken stub) → `resize_window` 375×812
-→ `?shell&eod` → the probe reads `innerWidth` in the SAME call as every rect; both themes (`&light`);
-list every control under 44, every text under 11, anything wider than 375, the row height, and
-whether the component is a fixed-height box (Agent Inventory was `h-[850px]` → two scrollers).
-Headless PNG at `--window-size=518,1100` with `#root{width:375px}` through `?css=`, cropped to 375
-in the compose page; captions ABOVE the frames so a tall frame never cuts them. Boards: TODAY beside
-each fix through `?css=`, YES/NO or a letter per board, recommended one marked; two boards was
-enough for Agent Inventory. **The TODAY frame must show the defect the pane measured** — if the
-defect sits below 812, shoot taller and say so in the caption. No code before he answers. Then
-classes with `lg:` resets, element-scoped guards red (stash the source) → green, `npm run build;
-node src/config/integration.audit.mjs` (stop the lab first, lesson 2026-09-07), re-measure at 375
-and 1280, one SHIPPED board (dark / pressed / light), commit, ✅ TEST line **with the checklist
-written out in plain words** — "✅ TEST Customers (a9822ff)" made him ask *"what is the test
-customer u mean?"* (2026-09-18).
+`preview_start ponder-lab` → the lab page is `http://localhost:4190/tools/ponder-lab.html` (the root `/` serves the real app and dies on the stub — a blank page with a `connectFirestoreEmulator` error means the wrong URL, not a broken stub; a blank page with `Failed to reload … 500` in the console means a SYNTAX ERROR in a source file — read `preview_logs` for the file and line) → `resize_window` 375×812 → `?shell&opname` → the probe reads `innerWidth` in the SAME call as every rect; both themes (`&light`); list every control under 44, every text under 11, anything wider than 375, the row height, and whether the component is a fixed-height box (Agent Inventory was `h-[850px]` → two scrollers; EOD's deck was `h-[344px]`). ⚠️ A rect read inside 1–2 s of a press is MID-TRANSITION when the element is scaling (the EOD card read 41×89 for a 44×96 box at scale .93) — read `getComputedStyle(el).transform`, wait, read again. Headless PNG at `--window-size=518,1250` with `look=pin` (`#root{width:375px}`), cropped to 375 in the compose page (`object-fit:none; object-position:0 -Npx`); captions ABOVE the frames. `?tab=<label>,…` presses buttons by label, `cursor-pointer` cards when no button carries the label, and `type:<value>` types into the first enabled visible input (added 2026-09-18 for the EOD deck — a confirm button disabled until a figure is typed cannot be reached by presses alone). Boards: TODAY beside each fix through `?look=<name>` entries in `tools/lab-looks.js` (write them, ship, delete them — the contract at the top of that file), YES/NO or a letter per board, recommended one marked; two boards was enough for Agent Inventory and for EOD. The TODAY frame must show the defect the pane measured — if the defect sits below 812, shoot taller and say so in the caption. No code before he answers. Then classes with `lg:` resets, element-scoped guards red (sources untouched, the check written first) → green, `npm run build; node src/config/integration.audit.mjs` (stop the lab first, lesson 2026-09-07), re-measure at 375 and 1280, one SHIPPED board (dark / light), commit, ✅ TEST line with the checklist written out in plain words — "✅ TEST Customers (a9822ff)" made him ask "what is the test customer u mean?" (2026-09-18).
 
-**Traps.** (a) `index.css` `button:has(> svg:only-child)` forces inline-flex + 44 px on any button
-whose only ELEMENT child is an icon — put the label in a `<span>`. (b) Inputs with no `bg-` class
-are white in dark mode; `bg-[var(--inset)]` on a raised card, `bg-[var(--raised)]` inside an inset
-block, `text-[var(--ink)]` always — EOD has a cash-count input, check it. (c) `code()` in the
-selfcheck strips block-comment spans; a negative guard (`!/h-\[850px\]/`) must run on `code(a)` or
-your own explanatory comment fails it. (d) A `{/* JSX comment */}` placed before the root element
-inside `return (` is a syntax error (two expressions) — use a plain `/* */` there. (e) The lab
-stub's `onSnapshot` answers a DOCUMENT listener only when the fixture is a plain object
-(`FIXTURES['motorists/m2']`), a collection when it is an array. (f) Every frame at a MEASURED 375
-inside the shell; a 518 frame without the pin re-lays-out and hides the wrap. (g) Phone-only 11 px
-type is `text-[11px] lg:text-[10px]` (the Customers precedent) so the desk stays pixel-identical.
-
----
+Traps. (a) `index.css` `button:has(> svg:only-child)` forces inline-flex + 44 px on any button whose only ELEMENT child is an icon — put the label in a `<span>`. (b) Inputs with no `bg-` class are white in dark mode; `bg-[var(--inset)]` on a raised card, `bg-[var(--raised)]` inside an inset block, `text-[var(--ink)]` always — Stock Opname has count inputs, check every one. (c) `code()` in the selfcheck strips block-comment spans; a negative guard (`!/h-\[850px\]/`) must run on `code(a)` or your own explanatory comment fails it. (d) A `{/* JSX comment */}` as the first thing inside `return (` or `cond ? (` is two expressions — a parse error. It fired AGAIN on 2026-09-18 despite this line; logicFixes now sweeps every `src/**/*.jsx` for `(\s*{/*` and goes red, so run the selfcheck before touching the pane. Use a plain `/* */` there. (e) The lab stub's `onSnapshot` answers a DOCUMENT listener when the fixture is a plain object, a collection when it is an array. (f) Every frame at a MEASURED 375 inside the shell; a 518 frame without the pin re-lays-out and hides the wrap. (g) Phone-only 11 px type is `text-[11px] lg:text-[10px]` (the Customers precedent) so the desk stays pixel-identical. (h) SIDEWAYS RATCHET (logicFixes): no `<table>` under lg may carry a bare `min-w-[Npx]`; only `HistoryReportView.jsx:500` / `:808` may, until the Reports day — Stock Opname's monitor side may have tables; grep `<table` first (EOD's brief said it had tables; it had none).
 
 ## Paste this to start the next session
 
-> /alucard
->
-> Read `.claude/NEXT-SESSION.md` first — it is the whole job, do not re-read source to re-orient.
->
-> **Read his two ✅ TEST replies (Customers `a9822ff`, Agent Inventory `8b9b3f9`) before anything;
-> a miss is fixed first. Then the EOD Setoran screen on the phone. Build the lab mount first, then
-> look, then propose — never fix from a description.**
-> 1. `tools/ponder-lab.jsx`: add `?shell&eod` to `ShellLab()` before the `agent` branch.
->    `App.jsx:5022` mounts `<EODReconciliationView` (`src/EODReconciliationView.jsx:44`) with NO
->    wrapper; it keys on `agentProfileId` directly, so `"m2"` + `isAdmin={false}` is the T5 submit
->    flow. Reuse `FIXTURES['motorists/m2'].activeCanvas` as `agentCanvas`, `LAB_AGENT_TXNS` as
->    transactions, `onSubmitEOD` → `window.__eod`.
-> 2. Pane at `http://localhost:4190/tools/ponder-lab.html`: `resize_window` 375×812, `innerWidth`
->    in the same probe as every rect, both themes. Measure every control under 44, every text under
->    11, anything wider than 375, the row height, any fixed-height box (two scrollers). Headless PNG
->    at 518×1100 with the `#root{width:375px}` pin, captions above the frames.
-> 3. Reply as FRAMES with captions — TODAY beside each fix through `?css=` — YES/NO per board,
->    recommended marked. No code before he answers. When he answers: classes with `lg:` resets,
->    guards red (source stashed) → green, stop the lab, build + audit, re-measure at 375 and 1280,
->    one SHIPPED board, commit, ✅ TEST written out in plain words.
->
-> **Traps.** `button:has(> svg:only-child)` beats `lg:hidden` — label in a span. Bare inputs are
-> white in dark mode — surface tokens on every box (EOD has a cash input). A negative guard runs on
-> `code(a)`, not the raw file, or your own comment fails it. No `{/* */}` before the root element in
-> `return (`. Every frame at a MEASURED 375.
->
-> Rewrite this file with the next single job before closing.
+```
+/alucard
+Read `.claude/NEXT-SESSION.md` first — it is the whole job, do not re-read source to re-orient.
+Read his ✅ TEST replies (Customers `832ea7c`, EOD Setoran — the commit named in the note) before anything; a miss is fixed first. Then the Stock Opname screen on the phone. Build the lab mount first, then look, then propose — never fix from a description.
 
----
+1. `tools/ponder-lab.jsx`: add `?shell&opname` to `ShellLab()` before the `eod` branch. `App.jsx:5069` mounts `<StockOpnameView` (`src/StockOpnameView.jsx:194`) with NO wrapper; `userRole="FIELD_OPERATIVE"` + `isAdmin={false}` + `user.location='MUNTILAN'` is the T5 count flow (`:222` viewMode 'count'). Products from `LAB_PRODUCTS` + `LAB_VAN_EXTRA`, `LAB_AGENT_TXNS`, `LAB_MOTORISTS`; a `FIXTURES['branches/MUNTILAN/inventory']` ARRAY only if the admin side is mounted.
+2. Pane at `http://localhost:4190/tools/ponder-lab.html`: `resize_window` 375×812, `innerWidth` in the same probe as every rect, both themes. Measure every control under 44, every text under 11, anything wider than 375, the row height, any fixed-height box (two scrollers), any `<table` with a bare `min-w-[`. Headless PNG at 518×1250 with `look=pin`, captions above the frames.
+3. Reply as FRAMES with captions — TODAY beside each fix through `?look=` entries in `tools/lab-looks.js` — YES/NO per board, recommended marked. No code before he answers. When he answers: classes with `lg:` resets, guards written first and red with the sources untouched → green, stop the lab, build + audit, re-measure at 375 and 1280, one SHIPPED board, commit, ✅ TEST written out in plain words.
+
+Traps. `button:has(> svg:only-child)` beats `lg:hidden` — label in a span. Bare inputs are white in dark mode — surface tokens on every box. A negative guard runs on `code(a)`, not the raw file. No `{/* */}` before the root element in `return (` or `? (` — the selfcheck sweeps for it now. A rect read within 2 s of a press can be mid-transition — read the transform too. Every frame at a MEASURED 375.
+Rewrite this file with the next single job before closing.
+```
+
+## Shipped 2026-09-18 ~14:05 — EOD Setoran on the phone (his board 1 YES + board 2 B)
+
+His words: "board 1 yes, board 2 B because it have more space for long product name". `EODCardDeck.jsx`: the deck is `relative mb-[33px] lg:mb-0 lg:h-[344px]` — on the phone as tall as the card on top, the cards behind `absolute … bottom-0 overflow-hidden [&>*]:invisible` (blank card backs, 11 px peeks), the card on top `relative`, the flying card `absolute inset-x-0 top-0` unclipped; the count rows `flex-wrap` with the name `basis-full` on its own line and a `w-24 h-11 ml-auto` box (96×44) + `w-12` unit on the right (`lg:` resets every one); both lists `lg:max-h-[…]` so nothing scrolls inside a card on the phone; Landed / Less / Not yet `min-h-11 lg:min-h-0`; the "Actually got" box `h-11 lg:h-auto`; names `lg:truncate`. Four 10 px labels → `text-[11px] lg:text-[10px]` (Step 1/2/3, the line under the title, the two waiting/closed lines). Left alone: the 8 px SEALED on the wax seal. Measured after at 375 (dark; light frame shot): deck 226 = Cash card, gap 33; card 3 rows one line each at 232 px, box 96×44, KARTON whole, list 333 = 333 (no inner scroll), nothing wider than 375, only SEALED under 11. Desk at 1280 unchanged: deck 344, cards absolute, buttons 29, box 74, list 152 max, labels 10. Guards 1615 (red 7 first + the new JSX-comment sweep proven red on a probe file), audit 722. Lab: `?shell&eod` (`&admin` for the review side, unmeasured), `?tab=type:<v>`; `tools/lab-looks.js` back to `pin` only. ✅ TEST owed on his phone (`https://192.168.1.132:4173`, packed build rebuilt): "open EOD Setoran as a salesman — under the Cash card no other card's row shows through, just blank card edges; count the cash, put it in the letter, then on the Transfer card the three buttons LANDED / LESS / NOT YET are easy to hit; on Goods returned all four products are on one screen, each name on its own line in full, a big count box under it on the right, and KARTON is spelled out whole; nothing slides sideways".
 
 ## Shipped 2026-09-18 11:11 — key caps, the stacked competitor table, the LED count (`832ea7c`)
 

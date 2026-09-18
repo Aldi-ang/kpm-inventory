@@ -6,5 +6,8 @@
    entries are gone from here. Only the 375 pin remains. */
 export const PIN = '#root{width:375px}';
 
+/* 2026-09-18 later: the EOD Setoran deck (board 1 YES) and count rows (board 2 B) were decided the
+   same morning and shipped into EODCardDeck.jsx — their entries are gone from here too. */
+
 /* `?look=a,b` — comma-separated names, injected after the app's stylesheet like ?css= */
 export const LOOKS = { pin: PIN };

@@ -29,6 +29,7 @@ import RestockVaultView from '../src/RestockVaultView.jsx';
 import MerchantSalesView from '../src/MerchantSalesView.jsx';
 import { CustomerManagement } from '../src/components/CustomerManager.jsx';
 import AgentInventoryView from '../src/AgentInventoryView.jsx';
+import EODReconciliationView from '../src/EODReconciliationView.jsx';
 import BranchWarehouseManager from '../src/components/BranchWarehouseManager.jsx';
 import ShipmentLabel from '../src/components/ShipmentLabel.jsx';
 import ArrivalScanner from '../src/components/ArrivalScanner.jsx';
@@ -651,6 +652,17 @@ function ShellLab() {
        moment the page has loaded; a plain loop presses the second button before it is drawn. */
     const press = (want) => {
       const desk = document.querySelector('button[aria-selected]')?.closest('.rounded-2xl') || document;
+      /* `type:2490000` — types into the first enabled, visible input inside the desk (React's own
+         value setter, then an input event so the controlled field takes it). The EOD deck's
+         confirm button is disabled until the card carries a figure, so a headless frame of card 2
+         or 3 cannot be reached by presses alone: `?tab=type:2490000,put cash,landed,put transfer`. */
+      if (want.startsWith('type:')) {
+        const el = [...desk.querySelectorAll('input:not([disabled])')].find((e) => e.offsetParent);
+        if (!el) return;
+        Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(el, want.slice(5));
+        el.dispatchEvent(new Event('input', { bubbles: true }));
+        return;
+      }
       const hit = (sel) => [...desk.querySelectorAll(sel)]
         .find((el) => el.textContent.trim().toLowerCase().startsWith(want));
       /* buttons first; a card that opens on click (the Customers folders and stores are
@@ -684,7 +696,27 @@ function ShellLab() {
         </button>
       )}
     >
-      {q.has('agent') ? (
+      {q.has('eod') ? (
+        /* ?shell&eod — EOD Setoran, the salesman's SUBMIT flow (isAdmin false → viewMode 'submit'),
+           INSIDE the real shell exactly as App.jsx:5022 mounts it: no wrapper. The screen keys on
+           agentProfileId directly (EODReconciliationView.jsx:75), so "m2" is Budi. His van is read
+           off the motorist record first (:152), so the same FIXTURES['motorists/m2'] object the
+           agent branch feeds the stub is merged into his row — cukaiDebts included, so the pita
+           cukai card has a figure. Two cash sales plus one transfer, so the cash card and the
+           transfer receipt list both have rows. onSubmitEOD records to window.__eod and writes
+           nothing. `&admin` mounts the boss's review side instead. */
+        <EODReconciliationView
+          agentProfileId="m2" isAdmin={q.has('admin')}
+          motorists={LAB_MOTORISTS.map((m) => (m.id === 'm2' ? { ...m, ...FIXTURES['motorists/m2'] } : m))}
+          agentCanvas={FIXTURES['motorists/m2'].activeCanvas}
+          inventory={[...LAB_PRODUCTS, ...LAB_VAN_EXTRA]}
+          transactions={[...LAB_AGENT_TXNS, { id: 'tx5', agentId: 'm2', date: LAB_TODAY, type: 'SALE', total: 425000, paymentType: 'Transfer', customerName: 'Toko Berkah Jaya' }]}
+          samplings={[]} eodReports={[]} appSettings={{}}
+          user={{ uid: 'lab-t5', displayName: 'Lab Salesman', email: 'lab@example.com' }}
+          onSubmitEOD={async (p) => { window.__eod = [...(window.__eod || []), p]; }}
+          onVerifyEOD={() => {}} onResetEOD={() => {}}
+        />
+      ) : q.has('agent') ? (
         /* ?shell&agent — the Agent Inventory (the salesman's van manifest) INSIDE the real shell,
            exactly as App.jsx:4253 mounts it: no wrapper, a direct child of biohazard-content. T5
            Budi (m2) — see FIXTURES['motorists/m2'] above for how the screen finds him. Products
