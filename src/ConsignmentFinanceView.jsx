@@ -1029,7 +1029,6 @@ export default function ConsignmentFinanceView({ transactions = [], customers = 
                                of the dot pinging itself, so the alert no longer fades to nothing at the peak
                                — which is the half he read as "blinking". */
                             <span className="absolute top-2 right-2 flex h-2 w-2">
-                                <span className="absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-75 animate-ping"></span>
                                 <span className="relative inline-flex h-2 w-2 rounded-full bg-red-500"></span>
                             </span>
                         )}

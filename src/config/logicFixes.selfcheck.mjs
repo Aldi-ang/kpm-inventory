@@ -6115,10 +6115,10 @@ ok('the alert badge sits INSIDE the button, not hanging off its corner',
    /<span className="absolute top-2 right-2 flex h-2 w-2">/.test(dtRaw) &&
    !/absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-ping/.test(dtRaw),
    'a negative inset plus a 2x transform is what pushed the scroll width of an overflow-x-auto strip');
-ok('the ring pings behind a solid dot instead of the dot pinging itself',
-   /rounded-full bg-red-500 opacity-75 animate-ping/.test(dtRaw) &&
+ok('the alert is a solid dot and nothing pings any more',
+   !/animate-ping/.test(code(dtRaw)) &&
    /<span className="relative inline-flex h-2 w-2 rounded-full bg-red-500">/.test(dtRaw),
-   'animate-ping fades to zero at its peak, so the alert vanished half the time — the "blinking" half of his report');
+   'Aldi 2026-09-18: "just erase the dot light" — a light that loops forever reads as noise; the dot stays, the ring is gone');
 ok('the strip it lives in really is a horizontal scroller, which is why this mattered at all',
    /overflow-x-auto max-w-full shrink-0/.test(dtRaw),
    'if that strip ever stops scrolling this bug cannot recur, and this section should be retired with it');
@@ -7315,18 +7315,15 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
      /\.kpm-well::after \{[^}]*background: #000;/.test(th) &&
      /\.kpm-stamp \{ font-family: var\(--font-mono\); font-variant-numeric: tabular-nums;/.test(th),
      'the lamp lit amber under the thumb until 2026-09-18 14:01 — his "repetitive because it have similar animation like the ponder panel"; the hold is the charge line now (guarded below)');
-  ok('theme: the LED lamp pulses on opacity only; the leaving digit\'s BASE is hidden and its keyframe starts visible',
-     /\.kpm-led::before \{[^}]*animation: kpmLedLamp 1\.6s ease-in-out infinite;/.test(th) && /@keyframes kpmLedLamp \{ 50% \{ opacity: \.3; \} \}/.test(th) &&
-     /\.kpm-roll-out \{ opacity: 0; translate: 0 -70%; pointer-events: none;\s*animation: kpmRollOut 260ms/.test(th) &&
-     /@keyframes kpmRollOut \{ from \{ opacity: 1; translate: 0 0; \} \}/.test(th) && /@keyframes kpmRollIn  \{ from \{ opacity: 0; translate: 0 70%; \} \}/.test(th),
-     'under Lite Mode both animations jump to their end: the new digit in place, the old one gone — never two digits at once');
-  ok('the Quarantine count is the LED with rolling digits, and the old flat pill is gone',
-     /<span className="kpm-led" aria-label=\{`\$\{quarantineCount\} in quarantine`\}><RollingCount value=\{quarantineCount\} \/><\/span>/.test(a) &&
+  ok('theme: the LED window, its blinking lamp and the odometer are GONE — the nixie counter is the one moving-number instrument',
+     !/\.kpm-led \{/.test(code(th)) && !/kpmLedLamp/.test(code(th)) && !/\.kpm-roll/.test(code(th)),
+     'Aldi 2026-09-18 21:30: "too much of those blinking light ... just erase the dot light"; the LED was his B that morning, replaced by the instrument he approved that evening');
+  ok('the Quarantine count is a nixie counter, and the old flat pill and the roll are gone',
+     /<NixieCount value=\{quarantineCount\} size=\{16\} \/>/.test(a) &&
+     /import NixieCount from '\.\/components\/NixieCount\.jsx';/.test(a) &&
      !/bg-danger-badge text-white text-\[12px\]/.test(a) &&
-     /if \(value === roll\.cur\) return;\s*setRoll\(\(r\) => \(\{ cur: value, prev: r\.cur, key: r\.key \+ 1 \}\)\);/.test(a) &&
-     /<span key=\{roll\.key\} className="kpm-roll-in">\{roll\.cur\}<\/span>/.test(a) &&
-     /\{roll\.prev !== null && <span key=\{`out-\$\{roll\.key\}`\} className="kpm-roll-out" aria-hidden="true">\{roll\.prev\}<\/span>\}/.test(a),
-     'his board 5 = B; sampled in the lab (?shell&agent&tick): kpmRollIn and kpmRollOut run together, 0 → 117 → 217 ms of 260');
+     !/RollingCount|kpm-led|kpm-roll/.test(code(a)),
+     'one instrument for every changing figure (his "standardize effect")');
   ok('BEHAVIOUR: one roll step keeps the old digit as prev and bumps the key so the entering span remounts',
      JSON.stringify(((r, value) => ({ cur: value, prev: r.cur, key: r.key + 1 }))({ cur: 10, prev: null, key: 0 }, 15)) === '{"cur":15,"prev":10,"key":1}' &&
      JSON.stringify(((r, value) => ({ cur: value, prev: r.cur, key: r.key + 1 }))({ cur: 15, prev: 10, key: 1 }, 10)) === '{"cur":10,"prev":15,"key":2}',
@@ -7551,8 +7548,9 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
   const nixieCss = th.slice(th.indexOf('.kpm-nixie {'), th.indexOf('.kpm-nixie-reel > span.lit') + 400);
   ok('the nixie CSS: a reel that TRANSLATES by --dmg-like --i, 420 ms, staggered by --d; the glow is a gradient disc; nothing in it is a shadow or a filter',
      /\.kpm-nixie-reel \{[^}]*translate: 0 calc\(var\(--i, 0\) \* -1\.18em\);[^}]*transition: translate 420ms cubic-bezier\(\.23, 1, \.32, 1\); transition-delay: var\(--d, 0ms\);/.test(nixieCss) &&
-     /\.kpm-nixie-reel > span\.lit \{ color: var\(--amber\);\s*background: radial-gradient/.test(nixieCss) &&
-     /\.kpm-nixie-tube::before \{ content: "8";/.test(nixieCss) &&
+     /\.kpm-nixie-reel > span\.lit \{ color: var\(--nixie-ink\);\s*background: radial-gradient/.test(nixieCss) &&
+     /--nixie-ink: #FFB02E;\s*font-family: var\(--font-display\); font-weight: 800;/.test(nixieCss) &&
+     !/\.kpm-nixie-tube::before/.test(nixieCss) &&
      !/box-shadow|text-shadow|filter:/.test(nixieCss) &&
      /@media \(prefers-reduced-motion: reduce\) \{ \.kpm-nixie-reel \{ transition: none; \} \}/.test(th),
      'audit G30 turned drawn shadows into gradients once already (832ea7c); this one is born without them');

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Package, Truck, AlertCircle, TrendingUp, Wallet, Coins, Receipt, Tag, AlertOctagon, ShieldAlert, User } from 'lucide-react';
 import { doc, onSnapshot } from 'firebase/firestore';
+import NixieCount from './components/NixieCount.jsx';
 /* `getCurrentDate` is IMPORTED, not redefined. This file used to keep its own copy —
    `new Date().toISOString()`, the UTC one — so it stayed a day behind between midnight and 07:00
    WIB even after the shared helper was fixed. A second copy of a date rule is a second bug
@@ -21,23 +22,6 @@ const Money = ({ value, className = '' }) => {
     return <span className={`${fit} font-black tabular-nums whitespace-nowrap ${className}`}>{s}</span>;
 };
 
-/* THE QUARANTINE COUNT ROLLS. Aldi, 2026-09-18, board 5 = B: "make it more animation HD and
-   good". The digit that leaves rides up and out while the new one rides in from below (260 ms,
-   .kpm-roll in theme.css). The leaving digit's resting style is hidden and its keyframe starts
-   visible, so Lite Mode's 0.001 s jump lands on nothing overlapping. Same value in → no re-render. */
-const RollingCount = ({ value }) => {
-    const [roll, setRoll] = useState({ cur: value, prev: null, key: 0 });
-    useEffect(() => {
-        if (value === roll.cur) return;
-        setRoll((r) => ({ cur: value, prev: r.cur, key: r.key + 1 }));
-    }, [value, roll.cur]);
-    return (
-        <span className="kpm-roll">
-            <span key={roll.key} className="kpm-roll-in">{roll.cur}</span>
-            {roll.prev !== null && <span key={`out-${roll.key}`} className="kpm-roll-out" aria-hidden="true">{roll.prev}</span>}
-        </span>
-    );
-};
 
 const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [], transactions = [], samplings = [], user, motorists = [], previewing = null }) => {
     const [canvasItems, setCanvasItems] = useState([]);
@@ -325,7 +309,7 @@ const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [],
                     >
                         Quarantine
                         {quarantineCount > 0 && (
-                            <span className="kpm-led" aria-label={`${quarantineCount} in quarantine`}><RollingCount value={quarantineCount} /></span>
+                            <NixieCount value={quarantineCount} size={16} />
                         )}
                     </button>
                 </div>

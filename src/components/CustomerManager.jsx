@@ -1599,7 +1599,7 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                                     <div className="contents lg:flex items-start justify-between mb-0 lg:mb-4 row-span-2">
                                         <div className="kpm-well p-3 rounded-lg row-span-2"><MapPin size={24} /></div>
                                         <div className="contents lg:flex lg:flex-col lg:items-end lg:gap-2">
-                                            {data.pending > 0 && <span className="col-start-2 row-start-3 justify-self-start mt-1 lg:mt-0 bg-[var(--danger)] text-[var(--gold-ink)] text-[11px] lg:text-[10px] font-bold px-2 py-1 rounded-full animate-pulse">{data.pending} Pending</span>}
+                                            {data.pending > 0 && <span className="col-start-2 row-start-3 justify-self-start mt-1 lg:mt-0 bg-[var(--danger)] text-[var(--gold-ink)] text-[11px] lg:text-[10px] font-bold px-2 py-1 rounded-full">{data.pending} Pending</span>}
                                             {isAdmin && (
                                                 <div data-acts onClick={e => e.stopPropagation()}
                                                     className={`col-span-3 row-start-4 grid transition-[grid-template-rows,opacity] duration-200 ease-out lg:flex lg:gap-1 ${actsOpen === `prov:${prov}` ? 'opacity-100' : 'opacity-0 lg:opacity-100'}`}
@@ -1642,7 +1642,7 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                                     <div className="contents lg:flex items-start justify-between mb-0 lg:mb-4 row-span-2">
                                         <div className="kpm-well p-3 rounded-lg row-span-2"><Folder size={24} /></div>
                                         <div className="contents lg:flex lg:flex-col lg:items-end lg:gap-2">
-                                            {data.pending > 0 && <span className="col-start-2 row-start-3 justify-self-start mt-1 lg:mt-0 bg-[var(--danger)] text-[var(--gold-ink)] text-[11px] lg:text-[10px] font-bold px-2 py-1 rounded-full animate-pulse">{data.pending} Pending</span>}
+                                            {data.pending > 0 && <span className="col-start-2 row-start-3 justify-self-start mt-1 lg:mt-0 bg-[var(--danger)] text-[var(--gold-ink)] text-[11px] lg:text-[10px] font-bold px-2 py-1 rounded-full">{data.pending} Pending</span>}
                                             {isAdmin && (
                                                 <div data-acts onClick={e => e.stopPropagation()}
                                                     className={`col-span-3 row-start-4 grid transition-[grid-template-rows,opacity] duration-200 ease-out lg:flex lg:gap-1 ${actsOpen === `kab:${kab}` ? 'opacity-100' : 'opacity-0 lg:opacity-100'}`}
@@ -1684,7 +1684,7 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                                     <div className="contents lg:flex items-start justify-between mb-0 lg:mb-4 row-span-2">
                                         <div className="kpm-well p-3 rounded-lg row-span-2"><Folder size={24} /></div>
                                         <div className="contents lg:flex lg:flex-col lg:items-end lg:gap-2">
-                                            {data.pending > 0 && <span className="col-start-2 row-start-3 justify-self-start mt-1 lg:mt-0 bg-[var(--danger)] text-[var(--gold-ink)] text-[11px] lg:text-[10px] font-bold px-2 py-1 rounded-full animate-pulse">{data.pending} Pending</span>}
+                                            {data.pending > 0 && <span className="col-start-2 row-start-3 justify-self-start mt-1 lg:mt-0 bg-[var(--danger)] text-[var(--gold-ink)] text-[11px] lg:text-[10px] font-bold px-2 py-1 rounded-full">{data.pending} Pending</span>}
                                             {isAdmin && (
                                                 <div data-acts onClick={e => e.stopPropagation()}
                                                     className={`col-span-3 row-start-4 grid transition-[grid-template-rows,opacity] duration-200 ease-out lg:flex lg:gap-1 ${actsOpen === `kec:${kec}` ? 'opacity-100' : 'opacity-0 lg:opacity-100'}`}

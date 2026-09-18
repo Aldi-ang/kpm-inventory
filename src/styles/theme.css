@@ -3926,19 +3926,21 @@ html.lite-mode .kpm-hazard { animation: none; opacity: 1; }
   background-color: #000;
   background-image: linear-gradient(180deg, rgba(255, 255, 255, .07) 0 1px, transparent 1px, transparent 55%, rgba(255, 255, 255, .025));
   border: 1px solid var(--line-2); border-radius: 4px;
-  font-family: var(--font-mono); font-weight: 800; font-size: var(--nx, 16px); line-height: 1;
-  font-variant-numeric: tabular-nums; letter-spacing: 0; }
-.kpm-nixie-sign { width: .62em; text-align: center; color: var(--amber); }
-.kpm-nixie-tube { position: relative; width: .74em; height: 1.18em; overflow: hidden; border-radius: 2px;
-  background: radial-gradient(70% 80% at 50% 50%, rgba(255, 140, 40, .09), transparent 72%); }
-.kpm-nixie-tube::before { content: "8"; position: absolute; inset: 0; text-align: center; line-height: 1.18em;
-  color: rgba(208, 138, 46, .11); }
+  /* a condensed display face, not mono: his "change the fonts ... it is not clear" - the mono
+     digit in a narrow tube with a ghost "8" behind it read as a smudge. The ink is FIXED (like
+     --led-ink): in light mode --amber is a dark brown that vanished on the black glass. */
+  --nixie-ink: #FFB02E;
+  font-family: var(--font-display); font-weight: 800; font-size: var(--nx, 16px); line-height: 1;
+  font-variant-numeric: tabular-nums; letter-spacing: .02em; }
+.kpm-nixie-sign { width: .6em; text-align: center; color: var(--nixie-ink); }
+.kpm-nixie-tube { position: relative; width: .66em; height: 1.18em; overflow: hidden; border-radius: 2px;
+  background: radial-gradient(70% 80% at 50% 50%, rgba(255, 150, 40, .10), transparent 72%); }
 .kpm-nixie-reel { position: absolute; left: 0; right: 0; top: 0; display: grid; text-align: center;
   translate: 0 calc(var(--i, 0) * -1.18em);
   transition: translate 420ms cubic-bezier(.23, 1, .32, 1); transition-delay: var(--d, 0ms); will-change: translate; }
-.kpm-nixie-reel > span { height: 1.18em; line-height: 1.18em; color: rgba(208, 138, 46, .22); }
-.kpm-nixie-reel > span.lit { color: var(--amber);
-  background: radial-gradient(55% 62% at 50% 50%, rgba(255, 140, 40, .30), transparent 72%); }
+.kpm-nixie-reel > span { height: 1.18em; line-height: 1.18em; color: rgba(255, 176, 46, .18); }
+.kpm-nixie-reel > span.lit { color: var(--nixie-ink);
+  background: radial-gradient(55% 62% at 50% 50%, rgba(255, 150, 40, .32), transparent 72%); }
 /* the boss's audit DIFFERENCE is the verdict: bigger than the two figures it comes from on the
    phone (his "a little bit bigger"); the desk row keeps the three at one size */
 .kpm-nixie-verdict { --nx: 20px !important; }
@@ -4481,19 +4483,3 @@ html.lite-mode .kpm-pace-fill { opacity: 1; animation: none; }
   transition: transform 160ms ease-out; }
 .kpm-plate:active { transform: scale(.97); }
 
-.kpm-led { position: relative; display: inline-flex; align-items: center; justify-content: center;
-  min-width: 34px; height: 22px; padding: 0 8px 0 16px;
-  background-color: #000; background-image: linear-gradient(180deg, rgba(255, 255, 255, .06) 0 1px, transparent 1px, transparent 60%, rgba(255, 255, 255, .03));
-  color: var(--led-ink); border: 1px solid var(--line-2); border-radius: 3px;
-  font: 800 13px/1 var(--font-mono); font-variant-numeric: tabular-nums; letter-spacing: .06em; }
-.kpm-led::before { content: ""; position: absolute; left: 6px; top: 50%; width: 5px; height: 5px; margin-top: -2.5px;
-  border-radius: 50%; background: var(--danger-rail); animation: kpmLedLamp 1.6s ease-in-out infinite; }
-@keyframes kpmLedLamp { 50% { opacity: .3; } }
-
-.kpm-roll { position: relative; display: inline-grid; overflow: hidden; line-height: 1; }
-.kpm-roll > span { grid-area: 1 / 1; will-change: translate, opacity; }
-.kpm-roll-in  { animation: kpmRollIn 260ms cubic-bezier(.23, 1, .32, 1) both; }
-.kpm-roll-out { opacity: 0; translate: 0 -70%; pointer-events: none;
-  animation: kpmRollOut 260ms cubic-bezier(.23, 1, .32, 1) both; }
-@keyframes kpmRollIn  { from { opacity: 0; translate: 0 70%; } }
-@keyframes kpmRollOut { from { opacity: 1; translate: 0 0; } }
