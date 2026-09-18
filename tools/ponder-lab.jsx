@@ -625,6 +625,19 @@ const LAB_AGENT_TXNS = [
 
 function ShellLab() {
   const [dark, setDark] = React.useState(!q.has('light'));
+  /* ?shell&agent&tick — every 2.5 s a second RETUR (5 pcs) joins and leaves today's transactions,
+     so the Quarantine count rolls 10 → 15 → 10 and the odometer can be watched and sampled
+     (`el.getAnimations()`) instead of described. Off unless asked for. */
+  const [tick, setTick] = React.useState(0);
+  React.useEffect(() => {
+    if (!q.has('tick')) return;
+    const t = setInterval(() => setTick((n) => n + 1), 2500);
+    return () => clearInterval(t);
+  }, []);
+  const agentTxns = tick % 2
+    ? [...LAB_AGENT_TXNS, { id: 'tx4', agentId: 'm2', date: LAB_TODAY, type: 'RETUR', total: -44500, customerName: 'Warung Bu Sri',
+        forensicData: { quarantineCargo: [{ itemName: 'Djarum Coklat 12', qty: 5, returnReason: 'Kemasan rusak' }] } }]
+    : LAB_AGENT_TXNS;
   /* ?tab=<label>[,<label>...] presses, in order, each button whose text starts with <label> once
      the page is up — `?tab=data,daftarkan pabrik` opens the Data Induk tab and then its factory
      form. A headless screenshot cannot click; without this the phone frame of any second tab or
@@ -680,7 +693,7 @@ function ShellLab() {
         <AgentInventoryView
           db={{}} appId="lab" userId="lab" agentProfileId="m2"
           inventory={[...LAB_PRODUCTS, ...LAB_VAN_EXTRA].map((p) => ({ ...p, priceRetail: Math.round(p.priceDistributor * 1.15), priceEcer: Math.round(p.priceDistributor * 1.25), priceGrosir: Math.round(p.priceDistributor * 1.08) }))}
-          transactions={LAB_AGENT_TXNS} samplings={[]}
+          transactions={agentTxns} samplings={[]}
           user={{ uid: 'lab-t5', displayName: 'Lab Salesman', email: 'lab@example.com' }}
           motorists={LAB_MOTORISTS} previewing={null}
         />

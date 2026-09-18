@@ -3573,7 +3573,10 @@ ok('the velocity figures are guarded for the same reason',
 ok('nothing in the dashboard block needs a shadow to be visible',
    /* slice from the first RULE, not from the header comment: starting mid-comment leaves an
       unmatched close and the stripper cannot see a pair to remove */
-   !/box-shadow/.test(code(themeCss.slice(themeCss.indexOf('.kpm-dash { container-type')))));
+   /* …and END at the next section (the 2026-09-18 key caps, which are shadows on purpose); a
+      missing marker falls back to the file end rather than a raw -1 (lesson 2026-08-19) */
+   !/box-shadow/.test(code(themeCss.slice(themeCss.indexOf('.kpm-dash { container-type'),
+     themeCss.indexOf('/* ─── 2026-09-18 — KEY CAPS') > 0 ? themeCss.indexOf('/* ─── 2026-09-18 — KEY CAPS') : themeCss.length))));
 
 section('D5. Responsive by CONTAINER, so an opening rail cannot lie to it');
 ok('the dashboard declares a container',
@@ -7177,7 +7180,7 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
      /className=\{`bg-\[var\(--raised\)\] p-6 rounded-2xl shadow-sm border border-\[var\(--line\)\] \$\{showForm \? '' : 'hidden lg:block'\}`\}/.test(c),
      'his YES to board 1: 1,100 px of form sat above the search box and the shop list on every lookup');
   ok('the button that opens it is phone-only, 48 tall, and its icon is not the only element child (index.css button:has(> svg:only-child) would force it visible on the desk)',
-     /className="lg:hidden w-full min-h-\[48px\] rounded-xl bg-\[var\(--gold\)\] text-\[var\(--gold-ink\)\]/.test(c) &&
+     /className="kpm-plate lg:hidden w-full min-h-\[48px\] rounded-xl bg-\[var\(--gold\)\] text-\[var\(--gold-ink\)\]/.test(c) &&
      /<span>\{showForm \? 'Hide the form' : 'Add new customer'\}<\/span>/.test(c),
      'measured: with the icon as the only element child the button was inline-flex at 1280 and 44 tall instead of 48');
   ok('BEHAVIOUR: Edit opens the folded form; a successful save on the phone folds it again',
@@ -7197,10 +7200,10 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
      /<div className="grid grid-cols-2 lg:flex gap-2 w-full lg:w-auto">/.test(c) &&
      /<span className="font-bold text-sm whitespace-nowrap">Location & Street View<\/span>/.test(c));
   ok('folder cards are rows on the phone (icon · name · count) and cards again at lg',
-     (c.match(/p-3 lg:p-6 rounded-xl border shadow-sm cursor-pointer[^"]*grid grid-cols-\[auto_1fr\] items-center gap-x-3 lg:block/g) || []).length === 3 &&
+     (c.match(/kpm-key kpm-hot bg-\[var\(--raised\)\] p-3 lg:p-6 rounded-xl border cursor-pointer[^"]*grid grid-cols-\[auto_1fr\] items-center gap-x-3 lg:block/g) || []).length === 3 &&
      (c.match(/<h3 className="font-bold text-\[15px\] lg:text-lg mb-0 lg:mb-2 truncate self-end">/g) || []).length === 3);
   ok('shop cards: tighter on the phone, Edit / map / delete 44 tall, breadcrumb links 44, 10 px type 11',
-     /className=\{`bg-\[var\(--raised\)\] p-3 lg:p-5 rounded-xl border shadow-sm flex flex-col justify-between cursor-pointer/.test(c) &&
+     /className=\{`kpm-key kpm-hot bg-\[var\(--raised\)\] p-3 lg:p-5 rounded-xl border flex flex-col justify-between cursor-pointer/.test(c) &&
      (c.match(/px-3 py-1\.5 min-h-\[44px\] lg:min-h-0 text-xs font-bold bg-\[var\(--inset\)\]/g) || []).length === 4 &&
      (c.match(/min-h-\[44px\] lg:min-h-0 \$\{!selected(Region|City) \?/g) || []).length === 2 &&
      (c.match(/<h4 className="text-\[11px\] lg:text-\[10px\] uppercase tracking-widest/g) || []).length === 3);
@@ -7248,6 +7251,87 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
      /bg-panel border-b border-line-2 p-3 lg:p-4 flex flex-col xl:flex-row justify-between items-start gap-3 lg:gap-4/.test(a) &&
      /flex flex-col gap-2 lg:gap-3 w-full xl:w-\[65%\] lg:mt-2 xl:mt-0/.test(a),
      'measured header 424 → 401 before the fold');
+}
+
+/* ─── 2026-09-18 — THE CUSTOMERS LOOK, THE SIDEWAYS SWIPE, THE QUARANTINE COUNT (his boards 3-6, all B) ───
+   "the color and the UI is just look so static and too simple … add some small animation on the
+   folder or lighting or button … i can swipe it right and left … make the quarantine quantity …
+   more animation HD". The screen joins the control system (.kpm-key / .kpm-well / .kpm-stamp /
+   .kpm-plate), the shop detail's 600 px competitor table stacks under lg, and the count is an LED
+   with rolling digits. Material, not hue: the palette law and the amber rationing law hold. */
+{
+  const c = read('src/components/CustomerManager.jsx');
+  const th = read('src/styles/theme.css');
+  const a = read('src/AgentInventoryView.jsx');
+  ok('REGRESSION: every folder row and shop card is a pressable key with the RE sweep (kpm-key kpm-hot); the utilities the key replaces are gone',
+     (c.match(/className="kpm-key kpm-hot bg-\[var\(--raised\)\] p-3 lg:p-6 rounded-xl border cursor-pointer hover:border-\[var\(--accent-edge\)\] grid grid-cols-\[auto_1fr\] items-center gap-x-3 lg:block group"/g) || []).length === 3 &&
+     /className=\{`kpm-key kpm-hot bg-\[var\(--raised\)\] p-3 lg:p-5 rounded-xl border flex flex-col justify-between cursor-pointer hover:border-\[var\(--accent-edge\)\] group/.test(c) &&
+     !/rounded-xl border shadow-sm cursor-pointer hover:shadow-md/.test(c),
+     'theme.css is imported BEFORE the utilities, so a leftover shadow-sm / transition-all would beat .kpm-key on a tie');
+  ok('the folder icon sits in a bezelled well, never a red box; FOLDER is a routine act (kpm-btn), so ADD is the only gold plate',
+     (c.match(/className="kpm-well p-3 rounded-lg"/g) || []).length === 3 && !/p-3 bg-\[var\(--danger-well\)\] rounded-lg/.test(c) &&
+     (c.match(/handleAddFolder\('(Provinsi|Kabupaten|Kecamatan)', [^)]*\)\} className="kpm-btn rounded"/g) || []).length === 3 &&
+     !/rounded bg-\[var\(--gold\)\] text-\[var\(--gold-ink\)\] hover:bg-\[var\(--gold\)\] hover:text-\[var\(--gold-ink\)\] font-bold uppercase transition-colors border border-\[var\(--line\)\] flex items-center gap-1 shadow-md/.test(c),
+     'the amber rationing law: two gold plates on one screen is one too many; red is hazard, a folder is not');
+  ok('the counts are printed stamps, the level header is a rule not a card, ADD is the plate, search is a well',
+     (c.match(/className="kpm-stamp text-\[11px\] lg:text-\[10px\]/g) || []).length === 3 &&
+     (c.match(/<div className="flex justify-between items-center px-1 py-2 border-b border-\[var\(--line-2\)\]">/g) || []).length === 3 &&
+     /className="kpm-plate lg:hidden w-full min-h-\[48px\] rounded-xl bg-\[var\(--gold\)\]/.test(c) &&
+     /py-3 bg-\[var\(--inset\)\] border border-\[var\(--line-2\)\] rounded-xl text-\[var\(--ink\)\] focus:border-\[var\(--accent-edge\)\] outline-none shadow-\[inset_0_2px_6px_rgba\(0,0,0,\.4\)\] transition-colors/.test(c));
+  ok('REGRESSION: the competitor table never scrolls sideways under lg — the box, the table, the head, the rows',
+     /<div className="flex-1 overflow-y-auto lg:overflow-x-auto pb-2">/.test(c) &&
+     /<table className="w-full text-sm text-left block lg:table lg:min-w-\[600px\]">/.test(c) &&
+     /<thead className="hidden lg:table-header-group/.test(c) &&
+     /<tbody className="block lg:table-row-group lg:divide-y divide-\[var\(--line\)\]">/.test(c) &&
+     /<tr key=\{b\.id\} className="grid grid-cols-\[1fr_auto\] gap-x-3 py-2\.5 border-b border-\[var\(--line\)\] lg:table-row lg:border-0 lg:py-0 hover:bg-\[var\(--inset\)\]">/.test(c) &&
+     /col-start-1 row-start-1 lg:py-3 lg:pl-2/.test(c) && /col-start-2 row-start-1 text-right lg:text-left/.test(c) &&
+     /col-start-1 row-start-2 pt-1/.test(c) && /col-span-2 row-start-3 lg:col-span-1/.test(c) && /col-start-2 row-start-2 text-right/.test(c) &&
+     !/min-w-\[600px\]">/.test(c.replace('lg:min-w-[600px]">', '')),
+     'measured 2026-09-18: 600 px in a 310 px box — "the customer segment is not fixed and locked on phone that i can swipe it right and left"');
+  ok('the five benchmark boxes carry surface tokens and 44 on the phone; the map button\'s word is ink on its raised rest state',
+     (c.match(/min-h-\[44px\] lg:min-h-0 text-sm rounded border border-\[var\(--line\)\] bg-\[var\(--raised\)\] text-\[var\(--ink\)\]/g) || []).length === 5 &&
+     /bg-\[var\(--raised\)\] hover:bg-\[var\(--gold\)\] text-\[var\(--ink\)\] hover:text-\[var\(--gold-ink\)\] rounded-xl/.test(c),
+     'gold-ink on raised was black on near-black until hover; a bare input is white in dark mode');
+  ok('THE SIDEWAYS RATCHET: no app table under lg may carry a fixed min-width — only the two Reports tables still do, and no new one may join them',
+     (() => {
+       const files = fs.readdirSync('src').filter((f) => f.endsWith('.jsx')).map((f) => 'src/' + f)
+         .concat(fs.readdirSync('src/components').filter((f) => f.endsWith('.jsx')).map((f) => 'src/components/' + f));
+       const bad = [];
+       for (const f of files) {
+         const src = read(f);
+         for (const m of src.matchAll(/<table className="([^"]*)"/g)) {
+           if (/(^|\s)min-w-\[(\d{3,4})px\]/.test(m[1]) && !/(sm|md|lg):min-w-\[/.test(m[1])) bad.push(f);
+         }
+       }
+       return bad.length <= 2 && bad.every((f) => f === 'src/components/HistoryReportView.jsx');
+     })(),
+     'his rule 2026-09-18: "sideways swipe is inconvenience for phone so make sure that most of the segment doesnt have that" — HistoryReportView.jsx:500 and :808 are the Reports sweep day, not a licence');
+  ok('theme: the key rises from its keyframe, not from its base — Lite Mode\'s 0.001 s jump lands on a visible row',
+     /\.kpm-key \{ position: relative; border-color: var\(--line-2\);/.test(th) && /animation: kpmKeyRise 280ms cubic-bezier\(\.23, 1, \.32, 1\) both/.test(th) &&
+     /@keyframes kpmKeyRise \{ from \{ opacity: 0; translate: 0 10px; \} \}/.test(th) && !/\.kpm-key \{[^}]*opacity: 0/.test(th) &&
+     /\.kpm-key:active \{ translate: 0 2px;/.test(th) && /\.kpm-key\.kpm-hot::after \{ background: var\(--amber\); width: 3px; \}/.test(th),
+     'an animation must never OWN visibility (2026-08-16)');
+  ok('theme: the lamp is black at rest and amber only under the thumb (hover gated to real pointers); the stamp is mono + tabular',
+     /\.kpm-well::after \{[^}]*background: #000;/.test(th) && /\.kpm-key:active \.kpm-well::after \{ background: var\(--amber\)/.test(th) &&
+     /@media \(hover: hover\) and \(pointer: fine\) \{\s*\.kpm-key:hover \.kpm-well::after/.test(th) &&
+     /\.kpm-stamp \{ font-family: var\(--font-mono\); font-variant-numeric: tabular-nums;/.test(th),
+     '"all the light should stays black on default and lights up light amber when section pressed" (2026-09-03)');
+  ok('theme: the LED lamp pulses on opacity only; the leaving digit\'s BASE is hidden and its keyframe starts visible',
+     /\.kpm-led::before \{[^}]*animation: kpmLedLamp 1\.6s ease-in-out infinite;/.test(th) && /@keyframes kpmLedLamp \{ 50% \{ opacity: \.3; \} \}/.test(th) &&
+     /\.kpm-roll-out \{ opacity: 0; translate: 0 -70%; pointer-events: none;\s*animation: kpmRollOut 260ms/.test(th) &&
+     /@keyframes kpmRollOut \{ from \{ opacity: 1; translate: 0 0; \} \}/.test(th) && /@keyframes kpmRollIn  \{ from \{ opacity: 0; translate: 0 70%; \} \}/.test(th),
+     'under Lite Mode both animations jump to their end: the new digit in place, the old one gone — never two digits at once');
+  ok('the Quarantine count is the LED with rolling digits, and the old flat pill is gone',
+     /<span className="kpm-led" aria-label=\{`\$\{quarantineCount\} in quarantine`\}><RollingCount value=\{quarantineCount\} \/><\/span>/.test(a) &&
+     !/bg-danger-badge text-white text-\[12px\]/.test(a) &&
+     /if \(value === roll\.cur\) return;\s*setRoll\(\(r\) => \(\{ cur: value, prev: r\.cur, key: r\.key \+ 1 \}\)\);/.test(a) &&
+     /<span key=\{roll\.key\} className="kpm-roll-in">\{roll\.cur\}<\/span>/.test(a) &&
+     /\{roll\.prev !== null && <span key=\{`out-\$\{roll\.key\}`\} className="kpm-roll-out" aria-hidden="true">\{roll\.prev\}<\/span>\}/.test(a),
+     'his board 5 = B; sampled in the lab (?shell&agent&tick): kpmRollIn and kpmRollOut run together, 0 → 117 → 217 ms of 260');
+  ok('BEHAVIOUR: one roll step keeps the old digit as prev and bumps the key so the entering span remounts',
+     JSON.stringify(((r, value) => ({ cur: value, prev: r.cur, key: r.key + 1 }))({ cur: 10, prev: null, key: 0 }, 15)) === '{"cur":15,"prev":10,"key":1}' &&
+     JSON.stringify(((r, value) => ({ cur: value, prev: r.cur, key: r.key + 1 }))({ cur: 15, prev: 10, key: 1 }, 10)) === '{"cur":10,"prev":15,"key":2}',
+     'the reducer the component runs, on the lab\'s 10 → 15 → 10');
 }
 
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);

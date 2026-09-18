@@ -136,7 +136,7 @@ export const CustomerDetailView = ({ customer, db, appId, user, onBack, logAudit
                             sessionStorage.setItem('targetMapStore', customer.id);
                             if (onNavigateToMap) onNavigateToMap();
                             else window.dispatchEvent(new CustomEvent('switchTab', { detail: 'map' }));
-                        }} className="w-full mt-4 py-3 bg-[var(--raised)] hover:bg-[var(--gold)] text-[var(--gold-ink)] rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-colors shadow-md group">
+                        }} className="w-full mt-4 py-3 bg-[var(--raised)] hover:bg-[var(--gold)] text-[var(--ink)] hover:text-[var(--gold-ink)] rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-colors shadow-md group">
                             <Globe size={16} className="text-[var(--accent-ink)] group-hover:text-[var(--ink)]" /> Open in Map Mission Control
                         </button>
                     </div>
@@ -150,16 +150,16 @@ export const CustomerDetailView = ({ customer, db, appId, user, onBack, logAudit
                         </div>
                         <form onSubmit={handleAddBenchmark} className="bg-[var(--inset)] p-4 rounded-xl border mb-6 border-[var(--line)]">
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
-                                <input value={newBench.brand} onChange={e=>setNewBench({...newBench, brand:e.target.value})} placeholder="Brand" className="p-2 text-sm rounded border border-[var(--line)]"/>
-                                <input value={newBench.product} onChange={e=>setNewBench({...newBench, product:e.target.value})} placeholder="Product Name" className="p-2 text-sm rounded border border-[var(--line)]"/>
-                                <input type="number" step="any" value={newBench.price} onChange={e=>setNewBench({...newBench, price:e.target.value})} placeholder="Price (Rp)" className="p-2 text-sm rounded border border-[var(--line)]"/>
-                                <select value={newBench.volume} onChange={e=>setNewBench({...newBench, volume:e.target.value})} className="p-2 text-sm rounded border border-[var(--line)]"><option>High Sales</option><option>Medium</option><option>Slow Moving</option></select>
+                                <input value={newBench.brand} onChange={e=>setNewBench({...newBench, brand:e.target.value})} placeholder="Brand" className="p-2 min-h-[44px] lg:min-h-0 text-sm rounded border border-[var(--line)] bg-[var(--raised)] text-[var(--ink)]"/>
+                                <input value={newBench.product} onChange={e=>setNewBench({...newBench, product:e.target.value})} placeholder="Product Name" className="p-2 min-h-[44px] lg:min-h-0 text-sm rounded border border-[var(--line)] bg-[var(--raised)] text-[var(--ink)]"/>
+                                <input type="number" step="any" value={newBench.price} onChange={e=>setNewBench({...newBench, price:e.target.value})} placeholder="Price (Rp)" className="p-2 min-h-[44px] lg:min-h-0 text-sm rounded border border-[var(--line)] bg-[var(--raised)] text-[var(--ink)]"/>
+                                <select value={newBench.volume} onChange={e=>setNewBench({...newBench, volume:e.target.value})} className="p-2 min-h-[44px] lg:min-h-0 text-sm rounded border border-[var(--line)] bg-[var(--raised)] text-[var(--ink)]"><option>High Sales</option><option>Medium</option><option>Slow Moving</option></select>
                             </div>
-                            <div className="flex gap-3"><input value={newBench.notes} onChange={e=>setNewBench({...newBench, notes:e.target.value})} placeholder="Notes (e.g. Promos)" className="flex-1 p-2 text-sm rounded border border-[var(--line)]"/><button className="bg-[var(--gold)] text-[var(--gold-ink)] px-4 py-2 rounded-lg font-bold text-sm hover:bg-[var(--gold)]">Add Log</button></div>
+                            <div className="flex gap-3"><input value={newBench.notes} onChange={e=>setNewBench({...newBench, notes:e.target.value})} placeholder="Notes (e.g. Promos)" className="flex-1 p-2 min-h-[44px] lg:min-h-0 text-sm rounded border border-[var(--line)] bg-[var(--raised)] text-[var(--ink)]"/><button className="bg-[var(--gold)] text-[var(--gold-ink)] px-4 py-2 rounded-lg font-bold text-sm hover:bg-[var(--gold)]">Add Log</button></div>
                         </form>
-                        <div className="flex-1 overflow-y-auto overflow-x-auto pb-2">
-                            <table className="w-full text-sm text-left min-w-[600px]">
-                                <thead className="text-[var(--ink-dim)] font-bold border-b border-[var(--line)]">
+                        <div className="flex-1 overflow-y-auto lg:overflow-x-auto pb-2">
+                            <table className="w-full text-sm text-left block lg:table lg:min-w-[600px]">
+                                <thead className="hidden lg:table-header-group text-[var(--ink-dim)] font-bold border-b border-[var(--line)]">
                                     <tr>
                                         <th className="pb-3 pl-2 w-1/3">Product</th>
                                         <th className="pb-3 w-1/6">Price</th>
@@ -168,23 +168,23 @@ export const CustomerDetailView = ({ customer, db, appId, user, onBack, logAudit
                                         <th className="pb-3 text-right pr-2">Action</th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-[var(--line)]">
+                                <tbody className="block lg:table-row-group lg:divide-y divide-[var(--line)]">
                                     {benchmarks.map(b => (
-                                        <tr key={b.id} className="hover:bg-[var(--inset)]">
-                                            <td className="py-3 pl-2">
-                                                <div className="font-bold truncate max-w-[150px]">{b.product}</div>
+                                        <tr key={b.id} className="grid grid-cols-[1fr_auto] gap-x-3 py-2.5 border-b border-[var(--line)] lg:table-row lg:border-0 lg:py-0 hover:bg-[var(--inset)]">
+                                            <td className="col-start-1 row-start-1 lg:py-3 lg:pl-2">
+                                                <div className="font-bold lg:truncate lg:max-w-[150px]">{b.product}</div>
                                                 <div className="text-xs text-[var(--ink-dim)]">{b.brand}</div>
                                             </td>
-                                            <td className="py-3 font-mono text-[var(--danger-ink)] font-bold whitespace-nowrap">
+                                            <td className="col-start-2 row-start-1 text-right lg:text-left lg:py-3 font-mono text-[var(--danger-ink)] font-bold whitespace-nowrap">
                                                 {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(b.price)}
                                             </td>
-                                            <td className="py-3">
-                                                <span className={`text-[10px] px-2 py-1 rounded-full border whitespace-nowrap border-[var(--line)] ${b.volume === 'High Sales' ? 'bg-[var(--inset)] text-[var(--ink)] border-[var(--line)]' : b.volume === 'Slow Moving' ? 'bg-[var(--danger-well)] text-[var(--danger-ink)] border-[var(--danger)]' : 'bg-[var(--inset)] text-[var(--accent-ink)] border-[var(--line)]'} `}>
+                                            <td className="col-start-1 row-start-2 pt-1 lg:pt-0 lg:py-3">
+                                                <span className={`text-[11px] lg:text-[10px] px-2 py-1 rounded-full border whitespace-nowrap border-[var(--line)] ${b.volume === 'High Sales' ? 'bg-[var(--inset)] text-[var(--ink)] border-[var(--line)]' : b.volume === 'Slow Moving' ? 'bg-[var(--danger-well)] text-[var(--danger-ink)] border-[var(--danger)]' : 'bg-[var(--inset)] text-[var(--accent-ink)] border-[var(--line)]'} `}>
                                                     {b.volume}
                                                 </span>
                                             </td>
-                                            <td className="py-3 text-[var(--ink-dim)] text-xs italic truncate max-w-[150px]">{b.notes}</td>
-                                            <td className="py-3 text-right pr-2">
+                                            <td className="col-span-2 row-start-3 lg:col-span-1 pt-1 lg:pt-0 lg:py-3 text-[var(--ink-dim)] text-xs italic lg:truncate lg:max-w-[150px]">{b.notes}</td>
+                                            <td className="col-start-2 row-start-2 text-right lg:py-3 lg:pr-2">
                                                 <button data-kpm-del data-label="Delete" onClick={()=>handleDeleteBenchmark(b.id)} className="text-[var(--ink-dim)] hover:text-[var(--danger-ink)]"><Trash2 size={14}/></button>
                                             </td>
                                         </tr>
@@ -1290,7 +1290,7 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
             )}
             {canAddOrEditAnything && (
                 <button type="button" onClick={() => setShowForm((v) => !v)} aria-expanded={showForm}
-                    className="lg:hidden w-full min-h-[48px] rounded-xl bg-[var(--gold)] text-[var(--gold-ink)] font-bold text-[13px] uppercase tracking-[0.12em] flex items-center justify-center gap-2">
+                    className="kpm-plate lg:hidden w-full min-h-[48px] rounded-xl bg-[var(--gold)] text-[var(--gold-ink)] font-bold text-[13px] uppercase tracking-[0.12em] flex items-center justify-center gap-2">
                     {/* the label is a span so the icon is not the button's only element child —
                         index.css's `button:has(> svg:only-child)` would otherwise force
                         inline-flex over `lg:hidden` and pin the height at 44 */}
@@ -1491,7 +1491,7 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                     placeholder="Search store name, region, city, or salesperson..." 
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-12 pr-4 py-3 bg-[var(--raised)] border rounded-xl text-[var(--ink)] focus:border-[var(--accent-edge)] outline-none shadow-sm transition-all"
+                    className="w-full pl-12 pr-4 py-3 bg-[var(--inset)] border border-[var(--line-2)] rounded-xl text-[var(--ink)] focus:border-[var(--accent-edge)] outline-none shadow-[inset_0_2px_6px_rgba(0,0,0,.4)] transition-colors"
                 />
             </div>
 
@@ -1534,15 +1534,15 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                {/* LEVEL 0: PROVINSI */}
                 {!selectedProvince && (
                     <div className="space-y-4">
-                        <div className="flex justify-between items-center bg-[var(--raised)] p-3 rounded-xl border border-[var(--line)]">
+                        <div className="flex justify-between items-center px-1 py-2 border-b border-[var(--line-2)]">
                             <h4 className="text-[11px] lg:text-[10px] uppercase tracking-widest text-[var(--ink-dim)] font-bold">Indonesia (Provinsi Level)</h4>
-                            <button onClick={() => handleAddFolder('Provinsi', null)} className="text-[10px] px-3 py-1.5 rounded bg-[var(--gold)] text-[var(--gold-ink)] hover:bg-[var(--gold)] hover:text-[var(--gold-ink)] font-bold uppercase transition-colors border border-[var(--line)] flex items-center gap-1 shadow-md"><Plus size={12}/> Folder</button>
+                            <button onClick={() => handleAddFolder('Provinsi', null)} className="kpm-btn rounded"><Plus size={12}/> Folder</button>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                             {Object.entries(folderStructure).map(([prov, data]) => (
-                                <div key={prov} onClick={() => setSelectedProvince(prov)} className="bg-[var(--raised)] p-3 lg:p-6 rounded-xl border shadow-sm cursor-pointer hover:shadow-md hover:border-[var(--accent-edge)] transition-all grid grid-cols-[auto_1fr] items-center gap-x-3 lg:block group">
+                                <div key={prov} onClick={() => setSelectedProvince(prov)} className="kpm-key kpm-hot bg-[var(--raised)] p-3 lg:p-6 rounded-xl border cursor-pointer hover:border-[var(--accent-edge)] grid grid-cols-[auto_1fr] items-center gap-x-3 lg:block group">
                                     <div className="flex items-start justify-between mb-0 lg:mb-4 row-span-2">
-                                        <div className="p-3 bg-[var(--danger-well)] rounded-lg text-[var(--danger-ink)] group-hover:bg-[var(--danger)] group-hover:text-[var(--gold-ink)] transition-colors"><MapPin size={24} /></div>
+                                        <div className="kpm-well p-3 rounded-lg"><MapPin size={24} /></div>
                                         <div className="flex flex-col items-end gap-2">
                                             {data.pending > 0 && <span className="bg-[var(--danger)] text-[var(--gold-ink)] text-[10px] font-bold px-2 py-1 rounded-full animate-pulse">{data.pending} Pending</span>}
                                             {isAdmin && (
@@ -1562,7 +1562,7 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                                         </div>
                                     </div>
                                     <h3 className="font-bold text-[15px] lg:text-lg mb-0 lg:mb-2 truncate self-end">{prov}</h3>
-                                    <p className="text-[10px] text-[var(--ink-dim)] uppercase tracking-widest font-bold">{data.count} Total Stores</p>
+                                    <p className="kpm-stamp text-[11px] lg:text-[10px] text-[var(--ink-dim)] uppercase tracking-widest font-bold self-start">{data.count} Total Stores</p>
                                 </div>
                             ))}
                             {Object.keys(folderStructure).length === 0 && <div className="col-span-full text-center py-12 opacity-50"><Folder size={48} className="mx-auto mb-4"/><p className="font-bold tracking-widest uppercase">No Data Found</p></div>}
@@ -1573,15 +1573,15 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                 {/* LEVEL 1: KABUPATEN */}
                 {selectedProvince && !selectedRegion && activeProv && (
                     <div className="space-y-4">
-                        <div className="flex justify-between items-center bg-[var(--raised)] p-3 rounded-xl border border-[var(--line)]">
+                        <div className="flex justify-between items-center px-1 py-2 border-b border-[var(--line-2)]">
                             <h4 className="text-[11px] lg:text-[10px] uppercase tracking-widest text-[var(--ink-dim)] font-bold">{selectedProvince} (Kabupaten Level)</h4>
-                            <button onClick={() => handleAddFolder('Kabupaten', selectedProvince)} className="text-[10px] px-3 py-1.5 rounded bg-[var(--gold)] text-[var(--gold-ink)] hover:bg-[var(--gold)] hover:text-[var(--gold-ink)] font-bold uppercase transition-colors border border-[var(--line)] flex items-center gap-1 shadow-md"><Plus size={12}/> Folder</button>
+                            <button onClick={() => handleAddFolder('Kabupaten', selectedProvince)} className="kpm-btn rounded"><Plus size={12}/> Folder</button>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                             {Object.entries(activeProv?.regions || {}).map(([kab, data]) => (
-                                <div key={kab} onClick={() => setSelectedRegion(kab)} className="bg-[var(--raised)] p-3 lg:p-6 rounded-xl border shadow-sm cursor-pointer hover:shadow-md hover:border-[var(--accent-edge)] transition-all grid grid-cols-[auto_1fr] items-center gap-x-3 lg:block group">
+                                <div key={kab} onClick={() => setSelectedRegion(kab)} className="kpm-key kpm-hot bg-[var(--raised)] p-3 lg:p-6 rounded-xl border cursor-pointer hover:border-[var(--accent-edge)] grid grid-cols-[auto_1fr] items-center gap-x-3 lg:block group">
                                     <div className="flex items-start justify-between mb-0 lg:mb-4 row-span-2">
-                                        <div className="p-3 bg-[var(--inset)] rounded-lg text-[var(--accent-ink)] group-hover:bg-[var(--gold)] group-hover:text-[var(--gold-ink)] transition-colors"><Folder size={24} /></div>
+                                        <div className="kpm-well p-3 rounded-lg"><Folder size={24} /></div>
                                         <div className="flex flex-col items-end gap-2">
                                             {data.pending > 0 && <span className="bg-[var(--danger)] text-[var(--gold-ink)] text-[10px] font-bold px-2 py-1 rounded-full animate-pulse">{data.pending} Pending</span>}
                                             {isAdmin && (
@@ -1601,7 +1601,7 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                                         </div>
                                     </div>
                                     <h3 className="font-bold text-[15px] lg:text-lg mb-0 lg:mb-2 truncate self-end">{kab}</h3>
-                                    <p className="text-[11px] lg:text-[10px] text-[var(--ink-dim)] uppercase tracking-widest font-bold self-start">{data.count} Registered</p>
+                                    <p className="kpm-stamp text-[11px] lg:text-[10px] text-[var(--ink-dim)] uppercase tracking-widest font-bold self-start">{data.count} Registered</p>
                                 </div>
                             ))}
                         </div>
@@ -1611,15 +1611,15 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                 {/* LEVEL 2: KECAMATAN */}
                 {selectedProvince && selectedRegion && !selectedCity && activeKab && (
                     <div className="space-y-4">
-                        <div className="flex justify-between items-center bg-[var(--raised)] p-3 rounded-xl border border-[var(--line)]">
+                        <div className="flex justify-between items-center px-1 py-2 border-b border-[var(--line-2)]">
                             <h4 className="text-[11px] lg:text-[10px] uppercase tracking-widest text-[var(--ink-dim)] font-bold">{selectedRegion} (Kecamatan Level)</h4>
-                            <button onClick={() => handleAddFolder('Kecamatan', selectedRegion)} className="text-[10px] px-3 py-1.5 rounded bg-[var(--gold)] text-[var(--gold-ink)] hover:bg-[var(--gold)] hover:text-[var(--gold-ink)] font-bold uppercase transition-colors border border-[var(--line)] flex items-center gap-1 shadow-md"><Plus size={12}/> Folder</button>
+                            <button onClick={() => handleAddFolder('Kecamatan', selectedRegion)} className="kpm-btn rounded"><Plus size={12}/> Folder</button>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                             {Object.entries(activeKab?.cities || {}).map(([kec, data]) => (
-                                <div key={kec} onClick={() => setSelectedCity(kec)} className="bg-[var(--raised)] p-3 lg:p-6 rounded-xl border shadow-sm cursor-pointer hover:shadow-md hover:border-[var(--line)] transition-all group grid grid-cols-[auto_1fr] items-center gap-x-3 lg:block">
+                                <div key={kec} onClick={() => setSelectedCity(kec)} className="kpm-key kpm-hot bg-[var(--raised)] p-3 lg:p-6 rounded-xl border cursor-pointer hover:border-[var(--accent-edge)] grid grid-cols-[auto_1fr] items-center gap-x-3 lg:block group">
                                     <div className="flex items-start justify-between mb-0 lg:mb-4 row-span-2">
-                                        <div className="p-3 bg-[var(--inset)] rounded-lg text-[var(--ink)] group-hover:bg-[var(--gold)] group-hover:text-[var(--gold-ink)] transition-colors"><Folder size={24} /></div>
+                                        <div className="kpm-well p-3 rounded-lg"><Folder size={24} /></div>
                                         <div className="flex flex-col items-end gap-2">
                                             {data.pending > 0 && <span className="bg-[var(--danger)] text-[var(--gold-ink)] text-[10px] font-bold px-2 py-1 rounded-full animate-pulse">{data.pending} Pending</span>}
                                             {isAdmin && (
@@ -1635,7 +1635,7 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                                         </div>
                                     </div>
                                     <h3 className="font-bold text-[15px] lg:text-lg mb-0 lg:mb-2 truncate self-end">{kec}</h3>
-                                    <p className="text-[11px] lg:text-[10px] text-[var(--ink-dim)] uppercase tracking-widest font-bold self-start">{data.count} Registered</p>
+                                    <p className="kpm-stamp text-[11px] lg:text-[10px] text-[var(--ink-dim)] uppercase tracking-widest font-bold self-start">{data.count} Registered</p>
                                 </div>
                             ))}
                         </div>
@@ -1650,7 +1650,7 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                         {[...(activeKec?.stores || [])].sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'id', { sensitivity: 'base' })).map(c => {
                             const tierDef = tierSettings ? tierSettings.find(t => t.id === c.tier) : null;
                             return (
-                                <div key={c.id} onClick={() => openDetail(c)} className={`bg-[var(--raised)] p-3 lg:p-5 rounded-xl border shadow-sm flex flex-col justify-between cursor-pointer hover:shadow-md hover:border-[var(--accent-edge)] transition-all group ${editingId === c.id ? 'border-[var(--lamp-on)]' : ''} `}>
+                                <div key={c.id} onClick={() => openDetail(c)} className={`kpm-key kpm-hot bg-[var(--raised)] p-3 lg:p-5 rounded-xl border flex flex-col justify-between cursor-pointer hover:border-[var(--accent-edge)] group ${editingId === c.id ? 'border-[var(--lamp-on)]' : ''} `}>
                                     
                                     {/* TOP: Store Header */}
                                     <div className="flex justify-between items-start mb-2 lg:mb-4 pb-2 lg:pb-4 border-b border-[var(--line)]">

@@ -150,6 +150,9 @@
   --danger-plate-ink: #F7F2EE;
   --danger-rail:   #B4524A;   /* the 3px rail that marks a negative value */
   --danger-badge:  #B4524A;   /* count badge; with pure #FFF = 4,95:1 */
+  --led-ink:       #E08C82;   /* digits on the LED's fixed BLACK well — does not flip with the theme,
+                                 because the well does not (an instrument keeps its own lights,
+                                 2026-09-04); 8,3:1 on #000. Never as text on a themed surface. */
   --danger-well:   #1E1512;
 
   /* verified / complete. NOT green — carried by weight and a filled plate. */
@@ -4365,3 +4368,86 @@ html.lite-mode .kpm-pace-fill { opacity: 1; animation: none; }
   }
   .kpm-stack-rows td:first-child { padding-right: 34px; }
 }
+
+
+/* ─── 2026-09-18 — KEY CAPS, WELL, STAMP, PLATE, LED: the Customers screen joins the control system ───
+   Aldi, on the shipped Customers screen: "the color and the UI is just look so static and too simple
+   ... add some small animation on the folder or lighting or button". His picks on boards 3-5 were
+   all B. Every class below is material, not hue — the palette law and the amber rationing law stand.
+
+   ⚠️ NO SHADOWS, NO FILTERS — audit G30: nothing in the system may DEPEND on a shadow, because Lite
+   Mode strips them on the cheap phones this is for. Depth here is drawn with borders and gradient
+   layers instead: a key's proud edge is a border-bottom, its top light is a background layer, the
+   LED's recess is a gradient. (The boards were drawn with box-shadows; the shipped material is the
+   same shape without them.)
+
+   .kpm-key   a record you can press: lit from the top (12 % gold into --raised over 56 px) with a
+              hairline highlight, standing 3 px proud on a --line-2 edge; it sinks 2 px under the
+              thumb and the edge shortens to 1 px. Rows rise in one after another when a list opens
+              (280 ms, 45 ms apart). The start state lives in the keyframe's `from`, never in the
+              base rule, so Lite Mode's 0.001 s jump lands on a resting, visible row (an animation
+              must never OWN visibility — 2026-08-16). Pair it with .kpm-hot: the RE sweep stays,
+              and its ink bar becomes the amber edge.
+   .kpm-well  the folder icon's recess, with a lamp that is BLACK until the row is touched and amber
+              while it is ("all the light should stays black on default and lights up light amber
+              when section pressed", 2026-09-03). Hover is gated to real pointers.
+   .kpm-stamp a printed count — mono, tabular, inset, so a number reads as a reading, not a caption.
+   .kpm-plate the one gold plate on a screen: a lit top edge and a dark bottom edge as gradient
+              layers; sinks on press.
+   .kpm-led   the Quarantine count as an instrument: a black well, red mono digits, a 5 px lamp that
+              pulses (1.6 s, opacity only). Black on both grounds on purpose — an instrument does
+              not follow the room's lights (2026-09-04) — so its ink is the fixed --led-ink.
+   .kpm-roll  the odometer: the digit that leaves rides up and out while the new one rides in from
+              below (260 ms, transform + opacity only). The leaving digit's BASE is hidden; its
+              keyframe starts visible — the same Lite rule as .kpm-key, read the other way round. */
+.kpm-key { position: relative; border-color: var(--line-2);
+  background-image:
+    linear-gradient(180deg, color-mix(in srgb, var(--ink) 12%, transparent) 0 1px, transparent 1px),
+    linear-gradient(180deg, color-mix(in srgb, var(--raised) 88%, var(--gold) 12%) 0, var(--raised) 56px);
+  transition: translate 120ms ease-out, border-color 160ms ease-out, border-bottom-width 120ms ease-out;
+  animation: kpmKeyRise 280ms cubic-bezier(.23, 1, .32, 1) both; will-change: translate; }
+/* the proud edge rides on the PAIR: theme.css is imported before the utilities, so a lone .kpm-key
+   would lose border-bottom-width to the row's own `border` class on a specificity tie */
+.kpm-key.kpm-hot { border-bottom-width: 4px; }
+.kpm-key:active { translate: 0 2px; }
+.kpm-key.kpm-hot:active { scale: 1; border-bottom-width: 2px; }
+.kpm-key.kpm-hot::after { background: var(--amber); width: 3px; }
+.kpm-key:nth-child(2) { animation-delay: 45ms; }  .kpm-key:nth-child(3) { animation-delay: 90ms; }
+.kpm-key:nth-child(4) { animation-delay: 135ms; } .kpm-key:nth-child(5) { animation-delay: 180ms; }
+.kpm-key:nth-child(6) { animation-delay: 225ms; } .kpm-key:nth-child(7) { animation-delay: 270ms; }
+.kpm-key:nth-child(n+8) { animation-delay: 315ms; }
+@keyframes kpmKeyRise { from { opacity: 0; translate: 0 10px; } }
+
+.kpm-well { position: relative; color: var(--ink-muted); border: 1px solid var(--line-2);
+  background-color: var(--inset);
+  background-image: linear-gradient(180deg, rgba(0, 0, 0, .45) 0, transparent 55%, color-mix(in srgb, var(--ink) 8%, transparent) 100%); }
+.kpm-well::after { content: ""; position: absolute; right: 5px; top: 5px; width: 6px; height: 6px; border-radius: 50%;
+  background: #000; border: 1px solid var(--line-2); transition: background-color 160ms ease-out, border-color 160ms ease-out; }
+.kpm-key:active .kpm-well::after { background: var(--amber); border-color: var(--amber); }
+@media (hover: hover) and (pointer: fine) {
+  .kpm-key:hover .kpm-well::after { background: var(--amber); border-color: var(--amber); }
+}
+
+.kpm-stamp { font-family: var(--font-mono); font-variant-numeric: tabular-nums; background: var(--inset);
+  border: 1px solid var(--line-2); border-radius: 4px; padding: 2px 8px; width: max-content; letter-spacing: .14em; }
+
+.kpm-plate { background-image: linear-gradient(180deg, rgba(255, 255, 255, .3) 0 1px, transparent 1px, transparent calc(100% - 2px), rgba(0, 0, 0, .28) calc(100% - 2px));
+  transition: transform 160ms ease-out; }
+.kpm-plate:active { transform: scale(.97); }
+
+.kpm-led { position: relative; display: inline-flex; align-items: center; justify-content: center;
+  min-width: 34px; height: 22px; padding: 0 8px 0 16px;
+  background-color: #000; background-image: linear-gradient(180deg, rgba(255, 255, 255, .06) 0 1px, transparent 1px, transparent 60%, rgba(255, 255, 255, .03));
+  color: var(--led-ink); border: 1px solid var(--line-2); border-radius: 3px;
+  font: 800 13px/1 var(--font-mono); font-variant-numeric: tabular-nums; letter-spacing: .06em; }
+.kpm-led::before { content: ""; position: absolute; left: 6px; top: 50%; width: 5px; height: 5px; margin-top: -2.5px;
+  border-radius: 50%; background: var(--danger-rail); animation: kpmLedLamp 1.6s ease-in-out infinite; }
+@keyframes kpmLedLamp { 50% { opacity: .3; } }
+
+.kpm-roll { position: relative; display: inline-grid; overflow: hidden; line-height: 1; }
+.kpm-roll > span { grid-area: 1 / 1; will-change: translate, opacity; }
+.kpm-roll-in  { animation: kpmRollIn 260ms cubic-bezier(.23, 1, .32, 1) both; }
+.kpm-roll-out { opacity: 0; translate: 0 -70%; pointer-events: none;
+  animation: kpmRollOut 260ms cubic-bezier(.23, 1, .32, 1) both; }
+@keyframes kpmRollIn  { from { opacity: 0; translate: 0 70%; } }
+@keyframes kpmRollOut { from { opacity: 1; translate: 0 0; } }
