@@ -30,6 +30,7 @@ import MerchantSalesView from '../src/MerchantSalesView.jsx';
 import { CustomerManagement } from '../src/components/CustomerManager.jsx';
 import AgentInventoryView from '../src/AgentInventoryView.jsx';
 import EODReconciliationView from '../src/EODReconciliationView.jsx';
+import StockOpnameView from '../src/StockOpnameView.jsx';
 import BranchWarehouseManager from '../src/components/BranchWarehouseManager.jsx';
 import ShipmentLabel from '../src/components/ShipmentLabel.jsx';
 import ArrivalScanner from '../src/components/ArrivalScanner.jsx';
@@ -617,6 +618,20 @@ FIXTURES['benchmarks'] = [
   { id: 'b3', brand: 'Djarum', product: 'Super 12', price: 22000, volume: 'Low Sales', notes: 'Stok sering kosong' },
 ];
 const LAB_TODAY = getLocalDayKey();
+/* the boss's Stock Opname side (`?shell&opname&admin`): one count waiting for HQ so the HQ AUDITS
+   tab has a row and a badge, one resolved quarantine log so the vault's history has a line */
+FIXTURES['pending_audits'] = [
+  { id: 'aud1', status: 'PENDING_HQ_APPROVAL', branchLocation: 'BANDUNG', agentName: 'Budi Santoso', auditType: 'BRANCH',
+    timestamp: { seconds: Math.floor(Date.now() / 1000) - 3600 },
+    items: [
+      { productId: 'p-cg16', name: 'Cello Green 16', expectedStock: 420, expectedDamagedStock: 0, goodCount: 415, damagedCount: 3, totalFound: 418, variance: -2, varianceReason: 'Salah hitung', countPasses: [{ good: 415, damaged: 3 }, { good: 415, damaged: 3 }], countedTwice: true, threeWayDisagreement: false, damageKinds: [], damagedPhotoUrl: null },
+      { productId: 'p-cm12', name: 'Cello Merah 12', expectedStock: 168, expectedDamagedStock: 0, goodCount: 168, damagedCount: 0, totalFound: 168, variance: 0, varianceReason: null, countPasses: [{ good: 168, damaged: 0 }], countedTwice: false, threeWayDisagreement: false, damageKinds: [], damagedPhotoUrl: null },
+    ] },
+];
+FIXTURES['quarantine_logs'] = [
+  { id: 'ql1', method: 'RTV', facility: 'BANDUNG', productName: 'Djarum Coklat 12', qty: 12, totalValueHpp: 150000,
+    details: 'SJR-2026-014', resolvedBy: 'Lab', timestamp: { seconds: Math.floor(Date.now() / 1000) - 86400 } },
+];
 const LAB_AGENT_TXNS = [
   { id: 'tx1', agentId: 'm2', date: LAB_TODAY, type: 'SALE', total: 1850000, customerName: 'Toko Sumber Rejeki' },
   { id: 'tx2', agentId: 'm2', date: LAB_TODAY, type: 'SALE', total: 640000, customerName: 'Warung Bu Sri' },
@@ -656,19 +671,43 @@ function ShellLab() {
          value setter, then an input event so the controlled field takes it). The EOD deck's
          confirm button is disabled until the card carries a figure, so a headless frame of card 2
          or 3 cannot be reached by presses alone: `?tab=type:2490000,put cash,landed,put transfer`. */
+      const setValue = (el, v) => {
+        Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(el, v);
+        el.dispatchEvent(new Event('input', { bubbles: true }));
+      };
       if (want.startsWith('type:')) {
         const el = [...desk.querySelectorAll('input:not([disabled])')].find((e) => e.offsetParent);
-        if (!el) return;
-        Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(el, want.slice(5));
-        el.dispatchEvent(new Event('input', { bubbles: true }));
+        if (el) setValue(el, want.slice(5));
         return;
+      }
+      /* `count:400/3` — the first product card's GOOD and DAMAGED boxes (Stock Opname): the search
+         box is the first input on that screen, so `type:` cannot reach a count and the revealed
+         state (plates, recount, damage kinds) could not be shot headless. */
+      if (want.startsWith('count:')) {
+        const [g, d] = want.slice(6).split('/');
+        /* the rows arrive from the stub's onSnapshot one tick later, so poll for the first box */
+        const find = (tries) => new Promise((res) => {
+          const nums = [...desk.querySelectorAll('input[type=number]')].filter((e) => e.offsetParent);
+          if (nums[0] || tries <= 0) return res(nums);
+          setTimeout(() => res(find(tries - 1)), 50);
+        });
+        return find(40).then((nums) => {
+          if (nums[0] && g) setValue(nums[0], g);
+          if (nums[1] && d) setValue(nums[1], d);
+        });
       }
       const hit = (sel) => [...desk.querySelectorAll(sel)]
         .find((el) => el.textContent.trim().toLowerCase().startsWith(want));
       /* buttons first; a card that opens on click (the Customers folders and stores are
-         `cursor-pointer` divs, not buttons) only when no button carries the label */
-      const b = hit('button') || hit('[class*="cursor-pointer"]');
-      if (b) b.click();
+         `cursor-pointer` divs, not buttons) only when no button carries the label. A target
+         that a stub listener paints one tick later (the Stock Opname audit rows) is polled for,
+         up to two seconds, instead of being missed. */
+      const wait = (tries) => new Promise((res) => {
+        const b = hit('button') || hit('[class*="cursor-pointer"]');
+        if (b || tries <= 0) return res(b);
+        setTimeout(() => res(wait(tries - 1)), 50);
+      });
+      return wait(40).then((b) => { if (b) b.click(); });
     };
     wants.reduce((chain, want) => chain.then(() => press(want)), Promise.resolve()).then(() => {
       /* `&held` — the first .kpm-key wears `lab-held`, so a look can draw the HELD state of a row
@@ -700,7 +739,25 @@ function ShellLab() {
         </button>
       )}
     >
-      {q.has('eod') ? (
+      {q.has('opname') ? (
+        /* ?shell&opname — Stock Opname INSIDE the real shell exactly as App.jsx:5069 mounts it: no
+           wrapper. A T5 counts BLIND (viewMode 'count', StockOpnameView.jsx:222) against his
+           BRANCH's inventory (:232, isAreaAdmin = everyone below ADMIN), so the salesman is put in
+           BANDUNG and the stub answers the same `branches/BANDUNG/inventory` fixture the gudang
+           desk reads. `&admin` is the boss: viewMode 'monitor' on the passed inventory, the HQ
+           AUDITS and QUARANTINE tabs fed by the two array fixtures above. It writes through addDoc
+           on submit — the stub swallows it; the lab is for looking. */
+        <StockOpnameView
+          db={{}} storage={{}} appId="lab"
+          /* one product carries damaged stock so the boss's QUARANTINE tab has a row with its
+             three protocol keys instead of the empty-zone plate */
+          inventory={[...LAB_PRODUCTS, ...LAB_VAN_EXTRA].map((p) => (p.id === 'p-djar' ? { ...p, damagedStock: 12 } : p))} transactions={LAB_AGENT_TXNS}
+          motorists={LAB_MOTORISTS} appSettings={{}}
+          userRole={q.has('admin') ? 'ADMIN' : 'FIELD_OPERATIVE'} isAdmin={q.has('admin')}
+          user={{ uid: 'lab-boss', displayName: q.has('admin') ? 'Lab Boss' : 'Lab Salesman', email: 'lab@example.com', location: 'BANDUNG', userRole: q.has('admin') ? 'ADMIN' : 'FIELD_OPERATIVE' }}
+          logAudit={() => {}} triggerCapy={() => {}}
+        />
+      ) : q.has('eod') ? (
         /* ?shell&eod — EOD Setoran, the salesman's SUBMIT flow (isAdmin false → viewMode 'submit'),
            INSIDE the real shell exactly as App.jsx:5022 mounts it: no wrapper. The screen keys on
            agentProfileId directly (EODReconciliationView.jsx:75), so "m2" is Budi. His van is read
