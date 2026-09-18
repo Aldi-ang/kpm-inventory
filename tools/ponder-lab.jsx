@@ -31,6 +31,7 @@ import { CustomerManagement } from '../src/components/CustomerManager.jsx';
 import AgentInventoryView from '../src/AgentInventoryView.jsx';
 import EODReconciliationView from '../src/EODReconciliationView.jsx';
 import StockOpnameView from '../src/StockOpnameView.jsx';
+import JourneyView from '../src/JourneyView.jsx';
 import BranchWarehouseManager from '../src/components/BranchWarehouseManager.jsx';
 import ShipmentLabel from '../src/components/ShipmentLabel.jsx';
 import ArrivalScanner from '../src/components/ArrivalScanner.jsx';
@@ -739,7 +740,29 @@ function ShellLab() {
         </button>
       )}
     >
-      {q.has('opname') ? (
+      {q.has('journey') ? (
+        /* ?shell&journey — Journey Plan INSIDE the real shell exactly as App.jsx:4650 mounts it: no
+           wrapper. App hands it displayPermitted (already tier-filtered), so the lab hands the four
+           customers plus two more with a lastVisit / visitFreq spread, all in Bandung, so the day's
+           list has due, overdue and fresh rows and the map has pins to cluster. The salesman is
+           Budi (his check-in writes under user.displayName, JourneyView.jsx:773); `&admin` is the
+           boss (isAdmin → the fleet paintbrush, :322). Every write is a stub no-op; the lab is for
+           looking. */
+        <JourneyView
+          db={{}} appId="lab"
+          customers={[
+            ...LAB_CUSTOMERS.map((c, i) => ({ ...c, region: 'BANDUNG', city: 'Bandung', tier: ['Bronze', 'Silver', 'Gold', 'Bronze'][i], assignedAgent: 'Budi Santoso', visitFreq: 7, lastVisit: i === 0 ? LAB_TODAY : i === 1 ? '2026-09-01' : '', phone: '0812-3456-7890' })),
+            { id: 'c-sri', name: 'Warung Bu Sri Rahayu Sejahtera Abadi', address: 'Jl. Dago Atas No. 101, Bandung', latitude: -6.8700, longitude: 107.6150, priceTier: 'Ecer', region: 'BANDUNG', city: 'Bandung', tier: 'Silver', assignedAgent: 'Budi Santoso', visitFreq: 3, lastVisit: '2026-09-10' },
+            { id: 'c-jaya', name: 'Grosir Jaya Abadi', address: 'Jl. Soekarno Hatta 400', latitude: -6.9400, longitude: 107.6300, priceTier: 'Grosir', region: 'BANDUNG', city: 'Bandung', tier: 'Gold', assignedAgent: 'Adi Nugroho', visitFreq: 14, lastVisit: '2026-08-20' },
+          ]}
+          transactions={LAB_AGENT_TXNS}
+          user={{ uid: 'lab-t5', displayName: q.has('admin') ? 'Lab Boss' : 'Budi Santoso', email: 'lab@example.com', location: 'BANDUNG', userRole: q.has('admin') ? 'ADMIN' : 'FIELD_OPERATIVE' }}
+          userRole={q.has('admin') ? 'ADMIN' : 'FIELD_OPERATIVE'} isAdmin={q.has('admin')}
+          logAudit={() => {}} triggerCapy={() => {}} setActiveTab={() => {}}
+          tierSettings={{}} isLiteMode={false} appSettings={{}}
+          focusStore={null} onFocusStoreHandled={() => {}}
+        />
+      ) : q.has('opname') ? (
         /* ?shell&opname — Stock Opname INSIDE the real shell exactly as App.jsx:5069 mounts it: no
            wrapper. A T5 counts BLIND (viewMode 'count', StockOpnameView.jsx:222) against his
            BRANCH's inventory (:232, isAreaAdmin = everyone below ADMIN), so the salesman is put in

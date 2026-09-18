@@ -45,6 +45,7 @@ export const runTransaction = async (_db, fn) =>
   fn({ get: async () => ({ exists: () => false, data: () => ({}) }), set: noop, update: noop });
 export const updateDoc = async () => {};
 export const deleteDoc = async () => {};
+export const deleteField = () => undefined;
 export const serverTimestamp = () => ({ seconds: Math.floor(Date.now() / 1000) });
 export const increment = (n) => n;
 export const arrayUnion = (...v) => v;
