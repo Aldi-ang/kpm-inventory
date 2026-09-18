@@ -14,57 +14,76 @@ export const PIN = '#root{width:375px}';
    When a look needs the HELD state of a row for a still, `&held` puts `lab-held` on the first
    .kpm-key; write the look against `.kpm-key:active, .kpm-key.lab-held`. */
 
-/* 2026-09-18 evening — Stock Opname on the phone, four boards, undecided. `?shell&opname&look=…`
-   (T5 count) and `?shell&opname&admin&look=…` (the boss). Delete when he answers. */
+/* 2026-09-18 19:10: the Stock Opname floor (title, 11 px, 44 px, the 2x2 tabs, the 92 px reel row,
+   the pickers) is SHIPPED (kpm f72ef35) — op-1..op-4 are gone. What is left undecided is the
+   PRESENTATION he refused: the counting card ("too much red, no animation or effect") and the
+   boss's audit item ("too compact in a small space"). `?shell&opname&look=op-5a|op-5b` with
+   `&tab=count:400/3,3%20damaged`, and `?shell&opname&admin&look=op-6a|op-6b` with
+   `&tab=hq%20audits,bandung`. Stills only — the motion is described in the caption. */
 const C = '.biohazard-content ';
-const OP_TYPE = `
-  ${C}p[class*="text-[10px]"].font-mono{font-size:11px}
-  ${C}h2.text-2xl.tracking-widest{font-size:20px;line-height:28px}
+const K = `${C}div.relative.overflow-hidden.rounded-xl[class*="bg-[var(--raised)]"]`;   /* one counting card (the list box around them is --sunk) */
+const PLATE = 'linear-gradient(180deg, rgba(255,255,255,.3) 0 1px, transparent 1px, transparent calc(100% - 2px), rgba(0,0,0,.28) calc(100% - 2px))';
+/* the red reduction both count-card options share: a first-pass difference is a REQUEST to count
+   again (amber), red waits for a confirmed difference or a refused submit; "expected damaged" is
+   just a number; the BLIND COUNT badge is a status, not an alarm */
+const OP_5_BASE = `
+  ${K}[class*="border-[var(--danger)]"]{border-color:var(--accent-edge)}
+  ${K}>span.w-1[class*="bg-[var(--danger)]"]{background:var(--accent-edge)}
+  ${K} div.grid.gap-px>div[class*="border-[var(--danger)]"]{border-color:var(--accent-edge)}
+  ${K} div.grid.gap-px>div:nth-child(2)>div:first-child{color:var(--ink-dim)}
+  ${K} div.grid.gap-px>div:nth-child(2)>div:last-child{color:var(--ink)}
+  ${K} div.grid.gap-px>div:nth-child(4)>div{color:var(--accent-ink)}
+  ${K} div.p-3.rounded-lg[class*="border-[var(--danger)]"]{border-color:var(--accent-edge)}
+  ${K} div.p-3.rounded-lg span[class*="text-[var(--danger-ink)]"]{color:var(--ink)}
+  ${K} div.p-3.rounded-lg span>span.font-black{color:var(--accent-ink)}
+  ${K} button[class*="min-h-11 lg:min-h-[40px]"]{border-color:var(--accent-edge);color:var(--accent-ink);background:transparent;letter-spacing:.12em}
+  ${K} label.cursor-pointer{border-style:solid;border-color:var(--line-2);color:var(--ink-muted)}
+  ${K} button[aria-expanded][class*="border-[var(--danger)]"]{border-color:var(--accent-edge);color:var(--accent-ink)}
+  ${K} button[aria-expanded] span[class*="text-[var(--danger-ink)]"]{color:var(--accent-ink)}
+  ${C}span[class*="bg-[var(--danger-well)]"]{background:transparent;border-color:var(--accent-edge);color:var(--accent-ink)}
 `;
-/* board 1 — the counting card: title one line, every label 11, CLEAR AND COUNT AGAIN and UPLOAD
-   PROOF 44, SUBMIT TO HQ on one line */
-const OP_1 = OP_TYPE + `
-  ${C}div[class*="text-[10px]"].font-mono{font-size:11px}
-  ${C}label>span[class*="text-[10px]"]{font-size:11px}
-  ${C}div.grid.gap-px>div>div[class*="text-[9px]"]{font-size:11px}
-  ${C}button[class*="min-h-[40px]"]{min-height:44px;font-size:11px}
-  ${C}label.cursor-pointer.border-dashed{min-height:44px;font-size:11px}
-  ${C}span[class*="text-[9px]"].font-mono{font-size:11px}
-  ${C}button.px-8{padding-left:1rem;padding-right:1rem}
-  ${C}div.flex.w-full.gap-3>button:first-child{flex:0 0 auto}
+/* A — the plates get the control system's top light, the DIFFERENCE is an LED window (rolling
+   digits when the figure changes; the lamp amber until the count is confirmed), and the whole
+   verdict block slides open under the boxes on the first typed number (grid-rows fold) */
+const OP_5A = OP_5_BASE + `
+  ${K} div.grid.gap-px>div{background-image:${PLATE}}
+  ${K} div.grid.gap-px>div:nth-child(4)>div:last-child{display:inline-flex;align-items:center;justify-content:center;position:relative;min-width:64px;height:24px;margin-top:2px;padding:0 8px 0 18px;background:#000;color:var(--led-ink);border:1px solid var(--line-2);border-radius:3px;font-size:15px;letter-spacing:.06em}
+  ${K} div.grid.gap-px>div:nth-child(4)>div:last-child::before{content:"";position:absolute;left:6px;top:50%;width:5px;height:5px;margin-top:-2.5px;border-radius:50%;background:var(--amber)}
 `;
-/* board 2 — the kinds-of-damage reel: A the two arrows become 44 px keys (the row grows to 92),
-   B the arrows go and the face itself is the key (tap = next kind) */
-const OP_2A = `
-  ${C}.kpm-dmg-win{--dmg-row:92px}
-  ${C}.kpm-dmg-face>button{align-self:stretch}
-  ${C}.kpm-dmg-face input{width:64px;height:44px;font-size:16px}
-  ${C}.kpm-dmg-win+div.flex-col>button{width:44px;font-size:14px}
+/* B — no bar and no coloured edge on the card at all; the verdict is ONE stamp in the corner
+   (COUNT AGAIN / MATCH / DIFFERENCE −17) that drops onto the card, the plates stay plain */
+const OP_5B = OP_5_BASE + `
+  ${K}{border-color:var(--line) !important}
+  ${K}>span.w-1{display:none}
+  ${K}:not([class*="border-[var(--line)]"])::after{content:"COUNT AGAIN";position:absolute;right:12px;top:12px;font:800 11px/1 var(--font-mono);letter-spacing:.14em;padding:5px 8px;border:1px solid var(--accent-edge);color:var(--accent-ink);border-radius:4px;background:var(--inset)}
+  ${K} div.grid.gap-px>div:nth-child(4){border-color:transparent}
+  ${K} div.grid.gap-px>div:nth-child(4)>div{color:var(--ink)}
 `;
-const OP_2B = `
-  ${C}.kpm-dmg-win+div.flex-col{display:none}
-  ${C}.kpm-dmg-face>button{align-self:stretch}
-  ${C}.kpm-dmg-face input{width:64px;height:44px;font-size:16px}
+
+/* the boss's audit item — TODAY packs the name, SYS → FND and the difference into one line */
+const I = `${C}div.flex.flex-col.p-3.rounded-lg`;                 /* one item in the itemized report */
+const OP_6_BASE = `
+  ${I}{padding:16px}
+  ${I}>div.justify-between.border-b{flex-direction:column;align-items:stretch;gap:10px;border-bottom:0;padding-bottom:0;margin-bottom:12px}
+  ${I} span.text-xs.uppercase{font-size:14px}
+  ${I}>div.flex.flex-wrap.gap-1\\.5{gap:6px;margin-bottom:12px}
+  ${I}>div.flex.gap-4.items-center{flex-direction:column;align-items:stretch;gap:6px}
+  ${I}>div.flex.gap-4.items-center>div{padding:10px 12px;font-size:12px}
+  ${I}>div.mt-2{margin-top:12px}
 `;
-/* board 3 — the boss's four tabs: A two rows of two keys, B one row of four squeezed */
-const OP_STRIP = `${C}div.overflow-x-auto.rounded-lg.p-1`;
-const OP_3A = `
-  ${OP_STRIP}{display:grid;grid-template-columns:1fr 1fr;gap:4px;overflow:visible}
-  ${OP_STRIP}>button{justify-content:center;min-height:44px;font-size:11px;padding:0 8px}
+/* A — three plates, the same language the salesman's card speaks: EXPECTED · FOUND · DIFFERENCE */
+const OP_6A = OP_6_BASE + `
+  ${I} div.gap-4.font-mono{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1px;background:var(--line);border-radius:8px;overflow:hidden}
+  ${I} div.gap-4.font-mono>span{background:var(--sunk);background-image:${PLATE};padding:8px 4px;text-align:center;font-size:16px;font-weight:900;width:auto}
+  ${I} div.gap-4.font-mono>span:nth-child(2){display:none}
+  ${I} div.gap-4.font-mono>span:first-child,${I} div.gap-4.font-mono>span:nth-child(3){color:var(--ink)}
 `;
-const OP_3B = `
-  ${OP_STRIP}{overflow:visible}
-  ${OP_STRIP}>button{flex:1 1 0;min-width:0;justify-content:center;min-height:44px;font-size:11px;padding:0 2px;gap:3px;letter-spacing:.02em}
-  ${OP_STRIP}>button>svg{display:none}
-`;
-/* board 4 — the boss's lists: the three pickers 44 tall, 11 px everywhere, names and the
-   quarantine line wrap instead of clipping */
-const OP_4 = OP_TYPE + `
-  ${C}select{min-height:44px}
-  ${C}[class*="text-[10px]"],${C}[class*="text-[9px]"]{font-size:11px}
-  ${C}span.truncate.text-xs{white-space:normal;overflow:visible}
-  ${C}div.flex.items-center.gap-3.mt-1.font-mono{flex-wrap:wrap;row-gap:2px}
+/* B — the verdict leads: the difference is the big figure, the two counts follow it small */
+const OP_6B = OP_6_BASE + `
+  ${I} div.gap-4.font-mono{display:flex;align-items:baseline;gap:12px}
+  ${I} div.gap-4.font-mono>span.w-12{order:-1;width:auto;text-align:left;font-size:28px;line-height:1}
+  ${I} div.gap-4.font-mono>span{font-size:12px}
 `;
 
 /* `?look=a,b` — comma-separated names, injected after the app's stylesheet like ?css= */
-export const LOOKS = { pin: PIN, 'op-1': OP_1, 'op-2a': OP_1 + OP_2A, 'op-2b': OP_1 + OP_2B, 'op-3a': OP_4 + OP_3A, 'op-3b': OP_4 + OP_3B, 'op-4': OP_4 };
+export const LOOKS = { pin: PIN, 'op-5a': OP_5A, 'op-5b': OP_5B, 'op-6a': OP_6A, 'op-6b': OP_6B };
