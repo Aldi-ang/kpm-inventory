@@ -10,17 +10,25 @@
    Writes are no-ops that resolve. Nothing here talks to a network, and nothing here is bundled
    into dist/. */
 
-const snap = (rows) => ({
-  docs: rows.map(({ id, ...rest }) => ({ id, data: () => rest })),
-  empty: rows.length === 0,
-});
+/* A fixture that is an ARRAY is a collection; a plain OBJECT is one document (`docSnap.exists()`
+   / `.data()`), which is what `AgentInventoryView` listens to — `onSnapshot(doc(...))`. With no
+   fixture a document listener resolves `exists() === false`, the same as a van never loaded. */
+const snap = (rows) => Array.isArray(rows)
+  ? {
+      docs: rows.map(({ id, ...rest }) => ({ id, data: () => rest })),
+      empty: rows.length === 0,
+      exists: () => false, data: () => ({}),
+    }
+  : { exists: () => true, data: () => rows, docs: [], empty: true };
 
 /* Keyed by the tail of the collection path, because the lab's appId and masterUserId are made up
    and the prefix is therefore meaningless. */
 export const FIXTURES = {};
 
 export const collection = (_db, path) => ({ path });
-export const doc = (_db, path) => ({ path });
+/* like the real one, the id segments join the path — so a document fixture can be keyed
+   `motorists/m2` and never collide with a `motorists` collection fixture */
+export const doc = (_db, path, ...segs) => ({ path: [path, ...segs].join('/') });
 
 export const onSnapshot = (ref, cb) => {
   const path = (ref && ref.path) || '';

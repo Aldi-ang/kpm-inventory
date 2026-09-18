@@ -28,6 +28,7 @@ import AcceptanceReceipt from '../src/components/AcceptanceReceipt.jsx';
 import RestockVaultView from '../src/RestockVaultView.jsx';
 import MerchantSalesView from '../src/MerchantSalesView.jsx';
 import { CustomerManagement } from '../src/components/CustomerManager.jsx';
+import AgentInventoryView from '../src/AgentInventoryView.jsx';
 import BranchWarehouseManager from '../src/components/BranchWarehouseManager.jsx';
 import ShipmentLabel from '../src/components/ShipmentLabel.jsx';
 import ArrivalScanner from '../src/components/ArrivalScanner.jsx';
@@ -38,7 +39,7 @@ import { Cloud } from 'lucide-react';
 /* Same module the alias in ponder-lab.config.mjs points `firebase/firestore` at, so writing a
    fixture here is what the component's own listener reads back. */
 import { FIXTURES } from './lab-firestore-stub.js';
-import { scanNotaToBase64, homography } from '../src/utils/helpers.js';
+import { scanNotaToBase64, homography, getLocalDayKey } from '../src/utils/helpers.js';
 import PhotoField from '../src/components/PhotoField.jsx';
 import { SCENES } from '../src/ponder/registry.js';
 
@@ -579,6 +580,38 @@ function ToastLab() {
    `min-w-0`, so nothing but a laid-out page can say where the bell ends up. The sync chip is
    copied verbatim from the call site in App.jsx (`syncIndicator=`); a harness that invents its
    markup measures the harness. `../config/firebase` is aliased to lab-firebase-stub.js here. */
+/* The salesman's van for ?shell&agent. The screen finds its motorist by EMAIL first and only
+   then by agentProfileId (AgentInventoryView.jsx:53-58); LAB_MOTORISTS carry no email, so the
+   lookup falls through to `agentProfileId="m2"` — Budi, the FIELD_OPERATIVE. It then listens to
+   ONE document, `artifacts/lab/users/lab/motorists/m2`, and reads `activeCanvas` off it; the stub
+   serves this object for that path. Mixed units so the Bks conversion has something to convert. */
+FIXTURES['motorists/m2'] = {
+  name: 'Budi Santoso', location: 'MUNTILAN',
+  activeCanvas: [
+    /* the row prints item.name, not the product's — the load-to-agent write copies it */
+    { productId: 'p-cg16', name: 'Cello Green 16', qty: 3, unit: 'Bal' },
+    { productId: 'p-djar', name: 'Djarum Coklat 12', qty: 12, unit: 'Slop' },
+    { productId: 'p-gg12', name: 'Gudang Garam Surya 12', qty: 1, unit: 'Karton' },
+    { productId: 'p-smp16', name: 'Sampoerna Mild 16', qty: 40, unit: 'Bks' },
+  ],
+  cukaiDebts: { 'p-cg16': 120, 'p-djar': 35 },
+};
+/* two more wares for the van only — LAB_PRODUCTS is shared with the terminal and the vault desk,
+   whose boards were measured on its two rows and stay as they were */
+const LAB_VAN_EXTRA = [
+  { id: 'p-gg12', name: 'Gudang Garam Surya 12', sku: 'GG12', stock: 900, priceDistributor: 21000,
+    packsPerSlop: 10, slopsPerBal: 20, balsPerCarton: 4 },
+  { id: 'p-smp16', name: 'Sampoerna Mild 16', sku: 'SM16', stock: 600, priceDistributor: 27500,
+    packsPerSlop: 10, slopsPerBal: 20, balsPerCarton: 4 },
+];
+const LAB_TODAY = getLocalDayKey();
+const LAB_AGENT_TXNS = [
+  { id: 'tx1', agentId: 'm2', date: LAB_TODAY, type: 'SALE', total: 1850000, customerName: 'Toko Sumber Rejeki' },
+  { id: 'tx2', agentId: 'm2', date: LAB_TODAY, type: 'SALE', total: 640000, customerName: 'Warung Bu Sri' },
+  { id: 'tx3', agentId: 'm2', date: LAB_TODAY, type: 'RETUR', total: -89000, customerName: 'Toko Sumber Rejeki',
+    forensicData: { quarantineCargo: [{ itemName: 'Cello Green 16', qty: 10, returnReason: 'Rusak / Basah' }] } },
+];
+
 function ShellLab() {
   const [dark, setDark] = React.useState(!q.has('light'));
   /* ?tab=<label>[,<label>...] presses, in order, each button whose text starts with <label> once
@@ -627,7 +660,20 @@ function ShellLab() {
         </button>
       )}
     >
-      {q.has('customers') ? (
+      {q.has('agent') ? (
+        /* ?shell&agent — the Agent Inventory (the salesman's van manifest) INSIDE the real shell,
+           exactly as App.jsx:4253 mounts it: no wrapper, a direct child of biohazard-content. T5
+           Budi (m2) — see FIXTURES['motorists/m2'] above for how the screen finds him. Products
+           carry the three tier prices the Projected Value box multiplies; three of today's
+           transactions so Cash, Retur and the QUARANTINE view all have something to show. */
+        <AgentInventoryView
+          db={{}} appId="lab" userId="lab" agentProfileId="m2"
+          inventory={[...LAB_PRODUCTS, ...LAB_VAN_EXTRA].map((p) => ({ ...p, priceRetail: Math.round(p.priceDistributor * 1.15), priceEcer: Math.round(p.priceDistributor * 1.25), priceGrosir: Math.round(p.priceDistributor * 1.08) }))}
+          transactions={LAB_AGENT_TXNS} samplings={[]}
+          user={{ uid: 'lab-t5', displayName: 'Lab Salesman', email: 'lab@example.com' }}
+          motorists={LAB_MOTORISTS} previewing={null}
+        />
+      ) : q.has('customers') ? (
         /* ?shell&customers — the Customers screen INSIDE the real shell, exactly as App.jsx:5041
            mounts it: no wrapper at all, a direct child of the shell's biohazard-content. T5 again
            (the salesman who registers and looks up shops from a phone); the four LAB_CUSTOMERS
