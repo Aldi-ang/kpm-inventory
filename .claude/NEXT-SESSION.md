@@ -6,7 +6,7 @@ sweep order he set on 2026-09-15: Sales Terminal ✓ → Customers ✓ → Agent
 Setoran** → Stock Opname → Journey Plan → Sampling → Agent Profile. Same method, one morning per
 screen: mount in the lab, measure at 375 in the real shell, propose as frames, build what he picks.
 
-⚠️ **Open the session by reading his test reply first.** Customers (`a9822ff`) and Agent
+⚠️ SESSION CLOSED 2026-09-18 11:18 at his *"after this make notes and prompt for later because 5 hours quota almost reaching its limit"*; plan quota at close: 5-hour window 76 % (resets ~13:00 WIB), weekly 48 %. **Open the session by reading his test reply first.** Customers (`a9822ff`) and Agent
 Inventory (`8b9b3f9`) are CONFIRMED (his *"T1 approve, t2 approve"*, 2026-09-18 10:40). ONE ✅ TEST
 is owed on `https://192.168.1.132:4173` (the PC's address moved .107 → .132 on 2026-09-18 — read it
 off the preview server's `Network:` line before writing it anywhere): `832ea7c` — Customers rows
