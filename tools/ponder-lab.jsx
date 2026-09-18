@@ -39,6 +39,7 @@ import { Cloud } from 'lucide-react';
 /* Same module the alias in ponder-lab.config.mjs points `firebase/firestore` at, so writing a
    fixture here is what the component's own listener reads back. */
 import { FIXTURES } from './lab-firestore-stub.js';
+import { LOOKS } from './lab-looks.js';
 import { scanNotaToBase64, homography, getLocalDayKey } from '../src/utils/helpers.js';
 import PhotoField from '../src/components/PhotoField.jsx';
 import { SCENES } from '../src/ponder/registry.js';
@@ -49,6 +50,9 @@ if (q.has('light')) document.documentElement.classList.add('light');
    rendered and shown to Aldi as a frame BEFORE it is written into a component — his rule,
    2026-09-14: a decision comes as a picture, not a sentence. Lab only; nothing here ships. */
 if (q.has('css')) { const s = document.createElement('style'); s.textContent = q.get('css'); document.head.appendChild(s); }
+/* ?look=<name>[,<name>] — a proposal's CSS by short name (tools/lab-looks.js), so Aldi can open a
+   board option live and press it instead of reading a 6 KB ?css= link */
+if (q.has('look')) { const s = document.createElement('style'); s.textContent = q.get('look').split(',').map((k) => LOOKS[k.trim()] || '').join(''); document.head.appendChild(s); }
 if (q.has('lite')) document.documentElement.classList.add('lite-mode');
 
 /* ?scene=<id>, defaulting to the first one in the registry, so a new scene needs no edit here. */
@@ -603,6 +607,13 @@ const LAB_VAN_EXTRA = [
     packsPerSlop: 10, slopsPerBal: 20, balsPerCarton: 4 },
   { id: 'p-smp16', name: 'Sampoerna Mild 16', sku: 'SM16', stock: 600, priceDistributor: 27500,
     packsPerSlop: 10, slopsPerBal: 20, balsPerCarton: 4 },
+];
+/* a shop's Competitor Intelligence rows (CustomerManager detail view, `…/customers/{id}/benchmarks`)
+   — without them the 600 px table is an empty header and a phone frame proves nothing */
+FIXTURES['benchmarks'] = [
+  { id: 'b1', brand: 'Gudang Garam', product: 'Surya 12', price: 21500, volume: 'High Sales', notes: 'Promo beli 10 gratis 1' },
+  { id: 'b2', brand: 'Sampoerna', product: 'Mild 16', price: 29000, volume: 'Medium', notes: '' },
+  { id: 'b3', brand: 'Djarum', product: 'Super 12', price: 22000, volume: 'Low Sales', notes: 'Stok sering kosong' },
 ];
 const LAB_TODAY = getLocalDayKey();
 const LAB_AGENT_TXNS = [
