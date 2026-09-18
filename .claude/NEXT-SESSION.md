@@ -6,11 +6,25 @@ sweep order he set on 2026-09-15: Sales Terminal ✓ → Customers ✓ → Agent
 Setoran** → Stock Opname → Journey Plan → Sampling → Agent Profile. Same method, one morning per
 screen: mount in the lab, measure at 375 in the real shell, propose as frames, build what he picks.
 
-⚠️ **Open the session by reading his test replies first.** Two ✅ TESTs are owed on
-`https://192.168.1.132:4173` (the PC's address moved .107 → .132 on 2026-09-18 — read it off the
-preview server's `Network:` line before writing it anywhere): Customers (`a9822ff`) and Agent
-Inventory (`8b9b3f9`). If he reports a miss, fix that first. The packed build on `:4173` was left
-running (if it is down, `preview_start kpm-preview`).
+⚠️ **Open the session by reading his test reply first.** Customers (`a9822ff`) and Agent
+Inventory (`8b9b3f9`) are CONFIRMED (his *"T1 approve, t2 approve"*, 2026-09-18 10:40). ONE ✅ TEST
+is owed on `https://192.168.1.132:4173` (the PC's address moved .107 → .132 on 2026-09-18 — read it
+off the preview server's `Network:` line before writing it anywhere): `832ea7c` — Customers rows
+and cards as key caps (lit top, thick bottom edge, sink on press, sweep + amber bar, rows slide in
+one after another, folder lamp lights amber while held, FOLDER an outline button), the shop page's
+Competitor Intelligence no longer slides sideways, the Quarantine count is a black LED tile with red
+digits and a pulsing lamp. If he reports a miss, fix that first. ❓ still open: was the shop page the
+place he swiped, or somewhere else? The packed build on `:4173` was left running (if it is down,
+`preview_start kpm-preview`).
+
+**Two facts from `832ea7c` the EOD job must carry.** (a) Audit G30: nothing in the control system
+(theme.css from `.kpm-mod {` to the end) may use `box-shadow` / `text-shadow` / `filter` — depth is
+drawn with borders and gradient layers (`.kpm-key`, `.kpm-well`, `.kpm-plate`, `.kpm-led` are the
+patterns). A board drawn with shadows must be re-drawn before shipping, and he is told. (b) THE
+SIDEWAYS RATCHET (logicFixes): no `<table>` under lg may carry a bare `min-w-[Npx]`; only
+`HistoryReportView.jsx:500` / `:808` may, until the Reports day. EOD has tables — stack them under
+lg like the competitor table (`block lg:table`, `hidden lg:table-header-group`, rows as
+`grid grid-cols-[1fr_auto] lg:table-row`).
 
 Why it costs him money: EOD Setoran is where the salesman hands in the day's cash and stock and the
 boss verifies it — a money screen, used once a day by every salesman, on a phone in the evening.
@@ -99,7 +113,18 @@ type is `text-[11px] lg:text-[10px]` (the Customers precedent) so the desk stays
 
 ---
 
-## Shipped 2026-09-18 09:38 — Agent Inventory on the phone (`8b9b3f9`)
+## Shipped 2026-09-18 11:11 — key caps, the stacked competitor table, the LED count (`832ea7c`)
+
+His words: *"board 3 = B, board 4 =B, 5 = B, 6 = B make sure that the animation is clear and HD and
+smooth ,just to let u now that sideways swipe is inconvenience for phone so make sure that most of
+the segment doesnt have that"*. theme.css: `.kpm-key` (4 px edge on the `.kpm-key.kpm-hot` pair,
+sinks 2 px, staggered rise-in), `.kpm-well` (lamp black → amber), `.kpm-stamp`, `.kpm-plate`,
+`.kpm-led` + `.kpm-roll` (odometer; `--led-ink` fixed). CustomerManager: rows/cards `kpm-key
+kpm-hot`, FOLDER `.kpm-btn`, competitor table stacked under lg, five boxes tokened + 44, map button
+ink. AgentInventoryView: `RollingCount`. Guards 1606 (red 12), audit 722. Lab: `?shell&agent&tick`
+rolls the count 10 → 15 → 10. ✅ TEST owed (above).
+
+## Shipped 2026-09-18 09:38 — Agent Inventory on the phone (`8b9b3f9`) — CONFIRMED 10:40
 
 His words: *"board 1 yes, board 2 B that shows "afterboard 1" when pressed"*. Under lg the fixed
 `h-[850px]` box is gone (one scroller: root 1347 ≈ page 1363), header `p-3` / `gap-3`, Saleable /
