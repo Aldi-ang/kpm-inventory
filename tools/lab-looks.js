@@ -85,5 +85,14 @@ const OP_6B = OP_6_BASE + `
   ${I} div.gap-4.font-mono>span{font-size:12px}
 `;
 
+/* 19:30 — his answer: 5 = A "but redesign the difference, it looks bad", 6 = A "make the
+   difference number a little bit bigger and put some animation on the number", and the clip: a
+   nixie-tube counter. `op-7` is 5A without the LED, `op-8` is 6A's spacing; both are meant to be
+   opened with `&nixify`, which drops the REAL nixie counters (tools/lab-nixie.jsx) into the figures. */
+const OP_7 = OP_5_BASE + `
+  ${K} div.grid.gap-px>div{background-image:${PLATE}}
+`;
+const OP_8 = OP_6_BASE;
+
 /* `?look=a,b` — comma-separated names, injected after the app's stylesheet like ?css= */
-export const LOOKS = { pin: PIN, 'op-5a': OP_5A, 'op-5b': OP_5B, 'op-6a': OP_6A, 'op-6b': OP_6B };
+export const LOOKS = { pin: PIN, 'op-5a': OP_5A, 'op-5b': OP_5B, 'op-6a': OP_6A, 'op-6b': OP_6B, 'op-7': OP_7, 'op-8': OP_8 };
