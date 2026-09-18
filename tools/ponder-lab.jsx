@@ -671,6 +671,10 @@ function ShellLab() {
       if (b) b.click();
     };
     wants.reduce((chain, want) => chain.then(() => press(want)), Promise.resolve()).then(() => {
+      /* `&held` — the first .kpm-key wears `lab-held`, so a look can draw the HELD state of a row
+         (`:active` cannot be forced from outside) and a headless frame can show it. The pane and
+         his phone still feel the real :active; this is only for the still. */
+      if (q.has('held')) document.querySelector('.kpm-key')?.classList.add('lab-held');
       if (!q.has('grip')) return;
       /* the LAST one: the customer bar above the grip is also cursor-grab and its tap is a no-op */
       const grip = [...document.querySelectorAll('.cursor-grab')].pop();
@@ -741,7 +745,10 @@ function ShellLab() {
           db={{}} appId="lab"
           user={{ uid: 'lab-t5', displayName: 'Lab Salesman', email: 'lab@example.com', location: 'BANDUNG' }}
           logAudit={() => {}} triggerCapy={() => {}}
-          isAdmin={false} userRole="FIELD_OPERATIVE" employeeRegion="BANDUNG"
+          /* &admin — the boss's header: Find Duplicates / Data Scrub / Import Map Marker sit
+             beside the title in one non-wrapping row (his "customer page moves sideways",
+             2026-09-18 — invisible to the T5 mount, which never shows them) */
+          isAdmin={q.has('admin')} userRole={q.has('admin') ? 'ADMIN' : 'FIELD_OPERATIVE'} employeeRegion="BANDUNG"
           tierSettings={[
             { id: 'Mythic', label: 'Mythic', color: '#f59e0b', iconType: 'emoji', value: '👑' },
             { id: 'Bronze', label: 'Bronze', color: '#d97706', iconType: 'emoji', value: '🛡️' },

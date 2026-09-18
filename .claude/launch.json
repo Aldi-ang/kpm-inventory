@@ -32,7 +32,8 @@
         "tools/ponder-lab.config.mjs",
         "--port",
         "4190",
-        "--strictPort"
+        "--strictPort",
+        "--host"
       ],
       "port": 4190,
       "url": "http://localhost:4190"
