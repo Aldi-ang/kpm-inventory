@@ -7614,9 +7614,9 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
   ok('the folder control lives in theme.css: a lid, a numbered tab (CSS counter), an ↗ key, the lid lifts on press; no shadow',
      /\.kpm-folders \{ counter-reset: folder; \}/.test(tf) &&
      /\.kpm-folder \{ position: relative; display: flex; flex-direction: column;[^}]*counter-increment: folder;/.test(tf) &&
-     /\.kpm-folder-lid \{ position: relative; overflow: visible; height: 40px;[^}]*transition: height 220ms/.test(tf) &&
-     /\.kpm-folder-file \{ position: absolute; left: 16px; right: 16px; top: 36px;[^}]*transform: translateY\(0\);/.test(tf) &&
-     /\.kpm-folder\.arming \.kpm-folder-file \{ transform: translateY\(-52px\); transition-duration: 700ms;/.test(tf) &&
+     /\.kpm-folder-lid \{ position: relative; overflow: hidden; height: 40px;[^}]*transition: height 220ms/.test(tf) &&
+     /\.kpm-folder-file \{ position: absolute; left: 16px; right: 16px; bottom: -6px;[^}]*transform: translateY\(46px\);/.test(tf) &&
+     /\.kpm-folder\.arming \.kpm-folder-file \{ transform: translateY\(10px\); transition-duration: 700ms;/.test(tf) &&
      /<div className="kpm-folder-lid"><i className="kpm-folder-file" aria-hidden="true"><\/i><span className="kpm-folder-icon">\{icon\}<\/span><\/div>/.test(fs.existsSync('src/components/FolderCard.jsx') ? read('src/components/FolderCard.jsx') : '') &&
      /\.kpm-folder-panel::before \{ content: counter\(folder, decimal-leading-zero\);/.test(tf) &&
      /\.kpm-folder-panel::after \{ content: "↗";/.test(tf) &&

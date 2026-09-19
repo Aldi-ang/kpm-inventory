@@ -4523,7 +4523,7 @@ html.lite-mode .kpm-pace-fill { opacity: 1; animation: none; }
   border-width: 1px; border-style: solid; border-radius: 14px 14px 12px 12px; }
 /* SHUT by default (his 10:05: "folder should be expand when hold and on default it should shrink"): a 40 px
    manila strip. The lid clips the FILE tucked in its pocket. */
-.kpm-folder-lid { position: relative; overflow: visible; height: 40px; margin: -1px -1px 0; padding: 8px 10px; border-radius: 14px 14px 0 0;
+.kpm-folder-lid { position: relative; overflow: hidden; height: 40px; margin: -1px -1px 0; padding: 8px 10px; border-radius: 14px 14px 0 0;
   display: flex; align-items: flex-start; justify-content: flex-end; color: #2a2016;
   background: linear-gradient(135deg, #d6b57a 0%, #b8924f 45%, #8a6a3a 100%);
   transition: height 220ms cubic-bezier(.2, .8, .3, 1); }
@@ -4531,12 +4531,12 @@ html.lite-mode .kpm-pace-fill { opacity: 1; animation: none; }
 /* the FILE inside: a paper sheet in the folder's pocket — a sliver shows when shut; it rises when the folder
    opens and slides back in when it shuts (his "put file animation on inside the folder that move up a little
    when expand and going back inside when shrink just like on the video") */
-/* the sheet sits 4 px above the panel's edge when shut (its body hides behind the panel, which paints over it);
-   held, it slides UP past the lid's top edge — out of the folder, not merely within it (his 10:35 "paper is
-   not sliding out here") — so the lid does not clip */
-.kpm-folder-file { position: absolute; left: 16px; right: 16px; top: 36px; height: 70px; border-radius: 6px 6px 0 0;
+/* the sheet stays INSIDE the folder: the lid clips it, a sliver shows when shut, it rises within the manila
+   while held. A version that slid past the lid's edge was tried at 10:45 and he sent it back — "revert it to
+   before its better" (11:00). */
+.kpm-folder-file { position: absolute; left: 16px; right: 16px; bottom: -6px; height: 70px; border-radius: 6px 6px 0 0;
   background: linear-gradient(180deg, #f6efe0 0, #e6dcc4 60%, #d3c6aa 100%);
-  transform: translateY(0); transition: transform 220ms cubic-bezier(.2, .8, .3, 1); }
+  transform: translateY(46px); transition: transform 220ms cubic-bezier(.2, .8, .3, 1); }
 /* OPEN while held: the lid grows and the file rises for the whole hold — the growth is the hold's progress,
    like the ribbon's swell; it takes the whole hold to reach the top */
 .kpm-folder-panel { position: relative; margin-top: -14px; padding: 22px 14px 14px; background: inherit;
@@ -4549,5 +4549,5 @@ html.lite-mode .kpm-pace-fill { opacity: 1; animation: none; }
   border-radius: 50%; border: 1px solid var(--line-3); background: var(--inset); color: var(--ink);
   display: grid; place-items: center; font: 700 14px/1 var(--font-mono); }
 .kpm-folder.arming .kpm-folder-lid { height: 92px; transition-duration: 700ms; transition-timing-function: cubic-bezier(.4, 0, .6, 1); }
-.kpm-folder.arming .kpm-folder-file { transform: translateY(-52px); transition-duration: 700ms; transition-timing-function: cubic-bezier(.4, 0, .6, 1); }
+.kpm-folder.arming .kpm-folder-file { transform: translateY(10px); transition-duration: 700ms; transition-timing-function: cubic-bezier(.4, 0, .6, 1); }
 
