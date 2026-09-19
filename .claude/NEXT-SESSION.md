@@ -17,11 +17,16 @@ Traps. (a) `index.css` `button:has(> svg:only-child)` forces inline-flex + 44 px
 ```
 /alucard
 Read `.claude/NEXT-SESSION.md` first — it is the whole job, do not re-read source to re-orient.
-FIRST read my replies: ✅ `8eb8a25` the Customers folders (two to a row, ⋯ at the corner, DEL / EDIT under the card as the boss); ✅ `0743a17` the store card; ✅ `056d8e3`; the older ✅ TESTs — a miss is fixed first. Then THE JOB: SAMPLING on the phone — build the lab mount (`?shell&sampling`, both tiers; the facts in the note), measure at 375, propose as frames with TODAY beside each option; no code before I answer. Then rewrite this file.
+FIRST read my replies: ✅ `507281d` the folders (a tap opens the folder on screen then enters; a hold only animates; the Customers folder's paper rests inside — if the "LED light on the bottom" he saw is NOT the paper's pale sliver, ask for a screenshot before touching it); ✅ `8eb8a25` the Customers folders (two to a row, ⋯ at the corner, DEL / EDIT under the card as the boss); ✅ `0743a17` the store card; ✅ `056d8e3`; the older ✅ TESTs — a miss is fixed first. Then THE JOB: SAMPLING on the phone — build the lab mount (`?shell&sampling`, both tiers; the facts in the note), measure at 375, propose as frames with TODAY beside each option; no code before I answer. Then rewrite this file.
 
 Traps. `button:has(> svg:only-child)` beats `lg:hidden` — label in a span. Bare inputs are white in dark mode — surface tokens on every box. A negative guard runs on `code(a)`. No `{/* */}` before the root element in `return (` or `? (` — a JS comment above `return` instead. The pane does not advance a transition until it paints — screenshot, then read. Scope selectors to the tag, never to utilities alone (a probe too). A `<select>` is the tap target, its padded wrapper is not. A button resets `uppercase` — carry it on the button. A light blinks only while something is happening; the control system carries no shadow (G30) — a glow is a gradient. A block hidden until a fold opens keys off the fold's state. A button cannot live inside a button — a card that is a button keeps its ⋯ and its fold in a wrapper beside it. CustomerManager.jsx is CRLF on disk — normalise before a regex patch. Headless frames come out dim without `--run-all-compositor-stages-before-draw` + a 15 s budget (jp/shoot3.mjs has it). The phone is a PWA: a build shows after ONE automatic reload; rebuild dist AFTER the commit so the Flight Recorder's BUILD id names the commit.
 Rewrite this file with the next single job before closing.
 ```
+
+## Shipped 2026-09-19 12:05 — a tap plays the open, the Customers paper rests inside (`507281d`) — ✅ TEST owed
+
+His 11:50 words. Tap → the lid lifts (260 ms) then the folder enters; hold → animates only; Customers folders show no paper sliver at rest. Full story: `git show 507281d`. Not pressed in the lab (quota) — his tap is the test.
+✅ TEST: Customers → tap a folder: it opens on screen for a blink, THEN the regencies appear. Hold one: it opens and stays, let go → shuts, nothing entered. At rest the manila strip has no pale line under it. Same on RADAR HUB (there the pale line stays, as you approved). Flight Recorder shows BUILD 507281d. If the "LED light" you meant is still there, send a screenshot of it.
 
 ## Shipped 2026-09-19 11:40 — the Customers folders (`8eb8a25`) — ✅ TEST owed
 
