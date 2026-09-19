@@ -31,23 +31,7 @@ export const PIN = '#root{width:375px}';
 /* 2026-09-19 08:40 — the FOLDER CARD look from his video (a tab cut-out top-left with a number, an ↗ corner
    key, a lid on top that lifts on press). Candidates for the RADAR HUB region cards and the Customers
    folders. CSS approximations for the boards; delete when he decides. */
-/* 2026-09-19 09:10: fold-hub / fold-hub-b were decided B and shipped as .kpm-folder in theme.css + JourneyView.jsx. Gone.
-   fold-cus-a / fold-cus-b stay until the Customers folders are built (his "B for both"). */
-const CUS = 'div.kpm-key.kpm-hot.grid';                                  // a Customers folder row on the phone
-/* fold-cus-a — the row stays a row: a numbered tab on its shoulder, the icon well becomes a manila lid */
-export const FOLD_CUS_A = `body{counter-reset:folder}
-${CUS}{position:relative;margin-top:20px;border-radius:0 12px 12px 12px;counter-increment:folder;overflow:visible}
-${CUS}::before{content:counter(folder,decimal-leading-zero);inset:auto;left:-1px;top:-21px;height:22px;width:38%;padding:0 0 0 12px;z-index:1;opacity:1;transform:none;border:1px solid var(--line-2);border-bottom:0;border-radius:9px 12px 0 0;background:var(--raised);clip-path:polygon(0 0,80% 0,100% 100%,0 100%);font:900 13px/22px ui-monospace,Consolas,monospace;letter-spacing:.1em;color:var(--ink)}
-${CUS} > .contents > .kpm-well, ${CUS} .kpm-well{background:linear-gradient(135deg,#d6b57a 0%,#b8924f 45%,#8a6a3a 100%);color:#2a2016;border-color:#8a6a3a;border-radius:8px 8px 3px 3px}
-${CUS} .kpm-well::after{display:none}`;
-/* fold-cus-b — the folders become cards two to a row, the lid on top, like the hub */
-export const FOLD_CUS_B = `div:has(> ${CUS}){display:grid;grid-template-columns:1fr 1fr;gap:12px 10px;align-items:start}
-${CUS}{display:flex;flex-direction:column;align-items:stretch;padding:0;margin-top:26px;overflow:visible;border-radius:0 12px 12px 12px}
-${CUS} > .contents{display:contents}
-${CUS} .kpm-well{order:-1;width:100%;height:64px;border-radius:12px 12px 0 0;display:flex;align-items:flex-start;justify-content:flex-end;padding:8px}
-${CUS} > .contents > div:last-child{display:contents}
-${CUS} h3, ${CUS} .font-black{padding:8px 12px 0}
-${CUS} > button{position:absolute;right:6px;top:66px}`;
-
+/* 2026-09-19 09:10: fold-hub / fold-hub-b were decided B and shipped as .kpm-folder in theme.css + JourneyView.jsx.
+   11:40: fold-cus-a / fold-cus-b — the Customers folders shipped as the same FolderCard (CustomerManager.jsx). All gone. */
 /* `?look=a,b` — comma-separated names, injected after the app's stylesheet like ?css= */
-export const LOOKS = { pin: PIN, 'fold-cus-a': FOLD_CUS_A, 'fold-cus-b': FOLD_CUS_A + FOLD_CUS_B };
+export const LOOKS = { pin: PIN };

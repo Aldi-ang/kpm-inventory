@@ -4545,9 +4545,14 @@ html.lite-mode .kpm-pace-fill { opacity: 1; animation: none; }
   height: 24px; width: 42%; padding-left: 14px; background: inherit; border-radius: 10px 14px 0 0;
   clip-path: polygon(0 0, 80% 0, 100% 100%, 0 100%);
   font: 900 15px/24px var(--font-mono); letter-spacing: .1em; color: var(--ink); }
-.kpm-folder-panel::after { content: "↗"; position: absolute; right: 12px; top: -10px; width: 30px; height: 30px;
+/* the ↗ sits at the panel's bottom-right: at the top it collided with the lid's icon on a 174 px folder
+   (the Customers grid, two to a row) and with the admin's ⋯ key */
+.kpm-folder-panel::after { content: "↗"; position: absolute; right: 12px; bottom: 12px; width: 30px; height: 30px;
   border-radius: 50%; border: 1px solid var(--line-3); background: var(--inset); color: var(--ink);
   display: grid; place-items: center; font: 700 14px/1 var(--font-mono); }
+/* a folder in a two-column grid (Customers, 174 px) has no room for the ↗ beside its count; the admin's ⋯ is
+   its corner key there */
+.kpm-folder-quiet .kpm-folder-panel::after { display: none; }
 .kpm-folder.arming .kpm-folder-lid { height: 92px; transition-duration: 700ms; transition-timing-function: cubic-bezier(.4, 0, .6, 1); }
 .kpm-folder.arming .kpm-folder-file { transform: translateY(10px); transition-duration: 700ms; transition-timing-function: cubic-bezier(.4, 0, .6, 1); }
 

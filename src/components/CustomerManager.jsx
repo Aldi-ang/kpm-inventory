@@ -36,6 +36,7 @@ import { ArrowRight, MapPin, Phone, User, ShieldAlert, Trash2, Store, Camera, X,
    2026-09-19 - the Journey Plan store card wears the same key. Every folder row and shop card here
    hides its DEL / EDIT behind it. */
 import MoreKey from './MoreKey.jsx';
+import FolderCard from './FolderCard.jsx';
 import { confirmAction, promptAction } from './ConfirmGate.jsx';
 import { notify } from './Toast.jsx';
 
@@ -266,6 +267,37 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
        key — one strip open at a time, a tap anywhere outside it folds it. */
     const [showTools, setShowTools] = useState(false);
     const [actsOpen, setActsOpen] = useState(null);
+
+    /* 📁 THE FOLDER (his video + "B for both", 2026-09-19): every folder level is the same FolderCard as the
+       Journey Plan hub — a manila lid with the paper inside, a numbered tab, an ↗ key; hold to peek, tap to
+       enter. The ⋯ key and the DEL / EDIT fold are the admin's; a button cannot live inside a button, so they
+       sit beside the card in a wrapper — the ⋯ over the lid's top-left corner, the fold under the card (the
+       desk shows DEL / EDIT inline there, as before). One function, three levels. */
+    const folderCard = ({ kind, id, icon, onOpen, countText, pending, stores }) => {
+        const key = `${kind}:${id}`;
+        const open = actsOpen === key;
+        const level = { prov: 'Provinsi', kab: 'Kabupaten', kec: 'Kecamatan' }[kind];
+        return (
+            <div key={id} className="relative">
+                <FolderCard icon={icon} onOpen={onOpen} className="kpm-folder-quiet w-full bg-[var(--raised)] border-[var(--line-2)] hover:border-[var(--accent-edge)] transition-colors">
+                    <h3 className="font-bold text-[15px] lg:text-lg mb-1 pr-11 truncate">{id}</h3>
+                    <p className="kpm-stamp text-[11px] lg:text-[10px] text-[var(--ink-dim)] uppercase tracking-widest font-bold">{countText}</p>
+                    {pending > 0 && <span className="inline-block mt-2 bg-[var(--danger)] text-[var(--gold-ink)] text-[11px] lg:text-[10px] font-bold px-2 py-1 rounded-full">{pending} Pending</span>}
+                </FolderCard>
+                {isAdmin && <MoreKey id={key} label={id} open={open} onToggle={(k) => setActsOpen(o => (o === k ? null : k))} className="absolute right-1.5 top-[30px] z-10" />}
+                {isAdmin && (
+                    <div data-acts onClick={e => e.stopPropagation()}
+                        className={`grid transition-[grid-template-rows,opacity] duration-200 ease-out lg:flex lg:gap-1 lg:mt-2 ${open ? 'opacity-100' : 'opacity-0 lg:opacity-100'}`}
+                        style={{ gridTemplateRows: open ? '1fr' : '0fr' }}>
+                        <div className="overflow-hidden lg:contents"><div className="flex gap-2 pt-2 lg:contents">
+                            <button onClick={(e) => handleDeleteFolder(e, level, id, stores())} className="flex-1 lg:flex-none min-h-[44px] lg:min-h-0 justify-center lg:justify-start text-[11px] lg:text-[10px] font-bold text-[var(--danger-ink)] lg:text-[var(--ink-dim)] hover:text-[var(--danger-ink)] bg-[var(--inset)] border border-[var(--danger)] lg:border-[var(--line)] px-2 py-1 rounded-lg lg:rounded transition-colors flex items-center gap-1 hover:border-[var(--danger)]"><Trash2 size={10}/> DEL</button>
+                            <button onClick={(e) => handleBulkRename(e, level, id, stores())} className="flex-1 lg:flex-none min-h-[44px] lg:min-h-0 justify-center lg:justify-start text-[11px] lg:text-[10px] font-bold text-[var(--ink-dim)] hover:text-[var(--ink-dim)] bg-[var(--inset)] border border-[var(--line)] px-2 py-1 rounded-lg lg:rounded transition-colors flex items-center gap-1 hover:border-[var(--line)]"><Pencil size={10}/> EDIT</button>
+                        </div></div>
+                    </div>
+                )}
+            </div>
+        );
+    };
     useEffect(() => {
         if (actsOpen === null) return;
         const close = (e) => { if (!e.target.closest('[data-acts]')) setActsOpen(null); };
@@ -1579,41 +1611,9 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                             <h4 className="text-[11px] lg:text-[10px] uppercase tracking-widest text-[var(--ink-dim)] font-bold">Indonesia (Provinsi Level)</h4>
                             <button onClick={() => handleAddFolder('Provinsi', null)} className="kpm-btn rounded"><Plus size={12}/> Folder</button>
                         </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                            {Object.entries(folderStructure).map(([prov, data]) => (
-                                <div key={prov} onClick={() => setSelectedProvince(prov)} className="kpm-key kpm-hot bg-[var(--raised)] p-3 lg:p-6 rounded-xl border cursor-pointer hover:border-[var(--accent-edge)] grid grid-cols-[auto_1fr_auto] items-center gap-x-3 lg:block group">
-                                    {/* 📱 on the phone this cell and its right column are `contents`, so the well, the
-                                        badge and the DEL / EDIT group are placed by the row's own grid: well col 1 rows
-                                        1–2, name and count col 2, the ⋯ key col 3, the badge under the count, the strip
-                                        across row 4. The desk gets the flex boxes back with lg: and changes nothing. */}
-                                    <div className="contents lg:flex items-start justify-between mb-0 lg:mb-4 row-span-2">
-                                        <div className="kpm-well p-3 rounded-lg row-span-2"><MapPin size={24} /></div>
-                                        <div className="contents lg:flex lg:flex-col lg:items-end lg:gap-2">
-                                            {data.pending > 0 && <span className="col-start-2 row-start-3 justify-self-start mt-1 lg:mt-0 bg-[var(--danger)] text-[var(--gold-ink)] text-[11px] lg:text-[10px] font-bold px-2 py-1 rounded-full">{data.pending} Pending</span>}
-                                            {isAdmin && (
-                                                <div data-acts onClick={e => e.stopPropagation()}
-                                                    className={`col-span-3 row-start-4 grid transition-[grid-template-rows,opacity] duration-200 ease-out lg:flex lg:gap-1 ${actsOpen === `prov:${prov}` ? 'opacity-100' : 'opacity-0 lg:opacity-100'}`}
-                                                    style={{ gridTemplateRows: actsOpen === `prov:${prov}` ? '1fr' : '0fr' }}>
-                                                <div className="overflow-hidden lg:contents"><div className="flex gap-2 pt-2 mt-2 border-t border-[var(--line)] lg:contents">
-                                                    <button onClick={(e) => {
-                                                        let stores = [];
-                                                        Object.values(data.regions).forEach(r => Object.values(r.cities).forEach(c => stores.push(...c.stores)));
-                                                        handleDeleteFolder(e, 'Provinsi', prov, stores);
-                                                    }} className="flex-1 lg:flex-none min-h-[44px] lg:min-h-0 justify-center lg:justify-start text-[11px] lg:text-[10px] font-bold text-[var(--danger-ink)] lg:text-[var(--ink-dim)] hover:text-[var(--danger-ink)] bg-[var(--inset)] border border-[var(--danger)] lg:border-[var(--line)] px-2 py-1 rounded-lg lg:rounded transition-colors flex items-center gap-1 hover:border-[var(--danger)]"><Trash2 size={10}/> DEL</button>
-                                                    <button onClick={(e) => {
-                                                        let stores = [];
-                                                        Object.values(data.regions).forEach(r => Object.values(r.cities).forEach(c => stores.push(...c.stores)));
-                                                        handleBulkRename(e, 'Provinsi', prov, stores);
-                                                    }} className="flex-1 lg:flex-none min-h-[44px] lg:min-h-0 justify-center lg:justify-start text-[11px] lg:text-[10px] font-bold text-[var(--ink-dim)] hover:text-[var(--ink-dim)] bg-[var(--inset)] border border-[var(--line)] px-2 py-1 rounded-lg lg:rounded transition-colors flex items-center gap-1 hover:border-[var(--line)]"><Pencil size={10}/> EDIT</button>
-                                                </div></div></div>
-                                            )}
-                                        </div>
-                                    </div>
-                                    <h3 className="font-bold text-[15px] lg:text-lg mb-0 lg:mb-2 truncate self-end">{prov}</h3>
-                                    <p className="kpm-stamp text-[11px] lg:text-[10px] text-[var(--ink-dim)] uppercase tracking-widest font-bold self-start">{data.count} Total Stores</p>
-                                    {isAdmin && <MoreKey id={`prov:${prov}`} label={prov} open={actsOpen === `prov:${prov}`} onToggle={(id) => setActsOpen(o => (o === id ? null : id))} className="col-start-3 row-start-1 row-span-2 self-center" />}
-                                </div>
-                            ))}
+                        <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-4 kpm-folders">
+                            {Object.entries(folderStructure).map(([prov, data]) => folderCard({ kind: 'prov', id: prov, icon: <MapPin size={22} />, onOpen: () => setSelectedProvince(prov), countText: `${data.count} Total Stores`, pending: data.pending,
+                                stores: () => { const stores = []; Object.values(data.regions).forEach(r => Object.values(r.cities).forEach(c => stores.push(...c.stores))); return stores; } }))}
                             {Object.keys(folderStructure).length === 0 && <div className="col-span-full text-center py-12 opacity-50"><Folder size={48} className="mx-auto mb-4"/><p className="font-bold tracking-widest uppercase">No Data Found</p></div>}
                         </div>
                     </div>
@@ -1626,37 +1626,9 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                             <h4 className="text-[11px] lg:text-[10px] uppercase tracking-widest text-[var(--ink-dim)] font-bold">{selectedProvince} (Kabupaten Level)</h4>
                             <button onClick={() => handleAddFolder('Kabupaten', selectedProvince)} className="kpm-btn rounded"><Plus size={12}/> Folder</button>
                         </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                            {Object.entries(activeProv?.regions || {}).map(([kab, data]) => (
-                                <div key={kab} onClick={() => setSelectedRegion(kab)} className="kpm-key kpm-hot bg-[var(--raised)] p-3 lg:p-6 rounded-xl border cursor-pointer hover:border-[var(--accent-edge)] grid grid-cols-[auto_1fr_auto] items-center gap-x-3 lg:block group">
-                                    <div className="contents lg:flex items-start justify-between mb-0 lg:mb-4 row-span-2">
-                                        <div className="kpm-well p-3 rounded-lg row-span-2"><Folder size={24} /></div>
-                                        <div className="contents lg:flex lg:flex-col lg:items-end lg:gap-2">
-                                            {data.pending > 0 && <span className="col-start-2 row-start-3 justify-self-start mt-1 lg:mt-0 bg-[var(--danger)] text-[var(--gold-ink)] text-[11px] lg:text-[10px] font-bold px-2 py-1 rounded-full">{data.pending} Pending</span>}
-                                            {isAdmin && (
-                                                <div data-acts onClick={e => e.stopPropagation()}
-                                                    className={`col-span-3 row-start-4 grid transition-[grid-template-rows,opacity] duration-200 ease-out lg:flex lg:gap-1 ${actsOpen === `kab:${kab}` ? 'opacity-100' : 'opacity-0 lg:opacity-100'}`}
-                                                    style={{ gridTemplateRows: actsOpen === `kab:${kab}` ? '1fr' : '0fr' }}>
-                                                <div className="overflow-hidden lg:contents"><div className="flex gap-2 pt-2 mt-2 border-t border-[var(--line)] lg:contents">
-                                                    <button onClick={(e) => {
-                                                        let stores = [];
-                                                        Object.values(data.cities).forEach(c => stores.push(...c.stores));
-                                                        handleDeleteFolder(e, 'Kabupaten', kab, stores);
-                                                    }} className="flex-1 lg:flex-none min-h-[44px] lg:min-h-0 justify-center lg:justify-start text-[11px] lg:text-[10px] font-bold text-[var(--danger-ink)] lg:text-[var(--ink-dim)] hover:text-[var(--danger-ink)] bg-[var(--inset)] border border-[var(--danger)] lg:border-[var(--line)] px-2 py-1 rounded-lg lg:rounded transition-colors flex items-center gap-1 hover:border-[var(--danger)]"><Trash2 size={10}/> DEL</button>
-                                                    <button onClick={(e) => {
-                                                        let stores = [];
-                                                        Object.values(data.cities).forEach(c => stores.push(...c.stores));
-                                                        handleBulkRename(e, 'Kabupaten', kab, stores);
-                                                    }} className="flex-1 lg:flex-none min-h-[44px] lg:min-h-0 justify-center lg:justify-start text-[11px] lg:text-[10px] font-bold text-[var(--ink-dim)] hover:text-[var(--ink-dim)] bg-[var(--inset)] border border-[var(--line)] px-2 py-1 rounded-lg lg:rounded transition-colors flex items-center gap-1 hover:border-[var(--line)]"><Pencil size={10}/> EDIT</button>
-                                                </div></div></div>
-                                            )}
-                                        </div>
-                                    </div>
-                                    <h3 className="font-bold text-[15px] lg:text-lg mb-0 lg:mb-2 truncate self-end">{kab}</h3>
-                                    <p className="kpm-stamp text-[11px] lg:text-[10px] text-[var(--ink-dim)] uppercase tracking-widest font-bold self-start">{data.count} Registered</p>
-                                    {isAdmin && <MoreKey id={`kab:${kab}`} label={kab} open={actsOpen === `kab:${kab}`} onToggle={(id) => setActsOpen(o => (o === id ? null : id))} className="col-start-3 row-start-1 row-span-2 self-center" />}
-                                </div>
-                            ))}
+                        <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-4 kpm-folders">
+                            {Object.entries(activeProv?.regions || {}).map(([kab, data]) => folderCard({ kind: 'kab', id: kab, icon: <Folder size={22} />, onOpen: () => setSelectedRegion(kab), countText: `${data.count} Registered`, pending: data.pending,
+                                stores: () => { const stores = []; Object.values(data.cities).forEach(c => stores.push(...c.stores)); return stores; } }))}
                         </div>
                     </div>
                 )}
@@ -1668,33 +1640,9 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                             <h4 className="text-[11px] lg:text-[10px] uppercase tracking-widest text-[var(--ink-dim)] font-bold">{selectedRegion} (Kecamatan Level)</h4>
                             <button onClick={() => handleAddFolder('Kecamatan', selectedRegion)} className="kpm-btn rounded"><Plus size={12}/> Folder</button>
                         </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                            {Object.entries(activeKab?.cities || {}).map(([kec, data]) => (
-                                <div key={kec} onClick={() => setSelectedCity(kec)} className="kpm-key kpm-hot bg-[var(--raised)] p-3 lg:p-6 rounded-xl border cursor-pointer hover:border-[var(--accent-edge)] grid grid-cols-[auto_1fr_auto] items-center gap-x-3 lg:block group">
-                                    <div className="contents lg:flex items-start justify-between mb-0 lg:mb-4 row-span-2">
-                                        <div className="kpm-well p-3 rounded-lg row-span-2"><Folder size={24} /></div>
-                                        <div className="contents lg:flex lg:flex-col lg:items-end lg:gap-2">
-                                            {data.pending > 0 && <span className="col-start-2 row-start-3 justify-self-start mt-1 lg:mt-0 bg-[var(--danger)] text-[var(--gold-ink)] text-[11px] lg:text-[10px] font-bold px-2 py-1 rounded-full">{data.pending} Pending</span>}
-                                            {isAdmin && (
-                                                <div data-acts onClick={e => e.stopPropagation()}
-                                                    className={`col-span-3 row-start-4 grid transition-[grid-template-rows,opacity] duration-200 ease-out lg:flex lg:gap-1 ${actsOpen === `kec:${kec}` ? 'opacity-100' : 'opacity-0 lg:opacity-100'}`}
-                                                    style={{ gridTemplateRows: actsOpen === `kec:${kec}` ? '1fr' : '0fr' }}>
-                                                <div className="overflow-hidden lg:contents"><div className="flex gap-2 pt-2 mt-2 border-t border-[var(--line)] lg:contents">
-                                                    <button onClick={(e) => {
-                                                        handleDeleteFolder(e, 'Kecamatan', kec, data.stores);
-                                                    }} className="flex-1 lg:flex-none min-h-[44px] lg:min-h-0 justify-center lg:justify-start text-[11px] lg:text-[10px] font-bold text-[var(--danger-ink)] lg:text-[var(--ink-dim)] hover:text-[var(--danger-ink)] bg-[var(--inset)] border border-[var(--danger)] lg:border-[var(--line)] px-2 py-1 rounded-lg lg:rounded transition-colors flex items-center gap-1 hover:border-[var(--danger)]"><Trash2 size={10}/> DEL</button>
-                                                    <button onClick={(e) => {
-                                                        handleBulkRename(e, 'Kecamatan', kec, data.stores);
-                                                    }} className="flex-1 lg:flex-none min-h-[44px] lg:min-h-0 justify-center lg:justify-start text-[11px] lg:text-[10px] font-bold text-[var(--ink-dim)] hover:text-[var(--ink-dim)] bg-[var(--inset)] border border-[var(--line)] px-2 py-1 rounded-lg lg:rounded transition-colors flex items-center gap-1 hover:border-[var(--line)]"><Pencil size={10}/> EDIT</button>
-                                                </div></div></div>
-                                            )}
-                                        </div>
-                                    </div>
-                                    <h3 className="font-bold text-[15px] lg:text-lg mb-0 lg:mb-2 truncate self-end">{kec}</h3>
-                                    <p className="kpm-stamp text-[11px] lg:text-[10px] text-[var(--ink-dim)] uppercase tracking-widest font-bold self-start">{data.count} Registered</p>
-                                    {isAdmin && <MoreKey id={`kec:${kec}`} label={kec} open={actsOpen === `kec:${kec}`} onToggle={(id) => setActsOpen(o => (o === id ? null : id))} className="col-start-3 row-start-1 row-span-2 self-center" />}
-                                </div>
-                            ))}
+                        <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-4 kpm-folders">
+                            {Object.entries(activeKab?.cities || {}).map(([kec, data]) => folderCard({ kind: 'kec', id: kec, icon: <Folder size={22} />, onOpen: () => setSelectedCity(kec), countText: `${data.count} Registered`, pending: data.pending,
+                                stores: () => data.stores }))}
                         </div>
                     </div>
                 )}

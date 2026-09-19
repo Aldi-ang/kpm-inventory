@@ -7199,9 +7199,11 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
      /<div className="flex flex-wrap lg:flex-nowrap items-center justify-between gap-2 mb-2">/.test(c) &&
      /<div className="grid grid-cols-2 lg:flex gap-2 w-full lg:w-auto">/.test(c) &&
      /<span className="font-bold text-sm whitespace-nowrap">Location & Street View<\/span>/.test(c));
-  ok('folder cards are rows on the phone (icon · name · count) and cards again at lg',
-     (c.match(/kpm-key kpm-hot bg-\[var\(--raised\)\] p-3 lg:p-6 rounded-xl border cursor-pointer[^"]*grid grid-cols-\[auto_1fr_auto\] items-center gap-x-3 lg:block/g) || []).length === 3 &&
-     (c.match(/<h3 className="font-bold text-\[15px\] lg:text-lg mb-0 lg:mb-2 truncate self-end">/g) || []).length === 3);
+  ok('folder cards are FolderCards two to a row on the phone, three at lg (his "B for both", 2026-09-19); one helper, three levels',
+     (c.match(/grid grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-4 kpm-folders/g) || []).length === 3 &&
+     (c.match(/folderCard\(\{ kind: '(prov|kab|kec)', id: (prov|kab|kec), icon: <(MapPin|Folder) size=\{22\} \/>/g) || []).length === 3 &&
+     /<h3 className="font-bold text-\[15px\] lg:text-lg mb-1 pr-11 truncate">\{id\}<\/h3>/.test(c) &&
+     !/grid grid-cols-\[auto_1fr_auto\]/.test(code(c)));
   ok('shop cards: tighter on the phone, Edit / map / delete 44 tall, breadcrumb links 44, 10 px type 11',
      /className=\{`kpm-key kpm-hot bg-\[var\(--raised\)\] p-3 lg:p-5 rounded-xl border flex flex-col justify-between cursor-pointer/.test(c) &&
      (c.match(/px-3 py-1\.5 min-h-\[44px\] lg:min-h-0 text-xs font-bold bg-\[var\(--inset\)\]/g) || []).length === 4 &&
@@ -7263,18 +7265,20 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
   const c = read('src/components/CustomerManager.jsx');
   const th = read('src/styles/theme.css');
   const a = read('src/AgentInventoryView.jsx');
-  ok('REGRESSION: every folder row and shop card is a pressable key with the RE sweep (kpm-key kpm-hot); the utilities the key replaces are gone',
-     (c.match(/className="kpm-key kpm-hot bg-\[var\(--raised\)\] p-3 lg:p-6 rounded-xl border cursor-pointer hover:border-\[var\(--accent-edge\)\] grid grid-cols-\[auto_1fr_auto\] items-center gap-x-3 lg:block group"/g) || []).length === 3 &&
+  ok('REGRESSION: the shop card is a pressable key with the RE sweep (kpm-key kpm-hot); the folder rows became folders on 2026-09-19; the utilities the key replaces are gone',
+     !/kpm-key kpm-hot bg-\[var\(--raised\)\] p-3 lg:p-6 rounded-xl border cursor-pointer/.test(code(c)) &&
      /className=\{`kpm-key kpm-hot bg-\[var\(--raised\)\] p-3 lg:p-5 rounded-xl border flex flex-col justify-between cursor-pointer hover:border-\[var\(--accent-edge\)\] group/.test(c) &&
      !/rounded-xl border shadow-sm cursor-pointer hover:shadow-md/.test(c),
      'theme.css is imported BEFORE the utilities, so a leftover shadow-sm / transition-all would beat .kpm-key on a tie');
-  ok('the folder icon sits in a bezelled well, never a red box; FOLDER is a routine act (kpm-btn), so ADD is the only gold plate',
-     (c.match(/className="kpm-well p-3 rounded-lg row-span-2"/g) || []).length === 3 && !/p-3 bg-\[var\(--danger-well\)\] rounded-lg/.test(c) &&
+  ok('the folder icon sits on the folder\'s lid (FolderCard), never a red box; FOLDER is a routine act (kpm-btn), so ADD is the only gold plate',
+     !/kpm-well p-3 rounded-lg row-span-2/.test(code(c)) && !/p-3 bg-\[var\(--danger-well\)\] rounded-lg/.test(c) &&
+     /<FolderCard icon=\{icon\} onOpen=\{onOpen\} className="kpm-folder-quiet w-full bg-\[var\(--raised\)\] border-\[var\(--line-2\)\] hover:border-\[var\(--accent-edge\)\] transition-colors">/.test(c) &&
+     /\.kpm-folder-quiet \.kpm-folder-panel::after \{ display: none; \}/.test(th) &&
      (c.match(/handleAddFolder\('(Provinsi|Kabupaten|Kecamatan)', [^)]*\)\} className="kpm-btn rounded"/g) || []).length === 3 &&
      !/rounded bg-\[var\(--gold\)\] text-\[var\(--gold-ink\)\] hover:bg-\[var\(--gold\)\] hover:text-\[var\(--gold-ink\)\] font-bold uppercase transition-colors border border-\[var\(--line\)\] flex items-center gap-1 shadow-md/.test(c),
      'the amber rationing law: two gold plates on one screen is one too many; red is hazard, a folder is not');
   ok('the counts are printed stamps, the level header is a rule not a card, ADD is the plate, search is a well',
-     (c.match(/className="kpm-stamp text-\[11px\] lg:text-\[10px\]/g) || []).length === 3 &&
+     (c.match(/className="kpm-stamp text-\[11px\] lg:text-\[10px\]/g) || []).length === 1 && (c.match(/countText: `\$\{data\.count\} (Total Stores|Registered)`/g) || []).length === 3 &&
      (c.match(/<div className="flex justify-between items-center px-1 py-2 border-b border-\[var\(--line-2\)\]">/g) || []).length === 3 &&
      /className="kpm-plate lg:hidden w-full min-h-\[48px\] rounded-xl bg-\[var\(--gold\)\]/.test(c) &&
      /py-3 bg-\[var\(--inset\)\] border border-\[var\(--line-2\)\] rounded-xl text-\[var\(--ink\)\] focus:border-\[var\(--accent-edge\)\] outline-none shadow-\[inset_0_2px_6px_rgba\(0,0,0,\.4\)\] transition-colors/.test(c));
@@ -7420,18 +7424,18 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
      /style=\{\{ gridTemplateRows: showTools \? '1fr' : '0fr' \}\}/.test(c));
   ok('the phone labels are short and the desk labels are exactly what they were',
      /\{phone \? 'Import map' : 'Import Map Marker \(KML\)'\}/.test(c) && /'Find Duplicates'/.test(c) && /Data Scrub\s*<\/button>/.test(c));
-  ok('every folder row is a three-column grid on the phone with the ⋯ key in the third column and the strip across all three',
-     (c.match(/grid grid-cols-\[auto_1fr_auto\] items-center gap-x-3 lg:block group/g) || []).length === 3 &&
-     (c.match(/className="contents lg:flex items-start justify-between mb-0 lg:mb-4 row-span-2"/g) || []).length === 3 &&
-     (c.match(/className="contents lg:flex lg:flex-col lg:items-end lg:gap-2"/g) || []).length === 3 &&
-     (c.match(/className="kpm-well p-3 rounded-lg row-span-2"/g) || []).length === 3 &&
-     (c.match(/<MoreKey id=\{`(prov|kab|kec):\$\{(prov|kab|kec)\}`\}/g) || []).length === 3 &&
-     (c.match(/col-span-3 row-start-4 grid transition-\[grid-template-rows,opacity\] duration-200 ease-out lg:flex lg:gap-1/g) || []).length === 3 &&
-     !/className="flex gap-1" onClick=\{e => e\.stopPropagation\(\)\}/.test(code(c)),
-     'one set of buttons: the desk keeps them inline in the first cell, the phone relocates the same elements into a strip under the row');
+  ok('every folder is a FolderCard in a wrapper: the ⋯ key over the lid\'s corner (a button cannot live inside a button), the DEL / EDIT fold under the card; one set of buttons for both widths',
+     /import FolderCard from '\.\/FolderCard\.jsx';/.test(c) &&
+     /<div key=\{id\} className="relative">\s*<FolderCard icon=\{icon\} onOpen=\{onOpen\}/.test(c) &&
+     /<MoreKey id=\{key\} label=\{id\} open=\{open\} onToggle=\{\(k\) => setActsOpen\(o => \(o === k \? null : k\)\)\} className="absolute right-1\.5 top-\[30px\] z-10" \/>/.test(c) &&
+     /grid transition-\[grid-template-rows,opacity\] duration-200 ease-out lg:flex lg:gap-1 lg:mt-2 \$\{open \? 'opacity-100' : 'opacity-0 lg:opacity-100'\}/.test(c) &&
+     /const level = \{ prov: 'Provinsi', kab: 'Kabupaten', kec: 'Kecamatan' \}\[kind\];/.test(c) &&
+     /handleDeleteFolder\(e, level, id, stores\(\)\)/.test(c) && /handleBulkRename\(e, level, id, stores\(\)\)/.test(c) &&
+     !/col-span-3 row-start-4/.test(code(c)) && !/className="flex gap-1" onClick=\{e => e\.stopPropagation\(\)\}/.test(code(c)),
+     'his "B for both" (2026-09-19): the same folder as the RADAR HUB, hold to peek, tap to enter');
   ok('DEL wears the danger tone on the phone and its desk look on the desk; both strip buttons are 44 and 11 px on the phone',
-     (c.match(/border border-\[var\(--danger\)\] lg:border-\[var\(--line\)\] px-2 py-1 rounded-lg lg:rounded/g) || []).length === 3 &&
-     (c.match(/flex-1 lg:flex-none min-h-\[44px\] lg:min-h-0 justify-center lg:justify-start text-\[11px\] lg:text-\[10px\] font-bold/g) || []).length === 6 &&
+     (c.match(/border border-\[var\(--danger\)\] lg:border-\[var\(--line\)\] px-2 py-1 rounded-lg lg:rounded/g) || []).length === 1 &&
+     (c.match(/flex-1 lg:flex-none min-h-\[44px\] lg:min-h-0 justify-center lg:justify-start text-\[11px\] lg:text-\[10px\] font-bold/g) || []).length === 2 &&
      /handleDelete\(c\.id, c\.name\); \}\} className="flex-1 lg:flex-none justify-center px-3 py-1\.5 min-h-\[44px\] lg:min-h-0 text-xs font-bold bg-\[var\(--inset\)\] border border-\[var\(--danger\)\] lg:border-\[var\(--line\)\]/.test(c));
   ok('the shop card: a ⋯ key beside the map pin on the phone, the admin row folds, the desk row is what it was',
      /<MoreKey id=\{`store:\$\{c\.id\}`\}/.test(c) &&
