@@ -4555,4 +4555,12 @@ html.lite-mode .kpm-pace-fill { opacity: 1; animation: none; }
 .kpm-folder-quiet .kpm-folder-panel::after { display: none; }
 .kpm-folder.arming .kpm-folder-lid { height: 92px; transition-duration: 700ms; transition-timing-function: cubic-bezier(.4, 0, .6, 1); }
 .kpm-folder.arming .kpm-folder-file { transform: translateY(10px); transition-duration: 700ms; transition-timing-function: cubic-bezier(.4, 0, .6, 1); }
+/* a TAP plays the same open, quickly, before the folder enters (his 11:50: a plain press skipped the animation);
+   .opening outlives .arming, so the lift is not cut when the finger lifts */
+.kpm-folder.opening .kpm-folder-lid { height: 92px; transition-duration: 260ms; transition-timing-function: cubic-bezier(.2, .8, .3, 1); }
+.kpm-folder.opening .kpm-folder-file { transform: translateY(10px); transition-duration: 260ms; transition-timing-function: cubic-bezier(.2, .8, .3, 1); }
+/* on the narrow Customers folders the paper's resting sliver read as a lit strip under the lid (his 11:50 "the
+   LED light on the bottom of the button"), so there the sheet rests fully inside the pocket */
+.kpm-folder-quiet .kpm-folder-file { transform: translateY(52px); }
+.kpm-folder-quiet.arming .kpm-folder-file, .kpm-folder-quiet.opening .kpm-folder-file { transform: translateY(14px); }
 

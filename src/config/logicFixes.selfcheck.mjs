@@ -7636,14 +7636,18 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
      !/p-5 rounded-2xl flex flex-col items-start gap-3 transition-all duration-300 group shadow-md/.test(code(jf)),
      'the panel and its tab inherit the card colour, so the screen keeps its own palette');
   const fc = fs.existsSync('src/components/FolderCard.jsx') ? read('src/components/FolderCard.jsx') : '';
-  ok('HOLD: FolderCard opens on a TAP only; a hold animates the folder open for as long as the finger stays and never enters (the release-click of a press >= 350 ms is swallowed); no long-press menu',
-     /export const FOLDER_HOLD_MS = 350;/.test(fc) && !/setTimeout/.test(code(fc)) &&
-     /const down = \(e\) => \{ if \(e\.pointerType === 'mouse' && e\.button !== 0\) return; t0\.current = Date\.now\(\); held\.current = false; setArming\(true\); \};/.test(fc) &&
-     /const up = \(\) => \{ held\.current = Date\.now\(\) - t0\.current >= FOLDER_HOLD_MS; setArming\(false\); \};/.test(fc) &&
-     /const click = \(\) => \{ if \(held\.current\) \{ held\.current = false; return; \} onOpen\(\); \};/.test(fc) &&
-     /onPointerDown=\{down\} onPointerUp=\{up\} onPointerLeave=\{up\} onPointerCancel=\{up\}/.test(fc) &&
+  ok('HOLD / TAP: a tap plays the open (300 ms) and then enters; a hold (>= 350 ms) animates for as long as the finger stays and never enters; the release-click is swallowed either way; no long-press menu',
+     /export const FOLDER_HOLD_MS = 350;/.test(fc) && /export const FOLDER_TAP_MS = 300;/.test(fc) &&
+     /const down = \(e\) => \{ if \(e\.pointerType === 'mouse' && e\.button !== 0\) return; t0\.current = Date\.now\(\); swallow\.current = false; setArming\(true\); \};/.test(fc) &&
+     /if \(Date\.now\(\) - t0\.current >= FOLDER_HOLD_MS\) return;/.test(fc) &&
+     /setOpening\(true\);[^\n]*\n\s*setTimeout\(\(\) => \{ setOpening\(false\); onOpen\(\); \}, FOLDER_TAP_MS\);/.test(fc) &&
+     /const leave = \(\) => \{ swallow\.current = true; setArming\(false\); \};/.test(fc) &&
+     /const click = \(\) => \{ if \(swallow\.current\) \{ swallow\.current = false; return; \} onOpen\(\); \};/.test(fc) &&
+     /onPointerDown=\{down\} onPointerUp=\{up\} onPointerLeave=\{leave\} onPointerCancel=\{leave\}/.test(fc) &&
+     /\.kpm-folder\.opening \.kpm-folder-lid \{ height: 92px; transition-duration: 260ms;/.test(tf) &&
+     /\.kpm-folder-quiet \.kpm-folder-file \{ transform: translateY\(52px\); \}/.test(tf) &&
      /onContextMenu=\{\(e\) => e\.preventDefault\(\)\}/.test(fc) &&
-     /className=\{`kpm-folder \$\{arming \? 'arming' : ''\} \$\{className\}`\}/.test(fc),
+     /className=\{`kpm-folder \$\{arming \? 'arming' : ''\} \$\{opening \? 'opening' : ''\} \$\{className\}`\}/.test(fc),
      'his 09:40 "add hold effect on the folder, just like the video … we have hold mechanic as well on the side panel"');
 
   section('2026-09-19 - the phone runs the NEW build on the first open (the PWA worker reloads once)');
