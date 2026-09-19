@@ -4576,6 +4576,11 @@ html.lite-mode .kpm-pace-fill { opacity: 1; animation: none; }
 .kpm-folders > :nth-child(6), .kpm-arrive > :nth-child(6) { animation-delay: 200ms; }
 .kpm-folders > :nth-child(7), .kpm-arrive > :nth-child(7) { animation-delay: 240ms; }
 .kpm-folders > :nth-child(n+8), .kpm-arrive > :nth-child(n+8) { animation-delay: 280ms; }
+/* LEAVING — on a tap the other folders of the list step back while the tapped one opens (FolderCard marks the
+   list .kpm-leaving); the list unmounts when the next level arrives, so nothing has to be undone. The tapped
+   folder is the .opening button, or on Customers the wrapper holding it. */
+.kpm-folders.kpm-leaving > :not(.opening):not(:has(> .opening)) { animation: kpmLeave 240ms cubic-bezier(.4, 0, .6, 1) both; }
+@keyframes kpmLeave { to { opacity: 0; transform: translateY(8px) scale(.98); } }
 .kpm-folder-quiet .kpm-folder-file { transform: translateY(52px); }
 .kpm-folder-quiet.arming .kpm-folder-file, .kpm-folder-quiet.opening .kpm-folder-file { transform: translateY(14px); }
 

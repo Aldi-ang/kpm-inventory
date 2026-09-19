@@ -20,11 +20,14 @@ export default function FolderCard({ icon, onOpen, className = '', children }) {
   const t0 = useRef(0);
   const swallow = useRef(false);
   const down = (e) => { if (e.pointerType === 'mouse' && e.button !== 0) return; t0.current = Date.now(); swallow.current = false; setArming(true); };
-  const up = () => {
+  const up = (e) => {
     swallow.current = true;
     setArming(false);
     if (Date.now() - t0.current >= FOLDER_HOLD_MS) return;          // a hold: shut, never enter
     setOpening(true);                                                // a tap: open on screen, then enter
+    /* the other folders of this list step back while this one opens (.kpm-leaving in theme.css); the list
+       unmounts when the next level arrives, so nothing has to be undone — his 12:40 "continue" on the exit */
+    e.currentTarget.closest('.kpm-folders')?.classList.add('kpm-leaving');
     setTimeout(() => { setOpening(false); onOpen(); }, FOLDER_TAP_MS);
   };
   const leave = () => { swallow.current = true; setArming(false); };   // the finger slid off: shut, no entry

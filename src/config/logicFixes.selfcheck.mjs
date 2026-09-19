@@ -7640,7 +7640,9 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
      /export const FOLDER_HOLD_MS = 350;/.test(fc) && /export const FOLDER_TAP_MS = 300;/.test(fc) &&
      /const down = \(e\) => \{ if \(e\.pointerType === 'mouse' && e\.button !== 0\) return; t0\.current = Date\.now\(\); swallow\.current = false; setArming\(true\); \};/.test(fc) &&
      /if \(Date\.now\(\) - t0\.current >= FOLDER_HOLD_MS\) return;/.test(fc) &&
-     /setOpening\(true\);[^\n]*\n\s*setTimeout\(\(\) => \{ setOpening\(false\); onOpen\(\); \}, FOLDER_TAP_MS\);/.test(fc) &&
+     /setOpening\(true\);[^\n]*\n[\s\S]{0,400}?e\.currentTarget\.closest\('\.kpm-folders'\)\?\.classList\.add\('kpm-leaving'\);\s*setTimeout\(\(\) => \{ setOpening\(false\); onOpen\(\); \}, FOLDER_TAP_MS\);/.test(fc) &&
+     /\.kpm-folders\.kpm-leaving > :not\(\.opening\):not\(:has\(> \.opening\)\) \{ animation: kpmLeave 240ms/.test(tf) &&
+     /@keyframes kpmLeave \{ to \{ opacity: 0; transform: translateY\(8px\) scale\(\.98\); \} \}/.test(tf) &&
      /const leave = \(\) => \{ swallow\.current = true; setArming\(false\); \};/.test(fc) &&
      /const click = \(\) => \{ if \(swallow\.current\) \{ swallow\.current = false; return; \} onOpen\(\); \};/.test(fc) &&
      /onPointerDown=\{down\} onPointerUp=\{up\} onPointerLeave=\{leave\} onPointerCancel=\{leave\}/.test(fc) &&
