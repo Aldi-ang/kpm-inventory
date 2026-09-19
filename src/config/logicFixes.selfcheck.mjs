@@ -7640,7 +7640,11 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
      /export const FOLDER_HOLD_MS = 350;/.test(fc) && /export const FOLDER_TAP_MS = 200;/.test(fc) &&
      /const down = \(e\) => \{ if \(e\.pointerType === 'mouse' && e\.button !== 0\) return; t0\.current = Date\.now\(\); swallow\.current = false; setArming\(true\); \};/.test(fc) &&
      /if \(Date\.now\(\) - t0\.current >= FOLDER_HOLD_MS\) return;/.test(fc) &&
-     /setOpening\(true\);[^\n]*\n[\s\S]{0,400}?e\.currentTarget\.closest\('\.kpm-folders'\)\?\.classList\.add\('kpm-leaving'\);\s*setTimeout\(\(\) => \{ setOpening\(false\); onOpen\(\); \}, FOLDER_TAP_MS\);/.test(fc) &&
+     /* 2026-09-20: the leaving mark is taken OFF the list before the folder enters — the mark is set by hand, and when the next
+        level has the same shape React keeps the list box and never rewrites its classes, so the new folders arrived already
+        leaving (his recording: the "19 Sat" folder showed for a frame and was gone) */
+     /setOpening\(true\);[^\n]*\n[\s\S]{0,900}?const list = e\.currentTarget\.closest\('\.kpm-folders'\);\s*list\?\.classList\.add\('kpm-leaving'\);\s*setTimeout\(\(\) => \{ setOpening\(false\); list\?\.classList\.remove\('kpm-leaving'\); onOpen\(\); \}, FOLDER_TAP_MS\);/.test(fc) &&
+     !/e\.currentTarget\.closest\('\.kpm-folders'\)\?\.classList\.add/.test(code(fc)) &&
      /\.kpm-folders\.kpm-leaving > :not\(\.opening\):not\(:has\(> \.opening\)\) \{ animation: kpmLeave 160ms/.test(tf) &&
      /@keyframes kpmLeave \{ to \{ opacity: 0; transform: translateY\(8px\) scale\(\.98\); \} \}/.test(tf) &&
      /const leave = \(\) => \{ swallow\.current = true; setArming\(false\); \};/.test(fc) &&

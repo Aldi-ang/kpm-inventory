@@ -25,10 +25,14 @@ export default function FolderCard({ icon, onOpen, className = '', children }) {
     setArming(false);
     if (Date.now() - t0.current >= FOLDER_HOLD_MS) return;          // a hold: shut, never enter
     setOpening(true);                                                // a tap: open on screen, then enter
-    /* the other folders of this list step back while this one opens (.kpm-leaving in theme.css); the list
-       unmounts when the next level arrives, so nothing has to be undone — his 12:40 "continue" on the exit */
-    e.currentTarget.closest('.kpm-folders')?.classList.add('kpm-leaving');
-    setTimeout(() => { setOpening(false); onOpen(); }, FOLDER_TAP_MS);
+    /* the other folders of this list step back while this one opens (.kpm-leaving in theme.css) — his 12:40
+       "continue" on the exit. The mark is set by hand, outside React, so it is taken off again before the folder
+       enters: when the next level has the same shape (Sampling's month › date pages) React keeps this list box
+       and never rewrites its classes, and the NEW folders would arrive already leaving — his recording,
+       2026-09-19 23:36: the "19 Sat" folder showed for a frame and was gone. */
+    const list = e.currentTarget.closest('.kpm-folders');
+    list?.classList.add('kpm-leaving');
+    setTimeout(() => { setOpening(false); list?.classList.remove('kpm-leaving'); onOpen(); }, FOLDER_TAP_MS);
   };
   const leave = () => { swallow.current = true; setArming(false); };   // the finger slid off: shut, no entry
   const click = () => { if (swallow.current) { swallow.current = false; return; } onOpen(); };
