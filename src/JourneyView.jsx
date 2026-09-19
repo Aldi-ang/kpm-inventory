@@ -5,6 +5,7 @@ import { MapContainer, TileLayer, Marker, Polyline, GeoJSON, Tooltip as LeafletT
 import MarkerClusterGroup from 'react-leaflet-cluster';
 import { storeKey, getLocalDayKey, journeyWhere } from './utils/helpers';
 import MoreKey from './components/MoreKey.jsx';
+import FolderCard from './components/FolderCard.jsx';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { loadBorderCache, saveBorderCache } from './utils/borderCache';
@@ -1400,13 +1401,10 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                                         Object.values(groupedTree[prov] || {}).forEach(k => Object.values(k).forEach(c => storeCount += c.length));
                                         
                                         return (
-                                            <button key={prov} onClick={() => setSelectedProvinsi(prov)} className="kpm-folder bg-slate-900 border-slate-700 hover:border-orange-500 transition-colors duration-300">
-                                                <div className="kpm-folder-lid"><MapPin size={22} /></div>
-                                                <div className="kpm-folder-panel">
-                                                    <h3 className="text-sm font-black text-white uppercase tracking-widest mb-1">{prov}</h3>
-                                                    <p className="text-[11px] lg:text-[10px] text-slate-400 font-bold uppercase tracking-wider">{kabCount} Regions • {storeCount} Targets</p>
-                                                </div>
-                                            </button>
+                                            <FolderCard key={prov} icon={<MapPin size={22} />} onOpen={() => setSelectedProvinsi(prov)} className="bg-slate-900 border-slate-700 hover:border-orange-500 transition-colors duration-300">
+                                                <h3 className="text-sm font-black text-white uppercase tracking-widest mb-1">{prov}</h3>
+                                                <p className="text-[11px] lg:text-[10px] text-slate-400 font-bold uppercase tracking-wider">{kabCount} Regions • {storeCount} Targets</p>
+                                            </FolderCard>
                                         );
                                     })}
                                 </div>
@@ -1421,13 +1419,10 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                                         Object.values(groupedTree[selectedProvinsi][kab] || {}).forEach(c => storeCount += c.length);
 
                                         return (
-                                            <button key={kab} onClick={() => setSelectedKabupaten(kab)} className="kpm-folder bg-slate-900 border-slate-700 hover:border-blue-500 transition-colors duration-300">
-                                                <div className="kpm-folder-lid"><Layers size={22} /></div>
-                                                <div className="kpm-folder-panel">
-                                                    <h3 className="text-sm font-black text-white uppercase tracking-widest mb-1">{kab}</h3>
-                                                    <p className="text-[11px] lg:text-[10px] text-slate-400 font-bold uppercase tracking-wider">{kecCount} Sectors • {storeCount} Targets</p>
-                                                </div>
-                                            </button>
+                                            <FolderCard key={kab} icon={<Layers size={22} />} onOpen={() => setSelectedKabupaten(kab)} className="bg-slate-900 border-slate-700 hover:border-blue-500 transition-colors duration-300">
+                                                <h3 className="text-sm font-black text-white uppercase tracking-widest mb-1">{kab}</h3>
+                                                <p className="text-[11px] lg:text-[10px] text-slate-400 font-bold uppercase tracking-wider">{kecCount} Sectors • {storeCount} Targets</p>
+                                            </FolderCard>
                                         );
                                     })}
                                 </div>

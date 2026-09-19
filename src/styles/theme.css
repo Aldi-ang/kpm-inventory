@@ -4511,8 +4511,10 @@ html.lite-mode .kpm-pace-fill { opacity: 1; animation: none; }
 
 /* ---- THE FOLDER CARD — his video, 2026-09-19 ("change the folder design make it more alive like this video, i
    want u to make the customer folder like this also"; B for both). A manila lid on top with the icon at its
-   corner, a numbered tab cut into the lid, an ↗ key, the name and the count on the panel; press it and the lid
-   lifts (a phone has no hover). The number is a CSS counter — the list wears .kpm-folders. The control carries
+   corner, a numbered tab cut into the lid, an ↗ key, the name and the count on the panel. HOLD it and the lid
+   lifts for the whole hold (his 09:40 "add hold effect on the folder … like the side panel"): .arming is set
+   by components/FolderCard.jsx for FOLDER_HOLD_MS, the lift takes exactly that long, and the folder opens when
+   it is up. The number is a CSS counter — the list wears .kpm-folders. The control carries
    no colour of its own: the panel and its tab inherit the card's background, so each screen keeps its palette.
    No shadow (G30); nothing blinks; Lite Mode loses only the lift's motion. */
 .kpm-folders { counter-reset: folder; }
@@ -4523,6 +4525,7 @@ html.lite-mode .kpm-pace-fill { opacity: 1; animation: none; }
   display: flex; align-items: flex-start; justify-content: flex-end; color: #2a2016;
   background: linear-gradient(135deg, #d6b57a 0%, #b8924f 45%, #8a6a3a 100%);
   transition: height 220ms cubic-bezier(.2, .8, .3, 1); }
+/* the lift is the hold's progress, like the ribbon's swell: it takes the whole hold to reach the top */
 .kpm-folder-panel { position: relative; margin-top: -14px; padding: 22px 14px 14px; background: inherit;
   border-radius: 0 12px 12px 12px; }
 .kpm-folder-panel::before { content: counter(folder, decimal-leading-zero); position: absolute; left: 0; top: -22px;
@@ -4532,5 +4535,5 @@ html.lite-mode .kpm-pace-fill { opacity: 1; animation: none; }
 .kpm-folder-panel::after { content: "↗"; position: absolute; right: 12px; top: -10px; width: 30px; height: 30px;
   border-radius: 50%; border: 1px solid var(--line-3); background: var(--inset); color: var(--ink);
   display: grid; place-items: center; font: 700 14px/1 var(--font-mono); }
-.kpm-folder:active .kpm-folder-lid { height: 34px; }
+.kpm-folder.arming .kpm-folder-lid { height: 34px; transition-duration: 700ms; transition-timing-function: cubic-bezier(.4, 0, .6, 1); }
 

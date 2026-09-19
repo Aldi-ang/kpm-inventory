@@ -7617,15 +7617,26 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
      /\.kpm-folder-lid \{ height: 78px;[^}]*transition: height 220ms/.test(tf) &&
      /\.kpm-folder-panel::before \{ content: counter\(folder, decimal-leading-zero\);/.test(tf) &&
      /\.kpm-folder-panel::after \{ content: "↗";/.test(tf) &&
-     /\.kpm-folder:active \.kpm-folder-lid \{ height: 34px; \}/.test(tf) &&
+     /\.kpm-folder\.arming \.kpm-folder-lid \{ height: 34px; transition-duration: 700ms;/.test(tf) &&
+     !/\.kpm-folder:active/.test(code(tf)) &&
      !/box-shadow|text-shadow|filter:/.test(code(tf).slice(code(tf).indexOf('.kpm-folders {'))),
      'his "make it more alive like this video" - the press is the phone\'s hover');
   ok('both hub levels (province, regency) wear the folder and their lists carry the counter; the old flat card is gone',
-     /className="kpm-folder bg-slate-900 border-slate-700 hover:border-orange-500 transition-colors duration-300">\s*<div className="kpm-folder-lid"><MapPin size=\{22\} \/><\/div>\s*<div className="kpm-folder-panel">/.test(jf) &&
-     /className="kpm-folder bg-slate-900 border-slate-700 hover:border-blue-500 transition-colors duration-300">\s*<div className="kpm-folder-lid"><Layers size=\{22\} \/><\/div>\s*<div className="kpm-folder-panel">/.test(jf) &&
+     /<FolderCard key=\{prov\} icon=\{<MapPin size=\{22\} \/>\} onOpen=\{\(\) => setSelectedProvinsi\(prov\)\} className="bg-slate-900 border-slate-700 hover:border-orange-500 transition-colors duration-300">/.test(jf) &&
+     /<FolderCard key=\{kab\} icon=\{<Layers size=\{22\} \/>\} onOpen=\{\(\) => setSelectedKabupaten\(kab\)\} className="bg-slate-900 border-slate-700 hover:border-blue-500 transition-colors duration-300">/.test(jf) &&
+     /import FolderCard from '\.\/components\/FolderCard\.jsx';/.test(jf) &&
      (jf.match(/ kpm-folders">/g) || []).length === 2 &&
      !/p-5 rounded-2xl flex flex-col items-start gap-3 transition-all duration-300 group shadow-md/.test(code(jf)),
      'the panel and its tab inherit the card colour, so the screen keeps its own palette');
+  const fc = fs.existsSync('src/components/FolderCard.jsx') ? read('src/components/FolderCard.jsx') : '';
+  ok('HOLD: FolderCard opens on a tap, and on a hold opens by itself when the lid is up (700 ms); the click the release fires on the next screen is swallowed; no long-press menu',
+     /export const FOLDER_HOLD_MS = 700;/.test(fc) && /let swallowUntil = 0;/.test(fc) &&
+     /timer\.current = setTimeout\(\(\) => \{ stop\(\); swallowUntil = Date\.now\(\) \+ 400; onOpen\(\); \}, FOLDER_HOLD_MS\);/.test(fc) &&
+     /const click = \(\) => \{ if \(Date\.now\(\) < swallowUntil\) return; onOpen\(\); \};/.test(fc) &&
+     /onPointerDown=\{down\} onPointerUp=\{stop\} onPointerLeave=\{stop\} onPointerCancel=\{stop\}/.test(fc) &&
+     /onContextMenu=\{\(e\) => e\.preventDefault\(\)\}/.test(fc) &&
+     /className=\{`kpm-folder \$\{arming \? 'arming' : ''\} \$\{className\}`\}/.test(fc),
+     'his 09:40 "add hold effect on the folder, just like the video … we have hold mechanic as well on the side panel"');
 
   section('2026-09-19 - the phone runs the NEW build on the first open (the PWA worker reloads once)');
   const mainSrc = read('src/main.jsx');
