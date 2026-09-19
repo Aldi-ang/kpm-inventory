@@ -1,30 +1,25 @@
 import { useRef, useState } from 'react';
 
-/* THE FOLDER CARD — his video, 2026-09-19 ("make the folder design more alive like this video"), and his
-   09:40 ask: "add hold effect on the folder, just like the video … we have hold mechanic as well on the side
-   panel". The look is .kpm-folder in theme.css (a manila lid, a numbered tab, an ↗ key; the panel is the
-   children). The mechanic is here, the same shape as the edge ribbon's and HoldButton's:
-     tap  → opens at once (a salesman drilling through regions must not wait);
-     hold → the lid lifts for the whole hold — the lift IS the progress, like the ribbon's swell — and when
-            it is fully up the folder opens by itself, no release needed.
-   A hold that opens replaces the list under the finger, so the click the browser fires on release would
-   land on the NEXT screen's folder and open it too: every instance shares one `swallowUntil` clock and
-   ignores a click for 400 ms after any hold-open. */
-export const FOLDER_HOLD_MS = 700;
-let swallowUntil = 0;
+/* THE FOLDER CARD — his video, 2026-09-19 ("make the folder design more alive like this video"). The look is
+   .kpm-folder in theme.css (a manila lid, a paper file in its pocket, a numbered tab, an ↗ key; the panel is
+   the children). The mechanic, his 10:35 correction: "when hold folder should not click it will just animate
+   bro, click to enter not hold":
+     tap  → opens (a salesman drilling through regions must not wait);
+     hold → the folder OPENS on screen for as long as the finger stays — the lid grows, the paper slides out —
+            and shuts again on release. A hold never enters: a press that lasted FOLDER_HOLD_MS or more
+            swallows the click the browser fires on release (a mouse always fires one; a phone sometimes does).
+   The long-press menu is prevented and the card is not selectable, so a hold stays a hold. */
+export const FOLDER_HOLD_MS = 350;   // a press this long is a hold, not a tap
 
 export default function FolderCard({ icon, onOpen, className = '', children }) {
   const [arming, setArming] = useState(false);
-  const timer = useRef(null);
-  const stop = () => { clearTimeout(timer.current); timer.current = null; setArming(false); };
-  const down = (e) => {
-    if (e.pointerType === 'mouse' && e.button !== 0) return;
-    setArming(true);
-    timer.current = setTimeout(() => { stop(); swallowUntil = Date.now() + 400; onOpen(); }, FOLDER_HOLD_MS);
-  };
-  const click = () => { if (Date.now() < swallowUntil) return; onOpen(); };
+  const t0 = useRef(0);
+  const held = useRef(false);
+  const down = (e) => { if (e.pointerType === 'mouse' && e.button !== 0) return; t0.current = Date.now(); held.current = false; setArming(true); };
+  const up = () => { held.current = Date.now() - t0.current >= FOLDER_HOLD_MS; setArming(false); };
+  const click = () => { if (held.current) { held.current = false; return; } onOpen(); };
   return (
-    <button type="button" onPointerDown={down} onPointerUp={stop} onPointerLeave={stop} onPointerCancel={stop}
+    <button type="button" onPointerDown={down} onPointerUp={up} onPointerLeave={up} onPointerCancel={up}
       onClick={click} onContextMenu={(e) => e.preventDefault()}
       className={`kpm-folder ${arming ? 'arming' : ''} ${className}`} style={{ touchAction: 'manipulation', WebkitUserSelect: 'none', userSelect: 'none' }}>
       <div className="kpm-folder-lid"><i className="kpm-folder-file" aria-hidden="true"></i><span className="kpm-folder-icon">{icon}</span></div>

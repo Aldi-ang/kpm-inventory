@@ -7614,9 +7614,9 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
   ok('the folder control lives in theme.css: a lid, a numbered tab (CSS counter), an ↗ key, the lid lifts on press; no shadow',
      /\.kpm-folders \{ counter-reset: folder; \}/.test(tf) &&
      /\.kpm-folder \{ position: relative; display: flex; flex-direction: column;[^}]*counter-increment: folder;/.test(tf) &&
-     /\.kpm-folder-lid \{ position: relative; overflow: hidden; height: 40px;[^}]*transition: height 220ms/.test(tf) &&
-     /\.kpm-folder-file \{ position: absolute;[^}]*transform: translateY\(46px\);/.test(tf) &&
-     /\.kpm-folder\.arming \.kpm-folder-file \{ transform: translateY\(10px\); transition-duration: 700ms;/.test(tf) &&
+     /\.kpm-folder-lid \{ position: relative; overflow: visible; height: 40px;[^}]*transition: height 220ms/.test(tf) &&
+     /\.kpm-folder-file \{ position: absolute; left: 16px; right: 16px; top: 36px;[^}]*transform: translateY\(0\);/.test(tf) &&
+     /\.kpm-folder\.arming \.kpm-folder-file \{ transform: translateY\(-52px\); transition-duration: 700ms;/.test(tf) &&
      /<div className="kpm-folder-lid"><i className="kpm-folder-file" aria-hidden="true"><\/i><span className="kpm-folder-icon">\{icon\}<\/span><\/div>/.test(fs.existsSync('src/components/FolderCard.jsx') ? read('src/components/FolderCard.jsx') : '') &&
      /\.kpm-folder-panel::before \{ content: counter\(folder, decimal-leading-zero\);/.test(tf) &&
      /\.kpm-folder-panel::after \{ content: "↗";/.test(tf) &&
@@ -7632,11 +7632,12 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
      !/p-5 rounded-2xl flex flex-col items-start gap-3 transition-all duration-300 group shadow-md/.test(code(jf)),
      'the panel and its tab inherit the card colour, so the screen keeps its own palette');
   const fc = fs.existsSync('src/components/FolderCard.jsx') ? read('src/components/FolderCard.jsx') : '';
-  ok('HOLD: FolderCard opens on a tap, and on a hold opens by itself when the lid is up (700 ms); the click the release fires on the next screen is swallowed; no long-press menu',
-     /export const FOLDER_HOLD_MS = 700;/.test(fc) && /let swallowUntil = 0;/.test(fc) &&
-     /timer\.current = setTimeout\(\(\) => \{ stop\(\); swallowUntil = Date\.now\(\) \+ 400; onOpen\(\); \}, FOLDER_HOLD_MS\);/.test(fc) &&
-     /const click = \(\) => \{ if \(Date\.now\(\) < swallowUntil\) return; onOpen\(\); \};/.test(fc) &&
-     /onPointerDown=\{down\} onPointerUp=\{stop\} onPointerLeave=\{stop\} onPointerCancel=\{stop\}/.test(fc) &&
+  ok('HOLD: FolderCard opens on a TAP only; a hold animates the folder open for as long as the finger stays and never enters (the release-click of a press >= 350 ms is swallowed); no long-press menu',
+     /export const FOLDER_HOLD_MS = 350;/.test(fc) && !/setTimeout/.test(code(fc)) &&
+     /const down = \(e\) => \{ if \(e\.pointerType === 'mouse' && e\.button !== 0\) return; t0\.current = Date\.now\(\); held\.current = false; setArming\(true\); \};/.test(fc) &&
+     /const up = \(\) => \{ held\.current = Date\.now\(\) - t0\.current >= FOLDER_HOLD_MS; setArming\(false\); \};/.test(fc) &&
+     /const click = \(\) => \{ if \(held\.current\) \{ held\.current = false; return; \} onOpen\(\); \};/.test(fc) &&
+     /onPointerDown=\{down\} onPointerUp=\{up\} onPointerLeave=\{up\} onPointerCancel=\{up\}/.test(fc) &&
      /onContextMenu=\{\(e\) => e\.preventDefault\(\)\}/.test(fc) &&
      /className=\{`kpm-folder \$\{arming \? 'arming' : ''\} \$\{className\}`\}/.test(fc),
      'his 09:40 "add hold effect on the folder, just like the video … we have hold mechanic as well on the side panel"');
