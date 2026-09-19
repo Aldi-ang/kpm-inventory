@@ -1649,7 +1649,7 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
 
                 {/* LEVEL 3: STORES */}
                 {selectedProvince && selectedRegion && selectedCity && activeKec && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 kpm-arrive">
                         {/* A → Z by name — his ask 2026-09-17: "easier to find them". The folders keep
                             their own order; only the shops inside one are sorted. */}
                         {[...(activeKec?.stores || [])].sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'id', { sensitivity: 'base' })).map(c => {

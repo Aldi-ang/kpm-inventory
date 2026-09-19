@@ -7646,6 +7646,10 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
      /onPointerDown=\{down\} onPointerUp=\{up\} onPointerLeave=\{leave\} onPointerCancel=\{leave\}/.test(fc) &&
      /\.kpm-folder\.opening \.kpm-folder-lid \{ height: 92px; transition-duration: 260ms;/.test(tf) &&
      /\.kpm-folder-quiet \.kpm-folder-file \{ transform: translateY\(52px\); \}/.test(tf) &&
+     /\.kpm-folders > \*, \.kpm-arrive > \* \{ animation: kpmArrive 320ms cubic-bezier\(\.16, 1, \.3, 1\) both; \}/.test(tf) &&
+     /@keyframes kpmArrive \{ from \{ opacity: 0; transform: translateY\(12px\) scale\(\.985\); \} \}/.test(tf) &&
+     /\.kpm-folders > :nth-child\(n\+8\), \.kpm-arrive > :nth-child\(n\+8\) \{ animation-delay: 280ms; \}/.test(tf) &&
+     /<div className="grid grid-cols-1 md:grid-cols-2 gap-4 kpm-arrive">/.test(read('src/components/CustomerManager.jsx')) &&
      /onContextMenu=\{\(e\) => e\.preventDefault\(\)\}/.test(fc) &&
      /className=\{`kpm-folder \$\{arming \? 'arming' : ''\} \$\{opening \? 'opening' : ''\} \$\{className\}`\}/.test(fc),
      'his 09:40 "add hold effect on the folder, just like the video … we have hold mechanic as well on the side panel"');
@@ -7744,7 +7748,7 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
      'measured 2026-09-19: 149 x 37 and 43 x 43');
   ok('board 3: the path row stays inside the page and the sector cards wrap two to a row - no sideways move, no swipe reel',
      /bg-slate-900\/80 backdrop-blur p-3 rounded-xl border border-slate-700 max-w-full lg:w-max shadow-lg">/.test(jv) &&
-     /<div className="flex flex-wrap lg:flex-nowrap lg:overflow-x-auto hide-scrollbar gap-3 pb-4">/.test(jv) &&
+     /<div className="flex flex-wrap lg:flex-nowrap lg:overflow-x-auto hide-scrollbar gap-3 pb-4 kpm-arrive">/.test(jv) &&
      /className=\{`shrink-0 basis-\[calc\(50%-6px\)\] lg:basis-auto flex flex-col items-start p-3\.5 rounded-2xl border-2/.test(jv) &&
      !/-mx-4 px-4 lg:mx-0 lg:px-0/.test(code(jv)) &&
      !/border border-slate-700 w-max shadow-lg/.test(code(jv)),

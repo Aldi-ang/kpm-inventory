@@ -1436,7 +1436,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                                     <div className="animate-fade-in mt-4">
                                         {/* 📱 the sector cards wrap two to a row on the phone (his board 3 = YES: no swipe reel, and the
                                             old -mx-4 stuck out of the phone shell's p-2); the desk keeps its one-row reel */}
-                                        <div className="flex flex-wrap lg:flex-nowrap lg:overflow-x-auto hide-scrollbar gap-3 pb-4">
+                                        <div className="flex flex-wrap lg:flex-nowrap lg:overflow-x-auto hide-scrollbar gap-3 pb-4 kpm-arrive">
                                             {Object.keys(kecs).sort().map(kec => {
                                                 const sectorStores = kecs[kec];
                                                 const completedInSector = sectorStores.filter(c => c.lastVisit === todayDate || !!safeVisits[c.name.trim().toLowerCase()]).length;
