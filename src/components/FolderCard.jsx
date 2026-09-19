@@ -27,7 +27,7 @@ export default function FolderCard({ icon, onOpen, className = '', children }) {
     <button type="button" onPointerDown={down} onPointerUp={stop} onPointerLeave={stop} onPointerCancel={stop}
       onClick={click} onContextMenu={(e) => e.preventDefault()}
       className={`kpm-folder ${arming ? 'arming' : ''} ${className}`} style={{ touchAction: 'manipulation', WebkitUserSelect: 'none', userSelect: 'none' }}>
-      <div className="kpm-folder-lid">{icon}</div>
+      <div className="kpm-folder-lid"><i className="kpm-folder-file" aria-hidden="true"></i><span className="kpm-folder-icon">{icon}</span></div>
       <div className="kpm-folder-panel">{children}</div>
     </button>
   );
