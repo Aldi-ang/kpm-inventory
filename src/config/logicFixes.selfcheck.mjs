@@ -7618,13 +7618,13 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
   ok('the folder control lives in theme.css: a lid, a numbered tab (CSS counter), an ↗ key, the lid lifts on press; no shadow',
      /\.kpm-folders \{ counter-reset: folder; \}/.test(tf) &&
      /\.kpm-folder \{ position: relative; display: flex; flex-direction: column;[^}]*counter-increment: folder;/.test(tf) &&
-     /\.kpm-folder-lid \{ position: relative; overflow: hidden; height: 40px;[^}]*transition: height 220ms/.test(tf) &&
+     /\.kpm-folder-lid \{ position: relative; overflow: hidden; height: 40px;[^}]*transition: height 180ms/.test(tf) &&
      /\.kpm-folder-file \{ position: absolute; left: 16px; right: 16px; bottom: -6px;[^}]*transform: translateY\(46px\);/.test(tf) &&
-     /\.kpm-folder\.arming \.kpm-folder-file \{ transform: translateY\(10px\); transition-duration: 700ms;/.test(tf) &&
+     /\.kpm-folder\.arming \.kpm-folder-file \{ transform: translateY\(10px\); \}/.test(tf) &&
      /<div className="kpm-folder-lid"><i className="kpm-folder-file" aria-hidden="true"><\/i><span className="kpm-folder-icon">\{icon\}<\/span><\/div>/.test(fs.existsSync('src/components/FolderCard.jsx') ? read('src/components/FolderCard.jsx') : '') &&
      /\.kpm-folder-panel::before \{ content: counter\(folder, decimal-leading-zero\);/.test(tf) &&
      /\.kpm-folder-panel::after \{ content: "↗";/.test(tf) &&
-     /\.kpm-folder\.arming \.kpm-folder-lid \{ height: 92px; transition-duration: 700ms;/.test(tf) &&
+     /\.kpm-folder\.arming \.kpm-folder-lid \{ height: 92px; \}/.test(tf) && !/transition-duration: 700ms/.test(code(tf)) &&
      !/\.kpm-folder:active/.test(code(tf)) &&
      !/box-shadow|text-shadow|filter:/.test(code(tf).slice(code(tf).indexOf('.kpm-folders {'))),
      'his "make it more alive like this video" - the press is the phone\'s hover');
@@ -7637,20 +7637,20 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
      'the panel and its tab inherit the card colour, so the screen keeps its own palette');
   const fc = fs.existsSync('src/components/FolderCard.jsx') ? read('src/components/FolderCard.jsx') : '';
   ok('HOLD / TAP: a tap plays the open (300 ms) and then enters; a hold (>= 350 ms) animates for as long as the finger stays and never enters; the release-click is swallowed either way; no long-press menu',
-     /export const FOLDER_HOLD_MS = 350;/.test(fc) && /export const FOLDER_TAP_MS = 300;/.test(fc) &&
+     /export const FOLDER_HOLD_MS = 350;/.test(fc) && /export const FOLDER_TAP_MS = 200;/.test(fc) &&
      /const down = \(e\) => \{ if \(e\.pointerType === 'mouse' && e\.button !== 0\) return; t0\.current = Date\.now\(\); swallow\.current = false; setArming\(true\); \};/.test(fc) &&
      /if \(Date\.now\(\) - t0\.current >= FOLDER_HOLD_MS\) return;/.test(fc) &&
      /setOpening\(true\);[^\n]*\n[\s\S]{0,400}?e\.currentTarget\.closest\('\.kpm-folders'\)\?\.classList\.add\('kpm-leaving'\);\s*setTimeout\(\(\) => \{ setOpening\(false\); onOpen\(\); \}, FOLDER_TAP_MS\);/.test(fc) &&
-     /\.kpm-folders\.kpm-leaving > :not\(\.opening\):not\(:has\(> \.opening\)\) \{ animation: kpmLeave 240ms/.test(tf) &&
+     /\.kpm-folders\.kpm-leaving > :not\(\.opening\):not\(:has\(> \.opening\)\) \{ animation: kpmLeave 160ms/.test(tf) &&
      /@keyframes kpmLeave \{ to \{ opacity: 0; transform: translateY\(8px\) scale\(\.98\); \} \}/.test(tf) &&
      /const leave = \(\) => \{ swallow\.current = true; setArming\(false\); \};/.test(fc) &&
      /const click = \(\) => \{ if \(swallow\.current\) \{ swallow\.current = false; return; \} onOpen\(\); \};/.test(fc) &&
      /onPointerDown=\{down\} onPointerUp=\{up\} onPointerLeave=\{leave\} onPointerCancel=\{leave\}/.test(fc) &&
-     /\.kpm-folder\.opening \.kpm-folder-lid \{ height: 92px; transition-duration: 260ms;/.test(tf) &&
+     /\.kpm-folder\.opening \.kpm-folder-lid \{ height: 92px; \}/.test(tf) &&
      /\.kpm-folder-quiet \.kpm-folder-file \{ transform: translateY\(52px\); \}/.test(tf) &&
-     /\.kpm-folders > \*, \.kpm-arrive > \* \{ animation: kpmArrive 320ms cubic-bezier\(\.16, 1, \.3, 1\) both; \}/.test(tf) &&
+     /\.kpm-folders > \*, \.kpm-arrive > \* \{ animation: kpmArrive 220ms cubic-bezier\(\.16, 1, \.3, 1\) both; \}/.test(tf) &&
      /@keyframes kpmArrive \{ from \{ opacity: 0; transform: translateY\(12px\) scale\(\.985\); \} \}/.test(tf) &&
-     /\.kpm-folders > :nth-child\(n\+8\), \.kpm-arrive > :nth-child\(n\+8\) \{ animation-delay: 280ms; \}/.test(tf) &&
+     /\.kpm-folders > :nth-child\(n\+8\), \.kpm-arrive > :nth-child\(n\+8\) \{ animation-delay: 175ms; \}/.test(tf) &&
      /<div className="grid grid-cols-1 md:grid-cols-2 gap-4 kpm-arrive">/.test(read('src/components/CustomerManager.jsx')) &&
      /onContextMenu=\{\(e\) => e\.preventDefault\(\)\}/.test(fc) &&
      /className=\{`kpm-folder \$\{arming \? 'arming' : ''\} \$\{opening \? 'opening' : ''\} \$\{className\}`\}/.test(fc),

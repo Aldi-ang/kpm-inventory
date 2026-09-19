@@ -12,7 +12,7 @@ import { useRef, useState } from 'react';
    hold does not enter at all; a keyboard or synthetic click (no pointer) still enters at once. The long-press
    menu is prevented and the card is not selectable, so a hold stays a hold. */
 export const FOLDER_HOLD_MS = 350;   // a press this long is a hold, not a tap
-export const FOLDER_TAP_MS = 300;    // how long a tap's open plays before the folder enters
+export const FOLDER_TAP_MS = 200;    // how long a tap's open plays before the folder enters (the lift is 180 ms)
 
 export default function FolderCard({ icon, onOpen, className = '', children }) {
   const [arming, setArming] = useState(false);   // the finger is down

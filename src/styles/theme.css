@@ -4526,7 +4526,7 @@ html.lite-mode .kpm-pace-fill { opacity: 1; animation: none; }
 .kpm-folder-lid { position: relative; overflow: hidden; height: 40px; margin: -1px -1px 0; padding: 8px 10px; border-radius: 14px 14px 0 0;
   display: flex; align-items: flex-start; justify-content: flex-end; color: #2a2016;
   background: linear-gradient(135deg, #d6b57a 0%, #b8924f 45%, #8a6a3a 100%);
-  transition: height 220ms cubic-bezier(.2, .8, .3, 1); }
+  transition: height 180ms cubic-bezier(.2, .8, .3, 1); }
 .kpm-folder-icon { position: relative; z-index: 1; display: block; }
 /* the FILE inside: a paper sheet in the folder's pocket — a sliver shows when shut; it rises when the folder
    opens and slides back in when it shuts (his "put file animation on inside the folder that move up a little
@@ -4536,9 +4536,10 @@ html.lite-mode .kpm-pace-fill { opacity: 1; animation: none; }
    before its better" (11:00). */
 .kpm-folder-file { position: absolute; left: 16px; right: 16px; bottom: -6px; height: 70px; border-radius: 6px 6px 0 0;
   background: linear-gradient(180deg, #f6efe0 0, #e6dcc4 60%, #d3c6aa 100%);
-  transform: translateY(46px); transition: transform 220ms cubic-bezier(.2, .8, .3, 1); }
-/* OPEN while held: the lid grows and the file rises for the whole hold — the growth is the hold's progress,
-   like the ribbon's swell; it takes the whole hold to reach the top */
+  transform: translateY(46px); transition: transform 180ms cubic-bezier(.2, .8, .3, 1); }
+/* OPEN while held: the lid grows and the file rises at the same speed they shut — his 13:40 "make the expand and
+   shrink speed the same on the file folder and also make the animation quicker just so that the users are be able
+   to quick navigate"; one speed, 180 ms, everywhere on the folder */
 .kpm-folder-panel { position: relative; margin-top: -14px; padding: 22px 14px 14px; background: inherit;
   border-radius: 0 12px 12px 12px; }
 .kpm-folder-panel::before { content: counter(folder, decimal-leading-zero); position: absolute; left: 0; top: -22px;
@@ -4553,12 +4554,12 @@ html.lite-mode .kpm-pace-fill { opacity: 1; animation: none; }
 /* a folder in a two-column grid (Customers, 174 px) has no room for the ↗ beside its count; the admin's ⋯ is
    its corner key there */
 .kpm-folder-quiet .kpm-folder-panel::after { display: none; }
-.kpm-folder.arming .kpm-folder-lid { height: 92px; transition-duration: 700ms; transition-timing-function: cubic-bezier(.4, 0, .6, 1); }
-.kpm-folder.arming .kpm-folder-file { transform: translateY(10px); transition-duration: 700ms; transition-timing-function: cubic-bezier(.4, 0, .6, 1); }
+.kpm-folder.arming .kpm-folder-lid { height: 92px; }
+.kpm-folder.arming .kpm-folder-file { transform: translateY(10px); }
 /* a TAP plays the same open, quickly, before the folder enters (his 11:50: a plain press skipped the animation);
    .opening outlives .arming, so the lift is not cut when the finger lifts */
-.kpm-folder.opening .kpm-folder-lid { height: 92px; transition-duration: 260ms; transition-timing-function: cubic-bezier(.2, .8, .3, 1); }
-.kpm-folder.opening .kpm-folder-file { transform: translateY(10px); transition-duration: 260ms; transition-timing-function: cubic-bezier(.2, .8, .3, 1); }
+.kpm-folder.opening .kpm-folder-lid { height: 92px; }
+.kpm-folder.opening .kpm-folder-file { transform: translateY(10px); }
 /* on the narrow Customers folders the paper's resting sliver read as a lit strip under the lid (his 11:50 "the
    LED light on the bottom of the button"), so there the sheet rests fully inside the pocket */
 /* ---- ARRIVING INSIDE A FOLDER — his 12:15 "can the transition be smoother when entering inside the folder
@@ -4567,19 +4568,19 @@ html.lite-mode .kpm-pace-fill { opacity: 1; animation: none; }
    another — 40 ms apart, 320 ms each, the keys' ease-out. The lists: .kpm-folders (the counter lists) and
    .kpm-arrive (the store lists). Lite Mode and reduced motion kill it through the global rules above; no
    shadow, nothing loops. */
-.kpm-folders > *, .kpm-arrive > * { animation: kpmArrive 320ms cubic-bezier(.16, 1, .3, 1) both; }
+.kpm-folders > *, .kpm-arrive > * { animation: kpmArrive 220ms cubic-bezier(.16, 1, .3, 1) both; }
 @keyframes kpmArrive { from { opacity: 0; transform: translateY(12px) scale(.985); } }
-.kpm-folders > :nth-child(2), .kpm-arrive > :nth-child(2) { animation-delay: 40ms; }
-.kpm-folders > :nth-child(3), .kpm-arrive > :nth-child(3) { animation-delay: 80ms; }
-.kpm-folders > :nth-child(4), .kpm-arrive > :nth-child(4) { animation-delay: 120ms; }
-.kpm-folders > :nth-child(5), .kpm-arrive > :nth-child(5) { animation-delay: 160ms; }
-.kpm-folders > :nth-child(6), .kpm-arrive > :nth-child(6) { animation-delay: 200ms; }
-.kpm-folders > :nth-child(7), .kpm-arrive > :nth-child(7) { animation-delay: 240ms; }
-.kpm-folders > :nth-child(n+8), .kpm-arrive > :nth-child(n+8) { animation-delay: 280ms; }
+.kpm-folders > :nth-child(2), .kpm-arrive > :nth-child(2) { animation-delay: 25ms; }
+.kpm-folders > :nth-child(3), .kpm-arrive > :nth-child(3) { animation-delay: 50ms; }
+.kpm-folders > :nth-child(4), .kpm-arrive > :nth-child(4) { animation-delay: 75ms; }
+.kpm-folders > :nth-child(5), .kpm-arrive > :nth-child(5) { animation-delay: 100ms; }
+.kpm-folders > :nth-child(6), .kpm-arrive > :nth-child(6) { animation-delay: 125ms; }
+.kpm-folders > :nth-child(7), .kpm-arrive > :nth-child(7) { animation-delay: 150ms; }
+.kpm-folders > :nth-child(n+8), .kpm-arrive > :nth-child(n+8) { animation-delay: 175ms; }
 /* LEAVING — on a tap the other folders of the list step back while the tapped one opens (FolderCard marks the
    list .kpm-leaving); the list unmounts when the next level arrives, so nothing has to be undone. The tapped
    folder is the .opening button, or on Customers the wrapper holding it. */
-.kpm-folders.kpm-leaving > :not(.opening):not(:has(> .opening)) { animation: kpmLeave 240ms cubic-bezier(.4, 0, .6, 1) both; }
+.kpm-folders.kpm-leaving > :not(.opening):not(:has(> .opening)) { animation: kpmLeave 160ms cubic-bezier(.4, 0, .6, 1) both; }
 @keyframes kpmLeave { to { opacity: 0; transform: translateY(8px) scale(.98); } }
 .kpm-folder-quiet .kpm-folder-file { transform: translateY(52px); }
 .kpm-folder-quiet.arming .kpm-folder-file, .kpm-folder-quiet.opening .kpm-folder-file { transform: translateY(14px); }
