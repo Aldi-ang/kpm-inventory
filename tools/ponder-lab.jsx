@@ -32,6 +32,7 @@ import AgentInventoryView from '../src/AgentInventoryView.jsx';
 import EODReconciliationView from '../src/EODReconciliationView.jsx';
 import StockOpnameView from '../src/StockOpnameView.jsx';
 import JourneyView from '../src/JourneyView.jsx';
+import { SamplingFolderView, SamplingAnalyticsView, SampleEntryModal } from '../src/components/SamplingManager.jsx';
 import BranchWarehouseManager from '../src/components/BranchWarehouseManager.jsx';
 import ShipmentLabel from '../src/components/ShipmentLabel.jsx';
 import ArrivalScanner from '../src/components/ArrivalScanner.jsx';
@@ -347,6 +348,19 @@ FIXTURES['branches/BANDUNG/inventory'] = [
 /* TWO PRODUCTS WITH DELIBERATELY DIFFERENT PACKING. One karton is 400 Bks for the first and 600
    for the second, so the intake desk's rates line can be seen reading each product's own numbers
    rather than a constant. A lab with one product could not tell those two cases apart. */
+/* Sampling rows for ?shell&sampling (2026-09-19): three days, two places a day, a shop per note group —
+   the fields SamplingFolderView reads (date › reason = the place › note = the shop; productName, qty,
+   unit, sticksPerPack). A function of today so the newest folder is always this month. */
+const labSamplings = (today) => [
+  { id: 's1', date: today, reason: 'Pasar Baru', note: 'Warung Sumber Rejeki', productName: 'Cello Green 16', qty: 32, unit: 'Batang', sticksPerPack: 16 },
+  { id: 's2', date: today, reason: 'Pasar Baru', note: 'Warung Sumber Rejeki', productName: 'Cello Merah 12', qty: 2, unit: 'Bks', sticksPerPack: 12 },
+  { id: 's3', date: today, reason: 'Pasar Baru', note: 'Kios Maju Mundur', productName: 'Cello Green 16', qty: 16, unit: 'Batang', sticksPerPack: 16 },
+  { id: 's4', date: today, reason: 'Dago', note: 'Toko Lancar', productName: 'Cello Filter 20', qty: 1, unit: 'Bks', sticksPerPack: 20 },
+  { id: 's5', date: '2026-09-12', reason: 'Cibeunying', note: 'Grosir Jaya Abadi', productName: 'Cello Green 16', qty: 48, unit: 'Batang', sticksPerPack: 16 },
+  { id: 's6', date: '2026-09-12', reason: 'Cibeunying', note: 'Grosir Jaya Abadi', productName: 'Cello Merah 12', qty: 3, unit: 'Bks', sticksPerPack: 12 },
+  { id: 's7', date: '2026-08-28', reason: 'Dago', note: 'Warung Bu Sri Rahayu Sejahtera Abadi', productName: 'Cello Filter 20', qty: 20, unit: 'Batang', sticksPerPack: 20 },
+];
+
 const LAB_PRODUCTS = [
   { id: 'p-cg16', name: 'Cello Green 16', sku: 'CG16', stock: 4200, priceDistributor: 8900,
     packsPerSlop: 10, slopsPerBal: 10, balsPerCarton: 4 },
@@ -740,7 +754,18 @@ function ShellLab() {
         </button>
       )}
     >
-      {q.has('journey') ? (
+      {q.has('sampling') ? (
+        /* ?shell&sampling — Sampling INSIDE the real shell as App.jsx:5087 mounts it: the folder view
+           (year › month › date › place › the shops' items), `&analytics` the boss's charts, `&entry` the
+           record-a-sample modal on top. App owns `samplings`; the lab hands seven rows over three days.
+           Every write is a stub no-op; the lab is for looking. */
+        <>
+          {q.has('entry') && <SampleEntryModal isOpen initialData={null} inventory={[...LAB_PRODUCTS, ...LAB_VAN_EXTRA]} onSubmit={() => {}} onClose={() => {}} />}
+          {q.has('analytics')
+            ? <SamplingAnalyticsView samplings={labSamplings(LAB_TODAY)} inventory={[...LAB_PRODUCTS, ...LAB_VAN_EXTRA]} onBack={() => {}} />
+            : <SamplingFolderView samplings={labSamplings(LAB_TODAY)} isAdmin={q.has('admin')} onRecordSample={() => {}} onDelete={() => {}} onEdit={() => {}} onEditFolder={() => {}} onShowAnalytics={() => {}} />}
+        </>
+      ) : q.has('journey') ? (
         /* ?shell&journey — Journey Plan INSIDE the real shell exactly as App.jsx:4650 mounts it: no
            wrapper. App hands it displayPermitted (already tier-filtered), so the lab hands the four
            customers plus two more with a lastVisit / visitFreq spread, all in Bandung, so the day's
